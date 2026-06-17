@@ -17,7 +17,21 @@ Agents sollen dieselben Root-Wahrheiten lesen, nur relevante Detaildateien laden
 2. `docs/`: Detailwissen nach Bedarf.
 3. `.github/instructions`: wiederverwendbare Kontextregeln.
 4. `.github/prompts`: wiederholbare Aufgabenprompts.
-5. Skills/MCP/Agents: optional und sicherheitsgeprüft.
+5. Eigene Skills: aktiv, eng gescoped und an Root-Wahrheiten gebunden.
+6. Externe Skills/MCP/Agents: optional, reviewpflichtig und nicht automatisch aktiviert.
+
+## Phase 1.6 - Codex Capability Enablement
+
+Phase 1.6 liegt vor Phase 2. Sie finalisiert die Agentenfähigkeit, ohne App-Features zu bauen.
+
+Scope:
+
+- eigene Life-OS-Skills dokumentieren und aktiv nutzbar machen
+- MCP-Regeln und sichere Tool-Nutzung einordnen
+- Prompting-Regeln für Plan Mode, Pursue Goal und Skill-Aktivierung ergänzen
+- Context7 als erste empfohlene Quelle für aktuelle Library-Dokumentation einordnen
+- Playwright MCP als späteres UI-/Screenshot-/Accessibility-QA-Tool dokumentieren
+- externe Tools, Skills und MCPs nicht automatisch installieren oder aktivieren
 
 ## Aktuell sinnvoll
 
@@ -25,8 +39,10 @@ Agents sollen dieselben Root-Wahrheiten lesen, nur relevante Detaildateien laden
 - `.github/copilot-instructions.md` für repositoryweite Copilot-Regeln.
 - `.github/instructions/*.instructions.md` für bereichsspezifische Regeln.
 - `.github/prompts/*.prompt.md` für wiederholbare Workflows.
-- Playwright für Screenshot-/Browser-QA.
-- Context7 als optionale aktuelle Docs-Quelle.
+- `$life-os-design-taste` für V5-gebundene UI-/Designreviews.
+- `$life-os-codex-task-writer` für sichere, prüfbare Codex-Aufträge.
+- Context7 als erste empfohlene aktuelle Docs-Quelle für Libraries und APIs.
+- Playwright MCP später für lokale Screenshot-/Browser-/Accessibility-QA.
 - Repomix/Gitingest für große Kontextanalysen.
 
 ## Nur optional/später
@@ -36,9 +52,11 @@ Agents sollen dieselben Root-Wahrheiten lesen, nur relevante Detaildateien laden
 - OpenHands
 - Cline/Aider als Alternativharness
 - Subagents
-- eigene Skills
+- weitere eigene Skills
 - Memory Layer
 
 ## Sicherheitsregel
 
 MCP-/Agenten-Tools bekommen nie pauschal Zugriff auf Secrets, private Daten oder Produktionssysteme. Jede Integration braucht Zweck, Scope, Rechte, Risiko und Review.
+
+Aktive eigene Skills dürfen Dokumentation und Reviews strukturieren. Sie geben keine Autonomie-Freigabe für Produktentscheidungen, externe Installationen, Commits, Toolketten oder Zugriff auf Secrets.

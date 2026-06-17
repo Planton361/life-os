@@ -41,6 +41,22 @@ Bei Agenten-/Prompt-Aufgaben zusätzlich:
 - `docs/ai-workflow/review-workflow.md`
 - `docs/ai-workflow/tools-and-repos.md`
 
+## Codex Capability Layer
+
+Aktive eigene Skills:
+
+- `$life-os-design-taste`: nutzen, wenn UI-, Dashboard-, Komponenten-, Layout- oder visuelle Vorschläge gegen V5 geprüft werden.
+- `$life-os-codex-task-writer`: nutzen, wenn vage Anforderungen in kleine, sichere, prüfbare Codex-Aufträge übersetzt werden.
+
+Regeln:
+
+- Skills ergänzen die Arbeit, ersetzen aber nicht `DESIGN.md`, `AI_WORKFLOW.md`, `ROADMAP.md` oder andere Root-Wahrheiten.
+- `$life-os-design-taste` ersetzt V5 nicht. V5 bleibt die verbindliche Designwahrheit.
+- Skills treffen keine autonomen Produktentscheidungen.
+- Externe Skills, MCPs und Agententools werden erst nach Review von Zweck, Scope, Rechten und Risiko genutzt.
+- Externe Tools werden nicht automatisch installiert oder aktiviert.
+- Große Aufgaben zuerst im Plan Mode klären, dann erst im bestätigten Scope umsetzen.
+
 ## Arbeitsregeln
 
 - Vor größeren Änderungen Plan ausgeben.

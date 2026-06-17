@@ -36,3 +36,19 @@ Dashboard Overhaul V5 – Subtle Color Identity Polish
 ```text
 Weniger Oberfläche. Mehr Steuerung.
 ```
+## Agent Workflow
+
+- Root rules: `AGENTS.md`
+- Design truth: `DESIGN.md`
+- Product truth: `PRODUCT.md`
+- AI workflow: `AI_WORKFLOW.md`
+- Codex skills: `.agents/skills/*`
+- Copilot instructions: `.github/instructions/*`
+- Reusable prompts: `.github/prompts/*`
+
+Start with:
+1. Plan Mode
+2. confirmed small task
+3. Pursue Goal
+4. validation
+5. diff/screenshot review

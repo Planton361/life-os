@@ -1,29 +1,49 @@
 # Skills
 
 Stand: 2026-06-17  
-Status: Draft  
-Zweck: mögliche Life-OS-Skills beschreiben.  
+Status: Active
+Zweck: aktive eigene Life-OS-Skills und optionale externe Skills einordnen.
 Quelle der Wahrheit: `AI_WORKFLOW.md`.  
-Gilt für: spätere Skill-Ordner.  
-Nicht gilt für: sofortige Aktivierung.
+Gilt für: Skill-Auswahl, Skill-Scope und sichere Aktivierung.
+Nicht gilt für: automatische Installation externer Skills.
 
 ## Kurzfassung
 
-Skills sind optional. Sie werden erst sinnvoll, wenn wiederholbare Spezialaufgaben stabil sind, z. B. UI-Review, Dashboard-Component-Handoff oder Accessibility-Audit.
+Life OS nutzt zwei aktive eigene Codex-Skills für wiederholbare Agentenarbeit. Externe Skills bleiben optional, reviewpflichtig und dürfen V5 oder die Root-Dateien nicht ersetzen.
 
-## Kandidaten
+## Aktive eigene Skills
 
 ### `life-os-design-taste`
 
-Zweck: UI-Vorschläge gegen V5, Anti-AI-Slop und Component-System prüfen.
-
-### `life-os-dashboard-review`
-
-Zweck: Screenshot Review gegen P0/P1/P2/P3-Hierarchie.
+Status: Active
+Pfad: `.agents/skills/life-os-design-taste/SKILL.md`
+Zweck: UI-, Dashboard-, Komponenten-, Layout- und visuelle Vorschläge gegen V5, Anti-AI-Slop, Component-System, Visualisierungsregeln und Accessibility prüfen.
 
 ### `life-os-codex-task-writer`
 
-Zweck: vage Produktabsicht in sicheren Codex-Prompt übersetzen.
+Status: Active
+Pfad: `.agents/skills/life-os-codex-task-writer/SKILL.md`
+Zweck: vage Produkt-, Design-, Dokumentations- oder Implementierungsabsichten in kleine, sichere, prüfbare Codex-Aufträge übersetzen.
+
+## Optionale externe Skills
+
+### UI UX Pro Max
+
+Status: Optional / Review-Hilfe
+Rolle: kann später als zusätzliche Design-Review-Perspektive dienen.
+Grenze: ersetzt weder `DESIGN.md` noch `docs/design/dashboard-v5.md`; darf keine neue Designrichtung setzen.
+
+### Externe Skill-Sammlungen
+
+Status: Research only / optional
+Rolle: Inspiration für Skill-Struktur und Agentenrollen.
+Grenze: keine automatische Aktivierung, kein Kopieren ohne Anpassung an Life OS, keine Installation ohne explizite Freigabe.
+
+## Spätere eigene Kandidaten
+
+### `life-os-dashboard-review`
+
+Zweck: Screenshot Review gegen P0/P1/P2/P3-Hierarchie. Noch nicht aktiv.
 
 ## Skill-Regeln
 
@@ -32,3 +52,6 @@ Zweck: vage Produktabsicht in sicheren Codex-Prompt übersetzen.
 - keine Secrets
 - keine autonomen Codeänderungen ohne Review
 - V5 nicht ersetzen
+- keine neue Designrichtung einführen
+- externe Skills nur nach Zweck-, Scope-, Rechte- und Risiko-Review
+- keine externen Skills automatisch installieren oder aktivieren
