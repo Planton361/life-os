@@ -1,125 +1,47 @@
-# ARCHITECTURE.md – Life OS App
+# ARCHITECTURE.md
 
-Stand: 2026-06-12
+Stand: 2026-06-17  
+Status: Active  
+Zweck: operative Architekturregeln für Next.js App.  
+Quelle der Wahrheit: Diese Datei; Details in `docs/engineering/*`.  
+Gilt für: Repo-Struktur, Komponenten, Datenzugriff.  
+Nicht gilt für: Produkt- oder Designdetails.
 
-## Zielstack
+## Stack
+
+- Next.js App Router
+- React
+- TypeScript
+- Tailwind CSS
+- shadcn/ui als Basis
+- Supabase Auth + Postgres + RLS
+- Zod
+- React Hook Form
+- Recharts sparsam
+- Vitest / Playwright
+
+## Struktur
 
 ```text
-Next.js App Router
-React
-TypeScript
-Tailwind CSS
-shadcn/ui
-Supabase Postgres + Auth + RLS
-Zod
-React Hook Form
-Recharts
-Vitest
-Playwright
-Vercel
-```
-
-## Projektstruktur
-
-```text
-src/
-  app/
-    (app)/
-      dashboard/
-      today/
-      inbox/
-      week/
-      projects/
-      goals/
-      review/
-      education/
-      work/
-      coding/
-      health/
-      nutrition/
-      personal/
-    (auth)/
-    api/
-    globals.css
-    layout.tsx
-
-  components/
-    ui/
-    layout/
-    dashboard/
-    forms/
-    visualization/
-    shared/
-
-  features/
-    inbox/
-    tasks/
-    projects/
-    goals/
-    review/
-    education/
-    coding/
-    health/
-    nutrition/
-
-  lib/
-    supabase/
-    db/
-    validation/
-    utils/
-    constants/
-
-  server/
-    actions/
-    queries/
-
-  types/
+src/app/(app)/...
+src/app/(auth)/...
+src/components/ui
+src/components/layout
+src/components/dashboard
+src/components/visualization
+src/features/*
+src/lib/*
+src/server/*
+src/types/*
 ```
 
 ## Regeln
 
-- Server Components als Default.
-- Client Components nur bei Interaktion.
-- Feature-nahe Logik in `features/*`.
-- Wiederverwendbare UI in `components/*`.
-- Datenzugriff nicht in UI-Komponenten verstreuen.
-- Zod für Mutations.
-- Supabase RLS für User-Daten.
-- Loading/Error/Empty States pro wichtiger Route.
-- Keine schwere Chart-Library im globalen Bundle.
-
-## shadcn/ui
-
-- Basiskomponenten in `components/ui`.
-- Komponenten nicht unkontrolliert direkt ändern.
-- Life-OS-Stil über Tokens und Wrapper-Komponenten.
-- `components.json` konsistent halten.
-
-## Datenzugriff
-
-MVP:
-
-- Supabase Auth
-- Supabase Client
-- Server-side queries
-- RLS
-
-Optional:
-
-- Drizzle für Schema/Migrations
-
-## App Shell
-
-Desktop:
-
-- Sidebar
-- Topbar
-- Command/Quick Add
-- Main content
-- optional Context Panel
-
-Mobile:
-
-- Bottom Nav oder compact top navigation
-- Quick Add prominent
-- Drawer für sekundäre Navigation
+- Server Components default.
+- Client Components nur für echte Interaktion.
+- Feature-Code in `features/*`.
+- Server Queries/Actions getrennt halten.
+- Keine globale State-Maschine im MVP.
+- Tokens statt ad hoc Styling.
+- Loading/Error/Empty States einplanen.
+- Charts lazy/import-sparsam.

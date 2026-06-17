@@ -1,76 +1,57 @@
-# PRODUCT.md – Life OS App
+# PRODUCT.md
 
-Stand: 2026-06-12
+Stand: 2026-06-17  
+Status: Active  
+Zweck: Operative Produktwahrheit für Agents.  
+Quelle der Wahrheit: Diese Datei; Details in `docs/product/*`.  
+Gilt für: Scope, Priorisierung, UX-Zweck.  
+Nicht gilt für: visuelle Details; siehe `DESIGN.md`.
 
-## Produkt
+## Kurzfassung
 
-Life OS ist eine eigene Web-App für persönliche Steuerung.
+Life OS ist eine eigene Web-App für persönliche Steuerung: Today, Inbox, Week, Projects, Goals, Review, Education, Work, Coding & Agents, Health, Nutrition, Personal. Das Ziel ist operative Klarheit, nicht Datensammlung.
 
-## Ziel
-
-Anton soll täglich Studium, Arbeit, Projekte, Coding/Agenten, Gesundheit, Ernährung, Routinen und Reviews steuern können.
-
-## Hauptversprechen
+## Leitsatz
 
 ```text
-Morgens wissen, was zählt.
-Tagsüber fokussiert handeln.
-Abends offene Loops schließen.
+Weniger Oberfläche. Mehr Steuerung.
 ```
 
-## Hauptbereiche
+## Produktmodell
 
-- Dashboard
-- Today
+```text
+Dashboard = Steuerung
+Bereichsseiten = Kontext
+Detailseiten = Tiefe
+Archiv = Vergangenheit
+```
+
+## MVP-Kern
+
+- Dashboard V5
+- Quick Thought / Capture
 - Inbox
-- Week
-- Projects
-- Goals
-- Review
-- Education
-- Work
-- Coding & Agents
-- Health
-- Nutrition
-- Personal
-- System
-
-## MVP
-
-P0:
-
-- Dashboard
-- Quick Add
-- Inbox
+- Today Agenda
+- Daily Control
 - Tasks
-- Today
-- Projects
+- Active Projects
 - Daily Review
+- Basic Area Snapshots
 
-P1:
+## Erfolgskriterien
 
-- Week
-- Goals
-- Weekly Review
-- Health Snapshot
-- Education Snapshot
-- Work/Coding Snapshot
+- Anton erkennt morgens in unter 30 Sekunden, was zählt.
+- Inbox blockiert mental nicht.
+- Projekte bleiben kontrollierbar.
+- Review ist leicht ausfüllbar.
+- Dashboard bleibt scanbar.
+- Mobile ist nutzbar.
 
-P2:
+## Nicht-Ziele
 
-- Area Dashboards
-- Nutrition
-- Habits
-- Agent Sessions
-- Literature
-- WorkLog
-
-## Nicht im MVP
-
-- komplexe KI-Automation
-- Social Features
-- komplexes XP-System
-- große Analytics
-- Calendar Sync
-- Native Mobile
-- vollständiges PWA Offline
+- Notion-Klon
+- Social-App
+- vollständige Analytics
+- komplexe KI-Automation vor manuellem Flow
+- XP-Spiel
+- Dashboard als Datenfriedhof

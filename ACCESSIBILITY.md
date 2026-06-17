@@ -1,39 +1,35 @@
-# ACCESSIBILITY.md – Life OS App
+# ACCESSIBILITY.md
 
-Stand: 2026-06-12
+Stand: 2026-06-17  
+Status: Active  
+Zweck: operative Accessibility-Regeln.  
+Quelle der Wahrheit: Diese Datei.  
+Gilt für: alle UI-Arbeiten.  
+Nicht gilt für: reine Datenmodellarbeit ohne UI.
 
 ## Ziel
 
 Mindestens WCAG 2.2 AA als Orientierung.
 
-## Pflichtregeln
+## Regeln
 
-```text
-[ ] Eine H1 pro Seite.
-[ ] Logische Heading-Struktur.
-[ ] Buttons haben verständliche Namen.
-[ ] Icon-only Buttons haben aria-label.
-[ ] Inputs haben Labels.
-[ ] Focus States sind sichtbar.
-[ ] Tastaturbedienung funktioniert.
-[ ] Dialoge fokussieren korrekt.
-[ ] Escape schließt Dialoge.
-[ ] Kontrast ist ausreichend.
-[ ] Touch Targets sind groß genug.
-[ ] Charts haben Textzusammenfassung.
-[ ] Status nicht nur über Farbe.
-```
+- Eine H1 pro Seite.
+- Logische Heading-Struktur.
+- Sichtbarer Focus State.
+- Tastaturbedienung für Navigation, Buttons, Forms, Dialoge.
+- Inputs haben Labels.
+- Icon-only Buttons haben `aria-label`.
+- Dialoge fokussieren korrekt und schließen mit Escape.
+- Keine Information nur über Farbe.
+- Dark-UI-Kontrast prüfen.
+- Charts haben Titel und textliche Kernaussage.
+- Mobile Touch Targets ausreichend groß.
 
-## Design
+## DoD
 
-- Muted Text darf nicht zu hell sein.
-- Fokus-Ring nie entfernen.
-- Pills mit Textlabel.
-- Charts mit Titel und Kernaussage.
-- Mobile ohne horizontales Scrollen.
-
-## Testen
-
-- Keyboard-only Navigation.
-- Screenreader Labels prüfen.
-- Playwright optional mit axe-core.
+- [ ] Keyboard nutzbar.
+- [ ] Fokus sichtbar.
+- [ ] Kontrast ausreichend.
+- [ ] Touch Targets ausreichend.
+- [ ] Screenreader-Namen vorhanden.
+- [ ] Keine horizontalen Mobile-Overflows.

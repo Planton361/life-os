@@ -1,270 +1,76 @@
-# DESIGN.md – Life OS App Design System
+# DESIGN.md
 
-Stand: 2026-06-12
+Stand: 2026-06-17  
+Status: Active  
+Zweck: Operative Designquelle für Life OS.  
+Quelle der Wahrheit: Diese Datei + `docs/design/*`.  
+Gilt für: UI, Dashboard, Komponenten, visuelle Reviews.  
+Nicht gilt für: alte V1–V4-Dashboardvarianten.
 
-## Designziel
+## Kurzfassung
 
-Life OS soll wirken wie eine moderne, hochwertige persönliche Produktivitäts-App:
+Aktive Richtung ist **Life OS – Linear Calm Dark Command Center**. Das Dashboard ist ein dunkles, ruhiges, präzises WQHD-Command-Center. Es wirkt hochwertig durch Hierarchie, Dichtekontrolle, matte Flächen, präzise Borders, semantische Farbe und reduzierte Mikrotexte.
 
-- beeindruckend
-- ruhig
-- präzise
-- produktivitätsorientiert
-- visuell klar
-- datenbewusst
-- mobile-tauglich
-- nicht verspielt
-- nicht überladen
-
-Referenz-Vibe:
+## Aktive Figma-Basis
 
 ```text
-Linear Premium + Vercel Technical + Calm Productivity
+Dashboard Overhaul V5 – Subtle Color Identity Polish
 ```
 
-## Designprinzip
+## Prioritäten
 
-```text
-Skelett bleibt stabil.
-Vibe ist austauschbar.
-```
+### P0
 
-Skelett:
+- Today Agenda
+- Daily Control
 
-- Dashboard-Struktur
-- Navigation
-- Komponenten
-- Datenlogik
-- Mobile-Reihenfolge
-- Accessibility
-- Dichte-Regeln
+### P1
 
-Vibe:
-
-- Farbtemperatur
-- Schatten
-- Radius
-- Hintergrund
-- Card-Stil
-- Motion
-- Typografiegefühl
-
-## Design Tokens
-
-```yaml
-spacing:
-  1: 4px
-  2: 8px
-  3: 12px
-  4: 16px
-  5: 24px
-  6: 32px
-  7: 48px
-  8: 64px
-  9: 96px
-
-layout:
-  pageMax: 1240px
-  dashboardMax: 1280px
-  sidebarWidth: 264px
-  topbarHeight: 64px
-  mobilePad: 16px
-  desktopPad: 32px
-  gridGap: 20px
-  sectionGap: 40px
-
-radius:
-  xs: 6px
-  sm: 8px
-  md: 12px
-  lg: 16px
-  xl: 22px
-  2xl: 28px
-
-color:
-  bg: "#f6f5f2"
-  bgElevated: "#fbfaf8"
-  surface: "#ffffff"
-  surfaceSubtle: "#f8f7f4"
-  border: "#e2ded6"
-  borderStrong: "#d2cbc0"
-  text: "#1f1f1f"
-  textMuted: "#6d6961"
-  textSoft: "#979188"
-  education: "#2f6fbd"
-  work: "#2f7a4f"
-  coding: "#d06f2f"
-  agent: "#3b6fd8"
-  health: "#c65f35"
-  nutrition: "#b76a25"
-  personal: "#7a5aa6"
-  system: "#6f747c"
-```
-
-## Komponenten
-
-### AppShell
-
+- Quick Thought
+- Command Center
 - Sidebar
-- Topbar
-- Command trigger
-- Main content
-- optional Context Panel
+- Mood Check
+- Habit Tracker
+- Active Portfolio
 
-### DashboardHero
+### P2
 
-- ein Fokus
-- kurzer Text
-- maximal 3 Meta-Items
-- optional Mini-Progress
+- Meals Today
+- Running / Muscle / Recovery
+- Nutrient Balance
+- Weight Loss
 
-### QuickActions
+### P3
 
-Maximal 6:
+- Time Progress
+- Anti-Rot Actions
+- Challenges / Reward Focus
 
-- + Gedanke
-- + Aufgabe
-- + Tageslog
-- + Training
-- + Lernlog
-- + Agent Session
+## Designregeln
 
-### DashboardCard
+- Dashboard ist Cockpit, kein Datenlager.
+- Ein Screen hat genau einen Hauptfokus.
+- Farbe ist semantisch und textgestützt.
+- Visualisierung muss Entscheidung oder Verhalten unterstützen.
+- Liquid Glass nur subtil und gezielt.
+- Cards haben klare Aufgabe, Header, Datenhierarchie und begrenzte Mikrotexte.
+- Hohe Informationsdichte ist erlaubt, aber nur mit P0–P3-Hierarchie.
 
-- eine Aufgabe pro Card
-- Header mit Titel und optional Count
-- Inhalt 3–7 Items
-- Footer Link optional
+## Nicht erlaubt
 
-### CompactList
-
-- Haupttext zuerst
-- Meta sekundär
-- maximal 4 Meta-Infos
-- Pills sparsam
-
-### Progress
-
-- Projekt
-- Ziel
-- Habit
-- Skill
-- immer mit Textwert
-
-### Visualizations
-
-Erlaubt:
-
-- Progress bars
-- Week dots
-- sparklines
-- kleine line/bar charts
-- rings sparsam
-- timelines auf Detailseiten
-
-Nicht:
-
-- dekorative Charts
-- 3D
-- Regenbogenfarben
-- mehr als 2 Charts im Dashboard-Topbereich
-
-## Farblogik
-
-- Education = Blau
-- Work = Grün
-- Coding & Agents = Orange/Blau
-- Health = Rot/Orange
-- Nutrition = Orange
-- Personal = Lila
-- Review/System = Grau
-
-Farbe nie allein verwenden. Immer Textlabel.
-
-## Area Vibes
-
-```text
-Dashboard: Linear Premium + Calm Productivity
-Education: Calm Academic
-Work: Linear Premium
-Coding & Agents: Vercel Technical
-Health: Warm Routine
-Nutrition: Warm Simple
-Personal: Warm Minimal
-Review/System: System Grey
-```
-
-## Motion
-
-Erlaubt:
-
-- hover elevation
-- dialog/sheet transitions
-- command palette animation
-- progress loading
-- skeleton loading
-
-Nicht erlaubt:
-
-- dauerhafte Hintergrundanimation
-- Parallax im Produktivitätsfluss
-- Motion, die UI langsamer macht
-
-## Anti-Patterns
-
-- Tabellenwand
-- zu viele Cards mit gleicher Dominanz
-- lange Motivationszitate
-- Wetter/Uhr als Hauptfokus
+- Neon-Gradient-Ästhetik
+- Glassmorphism überall
+- generische Tailwind-SaaS-Optik
+- AI-Slop-Komponenten ohne Produktlogik
 - Chart-Overload
-- generisches SaaS-Blau ohne Semantik
-- zu viele Icons
-- Icon-only Actions ohne Label
-- schwer lesbares Glassmorphism
-- starke Verläufe hinter Text
-- Dashboard als Datenbank-Ersatz
+- unlesbare Kontraste
+- Gamification-Druck
 
-## Main Dashboard Pflicht
+## Detailquellen
 
-Muss sichtbar machen:
-
-1. Heute
-2. Inbox offen
-3. Diese Woche
-4. Fokus
-5. Aktive Projekte
-6. Ziele
-7. Review
-8. Area Snapshots
-
-## Mobile
-
-Mobile ist nicht nur gestapelter Desktop.
-
-Reihenfolge:
-
-1. Quick Actions
-2. Heute
-3. Inbox
-4. Diese Woche
-5. Fokus
-6. Aktive Projekte
-7. Review
-8. Health
-9. Education
-10. Work/Coding
-11. Goals
-12. Nutrition
-
-## Definition of Done Design
-
-```text
-[ ] Primärer Fokus ist klar.
-[ ] Today/Inbox/Review sind schnell sichtbar.
-[ ] Cards sind konsistent.
-[ ] Farben sind semantisch.
-[ ] Visualisierung unterstützt Handlung.
-[ ] Mobile funktioniert.
-[ ] Accessibility ist beachtet.
-[ ] App wirkt hochwertig, nicht überladen.
-```
+- `docs/design/dashboard-v5.md`
+- `docs/design/design-tokens.md`
+- `docs/design/component-system.md`
+- `docs/design/visualization-rules.md`
+- `docs/design/anti-ai-slop.md`
+- `docs/design/figma-handoff.md`

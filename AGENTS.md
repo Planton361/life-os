@@ -1,151 +1,70 @@
-# AGENTS.md – Life OS App
+# AGENTS.md
 
-Stand: 2026-06-12
+Stand: 2026-06-17  
+Status: Active  
+Zweck: Operative Arbeitsregeln für Codex, Claude, Cursor, Copilot und andere Coding Agents.  
+Quelle der Wahrheit: Diese Datei für Agentenverhalten.  
+Gilt für: alle Agentenarbeiten im Repo.  
+Nicht gilt für: Produktstrategie im Detail; siehe `PRODUCT.md`.
 
-## Projekt
+## Kurzfassung
 
-Wir bauen eine eigene moderne Website/App für Antons Life OS / Monatsplanung.
+Arbeite erst prüfend, dann ändernd. Nichts löschen ohne ausdrückliche Bestätigung. Bestehende Dateien und Komponenten bevorzugt verbessern statt duplizieren. V5 ist die finale Dashboard-Designrichtung.
 
-Ziel:
-Ein schönes, beeindruckendes und funktionales persönliches Produktivitäts-Cockpit für Tagesplanung, Wochenplanung, Projekte, Studium/Forschung, Arbeit, Coding/Agenten, Health, Ernährung, Personal und Reviews.
+## Immer zuerst lesen
 
-Leitsatz:
-
-```text
-Weniger Oberfläche. Mehr Steuerung.
-```
-
-## Arbeitsmodus für Codex
-
-Vor jeder Aufgabe:
-
-1. Relevante Markdown-Dateien lesen:
-   - `PRODUCT.md`
-   - `DESIGN.md`
-   - `ARCHITECTURE.md`
-   - `DATA_MODEL.md`
-   - `SECURITY.md`
-   - `ACCESSIBILITY.md`
-   - relevante Dateien in `docs/`
-
-2. Bestehenden Code prüfen.
-
-3. Nur die angeforderten Dateien ändern.
-
-4. Keine unnötigen Framework-/Library-Wechsel.
-
-5. Nach Fertigstellung prüfen und berichten.
-
-## Aktueller Ziel-Stack
-
-```text
-Next.js App Router
-React
-TypeScript
-Tailwind CSS
-shadcn/ui
-Supabase Postgres + Auth + RLS
-Zod
-React Hook Form
-Recharts
-Vitest
-Playwright
-Vercel
-```
-
-## Wichtige Produktregeln
-
-- Dashboard ist ein Cockpit, kein Datenlager.
-- Heute, Inbox, Diese Woche, Projekte, Ziele und Review sind zentral.
-- Visualisierungen sind erlaubt, aber müssen Handlung oder Motivation unterstützen.
-- Keine Tabellenwand.
-- Keine dekorativen Widgets als Hauptfokus.
-- Maximal 6 Quick Actions im Main Dashboard.
-- Mobile-Reihenfolge ist Produktentscheidung.
-- App darf beeindruckend aussehen, aber nicht unübersichtlich werden.
-- KI-/Agentenfeatures erst nach stabilem manuellem Flow.
-
-## Designregeln
-
-Siehe `DESIGN.md`.
-
-Kurzfassung:
-
-- moderne Premium-App
-- starke Informationshierarchie
-- semantische Farben
-- konsistente Tokens
-- hochwertige Cards
-- wenige, klare Visualisierungen
-- starke Empty States
-- sichtbare Focus States
-- keine generische Tailwind-SaaS-Optik
-
-## Architekturregeln
-
-Siehe `ARCHITECTURE.md`.
-
-Kurzfassung:
-
-- Server Components als Default
-- Client Components nur für Interaktion
-- Feature-Ordner nutzen
-- UI-Komponenten wiederverwenden
-- Datenzugriff zentralisieren
-- Zod für Validierung
-- RLS bei nutzerspezifischen Daten
-- keine Service Keys im Client
-
-## Security-Regeln
-
-Siehe `SECURITY.md`.
-
-Nie:
-
-- Secrets committen
-- RLS umgehen
-- `service_role` im Client verwenden
-- unvalidierte Inputs speichern
-- fremde User-Daten anzeigen
-
-## Accessibility-Regeln
-
-Siehe `ACCESSIBILITY.md`.
-
-Pflicht:
-
-- semantische Struktur
-- sichtbare Focus States
-- Labels
-- Tastaturbedienung
-- Kontrast
-- Status nicht nur farblich
-
-## Dateien, die nicht ohne Auftrag geändert werden dürfen
-
-- `AGENTS.md`
-- `DESIGN.md`
 - `PRODUCT.md`
+- `DESIGN.md`
 - `ARCHITECTURE.md`
 - `DATA_MODEL.md`
 - `SECURITY.md`
 - `ACCESSIBILITY.md`
 - `ROADMAP.md`
-- Datenbank-Migrationen, sobald produktive Daten existieren
-- Package-Manager-Dateien bei Library-Änderungen ohne explizite Begründung
+- `AI_WORKFLOW.md`
 
-## Neue Libraries
+Bei UI-/Dashboard-Aufgaben zusätzlich:
 
-Nur hinzufügen, wenn:
+- `docs/design/dashboard-v5.md`
+- `docs/design/design-tokens.md`
+- `docs/design/component-system.md`
+- `docs/design/visualization-rules.md`
 
-1. der Auftrag es verlangt oder
-2. es klar begründet wird und
-3. Alternativen geprüft wurden und
-4. Bundle-/Komplexitätsrisiko genannt wird.
+Bei Produkt-/Route-Aufgaben zusätzlich:
 
-## Codex-Ausgabeformat
+- `docs/product/pages-and-routes.md`
+- `docs/product/ux-flows.md`
+- `docs/product/feature-spec.md`
 
-Nach jeder Aufgabe:
+Bei Agenten-/Prompt-Aufgaben zusätzlich:
+
+- `docs/ai-workflow/prompting-rules.md`
+- `docs/ai-workflow/review-workflow.md`
+- `docs/ai-workflow/tools-and-repos.md`
+
+## Arbeitsregeln
+
+- Vor größeren Änderungen Plan ausgeben.
+- Keine Dateien löschen.
+- Keine alten Dashboard-Varianten reaktivieren.
+- Keine neue Library ohne Begründung.
+- Keine Secrets anfassen oder erzeugen.
+- Keine RLS/Security-Regeln umgehen.
+- Keine umfangreichen Refactors nebenbei.
+- Kleine, reviewbare Änderungen bevorzugen.
+- Nach Änderungen relevante Checks ausführen oder begründen, warum nicht möglich.
+
+## Design-Hard-Limits
+
+- Aktive Designrichtung: `Life OS – Linear Calm Dark Command Center`.
+- Figma-Basis: `Dashboard Overhaul V5 – Subtle Color Identity Polish`.
+- Keine Neon-Gradients.
+- Keine Glass-Lawine.
+- Keine Chart-Flut.
+- Keine generische AI-Slop-Optik.
+- Keine übertriebene Gamification.
+- P0 dominiert: Today Agenda und Daily Control.
+
+## Ausgabeformat
 
 ```text
 Erstellt:
@@ -156,15 +75,12 @@ Offene Punkte:
 Risiken:
 ```
 
-## Akzeptanzkriterien allgemein
+## Definition of Done
 
-```text
-[ ] Nutzeraufgabe erfüllt.
-[ ] Designsystem eingehalten.
-[ ] Mobile nutzbar.
-[ ] Accessibility nicht verschlechtert.
-[ ] Security nicht verletzt.
-[ ] Keine unnötige Library.
-[ ] Keine Tabellenwand im Dashboard.
-[ ] Keine unkontrollierte Architekturänderung.
-```
+- [ ] Aufgabe erfüllt.
+- [ ] Designsystem respektiert.
+- [ ] Mobile-Verhalten bedacht.
+- [ ] Accessibility nicht verschlechtert.
+- [ ] Security/Privacy nicht verletzt.
+- [ ] Keine unnötigen Duplikate erzeugt.
+- [ ] Keine alte Wahrheit aktiv gehalten.
