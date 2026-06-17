@@ -580,8 +580,8 @@ export function HabitTrackers() {
       headerAccessory={windowSwitch}
       title={habitTrackers.title}
     >
-      <div className="p-4 2xl:px-[28px] 2xl:pb-1.5 2xl:pt-4">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 2xl:grid-cols-[123px_123px_123px_123px] 2xl:gap-x-[14px] 2xl:gap-y-2">
+      <div className="p-4 2xl:px-[28px] 2xl:pb-1.5 2xl:pt-6">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 2xl:grid-cols-[130px_130px_130px_130px] 2xl:gap-x-[14px] 2xl:gap-y-5">
           {habits.map((habit) => (
             <article
               className="min-h-[68px] rounded-[14px] border border-[var(--border-subtle)] bg-[#101a2a] p-2.5"
@@ -655,7 +655,7 @@ export function ActivePortfolio() {
       titleClassName="text-xl"
     >
       <div className="p-4 2xl:px-[26px] 2xl:pb-3 2xl:pt-4">
-        <div className="mb-3 rounded-[13px] border border-[var(--border-subtle)] bg-[#0b1422] p-3 2xl:mb-4">
+        <div className="mb-3 rounded-[13px] border border-[var(--border-subtle)] bg-[#0b1422] p-3 2xl:mb-6">
           <div className="grid gap-3 sm:grid-cols-[132px_minmax(0,1fr)] sm:items-center">
             <div>
               <p className="text-[13px] font-semibold text-[var(--text-primary)]">

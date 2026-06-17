@@ -320,7 +320,7 @@ function TimeProgress() {
         </div>
         <div className="rounded-[18px] border border-[rgba(168,183,204,.10)] bg-[rgba(168,183,204,.07)] p-2 text-center">
           <div aria-hidden="true" className="mx-auto h-6 w-12 rounded-full bg-[rgba(168,183,204,.30)]" />
-          <p className="mt-1 text-[9px] font-medium text-[var(--text-muted)]">
+          <p className="mt-2 text-[9px] font-medium text-[var(--text-muted)]">
             {commandCenter.weather.temperatureLabel}
           </p>
           <p className="mt-0.5 text-[9px] font-medium text-[var(--text-muted)]">
