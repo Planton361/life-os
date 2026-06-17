@@ -28,14 +28,14 @@ function ProgressBar({
   quiet?: boolean;
 }>) {
   return (
-    <div className="h-1.5 rounded-full bg-[rgba(168,183,204,.11)]">
+    <div className="h-1.5 rounded-full bg-[rgba(168,183,204,.14)]">
       <div
         aria-hidden="true"
         className={cn(
           "h-full w-[var(--progress)] rounded-full",
           quiet
-            ? "bg-[color-mix(in_srgb,var(--accent)_42%,transparent)]"
-            : "bg-[color-mix(in_srgb,var(--accent)_82%,transparent)]",
+            ? "bg-[color-mix(in_srgb,var(--accent)_56%,transparent)]"
+            : "bg-[color-mix(in_srgb,var(--accent)_88%,transparent)]",
         )}
         style={accentStyle(accent, progress)}
       />
@@ -54,9 +54,15 @@ function MetricCard({
   return (
     <article
       className={cn(
-        "flex h-full flex-col rounded-[13px] border border-[var(--border-subtle)] bg-[#101a2a] p-2.5 pb-3",
+        "flex h-full flex-col rounded-[13px] border bg-[color-mix(in_srgb,var(--accent)_3%,#101a2a)] p-2.5 pb-3",
         compact && "2xl:p-2 2xl:pb-2.5",
       )}
+      style={
+        {
+          "--accent": accent,
+          borderColor: "color-mix(in srgb, var(--accent) 22%, rgba(148,163,184,.08))",
+    } as CSSProperties
+  }
     >
       <div className="flex items-start justify-between gap-2">
         <div>
@@ -75,13 +81,13 @@ function MetricCard({
         <span
           aria-hidden="true"
           className={cn(
-            "mt-2.5 grid size-6 place-items-center rounded-full border border-[color-mix(in_srgb,var(--accent)_28%,transparent)] bg-[color-mix(in_srgb,var(--accent)_10%,transparent)]",
+            "mt-2.5 grid size-6 place-items-center rounded-full border border-[color-mix(in_srgb,var(--accent)_8%,transparent)] bg-[color-mix(in_srgb,var(--accent)_4%,transparent)]",
             compact && "2xl:mt-2",
           )}
           style={{ "--accent": accent } as CSSProperties}
         >
           <span
-            className="size-2.5 rounded-full bg-[var(--accent)] shadow-[0_0_18px_color-mix(in_srgb,var(--accent)_60%,transparent)]"
+            className="size-2.5 rounded-full bg-[var(--accent)] shadow-[0_0_8px_color-mix(in_srgb,var(--accent)_22%,transparent)]"
           />
         </span>
       </div>
@@ -104,7 +110,7 @@ function QuickThought() {
   return (
     <section
       aria-labelledby="quick-thought-title"
-      className="flex h-[265px] flex-col rounded-[var(--panel-radius)] border border-[rgba(91,124,250,.22)] bg-[rgba(15,26,43,.90)] p-3 shadow-[0_8px_22px_rgba(0,0,0,.12)]"
+      className="flex h-[265px] flex-col rounded-[var(--panel-radius)] border border-[rgba(91,124,250,.30)] bg-[color-mix(in_srgb,var(--accent-blue)_8%,rgba(15,26,43,.92))] p-3 shadow-[0_8px_22px_rgba(0,0,0,.12)]"
     >
       <div className="flex items-center justify-between">
         <h2
@@ -117,8 +123,8 @@ function QuickThought() {
           {quickCapture.destinationLabel}
         </span>
       </div>
-      <div className="mt-2 flex flex-1 flex-col rounded-[18px] border border-[rgba(91,124,250,.23)] bg-[rgba(15,26,43,.90)] p-3">
-        <div className="border-l-4 border-[rgba(91,124,250,.82)] pl-3">
+      <div className="mt-2 flex flex-1 flex-col rounded-[18px] border border-[rgba(91,124,250,.30)] bg-[color-mix(in_srgb,var(--accent-cyan)_5%,rgba(15,26,43,.92))] p-3">
+        <div className="border-l-4 border-[rgba(91,124,250,.90)] pl-3">
           <p className="text-[10px] font-medium text-[var(--text-secondary)]">
             {quickCapture.placeholder}
           </p>
@@ -127,11 +133,11 @@ function QuickThought() {
           </p>
         </div>
         <div className="mt-4 space-y-2" aria-hidden="true">
-          <div className="h-[3px] w-20 rounded-full bg-[rgba(91,124,250,.26)]" />
-          <div className="h-[3px] w-14 rounded-full bg-[rgba(91,124,250,.18)]" />
+          <div className="h-[3px] w-20 rounded-full bg-[rgba(91,124,250,.36)]" />
+          <div className="h-[3px] w-14 rounded-full bg-[rgba(95,200,215,.24)]" />
         </div>
         <div className="mt-auto flex justify-center">
-          <span className="rounded-full border border-[rgba(91,124,250,.34)] bg-[rgba(91,124,250,.16)] px-8 py-2 text-[10px] font-medium text-[var(--text-secondary)]">
+          <span className="rounded-full border border-[rgba(95,200,215,.34)] bg-[rgba(91,124,250,.20)] px-8 py-2 text-[10px] font-medium text-[var(--text-secondary)]">
             {quickCapture.captureLabel}
           </span>
         </div>
@@ -139,7 +145,7 @@ function QuickThought() {
       <div className="mt-2 flex flex-nowrap justify-center gap-1 overflow-hidden">
         {quickCapture.kinds.map((type) => (
           <span
-            className="shrink-0 rounded-full border border-[rgba(91,124,250,.20)] bg-[rgba(91,124,250,.09)] px-2 py-0.5 text-[9px] font-medium text-[var(--text-secondary)]"
+            className="shrink-0 rounded-full border border-[rgba(91,124,250,.26)] bg-[rgba(91,124,250,.12)] px-2 py-0.5 text-[9px] font-medium text-[var(--text-secondary)]"
             key={type}
           >
             {type}
@@ -156,7 +162,7 @@ function DailyControlStatusPill({
   label: string;
 }>) {
   return (
-    <span className="rounded-full border border-[rgba(91,124,250,.24)] bg-[rgba(17,28,46,.96)] px-3 py-1 text-[10px] font-medium text-[var(--text-secondary)]">
+    <span className="rounded-full border border-[rgba(95,200,215,.30)] bg-[rgba(22,39,64,.96)] px-3 py-1 text-[10px] font-medium text-[var(--text-secondary)]">
       {label}
     </span>
   );
@@ -168,8 +174,7 @@ function DailyControlCurrentTask({
   task: DashboardCurrentTask;
 }>) {
   return (
-    <article className="h-[204px] rounded-[18px] border border-[rgba(91,124,250,.28)] bg-[rgba(21,36,58,.98)] p-3">
-      <div className="flex items-start justify-between gap-3">
+      <article className="h-[204px] rounded-[18px] border border-[rgba(91,124,250,.34)] bg-[linear-gradient(180deg,rgba(24,42,70,.98),rgba(16,29,49,.98))] p-3 shadow-[inset_0_0_0_1px_rgba(91,124,250,.10)]">      <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-[10px] font-medium uppercase text-[var(--text-secondary)]">
             {task.sectionLabel}
@@ -189,7 +194,7 @@ function DailyControlCurrentTask({
       <div className="mt-2">
         <ProgressBar accent={task.accent} progress={task.progress} />
       </div>
-      <span className="mt-3 flex min-h-[24px] items-center justify-center rounded-full border border-[rgba(91,124,250,.36)] bg-[rgba(91,124,250,.18)] text-[10px] font-medium text-[var(--text-secondary)]">
+      <span className="mt-3 flex min-h-[24px] items-center justify-center rounded-full border border-[rgba(95,200,215,.38)] bg-[rgba(91,124,250,.22)] text-[10px] font-medium text-[var(--text-secondary)]">
         {task.actionLabel}
       </span>
     </article>
@@ -203,10 +208,10 @@ function DailyControlQueueItem({
 }>) {
   return (
     <article
-      className="grid min-h-12 grid-cols-[4px_8px_minmax(0,1fr)_76px_10px] items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[#111c2e] pr-2"
+      className="grid min-h-12 grid-cols-[4px_8px_minmax(0,1fr)_76px_10px] items-center gap-2 rounded-xl border border-[rgba(91,124,250,.18)] bg-[color-mix(in_srgb,var(--accent-blue)_6%,#111c2e)] pr-2"
     >
-      <span className="h-full rounded-full bg-[rgba(91,124,250,.72)]" />
-      <span className="size-2 rounded-full bg-[var(--accent-blue)]" />
+      <span className="h-full rounded-full bg-[rgba(91,124,250,.84)]" />
+      <span className="size-2 rounded-full bg-[var(--accent-cyan)]" />
       <div className="min-w-0">
         <p className="truncate text-[13px] font-medium text-[var(--text-secondary)]">
           {item.title}
@@ -215,7 +220,7 @@ function DailyControlQueueItem({
           {item.meta}
         </p>
       </div>
-      <span className="rounded-full border border-[rgba(91,124,250,.24)] px-2 py-1 text-center text-[10px] font-medium text-[var(--text-secondary)]">
+      <span className="rounded-full border border-[rgba(91,124,250,.32)] bg-[rgba(91,124,250,.10)] px-2 py-1 text-center text-[10px] font-medium text-[var(--text-secondary)]">
         {item.tag}
       </span>
       <span aria-hidden="true" className="text-base text-[var(--text-secondary)]">
@@ -261,7 +266,7 @@ function DailyControl() {
   return (
     <section
       aria-labelledby="daily-control-title"
-      className="grid min-h-[265px] gap-3 overflow-hidden rounded-[var(--panel-radius)] border border-[rgba(91,124,250,.30)] bg-[#15243a] p-3 shadow-[0_16px_40px_rgba(0,0,0,.24)] lg:h-[265px] lg:grid-cols-[236px_minmax(0,1fr)]"
+      className="grid min-h-[265px] gap-3 overflow-hidden rounded-[var(--panel-radius)] border border-[rgba(91,124,250,.38)] bg-[color-mix(in_srgb,var(--accent-blue)_8%,#15243a)] p-3 shadow-[0_16px_40px_rgba(0,0,0,.24)] lg:h-[265px] lg:grid-cols-[236px_minmax(0,1fr)]"
     >
       <div className="lg:col-span-2">
         <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
@@ -287,7 +292,7 @@ function TimeProgress() {
   return (
     <section
       aria-labelledby="time-progress-title"
-      className="h-full overflow-hidden rounded-[var(--panel-radius)] border border-[var(--border-subtle)] bg-[#0d1625] p-3 shadow-[0_10px_26px_rgba(0,0,0,.14)]"
+      className="h-full overflow-hidden rounded-[var(--panel-radius)] border border-[rgba(95,200,215,.10)] bg-[color-mix(in_srgb,var(--accent-blue)_5%,#0d1625)] p-3 shadow-[0_10px_26px_rgba(0,0,0,.14)]"
     >
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_96px]">
         <div>
@@ -318,8 +323,8 @@ function TimeProgress() {
             ))}
           </div>
         </div>
-        <div className="rounded-[18px] border border-[rgba(168,183,204,.10)] bg-[rgba(168,183,204,.07)] p-2 text-center">
-          <div aria-hidden="true" className="mx-auto h-6 w-12 rounded-full bg-[rgba(168,183,204,.30)]" />
+        <div className="rounded-[18px] border border-[rgba(95,200,215,.10)] bg-[rgba(95,200,215,.07)] p-2 text-center">
+          <div aria-hidden="true" className="mx-auto h-6 w-12 rounded-full bg-[rgba(95,200,215,.30)]" />
           <p className="mt-2 text-[9px] font-medium text-[var(--text-muted)]">
             {commandCenter.weather.temperatureLabel}
           </p>
@@ -333,16 +338,16 @@ function TimeProgress() {
 }
 
 function MoodBoard() {
-  const moodAccent = "var(--accent-green)";
+  const moodAccent = commandCenter.moodCheck.accent;
 
   return (
     <section
       aria-labelledby="mood-title"
-      className="h-full overflow-hidden rounded-[var(--panel-radius)] border border-[rgba(66,184,131,.18)] bg-[#0d1625] p-3 shadow-[0_10px_26px_rgba(0,0,0,.14)]"
+      className="h-full overflow-hidden rounded-[var(--panel-radius)] border border-[rgba(95,200,215,.14)] bg-[color-mix(in_srgb,var(--accent-cyan)_8%,#0d1625)] p-3 shadow-[0_10px_26px_rgba(0,0,0,.14)]"
     >
       <div className="grid h-full gap-3 sm:grid-cols-[132px_minmax(0,1fr)] sm:items-center">
         <div className="flex h-full flex-col justify-center">
-          <p className="text-[10px] font-semibold uppercase text-[rgba(66,184,131,.78)]">
+          <p className="text-[10px] font-semibold uppercase text-[rgba(95,200,215,.86)]">
             {commandCenter.moodCheck.eyebrow}
           </p>
           <h2
@@ -358,7 +363,7 @@ function MoodBoard() {
         <div className="flex h-full flex-col justify-between">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <span className="grid size-7 place-items-center rounded-full bg-[rgba(66,184,131,.13)] text-sm text-[var(--accent-green)]">
+              <span className="grid size-7 place-items-center rounded-full bg-[rgba(66,184,131,.18)] text-sm text-[var(--accent-cyan)]">
                 :)
               </span>
               <div>
@@ -370,7 +375,7 @@ function MoodBoard() {
                 </p>
               </div>
             </div>
-            <p className="text-[10px] font-semibold text-[rgba(66,184,131,.78)]">
+            <p className="text-[10px] font-semibold text-[rgba(95,200,215,.86)]">
               {commandCenter.moodCheck.scoreLabel}
             </p>
           </div>
@@ -388,8 +393,8 @@ function MoodBoard() {
                   className={cn(
                     "rounded-full border px-2.5 py-0.5 text-[9px] font-medium",
                     mood === commandCenter.moodCheck.activeOption
-                      ? "border-[rgba(66,184,131,.28)] bg-[rgba(66,184,131,.13)] text-[var(--text-secondary)]"
-                      : "border-[var(--border-subtle)] bg-[rgba(168,183,204,.05)] text-[var(--text-muted)]",
+                      ? "border-[rgba(95,200,215,.36)] bg-[rgba(66,184,131,.18)] text-[var(--text-secondary)]"
+                      : "border-[rgba(95,200,215,.10)] bg-[rgba(168,183,204,.04)] text-[var(--text-muted)]",
                   )}
                   key={mood}
                 >
@@ -407,7 +412,7 @@ function MoodBoard() {
 export function CommandCenter() {
   return (
     <header className="px-3 pt-3">
-      <div className="rounded-[var(--panel-radius)] border border-[var(--border-subtle)] bg-[rgba(12,20,34,.94)] p-3 shadow-[0_10px_26px_rgba(0,0,0,.14)]">
+      <div className="rounded-[var(--panel-radius)] border border-[rgba(95,200,215,.14)] bg-[color-mix(in_srgb,var(--accent-blue)_4%,rgba(12,20,34,.94))] p-3 shadow-[0_10px_26px_rgba(0,0,0,.14)]">
         <div className="grid gap-3 2xl:h-[var(--top-zone-height)] 2xl:grid-cols-[580px_278px_minmax(700px,1fr)_600px] 2xl:items-start 2xl:gap-[9px] 2xl:overflow-hidden">
           <section
             aria-label="Command Center Stats"

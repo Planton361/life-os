@@ -54,19 +54,61 @@ function currentTimeLabelStyle(position: number): CSSProperties {
 }
 
 function statusClassName(status: DashboardAgendaEvent["status"]) {
-  if (status === "next" || status === "active") {
-    return "border-[rgba(91,124,250,.54)]";
+  if (status === "active") {
+    return "border-[color-mix(in_srgb,var(--accent)_34%,transparent)]";
+  }
+
+  if (status === "next") {
+    return "border-[color-mix(in_srgb,var(--accent)_28%,transparent)]";
   }
 
   if (status === "blocked") {
-    return "border-[rgba(221,107,95,.44)]";
+    return "border-[rgba(221,107,95,.22)]";
   }
 
   if (status === "done") {
-    return "border-[rgba(148,163,184,.18)]";
+    return "border-[rgba(148,163,184,.08)]";
   }
 
-  return "";
+  return "border-[color-mix(in_srgb,var(--accent)_20%,transparent)]";
+}
+
+function agendaEventBackground(status: DashboardAgendaEvent["status"]) {
+  if (status === "active") {
+    return "color-mix(in srgb, var(--accent) 24%, #0d1625)";
+  }
+
+  if (status === "next") {
+    return "color-mix(in srgb, var(--accent) 20%, #0d1625)";
+  }
+
+  if (status === "done") {
+    return "color-mix(in srgb, var(--accent) 5%, #0d1625)";
+  }
+
+  if (status === "blocked") {
+    return "color-mix(in srgb, var(--accent) 10%, #0d1625)";
+  }
+
+  return "color-mix(in srgb, var(--accent) 16%, #0d1625)";
+}
+
+function runningRhythmAccent(statusLabel: string) {
+  const normalizedStatus = statusLabel.toLowerCase();
+
+  if (normalizedStatus.includes("better")) {
+    return "var(--accent-green)";
+  }
+
+  if (
+    normalizedStatus.includes("below") ||
+    normalizedStatus.includes("weak") ||
+    normalizedStatus.includes("slow")
+  ) {
+    return "var(--accent-orange)";
+  }
+
+  return "var(--accent-cyan)";
 }
 
 function ProgressBar({
@@ -79,14 +121,14 @@ function ProgressBar({
   quiet?: boolean;
 }>) {
   return (
-    <div className="h-1.5 rounded-full bg-[rgba(168,183,204,.15)]">
+    <div className="h-1.5 rounded-full bg-[rgba(168,183,204,.18)]">
       <div
         aria-hidden="true"
         className={cn(
           "h-full w-[var(--progress)] rounded-full",
           quiet
-            ? "bg-[color-mix(in_srgb,var(--accent)_46%,transparent)]"
-            : "bg-[color-mix(in_srgb,var(--accent)_64%,transparent)]",
+            ? "bg-[color-mix(in_srgb,var(--accent)_56%,transparent)]"
+            : "bg-[color-mix(in_srgb,var(--accent)_76%,transparent)]",
         )}
         style={styleFor(accent, progress)}
       />
@@ -108,8 +150,8 @@ function Pill({
       className={cn(
         "rounded-full border px-3 py-1 text-[10px] font-medium",
         quiet
-          ? "border-[var(--border-subtle)] bg-[rgba(168,183,204,.05)] text-[var(--text-muted)]"
-          : "border-[color-mix(in_srgb,var(--accent)_24%,transparent)] bg-[color-mix(in_srgb,var(--accent)_10%,transparent)] text-[var(--text-secondary)]",
+          ? "border-[var(--border-subtle)] bg-[rgba(168,183,204,.07)] text-[var(--text-muted)]"
+          : "border-[color-mix(in_srgb,var(--accent)_34%,transparent)] bg-[color-mix(in_srgb,var(--accent)_14%,transparent)] text-[var(--text-secondary)]",
       )}
       style={styleFor(accent)}
     >
@@ -141,7 +183,7 @@ function Panel({
         className,
       )}
     >
-      <div className="border-b border-[var(--border-subtle)] bg-[rgba(14,23,38,.72)] px-5 py-4">
+      <div className="border-b border-[var(--border-subtle)] bg-[rgba(14,23,38,.80)] px-5 py-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2
@@ -210,7 +252,7 @@ export function WeightLossGoal() {
   return (
     <section
       aria-labelledby="weight-loss-goal-title"
-      className="h-[188px] overflow-hidden rounded-[var(--panel-radius)] border border-[rgba(66,184,131,.12)] bg-[#0f1724] p-5 shadow-[0_8px_22px_rgba(0,0,0,.12)] 2xl:h-[184px] 2xl:px-[28px] 2xl:py-[22px]"
+      className="h-[188px] overflow-hidden rounded-[var(--panel-radius)] border border-[var(--border-subtle)] bg-[#0f1724] p-5 shadow-[0_8px_22px_rgba(0,0,0,.12)] 2xl:h-[184px] 2xl:px-[28px] 2xl:py-[22px]"
     >
       <h2
         className="text-lg font-semibold text-[var(--text-primary)]"
@@ -229,7 +271,7 @@ export function WeightLossGoal() {
       </p>
       <div className="mt-2">
         <ProgressBar
-          accent={weightLossGoal.accent}
+          accent="rgba(224, 29, 175, 0.62)"
           progress={weightLossGoal.progress}
           quiet
         />
@@ -242,7 +284,7 @@ export function NutrientBalance() {
   return (
     <section
       aria-labelledby="nutrient-balance-title"
-      className="h-[188px] overflow-hidden rounded-[var(--panel-radius)] border border-[rgba(217,146,79,.12)] bg-[#0f1724] p-5 shadow-[0_8px_22px_rgba(0,0,0,.12)] 2xl:h-[184px] 2xl:p-[18px]"
+      className="h-[188px] overflow-hidden rounded-[var(--panel-radius)] border border-[var(--border-subtle)] bg-[#0f1724] p-5 shadow-[0_8px_22px_rgba(0,0,0,.12)] 2xl:h-[184px] 2xl:p-[18px]"
     >
       <h2
         className="text-lg font-semibold text-[var(--text-primary)]"
@@ -265,7 +307,6 @@ export function NutrientBalance() {
               <ProgressBar
                 accent={item.accent}
                 progress={item.progress}
-                quiet
               />
             </div>
           </div>
@@ -287,7 +328,7 @@ function AgendaViewSwitch({
           className={cn(
             "flex-1 rounded-full px-3 py-1.5",
             view === agenda.activeView &&
-              "border border-[rgba(91,124,250,.24)]",
+              "border border-[rgba(91,124,250,.34)] bg-[rgba(91,124,250,.13)] text-[var(--text-secondary)]",
           )}
           key={view}
         >
@@ -325,7 +366,7 @@ function AgendaEventCard({
   const metaLabel = `${event.time} · ${event.areaLabel} · ${event.typeLabel} · ${event.statusLabel}`;
   const eventStyle: AccentStyle = {
     ...styleFor(event.accent),
-    background: "color-mix(in srgb, var(--accent) 7%, #0d1625)",
+    background: agendaEventBackground(event.status),
   };
 
   return (
@@ -334,13 +375,13 @@ function AgendaEventCard({
         "relative overflow-hidden rounded-[13px] border bg-[#0d1625] p-2.5 pl-4",
         event.tall ? "min-h-[58px]" : "min-h-[42px]",
         statusClassName(event.status),
-        event.strong && event.status !== "blocked" && "border-[rgba(221,107,95,.44)]",
+        event.strong && event.status !== "blocked" && "border-[rgba(221,107,95,.28)]",
       )}
       style={eventStyle}
     >
       <span
         aria-hidden="true"
-        className="absolute bottom-0 left-0 top-0 w-1 bg-[color-mix(in_srgb,var(--accent)_64%,transparent)]"
+        className="absolute bottom-0 left-0 top-0 w-1 bg-[color-mix(in_srgb,var(--accent)_72%,transparent)]"
       />
       <div className="grid gap-1.5 sm:grid-cols-[184px_minmax(0,1fr)_156px] sm:items-center">
         <div className="min-w-0">
@@ -392,7 +433,7 @@ function AgendaPill({
 }>) {
   return (
     <span
-      className="rounded-full border border-[color-mix(in_srgb,var(--accent)_24%,transparent)] bg-[color-mix(in_srgb,var(--accent)_10%,transparent)] px-2.5 py-0.5 text-[9px] font-medium text-[var(--text-secondary)]"
+      className="rounded-full border border-[color-mix(in_srgb,var(--accent)_28%,transparent)] bg-[color-mix(in_srgb,var(--accent)_12%,transparent)] px-2.5 py-0.5 text-[9px] font-medium text-[var(--text-secondary)]"
       style={styleFor(accent)}
     >
       {children}
@@ -403,16 +444,16 @@ function AgendaPill({
 export function MealsToday() {
   return (
     <Panel
-      className="border-[rgba(217,146,79,.12)] bg-[#0f1724] 2xl:h-[384px]"
+      className="border-[rgba(217,146,79,.22)] bg-[color-mix(in_srgb,var(--accent-orange)_5%,#0f1724)] 2xl:h-[384px]"
       title={meals.title}
     >
       <div className="space-y-3 p-4 2xl:space-y-2 2xl:p-3">
         {meals.items.map((meal) => (
           <article
-            className="grid min-h-[84px] grid-cols-[64px_minmax(0,1fr)] gap-4 rounded-[14px] border border-[var(--border-subtle)] bg-[#101a2a] p-3 2xl:min-h-[92px] 2xl:grid-cols-[72px_minmax(0,1fr)]"
+            className="grid min-h-[84px] grid-cols-[64px_minmax(0,1fr)] gap-4 rounded-[14px] border border-[rgba(217,146,79,.18)] bg-[color-mix(in_srgb,var(--accent-orange)_7%,#101a2a)] p-3 2xl:min-h-[92px] 2xl:grid-cols-[72px_minmax(0,1fr)]"
             key={meal.type}
           >
-            <div className="rounded-[14px] border border-[rgba(217,146,79,.10)] bg-[rgba(217,146,79,.09)] 2xl:h-[68px] 2xl:w-[72px]" />
+            <div className="rounded-[14px] border border-[rgba(217,146,79,.20)] bg-[rgba(217,146,79,.14)] 2xl:h-[68px] 2xl:w-[72px]" />
             <div className="min-w-0 py-0.5">
               <div className="flex flex-wrap items-center gap-2.5">
                 <Pill accent="var(--accent-yellow)">{meal.type}</Pill>
@@ -435,13 +476,15 @@ export function MealsToday() {
 }
 
 export function RunningTracker() {
+  const rhythmAccent = runningRhythmAccent(runningRecovery.rhythm.statusLabel);
   const modeSwitch = (
     <div className="flex w-[294px] max-w-full rounded-full border border-[var(--border-subtle)] bg-[#0b1422] p-0.5 text-center text-[10px] font-semibold text-[var(--text-primary)]">
       {runningRecovery.modes.map((view) => (
         <span
           className={cn(
             "flex-1 rounded-full px-3 py-0.5",
-            view === runningRecovery.activeMode && "border border-[var(--border-subtle)]",
+            view === runningRecovery.activeMode &&
+              "border border-[var(--border-subtle)] bg-[rgba(168,183,204,.06)] text-[var(--text-secondary)]",
           )}
           key={view}
         >
@@ -453,7 +496,7 @@ export function RunningTracker() {
 
   return (
     <Panel
-      className="border-[rgba(221,107,95,.12)] bg-[#0f1724] 2xl:h-[226px]"
+      className="border-[var(--border-subtle)] bg-[#0f1724] 2xl:h-[226px]"
       headerAccessory={modeSwitch}
       subtitle={runningRecovery.subtitle}
       title={runningRecovery.title}
@@ -489,11 +532,11 @@ export function RunningTracker() {
             </p>
           </div>
           <ProgressBar
-            accent={runningRecovery.rhythm.accent}
+            accent={rhythmAccent}
             progress={runningRecovery.rhythm.progress}
             quiet
           />
-          <Pill accent={runningRecovery.rhythm.accent}>
+          <Pill accent={rhythmAccent}>
             {runningRecovery.rhythm.statusLabel}
           </Pill>
         </article>
@@ -508,9 +551,9 @@ export function TodayAgenda() {
   return (
     <section
       aria-labelledby="today-agenda-title"
-      className="overflow-hidden rounded-[var(--panel-radius)] border border-[rgba(91,124,250,.30)] bg-[#0e1828] shadow-[0_16px_40px_rgba(0,0,0,.24)] 2xl:h-[820px]"
+      className="overflow-hidden rounded-[var(--panel-radius)] border border-[rgba(91,124,250,.34)] bg-[color-mix(in_srgb,var(--accent-blue)_4%,#0e1828)] shadow-[0_16px_40px_rgba(0,0,0,.24)] 2xl:h-[820px]"
     >
-      <div className="border-b border-[var(--border-subtle)] bg-[rgba(14,23,38,.72)] px-5 py-4 2xl:h-[86px] 2xl:px-[30px] 2xl:py-0">
+      <div className="border-b border-[var(--border-subtle)] bg-[rgba(14,23,38,.82)] px-5 py-4 2xl:h-[86px] 2xl:px-[30px] 2xl:py-0">
         <div className="flex flex-wrap items-center justify-between gap-4 2xl:h-full">
           <h2
             className="text-[28px] font-semibold text-[var(--text-primary)]"
@@ -525,7 +568,7 @@ export function TodayAgenda() {
       </div>
       <div className="relative grid h-[clamp(560px,54vh,650px)] min-h-0 grid-cols-[56px_minmax(0,1fr)] gap-3 p-3 2xl:mt-[6px] 2xl:h-[780px] 2xl:grid-cols-[64px_minmax(0,1fr)] 2xl:gap-5 2xl:px-[22px] 2xl:py-0">
         <AgendaHourRail hours={data.hours} />
-        <div className="relative min-h-0 overflow-hidden rounded-[16px] border border-[var(--border-subtle)] bg-[#0b1423] p-2.5">
+        <div className="relative min-h-0 overflow-hidden rounded-[16px] border border-[rgba(91,124,250,.16)] bg-[color-mix(in_srgb,var(--accent-blue)_4%,#0b1423)] p-2.5">
           <div
             aria-hidden="true"
             className="absolute left-0 right-0 z-10 h-0.5 bg-[rgba(221,107,95,.95)]"
@@ -563,7 +606,7 @@ export function HabitTrackers() {
             className={cn(
               "flex-1 rounded-full px-3 py-0.5",
               view === habitTrackers.activeWindow &&
-                "border border-[var(--border-subtle)]",
+                "border border-[rgba(155,124,246,.26)] bg-[rgba(155,124,246,.12)] text-[var(--text-secondary)]",
             )}
             key={view}
           >
@@ -576,7 +619,7 @@ export function HabitTrackers() {
 
   return (
     <Panel
-      className="bg-[#101827] 2xl:h-[260px]"
+      className="border-[rgba(155,124,246,.16)] bg-[color-mix(in_srgb,var(--accent-purple)_5%,#101827)] 2xl:h-[260px]"
       headerAccessory={windowSwitch}
       title={habitTrackers.title}
     >
@@ -584,11 +627,11 @@ export function HabitTrackers() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 2xl:grid-cols-[130px_130px_130px_130px] 2xl:gap-x-[14px] 2xl:gap-y-5">
           {habits.map((habit) => (
             <article
-              className="min-h-[68px] rounded-[14px] border border-[var(--border-subtle)] bg-[#101a2a] p-2.5"
+              className="min-h-[68px] rounded-[14px] border border-[rgba(155,124,246,.16)] bg-[color-mix(in_srgb,var(--accent-purple)_5%,#101a2a)] p-2.5"
               key={habit.label}
             >
               <div className="flex items-start gap-2.5">
-                <span className="grid size-6 shrink-0 place-items-center rounded-full border border-[var(--border-subtle)] text-[10px] font-semibold text-[var(--text-primary)]">
+                <span className="grid size-6 shrink-0 place-items-center rounded-full border border-[rgba(155,124,246,.24)] bg-[rgba(155,124,246,.12)] text-[10px] font-semibold text-[var(--text-primary)]">
                   {habit.marker}
                 </span>
                 <div className="min-w-0">
@@ -609,8 +652,8 @@ export function HabitTrackers() {
                     className={cn(
                       "size-1.5 rounded-full",
                       index < habit.done
-                        ? "bg-[var(--accent-purple)]"
-                        : "bg-[rgba(148,163,184,.24)]",
+                        ? "bg-[var(--accent-purple)] shadow-[0_0_10px_rgba(155,124,246,.36)]"
+                        : "bg-[rgba(148,163,184,.20)]",
                     )}
                     key={`${habit.label}-${index}`}
                   />
@@ -618,7 +661,7 @@ export function HabitTrackers() {
               </div>
             </article>
           ))}
-          <article className="grid min-h-[68px] place-items-center rounded-[14px] border border-[var(--border-subtle)] bg-[#101a2a] p-2.5 text-center">
+          <article className="grid min-h-[68px] place-items-center rounded-[14px] border border-[rgba(155,124,246,.16)] bg-[color-mix(in_srgb,var(--accent-purple)_5%,#101a2a)] p-2.5 text-center">
             <div>
               <p className="text-lg font-semibold leading-none text-[var(--text-primary)]">+</p>
               <p className="mt-1.5 text-[10px] font-semibold text-[var(--text-primary)]">
@@ -637,7 +680,7 @@ export function ActivePortfolio() {
     <div className="flex flex-wrap items-center justify-end gap-1.5">
       {activePortfolioCounters.map((counter) => (
         <span
-          className="rounded-full border border-[var(--border-subtle)] bg-[#0b1422] px-2.5 py-1 text-[9px] font-semibold text-[var(--text-secondary)]"
+          className="rounded-full border border-[rgba(91,124,250,.20)] bg-[rgba(91,124,250,.09)] px-2.5 py-1 text-[9px] font-semibold text-[var(--text-secondary)]"
           key={counter.label}
         >
           {counter.value} {counter.label}
@@ -648,14 +691,14 @@ export function ActivePortfolio() {
 
   return (
     <Panel
-      className="bg-[#101827] 2xl:h-[546px]"
+      className="border-[rgba(91,124,250,.16)] bg-[color-mix(in_srgb,var(--accent-blue)_4%,#101827)] 2xl:h-[546px]"
       headerAccessory={headerCounters}
       subtitle={activePortfolio.subtitle}
       title={activePortfolio.title}
       titleClassName="text-xl"
     >
       <div className="p-4 2xl:px-[26px] 2xl:pb-3 2xl:pt-4">
-        <div className="mb-3 rounded-[13px] border border-[var(--border-subtle)] bg-[#0b1422] p-3 2xl:mb-6">
+        <div className="mb-3 rounded-[13px] border border-[rgba(91,124,250,.18)] bg-[color-mix(in_srgb,var(--accent-blue)_5%,#0b1422)] p-3 2xl:mb-6">
           <div className="grid gap-3 sm:grid-cols-[132px_minmax(0,1fr)] sm:items-center">
             <div>
               <p className="text-[13px] font-semibold text-[var(--text-primary)]">
@@ -671,7 +714,7 @@ export function ActivePortfolio() {
                   className={cn(
                     "flex-1 rounded-full px-3 py-1.5",
                     view === activePortfolio.activeView &&
-                      "border border-[var(--border-subtle)]",
+                      "border border-[rgba(91,124,250,.28)] bg-[rgba(91,124,250,.12)] text-[var(--text-secondary)]",
                   )}
                   key={view}
                 >
@@ -684,16 +727,17 @@ export function ActivePortfolio() {
         <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-[263px_263px] 2xl:gap-3">
           {projects.map((project) => (
             <article
-              className="rounded-[13px] border bg-[#101a2a] p-3 2xl:min-h-[162px]"
+              className="rounded-[13px] border p-3 2xl:min-h-[162px]"
               key={project.title}
               style={{
+                background: "color-mix(in srgb, var(--accent) 4%, #101a2a)",
                 borderColor: "color-mix(in srgb, var(--accent) 26%, transparent)",
                 "--accent": project.accent,
               } as AccentStyle}
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
-                  <span className="size-2.5 rounded-full bg-[var(--accent)]" />
+                  <span className="size-2.5 rounded-full bg-[var(--accent)] shadow-[0_0_10px_color-mix(in_srgb,var(--accent)_30%,transparent)]" />
                   <h3 className="truncate text-sm font-semibold text-[var(--text-primary)]">
                     {project.title}
                   </h3>
@@ -728,19 +772,19 @@ export function ActivePortfolio() {
 export function AntiRotActions() {
   return (
     <Panel
-      className="border-[rgba(168,183,204,.10)] bg-[#0c1320] 2xl:h-[205px]"
+      className="border-[rgba(155,124,246,.10)] bg-[color-mix(in_srgb,var(--accent-purple)_3%,#0c1320)] 2xl:h-[205px]"
       title={antiRotActions.title}
     >
       <div className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-5 2xl:grid-cols-[256px_256px_257px_257px_257px] 2xl:gap-[15px] 2xl:px-[36px] 2xl:pb-0 2xl:pt-2">
         {antiRot.map((action) => (
           <article
-            className="flex flex-col justify-between rounded-[13px] border border-[var(--border-subtle)] bg-[color-mix(in_srgb,var(--accent)_4%,transparent)] p-3 2xl:h-[125px] 2xl:p-2.5"
+            className="flex flex-col justify-between rounded-[13px] border border-[color-mix(in_srgb,var(--accent)_16%,transparent)] bg-[color-mix(in_srgb,var(--accent)_5%,transparent)] p-3 2xl:h-[125px] 2xl:p-2.5"
             key={action.title}
             style={styleFor(action.accent)}
           >
             <div className="flex items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-2">
-                <span className="size-2 rounded-full bg-[var(--accent)]" />
+                <span className="size-2 rounded-full bg-[var(--accent)] shadow-[0_0_8px_color-mix(in_srgb,var(--accent)_24%,transparent)]" />
                 <h3 className="truncate text-[10px] font-semibold text-[var(--text-secondary)]">
                   {action.title}
                 </h3>
@@ -775,7 +819,7 @@ export function Challenges() {
   return (
     <section
       aria-labelledby="challenges-title"
-      className="overflow-hidden rounded-[var(--panel-radius)] border border-[rgba(216,180,90,.12)] bg-[#0c1320] shadow-[0_8px_22px_rgba(0,0,0,.12)] 2xl:h-[205px]"
+      className="overflow-hidden rounded-[var(--panel-radius)] border border-[rgba(216,180,90,.16)] bg-[color-mix(in_srgb,var(--accent-yellow)_3%,#0c1320)] shadow-[0_8px_22px_rgba(0,0,0,.12)] 2xl:h-[205px]"
     >
       <div className="p-4 2xl:px-[31px] 2xl:py-[10px]">
         <h2
@@ -784,7 +828,7 @@ export function Challenges() {
         >
           {challengesRewardFocus.title}
         </h2>
-        <div className="mb-3 mt-3 flex min-h-8 items-center justify-between gap-3 rounded-full border border-[rgba(216,180,90,.16)] bg-[rgba(216,180,90,.06)] px-4 2xl:mb-2 2xl:mt-2 2xl:h-[27px]">
+        <div className="mb-3 mt-3 flex min-h-8 items-center justify-between gap-3 rounded-full border border-[rgba(216,180,90,.20)] bg-[rgba(216,180,90,.08)] px-4 2xl:mb-2 2xl:mt-2 2xl:h-[27px]">
           <p className="text-xs font-semibold text-[var(--text-secondary)]">
             {challengesRewardFocus.summary}
           </p>
@@ -795,11 +839,11 @@ export function Challenges() {
         <div className="grid gap-3 md:grid-cols-3 2xl:grid-cols-[240px_240px_240px] 2xl:gap-[12px]">
           {challenges.map((challenge) => (
             <article
-              className="flex flex-col justify-between rounded-[13px] border border-[rgba(216,180,90,.11)] bg-[#0f1724] p-3 2xl:h-[108px] 2xl:p-2.5"
+              className="flex flex-col justify-between rounded-[13px] border border-[rgba(216,180,90,.16)] bg-[color-mix(in_srgb,var(--accent-yellow)_4%,#0f1724)] p-3 2xl:h-[108px] 2xl:p-2.5"
               key={challenge.title}
             >
               <div className="flex items-start gap-3">
-                <span className="mt-1 size-2 rounded-full bg-[var(--accent-yellow)]" />
+                <span className="mt-1 size-2 rounded-full bg-[var(--accent-yellow)] shadow-[0_0_8px_rgba(216,180,90,.24)]" />
                 <h3 className="text-[10px] font-semibold text-[var(--text-secondary)]">
                   {challenge.title}
                 </h3>

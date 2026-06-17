@@ -12,10 +12,10 @@ function sectionStyle(accent: string): CSSProperties {
 export function Sidebar() {
   return (
     <aside className="border-b border-[var(--border-default)] bg-[var(--bg-app)] p-2 lg:h-dvh lg:min-h-0 lg:overflow-hidden lg:border-b-0 lg:border-r">
-      <div className="flex h-full min-h-0 flex-col rounded-[20px] border border-[var(--border-subtle)] bg-[#070b13] px-3 py-4 shadow-[0_8px_22px_rgba(0,0,0,0.12)] lg:h-[calc(100dvh-16px)] 2xl:max-h-[1424px]">
+      <div className="flex h-full min-h-0 flex-col rounded-[20px] border border-[rgba(91,124,250,.16)] bg-[color-mix(in_srgb,var(--accent-blue)_4%,#070b13)] px-3 py-4 shadow-[0_8px_22px_rgba(0,0,0,0.12)] lg:h-[calc(100dvh-16px)] 2xl:max-h-[1424px]">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="grid size-9 place-items-center rounded-[10px] border border-[rgba(91,124,250,.22)] bg-[rgba(91,124,250,.86)] text-[10px] font-semibold text-[var(--text-primary)]">
+            <div className="grid size-9 place-items-center rounded-[10px] border border-[rgba(95,200,215,.30)] bg-[rgba(91,124,250,.90)] text-[10px] font-semibold text-[var(--text-primary)]">
               LO
             </div>
             <p className="text-lg font-medium text-[var(--text-secondary)]">
@@ -35,7 +35,7 @@ export function Sidebar() {
         </a>
 
         <div className="mt-3 flex flex-col items-center">
-          <div className="grid size-24 place-items-center rounded-full bg-[rgba(91,124,250,.78)] text-3xl font-semibold text-[var(--text-primary)]">
+          <div className="grid size-24 place-items-center rounded-full bg-[color-mix(in_srgb,var(--accent-blue)_84%,var(--accent-cyan))] text-3xl font-semibold text-[var(--text-primary)]">
             A
           </div>
           <p className="mt-3 text-base font-medium text-[var(--text-secondary)]">
@@ -48,7 +48,7 @@ export function Sidebar() {
 
         <div
           aria-label="Search or command"
-          className="mt-3.5 flex min-h-[33px] items-center justify-between rounded-[13px] border border-[rgba(168,183,204,.16)] bg-[#0c1422] px-4 text-[11px] font-medium text-[var(--text-secondary)]"
+          className="mt-3.5 flex min-h-[33px] items-center justify-between rounded-[13px] border border-[rgba(95,200,215,.18)] bg-[color-mix(in_srgb,var(--accent-cyan)_4%,#0c1422)] px-4 text-[11px] font-medium text-[var(--text-secondary)]"
           role="search"
         >
           <span>Search or command</span>
@@ -65,14 +65,14 @@ export function Sidebar() {
                   aria-current="page"
                   className={cn(
                     "flex min-h-8 items-center rounded-[10px] border px-3 text-[11px] font-medium transition",
-                    "border-[rgba(91,124,250,.28)] bg-[rgba(91,124,250,.14)] text-[var(--text-secondary)] hover:border-[rgba(91,124,250,.48)]",
+                    "border-[rgba(91,124,250,.42)] bg-[rgba(91,124,250,.20)] text-[var(--text-secondary)] shadow-[0_0_0_1px_rgba(95,200,215,.08)] hover:border-[rgba(95,200,215,.50)]",
                   )}
                   href={item.href}
                   key={item.label}
                 >
                   <span
                     aria-hidden="true"
-                    className="mr-3 size-3 rounded-full"
+                    className="mr-3 size-3 rounded-full shadow-[0_0_10px_color-mix(in_srgb,var(--accent-blue)_45%,transparent)]"
                     style={{ background: item.accent }}
                   />
                   {item.label}
@@ -85,7 +85,7 @@ export function Sidebar() {
                 >
                   <span
                     aria-hidden="true"
-                    className="mr-3 size-3 rounded-full"
+                    className="mr-3 size-3 rounded-full shadow-[0_0_8px_rgba(91,124,250,.28)]"
                     style={{ background: item.accent }}
                   />
                   {item.label}
@@ -96,7 +96,7 @@ export function Sidebar() {
 
           {sidebarSections.map((section) => (
             <section key={section.title} style={sectionStyle(section.accent)}>
-              <div className="flex min-h-7 items-center justify-between gap-2 rounded-[10px] border border-[color-mix(in_srgb,var(--section-accent)_16%,transparent)] bg-[color-mix(in_srgb,var(--section-accent)_8%,transparent)] px-3">
+              <div className="flex min-h-7 items-center justify-between gap-2 rounded-[10px] border border-[color-mix(in_srgb,var(--section-accent)_26%,transparent)] bg-[color-mix(in_srgb,var(--section-accent)_12%,transparent)] px-3">
                 <h2 className="text-[9px] font-medium uppercase text-[var(--text-secondary)]">
                   {section.title}
                 </h2>
@@ -109,7 +109,7 @@ export function Sidebar() {
                   <div className="grid grid-cols-[8px_minmax(0,1fr)] gap-3" key={item.label}>
                     <span
                       aria-hidden="true"
-                      className="mt-1.5 size-2 rounded-full bg-[var(--section-accent)]"
+                      className="mt-1.5 size-2 rounded-full bg-[var(--section-accent)] shadow-[0_0_8px_color-mix(in_srgb,var(--section-accent)_42%,transparent)]"
                     />
                     <div className="min-w-0">
                       <p className="truncate text-[10px] font-medium text-[var(--text-secondary)]">

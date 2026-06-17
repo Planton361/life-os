@@ -28,12 +28,12 @@
   --card-radius:16px;
   --panel-radius:20px;
   --focus-ring:rgba(95,200,215,.88);
-  --wash-blue:rgba(91,124,250,.10);
-  --wash-green:rgba(66,184,131,.10);
-  --wash-orange:rgba(217,146,79,.10);
-  --wash-red:rgba(221,107,95,.10);
-  --wash-purple:rgba(155,124,246,.10);
-  --wash-yellow:rgba(216,180,90,.10);
+  --wash-blue:rgba(91,124,250,.11);
+  --wash-green:rgba(66,184,131,.11);
+  --wash-orange:rgba(217,146,79,.11);
+  --wash-red:rgba(221,107,95,.11);
+  --wash-purple:rgba(155,124,246,.11);
+  --wash-yellow:rgba(216,180,90,.11);
 }
 
 * {
