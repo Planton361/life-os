@@ -22,7 +22,7 @@
   --accent-cyan:#5fc8d7;
   --accent-yellow:#d8b45a;
   --sidebar-width:280px;
-  --top-zone-height:clamp(276px,23vh,320px);
+  --top-zone-height:265px;
   --dashboard-max:2560px;
   --grid-gap:12px;
   --card-radius:16px;

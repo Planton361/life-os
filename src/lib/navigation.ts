@@ -123,7 +123,6 @@ export const sidebarSections: NavigationSection[] = [
     items: [
       { label: "Daily Review", count: 1 },
       { label: "Weekly Review", count: 1 },
-      { label: "System Inbox", count: 3 },
       { label: "Settings" },
     ],
   },
