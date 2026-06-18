@@ -25,9 +25,13 @@ Arbeite erst prüfend, dann ändernd. Nichts löschen ohne ausdrückliche Bestä
 Bei UI-/Dashboard-Aufgaben zusätzlich:
 
 - `docs/design/dashboard-v5.md`
+- `docs/design/dashboard-layout-lock.md`
 - `docs/design/design-tokens.md`
 - `docs/design/component-system.md`
 - `docs/design/visualization-rules.md`
+- `docs/design/effects-and-motion.md`
+- `docs/engineering/dashboard-code-structure.md`
+- `docs/ai-workflow/codex-dashboard-workflow.md`
 
 Bei Produkt-/Route-Aufgaben zusätzlich:
 
@@ -68,6 +72,9 @@ Regeln:
 - Keine umfangreichen Refactors nebenbei.
 - Kleine, reviewbare Änderungen bevorzugen.
 - Nach Änderungen relevante Checks ausführen oder begründen, warum nicht möglich.
+- Dashboard-Layout ist locked.
+- Layoutwerte dürfen nur mit explizitem Layout-Scope geändert werden.
+- Color-/Content-/Motion-/Refactor-Aufgaben dürfen keine Layoutwerte ändern.
 
 ## Design-Hard-Limits
 

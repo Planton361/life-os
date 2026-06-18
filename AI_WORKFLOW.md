@@ -41,9 +41,14 @@ Scope:
 - `.github/prompts/*.prompt.md` für wiederholbare Workflows.
 - `$life-os-design-taste` für V5-gebundene UI-/Designreviews.
 - `$life-os-codex-task-writer` für sichere, prüfbare Codex-Aufträge.
+- `docs/ai-workflow/codex-dashboard-workflow.md` für sichere Dashboard-Änderungen nach Change Type.
+- `.github/instructions/life-os-dashboard.instructions.md` für kompakte Dashboard-Regeln im GitHub-/Copilot-/Codex-Kontext.
+- `.github/prompts/dashboard-safe-change.prompt.md` für kleine, dateigenaue Dashboard-Änderungen.
 - Context7 als erste empfohlene aktuelle Docs-Quelle für Libraries und APIs.
 - Playwright MCP später für lokale Screenshot-/Browser-/Accessibility-QA.
 - Repomix/Gitingest für große Kontextanalysen.
+
+Dashboard-Änderungen müssen künftig zuerst nach Change Type getrennt werden: `layout`, `color`, `content`, `motion`, `refactor`.
 
 ## Nur optional/später
 

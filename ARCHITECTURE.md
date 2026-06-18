@@ -35,6 +35,10 @@ src/server/*
 src/types/*
 ```
 
+Detailquelle für Dashboard-Datei-Ownership und Safe Refactors:
+
+- `docs/engineering/dashboard-code-structure.md`
+
 ## Regeln
 
 - Server Components default.
@@ -45,3 +49,4 @@ src/types/*
 - Tokens statt ad hoc Styling.
 - Loading/Error/Empty States einplanen.
 - Charts lazy/import-sparsam.
+- Dashboard-Code folgt Datei-Ownership und Safe-Refactor-Regeln aus `docs/engineering/dashboard-code-structure.md`.

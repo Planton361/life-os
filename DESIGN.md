@@ -52,6 +52,8 @@ Dashboard Overhaul V5 – Subtle Color Identity Polish
 - Ein Screen hat genau einen Hauptfokus.
 - Farbe ist semantisch und textgestützt.
 - Visualisierung muss Entscheidung oder Verhalten unterstützen.
+- `docs/design/dashboard-layout-lock.md` schützt den akzeptierten V5-Dashboard-Stand.
+- `docs/design/effects-and-motion.md` regelt spätere Motion-/Effect-Arbeiten ohne Layout-Shifts.
 - Liquid Glass nur subtil und gezielt.
 - Cards haben klare Aufgabe, Header, Datenhierarchie und begrenzte Mikrotexte.
 - Hohe Informationsdichte ist erlaubt, aber nur mit P0–P3-Hierarchie.
@@ -69,8 +71,10 @@ Dashboard Overhaul V5 – Subtle Color Identity Polish
 ## Detailquellen
 
 - `docs/design/dashboard-v5.md`
+- `docs/design/dashboard-layout-lock.md`
 - `docs/design/design-tokens.md`
 - `docs/design/component-system.md`
 - `docs/design/visualization-rules.md`
+- `docs/design/effects-and-motion.md`
 - `docs/design/anti-ai-slop.md`
 - `docs/design/figma-handoff.md`
