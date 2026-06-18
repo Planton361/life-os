@@ -1,15 +1,14 @@
 import type { CSSProperties } from "react";
-import {
-  dashboardMockData,
-  type DashboardCurrentTask,
-  type DashboardDailyControl,
-  type DashboardQueueItem,
+import type {
+  DashboardCommandCenterMeta,
+  DashboardCommandCenterViewModel,
+  DashboardCurrentTask,
+  DashboardDailyControl,
+  DashboardMetric,
+  DashboardQueueItem,
+  DashboardQuickCapture,
 } from "@/features/dashboard";
 import { cn } from "@/lib/cn";
-
-const { commandCenter, quickCapture } = dashboardMockData;
-const metrics = commandCenter.metrics;
-const timeRows = commandCenter.timeProgress;
 
 function accentStyle(accent: string, progress?: number): CSSProperties {
   return {
@@ -50,7 +49,7 @@ function MetricCard({
   progress,
   accent,
   compact = false,
-}: Readonly<(typeof metrics)[number] & { compact?: boolean }>) {
+}: Readonly<DashboardMetric & { compact?: boolean }>) {
   return (
     <article
       className={cn(
@@ -106,7 +105,11 @@ function MetricCard({
   );
 }
 
-function QuickThought() {
+function QuickThought({
+  data,
+}: Readonly<{
+  data: DashboardQuickCapture;
+}>) {
   return (
     <section
       aria-labelledby="quick-thought-title"
@@ -117,19 +120,19 @@ function QuickThought() {
           className="text-[13px] font-semibold text-[var(--text-primary)]"
           id="quick-thought-title"
         >
-          {quickCapture.title}
+          {data.title}
         </h2>
         <span className="text-[11px] font-semibold text-[var(--text-primary)]">
-          {quickCapture.destinationLabel}
+          {data.destinationLabel}
         </span>
       </div>
       <div className="mt-2 flex flex-1 flex-col rounded-[18px] border border-[rgba(91,124,250,.30)] bg-[color-mix(in_srgb,var(--accent-cyan)_5%,rgba(15,26,43,.92))] p-3">
         <div className="border-l-4 border-[rgba(91,124,250,.90)] pl-3">
           <p className="text-[10px] font-medium text-[var(--text-secondary)]">
-            {quickCapture.placeholder}
+            {data.placeholder}
           </p>
           <p className="mt-2 text-[9px] font-medium text-[var(--text-faint)]">
-            {quickCapture.helperText}
+            {data.helperText}
           </p>
         </div>
         <div className="mt-4 space-y-2" aria-hidden="true">
@@ -138,12 +141,12 @@ function QuickThought() {
         </div>
         <div className="mt-auto flex justify-center">
           <span className="rounded-full border border-[rgba(95,200,215,.34)] bg-[rgba(91,124,250,.20)] px-8 py-2 text-[10px] font-medium text-[var(--text-secondary)]">
-            {quickCapture.captureLabel}
+            {data.captureLabel}
           </span>
         </div>
       </div>
       <div className="mt-2 flex flex-nowrap justify-center gap-1 overflow-hidden">
-        {quickCapture.kinds.map((type) => (
+        {data.kinds.map((type) => (
           <span
             className="shrink-0 rounded-full border border-[rgba(91,124,250,.26)] bg-[rgba(91,124,250,.12)] px-2 py-0.5 text-[9px] font-medium text-[var(--text-secondary)]"
             key={type}
@@ -260,9 +263,11 @@ function DailyControlQueue({
   );
 }
 
-function DailyControl() {
-  const data = dashboardMockData.dailyControl;
-
+function DailyControl({
+  data,
+}: Readonly<{
+  data: DashboardDailyControl;
+}>) {
   return (
     <section
       aria-labelledby="daily-control-title"
@@ -288,7 +293,11 @@ function DailyControl() {
   );
 }
 
-function TimeProgress() {
+function TimeProgress({
+  data,
+}: Readonly<{
+  data: DashboardCommandCenterMeta;
+}>) {
   return (
     <section
       aria-labelledby="time-progress-title"
@@ -303,7 +312,7 @@ function TimeProgress() {
             Time Progress
           </h2>
           <div className="mt-2 space-y-1.5">
-            {timeRows.map((row) => (
+            {data.timeProgress.map((row) => (
               <div
                 className="grid grid-cols-[72px_minmax(0,1fr)_32px] items-center gap-2"
                 key={row.label}
@@ -326,10 +335,10 @@ function TimeProgress() {
         <div className="rounded-[18px] border border-[rgba(95,200,215,.10)] bg-[rgba(95,200,215,.07)] p-2 text-center">
           <div aria-hidden="true" className="mx-auto h-6 w-12 rounded-full bg-[rgba(95,200,215,.30)]" />
           <p className="mt-2 text-[9px] font-medium text-[var(--text-muted)]">
-            {commandCenter.weather.temperatureLabel}
+            {data.weather.temperatureLabel}
           </p>
           <p className="mt-0.5 text-[9px] font-medium text-[var(--text-muted)]">
-            {commandCenter.weather.periodLabel}
+            {data.weather.periodLabel}
           </p>
         </div>
       </div>
@@ -337,8 +346,12 @@ function TimeProgress() {
   );
 }
 
-function MoodBoard() {
-  const moodAccent = commandCenter.moodCheck.accent;
+function MoodBoard({
+  data,
+}: Readonly<{
+  data: DashboardCommandCenterMeta;
+}>) {
+  const moodAccent = data.moodCheck.accent;
 
   return (
     <section
@@ -348,16 +361,16 @@ function MoodBoard() {
       <div className="grid h-full gap-3 sm:grid-cols-[132px_minmax(0,1fr)] sm:items-center">
         <div className="flex h-full flex-col justify-center">
           <p className="text-[10px] font-semibold uppercase text-[rgba(95,200,215,.86)]">
-            {commandCenter.moodCheck.eyebrow}
+            {data.moodCheck.eyebrow}
           </p>
           <h2
             className="mt-1 text-base font-semibold text-[var(--text-primary)]"
             id="mood-title"
           >
-            {commandCenter.moodCheck.title}
+            {data.moodCheck.title}
           </h2>
           <p className="mt-1 text-[10px] font-medium text-[var(--text-muted)]">
-            {commandCenter.moodCheck.prompt}
+            {data.moodCheck.prompt}
           </p>
         </div>
         <div className="flex h-full flex-col justify-between">
@@ -368,31 +381,31 @@ function MoodBoard() {
               </span>
               <div>
                 <p className="text-lg font-semibold text-[var(--text-primary)]">
-                  {commandCenter.moodCheck.moodLabel}
+                  {data.moodCheck.moodLabel}
                 </p>
                 <p className="mt-0.5 text-[10px] font-medium text-[var(--text-muted)]">
-                  {commandCenter.moodCheck.detail}
+                  {data.moodCheck.detail}
                 </p>
               </div>
             </div>
             <p className="text-[10px] font-semibold text-[rgba(95,200,215,.86)]">
-              {commandCenter.moodCheck.scoreLabel}
+              {data.moodCheck.scoreLabel}
             </p>
           </div>
           <div className="mt-2">
             <ProgressBar
               accent={moodAccent}
-              progress={commandCenter.moodCheck.progress}
+              progress={data.moodCheck.progress}
               quiet
             />
           </div>
           <div className="mt-2 flex flex-wrap gap-1.5">
-            {commandCenter.moodCheck.options.map(
+            {data.moodCheck.options.map(
               (mood) => (
                 <span
                   className={cn(
                     "rounded-full border px-2.5 py-0.5 text-[9px] font-medium",
-                    mood === commandCenter.moodCheck.activeOption
+                    mood === data.moodCheck.activeOption
                       ? "border-[rgba(95,200,215,.36)] bg-[rgba(66,184,131,.18)] text-[var(--text-secondary)]"
                       : "border-[rgba(95,200,215,.10)] bg-[rgba(168,183,204,.04)] text-[var(--text-muted)]",
                   )}
@@ -409,7 +422,11 @@ function MoodBoard() {
   );
 }
 
-export function CommandCenter() {
+export function CommandCenter({
+  data,
+}: Readonly<{
+  data: DashboardCommandCenterViewModel;
+}>) {
   return (
     <header className="px-3 pt-3">
       <div className="rounded-[var(--panel-radius)] border border-[rgba(95,200,215,.14)] bg-[color-mix(in_srgb,var(--accent-blue)_4%,rgba(12,20,34,.94))] p-3 shadow-[0_10px_26px_rgba(0,0,0,.14)]">
@@ -419,13 +436,13 @@ export function CommandCenter() {
             className="p-1 2xl:h-[265px] 2xl:overflow-hidden"
           >
             <p className="text-3xl font-semibold text-[var(--text-secondary)]">
-              {commandCenter.greeting}
+              {data.commandCenter.greeting}
             </p>
             <p className="mt-2 text-xs font-medium text-[var(--text-secondary)]">
-              {commandCenter.dateLabel} · {commandCenter.dayTypeLabel}
+              {data.commandCenter.dateLabel} · {data.commandCenter.dayTypeLabel}
             </p>
             <div className="mt-5 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3 2xl:h-[181px] 2xl:grid-rows-[88px_81px] 2xl:gap-y-3">
-              {metrics.map((metric, index) => (
+              {data.commandCenter.metrics.map((metric, index) => (
                 <MetricCard
                   compact={index >= 3}
                   key={metric.label}
@@ -435,12 +452,12 @@ export function CommandCenter() {
             </div>
           </section>
 
-          <QuickThought />
-          <DailyControl />
+          <QuickThought data={data.quickCapture} />
+          <DailyControl data={data.dailyControl} />
 
           <div className="grid h-[265px] grid-rows-[104px_minmax(0,1fr)] gap-3 overflow-hidden">
-            <TimeProgress />
-            <MoodBoard />
+            <TimeProgress data={data.commandCenter} />
+            <MoodBoard data={data.commandCenter} />
           </div>
         </div>
       </div>

@@ -1,4 +1,10 @@
 export { dashboardMockData } from "./mock-data";
+export { getDashboardViewModel } from "./dashboard-view-model";
+export type {
+  DashboardCommandCenterViewModel,
+  DashboardHealthNutritionViewModel,
+  DashboardViewModel,
+} from "./dashboard-view-model";
 export type {
   DashboardAccent,
   DashboardActivePortfolio,
