@@ -2,18 +2,462 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { CSSProperties } from "react";
-import { navigationItems, sidebarSections } from "@/lib/navigation";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type CSSProperties,
+  type FocusEvent,
+  type KeyboardEvent,
+} from "react";
+import {
+  sidebarNavigation,
+  type NavigationItem,
+  type NavigationSection,
+} from "@/config/navigation";
 import { cn } from "@/lib/cn";
 
-function sectionStyle(accent: string): CSSProperties {
+type SidebarStyle = CSSProperties & {
+  "--section-accent"?: string;
+  "--item-accent"?: string;
+};
+
+type FlyoutPosition = {
+  left: number;
+  top: number;
+};
+
+const FLYOUT_CLOSE_DELAY_MS = 140;
+const NAV_ITEM_TEXT_CLASSES =
+  "font-[inherit] text-[10px] font-medium leading-none";
+const NAV_ITEM_LABEL_CLASSES =
+  "min-w-0 truncate text-[10px] font-medium leading-none";
+const NAV_ITEM_BASE_CLASSES = `flex min-h-[25px] w-full items-center rounded-[9px] border px-2.5 text-left ${NAV_ITEM_TEXT_CLASSES} transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-cyan)]`;
+const NAV_ITEM_ACTIVE_CLASSES =
+  "border-[rgba(91,124,250,.34)] bg-[rgba(91,124,250,.16)] text-[var(--text-primary)] hover:border-[rgba(95,200,215,.34)]";
+const NAV_ITEM_IDLE_CLASSES =
+  "border-transparent text-[var(--text-muted)] opacity-70";
+const NAV_ITEM_IDLE_HOVER_CLASSES =
+  "border-transparent text-[var(--text-muted)] opacity-70 hover:border-[rgba(148,163,184,.14)] hover:bg-[rgba(148,163,184,.035)] hover:text-[var(--text-secondary)] hover:opacity-100";
+const NAV_ITEM_PLANNED_CLASSES =
+  "text-[var(--text-muted)] opacity-70 hover:opacity-85";
+const NAV_ITEM_PLANNED_STATIC_CLASSES =
+  "cursor-default text-[var(--text-muted)] opacity-70 hover:border-transparent hover:bg-transparent";
+const SECTION_LABEL_CLASSES =
+  "text-[10px] font-semibold uppercase text-[var(--text-secondary)]";
+
+function sectionStyle(accent: string): SidebarStyle {
   return {
     "--section-accent": accent,
-  } as CSSProperties;
+  };
+}
+
+function itemStyle(accent: string): SidebarStyle {
+  return {
+    "--item-accent": accent,
+  };
 }
 
 function isCurrentPath(pathname: string, href: string) {
   return pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
+}
+
+function isReadyActive(pathname: string, item: NavigationItem) {
+  return item.status === "ready" && isCurrentPath(pathname, item.href);
+}
+
+function hasReadyActiveDescendant(
+  pathname: string,
+  item: NavigationItem,
+): boolean {
+  return (
+    isReadyActive(pathname, item) ||
+    Boolean(
+      item.children?.some((child) => hasReadyActiveDescendant(pathname, child)),
+    )
+  );
+}
+
+function sectionId(label: string) {
+  return `${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-navigation`;
+}
+
+function flyoutTop(rect: DOMRect, itemCount: number) {
+  const estimatedHeight = 18 + itemCount * 28;
+  const maxTop = window.innerHeight - estimatedHeight - 12;
+
+  return Math.max(12, Math.min(rect.top - 2, maxTop));
+}
+
+function NavDot({
+  active = false,
+  muted = false,
+}: Readonly<{ active?: boolean; muted?: boolean }>) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "mr-2 size-1.5 rounded-full bg-[var(--item-accent)]",
+        active
+          ? "opacity-90 shadow-[0_0_6px_color-mix(in_srgb,var(--item-accent)_32%,transparent)]"
+          : muted
+            ? "opacity-[.18]"
+            : "opacity-[.22]",
+      )}
+    />
+  );
+}
+
+function PlannedBadge() {
+  return (
+    <span className="ml-auto shrink-0 rounded-full border border-[rgba(148,163,184,.10)] bg-[rgba(148,163,184,.025)] px-1 py-0 text-[6px] font-medium uppercase tracking-[0.06em] text-[var(--text-faint)]">
+      planned
+    </span>
+  );
+}
+
+function FlyoutChildItem({
+  item,
+  pathname,
+  accent,
+  onSelect,
+}: Readonly<{
+  item: NavigationItem;
+  pathname: string;
+  accent: string;
+  onSelect: () => void;
+}>) {
+  const isCurrent = isReadyActive(pathname, item);
+  const itemClasses = cn(
+    NAV_ITEM_BASE_CLASSES,
+    isCurrent ? NAV_ITEM_ACTIVE_CLASSES : NAV_ITEM_IDLE_HOVER_CLASSES,
+    item.status === "planned" && NAV_ITEM_PLANNED_STATIC_CLASSES,
+  );
+
+  if (item.status === "ready") {
+    return (
+      <Link
+        aria-current={isCurrent ? "page" : undefined}
+        className={itemClasses}
+        href={item.href}
+        onClick={onSelect}
+        style={itemStyle(accent)}
+      >
+        <NavDot active={isCurrent} muted={!isCurrent} />
+        <span className={NAV_ITEM_LABEL_CLASSES}>{item.label}</span>
+      </Link>
+    );
+  }
+
+  return (
+    <button
+      aria-disabled="true"
+      className={itemClasses}
+      onClick={(event) => event.preventDefault()}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+        }
+      }}
+      style={itemStyle(accent)}
+      type="button"
+    >
+      <NavDot muted />
+      <span className={NAV_ITEM_LABEL_CLASSES}>{item.label}</span>
+      <PlannedBadge />
+    </button>
+  );
+}
+
+function NavItem({
+  item,
+  pathname,
+  accent = "var(--accent-blue)",
+}: Readonly<{
+  item: NavigationItem;
+  pathname: string;
+  accent?: string;
+}>) {
+  const isCurrent = isReadyActive(pathname, item);
+  const children = item.children ?? [];
+  const isGroupActive = children.some((child) =>
+    hasReadyActiveDescendant(pathname, child),
+  );
+  const hasChildren = children.length > 0;
+  const isExpandable = hasChildren;
+  const flyoutId = useId();
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pointerDownRef = useRef(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const flyoutRef = useRef<HTMLDivElement>(null);
+  const [isFlyoutOpen, setIsFlyoutOpen] = useState(false);
+  const [isFlyoutPinned, setIsFlyoutPinned] = useState(false);
+  const [flyoutPosition, setFlyoutPosition] = useState<FlyoutPosition | null>(
+    null,
+  );
+  const itemClasses = cn(
+    NAV_ITEM_BASE_CLASSES,
+    isCurrent ? NAV_ITEM_ACTIVE_CLASSES : NAV_ITEM_IDLE_CLASSES,
+    item.status === "planned" && !isGroupActive && NAV_ITEM_PLANNED_CLASSES,
+  );
+
+  function clearCloseTimer() {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  }
+
+  function updateFlyoutPosition() {
+    const trigger = triggerRef.current;
+
+    if (!trigger) {
+      return;
+    }
+
+    const rect = trigger.getBoundingClientRect();
+    setFlyoutPosition({
+      left: rect.right + 8,
+      top: flyoutTop(rect, children.length),
+    });
+  }
+
+  function openFlyout() {
+    if (!isExpandable) {
+      return;
+    }
+
+    clearCloseTimer();
+    updateFlyoutPosition();
+    setIsFlyoutOpen(true);
+  }
+
+  function closeFlyout() {
+    clearCloseTimer();
+    setIsFlyoutPinned(false);
+    setIsFlyoutOpen(false);
+  }
+
+  function scheduleCloseFlyout() {
+    clearCloseTimer();
+    closeTimerRef.current = setTimeout(() => {
+      setIsFlyoutPinned(false);
+      setIsFlyoutOpen(false);
+    }, FLYOUT_CLOSE_DELAY_MS);
+  }
+
+  function handleContainerBlur(event: FocusEvent<HTMLDivElement>) {
+    if (event.currentTarget.contains(event.relatedTarget as Node | null)) {
+      return;
+    }
+
+    scheduleCloseFlyout();
+  }
+
+  function handleTriggerKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeFlyout();
+      triggerRef.current?.focus();
+      return;
+    }
+
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+      event.preventDefault();
+      openFlyout();
+      window.requestAnimationFrame(() => {
+        flyoutRef.current?.querySelector<HTMLElement>("a, button")?.focus();
+      });
+    }
+  }
+
+  function handleFlyoutKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key !== "Escape") {
+      return;
+    }
+
+    event.preventDefault();
+    closeFlyout();
+    triggerRef.current?.focus();
+  }
+
+  useEffect(() => {
+    return () => {
+      clearCloseTimer();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isFlyoutOpen || !isExpandable) {
+      return;
+    }
+
+    function updatePosition() {
+      const trigger = triggerRef.current;
+
+      if (!trigger) {
+        return;
+      }
+
+      const rect = trigger.getBoundingClientRect();
+      setFlyoutPosition({
+        left: rect.right + 8,
+        top: flyoutTop(rect, children.length),
+      });
+    }
+
+    updatePosition();
+
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [children.length, isExpandable, isFlyoutOpen]);
+
+  if (isExpandable) {
+    return (
+      <div
+        className="relative"
+        onBlur={handleContainerBlur}
+        onFocus={() => {
+          if (pointerDownRef.current) {
+            return;
+          }
+
+          openFlyout();
+        }}
+        onKeyDown={handleFlyoutKeyDown}
+        onMouseEnter={openFlyout}
+        onMouseLeave={scheduleCloseFlyout}
+      >
+        <button
+          aria-controls={flyoutId}
+          aria-expanded={isFlyoutOpen}
+          className={cn(
+            itemClasses,
+            "cursor-pointer",
+            isGroupActive &&
+              "border-[color-mix(in_srgb,var(--item-accent)_28%,transparent)] bg-[color-mix(in_srgb,var(--item-accent)_8%,transparent)] text-[var(--text-primary)]",
+          )}
+          onClick={() => {
+            pointerDownRef.current = false;
+
+            if (isFlyoutOpen && isFlyoutPinned) {
+              closeFlyout();
+              return;
+            }
+
+            setIsFlyoutPinned(true);
+            openFlyout();
+          }}
+          onKeyDown={handleTriggerKeyDown}
+          onPointerDown={() => {
+            pointerDownRef.current = true;
+          }}
+          ref={triggerRef}
+          style={itemStyle(accent)}
+          type="button"
+        >
+          <NavDot active={Boolean(isGroupActive)} muted={!isGroupActive} />
+          <span className={NAV_ITEM_LABEL_CLASSES}>{item.label}</span>
+          {item.status === "planned" ? <PlannedBadge /> : null}
+          <span
+            aria-hidden="true"
+            className="ml-1.5 shrink-0 text-[9px] text-[var(--text-muted)]"
+          >
+            ›
+          </span>
+        </button>
+        {isFlyoutOpen && flyoutPosition ? (
+          <div
+            aria-label={`${item.label} Unterseiten`}
+            className="fixed z-50 w-44 rounded-[12px] border border-[rgba(148,163,184,.16)] bg-[color-mix(in_srgb,var(--surface-2)_92%,#070b13)] py-1 shadow-[0_14px_34px_rgba(0,0,0,.24)]"
+            id={flyoutId}
+            onMouseEnter={clearCloseTimer}
+            ref={flyoutRef}
+            style={{
+              ...itemStyle(accent),
+              left: flyoutPosition.left,
+              top: flyoutPosition.top,
+            }}
+          >
+            <div className="space-y-0.5">
+              {children.map((child) => (
+                <FlyoutChildItem
+                  accent={accent}
+                  item={child}
+                  key={child.href}
+                  onSelect={closeFlyout}
+                  pathname={pathname}
+                />
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (item.status === "ready") {
+    return (
+      <Link
+        aria-current={isCurrent ? "page" : undefined}
+        className={itemClasses}
+        href={item.href}
+        style={itemStyle(accent)}
+      >
+        <NavDot active={isCurrent} muted={!isCurrent} />
+        <span className={NAV_ITEM_LABEL_CLASSES}>{item.label}</span>
+      </Link>
+    );
+  }
+
+  return (
+    <span
+      aria-disabled="true"
+      className={itemClasses}
+      style={itemStyle(accent)}
+    >
+      <NavDot muted />
+      <span className={NAV_ITEM_LABEL_CLASSES}>{item.label}</span>
+      <PlannedBadge />
+    </span>
+  );
+}
+
+function NavigationSectionBlock({
+  section,
+  pathname,
+}: Readonly<{
+  section: NavigationSection;
+  pathname: string;
+}>) {
+  const id = sectionId(section.label);
+
+  return (
+    <section aria-labelledby={id} style={sectionStyle(section.accent)}>
+      <div className="flex min-h-[24px] items-center rounded-[9px] border border-[color-mix(in_srgb,var(--section-accent)_24%,transparent)] bg-[color-mix(in_srgb,var(--section-accent)_10%,transparent)] px-2.5 py-1">
+        {" "}
+        <h2 className={SECTION_LABEL_CLASSES} id={id}>
+          {section.label}
+        </h2>
+      </div>
+      <div className="mt-0.5 space-y-0.5">
+        {section.items.map((item) => (
+          <NavItem
+            accent={section.accent}
+            item={item}
+            key={item.href}
+            pathname={pathname}
+          />
+        ))}
+      </div>
+    </section>
+  );
 }
 
 export function Sidebar() {
@@ -21,146 +465,88 @@ export function Sidebar() {
 
   return (
     <aside className="border-b border-[var(--border-default)] bg-[var(--bg-app)] p-2 lg:h-dvh lg:min-h-0 lg:overflow-hidden lg:border-b-0 lg:border-r">
-      <div className="flex h-full min-h-0 flex-col rounded-[20px] border border-[rgba(91,124,250,.16)] bg-[color-mix(in_srgb,var(--accent-blue)_4%,#070b13)] px-3 py-4 shadow-[0_8px_22px_rgba(0,0,0,0.12)] lg:h-[calc(100dvh-16px)] 2xl:max-h-[1424px]">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="grid size-9 place-items-center rounded-[10px] border border-[rgba(95,200,215,.30)] bg-[rgba(91,124,250,.90)] text-[10px] font-semibold text-[var(--text-primary)]">
-              LO
+      <div className="flex h-full min-h-0 flex-col rounded-[20px] border border-[rgba(91,124,250,.16)] bg-[color-mix(in_srgb,var(--accent-blue)_4%,#070b13)] px-3 py-3 shadow-[0_8px_22px_rgba(0,0,0,0.12)] lg:h-[calc(100dvh-16px)] 2xl:max-h-[1424px]">
+        <div className="flex items-center gap-3">
+          <div
+            aria-hidden="true"
+            className="grid size-9 place-items-center rounded-[10px] border border-[rgba(95,200,215,.22)] bg-[color-mix(in_srgb,var(--surface-2)_86%,var(--accent-blue))]"
+          >
+            <div className="relative size-5 rounded-[6px] border border-[rgba(184,195,214,.32)] bg-[rgba(7,11,18,.38)]">
+              <span className="absolute left-1 top-1 h-1 w-3 rounded-full bg-[rgba(95,200,215,.46)]" />
+              <span className="absolute bottom-1 left-1 h-1 w-2 rounded-full bg-[rgba(91,124,250,.48)]" />
+              <span className="absolute bottom-1 right-1 size-1 rounded-[2px] bg-[rgba(184,195,214,.46)]" />
             </div>
-            <p className="text-lg font-medium text-[var(--text-secondary)]">
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-[var(--text-secondary)]">
               Life OS
             </p>
+            <p className="mt-0.5 truncate text-[10px] font-medium text-[var(--text-muted)]">
+              V5 / Linear Calm
+            </p>
           </div>
-          <span className="text-xs text-[var(--text-secondary)]" aria-hidden="true">
-            ⌘
-          </span>
         </div>
 
         <a
-          className="mt-4 inline-flex rounded-lg border border-[var(--border-default)] px-3 py-2 text-xs font-medium text-[var(--text-secondary)] transition hover:border-[var(--accent-cyan)] lg:hidden"
+          className="mt-3 inline-flex rounded-lg border border-[var(--border-default)] px-3 py-2 text-xs font-medium text-[var(--text-secondary)] transition hover:border-[var(--accent-cyan)] lg:hidden"
           href="#main-content"
         >
           Inhalt
         </a>
 
-        <div className="mt-3 flex flex-col items-center">
-          <div className="grid size-24 place-items-center rounded-full bg-[color-mix(in_srgb,var(--accent-blue)_84%,var(--accent-cyan))] text-3xl font-semibold text-[var(--text-primary)]">
+        <div className="mt-3 flex items-center gap-2.5 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(168,183,204,.04)] px-2.5 py-2">
+          <div className="grid size-8 shrink-0 place-items-center rounded-full bg-[color-mix(in_srgb,var(--accent-blue)_84%,var(--accent-cyan))] text-xs font-semibold text-[var(--text-primary)]">
             A
           </div>
-          <p className="mt-3 text-base font-medium text-[var(--text-secondary)]">
-            Anton
-          </p>
-          <p className="mt-1 text-[10px] font-medium text-[var(--text-muted)]">
-            Student · Work · Health
-          </p>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-[var(--text-secondary)]">
+              Anton
+            </p>
+            <p className="mt-0.5 truncate text-[10px] font-medium text-[var(--text-muted)]">
+              Student · Werkstudent
+            </p>
+          </div>
         </div>
 
         <div
-          aria-label="Search or command"
-          className="mt-3.5 flex min-h-[33px] items-center justify-between rounded-[13px] border border-[rgba(95,200,215,.18)] bg-[color-mix(in_srgb,var(--accent-cyan)_4%,#0c1422)] px-4 text-[11px] font-medium text-[var(--text-secondary)]"
+          aria-label="Search / Command"
+          className="mt-4 flex min-h-[29px] items-center justify-between rounded-[11px] border border-[rgba(95,200,215,.18)] bg-[color-mix(in_srgb,var(--accent-cyan)_4%,#0c1422)] px-3 text-[10px] font-medium text-[var(--text-secondary)]"
           role="search"
         >
-          <span>Search or command</span>
+          <span>Search / Command</span>
           <kbd className="font-medium text-[10px] text-[var(--text-secondary)]">
             ⌘K
           </kbd>
         </div>
 
-        <nav aria-label="Hauptnavigation" className="mt-3.5 flex min-h-0 flex-1 flex-col justify-between overflow-hidden">
-          <div className="space-y-2">
-            {navigationItems.map((item) => {
-              const isCurrent = isCurrentPath(pathname, item.href);
-
-              return item.status === "enabled" ? (
-                <Link
-                  aria-current={isCurrent ? "page" : undefined}
-                  className={cn(
-                    "flex min-h-8 items-center rounded-[10px] border px-3 text-[11px] font-medium transition",
-                    isCurrent
-                      ? "border-[rgba(91,124,250,.42)] bg-[rgba(91,124,250,.20)] text-[var(--text-secondary)] shadow-[0_0_0_1px_rgba(95,200,215,.08)] hover:border-[rgba(95,200,215,.50)]"
-                      : "border-transparent text-[var(--text-secondary)]",
-                  )}
-                  href={item.href}
-                  key={item.label}
-                >
-                  <span
-                    aria-hidden="true"
-                    className="mr-3 size-3 rounded-full shadow-[0_0_10px_color-mix(in_srgb,var(--accent-blue)_45%,transparent)]"
-                    style={{ background: item.accent }}
-                  />
-                  {item.label}
-                </Link>
-              ) : (
-                <span
-                  aria-disabled="true"
-                  className="flex min-h-8 items-center rounded-[10px] px-3 text-[11px] font-medium text-[var(--text-secondary)]"
-                  key={item.label}
-                >
-                  <span
-                    aria-hidden="true"
-                    className="mr-3 size-3 rounded-full shadow-[0_0_8px_rgba(91,124,250,.28)]"
-                    style={{ background: item.accent }}
-                  />
-                  {item.label}
-                </span>
-              );
-            })}
+        <nav
+          aria-label="Hauptnavigation"
+          className="mt-4 flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pr-1"
+        >
+          <div className="space-y-0.5">
+            {sidebarNavigation.primary.map((item) => (
+              <NavItem item={item} key={item.href} pathname={pathname} />
+            ))}
           </div>
 
-          {sidebarSections.map((section) => (
-            <section key={section.title} style={sectionStyle(section.accent)}>
-              <div className="flex min-h-7 items-center justify-between gap-2 rounded-[10px] border border-[color-mix(in_srgb,var(--section-accent)_26%,transparent)] bg-[color-mix(in_srgb,var(--section-accent)_12%,transparent)] px-3">
-                <h2 className="text-[9px] font-medium uppercase text-[var(--text-secondary)]">
-                  {section.title}
-                </h2>
-                <p className="text-[7px] font-medium text-[var(--text-muted)]">
-                  {section.summary}
-                </p>
-              </div>
-              <div className="mt-2.5 space-y-2 px-2">
-                {section.items.map((item) => {
-                  const itemContent = (
-                    <>
-                      <span
-                        aria-hidden="true"
-                        className="mt-1.5 size-2 rounded-full bg-[var(--section-accent)] shadow-[0_0_8px_color-mix(in_srgb,var(--section-accent)_42%,transparent)]"
-                      />
-                      <div className="min-w-0">
-                        <p className="truncate text-[10px] font-medium text-[var(--text-secondary)]">
-                          {item.label}
-                          {typeof item.count === "number" ? (
-                            <span className="ml-1 text-[8px] text-[var(--text-muted)]">
-                              ({item.count})
-                            </span>
-                          ) : null}
-                        </p>
-                        {item.meta ? (
-                          <p className="mt-0.5 truncate text-[7px] font-medium text-[var(--text-muted)]">
-                            {item.meta}
-                          </p>
-                        ) : null}
-                      </div>
-                    </>
-                  );
-
-                  return item.href ? (
-                    <Link
-                      aria-current={isCurrentPath(pathname, item.href) ? "page" : undefined}
-                      className="grid grid-cols-[8px_minmax(0,1fr)] gap-3"
-                      href={item.href}
-                      key={item.label}
-                    >
-                      {itemContent}
-                    </Link>
-                  ) : (
-                    <div className="grid grid-cols-[8px_minmax(0,1fr)] gap-3" key={item.label}>
-                      {itemContent}
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
+          {sidebarNavigation.sections.map((section) => (
+            <NavigationSectionBlock
+              key={section.label}
+              pathname={pathname}
+              section={section}
+            />
           ))}
+
+          <div className="mt-auto space-y-0.5 border-t border-[var(--border-subtle)] pt-2">
+            {sidebarNavigation.utility.map((item) => (
+              <NavItem
+                accent="var(--text-muted)"
+                item={item}
+                key={item.href}
+                pathname={pathname}
+              />
+            ))}
+          </div>
         </nav>
       </div>
     </aside>
