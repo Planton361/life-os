@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { CSSProperties } from "react";
 import { navigationItems, sidebarSections } from "@/lib/navigation";
 import { cn } from "@/lib/cn";
@@ -9,7 +12,13 @@ function sectionStyle(accent: string): CSSProperties {
   } as CSSProperties;
 }
 
+function isCurrentPath(pathname: string, href: string) {
+  return pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
+}
+
 export function Sidebar() {
+  const pathname = usePathname();
+
   return (
     <aside className="border-b border-[var(--border-default)] bg-[var(--bg-app)] p-2 lg:h-dvh lg:min-h-0 lg:overflow-hidden lg:border-b-0 lg:border-r">
       <div className="flex h-full min-h-0 flex-col rounded-[20px] border border-[rgba(91,124,250,.16)] bg-[color-mix(in_srgb,var(--accent-blue)_4%,#070b13)] px-3 py-4 shadow-[0_8px_22px_rgba(0,0,0,0.12)] lg:h-[calc(100dvh-16px)] 2xl:max-h-[1424px]">
@@ -59,13 +68,17 @@ export function Sidebar() {
 
         <nav aria-label="Hauptnavigation" className="mt-3.5 flex min-h-0 flex-1 flex-col justify-between overflow-hidden">
           <div className="space-y-2">
-            {navigationItems.map((item) =>
-              item.status === "active" ? (
+            {navigationItems.map((item) => {
+              const isCurrent = isCurrentPath(pathname, item.href);
+
+              return item.status === "enabled" ? (
                 <Link
-                  aria-current="page"
+                  aria-current={isCurrent ? "page" : undefined}
                   className={cn(
                     "flex min-h-8 items-center rounded-[10px] border px-3 text-[11px] font-medium transition",
-                    "border-[rgba(91,124,250,.42)] bg-[rgba(91,124,250,.20)] text-[var(--text-secondary)] shadow-[0_0_0_1px_rgba(95,200,215,.08)] hover:border-[rgba(95,200,215,.50)]",
+                    isCurrent
+                      ? "border-[rgba(91,124,250,.42)] bg-[rgba(91,124,250,.20)] text-[var(--text-secondary)] shadow-[0_0_0_1px_rgba(95,200,215,.08)] hover:border-[rgba(95,200,215,.50)]"
+                      : "border-transparent text-[var(--text-secondary)]",
                   )}
                   href={item.href}
                   key={item.label}
@@ -90,8 +103,8 @@ export function Sidebar() {
                   />
                   {item.label}
                 </span>
-              ),
-            )}
+              );
+            })}
           </div>
 
           {sidebarSections.map((section) => (
@@ -105,29 +118,46 @@ export function Sidebar() {
                 </p>
               </div>
               <div className="mt-2.5 space-y-2 px-2">
-                {section.items.map((item) => (
-                  <div className="grid grid-cols-[8px_minmax(0,1fr)] gap-3" key={item.label}>
-                    <span
-                      aria-hidden="true"
-                      className="mt-1.5 size-2 rounded-full bg-[var(--section-accent)] shadow-[0_0_8px_color-mix(in_srgb,var(--section-accent)_42%,transparent)]"
-                    />
-                    <div className="min-w-0">
-                      <p className="truncate text-[10px] font-medium text-[var(--text-secondary)]">
-                        {item.label}
-                        {typeof item.count === "number" ? (
-                          <span className="ml-1 text-[8px] text-[var(--text-muted)]">
-                            ({item.count})
-                          </span>
-                        ) : null}
-                      </p>
-                      {item.meta ? (
-                        <p className="mt-0.5 truncate text-[7px] font-medium text-[var(--text-muted)]">
-                          {item.meta}
+                {section.items.map((item) => {
+                  const itemContent = (
+                    <>
+                      <span
+                        aria-hidden="true"
+                        className="mt-1.5 size-2 rounded-full bg-[var(--section-accent)] shadow-[0_0_8px_color-mix(in_srgb,var(--section-accent)_42%,transparent)]"
+                      />
+                      <div className="min-w-0">
+                        <p className="truncate text-[10px] font-medium text-[var(--text-secondary)]">
+                          {item.label}
+                          {typeof item.count === "number" ? (
+                            <span className="ml-1 text-[8px] text-[var(--text-muted)]">
+                              ({item.count})
+                            </span>
+                          ) : null}
                         </p>
-                      ) : null}
+                        {item.meta ? (
+                          <p className="mt-0.5 truncate text-[7px] font-medium text-[var(--text-muted)]">
+                            {item.meta}
+                          </p>
+                        ) : null}
+                      </div>
+                    </>
+                  );
+
+                  return item.href ? (
+                    <Link
+                      aria-current={isCurrentPath(pathname, item.href) ? "page" : undefined}
+                      className="grid grid-cols-[8px_minmax(0,1fr)] gap-3"
+                      href={item.href}
+                      key={item.label}
+                    >
+                      {itemContent}
+                    </Link>
+                  ) : (
+                    <div className="grid grid-cols-[8px_minmax(0,1fr)] gap-3" key={item.label}>
+                      {itemContent}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </section>
           ))}

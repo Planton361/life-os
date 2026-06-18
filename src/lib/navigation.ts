@@ -2,7 +2,7 @@ export type NavigationItem = {
   label: string;
   href: string;
   group: "Primary";
-  status: "active" | "disabled";
+  status: "enabled" | "disabled";
   accent: string;
 };
 
@@ -11,14 +11,14 @@ export const navigationItems: NavigationItem[] = [
     label: "Dashboard",
     href: "/dashboard",
     group: "Primary",
-    status: "active",
+    status: "enabled",
     accent: "var(--accent-blue)",
   },
   {
     label: "Today",
     href: "/today",
     group: "Primary",
-    status: "disabled",
+    status: "enabled",
     accent: "var(--accent-blue)",
   },
   {
@@ -29,10 +29,17 @@ export const navigationItems: NavigationItem[] = [
     accent: "var(--accent-blue)",
   },
   {
+    label: "Inbox",
+    href: "/inbox",
+    group: "Primary",
+    status: "enabled",
+    accent: "var(--accent-green)",
+  },
+  {
     label: "Tasks",
     href: "/tasks",
     group: "Primary",
-    status: "disabled",
+    status: "enabled",
     accent: "var(--accent-blue)",
   },
 ];
@@ -44,6 +51,7 @@ export type NavigationSection = {
   items: Array<{
     label: string;
     count?: number;
+    href?: string;
     meta?: string;
   }>;
 };
@@ -121,7 +129,7 @@ export const sidebarSections: NavigationSection[] = [
     summary: "6 tasks · 1 project · 0 goals",
     accent: "var(--text-muted)",
     items: [
-      { label: "Daily Review", count: 1 },
+      { label: "Daily Review", count: 1, href: "/review/daily" },
       { label: "Weekly Review", count: 1 },
       { label: "Settings" },
     ],
