@@ -1,4 +1,10 @@
 export { PortfolioPage } from "./components/portfolio-page";
+export {
+  createPortfolioHref,
+  normalizePortfolioScopeFilter,
+  normalizePortfolioSortMode,
+  normalizePortfolioView,
+} from "./portfolio-routing";
 export { getPortfolioViewModel } from "./portfolio-view-model";
 export type {
   PortfolioArea,

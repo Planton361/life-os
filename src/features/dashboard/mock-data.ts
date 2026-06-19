@@ -455,15 +455,12 @@ export const dashboardMockData = {
     views: [
       {
         label: "Project View",
-        href: "/portfolio?view=projects&status=active",
       },
       {
         label: "Goal View",
-        href: "/portfolio?view=goals&status=active",
       },
       {
         label: "Skill View",
-        href: "/portfolio?view=skills&status=active",
       },
     ],
     activeView: "Project View",
@@ -503,6 +500,30 @@ export const dashboardMockData = {
         area: "coding",
         kind: "skill",
         href: "/portfolio?item=portfolio-java-hyperskill",
+      },
+      {
+        id: "portfolio-life-os-mvp",
+        title: "Life OS MVP",
+        label: "Goal",
+        next: "Static App nutzbar machen",
+        meta: "4 linked projects",
+        progress: 58,
+        accent: "var(--accent-purple)",
+        area: "coding",
+        kind: "goal",
+        href: "/portfolio?item=portfolio-life-os-mvp",
+      },
+      {
+        id: "portfolio-masterarbeit-goal",
+        title: "Masterarbeit abgeben",
+        label: "Goal",
+        next: "Quellenentscheidung klären",
+        meta: "2 projects linked",
+        progress: 37,
+        accent: "var(--accent-blue)",
+        area: "education",
+        kind: "goal",
+        href: "/portfolio?item=portfolio-masterarbeit-goal",
       },
       {
         id: "portfolio-finanzinformatik",

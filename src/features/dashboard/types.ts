@@ -254,7 +254,7 @@ export type PortfolioItemKind = "project" | "goal" | "skill";
 
 export type DashboardPortfolioViewLink = {
   label: PortfolioView;
-  href: DashboardHref;
+  href?: DashboardHref;
 };
 
 export type DashboardPortfolioItem = {

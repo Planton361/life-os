@@ -1,6 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import {
+  createPortfolioHref,
+  normalizePortfolioScopeFilter,
+  normalizePortfolioSortMode,
+  normalizePortfolioView,
+} from "../portfolio-routing";
 import {
   portfolioPriorityRank,
   portfolioStatusMeta,
@@ -81,6 +88,42 @@ function matchesFilter(entity: PortfolioEntity, filter: PortfolioScopeFilter) {
   return true;
 }
 
+function matchesStatusQuery(entity: PortfolioEntity, status: string | null) {
+  if (!status) {
+    return true;
+  }
+
+  if (status === "active") {
+    return !["planned", "done"].includes(entity.status);
+  }
+
+  return entity.status === status;
+}
+
+function matchesAreaQuery(entity: PortfolioEntity, area: string | null) {
+  return !area || entity.area === area;
+}
+
+function matchesPriorityQuery(entity: PortfolioEntity, priority: string | null) {
+  return !priority || entity.priority.toLowerCase() === priority.toLowerCase();
+}
+
+function matchesReviewQuery(entity: PortfolioEntity, review: string | null) {
+  if (!review) {
+    return true;
+  }
+
+  if (["1", "true", "open", "needed"].includes(review)) {
+    return entity.reviewNeeded;
+  }
+
+  if (["0", "false", "none"].includes(review)) {
+    return !entity.reviewNeeded;
+  }
+
+  return true;
+}
+
 function priorityScore(entity: PortfolioEntity) {
   const decisionWeight =
     entity.blocked || entity.status === "blocked"
@@ -135,23 +178,38 @@ export function PortfolioPage({
 }: Readonly<{
   viewModel: PortfolioViewModel;
 }>) {
-  const [activeView, setActiveView] = useState<PortfolioView>("all");
-  const [activeFilter, setActiveFilter] =
-    useState<PortfolioScopeFilter>("all");
-  const [sortMode, setSortMode] = useState<PortfolioSortMode>("priority");
-  const [selectedEntityId, setSelectedEntityId] = useState<string | null>(
-    viewModel.entities[0]?.id ?? null,
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const activeView = normalizePortfolioView(searchParams.get("view"));
+  const activeFilter = normalizePortfolioScopeFilter(searchParams.get("scope"));
+  const sortMode = normalizePortfolioSortMode(searchParams.get("sort"));
+  const selectedEntityId = searchParams.get("selected");
+  const statusFilter = searchParams.get("status");
+  const areaFilter = searchParams.get("area");
+  const priorityFilter = searchParams.get("priority");
+  const reviewFilter = searchParams.get("review");
+
+  const baseEntities = useMemo(
+    () =>
+      viewModel.entities.filter(
+        (entity) =>
+          matchesStatusQuery(entity, statusFilter) &&
+          matchesAreaQuery(entity, areaFilter) &&
+          matchesPriorityQuery(entity, priorityFilter) &&
+          matchesReviewQuery(entity, reviewFilter),
+      ),
+    [areaFilter, priorityFilter, reviewFilter, statusFilter, viewModel.entities],
   );
 
   const visibleEntities = useMemo(() => {
     return sortEntities(
-      viewModel.entities.filter(
+      baseEntities.filter(
         (entity) =>
           matchesView(entity, activeView) && matchesFilter(entity, activeFilter),
       ),
       sortMode,
     );
-  }, [activeFilter, activeView, sortMode, viewModel.entities]);
+  }, [activeFilter, activeView, baseEntities, sortMode]);
 
   const selectedEntity =
     visibleEntities.find((entity) => entity.id === selectedEntityId) ??
@@ -176,12 +234,38 @@ export function PortfolioPage({
         activeFilter={activeFilter}
         activeView={activeView}
         filters={viewModel.filters}
-        onFilterChange={setActiveFilter}
-        onSortChange={setSortMode}
-        onViewChange={setActiveView}
+        getFilterHref={(filter) =>
+          createPortfolioHref(
+            {
+              scope: filter === "all" ? null : filter,
+              selected: null,
+            },
+            searchParams,
+            pathname,
+          )
+        }
+        getSortHref={(sort) =>
+          createPortfolioHref(
+            {
+              sort: sort === "priority" ? null : sort,
+            },
+            searchParams,
+            pathname,
+          )
+        }
+        getViewHref={(view) =>
+          createPortfolioHref(
+            {
+              view,
+              selected: null,
+            },
+            searchParams,
+            pathname,
+          )
+        }
         sortMode={sortMode}
         sorts={viewModel.sorts}
-        totalCount={viewModel.entities.length}
+        totalCount={baseEntities.length}
         views={viewModel.views}
         visibleCount={visibleEntities.length}
       />
@@ -190,7 +274,15 @@ export function PortfolioPage({
         <PortfolioEntityList
           activeViewLabel={getViewLabel(viewModel, activeView)}
           entities={visibleEntities}
-          onSelectEntity={setSelectedEntityId}
+          getEntityHref={(entityId) =>
+            createPortfolioHref(
+              {
+                selected: entityId,
+              },
+              searchParams,
+              pathname,
+            )
+          }
           selectedEntityId={selectedEntity?.id ?? null}
         />
         <div className="grid min-w-0 gap-2 xl:min-h-0">
@@ -200,7 +292,7 @@ export function PortfolioPage({
             className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.36)] px-3 py-2"
           >
             <p className="text-[10px] leading-4 text-[var(--text-muted)]">
-              Selected state is local UI only:{" "}
+              Selected state is URL-driven and UI-only:{" "}
               <span className="font-semibold text-[var(--text-secondary)]">
                 {selectedEntity?.title ?? "none"}
               </span>{" "}

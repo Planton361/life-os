@@ -1,8 +1,12 @@
+"use client";
+
 import {
   type DashboardActivePortfolio,
   type PortfolioItemKind,
+  type PortfolioView,
 } from "@/features/dashboard";
 import Link from "next/link";
+import { useState } from "react";
 import { cn } from "@/lib/cn";
 import {
   type AccentStyle,
@@ -24,12 +28,28 @@ function countPortfolioKind(
   );
 }
 
+function kindForPortfolioView(view: PortfolioView): PortfolioItemKind {
+  if (view === "Goal View") {
+    return "goal";
+  }
+
+  if (view === "Skill View") {
+    return "skill";
+  }
+
+  return "project";
+}
+
 export function ActivePortfolio({
   data,
 }: Readonly<{
   data: DashboardActivePortfolio;
 }>) {
+  const [activeView, setActiveView] = useState<PortfolioView>(data.activeView);
   const projects = data.items;
+  const visibleProjects = projects.filter(
+    (project) => project.kind === kindForPortfolioView(activeView),
+  );
   const activePortfolioCounters = [
     {
       label: "Projects",
@@ -80,24 +100,26 @@ export function ActivePortfolio({
             </div>
             <div className="flex rounded-[13px] border border-[var(--border-subtle)] bg-[#0b1422] p-1 text-center text-[10px] font-semibold text-[var(--text-primary)]">
               {data.views.map((view) => (
-                <Link
+                <button
+                  aria-pressed={view.label === activeView}
                   className={cn(
                     "flex-1 rounded-full px-3 py-1.5",
                     DASHBOARD_LINK_FOCUS_CLASSES,
-                    view.label === data.activeView &&
+                    view.label === activeView &&
                       "border border-[rgba(91,124,250,.28)] bg-[rgba(91,124,250,.12)] text-[var(--text-secondary)]",
                   )}
-                  href={view.href}
                   key={view.label}
+                  onClick={() => setActiveView(view.label)}
+                  type="button"
                 >
                   {view.label}
-                </Link>
+                </button>
               ))}
             </div>
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-[263px_263px] 2xl:gap-3">
-          {projects.map((project) => (
+          {visibleProjects.map((project) => (
             <Link
               aria-label={`Open portfolio item: ${project.title}`}
               className={cn(

@@ -1,5 +1,4 @@
 import {
-  ActivePortfolio,
   AntiRotActions,
   Challenges,
   HabitTrackers,
@@ -9,6 +8,7 @@ import {
   TodayAgenda,
   WeightLossGoal,
 } from "@/components/dashboard/dashboard-sections";
+import { ActivePortfolio } from "@/components/dashboard/sections/active-portfolio-section";
 import { getDashboardViewModel } from "@/features/dashboard";
 
 export function DashboardGrid() {

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { cn } from "@/lib/cn";
 import type {
   PortfolioOption,
@@ -6,7 +7,7 @@ import type {
   PortfolioView,
 } from "../types";
 
-function segmentedButtonClass(active: boolean) {
+function segmentedLinkClass(active: boolean) {
   return cn(
     "min-h-7 shrink-0 rounded-full border px-3 text-[10px] font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
     active
@@ -15,9 +16,9 @@ function segmentedButtonClass(active: boolean) {
   );
 }
 
-function chipButtonClass(active: boolean) {
+function chipLinkClass(active: boolean) {
   return cn(
-    "min-h-7 shrink-0 rounded-full border px-3 text-[10px] font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
+    "inline-flex min-h-7 shrink-0 items-center rounded-full border px-3 text-[10px] font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
     active
       ? "border-[rgba(95,200,215,.34)] bg-[rgba(95,200,215,.16)] text-[var(--text-primary)]"
       : "border-[var(--border-subtle)] bg-[rgba(18,28,43,.68)] text-[var(--text-secondary)] hover:border-[var(--border-default)]",
@@ -33,9 +34,9 @@ export function PortfolioFilterBar({
   sortMode,
   visibleCount,
   totalCount,
-  onViewChange,
-  onFilterChange,
-  onSortChange,
+  getViewHref,
+  getFilterHref,
+  getSortHref,
 }: Readonly<{
   views: PortfolioOption<PortfolioView>[];
   filters: PortfolioOption<PortfolioScopeFilter>[];
@@ -45,9 +46,9 @@ export function PortfolioFilterBar({
   sortMode: PortfolioSortMode;
   visibleCount: number;
   totalCount: number;
-  onViewChange: (view: PortfolioView) => void;
-  onFilterChange: (filter: PortfolioScopeFilter) => void;
-  onSortChange: (sort: PortfolioSortMode) => void;
+  getViewHref: (view: PortfolioView) => `/${string}`;
+  getFilterHref: (filter: PortfolioScopeFilter) => `/${string}`;
+  getSortHref: (sort: PortfolioSortMode) => `/${string}`;
 }>) {
   return (
     <section
@@ -59,15 +60,14 @@ export function PortfolioFilterBar({
           <div className="-mx-1 overflow-x-auto px-1">
             <div className="flex w-max min-w-full rounded-full border border-[var(--border-subtle)] bg-[rgba(11,17,28,.72)] p-1">
               {views.map((view) => (
-                <button
-                  aria-pressed={view.value === activeView}
-                  className={segmentedButtonClass(view.value === activeView)}
+                <Link
+                  aria-current={view.value === activeView ? "page" : undefined}
+                  className={segmentedLinkClass(view.value === activeView)}
+                  href={getViewHref(view.value)}
                   key={view.value}
-                  onClick={() => onViewChange(view.value)}
-                  type="button"
                 >
                   {view.label}
-                </button>
+                </Link>
               ))}
             </div>
           </div>
@@ -86,15 +86,16 @@ export function PortfolioFilterBar({
                 Scope
               </p>
               {filters.map((filter) => (
-                <button
-                  aria-pressed={filter.value === activeFilter}
-                  className={chipButtonClass(filter.value === activeFilter)}
+                <Link
+                  aria-current={
+                    filter.value === activeFilter ? "true" : undefined
+                  }
+                  className={chipLinkClass(filter.value === activeFilter)}
+                  href={getFilterHref(filter.value)}
                   key={filter.value}
-                  onClick={() => onFilterChange(filter.value)}
-                  type="button"
                 >
                   {filter.label}
-                </button>
+                </Link>
               ))}
             </div>
           </div>
@@ -106,16 +107,15 @@ export function PortfolioFilterBar({
               Sort
             </p>
             {sorts.map((sort) => (
-              <button
-                aria-pressed={sort.value === sortMode}
-                className={chipButtonClass(sort.value === sortMode)}
+              <Link
+                aria-current={sort.value === sortMode ? "true" : undefined}
+                className={chipLinkClass(sort.value === sortMode)}
+                href={getSortHref(sort.value)}
                 key={sort.value}
-                onClick={() => onSortChange(sort.value)}
                 title={sort.description}
-                type="button"
               >
                 {sort.label}
-              </button>
+              </Link>
             ))}
           </div>
         </div>

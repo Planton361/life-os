@@ -3,6 +3,7 @@ import {
   Pill,
   accentStyle,
 } from "@/components/layout/route-page-primitives";
+import Link from "next/link";
 import { cn } from "@/lib/cn";
 import {
   portfolioAreaMeta,
@@ -21,12 +22,12 @@ export function PortfolioEntityList({
   entities,
   selectedEntityId,
   activeViewLabel,
-  onSelectEntity,
+  getEntityHref,
 }: Readonly<{
   entities: PortfolioEntity[];
   selectedEntityId: string | null;
   activeViewLabel: string;
-  onSelectEntity: (entityId: string) => void;
+  getEntityHref: (entityId: string) => `/${string}`;
 }>) {
   return (
     <section
@@ -59,18 +60,17 @@ export function PortfolioEntityList({
             const selected = entity.id === selectedEntityId;
 
             return (
-              <button
-                aria-pressed={selected}
+              <Link
+                aria-current={selected ? "true" : undefined}
                 className={cn(
-                  "w-full rounded-[14px] border bg-[rgba(11,17,28,.46)] p-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
+                  "block w-full rounded-[14px] border bg-[rgba(11,17,28,.46)] p-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
                   selected
                     ? "border-[color-mix(in_srgb,var(--accent)_44%,transparent)] bg-[color-mix(in_srgb,var(--accent)_10%,rgba(18,28,43,.78))]"
                     : "border-[var(--border-subtle)] hover:border-[color-mix(in_srgb,var(--accent)_28%,transparent)] hover:bg-[rgba(18,28,43,.62)]",
                 )}
+                href={getEntityHref(entity.id)}
                 key={entity.id}
-                onClick={() => onSelectEntity(entity.id)}
                 style={accentStyle(typeAccent)}
-                type="button"
               >
                 <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -143,7 +143,7 @@ export function PortfolioEntityList({
                     />
                   </div>
                 </div>
-              </button>
+              </Link>
             );
           })
         ) : (

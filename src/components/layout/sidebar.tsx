@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   useEffect,
   useId,
@@ -26,6 +26,10 @@ type SidebarStyle = CSSProperties & {
 type FlyoutPosition = {
   left: number;
   top: number;
+};
+
+type CurrentSearchParams = {
+  get: (name: string) => string | null;
 };
 
 const FLYOUT_CLOSE_DELAY_MS = 140;
@@ -59,22 +63,59 @@ function itemStyle(accent: string): SidebarStyle {
   };
 }
 
-function isCurrentPath(pathname: string, href: string) {
-  return pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
+function splitHref(href: string) {
+  const [path, query = ""] = href.split("?");
+
+  return {
+    path,
+    searchParams: new URLSearchParams(query),
+  };
 }
 
-function isReadyActive(pathname: string, item: NavigationItem) {
-  return item.status === "ready" && isCurrentPath(pathname, item.href);
+function isCurrentPath(
+  pathname: string,
+  searchParams: CurrentSearchParams,
+  href: string,
+) {
+  const target = splitHref(href);
+
+  if (target.searchParams.size > 0) {
+    if (pathname !== target.path) {
+      return false;
+    }
+
+    return Array.from(target.searchParams.entries()).every(
+      ([key, value]) => searchParams.get(key) === value,
+    );
+  }
+
+  return (
+    pathname === target.path ||
+    (target.path !== "/" && pathname.startsWith(`${target.path}/`))
+  );
+}
+
+function isReadyActive(
+  pathname: string,
+  searchParams: CurrentSearchParams,
+  item: NavigationItem,
+) {
+  return (
+    item.status === "ready" && isCurrentPath(pathname, searchParams, item.href)
+  );
 }
 
 function hasReadyActiveDescendant(
   pathname: string,
+  searchParams: CurrentSearchParams,
   item: NavigationItem,
 ): boolean {
   return (
-    isReadyActive(pathname, item) ||
+    isReadyActive(pathname, searchParams, item) ||
     Boolean(
-      item.children?.some((child) => hasReadyActiveDescendant(pathname, child)),
+      item.children?.some((child) =>
+        hasReadyActiveDescendant(pathname, searchParams, child),
+      ),
     )
   );
 }
@@ -120,15 +161,17 @@ function PlannedBadge() {
 function FlyoutChildItem({
   item,
   pathname,
+  searchParams,
   accent,
   onSelect,
 }: Readonly<{
   item: NavigationItem;
   pathname: string;
+  searchParams: CurrentSearchParams;
   accent: string;
   onSelect: () => void;
 }>) {
-  const isCurrent = isReadyActive(pathname, item);
+  const isCurrent = isReadyActive(pathname, searchParams, item);
   const itemClasses = cn(
     NAV_ITEM_BASE_CLASSES,
     isCurrent ? NAV_ITEM_ACTIVE_CLASSES : NAV_ITEM_IDLE_HOVER_CLASSES,
@@ -173,23 +216,25 @@ function FlyoutChildItem({
 function NavItem({
   item,
   pathname,
+  searchParams,
   accent = "var(--accent-blue)",
 }: Readonly<{
   item: NavigationItem;
   pathname: string;
+  searchParams: CurrentSearchParams;
   accent?: string;
 }>) {
-  const isCurrent = isReadyActive(pathname, item);
+  const isCurrent = isReadyActive(pathname, searchParams, item);
   const children = item.children ?? [];
   const isGroupActive = children.some((child) =>
-    hasReadyActiveDescendant(pathname, child),
+    hasReadyActiveDescendant(pathname, searchParams, child),
   );
   const hasChildren = children.length > 0;
   const isExpandable = hasChildren;
   const flyoutId = useId();
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pointerDownRef = useRef(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
   const flyoutRef = useRef<HTMLDivElement>(null);
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(false);
   const [isFlyoutPinned, setIsFlyoutPinned] = useState(false);
@@ -255,7 +300,7 @@ function NavItem({
     scheduleCloseFlyout();
   }
 
-  function handleTriggerKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
+  function handleTriggerKeyDown(event: KeyboardEvent<HTMLElement>) {
     if (event.key === "Escape") {
       event.preventDefault();
       closeFlyout();
@@ -319,6 +364,26 @@ function NavItem({
   }, [children.length, isExpandable, isFlyoutOpen]);
 
   if (isExpandable) {
+    const expandableItemClasses = cn(
+      itemClasses,
+      "cursor-pointer",
+      isGroupActive &&
+        "border-[color-mix(in_srgb,var(--item-accent)_28%,transparent)] bg-[color-mix(in_srgb,var(--item-accent)_8%,transparent)] text-[var(--text-primary)]",
+    );
+    const triggerContent = (
+      <>
+        <NavDot active={Boolean(isGroupActive)} muted={!isGroupActive} />
+        <span className={NAV_ITEM_LABEL_CLASSES}>{item.label}</span>
+        {item.status === "planned" ? <PlannedBadge /> : null}
+        <span
+          aria-hidden="true"
+          className="ml-1.5 shrink-0 text-[9px] text-[var(--text-muted)]"
+        >
+          ›
+        </span>
+      </>
+    );
+
     return (
       <div
         className="relative"
@@ -334,44 +399,57 @@ function NavItem({
         onMouseEnter={openFlyout}
         onMouseLeave={scheduleCloseFlyout}
       >
-        <button
-          aria-controls={flyoutId}
-          aria-expanded={isFlyoutOpen}
-          className={cn(
-            itemClasses,
-            "cursor-pointer",
-            isGroupActive &&
-              "border-[color-mix(in_srgb,var(--item-accent)_28%,transparent)] bg-[color-mix(in_srgb,var(--item-accent)_8%,transparent)] text-[var(--text-primary)]",
-          )}
-          onClick={() => {
-            pointerDownRef.current = false;
-
-            if (isFlyoutOpen && isFlyoutPinned) {
+        {item.status === "ready" ? (
+          <Link
+            aria-controls={flyoutId}
+            aria-current={isCurrent ? "page" : undefined}
+            aria-expanded={isFlyoutOpen}
+            className={expandableItemClasses}
+            href={item.href}
+            onClick={() => {
+              pointerDownRef.current = false;
               closeFlyout();
-              return;
-            }
-
-            setIsFlyoutPinned(true);
-            openFlyout();
-          }}
-          onKeyDown={handleTriggerKeyDown}
-          onPointerDown={() => {
-            pointerDownRef.current = true;
-          }}
-          ref={triggerRef}
-          style={itemStyle(accent)}
-          type="button"
-        >
-          <NavDot active={Boolean(isGroupActive)} muted={!isGroupActive} />
-          <span className={NAV_ITEM_LABEL_CLASSES}>{item.label}</span>
-          {item.status === "planned" ? <PlannedBadge /> : null}
-          <span
-            aria-hidden="true"
-            className="ml-1.5 shrink-0 text-[9px] text-[var(--text-muted)]"
+            }}
+            onKeyDown={handleTriggerKeyDown}
+            onPointerDown={() => {
+              pointerDownRef.current = true;
+            }}
+            ref={(node) => {
+              triggerRef.current = node;
+            }}
+            style={itemStyle(accent)}
           >
-            ›
-          </span>
-        </button>
+            {triggerContent}
+          </Link>
+        ) : (
+          <button
+            aria-controls={flyoutId}
+            aria-expanded={isFlyoutOpen}
+            className={expandableItemClasses}
+            onClick={() => {
+              pointerDownRef.current = false;
+
+              if (isFlyoutOpen && isFlyoutPinned) {
+                closeFlyout();
+                return;
+              }
+
+              setIsFlyoutPinned(true);
+              openFlyout();
+            }}
+            onKeyDown={handleTriggerKeyDown}
+            onPointerDown={() => {
+              pointerDownRef.current = true;
+            }}
+            ref={(node) => {
+              triggerRef.current = node;
+            }}
+            style={itemStyle(accent)}
+            type="button"
+          >
+            {triggerContent}
+          </button>
+        )}
         {isFlyoutOpen && flyoutPosition ? (
           <div
             aria-label={`${item.label} Unterseiten`}
@@ -393,6 +471,7 @@ function NavItem({
                   key={child.href}
                   onSelect={closeFlyout}
                   pathname={pathname}
+                  searchParams={searchParams}
                 />
               ))}
             </div>
@@ -432,9 +511,11 @@ function NavItem({
 function NavigationSectionBlock({
   section,
   pathname,
+  searchParams,
 }: Readonly<{
   section: NavigationSection;
   pathname: string;
+  searchParams: CurrentSearchParams;
 }>) {
   const id = sectionId(section.label);
 
@@ -453,6 +534,7 @@ function NavigationSectionBlock({
             item={item}
             key={item.href}
             pathname={pathname}
+            searchParams={searchParams}
           />
         ))}
       </div>
@@ -462,6 +544,7 @@ function NavigationSectionBlock({
 
 export function Sidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   return (
     <aside className="border-b border-[var(--border-default)] bg-[var(--bg-app)] p-2 lg:h-dvh lg:min-h-0 lg:overflow-hidden lg:border-b-0 lg:border-r">
@@ -525,7 +608,12 @@ export function Sidebar() {
         >
           <div className="space-y-0.5">
             {sidebarNavigation.primary.map((item) => (
-              <NavItem item={item} key={item.href} pathname={pathname} />
+              <NavItem
+                item={item}
+                key={item.href}
+                pathname={pathname}
+                searchParams={searchParams}
+              />
             ))}
           </div>
 
@@ -533,6 +621,7 @@ export function Sidebar() {
             <NavigationSectionBlock
               key={section.label}
               pathname={pathname}
+              searchParams={searchParams}
               section={section}
             />
           ))}
@@ -544,6 +633,7 @@ export function Sidebar() {
                 item={item}
                 key={item.href}
                 pathname={pathname}
+                searchParams={searchParams}
               />
             ))}
           </div>
