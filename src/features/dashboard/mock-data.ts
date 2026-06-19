@@ -14,6 +14,7 @@ export const dashboardMockData = {
         progress: 67,
         accent: "var(--accent-blue)",
         area: "review",
+        href: "/tasks?view=today",
       },
       {
         label: "Focus Time",
@@ -22,6 +23,7 @@ export const dashboardMockData = {
         progress: 56,
         accent: "var(--accent-blue)",
         area: "education",
+        href: "/tasks?view=today&focus=true",
       },
       {
         label: "Inbox",
@@ -30,6 +32,7 @@ export const dashboardMockData = {
         progress: 38,
         accent: "var(--accent-green)",
         area: "review",
+        href: "/inbox",
       },
       {
         label: "Nutrition",
@@ -38,6 +41,7 @@ export const dashboardMockData = {
         progress: 78,
         accent: "var(--accent-yellow)",
         area: "nutrition",
+        href: "/nutrition/meal-planner?view=today",
       },
       {
         label: "Steps",
@@ -46,6 +50,7 @@ export const dashboardMockData = {
         progress: 42,
         accent: "var(--accent-blue)",
         area: "health",
+        href: "/health?section=analytics&metric=steps",
       },
       {
         label: "Sleep",
@@ -54,6 +59,7 @@ export const dashboardMockData = {
         progress: 77,
         accent: "var(--accent-blue)",
         area: "health",
+        href: "/health/mental?section=sleep",
       },
     ],
     timeProgress: [
@@ -61,6 +67,7 @@ export const dashboardMockData = {
       { label: "Month June", value: "43%", progress: 43 },
       { label: "Week 24", value: "71%", progress: 71 },
     ],
+    timeProgressHref: "/portfolio?view=roadmap",
     weather: {
       temperatureLabel: "18°C cloudy",
       periodLabel: "Evening",
@@ -75,6 +82,7 @@ export const dashboardMockData = {
       scoreLabel: "7.6 / 10",
       progress: 76,
       accent: "var(--accent-cyan)",
+      href: "/health/mental",
       options: ["Happy", "Anxious", "Angry", "Tired", "Sad", "Stressed"],
       activeOption: "Happy",
     },
@@ -106,6 +114,7 @@ export const dashboardMockData = {
       detail: "3 Quellen clustern, danach Review-Haken setzen",
     },
     currentTask: {
+      id: "task-literature-structure",
       sectionLabel: "Current Task",
       timeRemainingLabel: "18:32 · 25 min left",
       statusLabel: "Active Now",
@@ -115,6 +124,7 @@ export const dashboardMockData = {
       progress: 34,
       accent: "var(--accent-blue)",
       area: "education",
+      href: "/tasks?task=task-literature-structure",
     },
     signals: [
       {
@@ -144,28 +154,35 @@ export const dashboardMockData = {
     queueSummary: "3 queued",
     queue: [
       {
+        id: "task-java-hyperskill-close",
         title: "Java/Hyperskill abschließen",
         meta: "Heute später · 30 min",
         tag: "Learn",
         area: "coding",
+        href: "/tasks?task=task-java-hyperskill-close",
       },
       {
+        id: "task-daily-review-closeout",
         title: "Daily Review ausfüllen",
         meta: "Abends · offen",
         tag: "Review",
         area: "review",
+        href: "/tasks?task=task-daily-review-closeout",
       },
       {
+        id: "task-inbox-triage",
         title: "Inbox triagieren",
         meta: "3 offen · 10 min",
         tag: "Inbox",
         area: "review",
+        href: "/tasks?task=task-inbox-triage",
       },
     ],
   },
   todayAgenda: {
     priority: "P0",
     title: "Today Agenda",
+    href: "/calendar?view=day&date=today",
     views: ["Day", "Week", "Month"],
     activeView: "Day",
     preparedViewsLabel: "Week and month views prepared",
@@ -194,6 +211,7 @@ export const dashboardMockData = {
     ],
     events: [
       {
+        id: "block-morning-routine",
         title: "Morning Routine",
         time: "06:30-07:15 · 45 min",
         note: "Start baseline",
@@ -208,8 +226,10 @@ export const dashboardMockData = {
         area: "personal",
         energy: "low",
         priority: "P1",
+        href: "/calendar?view=day&date=today&block=block-morning-routine",
       },
       {
+        id: "block-deep-work-masterarbeit",
         title: "Deep Work: Masterarbeit",
         time: "08:00-10:00 · 120 min",
         note: "Literature extraction · source notes",
@@ -226,8 +246,10 @@ export const dashboardMockData = {
         energy: "high",
         priority: "P0",
         tall: true,
+        href: "/calendar?view=day&date=today&block=block-deep-work-masterarbeit",
       },
       {
+        id: "block-team-standup",
         title: "Team Standup",
         time: "10:15-10:45 · 30 min",
         note: "Sync + blockers",
@@ -242,8 +264,10 @@ export const dashboardMockData = {
         area: "work",
         energy: "medium",
         priority: "P1",
+        href: "/calendar?view=day&date=today&block=block-team-standup",
       },
       {
+        id: "block-lunch-walk",
         title: "Lunch & Walk",
         time: "12:00-13:00 · 60 min",
         note: "Reset + movement",
@@ -259,8 +283,10 @@ export const dashboardMockData = {
         area: "health",
         energy: "low",
         priority: "P2",
+        href: "/calendar?view=day&date=today&block=block-lunch-walk",
       },
       {
+        id: "block-open-focus-buffer",
         title: "Open Focus Buffer",
         time: "13:30-14:30 · 60 min",
         note: "Free slot",
@@ -277,8 +303,10 @@ export const dashboardMockData = {
         area: "review",
         energy: "medium",
         priority: "P1",
+        href: "/calendar?view=day&date=today&block=block-open-focus-buffer",
       },
       {
+        id: "block-skill-practice-figma",
         title: "Skill Practice: Figma",
         time: "15:30-16:30 · 60 min",
         note: "Life OS layout refinement",
@@ -296,8 +324,10 @@ export const dashboardMockData = {
         energy: "medium",
         priority: "P1",
         active: true,
+        href: "/calendar?view=day&date=today&block=block-skill-practice-figma",
       },
       {
+        id: "block-workout-run",
         title: "Workout / Run",
         time: "17:00-18:00 · 60 min",
         note: "Training planned",
@@ -314,8 +344,10 @@ export const dashboardMockData = {
         energy: "medium",
         priority: "P2",
         strong: true,
+        href: "/calendar?view=day&date=today&block=block-workout-run",
       },
       {
+        id: "block-dinner-protein-bowl",
         title: "Dinner: Protein Bowl",
         time: "19:00-19:30 · 30 min",
         note: "Nutrition target",
@@ -330,8 +362,10 @@ export const dashboardMockData = {
         area: "nutrition",
         energy: "low",
         priority: "P2",
+        href: "/calendar?view=day&date=today&block=block-dinner-protein-bowl",
       },
       {
+        id: "block-journal-plan-tomorrow",
         title: "Journal & Plan Tomorrow",
         time: "21:30-22:00 · 30 min",
         note: "Daily review closeout",
@@ -347,6 +381,7 @@ export const dashboardMockData = {
         area: "review",
         energy: "low",
         priority: "P1",
+        href: "/calendar?view=day&date=today&block=block-journal-plan-tomorrow",
       },
     ],
   },
@@ -394,6 +429,7 @@ export const dashboardMockData = {
   habitTrackers: {
     priority: "P1",
     title: "Habit Trackers",
+    href: "/health/habits",
     windows: ["Morning", "Midday", "Evening"],
     activeWindow: "Morning",
     totalSlotsLabel: "7 per view · 21 total slots",
@@ -415,10 +451,25 @@ export const dashboardMockData = {
     subtitle: "Unique active projects · next action first",
     viewTitle: "Portfolio View",
     viewSubtitle: "Switch content state",
-    views: ["Project View", "Goal View", "Skill View"],
+    href: "/portfolio?status=active",
+    views: [
+      {
+        label: "Project View",
+        href: "/portfolio?view=projects&status=active",
+      },
+      {
+        label: "Goal View",
+        href: "/portfolio?view=goals&status=active",
+      },
+      {
+        label: "Skill View",
+        href: "/portfolio?view=skills&status=active",
+      },
+    ],
     activeView: "Project View",
     items: [
       {
+        id: "portfolio-life-os-app",
         title: "Life OS App",
         label: "Coding",
         next: "Project view finalisieren",
@@ -427,8 +478,10 @@ export const dashboardMockData = {
         accent: "var(--accent-orange)",
         area: "coding",
         kind: "project",
+        href: "/portfolio?item=portfolio-life-os-app",
       },
       {
+        id: "portfolio-masterarbeit",
         title: "Masterarbeit",
         label: "Education",
         next: "Literaturquelle eintragen",
@@ -437,8 +490,10 @@ export const dashboardMockData = {
         accent: "var(--accent-blue)",
         area: "education",
         kind: "project",
+        href: "/portfolio?item=portfolio-masterarbeit",
       },
       {
+        id: "portfolio-java-hyperskill",
         title: "Java / Hyperskill",
         label: "Skill",
         next: "Modul abschließen",
@@ -447,8 +502,10 @@ export const dashboardMockData = {
         accent: "var(--accent-purple)",
         area: "coding",
         kind: "skill",
+        href: "/portfolio?item=portfolio-java-hyperskill",
       },
       {
+        id: "portfolio-finanzinformatik",
         title: "Finanzinformatik",
         label: "Work",
         next: "Notizen für FI aufbereiten",
@@ -457,12 +514,14 @@ export const dashboardMockData = {
         accent: "var(--accent-green)",
         area: "work",
         kind: "project",
+        href: "/portfolio?item=portfolio-finanzinformatik",
       },
     ],
   },
   weightLossGoal: {
     priority: "P2",
     title: "Weight Loss Goal",
+    href: "/health",
     currentWeight: "75.0 kg",
     targetLabel: "Target 70.0 kg · -0.4 kg this week",
     progressLabel: "42% to goal",
@@ -472,6 +531,7 @@ export const dashboardMockData = {
   nutrientBalance: {
     priority: "P2",
     title: "Nutrient Balance",
+    href: "/nutrition/meal-planner?view=today",
     items: [
       {
         label: "Protein",
@@ -496,27 +556,37 @@ export const dashboardMockData = {
   meals: {
     priority: "P2",
     title: "Meals Today",
+    href: "/nutrition/meal-planner?view=today",
     items: [
       {
+        recipeId: "overnight-oats",
+        mealId: "breakfast",
         type: "Breakfast",
         name: "Overnight Oats",
         kcal: "310 kcal",
         macros: ["P 8g", "C 38g", "F 6g"],
         area: "nutrition",
+        href: "/nutrition/recipes?recipe=overnight-oats&meal=breakfast",
       },
       {
+        recipeId: "steak-salad",
+        mealId: "lunch",
         type: "Lunch",
         name: "Steak Salad",
         kcal: "400 kcal",
         macros: ["P 58g", "C 10g", "F 20g"],
         area: "nutrition",
+        href: "/nutrition/recipes?recipe=steak-salad&meal=lunch",
       },
       {
+        recipeId: "protein-bowl",
+        mealId: "dinner",
         type: "Dinner",
         name: "Protein Bowl",
         kcal: "690 kcal",
         macros: ["P 48g", "C 62g", "F 18g"],
         area: "nutrition",
+        href: "/nutrition/recipes?recipe=protein-bowl&meal=dinner",
       },
     ],
   },
@@ -524,6 +594,7 @@ export const dashboardMockData = {
     priority: "P2",
     title: "Running Tracker",
     subtitle: "Health view switch · current run state",
+    href: "/health/running",
     modes: ["Running", "Muscle", "Recovery"],
     activeMode: "Running",
     stats: [
@@ -542,6 +613,7 @@ export const dashboardMockData = {
   antiRotActions: {
     priority: "P3",
     title: "Anti-Rot Actions / Bad Habit Reset Row",
+    href: "/health/habits?view=bad-habits",
     donePrompt: "Done?",
     actions: [
       {
@@ -594,6 +666,7 @@ export const dashboardMockData = {
   challengesRewardFocus: {
     priority: "P3",
     title: "Challenges",
+    href: "/challenges",
     summary: "Complete 2 challenges today",
     measurementLabel: "1 / 2 measurable · 1 rule active",
     rewardFocus: "Small reward after review closeout",

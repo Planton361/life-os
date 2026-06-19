@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import Link from "next/link";
 import type {
   DashboardCommandCenterMeta,
   DashboardCommandCenterViewModel,
@@ -9,6 +10,9 @@ import type {
   DashboardQuickCapture,
 } from "@/features/dashboard";
 import { cn } from "@/lib/cn";
+
+const DASHBOARD_LINK_FOCUS_CLASSES =
+  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-cyan)]";
 
 function accentStyle(accent: string, progress?: number): CSSProperties {
   return {
@@ -48,21 +52,20 @@ function MetricCard({
   detail,
   progress,
   accent,
+  href,
   compact = false,
 }: Readonly<DashboardMetric & { compact?: boolean }>) {
-  return (
-    <article
-      className={cn(
-        "flex h-full flex-col rounded-[13px] border bg-[color-mix(in_srgb,var(--accent)_3%,#101a2a)] p-2.5 pb-3",
-        compact && "2xl:p-2 2xl:pb-2.5",
-      )}
-      style={
-        {
-          "--accent": accent,
-          borderColor: "color-mix(in srgb, var(--accent) 22%, rgba(148,163,184,.08))",
-    } as CSSProperties
-  }
-    >
+  const className = cn(
+    "flex h-full flex-col rounded-[13px] border bg-[color-mix(in_srgb,var(--accent)_3%,#101a2a)] p-2.5 pb-3",
+    compact && "2xl:p-2 2xl:pb-2.5",
+    href && DASHBOARD_LINK_FOCUS_CLASSES,
+  );
+  const style = {
+    "--accent": accent,
+    borderColor: "color-mix(in srgb, var(--accent) 22%, rgba(148,163,184,.08))",
+  } as CSSProperties;
+  const content = (
+    <>
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-[10px] font-medium leading-tight text-[var(--text-secondary)]">
@@ -101,6 +104,25 @@ function MetricCard({
       <div className={cn("mt-auto pt-2", compact && "2xl:pt-1")}>
         <ProgressBar accent={accent} progress={progress} />
       </div>
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link
+        aria-label={`${label}: ${value}, ${detail}`}
+        className={className}
+        href={href}
+        style={style}
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <article className={className} style={style}>
+      {content}
     </article>
   );
 }
@@ -176,8 +198,13 @@ function DailyControlCurrentTask({
 }: Readonly<{
   task: DashboardCurrentTask;
 }>) {
-  return (
-      <article className="h-[204px] rounded-[18px] border border-[rgba(91,124,250,.34)] bg-[linear-gradient(180deg,rgba(24,42,70,.98),rgba(16,29,49,.98))] p-3 shadow-[inset_0_0_0_1px_rgba(91,124,250,.10)]">      <div className="flex items-start justify-between gap-3">
+  const className = cn(
+    "h-[204px] rounded-[18px] border border-[rgba(91,124,250,.34)] bg-[linear-gradient(180deg,rgba(24,42,70,.98),rgba(16,29,49,.98))] p-3 shadow-[inset_0_0_0_1px_rgba(91,124,250,.10)]",
+    task.href && `block ${DASHBOARD_LINK_FOCUS_CLASSES}`,
+  );
+  const content = (
+    <>
+      <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-[10px] font-medium uppercase text-[var(--text-secondary)]">
             {task.sectionLabel}
@@ -200,6 +227,24 @@ function DailyControlCurrentTask({
       <span className="mt-3 flex min-h-[24px] items-center justify-center rounded-full border border-[rgba(95,200,215,.38)] bg-[rgba(91,124,250,.22)] text-[10px] font-medium text-[var(--text-secondary)]">
         {task.actionLabel}
       </span>
+    </>
+  );
+
+  if (task.href) {
+    return (
+      <Link
+        aria-label={`${task.sectionLabel}: ${task.title}`}
+        className={className}
+        href={task.href}
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <article className={className}>
+      {content}
     </article>
   );
 }
@@ -209,10 +254,12 @@ function DailyControlQueueItem({
 }: Readonly<{
   item: DashboardQueueItem;
 }>) {
-  return (
-    <article
-      className="grid min-h-12 grid-cols-[4px_8px_minmax(0,1fr)_76px_10px] items-center gap-2 rounded-xl border border-[rgba(91,124,250,.18)] bg-[color-mix(in_srgb,var(--accent-blue)_6%,#111c2e)] pr-2"
-    >
+  const className = cn(
+    "grid min-h-12 grid-cols-[4px_8px_minmax(0,1fr)_76px_10px] items-center gap-2 rounded-xl border border-[rgba(91,124,250,.18)] bg-[color-mix(in_srgb,var(--accent-blue)_6%,#111c2e)] pr-2",
+    item.href && DASHBOARD_LINK_FOCUS_CLASSES,
+  );
+  const content = (
+    <>
       <span className="h-full rounded-full bg-[rgba(91,124,250,.84)]" />
       <span className="size-2 rounded-full bg-[var(--accent-cyan)]" />
       <div className="min-w-0">
@@ -229,6 +276,24 @@ function DailyControlQueueItem({
       <span aria-hidden="true" className="text-base text-[var(--text-secondary)]">
         ›
       </span>
+    </>
+  );
+
+  if (item.href) {
+    return (
+      <Link
+        aria-label={`Open queued task: ${item.title}`}
+        className={className}
+        href={item.href}
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <article className={className}>
+      {content}
     </article>
   );
 }
@@ -298,50 +363,70 @@ function TimeProgress({
 }: Readonly<{
   data: DashboardCommandCenterMeta;
 }>) {
+  const className = cn(
+    "h-full overflow-hidden rounded-[var(--panel-radius)] border border-[rgba(95,200,215,.10)] bg-[color-mix(in_srgb,var(--accent-blue)_5%,#0d1625)] p-3 shadow-[0_10px_26px_rgba(0,0,0,.14)]",
+    data.timeProgressHref && `block ${DASHBOARD_LINK_FOCUS_CLASSES}`,
+  );
+  const content = (
+    <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_96px]">
+      <div>
+        <h2
+          className="text-xs font-medium text-[var(--text-secondary)]"
+          id="time-progress-title"
+        >
+          Time Progress
+        </h2>
+        <div className="mt-2 space-y-1.5">
+          {data.timeProgress.map((row) => (
+            <div
+              className="grid grid-cols-[72px_minmax(0,1fr)_32px] items-center gap-2"
+              key={row.label}
+            >
+              <p className="text-[10px] font-medium uppercase text-[var(--text-muted)]">
+                {row.label}
+              </p>
+              <ProgressBar
+                accent="var(--accent-blue)"
+                progress={row.progress}
+                quiet
+              />
+              <p className="text-[10px] font-medium text-[var(--text-muted)]">
+                {row.value}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="rounded-[18px] border border-[rgba(95,200,215,.10)] bg-[rgba(95,200,215,.07)] p-2 text-center">
+        <div aria-hidden="true" className="mx-auto h-6 w-12 rounded-full bg-[rgba(95,200,215,.30)]" />
+        <p className="mt-2 text-[9px] font-medium text-[var(--text-muted)]">
+          {data.weather.temperatureLabel}
+        </p>
+        <p className="mt-0.5 text-[9px] font-medium text-[var(--text-muted)]">
+          {data.weather.periodLabel}
+        </p>
+      </div>
+    </div>
+  );
+
+  if (data.timeProgressHref) {
+    return (
+      <Link
+        aria-label="Open portfolio roadmap"
+        className={className}
+        href={data.timeProgressHref}
+      >
+        {content}
+      </Link>
+    );
+  }
+
   return (
     <section
       aria-labelledby="time-progress-title"
-      className="h-full overflow-hidden rounded-[var(--panel-radius)] border border-[rgba(95,200,215,.10)] bg-[color-mix(in_srgb,var(--accent-blue)_5%,#0d1625)] p-3 shadow-[0_10px_26px_rgba(0,0,0,.14)]"
+      className={className}
     >
-      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_96px]">
-        <div>
-          <h2
-            className="text-xs font-medium text-[var(--text-secondary)]"
-            id="time-progress-title"
-          >
-            Time Progress
-          </h2>
-          <div className="mt-2 space-y-1.5">
-            {data.timeProgress.map((row) => (
-              <div
-                className="grid grid-cols-[72px_minmax(0,1fr)_32px] items-center gap-2"
-                key={row.label}
-              >
-                <p className="text-[10px] font-medium uppercase text-[var(--text-muted)]">
-                  {row.label}
-                </p>
-                <ProgressBar
-                  accent="var(--accent-blue)"
-                  progress={row.progress}
-                  quiet
-                />
-                <p className="text-[10px] font-medium text-[var(--text-muted)]">
-                  {row.value}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="rounded-[18px] border border-[rgba(95,200,215,.10)] bg-[rgba(95,200,215,.07)] p-2 text-center">
-          <div aria-hidden="true" className="mx-auto h-6 w-12 rounded-full bg-[rgba(95,200,215,.30)]" />
-          <p className="mt-2 text-[9px] font-medium text-[var(--text-muted)]">
-            {data.weather.temperatureLabel}
-          </p>
-          <p className="mt-0.5 text-[9px] font-medium text-[var(--text-muted)]">
-            {data.weather.periodLabel}
-          </p>
-        </div>
-      </div>
+      {content}
     </section>
   );
 }
@@ -356,9 +441,26 @@ function MoodBoard({
   return (
     <section
       aria-labelledby="mood-title"
-      className="h-full overflow-hidden rounded-[var(--panel-radius)] border border-[rgba(95,200,215,.14)] bg-[color-mix(in_srgb,var(--accent-cyan)_8%,#0d1625)] p-3 shadow-[0_10px_26px_rgba(0,0,0,.14)]"
+      className="relative isolate h-full overflow-hidden rounded-[var(--panel-radius)] border border-[rgba(95,200,215,.14)] bg-[color-mix(in_srgb,var(--accent-cyan)_8%,#0d1625)] p-3 shadow-[0_10px_26px_rgba(0,0,0,.14)]"
     >
-      <div className="grid h-full gap-3 sm:grid-cols-[132px_minmax(0,1fr)] sm:items-center">
+      {data.moodCheck.href ? (
+        <Link
+          aria-label="Open mental health"
+          className={cn(
+            "absolute inset-0 z-0 rounded-[var(--panel-radius)]",
+            DASHBOARD_LINK_FOCUS_CLASSES,
+          )}
+          href={data.moodCheck.href}
+        >
+          <span className="sr-only">Open mental health</span>
+        </Link>
+      ) : null}
+      <div
+        className={cn(
+          "relative z-10 grid h-full gap-3 sm:grid-cols-[132px_minmax(0,1fr)] sm:items-center",
+          data.moodCheck.href && "pointer-events-none",
+        )}
+      >
         <div className="flex h-full flex-col justify-center">
           <p className="text-[10px] font-semibold uppercase text-[rgba(95,200,215,.86)]">
             {data.moodCheck.eyebrow}
@@ -402,17 +504,20 @@ function MoodBoard({
           <div className="mt-2 flex flex-wrap gap-1.5">
             {data.moodCheck.options.map(
               (mood) => (
-                <span
+                <button
+                  aria-pressed={mood === data.moodCheck.activeOption}
                   className={cn(
-                    "rounded-full border px-2.5 py-0.5 text-[9px] font-medium",
+                    "pointer-events-auto rounded-full border px-2.5 py-0.5 text-[9px] font-medium",
+                    DASHBOARD_LINK_FOCUS_CLASSES,
                     mood === data.moodCheck.activeOption
                       ? "border-[rgba(95,200,215,.36)] bg-[rgba(66,184,131,.18)] text-[var(--text-secondary)]"
                       : "border-[rgba(95,200,215,.10)] bg-[rgba(168,183,204,.04)] text-[var(--text-muted)]",
                   )}
                   key={mood}
+                  type="button"
                 >
                   {mood}
-                </span>
+                </button>
               ),
             )}
           </div>

@@ -31,6 +31,7 @@ export function HabitTrackers({
       className="border-[rgba(155,124,246,.16)] bg-[color-mix(in_srgb,var(--accent-purple)_5%,#101827)] 2xl:h-[260px]"
       headerAccessory={windowSwitch}
       title={data.title}
+      titleHref={data.href}
     >
       <div className="p-4 2xl:px-[28px] 2xl:pb-1.5 2xl:pt-6">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 2xl:grid-cols-[130px_130px_130px_130px] 2xl:gap-x-[14px] 2xl:gap-y-5">

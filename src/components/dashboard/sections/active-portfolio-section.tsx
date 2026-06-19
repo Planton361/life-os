@@ -2,6 +2,7 @@ import {
   type DashboardActivePortfolio,
   type PortfolioItemKind,
 } from "@/features/dashboard";
+import Link from "next/link";
 import { cn } from "@/lib/cn";
 import {
   type AccentStyle,
@@ -9,6 +10,9 @@ import {
   Pill,
   ProgressBar,
 } from "./section-primitives";
+
+const DASHBOARD_LINK_FOCUS_CLASSES =
+  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-cyan)]";
 
 function countPortfolioKind(
   items: DashboardActivePortfolio["items"],
@@ -61,6 +65,7 @@ export function ActivePortfolio({
       subtitle={data.subtitle}
       title={data.title}
       titleClassName="text-xl"
+      titleHref={data.href}
     >
       <div className="p-4 2xl:px-[26px] 2xl:pb-3 2xl:pt-4">
         <div className="mb-3 rounded-[13px] border border-[rgba(91,124,250,.18)] bg-[color-mix(in_srgb,var(--accent-blue)_5%,#0b1422)] p-3 2xl:mb-6">
@@ -75,24 +80,31 @@ export function ActivePortfolio({
             </div>
             <div className="flex rounded-[13px] border border-[var(--border-subtle)] bg-[#0b1422] p-1 text-center text-[10px] font-semibold text-[var(--text-primary)]">
               {data.views.map((view) => (
-                <span
+                <Link
                   className={cn(
                     "flex-1 rounded-full px-3 py-1.5",
-                    view === data.activeView &&
+                    DASHBOARD_LINK_FOCUS_CLASSES,
+                    view.label === data.activeView &&
                       "border border-[rgba(91,124,250,.28)] bg-[rgba(91,124,250,.12)] text-[var(--text-secondary)]",
                   )}
-                  key={view}
+                  href={view.href}
+                  key={view.label}
                 >
-                  {view}
-                </span>
+                  {view.label}
+                </Link>
               ))}
             </div>
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-[263px_263px] 2xl:gap-3">
           {projects.map((project) => (
-            <article
-              className="rounded-[13px] border p-3 2xl:min-h-[162px]"
+            <Link
+              aria-label={`Open portfolio item: ${project.title}`}
+              className={cn(
+                "block rounded-[13px] border p-3 2xl:min-h-[162px]",
+                DASHBOARD_LINK_FOCUS_CLASSES,
+              )}
+              href={project.href ?? data.href ?? "/portfolio?status=active"}
               key={project.title}
               style={{
                 background: "color-mix(in srgb, var(--accent) 4%, #101a2a)",
@@ -126,7 +138,7 @@ export function ActivePortfolio({
               <div className="mt-2">
                 <ProgressBar accent={project.accent} progress={project.progress} />
               </div>
-            </article>
+            </Link>
           ))}
         </div>
       </div>

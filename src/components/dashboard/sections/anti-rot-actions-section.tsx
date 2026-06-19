@@ -10,6 +10,7 @@ export function AntiRotActions({
     <Panel
       className="border-[rgba(155,124,246,.10)] bg-[color-mix(in_srgb,var(--accent-purple)_3%,#0c1320)] 2xl:h-[205px]"
       title={data.title}
+      titleHref={data.href}
     >
       <div className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-5 2xl:grid-cols-[256px_256px_257px_257px_257px] 2xl:gap-[15px] 2xl:px-[36px] 2xl:pb-0 2xl:pt-2">
         {data.actions.map((action) => (

@@ -4,8 +4,12 @@ import type {
   DashboardRunningRecovery,
   DashboardWeightLossGoal,
 } from "@/features/dashboard";
+import Link from "next/link";
 import { cn } from "@/lib/cn";
 import { Panel, Pill, ProgressBar } from "./section-primitives";
+
+const DASHBOARD_LINK_FOCUS_CLASSES =
+  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-cyan)]";
 
 function runningRhythmAccent(statusLabel: string) {
   const normalizedStatus = statusLabel.toLowerCase();
@@ -30,11 +34,12 @@ export function WeightLossGoal({
 }: Readonly<{
   data: DashboardWeightLossGoal;
 }>) {
-  return (
-    <section
-      aria-labelledby="weight-loss-goal-title"
-      className="h-[188px] overflow-hidden rounded-[var(--panel-radius)] border border-[var(--border-subtle)] bg-[#0f1724] p-5 shadow-[0_8px_22px_rgba(0,0,0,.12)] 2xl:h-[184px] 2xl:px-[28px] 2xl:py-[22px]"
-    >
+  const className = cn(
+    "h-[188px] overflow-hidden rounded-[var(--panel-radius)] border border-[var(--border-subtle)] bg-[#0f1724] p-5 shadow-[0_8px_22px_rgba(0,0,0,.12)] 2xl:h-[184px] 2xl:px-[28px] 2xl:py-[22px]",
+    data.href && `block ${DASHBOARD_LINK_FOCUS_CLASSES}`,
+  );
+  const content = (
+    <>
       <h2
         className="text-lg font-semibold text-[var(--text-primary)]"
         id="weight-loss-goal-title"
@@ -57,6 +62,27 @@ export function WeightLossGoal({
           quiet
         />
       </div>
+    </>
+  );
+
+  if (data.href) {
+    return (
+      <Link
+        aria-label={`Open health: ${data.title}`}
+        className={className}
+        href={data.href}
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <section
+      aria-labelledby="weight-loss-goal-title"
+      className={className}
+    >
+      {content}
     </section>
   );
 }
@@ -66,11 +92,12 @@ export function NutrientBalance({
 }: Readonly<{
   data: DashboardNutrientBalance;
 }>) {
-  return (
-    <section
-      aria-labelledby="nutrient-balance-title"
-      className="h-[188px] overflow-hidden rounded-[var(--panel-radius)] border border-[var(--border-subtle)] bg-[#0f1724] p-5 shadow-[0_8px_22px_rgba(0,0,0,.12)] 2xl:h-[184px] 2xl:p-[18px]"
-    >
+  const className = cn(
+    "h-[188px] overflow-hidden rounded-[var(--panel-radius)] border border-[var(--border-subtle)] bg-[#0f1724] p-5 shadow-[0_8px_22px_rgba(0,0,0,.12)] 2xl:h-[184px] 2xl:p-[18px]",
+    data.href && `block ${DASHBOARD_LINK_FOCUS_CLASSES}`,
+  );
+  const content = (
+    <>
       <h2
         className="text-lg font-semibold text-[var(--text-primary)]"
         id="nutrient-balance-title"
@@ -97,6 +124,27 @@ export function NutrientBalance({
           </div>
         ))}
       </div>
+    </>
+  );
+
+  if (data.href) {
+    return (
+      <Link
+        aria-label={`Open meal planner: ${data.title}`}
+        className={className}
+        href={data.href}
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <section
+      aria-labelledby="nutrient-balance-title"
+      className={className}
+    >
+      {content}
     </section>
   );
 }
@@ -110,30 +158,53 @@ export function MealsToday({
     <Panel
       className="border-[rgba(217,146,79,.22)] bg-[color-mix(in_srgb,var(--accent-orange)_5%,#0f1724)] 2xl:h-[384px]"
       title={data.title}
+      titleHref={data.href}
     >
       <div className="space-y-3 p-4 2xl:space-y-2 2xl:p-3">
-        {data.items.map((meal) => (
-          <article
-            className="grid min-h-[84px] grid-cols-[64px_minmax(0,1fr)] gap-4 rounded-[14px] border border-[rgba(217,146,79,.18)] bg-[color-mix(in_srgb,var(--accent-orange)_7%,#101a2a)] p-3 2xl:min-h-[92px] 2xl:grid-cols-[72px_minmax(0,1fr)]"
-            key={meal.type}
-          >
-            <div className="rounded-[14px] border border-[rgba(217,146,79,.20)] bg-[rgba(217,146,79,.14)] 2xl:h-[68px] 2xl:w-[72px]" />
-            <div className="min-w-0 py-0.5">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <Pill accent="var(--accent-yellow)">{meal.type}</Pill>
-                <h3 className="text-xs font-semibold text-[var(--text-secondary)]">
-                  {meal.name}
-                </h3>
+        {data.items.map((meal) => {
+          const className = cn(
+            "grid min-h-[84px] grid-cols-[64px_minmax(0,1fr)] gap-4 rounded-[14px] border border-[rgba(217,146,79,.18)] bg-[color-mix(in_srgb,var(--accent-orange)_7%,#101a2a)] p-3 2xl:min-h-[92px] 2xl:grid-cols-[72px_minmax(0,1fr)]",
+            meal.href && DASHBOARD_LINK_FOCUS_CLASSES,
+          );
+          const content = (
+            <>
+              <div className="rounded-[14px] border border-[rgba(217,146,79,.20)] bg-[rgba(217,146,79,.14)] 2xl:h-[68px] 2xl:w-[72px]" />
+              <div className="min-w-0 py-0.5">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <Pill accent="var(--accent-yellow)">{meal.type}</Pill>
+                  <h3 className="text-xs font-semibold text-[var(--text-secondary)]">
+                    {meal.name}
+                  </h3>
+                </div>
+                <div className="mt-2.5 flex flex-wrap gap-x-5 gap-y-1.5 text-[10px] font-medium text-[var(--text-secondary)]">
+                  <span>{meal.kcal}</span>
+                  {meal.macros.map((macro) => (
+                    <span key={macro}>{macro}</span>
+                  ))}
+                </div>
               </div>
-              <div className="mt-2.5 flex flex-wrap gap-x-5 gap-y-1.5 text-[10px] font-medium text-[var(--text-secondary)]">
-                <span>{meal.kcal}</span>
-                {meal.macros.map((macro) => (
-                  <span key={macro}>{macro}</span>
-                ))}
-              </div>
-            </div>
-          </article>
-        ))}
+            </>
+          );
+
+          if (meal.href) {
+            return (
+              <Link
+                aria-label={`Open recipe for ${meal.type}: ${meal.name}`}
+                className={className}
+                href={meal.href}
+                key={meal.type}
+              >
+                {content}
+              </Link>
+            );
+          }
+
+          return (
+            <article className={className} key={meal.type}>
+              {content}
+            </article>
+          );
+        })}
       </div>
     </Panel>
   );
@@ -168,6 +239,7 @@ export function RunningTracker({
       headerAccessory={modeSwitch}
       subtitle={data.subtitle}
       title={data.title}
+      titleHref={data.href}
     >
       <div className="p-3 2xl:flex 2xl:h-[152px] 2xl:flex-col 2xl:justify-between 2xl:p-2.5">
         <div className="grid gap-3 sm:grid-cols-3 2xl:gap-2">

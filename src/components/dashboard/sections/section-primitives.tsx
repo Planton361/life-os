@@ -1,5 +1,9 @@
 import type { CSSProperties, ReactNode } from "react";
+import Link from "next/link";
 import { cn } from "@/lib/cn";
+
+const DASHBOARD_LINK_FOCUS_CLASSES =
+  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-cyan)]";
 
 export type AccentStyle = CSSProperties & {
   "--accent"?: string;
@@ -69,6 +73,7 @@ export function Panel({
   className,
   headerAccessory,
   titleClassName,
+  titleHref,
 }: Readonly<{
   title: string;
   subtitle?: string;
@@ -76,10 +81,23 @@ export function Panel({
   className?: string;
   headerAccessory?: ReactNode;
   titleClassName?: string;
+  titleHref?: string;
 }>) {
+  const titleId = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-title`;
+  const titleContent = titleHref ? (
+    <Link
+      className={cn("rounded-sm", DASHBOARD_LINK_FOCUS_CLASSES)}
+      href={titleHref}
+    >
+      {title}
+    </Link>
+  ) : (
+    title
+  );
+
   return (
     <section
-      aria-labelledby={`${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-title`}
+      aria-labelledby={titleId}
       className={cn(
         "overflow-hidden rounded-[var(--panel-radius)] border border-[var(--border-subtle)] bg-[var(--surface-1)] shadow-[0_8px_22px_rgba(0,0,0,.12)]",
         className,
@@ -93,9 +111,9 @@ export function Panel({
                 "font-semibold text-[var(--text-primary)]",
                 titleClassName ?? "text-lg",
               )}
-              id={`${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-title`}
+              id={titleId}
             >
-              {title}
+              {titleContent}
             </h2>
             {subtitle ? (
               <p className="mt-1 text-[10px] font-semibold text-[var(--text-secondary)]">

@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import Link from "next/link";
 import {
   type DashboardAgendaEvent,
   type DashboardTodayAgenda,
@@ -21,6 +22,9 @@ const agendaEventSlots = [
   "72%",
   "85%",
 ] as const;
+
+const DASHBOARD_LINK_FOCUS_CLASSES =
+  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-cyan)]";
 
 function agendaEventSlotStyle(index: number): AgendaSlotStyle {
   return {
@@ -132,17 +136,15 @@ function AgendaEventCard({
     ...styleFor(event.accent),
     background: agendaEventBackground(event.status),
   };
-
-  return (
-    <article
-      className={cn(
-        "relative overflow-hidden rounded-[13px] border bg-[#0d1625] p-2.5 pl-4",
-        event.tall ? "min-h-[58px]" : "min-h-[42px]",
-        statusClassName(event.status),
-        event.strong && event.status !== "blocked" && "border-[rgba(221,107,95,.28)]",
-      )}
-      style={eventStyle}
-    >
+  const className = cn(
+    "relative overflow-hidden rounded-[13px] border bg-[#0d1625] p-2.5 pl-4",
+    event.tall ? "min-h-[58px]" : "min-h-[42px]",
+    statusClassName(event.status),
+    event.strong && event.status !== "blocked" && "border-[rgba(221,107,95,.28)]",
+    event.href && `block ${DASHBOARD_LINK_FOCUS_CLASSES}`,
+  );
+  const content = (
+    <>
       <span
         aria-hidden="true"
         className="absolute bottom-0 left-0 top-0 w-1 bg-[color-mix(in_srgb,var(--accent)_72%,transparent)]"
@@ -184,6 +186,25 @@ function AgendaEventCard({
           ) : null}
         </div>
       </div>
+    </>
+  );
+
+  if (event.href) {
+    return (
+      <Link
+        aria-label={`Open calendar block: ${event.title}`}
+        className={className}
+        href={event.href}
+        style={eventStyle}
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <article className={className} style={eventStyle}>
+      {content}
     </article>
   );
 }
@@ -210,6 +231,17 @@ export function TodayAgenda({
 }: Readonly<{
   data: DashboardTodayAgenda;
 }>) {
+  const title = data.href ? (
+    <Link
+      className={cn("rounded-sm", DASHBOARD_LINK_FOCUS_CLASSES)}
+      href={data.href}
+    >
+      {data.title}
+    </Link>
+  ) : (
+    data.title
+  );
+
   return (
     <section
       aria-labelledby="today-agenda-title"
@@ -221,7 +253,7 @@ export function TodayAgenda({
             className="text-[28px] font-semibold text-[var(--text-primary)]"
             id="today-agenda-title"
           >
-            {data.title}
+            {title}
           </h2>
           <div className="flex flex-wrap items-center gap-6">
             <AgendaViewSwitch agenda={data} />

@@ -1,11 +1,27 @@
 import type { DashboardChallengesRewardFocus } from "@/features/dashboard";
+import Link from "next/link";
+import { cn } from "@/lib/cn";
 import { Pill, ProgressBar } from "./section-primitives";
+
+const DASHBOARD_LINK_FOCUS_CLASSES =
+  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-cyan)]";
 
 export function Challenges({
   data,
 }: Readonly<{
   data: DashboardChallengesRewardFocus;
 }>) {
+  const title = data.href ? (
+    <Link
+      className={cn("rounded-sm", DASHBOARD_LINK_FOCUS_CLASSES)}
+      href={data.href}
+    >
+      {data.title}
+    </Link>
+  ) : (
+    data.title
+  );
+
   return (
     <section
       aria-labelledby="challenges-title"
@@ -16,7 +32,7 @@ export function Challenges({
           className="text-lg font-semibold text-[var(--text-primary)]"
           id="challenges-title"
         >
-          {data.title}
+          {title}
         </h2>
         <div className="mb-3 mt-3 flex min-h-8 items-center justify-between gap-3 rounded-full border border-[rgba(216,180,90,.20)] bg-[rgba(216,180,90,.08)] px-4 2xl:mb-2 2xl:mt-2 2xl:h-[27px]">
           <p className="text-xs font-semibold text-[var(--text-secondary)]">

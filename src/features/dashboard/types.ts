@@ -20,6 +20,8 @@ export type DashboardAccent =
   | "var(--accent-yellow)"
   | "var(--text-muted)";
 
+export type DashboardHref = `/${string}`;
+
 export type DashboardMetric = {
   label: string;
   value: string;
@@ -27,6 +29,7 @@ export type DashboardMetric = {
   progress: number;
   accent: DashboardAccent;
   area: DashboardArea;
+  href?: DashboardHref;
 };
 
 export type DashboardTimeProgressRow = {
@@ -50,6 +53,7 @@ export type DashboardMoodCheck = {
   scoreLabel: string;
   progress: number;
   accent: DashboardAccent;
+  href?: DashboardHref;
   options: readonly string[];
   activeOption: string;
 };
@@ -61,6 +65,7 @@ export type DashboardCommandCenterMeta = {
   dayTypeLabel: string;
   metrics: readonly DashboardMetric[];
   timeProgress: readonly DashboardTimeProgressRow[];
+  timeProgressHref?: DashboardHref;
   weather: DashboardWeatherState;
   moodCheck: DashboardMoodCheck;
 };
@@ -79,6 +84,7 @@ export type DashboardQuickCapture = {
 };
 
 export type DashboardCurrentTask = {
+  id: string;
   sectionLabel: string;
   timeRemainingLabel: string;
   statusLabel: string;
@@ -88,13 +94,16 @@ export type DashboardCurrentTask = {
   progress: number;
   accent: DashboardAccent;
   area: DashboardArea;
+  href?: DashboardHref;
 };
 
 export type DashboardQueueItem = {
+  id: string;
   title: string;
   meta: string;
   tag: string;
   area: DashboardArea;
+  href?: DashboardHref;
 };
 
 export type DashboardDailyControlFocus = {
@@ -158,6 +167,7 @@ export type TodayAgendaEventStatus =
   | "blocked";
 
 export type DashboardAgendaEvent = {
+  id: string;
   title: string;
   time: string;
   note: string;
@@ -177,11 +187,13 @@ export type DashboardAgendaEvent = {
   active?: boolean;
   strong?: boolean;
   tall?: boolean;
+  href?: DashboardHref;
 };
 
 export type DashboardTodayAgenda = {
   priority: Extract<DashboardPriority, "P0">;
   title: string;
+  href?: DashboardHref;
   views: readonly TodayAgendaView[];
   activeView: TodayAgendaView;
   preparedViewsLabel: string;
@@ -227,6 +239,7 @@ export type DashboardHabit = {
 export type DashboardHabitTrackers = {
   priority: Extract<DashboardPriority, "P1">;
   title: string;
+  href?: DashboardHref;
   windows: readonly HabitTrackerWindow[];
   activeWindow: HabitTrackerWindow;
   totalSlotsLabel: string;
@@ -239,7 +252,13 @@ export type PortfolioView = "Project View" | "Goal View" | "Skill View";
 
 export type PortfolioItemKind = "project" | "goal" | "skill";
 
+export type DashboardPortfolioViewLink = {
+  label: PortfolioView;
+  href: DashboardHref;
+};
+
 export type DashboardPortfolioItem = {
+  id: string;
   title: string;
   label: string;
   next: string;
@@ -248,6 +267,7 @@ export type DashboardPortfolioItem = {
   accent: DashboardAccent;
   area: DashboardArea;
   kind: PortfolioItemKind;
+  href?: DashboardHref;
 };
 
 export type DashboardActivePortfolio = {
@@ -256,7 +276,8 @@ export type DashboardActivePortfolio = {
   subtitle: string;
   viewTitle: string;
   viewSubtitle: string;
-  views: readonly PortfolioView[];
+  href?: DashboardHref;
+  views: readonly DashboardPortfolioViewLink[];
   activeView: PortfolioView;
   items: readonly DashboardPortfolioItem[];
 };
@@ -264,22 +285,27 @@ export type DashboardActivePortfolio = {
 export type MealType = "Breakfast" | "Lunch" | "Dinner" | "Snack";
 
 export type DashboardMeal = {
+  recipeId: string;
+  mealId: string;
   type: MealType;
   name: string;
   kcal: string;
   macros: readonly string[];
   area: Extract<DashboardArea, "nutrition">;
+  href?: DashboardHref;
 };
 
 export type DashboardMeals = {
   priority: Extract<DashboardPriority, "P2">;
   title: string;
+  href?: DashboardHref;
   items: readonly DashboardMeal[];
 };
 
 export type DashboardWeightLossGoal = {
   priority: Extract<DashboardPriority, "P2">;
   title: string;
+  href?: DashboardHref;
   currentWeight: string;
   targetLabel: string;
   progressLabel: string;
@@ -297,6 +323,7 @@ export type DashboardNutrientBalanceItem = {
 export type DashboardNutrientBalance = {
   priority: Extract<DashboardPriority, "P2">;
   title: string;
+  href?: DashboardHref;
   items: readonly DashboardNutrientBalanceItem[];
 };
 
@@ -320,6 +347,7 @@ export type DashboardRunningRecovery = {
   priority: Extract<DashboardPriority, "P2">;
   title: string;
   subtitle: string;
+  href?: DashboardHref;
   modes: readonly RunningRecoveryMode[];
   activeMode: RunningRecoveryMode;
   stats: readonly DashboardRunStat[];
@@ -341,6 +369,7 @@ export type DashboardAntiRotAction = {
 export type DashboardAntiRotActions = {
   priority: Extract<DashboardPriority, "P3">;
   title: string;
+  href?: DashboardHref;
   donePrompt: string;
   actions: readonly DashboardAntiRotAction[];
 };
@@ -357,6 +386,7 @@ export type DashboardChallenge = {
 export type DashboardChallengesRewardFocus = {
   priority: Extract<DashboardPriority, "P3">;
   title: string;
+  href?: DashboardHref;
   summary: string;
   measurementLabel: string;
   rewardFocus: string;
