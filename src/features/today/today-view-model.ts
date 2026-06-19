@@ -1,182 +1,487 @@
-export type TodayAgendaBlock = {
+export type TodayStatusPillViewModel = {
+  label: string;
+  accent: string;
+};
+
+export type TodayHeaderViewModel = {
+  eyebrow: "DAY MEMORY LOG";
+  title: "Today";
+  summary: string;
+  dateLabel: string;
+  statusPills: TodayStatusPillViewModel[];
+};
+
+export type TodayActivityEventViewModel = {
   time: string;
-  title: string;
-  area: string;
   type: string;
-  status: string;
-  note: string;
-  accent: string;
-};
-
-export type TodayInboxSignal = {
   title: string;
-  type: string;
-  area: string;
   source: string;
-  nextStep: string;
-  reviewHint: string;
+  status: string;
   accent: string;
 };
 
-export type TodayNextStep = {
+export type TodayDeltaMetricViewModel = {
+  label: string;
+  value: string;
+  detail: string;
+  accent: string;
+};
+
+export type TodayReviewSignalViewModel = {
+  label: string;
+  value: string;
+  detail: string;
+  accent: string;
+};
+
+export type TodayDecisionViewModel = {
+  label: string;
   title: string;
-  area: string;
-  priority: "P1" | "P2" | "P3";
-  estimate: string;
-  note: string;
+  description: string;
+  accent: string;
+};
+
+export type TodayCarryForwardItemViewModel = {
+  label: string;
+  description: string;
+  accent: string;
+};
+
+export type TodayArtifactViewModel = {
+  type: string;
+  title: string;
+  detail: string;
+  accent: string;
+};
+
+export type TodayContractViewModel = {
+  text: string;
+  pills: TodayStatusPillViewModel[];
 };
 
 export type TodayViewModel = {
-  title: "Today";
-  eyebrow: string;
-  summary: string;
-  focus: {
-    label: string;
-    title: string;
-    area: string;
-    priority: "P1" | "P2";
-    energy: string;
-    nextAction: string;
+  header: TodayHeaderViewModel;
+  activityStream: {
+    title: "Activity Stream";
+    subtitle: string;
+    events: TodayActivityEventViewModel[];
   };
-  agenda: {
-    title: string;
-    blocks: TodayAgendaBlock[];
-    emptyState: {
-      title: string;
-      description: string;
-    };
+  openingReview: {
+    title: "Opening Review / Morning Context";
+    subtitle: string;
+    items: TodayReviewSignalViewModel[];
   };
-  focusBlock: {
-    title: string;
-    window: string;
-    constraint: string;
-    doneDefinition: string;
+  deltaSummary: {
+    title: "Delta Summary";
+    subtitle: string;
+    metrics: TodayDeltaMetricViewModel[];
   };
-  inboxSignals: {
-    title: string;
-    items: TodayInboxSignal[];
-    emptyState: {
-      title: string;
-      description: string;
-    };
+  decisionsLedger: {
+    title: "Decisions Ledger";
+    subtitle: string;
+    decisions: TodayDecisionViewModel[];
   };
-  nextSteps: {
-    title: string;
-    items: TodayNextStep[];
+  carryForward: {
+    title: "Carry Forward";
+    subtitle: string;
+    items: TodayCarryForwardItemViewModel[];
+    firstMove: string;
+  };
+  closingReview: {
+    title: "Closing Review / Day Closeout";
+    subtitle: string;
+    signals: TodayReviewSignalViewModel[];
+  };
+  evidenceArtifacts: {
+    title: "Evidence & Artifacts";
+    subtitle: string;
+    artifacts: TodayArtifactViewModel[];
+  };
+  contract: TodayContractViewModel;
+  pageContract: {
+    pageType: "Daily Record / Activity Memory Log";
+    primaryPurpose: string;
+    canonicalSource: string;
+    sensitiveData: string;
+    mainZone: string;
   };
 };
 
 export function getTodayViewModel(): TodayViewModel {
   return {
-    title: "Today",
-    eyebrow: "Daily flow",
-    summary:
-      "A focused area page for the workday: planned blocks, active focus, open signals, and the next operational moves.",
-    focus: {
-      label: "Day focus",
-      title: "Build daily flow page skeletons",
-      area: "Coding & Agents",
-      priority: "P1",
-      energy: "Deep work",
-      nextAction: "Finish the daily flow pages, then validate the app.",
-    },
-    agenda: {
-      title: "Today Agenda",
-      blocks: [
+    header: {
+      eyebrow: "DAY MEMORY LOG",
+      title: "Today",
+      summary:
+        "Daily record of captures, decisions, artifacts, state changes and carry-forward.",
+      dateLabel: "Tuesday, 09 June · Work / Study Day",
+      statusPills: [
         {
-          time: "09:00",
-          title: "Plan the daily flow route scope",
-          area: "Life OS",
-          type: "Build",
-          status: "Done",
-          note: "Read root docs, route docs, and existing shell patterns.",
+          label: "12 events",
+          accent: "var(--accent-cyan)",
+        },
+        {
+          label: "5 captures",
           accent: "var(--accent-blue)",
         },
         {
-          time: "10:30",
-          title: "Implement page skeletons",
-          area: "Coding & Agents",
-          type: "Focus",
-          status: "Active",
-          note: "Keep page data in typed ViewModels and pages calm.",
+          label: "3 completed",
+          accent: "var(--accent-green)",
+        },
+        {
+          label: "2 decisions",
           accent: "var(--accent-orange)",
         },
         {
-          time: "14:00",
-          title: "Review static daily flow",
-          area: "Review / System",
-          type: "Check",
-          status: "Next",
-          note: "Confirm one H1 per route and no dashboard regressions.",
-          accent: "var(--accent-cyan)",
+          label: "review open",
+          accent: "var(--accent-purple)",
         },
       ],
-      emptyState: {
-        title: "No further planned tasks",
-        description:
-          "Use the open focus block or clear the next inbox signal before adding more to today.",
-      },
     },
-    focusBlock: {
-      title: "Route skeleton implementation",
-      window: "10:30 - 12:00",
-      constraint: "Keep this block scoped to planning and validation; defer saving or editing records.",
-      doneDefinition:
-        "Four routes render with typed static ViewModels and helpful empty states.",
-    },
-    inboxSignals: {
-      title: "Open inbox signals for today",
-      items: [
+    activityStream: {
+      title: "Activity Stream",
+      subtitle: "Chronological system events from the day.",
+      events: [
         {
-          title: "Route navigation should expose daily flow pages",
-          type: "Task",
-          area: "System",
-          source: "Daily flow brief",
-          nextStep: "Use the existing navigation data structure only.",
-          reviewHint: "Check that dashboard remains reachable.",
+          time: "08:14",
+          type: "Task completed",
+          title: "Morning baseline checked",
+          source: "Tasks · Personal",
+          status: "completed",
+          accent: "var(--accent-green)",
+        },
+        {
+          time: "09:32",
+          type: "Quick Thought captured",
+          title: "Supabase RLS setup question",
+          source: "Inbox · Coding",
+          status: "needs review",
           accent: "var(--accent-cyan)",
         },
         {
-          title: "Daily review needs a preview state",
+          time: "10:18",
+          type: "Resource added",
+          title: "Literature chapter source",
+          source: "Resources · Education",
+          status: "linked",
+          accent: "var(--accent-yellow)",
+        },
+        {
+          time: "11:04",
+          type: "Decision made",
+          title: "Command Center stays dashboard-only",
+          source: "Design · IA",
+          status: "decision",
+          accent: "var(--accent-orange)",
+        },
+        {
+          time: "13:40",
+          type: "Meal logged",
+          title: "Steak salad recorded with macros",
+          source: "Nutrition",
+          status: "added",
+          accent: "var(--accent-yellow)",
+        },
+        {
+          time: "15:12",
+          type: "Project movement",
+          title: "Life OS moved from routing to page design",
+          source: "Portfolio · Coding",
+          status: "progress",
+          accent: "var(--accent-blue)",
+        },
+        {
+          time: "16:20",
+          type: "Mood changed",
+          title: "Content · focus stable, stress visible",
+          source: "Mental Health",
+          status: "signal",
+          accent: "var(--accent-green)",
+        },
+        {
+          time: "17:08",
+          type: "Note created",
+          title: "Today concept correction",
+          source: "Notes · Product",
+          status: "captured",
+          accent: "var(--accent-purple)",
+        },
+        {
+          time: "18:05",
+          type: "Run recorded",
+          title: "6.2 km · above 7-day rhythm",
+          source: "Health · Running",
+          status: "activity",
+          accent: "var(--accent-red)",
+        },
+        {
+          time: "19:10",
+          type: "Artifact saved",
+          title: "Dashboard route link pass",
+          source: "Screenshot · Evidence",
+          status: "evidence",
+          accent: "var(--accent-cyan)",
+        },
+        {
+          time: "20:24",
+          type: "Habit checked",
+          title: "Evening anti-rot action completed",
+          source: "Habits",
+          status: "completed",
+          accent: "var(--accent-green)",
+        },
+        {
+          time: "21:30",
+          type: "Review started",
+          title: "Daily Review panel opened",
+          source: "Review · Today",
+          status: "open",
+          accent: "var(--accent-purple)",
+        },
+      ],
+    },
+    openingReview: {
+      title: "Opening Review / Morning Context",
+      subtitle: "How the day started before the work log filled in.",
+      items: [
+        {
+          label: "Sleep",
+          value: "6h 12m",
+          detail: "stable",
+          accent: "var(--accent-blue)",
+        },
+        {
+          label: "Morning Mood",
+          value: "Content",
+          detail: "calm start",
+          accent: "var(--accent-green)",
+        },
+        {
+          label: "Morning Energy",
+          value: "7.6 / 10",
+          detail: "usable focus",
+          accent: "var(--accent-cyan)",
+        },
+        {
+          label: "Today Focus",
+          value: "Master thesis / routing / review",
+          detail: "protect boundaries",
+          accent: "var(--accent-purple)",
+        },
+        {
+          label: "Today Intent",
+          value: "Clarify structure",
+          detail: "keep dashboard separate",
+          accent: "var(--accent-orange)",
+        },
+        {
+          label: "Planned",
+          value: "Review + layout pass",
+          detail: "no calendar rebuild",
+          accent: "var(--accent-yellow)",
+        },
+      ],
+    },
+    deltaSummary: {
+      title: "Delta Summary",
+      subtitle: "What changed in the system today.",
+      metrics: [
+        {
+          label: "Tasks completed",
+          value: "3",
+          detail: "From task events",
+          accent: "var(--accent-green)",
+        },
+        {
+          label: "Inbox created",
+          value: "5",
+          detail: "Needs clarification",
+          accent: "var(--accent-cyan)",
+        },
+        {
+          label: "Resources added",
+          value: "2",
+          detail: "Linked to coding",
+          accent: "var(--accent-yellow)",
+        },
+        {
+          label: "Project movement",
+          value: "1",
+          detail: "Routing to design",
+          accent: "var(--accent-blue)",
+        },
+        {
+          label: "Habits checked",
+          value: "5 / 7",
+          detail: "2 still open",
+          accent: "var(--accent-green)",
+        },
+        {
+          label: "Note created",
+          value: "1",
+          detail: "Today concept note",
+          accent: "var(--accent-purple)",
+        },
+      ],
+    },
+    decisionsLedger: {
+      title: "Decisions Ledger",
+      subtitle: "Explicit choices made today.",
+      decisions: [
+        {
+          label: "Decision 1",
+          title: "Today mode",
+          description:
+            "Day Memory Log, not a second cockpit.",
+          accent: "var(--accent-orange)",
+        },
+        {
+          label: "Decision 2",
+          title: "Route boundary",
+          description:
+            "Calendar owns time; Today owns day evidence.",
+          accent: "var(--accent-cyan)",
+        },
+        {
+          label: "Decision 3",
+          title: "Sleep IA",
+          description:
+            "Sleep stays a signal, not a sidebar page.",
+          accent: "var(--accent-green)",
+        },
+        {
+          label: "Decision 4",
+          title: "Implementation gate",
+          description:
+            "Implementation waits for accepted design.",
+          accent: "var(--accent-purple)",
+        },
+      ],
+    },
+    carryForward: {
+      title: "Carry Forward",
+      subtitle: "Open loops and tomorrow candidates.",
+      items: [
+        {
+          label: "Open loop",
+          description: "Validate Today V2 fit.",
+          accent: "var(--accent-green)",
+        },
+        {
+          label: "Tomorrow candidate",
+          description:
+            "Prepare next Codex prompt after review.",
+          accent: "var(--accent-blue)",
+        },
+        {
+          label: "Needs review",
+          description:
+            "Confirm Today vs Calendar Day Detail.",
+          accent: "var(--accent-orange)",
+        },
+      ],
+      firstMove:
+        "Compare Today V1/V2 and decide keep/remove.",
+    },
+    closingReview: {
+      title: "Closing Review / Day Closeout",
+      subtitle: "Final state, open loops and tomorrow handoff.",
+      signals: [
+        {
+          label: "Evening Mood",
+          value: "Content",
+          detail: "stress visible, stable",
+          accent: "var(--accent-green)",
+        },
+        {
+          label: "Energy today",
+          value: "7.6 / 10",
+          detail: "usable, not depleted",
+          accent: "var(--accent-cyan)",
+        },
+        {
+          label: "Went well",
+          value: "Structure clarified",
+          detail: "Today stays separate",
+          accent: "var(--accent-purple)",
+        },
+        {
+          label: "Stays open",
+          value: "Review decision",
+          detail: "compare V1/V2",
+          accent: "var(--accent-orange)",
+        },
+      ],
+    },
+    evidenceArtifacts: {
+      title: "Evidence & Artifacts",
+      subtitle: "Objects produced or changed today.",
+      artifacts: [
+        {
+          type: "Figma frame",
+          title: "Today Page V2 · Day Memory Log",
+          detail: "Design artifact",
+          accent: "var(--accent-purple)",
+        },
+        {
+          type: "Commit",
+          title: "docs: add page design rules",
+          detail: "Repo event",
+          accent: "var(--accent-cyan)",
+        },
+        {
+          type: "Resource",
+          title: "Dashboard V5 design direction",
+          detail: "Source",
+          accent: "var(--accent-purple)",
+        },
+        {
           type: "Note",
-          area: "Review",
-          source: "Feature spec",
-          nextStep: "Render static status instead of form submission.",
-          reviewHint: "Mark saving as later processing.",
-          accent: "var(--text-muted)",
+          title: "Today concept correction",
+          detail: "Product note",
+          accent: "var(--accent-cyan)",
+        },
+        {
+          type: "Screenshot",
+          title: "Dashboard route link pass",
+          detail: "Evidence",
+          accent: "var(--accent-purple)",
+        },
+        {
+          type: "Journal link",
+          title: "Mental note: avoid dashboard duplication",
+          detail: "Private",
+          accent: "var(--accent-cyan)",
         },
       ],
-      emptyState: {
-        title: "No urgent inbox signals for today",
-        description:
-          "Keep the day focused. Process lower-priority captures from Inbox later.",
-      },
     },
-    nextSteps: {
-      title: "Next operational steps",
-      items: [
+    contract: {
+      text:
+        "Today links activity events, decisions, artifacts and day signals. It does not replace Dashboard, Calendar or domain pages.",
+      pills: [
         {
-          title: "Complete static pages",
-          area: "Life OS App",
-          priority: "P1",
-          estimate: "35 min",
-          note: "Create route pages for Today, Inbox, Tasks, and Daily Review.",
+          label: "Day Memory",
+          accent: "var(--accent-purple)",
         },
         {
-          title: "Validate daily flow pages",
-          area: "QA",
-          priority: "P2",
-          estimate: "15 min",
-          note: "Run lint, TypeScript, diff check, and dashboard QA if nav changed.",
+          label: "Activity Events",
+          accent: "var(--accent-cyan)",
         },
         {
-          title: "Capture follow-up data binding work",
-          area: "Roadmap",
-          priority: "P3",
-          estimate: "10 min",
-          note: "Keep stored data work out of this pass.",
+          label: "No duplicate data",
+          accent: "var(--accent-green)",
         },
       ],
+    },
+    pageContract: {
+      pageType: "Daily Record / Activity Memory Log",
+      primaryPurpose:
+        "Reconstruct what the day left behind through events, decisions, artifacts, state changes, and carry-forward.",
+      canonicalSource:
+        "daily_records for day-level decisions and carry-forward; canonical entities remain in tasks, inbox_items, resources, projects, habits, workouts, meals, mood, sleep, and review_records.",
+      sensitiveData:
+        "Health, mood, sleep, journal, and work data are compact signals only; no diagnosis or private detail expansion.",
+      mainZone: "Activity Stream",
     },
   };
 }
