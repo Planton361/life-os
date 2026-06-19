@@ -77,3 +77,7 @@ select {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
+
+body:has(#inbox-page) .life-os-command-center {
+  display: none;
+}

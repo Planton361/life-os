@@ -533,7 +533,7 @@ export function CommandCenter({
   data: DashboardCommandCenterViewModel;
 }>) {
   return (
-    <header className="px-3 pt-3">
+    <header className="life-os-command-center px-3 pt-3">
       <div className="rounded-[var(--panel-radius)] border border-[rgba(95,200,215,.14)] bg-[color-mix(in_srgb,var(--accent-blue)_4%,rgba(12,20,34,.94))] p-3 shadow-[0_10px_26px_rgba(0,0,0,.14)]">
         <div className="grid gap-3 2xl:h-[var(--top-zone-height)] 2xl:grid-cols-[580px_278px_minmax(700px,1fr)_600px] 2xl:items-start 2xl:gap-[9px] 2xl:overflow-hidden">
           <section
