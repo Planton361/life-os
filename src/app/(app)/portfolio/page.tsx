@@ -1,23 +1,17 @@
+import type { Metadata } from "next";
 import {
-  RouteSkeletonPage,
-  createRouteSkeletonMetadata,
-  type RouteSkeletonConfig,
-} from "@/components/layout/route-skeleton-page";
+  PortfolioPage as PortfolioWorkbenchPage,
+  getPortfolioViewModel,
+} from "@/features/portfolio";
 
-const routeConfig = {
-  title: "Portfolio",
-  eyebrow: "Entity overview",
-  summary:
-    "Portfolio will collect the active steering view for tasks, projects, goals, and skills without replacing their canonical workbenches.",
-  dataSource: "tasks, projects, goals, and skills.",
-  emptyTitle: "No portfolio overview connected yet",
-  emptyDescription:
-    "This skeleton keeps the Portfolio route available while the entity overview remains static.",
-  accent: "var(--accent-blue)",
-} satisfies RouteSkeletonConfig;
-
-export const metadata = createRouteSkeletonMetadata(routeConfig);
+export const metadata: Metadata = {
+  title: "Portfolio | Life OS",
+  description:
+    "Active workbench for tasks, projects, goals and skills in context.",
+};
 
 export default function PortfolioPage() {
-  return <RouteSkeletonPage config={routeConfig} />;
+  const viewModel = getPortfolioViewModel();
+
+  return <PortfolioWorkbenchPage viewModel={viewModel} />;
 }

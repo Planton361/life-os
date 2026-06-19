@@ -1,0 +1,76 @@
+import { Pill } from "@/components/layout/route-page-primitives";
+import { cn } from "@/lib/cn";
+import type { CalendarViewModel } from "../calendar-types";
+
+export function CalendarPageHeader({
+  header,
+}: Readonly<{
+  header: CalendarViewModel["header"];
+}>) {
+  return (
+    <header className="overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.72)] shadow-[0_8px_22px_rgba(0,0,0,.12)]">
+      <div className="grid gap-3 bg-[linear-gradient(90deg,rgba(95,200,215,.045),transparent_44%)] px-4 py-3 sm:px-4 xl:grid-cols-[minmax(0,1fr)_minmax(420px,auto)] xl:items-center">
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--accent-cyan)]">
+            {header.eyebrow}
+          </p>
+          <h1 className="mt-0.5 text-[28px] font-semibold leading-none text-[var(--text-primary)] sm:text-[30px]">
+            {header.title}
+          </h1>
+          <p className="mt-1.5 max-w-3xl text-xs leading-4 text-[var(--text-secondary)]">
+            {header.summary}
+          </p>
+        </div>
+
+        <div className="grid gap-1.5 xl:justify-items-end">
+          <div className="flex flex-wrap items-center gap-2">
+            <Pill quiet>{header.dateRange}</Pill>
+            <button
+              className="rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.82)] px-3 py-1 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[var(--border-default)] hover:bg-[rgba(23,34,53,.82)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+              type="button"
+            >
+              {header.controls.currentAction}
+            </button>
+            <button
+              aria-label="Previous week"
+              className="size-6 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.74)] text-[12px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+              type="button"
+            >
+              {"<"}
+            </button>
+            <button
+              aria-label="Next week"
+              className="size-6 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.74)] text-[12px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+              type="button"
+            >
+              {">"}
+            </button>
+          </div>
+
+          <div className="flex w-full min-w-0 flex-wrap rounded-full border border-[var(--border-subtle)] bg-[rgba(11,17,28,.72)] p-1 xl:w-[476px]">
+            {header.controls.views.map((view) => (
+              <button
+                aria-pressed={view.active ? "true" : "false"}
+                className={cn(
+                  "min-h-6 flex-1 rounded-full px-3 text-[10px] font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
+                  view.active
+                    ? "border border-[rgba(95,200,215,.28)] bg-[rgba(95,200,215,.16)] text-[var(--text-primary)]"
+                    : "border border-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)]",
+                )}
+                key={view.label}
+                type="button"
+              >
+                {view.label}
+              </button>
+            ))}
+          </div>
+
+          <p className="max-w-[476px] text-[10px] leading-4 text-[var(--text-faint)]">
+            Day, Month and Year are visible switches. Week is fully designed in
+            V1.
+          </p>
+        </div>
+      </div>
+    </header>
+  );
+}
