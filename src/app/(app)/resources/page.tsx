@@ -1,23 +1,17 @@
+import type { Metadata } from "next";
 import {
-  RouteSkeletonPage,
-  createRouteSkeletonMetadata,
-  type RouteSkeletonConfig,
-} from "@/components/layout/route-skeleton-page";
+  ResourcesPage as ResourcesWorkbenchPage,
+  getResourcesViewModel,
+} from "@/features/resources";
 
-const routeConfig = {
-  title: "Resources",
-  eyebrow: "Knowledge workbench",
-  summary:
-    "Resources will be the central workbench for reusable knowledge, references, materials, prompts, and source-backed notes.",
-  dataSource: "resources as the canonical knowledge and reference entity.",
-  emptyTitle: "No resources connected yet",
-  emptyDescription:
-    "This skeleton reserves the Resources route before capture, search, and relationship views are implemented.",
-  accent: "var(--accent-cyan)",
-} satisfies RouteSkeletonConfig;
-
-export const metadata = createRouteSkeletonMetadata(routeConfig);
+export const metadata: Metadata = {
+  title: "Resources | Life OS",
+  description:
+    "Knowledge library for reusable resources, prompts, research notes and learnings.",
+};
 
 export default function ResourcesPage() {
-  return <RouteSkeletonPage config={routeConfig} />;
+  const viewModel = getResourcesViewModel();
+
+  return <ResourcesWorkbenchPage viewModel={viewModel} />;
 }

@@ -323,7 +323,7 @@ function FieldSurface({
       </span>
       <textarea
         className={cn(
-          "mt-1.5 w-full resize-none rounded-[14px] border border-[var(--border-subtle)] border-l-[3px] border-l-[var(--accent-cyan)] bg-[rgba(18,28,43,.64)] px-3 py-2 text-[13px] leading-5 text-[var(--text-secondary)]",
+          "mt-1.5 w-full resize-none rounded-[14px] border border-[var(--border-default)] bg-[rgba(18,28,43,.64)] px-3 py-2 text-[13px] leading-5 text-[var(--text-secondary)]",
           className,
           focusClasses,
         )}
@@ -381,12 +381,13 @@ function InboxPlanningSignals({
       <div className="mt-2.5 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
         {signals.map((signal) => (
           <article
-            className="rounded-[14px] border border-[var(--border-subtle)] border-l-[3px] border-l-[var(--accent)] bg-[rgba(15,23,36,.70)] px-3 py-2"
+            className="rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.70)] px-3 py-2"
             key={signal.label}
             style={accentStyle(signal.accent)}
           >
-            <p className="text-[10px] font-medium text-[var(--text-muted)]">
-              {signal.label}
+            <p className="flex items-center gap-1.5 text-[10px] font-medium text-[var(--text-muted)]">
+              <Dot accent={signal.accent} className="size-1.5 opacity-75" />
+              <span>{signal.label}</span>
             </p>
             <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
               {signal.value}
