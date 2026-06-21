@@ -48,6 +48,8 @@ export function CalendarWeekSurface({
           <span>Current time {viewModel.currentTime.label}</span>
           <span aria-hidden="true">·</span>
           <span>Selected Thu 12</span>
+          <span aria-hidden="true">·</span>
+          <span>Create from slot in right panel</span>
         </div>
       </div>
 
@@ -169,13 +171,15 @@ export function CalendarWeekSurface({
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--border-subtle)] px-3 py-2">
             <div className="flex flex-wrap gap-2.5 text-[10px] text-[var(--text-muted)]">
               {[
-                ["Meeting", "var(--accent-green)"],
-                ["Task", "var(--accent-blue)"],
-                ["Project", "var(--accent-cyan)"],
+                ["Event", "var(--accent-green)"],
+                ["Task Block", "var(--accent-blue)"],
+                ["Focus Block", "var(--accent-cyan)"],
+                ["Batch Block", "var(--accent-purple)"],
+                ["Routine", "var(--accent-orange)"],
                 ["Meal", "var(--accent-yellow)"],
-                ["Health", "var(--accent-red)"],
+                ["Workout", "var(--accent-red)"],
                 ["Review", "var(--accent-cyan)"],
-                ["Free Time", "var(--text-faint)"],
+                ["Deadline / Reminder", "var(--accent-orange)"],
               ].map(([label, accent]) => (
                 <span className="inline-flex items-center gap-1.5" key={label}>
                   <span

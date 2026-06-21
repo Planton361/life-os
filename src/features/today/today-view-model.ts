@@ -11,13 +11,58 @@ export type TodayHeaderViewModel = {
   statusPills: TodayStatusPillViewModel[];
 };
 
+export type TodayActivityStatus =
+  | "planned"
+  | "current"
+  | "completed"
+  | "logged"
+  | "shifted"
+  | "needs_review";
+
+export type TodayActivityEventType =
+  | "task"
+  | "ritual"
+  | "capture"
+  | "decision"
+  | "artifact"
+  | "resource"
+  | "health"
+  | "review"
+  | "project";
+
+export type TodayLinkedEntityType =
+  | "task"
+  | "inbox_item"
+  | "project"
+  | "note"
+  | "resource"
+  | "review";
+
 export type TodayActivityEventViewModel = {
-  time: string;
-  type: string;
+  id: string;
+  timeLabel: string;
+  dateTime?: string;
+  status: TodayActivityStatus;
+  statusLabel: string;
+  eventType: TodayActivityEventType;
+  eventTypeLabel: string;
   title: string;
-  source: string;
-  status: string;
+  description: string;
+  sourceLabel: string;
+  areaLabel?: string;
+  linkedEntityType?: TodayLinkedEntityType;
+  linkedEntityId?: string;
+  sourceHref?: string;
+  sourceActionLabel: string;
   accent: string;
+};
+
+export type TodayActivityStreamSectionViewModel = {
+  id: "current" | "planned" | "actual";
+  title: string;
+  subtitle: string;
+  accent: string;
+  events: TodayActivityEventViewModel[];
 };
 
 export type TodayDeltaMetricViewModel = {
@@ -64,7 +109,7 @@ export type TodayViewModel = {
   activityStream: {
     title: "Activity Stream";
     subtitle: string;
-    events: TodayActivityEventViewModel[];
+    sections: TodayActivityStreamSectionViewModel[];
   };
   openingReview: {
     title: "Opening Review / Morning Context";
@@ -117,126 +162,258 @@ export function getTodayViewModel(): TodayViewModel {
       dateLabel: "Tuesday, 09 June · Work / Study Day",
       statusPills: [
         {
-          label: "12 events",
+          label: "11 events",
           accent: "var(--accent-cyan)",
         },
         {
-          label: "5 captures",
+          label: "3 planned",
           accent: "var(--accent-blue)",
         },
         {
-          label: "3 completed",
+          label: "1 current",
+          accent: "var(--accent-purple)",
+        },
+        {
+          label: "6 actual",
           accent: "var(--accent-green)",
         },
         {
-          label: "2 decisions",
+          label: "1 shifted",
           accent: "var(--accent-orange)",
-        },
-        {
-          label: "review open",
-          accent: "var(--accent-purple)",
         },
       ],
     },
     activityStream: {
       title: "Activity Stream",
-      subtitle: "Chronological system events from the day.",
-      events: [
+      subtitle:
+        "Planned work separated from completed and logged day evidence.",
+      sections: [
         {
-          time: "08:14",
-          type: "Task completed",
-          title: "Morning baseline checked",
-          source: "Tasks · Personal",
-          status: "completed",
-          accent: "var(--accent-green)",
+          id: "current",
+          title: "Now / Next",
+          subtitle: "The active or immediately available day context.",
+          accent: "var(--accent-purple)",
+          events: [
+            {
+              id: "morning-briefing",
+              timeLabel: "Now",
+              status: "current",
+              statusLabel: "current",
+              eventType: "ritual",
+              eventTypeLabel: "Ritual task",
+              title: "Morning Briefing",
+              description: "Open the day context before pulling more work in.",
+              sourceLabel: "Today",
+              areaLabel: "Daily control",
+              linkedEntityType: "review",
+              linkedEntityId: "today-morning-briefing",
+              sourceActionLabel: "Ritual context ready",
+              accent: "var(--accent-purple)",
+            },
+          ],
         },
         {
-          time: "09:32",
-          type: "Quick Thought captured",
-          title: "Supabase RLS setup question",
-          source: "Inbox · Coding",
-          status: "needs review",
-          accent: "var(--accent-cyan)",
-        },
-        {
-          time: "10:18",
-          type: "Resource added",
-          title: "Literature chapter source",
-          source: "Resources · Education",
-          status: "linked",
-          accent: "var(--accent-yellow)",
-        },
-        {
-          time: "11:04",
-          type: "Decision made",
-          title: "Command Center stays dashboard-only",
-          source: "Design · IA",
-          status: "decision",
-          accent: "var(--accent-orange)",
-        },
-        {
-          time: "13:40",
-          type: "Meal logged",
-          title: "Steak salad recorded with macros",
-          source: "Nutrition",
-          status: "added",
-          accent: "var(--accent-yellow)",
-        },
-        {
-          time: "15:12",
-          type: "Project movement",
-          title: "Life OS moved from routing to page design",
-          source: "Portfolio · Coding",
-          status: "progress",
+          id: "planned",
+          title: "Upcoming / Planned",
+          subtitle:
+            "Open tasks, focus blocks and known commitments still in the day.",
           accent: "var(--accent-blue)",
+          events: [
+            {
+              id: "literature-focus-block",
+              timeLabel: "09:00-10:30",
+              status: "planned",
+              statusLabel: "planned",
+              eventType: "task",
+              eventTypeLabel: "Focus block",
+              title: "Revise literature structure",
+              description:
+                "Turn open source notes into the next thesis outline pass.",
+              sourceLabel: "Tasks",
+              areaLabel: "Education",
+              linkedEntityType: "task",
+              linkedEntityId: "task-literature-structure",
+              sourceHref: "/tasks",
+              sourceActionLabel: "Open source",
+              accent: "var(--accent-blue)",
+            },
+            {
+              id: "run-after-work",
+              timeLabel: "17:30",
+              dateTime: "17:30",
+              status: "planned",
+              statusLabel: "planned",
+              eventType: "health",
+              eventTypeLabel: "Training plan",
+              title: "Easy run after work block",
+              description:
+                "Keep the health signal visible without turning Today into analytics.",
+              sourceLabel: "Running Tracker",
+              areaLabel: "Health",
+              linkedEntityType: "task",
+              linkedEntityId: "task-easy-run",
+              sourceHref: "/health/running",
+              sourceActionLabel: "Open source",
+              accent: "var(--accent-red)",
+            },
+            {
+              id: "resource-tag-review",
+              timeLabel: "After lunch",
+              status: "planned",
+              statusLabel: "planned",
+              eventType: "resource",
+              eventTypeLabel: "Resource review",
+              title: "Tag the new Supabase notes",
+              description:
+                "Classify captured setup notes before they become loose knowledge.",
+              sourceLabel: "Resources",
+              areaLabel: "Coding",
+              linkedEntityType: "resource",
+              linkedEntityId: "resource-supabase-rls",
+              sourceHref: "/resources",
+              sourceActionLabel: "Open source",
+              accent: "var(--accent-cyan)",
+            },
+            {
+              id: "weekly-route-check",
+              timeLabel: "18:45",
+              dateTime: "18:45",
+              status: "shifted",
+              statusLabel: "shifted",
+              eventType: "task",
+              eventTypeLabel: "Task shifted",
+              title: "Check Calendar review panel copy",
+              description:
+                "Moved to tomorrow so the Activity Stream can stay focused.",
+              sourceLabel: "Tasks",
+              areaLabel: "Review",
+              linkedEntityType: "task",
+              linkedEntityId: "task-calendar-review-copy",
+              sourceHref: "/tasks",
+              sourceActionLabel: "Open source",
+              accent: "var(--accent-orange)",
+            },
+          ],
         },
         {
-          time: "16:20",
-          type: "Mood changed",
-          title: "Content · focus stable, stress visible",
-          source: "Mental Health",
-          status: "signal",
+          id: "actual",
+          title: "Completed / Logged",
+          subtitle: "Actual events from the day, including non-task records.",
           accent: "var(--accent-green)",
-        },
-        {
-          time: "17:08",
-          type: "Note created",
-          title: "Today concept correction",
-          source: "Notes · Product",
-          status: "captured",
-          accent: "var(--accent-purple)",
-        },
-        {
-          time: "18:05",
-          type: "Run recorded",
-          title: "6.2 km · above 7-day rhythm",
-          source: "Health · Running",
-          status: "activity",
-          accent: "var(--accent-red)",
-        },
-        {
-          time: "19:10",
-          type: "Artifact saved",
-          title: "Dashboard route link pass",
-          source: "Screenshot · Evidence",
-          status: "evidence",
-          accent: "var(--accent-cyan)",
-        },
-        {
-          time: "20:24",
-          type: "Habit checked",
-          title: "Evening anti-rot action completed",
-          source: "Habits",
-          status: "completed",
-          accent: "var(--accent-green)",
-        },
-        {
-          time: "21:30",
-          type: "Review started",
-          title: "Daily Review panel opened",
-          source: "Review · Today",
-          status: "open",
-          accent: "var(--accent-purple)",
+          events: [
+            {
+              id: "morning-baseline-completed",
+              timeLabel: "08:14",
+              dateTime: "08:14",
+              status: "completed",
+              statusLabel: "completed",
+              eventType: "task",
+              eventTypeLabel: "Task completed",
+              title: "Morning baseline checked",
+              description:
+                "Personal startup task finished and recorded as actual work.",
+              sourceLabel: "Tasks",
+              areaLabel: "Personal",
+              linkedEntityType: "task",
+              linkedEntityId: "task-morning-baseline",
+              sourceHref: "/tasks",
+              sourceActionLabel: "Open source",
+              accent: "var(--accent-green)",
+            },
+            {
+              id: "supabase-question-captured",
+              timeLabel: "09:32",
+              dateTime: "09:32",
+              status: "needs_review",
+              statusLabel: "needs review",
+              eventType: "capture",
+              eventTypeLabel: "Quick Thought captured",
+              title: "Supabase RLS setup question",
+              description:
+                "Captured to Inbox as a coding question, not a completed task.",
+              sourceLabel: "Inbox",
+              areaLabel: "Coding",
+              linkedEntityType: "inbox_item",
+              linkedEntityId: "inbox-supabase-rls",
+              sourceHref: "/inbox",
+              sourceActionLabel: "Open source",
+              accent: "var(--accent-cyan)",
+            },
+            {
+              id: "command-center-decision",
+              timeLabel: "11:04",
+              dateTime: "11:04",
+              status: "logged",
+              statusLabel: "logged",
+              eventType: "decision",
+              eventTypeLabel: "Decision made",
+              title: "Command Center stays dashboard-only",
+              description:
+                "IA boundary recorded so Today remains the day archive.",
+              sourceLabel: "Design",
+              areaLabel: "IA",
+              linkedEntityType: "note",
+              linkedEntityId: "note-command-center-boundary",
+              sourceActionLabel: "Source link prepared",
+              accent: "var(--accent-orange)",
+            },
+            {
+              id: "life-os-project-movement",
+              timeLabel: "15:12",
+              dateTime: "15:12",
+              status: "logged",
+              statusLabel: "logged",
+              eventType: "project",
+              eventTypeLabel: "Project movement",
+              title: "Life OS moved from routing to page design",
+              description:
+                "Project state changed after the page contract pass.",
+              sourceLabel: "Portfolio",
+              areaLabel: "Coding",
+              linkedEntityType: "project",
+              linkedEntityId: "project-life-os",
+              sourceHref: "/projects",
+              sourceActionLabel: "Open source",
+              accent: "var(--accent-blue)",
+            },
+            {
+              id: "dashboard-route-artifact",
+              timeLabel: "19:10",
+              dateTime: "19:10",
+              status: "logged",
+              statusLabel: "logged",
+              eventType: "artifact",
+              eventTypeLabel: "Artifact saved",
+              title: "Dashboard route link pass",
+              description: "Screenshot evidence saved for later review.",
+              sourceLabel: "Evidence",
+              areaLabel: "Artifact",
+              linkedEntityType: "resource",
+              linkedEntityId: "artifact-dashboard-route-link",
+              sourceHref: "/resources",
+              sourceActionLabel: "Open source",
+              accent: "var(--accent-cyan)",
+            },
+            {
+              id: "daily-review-opened",
+              timeLabel: "21:30",
+              dateTime: "21:30",
+              status: "logged",
+              statusLabel: "open",
+              eventType: "review",
+              eventTypeLabel: "Review started",
+              title: "Daily Review panel opened",
+              description:
+                "Review is started, with carry-forward handled below the stream.",
+              sourceLabel: "Review",
+              areaLabel: "Today",
+              linkedEntityType: "review",
+              linkedEntityId: "review-daily-2026-06-09",
+              sourceHref: "/review/daily",
+              sourceActionLabel: "Open source",
+              accent: "var(--accent-purple)",
+            },
+          ],
         },
       ],
     },
@@ -288,38 +465,38 @@ export function getTodayViewModel(): TodayViewModel {
       metrics: [
         {
           label: "Tasks completed",
-          value: "3",
+          value: "1",
           detail: "From task events",
           accent: "var(--accent-green)",
         },
         {
-          label: "Inbox created",
-          value: "5",
-          detail: "Needs clarification",
-          accent: "var(--accent-cyan)",
-        },
-        {
-          label: "Resources added",
-          value: "2",
-          detail: "Linked to coding",
-          accent: "var(--accent-yellow)",
-        },
-        {
-          label: "Project movement",
-          value: "1",
-          detail: "Routing to design",
+          label: "Tasks still planned",
+          value: "3",
+          detail: "Open today",
           accent: "var(--accent-blue)",
         },
         {
-          label: "Habits checked",
-          value: "5 / 7",
-          detail: "2 still open",
-          accent: "var(--accent-green)",
+          label: "Shifted tasks",
+          value: "1",
+          detail: "Moved forward",
+          accent: "var(--accent-orange)",
         },
         {
-          label: "Note created",
+          label: "Inbox captures",
           value: "1",
-          detail: "Today concept note",
+          detail: "Needs review",
+          accent: "var(--accent-cyan)",
+        },
+        {
+          label: "Artifacts logged",
+          value: "1",
+          detail: "Evidence linked",
+          accent: "var(--accent-yellow)",
+        },
+        {
+          label: "Review opened",
+          value: "1",
+          detail: "Carry-forward pending",
           accent: "var(--accent-purple)",
         },
       ],
@@ -331,29 +508,25 @@ export function getTodayViewModel(): TodayViewModel {
         {
           label: "Decision 1",
           title: "Today mode",
-          description:
-            "Day Memory Log, not a second cockpit.",
+          description: "Day Memory Log, not a second cockpit.",
           accent: "var(--accent-orange)",
         },
         {
           label: "Decision 2",
           title: "Route boundary",
-          description:
-            "Calendar owns time; Today owns day evidence.",
+          description: "Calendar owns time; Today owns day evidence.",
           accent: "var(--accent-cyan)",
         },
         {
           label: "Decision 3",
           title: "Sleep IA",
-          description:
-            "Sleep stays a signal, not a sidebar page.",
+          description: "Sleep stays a signal, not a sidebar page.",
           accent: "var(--accent-green)",
         },
         {
           label: "Decision 4",
           title: "Implementation gate",
-          description:
-            "Implementation waits for accepted design.",
+          description: "Implementation waits for accepted design.",
           accent: "var(--accent-purple)",
         },
       ],
@@ -369,19 +542,16 @@ export function getTodayViewModel(): TodayViewModel {
         },
         {
           label: "Tomorrow candidate",
-          description:
-            "Prepare next Codex prompt after review.",
+          description: "Prepare next Codex prompt after review.",
           accent: "var(--accent-blue)",
         },
         {
           label: "Needs review",
-          description:
-            "Confirm Today vs Calendar Day Detail.",
+          description: "Confirm Today vs Calendar Day Detail.",
           accent: "var(--accent-orange)",
         },
       ],
-      firstMove:
-        "Compare Today V1/V2 and decide keep/remove.",
+      firstMove: "Compare Today V1/V2 and decide keep/remove.",
     },
     closingReview: {
       title: "Closing Review / Day Closeout",
@@ -456,8 +626,7 @@ export function getTodayViewModel(): TodayViewModel {
       ],
     },
     contract: {
-      text:
-        "Today links activity events, decisions, artifacts and day signals. It does not replace Dashboard, Calendar or domain pages.",
+      text: "Today links activity events, decisions, artifacts and day signals. It does not replace Dashboard, Calendar or domain pages.",
       pills: [
         {
           label: "Day Memory",

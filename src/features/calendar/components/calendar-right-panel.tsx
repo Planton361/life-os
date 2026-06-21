@@ -1,11 +1,19 @@
+import Link from "next/link";
 import { Pill, accentStyle } from "@/components/layout/route-page-primitives";
+import {
+  calendarBlockSourceLabels,
+  calendarBlockStatusLabels,
+  calendarBlockTypeLabels,
+} from "../calendar-types";
 import type {
   CalendarAllDayBlockViewModel,
   CalendarContextListItemViewModel,
+  CalendarPlanningAssistantSuggestionViewModel,
   CalendarReviewMetricViewModel,
   CalendarRightPanelViewModel,
   CalendarTimedBlockViewModel,
 } from "../calendar-types";
+import { CalendarCreateActionButtons } from "./calendar-create-flow";
 
 function ReviewMetricCard({
   metric,
@@ -95,6 +103,11 @@ function SelectedBlockDetails({
 }: Readonly<{
   block: CalendarAllDayBlockViewModel | CalendarTimedBlockViewModel;
 }>) {
+  const timeLabel =
+    "startTime" in block
+      ? `${block.startTime}-${block.endTime}`
+      : block.timeLabel ?? "All day";
+
   return (
     <section
       aria-labelledby="selected-block-heading"
@@ -111,26 +124,234 @@ function SelectedBlockDetails({
         {block.title}
       </h3>
       <div className="mt-2 flex flex-wrap gap-1.5">
-        <Pill accent={block.accent}>{block.kind}</Pill>
-        <Pill accent={block.accent}>{block.status}</Pill>
+        <Pill accent={block.accent}>{calendarBlockTypeLabels[block.type]}</Pill>
+        <Pill accent={block.accent}>
+          {calendarBlockStatusLabels[block.status]}
+        </Pill>
       </div>
       <dl className="mt-2.5 grid gap-1 text-[11px] leading-4 text-[var(--text-secondary)]">
         <div>
+          <dt className="inline text-[var(--text-muted)]">Time: </dt>
+          <dd className="inline">{timeLabel}</dd>
+        </div>
+        <div>
           <dt className="inline text-[var(--text-muted)]">Type: </dt>
-          <dd className="inline">{block.kind}</dd>
+          <dd className="inline">{calendarBlockTypeLabels[block.type]}</dd>
         </div>
         <div>
           <dt className="inline text-[var(--text-muted)]">Status: </dt>
-          <dd className="inline">{block.status}</dd>
+          <dd className="inline">{calendarBlockStatusLabels[block.status]}</dd>
         </div>
         <div>
           <dt className="inline text-[var(--text-muted)]">Source: </dt>
-          <dd className="inline">{block.sourceEntity.label}</dd>
+          <dd className="inline">
+            {calendarBlockSourceLabels[block.source]} / {block.sourceEntity.label}
+          </dd>
+        </div>
+        <div>
+          <dt className="inline text-[var(--text-muted)]">Area: </dt>
+          <dd className="inline">{block.area}</dd>
+        </div>
+        <div>
+          <dt className="inline text-[var(--text-muted)]">Linked entity: </dt>
+          <dd className="inline">{block.linkedEntity ?? block.sourceEntity.label}</dd>
+        </div>
+        <div>
+          <dt className="inline text-[var(--text-muted)]">Planned outcome: </dt>
+          <dd className="inline">
+            {block.plannedOutcome ?? "Prepared for later scheduling."}
+          </dd>
         </div>
       </dl>
       <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
         Calendar stores the time projection, not a duplicate project record.
       </p>
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {block.sourceEntity.href ? (
+          <Link
+            className="rounded-full border border-[color-mix(in_srgb,var(--accent)_28%,transparent)] bg-[rgba(18,28,43,.72)] px-2.5 py-1 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[color-mix(in_srgb,var(--accent)_44%,transparent)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+            href={block.sourceEntity.href}
+          >
+            Open source
+          </Link>
+        ) : (
+          <button
+            className="rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-2.5 py-1 text-[10px] font-semibold text-[var(--text-muted)]"
+            type="button"
+          >
+            Open source
+          </button>
+        )}
+        {["Mark done", "Move", "Duplicate", "Convert to recurring"].map(
+          (action) => (
+            <button
+              className="cursor-not-allowed rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.42)] px-2.5 py-1 text-[10px] font-semibold text-[var(--text-muted)]"
+              disabled
+              key={action}
+              type="button"
+            >
+              {action}
+            </button>
+          ),
+        )}
+      </div>
+    </section>
+  );
+}
+
+function SelectedDayActions({
+  panel,
+}: Readonly<{
+  panel: CalendarRightPanelViewModel;
+}>) {
+  return (
+    <section
+      aria-labelledby="selected-day-actions-heading"
+      className="rounded-[12px] border border-[rgba(95,200,215,.14)] bg-[rgba(11,17,28,.46)] p-3"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3
+            className="text-[13px] font-semibold text-[var(--text-primary)]"
+            id="selected-day-actions-heading"
+          >
+            Selected Day Actions
+          </h3>
+          <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
+            Create controls are prepared only. They do not apply planning changes automatically.
+          </p>
+        </div>
+        <Pill accent="var(--accent-cyan)">manual</Pill>
+      </div>
+      <div className="mt-2 grid gap-2">
+        <CalendarCreateActionButtons
+          defaults={panel.selectedTimeSlot}
+          types={["event", "task_block", "batch_block", "deadline"]}
+        />
+        <Link
+          className="inline-flex min-h-8 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.76)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+          href="/today"
+        >
+          Open Today record
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+function SelectedTimeSlot({
+  panel,
+}: Readonly<{
+  panel: CalendarRightPanelViewModel;
+}>) {
+  return (
+    <section
+      aria-labelledby="selected-time-slot-heading"
+      className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.38)] p-3"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-faint)]">
+            {panel.selectedTimeSlot.label}
+          </p>
+          <h3
+            className="mt-0.5 text-[13px] font-semibold text-[var(--text-primary)]"
+            id="selected-time-slot-heading"
+          >
+            {panel.selectedTimeSlot.dayLabel} · {panel.selectedTimeSlot.startTime}-
+            {panel.selectedTimeSlot.endTime}
+          </h3>
+          <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
+            The current grid is block-based, so slot creation is exposed here instead of using fragile click coordinates.
+          </p>
+        </div>
+      </div>
+      <div className="mt-2">
+        <CalendarCreateActionButtons
+          defaults={panel.selectedTimeSlot}
+          types={["event", "task_block", "focus_block", "batch_block"]}
+        />
+      </div>
+    </section>
+  );
+}
+
+function PlanningAssistantSuggestion({
+  suggestion,
+}: Readonly<{
+  suggestion: CalendarPlanningAssistantSuggestionViewModel;
+}>) {
+  return (
+    <article
+      className="grid min-h-9 grid-cols-[8px_minmax(0,1fr)] gap-2"
+      style={accentStyle(suggestion.accent)}
+    >
+      <span
+        aria-hidden="true"
+        className="mt-1.5 size-1.5 rounded-full bg-[var(--accent)]"
+      />
+      <div className="min-w-0">
+        <p className="truncate text-[11px] font-medium text-[var(--text-secondary)]">
+          {suggestion.title}
+        </p>
+        <p className="truncate text-[10px] leading-4 text-[var(--text-muted)]">
+          {calendarBlockSourceLabels[suggestion.source]} /{" "}
+          {calendarBlockStatusLabels[suggestion.status]} - {suggestion.meta}
+        </p>
+      </div>
+    </article>
+  );
+}
+
+function PlanningAssistant({
+  panel,
+}: Readonly<{
+  panel: CalendarRightPanelViewModel;
+}>) {
+  return (
+    <section
+      aria-labelledby="planning-assistant-heading"
+      className="rounded-[12px] border border-[rgba(95,200,215,.14)] bg-[rgba(11,17,28,.42)] p-3"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3
+            className="text-[13px] font-semibold text-[var(--text-primary)]"
+            id="planning-assistant-heading"
+          >
+            {panel.planningAssistant.title}
+          </h3>
+          <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
+            Suggestions are visible drafts only. Nothing is created unless the user chooses a create action later.
+          </p>
+        </div>
+        <Pill accent="var(--accent-cyan)">
+          {panel.planningAssistant.status}
+        </Pill>
+      </div>
+      <div className="mt-2 grid gap-1.5">
+        {panel.planningAssistant.suggestions.map((suggestion) => (
+          <PlanningAssistantSuggestion
+            key={suggestion.title}
+            suggestion={suggestion}
+          />
+        ))}
+      </div>
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        <button
+          className="rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-2.5 py-1 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+          type="button"
+        >
+          Review suggestions
+        </button>
+        <button
+          className="cursor-not-allowed rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.42)] px-2.5 py-1 text-[10px] font-semibold text-[var(--text-muted)]"
+          disabled
+          type="button"
+        >
+          Apply selected
+        </button>
+      </div>
     </section>
   );
 }
@@ -171,7 +392,7 @@ export function CalendarRightPanel({
           ))}
         </div>
 
-        <div className="grid gap-2 xl:grid-cols-3">
+        <div className="grid gap-2 sm:grid-cols-2">
           <ContextList
             accent="var(--accent-red)"
             countLabel="5 open"
@@ -179,16 +400,27 @@ export function CalendarRightPanel({
             title="Open Loops"
           />
           <ContextList
-            accent="var(--accent-green)"
-            countLabel="3 wins"
-            items={panel.recentWins}
-            title="Recent Wins"
+            accent="var(--accent-blue)"
+            countLabel="2 unscheduled"
+            items={panel.unscheduledTasks}
+            title="Unscheduled Tasks"
+          />
+          <ContextList
+            accent="var(--accent-cyan)"
+            countLabel="2 open"
+            items={panel.reviewsOpen}
+            title="Reviews Open"
           />
           <ContextList
             accent="var(--accent-orange)"
-            items={panel.carryForward}
-            title="Carry Forward"
+            items={panel.suggestedPlanningActions}
+            title="Suggested Planning Actions"
           />
+        </div>
+
+        <div className="grid gap-2 xl:grid-cols-[minmax(0,1.08fr)_minmax(0,.92fr)]">
+          <SelectedDayActions panel={panel} />
+          <SelectedTimeSlot panel={panel} />
         </div>
 
         <div className="grid gap-2 xl:grid-cols-[minmax(0,1.08fr)_minmax(0,.92fr)]">
@@ -232,6 +464,8 @@ export function CalendarRightPanel({
             </div>
           </section>
         </div>
+
+        <PlanningAssistant panel={panel} />
       </div>
     </aside>
   );

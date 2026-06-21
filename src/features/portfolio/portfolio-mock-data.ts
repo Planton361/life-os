@@ -78,7 +78,8 @@ export const portfolioEntities: PortfolioEntity[] = [
       { label: "Calendar", href: "/calendar" },
       { label: "Project / Life OS App", href: "/projects" },
     ],
-    noteSnippet: "Use Calendar for time projection, not duplicated project data.",
+    noteSnippet:
+      "Use Calendar for time projection, not duplicated project data.",
   },
   {
     id: "task-portfolio-figma",
@@ -150,7 +151,8 @@ export const portfolioEntities: PortfolioEntity[] = [
     id: "task-literature-source",
     type: "task",
     title: "Literature source deadline klaeren",
-    description: "Confirm whether the next literature source blocks thesis work.",
+    description:
+      "Confirm whether the next literature source blocks thesis work.",
     area: "education",
     status: "blocked",
     priority: "P1",
@@ -187,7 +189,8 @@ export const portfolioEntities: PortfolioEntity[] = [
     id: "task-hyperskill",
     type: "task",
     title: "Hyperskill lesson block abschliessen",
-    description: "Finish one contained Java learning block without scope creep.",
+    description:
+      "Finish one contained Java learning block without scope creep.",
     area: "education",
     status: "in_progress",
     priority: "P2",
@@ -366,7 +369,10 @@ export const portfolioEntities: PortfolioEntity[] = [
       },
     ],
     sourceLinks: [
-      { label: "Education / Scientific Work", href: "/education/scientific-work" },
+      {
+        label: "Education / Scientific Work",
+        href: "/education/scientific-work",
+      },
       { label: "Education / Literature", href: "/education/literature" },
       { label: "Goals", href: "/goals" },
     ],
@@ -404,7 +410,7 @@ export const portfolioEntities: PortfolioEntity[] = [
   {
     id: "project-fi-work-notes",
     type: "project",
-    title: "Finanzinformatik Work Notes",
+    title: "Finanzinformatik notes aufbereiten",
     description: "Work notes, decisions and reusable context for FI tasks.",
     area: "work",
     status: "review_open",
@@ -505,7 +511,10 @@ export const portfolioEntities: PortfolioEntity[] = [
       },
     ],
     sourceLinks: [
-      { label: "Education / Scientific Work", href: "/education/scientific-work" },
+      {
+        label: "Education / Scientific Work",
+        href: "/education/scientific-work",
+      },
       { label: "Education / Literature", href: "/education/literature" },
       { label: "Projects", href: "/projects" },
     ],
@@ -517,15 +526,15 @@ export const portfolioEntities: PortfolioEntity[] = [
     title: "Fitness-Routine stabilisieren",
     description: "Make health actions consistent without overloading the day.",
     area: "health",
-    status: "planned",
+    status: "active",
     priority: "P2",
     focusLevel: "medium",
     nextAction: "Plan one workout and one recovery cue",
-    dueLabel: "This week",
-    dueRank: 1,
+    dueLabel: "June support",
+    dueRank: 2,
     progress: 28,
     countLabel: "2 habits linked",
-    lastTouched: "4d ago",
+    lastTouched: "2d ago",
     recentRank: 18,
     reviewNeeded: false,
     blocked: false,
@@ -572,17 +581,17 @@ export const portfolioEntities: PortfolioEntity[] = [
   {
     id: "skill-figma-design",
     type: "skill",
-    title: "Figma Product Design",
-    description: "Use Figma to define calm, buildable Life OS pages.",
+    title: "Figma Layout Practice",
+    description: "Practice calm, buildable Life OS page layouts in Figma.",
     area: "coding",
     status: "practicing",
     priority: "P2",
     focusLevel: "medium",
-    nextAction: "Review Portfolio implementation against V5 rules",
+    nextAction: "Run a 30 min layout review against V5 rules",
     dueLabel: "This week",
     dueRank: 1,
     progress: 52,
-    countLabel: "2 sessions planned",
+    countLabel: "4 sessions planned",
     lastTouched: "today",
     recentRank: 16,
     reviewNeeded: true,
@@ -602,7 +611,14 @@ export const portfolioEntities: PortfolioEntity[] = [
       { label: "Skills", href: "/skills" },
       { label: "Portfolio", href: "/portfolio" },
     ],
-    noteSnippet: "Design work should constrain implementation, not decorate it.",
+    noteSnippet:
+      "Design work should constrain implementation, not decorate it.",
+    skillContext: {
+      practiceStatus: "practicing",
+      confidence: "medium",
+      nextSession: "30 min Portfolio layout review",
+      evidence: "Linked to Life OS App and Portfolio Page V1",
+    },
   },
   {
     id: "skill-java-hyperskill",
@@ -631,7 +647,14 @@ export const portfolioEntities: PortfolioEntity[] = [
       { label: "Education / Learning Log", href: "/education/learning-log" },
       { label: "Projects", href: "/projects" },
     ],
-    noteSnippet: "Small lessons keep the skill active without dominating Today.",
+    noteSnippet:
+      "Small lessons keep the skill active without dominating Today.",
+    skillContext: {
+      practiceStatus: "practicing",
+      confidence: "medium",
+      nextSession: "Finish one contained lesson block",
+      evidence: "Learning log plus Java / Hyperskill project",
+    },
   },
   {
     id: "skill-research-writing",
@@ -664,9 +687,18 @@ export const portfolioEntities: PortfolioEntity[] = [
     ],
     sourceLinks: [
       { label: "Education / Literature", href: "/education/literature" },
-      { label: "Education / Scientific Work", href: "/education/scientific-work" },
+      {
+        label: "Education / Scientific Work",
+        href: "/education/scientific-work",
+      },
     ],
     noteSnippet: "Writing skill is blocked by decision quality, not effort.",
+    skillContext: {
+      practiceStatus: "blocked practice",
+      confidence: "low",
+      nextSession: "Resolve source decision before writing drill",
+      evidence: "Linked to Masterarbeit goal and project",
+    },
   },
   {
     id: "skill-ai-agent-workflow",
@@ -702,5 +734,11 @@ export const portfolioEntities: PortfolioEntity[] = [
       { label: "Resources", href: "/resources" },
     ],
     noteSnippet: "Agent capability stays bounded by root truths and reviews.",
+    skillContext: {
+      practiceStatus: "practicing",
+      confidence: "medium",
+      nextSession: "Review one scoped Codex prompt",
+      evidence: "AI_WORKFLOW rules and Life OS App implementation loops",
+    },
   },
 ];

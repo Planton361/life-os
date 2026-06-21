@@ -1,6 +1,10 @@
 import type { CSSProperties } from "react";
 import { Pill, accentStyle } from "@/components/layout/route-page-primitives";
 import { cn } from "@/lib/cn";
+import {
+  calendarBlockStatusLabels,
+  calendarBlockTypeLabels,
+} from "../calendar-types";
 import type {
   CalendarAllDayBlockViewModel,
   CalendarTimedBlockViewModel,
@@ -11,7 +15,7 @@ type TimedBlockStyle = CSSProperties & {
 };
 
 function blockLabel(block: CalendarTimedBlockViewModel) {
-  return `${block.title}, ${block.startTime} to ${block.endTime}, ${block.kind}, ${block.status}, source ${block.sourceEntity.label}`;
+  return `${block.title}, ${block.startTime} to ${block.endTime}, ${calendarBlockTypeLabels[block.type]}, ${calendarBlockStatusLabels[block.status]}, source ${block.sourceEntity.label}, area ${block.area}`;
 }
 
 export function CalendarTimedBlock({
@@ -54,14 +58,15 @@ export function CalendarTimedBlock({
             />
           </div>
           <p className="mt-0.5 truncate text-[9px] font-medium leading-3 text-[var(--text-secondary)]">
-            {block.startTime}-{block.endTime} · {block.kind}
+            {block.startTime}-{block.endTime} ·{" "}
+            {calendarBlockTypeLabels[block.type]}
           </p>
           <p className="mt-0.5 truncate text-[9px] leading-3 text-[var(--text-muted)]">
-            {block.meta ?? block.sourceEntity.label}
+            {block.area} · {block.meta ?? block.sourceEntity.label}
           </p>
           <div className="mt-auto pt-1">
             <Pill accent={block.accent} quiet={block.status === "planned"}>
-              {block.status}
+              {calendarBlockStatusLabels[block.status]}
             </Pill>
           </div>
         </div>
@@ -80,10 +85,11 @@ export function CalendarTimedBlock({
           </div>
           <div className="flex min-w-0 items-center justify-between gap-1.5">
             <p className="min-w-0 truncate text-[9px] font-medium leading-3 text-[var(--text-secondary)]">
-              {block.startTime}-{block.endTime} · {block.kind}
+              {block.startTime}-{block.endTime} ·{" "}
+              {calendarBlockTypeLabels[block.type]}
             </p>
             <p className="shrink-0 truncate text-[9px] font-semibold leading-3 text-[var(--accent)]">
-              {block.status}
+              {calendarBlockStatusLabels[block.status]}
             </p>
           </div>
         </div>
@@ -95,7 +101,8 @@ export function CalendarTimedBlock({
             {block.title}
           </p>
           <p className="truncate text-[9px] font-medium leading-3 text-[var(--text-secondary)]">
-            {block.startTime}-{block.endTime} · {block.status}
+            {block.startTime}-{block.endTime} ·{" "}
+            {calendarBlockStatusLabels[block.status]}
           </p>
         </div>
       ) : null}
@@ -112,8 +119,8 @@ export function CalendarAllDayBlock({
 }>) {
   return (
     <article
-      aria-label={`${block.title}, all day, ${block.kind}, ${block.status}, source ${block.sourceEntity.label}`}
-      title={`${block.title}, ${block.status}, ${block.sourceEntity.label}`}
+      aria-label={`${block.title}, ${block.timeLabel ?? "all day"}, ${calendarBlockTypeLabels[block.type]}, ${calendarBlockStatusLabels[block.status]}, source ${block.sourceEntity.label}, area ${block.area}`}
+      title={`${block.title}, ${calendarBlockStatusLabels[block.status]}, ${block.sourceEntity.label}`}
       className={cn(
         "min-h-[38px] overflow-hidden rounded-[8px] border bg-[color-mix(in_srgb,var(--accent)_10%,rgba(18,28,43,.82))] px-1.5 py-1",
         selected
@@ -134,10 +141,10 @@ export function CalendarAllDayBlock({
         </div>
         <div className="flex min-w-0 items-center justify-between gap-1">
           <p className="min-w-0 truncate text-[9px] leading-3 text-[var(--text-muted)]">
-            {block.sourceEntity.label}
+            {block.timeLabel ?? "All day"} · {calendarBlockTypeLabels[block.type]}
           </p>
           <p className="shrink-0 truncate text-[9px] font-semibold leading-3 text-[var(--accent)]">
-            {block.status}
+            {calendarBlockStatusLabels[block.status]}
           </p>
         </div>
       </div>

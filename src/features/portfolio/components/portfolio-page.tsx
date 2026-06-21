@@ -8,10 +8,7 @@ import {
   normalizePortfolioSortMode,
   normalizePortfolioView,
 } from "../portfolio-routing";
-import {
-  portfolioPriorityRank,
-  portfolioStatusMeta,
-} from "../portfolio-style";
+import { portfolioPriorityRank, portfolioStatusMeta } from "../portfolio-style";
 import type {
   PortfolioEntity,
   PortfolioEntityType,
@@ -104,7 +101,10 @@ function matchesAreaQuery(entity: PortfolioEntity, area: string | null) {
   return !area || entity.area === area;
 }
 
-function matchesPriorityQuery(entity: PortfolioEntity, priority: string | null) {
+function matchesPriorityQuery(
+  entity: PortfolioEntity,
+  priority: string | null,
+) {
   return !priority || entity.priority.toLowerCase() === priority.toLowerCase();
 }
 
@@ -180,7 +180,9 @@ export function PortfolioPage({
 }>) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const activeView = normalizePortfolioView(searchParams.get("view"));
+  const activeView = normalizePortfolioView(
+    searchParams.get("type") ?? searchParams.get("view"),
+  );
   const activeFilter = normalizePortfolioScopeFilter(searchParams.get("scope"));
   const sortMode = normalizePortfolioSortMode(searchParams.get("sort"));
   const selectedEntityId = searchParams.get("selected");
@@ -198,14 +200,21 @@ export function PortfolioPage({
           matchesPriorityQuery(entity, priorityFilter) &&
           matchesReviewQuery(entity, reviewFilter),
       ),
-    [areaFilter, priorityFilter, reviewFilter, statusFilter, viewModel.entities],
+    [
+      areaFilter,
+      priorityFilter,
+      reviewFilter,
+      statusFilter,
+      viewModel.entities,
+    ],
   );
 
   const visibleEntities = useMemo(() => {
     return sortEntities(
       baseEntities.filter(
         (entity) =>
-          matchesView(entity, activeView) && matchesFilter(entity, activeFilter),
+          matchesView(entity, activeView) &&
+          matchesFilter(entity, activeFilter),
       ),
       sortMode,
     );
@@ -256,7 +265,8 @@ export function PortfolioPage({
         getViewHref={(view) =>
           createPortfolioHref(
             {
-              view,
+              type: view === "all" ? null : view,
+              view: null,
               selected: null,
             },
             searchParams,

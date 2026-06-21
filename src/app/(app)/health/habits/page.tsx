@@ -1,23 +1,15 @@
-import {
-  RouteSkeletonPage,
-  createRouteSkeletonMetadata,
-  type RouteSkeletonConfig,
-} from "@/components/layout/route-skeleton-page";
-
-const routeConfig = {
-  title: "Habits",
-  eyebrow: "Domain workbench",
-  summary:
-    "Habits will manage routines and habit logs as behavior signals that can appear in Today, Dashboard, Review, and Health views.",
-  dataSource: "habits and habit_logs.",
-  emptyTitle: "No habit workbench connected yet",
-  emptyDescription:
-    "This skeleton reserves the Habits route before habit definitions, logs, and review summaries exist.",
-  accent: "var(--accent-red)",
-} satisfies RouteSkeletonConfig;
-
-export const metadata = createRouteSkeletonMetadata(routeConfig);
+import type { Metadata } from "next";
+import { HabitsAnalyticsPage } from "@/features/health/habits/components/habits-analytics-page";
+import { getHabitsAnalyticsViewModel } from "@/features/health/habits/habits-view-model";
 
 export default function HabitsPage() {
-  return <RouteSkeletonPage config={routeConfig} />;
+  const viewModel = getHabitsAnalyticsViewModel();
+
+  return <HabitsAnalyticsPage viewModel={viewModel} />;
 }
+
+export const metadata: Metadata = {
+  title: "Habits | Life OS",
+  description:
+    "Habits V1 analytics detail page for rhythm, consistency and repair patterns.",
+};

@@ -2,6 +2,18 @@ export type PortfolioEntityType = "task" | "project" | "goal" | "skill";
 
 export type PortfolioView = "all" | "tasks" | "projects" | "goals" | "skills";
 
+export type PortfolioVisibilityReason =
+  | "blocked"
+  | "needs_decision"
+  | "needs_review"
+  | "high_focus"
+  | "due_this_week"
+  | "recently_touched"
+  | "stale"
+  | "in_motion";
+
+export type PortfolioGroup = "attention" | "in_motion" | "later_this_week";
+
 export type PortfolioArea =
   | "education"
   | "work"
@@ -57,6 +69,13 @@ export type PortfolioSourceLink = {
   href: `/${string}`;
 };
 
+export type PortfolioSkillContext = {
+  practiceStatus: string;
+  confidence: "low" | "medium" | "high";
+  nextSession: string;
+  evidence: string;
+};
+
 export type PortfolioEntity = {
   id: string;
   type: PortfolioEntityType;
@@ -79,6 +98,7 @@ export type PortfolioEntity = {
   decisions: PortfolioDecision[];
   sourceLinks: PortfolioSourceLink[];
   noteSnippet: string;
+  skillContext?: PortfolioSkillContext;
 };
 
 export type PortfolioOption<TValue extends string> = {

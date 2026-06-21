@@ -1,36 +1,97 @@
 export type CalendarSourceEntityType =
   | "project"
   | "task"
+  | "goal"
   | "review"
   | "meal"
   | "workout"
   | "meeting"
   | "free_event";
 
+export type CalendarBlockType =
+  | "event"
+  | "task_block"
+  | "focus_block"
+  | "batch_block"
+  | "routine"
+  | "deadline"
+  | "reminder"
+  | "review"
+  | "meal"
+  | "workout";
+
+export type CalendarCreateBlockType =
+  | "event"
+  | "task_block"
+  | "focus_block"
+  | "batch_block"
+  | "routine"
+  | "deadline"
+  | "reminder";
+
 export type CalendarBlockStatus =
   | "planned"
   | "active"
   | "done"
   | "moved"
-  | "needs decision"
-  | "review open"
-  | "deadline";
+  | "cancelled"
+  | "missed"
+  | "needs_decision"
+  | "draft";
 
-export type CalendarBlockKind =
-  | "Focus"
-  | "Meeting"
-  | "Health"
-  | "Project"
-  | "Meal"
-  | "Review"
-  | "Task"
-  | "Free"
-  | "Deadline"
-  | "Project Milestone";
+export type CalendarBlockSource =
+  | "manual"
+  | "task"
+  | "project"
+  | "goal"
+  | "inbox"
+  | "routine"
+  | "meal_planner"
+  | "health"
+  | "review"
+  | "agent_suggestion";
+
+export const calendarBlockTypeLabels = {
+  event: "Event",
+  task_block: "Task Block",
+  focus_block: "Focus Block",
+  batch_block: "Batch Block",
+  routine: "Routine",
+  deadline: "Deadline",
+  reminder: "Reminder",
+  review: "Review",
+  meal: "Meal",
+  workout: "Workout",
+} satisfies Record<CalendarBlockType, string>;
+
+export const calendarBlockStatusLabels = {
+  planned: "planned",
+  active: "active",
+  done: "done",
+  moved: "moved",
+  cancelled: "cancelled",
+  missed: "missed",
+  needs_decision: "needs decision",
+  draft: "draft",
+} satisfies Record<CalendarBlockStatus, string>;
+
+export const calendarBlockSourceLabels = {
+  manual: "manual",
+  task: "task",
+  project: "project",
+  goal: "goal",
+  inbox: "inbox",
+  routine: "routine",
+  meal_planner: "meal planner",
+  health: "health",
+  review: "review",
+  agent_suggestion: "agent suggestion",
+} satisfies Record<CalendarBlockSource, string>;
 
 export type CalendarSourceEntity = {
   type: CalendarSourceEntityType;
   label: string;
+  href?: string;
 };
 
 export type CalendarDayViewModel = {
@@ -74,11 +135,16 @@ export type CalendarBlockBase = {
   id: string;
   dayId: string;
   title: string;
-  kind: CalendarBlockKind;
+  type: CalendarBlockType;
   status: CalendarBlockStatus;
+  source: CalendarBlockSource;
+  area: string;
   sourceEntity: CalendarSourceEntity;
   accent: string;
   meta?: string;
+  linkedEntity?: string;
+  plannedOutcome?: string;
+  timeLabel?: string;
 };
 
 export type CalendarTimedBlockViewModel = CalendarBlockBase & {
@@ -107,13 +173,36 @@ export type CalendarContextListItemViewModel = {
   accent: string;
 };
 
+export type CalendarSelectedTimeSlotViewModel = {
+  label: string;
+  dayLabel: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+};
+
+export type CalendarPlanningAssistantSuggestionViewModel = {
+  title: string;
+  meta: string;
+  source: CalendarBlockSource;
+  status: CalendarBlockStatus;
+  accent: string;
+};
+
 export type CalendarRightPanelViewModel = {
   selectedDay: string;
   badge: string;
   metrics: CalendarReviewMetricViewModel[];
   openLoops: CalendarContextListItemViewModel[];
-  recentWins: CalendarContextListItemViewModel[];
-  carryForward: CalendarContextListItemViewModel[];
+  unscheduledTasks: CalendarContextListItemViewModel[];
+  reviewsOpen: CalendarContextListItemViewModel[];
+  suggestedPlanningActions: CalendarContextListItemViewModel[];
+  selectedTimeSlot: CalendarSelectedTimeSlotViewModel;
+  planningAssistant: {
+    title: "Planning Assistant";
+    status: "suggestions only";
+    suggestions: CalendarPlanningAssistantSuggestionViewModel[];
+  };
   weeklyReview: {
     title: string;
     status: string;

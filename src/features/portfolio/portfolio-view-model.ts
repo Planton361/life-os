@@ -9,11 +9,27 @@ import type {
 } from "./types";
 
 const views: PortfolioOption<PortfolioView>[] = [
-  { value: "all", label: "All" },
-  { value: "tasks", label: "Tasks" },
-  { value: "projects", label: "Projects" },
-  { value: "goals", label: "Goals" },
-  { value: "skills", label: "Skills" },
+  { value: "all", label: "All", description: "Unified active portfolio" },
+  {
+    value: "tasks",
+    label: "Tasks",
+    description: "Task filter inside Portfolio",
+  },
+  {
+    value: "projects",
+    label: "Projects",
+    description: "Project filter inside Portfolio",
+  },
+  {
+    value: "goals",
+    label: "Goals",
+    description: "Goal filter inside Portfolio",
+  },
+  {
+    value: "skills",
+    label: "Skills",
+    description: "Skill filter inside Portfolio",
+  },
 ];
 
 const filters: PortfolioOption<PortfolioScopeFilter>[] = [
@@ -48,7 +64,9 @@ const sorts: PortfolioOption<PortfolioSortMode>[] = [
   },
 ];
 
-function countBy(predicate: (entity: (typeof portfolioEntities)[number]) => boolean) {
+function countBy(
+  predicate: (entity: (typeof portfolioEntities)[number]) => boolean,
+) {
   return portfolioEntities.filter(predicate).length;
 }
 
@@ -107,8 +125,8 @@ export function getPortfolioViewModel(): PortfolioViewModel {
       eyebrow: "Workbench",
       title: "Portfolio",
       summary:
-        "Aktive Tasks, Projekte, Ziele und Skills im Kontext steuern.",
-      dateRange: "Week 24 / 09-15 June 2026",
+        "Aktive Tasks, Projekte, Ziele und Skills nach Aufmerksamkeit, Bewegung und Wochenfokus steuern.",
+      dateRange: "Week 25 / 15-21 June 2026",
     },
     pageContract: {
       pageType: "Portfolio / Entity Workbench",

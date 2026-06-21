@@ -1,6 +1,7 @@
 import { Pill } from "@/components/layout/route-page-primitives";
 import { cn } from "@/lib/cn";
 import type { CalendarViewModel } from "../calendar-types";
+import { CalendarCreateMenu } from "./calendar-create-flow";
 
 export function CalendarPageHeader({
   header,
@@ -25,6 +26,14 @@ export function CalendarPageHeader({
         <div className="grid gap-1.5 xl:justify-items-end">
           <div className="flex flex-wrap items-center gap-2">
             <Pill quiet>{header.dateRange}</Pill>
+            <CalendarCreateMenu
+              defaults={{
+                date: "2026-06-12",
+                dayLabel: "Thu 12 June",
+                endTime: "17:00",
+                startTime: "15:30",
+              }}
+            />
             <button
               className="rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.82)] px-3 py-1 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[var(--border-default)] hover:bg-[rgba(23,34,53,.82)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
               type="button"

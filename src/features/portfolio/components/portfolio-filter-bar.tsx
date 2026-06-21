@@ -55,6 +55,20 @@ export function PortfolioFilterBar({
       aria-label="Portfolio view, scope and sort controls"
       className="rounded-[14px] border border-[rgba(148,163,184,.08)] bg-[rgba(11,17,28,.48)] px-3 py-2"
     >
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-faint)]">
+            Entity view
+          </p>
+          <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
+            All is the unified active workbench; entity tabs filter this page.
+          </p>
+        </div>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-faint)]">
+          {visibleCount} of {totalCount} visible
+        </p>
+      </div>
+
       <div className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
         <div className="min-w-0">
           <div className="-mx-1 overflow-x-auto px-1">
@@ -65,6 +79,7 @@ export function PortfolioFilterBar({
                   className={segmentedLinkClass(view.value === activeView)}
                   href={getViewHref(view.value)}
                   key={view.value}
+                  title={view.description}
                 >
                   {view.label}
                 </Link>
@@ -72,10 +87,6 @@ export function PortfolioFilterBar({
             </div>
           </div>
         </div>
-
-        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-faint)] xl:text-right">
-          {visibleCount} of {totalCount} visible
-        </p>
       </div>
 
       <div className="mt-2 grid gap-2 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">

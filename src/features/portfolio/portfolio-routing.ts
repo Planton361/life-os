@@ -7,6 +7,7 @@ import type {
 type SearchSource = string | URLSearchParams | { toString(): string } | null;
 
 type PortfolioHrefParams = {
+  type?: PortfolioView | null;
   view?: PortfolioView | null;
   status?: string | null;
   area?: string | null;
@@ -104,6 +105,7 @@ export function createPortfolioHref(
   const searchParams = normalizeSearchParams(currentSearchParams);
 
   setSearchParam(searchParams, "status", params.status);
+  setSearchParam(searchParams, "type", params.type);
   setSearchParam(searchParams, "view", params.view);
   setSearchParam(searchParams, "area", params.area);
   setSearchParam(searchParams, "priority", params.priority);

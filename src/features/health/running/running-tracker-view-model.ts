@@ -1,0 +1,486 @@
+import type { RunningTrackerPageViewModel } from "./running-tracker-types";
+
+export function getRunningTrackerViewModel(): RunningTrackerPageViewModel {
+  return {
+    header: {
+      breadcrumb: ["Life OS", "Health & Fitness", "Running Tracker"],
+      title: "Running Tracker",
+      description:
+        "Beginner-friendly running plan and quiet context for choosing the next useful run.",
+      pills: [
+        { label: "Beginner Mode", accent: "var(--accent-orange)" },
+        { label: "Next Run Planner", accent: "var(--accent-red)" },
+        { label: "Load moderate", accent: "var(--accent-yellow)" },
+        { label: "Self-tracked context", accent: "var(--accent-cyan)" },
+      ],
+      decision: {
+        label: "Next run decision",
+        title: "Easy run / walk",
+        duration: "25-30 min",
+        effort: "conversational effort",
+        readiness: "72%",
+        progress: 72,
+        detail:
+          "Keep the session repeatable. Pace and heart rate stay context, not the steering input.",
+        accent: "var(--accent-orange)",
+      },
+    },
+    summary: [
+      {
+        label: "Weekly distance",
+        value: "18.6 / 24 km",
+        detail: "steady build",
+        accent: "var(--accent-orange)",
+      },
+      {
+        label: "Runs this week",
+        value: "3 / 4",
+        detail: "one easy session open",
+        accent: "var(--accent-cyan)",
+      },
+      {
+        label: "Beginner load",
+        value: "Moderate",
+        detail: "do not stack intensity",
+        accent: "var(--accent-yellow)",
+      },
+      {
+        label: "Avg easy pace",
+        value: "6:05 / km",
+        detail: "context only",
+        accent: "var(--accent-blue)",
+      },
+      {
+        label: "Recovery signal",
+        value: "72%",
+        detail: "self-check",
+        accent: "var(--accent-green)",
+      },
+      {
+        label: "Next run",
+        value: "Run / walk 30 min",
+        detail: "flat loop",
+        accent: "var(--accent-red)",
+      },
+    ],
+    planner: {
+      title: "Beginner Run Planner",
+      subtitle:
+        "Plan the next session from available time, desired effort and recovery context.",
+      goalTypes: [
+        { label: "Time", value: "time", active: true },
+        { label: "Distance", value: "distance" },
+        { label: "Run / Walk", value: "run-walk", active: true },
+        { label: "Pace", value: "pace" },
+        { label: "Heart Rate", value: "heart-rate" },
+        { label: "Recovery", value: "recovery", active: true },
+      ],
+      beginnerGoals: [
+        { label: "Build consistency", value: "build-consistency", active: true },
+        { label: "Finish easy", value: "finish-easy", active: true },
+        { label: "Learn pacing", value: "learn-pacing" },
+        { label: "Extend distance", value: "extend-distance" },
+        { label: "Recover gently", value: "recover-gently" },
+        { label: "Prepare 5K base", value: "prepare-5k-base" },
+      ],
+      availableTimes: [
+        { label: "20 min", value: "20" },
+        { label: "25 min", value: "25", active: true },
+        { label: "30 min", value: "30", active: true },
+        { label: "35 min", value: "35" },
+        { label: "45 min", value: "45" },
+      ],
+      effortTargets: [
+        { label: "Very easy", value: "very-easy" },
+        { label: "Conversational", value: "conversational", active: true },
+        { label: "Moderate", value: "moderate" },
+        { label: "Hard", value: "hard" },
+      ],
+      optionalInputs: [
+        {
+          label: "Distance target",
+          value: "optional",
+          helper: "Use only if it keeps the run easy.",
+          accent: "var(--accent-cyan)",
+        },
+        {
+          label: "Pace target",
+          value: "6:05 / km context",
+          helper: "Do not chase pace on this session.",
+          accent: "var(--accent-blue)",
+        },
+        {
+          label: "Heart Rate",
+          value: "easy zone context",
+          helper: "Use breathing as the primary signal.",
+          accent: "var(--accent-green)",
+        },
+        {
+          label: "Run / walk ratio",
+          value: "2 min jog / 90 sec walk",
+          helper: "Walk before the effort feels hard.",
+          accent: "var(--accent-orange)",
+        },
+      ],
+      suggestedPlan: {
+        title: "Suggested Beginner Plan",
+        detail: "30 minutes total. Keep the first repeat slower than expected.",
+        steps: [
+          {
+            label: "5 min warm-up walk",
+            detail: "Easy breathing, no pace target.",
+            accent: "var(--accent-green)",
+          },
+          {
+            label: "8 x 2 min easy jog",
+            detail: "Conversational effort.",
+            accent: "var(--accent-orange)",
+          },
+          {
+            label: "8 x 90 sec walk",
+            detail: "Reset before tired.",
+            accent: "var(--accent-cyan)",
+          },
+          {
+            label: "5 min cooldown walk",
+            detail: "Finish easy and note how it felt.",
+            accent: "var(--accent-green)",
+          },
+        ],
+      },
+      primaryActions: [
+        { label: "Use this plan", variant: "primary" },
+        { label: "Adjust goal", variant: "secondary" },
+        { label: "Save as template", variant: "quiet" },
+      ],
+      secondaryActions: [
+        { label: "Schedule for 17:30", variant: "secondary" },
+        { label: "Start run later", variant: "quiet" },
+      ],
+    },
+    todayPlan: {
+      title: "Today Run Plan",
+      plan: "Run / walk - 30 min",
+      details: [
+        {
+          label: "Goal",
+          value: "build consistency",
+          detail: "repeatable first",
+          accent: "var(--accent-orange)",
+        },
+        {
+          label: "Effort",
+          value: "conversational",
+          detail: "easy breathing",
+          accent: "var(--accent-green)",
+        },
+        {
+          label: "Route",
+          value: "flat loop",
+          detail: "low decision load",
+          accent: "var(--accent-cyan)",
+        },
+        {
+          label: "Focus",
+          value: "finish easy",
+          detail: "no late push",
+          accent: "var(--accent-yellow)",
+        },
+      ],
+      checklist: [
+        { label: "Warm-up walk", done: true },
+        { label: "Start slow", done: false },
+        { label: "Keep breathing easy", done: false },
+        { label: "Walk before tired", done: false },
+        { label: "Cooldown", done: false },
+        { label: "Log how it felt", done: false },
+      ],
+      actions: [
+        { label: "Start planned run", variant: "primary" },
+        { label: "Edit plan", variant: "secondary" },
+        { label: "Move to tomorrow", variant: "quiet" },
+      ],
+    },
+    review: {
+      title: "Recent Run Review",
+      lastRun: "Last run - 4.8 km run / walk - 31 min",
+      metrics: [
+        {
+          label: "Distance",
+          value: "4.8 km",
+          detail: "flat route",
+          accent: "var(--accent-orange)",
+        },
+        {
+          label: "Duration",
+          value: "31 min",
+          detail: "planned range",
+          accent: "var(--accent-cyan)",
+        },
+        {
+          label: "Avg pace",
+          value: "6:18 / km",
+          detail: "context only",
+          accent: "var(--accent-blue)",
+        },
+      ],
+      signals: [
+        {
+          label: "Effort",
+          value: "easy-moderate",
+          detail: "settled after warm-up",
+          accent: "var(--accent-yellow)",
+        },
+        {
+          label: "Breathing",
+          value: "mostly easy",
+          detail: "brief hill spike",
+          accent: "var(--accent-green)",
+        },
+        {
+          label: "Legs",
+          value: "fresh enough",
+          detail: "no heavy finish",
+          accent: "var(--accent-cyan)",
+        },
+        {
+          label: "Comfort",
+          value: "stable",
+          detail: "shoes felt fine",
+          accent: "var(--accent-orange)",
+        },
+      ],
+      learnings: [
+        "Two-minute jog blocks stayed repeatable.",
+        "Walking before fatigue kept the last repeat clean.",
+      ],
+      nextAdjustment:
+        "Keep 30 min, add no intensity, and use the same flat route once more.",
+      action: { label: "Accept adjustment", variant: "secondary" },
+    },
+    rhythm: {
+      title: "Weekly Running Rhythm",
+      subtitle: "Seven-day rhythm. Dots show type and label; color is supportive only.",
+      days: [
+        {
+          day: "Mon",
+          label: "Rest",
+          state: "rest",
+          status: "rest",
+          accent: "var(--accent-green)",
+          active: true,
+        },
+        {
+          day: "Tue",
+          label: "Easy run",
+          state: "easy-run",
+          status: "done",
+          accent: "var(--accent-orange)",
+          active: true,
+        },
+        {
+          day: "Wed",
+          label: "Mobility",
+          state: "mobility",
+          status: "mobility",
+          accent: "var(--accent-cyan)",
+          active: true,
+        },
+        {
+          day: "Thu",
+          label: "Rest",
+          state: "rest",
+          status: "rest",
+          accent: "var(--accent-green)",
+          active: true,
+        },
+        {
+          day: "Fri",
+          label: "Tempo context",
+          state: "tempo",
+          status: "done",
+          accent: "var(--accent-yellow)",
+          active: true,
+        },
+        {
+          day: "Sat",
+          label: "Easy run",
+          state: "easy-run",
+          status: "done",
+          accent: "var(--accent-orange)",
+          active: true,
+        },
+        {
+          day: "Sun",
+          label: "Planned long run",
+          state: "planned-long-run",
+          status: "planned",
+          accent: "var(--accent-red)",
+          active: false,
+        },
+      ],
+    },
+    loadRecovery: {
+      title: "Training Load & Recovery",
+      weeklyLoad: {
+        label: "Weekly load",
+        value: "Moderate",
+        progress: 64,
+        detail: "64% of current beginner limit",
+        accent: "var(--accent-yellow)",
+      },
+      recoverySignal: {
+        label: "Recovery signal",
+        value: "72%",
+        progress: 72,
+        detail: "self-check says easy is fine",
+        accent: "var(--accent-green)",
+      },
+      intensitySplit: [
+        {
+          label: "Easy",
+          value: 72,
+          detail: "dominant",
+          accent: "var(--accent-green)",
+        },
+        {
+          label: "Walk",
+          value: 20,
+          detail: "planned breaks",
+          accent: "var(--accent-cyan)",
+        },
+        {
+          label: "Moderate",
+          value: 8,
+          detail: "keep low",
+          accent: "var(--accent-yellow)",
+        },
+      ],
+      guardrail:
+        "Do not increase distance and intensity in the same week.",
+    },
+    context: {
+      title: "Pace / Heart Rate / Distance Context",
+      subtitle: "Priority order keeps body signals ahead of numeric targets.",
+      items: [
+        {
+          rank: "01",
+          label: "Time",
+          detail: "Choose what fits today before adding distance.",
+          accent: "var(--accent-orange)",
+        },
+        {
+          rank: "02",
+          label: "Feeling / RPE",
+          detail: "Conversational effort is the main steering signal.",
+          accent: "var(--accent-green)",
+        },
+        {
+          rank: "03",
+          label: "Run-walk ratio",
+          detail: "Protect consistency with planned walk breaks.",
+          accent: "var(--accent-cyan)",
+        },
+        {
+          rank: "04",
+          label: "Distance",
+          detail: "Useful context, not the first target today.",
+          accent: "var(--accent-yellow)",
+        },
+        {
+          rank: "05",
+          label: "Pace",
+          detail: "Review after the run; do not chase it mid-run.",
+          accent: "var(--accent-blue)",
+        },
+        {
+          rank: "06",
+          label: "Heart Rate",
+          detail: "Secondary context for easy effort.",
+          accent: "var(--accent-red)",
+        },
+      ],
+    },
+    distanceTrend: {
+      title: "30-Day Distance Trend",
+      statement:
+        "Distance is building gradually. Keep the next run easy.",
+      bars: [
+        { label: "D1", value: 18, display: "2.2 km", accent: "var(--accent-cyan)" },
+        { label: "D4", value: 26, display: "3.1 km", accent: "var(--accent-cyan)" },
+        { label: "D7", value: 0, display: "rest", accent: "var(--accent-green)" },
+        { label: "D10", value: 35, display: "4.2 km", accent: "var(--accent-orange)" },
+        { label: "D13", value: 0, display: "rest", accent: "var(--accent-green)" },
+        { label: "D16", value: 39, display: "4.7 km", accent: "var(--accent-orange)" },
+        { label: "D19", value: 22, display: "2.7 km", accent: "var(--accent-cyan)" },
+        { label: "D22", value: 44, display: "5.3 km", accent: "var(--accent-orange)" },
+        { label: "D25", value: 0, display: "rest", accent: "var(--accent-green)" },
+        { label: "D28", value: 48, display: "5.8 km", accent: "var(--accent-red)" },
+      ],
+    },
+    recentRuns: {
+      title: "Recent Runs",
+      subtitle: "Compact log, capped to the latest four sessions.",
+      items: [
+        {
+          date: "Jun 18",
+          title: "Run / walk",
+          distance: "4.8 km",
+          duration: "31 min",
+          effort: "conversational",
+          status: "logged",
+          accent: "var(--accent-orange)",
+        },
+        {
+          date: "Jun 15",
+          title: "Easy loop",
+          distance: "5.2 km",
+          duration: "34 min",
+          effort: "easy",
+          status: "felt stable",
+          accent: "var(--accent-green)",
+        },
+        {
+          date: "Jun 12",
+          title: "Run / walk",
+          distance: "3.6 km",
+          duration: "25 min",
+          effort: "very easy",
+          status: "walk breaks",
+          accent: "var(--accent-cyan)",
+        },
+        {
+          date: "Jun 09",
+          title: "Flat route",
+          distance: "5.0 km",
+          duration: "33 min",
+          effort: "moderate",
+          status: "no increase",
+          accent: "var(--accent-yellow)",
+        },
+      ],
+    },
+    boundaries: [
+      {
+        label: "Repeatability first",
+        detail: "A useful run is one you can repeat.",
+        accent: "var(--accent-orange)",
+      },
+      {
+        label: "Pace is optional",
+        detail: "Pace explains later; it does not command today.",
+        accent: "var(--accent-blue)",
+      },
+      {
+        label: "Walk breaks are allowed",
+        detail: "Breaks protect the plan from turning hard.",
+        accent: "var(--accent-green)",
+      },
+      {
+        label: "Self-check only",
+        detail: "This is planning context, not medical advice.",
+        accent: "var(--accent-cyan)",
+      },
+    ],
+  };
+}

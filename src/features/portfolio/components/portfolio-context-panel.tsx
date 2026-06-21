@@ -1,15 +1,19 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import {
   EmptyState,
   Pill,
   accentStyle,
 } from "@/components/layout/route-page-primitives";
 import {
+  getPortfolioEntitySourceRoute,
+  getPortfolioPrimaryReason,
   portfolioAreaMeta,
   portfolioFocusLabels,
   portfolioStatusMeta,
   portfolioTypeAccent,
   portfolioTypeLabels,
+  portfolioVisibilityReasonMeta,
 } from "../portfolio-style";
 import type { PortfolioDecision, PortfolioEntity } from "../types";
 
@@ -57,6 +61,23 @@ function FieldCard({
   );
 }
 
+function ActionLink({
+  href,
+  children,
+}: Readonly<{
+  href: `/${string}`;
+  children: ReactNode;
+}>) {
+  return (
+    <Link
+      className="inline-flex min-h-8 items-center rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.76)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+      href={href}
+    >
+      {children}
+    </Link>
+  );
+}
+
 export function PortfolioContextPanel({
   entity,
 }: Readonly<{
@@ -76,6 +97,13 @@ export function PortfolioContextPanel({
   const typeAccent = portfolioTypeAccent[entity.type];
   const area = portfolioAreaMeta[entity.area];
   const status = portfolioStatusMeta[entity.status];
+  const primaryReason = getPortfolioPrimaryReason(entity);
+  const reason = portfolioVisibilityReasonMeta[primaryReason];
+  const entityRoute = getPortfolioEntitySourceRoute(entity);
+  const sourceLink =
+    entity.sourceLinks.find((link) => link.href !== entityRoute) ??
+    entity.sourceLinks[0] ??
+    null;
 
   return (
     <aside
@@ -94,17 +122,43 @@ export function PortfolioContextPanel({
             >
               {entity.title}
             </h2>
+            <p className="mt-1 max-w-xl text-[11px] leading-4 text-[var(--text-secondary)]">
+              {entity.description}
+            </p>
           </div>
           <div className="flex flex-wrap justify-end gap-1.5">
             <Pill accent={typeAccent}>{portfolioTypeLabels[entity.type]}</Pill>
             <Pill accent={area.accent}>{area.label}</Pill>
           </div>
         </div>
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          <ActionLink href={entityRoute}>
+            Open {portfolioTypeLabels[entity.type].toLowerCase()}
+          </ActionLink>
+          {sourceLink ? (
+            <ActionLink href={sourceLink.href}>Open source</ActionLink>
+          ) : null}
+        </div>
       </div>
 
       <div className="grid gap-3 p-3 xl:max-h-[calc(100dvh-25rem)] xl:overflow-y-auto">
-        <div className="grid gap-2 sm:grid-cols-3">
-          <FieldCard accent={status.accent} label="Status" value={status.label} />
+        <div className="grid gap-2 sm:grid-cols-2">
+          <FieldCard
+            accent={typeAccent}
+            label="Type"
+            value={portfolioTypeLabels[entity.type]}
+          />
+          <FieldCard accent={area.accent} label="Area" value={area.label} />
+          <FieldCard
+            accent={status.accent}
+            label="Status"
+            value={status.label}
+          />
+          <FieldCard
+            accent={reason.accent}
+            label="Why visible"
+            value={reason.label}
+          />
           <FieldCard
             accent={typeAccent}
             label="Priority / Focus"
@@ -133,6 +187,39 @@ export function PortfolioContextPanel({
           </p>
         </div>
 
+        {entity.type === "skill" && entity.skillContext ? (
+          <section aria-labelledby="entity-skill-context-heading">
+            <h3
+              className="text-[13px] font-semibold text-[var(--text-primary)]"
+              id="entity-skill-context-heading"
+            >
+              Practice / Learning Signal
+            </h3>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              <FieldCard
+                accent="var(--accent-cyan)"
+                label="Practice Status"
+                value={entity.skillContext.practiceStatus}
+              />
+              <FieldCard
+                accent="var(--accent-cyan)"
+                label="Confidence"
+                value={entity.skillContext.confidence}
+              />
+              <FieldCard
+                accent="var(--accent-orange)"
+                label="Next Session"
+                value={entity.skillContext.nextSession}
+              />
+              <FieldCard
+                accent="var(--text-muted)"
+                label="Evidence"
+                value={entity.skillContext.evidence}
+              />
+            </div>
+          </section>
+        ) : null}
+
         <div className="grid gap-2 sm:grid-cols-2">
           <FieldCard
             accent="var(--accent-orange)"
@@ -142,7 +229,11 @@ export function PortfolioContextPanel({
           <FieldCard
             accent="var(--accent-blue)"
             label="Review Status"
-            value={entity.reviewNeeded ? "Needs weekly review note" : "No review note needed"}
+            value={
+              entity.reviewNeeded
+                ? "Needs weekly review note"
+                : "No review note needed"
+            }
           />
         </div>
 
@@ -239,25 +330,14 @@ export function PortfolioContextPanel({
             >
               Quick Notes / Review Snippet
             </h3>
-            <div className="mt-2 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.42)] p-2">
-              <label className="sr-only" htmlFor="portfolio-note">
-                Capture portfolio note
-              </label>
-              <textarea
-                className="min-h-16 w-full resize-none border-0 bg-transparent text-[11px] leading-4 text-[var(--text-secondary)] outline-none placeholder:text-[var(--text-faint)]"
-                defaultValue={entity.noteSnippet}
-                id="portfolio-note"
-                key={entity.id}
-                rows={3}
-              />
-              <div className="mt-2 flex justify-end">
-                <button
-                  className="rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.76)] px-3 py-1.5 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-                  type="button"
-                >
-                  Add note
-                </button>
-              </div>
+            <div className="mt-2 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.42)] p-3">
+              <p className="text-[11px] leading-4 text-[var(--text-secondary)]">
+                {entity.noteSnippet}
+              </p>
+              <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
+                Portfolio reads this snippet only. Source editing belongs in the
+                entity workbench or detail page.
+              </p>
             </div>
           </section>
         </div>

@@ -1,13 +1,17 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { Pill, accentStyle } from "@/components/layout/route-page-primitives";
 import { cn } from "@/lib/cn";
 import type {
   TodayActivityEventViewModel,
+  TodayActivityStatus,
+  TodayActivityStreamSectionViewModel,
   TodayArtifactViewModel,
   TodayCarryForwardItemViewModel,
   TodayDecisionViewModel,
   TodayDeltaMetricViewModel,
   TodayReviewSignalViewModel,
+  TodayLinkedEntityType,
   TodayViewModel,
 } from "./today-view-model";
 
@@ -103,59 +107,150 @@ function TodayHeader({
 }
 
 function ActivityStream({
-  events,
+  sections,
 }: Readonly<{
-  events: TodayActivityEventViewModel[];
+  sections: TodayActivityStreamSectionViewModel[];
 }>) {
   return (
-    <div className="flex h-full flex-col">
-      <ol className="grid gap-2.5 2xl:flex-1 2xl:auto-rows-fr">
-        {events.map((event) => (
-          <li className="min-h-0" key={`${event.time}-${event.type}-${event.title}`}>
-            <article
-              className="relative flex h-full min-h-[58px] items-center rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.78)] px-3.5 py-3"
-              style={accentStyle(event.accent)}
-            >
-              <div className="flex w-full flex-wrap items-center justify-between gap-3">
-                <div className="flex min-w-0 items-start gap-3">
-                  <time
-                    className="shrink-0 rounded-full border border-[color-mix(in_srgb,var(--accent)_28%,transparent)] bg-[color-mix(in_srgb,var(--accent)_9%,transparent)] px-2 py-1 text-[10px] font-semibold leading-none text-[var(--text-secondary)]"
-                    dateTime={event.time}
-                  >
-                    {event.time}
-                  </time>
-                  <div className="min-w-0">
-                    <div className="flex min-w-0 items-baseline gap-2">
-                      <p className="shrink-0 text-[10px] font-semibold text-[var(--text-primary)]">
-                        {event.type}
-                      </p>
-                      <h3 className="truncate text-[13px] font-semibold leading-4 text-[var(--text-primary)]">
-                        {event.title}
-                      </h3>
-                    </div>
-                    <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
-                      {event.source}
-                    </p>
-                  </div>
-                </div>
-                <span className="shrink-0">
-                  <Pill accent={event.accent}>{event.status}</Pill>
-                </span>
-              </div>
-            </article>
-          </li>
-        ))}
-      </ol>
+    <div className="flex h-full min-h-0 flex-col gap-3 2xl:overflow-y-auto 2xl:pr-1">
+      {sections.map((section) => (
+        <ActivityStreamSection key={section.id} section={section} />
+      ))}
 
       <div className="mt-auto rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.62)] px-3 py-2">
         <p className="text-[10px] font-semibold text-[var(--text-secondary)]">
           End of day record
         </p>
         <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
-          Review open; carry-forward stays in the right column.
+          Planned items stay separate from actual events; carry-forward stays in
+          the right column.
         </p>
       </div>
     </div>
+  );
+}
+
+const linkedEntityLabels: Record<TodayLinkedEntityType, string> = {
+  task: "linked task",
+  inbox_item: "linked inbox item",
+  project: "linked project",
+  note: "linked note",
+  resource: "linked resource",
+  review: "linked review",
+};
+
+function linkedEntityLabel(entityType?: TodayLinkedEntityType) {
+  return entityType ? linkedEntityLabels[entityType] : "source prepared";
+}
+
+function activityCardClass(status: TodayActivityStatus) {
+  return cn(
+    "rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.70)] px-3 py-2.5",
+    status === "current" &&
+      "border-[color-mix(in_srgb,var(--accent)_34%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_8%,rgba(18,28,43,.82))]",
+    status === "shifted" && "border-dashed",
+    status === "needs_review" &&
+      "border-[color-mix(in_srgb,var(--accent)_26%,var(--border-subtle))]",
+  );
+}
+
+function ActivitySourceAction({
+  event,
+}: Readonly<{
+  event: TodayActivityEventViewModel;
+}>) {
+  const className =
+    "inline-flex items-center rounded-full border border-[var(--border-subtle)] bg-[rgba(168,183,204,.05)] px-2 py-0.5 text-[10px] font-semibold text-[var(--text-secondary)] transition-colors hover:border-[color-mix(in_srgb,var(--accent)_36%,var(--border-subtle))] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
+
+  if (!event.sourceHref) {
+    return (
+      <span className={className} style={accentStyle(event.accent)}>
+        {event.sourceActionLabel}
+      </span>
+    );
+  }
+
+  return (
+    <Link
+      className={className}
+      href={event.sourceHref}
+      style={accentStyle(event.accent)}
+    >
+      {event.sourceActionLabel}
+    </Link>
+  );
+}
+
+function ActivityStreamSection({
+  section,
+}: Readonly<{
+  section: TodayActivityStreamSectionViewModel;
+}>) {
+  const headingId = `activity-${section.id}-heading`;
+
+  return (
+    <section
+      aria-labelledby={headingId}
+      className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.46)] px-3 py-3"
+      style={accentStyle(section.accent)}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h3
+            className="text-[12px] font-semibold leading-4 text-[var(--text-primary)]"
+            id={headingId}
+          >
+            {section.title}
+          </h3>
+          <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
+            {section.subtitle}
+          </p>
+        </div>
+        <Pill accent={section.accent}>{section.events.length} items</Pill>
+      </div>
+
+      <ol className="mt-2 grid gap-2">
+        {section.events.map((event) => (
+          <li key={event.id}>
+            <article
+              className={activityCardClass(event.status)}
+              style={accentStyle(event.accent)}
+            >
+              <div className="flex flex-wrap items-center gap-1.5">
+                <time
+                  className="rounded-full border border-[color-mix(in_srgb,var(--accent)_28%,transparent)] bg-[color-mix(in_srgb,var(--accent)_9%,transparent)] px-2 py-0.5 text-[10px] font-semibold leading-4 text-[var(--text-secondary)]"
+                  dateTime={event.dateTime}
+                >
+                  {event.timeLabel}
+                </time>
+                <Pill accent={event.accent}>{event.eventTypeLabel}</Pill>
+                <Pill accent={event.accent}>{event.statusLabel}</Pill>
+              </div>
+
+              <h4 className="mt-2 text-[13px] font-semibold leading-4 text-[var(--text-primary)]">
+                {event.title}
+              </h4>
+              <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
+                {event.description}
+              </p>
+
+              <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px] leading-4 text-[var(--text-muted)]">
+                <span>{event.sourceLabel}</span>
+                {event.areaLabel ? (
+                  <>
+                    <span aria-hidden="true">·</span>
+                    <span>{event.areaLabel}</span>
+                  </>
+                ) : null}
+                <span aria-hidden="true">·</span>
+                <span>{linkedEntityLabel(event.linkedEntityType)}</span>
+                <ActivitySourceAction event={event} />
+              </div>
+            </article>
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
 
@@ -428,7 +523,7 @@ export function TodayMemoryLogPage({
           subtitle={viewModel.activityStream.subtitle}
           title={viewModel.activityStream.title}
         >
-          <ActivityStream events={viewModel.activityStream.events} />
+          <ActivityStream sections={viewModel.activityStream.sections} />
         </MemoryPanel>
 
         <div className="grid gap-3 2xl:min-h-0 2xl:grid-rows-[auto_minmax(0,.56fr)_minmax(0,.44fr)]">

@@ -184,8 +184,11 @@ function buildTimedBlocks(): CalendarTimedBlockViewModel[] {
 }
 
 export function getCalendarViewModel(): CalendarViewModel {
+  const timedBlockViewModels = buildTimedBlocks();
   const selectedBlock =
-    allDayBlocks.find((block) => block.id === "life-os-routing-milestone") ??
+    timedBlockViewModels.find(
+      (block) => block.id === "task-block-literature-structure",
+    ) ??
     allDayBlocks[0];
 
   return {
@@ -210,7 +213,7 @@ export function getCalendarViewModel(): CalendarViewModel {
     days: calendarDays,
     hours: calendarHours,
     allDayBlocks,
-    timedBlocks: buildTimedBlocks(),
+    timedBlocks: timedBlockViewModels,
     selectedBlock,
     currentTime: {
       label: "15:42",
@@ -237,30 +240,76 @@ export function getCalendarViewModel(): CalendarViewModel {
           accent: "var(--accent-cyan)",
         },
       ],
-      recentWins: [
+      unscheduledTasks: [
         {
-          title: "Figma practice block placed",
-          meta: "Skill - active",
+          title: "Run lint and TypeScript checks",
+          meta: "P1 task - no time block yet",
+          accent: "var(--accent-blue)",
+        },
+        {
+          title: "Prepare static review route copy",
+          meta: "P2 task - week candidate",
+          accent: "var(--accent-purple)",
+        },
+      ],
+      reviewsOpen: [
+        {
+          title: "Daily Review",
+          meta: "draft - tonight",
           accent: "var(--accent-cyan)",
         },
         {
-          title: "Standup completed",
-          meta: "Work - done",
+          title: "Weekly Review",
+          meta: "planned - Saturday",
+          accent: "var(--accent-cyan)",
+        },
+      ],
+      suggestedPlanningActions: [
+        {
+          title: "Place one P1 task block",
+          meta: "Suggested slot - Thu 15:30",
+          accent: "var(--accent-blue)",
+        },
+        {
+          title: "Batch admin before work closes",
+          meta: "Batch candidate - Tue 14:00",
           accent: "var(--accent-green)",
         },
       ],
-      carryForward: [
-        {
-          title: "Finalize calendar route decision",
-          meta: "Project - tomorrow candidate",
-          accent: "var(--accent-orange)",
-        },
-        {
-          title: "Prepare weekly review",
-          meta: "Review - open",
-          accent: "var(--accent-cyan)",
-        },
-      ],
+      selectedTimeSlot: {
+        label: "Selected time slot",
+        dayLabel: "Thu 12 June",
+        date: "2026-06-12",
+        startTime: "15:30",
+        endTime: "17:00",
+      },
+      planningAssistant: {
+        title: "Planning Assistant",
+        status: "suggestions only",
+        suggestions: [
+          {
+            title: "3 unscheduled P1 tasks",
+            meta: "Review before creating calendar blocks",
+            source: "agent_suggestion",
+            status: "draft",
+            accent: "var(--accent-blue)",
+          },
+          {
+            title: "Suggested focus slot: Thu 15:30-17:00",
+            meta: "Draft recommendation from current workload",
+            source: "agent_suggestion",
+            status: "draft",
+            accent: "var(--accent-cyan)",
+          },
+          {
+            title: "Weekly Review still open",
+            meta: "Review source remains manual",
+            source: "review",
+            status: "planned",
+            accent: "var(--accent-orange)",
+          },
+        ],
+      },
       weeklyReview: {
         title: "Weekly Review",
         status: "draft open",
@@ -273,8 +322,8 @@ export function getCalendarViewModel(): CalendarViewModel {
     pageContract: {
       pageType: "Temporal Projection / Planning Surface",
       primaryPurpose:
-        "Inspect the week across dated work, free events, deadlines and review readiness.",
-      writes: "V1 writes nothing. Later only free calendar events and time blocks are calendar-owned.",
+        "Inspect and prepare the week across dated work, free events, deadlines and review readiness.",
+      writes: "V2 prepares manual events and time blocks in UI only. Later only free calendar events and time blocks are calendar-owned.",
       reads:
         "Tasks, projects, reviews, meals, workouts, meetings and free calendar events.",
       canonicalSource:
@@ -282,12 +331,12 @@ export function getCalendarViewModel(): CalendarViewModel {
       sensitiveData:
         "Work and health-adjacent time blocks are visible but mocked without private content.",
       primaryDecision:
-        "What needs time, movement, review or carry-forward attention this week?",
+        "What needs time, creation, movement, review or carry-forward attention this week?",
       mainZone: "Outlook-style week calendar surface.",
       emptyState:
         "When empty, explain that dated source entities and free events will appear here.",
       mobileOrder:
-        "Header, filters, stats, calendar surface with horizontal scroll, review context panel.",
+        "Header and create, filters, selected day summary, week blocks, selected block details.",
     },
   };
 }
