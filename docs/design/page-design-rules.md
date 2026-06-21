@@ -1,6 +1,6 @@
 # Page Design Rules
 
-Stand: 2026-06-19
+Stand: 2026-06-21
 Status: Active
 Zweck: Operative Designgrundlage fuer neue Life-OS-Seiten in Figma und spaeter in Code.
 Quelle der Wahrheit: `DESIGN.md`, `PRODUCT.md`, `DATA_MODEL.md`, `ROADMAP.md`, `docs/design/*`, `docs/product/pages-and-routes.md` und `docs/product/navigation-and-source-of-truth-blueprint.md`.
@@ -504,7 +504,7 @@ Verbotene Patterns:
 
 ### Work
 
-- Work Log, Wiki und Meetings sichtbar machen
+- Work Log und Wiki sichtbar machen; Meetings bleibt fachlicher Kontext, aber kein sichtbarer Work-Sidebar-Punkt
 - Work-Daten mit Privacy-Grenzen behandeln
 - Follow-ups laufen ueber Work Log, Tasks oder Meetings
 - Work Wiki ist View oder eigene Wissensseite mit klaren Resource-Links

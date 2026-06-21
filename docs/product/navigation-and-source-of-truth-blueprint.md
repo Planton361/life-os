@@ -1,6 +1,6 @@
 # Navigation and Source-of-Truth Blueprint
 
-Stand: 2026-06-18
+Stand: 2026-06-21
 Status: Active
 Zweck: Zielbild fuer Sidebar, Navigation, Routes und Datenwahrheiten.
 Quelle der Wahrheit: `PRODUCT.md`, `DATA_MODEL.md`, `ROADMAP.md`, `ARCHITECTURE.md`, `DESIGN.md` und `docs/product/pages-and-routes.md`.
@@ -78,7 +78,6 @@ Learning Log
 WORK
 Work Log
 Wiki
-Meetings
 
 UTILITY
 Shop
@@ -166,6 +165,7 @@ Coding umfasst sichtbar:
 ## Work
 
 Follow-up ist kein sichtbarer Work-Navigationspunkt.
+Meetings ist kein sichtbarer Work-Navigationspunkt. Meeting-Kontext bleibt fachlich erhalten, aber die Sidebar zeigt unter Work nur Work Log und Wiki.
 
 Follow-ups werden fachlich innerhalb von Work Log, Tasks oder Meetings gefuehrt:
 
@@ -265,7 +265,6 @@ Die Life-Navigation bleibt damit scanbar, ohne die Unterbereiche fuer Unterhaltu
 /work
 /work/log
 /work/wiki
-/work/meetings
 ```
 
 ### Utility

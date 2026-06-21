@@ -20,6 +20,20 @@ export type CalendarBlockType =
   | "meal"
   | "workout";
 
+export type CalendarView = "day" | "week" | "month" | "year";
+
+export type CalendarScope =
+  | "All"
+  | "Events"
+  | "Tasks"
+  | "Focus"
+  | "Routines"
+  | "Projects"
+  | "Meals"
+  | "Health"
+  | "Reviews"
+  | "Deadlines";
+
 export type CalendarCreateBlockType =
   | "event"
   | "task_block"
@@ -27,7 +41,9 @@ export type CalendarCreateBlockType =
   | "batch_block"
   | "routine"
   | "deadline"
-  | "reminder";
+  | "reminder"
+  | "review"
+  | "meal";
 
 export type CalendarBlockStatus =
   | "planned"
@@ -96,6 +112,7 @@ export type CalendarSourceEntity = {
 
 export type CalendarDayViewModel = {
   id: string;
+  date: string;
   weekday: string;
   dayNumber: string;
   fullLabel: string;
@@ -134,6 +151,7 @@ export type CalendarTimedBlockDensity = "regular" | "compact" | "micro";
 export type CalendarBlockBase = {
   id: string;
   dayId: string;
+  date?: string;
   title: string;
   type: CalendarBlockType;
   status: CalendarBlockStatus;
@@ -145,6 +163,12 @@ export type CalendarBlockBase = {
   linkedEntity?: string;
   plannedOutcome?: string;
   timeLabel?: string;
+  priority?: "P0" | "P1" | "P2" | "P3" | "none";
+  project?: string;
+  taskId?: string;
+  goalId?: string;
+  isFlexible?: boolean;
+  isLocked?: boolean;
 };
 
 export type CalendarTimedBlockViewModel = CalendarBlockBase & {
@@ -175,10 +199,31 @@ export type CalendarContextListItemViewModel = {
 
 export type CalendarSelectedTimeSlotViewModel = {
   label: string;
+  dayId?: string;
   dayLabel: string;
   date: string;
   startTime: string;
   endTime: string;
+};
+
+export type SchedulableTaskStatus =
+  | "open"
+  | "planned"
+  | "in-progress"
+  | "done";
+
+export type SchedulableTaskViewModel = {
+  id: string;
+  title: string;
+  priority: "P0" | "P1" | "P2" | "P3";
+  area: string;
+  project: string;
+  status: SchedulableTaskStatus;
+  estimatedMinutes: number;
+  dueDate?: string;
+  recentlyUpdated: string;
+  alreadyScheduled?: boolean;
+  accent: string;
 };
 
 export type CalendarPlanningAssistantSuggestionViewModel = {
@@ -248,6 +293,7 @@ export type CalendarViewModel = {
   allDayBlocks: CalendarAllDayBlockViewModel[];
   timedBlocks: CalendarTimedBlockViewModel[];
   selectedBlock: CalendarAllDayBlockViewModel | CalendarTimedBlockViewModel;
+  schedulableTasks: SchedulableTaskViewModel[];
   rightPanel: CalendarRightPanelViewModel;
   currentTime: {
     label: "15:42";

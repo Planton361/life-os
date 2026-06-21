@@ -1,11 +1,24 @@
+"use client";
+
 import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
+import { useState, type FormEvent } from "react";
 import {
   type DashboardAgendaEvent,
+  type DashboardArea,
   type DashboardTodayAgenda,
+  type TodayAgendaEnergy,
 } from "@/features/dashboard";
 import { cn } from "@/lib/cn";
 import { type AccentStyle, styleFor } from "./section-primitives";
+import {
+  DashboardDialog,
+  SelectField,
+  TextAreaField,
+  TextField,
+  dashboardActionButtonClass,
+  dashboardPrimaryButtonClass,
+} from "./dashboard-dialog";
 
 type AgendaSlotStyle = CSSProperties & {
   "--agenda-top"?: string;
@@ -42,6 +55,46 @@ function currentTimeLabelStyle(position: number): CSSProperties {
   return {
     top: `calc(${position}% - 22px)`,
   };
+}
+
+function accentForArea(area: DashboardArea) {
+  if (area === "work") {
+    return "var(--accent-green)";
+  }
+
+  if (area === "coding" || area === "education") {
+    return "var(--accent-blue)";
+  }
+
+  if (area === "health") {
+    return "var(--accent-red)";
+  }
+
+  if (area === "nutrition") {
+    return "var(--accent-yellow)";
+  }
+
+  if (area === "personal") {
+    return "var(--accent-purple)";
+  }
+
+  return "var(--accent-cyan)";
+}
+
+function areaLabelFor(area: DashboardArea) {
+  if (area === "review") {
+    return "Review";
+  }
+
+  return `${area.charAt(0).toUpperCase()}${area.slice(1)}`;
+}
+
+function taskIdFromTitle(title: string) {
+  return `task-${title
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")}`;
 }
 
 function statusClassName(status: DashboardAgendaEvent["status"]) {
@@ -192,7 +245,7 @@ function AgendaEventCard({
   if (event.href) {
     return (
       <Link
-        aria-label={`Open calendar block: ${event.title}`}
+        aria-label={`Open agenda item: ${event.title}`}
         className={className}
         href={event.href}
         style={eventStyle}
@@ -226,11 +279,140 @@ function AgendaPill({
   );
 }
 
+function AddTaskDialog({
+  onClose,
+  onSave,
+}: Readonly<{
+  onClose: () => void;
+  onSave: (event: DashboardAgendaEvent) => void;
+}>) {
+  function saveTask(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const formData = new FormData(event.currentTarget);
+    const title = String(formData.get("title") ?? "").trim();
+    const description = String(formData.get("description") ?? "").trim();
+    const area = String(formData.get("area") ?? "review") as DashboardArea;
+    const timeBlock = String(formData.get("timeBlock") ?? "Task block").trim();
+    const startTime = String(formData.get("startTime") ?? "16:30").trim();
+    const endTime = String(formData.get("endTime") ?? "17:00").trim();
+    const priority = String(formData.get("priority") ?? "P2") as DashboardAgendaEvent["priority"];
+    const taskTitle = title || "New task block";
+    const taskId = taskIdFromTitle(taskTitle);
+    const energy: TodayAgendaEnergy = priority === "P0" ? "high" : "medium";
+
+    onSave({
+      id: taskId,
+      title: taskTitle,
+      time: `${startTime}-${endTime} · ${timeBlock || "Task block"}`,
+      note: description || "Local task block",
+      areaLabel: areaLabelFor(area),
+      type: "task",
+      typeLabel: "Task",
+      status: "planned",
+      statusLabel: "Planned",
+      relevanceLabel: priority,
+      nextAction: "Open task detail",
+      tags: [areaLabelFor(area), energy],
+      accent: accentForArea(area),
+      area,
+      energy,
+      priority,
+      href: `/tasks/${taskId}`,
+    });
+    onClose();
+  }
+
+  return (
+    <DashboardDialog
+      labelledBy="agenda-add-task-dialog-heading"
+      onClose={onClose}
+      open
+    >
+      <form onSubmit={saveTask}>
+        <div className="border-b border-[var(--border-subtle)] px-5 py-4">
+          <h2
+            className="text-lg font-semibold text-[var(--text-primary)]"
+            id="agenda-add-task-dialog-heading"
+          >
+            Add task
+          </h2>
+          <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+            Local agenda prototype only. No calendar sync or AI scheduling runs.
+          </p>
+        </div>
+        <div className="grid gap-3 p-5 sm:grid-cols-2">
+          <TextField label="Title" name="title" placeholder="Task title" />
+          <SelectField defaultValue="review" label="Label / Area" name="area">
+            <option value="review">Review</option>
+            <option value="education">Education</option>
+            <option value="work">Work</option>
+            <option value="coding">Coding</option>
+            <option value="health">Health</option>
+            <option value="nutrition">Nutrition</option>
+            <option value="personal">Personal</option>
+          </SelectField>
+          <div className="sm:col-span-2">
+            <TextAreaField
+              label="Description"
+              name="description"
+              optional
+              placeholder="What should be true when this block is done?"
+            />
+          </div>
+          <TextField
+            defaultValue="30 min"
+            label="Time block"
+            name="timeBlock"
+            placeholder="30 min"
+          />
+          <SelectField defaultValue="P2" label="Priority" name="priority">
+            <option value="P0">P0</option>
+            <option value="P1">P1</option>
+            <option value="P2">P2</option>
+            <option value="P3">P3</option>
+          </SelectField>
+          <TextField
+            defaultValue="16:30"
+            label="Start time"
+            name="startTime"
+            type="time"
+          />
+          <TextField
+            defaultValue="17:00"
+            label="End time"
+            name="endTime"
+            type="time"
+          />
+          <label className="flex items-center gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(168,183,204,.05)] px-3 py-2 text-[10px] font-semibold text-[var(--text-muted)] sm:col-span-2">
+            <input disabled type="checkbox" />
+            Find free block later
+          </label>
+        </div>
+        <div className="flex justify-end gap-2 border-t border-[var(--border-subtle)] px-5 py-4">
+          <button
+            className={dashboardActionButtonClass}
+            onClick={onClose}
+            type="button"
+          >
+            Cancel
+          </button>
+          <button className={dashboardPrimaryButtonClass} type="submit">
+            Save
+          </button>
+        </div>
+      </form>
+    </DashboardDialog>
+  );
+}
+
 export function TodayAgenda({
   data,
 }: Readonly<{
   data: DashboardTodayAgenda;
 }>) {
+  const [events, setEvents] = useState<DashboardAgendaEvent[]>([...data.events]);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
   const title = data.href ? (
     <Link
       className={cn("rounded-sm", DASHBOARD_LINK_FOCUS_CLASSES)}
@@ -257,6 +439,16 @@ export function TodayAgenda({
           </h2>
           <div className="flex flex-wrap items-center gap-6">
             <AgendaViewSwitch agenda={data} />
+            <button
+              className={cn(
+                "rounded-full border border-[rgba(91,124,250,.28)] bg-[rgba(91,124,250,.12)] px-3 py-1.5 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[rgba(91,124,250,.40)] hover:text-[var(--text-primary)]",
+                DASHBOARD_LINK_FOCUS_CLASSES,
+              )}
+              onClick={() => setAddDialogOpen(true)}
+              type="button"
+            >
+              + Add task
+            </button>
           </div>
         </div>
       </div>
@@ -275,7 +467,7 @@ export function TodayAgenda({
             {data.currentTimeLabel}
           </p>
           <div className="relative h-full space-y-2 overflow-hidden pr-1 2xl:space-y-0 2xl:pr-0">
-            {data.events.map((event, index) => (
+            {events.map((event, index) => (
               <div
                 className="2xl:absolute 2xl:left-0 2xl:right-1 2xl:top-[var(--agenda-top)]"
                 key={event.title}
@@ -287,6 +479,12 @@ export function TodayAgenda({
           </div>
         </div>
       </div>
+      {addDialogOpen ? (
+        <AddTaskDialog
+          onClose={() => setAddDialogOpen(false)}
+          onSave={(event) => setEvents((currentEvents) => [...currentEvents, event])}
+        />
+      ) : null}
     </section>
   );
 }

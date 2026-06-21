@@ -1,12 +1,24 @@
 import { Pill } from "@/components/layout/route-page-primitives";
 import { cn } from "@/lib/cn";
-import type { CalendarViewModel } from "../calendar-types";
+import type { CalendarView, CalendarViewModel } from "../calendar-types";
 import { CalendarCreateMenu } from "./calendar-create-flow";
 
 export function CalendarPageHeader({
   header,
+  onCreateBlock,
+  onMovePeriod,
+  onToday,
+  onViewChange,
+  resolveDayId,
+  schedulableTasks,
 }: Readonly<{
   header: CalendarViewModel["header"];
+  onCreateBlock: Parameters<typeof CalendarCreateMenu>[0]["onCreateBlock"];
+  onMovePeriod: (direction: -1 | 1) => void;
+  onToday: () => void;
+  onViewChange: (view: CalendarView) => void;
+  resolveDayId: (date: string) => string;
+  schedulableTasks: CalendarViewModel["schedulableTasks"];
 }>) {
   return (
     <header className="overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.72)] shadow-[0_8px_22px_rgba(0,0,0,.12)]">
@@ -33,9 +45,13 @@ export function CalendarPageHeader({
                 endTime: "17:00",
                 startTime: "15:30",
               }}
+              onCreateBlock={onCreateBlock}
+              resolveDayId={resolveDayId}
+              tasks={schedulableTasks}
             />
             <button
               className="rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.82)] px-3 py-1 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[var(--border-default)] hover:bg-[rgba(23,34,53,.82)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+              onClick={onToday}
               type="button"
             >
               {header.controls.currentAction}
@@ -43,6 +59,7 @@ export function CalendarPageHeader({
             <button
               aria-label="Previous week"
               className="size-6 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.74)] text-[12px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+              onClick={() => onMovePeriod(-1)}
               type="button"
             >
               {"<"}
@@ -50,6 +67,7 @@ export function CalendarPageHeader({
             <button
               aria-label="Next week"
               className="size-6 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.74)] text-[12px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+              onClick={() => onMovePeriod(1)}
               type="button"
             >
               {">"}
@@ -67,6 +85,7 @@ export function CalendarPageHeader({
                     : "border border-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)]",
                 )}
                 key={view.label}
+                onClick={() => onViewChange(view.label.toLowerCase() as CalendarView)}
                 type="button"
               >
                 {view.label}
@@ -75,8 +94,8 @@ export function CalendarPageHeader({
           </div>
 
           <p className="max-w-[476px] text-[10px] leading-4 text-[var(--text-faint)]">
-            Day, Month and Year are visible switches. Week is fully designed in
-            V1.
+            View switcher, period navigation and scheduling are local prototype
+            controls.
           </p>
         </div>
       </div>

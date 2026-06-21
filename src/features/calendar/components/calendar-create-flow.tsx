@@ -1,67 +1,41 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Pill, accentStyle } from "@/components/layout/route-page-primitives";
 import { cn } from "@/lib/cn";
+import type { CalendarRawTimedBlock } from "../calendar-view-model";
 import {
   calendarBlockTypeLabels,
   type CalendarCreateBlockType,
   type CalendarSelectedTimeSlotViewModel,
+  type SchedulableTaskViewModel,
 } from "../calendar-types";
 
-type CalendarCreateOption = {
-  type: CalendarCreateBlockType;
-  label: string;
-  microcopy: string;
-  accent: string;
+type CalendarCreateDefaults = Partial<CalendarSelectedTimeSlotViewModel>;
+type ScheduleTab = "existing-task" | "new-item";
+type SortMode =
+  | "priority"
+  | "due-date"
+  | "shortest"
+  | "longest"
+  | "recently-updated";
+
+type CalendarCreateProps = {
+  defaults?: CalendarCreateDefaults;
+  onCreateBlock: (block: CalendarRawTimedBlock) => void;
+  resolveDayId: (date: string) => string;
+  tasks: readonly SchedulableTaskViewModel[];
 };
 
-type CalendarCreateDefaults = Partial<CalendarSelectedTimeSlotViewModel>;
-
-const CREATE_OPTIONS = [
-  {
-    type: "event",
-    label: "Event",
-    microcopy: "fixed appointment",
-    accent: "var(--accent-green)",
-  },
-  {
-    type: "task_block",
-    label: "Task Block",
-    microcopy: "schedule an existing task",
-    accent: "var(--accent-blue)",
-  },
-  {
-    type: "focus_block",
-    label: "Focus Block",
-    microcopy: "reserve deep work time",
-    accent: "var(--accent-cyan)",
-  },
-  {
-    type: "batch_block",
-    label: "Batch Block",
-    microcopy: "group small tasks",
-    accent: "var(--accent-purple)",
-  },
-  {
-    type: "routine",
-    label: "Routine",
-    microcopy: "recurring ritual",
-    accent: "var(--accent-orange)",
-  },
-  {
-    type: "deadline",
-    label: "Deadline",
-    microcopy: "due date marker",
-    accent: "var(--accent-red)",
-  },
-  {
-    type: "reminder",
-    label: "Reminder",
-    microcopy: "soft nudge",
-    accent: "var(--accent-yellow)",
-  },
-] satisfies CalendarCreateOption[];
+const typeOptions = [
+  "event",
+  "task_block",
+  "focus_block",
+  "routine",
+  "meal",
+  "review",
+  "deadline",
+] satisfies CalendarCreateBlockType[];
 
 const inputClass =
   "mt-1 min-h-9 w-full rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.76)] px-3 text-[12px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)]";
@@ -69,8 +43,41 @@ const inputClass =
 const actionButtonClass =
   "min-h-8 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.76)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]";
 
-function optionFor(type: CalendarCreateBlockType) {
-  return CREATE_OPTIONS.find((option) => option.type === type) ?? CREATE_OPTIONS[0];
+const priorityRank = {
+  P0: 0,
+  P1: 1,
+  P2: 2,
+  P3: 3,
+};
+
+function timeToMinutes(time: string) {
+  const [hours, minutes] = time.split(":").map(Number);
+
+  return hours * 60 + minutes;
+}
+
+function addMinutes(time: string, minutesToAdd: number) {
+  const minutes = timeToMinutes(time) + minutesToAdd;
+
+  return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+}
+
+function accentForType(type: CalendarCreateBlockType) {
+  if (type === "event") return "var(--accent-green)";
+  if (type === "task_block") return "var(--accent-blue)";
+  if (type === "focus_block") return "var(--accent-cyan)";
+  if (type === "routine") return "var(--accent-orange)";
+  if (type === "deadline") return "var(--accent-red)";
+  if (type === "meal") return "var(--accent-yellow)";
+  return "var(--accent-cyan)";
+}
+
+function sourceForType(type: CalendarCreateBlockType): CalendarRawTimedBlock["source"] {
+  if (type === "task_block") return "task";
+  if (type === "meal") return "meal_planner";
+  if (type === "review") return "review";
+  if (type === "routine") return "routine";
+  return "manual";
 }
 
 function FieldLabel({
@@ -95,16 +102,18 @@ function FieldLabel({
 
 function TextField({
   label,
+  onChange,
   optional,
-  type = "text",
-  defaultValue,
   placeholder,
+  type = "text",
+  value,
 }: Readonly<{
   label: string;
+  onChange: (value: string) => void;
   optional?: boolean;
-  type?: "text" | "date" | "time" | "number" | "url";
-  defaultValue?: string;
   placeholder?: string;
+  type?: "text" | "date" | "time";
+  value: string;
 }>) {
   const id = useId();
 
@@ -113,316 +122,135 @@ function TextField({
       <FieldLabel label={label} optional={optional} />
       <input
         className={inputClass}
-        defaultValue={defaultValue}
         id={id}
+        onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         type={type}
-      />
-    </label>
-  );
-}
-
-function TextAreaField({
-  label,
-  optional,
-  placeholder,
-}: Readonly<{
-  label: string;
-  optional?: boolean;
-  placeholder?: string;
-}>) {
-  const id = useId();
-
-  return (
-    <label className="block min-w-0" htmlFor={id}>
-      <FieldLabel label={label} optional={optional} />
-      <textarea
-        className={cn(inputClass, "min-h-[76px] resize-none py-2 leading-5")}
-        id={id}
-        placeholder={placeholder}
-        rows={3}
+        value={value}
       />
     </label>
   );
 }
 
 function SelectField({
+  children,
   label,
-  optional,
-  options,
-  defaultValue,
+  onChange,
+  value,
 }: Readonly<{
+  children: React.ReactNode;
   label: string;
-  optional?: boolean;
-  options: string[];
-  defaultValue?: string;
+  onChange: (value: string) => void;
+  value: string;
 }>) {
   const id = useId();
 
   return (
     <label className="block min-w-0" htmlFor={id}>
-      <FieldLabel label={label} optional={optional} />
-      <select className={inputClass} defaultValue={defaultValue ?? ""} id={id}>
-        {optional ? <option value="">Not set</option> : null}
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
+      <FieldLabel label={label} />
+      <select
+        className={inputClass}
+        id={id}
+        onChange={(event) => onChange(event.target.value)}
+        value={value}
+      >
+        {children}
       </select>
     </label>
   );
 }
 
-function ActiveDaysField() {
-  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
-  return (
-    <fieldset className="min-w-0">
-      <legend>
-        <FieldLabel label="Active days" />
-      </legend>
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        {days.map((day) => {
-          const id = `routine-day-${day.toLowerCase()}`;
-
-          return (
-            <label
-              className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.64)] px-2.5 text-[10px] font-semibold text-[var(--text-secondary)]"
-              htmlFor={id}
-              key={day}
-            >
-              <input
-                className="size-3 accent-[var(--accent-cyan)]"
-                defaultChecked={["Mon", "Tue", "Wed", "Thu", "Fri"].includes(day)}
-                id={id}
-                type="checkbox"
-              />
-              {day}
-            </label>
-          );
-        })}
-      </div>
-    </fieldset>
-  );
-}
-
-function DateTimeFields({
-  defaults,
-}: Readonly<{
-  defaults: CalendarCreateDefaults;
-}>) {
-  return (
-    <>
-      <TextField
-        defaultValue={defaults.date ?? "2026-06-12"}
-        label="Date"
-        type="date"
-      />
-      <TextField
-        defaultValue={defaults.startTime ?? "15:30"}
-        label="Start time"
-        type="time"
-      />
-      <TextField
-        defaultValue={defaults.endTime ?? "17:00"}
-        label="End time"
-        type="time"
-      />
-    </>
-  );
-}
-
-function CreateFields({
+function buildBlock({
+  area,
+  date,
+  dayId,
+  endTime,
+  id,
+  priority,
+  project,
+  sourceHref,
+  sourceLabel,
+  startTime,
+  status = "planned",
+  taskId,
+  title,
   type,
-  defaults,
-}: Readonly<{
+}: {
+  area: string;
+  date: string;
+  dayId: string;
+  endTime: string;
+  id: string;
+  priority?: CalendarRawTimedBlock["priority"];
+  project?: string;
+  sourceHref?: string;
+  sourceLabel: string;
+  startTime: string;
+  status?: CalendarRawTimedBlock["status"];
+  taskId?: string;
+  title: string;
   type: CalendarCreateBlockType;
-  defaults: CalendarCreateDefaults;
-}>) {
-  if (type === "event") {
-    return (
-      <>
-        <TextField label="Title" placeholder="Team sync" />
-        <DateTimeFields defaults={defaults} />
-        <SelectField
-          label="Area"
-          options={["Work", "Education", "Coding", "Health", "Personal"]}
-        />
-        <TextField label="Location / link" optional placeholder="Room or URL" />
-        <TextAreaField label="Notes" optional placeholder="Context for the appointment" />
-        <SelectField
-          label="Repeat"
-          optional
-          options={["Does not repeat", "Daily", "Weekly", "Weekdays", "Custom"]}
-        />
-      </>
-    );
-  }
-
-  if (type === "task_block") {
-    return (
-      <>
-        <SelectField
-          label="Linked task"
-          options={[
-            "Literaturstruktur uberarbeiten",
-            "Run lint and TypeScript checks",
-            "Prepare static review route copy",
-          ]}
-        />
-        <DateTimeFields defaults={defaults} />
-        <SelectField label="Priority" optional options={["P1", "P2", "P3", "none"]} />
-        <SelectField
-          label="Energy fit"
-          optional
-          options={["Deep work", "Medium", "Low", "Any"]}
-        />
-        <TextAreaField
-          label="Planned outcome"
-          optional
-          placeholder="What should be true after this block?"
-        />
-      </>
-    );
-  }
-
-  if (type === "focus_block") {
-    return (
-      <>
-        <TextField label="Title" placeholder="Deep Work: Masterarbeit" />
-        <SelectField
-          label="Area"
-          options={["Education", "Coding", "Work", "Personal"]}
-        />
-        <SelectField
-          label="Project"
-          optional
-          options={["Masterarbeit", "Life OS App", "Java Learning"]}
-        />
-        <SelectField
-          label="Goal"
-          optional
-          options={["Thesis progress", "V5 implementation", "Skill practice"]}
-        />
-        <DateTimeFields defaults={defaults} />
-        <TextAreaField
-          label="Intended outcome"
-          placeholder="Define the useful output for this focus window."
-        />
-      </>
-    );
-  }
-
-  if (type === "batch_block") {
-    return (
-      <>
-        <TextField label="Title" placeholder="Batch Block: Admin Cleanup" />
-        <DateTimeFields defaults={defaults} />
-        <TextAreaField
-          label="Included tasks"
-          placeholder="List the small tasks grouped into this time window."
-        />
-        <TextField label="Max task count" optional placeholder="5" type="number" />
-        <TextAreaField
-          label="Batch goal"
-          placeholder="A batch block groups several small items into one planned time window."
-        />
-      </>
-    );
-  }
-
-  if (type === "routine") {
-    return (
-      <>
-        <TextField label="Title" placeholder="Routine: Morning Briefing" />
-        <TextField label="Ritual type" optional placeholder="Startup / shutdown" />
-        <TextField
-          defaultValue={defaults.startTime ?? "07:30"}
-          label="Start time"
-          type="time"
-        />
-        <TextField
-          defaultValue={defaults.endTime ?? "07:50"}
-          label="End time"
-          type="time"
-        />
-        <SelectField
-          defaultValue="Weekdays"
-          label="Repeat"
-          options={["Daily", "Weekly", "Weekdays", "Custom days"]}
-        />
-        <ActiveDaysField />
-        <TextField label="End date" optional type="date" />
-      </>
-    );
-  }
-
-  if (type === "deadline") {
-    return (
-      <>
-        <TextField label="Title" placeholder="Literature source deadline" />
-        <TextField
-          defaultValue={defaults.date ?? "2026-06-12"}
-          label="Due date"
-          type="date"
-        />
-        <TextField
-          defaultValue={defaults.startTime}
-          label="Due time"
-          optional
-          type="time"
-        />
-        <SelectField
-          label="Linked project/task/goal"
-          optional
-          options={["Masterarbeit", "Literature source task", "Thesis progress goal"]}
-        />
-        <SelectField
-          label="Warning window"
-          optional
-          options={["Same day", "1 day before", "3 days before", "1 week before"]}
-        />
-      </>
-    );
-  }
-
-  return (
-    <>
-      <TextField label="Title" placeholder="Reminder: Send source list" />
-      <TextField
-        defaultValue={defaults.date ?? "2026-06-12"}
-        label="Date"
-        type="date"
-      />
-      <TextField
-        defaultValue={defaults.startTime}
-        label="Time"
-        optional
-        type="time"
-      />
-      <SelectField
-        label="Area"
-        optional
-        options={["Education", "Work", "Coding", "Health", "Personal"]}
-      />
-      <TextAreaField label="Notes" optional placeholder="Soft context for the nudge." />
-    </>
-  );
+}): CalendarRawTimedBlock {
+  return {
+    id,
+    dayId,
+    date,
+    title,
+    type,
+    status,
+    source: sourceForType(type),
+    area,
+    sourceEntity: {
+      type: type === "task_block" ? "task" : "free_event",
+      label: sourceLabel,
+      href: sourceHref,
+    },
+    accent: accentForType(type),
+    meta: type === "task_block" ? "Scheduled existing task" : "Local calendar draft",
+    linkedEntity: project,
+    plannedOutcome: "Prepared from the Calendar scheduling flow.",
+    priority,
+    project,
+    taskId,
+    isFlexible: true,
+    isLocked: false,
+    startTime,
+    endTime,
+    startMinutes: timeToMinutes(startTime),
+    endMinutes: timeToMinutes(endTime),
+  };
 }
 
-function CalendarCreateDialog({
-  activeType,
-  defaults,
-  onClose,
-}: Readonly<{
-  activeType: CalendarCreateBlockType | null;
-  defaults: CalendarCreateDefaults;
-  onClose: () => void;
-}>) {
+export function CalendarCreateMenu({
+  defaults = {},
+  onCreateBlock,
+  resolveDayId,
+  tasks,
+}: Readonly<CalendarCreateProps>) {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const [draftNotice, setDraftNotice] = useState<string | null>(null);
-  const activeOption = activeType ? optionFor(activeType) : null;
+  const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState<ScheduleTab>("existing-task");
+  const [query, setQuery] = useState("");
+  const [priority, setPriority] = useState("all");
+  const [area, setArea] = useState("all");
+  const [project, setProject] = useState("all");
+  const [status, setStatus] = useState("all");
+  const [duration, setDuration] = useState("all");
+  const [dueDate, setDueDate] = useState("all");
+  const [sortMode, setSortMode] = useState<SortMode>("priority");
+  const [selectedTaskId, setSelectedTaskId] = useState(tasks[0]?.id ?? "");
+  const [date, setDate] = useState(defaults.date ?? "2026-06-12");
+  const [startTime, setStartTime] = useState(defaults.startTime ?? "15:30");
+  const [endTime, setEndTime] = useState(defaults.endTime ?? "17:00");
+  const [blockType, setBlockType] =
+    useState<CalendarCreateBlockType>("task_block");
+  const [newType, setNewType] = useState<CalendarCreateBlockType>("event");
+  const [newTitle, setNewTitle] = useState("");
+  const [newArea, setNewArea] = useState("Coding");
+  const [newProject, setNewProject] = useState("");
+  const [newStatus, setNewStatus] = useState("planned");
+  const [notice, setNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -431,62 +259,209 @@ function CalendarCreateDialog({
       return;
     }
 
-    if (activeType && !dialog.open) {
+    if (open && !dialog.open) {
       dialog.showModal();
     }
 
-    if (!activeType && dialog.open) {
+    if (!open && dialog.open) {
       dialog.close();
     }
-  }, [activeType]);
+  }, [open]);
+
+  const areas = useMemo(
+    () => Array.from(new Set(tasks.map((task) => task.area))).sort(),
+    [tasks],
+  );
+  const projects = useMemo(
+    () => Array.from(new Set(tasks.map((task) => task.project))).sort(),
+    [tasks],
+  );
+
+  const filteredTasks = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    const next = tasks.filter((task) => {
+      const matchesQuery =
+        normalizedQuery.length === 0 ||
+        `${task.title} ${task.area} ${task.project}`
+          .toLowerCase()
+          .includes(normalizedQuery);
+      const matchesPriority = priority === "all" || task.priority === priority;
+      const matchesArea = area === "all" || task.area === area;
+      const matchesProject = project === "all" || task.project === project;
+      const matchesStatus = status === "all" || task.status === status;
+      const matchesDuration =
+        duration === "all" ||
+        (duration === "short" && task.estimatedMinutes <= 30) ||
+        (duration === "medium" &&
+          task.estimatedMinutes > 30 &&
+          task.estimatedMinutes <= 60) ||
+        (duration === "long" && task.estimatedMinutes > 60);
+      const matchesDueDate =
+        dueDate === "all" ||
+        (dueDate === "scheduled" && task.dueDate) ||
+        (dueDate === "unscheduled" && !task.dueDate);
+
+      return (
+        matchesQuery &&
+        matchesPriority &&
+        matchesArea &&
+        matchesProject &&
+        matchesStatus &&
+        matchesDuration &&
+        matchesDueDate
+      );
+    });
+
+    return next.sort((a, b) => {
+      if (sortMode === "due-date") {
+        return (a.dueDate ?? "9999-12-31").localeCompare(
+          b.dueDate ?? "9999-12-31",
+        );
+      }
+
+      if (sortMode === "shortest") {
+        return a.estimatedMinutes - b.estimatedMinutes;
+      }
+
+      if (sortMode === "longest") {
+        return b.estimatedMinutes - a.estimatedMinutes;
+      }
+
+      if (sortMode === "recently-updated") {
+        return b.recentlyUpdated.localeCompare(a.recentlyUpdated);
+      }
+
+      return priorityRank[a.priority] - priorityRank[b.priority];
+    });
+  }, [
+    area,
+    dueDate,
+    duration,
+    priority,
+    project,
+    query,
+    sortMode,
+    status,
+    tasks,
+  ]);
+
+  const selectedTask =
+    tasks.find((task) => task.id === selectedTaskId) ?? filteredTasks[0] ?? tasks[0];
 
   function closeDialog() {
-    setDraftNotice(null);
-    onClose();
+    setOpen(false);
+    setNotice(null);
+    setError(null);
+  }
+
+  function validateTime() {
+    if (timeToMinutes(endTime) <= timeToMinutes(startTime)) {
+      setError("End time must be after start time.");
+      return false;
+    }
+
+    setError(null);
+    return true;
+  }
+
+  function saveExistingTask() {
+    if (!selectedTask || !validateTime()) {
+      return;
+    }
+
+    onCreateBlock(
+      buildBlock({
+        area: selectedTask.area,
+        date,
+        dayId: resolveDayId(date),
+        endTime,
+        id: `scheduled-${selectedTask.id}-${Date.now()}`,
+        priority: selectedTask.priority,
+        project: selectedTask.project,
+        sourceHref: "/tasks",
+        sourceLabel: "Task / Scheduling Queue",
+        startTime,
+        status: "planned",
+        taskId: selectedTask.id,
+        title:
+          blockType === "focus_block"
+            ? `Focus Block: ${selectedTask.title}`
+            : `Task Block: ${selectedTask.title}`,
+        type: blockType,
+      }),
+    );
+    setNotice("Task scheduled locally. No backend record was written.");
+  }
+
+  function saveNewItem() {
+    if (!validateTime()) {
+      return;
+    }
+
+    onCreateBlock(
+      buildBlock({
+        area: newArea,
+        date,
+        dayId: resolveDayId(date),
+        endTime,
+        id: `calendar-draft-${Date.now()}`,
+        project: newProject || undefined,
+        sourceLabel: "Manual calendar draft",
+        startTime,
+        status: newStatus as CalendarRawTimedBlock["status"],
+        title:
+          newTitle.trim() ||
+          `${calendarBlockTypeLabels[newType]} · ${date} ${startTime}`,
+        type: newType,
+      }),
+    );
+    setNotice("New item added to the local calendar mock state.");
   }
 
   return (
-    <dialog
-      aria-labelledby="calendar-create-dialog-heading"
-      className="w-[min(720px,calc(100vw-24px))] max-h-[calc(100dvh-24px)] overflow-hidden rounded-[18px] border border-[var(--border-default)] bg-[var(--surface-1)] p-0 text-left text-[var(--text-primary)] shadow-[0_24px_80px_rgba(0,0,0,.48)] backdrop:bg-[rgba(0,0,0,.58)]"
-      onCancel={(event) => {
-        event.preventDefault();
-        closeDialog();
-      }}
-      onClose={() => {
-        setDraftNotice(null);
-      }}
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) {
+    <>
+      <button
+        className="min-h-8 rounded-full border border-[rgba(95,200,215,.28)] bg-[rgba(95,200,215,.14)] px-3 text-[11px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(95,200,215,.42)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+        onClick={() => setOpen(true)}
+        type="button"
+      >
+        + New
+      </button>
+
+      <dialog
+        aria-labelledby="calendar-schedule-dialog-heading"
+        className="w-[min(980px,calc(100vw-24px))] max-h-[calc(100dvh-24px)] overflow-hidden rounded-[18px] border border-[var(--border-default)] bg-[var(--surface-1)] p-0 text-left text-[var(--text-primary)] shadow-[0_24px_80px_rgba(0,0,0,.48)] backdrop:bg-[rgba(0,0,0,.58)]"
+        onCancel={(event) => {
+          event.preventDefault();
           closeDialog();
-        }
-      }}
-      ref={dialogRef}
-    >
-      {activeOption ? (
+        }}
+        onMouseDown={(event) => {
+          if (event.target === event.currentTarget) {
+            closeDialog();
+          }
+        }}
+        ref={dialogRef}
+      >
         <div className="flex max-h-[calc(100dvh-24px)] flex-col">
-          <div
-            className="border-b border-[var(--border-subtle)] bg-[color-mix(in_srgb,var(--accent)_7%,rgba(14,23,38,.92))] px-4 py-3"
-            style={accentStyle(activeOption.accent)}
-          >
+          <div className="border-b border-[var(--border-subtle)] bg-[rgba(14,23,38,.92)] px-4 py-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">
-                  Create calendar block
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-cyan)]">
+                  Calendar scheduling
                 </p>
                 <h2
                   className="mt-1 text-[18px] font-semibold leading-6 text-[var(--text-primary)]"
-                  id="calendar-create-dialog-heading"
+                  id="calendar-schedule-dialog-heading"
                 >
-                  {activeOption.label}
+                  Schedule something
                 </h2>
-                <p className="mt-1 text-[11px] leading-4 text-[var(--text-muted)]">
-                  {activeOption.microcopy}. Calendar prepares time; source
-                  entities stay in Tasks, Projects, Goals or domain pages.
+                <p className="mt-1 max-w-2xl text-[11px] leading-4 text-[var(--text-muted)]">
+                  Existing tasks and new calendar items are added to local mock
+                  state only.
                 </p>
               </div>
               <button
-                aria-label="Close create panel"
+                aria-label="Close scheduling dialog"
                 className="size-8 shrink-0 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.82)] text-[15px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                 onClick={closeDialog}
                 type="button"
@@ -494,177 +469,281 @@ function CalendarCreateDialog({
                 x
               </button>
             </div>
-            {defaults.dayLabel ? (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                <Pill accent={activeOption.accent}>{defaults.dayLabel}</Pill>
-                <Pill quiet>
-                  {defaults.startTime ?? "15:30"}-{defaults.endTime ?? "17:00"}
-                </Pill>
-              </div>
-            ) : null}
+
+            <div className="mt-3 flex w-full max-w-[360px] rounded-full border border-[var(--border-subtle)] bg-[rgba(11,17,28,.72)] p-1">
+              {[
+                ["existing-task", "Existing task"],
+                ["new-item", "New item"],
+              ].map(([value, label]) => (
+                <button
+                  aria-pressed={tab === value}
+                  className={cn(
+                    "min-h-7 flex-1 rounded-full px-3 text-[10px] font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
+                    tab === value
+                      ? "border border-[rgba(95,200,215,.28)] bg-[rgba(95,200,215,.16)] text-[var(--text-primary)]"
+                      : "border border-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)]",
+                  )}
+                  key={value}
+                  onClick={() => setTab(value as ScheduleTab)}
+                  type="button"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="overflow-y-auto px-4 py-3">
-            {activeOption.type === "batch_block" ? (
-              <p className="mb-3 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.58)] px-3 py-2 text-[11px] leading-4 text-[var(--text-muted)]">
-                A batch block groups several small items into one planned time window.
-              </p>
-            ) : null}
-            <div className="grid gap-3 sm:grid-cols-2">
-              <CreateFields defaults={defaults} type={activeOption.type} />
-            </div>
-            {draftNotice ? (
-              <p
-                className="mt-3 rounded-[10px] border border-[rgba(95,200,215,.22)] bg-[rgba(95,200,215,.08)] px-3 py-2 text-[11px] leading-4 text-[var(--text-secondary)]"
-                role="status"
-              >
-                {draftNotice}
-              </p>
-            ) : null}
+          <div className="grid min-h-0 gap-3 overflow-y-auto p-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+            {tab === "existing-task" ? (
+              <div className="min-w-0">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <TextField
+                    label="Search"
+                    onChange={setQuery}
+                    placeholder="Task, area or project"
+                    value={query}
+                  />
+                  <SelectField label="Priority" onChange={setPriority} value={priority}>
+                    <option value="all">All priorities</option>
+                    {["P0", "P1", "P2", "P3"].map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </SelectField>
+                  <SelectField label="Area" onChange={setArea} value={area}>
+                    <option value="all">All areas</option>
+                    {areas.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </SelectField>
+                  <SelectField label="Project" onChange={setProject} value={project}>
+                    <option value="all">All projects</option>
+                    {projects.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </SelectField>
+                  <SelectField label="Status" onChange={setStatus} value={status}>
+                    <option value="all">All statuses</option>
+                    {["open", "planned", "in-progress", "done"].map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </SelectField>
+                  <SelectField
+                    label="Duration"
+                    onChange={setDuration}
+                    value={duration}
+                  >
+                    <option value="all">Any duration</option>
+                    <option value="short">30 min or less</option>
+                    <option value="medium">31-60 min</option>
+                    <option value="long">Over 60 min</option>
+                  </SelectField>
+                  <SelectField label="Due date" onChange={setDueDate} value={dueDate}>
+                    <option value="all">Any due date</option>
+                    <option value="scheduled">Has due date</option>
+                    <option value="unscheduled">No due date</option>
+                  </SelectField>
+                  <SelectField
+                    label="Sort"
+                    onChange={(value) => setSortMode(value as SortMode)}
+                    value={sortMode}
+                  >
+                    <option value="priority">Priority</option>
+                    <option value="due-date">Due date</option>
+                    <option value="shortest">Shortest first</option>
+                    <option value="longest">Longest first</option>
+                    <option value="recently-updated">Recently updated</option>
+                  </SelectField>
+                </div>
+
+                <div className="mt-3 grid gap-2">
+                  {filteredTasks.length > 0 ? (
+                    filteredTasks.map((task) => (
+                      <button
+                        aria-pressed={selectedTask?.id === task.id}
+                        className={cn(
+                          "rounded-[10px] border bg-[rgba(18,28,43,.54)] px-3 py-2 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
+                          selectedTask?.id === task.id
+                            ? "border-[color-mix(in_srgb,var(--accent)_48%,transparent)]"
+                            : "border-[var(--border-subtle)] hover:border-[var(--border-default)]",
+                        )}
+                        key={task.id}
+                        onClick={() => {
+                          setSelectedTaskId(task.id);
+                          setEndTime(addMinutes(startTime, task.estimatedMinutes));
+                        }}
+                        style={accentStyle(task.accent)}
+                        type="button"
+                      >
+                        <div className="flex min-w-0 items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate text-[12px] font-semibold text-[var(--text-primary)]">
+                              {task.title}
+                            </p>
+                            <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
+                              {task.priority} · {task.estimatedMinutes} min ·{" "}
+                              {task.area} / {task.project}
+                            </p>
+                          </div>
+                          <div className="flex shrink-0 flex-col items-end gap-1">
+                            <Pill accent={task.accent}>{task.status}</Pill>
+                            {task.alreadyScheduled ? (
+                              <span className="text-[9px] font-semibold text-[var(--text-faint)]">
+                                already scheduled
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
+                        <p className="mt-1 text-[10px] leading-4 text-[var(--text-secondary)]">
+                          Due {task.dueDate ?? "not set"} · updated{" "}
+                          {task.recentlyUpdated}
+                        </p>
+                      </button>
+                    ))
+                  ) : (
+                    <p className="rounded-[10px] border border-dashed border-[var(--border-default)] bg-[rgba(168,183,204,.05)] px-3 py-3 text-[11px] text-[var(--text-muted)]">
+                      No tasks match the selected filters.
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+                <SelectField
+                  label="Type"
+                  onChange={(value) => setNewType(value as CalendarCreateBlockType)}
+                  value={newType}
+                >
+                  {typeOptions.map((type) => (
+                    <option key={type} value={type}>
+                      {calendarBlockTypeLabels[type]}
+                    </option>
+                  ))}
+                </SelectField>
+                <TextField
+                  label="Title"
+                  onChange={setNewTitle}
+                  placeholder="Team sync"
+                  value={newTitle}
+                />
+                <TextField label="Area / label" onChange={setNewArea} value={newArea} />
+                <TextField
+                  label="Project"
+                  onChange={setNewProject}
+                  optional
+                  placeholder="Life OS App"
+                  value={newProject}
+                />
+                <SelectField label="Status" onChange={setNewStatus} value={newStatus}>
+                  <option value="planned">planned</option>
+                  <option value="draft">draft</option>
+                </SelectField>
+              </div>
+            )}
+
+            <aside className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.42)] p-3">
+              <h3 className="text-[13px] font-semibold text-[var(--text-primary)]">
+                Time planning
+              </h3>
+              <div className="mt-3 grid gap-3">
+                <TextField label="Date" onChange={setDate} type="date" value={date} />
+                <TextField
+                  label="Start time"
+                  onChange={setStartTime}
+                  type="time"
+                  value={startTime}
+                />
+                <TextField
+                  label="End time"
+                  onChange={setEndTime}
+                  type="time"
+                  value={endTime}
+                />
+                {tab === "existing-task" ? (
+                  <SelectField
+                    label="Block type"
+                    onChange={(value) =>
+                      setBlockType(value as CalendarCreateBlockType)
+                    }
+                    value={blockType}
+                  >
+                    <option value="task_block">Task Block</option>
+                    <option value="focus_block">Focus Block</option>
+                  </SelectField>
+                ) : null}
+              </div>
+              <div className="mt-3 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.48)] px-3 py-2 text-[10px] leading-4 text-[var(--text-muted)]">
+                <p className="font-semibold text-[var(--text-secondary)]">
+                  Suggested slots
+                </p>
+                <p>Stub only: Thu 15:30-17:00, Fri 09:00-10:00.</p>
+              </div>
+              {error ? (
+                <p
+                  className="mt-3 rounded-[10px] border border-[rgba(221,107,95,.24)] bg-[rgba(221,107,95,.08)] px-3 py-2 text-[11px] text-[var(--text-secondary)]"
+                  role="alert"
+                >
+                  {error}
+                </p>
+              ) : null}
+              {notice ? (
+                <p
+                  className="mt-3 rounded-[10px] border border-[rgba(95,200,215,.22)] bg-[rgba(95,200,215,.08)] px-3 py-2 text-[11px] text-[var(--text-secondary)]"
+                  role="status"
+                >
+                  {notice}
+                </p>
+              ) : null}
+            </aside>
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--border-subtle)] bg-[rgba(11,17,28,.58)] px-4 py-3">
             <p className="max-w-md text-[10px] leading-4 text-[var(--text-faint)]">
-              Phase 2 UI only. This prepares a draft shape and does not save to
-              Supabase, sync calendars or mutate Tasks.
+              Phase 2 UI only. No calendar sync, automation or Supabase write is
+              performed.
             </p>
             <div className="flex flex-wrap gap-2">
               <button className={actionButtonClass} onClick={closeDialog} type="button">
                 Cancel
               </button>
               <button
-                className="min-h-8 rounded-full border border-[color-mix(in_srgb,var(--accent)_34%,transparent)] bg-[color-mix(in_srgb,var(--accent)_16%,rgba(18,28,43,.86))] px-3 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[color-mix(in_srgb,var(--accent)_52%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-                onClick={() => {
-                  setDraftNotice(
-                    `${activeOption.label} draft prepared locally. No calendar record was saved.`,
-                  );
-                }}
-                style={accentStyle(activeOption.accent)}
+                className="min-h-8 rounded-full border border-[rgba(95,200,215,.34)] bg-[rgba(95,200,215,.16)] px-3 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(95,200,215,.48)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                onClick={tab === "existing-task" ? saveExistingTask : saveNewItem}
                 type="button"
               >
-                Prepare draft
+                Save to mock calendar
               </button>
             </div>
           </div>
         </div>
-      ) : null}
-    </dialog>
-  );
-}
-
-export function CalendarCreateMenu({
-  defaults = {},
-}: Readonly<{
-  defaults?: CalendarCreateDefaults;
-}>) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [activeType, setActiveType] = useState<CalendarCreateBlockType | null>(
-    null,
-  );
-  const menuId = useId();
-
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setMenuOpen(false);
-      }
-    }
-
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, []);
-
-  function openType(type: CalendarCreateBlockType) {
-    setMenuOpen(false);
-    setActiveType(type);
-  }
-
-  return (
-    <div className="relative">
-      <button
-        aria-controls={menuOpen ? menuId : undefined}
-        aria-expanded={menuOpen}
-        aria-haspopup="menu"
-        className="min-h-8 rounded-full border border-[rgba(95,200,215,.28)] bg-[rgba(95,200,215,.14)] px-3 text-[11px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(95,200,215,.42)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-        onClick={() => setMenuOpen((open) => !open)}
-        type="button"
-      >
-        + New
-      </button>
-
-      {menuOpen ? (
-        <div
-          className="absolute right-0 z-20 mt-2 w-[min(320px,calc(100vw-32px))] overflow-hidden rounded-[14px] border border-[var(--border-default)] bg-[rgba(15,23,36,.98)] p-1.5 shadow-[0_18px_48px_rgba(0,0,0,.38)]"
-          id={menuId}
-          role="menu"
-        >
-          {CREATE_OPTIONS.map((option) => (
-            <button
-              className="grid w-full rounded-[10px] px-3 py-2 text-left transition hover:bg-[rgba(168,183,204,.07)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-              key={option.type}
-              onClick={() => openType(option.type)}
-              role="menuitem"
-              style={accentStyle(option.accent)}
-              type="button"
-            >
-              <span className="text-[12px] font-semibold text-[var(--text-primary)]">
-                {option.label}
-              </span>
-              <span className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
-                {option.microcopy}
-              </span>
-            </button>
-          ))}
-        </div>
-      ) : null}
-
-      <CalendarCreateDialog
-        activeType={activeType}
-        defaults={defaults}
-        onClose={() => setActiveType(null)}
-      />
-    </div>
+      </dialog>
+    </>
   );
 }
 
 export function CalendarCreateActionButtons({
   defaults,
-  types,
-}: Readonly<{
-  defaults: CalendarSelectedTimeSlotViewModel;
-  types: CalendarCreateBlockType[];
-}>) {
-  const [activeType, setActiveType] = useState<CalendarCreateBlockType | null>(
-    null,
-  );
-
+  onCreateBlock,
+  resolveDayId,
+  tasks,
+}: Readonly<
+  CalendarCreateProps & {
+    defaults: CalendarSelectedTimeSlotViewModel;
+  }
+>) {
   return (
-    <>
-      <div className="grid gap-1.5 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-        {types.map((type) => {
-          const option = optionFor(type);
-
-          return (
-            <button
-              className="min-h-8 rounded-full border border-[color-mix(in_srgb,var(--accent)_30%,transparent)] bg-[color-mix(in_srgb,var(--accent)_10%,rgba(18,28,43,.74))] px-3 text-left text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[color-mix(in_srgb,var(--accent)_48%,transparent)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-              key={type}
-              onClick={() => setActiveType(type)}
-              style={accentStyle(option.accent)}
-              type="button"
-            >
-              + {calendarBlockTypeLabels[type]}
-            </button>
-          );
-        })}
-      </div>
-      <CalendarCreateDialog
-        activeType={activeType}
-        defaults={defaults}
-        onClose={() => setActiveType(null)}
-      />
-    </>
+    <CalendarCreateMenu
+      defaults={defaults}
+      onCreateBlock={onCreateBlock}
+      resolveDayId={resolveDayId}
+      tasks={tasks}
+    />
   );
 }

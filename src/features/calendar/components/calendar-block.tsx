@@ -20,8 +20,12 @@ function blockLabel(block: CalendarTimedBlockViewModel) {
 
 export function CalendarTimedBlock({
   block,
+  onSelect,
+  selected = false,
 }: Readonly<{
   block: CalendarTimedBlockViewModel;
+  onSelect?: (blockId: string) => void;
+  selected?: boolean;
 }>) {
   const isRegular = block.density === "regular";
   const isCompact = block.density === "compact";
@@ -35,11 +39,17 @@ export function CalendarTimedBlock({
   };
 
   return (
-    <article
+    <button
       aria-label={blockLabel(block)}
+      aria-pressed={selected}
+      onClick={() => onSelect?.(block.id)}
       title={blockLabel(block)}
+      type="button"
       className={cn(
-        "absolute overflow-hidden rounded-[8px] border border-[color-mix(in_srgb,var(--accent)_26%,transparent)] bg-[color-mix(in_srgb,var(--accent)_12%,rgba(18,28,43,.92))] shadow-[0_6px_14px_rgba(0,0,0,.12)]",
+        "absolute overflow-hidden rounded-[8px] border bg-[color-mix(in_srgb,var(--accent)_12%,rgba(18,28,43,.92))] text-left shadow-[0_6px_14px_rgba(0,0,0,.12)] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
+        selected
+          ? "border-[color-mix(in_srgb,var(--accent)_62%,transparent)] ring-1 ring-[color-mix(in_srgb,var(--accent)_42%,transparent)]"
+          : "border-[color-mix(in_srgb,var(--accent)_26%,transparent)] hover:border-[color-mix(in_srgb,var(--accent)_42%,transparent)]",
         isRegular && "min-h-[72px] px-2.5 py-2",
         isCompact && "min-h-[52px] px-2 py-1.5",
         isMicro && "min-h-[40px] px-2 py-1",
@@ -106,28 +116,33 @@ export function CalendarTimedBlock({
           </p>
         </div>
       ) : null}
-    </article>
+    </button>
   );
 }
 
 export function CalendarAllDayBlock({
   block,
+  onSelect,
   selected = false,
 }: Readonly<{
   block: CalendarAllDayBlockViewModel;
+  onSelect?: (blockId: string) => void;
   selected?: boolean;
 }>) {
   return (
-    <article
+    <button
       aria-label={`${block.title}, ${block.timeLabel ?? "all day"}, ${calendarBlockTypeLabels[block.type]}, ${calendarBlockStatusLabels[block.status]}, source ${block.sourceEntity.label}, area ${block.area}`}
+      aria-pressed={selected}
+      onClick={() => onSelect?.(block.id)}
       title={`${block.title}, ${calendarBlockStatusLabels[block.status]}, ${block.sourceEntity.label}`}
       className={cn(
-        "min-h-[38px] overflow-hidden rounded-[8px] border bg-[color-mix(in_srgb,var(--accent)_10%,rgba(18,28,43,.82))] px-1.5 py-1",
+        "min-h-[38px] overflow-hidden rounded-[8px] border bg-[color-mix(in_srgb,var(--accent)_10%,rgba(18,28,43,.82))] px-1.5 py-1 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
         selected
-          ? "border-[color-mix(in_srgb,var(--accent)_42%,transparent)]"
-          : "border-[color-mix(in_srgb,var(--accent)_20%,transparent)]",
+          ? "border-[color-mix(in_srgb,var(--accent)_62%,transparent)] ring-1 ring-[color-mix(in_srgb,var(--accent)_42%,transparent)]"
+          : "border-[color-mix(in_srgb,var(--accent)_20%,transparent)] hover:border-[color-mix(in_srgb,var(--accent)_38%,transparent)]",
       )}
       style={accentStyle(block.accent)}
+      type="button"
     >
       <div className="grid min-w-0 gap-0.5">
         <div className="flex min-w-0 items-center justify-between gap-1">
@@ -148,6 +163,6 @@ export function CalendarAllDayBlock({
           </p>
         </div>
       </div>
-    </article>
+    </button>
   );
 }

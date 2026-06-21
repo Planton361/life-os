@@ -10,6 +10,7 @@ export type NavigationItem = {
 
 export type NavigationSection = {
   label: string;
+  href: `/${string}`;
   accent: string;
   items: NavigationItem[];
 };
@@ -135,6 +136,7 @@ export const sidebarNavigation: SidebarNavigation = {
   sections: [
     {
       label: "Health & Fitness",
+      href: "/health",
       accent: "var(--accent-red)",
       items: [
         {
@@ -161,13 +163,9 @@ export const sidebarNavigation: SidebarNavigation = {
     },
     {
       label: "Nutrition",
+      href: "/nutrition",
       accent: "var(--accent-yellow)",
       items: [
-        {
-          label: "Overview",
-          href: "/nutrition",
-          status: "ready",
-        },
         {
           label: "Meal Planner",
           href: "/nutrition/meal-planner",
@@ -187,13 +185,9 @@ export const sidebarNavigation: SidebarNavigation = {
     },
     {
       label: "Coding",
+      href: "/coding",
       accent: "var(--accent-blue)",
       items: [
-        {
-          label: "Overview",
-          href: "/coding",
-          status: "ready",
-        },
         {
           label: "Repositories",
           href: "/coding/repositories",
@@ -220,6 +214,7 @@ export const sidebarNavigation: SidebarNavigation = {
     },
     {
       label: "Life",
+      href: "/life",
       accent: "var(--accent-purple)",
       items: [
         {
@@ -268,13 +263,9 @@ export const sidebarNavigation: SidebarNavigation = {
     },
     {
       label: "Education",
+      href: "/education",
       accent: "var(--accent-blue)",
       items: [
-        {
-          label: "Overview",
-          href: "/education",
-          status: "ready",
-        },
         {
           label: "Scientific Work",
           href: "/education/scientific-work",
@@ -294,6 +285,7 @@ export const sidebarNavigation: SidebarNavigation = {
     },
     {
       label: "Work",
+      href: "/work",
       accent: "var(--accent-green)",
       items: [
         {
@@ -304,11 +296,6 @@ export const sidebarNavigation: SidebarNavigation = {
         {
           label: "Wiki",
           href: "/work/wiki",
-          status: "ready",
-        },
-        {
-          label: "Meetings",
-          href: "/work/meetings",
           status: "ready",
         },
       ],

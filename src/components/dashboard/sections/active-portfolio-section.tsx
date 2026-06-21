@@ -54,42 +54,50 @@ export function ActivePortfolio({
     {
       label: "Projects",
       value: countPortfolioKind(projects, "project"),
+      href: "/portfolio?view=projects",
     },
     {
       label: "Goals",
       value: countPortfolioKind(projects, "goal"),
+      href: "/portfolio?view=goals",
     },
     {
       label: "Skills",
       value: countPortfolioKind(projects, "skill"),
+      href: "/portfolio?view=skills",
     },
   ] as const;
 
   const headerCounters = (
     <div className="flex flex-wrap items-center justify-end gap-1.5">
       {activePortfolioCounters.map((counter) => (
-        <span
-          className="rounded-full border border-[rgba(91,124,250,.20)] bg-[rgba(91,124,250,.09)] px-2.5 py-1 text-[9px] font-semibold text-[var(--text-secondary)]"
+        <Link
+          aria-label={`Open portfolio ${counter.label.toLowerCase()} view`}
+          className={cn(
+            "rounded-full border border-[rgba(91,124,250,.20)] bg-[rgba(91,124,250,.09)] px-2.5 py-1 text-[9px] font-semibold text-[var(--text-secondary)] transition hover:border-[rgba(91,124,250,.34)] hover:text-[var(--text-primary)]",
+            DASHBOARD_LINK_FOCUS_CLASSES,
+          )}
+          href={counter.href}
           key={counter.label}
         >
           {counter.value} {counter.label}
-        </span>
+        </Link>
       ))}
     </div>
   );
 
   return (
     <Panel
-      className="border-[rgba(91,124,250,.16)] bg-[color-mix(in_srgb,var(--accent-blue)_4%,#101827)] 2xl:h-[546px]"
+      className="border-[rgba(91,124,250,.16)] bg-[color-mix(in_srgb,var(--accent-blue)_4%,#101827)] 2xl:h-[515px]"
       headerAccessory={headerCounters}
       subtitle={data.subtitle}
       title={data.title}
       titleClassName="text-xl"
       titleHref={data.href}
     >
-      <div className="p-4 2xl:px-[26px] 2xl:pb-3 2xl:pt-4">
-        <div className="mb-3 rounded-[13px] border border-[rgba(91,124,250,.18)] bg-[color-mix(in_srgb,var(--accent-blue)_5%,#0b1422)] p-3 2xl:mb-6">
-          <div className="grid gap-3 sm:grid-cols-[132px_minmax(0,1fr)] sm:items-center">
+      <div className="p-4 2xl:px-[22px] 2xl:pb-2 2xl:pt-3">
+        <div className="mb-3 rounded-[13px] border border-[rgba(91,124,250,.18)] bg-[color-mix(in_srgb,var(--accent-blue)_5%,#0b1422)] p-3 2xl:mb-3">
+          <div className="grid gap-3 2xl:grid-cols-[132px_minmax(0,1fr)] 2xl:items-center">
             <div>
               <p className="text-[13px] font-semibold text-[var(--text-primary)]">
                 {data.viewTitle}
@@ -118,21 +126,24 @@ export function ActivePortfolio({
             </div>
           </div>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-[263px_263px] 2xl:gap-3">
+        <div className="grid gap-3 2xl:grid-cols-[263px_263px] 2xl:gap-3">
           {visibleProjects.map((project) => (
             <Link
               aria-label={`Open portfolio item: ${project.title}`}
               className={cn(
-                "block rounded-[13px] border p-3 2xl:min-h-[162px]",
+                "block rounded-[13px] border p-3 2xl:min-h-[130px] 2xl:p-2.5",
                 DASHBOARD_LINK_FOCUS_CLASSES,
               )}
               href={project.href ?? data.href ?? "/portfolio?status=active"}
               key={project.title}
-              style={{
-                background: "color-mix(in srgb, var(--accent) 4%, #101a2a)",
-                borderColor: "color-mix(in srgb, var(--accent) 26%, transparent)",
-                "--accent": project.accent,
-              } as AccentStyle}
+              style={
+                {
+                  background: "color-mix(in srgb, var(--accent) 4%, #101a2a)",
+                  borderColor:
+                    "color-mix(in srgb, var(--accent) 26%, transparent)",
+                  "--accent": project.accent,
+                } as AccentStyle
+              }
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
@@ -143,7 +154,7 @@ export function ActivePortfolio({
                 </div>
                 <Pill accent={project.accent}>{project.label}</Pill>
               </div>
-              <p className="mt-3 text-[10px] font-medium text-[var(--text-secondary)]">
+              <p className="mt-2.5 text-[10px] font-medium text-[var(--text-secondary)]">
                 Next
               </p>
               <p className="mt-1 text-[10px] font-medium text-[var(--text-secondary)]">
@@ -158,7 +169,10 @@ export function ActivePortfolio({
                 </p>
               </div>
               <div className="mt-2">
-                <ProgressBar accent={project.accent} progress={project.progress} />
+                <ProgressBar
+                  accent={project.accent}
+                  progress={project.progress}
+                />
               </div>
             </Link>
           ))}

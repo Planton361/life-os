@@ -1,5 +1,8 @@
+"use client";
+
 import type { CSSProperties } from "react";
 import Link from "next/link";
+import { useState } from "react";
 import type {
   DashboardCommandCenterMeta,
   DashboardCommandCenterViewModel,
@@ -44,6 +47,20 @@ function ProgressBar({
       />
     </div>
   );
+}
+
+const moodToneByLabel: Record<string, { symbol: string; accent: string }> = {
+  Happy: { symbol: "🙂", accent: "var(--accent-green)" },
+  Content: { symbol: "◡", accent: "var(--accent-cyan)" },
+  Calm: { symbol: "😌", accent: "var(--accent-cyan)" },
+  Focused: { symbol: "◎", accent: "var(--accent-blue)" },
+  Tired: { symbol: "◔", accent: "var(--text-muted)" },
+  Anxious: { symbol: "!", accent: "var(--accent-orange)" },
+  Stressed: { symbol: "⚠", accent: "var(--accent-red)" },
+};
+
+function moodToneFor(mood: string) {
+  return moodToneByLabel[mood] ?? { symbol: "•", accent: "var(--accent-cyan)" };
 }
 
 function MetricCard({
@@ -412,7 +429,7 @@ function TimeProgress({
   if (data.timeProgressHref) {
     return (
       <Link
-        aria-label="Open portfolio roadmap"
+        aria-label="Open year timeline"
         className={className}
         href={data.timeProgressHref}
       >
@@ -436,31 +453,17 @@ function MoodBoard({
 }: Readonly<{
   data: DashboardCommandCenterMeta;
 }>) {
-  const moodAccent = data.moodCheck.accent;
+  const [activeMood, setActiveMood] = useState(data.moodCheck.activeOption);
+  const activeMoodTone = moodToneFor(activeMood);
+  const moodAccent = activeMoodTone.accent;
 
   return (
     <section
       aria-labelledby="mood-title"
-      className="relative isolate h-full overflow-hidden rounded-[var(--panel-radius)] border border-[rgba(95,200,215,.14)] bg-[color-mix(in_srgb,var(--accent-cyan)_8%,#0d1625)] p-3 shadow-[0_10px_26px_rgba(0,0,0,.14)]"
+      className="relative isolate h-full overflow-hidden rounded-[var(--panel-radius)] border border-[rgba(95,200,215,.14)] bg-[color-mix(in_srgb,var(--accent-cyan)_8%,#0d1625)] p-2.5 shadow-[0_10px_26px_rgba(0,0,0,.14)]"
+      style={accentStyle(moodAccent)}
     >
-      {data.moodCheck.href ? (
-        <Link
-          aria-label="Open mental health"
-          className={cn(
-            "absolute inset-0 z-0 rounded-[var(--panel-radius)]",
-            DASHBOARD_LINK_FOCUS_CLASSES,
-          )}
-          href={data.moodCheck.href}
-        >
-          <span className="sr-only">Open mental health</span>
-        </Link>
-      ) : null}
-      <div
-        className={cn(
-          "relative z-10 grid h-full gap-3 sm:grid-cols-[132px_minmax(0,1fr)] sm:items-center",
-          data.moodCheck.href && "pointer-events-none",
-        )}
-      >
+      <div className="relative z-10 grid h-full gap-2 sm:grid-cols-[118px_minmax(0,1fr)] sm:items-center">
         <div className="flex h-full flex-col justify-center">
           <p className="text-[10px] font-semibold uppercase text-[rgba(95,200,215,.86)]">
             {data.moodCheck.eyebrow}
@@ -474,51 +477,77 @@ function MoodBoard({
           <p className="mt-1 text-[10px] font-medium text-[var(--text-muted)]">
             {data.moodCheck.prompt}
           </p>
+          {data.moodCheck.href ? (
+            <Link
+              className={cn(
+                "mt-1.5 w-fit rounded-full border border-[rgba(95,200,215,.18)] bg-[rgba(95,200,215,.08)] px-2 py-0.5 text-[9px] font-semibold text-[var(--text-secondary)]",
+                DASHBOARD_LINK_FOCUS_CLASSES,
+              )}
+              href={data.moodCheck.href}
+            >
+              Mental health
+            </Link>
+          ) : null}
         </div>
         <div className="flex h-full flex-col justify-between">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <span className="grid size-7 place-items-center rounded-full bg-[rgba(66,184,131,.18)] text-sm text-[var(--accent-cyan)]">
-                :)
+              <span
+                aria-label={`${activeMood} mood indicator`}
+                className="grid size-7 place-items-center rounded-full border border-[color-mix(in_srgb,var(--accent)_28%,transparent)] bg-[color-mix(in_srgb,var(--accent)_14%,transparent)] text-sm text-[color-mix(in_srgb,var(--accent)_88%,var(--text-secondary))]"
+              >
+                {activeMoodTone.symbol}
               </span>
               <div>
                 <p className="text-lg font-semibold text-[var(--text-primary)]">
-                  {data.moodCheck.moodLabel}
+                  {activeMood}
                 </p>
                 <p className="mt-0.5 text-[10px] font-medium text-[var(--text-muted)]">
                   {data.moodCheck.detail}
                 </p>
               </div>
             </div>
-            <p className="text-[10px] font-semibold text-[rgba(95,200,215,.86)]">
-              {data.moodCheck.scoreLabel}
-            </p>
           </div>
-          <div className="mt-2">
+          <div className="mt-1.5">
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <p className="text-[9px] font-semibold text-[var(--text-muted)]">
+                {data.moodCheck.progressLabel}
+              </p>
+              <p className="text-[9px] font-semibold text-[var(--text-muted)]">
+                {data.moodCheck.scoreLabel}
+              </p>
+            </div>
             <ProgressBar
               accent={moodAccent}
               progress={data.moodCheck.progress}
               quiet
             />
           </div>
-          <div className="mt-2 flex flex-wrap gap-1.5">
+          <div className="mt-1.5 grid grid-cols-3 gap-1">
             {data.moodCheck.options.map(
-              (mood) => (
-                <button
-                  aria-pressed={mood === data.moodCheck.activeOption}
-                  className={cn(
-                    "pointer-events-auto rounded-full border px-2.5 py-0.5 text-[9px] font-medium",
-                    DASHBOARD_LINK_FOCUS_CLASSES,
-                    mood === data.moodCheck.activeOption
-                      ? "border-[rgba(95,200,215,.36)] bg-[rgba(66,184,131,.18)] text-[var(--text-secondary)]"
-                      : "border-[rgba(95,200,215,.10)] bg-[rgba(168,183,204,.04)] text-[var(--text-muted)]",
-                  )}
-                  key={mood}
-                  type="button"
-                >
-                  {mood}
-                </button>
-              ),
+              (mood) => {
+                const moodTone = moodToneFor(mood);
+
+                return (
+                  <button
+                    aria-pressed={mood === activeMood}
+                    className={cn(
+                      "rounded-full border px-1.5 py-0.5 text-[9px] font-medium leading-4",
+                      DASHBOARD_LINK_FOCUS_CLASSES,
+                      mood === activeMood
+                        ? "border-[color-mix(in_srgb,var(--accent)_36%,transparent)] bg-[color-mix(in_srgb,var(--accent)_13%,transparent)] text-[var(--text-primary)]"
+                        : "border-[rgba(95,200,215,.10)] bg-[rgba(168,183,204,.04)] text-[var(--text-muted)]",
+                    )}
+                    key={mood}
+                    onClick={() => setActiveMood(mood)}
+                    style={accentStyle(moodTone.accent)}
+                    type="button"
+                  >
+                    {mood === activeMood ? "Set · " : ""}
+                    {mood}
+                  </button>
+                );
+              },
             )}
           </div>
         </div>
@@ -560,7 +589,7 @@ export function CommandCenter({
           <QuickThought data={data.quickCapture} />
           <DailyControl data={data.dailyControl} />
 
-          <div className="grid h-[265px] grid-rows-[104px_minmax(0,1fr)] gap-3 overflow-hidden">
+          <div className="grid h-[265px] grid-rows-[92px_minmax(0,1fr)] gap-3 overflow-hidden">
             <TimeProgress data={data.commandCenter} />
             <MoodBoard data={data.commandCenter} />
           </div>

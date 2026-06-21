@@ -23,8 +23,21 @@ function hourTop(hour: string) {
 }
 
 export function CalendarWeekSurface({
+  onSelectBlock,
+  onSelectSlot,
+  selectedBlockId,
   viewModel,
 }: Readonly<{
+  onSelectBlock: (blockId: string) => void;
+  onSelectSlot: (slot: {
+    dayId: string;
+    dayLabel: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+    label: string;
+  }) => void;
+  selectedBlockId?: string;
   viewModel: CalendarViewModel;
 }>) {
   return (
@@ -103,7 +116,8 @@ export function CalendarWeekSurface({
                       <CalendarAllDayBlock
                         block={block}
                         key={block.id}
-                        selected={block.id === viewModel.selectedBlock.id}
+                        onSelect={onSelectBlock}
+                        selected={block.id === selectedBlockId}
                       />
                     ))}
                   </div>
@@ -142,15 +156,41 @@ export function CalendarWeekSurface({
                     key={day.id}
                   >
                     {viewModel.hours.map((hour) => (
-                      <span
-                        aria-hidden="true"
-                        className="absolute left-0 right-0 h-px bg-[rgba(148,163,184,.08)]"
+                      <button
+                        aria-label={`Select free slot on ${day.fullLabel} at ${hour}`}
+                        className="absolute left-0 right-0 h-8 -translate-y-1/2 border-0 bg-transparent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[var(--focus-ring)]"
                         key={hour}
+                        onClick={() => {
+                          const startMinutes = hourToMinutes(hour);
+                          const endMinutes = startMinutes + 60;
+                          const endHour = `${String(Math.floor(endMinutes / 60)).padStart(2, "0")}:${String(endMinutes % 60).padStart(2, "0")}`;
+
+                          onSelectSlot({
+                            dayId: day.id,
+                            dayLabel: `${day.weekday} ${day.dayNumber} June`,
+                            date: day.date,
+                            startTime: hour,
+                            endTime: endHour,
+                            label: "Selected time slot",
+                          });
+                        }}
                         style={{ top: `${hourTop(hour)}%` }}
-                      />
+                        title={`Select ${day.fullLabel} ${hour}`}
+                        type="button"
+                      >
+                        <span
+                          aria-hidden="true"
+                          className="absolute left-0 right-0 top-1/2 h-px bg-[rgba(148,163,184,.08)]"
+                        />
+                      </button>
                     ))}
                     {dayBlocks.map((block) => (
-                      <CalendarTimedBlock block={block} key={block.id} />
+                      <CalendarTimedBlock
+                        block={block}
+                        key={block.id}
+                        onSelect={onSelectBlock}
+                        selected={block.id === selectedBlockId}
+                      />
                     ))}
                   </div>
                 );

@@ -3,13 +3,16 @@ import { cn } from "@/lib/cn";
 import type {
   CalendarFilterViewModel,
   CalendarProjectRailItemViewModel,
+  CalendarScope,
 } from "../calendar-types";
 
 export function CalendarScopeRow({
   filters,
+  onScopeChange,
   projects,
 }: Readonly<{
   filters: CalendarFilterViewModel[];
+  onScopeChange: (scope: CalendarScope) => void;
   projects: CalendarProjectRailItemViewModel[];
 }>) {
   return (
@@ -32,6 +35,7 @@ export function CalendarScopeRow({
                   : "border-[var(--border-subtle)] bg-[rgba(18,28,43,.7)] text-[var(--text-secondary)] hover:border-[var(--border-default)]",
               )}
               key={filter.label}
+              onClick={() => onScopeChange(filter.label as CalendarScope)}
               type="button"
             >
               {filter.label}

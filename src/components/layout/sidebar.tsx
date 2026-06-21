@@ -364,15 +364,16 @@ function NavItem({
   }, [children.length, isExpandable, isFlyoutOpen]);
 
   if (isExpandable) {
+    const isExpandableActive = isCurrent || isGroupActive;
     const expandableItemClasses = cn(
       itemClasses,
       "cursor-pointer",
-      isGroupActive &&
+      isExpandableActive &&
         "border-[color-mix(in_srgb,var(--item-accent)_28%,transparent)] bg-[color-mix(in_srgb,var(--item-accent)_8%,transparent)] text-[var(--text-primary)]",
     );
     const triggerContent = (
       <>
-        <NavDot active={Boolean(isGroupActive)} muted={!isGroupActive} />
+        <NavDot active={isExpandableActive} muted={!isExpandableActive} />
         <span className={NAV_ITEM_LABEL_CLASSES}>{item.label}</span>
         {item.status === "planned" ? <PlannedBadge /> : null}
         <span
@@ -518,15 +519,35 @@ function NavigationSectionBlock({
   searchParams: CurrentSearchParams;
 }>) {
   const id = sectionId(section.label);
+  const isSectionLandingPage = pathname === section.href;
+  const isSectionActive = isCurrentPath(pathname, searchParams, section.href);
+  const sectionLabel = `${section.label} Area`;
+  const sectionHeaderClasses = cn(
+    "flex min-h-[24px] items-center rounded-[9px] border border-[color-mix(in_srgb,var(--section-accent)_24%,transparent)] bg-[color-mix(in_srgb,var(--section-accent)_10%,transparent)] px-2.5 py-1 transition hover:border-[color-mix(in_srgb,var(--section-accent)_38%,transparent)] hover:bg-[color-mix(in_srgb,var(--section-accent)_14%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-cyan)]",
+    isSectionActive &&
+      "border-[color-mix(in_srgb,var(--section-accent)_42%,transparent)] bg-[color-mix(in_srgb,var(--section-accent)_16%,transparent)]",
+  );
 
   return (
     <section aria-labelledby={id} style={sectionStyle(section.accent)}>
-      <div className="flex min-h-[24px] items-center rounded-[9px] border border-[color-mix(in_srgb,var(--section-accent)_24%,transparent)] bg-[color-mix(in_srgb,var(--section-accent)_10%,transparent)] px-2.5 py-1">
-        {" "}
-        <h2 className={SECTION_LABEL_CLASSES} id={id}>
+      <Link
+        aria-current={isSectionLandingPage ? "page" : undefined}
+        aria-label={`${sectionLabel} öffnen${
+          isSectionActive ? " - aktive Area" : ""
+        }`}
+        className={sectionHeaderClasses}
+        href={section.href}
+      >
+        <h2
+          className={cn(
+            SECTION_LABEL_CLASSES,
+            isSectionActive && "text-[var(--text-primary)]",
+          )}
+          id={id}
+        >
           {section.label}
         </h2>
-      </div>
+      </Link>
       <div className="mt-0.5 space-y-0.5">
         {section.items.map((item) => (
           <NavItem

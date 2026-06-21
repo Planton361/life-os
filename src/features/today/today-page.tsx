@@ -5,7 +5,6 @@ import { cn } from "@/lib/cn";
 import type {
   TodayActivityEventViewModel,
   TodayActivityStatus,
-  TodayActivityStreamSectionViewModel,
   TodayArtifactViewModel,
   TodayCarryForwardItemViewModel,
   TodayDecisionViewModel,
@@ -107,23 +106,56 @@ function TodayHeader({
 }
 
 function ActivityStream({
-  sections,
+  events,
 }: Readonly<{
-  sections: TodayActivityStreamSectionViewModel[];
+  events: TodayActivityEventViewModel[];
 }>) {
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 2xl:overflow-y-auto 2xl:pr-1">
-      {sections.map((section) => (
-        <ActivityStreamSection key={section.id} section={section} />
-      ))}
+    <div className="flex h-full min-h-0 flex-col 2xl:overflow-y-auto 2xl:pr-1">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.46)] px-3 py-2">
+        <p className="text-[10px] font-semibold text-[var(--text-secondary)]">
+          Chronological day record
+        </p>
+        <Pill accent="var(--accent-cyan)">{events.length} events</Pill>
+      </div>
+
+      <ol className="relative mt-3 grid gap-2.5 before:absolute before:bottom-2 before:left-[3.55rem] before:top-2 before:w-px before:bg-[var(--border-subtle)]">
+        {events.map((event) => (
+          <li
+            className="relative grid grid-cols-[48px_minmax(0,1fr)] gap-3"
+            key={event.id}
+          >
+            <time
+              className="z-10 mt-2 text-right text-[10px] font-semibold leading-4 text-[var(--text-secondary)]"
+              dateTime={event.dateTime}
+            >
+              {event.timeLabel}
+            </time>
+            <span
+              aria-hidden="true"
+              className={cn(
+                "absolute left-[3.35rem] top-4 z-10 size-1.5 rounded-full border border-[var(--surface-1)] bg-[var(--text-muted)]",
+                event.status === "current" &&
+                  "bg-[var(--accent-purple)] shadow-[0_0_0_3px_rgba(155,124,246,.12)]",
+                (event.status === "shifted" ||
+                  event.status === "needs_review") &&
+                  "bg-[var(--accent-orange)]",
+                (event.status === "completed" || event.status === "logged") &&
+                  "bg-[var(--text-faint)]",
+              )}
+            />
+            <ActivityEventCard event={event} />
+          </li>
+        ))}
+      </ol>
 
       <div className="mt-auto rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.62)] px-3 py-2">
         <p className="text-[10px] font-semibold text-[var(--text-secondary)]">
           End of day record
         </p>
         <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
-          Planned items stay separate from actual events; carry-forward stays in
-          the right column.
+          Planned, current and logged items stay in one timeline; carry-forward
+          stays in the right column.
         </p>
       </div>
     </div>
@@ -145,112 +177,128 @@ function linkedEntityLabel(entityType?: TodayLinkedEntityType) {
 
 function activityCardClass(status: TodayActivityStatus) {
   return cn(
-    "rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.70)] px-3 py-2.5",
+    "block rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.70)] px-3 py-2.5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
     status === "current" &&
-      "border-[color-mix(in_srgb,var(--accent)_34%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_8%,rgba(18,28,43,.82))]",
+      "border-[color-mix(in_srgb,var(--accent)_38%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_8%,rgba(18,28,43,.86))] shadow-[0_0_0_1px_color-mix(in_srgb,var(--accent)_18%,transparent)]",
+    (status === "completed" || status === "logged") &&
+      "bg-[rgba(15,23,36,.50)] text-[var(--text-secondary)]",
+    (status === "shifted" || status === "needs_review") &&
+      "border-[color-mix(in_srgb,var(--accent-orange)_32%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent-orange)_6%,rgba(18,28,43,.78))]",
     status === "shifted" && "border-dashed",
-    status === "needs_review" &&
-      "border-[color-mix(in_srgb,var(--accent)_26%,var(--border-subtle))]",
   );
 }
 
-function ActivitySourceAction({
+function statusAccent(status: TodayActivityStatus, fallbackAccent: string) {
+  if (status === "current") {
+    return "var(--accent-purple)";
+  }
+
+  if (status === "shifted" || status === "needs_review") {
+    return "var(--accent-orange)";
+  }
+
+  if (status === "completed" || status === "logged") {
+    return "var(--text-muted)";
+  }
+
+  return fallbackAccent;
+}
+
+function ActivitySourceActionLabel({
   event,
 }: Readonly<{
   event: TodayActivityEventViewModel;
 }>) {
-  const className =
-    "inline-flex items-center rounded-full border border-[var(--border-subtle)] bg-[rgba(168,183,204,.05)] px-2 py-0.5 text-[10px] font-semibold text-[var(--text-secondary)] transition-colors hover:border-[color-mix(in_srgb,var(--accent)_36%,var(--border-subtle))] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
+  return (
+    <span
+      className="inline-flex items-center rounded-full border border-[var(--border-subtle)] bg-[rgba(168,183,204,.05)] px-2 py-0.5 text-[10px] font-semibold text-[var(--text-secondary)]"
+      style={accentStyle(event.accent)}
+    >
+      {event.sourceActionLabel}
+    </span>
+  );
+}
+
+function ActivityEventCardContent({
+  event,
+}: Readonly<{
+  event: TodayActivityEventViewModel;
+}>) {
+  return (
+    <div className="grid grid-cols-[3px_minmax(0,1fr)] gap-3">
+      <span
+        aria-hidden="true"
+        className={cn(
+          "h-full min-h-20 rounded-full bg-[var(--accent)] opacity-70",
+          event.status === "current" && "opacity-100",
+          (event.status === "completed" || event.status === "logged") &&
+            "opacity-35",
+        )}
+      />
+
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Pill accent={event.accent}>{event.eventTypeLabel}</Pill>
+          <Pill accent={statusAccent(event.status, event.accent)}>
+            {event.statusLabel}
+          </Pill>
+        </div>
+
+        <h3
+          className={cn(
+            "mt-2 text-[13px] font-semibold leading-4 text-[var(--text-primary)]",
+            (event.status === "completed" || event.status === "logged") &&
+              "text-[var(--text-secondary)]",
+          )}
+        >
+          {event.title}
+        </h3>
+        <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
+          {event.description}
+        </p>
+
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px] leading-4 text-[var(--text-muted)]">
+          <span>{event.sourceLabel}</span>
+          {event.areaLabel ? (
+            <>
+              <span aria-hidden="true">·</span>
+              <span>{event.areaLabel}</span>
+            </>
+          ) : null}
+          <span aria-hidden="true">·</span>
+          <span>{linkedEntityLabel(event.linkedEntityType)}</span>
+          <ActivitySourceActionLabel event={event} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ActivityEventCard({
+  event,
+}: Readonly<{
+  event: TodayActivityEventViewModel;
+}>) {
+  const className = activityCardClass(event.status);
+  const style = accentStyle(event.accent);
 
   if (!event.sourceHref) {
     return (
-      <span className={className} style={accentStyle(event.accent)}>
-        {event.sourceActionLabel}
-      </span>
+      <article className={className} style={style}>
+        <ActivityEventCardContent event={event} />
+      </article>
     );
   }
 
   return (
     <Link
+      aria-label={`Open ${event.title}`}
       className={className}
       href={event.sourceHref}
-      style={accentStyle(event.accent)}
+      style={style}
     >
-      {event.sourceActionLabel}
+      <ActivityEventCardContent event={event} />
     </Link>
-  );
-}
-
-function ActivityStreamSection({
-  section,
-}: Readonly<{
-  section: TodayActivityStreamSectionViewModel;
-}>) {
-  const headingId = `activity-${section.id}-heading`;
-
-  return (
-    <section
-      aria-labelledby={headingId}
-      className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.46)] px-3 py-3"
-      style={accentStyle(section.accent)}
-    >
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0">
-          <h3
-            className="text-[12px] font-semibold leading-4 text-[var(--text-primary)]"
-            id={headingId}
-          >
-            {section.title}
-          </h3>
-          <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
-            {section.subtitle}
-          </p>
-        </div>
-        <Pill accent={section.accent}>{section.events.length} items</Pill>
-      </div>
-
-      <ol className="mt-2 grid gap-2">
-        {section.events.map((event) => (
-          <li key={event.id}>
-            <article
-              className={activityCardClass(event.status)}
-              style={accentStyle(event.accent)}
-            >
-              <div className="flex flex-wrap items-center gap-1.5">
-                <time
-                  className="rounded-full border border-[color-mix(in_srgb,var(--accent)_28%,transparent)] bg-[color-mix(in_srgb,var(--accent)_9%,transparent)] px-2 py-0.5 text-[10px] font-semibold leading-4 text-[var(--text-secondary)]"
-                  dateTime={event.dateTime}
-                >
-                  {event.timeLabel}
-                </time>
-                <Pill accent={event.accent}>{event.eventTypeLabel}</Pill>
-                <Pill accent={event.accent}>{event.statusLabel}</Pill>
-              </div>
-
-              <h4 className="mt-2 text-[13px] font-semibold leading-4 text-[var(--text-primary)]">
-                {event.title}
-              </h4>
-              <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
-                {event.description}
-              </p>
-
-              <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px] leading-4 text-[var(--text-muted)]">
-                <span>{event.sourceLabel}</span>
-                {event.areaLabel ? (
-                  <>
-                    <span aria-hidden="true">·</span>
-                    <span>{event.areaLabel}</span>
-                  </>
-                ) : null}
-                <span aria-hidden="true">·</span>
-                <span>{linkedEntityLabel(event.linkedEntityType)}</span>
-                <ActivitySourceAction event={event} />
-              </div>
-            </article>
-          </li>
-        ))}
-      </ol>
-    </section>
   );
 }
 
@@ -523,7 +571,7 @@ export function TodayMemoryLogPage({
           subtitle={viewModel.activityStream.subtitle}
           title={viewModel.activityStream.title}
         >
-          <ActivityStream sections={viewModel.activityStream.sections} />
+          <ActivityStream events={viewModel.activityStream.events} />
         </MemoryPanel>
 
         <div className="grid gap-3 2xl:min-h-0 2xl:grid-rows-[auto_minmax(0,.56fr)_minmax(0,.44fr)]">

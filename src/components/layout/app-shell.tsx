@@ -4,8 +4,8 @@ import { Sidebar } from "@/components/layout/sidebar";
 
 function SidebarFallback() {
   return (
-    <aside
-      aria-label="Loading navigation"
+    <div
+      aria-hidden="true"
       className="border-b border-[var(--border-default)] bg-[var(--bg-app)] p-2 lg:h-dvh lg:min-h-0 lg:overflow-hidden lg:border-b-0 lg:border-r"
     />
   );

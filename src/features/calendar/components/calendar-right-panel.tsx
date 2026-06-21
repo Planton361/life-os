@@ -1,5 +1,10 @@
+"use client";
+
 import Link from "next/link";
+import { useMemo, useState } from "react";
 import { Pill, accentStyle } from "@/components/layout/route-page-primitives";
+import { cn } from "@/lib/cn";
+import type { CalendarRawTimedBlock } from "../calendar-view-model";
 import {
   calendarBlockSourceLabels,
   calendarBlockStatusLabels,
@@ -7,76 +12,455 @@ import {
 } from "../calendar-types";
 import type {
   CalendarAllDayBlockViewModel,
-  CalendarContextListItemViewModel,
-  CalendarPlanningAssistantSuggestionViewModel,
-  CalendarReviewMetricViewModel,
+  CalendarDayViewModel,
   CalendarRightPanelViewModel,
+  CalendarSelectedTimeSlotViewModel,
   CalendarTimedBlockViewModel,
+  SchedulableTaskViewModel,
 } from "../calendar-types";
-import { CalendarCreateActionButtons } from "./calendar-create-flow";
+import { CalendarCreateMenu } from "./calendar-create-flow";
 
-function ReviewMetricCard({
-  metric,
+type SelectedBlock = CalendarAllDayBlockViewModel | CalendarTimedBlockViewModel;
+type QueueTab = "unscheduled" | "open-loops" | "reviews";
+
+const inputClass =
+  "mt-1 min-h-8 w-full rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.76)] px-2.5 text-[12px] text-[var(--text-primary)] outline-none focus:border-[var(--focus-ring)]";
+
+function timeToMinutes(time: string) {
+  const [hours, minutes] = time.split(":").map(Number);
+
+  return hours * 60 + minutes;
+}
+
+function Field({
+  label,
+  onChange,
+  type = "text",
+  value,
 }: Readonly<{
-  metric: CalendarReviewMetricViewModel;
+  label: string;
+  onChange: (value: string) => void;
+  type?: "date" | "text" | "time";
+  value: string;
 }>) {
   return (
-    <article
-      className="min-h-[42px] rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.72)] px-2 py-1.5"
-      style={accentStyle(metric.accent)}
-    >
-      <div className="flex min-w-0 items-center gap-1.5">
-        <span
-          aria-hidden="true"
-          className="h-6 w-1 shrink-0 rounded-full bg-[var(--accent)]"
-        />
-        <div className="min-w-0">
-          <p className="truncate text-[10px] font-semibold text-[var(--text-muted)]">
-            {metric.label}
-          </p>
-          <p className="truncate text-[12px] font-semibold leading-4 text-[var(--text-primary)]">
-            {metric.value}
-          </p>
-          <p className="truncate text-[10px] leading-4 text-[var(--text-secondary)]">
-            {metric.detail}
-          </p>
-        </div>
-      </div>
-    </article>
+    <label className="block min-w-0">
+      <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+        {label}
+      </span>
+      <input
+        className={inputClass}
+        onChange={(event) => onChange(event.target.value)}
+        type={type}
+        value={value}
+      />
+    </label>
   );
 }
 
-function ContextList({
-  title,
-  countLabel,
-  items,
-  accent,
+function durationLabel(minutes: number) {
+  if (minutes < 60) {
+    return `${minutes} min`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+
+  return rest > 0 ? `${hours}h ${rest}m` : `${hours}h`;
+}
+
+function isTimedBlock(block: SelectedBlock): block is CalendarTimedBlockViewModel {
+  return "startTime" in block;
+}
+
+function InspectorHeader({
+  selectedLabel,
 }: Readonly<{
-  title: string;
-  countLabel?: string;
-  items: CalendarContextListItemViewModel[];
-  accent: string;
+  selectedLabel: string;
 }>) {
   return (
-    <section
-      aria-labelledby={`${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-heading`}
-      className="rounded-[12px] border border-[rgba(148,163,184,.10)] bg-[rgba(11,17,28,.38)] p-2.5"
-      style={accentStyle(accent)}
-    >
-      <div className="flex items-center justify-between gap-3">
+    <div className="border-b border-[var(--border-subtle)] bg-[rgba(18,28,43,.54)] px-3 py-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-cyan)]">
+            Calendar Inspector
+          </p>
+          <h2
+            className="mt-0.5 text-[18px] font-semibold leading-6 text-[var(--text-primary)]"
+            id="calendar-right-panel-heading"
+          >
+            Selected: {selectedLabel}
+          </h2>
+        </div>
+        <Pill accent="var(--accent-cyan)">local mock</Pill>
+      </div>
+    </div>
+  );
+}
+
+function SelectedContext({
+  block,
+  selectedDay,
+  selectedSlot,
+}: Readonly<{
+  block?: SelectedBlock;
+  selectedDay?: CalendarDayViewModel;
+  selectedSlot?: CalendarSelectedTimeSlotViewModel | null;
+}>) {
+  if (block) {
+    const timeLabel = isTimedBlock(block)
+      ? `${block.startTime}-${block.endTime}`
+      : block.timeLabel ?? "All day";
+
+    return (
+      <section
+        aria-labelledby="calendar-selected-context-heading"
+        className="rounded-[14px] border border-[color-mix(in_srgb,var(--accent)_30%,transparent)] bg-[color-mix(in_srgb,var(--accent)_9%,rgba(18,28,43,.70))] p-3"
+        style={accentStyle(block.accent)}
+      >
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">
+          Selected context
+        </p>
         <h3
-          className="text-[12px] font-semibold text-[var(--text-primary)]"
-          id={`${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-heading`}
+          className="mt-1 text-[15px] font-semibold leading-5 text-[var(--text-primary)]"
+          id="calendar-selected-context-heading"
         >
-          {title}
+          {block.title}
         </h3>
-        {countLabel ? <Pill accent={accent}>{countLabel}</Pill> : null}
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          <Pill accent={block.accent}>{calendarBlockTypeLabels[block.type]}</Pill>
+          <Pill accent={block.accent}>
+            {calendarBlockStatusLabels[block.status]}
+          </Pill>
+          {block.priority ? <Pill quiet>{block.priority}</Pill> : null}
+        </div>
+        <dl className="mt-2 grid gap-1 text-[11px] leading-4 text-[var(--text-secondary)]">
+          <div>
+            <dt className="inline text-[var(--text-muted)]">Date: </dt>
+            <dd className="inline">{block.date ?? selectedDay?.date ?? "2026-06-12"}</dd>
+          </div>
+          <div>
+            <dt className="inline text-[var(--text-muted)]">Time: </dt>
+            <dd className="inline">{timeLabel}</dd>
+          </div>
+          {isTimedBlock(block) ? (
+            <div>
+              <dt className="inline text-[var(--text-muted)]">Duration: </dt>
+              <dd className="inline">{durationLabel(block.durationMinutes)}</dd>
+            </div>
+          ) : null}
+          <div>
+            <dt className="inline text-[var(--text-muted)]">Area: </dt>
+            <dd className="inline">{block.area}</dd>
+          </div>
+          <div>
+            <dt className="inline text-[var(--text-muted)]">Outcome: </dt>
+            <dd className="inline">
+              {block.plannedOutcome ?? "Prepared for later scheduling."}
+            </dd>
+          </div>
+        </dl>
+      </section>
+    );
+  }
+
+  if (selectedSlot) {
+    return (
+      <section
+        aria-labelledby="calendar-slot-context-heading"
+        className="rounded-[14px] border border-[rgba(95,200,215,.18)] bg-[rgba(18,28,43,.54)] p-3"
+      >
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-cyan)]">
+          Empty slot
+        </p>
+        <h3
+          className="mt-1 text-[15px] font-semibold leading-5 text-[var(--text-primary)]"
+          id="calendar-slot-context-heading"
+        >
+          {selectedSlot.dayLabel} · {selectedSlot.startTime}-{selectedSlot.endTime}
+        </h3>
+        <p className="mt-2 text-[11px] leading-4 text-[var(--text-muted)]">
+          Free slot. Use it for an event, task block or focus block.
+        </p>
+      </section>
+    );
+  }
+
+  return (
+    <section
+      aria-labelledby="calendar-day-context-heading"
+      className="rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.46)] p-3"
+    >
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-faint)]">
+        Day context
+      </p>
+      <h3
+        className="mt-1 text-[15px] font-semibold leading-5 text-[var(--text-primary)]"
+        id="calendar-day-context-heading"
+      >
+        {selectedDay?.fullLabel ?? "No specific day selected"}
+      </h3>
+      <p className="mt-2 text-[11px] leading-4 text-[var(--text-muted)]">
+        Scan the planned blocks, pick a free slot, or schedule an item from the
+        queue.
+      </p>
+    </section>
+  );
+}
+
+function TimeSettings({
+  block,
+  onDuplicateBlock,
+  onMarkDone,
+  onMoveLater,
+  onSaveTime,
+  selectedSlot,
+}: Readonly<{
+  block?: SelectedBlock;
+  onDuplicateBlock: (blockId: string) => void;
+  onMarkDone: (blockId: string) => void;
+  onMoveLater: (blockId: string) => void;
+  onSaveTime: (blockId: string, date: string, startTime: string, endTime: string) => void;
+  selectedSlot?: CalendarSelectedTimeSlotViewModel | null;
+}>) {
+  const baseDate = block?.date ?? selectedSlot?.date ?? "2026-06-12";
+  const baseStart = block && isTimedBlock(block) ? block.startTime : selectedSlot?.startTime ?? "09:00";
+  const baseEnd = block && isTimedBlock(block) ? block.endTime : selectedSlot?.endTime ?? "10:00";
+  const [date, setDate] = useState(baseDate);
+  const [startTime, setStartTime] = useState(baseStart);
+  const [endTime, setEndTime] = useState(baseEnd);
+  const [error, setError] = useState<string | null>(null);
+
+  const duration = Math.max(0, timeToMinutes(endTime) - timeToMinutes(startTime));
+
+  function save() {
+    if (!block) {
+      setError("Select a calendar block before saving time changes.");
+      return;
+    }
+
+    if (timeToMinutes(endTime) <= timeToMinutes(startTime)) {
+      setError("End time must be after start time.");
+      return;
+    }
+
+    onSaveTime(block.id, date, startTime, endTime);
+    setError(null);
+  }
+
+  return (
+    <section
+      aria-labelledby="calendar-time-settings-heading"
+      className="rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.42)] p-3"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3
+            className="text-[13px] font-semibold text-[var(--text-primary)]"
+            id="calendar-time-settings-heading"
+          >
+            Time Settings
+          </h3>
+          <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
+            Local edit only. Changes update the visible calendar mock state.
+          </p>
+        </div>
+        <Pill accent="var(--accent-cyan)">{durationLabel(duration)}</Pill>
+      </div>
+
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        <Field label="Date" onChange={setDate} type="date" value={date} />
+        <Field label="Duration" onChange={() => undefined} value={durationLabel(duration)} />
+        <Field label="Start time" onChange={setStartTime} type="time" value={startTime} />
+        <Field label="End time" onChange={setEndTime} type="time" value={endTime} />
+      </div>
+
+      <div className="mt-3 grid gap-1.5 sm:grid-cols-2">
+        <button
+          className="min-h-8 rounded-full border border-[rgba(95,200,215,.34)] bg-[rgba(95,200,215,.14)] px-3 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(95,200,215,.48)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+          onClick={save}
+          type="button"
+        >
+          Save time
+        </button>
+        <button
+          className="min-h-8 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+          onClick={() => {
+            setDate(baseDate);
+            setStartTime(baseStart);
+            setEndTime(baseEnd);
+            setError(null);
+          }}
+          type="button"
+        >
+          Cancel
+        </button>
+        <button
+          className="min-h-8 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={!block}
+          onClick={() => block && onMoveLater(block.id)}
+          type="button"
+        >
+          Move later
+        </button>
+        <button
+          className="min-h-8 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={!block}
+          onClick={() => block && onDuplicateBlock(block.id)}
+          type="button"
+        >
+          Duplicate
+        </button>
+        <button
+          className="min-h-8 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-2"
+          disabled={!block || block.status === "done"}
+          onClick={() => block && onMarkDone(block.id)}
+          type="button"
+        >
+          Mark done
+        </button>
+      </div>
+
+      {error ? (
+        <p
+          className="mt-3 rounded-[10px] border border-[rgba(221,107,95,.24)] bg-[rgba(221,107,95,.08)] px-3 py-2 text-[11px] text-[var(--text-secondary)]"
+          role="alert"
+        >
+          {error}
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
+function SourcePanel({
+  block,
+}: Readonly<{
+  block?: SelectedBlock;
+}>) {
+  if (!block) {
+    return null;
+  }
+
+  return (
+    <section
+      aria-labelledby="calendar-source-heading"
+      className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.36)] p-3"
+    >
+      <h3
+        className="text-[13px] font-semibold text-[var(--text-primary)]"
+        id="calendar-source-heading"
+      >
+        Source / Linked Item
+      </h3>
+      <dl className="mt-2 grid gap-1 text-[11px] leading-4 text-[var(--text-secondary)]">
+        <div>
+          <dt className="inline text-[var(--text-muted)]">Source: </dt>
+          <dd className="inline">
+            {calendarBlockSourceLabels[block.source]} / {block.sourceEntity.label}
+          </dd>
+        </div>
+        <div>
+          <dt className="inline text-[var(--text-muted)]">Linked item: </dt>
+          <dd className="inline">{block.linkedEntity ?? block.sourceEntity.label}</dd>
+        </div>
+        <div>
+          <dt className="inline text-[var(--text-muted)]">Status: </dt>
+          <dd className="inline">{calendarBlockStatusLabels[block.status]}</dd>
+        </div>
+      </dl>
+      {block.sourceEntity.href ? (
+        <Link
+          className="mt-3 inline-flex min-h-8 items-center rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.76)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+          href={block.sourceEntity.href}
+        >
+          {block.sourceEntity.type === "task" ? "Open task" : "Open source"}
+        </Link>
+      ) : null}
+    </section>
+  );
+}
+
+function PlanningQueue({
+  panel,
+  tasks,
+}: Readonly<{
+  panel: CalendarRightPanelViewModel;
+  tasks: readonly SchedulableTaskViewModel[];
+}>) {
+  const [tab, setTab] = useState<QueueTab>("unscheduled");
+  const queueItems = useMemo(() => {
+    if (tab === "open-loops") {
+      return panel.openLoops.map((item) => ({
+        title: item.title,
+        meta: item.meta,
+        accent: item.accent,
+      }));
+    }
+
+    if (tab === "reviews") {
+      return panel.reviewsOpen.map((item) => ({
+        title: item.title,
+        meta: item.meta,
+        accent: item.accent,
+      }));
+    }
+
+    return tasks
+      .filter((task) => !task.alreadyScheduled)
+      .map((task) => ({
+        title: task.title,
+        meta: `${task.priority} · ${task.estimatedMinutes} min · ${task.project}`,
+        accent: task.accent,
+      }));
+  }, [panel.openLoops, panel.reviewsOpen, tab, tasks]);
+
+  return (
+    <section
+      aria-labelledby="calendar-planning-queue-heading"
+      className="rounded-[12px] border border-[rgba(148,163,184,.10)] bg-[rgba(11,17,28,.34)] p-3"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3
+            className="text-[13px] font-semibold text-[var(--text-primary)]"
+            id="calendar-planning-queue-heading"
+          >
+            Planning Queue
+          </h3>
+          <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
+            Secondary queue for items that need time.
+          </p>
+        </div>
+        <Pill quiet>{queueItems.length}</Pill>
+      </div>
+      <div className="mt-2 flex rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.48)] p-1">
+        {[
+          ["unscheduled", "Unscheduled"],
+          ["open-loops", "Open loops"],
+          ["reviews", "Reviews"],
+        ].map(([value, label]) => (
+          <button
+            aria-pressed={tab === value}
+            className={cn(
+              "min-h-6 flex-1 rounded-full px-2 text-[9px] font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
+              tab === value
+                ? "border border-[rgba(95,200,215,.28)] bg-[rgba(95,200,215,.14)] text-[var(--text-primary)]"
+                : "border border-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)]",
+            )}
+            key={value}
+            onClick={() => setTab(value as QueueTab)}
+            type="button"
+          >
+            {label}
+          </button>
+        ))}
       </div>
       <div className="mt-2 grid gap-1.5">
-        {items.map((item) => (
+        {queueItems.slice(0, 4).map((item) => (
           <article
-            className="grid min-h-7 grid-cols-[8px_minmax(0,1fr)] gap-2"
-            key={item.title}
+            className="grid min-h-8 grid-cols-[8px_minmax(0,1fr)] gap-2"
+            key={`${tab}-${item.title}`}
             style={accentStyle(item.accent)}
           >
             <span
@@ -98,374 +482,85 @@ function ContextList({
   );
 }
 
-function SelectedBlockDetails({
-  block,
-}: Readonly<{
-  block: CalendarAllDayBlockViewModel | CalendarTimedBlockViewModel;
-}>) {
-  const timeLabel =
-    "startTime" in block
-      ? `${block.startTime}-${block.endTime}`
-      : block.timeLabel ?? "All day";
-
-  return (
-    <section
-      aria-labelledby="selected-block-heading"
-      className="rounded-[14px] border border-[color-mix(in_srgb,var(--accent)_26%,transparent)] bg-[color-mix(in_srgb,var(--accent)_10%,rgba(18,28,43,.68))] p-3"
-      style={accentStyle(block.accent)}
-    >
-      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">
-        Selected Block
-      </p>
-      <h3
-        className="mt-1.5 text-[15px] font-semibold leading-5 text-[var(--text-primary)]"
-        id="selected-block-heading"
-      >
-        {block.title}
-      </h3>
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        <Pill accent={block.accent}>{calendarBlockTypeLabels[block.type]}</Pill>
-        <Pill accent={block.accent}>
-          {calendarBlockStatusLabels[block.status]}
-        </Pill>
-      </div>
-      <dl className="mt-2.5 grid gap-1 text-[11px] leading-4 text-[var(--text-secondary)]">
-        <div>
-          <dt className="inline text-[var(--text-muted)]">Time: </dt>
-          <dd className="inline">{timeLabel}</dd>
-        </div>
-        <div>
-          <dt className="inline text-[var(--text-muted)]">Type: </dt>
-          <dd className="inline">{calendarBlockTypeLabels[block.type]}</dd>
-        </div>
-        <div>
-          <dt className="inline text-[var(--text-muted)]">Status: </dt>
-          <dd className="inline">{calendarBlockStatusLabels[block.status]}</dd>
-        </div>
-        <div>
-          <dt className="inline text-[var(--text-muted)]">Source: </dt>
-          <dd className="inline">
-            {calendarBlockSourceLabels[block.source]} / {block.sourceEntity.label}
-          </dd>
-        </div>
-        <div>
-          <dt className="inline text-[var(--text-muted)]">Area: </dt>
-          <dd className="inline">{block.area}</dd>
-        </div>
-        <div>
-          <dt className="inline text-[var(--text-muted)]">Linked entity: </dt>
-          <dd className="inline">{block.linkedEntity ?? block.sourceEntity.label}</dd>
-        </div>
-        <div>
-          <dt className="inline text-[var(--text-muted)]">Planned outcome: </dt>
-          <dd className="inline">
-            {block.plannedOutcome ?? "Prepared for later scheduling."}
-          </dd>
-        </div>
-      </dl>
-      <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
-        Calendar stores the time projection, not a duplicate project record.
-      </p>
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        {block.sourceEntity.href ? (
-          <Link
-            className="rounded-full border border-[color-mix(in_srgb,var(--accent)_28%,transparent)] bg-[rgba(18,28,43,.72)] px-2.5 py-1 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[color-mix(in_srgb,var(--accent)_44%,transparent)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-            href={block.sourceEntity.href}
-          >
-            Open source
-          </Link>
-        ) : (
-          <button
-            className="rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-2.5 py-1 text-[10px] font-semibold text-[var(--text-muted)]"
-            type="button"
-          >
-            Open source
-          </button>
-        )}
-        {["Mark done", "Move", "Duplicate", "Convert to recurring"].map(
-          (action) => (
-            <button
-              className="cursor-not-allowed rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.42)] px-2.5 py-1 text-[10px] font-semibold text-[var(--text-muted)]"
-              disabled
-              key={action}
-              type="button"
-            >
-              {action}
-            </button>
-          ),
-        )}
-      </div>
-    </section>
-  );
-}
-
-function SelectedDayActions({
-  panel,
-}: Readonly<{
-  panel: CalendarRightPanelViewModel;
-}>) {
-  return (
-    <section
-      aria-labelledby="selected-day-actions-heading"
-      className="rounded-[12px] border border-[rgba(95,200,215,.14)] bg-[rgba(11,17,28,.46)] p-3"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3
-            className="text-[13px] font-semibold text-[var(--text-primary)]"
-            id="selected-day-actions-heading"
-          >
-            Selected Day Actions
-          </h3>
-          <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
-            Create controls are prepared only. They do not apply planning changes automatically.
-          </p>
-        </div>
-        <Pill accent="var(--accent-cyan)">manual</Pill>
-      </div>
-      <div className="mt-2 grid gap-2">
-        <CalendarCreateActionButtons
-          defaults={panel.selectedTimeSlot}
-          types={["event", "task_block", "batch_block", "deadline"]}
-        />
-        <Link
-          className="inline-flex min-h-8 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.76)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-          href="/today"
-        >
-          Open Today record
-        </Link>
-      </div>
-    </section>
-  );
-}
-
-function SelectedTimeSlot({
-  panel,
-}: Readonly<{
-  panel: CalendarRightPanelViewModel;
-}>) {
-  return (
-    <section
-      aria-labelledby="selected-time-slot-heading"
-      className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.38)] p-3"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-faint)]">
-            {panel.selectedTimeSlot.label}
-          </p>
-          <h3
-            className="mt-0.5 text-[13px] font-semibold text-[var(--text-primary)]"
-            id="selected-time-slot-heading"
-          >
-            {panel.selectedTimeSlot.dayLabel} · {panel.selectedTimeSlot.startTime}-
-            {panel.selectedTimeSlot.endTime}
-          </h3>
-          <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
-            The current grid is block-based, so slot creation is exposed here instead of using fragile click coordinates.
-          </p>
-        </div>
-      </div>
-      <div className="mt-2">
-        <CalendarCreateActionButtons
-          defaults={panel.selectedTimeSlot}
-          types={["event", "task_block", "focus_block", "batch_block"]}
-        />
-      </div>
-    </section>
-  );
-}
-
-function PlanningAssistantSuggestion({
-  suggestion,
-}: Readonly<{
-  suggestion: CalendarPlanningAssistantSuggestionViewModel;
-}>) {
-  return (
-    <article
-      className="grid min-h-9 grid-cols-[8px_minmax(0,1fr)] gap-2"
-      style={accentStyle(suggestion.accent)}
-    >
-      <span
-        aria-hidden="true"
-        className="mt-1.5 size-1.5 rounded-full bg-[var(--accent)]"
-      />
-      <div className="min-w-0">
-        <p className="truncate text-[11px] font-medium text-[var(--text-secondary)]">
-          {suggestion.title}
-        </p>
-        <p className="truncate text-[10px] leading-4 text-[var(--text-muted)]">
-          {calendarBlockSourceLabels[suggestion.source]} /{" "}
-          {calendarBlockStatusLabels[suggestion.status]} - {suggestion.meta}
-        </p>
-      </div>
-    </article>
-  );
-}
-
-function PlanningAssistant({
-  panel,
-}: Readonly<{
-  panel: CalendarRightPanelViewModel;
-}>) {
-  return (
-    <section
-      aria-labelledby="planning-assistant-heading"
-      className="rounded-[12px] border border-[rgba(95,200,215,.14)] bg-[rgba(11,17,28,.42)] p-3"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3
-            className="text-[13px] font-semibold text-[var(--text-primary)]"
-            id="planning-assistant-heading"
-          >
-            {panel.planningAssistant.title}
-          </h3>
-          <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
-            Suggestions are visible drafts only. Nothing is created unless the user chooses a create action later.
-          </p>
-        </div>
-        <Pill accent="var(--accent-cyan)">
-          {panel.planningAssistant.status}
-        </Pill>
-      </div>
-      <div className="mt-2 grid gap-1.5">
-        {panel.planningAssistant.suggestions.map((suggestion) => (
-          <PlanningAssistantSuggestion
-            key={suggestion.title}
-            suggestion={suggestion}
-          />
-        ))}
-      </div>
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        <button
-          className="rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-2.5 py-1 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-          type="button"
-        >
-          Review suggestions
-        </button>
-        <button
-          className="cursor-not-allowed rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.42)] px-2.5 py-1 text-[10px] font-semibold text-[var(--text-muted)]"
-          disabled
-          type="button"
-        >
-          Apply selected
-        </button>
-      </div>
-    </section>
-  );
-}
-
 export function CalendarRightPanel({
+  onCreateBlock,
+  onDuplicateBlock,
+  onMarkDone,
+  onMoveLater,
+  onSaveTime,
   panel,
+  resolveDayId,
   selectedBlock,
+  selectedDay,
+  selectedSlot,
+  tasks,
 }: Readonly<{
+  onCreateBlock: (block: CalendarRawTimedBlock) => void;
+  onDuplicateBlock: (blockId: string) => void;
+  onMarkDone: (blockId: string) => void;
+  onMoveLater: (blockId: string) => void;
+  onSaveTime: (blockId: string, date: string, startTime: string, endTime: string) => void;
   panel: CalendarRightPanelViewModel;
-  selectedBlock: CalendarAllDayBlockViewModel | CalendarTimedBlockViewModel;
+  resolveDayId: (date: string) => string;
+  selectedBlock?: SelectedBlock;
+  selectedDay?: CalendarDayViewModel;
+  selectedSlot?: CalendarSelectedTimeSlotViewModel | null;
+  tasks: readonly SchedulableTaskViewModel[];
 }>) {
+  const selectedLabel = selectedBlock
+    ? calendarBlockTypeLabels[selectedBlock.type]
+    : selectedSlot
+      ? "Empty Slot"
+      : "Day";
+
   return (
     <aside
       aria-labelledby="calendar-right-panel-heading"
       className="overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.86)] shadow-[0_8px_22px_rgba(0,0,0,.12)] xl:flex xl:min-h-0 xl:flex-col"
     >
-      <div className="border-b border-[var(--border-subtle)] bg-[rgba(18,28,43,.54)] px-3 py-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-cyan)]">
-              Selected Day
-            </p>
-            <h2
-              className="mt-0.5 text-[18px] font-semibold leading-6 text-[var(--text-primary)]"
-              id="calendar-right-panel-heading"
-            >
-              {panel.selectedDay}
-            </h2>
-          </div>
-          <Pill accent="var(--accent-cyan)">{panel.badge}</Pill>
-        </div>
-      </div>
+      <InspectorHeader selectedLabel={selectedLabel} />
 
-      <div className="grid gap-2 p-2.5 xl:min-h-0 xl:flex-1 xl:content-start">
-        <div className="grid gap-1.5 sm:grid-cols-3 xl:grid-cols-5">
-          {panel.metrics.map((metric) => (
-            <ReviewMetricCard key={metric.label} metric={metric} />
-          ))}
-        </div>
+      <div className="grid gap-2 p-2.5 xl:min-h-0 xl:flex-1 xl:content-start xl:overflow-y-auto">
+        <SelectedContext
+          block={selectedBlock}
+          selectedDay={selectedDay}
+          selectedSlot={selectedSlot}
+        />
 
-        <div className="grid gap-2 sm:grid-cols-2">
-          <ContextList
-            accent="var(--accent-red)"
-            countLabel="5 open"
-            items={panel.openLoops}
-            title="Open Loops"
-          />
-          <ContextList
-            accent="var(--accent-blue)"
-            countLabel="2 unscheduled"
-            items={panel.unscheduledTasks}
-            title="Unscheduled Tasks"
-          />
-          <ContextList
-            accent="var(--accent-cyan)"
-            countLabel="2 open"
-            items={panel.reviewsOpen}
-            title="Reviews Open"
-          />
-          <ContextList
-            accent="var(--accent-orange)"
-            items={panel.suggestedPlanningActions}
-            title="Suggested Planning Actions"
-          />
-        </div>
+        <TimeSettings
+          block={selectedBlock}
+          key={`${selectedBlock?.id ?? "slot"}-${selectedSlot?.date ?? selectedDay?.date ?? "day"}-${selectedSlot?.startTime ?? ""}`}
+          onDuplicateBlock={onDuplicateBlock}
+          onMarkDone={onMarkDone}
+          onMoveLater={onMoveLater}
+          onSaveTime={onSaveTime}
+          selectedSlot={selectedSlot}
+        />
 
-        <div className="grid gap-2 xl:grid-cols-[minmax(0,1.08fr)_minmax(0,.92fr)]">
-          <SelectedDayActions panel={panel} />
-          <SelectedTimeSlot panel={panel} />
-        </div>
-
-        <div className="grid gap-2 xl:grid-cols-[minmax(0,1.08fr)_minmax(0,.92fr)]">
-          <SelectedBlockDetails block={selectedBlock} />
-
+        {selectedSlot ? (
           <section
-            aria-labelledby="weekly-review-heading"
-            className="rounded-[12px] border border-[rgba(95,200,215,.14)] bg-[rgba(11,17,28,.46)] p-3"
+            aria-labelledby="calendar-slot-actions-heading"
+            className="rounded-[12px] border border-[rgba(95,200,215,.14)] bg-[rgba(11,17,28,.38)] p-3"
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <h3
-                  className="text-[13px] font-semibold text-[var(--text-primary)]"
-                  id="weekly-review-heading"
-                >
-                  {panel.weeklyReview.title}
-                </h3>
-                <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
-                  {panel.weeklyReview.description}
-                </p>
-              </div>
-              <Pill accent="var(--accent-cyan)">{panel.weeklyReview.status}</Pill>
-            </div>
-
-            <div className="mt-2 flex min-w-0 items-center gap-2 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.74)] px-2.5 py-1.5">
-              <label className="sr-only" htmlFor="weekly-review-note">
-                Write weekly review note
-              </label>
-              <textarea
-                className="min-h-6 flex-1 resize-none border-0 bg-transparent text-[10px] leading-4 text-[var(--text-secondary)] outline-none placeholder:text-[var(--text-faint)]"
-                id="weekly-review-note"
-                placeholder={panel.weeklyReview.placeholder}
-                rows={1}
+            <h3
+              className="text-[13px] font-semibold text-[var(--text-primary)]"
+              id="calendar-slot-actions-heading"
+            >
+              Create
+            </h3>
+            <div className="mt-2">
+              <CalendarCreateMenu
+                defaults={selectedSlot}
+                onCreateBlock={onCreateBlock}
+                resolveDayId={resolveDayId}
+                tasks={tasks}
               />
-              <button
-                className="shrink-0 rounded-full border border-[rgba(95,200,215,.16)] bg-[rgba(18,28,43,.76)] px-2.5 py-1 text-[9px] font-semibold text-[var(--accent-cyan)] transition hover:border-[rgba(95,200,215,.32)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-                type="button"
-              >
-                {panel.weeklyReview.actionLabel}
-              </button>
             </div>
           </section>
-        </div>
+        ) : null}
 
-        <PlanningAssistant panel={panel} />
+        <SourcePanel block={selectedBlock} />
+        <PlanningQueue panel={panel} tasks={tasks} />
       </div>
     </aside>
   );

@@ -1,6 +1,6 @@
 # Pages and Routes
 
-Stand: 2026-06-18
+Stand: 2026-06-21
 Status: Active
 Zweck: Operative Routen- und Navigationsdokumentation fuer Life OS.
 Quelle der Wahrheit: `PRODUCT.md`, `ARCHITECTURE.md`, `DATA_MODEL.md`, `docs/product/navigation-and-source-of-truth-blueprint.md` und der Discovery-Kontext aus `docs/product/LIFE_OS_FUNKTIONSKATALOG.md`.
@@ -80,7 +80,6 @@ Learning Log
 WORK
 Work Log
 Wiki
-Meetings
 
 UTILITY
 Shop
@@ -104,6 +103,7 @@ Die Punkte oberhalb von Health & Fitness sind globale operative Einstiege und ke
 - `Sleep Log` ist kein sichtbarer Health-&-Fitness-Punkt.
 - Sleep bleibt spaetere Datenquelle innerhalb von Mental Health, Today und Recovery / Analytics.
 - `Follow-up` ist kein sichtbarer Work-Punkt.
+- `Meetings` ist kein sichtbarer Work-Punkt. Meeting-Kontext bleibt fachlich erhalten und kann intern, ueber Deep Links, Calendar oder Work-Kontext erreichbar bleiben.
 - Follow-ups gehoeren spaeter zu Work Log, Tasks oder Meetings.
 - `Entertainment` ist ein expandierbarer Life-Unterpunkt mit Games, Books, Series und Movies.
 - Area-Unterseiten sind Views auf kanonische Daten, keine eigenen Datensilos.
@@ -211,8 +211,9 @@ Sleep wird nicht als sichtbare Route gefuehrt. Falls spaetere Detailrouten noeti
 /work
 /work/log
 /work/wiki
-/work/meetings
 ```
+
+`/work/meetings` ist keine sichtbare Sidebar-Route. Eine bestehende technische Route kann als interner oder spaeterer Deep Link erhalten bleiben.
 
 `/work/follow-up` wird nicht gefuehrt. Follow-ups gehoeren spaeter in Work Log, Tasks oder Meetings.
 
@@ -240,6 +241,7 @@ Diese Routen koennen spaeter intern, ueber Panels, Detailseiten oder Command/Sea
 /agent-sessions/[sessionId]
 /runs/[runId]
 /workouts/[workoutId]
+/work/meetings
 /recipes/[recipeId]
 /meals/[mealId]
 ```

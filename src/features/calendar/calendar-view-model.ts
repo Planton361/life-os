@@ -8,6 +8,7 @@ import {
   calendarViewSwitches,
   projectsThisWeek,
   reviewMetrics,
+  schedulableTasks,
   timedBlocks,
   weekStats,
 } from "./calendar-mock-data";
@@ -22,6 +23,7 @@ type RawTimedBlock = Omit<
   CalendarTimedBlockViewModel,
   "compact" | "density" | "durationMinutes" | "layout"
 >;
+export type CalendarRawTimedBlock = RawTimedBlock;
 
 type WorkingLayoutBlock = {
   block: RawTimedBlock;
@@ -144,18 +146,20 @@ export function getEventLayout(
   return layouts;
 }
 
-function buildTimedBlocks(): CalendarTimedBlockViewModel[] {
+export function buildCalendarTimedBlocks(
+  blocks: RawTimedBlock[] = timedBlocks,
+): CalendarTimedBlockViewModel[] {
   const layoutsById = new Map<string, CalendarBlockLayout>();
 
   calendarDays.forEach((day) => {
-    getEventLayout(timedBlocks.filter((block) => block.dayId === day.id)).forEach(
+    getEventLayout(blocks.filter((block) => block.dayId === day.id)).forEach(
       (layout, id) => {
         layoutsById.set(id, layout);
       },
     );
   });
 
-  return timedBlocks.map((block) => {
+  return blocks.map((block) => {
     const durationMinutes = block.endMinutes - block.startMinutes;
     const density: CalendarTimedBlockDensity =
       durationMinutes <= MICRO_DURATION_MINUTES
@@ -184,7 +188,7 @@ function buildTimedBlocks(): CalendarTimedBlockViewModel[] {
 }
 
 export function getCalendarViewModel(): CalendarViewModel {
-  const timedBlockViewModels = buildTimedBlocks();
+  const timedBlockViewModels = buildCalendarTimedBlocks();
   const selectedBlock =
     timedBlockViewModels.find(
       (block) => block.id === "task-block-literature-structure",
@@ -215,6 +219,7 @@ export function getCalendarViewModel(): CalendarViewModel {
     allDayBlocks,
     timedBlocks: timedBlockViewModels,
     selectedBlock,
+    schedulableTasks,
     currentTime: {
       label: "15:42",
       top: minutesToTopPercent(15 * 60 + 42),

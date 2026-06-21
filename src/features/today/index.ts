@@ -4,7 +4,6 @@ export type {
   TodayActivityEventViewModel,
   TodayActivityEventType,
   TodayActivityStatus,
-  TodayActivityStreamSectionViewModel,
   TodayArtifactViewModel,
   TodayCarryForwardItemViewModel,
   TodayContractViewModel,

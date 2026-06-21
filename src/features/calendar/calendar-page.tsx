@@ -1,12 +1,196 @@
+"use client";
+
+import { useMemo, useState } from "react";
 import { Pill, accentStyle } from "@/components/layout/route-page-primitives";
+import { cn } from "@/lib/cn";
+import {
+  CALENDAR_DAY_END_MINUTES,
+  CALENDAR_DAY_START_MINUTES,
+} from "./calendar-mock-data";
+import type { CalendarRawTimedBlock } from "./calendar-view-model";
+import { buildCalendarTimedBlocks } from "./calendar-view-model";
 import type {
+  CalendarAllDayBlockViewModel,
+  CalendarBlockStatus,
+  CalendarDayViewModel,
+  CalendarScope,
+  CalendarSelectedTimeSlotViewModel,
+  CalendarTimedBlockViewModel,
+  CalendarView,
   CalendarViewModel,
   CalendarWeekStatViewModel,
 } from "./calendar-types";
+import { calendarBlockStatusLabels, calendarBlockTypeLabels } from "./calendar-types";
+import { CalendarAllDayBlock, CalendarTimedBlock } from "./components/calendar-block";
 import { CalendarPageHeader } from "./components/calendar-page-header";
 import { CalendarRightPanel } from "./components/calendar-right-panel";
 import { CalendarScopeRow } from "./components/calendar-scope-row";
 import { CalendarWeekSurface } from "./components/calendar-week-surface";
+
+type Selection =
+  | { kind: "block"; blockId: string }
+  | { kind: "slot"; slot: CalendarSelectedTimeSlotViewModel }
+  | { kind: "day"; dayId: string }
+  | { kind: "month"; month: number };
+
+type DateParts = {
+  date: Date;
+  iso: string;
+};
+
+const MOCK_TODAY = "2026-06-12";
+const monthNames = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+const weekdayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function stripTimedBlock(block: CalendarTimedBlockViewModel): CalendarRawTimedBlock {
+  const { compact, density, durationMinutes, layout, ...rawBlock } = block;
+
+  void compact;
+  void density;
+  void durationMinutes;
+  void layout;
+
+  return rawBlock;
+}
+
+function parseIsoDate(iso: string) {
+  const [year, month, day] = iso.split("-").map(Number);
+
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+function formatIsoDate(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function addDays(iso: string, days: number) {
+  const date = parseIsoDate(iso);
+  date.setUTCDate(date.getUTCDate() + days);
+
+  return formatIsoDate(date);
+}
+
+function addMonths(iso: string, months: number) {
+  const date = parseIsoDate(iso);
+  date.setUTCMonth(date.getUTCMonth() + months);
+
+  return formatIsoDate(date);
+}
+
+function addYears(iso: string, years: number) {
+  const date = parseIsoDate(iso);
+  date.setUTCFullYear(date.getUTCFullYear() + years);
+
+  return formatIsoDate(date);
+}
+
+function startOfMonth(iso: string) {
+  const date = parseIsoDate(iso);
+  date.setUTCDate(1);
+
+  return formatIsoDate(date);
+}
+
+function dayLabel(iso: string) {
+  const date = parseIsoDate(iso);
+
+  return `${weekdayNames[date.getUTCDay()]} ${String(date.getUTCDate()).padStart(2, "0")} ${monthNames[date.getUTCMonth()]}`;
+}
+
+function dateLabel(iso: string) {
+  const date = parseIsoDate(iso);
+
+  return `${weekdayNames[date.getUTCDay()]} ${String(date.getUTCDate()).padStart(2, "0")} ${monthNames[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
+}
+
+function monthLabel(iso: string) {
+  const date = parseIsoDate(iso);
+
+  return `${monthNames[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
+}
+
+function yearLabel(iso: string) {
+  return String(parseIsoDate(iso).getUTCFullYear());
+}
+
+function weekLabel(days: readonly CalendarDayViewModel[]) {
+  const first = days[0];
+  const last = days[days.length - 1];
+
+  return first && last
+    ? `${first.dayNumber}-${last.dayNumber} June 2026`
+    : "Selected week";
+}
+
+function weekRangeLabel(iso: string) {
+  const selected = parseIsoDate(iso);
+  const start = new Date(selected);
+  const weekday = start.getUTCDay();
+  const mondayOffset = weekday === 0 ? -6 : 1 - weekday;
+  start.setUTCDate(start.getUTCDate() + mondayOffset);
+
+  const end = new Date(start);
+  end.setUTCDate(start.getUTCDate() + 6);
+
+  const sameMonth = start.getUTCMonth() === end.getUTCMonth();
+  const sameYear = start.getUTCFullYear() === end.getUTCFullYear();
+  const startLabel = sameMonth
+    ? String(start.getUTCDate()).padStart(2, "0")
+    : `${String(start.getUTCDate()).padStart(2, "0")} ${monthNames[start.getUTCMonth()]}`;
+  const endLabel = `${String(end.getUTCDate()).padStart(2, "0")} ${monthNames[end.getUTCMonth()]}${sameYear ? "" : ` ${end.getUTCFullYear()}`}`;
+
+  return `${startLabel}-${endLabel} ${end.getUTCFullYear()}`;
+}
+
+function timeToMinutes(time: string) {
+  const [hours, minutes] = time.split(":").map(Number);
+
+  return hours * 60 + minutes;
+}
+
+function minutesToTime(minutes: number) {
+  return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+}
+
+function offsetTime(time: string, offset: number) {
+  return minutesToTime(timeToMinutes(time) + offset);
+}
+
+function hourToTop(hour: string) {
+  const range = CALENDAR_DAY_END_MINUTES - CALENDAR_DAY_START_MINUTES;
+  const offset = timeToMinutes(hour) - CALENDAR_DAY_START_MINUTES;
+
+  return Math.max(0, Math.min(100, (offset / range) * 100));
+}
+
+function scopeMatches(
+  block: CalendarAllDayBlockViewModel | CalendarTimedBlockViewModel | CalendarRawTimedBlock,
+  scope: CalendarScope,
+) {
+  if (scope === "All") return true;
+  if (scope === "Events") return block.type === "event";
+  if (scope === "Tasks") return block.type === "task_block" || block.source === "task";
+  if (scope === "Focus") return block.type === "focus_block" || block.type === "batch_block";
+  if (scope === "Routines") return block.type === "routine";
+  if (scope === "Projects") return block.source === "project";
+  if (scope === "Meals") return block.type === "meal";
+  if (scope === "Health") return block.source === "health" || block.type === "workout";
+  if (scope === "Reviews") return block.type === "review" || block.source === "review";
+  return block.type === "deadline" || block.type === "reminder";
+}
 
 function WeekStatCard({
   stat,
@@ -37,8 +221,10 @@ function WeekStatCard({
 }
 
 function CalendarWeekOverview({
+  activeView,
   viewModel,
 }: Readonly<{
+  activeView: CalendarView;
   viewModel: CalendarViewModel;
 }>) {
   return (
@@ -53,9 +239,9 @@ function CalendarWeekOverview({
               className="text-[15px] font-semibold text-[var(--text-primary)]"
               id="calendar-week-overview-heading"
             >
-              {viewModel.weekStats.title}
+              {activeView === "week" ? "Week View" : `${activeView[0].toUpperCase()}${activeView.slice(1)} View`}
             </h2>
-            <Pill accent="var(--accent-cyan)">focus week</Pill>
+            <Pill accent="var(--accent-cyan)">planning surface</Pill>
           </div>
           <p className="mt-1 max-w-3xl text-[10px] leading-4 text-[var(--text-muted)]">
             {viewModel.weekStats.summary}
@@ -88,9 +274,335 @@ function CalendarSourceContract({
           </span>{" "}
           {viewModel.pageContract.pageType}
         </p>
-        <p className="max-w-4xl">
-          {viewModel.pageContract.canonicalSource}
-        </p>
+        <p className="max-w-4xl">{viewModel.pageContract.canonicalSource}</p>
+      </div>
+    </section>
+  );
+}
+
+function EmptyCalendarState() {
+  return (
+    <div className="rounded-[12px] border border-dashed border-[var(--border-default)] bg-[rgba(168,183,204,.05)] px-4 py-5 text-center">
+      <p className="text-[13px] font-semibold text-[var(--text-secondary)]">
+        No blocks for this scope in the selected period.
+      </p>
+    </div>
+  );
+}
+
+function CalendarDaySurface({
+  allDayBlocks,
+  day,
+  hours,
+  onSelectBlock,
+  onSelectSlot,
+  selectedBlockId,
+  timedBlocks,
+}: Readonly<{
+  allDayBlocks: readonly CalendarAllDayBlockViewModel[];
+  day: CalendarDayViewModel;
+  hours: readonly string[];
+  onSelectBlock: (blockId: string) => void;
+  onSelectSlot: (slot: CalendarSelectedTimeSlotViewModel) => void;
+  selectedBlockId?: string;
+  timedBlocks: readonly CalendarTimedBlockViewModel[];
+}>) {
+  const dayTimedBlocks = timedBlocks.filter((block) => block.dayId === day.id);
+  const dayAllDayBlocks = allDayBlocks.filter((block) => block.dayId === day.id);
+  const hasBlocks = dayTimedBlocks.length > 0 || dayAllDayBlocks.length > 0;
+
+  return (
+    <section
+      aria-labelledby="calendar-day-surface-heading"
+      className="min-w-0 overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.74)] shadow-[0_8px_22px_rgba(0,0,0,.12)] xl:flex xl:min-h-0 xl:flex-col"
+    >
+      <div className="flex items-center justify-between gap-3 border-b border-[var(--border-subtle)] bg-[rgba(14,23,38,.76)] px-3 py-2">
+        <div>
+          <h2
+            className="text-[14px] font-semibold text-[var(--text-primary)]"
+            id="calendar-day-surface-heading"
+          >
+            Day timeline
+          </h2>
+          <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
+            {day.fullLabel}
+          </p>
+        </div>
+        <Pill accent="var(--accent-cyan)">single day</Pill>
+      </div>
+
+      <div className="grid gap-2 p-2 xl:min-h-0 xl:flex-1 xl:grid-rows-[auto_minmax(0,1fr)]">
+        <div className="grid gap-1.5 sm:grid-cols-2">
+          {dayAllDayBlocks.map((block) => (
+            <CalendarAllDayBlock
+              block={block}
+              key={block.id}
+              onSelect={onSelectBlock}
+              selected={block.id === selectedBlockId}
+            />
+          ))}
+        </div>
+        <div className="relative min-h-[620px] overflow-hidden rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.32)]">
+          {hours.map((hour) => (
+            <button
+              aria-label={`Select free slot on ${day.fullLabel} at ${hour}`}
+              className="absolute left-0 right-0 h-8 -translate-y-1/2 border-0 bg-transparent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[var(--focus-ring)]"
+              key={hour}
+              onClick={() =>
+                onSelectSlot({
+                  dayId: day.id,
+                  dayLabel: dayLabel(day.date),
+                  date: day.date,
+                  startTime: hour,
+                  endTime: offsetTime(hour, 60),
+                  label: "Selected time slot",
+                })
+              }
+              style={{ top: `${hourToTop(hour)}%` }}
+              type="button"
+            >
+              <span
+                aria-hidden="true"
+                className="absolute left-16 right-0 top-1/2 h-px bg-[rgba(148,163,184,.08)]"
+              />
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[9px] text-[var(--text-faint)]">
+                {hour}
+              </span>
+            </button>
+          ))}
+          {dayTimedBlocks.map((block) => (
+            <CalendarTimedBlock
+              block={block}
+              key={block.id}
+              onSelect={onSelectBlock}
+              selected={block.id === selectedBlockId}
+            />
+          ))}
+          {!hasBlocks ? <EmptyCalendarState /> : null}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CalendarMonthSurface({
+  allDayBlocks,
+  currentDate,
+  onSelectBlock,
+  onSelectDay,
+  selectedBlockId,
+  timedBlocks,
+}: Readonly<{
+  allDayBlocks: readonly CalendarAllDayBlockViewModel[];
+  currentDate: string;
+  onSelectBlock: (blockId: string) => void;
+  onSelectDay: (dayId: string) => void;
+  selectedBlockId?: string;
+  timedBlocks: readonly CalendarTimedBlockViewModel[];
+}>) {
+  const start = parseIsoDate(startOfMonth(currentDate));
+  const gridStart = new Date(start);
+  gridStart.setUTCDate(1 - gridStart.getUTCDay());
+
+  const cells: DateParts[] = Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(gridStart);
+    date.setUTCDate(gridStart.getUTCDate() + index);
+
+    return {
+      date,
+      iso: formatIsoDate(date),
+    };
+  });
+  const currentMonth = parseIsoDate(currentDate).getUTCMonth();
+  const blocks = [...timedBlocks, ...allDayBlocks];
+  const hasBlocks = blocks.length > 0;
+
+  return (
+    <section
+      aria-labelledby="calendar-month-surface-heading"
+      className="overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.74)] shadow-[0_8px_22px_rgba(0,0,0,.12)]"
+    >
+      <div className="flex items-center justify-between gap-3 border-b border-[var(--border-subtle)] bg-[rgba(14,23,38,.76)] px-3 py-2">
+        <div>
+          <h2
+            className="text-[14px] font-semibold text-[var(--text-primary)]"
+            id="calendar-month-surface-heading"
+          >
+            Month grid
+          </h2>
+          <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
+            Compact event density only.
+          </p>
+        </div>
+        <Pill accent="var(--accent-cyan)">{monthLabel(currentDate)}</Pill>
+      </div>
+      <div className="grid grid-cols-7 border-b border-[var(--border-subtle)]">
+        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+          <div
+            className="border-r border-[var(--border-subtle)] px-2 py-1.5 text-center text-[10px] font-semibold text-[var(--text-muted)] last:border-r-0"
+            key={day}
+          >
+            {day}
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7">
+        {cells.map((cell) => {
+          const dayBlocks = blocks.filter((block) => block.date === cell.iso);
+          const dayId = cell.iso;
+          const muted = cell.date.getUTCMonth() !== currentMonth;
+
+          return (
+            <div
+              className={cn(
+                "min-h-[112px] border-r border-t border-[var(--border-subtle)] p-1.5 last:border-r-0",
+                muted && "bg-[rgba(11,17,28,.34)] opacity-60",
+              )}
+              key={cell.iso}
+            >
+              <button
+                className="rounded-full px-2 py-0.5 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:bg-[rgba(168,183,204,.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                onClick={() => onSelectDay(dayId)}
+                type="button"
+              >
+                {cell.date.getUTCDate()}
+              </button>
+              <div className="mt-1 grid gap-1">
+                {dayBlocks.slice(0, 3).map((block) => (
+                  <button
+                    aria-pressed={selectedBlockId === block.id}
+                    className={cn(
+                      "truncate rounded-[7px] border bg-[color-mix(in_srgb,var(--accent)_10%,rgba(18,28,43,.82))] px-1.5 py-1 text-left text-[9px] font-semibold text-[var(--text-secondary)] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
+                      selectedBlockId === block.id
+                        ? "border-[color-mix(in_srgb,var(--accent)_54%,transparent)]"
+                        : "border-[color-mix(in_srgb,var(--accent)_20%,transparent)] hover:border-[color-mix(in_srgb,var(--accent)_38%,transparent)]",
+                    )}
+                    key={block.id}
+                    onClick={() => onSelectBlock(block.id)}
+                    style={accentStyle(block.accent)}
+                    title={block.title}
+                    type="button"
+                  >
+                    {block.title}
+                  </button>
+                ))}
+                {dayBlocks.length > 3 ? (
+                  <span className="text-[9px] font-semibold text-[var(--text-faint)]">
+                    +{dayBlocks.length - 3} more
+                  </span>
+                ) : null}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {!hasBlocks ? <EmptyCalendarState /> : null}
+    </section>
+  );
+}
+
+function CalendarYearSurface({
+  allDayBlocks,
+  currentDate,
+  onSelectBlock,
+  onSelectMonth,
+  selectedBlockId,
+  timedBlocks,
+}: Readonly<{
+  allDayBlocks: readonly CalendarAllDayBlockViewModel[];
+  currentDate: string;
+  onSelectBlock: (blockId: string) => void;
+  onSelectMonth: (month: number) => void;
+  selectedBlockId?: string;
+  timedBlocks: readonly CalendarTimedBlockViewModel[];
+}>) {
+  const year = parseIsoDate(currentDate).getUTCFullYear();
+  const blocks = [...timedBlocks, ...allDayBlocks].filter((block) =>
+    (block.date ?? "").startsWith(`${year}-`),
+  );
+
+  return (
+    <section
+      aria-labelledby="calendar-year-surface-heading"
+      className="overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.74)] shadow-[0_8px_22px_rgba(0,0,0,.12)]"
+    >
+      <div className="flex items-center justify-between gap-3 border-b border-[var(--border-subtle)] bg-[rgba(14,23,38,.76)] px-3 py-2">
+        <div>
+          <h2
+            className="text-[14px] font-semibold text-[var(--text-primary)]"
+            id="calendar-year-surface-heading"
+          >
+            Year roadmap
+          </h2>
+          <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
+            Prototype overview with deadlines, reviews and project markers.
+          </p>
+        </div>
+        <Pill accent="var(--accent-cyan)">{year}</Pill>
+      </div>
+      <div className="grid gap-2 p-2 sm:grid-cols-2 xl:grid-cols-3">
+        {monthNames.map((month, index) => {
+          const monthNumber = String(index + 1).padStart(2, "0");
+          const monthBlocks = blocks.filter((block) =>
+            (block.date ?? "").startsWith(`${year}-${monthNumber}`),
+          );
+
+          return (
+            <section
+              aria-labelledby={`calendar-year-${month.toLowerCase()}-heading`}
+              className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.38)] p-3"
+              key={month}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <button
+                  className="text-[13px] font-semibold text-[var(--text-primary)] transition hover:text-[var(--accent-cyan)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                  id={`calendar-year-${month.toLowerCase()}-heading`}
+                  onClick={() => onSelectMonth(index)}
+                  type="button"
+                >
+                  {month}
+                </button>
+                <Pill quiet>{monthBlocks.length}</Pill>
+              </div>
+              <div className="mt-2 grid gap-1.5">
+                {monthBlocks.slice(0, 3).map((block) => (
+                  <button
+                    aria-pressed={selectedBlockId === block.id}
+                    className={cn(
+                      "grid min-h-8 grid-cols-[8px_minmax(0,1fr)] gap-2 rounded-[8px] border bg-[rgba(18,28,43,.44)] px-2 py-1.5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
+                      selectedBlockId === block.id
+                        ? "border-[color-mix(in_srgb,var(--accent)_54%,transparent)]"
+                        : "border-[var(--border-subtle)] hover:border-[var(--border-default)]",
+                    )}
+                    key={block.id}
+                    onClick={() => onSelectBlock(block.id)}
+                    style={accentStyle(block.accent)}
+                    type="button"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="mt-1.5 size-1.5 rounded-full bg-[var(--accent)]"
+                    />
+                    <span className="min-w-0">
+                      <span className="block truncate text-[10px] font-semibold text-[var(--text-secondary)]">
+                        {block.title}
+                      </span>
+                      <span className="block truncate text-[9px] text-[var(--text-muted)]">
+                        {calendarBlockTypeLabels[block.type]} ·{" "}
+                        {calendarBlockStatusLabels[block.status]}
+                      </span>
+                    </span>
+                  </button>
+                ))}
+                {monthBlocks.length === 0 ? (
+                  <p className="text-[10px] leading-4 text-[var(--text-faint)]">
+                    No markers.
+                  </p>
+                ) : null}
+              </div>
+            </section>
+          );
+        })}
       </div>
     </section>
   );
@@ -101,23 +613,324 @@ export function CalendarPlanningPage({
 }: Readonly<{
   viewModel: CalendarViewModel;
 }>) {
+  const [activeView, setActiveView] = useState<CalendarView>("week");
+  const [activeScope, setActiveScope] = useState<CalendarScope>("All");
+  const [currentDate, setCurrentDate] = useState(MOCK_TODAY);
+  const [rawTimedBlocks, setRawTimedBlocks] = useState<CalendarRawTimedBlock[]>(
+    () => viewModel.timedBlocks.map(stripTimedBlock),
+  );
+  const [allDayBlocks, setAllDayBlocks] = useState<CalendarAllDayBlockViewModel[]>(
+    () => viewModel.allDayBlocks,
+  );
+  const [selection, setSelection] = useState<Selection>({
+    kind: "block",
+    blockId: viewModel.selectedBlock.id,
+  });
+
+  const dateByDayId = useMemo(
+    () => new Map(viewModel.days.map((day) => [day.id, day.date])),
+    [viewModel.days],
+  );
+  const dayIdByDate = useMemo(
+    () => new Map(viewModel.days.map((day) => [day.date, day.id])),
+    [viewModel.days],
+  );
+
+  function resolveDayId(date: string) {
+    return dayIdByDate.get(date) ?? date;
+  }
+
+  const timedBlocks = useMemo(
+    () =>
+      buildCalendarTimedBlocks(
+        rawTimedBlocks.map((block) => ({
+          ...block,
+          date: block.date ?? dateByDayId.get(block.dayId),
+        })),
+      ),
+    [dateByDayId, rawTimedBlocks],
+  );
+
+  const filteredTimedBlocks = timedBlocks.filter((block) =>
+    scopeMatches(block, activeScope),
+  );
+  const filteredAllDayBlocks = allDayBlocks
+    .map((block) => ({
+      ...block,
+      date: block.date ?? dateByDayId.get(block.dayId),
+    }))
+    .filter((block) => scopeMatches(block, activeScope));
+
+  const selectedBlock =
+    [...filteredTimedBlocks, ...filteredAllDayBlocks].find(
+      (block) => selection.kind === "block" && block.id === selection.blockId,
+    ) ??
+    [...timedBlocks, ...allDayBlocks].find(
+      (block) => selection.kind === "block" && block.id === selection.blockId,
+    );
+
+  const selectedSlot = selection.kind === "slot" ? selection.slot : null;
+  const selectedDay =
+    selection.kind === "day"
+      ? viewModel.days.find((day) => day.id === selection.dayId)
+      : selectedSlot
+        ? viewModel.days.find((day) => day.id === selectedSlot.dayId)
+        : selectedBlock
+          ? viewModel.days.find((day) => day.id === selectedBlock.dayId)
+          : viewModel.days.find((day) => day.date === currentDate);
+
+  const activeDay =
+    viewModel.days.find((day) => day.date === currentDate) ??
+    selectedDay ??
+    viewModel.days[3] ??
+    viewModel.days[0];
+
+  const dynamicHeader = {
+    ...viewModel.header,
+    dateRange:
+      activeView === "day"
+        ? dateLabel(currentDate)
+        : activeView === "month"
+          ? monthLabel(currentDate)
+          : activeView === "year"
+            ? yearLabel(currentDate)
+            : currentDate === MOCK_TODAY
+              ? weekLabel(viewModel.days)
+              : weekRangeLabel(currentDate),
+    controls: {
+      ...viewModel.header.controls,
+      views: viewModel.header.controls.views.map((view) => ({
+        ...view,
+        active: view.label.toLowerCase() === activeView,
+      })),
+    },
+  };
+
+  const dynamicViewModel = {
+    ...viewModel,
+    header: dynamicHeader,
+    filters: viewModel.filters.map((filter) => ({
+      ...filter,
+      active: filter.label === activeScope,
+    })),
+    days: viewModel.days,
+    allDayBlocks: filteredAllDayBlocks,
+    timedBlocks: filteredTimedBlocks,
+    selectedBlock: selectedBlock ?? viewModel.selectedBlock,
+    schedulableTasks: viewModel.schedulableTasks,
+  };
+
+  function movePeriod(direction: -1 | 1) {
+    let nextDate = addYears(currentDate, direction);
+
+    if (activeView === "day") {
+      nextDate = addDays(currentDate, direction);
+    } else if (activeView === "week") {
+      nextDate = addDays(currentDate, direction * 7);
+    } else if (activeView === "month") {
+      nextDate = addMonths(currentDate, direction);
+    }
+
+    setCurrentDate(nextDate);
+    setSelection({ kind: "day", dayId: resolveDayId(nextDate) });
+  }
+
+  function selectBlock(blockId: string) {
+    setSelection({ kind: "block", blockId });
+  }
+
+  function createBlock(block: CalendarRawTimedBlock) {
+    setRawTimedBlocks((blocks) => [...blocks, block]);
+    setSelection({ kind: "block", blockId: block.id });
+  }
+
+  function saveTime(blockId: string, date: string, startTime: string, endTime: string) {
+    const nextDayId = resolveDayId(date);
+
+    setRawTimedBlocks((blocks) =>
+      blocks.map((block) =>
+        block.id === blockId
+          ? {
+              ...block,
+              date,
+              dayId: nextDayId,
+              startTime,
+              endTime,
+              startMinutes: timeToMinutes(startTime),
+              endMinutes: timeToMinutes(endTime),
+            }
+          : block,
+      ),
+    );
+    setAllDayBlocks((blocks) =>
+      blocks.map((block) =>
+        block.id === blockId
+          ? {
+              ...block,
+              date,
+              dayId: nextDayId,
+              timeLabel: `${startTime}-${endTime}`,
+            }
+          : block,
+      ),
+    );
+  }
+
+  function moveLater(blockId: string) {
+    setRawTimedBlocks((blocks) =>
+      blocks.map((block) =>
+        block.id === blockId
+          ? {
+              ...block,
+              startTime: offsetTime(block.startTime, 30),
+              endTime: offsetTime(block.endTime, 30),
+              startMinutes: block.startMinutes + 30,
+              endMinutes: block.endMinutes + 30,
+              status: "moved" as CalendarBlockStatus,
+            }
+          : block,
+      ),
+    );
+  }
+
+  function duplicateBlock(blockId: string) {
+    const timedBlock = rawTimedBlocks.find((block) => block.id === blockId);
+
+    if (timedBlock) {
+      const duplicate = {
+        ...timedBlock,
+        id: `${timedBlock.id}-copy-${Date.now()}`,
+        title: `${timedBlock.title} copy`,
+        startTime: offsetTime(timedBlock.startTime, 30),
+        endTime: offsetTime(timedBlock.endTime, 30),
+        startMinutes: timedBlock.startMinutes + 30,
+        endMinutes: timedBlock.endMinutes + 30,
+        status: "draft" as CalendarBlockStatus,
+      };
+
+      setRawTimedBlocks((blocks) => [...blocks, duplicate]);
+      setSelection({ kind: "block", blockId: duplicate.id });
+      return;
+    }
+
+    const allDayBlock = allDayBlocks.find((block) => block.id === blockId);
+
+    if (allDayBlock) {
+      const duplicate = {
+        ...allDayBlock,
+        id: `${allDayBlock.id}-copy-${Date.now()}`,
+        title: `${allDayBlock.title} copy`,
+        status: "draft" as CalendarBlockStatus,
+      };
+
+      setAllDayBlocks((blocks) => [...blocks, duplicate]);
+      setSelection({ kind: "block", blockId: duplicate.id });
+    }
+  }
+
+  function markDone(blockId: string) {
+    setRawTimedBlocks((blocks) =>
+      blocks.map((block) =>
+        block.id === blockId ? { ...block, status: "done" } : block,
+      ),
+    );
+    setAllDayBlocks((blocks) =>
+      blocks.map((block) =>
+        block.id === blockId ? { ...block, status: "done" } : block,
+      ),
+    );
+  }
+
+  const selectedBlockId = selection.kind === "block" ? selection.blockId : undefined;
+
   return (
     <div className="mx-auto flex w-full max-w-[2208px] flex-col gap-2 pb-6 xl:h-[calc(100dvh-1.25rem)] xl:min-h-0 xl:pb-0">
-      <CalendarPageHeader header={viewModel.header} />
+      <CalendarPageHeader
+        header={dynamicHeader}
+        onCreateBlock={createBlock}
+        onMovePeriod={movePeriod}
+        onToday={() => {
+          setCurrentDate(MOCK_TODAY);
+          setSelection({ kind: "day", dayId: resolveDayId(MOCK_TODAY) });
+        }}
+        onViewChange={setActiveView}
+        resolveDayId={resolveDayId}
+        schedulableTasks={viewModel.schedulableTasks}
+      />
       <CalendarScopeRow
-        filters={viewModel.filters}
+        filters={dynamicViewModel.filters}
+        onScopeChange={setActiveScope}
         projects={viewModel.projectsThisWeek}
       />
-      <CalendarWeekOverview viewModel={viewModel} />
+      <CalendarWeekOverview activeView={activeView} viewModel={viewModel} />
 
       <div className="grid min-w-0 gap-2 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(0,1fr)_minmax(400px,440px)] 2xl:grid-cols-[minmax(0,1fr)_minmax(440px,520px)]">
         <div className="grid min-w-0 gap-2 xl:min-h-0 xl:grid-rows-[minmax(0,1fr)_auto]">
-          <CalendarWeekSurface viewModel={viewModel} />
+          {activeView === "week" ? (
+            <CalendarWeekSurface
+              onSelectBlock={selectBlock}
+              onSelectSlot={(slot) => setSelection({ kind: "slot", slot })}
+              selectedBlockId={selectedBlockId}
+              viewModel={dynamicViewModel}
+            />
+          ) : null}
+
+          {activeView === "day" ? (
+            <CalendarDaySurface
+              allDayBlocks={filteredAllDayBlocks}
+              day={activeDay}
+              hours={viewModel.hours}
+              onSelectBlock={selectBlock}
+              onSelectSlot={(slot) => setSelection({ kind: "slot", slot })}
+              selectedBlockId={selectedBlockId}
+              timedBlocks={filteredTimedBlocks}
+            />
+          ) : null}
+
+          {activeView === "month" ? (
+            <CalendarMonthSurface
+              allDayBlocks={filteredAllDayBlocks}
+              currentDate={currentDate}
+              onSelectBlock={selectBlock}
+              onSelectDay={(date) => {
+                setCurrentDate(date);
+                setSelection({ kind: "day", dayId: resolveDayId(date) });
+              }}
+              selectedBlockId={selectedBlockId}
+              timedBlocks={filteredTimedBlocks}
+            />
+          ) : null}
+
+          {activeView === "year" ? (
+            <CalendarYearSurface
+              allDayBlocks={filteredAllDayBlocks}
+              currentDate={currentDate}
+              onSelectBlock={selectBlock}
+              onSelectMonth={(month) => {
+                const year = parseIsoDate(currentDate).getUTCFullYear();
+                const nextDate = `${year}-${String(month + 1).padStart(2, "0")}-01`;
+                setCurrentDate(nextDate);
+                setSelection({ kind: "month", month });
+              }}
+              selectedBlockId={selectedBlockId}
+              timedBlocks={filteredTimedBlocks}
+            />
+          ) : null}
+
           <CalendarSourceContract viewModel={viewModel} />
         </div>
         <CalendarRightPanel
+          onCreateBlock={createBlock}
+          onDuplicateBlock={duplicateBlock}
+          onMarkDone={markDone}
+          onMoveLater={moveLater}
+          onSaveTime={saveTime}
           panel={viewModel.rightPanel}
-          selectedBlock={viewModel.selectedBlock}
+          resolveDayId={resolveDayId}
+          selectedBlock={selectedBlock}
+          selectedDay={selectedDay}
+          selectedSlot={selectedSlot}
+          tasks={viewModel.schedulableTasks}
         />
       </div>
     </div>

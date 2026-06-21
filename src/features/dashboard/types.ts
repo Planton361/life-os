@@ -50,6 +50,7 @@ export type DashboardMoodCheck = {
   prompt: string;
   moodLabel: string;
   detail: string;
+  progressLabel: string;
   scoreLabel: string;
   progress: number;
   accent: DashboardAccent;
@@ -228,10 +229,13 @@ export type DashboardInboxSignals = {
 export type HabitTrackerWindow = "Morning" | "Midday" | "Evening";
 
 export type DashboardHabit = {
+  id: string;
   marker: string;
   label: string;
-  value: string;
-  done: number;
+  currentValue: number;
+  targetValue: number;
+  unit?: string;
+  stepValue: number;
   total: number;
   area: DashboardArea;
 };
@@ -245,7 +249,7 @@ export type DashboardHabitTrackers = {
   totalSlotsLabel: string;
   addHabitLabel: string;
   addHabitMeta: string;
-  habits: readonly DashboardHabit[];
+  habitsByWindow: Record<HabitTrackerWindow, readonly DashboardHabit[]>;
 };
 
 export type PortfolioView = "Project View" | "Goal View" | "Skill View";
@@ -289,6 +293,7 @@ export type DashboardMeal = {
   mealId: string;
   type: MealType;
   name: string;
+  time: string;
   kcal: string;
   macros: readonly string[];
   area: Extract<DashboardArea, "nutrition">;
@@ -299,6 +304,7 @@ export type DashboardMeals = {
   priority: Extract<DashboardPriority, "P2">;
   title: string;
   href?: DashboardHref;
+  currentTimeLabel: string;
   items: readonly DashboardMeal[];
 };
 
@@ -308,26 +314,33 @@ export type DashboardWeightLossGoal = {
   href?: DashboardHref;
   currentWeight: string;
   targetLabel: string;
-  progressLabel: string;
+  remainingLabel: string;
+  weeklyStatusLabel: string;
+  weeklyStatusAccent: DashboardAccent;
   progress: number;
   accent: DashboardAccent;
 };
 
+export type DashboardNutrientStatus = "Under" | "On target" | "Over";
+
 export type DashboardNutrientBalanceItem = {
   label: string;
   value: string;
+  status: DashboardNutrientStatus;
   progress: number;
   accent: DashboardAccent;
+  statusAccent: DashboardAccent;
 };
 
 export type DashboardNutrientBalance = {
   priority: Extract<DashboardPriority, "P2">;
   title: string;
   href?: DashboardHref;
+  lastUpdatedLabel: string;
   items: readonly DashboardNutrientBalanceItem[];
 };
 
-export type RunningRecoveryMode = "Running" | "Muscle" | "Recovery";
+export type RunningRecoveryMode = "Running" | "Muscle";
 
 export type DashboardRunStat = {
   label: string;
@@ -343,6 +356,16 @@ export type DashboardRunningRhythm = {
   accent: DashboardAccent;
 };
 
+export type DashboardMuscleWorkout = {
+  workoutId: string;
+  title: string;
+  detail: string;
+  focusGroups: readonly string[];
+  nextStep: string;
+  statusLabel: "Planned" | "Done" | "Missed";
+  href?: DashboardHref;
+};
+
 export type DashboardRunningRecovery = {
   priority: Extract<DashboardPriority, "P2">;
   title: string;
@@ -352,11 +375,15 @@ export type DashboardRunningRecovery = {
   activeMode: RunningRecoveryMode;
   stats: readonly DashboardRunStat[];
   rhythm: DashboardRunningRhythm;
+  todayGoalLabel: string;
+  lastSyncLabel: string;
+  muscle: DashboardMuscleWorkout;
 };
 
 export type AntiRotEffort = "Easy" | "Medium" | "Hard";
 
 export type DashboardAntiRotAction = {
+  id: string;
   title: string;
   type: string;
   bad: string;
@@ -374,12 +401,21 @@ export type DashboardAntiRotActions = {
   actions: readonly DashboardAntiRotAction[];
 };
 
+export type DashboardChallengeCadence = "Daily" | "Weekly" | "Monthly";
+
+export type DashboardChallengeTracking = "auto" | "manual";
+
 export type DashboardChallenge = {
+  id: string;
   title: string;
+  cadence: DashboardChallengeCadence;
+  tracking: DashboardChallengeTracking;
+  sourceLabel: string;
   type: string;
   status: string;
   footer: string;
   progress: number;
+  completed: boolean;
   area: DashboardArea;
 };
 

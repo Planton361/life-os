@@ -1,6 +1,6 @@
 # PRODUCT.md
 
-Stand: 2026-06-18
+Stand: 2026-06-21
 Status: Active
 Zweck: Operative Produktwahrheit für Agents.
 Quelle der Wahrheit: Diese Datei; Details in `docs/product/*`.
@@ -62,7 +62,7 @@ Archiv = Vergangenheit
 - Coding enthält Repositories, Agents und Skill & Knowledge Map.
 - Life enthält Journal, Notes, Entertainment mit Games, Books, Series und Movies sowie Inventory.
 - Education enthält Scientific Work, Literature und Learning Log.
-- Work enthält Work Log, Wiki und Meetings.
+- Work enthält sichtbar Work Log und Wiki. Meetings bleibt fachlich erhalten, ist aber kein sichtbarer Work-Sidebar-Punkt.
 - Follow-ups sind kein eigener Work-Punkt mehr. Sie gehören später zu Work Log, Tasks oder Meetings.
 - Shop und Challenges sind Utility- und Motivationspunkte, aber nicht P0.
 
