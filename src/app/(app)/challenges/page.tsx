@@ -1,23 +1,17 @@
+import type { Metadata } from "next";
 import {
-  RouteSkeletonPage,
-  createRouteSkeletonMetadata,
-  type RouteSkeletonConfig,
-} from "@/components/layout/route-skeleton-page";
+  ChallengesPage as ChallengesFeaturePage,
+  getChallengesViewModel,
+} from "@/features/challenges";
 
-const routeConfig = {
-  title: "Challenges",
-  eyebrow: "Motivation workflow",
-  summary:
-    "Challenges will provide lightweight behavior prompts and progress constraints without turning Life OS into an XP game.",
-  dataSource: "challenges, rewards, habits, tasks, daily_records, and review_records.",
-  emptyTitle: "No challenges workflow connected yet",
-  emptyDescription:
-    "This skeleton reserves the Challenges route before challenge definitions, progress, and reward links are implemented.",
-  accent: "var(--accent-orange)",
-} satisfies RouteSkeletonConfig;
-
-export const metadata = createRouteSkeletonMetadata(routeConfig);
+export const metadata: Metadata = {
+  title: "Challenges | Life OS",
+  description:
+    "Challenge Hub for daily, weekly and monthly special tasks with local progress simulation.",
+};
 
 export default function ChallengesPage() {
-  return <RouteSkeletonPage config={routeConfig} />;
+  const viewModel = getChallengesViewModel();
+
+  return <ChallengesFeaturePage viewModel={viewModel} />;
 }

@@ -271,6 +271,11 @@ export const sidebarNavigation: SidebarNavigation = {
       accent: "var(--accent-blue)",
       items: [
         {
+          label: "Overview",
+          href: "/education",
+          status: "ready",
+        },
+        {
           label: "Scientific Work",
           href: "/education/scientific-work",
           status: "ready",

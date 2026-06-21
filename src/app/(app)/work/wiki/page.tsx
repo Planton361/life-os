@@ -1,23 +1,12 @@
-import {
-  RouteSkeletonPage,
-  createRouteSkeletonMetadata,
-  type RouteSkeletonConfig,
-} from "@/components/layout/route-skeleton-page";
+import type { Metadata } from "next";
+import { getWorkWikiViewModel, WorkWikiPage } from "@/features/work";
 
-const routeConfig = {
-  title: "Wiki",
-  eyebrow: "Work knowledge view",
-  summary:
-    "Wiki will show work-specific knowledge, notes, and references while keeping reusable knowledge connected to the central Resources layer.",
-  dataSource: "wiki_pages, resources, notes, projects, and work_logs.",
-  emptyTitle: "No work wiki connected yet",
-  emptyDescription:
-    "This skeleton keeps the Work Wiki route available before pages, links, and restricted resource views are implemented.",
-  accent: "var(--accent-green)",
-} satisfies RouteSkeletonConfig;
+export const metadata: Metadata = {
+  title: "Wiki | Life OS",
+  description:
+    "Personal work reference, process notes and architecture lookup with local mock data.",
+};
 
-export const metadata = createRouteSkeletonMetadata(routeConfig);
-
-export default function WorkWikiPage() {
-  return <RouteSkeletonPage config={routeConfig} />;
+export default function WorkWikiRoute() {
+  return <WorkWikiPage viewModel={getWorkWikiViewModel()} />;
 }
