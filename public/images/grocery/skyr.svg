@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="112" height="112" viewBox="0 0 112 112" role="img" aria-label="Skyr grocery placeholder">
+  <rect width="112" height="112" rx="18" fill="#101927"/>
+  <path d="M34 36h44l-6 52H40L34 36Z" fill="#172235" stroke="rgba(148,163,184,.32)"/>
+  <path d="M37 30h38" stroke="#5fc8d7" stroke-width="8" stroke-linecap="round" opacity=".58"/>
+  <path d="M43 58c8-5 16 5 27-1" stroke="#eef4ff" stroke-width="6" stroke-linecap="round" opacity=".72"/>
+  <circle cx="56" cy="72" r="7" fill="#5fc8d7" opacity=".26"/>
+</svg>

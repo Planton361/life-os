@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="112" height="112" viewBox="0 0 112 112" role="img" aria-label="Potatoes grocery placeholder">
+  <rect width="112" height="112" rx="18" fill="#101927"/>
+  <ellipse cx="47" cy="60" rx="18" ry="25" fill="#d9924f" opacity=".48"/>
+  <ellipse cx="66" cy="65" rx="17" ry="22" fill="#d8b45a" opacity=".40"/>
+  <circle cx="43" cy="55" r="2" fill="#101927" opacity=".55"/>
+  <circle cx="65" cy="68" r="2" fill="#101927" opacity=".55"/>
+</svg>

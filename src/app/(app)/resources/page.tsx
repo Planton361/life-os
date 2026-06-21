@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import {
   ResourcesPage as ResourcesWorkbenchPage,
   getResourcesViewModel,
@@ -13,5 +14,9 @@ export const metadata: Metadata = {
 export default function ResourcesPage() {
   const viewModel = getResourcesViewModel();
 
-  return <ResourcesWorkbenchPage viewModel={viewModel} />;
+  return (
+    <Suspense fallback={null}>
+      <ResourcesWorkbenchPage viewModel={viewModel} />
+    </Suspense>
+  );
 }

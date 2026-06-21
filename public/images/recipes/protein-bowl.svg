@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 100" role="img" aria-labelledby="title">
+  <title id="title">Abstract protein bowl with vegetables</title>
+  <rect width="160" height="100" rx="16" fill="#0f1724"/>
+  <rect x="10" y="10" width="140" height="80" rx="14" fill="#121c2b" stroke="rgba(148,163,184,.20)"/>
+  <ellipse cx="80" cy="61" rx="54" ry="21" fill="#42b883" opacity=".18"/>
+  <rect x="49" y="42" width="25" height="18" rx="6" fill="#d9924f" opacity=".78"/>
+  <rect x="78" y="39" width="28" height="21" rx="7" fill="#eef4ff" opacity=".16"/>
+  <circle cx="108" cy="58" r="8" fill="#42b883" opacity=".72"/>
+  <circle cx="61" cy="63" r="6" fill="#d8b45a" opacity=".76"/>
+  <path d="M42 70c22 9 55 10 76 0" fill="none" stroke="#5fc8d7" stroke-width="3" stroke-linecap="round" opacity=".54"/>
+</svg>

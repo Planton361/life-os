@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 100" role="img" aria-labelledby="title">
+  <title id="title">Abstract lentil curry</title>
+  <rect width="160" height="100" rx="16" fill="#0f1724"/>
+  <rect x="10" y="10" width="140" height="80" rx="14" fill="#121c2b" stroke="rgba(148,163,184,.20)"/>
+  <ellipse cx="80" cy="61" rx="50" ry="20" fill="#d9924f" opacity=".30"/>
+  <circle cx="61" cy="56" r="5" fill="#d8b45a" opacity=".76"/>
+  <circle cx="77" cy="63" r="5" fill="#d8b45a" opacity=".60"/>
+  <circle cx="94" cy="55" r="5" fill="#42b883" opacity=".70"/>
+  <circle cx="107" cy="64" r="4" fill="#d8b45a" opacity=".66"/>
+  <path d="M44 72c22 8 53 8 73 0" fill="none" stroke="#d9924f" stroke-width="3" stroke-linecap="round" opacity=".72"/>
+</svg>

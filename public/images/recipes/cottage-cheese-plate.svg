@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 100" role="img" aria-labelledby="title">
+  <title id="title">Abstract cottage cheese plate</title>
+  <rect width="160" height="100" rx="16" fill="#0f1724"/>
+  <rect x="10" y="10" width="140" height="80" rx="14" fill="#121c2b" stroke="rgba(148,163,184,.20)"/>
+  <ellipse cx="80" cy="61" rx="51" ry="19" fill="#eef4ff" opacity=".12"/>
+  <rect x="49" y="46" width="29" height="18" rx="6" fill="#d8b45a" opacity=".42"/>
+  <circle cx="93" cy="54" r="13" fill="#eef4ff" opacity=".22"/>
+  <circle cx="93" cy="54" r="6" fill="#d9924f" opacity=".78"/>
+  <circle cx="112" cy="62" r="5" fill="#dd6b5f" opacity=".74"/>
+  <path d="M42 72c22 8 54 8 76 0" fill="none" stroke="#526178" stroke-width="3" stroke-linecap="round" opacity=".64"/>
+</svg>

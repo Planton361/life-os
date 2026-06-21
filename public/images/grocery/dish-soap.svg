@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="112" height="112" viewBox="0 0 112 112" role="img" aria-label="Dish soap grocery placeholder">
+  <rect width="112" height="112" rx="18" fill="#101927"/>
+  <path d="M40 38h32l5 50H35l5-50Z" fill="#172235" stroke="rgba(148,163,184,.32)"/>
+  <rect x="46" y="22" width="20" height="18" rx="6" fill="#5fc8d7" opacity=".5"/>
+  <path d="M42 62c9-7 18 6 30-1" stroke="#5fc8d7" stroke-width="6" stroke-linecap="round" opacity=".46"/>
+</svg>

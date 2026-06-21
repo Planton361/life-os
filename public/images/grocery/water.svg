@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="112" height="112" viewBox="0 0 112 112" role="img" aria-label="Water bottle grocery placeholder">
+  <rect width="112" height="112" rx="18" fill="#101927"/>
+  <rect x="42" y="18" width="28" height="74" rx="10" fill="#172235" stroke="rgba(148,163,184,.32)"/>
+  <rect x="47" y="12" width="18" height="14" rx="5" fill="#5fc8d7" opacity=".58"/>
+  <path d="M46 56c8-7 13 6 22-1v24H46V56Z" fill="#5fc8d7" opacity=".34"/>
+  <path d="M47 36h18" stroke="#b8c3d6" stroke-width="4" stroke-linecap="round" opacity=".44"/>
+</svg>

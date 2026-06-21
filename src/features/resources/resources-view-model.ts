@@ -1,9 +1,12 @@
 import type {
   RecentLearning,
+  ResourceAiSuggestion,
   ResourceArea,
   ResourceAreaMeta,
+  ResourceCluster,
   ResourceItem,
   ResourceOption,
+  ResourceRelation,
   ResourceReviewQueueItem,
   ResourceReviewState,
   ResourceReviewStateMeta,
@@ -12,6 +15,7 @@ import type {
   ResourceSummaryStat,
   ResourceType,
   ResourceTypeMeta,
+  ResourceViewMode,
   ResourcesViewModel,
 } from "./types";
 
@@ -39,6 +43,11 @@ export const resourceTypeMeta: Record<ResourceType, ResourceTypeMeta> = {
   link: {
     label: "Source Link",
     shortLabel: "Link",
+    accent: "var(--accent-cyan)",
+  },
+  source: {
+    label: "Source",
+    shortLabel: "Source",
     accent: "var(--accent-cyan)",
   },
   snippet: {
@@ -97,6 +106,10 @@ export const resourceAreaMeta: Record<ResourceArea, ResourceAreaMeta> = {
     label: "Health",
     accent: "var(--accent-red)",
   },
+  nutrition: {
+    label: "Nutrition",
+    accent: "var(--accent-yellow)",
+  },
   personal: {
     label: "Personal",
     accent: "var(--accent-purple)",
@@ -150,6 +163,31 @@ const resources: ResourceItem[] = [
     status: "review_needed",
     source: "Scientific Work / Literature",
     linkedContext: "Masterarbeit / Literature chapter",
+    linkedContexts: [
+      {
+        id: "scientific-work-masterarbeit",
+        title: "Masterarbeit",
+        kind: "scientific_work",
+        detail: "Scientific Work",
+        accent: "var(--accent-blue)",
+      },
+      {
+        id: "project-literature-chapter",
+        title: "Literature chapter",
+        kind: "project",
+        detail: "Project context",
+        accent: "var(--accent-blue)",
+      },
+      {
+        id: "skill-research-methodology",
+        title: "Research Methodology",
+        kind: "skill",
+        detail: "Skill evidence",
+        accent: "var(--accent-cyan)",
+      },
+    ],
+    topic: "Literature review provenance",
+    clusterId: "masterarbeit-literature",
     lastTouched: "Today 10:20",
     reviewState: "needs_extraction",
     summary:
@@ -186,6 +224,31 @@ const resources: ResourceItem[] = [
     status: "reusable",
     source: "Codex session note",
     linkedContext: "Life OS / Agent Workflow",
+    linkedContexts: [
+      {
+        id: "project-life-os-app",
+        title: "Life OS App",
+        kind: "project",
+        detail: "Implementation context",
+        accent: "var(--accent-blue)",
+      },
+      {
+        id: "skill-codex-agent-workflow",
+        title: "Codex Agent Workflow",
+        kind: "skill",
+        detail: "Reusable prompt skill",
+        accent: "var(--accent-orange)",
+      },
+      {
+        id: "area-coding-agents",
+        title: "Coding / Agents",
+        kind: "area",
+        detail: "Area view",
+        accent: "var(--accent-orange)",
+      },
+    ],
+    topic: "Agent prompt patterns",
+    clusterId: "ai-agent-workflow",
     lastTouched: "Yesterday 18:40",
     reviewState: "pattern_candidate",
     summary:
@@ -222,6 +285,31 @@ const resources: ResourceItem[] = [
     status: "linked",
     source: "Design docs / Figma handoff",
     linkedContext: "Design System / Page Rules",
+    linkedContexts: [
+      {
+        id: "project-life-os-page-design",
+        title: "Life OS Page Design",
+        kind: "project",
+        detail: "Page workbench rules",
+        accent: "var(--accent-cyan)",
+      },
+      {
+        id: "note-design-tokens",
+        title: "Design Tokens",
+        kind: "note",
+        detail: "V5 source note",
+        accent: "var(--accent-cyan)",
+      },
+      {
+        id: "skill-ui-implementation",
+        title: "UI Implementation",
+        kind: "skill",
+        detail: "Design-to-code guardrail",
+        accent: "var(--accent-blue)",
+      },
+    ],
+    topic: "Life OS page design",
+    clusterId: "life-os-design-system",
     lastTouched: "Yesterday 16:05",
     reviewState: "ready_to_reuse",
     summary:
@@ -254,6 +342,31 @@ const resources: ResourceItem[] = [
     status: "review_needed",
     source: "Education / Scientific Work",
     linkedContext: "Masterarbeit / Argumentation",
+    linkedContexts: [
+      {
+        id: "scientific-work-masterarbeit",
+        title: "Masterarbeit",
+        kind: "scientific_work",
+        detail: "Scientific Work",
+        accent: "var(--accent-blue)",
+      },
+      {
+        id: "project-argumentation-outline",
+        title: "Argumentation outline",
+        kind: "project",
+        detail: "Thesis section planning",
+        accent: "var(--accent-blue)",
+      },
+      {
+        id: "note-claim-map",
+        title: "Claim map",
+        kind: "note",
+        detail: "Evidence and limitation notes",
+        accent: "var(--accent-purple)",
+      },
+    ],
+    topic: "Thesis claim structure",
+    clusterId: "masterarbeit-literature",
     lastTouched: "Mon 21:15",
     reviewState: "needs_extraction",
     summary:
@@ -286,6 +399,31 @@ const resources: ResourceItem[] = [
     status: "processed",
     source: "Work Log / Meetings",
     linkedContext: "Work / Meeting follow-ups",
+    linkedContexts: [
+      {
+        id: "wiki-fi-meetings",
+        title: "FI Meeting Wiki",
+        kind: "wiki",
+        detail: "Work-specific knowledge",
+        accent: "var(--accent-green)",
+      },
+      {
+        id: "task-meeting-follow-ups",
+        title: "Meeting follow-ups",
+        kind: "task",
+        detail: "Promises and blockers",
+        accent: "var(--accent-green)",
+      },
+      {
+        id: "project-fi-work-context",
+        title: "FI Work Context",
+        kind: "project",
+        detail: "Work project context",
+        accent: "var(--accent-green)",
+      },
+    ],
+    topic: "Meeting decision loops",
+    clusterId: "work-meeting-knowledge",
     lastTouched: "Mon 14:35",
     reviewState: "needs_linking",
     summary:
@@ -314,6 +452,31 @@ const resources: ResourceItem[] = [
     status: "processed",
     source: "Architecture note",
     linkedContext: "Life OS / Data fetching later",
+    linkedContexts: [
+      {
+        id: "project-life-os-app",
+        title: "Life OS App",
+        kind: "project",
+        detail: "Future data fetching",
+        accent: "var(--accent-blue)",
+      },
+      {
+        id: "repository-life-os",
+        title: "life-os-app",
+        kind: "repository",
+        detail: "Next.js repository",
+        accent: "var(--accent-orange)",
+      },
+      {
+        id: "skill-nextjs-architecture",
+        title: "Next.js Architecture",
+        kind: "skill",
+        detail: "Phase 3 decision guard",
+        accent: "var(--accent-blue)",
+      },
+    ],
+    topic: "Phase 3 data fetching",
+    clusterId: "life-os-design-system",
     lastTouched: "Sun 11:10",
     reviewState: "source_checked",
     summary:
@@ -342,6 +505,31 @@ const resources: ResourceItem[] = [
     status: "reusable",
     source: "AI Workflow / Codex sessions",
     linkedContext: "Coding / Agents",
+    linkedContexts: [
+      {
+        id: "skill-codex-agent-workflow",
+        title: "Codex Agent Workflow",
+        kind: "skill",
+        detail: "Agent operating rules",
+        accent: "var(--accent-orange)",
+      },
+      {
+        id: "note-ai-workflow",
+        title: "AI Workflow docs",
+        kind: "note",
+        detail: "Source-of-truth reading",
+        accent: "var(--accent-cyan)",
+      },
+      {
+        id: "area-coding-agents",
+        title: "Coding / Agents",
+        kind: "area",
+        detail: "Area view",
+        accent: "var(--accent-orange)",
+      },
+    ],
+    topic: "Agent work quality",
+    clusterId: "ai-agent-workflow",
     lastTouched: "Fri 19:30",
     reviewState: "ready_to_reuse",
     summary:
@@ -366,10 +554,35 @@ const resources: ResourceItem[] = [
     id: "nutrition-habit-insight",
     title: "Nutrition Habit Insight",
     type: "learning",
-    area: "health",
+    area: "nutrition",
     status: "linked",
     source: "Nutrition / Habit note",
     linkedContext: "Health & Nutrition",
+    linkedContexts: [
+      {
+        id: "area-nutrition",
+        title: "Nutrition",
+        kind: "area",
+        detail: "Meal planning context",
+        accent: "var(--accent-yellow)",
+      },
+      {
+        id: "goal-evening-energy",
+        title: "Evening energy",
+        kind: "goal",
+        detail: "Calm habit adjustment",
+        accent: "var(--accent-orange)",
+      },
+      {
+        id: "note-meal-prep-friction",
+        title: "Meal prep friction",
+        kind: "note",
+        detail: "Habit observation",
+        accent: "var(--accent-purple)",
+      },
+    ],
+    topic: "Meal prep friction",
+    clusterId: "nutrition-habit-learnings",
     lastTouched: "Thu 08:50",
     reviewState: "ready_to_reuse",
     summary:
@@ -398,6 +611,31 @@ const resources: ResourceItem[] = [
     status: "raw",
     source: "Weekly Review",
     linkedContext: "Review / Open loops",
+    linkedContexts: [
+      {
+        id: "note-weekly-review",
+        title: "Weekly Review",
+        kind: "note",
+        detail: "Review record source",
+        accent: "var(--accent-cyan)",
+      },
+      {
+        id: "goal-focus-stability",
+        title: "Focus stability",
+        kind: "goal",
+        detail: "Open-loop reduction",
+        accent: "var(--accent-purple)",
+      },
+      {
+        id: "task-close-work-loops",
+        title: "Close work loops",
+        kind: "task",
+        detail: "Review follow-up",
+        accent: "var(--accent-green)",
+      },
+    ],
+    topic: "Review open loops",
+    clusterId: "work-meeting-knowledge",
     lastTouched: "Wed 22:00",
     reviewState: "needs_extraction",
     summary:
@@ -463,6 +701,28 @@ const summaryStats: ResourceSummaryStat[] = [
   },
 ];
 
+const viewOptions: ResourceOption<ResourceViewMode>[] = [
+  {
+    value: "library",
+    label: "Library",
+    detail: "Search, capture, filter and reuse",
+    accent: "var(--accent-cyan)",
+    active: true,
+  },
+  {
+    value: "map",
+    label: "Map",
+    detail: "Selected resource neighborhood",
+    accent: "var(--accent-blue)",
+  },
+  {
+    value: "review",
+    label: "Review",
+    detail: "Process, link and convert",
+    accent: "var(--accent-orange)",
+  },
+];
+
 const typeOptions: ResourceOption<ResourceType | "all">[] = [
   {
     value: "all",
@@ -501,6 +761,13 @@ const typeOptions: ResourceOption<ResourceType | "all">[] = [
     accent: resourceTypeMeta.research.accent,
   },
   {
+    value: "source",
+    label: "Sources",
+    detail: "Source chain",
+    count: 14,
+    accent: resourceTypeMeta.source.accent,
+  },
+  {
     value: "snippet",
     label: "Snippets",
     detail: "Reusable code",
@@ -513,6 +780,64 @@ const typeOptions: ResourceOption<ResourceType | "all">[] = [
     detail: "Decision notes",
     count: 10,
     accent: resourceTypeMeta.decision.accent,
+  },
+];
+
+const mapScopes: ResourceOption<string>[] = [
+  {
+    value: "neighborhood",
+    label: "Selected neighborhood",
+    count: 7,
+    accent: "var(--accent-cyan)",
+    active: true,
+  },
+  {
+    value: "cluster",
+    label: "Current cluster",
+    count: 5,
+    accent: "var(--accent-blue)",
+  },
+  {
+    value: "area",
+    label: "Area",
+    count: 4,
+    accent: "var(--accent-green)",
+  },
+  {
+    value: "project",
+    label: "Project",
+    count: 3,
+    accent: "var(--accent-orange)",
+  },
+  {
+    value: "goal",
+    label: "Goal",
+    count: 2,
+    accent: "var(--accent-purple)",
+  },
+  {
+    value: "skill",
+    label: "Skill",
+    count: 4,
+    accent: "var(--accent-cyan)",
+  },
+  {
+    value: "topic",
+    label: "Topic",
+    count: 5,
+    accent: "var(--accent-yellow)",
+  },
+  {
+    value: "review_needed",
+    label: "Review needed only",
+    count: 12,
+    accent: "var(--accent-orange)",
+  },
+  {
+    value: "reusable",
+    label: "Reusable only",
+    count: 34,
+    accent: "var(--accent-green)",
   },
 ];
 
@@ -583,32 +908,223 @@ const captureTypes: ResourceOption<ResourceType>[] = [
     label: "Link",
     accent: resourceTypeMeta.link.accent,
   },
+  {
+    value: "source",
+    label: "Source",
+    accent: resourceTypeMeta.source.accent,
+  },
+];
+
+const relations: ResourceRelation[] = [
+  {
+    id: "literature-supports-argumentation",
+    fromResourceId: "literature-review-search-strategy",
+    toResourceId: "masterarbeit-argumentation-notes",
+    type: "supports",
+    label: "supports thesis claims",
+  },
+  {
+    id: "argumentation-references-literature",
+    fromResourceId: "masterarbeit-argumentation-notes",
+    toResourceId: "literature-review-search-strategy",
+    type: "references",
+    label: "references search evidence",
+  },
+  {
+    id: "codex-derived-from-agent-workflow",
+    fromResourceId: "codex-prompt-pattern-design-to-implementation",
+    toResourceId: "ai-agent-workflow-learnings",
+    type: "derived_from",
+    label: "derived from workflow learning",
+  },
+  {
+    id: "agent-workflow-source-for-codex",
+    fromResourceId: "ai-agent-workflow-learnings",
+    toResourceId: "codex-prompt-pattern-design-to-implementation",
+    type: "source_for",
+    label: "source for prompt pattern",
+  },
+  {
+    id: "figma-used-in-codex-prompt",
+    fromResourceId: "figma-layout-rules-life-os-pages",
+    toResourceId: "codex-prompt-pattern-design-to-implementation",
+    type: "used_in",
+    label: "used in design-to-code prompt",
+  },
+  {
+    id: "figma-related-react-query",
+    fromResourceId: "figma-layout-rules-life-os-pages",
+    toResourceId: "react-query-decision-note",
+    type: "related_to",
+    label: "same Life OS phase boundary",
+  },
+  {
+    id: "react-query-related-life-os-agent-scope",
+    fromResourceId: "react-query-decision-note",
+    toResourceId: "ai-agent-workflow-learnings",
+    type: "related_to",
+    label: "guards library scope",
+  },
+  {
+    id: "fi-feeds-weekly-review",
+    fromResourceId: "fi-work-notes-meeting-patterns",
+    toResourceId: "weekly-review-reflection-focus-drift",
+    type: "feeds_into",
+    label: "feeds review open-loop pattern",
+  },
+  {
+    id: "weekly-follow-up-fi",
+    fromResourceId: "weekly-review-reflection-focus-drift",
+    toResourceId: "fi-work-notes-meeting-patterns",
+    type: "follow_up_of",
+    label: "follow-up of work meeting loops",
+  },
+  {
+    id: "nutrition-same-topic-weekly-review",
+    fromResourceId: "nutrition-habit-insight",
+    toResourceId: "weekly-review-reflection-focus-drift",
+    type: "same_topic",
+    label: "same weekly habit signal",
+  },
+  {
+    id: "weekly-related-agent-workflow",
+    fromResourceId: "weekly-review-reflection-focus-drift",
+    toResourceId: "ai-agent-workflow-learnings",
+    type: "related_to",
+    label: "process quality pattern",
+  },
+];
+
+const clusters: ResourceCluster[] = [
+  {
+    id: "masterarbeit-literature",
+    title: "Masterarbeit / Literature",
+    area: "education",
+    topic: "Research provenance and claim structure",
+    summary: "Search strategy, source evidence and thesis argumentation notes.",
+    resourceIds: [
+      "literature-review-search-strategy",
+      "masterarbeit-argumentation-notes",
+    ],
+    accent: "var(--accent-blue)",
+  },
+  {
+    id: "life-os-design-system",
+    title: "Life OS Design System",
+    area: "system",
+    topic: "V5 page rules and phase boundaries",
+    summary: "Design rules, page implementation constraints and later data decisions.",
+    resourceIds: [
+      "figma-layout-rules-life-os-pages",
+      "react-query-decision-note",
+      "codex-prompt-pattern-design-to-implementation",
+    ],
+    accent: "var(--accent-cyan)",
+  },
+  {
+    id: "ai-agent-workflow",
+    title: "AI Agent Workflow",
+    area: "coding",
+    topic: "Prompt patterns and agent operating rules",
+    summary: "Codex prompts, workflow learnings and review handoffs.",
+    resourceIds: [
+      "codex-prompt-pattern-design-to-implementation",
+      "ai-agent-workflow-learnings",
+      "weekly-review-reflection-focus-drift",
+    ],
+    accent: "var(--accent-orange)",
+  },
+  {
+    id: "nutrition-habit-learnings",
+    title: "Nutrition / Habit Learnings",
+    area: "nutrition",
+    topic: "Meal prep friction and energy patterns",
+    summary: "Small reusable habit insights without pressure or diagnosis.",
+    resourceIds: ["nutrition-habit-insight"],
+    accent: "var(--accent-yellow)",
+  },
+  {
+    id: "work-meeting-knowledge",
+    title: "Work Meeting Knowledge",
+    area: "work",
+    topic: "Meeting patterns, promises and open loops",
+    summary: "Work notes and weekly review signals that create follow-ups.",
+    resourceIds: [
+      "fi-work-notes-meeting-patterns",
+      "weekly-review-reflection-focus-drift",
+    ],
+    accent: "var(--accent-green)",
+  },
 ];
 
 const reviewQueue: ResourceReviewQueueItem[] = [
   {
+    resourceId: "masterarbeit-argumentation-notes",
     title: "Masterarbeit Notes",
+    sourceType: "Raw Note",
     action: "extract key claims",
+    targetType: "Learning / Decision",
     linkedContext: "Education / Scientific Work",
+    status: "needs extraction",
+    suggestedActions: ["Extract learning", "Link resources", "Attach to project"],
     accent: "var(--accent-blue)",
   },
   {
+    resourceId: "ai-agent-workflow-learnings",
     title: "Codex Session Learnings",
+    sourceType: "Learning",
     action: "turn into prompt pattern",
+    targetType: "Prompt Pattern",
     linkedContext: "Coding / Agents",
+    status: "pattern candidate",
+    suggestedActions: ["Convert to prompt pattern", "Attach to skill"],
     accent: "var(--accent-orange)",
   },
   {
+    resourceId: "fi-work-notes-meeting-patterns",
     title: "FI Meeting Notes",
+    sourceType: "Processed Note",
     action: "link to Work Log",
+    targetType: "Work Wiki / Task",
     linkedContext: "Work / Meetings",
+    status: "needs linking",
+    suggestedActions: ["Link resources", "Attach to project", "Archive / dismiss"],
     accent: "var(--accent-green)",
   },
   {
+    resourceId: "figma-layout-rules-life-os-pages",
     title: "Figma Resources",
+    sourceType: "Learning",
     action: "convert to design rules",
+    targetType: "Reusable Rule",
     linkedContext: "Design System",
+    status: "ready to reuse",
+    suggestedActions: ["Mark reusable", "Attach to skill"],
     accent: "var(--accent-cyan)",
+  },
+];
+
+const aiSuggestions: ResourceAiSuggestion[] = [
+  {
+    title: "Possible related resource",
+    detail:
+      "Figma Layout Rules may support the Codex prompt pattern because both enforce design-to-implementation boundaries.",
+    confidence: "medium",
+    accent: "var(--accent-cyan)",
+  },
+  {
+    title: "Possible reusable learning",
+    detail:
+      "Weekly Review Reflection contains an open-loop pattern that could become a review prompt after manual cleanup.",
+    confidence: "medium",
+    accent: "var(--accent-orange)",
+  },
+  {
+    title: "Possible isolated note",
+    detail:
+      "Nutrition Habit Insight has fewer resource-to-resource edges; keep it scoped to Nutrition until more habit notes exist.",
+    confidence: "low",
+    accent: "var(--accent-yellow)",
   },
 ];
 
@@ -665,19 +1181,25 @@ export function getResourcesViewModel(): ResourcesViewModel {
       sensitiveData:
         "May include personal, work and research notes; mock data avoids secrets and private details.",
       primaryDecision: "What should be reused, reviewed, linked or archived?",
-      mainZone: "Main Resources Library with selected resource context.",
+      mainZone:
+        "View switcher between Library, scoped Knowledge Map and Review queue with selected resource context.",
       emptyState:
         "A future empty state should guide capture from Inbox or direct Save Resource.",
       mobileOrder:
-        "Header, summary, Save Resource, type switch, filters, library, selected context, review queue, recent learnings.",
+        "Header, KPIs, view switcher, Quick Capture, current view content, selected resource inspector, review queue.",
     },
     summaryStats,
+    viewOptions,
     typeOptions,
     filterOptions,
+    mapScopes,
     captureTypes,
     resources,
+    relations,
+    clusters,
     selectedResource: resources[0],
     reviewQueue,
+    aiSuggestions,
     recentLearnings,
   };
 }

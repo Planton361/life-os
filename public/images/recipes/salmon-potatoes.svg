@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 100" role="img" aria-labelledby="title">
+  <title id="title">Abstract salmon with potatoes</title>
+  <rect width="160" height="100" rx="16" fill="#0f1724"/>
+  <rect x="10" y="10" width="140" height="80" rx="14" fill="#121c2b" stroke="rgba(148,163,184,.20)"/>
+  <path d="M45 61c16-22 46-24 72-4-13 21-43 25-72 4z" fill="#dd6b5f" opacity=".72"/>
+  <path d="M61 61c12-10 29-11 44-2" fill="none" stroke="#eef4ff" stroke-width="3" stroke-linecap="round" opacity=".18"/>
+  <circle cx="50" cy="40" r="8" fill="#d8b45a" opacity=".78"/>
+  <circle cx="68" cy="36" r="7" fill="#d8b45a" opacity=".62"/>
+  <circle cx="109" cy="40" r="6" fill="#42b883" opacity=".62"/>
+  <path d="M41 75h76" stroke="#526178" stroke-width="3" stroke-linecap="round" opacity=".64"/>
+</svg>

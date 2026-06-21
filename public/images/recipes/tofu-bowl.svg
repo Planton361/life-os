@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 100" role="img" aria-labelledby="title">
+  <title id="title">Abstract tofu bowl</title>
+  <rect width="160" height="100" rx="16" fill="#0f1724"/>
+  <rect x="10" y="10" width="140" height="80" rx="14" fill="#121c2b" stroke="rgba(148,163,184,.20)"/>
+  <ellipse cx="80" cy="63" rx="50" ry="18" fill="#42b883" opacity=".18"/>
+  <rect x="54" y="43" width="18" height="18" rx="4" fill="#eef4ff" opacity=".22"/>
+  <rect x="76" y="38" width="20" height="20" rx="4" fill="#eef4ff" opacity=".18"/>
+  <rect x="99" y="47" width="17" height="17" rx="4" fill="#eef4ff" opacity=".20"/>
+  <circle cx="61" cy="65" r="5" fill="#d9924f" opacity=".74"/>
+  <circle cx="96" cy="63" r="5" fill="#d8b45a" opacity=".70"/>
+  <path d="M43 71c21 10 54 10 75 0" fill="none" stroke="#42b883" stroke-width="3" stroke-linecap="round" opacity=".66"/>
+</svg>

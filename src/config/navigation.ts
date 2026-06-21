@@ -164,6 +164,11 @@ export const sidebarNavigation: SidebarNavigation = {
       accent: "var(--accent-yellow)",
       items: [
         {
+          label: "Overview",
+          href: "/nutrition",
+          status: "ready",
+        },
+        {
           label: "Meal Planner",
           href: "/nutrition/meal-planner",
           status: "ready",
@@ -184,6 +189,11 @@ export const sidebarNavigation: SidebarNavigation = {
       label: "Coding",
       accent: "var(--accent-blue)",
       items: [
+        {
+          label: "Overview",
+          href: "/coding",
+          status: "ready",
+        },
         {
           label: "Repositories",
           href: "/coding/repositories",

@@ -1,23 +1,17 @@
+import type { Metadata } from "next";
 import {
-  RouteSkeletonPage,
-  createRouteSkeletonMetadata,
-  type RouteSkeletonConfig,
-} from "@/components/layout/route-skeleton-page";
+  RepositoriesPage,
+  getRepositoriesViewModel,
+} from "@/features/coding/repositories";
 
-const routeConfig = {
-  title: "Repositories",
-  eyebrow: "Domain workbench",
-  summary:
-    "Repositories will track codebases, active branches, project links, and technical context without replacing Portfolio projects.",
-  dataSource: "repositories plus linked projects, tasks, resources, and work_logs.",
-  emptyTitle: "No repository workbench connected yet",
-  emptyDescription:
-    "This skeleton reserves the Repositories route before repo metadata, activity signals, and project links are wired.",
-  accent: "var(--accent-blue)",
-} satisfies RouteSkeletonConfig;
+export const metadata: Metadata = {
+  title: "Repositories | Life OS",
+  description:
+    "Coding repository workbench for linked projects, tasks, resources, agent sessions and next actions.",
+};
 
-export const metadata = createRouteSkeletonMetadata(routeConfig);
+export default function CodingRepositoriesPage() {
+  const viewModel = getRepositoriesViewModel();
 
-export default function RepositoriesPage() {
-  return <RouteSkeletonPage config={routeConfig} />;
+  return <RepositoriesPage viewModel={viewModel} />;
 }

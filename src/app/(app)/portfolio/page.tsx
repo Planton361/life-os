@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import {
   PortfolioPage as PortfolioWorkbenchPage,
   getPortfolioViewModel,
@@ -13,5 +14,9 @@ export const metadata: Metadata = {
 export default function PortfolioPage() {
   const viewModel = getPortfolioViewModel();
 
-  return <PortfolioWorkbenchPage viewModel={viewModel} />;
+  return (
+    <Suspense fallback={null}>
+      <PortfolioWorkbenchPage viewModel={viewModel} />
+    </Suspense>
+  );
 }

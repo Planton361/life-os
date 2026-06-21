@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="112" height="112" viewBox="0 0 112 112" role="img" aria-label="Spinach grocery placeholder">
+  <rect width="112" height="112" rx="18" fill="#101927"/>
+  <path d="M56 82C30 62 30 35 55 30c24 6 28 34 1 52Z" fill="#42b883" opacity=".42"/>
+  <path d="M56 32v50M42 50l14 10 15-13" stroke="#b8c3d6" stroke-width="4" stroke-linecap="round" opacity=".42"/>
+</svg>
