@@ -1,23 +1,17 @@
-import {
-  RouteSkeletonPage,
-  createRouteSkeletonMetadata,
-  type RouteSkeletonConfig,
-} from "@/components/layout/route-skeleton-page";
+import type { Metadata } from "next";
+import { EntityWorkbenchPage } from "@/features/entities";
+import type { WorkbenchSearchParams } from "@/features/entities/types";
 
-const routeConfig = {
-  title: "Projects",
-  eyebrow: "Entity workbench",
-  summary:
-    "Projects will manage active and paused outcomes while staying visible from Portfolio, Today, Calendar, and area views.",
-  dataSource: "projects plus linked tasks, goals, skills, and resources.",
-  emptyTitle: "No project workbench connected yet",
-  emptyDescription:
-    "This skeleton keeps the Projects route available before project lists, details, and lifecycle controls exist.",
-  accent: "var(--accent-blue)",
-} satisfies RouteSkeletonConfig;
+export const metadata: Metadata = {
+  title: "Projects | Life OS",
+};
 
-export const metadata = createRouteSkeletonMetadata(routeConfig);
-
-export default function ProjectsPage() {
-  return <RouteSkeletonPage config={routeConfig} />;
+export default async function ProjectsPage({
+  searchParams,
+}: Readonly<{
+  searchParams: Promise<WorkbenchSearchParams>;
+}>) {
+  return (
+    <EntityWorkbenchPage kind="project" searchParams={await searchParams} />
+  );
 }

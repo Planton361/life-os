@@ -1,23 +1,17 @@
-import {
-  RouteSkeletonPage,
-  createRouteSkeletonMetadata,
-  type RouteSkeletonConfig,
-} from "@/components/layout/route-skeleton-page";
+import type { Metadata } from "next";
+import { EntityWorkbenchPage } from "@/features/entities";
+import type { WorkbenchSearchParams } from "@/features/entities/types";
 
-const routeConfig = {
-  title: "Skills",
-  eyebrow: "Entity workbench",
-  summary:
-    "Skills will track learning state, practice evidence, and applied capability across education, work, coding, and life contexts.",
-  dataSource: "skills plus linked projects, resources, learning_logs, and evidence records.",
-  emptyTitle: "No skill workbench connected yet",
-  emptyDescription:
-    "This skeleton keeps the Skills route available before skill states, evidence, and roadmap views are built.",
-  accent: "var(--accent-blue)",
-} satisfies RouteSkeletonConfig;
+export const metadata: Metadata = {
+  title: "Skills | Life OS",
+};
 
-export const metadata = createRouteSkeletonMetadata(routeConfig);
-
-export default function SkillsPage() {
-  return <RouteSkeletonPage config={routeConfig} />;
+export default async function SkillsPage({
+  searchParams,
+}: Readonly<{
+  searchParams: Promise<WorkbenchSearchParams>;
+}>) {
+  return (
+    <EntityWorkbenchPage kind="skill" searchParams={await searchParams} />
+  );
 }

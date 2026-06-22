@@ -206,5 +206,5 @@ export function getPortfolioGroup(entity: PortfolioEntity): PortfolioGroup {
 export function getPortfolioEntitySourceRoute(
   entity: PortfolioEntity,
 ): `/${string}` {
-  return sourceRouteByType[entity.type];
+  return `${sourceRouteByType[entity.type]}/${entity.id}` as `/${string}`;
 }

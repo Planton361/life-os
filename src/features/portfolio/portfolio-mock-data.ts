@@ -37,9 +37,9 @@ export const portfolioEntities: PortfolioEntity[] = [
       },
     ],
     sourceLinks: [
-      { label: "Project / Life OS App", href: "/projects" },
+      { label: "Project / Life OS App", href: "/projects/portfolio-life-os-app" },
       { label: "Tasks / Portfolio", href: "/tasks" },
-      { label: "Goal / Life OS MVP", href: "/goals" },
+      { label: "Goal / Life OS MVP", href: "/goals/portfolio-life-os-mvp" },
     ],
     noteSnippet: "Keep Portfolio as list plus context, not a second dashboard.",
   },
@@ -74,9 +74,9 @@ export const portfolioEntities: PortfolioEntity[] = [
       },
     ],
     sourceLinks: [
-      { label: "Task / Calendar", href: "/tasks" },
+      { label: "Task / Calendar", href: "/tasks/task-calendar-page" },
       { label: "Calendar", href: "/calendar" },
-      { label: "Project / Life OS App", href: "/projects" },
+      { label: "Project / Life OS App", href: "/projects/portfolio-life-os-app" },
     ],
     noteSnippet:
       "Use Calendar for time projection, not duplicated project data.",
@@ -112,9 +112,9 @@ export const portfolioEntities: PortfolioEntity[] = [
       },
     ],
     sourceLinks: [
-      { label: "Task / Portfolio", href: "/tasks" },
-      { label: "Project / Life OS App", href: "/projects" },
-      { label: "Skills / Design", href: "/skills" },
+      { label: "Task / Portfolio", href: "/tasks/task-portfolio-figma" },
+      { label: "Project / Life OS App", href: "/projects/portfolio-life-os-app" },
+      { label: "Skill / Design", href: "/skills/portfolio-figma-design" },
     ],
     noteSnippet: "Use the workbench pattern, not a 2x2 state gallery.",
   },
@@ -143,7 +143,7 @@ export const portfolioEntities: PortfolioEntity[] = [
     decisions: [],
     sourceLinks: [
       { label: "Inbox", href: "/inbox" },
-      { label: "Tasks", href: "/tasks" },
+      { label: "Task / Inbox empty", href: "/tasks/task-inbox-empty" },
     ],
     noteSnippet: "Empty state should reduce pressure and point to capture.",
   },
@@ -180,8 +180,8 @@ export const portfolioEntities: PortfolioEntity[] = [
     ],
     sourceLinks: [
       { label: "Education / Literature", href: "/education/literature" },
-      { label: "Project / Masterarbeit", href: "/projects" },
-      { label: "Goal / Masterarbeit", href: "/goals" },
+      { label: "Project / Masterarbeit", href: "/projects/portfolio-masterarbeit" },
+      { label: "Goal / Masterarbeit", href: "/goals/portfolio-masterarbeit-goal" },
     ],
     noteSnippet: "Clarify source value before expanding the reading list.",
   },
@@ -210,7 +210,7 @@ export const portfolioEntities: PortfolioEntity[] = [
     ],
     decisions: [],
     sourceLinks: [
-      { label: "Skill / Java", href: "/skills" },
+      { label: "Skill / Java", href: "/skills/portfolio-java-hyperskill" },
       { label: "Education / Learning Log", href: "/education/learning-log" },
     ],
     noteSnippet: "Keep practice small enough to preserve the daily flow.",
@@ -246,7 +246,7 @@ export const portfolioEntities: PortfolioEntity[] = [
     ],
     sourceLinks: [
       { label: "Calendar", href: "/calendar" },
-      { label: "Tasks", href: "/tasks" },
+      { label: "Task / Weekly review", href: "/tasks/task-weekly-review" },
     ],
     noteSnippet: "Review stays near Calendar and Today, not primary sidebar.",
   },
@@ -276,7 +276,7 @@ export const portfolioEntities: PortfolioEntity[] = [
     sourceLinks: [
       { label: "Work / Wiki", href: "/work/wiki" },
       { label: "Work Log", href: "/work/log" },
-      { label: "Tasks", href: "/tasks" },
+      { label: "Task / FI notes", href: "/tasks/task-fi-notes" },
     ],
     noteSnippet: "Separate follow-ups from durable wiki notes.",
   },
@@ -374,7 +374,7 @@ export const portfolioEntities: PortfolioEntity[] = [
         href: "/education/scientific-work",
       },
       { label: "Education / Literature", href: "/education/literature" },
-      { label: "Goals", href: "/goals" },
+      { label: "Goal / Masterarbeit", href: "/goals/portfolio-masterarbeit-goal" },
     ],
     noteSnippet: "Keep visible, but do not let source triage own the page.",
   },
@@ -402,7 +402,7 @@ export const portfolioEntities: PortfolioEntity[] = [
     ],
     decisions: [],
     sourceLinks: [
-      { label: "Skills", href: "/skills" },
+      { label: "Skill / Java", href: "/skills/portfolio-java-hyperskill" },
       { label: "Education / Learning Log", href: "/education/learning-log" },
     ],
     noteSnippet: "Evidence should come from practice, not course collecting.",
@@ -439,7 +439,7 @@ export const portfolioEntities: PortfolioEntity[] = [
     sourceLinks: [
       { label: "Work / Wiki", href: "/work/wiki" },
       { label: "Work Log", href: "/work/log" },
-      { label: "Tasks", href: "/tasks" },
+      { label: "Task / FI notes", href: "/tasks/task-fi-notes" },
     ],
     noteSnippet: "Keep confidential work context quiet and scoped.",
   },
@@ -474,7 +474,7 @@ export const portfolioEntities: PortfolioEntity[] = [
       },
     ],
     sourceLinks: [
-      { label: "Project / Life OS App", href: "/projects" },
+      { label: "Project / Life OS App", href: "/projects/portfolio-life-os-app" },
       { label: "Portfolio", href: "/portfolio" },
       { label: "Roadmap", href: "/resources" },
     ],
@@ -516,7 +516,7 @@ export const portfolioEntities: PortfolioEntity[] = [
         href: "/education/scientific-work",
       },
       { label: "Education / Literature", href: "/education/literature" },
-      { label: "Projects", href: "/projects" },
+      { label: "Project / Masterarbeit", href: "/projects/portfolio-masterarbeit" },
     ],
     noteSnippet: "Decision pressure belongs here, not in the Dashboard.",
   },
@@ -574,7 +574,7 @@ export const portfolioEntities: PortfolioEntity[] = [
     decisions: [],
     sourceLinks: [
       { label: "Work", href: "/work" },
-      { label: "Projects", href: "/projects" },
+      { label: "Project / FI notes", href: "/projects/portfolio-finanzinformatik" },
     ],
     noteSnippet: "Keep this low-pressure until weekly review promotes it.",
   },
@@ -608,7 +608,7 @@ export const portfolioEntities: PortfolioEntity[] = [
       },
     ],
     sourceLinks: [
-      { label: "Skills", href: "/skills" },
+      { label: "Skill / Figma", href: "/skills/portfolio-figma-design" },
       { label: "Portfolio", href: "/portfolio" },
     ],
     noteSnippet:
@@ -645,7 +645,7 @@ export const portfolioEntities: PortfolioEntity[] = [
     decisions: [],
     sourceLinks: [
       { label: "Education / Learning Log", href: "/education/learning-log" },
-      { label: "Projects", href: "/projects" },
+      { label: "Project / Java", href: "/projects/project-java-hyperskill" },
     ],
     noteSnippet:
       "Small lessons keep the skill active without dominating Today.",
