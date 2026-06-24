@@ -23,6 +23,32 @@ function clampPercentage(actual: number, target: number) {
   return Math.min(100, Math.round((actual / target) * 100));
 }
 
+function formatMetricLabels(
+  actualValue: string,
+  targetValue: string,
+  remainingValue: string,
+  unit: NutritionMetricViewModel["unit"],
+  percentage: number,
+  target: number,
+) {
+  if (target <= 0) {
+    return {
+      meta: "Zielprofil nicht gesetzt",
+      remainingLabel: "Keine lokalen Zielwerte",
+      valueLabel:
+        actualValue === "0" || actualValue === "0.0"
+          ? "—"
+          : `${actualValue} ${unit}`,
+    };
+  }
+
+  return {
+    meta: `${percentage}% complete · ${remainingValue} ${unit} left`,
+    remainingLabel: `${remainingValue} ${unit} left`,
+    valueLabel: `${actualValue} / ${targetValue} ${unit}`,
+  };
+}
+
 function formatNumber(value: number, maximumFractionDigits = 0) {
   return new Intl.NumberFormat("en-US", {
     maximumFractionDigits,
@@ -116,6 +142,14 @@ export function buildNutritionMetrics(
       const target = formatNumber(value.target, meta.precision);
       const remainingValue = formatNumber(remaining, meta.precision);
       const percentage = clampPercentage(value.actual, value.target);
+      const labels = formatMetricLabels(
+        actual,
+        target,
+        remainingValue,
+        value.unit,
+        percentage,
+        value.target,
+      );
 
       return {
         type,
@@ -123,9 +157,9 @@ export function buildNutritionMetrics(
         actual: value.actual,
         target: value.target,
         unit: value.unit,
-        valueLabel: `${actual} / ${target} ${value.unit}`,
-        meta: `${percentage}% complete · ${remainingValue} ${value.unit} left`,
-        remainingLabel: `${remainingValue} ${value.unit} left`,
+        valueLabel: labels.valueLabel,
+        meta: labels.meta,
+        remainingLabel: labels.remainingLabel,
         percentage,
         accent: meta.accent,
       };

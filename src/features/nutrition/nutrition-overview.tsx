@@ -11,6 +11,11 @@ import {
   type ReactNode,
 } from "react";
 import { Pill, accentStyle } from "@/components/layout/route-page-primitives";
+import {
+  contentStateDataAttributes,
+  resolveContentStateMeta,
+  type ContentStateMeta,
+} from "@/features/content-state";
 import { cn } from "@/lib/cn";
 import { buildNutritionMetrics } from "./nutrition-view-model";
 import type {
@@ -173,6 +178,14 @@ function proteinStatement(
   proteinMetric: NutritionMetricViewModel,
   nextMeal: MealEntry | null,
 ) {
+  if (proteinMetric.target <= 0 && proteinMetric.actual <= 0) {
+    return "Today Nutrition neutral: noch keine Mahlzeit und kein Zielprofil gesetzt.";
+  }
+
+  if (proteinMetric.target <= 0) {
+    return "Lokale Mahlzeiten sind sichtbar; ein Zielprofil ist noch nicht gesetzt.";
+  }
+
   const gap = Math.max(0, proteinMetric.target - proteinMetric.actual);
 
   if (gap === 0) {
@@ -186,18 +199,24 @@ function proteinStatement(
   return `Protein liegt ${formatNumber(gap)} g unter Ziel; ${mealTypeLabels[nextMeal.meal_type]} kann die Lücke voraussichtlich schließen.`;
 }
 
+function stateAttrs(meta: ContentStateMeta, profileId: string) {
+  return contentStateDataAttributes(meta, profileId);
+}
+
 function NutritionPanel({
   title,
   subtitle,
   badge,
   children,
   className,
+  stateAttributes,
 }: Readonly<{
   title: string;
   subtitle: string;
   badge?: ReactNode;
   children: ReactNode;
   className?: string;
+  stateAttributes?: Record<string, string>;
 }>) {
   const headingId = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-heading`;
 
@@ -208,6 +227,7 @@ function NutritionPanel({
         "min-w-0 overflow-hidden rounded-[16px] border border-[var(--border-subtle)] bg-[var(--surface-1)] shadow-[0_8px_22px_rgba(0,0,0,.12)]",
         className,
       )}
+      {...stateAttributes}
     >
       <div className="border-b border-[var(--border-subtle)] bg-[rgba(18,28,43,.42)] px-4 py-3">
         <div className="flex min-w-0 items-start justify-between gap-3">
@@ -303,11 +323,17 @@ function MetricButton({
 function TodayNutritionCard({
   metrics,
   nextMeal,
+  profileId,
+  stateMeta,
+  actionsEnabled,
   onAddWater,
   onSelectMetric,
 }: Readonly<{
   metrics: readonly NutritionMetricViewModel[];
   nextMeal: MealEntry | null;
+  profileId: string;
+  stateMeta: ContentStateMeta;
+  actionsEnabled: boolean;
   onAddWater: () => void;
   onSelectMetric: (metric: NutritionMetricViewModel) => void;
 }>) {
@@ -320,6 +346,7 @@ function TodayNutritionCard({
       badge={<Pill accent={nutritionAccent}>P0 · Decision</Pill>}
       className="order-1 xl:col-span-7"
       subtitle="Tagesfortschritt, verbleibende Zielwerte und relevante Lücken"
+      stateAttributes={stateAttrs(stateMeta, profileId)}
       title="Today Nutrition"
     >
       <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
@@ -329,10 +356,14 @@ function TodayNutritionCard({
           </p>
           <div className="mt-4">
             <p className="text-[42px] font-semibold leading-none text-[var(--text-primary)]">
-              {formatNumber(calories.actual)}
+              {calories.target <= 0 && calories.actual <= 0
+                ? "—"
+                : formatNumber(calories.actual)}
             </p>
             <p className="mt-2 text-[13px] text-[var(--text-secondary)]">
-              / {formatNumber(calories.target)} kcal
+              {calories.target > 0
+                ? `/ ${formatNumber(calories.target)} kcal`
+                : "Zielprofil nicht gesetzt"}
             </p>
             <p className="mt-3 text-[12px] font-semibold text-[var(--accent-yellow)]">
               {calories.remainingLabel}
@@ -359,23 +390,32 @@ function TodayNutritionCard({
           />
           <div className="min-w-0">
             <p className="text-[13px] font-semibold leading-5 text-[var(--text-primary)]">
-              Nächste sinnvolle Handlung: Proteinreiche geplante Mahlzeit prüfen
-              oder direkt als gegessen markieren.
+              {calories.target > 0 || protein.actual > 0
+                ? "Nächste sinnvolle Handlung: Proteinreiche geplante Mahlzeit prüfen oder direkt als gegessen markieren."
+                : "Nächste sinnvolle Handlung: erst lokale Mahlzeiten oder Ziele erfassen."}
             </p>
             <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
-              Klick auf ein Makro öffnet den Detailbereich.
+              {actionsEnabled
+                ? "Klick auf ein Makro öffnet den Detailbereich."
+                : "Detailaktionen bleiben deaktiviert, bis ein echter Nutrition-Flow existiert."}
             </p>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
             className={ghostButtonClass}
+            disabled={!actionsEnabled}
             onClick={() => onSelectMetric(protein)}
             type="button"
           >
             Protein details
           </button>
-          <button className={ghostButtonClass} onClick={onAddWater} type="button">
+          <button
+            className={ghostButtonClass}
+            disabled={!actionsEnabled}
+            onClick={onAddWater}
+            type="button"
+          >
             Add water
           </button>
         </div>
@@ -386,10 +426,16 @@ function TodayNutritionCard({
 
 function NextMealCard({
   meal,
+  profileId,
+  stateMeta,
+  actionsEnabled,
   onMarkAsEaten,
   onOpenMeal,
 }: Readonly<{
   meal: MealEntry | null;
+  profileId: string;
+  stateMeta: ContentStateMeta;
+  actionsEnabled: boolean;
   onMarkAsEaten: (meal: MealEntry) => void;
   onOpenMeal: (meal: MealEntry) => void;
 }>) {
@@ -406,6 +452,7 @@ function NextMealCard({
       }
       className="order-2 xl:col-span-5"
       subtitle="Planung und direkte Essens-Aktion"
+      stateAttributes={stateAttrs(stateMeta, profileId)}
       title="Next Meal"
     >
       {meal ? (
@@ -419,7 +466,9 @@ function NextMealCard({
                 {meal.title}
               </h3>
               <p className="mt-1 text-[11px] leading-4 text-[var(--text-muted)]">
-                Meal Planner · Rezept aus Wochenplan · 3 missing ingredients
+                {actionsEnabled
+                  ? "Meal Planner · Rezept aus Wochenplan · 3 missing ingredients"
+                  : "Lokale Mahlzeit · noch keine Recipe- oder Grocery-Verknüpfung"}
               </p>
             </div>
           </div>
@@ -449,10 +498,13 @@ function NextMealCard({
 
           <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
             <p className="text-[11px] leading-5 text-[var(--text-muted)]">
-              Grocery Signal: Paprika ist optional. Alternative vorhanden.
+              {actionsEnabled
+                ? "Grocery Signal: Paprika ist optional. Alternative vorhanden."
+                : "Grocery Signal: keine Zutaten ohne Recipe-Verknüpfung."}
             </p>
             <button
               className={secondaryButtonClass}
+              disabled={!actionsEnabled}
               onClick={() => onOpenMeal(meal)}
               type="button"
             >
@@ -460,6 +512,7 @@ function NextMealCard({
             </button>
             <button
               className={primaryButtonClass}
+              disabled={!actionsEnabled}
               onClick={() => onMarkAsEaten(meal)}
               type="button"
             >
@@ -470,9 +523,9 @@ function NextMealCard({
       ) : (
         <EmptyNutritionState
           actionLabel="Open meal planner"
-          description="Es gibt keine offene Mahlzeit. Planung bleibt getrennt vom Tagesstatus."
+          description="Planung bleibt getrennt vom Tagesstatus und erscheint erst mit lokalen Mahlzeiten."
           href="/nutrition/meal-planner"
-          title="No planned meal open"
+          title="Keine offene Mahlzeit"
         />
       )}
     </NutritionPanel>
@@ -510,24 +563,35 @@ function MealMacroCard({
 function WeekBalanceCard({
   items,
   statement,
+  profileId,
+  stateMeta,
 }: Readonly<{
   items: NutritionOverviewViewModel["weekBalance"];
   statement: string;
+  profileId: string;
+  stateMeta: ContentStateMeta;
 }>) {
+  const isEmpty = stateMeta.state === "empty";
+
   return (
     <NutritionPanel
-      badge={<Pill quiet>Common gap: water</Pill>}
+      badge={<Pill quiet>{isEmpty ? "0 / 7" : "Common gap: water"}</Pill>}
       className="order-5 xl:order-3"
       subtitle="7-day consistency with one clear reading"
+      stateAttributes={stateAttrs(stateMeta, profileId)}
       title="Week Balance"
     >
       <p className="text-[13px] font-medium leading-5 text-[var(--text-primary)]">
         {statement}
       </p>
       <div
-        aria-label={`Week balance: ${items
-          .map((item) => `${item.day} ${item.label}`)
-          .join(", ")}`}
+        aria-label={
+          isEmpty
+            ? "Week balance: noch keine Mahlzeiten geplant"
+            : `Week balance: ${items
+                .map((item) => `${item.day} ${item.label}`)
+                .join(", ")}`
+        }
         className="mt-5 flex h-36 items-end justify-between gap-2"
         role="img"
       >
@@ -555,8 +619,12 @@ function WeekBalanceCard({
 
 function MealPlanAdherenceCard({
   adherence,
+  profileId,
+  stateMeta,
 }: Readonly<{
   adherence: NutritionOverviewViewModel["adherence"];
+  profileId: string;
+  stateMeta: ContentStateMeta;
 }>) {
   const total = Math.max(1, adherence.planned);
   const items = [
@@ -590,6 +658,7 @@ function MealPlanAdherenceCard({
     <NutritionPanel
       className="order-6 xl:order-4"
       subtitle="Geplant, gegessen, ersetzt und offen"
+      stateAttributes={stateAttrs(stateMeta, profileId)}
       title="Meal Plan Adherence"
     >
       <div
@@ -643,19 +712,26 @@ function MealPlanAdherenceCard({
 
 function NutritionPrioritiesCard({
   priorities,
+  profileId,
+  stateMeta,
+  actionsEnabled,
   onAddWater,
 }: Readonly<{
   priorities: NutritionOverviewViewModel["priorities"];
+  profileId: string;
+  stateMeta: ContentStateMeta;
+  actionsEnabled: boolean;
   onAddWater: () => void;
 }>) {
   return (
     <NutritionPanel
       className="order-4 xl:order-5"
       subtitle="Maximal drei konkrete Hinweise mit Aktion"
+      stateAttributes={stateAttrs(stateMeta, profileId)}
       title="Nutrition Priorities"
     >
       <div className="grid gap-3">
-        {priorities.map((priority) => (
+        {priorities.length > 0 ? priorities.map((priority) => (
           <article
             className="grid gap-3 rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.48)] p-3 sm:grid-cols-[180px_minmax(0,1fr)_auto] sm:items-center"
             key={priority.id}
@@ -675,13 +751,20 @@ function NutritionPrioritiesCard({
             </p>
             <button
               className={ghostButtonClass}
+              disabled={!actionsEnabled}
               onClick={priority.id === "water" ? onAddWater : undefined}
               type="button"
             >
               {priority.actionLabel}
             </button>
           </article>
-        ))}
+        )) : (
+          <EmptyNutritionState
+            actionLabel="Später konfigurieren"
+            description="Hinweise erscheinen, sobald Mahlzeiten, Wasser oder Ziele vorhanden sind."
+            title="Noch keine Prioritäten"
+          />
+        )}
       </div>
     </NutritionPanel>
   );
@@ -689,22 +772,37 @@ function NutritionPrioritiesCard({
 
 function WeightTrendCard({
   trend,
+  profileId,
+  stateMeta,
 }: Readonly<{
   trend: NutritionOverviewViewModel["weightTrend"];
+  profileId: string;
+  stateMeta: ContentStateMeta;
 }>) {
+  const isEmpty = trend.values.length === 0;
+
   return (
     <NutritionPanel
       className="order-9 xl:order-6"
       subtitle={`${trend.periodLabel} · text first, no medical judgement`}
+      stateAttributes={stateAttrs(stateMeta, profileId)}
       title="Weight Trend"
     >
       <p className="text-[13px] leading-5 text-[var(--text-secondary)]">
         {trend.statement}
       </p>
-      <Sparkline
-        label={`Weight trend ${trend.values.join(", ")}`}
-        values={trend.values}
-      />
+      {isEmpty ? (
+        <div
+          aria-label="Weight trend: noch kein Gewichtstrend"
+          className="mt-4 h-20 rounded-[14px] border border-dashed border-[var(--border-subtle)] bg-[rgba(168,183,204,.035)]"
+          role="img"
+        />
+      ) : (
+        <Sparkline
+          label={`Weight trend ${trend.values.join(", ")}`}
+          values={trend.values}
+        />
+      )}
       <p className="mt-2 text-[11px] leading-4 text-[var(--text-muted)]">
         {trend.axisLabel}
       </p>
@@ -775,15 +873,22 @@ function Sparkline({
 
 function HydrationCard({
   metric,
+  profileId,
+  stateMeta,
+  actionsEnabled,
   onAddWater,
 }: Readonly<{
   metric: NutritionMetricViewModel;
+  profileId: string;
+  stateMeta: ContentStateMeta;
+  actionsEnabled: boolean;
   onAddWater: () => void;
 }>) {
   return (
     <NutritionPanel
       className="order-7 xl:order-7"
       subtitle="Tagesstatus mit direkter Erfassung"
+      stateAttributes={stateAttrs(stateMeta, profileId)}
       title="Hydration"
     >
       <p className="text-[30px] font-semibold leading-none text-[var(--text-primary)]">
@@ -800,10 +905,17 @@ function HydrationCard({
         </div>
         <ProgressBar metric={metric} />
         <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
-          {metric.remainingLabel} · Ziel bleibt erreichbar
+          {metric.target > 0
+            ? `${metric.remainingLabel} · Ziel bleibt erreichbar`
+            : "Hydration bleibt neutral, bis lokale Wasser- oder Zielwerte vorhanden sind."}
         </p>
       </div>
-      <button className={secondaryButtonClass} onClick={onAddWater} type="button">
+      <button
+        className={secondaryButtonClass}
+        disabled={!actionsEnabled}
+        onClick={onAddWater}
+        type="button"
+      >
         Add 300 ml
       </button>
     </NutritionPanel>
@@ -812,10 +924,16 @@ function HydrationCard({
 
 function RecentMealsCard({
   meals,
+  profileId,
+  stateMeta,
+  actionsEnabled,
   onOpenMeal,
   onLogMeal,
 }: Readonly<{
   meals: readonly MealEntry[];
+  profileId: string;
+  stateMeta: ContentStateMeta;
+  actionsEnabled: boolean;
   onOpenMeal: (meal: MealEntry) => void;
   onLogMeal: () => void;
 }>) {
@@ -824,6 +942,7 @@ function RecentMealsCard({
       badge={<Pill quiet>{meals.length} logged</Pill>}
       className="order-8 xl:order-8"
       subtitle="Letzte Einträge und Detailzugriff"
+      stateAttributes={stateAttrs(stateMeta, profileId)}
       title="Recent Meals"
     >
       {meals.length > 0 ? (
@@ -831,6 +950,7 @@ function RecentMealsCard({
           {meals.map((meal) => (
             <button
               className="grid min-w-0 gap-1 rounded-[10px] border border-[rgba(148,163,184,.08)] bg-[rgba(18,28,43,.34)] px-3 py-2 text-left transition hover:border-[var(--border-default)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] sm:grid-cols-[minmax(0,1fr)_150px_170px] sm:items-center"
+              disabled={!actionsEnabled}
               key={meal.id}
               onClick={() => onOpenMeal(meal)}
               type="button"
@@ -855,9 +975,9 @@ function RecentMealsCard({
       ) : (
         <EmptyNutritionState
           actionLabel="Log first meal"
-          description="Starte mit einer Mahlzeit oder plane den heutigen Intake."
-          onAction={onLogMeal}
-          title="No intake logged today"
+          description="Mahlzeiten erscheinen hier, sobald lokale Einträge vorhanden sind."
+          onAction={actionsEnabled ? onLogMeal : undefined}
+          title="Noch keine Mahlzeiten"
         />
       )}
     </NutritionPanel>
@@ -866,22 +986,43 @@ function RecentMealsCard({
 
 function GrocerySignalCard({
   signal,
+  profileId,
+  stateMeta,
 }: Readonly<{
   signal: NutritionOverviewViewModel["grocerySignal"];
+  profileId: string;
+  stateMeta: ContentStateMeta;
 }>) {
+  const isEmpty = signal.missingCount === 0 && signal.ingredients.length === 0;
+
   return (
     <NutritionPanel
       badge={<Pill quiet>{signal.linkedMealsLabel}</Pill>}
       className="order-10 xl:order-9"
       subtitle="Fehlende Zutaten aus geplanten Mahlzeiten"
+      stateAttributes={stateAttrs(stateMeta, profileId)}
       title="Grocery Signal"
     >
-      <p className="text-[24px] font-semibold leading-8 text-[var(--text-primary)]">
-        {signal.missingCount} missing ingredients
-      </p>
-      <p className="mt-2 text-[12px] leading-5 text-[var(--text-secondary)]">
-        {signal.ingredients.join(" · ")}
-      </p>
+      {isEmpty ? (
+        <>
+          <p className="text-[18px] font-semibold leading-7 text-[var(--text-primary)]">
+            Keine Einkaufssignale
+          </p>
+          <p className="mt-2 text-[12px] leading-5 text-[var(--text-secondary)]">
+            Zutaten erscheinen, sobald geplante Mahlzeiten oder lokale
+            Einkaufsdaten vorhanden sind.
+          </p>
+        </>
+      ) : (
+        <>
+          <p className="text-[24px] font-semibold leading-8 text-[var(--text-primary)]">
+            {signal.missingCount} missing ingredients
+          </p>
+          <p className="mt-2 text-[12px] leading-5 text-[var(--text-secondary)]">
+            {signal.ingredients.join(" · ")}
+          </p>
+        </>
+      )}
       <Link className={cn(secondaryButtonClass, "mt-5 w-fit")} href={signal.href}>
         {signal.actionLabel}
       </Link>
@@ -943,11 +1084,13 @@ function EmptyNutritionState({
 function PageHeader({
   header,
   period,
+  actionsEnabled,
   onPeriodChange,
   onLogMeal,
 }: Readonly<{
   header: NutritionOverviewViewModel["header"];
   period: NutritionPeriod;
+  actionsEnabled: boolean;
   onPeriodChange: (period: NutritionPeriod) => void;
   onLogMeal: () => void;
 }>) {
@@ -993,7 +1136,12 @@ function PageHeader({
               {action.label}
             </Link>
           ))}
-          <button className={primaryButtonClass} onClick={onLogMeal} type="button">
+          <button
+            className={primaryButtonClass}
+            disabled={!actionsEnabled}
+            onClick={onLogMeal}
+            type="button"
+          >
             {header.primaryAction}
           </button>
         </div>
@@ -1532,6 +1680,8 @@ export function NutritionOverviewPage({
 }: Readonly<{
   viewModel: NutritionOverviewViewModel;
 }>) {
+  const profileId = viewModel.profileId ?? "demo";
+  const actionsEnabled = viewModel.actionsEnabled ?? true;
   const [period, setPeriod] = useState<NutritionPeriod>("today");
   const [day, setDay] = useState<NutritionDay>(viewModel.day);
   const [meals, setMeals] = useState<MealEntry[]>([...viewModel.meals]);
@@ -1564,6 +1714,53 @@ export function NutritionOverviewPage({
       open: Math.max(0, viewModel.adherence.open - openDelta),
     };
   }, [initialLoggedCount, loggedMeals.length, openMeal, viewModel.adherence]);
+  const contentStates =
+    viewModel.contentStates ??
+    {
+      adherence: resolveContentStateMeta({
+        capacity: 21,
+        itemCount: viewModel.adherence.planned,
+      }),
+      grocerySignal: resolveContentStateMeta({
+        capacity: 1,
+        itemCount: viewModel.grocerySignal.missingCount > 0 ? 1 : 0,
+      }),
+      hydration: resolveContentStateMeta({
+        capacity: 1,
+        hasPrimaryValue: waterMetric.actual > 0,
+        itemCount: waterMetric.actual > 0 ? 1 : 0,
+      }),
+      nextMeal: resolveContentStateMeta({
+        capacity: 1,
+        itemCount: openMeal ? 1 : 0,
+      }),
+      page: resolveContentStateMeta({
+        capacity: 7,
+        itemCount: viewModel.meals.length + viewModel.priorities.length,
+      }),
+      priorities: resolveContentStateMeta({
+        capacity: 3,
+        itemCount: viewModel.priorities.length,
+      }),
+      recentMeals: resolveContentStateMeta({
+        capacity: 5,
+        itemCount: loggedMeals.length,
+      }),
+      todayNutrition: resolveContentStateMeta({
+        capacity: 5,
+        itemCount: hasData ? 1 : 0,
+      }),
+      weekBalance: resolveContentStateMeta({
+        capacity: 7,
+        itemCount: viewModel.weekBalance.filter((item) => item.value > 0).length,
+      }),
+      weightTrend: resolveContentStateMeta({
+        capacity: 3,
+        hasHistory: viewModel.weightTrend.values.length > 1,
+        hasPrimaryValue: viewModel.weightTrend.values.length > 0,
+        itemCount: viewModel.weightTrend.values.length,
+      }),
+    };
 
   function showToast(nextToast: ToastState) {
     setToast(nextToast);
@@ -1627,64 +1824,83 @@ export function NutritionOverviewPage({
       <div
         className="mx-auto flex w-full max-w-[2208px] flex-col gap-2 pb-6"
         id="nutrition-page"
+        {...stateAttrs(contentStates.page, profileId)}
       >
         <PageHeader
+          actionsEnabled={actionsEnabled}
           header={viewModel.header}
           onLogMeal={() => setLogDialogOpen(true)}
           onPeriodChange={handlePeriodChange}
           period={period}
         />
 
-        {!hasData ? (
-          <NutritionPanel
-            className="order-1"
-            subtitle="Day without nutrition data"
-            title="Empty State"
-          >
-            <EmptyNutritionState
-              actionLabel="Log first meal"
-              description="Starte mit einer Mahlzeit oder plane den heutigen Intake."
-              onAction={() => setLogDialogOpen(true)}
-              title="No intake logged today"
-            />
-          </NutritionPanel>
-        ) : null}
-
         <div className="grid min-w-0 gap-2 xl:grid-cols-12">
           <TodayNutritionCard
+            actionsEnabled={actionsEnabled}
             metrics={metrics}
             nextMeal={openMeal}
             onAddWater={handleAddWater}
             onSelectMetric={setActiveMetric}
+            profileId={profileId}
+            stateMeta={contentStates.todayNutrition}
           />
           <NextMealCard
+            actionsEnabled={actionsEnabled}
             meal={openMeal}
             onMarkAsEaten={handleMarkAsEaten}
             onOpenMeal={setActiveMeal}
+            profileId={profileId}
+            stateMeta={contentStates.nextMeal}
           />
         </div>
 
         <div className="grid min-w-0 gap-2 xl:grid-cols-[minmax(300px,.9fr)_minmax(300px,.75fr)_minmax(420px,1.3fr)]">
           <NutritionPrioritiesCard
+            actionsEnabled={actionsEnabled}
             onAddWater={handleAddWater}
+            profileId={profileId}
             priorities={viewModel.priorities}
+            stateMeta={contentStates.priorities}
           />
           <WeekBalanceCard
             items={viewModel.weekBalance}
+            profileId={profileId}
+            stateMeta={contentStates.weekBalance}
             statement={viewModel.weekBalanceStatement}
           />
-          <MealPlanAdherenceCard adherence={localAdherence} />
+          <MealPlanAdherenceCard
+            adherence={localAdherence}
+            profileId={profileId}
+            stateMeta={contentStates.adherence}
+          />
         </div>
 
         <div className="grid min-w-0 gap-2 xl:grid-cols-[minmax(260px,.8fr)_minmax(260px,.75fr)_minmax(420px,1.1fr)_minmax(320px,.8fr)]">
-          <HydrationCard metric={waterMetric} onAddWater={handleAddWater} />
+          <HydrationCard
+            actionsEnabled={actionsEnabled}
+            metric={waterMetric}
+            onAddWater={handleAddWater}
+            profileId={profileId}
+            stateMeta={contentStates.hydration}
+          />
           <RecentMealsCard
+            actionsEnabled={actionsEnabled}
             meals={loggedMeals}
             onLogMeal={() => setLogDialogOpen(true)}
             onOpenMeal={setActiveMeal}
+            profileId={profileId}
+            stateMeta={contentStates.recentMeals}
           />
-          <WeightTrendCard trend={viewModel.weightTrend} />
-          <GrocerySignalCard signal={viewModel.grocerySignal} />
+          <WeightTrendCard
+            profileId={profileId}
+            stateMeta={contentStates.weightTrend}
+            trend={viewModel.weightTrend}
+          />
+          <GrocerySignalCard
+            profileId={profileId}
+            signal={viewModel.grocerySignal}
+            stateMeta={contentStates.grocerySignal}
+          />
         </div>
       </div>
 

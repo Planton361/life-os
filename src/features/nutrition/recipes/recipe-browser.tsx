@@ -47,6 +47,7 @@ export function RecipeBrowser({
   tag,
   readiness,
   selectedRecipeId,
+  stateAttributes,
   onQueryChange,
   onMealTypeChange,
   onTagChange,
@@ -59,6 +60,7 @@ export function RecipeBrowser({
   tag: TagFilter;
   readiness: ReadinessFilter;
   selectedRecipeId: string | null;
+  stateAttributes?: Record<string, string>;
   onQueryChange: (query: string) => void;
   onMealTypeChange: (mealType: MealTypeFilter) => void;
   onTagChange: (tag: TagFilter) => void;
@@ -74,6 +76,7 @@ export function RecipeBrowser({
       }
       bodyClassName="flex min-h-0 flex-col gap-3 p-3"
       className="min-h-0 xl:h-full"
+      stateAttributes={stateAttributes}
       subtitle="Search, filter, select."
       title="Recipe Browser"
     >
@@ -166,12 +169,13 @@ export function RecipeBrowser({
             </div>
           ))
         ) : (
-          <div className="rounded-[14px] border border-dashed border-[var(--border-default)] bg-[rgba(168,183,204,.04)] p-4">
-            <p className="text-sm font-semibold text-[var(--text-secondary)]">
-              No active recipes match
+          <div className="min-h-[320px] rounded-[14px] border border-dashed border-[var(--border-default)] bg-[rgba(168,183,204,.04)] p-6">
+            <p className="text-[16px] font-semibold text-[var(--text-primary)]">
+              Noch keine Rezepte
             </p>
-            <p className="mt-1 text-[11px] leading-5 text-[var(--text-muted)]">
-              Adjust search, meal type, tag or readiness filters.
+            <p className="mt-2 max-w-xl text-[12px] leading-5 text-[var(--text-muted)]">
+              Speichere Rezepte, damit Meal Planner und Grocery Signale echte
+              Vorschläge erhalten.
             </p>
           </div>
         )}

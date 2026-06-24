@@ -1,3 +1,5 @@
+import type { ContentStateMeta } from "@/features/content-state";
+import type { LifeOsProfileId } from "@/features/profile-data/types";
 import {
   mealPlanWeek,
   recipes,
@@ -28,6 +30,16 @@ import type {
 import type { MealPlanWeek, Recipe } from "../meal-planner/meal-planner-types";
 
 export type GroceryViewModel = {
+  profileId?: LifeOsProfileId;
+  contentStates?: {
+    page: ContentStateMeta;
+    summary: ContentStateMeta;
+    toBuy: ContentStateMeta;
+    pantry: ContentStateMeta;
+    mustHave: ContentStateMeta;
+    receipts: ContentStateMeta;
+  };
+  actionsEnabled?: boolean;
   header: {
     eyebrow: "Life OS / Nutrition / Grocery";
     title: "Grocery";

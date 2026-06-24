@@ -2,6 +2,10 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import {
+  contentStateDataAttributes,
+  resolveContentStateMeta,
+} from "@/features/content-state";
 import { initialPantryItems } from "../grocery/grocery-mock-data";
 import { calculateRecipeAvailability } from "../grocery/grocery-utils";
 import { MealPlannerInspector } from "./meal-planner-inspector";
@@ -179,6 +183,8 @@ export function MealPlannerView({
 }: Readonly<{
   viewModel: MealPlannerViewModel;
 }>) {
+  const profileId = viewModel.profileId ?? "demo";
+  const actionsEnabled = viewModel.actionsEnabled ?? true;
   const [weekOffset, setWeekOffset] = useState(0);
   const [week, setWeek] = useState(viewModel.week);
   const [selectedSlot, setSelectedSlot] = useState<SelectedMealSlot | null>(null);
@@ -196,8 +202,9 @@ export function MealPlannerView({
 
   const activeProfile =
     viewModel.profiles.find((profile) => profile.id === activeProfileId) ??
-    viewModel.profiles[0];
-  const targets = activeProfile.targets;
+    viewModel.profiles[0] ??
+    null;
+  const targets = activeProfile?.targets ?? emptyTotals();
   const selectedDay = selectedSlot ? findDay(week, selectedSlot.date) : null;
   const selectedSlotData = findSlot(week, selectedSlot);
   const selectedRecipe = selectedSlotData?.plannedMeal
@@ -228,6 +235,32 @@ export function MealPlannerView({
     () => calculateWeekStatus(week, viewModel.recipes, targets),
     [targets, viewModel.recipes, week],
   );
+  const contentStates =
+    viewModel.contentStates ??
+    {
+      inspector: resolveContentStateMeta({
+        capacity: 1,
+        itemCount: selectedSlot ? 1 : 0,
+      }),
+      page: resolveContentStateMeta({
+        capacity: 21,
+        itemCount: weekStatus.plannedMeals,
+      }),
+      recipeSuggestions: resolveContentStateMeta({
+        capacity: 8,
+        itemCount: viewModel.recipes.length,
+      }),
+      targetProfile: resolveContentStateMeta({
+        capacity: 1,
+        itemCount: activeProfile ? 1 : 0,
+      }),
+      weekPlan: resolveContentStateMeta({
+        capacity: 21,
+        itemCount: weekStatus.plannedMeals,
+      }),
+    };
+  const stateAttrs = (meta: (typeof contentStates)[keyof typeof contentStates]) =>
+    contentStateDataAttributes(meta, profileId);
 
   function selectSlot(slot: SelectedMealSlot) {
     const dayIndex = week.days.findIndex((day) => day.date === slot.date);
@@ -266,6 +299,10 @@ export function MealPlannerView({
   }
 
   function saveWeek() {
+    if (!unsavedChanges) {
+      return;
+    }
+
     setUnsavedChanges(false);
     setToast("Week plan saved locally for this session");
   }
@@ -382,7 +419,11 @@ export function MealPlannerView({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-[2208px] flex-col gap-3 pb-6 xl:h-[calc(100dvh-20px)] xl:max-h-[calc(100dvh-20px)] xl:gap-2 xl:overflow-hidden xl:pb-0">
+    <div
+      className="mx-auto flex w-full max-w-[2208px] flex-col gap-3 pb-6 xl:h-[calc(100dvh-20px)] xl:max-h-[calc(100dvh-20px)] xl:gap-2 xl:overflow-hidden xl:pb-0"
+      id="meal-planner-page"
+      {...stateAttrs(contentStates.page)}
+    >
       <header className="shrink-0 overflow-hidden rounded-[18px] border border-[rgba(216,180,90,.18)] bg-[rgba(15,23,36,.80)] shadow-[0_8px_22px_rgba(0,0,0,.12)]">
         <div className="grid gap-4 bg-[rgba(217,146,79,.055)] px-4 py-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
           <div className="min-w-0">
@@ -422,12 +463,17 @@ export function MealPlannerView({
             >
               Next Week
             </button>
-            <button className={primaryButtonClass} onClick={saveWeek} type="button">
+            <button
+              className={primaryButtonClass}
+              disabled={!actionsEnabled || !unsavedChanges}
+              onClick={saveWeek}
+              type="button"
+            >
               Save week
             </button>
             <button
               className={quietButtonClass}
-              disabled={!unsavedChanges}
+              disabled={!actionsEnabled || !unsavedChanges}
               onClick={resetChanges}
               type="button"
             >
@@ -459,6 +505,7 @@ export function MealPlannerView({
                 setUnsavedChanges(true);
               }}
               profiles={viewModel.profiles}
+              stateAttributes={stateAttrs(contentStates.targetProfile)}
               targets={targets}
             />
 
@@ -480,17 +527,20 @@ export function MealPlannerView({
               selectedSlot={selectedSlot}
               selectedSlotData={selectedSlotData}
               targets={targets}
+              stateAttributes={stateAttrs(contentStates.inspector)}
               weekStatus={weekStatus}
             />
           </div>
 
           <div className="min-h-0 xl:flex-1 xl:overflow-hidden">
             <WeekPlannerGrid
+              actionsEnabled={actionsEnabled}
               onSelectDay={selectDay}
               onSelectSlot={selectSlot}
               recipes={viewModel.recipes}
               selectedDayIndex={selectedDayIndex}
               selectedSlot={selectedSlot}
+              stateAttributes={stateAttrs(contentStates.weekPlan)}
               targets={targets}
               week={week}
             />
@@ -512,6 +562,7 @@ export function MealPlannerView({
             selectedSlot={selectedSlot}
             selectedSlotHasPlannedMeal={selectedSlotHasPlannedMeal}
             sort={sort}
+            stateAttributes={stateAttrs(contentStates.recipeSuggestions)}
             targets={targets}
           />
         </aside>

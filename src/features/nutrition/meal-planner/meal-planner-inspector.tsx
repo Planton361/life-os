@@ -63,6 +63,7 @@ export function MealPlannerInspector({
   onClearSlot,
   onResetIngredientChanges,
   availability,
+  stateAttributes,
 }: Readonly<{
   selectedSlot: SelectedMealSlot | null;
   selectedDay: MealPlanDay | null;
@@ -85,6 +86,7 @@ export function MealPlannerInspector({
     MealAvailability,
     "status" | "missingIngredients" | "coveredIngredientCount" | "totalIngredientCount"
   > | null;
+  stateAttributes?: Record<string, string>;
 }>) {
   const plannedMeal = selectedSlotData?.plannedMeal ?? null;
   const hasSelectedSlot = selectedSlot && selectedDay && selectedSlotData;
@@ -93,6 +95,7 @@ export function MealPlannerInspector({
     <PlannerPanel
       bodyClassName="p-3"
       subtitle="Compact slot context, target deltas and local recipe edits."
+      stateAttributes={stateAttributes}
       title="Selected Meal / Meal Inspector"
     >
       {!hasSelectedSlot ? (

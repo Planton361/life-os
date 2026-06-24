@@ -25,6 +25,7 @@ import { getNutritionOverviewViewModel as getDemoNutritionOverviewViewModel } fr
 import { getGroceryViewModel as getDemoGroceryViewModel } from "@/features/nutrition/grocery";
 import { getMealPlannerViewModel as getDemoMealPlannerViewModel } from "@/features/nutrition/meal-planner";
 import { getRecipesViewModel as getDemoRecipesViewModel } from "@/features/nutrition/recipes";
+import { summarizeRecipes } from "@/features/nutrition/recipes/recipe-utils";
 import {
   buildResourcesContentStates,
   getResourcesViewModel as getDemoResourcesViewModel,
@@ -39,6 +40,7 @@ import {
 import { readManualProfile } from "./manual-profile-store";
 import { getCurrentLifeOsProfileId } from "./profile-cookie";
 import type { LifeOsProfileId, ManualHabit, ManualProfileData } from "./types";
+import type { MealEntry, NutritionDay } from "@/features/nutrition";
 
 type PathPart = string | number;
 
@@ -1026,6 +1028,274 @@ function buildProfileStrengthTrackerViewModel(
   return viewModel;
 }
 
+function emptyNutritionDay(): NutritionDay {
+  return {
+    calorie_actual: 0,
+    calorie_target: 0,
+    carbs_actual: 0,
+    carbs_target: 0,
+    date: "2026-06-24",
+    fat_actual: 0,
+    fat_target: 0,
+    protein_actual: 0,
+    protein_target: 0,
+    water_actual: 0,
+    water_target: 0,
+  };
+}
+
+function parseMacroValue(macros: readonly string[], prefix: "P" | "C" | "F") {
+  const raw = macros.find((macro) => macro.trim().startsWith(prefix));
+  const value = Number(raw?.replace(/[^0-9.]/g, "") ?? 0);
+
+  return Number.isFinite(value) ? value : 0;
+}
+
+function parseKcal(value?: string) {
+  const parsed = Number(value?.replace(/[^0-9.]/g, "") ?? 0);
+
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function manualMealTypeToNutritionType(
+  type: ManualProfileData["meals"][number]["type"],
+) {
+  return type.toLowerCase() as MealEntry["meal_type"];
+}
+
+function manualMealToNutritionEntry(
+  meal: ManualProfileData["meals"][number],
+): MealEntry {
+  const plannedAt = `2026-06-24T${meal.time || "12:00"}:00.000Z`;
+  const isLogged = meal.state === "logged";
+
+  return {
+    calories: parseKcal(meal.kcal),
+    consumed_at: isLogged ? meal.updatedAt : undefined,
+    id: meal.id,
+    macros: {
+      carbs: parseMacroValue(meal.macros, "C"),
+      fat: parseMacroValue(meal.macros, "F"),
+      protein: parseMacroValue(meal.macros, "P"),
+    },
+    meal_type: manualMealTypeToNutritionType(meal.type),
+    planned_at: isLogged ? undefined : plannedAt,
+    source: "manual",
+    title: meal.name,
+  };
+}
+
+function buildProfileNutritionOverviewViewModel(
+  profileId: Exclude<LifeOsProfileId, "demo">,
+  profile: ManualProfileData,
+): ReturnType<typeof getDemoNutritionOverviewViewModel> {
+  const viewModel = clone(getDemoNutritionOverviewViewModel());
+  const meals =
+    profileId === "manual"
+      ? profile.meals
+          .filter((meal) => meal.state === "planned" || meal.state === "logged")
+          .map(manualMealToNutritionEntry)
+      : [];
+  const loggedMeals = meals.filter((meal) => meal.consumed_at);
+  const plannedMeals = meals.filter(
+    (meal) => meal.planned_at && !meal.consumed_at,
+  );
+  const day = loggedMeals.reduce<NutritionDay>(
+    (current, meal) => ({
+      ...current,
+      calorie_actual: current.calorie_actual + meal.calories,
+      carbs_actual: current.carbs_actual + meal.macros.carbs,
+      fat_actual: current.fat_actual + meal.macros.fat,
+      protein_actual: current.protein_actual + meal.macros.protein,
+    }),
+    emptyNutritionDay(),
+  );
+  const primaryItemCount = loggedMeals.length + plannedMeals.length;
+
+  viewModel.profileId = profileId;
+  viewModel.actionsEnabled = false;
+  viewModel.header = {
+    ...viewModel.header,
+    dateLabel: "Heute",
+    summary:
+      primaryItemCount > 0
+        ? "Heute · lokale Mahlzeiten ohne Zielprofil"
+        : "Heute · Nutrition-Shell ohne Demo-Daten",
+  };
+  viewModel.day = day;
+  viewModel.goals = [];
+  viewModel.meals = meals;
+  viewModel.weekBalance = [
+    { day: "Mo", label: "leer", value: 0 },
+    { day: "Di", label: "leer", value: 0 },
+    {
+      day: "Mi",
+      label: primaryItemCount > 0 ? "lokal" : "leer",
+      value: primaryItemCount > 0 ? 0.18 : 0,
+    },
+    { day: "Do", label: "leer", value: 0 },
+    { day: "Fr", label: "leer", value: 0 },
+    { day: "Sa", label: "leer", value: 0 },
+    { day: "So", label: "leer", value: 0 },
+  ];
+  viewModel.weekBalanceStatement =
+    primaryItemCount > 0
+      ? "Lokale Mahlzeiten sind sichtbar; Wochenverlauf und Ziele fehlen noch."
+      : "Noch keine Wochenbalance.";
+  viewModel.adherence = {
+    eaten: loggedMeals.length,
+    open: plannedMeals.length,
+    planned: primaryItemCount,
+    replaced: 0,
+    statement:
+      primaryItemCount > 0
+        ? "Lokale Mahlzeiten werden angezeigt; ein Wochenplan ist noch nicht gesetzt."
+        : "Noch kein Wochenplan gesetzt.",
+  };
+  viewModel.priorities = [];
+  viewModel.weightTrend = {
+    axisLabel: "Trends erscheinen nach mehreren lokalen Einträgen.",
+    periodLabel: "Lokaler Verlauf",
+    statement: "Noch kein Gewichtstrend",
+    values: [],
+  };
+  viewModel.grocerySignal = {
+    actionLabel: "View grocery list",
+    href: "/nutrition/grocery",
+    ingredients: [],
+    linkedMealsLabel: "0 linked meals",
+    missingCount: 0,
+  };
+  viewModel.contentStates = {
+    adherence: resolveContentStateMeta({ capacity: 21, itemCount: primaryItemCount }),
+    grocerySignal: resolveContentStateMeta({ capacity: 1, itemCount: 0 }),
+    hydration: resolveContentStateMeta({
+      capacity: 1,
+      hasPrimaryValue: day.water_actual > 0,
+      itemCount: day.water_actual > 0 ? 1 : 0,
+    }),
+    nextMeal: resolveContentStateMeta({
+      capacity: 1,
+      itemCount: plannedMeals.length > 0 ? 1 : 0,
+    }),
+    page: resolveContentStateMeta({ capacity: 8, itemCount: primaryItemCount }),
+    priorities: resolveContentStateMeta({ capacity: 3, itemCount: 0 }),
+    recentMeals: resolveContentStateMeta({
+      capacity: 5,
+      itemCount: Math.min(loggedMeals.length, 5),
+    }),
+    todayNutrition: resolveContentStateMeta({
+      capacity: 5,
+      itemCount: primaryItemCount > 0 ? 1 : 0,
+    }),
+    weekBalance: resolveContentStateMeta({
+      capacity: 7,
+      itemCount: primaryItemCount > 0 ? 1 : 0,
+    }),
+    weightTrend: resolveContentStateMeta({
+      capacity: 3,
+      hasHistory: false,
+      hasPrimaryValue: false,
+      itemCount: 0,
+    }),
+  };
+
+  return viewModel;
+}
+
+function buildEmptyMealPlanWeek(
+  week: ReturnType<typeof getDemoMealPlannerViewModel>["week"],
+) {
+  return {
+    ...week,
+    days: week.days.map((day) => ({
+      ...day,
+      slots: day.slots.map((slot) => ({
+        date: slot.date,
+        mealType: slot.mealType,
+      })),
+    })),
+  };
+}
+
+function buildProfileMealPlannerViewModel(
+  profileId: Exclude<LifeOsProfileId, "demo">,
+): ReturnType<typeof getDemoMealPlannerViewModel> {
+  const viewModel = clone(getDemoMealPlannerViewModel());
+
+  viewModel.profileId = profileId;
+  viewModel.actionsEnabled = false;
+  viewModel.header = {
+    ...viewModel.header,
+    weekLabel: "Aktuelle Woche",
+  };
+  viewModel.profiles = [];
+  viewModel.defaultProfileId = "";
+  viewModel.recipes = [];
+  viewModel.week = buildEmptyMealPlanWeek(viewModel.week);
+  viewModel.contentStates = {
+    inspector: resolveContentStateMeta({ capacity: 1, itemCount: 0 }),
+    page: resolveContentStateMeta({ capacity: 21, itemCount: 0 }),
+    recipeSuggestions: resolveContentStateMeta({ capacity: 8, itemCount: 0 }),
+    targetProfile: resolveContentStateMeta({ capacity: 1, itemCount: 0 }),
+    weekPlan: resolveContentStateMeta({ capacity: 21, itemCount: 0 }),
+  };
+
+  return viewModel;
+}
+
+function buildProfileRecipesViewModel(
+  profileId: Exclude<LifeOsProfileId, "demo">,
+): ReturnType<typeof getDemoRecipesViewModel> {
+  const viewModel = clone(getDemoRecipesViewModel());
+
+  viewModel.profileId = profileId;
+  viewModel.actionsEnabled = false;
+  viewModel.recipes = [];
+  viewModel.stats = summarizeRecipes([]);
+  viewModel.contentStates = {
+    browser: resolveContentStateMeta({ capacity: 8, itemCount: 0 }),
+    page: resolveContentStateMeta({ capacity: 8, itemCount: 0 }),
+    selectedRecipe: resolveContentStateMeta({ capacity: 1, itemCount: 0 }),
+    summary: resolveContentStateMeta({ capacity: 5, itemCount: 0 }),
+  };
+
+  return viewModel;
+}
+
+function buildProfileGroceryViewModel(
+  profileId: Exclude<LifeOsProfileId, "demo">,
+): ReturnType<typeof getDemoGroceryViewModel> {
+  const viewModel = clone(getDemoGroceryViewModel());
+
+  viewModel.profileId = profileId;
+  viewModel.actionsEnabled = false;
+  viewModel.week = buildEmptyMealPlanWeek(viewModel.week);
+  viewModel.recipes = [];
+  viewModel.pantryItems = [];
+  viewModel.mustHaveItems = [];
+  viewModel.receiptUploads = [];
+  viewModel.receiptLineItems = [];
+  viewModel.initialDemand = [];
+  viewModel.summary = {
+    fromMealPlan: 0,
+    fromMustList: 0,
+    inStockItems: 0,
+    receiptsPendingReview: 0,
+    toBuyItems: 0,
+  };
+  viewModel.contentStates = {
+    mustHave: resolveContentStateMeta({ capacity: 6, itemCount: 0 }),
+    page: resolveContentStateMeta({ capacity: 12, itemCount: 0 }),
+    pantry: resolveContentStateMeta({ capacity: 8, itemCount: 0 }),
+    receipts: resolveContentStateMeta({ capacity: 4, itemCount: 0 }),
+    summary: resolveContentStateMeta({ capacity: 5, itemCount: 0 }),
+    toBuy: resolveContentStateMeta({ capacity: 8, itemCount: 0 }),
+  };
+
+  return viewModel;
+}
+
 export function getProfileEmptyStateText(
   profileId: LifeOsProfileId,
   areaLabel: string,
@@ -1091,25 +1361,52 @@ export async function getStrengthTrackerViewModel(): Promise<
 export async function getNutritionOverviewViewModel(): Promise<
   ReturnType<typeof getDemoNutritionOverviewViewModel>
 > {
-  return getProfileAreaViewModel(getDemoNutritionOverviewViewModel, "Nutrition");
+  const profileId = await getCurrentLifeOsProfileId();
+
+  if (profileId === "demo") {
+    return getDemoNutritionOverviewViewModel();
+  }
+
+  return buildProfileNutritionOverviewViewModel(
+    profileId,
+    await readManualProfile(),
+  );
 }
 
 export async function getMealPlannerViewModel(): Promise<
   ReturnType<typeof getDemoMealPlannerViewModel>
 > {
-  return getProfileAreaViewModel(getDemoMealPlannerViewModel, "Nutrition");
+  const profileId = await getCurrentLifeOsProfileId();
+
+  if (profileId === "demo") {
+    return getDemoMealPlannerViewModel();
+  }
+
+  return buildProfileMealPlannerViewModel(profileId);
 }
 
 export async function getRecipesViewModel(): Promise<
   ReturnType<typeof getDemoRecipesViewModel>
 > {
-  return getProfileAreaViewModel(getDemoRecipesViewModel, "Nutrition");
+  const profileId = await getCurrentLifeOsProfileId();
+
+  if (profileId === "demo") {
+    return getDemoRecipesViewModel();
+  }
+
+  return buildProfileRecipesViewModel(profileId);
 }
 
 export async function getGroceryViewModel(): Promise<
   ReturnType<typeof getDemoGroceryViewModel>
 > {
-  return getProfileAreaViewModel(getDemoGroceryViewModel, "Nutrition");
+  const profileId = await getCurrentLifeOsProfileId();
+
+  if (profileId === "demo") {
+    return getDemoGroceryViewModel();
+  }
+
+  return buildProfileGroceryViewModel(profileId);
 }
 
 export async function getCodingOverviewViewModel(): Promise<

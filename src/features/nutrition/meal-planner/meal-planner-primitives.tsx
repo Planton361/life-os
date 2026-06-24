@@ -44,6 +44,7 @@ export function PlannerPanel({
   badge,
   className,
   bodyClassName,
+  stateAttributes,
 }: Readonly<{
   title: string;
   subtitle?: string;
@@ -51,6 +52,7 @@ export function PlannerPanel({
   badge?: ReactNode;
   className?: string;
   bodyClassName?: string;
+  stateAttributes?: Record<string, string>;
 }>) {
   const headingId = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-heading`;
 
@@ -61,6 +63,7 @@ export function PlannerPanel({
         "min-w-0 overflow-hidden rounded-[16px] border border-[var(--border-subtle)] bg-[var(--surface-1)] shadow-[0_8px_22px_rgba(0,0,0,.12)]",
         className,
       )}
+      {...stateAttributes}
     >
       <div className="border-b border-[var(--border-subtle)] bg-[rgba(18,28,43,.44)] px-4 py-3">
         <div className="flex min-w-0 items-start justify-between gap-3">

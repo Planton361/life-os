@@ -36,6 +36,7 @@ export function MealSlotCard({
   recipe,
   totals,
   selected,
+  actionsEnabled,
   statusLine,
   onSelect,
 }: Readonly<{
@@ -43,10 +44,12 @@ export function MealSlotCard({
   recipe: Recipe | null;
   totals: NutritionMacroTarget | null;
   selected: boolean;
+  actionsEnabled: boolean;
   statusLine: string;
   onSelect: () => void;
 }>) {
   const label = mealTypeLabels[slot.mealType];
+  const canSelect = actionsEnabled || Boolean(recipe);
   const availability =
     recipe && slot.plannedMeal
       ? calculateRecipeAvailability(
@@ -60,11 +63,12 @@ export function MealSlotCard({
     <button
       aria-pressed={selected}
       className={cn(
-        "min-h-[108px] w-full rounded-[14px] border p-2.5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
+        "min-h-[108px] w-full rounded-[14px] border p-2.5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-60",
         selected
           ? "border-[rgba(217,146,79,.56)] bg-[rgba(217,146,79,.12)] shadow-[0_0_0_1px_rgba(217,146,79,.20)]"
           : "border-[var(--border-subtle)] bg-[rgba(18,28,43,.58)] hover:border-[rgba(217,146,79,.30)] hover:bg-[rgba(18,28,43,.76)]",
       )}
+      disabled={!canSelect}
       onClick={onSelect}
       type="button"
     >
@@ -81,7 +85,7 @@ export function MealSlotCard({
                 : "border-[var(--border-subtle)] bg-[rgba(168,183,204,.04)] text-[var(--text-muted)]",
             )}
           >
-            {recipe ? "Planned" : "Open"}
+            {recipe ? "Planned" : actionsEnabled ? "Open" : "Later"}
           </span>
           {availability ? (
             <span
@@ -134,7 +138,7 @@ export function MealSlotCard({
         </div>
       ) : (
         <div className="mt-4 flex min-h-[64px] items-center justify-center rounded-[12px] border border-dashed border-[var(--border-subtle)] bg-[rgba(168,183,204,.025)] text-[12px] font-semibold text-[var(--text-secondary)]">
-          Add {slot.mealType}
+          {actionsEnabled ? `Add ${slot.mealType}` : "Plan later"}
         </div>
       )}
     </button>

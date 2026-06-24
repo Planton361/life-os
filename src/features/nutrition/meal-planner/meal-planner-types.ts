@@ -1,3 +1,6 @@
+import type { ContentStateMeta } from "@/features/content-state";
+import type { LifeOsProfileId } from "@/features/profile-data/types";
+
 export type MealType = "breakfast" | "lunch" | "dinner";
 
 export type MacroKey = "calories" | "protein" | "carbs" | "fat";
@@ -141,6 +144,15 @@ export type NutritionAccent =
   | "var(--accent-yellow)";
 
 export type MealPlannerViewModel = {
+  profileId?: LifeOsProfileId;
+  contentStates?: {
+    page: ContentStateMeta;
+    targetProfile: ContentStateMeta;
+    weekPlan: ContentStateMeta;
+    inspector: ContentStateMeta;
+    recipeSuggestions: ContentStateMeta;
+  };
+  actionsEnabled?: boolean;
   header: {
     eyebrow: "Life OS / Nutrition / Meal Planner";
     title: "Meal Planner";

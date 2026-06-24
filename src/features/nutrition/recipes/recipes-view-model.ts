@@ -1,8 +1,18 @@
+import type { ContentStateMeta } from "@/features/content-state";
+import type { LifeOsProfileId } from "@/features/profile-data/types";
 import type { Recipe } from "../meal-planner/meal-planner-types";
 import { recipes } from "../meal-planner/meal-planner-mock-data";
 import { summarizeRecipes, type RecipeStats } from "./recipe-utils";
 
 export type RecipesViewModel = {
+  profileId?: LifeOsProfileId;
+  contentStates?: {
+    page: ContentStateMeta;
+    summary: ContentStateMeta;
+    browser: ContentStateMeta;
+    selectedRecipe: ContentStateMeta;
+  };
+  actionsEnabled?: boolean;
   header: {
     eyebrow: "Life OS / Nutrition / Recipes";
     title: "Recipes";

@@ -510,6 +510,155 @@ test.afterEach(async () => {
   await resetManualProfileFile();
 });
 
+test.describe("Nutrition content states", () => {
+  const nutritionBlockedDemoStrings = [
+    "Protein Bowl",
+    "Skyr",
+    "Paprika",
+    "3 missing ingredients",
+    "-0.4 kg",
+    "No planned meal open",
+    "No intake logged today",
+  ] as const;
+
+  async function expectNoNutritionDemoStrings(page: Page) {
+    await expectNoMainStrings(page, nutritionBlockedDemoStrings, "nutrition");
+  }
+
+  test("keeps demo nutrition routes as the curated reference", async ({
+    page,
+  }) => {
+    await setProfile(page, "demo");
+
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/nutrition");
+    });
+    await expect(page.locator("#nutrition-page")).toHaveAttribute(
+      "data-content-state",
+      "filled",
+    );
+    await expect(page.getByText("Protein Bowl").first()).toBeVisible();
+
+    await page.goto("/nutrition/meal-planner");
+    await expect(page.locator("#meal-planner-page")).toHaveAttribute(
+      "data-content-state",
+      "partial",
+    );
+    await expect(page.getByText("15 / 21").first()).toBeVisible();
+
+    await page.goto("/nutrition/recipes");
+    await expect(page.locator("#recipes-page")).toHaveAttribute(
+      "data-content-state",
+      "filled",
+    );
+    await expect(page.getByText("Skyr with oats and berries").first()).toBeVisible();
+
+    await page.goto("/nutrition/grocery");
+    await expect(page.locator("#grocery-page")).toHaveAttribute(
+      "data-content-state",
+      "filled",
+    );
+    await expect(page.getByText("Oats").first()).toBeVisible();
+  });
+
+  test("renders empty nutrition overview without demo leaks", async ({
+    page,
+  }) => {
+    await setProfile(page, "empty");
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/nutrition");
+    });
+
+    await expect(page.locator("#nutrition-page")).toHaveAttribute(
+      "data-content-state",
+      "empty",
+    );
+    await expectNoNutritionDemoStrings(page);
+    await expect(
+      page.getByRole("region", { name: "Today Nutrition" }),
+    ).toHaveAttribute("data-content-state", "empty");
+    await expect(page.getByText("Keine offene Mahlzeit")).toBeVisible();
+    await expect(page.getByText("Noch keine Prioritäten")).toBeVisible();
+    await expect(page.getByText("Noch kein Gewichtstrend")).toBeVisible();
+    await expect(page.getByText("Keine Einkaufssignale")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Log meal" })).toBeDisabled();
+  });
+
+  test("renders empty meal planner, recipes and grocery shells", async ({
+    page,
+  }) => {
+    await setProfile(page, "empty");
+
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/nutrition/meal-planner");
+    });
+    await expect(page.locator("#meal-planner-page")).toHaveAttribute(
+      "data-content-state",
+      "empty",
+    );
+    await expect(page.getByText("Zielprofil nicht gesetzt")).toBeVisible();
+    await expect(page.getByText("0 / 21").first()).toBeVisible();
+    await expect(page.getByText("Keine passenden Rezepte")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Save week" })).toBeDisabled();
+
+    await page.goto("/nutrition/recipes");
+    await expect(page.locator("#recipes-page")).toHaveAttribute(
+      "data-content-state",
+      "empty",
+    );
+    await expect(page.getByText("Noch keine Rezepte")).toBeVisible();
+    await expect(page.getByText("Kein Rezept ausgewählt")).toBeVisible();
+    await expect(page.getByRole("button", { name: "New recipe" })).toBeDisabled();
+
+    await page.goto("/nutrition/grocery");
+    await expect(page.locator("#grocery-page")).toHaveAttribute(
+      "data-content-state",
+      "empty",
+    );
+    await expect(page.getByText("Keine Einkaufspunkte offen")).toBeVisible();
+    await expect(page.getByText("Noch keine Vorräte erfasst")).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Copy shopping text" }),
+    ).toBeDisabled();
+  });
+
+  test("projects manual nutrition meals without recipe or grocery demo fallback", async ({
+    page,
+  }) => {
+    await setProfile(page, "manual");
+    await writeManualProfile({
+      meals: [
+        {
+          ...manualMeal("Breakfast", 1),
+          state: "logged",
+        },
+        manualMeal("Lunch", 2),
+      ],
+    });
+
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/nutrition");
+    });
+    await expect(page.locator("#nutrition-page")).toHaveAttribute(
+      "data-content-state",
+      "partial",
+    );
+    await expectNoNutritionDemoStrings(page);
+    await expect(page.getByText("Manual Breakfast").first()).toBeVisible();
+    await expect(page.getByText("Manual Lunch").first()).toBeVisible();
+    await expect(
+      page.getByText("Lokale Mahlzeiten sind sichtbar").first(),
+    ).toBeVisible();
+
+    await page.goto("/nutrition/meal-planner");
+    await expect(page.locator("#meal-planner-page")).toHaveAttribute(
+      "data-content-state",
+      "empty",
+    );
+    await expect(page.getByText("Keine passenden Rezepte")).toBeVisible();
+  });
+});
+
 test.describe("Dashboard content states", () => {
   test.describe.configure({ mode: "serial" });
 

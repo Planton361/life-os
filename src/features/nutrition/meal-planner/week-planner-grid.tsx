@@ -189,12 +189,14 @@ function DayColumn({
   recipes,
   targets,
   selectedSlot,
+  actionsEnabled,
   onSelectSlot,
 }: Readonly<{
   day: MealPlanDay;
   recipes: readonly Recipe[];
   targets: NutritionMacroTarget;
   selectedSlot: SelectedMealSlot | null;
+  actionsEnabled: boolean;
   onSelectSlot: (slot: SelectedMealSlot) => void;
 }>) {
   const totals = calculateDayTotals(day, recipes);
@@ -251,6 +253,7 @@ function DayColumn({
           return (
             <MealSlotCard
               key={`${slot.date}-${slot.mealType}`}
+              actionsEnabled={actionsEnabled}
               onSelect={() =>
                 onSelectSlot({
                   date: slot.date,
@@ -279,6 +282,8 @@ export function WeekPlannerGrid({
   recipes,
   targets,
   selectedSlot,
+  actionsEnabled,
+  stateAttributes,
   selectedDayIndex,
   onSelectSlot,
   onSelectDay,
@@ -287,6 +292,8 @@ export function WeekPlannerGrid({
   recipes: readonly Recipe[];
   targets: NutritionMacroTarget;
   selectedSlot: SelectedMealSlot | null;
+  actionsEnabled: boolean;
+  stateAttributes?: Record<string, string>;
   selectedDayIndex: number;
   onSelectSlot: (slot: SelectedMealSlot) => void;
   onSelectDay: (index: number) => void;
@@ -298,6 +305,7 @@ export function WeekPlannerGrid({
       <PlannerPanel
         bodyClassName="xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:p-3"
         className="min-w-0 xl:flex xl:h-full xl:min-h-0 xl:flex-col"
+        stateAttributes={stateAttributes}
         subtitle="No days are available in this local week state."
         title="Weekly Meal Plan"
       >
@@ -317,6 +325,7 @@ export function WeekPlannerGrid({
     <PlannerPanel
       bodyClassName="xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:p-3"
       className="min-w-0 xl:flex xl:h-full xl:min-h-0 xl:flex-col"
+      stateAttributes={stateAttributes}
       subtitle="Desktop matrix, mobile day switcher. Slots are buttons."
       title="Weekly Meal Plan"
     >
@@ -353,6 +362,7 @@ export function WeekPlannerGrid({
       <div className="xl:hidden">
         <DayColumn
           day={selectedDay}
+          actionsEnabled={actionsEnabled}
           onSelectSlot={onSelectSlot}
           recipes={recipes}
           selectedSlot={selectedSlot}
@@ -364,6 +374,7 @@ export function WeekPlannerGrid({
         {week.days.map((day, index) => (
           <DayColumn
             day={day}
+            actionsEnabled={actionsEnabled}
             key={`meal-week-day-column-${index}`}
             onSelectSlot={onSelectSlot}
             recipes={recipes}

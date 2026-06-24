@@ -3,6 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
+  contentStateDataAttributes,
+  resolveContentStateMeta,
+} from "@/features/content-state";
+import {
   useEffect,
   useMemo,
   useRef,
@@ -92,6 +96,7 @@ function WorkbenchPanel({
   children,
   className,
   bodyClassName,
+  stateAttributes,
 }: Readonly<{
   title: string;
   subtitle: string;
@@ -99,6 +104,7 @@ function WorkbenchPanel({
   children: ReactNode;
   className?: string;
   bodyClassName?: string;
+  stateAttributes?: Record<string, string>;
 }>) {
   const headingId = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-heading`;
 
@@ -109,6 +115,7 @@ function WorkbenchPanel({
         "flex min-h-0 min-w-0 flex-col overflow-hidden rounded-[16px] border border-[var(--border-subtle)] bg-[var(--surface-1)] shadow-[0_8px_22px_rgba(0,0,0,.12)]",
         className,
       )}
+      {...stateAttributes}
     >
       <div className="shrink-0 border-b border-[var(--border-subtle)] bg-[rgba(18,28,43,.42)] px-4 py-3">
         <div className="flex min-w-0 items-start justify-between gap-3">
@@ -279,8 +286,10 @@ function filterShoppingItems(
 
 function SummaryStrip({
   summary,
+  stateAttributes,
 }: Readonly<{
   summary: GroceryViewModel["summary"];
+  stateAttributes?: Record<string, string>;
 }>) {
   const tiles = [
     {
@@ -319,6 +328,7 @@ function SummaryStrip({
     <section
       aria-label="Grocery summary"
       className="grid shrink-0 gap-2 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--surface-1)] p-3 sm:grid-cols-2 xl:grid-cols-5"
+      {...stateAttributes}
     >
       {tiles.map((tile, index) => (
         <article
@@ -374,6 +384,8 @@ function ToBuyPanel({
   filter,
   mustHaveItems,
   mustListOpen,
+  actionsEnabled,
+  stateAttributes,
   onFilterChange,
   onAddToPantry,
   onListStatusChange,
@@ -385,6 +397,8 @@ function ToBuyPanel({
   filter: ShoppingFilter;
   mustHaveItems: readonly MustHaveItem[];
   mustListOpen: boolean;
+  actionsEnabled: boolean;
+  stateAttributes?: Record<string, string>;
   onFilterChange: (filter: ShoppingFilter) => void;
   onAddToPantry: (item: GroceryListItem) => void;
   onListStatusChange: (itemId: string, status: GroceryListItem["status"]) => void;
@@ -399,6 +413,7 @@ function ToBuyPanel({
       badge={`${visibleItems.length} active`}
       bodyClassName="flex flex-col gap-3 p-3"
       className="xl:h-full"
+      stateAttributes={stateAttributes}
       subtitle="Meal-plan gaps and always-stock items that still need action."
       title="Muss noch geholt werden"
     >
@@ -494,6 +509,7 @@ function ToBuyPanel({
                         <div className="flex flex-wrap gap-2 lg:justify-end">
                           <button
                             className={secondaryButtonClass}
+                            disabled={!actionsEnabled}
                             onClick={() => onListStatusChange(item.id, "checked")}
                             type="button"
                           >
@@ -501,6 +517,7 @@ function ToBuyPanel({
                           </button>
                           <button
                             className={secondaryButtonClass}
+                            disabled={!actionsEnabled}
                             onClick={() => onAddToPantry(item)}
                             type="button"
                           >
@@ -508,6 +525,7 @@ function ToBuyPanel({
                           </button>
                           <button
                             className={quietButtonClass}
+                            disabled={!actionsEnabled}
                             onClick={() => onListStatusChange(item.id, "ignored")}
                             type="button"
                           >
@@ -524,11 +542,11 @@ function ToBuyPanel({
         ) : (
           <div className="rounded-[14px] border border-dashed border-[var(--border-subtle)] bg-[rgba(168,183,204,.04)] p-4">
             <p className="text-[13px] font-semibold text-[var(--text-primary)]">
-              No active shopping items
+              Keine Einkaufspunkte offen
             </p>
             <p className="mt-1 text-[11px] leading-4 text-[var(--text-muted)]">
-              Meal-plan demand and enabled must-list items are currently covered or
-              filtered out.
+              Einkaufsbedarf erscheint, sobald Mahlzeiten, Must-have-Items oder
+              Pantry-Daten vorhanden sind.
             </p>
           </div>
         )}
@@ -536,6 +554,7 @@ function ToBuyPanel({
 
       <MustHaveManager
         items={mustHaveItems}
+        actionsEnabled={actionsEnabled}
         onAddItem={onAddMustHave}
         onOpenChange={onMustListOpenChange}
         onToggleItem={onToggleMustHave}
@@ -547,12 +566,14 @@ function ToBuyPanel({
 
 function MustHaveManager({
   items,
+  actionsEnabled,
   open,
   onOpenChange,
   onToggleItem,
   onAddItem,
 }: Readonly<{
   items: readonly MustHaveItem[];
+  actionsEnabled: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onToggleItem: (itemId: string) => void;
@@ -612,6 +633,7 @@ function MustHaveManager({
         </div>
         <button
           className={secondaryButtonClass}
+          disabled={!actionsEnabled}
           onClick={() => onOpenChange(!open)}
           type="button"
         >
@@ -630,6 +652,7 @@ function MustHaveManager({
                 <input
                   checked={item.enabled}
                   className="size-4 accent-[var(--accent-orange)]"
+                  disabled={!actionsEnabled}
                   onChange={() => onToggleItem(item.id)}
                   type="checkbox"
                 />
@@ -720,7 +743,11 @@ function MustHaveManager({
                 </select>
               </label>
             </div>
-            <button className={primaryButtonClass} type="submit">
+            <button
+              className={primaryButtonClass}
+              disabled={!actionsEnabled}
+              type="submit"
+            >
               Add must-have item
             </button>
           </form>
@@ -734,6 +761,8 @@ function InStockPanel({
   pantryItems,
   addFormOpen,
   receiptUploads,
+  actionsEnabled,
+  stateAttributes,
   onAddFormOpenChange,
   onAddItem,
   onQuantityChange,
@@ -745,6 +774,8 @@ function InStockPanel({
   pantryItems: readonly PantryItem[];
   addFormOpen: boolean;
   receiptUploads: readonly ReceiptUpload[];
+  actionsEnabled: boolean;
+  stateAttributes?: Record<string, string>;
   onAddFormOpenChange: (open: boolean) => void;
   onAddItem: (
     name: string,
@@ -792,6 +823,7 @@ function InStockPanel({
       badge={`${pantryItems.length} estimates`}
       bodyClassName="flex flex-col gap-3 p-3"
       className="xl:h-full"
+      stateAttributes={stateAttributes}
       subtitle="Estimated pantry, household and receipt-reviewed stock."
       title="Ist vorhanden"
     >
@@ -866,7 +898,11 @@ function InStockPanel({
             </label>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button className={primaryButtonClass} type="submit">
+            <button
+              className={primaryButtonClass}
+              disabled={!actionsEnabled}
+              type="submit"
+            >
               Add item
             </button>
             <button
@@ -885,8 +921,9 @@ function InStockPanel({
         className="min-h-[280px] flex-1 overflow-y-auto pr-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
         tabIndex={0}
       >
-        <div className="grid gap-3">
-          {categoryGroup(visibleItems).map((group) => (
+        {visibleItems.length > 0 ? (
+          <div className="grid gap-3">
+            {categoryGroup(visibleItems).map((group) => (
             <section
               aria-labelledby={`stock-${group.category}`}
               className="grid gap-2"
@@ -964,7 +1001,7 @@ function InStockPanel({
                           <div className="flex flex-wrap gap-2">
                             <button
                               className={quietButtonClass}
-                              disabled={item.quantity <= 0}
+                              disabled={!actionsEnabled || item.quantity <= 0}
                               onClick={() => onUseItem(item)}
                               type="button"
                             >
@@ -972,6 +1009,7 @@ function InStockPanel({
                             </button>
                             <button
                               className={quietButtonClass}
+                              disabled={!actionsEnabled}
                               onClick={() => onRemoveItem(item)}
                               type="button"
                             >
@@ -985,11 +1023,22 @@ function InStockPanel({
                 ))}
               </div>
             </section>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-[14px] border border-dashed border-[var(--border-subtle)] bg-[rgba(168,183,204,.04)] p-4">
+            <p className="text-[13px] font-semibold text-[var(--text-primary)]">
+              Noch keine Vorräte erfasst
+            </p>
+            <p className="mt-1 text-[11px] leading-4 text-[var(--text-muted)]">
+              Vorräte erscheinen, sobald lokale Pantry-Daten vorhanden sind.
+            </p>
+          </div>
+        )}
       </div>
 
       <ReceiptInbox
+        actionsEnabled={actionsEnabled}
         onReview={onReview}
         onUpload={onUpload}
         receiptUploads={receiptUploads}
@@ -1000,10 +1049,12 @@ function InStockPanel({
 
 function ReceiptInbox({
   receiptUploads,
+  actionsEnabled,
   onUpload,
   onReview,
 }: Readonly<{
   receiptUploads: readonly ReceiptUpload[];
+  actionsEnabled: boolean;
   onUpload: (file: File) => void;
   onReview: (upload: ReceiptUpload) => void;
 }>) {
@@ -1024,11 +1075,18 @@ function ReceiptInbox({
         </span>
       </div>
 
-      <label className="mt-3 block rounded-[12px] border border-dashed border-[var(--border-default)] bg-[rgba(168,183,204,.04)] p-3">
+      <label
+        aria-disabled={!actionsEnabled}
+        className={cn(
+          "mt-3 block rounded-[12px] border border-dashed border-[var(--border-default)] bg-[rgba(168,183,204,.04)] p-3",
+          !actionsEnabled && "cursor-not-allowed opacity-60",
+        )}
+      >
         <FieldLabel>Upload receipt</FieldLabel>
         <input
           accept="image/*,.pdf"
           className="mt-2 block w-full text-[11px] text-[var(--text-secondary)] file:mr-3 file:min-h-9 file:rounded-[10px] file:border file:border-[var(--border-subtle)] file:bg-[rgba(18,28,43,.82)] file:px-3 file:text-[10px] file:font-semibold file:text-[var(--text-secondary)]"
+          disabled={!actionsEnabled}
           onChange={(event: ChangeEvent<HTMLInputElement>) => {
             const file = event.target.files?.[0];
 
@@ -1074,6 +1132,7 @@ function ReceiptInbox({
             </div>
             <button
               className={cn(secondaryButtonClass, "mt-3")}
+              disabled={!actionsEnabled}
               onClick={() => onReview(upload)}
               type="button"
             >
@@ -1295,6 +1354,8 @@ export function GroceryWorkbenchView({
 }: Readonly<{
   viewModel: GroceryViewModel;
 }>) {
+  const profileId = viewModel.profileId ?? "demo";
+  const actionsEnabled = viewModel.actionsEnabled ?? true;
   const [pantryItems, setPantryItems] = useState<PantryItem[]>(() =>
     viewModel.pantryItems.map((item) => ({ ...item })),
   );
@@ -1349,6 +1410,41 @@ export function GroceryWorkbenchView({
   const activeReceiptItems = activeReceipt
     ? receiptItems.filter((item) => item.receiptUploadId === activeReceipt.id)
     : [];
+  const contentStates =
+    viewModel.contentStates ??
+    {
+      mustHave: resolveContentStateMeta({
+        capacity: 6,
+        itemCount: mustHaveItems.length,
+      }),
+      page: resolveContentStateMeta({
+        capacity: 12,
+        itemCount: groceryItems.length + pantryItems.length + receiptUploads.length,
+      }),
+      pantry: resolveContentStateMeta({
+        capacity: 8,
+        itemCount: pantryItems.length,
+      }),
+      receipts: resolveContentStateMeta({
+        capacity: 4,
+        itemCount: receiptUploads.length,
+      }),
+      summary: resolveContentStateMeta({
+        capacity: 5,
+        itemCount:
+          summary.toBuyItems +
+          summary.fromMealPlan +
+          summary.fromMustList +
+          summary.inStockItems +
+          summary.receiptsPendingReview,
+      }),
+      toBuy: resolveContentStateMeta({
+        capacity: 8,
+        itemCount: groceryItems.filter((item) => item.status === "to_buy").length,
+      }),
+    };
+  const stateAttrs = (meta: (typeof contentStates)[keyof typeof contentStates]) =>
+    contentStateDataAttributes(meta, profileId);
 
   function addItemToPantry(item: GroceryListItem) {
     setPantryItems((current) =>
@@ -1468,7 +1564,11 @@ export function GroceryWorkbenchView({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 pb-8 xl:h-[calc(100dvh-88px)] xl:min-h-0 xl:overflow-hidden xl:pb-0">
+    <div
+      className="mx-auto flex w-full max-w-7xl flex-col gap-3 pb-8 xl:h-[calc(100dvh-88px)] xl:min-h-0 xl:overflow-hidden xl:pb-0"
+      id="grocery-page"
+      {...stateAttrs(contentStates.page)}
+    >
       <header className="shrink-0 overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[var(--surface-1)] shadow-[0_8px_22px_rgba(0,0,0,.12)]">
         <div className="flex flex-col gap-3 px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
@@ -1488,6 +1588,7 @@ export function GroceryWorkbenchView({
           <div className="flex flex-wrap gap-2">
             <button
               className={primaryButtonClass}
+              disabled={!actionsEnabled || visibleShoppingItems.length === 0}
               onClick={copyShoppingText}
               onPointerDown={() => {
                 if (copyShoppingItemNames(visibleShoppingItems)) {
@@ -1498,11 +1599,18 @@ export function GroceryWorkbenchView({
             >
               Copy shopping text
             </button>
-            <label className={secondaryButtonClass}>
+            <label
+              aria-disabled={!actionsEnabled}
+              className={cn(
+                secondaryButtonClass,
+                !actionsEnabled && "pointer-events-none opacity-50",
+              )}
+            >
               Upload receipt
               <input
                 accept="image/*,.pdf"
                 className="sr-only"
+                disabled={!actionsEnabled}
                 onChange={(event) => {
                   const file = event.target.files?.[0];
 
@@ -1516,6 +1624,7 @@ export function GroceryWorkbenchView({
             </label>
             <button
               className={secondaryButtonClass}
+              disabled={!actionsEnabled}
               onClick={() => setPantryFormOpen(true)}
               type="button"
             >
@@ -1523,6 +1632,7 @@ export function GroceryWorkbenchView({
             </button>
             <button
               className={secondaryButtonClass}
+              disabled={!actionsEnabled}
               onClick={() => setMustListOpen(true)}
               type="button"
             >
@@ -1551,10 +1661,14 @@ export function GroceryWorkbenchView({
         ) : null}
       </header>
 
-      <SummaryStrip summary={summary} />
+      <SummaryStrip
+        stateAttributes={stateAttrs(contentStates.summary)}
+        summary={summary}
+      />
 
       <div className="grid min-h-0 gap-3 xl:flex-1 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.85fr)] xl:overflow-hidden">
         <ToBuyPanel
+          actionsEnabled={actionsEnabled}
           filter={shoppingFilter}
           items={groceryItems}
           mustHaveItems={mustHaveItems}
@@ -1576,9 +1690,11 @@ export function GroceryWorkbenchView({
               ),
             )
           }
+          stateAttributes={stateAttrs(contentStates.toBuy)}
         />
 
         <InStockPanel
+          actionsEnabled={actionsEnabled}
           addFormOpen={pantryFormOpen}
           onAddFormOpenChange={setPantryFormOpen}
           onAddItem={(name, quantity, unit, confidence) => {
@@ -1596,6 +1712,7 @@ export function GroceryWorkbenchView({
           onUseItem={usePantryItem}
           pantryItems={pantryItems}
           receiptUploads={receiptUploads}
+          stateAttributes={stateAttrs(contentStates.pantry)}
         />
       </div>
 

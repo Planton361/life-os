@@ -43,6 +43,8 @@ function DetailMetric({
 export function RecipeDetailPanel({
   recipe,
   confirmingArchive,
+  actionsEnabled,
+  stateAttributes,
   onEdit,
   onDuplicate,
   onRequestArchive,
@@ -51,6 +53,8 @@ export function RecipeDetailPanel({
 }: Readonly<{
   recipe: Recipe | null;
   confirmingArchive: boolean;
+  actionsEnabled: boolean;
+  stateAttributes?: Record<string, string>;
   onEdit: (recipe: Recipe) => void;
   onDuplicate: (recipe: Recipe) => void;
   onRequestArchive: () => void;
@@ -62,15 +66,16 @@ export function RecipeDetailPanel({
       <PlannerPanel
         bodyClassName="p-3"
         className="min-h-0 xl:h-full"
+        stateAttributes={stateAttributes}
         subtitle="Select a recipe."
         title="Selected Recipe"
       >
         <div className="rounded-[14px] border border-dashed border-[var(--border-default)] bg-[rgba(168,183,204,.04)] p-4">
           <p className="text-sm font-semibold text-[var(--text-secondary)]">
-            No recipe selected
+            Kein Rezept ausgewählt
           </p>
           <p className="mt-1 text-[11px] leading-5 text-[var(--text-muted)]">
-            Create a new recipe or select one from the browser.
+            Wähle ein Rezept aus der Library oder erstelle später ein neues.
           </p>
         </div>
       </PlannerPanel>
@@ -83,6 +88,7 @@ export function RecipeDetailPanel({
     <PlannerPanel
       bodyClassName="flex min-h-0 flex-col gap-3 p-3 xl:overflow-y-auto"
       className="min-h-0 xl:h-full"
+      stateAttributes={stateAttributes}
       subtitle="Planner context."
       title="Selected Recipe"
     >
@@ -191,17 +197,28 @@ export function RecipeDetailPanel({
 
       <div className="mt-auto grid gap-2 border-t border-[var(--border-subtle)] pt-3">
         <div className="flex flex-wrap gap-2">
-          <button className={primaryButtonClass} onClick={() => onEdit(recipe)} type="button">
+          <button
+            className={primaryButtonClass}
+            disabled={!actionsEnabled}
+            onClick={() => onEdit(recipe)}
+            type="button"
+          >
             Edit
           </button>
           <button
             className={secondaryButtonClass}
+            disabled={!actionsEnabled}
             onClick={() => onDuplicate(recipe)}
             type="button"
           >
             Duplicate
           </button>
-          <button className={quietButtonClass} onClick={onRequestArchive} type="button">
+          <button
+            className={quietButtonClass}
+            disabled={!actionsEnabled}
+            onClick={onRequestArchive}
+            type="button"
+          >
             Archive
           </button>
         </div>

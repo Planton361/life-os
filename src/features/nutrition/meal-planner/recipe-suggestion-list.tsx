@@ -57,6 +57,7 @@ export function RecipeSuggestionList({
   selectedSlot,
   selectedDay,
   selectedSlotHasPlannedMeal,
+  stateAttributes,
   filter,
   sort,
   query,
@@ -72,6 +73,7 @@ export function RecipeSuggestionList({
   selectedSlot: SelectedMealSlot | null;
   selectedDay: MealPlanDay | null;
   selectedSlotHasPlannedMeal: boolean;
+  stateAttributes?: Record<string, string>;
   filter: RecipeFilter;
   sort: RecipeSort;
   query: string;
@@ -98,11 +100,14 @@ export function RecipeSuggestionList({
     fits,
     selectedMealType,
   );
+  const canResetFilters =
+    filter !== "all" || sort !== "best-fit" || query.trim().length > 0;
 
   return (
     <PlannerPanel
       bodyClassName="flex min-h-0 flex-1 flex-col gap-3 p-3"
       className="flex h-full min-h-0 flex-col"
+      stateAttributes={stateAttributes}
       subtitle={panelSubtitle}
       title="Recipe Suggestions"
     >
@@ -272,15 +277,18 @@ export function RecipeSuggestionList({
         ) : (
           <div className="rounded-[14px] border border-dashed border-[var(--border-subtle)] bg-[rgba(168,183,204,.04)] p-4">
             <p className="text-[13px] font-semibold text-[var(--text-primary)]">
-              No recipes match this filter
+              Keine passenden Rezepte
             </p>
             <p className="mt-1 text-[11px] leading-4 text-[var(--text-muted)]">
-              Clear search or use All to return to the typed mock Recipe List.
+              Rezepte erscheinen, sobald lokale Rezepte vorhanden sind oder
+              Filter gelockert werden.
             </p>
             <button
               className={quietButtonClass}
+              disabled={!canResetFilters}
               onClick={() => {
                 onFilterChange("all");
+                onSortChange("best-fit");
                 onQueryChange("");
               }}
               type="button"

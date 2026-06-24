@@ -1,3 +1,6 @@
+import type { ContentStateMeta } from "@/features/content-state";
+import type { LifeOsProfileId } from "@/features/profile-data/types";
+
 export type NutritionAccent =
   | "var(--accent-blue)"
   | "var(--accent-green)"
@@ -109,6 +112,20 @@ export type NutritionGrocerySignalViewModel = {
 };
 
 export type NutritionOverviewViewModel = {
+  profileId?: LifeOsProfileId;
+  contentStates?: {
+    page: ContentStateMeta;
+    todayNutrition: ContentStateMeta;
+    nextMeal: ContentStateMeta;
+    priorities: ContentStateMeta;
+    weekBalance: ContentStateMeta;
+    adherence: ContentStateMeta;
+    hydration: ContentStateMeta;
+    recentMeals: ContentStateMeta;
+    weightTrend: ContentStateMeta;
+    grocerySignal: ContentStateMeta;
+  };
+  actionsEnabled?: boolean;
   header: {
     eyebrow: "Life OS / Nutrition";
     title: "Nutrition Overview";

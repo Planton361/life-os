@@ -31,23 +31,32 @@ export function NutritionTargetSummary({
   profiles,
   activeProfileId,
   targets,
+  stateAttributes,
   onProfileChange,
 }: Readonly<{
   profiles: readonly NutritionProfile[];
   activeProfileId: string;
   targets: NutritionMacroTarget;
+  stateAttributes?: Record<string, string>;
   onProfileChange: (profileId: string) => void;
 }>) {
   const activeProfile =
-    profiles.find((profile) => profile.id === activeProfileId) ?? profiles[0];
+    profiles.find((profile) => profile.id === activeProfileId) ?? profiles[0] ?? null;
 
   return (
     <PlannerPanel
       bodyClassName="p-3"
-      subtitle="Targets from Nutrition Settings - local stub"
+      subtitle={
+        activeProfile
+          ? "Targets from Nutrition Settings - local stub"
+          : "Noch keine lokalen Nutrition-Ziele"
+      }
+      stateAttributes={stateAttributes}
       title="Target Profile"
     >
-      <div className="flex flex-wrap gap-2">
+      {activeProfile ? (
+        <>
+          <div className="flex flex-wrap gap-2">
         {profiles.map((profile) => {
           const isActive = profile.id === activeProfileId;
 
@@ -68,37 +77,49 @@ export function NutritionTargetSummary({
             </button>
           );
         })}
-      </div>
+          </div>
 
-      <p className="mt-2 text-[11px] leading-4 text-[var(--text-muted)]">
-        {activeProfile.description}
-      </p>
+          <p className="mt-2 text-[11px] leading-4 text-[var(--text-muted)]">
+            {activeProfile.description}
+          </p>
 
-      <div className="mt-3 grid gap-2 sm:grid-cols-2 2xl:grid-cols-4">
-        {targetOrder.map((macro) => (
-          <article
-            className="rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_20%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_5%,rgba(18,28,43,.58))] p-2.5"
-            key={macro}
-            style={accentStyle(targetAccents[macro])}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-[10px] font-semibold text-[var(--text-muted)]">
-                {macroLabels[macro]}
-              </p>
-              <p className="text-[12px] font-semibold text-[var(--text-primary)]">
-                {formatMacro(targets[macro], macroUnits[macro])}
-              </p>
-            </div>
-            <div className="mt-2">
-              <ProgressBar
-                accent={targetAccents[macro]}
-                label={`${macroLabels[macro]} target ${targets[macro]} ${macroUnits[macro]}`}
-                value={100}
-              />
-            </div>
-          </article>
-        ))}
-      </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 2xl:grid-cols-4">
+            {targetOrder.map((macro) => (
+              <article
+                className="rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_20%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_5%,rgba(18,28,43,.58))] p-2.5"
+                key={macro}
+                style={accentStyle(targetAccents[macro])}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-[10px] font-semibold text-[var(--text-muted)]">
+                    {macroLabels[macro]}
+                  </p>
+                  <p className="text-[12px] font-semibold text-[var(--text-primary)]">
+                    {formatMacro(targets[macro], macroUnits[macro])}
+                  </p>
+                </div>
+                <div className="mt-2">
+                  <ProgressBar
+                    accent={targetAccents[macro]}
+                    label={`${macroLabels[macro]} target ${targets[macro]} ${macroUnits[macro]}`}
+                    value={100}
+                  />
+                </div>
+              </article>
+            ))}
+          </div>
+        </>
+      ) : (
+        <div className="rounded-[14px] border border-dashed border-[var(--border-subtle)] bg-[rgba(168,183,204,.04)] p-4">
+          <p className="text-[14px] font-semibold text-[var(--text-primary)]">
+            Zielprofil nicht gesetzt
+          </p>
+          <p className="mt-2 text-[11px] leading-5 text-[var(--text-muted)]">
+            Keine kcal- oder Makroziele anzeigen, bis lokale Nutrition-Ziele
+            existieren.
+          </p>
+        </div>
+      )}
     </PlannerPanel>
   );
 }

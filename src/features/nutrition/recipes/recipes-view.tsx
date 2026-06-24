@@ -3,6 +3,10 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { useMemo, useState } from "react";
+import {
+  contentStateDataAttributes,
+  resolveContentStateMeta,
+} from "@/features/content-state";
 import type { MealType, Recipe } from "../meal-planner/meal-planner-types";
 import {
   primaryButtonClass,
@@ -63,11 +67,18 @@ function StatTile({
   );
 }
 
-function RecipeSummary({ stats }: Readonly<{ stats: RecipeStats }>) {
+function RecipeSummary({
+  stats,
+  stateAttributes,
+}: Readonly<{
+  stats: RecipeStats;
+  stateAttributes?: Record<string, string>;
+}>) {
   return (
     <section
       aria-labelledby="recipe-summary-heading"
       className="shrink-0 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--surface-1)] p-3 shadow-[0_8px_22px_rgba(0,0,0,.12)]"
+      {...stateAttributes}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
@@ -123,6 +134,8 @@ export function RecipesView({
 }: Readonly<{
   viewModel: RecipesViewModel;
 }>) {
+  const profileId = viewModel.profileId ?? "demo";
+  const actionsEnabled = viewModel.actionsEnabled ?? true;
   const [recipes, setRecipes] = useState<Recipe[]>(() =>
     viewModel.recipes.map(cloneRecipe),
   );
@@ -148,6 +161,28 @@ export function RecipesView({
     filteredRecipes[0] ??
     activeRecipes[0] ??
     null;
+  const contentStates =
+    viewModel.contentStates ??
+    {
+      browser: resolveContentStateMeta({
+        capacity: 8,
+        itemCount: filteredRecipes.length,
+      }),
+      page: resolveContentStateMeta({
+        capacity: 8,
+        itemCount: activeRecipes.length,
+      }),
+      selectedRecipe: resolveContentStateMeta({
+        capacity: 1,
+        itemCount: selectedRecipe ? 1 : 0,
+      }),
+      summary: resolveContentStateMeta({
+        capacity: 5,
+        itemCount: activeRecipes.length > 0 ? 5 : 0,
+      }),
+    };
+  const stateAttrs = (meta: (typeof contentStates)[keyof typeof contentStates]) =>
+    contentStateDataAttributes(meta, profileId);
 
   function openNewRecipe() {
     setEditor({
@@ -214,7 +249,11 @@ export function RecipesView({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 pb-4 xl:h-[calc(100dvh-88px)] xl:min-h-0 xl:overflow-hidden xl:pb-0">
+    <div
+      className="mx-auto flex w-full max-w-7xl flex-col gap-3 pb-4 xl:h-[calc(100dvh-88px)] xl:min-h-0 xl:overflow-hidden xl:pb-0"
+      id="recipes-page"
+      {...stateAttrs(contentStates.page)}
+    >
       <header className="shrink-0 overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[var(--surface-1)] shadow-[0_8px_22px_rgba(0,0,0,.12)]">
         <div className="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
@@ -232,7 +271,12 @@ export function RecipesView({
             <Link className={secondaryButtonClass} href="/nutrition/meal-planner">
               Meal Planner
             </Link>
-            <button className={primaryButtonClass} onClick={openNewRecipe} type="button">
+            <button
+              className={primaryButtonClass}
+              disabled={!actionsEnabled}
+              onClick={openNewRecipe}
+              type="button"
+            >
               New recipe
             </button>
           </div>
@@ -255,7 +299,10 @@ export function RecipesView({
         ) : null}
       </header>
 
-      <RecipeSummary stats={stats} />
+      <RecipeSummary
+        stateAttributes={stateAttrs(contentStates.summary)}
+        stats={stats}
+      />
 
       <div className="grid min-h-0 gap-3 xl:flex-1 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-stretch xl:overflow-hidden">
         <RecipeBrowser
@@ -272,17 +319,20 @@ export function RecipesView({
           readiness={readiness}
           recipes={filteredRecipes}
           selectedRecipeId={selectedRecipe?.id ?? null}
+          stateAttributes={stateAttrs(contentStates.browser)}
           tag={tag}
         />
 
         <RecipeDetailPanel
           confirmingArchive={confirmingArchive}
+          actionsEnabled={actionsEnabled}
           onCancelArchive={() => setConfirmingArchive(false)}
           onConfirmArchive={archiveSelectedRecipe}
           onDuplicate={duplicateSelectedRecipe}
           onEdit={openEditRecipe}
           onRequestArchive={() => setConfirmingArchive(true)}
           recipe={selectedRecipe}
+          stateAttributes={stateAttrs(contentStates.selectedRecipe)}
         />
       </div>
 
