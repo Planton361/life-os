@@ -12,6 +12,7 @@ import {
   type ReactNode,
 } from "react";
 import Link from "next/link";
+import { contentStateDataAttributes } from "@/features/content-state";
 import { cn } from "@/lib/cn";
 import type {
   AcademicWorkType,
@@ -462,12 +463,16 @@ function Panel({
   badge,
   children,
   className,
+  dataSection,
+  stateAttributes,
 }: Readonly<{
   title: string;
   subtitle?: string;
   badge?: ReactNode;
   children: ReactNode;
   className?: string;
+  dataSection?: string;
+  stateAttributes?: Record<string, string>;
 }>) {
   const id = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-section`;
 
@@ -478,6 +483,9 @@ function Panel({
         "min-w-0 overflow-hidden rounded-[var(--panel-radius)] border border-[var(--border-subtle)] bg-[var(--surface-1)] shadow-[0_8px_22px_rgba(0,0,0,.12)]",
         className,
       )}
+      data-scientific-work-section={dataSection}
+      data-literature-section={dataSection}
+      {...stateAttributes}
     >
       <div className="border-b border-[var(--border-subtle)] bg-[rgba(14,23,38,.78)] px-4 py-3 sm:px-5">
         <div className="flex min-w-0 items-start justify-between gap-3">
@@ -524,11 +532,13 @@ function EmptyState({
   description,
   actionLabel,
   onAction,
+  disabled = false,
 }: Readonly<{
   title: string;
   description: string;
   actionLabel?: string;
   onAction?: () => void;
+  disabled?: boolean;
 }>) {
   return (
     <div className="rounded-[14px] border border-dashed border-[var(--border-default)] bg-[rgba(168,183,204,.045)] p-4">
@@ -539,7 +549,12 @@ function EmptyState({
         {description}
       </p>
       {actionLabel && onAction ? (
-        <button className={cn(quietButtonClass, "mt-3")} onClick={onAction} type="button">
+        <button
+          className={cn(quietButtonClass, "mt-3")}
+          disabled={disabled}
+          onClick={onAction}
+          type="button"
+        >
           {actionLabel}
         </button>
       ) : null}
@@ -713,11 +728,13 @@ function LinkedMiniItem({
 
 function EducationSubpageHeader({
   config,
+  actionsEnabled,
   pageKind,
   onPrimaryAction,
   onSecondaryAction,
 }: Readonly<{
   config: (typeof pages)[EducationSubpageKind];
+  actionsEnabled: boolean;
   pageKind: EducationSubpageKind;
   onPrimaryAction: () => void;
   onSecondaryAction: (label: string) => void;
@@ -737,12 +754,18 @@ function EducationSubpageHeader({
           </p>
         </div>
         <div className="grid gap-2 sm:grid-cols-2 xl:flex xl:justify-end">
-          <button className={primaryButtonClass} onClick={onPrimaryAction} type="button">
+          <button
+            className={primaryButtonClass}
+            disabled={!actionsEnabled}
+            onClick={onPrimaryAction}
+            type="button"
+          >
             {config.primaryAction}
           </button>
           {config.secondaryActions.map((action, index) => (
             <button
               className={secondaryButtonClass}
+              disabled={!actionsEnabled}
               key={`education-secondary-action-${index}`}
               onClick={() => onSecondaryAction(action)}
               type="button"
@@ -775,6 +798,7 @@ function EducationSubpageHeader({
 function SearchAndFilters({
   pageKind,
   search,
+  stateAttributes,
   fieldFilter,
   statusFilter,
   thesisFilter,
@@ -797,6 +821,7 @@ function SearchAndFilters({
 }: Readonly<{
   pageKind: EducationSubpageKind;
   search: string;
+  stateAttributes?: Record<string, string>;
   fieldFilter: string;
   statusFilter: string;
   thesisFilter: string;
@@ -821,6 +846,9 @@ function SearchAndFilters({
     <section
       aria-label="Education filters"
       className="rounded-[18px] border border-[var(--border-subtle)] bg-[var(--surface-1)] p-3"
+      data-scientific-work-section="search-filter"
+      data-literature-section="search-filter"
+      {...stateAttributes}
     >
       <div className="grid gap-3 xl:grid-cols-[minmax(240px,360px)_1fr]">
         <label htmlFor={`${pageKind}-search`}>
@@ -1341,6 +1369,9 @@ export function EducationWorkspacePage({
   const dismissToast = useCallback(() => setToast(null), []);
   const query = normalize(search);
   const config = pages[pageKind];
+  const actionsEnabled = viewModel.actionsEnabled;
+  const stateAttrs = (key: keyof EducationWorkspaceViewModel["contentStates"]) =>
+    contentStateDataAttributes(viewModel.contentStates[key], viewModel.profileId);
 
   const filteredIdeas = useMemo(
     () =>
@@ -1536,6 +1567,7 @@ export function EducationWorkspacePage({
       : null;
 
   function openDialog(kind: DialogKind, context: LinkContext = {}) {
+    if (!actionsEnabled) return;
     setInspector(null);
     setDialogError(null);
 
@@ -1877,8 +1909,14 @@ export function EducationWorkspacePage({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-[2208px] flex-col gap-4 pb-8">
+    <div
+      className="mx-auto flex w-full max-w-[2208px] flex-col gap-4 pb-8"
+      data-literature-section="page"
+      data-scientific-work-section="page"
+      {...stateAttrs("page")}
+    >
       <EducationSubpageHeader
+        actionsEnabled={actionsEnabled}
         config={config}
         onPrimaryAction={runPrimaryAction}
         onSecondaryAction={runSecondaryAction}
@@ -1903,6 +1941,7 @@ export function EducationWorkspacePage({
         relevanceFilter={relevanceFilter}
         reviewFilter={reviewFilter}
         search={search}
+        stateAttributes={stateAttrs("filters")}
         statusFilter={statusFilter}
         thesisFilter={thesisFilter}
         typeFilter={typeFilter}
@@ -1914,6 +1953,8 @@ export function EducationWorkspacePage({
           <Panel
             badge={<Pill accent={ideaAccent}>{optionLabel(masterThesis.currentPhase)}</Pill>}
             className="border-[rgba(91,124,250,.30)]"
+            dataSection="master-thesis-focus"
+            stateAttributes={stateAttrs("masterThesisFocus")}
             subtitle="Thesis direction, evidence and next action stay inside the academic workbench."
             title="Master Thesis Focus"
           >
@@ -1948,6 +1989,7 @@ export function EducationWorkspacePage({
                 <div className="flex flex-wrap gap-2">
                   <button
                     className={primaryButtonClass}
+                    disabled={!actionsEnabled}
                     onClick={() => openDialog("thesis-action")}
                     type="button"
                   >
@@ -1955,6 +1997,7 @@ export function EducationWorkspacePage({
                   </button>
                   <button
                     className={secondaryButtonClass}
+                    disabled={!actionsEnabled}
                     onClick={() =>
                       openDialog("note", {
                         ideaId: masterThesis.linkedIdeaId,
@@ -1967,6 +2010,7 @@ export function EducationWorkspacePage({
                   </button>
                   <button
                     className={secondaryButtonClass}
+                    disabled={!masterThesis.linkedIdeaId}
                     onClick={() => setInspector({ type: "thesis" })}
                     type="button"
                   >
@@ -2006,15 +2050,17 @@ export function EducationWorkspacePage({
           <div className="grid gap-4 xl:grid-cols-2">
             <Panel
               badge={<Pill accent={ideaAccent}>{promisingIdeas.length}</Pill>}
+              dataSection="research-ideas"
+              stateAttributes={stateAttrs("researchIdeas")}
               subtitle="Promising and active academic ideas with thesis potential."
               title="Research Ideas"
             >
               {promisingIdeas.length === 0 ? (
                 <EmptyState
-                  actionLabel="Add research idea"
-                  description="No high-potential idea matches the current filters."
-                  onAction={() => openDialog("idea")}
-                  title="No promising ideas visible"
+                  actionLabel={actionsEnabled ? "Add research idea" : undefined}
+                  description="Research-Ideen erscheinen hier, sobald lokale Ideen existieren."
+                  onAction={actionsEnabled ? () => openDialog("idea") : undefined}
+                  title="Noch keine Research-Ideen"
                 />
               ) : (
                 <div className="grid gap-3">
@@ -2030,15 +2076,17 @@ export function EducationWorkspacePage({
             </Panel>
             <Panel
               badge={<Pill accent={questionAccent}>{openIdeaQuestions.length}</Pill>}
+              dataSection="research-questions"
+              stateAttributes={stateAttrs("researchQuestions")}
               subtitle="Open questions that shape the next scientific work decision."
               title="Research Questions"
             >
               {openIdeaQuestions.length === 0 ? (
                 <EmptyState
-                  actionLabel="Capture question"
-                  description="No open question matches the current filters."
-                  onAction={() => openDialog("question")}
-                  title="No open questions"
+                  actionLabel={actionsEnabled ? "Capture question" : undefined}
+                  description="Forschungsfragen erscheinen hier, sobald lokale Fragen existieren."
+                  onAction={actionsEnabled ? () => openDialog("question") : undefined}
+                  title="Noch keine Forschungsfragen"
                 />
               ) : (
                 <div className="grid gap-3">
@@ -2059,15 +2107,15 @@ export function EducationWorkspacePage({
           <div className="grid gap-4 xl:grid-cols-2">
             <Panel
               badge={<Pill>{activeFields.length} active</Pill>}
+              dataSection="research-fields"
+              stateAttributes={stateAttrs("researchFields")}
               subtitle="Fields and topic clusters that hold the academic work context."
               title="Research Fields"
             >
               {activeFields.length === 0 ? (
                 <EmptyState
-                  actionLabel="Add field"
-                  description="No active field matches the current filters."
-                  onAction={() => openDialog("field")}
-                  title="No active fields found"
+                  description="Forschungsfelder erscheinen hier, sobald lokale Felder existieren."
+                  title="Noch keine Forschungsfelder"
                 />
               ) : (
                 <div className="grid gap-3">
@@ -2083,15 +2131,15 @@ export function EducationWorkspacePage({
             </Panel>
             <Panel
               badge={<Pill accent={literatureAccent}>{scientificWorkItems.length}</Pill>}
+              dataSection="scientific-work-papers"
+              stateAttributes={stateAttrs("scientificWorkPapers")}
               subtitle="Hausarbeiten, papers, presentations and research projects in progress."
               title="Scientific Work / Papers"
             >
               {scientificWorkItems.length === 0 ? (
                 <EmptyState
-                  actionLabel="Add research idea"
-                  description="No academic work item matches the current filters."
-                  onAction={() => openDialog("idea")}
-                  title="No scientific work items"
+                  description="Wissenschaftliche Arbeiten erscheinen hier, sobald lokale Work Items existieren."
+                  title="Noch keine wissenschaftlichen Arbeiten"
                 />
               ) : (
                 <div className="grid gap-2">
@@ -2109,15 +2157,15 @@ export function EducationWorkspacePage({
 
           <Panel
             badge={<Pill>{recentResearchNotes.length} recent</Pill>}
+            dataSection="recent-research-notes"
+            stateAttributes={stateAttrs("recentResearchNotes")}
             subtitle="Recent notes and thinking traces without making notes a separate sidebar page."
             title="Recent Research Notes"
           >
             {recentResearchNotes.length === 0 ? (
               <EmptyState
-                actionLabel="Capture research note"
-                description="No research note matches the current filters."
-                onAction={() => openDialog("note")}
-                title="No recent research notes"
+                description="Research-Notizen erscheinen hier, sobald lokale Notizen existieren."
+                title="Noch keine Research-Notizen"
               />
             ) : (
               <div className="grid gap-3 lg:grid-cols-2">
@@ -2233,15 +2281,21 @@ export function EducationWorkspacePage({
         <>
           <Panel
             badge={<Pill accent={literatureAccent}>{filteredLiterature.length} sources</Pill>}
-            subtitle="Reading status and extraction queue. Mock sources are UI examples, not verified citations."
+            dataSection="literature-queue"
+            stateAttributes={stateAttrs("literatureQueue")}
+            subtitle={
+              viewModel.profileId === "demo"
+                ? "Reading status and extraction queue. Mock sources are UI examples, not verified citations."
+                : "Quellen erscheinen hier, sobald lokale Literatureinträge existieren."
+            }
             title="Literature Queue"
           >
             {filteredLiterature.length === 0 ? (
               <EmptyState
-                actionLabel="Add literature"
-                description="No source matches the current filters. Add one locally or broaden the filters."
-                onAction={() => openDialog("literature")}
-                title="No literature found"
+                actionLabel={actionsEnabled ? "Add literature" : undefined}
+                description="Quellen erscheinen hier, sobald lokale Literatureinträge existieren."
+                onAction={actionsEnabled ? () => openDialog("literature") : undefined}
+                title="Noch keine Literatur"
               />
             ) : (
               <div className="space-y-4">
@@ -2284,13 +2338,15 @@ export function EducationWorkspacePage({
           <div className="grid gap-4 xl:grid-cols-3">
             <Panel
               badge={<Pill accent={ideaAccent}>{extractionFocus.length}</Pill>}
+              dataSection="extraction-focus"
+              stateAttributes={stateAttrs("extractionFocus")}
               subtitle="Sources where evidence extraction is currently the next work."
               title="Extraction Focus"
             >
               {extractionFocus.length === 0 ? (
                 <EmptyState
-                  description="Move a source to Extracting when notes or arguments need to be pulled out."
-                  title="No source is extracting"
+                  description="Extraktion erscheint, sobald eine lokale Quelle in Bearbeitung ist."
+                  title="Keine Quelle in Extraktion"
                 />
               ) : (
                 <div className="grid gap-2">
@@ -2306,20 +2362,34 @@ export function EducationWorkspacePage({
             </Panel>
             <Panel
               badge={<Pill accent={literatureAccent}>{highRelevanceSources.length}</Pill>}
+              dataSection="high-relevance-sources"
+              stateAttributes={stateAttrs("highRelevanceSources")}
               subtitle="High relevance sources for reading and review priority."
               title="High Relevance Sources"
             >
-              <div className="grid gap-2">
-                {highRelevanceSources.slice(0, 5).map((item) => (
-                  <LinkedMiniItem
-                    key={item.id}
-                    meta={`${literatureStatusMeta[item.status].label} · ${item.nextAction}`}
-                    title={item.title}
-                  />
-                ))}
-              </div>
+              {highRelevanceSources.length === 0 ? (
+                <EmptyState
+                  description="Priorisierte Quellen erscheinen hier nach lokaler Relevanzmarkierung."
+                  title="Keine priorisierten Quellen"
+                />
+              ) : (
+                <div className="grid gap-2">
+                  {highRelevanceSources.slice(0, 5).map((item) => (
+                    <LinkedMiniItem
+                      key={item.id}
+                      meta={`${literatureStatusMeta[item.status].label} · ${item.nextAction}`}
+                      title={item.title}
+                    />
+                  ))}
+                </div>
+              )}
             </Panel>
-            <Panel subtitle="Small reading-state signals, not analytics." title="Literature Status Summary">
+            <Panel
+              dataSection="status-summary"
+              stateAttributes={stateAttrs("statusSummary")}
+              subtitle="Small reading-state signals, not analytics."
+              title="Literature Status Summary"
+            >
               <div className="grid gap-2">
                 {literatureStatuses.map((status) => (
                   <Metric

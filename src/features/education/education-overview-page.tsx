@@ -13,6 +13,7 @@ import {
   type ReactNode,
 } from "react";
 import Link from "next/link";
+import { contentStateDataAttributes } from "@/features/content-state";
 import { cn } from "@/lib/cn";
 import type {
   AcademicRhythmSignal,
@@ -330,12 +331,16 @@ function EducationPanel({
   badge,
   children,
   className,
+  dataSection,
+  stateAttributes,
 }: Readonly<{
   title: string;
   subtitle?: string;
   badge?: ReactNode;
   children: ReactNode;
   className?: string;
+  dataSection?: string;
+  stateAttributes?: Record<string, string>;
 }>) {
   const id = sectionId(title);
 
@@ -346,6 +351,8 @@ function EducationPanel({
         "min-w-0 overflow-hidden rounded-[var(--panel-radius)] border border-[var(--border-subtle)] bg-[var(--surface-1)] shadow-[0_8px_22px_rgba(0,0,0,.12)]",
         className,
       )}
+      data-education-section={dataSection}
+      {...stateAttributes}
     >
       <div className="border-b border-[var(--border-subtle)] bg-[rgba(14,23,38,.78)] px-4 py-3 sm:px-5">
         <div className="flex min-w-0 items-start justify-between gap-3">
@@ -664,12 +671,14 @@ function TextStat({
 
 function EducationPageHeader({
   viewModel,
+  actionsEnabled,
   onAddIdea,
   onAddLiterature,
   onAddNote,
   onAddQuestion,
 }: Readonly<{
   viewModel: EducationOverviewViewModel;
+  actionsEnabled: boolean;
   onAddIdea: () => void;
   onAddLiterature: () => void;
   onAddNote: () => void;
@@ -690,21 +699,33 @@ function EducationPageHeader({
           </p>
         </div>
         <div className="grid gap-2 sm:grid-cols-2 xl:flex xl:justify-end">
-          <button className={primaryButtonClass} onClick={onAddIdea} type="button">
+          <button
+            className={primaryButtonClass}
+            disabled={!actionsEnabled}
+            onClick={onAddIdea}
+            type="button"
+          >
             Add research idea
           </button>
           <button
             className={secondaryButtonClass}
+            disabled={!actionsEnabled}
             onClick={onAddLiterature}
             type="button"
           >
             Add literature
           </button>
-          <button className={secondaryButtonClass} onClick={onAddNote} type="button">
+          <button
+            className={secondaryButtonClass}
+            disabled={!actionsEnabled}
+            onClick={onAddNote}
+            type="button"
+          >
             Capture research note
           </button>
           <button
             className={secondaryButtonClass}
+            disabled={!actionsEnabled}
             onClick={onAddQuestion}
             type="button"
           >
@@ -736,6 +757,7 @@ function EducationControls({
   relevanceFilter,
   reviewNeededFilter,
   search,
+  stateAttributes,
   thesisFilter,
   onActiveSegmentChange,
   onFieldFilterChange,
@@ -754,6 +776,7 @@ function EducationControls({
   relevanceFilter: string;
   reviewNeededFilter: string;
   search: string;
+  stateAttributes?: Record<string, string>;
   thesisFilter: string;
   onActiveSegmentChange: (value: EducationSegment) => void;
   onFieldFilterChange: (value: string) => void;
@@ -768,6 +791,8 @@ function EducationControls({
     <section
       aria-label="Education filters"
       className="rounded-[18px] border border-[var(--border-subtle)] bg-[var(--surface-1)] p-3"
+      data-education-section="filters"
+      {...stateAttributes}
     >
       <div className="grid gap-3 xl:grid-cols-[minmax(240px,360px)_1fr]">
         <label className="block" htmlFor="education-search">
@@ -899,6 +924,7 @@ function EducationControls({
 }
 
 function CurrentResearchFocusCard({
+  actionsEnabled,
   focusIdea,
   focusField,
   focusLiterature,
@@ -906,7 +932,9 @@ function CurrentResearchFocusCard({
   focusQuestions,
   onAddSource,
   onOpenFocus,
+  stateAttributes,
 }: Readonly<{
+  actionsEnabled: boolean;
   focusIdea: ResearchIdea | null;
   focusField: ResearchField | null;
   focusLiterature: readonly LiteratureItem[];
@@ -914,6 +942,7 @@ function CurrentResearchFocusCard({
   focusQuestions: readonly ResearchQuestion[];
   onAddSource: () => void;
   onOpenFocus: () => void;
+  stateAttributes?: Record<string, string>;
 }>) {
   const reviewedCount = focusLiterature.filter((item) =>
     ["reviewed", "used"].includes(item.status),
@@ -931,6 +960,8 @@ function CurrentResearchFocusCard({
     <section
       aria-labelledby="current-research-focus-heading"
       className="overflow-hidden rounded-[24px] border border-[rgba(91,124,250,.30)] bg-[linear-gradient(180deg,rgba(18,28,43,.96),rgba(15,23,36,.96))] shadow-[0_12px_30px_rgba(0,0,0,.18)]"
+      data-education-section="current-research-focus"
+      {...stateAttributes}
     >
       <div className="border-b border-[var(--border-subtle)] bg-[rgba(91,124,250,.08)] px-4 py-4 sm:px-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -1001,10 +1032,10 @@ function CurrentResearchFocusCard({
             </>
           ) : (
             <EducationEmptyState
-              actionLabel="Add research idea"
-              description="There is no local research focus yet. Start with a research idea, then connect literature, notes and questions."
-              onAction={onOpenFocus}
-              title="No research focus yet"
+              actionLabel={actionsEnabled ? "Add research idea" : undefined}
+              description="Lege später eine lokale Research-Idee an, um Felder, Literatur, Notizen und offene Fragen zu verbinden."
+              onAction={actionsEnabled ? onOpenFocus : undefined}
+              title="Noch kein Forschungsfokus"
             />
           )}
         </div>
@@ -1045,11 +1076,17 @@ function CurrentResearchFocusCard({
             ) : null}
           </div>
           <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-            <button className={primaryButtonClass} onClick={onOpenFocus} type="button">
+            <button
+              className={primaryButtonClass}
+              disabled={!hasFocus && !actionsEnabled}
+              onClick={onOpenFocus}
+              type="button"
+            >
               {hasFocus ? "Open focus" : "Add idea"}
             </button>
             <button
               className={secondaryButtonClass}
+              disabled={!actionsEnabled}
               onClick={onAddSource}
               type="button"
             >
@@ -1067,22 +1104,26 @@ function ResearchIdeaPipeline({
   selectedIdeaId,
   onAddNote,
   onOpenIdea,
+  stateAttributes,
 }: Readonly<{
   ideas: readonly ResearchIdea[];
   selectedIdeaId: string | null;
   onAddNote: (idea: ResearchIdea) => void;
   onOpenIdea: (idea: ResearchIdea) => void;
+  stateAttributes?: Record<string, string>;
 }>) {
   return (
     <EducationPanel
       badge={<EducationPill accent={ideaAccent}>{ideas.length} ideas</EducationPill>}
+      dataSection="research-idea-pipeline"
+      stateAttributes={stateAttributes}
       subtitle="Track ideas by status, thesis potential, evidence and next academic action."
       title="Research Idea Pipeline"
     >
       {ideas.length === 0 ? (
         <EducationEmptyState
-          description="Use Add research idea to start a local mock idea and connect notes, questions and sources later."
-          title="No research ideas match this view"
+          description="Research-Ideen erscheinen hier, sobald lokale Ideen existieren."
+          title="Noch keine Research-Ideen"
         />
       ) : (
         <div className="grid gap-3">
@@ -1179,6 +1220,7 @@ function LiteratureQueue({
   selectedLiteratureId,
   onAddNote,
   onOpenLiterature,
+  stateAttributes,
 }: Readonly<{
   ideas: readonly ResearchIdea[];
   fields: readonly ResearchField[];
@@ -1186,6 +1228,7 @@ function LiteratureQueue({
   selectedLiteratureId: string | null;
   onAddNote: (item: LiteratureItem) => void;
   onOpenLiterature: (item: LiteratureItem) => void;
+  stateAttributes?: Record<string, string>;
 }>) {
   const queueStatuses: readonly LiteratureStatus[] = literatureStatuses;
 
@@ -1196,13 +1239,15 @@ function LiteratureQueue({
           {literature.length} sources
         </EducationPill>
       }
+      dataSection="literature-queue"
+      stateAttributes={stateAttributes}
       subtitle="Compact reading queue, not a full literature database."
       title="Literature Queue"
     >
       {literature.length === 0 ? (
         <EducationEmptyState
-          description="Use Add literature to create a local source with status, relevance, linked idea and next action."
-          title="No literature matches this view"
+          description="Quellen erscheinen hier, sobald lokale Literatureinträge existieren."
+          title="Noch keine Literatur"
         />
       ) : (
         <div className="space-y-4">
@@ -1391,21 +1436,25 @@ function ResearchFieldsPanel({
   fields,
   selectedFieldId,
   onSelectField,
+  stateAttributes,
 }: Readonly<{
   fields: readonly ResearchField[];
   selectedFieldId: string;
   onSelectField: (fieldId: string) => void;
+  stateAttributes?: Record<string, string>;
 }>) {
   return (
     <EducationPanel
       badge={<EducationPill accent={educationAccent}>{fields.length} fields</EducationPill>}
+      dataSection="research-fields"
+      stateAttributes={stateAttributes}
       subtitle="Theme clusters for active scientific work. No graph or canvas in this MVP."
       title="Research Fields"
     >
       {fields.length === 0 ? (
         <EducationEmptyState
           description="Fields will group ideas, literature and open questions once research context is connected."
-          title="No research fields match this view"
+          title="Noch keine Forschungsfelder"
         />
       ) : (
         <div className="grid gap-3 lg:grid-cols-2">
@@ -1461,23 +1510,23 @@ function ResearchFieldsPanel({
 
 function RecentResearchNotes({
   notes,
-  onAddNote,
+  stateAttributes,
 }: Readonly<{
   notes: readonly ResearchNote[];
-  onAddNote: () => void;
+  stateAttributes?: Record<string, string>;
 }>) {
   return (
     <EducationPanel
       badge={<EducationPill accent={educationAccent}>{notes.length} notes</EducationPill>}
+      dataSection="recent-research-notes"
+      stateAttributes={stateAttributes}
       subtitle="Evidence, arguments and decisions. No automatic knowledge processing."
       title="Recent Research Notes"
     >
       {notes.length === 0 ? (
         <EducationEmptyState
-          actionLabel="Capture research note"
-          description="Capture a local note to keep evidence and reasoning visible before later persistence exists."
-          onAction={onAddNote}
-          title="No research notes match this view"
+          description="Research-Notizen erscheinen hier, sobald lokale Notizen existieren."
+          title="Noch keine Research-Notizen"
         />
       ) : (
         <div className="grid gap-3">
@@ -1601,13 +1650,17 @@ function EducationMethodNotes({
 
 function StatsStrip({
   stats,
+  stateAttributes,
 }: Readonly<{
   stats: EducationOverviewStats;
+  stateAttributes?: Record<string, string>;
 }>) {
   return (
     <section
       aria-label="Education summary"
       className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4"
+      data-education-section="summary"
+      {...stateAttributes}
     >
       <TextStat
         accent={ideaAccent}
@@ -2944,6 +2997,9 @@ export function EducationOverviewPage({
   }, []);
 
   const query = normalize(search);
+  const actionsEnabled = viewModel.actionsEnabled;
+  const stateAttrs = (key: keyof EducationOverviewViewModel["contentStates"]) =>
+    contentStateDataAttributes(viewModel.contentStates[key], viewModel.profileId);
 
   const focusIdea = useMemo(
     () => ideas.find((idea) => idea.id === focusIdeaId) ?? ideas[0] ?? null,
@@ -3085,24 +3141,28 @@ export function EducationOverviewPage({
   }
 
   function openIdeaDialog() {
+    if (!actionsEnabled) return;
     setInspector(null);
     setDialogContext({});
     setActiveDialog("idea");
   }
 
   function openLiteratureDialog(context: LinkContext = {}) {
+    if (!actionsEnabled) return;
     setInspector(null);
     setDialogContext(context);
     setActiveDialog("literature");
   }
 
   function openNoteDialog(context: LinkContext = {}) {
+    if (!actionsEnabled) return;
     setInspector(null);
     setDialogContext(context);
     setActiveDialog("note");
   }
 
   function openQuestionDialog(context: LinkContext = {}) {
+    if (!actionsEnabled) return;
     setInspector(null);
     setDialogContext(context);
     setActiveDialog("question");
@@ -3310,9 +3370,12 @@ export function EducationOverviewPage({
   return (
     <div
       className="mx-auto flex w-full max-w-[2208px] flex-col gap-4 pb-8"
+      data-education-section="page"
       id="education-page"
+      {...stateAttrs("page")}
     >
       <EducationPageHeader
+        actionsEnabled={actionsEnabled}
         onAddIdea={openIdeaDialog}
         onAddLiterature={() => openLiteratureDialog()}
         onAddNote={() => openNoteDialog()}
@@ -3327,7 +3390,7 @@ export function EducationOverviewPage({
         />
       ) : null}
 
-      <StatsStrip stats={stats} />
+      <StatsStrip stats={stats} stateAttributes={stateAttrs("summary")} />
 
       <EducationControls
         activeSegment={activeSegment}
@@ -3346,6 +3409,7 @@ export function EducationOverviewPage({
         relevanceFilter={relevanceFilter}
         reviewNeededFilter={reviewNeededFilter}
         search={search}
+        stateAttributes={stateAttrs("filters")}
         thesisFilter={thesisFilter}
       />
 
@@ -3358,6 +3422,7 @@ export function EducationOverviewPage({
 
       {activeSegment === "overview" ? (
         <CurrentResearchFocusCard
+          actionsEnabled={actionsEnabled}
           focusField={focusField}
           focusIdea={focusIdea}
           focusLiterature={focusLiterature}
@@ -3378,6 +3443,7 @@ export function EducationOverviewPage({
               ? setInspector({ type: "idea", id: focusIdea.id })
               : openIdeaDialog()
           }
+          stateAttributes={stateAttrs("currentResearchFocus")}
         />
       ) : null}
 
@@ -3391,6 +3457,7 @@ export function EducationOverviewPage({
               }
               onOpenIdea={(idea) => setInspector({ type: "idea", id: idea.id })}
               selectedIdeaId={inspector?.type === "idea" ? inspector.id : null}
+              stateAttributes={stateAttrs("researchIdeaPipeline")}
             />
           ) : null}
 
@@ -3412,6 +3479,7 @@ export function EducationOverviewPage({
               selectedLiteratureId={
                 inspector?.type === "literature" ? inspector.id : null
               }
+              stateAttributes={stateAttrs("literatureQueue")}
             />
           ) : null}
 
@@ -3439,6 +3507,7 @@ export function EducationOverviewPage({
               fields={filteredFields}
               onSelectField={(fieldId) => setFieldFilter(fieldId)}
               selectedFieldId={fieldFilter}
+              stateAttributes={stateAttrs("researchFields")}
             />
           ) : null}
 
@@ -3446,7 +3515,7 @@ export function EducationOverviewPage({
             <>
               <RecentResearchNotes
                 notes={filteredNotes}
-                onAddNote={() => openNoteDialog()}
+                stateAttributes={stateAttrs("recentResearchNotes")}
               />
               <AcademicRhythm rhythm={viewModel.rhythm} />
             </>

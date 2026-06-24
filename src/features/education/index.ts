@@ -9,6 +9,7 @@ export type {
   AcademicWorkType,
   CurrentResearchFocus,
   EducationOverviewStats,
+  EducationProfileId,
   EducationOverviewViewModel,
   EducationSegment,
   EducationSubpageKind,

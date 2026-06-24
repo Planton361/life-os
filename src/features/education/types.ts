@@ -1,3 +1,7 @@
+import type { ContentStateMeta } from "@/features/content-state";
+
+export type EducationProfileId = "demo" | "empty" | "manual";
+
 export type ResearchIdeaStatus =
   | "idea"
   | "exploring"
@@ -259,6 +263,18 @@ export type EducationOverviewStats = {
 };
 
 export type EducationOverviewViewModel = {
+  profileId: EducationProfileId;
+  actionsEnabled: boolean;
+  contentStates: {
+    page: ContentStateMeta;
+    summary: ContentStateMeta;
+    filters: ContentStateMeta;
+    currentResearchFocus: ContentStateMeta;
+    researchIdeaPipeline: ContentStateMeta;
+    researchFields: ContentStateMeta;
+    literatureQueue: ContentStateMeta;
+    recentResearchNotes: ContentStateMeta;
+  };
   header: {
     eyebrow: string;
     title: string;
@@ -288,6 +304,22 @@ export type EducationOverviewViewModel = {
 };
 
 export type EducationWorkspaceViewModel = {
+  profileId: EducationProfileId;
+  actionsEnabled: boolean;
+  contentStates: {
+    page: ContentStateMeta;
+    filters: ContentStateMeta;
+    masterThesisFocus: ContentStateMeta;
+    researchIdeas: ContentStateMeta;
+    researchQuestions: ContentStateMeta;
+    researchFields: ContentStateMeta;
+    scientificWorkPapers: ContentStateMeta;
+    recentResearchNotes: ContentStateMeta;
+    literatureQueue: ContentStateMeta;
+    extractionFocus: ContentStateMeta;
+    highRelevanceSources: ContentStateMeta;
+    statusSummary: ContentStateMeta;
+  };
   ideas: ResearchIdea[];
   fields: ResearchField[];
   literature: LiteratureItem[];
@@ -298,6 +330,17 @@ export type EducationWorkspaceViewModel = {
 };
 
 export type LearningLogViewModel = {
+  profileId: EducationProfileId;
+  actionsEnabled: boolean;
+  contentStates: {
+    page: ContentStateMeta;
+    filters: ContentStateMeta;
+    currentLearningFocus: ContentStateMeta;
+    weeklyRhythm: ContentStateMeta;
+    trackSummary: ContentStateMeta;
+    activeTracks: ContentStateMeta;
+    practiceQueue: ContentStateMeta;
+  };
   tracks: LearningTrack[];
   sessions: LearningSession[];
   practiceQueue: PracticeQueueItem[];

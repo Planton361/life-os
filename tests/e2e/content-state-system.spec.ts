@@ -414,6 +414,50 @@ const resourcesBlockedDemoStrings = [
   "No local entry",
 ] as const;
 
+const educationOverviewBlockedDemoStrings = [
+  "KI-Agenten als persönliche Produktivitätsassistenten",
+  "Human-AI Interaction",
+  "Personal Knowledge Management",
+  "Wie kann Review-Pflicht Vertrauen in Agentenoutputs erhöhen?",
+  "Human-AI Collaboration in Knowledge Work",
+  "Designing Calm Technology",
+  "3 Kernquellen lesen",
+  "5 ideas",
+  "6 fields",
+] as const;
+
+const scientificWorkBlockedDemoStrings = [
+  "Masterarbeit: KI-gestützte persönliche Produktivitätssysteme",
+  "Local profile state",
+  "Wie kann Review-Pflicht Vertrauen und Kontrolle",
+  "Forschungsfrage schärfen und 5 Kernquellen prüfen",
+  "Forschungsfrage ist noch zu breit",
+  "KI-Agenten als persönliche Produktivitätsassistenten",
+  "Life OS als persönliches Wissens- und Steuerungssystem",
+  "18%",
+] as const;
+
+const literatureBlockedDemoStrings = [
+  "Personal Knowledge Management Revisited",
+  "Self-Regulated Learning and Digital Tools",
+  "Human-AI Collaboration in Knowledge Work",
+  "Designing Calm Technology",
+  "Privacy by Design in Personal Data Systems",
+  "Mock sources",
+  "5 sources",
+] as const;
+
+const learningLogBlockedDemoStrings = [
+  "Java / Hyperskill",
+  "Collections",
+  "Hyperskill: Collections Practice",
+  "Java Foundations",
+  "41%",
+  "3h 20m",
+  "4 tracks",
+  "5 practice items",
+] as const;
+
 async function expectNoMainStrings(
   page: Page,
   blockedStrings: readonly string[],
@@ -476,6 +520,159 @@ async function expectResourcesWidgetContracts(page: Page, profile: ProfileId) {
     page.locator('[data-resources-section="relation-inspector"]'),
     profile,
     "1",
+  );
+}
+
+async function expectEducationOverviewContracts(page: Page, profile: ProfileId) {
+  await expectWidgetContract(page.locator("#education-page"), profile, "8");
+  await expectWidgetContract(
+    page.locator('[data-education-section="summary"]'),
+    profile,
+    "4",
+  );
+  await expectWidgetContract(
+    page.locator('[data-education-section="filters"]'),
+    profile,
+    "1",
+  );
+  await expectWidgetContract(
+    page.locator('[data-education-section="current-research-focus"]'),
+    profile,
+    "1",
+  );
+  await expectWidgetContract(
+    page.locator('[data-education-section="research-idea-pipeline"]'),
+    profile,
+    "5",
+  );
+  await expectWidgetContract(
+    page.locator('[data-education-section="research-fields"]'),
+    profile,
+    "6",
+  );
+  await expectWidgetContract(
+    page.locator('[data-education-section="literature-queue"]'),
+    profile,
+    "5",
+  );
+  await expectWidgetContract(
+    page.locator('[data-education-section="recent-research-notes"]'),
+    profile,
+    "5",
+  );
+}
+
+async function expectScientificWorkContracts(page: Page, profile: ProfileId) {
+  await expectWidgetContract(
+    page.locator('[data-scientific-work-section="page"]'),
+    profile,
+    "8",
+  );
+  await expectWidgetContract(
+    page.locator('[data-scientific-work-section="search-filter"]'),
+    profile,
+    "1",
+  );
+  await expectWidgetContract(
+    page.locator('[data-scientific-work-section="master-thesis-focus"]'),
+    profile,
+    "1",
+  );
+  await expectWidgetContract(
+    page.locator('[data-scientific-work-section="research-ideas"]'),
+    profile,
+    "4",
+  );
+  await expectWidgetContract(
+    page.locator('[data-scientific-work-section="research-questions"]'),
+    profile,
+    "5",
+  );
+  await expectWidgetContract(
+    page.locator('[data-scientific-work-section="research-fields"]'),
+    profile,
+    "4",
+  );
+  await expectWidgetContract(
+    page.locator('[data-scientific-work-section="scientific-work-papers"]'),
+    profile,
+    "6",
+  );
+  await expectWidgetContract(
+    page.locator('[data-scientific-work-section="recent-research-notes"]'),
+    profile,
+    "5",
+  );
+}
+
+async function expectLiteratureContracts(page: Page, profile: ProfileId) {
+  await expectWidgetContract(
+    page.locator('[data-literature-section="page"]'),
+    profile,
+    "8",
+  );
+  await expectWidgetContract(
+    page.locator('[data-literature-section="search-filter"]'),
+    profile,
+    "1",
+  );
+  await expectWidgetContract(
+    page.locator('[data-literature-section="literature-queue"]'),
+    profile,
+    "5",
+  );
+  await expectWidgetContract(
+    page.locator('[data-literature-section="extraction-focus"]'),
+    profile,
+    "3",
+  );
+  await expectWidgetContract(
+    page.locator('[data-literature-section="high-relevance-sources"]'),
+    profile,
+    "5",
+  );
+  await expectWidgetContract(
+    page.locator('[data-literature-section="status-summary"]'),
+    profile,
+    "6",
+  );
+}
+
+async function expectLearningLogContracts(page: Page, profile: ProfileId) {
+  await expectWidgetContract(
+    page.locator('[data-learning-log-section="page"]'),
+    profile,
+    "8",
+  );
+  await expectWidgetContract(
+    page.locator('[data-learning-log-section="search-filter"]'),
+    profile,
+    "1",
+  );
+  await expectWidgetContract(
+    page.locator('[data-learning-log-section="current-learning-focus"]'),
+    profile,
+    "1",
+  );
+  await expectWidgetContract(
+    page.locator('[data-learning-log-section="weekly-rhythm"]'),
+    profile,
+    "7",
+  );
+  await expectWidgetContract(
+    page.locator('[data-learning-log-section="track-summary"]'),
+    profile,
+    "4",
+  );
+  await expectWidgetContract(
+    page.locator('[data-learning-log-section="active-tracks"]'),
+    profile,
+    "4",
+  );
+  await expectWidgetContract(
+    page.locator('[data-learning-log-section="practice-queue"]'),
+    profile,
+    "5",
   );
 }
 
@@ -1327,6 +1524,151 @@ test.describe("Portfolio content states", () => {
     await page.goto("/portfolio?view=skills");
     await expect(page.getByText("Noch keine Skills im Portfolio")).toBeVisible();
     await expectNoMainStrings(page, portfolioBlockedDemoStrings, "portfolio");
+  });
+});
+
+test.describe("Education content states", () => {
+  test("Education Overview demo keeps the filled reference shell", async ({
+    page,
+  }) => {
+    await setProfile(page, "demo");
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/education");
+    });
+
+    await expectEducationOverviewContracts(page, "demo");
+    await expect(page.locator("#education-page")).toHaveAttribute(
+      "data-content-state",
+      "filled",
+    );
+    await expect(
+      page.getByRole("heading", {
+        name: "KI-Agenten als persönliche Produktivitätsassistenten",
+      }),
+    ).toBeVisible();
+  });
+
+  test("Education Overview empty blocks demo data and keeps section selectors", async ({
+    page,
+  }) => {
+    await setProfile(page, "empty");
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/education");
+    });
+
+    await expectEducationOverviewContracts(page, "empty");
+    await expect(page.locator("#education-page")).toHaveAttribute(
+      "data-content-state",
+      "empty",
+    );
+    await expectNoMainStrings(
+      page,
+      educationOverviewBlockedDemoStrings,
+      "education overview",
+    );
+    await expect(page.getByText("Noch kein Forschungsfokus")).toBeVisible();
+    await expect(page.getByText("Noch keine Research-Ideen")).toBeVisible();
+    await expect(page.getByText("Noch keine Forschungsfelder")).toBeVisible();
+    await expect(page.getByText("Noch keine Literatur")).toBeVisible();
+    await expect(page.getByText("Noch keine Research-Notizen")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Add research idea" })).toBeDisabled();
+  });
+
+  test("Scientific Work empty removes the fake thesis focus", async ({
+    page,
+  }) => {
+    await setProfile(page, "empty");
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/education/scientific-work");
+    });
+
+    await expectScientificWorkContracts(page, "empty");
+    await expectNoMainStrings(
+      page,
+      scientificWorkBlockedDemoStrings,
+      "scientific work",
+    );
+    await expect(page.getByText("Noch kein wissenschaftlicher Fokus")).toBeVisible();
+    await expect(page.getByText("Keine nächste Forschungsaktion")).toBeVisible();
+    await expect(page.getByText("Noch keine Forschungsfragen")).toBeVisible();
+    await expect(page.getByText("Noch keine wissenschaftlichen Arbeiten")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Update next action" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Open focus" })).toBeDisabled();
+  });
+
+  test("Literature empty blocks mock source copy and demo sources", async ({
+    page,
+  }) => {
+    await setProfile(page, "empty");
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/education/literature");
+    });
+
+    await expectLiteratureContracts(page, "empty");
+    await expectNoMainStrings(page, literatureBlockedDemoStrings, "literature");
+    await expect(page.getByText("Noch keine Literatur")).toBeVisible();
+    await expect(page.getByText("Keine Quelle in Extraktion")).toBeVisible();
+    await expect(page.getByText("Keine priorisierten Quellen")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Add literature" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Review queue" })).toBeDisabled();
+  });
+
+  test("Learning Log empty disables Log Session without tracks", async ({
+    page,
+  }) => {
+    await setProfile(page, "empty");
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/education/learning-log");
+    });
+
+    await expectLearningLogContracts(page, "empty");
+    await expectNoMainStrings(page, learningLogBlockedDemoStrings, "learning log");
+    await expect(page.getByText("Noch kein Lernfokus")).toBeVisible();
+    await expect(page.getByText("Noch keine Lerntracks")).toBeVisible();
+    await expect(page.getByText("Keine Practice-Items")).toBeVisible();
+    await expect(
+      page.getByRole("button", { exact: true, name: "Log Session" }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole("button", { exact: true, name: "Log learning session" }),
+    ).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Add practice item" })).toBeDisabled();
+  });
+
+  test("Education manual empty keeps all scoped routes free of demo leaks", async ({
+    page,
+  }) => {
+    await setProfile(page, "manual");
+
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/education");
+    });
+    await expectEducationOverviewContracts(page, "manual");
+    await expectNoMainStrings(
+      page,
+      educationOverviewBlockedDemoStrings,
+      "education manual",
+    );
+
+    await page.goto("/education/scientific-work");
+    await expectScientificWorkContracts(page, "manual");
+    await expectNoMainStrings(
+      page,
+      scientificWorkBlockedDemoStrings,
+      "scientific work manual",
+    );
+
+    await page.goto("/education/literature");
+    await expectLiteratureContracts(page, "manual");
+    await expectNoMainStrings(page, literatureBlockedDemoStrings, "literature manual");
+
+    await page.goto("/education/learning-log");
+    await expectLearningLogContracts(page, "manual");
+    await expectNoMainStrings(
+      page,
+      learningLogBlockedDemoStrings,
+      "learning log manual",
+    );
   });
 });
 

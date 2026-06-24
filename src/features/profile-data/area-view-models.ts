@@ -10,6 +10,14 @@ import {
   getEducationWorkspaceViewModel as getDemoEducationWorkspaceViewModel,
   getLearningLogViewModel as getDemoLearningLogViewModel,
 } from "@/features/education";
+import type {
+  EducationOverviewViewModel,
+  EducationProfileId,
+  EducationWorkspaceViewModel,
+  LearningLogViewModel,
+  MasterThesisState,
+  WeeklyLearningDay,
+} from "@/features/education";
 import { getHealthOverviewViewModel as getDemoHealthOverviewViewModel } from "@/features/health";
 import { getHabitsAnalyticsViewModel as getDemoHabitsAnalyticsViewModel } from "@/features/health/habits/habits-view-model";
 import { getRunningTrackerViewModel as getDemoRunningTrackerViewModel } from "@/features/health/running";
@@ -1307,6 +1315,171 @@ export function getBlockedDemoFragments() {
   return [...blockedDemoFragments];
 }
 
+function educationEmptyWeeklyDays(): WeeklyLearningDay[] {
+  return ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => ({
+    dayLabel: day as WeeklyLearningDay["dayLabel"],
+    id: `empty-${day.toLowerCase()}`,
+    minutes: 0,
+    status: "rest",
+  }));
+}
+
+function emptyMasterThesisState(): MasterThesisState {
+  return {
+    currentPhase: "orientation",
+    id: "empty-master-thesis-focus",
+    milestoneCount: 0,
+    nextAction: "Keine nächste Forschungsaktion",
+    noteCount: 0,
+    progress: 0,
+    sourceCount: 0,
+    title: "Noch kein wissenschaftlicher Fokus",
+  };
+}
+
+function buildProfileEducationOverviewViewModel(
+  profileId: Exclude<EducationProfileId, "demo">,
+): EducationOverviewViewModel {
+  const viewModel = clone(getDemoEducationOverviewViewModel());
+
+  viewModel.profileId = profileId;
+  viewModel.actionsEnabled = false;
+  viewModel.header = {
+    ...viewModel.header,
+    summary:
+      "Research-Shell ohne Demo-Daten fuer Ideen, Literatur, Felder und Notizen.",
+  };
+  viewModel.focus = {
+    field: null,
+    idea: null,
+    literatureItems: [],
+    literatureProgressLabel: "0 sources · 0 reviewed · 0 to read",
+    notes: [],
+    openQuestions: [],
+    reviewedSourceCount: 0,
+    toReadSourceCount: 0,
+  };
+  viewModel.stats = {
+    activeIdeaCount: 0,
+    openQuestionCount: 0,
+    queuedLiteratureCount: 0,
+    reviewNeededNoteCount: 0,
+  };
+  viewModel.ideas = [];
+  viewModel.fields = [];
+  viewModel.literature = [];
+  viewModel.notes = [];
+  viewModel.questions = [];
+  viewModel.rhythm = [
+    {
+      id: "education-empty-ideas",
+      label: "Research-Ideen",
+      tone: "blue",
+      value: "0",
+    },
+    {
+      id: "education-empty-literature",
+      label: "Literatur",
+      tone: "cyan",
+      value: "0",
+    },
+    {
+      id: "education-empty-notes",
+      label: "Research-Notizen",
+      tone: "orange",
+      value: "0",
+    },
+  ];
+  viewModel.methodNotes = [
+    "Manual Data Gap: lokale Research-Ideen existieren noch nicht.",
+    "Manual Data Gap: lokale Literatur- und Notizquellen existieren noch nicht.",
+    "Keine Fake-Literatur, Forschungsfragen oder Thesis-Fortschritte.",
+    "Persistente Education-Flows bleiben spaeteren Slices vorbehalten.",
+    "Demo-Fixtures bleiben auf das Demo-Profil begrenzt.",
+  ];
+  viewModel.contentStates = {
+    currentResearchFocus: resolveContentStateMeta({ capacity: 1, itemCount: 0 }),
+    filters: resolveContentStateMeta({ capacity: 1, itemCount: 1 }),
+    literatureQueue: resolveContentStateMeta({ capacity: 5, itemCount: 0 }),
+    page: resolveContentStateMeta({ capacity: 8, itemCount: 0 }),
+    recentResearchNotes: resolveContentStateMeta({ capacity: 5, itemCount: 0 }),
+    researchFields: resolveContentStateMeta({ capacity: 6, itemCount: 0 }),
+    researchIdeaPipeline: resolveContentStateMeta({
+      capacity: 5,
+      itemCount: 0,
+    }),
+    summary: resolveContentStateMeta({ capacity: 4, itemCount: 0 }),
+  };
+
+  return viewModel;
+}
+
+function buildProfileEducationWorkspaceViewModel(
+  profileId: Exclude<EducationProfileId, "demo">,
+): EducationWorkspaceViewModel {
+  const viewModel = clone(getDemoEducationWorkspaceViewModel());
+
+  viewModel.profileId = profileId;
+  viewModel.actionsEnabled = false;
+  viewModel.ideas = [];
+  viewModel.fields = [];
+  viewModel.literature = [];
+  viewModel.notes = [];
+  viewModel.questions = [];
+  viewModel.masterThesis = emptyMasterThesisState();
+  viewModel.masterThesisMilestones = [];
+  viewModel.contentStates = {
+    extractionFocus: resolveContentStateMeta({ capacity: 3, itemCount: 0 }),
+    filters: resolveContentStateMeta({ capacity: 1, itemCount: 1 }),
+    highRelevanceSources: resolveContentStateMeta({ capacity: 5, itemCount: 0 }),
+    literatureQueue: resolveContentStateMeta({ capacity: 5, itemCount: 0 }),
+    masterThesisFocus: resolveContentStateMeta({ capacity: 1, itemCount: 0 }),
+    page: resolveContentStateMeta({ capacity: 8, itemCount: 0 }),
+    recentResearchNotes: resolveContentStateMeta({ capacity: 5, itemCount: 0 }),
+    researchFields: resolveContentStateMeta({ capacity: 4, itemCount: 0 }),
+    researchIdeas: resolveContentStateMeta({ capacity: 4, itemCount: 0 }),
+    researchQuestions: resolveContentStateMeta({ capacity: 5, itemCount: 0 }),
+    scientificWorkPapers: resolveContentStateMeta({ capacity: 6, itemCount: 0 }),
+    statusSummary: resolveContentStateMeta({ capacity: 6, itemCount: 0 }),
+  };
+
+  return viewModel;
+}
+
+function buildProfileLearningLogViewModel(
+  profileId: Exclude<EducationProfileId, "demo">,
+): LearningLogViewModel {
+  const viewModel = clone(getDemoLearningLogViewModel());
+
+  viewModel.profileId = profileId;
+  viewModel.actionsEnabled = false;
+  viewModel.tracks = [];
+  viewModel.sessions = [];
+  viewModel.practiceQueue = [];
+  viewModel.insights = [];
+  viewModel.week = educationEmptyWeeklyDays();
+  viewModel.weeklyGoal =
+    "Lege später einen lokalen Lerntrack an, um Sessions, Practice und Nachweise zu verbinden.";
+  viewModel.methodNotes = [
+    "Manual Data Gap: lokale Learning Tracks existieren noch nicht.",
+    "Manual Data Gap: lokale Learning Sessions existieren noch nicht.",
+    "Manual Data Gap: lokale Practice Items existieren noch nicht.",
+    "Keine Fake-Lernsessions oder Plattformdaten im Empty-/Manual-State.",
+    "Persistente Learning-Log-Flows bleiben spaeteren Slices vorbehalten.",
+  ];
+  viewModel.contentStates = {
+    activeTracks: resolveContentStateMeta({ capacity: 4, itemCount: 0 }),
+    currentLearningFocus: resolveContentStateMeta({ capacity: 1, itemCount: 0 }),
+    filters: resolveContentStateMeta({ capacity: 1, itemCount: 1 }),
+    page: resolveContentStateMeta({ capacity: 8, itemCount: 0 }),
+    practiceQueue: resolveContentStateMeta({ capacity: 5, itemCount: 0 }),
+    trackSummary: resolveContentStateMeta({ capacity: 4, itemCount: 0 }),
+    weeklyRhythm: resolveContentStateMeta({ capacity: 7, itemCount: 0 }),
+  };
+
+  return viewModel;
+}
+
 export async function getHealthOverviewViewModel(): Promise<
   ReturnType<typeof getDemoHealthOverviewViewModel>
 > {
@@ -1973,25 +2146,34 @@ export async function getInventoryPageViewModel(): Promise<
   };
 }
 
-export async function getEducationOverviewViewModel(): Promise<
-  ReturnType<typeof getDemoEducationOverviewViewModel>
-> {
-  return getProfileAreaViewModel(getDemoEducationOverviewViewModel, "Education");
+export async function getEducationOverviewViewModel(): Promise<EducationOverviewViewModel> {
+  const profileId = await getCurrentLifeOsProfileId();
+
+  if (profileId === "demo") {
+    return getDemoEducationOverviewViewModel();
+  }
+
+  return buildProfileEducationOverviewViewModel(profileId);
 }
 
-export async function getEducationWorkspaceViewModel(): Promise<
-  ReturnType<typeof getDemoEducationWorkspaceViewModel>
-> {
-  return getProfileAreaViewModel(
-    getDemoEducationWorkspaceViewModel,
-    "Education",
-  );
+export async function getEducationWorkspaceViewModel(): Promise<EducationWorkspaceViewModel> {
+  const profileId = await getCurrentLifeOsProfileId();
+
+  if (profileId === "demo") {
+    return getDemoEducationWorkspaceViewModel();
+  }
+
+  return buildProfileEducationWorkspaceViewModel(profileId);
 }
 
-export async function getLearningLogViewModel(): Promise<
-  ReturnType<typeof getDemoLearningLogViewModel>
-> {
-  return getProfileAreaViewModel(getDemoLearningLogViewModel, "Education");
+export async function getLearningLogViewModel(): Promise<LearningLogViewModel> {
+  const profileId = await getCurrentLifeOsProfileId();
+
+  if (profileId === "demo") {
+    return getDemoLearningLogViewModel();
+  }
+
+  return buildProfileLearningLogViewModel(profileId);
 }
 
 export async function getWorkOverviewViewModel(): Promise<

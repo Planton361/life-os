@@ -5,6 +5,7 @@ import {
   mockResearchNotes,
   mockResearchQuestions,
 } from "./mock-education-data";
+import { resolveContentStateMeta } from "@/features/content-state";
 import type {
   CurrentResearchFocus,
   EducationOverviewStats,
@@ -95,6 +96,33 @@ export function getEducationOverviewViewModel(): EducationOverviewViewModel {
   const questions = mockResearchQuestions;
 
   return {
+    profileId: "demo",
+    actionsEnabled: true,
+    contentStates: {
+      currentResearchFocus: resolveContentStateMeta({
+        capacity: 1,
+        itemCount: 1,
+      }),
+      filters: resolveContentStateMeta({ capacity: 1, itemCount: 1 }),
+      literatureQueue: resolveContentStateMeta({
+        capacity: 5,
+        itemCount: literature.length,
+      }),
+      page: resolveContentStateMeta({ capacity: 8, itemCount: 8 }),
+      recentResearchNotes: resolveContentStateMeta({
+        capacity: 5,
+        itemCount: notes.length,
+      }),
+      researchFields: resolveContentStateMeta({
+        capacity: 6,
+        itemCount: fields.length,
+      }),
+      researchIdeaPipeline: resolveContentStateMeta({
+        capacity: 5,
+        itemCount: ideas.length,
+      }),
+      summary: resolveContentStateMeta({ capacity: 4, itemCount: 4 }),
+    },
     header: {
       eyebrow: "Education · Area dashboard",
       title: "Education Overview",

@@ -11,6 +11,7 @@ import {
   type MouseEvent,
   type ReactNode,
 } from "react";
+import { contentStateDataAttributes } from "@/features/content-state";
 import { cn } from "@/lib/cn";
 import type {
   LearningInsight,
@@ -330,12 +331,16 @@ function Panel({
   badge,
   children,
   className,
+  dataSection,
+  stateAttributes,
 }: Readonly<{
   title: string;
   subtitle?: string;
   badge?: ReactNode;
   children: ReactNode;
   className?: string;
+  dataSection?: string;
+  stateAttributes?: Record<string, string>;
 }>) {
   const id = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-section`;
 
@@ -346,6 +351,8 @@ function Panel({
         "min-w-0 overflow-hidden rounded-[var(--panel-radius)] border border-[var(--border-subtle)] bg-[var(--surface-1)] shadow-[0_8px_22px_rgba(0,0,0,.12)]",
         className,
       )}
+      data-learning-log-section={dataSection}
+      {...stateAttributes}
     >
       <div className="border-b border-[var(--border-subtle)] bg-[rgba(14,23,38,.78)] px-4 py-3 sm:px-5">
         <div className="flex min-w-0 items-start justify-between gap-3">
@@ -392,11 +399,13 @@ function EmptyState({
   description,
   actionLabel,
   onAction,
+  disabled = false,
 }: Readonly<{
   title: string;
   description: string;
   actionLabel?: string;
   onAction?: () => void;
+  disabled?: boolean;
 }>) {
   return (
     <div className="rounded-[14px] border border-dashed border-[var(--border-default)] bg-[rgba(168,183,204,.045)] p-4">
@@ -407,7 +416,12 @@ function EmptyState({
         {description}
       </p>
       {actionLabel && onAction ? (
-        <button className={cn(quietButtonClass, "mt-3")} onClick={onAction} type="button">
+        <button
+          className={cn(quietButtonClass, "mt-3")}
+          disabled={disabled}
+          onClick={onAction}
+          type="button"
+        >
           {actionLabel}
         </button>
       ) : null}
@@ -537,10 +551,14 @@ function Toast({
 }
 
 function LearningHeader({
+  actionsEnabled,
+  hasTrack,
   onAddPractice,
   onAddTrack,
   onLogSession,
 }: Readonly<{
+  actionsEnabled: boolean;
+  hasTrack: boolean;
   onAddPractice: () => void;
   onAddTrack: () => void;
   onLogSession: () => void;
@@ -560,13 +578,28 @@ function LearningHeader({
           </p>
         </div>
         <div className="grid gap-2 sm:grid-cols-3 xl:flex xl:justify-end">
-          <button className={primaryButtonClass} onClick={onLogSession} type="button">
+          <button
+            className={primaryButtonClass}
+            disabled={!actionsEnabled || !hasTrack}
+            onClick={onLogSession}
+            type="button"
+          >
             Log learning session
           </button>
-          <button className={secondaryButtonClass} onClick={onAddTrack} type="button">
+          <button
+            className={secondaryButtonClass}
+            disabled={!actionsEnabled}
+            onClick={onAddTrack}
+            type="button"
+          >
             Add learning track
           </button>
-          <button className={secondaryButtonClass} onClick={onAddPractice} type="button">
+          <button
+            className={secondaryButtonClass}
+            disabled={!actionsEnabled || !hasTrack}
+            onClick={onAddPractice}
+            type="button"
+          >
             Add practice item
           </button>
         </div>
@@ -588,6 +621,7 @@ function LearningFilters({
   reviewFilter,
   search,
   sourceFilter,
+  stateAttributes,
   statusFilter,
   trackFilter,
   tracks,
@@ -604,6 +638,7 @@ function LearningFilters({
   reviewFilter: string;
   search: string;
   sourceFilter: string;
+  stateAttributes?: Record<string, string>;
   statusFilter: string;
   trackFilter: string;
   tracks: readonly LearningTrack[];
@@ -612,6 +647,8 @@ function LearningFilters({
     <section
       aria-label="Learning Log filters"
       className="rounded-[18px] border border-[var(--border-subtle)] bg-[var(--surface-1)] p-3"
+      data-learning-log-section="search-filter"
+      {...stateAttributes}
     >
       <div className="grid gap-3 xl:grid-cols-[minmax(240px,360px)_1fr]">
         <label htmlFor="learning-search">
@@ -729,6 +766,7 @@ function LearningFilters({
 }
 
 function CurrentLearningFocus({
+  actionsEnabled,
   currentTrack,
   lastSession,
   nextPractice,
@@ -737,7 +775,9 @@ function CurrentLearningFocus({
   onOpenTrack,
   onStartPractice,
   weeklyGoal,
+  stateAttributes,
 }: Readonly<{
+  actionsEnabled: boolean;
   currentTrack: LearningTrack | null;
   lastSession: LearningSession | null;
   nextPractice: PracticeQueueItem | null;
@@ -746,19 +786,22 @@ function CurrentLearningFocus({
   onOpenTrack: (track: LearningTrack) => void;
   onStartPractice: (item: PracticeQueueItem | null) => void;
   weeklyGoal: string;
+  stateAttributes?: Record<string, string>;
 }>) {
   if (!currentTrack) {
     return (
       <Panel
         className="border-[rgba(91,124,250,.30)]"
-        subtitle="The main learning focus appears here once a track exists."
+        dataSection="current-learning-focus"
+        stateAttributes={stateAttributes}
+        subtitle="Lege später einen lokalen Lerntrack an, um Sessions, Practice und Nachweise zu verbinden."
         title="Current Learning Focus"
       >
         <EmptyState
-          actionLabel="Add learning track"
-          description="Create a local track to anchor sessions, practice items and evidence."
-          onAction={onAddTrack}
-          title="No learning track yet"
+          actionLabel={actionsEnabled ? "Add learning track" : undefined}
+          description="Lege später einen lokalen Lerntrack an, um Sessions, Practice und Nachweise zu verbinden."
+          onAction={actionsEnabled ? onAddTrack : undefined}
+          title="Noch kein Lernfokus"
         />
       </Panel>
     );
@@ -768,6 +811,8 @@ function CurrentLearningFocus({
     <section
       aria-labelledby="current-learning-focus-title"
       className="overflow-hidden rounded-[var(--panel-radius)] border border-[rgba(91,124,250,.34)] bg-[linear-gradient(180deg,rgba(15,23,36,.98),rgba(15,23,36,.92))] shadow-[0_8px_22px_rgba(0,0,0,.12)]"
+      data-learning-log-section="current-learning-focus"
+      {...stateAttributes}
     >
       <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="min-w-0 p-4 sm:p-5">
@@ -881,10 +926,14 @@ function CurrentLearningFocus({
 }
 
 function QuickActions({
+  actionsEnabled,
+  hasTrack,
   onAddPractice,
   onAddTrack,
   onLogSession,
 }: Readonly<{
+  actionsEnabled: boolean;
+  hasTrack: boolean;
   onAddPractice: () => void;
   onAddTrack: () => void;
   onLogSession: () => void;
@@ -894,13 +943,28 @@ function QuickActions({
       aria-label="Learning quick actions"
       className="grid gap-2 sm:grid-cols-3"
     >
-      <button className={primaryButtonClass} onClick={onLogSession} type="button">
+      <button
+        className={primaryButtonClass}
+        disabled={!actionsEnabled || !hasTrack}
+        onClick={onLogSession}
+        type="button"
+      >
         Log Session
       </button>
-      <button className={secondaryButtonClass} onClick={onAddTrack} type="button">
+      <button
+        className={secondaryButtonClass}
+        disabled={!actionsEnabled}
+        onClick={onAddTrack}
+        type="button"
+      >
         Add Track
       </button>
-      <button className={secondaryButtonClass} onClick={onAddPractice} type="button">
+      <button
+        className={secondaryButtonClass}
+        disabled={!actionsEnabled || !hasTrack}
+        onClick={onAddPractice}
+        type="button"
+      >
         Add Practice
       </button>
     </section>
@@ -910,10 +974,17 @@ function QuickActions({
 function WeeklyRhythm({
   summary,
   week,
-}: Readonly<{ summary: string; week: readonly WeeklyLearningDay[] }>) {
+  stateAttributes,
+}: Readonly<{
+  summary: string;
+  week: readonly WeeklyLearningDay[];
+  stateAttributes?: Record<string, string>;
+}>) {
   return (
     <Panel
       badge={<Pill accent={evidenceAccent}>Rhythm</Pill>}
+      dataSection="weekly-rhythm"
+      stateAttributes={stateAttributes}
       subtitle={summary}
       title="Weekly Learning Rhythm"
     >
@@ -1197,6 +1268,9 @@ export function LearningLogPage({
 
   const dismissToast = useCallback(() => setToast(null), []);
   const query = normalize(search);
+  const actionsEnabled = viewModel.actionsEnabled;
+  const stateAttrs = (key: keyof LearningLogViewModel["contentStates"]) =>
+    contentStateDataAttributes(viewModel.contentStates[key], viewModel.profileId);
 
   const sortedSessions = useMemo(
     () =>
@@ -1316,7 +1390,10 @@ export function LearningLogPage({
   const thisWeekMinutes = viewModel.week.reduce((total, day) => total + day.minutes, 0);
   const doneDays = viewModel.week.filter((day) => day.status === "done").length;
   const plannedDays = viewModel.week.filter((day) => day.status === "planned").length;
-  const weeklySummary = `${doneDays} sessions logged · ${plannedDays} planned · rhythm stable`;
+  const weeklySummary =
+    tracks.length === 0
+      ? "Noch kein Lernrhythmus · Sessions erscheinen hier, sobald lokale Lerntracks existieren."
+      : `${doneDays} sessions logged · ${plannedDays} planned · rhythm stable`;
   const selectedTrack =
     inspector?.type === "track" ? findTrack(tracks, inspector.id) : null;
   const selectedSession =
@@ -1333,6 +1410,7 @@ export function LearningLogPage({
   }
 
   function openDialog(kind: DialogKind, context: { trackId?: string } = {}) {
+    if (!actionsEnabled) return;
     setDialogError(null);
     setInspector(null);
 
@@ -1497,8 +1575,14 @@ export function LearningLogPage({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-[2208px] flex-col gap-4 pb-8">
+    <div
+      className="mx-auto flex w-full max-w-[2208px] flex-col gap-4 pb-8"
+      data-learning-log-section="page"
+      {...stateAttrs("page")}
+    >
       <LearningHeader
+        actionsEnabled={actionsEnabled}
+        hasTrack={tracks.length > 0}
         onAddPractice={() => openDialog("practice")}
         onAddTrack={() => openDialog("track")}
         onLogSession={() => openDialog("session")}
@@ -1517,12 +1601,14 @@ export function LearningLogPage({
         reviewFilter={reviewFilter}
         search={search}
         sourceFilter={sourceFilter}
+        stateAttributes={stateAttrs("filters")}
         statusFilter={statusFilter}
         trackFilter={trackFilter}
         tracks={tracks}
       />
 
       <CurrentLearningFocus
+        actionsEnabled={actionsEnabled}
         currentTrack={currentTrack}
         lastSession={currentTrackLastSession}
         nextPractice={nextPractice}
@@ -1530,18 +1616,27 @@ export function LearningLogPage({
         onLogSession={() => openDialog("session", { trackId: currentTrack?.id })}
         onOpenTrack={(track) => setInspector({ type: "track", id: track.id })}
         onStartPractice={startPractice}
+        stateAttributes={stateAttrs("currentLearningFocus")}
         weeklyGoal={viewModel.weeklyGoal}
       />
 
       <QuickActions
+        actionsEnabled={actionsEnabled}
+        hasTrack={tracks.length > 0}
         onAddPractice={() => openDialog("practice", { trackId: currentTrack?.id })}
         onAddTrack={() => openDialog("track")}
         onLogSession={() => openDialog("session", { trackId: currentTrack?.id })}
       />
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <WeeklyRhythm summary={weeklySummary} week={viewModel.week} />
+        <WeeklyRhythm
+          stateAttributes={stateAttrs("weeklyRhythm")}
+          summary={weeklySummary}
+          week={viewModel.week}
+        />
         <Panel
+          dataSection="track-summary"
+          stateAttributes={stateAttrs("trackSummary")}
           subtitle="Small signals only. Learning Log does not score XP or streaks."
           title="Track Summary"
         >
@@ -1569,15 +1664,17 @@ export function LearningLogPage({
       {showSection("tracks") ? (
         <Panel
           badge={<Pill>{visibleTrackList.length} tracks</Pill>}
+          dataSection="active-tracks"
+          stateAttributes={stateAttrs("activeTracks")}
           subtitle="Active and planned learning tracks with module, progress and next action."
           title="Active Learning Tracks"
         >
           {visibleTrackList.length === 0 ? (
             <EmptyState
-              actionLabel="Add learning track"
-              description="Create a local learning track to connect sessions and practice work."
-              onAction={() => openDialog("track")}
-              title={query ? "No learning tracks match the filters" : "No learning tracks yet"}
+              actionLabel={actionsEnabled ? "Add learning track" : undefined}
+              description="Lerntracks erscheinen hier, sobald lokale Tracks existieren."
+              onAction={actionsEnabled ? () => openDialog("track") : undefined}
+              title={query ? "Keine Lerntracks passen zu den Filtern" : "Noch keine Lerntracks"}
             />
           ) : (
             <div className="grid gap-3 xl:grid-cols-2">
@@ -1597,15 +1694,21 @@ export function LearningLogPage({
       {showSection("practice") ? (
         <Panel
           badge={<Pill accent={warningAccent}>{filteredPractice.length} items</Pill>}
+          dataSection="practice-queue"
+          stateAttributes={stateAttrs("practiceQueue")}
           subtitle="Next exercises and course tasks. No external platform state is implied."
           title="Practice Queue"
         >
           {filteredPractice.length === 0 ? (
             <EmptyState
-              actionLabel="Add practice item"
-              description="Add the next manual exercise, course task or reading practice."
-              onAction={() => openDialog("practice")}
-              title={query ? "No practice items match the filters" : "No practice items yet"}
+              actionLabel={actionsEnabled && tracks.length > 0 ? "Add practice item" : undefined}
+              description="Practice-Items erscheinen hier, sobald lokale Lerntracks existieren."
+              onAction={
+                actionsEnabled && tracks.length > 0
+                  ? () => openDialog("practice")
+                  : undefined
+              }
+              title={query ? "Keine Practice-Items passen zu den Filtern" : "Keine Practice-Items"}
             />
           ) : (
             <div className="grid gap-3 xl:grid-cols-2">
@@ -1631,10 +1734,18 @@ export function LearningLogPage({
         >
           {filteredSessions.length === 0 ? (
             <EmptyState
-              actionLabel="Log learning session"
-              description="Log a local study session with outcome and evidence."
-              onAction={() => openDialog("session")}
-              title={query ? "No sessions match the filters" : "No learning sessions yet"}
+              actionLabel={
+                actionsEnabled && tracks.length > 0
+                  ? "Log learning session"
+                  : undefined
+              }
+              description="Sessions erscheinen hier, sobald lokale Lerntracks existieren."
+              onAction={
+                actionsEnabled && tracks.length > 0
+                  ? () => openDialog("session")
+                  : undefined
+              }
+              title={query ? "Keine Sessions passen zu den Filtern" : "Noch kein Lernrhythmus"}
             />
           ) : (
             <div className="grid gap-3">
