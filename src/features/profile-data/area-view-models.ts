@@ -1412,7 +1412,59 @@ export async function getGroceryViewModel(): Promise<
 export async function getCodingOverviewViewModel(): Promise<
   ReturnType<typeof getDemoCodingOverviewViewModel>
 > {
-  return getProfileAreaViewModel(getDemoCodingOverviewViewModel, "Coding");
+  const profileId = await getCurrentLifeOsProfileId();
+  const viewModel = getDemoCodingOverviewViewModel();
+
+  if (profileId === "demo") {
+    return viewModel;
+  }
+
+  return {
+    ...clone(viewModel),
+    profileId,
+    header: {
+      ...viewModel.header,
+      contextLine: "No local Coding records yet · manual setup only",
+      stats: [
+        { label: "0 focus", accent: "var(--accent-blue)" },
+        { label: "0 repositories", accent: "var(--accent-blue)" },
+        { label: "0 reviews", accent: "var(--accent-orange)" },
+      ],
+    },
+    projects: [],
+    repositories: [],
+    currentFocus: null,
+    activeWork: [],
+    agentQueue: [],
+    repositoriesAttention: [],
+    recentSessions: [],
+    skillFocus: null,
+    knowledgeUpdates: [],
+    codingRhythm: {
+      ...viewModel.codingRhythm,
+      statement: "No coding sessions logged yet.",
+      days: viewModel.codingRhythm.days.map((day) => ({
+        ...day,
+        label: `${day.day}: no session logged`,
+        minutes: 0,
+        sessions: 0,
+      })),
+      insight:
+        "Coding rhythm appears after real local sessions are recorded.",
+    },
+    emptyStates: {
+      noRepositories: {
+        title: "No repositories recorded",
+        description:
+          "Repository workbench structure is ready. Add a local repository draft before linking tasks, resources or sessions.",
+      },
+      noFocus: {
+        title: "No active coding focus",
+        description:
+          "Define one repository or project next action before starting a coding session.",
+      },
+    },
+  };
 }
 
 export async function getRepositoriesViewModel(): Promise<
@@ -1425,40 +1477,169 @@ export async function getRepositoriesViewModel(): Promise<
     return viewModel;
   }
 
-  const sanitizedViewModel = sanitizeAreaViewModel(
-    clone(viewModel),
-    profileId,
-    "Coding",
-  );
-
-  if (profileId === "manual") {
-    const profile = await readManualProfile();
-
-    return {
-      ...sanitizedViewModel,
-      projectOptions: profile.projects.map((project) => ({
-        label: project.title,
-        value: project.id,
-      })),
-    };
-  }
+  const profile = profileId === "manual" ? await readManualProfile() : null;
 
   return {
-    ...sanitizedViewModel,
-    projectOptions: [],
+    ...clone(viewModel),
+    profileId,
+    header: {
+      ...viewModel.header,
+      contextLine: "Manual repository workbench · no GitHub sync configured",
+      stats: [
+        {
+          label: "Repositories",
+          value: "0",
+          detail: "local records",
+          accent: "var(--accent-blue)",
+        },
+        {
+          label: "Attention",
+          value: "0",
+          detail: "no local signals",
+          accent: "var(--accent-orange)",
+        },
+        {
+          label: "Reviews",
+          value: "0",
+          detail: "no agent outputs",
+          accent: "var(--accent-orange)",
+        },
+      ],
+    },
+    repositories: [],
+    tasks: [],
+    resources: [],
+    agentSessions: [],
+    activity: [],
+    projectOptions:
+      profile?.projects.map((project) => ({
+        label: project.title,
+        value: project.id,
+      })) ?? [],
+    emptyStates: {
+      noRepositories: {
+        title: "No repositories recorded",
+        description:
+          "The repository workbench is ready for local drafts. No GitHub repository, token or sync job exists yet.",
+      },
+      noSearchResults: {
+        title: "No repositories match this filter",
+        description:
+          "Adjust filters or add a local repository draft. No demo repositories are used as fallback.",
+      },
+      noLinkedTasks: {
+        title: "No linked tasks",
+        description:
+          "Linked tasks appear after a real local repository context exists. Demo tasks are not reused here.",
+      },
+    },
   };
 }
 
 export async function getAgentHubViewModel(): Promise<
   ReturnType<typeof getDemoAgentHubViewModel>
 > {
-  return getProfileAreaViewModel(getDemoAgentHubViewModel, "Coding");
+  const profileId = await getCurrentLifeOsProfileId();
+  const viewModel = getDemoAgentHubViewModel();
+
+  if (profileId === "demo") {
+    return viewModel;
+  }
+
+  const profile = profileId === "manual" ? await readManualProfile() : null;
+
+  return {
+    ...clone(viewModel),
+    profileId,
+    workers: viewModel.workers.map((worker) => ({
+      ...worker,
+      currentTaskId: undefined,
+      lastSessionAt: undefined,
+      reliabilityNote:
+        "Role shell only. No worker is configured, connected or running in this profile.",
+      status: "needs_setup" as const,
+    })),
+    tasks: [],
+    sessions: [],
+    outputs: [],
+    promptTemplates: [],
+    contextBundles: [],
+    projects:
+      profile?.projects.map((project) => ({
+        id: project.id,
+        title: project.title,
+      })) ?? [],
+    repositories: [],
+    emptyStates: {
+      noTasks: {
+        title: "No agent tasks queued",
+        description:
+          "Create a local draft only when a scoped human-reviewed agent handoff exists. No worker starts automatically.",
+      },
+      noWorkers: {
+        title: "No worker profiles configured",
+        description:
+          "Worker roles are visible as shells, but no provider or automation is connected.",
+      },
+      noReviewItems: {
+        title: "No outputs waiting for review",
+        description:
+          "Review queue stays empty until real local output exists. Demo outputs are not used as fallback.",
+      },
+      noPrompts: {
+        title: "No prompt templates yet",
+        description:
+          "Prompt templates can be drafted locally; no prompt library or provider is connected.",
+      },
+    },
+  };
 }
 
 export async function getSkillMapViewModel(): Promise<
   ReturnType<typeof getDemoSkillMapViewModel>
 > {
-  return getProfileAreaViewModel(getDemoSkillMapViewModel, "Coding");
+  const profileId = await getCurrentLifeOsProfileId();
+  const viewModel = getDemoSkillMapViewModel();
+
+  if (profileId === "demo") {
+    return viewModel;
+  }
+
+  return {
+    ...clone(viewModel),
+    profileId,
+    skills: [],
+    connections: [],
+    clusters: [],
+    evidence: [],
+    projects: [],
+    requirements: [],
+    recommendations: [],
+    insight:
+      "Manual skill mapping is empty. Add local skills and evidence before project gaps are evaluated.",
+    emptyStates: {
+      noSkills: {
+        title: "No coding skills mapped",
+        description:
+          "The skill workbench is ready for local skill drafts. No demo skills, evidence or progress values are used.",
+      },
+      noRequirements: {
+        title: "No project skill gaps",
+        description:
+          "Project gap cards appear after real skill requirements exist.",
+      },
+      noEvidence: {
+        title: "No evidence attached",
+        description:
+          "Evidence appears after local proof points are added to a real skill.",
+      },
+      noSearchResults: {
+        title: "No matching skills",
+        description:
+          "Adjust filters or add a local skill draft. Demo skills are not used as fallback.",
+      },
+    },
+  };
 }
 
 export async function getLifeOverviewViewModel(): Promise<

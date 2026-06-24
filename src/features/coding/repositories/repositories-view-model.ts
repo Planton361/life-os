@@ -413,6 +413,7 @@ export function getRepositoriesViewModel(): RepositoryWorkbenchViewModel {
   const reviewCount = agentSessions.filter((session) => session.reviewNeeded).length;
 
   return {
+    profileId: "demo",
     header: {
       eyebrow: "Life OS / Coding",
       title: "Repositories",

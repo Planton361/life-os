@@ -487,6 +487,44 @@ async function expectNoResourceKpiLeaks(page: Page) {
   }
 }
 
+const codingOverviewBlockedDemoStrings = [
+  "Life OS Coding Area",
+  "AI Agent Workflow",
+  "Java / Hyperskill",
+  "Repository-Detail-Inspector prüfen",
+  "Repository-Detail-Inspector pruefen",
+  "Codex output: Coding route draft",
+  "Type-safe server actions",
+  "Repository inspector sketch",
+  "RLS policy pattern for user-owned rows",
+] as const;
+
+const codingRepositoryBlockedDemoStrings = [
+  "anton/life-os-app",
+  "anton/agent-prompts",
+  "anton/java-training",
+  "anton/supabase-sandbox",
+  "anton/master-thesis-tools",
+] as const;
+
+const codingAgentBlockedDemoStrings = [
+  "PREPARED ERROR STATE",
+  "Prepared error state",
+  "Future agent run failed",
+  "Repository Workbench implementation diff",
+  "Implement /coding repositories page",
+] as const;
+
+const codingSkillMapBlockedDemoStrings = [
+  "React",
+  "TypeScript Strictness",
+  "Supabase",
+  "Row Level Security",
+  "PostgreSQL",
+  "Playwright",
+  "Code Review",
+] as const;
+
 async function expectNoHydrationErrors(page: Page, action: () => Promise<void>) {
   const errors: string[] = [];
   page.on("console", (message) => {
@@ -508,6 +546,101 @@ test.beforeEach(async () => {
 
 test.afterEach(async () => {
   await resetManualProfileFile();
+});
+
+test.describe("Coding content states", () => {
+  for (const profile of ["empty", "manual"] as const) {
+    test(`keeps coding overview state-proof for ${profile}`, async ({
+      page,
+    }) => {
+      await setProfile(page, profile);
+      await expectNoHydrationErrors(page, async () => {
+        await page.goto("/coding");
+      });
+
+      await expect(page.getByRole("heading", { name: "Coding Overview" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Active Work" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Agent Queue" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Repositories requiring attention" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Recent Sessions" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Skill Focus" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Knowledge Updates" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Coding Rhythm" })).toBeVisible();
+      await expectNoMainStrings(page, codingOverviewBlockedDemoStrings, "/coding");
+    });
+
+    test(`keeps repositories workbench shell for ${profile}`, async ({
+      page,
+    }) => {
+      await setProfile(page, profile);
+      await expectNoHydrationErrors(page, async () => {
+        await page.goto("/coding/repositories");
+      });
+
+      for (const heading of [
+        "Repository List",
+        "Attention Queue",
+        "Selected Repository",
+        "Linked Tasks",
+        "Resource Map",
+        "Repository Health",
+        "Recent Repository Activity",
+      ]) {
+        await expect(page.getByRole("heading", { name: heading })).toBeVisible();
+      }
+      await expect(page.getByRole("button", { name: "Sync GitHub" })).toBeDisabled();
+      await expectNoMainStrings(
+        page,
+        codingRepositoryBlockedDemoStrings,
+        "/coding/repositories",
+      );
+    });
+
+    test(`hides prepared agent errors and fake runs for ${profile}`, async ({
+      page,
+    }) => {
+      await setProfile(page, profile);
+      await expectNoHydrationErrors(page, async () => {
+        await page.goto("/coding/agents");
+      });
+
+      for (const heading of [
+        "Agent Mission Control",
+        "Review Queue",
+        "Assignment Queue",
+        "Worker Pool",
+        "Recent Agent Sessions",
+        "Prompt Library Snapshot",
+        "Context Bundles",
+      ]) {
+        await expect(page.getByRole("heading", { name: heading })).toBeVisible();
+      }
+      await expectNoMainStrings(page, codingAgentBlockedDemoStrings, "/coding/agents");
+    });
+
+    test(`keeps skill map workbench shell for ${profile}`, async ({ page }) => {
+      await setProfile(page, profile);
+      await expectNoHydrationErrors(page, async () => {
+        await page.goto("/coding/skill-map");
+      });
+
+      for (const heading of [
+        "Skill Network Map",
+        "Selected Skill Inspector",
+        "Project Skill Gaps",
+        "Skill Gap Matrix",
+        "Learning Recommendations",
+        "Evidence Timeline",
+      ]) {
+        await expect(page.getByRole("heading", { name: heading })).toBeVisible();
+      }
+      await expectNoMainStrings(
+        page,
+        codingSkillMapBlockedDemoStrings,
+        "/coding/skill-map",
+      );
+    });
+  }
 });
 
 test.describe("Nutrition content states", () => {

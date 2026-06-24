@@ -101,6 +101,7 @@ export type RepositorySignalMeta = {
 };
 
 export type RepositoryWorkbenchViewModel = {
+  profileId: "demo" | "empty" | "manual";
   header: {
     eyebrow: string;
     title: string;

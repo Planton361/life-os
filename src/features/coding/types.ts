@@ -158,6 +158,7 @@ export type CodingRhythmViewModel = {
 };
 
 export type CodingOverviewViewModel = {
+  profileId: "demo" | "empty" | "manual";
   header: CodingHeaderViewModel;
   pageContract: CodingPageContract;
   projects: CodingProject[];
@@ -167,7 +168,7 @@ export type CodingOverviewViewModel = {
   agentQueue: AgentSessionViewModel[];
   repositoriesAttention: RepositoryAttentionViewModel[];
   recentSessions: RecentCodingSessionViewModel[];
-  skillFocus: SkillFocusViewModel;
+  skillFocus: SkillFocusViewModel | null;
   knowledgeUpdates: KnowledgeUpdateViewModel[];
   codingRhythm: CodingRhythmViewModel;
   emptyStates: {

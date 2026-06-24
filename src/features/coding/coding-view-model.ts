@@ -406,6 +406,7 @@ export function getCodingOverviewViewModel(): CodingOverviewViewModel {
   ).length;
 
   return {
+    profileId: "demo",
     header: {
       eyebrow: "Life OS / Coding",
       title: "Coding Overview",

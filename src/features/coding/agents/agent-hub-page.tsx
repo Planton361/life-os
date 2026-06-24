@@ -12,6 +12,10 @@ import {
 } from "react";
 import { cn } from "@/lib/cn";
 import {
+  contentStateDataAttributes,
+  resolveContentStateMeta,
+} from "@/features/content-state";
+import {
   CodingPanel,
   CodingPill,
   EmptyStateCard,
@@ -586,6 +590,12 @@ function MissionControl({
 }>) {
   return (
     <section
+      {...contentStateDataAttributes(
+        resolveContentStateMeta({
+          itemCount: counts.running + counts.queued + counts.blocked + counts.reviewNeeded,
+        }),
+        viewModel.profileId,
+      )}
       aria-labelledby="agent-mission-control-heading"
       className="overflow-hidden rounded-[18px] border border-[rgba(91,124,250,.26)] bg-[rgba(15,23,36,.9)] shadow-[0_12px_30px_rgba(0,0,0,.18)] xl:col-span-7"
     >
@@ -694,6 +704,7 @@ function ReviewQueue({
   sessions,
   tasks,
   workers,
+  profileId,
   onReview,
   onDecision,
   emptyState,
@@ -702,6 +713,7 @@ function ReviewQueue({
   sessions: AgentSession[];
   tasks: AgentTask[];
   workers: AgentWorker[];
+  profileId: string;
   onReview: (output: AgentOutput) => void;
   onDecision: (output: AgentOutput, status: AgentOutput["reviewStatus"]) => void;
   emptyState: AgentHubViewModel["emptyStates"]["noReviewItems"];
@@ -710,6 +722,10 @@ function ReviewQueue({
 
   return (
     <CodingPanel
+      {...contentStateDataAttributes(
+        resolveContentStateMeta({ itemCount: pending.length }),
+        profileId,
+      )}
       className="xl:col-span-5"
       subtitle="Generated suggestions stay here until manually reviewed."
       title="Review Queue"
@@ -812,6 +828,10 @@ function AssignmentQueue({
 }>) {
   return (
     <CodingPanel
+      {...contentStateDataAttributes(
+        resolveContentStateMeta({ itemCount: tasks.length }),
+        viewModel.profileId,
+      )}
       className="xl:col-span-7"
       subtitle="Prioritized local task queue. It prepares handoff, not execution."
       title="Assignment Queue"
@@ -897,6 +917,10 @@ function WorkerPool({
 }>) {
   return (
     <CodingPanel
+      {...contentStateDataAttributes(
+        resolveContentStateMeta({ itemCount: workers.length }),
+        viewModel.profileId,
+      )}
       className="xl:col-span-5"
       subtitle="Worker profiles and limits. These are roles, not autonomous machines."
       title="Worker Pool"
@@ -981,14 +1005,20 @@ function WorkerPool({
 function PromptLibrary({
   prompts,
   emptyState,
+  profileId,
   onNewPrompt,
 }: Readonly<{
   prompts: PromptTemplate[];
   emptyState: AgentHubViewModel["emptyStates"]["noPrompts"];
+  profileId: string;
   onNewPrompt: () => void;
 }>) {
   return (
     <CodingPanel
+      {...contentStateDataAttributes(
+        resolveContentStateMeta({ itemCount: prompts.length }),
+        profileId,
+      )}
       className="xl:col-span-4"
       subtitle="Reusable prompts stay visible, but below queue and review."
       title="Prompt Library Snapshot"
@@ -1041,13 +1071,19 @@ function PromptLibrary({
 
 function ContextBundles({
   bundles,
+  profileId,
   onAddContext,
 }: Readonly<{
   bundles: ContextBundle[];
+  profileId: string;
   onAddContext: () => void;
 }>) {
   return (
     <CodingPanel
+      {...contentStateDataAttributes(
+        resolveContentStateMeta({ itemCount: bundles.length }),
+        profileId,
+      )}
       className="xl:col-span-4"
       subtitle="Linked repo, product, design and security context for agent handoff."
       title="Context Bundles"
@@ -1057,8 +1093,19 @@ function ContextBundles({
         </button>
       }
     >
-      <div className="grid gap-3">
-        {bundles.map((bundle) => (
+      {bundles.length === 0 ? (
+        <EmptyStateCard
+          action={
+            <button className={secondaryButtonClass} onClick={onAddContext} type="button">
+              Add context
+            </button>
+          }
+          description="Context bundles appear after a local bundle draft exists. No files, repositories, APIs or secrets are read."
+          title="No context bundles"
+        />
+      ) : (
+        <div className="grid gap-3">
+          {bundles.map((bundle) => (
           <article
             className="rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.52)] p-3"
             key={bundle.id}
@@ -1081,8 +1128,9 @@ function ContextBundles({
               {bundle.repositoryName ?? "No repository"}
             </p>
           </article>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </CodingPanel>
   );
 }
@@ -1100,12 +1148,22 @@ function RecentSessions({
 }>) {
   return (
     <CodingPanel
+      {...contentStateDataAttributes(
+        resolveContentStateMeta({ itemCount: sessions.length }),
+        viewModel.profileId,
+      )}
       className="xl:col-span-4"
       subtitle="Completed and active sessions stay secondary to review decisions."
       title="Recent Agent Sessions"
     >
-      <div className="grid gap-3">
-        {sessions.map((session) => (
+      {sessions.length === 0 ? (
+        <EmptyStateCard
+          description="Agent sessions appear only after a real local draft or reviewed output exists."
+          title="No recent agent sessions"
+        />
+      ) : (
+        <div className="grid gap-3">
+          {sessions.map((session) => (
           <article
             className="rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.52)] p-3"
             key={session.id}
@@ -1130,8 +1188,9 @@ function RecentSessions({
               Follow-up: {session.followUp ?? "None"}
             </p>
           </article>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </CodingPanel>
   );
 }
@@ -2064,6 +2123,7 @@ export function AgentHubPage({
           onDecision={updateOutputReviewStatus}
           onReview={(output) => setSelectedOutputId(output.id)}
           outputs={filteredOutputs}
+          profileId={viewModel.profileId}
           sessions={viewModel.sessions}
           tasks={tasks}
           workers={viewModel.workers}
@@ -2092,29 +2152,33 @@ export function AgentHubPage({
         <PromptLibrary
           emptyState={viewModel.emptyStates.noPrompts}
           onNewPrompt={() => setPromptOpen(true)}
+          profileId={viewModel.profileId}
           prompts={prompts}
         />
         <ContextBundles
           bundles={contexts}
           onAddContext={() => setContextOpen(true)}
+          profileId={viewModel.profileId}
         />
-        <section
-          aria-labelledby="future-error-state-heading"
-          className="xl:col-span-12 rounded-[16px] border border-[rgba(221,107,95,.22)] bg-[rgba(221,107,95,.06)] p-4"
-        >
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-red)]">
-            Prepared error state
-          </p>
-          <h2
-            className="mt-1 text-[15px] font-semibold text-[var(--text-primary)]"
-            id="future-error-state-heading"
+        {viewModel.profileId === "demo" ? (
+          <section
+            aria-labelledby="future-error-state-heading"
+            className="xl:col-span-12 rounded-[16px] border border-[rgba(221,107,95,.22)] bg-[rgba(221,107,95,.06)] p-4"
           >
-            {viewModel.futureErrorState.title}
-          </h2>
-          <p className="mt-2 text-[12px] leading-5 text-[var(--text-secondary)]">
-            {viewModel.futureErrorState.description}
-          </p>
-        </section>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-red)]">
+              Prepared error state
+            </p>
+            <h2
+              className="mt-1 text-[15px] font-semibold text-[var(--text-primary)]"
+              id="future-error-state-heading"
+            >
+              {viewModel.futureErrorState.title}
+            </h2>
+            <p className="mt-2 text-[12px] leading-5 text-[var(--text-secondary)]">
+              {viewModel.futureErrorState.description}
+            </p>
+          </section>
+        ) : null}
         <Guardrails guardrails={viewModel.guardrails} />
       </div>
 

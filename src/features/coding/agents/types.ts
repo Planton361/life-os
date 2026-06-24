@@ -167,6 +167,7 @@ export type AgentHubPageContract = {
 };
 
 export type AgentHubViewModel = {
+  profileId: "demo" | "empty" | "manual";
   generatedAt: string;
   pageContract: AgentHubPageContract;
   workers: AgentWorker[];

@@ -126,6 +126,7 @@ export type SkillMapPageContract = {
 };
 
 export type SkillMapViewModel = {
+  profileId: "demo" | "empty" | "manual";
   generatedAt: string;
   pageContract: SkillMapPageContract;
   skills: CodingSkill[];

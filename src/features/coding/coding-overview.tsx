@@ -13,6 +13,10 @@ import {
 } from "react";
 import { cn } from "@/lib/cn";
 import {
+  contentStateDataAttributes,
+  resolveContentStateMeta,
+} from "@/features/content-state";
+import {
   CodingPanel,
   CodingPill,
   EmptyStateCard,
@@ -1045,12 +1049,22 @@ function ActiveWorkPanel({
 }>) {
   return (
     <CodingPanel
+      {...contentStateDataAttributes(
+        resolveContentStateMeta({ capacity: 3, itemCount: viewModel.activeWork.length }),
+        viewModel.profileId,
+      )}
       className="order-3 xl:order-2 xl:col-span-5"
       subtitle="Maximal drei aktive Projekte oder Repositories."
       title="Active Work"
     >
-      <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-3">
-        {viewModel.activeWork.map((item) => (
+      {viewModel.activeWork.length === 0 ? (
+        <EmptyStateCard
+          description="Active work appears after a real local project or repository focus exists. Demo projects are not used here."
+          title="No active coding work"
+        />
+      ) : (
+        <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-3">
+          {viewModel.activeWork.map((item) => (
           <button
             className="min-h-[128px] rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.54)] p-3 text-left transition hover:border-[color-mix(in_srgb,var(--accent)_32%,var(--border-default))] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
             key={item.id}
@@ -1077,18 +1091,21 @@ function ActiveWorkPanel({
               <CodingPill quiet>{item.area}</CodingPill>
             </div>
           </button>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </CodingPanel>
   );
 }
 
 function AgentQueuePanel({
+  profileId,
   agents,
   decisions,
   onReview,
 }: Readonly<{
   agents: AgentSessionViewModel[];
+  profileId: string;
   decisions: Record<string, ReviewDecision>;
   onReview: (agent: AgentSessionViewModel) => void;
 }>) {
@@ -1096,6 +1113,10 @@ function AgentQueuePanel({
 
   return (
     <CodingPanel
+      {...contentStateDataAttributes(
+        resolveContentStateMeta({ itemCount: agents.length }),
+        profileId,
+      )}
       badge={
         reviewNeeded ? (
           <CodingPill accent="var(--accent-orange)">Review needed</CodingPill>
@@ -1105,8 +1126,14 @@ function AgentQueuePanel({
       subtitle="Generated output waits for proposal review."
       title="Agent Queue"
     >
-      <div className="space-y-2">
-        {agents.map((agent) => {
+      {agents.length === 0 ? (
+        <EmptyStateCard
+          description="Agent outputs appear only after a real local draft or review item exists. No fake agent run is shown."
+          title="No agent outputs queued"
+        />
+      ) : (
+        <div className="space-y-2">
+          {agents.map((agent) => {
           const decision = decisions[agent.id];
           const isReview = agent.reviewNeeded;
 
@@ -1148,8 +1175,9 @@ function AgentQueuePanel({
               </div>
             </div>
           );
-        })}
-      </div>
+          })}
+        </div>
+      )}
     </CodingPanel>
   );
 }
@@ -1157,14 +1185,20 @@ function AgentQueuePanel({
 function RepositoryAttentionPanel({
   repositories,
   emptyState,
+  profileId,
   onRepositoryOpen,
 }: Readonly<{
   repositories: RepositoryAttentionViewModel[];
   emptyState: CodingOverviewViewModel["emptyStates"]["noRepositories"];
+  profileId: string;
   onRepositoryOpen: (repository: RepositoryAttentionViewModel) => void;
 }>) {
   return (
     <CodingPanel
+      {...contentStateDataAttributes(
+        resolveContentStateMeta({ itemCount: repositories.length }),
+        profileId,
+      )}
       className="order-4 xl:col-span-5"
       subtitle="Manual mock signals with a checkable next action."
       title="Repositories requiring attention"
@@ -1219,19 +1253,31 @@ function RepositoryAttentionPanel({
 
 function RecentSessionsPanel({
   sessions,
+  profileId,
   onToast,
 }: Readonly<{
   sessions: RecentCodingSessionViewModel[];
+  profileId: string;
   onToast: (toast: ToastState) => void;
 }>) {
   return (
     <CodingPanel
+      {...contentStateDataAttributes(
+        resolveContentStateMeta({ itemCount: sessions.length }),
+        profileId,
+      )}
       className="order-5 xl:col-span-3"
       subtitle="Outcome notes keep context recoverable."
       title="Recent Sessions"
     >
-      <div className="space-y-2">
-        {sessions.map((session) => (
+      {sessions.length === 0 ? (
+        <EmptyStateCard
+          description="Session notes appear after a local session draft exists. No previous demo session is reused."
+          title="No recent coding sessions"
+        />
+      ) : (
+        <div className="space-y-2">
+          {sessions.map((session) => (
           <div
             className="rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.5)] p-3"
             key={session.id}
@@ -1265,8 +1311,9 @@ function RecentSessionsPanel({
               Open note
             </button>
           </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </CodingPanel>
   );
 }
@@ -1282,11 +1329,22 @@ function SkillFocusPanel({
 
   return (
     <CodingPanel
-      badge={<CodingPill accent="var(--accent-cyan)">{skill.evidenceStatus}</CodingPill>}
+      {...contentStateDataAttributes(
+        resolveContentStateMeta({ hasPrimaryValue: Boolean(skill), itemCount: skill ? 1 : 0 }),
+        viewModel.profileId,
+      )}
+      badge={skill ? <CodingPill accent="var(--accent-cyan)">{skill.evidenceStatus}</CodingPill> : null}
       className="order-6 xl:col-span-4"
       subtitle="One learning target linked to work evidence."
       title="Skill Focus"
     >
+      {!skill ? (
+        <EmptyStateCard
+          description="Skill focus appears after a real local skill or evidence target exists. No fake progress is shown."
+          title="No skill focus selected"
+        />
+      ) : (
+      <>
       <p className="text-[22px] font-semibold leading-7 text-[var(--text-primary)]">
         {skill.title}
       </p>
@@ -1322,25 +1380,39 @@ function SkillFocusPanel({
           {skill.secondaryAction}
         </button>
       </div>
+      </>
+      )}
     </CodingPanel>
   );
 }
 
 function KnowledgeUpdatesPanel({
   updates,
+  profileId,
   onToast,
 }: Readonly<{
   updates: KnowledgeUpdateViewModel[];
+  profileId: string;
   onToast: (toast: ToastState) => void;
 }>) {
   return (
     <CodingPanel
+      {...contentStateDataAttributes(
+        resolveContentStateMeta({ itemCount: updates.length }),
+        profileId,
+      )}
       className="order-7 xl:col-span-5"
       subtitle="Recently relevant technical notes and decisions."
       title="Knowledge Updates"
     >
-      <div className="space-y-2">
-        {updates.map((update) => (
+      {updates.length === 0 ? (
+        <EmptyStateCard
+          description="Knowledge updates appear after a local note or reviewed output exists."
+          title="No coding knowledge updates"
+        />
+      ) : (
+        <div className="space-y-2">
+          {updates.map((update) => (
           <div
             className="rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.5)] p-3"
             key={update.id}
@@ -1370,8 +1442,9 @@ function KnowledgeUpdatesPanel({
               </button>
             </div>
           </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </CodingPanel>
   );
 }
@@ -1383,9 +1456,14 @@ function CodingRhythmPanel({
 }>) {
   const rhythm = viewModel.codingRhythm;
   const maxMinutes = Math.max(...rhythm.days.map((day) => day.minutes), 1);
+  const totalSessions = rhythm.days.reduce((sum, day) => sum + day.sessions, 0);
 
   return (
     <CodingPanel
+      {...contentStateDataAttributes(
+        resolveContentStateMeta({ itemCount: totalSessions }),
+        viewModel.profileId,
+      )}
       className="order-8 xl:col-span-3"
       subtitle={`${rhythm.period} with text insight, not pressure.`}
       title={rhythm.title}
@@ -1595,6 +1673,7 @@ export function CodingOverviewPage({
           agents={viewModel.agentQueue}
           decisions={reviewDecisions}
           onReview={setReviewAgent}
+          profileId={viewModel.profileId}
         />
         <ActiveWorkPanel
           onRepositoryOpen={openRepositoryById}
@@ -1603,11 +1682,20 @@ export function CodingOverviewPage({
         <RepositoryAttentionPanel
           emptyState={viewModel.emptyStates.noRepositories}
           onRepositoryOpen={setInspectedRepository}
+          profileId={viewModel.profileId}
           repositories={viewModel.repositoriesAttention}
         />
-        <RecentSessionsPanel onToast={setToast} sessions={recentSessions} />
+        <RecentSessionsPanel
+          onToast={setToast}
+          profileId={viewModel.profileId}
+          sessions={recentSessions}
+        />
         <SkillFocusPanel onToast={setToast} viewModel={viewModel} />
-        <KnowledgeUpdatesPanel onToast={setToast} updates={knowledgeUpdates} />
+        <KnowledgeUpdatesPanel
+          onToast={setToast}
+          profileId={viewModel.profileId}
+          updates={knowledgeUpdates}
+        />
         <CodingRhythmPanel viewModel={viewModel} />
       </div>
 

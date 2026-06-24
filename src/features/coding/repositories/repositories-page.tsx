@@ -12,6 +12,10 @@ import {
 } from "react";
 import { cn } from "@/lib/cn";
 import {
+  contentStateDataAttributes,
+  resolveContentStateMeta,
+} from "@/features/content-state";
+import {
   CodingPanel,
   CodingPill,
   EmptyStateCard,
@@ -279,7 +283,7 @@ function Header({
             {viewModel.header.primaryAction}
           </button>
           <button
-            aria-disabled="true"
+            disabled
             className={cn(
               secondaryButtonClass,
               "border-[rgba(95,200,215,.18)] text-[var(--text-muted)]",
@@ -567,25 +571,39 @@ function CompactCount({
 
 function RepositoryList({
   repositories,
+  sourceEmpty,
   selectedId,
   viewModel,
   onSelect,
 }: Readonly<{
   repositories: CodingRepository[];
+  sourceEmpty: boolean;
   selectedId: string | null;
   viewModel: RepositoryWorkbenchViewModel;
   onSelect: (repository: CodingRepository) => void;
 }>) {
   return (
     <CodingPanel
+      {...contentStateDataAttributes(
+        resolveContentStateMeta({ itemCount: repositories.length }),
+        viewModel.profileId,
+      )}
       className="order-4 xl:order-3 xl:col-span-8"
       subtitle="Scanbare Arbeitsliste ohne GitHub-Analytics-Metrikwand."
       title="Repository List"
     >
       {repositories.length === 0 ? (
         <EmptyStateCard
-          description={viewModel.emptyStates.noSearchResults.description}
-          title={viewModel.emptyStates.noSearchResults.title}
+          description={
+            sourceEmpty
+              ? viewModel.emptyStates.noRepositories.description
+              : viewModel.emptyStates.noSearchResults.description
+          }
+          title={
+            sourceEmpty
+              ? viewModel.emptyStates.noRepositories.title
+              : viewModel.emptyStates.noSearchResults.title
+          }
         />
       ) : (
         <div className="space-y-2">
@@ -619,13 +637,23 @@ function AttentionQueue({
 
   return (
     <CodingPanel
+      {...contentStateDataAttributes(
+        resolveContentStateMeta({ capacity: 4, itemCount: attention.length }),
+        viewModel.profileId,
+      )}
       badge={<CodingPill accent="var(--accent-orange)">Manual signals</CodingPill>}
       className="order-3 xl:order-4 xl:col-span-4"
       subtitle="Failed checks, stale branches, missing next actions and open reviews."
       title="Attention Queue"
     >
-      <div className="space-y-2">
-        {attention.map((repository) => {
+      {attention.length === 0 ? (
+        <EmptyStateCard
+          description="Attention signals appear after a real repository has a missing next action, stale branch, failed check or open review."
+          title="No repository attention signals"
+        />
+      ) : (
+        <div className="space-y-2">
+          {attention.map((repository) => {
           const signal = primarySignal(repository, viewModel);
           const meta = viewModel.signalMeta[signal];
 
@@ -650,8 +678,9 @@ function AttentionQueue({
               </div>
             </button>
           );
-        })}
-      </div>
+          })}
+        </div>
+      )}
     </CodingPanel>
   );
 }
@@ -665,19 +694,26 @@ function SelectedRepositorySummary({
   viewModel: RepositoryWorkbenchViewModel;
   onOpenInspector: () => void;
 }>) {
-  if (!repository) {
-    return null;
-  }
-
-  const status = viewModel.statusMeta[repository.status];
+  const status = repository ? viewModel.statusMeta[repository.status] : null;
 
   return (
     <CodingPanel
-      badge={<CodingPill accent={status.accent}>{status.label}</CodingPill>}
+      {...contentStateDataAttributes(
+        resolveContentStateMeta({ hasPrimaryValue: Boolean(repository), itemCount: repository ? 1 : 0 }),
+        viewModel.profileId,
+      )}
+      badge={status ? <CodingPill accent={status.accent}>{status.label}</CodingPill> : null}
       className="order-5 xl:order-5 xl:col-span-4"
       subtitle="Selected repository context."
       title="Selected Repository"
     >
+      {!repository ? (
+        <EmptyStateCard
+          description="Select or add a local repository draft to inspect branch, project, next action and linked context."
+          title="No repository selected"
+        />
+      ) : (
+      <>
       <p className="text-[18px] font-semibold text-[var(--text-primary)]">
         {repository.fullName}
       </p>
@@ -693,6 +729,8 @@ function SelectedRepositorySummary({
       <button className={primaryButtonClass} onClick={onOpenInspector} type="button">
         Open repository
       </button>
+      </>
+      )}
     </CodingPanel>
   );
 }
@@ -720,17 +758,23 @@ function LinkedTasks({
   repository,
   tasks,
   emptyState,
+  profileId,
   onToast,
 }: Readonly<{
   repository: CodingRepository | null;
   tasks: RepositoryLinkedTask[];
   emptyState: RepositoryWorkbenchViewModel["emptyStates"]["noLinkedTasks"];
+  profileId: string;
   onToast: (toast: ToastState) => void;
 }>) {
   const linkedTasks = repository ? tasksFor(tasks, repository.id) : [];
 
   return (
     <CodingPanel
+      {...contentStateDataAttributes(
+        resolveContentStateMeta({ itemCount: linkedTasks.length }),
+        profileId,
+      )}
       className="order-6 xl:order-6 xl:col-span-4"
       subtitle="Task context for the selected repository."
       title="Linked Tasks"
@@ -779,10 +823,12 @@ function LinkedTasks({
 function ResourceMap({
   repository,
   resources,
+  profileId,
   onToast,
 }: Readonly<{
   repository: CodingRepository | null;
   resources: RepositoryResource[];
+  profileId: string;
   onToast: (toast: ToastState) => void;
 }>) {
   const selectedResources = repository
@@ -801,12 +847,21 @@ function ResourceMap({
 
   return (
     <CodingPanel
+      {...contentStateDataAttributes(
+        resolveContentStateMeta({ itemCount: selectedResources.length }),
+        profileId,
+      )}
       className="order-7 xl:order-7 xl:col-span-4"
       subtitle="Grouped list, no network graph."
       title="Resource Map"
     >
       <div className="space-y-3">
-        {groups.map((group, index) => {
+        {selectedResources.length === 0 ? (
+          <EmptyStateCard
+            description="Resource groups stay ready, but no docs, notes, prompts or snippets are linked yet."
+            title="No repository resources linked"
+          />
+        ) : groups.map((group, index) => {
           const items = selectedResources.filter((resource) =>
             group.types.includes(resource.type),
           );
@@ -858,11 +913,7 @@ function RepositoryHealth({
   repository: CodingRepository | null;
   viewModel: RepositoryWorkbenchViewModel;
 }>) {
-  if (!repository) {
-    return null;
-  }
-
-  const healthItems = [
+  const healthItems = repository ? [
     {
       label: "Next action set",
       value: repository.nextAction ? "Ready" : "Missing",
@@ -885,14 +936,25 @@ function RepositoryHealth({
         ? "var(--accent-orange)"
         : "var(--accent-green)",
     },
-  ];
+  ] : [];
 
   return (
     <CodingPanel
+      {...contentStateDataAttributes(
+        resolveContentStateMeta({ hasPrimaryValue: Boolean(repository), itemCount: repository ? 1 : 0 }),
+        viewModel.profileId,
+      )}
       className="order-9 xl:order-8 xl:col-span-4"
       subtitle="Small text-led signals, no DevOps metric wall."
       title="Repository Health"
     >
+      {!repository ? (
+        <EmptyStateCard
+          description="Health signals appear after a real local repository draft is selected."
+          title="No repository health yet"
+        />
+      ) : (
+      <>
       <div className="grid gap-2 sm:grid-cols-2">
         {healthItems.map((item, index) => (
           <div
@@ -913,6 +975,8 @@ function RepositoryHealth({
         Primary signal:{" "}
         {viewModel.signalMeta[primarySignal(repository, viewModel)].label}
       </p>
+      </>
+      )}
     </CodingPanel>
   );
 }
@@ -920,14 +984,20 @@ function RepositoryHealth({
 function RecentActivity({
   repository,
   activity,
+  profileId,
 }: Readonly<{
   repository: CodingRepository | null;
   activity: RepositoryActivity[];
+  profileId: string;
 }>) {
   const items = repository ? activityFor(activity, repository.id) : activity.slice(0, 4);
 
   return (
     <CodingPanel
+      {...contentStateDataAttributes(
+        resolveContentStateMeta({ itemCount: items.length }),
+        profileId,
+      )}
       className="order-8 xl:order-9 xl:col-span-4"
       subtitle="Manual/mock activity, not GitHub history."
       title="Recent Repository Activity"
@@ -1766,24 +1836,7 @@ export function RepositoriesPage({
       />
       <FilterBar filter={filter} setFilter={setFilter} viewModel={viewModel} />
 
-      {repositories.length === 0 ? (
-        <section className="order-3">
-          <EmptyStateCard
-            action={
-              <button
-                className={primaryButtonClass}
-                onClick={() => setAddDialogOpen(true)}
-                type="button"
-              >
-                Add repository
-              </button>
-            }
-            description={viewModel.emptyStates.noRepositories.description}
-            title={viewModel.emptyStates.noRepositories.title}
-          />
-        </section>
-      ) : (
-        <div className="grid min-w-0 gap-2 xl:grid-cols-12">
+      <div className="grid min-w-0 gap-2 xl:grid-cols-12">
           <AttentionQueue
             onSelect={selectRepository}
             repositories={repositories}
@@ -1793,6 +1846,7 @@ export function RepositoriesPage({
             onSelect={selectRepository}
             repositories={filteredRepositories}
             selectedId={selectedRepository?.id ?? null}
+            sourceEmpty={repositories.length === 0}
             viewModel={viewModel}
           />
           <SelectedRepositorySummary
@@ -1803,24 +1857,26 @@ export function RepositoriesPage({
           <LinkedTasks
             emptyState={viewModel.emptyStates.noLinkedTasks}
             onToast={setToast}
+            profileId={viewModel.profileId}
             repository={selectedRepository}
             tasks={viewModel.tasks}
           />
           <ResourceMap
             onToast={setToast}
+            profileId={viewModel.profileId}
             repository={selectedRepository}
             resources={resources}
           />
           <RecentActivity
             activity={viewModel.activity}
+            profileId={viewModel.profileId}
             repository={selectedRepository}
           />
           <RepositoryHealth
             repository={selectedRepository}
             viewModel={viewModel}
           />
-        </div>
-      )}
+      </div>
 
       <div className="order-last rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.42)] p-3">
         <PageContractNote>

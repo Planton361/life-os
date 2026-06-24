@@ -446,6 +446,7 @@ const recommendations: LearningRecommendation[] = [
 
 export function getSkillMapViewModel(): SkillMapViewModel {
   return {
+    profileId: "demo",
     generatedAt: "2026-06-21T18:30:00+02:00",
     pageContract: {
       pageType: "Area Subpage / Skill Intelligence Map",

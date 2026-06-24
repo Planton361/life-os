@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { ComponentPropsWithoutRef, CSSProperties, ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
 export type CodingStyle = CSSProperties & {
@@ -48,13 +48,15 @@ export function CodingPanel({
   badge,
   children,
   className,
+  ...props
 }: Readonly<{
   title: string;
   subtitle?: string;
   badge?: ReactNode;
   children: ReactNode;
   className?: string;
-}>) {
+}> &
+  ComponentPropsWithoutRef<"section">) {
   const id = headingId(title);
 
   return (
@@ -64,6 +66,7 @@ export function CodingPanel({
         "min-w-0 overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.84)] shadow-[0_8px_22px_rgba(0,0,0,.12)]",
         className,
       )}
+      {...props}
     >
       <div className="border-b border-[var(--border-subtle)] bg-[rgba(18,28,43,.42)] px-4 py-3">
         <div className="flex min-w-0 items-start justify-between gap-3">

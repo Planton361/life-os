@@ -13,6 +13,10 @@ import {
 } from "react";
 import { cn } from "@/lib/cn";
 import {
+  contentStateDataAttributes,
+  resolveContentStateMeta,
+} from "@/features/content-state";
+import {
   CodingPanel,
   CodingPill,
   EmptyStateCard,
@@ -568,6 +572,10 @@ function SkillNetworkMap({
 
   return (
     <section
+      {...contentStateDataAttributes(
+        resolveContentStateMeta({ itemCount: skills.length }),
+        viewModel.profileId,
+      )}
       aria-describedby="skill-map-description"
       aria-labelledby="skill-network-map-heading"
       className="overflow-hidden rounded-[18px] border border-[rgba(91,124,250,.26)] bg-[rgba(15,23,36,.9)] shadow-[0_12px_30px_rgba(0,0,0,.18)] xl:col-span-8"
@@ -615,6 +623,14 @@ function SkillNetworkMap({
 
       <div className="overflow-x-auto p-4">
         <div className="relative h-[640px] min-w-[960px] rounded-[16px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.48)]">
+          {skills.length === 0 ? (
+            <div className="absolute inset-4 flex items-center justify-center">
+              <EmptyStateCard
+                description={viewModel.emptyStates.noSkills.description}
+                title={viewModel.emptyStates.noSkills.title}
+              />
+            </div>
+          ) : null}
           {viewModel.clusters.map((cluster) => {
             const clusterSkills = viewModel.skills.filter((skill) =>
               cluster.skillIds.includes(skill.id),
@@ -772,6 +788,10 @@ function SelectedSkillInspector({
 }>) {
   return (
     <CodingPanel
+      {...contentStateDataAttributes(
+        resolveContentStateMeta({ hasPrimaryValue: Boolean(skill), itemCount: skill ? 1 : 0 }),
+        skill ? "demo" : "empty",
+      )}
       className="xl:col-span-4"
       subtitle="Manual skill detail. Evidence and project links explain confidence."
       title="Selected Skill Inspector"
@@ -975,6 +995,10 @@ function ProjectRequirementsPanel({
 }>) {
   return (
     <CodingPanel
+      {...contentStateDataAttributes(
+        resolveContentStateMeta({ itemCount: projects.length }),
+        "demo",
+      )}
       className="xl:col-span-4"
       subtitle="Select a project to highlight required, optional and missing skills."
       title="Project Skill Gaps"
@@ -1065,10 +1089,21 @@ function SkillGapMatrix({
 
   return (
     <CodingPanel
+      {...contentStateDataAttributes(
+        resolveContentStateMeta({ itemCount: visibleSkills.length }),
+        "demo",
+      )}
       className="xl:col-span-8"
       subtitle="Compact project fit matrix. Every cell has a text label."
       title="Skill Gap Matrix"
     >
+      {visibleProjects.length === 0 || visibleSkills.length === 0 ? (
+        <EmptyStateCard
+          description="Skill fit cells appear after real skills and project requirements exist. No fake fit values are shown."
+          title="No skill gap matrix yet"
+        />
+      ) : (
+      <>
       <div className="hidden overflow-x-auto md:block">
         <div className="min-w-[720px]">
           <div className="grid gap-2" style={{ gridTemplateColumns: `180px repeat(${visibleProjects.length}, minmax(120px, 1fr))` }}>
@@ -1152,6 +1187,8 @@ function SkillGapMatrix({
           );
         })}
       </div>
+      </>
+      )}
     </CodingPanel>
   );
 }
@@ -1165,6 +1202,12 @@ function ClusterSummaryCards({
 }>) {
   return (
     <CodingPanel className="xl:col-span-4" subtitle="Cluster strength and next gap." title="Cluster Summary">
+      {clusters.length === 0 ? (
+        <EmptyStateCard
+          description="Cluster summaries appear after local skills are grouped."
+          title="No skill clusters yet"
+        />
+      ) : (
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
         {clusters.map((cluster) => {
           const clusterSkills = skills.filter((skill) =>
@@ -1201,6 +1244,7 @@ function ClusterSummaryCards({
           );
         })}
       </div>
+      )}
     </CodingPanel>
   );
 }
@@ -1222,7 +1266,12 @@ function SkillListMobile({
         Mobile Skill List
       </p>
       <div className="mt-3 grid gap-4">
-        {clusters.map((cluster) => {
+        {skills.length === 0 ? (
+          <EmptyStateCard
+            description="Skill list appears after a local skill draft exists."
+            title="No skills listed"
+          />
+        ) : clusters.map((cluster) => {
           const clusterSkills = skills.filter((skill) =>
             cluster.skillIds.includes(skill.id),
           );
@@ -1275,8 +1324,14 @@ function LearningRecommendations({
 }>) {
   return (
     <CodingPanel className="xl:col-span-4" subtitle="Prioritized next practice steps from mock gap data." title="Learning Recommendations">
-      <div className="grid gap-3">
-        {recommendations.map((recommendation) => {
+      {recommendations.length === 0 ? (
+        <EmptyStateCard
+          description="Practice recommendations appear after real gaps or local practice plans exist."
+          title="No practice recommendations"
+        />
+      ) : (
+        <div className="grid gap-3">
+          {recommendations.map((recommendation) => {
           const skill = skills.find((item) => item.id === recommendation.skillId);
           const project = projects.find(
             (item) => item.id === recommendation.linkedProjectId,
@@ -1308,8 +1363,9 @@ function LearningRecommendations({
               </p>
             </article>
           );
-        })}
-      </div>
+          })}
+        </div>
+      )}
     </CodingPanel>
   );
 }
@@ -1933,17 +1989,7 @@ export function SkillMapPage({
         viewModel={workingViewModel}
       />
 
-      {skills.length === 0 ? (
-        <EmptyStateCard
-          action={
-            <button className={primaryButtonClass} onClick={() => setAddSkillOpen(true)} type="button">
-              Add skill
-            </button>
-          }
-          description={viewModel.emptyStates.noSkills.description}
-          title={viewModel.emptyStates.noSkills.title}
-        />
-      ) : noResults ? (
+      {noResults && skills.length > 0 ? (
         <EmptyStateCard
           description={viewModel.emptyStates.noSearchResults.description}
           title={viewModel.emptyStates.noSearchResults.title}
@@ -2018,6 +2064,7 @@ export function SkillMapPage({
               evidence={evidence}
               skills={skills}
             />
+            {viewModel.profileId === "demo" ? (
             <section className="xl:col-span-12 rounded-[16px] border border-[rgba(221,107,95,.22)] bg-[rgba(221,107,95,.06)] p-4">
               <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-red)]">
                 Prepared error state
@@ -2029,6 +2076,7 @@ export function SkillMapPage({
                 {viewModel.futureErrorState.description}
               </p>
             </section>
+            ) : null}
             <Rules rules={viewModel.rules} />
           </div>
         </>

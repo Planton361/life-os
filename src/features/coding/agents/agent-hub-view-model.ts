@@ -381,6 +381,7 @@ const contextBundles: ContextBundle[] = [
 
 export function getAgentHubViewModel(): AgentHubViewModel {
   return {
+    profileId: "demo",
     generatedAt: "2026-06-21T18:00:00+02:00",
     pageContract: {
       pageType: "Area Subpage / Agent Control Hub",
