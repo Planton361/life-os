@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
-import {
-  RepositoriesPage,
-  getRepositoriesViewModel,
-} from "@/features/coding/repositories";
+import { getRepositoriesViewModel } from "@/features/profile-data";
 
 export const metadata: Metadata = {
   title: "Repositories | Life OS",
@@ -10,8 +7,10 @@ export const metadata: Metadata = {
     "Coding repository workbench for linked projects, tasks, resources, agent sessions and next actions.",
 };
 
-export default function CodingRepositoriesPage() {
-  const viewModel = getRepositoriesViewModel();
+export default async function CodingRepositoriesPage() {
+  const { RepositoriesPage } =
+    await import("@/features/coding/repositories");
+  const viewModel = await getRepositoriesViewModel();
 
   return <RepositoriesPage viewModel={viewModel} />;
 }

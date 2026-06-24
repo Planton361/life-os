@@ -86,6 +86,32 @@ export function HealthMetricCard({
   );
 }
 
+export function SectionEmptyState({
+  title = "Noch keine Eintraege",
+  description = "Erfasse den ersten Eintrag, sobald du diesen Bereich nutzt.",
+  className,
+}: Readonly<{
+  title?: string;
+  description?: string;
+  className?: string;
+}>) {
+  return (
+    <div
+      className={cn(
+        "rounded-[13px] border border-dashed border-[var(--border-subtle)] bg-[rgba(11,17,28,.34)] px-3 py-3",
+        className,
+      )}
+    >
+      <p className="text-[12px] font-semibold text-[var(--text-primary)]">
+        {title}
+      </p>
+      <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
+        {description}
+      </p>
+    </div>
+  );
+}
+
 export function ActionLink({
   href,
   children,

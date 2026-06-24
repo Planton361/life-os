@@ -9,7 +9,8 @@ const routeConfig = {
   eyebrow: "Knowledge view",
   summary:
     "Coding Knowledge will show technical notes, snippets, prompts, documentation, and references as a filtered view of the central Resources layer.",
-  dataSource: "resources plus linked repositories, skills, projects, and agent context.",
+  dataSource:
+    "resources plus linked repositories, skills, projects, and agent context.",
   emptyTitle: "No coding knowledge view connected yet",
   emptyDescription:
     "This skeleton keeps the Coding Knowledge route available before resource filters and technical context links exist.",

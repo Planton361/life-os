@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
+import { getMentalHealthViewModel } from "@/features/profile-data";
 import { MentalHealthActionLandingPage } from "@/features/health/mental-health-page";
-import { getMentalHealthViewModel } from "@/features/health/mental-health-view-model";
 
 export const metadata: Metadata = {
   title: "Mental Health | Life OS",
@@ -8,8 +8,8 @@ export const metadata: Metadata = {
     "Self-checks, mood patterns and repair routines for Health & Fitness.",
 };
 
-export default function MentalHealthPage() {
-  const viewModel = getMentalHealthViewModel();
+export default async function MentalHealthPage() {
+  const viewModel = await getMentalHealthViewModel();
 
   return <MentalHealthActionLandingPage viewModel={viewModel} />;
 }

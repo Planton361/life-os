@@ -1,4 +1,5 @@
 import { dashboardMockData } from "./mock-data";
+import { recipes } from "@/features/nutrition/meal-planner/meal-planner-mock-data";
 import type {
   DashboardActivePortfolio,
   DashboardAntiRotActions,
@@ -7,12 +8,27 @@ import type {
   DashboardDailyControl,
   DashboardHabitTrackers,
   DashboardMeals,
+  DashboardMealRecipeOption,
   DashboardNutrientBalance,
   DashboardQuickCapture,
   DashboardRunningRecovery,
   DashboardTodayAgenda,
   DashboardWeightLossGoal,
 } from "./types";
+
+const recipeOptions = recipes
+  .filter((recipe) => !recipe.archived)
+  .map(
+    (recipe): DashboardMealRecipeOption => ({
+      id: recipe.id,
+      title: recipe.title,
+      mealTypes: recipe.mealTypes,
+      calories: recipe.totals.calories,
+      protein: recipe.totals.protein,
+      carbs: recipe.totals.carbs,
+      fat: recipe.totals.fat,
+    }),
+  );
 
 export type DashboardCommandCenterViewModel = {
   commandCenter: DashboardCommandCenterMeta;
@@ -48,7 +64,10 @@ export function getDashboardViewModel(): DashboardViewModel {
     healthNutrition: {
       weightLossGoal: dashboardMockData.weightLossGoal,
       nutrientBalance: dashboardMockData.nutrientBalance,
-      meals: dashboardMockData.meals,
+      meals: {
+        ...dashboardMockData.meals,
+        recipeOptions,
+      },
       runningRecovery: dashboardMockData.runningRecovery,
     },
     habitTrackers: dashboardMockData.habitTrackers,

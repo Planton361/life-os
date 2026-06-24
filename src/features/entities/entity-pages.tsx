@@ -35,7 +35,9 @@ import {
   skillStatusMeta,
   taskStatusMeta,
 } from "./entity-selectors";
+import { getEntityCollection } from "@/features/profile-data";
 import type {
+  EntityCollection,
   EntityActivity,
   EntityEvidence,
   EntityKind,
@@ -475,6 +477,17 @@ export function EntityWorkbenchPage({
   kind: EntityKind;
   searchParams: WorkbenchSearchParams;
 }>) {
+  return <EntityWorkbench kind={kind} searchParams={searchParams} />;
+}
+
+async function EntityWorkbench({
+  kind,
+  searchParams,
+}: Readonly<{
+  kind: EntityKind;
+  searchParams: WorkbenchSearchParams;
+}>) {
+  const collection = await getEntityCollection();
   const config = workbenchConfigs[kind];
   const route = entityKindMeta[kind].route;
   const activeFilter =
@@ -483,7 +496,7 @@ export function EntityWorkbenchPage({
   const activeSort =
     searchValue(searchParams, "sort") ??
     (kind === "goal" ? "horizon" : kind === "skill" ? "level" : "priority");
-  const items = getFilteredWorkbenchItems(kind, searchParams);
+  const items = getFilteredWorkbenchItems(kind, searchParams, collection);
   const selected = items[0] ?? null;
 
   return (
@@ -823,16 +836,19 @@ function ProjectRows({
   );
 }
 
-function TaskDetail({ taskId }: Readonly<{ taskId: string }>) {
-  const task = getTask(taskId);
+function TaskDetail({
+  collection,
+  taskId,
+}: Readonly<{ collection: EntityCollection; taskId: string }>) {
+  const task = getTask(taskId, collection);
 
   if (!task) return <MissingEntity id={taskId} kind="task" />;
 
   const status = taskStatusMeta[task.status];
   const area = entityAreaMeta[task.areaId];
-  const project = getTaskProject(task);
-  const goal = getTaskGoal(task);
-  const skill = getTaskSkill(task);
+  const project = getTaskProject(task, collection);
+  const goal = getTaskGoal(task, collection);
+  const skill = getTaskSkill(task, collection);
 
   return (
     <DetailShell
@@ -931,16 +947,19 @@ function TaskDetail({ taskId }: Readonly<{ taskId: string }>) {
   );
 }
 
-function ProjectDetail({ projectId }: Readonly<{ projectId: string }>) {
-  const project = getProject(projectId);
+function ProjectDetail({
+  collection,
+  projectId,
+}: Readonly<{ collection: EntityCollection; projectId: string }>) {
+  const project = getProject(projectId, collection);
 
   if (!project) return <MissingEntity id={projectId} kind="project" />;
 
   const status = projectStatusMeta[project.status];
   const area = entityAreaMeta[project.areaId];
-  const tasks = getProjectTasks(project);
-  const milestones = getProjectMilestones(project);
-  const goal = getProjectGoal(project);
+  const tasks = getProjectTasks(project, collection);
+  const milestones = getProjectMilestones(project, collection);
+  const goal = getProjectGoal(project, collection);
   const activeTask =
     tasks.find((task) => task.status === "active") ?? tasks[0] ?? null;
 
@@ -1078,16 +1097,19 @@ function ProjectDetail({ projectId }: Readonly<{ projectId: string }>) {
   );
 }
 
-function GoalDetail({ goalId }: Readonly<{ goalId: string }>) {
-  const goal = getGoal(goalId);
+function GoalDetail({
+  collection,
+  goalId,
+}: Readonly<{ collection: EntityCollection; goalId: string }>) {
+  const goal = getGoal(goalId, collection);
 
   if (!goal) return <MissingEntity id={goalId} kind="goal" />;
 
   const status = goalStatusMeta[goal.status];
   const area = entityAreaMeta[goal.areaId];
-  const projects = getGoalProjects(goal);
-  const tasks = getGoalTasks(goal);
-  const milestones = getGoalMilestones(goal);
+  const projects = getGoalProjects(goal, collection);
+  const tasks = getGoalTasks(goal, collection);
+  const milestones = getGoalMilestones(goal, collection);
 
   return (
     <DetailShell
@@ -1149,16 +1171,19 @@ function GoalDetail({ goalId }: Readonly<{ goalId: string }>) {
   );
 }
 
-function SkillDetail({ skillId }: Readonly<{ skillId: string }>) {
-  const skill = getSkill(skillId);
+function SkillDetail({
+  collection,
+  skillId,
+}: Readonly<{ collection: EntityCollection; skillId: string }>) {
+  const skill = getSkill(skillId, collection);
 
   if (!skill) return <MissingEntity id={skillId} kind="skill" />;
 
   const status = skillStatusMeta[skill.status];
   const area = entityAreaMeta[skill.areaId];
-  const tasks = getSkillTasks(skill);
-  const projects = getSkillProjects(skill);
-  const milestones = getSkillMilestones(skill);
+  const tasks = getSkillTasks(skill, collection);
+  const projects = getSkillProjects(skill, collection);
+  const milestones = getSkillMilestones(skill, collection);
 
   return (
     <DetailShell
@@ -1239,15 +1264,19 @@ function SkillDetail({ skillId }: Readonly<{ skillId: string }>) {
   );
 }
 
-export function EntityDetailPage({
+export async function EntityDetailPage({
   kind,
   id,
 }: Readonly<{
   kind: EntityKind;
   id: string;
 }>) {
-  if (kind === "task") return <TaskDetail taskId={id} />;
-  if (kind === "project") return <ProjectDetail projectId={id} />;
-  if (kind === "goal") return <GoalDetail goalId={id} />;
-  return <SkillDetail skillId={id} />;
+  const collection = await getEntityCollection();
+
+  if (kind === "task") return <TaskDetail collection={collection} taskId={id} />;
+  if (kind === "project") {
+    return <ProjectDetail collection={collection} projectId={id} />;
+  }
+  if (kind === "goal") return <GoalDetail collection={collection} goalId={id} />;
+  return <SkillDetail collection={collection} skillId={id} />;
 }

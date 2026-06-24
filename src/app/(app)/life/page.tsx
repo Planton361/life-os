@@ -1,7 +1,4 @@
-import {
-  LifeOverviewPage,
-  getLifeOverviewViewModel,
-} from "@/features/life";
+import { getLifeOverviewViewModel } from "@/features/profile-data";
 
 export const metadata = {
   title: "Life Overview | Life OS",
@@ -9,8 +6,10 @@ export const metadata = {
     "Personal Life overview for journal, loose notes, entertainment and inventory with local mock interactions.",
 };
 
-export default function LifePage() {
-  const viewModel = getLifeOverviewViewModel();
+export default async function LifePage() {
+  const { LifeOverviewPage } =
+    await import("@/features/life");
+  const viewModel = await getLifeOverviewViewModel();
 
   return <LifeOverviewPage viewModel={viewModel} />;
 }

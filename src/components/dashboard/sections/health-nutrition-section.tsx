@@ -2,6 +2,7 @@
 
 import type {
   DashboardMeal,
+  DashboardMealRecipeOption,
   DashboardMeals,
   DashboardNutrientBalance,
   DashboardRunningRecovery,
@@ -11,11 +12,6 @@ import type {
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { cn } from "@/lib/cn";
-import { recipes as recipeCatalog } from "@/features/nutrition/meal-planner/meal-planner-mock-data";
-import type {
-  MealType as RecipeMealType,
-  Recipe,
-} from "@/features/nutrition/meal-planner/meal-planner-types";
 import { formatMealTypeList } from "@/features/nutrition/meal-planner/meal-planner-utils";
 import {
   DashboardDialog,
@@ -24,7 +20,13 @@ import {
   dashboardActionButtonClass,
   dashboardPrimaryButtonClass,
 } from "./dashboard-dialog";
-import { Panel, Pill, ProgressBar, styleFor } from "./section-primitives";
+import {
+  DashboardEmptyState,
+  Panel,
+  Pill,
+  ProgressBar,
+  styleFor,
+} from "./section-primitives";
 
 const DASHBOARD_LINK_FOCUS_CLASSES =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-cyan)]";
@@ -69,8 +71,6 @@ function muscleStatusAccent(statusLabel: string) {
   return "var(--accent-cyan)";
 }
 
-const availableRecipes = recipeCatalog.filter((recipe) => !recipe.archived);
-
 function dashboardMealTypeFromForm(value: FormDataEntryValue | null) {
   if (value === "Lunch" || value === "Dinner") {
     return value;
@@ -79,7 +79,7 @@ function dashboardMealTypeFromForm(value: FormDataEntryValue | null) {
   return "Breakfast";
 }
 
-function recipeMealTypeForDashboard(type: DashboardMeal["type"]): RecipeMealType {
+function recipeMealTypeForDashboard(type: DashboardMeal["type"]) {
   if (type === "Lunch") {
     return "lunch";
   }
@@ -91,24 +91,27 @@ function recipeMealTypeForDashboard(type: DashboardMeal["type"]): RecipeMealType
   return "breakfast";
 }
 
-function findRecipe(recipeId: string) {
+function findRecipe(
+  recipeId: string,
+  availableRecipes: readonly DashboardMealRecipeOption[],
+) {
   return availableRecipes.find((recipe) => recipe.id === recipeId) ?? null;
 }
 
 function mealFromRecipe(
   meal: DashboardMeal,
-  recipe: Recipe,
+  recipe: DashboardMealRecipeOption,
   type: DashboardMeal["type"],
   time: string,
 ): DashboardMeal {
   return {
     ...meal,
     href: `/nutrition/recipes/${recipe.id}`,
-    kcal: `${Math.round(recipe.totals.calories)} kcal`,
+    kcal: `${Math.round(recipe.calories)} kcal`,
     macros: [
-      `P ${Math.round(recipe.totals.protein)}g`,
-      `C ${Math.round(recipe.totals.carbs)}g`,
-      `F ${Math.round(recipe.totals.fat)}g`,
+      `P ${Math.round(recipe.protein)}g`,
+      `C ${Math.round(recipe.carbs)}g`,
+      `F ${Math.round(recipe.fat)}g`,
     ],
     name: recipe.title,
     recipeId: recipe.id,
@@ -147,11 +150,7 @@ export function WeightLossGoal({
         </span>
       </div>
       <div className="mt-2">
-        <ProgressBar
-          accent={data.accent}
-          progress={data.progress}
-          quiet
-        />
+        <ProgressBar accent={data.accent} progress={data.progress} quiet />
       </div>
     </>
   );
@@ -169,10 +168,7 @@ export function WeightLossGoal({
   }
 
   return (
-    <section
-      aria-labelledby="weight-loss-goal-title"
-      className={className}
-    >
+    <section aria-labelledby="weight-loss-goal-title" className={className}>
       {content}
     </section>
   );
@@ -215,10 +211,7 @@ export function NutrientBalance({
               </div>
             </div>
             <div className="mt-2">
-              <ProgressBar
-                accent={item.accent}
-                progress={item.progress}
-              />
+              <ProgressBar accent={item.accent} progress={item.progress} />
             </div>
           </div>
         ))}
@@ -242,10 +235,7 @@ export function NutrientBalance({
   }
 
   return (
-    <section
-      aria-labelledby="nutrient-balance-title"
-      className={className}
-    >
+    <section aria-labelledby="nutrient-balance-title" className={className}>
       {content}
     </section>
   );
@@ -258,6 +248,7 @@ export function MealsToday({
 }>) {
   const [meals, setMeals] = useState<DashboardMeal[]>([...data.items]);
   const [editingMeal, setEditingMeal] = useState<DashboardMeal | null>(null);
+  const availableRecipes = data.recipeOptions;
 
   function saveMeal(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -269,7 +260,9 @@ export function MealsToday({
     const formData = new FormData(event.currentTarget);
     const type = dashboardMealTypeFromForm(formData.get("meal"));
     const recipeId = String(formData.get("recipeId") ?? editingMeal.recipeId);
-    const recipe = findRecipe(recipeId) ?? findRecipe(editingMeal.recipeId);
+    const recipe =
+      findRecipe(recipeId, availableRecipes) ??
+      findRecipe(editingMeal.recipeId, availableRecipes);
     const time = String(formData.get("time") ?? editingMeal.time).trim();
 
     if (!recipe) {
@@ -295,57 +288,66 @@ export function MealsToday({
         titleHref={data.href}
       >
         <div className="space-y-3 p-4 2xl:space-y-2 2xl:p-3">
-          {meals.map((meal) => {
-            const isPast = hasMealPassed(meal.time, data.currentTimeLabel);
+          {meals.length > 0 ? (
+            meals.map((meal) => {
+              const isPast = hasMealPassed(meal.time, data.currentTimeLabel);
 
-            return (
-              <article
-                className="grid min-h-[84px] grid-cols-[minmax(0,1fr)_auto] gap-2 rounded-[14px] border border-[rgba(217,146,79,.18)] bg-[color-mix(in_srgb,var(--accent-orange)_7%,#101a2a)] p-3 2xl:min-h-[92px]"
-                key={meal.mealId}
-              >
-                <Link
-                  aria-label={`Open recipe for ${meal.type}: ${meal.name}`}
-                  className={cn(
-                    "grid min-w-0 grid-cols-[64px_minmax(0,1fr)] gap-4 rounded-[12px] 2xl:grid-cols-[72px_minmax(0,1fr)]",
-                    DASHBOARD_LINK_FOCUS_CLASSES,
-                  )}
-                  href={meal.href ?? "/nutrition/recipes"}
+              return (
+                <article
+                  className="grid min-h-[84px] grid-cols-[minmax(0,1fr)_auto] gap-2 rounded-[14px] border border-[rgba(217,146,79,.18)] bg-[color-mix(in_srgb,var(--accent-orange)_7%,#101a2a)] p-3 2xl:min-h-[92px]"
+                  key={meal.mealId}
                 >
-                  <div className="rounded-[14px] border border-[rgba(217,146,79,.20)] bg-[rgba(217,146,79,.14)] 2xl:h-[68px] 2xl:w-[72px]" />
-                  <div className="min-w-0 py-0.5">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Pill accent="var(--accent-yellow)">{meal.type}</Pill>
-                      {isPast ? (
-                        <Pill accent="var(--accent-green)">Done · time passed</Pill>
-                      ) : (
-                        <Pill quiet>{meal.time}</Pill>
-                      )}
+                  <Link
+                    aria-label={`Open recipe for ${meal.type}: ${meal.name}`}
+                    className={cn(
+                      "grid min-w-0 grid-cols-[64px_minmax(0,1fr)] gap-4 rounded-[12px] 2xl:grid-cols-[72px_minmax(0,1fr)]",
+                      DASHBOARD_LINK_FOCUS_CLASSES,
+                    )}
+                    href={meal.href ?? "/nutrition/recipes"}
+                  >
+                    <div className="rounded-[14px] border border-[rgba(217,146,79,.20)] bg-[rgba(217,146,79,.14)] 2xl:h-[68px] 2xl:w-[72px]" />
+                    <div className="min-w-0 py-0.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Pill accent="var(--accent-yellow)">{meal.type}</Pill>
+                        {isPast ? (
+                          <Pill accent="var(--accent-green)">
+                            Done · time passed
+                          </Pill>
+                        ) : (
+                          <Pill quiet>{meal.time}</Pill>
+                        )}
+                      </div>
+                      <h3 className="mt-1 truncate text-xs font-semibold text-[var(--text-secondary)]">
+                        {meal.name}
+                      </h3>
+                      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] font-medium text-[var(--text-secondary)]">
+                        <span>{meal.kcal}</span>
+                        {meal.macros.map((macro) => (
+                          <span key={macro}>{macro}</span>
+                        ))}
+                      </div>
                     </div>
-                    <h3 className="mt-1 truncate text-xs font-semibold text-[var(--text-secondary)]">
-                      {meal.name}
-                    </h3>
-                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] font-medium text-[var(--text-secondary)]">
-                      <span>{meal.kcal}</span>
-                      {meal.macros.map((macro) => (
-                        <span key={macro}>{macro}</span>
-                      ))}
-                    </div>
-                  </div>
-                </Link>
-                <button
-                  aria-label={`Change ${meal.type}: ${meal.name}`}
-                  className={cn(
-                    "self-start rounded-full border border-[rgba(217,146,79,.22)] bg-[rgba(217,146,79,.09)] px-3 py-1 text-[9px] font-semibold text-[var(--text-secondary)] transition hover:border-[rgba(217,146,79,.36)] hover:text-[var(--text-primary)]",
-                    DASHBOARD_LINK_FOCUS_CLASSES,
-                  )}
-                  onClick={() => setEditingMeal(meal)}
-                  type="button"
-                >
-                  Change
-                </button>
-              </article>
-            );
-          })}
+                  </Link>
+                  <button
+                    aria-label={`Change ${meal.type}: ${meal.name}`}
+                    className={cn(
+                      "self-start rounded-full border border-[rgba(217,146,79,.22)] bg-[rgba(217,146,79,.09)] px-3 py-1 text-[9px] font-semibold text-[var(--text-secondary)] transition hover:border-[rgba(217,146,79,.36)] hover:text-[var(--text-primary)]",
+                      DASHBOARD_LINK_FOCUS_CLASSES,
+                    )}
+                    onClick={() => setEditingMeal(meal)}
+                    type="button"
+                  >
+                    Change
+                  </button>
+                </article>
+              );
+            })
+          ) : (
+            <DashboardEmptyState
+              description="Noch keine Mahlzeiten erfasst."
+              title="Meals leer"
+            />
+          )}
         </div>
       </Panel>
 
@@ -368,7 +370,11 @@ export function MealsToday({
               </p>
             </div>
             <div className="grid gap-3 p-5 sm:grid-cols-2">
-              <SelectField defaultValue={editingMeal.type} label="Meal Slot" name="meal">
+              <SelectField
+                defaultValue={editingMeal.type}
+                label="Meal Slot"
+                name="meal"
+              >
                 <option>Breakfast</option>
                 <option>Lunch</option>
                 <option>Dinner</option>
@@ -387,7 +393,9 @@ export function MealsToday({
                 >
                   {availableRecipes.map((recipe) => (
                     <option key={recipe.id} value={recipe.id}>
-                      {recipe.mealTypes.includes(recipeMealTypeForDashboard(editingMeal.type))
+                      {recipe.mealTypes.includes(
+                        recipeMealTypeForDashboard(editingMeal.type),
+                      )
                         ? "Fits slot · "
                         : ""}
                       {recipe.title} · {formatMealTypeList(recipe.mealTypes)}
@@ -423,7 +431,9 @@ export function RunningTracker({
 }: Readonly<{
   data: DashboardRunningRecovery;
 }>) {
-  const [activeMode, setActiveMode] = useState<RunningRecoveryMode>(data.activeMode);
+  const [activeMode, setActiveMode] = useState<RunningRecoveryMode>(
+    data.activeMode,
+  );
   const rhythmAccent = runningRhythmAccent(data.rhythm.statusLabel);
   const modeSwitch = (
     <div className="flex w-[294px] max-w-full rounded-full border border-[var(--border-subtle)] bg-[#0b1422] p-0.5 text-center text-[10px] font-semibold text-[var(--text-primary)]">

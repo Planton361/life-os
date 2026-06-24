@@ -66,6 +66,32 @@ export function Pill({
   );
 }
 
+export function DashboardEmptyState({
+  title,
+  description,
+  className,
+}: Readonly<{
+  title: string;
+  description: string;
+  className?: string;
+}>) {
+  return (
+    <div
+      className={cn(
+        "rounded-[13px] border border-dashed border-[var(--border-default)] bg-[rgba(168,183,204,.05)] p-3",
+        className,
+      )}
+    >
+      <p className="text-[11px] font-semibold text-[var(--text-secondary)]">
+        {title}
+      </p>
+      <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
+        {description}
+      </p>
+    </div>
+  );
+}
+
 export function Panel({
   title,
   subtitle,

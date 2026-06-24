@@ -9,7 +9,8 @@ const routeConfig = {
   eyebrow: "Work workflow",
   summary:
     "Meetings will organize agendas, notes, decisions, and follow-ups while routing concrete next steps back into Tasks or Work Log.",
-  dataSource: "meetings, tasks, work_logs, resources, notes, and calendar_events.",
+  dataSource:
+    "meetings, tasks, work_logs, resources, notes, and calendar_events.",
   emptyTitle: "No meetings workflow connected yet",
   emptyDescription:
     "This skeleton reserves the Meetings route before agendas, notes, decisions, and follow-up routing are implemented.",

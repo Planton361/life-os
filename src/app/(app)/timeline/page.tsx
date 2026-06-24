@@ -6,6 +6,10 @@ import {
   SectionPanel,
   accentStyle,
 } from "@/components/layout/route-page-primitives";
+import {
+  ProfileBoundaryPage,
+  getLifeOsDataSource,
+} from "@/features/profile-data";
 
 const milestones = [
   {
@@ -40,7 +44,19 @@ export const metadata: Metadata = {
     "Prototype yearly roadmap and milestone target for dashboard Time Progress.",
 };
 
-export default function TimelinePage() {
+export default async function TimelinePage() {
+  const dataSource = await getLifeOsDataSource();
+
+  if (dataSource.profile.id !== "demo") {
+    return (
+      <ProfileBoundaryPage
+        areaLabel="Timeline"
+        profile={dataSource.profile}
+        title="Year Timeline"
+      />
+    );
+  }
+
   return (
     <RoutePage>
       <PageHeader

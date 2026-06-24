@@ -7,13 +7,29 @@ import {
   SectionPanel,
   accentStyle,
 } from "@/components/layout/route-page-primitives";
-import { getDailyReviewViewModel } from "@/features/review";
+import {
+  ProfileBoundaryPage,
+  getLifeOsDataSource,
+} from "@/features/profile-data";
 
 export const metadata: Metadata = {
   title: "Daily Review | Life OS",
 };
 
-export default function DailyReviewPage() {
+export default async function DailyReviewPage() {
+  const dataSource = await getLifeOsDataSource();
+
+  if (dataSource.profile.id !== "demo") {
+    return (
+      <ProfileBoundaryPage
+        areaLabel="Review"
+        profile={dataSource.profile}
+        title="Daily Review"
+      />
+    );
+  }
+
+  const { getDailyReviewViewModel } = await import("@/features/review");
   const viewModel = getDailyReviewViewModel();
 
   return (

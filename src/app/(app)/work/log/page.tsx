@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getWorkLogViewModel, WorkLogPage } from "@/features/work";
+import { getWorkLogViewModel } from "@/features/profile-data";
 
 export const metadata: Metadata = {
   title: "Work Log | Life OS",
@@ -7,6 +7,8 @@ export const metadata: Metadata = {
     "Tasks, activities, outcomes and local work notes for personal work context.",
 };
 
-export default function WorkLogRoute() {
-  return <WorkLogPage viewModel={getWorkLogViewModel()} />;
+export default async function WorkLogRoute() {
+  const { WorkLogPage } = await import("@/features/work");
+
+  return <WorkLogPage viewModel={await getWorkLogViewModel()} />;
 }

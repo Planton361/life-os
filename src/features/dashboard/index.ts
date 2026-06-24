@@ -27,6 +27,8 @@ export type {
   DashboardInboxSignal,
   DashboardInboxSignals,
   DashboardMeal,
+  DashboardMealRecipeOption,
+  DashboardMealRecipeType,
   DashboardMeals,
   DashboardMetric,
   DashboardMockData,

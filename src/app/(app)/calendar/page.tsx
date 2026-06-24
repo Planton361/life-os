@@ -1,4 +1,5 @@
-import { CalendarPlanningPage, getCalendarViewModel } from "@/features/calendar";
+import { CalendarPlanningPage } from "@/features/calendar";
+import { getCalendarViewModel } from "@/features/profile-data";
 
 export const metadata = {
   title: "Calendar | Life OS",
@@ -6,8 +7,8 @@ export const metadata = {
     "Temporal planning surface for projected events, tasks, deadlines and reviews.",
 };
 
-export default function CalendarPage() {
-  const viewModel = getCalendarViewModel();
+export default async function CalendarPage() {
+  const viewModel = await getCalendarViewModel();
 
   return <CalendarPlanningPage viewModel={viewModel} />;
 }

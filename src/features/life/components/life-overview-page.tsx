@@ -208,7 +208,7 @@ const inventoryCategoryLabels: Record<InventoryCategory, string> = {
   clothing: "Clothing",
   fitness: "Fitness",
   home: "Home",
-  study: "Study",
+  study: "Learning",
   software: "Software",
   other: "Other",
 };

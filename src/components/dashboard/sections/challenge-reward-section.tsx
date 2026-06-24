@@ -8,7 +8,7 @@ import type {
 import Link from "next/link";
 import { useState } from "react";
 import { cn } from "@/lib/cn";
-import { Pill, ProgressBar } from "./section-primitives";
+import { DashboardEmptyState, Pill, ProgressBar } from "./section-primitives";
 import {
   DashboardDialog,
   dashboardActionButtonClass,
@@ -135,65 +135,71 @@ export function Challenges({
           </p>
         </div>
         <div className="mt-2 grid gap-2 md:grid-cols-3 2xl:gap-[10px]">
-          {visibleChallenges.map((challenge) => {
-            const completed = completedIds.has(challenge.id);
-            const sourceLabel = completed ? "Done" : challenge.sourceLabel;
-            const statusLabel = completed ? "Done" : challenge.status;
-            const content = (
-              <>
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="text-[10px] font-semibold leading-snug text-[var(--text-secondary)]">
-                    {challenge.title}
-                  </h3>
-                  <Pill
-                    accent={completed ? "var(--accent-green)" : "var(--accent-yellow)"}
-                  >
-                    {sourceLabel}
-                  </Pill>
-                </div>
-                <div className="mt-2 flex items-center justify-between gap-2 text-[8px] font-medium text-[var(--text-muted)]">
-                  <span>{challenge.type}</span>
-                  <span>
-                    {statusLabel}
-                  </span>
-                </div>
-                {challenge.progress > 0 ? (
-                  <div className="mt-2.5">
-                    <ProgressBar
+          {visibleChallenges.length > 0 ? (
+            visibleChallenges.map((challenge) => {
+              const completed = completedIds.has(challenge.id);
+              const sourceLabel = completed ? "Done" : challenge.sourceLabel;
+              const statusLabel = completed ? "Done" : challenge.status;
+              const content = (
+                <>
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="text-[10px] font-semibold leading-snug text-[var(--text-secondary)]">
+                      {challenge.title}
+                    </h3>
+                    <Pill
                       accent={completed ? "var(--accent-green)" : "var(--accent-yellow)"}
-                      progress={completed ? 100 : challenge.progress}
-                    />
+                    >
+                      {sourceLabel}
+                    </Pill>
                   </div>
-                ) : null}
-              </>
-            );
+                  <div className="mt-2 flex items-center justify-between gap-2 text-[8px] font-medium text-[var(--text-muted)]">
+                    <span>{challenge.type}</span>
+                    <span>{statusLabel}</span>
+                  </div>
+                  {challenge.progress > 0 ? (
+                    <div className="mt-2.5">
+                      <ProgressBar
+                        accent={completed ? "var(--accent-green)" : "var(--accent-yellow)"}
+                        progress={completed ? 100 : challenge.progress}
+                      />
+                    </div>
+                  ) : null}
+                </>
+              );
 
-            if (challenge.tracking === "manual" && !completed) {
+              if (challenge.tracking === "manual" && !completed) {
+                return (
+                  <button
+                    aria-label={`Confirm challenge: ${challenge.title}`}
+                    className={cn(
+                      "flex flex-col justify-between rounded-[13px] border border-[rgba(216,180,90,.16)] bg-[color-mix(in_srgb,var(--accent-yellow)_4%,#0f1724)] p-3 text-left transition hover:border-[rgba(216,180,90,.30)] 2xl:h-[96px] 2xl:p-2.5",
+                      DASHBOARD_LINK_FOCUS_CLASSES,
+                    )}
+                    key={challenge.id}
+                    onClick={() => setConfirmChallenge(challenge)}
+                    type="button"
+                  >
+                    {content}
+                  </button>
+                );
+              }
+
               return (
-                <button
-                  aria-label={`Confirm challenge: ${challenge.title}`}
-                  className={cn(
-                    "flex flex-col justify-between rounded-[13px] border border-[rgba(216,180,90,.16)] bg-[color-mix(in_srgb,var(--accent-yellow)_4%,#0f1724)] p-3 text-left transition hover:border-[rgba(216,180,90,.30)] 2xl:h-[96px] 2xl:p-2.5",
-                    DASHBOARD_LINK_FOCUS_CLASSES,
-                  )}
+                <article
+                  className="flex flex-col justify-between rounded-[13px] border border-[rgba(216,180,90,.16)] bg-[color-mix(in_srgb,var(--accent-yellow)_4%,#0f1724)] p-3 2xl:h-[96px] 2xl:p-2.5"
                   key={challenge.id}
-                  onClick={() => setConfirmChallenge(challenge)}
-                  type="button"
                 >
                   {content}
-                </button>
+                </article>
               );
-            }
-
-            return (
-              <article
-                className="flex flex-col justify-between rounded-[13px] border border-[rgba(216,180,90,.16)] bg-[color-mix(in_srgb,var(--accent-yellow)_4%,#0f1724)] p-3 2xl:h-[96px] 2xl:p-2.5"
-                key={challenge.id}
-              >
-                {content}
-              </article>
-            );
-          })}
+            })
+          ) : (
+            <DashboardEmptyState
+              className="md:col-span-3"
+              description="Noch keine Challenges im aktuellen Profil."
+              title="Keine Challenges"
+            />
+          )}
         </div>
       </div>
       {confirmChallenge ? (

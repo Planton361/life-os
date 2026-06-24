@@ -1,6 +1,10 @@
 import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
-import { Pill, accentStyle } from "@/components/layout/route-page-primitives";
+import {
+  EmptyState,
+  Pill,
+  accentStyle,
+} from "@/components/layout/route-page-primitives";
 import {
   DotRhythm,
   barHeightStyle,
@@ -151,6 +155,16 @@ function ProgressBar({
   );
 }
 
+function MentalEmptyState({
+  title,
+  description = "Erfasse den ersten lokalen Eintrag, sobald diese Quelle aktiv ist.",
+}: Readonly<{
+  title: string;
+  description?: string;
+}>) {
+  return <EmptyState description={description} title={title} />;
+}
+
 function MetricCard({
   metric,
 }: Readonly<{
@@ -293,11 +307,17 @@ function TodayCheckInPanel({
         </p>
       </div>
 
-      <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-5">
-        {checkIn.items.map((item) => (
-          <CheckItem item={item} key={item.label} />
-        ))}
-      </div>
+      {checkIn.items.length > 0 ? (
+        <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-5">
+          {checkIn.items.map((item) => (
+            <CheckItem item={item} key={item.label} />
+          ))}
+        </div>
+      ) : (
+        <div className="mt-2">
+          <MentalEmptyState title="Noch keine Check-in-Werte" />
+        </div>
+      )}
 
       <div className="mt-2 flex flex-col gap-2 rounded-[13px] border border-[rgba(148,163,184,.10)] bg-[rgba(11,17,28,.34)] p-2.5 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
@@ -362,11 +382,15 @@ function MoodPatternPanel({
       subtitle={moodPattern.subtitle}
       title={moodPattern.title}
     >
-      <div className="grid gap-1.5 sm:grid-cols-2 min-[1900px]:grid-cols-3">
-        {moodPattern.moods.map((mood) => (
-          <MoodCard key={mood.label} mood={mood} />
-        ))}
-      </div>
+      {moodPattern.moods.length > 0 ? (
+        <div className="grid gap-1.5 sm:grid-cols-2 min-[1900px]:grid-cols-3">
+          {moodPattern.moods.map((mood) => (
+            <MoodCard key={mood.label} mood={mood} />
+          ))}
+        </div>
+      ) : (
+        <MentalEmptyState title="Noch kein Stimmungsverlauf" />
+      )}
 
       <div className="mt-2 rounded-[13px] border border-[rgba(148,163,184,.10)] bg-[rgba(11,17,28,.34)] p-2.5">
         <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
@@ -394,11 +418,15 @@ function CurrentSignalPanel({
       subtitle={currentSignal.subtitle}
       title={currentSignal.title}
     >
-      <div className="grid gap-2 sm:grid-cols-3">
-        {currentSignal.metrics.map((metric) => (
-          <MetricCard key={metric.label} metric={metric} />
-        ))}
-      </div>
+      {currentSignal.metrics.length > 0 ? (
+        <div className="grid gap-2 sm:grid-cols-3">
+          {currentSignal.metrics.map((metric) => (
+            <MetricCard key={metric.label} metric={metric} />
+          ))}
+        </div>
+      ) : (
+        <MentalEmptyState title="Noch kein aktuelles Signal" />
+      )}
       <div className="mt-2 rounded-[13px] border border-[rgba(148,163,184,.10)] bg-[rgba(11,17,28,.34)] p-2.5">
         <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
           {currentSignal.interpretation.label}
@@ -465,20 +493,30 @@ function SleepRecoveryPanel({
       subtitle={sleepRecovery.subtitle}
       title={sleepRecovery.title}
     >
-      <div className="grid gap-2 sm:grid-cols-3">
-        {sleepRecovery.metrics.map((metric) => (
-          <MetricCard key={metric.label} metric={metric} />
-        ))}
-      </div>
+      {sleepRecovery.metrics.length > 0 ? (
+        <div className="grid gap-2 sm:grid-cols-3">
+          {sleepRecovery.metrics.map((metric) => (
+            <MetricCard key={metric.label} metric={metric} />
+          ))}
+        </div>
+      ) : (
+        <MentalEmptyState title="Noch keine Recovery-Metriken" />
+      )}
 
       <div className="mt-2 grid gap-2 md:grid-cols-[minmax(0,1fr)_minmax(180px,.8fr)]">
         <section
           aria-label="Sleep rhythm for the last 7 days"
           className="flex min-h-[96px] items-end gap-2 rounded-[13px] border border-[rgba(148,163,184,.10)] bg-[rgba(11,17,28,.34)] px-3 py-2.5"
         >
-          {sleepRecovery.bars.map((bar) => (
-            <SleepBar bar={bar} key={bar.day} />
-          ))}
+          {sleepRecovery.bars.length > 0 ? (
+            sleepRecovery.bars.map((bar) => (
+              <SleepBar bar={bar} key={bar.day} />
+            ))
+          ) : (
+            <div className="w-full self-stretch">
+              <MentalEmptyState title="Noch keine Schlafdaten" />
+            </div>
+          )}
         </section>
 
         <section className="rounded-[13px] border border-[rgba(148,163,184,.10)] bg-[rgba(11,17,28,.34)] p-2.5">
@@ -522,11 +560,17 @@ function JournalRhythmPanel({
               {journalRhythm.value}
             </p>
           </div>
-          <DotRhythm
-            accent="var(--accent-purple)"
-            label={`Journal rhythm: ${journalRhythm.value}`}
-            pattern={journalRhythm.pattern}
-          />
+          {journalRhythm.pattern.some(Boolean) ? (
+            <DotRhythm
+              accent="var(--accent-purple)"
+              label={`Journal rhythm: ${journalRhythm.value}`}
+              pattern={journalRhythm.pattern}
+            />
+          ) : (
+            <p className="text-[10px] leading-4 text-[var(--text-muted)]">
+              Noch keine Reflexionen erfasst.
+            </p>
+          )}
         </div>
       </div>
 
@@ -616,11 +660,15 @@ function RepairRoutinesPanel({
       subtitle={repairRoutines.subtitle}
       title={repairRoutines.title}
     >
-      <div className="grid gap-2">
-        {repairRoutines.routines.map((routine) => (
-          <RoutineRow key={routine.title} routine={routine} />
-        ))}
-      </div>
+      {repairRoutines.routines.length > 0 ? (
+        <div className="grid gap-2">
+          {repairRoutines.routines.map((routine) => (
+            <RoutineRow key={routine.title} routine={routine} />
+          ))}
+        </div>
+      ) : (
+        <MentalEmptyState title="Noch keine Support-Routinen" />
+      )}
       <div className="mt-2 rounded-[13px] border border-[rgba(66,184,131,.18)] bg-[rgba(66,184,131,.06)] p-2.5">
         <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
           {repairRoutines.recommendedToday.label}
@@ -701,14 +749,18 @@ function MentalHealthActionsPanel({
       subtitle={actions.subtitle}
       title={actions.title}
     >
-      <ol className="grid gap-2">
-        {actions.items.map((action) => (
-          <TimelineAction
-            action={action}
-            key={`${action.time}-${action.title}`}
-          />
-        ))}
-      </ol>
+      {actions.items.length > 0 ? (
+        <ol className="grid gap-2">
+          {actions.items.map((action) => (
+            <TimelineAction
+              action={action}
+              key={`${action.time}-${action.title}`}
+            />
+          ))}
+        </ol>
+      ) : (
+        <MentalEmptyState title="Noch keine Mental-Health-Aktionen" />
+      )}
 
       <div className="mt-3 rounded-[14px] border border-[rgba(148,163,184,.10)] bg-[rgba(11,17,28,.34)] p-2.5">
         <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">

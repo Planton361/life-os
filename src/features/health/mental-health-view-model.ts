@@ -76,7 +76,7 @@ export type MentalHealthPageViewModel = {
     title: "Today Check-In";
     subtitle: string;
     badge: "Primary action";
-    messageTitle: "5-minute self-check";
+    messageTitle: string;
     message: string;
     items: readonly MentalHealthCheckItemViewModel[];
     nextRepair: {
@@ -86,7 +86,7 @@ export type MentalHealthPageViewModel = {
     actionLabel: "Open check-in";
   };
   moodPattern: {
-    title: "Mood Pattern";
+    title: string;
     subtitle: string;
     rangeLabel: "7 days";
     moods: readonly MentalHealthMoodViewModel[];
@@ -121,7 +121,7 @@ export type MentalHealthPageViewModel = {
   journalRhythm: {
     title: "Journal / Reflection Rhythm";
     subtitle: string;
-    value: "4 / 7 days";
+    value: string;
     pattern: readonly boolean[];
     focus: {
       label: "Reflection focus";
@@ -141,7 +141,7 @@ export type MentalHealthPageViewModel = {
     href: "/life/journal";
   };
   repairRoutines: {
-    title: "Repair Routines";
+    title: string;
     subtitle: string;
     routines: readonly MentalHealthRoutineViewModel[];
     recommendedToday: {
@@ -157,7 +157,7 @@ export type MentalHealthPageViewModel = {
     items: readonly MentalHealthActionViewModel[];
     decisionRule: {
       label: "Decision rule";
-      value: "If stress rises, reduce scope before adding tools.";
+      value: string;
       detail: string;
       progress: number;
       progressLabel: string;

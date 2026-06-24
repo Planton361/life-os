@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
-import {
-  RunningTrackerPage,
-  getRunningTrackerViewModel,
-} from "@/features/health/running";
+import { getRunningTrackerViewModel } from "@/features/profile-data";
 
 export const metadata: Metadata = {
   title: "Running Tracker | Life OS",
@@ -10,8 +7,10 @@ export const metadata: Metadata = {
     "Beginner running planner and quiet analytics detail page for Life OS.",
 };
 
-export default function RunningPage() {
-  const viewModel = getRunningTrackerViewModel();
+export default async function RunningPage() {
+  const { RunningTrackerPage } =
+    await import("@/features/health/running");
+  const viewModel = await getRunningTrackerViewModel();
 
   return <RunningTrackerPage viewModel={viewModel} />;
 }

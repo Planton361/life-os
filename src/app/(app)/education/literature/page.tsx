@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
-import {
-  EducationWorkspacePage,
-  getEducationWorkspaceViewModel,
-} from "@/features/education";
+import { getEducationWorkspaceViewModel } from "@/features/profile-data";
 
 export const metadata: Metadata = {
   title: "Literature | Life OS",
@@ -10,11 +7,14 @@ export const metadata: Metadata = {
     "Sources, reading status and extraction queue for Education research.",
 };
 
-export default function LiteraturePage() {
+export default async function LiteraturePage() {
+  const { EducationWorkspacePage } =
+    await import("@/features/education");
+
   return (
     <EducationWorkspacePage
       pageKind="literature"
-      viewModel={getEducationWorkspaceViewModel()}
+      viewModel={await getEducationWorkspaceViewModel()}
     />
   );
 }

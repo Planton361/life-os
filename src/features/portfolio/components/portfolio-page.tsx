@@ -265,8 +265,8 @@ export function PortfolioPage({
         getViewHref={(view) =>
           createPortfolioHref(
             {
-              type: view === "all" ? null : view,
-              view: null,
+              type: null,
+              view: view === "all" ? null : view,
               selected: null,
             },
             searchParams,

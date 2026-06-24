@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { HabitsAnalyticsPage } from "@/features/health/habits/components/habits-analytics-page";
-import { getHabitsAnalyticsViewModel } from "@/features/health/habits/habits-view-model";
+import { getHabitsAnalyticsViewModel } from "@/features/profile-data";
 
-export default function HabitsPage() {
-  const viewModel = getHabitsAnalyticsViewModel();
+export default async function HabitsPage() {
+  const { HabitsAnalyticsPage } =
+    await import("@/features/health/habits/components/habits-analytics-page");
+  const viewModel = await getHabitsAnalyticsViewModel();
 
   return <HabitsAnalyticsPage viewModel={viewModel} />;
 }

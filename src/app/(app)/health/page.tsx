@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
-import {
-  HealthOverviewPage,
-  getHealthOverviewViewModel,
-} from "@/features/health";
+import { getHealthOverviewViewModel } from "@/features/profile-data";
 
 export const metadata: Metadata = {
   title: "Health & Fitness | Life OS",
@@ -10,8 +7,10 @@ export const metadata: Metadata = {
     "Area overview for mental health, habits, running and strength signals.",
 };
 
-export default function HealthPage() {
-  const viewModel = getHealthOverviewViewModel();
+export default async function HealthPage() {
+  const { HealthOverviewPage } =
+    await import("@/features/health");
+  const viewModel = await getHealthOverviewViewModel();
 
   return <HealthOverviewPage viewModel={viewModel} />;
 }

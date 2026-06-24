@@ -789,7 +789,7 @@ function HydrationCard({
       <div className="mt-4">
         <div className="mb-1 flex items-center justify-between gap-3">
           <p className="text-[12px] font-semibold text-[var(--text-secondary)]">
-            Water
+            {metric.label}
           </p>
           <p className="text-[12px] font-semibold text-[var(--text-primary)]">
             {metric.percentage}%

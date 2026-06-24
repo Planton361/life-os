@@ -1,17 +1,19 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { getDashboardViewModel } from "@/features/dashboard";
 import { CommandCenter } from "@/components/layout/command-center";
+import type { DashboardCommandCenterViewModel } from "@/features/dashboard";
 
-export function CommandCenterRouteGate() {
+export function CommandCenterRouteGate({
+  data,
+}: Readonly<{
+  data: DashboardCommandCenterViewModel;
+}>) {
   const pathname = usePathname();
 
   if (pathname !== "/dashboard") {
     return null;
   }
 
-  const dashboard = getDashboardViewModel();
-
-  return <CommandCenter data={dashboard.commandCenter} />;
+  return <CommandCenter data={data} />;
 }

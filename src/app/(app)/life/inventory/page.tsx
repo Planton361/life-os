@@ -1,4 +1,4 @@
-import { InventoryPage, getInventoryPageViewModel } from "@/features/life";
+import { getInventoryPageViewModel } from "@/features/profile-data";
 
 export const metadata = {
   title: "Inventory | Life OS",
@@ -6,8 +6,10 @@ export const metadata = {
     "Owned items, replacements and wishlist decisions with local mock inventory state.",
 };
 
-export default function LifeInventoryRoute() {
-  const viewModel = getInventoryPageViewModel();
+export default async function LifeInventoryRoute() {
+  const { InventoryPage } =
+    await import("@/features/life");
+  const viewModel = await getInventoryPageViewModel();
 
   return <InventoryPage viewModel={viewModel} />;
 }

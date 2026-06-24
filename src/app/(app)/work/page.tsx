@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getWorkOverviewViewModel, WorkOverviewPage } from "@/features/work";
+import { getWorkOverviewViewModel } from "@/features/profile-data";
 
 export const metadata: Metadata = {
   title: "Work Overview | Life OS",
@@ -7,6 +7,9 @@ export const metadata: Metadata = {
     "Work log, outcomes, architecture context and wiki lookup for personal work context.",
 };
 
-export default function WorkPage() {
-  return <WorkOverviewPage viewModel={getWorkOverviewViewModel()} />;
+export default async function WorkPage() {
+  const { WorkOverviewPage } =
+    await import("@/features/work");
+
+  return <WorkOverviewPage viewModel={await getWorkOverviewViewModel()} />;
 }

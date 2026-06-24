@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
-import {
-  ChallengesPage as ChallengesFeaturePage,
-  getChallengesViewModel,
-} from "@/features/challenges";
+import { getChallengesViewModel } from "@/features/profile-data";
 
 export const metadata: Metadata = {
   title: "Challenges | Life OS",
@@ -10,8 +7,10 @@ export const metadata: Metadata = {
     "Challenge Hub for daily, weekly and monthly special tasks with local progress simulation.",
 };
 
-export default function ChallengesPage() {
-  const viewModel = getChallengesViewModel();
+export default async function ChallengesPage() {
+  const { ChallengesPage: ChallengesFeaturePage } =
+    await import("@/features/challenges");
+  const viewModel = await getChallengesViewModel();
 
   return <ChallengesFeaturePage viewModel={viewModel} />;
 }

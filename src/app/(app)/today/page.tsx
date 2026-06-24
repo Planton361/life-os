@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
-import { TodayMemoryLogPage, getTodayViewModel } from "@/features/today";
+import { TodayMemoryLogPage } from "@/features/today";
+import { getTodayViewModel } from "@/features/profile-data";
 
 export const metadata: Metadata = {
   title: "Today | Life OS",
 };
 
-export default function TodayPage() {
-  const viewModel = getTodayViewModel();
+export default async function TodayPage() {
+  const viewModel = await getTodayViewModel();
 
   return <TodayMemoryLogPage viewModel={viewModel} />;
 }

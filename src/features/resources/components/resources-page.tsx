@@ -505,7 +505,7 @@ function ResourceLibrary({
 }: Readonly<{
   makeHref: (updates: ResourceHrefUpdates) => string;
   resources: ResourceItem[];
-  selectedResource: ResourceItem;
+  selectedResource: ResourceItem | null;
 }>) {
   const hiddenResourceCount = Math.max(
     0,
@@ -548,7 +548,7 @@ function ResourceLibrary({
                 const area = resourceAreaMeta[resource.area];
                 const status = resourceStatusMeta[resource.status];
                 const review = resourceReviewStateMeta[resource.reviewState];
-                const selected = resource.id === selectedResource.id;
+                const selected = resource.id === selectedResource?.id;
                 const hiddenOnDesktop =
                   index >= WIDE_DESKTOP_LIBRARY_LIMIT;
                 const wideDesktopOnly =
@@ -663,12 +663,41 @@ function ResourceLibrary({
           </>
         ) : (
           <EmptyState
-            description="Future filters should keep the selected context available while showing why nothing matched."
-            title="No resources match this filter"
+            description="Speichere die erste Ressource, sobald du diesen Bereich nutzt."
+            title="Noch keine Ressourcen"
           />
         )}
       </div>
     </section>
+  );
+}
+
+function ResourceRelationEmptyInspector() {
+  return (
+    <aside
+      aria-labelledby="selected-resource-heading"
+      className="flex min-w-0 flex-col overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.86)] shadow-[0_8px_22px_rgba(0,0,0,.12)] xl:h-full xl:min-h-0 xl:flex-1"
+    >
+      <div className="border-b border-[var(--border-subtle)] bg-[rgba(18,28,43,.50)] px-3 py-3 xl:px-2.5 xl:py-2">
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-cyan)] xl:text-[9px]">
+            Relation Inspector
+          </p>
+          <h2
+            className="mt-1 text-[20px] font-semibold leading-6 text-[var(--text-primary)] xl:text-[16px] xl:leading-5"
+            id="selected-resource-heading"
+          >
+            Keine Ressource ausgewaehlt
+          </h2>
+        </div>
+      </div>
+      <div className="grid gap-3 p-3 xl:min-h-0 xl:flex-1 xl:p-2">
+        <EmptyState
+          description="Sobald eine Ressource existiert, erscheinen Details, Kontext und Beziehungen in diesem Inspector."
+          title="Noch keine Ressource im Inspector"
+        />
+      </div>
+    </aside>
   );
 }
 
@@ -991,8 +1020,55 @@ function ResourceKnowledgeMap({
   mapScopes: ResourceOption<string>[];
   relations: ResourceRelation[];
   resources: ResourceItem[];
-  selectedResource: ResourceItem;
+  selectedResource: ResourceItem | null;
 }>) {
+  if (!selectedResource) {
+    return (
+      <section
+        aria-labelledby="resources-map-heading"
+        className="flex min-w-0 flex-col overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.82)] shadow-[0_8px_22px_rgba(0,0,0,.12)] xl:h-full xl:min-h-0"
+      >
+        <div className="border-b border-[var(--border-subtle)] bg-[rgba(18,28,43,.48)] px-3 py-3 xl:px-2.5 xl:py-2">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div className="min-w-0">
+              <h2
+                className="text-[16px] font-semibold leading-5 text-[var(--text-primary)] xl:text-[14px] xl:leading-4"
+                id="resources-map-heading"
+              >
+                Knowledge Map
+              </h2>
+              <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)] xl:line-clamp-1 xl:leading-3">
+                Scoped to selected resource neighborhood, not all resources.
+              </p>
+            </div>
+            <Pill accent="var(--accent-blue)">Map</Pill>
+          </div>
+        </div>
+        <div className="grid gap-2 p-2.5 xl:min-h-0 xl:flex-1 xl:p-2">
+          <div className="-mx-1 overflow-x-auto px-1">
+            <div className="flex w-max min-w-full gap-1.5 xl:gap-1">
+              {mapScopes.map((scope) => (
+                <button
+                  aria-pressed={Boolean(scope.active)}
+                  className={controlClass(scope.active)}
+                  key={scope.value}
+                  style={accentStyle(scope.accent ?? "var(--accent-cyan)")}
+                  type="button"
+                >
+                  {scope.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <EmptyState
+            description="Speichere eine Ressource, damit Beziehungen im Knowledge Map View sichtbar werden."
+            title="Noch keine Map-Daten"
+          />
+        </div>
+      </section>
+    );
+  }
+
   const selectedType = resourceTypeMeta[selectedResource.type];
   const selectedCluster = clusters.find(
     (cluster) => cluster.id === selectedResource.clusterId,
@@ -1193,81 +1269,101 @@ function ResourceReviewWorkbench({
 
       <div className="grid gap-2 p-2.5 xl:min-h-0 xl:flex-1 xl:grid-rows-[minmax(0,1fr)_auto] xl:p-2">
         <div className="grid content-start gap-2 xl:min-h-0 xl:grid-cols-2 xl:overflow-y-auto">
-          {items.map((item) => {
-            const resource = getResourceById(resources, item.resourceId);
+          {items.length > 0 ? (
+            items.map((item) => {
+              const resource = getResourceById(resources, item.resourceId);
 
-            return (
-              <article
-                className="rounded-[14px] border border-[color-mix(in_srgb,var(--accent)_20%,transparent)] bg-[color-mix(in_srgb,var(--accent)_7%,rgba(11,17,28,.54))] p-3 xl:p-2.5"
-                key={item.resourceId}
-                style={accentStyle(item.accent)}
-              >
-                <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--accent)]">
-                      {item.sourceType} {"->"} {item.targetType}
+              return (
+                <article
+                  className="rounded-[14px] border border-[color-mix(in_srgb,var(--accent)_20%,transparent)] bg-[color-mix(in_srgb,var(--accent)_7%,rgba(11,17,28,.54))] p-3 xl:p-2.5"
+                  key={item.resourceId}
+                  style={accentStyle(item.accent)}
+                >
+                  <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--accent)]">
+                        {item.sourceType} {"->"} {item.targetType}
+                      </p>
+                      <h3 className="mt-1 text-[13px] font-semibold leading-5 text-[var(--text-primary)] xl:text-[12px] xl:leading-4">
+                        {item.title}
+                      </h3>
+                      <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
+                        {item.linkedContext} / {item.status}
+                      </p>
+                    </div>
+                    {resource ? (
+                      <Link
+                        className="inline-flex min-h-7 items-center rounded-full border border-[color-mix(in_srgb,var(--accent)_28%,transparent)] bg-[rgba(11,17,28,.40)] px-2.5 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[color-mix(in_srgb,var(--accent)_46%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                        href={makeHref({ selected: resource.id })}
+                        style={accentStyle(item.accent)}
+                      >
+                        Inspect
+                      </Link>
+                    ) : null}
+                  </div>
+
+                  <div className="mt-3 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.34)] px-3 py-2">
+                    <p className="text-[10px] font-semibold text-[var(--text-muted)]">
+                      Suggested next action
                     </p>
-                    <h3 className="mt-1 text-[13px] font-semibold leading-5 text-[var(--text-primary)] xl:text-[12px] xl:leading-4">
-                      {item.title}
-                    </h3>
-                    <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
-                      {item.linkedContext} / {item.status}
+                    <p className="mt-1 text-[11px] leading-4 text-[var(--text-secondary)]">
+                      {item.action}
                     </p>
                   </div>
-                  {resource ? (
-                    <Link
-                      className="inline-flex min-h-7 items-center rounded-full border border-[color-mix(in_srgb,var(--accent)_28%,transparent)] bg-[rgba(11,17,28,.40)] px-2.5 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[color-mix(in_srgb,var(--accent)_46%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-                      href={makeHref({ selected: resource.id })}
-                      style={accentStyle(item.accent)}
-                    >
-                      Inspect
-                    </Link>
-                  ) : null}
-                </div>
 
-                <div className="mt-3 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.34)] px-3 py-2">
-                  <p className="text-[10px] font-semibold text-[var(--text-muted)]">
-                    Suggested next action
-                  </p>
-                  <p className="mt-1 text-[11px] leading-4 text-[var(--text-secondary)]">
-                    {item.action}
-                  </p>
-                </div>
-
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {item.suggestedActions.map((action) => (
-                    <button
-                      className="min-h-7 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.58)] px-2.5 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-                      key={action}
-                      type="button"
-                    >
-                      {action}
-                    </button>
-                  ))}
-                </div>
-              </article>
-            );
-          })}
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {item.suggestedActions.map((action) => (
+                      <button
+                        className="min-h-7 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.58)] px-2.5 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                        key={action}
+                        type="button"
+                      >
+                        {action}
+                      </button>
+                    ))}
+                  </div>
+                </article>
+              );
+            })
+          ) : (
+            <div className="xl:col-span-2">
+              <EmptyState
+                description="Neue Ressourcen erscheinen hier, sobald sie Review brauchen."
+                title="Keine Review-Punkte offen"
+              />
+            </div>
+          )}
         </div>
 
         <div className="grid gap-2 xl:grid-cols-3">
-          {aiSuggestions.map((suggestion) => (
-            <article
-              className="rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_18%,transparent)] bg-[rgba(11,17,28,.36)] px-3 py-2"
-              key={suggestion.title}
-              style={accentStyle(suggestion.accent)}
-            >
-              <div className="flex min-w-0 items-center justify-between gap-2">
-                <h3 className="truncate text-[11px] font-semibold text-[var(--text-primary)]">
-                  {suggestion.title}
-                </h3>
-                <Pill accent={suggestion.accent}>{suggestion.confidence}</Pill>
-              </div>
-              <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
-                {suggestion.detail}
-              </p>
-            </article>
-          ))}
+          {aiSuggestions.length > 0 ? (
+            aiSuggestions.map((suggestion) => (
+              <article
+                className="rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_18%,transparent)] bg-[rgba(11,17,28,.36)] px-3 py-2"
+                key={suggestion.title}
+                style={accentStyle(suggestion.accent)}
+              >
+                <div className="flex min-w-0 items-center justify-between gap-2">
+                  <h3 className="truncate text-[11px] font-semibold text-[var(--text-primary)]">
+                    {suggestion.title}
+                  </h3>
+                  <Pill accent={suggestion.accent}>
+                    {suggestion.confidence}
+                  </Pill>
+                </div>
+                <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
+                  {suggestion.detail}
+                </p>
+              </article>
+            ))
+          ) : (
+            <div className="xl:col-span-3">
+              <EmptyState
+                description="Review-Hinweise erscheinen erst, wenn lokale Ressourcen vorhanden sind."
+                title="Keine Review-Hinweise"
+              />
+            </div>
+          )}
         </div>
 
         <p className="rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.32)] px-3 py-2 text-[10px] leading-4 text-[var(--text-muted)]">
@@ -1305,25 +1401,32 @@ function AISuggestionsPanel({
         </div>
       </div>
       <div className="grid gap-1.5 p-3 xl:min-h-0 xl:flex-1 xl:gap-1.5 xl:p-2">
-        {items.map((item) => (
-          <article
-            className="rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_16%,transparent)] bg-[rgba(11,17,28,.42)] px-3 py-2 xl:px-2 xl:py-1.5"
-            key={item.title}
-            style={accentStyle(item.accent)}
-          >
-            <div className="flex min-w-0 items-center justify-between gap-2">
-              <h3 className="truncate text-[11px] font-semibold text-[var(--text-primary)]">
-                {item.title}
-              </h3>
-              <span className="shrink-0 text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                {item.confidence}
-              </span>
-            </div>
-            <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)] xl:line-clamp-2">
-              {item.detail}
-            </p>
-          </article>
-        ))}
+        {items.length > 0 ? (
+          items.map((item) => (
+            <article
+              className="rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_16%,transparent)] bg-[rgba(11,17,28,.42)] px-3 py-2 xl:px-2 xl:py-1.5"
+              key={item.title}
+              style={accentStyle(item.accent)}
+            >
+              <div className="flex min-w-0 items-center justify-between gap-2">
+                <h3 className="truncate text-[11px] font-semibold text-[var(--text-primary)]">
+                  {item.title}
+                </h3>
+                <span className="shrink-0 text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                  {item.confidence}
+                </span>
+              </div>
+              <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)] xl:line-clamp-2">
+                {item.detail}
+              </p>
+            </article>
+          ))
+        ) : (
+          <EmptyState
+            description="Hinweise erscheinen hier, sobald lokale Ressourcen Review-Kontext liefern."
+            title="Keine Review-Hinweise"
+          />
+        )}
         <p className="rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.32)] px-3 py-2 text-[10px] leading-4 text-[var(--text-muted)]">
           AI suggestions require review before they change the knowledge graph.
         </p>
@@ -1361,25 +1464,32 @@ function ReviewQueue({
         </div>
       </div>
       <div className="grid gap-1.5 p-3 xl:min-h-0 xl:flex-1 xl:grid-cols-2 xl:auto-rows-fr xl:gap-1.5 xl:p-2">
-        {visibleItems.map((item) => (
-          <article
-            className="rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_18%,transparent)] bg-[color-mix(in_srgb,var(--accent)_7%,rgba(11,17,28,.48))] px-3 py-2 xl:flex xl:min-h-0 xl:flex-col xl:justify-center xl:px-2 xl:py-1.5 [@media(min-width:2200px)]:px-2.5"
-            key={`${item.title}-${item.action}`}
-            style={accentStyle(item.accent)}
-          >
-            <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
-              <div className="min-w-0">
-                <h3 className="truncate text-[12px] font-semibold leading-4 text-[var(--text-primary)] xl:text-[10px] xl:leading-3">
-                  {item.title}
-                </h3>
-                <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)] xl:truncate xl:text-[9px] xl:leading-3">
-                  {item.linkedContext}
-                </p>
+        {visibleItems.length > 0 ? (
+          visibleItems.map((item) => (
+            <article
+              className="rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_18%,transparent)] bg-[color-mix(in_srgb,var(--accent)_7%,rgba(11,17,28,.48))] px-3 py-2 xl:flex xl:min-h-0 xl:flex-col xl:justify-center xl:px-2 xl:py-1.5 [@media(min-width:2200px)]:px-2.5"
+              key={`${item.title}-${item.action}`}
+              style={accentStyle(item.accent)}
+            >
+              <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <h3 className="truncate text-[12px] font-semibold leading-4 text-[var(--text-primary)] xl:text-[10px] xl:leading-3">
+                    {item.title}
+                  </h3>
+                  <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)] xl:truncate xl:text-[9px] xl:leading-3">
+                    {item.linkedContext}
+                  </p>
+                </div>
+                <Pill accent={item.accent}>{item.action}</Pill>
               </div>
-              <Pill accent={item.accent}>{item.action}</Pill>
-            </div>
-          </article>
-        ))}
+            </article>
+          ))
+        ) : (
+          <EmptyState
+            description="Neue Ressourcen erscheinen hier, sobald sie Review brauchen."
+            title="Keine Review-Punkte offen"
+          />
+        )}
       </div>
     </section>
   );
@@ -1414,35 +1524,42 @@ function RecentLearnings({
         </div>
       </div>
       <div className="grid gap-1.5 p-3 xl:min-h-0 xl:flex-1 xl:auto-rows-fr xl:gap-1.5 xl:p-2">
-        {visibleItems.map((item, index) => (
-          <article
-            className={cn(
-              "rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_16%,transparent)] bg-[rgba(11,17,28,.42)] px-3 py-2 xl:flex xl:min-h-0 xl:items-center xl:px-2 xl:py-1.5 [@media(min-width:2200px)]:px-2.5",
-              index >= DESKTOP_RECENT_LEARNINGS_LIMIT &&
-                "xl:hidden [@media(min-width:2200px)]:flex",
-            )}
-            key={item.title}
-            style={accentStyle(item.accent)}
-          >
-            <div className="flex min-w-0 items-start gap-2">
-              <span
-                aria-hidden="true"
-                className="mt-1.5 size-1.5 shrink-0 rounded-full bg-[var(--accent)]"
-              />
-              <div className="min-w-0">
-                <h3 className="line-clamp-1 text-[12px] font-semibold leading-4 text-[var(--text-primary)] xl:text-[10px] xl:leading-3">
-                  {item.title}
-                </h3>
-                <p className="mt-1 text-[10px] leading-4 text-[var(--text-secondary)] xl:line-clamp-1 xl:text-[9px] xl:leading-3">
-                  {item.insight}
-                </p>
-                <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)] xl:hidden [@media(min-width:2200px)]:block">
-                  Source: {item.source}
-                </p>
+        {visibleItems.length > 0 ? (
+          visibleItems.map((item, index) => (
+            <article
+              className={cn(
+                "rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_16%,transparent)] bg-[rgba(11,17,28,.42)] px-3 py-2 xl:flex xl:min-h-0 xl:items-center xl:px-2 xl:py-1.5 [@media(min-width:2200px)]:px-2.5",
+                index >= DESKTOP_RECENT_LEARNINGS_LIMIT &&
+                  "xl:hidden [@media(min-width:2200px)]:flex",
+              )}
+              key={item.title}
+              style={accentStyle(item.accent)}
+            >
+              <div className="flex min-w-0 items-start gap-2">
+                <span
+                  aria-hidden="true"
+                  className="mt-1.5 size-1.5 shrink-0 rounded-full bg-[var(--accent)]"
+                />
+                <div className="min-w-0">
+                  <h3 className="line-clamp-1 text-[12px] font-semibold leading-4 text-[var(--text-primary)] xl:text-[10px] xl:leading-3">
+                    {item.title}
+                  </h3>
+                  <p className="mt-1 text-[10px] leading-4 text-[var(--text-secondary)] xl:line-clamp-1 xl:text-[9px] xl:leading-3">
+                    {item.insight}
+                  </p>
+                  <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)] xl:hidden [@media(min-width:2200px)]:block">
+                    Source: {item.source}
+                  </p>
+                </div>
               </div>
-            </div>
-          </article>
-        ))}
+            </article>
+          ))
+        ) : (
+          <EmptyState
+            description="Gespeicherte Learnings erscheinen hier, sobald lokale Ressourcen vorhanden sind."
+            title="Noch keine Learnings"
+          />
+        )}
       </div>
     </section>
   );
@@ -1490,8 +1607,9 @@ export function ResourcesPage({
   const selectedResource = useMemo(
     () =>
       viewModel.resources.find((resource) => resource.id === selectedResourceId) ??
-      viewModel.selectedResource,
-    [selectedResourceId, viewModel.resources, viewModel.selectedResource],
+      viewModel.resources[0] ??
+      null,
+    [selectedResourceId, viewModel.resources],
   );
   const viewOptions = useMemo(
     () =>
@@ -1568,13 +1686,17 @@ export function ResourcesPage({
           ) : null}
         </div>
         <div className="grid min-w-0 gap-2 xl:h-full xl:min-h-0 xl:grid-rows-[minmax(0,13fr)_minmax(0,7fr)]">
-          <ResourceRelationInspector
-            clusters={viewModel.clusters}
-            makeHref={makeHref}
-            relations={viewModel.relations}
-            resource={selectedResource}
-            resources={viewModel.resources}
-          />
+          {selectedResource ? (
+            <ResourceRelationInspector
+              clusters={viewModel.clusters}
+              makeHref={makeHref}
+              relations={viewModel.relations}
+              resource={selectedResource}
+              resources={viewModel.resources}
+            />
+          ) : (
+            <ResourceRelationEmptyInspector />
+          )}
           {activeView === "library" ? (
             <RecentLearnings items={viewModel.recentLearnings} />
           ) : (

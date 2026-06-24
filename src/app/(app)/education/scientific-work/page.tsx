@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
-import {
-  EducationWorkspacePage,
-  getEducationWorkspaceViewModel,
-} from "@/features/education";
+import { getEducationWorkspaceViewModel } from "@/features/profile-data";
 
 export const metadata: Metadata = {
   title: "Scientific Work | Life OS",
@@ -10,11 +7,14 @@ export const metadata: Metadata = {
     "Academic workbench for research ideas, questions, fields, papers, notes, and thesis focus.",
 };
 
-export default function ScientificWorkPage() {
+export default async function ScientificWorkPage() {
+  const { EducationWorkspacePage } =
+    await import("@/features/education");
+
   return (
     <EducationWorkspacePage
       pageKind="scientific-work"
-      viewModel={getEducationWorkspaceViewModel()}
+      viewModel={await getEducationWorkspaceViewModel()}
     />
   );
 }

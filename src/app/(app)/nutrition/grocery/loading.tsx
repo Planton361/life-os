@@ -20,10 +20,7 @@ function SkeletonPanel({
       </div>
       <div className="grid gap-3 p-4">
         {Array.from({ length: rows }).map((_, index) => (
-          <SkeletonLine
-            className="h-20 w-full rounded-[14px]"
-            key={index}
-          />
+          <SkeletonLine className="h-20 w-full rounded-[14px]" key={index} />
         ))}
       </div>
     </section>

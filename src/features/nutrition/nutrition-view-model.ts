@@ -101,7 +101,7 @@ export function buildNutritionMetrics(
       precision: 0,
     },
     water: {
-      label: "Water",
+      label: "Hydration",
       accent: "var(--accent-blue)",
       precision: 1,
     },

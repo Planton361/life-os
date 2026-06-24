@@ -11,7 +11,5 @@ export default async function TasksPage({
 }: Readonly<{
   searchParams: Promise<WorkbenchSearchParams>;
 }>) {
-  return (
-    <EntityWorkbenchPage kind="task" searchParams={await searchParams} />
-  );
+  return <EntityWorkbenchPage kind="task" searchParams={await searchParams} />;
 }

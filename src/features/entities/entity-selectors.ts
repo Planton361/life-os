@@ -1,5 +1,5 @@
-import { entityCollection } from "./mock-entity-data";
 import type {
+  EntityCollection,
   EntityArea,
   EntityKind,
   EntityMilestone,
@@ -163,116 +163,172 @@ function normalizeId(kind: EntityKind, id: string) {
   return id;
 }
 
-export function getTask(taskId: string) {
-  return entityCollection.tasks.find((task) => task.id === taskId) ?? null;
+export function getTask(
+  taskId: string,
+  collection: EntityCollection,
+) {
+  return collection.tasks.find((task) => task.id === taskId) ?? null;
 }
 
-export function getProject(projectId: string) {
+export function getProject(
+  projectId: string,
+  collection: EntityCollection,
+) {
   const normalizedId = normalizeId("project", projectId);
   return (
-    entityCollection.projects.find((project) => project.id === normalizedId) ??
+    collection.projects.find((project) => project.id === normalizedId) ??
     null
   );
 }
 
-export function getGoal(goalId: string) {
+export function getGoal(
+  goalId: string,
+  collection: EntityCollection,
+) {
   const normalizedId = normalizeId("goal", goalId);
-  return entityCollection.goals.find((goal) => goal.id === normalizedId) ?? null;
+  return collection.goals.find((goal) => goal.id === normalizedId) ?? null;
 }
 
-export function getSkill(skillId: string) {
+export function getSkill(
+  skillId: string,
+  collection: EntityCollection,
+) {
   const normalizedId = normalizeId("skill", skillId);
-  return entityCollection.skills.find((skill) => skill.id === normalizedId) ?? null;
+  return collection.skills.find((skill) => skill.id === normalizedId) ?? null;
 }
 
-export function getMilestone(milestoneId: string) {
+export function getMilestone(
+  milestoneId: string,
+  collection: EntityCollection,
+) {
   return (
-    entityCollection.milestones.find(
+    collection.milestones.find(
       (milestone) => milestone.id === milestoneId,
     ) ?? null
   );
 }
 
-export function getProjectTasks(project: LifeProject) {
-  return project.taskIds.map(getTask).filter((task): task is LifeTask => Boolean(task));
+export function getProjectTasks(
+  project: LifeProject,
+  collection: EntityCollection,
+) {
+  return project.taskIds
+    .map((taskId) => getTask(taskId, collection))
+    .filter((task): task is LifeTask => Boolean(task));
 }
 
-export function getGoalTasks(goal: LifeGoal) {
+export function getGoalTasks(
+  goal: LifeGoal,
+  collection: EntityCollection,
+) {
   return goal.linkedTaskIds
-    .map(getTask)
+    .map((taskId) => getTask(taskId, collection))
     .filter((task): task is LifeTask => Boolean(task));
 }
 
-export function getGoalProjects(goal: LifeGoal) {
+export function getGoalProjects(
+  goal: LifeGoal,
+  collection: EntityCollection,
+) {
   return goal.linkedProjectIds
-    .map(getProject)
+    .map((projectId) => getProject(projectId, collection))
     .filter((project): project is LifeProject => Boolean(project));
 }
 
-export function getSkillTasks(skill: LifeSkill) {
+export function getSkillTasks(
+  skill: LifeSkill,
+  collection: EntityCollection,
+) {
   return skill.linkedTaskIds
-    .map(getTask)
+    .map((taskId) => getTask(taskId, collection))
     .filter((task): task is LifeTask => Boolean(task));
 }
 
-export function getSkillProjects(skill: LifeSkill) {
+export function getSkillProjects(
+  skill: LifeSkill,
+  collection: EntityCollection,
+) {
   return skill.linkedProjectIds
-    .map(getProject)
+    .map((projectId) => getProject(projectId, collection))
     .filter((project): project is LifeProject => Boolean(project));
 }
 
-export function getProjectMilestones(project: LifeProject) {
+export function getProjectMilestones(
+  project: LifeProject,
+  collection: EntityCollection,
+) {
   return project.milestoneIds
-    .map(getMilestone)
+    .map((milestoneId) => getMilestone(milestoneId, collection))
     .filter((milestone): milestone is EntityMilestone => Boolean(milestone));
 }
 
-export function getGoalMilestones(goal: LifeGoal) {
+export function getGoalMilestones(
+  goal: LifeGoal,
+  collection: EntityCollection,
+) {
   return goal.milestoneIds
-    .map(getMilestone)
+    .map((milestoneId) => getMilestone(milestoneId, collection))
     .filter((milestone): milestone is EntityMilestone => Boolean(milestone));
 }
 
-export function getSkillMilestones(skill: LifeSkill) {
+export function getSkillMilestones(
+  skill: LifeSkill,
+  collection: EntityCollection,
+) {
   return skill.milestoneIds
-    .map(getMilestone)
+    .map((milestoneId) => getMilestone(milestoneId, collection))
     .filter((milestone): milestone is EntityMilestone => Boolean(milestone));
 }
 
-export function getProjectGoal(project: LifeProject) {
-  return project.goalId ? getGoal(project.goalId) : null;
+export function getProjectGoal(
+  project: LifeProject,
+  collection: EntityCollection,
+) {
+  return project.goalId ? getGoal(project.goalId, collection) : null;
 }
 
-export function getTaskProject(task: LifeTask) {
-  return task.projectId ? getProject(task.projectId) : null;
+export function getTaskProject(
+  task: LifeTask,
+  collection: EntityCollection,
+) {
+  return task.projectId ? getProject(task.projectId, collection) : null;
 }
 
-export function getTaskGoal(task: LifeTask) {
-  return task.goalId ? getGoal(task.goalId) : null;
+export function getTaskGoal(
+  task: LifeTask,
+  collection: EntityCollection,
+) {
+  return task.goalId ? getGoal(task.goalId, collection) : null;
 }
 
-export function getTaskSkill(task: LifeTask) {
-  return task.skillId ? getSkill(task.skillId) : null;
+export function getTaskSkill(
+  task: LifeTask,
+  collection: EntityCollection,
+) {
+  return task.skillId ? getSkill(task.skillId, collection) : null;
 }
 
 export function getEntityHref(kind: EntityKind, id: string): `/${string}` {
   return `${entityKindMeta[kind].route}/${id}` as `/${string}`;
 }
 
-export function getWorkbenchItems(kind: EntityKind) {
+export function getWorkbenchItems(
+  kind: EntityKind,
+  collection: EntityCollection,
+) {
   if (kind === "task") {
-    return [...entityCollection.tasks];
+    return [...collection.tasks];
   }
 
   if (kind === "project") {
-    return [...entityCollection.projects];
+    return [...collection.projects];
   }
 
   if (kind === "goal") {
-    return [...entityCollection.goals];
+    return [...collection.goals];
   }
 
-  return [...entityCollection.skills];
+  return [...collection.skills];
 }
 
 function matchesTaskFilter(task: LifeTask, filter: string | null) {
@@ -375,20 +431,21 @@ function sortSkills(skills: LifeSkill[], sort: string | null) {
 export function getFilteredWorkbenchItems(
   kind: EntityKind,
   searchParams: WorkbenchSearchParams,
+  collection: EntityCollection,
 ) {
   const filter = normalizeSearchValue(searchParams.filter);
   const sort = normalizeSearchValue(searchParams.sort);
 
   if (kind === "task") {
     return sortTasks(
-      entityCollection.tasks.filter((task) => matchesTaskFilter(task, filter)),
+      collection.tasks.filter((task) => matchesTaskFilter(task, filter)),
       sort,
     );
   }
 
   if (kind === "project") {
     return sortProjects(
-      entityCollection.projects.filter((project) =>
+      collection.projects.filter((project) =>
         matchesProjectFilter(project, filter),
       ),
       sort,
@@ -397,13 +454,13 @@ export function getFilteredWorkbenchItems(
 
   if (kind === "goal") {
     return sortGoals(
-      entityCollection.goals.filter((goal) => matchesGoalFilter(goal, filter)),
+      collection.goals.filter((goal) => matchesGoalFilter(goal, filter)),
       sort,
     );
   }
 
   return sortSkills(
-    entityCollection.skills.filter((skill) => matchesSkillFilter(skill, filter)),
+    collection.skills.filter((skill) => matchesSkillFilter(skill, filter)),
     sort,
   );
 }

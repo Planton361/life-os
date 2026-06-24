@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import {
-  ResourcesPage as ResourcesWorkbenchPage,
-  getResourcesViewModel,
-} from "@/features/resources";
+import { getResourcesViewModel } from "@/features/profile-data";
 
 export const metadata: Metadata = {
   title: "Resources | Life OS",
@@ -11,8 +8,10 @@ export const metadata: Metadata = {
     "Knowledge library for reusable resources, prompts, research notes and learnings.",
 };
 
-export default function ResourcesPage() {
-  const viewModel = getResourcesViewModel();
+export default async function ResourcesPage() {
+  const { ResourcesPage: ResourcesWorkbenchPage } =
+    await import("@/features/resources");
+  const viewModel = await getResourcesViewModel();
 
   return (
     <Suspense fallback={null}>

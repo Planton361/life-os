@@ -9,10 +9,10 @@ import {
   WeightLossGoal,
 } from "@/components/dashboard/dashboard-sections";
 import { ActivePortfolio } from "@/components/dashboard/sections/active-portfolio-section";
-import { getDashboardViewModel } from "@/features/dashboard";
+import { getDashboardViewModel } from "@/features/profile-data";
 
-export function DashboardGrid() {
-  const dashboard = getDashboardViewModel();
+export async function DashboardGrid() {
+  const dashboard = await getDashboardViewModel();
 
   return (
     <section

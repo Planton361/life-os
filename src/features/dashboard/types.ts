@@ -204,7 +204,12 @@ export type DashboardTodayAgenda = {
   events: readonly DashboardAgendaEvent[];
 };
 
-export type InboxSignalType = "task" | "note" | "question" | "agent_context" | "loop";
+export type InboxSignalType =
+  | "task"
+  | "note"
+  | "question"
+  | "agent_context"
+  | "loop";
 
 export type InboxSignalStatus = "raw" | "clarified" | "converted" | "archived";
 
@@ -288,6 +293,18 @@ export type DashboardActivePortfolio = {
 
 export type MealType = "Breakfast" | "Lunch" | "Dinner" | "Snack";
 
+export type DashboardMealRecipeType = "breakfast" | "lunch" | "dinner";
+
+export type DashboardMealRecipeOption = {
+  id: string;
+  title: string;
+  mealTypes: readonly DashboardMealRecipeType[];
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+};
+
 export type DashboardMeal = {
   recipeId: string;
   mealId: string;
@@ -306,6 +323,7 @@ export type DashboardMeals = {
   href?: DashboardHref;
   currentTimeLabel: string;
   items: readonly DashboardMeal[];
+  recipeOptions: readonly DashboardMealRecipeOption[];
 };
 
 export type DashboardWeightLossGoal = {

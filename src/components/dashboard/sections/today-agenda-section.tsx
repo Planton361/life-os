@@ -10,7 +10,11 @@ import {
   type TodayAgendaEnergy,
 } from "@/features/dashboard";
 import { cn } from "@/lib/cn";
-import { type AccentStyle, styleFor } from "./section-primitives";
+import {
+  type AccentStyle,
+  DashboardEmptyState,
+  styleFor,
+} from "./section-primitives";
 import {
   DashboardDialog,
   SelectField,
@@ -467,15 +471,27 @@ export function TodayAgenda({
             {data.currentTimeLabel}
           </p>
           <div className="relative h-full space-y-2 overflow-hidden pr-1 2xl:space-y-0 2xl:pr-0">
-            {events.map((event, index) => (
+            {events.length > 0 ? (
+              events.map((event, index) => (
+                <div
+                  className="2xl:absolute 2xl:left-0 2xl:right-1 2xl:top-[var(--agenda-top)]"
+                  key={event.title}
+                  style={agendaEventSlotStyle(index)}
+                >
+                  <AgendaEventCard event={event} />
+                </div>
+              ))
+            ) : (
               <div
                 className="2xl:absolute 2xl:left-0 2xl:right-1 2xl:top-[var(--agenda-top)]"
-                key={event.title}
-                style={agendaEventSlotStyle(index)}
+                style={agendaEventSlotStyle(0)}
               >
-                <AgendaEventCard event={event} />
+                <DashboardEmptyState
+                  description="Lege 1-3 Aufgaben fuer heute an."
+                  title="Noch keine Tagesstruktur"
+                />
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>

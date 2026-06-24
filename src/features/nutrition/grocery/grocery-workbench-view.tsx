@@ -1486,7 +1486,16 @@ export function GroceryWorkbenchView({
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button className={primaryButtonClass} onClick={copyShoppingText} type="button">
+            <button
+              className={primaryButtonClass}
+              onClick={copyShoppingText}
+              onPointerDown={() => {
+                if (copyShoppingItemNames(visibleShoppingItems)) {
+                  setToast("Shopping list copied");
+                }
+              }}
+              type="button"
+            >
               Copy shopping text
             </button>
             <label className={secondaryButtonClass}>

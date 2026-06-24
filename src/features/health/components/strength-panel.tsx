@@ -4,6 +4,7 @@ import {
   ActionLink,
   HealthMetricCard,
   HealthPanel,
+  SectionEmptyState,
   barHeightStyle,
 } from "./health-overview-primitives";
 
@@ -37,8 +38,9 @@ export function StrengthPanel({
             >
               {data.trainingPattern.title}
             </h3>
-            <div className="mt-4 flex h-24 items-end gap-2 min-[1900px]:h-36 min-[1900px]:gap-3">
-              {data.trainingPattern.days.map((day) => (
+            {data.trainingPattern.days.length > 0 ? (
+              <div className="mt-4 flex h-24 items-end gap-2 min-[1900px]:h-36 min-[1900px]:gap-3">
+                {data.trainingPattern.days.map((day) => (
                 <div
                   aria-label={`${day.day}: ${day.label}`}
                   className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1"
@@ -55,8 +57,15 @@ export function StrengthPanel({
                     {day.day}
                   </span>
                 </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <SectionEmptyState
+                className="mt-4"
+                description="Krafteinheiten erscheinen hier, sobald du eine Session dokumentierst."
+                title="Noch keine Krafteinheiten"
+              />
+            )}
             <p className="mt-auto pt-3 text-[10px] leading-4 text-[var(--text-muted)]">
               {data.trainingPattern.note}
             </p>
@@ -72,8 +81,9 @@ export function StrengthPanel({
             >
               {data.sessionBalance.title}
             </h3>
-            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 min-[1900px]:gap-3">
-              {data.sessionBalance.items.map((item) => (
+            {data.sessionBalance.items.length > 0 ? (
+              <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 min-[1900px]:gap-3">
+                {data.sessionBalance.items.map((item) => (
                 <article
                   className="rounded-[10px] border border-[color-mix(in_srgb,var(--accent)_20%,transparent)] bg-[color-mix(in_srgb,var(--accent)_6%,rgba(15,23,36,.56))] px-2.5 py-2 min-[1900px]:p-3"
                   key={item.label}
@@ -92,8 +102,15 @@ export function StrengthPanel({
                     {item.count}
                   </p>
                 </article>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <SectionEmptyState
+                className="mt-4"
+                description="Session-Typen erscheinen nach den ersten lokalen Eintraegen."
+                title="Noch keine Session-Balance"
+              />
+            )}
           </section>
         </div>
 

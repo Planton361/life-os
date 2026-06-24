@@ -4,7 +4,7 @@ import type {
   HealthScheduleItemViewModel,
   HealthScheduleViewModel,
 } from "../types";
-import { ActionLink } from "./health-overview-primitives";
+import { ActionLink, SectionEmptyState } from "./health-overview-primitives";
 
 function statusTone(status: HealthScheduleItemViewModel["status"]) {
   if (status === "done") {
@@ -51,7 +51,8 @@ export function HealthDaySchedule({
             aria-hidden="true"
             className="absolute bottom-3 left-[64px] top-3 hidden w-px bg-[rgba(148,163,184,.16)] sm:block"
           />
-          {data.items.map((item) => (
+          {data.items.length > 0 ? (
+            data.items.map((item) => (
             <article
               className="relative grid min-w-0 gap-2 sm:grid-cols-[74px_minmax(0,1fr)] sm:gap-3 min-[1900px]:min-h-0"
               key={`${item.time}-${item.title}`}
@@ -79,7 +80,14 @@ export function HealthDaySchedule({
                 </p>
               </div>
             </article>
-          ))}
+            ))
+          ) : (
+            <SectionEmptyState
+              className="relative sm:ml-[86px]"
+              description="Termine erscheinen hier, sobald du Health-Zeitbloecke planst."
+              title="Noch kein Health-Zeitplan"
+            />
+          )}
         </div>
 
         <div className="mt-3 flex flex-col gap-3 border-t border-[var(--border-subtle)] pt-3 sm:flex-row sm:items-center sm:justify-between xl:mt-auto">

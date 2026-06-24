@@ -4,6 +4,7 @@ import {
   ActionLink,
   DotRhythm,
   HealthPanel,
+  SectionEmptyState,
   barHeightStyle,
 } from "./health-overview-primitives";
 
@@ -30,8 +31,9 @@ export function MentalHealthPanel({
           >
             {data.moodTitle}
           </h3>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2 2xl:grid-cols-3 min-[1900px]:gap-3">
-            {data.moodDirections.map((mood) => (
+          {data.moodDirections.length > 0 ? (
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 2xl:grid-cols-3 min-[1900px]:gap-3">
+              {data.moodDirections.map((mood) => (
               <article
                 className="grid min-w-0 grid-cols-[24px_minmax(0,1fr)] gap-2 rounded-[10px] border border-[rgba(148,163,184,.08)] bg-[rgba(15,23,36,.56)] px-2.5 py-2"
                 key={mood.label}
@@ -62,8 +64,15 @@ export function MentalHealthPanel({
                   </div>
                 </div>
               </article>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <SectionEmptyState
+              className="mt-3"
+              description="Check-ins erscheinen hier, sobald du sie lokal erfasst."
+              title="Noch keine Check-ins"
+            />
+          )}
         </section>
 
         <div className="grid gap-3 md:grid-cols-[minmax(0,.9fr)_minmax(0,1.1fr)] xl:flex-1 min-[1900px]:min-h-[190px]">
@@ -89,7 +98,8 @@ export function MentalHealthPanel({
             aria-label="Sleep rhythm for the last 7 days"
             className="flex min-h-[112px] items-end gap-2 rounded-[13px] border border-[rgba(148,163,184,.10)] bg-[rgba(11,17,28,.34)] px-3 py-3 min-[1900px]:min-h-[190px] min-[1900px]:gap-3 min-[1900px]:px-4 min-[1900px]:py-4"
           >
-            {data.sleep.bars.map((bar) => (
+            {data.sleep.bars.length > 0 ? (
+              data.sleep.bars.map((bar) => (
               <div
                 aria-label={`${bar.day}: ${bar.label}`}
                 className="flex h-full min-w-0 flex-1 flex-col justify-end gap-1"
@@ -107,7 +117,14 @@ export function MentalHealthPanel({
                   {bar.day}
                 </span>
               </div>
-            ))}
+              ))
+            ) : (
+              <SectionEmptyState
+                className="w-full self-stretch"
+                description="Schlafsignale erscheinen nach dem ersten lokalen Eintrag."
+                title="Noch keine Schlafdaten"
+              />
+            )}
           </section>
         </div>
 
@@ -125,13 +142,19 @@ export function MentalHealthPanel({
             <p className="mt-1 text-[14px] font-semibold text-[var(--text-primary)]">
               {data.journal.value}
             </p>
-            <div className="mt-2">
-              <DotRhythm
-                accent="var(--accent-purple)"
-                label={`${data.journal.label}: ${data.journal.value}`}
-                pattern={data.journal.pattern}
-              />
-            </div>
+            {data.journal.pattern.length > 0 ? (
+              <div className="mt-2">
+                <DotRhythm
+                  accent="var(--accent-purple)"
+                  label={`${data.journal.label}: ${data.journal.value}`}
+                  pattern={data.journal.pattern}
+                />
+              </div>
+            ) : (
+              <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
+                Noch keine Reflexionen erfasst.
+              </p>
+            )}
           </div>
           <ActionLink accent="var(--accent-purple)" href={data.journal.href}>
             {data.journal.actionLabel}

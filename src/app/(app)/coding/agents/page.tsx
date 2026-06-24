@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
-import { AgentHubPage, getAgentHubViewModel } from "@/features/coding/agents";
+import { getAgentHubViewModel } from "@/features/profile-data";
 
-export default function AgentsPage() {
-  const viewModel = getAgentHubViewModel();
+export default async function AgentsPage() {
+  const { AgentHubPage } =
+    await import("@/features/coding/agents");
+  const viewModel = await getAgentHubViewModel();
 
   return <AgentHubPage viewModel={viewModel} />;
 }

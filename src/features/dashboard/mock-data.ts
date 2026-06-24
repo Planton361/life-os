@@ -76,7 +76,7 @@ export const dashboardMockData = {
     moodCheck: {
       title: "Mood",
       eyebrow: "Wellbeing",
-      prompt: "How do you feel right now?",
+      prompt: "How do you feel?",
       moodLabel: "Content",
       detail: "stabil · fokusfähig · Stress im Blick",
       progressLabel: "Calm index",
@@ -808,6 +808,7 @@ export const dashboardMockData = {
     title: "Meals Today",
     href: "/nutrition/meal-planner?view=today",
     currentTimeLabel: "15:42",
+    recipeOptions: [],
     items: [
       {
         recipeId: "skyr-oats",

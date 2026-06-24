@@ -25,7 +25,9 @@ function SkeletonPanel({
       <div className="grid gap-3 p-4">
         {Array.from({ length: rows }).map((_, index) => (
           <SkeletonLine
-            className={index === rows - 1 ? "h-12 rounded-[12px]" : "h-4 w-full"}
+            className={
+              index === rows - 1 ? "h-12 rounded-[12px]" : "h-4 w-full"
+            }
             key={index}
           />
         ))}

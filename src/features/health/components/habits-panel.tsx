@@ -5,6 +5,7 @@ import {
   ActionLink,
   HealthMetricCard,
   HealthPanel,
+  SectionEmptyState,
 } from "./health-overview-primitives";
 
 const heatLevelLabels = ["none", "light", "steady", "strong"] as const;
@@ -105,11 +106,19 @@ export function HabitsPanel({
               <span>{data.heatmap.legend.high}</span>
             </div>
           </div>
-          <div className="mt-4 grid gap-3 min-[1900px]:gap-5">
-            {data.heatmap.rows.map((row) => (
+          {data.heatmap.rows.length > 0 ? (
+            <div className="mt-4 grid gap-3 min-[1900px]:gap-5">
+              {data.heatmap.rows.map((row) => (
               <HabitHeatmapRow key={row.label} row={row} />
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <SectionEmptyState
+              className="mt-4"
+              description="Routinen erscheinen hier, sobald du sie lokal erfasst."
+              title="Noch keine Routinen"
+            />
+          )}
         </section>
 
         <section

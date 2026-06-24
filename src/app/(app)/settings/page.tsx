@@ -3,6 +3,7 @@ import {
   SettingsPage as SettingsFeaturePage,
   getSettingsViewModel,
 } from "@/features/settings";
+import { ProfileDataSettingsPanel } from "@/features/profile-data";
 
 export const metadata: Metadata = {
   title: "Settings | Life OS",
@@ -13,5 +14,10 @@ export const metadata: Metadata = {
 export default function SettingsPage() {
   const viewModel = getSettingsViewModel();
 
-  return <SettingsFeaturePage viewModel={viewModel} />;
+  return (
+    <>
+      <SettingsFeaturePage viewModel={viewModel} />
+      <ProfileDataSettingsPanel />
+    </>
+  );
 }

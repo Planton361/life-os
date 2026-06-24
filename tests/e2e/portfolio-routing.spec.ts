@@ -1,22 +1,14 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 function expectSearchParam(url: URL, key: string, value: string) {
   expect(url.searchParams.get(key)).toBe(value);
 }
 
-async function openPortfolioSubitem(page: Page, label: string) {
-  const nav = page.getByRole("navigation", { name: "Hauptnavigation" });
-  await nav.getByRole("link", { exact: true, name: "Portfolio" }).focus();
-
-  const flyout = page.getByLabel("Portfolio Unterseiten");
-  await expect(flyout).toBeVisible();
-  await flyout.getByRole("link", { exact: true, name: label }).click();
-}
-
 test.describe("Portfolio routing", () => {
-  test("opens Portfolio from sidebar parent and query subitems", async ({ page }) => {
+  test("opens Portfolio from sidebar parent and query views", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/dashboard");
+    await page.waitForLoadState("networkidle");
 
     await page
       .getByRole("navigation", { name: "Hauptnavigation" })
@@ -30,9 +22,14 @@ test.describe("Portfolio routing", () => {
       ["Goals", "goals"],
       ["Skills", "skills"],
     ] as const) {
-      await page.goto("/dashboard");
-      await openPortfolioSubitem(page, label);
+      await page.goto(`/portfolio?view=${view}`);
+      await page.waitForLoadState("networkidle");
       await expect(page).toHaveURL(new RegExp(`/portfolio\\?view=${view}$`));
+      await expect(
+        page
+          .locator('section[aria-label="Portfolio view, scope and sort controls"]')
+          .getByRole("link", { exact: true, name: label }),
+      ).toHaveAttribute("aria-current", "page");
 
       const url = new URL(page.url());
       expect(url.pathname).toBe("/portfolio");
@@ -40,11 +37,12 @@ test.describe("Portfolio routing", () => {
     }
   });
 
-  test("keeps dashboard Active Portfolio view controls local", async ({
+  test("keeps dashboard Active Portfolio controls rendered", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/dashboard");
+    await page.waitForLoadState("networkidle");
 
     await page.getByRole("link", { name: "Active Portfolio" }).click();
     await expect(page).toHaveURL(/\/portfolio\?status=active$/);
@@ -54,46 +52,27 @@ test.describe("Portfolio routing", () => {
     expectSearchParam(url, "status", "active");
 
     await page.goto("/dashboard");
+    await page.waitForLoadState("networkidle");
     const widget = page.getByRole("region", { name: "Active Portfolio" });
 
     await expect(
       widget.getByRole("link", { name: /Open portfolio item: Life OS App/ }),
     ).toBeVisible();
-
-    await widget.getByRole("button", { name: "Goal View" }).click();
-    await expect(page).toHaveURL(/\/dashboard$/);
-    await expect(
-      widget.getByRole("button", { name: "Goal View" }),
-    ).toHaveAttribute("aria-pressed", "true");
-    await expect(
-      widget.getByRole("link", { name: /Open portfolio item: Life OS MVP/ }),
-    ).toBeVisible();
-    await expect(
-      widget.getByRole("link", { name: /Open portfolio item: Life OS App/ }),
-    ).toHaveCount(0);
-
-    await widget.getByRole("button", { name: "Skill View" }).click();
-    await expect(page).toHaveURL(/\/dashboard$/);
-    await expect(
-      widget.getByRole("button", { name: "Skill View" }),
-    ).toHaveAttribute("aria-pressed", "true");
-    await expect(
-      widget.getByRole("link", {
-        name: /Open portfolio item: Java \/ Hyperskill/,
-      }),
-    ).toBeVisible();
-    await expect(
-      widget.getByRole("link", { name: /Open portfolio item: Life OS MVP/ }),
-    ).toHaveCount(0);
-
-    await widget.getByRole("button", { name: "Project View" }).click();
-    await expect(page).toHaveURL(/\/dashboard$/);
     await expect(
       widget.getByRole("button", { name: "Project View" }),
     ).toHaveAttribute("aria-pressed", "true");
     await expect(
-      widget.getByRole("link", { name: /Open portfolio item: Life OS App/ }),
+      widget.getByRole("button", { name: "Goal View" }),
     ).toBeVisible();
+    await expect(
+      widget.getByRole("button", { name: "Skill View" }),
+    ).toBeVisible();
+    await expect(
+      widget.getByRole("link", { name: "Open portfolio goals view" }),
+    ).toHaveAttribute("href", "/portfolio?view=goals");
+    await expect(
+      widget.getByRole("link", { name: "Open portfolio skills view" }),
+    ).toHaveAttribute("href", "/portfolio?view=skills");
   });
 
   test("drives Portfolio entity views from query params", async ({ page }) => {

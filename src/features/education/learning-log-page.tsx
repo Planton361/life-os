@@ -182,7 +182,7 @@ const weeklyDayMeta: Record<WeeklyLearningDay["status"], { label: string; accent
 };
 
 const sourceLabels: Record<PracticeQueueItem["source"], string> = {
-  hyperskill: "Hyperskill",
+  hyperskill: "Practice platform",
   leetcode: "LeetCode",
   course: "Course",
   book: "Book",
@@ -556,7 +556,7 @@ function LearningHeader({
             Learning Log
           </h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
-            Study sessions, practice rhythm and learning evidence
+            Learning sessions, practice rhythm and learning evidence
           </p>
         </div>
         <div className="grid gap-2 sm:grid-cols-3 xl:flex xl:justify-end">

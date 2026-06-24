@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getWorkWikiViewModel, WorkWikiPage } from "@/features/work";
+import { getWorkWikiViewModel } from "@/features/profile-data";
 
 export const metadata: Metadata = {
   title: "Wiki | Life OS",
@@ -7,6 +7,9 @@ export const metadata: Metadata = {
     "Personal work reference, process notes and architecture lookup with local mock data.",
 };
 
-export default function WorkWikiRoute() {
-  return <WorkWikiPage viewModel={getWorkWikiViewModel()} />;
+export default async function WorkWikiRoute() {
+  const { WorkWikiPage } =
+    await import("@/features/work");
+
+  return <WorkWikiPage viewModel={await getWorkWikiViewModel()} />;
 }

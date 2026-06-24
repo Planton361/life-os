@@ -4,6 +4,7 @@ import {
   ActionLink,
   HealthMetricCard,
   HealthPanel,
+  SectionEmptyState,
   Sparkline,
 } from "./health-overview-primitives";
 
@@ -26,8 +27,9 @@ export function RunningPanel({
           ))}
         </div>
 
-        <div className="grid gap-3 md:grid-cols-2 xl:flex-1 min-[1900px]:gap-4">
-          {data.trends.map((trend) => (
+        {data.trends.length > 0 ? (
+          <div className="grid gap-3 md:grid-cols-2 xl:flex-1 min-[1900px]:gap-4">
+            {data.trends.map((trend) => (
             <section
               aria-labelledby={`${trend.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-heading`}
               className="flex min-h-[150px] flex-col rounded-[13px] border border-[rgba(148,163,184,.10)] bg-[rgba(11,17,28,.38)] p-3 min-[1900px]:min-h-[230px] min-[1900px]:p-4"
@@ -57,8 +59,14 @@ export function RunningPanel({
                 />
               </div>
             </section>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <SectionEmptyState
+            description="Laufeinheiten erscheinen hier, sobald du eine Session dokumentierst."
+            title="Noch keine Laufeinheiten"
+          />
+        )}
 
         <section
           aria-labelledby="running-next-run-heading"

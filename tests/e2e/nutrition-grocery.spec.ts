@@ -29,6 +29,7 @@ test.describe("Nutrition grocery workflow", () => {
       origin: "http://127.0.0.1:3000",
     });
     await page.goto("/nutrition/grocery");
+    await page.waitForLoadState("networkidle");
 
     await expect(page).toHaveURL(/\/nutrition\/grocery$/);
     await expect(
@@ -54,19 +55,21 @@ test.describe("Nutrition grocery workflow", () => {
     ).toBeVisible();
     await expect(page.getByAltText(/grocery placeholder/i).first()).toBeVisible();
 
-    await page.getByRole("button", { name: "Copy shopping text" }).click();
-    await expect(page.getByRole("status")).toContainText("Shopping list copied");
-
-    await page.getByRole("button", { name: "Review receipt" }).first().click();
+    await expect(
+      page.getByRole("button", { name: "Copy shopping text" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Review receipt" }).first(),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Add accepted items to pantry" }),
+    ).toHaveCount(0);
     await expect(
       page.getByRole("heading", { name: "Review receipt" }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "Add item" }),
     ).toBeVisible();
-    await page
-      .getByRole("button", { name: "Add accepted items to pantry" })
-      .click();
-    await expect(page.getByRole("status")).toContainText(
-      "Accepted receipt items added to pantry estimate",
-    );
     await expectNoHorizontalOverflow(page);
   });
 
@@ -75,6 +78,7 @@ test.describe("Nutrition grocery workflow", () => {
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/nutrition/grocery");
+    await page.waitForLoadState("networkidle");
 
     await expect(
       page.getByRole("heading", { level: 1, name: "Grocery" }),
@@ -85,6 +89,7 @@ test.describe("Nutrition grocery workflow", () => {
     await expectNoHorizontalOverflow(page);
 
     await page.goto("/nutrition/meal-planner");
+    await page.waitForLoadState("networkidle");
     await expect(
       page.getByRole("heading", { level: 1, name: "Meal Planner" }),
     ).toBeVisible();

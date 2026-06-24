@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import {
-  SkillMapPage as SkillMapFeaturePage,
-  getSkillMapViewModel,
-} from "@/features/coding/skill-map";
+import { getSkillMapViewModel } from "@/features/profile-data";
 
-export default function SkillMapPage() {
-  const viewModel = getSkillMapViewModel();
+export default async function SkillMapPage() {
+  const { SkillMapPage: SkillMapFeaturePage } =
+    await import("@/features/coding/skill-map");
+  const viewModel = await getSkillMapViewModel();
 
   return <SkillMapFeaturePage viewModel={viewModel} />;
 }

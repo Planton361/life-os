@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
-import {
-  CodingOverviewPage,
-  getCodingOverviewViewModel,
-} from "@/features/coding";
+import { getCodingOverviewViewModel } from "@/features/profile-data";
 
 export const metadata: Metadata = {
   title: "Coding Overview | Life OS",
@@ -10,8 +7,10 @@ export const metadata: Metadata = {
     "Area dashboard for coding focus, repository attention, agent reviews, recent sessions and technical knowledge.",
 };
 
-export default function CodingPage() {
-  const viewModel = getCodingOverviewViewModel();
+export default async function CodingPage() {
+  const { CodingOverviewPage } =
+    await import("@/features/coding");
+  const viewModel = await getCodingOverviewViewModel();
 
   return <CodingOverviewPage viewModel={viewModel} />;
 }

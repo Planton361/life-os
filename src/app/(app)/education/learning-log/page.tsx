@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
-import {
-  getLearningLogViewModel,
-  LearningLogPage as LearningLogFeaturePage,
-} from "@/features/education";
+import { getLearningLogViewModel } from "@/features/profile-data";
 
 export const metadata: Metadata = {
   title: "Learning Log | Life OS",
   description:
-    "Study sessions, practice rhythm and learning evidence for Education.",
+    "Learning sessions, practice rhythm and learning evidence for Education.",
 };
 
-export default function LearningLogPage() {
-  return <LearningLogFeaturePage viewModel={getLearningLogViewModel()} />;
+export default async function LearningLogPage() {
+  const { LearningLogPage: LearningLogFeaturePage } =
+    await import("@/features/education");
+
+  return <LearningLogFeaturePage viewModel={await getLearningLogViewModel()} />;
 }

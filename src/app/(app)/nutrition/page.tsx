@@ -1,7 +1,4 @@
-import {
-  NutritionOverviewPage,
-  getNutritionOverviewViewModel,
-} from "@/features/nutrition";
+import { getNutritionOverviewViewModel } from "@/features/profile-data";
 
 export const metadata = {
   title: "Nutrition Overview | Life OS",
@@ -9,8 +6,10 @@ export const metadata = {
     "Area dashboard for today's nutrition status, next meal action, hydration, meal plan adherence and grocery signal.",
 };
 
-export default function NutritionPage() {
-  const viewModel = getNutritionOverviewViewModel();
+export default async function NutritionPage() {
+  const { NutritionOverviewPage } =
+    await import("@/features/nutrition");
+  const viewModel = await getNutritionOverviewViewModel();
 
   return <NutritionOverviewPage viewModel={viewModel} />;
 }

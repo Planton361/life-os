@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import {
-  PortfolioPage as PortfolioWorkbenchPage,
-  getPortfolioViewModel,
-} from "@/features/portfolio";
+import { PortfolioPage as PortfolioWorkbenchPage } from "@/features/portfolio";
+import { getPortfolioViewModel } from "@/features/profile-data";
 
 export const metadata: Metadata = {
   title: "Portfolio | Life OS",
@@ -11,8 +9,8 @@ export const metadata: Metadata = {
     "Active workbench for tasks, projects, goals and skills in context.",
 };
 
-export default function PortfolioPage() {
-  const viewModel = getPortfolioViewModel();
+export default async function PortfolioPage() {
+  const viewModel = await getPortfolioViewModel();
 
   return (
     <Suspense fallback={null}>
