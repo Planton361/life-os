@@ -20,6 +20,8 @@ export type ToastState = {
   tone: "success" | "info" | "error";
 };
 
+type DataAttributes = Record<`data-${string}`, string | undefined>;
+
 export function accentStyle(accent: string): SystemStyle {
   return { "--accent": accent };
 }
@@ -88,14 +90,20 @@ export const textareaClass = cn(inputClass, "min-h-[104px] py-3");
 export function SystemPageShell({
   accent,
   children,
+  dataAttributes,
+  id,
 }: Readonly<{
   accent: string;
   children: ReactNode;
+  dataAttributes?: DataAttributes;
+  id?: string;
 }>) {
   return (
     <div
+      id={id}
       className="mx-auto flex w-full max-w-[2208px] flex-col gap-3 pb-8"
       style={accentStyle(accent)}
+      {...dataAttributes}
     >
       {children}
     </div>
@@ -145,6 +153,7 @@ export function SystemPanel({
   children,
   className,
   bodyClassName,
+  dataAttributes,
 }: Readonly<{
   title: string;
   subtitle?: string;
@@ -152,6 +161,7 @@ export function SystemPanel({
   children: ReactNode;
   className?: string;
   bodyClassName?: string;
+  dataAttributes?: DataAttributes;
 }>) {
   const id = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-section`;
 
@@ -162,6 +172,7 @@ export function SystemPanel({
         "min-w-0 overflow-hidden rounded-[var(--panel-radius)] border border-[var(--border-subtle)] bg-[var(--surface-1)] shadow-[0_8px_22px_rgba(0,0,0,.12)]",
         className,
       )}
+      {...dataAttributes}
     >
       <div className="border-b border-[var(--border-subtle)] bg-[rgba(14,23,38,.78)] px-4 py-3 sm:px-5">
         <div className="flex min-w-0 items-start justify-between gap-3">
@@ -391,4 +402,3 @@ export function LocalMockNotice({ children }: Readonly<{ children: ReactNode }>)
     </p>
   );
 }
-

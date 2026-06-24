@@ -8,8 +8,8 @@ import type { ChallengesViewModel } from "./types";
 export function getChallengesViewModel(): ChallengesViewModel {
   return {
     challenges,
+    profileId: "demo",
     rules: challengeRules,
     templates: challengeTemplates,
   };
 }
-

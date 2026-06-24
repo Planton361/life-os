@@ -12,10 +12,10 @@ export function getShopViewModel(): ShopViewModel {
   return {
     currency: lifeCurrency,
     earningSources,
+    profileId: "demo",
     recommendedRewardIds,
     rewards: rewardItems,
     rules: rewardRules,
     transactions: rewardTransactions,
   };
 }
-

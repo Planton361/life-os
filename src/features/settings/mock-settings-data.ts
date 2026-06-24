@@ -64,6 +64,7 @@ export const settingsPreferences: SettingsPreference[] = [
 export const settingsViewModel: SettingsViewModel = {
   appearance: settingsAppearance,
   preferences: settingsPreferences,
+  profileId: "demo",
   privacy: settingsPrivacy,
   profile: settingsProfile,
   systemInfo: {
@@ -74,4 +75,3 @@ export const settingsViewModel: SettingsViewModel = {
     versionLabel: "MVP static phase",
   },
 };
-

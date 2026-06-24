@@ -3,7 +3,10 @@ import {
   SettingsPage as SettingsFeaturePage,
   getSettingsViewModel,
 } from "@/features/settings";
-import { ProfileDataSettingsPanel } from "@/features/profile-data";
+import {
+  ProfileDataSettingsPanel,
+  getCurrentLifeOsProfileId,
+} from "@/features/profile-data";
 
 export const metadata: Metadata = {
   title: "Settings | Life OS",
@@ -11,8 +14,12 @@ export const metadata: Metadata = {
     "Profile, appearance, privacy and system settings in local mock mode.",
 };
 
-export default function SettingsPage() {
-  const viewModel = getSettingsViewModel();
+export default async function SettingsPage() {
+  const profileId = await getCurrentLifeOsProfileId();
+  const viewModel = {
+    ...getSettingsViewModel(),
+    profileId,
+  };
 
   return (
     <>

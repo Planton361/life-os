@@ -3,6 +3,10 @@
 import { useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import { cn } from "@/lib/cn";
 import {
+  contentStateDataAttributes,
+  resolveContentStateMeta,
+} from "@/features/content-state";
+import {
   CurrencyPill,
   DialogShell,
   EmptyState,
@@ -96,6 +100,26 @@ const statusAccent: Record<ChallengeStatus, string> = {
   paused: "var(--accent-orange)",
 };
 
+function sectionStateAttributes({
+  capacity,
+  itemCount,
+  profileId,
+  section,
+}: Readonly<{
+  capacity: number;
+  itemCount: number;
+  profileId: ChallengesViewModel["profileId"];
+  section: string;
+}>) {
+  return {
+    ...contentStateDataAttributes(
+      resolveContentStateMeta({ capacity, itemCount }),
+      profileId,
+    ),
+    "data-challenges-section": section,
+  };
+}
+
 const difficultyAccent: Record<ChallengeDifficulty, string> = {
   easy: "var(--accent-green)",
   hard: "var(--accent-orange)",
@@ -138,10 +162,12 @@ function updateProgressLabel(challenge: Challenge) {
 
 function ActiveChallengeFocus({
   challenge,
+  profileId,
   onComplete,
   onLog,
 }: Readonly<{
   challenge: Challenge | undefined;
+  profileId: ChallengesViewModel["profileId"];
   onComplete: (challenge: Challenge) => void;
   onLog: (challenge: Challenge) => void;
 }>) {
@@ -149,12 +175,18 @@ function ActiveChallengeFocus({
     return (
       <SystemPanel
         className="lg:col-span-2"
-        subtitle="No active challenge is currently selected from the mock list."
+        dataAttributes={sectionStateAttributes({
+          capacity: 1,
+          itemCount: 0,
+          profileId,
+          section: "active-challenge-focus",
+        })}
+        subtitle="No active challenge is currently selected."
         title="Active Challenge Focus"
       >
         <EmptyState
-          description="Create or activate a challenge to keep one specific behavior in focus."
-          title="No active challenge"
+          description="Aktiviere spaeter eine lokale Challenge, wenn du ein konkretes Verhalten fokussieren willst."
+          title="Keine aktive Challenge"
         />
       </SystemPanel>
     );
@@ -166,6 +198,12 @@ function ActiveChallengeFocus({
     <SystemPanel
       badge={<CurrencyPill amount={challenge.rewardAmount} />}
       className="lg:col-span-2"
+      dataAttributes={sectionStateAttributes({
+        capacity: 1,
+        itemCount: 1,
+        profileId,
+        section: "active-challenge-focus",
+      })}
       subtitle="The current focus is deliberately small and measurable."
       title="Active Challenge Focus"
     >
@@ -663,6 +701,8 @@ export function ChallengesPage({
 }: Readonly<{
   viewModel: ChallengesViewModel;
 }>) {
+  const profileId = viewModel.profileId;
+  const isDemo = profileId === "demo";
   const [challenges, setChallenges] = useState<Challenge[]>(viewModel.challenges);
   const [query, setQuery] = useState("");
   const [segment, setSegment] = useState<ChallengeSegment>("all");
@@ -672,6 +712,7 @@ export function ChallengesPage({
   const [dialog, setDialog] = useState<DialogState>(null);
   const [inspector, setInspector] = useState<Challenge | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
+  const canUseChallengeDrafts = isDemo;
 
   const activeFocus =
     challenges.find((challenge) => challenge.id === "challenge-weekly-review") ??
@@ -730,6 +771,10 @@ export function ChallengesPage({
   }
 
   function createChallenge(draft: ChallengeDraft) {
+    if (!canUseChallengeDrafts) {
+      return;
+    }
+
     const challenge: Challenge = {
       cadence: draft.cadence,
       createdByUser: true,
@@ -757,6 +802,10 @@ export function ChallengesPage({
   }
 
   function logProgress(challenge: Challenge, increment: number) {
+    if (!isDemo) {
+      return;
+    }
+
     setChallenges((current) =>
       current.map((item) => {
         if (item.id !== challenge.id) {
@@ -786,6 +835,10 @@ export function ChallengesPage({
   }
 
   function completeChallenge(challenge: Challenge) {
+    if (!isDemo) {
+      return;
+    }
+
     setChallenges((current) =>
       current.map((item) => {
         if (item.id !== challenge.id) {
@@ -815,12 +868,22 @@ export function ChallengesPage({
   }
 
   return (
-    <SystemPageShell accent={challengesAccent}>
+    <SystemPageShell
+      accent={challengesAccent}
+      dataAttributes={sectionStateAttributes({
+        capacity: 8,
+        itemCount: challenges.length,
+        profileId,
+        section: "page",
+      })}
+      id="challenges-page"
+    >
       <SystemPageHeader
         eyebrow="Motivation / Challenges"
         primaryAction={
           <button
             className={primaryButtonClass}
+            disabled={!canUseChallengeDrafts}
             onClick={() => setDialog({ kind: "create" })}
             type="button"
           >
@@ -831,7 +894,7 @@ export function ChallengesPage({
           <>
             <button
               className={secondaryButtonClass}
-              disabled={!activeFocus}
+              disabled={!isDemo || !activeFocus}
               onClick={() => activeFocus && setDialog({ challenge: activeFocus, kind: "log" })}
               type="button"
             >
@@ -855,12 +918,19 @@ export function ChallengesPage({
           challenge={activeFocus}
           onComplete={(challenge) => setDialog({ challenge, kind: "complete" })}
           onLog={(challenge) => setDialog({ challenge, kind: "log" })}
+          profileId={profileId}
         />
       </div>
 
       <div className="grid gap-3 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,.65fr)]">
         <SystemPanel
           badge={<Pill quiet>{filteredChallenges.length} visible</Pill>}
+          dataAttributes={sectionStateAttributes({
+            capacity: 8,
+            itemCount: challenges.length,
+            profileId,
+            section: "challenge-board",
+          })}
           subtitle="Daily, weekly and monthly cards stay grouped without a heavy Kanban surface."
           title="Challenge Board"
         >
@@ -980,8 +1050,8 @@ export function ChallengesPage({
                     </div>
                   ) : (
                     <EmptyState
-                      description={`No ${cadence} challenges match the current filters.`}
-                      title={`No ${cadence} challenges`}
+                      description="Lokale Challenges erscheinen hier erst, wenn eine echte Quelle vorhanden ist."
+                      title={`Keine ${optionLabel(cadence)} Challenges`}
                     />
                   )}
                 </section>
@@ -993,7 +1063,17 @@ export function ChallengesPage({
         <div className="space-y-3">
           <SystemPanel
             badge={<Pill accent={warmAccent}>Rhythm</Pill>}
-            subtitle="Quiet signals from mock data only. No streak pressure."
+            dataAttributes={sectionStateAttributes({
+              capacity: 4,
+              itemCount: completedChallenges.length,
+              profileId,
+              section: "challenge-rhythm",
+            })}
+            subtitle={
+              isDemo
+                ? "Quiet signals from demo data only. No streak pressure."
+                : "Quiet zero-state signals only. No streak pressure."
+            }
             title="Challenge Rhythm"
           >
             <div className="grid gap-2">
@@ -1009,38 +1089,58 @@ export function ChallengesPage({
           </SystemPanel>
 
           <SystemPanel
-            subtitle="Use a template to prefill the local creator dialog."
+            dataAttributes={sectionStateAttributes({
+              capacity: 5,
+              itemCount: viewModel.templates.length,
+              profileId,
+              section: "challenge-ideas",
+            })}
+            subtitle="Templates appear only after local challenge templates exist."
             title="Challenge Ideas"
           >
-            <div className="space-y-2">
-              {viewModel.templates.map((template) => (
-                <div
-                  className="rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.48)] p-3"
-                  key={template.title}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-semibold text-[var(--text-primary)]">
-                        {template.title}
-                      </p>
-                      <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">
-                        {optionLabel(template.cadence)} · {template.rewardAmount} LC
-                      </p>
+            {viewModel.templates.length > 0 ? (
+              <div className="space-y-2">
+                {viewModel.templates.map((template) => (
+                  <div
+                    className="rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.48)] p-3"
+                    key={template.title}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold text-[var(--text-primary)]">
+                          {template.title}
+                        </p>
+                        <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">
+                          {optionLabel(template.cadence)} · {template.rewardAmount} LC
+                        </p>
+                      </div>
+                      <button
+                        className={quietButtonClass}
+                        disabled={!canUseChallengeDrafts}
+                        onClick={() => setDialog({ kind: "create", template })}
+                        type="button"
+                      >
+                        Use template
+                      </button>
                     </div>
-                    <button
-                      className={quietButtonClass}
-                      onClick={() => setDialog({ kind: "create", template })}
-                      type="button"
-                    >
-                      Use template
-                    </button>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                description="Vorlagen erscheinen hier erst, sobald lokale Challenge-Templates vorhanden sind."
+                title="Keine Challenge-Ideen"
+              />
+            )}
           </SystemPanel>
 
           <SystemPanel
+            dataAttributes={sectionStateAttributes({
+              capacity: 4,
+              itemCount: viewModel.rules.length,
+              profileId,
+              section: "challenge-rules",
+            })}
             subtitle="Rules prevent pressure, punishment and vague tasks."
             title="Challenge Rules"
           >
@@ -1060,6 +1160,12 @@ export function ChallengesPage({
 
       <SystemPanel
         badge={<Pill quiet>{completedChallenges.length} completed</Pill>}
+        dataAttributes={sectionStateAttributes({
+          capacity: 4,
+          itemCount: completedChallenges.length,
+          profileId,
+          section: "completed-challenges",
+        })}
         subtitle="A compact record of completed special tasks, not a trophy wall."
         title="Completed Challenges"
       >

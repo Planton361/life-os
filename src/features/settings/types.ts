@@ -28,6 +28,7 @@ export type SettingsPreference = {
 };
 
 export type SettingsViewModel = {
+  profileId: "demo" | "empty" | "manual";
   profile: SettingsProfile;
   appearance: SettingsAppearance;
   privacy: SettingsPrivacy;
@@ -40,4 +41,3 @@ export type SettingsViewModel = {
     integrations: string;
   };
 };
-

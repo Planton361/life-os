@@ -401,20 +401,6 @@ function sanitizeAreaViewModel<T>(
   return value;
 }
 
-async function getProfileAreaViewModel<T>(
-  getDemoViewModel: () => T,
-  areaLabel: string,
-): Promise<T> {
-  const profileId = await getCurrentLifeOsProfileId();
-  const viewModel = getDemoViewModel();
-
-  if (profileId === "demo") {
-    return viewModel;
-  }
-
-  return sanitizeAreaViewModel(clone(viewModel), profileId, areaLabel);
-}
-
 function emptyHealthMetric<TAccent extends string = "var(--accent-cyan)">(
   label: string,
   detail: string,
@@ -2397,11 +2383,55 @@ export async function getResourcesViewModel(): Promise<
 export async function getShopViewModel(): Promise<
   ReturnType<typeof getDemoShopViewModel>
 > {
-  return getProfileAreaViewModel(getDemoShopViewModel, "Shop");
+  const profileId = await getCurrentLifeOsProfileId();
+  const viewModel = getDemoShopViewModel();
+
+  if (profileId === "demo") {
+    return viewModel;
+  }
+
+  return {
+    ...viewModel,
+    currency: {
+      ...viewModel.currency,
+      balance: 0,
+      earnedThisWeek: 0,
+      spentThisWeek: 0,
+    },
+    earningSources: [],
+    profileId,
+    recommendedRewardIds: [],
+    rewards: [],
+    rules: [
+      "Keine Zufallsbelohnungen",
+      "Kein echtes Geld",
+      "Cooldowns verhindern Uebernutzung",
+      "Manuelle Pruefung vor teuren Rewards",
+    ],
+    transactions: [],
+  };
 }
 
 export async function getChallengesViewModel(): Promise<
   ReturnType<typeof getDemoChallengesViewModel>
 > {
-  return getProfileAreaViewModel(getDemoChallengesViewModel, "Challenges");
+  const profileId = await getCurrentLifeOsProfileId();
+  const viewModel = getDemoChallengesViewModel();
+
+  if (profileId === "demo") {
+    return viewModel;
+  }
+
+  return {
+    ...viewModel,
+    challenges: [],
+    profileId,
+    rules: [
+      "Kein Druck",
+      "Keine Strafmechanik",
+      "Kleine messbare Aktionen",
+      "Review vor Wiederholung",
+    ],
+    templates: [],
+  };
 }

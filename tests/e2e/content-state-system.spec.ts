@@ -523,6 +523,135 @@ async function expectResourcesWidgetContracts(page: Page, profile: ProfileId) {
   );
 }
 
+const shopBlockedDemoStrings = [
+  "42 LC",
+  "18 LC",
+  "10 LC",
+  "30 min phone time",
+  "1 CS match",
+  "1 episode break",
+  "60 min free time",
+  "Coffee outside",
+  "Deep recovery evening",
+  "8 rewards",
+  "3 suggestions",
+  "Mock currency",
+  "+0 LC",
+] as const;
+
+const challengesBlockedDemoStrings = [
+  "Weekly Review completed",
+  "10-minute walk",
+  "Inbox zero attempt",
+  "No phone during first focus block",
+  "Read 20 pages",
+  "Clean desk reset",
+  "58 LC available",
+  "12 LC",
+  "4 LC",
+  "6 LC",
+  "5 LC",
+  "No random loot",
+  "No real money",
+] as const;
+
+async function expectShopWidgetContracts(page: Page, profile: ProfileId) {
+  await expectWidgetContract(page.locator("#shop-page"), profile, "8");
+  await expectWidgetContract(
+    page.locator('[data-shop-section="reward-balance"]'),
+    profile,
+    "1",
+  );
+  await expectWidgetContract(
+    page.locator('[data-shop-section="reward-shop"]'),
+    profile,
+    "8",
+  );
+  await expectWidgetContract(
+    page.locator('[data-shop-section="recommended-rewards"]'),
+    profile,
+    "3",
+  );
+  await expectWidgetContract(
+    page.locator('[data-shop-section="reward-rules"]'),
+    profile,
+    "4",
+  );
+  await expectWidgetContract(
+    page.locator('[data-shop-section="earning-sources"]'),
+    profile,
+    "4",
+  );
+  await expectWidgetContract(
+    page.locator('[data-shop-section="reward-history"]'),
+    profile,
+    "4",
+  );
+}
+
+async function expectChallengesWidgetContracts(page: Page, profile: ProfileId) {
+  await expectWidgetContract(page.locator("#challenges-page"), profile, "8");
+  await expectWidgetContract(
+    page.locator('[data-challenges-section="active-challenge-focus"]'),
+    profile,
+    "1",
+  );
+  await expectWidgetContract(
+    page.locator('[data-challenges-section="challenge-board"]'),
+    profile,
+    "8",
+  );
+  await expectWidgetContract(
+    page.locator('[data-challenges-section="challenge-rhythm"]'),
+    profile,
+    "4",
+  );
+  await expectWidgetContract(
+    page.locator('[data-challenges-section="challenge-ideas"]'),
+    profile,
+    "5",
+  );
+  await expectWidgetContract(
+    page.locator('[data-challenges-section="challenge-rules"]'),
+    profile,
+    "4",
+  );
+}
+
+async function expectSettingsWidgetContracts(page: Page, profile: ProfileId) {
+  await expectWidgetContract(page.locator("#settings-page"), profile, "6");
+  await expectWidgetContract(
+    page.locator('[data-settings-section="profile-settings"]'),
+    profile,
+    "1",
+  );
+  await expectWidgetContract(
+    page.locator('[data-settings-section="appearance"]'),
+    profile,
+    "4",
+  );
+  await expectWidgetContract(
+    page.locator('[data-settings-section="privacy"]'),
+    profile,
+    "4",
+  );
+  await expectWidgetContract(
+    page.locator('[data-settings-section="app-preferences"]'),
+    profile,
+    "5",
+  );
+  await expectWidgetContract(
+    page.locator('[data-settings-section="data-export"]'),
+    profile,
+    "2",
+  );
+  await expectWidgetContract(
+    page.locator('[data-settings-section="system-info"]'),
+    profile,
+    "5",
+  );
+}
+
 async function expectEducationOverviewContracts(page: Page, profile: ProfileId) {
   await expectWidgetContract(page.locator("#education-page"), profile, "8");
   await expectWidgetContract(
@@ -2095,6 +2224,124 @@ test.describe("Resources content states", () => {
     );
     await expect(page.getByText("Noch keine Ressourcen")).toHaveCount(1);
     await expect(page.getByText("Keine Ressource ausgewählt").first()).toBeVisible();
+  });
+});
+
+test.describe("Utility and system content states", () => {
+  test("keeps demo shop and challenges as curated references", async ({
+    page,
+  }) => {
+    await setProfile(page, "demo");
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/shop");
+    });
+    await expectShopWidgetContracts(page, "demo");
+    await expect(page.getByText("30 min phone time").first()).toBeVisible();
+    await expect(page.locator('[data-shop-section="reward-balance"]')).toContainText(
+      /42\s*LC/,
+    );
+
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/challenges");
+    });
+    await expectChallengesWidgetContracts(page, "demo");
+    await expect(page.getByText("Weekly Review completed").first()).toBeVisible();
+    await expect(page.getByText("10-minute walk").first()).toBeVisible();
+  });
+
+  test("renders empty shop without reward fixture leaks", async ({ page }) => {
+    await setProfile(page, "empty");
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/shop");
+    });
+
+    await expectShopWidgetContracts(page, "empty");
+    await expectNoMainStrings(page, shopBlockedDemoStrings, "shop empty");
+    await expect(page.getByText("0 LC").first()).toBeVisible();
+    await expect(page.getByText("Noch keine Rewards")).toBeVisible();
+    await expect(page.getByText("Keine Empfehlungen")).toBeVisible();
+    await expect(page.getByText("Keine aktiven Quellen")).toBeVisible();
+    await expect(page.getByText("Noch keine Reward-Historie")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Create reward" }).first()).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Claim selected" })).toBeDisabled();
+  });
+
+  test("renders empty challenges without challenge fixture leaks", async ({
+    page,
+  }) => {
+    await setProfile(page, "empty");
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/challenges");
+    });
+
+    await expectChallengesWidgetContracts(page, "empty");
+    await expectNoMainStrings(
+      page,
+      challengesBlockedDemoStrings,
+      "challenges empty",
+    );
+    await expect(page.getByText("Keine aktive Challenge")).toBeVisible();
+    await expect(page.getByText("Keine Daily Challenges")).toBeVisible();
+    await expect(page.getByText("Keine Weekly Challenges")).toBeVisible();
+    await expect(page.getByText("Keine Monthly Challenges")).toBeVisible();
+    await expect(page.getByText("Keine Challenge-Ideen")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Create challenge" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Log completion" })).toBeDisabled();
+  });
+
+  test("keeps manual shop and challenges empty until durable local sources exist", async ({
+    page,
+  }) => {
+    await resetManualProfileFile();
+    await setProfile(page, "manual");
+
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/shop");
+    });
+    await expectShopWidgetContracts(page, "manual");
+    await expectNoMainStrings(page, shopBlockedDemoStrings, "shop manual");
+    await expect(page.locator('[data-shop-section="reward-shop"]')).toHaveAttribute(
+      "data-item-count",
+      "0",
+    );
+
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/challenges");
+    });
+    await expectChallengesWidgetContracts(page, "manual");
+    await expectNoMainStrings(
+      page,
+      challengesBlockedDemoStrings,
+      "challenges manual",
+    );
+    await expect(
+      page.locator('[data-challenges-section="challenge-board"]'),
+    ).toHaveAttribute("data-item-count", "0");
+  });
+
+  test("keeps settings export and backup disabled until persistence exists", async ({
+    page,
+  }) => {
+    await setProfile(page, "manual");
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/settings");
+    });
+
+    await expectSettingsWidgetContracts(page, "manual");
+    await expect(page.getByRole("button", { name: "Save changes" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Reset local changes" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Export data" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Backup settings" })).toBeDisabled();
+    await expect(
+      page.getByText(/local UI preview state only/i).first(),
+    ).toBeVisible();
+
+    await page
+      .locator('[data-settings-section="appearance"]')
+      .getByRole("button", { name: "Compact" })
+      .click();
+    await expect(page.getByRole("button", { name: "Save changes" })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "Reset local changes" })).toBeEnabled();
   });
 });
 

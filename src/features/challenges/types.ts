@@ -48,8 +48,8 @@ export type ChallengeTemplate = {
 };
 
 export type ChallengesViewModel = {
+  profileId: "demo" | "empty" | "manual";
   challenges: Challenge[];
   templates: ChallengeTemplate[];
   rules: string[];
 };
-

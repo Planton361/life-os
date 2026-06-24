@@ -3,6 +3,10 @@
 import { useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { cn } from "@/lib/cn";
 import {
+  contentStateDataAttributes,
+  resolveContentStateMeta,
+} from "@/features/content-state";
+import {
   CurrencyPill,
   DialogShell,
   EmptyState,
@@ -108,6 +112,26 @@ function canClaim(reward: RewardItem, balance: number) {
   return reward.status === "available" && reward.cost <= balance;
 }
 
+function sectionStateAttributes({
+  capacity,
+  itemCount,
+  profileId,
+  section,
+}: Readonly<{
+  capacity: number;
+  itemCount: number;
+  profileId: ShopViewModel["profileId"];
+  section: string;
+}>) {
+  return {
+    ...contentStateDataAttributes(
+      resolveContentStateMeta({ capacity, itemCount }),
+      profileId,
+    ),
+    "data-shop-section": section,
+  };
+}
+
 function nextReward(rewards: RewardItem[], balance: number) {
   return rewards
     .filter((reward) => reward.status === "available" && reward.cost <= balance)
@@ -115,22 +139,33 @@ function nextReward(rewards: RewardItem[], balance: number) {
 }
 
 function RewardBalanceCard({
+  canCreate,
   currency,
+  profileId,
   rewards,
   onCreate,
   onViewHistory,
 }: Readonly<{
+  canCreate: boolean;
   currency: LifeCurrency;
+  profileId: ShopViewModel["profileId"];
   rewards: RewardItem[];
   onCreate: () => void;
   onViewHistory: () => void;
 }>) {
   const next = nextReward(rewards, currency.balance);
+  const isDemo = profileId === "demo";
 
   return (
     <SystemPanel
-      badge={<Pill accent={shopAccent}>Mock currency</Pill>}
+      badge={<Pill accent={shopAccent}>{isDemo ? "Demo currency" : "Local UI signal"}</Pill>}
       className="lg:col-span-2"
+      dataAttributes={sectionStateAttributes({
+        capacity: 1,
+        itemCount: currency.balance > 0 ? 1 : 0,
+        profileId,
+        section: "reward-balance",
+      })}
       subtitle="Life Credits are a local UI signal only. No account, wallet, payment or purchase flow is connected."
       title="Reward Balance"
     >
@@ -172,12 +207,19 @@ function RewardBalanceCard({
             <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
               {next
                 ? `${next.cost} LC · ${next.description}`
-                : "Create a lower-cost intentional reward or earn more Life Credits later."}
+                : "Rewards appear here only after local rewards and rules exist."}
             </p>
           </div>
-          <LocalMockNotice>Mock currency · no real money</LocalMockNotice>
+          <LocalMockNotice>
+            {isDemo ? "Demo currency - no real money" : "Local signal only - no wallet"}
+          </LocalMockNotice>
           <div className="flex flex-wrap gap-2">
-            <button className={primaryButtonClass} onClick={onCreate} type="button">
+            <button
+              className={primaryButtonClass}
+              disabled={!canCreate}
+              onClick={onCreate}
+              type="button"
+            >
               Create reward
             </button>
             <button className={secondaryButtonClass} onClick={onViewHistory} type="button">
@@ -454,6 +496,8 @@ function ClaimDialog({
 
 export function ShopPage({ viewModel }: Readonly<{ viewModel: ShopViewModel }>) {
   const historyRef = useRef<HTMLElement>(null);
+  const profileId = viewModel.profileId;
+  const isDemo = profileId === "demo";
   const [currency, setCurrency] = useState(viewModel.currency);
   const [rewards, setRewards] = useState<RewardItem[]>(viewModel.rewards);
   const [transactions, setTransactions] = useState<RewardTransaction[]>(
@@ -470,6 +514,7 @@ export function ShopPage({ viewModel }: Readonly<{ viewModel: ShopViewModel }>) 
   const [rewardDialog, setRewardDialog] = useState<RewardDialogState>(null);
   const [claimReward, setClaimReward] = useState<RewardItem | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
+  const canUseRewardDrafts = isDemo;
 
   const selectedReward = rewards.find((reward) => reward.id === selectedRewardId);
   const recommendedRewards = viewModel.recommendedRewardIds
@@ -507,6 +552,10 @@ export function ShopPage({ viewModel }: Readonly<{ viewModel: ShopViewModel }>) 
   }
 
   function handleSaveReward(draft: RewardDraft, reward?: RewardItem) {
+    if (!canUseRewardDrafts) {
+      return;
+    }
+
     if (reward) {
       setRewards((current) =>
         current.map((item) =>
@@ -547,7 +596,7 @@ export function ShopPage({ viewModel }: Readonly<{ viewModel: ShopViewModel }>) 
   }
 
   function handleConfirmClaim() {
-    if (!claimReward) {
+    if (!claimReward || !isDemo) {
       return;
     }
 
@@ -601,12 +650,22 @@ export function ShopPage({ viewModel }: Readonly<{ viewModel: ShopViewModel }>) 
   }
 
   return (
-    <SystemPageShell accent={shopAccent}>
+    <SystemPageShell
+      accent={shopAccent}
+      dataAttributes={sectionStateAttributes({
+        capacity: 8,
+        itemCount: rewards.length,
+        profileId,
+        section: "page",
+      })}
+      id="shop-page"
+    >
       <SystemPageHeader
         eyebrow="Utility / Rewards"
         primaryAction={
           <button
             className={primaryButtonClass}
+            disabled={!canUseRewardDrafts}
             onClick={() => setRewardDialog({ mode: "create" })}
             type="button"
           >
@@ -617,7 +676,7 @@ export function ShopPage({ viewModel }: Readonly<{ viewModel: ShopViewModel }>) 
           <>
             <button
               className={secondaryButtonClass}
-              disabled={!selectedReward || !canClaim(selectedReward, currency.balance)}
+              disabled={!isDemo || !selectedReward || !canClaim(selectedReward, currency.balance)}
               onClick={() => selectedReward && setClaimReward(selectedReward)}
               type="button"
             >
@@ -634,9 +693,11 @@ export function ShopPage({ viewModel }: Readonly<{ viewModel: ShopViewModel }>) 
 
       <div className="grid gap-3 lg:grid-cols-2">
         <RewardBalanceCard
+          canCreate={canUseRewardDrafts}
           currency={currency}
           onCreate={() => setRewardDialog({ mode: "create" })}
           onViewHistory={scrollToHistory}
+          profileId={profileId}
           rewards={rewards}
         />
       </div>
@@ -644,6 +705,12 @@ export function ShopPage({ viewModel }: Readonly<{ viewModel: ShopViewModel }>) 
       <div className="grid gap-3 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,.6fr)]">
         <SystemPanel
           badge={<Pill quiet>{filteredRewards.length} rewards</Pill>}
+          dataAttributes={sectionStateAttributes({
+            capacity: 8,
+            itemCount: rewards.length,
+            profileId,
+            section: "reward-shop",
+          })}
           subtitle="Filter intentional rewards by category, status, affordability and user-created items."
           title="Reward Shop"
         >
@@ -738,16 +805,20 @@ export function ShopPage({ viewModel }: Readonly<{ viewModel: ShopViewModel }>) 
               </div>
             ) : (
               <EmptyState
-                actionLabel="Create reward"
+                actionLabel={canUseRewardDrafts ? "Create reward" : undefined}
                 description={
                   rewards.length === 0
-                    ? "Create the first local reward to populate the shop."
+                    ? "Erstelle spaeter lokale Rewards, wenn du Life Credits bewusst verwenden willst."
                     : customOnly
                       ? "No custom rewards match the current filters."
                       : "No rewards match the current search or filters."
                 }
-                onAction={() => setRewardDialog({ mode: "create" })}
-                title={rewards.length === 0 ? "No rewards yet" : "No matching rewards"}
+                onAction={
+                  canUseRewardDrafts
+                    ? () => setRewardDialog({ mode: "create" })
+                    : undefined
+                }
+                title={rewards.length === 0 ? "Noch keine Rewards" : "No matching rewards"}
               />
             )}
           </div>
@@ -755,8 +826,18 @@ export function ShopPage({ viewModel }: Readonly<{ viewModel: ShopViewModel }>) 
 
         <div className="space-y-3">
           <SystemPanel
-            badge={<Pill accent={shopAccent}>3 suggestions</Pill>}
-            subtitle="Static recommendations from mock data. No AI or random rewards."
+            badge={<Pill accent={shopAccent}>{recommendedRewards.length} suggestions</Pill>}
+            dataAttributes={sectionStateAttributes({
+              capacity: 3,
+              itemCount: recommendedRewards.length,
+              profileId,
+              section: "recommended-rewards",
+            })}
+            subtitle={
+              isDemo
+                ? "Static recommendations from demo data. No AI or random rewards."
+                : "Recommendations appear only after local rewards or rules exist."
+            }
             title="Recommended Rewards"
           >
             {recommendedRewards.length > 0 ? (
@@ -782,13 +863,19 @@ export function ShopPage({ viewModel }: Readonly<{ viewModel: ShopViewModel }>) 
               </div>
             ) : (
               <EmptyState
-                description="Recommended rewards will appear when matching mock rewards exist."
-                title="No recommendations"
+                description="Empfehlungen erscheinen erst, wenn lokale Rewards oder Regeln existieren."
+                title="Keine Empfehlungen"
               />
             )}
           </SystemPanel>
 
           <SystemPanel
+            dataAttributes={sectionStateAttributes({
+              capacity: 4,
+              itemCount: viewModel.rules.length,
+              profileId,
+              section: "reward-rules",
+            })}
             subtitle="Rules keep rewards deliberate and non-random."
             title="Reward Rules"
           >
@@ -805,23 +892,46 @@ export function ShopPage({ viewModel }: Readonly<{ viewModel: ShopViewModel }>) 
           </SystemPanel>
 
           <SystemPanel
+            dataAttributes={sectionStateAttributes({
+              capacity: 4,
+              itemCount: viewModel.earningSources.length,
+              profileId,
+              section: "earning-sources",
+            })}
             subtitle="Prepared static sources only. No integration is connected."
             title="Earning Sources"
           >
-            <div className="flex flex-wrap gap-2">
-              {viewModel.earningSources.map((source, index) => (
-                <Pill key={`shop-earning-source-${index}`} quiet>
-                  {source}
-                </Pill>
-              ))}
-            </div>
+            {viewModel.earningSources.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {viewModel.earningSources.map((source, index) => (
+                  <Pill key={`shop-earning-source-${index}`} quiet>
+                    {source}
+                  </Pill>
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                description="Life Credits bleiben ein lokales UI-Signal. Keine Wallet, kein Konto, kein Kauf."
+                title="Keine aktiven Quellen"
+              />
+            )}
           </SystemPanel>
         </div>
       </div>
 
       <SystemPanel
         badge={<Pill quiet>{transactions.length} entries</Pill>}
-        subtitle="Recent local mock transactions. This is not a finance or accounting surface."
+        dataAttributes={sectionStateAttributes({
+          capacity: 4,
+          itemCount: transactions.length,
+          profileId,
+          section: "reward-history",
+        })}
+        subtitle={
+          isDemo
+            ? "Recent demo transactions. This is not a finance or accounting surface."
+            : "Reward history stays empty until local reward transactions exist."
+        }
         title="Reward History"
       >
         <section ref={historyRef}>
@@ -860,8 +970,8 @@ export function ShopPage({ viewModel }: Readonly<{ viewModel: ShopViewModel }>) 
             </div>
           ) : (
             <EmptyState
-              description="Claims and later earning simulations will appear here as local transaction entries."
-              title="No reward history"
+              description="Keine Fake-Zeilen, keine Wallet-Buchung und keine externe Historie."
+              title="Noch keine Reward-Historie"
             />
           )}
         </section>

@@ -47,6 +47,7 @@ export type RewardTransaction = {
 };
 
 export type ShopViewModel = {
+  profileId: "demo" | "empty" | "manual";
   currency: LifeCurrency;
   rewards: RewardItem[];
   transactions: RewardTransaction[];
@@ -54,4 +55,3 @@ export type ShopViewModel = {
   rules: string[];
   earningSources: string[];
 };
-

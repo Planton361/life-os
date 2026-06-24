@@ -1,7 +1,11 @@
 "use client";
 
-import { useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 import { cn } from "@/lib/cn";
+import {
+  contentStateDataAttributes,
+  resolveContentStateMeta,
+} from "@/features/content-state";
 import {
   DialogShell,
   EmptyState,
@@ -57,6 +61,26 @@ const accentToken: Record<SettingsAppearance["accentColor"], string> = {
   purple: "var(--accent-purple)",
 };
 
+function sectionStateAttributes({
+  capacity,
+  itemCount,
+  profileId,
+  section,
+}: Readonly<{
+  capacity: number;
+  itemCount: number;
+  profileId: SettingsViewModel["profileId"];
+  section: string;
+}>) {
+  return {
+    ...contentStateDataAttributes(
+      resolveContentStateMeta({ capacity, itemCount }),
+      profileId,
+    ),
+    "data-settings-section": section,
+  };
+}
+
 function clonePreferences(preferences: SettingsPreference[]) {
   return preferences.map((preference) => ({ ...preference }));
 }
@@ -110,11 +134,13 @@ function AvatarPreview({ profile }: Readonly<{ profile: SettingsProfile }>) {
 
 function ProfileSettingsPanel({
   error,
+  profileId,
   onChange,
   onPreview,
   profile,
 }: Readonly<{
   error: string | null;
+  profileId: SettingsViewModel["profileId"];
   onChange: (profile: SettingsProfile) => void;
   onPreview: () => void;
   profile: SettingsProfile;
@@ -130,6 +156,12 @@ function ProfileSettingsPanel({
     <SystemPanel
       badge={<Pill accent={settingsAccent}>Local preview only</Pill>}
       className="lg:col-span-2"
+      dataAttributes={sectionStateAttributes({
+        capacity: 1,
+        itemCount: profile.displayName.trim() ? 1 : 0,
+        profileId,
+        section: "profile-settings",
+      })}
       subtitle="Profile editing is prepared as local UI state. No auth profile or upload service is connected."
       title="Profile Settings"
     >
@@ -208,9 +240,11 @@ function ProfileSettingsPanel({
 
 function AppearanceSettingsPanel({
   appearance,
+  profileId,
   onChange,
 }: Readonly<{
   appearance: SettingsAppearance;
+  profileId: SettingsViewModel["profileId"];
   onChange: (appearance: SettingsAppearance) => void;
 }>) {
   function update<K extends keyof SettingsAppearance>(
@@ -223,6 +257,12 @@ function AppearanceSettingsPanel({
   return (
     <SystemPanel
       badge={<StatusPill accent={accentToken[appearance.accentColor]}>{optionLabel(appearance.accentColor)}</StatusPill>}
+      dataAttributes={sectionStateAttributes({
+        capacity: 4,
+        itemCount: 4,
+        profileId,
+        section: "appearance",
+      })}
       subtitle="Local UI preview state only. No new theme library or persistence is connected."
       title="Appearance"
     >
@@ -301,9 +341,11 @@ function AppearanceSettingsPanel({
 
 function PrivacySettingsPanel({
   onChange,
+  profileId,
   privacy,
 }: Readonly<{
   onChange: (privacy: SettingsPrivacy) => void;
+  profileId: SettingsViewModel["profileId"];
   privacy: SettingsPrivacy;
 }>) {
   function update<K extends keyof SettingsPrivacy>(key: K, value: SettingsPrivacy[K]) {
@@ -313,7 +355,13 @@ function PrivacySettingsPanel({
   return (
     <SystemPanel
       badge={<StatusPill accent="var(--accent-green)">Private mode enabled</StatusPill>}
-      subtitle="Privacy settings are UI preferences in this mock state."
+      dataAttributes={sectionStateAttributes({
+        capacity: 4,
+        itemCount: 4,
+        profileId,
+        section: "privacy",
+      })}
+      subtitle="Privacy toggles are local UI preview state only. No external persistence is connected."
       title="Privacy"
     >
       <div className="space-y-3">
@@ -435,37 +483,43 @@ export function SettingsPage({
 }: Readonly<{
   viewModel: SettingsViewModel;
 }>) {
+  const profileId = viewModel.profileId;
   const [profile, setProfile] = useState(viewModel.profile);
   const [appearance, setAppearance] = useState(viewModel.appearance);
   const [privacy, setPrivacy] = useState(viewModel.privacy);
   const [preferences, setPreferences] = useState(() =>
     clonePreferences(viewModel.preferences),
   );
+  const [savedState, setSavedState] = useState(() => ({
+    appearance: viewModel.appearance,
+    preferences: clonePreferences(viewModel.preferences),
+    privacy: viewModel.privacy,
+    profile: viewModel.profile,
+  }));
+  const [dirty, setDirty] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previewProfile, setPreviewProfile] = useState<SettingsProfile | null>(null);
   const [resetOpen, setResetOpen] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
 
-  const dirty = useMemo(
-    () =>
-      JSON.stringify({
-        appearance,
-        preferences,
-        privacy,
-        profile,
-      }) !==
-      JSON.stringify({
-        appearance: viewModel.appearance,
-        preferences: viewModel.preferences,
-        privacy: viewModel.privacy,
-        profile: viewModel.profile,
-      }),
-    [appearance, preferences, privacy, profile, viewModel],
-  );
-
   function showToast(nextToast: ToastState) {
     setToast(nextToast);
     window.setTimeout(() => setToast(null), 2800);
+  }
+
+  function updateProfile(profileDraft: SettingsProfile) {
+    setProfile(profileDraft);
+    setDirty(true);
+  }
+
+  function updateAppearance(appearanceDraft: SettingsAppearance) {
+    setAppearance(appearanceDraft);
+    setDirty(true);
+  }
+
+  function updatePrivacy(privacyDraft: SettingsPrivacy) {
+    setPrivacy(privacyDraft);
+    setDirty(true);
   }
 
   function saveChanges(event?: FormEvent<HTMLFormElement>) {
@@ -477,28 +531,37 @@ export function SettingsPage({
     }
 
     setError(null);
+    setSavedState({
+      appearance,
+      preferences: clonePreferences(preferences),
+      privacy,
+      profile,
+    });
+    setDirty(false);
     showToast({
-      body: "Settings saved locally",
-      title: "Settings saved locally",
+      body: "Local UI preview updated for this session. No external persistence was used.",
+      title: "Preview state updated",
       tone: "success",
     });
   }
 
   function resetLocalChanges() {
-    setProfile(viewModel.profile);
-    setAppearance(viewModel.appearance);
-    setPrivacy(viewModel.privacy);
-    setPreferences(clonePreferences(viewModel.preferences));
+    setProfile(savedState.profile);
+    setAppearance(savedState.appearance);
+    setPrivacy(savedState.privacy);
+    setPreferences(clonePreferences(savedState.preferences));
     setError(null);
+    setDirty(false);
     setResetOpen(false);
     showToast({
-      body: "Local settings returned to mock defaults.",
+      body: "Unsaved local UI changes were discarded.",
       title: "Local changes reset",
       tone: "info",
     });
   }
 
   function updatePreference(id: string, enabled: boolean) {
+    setDirty(true);
     setPreferences((current) =>
       current.map((preference) =>
         preference.id === id ? { ...preference, enabled } : preference,
@@ -507,12 +570,34 @@ export function SettingsPage({
   }
 
   return (
-    <form onSubmit={saveChanges}>
-      <SystemPageShell accent={settingsAccent}>
+    <form
+      onChangeCapture={() => setDirty(true)}
+      onClickCapture={(event) => {
+        const target = event.target;
+
+        if (
+          target instanceof HTMLElement &&
+          target.closest('button[aria-pressed="false"]')
+        ) {
+          setDirty(true);
+        }
+      }}
+      onSubmit={saveChanges}
+    >
+      <SystemPageShell
+        accent={settingsAccent}
+        dataAttributes={sectionStateAttributes({
+          capacity: 6,
+          itemCount: 6,
+          profileId,
+          section: "page",
+        })}
+        id="settings-page"
+      >
         <SystemPageHeader
           eyebrow="System / Settings"
           primaryAction={
-            <button className={primaryButtonClass} type="submit">
+            <button className={primaryButtonClass} disabled={!dirty} type="submit">
               Save changes
             </button>
           }
@@ -542,20 +627,35 @@ export function SettingsPage({
         <div className="grid gap-3 lg:grid-cols-2">
           <ProfileSettingsPanel
             error={error}
-            onChange={setProfile}
+            onChange={updateProfile}
             onPreview={() => setPreviewProfile(profile)}
+            profileId={profileId}
             profile={profile}
           />
         </div>
 
         <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <AppearanceSettingsPanel appearance={appearance} onChange={setAppearance} />
-          <PrivacySettingsPanel onChange={setPrivacy} privacy={privacy} />
+          <AppearanceSettingsPanel
+            appearance={appearance}
+            onChange={updateAppearance}
+            profileId={profileId}
+          />
+          <PrivacySettingsPanel
+            onChange={updatePrivacy}
+            privacy={privacy}
+            profileId={profileId}
+          />
         </div>
 
         <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(320px,.48fr)]">
           <SystemPanel
             badge={dirty ? <Pill accent="var(--accent-orange)">Unsaved changes</Pill> : <Pill quiet>Saved mock state</Pill>}
+            dataAttributes={sectionStateAttributes({
+              capacity: 5,
+              itemCount: preferences.length,
+              profileId,
+              section: "app-preferences",
+            })}
             subtitle="Prepared local preferences only. No notifications, persistence or external services are connected."
             title="App Preferences"
           >
@@ -582,6 +682,12 @@ export function SettingsPage({
           <div className="space-y-3">
             <SystemPanel
               badge={<Pill quiet>Prepared</Pill>}
+              dataAttributes={sectionStateAttributes({
+                capacity: 2,
+                itemCount: 0,
+                profileId,
+                section: "data-export",
+              })}
               subtitle="Export will be added after real persistence."
               title="Data & Export"
             >
@@ -597,6 +703,12 @@ export function SettingsPage({
             </SystemPanel>
 
             <SystemPanel
+              dataAttributes={sectionStateAttributes({
+                capacity: 5,
+                itemCount: Object.keys(viewModel.systemInfo).length,
+                profileId,
+                section: "system-info",
+              })}
               subtitle="Static app mode summary."
               title="System Info"
             >
@@ -647,4 +759,3 @@ export function SettingsPage({
     </form>
   );
 }
-
