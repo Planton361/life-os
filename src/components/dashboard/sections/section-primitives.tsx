@@ -1,5 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
+import type { ContentStateMeta } from "@/features/content-state";
+import type { DashboardProfileId } from "@/features/dashboard";
 import { cn } from "@/lib/cn";
 
 const DASHBOARD_LINK_FOCUS_CLASSES =
@@ -14,6 +16,18 @@ export function styleFor(accent: string, progress?: number): AccentStyle {
   return {
     "--accent": accent,
     "--progress": `${progress ?? 0}%`,
+  };
+}
+
+export function contentStateAttrs(
+  meta: ContentStateMeta,
+  profileId: DashboardProfileId,
+) {
+  return {
+    "data-capacity": meta.capacity,
+    "data-content-state": meta.state,
+    "data-item-count": meta.itemCount,
+    "data-profile-id": profileId,
   };
 }
 
@@ -98,6 +112,7 @@ export function Panel({
   children,
   className,
   headerAccessory,
+  stateAttrs,
   titleClassName,
   titleHref,
 }: Readonly<{
@@ -106,6 +121,7 @@ export function Panel({
   children: ReactNode;
   className?: string;
   headerAccessory?: ReactNode;
+  stateAttrs?: Record<string, string | number | undefined>;
   titleClassName?: string;
   titleHref?: string;
 }>) {
@@ -128,6 +144,7 @@ export function Panel({
         "overflow-hidden rounded-[var(--panel-radius)] border border-[var(--border-subtle)] bg-[var(--surface-1)] shadow-[0_8px_22px_rgba(0,0,0,.12)]",
         className,
       )}
+      {...stateAttrs}
     >
       <div className="border-b border-[var(--border-subtle)] bg-[rgba(14,23,38,.80)] px-5 py-4">
         <div className="flex flex-wrap items-start justify-between gap-3">

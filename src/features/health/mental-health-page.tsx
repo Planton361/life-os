@@ -216,8 +216,8 @@ function MentalHealthHeader({
             {header.subtitle}
           </p>
           <div className="mt-2 flex flex-wrap gap-1.5">
-            {header.pills.map((pill) => (
-              <Pill accent={pill.accent} key={pill.label}>
+            {header.pills.map((pill, index) => (
+              <Pill accent={pill.accent} key={`mental-header-pill-${index}`}>
                 {pill.label}
               </Pill>
             ))}
@@ -309,8 +309,8 @@ function TodayCheckInPanel({
 
       {checkIn.items.length > 0 ? (
         <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-5">
-          {checkIn.items.map((item) => (
-            <CheckItem item={item} key={item.label} />
+          {checkIn.items.map((item, index) => (
+            <CheckItem item={item} key={`mental-check-item-${index}`} />
           ))}
         </div>
       ) : (
@@ -384,8 +384,8 @@ function MoodPatternPanel({
     >
       {moodPattern.moods.length > 0 ? (
         <div className="grid gap-1.5 sm:grid-cols-2 min-[1900px]:grid-cols-3">
-          {moodPattern.moods.map((mood) => (
-            <MoodCard key={mood.label} mood={mood} />
+          {moodPattern.moods.map((mood, index) => (
+            <MoodCard key={`mental-mood-card-${index}`} mood={mood} />
           ))}
         </div>
       ) : (
@@ -420,8 +420,8 @@ function CurrentSignalPanel({
     >
       {currentSignal.metrics.length > 0 ? (
         <div className="grid gap-2 sm:grid-cols-3">
-          {currentSignal.metrics.map((metric) => (
-            <MetricCard key={metric.label} metric={metric} />
+          {currentSignal.metrics.map((metric, index) => (
+            <MetricCard key={`mental-current-metric-${index}`} metric={metric} />
           ))}
         </div>
       ) : (
@@ -495,8 +495,8 @@ function SleepRecoveryPanel({
     >
       {sleepRecovery.metrics.length > 0 ? (
         <div className="grid gap-2 sm:grid-cols-3">
-          {sleepRecovery.metrics.map((metric) => (
-            <MetricCard key={metric.label} metric={metric} />
+          {sleepRecovery.metrics.map((metric, index) => (
+            <MetricCard key={`mental-sleep-metric-${index}`} metric={metric} />
           ))}
         </div>
       ) : (
@@ -509,8 +509,8 @@ function SleepRecoveryPanel({
           className="flex min-h-[96px] items-end gap-2 rounded-[13px] border border-[rgba(148,163,184,.10)] bg-[rgba(11,17,28,.34)] px-3 py-2.5"
         >
           {sleepRecovery.bars.length > 0 ? (
-            sleepRecovery.bars.map((bar) => (
-              <SleepBar bar={bar} key={bar.day} />
+            sleepRecovery.bars.map((bar, index) => (
+              <SleepBar bar={bar} key={`mental-sleep-bar-${index}`} />
             ))
           ) : (
             <div className="w-full self-stretch">
@@ -662,8 +662,8 @@ function RepairRoutinesPanel({
     >
       {repairRoutines.routines.length > 0 ? (
         <div className="grid gap-2">
-          {repairRoutines.routines.map((routine) => (
-            <RoutineRow key={routine.title} routine={routine} />
+          {repairRoutines.routines.map((routine, index) => (
+            <RoutineRow key={`mental-repair-routine-${index}`} routine={routine} />
           ))}
         </div>
       ) : (
@@ -848,8 +848,8 @@ function SafetyBoundariesStrip({
           {safety.subtitle}
         </p>
         <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-          {safety.items.map((item) => (
-            <BoundaryCard item={item} key={item.title} />
+          {safety.items.map((item, index) => (
+            <BoundaryCard item={item} key={`mental-safety-item-${index}`} />
           ))}
         </div>
       </div>

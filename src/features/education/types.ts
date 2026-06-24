@@ -234,7 +234,7 @@ export type EducationSegment =
   | "fields";
 
 export type CurrentResearchFocus = {
-  idea: ResearchIdea;
+  idea: ResearchIdea | null;
   field: ResearchField | null;
   literatureItems: LiteratureItem[];
   notes: ResearchNote[];

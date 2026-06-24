@@ -439,7 +439,7 @@ function PlanningQueue({
           ["unscheduled", "Unscheduled"],
           ["open-loops", "Open loops"],
           ["reviews", "Reviews"],
-        ].map(([value, label]) => (
+        ].map(([value, label], index) => (
           <button
             aria-pressed={tab === value}
             className={cn(
@@ -448,7 +448,7 @@ function PlanningQueue({
                 ? "border border-[rgba(95,200,215,.28)] bg-[rgba(95,200,215,.14)] text-[var(--text-primary)]"
                 : "border border-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)]",
             )}
-            key={value}
+            key={`calendar-queue-tab-${index}`}
             onClick={() => setTab(value as QueueTab)}
             type="button"
           >

@@ -169,10 +169,10 @@ function InboxPageHeader({
         </div>
 
         <dl className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-          {signals.map((signal) => (
+          {signals.map((signal, index) => (
             <div
               className="rounded-[16px] border border-[var(--border-subtle)] bg-[rgba(12,20,34,.72)] p-2.5"
-              key={signal.label}
+              key={`inbox-overview-signal-${index}`}
               style={accentStyle(signal.accent)}
             >
               <dt className="text-[10px] font-medium text-[var(--text-muted)]">
@@ -379,10 +379,10 @@ function InboxPlanningSignals({
         </div>
       </div>
       <div className="mt-2.5 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-        {signals.map((signal) => (
+        {signals.map((signal, index) => (
           <article
             className="rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.70)] px-3 py-2"
-            key={signal.label}
+            key={`inbox-queue-signal-${index}`}
             style={accentStyle(signal.accent)}
           >
             <p className="flex items-center gap-1.5 text-[10px] font-medium text-[var(--text-muted)]">
@@ -568,7 +568,7 @@ function InboxActiveItemPanel({
                     : "border-[var(--border-subtle)] bg-[rgba(18,28,43,.70)] text-[var(--text-secondary)]",
                   focusClasses,
                 )}
-                key={action}
+                key={`inbox-action-${index}`}
                 type="button"
               >
                 {action}
@@ -604,8 +604,11 @@ function AIAssistantPanel({
             Suggested Planning
           </p>
           <div className="mt-2 grid grid-cols-2 gap-2">
-            {assistant.planning.map((suggestion) => (
-              <SuggestionBox key={suggestion.label} suggestion={suggestion} />
+            {assistant.planning.map((suggestion, index) => (
+              <SuggestionBox
+                key={`inbox-ai-suggestion-${index}`}
+                suggestion={suggestion}
+              />
             ))}
           </div>
           <button
@@ -690,8 +693,8 @@ function DecisionChecklist({
       </div>
       <div className="p-4">
         <ul className="space-y-2">
-          {checklist.items.map((item) => (
-            <ChecklistItem item={item} key={item.label} />
+          {checklist.items.map((item, index) => (
+            <ChecklistItem item={item} key={`inbox-checklist-${index}`} />
           ))}
         </ul>
       </div>
@@ -754,8 +757,11 @@ function RelatedContext({
           readOnly
         />
         <div className="grid gap-2 2xl:min-h-0 2xl:flex-1 2xl:overflow-y-auto 2xl:pr-1">
-          {context.items.map((item) => (
-            <RelatedContextRow item={item} key={item.name} />
+          {context.items.map((item, index) => (
+            <RelatedContextRow
+              item={item}
+              key={`inbox-related-context-${index}`}
+            />
           ))}
         </div>
       </div>

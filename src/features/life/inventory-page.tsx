@@ -620,10 +620,10 @@ export function InventoryPage({
         title="Inventory & Wishlist"
       >
         <div className="flex flex-wrap gap-2">
-          {segments.map((item) => (
+          {segments.map((item, index) => (
             <SegmentButton
               active={segment === item.value}
-              key={item.value}
+              key={`inventory-segment-${index}`}
               onSelect={setSegment}
               value={item.value}
             >

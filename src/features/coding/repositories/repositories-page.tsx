@@ -295,10 +295,10 @@ function Header({
         </div>
       </div>
       <div className="grid gap-2 border-t border-[var(--border-subtle)] bg-[rgba(11,17,28,.36)] p-3 sm:grid-cols-3">
-        {viewModel.header.stats.map((stat) => (
+        {viewModel.header.stats.map((stat, index) => (
           <div
             className="rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_20%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_6%,rgba(15,23,36,.68))] px-3 py-2"
-            key={stat.label}
+            key={`repositories-header-stat-${index}`}
             style={accentStyle(stat.accent)}
           >
             <p className="text-[10px] font-semibold text-[var(--text-muted)]">
@@ -806,13 +806,13 @@ function ResourceMap({
       title="Resource Map"
     >
       <div className="space-y-3">
-        {groups.map((group) => {
+        {groups.map((group, index) => {
           const items = selectedResources.filter((resource) =>
             group.types.includes(resource.type),
           );
 
           return (
-            <div key={group.label}>
+            <div key={`repository-resource-group-${index}`}>
               <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
                 {group.label}
               </p>
@@ -894,10 +894,10 @@ function RepositoryHealth({
       title="Repository Health"
     >
       <div className="grid gap-2 sm:grid-cols-2">
-        {healthItems.map((item) => (
+        {healthItems.map((item, index) => (
           <div
             className="rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_22%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_6%,rgba(18,28,43,.58))] px-3 py-2"
-            key={item.label}
+            key={`repository-health-item-${index}`}
             style={accentStyle(item.accent)}
           >
             <p className="text-[10px] font-semibold text-[var(--text-muted)]">

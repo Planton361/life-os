@@ -531,8 +531,11 @@ function WeekBalanceCard({
         className="mt-5 flex h-36 items-end justify-between gap-2"
         role="img"
       >
-        {items.map((item) => (
-          <div className="flex h-full flex-1 flex-col justify-end gap-2" key={item.day}>
+        {items.map((item, index) => (
+          <div
+            className="flex h-full flex-1 flex-col justify-end gap-2"
+            key={`nutrition-week-balance-${index}`}
+          >
             <div className="flex min-h-0 flex-1 items-end rounded-[10px] bg-[rgba(23,34,53,.58)] px-1.5">
               <div
                 aria-hidden="true"
@@ -609,10 +612,10 @@ function MealPlanAdherenceCard({
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {items.map((item) => (
+        {items.map((item, index) => (
           <article
             className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.46)] p-3"
-            key={item.label}
+            key={`nutrition-adherence-item-${index}`}
             style={accentStyle(item.accent)}
           >
             <p className="flex items-center gap-2 text-[10px] font-semibold text-[var(--text-muted)]">

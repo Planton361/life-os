@@ -70,10 +70,10 @@ export default async function TimelinePage() {
         title="2026 Milestones"
       >
         <ol className="space-y-3">
-          {milestones.map((milestone) => (
+          {milestones.map((milestone, index) => (
             <li
               className="rounded-[13px] border border-[color-mix(in_srgb,var(--accent)_24%,transparent)] bg-[color-mix(in_srgb,var(--accent)_6%,#101827)] p-4"
-              key={milestone.title}
+              key={`timeline-milestone-${index}`}
               style={accentStyle(milestone.accent)}
             >
               <div className="flex flex-wrap items-start justify-between gap-3">

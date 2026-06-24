@@ -1,5 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
 
+const playwrightHost = process.env.PLAYWRIGHT_HOST ?? "127.0.0.1";
+const playwrightPort = process.env.PLAYWRIGHT_PORT ?? "3000";
+const playwrightBaseUrl = `http://${playwrightHost}:${playwrightPort}`;
+
 async function expectNoHorizontalOverflow(page: Page) {
   const overflow = await page.evaluate(() => {
     const documentWidth = document.documentElement.scrollWidth;
@@ -26,7 +30,7 @@ test.describe("Nutrition grocery workflow", () => {
   }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.context().grantPermissions(["clipboard-read", "clipboard-write"], {
-      origin: "http://127.0.0.1:3000",
+      origin: playwrightBaseUrl,
     });
     await page.goto("/nutrition/grocery");
     await page.waitForLoadState("networkidle");

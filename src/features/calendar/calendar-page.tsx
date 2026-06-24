@@ -248,8 +248,8 @@ function CalendarWeekOverview({
           </p>
         </div>
         <div className="grid gap-1.5 sm:grid-cols-2 xl:grid-cols-5">
-          {viewModel.weekStats.stats.map((stat) => (
-            <WeekStatCard key={stat.label} stat={stat} />
+          {viewModel.weekStats.stats.map((stat, index) => (
+            <WeekStatCard key={`calendar-week-stat-${index}`} stat={stat} />
           ))}
         </div>
       </div>

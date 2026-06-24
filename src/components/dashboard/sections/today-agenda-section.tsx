@@ -2,17 +2,22 @@
 
 import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  createDashboardTaskAction,
+} from "@/features/profile-data/actions";
+import { initialDashboardActionState } from "@/features/profile-data/dashboard-action-state";
 import {
   type DashboardAgendaEvent,
-  type DashboardArea,
+  type DashboardProfileId,
   type DashboardTodayAgenda,
-  type TodayAgendaEnergy,
 } from "@/features/dashboard";
 import { cn } from "@/lib/cn";
 import {
   type AccentStyle,
   DashboardEmptyState,
+  contentStateAttrs,
   styleFor,
 } from "./section-primitives";
 import {
@@ -43,7 +48,37 @@ const agendaEventSlots = [
 const DASHBOARD_LINK_FOCUS_CLASSES =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-cyan)]";
 
-function agendaEventSlotStyle(index: number): AgendaSlotStyle {
+function hourMinutes(value: string) {
+  const [hours = "0", minutes = "0"] = value.split(":");
+  const total = Number(hours) * 60 + Number(minutes);
+
+  return Number.isFinite(total) ? total : null;
+}
+
+function eventStartMinutes(event: DashboardAgendaEvent) {
+  const match = event.time.match(/^(\d{2}:\d{2})/);
+
+  return match ? hourMinutes(match[1]) : null;
+}
+
+function agendaEventSlotStyle(
+  index: number,
+  event: DashboardAgendaEvent,
+  hours: DashboardTodayAgenda["hours"],
+): AgendaSlotStyle {
+  const start = eventStartMinutes(event);
+  const firstHour = hourMinutes(hours[0] ?? "06:00");
+  const lastHour = hourMinutes(hours[hours.length - 1] ?? "24:00");
+
+  if (start !== null && firstHour !== null && lastHour !== null && lastHour > firstHour) {
+    return {
+      "--agenda-top": `${Math.max(
+        0,
+        Math.min(92, ((start - firstHour) / (lastHour - firstHour)) * 100),
+      )}%`,
+    };
+  }
+
   return {
     "--agenda-top": agendaEventSlots[index] ?? `${index * 10}%`,
   };
@@ -59,46 +94,6 @@ function currentTimeLabelStyle(position: number): CSSProperties {
   return {
     top: `calc(${position}% - 22px)`,
   };
-}
-
-function accentForArea(area: DashboardArea) {
-  if (area === "work") {
-    return "var(--accent-green)";
-  }
-
-  if (area === "coding" || area === "education") {
-    return "var(--accent-blue)";
-  }
-
-  if (area === "health") {
-    return "var(--accent-red)";
-  }
-
-  if (area === "nutrition") {
-    return "var(--accent-yellow)";
-  }
-
-  if (area === "personal") {
-    return "var(--accent-purple)";
-  }
-
-  return "var(--accent-cyan)";
-}
-
-function areaLabelFor(area: DashboardArea) {
-  if (area === "review") {
-    return "Review";
-  }
-
-  return `${area.charAt(0).toUpperCase()}${area.slice(1)}`;
-}
-
-function taskIdFromTitle(title: string) {
-  return `task-${title
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")}`;
 }
 
 function statusClassName(status: DashboardAgendaEvent["status"]) {
@@ -285,47 +280,23 @@ function AgendaPill({
 
 function AddTaskDialog({
   onClose,
-  onSave,
+  profileId,
 }: Readonly<{
   onClose: () => void;
-  onSave: (event: DashboardAgendaEvent) => void;
+  profileId: DashboardProfileId;
 }>) {
-  function saveTask(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  const [state, formAction, pending] = useActionState(
+    createDashboardTaskAction,
+    initialDashboardActionState,
+  );
+  const router = useRouter();
 
-    const formData = new FormData(event.currentTarget);
-    const title = String(formData.get("title") ?? "").trim();
-    const description = String(formData.get("description") ?? "").trim();
-    const area = String(formData.get("area") ?? "review") as DashboardArea;
-    const timeBlock = String(formData.get("timeBlock") ?? "Task block").trim();
-    const startTime = String(formData.get("startTime") ?? "16:30").trim();
-    const endTime = String(formData.get("endTime") ?? "17:00").trim();
-    const priority = String(formData.get("priority") ?? "P2") as DashboardAgendaEvent["priority"];
-    const taskTitle = title || "New task block";
-    const taskId = taskIdFromTitle(taskTitle);
-    const energy: TodayAgendaEnergy = priority === "P0" ? "high" : "medium";
-
-    onSave({
-      id: taskId,
-      title: taskTitle,
-      time: `${startTime}-${endTime} · ${timeBlock || "Task block"}`,
-      note: description || "Local task block",
-      areaLabel: areaLabelFor(area),
-      type: "task",
-      typeLabel: "Task",
-      status: "planned",
-      statusLabel: "Planned",
-      relevanceLabel: priority,
-      nextAction: "Open task detail",
-      tags: [areaLabelFor(area), energy],
-      accent: accentForArea(area),
-      area,
-      energy,
-      priority,
-      href: `/tasks/${taskId}`,
-    });
-    onClose();
-  }
+  useEffect(() => {
+    if (state.status === "success") {
+      router.refresh();
+      onClose();
+    }
+  }, [onClose, router, state.status]);
 
   return (
     <DashboardDialog
@@ -333,7 +304,7 @@ function AddTaskDialog({
       onClose={onClose}
       open
     >
-      <form onSubmit={saveTask}>
+      <form action={formAction}>
         <div className="border-b border-[var(--border-subtle)] px-5 py-4">
           <h2
             className="text-lg font-semibold text-[var(--text-primary)]"
@@ -342,7 +313,9 @@ function AddTaskDialog({
             Add task
           </h2>
           <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
-            Local agenda prototype only. No calendar sync or AI scheduling runs.
+            {profileId === "manual"
+              ? "Speichert eine lokale Aufgabe und projiziert sie in Agenda, Today und Calendar."
+              : "Wechsle ins Manual-Profil, um lokale Aufgaben zu speichern."}
           </p>
         </div>
         <div className="grid gap-3 p-5 sm:grid-cols-2">
@@ -393,6 +366,21 @@ function AddTaskDialog({
             Find free block later
           </label>
         </div>
+        {state.message ? (
+          <p
+            className={cn(
+              "px-5 pb-2 text-[11px] font-semibold",
+              state.status === "success"
+                ? "text-[var(--accent-green)]"
+                : state.status === "blocked"
+                  ? "text-[var(--accent-orange)]"
+                  : "text-[var(--text-muted)]",
+            )}
+            role="status"
+          >
+            {state.message}
+          </p>
+        ) : null}
         <div className="flex justify-end gap-2 border-t border-[var(--border-subtle)] px-5 py-4">
           <button
             className={dashboardActionButtonClass}
@@ -401,8 +389,12 @@ function AddTaskDialog({
           >
             Cancel
           </button>
-          <button className={dashboardPrimaryButtonClass} type="submit">
-            Save
+          <button
+            className={dashboardPrimaryButtonClass}
+            disabled={pending}
+            type="submit"
+          >
+            {pending ? "Saving..." : "Save"}
           </button>
         </div>
       </form>
@@ -412,10 +404,12 @@ function AddTaskDialog({
 
 export function TodayAgenda({
   data,
+  profileId,
 }: Readonly<{
   data: DashboardTodayAgenda;
+  profileId: DashboardProfileId;
 }>) {
-  const [events, setEvents] = useState<DashboardAgendaEvent[]>([...data.events]);
+  const events = data.events;
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const title = data.href ? (
     <Link
@@ -432,6 +426,7 @@ export function TodayAgenda({
     <section
       aria-labelledby="today-agenda-title"
       className="overflow-hidden rounded-[var(--panel-radius)] border border-[rgba(91,124,250,.34)] bg-[color-mix(in_srgb,var(--accent-blue)_4%,#0e1828)] shadow-[0_16px_40px_rgba(0,0,0,.24)] 2xl:h-[820px]"
+      {...contentStateAttrs(data.contentState, profileId)}
     >
       <div className="border-b border-[var(--border-subtle)] bg-[rgba(14,23,38,.82)] px-5 py-4 2xl:h-[86px] 2xl:px-[30px] 2xl:py-0">
         <div className="flex flex-wrap items-center justify-between gap-4 2xl:h-full">
@@ -451,7 +446,7 @@ export function TodayAgenda({
               onClick={() => setAddDialogOpen(true)}
               type="button"
             >
-              + Add task
+            Task anlegen
             </button>
           </div>
         </div>
@@ -475,8 +470,8 @@ export function TodayAgenda({
               events.map((event, index) => (
                 <div
                   className="2xl:absolute 2xl:left-0 2xl:right-1 2xl:top-[var(--agenda-top)]"
-                  key={event.title}
-                  style={agendaEventSlotStyle(index)}
+                  key={event.id}
+                  style={agendaEventSlotStyle(index, event, data.hours)}
                 >
                   <AgendaEventCard event={event} />
                 </div>
@@ -484,11 +479,11 @@ export function TodayAgenda({
             ) : (
               <div
                 className="2xl:absolute 2xl:left-0 2xl:right-1 2xl:top-[var(--agenda-top)]"
-                style={agendaEventSlotStyle(0)}
+                style={{ "--agenda-top": agendaEventSlots[0] } as AgendaSlotStyle}
               >
                 <DashboardEmptyState
-                  description="Lege 1-3 Aufgaben fuer heute an."
-                  title="Noch keine Tagesstruktur"
+                  description="Lege 1-3 Aufgaben für heute an."
+                  title="Noch keine Tagesstruktur."
                 />
               </div>
             )}
@@ -498,7 +493,7 @@ export function TodayAgenda({
       {addDialogOpen ? (
         <AddTaskDialog
           onClose={() => setAddDialogOpen(false)}
-          onSave={(event) => setEvents((currentEvents) => [...currentEvents, event])}
+          profileId={profileId}
         />
       ) : null}
     </section>

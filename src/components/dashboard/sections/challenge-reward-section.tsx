@@ -4,11 +4,17 @@ import type {
   DashboardChallenge,
   DashboardChallengeCadence,
   DashboardChallengesRewardFocus,
+  DashboardProfileId,
 } from "@/features/dashboard";
 import Link from "next/link";
 import { useState } from "react";
 import { cn } from "@/lib/cn";
-import { DashboardEmptyState, Pill, ProgressBar } from "./section-primitives";
+import {
+  DashboardEmptyState,
+  Pill,
+  ProgressBar,
+  contentStateAttrs,
+} from "./section-primitives";
 import {
   DashboardDialog,
   dashboardActionButtonClass,
@@ -70,8 +76,10 @@ function ChallengeConfirmDialog({
 
 export function Challenges({
   data,
+  profileId,
 }: Readonly<{
   data: DashboardChallengesRewardFocus;
+  profileId: DashboardProfileId;
 }>) {
   const [activeCadence, setActiveCadence] =
     useState<DashboardChallengeCadence>("Daily");
@@ -98,6 +106,7 @@ export function Challenges({
     <section
       aria-labelledby="challenges-title"
       className="overflow-hidden rounded-[var(--panel-radius)] border border-[rgba(216,180,90,.16)] bg-[color-mix(in_srgb,var(--accent-yellow)_3%,#0c1320)] shadow-[0_8px_22px_rgba(0,0,0,.12)] 2xl:h-[205px]"
+      {...contentStateAttrs(data.contentState, profileId)}
     >
       <div className="p-4 2xl:px-[28px] 2xl:py-[9px]">
         <div className="flex items-center justify-between gap-3">
@@ -196,7 +205,7 @@ export function Challenges({
           ) : (
             <DashboardEmptyState
               className="md:col-span-3"
-              description="Noch keine Challenges im aktuellen Profil."
+              description="Öffne Challenges, um eine lokale Challenge zu starten."
               title="Keine Challenges"
             />
           )}

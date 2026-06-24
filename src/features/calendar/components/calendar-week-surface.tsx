@@ -220,8 +220,11 @@ export function CalendarWeekSurface({
                 ["Workout", "var(--accent-red)"],
                 ["Review", "var(--accent-cyan)"],
                 ["Deadline / Reminder", "var(--accent-orange)"],
-              ].map(([label, accent]) => (
-                <span className="inline-flex items-center gap-1.5" key={label}>
+              ].map(([label, accent], index) => (
+                <span
+                  className="inline-flex items-center gap-1.5"
+                  key={`calendar-legend-${index}`}
+                >
                   <span
                     aria-hidden="true"
                     className="size-1.5 rounded-full"

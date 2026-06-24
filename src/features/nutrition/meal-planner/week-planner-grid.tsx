@@ -335,7 +335,7 @@ export function WeekPlannerGrid({
                   ? "border-[rgba(217,146,79,.48)] bg-[rgba(217,146,79,.13)]"
                   : "border-[var(--border-subtle)] bg-[rgba(18,28,43,.58)]",
               )}
-              key={day.date}
+              key={`meal-week-day-button-${index}`}
               onClick={() => onSelectDay(index)}
               type="button"
             >
@@ -361,10 +361,10 @@ export function WeekPlannerGrid({
       </div>
 
       <div className="hidden grid-cols-7 gap-2 xl:grid">
-        {week.days.map((day) => (
+        {week.days.map((day, index) => (
           <DayColumn
             day={day}
-            key={day.date}
+            key={`meal-week-day-column-${index}`}
             onSelectSlot={onSelectSlot}
             recipes={recipes}
             selectedSlot={selectedSlot}

@@ -2,6 +2,7 @@
 
 import {
   type DashboardActivePortfolio,
+  type DashboardProfileId,
   type PortfolioItemKind,
   type PortfolioView,
 } from "@/features/dashboard";
@@ -10,10 +11,10 @@ import { useState } from "react";
 import { cn } from "@/lib/cn";
 import {
   type AccentStyle,
-  DashboardEmptyState,
   Panel,
   Pill,
   ProgressBar,
+  contentStateAttrs,
 } from "./section-primitives";
 
 const DASHBOARD_LINK_FOCUS_CLASSES =
@@ -43,14 +44,17 @@ function kindForPortfolioView(view: PortfolioView): PortfolioItemKind {
 
 export function ActivePortfolio({
   data,
+  profileId,
 }: Readonly<{
   data: DashboardActivePortfolio;
+  profileId: DashboardProfileId;
 }>) {
   const [activeView, setActiveView] = useState<PortfolioView>(data.activeView);
   const projects = data.items;
   const visibleProjects = projects.filter(
     (project) => project.kind === kindForPortfolioView(activeView),
-  );
+  ).slice(0, 4);
+  const activeViewCount = visibleProjects.length;
   const activePortfolioCounters = [
     {
       label: "Projects",
@@ -71,7 +75,7 @@ export function ActivePortfolio({
 
   const headerCounters = (
     <div className="flex flex-wrap items-center justify-end gap-1.5">
-      {activePortfolioCounters.map((counter) => (
+      {activePortfolioCounters.map((counter, index) => (
         <Link
           aria-label={`Open portfolio ${counter.label.toLowerCase()} view`}
           className={cn(
@@ -79,7 +83,7 @@ export function ActivePortfolio({
             DASHBOARD_LINK_FOCUS_CLASSES,
           )}
           href={counter.href}
-          key={counter.label}
+          key={`active-portfolio-counter-${index}`}
         >
           {counter.value} {counter.label}
         </Link>
@@ -91,6 +95,19 @@ export function ActivePortfolio({
     <Panel
       className="border-[rgba(91,124,250,.16)] bg-[color-mix(in_srgb,var(--accent-blue)_4%,#101827)] 2xl:h-[515px]"
       headerAccessory={headerCounters}
+      stateAttrs={contentStateAttrs(
+        {
+          capacity: 4,
+          itemCount: activeViewCount,
+          state:
+            activeViewCount === 0
+              ? "empty"
+              : activeViewCount >= 4
+                ? "filled"
+                : "partial",
+        },
+        profileId,
+      )}
       subtitle={data.subtitle}
       title={data.title}
       titleClassName="text-xl"
@@ -108,7 +125,7 @@ export function ActivePortfolio({
               </p>
             </div>
             <div className="flex rounded-[13px] border border-[var(--border-subtle)] bg-[#0b1422] p-1 text-center text-[10px] font-semibold text-[var(--text-primary)]">
-              {data.views.map((view) => (
+              {data.views.map((view, index) => (
                 <button
                   aria-pressed={view.label === activeView}
                   className={cn(
@@ -117,7 +134,7 @@ export function ActivePortfolio({
                     view.label === activeView &&
                       "border border-[rgba(91,124,250,.28)] bg-[rgba(91,124,250,.12)] text-[var(--text-secondary)]",
                   )}
-                  key={view.label}
+                  key={`active-portfolio-view-${index}`}
                   onClick={() => setActiveView(view.label)}
                   onPointerDown={() => setActiveView(view.label)}
                   type="button"
@@ -129,8 +146,7 @@ export function ActivePortfolio({
           </div>
         </div>
         <div className="grid gap-3 2xl:grid-cols-[263px_263px] 2xl:gap-3">
-          {visibleProjects.length > 0 ? (
-            visibleProjects.map((project) => (
+          {visibleProjects.map((project) => (
               <Link
                 aria-label={`Open portfolio item: ${project.title}`}
                 className={cn(
@@ -138,7 +154,7 @@ export function ActivePortfolio({
                   DASHBOARD_LINK_FOCUS_CLASSES,
                 )}
                 href={project.href ?? data.href ?? "/portfolio?status=active"}
-                key={project.title}
+                key={project.id}
                 style={
                   {
                     background: "color-mix(in srgb, var(--accent) 4%, #101a2a)",
@@ -178,14 +194,29 @@ export function ActivePortfolio({
                   />
                 </div>
               </Link>
-            ))
-          ) : (
-            <DashboardEmptyState
-              className="2xl:col-span-2"
-              description="Noch keine aktiven Projekte oder Ziele."
-              title="Portfolio leer"
-            />
-          )}
+          ))}
+          {activeViewCount < 4 ? (
+            <Link
+              aria-label="Create project"
+              className={cn(
+                "grid rounded-[13px] border border-dashed border-[rgba(91,124,250,.24)] bg-[color-mix(in_srgb,var(--accent-blue)_4%,#101a2a)] p-3 2xl:min-h-[130px] 2xl:p-2.5",
+                DASHBOARD_LINK_FOCUS_CLASSES,
+              )}
+              href="/settings"
+            >
+              <div className="self-center text-center">
+                <p className="text-lg font-semibold leading-none text-[var(--text-primary)]">
+                  +
+                </p>
+                <p className="mt-2 text-[10px] font-semibold text-[var(--text-primary)]">
+                  Add Project
+                </p>
+                <p className="mt-1 text-[9px] font-semibold text-[var(--text-muted)]">
+                  {activeViewCount}/4
+                </p>
+              </div>
+            </Link>
+          ) : null}
         </div>
       </div>
     </Panel>

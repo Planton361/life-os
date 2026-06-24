@@ -4,10 +4,16 @@ import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type {
   CreateGoalInput,
+  CreateHabitInput,
   CreateInboxItemInput,
   CreateProjectInput,
+  SaveMealSlotInput,
+  SetMoodInput,
   CreateTaskInput,
+  ManualHabit,
   ManualInboxItem,
+  ManualMealSlot,
+  ManualMood,
   ManualProfileData,
 } from "./types";
 import type {
@@ -21,6 +27,11 @@ import type {
   ProjectStatus,
   TaskStatus,
 } from "@/features/entities/types";
+import type {
+  DashboardMealSlotState,
+  HabitTrackerWindow,
+  MealType,
+} from "@/features/dashboard";
 import type { InboxCaptureType } from "@/features/inbox";
 
 const manualProfilePath = path.join(
@@ -37,6 +48,9 @@ const defaultManualProfile: ManualProfileData = {
   projects: [],
   goals: [],
   inboxItems: [],
+  habits: [],
+  mood: null,
+  meals: [],
 };
 
 const entityAreas: readonly EntityArea[] = [
@@ -90,6 +104,22 @@ const inboxTypes: readonly InboxCaptureType[] = [
   "resource",
   "agent",
   "decision",
+];
+const habitWindows: readonly HabitTrackerWindow[] = [
+  "Morning",
+  "Midday",
+  "Evening",
+];
+const mealTypes: readonly Exclude<MealType, "Snack">[] = [
+  "Breakfast",
+  "Lunch",
+  "Dinner",
+];
+const mealStates: readonly DashboardMealSlotState[] = [
+  "unplanned",
+  "planned",
+  "logged",
+  "skipped",
 ];
 
 function nowIso() {
@@ -173,6 +203,39 @@ function readInboxType(value: unknown, fallback: InboxCaptureType = "note") {
     : fallback;
 }
 
+function readHabitWindow(
+  value: unknown,
+  fallback: HabitTrackerWindow = "Morning",
+) {
+  const candidate = readString(value);
+
+  return habitWindows.includes(candidate as HabitTrackerWindow)
+    ? (candidate as HabitTrackerWindow)
+    : fallback;
+}
+
+function readMealType(
+  value: unknown,
+  fallback: Exclude<MealType, "Snack"> = "Breakfast",
+) {
+  const candidate = readString(value);
+
+  return mealTypes.includes(candidate as Exclude<MealType, "Snack">)
+    ? (candidate as Exclude<MealType, "Snack">)
+    : fallback;
+}
+
+function readMealState(
+  value: unknown,
+  fallback: DashboardMealSlotState = "planned",
+) {
+  const candidate = readString(value);
+
+  return mealStates.includes(candidate as DashboardMealSlotState)
+    ? (candidate as DashboardMealSlotState)
+    : fallback;
+}
+
 function readDuration(value: unknown) {
   const candidate = Number(readString(value, "30"));
 
@@ -181,6 +244,26 @@ function readDuration(value: unknown) {
   }
 
   return Math.min(480, Math.round(candidate));
+}
+
+function readPositiveNumber(value: unknown, fallback: number) {
+  const candidate = Number(readString(value, String(fallback)));
+
+  if (!Number.isFinite(candidate) || candidate <= 0) {
+    return fallback;
+  }
+
+  return candidate;
+}
+
+function readMacros(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item) => (typeof item === "string" ? item.trim() : ""))
+    .filter(Boolean);
 }
 
 function normalizeProfile(
@@ -193,6 +276,15 @@ function normalizeProfile(
     projects: Array.isArray(value.projects) ? value.projects : [],
     goals: Array.isArray(value.goals) ? value.goals : [],
     inboxItems: Array.isArray(value.inboxItems) ? value.inboxItems : [],
+    habits: Array.isArray(value.habits) ? value.habits : [],
+    mood:
+      value.mood &&
+      typeof value.mood === "object" &&
+      "label" in value.mood &&
+      typeof value.mood.label === "string"
+        ? (value.mood as ManualMood)
+        : null,
+    meals: Array.isArray(value.meals) ? value.meals : [],
   };
 }
 
@@ -366,4 +458,68 @@ export async function createManualGoal(input: CreateGoalInput) {
   });
 
   return goal;
+}
+
+export async function createManualHabit(input: CreateHabitInput) {
+  const profile = await readManualProfile();
+  const label = readString(input.label, "Manual habit");
+  const targetValue = readPositiveNumber(input.targetValue, 1);
+  const habit: ManualHabit = {
+    id: createId("habit", label),
+    marker: (label.charAt(0) || "H").toUpperCase(),
+    label,
+    window: readHabitWindow(input.window),
+    currentValue: 0,
+    targetValue,
+    unit: readString(input.unit) || undefined,
+    stepValue: targetValue <= 10 ? 1 : Math.max(1, Math.round(targetValue / 5)),
+    total: 5,
+    areaId: readArea(input.areaId, "health"),
+    createdAt: nowIso(),
+  };
+
+  await writeManualProfile({
+    ...profile,
+    habits: [habit, ...profile.habits],
+  });
+
+  return habit;
+}
+
+export async function setManualMood(input: SetMoodInput) {
+  const profile = await readManualProfile();
+  const mood: ManualMood = {
+    label: readString(input.label, "Calm"),
+    updatedAt: nowIso(),
+  };
+
+  await writeManualProfile({
+    ...profile,
+    mood,
+  });
+
+  return mood;
+}
+
+export async function saveManualMealSlot(input: SaveMealSlotInput) {
+  const profile = await readManualProfile();
+  const type = readMealType(input.type);
+  const existing = profile.meals.find((meal) => meal.type === type);
+  const meal: ManualMealSlot = {
+    id: existing?.id ?? `meal-${type.toLowerCase()}`,
+    type,
+    state: readMealState(input.state),
+    name: readString(input.name) || existing?.name || "Keine Mahlzeit",
+    time: readString(input.time) || existing?.time || "",
+    kcal: readString(input.kcal) || existing?.kcal,
+    macros: input.macros ? readMacros(input.macros) : (existing?.macros ?? []),
+    updatedAt: nowIso(),
+  };
+
+  await writeManualProfile({
+    ...profile,
+    meals: [meal, ...profile.meals.filter((item) => item.type !== type)],
+  });
+
+  return meal;
 }

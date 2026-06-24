@@ -11,10 +11,10 @@ export function PortfolioSummaryStrip({
       aria-label="Portfolio summary"
       className="grid gap-2 sm:grid-cols-2 xl:grid-cols-6"
     >
-      {stats.map((stat) => (
+      {stats.map((stat, index) => (
         <article
           className="min-h-[58px] rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_20%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_6%,rgba(15,23,36,.68))] px-3 py-2"
-          key={stat.label}
+          key={`portfolio-summary-stat-${index}`}
           style={accentStyle(stat.accent)}
         >
           <div className="flex min-w-0 items-start gap-2">

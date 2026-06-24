@@ -320,10 +320,10 @@ function SummaryStrip({
       aria-label="Grocery summary"
       className="grid shrink-0 gap-2 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--surface-1)] p-3 sm:grid-cols-2 xl:grid-cols-5"
     >
-      {tiles.map((tile) => (
+      {tiles.map((tile, index) => (
         <article
           className="flex min-h-12 items-center justify-between gap-3 rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_22%,var(--border-subtle))] bg-[rgba(168,183,204,.04)] px-3 py-2"
-          key={tile.label}
+          key={`grocery-summary-tile-${index}`}
           style={{ "--accent": tile.accent } as CSSProperties}
         >
           <div className="min-w-0">

@@ -907,7 +907,7 @@ function CurrentResearchFocusCard({
   onAddSource,
   onOpenFocus,
 }: Readonly<{
-  focusIdea: ResearchIdea;
+  focusIdea: ResearchIdea | null;
   focusField: ResearchField | null;
   focusLiterature: readonly LiteratureItem[];
   focusNotes: readonly ResearchNote[];
@@ -925,6 +925,7 @@ function CurrentResearchFocusCard({
     focusLiterature.length === 0
       ? 0
       : Math.round((reviewedCount / focusLiterature.length) * 100);
+  const hasFocus = Boolean(focusIdea);
 
   return (
     <section
@@ -941,57 +942,71 @@ function CurrentResearchFocusCard({
               className="mt-2 text-2xl font-semibold leading-tight text-[var(--text-primary)]"
               id="current-research-focus-heading"
             >
-              {focusIdea.title}
+              {focusIdea?.title ?? "No current research focus"}
             </h2>
             <p className="mt-2 max-w-4xl text-sm leading-6 text-[var(--text-secondary)]">
-              {focusIdea.summary}
+              {focusIdea?.summary ??
+                "Add or select a research idea to connect fields, literature, notes and open questions."}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2 lg:justify-end">
-            <EducationPill accent={ideaStatusMeta[focusIdea.status].accent}>
-              Status · {ideaStatusMeta[focusIdea.status].label}
-            </EducationPill>
-            <EducationPill accent={ideaAccent}>
-              Thesis · {thesisPotentialLabels[focusIdea.thesisPotential]}
-            </EducationPill>
-          </div>
+          {focusIdea ? (
+            <div className="flex flex-wrap gap-2 lg:justify-end">
+              <EducationPill accent={ideaStatusMeta[focusIdea.status].accent}>
+                Status · {ideaStatusMeta[focusIdea.status].label}
+              </EducationPill>
+              <EducationPill accent={ideaAccent}>
+                Thesis · {thesisPotentialLabels[focusIdea.thesisPotential]}
+              </EducationPill>
+            </div>
+          ) : null}
         </div>
       </div>
       <div className="grid gap-4 p-4 sm:p-5 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="min-w-0 space-y-4">
-          <div className="grid gap-3 lg:grid-cols-3">
-            <TextStat
-              accent={educationAccent}
-              label="Research Field"
-              value={focusField?.title ?? focusIdea.fieldTitle}
+          {focusIdea ? (
+            <>
+              <div className="grid gap-3 lg:grid-cols-3">
+                <TextStat
+                  accent={educationAccent}
+                  label="Research Field"
+                  value={focusField?.title ?? focusIdea.fieldTitle}
+                />
+                <TextStat
+                  accent={questionAccent}
+                  label="Open Questions"
+                  value={focusQuestions.length}
+                />
+                <TextStat
+                  accent={literatureAccent}
+                  label="Evidence Notes"
+                  value={focusNotes.length}
+                />
+              </div>
+              <div className="rounded-[16px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.28)] p-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                  Research Question
+                </p>
+                <p className="mt-2 text-[18px] font-semibold leading-7 text-[var(--text-primary)]">
+                  {focusIdea.researchQuestion ?? "No research question set yet."}
+                </p>
+              </div>
+              <div className="rounded-[16px] border border-[rgba(217,146,79,.26)] bg-[rgba(217,146,79,.07)] p-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--accent-orange)]">
+                  Next Action
+                </p>
+                <p className="mt-2 text-sm leading-6 text-[var(--text-primary)]">
+                  {focusIdea.nextAction}
+                </p>
+              </div>
+            </>
+          ) : (
+            <EducationEmptyState
+              actionLabel="Add research idea"
+              description="There is no local research focus yet. Start with a research idea, then connect literature, notes and questions."
+              onAction={onOpenFocus}
+              title="No research focus yet"
             />
-            <TextStat
-              accent={questionAccent}
-              label="Open Questions"
-              value={focusQuestions.length}
-            />
-            <TextStat
-              accent={literatureAccent}
-              label="Evidence Notes"
-              value={focusNotes.length}
-            />
-          </div>
-          <div className="rounded-[16px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.28)] p-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
-              Research Question
-            </p>
-            <p className="mt-2 text-[18px] font-semibold leading-7 text-[var(--text-primary)]">
-              {focusIdea.researchQuestion ?? "No research question set yet."}
-            </p>
-          </div>
-          <div className="rounded-[16px] border border-[rgba(217,146,79,.26)] bg-[rgba(217,146,79,.07)] p-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--accent-orange)]">
-              Next Action
-            </p>
-            <p className="mt-2 text-sm leading-6 text-[var(--text-primary)]">
-              {focusIdea.nextAction}
-            </p>
-          </div>
+          )}
         </div>
         <aside className="min-w-0 rounded-[16px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.48)] p-4">
           <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
@@ -1031,7 +1046,7 @@ function CurrentResearchFocusCard({
           </div>
           <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
             <button className={primaryButtonClass} onClick={onOpenFocus} type="button">
-              Open focus
+              {hasFocus ? "Open focus" : "Add idea"}
             </button>
             <button
               className={secondaryButtonClass}
@@ -1571,10 +1586,10 @@ function EducationMethodNotes({
       title="Education Method Notes"
     >
       <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
-        {methodNotes.map((note) => (
+        {methodNotes.map((note, index) => (
           <li
             className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(168,183,204,.045)] p-3 text-[12px] leading-5 text-[var(--text-secondary)]"
-            key={note}
+            key={`education-method-note-${index}`}
           >
             {note}
           </li>
@@ -2906,7 +2921,9 @@ export function EducationOverviewPage({
   const [questions, setQuestions] = useState<ResearchQuestion[]>(
     viewModel.questions,
   );
-  const [focusIdeaId, setFocusIdeaId] = useState(viewModel.focus.idea.id);
+  const [focusIdeaId, setFocusIdeaId] = useState<string | null>(
+    viewModel.focus.idea?.id ?? viewModel.ideas[0]?.id ?? null,
+  );
   const [activeSegment, setActiveSegment] =
     useState<EducationSegment>("overview");
   const [search, setSearch] = useState("");
@@ -2929,29 +2946,35 @@ export function EducationOverviewPage({
   const query = normalize(search);
 
   const focusIdea = useMemo(
-    () => ideas.find((idea) => idea.id === focusIdeaId) ?? ideas[0],
+    () => ideas.find((idea) => idea.id === focusIdeaId) ?? ideas[0] ?? null,
     [focusIdeaId, ideas],
   );
   const focusField = useMemo(
-    () => fields.find((field) => field.id === focusIdea.fieldId) ?? null,
-    [fields, focusIdea.fieldId],
+    () =>
+      focusIdea
+        ? fields.find((field) => field.id === focusIdea.fieldId) ?? null
+        : null,
+    [fields, focusIdea],
   );
   const focusLiterature = useMemo(
-    () => literature.filter((item) => item.ideaId === focusIdea.id),
-    [focusIdea.id, literature],
+    () =>
+      focusIdea ? literature.filter((item) => item.ideaId === focusIdea.id) : [],
+    [focusIdea, literature],
   );
   const focusNotes = useMemo(
-    () => notes.filter((note) => note.ideaId === focusIdea.id),
-    [focusIdea.id, notes],
+    () => (focusIdea ? notes.filter((note) => note.ideaId === focusIdea.id) : []),
+    [focusIdea, notes],
   );
   const focusQuestions = useMemo(
     () =>
-      questions.filter(
-        (question) =>
-          question.ideaId === focusIdea.id &&
-          ["open", "investigating"].includes(question.status),
-      ),
-    [focusIdea.id, questions],
+      focusIdea
+        ? questions.filter(
+            (question) =>
+              question.ideaId === focusIdea.id &&
+              ["open", "investigating"].includes(question.status),
+          )
+        : [],
+    [focusIdea, questions],
   );
 
   const stats = useMemo<EducationOverviewStats>(
@@ -3341,12 +3364,20 @@ export function EducationOverviewPage({
           focusNotes={focusNotes}
           focusQuestions={focusQuestions}
           onAddSource={() =>
-            openLiteratureDialog({
-              ideaId: focusIdea.id,
-              fieldId: focusIdea.fieldId,
-            })
+            openLiteratureDialog(
+              focusIdea
+                ? {
+                    ideaId: focusIdea.id,
+                    fieldId: focusIdea.fieldId,
+                  }
+                : {},
+            )
           }
-          onOpenFocus={() => setInspector({ type: "idea", id: focusIdea.id })}
+          onOpenFocus={() =>
+            focusIdea
+              ? setInspector({ type: "idea", id: focusIdea.id })
+              : openIdeaDialog()
+          }
         />
       ) : null}
 

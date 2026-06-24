@@ -33,10 +33,10 @@ export function MentalHealthPanel({
           </h3>
           {data.moodDirections.length > 0 ? (
             <div className="mt-3 grid gap-2 sm:grid-cols-2 2xl:grid-cols-3 min-[1900px]:gap-3">
-              {data.moodDirections.map((mood) => (
+              {data.moodDirections.map((mood, index) => (
               <article
                 className="grid min-w-0 grid-cols-[24px_minmax(0,1fr)] gap-2 rounded-[10px] border border-[rgba(148,163,184,.08)] bg-[rgba(15,23,36,.56)] px-2.5 py-2"
-                key={mood.label}
+                key={`mental-mood-${index}`}
                 style={accentStyle(mood.accent)}
               >
                 <span
@@ -99,11 +99,11 @@ export function MentalHealthPanel({
             className="flex min-h-[112px] items-end gap-2 rounded-[13px] border border-[rgba(148,163,184,.10)] bg-[rgba(11,17,28,.34)] px-3 py-3 min-[1900px]:min-h-[190px] min-[1900px]:gap-3 min-[1900px]:px-4 min-[1900px]:py-4"
           >
             {data.sleep.bars.length > 0 ? (
-              data.sleep.bars.map((bar) => (
+              data.sleep.bars.map((bar, index) => (
               <div
                 aria-label={`${bar.day}: ${bar.label}`}
                 className="flex h-full min-w-0 flex-1 flex-col justify-end gap-1"
-                key={bar.day}
+                key={`mental-sleep-bar-${index}`}
                 role="img"
               >
                 <div className="flex h-16 items-end rounded-full bg-[rgba(82,97,120,.18)] min-[1900px]:h-28">

@@ -245,10 +245,10 @@ export function PortfolioContextPanel({
             Relations
           </h3>
           <div className="mt-2 grid gap-1.5">
-            {entity.relations.map((relation) => (
+            {entity.relations.map((relation, index) => (
               <div
                 className="flex min-h-8 items-center justify-between gap-3 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.40)] px-3 text-[11px]"
-                key={`${relation.label}-${relation.value}`}
+                key={`portfolio-relation-${index}`}
               >
                 <span className="font-semibold text-[var(--text-muted)]">
                   {relation.label}
@@ -270,10 +270,10 @@ export function PortfolioContextPanel({
           </h3>
           <div className="mt-2 grid gap-1.5">
             {entity.decisions.length > 0 ? (
-              entity.decisions.map((decision) => (
+              entity.decisions.map((decision, index) => (
                 <article
                   className="rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_18%,transparent)] bg-[color-mix(in_srgb,var(--accent)_8%,rgba(11,17,28,.48))] px-3 py-2"
-                  key={decision.title}
+                  key={`portfolio-decision-${index}`}
                   style={accentStyle(decisionAccent(decision))}
                 >
                   <div className="flex items-start justify-between gap-3">

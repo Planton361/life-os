@@ -124,7 +124,7 @@ export function RecipeSuggestionList({
           Filter
         </p>
         <div className="mt-2 flex flex-wrap gap-2">
-          {recipeFilters.map((item) => {
+          {recipeFilters.map((item, index) => {
             const isActive = filter === item.value;
 
             return (
@@ -136,7 +136,7 @@ export function RecipeSuggestionList({
                     ? "border-[rgba(217,146,79,.42)] bg-[rgba(217,146,79,.14)] text-[var(--text-primary)]"
                     : "border-[var(--border-subtle)] bg-[rgba(168,183,204,.04)] text-[var(--text-secondary)] hover:border-[var(--border-default)]",
                 )}
-                key={item.value}
+                key={`recipe-filter-${index}`}
                 onClick={() => onFilterChange(item.value)}
                 type="button"
               >
@@ -152,7 +152,7 @@ export function RecipeSuggestionList({
           Sort
         </p>
         <div className="mt-2 flex flex-wrap gap-2">
-          {recipeSorts.map((item) => {
+          {recipeSorts.map((item, index) => {
             const isActive = sort === item.value;
 
             return (
@@ -164,7 +164,7 @@ export function RecipeSuggestionList({
                     ? "border-[rgba(216,180,90,.42)] bg-[rgba(216,180,90,.12)] text-[var(--text-primary)]"
                     : "border-[var(--border-subtle)] bg-[rgba(168,183,204,.04)] text-[var(--text-secondary)] hover:border-[var(--border-default)]",
                 )}
-                key={item.value}
+                key={`recipe-sort-${index}`}
                 onClick={() => onSortChange(item.value)}
                 type="button"
               >

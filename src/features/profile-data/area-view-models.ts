@@ -32,6 +32,7 @@ import {
   getWorkOverviewViewModel as getDemoWorkOverviewViewModel,
   getWorkWikiViewModel as getDemoWorkWikiViewModel,
 } from "@/features/work";
+import { readManualProfile } from "./manual-profile-store";
 import { getCurrentLifeOsProfileId } from "./profile-cookie";
 import type { LifeOsProfileId } from "./types";
 
@@ -102,7 +103,17 @@ const structuralStringKeys = new Set([
 ]);
 
 const structuralStringArrayKeys = new Set([
+  "filterOptions",
+  "filters",
+  "mapScopes",
+  "scopes",
+  "segments",
   "signals",
+  "sortOptions",
+  "statusOptions",
+  "types",
+  "viewOptions",
+  "views",
 ]);
 
 const structuralArrayKeys = new Set([
@@ -266,6 +277,7 @@ function neutralString(
     value.startsWith("#") ||
     structuralStringKeys.has(key) ||
     structuralStringArrayKeys.has(parentKey) ||
+    structuralArrayKeys.has(parentKey) ||
     key.endsWith("Id") ||
     key.endsWith("Kind") ||
     key.endsWith("State") ||
@@ -452,7 +464,35 @@ export async function getCodingOverviewViewModel(): Promise<
 export async function getRepositoriesViewModel(): Promise<
   ReturnType<typeof getDemoRepositoriesViewModel>
 > {
-  return getProfileAreaViewModel(getDemoRepositoriesViewModel, "Coding");
+  const profileId = await getCurrentLifeOsProfileId();
+  const viewModel = getDemoRepositoriesViewModel();
+
+  if (profileId === "demo") {
+    return viewModel;
+  }
+
+  const sanitizedViewModel = sanitizeAreaViewModel(
+    clone(viewModel),
+    profileId,
+    "Coding",
+  );
+
+  if (profileId === "manual") {
+    const profile = await readManualProfile();
+
+    return {
+      ...sanitizedViewModel,
+      projectOptions: profile.projects.map((project) => ({
+        label: project.title,
+        value: project.id,
+      })),
+    };
+  }
+
+  return {
+    ...sanitizedViewModel,
+    projectOptions: [],
+  };
 }
 
 export async function getAgentHubViewModel(): Promise<

@@ -93,10 +93,10 @@ export default async function DailyReviewPage() {
           <SectionPanel title={viewModel.openLoops.title}>
             {viewModel.openLoops.items.length > 0 ? (
               <div className="grid gap-3 md:grid-cols-2">
-                {viewModel.openLoops.items.map((loop) => (
+                {viewModel.openLoops.items.map((loop, index) => (
                   <article
                     className="rounded-[13px] border border-[color-mix(in_srgb,var(--accent)_24%,transparent)] bg-[color-mix(in_srgb,var(--accent)_6%,#101827)] p-4"
-                    key={loop.title}
+                    key={`daily-review-loop-${index}`}
                     style={accentStyle(loop.accent)}
                   >
                     <Pill accent={loop.accent}>{loop.area}</Pill>

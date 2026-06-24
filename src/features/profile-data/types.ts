@@ -1,5 +1,10 @@
 import type { CalendarViewModel } from "@/features/calendar";
-import type { DashboardViewModel } from "@/features/dashboard";
+import type {
+  DashboardMealSlotState,
+  DashboardViewModel,
+  HabitTrackerWindow,
+  MealType,
+} from "@/features/dashboard";
 import type {
   EntityArea,
   EntityCollection,
@@ -45,6 +50,36 @@ export type ManualInboxItem = {
   createdAt: string;
 };
 
+export type ManualHabit = {
+  id: string;
+  marker: string;
+  label: string;
+  window: HabitTrackerWindow;
+  currentValue: number;
+  targetValue: number;
+  unit?: string;
+  stepValue: number;
+  total: number;
+  areaId: EntityArea;
+  createdAt: string;
+};
+
+export type ManualMood = {
+  label: string;
+  updatedAt: string;
+};
+
+export type ManualMealSlot = {
+  id: string;
+  type: Exclude<MealType, "Snack">;
+  state: DashboardMealSlotState;
+  name: string;
+  time: string;
+  kcal?: string;
+  macros: string[];
+  updatedAt: string;
+};
+
 export type ManualProfileData = {
   version: 1;
   updatedAt: string | null;
@@ -52,6 +87,9 @@ export type ManualProfileData = {
   projects: LifeProject[];
   goals: LifeGoal[];
   inboxItems: ManualInboxItem[];
+  habits: ManualHabit[];
+  mood: ManualMood | null;
+  meals: ManualMealSlot[];
 };
 
 export type CreateTaskInput = {
@@ -97,6 +135,27 @@ export type CreateGoalInput = {
   nextStep?: string;
 };
 
+export type CreateHabitInput = {
+  label: string;
+  window?: HabitTrackerWindow;
+  targetValue?: number;
+  unit?: string;
+  areaId?: EntityArea;
+};
+
+export type SetMoodInput = {
+  label: string;
+};
+
+export type SaveMealSlotInput = {
+  type: Exclude<MealType, "Snack">;
+  state?: DashboardMealSlotState;
+  name?: string;
+  time?: string;
+  kcal?: string;
+  macros?: string[];
+};
+
 export type LifeOsDataSource = {
   profile: LifeOsProfileSummary;
   getDashboardViewModel(): Promise<DashboardViewModel>;
@@ -109,6 +168,9 @@ export type LifeOsDataSource = {
   createProject(input: CreateProjectInput): Promise<LifeProject>;
   getGoals(): Promise<LifeGoal[]>;
   createGoal(input: CreateGoalInput): Promise<LifeGoal>;
+  createHabit(input: CreateHabitInput): Promise<ManualHabit>;
+  setMood(input: SetMoodInput): Promise<ManualMood>;
+  saveMealSlot(input: SaveMealSlotInput): Promise<ManualMealSlot>;
   getPortfolioViewModel(): Promise<PortfolioViewModel>;
   getMentalHealthViewModel(): Promise<MentalHealthPageViewModel>;
   getInboxViewModel(): Promise<InboxViewModel>;

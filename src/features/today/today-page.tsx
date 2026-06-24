@@ -93,8 +93,8 @@ function TodayHeader({
             aria-label="Today memory log status"
             className="mt-2 flex flex-wrap gap-1.5"
           >
-            {header.statusPills.map((pill) => (
-              <Pill accent={pill.accent} key={pill.label}>
+            {header.statusPills.map((pill, index) => (
+              <Pill accent={pill.accent} key={`today-status-pill-${index}`}>
                 {pill.label}
               </Pill>
             ))}
@@ -309,10 +309,10 @@ function DeltaSummary({
 }>) {
   return (
     <div className="flex h-full flex-col gap-2">
-      {metrics.map((metric) => (
+      {metrics.map((metric, index) => (
         <article
           className="grid min-h-10 grid-cols-[48px_minmax(0,1fr)] items-center gap-x-3 rounded-[8px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.28)] px-2.5 py-1.5 sm:grid-cols-[52px_minmax(0,1fr)_minmax(112px,max-content)]"
-          key={metric.label}
+          key={`today-delta-metric-${index}`}
           style={accentStyle(metric.accent)}
         >
           <div className="flex min-w-0 items-center gap-2">
@@ -346,10 +346,10 @@ function DecisionRows({
 }>) {
   return (
     <div className="space-y-1.5">
-      {decisions.map((decision) => (
+      {decisions.map((decision, index) => (
         <article
           className="grid min-h-[46px] grid-cols-[3px_minmax(0,1fr)] gap-2.5 rounded-[8px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.38)] px-2.5 py-2"
-          key={decision.label}
+          key={`today-decision-${index}`}
           style={accentStyle(decision.accent)}
         >
           <span
@@ -382,10 +382,10 @@ function HandoffRows({
 }>) {
   return (
     <div className="space-y-1.5">
-      {items.map((item) => (
+      {items.map((item, index) => (
         <article
           className="grid min-h-[46px] grid-cols-[8px_minmax(0,1fr)] gap-2.5 rounded-[8px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.38)] px-2.5 py-2"
-          key={item.label}
+          key={`today-recap-${index}`}
           style={accentStyle(item.accent)}
         >
           <span
@@ -415,10 +415,10 @@ function ReviewSignalGrid({
 }>) {
   return (
     <div className={cn("grid content-start gap-2 sm:grid-cols-2", className)}>
-      {items.map((item) => (
+      {items.map((item, index) => (
         <article
           className="min-h-[52px] rounded-[8px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.34)] px-3 py-2"
-          key={item.label}
+          key={`today-review-signal-${index}`}
           style={accentStyle(item.accent)}
         >
           <div className="flex min-w-0 items-center gap-2">

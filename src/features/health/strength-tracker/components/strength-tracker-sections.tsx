@@ -57,8 +57,8 @@ export function StrengthHeader({
             {header.meta}
           </p>
           <div className="mt-3 flex flex-wrap gap-1.5 xl:mt-2 xl:gap-1">
-            {header.pills.map((pill) => (
-              <Pill accent={pill.accent} key={pill.label}>
+            {header.pills.map((pill, index) => (
+              <Pill accent={pill.accent} key={`strength-header-pill-${index}`}>
                 {pill.label}
               </Pill>
             ))}
@@ -117,8 +117,8 @@ export function SummaryStrip({
       aria-label="Strength tracker summary"
       className="grid gap-2 sm:grid-cols-2 xl:grid-cols-6 xl:gap-1.5"
     >
-      {metrics.map((metric) => (
-        <StrengthMetricCard compact key={metric.label} metric={metric} />
+      {metrics.map((metric, index) => (
+        <StrengthMetricCard compact key={`strength-summary-${index}`} metric={metric} />
       ))}
     </section>
   );
@@ -145,33 +145,33 @@ export function StrengthSessionPlannerSection({
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(300px,390px)] xl:gap-3">
         <div className="grid gap-4 xl:content-start xl:gap-2.5">
           <ChipGroup title="Session Type">
-            {planner.sessionTypes.map((chip) => (
-              <StrengthChip chip={chip} key={chip.value} />
+            {planner.sessionTypes.map((chip, index) => (
+              <StrengthChip chip={chip} key={`strength-session-type-${index}`} />
             ))}
           </ChipGroup>
 
           <ChipGroup title="Training Focus">
-            {planner.trainingFocus.map((chip) => (
-              <StrengthChip chip={chip} key={chip.value} />
+            {planner.trainingFocus.map((chip, index) => (
+              <StrengthChip chip={chip} key={`strength-training-focus-${index}`} />
             ))}
           </ChipGroup>
 
           <div className="grid gap-4 md:grid-cols-2 xl:gap-2">
             <ChipGroup title="Available Time">
-              {planner.availableTimes.map((chip) => (
-                <StrengthChip chip={chip} key={chip.value} />
+              {planner.availableTimes.map((chip, index) => (
+                <StrengthChip chip={chip} key={`strength-available-time-${index}`} />
               ))}
             </ChipGroup>
             <ChipGroup title="Effort Target">
-              {planner.effortTargets.map((chip) => (
-                <StrengthChip chip={chip} key={chip.value} />
+              {planner.effortTargets.map((chip, index) => (
+                <StrengthChip chip={chip} key={`strength-effort-target-${index}`} />
               ))}
             </ChipGroup>
           </div>
 
           <ChipGroup title="Equipment">
-            {planner.equipment.map((chip) => (
-              <StrengthChip chip={chip} key={chip.value} />
+            {planner.equipment.map((chip, index) => (
+              <StrengthChip chip={chip} key={`strength-equipment-${index}`} />
             ))}
           </ChipGroup>
 
@@ -180,10 +180,10 @@ export function StrengthSessionPlannerSection({
               Movement context
             </h3>
             <div className="mt-2 grid gap-2 sm:grid-cols-2 xl:mt-1.5 xl:gap-1.5">
-              {planner.movementInputs.map((input) => (
+              {planner.movementInputs.map((input, index) => (
                 <article
                   className="min-w-0 rounded-[13px] border border-[color-mix(in_srgb,var(--accent)_18%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_5%,rgba(11,17,28,.50))] p-3 xl:p-2"
-                  key={input.label}
+                  key={`strength-movement-input-${index}`}
                   style={accentStyle(input.accent)}
                 >
                   <p className="text-[10px] font-semibold text-[var(--text-muted)]">
@@ -212,7 +212,7 @@ export function StrengthSessionPlannerSection({
             {planner.suggestedSession.steps.map((step, index) => (
               <li
                 className="grid grid-cols-[28px_minmax(0,1fr)] gap-2 rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_18%,var(--border-subtle))] bg-[rgba(11,17,28,.38)] p-2.5 xl:grid-cols-[22px_minmax(0,1fr)] xl:p-1.5"
-                key={step.label}
+                key={`strength-planner-step-${index}`}
                 style={accentStyle(step.accent)}
               >
                 <span className="flex size-7 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--accent)_32%,transparent)] bg-[color-mix(in_srgb,var(--accent)_10%,transparent)] text-[11px] font-semibold text-[var(--text-primary)] xl:size-[22px] xl:text-[10px]">
@@ -235,13 +235,13 @@ export function StrengthSessionPlannerSection({
           </p>
 
           <div className="mt-4 flex flex-wrap gap-2 xl:mt-2 xl:gap-1.5">
-            {planner.primaryActions.map((action) => (
-              <StrengthActionButton action={action} key={action.label} />
+            {planner.primaryActions.map((action, index) => (
+              <StrengthActionButton action={action} key={`strength-planner-primary-${index}`} />
             ))}
           </div>
           <div className="mt-2 flex flex-wrap gap-2 border-t border-[var(--border-subtle)] pt-3 xl:gap-1.5 xl:pt-2">
-            {planner.secondaryActions.map((action) => (
-              <StrengthActionButton action={action} key={action.label} />
+            {planner.secondaryActions.map((action, index) => (
+              <StrengthActionButton action={action} key={`strength-planner-secondary-${index}`} />
             ))}
           </div>
         </article>
@@ -269,8 +269,8 @@ export function TodayStrengthPlanSection({
         {todayPlan.plan}
       </p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        {todayPlan.details.map((detail) => (
-          <StrengthMetricCard compact key={detail.label} metric={detail} />
+        {todayPlan.details.map((detail, index) => (
+          <StrengthMetricCard compact key={`strength-today-detail-${index}`} metric={detail} />
         ))}
       </div>
 
@@ -279,10 +279,10 @@ export function TodayStrengthPlanSection({
           Checklist
         </h3>
         <ul className="mt-2 grid gap-1.5">
-          {todayPlan.checklist.map((item) => (
+          {todayPlan.checklist.map((item, index) => (
             <li
               className="flex min-h-8 items-center gap-2 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(168,183,204,.035)] px-2.5 text-[11px] text-[var(--text-secondary)]"
-              key={item.label}
+              key={`strength-today-checklist-${index}`}
             >
               <span
                 aria-hidden="true"
@@ -305,8 +305,8 @@ export function TodayStrengthPlanSection({
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        {todayPlan.actions.map((action) => (
-          <StrengthActionButton action={action} key={action.label} />
+        {todayPlan.actions.map((action, index) => (
+          <StrengthActionButton action={action} key={`strength-today-action-${index}`} />
         ))}
       </div>
     </StrengthPanel>
@@ -332,15 +332,15 @@ export function RecentSessionReviewSection({
         {review.lastSession}
       </p>
       <div className="mt-3 grid gap-2 sm:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
-        {review.metrics.map((metric) => (
-          <StrengthMetricCard compact key={metric.label} metric={metric} />
+        {review.metrics.map((metric, index) => (
+          <StrengthMetricCard compact key={`strength-review-metric-${index}`} metric={metric} />
         ))}
       </div>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        {review.signals.map((signal) => (
+        {review.signals.map((signal, index) => (
           <article
             className="rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_18%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_5%,rgba(11,17,28,.46))] p-2.5"
-            key={signal.label}
+            key={`strength-review-signal-${index}`}
             style={accentStyle(signal.accent)}
           >
             <p className="text-[10px] font-semibold text-[var(--text-muted)]">
@@ -393,10 +393,10 @@ export function WeeklyStrengthRhythmSection({
       title={rhythmBalance.title}
     >
       <ol className="grid gap-2 sm:grid-cols-7 xl:grid-cols-7">
-        {rhythmBalance.days.map((day) => (
+        {rhythmBalance.days.map((day, index) => (
           <li
             className="min-w-0 rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_18%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_5%,rgba(11,17,28,.44))] p-2"
-            key={day.day}
+            key={`strength-rhythm-day-${index}`}
             style={accentStyle(day.accent)}
           >
             <div className="flex items-center justify-between gap-2">
@@ -416,10 +416,10 @@ export function WeeklyStrengthRhythmSection({
       </ol>
 
       <div className="mt-3 grid gap-2 sm:grid-cols-5">
-        {rhythmBalance.balance.map((item) => (
+        {rhythmBalance.balance.map((item, index) => (
           <article
             className="rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_18%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_5%,rgba(11,17,28,.44))] p-2.5"
-            key={item.label}
+            key={`strength-rhythm-balance-${index}`}
             style={accentStyle(item.accent)}
           >
             <p className="text-[10px] font-semibold text-[var(--text-muted)]">
@@ -457,10 +457,10 @@ export function TrainingLoadRecoverySection({
       title={loadRecovery.title}
     >
       <div className="grid gap-2 sm:grid-cols-2">
-        {[loadRecovery.weeklyLoad, loadRecovery.recoverySignal].map((item) => (
+        {[loadRecovery.weeklyLoad, loadRecovery.recoverySignal].map((item, index) => (
           <article
             className="rounded-[13px] border border-[color-mix(in_srgb,var(--accent)_20%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_6%,rgba(11,17,28,.52))] p-3"
-            key={item.label}
+            key={`strength-load-recovery-${index}`}
             style={accentStyle(item.accent)}
           >
             <p className="text-[10px] font-semibold text-[var(--text-muted)]">
@@ -488,10 +488,10 @@ export function TrainingLoadRecoverySection({
           Volume split
         </h3>
         <div className="mt-2 grid gap-2">
-          {loadRecovery.volumeSplit.map((split) => (
+          {loadRecovery.volumeSplit.map((split, index) => (
             <div
               className="grid grid-cols-[72px_minmax(0,1fr)_52px] items-center gap-2 text-[10px]"
-              key={split.label}
+              key={`strength-volume-split-${index}`}
               style={accentStyle(split.accent)}
             >
               <span className="font-semibold text-[var(--text-secondary)]">
@@ -577,10 +577,10 @@ export function StrengthTrendSection({
       title={trend.title}
     >
       <div className="flex min-h-[150px] items-end gap-2 rounded-[13px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.35)] px-3 pb-3 pt-4">
-        {trend.weeks.map((week) => (
+        {trend.weeks.map((week, index) => (
           <div
             className="flex min-w-0 flex-1 flex-col items-center gap-2"
-            key={week.label}
+            key={`strength-trend-week-${index}`}
             style={accentStyle(week.accent)}
           >
             <div className="flex h-20 w-full items-end justify-center rounded-[10px] bg-[rgba(168,183,204,.035)] px-2 py-1">
@@ -603,10 +603,10 @@ export function StrengthTrendSection({
         ))}
       </div>
       <ul className="mt-3 grid gap-1.5">
-        {trend.weeks.map((week) => (
+        {trend.weeks.map((week, index) => (
           <li
             className="grid grid-cols-[72px_minmax(0,1fr)] gap-2 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(168,183,204,.035)] px-2.5 py-2 text-[10px]"
-            key={`${week.label}-detail`}
+            key={`strength-trend-week-detail-${index}`}
           >
             <span className="font-semibold text-[var(--text-primary)]">
               {week.label}
@@ -641,10 +641,10 @@ export function RecentSetsSection({
       title={recentSets.title}
     >
       <ul className="grid gap-2">
-        {recentSets.items.map((item) => (
+        {recentSets.items.map((item, index) => (
           <li
             className="grid grid-cols-[52px_minmax(0,1fr)_auto] items-center gap-2 rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_16%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_4%,rgba(11,17,28,.44))] p-2.5 text-[10px]"
-            key={`${item.date}-${item.exercise}`}
+            key={`strength-recent-set-${index}`}
             style={accentStyle(item.accent)}
           >
             <span className="font-semibold text-[var(--text-muted)]">
@@ -687,10 +687,10 @@ export function BeginnerStrengthBoundariesSection({
       title={boundaries.title}
     >
       <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
-        {boundaries.items.map((item) => (
+        {boundaries.items.map((item, index) => (
           <article
             className="rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_18%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_5%,rgba(11,17,28,.44))] p-3"
-            key={item.label}
+            key={`strength-boundary-${index}`}
             style={accentStyle(item.accent)}
           >
             <p className="text-[12px] font-semibold leading-4 text-[var(--text-primary)]">

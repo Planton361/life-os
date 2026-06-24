@@ -1,9 +1,18 @@
 "use client";
 
-import type { DashboardAntiRotActions } from "@/features/dashboard";
+import type {
+  DashboardAntiRotActions,
+  DashboardProfileId,
+} from "@/features/dashboard";
 import { useState } from "react";
 import { cn } from "@/lib/cn";
-import { DashboardEmptyState, Panel, Pill, styleFor } from "./section-primitives";
+import {
+  DashboardEmptyState,
+  Panel,
+  Pill,
+  contentStateAttrs,
+  styleFor,
+} from "./section-primitives";
 
 type AntiRotState = "neutral" | "active" | "done";
 
@@ -36,8 +45,10 @@ function antiRotStatusLabel(state: AntiRotState) {
 
 export function AntiRotActions({
   data,
+  profileId,
 }: Readonly<{
   data: DashboardAntiRotActions;
+  profileId: DashboardProfileId;
 }>) {
   const [actionStates, setActionStates] = useState<Record<string, AntiRotState>>({});
 
@@ -51,6 +62,7 @@ export function AntiRotActions({
   return (
     <Panel
       className="border-[rgba(155,124,246,.10)] bg-[color-mix(in_srgb,var(--accent-purple)_3%,#0c1320)] 2xl:h-[205px]"
+      stateAttrs={contentStateAttrs(data.contentState, profileId)}
       title={data.title}
       titleHref={data.href}
     >
@@ -112,7 +124,7 @@ export function AntiRotActions({
         ) : (
           <DashboardEmptyState
             className="xl:col-span-5"
-            description="Noch keine Reset-Aktionen im aktuellen Profil."
+            description="Öffne Habits, um Reset-Aktionen zu konfigurieren."
             title="Keine Anti-Rot-Aktionen"
           />
         )}

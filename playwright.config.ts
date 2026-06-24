@@ -1,5 +1,9 @@
 import { defineConfig } from "@playwright/test";
 
+const playwrightHost = process.env.PLAYWRIGHT_HOST ?? "127.0.0.1";
+const playwrightPort = process.env.PLAYWRIGHT_PORT ?? "3000";
+const playwrightBaseUrl = `http://${playwrightHost}:${playwrightPort}`;
+
 export default defineConfig({
   testDir: "./tests/e2e",
   outputDir: "test-results",
@@ -8,14 +12,14 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   reporter: [["list"], ["html", { open: "never" }]],
   use: {
-    baseURL: "http://127.0.0.1:3000",
+    baseURL: playwrightBaseUrl,
     screenshot: "only-on-failure",
     trace: "on-first-retry",
   },
   webServer: {
-    command: "pnpm dev --hostname 127.0.0.1 --port 3000",
+    command: `pnpm dev --hostname ${playwrightHost} --port ${playwrightPort}`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
-    url: "http://127.0.0.1:3000",
+    url: playwrightBaseUrl,
   },
 });

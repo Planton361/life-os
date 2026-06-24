@@ -258,13 +258,13 @@ function InspectorStatGrid({
 }>) {
   return (
     <div className="grid gap-2 sm:grid-cols-3">
-      {stats.map((stat) => (
+      {stats.map((stat, index) => (
         <article
           className={cn(
             "min-h-[64px] rounded-[12px] border px-3 py-2",
             statToneClass(stat.tone ?? "default"),
           )}
-          key={stat.label}
+          key={`meal-inspector-stat-${index}`}
         >
           <p className="text-[9px] font-semibold uppercase text-[var(--text-muted)]">
             {stat.label}

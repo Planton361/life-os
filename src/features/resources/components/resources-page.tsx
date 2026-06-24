@@ -216,10 +216,10 @@ function ResourceSummaryStrip({
       aria-label="Resource summary"
       className="grid gap-2 sm:grid-cols-2 xl:grid-cols-6"
     >
-      {stats.map((stat) => (
+      {stats.map((stat, index) => (
         <article
           className="min-h-[58px] rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_20%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_6%,rgba(15,23,36,.68))] px-3 py-2 xl:min-h-[46px] xl:px-2.5 xl:py-1.5"
-          key={stat.label}
+          key={`resource-summary-stat-${index}`}
           style={accentStyle(stat.accent)}
         >
           <div className="flex min-w-0 items-start gap-2 xl:items-center">
@@ -927,10 +927,10 @@ function ResourceRelationInspector({
             Actions
           </h3>
           <div className="mt-2 grid gap-1.5 xl:mt-1.5 xl:grid-cols-2 xl:gap-1.5">
-            {resource.actions.map((action) => (
+            {resource.actions.map((action, index) => (
               <button
                 className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.42)] px-3 py-2 text-left transition hover:border-[var(--border-default)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] xl:px-2 xl:py-1.5"
-                key={action.label}
+                key={`resource-action-${index}`}
                 type="button"
               >
                 <span className="block text-[12px] font-semibold leading-4 text-[var(--text-primary)] xl:text-[11px] xl:leading-3">
@@ -1312,10 +1312,10 @@ function ResourceReviewWorkbench({
                   </div>
 
                   <div className="mt-3 flex flex-wrap gap-1.5">
-                    {item.suggestedActions.map((action) => (
+                    {item.suggestedActions.map((action, index) => (
                       <button
                         className="min-h-7 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.58)] px-2.5 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-                        key={action}
+                        key={`resource-review-action-${index}`}
                         type="button"
                       >
                         {action}
@@ -1328,8 +1328,8 @@ function ResourceReviewWorkbench({
           ) : (
             <div className="xl:col-span-2">
               <EmptyState
-                description="Neue Ressourcen erscheinen hier, sobald sie Review brauchen."
-                title="Keine Review-Punkte offen"
+                description="Neue Ressourcen erscheinen hier, sobald sie in der Workbench geprueft werden muessen."
+                title="Keine Ressourcen zur Pruefung"
               />
             </div>
           )}
@@ -1337,10 +1337,10 @@ function ResourceReviewWorkbench({
 
         <div className="grid gap-2 xl:grid-cols-3">
           {aiSuggestions.length > 0 ? (
-            aiSuggestions.map((suggestion) => (
+            aiSuggestions.map((suggestion, index) => (
               <article
                 className="rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_18%,transparent)] bg-[rgba(11,17,28,.36)] px-3 py-2"
-                key={suggestion.title}
+                key={`resource-inspector-suggestion-${index}`}
                 style={accentStyle(suggestion.accent)}
               >
                 <div className="flex min-w-0 items-center justify-between gap-2">
@@ -1402,10 +1402,10 @@ function AISuggestionsPanel({
       </div>
       <div className="grid gap-1.5 p-3 xl:min-h-0 xl:flex-1 xl:gap-1.5 xl:p-2">
         {items.length > 0 ? (
-          items.map((item) => (
+          items.map((item, index) => (
             <article
               className="rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_16%,transparent)] bg-[rgba(11,17,28,.42)] px-3 py-2 xl:px-2 xl:py-1.5"
-              key={item.title}
+              key={`resource-ai-suggestion-${index}`}
               style={accentStyle(item.accent)}
             >
               <div className="flex min-w-0 items-center justify-between gap-2">
@@ -1465,10 +1465,10 @@ function ReviewQueue({
       </div>
       <div className="grid gap-1.5 p-3 xl:min-h-0 xl:flex-1 xl:grid-cols-2 xl:auto-rows-fr xl:gap-1.5 xl:p-2">
         {visibleItems.length > 0 ? (
-          visibleItems.map((item) => (
+          visibleItems.map((item, index) => (
             <article
               className="rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_18%,transparent)] bg-[color-mix(in_srgb,var(--accent)_7%,rgba(11,17,28,.48))] px-3 py-2 xl:flex xl:min-h-0 xl:flex-col xl:justify-center xl:px-2 xl:py-1.5 [@media(min-width:2200px)]:px-2.5"
-              key={`${item.title}-${item.action}`}
+              key={`resource-review-queue-${index}`}
               style={accentStyle(item.accent)}
             >
               <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
@@ -1532,7 +1532,7 @@ function RecentLearnings({
                 index >= DESKTOP_RECENT_LEARNINGS_LIMIT &&
                   "xl:hidden [@media(min-width:2200px)]:flex",
               )}
-              key={item.title}
+              key={`resource-recent-learning-${index}`}
               style={accentStyle(item.accent)}
             >
               <div className="flex min-w-0 items-start gap-2">

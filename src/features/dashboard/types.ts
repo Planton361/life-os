@@ -1,4 +1,8 @@
+import type { ContentStateMeta } from "@/features/content-state";
+
 export type DashboardPriority = "P0" | "P1" | "P2" | "P3";
+
+export type DashboardProfileId = "demo" | "empty" | "manual";
 
 export type DashboardArea =
   | "education"
@@ -29,6 +33,7 @@ export type DashboardMetric = {
   progress: number;
   accent: DashboardAccent;
   area: DashboardArea;
+  contentState?: ContentStateMeta;
   href?: DashboardHref;
 };
 
@@ -64,6 +69,7 @@ export type DashboardCommandCenterMeta = {
   greeting: string;
   dateLabel: string;
   dayTypeLabel: string;
+  contentState: ContentStateMeta;
   metrics: readonly DashboardMetric[];
   timeProgress: readonly DashboardTimeProgressRow[];
   timeProgressHref?: DashboardHref;
@@ -80,6 +86,7 @@ export type DashboardQuickCapture = {
   placeholder: string;
   helperText: string;
   captureLabel: string;
+  contentState: ContentStateMeta;
   kinds: readonly QuickCaptureKind[];
   activeKind: QuickCaptureKind;
 };
@@ -135,6 +142,7 @@ export type DashboardDailyControl = {
   priority: Extract<DashboardPriority, "P0">;
   title: string;
   subtitle: string;
+  contentState: ContentStateMeta;
   focus: DashboardDailyControlFocus;
   nextStep: DashboardDailyControlNextStep;
   currentTask: DashboardCurrentTask;
@@ -195,6 +203,7 @@ export type DashboardTodayAgenda = {
   priority: Extract<DashboardPriority, "P0">;
   title: string;
   href?: DashboardHref;
+  contentState: ContentStateMeta;
   views: readonly TodayAgendaView[];
   activeView: TodayAgendaView;
   preparedViewsLabel: string;
@@ -249,6 +258,7 @@ export type DashboardHabitTrackers = {
   priority: Extract<DashboardPriority, "P1">;
   title: string;
   href?: DashboardHref;
+  contentState: ContentStateMeta;
   windows: readonly HabitTrackerWindow[];
   activeWindow: HabitTrackerWindow;
   totalSlotsLabel: string;
@@ -283,6 +293,7 @@ export type DashboardActivePortfolio = {
   priority: Extract<DashboardPriority, "P1">;
   title: string;
   subtitle: string;
+  contentState: ContentStateMeta;
   viewTitle: string;
   viewSubtitle: string;
   href?: DashboardHref;
@@ -309,18 +320,27 @@ export type DashboardMeal = {
   recipeId: string;
   mealId: string;
   type: MealType;
+  state?: DashboardMealSlotState;
   name: string;
   time: string;
   kcal: string;
   macros: readonly string[];
+  ctaLabel?: string;
   area: Extract<DashboardArea, "nutrition">;
   href?: DashboardHref;
 };
+
+export type DashboardMealSlotState =
+  | "unplanned"
+  | "planned"
+  | "logged"
+  | "skipped";
 
 export type DashboardMeals = {
   priority: Extract<DashboardPriority, "P2">;
   title: string;
   href?: DashboardHref;
+  contentState: ContentStateMeta;
   currentTimeLabel: string;
   items: readonly DashboardMeal[];
   recipeOptions: readonly DashboardMealRecipeOption[];
@@ -330,6 +350,7 @@ export type DashboardWeightLossGoal = {
   priority: Extract<DashboardPriority, "P2">;
   title: string;
   href?: DashboardHref;
+  contentState: ContentStateMeta;
   currentWeight: string;
   targetLabel: string;
   remainingLabel: string;
@@ -354,6 +375,7 @@ export type DashboardNutrientBalance = {
   priority: Extract<DashboardPriority, "P2">;
   title: string;
   href?: DashboardHref;
+  contentState: ContentStateMeta;
   lastUpdatedLabel: string;
   items: readonly DashboardNutrientBalanceItem[];
 };
@@ -389,6 +411,7 @@ export type DashboardRunningRecovery = {
   title: string;
   subtitle: string;
   href?: DashboardHref;
+  contentState: ContentStateMeta;
   modes: readonly RunningRecoveryMode[];
   activeMode: RunningRecoveryMode;
   stats: readonly DashboardRunStat[];
@@ -415,6 +438,7 @@ export type DashboardAntiRotActions = {
   priority: Extract<DashboardPriority, "P3">;
   title: string;
   href?: DashboardHref;
+  contentState: ContentStateMeta;
   donePrompt: string;
   actions: readonly DashboardAntiRotAction[];
 };
@@ -441,6 +465,7 @@ export type DashboardChallengesRewardFocus = {
   priority: Extract<DashboardPriority, "P3">;
   title: string;
   href?: DashboardHref;
+  contentState: ContentStateMeta;
   summary: string;
   measurementLabel: string;
   rewardFocus: string;

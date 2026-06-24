@@ -2,7 +2,13 @@
 
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useRef, useState } from "react";
+import {
+  captureDashboardQuickThoughtAction,
+  setDashboardMoodAction,
+} from "@/features/profile-data/actions";
+import { initialDashboardActionState } from "@/features/profile-data/dashboard-action-state";
 import type {
   DashboardCommandCenterMeta,
   DashboardCommandCenterViewModel,
@@ -12,6 +18,8 @@ import type {
   DashboardQueueItem,
   DashboardQuickCapture,
 } from "@/features/dashboard";
+import { resolveContentStateMeta } from "@/features/content-state";
+import { contentStateAttrs } from "@/components/dashboard/sections/section-primitives";
 import { cn } from "@/lib/cn";
 
 const DASHBOARD_LINK_FOCUS_CLASSES =
@@ -50,9 +58,10 @@ function ProgressBar({
 }
 
 const moodToneByLabel: Record<string, { symbol: string; accent: string }> = {
-  Happy: { symbol: "🙂", accent: "var(--accent-green)" },
+  Empty: { symbol: "•", accent: "var(--text-muted)" },
+  Happy: { symbol: "◠", accent: "var(--accent-green)" },
   Content: { symbol: "◡", accent: "var(--accent-cyan)" },
-  Calm: { symbol: "😌", accent: "var(--accent-cyan)" },
+  Calm: { symbol: "◇", accent: "var(--accent-cyan)" },
   Focused: { symbol: "◎", accent: "var(--accent-blue)" },
   Tired: { symbol: "◔", accent: "var(--text-muted)" },
   Anxious: { symbol: "!", accent: "var(--accent-orange)" },
@@ -64,14 +73,21 @@ function moodToneFor(mood: string) {
 }
 
 function MetricCard({
+  contentState,
   label,
   value,
   detail,
   progress,
   accent,
   href,
+  profileId,
   compact = false,
-}: Readonly<DashboardMetric & { compact?: boolean }>) {
+}: Readonly<
+  DashboardMetric & {
+    compact?: boolean;
+    profileId: DashboardCommandCenterViewModel["profileId"];
+  }
+>) {
   const className = cn(
     "flex h-full flex-col rounded-[13px] border bg-[color-mix(in_srgb,var(--accent)_3%,#101a2a)] p-2.5 pb-3",
     compact && "2xl:p-2 2xl:pb-2.5",
@@ -131,6 +147,7 @@ function MetricCard({
         className={className}
         href={href}
         style={style}
+        {...(contentState ? contentStateAttrs(contentState, profileId) : {})}
       >
         {content}
       </Link>
@@ -138,7 +155,11 @@ function MetricCard({
   }
 
   return (
-    <article className={className} style={style}>
+    <article
+      className={className}
+      style={style}
+      {...(contentState ? contentStateAttrs(contentState, profileId) : {})}
+    >
       {content}
     </article>
   );
@@ -146,13 +167,30 @@ function MetricCard({
 
 function QuickThought({
   data,
+  profileId,
 }: Readonly<{
   data: DashboardQuickCapture;
+  profileId: DashboardCommandCenterViewModel["profileId"];
 }>) {
+  const [state, formAction, pending] = useActionState(
+    captureDashboardQuickThoughtAction,
+    initialDashboardActionState,
+  );
+  const formRef = useRef<HTMLFormElement>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (state.status === "success") {
+      formRef.current?.reset();
+      router.refresh();
+    }
+  }, [router, state.status]);
+
   return (
     <section
       aria-labelledby="quick-thought-title"
       className="flex h-[265px] flex-col rounded-[var(--panel-radius)] border border-[rgba(91,124,250,.30)] bg-[color-mix(in_srgb,var(--accent-blue)_8%,rgba(15,26,43,.92))] p-3 shadow-[0_8px_22px_rgba(0,0,0,.12)]"
+      {...contentStateAttrs(data.contentState, profileId)}
     >
       <div className="flex items-center justify-between">
         <h2
@@ -165,35 +203,70 @@ function QuickThought({
           {data.destinationLabel}
         </span>
       </div>
-      <div className="mt-2 flex flex-1 flex-col rounded-[18px] border border-[rgba(91,124,250,.30)] bg-[color-mix(in_srgb,var(--accent-cyan)_5%,rgba(15,26,43,.92))] p-3">
-        <div className="border-l-4 border-[rgba(91,124,250,.90)] pl-3">
-          <p className="text-[10px] font-medium text-[var(--text-secondary)]">
-            {data.placeholder}
-          </p>
-          <p className="mt-2 text-[9px] font-medium text-[var(--text-faint)]">
-            {data.helperText}
-          </p>
-        </div>
-        <div className="mt-4 space-y-2" aria-hidden="true">
-          <div className="h-[3px] w-20 rounded-full bg-[rgba(91,124,250,.36)]" />
-          <div className="h-[3px] w-14 rounded-full bg-[rgba(95,200,215,.24)]" />
-        </div>
-        <div className="mt-auto flex justify-center">
-          <span className="rounded-full border border-[rgba(95,200,215,.34)] bg-[rgba(91,124,250,.20)] px-8 py-2 text-[10px] font-medium text-[var(--text-secondary)]">
-            {data.captureLabel}
-          </span>
-        </div>
-      </div>
-      <div className="mt-2 flex flex-nowrap justify-center gap-1 overflow-hidden">
-        {data.kinds.map((type) => (
-          <span
-            className="shrink-0 rounded-full border border-[rgba(91,124,250,.26)] bg-[rgba(91,124,250,.12)] px-2 py-0.5 text-[9px] font-medium text-[var(--text-secondary)]"
-            key={type}
+      <form
+        action={formAction}
+        className="mt-2 flex flex-1 flex-col rounded-[18px] border border-[rgba(91,124,250,.30)] bg-[color-mix(in_srgb,var(--accent-cyan)_5%,rgba(15,26,43,.92))] p-3"
+        ref={formRef}
+      >
+        <label className="sr-only" htmlFor="quick-thought-content">
+          Quick Thought
+        </label>
+        <textarea
+          className={cn(
+            "min-h-0 flex-1 resize-none border-l-4 border-[rgba(91,124,250,.90)] bg-transparent pl-3 text-[11px] leading-5 text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)]",
+            DASHBOARD_LINK_FOCUS_CLASSES,
+          )}
+          id="quick-thought-content"
+          name="content"
+          placeholder={data.placeholder}
+        />
+        <p className="mt-2 text-[9px] font-medium text-[var(--text-faint)]">
+          {data.helperText}
+        </p>
+        <div className="mt-2 flex items-center gap-2">
+          <label className="sr-only" htmlFor="quick-thought-kind">
+            Capture type
+          </label>
+          <select
+            className={cn(
+              "min-h-8 rounded-full border border-[rgba(91,124,250,.26)] bg-[rgba(91,124,250,.12)] px-2 text-[9px] font-medium text-[var(--text-secondary)] outline-none",
+              DASHBOARD_LINK_FOCUS_CLASSES,
+            )}
+            defaultValue={data.activeKind}
+            id="quick-thought-kind"
+            name="kind"
           >
-            {type}
-          </span>
-        ))}
-      </div>
+            {data.kinds.map((type) => (
+              <option key={type}>{type}</option>
+            ))}
+          </select>
+          <button
+            className={cn(
+              "ml-auto rounded-full border border-[rgba(95,200,215,.34)] bg-[rgba(91,124,250,.20)] px-5 py-2 text-[10px] font-medium text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]",
+              DASHBOARD_LINK_FOCUS_CLASSES,
+            )}
+            disabled={pending}
+            type="submit"
+          >
+            {pending ? "Saving..." : data.captureLabel}
+          </button>
+        </div>
+        {state.message ? (
+          <p
+            className={cn(
+              "mt-2 text-[9px] font-semibold leading-4",
+              state.status === "success"
+                ? "text-[var(--accent-green)]"
+                : state.status === "blocked"
+                  ? "text-[var(--accent-orange)]"
+                  : "text-[var(--text-muted)]",
+            )}
+            role="status"
+          >
+            {state.message}
+          </p>
+        ) : null}
+      </form>
     </section>
   );
 }
@@ -337,9 +410,20 @@ function DailyControlQueue({
         <DailyControlStatusPill label={data.queueSummary} />
       </div>
       <div className="mt-2 space-y-1.5">
-        {data.queue.map((item) => (
-          <DailyControlQueueItem item={item} key={item.title} />
-        ))}
+        {data.queue.length > 0 ? (
+          data.queue.map((item) => (
+            <DailyControlQueueItem item={item} key={item.id} />
+          ))
+        ) : (
+          <div className="rounded-xl border border-[rgba(91,124,250,.18)] bg-[color-mix(in_srgb,var(--accent-blue)_5%,#111c2e)] p-3">
+            <p className="text-[13px] font-medium text-[var(--text-secondary)]">
+              Wähle oder erstelle eine Aufgabe für heute.
+            </p>
+            <p className="mt-1 text-[10px] font-medium text-[var(--text-muted)]">
+              Die Queue füllt sich mit priorisierten Aufgaben.
+            </p>
+          </div>
+        )}
       </div>
     </section>
   );
@@ -347,13 +431,16 @@ function DailyControlQueue({
 
 function DailyControl({
   data,
+  profileId,
 }: Readonly<{
   data: DashboardDailyControl;
+  profileId: DashboardCommandCenterViewModel["profileId"];
 }>) {
   return (
     <section
       aria-labelledby="daily-control-title"
       className="grid min-h-[265px] gap-3 overflow-hidden rounded-[var(--panel-radius)] border border-[rgba(91,124,250,.38)] bg-[color-mix(in_srgb,var(--accent-blue)_8%,#15243a)] p-3 shadow-[0_16px_40px_rgba(0,0,0,.24)] lg:h-[265px] lg:grid-cols-[236px_minmax(0,1fr)]"
+      {...contentStateAttrs(data.contentState, profileId)}
     >
       <div className="lg:col-span-2">
         <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
@@ -377,9 +464,18 @@ function DailyControl({
 
 function TimeProgress({
   data,
+  profileId,
 }: Readonly<{
   data: DashboardCommandCenterMeta;
+  profileId: DashboardCommandCenterViewModel["profileId"];
 }>) {
+  const stateAttrs = contentStateAttrs(
+    resolveContentStateMeta({
+      capacity: 3,
+      itemCount: data.timeProgress.length,
+    }),
+    profileId,
+  );
   const className = cn(
     "h-full overflow-hidden rounded-[var(--panel-radius)] border border-[rgba(95,200,215,.10)] bg-[color-mix(in_srgb,var(--accent-blue)_5%,#0d1625)] p-3 shadow-[0_10px_26px_rgba(0,0,0,.14)]",
     data.timeProgressHref && `block ${DASHBOARD_LINK_FOCUS_CLASSES}`,
@@ -432,6 +528,7 @@ function TimeProgress({
         aria-label="Open year timeline"
         className={className}
         href={data.timeProgressHref}
+        {...stateAttrs}
       >
         {content}
       </Link>
@@ -442,6 +539,7 @@ function TimeProgress({
     <section
       aria-labelledby="time-progress-title"
       className={className}
+      {...stateAttrs}
     >
       {content}
     </section>
@@ -450,22 +548,43 @@ function TimeProgress({
 
 function MoodBoard({
   data,
+  profileId,
 }: Readonly<{
   data: DashboardCommandCenterMeta;
+  profileId: DashboardCommandCenterViewModel["profileId"];
 }>) {
   const [activeMood, setActiveMood] = useState(data.moodCheck.activeOption);
+  const [state, formAction, pending] = useActionState(
+    setDashboardMoodAction,
+    initialDashboardActionState,
+  );
+  const router = useRouter();
   const activeMoodTone = moodToneFor(activeMood);
   const moodAccent = activeMoodTone.accent;
+
+  useEffect(() => {
+    if (state.status === "success") {
+      router.refresh();
+    }
+  }, [router, state.status]);
 
   return (
     <section
       aria-labelledby="mood-title"
-      className="relative isolate h-full overflow-hidden rounded-[var(--panel-radius)] border border-[rgba(95,200,215,.14)] bg-[color-mix(in_srgb,var(--accent-cyan)_8%,#0d1625)] p-2.5 shadow-[0_10px_26px_rgba(0,0,0,.14)]"
+      className="relative isolate h-full overflow-hidden rounded-[var(--panel-radius)] border border-[color-mix(in_srgb,var(--accent)_20%,transparent)] bg-[color-mix(in_srgb,var(--accent)_8%,#0d1625)] p-2.5 shadow-[0_10px_26px_rgba(0,0,0,.14)]"
       style={accentStyle(moodAccent)}
+      {...contentStateAttrs(
+        {
+          capacity: 1,
+          itemCount: activeMood === "Empty" ? 0 : 1,
+          state: activeMood === "Empty" ? "empty" : "filled",
+        },
+        profileId,
+      )}
     >
       <div className="relative z-10 grid h-full gap-2 sm:grid-cols-[118px_minmax(0,1fr)] sm:items-center">
         <div className="flex h-full flex-col justify-center">
-          <p className="text-[10px] font-semibold uppercase text-[rgba(95,200,215,.86)]">
+          <p className="text-[10px] font-semibold uppercase text-[color-mix(in_srgb,var(--accent)_86%,var(--text-secondary))]">
             {data.moodCheck.eyebrow}
           </p>
           <h2
@@ -523,7 +642,7 @@ function MoodBoard({
               quiet
             />
           </div>
-          <div className="mt-1.5 grid grid-cols-3 gap-1">
+          <form action={formAction} className="mt-1.5 grid grid-cols-3 gap-1">
             {data.moodCheck.options.map(
               (mood) => {
                 const moodTone = moodToneFor(mood);
@@ -540,8 +659,11 @@ function MoodBoard({
                     )}
                     key={mood}
                     onClick={() => setActiveMood(mood)}
+                    disabled={pending}
+                    name="mood"
                     style={accentStyle(moodTone.accent)}
-                    type="button"
+                    type="submit"
+                    value={mood}
                   >
                     {mood === activeMood ? "Set · " : ""}
                     {mood}
@@ -549,7 +671,22 @@ function MoodBoard({
                 );
               },
             )}
-          </div>
+          </form>
+          {state.message ? (
+            <p
+              className={cn(
+                "mt-1 text-[9px] font-semibold",
+                state.status === "success"
+                  ? "text-[var(--accent-green)]"
+                  : state.status === "blocked"
+                    ? "text-[var(--accent-orange)]"
+                    : "text-[var(--text-muted)]",
+              )}
+              role="status"
+            >
+              {state.message}
+            </p>
+          ) : null}
         </div>
       </div>
     </section>
@@ -562,7 +699,10 @@ export function CommandCenter({
   data: DashboardCommandCenterViewModel;
 }>) {
   return (
-    <header className="life-os-command-center px-3 pt-3">
+    <header
+      className="life-os-command-center px-3 pt-3"
+      {...contentStateAttrs(data.commandCenter.contentState, data.profileId)}
+    >
       <div className="rounded-[var(--panel-radius)] border border-[rgba(95,200,215,.14)] bg-[color-mix(in_srgb,var(--accent-blue)_4%,rgba(12,20,34,.94))] p-3 shadow-[0_10px_26px_rgba(0,0,0,.14)]">
         <div className="grid gap-3 2xl:h-[var(--top-zone-height)] 2xl:grid-cols-[580px_278px_minmax(700px,1fr)_600px] 2xl:items-start 2xl:gap-[9px] 2xl:overflow-hidden">
           <section
@@ -579,19 +719,23 @@ export function CommandCenter({
               {data.commandCenter.metrics.map((metric, index) => (
                 <MetricCard
                   compact={index >= 3}
-                  key={metric.label}
+                  key={`command-center-metric-${index}`}
+                  profileId={data.profileId}
                   {...metric}
                 />
               ))}
             </div>
           </section>
 
-          <QuickThought data={data.quickCapture} />
-          <DailyControl data={data.dailyControl} />
+          <QuickThought data={data.quickCapture} profileId={data.profileId} />
+          <DailyControl data={data.dailyControl} profileId={data.profileId} />
 
           <div className="grid h-[265px] grid-rows-[92px_minmax(0,1fr)] gap-3 overflow-hidden">
-            <TimeProgress data={data.commandCenter} />
-            <MoodBoard data={data.commandCenter} />
+            <TimeProgress
+              data={data.commandCenter}
+              profileId={data.profileId}
+            />
+            <MoodBoard data={data.commandCenter} profileId={data.profileId} />
           </div>
         </div>
       </div>

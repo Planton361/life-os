@@ -740,10 +740,10 @@ function EducationSubpageHeader({
           <button className={primaryButtonClass} onClick={onPrimaryAction} type="button">
             {config.primaryAction}
           </button>
-          {config.secondaryActions.map((action) => (
+          {config.secondaryActions.map((action, index) => (
             <button
               className={secondaryButtonClass}
-              key={action}
+              key={`education-secondary-action-${index}`}
               onClick={() => onSecondaryAction(action)}
               type="button"
             >

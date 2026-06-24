@@ -809,8 +809,8 @@ export function ShopPage({ viewModel }: Readonly<{ viewModel: ShopViewModel }>) 
             title="Earning Sources"
           >
             <div className="flex flex-wrap gap-2">
-              {viewModel.earningSources.map((source) => (
-                <Pill key={source} quiet>
+              {viewModel.earningSources.map((source, index) => (
+                <Pill key={`shop-earning-source-${index}`} quiet>
                   {source}
                 </Pill>
               ))}

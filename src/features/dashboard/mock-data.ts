@@ -1,11 +1,19 @@
 import type { DashboardMockData } from "./types";
 
+const filledMetricState = {
+  hasHistory: true,
+  hasPrimaryValue: true,
+  itemCount: 1,
+  state: "filled",
+} as const;
+
 export const dashboardMockData = {
   commandCenter: {
     priority: "P1",
     greeting: "Good evening, Anton",
     dateLabel: "Tuesday, 09 June",
     dayTypeLabel: "Work / Study Day",
+    contentState: { capacity: 6, itemCount: 6, state: "filled" },
     metrics: [
       {
         label: "Tasks",
@@ -95,6 +103,7 @@ export const dashboardMockData = {
     placeholder: "Write a thought, task or instruction...",
     helperText: "Agent erkennt Task · Note · Question · Loop",
     captureLabel: "Capture",
+    contentState: { capacity: 1, itemCount: 1, state: "filled" },
     kinds: ["Task", "Note", "Question", "Agent"],
     activeKind: "Task",
   },
@@ -102,6 +111,7 @@ export const dashboardMockData = {
     priority: "P0",
     title: "Daily Control",
     subtitle: "Current task + next queue",
+    contentState: { capacity: 4, itemCount: 4, state: "filled" },
     focus: {
       label: "Tagesfokus",
       title: "Masterarbeit Struktur",
@@ -184,6 +194,7 @@ export const dashboardMockData = {
     priority: "P0",
     title: "Today Agenda",
     href: "/calendar?view=day&date=today",
+    contentState: { capacity: 9, itemCount: 9, state: "filled" },
     views: ["Day", "Week", "Month"],
     activeView: "Day",
     preparedViewsLabel: "Week and month views prepared",
@@ -431,6 +442,7 @@ export const dashboardMockData = {
     priority: "P1",
     title: "Habit Trackers",
     href: "/health/habits",
+    contentState: { capacity: 8, itemCount: 7, state: "partial" },
     windows: ["Morning", "Midday", "Evening"],
     activeWindow: "Morning",
     totalSlotsLabel: "7 per view · 21 total slots",
@@ -666,6 +678,7 @@ export const dashboardMockData = {
     priority: "P1",
     title: "Active Portfolio",
     subtitle: "Unique active projects · next action first",
+    contentState: { capacity: 4, itemCount: 4, state: "filled" },
     viewTitle: "Portfolio View",
     viewSubtitle: "Switch content state",
     href: "/portfolio?status=active",
@@ -763,6 +776,7 @@ export const dashboardMockData = {
     priority: "P2",
     title: "Weight Loss Goal",
     href: "/health",
+    contentState: filledMetricState,
     currentWeight: "75.0 kg",
     targetLabel: "Target 70.0 kg · -0.4 kg this week",
     remainingLabel: "5.0 kg to goal",
@@ -775,6 +789,7 @@ export const dashboardMockData = {
     priority: "P2",
     title: "Nutrient Balance",
     href: "/nutrition/meal-planner?view=today",
+    contentState: { capacity: 3, itemCount: 3, state: "filled" },
     lastUpdatedLabel: "Nutrition plan updated: today 12:10",
     items: [
       {
@@ -807,6 +822,7 @@ export const dashboardMockData = {
     priority: "P2",
     title: "Meals Today",
     href: "/nutrition/meal-planner?view=today",
+    contentState: { capacity: 3, itemCount: 3, state: "filled" },
     currentTimeLabel: "15:42",
     recipeOptions: [],
     items: [
@@ -850,6 +866,7 @@ export const dashboardMockData = {
     title: "Running Tracker",
     subtitle: "Workout data · periodic sync",
     href: "/health/running",
+    contentState: filledMetricState,
     modes: ["Running", "Muscle"],
     activeMode: "Running",
     stats: [
@@ -880,6 +897,7 @@ export const dashboardMockData = {
     priority: "P3",
     title: "Anti-Rot Actions / Bad Habit Reset Row",
     href: "/health/habits?view=bad-habits",
+    contentState: { capacity: 5, itemCount: 5, state: "filled" },
     donePrompt: "Done?",
     actions: [
       {
@@ -938,6 +956,7 @@ export const dashboardMockData = {
     priority: "P3",
     title: "Challenges",
     href: "/challenges",
+    contentState: { capacity: 3, itemCount: 3, state: "filled" },
     summary: "Complete 2 challenges today",
     measurementLabel: "1 / 2 measurable · 1 rule active",
     rewardFocus: "Small reward after review closeout",

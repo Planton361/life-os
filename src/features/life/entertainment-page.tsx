@@ -470,10 +470,10 @@ export function EntertainmentPage({
         title="Entertainment Shelf"
       >
         <div className="flex flex-wrap gap-2">
-          {segments.map((item) => (
+          {segments.map((item, index) => (
             <SegmentButton
               active={segment === item.value}
-              key={item.value}
+              key={`entertainment-segment-${index}`}
               onSelect={setSegment}
               value={item.value}
             >

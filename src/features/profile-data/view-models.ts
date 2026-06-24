@@ -15,14 +15,23 @@ import type {
   CalendarTimedBlockViewModel,
   CalendarViewModel,
 } from "@/features/calendar";
-import { getDashboardViewModel as getDemoDashboardViewModel } from "@/features/dashboard/dashboard-view-model";
+import {
+  getDashboardDateLabel,
+  getDashboardGreeting,
+  getDashboardViewModel as getDemoDashboardViewModel,
+  getSystemTimeProgress,
+} from "@/features/dashboard/dashboard-view-model";
+import { resolveContentStateMeta } from "@/features/content-state";
 import type {
   DashboardAccent,
   DashboardAgendaEvent,
   DashboardArea,
+  DashboardHabit,
+  DashboardMeal,
   DashboardPortfolioItem,
   DashboardPriority,
   DashboardViewModel,
+  HabitTrackerWindow,
 } from "@/features/dashboard";
 import { entityCollection as demoEntityCollection } from "@/features/entities/mock-entity-data";
 import type {
@@ -36,12 +45,15 @@ import type {
   TaskStatus,
 } from "@/features/entities/types";
 import {
+  createManualHabit,
   createManualGoal,
   createManualInboxItem,
   createManualProject,
   createManualTask,
   readManualProfile,
   resetManualProfile as resetManualProfileFile,
+  saveManualMealSlot,
+  setManualMood,
 } from "./manual-profile-store";
 import { getInboxViewModel as getDemoInboxViewModel } from "@/features/inbox/inbox-view-model";
 import type {
@@ -73,12 +85,17 @@ import type {
 } from "@/features/portfolio";
 import type {
   CreateGoalInput,
+  CreateHabitInput,
   CreateInboxItemInput,
   CreateProjectInput,
+  SaveMealSlotInput,
+  SetMoodInput,
   CreateTaskInput,
   LifeOsDataSource,
   LifeOsProfileId,
+  ManualHabit,
   ManualInboxItem,
+  ManualMealSlot,
   ManualProfileData,
 } from "./types";
 
@@ -94,6 +111,9 @@ function emptyManualProfile(): ManualProfileData {
     projects: [],
     goals: [],
     inboxItems: [],
+    habits: [],
+    mood: null,
+    meals: [],
   };
 }
 
@@ -263,6 +283,139 @@ function goalToPortfolioItem(goal: LifeGoal): DashboardPortfolioItem {
     kind: "goal",
     href: `/goals/${goal.id}`,
   };
+}
+
+const dashboardCapacity = {
+  activePortfolio: 4,
+  agenda: 9,
+  dailyControl: 4,
+  habits: 8,
+  meals: 3,
+} as const;
+
+const taskPriorityOrder: Record<EntityPriority, number> = {
+  P0: 0,
+  P1: 1,
+  P2: 2,
+  P3: 3,
+  none: 4,
+};
+
+const mealSlots: readonly Exclude<DashboardMeal["type"], "Snack">[] = [
+  "Breakfast",
+  "Lunch",
+  "Dinner",
+];
+
+function todayDateLabel() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function sortDashboardTasks(left: LifeTask, right: LifeTask) {
+  const timeCompare = `${left.date ?? ""}${left.startTime ?? "99:99"}`.localeCompare(
+    `${right.date ?? ""}${right.startTime ?? "99:99"}`,
+  );
+
+  if (timeCompare !== 0) return timeCompare;
+
+  return taskPriorityOrder[left.priority] - taskPriorityOrder[right.priority];
+}
+
+function visibleDashboardTasks(tasks: readonly LifeTask[]) {
+  const today = todayDateLabel();
+
+  return [...tasks]
+    .filter((task) => task.status !== "done" && task.status !== "canceled")
+    .filter((task) => !task.date || task.date === today)
+    .sort(sortDashboardTasks);
+}
+
+function manualHabitToDashboardHabit(habit: ManualHabit): DashboardHabit {
+  return {
+    area: habit.areaId as DashboardArea,
+    currentValue: habit.currentValue,
+    id: habit.id,
+    label: habit.label,
+    marker: habit.marker,
+    stepValue: habit.stepValue,
+    targetValue: habit.targetValue,
+    total: habit.total,
+    unit: habit.unit,
+  };
+}
+
+function emptyMealSlot(type: Exclude<DashboardMeal["type"], "Snack">): DashboardMeal {
+  const defaultTimes: Record<Exclude<DashboardMeal["type"], "Snack">, string> = {
+    Breakfast: "07:30",
+    Dinner: "19:00",
+    Lunch: "12:30",
+  };
+
+  return {
+    area: "nutrition",
+    ctaLabel: "Planen",
+    href: "/nutrition/meal-planner?view=today",
+    kcal: "-",
+    macros: [],
+    mealId: type.toLowerCase(),
+    name: "Keine Mahlzeit",
+    recipeId: "",
+    state: "unplanned",
+    time: defaultTimes[type],
+    type,
+  };
+}
+
+function manualMealToDashboardMeal(meal: ManualMealSlot): DashboardMeal {
+  const fallback = emptyMealSlot(meal.type);
+
+  return {
+    ...fallback,
+    ctaLabel: meal.state === "skipped" ? "Erfassen" : "Planen",
+    kcal: meal.kcal ?? (meal.state === "skipped" ? "Ausgelassen" : "-"),
+    macros: meal.macros,
+    name:
+      meal.state === "skipped"
+        ? "Ausgelassen"
+        : meal.name || fallback.name,
+    state: meal.state,
+    time: meal.time || fallback.time,
+  };
+}
+
+function buildMealSlots(profile: ManualProfileData): DashboardMeal[] {
+  return mealSlots.map((slot) => {
+    const meal = profile.meals.find((item) => item.type === slot);
+
+    return meal ? manualMealToDashboardMeal(meal) : emptyMealSlot(slot);
+  });
+}
+
+function mealIsDecided(meal: DashboardMeal) {
+  return meal.state !== "unplanned";
+}
+
+function moodAccent(label: string): DashboardAccent {
+  if (label === "Calm" || label === "Content") return "var(--accent-cyan)";
+  if (label === "Focused") return "var(--accent-blue)";
+  if (label === "Happy") return "var(--accent-green)";
+  if (label === "Anxious" || label === "Stressed") return "var(--accent-orange)";
+  if (label === "Tired") return "var(--accent-purple)";
+
+  return "var(--text-muted)";
+}
+
+function moodDetail(label: string) {
+  if (label === "Empty") return "Noch kein Mood-Eintrag";
+  if (label === "Calm") return "ruhig · stabil · langsam starten";
+  if (label === "Content") return "stabil · fokusfähig · Stress im Blick";
+  if (label === "Focused") return "klar · arbeitsbereit · geringe Ablenkung";
+  if (label === "Tired") return "gedämpft · vorsichtig planen";
+  if (label === "Happy") return "positiv · Energie verfügbar";
+  if (label === "Anxious") return "angespannt · kleine nächste Aktion wählen";
+  if (label === "Stressed") return "belastet · Druck reduzieren";
+
+  return "Mood gespeichert";
 }
 
 function portfolioPriority(priority: EntityPriority): PortfolioPriority {
@@ -656,15 +809,14 @@ function buildProfileDashboardViewModel(
   profile: ManualProfileData,
 ): DashboardViewModel {
   const viewModel = clone(getDemoDashboardViewModel());
-  const tasks = profile.tasks;
+  viewModel.profileId = profileId;
+  viewModel.commandCenter.profileId = profileId;
+
+  const tasks = visibleDashboardTasks(profile.tasks);
   const inboxItems = profile.inboxItems;
   const scheduledTasks = tasks
     .filter((task) => task.startTime)
-    .sort((left, right) =>
-      `${left.date ?? ""}${left.startTime ?? ""}`.localeCompare(
-        `${right.date ?? ""}${right.startTime ?? ""}`,
-      ),
-    );
+    .sort(sortDashboardTasks);
   const activeTask =
     tasks.find((task) => task.status === "active") ??
     scheduledTasks[0] ??
@@ -675,109 +827,166 @@ function buildProfileDashboardViewModel(
     (sum, task) => sum + (task.startTime ? (task.durationMinutes ?? 30) : 0),
     0,
   );
-  const profileLabel = profileTitle(profileId);
+  const meals = buildMealSlots(profile);
+  const decidedMealCount = meals.filter(mealIsDecided).length;
+  const activeMood = profile.mood?.label ?? "Empty";
+  const dashboardHabits = {
+    Morning: profile.habits
+      .filter((habit) => habit.window === "Morning")
+      .map(manualHabitToDashboardHabit)
+      .slice(0, dashboardCapacity.habits),
+    Midday: profile.habits
+      .filter((habit) => habit.window === "Midday")
+      .map(manualHabitToDashboardHabit)
+      .slice(0, dashboardCapacity.habits),
+    Evening: profile.habits
+      .filter((habit) => habit.window === "Evening")
+      .map(manualHabitToDashboardHabit)
+      .slice(0, dashboardCapacity.habits),
+  } satisfies Record<HabitTrackerWindow, DashboardHabit[]>;
+  const activeHabitCount = dashboardHabits.Morning.length;
+  const portfolioItems = [
+    ...profile.projects.map(projectToPortfolioItem),
+    ...profile.goals.map(goalToPortfolioItem),
+  ];
+  const activePortfolioView =
+    profile.projects.length > 0
+      ? "Project View"
+      : profile.goals.length > 0
+        ? "Goal View"
+        : "Project View";
 
   viewModel.commandCenter.commandCenter = {
     ...viewModel.commandCenter.commandCenter,
-    greeting: profileLabel,
-    dateLabel: "Local profile data source",
-    dayTypeLabel:
-      profileId === "manual"
-        ? "Manual entries only"
-        : "No entries stored locally",
+    contentState: resolveContentStateMeta({
+      capacity: 6,
+      itemCount: 6,
+    }),
+    greeting: getDashboardGreeting(profileId === "manual" ? "User" : "Anton"),
+    dateLabel: getDashboardDateLabel(),
+    dayTypeLabel: "Work / Study Day",
     metrics: [
       {
         label: "Tasks",
         value: `${doneTaskCount} / ${tasks.length}`,
-        detail: tasks.length > 0 ? "manual tasks" : "no tasks yet",
+        detail: tasks.length > 0 ? "Tasks for today" : "Create task",
         progress: tasks.length > 0 ? (doneTaskCount / tasks.length) * 100 : 0,
         accent: "var(--accent-blue)",
         area: "review",
+        contentState: resolveContentStateMeta({
+          capacity: dashboardCapacity.dailyControl,
+          itemCount: tasks.length,
+        }),
         href: "/tasks?filter=all",
       },
       {
         label: "Focus Time",
         value: `${focusMinutes}m`,
-        detail:
-          focusMinutes > 0 ? "scheduled manually" : "no focus block planned",
+        detail: focusMinutes > 0 ? "Scheduled today" : "No focus block planned",
         progress: Math.min(100, (focusMinutes / 180) * 100),
         accent: "var(--accent-blue)",
         area: "education",
+        contentState: resolveContentStateMeta({
+          hasPrimaryValue: focusMinutes > 0,
+          itemCount: focusMinutes > 0 ? 1 : 0,
+        }),
         href: "/calendar",
       },
       {
         label: "Inbox",
         value: `${inboxItems.length} open`,
-        detail: inboxItems.length > 0 ? "manual captures" : "no inbox entries",
+        detail: inboxItems.length > 0 ? "Captured locally" : "Capture thought",
         progress: Math.min(100, inboxItems.length * 18),
         accent: "var(--accent-green)",
         area: "review",
+        contentState: resolveContentStateMeta({
+          capacity: 8,
+          itemCount: inboxItems.length,
+        }),
         href: "/inbox",
       },
       {
         label: "Nutrition",
-        value: "0",
-        detail: "no meals captured",
-        progress: 0,
+        value: decidedMealCount > 0 ? `${decidedMealCount} / 3` : "No plan",
+        detail: decidedMealCount > 0 ? "Meal slots decided" : "Create Plan",
+        progress: (decidedMealCount / dashboardCapacity.meals) * 100,
         accent: "var(--accent-yellow)",
         area: "nutrition",
+        contentState: resolveContentStateMeta({
+          capacity: dashboardCapacity.meals,
+          itemCount: decidedMealCount,
+        }),
         href: "/nutrition/meal-planner?view=today",
       },
       {
         label: "Review Status",
         value: "No review",
-        detail: "manual profile only",
+        detail: "Start Capturing",
         progress: 0,
         accent: "var(--accent-cyan)",
         area: "review",
+        contentState: resolveContentStateMeta({
+          hasPrimaryValue: false,
+          itemCount: 0,
+        }),
         href: "/review/daily",
       },
       {
         label: "Sleep",
-        value: "Noch leer",
-        detail: "Health-Daten spaeter",
+        value: "No data",
+        detail: "Tracke deinen Schlaf",
         progress: 0,
         accent: "var(--accent-blue)",
         area: "health",
+        contentState: resolveContentStateMeta({
+          hasPrimaryValue: false,
+          itemCount: 0,
+        }),
         href: "/health/mental?section=sleep",
       },
     ],
     moodCheck: {
       ...viewModel.commandCenter.commandCenter.moodCheck,
-      moodLabel: "Not logged",
-      detail: "noch kein Mood-Eintrag",
-      progressLabel: "Manual profile",
-      scoreLabel: "0 / 10",
-      progress: 0,
-      activeOption: "Calm",
+      activeOption: activeMood,
+      detail: moodDetail(activeMood),
+      moodLabel: activeMood,
+      options: [
+        "Calm",
+        "Content",
+        "Focused",
+        "Tired",
+        "Anxious",
+        "Stressed",
+        "Happy",
+      ],
+      progress: profile.mood ? 64 : 0,
+      progressLabel: profile.mood ? "Current signal" : "No signal",
+      scoreLabel: profile.mood ? "Saved" : "-",
+      accent: moodAccent(activeMood),
     },
-    timeProgress: [
-      {
-        label: "Profile",
-        value: profileId === "manual" ? "manual" : "empty",
-        progress: profileId === "manual" ? 100 : 0,
-      },
-      {
-        label: "Tasks",
-        value: String(tasks.length),
-        progress: Math.min(100, tasks.length * 12),
-      },
-      {
-        label: "Inbox",
-        value: String(inboxItems.length),
-        progress: Math.min(100, inboxItems.length * 20),
-      },
-    ],
+    timeProgress: getSystemTimeProgress(),
     weather: {
-      temperatureLabel: "Kein Wetter",
-      periodLabel: "Manual",
-      conditionLabel: "not connected",
+      temperatureLabel: "Local day",
+      periodLabel: "System",
+      conditionLabel: "profile independent",
     },
   };
 
+  viewModel.commandCenter.quickCapture = {
+    ...viewModel.commandCenter.quickCapture,
+    contentState: resolveContentStateMeta({
+      capacity: 1,
+      itemCount: 0,
+    }),
+  };
   viewModel.commandCenter.dailyControl = {
     ...viewModel.commandCenter.dailyControl,
-    subtitle: "Local profile task state",
+    contentState: resolveContentStateMeta({
+      capacity: dashboardCapacity.dailyControl,
+      itemCount: tasks.length,
+    }),
+    subtitle:
+      tasks.length > 0 ? "Current task + next queue" : "No current task yet",
     focus: activeTask
       ? {
           label: "Tagesfokus",
@@ -792,8 +1001,8 @@ function buildProfileDashboardViewModel(
         }
       : {
           label: "Tagesfokus",
-          title: "Noch keine Tagesstruktur",
-          detail: "Lege 1-3 Aufgaben fuer heute an.",
+          title: "Kein aktueller Fokus",
+          detail: "Wähle oder erstelle eine Aufgabe für heute.",
           blockLabel: "Fokusblock",
           block: "nicht geplant",
         },
@@ -801,23 +1010,23 @@ function buildProfileDashboardViewModel(
       ? {
           label: "Nächster Schritt",
           title: activeTask.nextStep,
-          detail: "Aus dem Manual Local Profile",
+          detail: "Aus deiner heutigen Aufgabenliste",
         }
       : {
           label: "Nächster Schritt",
-          title: "Erste Aufgabe anlegen",
-          detail: "Manual Profile oder Inbox nutzen.",
+          title: "Aufgabe für heute erstellen",
+          detail: "Wähle oder erstelle eine Aufgabe für heute.",
         },
     currentTask: activeTask
       ? taskToCurrentTask(activeTask)
       : {
           id: "empty-current-task",
           sectionLabel: "Current Task",
-          timeRemainingLabel: "Kein Block gewaehlt",
+          timeRemainingLabel: "Kein Block gewählt",
           statusLabel: "Empty",
-          title: "Noch keine aktive Aufgabe",
-          contextLabel: "Lege eine Aufgabe an",
-          actionLabel: "Open tasks",
+          title: "Kein aktueller Fokus",
+          contextLabel: "Wähle oder erstelle eine Aufgabe für heute.",
+          actionLabel: "Create task",
           progress: 0,
           accent: "var(--text-muted)",
           area: "review",
@@ -828,21 +1037,21 @@ function buildProfileDashboardViewModel(
         kind: "energy",
         label: "Energy",
         value: "Not logged",
-        detail: "manual profile",
+        detail: "No signal",
         accent: "var(--text-muted)",
       },
       {
         kind: "inbox",
         label: "Inbox",
         value: `${inboxItems.length} open`,
-        detail: "local entries",
+        detail: inboxItems.length > 0 ? "Captured" : "No captures",
         accent: "var(--accent-green)",
       },
       {
         kind: "review",
         label: "Review",
-        value: "Open",
-        detail: "not wired",
+        value: "No review",
+        detail: "Start Capturing",
         accent: "var(--accent-cyan)",
       },
     ],
@@ -855,46 +1064,56 @@ function buildProfileDashboardViewModel(
 
   viewModel.todayAgenda = {
     ...viewModel.todayAgenda,
-    preparedViewsLabel:
-      profileId === "manual"
-        ? "Manual tasks projected into the same agenda"
-        : "Empty agenda state",
+    contentState: resolveContentStateMeta({
+      capacity: dashboardCapacity.agenda,
+      itemCount: scheduledTasks.length,
+    }),
+    preparedViewsLabel: "Week and month views prepared",
     events: scheduledTasks.slice(0, 9).map(taskToAgendaEvent),
   };
 
   viewModel.healthNutrition.weightLossGoal = {
     ...viewModel.healthNutrition.weightLossGoal,
+    contentState: resolveContentStateMeta({
+      hasPrimaryValue: false,
+      itemCount: 0,
+    }),
     currentWeight: "- kg",
     targetLabel: "Noch kein Health-Ziel",
-    remainingLabel: "not tracked",
-    weeklyStatusLabel: "Empty",
+    remainingLabel: "No data",
+    weeklyStatusLabel: "No data",
     weeklyStatusAccent: "var(--text-muted)",
     progress: 0,
   };
   viewModel.healthNutrition.nutrientBalance = {
     ...viewModel.healthNutrition.nutrientBalance,
-    lastUpdatedLabel: "No meals captured in this profile",
+    contentState: resolveContentStateMeta({
+      capacity: dashboardCapacity.meals,
+      itemCount: decidedMealCount,
+    }),
+    lastUpdatedLabel:
+      decidedMealCount > 0 ? "Meal slots updated locally" : "No plan",
     items: [
       {
         label: "Protein",
-        value: "0 / 0 g",
-        status: "Under",
+        value: "-",
+        status: "On target",
         progress: 0,
         accent: "var(--accent-red)",
         statusAccent: "var(--text-muted)",
       },
       {
         label: "Carbs",
-        value: "0 / 0 g",
-        status: "Under",
+        value: "-",
+        status: "On target",
         progress: 0,
         accent: "var(--accent-blue)",
         statusAccent: "var(--text-muted)",
       },
       {
         label: "Fat",
-        value: "0 / 0 g",
-        status: "Under",
+        value: "-",
+        status: "On target",
         progress: 0,
         accent: "var(--accent-yellow)",
         statusAccent: "var(--text-muted)",
@@ -903,15 +1122,23 @@ function buildProfileDashboardViewModel(
   };
   viewModel.healthNutrition.meals = {
     ...viewModel.healthNutrition.meals,
-    items: [],
+    contentState: resolveContentStateMeta({
+      capacity: dashboardCapacity.meals,
+      itemCount: decidedMealCount,
+    }),
+    items: meals,
     recipeOptions: [],
   };
   viewModel.healthNutrition.runningRecovery = {
     ...viewModel.healthNutrition.runningRecovery,
+    contentState: resolveContentStateMeta({
+      hasPrimaryValue: false,
+      itemCount: 0,
+    }),
     stats: [
-      { label: "Distance", value: "0 km", delta: "no run" },
-      { label: "Pace", value: "-", delta: "no data" },
-      { label: "Time", value: "0m", delta: "no data" },
+      { label: "Distance", value: "-", delta: "No data" },
+      { label: "Pace", value: "-", delta: "No data" },
+      { label: "Time", value: "-", delta: "No data" },
     ],
     rhythm: {
       title: "Noch keine Laufeinheit",
@@ -921,7 +1148,7 @@ function buildProfileDashboardViewModel(
       accent: "var(--text-muted)",
     },
     todayGoalLabel: "Today goal: not set",
-    lastSyncLabel: "No health sync in this phase",
+    lastSyncLabel: "No health data",
     muscle: {
       ...viewModel.healthNutrition.runningRecovery.muscle,
       title: "No strength session planned",
@@ -934,34 +1161,44 @@ function buildProfileDashboardViewModel(
 
   viewModel.habitTrackers = {
     ...viewModel.habitTrackers,
-    totalSlotsLabel: "0 active habits",
-    habitsByWindow: {
-      Morning: [],
-      Midday: [],
-      Evening: [],
-    },
+    contentState: resolveContentStateMeta({
+      capacity: dashboardCapacity.habits,
+      itemCount: activeHabitCount,
+    }),
+    totalSlotsLabel: `${activeHabitCount}/${dashboardCapacity.habits}`,
+    habitsByWindow: dashboardHabits,
   };
   viewModel.activePortfolio = {
     ...viewModel.activePortfolio,
+    activeView: activePortfolioView,
+    contentState: resolveContentStateMeta({
+      capacity: dashboardCapacity.activePortfolio,
+      itemCount: Math.min(portfolioItems.length, dashboardCapacity.activePortfolio),
+    }),
     subtitle:
       profile.projects.length + profile.goals.length > 0
-        ? "Manual projects and goals"
+        ? "Projects and goals"
         : "No active projects or goals",
-    items: [
-      ...profile.projects.map(projectToPortfolioItem),
-      ...profile.goals.map(goalToPortfolioItem),
-    ],
+    items: portfolioItems,
   };
   viewModel.antiRotActions = {
     ...viewModel.antiRotActions,
-    donePrompt: "No reset actions in this profile",
+    contentState: resolveContentStateMeta({
+      capacity: 5,
+      itemCount: 0,
+    }),
+    donePrompt: "Open habits to configure reset actions",
     actions: [],
   };
   viewModel.challengesRewardFocus = {
     ...viewModel.challengesRewardFocus,
+    contentState: resolveContentStateMeta({
+      capacity: 3,
+      itemCount: 0,
+    }),
     summary: "No challenges active",
     measurementLabel: "0 measurable",
-    rewardFocus: "No reward focus",
+    rewardFocus: "Open Challenges",
     items: [],
   };
 
@@ -1678,6 +1915,18 @@ export async function getLifeOsDataSource(): Promise<LifeOsDataSource> {
     async createGoal(input: CreateGoalInput) {
       assertManualProfile();
       return createManualGoal(input);
+    },
+    async createHabit(input: CreateHabitInput) {
+      assertManualProfile();
+      return createManualHabit(input);
+    },
+    async setMood(input: SetMoodInput) {
+      assertManualProfile();
+      return setManualMood(input);
+    },
+    async saveMealSlot(input: SaveMealSlotInput) {
+      assertManualProfile();
+      return saveManualMealSlot(input);
     },
     getPortfolioViewModel,
     getMentalHealthViewModel,

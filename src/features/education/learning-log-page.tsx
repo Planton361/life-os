@@ -1683,10 +1683,10 @@ export function LearningLogPage({
         title="Learning Method Notes"
       >
         <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
-          {viewModel.methodNotes.map((note) => (
+          {viewModel.methodNotes.map((note, index) => (
             <li
               className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.40)] p-3 text-[11px] leading-4 text-[var(--text-secondary)]"
-              key={note}
+              key={`learning-log-method-note-${index}`}
             >
               {note}
             </li>

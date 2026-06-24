@@ -645,7 +645,7 @@ function AgentOutputReviewSheet({
           <div className="border-t border-[var(--border-subtle)] bg-[rgba(11,17,28,.72)] px-5 py-4">
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {(["Accepted", "Editing", "Rejected", "Saved as note"] as const).map(
-                (action) => {
+                (action, index) => {
                   const actionLabel: Record<ReviewDecision, string> = {
                     Accepted: "Accept",
                     Editing: "Edit",
@@ -656,7 +656,7 @@ function AgentOutputReviewSheet({
                   return (
                   <button
                     className={action === "Accepted" ? primaryButtonClass : secondaryButtonClass}
-                    key={action}
+                    key={`coding-review-action-${index}`}
                     onClick={() => onDecision(agent, action)}
                     type="button"
                   >
@@ -929,8 +929,8 @@ function PageHeader({
             {viewModel.header.contextLine}
           </p>
           <div className="mt-3 flex flex-wrap gap-1.5">
-            {viewModel.header.stats.map((stat) => (
-              <CodingPill accent={stat.accent} key={stat.label}>
+            {viewModel.header.stats.map((stat, index) => (
+              <CodingPill accent={stat.accent} key={`coding-header-stat-${index}`}>
                 {stat.label}
               </CodingPill>
             ))}
@@ -1398,8 +1398,11 @@ function CodingRhythmPanel({
         className="mt-5 flex h-[118px] items-end justify-between gap-2"
         role="img"
       >
-        {rhythm.days.map((day) => (
-          <div className="flex min-w-0 flex-1 flex-col items-center gap-2" key={day.day}>
+        {rhythm.days.map((day, index) => (
+          <div
+            className="flex min-w-0 flex-1 flex-col items-center gap-2"
+            key={`coding-rhythm-day-${index}`}
+          >
             <div
               aria-label={day.label}
               className="w-full max-w-[34px] rounded-[10px] border border-[rgba(91,124,250,.24)] bg-[rgba(91,124,250,.38)]"

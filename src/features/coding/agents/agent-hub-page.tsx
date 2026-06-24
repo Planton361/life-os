@@ -658,10 +658,10 @@ function MissionControl({
             ["Queued", counts.queued, "var(--accent-blue)"],
             ["Blocked", counts.blocked, "var(--accent-red)"],
             ["Review Needed", counts.reviewNeeded, "var(--accent-orange)"],
-          ].map(([label, count, accent]) => (
+          ].map(([label, count, accent], index) => (
             <div
               className="flex items-center justify-between rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.44)] px-3 py-2"
-              key={label}
+              key={`agent-status-summary-${index}`}
             >
               <span className="flex items-center gap-2 text-[12px] font-semibold text-[var(--text-secondary)]">
                 <StatusDot accent={String(accent)} />
@@ -1787,10 +1787,10 @@ function TaskInspectorSheet({
             ["Output", output?.title ?? "No output yet"],
             ["Review status", output ? labelFromValue(output.reviewStatus) : "None"],
             ["Follow-up", session?.followUp ?? "No follow-up"],
-          ].map(([label, value]) => (
+          ].map(([label, value], index) => (
             <div
               className="rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.52)] p-3"
-              key={label}
+              key={`agent-output-summary-${index}`}
             >
               <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
                 {label}

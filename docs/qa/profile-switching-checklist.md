@@ -4,6 +4,24 @@ Stand: 2026-06-24
 Status: Active
 Zweck: QA fuer R1 Profile Data Source.
 
+## R1.4a Dashboard Reference
+
+Dashboard ist ab R1.4a die Referenz fuer `empty`, `partial` und `filled`.
+
+Zusatzchecks:
+
+- Alle Dashboard-Profile nutzen dieselbe V5-Shell.
+- `data-profile-id`, `data-content-state`, `data-item-count` und
+  `data-capacity` sind auf relevanten Dashboard-Widgets vorhanden.
+- Empty und Manual Reset zeigen keine Demo-Fixtures.
+- Quick Thought schreibt nur im Manual-Profil in die lokale Inbox.
+- Manual Task mit Startzeit/Dauer wird in Today Agenda korrekt platziert.
+- Habit Tracker folgt `0/8`, `1/8`, `8/8`.
+- Active Portfolio folgt `0/4`, `1/4`, `4/4`.
+- Meals Today zeigt immer Breakfast, Lunch und Dinner.
+- Time Progress ist in `demo`, `empty` und `manual` gleich strukturiert:
+  `Week`, `Month`, `Year`.
+
 ## Vorbereitung
 
 - `git status --short --untracked-files=all`

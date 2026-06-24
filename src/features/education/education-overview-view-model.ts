@@ -10,6 +10,7 @@ import type {
   EducationOverviewStats,
   EducationOverviewViewModel,
   LiteratureItem,
+  ResearchField,
   ResearchIdea,
   ResearchNote,
   ResearchQuestion,
@@ -19,13 +20,27 @@ const focusIdeaId = "idea-ai-agents";
 
 function buildCurrentResearchFocus(
   ideas: ResearchIdea[],
+  fields: ResearchField[],
   literature: LiteratureItem[],
   notes: ResearchNote[],
   questions: ResearchQuestion[],
 ): CurrentResearchFocus {
   const idea = ideas.find((item) => item.id === focusIdeaId) ?? ideas[0];
-  const field =
-    mockResearchFields.find((item) => item.id === idea.fieldId) ?? null;
+
+  if (!idea) {
+    return {
+      idea: null,
+      field: null,
+      literatureItems: [],
+      notes: [],
+      openQuestions: [],
+      reviewedSourceCount: 0,
+      toReadSourceCount: 0,
+      literatureProgressLabel: "0 sources · 0 reviewed · 0 to read",
+    };
+  }
+
+  const field = fields.find((item) => item.id === idea.fieldId) ?? null;
   const literatureItems = literature.filter((item) => item.ideaId === idea.id);
   const focusNotes = notes.filter((item) => item.ideaId === idea.id);
   const openQuestions = questions.filter(
@@ -105,7 +120,7 @@ export function getEducationOverviewViewModel(): EducationOverviewViewModel {
       mobileOrder:
         "Header, Current Focus, Quick Actions, Ideas, Literature, Questions, Fields, Notes, Method Notes.",
     },
-    focus: buildCurrentResearchFocus(ideas, literature, notes, questions),
+    focus: buildCurrentResearchFocus(ideas, fields, literature, notes, questions),
     stats: buildStats(ideas, literature, notes, questions),
     ideas,
     fields,

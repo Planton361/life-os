@@ -75,7 +75,7 @@ export function CalendarPageHeader({
           </div>
 
           <div className="flex w-full min-w-0 flex-wrap rounded-full border border-[var(--border-subtle)] bg-[rgba(11,17,28,.72)] p-1 xl:w-[476px]">
-            {header.controls.views.map((view) => (
+            {header.controls.views.map((view, index) => (
               <button
                 aria-pressed={view.active ? "true" : "false"}
                 className={cn(
@@ -84,7 +84,7 @@ export function CalendarPageHeader({
                     ? "border border-[rgba(95,200,215,.28)] bg-[rgba(95,200,215,.16)] text-[var(--text-primary)]"
                     : "border border-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)]",
                 )}
-                key={view.label}
+                key={`calendar-view-${index}`}
                 onClick={() => onViewChange(view.label.toLowerCase() as CalendarView)}
                 type="button"
               >

@@ -100,8 +100,8 @@ export function RunningHeader({
             {header.description}
           </p>
           <div className="mt-3 flex flex-wrap gap-1.5 xl:mt-2 xl:gap-1">
-            {header.pills.map((pill) => (
-              <Pill accent={pill.accent} key={pill.label}>
+            {header.pills.map((pill, index) => (
+              <Pill accent={pill.accent} key={`running-header-pill-${index}`}>
                 {pill.label}
               </Pill>
             ))}
@@ -160,8 +160,8 @@ export function SummaryStrip({
       aria-label="Running tracker summary"
       className="grid gap-2 sm:grid-cols-2 xl:grid-cols-6 xl:gap-1.5"
     >
-      {metrics.map((metric) => (
-        <RunningMetricCard compact key={metric.label} metric={metric} />
+      {metrics.map((metric, index) => (
+        <RunningMetricCard compact key={`running-summary-${index}`} metric={metric} />
       ))}
     </section>
   );
@@ -205,26 +205,26 @@ export function BeginnerPlannerSection({
       <div className="grid gap-4 xl:min-h-0 xl:grid-cols-[minmax(0,1fr)_minmax(300px,380px)] xl:gap-3">
         <div className="grid gap-4 xl:content-start xl:gap-2">
           <ChipGroup title="Goal Type">
-            {planner.goalTypes.map((chip) => (
-              <RunningChip chip={chip} key={chip.value} />
+            {planner.goalTypes.map((chip, index) => (
+              <RunningChip chip={chip} key={`running-goal-type-${index}`} />
             ))}
           </ChipGroup>
 
           <ChipGroup title="Beginner Goal">
-            {planner.beginnerGoals.map((chip) => (
-              <RunningChip chip={chip} key={chip.value} />
+            {planner.beginnerGoals.map((chip, index) => (
+              <RunningChip chip={chip} key={`running-beginner-goal-${index}`} />
             ))}
           </ChipGroup>
 
           <div className="grid gap-4 md:grid-cols-2 xl:gap-2">
             <ChipGroup title="Available Time">
-              {planner.availableTimes.map((chip) => (
-                <RunningChip chip={chip} key={chip.value} />
+              {planner.availableTimes.map((chip, index) => (
+                <RunningChip chip={chip} key={`running-available-time-${index}`} />
               ))}
             </ChipGroup>
             <ChipGroup title="Effort Target">
-              {planner.effortTargets.map((chip) => (
-                <RunningChip chip={chip} key={chip.value} />
+              {planner.effortTargets.map((chip, index) => (
+                <RunningChip chip={chip} key={`running-effort-target-${index}`} />
               ))}
             </ChipGroup>
           </div>
@@ -234,10 +234,10 @@ export function BeginnerPlannerSection({
               Optional Target Inputs
             </h3>
             <div className="mt-2 grid gap-2 sm:grid-cols-2 xl:mt-1.5 xl:gap-1.5">
-              {planner.optionalInputs.map((input) => (
+              {planner.optionalInputs.map((input, index) => (
                 <article
                   className="min-w-0 rounded-[13px] border border-[color-mix(in_srgb,var(--accent)_18%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_5%,rgba(11,17,28,.50))] p-3 xl:p-2"
-                  key={input.label}
+                  key={`running-optional-input-${index}`}
                   style={accentStyle(input.accent)}
                 >
                   <p className="text-[10px] font-semibold text-[var(--text-muted)]">
@@ -266,7 +266,7 @@ export function BeginnerPlannerSection({
             {planner.suggestedPlan.steps.map((step, index) => (
               <li
                 className="grid grid-cols-[28px_minmax(0,1fr)] gap-2 rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_18%,var(--border-subtle))] bg-[rgba(11,17,28,.38)] p-2.5 xl:grid-cols-[22px_minmax(0,1fr)] xl:p-1.5"
-                key={step.label}
+                key={`running-planner-step-${index}`}
                 style={accentStyle(step.accent)}
               >
                 <span className="flex size-7 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--accent)_32%,transparent)] bg-[color-mix(in_srgb,var(--accent)_10%,transparent)] text-[11px] font-semibold text-[var(--text-primary)] xl:size-[22px] xl:text-[10px]">
@@ -285,13 +285,13 @@ export function BeginnerPlannerSection({
           </ol>
 
           <div className="mt-4 flex flex-wrap gap-2 xl:mt-2 xl:gap-1.5">
-            {planner.primaryActions.map((action) => (
-              <RunningActionButton action={action} key={action.label} />
+            {planner.primaryActions.map((action, index) => (
+              <RunningActionButton action={action} key={`running-planner-primary-${index}`} />
             ))}
           </div>
           <div className="mt-2 flex flex-wrap gap-2 border-t border-[var(--border-subtle)] pt-3 xl:gap-1.5 xl:pt-2">
-            {planner.secondaryActions.map((action) => (
-              <RunningActionButton action={action} key={action.label} />
+            {planner.secondaryActions.map((action, index) => (
+              <RunningActionButton action={action} key={`running-planner-secondary-${index}`} />
             ))}
           </div>
         </article>
@@ -319,8 +319,8 @@ export function TodayRunPlanSection({
         {todayPlan.plan}
       </p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-        {todayPlan.details.map((detail) => (
-          <RunningMetricCard compact key={detail.label} metric={detail} />
+        {todayPlan.details.map((detail, index) => (
+          <RunningMetricCard compact key={`running-today-detail-${index}`} metric={detail} />
         ))}
       </div>
 
@@ -329,10 +329,10 @@ export function TodayRunPlanSection({
           Checklist
         </h3>
         <ul className="mt-2 grid gap-1.5">
-          {todayPlan.checklist.map((item) => (
+          {todayPlan.checklist.map((item, index) => (
             <li
               className="flex min-h-8 items-center gap-2 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(168,183,204,.035)] px-2.5 text-[11px] text-[var(--text-secondary)]"
-              key={item.label}
+              key={`running-today-checklist-${index}`}
             >
               <span
                 aria-hidden="true"
@@ -355,8 +355,8 @@ export function TodayRunPlanSection({
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        {todayPlan.actions.map((action) => (
-          <RunningActionButton action={action} key={action.label} />
+        {todayPlan.actions.map((action, index) => (
+          <RunningActionButton action={action} key={`running-today-action-${index}`} />
         ))}
       </div>
     </RunningPanel>
@@ -382,15 +382,15 @@ export function RecentRunReviewSection({
         {review.lastRun}
       </p>
       <div className="mt-3 grid gap-2 sm:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
-        {review.metrics.map((metric) => (
-          <RunningMetricCard compact key={metric.label} metric={metric} />
+        {review.metrics.map((metric, index) => (
+          <RunningMetricCard compact key={`running-review-metric-${index}`} metric={metric} />
         ))}
       </div>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        {review.signals.map((signal) => (
+        {review.signals.map((signal, index) => (
           <article
             className="rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_18%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_5%,rgba(11,17,28,.46))] p-2.5"
-            key={signal.label}
+            key={`running-review-signal-${index}`}
             style={accentStyle(signal.accent)}
           >
             <p className="text-[10px] font-semibold text-[var(--text-muted)]">
@@ -410,8 +410,8 @@ export function RecentRunReviewSection({
           Learnings
         </p>
         <ul className="mt-2 grid gap-1.5 text-[11px] leading-4 text-[var(--text-secondary)]">
-          {review.learnings.map((learning) => (
-            <li className="flex gap-2" key={learning}>
+          {review.learnings.map((learning, index) => (
+            <li className="flex gap-2" key={`running-learning-${index}`}>
               <Dot accent="var(--accent-green)" />
               <span>{learning}</span>
             </li>
@@ -448,10 +448,10 @@ export function WeeklyRhythmSection({
       title={rhythm.title}
     >
       <ol className="grid gap-2 sm:grid-cols-7 xl:grid-cols-1 2xl:grid-cols-7">
-        {rhythm.days.map((day) => (
+        {rhythm.days.map((day, index) => (
           <li
             className="min-w-0 rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_18%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_5%,rgba(11,17,28,.44))] p-2"
-            key={day.day}
+            key={`running-rhythm-day-${index}`}
             style={accentStyle(day.accent)}
           >
             <div className="flex items-center justify-between gap-2">
@@ -489,10 +489,10 @@ export function LoadRecoverySection({
       title={loadRecovery.title}
     >
       <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-        {[loadRecovery.weeklyLoad, loadRecovery.recoverySignal].map((item) => (
+        {[loadRecovery.weeklyLoad, loadRecovery.recoverySignal].map((item, index) => (
           <article
             className="rounded-[13px] border border-[color-mix(in_srgb,var(--accent)_20%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_6%,rgba(11,17,28,.52))] p-3"
-            key={item.label}
+            key={`running-load-recovery-${index}`}
             style={accentStyle(item.accent)}
           >
             <p className="text-[10px] font-semibold text-[var(--text-muted)]">
@@ -520,10 +520,10 @@ export function LoadRecoverySection({
           Intensity split
         </h3>
         <div className="mt-2 grid gap-2">
-          {loadRecovery.intensitySplit.map((split) => (
+          {loadRecovery.intensitySplit.map((split, index) => (
             <div
               className="grid grid-cols-[72px_minmax(0,1fr)_52px] items-center gap-2 text-[10px]"
-              key={split.label}
+              key={`running-intensity-split-${index}`}
               style={accentStyle(split.accent)}
             >
               <span className="font-semibold text-[var(--text-secondary)]">
@@ -571,26 +571,26 @@ export function DesktopRightColumn({
             {todayPlan.plan}
           </p>
           <div className="flex flex-wrap gap-1">
-            {todayPlan.actions.slice(0, 2).map((action) => (
-              <RunningActionButton action={action} key={action.label} />
+            {todayPlan.actions.slice(0, 2).map((action, index) => (
+              <RunningActionButton action={action} key={`running-mini-action-${index}`} />
             ))}
           </div>
         </div>
         <div className="mt-2 grid gap-1 sm:grid-cols-4 xl:grid-cols-2 2xl:grid-cols-4">
-          {todayPlan.details.map((detail) => (
+          {todayPlan.details.map((detail, index) => (
             <TinyStatus
               accent={detail.accent}
-              key={detail.label}
+              key={`running-mini-detail-${index}`}
               label={detail.label}
               value={detail.value}
             />
           ))}
         </div>
         <ul className="mt-2 grid gap-1 sm:grid-cols-3 xl:grid-cols-2 2xl:grid-cols-3">
-          {todayPlan.checklist.map((item) => (
+          {todayPlan.checklist.map((item, index) => (
             <li
               className="flex min-h-6 items-center gap-1.5 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(168,183,204,.035)] px-2 text-[10px] leading-3 text-[var(--text-secondary)]"
-              key={item.label}
+              key={`running-mini-checklist-${index}`}
             >
               <span
                 className={cn(
@@ -612,20 +612,20 @@ export function DesktopRightColumn({
           {review.lastRun}
         </p>
         <div className="mt-2 grid gap-1 sm:grid-cols-3">
-          {review.metrics.map((metric) => (
+          {review.metrics.map((metric, index) => (
             <TinyStatus
               accent={metric.accent}
-              key={metric.label}
+              key={`running-mini-review-metric-${index}`}
               label={metric.label}
               value={metric.value}
             />
           ))}
         </div>
         <div className="mt-2 grid gap-1 sm:grid-cols-4 xl:grid-cols-2 2xl:grid-cols-4">
-          {review.signals.map((signal) => (
+          {review.signals.map((signal, index) => (
             <TinyStatus
               accent={signal.accent}
-              key={signal.label}
+              key={`running-mini-signal-${index}`}
               label={signal.label}
               value={signal.value}
             />
@@ -649,10 +649,10 @@ export function DesktopRightColumn({
         title="Weekly Rhythm / Load"
       >
         <ol className="grid gap-1 sm:grid-cols-7">
-          {rhythm.days.map((day) => (
+          {rhythm.days.map((day, index) => (
             <li
               className="min-w-0 rounded-[9px] border border-[color-mix(in_srgb,var(--accent)_16%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_5%,rgba(11,17,28,.44))] px-1.5 py-1"
-              key={day.day}
+              key={`running-mini-rhythm-day-${index}`}
               style={accentStyle(day.accent)}
             >
               <div className="flex items-center justify-between gap-1">
@@ -669,8 +669,8 @@ export function DesktopRightColumn({
         </ol>
 
         <div className="mt-2 grid gap-2 sm:grid-cols-2">
-          {[loadRecovery.weeklyLoad, loadRecovery.recoverySignal].map((item) => (
-            <div key={item.label} style={accentStyle(item.accent)}>
+          {[loadRecovery.weeklyLoad, loadRecovery.recoverySignal].map((item, index) => (
+            <div key={`running-mini-load-${index}`} style={accentStyle(item.accent)}>
               <div className="flex items-center justify-between gap-2 text-[10px]">
                 <span className="font-semibold text-[var(--text-secondary)]">
                   {item.label}
@@ -694,10 +694,10 @@ export function DesktopRightColumn({
         </div>
 
         <div className="mt-2 grid gap-1 sm:grid-cols-3">
-          {loadRecovery.intensitySplit.map((split) => (
+          {loadRecovery.intensitySplit.map((split, index) => (
             <TinyStatus
               accent={split.accent}
-              key={split.label}
+              key={`running-mini-intensity-${index}`}
               label={split.label}
               value={`${split.value}% ${split.detail}`}
             />
@@ -811,10 +811,10 @@ export function BottomAnalyticsStrip({
           className="mt-2 flex h-16 items-end gap-1 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.36)] px-2 py-1.5"
           role="img"
         >
-          {distanceTrend.bars.map((bar) => (
+          {distanceTrend.bars.map((bar, index) => (
             <div
               className="flex min-w-0 flex-1 flex-col items-center justify-end gap-1"
-              key={bar.label}
+              key={`running-mini-distance-bar-${index}`}
             >
               <span
                 aria-hidden="true"
@@ -837,10 +837,10 @@ export function BottomAnalyticsStrip({
 
       <MiniPanel accent="var(--accent-cyan)" badge="P3" title={recentRuns.title}>
         <ul className="grid gap-1">
-          {recentRuns.items.map((run) => (
+          {recentRuns.items.map((run, index) => (
             <li
               className="grid grid-cols-[48px_minmax(0,1fr)_54px] items-center gap-1 rounded-[9px] border border-[color-mix(in_srgb,var(--accent)_14%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_4%,rgba(11,17,28,.44))] px-1.5 py-1"
-              key={`${run.date}-${run.title}`}
+              key={`running-mini-recent-run-${index}`}
               style={accentStyle(run.accent)}
             >
               <span className="text-[9px] font-semibold text-[var(--text-muted)]">
@@ -863,10 +863,10 @@ export function BottomAnalyticsStrip({
         title="Beginner Running Boundaries"
       >
         <div className="grid gap-1 sm:grid-cols-2">
-          {boundaries.map((boundary) => (
+          {boundaries.map((boundary, index) => (
             <article
               className="min-w-0 rounded-[9px] border border-[color-mix(in_srgb,var(--accent)_14%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_4%,rgba(11,17,28,.44))] px-1.5 py-1"
-              key={boundary.label}
+              key={`running-mini-boundary-${index}`}
               style={accentStyle(boundary.accent)}
             >
               <div className="flex min-w-0 items-center gap-1.5">
@@ -909,10 +909,10 @@ export function DistanceTrendSection({
         className="mt-4 flex h-36 items-end gap-2 rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.36)] px-3 py-3"
         role="img"
       >
-        {distanceTrend.bars.map((bar) => (
+        {distanceTrend.bars.map((bar, index) => (
           <div
             className="flex min-w-0 flex-1 flex-col items-center justify-end gap-2"
-            key={bar.label}
+            key={`running-distance-bar-${index}`}
           >
             <span
               aria-hidden="true"
@@ -949,10 +949,10 @@ export function RecentRunsSection({
       title={recentRuns.title}
     >
       <ul className="grid gap-2">
-        {recentRuns.items.map((run) => (
+        {recentRuns.items.map((run, index) => (
           <li
             className="grid gap-2 rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_16%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_4%,rgba(11,17,28,.44))] p-2.5 sm:grid-cols-[84px_minmax(0,1fr)_auto] sm:items-center"
-            key={`${run.date}-${run.title}`}
+            key={`running-recent-run-${index}`}
             style={accentStyle(run.accent)}
           >
             <span className="text-[10px] font-semibold text-[var(--text-muted)]">
@@ -987,10 +987,10 @@ export function BoundariesStrip({
       className="grid gap-2 rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.76)] p-3 shadow-[0_8px_22px_rgba(0,0,0,.12)] sm:grid-cols-2 xl:grid-cols-4"
     >
       <h2 className="sr-only">Beginner Running Boundaries</h2>
-      {boundaries.map((boundary) => (
+      {boundaries.map((boundary, index) => (
         <article
           className="min-w-0 rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_16%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_5%,rgba(11,17,28,.44))] p-3"
-          key={boundary.label}
+          key={`running-boundary-${index}`}
           style={accentStyle(boundary.accent)}
         >
           <div className="flex items-center gap-2">

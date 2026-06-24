@@ -3,11 +3,17 @@
 import type {
   DashboardHabit,
   DashboardHabitTrackers,
+  DashboardProfileId,
   HabitTrackerWindow,
 } from "@/features/dashboard";
-import { useState, type FormEvent } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  createDashboardHabitAction,
+} from "@/features/profile-data/actions";
+import { initialDashboardActionState } from "@/features/profile-data/dashboard-action-state";
 import { cn } from "@/lib/cn";
-import { Panel } from "./section-primitives";
+import { Panel, contentStateAttrs } from "./section-primitives";
 import {
   DashboardDialog,
   SelectField,
@@ -18,40 +24,6 @@ import {
 
 const DASHBOARD_LINK_FOCUS_CLASSES =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-cyan)]";
-
-function habitIdFromName(name: string) {
-  return `habit-${name
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")}-${Date.now().toString(36)}`;
-}
-
-function markerFromName(name: string) {
-  return (name.trim().charAt(0) || "H").toUpperCase();
-}
-
-function parsePositiveNumber(value: string, fallback: number) {
-  const parsedValue = Number.parseFloat(value.replace(",", "."));
-
-  if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
-    return fallback;
-  }
-
-  return parsedValue;
-}
-
-function defaultStepValue(targetValue: number) {
-  if (targetValue <= 1) {
-    return 1;
-  }
-
-  if (targetValue <= 10) {
-    return 1;
-  }
-
-  return Math.max(1, Math.round(targetValue / 5));
-}
 
 function clampHabitValue(habit: DashboardHabit) {
   return Math.min(Math.max(habit.currentValue, 0), habit.targetValue);
@@ -109,35 +81,24 @@ function nextHabitCurrentValue(habit: DashboardHabit) {
 function AddHabitDialog({
   activeWindow,
   onClose,
-  onSave,
+  profileId,
 }: Readonly<{
   activeWindow: HabitTrackerWindow;
   onClose: () => void;
-  onSave: (window: HabitTrackerWindow, habit: DashboardHabit) => void;
+  profileId: DashboardProfileId;
 }>) {
-  function saveHabit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  const [state, formAction, pending] = useActionState(
+    createDashboardHabitAction,
+    initialDashboardActionState,
+  );
+  const router = useRouter();
 
-    const formData = new FormData(event.currentTarget);
-    const name = String(formData.get("name") ?? "").trim() || "New habit";
-    const window = String(formData.get("window") ?? activeWindow) as HabitTrackerWindow;
-    const target = String(formData.get("target") ?? "1").trim() || "1";
-    const targetValue = parsePositiveNumber(target, 1);
-    const unit = String(formData.get("unit") ?? "").trim();
-
-    onSave(window, {
-      id: habitIdFromName(name),
-      marker: markerFromName(name),
-      label: name,
-      currentValue: 0,
-      targetValue,
-      unit: unit || undefined,
-      stepValue: defaultStepValue(targetValue),
-      total: 5,
-      area: "health",
-    });
-    onClose();
-  }
+  useEffect(() => {
+    if (state.status === "success") {
+      router.refresh();
+      onClose();
+    }
+  }, [onClose, router, state.status]);
 
   return (
     <DashboardDialog
@@ -145,7 +106,7 @@ function AddHabitDialog({
       onClose={onClose}
       open
     >
-      <form onSubmit={saveHabit}>
+      <form action={formAction}>
         <div className="border-b border-[var(--border-subtle)] px-5 py-4">
           <h2
             className="text-lg font-semibold text-[var(--text-primary)]"
@@ -154,7 +115,9 @@ function AddHabitDialog({
             Add habit
           </h2>
           <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
-            Local dashboard habit only. No habit log is written.
+            {profileId === "manual"
+              ? "Speichert den Habit lokal im Manual-Profil."
+              : "Wechsle ins Manual-Profil, um Habits lokal zu speichern."}
           </p>
         </div>
         <div className="grid gap-3 p-5 sm:grid-cols-2">
@@ -167,6 +130,21 @@ function AddHabitDialog({
           <TextField defaultValue="1" label="Target" name="target" />
           <TextField label="Unit" name="unit" optional placeholder="min, ml, pages" />
         </div>
+        {state.message ? (
+          <p
+            className={cn(
+              "px-5 pb-2 text-[11px] font-semibold",
+              state.status === "success"
+                ? "text-[var(--accent-green)]"
+                : state.status === "blocked"
+                  ? "text-[var(--accent-orange)]"
+                  : "text-[var(--text-muted)]",
+            )}
+            role="status"
+          >
+            {state.message}
+          </p>
+        ) : null}
         <div className="flex justify-end gap-2 border-t border-[var(--border-subtle)] px-5 py-4">
           <button
             className={dashboardActionButtonClass}
@@ -175,8 +153,12 @@ function AddHabitDialog({
           >
             Cancel
           </button>
-          <button className={dashboardPrimaryButtonClass} type="submit">
-            Save
+          <button
+            className={dashboardPrimaryButtonClass}
+            disabled={pending}
+            type="submit"
+          >
+            {pending ? "Saving..." : "Save"}
           </button>
         </div>
       </form>
@@ -186,8 +168,10 @@ function AddHabitDialog({
 
 export function HabitTrackers({
   data,
+  profileId,
 }: Readonly<{
   data: DashboardHabitTrackers;
+  profileId: DashboardProfileId;
 }>) {
   const [activeWindow, setActiveWindow] =
     useState<HabitTrackerWindow>(data.activeWindow);
@@ -211,14 +195,6 @@ export function HabitTrackers({
           : habit,
       ),
     }));
-  }
-
-  function addHabit(window: HabitTrackerWindow, habit: DashboardHabit) {
-    setHabitsByWindow((current) => ({
-      ...current,
-      [window]: [habit, ...current[window]].slice(0, 7),
-    }));
-    setActiveWindow(window);
   }
 
   const windowSwitch = (
@@ -248,6 +224,19 @@ export function HabitTrackers({
     <Panel
       className="border-[rgba(155,124,246,.16)] bg-[color-mix(in_srgb,var(--accent-purple)_5%,#101827)] 2xl:min-h-[292px]"
       headerAccessory={windowSwitch}
+      stateAttrs={contentStateAttrs(
+        {
+          capacity: 8,
+          itemCount: habits.length,
+          state:
+            habits.length === 0
+              ? "empty"
+              : habits.length >= 8
+                ? "filled"
+                : "partial",
+        },
+        profileId,
+      )}
       title={data.title}
       titleHref={data.href}
     >
@@ -303,31 +292,35 @@ export function HabitTrackers({
               </button>
             );
           })}
-          <button
-            className={cn(
-              "grid min-h-[68px] place-items-center rounded-[14px] border border-[rgba(155,124,246,.16)] bg-[color-mix(in_srgb,var(--accent-purple)_5%,#101a2a)] p-2.5 text-center transition hover:border-[rgba(155,124,246,.30)]",
-              DASHBOARD_LINK_FOCUS_CLASSES,
-            )}
-            onClick={() => setAddDialogOpen(true)}
-            type="button"
-          >
-            <div>
-              <p className="text-lg font-semibold leading-none text-[var(--text-primary)]">+</p>
-              <p className="mt-1.5 text-[10px] font-semibold text-[var(--text-primary)]">
-                {data.addHabitLabel}
-              </p>
-              <p className="mt-0.5 text-[8px] font-semibold text-[var(--text-muted)]">
-                {data.addHabitMeta}
-              </p>
-            </div>
-          </button>
+          {habits.length < 8 ? (
+            <button
+              className={cn(
+                "grid min-h-[68px] place-items-center rounded-[14px] border border-[rgba(155,124,246,.16)] bg-[color-mix(in_srgb,var(--accent-purple)_5%,#101a2a)] p-2.5 text-center transition hover:border-[rgba(155,124,246,.30)]",
+                DASHBOARD_LINK_FOCUS_CLASSES,
+              )}
+              onClick={() => setAddDialogOpen(true)}
+              type="button"
+            >
+              <div>
+                <p className="text-lg font-semibold leading-none text-[var(--text-primary)]">
+                  +
+                </p>
+                <p className="mt-1.5 text-[10px] font-semibold text-[var(--text-primary)]">
+                  {data.addHabitLabel}
+                </p>
+                <p className="mt-0.5 text-[8px] font-semibold text-[var(--text-muted)]">
+                  {data.addHabitMeta}
+                </p>
+              </div>
+            </button>
+          ) : null}
         </div>
       </div>
       {addDialogOpen ? (
         <AddHabitDialog
           activeWindow={activeWindow}
           onClose={() => setAddDialogOpen(false)}
-          onSave={addHabit}
+          profileId={profileId}
         />
       ) : null}
     </Panel>

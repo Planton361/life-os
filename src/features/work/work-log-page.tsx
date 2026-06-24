@@ -1039,7 +1039,7 @@ function WorkLogFilters({
         </div>
       </div>
       <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Work log segments">
-        {segments.map((item) => (
+        {segments.map((item, index) => (
           <button
             aria-pressed={segment === item.value}
             className={cn(
@@ -1047,7 +1047,7 @@ function WorkLogFilters({
               segment === item.value &&
                 "border-[rgba(66,184,131,.42)] bg-[rgba(66,184,131,.14)] text-[var(--text-primary)]",
             )}
-            key={item.value}
+            key={`work-log-segment-${index}`}
             onClick={() => onSegment(item.value)}
             type="button"
           >

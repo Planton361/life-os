@@ -1179,10 +1179,10 @@ function PrivacyNotes({
       title="Privacy Notes"
     >
       <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-        {notes.map((note) => (
+        {notes.map((note, index) => (
           <li
             className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(168,183,204,.035)] px-3 py-2 text-xs leading-5 text-[var(--text-secondary)]"
-            key={note}
+            key={`life-privacy-note-${index}`}
           >
             {note}
           </li>

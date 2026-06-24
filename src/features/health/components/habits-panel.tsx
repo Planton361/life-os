@@ -51,7 +51,7 @@ function HabitHeatmapRow({
               "aspect-square min-h-2 rounded-[3px] border min-[1900px]:rounded-[4px]",
               heatLevelClass(value),
             )}
-            key={`${row.label}-${index}`}
+            key={`habit-heatmap-day-${index}`}
             role="listitem"
           />
         ))}
@@ -74,8 +74,8 @@ export function HabitsPanel({
     >
       <div className="grid min-h-0 gap-3 xl:flex xl:flex-1 xl:flex-col min-[1900px]:justify-between min-[1900px]:gap-4">
         <div className="grid gap-2 sm:grid-cols-3 min-[1900px]:gap-3">
-          {data.metrics.map((metric) => (
-            <HealthMetricCard key={metric.label} metric={metric} />
+          {data.metrics.map((metric, index) => (
+            <HealthMetricCard key={`habits-metric-${index}`} metric={metric} />
           ))}
         </div>
 
@@ -108,8 +108,8 @@ export function HabitsPanel({
           </div>
           {data.heatmap.rows.length > 0 ? (
             <div className="mt-4 grid gap-3 min-[1900px]:gap-5">
-              {data.heatmap.rows.map((row) => (
-              <HabitHeatmapRow key={row.label} row={row} />
+              {data.heatmap.rows.map((row, index) => (
+              <HabitHeatmapRow key={`habit-heatmap-row-${index}`} row={row} />
               ))}
             </div>
           ) : (

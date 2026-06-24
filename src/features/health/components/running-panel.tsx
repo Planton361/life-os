@@ -22,18 +22,18 @@ export function RunningPanel({
     >
       <div className="grid min-h-0 gap-3 xl:flex xl:flex-1 xl:flex-col min-[1900px]:justify-between min-[1900px]:gap-4">
         <div className="grid gap-2 sm:grid-cols-3 min-[1900px]:gap-3">
-          {data.metrics.map((metric) => (
-            <HealthMetricCard key={metric.label} metric={metric} />
+          {data.metrics.map((metric, index) => (
+            <HealthMetricCard key={`running-metric-${index}`} metric={metric} />
           ))}
         </div>
 
         {data.trends.length > 0 ? (
           <div className="grid gap-3 md:grid-cols-2 xl:flex-1 min-[1900px]:gap-4">
-            {data.trends.map((trend) => (
+            {data.trends.map((trend, index) => (
             <section
               aria-labelledby={`${trend.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-heading`}
               className="flex min-h-[150px] flex-col rounded-[13px] border border-[rgba(148,163,184,.10)] bg-[rgba(11,17,28,.38)] p-3 min-[1900px]:min-h-[230px] min-[1900px]:p-4"
-              key={trend.title}
+              key={`running-trend-${index}`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">

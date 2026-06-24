@@ -670,7 +670,7 @@ function WorkFilters({
         </div>
       </div>
       <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Work view">
-        {segments.map((item) => (
+        {segments.map((item, index) => (
           <button
             aria-pressed={segment === item.value}
             className={cn(
@@ -678,7 +678,7 @@ function WorkFilters({
               segment === item.value &&
                 "border-[rgba(66,184,131,.42)] bg-[rgba(66,184,131,.14)] text-[var(--text-primary)]",
             )}
-            key={item.value}
+            key={`work-overview-segment-${index}`}
             onClick={() => onSegment(item.value)}
             type="button"
           >
@@ -1795,10 +1795,10 @@ function WorkPrivacyNotes({ notes }: Readonly<{ notes: readonly string[] }>) {
       title="Work Privacy Notes"
     >
       <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
-        {notes.map((note) => (
+        {notes.map((note, index) => (
           <li
             className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.40)] p-3 text-[11px] leading-4 text-[var(--text-secondary)]"
-            key={note}
+            key={`work-privacy-note-${index}`}
           >
             {note}
           </li>

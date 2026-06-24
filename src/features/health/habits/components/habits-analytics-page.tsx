@@ -154,8 +154,8 @@ function HabitsHeader({
             {header.meta}
           </p>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
-            {header.pills.map((pill) => (
-              <Pill accent={pill.accent} key={pill.value}>
+            {header.pills.map((pill, index) => (
+              <Pill accent={pill.accent} key={`habit-header-pill-${index}`}>
                 {pill.value}
               </Pill>
             ))}
@@ -198,8 +198,8 @@ function SummaryStrip({
       aria-label="Habit analytics summary"
       className="grid gap-1.5 sm:grid-cols-2 xl:grid-cols-6"
     >
-      {metrics.map((metric) => (
-        <MetricCard key={metric.label} metric={metric} />
+      {metrics.map((metric, index) => (
+        <MetricCard key={`habit-summary-${index}`} metric={metric} />
       ))}
     </section>
   );
@@ -330,10 +330,10 @@ function PatternReadCard({
         {patternRead.copy}
       </p>
       <div className="mt-2 grid grid-cols-2 gap-1.5">
-        {patternRead.metrics.map((metric) => (
+        {patternRead.metrics.map((metric, index) => (
           <article
             className="rounded-[10px] border border-[color-mix(in_srgb,var(--accent)_20%,var(--border-subtle))] bg-[rgba(11,17,28,.34)] px-2 py-1.5"
-            key={metric.label}
+            key={`habit-pattern-metric-${index}`}
             style={accentStyle(metric.accent)}
           >
             <p className="text-[10px] font-semibold text-[var(--text-muted)]">
@@ -552,8 +552,8 @@ function RepairLoopsPanel({
       title={repairLoops.title}
     >
       <div className="grid gap-1.5 md:grid-cols-3">
-        {repairLoops.items.map((item) => (
-          <RepairLoopCard item={item} key={item.title} />
+        {repairLoops.items.map((item, index) => (
+          <RepairLoopCard item={item} key={`habit-repair-loop-${index}`} />
         ))}
       </div>
     </Panel>
@@ -759,8 +759,8 @@ function WeeklyRhythmInsights({
       title={insights.title}
     >
       <div className="grid gap-1">
-        {insights.rows.slice(0, 3).map((row) => (
-          <WeeklyInsightRow key={row.title} row={row} />
+        {insights.rows.slice(0, 3).map((row, index) => (
+          <WeeklyInsightRow key={`habit-weekly-insight-${index}`} row={row} />
         ))}
       </div>
     </Panel>
@@ -792,10 +792,10 @@ function BoundaryCard({
       </h2>
       <ul className="mt-1.5 grid gap-1.5">
         {["Signals, not judgement", "no diagnosis", "reviewed automation"].map(
-          (bullet) => (
+          (bullet, index) => (
             <li
               className="grid grid-cols-[5px_minmax(0,1fr)] gap-2 text-[10px] leading-3 text-[var(--text-secondary)]"
-              key={bullet}
+              key={`habit-boundary-bullet-${index}`}
             >
               <span
                 aria-hidden="true"

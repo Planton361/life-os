@@ -804,10 +804,10 @@ function SelectedSkillInspector({
               ["Level", labelFromValue(skill.level)],
               ["Confidence", `${skill.confidence}%`],
               ["Evidence", String(skill.evidenceCount)],
-            ].map(([label, value]) => (
+            ].map(([label, value], index) => (
               <div
                 className="rounded-[13px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.52)] p-3"
-                key={label}
+                key={`coding-skill-summary-${index}`}
               >
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
                   {label}

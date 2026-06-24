@@ -62,7 +62,7 @@ test.describe("Dashboard viewport QA", () => {
     await expect(page.locator("aside")).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Hauptnavigation" })).toBeVisible();
     await expect(page.locator("header")).toBeVisible();
-    await expect(page.getByText("Good evening, Anton")).toBeVisible();
+    await expect(page.getByText(/Good (morning|afternoon|evening), Anton/)).toBeVisible();
     await expect(page.getByRole("heading", { name: "Daily Control" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Today Agenda" })).toBeVisible();
 

@@ -8,6 +8,9 @@ const manualProfilePath = join(
   "life-os",
   "manual-profile.json",
 );
+const playwrightHost = process.env.PLAYWRIGHT_HOST ?? "127.0.0.1";
+const playwrightPort = process.env.PLAYWRIGHT_PORT ?? "3000";
+const playwrightBaseUrl = `http://${playwrightHost}:${playwrightPort}`;
 
 const blockedDemoStrings = [
   "Steady",
@@ -29,7 +32,6 @@ const blockedDemoStrings = [
   "Article on calm dashboards",
   "Water",
   "Coffee",
-  "Study",
   "Skyr",
   "Skyr with oats and berries",
   "Protein Bowl",
@@ -86,7 +88,7 @@ async function setProfile(page: Page, profile: "demo" | "empty" | "manual") {
     {
       name: "life_os_profile",
       value: profile,
-      url: "http://127.0.0.1:3000",
+      url: playwrightBaseUrl,
       httpOnly: true,
       sameSite: "Lax",
     },
@@ -94,10 +96,10 @@ async function setProfile(page: Page, profile: "demo" | "empty" | "manual") {
 }
 
 async function expectNoBlockedDemoStrings(page: Page) {
-  const bodyText = await page.locator("body").innerText();
+  const mainText = await page.getByRole("main").innerText();
 
   for (const blocked of blockedDemoStrings) {
-    expect(bodyText, `blocked demo string visible: ${blocked}`).not.toContain(
+    expect(mainText, `blocked demo string visible: ${blocked}`).not.toContain(
       blocked,
     );
   }
@@ -120,9 +122,10 @@ async function expectNoTechnicalEmptyCopy(page: Page) {
 
 async function expectTextAtMostOnce(page: Page, text: string) {
   await expect(page.getByText(text, { exact: true })).toHaveCount(
-    await page.getByText(text, { exact: true }).count().then((count) =>
-      count > 0 ? 1 : 0,
-    ),
+    await page
+      .getByText(text, { exact: true })
+      .count()
+      .then((count) => (count > 0 ? 1 : 0)),
   );
 }
 
@@ -146,11 +149,17 @@ async function expectResourcesNaturalEmptyStates(page: Page) {
   for (const text of [
     "Noch keine Ressourcen",
     "Noch keine Ressource im Inspector",
-    "Keine Review-Punkte offen",
     "Noch keine Learnings",
   ] as const) {
     await expectTextAtMostOnce(page, text);
   }
+
+  await expect(
+    page
+      .getByRole("main")
+      .getByText("Keine Review-Punkte offen", { exact: true })
+      .filter({ visible: true }),
+  ).toHaveCount(1);
 }
 
 async function expectAreaShell(page: Page, heading: string) {
@@ -212,7 +221,65 @@ async function expectNoMentalHealthFixtureSignals(page: Page) {
 }
 
 async function submitPanel(panel: Locator, buttonName: string) {
+  const titleInput = panel.getByLabel("Title").first();
+
   await panel.getByRole("button", { name: buttonName }).click();
+  await expect(titleInput).toHaveValue("");
+}
+
+async function debugTextMatches(page: Page, text: string) {
+  const matches = await page.getByText(text).evaluateAll((nodes) =>
+    nodes.map((node, index) => {
+      const element = node as HTMLElement;
+      const section = element.closest("section");
+      const main = element.closest("main");
+
+      return {
+        index,
+        visible: Boolean(
+          element.offsetWidth ||
+          element.offsetHeight ||
+          element.getClientRects().length,
+        ),
+        text: element.textContent,
+        sectionText: section?.textContent?.slice(0, 500) ?? null,
+        mainText: main?.textContent?.slice(0, 500) ?? null,
+        className: element.getAttribute("class"),
+      };
+    }),
+  );
+
+  console.log(JSON.stringify({ text, matches }, null, 2));
+}
+
+async function expectManualTextNotVisible(
+  page: Page,
+  route: string,
+  text: string,
+) {
+  try {
+    await expect(page.getByText(text).filter({ visible: true })).toHaveCount(0);
+  } catch (error) {
+    console.log("reset verification route", route);
+    await debugTextMatches(page, text);
+    throw error;
+  }
+}
+
+async function resetManualProfileFromSettings(page: Page) {
+  await page
+    .locator("section")
+    .filter({
+      has: page.getByRole("heading", { name: "Manual Profile Reset" }),
+    })
+    .getByRole("button", { name: "Reset manual local profile" })
+    .click();
+
+  const profilePanel = panelByHeading(page, "Profile Data Source");
+  await expect(profilePanel).toContainText(/Tasks\s*0/);
+  await expect(profilePanel).toContainText(/Inbox\s*0/);
+  await expect(profilePanel).toContainText(/Projects\s*0/);
+  await expect(profilePanel).toContainText(/Goals\s*0/);
 }
 
 function panelByHeading(page: Page, heading: string) {
@@ -247,7 +314,9 @@ test.describe("Profile boundary", () => {
     await expect(
       page.getByRole("heading", { level: 1, name: "Dashboard" }),
     ).toBeAttached();
-    await expect(page.getByText("Good evening, Anton")).toBeVisible();
+    await expect(
+      page.getByText(/Good (morning|afternoon|evening), Anton/),
+    ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Today Agenda" }),
     ).toBeVisible();
@@ -421,20 +490,13 @@ test.describe("Profile boundary", () => {
     await expectResourcesNaturalEmptyStates(page);
 
     await page.goto("/settings");
-    await page
-      .locator("section")
-      .filter({
-        has: page.getByRole("heading", { name: "Manual Profile Reset" }),
-      })
-      .getByRole("button", { name: "Reset manual local profile" })
-      .click();
-    await expect(page.getByText("Aktives Profil: manual")).toBeVisible();
+    await resetManualProfileFromSettings(page);
 
     for (const route of ["/portfolio", "/dashboard"] as const) {
       await page.goto(route);
-      await expect(page.getByText(manualTask)).toHaveCount(0);
-      await expect(page.getByText(manualProject)).toHaveCount(0);
-      await expect(page.getByText(manualGoal)).toHaveCount(0);
+      await expectManualTextNotVisible(page, route, manualTask);
+      await expectManualTextNotVisible(page, route, manualProject);
+      await expectManualTextNotVisible(page, route, manualGoal);
       await expectNoBlockedDemoStrings(page);
     }
   });

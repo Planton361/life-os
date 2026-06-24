@@ -22,8 +22,8 @@ export function StrengthPanel({
     >
       <div className="grid min-h-0 gap-3 xl:flex xl:flex-1 xl:flex-col min-[1900px]:justify-between min-[1900px]:gap-4">
         <div className="grid gap-2 sm:grid-cols-3 min-[1900px]:gap-3">
-          {data.metrics.map((metric) => (
-            <HealthMetricCard key={metric.label} metric={metric} />
+          {data.metrics.map((metric, index) => (
+            <HealthMetricCard key={`strength-metric-${index}`} metric={metric} />
           ))}
         </div>
 
@@ -40,11 +40,11 @@ export function StrengthPanel({
             </h3>
             {data.trainingPattern.days.length > 0 ? (
               <div className="mt-4 flex h-24 items-end gap-2 min-[1900px]:h-36 min-[1900px]:gap-3">
-                {data.trainingPattern.days.map((day) => (
+                {data.trainingPattern.days.map((day, index) => (
                 <div
                   aria-label={`${day.day}: ${day.label}`}
                   className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1"
-                  key={`${day.day}-${day.label}`}
+                  key={`strength-training-day-${index}`}
                   role="img"
                   style={accentStyle(day.accent)}
                 >
@@ -83,10 +83,10 @@ export function StrengthPanel({
             </h3>
             {data.sessionBalance.items.length > 0 ? (
               <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 min-[1900px]:gap-3">
-                {data.sessionBalance.items.map((item) => (
+                {data.sessionBalance.items.map((item, index) => (
                 <article
                   className="rounded-[10px] border border-[color-mix(in_srgb,var(--accent)_20%,transparent)] bg-[color-mix(in_srgb,var(--accent)_6%,rgba(15,23,36,.56))] px-2.5 py-2 min-[1900px]:p-3"
-                  key={item.label}
+                  key={`strength-session-balance-${index}`}
                   style={accentStyle(item.accent)}
                 >
                   <div className="flex items-center gap-1.5">

@@ -2,17 +2,21 @@
 
 import type {
   DashboardMeal,
-  DashboardMealRecipeOption,
   DashboardMeals,
   DashboardNutrientBalance,
+  DashboardProfileId,
   DashboardRunningRecovery,
   DashboardWeightLossGoal,
   RunningRecoveryMode,
 } from "@/features/dashboard";
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  saveDashboardMealSlotAction,
+} from "@/features/profile-data/actions";
+import { initialDashboardActionState } from "@/features/profile-data/dashboard-action-state";
 import { cn } from "@/lib/cn";
-import { formatMealTypeList } from "@/features/nutrition/meal-planner/meal-planner-utils";
 import {
   DashboardDialog,
   SelectField,
@@ -21,10 +25,10 @@ import {
   dashboardPrimaryButtonClass,
 } from "./dashboard-dialog";
 import {
-  DashboardEmptyState,
   Panel,
   Pill,
   ProgressBar,
+  contentStateAttrs,
   styleFor,
 } from "./section-primitives";
 
@@ -71,59 +75,28 @@ function muscleStatusAccent(statusLabel: string) {
   return "var(--accent-cyan)";
 }
 
-function dashboardMealTypeFromForm(value: FormDataEntryValue | null) {
-  if (value === "Lunch" || value === "Dinner") {
-    return value;
-  }
+function mealStateLabel(state: DashboardMeal["state"]) {
+  if (state === "logged") return "Logged";
+  if (state === "planned") return "Planned";
+  if (state === "skipped") return "Ausgelassen";
 
-  return "Breakfast";
+  return "Unplanned";
 }
 
-function recipeMealTypeForDashboard(type: DashboardMeal["type"]) {
-  if (type === "Lunch") {
-    return "lunch";
-  }
+function mealStateAccent(state: DashboardMeal["state"]) {
+  if (state === "logged") return "var(--accent-green)";
+  if (state === "planned") return "var(--accent-yellow)";
+  if (state === "skipped") return "var(--text-muted)";
 
-  if (type === "Dinner") {
-    return "dinner";
-  }
-
-  return "breakfast";
-}
-
-function findRecipe(
-  recipeId: string,
-  availableRecipes: readonly DashboardMealRecipeOption[],
-) {
-  return availableRecipes.find((recipe) => recipe.id === recipeId) ?? null;
-}
-
-function mealFromRecipe(
-  meal: DashboardMeal,
-  recipe: DashboardMealRecipeOption,
-  type: DashboardMeal["type"],
-  time: string,
-): DashboardMeal {
-  return {
-    ...meal,
-    href: `/nutrition/recipes/${recipe.id}`,
-    kcal: `${Math.round(recipe.calories)} kcal`,
-    macros: [
-      `P ${Math.round(recipe.protein)}g`,
-      `C ${Math.round(recipe.carbs)}g`,
-      `F ${Math.round(recipe.fat)}g`,
-    ],
-    name: recipe.title,
-    recipeId: recipe.id,
-    time,
-    type,
-  };
+  return "var(--text-muted)";
 }
 
 export function WeightLossGoal({
   data,
+  profileId,
 }: Readonly<{
   data: DashboardWeightLossGoal;
+  profileId: DashboardProfileId;
 }>) {
   const className = cn(
     "h-[188px] overflow-hidden rounded-[var(--panel-radius)] border border-[var(--border-subtle)] bg-[#0f1724] p-5 shadow-[0_8px_22px_rgba(0,0,0,.12)] 2xl:h-[184px] 2xl:px-[28px] 2xl:py-[22px]",
@@ -161,6 +134,7 @@ export function WeightLossGoal({
         aria-label={`Open health: ${data.title}`}
         className={className}
         href={data.href}
+        {...contentStateAttrs(data.contentState, profileId)}
       >
         {content}
       </Link>
@@ -168,7 +142,11 @@ export function WeightLossGoal({
   }
 
   return (
-    <section aria-labelledby="weight-loss-goal-title" className={className}>
+    <section
+      aria-labelledby="weight-loss-goal-title"
+      className={className}
+      {...contentStateAttrs(data.contentState, profileId)}
+    >
       {content}
     </section>
   );
@@ -176,8 +154,10 @@ export function WeightLossGoal({
 
 export function NutrientBalance({
   data,
+  profileId,
 }: Readonly<{
   data: DashboardNutrientBalance;
+  profileId: DashboardProfileId;
 }>) {
   const className = cn(
     "h-[188px] overflow-hidden rounded-[var(--panel-radius)] border border-[var(--border-subtle)] bg-[#0f1724] p-5 shadow-[0_8px_22px_rgba(0,0,0,.12)] 2xl:h-[184px] 2xl:p-[18px]",
@@ -192,8 +172,8 @@ export function NutrientBalance({
         {data.title}
       </h2>
       <div className="mt-3 space-y-2.5">
-        {data.items.map((item) => (
-          <div key={item.label}>
+        {data.items.map((item, index) => (
+          <div key={`dashboard-nutrient-${index}`}>
             <div className="flex items-center justify-between gap-3">
               <p className="text-[10px] font-semibold text-[var(--text-muted)]">
                 {item.label}
@@ -228,6 +208,7 @@ export function NutrientBalance({
         aria-label={`Open meal planner: ${data.title}`}
         className={className}
         href={data.href}
+        {...contentStateAttrs(data.contentState, profileId)}
       >
         {content}
       </Link>
@@ -235,7 +216,11 @@ export function NutrientBalance({
   }
 
   return (
-    <section aria-labelledby="nutrient-balance-title" className={className}>
+    <section
+      aria-labelledby="nutrient-balance-title"
+      className={className}
+      {...contentStateAttrs(data.contentState, profileId)}
+    >
       {content}
     </section>
   );
@@ -243,54 +228,36 @@ export function NutrientBalance({
 
 export function MealsToday({
   data,
+  profileId,
 }: Readonly<{
   data: DashboardMeals;
+  profileId: DashboardProfileId;
 }>) {
-  const [meals, setMeals] = useState<DashboardMeal[]>([...data.items]);
   const [editingMeal, setEditingMeal] = useState<DashboardMeal | null>(null);
-  const availableRecipes = data.recipeOptions;
+  const [state, formAction, pending] = useActionState(
+    saveDashboardMealSlotAction,
+    initialDashboardActionState,
+  );
+  const router = useRouter();
 
-  function saveMeal(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (!editingMeal) {
-      return;
+  useEffect(() => {
+    if (state.status === "success") {
+      router.refresh();
     }
-
-    const formData = new FormData(event.currentTarget);
-    const type = dashboardMealTypeFromForm(formData.get("meal"));
-    const recipeId = String(formData.get("recipeId") ?? editingMeal.recipeId);
-    const recipe =
-      findRecipe(recipeId, availableRecipes) ??
-      findRecipe(editingMeal.recipeId, availableRecipes);
-    const time = String(formData.get("time") ?? editingMeal.time).trim();
-
-    if (!recipe) {
-      setEditingMeal(null);
-      return;
-    }
-
-    setMeals((currentMeals) =>
-      currentMeals.map((meal) =>
-        meal.mealId === editingMeal.mealId
-          ? mealFromRecipe(meal, recipe, type, time || meal.time)
-          : meal,
-      ),
-    );
-    setEditingMeal(null);
-  }
+  }, [router, state.status]);
 
   return (
     <>
       <Panel
         className="border-[rgba(217,146,79,.22)] bg-[color-mix(in_srgb,var(--accent-orange)_5%,#0f1724)] 2xl:h-[384px]"
+        stateAttrs={contentStateAttrs(data.contentState, profileId)}
         title={data.title}
         titleHref={data.href}
       >
         <div className="space-y-3 p-4 2xl:space-y-2 2xl:p-3">
-          {meals.length > 0 ? (
-            meals.map((meal) => {
+          {data.items.map((meal) => {
               const isPast = hasMealPassed(meal.time, data.currentTimeLabel);
+              const unplanned = meal.state === "unplanned";
 
               return (
                 <article
@@ -298,38 +265,52 @@ export function MealsToday({
                   key={meal.mealId}
                 >
                   <Link
-                    aria-label={`Open recipe for ${meal.type}: ${meal.name}`}
+                    aria-label={`Open meal slot ${meal.type}: ${meal.name}`}
                     className={cn(
                       "grid min-w-0 grid-cols-[64px_minmax(0,1fr)] gap-4 rounded-[12px] 2xl:grid-cols-[72px_minmax(0,1fr)]",
                       DASHBOARD_LINK_FOCUS_CLASSES,
                     )}
-                    href={meal.href ?? "/nutrition/recipes"}
+                    href={meal.href ?? "/nutrition/meal-planner?view=today"}
                   >
-                    <div className="rounded-[14px] border border-[rgba(217,146,79,.20)] bg-[rgba(217,146,79,.14)] 2xl:h-[68px] 2xl:w-[72px]" />
+                    <div
+                      className={cn(
+                        "rounded-[14px] border 2xl:h-[68px] 2xl:w-[72px]",
+                        unplanned
+                          ? "border-[var(--border-subtle)] bg-[rgba(168,183,204,.06)]"
+                          : "border-[rgba(217,146,79,.20)] bg-[rgba(217,146,79,.14)]",
+                      )}
+                    />
                     <div className="min-w-0 py-0.5">
                       <div className="flex flex-wrap items-center gap-2">
                         <Pill accent="var(--accent-yellow)">{meal.type}</Pill>
-                        {isPast ? (
+                        {unplanned ? (
+                          <Pill quiet>Unplanned</Pill>
+                        ) : isPast ? (
                           <Pill accent="var(--accent-green)">
                             Done · time passed
                           </Pill>
                         ) : (
                           <Pill quiet>{meal.time}</Pill>
                         )}
+                        <Pill accent={mealStateAccent(meal.state)}>
+                          {mealStateLabel(meal.state)}
+                        </Pill>
                       </div>
                       <h3 className="mt-1 truncate text-xs font-semibold text-[var(--text-secondary)]">
                         {meal.name}
                       </h3>
                       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] font-medium text-[var(--text-secondary)]">
                         <span>{meal.kcal}</span>
-                        {meal.macros.map((macro) => (
-                          <span key={macro}>{macro}</span>
+                        {meal.macros.map((macro, index) => (
+                          <span key={`${meal.mealId}-macro-${index}`}>
+                            {macro}
+                          </span>
                         ))}
                       </div>
                     </div>
                   </Link>
                   <button
-                    aria-label={`Change ${meal.type}: ${meal.name}`}
+                    aria-label={`${meal.ctaLabel ?? "Planen"} ${meal.type}`}
                     className={cn(
                       "self-start rounded-full border border-[rgba(217,146,79,.22)] bg-[rgba(217,146,79,.09)] px-3 py-1 text-[9px] font-semibold text-[var(--text-secondary)] transition hover:border-[rgba(217,146,79,.36)] hover:text-[var(--text-primary)]",
                       DASHBOARD_LINK_FOCUS_CLASSES,
@@ -337,17 +318,11 @@ export function MealsToday({
                     onClick={() => setEditingMeal(meal)}
                     type="button"
                   >
-                    Change
+                    {meal.ctaLabel ?? "Planen"}
                   </button>
                 </article>
               );
-            })
-          ) : (
-            <DashboardEmptyState
-              description="Noch keine Mahlzeiten erfasst."
-              title="Meals leer"
-            />
-          )}
+            })}
         </div>
       </Panel>
 
@@ -357,16 +332,18 @@ export function MealsToday({
           onClose={() => setEditingMeal(null)}
           open
         >
-          <form onSubmit={saveMeal}>
+          <form action={formAction}>
             <div className="border-b border-[var(--border-subtle)] px-5 py-4">
               <h2
                 className="text-lg font-semibold text-[var(--text-primary)]"
                 id="meal-change-dialog-heading"
               >
-                Change meal
+                Meal slot
               </h2>
               <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
-                Local prototype only. No meal planner or recipe sync is written.
+                {profileId === "manual"
+                  ? "Speichert den Slot lokal im Manual-Profil."
+                  : "Wechsle ins Manual-Profil, um Mahlzeiten lokal zu speichern."}
               </p>
             </div>
             <div className="grid gap-3 p-5 sm:grid-cols-2">
@@ -379,34 +356,55 @@ export function MealsToday({
                 <option>Lunch</option>
                 <option>Dinner</option>
               </SelectField>
+              <SelectField
+                defaultValue={editingMeal.state ?? "planned"}
+                label="State"
+                name="state"
+              >
+                <option value="planned">Planned</option>
+                <option value="logged">Logged</option>
+                <option value="skipped">Skipped</option>
+              </SelectField>
+              <TextField
+                defaultValue={
+                  editingMeal.state === "unplanned" ? "" : editingMeal.name
+                }
+                label="Name"
+                name="name"
+                placeholder="Meal name"
+              />
               <TextField
                 defaultValue={editingMeal.time}
                 label="Time"
                 name="time"
                 type="time"
               />
-              <div className="sm:col-span-2">
-                <SelectField
-                  defaultValue={editingMeal.recipeId}
-                  label="Recipe"
-                  name="recipeId"
-                >
-                  {availableRecipes.map((recipe) => (
-                    <option key={recipe.id} value={recipe.id}>
-                      {recipe.mealTypes.includes(
-                        recipeMealTypeForDashboard(editingMeal.type),
-                      )
-                        ? "Fits slot · "
-                        : ""}
-                      {recipe.title} · {formatMealTypeList(recipe.mealTypes)}
-                    </option>
-                  ))}
-                </SelectField>
-                <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
-                  Existing recipes only. Use Recipes for new recipe definitions.
-                </p>
-              </div>
+              <TextField
+                defaultValue={editingMeal.kcal === "-" ? "" : editingMeal.kcal}
+                label="Kcal"
+                name="kcal"
+                optional
+                placeholder="560 kcal"
+              />
+              <TextField label="Protein" name="protein" optional placeholder="P 40g" />
+              <TextField label="Carbs" name="carbs" optional placeholder="C 55g" />
+              <TextField label="Fat" name="fat" optional placeholder="F 15g" />
             </div>
+            {state.message ? (
+              <p
+                className={cn(
+                  "px-5 pb-2 text-[11px] font-semibold",
+                  state.status === "success"
+                    ? "text-[var(--accent-green)]"
+                    : state.status === "blocked"
+                      ? "text-[var(--accent-orange)]"
+                      : "text-[var(--text-muted)]",
+                )}
+                role="status"
+              >
+                {state.message}
+              </p>
+            ) : null}
             <div className="flex justify-end gap-2 border-t border-[var(--border-subtle)] px-5 py-4">
               <button
                 className={dashboardActionButtonClass}
@@ -415,8 +413,12 @@ export function MealsToday({
               >
                 Cancel
               </button>
-              <button className={dashboardPrimaryButtonClass} type="submit">
-                Save
+              <button
+                className={dashboardPrimaryButtonClass}
+                disabled={pending}
+                type="submit"
+              >
+                {pending ? "Saving..." : "Save"}
               </button>
             </div>
           </form>
@@ -428,8 +430,10 @@ export function MealsToday({
 
 export function RunningTracker({
   data,
+  profileId,
 }: Readonly<{
   data: DashboardRunningRecovery;
+  profileId: DashboardProfileId;
 }>) {
   const [activeMode, setActiveMode] = useState<RunningRecoveryMode>(
     data.activeMode,
@@ -460,6 +464,7 @@ export function RunningTracker({
     <Panel
       className="border-[var(--border-subtle)] bg-[#0f1724] 2xl:h-[226px]"
       headerAccessory={modeSwitch}
+      stateAttrs={contentStateAttrs(data.contentState, profileId)}
       subtitle={data.subtitle}
       title={data.title}
       titleHref={data.href}
@@ -468,10 +473,10 @@ export function RunningTracker({
         {activeMode === "Running" ? (
           <>
             <div className="grid gap-3 sm:grid-cols-3 2xl:gap-2">
-              {data.stats.map((stat) => (
+              {data.stats.map((stat, index) => (
                 <article
                   className="rounded-[14px] border border-[var(--border-subtle)] bg-[#101a2a] p-2.5 2xl:min-h-[52px] 2xl:p-2"
-                  key={stat.label}
+                  key={`running-stat-${index}`}
                 >
                   <p className="text-[10px] font-medium text-[var(--text-muted)]">
                     {stat.label}
@@ -525,8 +530,8 @@ export function RunningTracker({
               </Pill>
             </div>
             <div className="mt-3 flex flex-wrap gap-1.5">
-              {data.muscle.focusGroups.map((group) => (
-                <Pill key={group} quiet>
+              {data.muscle.focusGroups.map((group, index) => (
+                <Pill key={`muscle-focus-${index}`} quiet>
                   {group}
                 </Pill>
               ))}

@@ -657,7 +657,7 @@ function WikiLookupFilters({
         </div>
       </div>
       <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Wiki segments">
-        {segments.map((item) => (
+        {segments.map((item, index) => (
           <button
             aria-pressed={segment === item.value}
             className={cn(
@@ -665,7 +665,7 @@ function WikiLookupFilters({
               segment === item.value &&
                 "border-[rgba(95,200,215,.42)] bg-[rgba(95,200,215,.13)] text-[var(--text-primary)]",
             )}
-            key={item.value}
+            key={`work-wiki-segment-${index}`}
             onClick={() => onSegment(item.value)}
             type="button"
           >
