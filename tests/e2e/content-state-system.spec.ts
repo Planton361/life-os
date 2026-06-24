@@ -1448,6 +1448,362 @@ test.describe("Resources content states", () => {
   });
 });
 
+const lifeOverviewBlockedDemoStrings = [
+  "Wochenreflexion: mehr Ruhe nach Coding-Block",
+  "Gedanke zu neuer Knowledge-Idee",
+  "Laufschuhe Ersatz",
+  "MacBook Pro Upgrade",
+  "Severance",
+  "Atomic Habits",
+  "7-day review trace",
+  "5 loose notes kept",
+  "5 decisions open",
+] as const;
+
+const journalBlockedDemoStrings = [
+  "Wochenreflexion: mehr Ruhe nach Coding-Block",
+  "Abendnotiz: zu viele offene Loops",
+  "Check-in: stabil, aber mental voll",
+  "Gedanke nach Training",
+  "Was hat heute unnoetig mentalen Druck erzeugt?",
+  "4 entries this week",
+  "Stable",
+] as const;
+
+const notesBlockedDemoStrings = [
+  "Gedanke zu neuer Knowledge-Idee",
+  "Warum Entertainment eher Sammlung als To-do sein sollte",
+  "Zitat aus Podcast merken",
+  "Persönlicher Gedanke, nicht als Task geeignet",
+  "Idee fuer Inventory-Budget-Ansicht",
+  "5 shown",
+] as const;
+
+const entertainmentBlockedDemoStrings = [
+  "Severance",
+  "Atomic Habits",
+  "Dune: Part Two",
+  "YouTube: Design Systems Talk",
+  "Cyberpunk 2077",
+  "Podcast: Lenny",
+  "2 shown",
+] as const;
+
+const inventoryBlockedDemoStrings = [
+  "Monitor Arm",
+  "Noise-Cancelling Headphones",
+  "Software-Abo pruefen",
+  "MacBook Pro Upgrade",
+  "Schreibtischlampe",
+  "USB-C Dock",
+  "€95",
+  "€240",
+  "€2,400",
+] as const;
+
+async function expectLifeOverviewContracts(page: Page, profile: ProfileId) {
+  await expectWidgetContract(
+    page.locator('[data-life-section="page"]'),
+    profile,
+    "8",
+  );
+  await expectWidgetContract(
+    page.locator('[data-life-section="personal-check-in"]'),
+    profile,
+    "1",
+  );
+  await expectWidgetContract(
+    page.locator('[data-life-section="life-sections"]'),
+    profile,
+    "4",
+  );
+  await expectWidgetContract(
+    page.locator('[data-life-section="loose-notes"]'),
+    profile,
+    "5",
+  );
+  await expectWidgetContract(
+    page.locator('[data-life-section="inventory-focus"]'),
+    profile,
+    "4",
+  );
+  await expectWidgetContract(
+    page.locator('[data-life-section="entertainment-shelf"]'),
+    profile,
+    "4",
+  );
+  await expectWidgetContract(
+    page.locator('[data-life-section="recent-activity"]'),
+    profile,
+    "5",
+  );
+  await expectWidgetContract(
+    page.locator('[data-life-section="personal-signals"]'),
+    profile,
+    "4",
+  );
+}
+
+async function expectJournalContracts(page: Page, profile: ProfileId) {
+  await expectWidgetContract(
+    page.locator('[data-journal-section="page"]'),
+    profile,
+    "4",
+  );
+  await expectWidgetContract(
+    page.locator('[data-journal-section="writing-focus"]'),
+    profile,
+    "1",
+  );
+  await expectWidgetContract(
+    page.locator('[data-journal-section="recent-entries"]'),
+    profile,
+    "4",
+  );
+  await expectWidgetContract(
+    page.locator('[data-journal-section="reflection-prompts"]'),
+    profile,
+    "4",
+  );
+  await expectWidgetContract(
+    page.locator('[data-journal-section="journal-pattern"]'),
+    profile,
+    "3",
+  );
+}
+
+async function expectNotesContracts(page: Page, profile: ProfileId) {
+  await expectWidgetContract(
+    page.locator('[data-notes-section="page"]'),
+    profile,
+    "4",
+  );
+  await expectWidgetContract(
+    page.locator('[data-notes-section="brain-dump-history"]'),
+    profile,
+    "5",
+  );
+  await expectWidgetContract(
+    page.locator('[data-notes-section="note-composer"]'),
+    profile,
+    "1",
+  );
+  await expectWidgetContract(
+    page.locator('[data-notes-section="note-types"]'),
+    profile,
+    "7",
+  );
+  await expectWidgetContract(
+    page.locator('[data-notes-section="capture-sources"]'),
+    profile,
+    "3",
+  );
+}
+
+async function expectEntertainmentContracts(page: Page, profile: ProfileId) {
+  await expectWidgetContract(
+    page.locator('[data-entertainment-section="page"]'),
+    profile,
+    "4",
+  );
+  await expectWidgetContract(
+    page.locator('[data-entertainment-section="shelf"]'),
+    profile,
+    "6",
+  );
+  await expectWidgetContract(
+    page.locator('[data-entertainment-section="current-media"]'),
+    profile,
+    "5",
+  );
+  await expectWidgetContract(
+    page.locator('[data-entertainment-section="wishlist"]'),
+    profile,
+    "5",
+  );
+  await expectWidgetContract(
+    page.locator('[data-entertainment-section="finished-paused"]'),
+    profile,
+    "5",
+  );
+}
+
+async function expectInventoryContracts(page: Page, profile: ProfileId) {
+  await expectWidgetContract(
+    page.locator('[data-inventory-section="page"]'),
+    profile,
+    "4",
+  );
+  await expectWidgetContract(
+    page.locator('[data-inventory-section="inventory-wishlist"]'),
+    profile,
+    "6",
+  );
+  await expectWidgetContract(
+    page.locator('[data-inventory-section="wishlist-decisions"]'),
+    profile,
+    "5",
+  );
+  await expectWidgetContract(
+    page.locator('[data-inventory-section="owned-items"]'),
+    profile,
+    "5",
+  );
+  await expectWidgetContract(
+    page.locator('[data-inventory-section="budget-summary"]'),
+    profile,
+    "4",
+  );
+}
+
+test.describe("Life content states", () => {
+  test("keeps demo Life routes as curated references", async ({ page }) => {
+    await setProfile(page, "demo");
+
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/life");
+    });
+    await expectLifeOverviewContracts(page, "demo");
+    await expect(page.getByText("Wochenreflexion: mehr Ruhe nach Coding-Block").first()).toBeVisible();
+
+    await page.goto("/life/journal");
+    await expectJournalContracts(page, "demo");
+    await expect(page.getByText("Abendnotiz: zu viele offene Loops").first()).toBeVisible();
+
+    await page.goto("/life/notes");
+    await expectNotesContracts(page, "demo");
+    await expect(page.getByText("Gedanke zu neuer Knowledge-Idee").first()).toBeVisible();
+
+    await page.goto("/life/entertainment");
+    await expectEntertainmentContracts(page, "demo");
+    await expect(page.getByText("Severance").first()).toBeVisible();
+
+    await page.goto("/life/inventory");
+    await expectInventoryContracts(page, "demo");
+    await expect(page.getByText("MacBook Pro Upgrade").first()).toBeVisible();
+  });
+
+  test("renders empty Life overview with section cards and no demo leaks", async ({
+    page,
+  }) => {
+    await setProfile(page, "empty");
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/life");
+    });
+
+    await expectLifeOverviewContracts(page, "empty");
+    await expect(page.locator('[data-life-section="page"]')).toHaveAttribute(
+      "data-content-state",
+      "empty",
+    );
+    await expectNoMainStrings(page, lifeOverviewBlockedDemoStrings, "/life");
+    await expect(page.getByText("Noch kein persönlicher Check-in")).toBeVisible();
+    await expect(page.getByText("Keine persönliche Aktivität")).toBeVisible();
+    for (const sectionTitle of [
+      "Journal",
+      "Notes",
+      "Entertainment",
+      "Inventory",
+    ]) {
+      await expect(
+        page
+          .locator('[data-life-section="life-sections"]')
+          .getByRole("heading", { name: sectionTitle }),
+      ).toBeVisible();
+    }
+  });
+
+  test("renders empty Life child pages without demo or stub leaks", async ({
+    page,
+  }) => {
+    await setProfile(page, "empty");
+
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/life/journal");
+    });
+    await expectJournalContracts(page, "empty");
+    await expectNoMainStrings(page, journalBlockedDemoStrings, "/life/journal");
+    await expect(page.getByText("Noch kein Schreibfokus")).toBeVisible();
+    await expect(page.getByText("Noch keine Journal-Einträge")).toBeVisible();
+    await expect(page.getByText("Keine offenen Prompts")).toBeVisible();
+    await expect(page.getByText("Noch keine Einträge.")).toHaveCount(0);
+
+    await page.goto("/life/notes");
+    await expectNotesContracts(page, "empty");
+    await expectNoMainStrings(page, notesBlockedDemoStrings, "/life/notes");
+    await expect(page.getByText("Noch keine losen Notizen").first()).toBeVisible();
+    await expect(page.getByText("Notiz erfassen")).toBeVisible();
+    await expect(page.getByText("Noch keine Notiztypen")).toBeVisible();
+    await expect(page.getByText("Noch keine Quellen")).toBeVisible();
+
+    await page.goto("/life/entertainment");
+    await expectEntertainmentContracts(page, "empty");
+    await expectNoMainStrings(
+      page,
+      entertainmentBlockedDemoStrings,
+      "/life/entertainment",
+    );
+    await expect(page.getByText("Noch keine Medien")).toBeVisible();
+    await expect(page.getByText("Nichts aktuell")).toBeVisible();
+    await expect(page.getByText("Keine Merkliste")).toBeVisible();
+    await expect(
+      page.getByText("Keine abgeschlossenen oder pausierten Medien"),
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Open media" })).toHaveCount(0);
+
+    await page.goto("/life/inventory");
+    await expectInventoryContracts(page, "empty");
+    await expectNoMainStrings(page, inventoryBlockedDemoStrings, "/life/inventory");
+    await expectNoMainStrings(page, ["€95", "€240", "€2,400"], "/life/inventory");
+    await expect(page.getByText("Noch keine Inventareinträge")).toBeVisible();
+    await expect(page.getByText("Keine Wishlist-Entscheidungen")).toBeVisible();
+    await expect(page.getByText("Keine Besitz-Einträge")).toBeVisible();
+    await expect(page.getByText("Budget Fit ist nur ein manuelles Planungssignal.")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Review budget" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Open item" })).toHaveCount(0);
+  });
+
+  test("keeps manual Life routes empty until a durable local source exists", async ({
+    page,
+  }) => {
+    await setProfile(page, "manual");
+
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/life");
+    });
+    await expectLifeOverviewContracts(page, "manual");
+    await expectNoMainStrings(page, lifeOverviewBlockedDemoStrings, "/life");
+    await expect(page.locator('[data-life-section="page"]')).toHaveAttribute(
+      "data-content-state",
+      "empty",
+    );
+
+    await page.goto("/life/journal");
+    await expectJournalContracts(page, "manual");
+    await expectNoMainStrings(page, journalBlockedDemoStrings, "/life/journal");
+    await expect(page.locator('[data-journal-section="page"]')).toHaveAttribute(
+      "data-content-state",
+      "empty",
+    );
+
+    await page.goto("/life/notes");
+    await expectNotesContracts(page, "manual");
+    await expectNoMainStrings(page, notesBlockedDemoStrings, "/life/notes");
+
+    await page.goto("/life/entertainment");
+    await expectEntertainmentContracts(page, "manual");
+    await expectNoMainStrings(
+      page,
+      entertainmentBlockedDemoStrings,
+      "/life/entertainment",
+    );
+
+    await page.goto("/life/inventory");
+    await expectInventoryContracts(page, "manual");
+    await expectNoMainStrings(page, inventoryBlockedDemoStrings, "/life/inventory");
+  });
+});
+
 const healthOverviewBlockedDemoStrings = [
   "18.4 km",
   "5:42 / km",

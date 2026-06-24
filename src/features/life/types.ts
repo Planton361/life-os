@@ -191,6 +191,17 @@ export type LifePageContract = {
 };
 
 export type LifeOverviewViewModel = {
+  profileId?: LifeOsProfileId;
+  contentStates?: {
+    page: ContentStateMeta;
+    personalCheckIn: ContentStateMeta;
+    lifeSections: ContentStateMeta;
+    looseNotes: ContentStateMeta;
+    inventoryFocus: ContentStateMeta;
+    entertainmentShelf: ContentStateMeta;
+    recentActivity: ContentStateMeta;
+    personalSignals: ContentStateMeta;
+  };
   header: {
     title: "Life Overview";
     eyebrow: string;
@@ -218,6 +229,14 @@ export type LifeSubpageHeader = {
 };
 
 export type JournalPageViewModel = {
+  profileId?: LifeOsProfileId;
+  contentStates?: {
+    page: ContentStateMeta;
+    writingFocus: ContentStateMeta;
+    recentEntries: ContentStateMeta;
+    reflectionPrompts: ContentStateMeta;
+    journalPattern: ContentStateMeta;
+  };
   header: LifeSubpageHeader;
   pageContract: LifePageContract;
   entries: JournalEntry[];
@@ -225,19 +244,45 @@ export type JournalPageViewModel = {
 };
 
 export type NotesPageViewModel = {
+  profileId?: LifeOsProfileId;
+  contentStates?: {
+    page: ContentStateMeta;
+    brainDumpHistory: ContentStateMeta;
+    noteComposer: ContentStateMeta;
+    noteTypes: ContentStateMeta;
+    captureSources: ContentStateMeta;
+  };
   header: LifeSubpageHeader;
   pageContract: LifePageContract;
   notes: LifeNote[];
 };
 
 export type EntertainmentPageViewModel = {
+  profileId?: LifeOsProfileId;
+  contentStates?: {
+    page: ContentStateMeta;
+    shelf: ContentStateMeta;
+    currentMedia: ContentStateMeta;
+    wishlist: ContentStateMeta;
+    finishedPaused: ContentStateMeta;
+  };
   header: LifeSubpageHeader;
   pageContract: LifePageContract;
   items: EntertainmentItem[];
 };
 
 export type InventoryPageViewModel = {
+  profileId?: LifeOsProfileId;
+  contentStates?: {
+    page: ContentStateMeta;
+    inventoryWishlist: ContentStateMeta;
+    wishlistDecisions: ContentStateMeta;
+    ownedItems: ContentStateMeta;
+    budgetSummary: ContentStateMeta;
+  };
   header: LifeSubpageHeader;
   pageContract: LifePageContract;
   items: InventoryItem[];
 };
+import type { ContentStateMeta } from "@/features/content-state";
+import type { LifeOsProfileId } from "@/features/profile-data/types";

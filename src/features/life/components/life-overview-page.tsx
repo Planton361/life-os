@@ -15,6 +15,11 @@ import {
   Pill,
   accentStyle,
 } from "@/components/layout/route-page-primitives";
+import {
+  contentStateDataAttributes,
+  resolveContentStateMeta,
+  type ContentStateMeta,
+} from "@/features/content-state";
 import { cn } from "@/lib/cn";
 import type {
   EntertainmentItem,
@@ -359,12 +364,16 @@ function Panel({
   children,
   className,
   action,
+  sectionAttribute,
+  stateAttributes,
 }: Readonly<{
   title: string;
   subtitle?: string;
   children: ReactNode;
   className?: string;
   action?: ReactNode;
+  sectionAttribute?: Record<string, string>;
+  stateAttributes?: Record<string, string>;
 }>) {
   const headingId = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-heading`;
 
@@ -375,6 +384,8 @@ function Panel({
         "min-w-0 overflow-hidden rounded-[16px] border border-[var(--border-subtle)] bg-[var(--surface-1)] shadow-[0_8px_22px_rgba(0,0,0,.12)]",
         className,
       )}
+      {...stateAttributes}
+      {...sectionAttribute}
     >
       <div className="border-b border-[var(--border-subtle)] bg-[rgba(18,28,43,.42)] px-4 py-3">
         <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -501,12 +512,14 @@ function PersonalCheckInCard({
   onOpenJournal,
   onStartReflection,
   reviewDots,
+  stateAttributes,
   statusLabel,
 }: Readonly<{
   journalEntries: JournalEntry[];
   onOpenJournal: () => void;
   onStartReflection: () => void;
   reviewDots: LifeReviewDot[];
+  stateAttributes: Record<string, string>;
   statusLabel: string;
 }>) {
   const latestEntry = journalEntries[0] ?? null;
@@ -524,13 +537,15 @@ function PersonalCheckInCard({
         </div>
       }
       className="border-[color-mix(in_srgb,var(--accent-purple)_22%,var(--border-subtle))]"
+      sectionAttribute={{ "data-life-section": "personal-check-in" }}
+      stateAttributes={stateAttributes}
       subtitle="Private reflection, open review prompt and recent journal context without scores or medical labels."
       title="Personal Check-in"
     >
       {!latestEntry ? (
         <EmptyState
-          description="Start a private local journal draft to create a first check-in. Nothing is persisted in this MVP."
-          title="No journal entries yet"
+          description="Reflexionen erscheinen hier, sobald lokale Journal-Einträge existieren."
+          title="Noch kein persönlicher Check-in"
         />
       ) : (
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -640,12 +655,16 @@ function QuickActions({
 function LifeSectionCards({
   sections,
   onAction,
+  stateAttributes,
 }: Readonly<{
   sections: LifeSectionSummary[];
   onAction: (section: LifeSectionSummary) => void;
+  stateAttributes: Record<string, string>;
 }>) {
   return (
     <Panel
+      sectionAttribute={{ "data-life-section": "life-sections" }}
+      stateAttributes={stateAttributes}
       subtitle="Each section opens an existing Life route; the overview keeps only personal context depth."
       title="Life Sections"
     >
@@ -740,6 +759,7 @@ function LooseNotesPanel({
   onTagChange,
   onTypeChange,
   selectedTag,
+  stateAttributes,
   tags,
   totalCount,
 }: Readonly<{
@@ -752,12 +772,15 @@ function LooseNotesPanel({
   onTagChange: (value: string) => void;
   onTypeChange: (value: LifeNoteType | "all") => void;
   selectedTag: string;
+  stateAttributes: Record<string, string>;
   tags: string[];
   totalCount: number;
 }>) {
   return (
     <Panel
       action={<Pill accent="var(--accent-cyan)">{notes.length} shown</Pill>}
+      sectionAttribute={{ "data-life-section": "loose-notes" }}
+      stateAttributes={stateAttributes}
       subtitle="Thoughts are preserved here without automatic task or knowledge conversion."
       title="Loose Notes"
     >
@@ -798,8 +821,8 @@ function LooseNotesPanel({
       <div className="mt-4 grid gap-3">
         {totalCount === 0 ? (
           <EmptyState
-            description="Capture a note to keep a thought intentionally loose. It will not become a task or resource automatically."
-            title="No loose notes yet"
+            description="Erfasste Gedanken bleiben hier getrennt von Tasks und Resources."
+            title="Noch keine losen Notizen"
           />
         ) : notes.length === 0 ? (
           <EmptyState
@@ -871,6 +894,7 @@ function InventoryWishlistFocus({
   onInventoryStatusChange,
   onPriorityChange,
   priorityFilter,
+  stateAttributes,
   totalCount,
 }: Readonly<{
   inventoryStatus: InventoryStatus | "all";
@@ -879,6 +903,7 @@ function InventoryWishlistFocus({
   onInventoryStatusChange: (status: InventoryStatus | "all") => void;
   onPriorityChange: (priority: Priority | "all") => void;
   priorityFilter: Priority | "all";
+  stateAttributes: Record<string, string>;
   totalCount: number;
 }>) {
   return (
@@ -888,6 +913,8 @@ function InventoryWishlistFocus({
           Add wishlist item
         </button>
       }
+      sectionAttribute={{ "data-life-section": "inventory-focus" }}
+      stateAttributes={stateAttributes}
       subtitle="Possessions, replacement needs and wishlist choices stay text-led with budget-fit labels."
       title="Inventory & Wishlist Focus"
     >
@@ -921,8 +948,8 @@ function InventoryWishlistFocus({
       <div className="mt-4 grid gap-3">
         {totalCount === 0 ? (
           <EmptyState
-            description="Add a wishlist or replacement item locally to prepare the later inventory workflow."
-            title="No inventory items yet"
+            description="Besitz, Wünsche und Ersatzbedarf erscheinen hier, sobald lokale Einträge existieren."
+            title="Noch keine Inventareinträge"
           />
         ) : items.length === 0 ? (
           <EmptyState
@@ -988,6 +1015,7 @@ function EntertainmentShelf({
   onMediaStatusChange,
   onPriorityChange,
   priorityFilter,
+  stateAttributes,
   totalCount,
 }: Readonly<{
   items: EntertainmentItem[];
@@ -996,6 +1024,7 @@ function EntertainmentShelf({
   onMediaStatusChange: (status: EntertainmentStatus | "all") => void;
   onPriorityChange: (priority: Priority | "all") => void;
   priorityFilter: Priority | "all";
+  stateAttributes: Record<string, string>;
   totalCount: number;
 }>) {
   return (
@@ -1005,6 +1034,8 @@ function EntertainmentShelf({
           Add media
         </button>
       }
+      sectionAttribute={{ "data-life-section": "entertainment-shelf" }}
+      stateAttributes={stateAttributes}
       subtitle="A compact personal media shelf without ratings, public profiles or social mechanics."
       title="Entertainment Shelf"
     >
@@ -1038,8 +1069,8 @@ function EntertainmentShelf({
       <div className="mt-4 grid gap-3">
         {totalCount === 0 ? (
           <EmptyState
-            description="Add a movie, series, book, game, video or music item locally to prepare the later collection."
-            title="No entertainment items yet"
+            description="Medien erscheinen hier, sobald du lokale Einträge erfasst. Keine Social- oder Rating-Integration."
+            title="Noch keine Medien"
           />
         ) : items.length === 0 ? (
           <EmptyState
@@ -1096,11 +1127,18 @@ function EntertainmentShelf({
 
 function PersonalSignals({
   metrics,
+  stateAttributes,
 }: Readonly<{
   metrics: LifeOverviewMetric[];
+  stateAttributes: Record<string, string>;
 }>) {
   return (
-    <Panel subtitle="Small text-led signals, no scores or gamification." title="Personal Signals">
+    <Panel
+      sectionAttribute={{ "data-life-section": "personal-signals" }}
+      stateAttributes={stateAttributes}
+      subtitle="Small text-led signals, no scores or gamification."
+      title="Personal Signals"
+    >
       <div className="grid gap-3 sm:grid-cols-2">
         {metrics.map((metric) => (
           <article
@@ -1126,18 +1164,22 @@ function PersonalSignals({
 
 function RecentPersonalActivity({
   activity,
+  stateAttributes,
 }: Readonly<{
   activity: LifeActivity[];
+  stateAttributes: Record<string, string>;
 }>) {
   return (
     <Panel
+      sectionAttribute={{ "data-life-section": "recent-activity" }}
+      stateAttributes={stateAttributes}
       subtitle="A short activity trace, not analytics."
       title="Recent Personal Activity"
     >
       {activity.length === 0 ? (
         <EmptyState
-          description="Local saves will appear here during this browser session."
-          title="No recent personal activity"
+          description="Lokale persönliche Ereignisse erscheinen hier, sobald sie existieren."
+          title="Keine persönliche Aktivität"
         />
       ) : (
         <ol className="grid gap-3">
@@ -1860,30 +1902,42 @@ function buildPersonalSignals({
   return [
     {
       id: "journal-count-local",
-      label: "Journal entries this week",
+      label: "Journal entries",
       value: journalEntries.length.toString(),
-      helper: "Reflection exists without becoming a score.",
+      helper:
+        journalEntries.length > 0
+          ? "Reflection exists without becoming a score."
+          : "Noch keine lokalen Reflexionen vorhanden.",
       tone: "purple",
     },
     {
       id: "loose-notes-local",
-      label: "Loose notes kept",
+      label: "Loose notes",
       value: notes.length.toString(),
-      helper: "Preserved without task or knowledge conversion.",
+      helper:
+        notes.length > 0
+          ? "Preserved without task or knowledge conversion."
+          : "Keine automatische Task- oder Resource-Konvertierung.",
       tone: "cyan",
     },
     {
       id: "wishlist-open-local",
-      label: "Wishlist decisions open",
+      label: "Wishlist decisions",
       value: openWishlist.toString(),
-      helper: "Budget fit needs manual review.",
+      helper:
+        openWishlist > 0
+          ? "Budget fit needs manual review."
+          : "Budget Fit bleibt ein manuelles Planungssignal.",
       tone: "orange",
     },
     {
       id: "budget-wait-local",
       label: "Items marked wait",
       value: waitItems.toString(),
-      helper: "Text status, not alarm color.",
+      helper:
+        waitItems > 0
+          ? "Text status, not alarm color."
+          : "Keine Inventarwerte oder Preise als Demo-Fallback.",
       tone: "gray",
     },
   ];
@@ -1962,6 +2016,53 @@ function shouldShow(activeView: LifeView, section: Exclude<LifeView, "overview">
   return activeView === "overview" || activeView === section;
 }
 
+function stateAttrs(meta: ContentStateMeta, profileId: string) {
+  return contentStateDataAttributes(meta, profileId);
+}
+
+function buildOverviewContentStates(
+  viewModel: LifeOverviewViewModel,
+): NonNullable<LifeOverviewViewModel["contentStates"]> {
+  return {
+    page: resolveContentStateMeta({
+      capacity: 8,
+      itemCount:
+        viewModel.journalEntries.length +
+        viewModel.notes.length +
+        viewModel.entertainment.length +
+        viewModel.inventory.length,
+    }),
+    personalCheckIn: resolveContentStateMeta({
+      capacity: 1,
+      itemCount: viewModel.journalEntries.length > 0 ? 1 : 0,
+    }),
+    lifeSections: resolveContentStateMeta({
+      capacity: 4,
+      itemCount: viewModel.sections.length,
+    }),
+    looseNotes: resolveContentStateMeta({
+      capacity: 5,
+      itemCount: viewModel.notes.length,
+    }),
+    inventoryFocus: resolveContentStateMeta({
+      capacity: 4,
+      itemCount: viewModel.inventory.length,
+    }),
+    entertainmentShelf: resolveContentStateMeta({
+      capacity: 4,
+      itemCount: viewModel.entertainment.length,
+    }),
+    recentActivity: resolveContentStateMeta({
+      capacity: 5,
+      itemCount: viewModel.recentActivity.length,
+    }),
+    personalSignals: resolveContentStateMeta({
+      capacity: 4,
+      itemCount: viewModel.metrics.length,
+    }),
+  };
+}
+
 export function LifeOverviewPage({
   viewModel,
 }: Readonly<{
@@ -2038,6 +2139,9 @@ export function LifeOverviewPage({
     () => buildPersonalSignals({ inventory, journalEntries, notes }),
     [inventory, journalEntries, notes],
   );
+  const profileId = viewModel.profileId ?? "demo";
+  const contentStates =
+    viewModel.contentStates ?? buildOverviewContentStates(viewModel);
 
   function showToast(nextToast: ToastState) {
     setToast(nextToast);
@@ -2185,6 +2289,8 @@ export function LifeOverviewPage({
       className="mx-auto flex w-full max-w-[2208px] flex-col gap-2 pb-6"
       id="life-overview-page"
       style={{ "--accent": lifeAccent } as LifeStyle}
+      {...stateAttrs(contentStates.page, profileId)}
+      data-life-section="page"
     >
       <LifePageHeader
         header={viewModel.header}
@@ -2202,6 +2308,7 @@ export function LifeOverviewPage({
           onOpenJournal={openJournal}
           onStartReflection={openReflection}
           reviewDots={viewModel.reviewDots}
+          stateAttributes={stateAttrs(contentStates.personalCheckIn, profileId)}
           statusLabel={viewModel.header.statusLabel}
         />
       ) : null}
@@ -2219,6 +2326,7 @@ export function LifeOverviewPage({
         <LifeSectionCards
           onAction={handleSectionAction}
           sections={viewModel.sections}
+          stateAttributes={stateAttrs(contentStates.lifeSections, profileId)}
         />
       ) : null}
 
@@ -2234,6 +2342,7 @@ export function LifeOverviewPage({
             onTagChange={setSelectedTag}
             onTypeChange={setNoteType}
             selectedTag={selectedTag}
+            stateAttributes={stateAttrs(contentStates.looseNotes, profileId)}
             tags={noteTags}
             totalCount={notes.length}
           />
@@ -2247,6 +2356,7 @@ export function LifeOverviewPage({
             onInventoryStatusChange={setInventoryStatus}
             onPriorityChange={setInventoryPriority}
             priorityFilter={inventoryPriority}
+            stateAttributes={stateAttrs(contentStates.inventoryFocus, profileId)}
             totalCount={inventory.length}
           />
         ) : null}
@@ -2261,14 +2371,21 @@ export function LifeOverviewPage({
             onMediaStatusChange={setMediaStatus}
             onPriorityChange={setMediaPriority}
             priorityFilter={mediaPriority}
+            stateAttributes={stateAttrs(contentStates.entertainmentShelf, profileId)}
             totalCount={entertainment.length}
           />
         ) : null}
 
         {activeView === "overview" || activeView === "journal" ? (
           <div className="grid gap-2">
-            <RecentPersonalActivity activity={recentActivity} />
-            <PersonalSignals metrics={metrics} />
+            <RecentPersonalActivity
+              activity={recentActivity}
+              stateAttributes={stateAttrs(contentStates.recentActivity, profileId)}
+            />
+            <PersonalSignals
+              metrics={metrics}
+              stateAttributes={stateAttrs(contentStates.personalSignals, profileId)}
+            />
           </div>
         ) : null}
       </div>

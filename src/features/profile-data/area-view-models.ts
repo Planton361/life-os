@@ -1645,31 +1645,332 @@ export async function getSkillMapViewModel(): Promise<
 export async function getLifeOverviewViewModel(): Promise<
   ReturnType<typeof getDemoLifeOverviewViewModel>
 > {
-  return getProfileAreaViewModel(getDemoLifeOverviewViewModel, "Life");
+  const profileId = await getCurrentLifeOsProfileId();
+  const viewModel = getDemoLifeOverviewViewModel();
+
+  if (profileId === "demo") {
+    return {
+      ...viewModel,
+      profileId,
+      contentStates: {
+        page: resolveContentStateMeta({ capacity: 8, itemCount: 8 }),
+        personalCheckIn: resolveContentStateMeta({
+          capacity: 1,
+          itemCount: viewModel.journalEntries.length > 0 ? 1 : 0,
+        }),
+        lifeSections: resolveContentStateMeta({
+          capacity: 4,
+          itemCount: viewModel.sections.length,
+        }),
+        looseNotes: resolveContentStateMeta({
+          capacity: 5,
+          itemCount: viewModel.notes.length,
+        }),
+        inventoryFocus: resolveContentStateMeta({
+          capacity: 4,
+          itemCount: viewModel.inventory.length,
+        }),
+        entertainmentShelf: resolveContentStateMeta({
+          capacity: 4,
+          itemCount: viewModel.entertainment.length,
+        }),
+        recentActivity: resolveContentStateMeta({
+          capacity: 5,
+          itemCount: viewModel.recentActivity.length,
+        }),
+        personalSignals: resolveContentStateMeta({
+          capacity: 4,
+          itemCount: viewModel.metrics.length,
+        }),
+      },
+    };
+  }
+
+  return {
+    ...clone(viewModel),
+    profileId,
+    header: {
+      ...viewModel.header,
+      statusLabel: "Neutral",
+      context:
+        "Private personal context shell. No demo data, persistence or automation is connected.",
+    },
+    journalEntries: [],
+    notes: [],
+    entertainment: [],
+    inventory: [],
+    sections: viewModel.sections.map((section) => ({
+      ...section,
+      lastActivity: "Noch keine lokalen Daten",
+      openItems: "0",
+      purpose:
+        section.id === "journal"
+          ? "Private Reflexionen und Review-Prompts."
+          : section.id === "notes"
+            ? "Lose Gedanken, die nicht automatisch zu Tasks werden."
+            : section.id === "entertainment"
+              ? "Private Medienliste ohne Social- oder Rating-Mechanik."
+              : "Besitz, Wünsche und Ersatzbedarf ohne Finanzberatung.",
+      nextAction: "Lokale Datenquelle noch offen",
+    })),
+    metrics: [
+      {
+        id: "journal-neutral",
+        label: "Journal entries",
+        value: "0",
+        helper: "Noch keine lokalen Reflexionen vorhanden.",
+        tone: "purple",
+      },
+      {
+        id: "notes-neutral",
+        label: "Loose notes",
+        value: "0",
+        helper: "Keine automatische Task- oder Resource-Konvertierung.",
+        tone: "cyan",
+      },
+      {
+        id: "wishlist-neutral",
+        label: "Wishlist decisions",
+        value: "0",
+        helper: "Budget Fit bleibt ein manuelles Planungssignal.",
+        tone: "orange",
+      },
+      {
+        id: "media-neutral",
+        label: "Media items",
+        value: "0",
+        helper: "Keine Social-, Rating- oder Lookup-Integration.",
+        tone: "gray",
+      },
+    ],
+    recentActivity: [],
+    reviewDots: [],
+    contentStates: {
+      page: resolveContentStateMeta({ capacity: 8, itemCount: 0 }),
+      personalCheckIn: resolveContentStateMeta({ capacity: 1, itemCount: 0 }),
+      lifeSections: resolveContentStateMeta({ capacity: 4, itemCount: 4 }),
+      looseNotes: resolveContentStateMeta({ capacity: 5, itemCount: 0 }),
+      inventoryFocus: resolveContentStateMeta({ capacity: 4, itemCount: 0 }),
+      entertainmentShelf: resolveContentStateMeta({ capacity: 4, itemCount: 0 }),
+      recentActivity: resolveContentStateMeta({ capacity: 5, itemCount: 0 }),
+      personalSignals: resolveContentStateMeta({ capacity: 4, itemCount: 0 }),
+    },
+  };
 }
 
 export async function getJournalPageViewModel(): Promise<
   ReturnType<typeof getDemoJournalPageViewModel>
 > {
-  return getProfileAreaViewModel(getDemoJournalPageViewModel, "Life");
+  const profileId = await getCurrentLifeOsProfileId();
+  const viewModel = getDemoJournalPageViewModel();
+
+  if (profileId === "demo") {
+    return {
+      ...viewModel,
+      profileId,
+      contentStates: {
+        page: resolveContentStateMeta({ capacity: 4, itemCount: 4 }),
+        writingFocus: resolveContentStateMeta({ capacity: 1, itemCount: 1 }),
+        recentEntries: resolveContentStateMeta({
+          capacity: 4,
+          itemCount: viewModel.entries.length,
+        }),
+        reflectionPrompts: resolveContentStateMeta({
+          capacity: 4,
+          itemCount: viewModel.prompts.length,
+        }),
+        journalPattern: resolveContentStateMeta({ capacity: 3, itemCount: 3 }),
+      },
+    };
+  }
+
+  return {
+    ...clone(viewModel),
+    profileId,
+    header: {
+      ...viewModel.header,
+      context:
+        "Private reflexion shell. No demo entries, therapy flow or persistent journal source is connected.",
+    },
+    entries: [],
+    prompts: [],
+    contentStates: {
+      page: resolveContentStateMeta({ capacity: 4, itemCount: 0 }),
+      writingFocus: resolveContentStateMeta({ capacity: 1, itemCount: 0 }),
+      recentEntries: resolveContentStateMeta({ capacity: 4, itemCount: 0 }),
+      reflectionPrompts: resolveContentStateMeta({ capacity: 4, itemCount: 0 }),
+      journalPattern: resolveContentStateMeta({ capacity: 3, itemCount: 0 }),
+    },
+  };
 }
 
 export async function getNotesPageViewModel(): Promise<
   ReturnType<typeof getDemoNotesPageViewModel>
 > {
-  return getProfileAreaViewModel(getDemoNotesPageViewModel, "Life");
+  const profileId = await getCurrentLifeOsProfileId();
+  const viewModel = getDemoNotesPageViewModel();
+
+  if (profileId === "demo") {
+    return {
+      ...viewModel,
+      profileId,
+      contentStates: {
+        page: resolveContentStateMeta({ capacity: 4, itemCount: 4 }),
+        brainDumpHistory: resolveContentStateMeta({
+          capacity: 5,
+          itemCount: viewModel.notes.length,
+        }),
+        noteComposer: resolveContentStateMeta({ capacity: 1, itemCount: 1 }),
+        noteTypes: resolveContentStateMeta({
+          capacity: 7,
+          itemCount: viewModel.notes.length,
+        }),
+        captureSources: resolveContentStateMeta({
+          capacity: 3,
+          itemCount: viewModel.notes.length,
+        }),
+      },
+    };
+  }
+
+  return {
+    ...clone(viewModel),
+    profileId,
+    header: {
+      ...viewModel.header,
+      context:
+        "Loose note shell. No demo notes or automatic Task/Resource conversion is connected.",
+    },
+    notes: [],
+    contentStates: {
+      page: resolveContentStateMeta({ capacity: 4, itemCount: 0 }),
+      brainDumpHistory: resolveContentStateMeta({ capacity: 5, itemCount: 0 }),
+      noteComposer: resolveContentStateMeta({ capacity: 1, itemCount: 0 }),
+      noteTypes: resolveContentStateMeta({ capacity: 7, itemCount: 0 }),
+      captureSources: resolveContentStateMeta({ capacity: 3, itemCount: 0 }),
+    },
+  };
 }
 
 export async function getEntertainmentPageViewModel(): Promise<
   ReturnType<typeof getDemoEntertainmentPageViewModel>
 > {
-  return getProfileAreaViewModel(getDemoEntertainmentPageViewModel, "Life");
+  const profileId = await getCurrentLifeOsProfileId();
+  const viewModel = getDemoEntertainmentPageViewModel();
+
+  if (profileId === "demo") {
+    const currentItems = viewModel.items.filter((item) =>
+      ["watching", "reading", "playing"].includes(item.status),
+    );
+    const wishlistItems = viewModel.items.filter(
+      (item) => item.status === "wishlist",
+    );
+    const finishedPausedItems = viewModel.items.filter((item) =>
+      ["finished", "paused"].includes(item.status),
+    );
+
+    return {
+      ...viewModel,
+      profileId,
+      contentStates: {
+        page: resolveContentStateMeta({ capacity: 4, itemCount: 4 }),
+        shelf: resolveContentStateMeta({
+          capacity: 6,
+          itemCount: viewModel.items.length,
+        }),
+        currentMedia: resolveContentStateMeta({
+          capacity: 5,
+          itemCount: currentItems.length,
+        }),
+        wishlist: resolveContentStateMeta({
+          capacity: 5,
+          itemCount: wishlistItems.length,
+        }),
+        finishedPaused: resolveContentStateMeta({
+          capacity: 5,
+          itemCount: finishedPausedItems.length,
+        }),
+      },
+    };
+  }
+
+  return {
+    ...clone(viewModel),
+    profileId,
+    header: {
+      ...viewModel.header,
+      context:
+        "Private media shell. No demo media, social rating, watchlist sync or lookup API is connected.",
+    },
+    items: [],
+    contentStates: {
+      page: resolveContentStateMeta({ capacity: 4, itemCount: 0 }),
+      shelf: resolveContentStateMeta({ capacity: 6, itemCount: 0 }),
+      currentMedia: resolveContentStateMeta({ capacity: 5, itemCount: 0 }),
+      wishlist: resolveContentStateMeta({ capacity: 5, itemCount: 0 }),
+      finishedPaused: resolveContentStateMeta({ capacity: 5, itemCount: 0 }),
+    },
+  };
 }
 
 export async function getInventoryPageViewModel(): Promise<
   ReturnType<typeof getDemoInventoryPageViewModel>
 > {
-  return getProfileAreaViewModel(getDemoInventoryPageViewModel, "Life");
+  const profileId = await getCurrentLifeOsProfileId();
+  const viewModel = getDemoInventoryPageViewModel();
+
+  if (profileId === "demo") {
+    const wishlistItems = viewModel.items.filter((item) =>
+      ["wishlist", "planned_purchase", "needs_replacement"].includes(
+        item.status,
+      ),
+    );
+    const ownedItems = viewModel.items.filter(
+      (item) => item.owned || item.status === "owned",
+    );
+
+    return {
+      ...viewModel,
+      profileId,
+      contentStates: {
+        page: resolveContentStateMeta({ capacity: 4, itemCount: 4 }),
+        inventoryWishlist: resolveContentStateMeta({
+          capacity: 6,
+          itemCount: viewModel.items.length,
+        }),
+        wishlistDecisions: resolveContentStateMeta({
+          capacity: 5,
+          itemCount: wishlistItems.length,
+        }),
+        ownedItems: resolveContentStateMeta({
+          capacity: 5,
+          itemCount: ownedItems.length,
+        }),
+        budgetSummary: resolveContentStateMeta({
+          capacity: 4,
+          itemCount: viewModel.items.length,
+        }),
+      },
+    };
+  }
+
+  return {
+    ...clone(viewModel),
+    profileId,
+    header: {
+      ...viewModel.header,
+      context:
+        "Private inventory shell. Budget Fit is only a manual planning signal; no price, shopping or payment logic is connected.",
+    },
+    items: [],
+    contentStates: {
+      page: resolveContentStateMeta({ capacity: 4, itemCount: 0 }),
+      inventoryWishlist: resolveContentStateMeta({ capacity: 6, itemCount: 0 }),
+      wishlistDecisions: resolveContentStateMeta({ capacity: 5, itemCount: 0 }),
+      ownedItems: resolveContentStateMeta({ capacity: 5, itemCount: 0 }),
+      budgetSummary: resolveContentStateMeta({ capacity: 4, itemCount: 0 }),
+    },
+  };
 }
 
 export async function getEducationOverviewViewModel(): Promise<

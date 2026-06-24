@@ -1,6 +1,11 @@
 "use client";
 
 import { useMemo, useState, type FormEvent } from "react";
+import {
+  contentStateDataAttributes,
+  resolveContentStateMeta,
+  type ContentStateMeta,
+} from "@/features/content-state";
 import { cn } from "@/lib/cn";
 import type { LifeNote, LifeNoteType, LifeSource, NotesPageViewModel } from "./types";
 import {
@@ -276,6 +281,37 @@ function typeCounts(notes: LifeNote[]) {
   }));
 }
 
+function stateAttrs(meta: ContentStateMeta, profileId: string) {
+  return contentStateDataAttributes(meta, profileId);
+}
+
+function buildContentStates(
+  viewModel: NotesPageViewModel,
+): NonNullable<NotesPageViewModel["contentStates"]> {
+  return {
+    page: resolveContentStateMeta({
+      capacity: 4,
+      itemCount: viewModel.notes.length > 0 ? 4 : 0,
+    }),
+    brainDumpHistory: resolveContentStateMeta({
+      capacity: 5,
+      itemCount: viewModel.notes.length,
+    }),
+    noteComposer: resolveContentStateMeta({
+      capacity: 1,
+      itemCount: viewModel.notes.length > 0 ? 1 : 0,
+    }),
+    noteTypes: resolveContentStateMeta({
+      capacity: 7,
+      itemCount: viewModel.notes.length,
+    }),
+    captureSources: resolveContentStateMeta({
+      capacity: 3,
+      itemCount: viewModel.notes.length,
+    }),
+  };
+}
+
 export function NotesPage({
   viewModel,
 }: Readonly<{
@@ -291,6 +327,8 @@ export function NotesPage({
   const [selectedNote, setSelectedNote] = useState<LifeNote | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const profileId = viewModel.profileId ?? "demo";
+  const contentStates = viewModel.contentStates ?? buildContentStates(viewModel);
 
   const tags = useMemo(
     () => Array.from(new Set(notes.flatMap((note) => note.tags))).sort(),
@@ -340,7 +378,13 @@ export function NotesPage({
   }
 
   return (
-    <LifePageShell accent="var(--accent-cyan)">
+    <LifePageShell
+      accent="var(--accent-cyan)"
+      id="life-notes-page"
+      profileId={profileId}
+      sectionAttribute={{ "data-notes-section": "page" }}
+      stateMeta={contentStates.page}
+    >
       <LifeSubpageHeader
         header={viewModel.header}
         primaryAction={
@@ -365,6 +409,8 @@ export function NotesPage({
       <Panel
         action={<StatusPill tone="cyan" quiet>{filteredNotes.length} shown</StatusPill>}
         className="border-[color-mix(in_srgb,var(--accent-cyan)_24%,var(--border-subtle))]"
+        sectionAttribute={{ "data-notes-section": "brain-dump-history" }}
+        stateAttributes={stateAttrs(contentStates.brainDumpHistory, profileId)}
         subtitle="A brain dump history for thoughts that should remain loose until manually moved later."
         title="Brain Dump History"
       >
@@ -423,8 +469,8 @@ export function NotesPage({
         <div className="mt-4 grid gap-3">
           {notes.length === 0 ? (
             <LifeEmptyState
-              description="Create a local loose note. It will stay separate from Tasks and Resources."
-              title="Empty Notes"
+              description="Erfasste Gedanken bleiben hier getrennt von Tasks und Resources."
+              title="Noch keine losen Notizen"
             />
           ) : filteredNotes.length === 0 ? (
             <LifeEmptyState
@@ -484,16 +530,28 @@ export function NotesPage({
               New note
             </button>
           }
+          sectionAttribute={{ "data-notes-section": "note-composer" }}
+          stateAttributes={stateAttrs(contentStates.noteComposer, profileId)}
           subtitle="Same local fields as the dialog; this shortcut keeps capture visible on mobile."
-          title="New Note Composer"
+          title="Notiz erfassen"
         >
           <p className="text-xs leading-5 text-[var(--text-secondary)]">
-            Use the dialog to capture a loose thought with title, type, body, tags,
-            source and the kept-loose checkbox.
+            Nutze den Dialog, um einen Gedanken lokal festzuhalten. Keine automatische Umwandlung.
           </p>
         </Panel>
 
-        <Panel subtitle="Counts are local mock signals only." title="Note Types">
+        <Panel
+          sectionAttribute={{ "data-notes-section": "note-types" }}
+          stateAttributes={stateAttrs(contentStates.noteTypes, profileId)}
+          subtitle="Counts are local mock signals only."
+          title="Note Types"
+        >
+          {notes.length === 0 ? (
+            <LifeEmptyState
+              description="Notiztypen erscheinen, sobald lokale Notizen existieren."
+              title="Noch keine Notiztypen"
+            />
+          ) : null}
           <div className="flex flex-wrap gap-2">
             <SegmentButton active={activeType === "all"} onSelect={setActiveType} value="all">
               All / {notes.length}
@@ -512,7 +570,18 @@ export function NotesPage({
         </Panel>
       </div>
 
-      <Panel subtitle="Context only. No automation or conversion is triggered." title="Recent Capture Sources">
+      <Panel
+        sectionAttribute={{ "data-notes-section": "capture-sources" }}
+        stateAttributes={stateAttrs(contentStates.captureSources, profileId)}
+        subtitle="Context only. No automation or conversion is triggered."
+        title="Recent Capture Sources"
+      >
+        {notes.length === 0 ? (
+          <LifeEmptyState
+            description="Quellen erscheinen, sobald lokale Notizen existieren."
+            title="Noch keine Quellen"
+          />
+        ) : null}
         <div className="grid gap-3 sm:grid-cols-3">
           {noteSources.slice(0, 3).map((item) => (
             <div

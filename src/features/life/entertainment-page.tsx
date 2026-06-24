@@ -1,6 +1,11 @@
 "use client";
 
 import { useMemo, useState, type FormEvent } from "react";
+import {
+  contentStateDataAttributes,
+  resolveContentStateMeta,
+  type ContentStateMeta,
+} from "@/features/content-state";
 import { cn } from "@/lib/cn";
 import type {
   EntertainmentItem,
@@ -307,6 +312,47 @@ function matchesSegment(item: EntertainmentItem, segment: MediaSegment) {
   return true;
 }
 
+function stateAttrs(meta: ContentStateMeta, profileId: string) {
+  return contentStateDataAttributes(meta, profileId);
+}
+
+function buildContentStates(
+  viewModel: EntertainmentPageViewModel,
+): NonNullable<EntertainmentPageViewModel["contentStates"]> {
+  const currentItems = viewModel.items.filter((item) =>
+    ["watching", "reading", "playing"].includes(item.status),
+  );
+  const wishlistItems = viewModel.items.filter(
+    (item) => item.status === "wishlist",
+  );
+  const finishedPausedItems = viewModel.items.filter((item) =>
+    ["finished", "paused"].includes(item.status),
+  );
+
+  return {
+    page: resolveContentStateMeta({
+      capacity: 4,
+      itemCount: viewModel.items.length > 0 ? 4 : 0,
+    }),
+    shelf: resolveContentStateMeta({
+      capacity: 6,
+      itemCount: viewModel.items.length,
+    }),
+    currentMedia: resolveContentStateMeta({
+      capacity: 5,
+      itemCount: currentItems.length,
+    }),
+    wishlist: resolveContentStateMeta({
+      capacity: 5,
+      itemCount: wishlistItems.length,
+    }),
+    finishedPaused: resolveContentStateMeta({
+      capacity: 5,
+      itemCount: finishedPausedItems.length,
+    }),
+  };
+}
+
 function MediaRow({
   item,
   onOpen,
@@ -363,6 +409,8 @@ export function EntertainmentPage({
   const [selectedItem, setSelectedItem] = useState<EntertainmentItem | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const profileId = viewModel.profileId ?? "demo";
+  const contentStates = viewModel.contentStates ?? buildContentStates(viewModel);
 
   const filteredItems = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -441,7 +489,13 @@ export function EntertainmentPage({
   }
 
   return (
-    <LifePageShell accent="var(--accent-blue)">
+    <LifePageShell
+      accent="var(--accent-blue)"
+      id="life-entertainment-page"
+      profileId={profileId}
+      sectionAttribute={{ "data-entertainment-section": "page" }}
+      stateMeta={contentStates.page}
+    >
       <LifeSubpageHeader
         header={viewModel.header}
         primaryAction={
@@ -466,6 +520,8 @@ export function EntertainmentPage({
       <Panel
         action={<StatusPill tone="blue" quiet>{filteredItems.length} shown</StatusPill>}
         className="border-[color-mix(in_srgb,var(--accent-blue)_24%,var(--border-subtle))]"
+        sectionAttribute={{ "data-entertainment-section": "shelf" }}
+        stateAttributes={stateAttrs(contentStates.shelf, profileId)}
         subtitle="Personal media status and next actions without ratings community or social mechanics."
         title="Entertainment Shelf"
       >
@@ -507,8 +563,8 @@ export function EntertainmentPage({
         <div className="mt-4 grid gap-3">
           {items.length === 0 ? (
             <LifeEmptyState
-              description="Add a local media item to start the personal shelf."
-              title="Empty Entertainment"
+              description="Medien erscheinen hier, sobald du lokale Einträge erfasst. Keine Social- oder Rating-Integration."
+              title="Noch keine Medien"
             />
           ) : filteredItems.length === 0 ? (
             <LifeEmptyState
@@ -524,12 +580,17 @@ export function EntertainmentPage({
       </Panel>
 
       <div className="grid gap-2 xl:grid-cols-3">
-        <Panel subtitle="Currently watching, reading or playing." title="Current Media">
+        <Panel
+          sectionAttribute={{ "data-entertainment-section": "current-media" }}
+          stateAttributes={stateAttrs(contentStates.currentMedia, profileId)}
+          subtitle="Currently watching, reading or playing."
+          title="Current Media"
+        >
           <div className="grid gap-3">
             {currentItems.length === 0 ? (
               <LifeEmptyState
-                description="No current media is active. Pick from the shelf when useful."
-                title="No current media"
+                description="Aktuelle Medien erscheinen hier nur aus lokalen Einträgen."
+                title="Nichts aktuell"
               />
             ) : (
               currentItems.slice(0, 5).map((item) => (
@@ -539,12 +600,17 @@ export function EntertainmentPage({
           </div>
         </Panel>
 
-        <Panel subtitle="Remembered media without buying or streaming integration." title="Media Wishlist">
+        <Panel
+          sectionAttribute={{ "data-entertainment-section": "wishlist" }}
+          stateAttributes={stateAttrs(contentStates.wishlist, profileId)}
+          subtitle="Remembered media without buying or streaming integration."
+          title="Media Wishlist"
+        >
           <div className="grid gap-3">
             {wishlistItems.length === 0 ? (
               <LifeEmptyState
-                description="Add to wishlist from the header. This remains private."
-                title="Empty Wishlist"
+                description="Merkliste bleibt lokal und privat; keine externe Watchlist ist verbunden."
+                title="Keine Merkliste"
               />
             ) : (
               wishlistItems.slice(0, 5).map((item) => (
@@ -554,12 +620,17 @@ export function EntertainmentPage({
           </div>
         </Panel>
 
-        <Panel subtitle="Quiet reference list, not a rating wall." title="Finished / Paused">
+        <Panel
+          sectionAttribute={{ "data-entertainment-section": "finished-paused" }}
+          stateAttributes={stateAttrs(contentStates.finishedPaused, profileId)}
+          subtitle="Quiet reference list, not a rating wall."
+          title="Finished / Paused"
+        >
           <div className="grid gap-3">
             {finishedPausedItems.length === 0 ? (
               <LifeEmptyState
-                description="Finished or paused media will appear here."
-                title="No finished or paused media"
+                description="Abgeschlossene oder pausierte Medien erscheinen hier aus lokalen Einträgen."
+                title="Keine abgeschlossenen oder pausierten Medien"
               />
             ) : (
               finishedPausedItems.slice(0, 5).map((item) => (

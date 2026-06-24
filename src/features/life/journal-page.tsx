@@ -1,6 +1,11 @@
 "use client";
 
 import { useMemo, useState, type FormEvent } from "react";
+import {
+  contentStateDataAttributes,
+  resolveContentStateMeta,
+  type ContentStateMeta,
+} from "@/features/content-state";
 import { cn } from "@/lib/cn";
 import type { JournalEntry, JournalMood, JournalPageViewModel } from "./types";
 import {
@@ -238,6 +243,37 @@ function mostCommonTag(entries: JournalEntry[]) {
   return [...counts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] ?? "none";
 }
 
+function stateAttrs(meta: ContentStateMeta, profileId: string) {
+  return contentStateDataAttributes(meta, profileId);
+}
+
+function buildContentStates(
+  viewModel: JournalPageViewModel,
+): NonNullable<JournalPageViewModel["contentStates"]> {
+  return {
+    page: resolveContentStateMeta({
+      capacity: 4,
+      itemCount: viewModel.entries.length > 0 ? 4 : 0,
+    }),
+    writingFocus: resolveContentStateMeta({
+      capacity: 1,
+      itemCount: viewModel.entries.length > 0 ? 1 : 0,
+    }),
+    recentEntries: resolveContentStateMeta({
+      capacity: 4,
+      itemCount: viewModel.entries.length,
+    }),
+    reflectionPrompts: resolveContentStateMeta({
+      capacity: 4,
+      itemCount: viewModel.prompts.length,
+    }),
+    journalPattern: resolveContentStateMeta({
+      capacity: 3,
+      itemCount: viewModel.entries.length > 0 ? 3 : 0,
+    }),
+  };
+}
+
 export function JournalPage({
   viewModel,
 }: Readonly<{
@@ -250,6 +286,8 @@ export function JournalPage({
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const profileId = viewModel.profileId ?? "demo";
+  const contentStates = viewModel.contentStates ?? buildContentStates(viewModel);
 
   const filteredEntries = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -292,7 +330,12 @@ export function JournalPage({
   }
 
   return (
-    <LifePageShell>
+    <LifePageShell
+      id="life-journal-page"
+      profileId={profileId}
+      sectionAttribute={{ "data-journal-section": "page" }}
+      stateMeta={contentStates.page}
+    >
       <LifeSubpageHeader
         header={viewModel.header}
         primaryAction={
@@ -321,6 +364,8 @@ export function JournalPage({
           </button>
         }
         className="border-[color-mix(in_srgb,var(--accent-purple)_24%,var(--border-subtle))]"
+        sectionAttribute={{ "data-journal-section": "writing-focus" }}
+        stateAttributes={stateAttrs(contentStates.writingFocus, profileId)}
         subtitle="A writing entry point with the latest private context. This is not a diagnosis or therapy product."
         title="Writing Focus"
       >
@@ -359,8 +404,8 @@ export function JournalPage({
           </div>
         ) : (
           <LifeEmptyState
-            description="Start a private local journal entry. It will not be persisted in this MVP."
-            title="Empty Journal"
+            description="Starte einen lokalen Journal-Eintrag, um den nächsten Reflexionspunkt zu setzen."
+            title="Noch kein Schreibfokus"
           />
         )}
       </Panel>
@@ -368,6 +413,8 @@ export function JournalPage({
       <div className="grid gap-2 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,.8fr)]">
         <Panel
           action={<StatusPill tone="cyan" quiet>{filteredEntries.length} shown</StatusPill>}
+          sectionAttribute={{ "data-journal-section": "recent-entries" }}
+          stateAttributes={stateAttrs(contentStates.recentEntries, profileId)}
           subtitle="Short previews only; open an entry for the full text."
           title="Recent Journal Entries"
         >
@@ -384,8 +431,8 @@ export function JournalPage({
           <div className="mt-4 grid gap-3">
             {entries.length === 0 ? (
               <LifeEmptyState
-                description="New local journal entries will appear here."
-                title="Empty Journal"
+                description="Lokale Einträge erscheinen hier, sobald du sie erfasst."
+                title="Noch keine Journal-Einträge"
               />
             ) : filteredEntries.length === 0 ? (
               <LifeEmptyState
@@ -436,11 +483,19 @@ export function JournalPage({
 
         <div className="grid gap-2">
           <Panel
+            sectionAttribute={{ "data-journal-section": "reflection-prompts" }}
+            stateAttributes={stateAttrs(contentStates.reflectionPrompts, profileId)}
             subtitle="Select a prompt to start the same local journal dialog."
             title="Reflection Prompts"
           >
             <div className="grid gap-2" id="reflection-prompts">
-              {viewModel.prompts.map((prompt) => (
+              {viewModel.prompts.length === 0 ? (
+                <LifeEmptyState
+                  description="Prompts erscheinen, sobald ein lokaler Reflexionskontext existiert."
+                  title="Keine offenen Prompts"
+                />
+              ) : (
+                viewModel.prompts.map((prompt) => (
                 <button
                   className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.48)] px-3 py-3 text-left text-xs leading-5 text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                   key={prompt}
@@ -449,11 +504,17 @@ export function JournalPage({
                 >
                   {prompt}
                 </button>
-              ))}
+                ))
+              )}
             </div>
           </Panel>
 
-          <Panel subtitle="Text-only signals, not scores." title="Journal Pattern">
+          <Panel
+            sectionAttribute={{ "data-journal-section": "journal-pattern" }}
+            stateAttributes={stateAttrs(contentStates.journalPattern, profileId)}
+            subtitle="Text-only signals, not scores."
+            title="Journal Pattern"
+          >
             <div className="grid gap-3">
               <div className="rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.30)] p-3">
                 <p className="text-2xl font-semibold text-[var(--text-primary)]">

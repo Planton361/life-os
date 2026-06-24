@@ -2,6 +2,10 @@
 
 import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { EmptyState, Pill } from "@/components/layout/route-page-primitives";
+import {
+  contentStateDataAttributes,
+  type ContentStateMeta,
+} from "@/features/content-state";
 import { cn } from "@/lib/cn";
 import type {
   BudgetFit,
@@ -201,14 +205,25 @@ export function priorityRank(priority: LifePriority) {
 export function LifePageShell({
   accent = "var(--accent-purple)",
   children,
+  id,
+  sectionAttribute,
+  stateMeta,
+  profileId = "demo",
 }: Readonly<{
   accent?: string;
   children: ReactNode;
+  id?: string;
+  sectionAttribute?: Record<string, string>;
+  stateMeta?: ContentStateMeta;
+  profileId?: string;
 }>) {
   return (
     <div
       className="mx-auto flex w-full max-w-[2208px] flex-col gap-2 pb-6"
+      id={id}
       style={{ "--accent": accent } as LifeWorkbenchStyle}
+      {...(stateMeta ? contentStateDataAttributes(stateMeta, profileId) : {})}
+      {...sectionAttribute}
     >
       {children}
     </div>
@@ -256,12 +271,16 @@ export function Panel({
   action,
   children,
   className,
+  sectionAttribute,
+  stateAttributes,
 }: Readonly<{
   title: string;
   subtitle?: string;
   action?: ReactNode;
   children: ReactNode;
   className?: string;
+  sectionAttribute?: Record<string, string>;
+  stateAttributes?: Record<string, string>;
 }>) {
   const headingId = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-heading`;
 
@@ -272,6 +291,8 @@ export function Panel({
         "min-w-0 overflow-hidden rounded-[16px] border border-[var(--border-subtle)] bg-[var(--surface-1)] shadow-[0_8px_22px_rgba(0,0,0,.12)]",
         className,
       )}
+      {...stateAttributes}
+      {...sectionAttribute}
     >
       <div className="border-b border-[var(--border-subtle)] bg-[rgba(18,28,43,.42)] px-4 py-3">
         <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">

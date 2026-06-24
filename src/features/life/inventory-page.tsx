@@ -1,6 +1,11 @@
 "use client";
 
 import { useMemo, useState, type FormEvent } from "react";
+import {
+  contentStateDataAttributes,
+  resolveContentStateMeta,
+  type ContentStateMeta,
+} from "@/features/content-state";
 import { cn } from "@/lib/cn";
 import type {
   BudgetFit,
@@ -423,6 +428,44 @@ function decisionHint(item: InventoryItem) {
   return "Clarify fit manually";
 }
 
+function stateAttrs(meta: ContentStateMeta, profileId: string) {
+  return contentStateDataAttributes(meta, profileId);
+}
+
+function buildContentStates(
+  viewModel: InventoryPageViewModel,
+): NonNullable<InventoryPageViewModel["contentStates"]> {
+  const wishlistItems = viewModel.items.filter((item) =>
+    ["wishlist", "planned_purchase", "needs_replacement"].includes(item.status),
+  );
+  const ownedItems = viewModel.items.filter(
+    (item) => item.owned || item.status === "owned",
+  );
+
+  return {
+    page: resolveContentStateMeta({
+      capacity: 4,
+      itemCount: viewModel.items.length > 0 ? 4 : 0,
+    }),
+    inventoryWishlist: resolveContentStateMeta({
+      capacity: 6,
+      itemCount: viewModel.items.length,
+    }),
+    wishlistDecisions: resolveContentStateMeta({
+      capacity: 5,
+      itemCount: wishlistItems.length,
+    }),
+    ownedItems: resolveContentStateMeta({
+      capacity: 5,
+      itemCount: ownedItems.length,
+    }),
+    budgetSummary: resolveContentStateMeta({
+      capacity: 4,
+      itemCount: viewModel.items.length,
+    }),
+  };
+}
+
 function InventoryRow({
   item,
   onOpen,
@@ -506,6 +549,8 @@ export function InventoryPage({
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const profileId = viewModel.profileId ?? "demo";
+  const contentStates = viewModel.contentStates ?? buildContentStates(viewModel);
 
   const filteredItems = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -591,7 +636,13 @@ export function InventoryPage({
   }
 
   return (
-    <LifePageShell accent="var(--accent-orange)">
+    <LifePageShell
+      accent="var(--accent-orange)"
+      id="life-inventory-page"
+      profileId={profileId}
+      sectionAttribute={{ "data-inventory-section": "page" }}
+      stateMeta={contentStates.page}
+    >
       <LifeSubpageHeader
         header={viewModel.header}
         primaryAction={
@@ -604,7 +655,12 @@ export function InventoryPage({
             <button className={secondaryButtonClass} onClick={() => openAddItem(true)} type="button">
               Add wishlist item
             </button>
-            <button className={secondaryButtonClass} onClick={() => setBudgetDialogOpen(true)} type="button">
+            <button
+              className={secondaryButtonClass}
+              disabled={items.length === 0}
+              onClick={() => setBudgetDialogOpen(true)}
+              type="button"
+            >
               Review budget
             </button>
           </>
@@ -616,6 +672,8 @@ export function InventoryPage({
       <Panel
         action={<StatusPill tone="orange" quiet>{filteredItems.length} shown</StatusPill>}
         className="border-[color-mix(in_srgb,var(--accent-orange)_24%,var(--border-subtle))]"
+        sectionAttribute={{ "data-inventory-section": "inventory-wishlist" }}
+        stateAttributes={stateAttrs(contentStates.inventoryWishlist, profileId)}
         subtitle="Owned items, replacement needs and wishlist planning without shopping or finance integrations."
         title="Inventory & Wishlist"
       >
@@ -684,8 +742,8 @@ export function InventoryPage({
         <div className="mt-4 grid gap-3">
           {items.length === 0 ? (
             <LifeEmptyState
-              description="Add a local item or wishlist item to start inventory planning."
-              title="Empty Inventory"
+              description="Besitz, Wunschliste und Ersatzbedarf erscheinen hier, sobald lokale Einträge existieren."
+              title="Noch keine Inventareinträge"
             />
           ) : filteredItems.length === 0 ? (
             <LifeEmptyState
@@ -701,12 +759,17 @@ export function InventoryPage({
       </Panel>
 
       <div className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <Panel subtitle="Manual decision hints, not financial advice." title="Wishlist Decisions">
+        <Panel
+          sectionAttribute={{ "data-inventory-section": "wishlist-decisions" }}
+          stateAttributes={stateAttrs(contentStates.wishlistDecisions, profileId)}
+          subtitle="Manual decision hints, not financial advice."
+          title="Wishlist Decisions"
+        >
           <div className="grid gap-3">
             {wishlistItems.length === 0 ? (
               <LifeEmptyState
-                description="Wishlist and planned items will appear here."
-                title="Empty Wishlist"
+                description="Wishlist-Entscheidungen erscheinen erst aus lokalen Einträgen."
+                title="Keine Wishlist-Entscheidungen"
               />
             ) : (
               wishlistItems.slice(0, 5).map((item) => (
@@ -732,12 +795,17 @@ export function InventoryPage({
           </div>
         </Panel>
 
-        <Panel subtitle="Compact owned list, no wide table." title="Owned Items">
+        <Panel
+          sectionAttribute={{ "data-inventory-section": "owned-items" }}
+          stateAttributes={stateAttrs(contentStates.ownedItems, profileId)}
+          subtitle="Compact owned list, no wide table."
+          title="Owned Items"
+        >
           <div className="grid gap-3">
             {ownedItems.length === 0 ? (
               <LifeEmptyState
-                description="Owned inventory items will appear here."
-                title="No owned items"
+                description="Besitz-Einträge erscheinen hier, sobald lokale Daten existieren."
+                title="Keine Besitz-Einträge"
               />
             ) : (
               ownedItems.slice(0, 5).map((item) => (
@@ -748,7 +816,17 @@ export function InventoryPage({
         </Panel>
       </div>
 
-      <Panel subtitle="Text-led planning signal only." title="Budget Fit Summary">
+      <Panel
+        sectionAttribute={{ "data-inventory-section": "budget-summary" }}
+        stateAttributes={stateAttrs(contentStates.budgetSummary, profileId)}
+        subtitle="Text-led planning signal only."
+        title="Budget Fit Summary"
+      >
+        {items.length === 0 ? (
+          <p className="mb-3 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.42)] px-3 py-2 text-xs leading-5 text-[var(--text-secondary)]">
+            Budget Fit ist nur ein manuelles Planungssignal.
+          </p>
+        ) : null}
         <BudgetFitSummary items={items} />
       </Panel>
 
