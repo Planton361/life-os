@@ -9,3 +9,4 @@ out/
 .pnpm-store
 test-results/
 playwright-report/
+.local/
