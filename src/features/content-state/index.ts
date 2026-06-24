@@ -51,3 +51,17 @@ export function resolveContentStateMeta({
     state: hasHistory ? "filled" : "partial",
   };
 }
+
+export function contentStateDataAttributes(
+  meta: ContentStateMeta,
+  profileId: string,
+) {
+  return {
+    "data-content-state": meta.state,
+    "data-item-count": String(meta.itemCount),
+    ...(meta.capacity === undefined
+      ? {}
+      : { "data-capacity": String(meta.capacity) }),
+    "data-profile-id": profileId,
+  };
+}

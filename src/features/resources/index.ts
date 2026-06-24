@@ -1,8 +1,12 @@
 export { ResourcesPage } from "./components/resources-page";
-export { getResourcesViewModel } from "./resources-view-model";
+export {
+  buildResourcesContentStates,
+  getResourcesViewModel,
+} from "./resources-view-model";
 export type {
   RecentLearning,
   RelatedResource,
+  ResourceProfileId,
   ResourceAction,
   ResourceArea,
   ResourceAreaMeta,

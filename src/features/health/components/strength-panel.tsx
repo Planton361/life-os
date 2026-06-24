@@ -1,5 +1,6 @@
 import { accentStyle } from "@/components/layout/route-page-primitives";
-import type { StrengthViewModel } from "../types";
+import type { ContentStateMeta } from "@/features/content-state";
+import type { HealthProfileId, StrengthViewModel } from "../types";
 import {
   ActionLink,
   HealthMetricCard,
@@ -10,13 +11,20 @@ import {
 
 export function StrengthPanel({
   data,
+  profileId,
+  state,
 }: Readonly<{
   data: StrengthViewModel;
+  profileId: HealthProfileId;
+  state: ContentStateMeta;
 }>) {
   return (
     <HealthPanel
       accent="var(--accent-red)"
       badge={data.badge}
+      contentState={state}
+      profileId={profileId}
+      sectionName="strength"
       subtitle={data.subtitle}
       title={data.title}
     >

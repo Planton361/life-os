@@ -1,5 +1,6 @@
 "use client";
 
+import type { ContentStateMeta } from "@/features/content-state";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Pill, accentStyle } from "@/components/layout/route-page-primitives";
@@ -13,6 +14,7 @@ import {
 import type {
   CalendarAllDayBlockViewModel,
   CalendarDayViewModel,
+  CalendarViewModel,
   CalendarRightPanelViewModel,
   CalendarSelectedTimeSlotViewModel,
   CalendarTimedBlockViewModel,
@@ -25,6 +27,18 @@ type QueueTab = "unscheduled" | "open-loops" | "reviews";
 
 const inputClass =
   "mt-1 min-h-8 w-full rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.76)] px-2.5 text-[12px] text-[var(--text-primary)] outline-none focus:border-[var(--focus-ring)]";
+
+function contentStateAttributes(
+  meta: ContentStateMeta,
+  profileId: CalendarViewModel["profileId"],
+) {
+  return {
+    "data-capacity": meta.capacity?.toString() ?? undefined,
+    "data-content-state": meta.state,
+    "data-item-count": meta.itemCount.toString(),
+    "data-profile-id": profileId,
+  };
+}
 
 function timeToMinutes(time: string) {
   const [hours, minutes] = time.split(":").map(Number);
@@ -382,10 +396,14 @@ function SourcePanel({
 }
 
 function PlanningQueue({
+  contentState,
   panel,
+  profileId,
   tasks,
 }: Readonly<{
+  contentState: ContentStateMeta;
   panel: CalendarRightPanelViewModel;
+  profileId: CalendarViewModel["profileId"];
   tasks: readonly SchedulableTaskViewModel[];
 }>) {
   const [tab, setTab] = useState<QueueTab>("unscheduled");
@@ -419,6 +437,8 @@ function PlanningQueue({
     <section
       aria-labelledby="calendar-planning-queue-heading"
       className="rounded-[12px] border border-[rgba(148,163,184,.10)] bg-[rgba(11,17,28,.34)] p-3"
+      data-calendar-section="planning-queue"
+      {...contentStateAttributes(contentState, profileId)}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -489,6 +509,8 @@ export function CalendarRightPanel({
   onMoveLater,
   onSaveTime,
   panel,
+  planningQueueContentState,
+  profileId,
   resolveDayId,
   selectedBlock,
   selectedDay,
@@ -501,6 +523,8 @@ export function CalendarRightPanel({
   onMoveLater: (blockId: string) => void;
   onSaveTime: (blockId: string, date: string, startTime: string, endTime: string) => void;
   panel: CalendarRightPanelViewModel;
+  planningQueueContentState: ContentStateMeta;
+  profileId: CalendarViewModel["profileId"];
   resolveDayId: (date: string) => string;
   selectedBlock?: SelectedBlock;
   selectedDay?: CalendarDayViewModel;
@@ -560,7 +584,12 @@ export function CalendarRightPanel({
         ) : null}
 
         <SourcePanel block={selectedBlock} />
-        <PlanningQueue panel={panel} tasks={tasks} />
+        <PlanningQueue
+          contentState={planningQueueContentState}
+          panel={panel}
+          profileId={profileId}
+          tasks={tasks}
+        />
       </div>
     </aside>
   );

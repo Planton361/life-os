@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Pill, accentStyle } from "@/components/layout/route-page-primitives";
 import { cn } from "@/lib/cn";
+import { type ContentStateMeta } from "@/features/content-state";
 import {
   CALENDAR_DAY_END_MINUTES,
   CALENDAR_DAY_START_MINUTES,
@@ -38,7 +39,7 @@ type DateParts = {
   iso: string;
 };
 
-const MOCK_TODAY = "2026-06-12";
+const MOCK_TODAY = todayDateIso();
 const monthNames = [
   "January",
   "February",
@@ -54,6 +55,10 @@ const monthNames = [
   "December",
 ];
 const weekdayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function todayDateIso() {
+  return formatIsoDate(new Date());
+}
 
 function stripTimedBlock(block: CalendarTimedBlockViewModel): CalendarRawTimedBlock {
   const { compact, density, durationMinutes, layout, ...rawBlock } = block;
@@ -110,6 +115,24 @@ function dayLabel(iso: string) {
   return `${weekdayNames[date.getUTCDay()]} ${String(date.getUTCDate()).padStart(2, "0")} ${monthNames[date.getUTCMonth()]}`;
 }
 
+const emptyCalendarStateContent = {
+  title: "Noch keine Termine oder Zeitblöcke",
+  description:
+    "Geplante Aufgaben mit Uhrzeit erscheinen hier. Aufgaben ohne Uhrzeit bleiben in der Planning Queue.",
+};
+
+function contentStateAttributes(
+  meta: ContentStateMeta,
+  profileId: CalendarViewModel["profileId"],
+) {
+  return {
+    "data-capacity": meta.capacity?.toString() ?? undefined,
+    "data-content-state": meta.state,
+    "data-item-count": meta.itemCount.toString(),
+    "data-profile-id": profileId,
+  };
+}
+
 function dateLabel(iso: string) {
   const date = parseIsoDate(iso);
 
@@ -130,9 +153,13 @@ function weekLabel(days: readonly CalendarDayViewModel[]) {
   const first = days[0];
   const last = days[days.length - 1];
 
-  return first && last
-    ? `${first.dayNumber}-${last.dayNumber} June 2026`
-    : "Selected week";
+  if (!first || !last) {
+    return "Selected week";
+  }
+
+  const end = parseIsoDate(last.date);
+
+  return `${first.dayNumber}-${last.dayNumber} ${monthNames[end.getUTCMonth()]} ${end.getUTCFullYear()}`;
 }
 
 function weekRangeLabel(iso: string) {
@@ -223,13 +250,19 @@ function WeekStatCard({
 function CalendarWeekOverview({
   activeView,
   viewModel,
+  contentState,
+  profileId,
 }: Readonly<{
   activeView: CalendarView;
   viewModel: CalendarViewModel;
+  contentState: ContentStateMeta;
+  profileId: CalendarViewModel["profileId"];
 }>) {
   return (
     <section
       aria-labelledby="calendar-week-overview-heading"
+      data-calendar-section="week-overview"
+      {...contentStateAttributes(contentState, profileId)}
       className="rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.68)] px-3 py-2"
     >
       <div className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_minmax(580px,auto)] xl:items-center">
@@ -257,14 +290,98 @@ function CalendarWeekOverview({
   );
 }
 
+function CalendarEmptyPageHeader({
+  header,
+  onMovePeriod,
+  onToday,
+  onViewChange,
+}: Readonly<{
+  header: CalendarViewModel["header"];
+  onMovePeriod: (direction: -1 | 1) => void;
+  onToday: () => void;
+  onViewChange: (view: CalendarView) => void;
+}>) {
+  return (
+    <header className="overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.72)] shadow-[0_8px_22px_rgba(0,0,0,.12)]">
+      <div className="grid gap-3 bg-[linear-gradient(90deg,rgba(95,200,215,.045),transparent_44%)] px-4 py-3 sm:px-4 xl:grid-cols-[minmax(0,1fr)_minmax(420px,auto)] xl:items-center">
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--accent-cyan)]">
+            {header.eyebrow}
+          </p>
+          <h1 className="mt-0.5 text-[28px] font-semibold leading-none text-[var(--text-primary)] sm:text-[30px]">
+            {header.title}
+          </h1>
+          <p className="mt-1.5 max-w-3xl text-xs leading-4 text-[var(--text-secondary)]">
+            {header.summary}
+          </p>
+        </div>
+
+        <div className="grid gap-1.5 xl:justify-items-end">
+          <div className="flex flex-wrap items-center gap-2">
+            <Pill quiet>{header.dateRange}</Pill>
+            <button
+              className="rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.82)] px-3 py-1 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[var(--border-default)] hover:bg-[rgba(23,34,53,.82)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+              onClick={onToday}
+              type="button"
+            >
+              {header.controls.currentAction}
+            </button>
+            <button
+              aria-label="Previous week"
+              className="size-6 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.74)] text-[12px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+              onClick={() => onMovePeriod(-1)}
+              type="button"
+            >
+              {"<"}
+            </button>
+            <button
+              aria-label="Next week"
+              className="size-6 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.74)] text-[12px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+              onClick={() => onMovePeriod(1)}
+              type="button"
+            >
+              {">"}
+            </button>
+          </div>
+
+          <div className="flex w-full min-w-0 flex-wrap rounded-full border border-[var(--border-subtle)] bg-[rgba(11,17,28,.72)] p-1 xl:w-[476px]">
+            {header.controls.views.map((view, index) => (
+              <button
+                aria-pressed={view.active ? "true" : "false"}
+                className={cn(
+                  "min-h-6 flex-1 rounded-full px-3 text-[10px] font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
+                  view.active
+                    ? "border border-[rgba(95,200,215,.28)] bg-[rgba(95,200,215,.16)] text-[var(--text-primary)]"
+                    : "border border-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)]",
+                )}
+                key={`calendar-empty-view-${index}`}
+                onClick={() => onViewChange(view.label.toLowerCase() as CalendarView)}
+                type="button"
+              >
+                {view.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
+
 function CalendarSourceContract({
   viewModel,
+  contentState,
+  profileId,
 }: Readonly<{
   viewModel: CalendarViewModel;
+  contentState: ContentStateMeta;
+  profileId: CalendarViewModel["profileId"];
 }>) {
   return (
     <section
       aria-label="Calendar source of truth contract"
+      data-calendar-section="calendar-source-contract"
+      {...contentStateAttributes(contentState, profileId)}
       className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.36)] px-3 py-2"
     >
       <div className="flex flex-col gap-2 text-[10px] leading-4 text-[var(--text-muted)] xl:flex-row xl:items-center xl:justify-between">
@@ -280,13 +397,172 @@ function CalendarSourceContract({
   );
 }
 
-function EmptyCalendarState() {
+function EmptyCalendarState({
+  title = emptyCalendarStateContent.title,
+  description = emptyCalendarStateContent.description,
+}: Readonly<{
+  description?: string;
+  title?: string;
+}>) {
   return (
     <div className="rounded-[12px] border border-dashed border-[var(--border-default)] bg-[rgba(168,183,204,.05)] px-4 py-5 text-center">
       <p className="text-[13px] font-semibold text-[var(--text-secondary)]">
-        No blocks for this scope in the selected period.
+        {title}
+      </p>
+      <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
+        {description}
       </p>
     </div>
+  );
+}
+
+function CalendarEmptyRightPanel({
+  planningQueueContentState,
+  profileId,
+  selectedDay,
+  tasks,
+}: Readonly<{
+  planningQueueContentState: ContentStateMeta;
+  profileId: CalendarViewModel["profileId"];
+  selectedDay?: CalendarDayViewModel;
+  tasks: readonly CalendarViewModel["schedulableTasks"][number][];
+}>) {
+  const visibleTasks = tasks.filter((task) => !task.alreadyScheduled).slice(0, 4);
+
+  return (
+    <aside
+      aria-labelledby="calendar-right-panel-heading"
+      className="overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.86)] shadow-[0_8px_22px_rgba(0,0,0,.12)] xl:flex xl:min-h-0 xl:flex-col"
+    >
+      <div className="border-b border-[var(--border-subtle)] bg-[rgba(18,28,43,.54)] px-3 py-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-cyan)]">
+              Calendar Inspector
+            </p>
+            <h2
+              className="mt-0.5 text-[18px] font-semibold leading-6 text-[var(--text-primary)]"
+              id="calendar-right-panel-heading"
+            >
+              Kein Zeitblock ausgewählt
+            </h2>
+          </div>
+          <Pill accent="var(--accent-cyan)">bereit</Pill>
+        </div>
+      </div>
+
+      <div className="grid gap-2 p-2.5 xl:min-h-0 xl:flex-1 xl:content-start xl:overflow-y-auto">
+        <section
+          aria-labelledby="calendar-empty-context-heading"
+          className="rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.46)] p-3"
+        >
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-faint)]">
+            Day context
+          </p>
+          <h3
+            className="mt-1 text-[15px] font-semibold leading-5 text-[var(--text-primary)]"
+            id="calendar-empty-context-heading"
+          >
+            {selectedDay?.fullLabel ?? "Kein spezifischer Tag ausgewählt"}
+          </h3>
+          <p className="mt-2 text-[11px] leading-4 text-[var(--text-muted)]">
+            Wähle einen Zeitblock oder plane eine Aufgabe mit Uhrzeit.
+          </p>
+        </section>
+
+        <section
+          aria-labelledby="calendar-empty-time-settings-heading"
+          className="rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.42)] p-3"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h3
+                className="text-[13px] font-semibold text-[var(--text-primary)]"
+                id="calendar-empty-time-settings-heading"
+              >
+                Time Settings
+              </h3>
+              <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
+                Keine Zeitdaten vorhanden. Aktionen werden aktiv, sobald ein
+                echter Zeitblock ausgewählt ist.
+              </p>
+            </div>
+            <Pill quiet>—</Pill>
+          </div>
+          <div className="mt-3 grid gap-1.5 sm:grid-cols-2">
+            {["Save time", "Cancel", "Move later", "Duplicate", "Mark done"].map(
+              (label) => (
+                <button
+                  className="min-h-8 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] opacity-50"
+                  disabled
+                  key={`calendar-empty-action-${label}`}
+                  type="button"
+                >
+                  {label}
+                </button>
+              ),
+            )}
+          </div>
+        </section>
+
+        <section
+          aria-labelledby="calendar-empty-planning-queue-heading"
+          className="rounded-[12px] border border-[rgba(148,163,184,.10)] bg-[rgba(11,17,28,.34)] p-3"
+          data-calendar-section="planning-queue"
+          {...contentStateAttributes(planningQueueContentState, profileId)}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h3
+                className="text-[13px] font-semibold text-[var(--text-primary)]"
+                id="calendar-empty-planning-queue-heading"
+              >
+                Planning Queue
+              </h3>
+              <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
+                Aufgaben ohne Uhrzeit bleiben hier, statt in Fake-Slots zu
+                erscheinen.
+              </p>
+            </div>
+            <Pill quiet>{visibleTasks.length}</Pill>
+          </div>
+          {visibleTasks.length > 0 ? (
+            <div className="mt-3 grid gap-1.5">
+              {visibleTasks.map((task) => (
+                <article
+                  className="grid min-h-8 grid-cols-[8px_minmax(0,1fr)] gap-2"
+                  key={task.id}
+                  style={accentStyle(task.accent)}
+                >
+                  <span
+                    aria-hidden="true"
+                    className="mt-1.5 size-1.5 rounded-full bg-[var(--accent)]"
+                  />
+                  <div className="min-w-0">
+                    <p className="truncate text-[11px] font-medium text-[var(--text-secondary)]">
+                      {task.title}
+                    </p>
+                    <p className="truncate text-[10px] leading-4 text-[var(--text-muted)]">
+                      {task.priority} · {task.estimatedMinutes} min · {task.project}
+                    </p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-3 rounded-[10px] border border-dashed border-[var(--border-subtle)] bg-[rgba(168,183,204,.035)] px-3 py-4">
+              <p className="text-[12px] font-semibold leading-4 text-[var(--text-primary)]">
+                Keine ungeplanten Aufgaben
+              </p>
+              <p className="mt-1 text-[10px] leading-4 text-[var(--text-secondary)]">
+                Aufgaben ohne Uhrzeit erscheinen hier, sobald sie ein Datum oder
+                eine Planung brauchen.
+              </p>
+            </div>
+          )}
+        </section>
+      </div>
+    </aside>
   );
 }
 
@@ -298,6 +574,8 @@ function CalendarDaySurface({
   onSelectSlot,
   selectedBlockId,
   timedBlocks,
+  contentState,
+  contentStateProfileId,
 }: Readonly<{
   allDayBlocks: readonly CalendarAllDayBlockViewModel[];
   day: CalendarDayViewModel;
@@ -306,6 +584,8 @@ function CalendarDaySurface({
   onSelectSlot: (slot: CalendarSelectedTimeSlotViewModel) => void;
   selectedBlockId?: string;
   timedBlocks: readonly CalendarTimedBlockViewModel[];
+  contentState: ContentStateMeta;
+  contentStateProfileId: CalendarViewModel["profileId"];
 }>) {
   const dayTimedBlocks = timedBlocks.filter((block) => block.dayId === day.id);
   const dayAllDayBlocks = allDayBlocks.filter((block) => block.dayId === day.id);
@@ -314,6 +594,8 @@ function CalendarDaySurface({
   return (
     <section
       aria-labelledby="calendar-day-surface-heading"
+      data-calendar-section="day-surface"
+      {...contentStateAttributes(contentState, contentStateProfileId)}
       className="min-w-0 overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.74)] shadow-[0_8px_22px_rgba(0,0,0,.12)] xl:flex xl:min-h-0 xl:flex-col"
     >
       <div className="flex items-center justify-between gap-3 border-b border-[var(--border-subtle)] bg-[rgba(14,23,38,.76)] px-3 py-2">
@@ -622,10 +904,17 @@ export function CalendarPlanningPage({
   const [allDayBlocks, setAllDayBlocks] = useState<CalendarAllDayBlockViewModel[]>(
     () => viewModel.allDayBlocks,
   );
-  const [selection, setSelection] = useState<Selection>({
-    kind: "block",
-    blockId: viewModel.selectedBlock.id,
-  });
+  const [selection, setSelection] = useState<Selection>(() =>
+    viewModel.selectedBlock
+      ? {
+          kind: "block",
+          blockId: viewModel.selectedBlock.id,
+        }
+      : {
+          kind: "day",
+          dayId: viewModel.days[0]?.id ?? "calendar-day",
+        },
+  );
 
   const dateByDayId = useMemo(
     () => new Map(viewModel.days.map((day) => [day.id, day.date])),
@@ -647,8 +936,9 @@ export function CalendarPlanningPage({
           ...block,
           date: block.date ?? dateByDayId.get(block.dayId),
         })),
+        viewModel.days,
       ),
-    [dateByDayId, rawTimedBlocks],
+    [dateByDayId, rawTimedBlocks, viewModel.days],
   );
 
   const filteredTimedBlocks = timedBlocks.filter((block) =>
@@ -842,42 +1132,81 @@ export function CalendarPlanningPage({
   }
 
   const selectedBlockId = selection.kind === "block" ? selection.blockId : undefined;
+  const calendarHasBlocks =
+    filteredTimedBlocks.length > 0 || filteredAllDayBlocks.length > 0;
+  const showEmptyCalendarShell = viewModel.profileId !== "demo" && !calendarHasBlocks;
+  const showEmptyInspector = showEmptyCalendarShell;
 
   return (
-    <div className="mx-auto flex w-full max-w-[2208px] flex-col gap-2 pb-6 xl:h-[calc(100dvh-1.25rem)] xl:min-h-0 xl:pb-0">
-      <CalendarPageHeader
-        header={dynamicHeader}
-        onCreateBlock={createBlock}
-        onMovePeriod={movePeriod}
-        onToday={() => {
-          setCurrentDate(MOCK_TODAY);
-          setSelection({ kind: "day", dayId: resolveDayId(MOCK_TODAY) });
-        }}
-        onViewChange={setActiveView}
-        resolveDayId={resolveDayId}
-        schedulableTasks={viewModel.schedulableTasks}
-      />
+    <div
+      className="mx-auto flex w-full max-w-[2208px] flex-col gap-2 pb-6 xl:h-[calc(100dvh-1.25rem)] xl:min-h-0 xl:pb-0"
+      data-calendar-section="page"
+      {...contentStateAttributes(
+        viewModel.contentStates.page,
+        viewModel.profileId,
+      )}
+    >
+      {showEmptyCalendarShell ? (
+        <CalendarEmptyPageHeader
+          header={dynamicHeader}
+          onMovePeriod={movePeriod}
+          onToday={() => {
+            setCurrentDate(MOCK_TODAY);
+            setSelection({ kind: "day", dayId: resolveDayId(MOCK_TODAY) });
+          }}
+          onViewChange={setActiveView}
+        />
+      ) : (
+        <CalendarPageHeader
+          header={dynamicHeader}
+          onCreateBlock={createBlock}
+          onMovePeriod={movePeriod}
+          onToday={() => {
+            setCurrentDate(MOCK_TODAY);
+            setSelection({ kind: "day", dayId: resolveDayId(MOCK_TODAY) });
+          }}
+          onViewChange={setActiveView}
+          resolveDayId={resolveDayId}
+          schedulableTasks={viewModel.schedulableTasks}
+        />
+      )}
       <CalendarScopeRow
         filters={dynamicViewModel.filters}
         onScopeChange={setActiveScope}
         projects={viewModel.projectsThisWeek}
       />
-      <CalendarWeekOverview activeView={activeView} viewModel={viewModel} />
+      <CalendarWeekOverview
+        activeView={activeView}
+        contentState={viewModel.contentStates.weekOverview}
+        profileId={viewModel.profileId}
+        viewModel={viewModel}
+      />
 
       <div className="grid min-w-0 gap-2 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(0,1fr)_minmax(400px,440px)] 2xl:grid-cols-[minmax(0,1fr)_minmax(440px,520px)]">
         <div className="grid min-w-0 gap-2 xl:min-h-0 xl:grid-rows-[minmax(0,1fr)_auto]">
           {activeView === "week" ? (
-            <CalendarWeekSurface
-              onSelectBlock={selectBlock}
-              onSelectSlot={(slot) => setSelection({ kind: "slot", slot })}
-              selectedBlockId={selectedBlockId}
-              viewModel={dynamicViewModel}
-            />
+            <div
+              className="min-w-0 xl:min-h-0"
+              data-calendar-section="week-grid"
+              {...contentStateAttributes(
+                viewModel.contentStates.grid,
+                viewModel.profileId,
+              )}
+            >
+              <CalendarWeekSurface
+                onSelectBlock={selectBlock}
+                onSelectSlot={(slot) => setSelection({ kind: "slot", slot })}
+                selectedBlockId={selectedBlockId}
+                viewModel={dynamicViewModel}
+              />
+            </div>
           ) : null}
 
           {activeView === "day" ? (
             <CalendarDaySurface
               allDayBlocks={filteredAllDayBlocks}
+              contentState={viewModel.contentStates.grid}
+              contentStateProfileId={viewModel.profileId}
               day={activeDay}
               hours={viewModel.hours}
               onSelectBlock={selectBlock}
@@ -917,21 +1246,45 @@ export function CalendarPlanningPage({
             />
           ) : null}
 
-          <CalendarSourceContract viewModel={viewModel} />
+          <CalendarSourceContract
+            contentState={viewModel.contentStates.page}
+            profileId={viewModel.profileId}
+            viewModel={viewModel}
+          />
         </div>
-        <CalendarRightPanel
-          onCreateBlock={createBlock}
-          onDuplicateBlock={duplicateBlock}
-          onMarkDone={markDone}
-          onMoveLater={moveLater}
-          onSaveTime={saveTime}
-          panel={viewModel.rightPanel}
-          resolveDayId={resolveDayId}
-          selectedBlock={selectedBlock}
-          selectedDay={selectedDay}
-          selectedSlot={selectedSlot}
-          tasks={viewModel.schedulableTasks}
-        />
+        <div
+          className="min-w-0 xl:min-h-0"
+          data-calendar-section="inspector"
+          {...contentStateAttributes(
+            viewModel.contentStates.rightPanel,
+            viewModel.profileId,
+          )}
+        >
+          {showEmptyInspector ? (
+            <CalendarEmptyRightPanel
+              planningQueueContentState={viewModel.contentStates.planningQueue}
+              profileId={viewModel.profileId}
+              selectedDay={selectedDay}
+              tasks={viewModel.schedulableTasks}
+            />
+          ) : (
+            <CalendarRightPanel
+              onCreateBlock={createBlock}
+              onDuplicateBlock={duplicateBlock}
+              onMarkDone={markDone}
+              onMoveLater={moveLater}
+              onSaveTime={saveTime}
+              panel={viewModel.rightPanel}
+              planningQueueContentState={viewModel.contentStates.planningQueue}
+              profileId={viewModel.profileId}
+              resolveDayId={resolveDayId}
+              selectedBlock={selectedBlock}
+              selectedDay={selectedDay}
+              selectedSlot={selectedSlot}
+              tasks={viewModel.schedulableTasks}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

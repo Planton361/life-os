@@ -6,6 +6,10 @@ import {
   accentStyle,
 } from "@/components/layout/route-page-primitives";
 import {
+  contentStateDataAttributes,
+  type ContentStateMeta,
+} from "@/features/content-state";
+import {
   DotRhythm,
   barHeightStyle,
 } from "@/features/health/components/health-overview-primitives";
@@ -18,6 +22,7 @@ import type {
   MentalHealthMetricViewModel,
   MentalHealthMoodViewModel,
   MentalHealthPageViewModel,
+  MentalHealthProfileId,
   MentalHealthRoutineViewModel,
   MentalHealthSleepBarViewModel,
 } from "./mental-health-view-model";
@@ -42,6 +47,9 @@ function MentalPanel({
   badge,
   accent = "var(--accent-purple)",
   className,
+  contentState,
+  profileId,
+  sectionName,
   children,
 }: Readonly<{
   title: string;
@@ -49,6 +57,9 @@ function MentalPanel({
   badge?: string;
   accent?: MentalHealthAccent;
   className?: string;
+  contentState?: ContentStateMeta;
+  profileId?: MentalHealthProfileId;
+  sectionName?: string;
   children: ReactNode;
 }>) {
   const id = titleId(title);
@@ -56,6 +67,10 @@ function MentalPanel({
   return (
     <section
       aria-labelledby={id}
+      {...(contentState && profileId
+        ? contentStateDataAttributes(contentState, profileId)
+        : {})}
+      {...(sectionName ? { "data-mental-section": sectionName } : {})}
       className={cn(
         "min-w-0 overflow-hidden rounded-[18px] border border-[color-mix(in_srgb,var(--accent)_24%,var(--border-subtle))] bg-[rgba(15,23,36,.82)] shadow-[0_8px_22px_rgba(0,0,0,.12)]",
         className,
@@ -86,13 +101,21 @@ function MentalPanel({
 function TextButton({
   children,
   accent = "var(--accent-purple)",
+  disabled = false,
 }: Readonly<{
   children: ReactNode;
   accent?: MentalHealthAccent;
+  disabled?: boolean;
 }>) {
   return (
     <button
-      className="inline-flex min-h-9 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--accent)_32%,transparent)] bg-[color-mix(in_srgb,var(--accent)_13%,rgba(18,28,43,.80))] px-3 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[color-mix(in_srgb,var(--accent)_48%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] 2xl:min-h-8"
+      className={cn(
+        "inline-flex min-h-9 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--accent)_32%,transparent)] bg-[color-mix(in_srgb,var(--accent)_13%,rgba(18,28,43,.80))] px-3 text-[10px] font-semibold text-[var(--text-primary)] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] 2xl:min-h-8",
+        disabled
+          ? "cursor-not-allowed opacity-55"
+          : "hover:border-[color-mix(in_srgb,var(--accent)_48%,transparent)]",
+      )}
+      disabled={disabled}
       style={accentStyle(accent)}
       type="button"
     >
@@ -199,11 +222,19 @@ function MetricCard({
 
 function MentalHealthHeader({
   header,
+  profileId,
+  state,
 }: Readonly<{
   header: MentalHealthPageViewModel["header"];
+  profileId: MentalHealthProfileId;
+  state: ContentStateMeta;
 }>) {
   return (
-    <header className="min-w-0 overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.82)] shadow-[0_8px_22px_rgba(0,0,0,.12)]">
+    <header
+      className="min-w-0 overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.82)] shadow-[0_8px_22px_rgba(0,0,0,.12)]"
+      data-mental-section="header"
+      {...contentStateDataAttributes(state, profileId)}
+    >
       <div className="grid gap-3 bg-[linear-gradient(90deg,rgba(155,124,246,.065),transparent_54%)] px-4 py-2.5 xl:grid-cols-[minmax(0,1fr)_minmax(260px,330px)] xl:items-center">
         <div className="min-w-0">
           <p className="text-[10px] font-semibold text-[var(--text-muted)]">
@@ -286,15 +317,22 @@ function CheckItem({
 function TodayCheckInPanel({
   checkIn,
   className,
+  profileId,
+  state,
 }: Readonly<{
   checkIn: MentalHealthPageViewModel["checkIn"];
   className?: string;
+  profileId: MentalHealthProfileId;
+  state: ContentStateMeta;
 }>) {
   return (
     <MentalPanel
       accent="var(--accent-purple)"
       badge={checkIn.badge}
       className={className}
+      contentState={state}
+      profileId={profileId}
+      sectionName="check-in"
       subtitle={checkIn.subtitle}
       title={checkIn.title}
     >
@@ -328,7 +366,9 @@ function TodayCheckInPanel({
             {checkIn.nextRepair.value}
           </p>
         </div>
-        <TextButton>{checkIn.actionLabel}</TextButton>
+        <TextButton disabled={checkIn.actionDisabled}>
+          {checkIn.actionLabel}
+        </TextButton>
       </div>
     </MentalPanel>
   );
@@ -370,15 +410,22 @@ function MoodCard({
 function MoodPatternPanel({
   moodPattern,
   className,
+  profileId,
+  state,
 }: Readonly<{
   moodPattern: MentalHealthPageViewModel["moodPattern"];
   className?: string;
+  profileId: MentalHealthProfileId;
+  state: ContentStateMeta;
 }>) {
   return (
     <MentalPanel
       accent="var(--accent-purple)"
       badge={moodPattern.rangeLabel}
       className={className}
+      contentState={state}
+      profileId={profileId}
+      sectionName="mood-pattern"
       subtitle={moodPattern.subtitle}
       title={moodPattern.title}
     >
@@ -407,14 +454,21 @@ function MoodPatternPanel({
 function CurrentSignalPanel({
   currentSignal,
   className,
+  profileId,
+  state,
 }: Readonly<{
   currentSignal: MentalHealthPageViewModel["currentSignal"];
   className?: string;
+  profileId: MentalHealthProfileId;
+  state: ContentStateMeta;
 }>) {
   return (
     <MentalPanel
       accent="var(--accent-blue)"
       className={className}
+      contentState={state}
+      profileId={profileId}
+      sectionName="current-signal"
       subtitle={currentSignal.subtitle}
       title={currentSignal.title}
     >
@@ -481,15 +535,22 @@ function SleepBar({
 function SleepRecoveryPanel({
   sleepRecovery,
   className,
+  profileId,
+  state,
 }: Readonly<{
   sleepRecovery: MentalHealthPageViewModel["sleepRecovery"];
   className?: string;
+  profileId: MentalHealthProfileId;
+  state: ContentStateMeta;
 }>) {
   return (
     <MentalPanel
       accent="var(--accent-cyan)"
       badge="Recovery context"
       className={className}
+      contentState={state}
+      profileId={profileId}
+      sectionName="sleep-recovery"
       subtitle={sleepRecovery.subtitle}
       title={sleepRecovery.title}
     >
@@ -538,15 +599,22 @@ function SleepRecoveryPanel({
 function JournalRhythmPanel({
   journalRhythm,
   className,
+  profileId,
+  state,
 }: Readonly<{
   journalRhythm: MentalHealthPageViewModel["journalRhythm"];
   className?: string;
+  profileId: MentalHealthProfileId;
+  state: ContentStateMeta;
 }>) {
   return (
     <MentalPanel
       accent="var(--accent-purple)"
       badge={journalRhythm.value}
       className={className}
+      contentState={state}
+      profileId={profileId}
+      sectionName="journal-reflection"
       subtitle={journalRhythm.subtitle}
       title={journalRhythm.title}
     >
@@ -649,14 +717,21 @@ function RoutineRow({
 function RepairRoutinesPanel({
   repairRoutines,
   className,
+  profileId,
+  state,
 }: Readonly<{
   repairRoutines: MentalHealthPageViewModel["repairRoutines"];
   className?: string;
+  profileId: MentalHealthProfileId;
+  state: ContentStateMeta;
 }>) {
   return (
     <MentalPanel
       accent="var(--accent-green)"
       className={className}
+      contentState={state}
+      profileId={profileId}
+      sectionName="support-routines"
       subtitle={repairRoutines.subtitle}
       title={repairRoutines.title}
     >
@@ -737,15 +812,22 @@ function TimelineAction({
 function MentalHealthActionsPanel({
   actions,
   className,
+  profileId,
+  state,
 }: Readonly<{
   actions: MentalHealthPageViewModel["actions"];
   className?: string;
+  profileId: MentalHealthProfileId;
+  state: ContentStateMeta;
 }>) {
   return (
     <MentalPanel
       accent="var(--accent-purple)"
       badge={actions.badge}
       className={className}
+      contentState={state}
+      profileId={profileId}
+      sectionName="actions"
       subtitle={actions.subtitle}
       title={actions.title}
     >
@@ -822,15 +904,21 @@ function BoundaryCard({
 function SafetyBoundariesStrip({
   safety,
   className,
+  profileId,
+  state,
 }: Readonly<{
   safety: MentalHealthPageViewModel["safety"];
   className?: string;
+  profileId: MentalHealthProfileId;
+  state: ContentStateMeta;
 }>) {
   const id = titleId(safety.title);
 
   return (
     <section
       aria-labelledby={id}
+      data-mental-section="safety"
+      {...contentStateDataAttributes(state, profileId)}
       className={cn(
         "min-w-0 overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.86)] shadow-[0_8px_22px_rgba(0,0,0,.12)]",
         className,
@@ -863,41 +951,68 @@ export function MentalHealthActionLandingPage({
   viewModel: MentalHealthPageViewModel;
 }>) {
   return (
-    <div className="mx-auto flex w-full max-w-[2208px] flex-col gap-1.5 pb-3">
-      <MentalHealthHeader header={viewModel.header} />
+    <div
+      className="mx-auto flex w-full max-w-[2208px] flex-col gap-1.5 pb-3"
+      data-mental-section="page"
+      {...contentStateDataAttributes(
+        viewModel.contentStates.page,
+        viewModel.profileId,
+      )}
+    >
+      <MentalHealthHeader
+        header={viewModel.header}
+        profileId={viewModel.profileId}
+        state={viewModel.contentStates.header}
+      />
 
       <div className="grid min-w-0 gap-1.5 xl:grid-cols-2 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(390px,520px)] 2xl:items-start">
         <TodayCheckInPanel
           checkIn={viewModel.checkIn}
           className="order-1 2xl:order-none 2xl:col-start-1 2xl:row-start-1"
+          profileId={viewModel.profileId}
+          state={viewModel.contentStates.checkIn}
         />
         <MentalHealthActionsPanel
           actions={viewModel.actions}
           className="order-2 xl:row-span-2 2xl:order-none 2xl:col-start-3 2xl:row-span-3 2xl:row-start-1"
+          profileId={viewModel.profileId}
+          state={viewModel.contentStates.actions}
         />
         <CurrentSignalPanel
           className="order-3 2xl:order-none 2xl:col-start-1 2xl:row-start-3"
           currentSignal={viewModel.currentSignal}
+          profileId={viewModel.profileId}
+          state={viewModel.contentStates.currentSignal}
         />
         <MoodPatternPanel
           className="order-4 2xl:order-none 2xl:col-start-1 2xl:row-start-2"
           moodPattern={viewModel.moodPattern}
+          profileId={viewModel.profileId}
+          state={viewModel.contentStates.moodPattern}
         />
         <SleepRecoveryPanel
           className="order-5 2xl:order-none 2xl:col-start-2 2xl:row-start-1"
           sleepRecovery={viewModel.sleepRecovery}
+          profileId={viewModel.profileId}
+          state={viewModel.contentStates.sleepRecovery}
         />
         <JournalRhythmPanel
           className="order-6 2xl:order-none 2xl:col-start-2 2xl:row-start-2"
           journalRhythm={viewModel.journalRhythm}
+          profileId={viewModel.profileId}
+          state={viewModel.contentStates.journalRhythm}
         />
         <RepairRoutinesPanel
           className="order-7 2xl:order-none 2xl:col-start-2 2xl:row-start-3"
+          profileId={viewModel.profileId}
           repairRoutines={viewModel.repairRoutines}
+          state={viewModel.contentStates.repairRoutines}
         />
         <SafetyBoundariesStrip
           className="order-8 xl:col-span-2 2xl:order-none 2xl:col-span-2 2xl:col-start-1 2xl:row-start-4"
+          profileId={viewModel.profileId}
           safety={viewModel.safety}
+          state={viewModel.contentStates.safety}
         />
       </div>
     </div>

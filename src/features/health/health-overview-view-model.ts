@@ -1,3 +1,4 @@
+import { resolveContentStateMeta } from "@/features/content-state";
 import type { HealthOverviewViewModel } from "./types";
 
 const moodWeek = {
@@ -26,6 +27,15 @@ const habitHeatmap = {
 
 export function getHealthOverviewViewModel(): HealthOverviewViewModel {
   return {
+    profileId: "demo",
+    contentStates: {
+      habits: resolveContentStateMeta({ capacity: 3, itemCount: 3 }),
+      mentalHealth: resolveContentStateMeta({ capacity: 3, itemCount: 3 }),
+      page: resolveContentStateMeta({ capacity: 5, itemCount: 5 }),
+      running: resolveContentStateMeta({ capacity: 3, itemCount: 3 }),
+      schedule: resolveContentStateMeta({ capacity: 10, itemCount: 10 }),
+      strength: resolveContentStateMeta({ capacity: 3, itemCount: 3 }),
+    },
     header: {
       eyebrow: "Life OS / Health & Fitness",
       title: "Health & Fitness",

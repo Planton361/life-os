@@ -17,7 +17,9 @@ import type {
   CalendarTimedBlockDensity,
   CalendarTimedBlockViewModel,
   CalendarViewModel,
+  CalendarDayViewModel,
 } from "./calendar-types";
+import { resolveContentStateMeta } from "@/features/content-state";
 
 type RawTimedBlock = Omit<
   CalendarTimedBlockViewModel,
@@ -29,6 +31,118 @@ type WorkingLayoutBlock = {
   block: RawTimedBlock;
   lane: number;
 };
+
+const CALENDAR_PAGE_CONTENT_CAPACITY = {
+  dayColumns: 7,
+  grid: 16,
+  header: 1,
+  legend: 9,
+  page: 16,
+  planningQueue: 4,
+  rightPanel: 8,
+  scopeRow: 10,
+  timeBlocks: 16,
+  viewSwitcher: 4,
+  weekOverview: 5,
+} as const;
+
+const CALENDAR_LEGEND_ITEMS = 9;
+const DEFAULT_SCOPE_ROW_ITEM_COUNT = 10;
+const DEFAULT_VIEW_SWITCHER_ITEM_COUNT = 4;
+
+export function resolveCalendarContentStates({
+  allDayBlockCount,
+  daysWithContent,
+  dayColumnItemCount,
+  headerItemCount,
+  planningQueueCount,
+  rightPanelItemCount,
+  scopeRowItemCount = DEFAULT_SCOPE_ROW_ITEM_COUNT,
+  viewSwitcherItemCount = DEFAULT_VIEW_SWITCHER_ITEM_COUNT,
+  timedBlockCount,
+  legendItemCount,
+  weekStatItemCount,
+}: {
+  allDayBlockCount: number;
+  daysWithContent: number;
+  dayColumnItemCount: number;
+  headerItemCount: number;
+  planningQueueCount: number;
+  rightPanelItemCount: number;
+  scopeRowItemCount?: number;
+  viewSwitcherItemCount?: number;
+  timedBlockCount: number;
+  legendItemCount?: number;
+  weekStatItemCount: number;
+}): CalendarViewModel["contentStates"] {
+  const hasHistoryContent =
+    daysWithContent > 0 || allDayBlockCount > 0 || timedBlockCount > 0;
+
+  const gridItemCount = timedBlockCount + allDayBlockCount;
+  const pageItemCount =
+    gridItemCount +
+    rightPanelItemCount +
+    planningQueueCount +
+    headerItemCount;
+
+  return {
+    page: resolveContentStateMeta({
+      capacity: CALENDAR_PAGE_CONTENT_CAPACITY.page,
+      itemCount: pageItemCount,
+    }),
+    header: resolveContentStateMeta({
+      capacity: CALENDAR_PAGE_CONTENT_CAPACITY.header,
+      itemCount: headerItemCount,
+      hasHistory: pageItemCount > 0,
+    }),
+    scopeRow: resolveContentStateMeta({
+      capacity: CALENDAR_PAGE_CONTENT_CAPACITY.scopeRow,
+      itemCount: scopeRowItemCount,
+      hasHistory: hasHistoryContent,
+    }),
+    viewSwitcher: resolveContentStateMeta({
+      capacity: CALENDAR_PAGE_CONTENT_CAPACITY.viewSwitcher,
+      itemCount: viewSwitcherItemCount,
+      hasHistory: hasHistoryContent,
+    }),
+    weekOverview: resolveContentStateMeta({
+      capacity: CALENDAR_PAGE_CONTENT_CAPACITY.weekOverview,
+      itemCount: Math.min(
+        Math.max(0, weekStatItemCount),
+        CALENDAR_PAGE_CONTENT_CAPACITY.weekOverview,
+      ),
+      hasHistory: gridItemCount > 0,
+    }),
+    grid: resolveContentStateMeta({
+      capacity: CALENDAR_PAGE_CONTENT_CAPACITY.grid,
+      itemCount: gridItemCount,
+    }),
+    dayColumns: resolveContentStateMeta({
+      capacity: CALENDAR_PAGE_CONTENT_CAPACITY.dayColumns,
+      itemCount: dayColumnItemCount,
+      hasHistory: hasHistoryContent,
+    }),
+    timeBlocks: resolveContentStateMeta({
+      capacity: CALENDAR_PAGE_CONTENT_CAPACITY.timeBlocks,
+      itemCount: timedBlockCount,
+      hasHistory: hasHistoryContent,
+    }),
+    rightPanel: resolveContentStateMeta({
+      capacity: CALENDAR_PAGE_CONTENT_CAPACITY.rightPanel,
+      itemCount: rightPanelItemCount,
+    }),
+    planningQueue: resolveContentStateMeta({
+      capacity: CALENDAR_PAGE_CONTENT_CAPACITY.planningQueue,
+      itemCount: planningQueueCount,
+      hasHistory: rightPanelItemCount > 0,
+    }),
+    legend: resolveContentStateMeta({
+      capacity: CALENDAR_PAGE_CONTENT_CAPACITY.legend,
+      itemCount: legendItemCount ?? CALENDAR_LEGEND_ITEMS,
+      hasHistory: hasHistoryContent,
+    }),
+  };
+}
 
 const COMPACT_DURATION_MINUTES = 72;
 const MICRO_DURATION_MINUTES = 35;
@@ -148,10 +262,11 @@ export function getEventLayout(
 
 export function buildCalendarTimedBlocks(
   blocks: RawTimedBlock[] = timedBlocks,
+  days: readonly Pick<CalendarDayViewModel, "id">[] = calendarDays,
 ): CalendarTimedBlockViewModel[] {
   const layoutsById = new Map<string, CalendarBlockLayout>();
 
-  calendarDays.forEach((day) => {
+  days.forEach((day) => {
     getEventLayout(blocks.filter((block) => block.dayId === day.id)).forEach(
       (layout, id) => {
         layoutsById.set(id, layout);
@@ -189,13 +304,148 @@ export function buildCalendarTimedBlocks(
 
 export function getCalendarViewModel(): CalendarViewModel {
   const timedBlockViewModels = buildCalendarTimedBlocks();
+  const allDayBlockCount = allDayBlocks.length;
+  const timedBlockCount = timedBlockViewModels.length;
+  const headerItemCount = timedBlockCount > 0 || allDayBlockCount > 0 ? 1 : 0;
+  const scopeRowItemCount = calendarFilters.length + projectsThisWeek.length;
+  const viewSwitcherItemCount = calendarViewSwitches.length;
+  const daysWithContent = calendarDays.filter(
+    (day) =>
+      timedBlockViewModels.some((block) => block.dayId === day.id) ||
+      allDayBlocks.some((block) => block.dayId === day.id),
+  ).length;
+  const weekStatItemCount = weekStats.length;
   const selectedBlock =
     timedBlockViewModels.find(
       (block) => block.id === "task-block-literature-structure",
     ) ??
     allDayBlocks[0];
+  const rightPanel = {
+    selectedDay: "Thu 12 June",
+    badge: "Week active",
+    metrics: reviewMetrics,
+    openLoops: [
+      {
+        title: "Routing decision for Life OS App",
+        meta: "Project - needs decision",
+        accent: "var(--accent-orange)",
+      },
+      {
+        title: "Literature source deadline",
+        meta: "Education - deadline",
+        accent: "var(--accent-red)",
+      },
+      {
+        title: "Daily review still open",
+        meta: "Review - tonight",
+        accent: "var(--accent-cyan)",
+      },
+    ],
+    unscheduledTasks: [
+      {
+        title: "Run lint and TypeScript checks",
+        meta: "P1 task - no time block yet",
+        accent: "var(--accent-blue)",
+      },
+      {
+        title: "Prepare static review route copy",
+        meta: "P2 task - week candidate",
+        accent: "var(--accent-purple)",
+      },
+    ],
+    reviewsOpen: [
+      {
+        title: "Daily Review",
+        meta: "draft - tonight",
+        accent: "var(--accent-cyan)",
+      },
+      {
+        title: "Weekly Review",
+        meta: "planned - Saturday",
+        accent: "var(--accent-cyan)",
+      },
+    ],
+    suggestedPlanningActions: [
+      {
+        title: "Place one P1 task block",
+        meta: "Suggested slot - Thu 15:30",
+        accent: "var(--accent-blue)",
+      },
+      {
+        title: "Batch admin before work closes",
+        meta: "Batch candidate - Tue 14:00",
+        accent: "var(--accent-green)",
+      },
+    ],
+    selectedTimeSlot: {
+      label: "Selected time slot",
+      dayLabel: "Thu 12 June",
+      date: "2026-06-12",
+      startTime: "15:30",
+      endTime: "17:00",
+    },
+    planningAssistant: {
+      title: "Planning Assistant",
+      status: "suggestions only",
+      suggestions: [
+        {
+          title: "3 unscheduled P1 tasks",
+          meta: "Review before creating calendar blocks",
+          source: "agent_suggestion",
+          status: "draft",
+          accent: "var(--accent-blue)",
+        },
+        {
+          title: "Suggested focus slot: Thu 15:30-17:00",
+          meta: "Draft recommendation from current workload",
+          source: "agent_suggestion",
+          status: "draft",
+          accent: "var(--accent-cyan)",
+        },
+        {
+          title: "Weekly Review still open",
+          meta: "Review source remains manual",
+          source: "review",
+          status: "planned",
+          accent: "var(--accent-orange)",
+        },
+      ],
+    },
+    weeklyReview: {
+      title: "Weekly Review",
+      status: "draft open",
+      description:
+        "No review written yet. Capture what changed, what moved and what carries forward.",
+      placeholder: "Write weekly review note...",
+      actionLabel: "open full review",
+    },
+  } satisfies CalendarViewModel["rightPanel"];
+  const planningQueueCount =
+    rightPanel.unscheduledTasks.length +
+    rightPanel.openLoops.length +
+    rightPanel.reviewsOpen.length;
+  const rightPanelItemCount =
+    rightPanel.metrics.length +
+    rightPanel.openLoops.length +
+    rightPanel.unscheduledTasks.length +
+    rightPanel.reviewsOpen.length +
+    rightPanel.suggestedPlanningActions.length;
 
   return {
+    contentStates: resolveCalendarContentStates({
+      allDayBlockCount,
+      daysWithContent,
+      headerItemCount,
+      scopeRowItemCount,
+      weekStatItemCount,
+      planningQueueCount,
+      rightPanelItemCount,
+      timedBlockCount,
+      dayColumnItemCount: daysWithContent,
+      viewSwitcherItemCount,
+      legendItemCount: CALENDAR_LEGEND_ITEMS,
+    }),
+    profileId: "demo",
     header: {
       eyebrow: "TEMPORAL VIEW",
       title: "Calendar",
@@ -224,106 +474,7 @@ export function getCalendarViewModel(): CalendarViewModel {
       label: "15:42",
       top: minutesToTopPercent(15 * 60 + 42),
     },
-    rightPanel: {
-      selectedDay: "Thu 12 June",
-      badge: "Week active",
-      metrics: reviewMetrics,
-      openLoops: [
-        {
-          title: "Routing decision for Life OS App",
-          meta: "Project - needs decision",
-          accent: "var(--accent-orange)",
-        },
-        {
-          title: "Literature source deadline",
-          meta: "Education - deadline",
-          accent: "var(--accent-red)",
-        },
-        {
-          title: "Daily review still open",
-          meta: "Review - tonight",
-          accent: "var(--accent-cyan)",
-        },
-      ],
-      unscheduledTasks: [
-        {
-          title: "Run lint and TypeScript checks",
-          meta: "P1 task - no time block yet",
-          accent: "var(--accent-blue)",
-        },
-        {
-          title: "Prepare static review route copy",
-          meta: "P2 task - week candidate",
-          accent: "var(--accent-purple)",
-        },
-      ],
-      reviewsOpen: [
-        {
-          title: "Daily Review",
-          meta: "draft - tonight",
-          accent: "var(--accent-cyan)",
-        },
-        {
-          title: "Weekly Review",
-          meta: "planned - Saturday",
-          accent: "var(--accent-cyan)",
-        },
-      ],
-      suggestedPlanningActions: [
-        {
-          title: "Place one P1 task block",
-          meta: "Suggested slot - Thu 15:30",
-          accent: "var(--accent-blue)",
-        },
-        {
-          title: "Batch admin before work closes",
-          meta: "Batch candidate - Tue 14:00",
-          accent: "var(--accent-green)",
-        },
-      ],
-      selectedTimeSlot: {
-        label: "Selected time slot",
-        dayLabel: "Thu 12 June",
-        date: "2026-06-12",
-        startTime: "15:30",
-        endTime: "17:00",
-      },
-      planningAssistant: {
-        title: "Planning Assistant",
-        status: "suggestions only",
-        suggestions: [
-          {
-            title: "3 unscheduled P1 tasks",
-            meta: "Review before creating calendar blocks",
-            source: "agent_suggestion",
-            status: "draft",
-            accent: "var(--accent-blue)",
-          },
-          {
-            title: "Suggested focus slot: Thu 15:30-17:00",
-            meta: "Draft recommendation from current workload",
-            source: "agent_suggestion",
-            status: "draft",
-            accent: "var(--accent-cyan)",
-          },
-          {
-            title: "Weekly Review still open",
-            meta: "Review source remains manual",
-            source: "review",
-            status: "planned",
-            accent: "var(--accent-orange)",
-          },
-        ],
-      },
-      weeklyReview: {
-        title: "Weekly Review",
-        status: "draft open",
-        description:
-          "No review written yet. Capture what changed, what moved and what carries forward.",
-        placeholder: "Write weekly review note...",
-        actionLabel: "open full review",
-      },
-    },
+    rightPanel,
     pageContract: {
       pageType: "Temporal Projection / Planning Surface",
       primaryPurpose:

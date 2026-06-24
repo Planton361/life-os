@@ -25,7 +25,11 @@ import { getNutritionOverviewViewModel as getDemoNutritionOverviewViewModel } fr
 import { getGroceryViewModel as getDemoGroceryViewModel } from "@/features/nutrition/grocery";
 import { getMealPlannerViewModel as getDemoMealPlannerViewModel } from "@/features/nutrition/meal-planner";
 import { getRecipesViewModel as getDemoRecipesViewModel } from "@/features/nutrition/recipes";
-import { getResourcesViewModel as getDemoResourcesViewModel } from "@/features/resources";
+import {
+  buildResourcesContentStates,
+  getResourcesViewModel as getDemoResourcesViewModel,
+} from "@/features/resources";
+import { resolveContentStateMeta } from "@/features/content-state";
 import { getShopViewModel as getDemoShopViewModel } from "@/features/shop";
 import {
   getWorkLogViewModel as getDemoWorkLogViewModel,
@@ -34,7 +38,7 @@ import {
 } from "@/features/work";
 import { readManualProfile } from "./manual-profile-store";
 import { getCurrentLifeOsProfileId } from "./profile-cookie";
-import type { LifeOsProfileId } from "./types";
+import type { LifeOsProfileId, ManualHabit, ManualProfileData } from "./types";
 
 type PathPart = string | number;
 
@@ -384,6 +388,644 @@ async function getProfileAreaViewModel<T>(
   return sanitizeAreaViewModel(clone(viewModel), profileId, areaLabel);
 }
 
+function emptyHealthMetric<TAccent extends string = "var(--accent-cyan)">(
+  label: string,
+  detail: string,
+  accent: TAccent = "var(--accent-cyan)" as TAccent,
+) {
+  return {
+    accent,
+    detail,
+    label,
+    value: "—",
+  };
+}
+
+function habitGroupFromManualHabit(
+  habit: ManualHabit,
+): "Morning" | "Health" | "Learning" | "Review" | "Evening" {
+  if (habit.window === "Morning") return "Morning";
+  if (habit.window === "Evening") return "Evening";
+  if (habit.areaId === "education") return "Learning";
+  if (habit.areaId === "review") return "Review";
+
+  return "Health";
+}
+
+function buildProfileHealthOverviewViewModel(
+  profileId: Exclude<LifeOsProfileId, "demo">,
+  profile: ManualProfileData,
+): ReturnType<typeof getDemoHealthOverviewViewModel> {
+  const viewModel = clone(getDemoHealthOverviewViewModel());
+  const habitCount = profile.habits.length;
+  const moodCount = profile.mood ? 1 : 0;
+  const pageItemCount = moodCount + habitCount;
+  const firstHabit = profile.habits[0] ?? null;
+
+  viewModel.profileId = profileId;
+  viewModel.contentStates = {
+    habits: resolveContentStateMeta({
+      capacity: 3,
+      itemCount: habitCount > 0 ? 1 : 0,
+    }),
+    mentalHealth: resolveContentStateMeta({
+      capacity: 3,
+      itemCount: moodCount,
+    }),
+    page: resolveContentStateMeta({
+      capacity: 5,
+      itemCount: pageItemCount,
+    }),
+    running: resolveContentStateMeta({ capacity: 3, itemCount: 0 }),
+    schedule: resolveContentStateMeta({ capacity: 10, itemCount: 0 }),
+    strength: resolveContentStateMeta({ capacity: 3, itemCount: 0 }),
+  };
+  viewModel.header.dateRange =
+    profileId === "manual"
+      ? "Manual · lokale Health-Shell"
+      : "Empty · Health-Shell ohne Demo-Daten";
+
+  viewModel.mentalHealth = {
+    ...viewModel.mentalHealth,
+    badge: profile.mood ? "Local mood" : "Self-check",
+    moodDirections: profile.mood
+      ? [
+          {
+            accent: "var(--accent-purple)",
+            daysLabel: "1 local signal",
+            label: profile.mood.label,
+            mark: "●",
+            pattern: [true, false, false, false, false, false, false],
+          },
+        ]
+      : [],
+    sleep: {
+      ...viewModel.mentalHealth.sleep,
+      bars: [],
+      detail: "Noch keine Schlafdaten",
+      value: "—",
+    },
+    journal: {
+      ...viewModel.mentalHealth.journal,
+      pattern: [],
+      value: "—",
+    },
+  };
+
+  viewModel.running = {
+    ...viewModel.running,
+    loadStatus: "Noch kein Laufkontext",
+    metrics: [
+      emptyHealthMetric(
+        "Weekly distance",
+        "Laufdaten erscheinen nach der ersten lokalen Session.",
+        "var(--accent-orange)",
+      ),
+      emptyHealthMetric(
+        "Avg pace",
+        "Pace bleibt leer, bis echte Laufdaten existieren.",
+        "var(--accent-cyan)",
+      ),
+      emptyHealthMetric(
+        "Run history",
+        "Noch kein letzter Lauf",
+        "var(--accent-green)",
+      ),
+    ],
+    nextRun: {
+      ...viewModel.running.nextRun,
+      detail:
+        "Sobald Laufdaten oder ein lokaler Plan existieren, erscheint hier ein Vorschlag.",
+      title: "Noch kein Laufkontext",
+    },
+    trends: [],
+  };
+
+  viewModel.habits = {
+    ...viewModel.habits,
+    badge: habitCount > 0 ? `${habitCount} Routinen` : "0 Routinen",
+    heatmap: {
+      ...viewModel.habits.heatmap,
+      rows: [],
+    },
+    metrics: [
+      {
+        accent: "var(--accent-cyan)",
+        detail:
+          habitCount > 0
+            ? "lokal gespeicherte Routinen"
+            : "noch keine lokalen Routinen",
+        label: "Active routines",
+        value: String(habitCount),
+      },
+      emptyHealthMetric(
+        "Habit logs",
+        "Noch keine Habit-Logs",
+        "var(--accent-green)",
+      ),
+      emptyHealthMetric(
+        "Next repair",
+        "Repair Loops erscheinen nach lokalen Signalen.",
+        "var(--accent-purple)",
+      ),
+    ],
+    nextFocus: {
+      ...viewModel.habits.nextFocus,
+      title: firstHabit
+        ? `${firstHabit.label} · noch keine Logs`
+        : "Noch keine Habit-Signale",
+    },
+  };
+
+  viewModel.strength = {
+    ...viewModel.strength,
+    badge: "0 Sessions",
+    metrics: [
+      emptyHealthMetric(
+        "Sessions",
+        "Noch keine Kraftsessions",
+        "var(--accent-red)",
+      ),
+      emptyHealthMetric(
+        "Recovery",
+        "Recovery bleibt leer ohne lokale Session.",
+        "var(--accent-green)",
+      ),
+      emptyHealthMetric(
+        "Session history",
+        "Noch keine letzte Session",
+        "var(--accent-orange)",
+      ),
+    ],
+    nextSession: {
+      ...viewModel.strength.nextSession,
+      detail:
+        "Sobald eine lokale Kraftsession existiert, erscheint hier Kontext.",
+      title: "Noch kein Krafttrainingskontext",
+    },
+    sessionBalance: {
+      ...viewModel.strength.sessionBalance,
+      items: [],
+    },
+    trainingPattern: {
+      ...viewModel.strength.trainingPattern,
+      days: [],
+      note: "Krafteinheiten erscheinen nach der ersten lokalen Session.",
+    },
+  };
+
+  viewModel.schedule = {
+    ...viewModel.schedule,
+    dateLabel: "Heute",
+    footerLabel: "Health-Zeitblöcke werden später über Calendar geplant.",
+    items: [],
+  };
+
+  return viewModel;
+}
+
+function buildProfileHabitsAnalyticsViewModel(
+  profileId: Exclude<LifeOsProfileId, "demo">,
+  profile: ManualProfileData,
+): ReturnType<typeof getDemoHabitsAnalyticsViewModel> {
+  const viewModel = clone(getDemoHabitsAnalyticsViewModel());
+  const habitCount = profile.habits.length;
+  const rows = profile.habits.map((habit) => ({
+    accent: "var(--accent-cyan)" as const,
+    group: habitGroupFromManualHabit(habit),
+    habit: habit.label,
+    nextAction: "Routine ist lokal gespeichert; Logs fehlen noch.",
+    sevenDayDots: [false, false, false, false, false, false, false],
+    status: "No logs" as const,
+    target: `${habit.targetValue} ${habit.unit ?? "x"} / day`,
+    thirtyDayProgress: 0,
+  }));
+  const firstHabit = profile.habits[0] ?? null;
+
+  viewModel.profileId = profileId;
+  viewModel.contentStates = {
+    detailFocus: resolveContentStateMeta({
+      capacity: 1,
+      itemCount: firstHabit ? 1 : 0,
+    }),
+    header: resolveContentStateMeta({
+      capacity: 1,
+      itemCount: habitCount > 0 ? 1 : 0,
+    }),
+    heatmap: resolveContentStateMeta({ capacity: 4, itemCount: 0 }),
+    page: resolveContentStateMeta({ capacity: 7, itemCount: habitCount }),
+    patternTable: resolveContentStateMeta({
+      capacity: 6,
+      itemCount: Math.min(habitCount, 6),
+    }),
+    repairLoops: resolveContentStateMeta({ capacity: 3, itemCount: 0 }),
+    summary: resolveContentStateMeta({
+      capacity: 6,
+      itemCount: habitCount > 0 ? 1 : 0,
+    }),
+    todaySchedule: resolveContentStateMeta({ capacity: 6, itemCount: 0 }),
+    weeklyRhythmInsights: resolveContentStateMeta({
+      capacity: 4,
+      itemCount: 0,
+    }),
+  };
+  viewModel.header = {
+    ...viewModel.header,
+    meta:
+      profileId === "manual"
+        ? "Manual · lokale Routinen"
+        : "Empty · keine Habit-Signale",
+    pills: [
+      {
+        accent: "var(--accent-cyan)",
+        detail: "profile-safe",
+        label: "Mode",
+        value: "State Proof",
+      },
+      {
+        accent: "var(--accent-green)",
+        detail: "neutral copy",
+        label: "Boundary",
+        value: "No shame",
+      },
+      {
+        accent: "var(--accent-orange)",
+        detail: "logs deferred",
+        label: "Logs",
+        value: "Deferred",
+      },
+      {
+        accent: "var(--accent-purple)",
+        detail: "local shell",
+        label: "Source",
+        value: profileId === "manual" ? "Manual" : "Empty",
+      },
+    ],
+    todaySignal: {
+      accent: "var(--accent-cyan)",
+      detail:
+        habitCount > 0
+          ? "Lokale Routinen vorhanden; Habit-Logs fehlen noch."
+          : "Habit-Analytics erscheint, sobald Routinen oder Logs existieren.",
+      label: "TODAY HABIT SIGNAL",
+      progress: 0,
+      progressLabel: "keine Logs",
+      value:
+        habitCount > 0 ? `${habitCount} lokale Routinen` : "Noch keine Habit-Signale",
+    },
+  };
+  viewModel.summary = [
+    {
+      accent: "var(--accent-cyan)",
+      detail:
+        habitCount > 0
+          ? "lokal gespeicherte Routinen"
+          : "noch keine Routinen",
+      label: "Routines",
+      value: String(habitCount),
+    },
+    emptyHealthMetric("Habit logs", "noch keine Logs", "var(--accent-green)"),
+    emptyHealthMetric("Heatmap", "noch kein Verlauf", "var(--accent-orange)"),
+    emptyHealthMetric("Repair loops", "noch keine Signale", "var(--accent-purple)"),
+    emptyHealthMetric("Today schedule", "noch kein Zeitplan", "var(--accent-red)"),
+    emptyHealthMetric("Detail focus", "keine Auswahl", "var(--accent-yellow)"),
+  ];
+  viewModel.heatmap = {
+    ...viewModel.heatmap,
+    patternRead: {
+      ...viewModel.heatmap.patternRead,
+      copy:
+        "Habit-Analytics erscheint, sobald Routinen oder Logs existieren.",
+      metrics: [],
+    },
+    rows: [],
+    statement:
+      "Habit-Analytics erscheint, sobald Routinen oder Logs existieren.",
+  };
+  viewModel.patternTable = {
+    ...viewModel.patternTable,
+    rows,
+    statement:
+      habitCount > 0
+        ? "Lokale Routinen sind sichtbar; Logs und Verlauf fehlen noch."
+        : "Die Tabelle bleibt leer, bis lokale Routinen existieren.",
+  };
+  viewModel.repairLoops = {
+    ...viewModel.repairLoops,
+    items: [],
+  };
+  viewModel.todaySchedule = {
+    ...viewModel.todaySchedule,
+    items: [],
+    subtitle: "Habit-Zeitpunkte erscheinen, sobald ein lokaler Zeitplan existiert.",
+  };
+  viewModel.detailFocus = {
+    ...viewModel.detailFocus,
+    actionLabel: "Repair später starten",
+    frictionNote: firstHabit
+      ? "Noch keine Logs oder Reibungsnotizen vorhanden."
+      : "Noch kein Habit ausgewählt.",
+    habit: firstHabit?.label ?? "Noch kein Habit-Fokus",
+    progress: 0,
+    subtitle: firstHabit
+      ? "Selected habit: local routine"
+      : "Keine lokale Routine ausgewählt",
+    target: firstHabit
+      ? `${firstHabit.targetValue} ${firstHabit.unit ?? "x"} / day`
+      : "Kein Ziel hinterlegt",
+  };
+  viewModel.weeklyRhythmInsights = {
+    ...viewModel.weeklyRhythmInsights,
+    rows: [],
+  };
+  viewModel.isEmpty = habitCount === 0;
+
+  return viewModel;
+}
+
+function inactiveRunningChips<T extends string>(
+  chips: readonly { label: string; value: T; active?: boolean }[],
+) {
+  return chips.map((chip) => ({ ...chip, active: false }));
+}
+
+function buildProfileRunningTrackerViewModel(
+  profileId: Exclude<LifeOsProfileId, "demo">,
+): ReturnType<typeof getDemoRunningTrackerViewModel> {
+  const viewModel = clone(getDemoRunningTrackerViewModel());
+
+  viewModel.profileId = profileId;
+  viewModel.contentStates = {
+    boundaries: resolveContentStateMeta({ capacity: 4, itemCount: 4 }),
+    context: resolveContentStateMeta({ capacity: 6, itemCount: 0 }),
+    distanceTrend: resolveContentStateMeta({ capacity: 10, itemCount: 0 }),
+    header: resolveContentStateMeta({ capacity: 1, itemCount: 0 }),
+    loadRecovery: resolveContentStateMeta({ capacity: 3, itemCount: 0 }),
+    page: resolveContentStateMeta({ capacity: 8, itemCount: 0 }),
+    planner: resolveContentStateMeta({ capacity: 4, itemCount: 0 }),
+    recentRuns: resolveContentStateMeta({ capacity: 4, itemCount: 0 }),
+    review: resolveContentStateMeta({ capacity: 4, itemCount: 0 }),
+    rhythm: resolveContentStateMeta({ capacity: 7, itemCount: 0 }),
+    summary: resolveContentStateMeta({ capacity: 6, itemCount: 0 }),
+    todayPlan: resolveContentStateMeta({ capacity: 4, itemCount: 0 }),
+  };
+  viewModel.header = {
+    ...viewModel.header,
+    pills: [
+      { accent: "var(--accent-orange)", label: "Planner Shell" },
+      { accent: "var(--accent-cyan)", label: "No local runs" },
+      { accent: "var(--accent-green)", label: "Self-tracked later" },
+    ],
+    decision: {
+      ...viewModel.header.decision,
+      detail:
+        "Sobald Laufdaten oder ein lokaler Plan existieren, erscheint hier ein Vorschlag.",
+      duration: "—",
+      effort: "Noch kein lokaler Plan",
+      progress: 0,
+      readiness: "—",
+      title: "Noch kein Laufkontext",
+    },
+  };
+  viewModel.summary = [
+    emptyHealthMetric("Weekly distance", "Noch keine Laufdaten", "var(--accent-orange)"),
+    emptyHealthMetric("Runs this week", "Noch keine Laufdaten", "var(--accent-cyan)"),
+    emptyHealthMetric("Beginner load", "Noch kein Laufkontext", "var(--accent-yellow)"),
+    emptyHealthMetric("Avg easy pace", "Noch keine Pace-Daten", "var(--accent-blue)"),
+    emptyHealthMetric("Recovery signal", "Noch kein Recovery-Signal", "var(--accent-green)"),
+    emptyHealthMetric("Next run", "Noch kein Laufplan", "var(--accent-red)"),
+  ];
+  viewModel.planner = {
+    ...viewModel.planner,
+    availableTimes: inactiveRunningChips(viewModel.planner.availableTimes),
+    beginnerGoals: inactiveRunningChips(viewModel.planner.beginnerGoals),
+    effortTargets: inactiveRunningChips(viewModel.planner.effortTargets),
+    goalTypes: inactiveRunningChips(viewModel.planner.goalTypes),
+    optionalInputs: [
+      {
+        accent: "var(--accent-cyan)",
+        helper: "Sobald Laufdaten existieren, kann ein Ziel erscheinen.",
+        label: "Distance target",
+        value: "—",
+      },
+      {
+        accent: "var(--accent-blue)",
+        helper: "Pace bleibt leer, bis echte Laufdaten existieren.",
+        label: "Pace target",
+        value: "—",
+      },
+      {
+        accent: "var(--accent-green)",
+        helper: "Recovery-Kontext erscheint nach lokalen Signalen.",
+        label: "Recovery",
+        value: "—",
+      },
+      {
+        accent: "var(--accent-orange)",
+        helper: "Kein Run-/Walk-Verhältnis ohne lokalen Plan.",
+        label: "Run / walk ratio",
+        value: "—",
+      },
+    ],
+    primaryActions: [],
+    secondaryActions: [],
+    suggestedPlan: {
+      detail:
+        "Sobald Laufdaten oder ein lokaler Plan existieren, erscheint hier ein Vorschlag.",
+      steps: [],
+      title: "Noch kein Laufkontext",
+    },
+  };
+  viewModel.todayPlan = {
+    ...viewModel.todayPlan,
+    actions: [],
+    checklist: [],
+    details: [],
+    plan: "Noch kein Laufplan",
+  };
+  viewModel.review = {
+    ...viewModel.review,
+    action: { disabled: true, label: "Review später", variant: "quiet" },
+    lastRun: "Noch kein letzter Lauf",
+    learnings: [],
+    metrics: [],
+    nextAdjustment: "Keine Anpassung ohne lokale Laufdaten.",
+    signals: [],
+  };
+  viewModel.rhythm = {
+    ...viewModel.rhythm,
+    days: [],
+    subtitle: "Der Rhythmus bleibt leer, bis lokale Laufdaten existieren.",
+  };
+  viewModel.loadRecovery = {
+    ...viewModel.loadRecovery,
+    intensitySplit: [],
+    recoverySignal: {
+      ...viewModel.loadRecovery.recoverySignal,
+      detail: "Noch kein Recovery-Signal",
+      progress: 0,
+      value: "—",
+    },
+    weeklyLoad: {
+      ...viewModel.loadRecovery.weeklyLoad,
+      detail: "Noch keine Laufdaten",
+      progress: 0,
+      value: "—",
+    },
+  };
+  viewModel.context = {
+    ...viewModel.context,
+    items: [],
+    subtitle: "Kontext erscheint, sobald lokale Laufdaten vorhanden sind.",
+  };
+  viewModel.distanceTrend = {
+    ...viewModel.distanceTrend,
+    bars: [],
+    statement: "Noch keine Laufdaten",
+  };
+  viewModel.recentRuns = {
+    ...viewModel.recentRuns,
+    items: [],
+  };
+
+  return viewModel;
+}
+
+function inactiveStrengthChips<T extends string>(
+  chips: readonly { label: string; value: T; active?: boolean }[],
+) {
+  return chips.map((chip) => ({ ...chip, active: false }));
+}
+
+function buildProfileStrengthTrackerViewModel(
+  profileId: Exclude<LifeOsProfileId, "demo">,
+): ReturnType<typeof getDemoStrengthTrackerViewModel> {
+  const viewModel = clone(getDemoStrengthTrackerViewModel());
+
+  viewModel.profileId = profileId;
+  viewModel.contentStates = {
+    boundaries: resolveContentStateMeta({ capacity: 5, itemCount: 5 }),
+    header: resolveContentStateMeta({ capacity: 1, itemCount: 0 }),
+    loadRecovery: resolveContentStateMeta({ capacity: 4, itemCount: 0 }),
+    page: resolveContentStateMeta({ capacity: 8, itemCount: 0 }),
+    planner: resolveContentStateMeta({ capacity: 4, itemCount: 0 }),
+    progression: resolveContentStateMeta({ capacity: 6, itemCount: 0 }),
+    recentSets: resolveContentStateMeta({ capacity: 4, itemCount: 0 }),
+    review: resolveContentStateMeta({ capacity: 4, itemCount: 0 }),
+    rhythmBalance: resolveContentStateMeta({ capacity: 7, itemCount: 0 }),
+    summary: resolveContentStateMeta({ capacity: 6, itemCount: 0 }),
+    todayPlan: resolveContentStateMeta({ capacity: 4, itemCount: 0 }),
+    trend: resolveContentStateMeta({ capacity: 4, itemCount: 0 }),
+  };
+  viewModel.header = {
+    ...viewModel.header,
+    meta:
+      profileId === "manual"
+        ? "Manual · keine Kraftsessions"
+        : "Empty · keine Kraftsessions",
+    pills: [
+      { accent: "var(--accent-orange)", label: "Planner Shell" },
+      { accent: "var(--accent-cyan)", label: "No local sessions" },
+      { accent: "var(--accent-green)", label: "Self-tracked later" },
+    ],
+    decision: {
+      ...viewModel.header.decision,
+      detail:
+        "Sobald eine lokale Kraftsession existiert, erscheint hier Kontext.",
+      duration: "—",
+      effort: "Noch kein lokaler Plan",
+      progress: 0,
+      readiness: "—",
+      title: "Noch kein Krafttrainingskontext",
+    },
+  };
+  viewModel.summary = [
+    emptyHealthMetric("Sessions this week", "Noch keine Kraftsessions", "var(--accent-orange)"),
+    emptyHealthMetric("Training load", "Noch keine Lastdaten", "var(--accent-yellow)"),
+    emptyHealthMetric("Muscle balance", "Noch keine Balance-Daten", "var(--accent-red)"),
+    emptyHealthMetric("Progression", "Noch keine Progression", "var(--accent-green)"),
+    emptyHealthMetric("Recovery signal", "Noch kein Recovery-Signal", "var(--accent-cyan)"),
+    emptyHealthMetric("Next session", "Noch keine Kraftsession geplant", "var(--accent-orange)"),
+  ];
+  viewModel.planner = {
+    ...viewModel.planner,
+    availableTimes: inactiveStrengthChips(viewModel.planner.availableTimes),
+    effortTargets: inactiveStrengthChips(viewModel.planner.effortTargets),
+    equipment: inactiveStrengthChips(viewModel.planner.equipment),
+    movementInputs: [],
+    primaryActions: [],
+    secondaryActions: [],
+    sessionTypes: inactiveStrengthChips(viewModel.planner.sessionTypes),
+    suggestedSession: {
+      detail:
+        "Sobald lokale Sessions existieren, kann hier eine Session geplant werden.",
+      steps: [],
+      target: "—",
+      title: "Noch kein Krafttrainingskontext",
+    },
+    trainingFocus: inactiveStrengthChips(viewModel.planner.trainingFocus),
+  };
+  viewModel.todayPlan = {
+    ...viewModel.todayPlan,
+    actions: [],
+    checklist: [],
+    details: [],
+    plan: "Noch keine Kraftsession geplant",
+  };
+  viewModel.review = {
+    ...viewModel.review,
+    action: { disabled: true, label: "Review später", variant: "quiet" },
+    adjustment: "Keine Anpassung ohne lokale Session.",
+    lastSession: "Noch keine letzte Session",
+    learning: "Noch keine Session-Notiz.",
+    metrics: [],
+    signals: [],
+  };
+  viewModel.rhythmBalance = {
+    ...viewModel.rhythmBalance,
+    balance: [],
+    days: [],
+    statement: "Noch keine Krafttrainingsdaten.",
+    subtitle:
+      "Rhythmus und Balance bleiben leer, bis lokale Sessions existieren.",
+  };
+  viewModel.loadRecovery = {
+    ...viewModel.loadRecovery,
+    recoverySignal: {
+      ...viewModel.loadRecovery.recoverySignal,
+      detail: "Noch kein Recovery-Signal",
+      progress: 0,
+      value: "—",
+    },
+    volumeSplit: [],
+    weeklyLoad: {
+      ...viewModel.loadRecovery.weeklyLoad,
+      detail: "Noch keine Lastdaten",
+      progress: 0,
+      value: "—",
+    },
+  };
+  viewModel.progression = {
+    ...viewModel.progression,
+    footer: "Progression erscheint nach lokalen Sessions.",
+    rules: [],
+    subtitle:
+      "Progressionskontext bleibt leer, bis lokale Kraftdaten existieren.",
+  };
+  viewModel.trend = {
+    ...viewModel.trend,
+    statement: "Noch keine Krafttrainingsdaten.",
+    weeks: [],
+  };
+  viewModel.recentSets = {
+    ...viewModel.recentSets,
+    items: [],
+    note: "Sets erscheinen nach der ersten lokalen Session.",
+  };
+
+  return viewModel;
+}
+
 export function getProfileEmptyStateText(
   profileId: LifeOsProfileId,
   areaLabel: string,
@@ -398,37 +1040,52 @@ export function getBlockedDemoFragments() {
 export async function getHealthOverviewViewModel(): Promise<
   ReturnType<typeof getDemoHealthOverviewViewModel>
 > {
-  return getProfileAreaViewModel(
-    getDemoHealthOverviewViewModel,
-    "Health & Fitness",
-  );
+  const profileId = await getCurrentLifeOsProfileId();
+
+  if (profileId === "demo") {
+    return getDemoHealthOverviewViewModel();
+  }
+
+  return buildProfileHealthOverviewViewModel(profileId, await readManualProfile());
 }
 
 export async function getHabitsAnalyticsViewModel(): Promise<
   ReturnType<typeof getDemoHabitsAnalyticsViewModel>
 > {
-  return getProfileAreaViewModel(
-    getDemoHabitsAnalyticsViewModel,
-    "Health & Fitness",
+  const profileId = await getCurrentLifeOsProfileId();
+
+  if (profileId === "demo") {
+    return getDemoHabitsAnalyticsViewModel();
+  }
+
+  return buildProfileHabitsAnalyticsViewModel(
+    profileId,
+    await readManualProfile(),
   );
 }
 
 export async function getRunningTrackerViewModel(): Promise<
   ReturnType<typeof getDemoRunningTrackerViewModel>
 > {
-  return getProfileAreaViewModel(
-    getDemoRunningTrackerViewModel,
-    "Health & Fitness",
-  );
+  const profileId = await getCurrentLifeOsProfileId();
+
+  if (profileId === "demo") {
+    return getDemoRunningTrackerViewModel();
+  }
+
+  return buildProfileRunningTrackerViewModel(profileId);
 }
 
 export async function getStrengthTrackerViewModel(): Promise<
   ReturnType<typeof getDemoStrengthTrackerViewModel>
 > {
-  return getProfileAreaViewModel(
-    getDemoStrengthTrackerViewModel,
-    "Health & Fitness",
-  );
+  const profileId = await getCurrentLifeOsProfileId();
+
+  if (profileId === "demo") {
+    return getDemoStrengthTrackerViewModel();
+  }
+
+  return buildProfileStrengthTrackerViewModel(profileId);
 }
 
 export async function getNutritionOverviewViewModel(): Promise<
@@ -579,7 +1236,37 @@ export async function getWorkWikiViewModel(): Promise<
 export async function getResourcesViewModel(): Promise<
   ReturnType<typeof getDemoResourcesViewModel>
 > {
-  return getProfileAreaViewModel(getDemoResourcesViewModel, "Resources");
+  const profileId = await getCurrentLifeOsProfileId();
+  const viewModel = getDemoResourcesViewModel(profileId);
+
+  if (profileId === "demo") {
+    return viewModel;
+  }
+
+  const sanitizedViewModel = sanitizeAreaViewModel(
+    clone(viewModel),
+    profileId,
+    "Resources",
+  );
+
+  return {
+    ...sanitizedViewModel,
+    profileId,
+    selectedResource: null,
+    summaryStats: sanitizedViewModel.summaryStats.map((stat) => ({
+      ...stat,
+      detail: "0 local resources",
+      value: "0",
+    })),
+    contentStates: buildResourcesContentStates({
+      aiSuggestionCount: sanitizedViewModel.aiSuggestions.length,
+      clusterCount: sanitizedViewModel.clusters.length,
+      recentLearningCount: sanitizedViewModel.recentLearnings.length,
+      relationCount: sanitizedViewModel.relations.length,
+      resourceCount: sanitizedViewModel.resources.length,
+      reviewQueueCount: sanitizedViewModel.reviewQueue.length,
+    }),
+  };
 }
 
 export async function getShopViewModel(): Promise<

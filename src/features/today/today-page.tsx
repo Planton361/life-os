@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { Pill, accentStyle } from "@/components/layout/route-page-primitives";
+import type { ContentStateMeta } from "@/features/content-state";
 import { cn } from "@/lib/cn";
 import type {
   TodayActivityEventViewModel,
@@ -14,24 +15,68 @@ import type {
   TodayViewModel,
 } from "./today-view-model";
 
+function contentStateAttributes(
+  meta: ContentStateMeta,
+  profileId: TodayViewModel["profileId"],
+) {
+  return {
+    "data-capacity": meta.capacity?.toString(),
+    "data-content-state": meta.state,
+    "data-item-count": meta.itemCount.toString(),
+    "data-profile-id": profileId,
+  };
+}
+
 function titleId(title: string) {
   return `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-section`;
+}
+
+function EmptyStateBlock({
+  className,
+  description,
+  title,
+}: Readonly<{
+  className?: string;
+  description: string;
+  title: string;
+}>) {
+  return (
+    <div
+      className={cn(
+        "rounded-[10px] border border-dashed border-[var(--border-subtle)] bg-[rgba(168,183,204,.035)] px-3 py-4",
+        className,
+      )}
+    >
+      <p className="text-[12px] font-semibold leading-4 text-[var(--text-primary)]">
+        {title}
+      </p>
+      <p className="mt-1 text-[10px] leading-4 text-[var(--text-secondary)]">
+        {description}
+      </p>
+    </div>
+  );
 }
 
 function MemoryPanel({
   title,
   subtitle,
   accent,
+  contentState,
   className,
   contentClassName,
   children,
+  profileId,
+  todaySection,
 }: Readonly<{
   title: string;
   subtitle: string;
   accent: string;
+  contentState: ContentStateMeta;
   className?: string;
   contentClassName?: string;
   children: ReactNode;
+  profileId: TodayViewModel["profileId"];
+  todaySection: string;
 }>) {
   const id = titleId(title);
 
@@ -42,6 +87,8 @@ function MemoryPanel({
         "overflow-hidden rounded-[14px] border border-[var(--border-subtle)] bg-[var(--surface-1)] shadow-[0_6px_16px_rgba(0,0,0,.10)]",
         className,
       )}
+      data-today-section={todaySection}
+      {...contentStateAttributes(contentState, profileId)}
       style={accentStyle(accent)}
     >
       <div className="border-b border-[var(--border-subtle)] bg-[color-mix(in_srgb,var(--accent)_5%,rgba(14,23,38,.84))] px-4 py-3">
@@ -68,7 +115,14 @@ function TodayHeader({
   const { header } = viewModel;
 
   return (
-    <header className="rounded-[16px] border border-[var(--border-subtle)] bg-[color-mix(in_srgb,var(--accent-purple)_5%,var(--surface-1))] px-4 py-3 shadow-[0_6px_16px_rgba(0,0,0,.10)] sm:px-5">
+    <header
+      className="rounded-[16px] border border-[var(--border-subtle)] bg-[color-mix(in_srgb,var(--accent-purple)_5%,var(--surface-1))] px-4 py-3 shadow-[0_6px_16px_rgba(0,0,0,.10)] sm:px-5"
+      data-today-section="header"
+      {...contentStateAttributes(
+        viewModel.contentStates.header,
+        viewModel.profileId,
+      )}
+    >
       <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(330px,auto)] xl:items-center">
         <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
@@ -83,6 +137,16 @@ function TodayHeader({
           <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
             Today records day evidence; Dashboard stays the cockpit.
           </p>
+          {viewModel.firstRunNotice ? (
+            <div className="mt-3 max-w-xl rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.42)] px-3 py-2">
+              <p className="text-[11px] font-semibold text-[var(--text-primary)]">
+                {viewModel.firstRunNotice.title}
+              </p>
+              <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-secondary)]">
+                {viewModel.firstRunNotice.description}
+              </p>
+            </div>
+          ) : null}
         </div>
 
         <div className="min-w-0">
@@ -106,8 +170,10 @@ function TodayHeader({
 }
 
 function ActivityStream({
+  emptyState,
   events,
 }: Readonly<{
+  emptyState: TodayViewModel["activityStream"]["emptyState"];
   events: TodayActivityEventViewModel[];
 }>) {
   return (
@@ -119,35 +185,43 @@ function ActivityStream({
         <Pill accent="var(--accent-cyan)">{events.length} events</Pill>
       </div>
 
-      <ol className="relative mt-3 grid gap-2.5 before:absolute before:bottom-2 before:left-[3.55rem] before:top-2 before:w-px before:bg-[var(--border-subtle)]">
-        {events.map((event) => (
-          <li
-            className="relative grid grid-cols-[48px_minmax(0,1fr)] gap-3"
-            key={event.id}
-          >
-            <time
-              className="z-10 mt-2 text-right text-[10px] font-semibold leading-4 text-[var(--text-secondary)]"
-              dateTime={event.dateTime}
+      {events.length > 0 ? (
+        <ol className="relative mt-3 grid gap-2.5 before:absolute before:bottom-2 before:left-[3.55rem] before:top-2 before:w-px before:bg-[var(--border-subtle)]">
+          {events.map((event) => (
+            <li
+              className="relative grid grid-cols-[48px_minmax(0,1fr)] gap-3"
+              key={event.id}
             >
-              {event.timeLabel}
-            </time>
-            <span
-              aria-hidden="true"
-              className={cn(
-                "absolute left-[3.35rem] top-4 z-10 size-1.5 rounded-full border border-[var(--surface-1)] bg-[var(--text-muted)]",
-                event.status === "current" &&
-                  "bg-[var(--accent-purple)] shadow-[0_0_0_3px_rgba(155,124,246,.12)]",
-                (event.status === "shifted" ||
-                  event.status === "needs_review") &&
-                  "bg-[var(--accent-orange)]",
-                (event.status === "completed" || event.status === "logged") &&
-                  "bg-[var(--text-faint)]",
-              )}
-            />
-            <ActivityEventCard event={event} />
-          </li>
-        ))}
-      </ol>
+              <time
+                className="z-10 mt-2 text-right text-[10px] font-semibold leading-4 text-[var(--text-secondary)]"
+                dateTime={event.dateTime}
+              >
+                {event.timeLabel}
+              </time>
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "absolute left-[3.35rem] top-4 z-10 size-1.5 rounded-full border border-[var(--surface-1)] bg-[var(--text-muted)]",
+                  event.status === "current" &&
+                    "bg-[var(--accent-purple)] shadow-[0_0_0_3px_rgba(155,124,246,.12)]",
+                  (event.status === "shifted" ||
+                    event.status === "needs_review") &&
+                    "bg-[var(--accent-orange)]",
+                  (event.status === "completed" || event.status === "logged") &&
+                    "bg-[var(--text-faint)]",
+                )}
+              />
+              <ActivityEventCard event={event} />
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <EmptyStateBlock
+          className="mt-3"
+          description={emptyState.description}
+          title={emptyState.title}
+        />
+      )}
 
       <div className="mt-auto rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.62)] px-3 py-2">
         <p className="text-[10px] font-semibold text-[var(--text-secondary)]">
@@ -341,9 +415,20 @@ function DeltaSummary({
 
 function DecisionRows({
   decisions,
+  emptyState,
 }: Readonly<{
   decisions: TodayDecisionViewModel[];
+  emptyState: TodayViewModel["decisionsLedger"]["emptyState"];
 }>) {
+  if (decisions.length === 0) {
+    return (
+      <EmptyStateBlock
+        description={emptyState.description}
+        title={emptyState.title}
+      />
+    );
+  }
+
   return (
     <div className="space-y-1.5">
       {decisions.map((decision, index) => (
@@ -376,10 +461,21 @@ function DecisionRows({
 }
 
 function HandoffRows({
+  emptyState,
   items,
 }: Readonly<{
+  emptyState: TodayViewModel["carryForward"]["emptyState"];
   items: TodayCarryForwardItemViewModel[];
 }>) {
+  if (items.length === 0) {
+    return (
+      <EmptyStateBlock
+        description={emptyState.description}
+        title={emptyState.title}
+      />
+    );
+  }
+
   return (
     <div className="space-y-1.5">
       {items.map((item, index) => (
@@ -444,9 +540,20 @@ function ReviewSignalGrid({
 
 function ArtifactRows({
   artifacts,
+  emptyState,
 }: Readonly<{
   artifacts: TodayArtifactViewModel[];
+  emptyState: TodayViewModel["evidenceArtifacts"]["emptyState"];
 }>) {
+  if (artifacts.length === 0) {
+    return (
+      <EmptyStateBlock
+        description={emptyState.description}
+        title={emptyState.title}
+      />
+    );
+  }
+
   return (
     <div className="space-y-1.5">
       {artifacts.map((artifact) => (
@@ -478,10 +585,14 @@ function ArtifactRows({
 
 function DecisionsArtifacts({
   decisions,
+  decisionsEmptyState,
   artifacts,
+  artifactsEmptyState,
 }: Readonly<{
   decisions: TodayDecisionViewModel[];
+  decisionsEmptyState: TodayViewModel["decisionsLedger"]["emptyState"];
   artifacts: TodayArtifactViewModel[];
+  artifactsEmptyState: TodayViewModel["evidenceArtifacts"]["emptyState"];
 }>) {
   return (
     <div className="grid min-h-0 gap-4 xl:grid-cols-[minmax(0,.92fr)_minmax(0,1.08fr)]">
@@ -496,7 +607,7 @@ function DecisionsArtifacts({
           <Pill quiet>{decisions.length} decisions</Pill>
         </div>
         <div className="mt-2">
-          <DecisionRows decisions={decisions} />
+          <DecisionRows decisions={decisions} emptyState={decisionsEmptyState} />
         </div>
       </section>
 
@@ -511,7 +622,10 @@ function DecisionsArtifacts({
           <Pill quiet>{artifacts.length} artifacts</Pill>
         </div>
         <div className="mt-2">
-          <ArtifactRows artifacts={artifacts} />
+          <ArtifactRows
+            artifacts={artifacts}
+            emptyState={artifactsEmptyState}
+          />
         </div>
       </section>
     </div>
@@ -521,17 +635,27 @@ function DecisionsArtifacts({
 function ClosingReview({
   signals,
   handoffItems,
+  handoffContentState,
+  handoffEmptyState,
   firstMove,
+  profileId,
 }: Readonly<{
   signals: TodayReviewSignalViewModel[];
   handoffItems: TodayCarryForwardItemViewModel[];
+  handoffContentState: ContentStateMeta;
+  handoffEmptyState: TodayViewModel["carryForward"]["emptyState"];
   firstMove: string;
+  profileId: TodayViewModel["profileId"];
 }>) {
   return (
     <div className="grid h-full min-h-0 gap-4 xl:grid-cols-[minmax(0,.9fr)_minmax(0,1.1fr)]">
       <ReviewSignalGrid items={signals} className="xl:grid-cols-2" />
 
-      <div className="flex min-h-0 min-w-0 flex-col">
+      <div
+        className="flex min-h-0 min-w-0 flex-col"
+        data-today-section="carry-forward"
+        {...contentStateAttributes(handoffContentState, profileId)}
+      >
         <div className="flex items-center justify-between gap-3">
           <h3 className="text-[11px] font-semibold text-[var(--text-secondary)]">
             Carry Forward
@@ -539,7 +663,7 @@ function ClosingReview({
           <Pill quiet>{handoffItems.length} items</Pill>
         </div>
         <div className="mt-2">
-          <HandoffRows items={handoffItems} />
+          <HandoffRows emptyState={handoffEmptyState} items={handoffItems} />
         </div>
         <div className="mt-auto rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.72)] px-3 py-2">
           <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
@@ -560,24 +684,38 @@ export function TodayMemoryLogPage({
   viewModel: TodayViewModel;
 }>) {
   return (
-    <div className="mx-auto flex w-full max-w-[2208px] flex-col gap-3 pb-0 2xl:h-[calc(100dvh-1.25rem)] 2xl:min-h-0">
+    <div
+      className="mx-auto flex w-full max-w-[2208px] flex-col gap-3 pb-0 2xl:h-[calc(100dvh-1.25rem)] 2xl:min-h-0"
+      data-today-section="page-root"
+      id="today-page"
+      {...contentStateAttributes(viewModel.contentStates.page, viewModel.profileId)}
+    >
       <TodayHeader viewModel={viewModel} />
 
       <div className="grid gap-3 2xl:min-h-0 2xl:flex-1 2xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1.5fr)]">
         <MemoryPanel
           accent="var(--accent-cyan)"
           className="2xl:flex 2xl:min-h-0 2xl:flex-col"
+          contentState={viewModel.contentStates.activityStream}
           contentClassName="2xl:flex 2xl:min-h-0 2xl:flex-1 2xl:flex-col"
+          profileId={viewModel.profileId}
           subtitle={viewModel.activityStream.subtitle}
+          todaySection="activity-stream"
           title={viewModel.activityStream.title}
         >
-          <ActivityStream events={viewModel.activityStream.events} />
+          <ActivityStream
+            emptyState={viewModel.activityStream.emptyState}
+            events={viewModel.activityStream.events}
+          />
         </MemoryPanel>
 
         <div className="grid gap-3 2xl:min-h-0 2xl:grid-rows-[auto_minmax(0,.56fr)_minmax(0,.44fr)]">
           <MemoryPanel
             accent="var(--accent-green)"
+            contentState={viewModel.contentStates.openingReview}
+            profileId={viewModel.profileId}
             subtitle={viewModel.openingReview.subtitle}
+            todaySection="opening-review"
             title={viewModel.openingReview.title}
           >
             <ReviewSignalGrid
@@ -590,8 +728,11 @@ export function TodayMemoryLogPage({
             <MemoryPanel
               accent="var(--accent-blue)"
               className="2xl:flex 2xl:min-h-0 2xl:flex-col"
+              contentState={viewModel.contentStates.deltaSummary}
               contentClassName="2xl:flex 2xl:min-h-0 2xl:flex-1 2xl:flex-col"
+              profileId={viewModel.profileId}
               subtitle={viewModel.deltaSummary.subtitle}
+              todaySection="delta-summary"
               title={viewModel.deltaSummary.title}
             >
               <DeltaSummary metrics={viewModel.deltaSummary.metrics} />
@@ -600,13 +741,18 @@ export function TodayMemoryLogPage({
             <MemoryPanel
               accent="var(--accent-purple)"
               className="2xl:flex 2xl:min-h-0 2xl:flex-col"
+              contentState={viewModel.contentStates.decisionsArtifacts}
               contentClassName="2xl:min-h-0 2xl:flex-1"
+              profileId={viewModel.profileId}
               subtitle="Decisions made today and the evidence they produced."
+              todaySection="decisions-artifacts"
               title="Decisions & Artifacts"
             >
               <DecisionsArtifacts
                 artifacts={viewModel.evidenceArtifacts.artifacts}
+                artifactsEmptyState={viewModel.evidenceArtifacts.emptyState}
                 decisions={viewModel.decisionsLedger.decisions}
+                decisionsEmptyState={viewModel.decisionsLedger.emptyState}
               />
             </MemoryPanel>
           </div>
@@ -614,13 +760,19 @@ export function TodayMemoryLogPage({
           <MemoryPanel
             accent="var(--accent-orange)"
             className="2xl:flex 2xl:min-h-0 2xl:flex-col"
+            contentState={viewModel.contentStates.closingReview}
             contentClassName="2xl:flex 2xl:min-h-0 2xl:flex-1 2xl:flex-col"
+            profileId={viewModel.profileId}
             subtitle={viewModel.closingReview.subtitle}
+            todaySection="closing-review"
             title={viewModel.closingReview.title}
           >
             <ClosingReview
               firstMove={viewModel.carryForward.firstMove}
+              handoffContentState={viewModel.contentStates.carryForward}
+              handoffEmptyState={viewModel.carryForward.emptyState}
               handoffItems={viewModel.carryForward.items}
+              profileId={viewModel.profileId}
               signals={viewModel.closingReview.signals}
             />
           </MemoryPanel>

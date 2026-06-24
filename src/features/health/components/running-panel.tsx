@@ -1,5 +1,6 @@
 import { Pill } from "@/components/layout/route-page-primitives";
-import type { RunningViewModel } from "../types";
+import type { ContentStateMeta } from "@/features/content-state";
+import type { HealthProfileId, RunningViewModel } from "../types";
 import {
   ActionLink,
   HealthMetricCard,
@@ -10,13 +11,20 @@ import {
 
 export function RunningPanel({
   data,
+  profileId,
+  state,
 }: Readonly<{
   data: RunningViewModel;
+  profileId: HealthProfileId;
+  state: ContentStateMeta;
 }>) {
   return (
     <HealthPanel
       accent="var(--accent-orange)"
       badge={data.loadStatus}
+      contentState={state}
+      profileId={profileId}
+      sectionName="running"
       subtitle={data.subtitle}
       title={data.title}
     >

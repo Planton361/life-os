@@ -3,6 +3,7 @@ import "server-only";
 import {
   buildCalendarTimedBlocks,
   getCalendarViewModel as getDemoCalendarViewModel,
+  resolveCalendarContentStates,
 } from "@/features/calendar/calendar-view-model";
 import {
   calendarFilters,
@@ -56,7 +57,11 @@ import {
   setManualMood,
 } from "./manual-profile-store";
 import { getInboxViewModel as getDemoInboxViewModel } from "@/features/inbox/inbox-view-model";
-import type {
+import {
+  buildInboxContentStates,
+  getInboxCaptureTypeLabel,
+  getInboxStageLabel,
+  type InboxAISuggestion,
   InboxQueueItem,
   InboxStage,
   InboxViewModel,
@@ -65,9 +70,13 @@ import {
   getMentalHealthViewModel as getDemoMentalHealthViewModel,
   type MentalHealthPageViewModel,
 } from "@/features/health/mental-health-view-model";
-import { getTodayViewModel as getDemoTodayViewModel } from "@/features/today/today-view-model";
+import {
+  buildTodayContentStates,
+  getTodayViewModel as getDemoTodayViewModel,
+} from "@/features/today/today-view-model";
 import type {
   TodayActivityEventViewModel,
+  TodayReviewSignalViewModel,
   TodayViewModel,
 } from "@/features/today";
 import {
@@ -133,10 +142,6 @@ function areaAccent(area: EntityArea): DashboardAccent {
   if (area === "personal") return "var(--accent-purple)";
   if (area === "review" || area === "system") return "var(--accent-cyan)";
   return "var(--accent-blue)";
-}
-
-function profileTitle(profileId: LifeOsProfileId) {
-  return profileId === "manual" ? "Manual local profile" : "Empty profile";
 }
 
 function dashboardPriority(priority: EntityPriority): DashboardPriority {
@@ -634,6 +639,7 @@ function buildProfilePortfolioViewModel(
     collection.skills.length;
 
   return getDemoPortfolioViewModel(collectionToPortfolioEntities(collection), {
+    profileId,
     summary:
       profileId === "manual"
         ? "Lokale Tasks, Projekte und Ziele aus dem Manual Local Profile steuern. Demo-Fixtures bleiben ausgeblendet."
@@ -652,10 +658,31 @@ function buildProfilePortfolioViewModel(
 
 function buildProfileMentalHealthViewModel(
   profileId: LifeOsProfileId,
+  profile: ManualProfileData,
 ): MentalHealthPageViewModel {
-  const profileLabel = profileTitle(profileId);
+  const hasMood = Boolean(profile.mood);
+  const moodLabel = profile.mood?.label ?? "—";
 
   return {
+    profileId,
+    contentStates: {
+      actions: resolveContentStateMeta({ capacity: 7, itemCount: 0 }),
+      checkIn: resolveContentStateMeta({ capacity: 5, itemCount: 0 }),
+      currentSignal: resolveContentStateMeta({
+        capacity: 3,
+        itemCount: hasMood ? 1 : 0,
+      }),
+      header: resolveContentStateMeta({ capacity: 1, itemCount: hasMood ? 1 : 0 }),
+      journalRhythm: resolveContentStateMeta({ capacity: 7, itemCount: 0 }),
+      moodPattern: resolveContentStateMeta({
+        capacity: 6,
+        itemCount: hasMood ? 1 : 0,
+      }),
+      page: resolveContentStateMeta({ capacity: 8, itemCount: hasMood ? 1 : 0 }),
+      repairRoutines: resolveContentStateMeta({ capacity: 3, itemCount: 0 }),
+      safety: resolveContentStateMeta({ capacity: 4, itemCount: 4 }),
+      sleepRecovery: resolveContentStateMeta({ capacity: 7, itemCount: 0 }),
+    },
     header: {
       breadcrumb: ["Life OS", "Health & Fitness", "Mental Health"],
       title: "Mental Health",
@@ -663,16 +690,21 @@ function buildProfileMentalHealthViewModel(
         "Self-checks, mood patterns and routines without labels or pressure.",
       pills: [
         { label: "Self-check only", accent: "var(--accent-purple)" },
-        { label: profileLabel, accent: "var(--accent-cyan)" },
-        { label: "Noch leer", accent: "var(--accent-green)" },
+        { label: "No diagnosis", accent: "var(--accent-cyan)" },
+        {
+          label: hasMood ? "Local mood" : "Noch leer",
+          accent: "var(--accent-green)",
+        },
       ],
       signal: {
-        label: "Local signal",
-        value: "Noch kein Eintrag",
-        detail: "Lokales Profil",
+        label: "Current signal",
+        value: hasMood ? moodLabel : "Noch kein aktuelles Signal",
+        detail: hasMood
+          ? "Lokaler Mood-Eintrag gespeichert."
+          : "Noch kein Check-in erfasst.",
         accent: "var(--accent-purple)",
-        progress: 0,
-        progressLabel: "kein Check-in erfasst",
+        progress: hasMood ? 20 : 0,
+        progressLabel: hasMood ? "lokaler Mood" : "kein Check-in erfasst",
       },
     },
     checkIn: {
@@ -682,20 +714,40 @@ function buildProfileMentalHealthViewModel(
       messageTitle: "Noch kein Check-in",
       message:
         "Erfasse spaeter einen kurzen lokalen Check-in, um diese Card zu fuellen.",
-      items: [],
+      items: hasMood
+        ? [
+            {
+              accent: "var(--accent-purple)",
+              detail: "lokal gespeichert",
+              label: "Mood",
+              value: moodLabel,
+            },
+          ]
+        : [],
       nextRepair: {
         label: "Next repair",
-        value: "Noch keine Repair-Routine ausgewaehlt.",
+        value: "Noch keine Support-Routine ausgewaehlt.",
       },
       actionLabel: "Open check-in",
+      actionDisabled: true,
     },
     moodPattern: {
-      title: "Local Signal Pattern",
+      title: "Stimmungsverlauf",
       subtitle:
         "Show your tendency in text. Color is always paired with label.",
       rangeLabel: "7 days",
-      moods: [],
-      interpretation: "Noch kein Stimmungsverlauf erfasst.",
+      moods: hasMood
+        ? [
+            {
+              accent: "var(--accent-purple)",
+              detail: "lokaler Mood",
+              label: moodLabel,
+              pattern: [true, false, false, false, false, false, false],
+              value: "1 signal",
+            },
+          ]
+        : [],
+      interpretation: "Noch kein Stimmungsverlauf",
     },
     currentSignal: {
       title: "Current Signal",
@@ -703,14 +755,16 @@ function buildProfileMentalHealthViewModel(
       metrics: [],
       interpretation: {
         label: "Signal interpretation",
-        value: "Noch kein Signal fuer eine Interpretation.",
-        detail: "Erfasse zuerst einen Check-in, bevor ein Muster entsteht.",
+        value: hasMood ? moodLabel : "Noch kein aktuelles Signal",
+        detail: hasMood
+          ? "Ein einzelner lokaler Mood-Eintrag ist sichtbar; kein Muster wird abgeleitet."
+          : "Erfasse zuerst einen Check-in, bevor ein Verlauf entsteht.",
       },
       nextStep: {
         label: "Next step",
-        value:
-          "Check-in erfassen, sobald lokale Mental-Health-Daten aktiv sind.",
-        detail: "Bis dahin bleibt die Shell ohne Demo-Inhalte sichtbar.",
+        value: "Noch keine nächste Aktion",
+        detail:
+          "Aktionen erscheinen erst, wenn ein lokaler Check-in-Flow existiert.",
       },
     },
     sleepRecovery: {
@@ -720,8 +774,8 @@ function buildProfileMentalHealthViewModel(
       bars: [],
       tonightCue: {
         label: "Tonight cue",
-        value: "Noch kein Abend-Cue gespeichert.",
-        detail: "Lokale Mental-Health-Daten sind noch leer.",
+        value: "Noch keine Schlafdaten",
+        detail: "Schlafdaten erscheinen erst, wenn eine lokale Quelle existiert.",
       },
     },
     journalRhythm: {
@@ -731,7 +785,7 @@ function buildProfileMentalHealthViewModel(
       pattern: [],
       focus: {
         label: "Reflection focus",
-        value: "Noch kein Reflexionsfokus gespeichert.",
+        value: "Noch keine Reflexion erfasst",
       },
       lastReflection: {
         label: "Last reflection",
@@ -740,8 +794,8 @@ function buildProfileMentalHealthViewModel(
       },
       prompt: {
         label: "Daily prompt",
-        value: "Lokalen Journal-Eintrag erfassen, sobald die Quelle aktiv ist.",
-        detail: "Die Page Shell bleibt stabil, solange die Daten leer sind.",
+        value: "Noch kein Journal-Kontext",
+        detail: "Reflexionen erscheinen erst, wenn lokale Eintraege existieren.",
       },
       actionLabel: "Open Journal",
       href: "/life/journal",
@@ -752,8 +806,8 @@ function buildProfileMentalHealthViewModel(
       routines: [],
       recommendedToday: {
         label: "Recommended today",
-        value: "Noch keine Empfehlung ohne lokale Signale.",
-        detail: "Demo recommendations stay limited to the Demo profile.",
+        value: "Noch keine Support-Routinen",
+        detail: "Routinen erscheinen erst, wenn lokale Signale existieren.",
       },
     },
     actions: {
@@ -763,11 +817,10 @@ function buildProfileMentalHealthViewModel(
       items: [],
       decisionRule: {
         label: "Decision rule",
-        value: "Do not interpret empty data as a personal signal.",
-        detail:
-          "R1.2 preserves the page shell and waits for local mental-health entries.",
+        value: "Noch keine Mental-Health-Aktionen",
+        detail: "Diese Card bleibt leer, bis lokale Aktionen existieren.",
         progress: 0,
-        progressLabel: "keine lokalen Eintraege",
+        progressLabel: "keine Aktionen",
       },
       todayHref: "/today",
       todayLabel: "Open Today",
@@ -1229,20 +1282,100 @@ function manualInboxToQueueItem(
   };
 }
 
+function inboxEmptyPlanningSuggestions(): InboxAISuggestion[] {
+  return [
+    {
+      label: "Area",
+      value: "—",
+      accent: "var(--accent-blue)",
+    },
+    {
+      label: "Priority",
+      value: "—",
+      accent: "var(--accent-orange)",
+    },
+    {
+      label: "Effort",
+      value: "—",
+      accent: "var(--accent-green)",
+    },
+    {
+      label: "Energy",
+      value: "—",
+      accent: "var(--accent-cyan)",
+    },
+  ];
+}
+
 function buildProfileInboxViewModel(
   profile: ManualProfileData,
+  profileId: Exclude<LifeOsProfileId, "demo">,
 ): InboxViewModel {
   const viewModel = clone(getDemoInboxViewModel());
+  const isManual = profileId === "manual";
   const queue = profile.inboxItems.map((item, index) =>
     manualInboxToQueueItem(item, index === 0),
   );
   const active = profile.inboxItems[0] ?? null;
+  const checklistItems = [
+    {
+      label: "Capture vorhanden",
+      state: active ? "done" : "missing",
+    },
+    {
+      label: "Kontext geklärt",
+      state: active?.note ? "done" : "missing",
+    },
+    {
+      label: "Nächste Aktion festgelegt",
+      state: active?.next ? "done" : "missing",
+    },
+    {
+      label: "Outcome Route gewählt",
+      state: "missing",
+    },
+  ] satisfies InboxViewModel["checklist"]["items"];
+  const checklistDoneCount = checklistItems.filter(
+    (item) => item.state === "done",
+  ).length;
+  const aiPlanning = active
+    ? [
+        {
+          label: "Area",
+          value: areaLabel(active.areaId),
+          accent: areaAccent(active.areaId),
+        },
+        ...inboxEmptyPlanningSuggestions().slice(1),
+      ]
+    : inboxEmptyPlanningSuggestions();
 
+  viewModel.profileId = profileId;
+  viewModel.contentStates = buildInboxContentStates({
+    aiSuggestionCount: active ? 1 : 0,
+    checklistDoneCount,
+    hasActiveItem: Boolean(active),
+    queueCount: queue.length,
+    relatedContextCount: 0,
+  });
+  viewModel.quickCapture = {
+    enabled: isManual,
+    title: "Quick Capture",
+    description: isManual
+      ? "Speichert neue Inbox-Einträge im lokalen Manual-Profil."
+      : "Quick Capture bleibt sichtbar; Speichern ist dem Manual-Profil vorbehalten.",
+    disabledReason: isManual
+      ? undefined
+      : "Wechsle ins Manual-Profil, um lokale Einträge zu speichern.",
+  };
+  viewModel.queueEmptyState = {
+    title: "Inbox ist leer",
+    description: "Capture Gedanken, Aufgaben oder Fragen, wenn sie entstehen.",
+  };
   viewModel.signals = [
     {
       label: "Open",
       value: String(profile.inboxItems.length),
-      sublabel: "manual",
+      sublabel: isManual ? "local captures" : "captured",
       accent: "var(--accent-blue)",
     },
     {
@@ -1272,61 +1405,79 @@ function buildProfileInboxViewModel(
   ];
   viewModel.queue = queue;
   viewModel.activeItem = {
-    title: active?.title ?? "No inbox item selected",
-    stage: "Clarify",
-    type: "Question",
-    originalCapture: active?.note ?? "No manual inbox entries yet.",
-    source: "Manual Local Profile",
+    hasSelection: Boolean(active),
+    title: active?.title ?? "Kein Eintrag ausgewählt",
+    stage: active ? getInboxStageLabel(active.stage) : "—",
+    type: active ? getInboxCaptureTypeLabel(active.type) : "—",
+    originalCapture: active?.note ?? "",
+    source: isManual ? "Manual local profile" : "Empty profile",
     fields: [
       {
         label: "Clean Title",
-        value: active?.title ?? "No inbox item",
+        value: active?.title ?? "—",
       },
       {
         label: "Description / Context",
-        value: active?.note ?? "Create a manual inbox item to start triage.",
+        value: active?.note ?? "—",
       },
       {
         label: "Next Action",
-        value: active?.next ?? "Capture the first item.",
+        value: active?.next ?? "—",
       },
       {
         label: "Missing Info",
-        value: active ? "Choose an outcome route." : "Noch kein Eintrag.",
+        value: active ? "Outcome Route wählen." : "—",
       },
     ],
-    planningSignals: [
-      {
-        label: "Area",
-        value: active ? areaLabel(active.areaId) : "None",
-        source: "Manual",
-        accent: active ? areaAccent(active.areaId) : "var(--text-muted)",
-      },
-    ],
+    planningSignals: active
+      ? [
+          {
+            label: "Area",
+            value: areaLabel(active.areaId),
+            source: "Local item",
+            accent: areaAccent(active.areaId),
+          },
+        ]
+      : [],
+    actionsEnabled: false,
+    emptyState: {
+      title: "Kein Eintrag ausgewählt",
+      description:
+        "Wähle links einen Eintrag aus oder erfasse einen neuen Gedanken.",
+    },
+  };
+  viewModel.outcome = {
+    ...viewModel.outcome,
+    actionsEnabled: false,
   };
   viewModel.aiAssistant = {
     ...viewModel.aiAssistant,
-    description: "No AI or remote processing runs in the manual local profile.",
-    planning: [],
-    outcomes: [],
+    mode: active ? "local suggestion" : "waiting",
+    description: active
+      ? "Hinweise bleiben lokal und werden erst nach Review übernommen."
+      : "Noch keine Empfehlung möglich.",
+    planning: aiPlanning,
+    outcomes: active ? ["Outcome Route prüfen"] : [],
+    canApply: false,
+    emptyState: {
+      title: "Noch keine Empfehlung möglich",
+      description: "Wähle einen echten Eintrag aus, bevor Vorschläge entstehen.",
+    },
   };
   viewModel.checklist = {
     ...viewModel.checklist,
-    progress: active ? "1 / 6 ready" : "0 / 6 ready",
-    items: [
-      {
-        label: active ? "Manual capture exists" : "No manual capture",
-        state: active ? "done" : "missing",
-      },
-      {
-        label: "Outcome route selected",
-        state: "missing",
-      },
-    ],
+    progress: `${checklistDoneCount} / 4 ready`,
+    items: checklistItems,
   };
   viewModel.relatedContext = {
     ...viewModel.relatedContext,
     items: [],
+    actionsEnabled: false,
+    emptyState: {
+      title: "Kein verwandter Kontext",
+      description:
+        "Passende Projekte, Ziele oder Ressourcen erscheinen erst aus echten lokalen Daten.",
+    },
   };
 
   return viewModel;
@@ -1378,101 +1529,242 @@ function inboxToTodayEvent(item: ManualInboxItem): TodayActivityEventViewModel {
   };
 }
 
+function todayReviewNotSetItems(): TodayReviewSignalViewModel[] {
+  return [
+    {
+      label: "Sleep",
+      value: "—",
+      detail: "Nicht gesetzt",
+      accent: "var(--accent-blue)",
+    },
+    {
+      label: "Mood",
+      value: "Nicht gesetzt",
+      detail: "Opening Review nicht gestartet",
+      accent: "var(--accent-green)",
+    },
+    {
+      label: "Energy",
+      value: "—",
+      detail: "Nicht gesetzt",
+      accent: "var(--accent-cyan)",
+    },
+    {
+      label: "Focus",
+      value: "Nicht gesetzt",
+      detail: "Noch nicht gestartet",
+      accent: "var(--accent-purple)",
+    },
+    {
+      label: "Intent",
+      value: "Noch nicht gestartet",
+      detail: "Keine Review-Daten gespeichert",
+      accent: "var(--accent-orange)",
+    },
+    {
+      label: "Planned",
+      value: "—",
+      detail: "Nicht aus Review abgeleitet",
+      accent: "var(--accent-yellow)",
+    },
+  ];
+}
+
+function todayClosingNotStartedItems(
+  carryForwardCount: number,
+): TodayReviewSignalViewModel[] {
+  return [
+    {
+      label: "Review",
+      value: "Nicht gestartet",
+      detail: "Noch kein Daily Review Record",
+      accent: "var(--accent-orange)",
+    },
+    {
+      label: "Status",
+      value: "Nicht gespeichert",
+      detail: "Day Closeout ist offen",
+      accent: "var(--accent-purple)",
+    },
+    {
+      label: "Carry Forward",
+      value: String(carryForwardCount),
+      detail: "aus heutigen offenen Tasks",
+      accent: "var(--accent-blue)",
+    },
+    {
+      label: "Tomorrow Hint",
+      value: "—",
+      detail: "nicht gesetzt",
+      accent: "var(--accent-cyan)",
+    },
+  ];
+}
+
 function buildProfileTodayViewModel(
   profile: ManualProfileData,
+  profileId: Exclude<LifeOsProfileId, "demo">,
 ): TodayViewModel {
   const viewModel = clone(getDemoTodayViewModel());
+  const today = todayDateLabel();
+  const todayTasks = profile.tasks.filter((task) => task.date === today);
   const events = [
-    ...profile.tasks.map(taskToTodayEvent),
+    ...todayTasks.map(taskToTodayEvent),
     ...profile.inboxItems.map(inboxToTodayEvent),
   ];
+  const artifacts = [
+    ...profile.projects.slice(0, 3).map((project) => ({
+      type: "Project",
+      title: project.title,
+      detail: project.nextStep,
+      accent: areaAccent(project.areaId),
+    })),
+    ...profile.goals.slice(0, 3).map((goal) => ({
+      type: "Goal",
+      title: goal.title,
+      detail: goal.nextStep,
+      accent: areaAccent(goal.areaId),
+    })),
+  ];
+  const carryForwardItems = todayTasks
+    .filter((task) => task.status !== "done")
+    .slice(0, 4)
+    .map((task) => ({
+      label: task.title,
+      description: task.nextStep,
+      accent: areaAccent(task.areaId),
+    }));
+  const deltaValueCount =
+    todayTasks.length +
+    profile.inboxItems.length +
+    profile.projects.length +
+    profile.goals.length;
+  const hasTodayData =
+    events.length > 0 || artifacts.length > 0 || carryForwardItems.length > 0;
 
+  viewModel.profileId = profileId;
+  viewModel.contentStates = buildTodayContentStates({
+    activityEventCount: events.length,
+    carryForwardCount: carryForwardItems.length,
+    closingReviewCount: 0,
+    decisionsArtifactsCount: artifacts.length,
+    deltaValueCount,
+    openingReviewCount: 0,
+  });
+  viewModel.firstRunNotice = hasTodayData
+    ? undefined
+    : {
+        title: "Für heute wurde noch nichts erfasst.",
+        description:
+          "Starte mit einem Task, einem Inbox-Eintrag oder dem Opening Review.",
+      };
   viewModel.header = {
     ...viewModel.header,
-    dateLabel: "Local profile day",
+    dateLabel: `${
+      profileId === "manual" ? "Lokaler Tag" : "Leerer Tag"
+    } · ${today}`,
     summary:
-      profile.tasks.length + profile.inboxItems.length > 0
-        ? "Manual local entries projected into the Today memory log."
-        : "Noch keine lokalen Eintraege. Today bleibt in derselben Struktur leer.",
+      hasTodayData && profileId === "manual"
+        ? "Lokale Daten aus Tasks, Inbox und Portfolio erscheinen als Tageslog."
+        : "Für heute liegen noch keine lokalen Ereignisse vor. Die Tagesstruktur bleibt bereit.",
     statusPills: [
       {
-        label: `${profile.tasks.length} tasks`,
+        label: profileId === "manual" ? "Manual" : "Empty",
+        accent: "var(--accent-cyan)",
+      },
+      {
+        label: `${todayTasks.length} today tasks`,
         accent: "var(--accent-blue)",
       },
       {
         label: `${profile.inboxItems.length} inbox`,
         accent: "var(--accent-green)",
       },
+      {
+        label: `${artifacts.length} artifacts`,
+        accent: "var(--accent-purple)",
+      },
     ],
   };
   viewModel.activityStream = {
     ...viewModel.activityStream,
     events,
+    emptyState: {
+      title: "Noch keine Tagesereignisse",
+      description:
+        "Geplante Aufgaben, aktuelle Blöcke und geloggte Entscheidungen erscheinen hier.",
+    },
   };
   viewModel.openingReview = {
     ...viewModel.openingReview,
-    items: [],
+    items: todayReviewNotSetItems(),
   };
   viewModel.deltaSummary = {
     ...viewModel.deltaSummary,
     metrics: [
       {
-        label: "Manual tasks",
-        value: String(profile.tasks.length),
-        detail: "local profile",
+        label: "Today tasks",
+        value: String(todayTasks.length),
+        detail: "echte Tasks mit heutigem Datum",
         accent: "var(--accent-blue)",
       },
       {
-        label: "Inbox",
+        label: "Inbox captures",
         value: String(profile.inboxItems.length),
-        detail: "local captures",
+        detail: "lokale Captures",
         accent: "var(--accent-green)",
       },
       {
-        label: "Projects",
-        value: String(profile.projects.length),
-        detail: "manual",
+        label: "Artifacts",
+        value: String(artifacts.length),
+        detail: "Projects und Goals",
         accent: "var(--accent-orange)",
+      },
+      {
+        label: "Review records",
+        value: "—",
+        detail: "noch keine lokale Review-Quelle",
+        accent: "var(--accent-purple)",
       },
     ],
   };
   viewModel.decisionsLedger = {
     ...viewModel.decisionsLedger,
     decisions: [],
+    emptyState: {
+      title: "Noch keine Entscheidungen oder Artefakte",
+      description:
+        "Gespeicherte Entscheidungen, Screenshots, Notizen oder Links erscheinen hier.",
+    },
   };
   viewModel.closingReview = {
     ...viewModel.closingReview,
-    signals: [],
+    signals: todayClosingNotStartedItems(carryForwardItems.length),
+    emptyState: {
+      title: "Closing Review nicht gestartet",
+      description: "Der Tagesabschluss bleibt sichtbar, bis ein Review gespeichert wird.",
+    },
   };
   viewModel.carryForward = {
     ...viewModel.carryForward,
-    items: profile.tasks
-      .filter((task) => task.status !== "done")
-      .slice(0, 4)
-      .map((task) => ({
-        label: task.title,
-        description: task.nextStep,
-        accent: areaAccent(task.areaId),
-      })),
+    items: carryForwardItems,
     firstMove:
-      profile.tasks[0]?.nextStep ?? "Create one task or inbox item to start.",
+      carryForwardItems[0]?.description ??
+      "Ersten Tagespunkt erfassen oder Aufgabe planen.",
+    emptyState: {
+      title: "Kein Carry Forward",
+      description:
+        "Offene heutige Aufgaben und nächste Bewegungen erscheinen hier.",
+    },
   };
   viewModel.evidenceArtifacts = {
     ...viewModel.evidenceArtifacts,
-    artifacts: [
-      ...profile.projects.slice(0, 3).map((project) => ({
-        type: "Project",
-        title: project.title,
-        detail: project.nextStep,
-        accent: areaAccent(project.areaId),
-      })),
-      ...profile.goals.slice(0, 3).map((goal) => ({
-        type: "Goal",
-        title: goal.title,
-        detail: goal.nextStep,
-        accent: areaAccent(goal.areaId),
-      })),
-    ],
+    artifacts,
+    emptyState: {
+      title: "Noch keine Artefakte",
+      description:
+        "Gespeicherte Screenshots, Notizen, Links oder Projektbewegungen erscheinen hier.",
+    },
   };
 
   return viewModel;
@@ -1621,124 +1913,54 @@ function projectToAllDayBlock(
   };
 }
 
-function emptySelectedBlock(dayId: string): CalendarAllDayBlockViewModel {
-  return {
-    id: "empty-calendar-selection",
-    dayId,
-    title: "No time block selected",
-    type: "event",
-    status: "draft",
-    source: "manual",
-    area: "Review",
-    sourceEntity: {
-      type: "free_event",
-      label: "Manual profile",
-    },
-    accent: "var(--text-muted)",
-    timeLabel: "Empty",
-    plannedOutcome: "Create a dated task to place it on the calendar.",
-  };
-}
-
 function buildProfileCalendarViewModel(
   profile: ManualProfileData,
+  profileId: Exclude<LifeOsProfileId, "demo">,
 ): CalendarViewModel {
-  const viewModel = clone(getDemoCalendarViewModel());
+  const isManualProfile = profileId === "manual";
   const days = buildManualCalendarDays(profile);
   const firstDayId = days[0]?.id ?? "manual-week";
+  const demoModel = getDemoCalendarViewModel();
   const rawTimedBlocks = profile.tasks
     .map(taskToCalendarBlock)
     .filter(
       (
         block,
-      ): block is Omit<
+        ): block is Omit<
         CalendarTimedBlockViewModel,
         "compact" | "density" | "durationMinutes" | "layout"
       > => Boolean(block),
     );
-  const timedBlocks = buildCalendarTimedBlocks(rawTimedBlocks);
+  const timedBlocks = buildCalendarTimedBlocks(rawTimedBlocks, days);
   const allDayBlocks = profile.projects.map((project) =>
     projectToAllDayBlock(project, firstDayId),
   );
-  const unscheduledTasks = profile.tasks.filter((task) => !task.startTime);
+  const unscheduledTasks = profile.tasks.filter(
+    (task) => !task.startTime || !task.date,
+  );
 
-  viewModel.header = {
-    ...viewModel.header,
-    dateRange: `${days[0]?.fullLabel ?? "Manual week"} - ${
-      days[6]?.fullLabel ?? "Manual week"
-    }`,
-    controls: {
-      currentAction: "Today",
-      views: calendarViewSwitches,
-    },
-  };
-  viewModel.filters = calendarFilters;
-  viewModel.projectsThisWeek = profile.projects.map((project) => ({
-    label: project.title,
-    count: project.taskIds.length,
-    accent: areaAccent(project.areaId),
-  }));
-  viewModel.weekStats = {
-    ...viewModel.weekStats,
-    stats: [
-      {
-        label: "Tasks",
-        value: String(profile.tasks.length),
-        detail: "manual",
-        accent: "var(--accent-blue)",
-      },
-      {
-        label: "Projects",
-        value: String(profile.projects.length),
-        detail: "manual",
-        accent: "var(--accent-cyan)",
-      },
-      {
-        label: "Focus",
-        value: String(timedBlocks.length),
-        detail: "blocks",
-        accent: "var(--accent-purple)",
-      },
-      {
-        label: "Deadlines",
-        value: String(allDayBlocks.length),
-        detail: "visible",
-        accent: "var(--accent-red)",
-      },
-      {
-        label: "Reviews",
-        value: "0",
-        detail: "not wired",
-        accent: "var(--accent-orange)",
-      },
-    ],
-  };
-  viewModel.days = days;
-  viewModel.hours = calendarHours;
-  viewModel.allDayBlocks = allDayBlocks;
-  viewModel.timedBlocks = timedBlocks;
-  viewModel.selectedBlock =
-    timedBlocks[0] ?? allDayBlocks[0] ?? emptySelectedBlock(firstDayId);
-  viewModel.schedulableTasks = unscheduledTasks.map((task) => ({
-    id: task.id,
-    title: task.title,
-    priority: dashboardPriority(task.priority),
-    area: areaLabel(task.areaId),
-    project: task.projectId ?? "Manual",
-    status:
-      task.status === "done"
-        ? "done"
-        : task.status === "active"
-          ? "in-progress"
-          : "open",
-    estimatedMinutes: task.durationMinutes ?? 30,
-    dueDate: task.date,
-    recentlyUpdated: "local",
-    alreadyScheduled: false,
-    accent: areaAccent(task.areaId),
-  }));
-  viewModel.rightPanel = {
-    ...viewModel.rightPanel,
+  const schedulableTasks: CalendarViewModel["schedulableTasks"] = unscheduledTasks
+    .map((task) => ({
+      id: task.id,
+      title: task.title,
+      priority: dashboardPriority(task.priority),
+      area: areaLabel(task.areaId),
+      project: task.projectId ?? "Manual",
+      status:
+        task.status === "done"
+          ? ("done" as const)
+          : task.status === "active"
+            ? ("in-progress" as const)
+            : ("open" as const),
+      estimatedMinutes: task.durationMinutes ?? 30,
+      dueDate: task.date,
+      recentlyUpdated: "local",
+      alreadyScheduled: false,
+      accent: areaAccent(task.areaId),
+    }))
+    .slice(0, 100);
+
+  const rightPanel = {
     selectedDay: days.find((day) => day.isToday)?.fullLabel ?? "Manual week",
     badge: profile.tasks.length > 0 ? "Manual active" : "Empty",
     metrics: [
@@ -1749,18 +1971,30 @@ function buildProfileCalendarViewModel(
         accent: "var(--accent-blue)",
       },
       {
-        label: "Open loops",
+        label: "Projects",
+        value: String(profile.projects.length),
+        detail: "local",
+        accent: "var(--accent-cyan)",
+      },
+      {
+        label: "Inbox",
         value: String(profile.inboxItems.length),
-        detail: "inbox",
-        accent: "var(--accent-red)",
+        detail: "local",
+        accent: "var(--accent-orange)",
+      },
+      {
+        label: "Timed blocks",
+        value: String(timedBlocks.length),
+        detail: "visible",
+        accent: "var(--accent-green)",
       },
     ],
-    openLoops: profile.inboxItems.slice(0, 4).map((item) => ({
+    openLoops: profile.inboxItems.map((item) => ({
       title: item.title,
       meta: `${areaLabel(item.areaId)} - ${item.stage}`,
       accent: areaAccent(item.areaId),
     })),
-    unscheduledTasks: unscheduledTasks.slice(0, 4).map((task) => ({
+    unscheduledTasks: unscheduledTasks.map((task) => ({
       title: task.title,
       meta: `${task.priority} task - no time block yet`,
       accent: areaAccent(task.areaId),
@@ -1781,13 +2015,106 @@ function buildProfileCalendarViewModel(
       suggestions: [],
     },
     weeklyReview: {
-      ...viewModel.rightPanel.weeklyReview,
-      status: "not wired",
-      description: "Manual profile does not write review records in R1.",
+      title: "Review",
+      status: "offen",
+      description: "Noch kein Wochenreview im lokalen Profil.",
+      placeholder: "Review-Notiz erfassen...",
+      actionLabel: "Review öffnen",
     },
-  };
+  } satisfies CalendarViewModel["rightPanel"];
+  const daysWithContent = days.filter(
+    (day) =>
+      timedBlocks.some((block) => block.dayId === day.id) ||
+      allDayBlocks.some((block) => block.dayId === day.id),
+  ).length;
+  const headerItemCount = timedBlocks.length > 0 || allDayBlocks.length > 0 ? 1 : 0;
+  const planningQueueCount = unscheduledTasks.length;
+  const rightPanelItemCount =
+    rightPanel.metrics.length +
+    rightPanel.openLoops.length +
+    rightPanel.unscheduledTasks.length +
+    rightPanel.reviewsOpen.length +
+    rightPanel.suggestedPlanningActions.length;
+  const selectedBlock = timedBlocks[0] ?? allDayBlocks[0];
 
-  return viewModel;
+  return {
+    ...demoModel,
+    contentStates: resolveCalendarContentStates({
+      allDayBlockCount: allDayBlocks.length,
+      daysWithContent,
+        dayColumnItemCount: daysWithContent,
+      headerItemCount,
+      planningQueueCount,
+      rightPanelItemCount,
+      scopeRowItemCount: calendarFilters.length + rightPanel.unscheduledTasks.length,
+      timedBlockCount: timedBlocks.length,
+      weekStatItemCount: demoModel.weekStats.stats.length,
+      viewSwitcherItemCount: calendarViewSwitches.length,
+      legendItemCount: 0,
+    }),
+    profileId,
+    header: {
+      ...demoModel.header,
+      dateRange: `${days[0]?.fullLabel ?? "Manual week"} - ${
+        days[6]?.fullLabel ?? "Manual week"
+      }`,
+      summary: isManualProfile
+        ? "Calendar content comes from timed local tasks and local projects only."
+        : "Calendar renders an empty shell in empty mode.",
+      controls: {
+        currentAction: "Today",
+        views: calendarViewSwitches,
+      },
+    },
+    filters: calendarFilters,
+    projectsThisWeek: profile.projects.map((project) => ({
+      label: project.title,
+      count: project.taskIds.length,
+      accent: areaAccent(project.areaId),
+    })),
+    weekStats: {
+      ...demoModel.weekStats,
+      stats: [
+        {
+          label: "Tasks",
+          value: String(profile.tasks.length),
+          detail: "manual",
+          accent: "var(--accent-blue)",
+        },
+        {
+          label: "Projects",
+          value: String(profile.projects.length),
+          detail: "local",
+          accent: "var(--accent-cyan)",
+        },
+        {
+          label: "Focus",
+          value: String(timedBlocks.length),
+          detail: "visible",
+          accent: "var(--accent-purple)",
+        },
+        {
+          label: "Deadlines",
+          value: String(allDayBlocks.length),
+          detail: "visible",
+          accent: "var(--accent-red)",
+        },
+      {
+        label: "Reviews",
+        value: "0",
+        detail: "offen",
+        accent: "var(--accent-orange)",
+      },
+    ],
+    },
+    days,
+    hours: calendarHours,
+    allDayBlocks,
+    timedBlocks,
+    selectedBlock,
+    schedulableTasks,
+    rightPanel,
+  };
 }
 
 export async function getEntityCollection(): Promise<EntityCollection> {
@@ -1828,7 +2155,7 @@ export async function getInboxViewModel(): Promise<InboxViewModel> {
     return getDemoInboxViewModel();
   }
 
-  return buildProfileInboxViewModel(await getProfileData(profileId));
+  return buildProfileInboxViewModel(await getProfileData(profileId), profileId);
 }
 
 export async function getTodayViewModel(): Promise<TodayViewModel> {
@@ -1838,7 +2165,7 @@ export async function getTodayViewModel(): Promise<TodayViewModel> {
     return getDemoTodayViewModel();
   }
 
-  return buildProfileTodayViewModel(await getProfileData(profileId));
+  return buildProfileTodayViewModel(await getProfileData(profileId), profileId);
 }
 
 export async function getCalendarViewModel(): Promise<CalendarViewModel> {
@@ -1848,7 +2175,7 @@ export async function getCalendarViewModel(): Promise<CalendarViewModel> {
     return getDemoCalendarViewModel();
   }
 
-  return buildProfileCalendarViewModel(await getProfileData(profileId));
+  return buildProfileCalendarViewModel(await getProfileData(profileId), profileId);
 }
 
 export async function getPortfolioViewModel(): Promise<PortfolioViewModel> {
@@ -1868,7 +2195,10 @@ export async function getMentalHealthViewModel(): Promise<MentalHealthPageViewMo
     return getDemoMentalHealthViewModel();
   }
 
-  return buildProfileMentalHealthViewModel(profileId);
+  return buildProfileMentalHealthViewModel(
+    profileId,
+    await getProfileData(profileId),
+  );
 }
 
 export async function getLifeOsDataSource(): Promise<LifeOsDataSource> {

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import type { ContentStateMeta } from "@/features/content-state";
 import {
   EmptyState,
   Pill,
@@ -15,7 +16,11 @@ import {
   portfolioTypeLabels,
   portfolioVisibilityReasonMeta,
 } from "../portfolio-style";
-import type { PortfolioDecision, PortfolioEntity } from "../types";
+import type {
+  PortfolioDecision,
+  PortfolioEntity,
+  PortfolioViewModel,
+} from "../types";
 
 function progressWidth(progress: number) {
   return `${Math.max(0, Math.min(100, progress))}%`;
@@ -78,17 +83,37 @@ function ActionLink({
   );
 }
 
+function contentStateAttributes(
+  meta: ContentStateMeta,
+  profileId: PortfolioViewModel["profileId"],
+) {
+  return {
+    "data-capacity": meta.capacity?.toString() ?? undefined,
+    "data-content-state": meta.state,
+    "data-item-count": meta.itemCount.toString(),
+    "data-profile-id": profileId,
+  };
+}
+
 export function PortfolioContextPanel({
+  contentState,
   entity,
+  profileId,
 }: Readonly<{
+  contentState: ContentStateMeta;
   entity: PortfolioEntity | null;
+  profileId: PortfolioViewModel["profileId"];
 }>) {
   if (!entity) {
     return (
-      <aside className="rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.84)] p-3 shadow-[0_8px_22px_rgba(0,0,0,.12)]">
+      <aside
+        className="rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.84)] p-3 shadow-[0_8px_22px_rgba(0,0,0,.12)]"
+        data-portfolio-section="context-panel"
+        {...contentStateAttributes(contentState, profileId)}
+      >
         <EmptyState
-          description="Choose a broader scope to inspect entity context, source links and review notes."
-          title="No selected entity"
+          description="Wähle eine Entity oder einen breiteren Scope, um Kontext, Quellen und Review-Hinweise zu sehen."
+          title="Keine Entity ausgewählt"
         />
       </aside>
     );
@@ -109,6 +134,8 @@ export function PortfolioContextPanel({
     <aside
       aria-labelledby="selected-entity-heading"
       className="overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.86)] shadow-[0_8px_22px_rgba(0,0,0,.12)] xl:min-h-0"
+      data-portfolio-section="context-panel"
+      {...contentStateAttributes(contentState, profileId)}
     >
       <div className="border-b border-[var(--border-subtle)] bg-[rgba(18,28,43,.50)] px-3 py-3">
         <div className="flex flex-wrap items-start justify-between gap-3">

@@ -4,6 +4,10 @@ import {
   Pill,
   accentStyle,
 } from "@/components/layout/route-page-primitives";
+import {
+  contentStateDataAttributes,
+  type ContentStateMeta,
+} from "@/features/content-state";
 import { cn } from "@/lib/cn";
 import type {
   HabitAccent,
@@ -11,6 +15,7 @@ import type {
   HabitDaySignal,
   HabitPatternRowViewModel,
   HabitSummaryMetricViewModel,
+  HabitsProfileId,
   HabitsAnalyticsPageViewModel,
   RepairLoopViewModel,
   TodayHabitScheduleItemViewModel,
@@ -65,6 +70,9 @@ function Panel({
   accent = "var(--accent-red)",
   className,
   bodyClassName,
+  contentState,
+  profileId,
+  sectionName,
   children,
 }: Readonly<{
   title: string;
@@ -73,6 +81,9 @@ function Panel({
   accent?: HabitAccent;
   className?: string;
   bodyClassName?: string;
+  contentState?: ContentStateMeta;
+  profileId?: HabitsProfileId;
+  sectionName?: string;
   children: ReactNode;
 }>) {
   const id = titleId(title);
@@ -80,6 +91,10 @@ function Panel({
   return (
     <section
       aria-labelledby={id}
+      {...(contentState && profileId
+        ? contentStateDataAttributes(contentState, profileId)
+        : {})}
+      {...(sectionName ? { "data-habits-section": sectionName } : {})}
       className={cn(
         "min-w-0 overflow-hidden rounded-[18px] border border-[color-mix(in_srgb,var(--accent)_22%,var(--border-subtle))] bg-[rgba(15,23,36,.82)] shadow-[0_8px_22px_rgba(0,0,0,.12)]",
         className,
@@ -134,11 +149,19 @@ function MetricCard({
 
 function HabitsHeader({
   header,
+  profileId,
+  state,
 }: Readonly<{
   header: HabitsAnalyticsPageViewModel["header"];
+  profileId: HabitsProfileId;
+  state: ContentStateMeta;
 }>) {
   return (
-    <header className="min-w-0 overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.82)] shadow-[0_8px_22px_rgba(0,0,0,.12)]">
+    <header
+      className="min-w-0 overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.82)] shadow-[0_8px_22px_rgba(0,0,0,.12)]"
+      data-habits-section="header"
+      {...contentStateDataAttributes(state, profileId)}
+    >
       <div className="grid gap-2 bg-[linear-gradient(90deg,rgba(221,107,95,.06),transparent_54%)] px-4 py-2 xl:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] xl:items-center">
         <div className="min-w-0">
           <p className="text-[10px] font-semibold text-[var(--text-muted)]">
@@ -190,13 +213,19 @@ function HabitsHeader({
 
 function SummaryStrip({
   metrics,
+  profileId,
+  state,
 }: Readonly<{
   metrics: readonly HabitSummaryMetricViewModel[];
+  profileId: HabitsProfileId;
+  state: ContentStateMeta;
 }>) {
   return (
     <section
       aria-label="Habit analytics summary"
       className="grid gap-1.5 sm:grid-cols-2 xl:grid-cols-6"
+      data-habits-section="summary"
+      {...contentStateDataAttributes(state, profileId)}
     >
       {metrics.map((metric, index) => (
         <MetricCard key={`habit-summary-${index}`} metric={metric} />
@@ -352,15 +381,22 @@ function PatternReadCard({
 function MonthlyHeatmapPanel({
   heatmap,
   className,
+  profileId,
+  state,
 }: Readonly<{
   heatmap: HabitsAnalyticsPageViewModel["heatmap"];
   className?: string;
+  profileId: HabitsProfileId;
+  state: ContentStateMeta;
 }>) {
   return (
     <Panel
       accent="var(--accent-red)"
       badge="June"
       className={className}
+      contentState={state}
+      profileId={profileId}
+      sectionName="heatmap"
       subtitle={heatmap.statement}
       title={heatmap.title}
     >
@@ -383,8 +419,8 @@ function MonthlyHeatmapPanel({
         </div>
       ) : (
         <EmptyState
-          description="Habit analytics appears after routine logs exist. Future data should come from canonical habits and habit_logs."
-          title="No habit signals yet"
+          description="Habit-Analytics erscheint, sobald Routinen oder Logs existieren."
+          title="Noch keine Habit-Signale"
         />
       )}
     </Panel>
@@ -484,14 +520,21 @@ function PatternRow({
 function HabitPatternTable({
   patternTable,
   className,
+  profileId,
+  state,
 }: Readonly<{
   patternTable: HabitsAnalyticsPageViewModel["patternTable"];
   className?: string;
+  profileId: HabitsProfileId;
+  state: ContentStateMeta;
 }>) {
   return (
     <Panel
       accent="var(--accent-orange)"
       className={className}
+      contentState={state}
+      profileId={profileId}
+      sectionName="pattern-table"
       subtitle={patternTable.statement}
       title={patternTable.title}
     >
@@ -504,9 +547,16 @@ function HabitPatternTable({
         <span>Next action</span>
       </div>
       <div className="grid gap-1">
-        {patternTable.rows.map((row) => (
-          <PatternRow key={row.habit} row={row} />
-        ))}
+        {patternTable.rows.length > 0 ? (
+          patternTable.rows.map((row) => (
+            <PatternRow key={row.habit} row={row} />
+          ))
+        ) : (
+          <EmptyState
+            description="Routinen und Logs erscheinen hier, sobald sie lokal existieren."
+            title="Noch keine Habit-Zeilen"
+          />
+        )}
       </div>
     </Panel>
   );
@@ -541,20 +591,34 @@ function RepairLoopCard({
 function RepairLoopsPanel({
   repairLoops,
   className,
+  profileId,
+  state,
 }: Readonly<{
   repairLoops: HabitsAnalyticsPageViewModel["repairLoops"];
   className?: string;
+  profileId: HabitsProfileId;
+  state: ContentStateMeta;
 }>) {
   return (
     <Panel
       accent="var(--accent-cyan)"
       className={className}
+      contentState={state}
+      profileId={profileId}
+      sectionName="repair-loops"
       title={repairLoops.title}
     >
       <div className="grid gap-1.5 md:grid-cols-3">
-        {repairLoops.items.map((item, index) => (
-          <RepairLoopCard item={item} key={`habit-repair-loop-${index}`} />
-        ))}
+        {repairLoops.items.length > 0 ? (
+          repairLoops.items.map((item, index) => (
+            <RepairLoopCard item={item} key={`habit-repair-loop-${index}`} />
+          ))
+        ) : (
+          <EmptyState
+            description="Repair Loops erscheinen nach lokalen Habit-Signalen."
+            title="Noch keine Repair Loops"
+          />
+        )}
       </div>
     </Panel>
   );
@@ -640,21 +704,35 @@ function ScheduleItem({
 function TodayHabitSchedule({
   schedule,
   className,
+  profileId,
+  state,
 }: Readonly<{
   schedule: HabitsAnalyticsPageViewModel["todaySchedule"];
   className?: string;
+  profileId: HabitsProfileId;
+  state: ContentStateMeta;
 }>) {
   return (
     <Panel
       accent="var(--accent-red)"
       className={className}
+      contentState={state}
+      profileId={profileId}
+      sectionName="today-schedule"
       subtitle={schedule.subtitle}
       title={schedule.title}
     >
       <ol className="grid gap-1">
-        {schedule.items.map((item) => (
-          <ScheduleItem item={item} key={`${item.time}-${item.title}`} />
-        ))}
+        {schedule.items.length > 0 ? (
+          schedule.items.map((item) => (
+            <ScheduleItem item={item} key={`${item.time}-${item.title}`} />
+          ))
+        ) : (
+          <EmptyState
+            description="Habit-Zeitpunkte erscheinen, sobald ein lokaler Zeitplan existiert."
+            title="Noch kein Habit-Zeitplan"
+          />
+        )}
       </ol>
     </Panel>
   );
@@ -663,19 +741,29 @@ function TodayHabitSchedule({
 function HabitDetailFocus({
   focus,
   className,
+  profileId,
+  state,
 }: Readonly<{
   focus: HabitsAnalyticsPageViewModel["detailFocus"];
   className?: string;
+  profileId: HabitsProfileId;
+  state: ContentStateMeta;
 }>) {
+  const hasFocus = state.itemCount > 0;
+
   return (
     <Panel
       accent={focus.accent}
-      badge="selected"
+      badge={hasFocus ? "selected" : undefined}
       className={className}
+      contentState={state}
+      profileId={profileId}
+      sectionName="detail-focus"
       subtitle={focus.subtitle}
       title={focus.title}
     >
-      <article className="rounded-[11px] border border-[rgba(221,107,95,.20)] bg-[rgba(221,107,95,.06)] px-2 py-1.5">
+      {hasFocus ? (
+        <article className="rounded-[11px] border border-[rgba(221,107,95,.20)] bg-[rgba(221,107,95,.06)] px-2 py-1.5">
         <div className="flex min-w-0 items-center justify-between gap-2">
           <p className="truncate text-[13px] font-semibold leading-4 text-[var(--text-primary)]">
             {focus.habit}
@@ -685,9 +773,15 @@ function HabitDetailFocus({
           </span>
         </div>
         <p className="mt-0.5 truncate text-[10px] leading-3 text-[var(--text-secondary)]">
-          lower friction tonight · phone away · desk reset
+          {focus.frictionNote}
         </p>
-      </article>
+        </article>
+      ) : (
+        <EmptyState
+          description="Ein Habit-Fokus erscheint, sobald eine lokale Routine ausgewählt ist."
+          title="Noch kein Habit-Fokus"
+        />
+      )}
       <div className="mt-1.5 grid grid-cols-[minmax(0,.75fr)_minmax(0,1fr)] gap-1.5">
         <article className="rounded-[10px] border border-[rgba(148,163,184,.10)] bg-[rgba(11,17,28,.34)] px-2 py-1.5">
           <p className="text-[10px] font-semibold text-[var(--text-muted)]">
@@ -711,7 +805,13 @@ function HabitDetailFocus({
         </article>
       </div>
       <button
-        className="mt-1.5 inline-flex min-h-7 w-full items-center justify-center rounded-full border border-[rgba(221,107,95,.34)] bg-[rgba(221,107,95,.12)] px-3 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(221,107,95,.50)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+        className={cn(
+          "mt-1.5 inline-flex min-h-7 w-full items-center justify-center rounded-full border border-[rgba(221,107,95,.34)] bg-[rgba(221,107,95,.12)] px-3 text-[10px] font-semibold text-[var(--text-primary)] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
+          hasFocus
+            ? "hover:border-[rgba(221,107,95,.50)]"
+            : "cursor-not-allowed opacity-55",
+        )}
+        disabled={!hasFocus}
         type="button"
       >
         {focus.actionLabel}
@@ -748,20 +848,34 @@ function WeeklyInsightRow({
 function WeeklyRhythmInsights({
   insights,
   className,
+  profileId,
+  state,
 }: Readonly<{
   insights: HabitsAnalyticsPageViewModel["weeklyRhythmInsights"];
   className?: string;
+  profileId: HabitsProfileId;
+  state: ContentStateMeta;
 }>) {
   return (
     <Panel
       accent="var(--accent-purple)"
       className={className}
+      contentState={state}
+      profileId={profileId}
+      sectionName="weekly-rhythm"
       title={insights.title}
     >
       <div className="grid gap-1">
-        {insights.rows.slice(0, 3).map((row, index) => (
-          <WeeklyInsightRow key={`habit-weekly-insight-${index}`} row={row} />
-        ))}
+        {insights.rows.length > 0 ? (
+          insights.rows.slice(0, 3).map((row, index) => (
+            <WeeklyInsightRow key={`habit-weekly-insight-${index}`} row={row} />
+          ))
+        ) : (
+          <EmptyState
+            description="Wochenrhythmus erscheint nach lokalen Habit-Logs."
+            title="Noch kein Wochenrhythmus"
+          />
+        )}
       </div>
     </Panel>
   );
@@ -816,37 +930,63 @@ export function HabitsAnalyticsPage({
   viewModel: HabitsAnalyticsPageViewModel;
 }>) {
   return (
-    <div className="mx-auto flex w-full max-w-[2208px] flex-col gap-1.5 pb-0">
-      <HabitsHeader header={viewModel.header} />
-      <SummaryStrip metrics={viewModel.summary} />
-
-      {viewModel.isEmpty ? (
-        <EmptyState
-          description={viewModel.pageContract.emptyState}
-          title="No habit analytics yet"
-        />
-      ) : (
-        <>
-          <div className="grid min-w-0 gap-1.5 xl:grid-cols-[minmax(0,1fr)_minmax(340px,420px)] xl:items-start">
-            <TodayHabitSchedule
-              className="order-1 xl:order-2"
-              schedule={viewModel.todaySchedule}
-            />
-            <MonthlyHeatmapPanel
-              className="order-2 self-start xl:order-1"
-              heatmap={viewModel.heatmap}
-            />
-          </div>
-          <HabitPatternTable patternTable={viewModel.patternTable} />
-          <RepairLoopsPanel repairLoops={viewModel.repairLoops} />
-          <div className="grid min-w-0 gap-1.5 xl:grid-cols-[minmax(280px,.95fr)_minmax(0,1.15fr)_minmax(260px,.85fr)]">
-            <HabitDetailFocus focus={viewModel.detailFocus} />
-            <WeeklyRhythmInsights insights={viewModel.weeklyRhythmInsights} />
-            <BoundaryCard boundary={viewModel.boundary} />
-          </div>
-          <InterpretationFooter interpretation={viewModel.interpretation} />
-        </>
+    <div
+      className="mx-auto flex w-full max-w-[2208px] flex-col gap-1.5 pb-0"
+      data-habits-section="page"
+      {...contentStateDataAttributes(
+        viewModel.contentStates.page,
+        viewModel.profileId,
       )}
+    >
+      <HabitsHeader
+        header={viewModel.header}
+        profileId={viewModel.profileId}
+        state={viewModel.contentStates.header}
+      />
+      <SummaryStrip
+        metrics={viewModel.summary}
+        profileId={viewModel.profileId}
+        state={viewModel.contentStates.summary}
+      />
+
+      <div className="grid min-w-0 gap-1.5 xl:grid-cols-[minmax(0,1fr)_minmax(340px,420px)] xl:items-start">
+        <TodayHabitSchedule
+          className="order-1 xl:order-2"
+          profileId={viewModel.profileId}
+          schedule={viewModel.todaySchedule}
+          state={viewModel.contentStates.todaySchedule}
+        />
+        <MonthlyHeatmapPanel
+          className="order-2 self-start xl:order-1"
+          heatmap={viewModel.heatmap}
+          profileId={viewModel.profileId}
+          state={viewModel.contentStates.heatmap}
+        />
+      </div>
+      <HabitPatternTable
+        patternTable={viewModel.patternTable}
+        profileId={viewModel.profileId}
+        state={viewModel.contentStates.patternTable}
+      />
+      <RepairLoopsPanel
+        profileId={viewModel.profileId}
+        repairLoops={viewModel.repairLoops}
+        state={viewModel.contentStates.repairLoops}
+      />
+      <div className="grid min-w-0 gap-1.5 xl:grid-cols-[minmax(280px,.95fr)_minmax(0,1.15fr)_minmax(260px,.85fr)]">
+        <HabitDetailFocus
+          focus={viewModel.detailFocus}
+          profileId={viewModel.profileId}
+          state={viewModel.contentStates.detailFocus}
+        />
+        <WeeklyRhythmInsights
+          insights={viewModel.weeklyRhythmInsights}
+          profileId={viewModel.profileId}
+          state={viewModel.contentStates.weeklyRhythmInsights}
+        />
+        <BoundaryCard boundary={viewModel.boundary} />
+      </div>
+      <InterpretationFooter interpretation={viewModel.interpretation} />
     </div>
   );
 }

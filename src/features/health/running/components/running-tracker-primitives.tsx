@@ -1,10 +1,15 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Pill, accentStyle } from "@/components/layout/route-page-primitives";
+import {
+  contentStateDataAttributes,
+  type ContentStateMeta,
+} from "@/features/content-state";
 import { cn } from "@/lib/cn";
 import type {
   RunningAccent,
   RunningActionViewModel,
   RunningChipViewModel,
+  RunningProfileId,
   RunningSummaryMetricViewModel,
 } from "../running-tracker-types";
 
@@ -38,6 +43,9 @@ export function RunningPanel({
   className,
   bodyClassName,
   p0 = false,
+  contentState,
+  profileId,
+  sectionName,
 }: Readonly<{
   title: string;
   subtitle?: string;
@@ -47,12 +55,19 @@ export function RunningPanel({
   className?: string;
   bodyClassName?: string;
   p0?: boolean;
+  contentState?: ContentStateMeta;
+  profileId?: RunningProfileId;
+  sectionName?: string;
 }>) {
   const id = titleId(title);
 
   return (
     <section
       aria-labelledby={id}
+      {...(contentState && profileId
+        ? contentStateDataAttributes(contentState, profileId)
+        : {})}
+      {...(sectionName ? { "data-running-section": sectionName } : {})}
       className={cn(
         "min-w-0 overflow-hidden rounded-[18px] border bg-[rgba(15,23,36,.82)] shadow-[0_8px_22px_rgba(0,0,0,.12)]",
         p0
@@ -195,13 +210,20 @@ export function RunningActionButton({
     <button
       className={cn(
         "inline-flex min-h-9 items-center justify-center rounded-full border px-4 text-[11px] font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] xl:min-h-7 xl:px-3 xl:text-[10px]",
+        action.disabled && "cursor-not-allowed opacity-55",
         action.variant === "primary" &&
+          !action.disabled &&
           "border-[rgba(217,146,79,.42)] bg-[rgba(217,146,79,.16)] text-[var(--text-primary)] hover:border-[rgba(217,146,79,.58)]",
         action.variant === "secondary" &&
+          !action.disabled &&
           "border-[rgba(148,163,184,.18)] bg-[rgba(168,183,204,.06)] text-[var(--text-secondary)] hover:border-[rgba(217,146,79,.32)] hover:text-[var(--text-primary)]",
         action.variant === "quiet" &&
+          !action.disabled &&
           "border-transparent bg-transparent text-[var(--text-muted)] hover:border-[rgba(148,163,184,.16)] hover:bg-[rgba(168,183,204,.04)] hover:text-[var(--text-secondary)]",
+        action.disabled &&
+          "border-[var(--border-subtle)] bg-[rgba(168,183,204,.035)] text-[var(--text-muted)]",
       )}
+      disabled={action.disabled}
       type="button"
     >
       {action.label}

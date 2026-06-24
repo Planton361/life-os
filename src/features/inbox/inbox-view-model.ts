@@ -1,4 +1,11 @@
+import {
+  resolveContentStateMeta,
+  type ContentStateMeta,
+} from "@/features/content-state";
+
 export type InboxStage = "raw" | "clarify" | "review" | "ready";
+
+export type InboxProfileId = "demo" | "empty" | "manual";
 
 export type InboxCaptureType =
   | "task"
@@ -73,7 +80,31 @@ export type InboxRelatedContextItem = {
   accent: string;
 };
 
+export type InboxEmptyState = {
+  title: string;
+  description: string;
+};
+
+export type InboxQuickCaptureState = {
+  enabled: boolean;
+  title: string;
+  description: string;
+  disabledReason?: string;
+};
+
+export type InboxContentStates = {
+  page: ContentStateMeta;
+  header: ContentStateMeta;
+  queue: ContentStateMeta;
+  activeItem: ContentStateMeta;
+  aiAssistant: ContentStateMeta;
+  checklist: ContentStateMeta;
+  relatedContext: ContentStateMeta;
+};
+
 export type InboxViewModel = {
+  profileId: InboxProfileId;
+  contentStates: InboxContentStates;
   title: "Inbox";
   kicker: string;
   purpose: string;
@@ -81,19 +112,25 @@ export type InboxViewModel = {
   signals: InboxSignal[];
   filters: string[];
   queue: InboxQueueItem[];
+  queueEmptyState: InboxEmptyState;
+  quickCapture: InboxQuickCaptureState;
   activeItem: {
+    hasSelection: boolean;
     title: string;
-    stage: "Clarify";
-    type: "Question";
+    stage: string;
+    type: string;
     originalCapture: string;
     source: string;
     fields: InboxClarificationField[];
     planningSignals: InboxPlanningSignal[];
+    actionsEnabled: boolean;
+    emptyState: InboxEmptyState;
   };
   outcome: {
     title: "Outcome route";
     description: string;
     options: InboxOutcomeOption[];
+    actionsEnabled: boolean;
   };
   aiAssistant: {
     title: string;
@@ -102,6 +139,8 @@ export type InboxViewModel = {
     planning: InboxAISuggestion[];
     outcomes: string[];
     placeholder: string;
+    canApply: boolean;
+    emptyState: InboxEmptyState;
   };
   checklist: {
     title: string;
@@ -113,6 +152,8 @@ export type InboxViewModel = {
     mode: string;
     placeholder: string;
     items: InboxRelatedContextItem[];
+    actionsEnabled: boolean;
+    emptyState: InboxEmptyState;
   };
 };
 
@@ -141,8 +182,71 @@ export function getInboxCaptureTypeLabel(type: InboxCaptureType) {
   return typeLabels[type];
 }
 
+const inboxStateCapacities = {
+  activeItem: 1,
+  aiAssistant: 4,
+  checklist: 4,
+  header: 4,
+  queue: 8,
+  relatedContext: 5,
+} as const;
+
+export function buildInboxContentStates({
+  aiSuggestionCount,
+  checklistDoneCount,
+  hasActiveItem,
+  queueCount,
+  relatedContextCount,
+}: Readonly<{
+  aiSuggestionCount: number;
+  checklistDoneCount: number;
+  hasActiveItem: boolean;
+  queueCount: number;
+  relatedContextCount: number;
+}>): InboxContentStates {
+  return {
+    activeItem: resolveContentStateMeta({
+      capacity: inboxStateCapacities.activeItem,
+      hasPrimaryValue: hasActiveItem,
+      itemCount: hasActiveItem ? 1 : 0,
+    }),
+    aiAssistant: resolveContentStateMeta({
+      capacity: inboxStateCapacities.aiAssistant,
+      itemCount: aiSuggestionCount,
+    }),
+    checklist: resolveContentStateMeta({
+      capacity: inboxStateCapacities.checklist,
+      itemCount: checklistDoneCount,
+    }),
+    header: resolveContentStateMeta({
+      capacity: inboxStateCapacities.header,
+      itemCount: queueCount,
+    }),
+    page: resolveContentStateMeta({
+      capacity: inboxStateCapacities.queue,
+      itemCount: queueCount,
+    }),
+    queue: resolveContentStateMeta({
+      capacity: inboxStateCapacities.queue,
+      itemCount: queueCount,
+    }),
+    relatedContext: resolveContentStateMeta({
+      capacity: inboxStateCapacities.relatedContext,
+      itemCount: relatedContextCount,
+    }),
+  };
+}
+
 export function getInboxViewModel(): InboxViewModel {
   return {
+    profileId: "demo",
+    contentStates: buildInboxContentStates({
+      aiSuggestionCount: 4,
+      checklistDoneCount: 4,
+      hasActiveItem: true,
+      queueCount: 8,
+      relatedContextCount: 5,
+    }),
     title: "Inbox",
     kicker: "CAPTURE & CLARIFY",
     purpose:
@@ -258,7 +362,18 @@ export function getInboxViewModel(): InboxViewModel {
         accent: "var(--accent-yellow)",
       },
     ],
+    queueEmptyState: {
+      title: "Inbox ist leer",
+      description: "Capture Gedanken, Aufgaben oder Fragen, wenn sie entstehen.",
+    },
+    quickCapture: {
+      enabled: false,
+      title: "Quick Capture",
+      description: "Neue Eintraege werden im Manual-Profil lokal gespeichert.",
+      disabledReason: "Im Demo-Profil ist Quick Capture nur als Referenz sichtbar.",
+    },
     activeItem: {
+      hasSelection: true,
       title: "Data access setup question",
       stage: "Clarify",
       type: "Question",
@@ -312,11 +427,18 @@ export function getInboxViewModel(): InboxViewModel {
           accent: "var(--accent-blue)",
         },
       ],
+      actionsEnabled: false,
+      emptyState: {
+        title: "Kein Eintrag ausgewählt",
+        description:
+          "Wähle links einen Eintrag aus oder erfasse einen neuen Gedanken.",
+      },
     },
     outcome: {
       title: "Outcome route",
       description:
         "Choose what this item becomes next. Each option opens its own complete flow.",
+      actionsEnabled: false,
       options: [
         {
           id: "add_to_existing",
@@ -384,6 +506,11 @@ export function getInboxViewModel(): InboxViewModel {
       ],
       placeholder:
         "Ask which outcome fits, what context is missing, or why a related item was suggested...",
+      canApply: false,
+      emptyState: {
+        title: "Noch keine Empfehlung möglich",
+        description: "Wähle einen echten Eintrag aus, bevor Vorschläge entstehen.",
+      },
     },
     checklist: {
       title: "Decision Checklist",
@@ -415,6 +542,12 @@ export function getInboxViewModel(): InboxViewModel {
       title: "Related Context",
       mode: "semantic search",
       placeholder: "Search projects, goals, skills, notes...",
+      actionsEnabled: false,
+      emptyState: {
+        title: "Kein verwandter Kontext",
+        description:
+          "Sobald passende Projekte, Ziele oder Ressourcen existieren, erscheinen sie hier.",
+      },
       items: [
         {
           typeArea: "Project · Coding",

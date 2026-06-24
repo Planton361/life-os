@@ -1,8 +1,16 @@
 import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
 import { Pill, accentStyle } from "@/components/layout/route-page-primitives";
+import {
+  contentStateDataAttributes,
+  type ContentStateMeta,
+} from "@/features/content-state";
 import { cn } from "@/lib/cn";
-import type { HealthAccent, HealthMetricViewModel } from "../types";
+import type {
+  HealthAccent,
+  HealthMetricViewModel,
+  HealthProfileId,
+} from "../types";
 
 type HealthStyle = CSSProperties & {
   "--bar-height"?: string;
@@ -19,6 +27,9 @@ export function HealthPanel({
   accent,
   children,
   className,
+  contentState,
+  profileId,
+  sectionName,
 }: Readonly<{
   title: string;
   subtitle: string;
@@ -26,12 +37,19 @@ export function HealthPanel({
   accent: HealthAccent;
   children: ReactNode;
   className?: string;
+  contentState?: ContentStateMeta;
+  profileId?: HealthProfileId;
+  sectionName?: string;
 }>) {
   const id = titleId(title);
 
   return (
     <section
       aria-labelledby={id}
+      {...(contentState && profileId
+        ? contentStateDataAttributes(contentState, profileId)
+        : {})}
+      {...(sectionName ? { "data-health-section": sectionName } : {})}
       className={cn(
         "min-w-0 overflow-hidden rounded-[18px] border border-[color-mix(in_srgb,var(--accent)_24%,var(--border-subtle))] bg-[rgba(15,23,36,.76)] shadow-[0_8px_22px_rgba(0,0,0,.12)] xl:flex xl:min-h-0 xl:flex-col min-[1900px]:h-full",
         className,

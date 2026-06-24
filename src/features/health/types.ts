@@ -1,3 +1,7 @@
+import type { ContentStateMeta } from "@/features/content-state";
+
+export type HealthProfileId = "demo" | "empty" | "manual";
+
 export type HealthAccent =
   | "var(--accent-blue)"
   | "var(--accent-green)"
@@ -31,18 +35,18 @@ export type SleepBarViewModel = {
 export type MentalHealthViewModel = {
   title: "Mental Health";
   subtitle: "Mood, sleep and reflection signals. Self-check only.";
-  badge: "Self-check";
+  badge: string;
   moodTitle: "Mood check-ins · last 7 days";
   moodDirections: readonly MoodDirectionViewModel[];
   sleep: {
     label: "Sleep (7d avg)";
-    value: "7h 18m";
-    detail: "Sleep debt visible";
+    value: string;
+    detail: string;
     bars: readonly SleepBarViewModel[];
   };
   journal: {
     label: "Journal / Reflection";
-    value: "4 / 7 days";
+    value: string;
     pattern: readonly boolean[];
     actionLabel: "Open Journal";
     href: "/life/journal";
@@ -59,13 +63,13 @@ export type RunningTrendViewModel = {
 export type RunningViewModel = {
   title: "Running Tracker";
   subtitle: "Weekly distance, load status and next run.";
-  loadStatus: "Moderate load";
+  loadStatus: string;
   metrics: readonly HealthMetricViewModel[];
   trends: readonly RunningTrendViewModel[];
   nextRun: {
     label: "Next run";
-    title: "Thu · 6.5 km easy run";
-    detail: "Recovery signal medium · keep intensity low.";
+    title: string;
+    detail: string;
     actionLabel: "View Plan";
     href: "/health/running";
   };
@@ -79,7 +83,7 @@ export type HabitHeatmapRowViewModel = {
 export type HabitsViewModel = {
   title: "Habits";
   subtitle: "Routine consistency over time.";
-  badge: "78%";
+  badge: string;
   metrics: readonly HealthMetricViewModel[];
   heatmap: {
     title: "Monthly habit heatmap · June";
@@ -91,7 +95,7 @@ export type HabitsViewModel = {
   };
   nextFocus: {
     label: "Next Focus";
-    title: "Evening shutdown · build consistency before adding more.";
+    title: string;
     actionLabel: "Open Habits";
     href: "/health/habits";
   };
@@ -113,11 +117,11 @@ export type StrengthBalanceViewModel = {
 export type StrengthViewModel = {
   title: "Strength Tracker";
   subtitle: "Bodyweight / calisthenics · full body focus.";
-  badge: "64% coverage";
+  badge: string;
   metrics: readonly HealthMetricViewModel[];
   trainingPattern: {
     title: "Training pattern (last 2 weeks)";
-    note: "Full body sessions with recovery spacing.";
+    note: string;
     days: readonly StrengthPatternViewModel[];
   };
   sessionBalance: {
@@ -126,8 +130,8 @@ export type StrengthViewModel = {
   };
   nextSession: {
     label: "Next session";
-    title: "Tue · Full body";
-    detail: "Strength + skill · 40–50 min";
+    title: string;
+    detail: string;
     actionLabel: "View Plan";
     href: "/health/strength";
   };
@@ -146,19 +150,28 @@ export type HealthScheduleItemViewModel = {
 
 export type HealthScheduleViewModel = {
   title: "Today · Health Schedule";
-  dateLabel: "Tuesday, June 10";
+  dateLabel: string;
   items: readonly HealthScheduleItemViewModel[];
-  footerLabel: "View all details and history";
+  footerLabel: string;
   actionLabel: "Open Calendar";
   href: "/calendar";
 };
 
 export type HealthOverviewViewModel = {
+  profileId: HealthProfileId;
+  contentStates: {
+    page: ContentStateMeta;
+    mentalHealth: ContentStateMeta;
+    running: ContentStateMeta;
+    habits: ContentStateMeta;
+    strength: ContentStateMeta;
+    schedule: ContentStateMeta;
+  };
   header: {
     eyebrow: "Life OS / Health & Fitness";
     title: "Health & Fitness";
     summary: "Body, mind, habits and training signals in one place.";
-    dateRange: "Week 24 · June 10 – June 16, 2026";
+    dateRange: string;
   };
   pageContract: {
     pageType: "Area Overview";

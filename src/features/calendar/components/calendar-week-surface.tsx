@@ -9,10 +9,22 @@ import {
 } from "./calendar-block";
 import { cn } from "@/lib/cn";
 
+const TIME_GUTTER_WIDTH = 56;
+
+const emptyCalendarStateContent = {
+  title: "Noch keine Termine oder Zeitblöcke",
+  description:
+    "Geplante Aufgaben mit Uhrzeit erscheinen hier. Aufgaben ohne Uhrzeit bleiben in der Planning Queue.",
+};
+
 function hourToMinutes(hour: string) {
   const [hours, minutes] = hour.split(":").map(Number);
 
   return hours * 60 + minutes;
+}
+
+function minutesToTime(minutes: number) {
+  return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
 }
 
 function hourTop(hour: string) {
@@ -20,6 +32,35 @@ function hourTop(hour: string) {
   const offset = hourToMinutes(hour) - CALENDAR_DAY_START_MINUTES;
 
   return Math.max(0, Math.min(100, (offset / range) * 100));
+}
+
+function calendarHourRows() {
+  const rows: string[] = [];
+
+  for (
+    let minutes = CALENDAR_DAY_START_MINUTES;
+    minutes <= CALENDAR_DAY_END_MINUTES;
+    minutes += 60
+  ) {
+    rows.push(minutesToTime(minutes));
+  }
+
+  return rows;
+}
+
+function CalendarWeekEmptyOverlay() {
+  return (
+    <div className="pointer-events-none absolute left-[80px] right-4 top-[34%] z-10 flex justify-center">
+      <div className="max-w-[460px] rounded-[12px] border border-dashed border-[var(--border-default)] bg-[rgba(11,17,28,.88)] px-4 py-4 text-center shadow-[0_12px_28px_rgba(0,0,0,.22)] backdrop-blur-[2px]">
+        <p className="text-[13px] font-semibold text-[var(--text-secondary)]">
+          {emptyCalendarStateContent.title}
+        </p>
+        <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
+          {emptyCalendarStateContent.description}
+        </p>
+      </div>
+    </div>
+  );
 }
 
 export function CalendarWeekSurface({
@@ -40,10 +81,14 @@ export function CalendarWeekSurface({
   selectedBlockId?: string;
   viewModel: CalendarViewModel;
 }>) {
+  const hourRows = calendarHourRows();
+  const hasBlocks =
+    viewModel.allDayBlocks.length > 0 || viewModel.timedBlocks.length > 0;
+
   return (
     <section
       aria-labelledby="calendar-week-surface-heading"
-      className="min-w-0 overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.74)] shadow-[0_8px_22px_rgba(0,0,0,.12)] xl:flex xl:min-h-0 xl:flex-col"
+      className="min-w-0 overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.74)] shadow-[0_8px_22px_rgba(0,0,0,.12)] xl:flex xl:min-h-[720px] xl:flex-col 2xl:min-h-[760px]"
     >
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-subtle)] bg-[rgba(14,23,38,.76)] px-3 py-2">
         <div className="min-w-0">
@@ -66,9 +111,9 @@ export function CalendarWeekSurface({
         </div>
       </div>
 
-      <div className="overflow-x-auto xl:min-h-0 xl:flex-1">
-        <div className="min-w-[1040px] xl:flex xl:h-full xl:min-h-0 xl:flex-col">
-          <div className="grid grid-cols-[64px_repeat(7,minmax(138px,1fr))] border-b border-[var(--border-subtle)]">
+      <div className="overflow-x-auto xl:flex-1">
+        <div className="min-w-[1040px] xl:flex xl:h-full xl:min-h-[660px] xl:flex-col 2xl:min-h-[700px]">
+          <div className="grid grid-cols-[56px_repeat(7,minmax(138px,1fr))] border-b border-[var(--border-subtle)]">
             <div className="border-r border-[var(--border-subtle)] bg-[rgba(11,17,28,.34)]" />
             {viewModel.days.map((day) => (
               <div
@@ -94,7 +139,7 @@ export function CalendarWeekSurface({
             ))}
           </div>
 
-          <div className="grid grid-cols-[64px_repeat(7,minmax(138px,1fr))] border-b border-[var(--border-subtle)]">
+          <div className="grid grid-cols-[56px_repeat(7,minmax(138px,1fr))] border-b border-[var(--border-subtle)]">
             <div className="flex items-start justify-center border-r border-[var(--border-subtle)] bg-[rgba(11,17,28,.34)] px-2 py-3 text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--text-faint)]">
               All day
             </div>
@@ -126,21 +171,46 @@ export function CalendarWeekSurface({
             })}
           </div>
 
-          <div className="relative h-[620px] min-h-[520px] xl:min-h-0 xl:flex-1">
-            <div className="grid h-full grid-cols-[64px_repeat(7,minmax(138px,1fr))]">
-              <div className="relative border-r border-[var(--border-subtle)] bg-[rgba(11,17,28,.34)]">
-                {viewModel.hours.map((hour) => (
-                  <time
-                    className="absolute right-2 -translate-y-1/2 text-[9px] font-medium text-[var(--text-faint)]"
-                    dateTime={hour}
-                    key={hour}
-                    style={{ top: `${hourTop(hour)}%` }}
-                  >
-                    {hour}
-                  </time>
-                ))}
-              </div>
+          <div className="relative h-[816px] min-h-[640px] xl:h-auto xl:min-h-[680px] xl:flex-1 2xl:min-h-[760px]">
+            <div
+              className="grid min-h-full grid-cols-[56px_repeat(7,minmax(138px,1fr))]"
+              style={{
+                gridTemplateRows: `repeat(${hourRows.length}, minmax(48px, 1fr))`,
+              }}
+            >
+              {hourRows.map((hour) => (
+                <div className="contents" key={`calendar-week-row-${hour}`}>
+                  <div className="relative border-r border-t border-[rgba(148,163,184,.18)] bg-[rgba(11,17,28,.34)]">
+                    <time
+                      className="absolute right-2 top-2 text-[9px] font-medium leading-none text-[var(--text-faint)]"
+                      dateTime={hour}
+                    >
+                      {hour}
+                    </time>
+                  </div>
+                  {viewModel.days.map((day) => (
+                    <div
+                      aria-hidden="true"
+                      className={cn(
+                        "border-r border-t border-[rgba(148,163,184,.16)] last:border-r-0",
+                        day.isToday
+                          ? "bg-[rgba(95,200,215,.06)]"
+                          : "bg-[rgba(11,17,28,.08)]",
+                      )}
+                      key={`calendar-week-cell-${day.id}-${hour}`}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
 
+            <div
+              className="absolute inset-y-0 right-0 grid"
+              style={{
+                gridTemplateColumns: "repeat(7, minmax(138px, 1fr))",
+                left: TIME_GUTTER_WIDTH,
+              }}
+            >
               {viewModel.days.map((day) => {
                 const dayBlocks = viewModel.timedBlocks.filter(
                   (block) => block.dayId === day.id,
@@ -149,21 +219,18 @@ export function CalendarWeekSurface({
                 return (
                   <div
                     aria-label={day.fullLabel}
-                    className={cn(
-                      "relative overflow-hidden border-r border-[var(--border-subtle)] last:border-r-0",
-                      day.isToday && "bg-[rgba(95,200,215,.055)]",
-                    )}
+                    className="relative overflow-hidden"
                     key={day.id}
                   >
                     {viewModel.hours.map((hour) => (
                       <button
                         aria-label={`Select free slot on ${day.fullLabel} at ${hour}`}
-                        className="absolute left-0 right-0 h-8 -translate-y-1/2 border-0 bg-transparent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[var(--focus-ring)]"
+                        className="absolute left-0 right-0 z-[1] h-8 -translate-y-1/2 border-0 bg-transparent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[var(--focus-ring)]"
                         key={hour}
                         onClick={() => {
                           const startMinutes = hourToMinutes(hour);
                           const endMinutes = startMinutes + 60;
-                          const endHour = `${String(Math.floor(endMinutes / 60)).padStart(2, "0")}:${String(endMinutes % 60).padStart(2, "0")}`;
+                          const endHour = minutesToTime(endMinutes);
 
                           onSelectSlot({
                             dayId: day.id,
@@ -177,12 +244,7 @@ export function CalendarWeekSurface({
                         style={{ top: `${hourTop(hour)}%` }}
                         title={`Select ${day.fullLabel} ${hour}`}
                         type="button"
-                      >
-                        <span
-                          aria-hidden="true"
-                          className="absolute left-0 right-0 top-1/2 h-px bg-[rgba(148,163,184,.08)]"
-                        />
-                      </button>
+                      />
                     ))}
                     {dayBlocks.map((block) => (
                       <CalendarTimedBlock
@@ -199,13 +261,14 @@ export function CalendarWeekSurface({
 
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute left-[64px] right-0 h-px bg-[rgba(221,107,95,.82)]"
+              className="pointer-events-none absolute left-[56px] right-0 z-[2] h-px bg-[rgba(221,107,95,.82)]"
               style={{ top: `${viewModel.currentTime.top}%` }}
             >
               <span className="absolute -left-[52px] -top-2 rounded-full border border-[rgba(221,107,95,.26)] bg-[rgba(18,28,43,.94)] px-2 py-0.5 text-[9px] font-semibold text-[var(--accent-red)]">
                 {viewModel.currentTime.label}
               </span>
             </div>
+            {!hasBlocks ? <CalendarWeekEmptyOverlay /> : null}
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--border-subtle)] px-3 py-2">

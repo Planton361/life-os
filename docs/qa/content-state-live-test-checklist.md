@@ -60,6 +60,232 @@ P1-Folgepunkt:
   Area-Sweeps isolieren. R1.4a behebt kleine lokale Key-Faelle; breitere
   Health-/Area-Key-Audits bleiben ein separater Hardening-Slice.
 
+## R1.4b Operational Pages Audit Checklist
+
+Status: Audit-, Dokumentations- und Planungsstand fuer `/inbox`, `/today`,
+`/calendar`, `/portfolio` und `/resources`. Noch keine Implementierung.
+
+Review-Material:
+
+- Screenshot-Befund aus dem R1.4b Review-Prompt.
+- Code-Audit der aktuellen ViewModels und Page-Komponenten.
+- Keine neuen Screenshots wurden in diesem Dokumentationsblock erzeugt.
+
+### R1.4b Global Checks
+
+- Alle fuenf Routen nutzen ihre gestaltete Page-Shell in `demo`, `empty` und
+  `manual`; keine Route darf auf `ProfileBoundaryPage` fallen.
+- Demo bleibt V5-Referenz und zeigt Design-Fixtures.
+- Empty zeigt keine Demo-Fixtures und keine technischen Profiltexte.
+- Manual Reset entspricht fachlich Empty.
+- Manual Partial nutzt vorhandene lokale Datenquellen: Tasks, Inbox Items,
+  Projects und Goals.
+- Manual Resources, Manual Today Review Records und persistente Calendar
+  Events existieren noch nicht; sichtbare Actions muessen deshalb als
+  deferred/disabled oder UI-only dokumentiert bleiben.
+- Relevante Widgets brauchen nach Implementierung:
+  `data-content-state`, `data-profile-id`, `data-item-count` und
+  `data-capacity`, wenn eine sichtbare Kapazitaet existiert.
+- Empty States sitzen innerhalb bestehender Cards/Sections.
+- Collection Empty rendert genau einen Empty State pro Collection.
+- Metrics zeigen `0` nur bei echter Null; sonst `-` oder natuerliche
+  Unknown-Copy.
+- Keine Dashboard-, Sidebar- oder V5-Layoutwerte werden in R1.4b ohne
+  expliziten Layout-Scope geaendert.
+
+### R1.4b Demo Profile
+
+- `/inbox`: Queue, Active Item, AI Assistant, Checklist und Related Context
+  zeigen Demo-Daten als V5-Referenz.
+- `/today`: Activity Stream, Opening Review, Delta, Decisions/Artifacts und
+  Closing Review zeigen die Demo-Day-Memory-Komposition.
+- `/calendar`: Week/Day/Month/Year und Right Inspector zeigen Demo-Blöcke und
+  Review-nahe Kontextdaten.
+- `/portfolio`: Summary, Filter, Tabs, Active Portfolio List und Context Panel
+  zeigen Demo-Tasks, Projects, Goals und Skills.
+- `/resources`: KPI Strip, Library, Relation Inspector, Map, Review Queue,
+  AI Hints und Recent Learnings zeigen Demo-Resources.
+
+### R1.4b Empty Profile
+
+- `/inbox`:
+  - Header-Metriken stehen auf 0.
+  - Queue zeigt einen einzelnen Empty State, keine leere Flaeche.
+  - Active Item zeigt `Kein Inbox-Eintrag ausgewaehlt` oder gleichwertig.
+  - AI Suggested Planning zeigt `-`/keine Empfehlung; Apply ist deaktiviert.
+  - Decision Checklist zeigt 0/n ohne erledigte Fake-Schritte.
+  - Related Context zeigt einen Empty State.
+- `/today`:
+  - Page First-Run-Hinweis ist kompakt und ersetzt nicht die Page.
+  - Activity Stream hat einen zentralen Empty State.
+  - Opening Review zeigt Not-set Cards.
+  - Delta Summary zeigt echte 0-Werte fuer vorhandene Counts.
+  - Decisions und Artifacts haben eigene Empty States.
+  - Closing Review zeigt Not started / Not saved.
+- `/calendar`:
+  - Zeitraster bleibt sichtbar.
+  - Keine Demo-Termine, Review-Demo-Loops oder Projekt-Demo-Deadlines.
+  - Empty State liegt im Raster.
+  - Scope/Filter ist nicht unbeabsichtigt als offenes Overlay sichtbar.
+  - Planning Queue zeigt pro Tab einen Empty State.
+  - Tasks ohne Uhrzeit werden nicht in Fake-Slots gelegt.
+- `/portfolio`:
+  - Summary zeigt 0 Counts.
+  - Tabs/Filter bleiben sichtbar.
+  - `?view=tasks`, `?view=projects`, `?view=goals`, `?view=skills` zeigen je
+    natuerliche Empty States.
+  - Context Panel bleibt als Empty Inspector sichtbar.
+  - Keine Demo-Entity ist vorausgewaehlt.
+- `/resources`:
+  - KPI-Zeile zeigt keine Demo-Zahlen `128`, `12`, `34`, `9`, `21`, `46`.
+  - Filter-Counts zeigen keine Demo-Werte.
+  - Main Library zeigt genau einen Empty State.
+  - Relation Inspector zeigt `Keine Ressource ausgewaehlt`.
+  - Review Queue zeigt `Keine Review-Punkte offen`.
+  - Review Workbench hat eigene Copy und wiederholt nicht die Queue-Copy.
+  - Recent Learnings zeigt eigene Empty Copy.
+  - Keine Demo-Resource, keine Demo-Relation und kein Demo-Learning ist sichtbar.
+
+### R1.4b Manual Reset State
+
+- Profil `Manual Profile` auswaehlen.
+- `Reset manual local profile` in Settings ausfuehren.
+- `/inbox`, `/today`, `/calendar`, `/portfolio` und `/resources` muessen
+  fachlich wie Empty aussehen.
+- Quick Thought / Inbox / Task / Project / Goal bleiben als existierende lokale
+  Manual-Flows dokumentiert.
+- Save Resource bleibt deferred oder disabled, solange keine lokale
+  Resource-Quelle existiert.
+
+### R1.4b Manual Partial State
+
+In Settings anlegen:
+
+- 1 Task mit Datum, Startzeit, Dauer, Area und Priority.
+- 1 Inbox Item.
+- 1 Project.
+- 1 Goal.
+
+Pruefen:
+
+- `/inbox` zeigt das Inbox Item in derselben Row-Optik wie Demo und im
+  Active-Item-Inspector.
+- `/today` zeigt Task und Inbox Item im Activity Stream; Projects/Goals duerfen
+  als Artifacts erscheinen, wenn die Page dies abbildet.
+- `/calendar` zeigt den getimten Task im richtigen Slot; untimed Tasks bleiben
+  in der Planning Queue.
+- `/portfolio` zeigt Task, Project und Goal in denselben Rows wie Demo.
+- `/portfolio?view=skills` bleibt leer/deferred, weil Manual Skills fehlen.
+- Dashboard Today Agenda, Calendar und Today duerfen sich fuer denselben Task
+  nicht widersprechen.
+- `/resources` bleibt leer/deferred, weil Manual Resources noch fehlen.
+
+### R1.4b Manual Filled State
+
+Fuer diese fuenf Seiten nur teilweise erreichbar:
+
+- `/inbox`: mehrere Inbox Items koennen ueber Settings/Quick Thought entstehen,
+  aber Page Quick Capture ist noch kein bestaetigter Create Flow.
+- `/today`: gefuellt ist fuer Activity Stream ueber Tasks/Inbox Items moeglich;
+  Opening/Closing Review bleiben deferred.
+- `/calendar`: mehrere getimte Tasks koennen gefuellte Calendar Blocks ergeben.
+- `/portfolio`: mehrere Tasks/Projects/Goals koennen gefuellte Listen ergeben;
+  Skills bleiben deferred.
+- `/resources`: nicht erreichbar, solange keine Manual Resource Source
+  existiert.
+
+### R1.4b Selector Checks
+
+Nach Implementierung je Widget scopen:
+
+- `/inbox`: Queue, Active Item, AI Suggested Planning, Decision Checklist,
+  Related Context.
+- `/today`: First Run/Header, Opening Review, Activity Stream, Delta Summary,
+  Decisions, Artifacts, Closing Review, Carry Forward.
+- `/calendar`: Week/Day Grid, Month Grid, Year Surface, Right Inspector,
+  Planning Queue.
+- `/portfolio`: Summary Strip, Filter Bar, Active List, Context Panel.
+- `/resources`: KPI Strip, Save Resource, Library, Inspector, Map, Review
+  Queue, Review Workbench, Recent Learnings, AI Hints.
+
+Required attributes:
+
+- `data-content-state="empty|partial|filled"`
+- `data-profile-id="demo|empty|manual"`
+- `data-item-count`
+- `data-capacity` where a capacity exists.
+
+### R1.4b Demo Leak Checks
+
+In `empty` and Manual Reset, scan the five routes for:
+
+- Existing global blocked strings from this checklist.
+- Resource KPI leak strings: `128`, `12`, `34`, `9`, `21`, `46` when attached
+  to Resource summary labels.
+- Inbox demo strings: `Data access setup question`, `Article on calm dashboards`.
+- Today demo strings: `Morning baseline checked`, `Revise literature structure`,
+  `Daily Review panel opened`.
+- Calendar demo strings: `Literature source deadline`, `Daily review still open`,
+  `Weekly Review still open`.
+- Portfolio demo strings from fixture entities.
+- Resources demo strings: `Masterarbeit`, `Life OS App`, `AI Agent Workflow`,
+  `Data model notes`, `Article on calm dashboards`.
+
+### R1.4b Responsive / Duplicate Handling
+
+- Desktop `2560x1440`: dense shells stay scanable; no accidental duplicate
+  hidden rows become visible.
+- Desktop `1440x900`: no horizontal overflow, no overlapping controls.
+- Mobile around `390x844`: headers, tabs, filters and inspector shells remain
+  reachable without horizontal overflow.
+- Scope tests must account for responsive hidden variants in Resources Library
+  and Recent Learnings.
+- Repeated empty strings must not create duplicate React keys in mapped lists.
+
+### R1.4b Implementation Slice Gates
+
+R1.4b.1 - Inbox Content States:
+
+- Gate: Queue Empty, Active Empty Inspector, AI disabled Empty, Checklist 0/n,
+  Related Context Empty, selectors.
+
+R1.4b.2 - Today Content States:
+
+- Gate: First Run, Opening Review, Activity Stream, Delta, Decisions/Artifacts,
+  Closing Review, selectors.
+
+R1.4b.3 - Calendar Content States:
+
+- Gate: empty raster, timed Manual Task placement, untimed task queue, Inspector
+  Empty/Slot, Scope row, selectors.
+
+R1.4b.4 - Portfolio Content States:
+
+- Gate: query views, Manual core entities, Context Empty, Dashboard Active
+  Portfolio consistency, selectors.
+
+R1.4b.5 - Resources Content States:
+
+- Gate: KPI demo-leak fix, explicit Resource state mapping, deferred Save
+  Resource truthfulness, unique empty copies, selectors.
+
+R1.4b.6 - QA, E2E, Screenshot Review:
+
+- Gate: targeted Playwright checks for the five routes once UI slices exist;
+  no Full-E2E suite required for documentation-only changes.
+
+### R1.4b Documentation-Only Validation
+
+Required for this audit block:
+
+```bash
+git diff --check
+pnpm lint
+pnpm exec tsc --noEmit --incremental false
+```
+
+No Full-E2E is required while this remains documentation-only.
+
 ## Preparation
 
 - Worktree pruefen: `git status --short --untracked-files=all`

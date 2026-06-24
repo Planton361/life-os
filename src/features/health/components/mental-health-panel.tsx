@@ -1,5 +1,6 @@
 import { accentStyle } from "@/components/layout/route-page-primitives";
-import type { MentalHealthViewModel } from "../types";
+import type { ContentStateMeta } from "@/features/content-state";
+import type { HealthProfileId, MentalHealthViewModel } from "../types";
 import {
   ActionLink,
   DotRhythm,
@@ -10,13 +11,20 @@ import {
 
 export function MentalHealthPanel({
   data,
+  profileId,
+  state,
 }: Readonly<{
   data: MentalHealthViewModel;
+  profileId: HealthProfileId;
+  state: ContentStateMeta;
 }>) {
   return (
     <HealthPanel
       accent="var(--accent-purple)"
       badge={data.badge}
+      contentState={state}
+      profileId={profileId}
+      sectionName="mental"
       subtitle={data.subtitle}
       title={data.title}
     >

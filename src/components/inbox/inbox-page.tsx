@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import type { ContentStateMeta } from "@/features/content-state";
 import {
   getInboxCaptureTypeLabel,
   getInboxStageLabel,
@@ -12,6 +13,7 @@ import {
   type InboxSignal,
   type InboxViewModel,
 } from "@/features/inbox";
+import { createInboxQuickCaptureAction } from "@/features/profile-data/actions";
 import { cn } from "@/lib/cn";
 
 type AccentStyle = CSSProperties & {
@@ -32,6 +34,21 @@ const panelHeaderClasses =
 
 const focusClasses =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-cyan)]";
+
+const disabledActionClasses =
+  "disabled:cursor-not-allowed disabled:border-[var(--border-subtle)] disabled:bg-[rgba(18,28,43,.42)] disabled:text-[var(--text-muted)] disabled:opacity-70";
+
+function contentStateAttributes(
+  meta: ContentStateMeta,
+  profileId: InboxViewModel["profileId"],
+) {
+  return {
+    "data-capacity": meta.capacity?.toString(),
+    "data-content-state": meta.state,
+    "data-item-count": meta.itemCount.toString(),
+    "data-profile-id": profileId,
+  };
+}
 
 function SectionTitle({
   children,
@@ -129,21 +146,55 @@ function Dot({
   );
 }
 
+function InboxEmptyState({
+  className,
+  description,
+  title,
+}: Readonly<{
+  className?: string;
+  description: string;
+  title: string;
+}>) {
+  return (
+    <div
+      className={cn(
+        "rounded-[16px] border border-dashed border-[var(--border-subtle)] bg-[rgba(168,183,204,.035)] px-4 py-5",
+        className,
+      )}
+    >
+      <p className="text-sm font-semibold text-[var(--text-primary)]">
+        {title}
+      </p>
+      <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+        {description}
+      </p>
+    </div>
+  );
+}
+
 function InboxPageHeader({
+  contentState,
   kicker,
   modePills,
   purpose,
+  profileId,
   signals,
   title,
 }: Readonly<{
+  contentState: ContentStateMeta;
   kicker: string;
   modePills: string[];
+  profileId: InboxViewModel["profileId"];
   purpose: string;
   signals: InboxSignal[];
   title: string;
 }>) {
   return (
-    <header className="shrink-0 rounded-[22px] border border-[var(--border-default)] bg-[rgba(15,23,36,.96)] px-5 py-4 shadow-[0_8px_22px_rgba(0,0,0,.12)] 2xl:px-7">
+    <header
+      className="shrink-0 rounded-[22px] border border-[var(--border-default)] bg-[rgba(15,23,36,.96)] px-5 py-4 shadow-[0_8px_22px_rgba(0,0,0,.12)] 2xl:px-7"
+      data-inbox-section="header-metrics"
+      {...contentStateAttributes(contentState, profileId)}
+    >
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(520px,788px)] xl:items-center">
         <div className="min-w-0">
           <p className="text-[11px] font-semibold uppercase text-[var(--accent-cyan)]">
@@ -239,16 +290,26 @@ function InboxQueueItemView({ item }: Readonly<{ item: InboxQueueItem }>) {
 }
 
 function InboxQueue({
+  contentState,
+  emptyState,
   filters,
   items,
+  profileId,
+  quickCapture,
 }: Readonly<{
+  contentState: ContentStateMeta;
+  emptyState: InboxViewModel["queueEmptyState"];
   filters: string[];
   items: InboxQueueItem[];
+  profileId: InboxViewModel["profileId"];
+  quickCapture: InboxViewModel["quickCapture"];
 }>) {
   return (
     <section
       aria-labelledby="inbox-queue-title"
       className={cn(panelClasses, "2xl:flex 2xl:min-h-0 2xl:flex-col")}
+      data-inbox-section="queue"
+      {...contentStateAttributes(contentState, profileId)}
     >
       <div className={panelHeaderClasses}>
         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -289,7 +350,9 @@ function InboxQueue({
                   ? "border-[rgba(91,124,250,.34)] bg-[rgba(91,124,250,.18)] text-[var(--text-primary)]"
                   : "border-[var(--border-subtle)] bg-[rgba(18,28,43,.60)]",
                 focusClasses,
+                disabledActionClasses,
               )}
+              disabled={filter !== "All"}
               key={filter}
               type="button"
             >
@@ -297,10 +360,96 @@ function InboxQueue({
             </button>
           ))}
         </div>
+        <form
+          action={createInboxQuickCaptureAction}
+          aria-label="Inbox Quick Capture"
+          className="mt-3 rounded-[16px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.48)] p-3"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-[var(--text-primary)]">
+                {quickCapture.title}
+              </p>
+              <p className="mt-1 text-[11px] leading-4 text-[var(--text-secondary)]">
+                {quickCapture.description}
+              </p>
+            </div>
+            <select
+              aria-label="Quick Capture type"
+              className={cn(
+                "h-8 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(12,20,34,.74)] px-2 text-[11px] text-[var(--text-secondary)]",
+                focusClasses,
+              )}
+              defaultValue="note"
+              disabled={!quickCapture.enabled}
+              name="type"
+            >
+              <option value="note">Note</option>
+              <option value="task">Task</option>
+              <option value="question">Question</option>
+              <option value="idea">Idea</option>
+              <option value="resource">Resource</option>
+              <option value="agent">Agent</option>
+              <option value="decision">Decision</option>
+            </select>
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+            <label className="min-w-0">
+              <span className="sr-only">Quick Capture</span>
+              <input
+                aria-label="Quick Capture"
+                className={cn(
+                  "h-9 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(12,20,34,.74)] px-3 text-xs text-[var(--text-secondary)] placeholder:text-[var(--text-muted)]",
+                  focusClasses,
+                )}
+                disabled={!quickCapture.enabled}
+                name="title"
+                placeholder="Gedanken, Aufgabe oder Frage erfassen"
+                required={quickCapture.enabled}
+              />
+            </label>
+            <button
+              className={cn(
+                "min-h-9 rounded-[12px] border border-[rgba(73,209,163,.34)] bg-[rgba(73,209,163,.16)] px-3 text-xs font-semibold text-[var(--text-primary)]",
+                focusClasses,
+                disabledActionClasses,
+              )}
+              disabled={!quickCapture.enabled}
+              type="submit"
+            >
+              Capture
+            </button>
+          </div>
+          <label className="mt-2 block">
+            <span className="sr-only">Quick Capture note</span>
+            <input
+              aria-label="Quick Capture note"
+              className={cn(
+                "h-8 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(12,20,34,.54)] px-3 text-[11px] text-[var(--text-secondary)] placeholder:text-[var(--text-muted)]",
+                focusClasses,
+              )}
+              disabled={!quickCapture.enabled}
+              name="note"
+              placeholder="Optionaler Kontext"
+            />
+          </label>
+          {quickCapture.disabledReason ? (
+            <p className="mt-2 text-[11px] leading-4 text-[var(--text-muted)]">
+              {quickCapture.disabledReason}
+            </p>
+          ) : null}
+        </form>
         <div className="mt-3 grid gap-2 2xl:min-h-0 2xl:flex-1 2xl:overflow-y-auto 2xl:pr-1">
-          {items.map((item) => (
-            <InboxQueueItemView item={item} key={item.id} />
-          ))}
+          {items.length > 0 ? (
+            items.map((item) => (
+              <InboxQueueItemView item={item} key={item.id} />
+            ))
+          ) : (
+            <InboxEmptyState
+              description={emptyState.description}
+              title={emptyState.title}
+            />
+          )}
         </div>
       </div>
     </section>
@@ -336,8 +485,10 @@ function FieldSurface({
 }
 
 function InboxPlanningSignals({
+  actionsEnabled,
   signals,
 }: Readonly<{
+  actionsEnabled: boolean;
   signals: InboxPlanningSignal[];
 }>) {
   return (
@@ -362,7 +513,9 @@ function InboxPlanningSignals({
             className={cn(
               "min-h-8 rounded-[12px] border border-[var(--border-default)] bg-[rgba(18,28,43,.76)] px-3 text-xs font-semibold text-[var(--text-secondary)]",
               focusClasses,
+              disabledActionClasses,
             )}
+            disabled={!actionsEnabled}
             type="button"
           >
             Apply
@@ -371,7 +524,9 @@ function InboxPlanningSignals({
             className={cn(
               "min-h-8 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(168,183,204,.045)] px-3 text-xs font-semibold text-[var(--text-secondary)]",
               focusClasses,
+              disabledActionClasses,
             )}
+            disabled={!actionsEnabled}
             type="button"
           >
             Edit
@@ -379,34 +534,44 @@ function InboxPlanningSignals({
         </div>
       </div>
       <div className="mt-2.5 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-        {signals.map((signal, index) => (
-          <article
-            className="rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.70)] px-3 py-2"
-            key={`inbox-queue-signal-${index}`}
-            style={accentStyle(signal.accent)}
-          >
-            <p className="flex items-center gap-1.5 text-[10px] font-medium text-[var(--text-muted)]">
-              <Dot accent={signal.accent} className="size-1.5 opacity-75" />
-              <span>{signal.label}</span>
-            </p>
-            <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
-              {signal.value}
-            </p>
-            <p className="mt-1 text-[10px] text-[var(--text-muted)]">
-              {signal.source}
-            </p>
-          </article>
-        ))}
+        {signals.length > 0 ? (
+          signals.map((signal, index) => (
+            <article
+              className="rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.70)] px-3 py-2"
+              key={`inbox-queue-signal-${index}`}
+              style={accentStyle(signal.accent)}
+            >
+              <p className="flex items-center gap-1.5 text-[10px] font-medium text-[var(--text-muted)]">
+                <Dot accent={signal.accent} className="size-1.5 opacity-75" />
+                <span>{signal.label}</span>
+              </p>
+              <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
+                {signal.value}
+              </p>
+              <p className="mt-1 text-[10px] text-[var(--text-muted)]">
+                {signal.source}
+              </p>
+            </article>
+          ))
+        ) : (
+          <InboxEmptyState
+            className="sm:col-span-2 xl:col-span-4"
+            description="Planning-Signale erscheinen erst mit einem ausgewählten Eintrag."
+            title="Keine Planning-Signale"
+          />
+        )}
       </div>
     </section>
   );
 }
 
 function InboxOutcomeRoutes({
+  actionsEnabled,
   description,
   options,
   title,
 }: Readonly<{
+  actionsEnabled: boolean;
   description: string;
   options: InboxOutcomeOption[];
   title: string;
@@ -431,7 +596,9 @@ function InboxOutcomeRoutes({
             className={cn(
               "min-h-[100px] rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.68)] px-3 py-3 text-left 2xl:h-full",
               focusClasses,
+              disabledActionClasses,
             )}
+            disabled={!actionsEnabled}
             key={option.id}
             style={accentStyle(option.accent)}
             type="button"
@@ -459,10 +626,14 @@ function InboxOutcomeRoutes({
 
 function InboxActiveItemPanel({
   activeItem,
+  contentState,
   outcome,
+  profileId,
 }: Readonly<{
   activeItem: InboxViewModel["activeItem"];
+  contentState: ContentStateMeta;
   outcome: InboxViewModel["outcome"];
+  profileId: InboxViewModel["profileId"];
 }>) {
   const [cleanTitle, description, nextAction, missingInfo] = activeItem.fields;
 
@@ -470,6 +641,8 @@ function InboxActiveItemPanel({
     <section
       aria-labelledby="active-item-title"
       className={cn(panelClasses, "2xl:flex 2xl:min-h-0 2xl:flex-col")}
+      data-inbox-section="active-item"
+      {...contentStateAttributes(contentState, profileId)}
     >
       <div className={panelHeaderClasses}>
         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -495,6 +668,7 @@ function InboxActiveItemPanel({
         </div>
       </div>
 
+      {activeItem.hasSelection ? (
       <div className="space-y-3 p-3 2xl:flex 2xl:min-h-0 2xl:flex-1 2xl:flex-col 2xl:gap-3 2xl:space-y-0">
         <section
           aria-labelledby="original-capture-title"
@@ -548,8 +722,12 @@ function InboxActiveItemPanel({
           </div>
         </section>
 
-        <InboxPlanningSignals signals={activeItem.planningSignals} />
+        <InboxPlanningSignals
+          actionsEnabled={activeItem.actionsEnabled}
+          signals={activeItem.planningSignals}
+        />
         <InboxOutcomeRoutes
+          actionsEnabled={outcome.actionsEnabled}
           description={outcome.description}
           options={outcome.options}
           title={outcome.title}
@@ -567,7 +745,9 @@ function InboxActiveItemPanel({
                     ? "border-[rgba(66,184,131,.34)] bg-[rgba(66,184,131,.18)] text-[var(--text-primary)]"
                     : "border-[var(--border-subtle)] bg-[rgba(18,28,43,.70)] text-[var(--text-secondary)]",
                   focusClasses,
+                  disabledActionClasses,
                 )}
+                disabled={!activeItem.actionsEnabled}
                 key={`inbox-action-${index}`}
                 type="button"
               >
@@ -577,17 +757,59 @@ function InboxActiveItemPanel({
           )}
         </div>
       </div>
+      ) : (
+        <div className="space-y-3 p-3 2xl:flex 2xl:min-h-0 2xl:flex-1 2xl:flex-col">
+          <InboxEmptyState
+            className="2xl:min-h-[180px]"
+            description={activeItem.emptyState.description}
+            title={activeItem.emptyState.title}
+          />
+          <div
+            aria-label="Inbox item actions"
+            className="mt-auto flex flex-wrap gap-2 border-t border-[var(--border-subtle)] pt-3"
+          >
+            {["Save progress", "Mark as clarified", "Snooze", "Dismiss"].map(
+              (action, index) => (
+                <button
+                  className={cn(
+                    "min-h-8 rounded-[12px] border px-3 text-xs font-semibold",
+                    index === 1
+                      ? "border-[rgba(66,184,131,.34)] bg-[rgba(66,184,131,.18)] text-[var(--text-primary)]"
+                      : "border-[var(--border-subtle)] bg-[rgba(18,28,43,.70)] text-[var(--text-secondary)]",
+                    focusClasses,
+                    disabledActionClasses,
+                  )}
+                  disabled
+                  key={`inbox-empty-action-${index}`}
+                  type="button"
+                >
+                  {action}
+                </button>
+              ),
+            )}
+          </div>
+        </div>
+      )}
     </section>
   );
 }
 
 function AIAssistantPanel({
   assistant,
+  contentState,
+  profileId,
 }: Readonly<{
   assistant: InboxViewModel["aiAssistant"];
+  contentState: ContentStateMeta;
+  profileId: InboxViewModel["profileId"];
 }>) {
   return (
-    <section aria-labelledby="ai-assistant-title" className={panelClasses}>
+    <section
+      aria-labelledby="ai-assistant-title"
+      className={panelClasses}
+      data-inbox-section="ai-assistant"
+      {...contentStateAttributes(contentState, profileId)}
+    >
       <div className={panelHeaderClasses}>
         <SectionTitle id="ai-assistant-title" label={assistant.title}>
           <Pill active accent="var(--accent-purple)">
@@ -615,7 +837,9 @@ function AIAssistantPanel({
             className={cn(
               "mt-2 min-h-8 rounded-[12px] border border-[var(--border-default)] bg-[rgba(18,28,43,.76)] px-3 text-xs font-semibold text-[var(--text-secondary)]",
               focusClasses,
+              disabledActionClasses,
             )}
+            disabled={!assistant.canApply}
             type="button"
           >
             Apply
@@ -626,21 +850,29 @@ function AIAssistantPanel({
             Suggested Outcome
           </p>
           <div className="mt-2 flex flex-wrap gap-1.5">
-            {assistant.outcomes.map((outcome, index) => (
-              <Pill
-                active={index === 0}
-                accent={
-                  index === 0
-                    ? "var(--accent-blue)"
-                    : index === 1
-                      ? "var(--accent-purple)"
-                      : "var(--accent-orange)"
-                }
-                key={outcome}
-              >
-                {outcome}
-              </Pill>
-            ))}
+            {assistant.outcomes.length > 0 ? (
+              assistant.outcomes.map((outcome, index) => (
+                <Pill
+                  active={index === 0}
+                  accent={
+                    index === 0
+                      ? "var(--accent-blue)"
+                      : index === 1
+                        ? "var(--accent-purple)"
+                        : "var(--accent-orange)"
+                  }
+                  key={outcome}
+                >
+                  {outcome}
+                </Pill>
+              ))
+            ) : (
+              <InboxEmptyState
+                className="w-full py-3"
+                description={assistant.emptyState.description}
+                title={assistant.emptyState.title}
+              />
+            )}
           </div>
         </div>
         <label className="block">
@@ -679,11 +911,20 @@ function SuggestionBox({
 
 function DecisionChecklist({
   checklist,
+  contentState,
+  profileId,
 }: Readonly<{
   checklist: InboxViewModel["checklist"];
+  contentState: ContentStateMeta;
+  profileId: InboxViewModel["profileId"];
 }>) {
   return (
-    <section aria-labelledby="decision-checklist-title" className={panelClasses}>
+    <section
+      aria-labelledby="decision-checklist-title"
+      className={panelClasses}
+      data-inbox-section="decision-checklist"
+      {...contentStateAttributes(contentState, profileId)}
+    >
       <div className={panelHeaderClasses}>
         <SectionTitle id="decision-checklist-title" label={checklist.title}>
           <Pill active accent="var(--accent-orange)">
@@ -732,14 +973,20 @@ function ChecklistItem({ item }: Readonly<{ item: InboxChecklistItem }>) {
 }
 
 function RelatedContext({
+  contentState,
   context,
+  profileId,
 }: Readonly<{
+  contentState: ContentStateMeta;
   context: InboxViewModel["relatedContext"];
+  profileId: InboxViewModel["profileId"];
 }>) {
   return (
     <section
       aria-labelledby="related-context-title"
       className={cn(panelClasses, "2xl:flex 2xl:min-h-0 2xl:flex-1 2xl:flex-col")}
+      data-inbox-section="related-context"
+      {...contentStateAttributes(contentState, profileId)}
     >
       <div className={panelHeaderClasses}>
         <SectionTitle id="related-context-title" label={context.title}>
@@ -757,12 +1004,20 @@ function RelatedContext({
           readOnly
         />
         <div className="grid gap-2 2xl:min-h-0 2xl:flex-1 2xl:overflow-y-auto 2xl:pr-1">
-          {context.items.map((item, index) => (
-            <RelatedContextRow
-              item={item}
-              key={`inbox-related-context-${index}`}
+          {context.items.length > 0 ? (
+            context.items.map((item, index) => (
+              <RelatedContextRow
+                actionsEnabled={context.actionsEnabled}
+                item={item}
+                key={`inbox-related-context-${index}`}
+              />
+            ))
+          ) : (
+            <InboxEmptyState
+              description={context.emptyState.description}
+              title={context.emptyState.title}
             />
-          ))}
+          )}
         </div>
       </div>
     </section>
@@ -770,8 +1025,10 @@ function RelatedContext({
 }
 
 function RelatedContextRow({
+  actionsEnabled,
   item,
 }: Readonly<{
+  actionsEnabled: boolean;
   item: InboxRelatedContextItem;
 }>) {
   return (
@@ -798,7 +1055,9 @@ function RelatedContextRow({
           className={cn(
             "min-h-8 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.76)] px-3 text-xs font-semibold text-[var(--text-secondary)]",
             focusClasses,
+            disabledActionClasses,
           )}
+          disabled={!actionsEnabled}
           type="button"
         >
           Use
@@ -818,9 +1077,21 @@ function InboxAIAssistantPanel({
       className="space-y-4 2xl:flex 2xl:h-full 2xl:min-h-0 2xl:flex-col 2xl:gap-3 2xl:space-y-0"
       aria-label="Inbox assistant and context"
     >
-      <AIAssistantPanel assistant={viewModel.aiAssistant} />
-      <DecisionChecklist checklist={viewModel.checklist} />
-      <RelatedContext context={viewModel.relatedContext} />
+      <AIAssistantPanel
+        assistant={viewModel.aiAssistant}
+        contentState={viewModel.contentStates.aiAssistant}
+        profileId={viewModel.profileId}
+      />
+      <DecisionChecklist
+        checklist={viewModel.checklist}
+        contentState={viewModel.contentStates.checklist}
+        profileId={viewModel.profileId}
+      />
+      <RelatedContext
+        contentState={viewModel.contentStates.relatedContext}
+        context={viewModel.relatedContext}
+        profileId={viewModel.profileId}
+      />
     </aside>
   );
 }
@@ -833,21 +1104,34 @@ export function InboxPage({
   return (
     <div
       className="mx-auto flex w-full max-w-[2168px] flex-col gap-3 pb-8 2xl:h-[calc(100dvh-20px)] 2xl:min-h-0 2xl:overflow-hidden 2xl:pb-0"
+      data-inbox-section="page-root"
       id="inbox-page"
+      {...contentStateAttributes(viewModel.contentStates.page, viewModel.profileId)}
     >
       <InboxPageHeader
+        contentState={viewModel.contentStates.header}
         kicker={viewModel.kicker}
         modePills={viewModel.modePills}
+        profileId={viewModel.profileId}
         purpose={viewModel.purpose}
         signals={viewModel.signals}
         title={viewModel.title}
       />
 
       <div className="grid gap-3 2xl:min-h-0 2xl:flex-1 2xl:grid-cols-[minmax(360px,560px)_minmax(680px,1fr)_minmax(360px,604px)] 2xl:items-stretch">
-        <InboxQueue filters={viewModel.filters} items={viewModel.queue} />
+        <InboxQueue
+          contentState={viewModel.contentStates.queue}
+          emptyState={viewModel.queueEmptyState}
+          filters={viewModel.filters}
+          items={viewModel.queue}
+          profileId={viewModel.profileId}
+          quickCapture={viewModel.quickCapture}
+        />
         <InboxActiveItemPanel
           activeItem={viewModel.activeItem}
+          contentState={viewModel.contentStates.activeItem}
           outcome={viewModel.outcome}
+          profileId={viewModel.profileId}
         />
         <InboxAIAssistantPanel viewModel={viewModel} />
       </div>

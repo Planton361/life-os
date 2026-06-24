@@ -1,3 +1,7 @@
+import type { ContentStateMeta } from "@/features/content-state";
+
+export type ResourceProfileId = "demo" | "empty" | "manual";
+
 export type ResourceType =
   | "note"
   | "learning"
@@ -179,6 +183,7 @@ export type ResourceReviewStateMeta = {
 };
 
 export type ResourcesViewModel = {
+  profileId: ResourceProfileId;
   header: {
     eyebrow: "Knowledge Library";
     title: "Resources";
@@ -206,8 +211,18 @@ export type ResourcesViewModel = {
   resources: ResourceItem[];
   relations: ResourceRelation[];
   clusters: ResourceCluster[];
-  selectedResource: ResourceItem;
+  selectedResource: ResourceItem | null;
   reviewQueue: ResourceReviewQueueItem[];
   aiSuggestions: ResourceAiSuggestion[];
   recentLearnings: RecentLearning[];
+  contentStates: {
+    page: ContentStateMeta;
+    summary: ContentStateMeta;
+    library: ContentStateMeta;
+    relationInspector: ContentStateMeta;
+    reviewQueue: ContentStateMeta;
+    reviewWorkbench: ContentStateMeta;
+    recentLearnings: ContentStateMeta;
+    knowledgeMap: ContentStateMeta;
+  };
 };

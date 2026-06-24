@@ -1,3 +1,4 @@
+import { contentStateDataAttributes } from "@/features/content-state";
 import { HabitsPanel } from "./habits-panel";
 import { HealthDaySchedule } from "./health-day-schedule";
 import { MentalHealthPanel } from "./mental-health-panel";
@@ -36,20 +37,45 @@ export function HealthOverviewPage({
   viewModel: HealthOverviewViewModel;
 }>) {
   return (
-    <div className="mx-auto flex w-full max-w-[2208px] flex-col gap-2 pb-6 min-[1900px]:h-[calc(100dvh-1.25rem)] min-[1900px]:min-h-[1120px] min-[1900px]:pb-0">
+    <div
+      className="mx-auto flex w-full max-w-[2208px] flex-col gap-2 pb-6 min-[1900px]:h-[calc(100dvh-1.25rem)] min-[1900px]:min-h-[1120px] min-[1900px]:pb-0"
+      data-health-section="page"
+      {...contentStateDataAttributes(
+        viewModel.contentStates.page,
+        viewModel.profileId,
+      )}
+    >
       <HealthOverviewHeader header={viewModel.header} />
 
       <div className="grid min-w-0 gap-2 xl:grid-cols-[minmax(0,1fr)_minmax(380px,460px)] min-[1900px]:min-h-0 min-[1900px]:flex-1 min-[1900px]:grid-cols-[minmax(0,1fr)_minmax(560px,760px)]">
         <HealthDaySchedule
           className="order-1 xl:order-2 min-[1900px]:h-full"
           data={viewModel.schedule}
+          profileId={viewModel.profileId}
+          state={viewModel.contentStates.schedule}
         />
 
         <div className="order-2 grid min-w-0 gap-2 xl:order-1 min-[1900px]:h-full min-[1900px]:grid-cols-2 min-[1900px]:grid-rows-[minmax(0,1fr)_minmax(0,1fr)]">
-          <MentalHealthPanel data={viewModel.mentalHealth} />
-          <RunningPanel data={viewModel.running} />
-          <HabitsPanel data={viewModel.habits} />
-          <StrengthPanel data={viewModel.strength} />
+          <MentalHealthPanel
+            data={viewModel.mentalHealth}
+            profileId={viewModel.profileId}
+            state={viewModel.contentStates.mentalHealth}
+          />
+          <RunningPanel
+            data={viewModel.running}
+            profileId={viewModel.profileId}
+            state={viewModel.contentStates.running}
+          />
+          <HabitsPanel
+            data={viewModel.habits}
+            profileId={viewModel.profileId}
+            state={viewModel.contentStates.habits}
+          />
+          <StrengthPanel
+            data={viewModel.strength}
+            profileId={viewModel.profileId}
+            state={viewModel.contentStates.strength}
+          />
         </div>
       </div>
     </div>

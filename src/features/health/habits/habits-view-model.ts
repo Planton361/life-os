@@ -1,3 +1,4 @@
+import { resolveContentStateMeta } from "@/features/content-state";
 import { habitsAnalyticsMockData } from "./habits-mock-data";
 import type {
   HabitDayIntensity,
@@ -64,6 +65,24 @@ export function getHabitsAnalyticsViewModel(): HabitsAnalyticsPageViewModel {
   const data = habitsAnalyticsMockData;
 
   return {
+    profileId: "demo",
+    contentStates: {
+      detailFocus: resolveContentStateMeta({ capacity: 1, itemCount: 1 }),
+      header: resolveContentStateMeta({ capacity: 1, itemCount: 1 }),
+      heatmap: resolveContentStateMeta({
+        capacity: data.heatmapGroups.length,
+        itemCount: data.heatmapGroups.length,
+      }),
+      page: resolveContentStateMeta({ capacity: 7, itemCount: 7 }),
+      patternTable: resolveContentStateMeta({ capacity: 6, itemCount: 6 }),
+      repairLoops: resolveContentStateMeta({ capacity: 3, itemCount: 3 }),
+      summary: resolveContentStateMeta({ capacity: 6, itemCount: 6 }),
+      todaySchedule: resolveContentStateMeta({ capacity: 6, itemCount: 6 }),
+      weeklyRhythmInsights: resolveContentStateMeta({
+        capacity: 4,
+        itemCount: 4,
+      }),
+    },
     header: {
       breadcrumb: ["Life OS", "Health & Fitness", "Habits"],
       title: "Habits",

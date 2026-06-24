@@ -1,3 +1,7 @@
+import type { ContentStateMeta } from "@/features/content-state";
+
+export type PortfolioProfileId = "demo" | "empty" | "manual";
+
 export type PortfolioEntityType = "task" | "project" | "goal" | "skill";
 
 export type PortfolioView = "all" | "tasks" | "projects" | "goals" | "skills";
@@ -115,6 +119,7 @@ export type PortfolioStat = {
 };
 
 export type PortfolioViewModel = {
+  profileId: PortfolioProfileId;
   header: {
     eyebrow: string;
     title: "Portfolio";
@@ -130,4 +135,10 @@ export type PortfolioViewModel = {
   sorts: PortfolioOption<PortfolioSortMode>[];
   stats: PortfolioStat[];
   entities: PortfolioEntity[];
+  contentStates: {
+    page: ContentStateMeta;
+    summary: ContentStateMeta;
+    entityList: ContentStateMeta;
+    contextPanel: ContentStateMeta;
+  };
 };

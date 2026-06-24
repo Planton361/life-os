@@ -1,3 +1,7 @@
+import type { ContentStateMeta } from "@/features/content-state";
+
+export type MentalHealthProfileId = "demo" | "empty" | "manual";
+
 export type MentalHealthAccent =
   | "var(--accent-blue)"
   | "var(--accent-green)"
@@ -65,6 +69,19 @@ export type MentalHealthBoundaryViewModel = {
 };
 
 export type MentalHealthPageViewModel = {
+  profileId: MentalHealthProfileId;
+  contentStates: {
+    page: ContentStateMeta;
+    header: ContentStateMeta;
+    checkIn: ContentStateMeta;
+    moodPattern: ContentStateMeta;
+    currentSignal: ContentStateMeta;
+    sleepRecovery: ContentStateMeta;
+    journalRhythm: ContentStateMeta;
+    repairRoutines: ContentStateMeta;
+    actions: ContentStateMeta;
+    safety: ContentStateMeta;
+  };
   header: {
     breadcrumb: readonly string[];
     title: "Mental Health";
@@ -84,6 +101,7 @@ export type MentalHealthPageViewModel = {
       value: string;
     };
     actionLabel: "Open check-in";
+    actionDisabled?: boolean;
   };
   moodPattern: {
     title: string;
@@ -176,6 +194,69 @@ export type MentalHealthPageViewModel = {
 
 export function getMentalHealthViewModel(): MentalHealthPageViewModel {
   return {
+    profileId: "demo",
+    contentStates: {
+      actions: {
+        capacity: 7,
+        hasPrimaryValue: true,
+        itemCount: 7,
+        state: "filled",
+      },
+      checkIn: {
+        capacity: 5,
+        hasPrimaryValue: true,
+        itemCount: 5,
+        state: "filled",
+      },
+      currentSignal: {
+        capacity: 3,
+        hasPrimaryValue: true,
+        itemCount: 3,
+        state: "filled",
+      },
+      header: {
+        capacity: 1,
+        hasPrimaryValue: true,
+        itemCount: 1,
+        state: "filled",
+      },
+      journalRhythm: {
+        capacity: 7,
+        hasPrimaryValue: true,
+        itemCount: 4,
+        state: "partial",
+      },
+      moodPattern: {
+        capacity: 6,
+        hasPrimaryValue: true,
+        itemCount: 6,
+        state: "filled",
+      },
+      page: {
+        capacity: 8,
+        hasPrimaryValue: true,
+        itemCount: 7,
+        state: "partial",
+      },
+      repairRoutines: {
+        capacity: 3,
+        hasPrimaryValue: true,
+        itemCount: 3,
+        state: "filled",
+      },
+      safety: {
+        capacity: 4,
+        hasPrimaryValue: true,
+        itemCount: 4,
+        state: "filled",
+      },
+      sleepRecovery: {
+        capacity: 7,
+        hasPrimaryValue: true,
+        itemCount: 7,
+        state: "filled",
+      },
+    },
     header: {
       breadcrumb: ["Life OS", "Health & Fitness", "Mental Health"],
       title: "Mental Health",

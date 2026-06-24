@@ -123,6 +123,33 @@ export async function createManualInboxItemAction(formData: FormData) {
   redirectToSettings();
 }
 
+export async function createInboxQuickCaptureAction(formData: FormData) {
+  const profileId = await getCurrentLifeOsProfileId();
+
+  if (profileId !== "manual") {
+    revalidatePath("/inbox");
+    redirect("/inbox");
+  }
+
+  const title = formString(formData, "title");
+  const note = formString(formData, "note");
+  const fallbackTitle = note.split(/\s+/).slice(0, 9).join(" ");
+
+  if (!title && !fallbackTitle) {
+    revalidatePath("/inbox");
+    redirect("/inbox");
+  }
+
+  await createManualInboxItem({
+    areaId: "review",
+    note,
+    title: title || fallbackTitle,
+    type: formString(formData, "type") as InboxCaptureType,
+  });
+  revalidateDashboardViews();
+  redirect("/inbox");
+}
+
 export async function createManualProjectAction(formData: FormData) {
   await setProfileCookie("manual");
   await createManualProject({

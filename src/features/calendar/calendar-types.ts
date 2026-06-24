@@ -1,3 +1,5 @@
+import type { ContentStateMeta } from "@/features/content-state";
+
 export type CalendarSourceEntityType =
   | "project"
   | "task"
@@ -21,6 +23,8 @@ export type CalendarBlockType =
   | "workout";
 
 export type CalendarView = "day" | "week" | "month" | "year";
+
+export type CalendarProfileId = "demo" | "empty" | "manual";
 
 export type CalendarScope =
   | "All"
@@ -271,6 +275,20 @@ export type CalendarPageContractViewModel = {
 };
 
 export type CalendarViewModel = {
+  profileId: CalendarProfileId;
+  contentStates: {
+    page: ContentStateMeta;
+    header: ContentStateMeta;
+    scopeRow: ContentStateMeta;
+    viewSwitcher: ContentStateMeta;
+    weekOverview: ContentStateMeta;
+    grid: ContentStateMeta;
+    dayColumns: ContentStateMeta;
+    timeBlocks: ContentStateMeta;
+    rightPanel: ContentStateMeta;
+    planningQueue: ContentStateMeta;
+    legend: ContentStateMeta;
+  };
   header: {
     eyebrow: "TEMPORAL VIEW";
     title: "Calendar";
@@ -292,7 +310,7 @@ export type CalendarViewModel = {
   hours: string[];
   allDayBlocks: CalendarAllDayBlockViewModel[];
   timedBlocks: CalendarTimedBlockViewModel[];
-  selectedBlock: CalendarAllDayBlockViewModel | CalendarTimedBlockViewModel;
+  selectedBlock?: CalendarAllDayBlockViewModel | CalendarTimedBlockViewModel;
   schedulableTasks: SchedulableTaskViewModel[];
   rightPanel: CalendarRightPanelViewModel;
   currentTime: {

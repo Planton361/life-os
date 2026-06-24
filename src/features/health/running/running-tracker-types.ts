@@ -1,3 +1,7 @@
+import type { ContentStateMeta } from "@/features/content-state";
+
+export type RunningProfileId = "demo" | "empty" | "manual";
+
 export type RunningAccent =
   | "var(--accent-blue)"
   | "var(--accent-green)"
@@ -72,6 +76,7 @@ export type RunningPlanStepViewModel = {
 export type RunningActionViewModel = {
   label: string;
   variant: "primary" | "secondary" | "quiet";
+  disabled?: boolean;
 };
 
 export type TodayRunChecklistItemViewModel = {
@@ -133,6 +138,21 @@ export type RunningBoundaryViewModel = {
 };
 
 export type RunningTrackerPageViewModel = {
+  profileId: RunningProfileId;
+  contentStates: {
+    page: ContentStateMeta;
+    header: ContentStateMeta;
+    summary: ContentStateMeta;
+    planner: ContentStateMeta;
+    todayPlan: ContentStateMeta;
+    review: ContentStateMeta;
+    rhythm: ContentStateMeta;
+    loadRecovery: ContentStateMeta;
+    context: ContentStateMeta;
+    distanceTrend: ContentStateMeta;
+    recentRuns: ContentStateMeta;
+    boundaries: ContentStateMeta;
+  };
   header: {
     breadcrumb: readonly string[];
     title: "Running Tracker";
@@ -140,10 +160,10 @@ export type RunningTrackerPageViewModel = {
     pills: readonly RunningPillViewModel[];
     decision: {
       label: "Next run decision";
-      title: "Easy run / walk";
-      duration: "25-30 min";
-      effort: "conversational effort";
-      readiness: "72%";
+      title: string;
+      duration: string;
+      effort: string;
+      readiness: string;
       progress: number;
       detail: string;
       accent: RunningAccent;
@@ -159,7 +179,7 @@ export type RunningTrackerPageViewModel = {
     effortTargets: readonly RunningChipViewModel<EffortTarget>[];
     optionalInputs: readonly RunningInputViewModel[];
     suggestedPlan: {
-      title: "Suggested Beginner Plan";
+      title: string;
       detail: string;
       steps: readonly RunningPlanStepViewModel[];
     };
@@ -168,7 +188,7 @@ export type RunningTrackerPageViewModel = {
   };
   todayPlan: {
     title: "Today Run Plan";
-    plan: "Run / walk - 30 min";
+    plan: string;
     details: readonly RunningSummaryMetricViewModel[];
     checklist: readonly TodayRunChecklistItemViewModel[];
     actions: readonly RunningActionViewModel[];
@@ -191,15 +211,15 @@ export type RunningTrackerPageViewModel = {
     title: "Training Load & Recovery";
     weeklyLoad: {
       label: "Weekly load";
-      value: "Moderate";
-      progress: 64;
+      value: string;
+      progress: number;
       detail: string;
       accent: RunningAccent;
     };
     recoverySignal: {
       label: "Recovery signal";
-      value: "72%";
-      progress: 72;
+      value: string;
+      progress: number;
       detail: string;
       accent: RunningAccent;
     };

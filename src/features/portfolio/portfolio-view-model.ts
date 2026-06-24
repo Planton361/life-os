@@ -1,7 +1,9 @@
+import { resolveContentStateMeta } from "@/features/content-state";
 import { portfolioEntities } from "./portfolio-mock-data";
 import type {
   PortfolioEntity,
   PortfolioOption,
+  PortfolioProfileId,
   PortfolioScopeFilter,
   PortfolioSortMode,
   PortfolioStat,
@@ -65,6 +67,13 @@ const sorts: PortfolioOption<PortfolioSortMode>[] = [
   },
 ];
 
+const PORTFOLIO_CONTENT_CAPACITY = {
+  contextPanel: 1,
+  entityList: 8,
+  page: 8,
+  summary: 6,
+} as const;
+
 function countBy(
   entities: readonly PortfolioEntity[],
   predicate: (entity: PortfolioEntity) => boolean,
@@ -125,13 +134,38 @@ function getStats(entities: readonly PortfolioEntity[]): PortfolioStat[] {
   ];
 }
 
+function buildPortfolioContentStates(entities: readonly PortfolioEntity[]) {
+  return {
+    page: resolveContentStateMeta({
+      capacity: PORTFOLIO_CONTENT_CAPACITY.page,
+      itemCount: entities.length,
+    }),
+    summary: resolveContentStateMeta({
+      capacity: PORTFOLIO_CONTENT_CAPACITY.summary,
+      itemCount: entities.length,
+    }),
+    entityList: resolveContentStateMeta({
+      capacity: PORTFOLIO_CONTENT_CAPACITY.entityList,
+      itemCount: entities.length,
+    }),
+    contextPanel: resolveContentStateMeta({
+      capacity: PORTFOLIO_CONTENT_CAPACITY.contextPanel,
+      itemCount: entities.length > 0 ? 1 : 0,
+    }),
+  };
+}
+
 export function getPortfolioViewModel(
   entities: readonly PortfolioEntity[] = portfolioEntities,
   copy: Partial<
-    PortfolioViewModel["header"] & PortfolioViewModel["pageContract"]
+    PortfolioViewModel["header"] &
+      PortfolioViewModel["pageContract"] & {
+        profileId: PortfolioProfileId;
+      }
   > = {},
 ): PortfolioViewModel {
   return {
+    profileId: copy.profileId ?? "demo",
     header: {
       eyebrow: "Workbench",
       title: "Portfolio",
@@ -151,5 +185,6 @@ export function getPortfolioViewModel(
     sorts,
     stats: getStats(entities),
     entities: [...entities],
+    contentStates: buildPortfolioContentStates(entities),
   };
 }

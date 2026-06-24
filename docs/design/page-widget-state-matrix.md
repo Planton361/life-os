@@ -24,6 +24,302 @@ Aktualisierte Dashboard-Vertraege:
 
 Nicht-Dashboard-Zeilen unten bleiben Audit-/Planungsstand fuer spaetere Slices.
 
+## R1.4b Operational Pages Audit Update
+
+Scope: `/inbox`, `/today`, `/calendar`, `/portfolio`, `/resources`.
+
+Status: Audit-, Dokumentations- und Planungsblock. Keine Implementierung, keine
+Supabase-/Auth-/Migration-Arbeit, keine Demo-Fixture-Loeschung und keine
+V5-Layout-Neukomposition.
+
+Quellen:
+
+- Screenshot-Befund aus dem R1.4b Review-Prompt.
+- Code-Audit in `src/features/profile-data/**`,
+  `src/features/content-state/**`, `src/components/inbox/inbox-page.tsx`,
+  `src/features/today/**`, `src/features/calendar/**`,
+  `src/features/portfolio/**` und `src/features/resources/**`.
+
+Globale Befunde:
+
+- Alle fuenf Routen lesen ueber `src/features/profile-data`; die Page-Shells
+  bleiben damit grundsaetzlich profilfaehig erhalten.
+- `data-content-state`, `data-profile-id`, `data-item-count` und
+  `data-capacity` sind bisher nur in Dashboard-Section-Primitives umgesetzt.
+  Die operativen Seiten brauchen eigene, widgetnahe Selector-Ergaenzungen.
+- Der lokale Manual Store unterstuetzt Tasks, Inbox Items, Projects, Goals,
+  Habits, Mood und Meal Slots. Es gibt noch keine lokale Resource-Quelle und
+  keine Today Opening-/Closing-Review-Records.
+- `/resources` nutzt aktuell den generischen Area-Sanitizer. Das ist als
+  Zwischenstand hilfreich, aber zu fragil fuer R1.4b: Summary-Metrics,
+  Filter-Counts, Review Queue, Map und Relation Inspector brauchen explizite
+  Content-State-Metadaten.
+- Calendar-Create und Time-Edit sind client-lokale UI-Mocks. Sie duerfen in
+  R1.4b nicht als persistente Manual-Create-Flows dokumentiert werden.
+- Screenshot-Risiko: Der Review-Befund meldet Resource-KPI-Demozahlen
+  `128`, `12`, `34`, `9`, `21`, `46` in Manual/Empty. Code-Audit zeigt eine
+  generische Sanitizer-Strecke, aber keinen expliziten Resource-State-Vertrag;
+  deshalb bleibt dies ein P0 Demo-Leak-Risiko bis zur Live-Screenshot-Pruefung
+  und expliziten Resource-ViewModel-Korrektur.
+
+### R1.4b Operational Page Matrix
+
+| Route | Widget / Section | State Pattern | Empty Design | Partial Design | Filled Design | Capacity | Primary CTA | Manual Create Flow vorhanden | Demo Component | Manual Component | Required Fix | Priority |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `/inbox` | Header Metrics | Metric / Collection Count | echte 0-Werte, keine Demo-Triage-Counts | lokale Inbox Counts nach Stage | Demo Counts als V5-Referenz | 4 signal cards | Capture / Queue klaeren | Settings-Create ja, Page Quick Capture noch nein | `InboxPageHeader` | gleich via `getInboxViewModel` | `data-content-state`, `data-profile-id`, echte Subcopy statt `manual` | P0 |
+| `/inbox` | Inbox Queue | Collection | ein gestalteter Empty State in der linken Queue; keine leere Flaeche | Manual Rows mit gleicher `InboxQueueItemView` | Demo Rows | sichtbare Queue, scrollend | Quick Capture / create inbox item | Settings-Create ja; Page Capture nicht persistent | `InboxQueueItemView` | gleich | EmptyState einfuegen, Quick Capture Flow klaeren, Selectoren | P0 |
+| `/inbox` | Active Item Detail | Inspector / Detail | `Kein Inbox-Eintrag ausgewaehlt`; keine Fake-Felder | erstes echtes Manual Item auswaehlbar | Demo active item | 1 selected item | Select item / Capture | indirekt via Settings | `InboxActiveItemPanel` | gleich | `No inbox item selected`, `No manual inbox entries yet` und `Manual Local Profile` ersetzen; EmptyInspectorState | P0 |
+| `/inbox` | AI Suggested Planning | Inspector / Detail | Shell bleibt; Area/Priority/Effort/Energy `-`; Apply deaktiviert | Vorschlaege nur aus echtem Item-Kontext | Demo Suggestions | 4 planning signals | Apply suggestion | nein | `AIAssistantPanel` | gleich | leere `planning` rendert aktuell keine explizite Copy; Apply ist aktiv; no remote AI klar trennen | P1 |
+| `/inbox` | Decision Checklist | Fixed Checklist | 0/n ohne Fake-Checks | Workflow-Schritte aus echtem Inbox Item | Demo Checklist | Ziel R1.4b: 4 Schritte | Mark clarified | nein | `DecisionChecklist` | gleich | 0/6 und nur zwei Manual-Zeilen auf 0/4 Workflow-Vertrag bringen | P1 |
+| `/inbox` | Related Context | Collection / Inspector | Empty State statt leerer Liste oder Demo-Kontext | echte Links spaeter | Demo Related Context | sichtbare Kontextliste | Use / link context | nein | `RelatedContext` | gleich | bei 0 Items expliziten Empty State rendern; keine tote `Use`-Aktion | P1 |
+| `/today` | Page First Run / Header | Page First Run | kompakter Hinweis: noch nichts fuer heute erfasst | Tasks/Inbox Counts sichtbar | Demo Header | 1 notice | Start task / capture / opening review | Task/Inbox via Settings | `TodayHeader` | gleich | Header-Copy aktuell noch technisch (`Local profile day`); First-RunNotice fehlt | P0 |
+| `/today` | Activity Stream | Timeline / Collection | Timeline-Shell plus ein zentraler Empty State; keine leere OL-Flaeche | Manual Tasks und Inbox Items als Stream Cards | Demo Activity Cards | sichtbarer Stream | Create task / capture | Settings-Create ja | `ActivityStream`, `ActivityEventCard` | gleich | EmptyStream-State; `data-content-state`; grosse leere Flaeche entschraerfen | P0 |
+| `/today` | Opening Review | Metric / Fixed Cards | Mood/Energy/Focus/Intent als `Not set` Cards | echte Opening-Werte spaeter | Demo Review Signals | 4-6 cards | Start opening review | nein | `ReviewSignalGrid` | gleich | leeres Grid durch Not-set Cards ersetzen; kein Demo-Fallback | P0 |
+| `/today` | Delta Summary | Metric / Trend | echte 0 fuer Tasks/Inbox/Projects; unknown als `-` | lokale Counts | Demo Metrics | 3-6 metrics | Open source workbench | indirekt | `DeltaSummary` | gleich | State-Meta und 0-vs-unknown-Vertrag dokumentieren/implementieren | P1 |
+| `/today` | Decisions & Artifacts | Collection | je ein Empty State fuer Decisions und Artifacts | Manual Projects/Goals als Artifacts | Demo Rows | sichtbare Rows | Add decision/artifact spaeter | Project/Goal via Settings teilweise | `DecisionRows`, `ArtifactRows` | gleich | aktuell leere Sektionen ohne Empty Copy | P1 |
+| `/today` | Closing Review / Carry Forward | Metric / Collection | Not started / Not saved Cards; Carry Forward leer mit Copy | offene Manual Tasks als Carry Forward | Demo Closing Cards | signals + 4 carry items | Start daily review | nein | `ClosingReview` | gleich | Review-Signals leer; CTA fehlt; Review Records nicht im Manual Store | P0 |
+| `/calendar` | Week / Day Timeline | Timeline / Calendar | Raster bleibt; Empty State im Raster: keine Termine/Zeitbloecke | Manual timed Tasks korrekt platziert | Demo Blocks | week/day visible blocks | Create block / task | Task via Settings; Calendar create nur client-local | `CalendarWeekSurface`, `CalendarTimedBlock` | gleich | `data-content-state`; Empty-Copy auf R1.4b-Text; persistente Create-Wahrheit klaeren | P0 |
+| `/calendar` | Month / Year Surface | Timeline / Calendar | Month einmaliger Empty State; Year nicht 12x `No markers` dominant | Dated tasks/projects als Marker | Demo Markers | 42 cells / 12 months | Select day/month | nein | `CalendarMonthSurface`, `CalendarYearSurface` | gleich | Year-Empty weniger repetitiv; State-Meta | P1 |
+| `/calendar` | Scope / Filters | Control / Collection Filter | Filter sichtbar, keine unabsichtlich offene Overlay-Darstellung | filtert echte Blocks | Demo Scope Row | filter set | Change scope | nein | `CalendarScopeRow` | gleich | Empty-Screenshot auf offen sichtbares Scope-Dropdown pruefen; responsive duplicate scope scopen | P1 |
+| `/calendar` | Right Inspector | Inspector / Detail | Selected Day / Empty Slot; kein synthetischer Fake-Block | echter Task/Project Block | Demo selected block | 1 selected context | Create dated task | Task via Settings; UI-create client-local | `CalendarRightPanel` | gleich | `No time block selected`, `Manual profile`, `local mock` durch natuerliche EmptyInspector Copy ersetzen | P1 |
+| `/calendar` | Planning Queue | Collection | ein Empty State fuer Tasks/Open loops/Reviews | unscheduled Manual Tasks bleiben in Queue | Demo Queue | 4 visible items | Schedule / create task | Task via Settings | `PlanningQueue` | gleich | leere Queue rendert aktuell keine Empty Copy; Reviews `not wired` vermeiden | P1 |
+| `/portfolio` | Summary / Filters / Tabs | Metric / Collection | 0 Counts und Tabs/Filter bleiben | Manual Tasks/Projects/Goals gezaehlt | Demo Stats | 6 stat cards | Filter / view | Task/Project/Goal via Settings | `PortfolioSummaryStrip`, `PortfolioFilterBar` | gleich | `data-content-state`; Skill Manual-Gap ausweisen | P0 |
+| `/portfolio` | Active Portfolio List | Collection / Inspector | ein Empty State pro View/Scope; nicht generisch fuer Entity-Typen | Manual Tasks/Projects/Goals mit gleichen Rows | Demo Rows | sichtbare Liste | Open entity / create entity | Task/Project/Goal via Settings | `PortfolioEntityList` | gleich | Empty Copy pro `?view=tasks|projects|goals|skills`; Add/Create CTA zur existierenden Settings-Quelle | P0 |
+| `/portfolio` | Context Panel | Inspector / Detail | `No selected entity` Shell bleibt | echtes selected Entity | Demo selected Entity | 1 selected entity | Open source | ja fuer core entities | `PortfolioContextPanel` | gleich | Empty Text nicht nur Filterproblem; Selectoren | P1 |
+| `/portfolio` | Query Views | Collection Filter | alle vier Views bleiben ohne Demo-Entities | Manual Tasks/Projects/Goals; Skills leer/deferred | Demo tasks/projects/goals/skills | per view | View switch | Skills nein | `PortfolioPage` | gleich | `?view=tasks`, `projects`, `goals`, `skills` gezielt testen; Dashboard Active Portfolio Konsistenz | P0 |
+| `/resources` | KPI / Summary Strip | Metric | 0 oder `-`; keine Demozahlen `128/12/34/9/21/46` | lokale Resource Counts spaeter | Demo KPIs | 6 stats | Save resource | nein | `ResourceSummaryStrip` | generisch sanitisiert, keine Resource-Quelle | explizites Resource VM statt Sanitizer; Demo-Leak P0 pruefen/fixen; Selectoren | P0 |
+| `/resources` | Save Resource / Quick Capture | Capture | Shell sichtbar; Save deaktiviert oder klar deferred, solange kein Manual Store existiert | lokale Resource Create spaeter | Demo/static preview | 1 capture form | Save Resource | nein | `SaveResourceCard` | gleich | Readonly-Felder und aktiver Button duerfen keinen echten Save behaupten | P0 |
+| `/resources` | Main Library | Collection | genau ein Empty State: `Noch keine Ressourcen gespeichert.` | echte Resource Rows spaeter | Demo Rows | visible library rows | Save resource | nein | Resource row links | same shell, empty data | Content-State selectors; Manual Resource source deferred dokumentieren | P1 |
+| `/resources` | Relation Inspector | Inspector / Detail | `Keine Ressource ausgewaehlt` | echter selected Resource | Demo Inspector | 1 resource | Select resource | nein | `ResourceRelationInspector` | same shell | mock-literal empty texts ersetzen; keine Demo-Kontextgruppen in Empty/Manual | P1 |
+| `/resources` | Knowledge Map | Chart / Inspector | Map-Shell plus `Noch keine Map-Daten`; keine Fake-Nodes | echte Beziehungen spaeter | Demo map | selected neighborhood | Select resource | nein | `ResourceKnowledgeMap` | same shell | keine dekorative Map ohne Daten; `No direct neighborhood...` Copy naturalisieren | P2 |
+| `/resources` | Review Queue / Workbench | Collection / Workflow | `Keine Ressourcen zur Pruefung`; eigene Workbench-Copy | lokale Review Items spaeter | Demo Review Queue | 4 queue items | Inspect / process | nein | `ReviewQueue`, `ResourceReviewWorkbench` | same shell | Review Queue und Workbench duerfen nicht dieselbe Empty Copy nutzen; Buttons deferred | P1 |
+| `/resources` | Recent Learnings / AI Hints | Collection | `Noch keine Learnings gespeichert`; Review-Hints leer | lokale Learnings spaeter | Demo Learnings / AI hints | 3-4 learnings | Open resource | nein | `RecentLearnings`, `AISuggestionsPanel` | same shell | keine mehrfach wiederholten `No local entry`/mock Texte; Content-State selectors | P2 |
+
+### R1.4b Implementation Plan In Slices
+
+#### R1.4b.1 - Inbox Content States
+
+Scope:
+
+- Queue Empty State, Active Item Empty Inspector, AI Suggested Planning,
+  Decision Checklist, Related Context und Page-level QA attributes.
+
+Dateien:
+
+- Lesen/aendern: `src/features/inbox/inbox-view-model.ts`,
+  `src/components/inbox/inbox-page.tsx`,
+  `src/features/profile-data/view-models.ts`,
+  `src/features/content-state/index.ts`.
+- Nicht aendern: Supabase, Auth, Migrationen, Demo-Fixtures, Dashboard Layout.
+
+Risiken:
+
+- Tote Buttons wirken wie echte Workflow-Mutationen.
+- Checklist-Vertrag 0/6 vs R1.4b 0/4 muss produktfachlich sauber gesetzt werden.
+
+Akzeptanzkriterien:
+
+- Empty Queue zeigt genau einen Empty State.
+- Empty Active Item ist ein Inspector-State, kein Fake-Item.
+- AI Apply ist ohne Empfehlung deaktiviert.
+- Manual Inbox Item nutzt dieselbe Row-/Detailstruktur wie Demo.
+- Relevante Widgets tragen `data-content-state`, `data-item-count`,
+  `data-capacity` falls relevant und `data-profile-id`.
+
+Tests:
+
+- `git diff --check`
+- `pnpm lint`
+- `pnpm exec tsc --noEmit --incremental false`
+- spaeter gezielter Playwright-Check fuer Demo/Empty/Manual Queue.
+
+Nicht-Ziele:
+
+- Keine AI-Engine, keine Conversion-Engine, keine Supabase-Persistenz.
+
+#### R1.4b.2 - Today Content States
+
+Scope:
+
+- PageFirstRunNotice, Opening Review Not-set Cards, Activity Stream Empty
+  State, Delta Summary State-Meta, Decisions/Artifacts Empty States,
+  Closing Review Not-started State und Carry Forward.
+
+Dateien:
+
+- Lesen/aendern: `src/features/today/today-view-model.ts`,
+  `src/features/today/today-page.tsx`,
+  `src/features/profile-data/view-models.ts`,
+  `src/features/content-state/index.ts`.
+
+Risiken:
+
+- Today darf keine Dashboard-Kopie werden.
+- Review-Records existieren noch nicht im Manual Store.
+
+Akzeptanzkriterien:
+
+- Empty Today bleibt als Day Memory Log strukturiert sichtbar.
+- Activity Stream hat einen zentralen Empty State.
+- Opening/Closing Review zeigen Not-set/Not-started, keine Demo-Leaks.
+- Manual Tasks und Inbox Items erscheinen konsistent zum Dashboard/Calendar.
+
+Tests:
+
+- Standardchecks plus spaeter Playwright fuer Manual Reset und Manual Partial.
+
+Nicht-Ziele:
+
+- Keine Daily-Review-Engine, keine neuen Records, keine Dashboard-Layoutarbeit.
+
+#### R1.4b.3 - Calendar Content States
+
+Scope:
+
+- Week/Day/Month/Year Empty States, Inspector Empty/Slot States, Planning Queue
+  Empty State, Scope/Filter Review und QA attributes.
+
+Dateien:
+
+- Lesen/aendern: `src/features/calendar/calendar-page.tsx`,
+  `src/features/calendar/calendar-view-model.ts`,
+  `src/features/calendar/components/calendar-right-panel.tsx`,
+  `src/features/calendar/components/calendar-scope-row.tsx`,
+  `src/features/profile-data/view-models.ts`.
+
+Risiken:
+
+- Client-local Calendar create darf nicht als persistente Manual-Mutation
+  erscheinen.
+- Tasks ohne Uhrzeit duerfen nicht in Fake-Slots landen.
+
+Akzeptanzkriterien:
+
+- Empty Raster bleibt stabil.
+- Manual timed Task liegt im richtigen Slot.
+- Untimed Tasks bleiben in Planning Queue.
+- Inspector zeigt Selected Day / Empty Slot ohne synthetischen Fake-Block.
+
+Tests:
+
+- Standardchecks plus gezielter Manual Task mit Datum, Startzeit und Dauer.
+
+Nicht-Ziele:
+
+- Keine Calendar-Sync-Integration, keine neue Calendar-Komponente.
+
+#### R1.4b.4 - Portfolio Content States
+
+Scope:
+
+- Summary/Filters, Active Portfolio List, Context Panel,
+  `?view=tasks|projects|goals|skills`, Manual core entity alignment.
+
+Dateien:
+
+- Lesen/aendern: `src/features/portfolio/**`,
+  `src/features/profile-data/view-models.ts`,
+  `src/components/dashboard/sections/active-portfolio-section.tsx`.
+
+Risiken:
+
+- Skills haben noch keine Manual-Quelle.
+- Empty Copy darf nicht nur Filter-Problem sein, wenn Profil leer ist.
+
+Akzeptanzkriterien:
+
+- Empty/Manual Reset zeigt keine Demo-Entity und keine Demo-Detailauswahl.
+- Manual Tasks/Projects/Goals verwenden dieselben Rows wie Demo.
+- Query Views sind separat pruefbar.
+- Dashboard Active Portfolio und `/portfolio` widersprechen sich nicht.
+
+Tests:
+
+- Standardchecks plus Manual Task/Project/Goal und vier Query Views.
+
+Nicht-Ziele:
+
+- Keine neue Portfolio-Datenquelle, keine Skill-Create-Engine.
+
+#### R1.4b.5 - Resources Content States
+
+Scope:
+
+- Explizite Resource Content-State-Metadaten fuer KPI Strip, Save Resource,
+  Library, Inspector, Map, Review Queue/Workbench, Recent Learnings und AI
+  Hints.
+
+Dateien:
+
+- Lesen/aendern: `src/features/resources/resources-view-model.ts`,
+  `src/features/resources/components/resources-page.tsx`,
+  `src/features/profile-data/area-view-models.ts`,
+  `src/features/profile-data/types.ts` nur falls Manual Resource Source im
+  bestaetigten Scope liegt.
+
+Risiken:
+
+- Bekannter Demo-Leak-Risikopunkt: KPI-Demozahlen in Empty/Manual.
+- Generic Sanitizer kann Demo-Copy verdecken, aber nicht fachlich korrekt
+  modellieren.
+
+Akzeptanzkriterien:
+
+- Empty/Manual zeigen keine Resource-Demozahlen und keine Demo-Ressourcen.
+- Save Resource ist ehrlich disabled/deferred oder persistiert bewusst im
+  Manual Store, falls spaeter freigegeben.
+- Jede Collection hat genau einen eigenen Empty State.
+- Relation-Empty-Copy ist fachlich, nicht mock-literal.
+
+Tests:
+
+- Standardchecks plus blocked-string scan und Screenshot-Review fuer
+  Empty/Manual.
+
+Nicht-Ziele:
+
+- Keine Resource-CRUD-Engine, keine Supabase, keine AI-Linking-Automation.
+
+#### R1.4b.6 - QA, E2E, Screenshot Review
+
+Scope:
+
+- Profile Boundary, selectors, Manual Reset/Partial, Demo-Leak Checks,
+  Empty-State Checks, responsive duplicate handling und
+  Dashboard/Calendar/Today consistency.
+
+Dateien:
+
+- Lesen/aendern: `tests/e2e/content-state-system.spec.ts`,
+  `tests/e2e/profile-boundary.spec.ts` falls vorhanden oder im Slice erzeugt,
+  `docs/qa/content-state-live-test-checklist.md`.
+
+Risiken:
+
+- Lokale Browser-/Socket-Sandbox kann Screenshot/E2E blockieren.
+- Voller App-Sweep ist ausserhalb R1.4b; Tests muessen auf die fuenf Routen
+  gescoped bleiben.
+
+Akzeptanzkriterien:
+
+- Demo bleibt V5-Referenz.
+- Empty/Manual Reset zeigen keine Demo-Fixtures.
+- Manual Partial ist fuer vorhandene lokale Flows sichtbar.
+- Selektoren sind stabil scoping-faehig.
+- Mobile/desktop Screenshots zeigen keine Layout-Kollapse.
+
+Tests:
+
+- `git diff --check`
+- `pnpm lint`
+- `pnpm exec tsc --noEmit --incremental false`
+- spaeter gezielt: `pnpm exec playwright test tests/e2e/content-state-system.spec.ts`
+
+Nicht-Ziele:
+
+- Kein Full-E2E-Sweep, solange nur Dokumentation oder ein einzelner Slice
+  umgesetzt wird.
+
 ## Legend
 
 - `OK`: Pattern funktioniert fachlich bereits weitgehend.
@@ -73,7 +369,7 @@ Nicht-Dashboard-Zeilen unten bleiben Audit-/Planungsstand fuer spaetere Slices.
 | `/portfolio` | Active Portfolio List | Collection / Inspector | OK: one EmptyState when no groups | Manual Tasks/Projects/Goals same rows | Demo Portfolio rows | scroll list | Open entity | ja via Settings core | `PortfolioEntityList` | gleich | Add manual Create CTA; Partial/Filled thresholds | P0 |
 | `/portfolio` | Context Panel | Inspector / Detail | OK: No selected entity state | Manual selected entity | Demo selected entity | 1 selected | Open source | ja via Settings core | `PortfolioContextPanel` | gleich | Empty text less filter-only when profile empty | P1 |
 | `/review/daily` | Daily Review Page | Boundary | Fix: `empty`/`manual` use ProfileBoundaryPage | none | Demo review shell | page shell | Start daily review | nein | route-local `SectionPanel` composition | Boundary for non-demo | Replace Boundary with same review shell and natural empty states | P0 |
-| `/resources` | Summary Metrics / Header | Metric | Partial: sanitized values, no content-state contract | no real Manual resources | Demo metrics | summary cards | Save resource | nein | `ResourcesPage` | same sanitized VM | State meta; unknown vs 0 | P1 |
+| `/resources` | Summary Metrics / Header | Metric | Fix: Screenshot-Review meldet Demo-KPI-Zahlen `128/12/34/9/21/46`; Codepfad ist nur generisch sanitisiert und ohne Content-State-Vertrag | no real Manual resources | Demo metrics | summary cards | Save resource | nein | `ResourcesPage` | same shell via generic sanitized VM | Explizites Resource ViewModel mit 0/unknown-Werten, State-Meta und Demo-Leak-Test | P0 |
 | `/resources` | Main Library | Collection | OK/Partial: `Noch keine Ressourcen` exists | no real Manual resources | Demo resource rows | visible library rows | Save resource | nein | resource row components | same, empty data | Manual Resource create deferred or implement; QA attributes | P1 |
 | `/resources` | Relation Inspector | Inspector / Detail | OK/Partial: no selected resource state exists | no real Manual resource | Demo inspector | 1 resource | Select resource | nein | inspector components | same | Relation empty texts are still mock-literal; natural copy | P1 |
 | `/resources` | Review Queue / Recent Learnings / Map | Collection / Chart | Partial: Empty states exist | no real Manual resources | Demo queues/learnings | section caps | Open resource | nein | resources sections | same | Avoid repeated `No edge modeled`; state meta per section | P2 |

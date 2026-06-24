@@ -1,7 +1,23 @@
+import { resolveContentStateMeta } from "@/features/content-state";
 import type { StrengthTrackerPageViewModel } from "./strength-tracker-types";
 
 export function getStrengthTrackerViewModel(): StrengthTrackerPageViewModel {
   return {
+    profileId: "demo",
+    contentStates: {
+      boundaries: resolveContentStateMeta({ capacity: 5, itemCount: 5 }),
+      header: resolveContentStateMeta({ capacity: 1, itemCount: 1 }),
+      loadRecovery: resolveContentStateMeta({ capacity: 4, itemCount: 4 }),
+      page: resolveContentStateMeta({ capacity: 8, itemCount: 8 }),
+      planner: resolveContentStateMeta({ capacity: 4, itemCount: 4 }),
+      progression: resolveContentStateMeta({ capacity: 6, itemCount: 6 }),
+      recentSets: resolveContentStateMeta({ capacity: 4, itemCount: 4 }),
+      review: resolveContentStateMeta({ capacity: 4, itemCount: 4 }),
+      rhythmBalance: resolveContentStateMeta({ capacity: 7, itemCount: 7 }),
+      summary: resolveContentStateMeta({ capacity: 6, itemCount: 6 }),
+      todayPlan: resolveContentStateMeta({ capacity: 4, itemCount: 4 }),
+      trend: resolveContentStateMeta({ capacity: 4, itemCount: 4 }),
+    },
     header: {
       breadcrumb: ["Life OS", "Health & Fitness", "Strength Tracker"],
       title: "Strength Tracker",

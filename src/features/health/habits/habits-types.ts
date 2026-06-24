@@ -1,3 +1,7 @@
+import type { ContentStateMeta } from "@/features/content-state";
+
+export type HabitsProfileId = "demo" | "empty" | "manual";
+
 export type HabitAccent =
   | "var(--accent-blue)"
   | "var(--accent-green)"
@@ -49,7 +53,8 @@ export type HabitPatternStatus =
   | "Useful"
   | "Uneven"
   | "Fragile"
-  | "Repair";
+  | "Repair"
+  | "No logs";
 
 export type HabitPatternRowViewModel = {
   habit: string;
@@ -86,13 +91,13 @@ export type TodayHabitScheduleItemViewModel = {
 
 export type HabitDetailFocusViewModel = {
   title: "Habit Detail Focus";
-  subtitle: "Selected habit: Evening shutdown";
-  habit: "Evening shutdown";
+  subtitle: string;
+  habit: string;
   target: string;
   frictionNote: string;
   sevenDayStatus: string;
   thirtyDayTrend: string;
-  actionLabel: "Start next repair";
+  actionLabel: string;
   progress: number;
   accent: HabitAccent;
 };
@@ -110,11 +115,23 @@ export type HabitBoundaryCardViewModel = {
 };
 
 export type HabitsAnalyticsPageViewModel = {
+  profileId: HabitsProfileId;
+  contentStates: {
+    page: ContentStateMeta;
+    header: ContentStateMeta;
+    summary: ContentStateMeta;
+    heatmap: ContentStateMeta;
+    patternTable: ContentStateMeta;
+    repairLoops: ContentStateMeta;
+    todaySchedule: ContentStateMeta;
+    detailFocus: ContentStateMeta;
+    weeklyRhythmInsights: ContentStateMeta;
+  };
   header: {
     breadcrumb: readonly ["Life OS", "Health & Fitness", "Habits"];
     title: "Habits";
     subtitle: string;
-    meta: "June 2026 · analytics detail";
+    meta: string;
     pills: readonly HabitSummaryMetricViewModel[];
     todaySignal: HabitSummaryMetricViewModel & {
       progress: number;
@@ -156,7 +173,7 @@ export type HabitsAnalyticsPageViewModel = {
   interpretation: InterpretationFooterViewModel;
   todaySchedule: {
     title: "Today Habit Schedule";
-    subtitle: "Habit actions in today's flow, not another task wall.";
+    subtitle: string;
     items: readonly TodayHabitScheduleItemViewModel[];
   };
   detailFocus: HabitDetailFocusViewModel;

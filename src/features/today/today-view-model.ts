@@ -1,3 +1,26 @@
+import {
+  resolveContentStateMeta,
+  type ContentStateMeta,
+} from "@/features/content-state";
+
+export type TodayProfileId = "demo" | "empty" | "manual";
+
+export type TodayEmptyState = {
+  title: string;
+  description: string;
+};
+
+export type TodayContentStates = {
+  page: ContentStateMeta;
+  header: ContentStateMeta;
+  activityStream: ContentStateMeta;
+  openingReview: ContentStateMeta;
+  deltaSummary: ContentStateMeta;
+  decisionsArtifacts: ContentStateMeta;
+  closingReview: ContentStateMeta;
+  carryForward: ContentStateMeta;
+};
+
 export type TodayStatusPillViewModel = {
   label: string;
   accent: string;
@@ -97,11 +120,15 @@ export type TodayContractViewModel = {
 };
 
 export type TodayViewModel = {
+  profileId: TodayProfileId;
+  contentStates: TodayContentStates;
+  firstRunNotice?: TodayEmptyState;
   header: TodayHeaderViewModel;
   activityStream: {
     title: "Activity Stream";
     subtitle: string;
     events: TodayActivityEventViewModel[];
+    emptyState: TodayEmptyState;
   };
   openingReview: {
     title: "Opening Review / Morning Context";
@@ -117,22 +144,26 @@ export type TodayViewModel = {
     title: "Decisions Ledger";
     subtitle: string;
     decisions: TodayDecisionViewModel[];
+    emptyState: TodayEmptyState;
   };
   carryForward: {
     title: "Carry Forward";
     subtitle: string;
     items: TodayCarryForwardItemViewModel[];
     firstMove: string;
+    emptyState: TodayEmptyState;
   };
   closingReview: {
     title: "Closing Review / Day Closeout";
     subtitle: string;
     signals: TodayReviewSignalViewModel[];
+    emptyState: TodayEmptyState;
   };
   evidenceArtifacts: {
     title: "Evidence & Artifacts";
     subtitle: string;
     artifacts: TodayArtifactViewModel[];
+    emptyState: TodayEmptyState;
   };
   contract: TodayContractViewModel;
   pageContract: {
@@ -146,6 +177,76 @@ export type TodayViewModel = {
 
 function activitySortValue(event: TodayActivityEventViewModel) {
   return event.dateTime ?? event.timeLabel;
+}
+
+const todayStateCapacities = {
+  activityStream: 9,
+  carryForward: 4,
+  closingReview: 4,
+  decisionsArtifacts: 6,
+  deltaSummary: 6,
+  header: 1,
+  openingReview: 6,
+  page: 9,
+} as const;
+
+export function buildTodayContentStates({
+  activityEventCount,
+  carryForwardCount,
+  closingReviewCount,
+  decisionsArtifactsCount,
+  deltaValueCount,
+  openingReviewCount,
+}: Readonly<{
+  activityEventCount: number;
+  carryForwardCount: number;
+  closingReviewCount: number;
+  decisionsArtifactsCount: number;
+  deltaValueCount: number;
+  openingReviewCount: number;
+}>): TodayContentStates {
+  const pageItemCount =
+    activityEventCount +
+    carryForwardCount +
+    closingReviewCount +
+    decisionsArtifactsCount +
+    deltaValueCount +
+    openingReviewCount;
+
+  return {
+    activityStream: resolveContentStateMeta({
+      capacity: todayStateCapacities.activityStream,
+      itemCount: activityEventCount,
+    }),
+    carryForward: resolveContentStateMeta({
+      capacity: todayStateCapacities.carryForward,
+      itemCount: carryForwardCount,
+    }),
+    closingReview: resolveContentStateMeta({
+      capacity: todayStateCapacities.closingReview,
+      itemCount: closingReviewCount,
+    }),
+    decisionsArtifacts: resolveContentStateMeta({
+      capacity: todayStateCapacities.decisionsArtifacts,
+      itemCount: decisionsArtifactsCount,
+    }),
+    deltaSummary: resolveContentStateMeta({
+      capacity: todayStateCapacities.deltaSummary,
+      itemCount: deltaValueCount,
+    }),
+    header: resolveContentStateMeta({
+      capacity: todayStateCapacities.header,
+      itemCount: pageItemCount > 0 ? 1 : 0,
+    }),
+    openingReview: resolveContentStateMeta({
+      capacity: todayStateCapacities.openingReview,
+      itemCount: openingReviewCount,
+    }),
+    page: resolveContentStateMeta({
+      capacity: todayStateCapacities.page,
+      itemCount: pageItemCount,
+    }),
+  };
 }
 
 export function getTodayViewModel(): TodayViewModel {
@@ -319,6 +420,15 @@ export function getTodayViewModel(): TodayViewModel {
   );
 
   return {
+    profileId: "demo",
+    contentStates: buildTodayContentStates({
+      activityEventCount: activityEvents.length,
+      carryForwardCount: 3,
+      closingReviewCount: 4,
+      decisionsArtifactsCount: 10,
+      deltaValueCount: 6,
+      openingReviewCount: 6,
+    }),
     header: {
       eyebrow: "DAY MEMORY LOG",
       title: "Today",
@@ -353,6 +463,11 @@ export function getTodayViewModel(): TodayViewModel {
       subtitle:
         "Timeline of planned, current and logged activity.",
       events: activityEvents,
+      emptyState: {
+        title: "Noch keine Tagesereignisse",
+        description:
+          "Geplante Aufgaben, aktuelle Blöcke und geloggte Entscheidungen erscheinen hier.",
+      },
     },
     openingReview: {
       title: "Opening Review / Morning Context",
@@ -441,6 +556,11 @@ export function getTodayViewModel(): TodayViewModel {
     decisionsLedger: {
       title: "Decisions Ledger",
       subtitle: "Explicit choices made today.",
+      emptyState: {
+        title: "Noch keine Entscheidungen oder Artefakte",
+        description:
+          "Gespeicherte Entscheidungen, Screenshots, Notizen oder Links erscheinen hier.",
+      },
       decisions: [
         {
           label: "Decision 1",
@@ -471,6 +591,11 @@ export function getTodayViewModel(): TodayViewModel {
     carryForward: {
       title: "Carry Forward",
       subtitle: "Open loops and tomorrow candidates.",
+      emptyState: {
+        title: "Kein Carry Forward",
+        description:
+          "Offene Aufgaben und nächste Bewegungen erscheinen hier nach echter Tagesarbeit.",
+      },
       items: [
         {
           label: "Open loop",
@@ -493,6 +618,11 @@ export function getTodayViewModel(): TodayViewModel {
     closingReview: {
       title: "Closing Review / Day Closeout",
       subtitle: "Final state, open loops and tomorrow handoff.",
+      emptyState: {
+        title: "Closing Review nicht gestartet",
+        description:
+          "Der Tagesabschluss bleibt sichtbar, bis ein Review gespeichert wird.",
+      },
       signals: [
         {
           label: "Evening Mood",
@@ -523,6 +653,11 @@ export function getTodayViewModel(): TodayViewModel {
     evidenceArtifacts: {
       title: "Evidence & Artifacts",
       subtitle: "Objects produced or changed today.",
+      emptyState: {
+        title: "Noch keine Artefakte",
+        description:
+          "Gespeicherte Screenshots, Notizen, Links oder Projektbewegungen erscheinen hier.",
+      },
       artifacts: [
         {
           type: "Figma frame",

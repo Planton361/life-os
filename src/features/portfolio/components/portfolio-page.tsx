@@ -1,5 +1,6 @@
 "use client";
 
+import type { ContentStateMeta } from "@/features/content-state";
 import { useMemo } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
@@ -173,6 +174,18 @@ function getViewLabel(viewModel: PortfolioViewModel, view: PortfolioView) {
   );
 }
 
+function contentStateAttributes(
+  meta: ContentStateMeta,
+  profileId: PortfolioViewModel["profileId"],
+) {
+  return {
+    "data-capacity": meta.capacity?.toString() ?? undefined,
+    "data-content-state": meta.state,
+    "data-item-count": meta.itemCount.toString(),
+    "data-profile-id": profileId,
+  };
+}
+
 export function PortfolioPage({
   viewModel,
 }: Readonly<{
@@ -227,11 +240,13 @@ export function PortfolioPage({
 
   const selectedStatusLabel = selectedEntity
     ? portfolioStatusMeta[selectedEntity.status].label
-    : "none";
+    : "keine Auswahl";
 
   return (
     <div
       className="mx-auto flex w-full max-w-[2208px] flex-col gap-2 pb-6 xl:h-[calc(100dvh-1.25rem)] xl:min-h-0 xl:pb-0"
+      data-portfolio-section="page"
+      {...contentStateAttributes(viewModel.contentStates.page, viewModel.profileId)}
       id="portfolio-page"
     >
       <PortfolioPageHeader
@@ -283,6 +298,7 @@ export function PortfolioPage({
       <div className="grid min-w-0 gap-2 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(0,1fr)_minmax(360px,430px)] 2xl:grid-cols-[minmax(0,1fr)_minmax(420px,520px)]">
         <PortfolioEntityList
           activeViewLabel={getViewLabel(viewModel, activeView)}
+          contentState={viewModel.contentStates.entityList}
           entities={visibleEntities}
           getEntityHref={(entityId) =>
             createPortfolioHref(
@@ -293,21 +309,25 @@ export function PortfolioPage({
               pathname,
             )
           }
+          profileId={viewModel.profileId}
           selectedEntityId={selectedEntity?.id ?? null}
         />
         <div className="grid min-w-0 gap-2 xl:min-h-0">
-          <PortfolioContextPanel entity={selectedEntity} />
+          <PortfolioContextPanel
+            contentState={viewModel.contentStates.contextPanel}
+            entity={selectedEntity}
+            profileId={viewModel.profileId}
+          />
           <section
             aria-label="Selected entity state"
             className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.36)] px-3 py-2"
           >
             <p className="text-[10px] leading-4 text-[var(--text-muted)]">
-              Selected state is URL-driven and UI-only:{" "}
+              Auswahlstatus:{" "}
               <span className="font-semibold text-[var(--text-secondary)]">
-                {selectedEntity?.title ?? "none"}
+                {selectedEntity?.title ?? "Keine Entity ausgewählt"}
               </span>{" "}
-              / {selectedStatusLabel}. No persistence or data mutation runs in
-              this MVP.
+              / {selectedStatusLabel}.
             </p>
           </section>
         </div>

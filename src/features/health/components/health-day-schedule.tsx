@@ -1,8 +1,13 @@
 import { Pill, accentStyle } from "@/components/layout/route-page-primitives";
+import {
+  contentStateDataAttributes,
+  type ContentStateMeta,
+} from "@/features/content-state";
 import { cn } from "@/lib/cn";
 import type {
   HealthScheduleItemViewModel,
   HealthScheduleViewModel,
+  HealthProfileId,
 } from "../types";
 import { ActionLink, SectionEmptyState } from "./health-overview-primitives";
 
@@ -21,13 +26,19 @@ function statusTone(status: HealthScheduleItemViewModel["status"]) {
 export function HealthDaySchedule({
   data,
   className,
+  profileId,
+  state,
 }: Readonly<{
   data: HealthScheduleViewModel;
   className?: string;
+  profileId: HealthProfileId;
+  state: ContentStateMeta;
 }>) {
   return (
     <aside
       aria-labelledby="today-health-schedule-heading"
+      data-health-section="schedule"
+      {...contentStateDataAttributes(state, profileId)}
       className={cn(
         "min-w-0 overflow-hidden rounded-[18px] border border-[rgba(221,107,95,.20)] bg-[rgba(15,23,36,.82)] shadow-[0_8px_22px_rgba(0,0,0,.12)] xl:flex xl:min-h-0 xl:flex-col",
         className,

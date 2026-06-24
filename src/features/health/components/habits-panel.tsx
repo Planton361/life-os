@@ -1,6 +1,11 @@
 import { accentStyle } from "@/components/layout/route-page-primitives";
+import type { ContentStateMeta } from "@/features/content-state";
 import { cn } from "@/lib/cn";
-import type { HabitHeatmapRowViewModel, HabitsViewModel } from "../types";
+import type {
+  HabitHeatmapRowViewModel,
+  HabitsViewModel,
+  HealthProfileId,
+} from "../types";
 import {
   ActionLink,
   HealthMetricCard,
@@ -62,13 +67,20 @@ function HabitHeatmapRow({
 
 export function HabitsPanel({
   data,
+  profileId,
+  state,
 }: Readonly<{
   data: HabitsViewModel;
+  profileId: HealthProfileId;
+  state: ContentStateMeta;
 }>) {
   return (
     <HealthPanel
       accent="var(--accent-cyan)"
       badge={data.badge}
+      contentState={state}
+      profileId={profileId}
+      sectionName="habits"
       subtitle={data.subtitle}
       title={data.title}
     >

@@ -1,7 +1,23 @@
+import { resolveContentStateMeta } from "@/features/content-state";
 import type { RunningTrackerPageViewModel } from "./running-tracker-types";
 
 export function getRunningTrackerViewModel(): RunningTrackerPageViewModel {
   return {
+    profileId: "demo",
+    contentStates: {
+      boundaries: resolveContentStateMeta({ capacity: 4, itemCount: 4 }),
+      context: resolveContentStateMeta({ capacity: 6, itemCount: 6 }),
+      distanceTrend: resolveContentStateMeta({ capacity: 10, itemCount: 10 }),
+      header: resolveContentStateMeta({ capacity: 1, itemCount: 1 }),
+      loadRecovery: resolveContentStateMeta({ capacity: 3, itemCount: 3 }),
+      page: resolveContentStateMeta({ capacity: 8, itemCount: 8 }),
+      planner: resolveContentStateMeta({ capacity: 4, itemCount: 4 }),
+      recentRuns: resolveContentStateMeta({ capacity: 4, itemCount: 4 }),
+      review: resolveContentStateMeta({ capacity: 4, itemCount: 4 }),
+      rhythm: resolveContentStateMeta({ capacity: 7, itemCount: 7 }),
+      summary: resolveContentStateMeta({ capacity: 6, itemCount: 6 }),
+      todayPlan: resolveContentStateMeta({ capacity: 4, itemCount: 4 }),
+    },
     header: {
       breadcrumb: ["Life OS", "Health & Fitness", "Running Tracker"],
       title: "Running Tracker",

@@ -1,3 +1,7 @@
+import type { ContentStateMeta } from "@/features/content-state";
+
+export type StrengthProfileId = "demo" | "empty" | "manual";
+
 export type StrengthAccent =
   | "var(--accent-blue)"
   | "var(--accent-green)"
@@ -35,6 +39,7 @@ export type EquipmentType =
 export type StrengthActionViewModel = {
   label: string;
   variant: "primary" | "secondary" | "quiet";
+  disabled?: boolean;
 };
 
 export type StrengthPillViewModel = {
@@ -135,6 +140,21 @@ export type StrengthBoundaryViewModel = {
 };
 
 export type StrengthTrackerPageViewModel = {
+  profileId: StrengthProfileId;
+  contentStates: {
+    page: ContentStateMeta;
+    header: ContentStateMeta;
+    summary: ContentStateMeta;
+    planner: ContentStateMeta;
+    todayPlan: ContentStateMeta;
+    review: ContentStateMeta;
+    rhythmBalance: ContentStateMeta;
+    loadRecovery: ContentStateMeta;
+    progression: ContentStateMeta;
+    trend: ContentStateMeta;
+    recentSets: ContentStateMeta;
+    boundaries: ContentStateMeta;
+  };
   header: {
     breadcrumb: readonly string[];
     title: string;

@@ -1,5 +1,6 @@
 "use client";
 
+import type { ContentStateMeta } from "@/features/content-state";
 import {
   EmptyState,
   Pill,
@@ -124,6 +125,18 @@ function createResourceHref(
   return query ? `${pathname}?${query}` : pathname;
 }
 
+function contentStateAttributes(
+  meta: ContentStateMeta,
+  profileId: ResourcesViewModel["profileId"],
+) {
+  return {
+    "data-capacity": meta.capacity?.toString() ?? undefined,
+    "data-content-state": meta.state,
+    "data-item-count": meta.itemCount.toString(),
+    "data-profile-id": profileId,
+  };
+}
+
 function getResourceById(resources: ResourceItem[], id: string) {
   return resources.find((resource) => resource.id === id);
 }
@@ -207,14 +220,20 @@ function ResourcesPageHeader({
 }
 
 function ResourceSummaryStrip({
+  contentState,
+  profileId,
   stats,
 }: Readonly<{
+  contentState: ContentStateMeta;
+  profileId: ResourcesViewModel["profileId"];
   stats: ResourceSummaryStat[];
 }>) {
   return (
     <section
       aria-label="Resource summary"
       className="grid gap-2 sm:grid-cols-2 xl:grid-cols-6"
+      data-resources-section="summary"
+      {...contentStateAttributes(contentState, profileId)}
     >
       {stats.map((stat, index) => (
         <article
@@ -499,11 +518,15 @@ function ResourceControls({
 }
 
 function ResourceLibrary({
+  contentState,
   makeHref,
+  profileId,
   resources,
   selectedResource,
 }: Readonly<{
+  contentState: ContentStateMeta;
   makeHref: (updates: ResourceHrefUpdates) => string;
+  profileId: ResourcesViewModel["profileId"];
   resources: ResourceItem[];
   selectedResource: ResourceItem | null;
 }>) {
@@ -520,7 +543,9 @@ function ResourceLibrary({
     <section
       aria-labelledby="resources-library-heading"
       className="flex min-w-0 flex-col overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.82)] shadow-[0_8px_22px_rgba(0,0,0,.12)] xl:h-full xl:min-h-0 xl:flex-1"
+      {...contentStateAttributes(contentState, profileId)}
       data-resource-library
+      data-resources-section="library"
     >
       <div className="border-b border-[var(--border-subtle)] bg-[rgba(18,28,43,.48)] px-3 py-3 xl:px-2.5 xl:py-2">
         <div className="flex flex-wrap items-start justify-between gap-2">
@@ -672,11 +697,19 @@ function ResourceLibrary({
   );
 }
 
-function ResourceRelationEmptyInspector() {
+function ResourceRelationEmptyInspector({
+  contentState,
+  profileId,
+}: Readonly<{
+  contentState: ContentStateMeta;
+  profileId: ResourcesViewModel["profileId"];
+}>) {
   return (
     <aside
       aria-labelledby="selected-resource-heading"
       className="flex min-w-0 flex-col overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.86)] shadow-[0_8px_22px_rgba(0,0,0,.12)] xl:h-full xl:min-h-0 xl:flex-1"
+      data-resources-section="relation-inspector"
+      {...contentStateAttributes(contentState, profileId)}
     >
       <div className="border-b border-[var(--border-subtle)] bg-[rgba(18,28,43,.50)] px-3 py-3 xl:px-2.5 xl:py-2">
         <div className="min-w-0">
@@ -687,7 +720,7 @@ function ResourceRelationEmptyInspector() {
             className="mt-1 text-[20px] font-semibold leading-6 text-[var(--text-primary)] xl:text-[16px] xl:leading-5"
             id="selected-resource-heading"
           >
-            Keine Ressource ausgewaehlt
+            Keine Ressource ausgewählt
           </h2>
         </div>
       </div>
@@ -763,13 +796,17 @@ function ConnectionList({
 
 function ResourceRelationInspector({
   clusters,
+  contentState,
   makeHref,
+  profileId,
   resource,
   resources,
   relations,
 }: Readonly<{
   clusters: ResourceCluster[];
+  contentState: ContentStateMeta;
   makeHref: (updates: ResourceHrefUpdates) => string;
+  profileId: ResourcesViewModel["profileId"];
   resource: ResourceItem;
   resources: ResourceItem[];
   relations: ResourceRelation[];
@@ -814,6 +851,8 @@ function ResourceRelationInspector({
     <aside
       aria-labelledby="selected-resource-heading"
       className="flex min-w-0 flex-col overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.86)] shadow-[0_8px_22px_rgba(0,0,0,.12)] xl:h-full xl:min-h-0 xl:flex-1"
+      data-resources-section="relation-inspector"
+      {...contentStateAttributes(contentState, profileId)}
     >
       <div className="border-b border-[var(--border-subtle)] bg-[rgba(18,28,43,.50)] px-3 py-3 xl:px-2.5 xl:py-2">
         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1009,15 +1048,19 @@ function DetailBlock({
 
 function ResourceKnowledgeMap({
   clusters,
+  contentState,
   makeHref,
   mapScopes,
+  profileId,
   relations,
   resources,
   selectedResource,
 }: Readonly<{
   clusters: ResourceCluster[];
+  contentState: ContentStateMeta;
   makeHref: (updates: ResourceHrefUpdates) => string;
   mapScopes: ResourceOption<string>[];
+  profileId: ResourcesViewModel["profileId"];
   relations: ResourceRelation[];
   resources: ResourceItem[];
   selectedResource: ResourceItem | null;
@@ -1027,6 +1070,8 @@ function ResourceKnowledgeMap({
       <section
         aria-labelledby="resources-map-heading"
         className="flex min-w-0 flex-col overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.82)] shadow-[0_8px_22px_rgba(0,0,0,.12)] xl:h-full xl:min-h-0"
+        data-resources-section="knowledge-map"
+        {...contentStateAttributes(contentState, profileId)}
       >
         <div className="border-b border-[var(--border-subtle)] bg-[rgba(18,28,43,.48)] px-3 py-3 xl:px-2.5 xl:py-2">
           <div className="flex flex-wrap items-start justify-between gap-2">
@@ -1084,6 +1129,8 @@ function ResourceKnowledgeMap({
     <section
       aria-labelledby="resources-map-heading"
       className="flex min-w-0 flex-col overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.82)] shadow-[0_8px_22px_rgba(0,0,0,.12)] xl:h-full xl:min-h-0"
+      data-resources-section="knowledge-map"
+      {...contentStateAttributes(contentState, profileId)}
     >
       <div className="border-b border-[var(--border-subtle)] bg-[rgba(18,28,43,.48)] px-3 py-3 xl:px-2.5 xl:py-2">
         <div className="flex flex-wrap items-start justify-between gap-2">
@@ -1236,19 +1283,25 @@ function ResourceKnowledgeMap({
 
 function ResourceReviewWorkbench({
   aiSuggestions,
+  contentState,
   items,
   makeHref,
+  profileId,
   resources,
 }: Readonly<{
   aiSuggestions: ResourceAiSuggestion[];
+  contentState: ContentStateMeta;
   items: ResourceReviewQueueItem[];
   makeHref: (updates: ResourceHrefUpdates) => string;
+  profileId: ResourcesViewModel["profileId"];
   resources: ResourceItem[];
 }>) {
   return (
     <section
       aria-labelledby="resources-review-heading"
       className="flex min-w-0 flex-col overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.82)] shadow-[0_8px_22px_rgba(0,0,0,.12)] xl:h-full xl:min-h-0"
+      data-resources-section="review-workbench"
+      {...contentStateAttributes(contentState, profileId)}
     >
       <div className="border-b border-[var(--border-subtle)] bg-[rgba(18,28,43,.48)] px-3 py-3 xl:px-2.5 xl:py-2">
         <div className="flex flex-wrap items-start justify-between gap-2">
@@ -1329,7 +1382,7 @@ function ResourceReviewWorkbench({
             <div className="xl:col-span-2">
               <EmptyState
                 description="Neue Ressourcen erscheinen hier, sobald sie in der Workbench geprueft werden muessen."
-                title="Keine Ressourcen zur Pruefung"
+                title="Keine Ressourcen zur Prüfung"
               />
             </div>
           )}
@@ -1436,9 +1489,13 @@ function AISuggestionsPanel({
 }
 
 function ReviewQueue({
+  contentState,
   items,
+  profileId,
 }: Readonly<{
+  contentState: ContentStateMeta;
   items: ResourceReviewQueueItem[];
+  profileId: ResourcesViewModel["profileId"];
 }>) {
   const visibleItems = items.slice(0, 4);
 
@@ -1446,6 +1503,8 @@ function ReviewQueue({
     <section
       aria-labelledby="review-queue-heading"
       className="flex min-w-0 flex-col overflow-hidden rounded-[16px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.76)] xl:h-full xl:min-h-0"
+      data-resources-section="review-queue"
+      {...contentStateAttributes(contentState, profileId)}
     >
       <div className="border-b border-[var(--border-subtle)] bg-[rgba(18,28,43,.44)] px-3 py-3 xl:px-2.5 xl:py-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1496,9 +1555,13 @@ function ReviewQueue({
 }
 
 function RecentLearnings({
+  contentState,
   items,
+  profileId,
 }: Readonly<{
+  contentState: ContentStateMeta;
   items: RecentLearning[];
+  profileId: ResourcesViewModel["profileId"];
 }>) {
   const visibleItems = items.slice(0, WIDE_DESKTOP_RECENT_LEARNINGS_LIMIT);
 
@@ -1506,6 +1569,8 @@ function RecentLearnings({
     <section
       aria-labelledby="recent-learnings-heading"
       className="flex min-w-0 flex-col overflow-hidden rounded-[16px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.76)] xl:h-full xl:min-h-0"
+      data-resources-section="recent-learnings"
+      {...contentStateAttributes(contentState, profileId)}
     >
       <div className="border-b border-[var(--border-subtle)] bg-[rgba(18,28,43,.44)] px-3 py-3 xl:px-2.5 xl:py-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1625,10 +1690,16 @@ export function ResourcesPage({
   return (
     <div
       className="mx-auto flex min-h-screen w-full max-w-[2208px] flex-col gap-2 pb-8 xl:h-[calc(100dvh-1.25rem)] xl:min-h-0 xl:overflow-hidden xl:pb-0"
+      data-resources-section="page"
+      {...contentStateAttributes(viewModel.contentStates.page, viewModel.profileId)}
       id="resources-page"
     >
       <ResourcesPageHeader viewModel={viewModel} />
-      <ResourceSummaryStrip stats={viewModel.summaryStats} />
+      <ResourceSummaryStrip
+        contentState={viewModel.contentStates.summary}
+        profileId={viewModel.profileId}
+        stats={viewModel.summaryStats}
+      />
       <ResourceViewSwitcher
         activeView={activeView}
         makeHref={makeHref}
@@ -1657,20 +1728,28 @@ export function ResourcesPage({
           {activeView === "library" ? (
             <>
               <ResourceLibrary
+                contentState={viewModel.contentStates.library}
                 makeHref={makeHref}
+                profileId={viewModel.profileId}
                 resources={viewModel.resources}
                 selectedResource={selectedResource}
               />
               <div className="hidden xl:block xl:min-h-0">
-                <ReviewQueue items={viewModel.reviewQueue} />
+                <ReviewQueue
+                  contentState={viewModel.contentStates.reviewQueue}
+                  items={viewModel.reviewQueue}
+                  profileId={viewModel.profileId}
+                />
               </div>
             </>
           ) : null}
           {activeView === "map" ? (
             <ResourceKnowledgeMap
               clusters={viewModel.clusters}
+              contentState={viewModel.contentStates.knowledgeMap}
               makeHref={makeHref}
               mapScopes={viewModel.mapScopes}
+              profileId={viewModel.profileId}
               relations={viewModel.relations}
               resources={viewModel.resources}
               selectedResource={selectedResource}
@@ -1679,8 +1758,10 @@ export function ResourcesPage({
           {activeView === "review" ? (
             <ResourceReviewWorkbench
               aiSuggestions={viewModel.aiSuggestions}
+              contentState={viewModel.contentStates.reviewWorkbench}
               items={viewModel.reviewQueue}
               makeHref={makeHref}
+              profileId={viewModel.profileId}
               resources={viewModel.resources}
             />
           ) : null}
@@ -1689,23 +1770,36 @@ export function ResourcesPage({
           {selectedResource ? (
             <ResourceRelationInspector
               clusters={viewModel.clusters}
+              contentState={viewModel.contentStates.relationInspector}
               makeHref={makeHref}
+              profileId={viewModel.profileId}
               relations={viewModel.relations}
               resource={selectedResource}
               resources={viewModel.resources}
             />
           ) : (
-            <ResourceRelationEmptyInspector />
+            <ResourceRelationEmptyInspector
+              contentState={viewModel.contentStates.relationInspector}
+              profileId={viewModel.profileId}
+            />
           )}
           {activeView === "library" ? (
-            <RecentLearnings items={viewModel.recentLearnings} />
+            <RecentLearnings
+              contentState={viewModel.contentStates.recentLearnings}
+              items={viewModel.recentLearnings}
+              profileId={viewModel.profileId}
+            />
           ) : (
             <AISuggestionsPanel items={viewModel.aiSuggestions} />
           )}
         </div>
         {activeView !== "review" ? (
           <div className="xl:hidden">
-            <ReviewQueue items={viewModel.reviewQueue} />
+            <ReviewQueue
+              contentState={viewModel.contentStates.reviewQueue}
+              items={viewModel.reviewQueue}
+              profileId={viewModel.profileId}
+            />
           </div>
         ) : null}
       </div>

@@ -5,6 +5,7 @@ import {
 } from "@/components/layout/route-page-primitives";
 import Link from "next/link";
 import { cn } from "@/lib/cn";
+import type { ContentStateMeta } from "@/features/content-state";
 import {
   getPortfolioGroup,
   getPortfolioPrimaryReason,
@@ -16,7 +17,11 @@ import {
   portfolioTypeLabels,
   portfolioVisibilityReasonMeta,
 } from "../portfolio-style";
-import type { PortfolioEntity, PortfolioGroup } from "../types";
+import type {
+  PortfolioEntity,
+  PortfolioGroup,
+  PortfolioViewModel,
+} from "../types";
 
 function progressWidth(progress: number) {
   return `${Math.max(0, Math.min(100, progress))}%`;
@@ -187,23 +192,74 @@ function PortfolioGroupSection({
   );
 }
 
+function contentStateAttributes(
+  meta: ContentStateMeta,
+  profileId: PortfolioViewModel["profileId"],
+) {
+  return {
+    "data-capacity": meta.capacity?.toString() ?? undefined,
+    "data-content-state": meta.state,
+    "data-item-count": meta.itemCount.toString(),
+    "data-profile-id": profileId,
+  };
+}
+
+function getPortfolioEmptyStateCopy(activeViewLabel: string) {
+  const copy: Record<string, { title: string; description: string }> = {
+    All: {
+      title: "Noch keine Portfolio-Entities",
+      description:
+        "Tasks, Projekte und Ziele erscheinen hier, sobald sie im lokalen Profil existieren.",
+    },
+    Tasks: {
+      title: "Noch keine Portfolio-Tasks",
+      description:
+        "Lokale Tasks erscheinen hier, sobald sie eine Portfolio-Relevanz haben.",
+    },
+    Projects: {
+      title: "Noch keine Portfolio-Projekte",
+      description:
+        "Lokale Projekte erscheinen hier, sobald sie im Profil angelegt sind.",
+    },
+    Goals: {
+      title: "Noch keine Portfolio-Ziele",
+      description:
+        "Lokale Ziele erscheinen hier, sobald sie im Profil angelegt sind.",
+    },
+    Skills: {
+      title: "Noch keine Skills im Portfolio",
+      description:
+        "Skills haben aktuell keine lokale Quelle und bleiben außerhalb des Demo-Profils leer.",
+    },
+  };
+
+  return copy[activeViewLabel] ?? copy.All;
+}
+
 export function PortfolioEntityList({
   entities,
   selectedEntityId,
   activeViewLabel,
+  contentState,
   getEntityHref,
+  profileId,
 }: Readonly<{
   entities: PortfolioEntity[];
   selectedEntityId: string | null;
   activeViewLabel: string;
+  contentState: ContentStateMeta;
   getEntityHref: (entityId: string) => `/${string}`;
+  profileId: PortfolioViewModel["profileId"];
 }>) {
   const groups = groupEntities(entities);
+  const emptyStateCopy = getPortfolioEmptyStateCopy(activeViewLabel);
 
   return (
     <section
       aria-labelledby="active-portfolio-heading"
       className="overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.82)] shadow-[0_8px_22px_rgba(0,0,0,.12)] xl:min-h-0"
+      data-portfolio-section="entity-list"
+      {...contentStateAttributes(contentState, profileId)}
     >
       <div className="border-b border-[var(--border-subtle)] bg-[rgba(18,28,43,.48)] px-3 py-3">
         <div className="flex flex-wrap items-start justify-between gap-2">
@@ -235,8 +291,8 @@ export function PortfolioEntityList({
           ))
         ) : (
           <EmptyState
-            description="Adjust the entity type or scope filter. Portfolio keeps the context panel available when the list is empty."
-            title="No entities match this scope"
+            description={emptyStateCopy.description}
+            title={emptyStateCopy.title}
           />
         )}
       </div>

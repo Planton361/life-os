@@ -1,5 +1,7 @@
+import { resolveContentStateMeta } from "@/features/content-state";
 import type {
   RecentLearning,
+  ResourceProfileId,
   ResourceAiSuggestion,
   ResourceArea,
   ResourceAreaMeta,
@@ -1159,8 +1161,77 @@ const recentLearnings: RecentLearning[] = [
   },
 ];
 
-export function getResourcesViewModel(): ResourcesViewModel {
+const RESOURCES_CONTENT_CAPACITY = {
+  knowledgeMap: 6,
+  library: 8,
+  page: 8,
+  recentLearnings: 4,
+  relationInspector: 1,
+  reviewQueue: 4,
+  reviewWorkbench: 4,
+  summary: 6,
+} as const;
+
+export function buildResourcesContentStates({
+  aiSuggestionCount,
+  clusterCount,
+  recentLearningCount,
+  relationCount,
+  resourceCount,
+  reviewQueueCount,
+}: Readonly<{
+  aiSuggestionCount: number;
+  clusterCount: number;
+  recentLearningCount: number;
+  relationCount: number;
+  resourceCount: number;
+  reviewQueueCount: number;
+}>): ResourcesViewModel["contentStates"] {
   return {
+    page: resolveContentStateMeta({
+      capacity: RESOURCES_CONTENT_CAPACITY.page,
+      itemCount: resourceCount,
+    }),
+    summary: resolveContentStateMeta({
+      capacity: RESOURCES_CONTENT_CAPACITY.summary,
+      itemCount: resourceCount,
+    }),
+    library: resolveContentStateMeta({
+      capacity: RESOURCES_CONTENT_CAPACITY.library,
+      itemCount: resourceCount,
+    }),
+    relationInspector: resolveContentStateMeta({
+      capacity: RESOURCES_CONTENT_CAPACITY.relationInspector,
+      itemCount: resourceCount > 0 ? 1 : 0,
+    }),
+    reviewQueue: resolveContentStateMeta({
+      capacity: RESOURCES_CONTENT_CAPACITY.reviewQueue,
+      itemCount: reviewQueueCount,
+      hasHistory: resourceCount > 0,
+    }),
+    reviewWorkbench: resolveContentStateMeta({
+      capacity: RESOURCES_CONTENT_CAPACITY.reviewWorkbench,
+      itemCount: reviewQueueCount + aiSuggestionCount,
+      hasHistory: resourceCount > 0,
+    }),
+    recentLearnings: resolveContentStateMeta({
+      capacity: RESOURCES_CONTENT_CAPACITY.recentLearnings,
+      itemCount: recentLearningCount,
+      hasHistory: resourceCount > 0,
+    }),
+    knowledgeMap: resolveContentStateMeta({
+      capacity: RESOURCES_CONTENT_CAPACITY.knowledgeMap,
+      itemCount: relationCount + clusterCount,
+      hasHistory: resourceCount > 0,
+    }),
+  };
+}
+
+export function getResourcesViewModel(
+  profileId: ResourceProfileId = "demo",
+): ResourcesViewModel {
+  return {
+    profileId,
     header: {
       eyebrow: "Knowledge Library",
       title: "Resources",
@@ -1197,9 +1268,17 @@ export function getResourcesViewModel(): ResourcesViewModel {
     resources,
     relations,
     clusters,
-    selectedResource: resources[0],
+    selectedResource: resources[0] ?? null,
     reviewQueue,
     aiSuggestions,
     recentLearnings,
+    contentStates: buildResourcesContentStates({
+      aiSuggestionCount: aiSuggestions.length,
+      clusterCount: clusters.length,
+      recentLearningCount: recentLearnings.length,
+      relationCount: relations.length,
+      resourceCount: resources.length,
+      reviewQueueCount: reviewQueue.length,
+    }),
   };
 }

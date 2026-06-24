@@ -1,7 +1,18 @@
-import { Pill, accentStyle } from "@/components/layout/route-page-primitives";
+import {
+  EmptyState,
+  Pill,
+  accentStyle,
+} from "@/components/layout/route-page-primitives";
+import {
+  contentStateDataAttributes,
+  type ContentStateMeta,
+} from "@/features/content-state";
 import { cn } from "@/lib/cn";
 import type { ReactNode } from "react";
-import type { RunningTrackerPageViewModel } from "../running-tracker-types";
+import type {
+  RunningProfileId,
+  RunningTrackerPageViewModel,
+} from "../running-tracker-types";
 import {
   Dot,
   RunningActionButton,
@@ -16,23 +27,38 @@ type SectionClassName = {
   className?: string;
 };
 
+type RunningSectionState = {
+  profileId: RunningProfileId;
+  state: ContentStateMeta;
+};
+
 function MiniPanel({
   title,
   badge,
   accent,
   children,
   className,
+  contentState,
+  profileId,
+  sectionName,
 }: Readonly<
   SectionClassName & {
     title: string;
     badge?: string;
     accent: string;
+    contentState?: ContentStateMeta;
+    profileId?: RunningProfileId;
+    sectionName?: string;
     children: ReactNode;
   }
 >) {
   return (
     <section
       aria-labelledby={`${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-mini`}
+      {...(contentState && profileId
+        ? contentStateDataAttributes(contentState, profileId)
+        : {})}
+      {...(sectionName ? { "data-running-section": sectionName } : {})}
       className={cn(
         "min-w-0 overflow-hidden rounded-[14px] border border-[color-mix(in_srgb,var(--accent)_18%,var(--border-subtle))] bg-[rgba(15,23,36,.78)]",
         className,
@@ -83,11 +109,19 @@ function TinyStatus({
 
 export function RunningHeader({
   header,
+  profileId,
+  state,
 }: Readonly<{
   header: RunningTrackerPageViewModel["header"];
+  profileId: RunningProfileId;
+  state: ContentStateMeta;
 }>) {
   return (
-    <header className="min-w-0 overflow-hidden rounded-[18px] border border-[rgba(221,107,95,.16)] bg-[rgba(15,23,36,.82)] shadow-[0_8px_22px_rgba(0,0,0,.12)] xl:rounded-[16px]">
+    <header
+      className="min-w-0 overflow-hidden rounded-[18px] border border-[rgba(221,107,95,.16)] bg-[rgba(15,23,36,.82)] shadow-[0_8px_22px_rgba(0,0,0,.12)] xl:rounded-[16px]"
+      data-running-section="header"
+      {...contentStateDataAttributes(state, profileId)}
+    >
       <div className="grid gap-4 bg-[linear-gradient(90deg,rgba(221,107,95,.065),transparent_58%)] px-4 py-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] lg:items-center xl:gap-3 xl:px-3 xl:py-2.5">
         <div className="min-w-0">
           <p className="text-[10px] font-semibold text-[var(--accent-orange)] xl:leading-3">
@@ -152,13 +186,19 @@ export function RunningHeader({
 
 export function SummaryStrip({
   metrics,
+  profileId,
+  state,
 }: Readonly<{
   metrics: RunningTrackerPageViewModel["summary"];
+  profileId: RunningProfileId;
+  state: ContentStateMeta;
 }>) {
   return (
     <section
       aria-label="Running tracker summary"
       className="grid gap-2 sm:grid-cols-2 xl:grid-cols-6 xl:gap-1.5"
+      data-running-section="summary"
+      {...contentStateDataAttributes(state, profileId)}
     >
       {metrics.map((metric, index) => (
         <RunningMetricCard compact key={`running-summary-${index}`} metric={metric} />
@@ -187,18 +227,26 @@ function ChipGroup({
 export function BeginnerPlannerSection({
   planner,
   className,
+  profileId,
+  state,
 }: Readonly<
-  SectionClassName & {
+  SectionClassName &
+    RunningSectionState & {
     planner: RunningTrackerPageViewModel["planner"];
   }
 >) {
+  const hasSuggestedPlan = planner.suggestedPlan.steps.length > 0;
+
   return (
     <RunningPanel
       accent="var(--accent-orange)"
       badge="P0"
       bodyClassName="grid gap-4 xl:min-h-0 xl:gap-2"
       className={className}
+      contentState={state}
       p0
+      profileId={profileId}
+      sectionName="planner"
       subtitle={planner.subtitle}
       title={planner.title}
     >
@@ -262,38 +310,51 @@ export function BeginnerPlannerSection({
           <p className="mt-1 text-[12px] leading-5 text-[var(--text-secondary)] xl:text-[10px] xl:leading-3">
             {planner.suggestedPlan.detail}
           </p>
-          <ol className="mt-3 grid gap-2 xl:mt-2 xl:gap-1.5">
-            {planner.suggestedPlan.steps.map((step, index) => (
-              <li
-                className="grid grid-cols-[28px_minmax(0,1fr)] gap-2 rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_18%,var(--border-subtle))] bg-[rgba(11,17,28,.38)] p-2.5 xl:grid-cols-[22px_minmax(0,1fr)] xl:p-1.5"
-                key={`running-planner-step-${index}`}
-                style={accentStyle(step.accent)}
-              >
-                <span className="flex size-7 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--accent)_32%,transparent)] bg-[color-mix(in_srgb,var(--accent)_10%,transparent)] text-[11px] font-semibold text-[var(--text-primary)] xl:size-[22px] xl:text-[10px]">
-                  {index + 1}
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-semibold leading-5 text-[var(--text-primary)] xl:text-[12px] xl:leading-4">
-                    {step.label}
+          {hasSuggestedPlan ? (
+            <ol className="mt-3 grid gap-2 xl:mt-2 xl:gap-1.5">
+              {planner.suggestedPlan.steps.map((step, index) => (
+                <li
+                  className="grid grid-cols-[28px_minmax(0,1fr)] gap-2 rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_18%,var(--border-subtle))] bg-[rgba(11,17,28,.38)] p-2.5 xl:grid-cols-[22px_minmax(0,1fr)] xl:p-1.5"
+                  key={`running-planner-step-${index}`}
+                  style={accentStyle(step.accent)}
+                >
+                  <span className="flex size-7 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--accent)_32%,transparent)] bg-[color-mix(in_srgb,var(--accent)_10%,transparent)] text-[11px] font-semibold text-[var(--text-primary)] xl:size-[22px] xl:text-[10px]">
+                    {index + 1}
                   </span>
-                  <span className="block text-[10px] leading-4 text-[var(--text-secondary)] xl:leading-3">
-                    {step.detail}
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold leading-5 text-[var(--text-primary)] xl:text-[12px] xl:leading-4">
+                      {step.label}
+                    </span>
+                    <span className="block text-[10px] leading-4 text-[var(--text-secondary)] xl:leading-3">
+                      {step.detail}
+                    </span>
                   </span>
-                </span>
-              </li>
-            ))}
-          </ol>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <div className="mt-3">
+              <EmptyState
+                description="Sobald Laufdaten oder ein lokaler Plan existieren, erscheint hier ein Vorschlag."
+                title="Noch kein Laufkontext"
+              />
+            </div>
+          )}
 
-          <div className="mt-4 flex flex-wrap gap-2 xl:mt-2 xl:gap-1.5">
-            {planner.primaryActions.map((action, index) => (
-              <RunningActionButton action={action} key={`running-planner-primary-${index}`} />
-            ))}
-          </div>
-          <div className="mt-2 flex flex-wrap gap-2 border-t border-[var(--border-subtle)] pt-3 xl:gap-1.5 xl:pt-2">
-            {planner.secondaryActions.map((action, index) => (
-              <RunningActionButton action={action} key={`running-planner-secondary-${index}`} />
-            ))}
-          </div>
+          {planner.primaryActions.length > 0 ? (
+            <div className="mt-4 flex flex-wrap gap-2 xl:mt-2 xl:gap-1.5">
+              {planner.primaryActions.map((action, index) => (
+                <RunningActionButton action={action} key={`running-planner-primary-${index}`} />
+              ))}
+            </div>
+          ) : null}
+          {planner.secondaryActions.length > 0 ? (
+            <div className="mt-2 flex flex-wrap gap-2 border-t border-[var(--border-subtle)] pt-3 xl:gap-1.5 xl:pt-2">
+              {planner.secondaryActions.map((action, index) => (
+                <RunningActionButton action={action} key={`running-planner-secondary-${index}`} />
+              ))}
+            </div>
+          ) : null}
         </article>
       </div>
     </RunningPanel>
@@ -303,8 +364,11 @@ export function BeginnerPlannerSection({
 export function TodayRunPlanSection({
   todayPlan,
   className,
+  profileId,
+  state,
 }: Readonly<
-  SectionClassName & {
+  SectionClassName &
+    RunningSectionState & {
     todayPlan: RunningTrackerPageViewModel["todayPlan"];
   }
 >) {
@@ -313,18 +377,31 @@ export function TodayRunPlanSection({
       accent="var(--accent-red)"
       badge="P1"
       className={className}
+      contentState={state}
+      profileId={profileId}
+      sectionName="today-plan"
       title={todayPlan.title}
     >
       <p className="text-xl font-semibold leading-6 text-[var(--text-primary)]">
         {todayPlan.plan}
       </p>
-      <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-        {todayPlan.details.map((detail, index) => (
-          <RunningMetricCard compact key={`running-today-detail-${index}`} metric={detail} />
-        ))}
-      </div>
+      {todayPlan.details.length > 0 ? (
+        <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+          {todayPlan.details.map((detail, index) => (
+            <RunningMetricCard compact key={`running-today-detail-${index}`} metric={detail} />
+          ))}
+        </div>
+      ) : (
+        <div className="mt-3">
+          <EmptyState
+            description="Ein Laufplan erscheint, sobald Laufdaten oder ein lokaler Plan existieren."
+            title="Noch kein Laufplan"
+          />
+        </div>
+      )}
 
-      <div className="mt-4">
+      {todayPlan.checklist.length > 0 ? (
+        <div className="mt-4">
         <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
           Checklist
         </h3>
@@ -352,13 +429,16 @@ export function TodayRunPlanSection({
             </li>
           ))}
         </ul>
-      </div>
+        </div>
+      ) : null}
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        {todayPlan.actions.map((action, index) => (
-          <RunningActionButton action={action} key={`running-today-action-${index}`} />
-        ))}
-      </div>
+      {todayPlan.actions.length > 0 ? (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {todayPlan.actions.map((action, index) => (
+            <RunningActionButton action={action} key={`running-today-action-${index}`} />
+          ))}
+        </div>
+      ) : null}
     </RunningPanel>
   );
 }
@@ -366,8 +446,11 @@ export function TodayRunPlanSection({
 export function RecentRunReviewSection({
   review,
   className,
+  profileId,
+  state,
 }: Readonly<
-  SectionClassName & {
+  SectionClassName &
+    RunningSectionState & {
     review: RunningTrackerPageViewModel["review"];
   }
 >) {
@@ -376,36 +459,51 @@ export function RecentRunReviewSection({
       accent="var(--accent-yellow)"
       badge="P1/P2"
       className={className}
+      contentState={state}
+      profileId={profileId}
+      sectionName="review"
       title={review.title}
     >
       <p className="text-[13px] font-semibold leading-5 text-[var(--text-primary)]">
         {review.lastRun}
       </p>
-      <div className="mt-3 grid gap-2 sm:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
-        {review.metrics.map((metric, index) => (
-          <RunningMetricCard compact key={`running-review-metric-${index}`} metric={metric} />
-        ))}
-      </div>
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        {review.signals.map((signal, index) => (
-          <article
-            className="rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_18%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_5%,rgba(11,17,28,.46))] p-2.5"
-            key={`running-review-signal-${index}`}
-            style={accentStyle(signal.accent)}
-          >
-            <p className="text-[10px] font-semibold text-[var(--text-muted)]">
-              {signal.label}
-            </p>
-            <p className="mt-1 text-[13px] font-semibold leading-4 text-[var(--text-primary)]">
-              {signal.value}
-            </p>
-            <p className="mt-1 text-[10px] leading-4 text-[var(--text-secondary)]">
-              {signal.detail}
-            </p>
-          </article>
-        ))}
-      </div>
-      <div className="mt-3 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(168,183,204,.035)] p-3">
+      {review.metrics.length > 0 ? (
+        <div className="mt-3 grid gap-2 sm:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
+          {review.metrics.map((metric, index) => (
+            <RunningMetricCard compact key={`running-review-metric-${index}`} metric={metric} />
+          ))}
+        </div>
+      ) : (
+        <div className="mt-3">
+          <EmptyState
+            description="Laufreview erscheint nach dem ersten lokalen Lauf."
+            title="Noch kein letzter Lauf"
+          />
+        </div>
+      )}
+      {review.signals.length > 0 ? (
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {review.signals.map((signal, index) => (
+            <article
+              className="rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_18%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_5%,rgba(11,17,28,.46))] p-2.5"
+              key={`running-review-signal-${index}`}
+              style={accentStyle(signal.accent)}
+            >
+              <p className="text-[10px] font-semibold text-[var(--text-muted)]">
+                {signal.label}
+              </p>
+              <p className="mt-1 text-[13px] font-semibold leading-4 text-[var(--text-primary)]">
+                {signal.value}
+              </p>
+              <p className="mt-1 text-[10px] leading-4 text-[var(--text-secondary)]">
+                {signal.detail}
+              </p>
+            </article>
+          ))}
+        </div>
+      ) : null}
+      {review.learnings.length > 0 ? (
+        <div className="mt-3 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(168,183,204,.035)] p-3">
         <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
           Learnings
         </p>
@@ -423,10 +521,13 @@ export function RecentRunReviewSection({
           </span>{" "}
           {review.nextAdjustment}
         </p>
-      </div>
-      <div className="mt-3">
-        <RunningActionButton action={review.action} />
-      </div>
+        </div>
+      ) : null}
+      {review.action.label ? (
+        <div className="mt-3">
+          <RunningActionButton action={review.action} />
+        </div>
+      ) : null}
     </RunningPanel>
   );
 }
@@ -434,8 +535,11 @@ export function RecentRunReviewSection({
 export function WeeklyRhythmSection({
   rhythm,
   className,
+  profileId,
+  state,
 }: Readonly<
-  SectionClassName & {
+  SectionClassName &
+    RunningSectionState & {
     rhythm: RunningTrackerPageViewModel["rhythm"];
   }
 >) {
@@ -444,31 +548,41 @@ export function WeeklyRhythmSection({
       accent="var(--accent-cyan)"
       badge="P2"
       className={className}
+      contentState={state}
+      profileId={profileId}
+      sectionName="rhythm"
       subtitle={rhythm.subtitle}
       title={rhythm.title}
     >
-      <ol className="grid gap-2 sm:grid-cols-7 xl:grid-cols-1 2xl:grid-cols-7">
-        {rhythm.days.map((day, index) => (
-          <li
-            className="min-w-0 rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_18%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_5%,rgba(11,17,28,.44))] p-2"
-            key={`running-rhythm-day-${index}`}
-            style={accentStyle(day.accent)}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[10px] font-semibold text-[var(--text-muted)]">
-                {day.day}
-              </span>
-              <Dot accent={day.accent} active={day.active} />
-            </div>
-            <p className="mt-2 text-[11px] font-semibold leading-4 text-[var(--text-primary)]">
-              {day.label}
-            </p>
-            <p className="mt-1 text-[9px] leading-3 text-[var(--text-muted)]">
-              {day.status}
-            </p>
-          </li>
-        ))}
-      </ol>
+      {rhythm.days.length > 0 ? (
+        <ol className="grid gap-2 sm:grid-cols-7 xl:grid-cols-1 2xl:grid-cols-7">
+          {rhythm.days.map((day, index) => (
+            <li
+              className="min-w-0 rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_18%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_5%,rgba(11,17,28,.44))] p-2"
+              key={`running-rhythm-day-${index}`}
+              style={accentStyle(day.accent)}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] font-semibold text-[var(--text-muted)]">
+                  {day.day}
+                </span>
+                <Dot accent={day.accent} active={day.active} />
+              </div>
+              <p className="mt-2 text-[11px] font-semibold leading-4 text-[var(--text-primary)]">
+                {day.label}
+              </p>
+              <p className="mt-1 text-[9px] leading-3 text-[var(--text-muted)]">
+                {day.status}
+              </p>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <EmptyState
+          description="Wochenrhythmus erscheint nach lokalen Laufeinheiten."
+          title="Noch kein Laufrhythmus"
+        />
+      )}
     </RunningPanel>
   );
 }
@@ -476,8 +590,11 @@ export function WeeklyRhythmSection({
 export function LoadRecoverySection({
   loadRecovery,
   className,
+  profileId,
+  state,
 }: Readonly<
-  SectionClassName & {
+  SectionClassName &
+    RunningSectionState & {
     loadRecovery: RunningTrackerPageViewModel["loadRecovery"];
   }
 >) {
@@ -486,6 +603,9 @@ export function LoadRecoverySection({
       accent="var(--accent-yellow)"
       badge="P2"
       className={className}
+      contentState={state}
+      profileId={profileId}
+      sectionName="load-recovery"
       title={loadRecovery.title}
     >
       <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
@@ -519,27 +639,36 @@ export function LoadRecoverySection({
         <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
           Intensity split
         </h3>
-        <div className="mt-2 grid gap-2">
-          {loadRecovery.intensitySplit.map((split, index) => (
-            <div
-              className="grid grid-cols-[72px_minmax(0,1fr)_52px] items-center gap-2 text-[10px]"
-              key={`running-intensity-split-${index}`}
-              style={accentStyle(split.accent)}
-            >
-              <span className="font-semibold text-[var(--text-secondary)]">
-                {split.label}
-              </span>
-              <RunningProgressBar
-                accent={split.accent}
-                label={`${split.label} intensity split ${split.value}%`}
-                value={split.value}
-              />
-              <span className="text-right text-[var(--text-muted)]">
-                {split.value}% {split.detail}
-              </span>
-            </div>
-          ))}
-        </div>
+        {loadRecovery.intensitySplit.length > 0 ? (
+          <div className="mt-2 grid gap-2">
+            {loadRecovery.intensitySplit.map((split, index) => (
+              <div
+                className="grid grid-cols-[72px_minmax(0,1fr)_52px] items-center gap-2 text-[10px]"
+                key={`running-intensity-split-${index}`}
+                style={accentStyle(split.accent)}
+              >
+                <span className="font-semibold text-[var(--text-secondary)]">
+                  {split.label}
+                </span>
+                <RunningProgressBar
+                  accent={split.accent}
+                  label={`${split.label} intensity split ${split.value}%`}
+                  value={split.value}
+                />
+                <span className="text-right text-[var(--text-muted)]">
+                  {split.value}% {split.detail}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-2">
+            <EmptyState
+              description="Load- und Recovery-Kontext erscheint nach lokalen Laufdaten."
+              title="Noch keine Load-Daten"
+            />
+          </div>
+        )}
       </div>
 
       <p className="mt-3 rounded-[12px] border border-[rgba(221,107,95,.20)] bg-[rgba(221,107,95,.075)] p-3 text-[11px] font-semibold leading-4 text-[var(--text-primary)]">
@@ -554,18 +683,29 @@ export function DesktopRightColumn({
   review,
   rhythm,
   loadRecovery,
+  contentStates,
   className,
+  profileId,
 }: Readonly<
   SectionClassName & {
+    contentStates: RunningTrackerPageViewModel["contentStates"];
     todayPlan: RunningTrackerPageViewModel["todayPlan"];
     review: RunningTrackerPageViewModel["review"];
     rhythm: RunningTrackerPageViewModel["rhythm"];
     loadRecovery: RunningTrackerPageViewModel["loadRecovery"];
+    profileId: RunningProfileId;
   }
 >) {
   return (
     <div className={cn("hidden min-h-0 gap-2 xl:grid", className)}>
-      <MiniPanel accent="var(--accent-red)" badge="P1" title={todayPlan.title}>
+      <MiniPanel
+        accent="var(--accent-red)"
+        badge="P1"
+        contentState={contentStates.todayPlan}
+        profileId={profileId}
+        sectionName="today-plan"
+        title={todayPlan.title}
+      >
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
           <p className="text-[15px] font-semibold leading-5 text-[var(--text-primary)]">
             {todayPlan.plan}
@@ -576,64 +716,88 @@ export function DesktopRightColumn({
             ))}
           </div>
         </div>
-        <div className="mt-2 grid gap-1 sm:grid-cols-4 xl:grid-cols-2 2xl:grid-cols-4">
-          {todayPlan.details.map((detail, index) => (
-            <TinyStatus
-              accent={detail.accent}
-              key={`running-mini-detail-${index}`}
-              label={detail.label}
-              value={detail.value}
-            />
-          ))}
-        </div>
-        <ul className="mt-2 grid gap-1 sm:grid-cols-3 xl:grid-cols-2 2xl:grid-cols-3">
-          {todayPlan.checklist.map((item, index) => (
-            <li
-              className="flex min-h-6 items-center gap-1.5 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(168,183,204,.035)] px-2 text-[10px] leading-3 text-[var(--text-secondary)]"
-              key={`running-mini-checklist-${index}`}
-            >
-              <span
-                className={cn(
-                  "size-1.5 rounded-full",
-                  item.done
-                    ? "bg-[var(--accent-green)]"
-                    : "bg-[rgba(127,141,163,.58)]",
-                )}
+        {todayPlan.details.length > 0 ? (
+          <div className="mt-2 grid gap-1 sm:grid-cols-4 xl:grid-cols-2 2xl:grid-cols-4">
+            {todayPlan.details.map((detail, index) => (
+              <TinyStatus
+                accent={detail.accent}
+                key={`running-mini-detail-${index}`}
+                label={detail.label}
+                value={detail.value}
               />
-              <span className="truncate">{item.label}</span>
-              <span className="sr-only">{item.done ? "done" : "ready"}</span>
-            </li>
-          ))}
-        </ul>
+            ))}
+          </div>
+        ) : null}
+        {todayPlan.checklist.length > 0 ? (
+          <ul className="mt-2 grid gap-1 sm:grid-cols-3 xl:grid-cols-2 2xl:grid-cols-3">
+            {todayPlan.checklist.map((item, index) => (
+              <li
+                className="flex min-h-6 items-center gap-1.5 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(168,183,204,.035)] px-2 text-[10px] leading-3 text-[var(--text-secondary)]"
+                key={`running-mini-checklist-${index}`}
+              >
+                <span
+                  className={cn(
+                    "size-1.5 rounded-full",
+                    item.done
+                      ? "bg-[var(--accent-green)]"
+                      : "bg-[rgba(127,141,163,.58)]",
+                  )}
+                />
+                <span className="truncate">{item.label}</span>
+                <span className="sr-only">{item.done ? "done" : "ready"}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </MiniPanel>
 
-      <MiniPanel accent="var(--accent-yellow)" badge="P1/P2" title={review.title}>
+      <MiniPanel
+        accent="var(--accent-yellow)"
+        badge="P1/P2"
+        contentState={contentStates.review}
+        profileId={profileId}
+        sectionName="review"
+        title={review.title}
+      >
         <p className="truncate text-[12px] font-semibold leading-4 text-[var(--text-primary)]">
           {review.lastRun}
         </p>
-        <div className="mt-2 grid gap-1 sm:grid-cols-3">
-          {review.metrics.map((metric, index) => (
-            <TinyStatus
-              accent={metric.accent}
-              key={`running-mini-review-metric-${index}`}
-              label={metric.label}
-              value={metric.value}
+        {review.metrics.length > 0 ? (
+          <div className="mt-2 grid gap-1 sm:grid-cols-3">
+            {review.metrics.map((metric, index) => (
+              <TinyStatus
+                accent={metric.accent}
+                key={`running-mini-review-metric-${index}`}
+                label={metric.label}
+                value={metric.value}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="mt-2">
+            <EmptyState
+              description="Laufreview erscheint nach dem ersten lokalen Lauf."
+              title="Noch kein letzter Lauf"
             />
-          ))}
-        </div>
-        <div className="mt-2 grid gap-1 sm:grid-cols-4 xl:grid-cols-2 2xl:grid-cols-4">
-          {review.signals.map((signal, index) => (
-            <TinyStatus
-              accent={signal.accent}
-              key={`running-mini-signal-${index}`}
-              label={signal.label}
-              value={signal.value}
-            />
-          ))}
-        </div>
-        <p className="mt-2 text-[10px] leading-3 text-[var(--text-secondary)]">
-          {review.learnings.join(" ")}
-        </p>
+          </div>
+        )}
+        {review.signals.length > 0 ? (
+          <div className="mt-2 grid gap-1 sm:grid-cols-4 xl:grid-cols-2 2xl:grid-cols-4">
+            {review.signals.map((signal, index) => (
+              <TinyStatus
+                accent={signal.accent}
+                key={`running-mini-signal-${index}`}
+                label={signal.label}
+                value={signal.value}
+              />
+            ))}
+          </div>
+        ) : null}
+        {review.learnings.length > 0 ? (
+          <p className="mt-2 text-[10px] leading-3 text-[var(--text-secondary)]">
+            {review.learnings.join(" ")}
+          </p>
+        ) : null}
         <div className="mt-2 flex items-center justify-between gap-2">
           <p className="min-w-0 truncate text-[10px] font-semibold leading-3 text-[var(--text-primary)]">
             Next adjustment: {review.nextAdjustment}
@@ -646,27 +810,37 @@ export function DesktopRightColumn({
         accent="var(--accent-cyan)"
         badge="P2"
         className="min-h-0"
+        contentState={contentStates.rhythm}
+        profileId={profileId}
+        sectionName="rhythm"
         title="Weekly Rhythm / Load"
       >
-        <ol className="grid gap-1 sm:grid-cols-7">
-          {rhythm.days.map((day, index) => (
-            <li
-              className="min-w-0 rounded-[9px] border border-[color-mix(in_srgb,var(--accent)_16%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_5%,rgba(11,17,28,.44))] px-1.5 py-1"
-              key={`running-mini-rhythm-day-${index}`}
-              style={accentStyle(day.accent)}
-            >
-              <div className="flex items-center justify-between gap-1">
-                <span className="text-[9px] font-semibold text-[var(--text-muted)]">
-                  {day.day}
-                </span>
-                <Dot accent={day.accent} active={day.active} />
-              </div>
-              <p className="mt-1 truncate text-[10px] font-semibold leading-3 text-[var(--text-primary)]">
-                {day.label}
-              </p>
-            </li>
-          ))}
-        </ol>
+        {rhythm.days.length > 0 ? (
+          <ol className="grid gap-1 sm:grid-cols-7">
+            {rhythm.days.map((day, index) => (
+              <li
+                className="min-w-0 rounded-[9px] border border-[color-mix(in_srgb,var(--accent)_16%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_5%,rgba(11,17,28,.44))] px-1.5 py-1"
+                key={`running-mini-rhythm-day-${index}`}
+                style={accentStyle(day.accent)}
+              >
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-[9px] font-semibold text-[var(--text-muted)]">
+                    {day.day}
+                  </span>
+                  <Dot accent={day.accent} active={day.active} />
+                </div>
+                <p className="mt-1 truncate text-[10px] font-semibold leading-3 text-[var(--text-primary)]">
+                  {day.label}
+                </p>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <EmptyState
+            description="Laufrhythmus erscheint nach lokalen Laufeinheiten."
+            title="Noch kein Laufrhythmus"
+          />
+        )}
 
         <div className="mt-2 grid gap-2 sm:grid-cols-2">
           {[loadRecovery.weeklyLoad, loadRecovery.recoverySignal].map((item, index) => (
@@ -693,16 +867,18 @@ export function DesktopRightColumn({
           ))}
         </div>
 
-        <div className="mt-2 grid gap-1 sm:grid-cols-3">
-          {loadRecovery.intensitySplit.map((split, index) => (
-            <TinyStatus
-              accent={split.accent}
-              key={`running-mini-intensity-${index}`}
-              label={split.label}
-              value={`${split.value}% ${split.detail}`}
-            />
-          ))}
-        </div>
+        {loadRecovery.intensitySplit.length > 0 ? (
+          <div className="mt-2 grid gap-1 sm:grid-cols-3">
+            {loadRecovery.intensitySplit.map((split, index) => (
+              <TinyStatus
+                accent={split.accent}
+                key={`running-mini-intensity-${index}`}
+                label={split.label}
+                value={`${split.value}% ${split.detail}`}
+              />
+            ))}
+          </div>
+        ) : null}
         <p className="mt-2 rounded-[10px] border border-[rgba(221,107,95,.18)] bg-[rgba(221,107,95,.065)] px-2 py-1.5 text-[10px] font-semibold leading-3 text-[var(--text-primary)]">
           {loadRecovery.guardrail}
         </p>
@@ -714,8 +890,11 @@ export function DesktopRightColumn({
 export function ContextSection({
   context,
   className,
+  profileId,
+  state,
 }: Readonly<
-  SectionClassName & {
+  SectionClassName &
+    RunningSectionState & {
     context: RunningTrackerPageViewModel["context"];
   }
 >) {
@@ -724,46 +903,60 @@ export function ContextSection({
       accent="var(--accent-blue)"
       badge="P2/P3"
       className={className}
+      contentState={state}
+      profileId={profileId}
+      sectionName="context"
       subtitle={context.subtitle}
       title={context.title}
     >
-      <ol className="grid gap-2">
-        {context.items.map((item) => (
-          <li
-            className="grid grid-cols-[34px_minmax(0,1fr)] gap-2 rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_16%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_4%,rgba(11,17,28,.44))] p-2.5"
-            key={item.rank}
-            style={accentStyle(item.accent)}
-          >
-            <span className="text-[10px] font-semibold text-[var(--accent)]">
-              {item.rank}
-            </span>
-            <span className="min-w-0">
-              <span className="block text-[12px] font-semibold leading-4 text-[var(--text-primary)]">
-                {item.label}
+      {context.items.length > 0 ? (
+        <ol className="grid gap-2">
+          {context.items.map((item) => (
+            <li
+              className="grid grid-cols-[34px_minmax(0,1fr)] gap-2 rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_16%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_4%,rgba(11,17,28,.44))] p-2.5"
+              key={item.rank}
+              style={accentStyle(item.accent)}
+            >
+              <span className="text-[10px] font-semibold text-[var(--accent)]">
+                {item.rank}
               </span>
-              <span className="block text-[10px] leading-4 text-[var(--text-secondary)]">
-                {item.detail}
+              <span className="min-w-0">
+                <span className="block text-[12px] font-semibold leading-4 text-[var(--text-primary)]">
+                  {item.label}
+                </span>
+                <span className="block text-[10px] leading-4 text-[var(--text-secondary)]">
+                  {item.detail}
+                </span>
               </span>
-            </span>
-          </li>
-        ))}
-      </ol>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <EmptyState
+          description="Pace, Distanz und weitere Laufkontexte erscheinen nach lokalen Laufeinheiten."
+          title="Noch kein Laufkontext"
+        />
+      )}
     </RunningPanel>
   );
 }
 
 export function BottomAnalyticsStrip({
   context,
+  contentStates,
   distanceTrend,
   recentRuns,
   boundaries,
   className,
+  profileId,
 }: Readonly<
   SectionClassName & {
+    contentStates: RunningTrackerPageViewModel["contentStates"];
     context: RunningTrackerPageViewModel["context"];
     distanceTrend: RunningTrackerPageViewModel["distanceTrend"];
     recentRuns: RunningTrackerPageViewModel["recentRuns"];
     boundaries: RunningTrackerPageViewModel["boundaries"];
+    profileId: RunningProfileId;
   }
 >) {
   return (
@@ -774,92 +967,135 @@ export function BottomAnalyticsStrip({
         className,
       )}
     >
-      <MiniPanel accent="var(--accent-blue)" badge="P2/P3" title={context.title}>
-        <ol className="grid gap-1 sm:grid-cols-2">
-          {context.items.map((item) => (
-            <li
-              className="grid grid-cols-[22px_minmax(0,1fr)] gap-1 rounded-[9px] border border-[color-mix(in_srgb,var(--accent)_14%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_4%,rgba(11,17,28,.44))] px-1.5 py-1"
-              key={item.rank}
-              style={accentStyle(item.accent)}
-            >
-              <span className="text-[9px] font-semibold leading-3 text-[var(--accent)]">
-                {item.rank}
-              </span>
-              <span className="min-w-0">
-                <span className="block truncate text-[10px] font-semibold leading-3 text-[var(--text-primary)]">
-                  {item.label}
+      <MiniPanel
+        accent="var(--accent-blue)"
+        badge="P2/P3"
+        contentState={contentStates.context}
+        profileId={profileId}
+        sectionName="context"
+        title={context.title}
+      >
+        {context.items.length > 0 ? (
+          <ol className="grid gap-1 sm:grid-cols-2">
+            {context.items.map((item) => (
+              <li
+                className="grid grid-cols-[22px_minmax(0,1fr)] gap-1 rounded-[9px] border border-[color-mix(in_srgb,var(--accent)_14%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_4%,rgba(11,17,28,.44))] px-1.5 py-1"
+                key={item.rank}
+                style={accentStyle(item.accent)}
+              >
+                <span className="text-[9px] font-semibold leading-3 text-[var(--accent)]">
+                  {item.rank}
                 </span>
-                <span className="block truncate text-[9px] leading-3 text-[var(--text-muted)]">
-                  {item.detail}
+                <span className="min-w-0">
+                  <span className="block truncate text-[10px] font-semibold leading-3 text-[var(--text-primary)]">
+                    {item.label}
+                  </span>
+                  <span className="block truncate text-[9px] leading-3 text-[var(--text-muted)]">
+                    {item.detail}
+                  </span>
                 </span>
-              </span>
-            </li>
-          ))}
-        </ol>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <EmptyState
+            description="Pace, Distanz und weitere Laufkontexte erscheinen nach lokalen Laufeinheiten."
+            title="Noch kein Laufkontext"
+          />
+        )}
       </MiniPanel>
 
       <MiniPanel
         accent="var(--accent-orange)"
         badge="P3"
+        contentState={contentStates.distanceTrend}
+        profileId={profileId}
+        sectionName="distance-trend"
         title={distanceTrend.title}
       >
         <p className="truncate text-[10px] leading-3 text-[var(--text-secondary)]">
           {distanceTrend.statement}
         </p>
-        <div
-          aria-label={`${distanceTrend.title}: ${distanceTrend.statement}`}
-          className="mt-2 flex h-16 items-end gap-1 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.36)] px-2 py-1.5"
-          role="img"
-        >
-          {distanceTrend.bars.map((bar, index) => (
-            <div
-              className="flex min-w-0 flex-1 flex-col items-center justify-end gap-1"
-              key={`running-mini-distance-bar-${index}`}
-            >
-              <span
-                aria-hidden="true"
-                className="h-[var(--bar-height)] w-full max-w-5 rounded-t-[4px] bg-[var(--accent)] opacity-80"
-                style={{
-                  ...accentStyle(bar.accent),
-                  ...barHeightStyle(bar.value),
-                }}
-              />
-              <span className="text-[8px] font-semibold text-[var(--text-muted)]">
-                {bar.label}
-              </span>
-              <span className="sr-only">
-                {bar.label}: {bar.display}
-              </span>
-            </div>
-          ))}
-        </div>
+        {distanceTrend.bars.length > 0 ? (
+          <div
+            aria-label={`${distanceTrend.title}: ${distanceTrend.statement}`}
+            className="mt-2 flex h-16 items-end gap-1 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.36)] px-2 py-1.5"
+            role="img"
+          >
+            {distanceTrend.bars.map((bar, index) => (
+              <div
+                className="flex min-w-0 flex-1 flex-col items-center justify-end gap-1"
+                key={`running-mini-distance-bar-${index}`}
+              >
+                <span
+                  aria-hidden="true"
+                  className="h-[var(--bar-height)] w-full max-w-5 rounded-t-[4px] bg-[var(--accent)] opacity-80"
+                  style={{
+                    ...accentStyle(bar.accent),
+                    ...barHeightStyle(bar.value),
+                  }}
+                />
+                <span className="text-[8px] font-semibold text-[var(--text-muted)]">
+                  {bar.label}
+                </span>
+                <span className="sr-only">
+                  {bar.label}: {bar.display}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-2">
+            <EmptyState
+              description="Der Distanzverlauf erscheint nach lokalen Laufeinheiten."
+              title="Noch keine Laufdaten"
+            />
+          </div>
+        )}
       </MiniPanel>
 
-      <MiniPanel accent="var(--accent-cyan)" badge="P3" title={recentRuns.title}>
-        <ul className="grid gap-1">
-          {recentRuns.items.map((run, index) => (
-            <li
-              className="grid grid-cols-[48px_minmax(0,1fr)_54px] items-center gap-1 rounded-[9px] border border-[color-mix(in_srgb,var(--accent)_14%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_4%,rgba(11,17,28,.44))] px-1.5 py-1"
-              key={`running-mini-recent-run-${index}`}
-              style={accentStyle(run.accent)}
-            >
-              <span className="text-[9px] font-semibold text-[var(--text-muted)]">
-                {run.date}
-              </span>
-              <span className="min-w-0 truncate text-[10px] font-semibold leading-3 text-[var(--text-primary)]">
-                {run.title} - {run.distance}
-              </span>
-              <span className="truncate text-right text-[9px] text-[var(--text-muted)]">
-                {run.effort}
-              </span>
-            </li>
-          ))}
-        </ul>
+      <MiniPanel
+        accent="var(--accent-cyan)"
+        badge="P3"
+        contentState={contentStates.recentRuns}
+        profileId={profileId}
+        sectionName="recent-runs"
+        title={recentRuns.title}
+      >
+        {recentRuns.items.length > 0 ? (
+          <ul className="grid gap-1">
+            {recentRuns.items.map((run, index) => (
+              <li
+                className="grid grid-cols-[48px_minmax(0,1fr)_54px] items-center gap-1 rounded-[9px] border border-[color-mix(in_srgb,var(--accent)_14%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_4%,rgba(11,17,28,.44))] px-1.5 py-1"
+                key={`running-mini-recent-run-${index}`}
+                style={accentStyle(run.accent)}
+              >
+                <span className="text-[9px] font-semibold text-[var(--text-muted)]">
+                  {run.date}
+                </span>
+                <span className="min-w-0 truncate text-[10px] font-semibold leading-3 text-[var(--text-primary)]">
+                  {run.title} - {run.distance}
+                </span>
+                <span className="truncate text-right text-[9px] text-[var(--text-muted)]">
+                  {run.effort}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <EmptyState
+            description="Die Liste bleibt leer, bis lokale Laufeinheiten existieren."
+            title="Noch keine letzten Läufe"
+          />
+        )}
       </MiniPanel>
 
       <MiniPanel
         accent="var(--accent-green)"
         badge="Rules"
+        contentState={contentStates.boundaries}
+        profileId={profileId}
+        sectionName="boundaries"
         title="Beginner Running Boundaries"
       >
         <div className="grid gap-1 sm:grid-cols-2">
@@ -889,8 +1125,11 @@ export function BottomAnalyticsStrip({
 export function DistanceTrendSection({
   distanceTrend,
   className,
+  profileId,
+  state,
 }: Readonly<
-  SectionClassName & {
+  SectionClassName &
+    RunningSectionState & {
     distanceTrend: RunningTrackerPageViewModel["distanceTrend"];
   }
 >) {
@@ -899,35 +1138,47 @@ export function DistanceTrendSection({
       accent="var(--accent-orange)"
       badge="P3"
       className={className}
+      contentState={state}
+      profileId={profileId}
+      sectionName="distance-trend"
       title={distanceTrend.title}
     >
       <p className="text-[12px] leading-5 text-[var(--text-secondary)]">
         {distanceTrend.statement}
       </p>
-      <div
-        aria-label={`${distanceTrend.title}: ${distanceTrend.statement}`}
-        className="mt-4 flex h-36 items-end gap-2 rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.36)] px-3 py-3"
-        role="img"
-      >
-        {distanceTrend.bars.map((bar, index) => (
-          <div
-            className="flex min-w-0 flex-1 flex-col items-center justify-end gap-2"
-            key={`running-distance-bar-${index}`}
-          >
-            <span
-              aria-hidden="true"
-              className="h-[var(--bar-height)] w-full max-w-8 rounded-t-[6px] bg-[var(--accent)] opacity-80"
-              style={{ ...accentStyle(bar.accent), ...barHeightStyle(bar.value) }}
-            />
-            <span className="text-[9px] font-semibold text-[var(--text-muted)]">
-              {bar.label}
-            </span>
-            <span className="sr-only">
-              {bar.label}: {bar.display}
-            </span>
-          </div>
-        ))}
-      </div>
+      {distanceTrend.bars.length > 0 ? (
+        <div
+          aria-label={`${distanceTrend.title}: ${distanceTrend.statement}`}
+          className="mt-4 flex h-36 items-end gap-2 rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.36)] px-3 py-3"
+          role="img"
+        >
+          {distanceTrend.bars.map((bar, index) => (
+            <div
+              className="flex min-w-0 flex-1 flex-col items-center justify-end gap-2"
+              key={`running-distance-bar-${index}`}
+            >
+              <span
+                aria-hidden="true"
+                className="h-[var(--bar-height)] w-full max-w-8 rounded-t-[6px] bg-[var(--accent)] opacity-80"
+                style={{ ...accentStyle(bar.accent), ...barHeightStyle(bar.value) }}
+              />
+              <span className="text-[9px] font-semibold text-[var(--text-muted)]">
+                {bar.label}
+              </span>
+              <span className="sr-only">
+                {bar.label}: {bar.display}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-4">
+          <EmptyState
+            description="Der Distanzverlauf erscheint nach lokalen Laufeinheiten."
+            title="Noch keine Laufdaten"
+          />
+        </div>
+      )}
     </RunningPanel>
   );
 }
@@ -935,8 +1186,11 @@ export function DistanceTrendSection({
 export function RecentRunsSection({
   recentRuns,
   className,
+  profileId,
+  state,
 }: Readonly<
-  SectionClassName & {
+  SectionClassName &
+    RunningSectionState & {
     recentRuns: RunningTrackerPageViewModel["recentRuns"];
   }
 >) {
@@ -945,33 +1199,43 @@ export function RecentRunsSection({
       accent="var(--accent-cyan)"
       badge="P3"
       className={className}
+      contentState={state}
+      profileId={profileId}
+      sectionName="recent-runs"
       subtitle={recentRuns.subtitle}
       title={recentRuns.title}
     >
-      <ul className="grid gap-2">
-        {recentRuns.items.map((run, index) => (
-          <li
-            className="grid gap-2 rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_16%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_4%,rgba(11,17,28,.44))] p-2.5 sm:grid-cols-[84px_minmax(0,1fr)_auto] sm:items-center"
-            key={`running-recent-run-${index}`}
-            style={accentStyle(run.accent)}
-          >
-            <span className="text-[10px] font-semibold text-[var(--text-muted)]">
-              {run.date}
-            </span>
-            <span className="min-w-0">
-              <span className="block text-[12px] font-semibold leading-4 text-[var(--text-primary)]">
-                {run.title}
+      {recentRuns.items.length > 0 ? (
+        <ul className="grid gap-2">
+          {recentRuns.items.map((run, index) => (
+            <li
+              className="grid gap-2 rounded-[12px] border border-[color-mix(in_srgb,var(--accent)_16%,var(--border-subtle))] bg-[color-mix(in_srgb,var(--accent)_4%,rgba(11,17,28,.44))] p-2.5 sm:grid-cols-[84px_minmax(0,1fr)_auto] sm:items-center"
+              key={`running-recent-run-${index}`}
+              style={accentStyle(run.accent)}
+            >
+              <span className="text-[10px] font-semibold text-[var(--text-muted)]">
+                {run.date}
               </span>
-              <span className="block text-[10px] leading-4 text-[var(--text-secondary)]">
-                {run.distance} - {run.duration} - {run.effort}
+              <span className="min-w-0">
+                <span className="block text-[12px] font-semibold leading-4 text-[var(--text-primary)]">
+                  {run.title}
+                </span>
+                <span className="block text-[10px] leading-4 text-[var(--text-secondary)]">
+                  {run.distance} - {run.duration} - {run.effort}
+                </span>
               </span>
-            </span>
-            <span className="inline-flex min-h-6 items-center rounded-full border border-[color-mix(in_srgb,var(--accent)_24%,transparent)] bg-[color-mix(in_srgb,var(--accent)_8%,transparent)] px-2 text-[10px] font-semibold text-[var(--text-secondary)]">
-              {run.status}
-            </span>
-          </li>
-        ))}
-      </ul>
+              <span className="inline-flex min-h-6 items-center rounded-full border border-[color-mix(in_srgb,var(--accent)_24%,transparent)] bg-[color-mix(in_srgb,var(--accent)_8%,transparent)] px-2 text-[10px] font-semibold text-[var(--text-secondary)]">
+                {run.status}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <EmptyState
+          description="Die Liste bleibt leer, bis lokale Laufeinheiten existieren."
+          title="Noch keine letzten Läufe"
+        />
+      )}
     </RunningPanel>
   );
 }
