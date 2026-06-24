@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useMemo, useState, type ChangeEvent } from "react";
+import {
+  useCallback,
+  useMemo,
+  useState,
+  type ChangeEvent,
+} from "react";
+import { contentStateDataAttributes } from "@/features/content-state";
 import { cn } from "@/lib/cn";
 import type {
   WorkArchitectureItem,
@@ -43,6 +49,10 @@ import {
 
 type WikiSegment = "all" | "pinned" | "architecture" | "processes" | "needs_review";
 type DialogKind = "wiki" | "architecture" | null;
+
+type WorkWikiSectionProps = {
+  [key: `data-${string}`]: string | undefined;
+};
 
 type InspectorState =
   | { type: "wiki"; id: string }
@@ -205,6 +215,7 @@ export function WorkWikiPage({
 
   const dismissToast = useCallback(() => setToast(null), []);
   const query = normalize(search);
+  const canUseLocalWorkDrafts = viewModel.profileId === "demo";
   const allTags = useMemo(
     () => Array.from(new Set(wikiEntries.flatMap((entry) => entry.tags))).sort(),
     [wikiEntries],
@@ -413,8 +424,17 @@ export function WorkWikiPage({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-[2208px] flex-col gap-4 pb-8">
+    <div
+      className="mx-auto flex w-full max-w-[2208px] flex-col gap-4 pb-8"
+      data-work-wiki-section="page"
+      {...contentStateDataAttributes(
+        viewModel.contentStates.page,
+        viewModel.profileId,
+      )}
+    >
       <WorkWikiHeader
+        canUseLocalWorkDrafts={canUseLocalWorkDrafts}
+        hasReviewEntries={needsReview.length > 0}
         onAddArchitecture={openArchitectureDialog}
         onAddWiki={() => openWikiDialog()}
         onReviewEntries={reviewEntries}
@@ -431,6 +451,13 @@ export function WorkWikiPage({
         onTagFilter={setTagFilter}
         onTypeFilter={setTypeFilter}
         search={search}
+        sectionProps={{
+          "data-work-wiki-section": "search-filters",
+          ...contentStateDataAttributes(
+            viewModel.contentStates.searchFilters,
+            viewModel.profileId,
+          ),
+        }}
         segment={segment}
         statusFilter={statusFilter}
         tagFilter={tagFilter}
@@ -441,28 +468,42 @@ export function WorkWikiPage({
       <PinnedReferences
         entries={pinnedReferences}
         onOpen={(entry) => setInspector({ type: "wiki", id: entry.id })}
+        profileId={viewModel.profileId}
+        state={viewModel.contentStates.pinnedReferences}
       />
 
       <WikiNeedsReviewPanel
         entries={needsReview}
         onReview={markReviewed}
         onOpen={(entry) => setInspector({ type: "wiki", id: entry.id })}
+        profileId={viewModel.profileId}
+        state={viewModel.contentStates.needsReview}
       />
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
         <WikiLookupPanel
+          canUseLocalWorkDrafts={canUseLocalWorkDrafts}
           entries={filteredWiki}
           onAddWiki={() => openWikiDialog()}
           onOpen={(entry) => setInspector({ type: "wiki", id: entry.id })}
+          profileId={viewModel.profileId}
           query={query}
+          state={viewModel.contentStates.wikiLookup}
         />
         <div className="grid gap-4 content-start">
           <ArchitectureNotesPanel
             architectureItems={architectureItems}
+            canUseLocalWorkDrafts={canUseLocalWorkDrafts}
             onAddArchitecture={openArchitectureDialog}
             onOpen={(item) => setInspector({ type: "architecture", id: item.id })}
+            profileId={viewModel.profileId}
+            state={viewModel.contentStates.architectureNotes}
           />
-          <WikiCategories entries={wikiEntries} />
+          <WikiCategories
+            entries={wikiEntries}
+            profileId={viewModel.profileId}
+            state={viewModel.contentStates.wikiCategories}
+          />
           <RecentlyUpdatedWiki
             entries={recentlyUpdated}
             onOpen={(entry) => setInspector({ type: "wiki", id: entry.id })}
@@ -510,10 +551,14 @@ export function WorkWikiPage({
 }
 
 function WorkWikiHeader({
+  canUseLocalWorkDrafts,
+  hasReviewEntries,
   onAddArchitecture,
   onAddWiki,
   onReviewEntries,
 }: Readonly<{
+  canUseLocalWorkDrafts: boolean;
+  hasReviewEntries: boolean;
   onAddArchitecture: () => void;
   onAddWiki: () => void;
   onReviewEntries: () => void;
@@ -533,11 +578,17 @@ function WorkWikiHeader({
           </p>
         </div>
         <div className="grid gap-2 sm:grid-cols-3 xl:flex xl:justify-end">
-          <button className={primaryButtonClass} onClick={onAddWiki} type="button">
+          <button
+            className={primaryButtonClass}
+            disabled={!canUseLocalWorkDrafts}
+            onClick={onAddWiki}
+            type="button"
+          >
             Add wiki entry
           </button>
           <button
             className={secondaryButtonClass}
+            disabled={!canUseLocalWorkDrafts}
             onClick={onAddArchitecture}
             type="button"
           >
@@ -545,6 +596,7 @@ function WorkWikiHeader({
           </button>
           <button
             className={secondaryButtonClass}
+            disabled={!hasReviewEntries}
             onClick={onReviewEntries}
             type="button"
           >
@@ -567,6 +619,7 @@ function WikiLookupFilters({
   onTagFilter,
   onTypeFilter,
   search,
+  sectionProps,
   segment,
   statusFilter,
   tagFilter,
@@ -583,6 +636,7 @@ function WikiLookupFilters({
   onTagFilter: (value: string) => void;
   onTypeFilter: (value: string) => void;
   search: string;
+  sectionProps?: WorkWikiSectionProps;
   segment: WikiSegment;
   statusFilter: string;
   tagFilter: string;
@@ -591,6 +645,7 @@ function WikiLookupFilters({
 }>) {
   return (
     <section
+      {...sectionProps}
       aria-label="Wiki lookup filters"
       className="rounded-[18px] border border-[var(--border-subtle)] bg-[var(--surface-1)] p-3"
     >
@@ -713,20 +768,28 @@ function FilterSelect({
 function PinnedReferences({
   entries,
   onOpen,
+  profileId,
+  state,
 }: Readonly<{
   entries: readonly WorkWikiEntry[];
   onOpen: (entry: WorkWikiEntry) => void;
+  profileId: WorkWikiViewModel["profileId"];
+  state: WorkWikiViewModel["contentStates"]["pinnedReferences"];
 }>) {
   return (
     <Panel
       badge={<Pill accent={referenceAccent}>{entries.length} pinned</Pill>}
+      sectionProps={{
+        "data-work-wiki-section": "pinned-references",
+        ...contentStateDataAttributes(state, profileId),
+      }}
       subtitle="Frequently used process, checklist and glossary notes."
       title="Pinned References"
     >
       {entries.length === 0 ? (
         <EmptyState
           description="Pinned references appear when important lookup notes are available."
-          title="No pinned references"
+          title="Keine gepinnten Referenzen"
         />
       ) : (
         <div className="grid gap-3 lg:grid-cols-3">
@@ -762,21 +825,29 @@ function WikiNeedsReviewPanel({
   entries,
   onOpen,
   onReview,
+  profileId,
+  state,
 }: Readonly<{
   entries: readonly WorkWikiEntry[];
   onOpen: (entry: WorkWikiEntry) => void;
   onReview: (entry: WorkWikiEntry) => void;
+  profileId: WorkWikiViewModel["profileId"];
+  state: WorkWikiViewModel["contentStates"]["needsReview"];
 }>) {
   return (
     <Panel
       badge={<Pill accent={warningAccent}>{entries.length} review</Pill>}
+      sectionProps={{
+        "data-work-wiki-section": "needs-review",
+        ...contentStateDataAttributes(state, profileId),
+      }}
       subtitle="Visible but calm: entries that need a later human pass."
       title="Needs Review"
     >
       {entries.length === 0 ? (
         <EmptyState
           description="Entries that need a later check will appear here."
-          title="No wiki entries need review"
+          title="Keine Wiki-Einträge im Review"
         />
       ) : (
         <div className="grid gap-3 lg:grid-cols-2">
@@ -808,29 +879,39 @@ function WikiNeedsReviewPanel({
 }
 
 function WikiLookupPanel({
+  canUseLocalWorkDrafts,
   entries,
   onAddWiki,
   onOpen,
+  profileId,
   query,
+  state,
 }: Readonly<{
+  canUseLocalWorkDrafts: boolean;
   entries: readonly WorkWikiEntry[];
   onAddWiki: () => void;
   onOpen: (entry: WorkWikiEntry) => void;
+  profileId: WorkWikiViewModel["profileId"];
   query: string;
+  state: WorkWikiViewModel["contentStates"]["wikiLookup"];
 }>) {
   return (
     <Panel
       badge={<Pill accent={referenceAccent}>{entries.length} results</Pill>}
       className="border-[rgba(95,200,215,.30)]"
+      sectionProps={{
+        "data-work-wiki-section": "wiki-lookup",
+        ...contentStateDataAttributes(state, profileId),
+      }}
       subtitle="Searchable personal work knowledge, not an official company wiki."
       title="Wiki Lookup"
     >
       {entries.length === 0 ? (
         <EmptyState
-          actionLabel="Add wiki entry"
+          actionLabel={canUseLocalWorkDrafts ? "Add wiki entry" : undefined}
           description="No wiki entries match the current lookup filters."
-          onAction={onAddWiki}
-          title={query ? "No wiki results" : "No wiki entries yet"}
+          onAction={canUseLocalWorkDrafts ? onAddWiki : undefined}
+          title={query ? "No wiki results" : "Noch keine Wiki-Einträge"}
         />
       ) : (
         <div className="grid gap-3">
@@ -876,25 +957,35 @@ function WikiLookupPanel({
 
 function ArchitectureNotesPanel({
   architectureItems,
+  canUseLocalWorkDrafts,
   onAddArchitecture,
   onOpen,
+  profileId,
+  state,
 }: Readonly<{
   architectureItems: readonly WorkArchitectureItem[];
+  canUseLocalWorkDrafts: boolean;
   onAddArchitecture: () => void;
   onOpen: (item: WorkArchitectureItem) => void;
+  profileId: WorkWikiViewModel["profileId"];
+  state: WorkWikiViewModel["contentStates"]["architectureNotes"];
 }>) {
   return (
     <Panel
       badge={<Pill accent={referenceAccent}>{architectureItems.length}</Pill>}
+      sectionProps={{
+        "data-work-wiki-section": "architecture-notes",
+        ...contentStateDataAttributes(state, profileId),
+      }}
       subtitle="Personal architecture notes with text summaries only."
       title="Architecture Notes"
     >
       {architectureItems.length === 0 ? (
         <EmptyState
-          actionLabel="Add architecture note"
+          actionLabel={canUseLocalWorkDrafts ? "Add architecture note" : undefined}
           description="Add a local architecture note without system names or automation."
-          onAction={onAddArchitecture}
-          title="No architecture notes"
+          onAction={canUseLocalWorkDrafts ? onAddArchitecture : undefined}
+          title="Keine Architektur-Notizen"
         />
       ) : (
         <div className="grid gap-3">
@@ -931,14 +1022,27 @@ function ArchitectureNotesPanel({
 
 function WikiCategories({
   entries,
-}: Readonly<{ entries: readonly WorkWikiEntry[] }>) {
+  profileId,
+  state,
+}: Readonly<{
+  entries: readonly WorkWikiEntry[];
+  profileId: WorkWikiViewModel["profileId"];
+  state: WorkWikiViewModel["contentStates"]["wikiCategories"];
+}>) {
   const counts = wikiTypes.map((type) => ({
     type,
     count: entries.filter((entry) => entry.type === type).length,
   }));
 
   return (
-    <Panel subtitle="Compact category counts." title="Wiki Categories">
+    <Panel
+      sectionProps={{
+        "data-work-wiki-section": "wiki-categories",
+        ...contentStateDataAttributes(state, profileId),
+      }}
+      subtitle="Compact category counts."
+      title="Wiki Categories"
+    >
       <div className="grid gap-2 sm:grid-cols-2">
         {counts.map((item) => (
           <Metric

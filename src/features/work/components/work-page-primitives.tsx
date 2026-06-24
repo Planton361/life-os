@@ -19,6 +19,10 @@ export type ToastState = {
   tone: "success" | "info" | "error";
 };
 
+export type PanelSectionProps = {
+  [key: `data-${string}`]: string | undefined;
+};
+
 export const workAccent = "var(--accent-green)";
 export const referenceAccent = "var(--accent-cyan)";
 export const warningAccent = "var(--accent-orange)";
@@ -142,17 +146,20 @@ export function Panel({
   badge,
   children,
   className,
+  sectionProps,
 }: Readonly<{
   title: string;
   subtitle?: string;
   badge?: ReactNode;
   children: ReactNode;
   className?: string;
+  sectionProps?: PanelSectionProps;
 }>) {
   const id = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-section`;
 
   return (
     <section
+      {...sectionProps}
       aria-labelledby={id}
       className={cn(
         "min-w-0 overflow-hidden rounded-[var(--panel-radius)] border border-[var(--border-subtle)] bg-[var(--surface-1)] shadow-[0_8px_22px_rgba(0,0,0,.12)]",

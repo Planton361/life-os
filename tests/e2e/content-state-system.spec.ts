@@ -676,6 +676,175 @@ async function expectLearningLogContracts(page: Page, profile: ProfileId) {
   );
 }
 
+const workOverviewBlockedDemoStrings = [
+  "Schnittstellenverhalten nachvollzogen",
+  "Validierungsschicht",
+  "Architekturbeziehung zwischen Prüfung und Import klären",
+  "Unklaren Prozessschritt im nächsten Termin fragen",
+  "Wiki-Notiz zu Validierung ergänzen",
+  "3 this week",
+  "4 open",
+  "6 linked",
+  "2 unclear",
+] as const;
+
+const workLogBlockedDemoStrings = [
+  "Schnittstellenverhalten nachvollzogen",
+  "Testfall rekonstruiert",
+  "Validierungsschicht im Wiki ergänzen",
+  "4 activities logged this week",
+  "2 follow-ups open",
+  "3 wiki notes linked",
+  "1 activity needs review",
+] as const;
+
+const workWikiBlockedDemoStrings = [
+  "Testdaten prüfen: Vorgehen",
+  "Review vor Änderung: Checkliste",
+  "Begriff: Fachlicher Schlüssel",
+  "Schnittstelle vs. Prozessschritt",
+  "Validierungsschicht: Überblick",
+  "Batch-Prozess: Grundidee",
+  "Datenfluss: Eingabe → Prüfung → Verarbeitung",
+  "3 pinned",
+  "2 review",
+  "6 results",
+] as const;
+
+async function expectWorkOverviewContracts(page: Page, profile: ProfileId) {
+  await expectWidgetContract(
+    page.locator('[data-work-section="page"]'),
+    profile,
+    "8",
+  );
+  await expectWidgetContract(
+    page.locator('[data-work-section="search-filters"]'),
+    profile,
+    "1",
+  );
+  await expectWidgetContract(
+    page.locator('[data-work-section="current-work-journal"]'),
+    profile,
+    "1",
+  );
+  await expectWidgetContract(
+    page.locator('[data-work-section="quick-actions"]'),
+    profile,
+    "3",
+  );
+  await expectWidgetContract(
+    page.locator('[data-work-section="open-follow-ups"]'),
+    profile,
+    "4",
+  );
+  await expectWidgetContract(
+    page.locator('[data-work-section="work-signals"]'),
+    profile,
+    "4",
+  );
+  await expectWidgetContract(
+    page.locator('[data-work-section="recent-work-log"]'),
+    profile,
+    "7",
+  );
+  await expectWidgetContract(
+    page.locator('[data-work-section="architecture-snapshot"]'),
+    profile,
+    "4",
+  );
+}
+
+async function expectWorkLogContracts(page: Page, profile: ProfileId) {
+  await expectWidgetContract(
+    page.locator('[data-work-log-section="page"]'),
+    profile,
+    "8",
+  );
+  await expectWidgetContract(
+    page.locator('[data-work-log-section="search-filters"]'),
+    profile,
+    "1",
+  );
+  await expectWidgetContract(
+    page.locator('[data-work-log-section="current-work-entry"]'),
+    profile,
+    "1",
+  );
+  await expectWidgetContract(
+    page.locator('[data-work-log-section="quick-actions"]'),
+    profile,
+    "3",
+  );
+  await expectWidgetContract(
+    page.locator('[data-work-log-section="open-follow-ups"]'),
+    profile,
+    "4",
+  );
+  await expectWidgetContract(
+    page.locator('[data-work-log-section="task-context"]'),
+    profile,
+    "6",
+  );
+  await expectWidgetContract(
+    page.locator('[data-work-log-section="activity-timeline"]'),
+    profile,
+    "8",
+  );
+  await expectWidgetContract(
+    page.locator('[data-work-log-section="work-log-signals"]'),
+    profile,
+    "4",
+  );
+  await expectWidgetContract(
+    page.locator('[data-work-log-section="recent-work-logs"]'),
+    profile,
+    "5",
+  );
+  await expectWidgetContract(
+    page.locator('[data-work-log-section="linked-wiki-notes"]'),
+    profile,
+    "5",
+  );
+}
+
+async function expectWorkWikiContracts(page: Page, profile: ProfileId) {
+  await expectWidgetContract(
+    page.locator('[data-work-wiki-section="page"]'),
+    profile,
+    "8",
+  );
+  await expectWidgetContract(
+    page.locator('[data-work-wiki-section="search-filters"]'),
+    profile,
+    "1",
+  );
+  await expectWidgetContract(
+    page.locator('[data-work-wiki-section="pinned-references"]'),
+    profile,
+    "3",
+  );
+  await expectWidgetContract(
+    page.locator('[data-work-wiki-section="needs-review"]'),
+    profile,
+    "4",
+  );
+  await expectWidgetContract(
+    page.locator('[data-work-wiki-section="wiki-lookup"]'),
+    profile,
+    "6",
+  );
+  await expectWidgetContract(
+    page.locator('[data-work-wiki-section="architecture-notes"]'),
+    profile,
+    "5",
+  );
+  await expectWidgetContract(
+    page.locator('[data-work-wiki-section="wiki-categories"]'),
+    profile,
+    "8",
+  );
+}
+
 async function expectNoResourceKpiLeaks(page: Page) {
   const summary = page.locator('[data-resources-section="summary"]');
 
@@ -1668,6 +1837,145 @@ test.describe("Education content states", () => {
       page,
       learningLogBlockedDemoStrings,
       "learning log manual",
+    );
+  });
+});
+
+test.describe("Work content states", () => {
+  test("Work demo keeps the filled reference shells", async ({ page }) => {
+    await setProfile(page, "demo");
+
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/work");
+    });
+    await expectWorkOverviewContracts(page, "demo");
+    await expect(page.locator('[data-work-section="page"]')).toHaveAttribute(
+      "data-content-state",
+      "filled",
+    );
+    await expect(page.getByText("Schnittstellenverhalten nachvollzogen").first()).toBeVisible();
+
+    await page.goto("/work/log");
+    await expectWorkLogContracts(page, "demo");
+    await expect(page.locator('[data-work-log-section="page"]')).toHaveAttribute(
+      "data-content-state",
+      "filled",
+    );
+    await expect(page.getByText("Testfall rekonstruiert").first()).toBeVisible();
+
+    await page.goto("/work/wiki");
+    await expectWorkWikiContracts(page, "demo");
+    await expect(page.locator('[data-work-wiki-section="page"]')).toHaveAttribute(
+      "data-content-state",
+      "filled",
+    );
+    await expect(page.getByText("Testdaten prüfen: Vorgehen").first()).toBeVisible();
+  });
+
+  test("Work empty keeps shells and blocks demo data", async ({ page }) => {
+    await setProfile(page, "empty");
+
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/work");
+    });
+    await expectWorkOverviewContracts(page, "empty");
+    await expect(page.locator('[data-work-section="page"]')).toHaveAttribute(
+      "data-content-state",
+      "empty",
+    );
+    await expectNoMainStrings(page, workOverviewBlockedDemoStrings, "work overview");
+    await expect(page.getByText("Noch kein Work-Journal")).toBeVisible();
+    await expect(page.getByText("Keine offenen Follow-ups").first()).toBeVisible();
+    await expect(page.getByText("Noch keine Work-Logs").first()).toBeVisible();
+    await expect(page.getByText("Keine Architektur-Notizen").first()).toBeVisible();
+    await expect(page.getByRole("button", { name: "Log work entry" })).toBeDisabled();
+    await expect(
+      page.getByRole("button", { exact: true, name: "Add wiki note" }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole("button", { exact: true, name: "Add follow-up" }).first(),
+    ).toBeDisabled();
+
+    await page.goto("/work/log");
+    await expectWorkLogContracts(page, "empty");
+    await expect(page.locator('[data-work-log-section="page"]')).toHaveAttribute(
+      "data-content-state",
+      "empty",
+    );
+    await expectNoMainStrings(page, workLogBlockedDemoStrings, "work log");
+    await expect(page.getByText("Noch kein Work-Eintrag")).toBeVisible();
+    await expect(page.getByText("Keine verknüpften Work-Aufgaben")).toBeVisible();
+    await expect(page.getByText("Keine Aktivitäten")).toBeVisible();
+    await expect(page.getByText("Keine verknüpften Wiki-Notizen")).toBeVisible();
+    await expect(page.getByRole("button", { exact: true, name: "Log work" }).first()).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Add activity" }).first()).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Add task" }).first()).toBeDisabled();
+
+    await page.goto("/work/wiki");
+    await expectWorkWikiContracts(page, "empty");
+    await expect(page.locator('[data-work-wiki-section="page"]')).toHaveAttribute(
+      "data-content-state",
+      "empty",
+    );
+    await expectNoMainStrings(page, workWikiBlockedDemoStrings, "work wiki");
+    await expect(page.getByText("Keine gepinnten Referenzen")).toBeVisible();
+    await expect(page.getByText("Keine Wiki-Einträge im Review")).toBeVisible();
+    await expect(page.getByText("Noch keine Wiki-Einträge")).toBeVisible();
+    await expect(page.getByText("Keine Architektur-Notizen")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Add wiki entry" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Add architecture note" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Review entries" })).toBeDisabled();
+  });
+
+  test("Work manual empty and partial use only local Work data", async ({
+    page,
+  }) => {
+    await setProfile(page, "manual");
+
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/work");
+    });
+    await expectWorkOverviewContracts(page, "manual");
+    await expect(page.locator('[data-work-section="page"]')).toHaveAttribute(
+      "data-content-state",
+      "empty",
+    );
+    await expectNoMainStrings(page, workOverviewBlockedDemoStrings, "work manual");
+
+    await page.goto("/work/log");
+    await expectWorkLogContracts(page, "manual");
+    await expect(page.locator('[data-work-log-section="page"]')).toHaveAttribute(
+      "data-content-state",
+      "empty",
+    );
+    await expectNoMainStrings(page, workLogBlockedDemoStrings, "work log manual");
+
+    await page.goto("/work/wiki");
+    await expectWorkWikiContracts(page, "manual");
+    await expect(page.locator('[data-work-wiki-section="page"]')).toHaveAttribute(
+      "data-content-state",
+      "empty",
+    );
+    await expectNoMainStrings(page, workWikiBlockedDemoStrings, "work wiki manual");
+
+    await writeManualProfile({
+      tasks: [manualTimedTask()],
+    });
+
+    await page.goto("/work/log");
+    await expectWorkLogContracts(page, "manual");
+    await expect(page.locator('[data-work-log-section="page"]')).toHaveAttribute(
+      "data-content-state",
+      "partial",
+    );
+    await expect(
+      page.locator('[data-work-log-section="task-context"]'),
+    ).toHaveAttribute("data-content-state", "partial");
+    await expect(page.getByText("Manual 20:00 Agenda Task").first()).toBeVisible();
+    await expectNoMainStrings(
+      page,
+      workLogBlockedDemoStrings,
+      "work log manual partial",
     );
   });
 });

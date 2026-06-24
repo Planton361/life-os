@@ -7,6 +7,7 @@ import {
   type ChangeEvent,
   type ReactNode,
 } from "react";
+import { contentStateDataAttributes } from "@/features/content-state";
 import { cn } from "@/lib/cn";
 import type {
   WorkActivity,
@@ -51,6 +52,10 @@ import {
 
 type WorkLogSegment = "all" | "tasks" | "activities" | "follow-ups" | "review";
 type DialogKind = "log" | "activity" | "task" | "follow-up" | null;
+
+type WorkLogSectionProps = {
+  [key: `data-${string}`]: string | undefined;
+};
 
 type InspectorState =
   | { type: "task"; id: string }
@@ -339,6 +344,7 @@ export function WorkLogPage({
 
   const dismissToast = useCallback(() => setToast(null), []);
   const query = normalize(search);
+  const canUseLocalWorkDrafts = viewModel.profileId === "demo";
 
   const sortedLogs = useMemo(
     () =>
@@ -708,8 +714,16 @@ export function WorkLogPage({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-[2208px] flex-col gap-4 pb-8">
+    <div
+      className="mx-auto flex w-full max-w-[2208px] flex-col gap-4 pb-8"
+      data-work-log-section="page"
+      {...contentStateDataAttributes(
+        viewModel.contentStates.page,
+        viewModel.profileId,
+      )}
+    >
       <WorkLogHeader
+        canUseLocalWorkDrafts={canUseLocalWorkDrafts}
         onAddActivity={() => openDialog("activity")}
         onAddFollowUp={() => openDialog("follow-up")}
         onAddTask={() => openDialog("task")}
@@ -730,6 +744,13 @@ export function WorkLogPage({
         onWikiFilter={setWikiFilter}
         priorityFilter={priorityFilter}
         search={search}
+        sectionProps={{
+          "data-work-log-section": "search-filters",
+          ...contentStateDataAttributes(
+            viewModel.contentStates.searchFilters,
+            viewModel.profileId,
+          ),
+        }}
         segment={segment}
         taskStatusFilter={taskStatusFilter}
         wikiFilter={wikiFilter}
@@ -738,6 +759,7 @@ export function WorkLogPage({
       <CurrentWorkEntryCard
         activities={activities}
         architectureItems={viewModel.architectureItems}
+        canUseLocalWorkDrafts={canUseLocalWorkDrafts}
         entry={currentEntry}
         onAddActivity={() => openDialog("activity")}
         onContinueLog={continueLog}
@@ -746,14 +768,30 @@ export function WorkLogPage({
         onOpenLog={(entry) => setInspector({ type: "log", id: entry.id })}
         tasks={tasks}
         wikiEntries={viewModel.wikiEntries}
+        profileId={viewModel.profileId}
+        state={viewModel.contentStates.currentWorkEntry}
       />
 
-      <section aria-label="Work log quick actions" className="grid gap-2 sm:grid-cols-3">
-        <button className={primaryButtonClass} onClick={() => openDialog("log")} type="button">
+      <section
+        aria-label="Work log quick actions"
+        className="grid gap-2 sm:grid-cols-3"
+        data-work-log-section="quick-actions"
+        {...contentStateDataAttributes(
+          viewModel.contentStates.quickActions,
+          viewModel.profileId,
+        )}
+      >
+        <button
+          className={primaryButtonClass}
+          disabled={!canUseLocalWorkDrafts}
+          onClick={() => openDialog("log")}
+          type="button"
+        >
           Log work
         </button>
         <button
           className={secondaryButtonClass}
+          disabled={!canUseLocalWorkDrafts}
           onClick={() => openDialog("activity")}
           type="button"
         >
@@ -761,6 +799,7 @@ export function WorkLogPage({
         </button>
         <button
           className={secondaryButtonClass}
+          disabled={!canUseLocalWorkDrafts}
           onClick={() => openDialog("task")}
           type="button"
         >
@@ -772,6 +811,7 @@ export function WorkLogPage({
         <div className="grid gap-4">
           {showPanel("follow-ups") ? (
             <OpenWorkFollowUps
+              canUseLocalWorkDrafts={canUseLocalWorkDrafts}
               followUps={
                 segment === "review"
                   ? filteredFollowUps.filter((item) => item.status !== "done")
@@ -780,16 +820,21 @@ export function WorkLogPage({
               onAddFollowUp={() => openDialog("follow-up")}
               onMarkDone={markFollowUpDone}
               onOpenSource={openFollowUpSource}
+              profileId={viewModel.profileId}
               query={query}
+              state={viewModel.contentStates.openFollowUps}
             />
           ) : null}
           {showPanel("tasks") ? (
             <WorkTaskContextList
               activities={activities}
+              canUseLocalWorkDrafts={canUseLocalWorkDrafts}
               onAddActivity={(task) => openDialog("activity", { taskId: task.id })}
               onAddTask={() => openDialog("task")}
               onOpenTask={(task) => setInspector({ type: "task", id: task.id })}
+              profileId={viewModel.profileId}
               query={query}
+              state={viewModel.contentStates.taskContext}
               tasks={filteredTasks}
               wikiEntries={viewModel.wikiEntries}
             />
@@ -797,11 +842,14 @@ export function WorkLogPage({
           {showPanel("activities") ? (
             <WorkActivityTimeline
               activities={segment === "review" ? reviewActivities : filteredActivities}
+              canUseLocalWorkDrafts={canUseLocalWorkDrafts}
               onAddActivity={() => openDialog("activity")}
               onOpenActivity={(activity) =>
                 setInspector({ type: "activity", id: activity.id })
               }
+              profileId={viewModel.profileId}
               query={query}
+              state={viewModel.contentStates.activityTimeline}
               tasks={tasks}
             />
           ) : null}
@@ -811,13 +859,18 @@ export function WorkLogPage({
             activities={activities}
             followUps={followUps}
             logs={logs}
+            profileId={viewModel.profileId}
+            state={viewModel.contentStates.workLogSignals}
             wikiEntries={viewModel.wikiEntries}
           />
           <RecentWorkLogs
+            canUseLocalWorkDrafts={canUseLocalWorkDrafts}
             entries={segment === "review" ? reviewLogs : filteredLogs}
             onLogWork={() => openDialog("log")}
             onOpenLog={(entry) => setInspector({ type: "log", id: entry.id })}
+            profileId={viewModel.profileId}
             query={query}
+            state={viewModel.contentStates.recentWorkLogs}
           />
           <LinkedWikiNotesPanel
             currentEntry={currentEntry}
@@ -828,6 +881,8 @@ export function WorkLogPage({
                 tone: "info",
               })
             }
+            profileId={viewModel.profileId}
+            state={viewModel.contentStates.linkedWikiNotes}
             wikiEntries={viewModel.wikiEntries}
           />
         </div>
@@ -880,11 +935,13 @@ export function WorkLogPage({
 }
 
 function WorkLogHeader({
+  canUseLocalWorkDrafts,
   onAddActivity,
   onAddFollowUp,
   onAddTask,
   onLogWork,
 }: Readonly<{
+  canUseLocalWorkDrafts: boolean;
   onAddActivity: () => void;
   onAddFollowUp: () => void;
   onAddTask: () => void;
@@ -905,16 +962,36 @@ function WorkLogHeader({
           </p>
         </div>
         <div className="grid gap-2 sm:grid-cols-4 xl:flex xl:justify-end">
-          <button className={primaryButtonClass} onClick={onLogWork} type="button">
+          <button
+            className={primaryButtonClass}
+            disabled={!canUseLocalWorkDrafts}
+            onClick={onLogWork}
+            type="button"
+          >
             Log work
           </button>
-          <button className={secondaryButtonClass} onClick={onAddActivity} type="button">
+          <button
+            className={secondaryButtonClass}
+            disabled={!canUseLocalWorkDrafts}
+            onClick={onAddActivity}
+            type="button"
+          >
             Add activity
           </button>
-          <button className={secondaryButtonClass} onClick={onAddTask} type="button">
+          <button
+            className={secondaryButtonClass}
+            disabled={!canUseLocalWorkDrafts}
+            onClick={onAddTask}
+            type="button"
+          >
             Add task
           </button>
-          <button className={secondaryButtonClass} onClick={onAddFollowUp} type="button">
+          <button
+            className={secondaryButtonClass}
+            disabled={!canUseLocalWorkDrafts}
+            onClick={onAddFollowUp}
+            type="button"
+          >
             Add follow-up
           </button>
         </div>
@@ -937,6 +1014,7 @@ function WorkLogFilters({
   onWikiFilter,
   priorityFilter,
   search,
+  sectionProps,
   segment,
   taskStatusFilter,
   wikiFilter,
@@ -954,12 +1032,14 @@ function WorkLogFilters({
   onWikiFilter: (value: string) => void;
   priorityFilter: string;
   search: string;
+  sectionProps?: WorkLogSectionProps;
   segment: WorkLogSegment;
   taskStatusFilter: string;
   wikiFilter: string;
 }>) {
   return (
     <section
+      {...sectionProps}
       aria-label="Work log filters"
       className="rounded-[18px] border border-[var(--border-subtle)] bg-[var(--surface-1)] p-3"
     >
@@ -1095,6 +1175,7 @@ function FilterSelect({
 function CurrentWorkEntryCard({
   activities,
   architectureItems,
+  canUseLocalWorkDrafts,
   entry,
   onAddActivity,
   onContinueLog,
@@ -1103,9 +1184,12 @@ function CurrentWorkEntryCard({
   onOpenLog,
   tasks,
   wikiEntries,
+  profileId,
+  state,
 }: Readonly<{
   activities: readonly WorkActivity[];
   architectureItems: readonly WorkArchitectureItem[];
+  canUseLocalWorkDrafts: boolean;
   entry: WorkLogEntry | null;
   onAddActivity: () => void;
   onContinueLog: (entry: WorkLogEntry) => void;
@@ -1114,19 +1198,25 @@ function CurrentWorkEntryCard({
   onOpenLog: (entry: WorkLogEntry) => void;
   tasks: readonly WorkTask[];
   wikiEntries: readonly WorkWikiEntry[];
+  profileId: WorkLogViewModel["profileId"];
+  state: WorkLogViewModel["contentStates"]["currentWorkEntry"];
 }>) {
   if (!entry) {
     return (
       <Panel
         className="border-[rgba(66,184,131,.30)]"
+        sectionProps={{
+          "data-work-log-section": "current-work-entry",
+          ...contentStateDataAttributes(state, profileId),
+        }}
         subtitle="The work journal starts once a local entry exists."
         title="Current Work Entry"
       >
         <EmptyState
-          actionLabel="Log work"
-          description="Capture what was done, what was accomplished and how it was done."
-          onAction={onLogWork}
-          title="No work logs yet"
+          actionLabel={canUseLocalWorkDrafts ? "Log work" : undefined}
+          description="Erfasse später lokal, was erledigt wurde, wie es lief und welche Follow-ups bleiben."
+          onAction={canUseLocalWorkDrafts ? onLogWork : undefined}
+          title="Noch kein Work-Eintrag"
         />
       </Panel>
     );
@@ -1149,6 +1239,8 @@ function CurrentWorkEntryCard({
     <section
       aria-labelledby="current-work-entry-title"
       className="overflow-hidden rounded-[var(--panel-radius)] border border-[rgba(66,184,131,.34)] bg-[linear-gradient(180deg,rgba(15,23,36,.98),rgba(15,23,36,.92))] shadow-[0_8px_22px_rgba(0,0,0,.12)]"
+      data-work-log-section="current-work-entry"
+      {...contentStateDataAttributes(state, profileId)}
     >
       <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_420px]">
         <div className="min-w-0 p-4 sm:p-5">
@@ -1317,33 +1409,45 @@ function RelationList({
 
 function WorkTaskContextList({
   activities,
+  canUseLocalWorkDrafts,
   onAddActivity,
   onAddTask,
   onOpenTask,
+  profileId,
   query,
+  state,
   tasks,
   wikiEntries,
 }: Readonly<{
   activities: readonly WorkActivity[];
+  canUseLocalWorkDrafts: boolean;
   onAddActivity: (task: WorkTask) => void;
   onAddTask: () => void;
   onOpenTask: (task: WorkTask) => void;
+  profileId: WorkLogViewModel["profileId"];
   query: string;
+  state: WorkLogViewModel["contentStates"]["taskContext"];
   tasks: readonly WorkTask[];
   wikiEntries: readonly WorkWikiEntry[];
 }>) {
   return (
     <Panel
       badge={<Pill>{tasks.length} tasks</Pill>}
+      sectionProps={{
+        "data-work-log-section": "task-context",
+        ...contentStateDataAttributes(state, profileId),
+      }}
       subtitle="Current task context with next action, not a Jira-style board."
       title="Task Context"
     >
       {tasks.length === 0 ? (
         <EmptyState
-          actionLabel="Add task"
-          description="Add a local task context to connect activity, wiki notes and follow-ups."
-          onAction={onAddTask}
-          title={query ? "No tasks match the filters" : "No tasks yet"}
+          actionLabel={canUseLocalWorkDrafts ? "Add task" : undefined}
+          description="Work-Aufgaben erscheinen hier, sobald lokale Tasks mit Work-Kontext vorhanden sind."
+          onAction={canUseLocalWorkDrafts ? onAddTask : undefined}
+          title={
+            query ? "No tasks match the filters" : "Keine verknüpften Work-Aufgaben"
+          }
         />
       ) : (
         <div className="grid gap-3 lg:grid-cols-2">
@@ -1389,6 +1493,7 @@ function WorkTaskContextList({
                   </button>
                   <button
                     className={quietButtonClass}
+                    disabled={!canUseLocalWorkDrafts}
                     onClick={() => onAddActivity(task)}
                     type="button"
                   >
@@ -1406,29 +1511,39 @@ function WorkTaskContextList({
 
 function WorkActivityTimeline({
   activities,
+  canUseLocalWorkDrafts,
   onAddActivity,
   onOpenActivity,
+  profileId,
   query,
+  state,
   tasks,
 }: Readonly<{
   activities: readonly WorkActivity[];
+  canUseLocalWorkDrafts: boolean;
   onAddActivity: () => void;
   onOpenActivity: (activity: WorkActivity) => void;
+  profileId: WorkLogViewModel["profileId"];
   query: string;
+  state: WorkLogViewModel["contentStates"]["activityTimeline"];
   tasks: readonly WorkTask[];
 }>) {
   return (
     <Panel
       badge={<Pill accent={referenceAccent}>{activities.length} activities</Pill>}
+      sectionProps={{
+        "data-work-log-section": "activity-timeline",
+        ...contentStateDataAttributes(state, profileId),
+      }}
       subtitle="Chronological activity notes with result, method and evidence."
       title="Activity Timeline"
     >
       {activities.length === 0 ? (
         <EmptyState
-          actionLabel="Add activity"
+          actionLabel={canUseLocalWorkDrafts ? "Add activity" : undefined}
           description="Add a local activity when work needs result and method context."
-          onAction={onAddActivity}
-          title={query ? "No activities match the filters" : "No activities yet"}
+          onAction={canUseLocalWorkDrafts ? onAddActivity : undefined}
+          title={query ? "No activities match the filters" : "Keine Aktivitäten"}
         />
       ) : (
         <div className="grid gap-3">
@@ -1485,30 +1600,40 @@ function TimelineText({ label, value }: Readonly<{ label: string; value: string 
 }
 
 function OpenWorkFollowUps({
+  canUseLocalWorkDrafts,
   followUps,
   onAddFollowUp,
   onMarkDone,
   onOpenSource,
+  profileId,
   query,
+  state,
 }: Readonly<{
+  canUseLocalWorkDrafts: boolean;
   followUps: readonly WorkFollowUp[];
   onAddFollowUp: () => void;
   onMarkDone: (followUp: WorkFollowUp) => void;
   onOpenSource: (followUp: WorkFollowUp) => void;
+  profileId: WorkLogViewModel["profileId"];
   query: string;
+  state: WorkLogViewModel["contentStates"]["openFollowUps"];
 }>) {
   return (
     <Panel
       badge={<Pill accent={warningAccent}>{followUps.length} items</Pill>}
+      sectionProps={{
+        "data-work-log-section": "open-follow-ups",
+        ...contentStateDataAttributes(state, profileId),
+      }}
       subtitle="Open loops from logs and activities."
       title="Open Follow-ups"
     >
       {followUps.length === 0 ? (
         <EmptyState
-          actionLabel="Add follow-up"
+          actionLabel={canUseLocalWorkDrafts ? "Add follow-up" : undefined}
           description="No local follow-ups are open for the current filters."
-          onAction={onAddFollowUp}
-          title={query ? "No follow-ups match the filters" : "No follow-ups yet"}
+          onAction={canUseLocalWorkDrafts ? onAddFollowUp : undefined}
+          title={query ? "No follow-ups match the filters" : "Keine offenen Follow-ups"}
         />
       ) : (
         <div className="grid gap-3">
@@ -1565,28 +1690,38 @@ function OpenWorkFollowUps({
 }
 
 function RecentWorkLogs({
+  canUseLocalWorkDrafts,
   entries,
   onLogWork,
   onOpenLog,
+  profileId,
   query,
+  state,
 }: Readonly<{
+  canUseLocalWorkDrafts: boolean;
   entries: readonly WorkLogEntry[];
   onLogWork: () => void;
   onOpenLog: (entry: WorkLogEntry) => void;
+  profileId: WorkLogViewModel["profileId"];
   query: string;
+  state: WorkLogViewModel["contentStates"]["recentWorkLogs"];
 }>) {
   return (
     <Panel
       badge={<Pill>{entries.length}</Pill>}
+      sectionProps={{
+        "data-work-log-section": "recent-work-logs",
+        ...contentStateDataAttributes(state, profileId),
+      }}
       subtitle="Compact recent entries."
       title="Recent Work Logs"
     >
       {entries.length === 0 ? (
         <EmptyState
-          actionLabel="Log work"
+          actionLabel={canUseLocalWorkDrafts ? "Log work" : undefined}
           description="Recent work entries appear here after a local log is saved."
-          onAction={onLogWork}
-          title={query ? "No work logs match the filters" : "No work logs yet"}
+          onAction={canUseLocalWorkDrafts ? onLogWork : undefined}
+          title={query ? "No work logs match the filters" : "Noch keine Work-Logs"}
         />
       ) : (
         <div className="grid gap-2">
@@ -1614,10 +1749,14 @@ function RecentWorkLogs({
 function LinkedWikiNotesPanel({
   currentEntry,
   onOpenWiki,
+  profileId,
+  state,
   wikiEntries,
 }: Readonly<{
   currentEntry: WorkLogEntry | null;
   onOpenWiki: (entry: WorkWikiEntry) => void;
+  profileId: WorkLogViewModel["profileId"];
+  state: WorkLogViewModel["contentStates"]["linkedWikiNotes"];
   wikiEntries: readonly WorkWikiEntry[];
 }>) {
   const linkedWiki = currentEntry
@@ -1629,13 +1768,17 @@ function LinkedWikiNotesPanel({
   return (
     <Panel
       badge={<Pill accent={referenceAccent}>{linkedWiki.length}</Pill>}
+      sectionProps={{
+        "data-work-log-section": "linked-wiki-notes",
+        ...contentStateDataAttributes(state, profileId),
+      }}
       subtitle="Wiki notes connected to selected or latest work."
       title="Linked Wiki Notes"
     >
       {linkedWiki.length === 0 ? (
         <EmptyState
           description="Link a wiki note from a log or activity to see it here."
-          title="No linked wiki notes"
+          title="Keine verknüpften Wiki-Notizen"
         />
       ) : (
         <div className="grid gap-2">
@@ -1674,11 +1817,15 @@ function WorkLogSignals({
   activities,
   followUps,
   logs,
+  profileId,
+  state,
   wikiEntries,
 }: Readonly<{
   activities: readonly WorkActivity[];
   followUps: readonly WorkFollowUp[];
   logs: readonly WorkLogEntry[];
+  profileId: WorkLogViewModel["profileId"];
+  state: WorkLogViewModel["contentStates"]["workLogSignals"];
   wikiEntries: readonly WorkWikiEntry[];
 }>) {
   const weekActivityCount = Math.min(
@@ -1702,25 +1849,41 @@ function WorkLogSignals({
       (activity) => activity.blockers.length > 0 || activity.type === "review",
     ).length,
   );
+  const hasSignals =
+    logs.length + activities.length + followUps.length + wikiEntries.length > 0;
 
   return (
-    <Panel subtitle="Text-led signals, no productivity scoring." title="Work Log Signals">
+    <Panel
+      sectionProps={{
+        "data-work-log-section": "work-log-signals",
+        ...contentStateDataAttributes(state, profileId),
+      }}
+      subtitle="Text-led signals, no productivity scoring."
+      title="Work Log Signals"
+    >
       <div className="grid gap-2">
-        <Metric label="Activities" value={`${weekActivityCount || logs.length} activities logged this week`} />
+        <Metric
+          label="Activities"
+          value={
+            hasSignals
+              ? `${weekActivityCount || logs.length} activities logged this week`
+              : "0"
+          }
+        />
         <Metric
           accent={warningAccent}
           label="Follow-ups"
-          value={`${openFollowUpCount} follow-ups open`}
+          value={hasSignals ? `${openFollowUpCount} follow-ups open` : "0"}
         />
         <Metric
           accent={referenceAccent}
           label="Wiki"
-          value={`${linkedWikiCount} wiki notes linked`}
+          value={hasSignals ? `${linkedWikiCount} wiki notes linked` : "0"}
         />
         <Metric
           accent={warningAccent}
           label="Review"
-          value={`${reviewActivityCount} activity needs review`}
+          value={hasSignals ? `${reviewActivityCount} activity needs review` : "0"}
         />
       </div>
     </Panel>

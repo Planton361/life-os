@@ -1,3 +1,7 @@
+import type { ContentStateMeta } from "@/features/content-state";
+
+export type WorkProfileId = "demo" | "empty" | "manual";
+
 export type WorkTaskStatus =
   | "open"
   | "in_progress"
@@ -146,7 +150,43 @@ export type WorkSection = {
   nextAction: string;
 };
 
+export type WorkOverviewContentStates = {
+  page: ContentStateMeta;
+  searchFilters: ContentStateMeta;
+  currentWorkJournal: ContentStateMeta;
+  quickActions: ContentStateMeta;
+  openFollowUps: ContentStateMeta;
+  workSignals: ContentStateMeta;
+  recentWorkLog: ContentStateMeta;
+  architectureSnapshot: ContentStateMeta;
+};
+
+export type WorkLogContentStates = {
+  page: ContentStateMeta;
+  searchFilters: ContentStateMeta;
+  currentWorkEntry: ContentStateMeta;
+  quickActions: ContentStateMeta;
+  openFollowUps: ContentStateMeta;
+  taskContext: ContentStateMeta;
+  activityTimeline: ContentStateMeta;
+  workLogSignals: ContentStateMeta;
+  recentWorkLogs: ContentStateMeta;
+  linkedWikiNotes: ContentStateMeta;
+};
+
+export type WorkWikiContentStates = {
+  page: ContentStateMeta;
+  searchFilters: ContentStateMeta;
+  pinnedReferences: ContentStateMeta;
+  needsReview: ContentStateMeta;
+  wikiLookup: ContentStateMeta;
+  architectureNotes: ContentStateMeta;
+  wikiCategories: ContentStateMeta;
+};
+
 export type WorkOverviewViewModel = {
+  profileId: WorkProfileId;
+  contentStates: WorkOverviewContentStates;
   tasks: WorkTask[];
   activities: WorkActivity[];
   logs: WorkLogEntry[];
@@ -159,6 +199,8 @@ export type WorkOverviewViewModel = {
 };
 
 export type WorkLogViewModel = {
+  profileId: WorkProfileId;
+  contentStates: WorkLogContentStates;
   tasks: WorkTask[];
   activities: WorkActivity[];
   logs: WorkLogEntry[];
@@ -168,6 +210,8 @@ export type WorkLogViewModel = {
 };
 
 export type WorkWikiViewModel = {
+  profileId: WorkProfileId;
+  contentStates: WorkWikiContentStates;
   tasks: WorkTask[];
   logs: WorkLogEntry[];
   wikiEntries: WorkWikiEntry[];

@@ -45,6 +45,23 @@ import {
   getWorkOverviewViewModel as getDemoWorkOverviewViewModel,
   getWorkWikiViewModel as getDemoWorkWikiViewModel,
 } from "@/features/work";
+import type {
+  EntityPriority,
+  TaskStatus,
+} from "@/features/entities/types";
+import type {
+  WorkLogViewModel,
+  WorkOverviewViewModel,
+  WorkSection,
+  WorkTask,
+  WorkTaskStatus,
+  WorkWikiViewModel,
+} from "@/features/work";
+import {
+  buildWorkLogContentStates,
+  buildWorkOverviewContentStates,
+  buildWorkWikiContentStates,
+} from "@/features/work/work-content-states";
 import { readManualProfile } from "./manual-profile-store";
 import { getCurrentLifeOsProfileId } from "./profile-cookie";
 import type { LifeOsProfileId, ManualHabit, ManualProfileData } from "./types";
@@ -2146,6 +2163,141 @@ export async function getInventoryPageViewModel(): Promise<
   };
 }
 
+const profileWorkSections: WorkSection[] = [
+  {
+    href: "/work/log",
+    id: "log",
+    lastActivity: "Noch keine lokalen Work-Logs",
+    nextAction:
+      "Work-Logs erscheinen hier, sobald eine persistente lokale Quelle existiert.",
+    openItems: 0,
+    purpose: "Tagebuch fuer Arbeit, Ergebnis, Loesungsweg und Follow-ups.",
+    title: "Work Log",
+  },
+  {
+    href: "/work/wiki",
+    id: "wiki",
+    lastActivity: "Noch keine lokalen Wiki-Notizen",
+    nextAction:
+      "Wiki-Notizen erscheinen hier, sobald eine persistente lokale Quelle existiert.",
+    openItems: 0,
+    purpose: "Persoenlicher Nachschlageort fuer Begriffe, Prozesse und How-tos.",
+    title: "Wiki",
+  },
+  {
+    href: "/work/meetings",
+    id: "meetings",
+    lastActivity: "Keine Meeting-Kontexte",
+    nextAction:
+      "Meetings bleiben ein interner Kontext und sind nicht Teil dieses Baseline-Passes.",
+    openItems: 0,
+    purpose: "Meetingnotizen, Entscheidungen und offene Punkte vorbereiten.",
+    title: "Meetings",
+  },
+];
+
+const profileWorkPrivacyNotes = [
+  "Work notes stay private and local.",
+  "Do not store secrets or credentials.",
+  "Do not paste confidential employer or customer details.",
+  "Architecture notes stay personal learning context.",
+  "Wiki entries are personal lookup notes, not official documentation.",
+] as const;
+
+function workTaskStatusFromTask(status: TaskStatus): WorkTaskStatus {
+  if (status === "active") return "in_progress";
+  if (status === "waiting") return "blocked";
+  if (status === "done") return "done";
+  if (status === "canceled") return "archived";
+  return "open";
+}
+
+function workTaskPriorityFromTask(priority: EntityPriority): WorkTask["priority"] {
+  if (priority === "P0" || priority === "P1") return "high";
+  if (priority === "P2") return "medium";
+  return "low";
+}
+
+function manualWorkTasks(profile: ManualProfileData): WorkTask[] {
+  return profile.tasks
+    .filter((task) => task.areaId === "work")
+    .map((task) => ({
+      context:
+        task.description ||
+        "Lokaler Work-Task aus dem Manual-Profil ohne Work-Log-Verknuepfung.",
+      id: task.id,
+      linkedActivityIds: [],
+      linkedWikiEntryIds: [],
+      nextAction: task.nextStep,
+      priority: workTaskPriorityFromTask(task.priority),
+      status: workTaskStatusFromTask(task.status),
+      title: task.title,
+      updatedAt: task.date ?? "manual",
+    }));
+}
+
+function buildProfileWorkOverviewViewModel(
+  profileId: Exclude<LifeOsProfileId, "demo">,
+  profile: ManualProfileData,
+): WorkOverviewViewModel {
+  const tasks = manualWorkTasks(profile);
+  const viewModel = {
+    activities: [],
+    architectureItems: [],
+    followUps: [],
+    logs: [],
+    meetings: [],
+    privacyNotes: profileWorkPrivacyNotes.slice(),
+    profileId,
+    sections: profileWorkSections,
+    tasks,
+    wikiEntries: [],
+  } satisfies Omit<WorkOverviewViewModel, "contentStates">;
+
+  return {
+    ...viewModel,
+    contentStates: buildWorkOverviewContentStates(viewModel),
+  };
+}
+
+function buildProfileWorkLogViewModel(
+  profileId: Exclude<LifeOsProfileId, "demo">,
+  profile: ManualProfileData,
+): WorkLogViewModel {
+  const viewModel = {
+    activities: [],
+    architectureItems: [],
+    followUps: [],
+    logs: [],
+    profileId,
+    tasks: manualWorkTasks(profile),
+    wikiEntries: [],
+  } satisfies Omit<WorkLogViewModel, "contentStates">;
+
+  return {
+    ...viewModel,
+    contentStates: buildWorkLogContentStates(viewModel),
+  };
+}
+
+function buildProfileWorkWikiViewModel(
+  profileId: Exclude<LifeOsProfileId, "demo">,
+  profile: ManualProfileData,
+): WorkWikiViewModel {
+  const viewModel = {
+    architectureItems: [],
+    logs: [],
+    profileId,
+    tasks: manualWorkTasks(profile),
+    wikiEntries: [],
+  } satisfies Omit<WorkWikiViewModel, "contentStates">;
+
+  return {
+    ...viewModel,
+    contentStates: buildWorkWikiContentStates(viewModel),
+  };
+}
+
 export async function getEducationOverviewViewModel(): Promise<EducationOverviewViewModel> {
   const profileId = await getCurrentLifeOsProfileId();
 
@@ -2176,22 +2328,34 @@ export async function getLearningLogViewModel(): Promise<LearningLogViewModel> {
   return buildProfileLearningLogViewModel(profileId);
 }
 
-export async function getWorkOverviewViewModel(): Promise<
-  ReturnType<typeof getDemoWorkOverviewViewModel>
-> {
-  return getProfileAreaViewModel(getDemoWorkOverviewViewModel, "Work");
+export async function getWorkOverviewViewModel(): Promise<WorkOverviewViewModel> {
+  const profileId = await getCurrentLifeOsProfileId();
+
+  if (profileId === "demo") {
+    return getDemoWorkOverviewViewModel();
+  }
+
+  return buildProfileWorkOverviewViewModel(profileId, await readManualProfile());
 }
 
-export async function getWorkLogViewModel(): Promise<
-  ReturnType<typeof getDemoWorkLogViewModel>
-> {
-  return getProfileAreaViewModel(getDemoWorkLogViewModel, "Work");
+export async function getWorkLogViewModel(): Promise<WorkLogViewModel> {
+  const profileId = await getCurrentLifeOsProfileId();
+
+  if (profileId === "demo") {
+    return getDemoWorkLogViewModel();
+  }
+
+  return buildProfileWorkLogViewModel(profileId, await readManualProfile());
 }
 
-export async function getWorkWikiViewModel(): Promise<
-  ReturnType<typeof getDemoWorkWikiViewModel>
-> {
-  return getProfileAreaViewModel(getDemoWorkWikiViewModel, "Work");
+export async function getWorkWikiViewModel(): Promise<WorkWikiViewModel> {
+  const profileId = await getCurrentLifeOsProfileId();
+
+  if (profileId === "demo") {
+    return getDemoWorkWikiViewModel();
+  }
+
+  return buildProfileWorkWikiViewModel(profileId, await readManualProfile());
 }
 
 export async function getResourcesViewModel(): Promise<

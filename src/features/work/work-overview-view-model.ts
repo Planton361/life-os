@@ -9,10 +9,12 @@ import {
   mockWorkTasks,
   mockWorkWikiEntries,
 } from "./mock-work-data";
+import { buildWorkOverviewContentStates } from "./work-content-states";
 import type { WorkOverviewViewModel } from "./types";
 
 export function getWorkOverviewViewModel(): WorkOverviewViewModel {
-  return {
+  const viewModel = {
+    profileId: "demo",
     tasks: mockWorkTasks,
     activities: mockWorkActivities,
     logs: mockWorkLogEntries,
@@ -22,5 +24,10 @@ export function getWorkOverviewViewModel(): WorkOverviewViewModel {
     meetings: mockWorkMeetings,
     sections: mockWorkSections,
     privacyNotes: mockWorkPrivacyNotes,
+  } satisfies Omit<WorkOverviewViewModel, "contentStates">;
+
+  return {
+    ...viewModel,
+    contentStates: buildWorkOverviewContentStates(viewModel),
   };
 }
