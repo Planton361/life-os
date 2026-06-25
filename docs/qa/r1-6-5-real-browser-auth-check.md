@@ -29,7 +29,11 @@
 3. Sign in again with local Supabase email/password.
 4. Open `/dashboard`, choose `Aufgaben-Capture`, use `In Inbox speichern`, and confirm `Als Aufgaben-Capture in der Inbox gespeichert`.
 5. Follow `In Inbox als Task anlegen`, confirm the captured thought appears there, and use `Als Task anlegen`.
-6. Confirm the created task is visible through Portfolio, Today, Dashboard, and Calendar planning views after the normal manual DB flow.
+6. Confirm `Task erstellt` and `Portfolio öffnen` are visible after triage.
+7. Confirm the already triaged item disables `Als Task anlegen` after reload, so no second task can be created from the same inbox item.
+8. Confirm the Outcome Route checklist does not block task captures; task captures should show the direct task path as ready.
+9. Confirm the created task is visible through Portfolio, Today, Dashboard, and Calendar planning views after the normal manual DB flow.
+10. If Portfolio, Today, Dashboard, or Calendar stay empty, verify that the item was triaged in Inbox and that the task is visible under `/portfolio?view=tasks` before checking planning or scheduling actions.
 
 ## Known Boundaries
 

@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import Link from "next/link";
 import type { ContentStateMeta } from "@/features/content-state";
 import {
   getInboxCaptureTypeLabel,
@@ -639,6 +640,7 @@ function InboxActiveItemPanel({
   profileId: InboxViewModel["profileId"];
 }>) {
   const [cleanTitle, description, nextAction, missingInfo] = activeItem.fields;
+  const showTaskAction = activeItem.hasSelection && activeItem.isTaskCapture;
 
   return (
     <section
@@ -669,6 +671,46 @@ function InboxActiveItemPanel({
             </Pill>
           </div>
         </div>
+        {showTaskAction ? (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <form action={triageInboxItemToTaskFormAction}>
+              <input name="inboxItemId" type="hidden" value={activeItem.id} />
+              <input name="title" type="hidden" value={activeItem.title} />
+              <input
+                name="description"
+                type="hidden"
+                value={activeItem.originalCapture}
+              />
+              <button
+                className={cn(
+                  "min-h-9 rounded-[12px] border border-[rgba(66,184,131,.42)] bg-[rgba(66,184,131,.22)] px-3 text-xs font-semibold text-[var(--text-primary)]",
+                  focusClasses,
+                  disabledActionClasses,
+                )}
+                disabled={!activeItem.canTriageToTask}
+                type="submit"
+              >
+                Als Task anlegen
+              </button>
+            </form>
+            {activeItem.triagedTaskId ? (
+              <>
+                <Pill active accent="var(--accent-green)">
+                  Task erstellt
+                </Pill>
+                <Link
+                  className={cn(
+                    "inline-flex min-h-9 items-center rounded-[12px] border border-[rgba(91,124,250,.34)] bg-[rgba(91,124,250,.16)] px-3 text-xs font-semibold text-[var(--text-primary)]",
+                    focusClasses,
+                  )}
+                  href={activeItem.portfolioHref ?? "/portfolio?view=tasks"}
+                >
+                  Portfolio öffnen
+                </Link>
+              </>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       {activeItem.hasSelection ? (
@@ -739,30 +781,21 @@ function InboxActiveItemPanel({
           aria-label="Inbox item actions"
           className="mt-auto flex flex-wrap gap-2 border-t border-[var(--border-subtle)] pt-3"
         >
-          <form action={triageInboxItemToTaskFormAction}>
-            <input name="inboxItemId" type="hidden" value={activeItem.id} />
-            <input name="title" type="hidden" value={activeItem.title} />
-            <input
-              name="description"
-              type="hidden"
-              value={activeItem.originalCapture}
-            />
-            <button
-              className={cn(
-                "min-h-8 rounded-[12px] border border-[rgba(66,184,131,.34)] bg-[rgba(66,184,131,.18)] px-3 text-xs font-semibold text-[var(--text-primary)]",
-                focusClasses,
-                disabledActionClasses,
-              )}
-              disabled={!activeItem.canTriageToTask}
-              type="submit"
-            >
-              Als Task anlegen
-            </button>
-          </form>
           {activeItem.triagedTaskId ? (
-            <Pill active accent="var(--accent-green)">
-              Task erstellt
-            </Pill>
+            <>
+              <Pill active accent="var(--accent-green)">
+                Task erstellt
+              </Pill>
+              <Link
+                className={cn(
+                  "inline-flex min-h-8 items-center rounded-[12px] border border-[rgba(91,124,250,.34)] bg-[rgba(91,124,250,.16)] px-3 text-xs font-semibold text-[var(--text-primary)]",
+                  focusClasses,
+                )}
+                href={activeItem.portfolioHref ?? "/portfolio?view=tasks"}
+              >
+                Portfolio öffnen
+              </Link>
+            </>
           ) : null}
           {["Save progress", "Mark as clarified", "Snooze", "Dismiss"].map(
             (action, index) => (

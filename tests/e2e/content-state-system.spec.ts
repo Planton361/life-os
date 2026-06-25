@@ -74,6 +74,7 @@ async function captureAndTriageManualInboxTask(
     .getByRole("textbox", { exact: true, name: "Quick Capture" })
     .fill(title);
   await page.getByRole("textbox", { name: "Quick Capture note" }).fill(note);
+  await page.getByLabel("Quick Capture type").selectOption("task");
   await page.getByRole("button", { name: "Capture" }).click();
   await page.waitForLoadState("networkidle");
   await expect(page.getByText(title).first()).toBeVisible();
@@ -1492,9 +1493,14 @@ test.describe("Dashboard content states", () => {
 
     await page.goto("/inbox");
     await expect(page.getByText(thought).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: "Als Task anlegen" })).toBeVisible();
     await page.getByRole("button", { name: "Als Task anlegen" }).click();
     await page.waitForLoadState("networkidle");
     await expect(page.getByText("Task erstellt").first()).toBeVisible();
+    await expect(page.getByRole("link", { name: "Portfolio öffnen" })).toBeVisible();
+    await page.getByRole("link", { name: "Portfolio öffnen" }).first().click();
+    await expect(page).toHaveURL(/\/portfolio\?view=tasks/);
+    await expect(page.getByText(thought).first()).toBeVisible();
   });
 
   test("projects a manual DB task into Today Agenda", async ({ page }) => {
@@ -1777,17 +1783,25 @@ test.describe("Inbox content states", () => {
     await page
       .getByRole("textbox", { name: "Quick Capture note" })
       .fill("Create a task from this inbox item.");
+    await page.getByLabel("Quick Capture type").selectOption("task");
     await page.getByRole("button", { name: "Capture" }).click();
     await page.waitForLoadState("networkidle");
 
     await expect(page.getByText(title).first()).toBeVisible();
+    await expect(page.getByText("Outcome Route gewählt").first()).toBeVisible();
+    await expect(page.getByText("4 / 4 ready").first()).toBeVisible();
     await page.getByRole("button", { name: "Als Task anlegen" }).click();
     await page.waitForLoadState("networkidle");
 
     await expect(page.getByText("Task erstellt").first()).toBeVisible();
+    await expect(page.getByRole("link", { name: "Portfolio öffnen" })).toBeVisible();
     await page.reload();
     await expect(page.getByText(title).first()).toBeVisible();
     await expect(page.getByText("Task erstellt").first()).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Als Task anlegen" }),
+    ).toBeDisabled();
+    await expect(page.getByRole("link", { name: "Portfolio öffnen" })).toBeVisible();
     await expectNoInboxDemoStrings(page);
   });
 
@@ -1817,6 +1831,7 @@ test.describe("Inbox content states", () => {
     await page
       .getByRole("textbox", { name: "Quick Capture note" })
       .fill("Expose this triaged item through the task read model.");
+    await page.getByLabel("Quick Capture type").selectOption("task");
     await page.getByRole("button", { name: "Capture" }).click();
     await page.waitForLoadState("networkidle");
     await page.getByRole("button", { name: "Als Task anlegen" }).click();
@@ -1827,6 +1842,40 @@ test.describe("Inbox content states", () => {
       .poll(async () => readProfileDataTaskCount(page))
       .toBeGreaterThan(taskCountBefore);
     await expectNoInboxDemoStrings(page);
+  });
+
+  test("Manual Inbox triaged task cannot be submitted twice", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session; no broad DB cleanup action is available.",
+    );
+
+    const title = `Manual Inbox no duplicate task ${Date.now()}`;
+    const taskCountBefore = await readProfileDataTaskCount(page);
+
+    await captureAndTriageManualInboxTask(
+      page,
+      title,
+      "Keep this inbox item linked to one task.",
+    );
+
+    await expect
+      .poll(async () => readProfileDataTaskCount(page))
+      .toBeGreaterThan(taskCountBefore);
+    const taskCountAfterTriage = await readProfileDataTaskCount(page);
+
+    await page.goto("/inbox");
+    await expect(page.getByText(title).first()).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Als Task anlegen" }),
+    ).toBeDisabled();
+    await page.reload();
+    await expect(
+      page.getByRole("button", { name: "Als Task anlegen" }),
+    ).toBeDisabled();
+    await expect(await readProfileDataTaskCount(page)).toBe(taskCountAfterTriage);
   });
 });
 

@@ -1576,6 +1576,9 @@ function buildProfileInboxViewModel(
     manualInboxToQueueItem(item, index === 0),
   );
   const active = profile.inboxItems[0] ?? null;
+  const activeIsTaskCapture = active?.type === "task";
+  const activeIsTriaged = Boolean(active?.triagedTaskId);
+  const activeHasTaskOutcome = Boolean(active && (activeIsTaskCapture || activeIsTriaged));
   const checklistItems = [
     {
       label: "Capture vorhanden",
@@ -1591,7 +1594,7 @@ function buildProfileInboxViewModel(
     },
     {
       label: "Outcome Route gewählt",
-      state: "missing",
+      state: activeHasTaskOutcome ? "done" : "missing",
     },
   ] satisfies InboxViewModel["checklist"]["items"];
   const checklistDoneCount = checklistItems.filter(
@@ -1668,12 +1671,20 @@ function buildProfileInboxViewModel(
   ];
   viewModel.queue = queue;
   viewModel.activeItem = {
-    canTriageToTask: Boolean(isManual && active && !active.triagedTaskId),
+    canTriageToTask: Boolean(
+      isManual && active && activeIsTaskCapture && !activeIsTriaged,
+    ),
     hasSelection: Boolean(active),
     id: active?.id,
+    isTaskCapture: activeIsTaskCapture,
+    portfolioHref: activeIsTriaged ? "/portfolio?view=tasks" : undefined,
     title: active?.title ?? "Kein Eintrag ausgewählt",
     triagedTaskId: active?.triagedTaskId ?? null,
-    stage: active ? getInboxStageLabel(active.stage) : "—",
+    stage: activeIsTriaged
+      ? "Triaged"
+      : active
+        ? getInboxStageLabel(active.stage)
+        : "—",
     type: active ? getInboxCaptureTypeLabel(active.type) : "—",
     originalCapture: active?.note ?? "",
     source: isManual ? "Manual database" : "Empty profile",
@@ -1692,7 +1703,13 @@ function buildProfileInboxViewModel(
       },
       {
         label: "Missing Info",
-        value: active ? "Outcome Route wählen." : "—",
+        value: activeIsTriaged
+          ? "Task erstellt. Öffne Portfolio für Planung."
+          : activeIsTaskCapture
+            ? "Direkter Task-Pfad aktiv. Outcome Route blockiert nicht."
+            : active
+              ? "Outcome Route wählen."
+              : "—",
       },
     ],
     planningSignals: active
@@ -1714,6 +1731,9 @@ function buildProfileInboxViewModel(
   };
   viewModel.outcome = {
     ...viewModel.outcome,
+    description: activeIsTaskCapture
+      ? "Aufgaben-Captures nutzen direkt die primäre Aktion im Active Item."
+      : viewModel.outcome.description,
     actionsEnabled: false,
   };
   viewModel.aiAssistant = {
@@ -1723,7 +1743,13 @@ function buildProfileInboxViewModel(
       ? "Hinweise bleiben lokal und werden erst nach Review übernommen."
       : "Noch keine Empfehlung möglich.",
     planning: aiPlanning,
-    outcomes: active ? ["Outcome Route prüfen"] : [],
+    outcomes: activeIsTriaged
+      ? ["Task erstellt"]
+      : activeIsTaskCapture
+        ? ["Standalone task"]
+        : active
+          ? ["Outcome Route prüfen"]
+          : [],
     canApply: false,
     emptyState: {
       title: "Noch keine Empfehlung möglich",

@@ -118,6 +118,8 @@ export type InboxViewModel = {
     canTriageToTask?: boolean;
     hasSelection: boolean;
     id?: string;
+    isTaskCapture?: boolean;
+    portfolioHref?: string;
     title: string;
     triagedTaskId?: string | null;
     stage: string;
