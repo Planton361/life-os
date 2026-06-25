@@ -48,6 +48,7 @@ export type ManualInboxItem = {
   note: string;
   areaId: EntityArea;
   createdAt: string;
+  triagedTaskId?: string | null;
 };
 
 export type ManualHabit = {

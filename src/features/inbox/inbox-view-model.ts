@@ -115,8 +115,11 @@ export type InboxViewModel = {
   queueEmptyState: InboxEmptyState;
   quickCapture: InboxQuickCaptureState;
   activeItem: {
+    canTriageToTask?: boolean;
     hasSelection: boolean;
+    id?: string;
     title: string;
+    triagedTaskId?: string | null;
     stage: string;
     type: string;
     originalCapture: string;

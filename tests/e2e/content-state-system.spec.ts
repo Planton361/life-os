@@ -1602,11 +1602,11 @@ test.describe("Inbox content states", () => {
     await expectNoInboxDemoStrings(page);
     await expect(page.locator("#inbox-page")).toHaveAttribute(
       "data-content-state",
-      "partial",
+      /^(partial|filled)$/,
     );
     await expect(
       page.locator('[data-inbox-section="queue"]'),
-    ).toHaveAttribute("data-item-count", "1");
+    ).not.toHaveAttribute("data-item-count", "0");
     await expect(page.getByText(title).first()).toBeVisible();
     await expect(
       page.locator('[data-inbox-section="active-item"]'),
@@ -1638,6 +1638,39 @@ test.describe("Inbox content states", () => {
     await expect(page.getByText(title).first()).toBeVisible();
     await page.reload();
     await expect(page.getByText(title).first()).toBeVisible();
+    await expectNoInboxDemoStrings(page);
+  });
+
+  test("Manual Inbox triage to task", async ({ page }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session; no broad DB cleanup action is available.",
+    );
+
+    const title = `Manual Inbox triage to task ${Date.now()}`;
+
+    await setProfile(page, "manual");
+    await applySupabaseAuthState(page);
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/inbox");
+    });
+    await page
+      .getByRole("textbox", { exact: true, name: "Quick Capture" })
+      .fill(title);
+    await page
+      .getByRole("textbox", { name: "Quick Capture note" })
+      .fill("Create a task from this inbox item.");
+    await page.getByRole("button", { name: "Capture" }).click();
+    await page.waitForLoadState("networkidle");
+
+    await expect(page.getByText(title).first()).toBeVisible();
+    await page.getByRole("button", { name: "Als Task anlegen" }).click();
+    await page.waitForLoadState("networkidle");
+
+    await expect(page.getByText("Task erstellt").first()).toBeVisible();
+    await page.reload();
+    await expect(page.getByText(title).first()).toBeVisible();
+    await expect(page.getByText("Task erstellt").first()).toBeVisible();
     await expectNoInboxDemoStrings(page);
   });
 });

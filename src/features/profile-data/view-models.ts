@@ -1307,6 +1307,7 @@ function realInboxToManualInboxItem(item: InboxItem): ManualInboxItem {
     note: item.body ?? "",
     stage,
     title: item.title,
+    triagedTaskId: item.triagedTaskId,
     type: item.type,
   };
 }
@@ -1475,8 +1476,11 @@ function buildProfileInboxViewModel(
   ];
   viewModel.queue = queue;
   viewModel.activeItem = {
+    canTriageToTask: Boolean(isManual && active && !active.triagedTaskId),
     hasSelection: Boolean(active),
+    id: active?.id,
     title: active?.title ?? "Kein Eintrag ausgewählt",
+    triagedTaskId: active?.triagedTaskId ?? null,
     stage: active ? getInboxStageLabel(active.stage) : "—",
     type: active ? getInboxCaptureTypeLabel(active.type) : "—",
     originalCapture: active?.note ?? "",

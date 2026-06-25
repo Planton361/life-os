@@ -13,7 +13,10 @@ import {
   type InboxSignal,
   type InboxViewModel,
 } from "@/features/inbox";
-import { captureInboxItemFormAction } from "@/features/real-data/actions/inbox.actions";
+import {
+  captureInboxItemFormAction,
+  triageInboxItemToTaskFormAction,
+} from "@/features/real-data/actions/inbox.actions";
 import { cn } from "@/lib/cn";
 
 type AccentStyle = CSSProperties & {
@@ -736,6 +739,31 @@ function InboxActiveItemPanel({
           aria-label="Inbox item actions"
           className="mt-auto flex flex-wrap gap-2 border-t border-[var(--border-subtle)] pt-3"
         >
+          <form action={triageInboxItemToTaskFormAction}>
+            <input name="inboxItemId" type="hidden" value={activeItem.id} />
+            <input name="title" type="hidden" value={activeItem.title} />
+            <input
+              name="description"
+              type="hidden"
+              value={activeItem.originalCapture}
+            />
+            <button
+              className={cn(
+                "min-h-8 rounded-[12px] border border-[rgba(66,184,131,.34)] bg-[rgba(66,184,131,.18)] px-3 text-xs font-semibold text-[var(--text-primary)]",
+                focusClasses,
+                disabledActionClasses,
+              )}
+              disabled={!activeItem.canTriageToTask}
+              type="submit"
+            >
+              Als Task anlegen
+            </button>
+          </form>
+          {activeItem.triagedTaskId ? (
+            <Pill active accent="var(--accent-green)">
+              Task erstellt
+            </Pill>
+          ) : null}
           {["Save progress", "Mark as clarified", "Snooze", "Dismiss"].map(
             (action, index) => (
               <button
