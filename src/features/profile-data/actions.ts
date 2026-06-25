@@ -23,6 +23,7 @@ import type {
   HabitTrackerWindow,
   QuickCaptureKind,
 } from "@/features/dashboard";
+import { captureInboxItemAction } from "@/features/real-data/actions/inbox.actions";
 import type {
   EntityArea,
   EntityPriority,
@@ -113,12 +114,7 @@ export async function createManualTaskAction(formData: FormData) {
 
 export async function createManualInboxItemAction(formData: FormData) {
   await setProfileCookie("manual");
-  await createManualInboxItem({
-    title: formString(formData, "title"),
-    note: formString(formData, "note"),
-    type: formString(formData, "type") as InboxCaptureType,
-    areaId: formString(formData, "areaId") as EntityArea,
-  });
+  await captureInboxItemAction(formData);
   revalidateProfileViews();
   redirectToSettings();
 }

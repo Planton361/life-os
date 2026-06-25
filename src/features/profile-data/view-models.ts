@@ -45,10 +45,11 @@ import type {
   LifeTask,
   TaskStatus,
 } from "@/features/entities/types";
+import { captureInboxItemInputSchema, type InboxItem } from "@/features/real-data";
+import { createSupabaseInboxRepository } from "@/features/real-data/supabase";
 import {
   createManualHabit,
   createManualGoal,
-  createManualInboxItem,
   createManualProject,
   createManualTask,
   readManualProfile,
@@ -79,6 +80,7 @@ import type {
   TodayReviewSignalViewModel,
   TodayViewModel,
 } from "@/features/today";
+import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
 import {
   getCurrentLifeOsProfileId,
   getLifeOsProfileSummary,
@@ -1282,6 +1284,67 @@ function manualInboxToQueueItem(
   };
 }
 
+function realInboxStatusToStage(status: InboxItem["status"]): InboxStage {
+  if (status === "clarified") return "clarify";
+  if (status === "triaged" || status === "processed") return "ready";
+  if (status === "archived") return "review";
+
+  return "raw";
+}
+
+function realInboxToManualInboxItem(item: InboxItem): ManualInboxItem {
+  const stage = realInboxStatusToStage(item.status);
+
+  return {
+    age: "DB",
+    areaId: "review",
+    createdAt: item.createdAt,
+    id: item.id,
+    next:
+      stage === "ready"
+        ? "Review completed triage output."
+        : "Clarify outcome and decide where it belongs.",
+    note: item.body ?? "",
+    stage,
+    title: item.title,
+    type: item.type,
+  };
+}
+
+async function getManualInboxProfileData(): Promise<{
+  data: ManualProfileData;
+  unavailableReason?: string;
+}> {
+  const auth = await createAuthenticatedSupabaseServerClient();
+
+  if (!auth.ok) {
+    return {
+      data: emptyManualProfile(),
+      unavailableReason:
+        auth.error === "missing_env"
+          ? "Supabase ist lokal noch nicht konfiguriert."
+          : "Melde dich an, um DB-backed Inbox Items zu laden.",
+    };
+  }
+
+  const repository = createSupabaseInboxRepository(auth.client);
+  const result = await repository.getInboxItemsByUser(auth.user.id, auth.user.id);
+
+  if (!result.ok) {
+    return {
+      data: emptyManualProfile(),
+      unavailableReason: "Inbox Items konnten nicht aus Supabase geladen werden.",
+    };
+  }
+
+  return {
+    data: {
+      ...emptyManualProfile(),
+      inboxItems: result.data.map(realInboxToManualInboxItem),
+    },
+  };
+}
+
 function inboxEmptyPlanningSuggestions(): InboxAISuggestion[] {
   return [
     {
@@ -1310,6 +1373,9 @@ function inboxEmptyPlanningSuggestions(): InboxAISuggestion[] {
 function buildProfileInboxViewModel(
   profile: ManualProfileData,
   profileId: Exclude<LifeOsProfileId, "demo">,
+  options: Readonly<{
+    unavailableReason?: string;
+  }> = {},
 ): InboxViewModel {
   const viewModel = clone(getDemoInboxViewModel());
   const isManual = profileId === "manual";
@@ -1348,6 +1414,12 @@ function buildProfileInboxViewModel(
         ...inboxEmptyPlanningSuggestions().slice(1),
       ]
     : inboxEmptyPlanningSuggestions();
+  const quickCaptureDescription =
+    isManual && !options.unavailableReason
+      ? "Speichert neue Inbox-Einträge in Supabase."
+      : options.unavailableReason
+        ? "Manual Inbox ist auf Supabase umgestellt, aber aktuell nicht verfügbar."
+        : "Quick Capture bleibt sichtbar; Speichern ist dem Manual-Profil vorbehalten.";
 
   viewModel.profileId = profileId;
   viewModel.contentStates = buildInboxContentStates({
@@ -1358,13 +1430,11 @@ function buildProfileInboxViewModel(
     relatedContextCount: 0,
   });
   viewModel.quickCapture = {
-    enabled: isManual,
+    enabled: isManual && !options.unavailableReason,
     title: "Quick Capture",
-    description: isManual
-      ? "Speichert neue Inbox-Einträge im lokalen Manual-Profil."
-      : "Quick Capture bleibt sichtbar; Speichern ist dem Manual-Profil vorbehalten.",
+    description: quickCaptureDescription,
     disabledReason: isManual
-      ? undefined
+      ? options.unavailableReason
       : "Wechsle ins Manual-Profil, um lokale Einträge zu speichern.",
   };
   viewModel.queueEmptyState = {
@@ -1375,7 +1445,7 @@ function buildProfileInboxViewModel(
     {
       label: "Open",
       value: String(profile.inboxItems.length),
-      sublabel: isManual ? "local captures" : "captured",
+      sublabel: isManual ? "db captures" : "captured",
       accent: "var(--accent-blue)",
     },
     {
@@ -1410,7 +1480,7 @@ function buildProfileInboxViewModel(
     stage: active ? getInboxStageLabel(active.stage) : "—",
     type: active ? getInboxCaptureTypeLabel(active.type) : "—",
     originalCapture: active?.note ?? "",
-    source: isManual ? "Manual local profile" : "Empty profile",
+    source: isManual ? "Manual database" : "Empty profile",
     fields: [
       {
         label: "Clean Title",
@@ -2155,6 +2225,14 @@ export async function getInboxViewModel(): Promise<InboxViewModel> {
     return getDemoInboxViewModel();
   }
 
+  if (profileId === "manual") {
+    const manualInbox = await getManualInboxProfileData();
+
+    return buildProfileInboxViewModel(manualInbox.data, profileId, {
+      unavailableReason: manualInbox.unavailableReason,
+    });
+  }
+
   return buildProfileInboxViewModel(await getProfileData(profileId), profileId);
 }
 
@@ -2228,7 +2306,33 @@ export async function getLifeOsDataSource(): Promise<LifeOsDataSource> {
     },
     async createInboxItem(input: CreateInboxItemInput) {
       assertManualProfile();
-      return createManualInboxItem(input);
+      const auth = await createAuthenticatedSupabaseServerClient();
+
+      if (!auth.ok) {
+        throw new Error("Authenticated Supabase user is required.");
+      }
+
+      const parsed = captureInboxItemInputSchema.safeParse({
+        body: input.note,
+        profileId: auth.user.id,
+        source: "profile_data.manual_inbox",
+        title: input.title,
+        type: input.type ?? "note",
+        userId: auth.user.id,
+      });
+
+      if (!parsed.success) {
+        throw new Error("Valid inbox input is required.");
+      }
+
+      const repository = createSupabaseInboxRepository(auth.client);
+      const result = await repository.createInboxItem(parsed.data);
+
+      if (!result.ok) {
+        throw new Error("Inbox item could not be created.");
+      }
+
+      return realInboxToManualInboxItem(result.data);
     },
     async getProjects() {
       const collection = await getEntityCollection();

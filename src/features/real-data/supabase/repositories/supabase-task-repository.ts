@@ -17,7 +17,7 @@ import {
   mapTaskRowToDomain,
   mapUpdateTaskInputToPatch,
 } from "../mappers";
-import type { TaskRow } from "../row-types";
+import type { TaskRow, TaskUpdate } from "../row-types";
 
 type RepositoryFailure = RepositoryResult<never>;
 
@@ -60,7 +60,7 @@ async function updateTaskById(
   client: SupabaseClientLike,
   userId: string,
   taskId: string,
-  patch: unknown,
+  patch: TaskUpdate,
   operation: string,
 ): Promise<RepositoryResult<Task>> {
   const result = (await client

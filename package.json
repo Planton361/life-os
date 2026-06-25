@@ -12,6 +12,8 @@
     "qa:dashboard": "playwright test tests/e2e/dashboard.spec.ts"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.12.0",
+    "@supabase/supabase-js": "^2.108.2",
     "next": "16.2.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

@@ -13,7 +13,7 @@ import {
   type InboxSignal,
   type InboxViewModel,
 } from "@/features/inbox";
-import { createInboxQuickCaptureAction } from "@/features/profile-data/actions";
+import { captureInboxItemFormAction } from "@/features/real-data/actions/inbox.actions";
 import { cn } from "@/lib/cn";
 
 type AccentStyle = CSSProperties & {
@@ -361,7 +361,7 @@ function InboxQueue({
           ))}
         </div>
         <form
-          action={createInboxQuickCaptureAction}
+          action={captureInboxItemFormAction}
           aria-label="Inbox Quick Capture"
           className="mt-3 rounded-[16px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.48)] p-3"
         >
