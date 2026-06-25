@@ -74,10 +74,11 @@ async function captureAndTriageManualInboxTask(
     .getByRole("textbox", { exact: true, name: "Quick Capture" })
     .fill(title);
   await page.getByRole("textbox", { name: "Quick Capture note" }).fill(note);
-  await page.getByLabel("Quick Capture type").selectOption("task");
   await page.getByRole("button", { name: "Capture" }).click();
   await page.waitForLoadState("networkidle");
   await expect(page.getByText(title).first()).toBeVisible();
+  await page.getByRole("button", { name: "Standalone task" }).click();
+  await expect(page.getByText("Task Draft")).toBeVisible();
   await page.getByRole("button", { name: "Task erstellen" }).click();
   await page.waitForLoadState("networkidle");
   await expect(page.getByText("Task erstellt").first()).toBeVisible();
@@ -1763,6 +1764,9 @@ test.describe("Inbox content states", () => {
     );
 
     const title = `Manual Inbox triage to task ${Date.now()}`;
+    const draftTitle = `${title} drafted`;
+    const draftDescription = "Create a task from this edited draft.";
+    const draftNextAction = "Open the drafted task in Portfolio.";
 
     await setProfile(page, "manual");
     await applySupabaseAuthState(page);
@@ -1776,28 +1780,52 @@ test.describe("Inbox content states", () => {
     await page
       .getByRole("textbox", { name: "Quick Capture note" })
       .fill("Create a task from this inbox item.");
-    await page.getByLabel("Quick Capture type").selectOption("task");
     await page.getByRole("button", { name: "Capture" }).click();
     await page.waitForLoadState("networkidle");
 
     const activeItem = page.locator('[data-inbox-section="active-item"]');
     await expect(page.getByText(title).first()).toBeVisible();
+    await expect(page.getByText("Outcome Route gewählt").first()).toBeVisible();
+    await expect(page.getByText("3 / 4 ready").first()).toBeVisible();
+    await page.getByRole("button", { name: "Standalone task" }).click();
     await expect(activeItem.getByText("Task Draft")).toBeVisible();
-    await expect(activeItem.getByText("Titel")).toBeVisible();
-    await expect(activeItem.getByText("Beschreibung / Kontext")).toBeVisible();
-    await expect(activeItem.getByText("Nächste Aktion")).toBeVisible();
-    await expect(activeItem.getByText("Area")).toBeVisible();
-    await expect(activeItem.getByText("Priorität")).toBeVisible();
-    await expect(activeItem.getByText("Effort / Dauer")).toBeVisible();
-    await expect(activeItem.getByText("Energie")).toBeVisible();
+    await expect(activeItem.getByLabel("Titel")).toBeVisible();
+    await expect(activeItem.getByLabel("Beschreibung / Kontext")).toBeVisible();
+    await expect(activeItem.getByLabel("Nächste Aktion")).toBeVisible();
+    await expect(activeItem.getByLabel("Area")).toBeVisible();
+    await expect(activeItem.getByLabel("Priorität")).toBeVisible();
+    await expect(activeItem.getByLabel("Effort / Dauer")).toBeVisible();
+    await expect(activeItem.getByLabel("Energie")).toBeVisible();
     await expect(activeItem.getByText("Review nötig")).toBeVisible();
-    await expect(page.getByText("Task Draft vorhanden").first()).toBeVisible();
+    await activeItem.getByLabel("Titel").fill(draftTitle);
+    await activeItem.getByLabel("Beschreibung / Kontext").fill(draftDescription);
+    await activeItem.getByLabel("Nächste Aktion").fill(draftNextAction);
+    await activeItem.getByLabel("Priorität").selectOption("P1");
+    await activeItem.getByLabel("Effort / Dauer").selectOption("60");
+    await activeItem.getByLabel("Energie").selectOption("high");
+    await expect(activeItem.getByLabel("Titel")).toHaveValue(draftTitle);
+    await expect(activeItem.getByLabel("Beschreibung / Kontext")).toHaveValue(
+      draftDescription,
+    );
+    await expect(activeItem.getByLabel("Nächste Aktion")).toHaveValue(
+      draftNextAction,
+    );
+    await expect(activeItem.getByLabel("Priorität")).toHaveValue("P1");
+    await expect(activeItem.getByLabel("Effort / Dauer")).toHaveValue("60");
+    await expect(activeItem.getByLabel("Energie")).toHaveValue("high");
     await expect(page.getByText("4 / 4 ready").first()).toBeVisible();
     await page.getByRole("button", { name: "Task erstellen" }).click();
     await page.waitForLoadState("networkidle");
 
     await expect(activeItem.getByText("Task erstellt")).toHaveCount(1);
     await expect(page.getByRole("link", { name: "Portfolio öffnen" })).toBeVisible();
+    await page.getByRole("link", { name: "Portfolio öffnen" }).first().click();
+    await expect(page).toHaveURL(/\/portfolio\?view=tasks/);
+    await expect(page.getByText(draftTitle).first()).toBeVisible();
+    await expect(page.getByText("P1 / high").first()).toBeVisible();
+    await expect(page.getByText("60 min").first()).toBeVisible();
+    await expect(page.getByText(draftNextAction).first()).toBeVisible();
+    await page.goto("/inbox");
     await page.reload();
     await expect(page.getByText(title).first()).toBeVisible();
     await expect(activeItem.getByText("Task erstellt")).toHaveCount(1);
@@ -1834,9 +1862,9 @@ test.describe("Inbox content states", () => {
     await page
       .getByRole("textbox", { name: "Quick Capture note" })
       .fill("Expose this triaged item through the task read model.");
-    await page.getByLabel("Quick Capture type").selectOption("task");
     await page.getByRole("button", { name: "Capture" }).click();
     await page.waitForLoadState("networkidle");
+    await page.getByRole("button", { name: "Standalone task" }).click();
     await page.getByRole("button", { name: "Task erstellen" }).click();
     await page.waitForLoadState("networkidle");
 

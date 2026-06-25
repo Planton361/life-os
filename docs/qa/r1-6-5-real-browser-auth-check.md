@@ -14,13 +14,14 @@
 3. Sign in with local Supabase email/password.
 4. Open `/inbox`.
 5. Capture a Manual Inbox item.
-6. Convert it from the `Task Draft` panel with `Task erstellen`.
-7. Open `/portfolio?view=tasks` and confirm the task is visible.
-8. Use `Heute planen`.
-9. Open `/today` and `/dashboard` and confirm the task is visible for the local day.
-10. Use `Heute terminieren`.
-11. Open `/calendar` and confirm the task appears in the timed grid.
-12. Reload `/inbox`, `/portfolio?view=tasks`, `/today`, `/dashboard`, and `/calendar`.
+6. Choose `Standalone task` in Outcome Route.
+7. Edit the `Task Draft` fields and use `Task erstellen`.
+8. Open `/portfolio?view=tasks` and confirm the task is visible.
+9. Use `Heute planen`.
+10. Open `/today` and `/dashboard` and confirm the task is visible for the local day.
+11. Use `Heute terminieren`.
+12. Open `/calendar` and confirm the task appears in the timed grid.
+13. Reload `/inbox`, `/portfolio?view=tasks`, `/today`, `/dashboard`, and `/calendar`.
 
 ## Entry Semantics
 
@@ -39,13 +40,17 @@
 2. Confirm `/inbox`, `/portfolio?view=tasks`, `/today`, `/dashboard`, and `/calendar` stop showing repeated invalid refresh-token noise after reset.
 3. Sign in again with local Supabase email/password.
 4. Open `/dashboard`, confirm no `Inbox-Typ` dropdown is visible in `Quick Thought`, use `In Inbox speichern`, and confirm `In der Inbox gespeichert.` plus `Inbox öffnen`.
-5. Open `/inbox`, confirm the captured thought appears as a generic Inbox capture without `Task erstellen`.
-6. Capture a Manual Inbox item with type `Task`, confirm the `Task Draft` panel shows title, description/context, next action, area, priority, effort/duration, energy, and review-needed fields, then use `Task erstellen`.
-7. Confirm exactly one `Task erstellt` state and `Portfolio öffnen` are visible after triage.
-8. Confirm the already triaged item no longer shows a large `Task erstellen` button after reload, so no second task can be created from the same inbox item.
-9. Confirm the checklist shows `Task Draft vorhanden` for task captures; non-task captures continue to use Outcome Route.
-10. Confirm the created task is visible through Portfolio, Today, Dashboard, and Calendar planning views after the normal manual DB flow.
-11. If Portfolio, Today, Dashboard, or Calendar stay empty, verify that the item was triaged in Inbox and that the task is visible under `/portfolio?view=tasks` before checking planning or scheduling actions.
+5. Open `/inbox`, confirm the captured thought appears as a generic Inbox capture with Outcome Route visible and without `Task erstellen`.
+6. Choose `Standalone task`, confirm `Outcome Route gewählt` becomes done, and confirm `Task Draft` appears.
+7. Confirm `Task Draft` fields are editable: title, description/context, next action, area, priority, effort/duration, energy, review-needed, and optional `Heute planen`.
+8. Change title, description/context, next action, priority, effort/duration, and energy, then use `Task erstellen`.
+9. Confirm exactly one `Task erstellt` state and `Portfolio öffnen` are visible after triage.
+10. Confirm the already triaged item no longer shows a large `Task erstellen` button after reload, so no second task can be created from the same inbox item.
+11. Confirm the checklist shows `Task Draft vorhanden` for saved task captures and `Outcome Route gewählt` done for a selected standalone-task route.
+12. Confirm persisted draft fields in Portfolio: title, description/context including next action, priority, energy, duration, and optional Today planning.
+13. Confirm Area persists only when the Inbox item already has a real DB Area; otherwise the UI labels Area as not saved.
+14. Confirm the created task is visible through Portfolio, Today, Dashboard, and Calendar planning views after the normal manual DB flow.
+15. If Portfolio, Today, Dashboard, or Calendar stay empty, verify that the item was triaged in Inbox and that the task is visible under `/portfolio?view=tasks` before checking planning or scheduling actions.
 
 ## Known Boundaries
 

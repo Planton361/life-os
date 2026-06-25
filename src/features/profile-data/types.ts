@@ -48,6 +48,8 @@ export type ManualInboxItem = {
   note: string;
   areaId: EntityArea;
   createdAt: string;
+  priority?: EntityPriority;
+  sourceAreaId?: string | null;
   triagedTaskId?: string | null;
 };
 

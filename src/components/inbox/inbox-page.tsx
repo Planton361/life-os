@@ -1,4 +1,7 @@
+"use client";
+
 import type { CSSProperties, ReactNode } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { ContentStateMeta } from "@/features/content-state";
 import {
@@ -7,6 +10,7 @@ import {
   type InboxAISuggestion,
   type InboxChecklistItem,
   type InboxClarificationField,
+  type InboxOutcomeRoute,
   type InboxOutcomeOption,
   type InboxPlanningSignal,
   type InboxQueueItem,
@@ -41,6 +45,13 @@ const focusClasses =
 
 const disabledActionClasses =
   "disabled:cursor-not-allowed disabled:border-[var(--border-subtle)] disabled:bg-[rgba(18,28,43,.42)] disabled:text-[var(--text-muted)] disabled:opacity-70";
+
+const draftInputClasses =
+  "mt-1.5 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(12,20,34,.74)] px-3 py-2 text-xs leading-5 text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]";
+
+const taskDraftPriorities = ["P0", "P1", "P2", "P3", "none"] as const;
+const taskDraftEnergies = ["low", "medium", "high"] as const;
+const taskDraftDurations = [15, 30, 45, 60, 90, 120] as const;
 
 function contentStateAttributes(
   meta: ContentStateMeta,
@@ -570,14 +581,18 @@ function InboxPlanningSignals({
 }
 
 function InboxOutcomeRoutes({
-  actionsEnabled,
   description,
+  onSelectRoute,
   options,
+  selectedRoute,
+  standaloneTaskEnabled,
   title,
 }: Readonly<{
-  actionsEnabled: boolean;
   description: string;
+  onSelectRoute: (route: InboxOutcomeRoute) => void;
   options: InboxOutcomeOption[];
+  selectedRoute: InboxOutcomeRoute | null;
+  standaloneTaskEnabled: boolean;
   title: string;
 }>) {
   return (
@@ -595,63 +610,148 @@ function InboxOutcomeRoutes({
         {description}
       </p>
       <div className="mt-2 grid gap-2 lg:grid-cols-2 2xl:flex-1">
-        {options.map((option) => (
-          <button
-            className={cn(
-              "min-h-[100px] rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.68)] px-3 py-3 text-left 2xl:h-full",
-              focusClasses,
-              disabledActionClasses,
-            )}
-            disabled={!actionsEnabled}
-            key={option.id}
-            style={accentStyle(option.accent)}
-            type="button"
-          >
-            <span className="flex items-start gap-2.5">
-              <Dot accent={option.accent} className="mt-1 shrink-0" />
-              <span className="min-w-0">
-                <span className="block text-[13px] font-semibold text-[var(--text-primary)]">
-                  {option.title}
-                </span>
-                <span className="mt-1 block border-t border-[var(--border-subtle)] pt-1 text-[11px] leading-4 text-[var(--text-secondary)]">
-                  {option.description}
-                </span>
-                <span className="mt-0.5 block text-[10px] text-[var(--text-muted)]">
-                  {option.examples}
+        {options.map((option) => {
+          const isStandaloneTask = option.id === "standalone_task";
+          const isSelected = selectedRoute === option.id;
+          const enabled = isStandaloneTask && standaloneTaskEnabled;
+
+          return (
+            <button
+              aria-pressed={isSelected}
+              className={cn(
+                "min-h-[100px] rounded-[14px] border px-3 py-3 text-left 2xl:h-full",
+                enabled
+                  ? "border-[color-mix(in_srgb,var(--accent)_30%,transparent)] bg-[color-mix(in_srgb,var(--accent)_8%,rgba(15,23,36,.68))]"
+                  : "border-[var(--border-subtle)] bg-[rgba(15,23,36,.40)] opacity-80",
+                isSelected &&
+                  "border-[color-mix(in_srgb,var(--accent)_48%,transparent)] bg-[color-mix(in_srgb,var(--accent)_14%,rgba(15,23,36,.74))]",
+                focusClasses,
+                disabledActionClasses,
+              )}
+              disabled={!enabled}
+              key={option.id}
+              onClick={() => onSelectRoute(option.id)}
+              style={accentStyle(option.accent)}
+              type="button"
+            >
+              <span className="flex items-start gap-2.5">
+                <Dot accent={option.accent} className="mt-1 shrink-0" />
+                <span className="min-w-0">
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="block text-[13px] font-semibold text-[var(--text-primary)]">
+                      {option.title}
+                    </span>
+                    {isSelected ? (
+                      <Pill active accent={option.accent}>
+                        gewählt
+                      </Pill>
+                    ) : !enabled ? (
+                      <Pill accent="var(--text-muted)">Noch nicht verbunden</Pill>
+                    ) : null}
+                  </span>
+                  <span className="mt-1 block border-t border-[var(--border-subtle)] pt-1 text-[11px] leading-4 text-[var(--text-secondary)]">
+                    {option.description}
+                  </span>
+                  <span className="mt-0.5 block text-[10px] text-[var(--text-muted)]">
+                    {isStandaloneTask
+                      ? "Aktiviert den Task Draft. Erst Task erstellen schreibt in Supabase."
+                      : option.examples}
+                  </span>
                 </span>
               </span>
-            </span>
-          </button>
-        ))}
+            </button>
+          );
+        })}
       </div>
     </section>
   );
 }
 
-function TaskDraftField({
+function DraftTextInput({
+  defaultValue,
   label,
-  value,
+  name,
+  placeholder,
 }: Readonly<{
+  defaultValue: string;
   label: string;
-  value: string;
+  name: string;
+  placeholder?: string;
 }>) {
   return (
-    <div className="min-w-0 rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.70)] px-3 py-2">
-      <p className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+    <label className="block min-w-0">
+      <span className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">
         {label}
-      </p>
-      <p className="mt-1 min-h-5 text-xs leading-5 text-[var(--text-primary)]">
-        {value || "—"}
-      </p>
-    </div>
+      </span>
+      <input
+        className={cn(draftInputClasses, focusClasses)}
+        defaultValue={defaultValue}
+        name={name}
+        placeholder={placeholder}
+        required={name === "title"}
+      />
+    </label>
+  );
+}
+
+function DraftTextarea({
+  defaultValue,
+  label,
+  name,
+}: Readonly<{
+  defaultValue: string;
+  label: string;
+  name: string;
+}>) {
+  return (
+    <label className="block min-w-0">
+      <span className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+        {label}
+      </span>
+      <textarea
+        className={cn(draftInputClasses, "min-h-[76px] resize-none", focusClasses)}
+        defaultValue={defaultValue}
+        name={name}
+        rows={3}
+      />
+    </label>
+  );
+}
+
+function DraftSelect({
+  children,
+  defaultValue,
+  label,
+  name,
+}: Readonly<{
+  children: ReactNode;
+  defaultValue?: string;
+  label: string;
+  name: string;
+}>) {
+  return (
+    <label className="block min-w-0">
+      <span className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+        {label}
+      </span>
+      <select
+        className={cn(draftInputClasses, focusClasses)}
+        defaultValue={defaultValue}
+        name={name}
+      >
+        {children}
+      </select>
+    </label>
   );
 }
 
 function InboxTaskDraft({
   activeItem,
+  canCreateTask,
   nextAction,
 }: Readonly<{
   activeItem: InboxViewModel["activeItem"];
+  canCreateTask: boolean;
   nextAction: InboxClarificationField;
 }>) {
   const area =
@@ -696,53 +796,113 @@ function InboxTaskDraft({
       aria-labelledby="task-draft-title"
       className="rounded-[18px] border border-[rgba(66,184,131,.30)] bg-[rgba(66,184,131,.075)] p-3"
     >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h3
-            className="text-sm font-semibold text-[var(--text-primary)]"
-            id="task-draft-title"
-          >
-            Task Draft
-          </h3>
-          <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
-            Review aus der Inbox. Task-Erstellung passiert erst über diese
-            Aktion.
-          </p>
-        </div>
-        <form action={triageInboxItemToTaskFormAction}>
+      <form action={triageInboxItemToTaskFormAction}>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3
+              className="text-sm font-semibold text-[var(--text-primary)]"
+              id="task-draft-title"
+            >
+              Task Draft
+            </h3>
+            <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+              Review aus der Inbox. Task-Erstellung passiert erst über diese
+              Aktion.
+            </p>
+          </div>
           <input name="inboxItemId" type="hidden" value={activeItem.id} />
-          <input name="title" type="hidden" value={activeItem.title} />
-          <input
-            name="description"
-            type="hidden"
-            value={activeItem.originalCapture}
-          />
+          <input name="outcomeRoute" type="hidden" value="standalone_task" />
+          <input name="reviewNeeded" type="hidden" value="true" />
           <button
             className={cn(
               "min-h-9 rounded-[12px] border border-[rgba(66,184,131,.42)] bg-[rgba(66,184,131,.22)] px-3 text-xs font-semibold text-[var(--text-primary)]",
               focusClasses,
               disabledActionClasses,
             )}
-            disabled={!activeItem.canTriageToTask}
+            disabled={!canCreateTask}
             type="submit"
           >
             Task erstellen
           </button>
-        </form>
-      </div>
-      <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-        <TaskDraftField label="Titel" value={activeItem.title} />
-        <TaskDraftField
-          label="Beschreibung / Kontext"
-          value={activeItem.originalCapture}
-        />
-        <TaskDraftField label="Nächste Aktion" value={nextAction.value} />
-        <TaskDraftField label="Area" value={area} />
-        <TaskDraftField label="Priorität" value="nicht gesetzt" />
-        <TaskDraftField label="Effort / Dauer" value="nicht gesetzt" />
-        <TaskDraftField label="Energie" value="nicht gesetzt" />
-        <TaskDraftField label="Review nötig" value="Ja" />
-      </div>
+        </div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          <DraftTextInput
+            defaultValue={activeItem.title}
+            label="Titel"
+            name="title"
+          />
+          <DraftTextarea
+            defaultValue={activeItem.originalCapture}
+            label="Beschreibung / Kontext"
+            name="description"
+          />
+          <DraftTextInput
+            defaultValue={nextAction.value}
+            label="Nächste Aktion"
+            name="nextAction"
+          />
+          <DraftSelect label="Area" name="areaId">
+            {activeItem.persistedAreaId ? (
+              <option value={activeItem.persistedAreaId}>{area}</option>
+            ) : null}
+            <option value="">
+              {activeItem.persistedAreaId
+                ? "Keine Area setzen"
+                : "Nicht gesetzt - nicht gespeichert"}
+            </option>
+          </DraftSelect>
+          <DraftSelect
+            defaultValue={activeItem.priority ?? "P2"}
+            label="Priorität"
+            name="priority"
+          >
+            {taskDraftPriorities.map((priority) => (
+              <option key={priority} value={priority}>
+                {priority}
+              </option>
+            ))}
+          </DraftSelect>
+          <DraftSelect
+            defaultValue="30"
+            label="Effort / Dauer"
+            name="durationMinutes"
+          >
+            {taskDraftDurations.map((duration) => (
+              <option key={duration} value={duration}>
+                {duration} min
+              </option>
+            ))}
+          </DraftSelect>
+          <DraftSelect defaultValue="medium" label="Energie" name="energy">
+            {taskDraftEnergies.map((energy) => (
+              <option key={energy} value={energy}>
+                {energy}
+              </option>
+            ))}
+          </DraftSelect>
+          <label className="block min-w-0">
+            <span className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+              Review nötig
+            </span>
+            <span className="mt-1.5 flex min-h-10 items-center rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(12,20,34,.74)] px-3 text-xs leading-5 text-[var(--text-primary)]">
+              Ja - Task startet im Inbox-Status
+            </span>
+          </label>
+        </div>
+        <label className="mt-3 flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+          <input
+            className={cn("size-4 accent-[var(--accent-green)]", focusClasses)}
+            name="planToday"
+            type="checkbox"
+          />
+          Heute planen
+        </label>
+        <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
+          Persistiert: Titel, Beschreibung inklusive nächster Aktion, Priorität,
+          Energie, Dauer und optionale Tagesplanung. Area wird nur gespeichert,
+          wenn eine DB-Area vorhanden ist.
+        </p>
+      </form>
     </section>
   );
 }
@@ -750,15 +910,26 @@ function InboxTaskDraft({
 function InboxActiveItemPanel({
   activeItem,
   contentState,
+  onSelectOutcomeRoute,
   outcome,
+  selectedOutcomeRoute,
+  taskCreationEnabled,
   profileId,
 }: Readonly<{
   activeItem: InboxViewModel["activeItem"];
   contentState: ContentStateMeta;
+  onSelectOutcomeRoute: (route: InboxOutcomeRoute) => void;
   outcome: InboxViewModel["outcome"];
+  selectedOutcomeRoute: InboxOutcomeRoute | null;
+  taskCreationEnabled: boolean;
   profileId: InboxViewModel["profileId"];
 }>) {
   const [cleanTitle, description, nextAction, missingInfo] = activeItem.fields;
+  const taskDraftActive =
+    Boolean(activeItem.isTaskCapture) ||
+    selectedOutcomeRoute === "standalone_task";
+  const canSelectStandaloneTask =
+    activeItem.hasSelection && !activeItem.triagedTaskId;
 
   return (
     <section
@@ -849,13 +1020,19 @@ function InboxActiveItemPanel({
           actionsEnabled={activeItem.actionsEnabled}
           signals={activeItem.planningSignals}
         />
-        {activeItem.isTaskCapture ? (
-          <InboxTaskDraft activeItem={activeItem} nextAction={nextAction} />
+        {taskDraftActive ? (
+          <InboxTaskDraft
+            activeItem={activeItem}
+            canCreateTask={taskCreationEnabled}
+            nextAction={nextAction}
+          />
         ) : (
           <InboxOutcomeRoutes
-            actionsEnabled={outcome.actionsEnabled}
             description={outcome.description}
+            onSelectRoute={onSelectOutcomeRoute}
             options={outcome.options}
+            selectedRoute={selectedOutcomeRoute}
+            standaloneTaskEnabled={canSelectStandaloneTask}
             title={outcome.title}
           />
         )}
@@ -1228,6 +1405,53 @@ export function InboxPage({
 }: Readonly<{
   viewModel: InboxViewModel;
 }>) {
+  const activeItemKey = `${viewModel.activeItem.id ?? "empty"}:${
+    viewModel.activeItem.type
+  }:${viewModel.activeItem.triagedTaskId ?? "open"}`;
+  const defaultOutcomeRoute = viewModel.activeItem.isTaskCapture
+    ? "standalone_task"
+    : null;
+  const [outcomeSelection, setOutcomeSelection] = useState<{
+    key: string;
+    route: InboxOutcomeRoute | null;
+  }>({
+    key: activeItemKey,
+    route: defaultOutcomeRoute,
+  });
+  const selectedOutcomeRoute =
+    outcomeSelection.key === activeItemKey
+      ? outcomeSelection.route
+      : defaultOutcomeRoute;
+  const setSelectedOutcomeRoute = (route: InboxOutcomeRoute) => {
+    setOutcomeSelection({ key: activeItemKey, route });
+  };
+
+  const taskDraftActive =
+    Boolean(viewModel.activeItem.isTaskCapture) ||
+    selectedOutcomeRoute === "standalone_task";
+  const taskCreationEnabled = Boolean(
+    viewModel.quickCapture.enabled &&
+      viewModel.activeItem.hasSelection &&
+      !viewModel.activeItem.triagedTaskId &&
+      taskDraftActive,
+  );
+  const checklist = useMemo(() => {
+    const items = viewModel.checklist.items.map((item) => {
+      if (item.label === "Outcome Route gewählt" && taskDraftActive) {
+        return { ...item, state: "done" as const };
+      }
+
+      return item;
+    });
+    const doneCount = items.filter((item) => item.state === "done").length;
+
+    return {
+      ...viewModel.checklist,
+      items,
+      progress: `${doneCount} / ${items.length} ready`,
+    };
+  }, [taskDraftActive, viewModel.checklist]);
+
   return (
     <div
       className="mx-auto flex w-full max-w-[2168px] flex-col gap-3 pb-8 2xl:h-[calc(100dvh-20px)] 2xl:min-h-0 2xl:overflow-hidden 2xl:pb-0"
@@ -1257,10 +1481,18 @@ export function InboxPage({
         <InboxActiveItemPanel
           activeItem={viewModel.activeItem}
           contentState={viewModel.contentStates.activeItem}
+          onSelectOutcomeRoute={setSelectedOutcomeRoute}
           outcome={viewModel.outcome}
+          selectedOutcomeRoute={selectedOutcomeRoute}
+          taskCreationEnabled={taskCreationEnabled}
           profileId={viewModel.profileId}
         />
-        <InboxAIAssistantPanel viewModel={viewModel} />
+        <InboxAIAssistantPanel
+          viewModel={{
+            ...viewModel,
+            checklist,
+          }}
+        />
       </div>
     </div>
   );

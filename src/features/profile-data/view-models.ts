@@ -1365,7 +1365,9 @@ function realInboxToManualInboxItem(item: InboxItem): ManualInboxItem {
         ? "Review completed triage output."
         : "Clarify outcome and decide where it belongs.",
     note: item.body ?? "",
+    priority: item.priority,
     stage,
+    sourceAreaId: item.areaId,
     title: item.title,
     triagedTaskId: item.triagedTaskId,
     type: item.type,
@@ -1681,7 +1683,9 @@ function buildProfileInboxViewModel(
     hasSelection: Boolean(active),
     id: active?.id,
     isTaskCapture: activeIsTaskCapture,
+    persistedAreaId: active?.sourceAreaId ?? null,
     portfolioHref: activeIsTriaged ? "/portfolio?view=tasks" : undefined,
+    priority: active?.priority ?? "P2",
     title: active?.title ?? "Kein Eintrag ausgewählt",
     triagedTaskId: active?.triagedTaskId ?? null,
     stage: activeIsTriaged

@@ -30,6 +30,40 @@ function formString(formData: FormData, key: string) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function optionalFormString(formData: FormData, key: string) {
+  return formString(formData, key) || undefined;
+}
+
+function optionalFormNumber(formData: FormData, key: string) {
+  const value = Number(formString(formData, key));
+  return Number.isFinite(value) && value > 0 ? value : undefined;
+}
+
+const appTimeZone = "Europe/Berlin";
+
+function localDateLabel(date = new Date(), timeZone = appTimeZone) {
+  const parts = new Intl.DateTimeFormat("en", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone,
+    year: "numeric",
+  }).formatToParts(date);
+  const part = (type: string) =>
+    parts.find((item) => item.type === type)?.value ?? "00";
+
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
+function taskDescriptionFromDraft(formData: FormData) {
+  const description = formString(formData, "description");
+  const nextAction = formString(formData, "nextAction");
+
+  if (!nextAction) return description || undefined;
+  if (!description) return `Nächste Aktion: ${nextAction}`;
+
+  return `${description}\n\nNächste Aktion: ${nextAction}`;
+}
+
 function revalidateInboxCaptureRoutes() {
   revalidatePath("/inbox");
   revalidatePath("/dashboard");
@@ -155,9 +189,15 @@ export async function triageInboxItemToTaskAction(
   }
 
   const parsed = triageInboxItemToTaskInputSchema.safeParse({
-    description: formString(formData, "description") || undefined,
+    areaId: optionalFormString(formData, "areaId"),
+    description: taskDescriptionFromDraft(formData),
+    durationMinutes: optionalFormNumber(formData, "durationMinutes"),
+    energy: optionalFormString(formData, "energy"),
     inboxItemId: formString(formData, "inboxItemId"),
+    plannedDate:
+      formString(formData, "planToday") === "on" ? localDateLabel() : undefined,
     profileId: auth.user.id,
+    priority: optionalFormString(formData, "priority"),
     title: formString(formData, "title"),
     userId: auth.user.id,
   });

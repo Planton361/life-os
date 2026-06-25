@@ -119,7 +119,9 @@ export type InboxViewModel = {
     hasSelection: boolean;
     id?: string;
     isTaskCapture?: boolean;
+    persistedAreaId?: string | null;
     portfolioHref?: string;
+    priority?: string;
     title: string;
     triagedTaskId?: string | null;
     stage: string;
