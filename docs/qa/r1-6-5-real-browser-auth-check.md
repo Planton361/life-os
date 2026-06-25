@@ -34,6 +34,14 @@
 - Today shows today's execution view.
 - Calendar shows scheduled time blocks.
 
+## R1.6.6A Inbox Routing Notes
+
+- Inbox is a routing system for raw captures, not a task-only creation surface.
+- Dashboard Quick Thought is generic capture; it must save to Inbox without implying that a Task is created immediately.
+- Task creation is only one possible outcome route after Inbox review.
+- Planning signals such as priority, energy, effort, area, Today candidate, deadline hint, or recurrence hint are not fixed scheduling.
+- Calendar creates or shows time blocks after planning confirmation; it is not the place where raw Inbox clarification happens.
+
 ## R1.6.5B Follow-up Checks
 
 1. If `/settings#supabase-session` shows `invalid session`, use `Session zurücksetzen`.
