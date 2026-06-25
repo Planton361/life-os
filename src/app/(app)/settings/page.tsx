@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import {
-  SettingsPage as SettingsFeaturePage,
-  getSettingsViewModel,
-} from "@/features/settings";
+import { SettingsPage as SettingsFeaturePage } from "@/features/settings/settings-page";
+import { getSettingsViewModel } from "@/features/settings/settings-view-model";
 import {
   ProfileDataSettingsPanel,
   getCurrentLifeOsProfileId,

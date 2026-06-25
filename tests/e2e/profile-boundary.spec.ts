@@ -358,17 +358,26 @@ test.describe("Profile boundary", () => {
     await page.goto("/health/mental");
     await expectMentalHealthBaseShell(page);
     await expect(
-      page.getByRole("heading", { name: "Local Signal Pattern" }),
-    ).toBeVisible();
+      page.locator('[data-mental-section="mood-pattern"]'),
+    ).toHaveAttribute("data-profile-id", "empty");
     await expect(
-      page.getByRole("heading", { name: "Local Support Routines" }),
-    ).toBeVisible();
+      page.locator('[data-mental-section="mood-pattern"]'),
+    ).toHaveAttribute("data-content-state", "empty");
+    await expect(
+      page.locator('[data-mental-section="support-routines"]'),
+    ).toHaveAttribute("data-profile-id", "empty");
+    await expect(
+      page.locator('[data-mental-section="support-routines"]'),
+    ).toHaveAttribute("data-content-state", "empty");
     await expectNoGenericProfileBoundary(page);
     await expectNoBlockedDemoStrings(page);
     await expectNoMentalHealthFixtureSignals(page);
     await expect(
-      page.getByText("Noch kein Signal fuer eine Interpretation."),
-    ).toBeVisible();
+      page.locator('[data-mental-section="current-signal"]'),
+    ).toHaveAttribute("data-profile-id", "empty");
+    await expect(
+      page.locator('[data-mental-section="current-signal"]'),
+    ).toHaveAttribute("data-content-state", "empty");
 
     for (const [route, heading] of areaShellRoutes) {
       await page.goto(route);
@@ -385,7 +394,15 @@ test.describe("Profile boundary", () => {
     await expectResourcesNaturalEmptyStates(page);
 
     await page.goto("/portfolio?view=tasks");
-    await expect(page.getByText("No entities match this scope")).toBeVisible();
+    await expect(
+      page.locator('[data-portfolio-section="entity-list"]'),
+    ).toHaveAttribute("data-profile-id", "empty");
+    await expect(
+      page.locator('[data-portfolio-section="entity-list"]'),
+    ).toHaveAttribute("data-content-state", "empty");
+    await expect(
+      page.locator('[data-portfolio-section="entity-list"]'),
+    ).toHaveAttribute("data-item-count", "0");
     await expectNoBlockedDemoStrings(page);
   });
 
@@ -454,15 +471,23 @@ test.describe("Profile boundary", () => {
     await page.goto("/health/mental");
     await expectMentalHealthBaseShell(page);
     await expect(
-      page.getByRole("heading", { name: "Local Signal Pattern" }),
-    ).toBeVisible();
+      page.locator('[data-mental-section="mood-pattern"]'),
+    ).toHaveAttribute("data-profile-id", "manual");
     await expect(
-      page.getByRole("heading", { name: "Local Support Routines" }),
-    ).toBeVisible();
+      page.locator('[data-mental-section="mood-pattern"]'),
+    ).toHaveAttribute("data-content-state", "empty");
+    await expect(
+      page.locator('[data-mental-section="support-routines"]'),
+    ).toHaveAttribute("data-profile-id", "manual");
+    await expect(
+      page.locator('[data-mental-section="support-routines"]'),
+    ).toHaveAttribute("data-content-state", "empty");
     await expectNoGenericProfileBoundary(page);
     await expectNoBlockedDemoStrings(page);
     await expectNoMentalHealthFixtureSignals(page);
-    await expect(page.getByText("Manual local profile")).toBeVisible();
+    await expect(
+      page.locator('[data-mental-section="header"]'),
+    ).toHaveAttribute("data-profile-id", "manual");
     await expectNoTechnicalEmptyCopy(page);
 
     for (const [route, heading] of [
