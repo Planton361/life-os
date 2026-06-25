@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { ContentStateMeta } from "@/features/content-state";
+import { scheduleTaskForTodayFormAction } from "@/features/real-data/actions/task.actions";
 import {
   EmptyState,
   Pill,
@@ -80,6 +81,27 @@ function ActionLink({
     >
       {children}
     </Link>
+  );
+}
+
+function TaskPlanningForm({
+  mode,
+  taskId,
+}: Readonly<{
+  mode: "plan" | "schedule";
+  taskId: string;
+}>) {
+  return (
+    <form action={scheduleTaskForTodayFormAction}>
+      <input name="taskId" type="hidden" value={taskId} />
+      <input name="mode" type="hidden" value={mode} />
+      <button
+        className="inline-flex min-h-8 items-center rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.76)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+        type="submit"
+      >
+        {mode === "schedule" ? "Heute terminieren" : "Heute planen"}
+      </button>
+    </form>
   );
 }
 
@@ -164,6 +186,12 @@ export function PortfolioContextPanel({
           </ActionLink>
           {sourceLink ? (
             <ActionLink href={sourceLink.href}>Open source</ActionLink>
+          ) : null}
+          {profileId === "manual" && entity.type === "task" ? (
+            <>
+              <TaskPlanningForm mode="plan" taskId={entity.id} />
+              <TaskPlanningForm mode="schedule" taskId={entity.id} />
+            </>
           ) : null}
         </div>
       </div>

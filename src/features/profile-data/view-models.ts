@@ -315,14 +315,67 @@ const taskPriorityOrder: Record<EntityPriority, number> = {
   none: 4,
 };
 
+const appTimeZone = "Europe/Berlin";
+
 const mealSlots: readonly Exclude<DashboardMeal["type"], "Snack">[] = [
   "Breakfast",
   "Lunch",
   "Dinner",
 ];
 
+function localDateLabel(date = new Date(), timeZone = appTimeZone) {
+  const parts = new Intl.DateTimeFormat("en", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone,
+    year: "numeric",
+  }).formatToParts(date);
+  const part = (type: string) =>
+    parts.find((item) => item.type === type)?.value ?? "00";
+
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
+function localTimeLabel(date: Date, timeZone = appTimeZone) {
+  const parts = new Intl.DateTimeFormat("en", {
+    hour: "2-digit",
+    hourCycle: "h23",
+    minute: "2-digit",
+    timeZone,
+  }).formatToParts(date);
+  const part = (type: string) =>
+    parts.find((item) => item.type === type)?.value ?? "00";
+
+  return `${part("hour")}:${part("minute")}`;
+}
+
+function utcDateLabel(date: Date) {
+  const parts = new Intl.DateTimeFormat("en", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "UTC",
+    year: "numeric",
+  }).formatToParts(date);
+  const part = (type: string) =>
+    parts.find((item) => item.type === type)?.value ?? "00";
+
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
 function todayDateLabel() {
-  return new Date().toISOString().slice(0, 10);
+  return localDateLabel();
+}
+
+function scheduledTaskDate(task: RealDataTask) {
+  if (!task.scheduledStartAt) return undefined;
+
+  return localDateLabel(new Date(task.scheduledStartAt));
+}
+
+function scheduledTaskStartTime(task: RealDataTask) {
+  if (!task.scheduledStartAt) return undefined;
+
+  return localTimeLabel(new Date(task.scheduledStartAt));
 }
 
 function sortDashboardTasks(left: LifeTask, right: LifeTask) {
@@ -340,7 +393,7 @@ function visibleDashboardTasks(tasks: readonly LifeTask[]) {
 
   return [...tasks]
     .filter((task) => task.status !== "done" && task.status !== "canceled")
-    .filter((task) => !task.date || task.date === today)
+    .filter((task) => task.date === today)
     .sort(sortDashboardTasks);
 }
 
@@ -1128,10 +1181,10 @@ function buildProfileDashboardViewModel(
     ...viewModel.todayAgenda,
     contentState: resolveContentStateMeta({
       capacity: dashboardCapacity.agenda,
-      itemCount: scheduledTasks.length,
+      itemCount: tasks.length,
     }),
     preparedViewsLabel: "Week and month views prepared",
-    events: scheduledTasks.slice(0, 9).map(taskToAgendaEvent),
+    events: tasks.slice(0, 9).map(taskToAgendaEvent),
   };
 
   viewModel.healthNutrition.weightLossGoal = {
@@ -1332,10 +1385,13 @@ function realTaskToLifeTask(task: RealDataTask): LifeTask | null {
 
   if (!status) return null;
 
+  const scheduledDate = scheduledTaskDate(task);
+  const scheduledStartTime = scheduledTaskStartTime(task);
+
   return {
     areaId: "review",
     calendarBlockIds: [],
-    date: task.plannedDate ?? undefined,
+    date: task.plannedDate ?? scheduledDate,
     description: task.description ?? "",
     durationMinutes: task.durationMinutes ?? undefined,
     energy: task.energy ?? undefined,
@@ -1362,6 +1418,7 @@ function realTaskToLifeTask(task: RealDataTask): LifeTask | null {
     resultNote: task.completedAt ? "Completed in Supabase." : undefined,
     reviewNeeded: status === "inbox",
     source: task.sourceInboxItemId ? "Supabase inbox triage" : "Supabase task",
+    startTime: scheduledStartTime,
     status,
     timeline: [
       {
@@ -1443,6 +1500,22 @@ async function getManualTaskProfileData(): Promise<{
     tasks: result.data
       .map(realTaskToLifeTask)
       .filter((task): task is LifeTask => Boolean(task)),
+  };
+}
+
+async function getProfileDataWithManualTasks(profileId: LifeOsProfileId) {
+  if (profileId !== "manual") {
+    return getProfileData(profileId);
+  }
+
+  const [profile, manualTasks] = await Promise.all([
+    readManualProfile(),
+    getManualTaskProfileData(),
+  ]);
+
+  return {
+    ...profile,
+    tasks: manualTasks.tasks,
   };
 }
 
@@ -1951,7 +2024,7 @@ function addDays(date: Date, amount: number) {
 }
 
 function toIsoDate(date: Date) {
-  return date.toISOString().slice(0, 10);
+  return utcDateLabel(date);
 }
 
 function dayIdFromDate(date: string) {
@@ -1986,7 +2059,7 @@ function buildManualCalendarDays(
   const firstDate =
     profile.tasks.find((task) => task.date)?.date ??
     profile.projects.find((project) => project.deadline)?.deadline ??
-    toIsoDate(new Date());
+    todayDateLabel();
   const start = startOfWeek(new Date(`${firstDate}T00:00:00.000Z`));
 
   return Array.from({ length: 7 }).map((_, index) => {
@@ -2109,12 +2182,12 @@ function buildProfileCalendarViewModel(
   const allDayBlocks = profile.projects.map((project) =>
     projectToAllDayBlock(project, firstDayId),
   );
-  const unscheduledTasks = profile.tasks.filter(
-    (task) => !task.startTime || !task.date,
+  const planningQueueTasks = profile.tasks.filter(
+    (task) => task.date && !task.startTime,
   );
 
-  const schedulableTasks: CalendarViewModel["schedulableTasks"] = unscheduledTasks
-    .map((task) => ({
+  const schedulableTasks: CalendarViewModel["schedulableTasks"] =
+    planningQueueTasks.map((task) => ({
       id: task.id,
       title: task.title,
       priority: dashboardPriority(task.priority),
@@ -2168,7 +2241,7 @@ function buildProfileCalendarViewModel(
       meta: `${areaLabel(item.areaId)} - ${item.stage}`,
       accent: areaAccent(item.areaId),
     })),
-    unscheduledTasks: unscheduledTasks.map((task) => ({
+    unscheduledTasks: planningQueueTasks.map((task) => ({
       title: task.title,
       meta: `${task.priority} task - no time block yet`,
       accent: areaAccent(task.areaId),
@@ -2202,7 +2275,7 @@ function buildProfileCalendarViewModel(
       allDayBlocks.some((block) => block.dayId === day.id),
   ).length;
   const headerItemCount = timedBlocks.length > 0 || allDayBlocks.length > 0 ? 1 : 0;
-  const planningQueueCount = unscheduledTasks.length;
+  const planningQueueCount = planningQueueTasks.length;
   const rightPanelItemCount =
     rightPanel.metrics.length +
     rightPanel.openLoops.length +
@@ -2298,7 +2371,7 @@ export async function getEntityCollection(): Promise<EntityCollection> {
     return clone(demoEntityCollection);
   }
 
-  const profile = await getProfileData(profileId);
+  const profile = await getProfileDataWithManualTasks(profileId);
 
   return {
     tasks: profile.tasks,
@@ -2334,7 +2407,7 @@ export async function getDashboardViewModel(): Promise<DashboardViewModel> {
 
   return buildProfileDashboardViewModel(
     profileId,
-    await getProfileData(profileId),
+    await getProfileDataWithManualTasks(profileId),
   );
 }
 
@@ -2363,7 +2436,10 @@ export async function getTodayViewModel(): Promise<TodayViewModel> {
     return getDemoTodayViewModel();
   }
 
-  return buildProfileTodayViewModel(await getProfileData(profileId), profileId);
+  return buildProfileTodayViewModel(
+    await getProfileDataWithManualTasks(profileId),
+    profileId,
+  );
 }
 
 export async function getCalendarViewModel(): Promise<CalendarViewModel> {
@@ -2373,7 +2449,10 @@ export async function getCalendarViewModel(): Promise<CalendarViewModel> {
     return getDemoCalendarViewModel();
   }
 
-  return buildProfileCalendarViewModel(await getProfileData(profileId), profileId);
+  return buildProfileCalendarViewModel(
+    await getProfileDataWithManualTasks(profileId),
+    profileId,
+  );
 }
 
 export async function getPortfolioViewModel(): Promise<PortfolioViewModel> {

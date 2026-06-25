@@ -59,6 +59,35 @@ async function readProfileDataTaskCount(page: Page) {
   return Number(countText);
 }
 
+async function captureAndTriageManualInboxTask(
+  page: Page,
+  title: string,
+  note: string,
+) {
+  await setProfile(page, "manual");
+  await applySupabaseAuthState(page);
+  await expectNoHydrationErrors(page, async () => {
+    await page.goto("/inbox");
+  });
+  await page
+    .getByRole("textbox", { exact: true, name: "Quick Capture" })
+    .fill(title);
+  await page.getByRole("textbox", { name: "Quick Capture note" }).fill(note);
+  await page.getByRole("button", { name: "Capture" }).click();
+  await page.waitForLoadState("networkidle");
+  await expect(page.getByText(title).first()).toBeVisible();
+  await page.getByRole("button", { name: "Als Task anlegen" }).click();
+  await page.waitForLoadState("networkidle");
+  await expect(page.getByText("Task erstellt").first()).toBeVisible();
+}
+
+async function openPortfolioTaskPlanningControls(page: Page, title: string) {
+  await page.goto("/portfolio?view=tasks");
+  await expect(page.getByText(title).first()).toBeVisible();
+  await page.getByRole("link", { name: new RegExp(title) }).first().click();
+  await expect(page.locator("#selected-entity-heading")).toHaveText(title);
+}
+
 async function setProfile(page: Page, profile: ProfileId) {
   await page.context().clearCookies();
   await page.context().addCookies([
@@ -1430,24 +1459,28 @@ test.describe("Dashboard content states", () => {
     await expect(page.getByText(thought).first()).toBeVisible();
   });
 
-  test("projects a manual 20:00 task into Today Agenda", async ({ page }) => {
-    await setProfile(page, "manual");
-    await writeManualProfile({
-      tasks: [manualTimedTask()],
-    });
-    await expectNoHydrationErrors(page, async () => {
-      await page.goto("/dashboard");
-    });
+  test("projects a manual DB task into Today Agenda", async ({ page }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session; no broad DB cleanup action is available.",
+    );
+
+    const title = `Manual Dashboard DB Task ${Date.now()}`;
+
+    await captureAndTriageManualInboxTask(
+      page,
+      title,
+      "Schedule this task for the Dashboard Today Agenda.",
+    );
+    await openPortfolioTaskPlanningControls(page, title);
+    await page.getByRole("button", { name: "Heute terminieren" }).click();
+    await page.waitForLoadState("networkidle");
+    await page.goto("/dashboard");
 
     await expectOnlyProductContentStates(page);
     const todayAgenda = page.getByRole("region", { name: "Today Agenda" });
     await expect(todayAgenda).toHaveAttribute("data-content-state", "partial");
-    await expect(
-      todayAgenda.getByRole("link", {
-        name: /Open agenda item: Manual 20:00 Agenda Task|Manual 20:00 Agenda Task/,
-      }),
-    ).toBeVisible();
-    await expect(todayAgenda.getByText(/20:00[–-]20:30/)).toBeVisible();
+    await expect(todayAgenda.getByText(title).first()).toBeVisible();
   });
 
   test("reports habit and active portfolio capacity states", async ({ page }) => {
@@ -1804,12 +1837,11 @@ test.describe("Today content states", () => {
     ).toHaveAttribute("data-content-state", "empty");
   });
 
-  test("projects manual today data without demo fallback", async ({ page }) => {
+  test("projects manual today inbox and project data without demo fallback", async ({ page }) => {
     await setProfile(page, "manual");
     await writeManualProfile({
       inboxItems: [manualTodayInboxItem()],
       projects: [manualProject(1)],
-      tasks: [manualTimedTask()],
     });
     await expectNoHydrationErrors(page, async () => {
       await page.goto("/today");
@@ -1826,26 +1858,55 @@ test.describe("Today content states", () => {
     ).toHaveAttribute("data-content-state", "partial");
     await expect(
       page.locator('[data-today-section="activity-stream"]'),
-    ).toHaveAttribute("data-item-count", "2");
-    await expect(page.getByText("Manual 20:00 Agenda Task").first()).toBeVisible();
+    ).toHaveAttribute("data-item-count", "1");
     await expect(page.getByText("Manual Today Inbox Capture").first()).toBeVisible();
     await expect(page.getByText("Manual Project 1").first()).toBeVisible();
     await expect(
       page.locator('[data-today-section="carry-forward"]'),
-    ).toHaveAttribute("data-content-state", "partial");
+    ).toHaveAttribute("data-content-state", "empty");
     await expect(
       page.locator('[data-today-section="opening-review"]'),
     ).toHaveAttribute("data-content-state", "empty");
     await expect(
       page.locator('[data-today-section="closing-review"]'),
     ).toHaveAttribute("data-content-state", "empty");
+  });
+
+  test("Manual Today and Dashboard project planned DB task", async ({ page }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session; no broad DB cleanup action is available.",
+    );
+
+    const title = `Manual Today DB Task ${Date.now()}`;
+
+    await captureAndTriageManualInboxTask(
+      page,
+      title,
+      "Plan this task for the daily core views.",
+    );
+    await openPortfolioTaskPlanningControls(page, title);
+    await page.getByRole("button", { name: "Heute planen" }).click();
+    await page.waitForLoadState("networkidle");
+
+    await page.goto("/today");
+    await expectTodayWidgetContracts(page, "manual");
+    await expectNoTodayDemoStrings(page);
+    await expect(page.getByText(title).first()).toBeVisible();
+    await page.reload();
+    await expect(page.getByText(title).first()).toBeVisible();
 
     await page.goto("/dashboard");
-    await expect(page.getByRole("region", { name: "Today Agenda" })).toHaveAttribute(
+    const todayAgenda = page.getByRole("region", { name: "Today Agenda" });
+    await expect(todayAgenda).toHaveAttribute(
       "data-content-state",
-      "partial",
+      /^(partial|filled)$/,
     );
-    await expect(page.getByText("Manual 20:00 Agenda Task").first()).toBeVisible();
+    await expect(todayAgenda.getByText(title).first()).toBeVisible();
+    await page.reload();
+    await expect(
+      page.getByRole("region", { name: "Today Agenda" }).getByText(title).first(),
+    ).toBeVisible();
   });
 });
 
@@ -1883,16 +1944,25 @@ test.describe("Calendar content states", () => {
     await expect(page.getByText("Keine ungeplanten Aufgaben")).toBeVisible();
   });
 
-  test("projects manual timed tasks into the calendar grid", async ({
+  test("Manual Calendar projects scheduled DB task reload-stable", async ({
     page,
   }) => {
-    await setProfile(page, "manual");
-    await writeManualProfile({
-      tasks: [manualTimedTask()],
-    });
-    await expectNoHydrationErrors(page, async () => {
-      await page.goto("/calendar");
-    });
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session; no broad DB cleanup action is available.",
+    );
+
+    const title = `Manual Calendar DB Task ${Date.now()}`;
+
+    await captureAndTriageManualInboxTask(
+      page,
+      title,
+      "Schedule this task into the Calendar time grid.",
+    );
+    await openPortfolioTaskPlanningControls(page, title);
+    await page.getByRole("button", { name: "Heute terminieren" }).click();
+    await page.waitForLoadState("networkidle");
+    await page.goto("/calendar");
 
     await expectCalendarWidgetContracts(page, "manual");
     await expectNoMainStrings(page, calendarBlockedDemoStrings, "calendar");
@@ -1900,7 +1970,9 @@ test.describe("Calendar content states", () => {
       "data-content-state",
       "partial",
     );
-    await expect(page.getByText("Manual 20:00 Agenda Task").first()).toBeVisible();
+    await expect(page.getByText(title).first()).toBeVisible();
+    await page.reload();
+    await expect(page.getByText(title).first()).toBeVisible();
   });
 });
 
@@ -1948,14 +2020,13 @@ test.describe("Portfolio content states", () => {
     }
   });
 
-  test("projects manual tasks, projects and goals without demo fallback", async ({
+  test("projects manual projects and goals without demo fallback", async ({
     page,
   }) => {
     await setProfile(page, "manual");
     await writeManualProfile({
       goals: [manualGoal(1)],
       projects: [manualProject(1)],
-      tasks: [manualTimedTask()],
     });
     await expectNoHydrationErrors(page, async () => {
       await page.goto("/portfolio");
@@ -1969,11 +2040,34 @@ test.describe("Portfolio content states", () => {
     );
     await expect(page.getByText("Manual Project 1").first()).toBeVisible();
     await expect(page.getByText("Manual Goal 1").first()).toBeVisible();
-    await expect(page.getByText("Manual 20:00 Agenda Task").first()).toBeVisible();
 
     await page.goto("/portfolio?view=skills");
     await expect(page.getByText("Noch keine Skills im Portfolio")).toBeVisible();
     await expectNoMainStrings(page, portfolioBlockedDemoStrings, "portfolio");
+  });
+
+  test("Manual Portfolio projects triaged DB task reload-stable", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session; no broad DB cleanup action is available.",
+    );
+
+    const title = `Manual Portfolio DB Task ${Date.now()}`;
+
+    await captureAndTriageManualInboxTask(
+      page,
+      title,
+      "Project this task into Portfolio.",
+    );
+    await page.goto("/portfolio?view=tasks");
+
+    await expectPortfolioWidgetContracts(page, "manual");
+    await expectNoMainStrings(page, portfolioBlockedDemoStrings, "portfolio");
+    await expect(page.getByText(title).first()).toBeVisible();
+    await page.reload();
+    await expect(page.getByText(title).first()).toBeVisible();
   });
 });
 

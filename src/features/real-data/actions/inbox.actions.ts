@@ -36,6 +36,14 @@ function revalidateInboxCaptureRoutes() {
   revalidatePath("/today");
 }
 
+function revalidateInboxTriageRoutes() {
+  revalidatePath("/inbox");
+  revalidatePath("/portfolio");
+  revalidatePath("/today");
+  revalidatePath("/dashboard");
+  revalidatePath("/calendar");
+}
+
 export async function captureInboxItemAction(
   formData: FormData,
 ): Promise<InboxCaptureActionResult> {
@@ -158,7 +166,7 @@ export async function triageInboxItemToTaskAction(
     };
   }
 
-  revalidatePath("/inbox");
+  revalidateInboxTriageRoutes();
 
   return {
     inboxItemId: result.data.inboxItem.id,
