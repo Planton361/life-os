@@ -1,119 +1,52 @@
-import {
-  optionalEnum,
-  optionalPositiveInteger,
-  optionalString,
-  requiredString,
-  asInputRecord,
-  defineInputSchema,
-  finishSchema,
-  type SchemaIssue,
-} from "./schema-contract";
-import { inboxItemTypes, type InboxItemType } from "../domain/inbox";
-import type {
-  AreaId,
-  GoalId,
-  InboxItemId,
-  IsoDateTimeString,
-  LocalDateString,
-  ProfileId,
-  ProjectId,
-  UserId,
-} from "../domain/ids";
+import { inboxItemTypes } from "../domain/inbox";
 import { taskEnergies, taskPriorities } from "../domain/task";
-import type { TaskEnergy, TaskPriority } from "../domain/task";
-import { optionalDateTime, optionalLocalDate } from "./schema-contract";
+import {
+  optionalDateTimeStringSchema,
+  optionalEnumSchema,
+  optionalLocalDateSchema,
+  optionalPositiveIntegerSchema,
+  optionalTrimmedStringSchema,
+  requiredTrimmedStringSchema,
+  z,
+} from "./schema-contract";
 
-export type CaptureInboxItemInput = {
-  userId: UserId;
-  profileId: ProfileId;
-  areaId?: AreaId;
-  title: string;
-  body?: string;
-  type?: InboxItemType;
-  source?: string;
-};
+const requiredIdSchema = requiredTrimmedStringSchema();
+const titleSchema = requiredTrimmedStringSchema(2);
 
-export type TriageInboxItemToTaskInput = {
-  userId: UserId;
-  profileId: ProfileId;
-  inboxItemId: InboxItemId;
-  title: string;
-  description?: string;
-  areaId?: AreaId;
-  projectId?: ProjectId;
-  goalId?: GoalId;
-  priority?: TaskPriority;
-  energy?: TaskEnergy;
-  plannedDate?: LocalDateString;
-  scheduledStartAt?: IsoDateTimeString;
-  durationMinutes?: number;
-  dueAt?: IsoDateTimeString;
-};
+const triageTaskFieldsSchema = z.object({
+  areaId: optionalTrimmedStringSchema,
+  description: optionalTrimmedStringSchema,
+  dueAt: optionalDateTimeStringSchema,
+  durationMinutes: optionalPositiveIntegerSchema,
+  energy: optionalEnumSchema(taskEnergies),
+  goalId: optionalTrimmedStringSchema,
+  plannedDate: optionalLocalDateSchema,
+  priority: optionalEnumSchema(taskPriorities),
+  projectId: optionalTrimmedStringSchema,
+  scheduledStartAt: optionalDateTimeStringSchema,
+});
 
-function readTriageTaskFields(
-  record: Record<string, unknown>,
-  issues: SchemaIssue[],
-) {
-  return {
-    areaId: optionalString(record, "areaId", issues) as AreaId | undefined,
-    description: optionalString(record, "description", issues),
-    dueAt: optionalDateTime(record, "dueAt", issues),
-    durationMinutes: optionalPositiveInteger(record, "durationMinutes", issues),
-    energy: optionalEnum(record, "energy", taskEnergies, issues),
-    goalId: optionalString(record, "goalId", issues) as GoalId | undefined,
-    plannedDate: optionalLocalDate(record, "plannedDate", issues),
-    priority: optionalEnum(record, "priority", taskPriorities, issues),
-    projectId: optionalString(record, "projectId", issues) as
-      | ProjectId
-      | undefined,
-    scheduledStartAt: optionalDateTime(record, "scheduledStartAt", issues),
-  };
-}
+export const captureInboxItemInputSchema = z.object({
+  areaId: optionalTrimmedStringSchema,
+  body: optionalTrimmedStringSchema,
+  profileId: requiredIdSchema,
+  source: optionalTrimmedStringSchema,
+  title: titleSchema,
+  type: optionalEnumSchema(inboxItemTypes),
+  userId: requiredIdSchema,
+});
 
-export const captureInboxItemInputSchema =
-  defineInputSchema<CaptureInboxItemInput>(
-    "captureInboxItemInputSchema",
-    (input) => {
-      const issues: SchemaIssue[] = [];
-      const record = asInputRecord(input, issues);
+export type CaptureInboxItemInput = z.infer<
+  typeof captureInboxItemInputSchema
+>;
 
-      return finishSchema(
-        {
-          areaId: optionalString(record, "areaId", issues) as
-            | AreaId
-            | undefined,
-          body: optionalString(record, "body", issues),
-          profileId: requiredString(record, "profileId", issues) as ProfileId,
-          source: optionalString(record, "source", issues),
-          title: requiredString(record, "title", issues, 2),
-          type: optionalEnum(record, "type", inboxItemTypes, issues),
-          userId: requiredString(record, "userId", issues) as UserId,
-        },
-        issues,
-      );
-    },
-  );
+export const triageInboxItemToTaskInputSchema = triageTaskFieldsSchema.extend({
+  inboxItemId: requiredIdSchema,
+  profileId: requiredIdSchema,
+  title: titleSchema,
+  userId: requiredIdSchema,
+});
 
-export const triageInboxItemToTaskInputSchema =
-  defineInputSchema<TriageInboxItemToTaskInput>(
-    "triageInboxItemToTaskInputSchema",
-    (input) => {
-      const issues: SchemaIssue[] = [];
-      const record = asInputRecord(input, issues);
-
-      return finishSchema(
-        {
-          ...readTriageTaskFields(record, issues),
-          inboxItemId: requiredString(
-            record,
-            "inboxItemId",
-            issues,
-          ) as InboxItemId,
-          profileId: requiredString(record, "profileId", issues) as ProfileId,
-          title: requiredString(record, "title", issues, 2),
-          userId: requiredString(record, "userId", issues) as UserId,
-        },
-        issues,
-      );
-    },
-  );
+export type TriageInboxItemToTaskInput = z.infer<
+  typeof triageInboxItemToTaskInputSchema
+>;

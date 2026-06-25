@@ -1,93 +1,39 @@
-import type {
-  AreaId,
-  GoalId,
-  IsoDateTimeString,
-  ProfileId,
-  UserId,
-} from "../domain/ids";
+import { goalHorizons, goalStatuses } from "../domain/goal";
 import {
-  goalHorizons,
-  goalStatuses,
-  type GoalHorizon,
-  type GoalStatus,
-} from "../domain/goal";
-import {
-  optionalDateTime,
-  optionalEnum,
-  optionalString,
-  requiredString,
-  asInputRecord,
-  defineInputSchema,
-  finishSchema,
-  type SchemaIssue,
+  optionalDateTimeStringSchema,
+  optionalEnumSchema,
+  optionalTrimmedStringSchema,
+  requiredTrimmedStringSchema,
+  z,
 } from "./schema-contract";
 
-export type CreateGoalInput = {
-  userId: UserId;
-  profileId: ProfileId;
-  areaId?: AreaId;
-  title: string;
-  description?: string;
-  status?: GoalStatus;
-  horizon?: GoalHorizon;
-  why?: string;
-  measure?: string;
-  targetValue?: string;
-  targetDate?: IsoDateTimeString;
-};
+const requiredIdSchema = requiredTrimmedStringSchema();
+const titleSchema = requiredTrimmedStringSchema(2);
 
-export type UpdateGoalInput = {
-  userId: UserId;
-  profileId: ProfileId;
-  goalId: GoalId;
-} & Partial<Omit<CreateGoalInput, "userId" | "profileId">>;
+const goalPatchSchema = z.object({
+  areaId: optionalTrimmedStringSchema,
+  description: optionalTrimmedStringSchema,
+  horizon: optionalEnumSchema(goalHorizons),
+  measure: optionalTrimmedStringSchema,
+  status: optionalEnumSchema(goalStatuses),
+  targetDate: optionalDateTimeStringSchema,
+  targetValue: optionalTrimmedStringSchema,
+  why: optionalTrimmedStringSchema,
+});
 
-function readGoalPatch(record: Record<string, unknown>, issues: SchemaIssue[]) {
-  return {
-    areaId: optionalString(record, "areaId", issues) as AreaId | undefined,
-    description: optionalString(record, "description", issues),
-    horizon: optionalEnum(record, "horizon", goalHorizons, issues),
-    measure: optionalString(record, "measure", issues),
-    status: optionalEnum(record, "status", goalStatuses, issues),
-    targetDate: optionalDateTime(record, "targetDate", issues),
-    targetValue: optionalString(record, "targetValue", issues),
-    why: optionalString(record, "why", issues),
-  };
-}
+export const createGoalInputSchema = goalPatchSchema.extend({
+  profileId: requiredIdSchema,
+  title: titleSchema,
+  userId: requiredIdSchema,
+});
 
-export const createGoalInputSchema = defineInputSchema<CreateGoalInput>(
-  "createGoalInputSchema",
-  (input) => {
-    const issues: SchemaIssue[] = [];
-    const record = asInputRecord(input, issues);
+export type CreateGoalInput = z.infer<typeof createGoalInputSchema>;
 
-    return finishSchema(
-      {
-        ...readGoalPatch(record, issues),
-        profileId: requiredString(record, "profileId", issues) as ProfileId,
-        title: requiredString(record, "title", issues, 2),
-        userId: requiredString(record, "userId", issues) as UserId,
-      },
-      issues,
-    );
-  },
-);
+export const updateGoalInputSchema = goalPatchSchema.extend({
+  goalId: requiredIdSchema,
+  profileId: requiredIdSchema,
+  title: optionalTrimmedStringSchema,
+  userId: requiredIdSchema,
+});
 
-export const updateGoalInputSchema = defineInputSchema<UpdateGoalInput>(
-  "updateGoalInputSchema",
-  (input) => {
-    const issues: SchemaIssue[] = [];
-    const record = asInputRecord(input, issues);
-
-    return finishSchema(
-      {
-        ...readGoalPatch(record, issues),
-        goalId: requiredString(record, "goalId", issues) as GoalId,
-        profileId: requiredString(record, "profileId", issues) as ProfileId,
-        title: optionalString(record, "title", issues),
-        userId: requiredString(record, "userId", issues) as UserId,
-      },
-      issues,
-    );
-  },
-);
+export type UpdateGoalInput = z.infer<typeof updateGoalInputSchema>;
