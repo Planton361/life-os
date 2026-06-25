@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SupabaseAuthPanel } from "@/features/auth";
 import { SettingsPage as SettingsFeaturePage } from "@/features/settings/settings-page";
 import { getSettingsViewModel } from "@/features/settings/settings-view-model";
 import {
@@ -22,6 +23,9 @@ export default async function SettingsPage() {
   return (
     <>
       <SettingsFeaturePage viewModel={viewModel} />
+      <div className="mx-auto mt-3 w-full max-w-[2208px]">
+        <SupabaseAuthPanel />
+      </div>
       <ProfileDataSettingsPanel />
     </>
   );

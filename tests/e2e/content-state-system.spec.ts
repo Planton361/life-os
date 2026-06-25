@@ -69,6 +69,7 @@ async function captureAndTriageManualInboxTask(
   await expectNoHydrationErrors(page, async () => {
     await page.goto("/inbox");
   });
+  await skipIfManualDbUnavailable(page);
   await page
     .getByRole("textbox", { exact: true, name: "Quick Capture" })
     .fill(title);
@@ -79,6 +80,22 @@ async function captureAndTriageManualInboxTask(
   await page.getByRole("button", { name: "Als Task anlegen" }).click();
   await page.waitForLoadState("networkidle");
   await expect(page.getByText("Task erstellt").first()).toBeVisible();
+}
+
+async function skipIfManualDbUnavailable(page: Page) {
+  const quickCapture = page.getByRole("textbox", {
+    exact: true,
+    name: "Quick Capture",
+  });
+
+  await expect(quickCapture).toBeVisible();
+
+  if (!(await quickCapture.isEnabled())) {
+    test.skip(
+      true,
+      "Requires a local authenticated Supabase Browser/Playwright session.",
+    );
+  }
 }
 
 async function openPortfolioTaskPlanningControls(page: Page, title: string) {
@@ -1625,6 +1642,34 @@ test.describe("Inbox content states", () => {
     }
   });
 
+  test("Manual missing auth state stays visible across daily core routes", async ({
+    page,
+  }) => {
+    await setProfile(page, "manual");
+
+    for (const route of [
+      "/inbox",
+      "/portfolio?view=tasks",
+      "/today",
+      "/dashboard",
+      "/calendar",
+    ]) {
+      await expectNoHydrationErrors(page, async () => {
+        await page.goto(route);
+      });
+
+      await expect(
+        page.getByText("Manual DB benötigt Supabase Anmeldung").first(),
+      ).toBeVisible();
+      await expect(
+        page.getByText("Melde dich an, um lokale DB-backed Tasks zu laden").first(),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("link", { name: "Supabase anmelden" }).first(),
+      ).toHaveAttribute("href", "/settings#supabase-session");
+    }
+  });
+
   test("captures a manual inbox item from the inbox page", async ({ page }) => {
     test.skip(
       !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
@@ -1638,6 +1683,7 @@ test.describe("Inbox content states", () => {
     await expectNoHydrationErrors(page, async () => {
       await page.goto("/inbox");
     });
+    await skipIfManualDbUnavailable(page);
     await page
       .getByRole("textbox", { exact: true, name: "Quick Capture" })
       .fill(title);
@@ -1674,6 +1720,7 @@ test.describe("Inbox content states", () => {
     await expectNoHydrationErrors(page, async () => {
       await page.goto("/inbox");
     });
+    await skipIfManualDbUnavailable(page);
     await page
       .getByRole("textbox", { exact: true, name: "Quick Capture" })
       .fill(title);
@@ -1702,6 +1749,7 @@ test.describe("Inbox content states", () => {
     await expectNoHydrationErrors(page, async () => {
       await page.goto("/inbox");
     });
+    await skipIfManualDbUnavailable(page);
     await page
       .getByRole("textbox", { exact: true, name: "Quick Capture" })
       .fill(title);
@@ -1732,6 +1780,11 @@ test.describe("Inbox content states", () => {
 
     await setProfile(page, "manual");
     await applySupabaseAuthState(page);
+
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/inbox");
+    });
+    await skipIfManualDbUnavailable(page);
     const taskCountBefore = await readProfileDataTaskCount(page);
 
     await expectNoHydrationErrors(page, async () => {
