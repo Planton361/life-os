@@ -27,8 +27,8 @@
 1. If `/settings#supabase-session` shows `invalid session`, use `Session zurücksetzen`.
 2. Confirm `/inbox`, `/portfolio?view=tasks`, `/today`, `/dashboard`, and `/calendar` stop showing repeated invalid refresh-token noise after reset.
 3. Sign in again with local Supabase email/password.
-4. Open `/dashboard`, capture a `Quick Thought`, and confirm the success state links to `/inbox`.
-5. Open `/inbox`, confirm the captured thought appears there, and use `Als Task anlegen`.
+4. Open `/dashboard`, choose `Aufgaben-Capture`, use `In Inbox speichern`, and confirm `Als Aufgaben-Capture in der Inbox gespeichert`.
+5. Follow `In Inbox als Task anlegen`, confirm the captured thought appears there, and use `Als Task anlegen`.
 6. Confirm the created task is visible through Portfolio, Today, Dashboard, and Calendar planning views after the normal manual DB flow.
 
 ## Known Boundaries

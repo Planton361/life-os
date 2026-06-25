@@ -173,7 +173,7 @@ export async function resetManualProfileAction() {
 function mapQuickCaptureKind(kind: string): InboxCaptureType {
   const normalized = kind as QuickCaptureKind;
 
-  if (normalized === "Task") return "task";
+  if (normalized === "Aufgaben-Capture") return "task";
   if (normalized === "Question") return "question";
   if (normalized === "Agent") return "agent";
   if (normalized === "Loop") return "idea";
@@ -226,6 +226,7 @@ export async function captureDashboardQuickThoughtAction(
 
   const content = formString(formData, "content");
   const kind = formString(formData, "kind");
+  const inboxType = mapQuickCaptureKind(kind);
 
   if (!content) {
     return {
@@ -237,7 +238,7 @@ export async function captureDashboardQuickThoughtAction(
   const inboxFormData = new FormData();
   inboxFormData.set("title", content.split(/\s+/).slice(0, 9).join(" "));
   inboxFormData.set("note", content);
-  inboxFormData.set("type", mapQuickCaptureKind(kind));
+  inboxFormData.set("type", inboxType);
   const result = await captureInboxItemAction(inboxFormData);
 
   if (result.status !== "success") {
@@ -250,7 +251,10 @@ export async function captureDashboardQuickThoughtAction(
   revalidateDashboardViews();
 
   return {
-    message: "Gespeichert. Der Eintrag liegt in der Inbox.",
+    message:
+      inboxType === "task"
+        ? "Als Aufgaben-Capture in der Inbox gespeichert"
+        : "In der Inbox gespeichert.",
     status: "success",
   };
 }

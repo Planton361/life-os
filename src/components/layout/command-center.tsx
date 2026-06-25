@@ -186,6 +186,11 @@ function QuickThought({
     }
   }, [router, state.status]);
 
+  const successLinkLabel =
+    state.message === "Als Aufgaben-Capture in der Inbox gespeichert"
+      ? "In Inbox als Task anlegen"
+      : "Inbox öffnen";
+
   return (
     <section
       aria-labelledby="quick-thought-title"
@@ -225,7 +230,7 @@ function QuickThought({
         </p>
         <div className="mt-2 flex items-center gap-2">
           <label className="sr-only" htmlFor="quick-thought-kind">
-            Capture type
+            Inbox-Typ
           </label>
           <select
             className={cn(
@@ -274,7 +279,7 @@ function QuickThought({
             )}
             href="/inbox"
           >
-            Inbox öffnen
+            {successLinkLabel}
           </Link>
         ) : null}
       </form>

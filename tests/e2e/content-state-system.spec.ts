@@ -1481,10 +1481,14 @@ test.describe("Dashboard content states", () => {
       await page.goto("/dashboard");
     });
     await page.getByRole("textbox", { name: "Quick Thought" }).fill(thought);
-    await page.getByLabel("Capture type").selectOption("Note");
-    await page.getByRole("button", { name: "Capture" }).click();
-    await expect(page.getByText("Gespeichert. Der Eintrag liegt in der Inbox.")).toBeVisible();
-    await expect(page.getByRole("link", { name: "Inbox öffnen" })).toBeVisible();
+    await page.getByLabel("Inbox-Typ").selectOption("Aufgaben-Capture");
+    await page.getByRole("button", { name: "In Inbox speichern" }).click();
+    await expect(
+      page.getByText("Als Aufgaben-Capture in der Inbox gespeichert"),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "In Inbox als Task anlegen" }),
+    ).toBeVisible();
 
     await page.goto("/inbox");
     await expect(page.getByText(thought).first()).toBeVisible();
