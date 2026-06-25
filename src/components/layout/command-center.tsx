@@ -186,11 +186,6 @@ function QuickThought({
     }
   }, [router, state.status]);
 
-  const successLinkLabel =
-    state.message === "Als Aufgaben-Capture in der Inbox gespeichert"
-      ? "In Inbox als Task anlegen"
-      : "Inbox öffnen";
-
   return (
     <section
       aria-labelledby="quick-thought-title"
@@ -228,23 +223,8 @@ function QuickThought({
         <p className="mt-2 text-[9px] font-medium text-[var(--text-faint)]">
           {data.helperText}
         </p>
+        <input name="kind" type="hidden" value={data.activeKind} />
         <div className="mt-2 flex items-center gap-2">
-          <label className="sr-only" htmlFor="quick-thought-kind">
-            Inbox-Typ
-          </label>
-          <select
-            className={cn(
-              "min-h-8 rounded-full border border-[rgba(91,124,250,.26)] bg-[rgba(91,124,250,.12)] px-2 text-[9px] font-medium text-[var(--text-secondary)] outline-none",
-              DASHBOARD_LINK_FOCUS_CLASSES,
-            )}
-            defaultValue={data.activeKind}
-            id="quick-thought-kind"
-            name="kind"
-          >
-            {data.kinds.map((type) => (
-              <option key={type}>{type}</option>
-            ))}
-          </select>
           <button
             className={cn(
               "ml-auto rounded-full border border-[rgba(95,200,215,.34)] bg-[rgba(91,124,250,.20)] px-5 py-2 text-[10px] font-medium text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]",
@@ -279,7 +259,7 @@ function QuickThought({
             )}
             href="/inbox"
           >
-            {successLinkLabel}
+            Inbox öffnen
           </Link>
         ) : null}
       </form>

@@ -1578,7 +1578,9 @@ function buildProfileInboxViewModel(
   const active = profile.inboxItems[0] ?? null;
   const activeIsTaskCapture = active?.type === "task";
   const activeIsTriaged = Boolean(active?.triagedTaskId);
-  const activeHasTaskOutcome = Boolean(active && (activeIsTaskCapture || activeIsTriaged));
+  const activeHasExitDecision = Boolean(
+    active && (activeIsTaskCapture || activeIsTriaged),
+  );
   const checklistItems = [
     {
       label: "Capture vorhanden",
@@ -1593,8 +1595,10 @@ function buildProfileInboxViewModel(
       state: active?.next ? "done" : "missing",
     },
     {
-      label: "Outcome Route gewählt",
-      state: activeHasTaskOutcome ? "done" : "missing",
+      label: activeIsTaskCapture
+        ? "Task Draft vorhanden"
+        : "Outcome Route gewählt",
+      state: activeHasExitDecision ? "done" : "missing",
     },
   ] satisfies InboxViewModel["checklist"]["items"];
   const checklistDoneCount = checklistItems.filter(
@@ -1704,9 +1708,9 @@ function buildProfileInboxViewModel(
       {
         label: "Missing Info",
         value: activeIsTriaged
-          ? "Task erstellt. Öffne Portfolio für Planung."
+          ? "Task erstellt. Planung und Terminierung passieren außerhalb der Inbox."
           : activeIsTaskCapture
-            ? "Direkter Task-Pfad aktiv. Outcome Route blockiert nicht."
+            ? "Task Draft prüfen und erst danach erstellen."
             : active
               ? "Outcome Route wählen."
               : "—",
@@ -1732,7 +1736,7 @@ function buildProfileInboxViewModel(
   viewModel.outcome = {
     ...viewModel.outcome,
     description: activeIsTaskCapture
-      ? "Aufgaben-Captures nutzen direkt die primäre Aktion im Active Item."
+      ? "Task-Captures werden als Task Draft im Active Item geprüft."
       : viewModel.outcome.description,
     actionsEnabled: false,
   };
@@ -1743,13 +1747,7 @@ function buildProfileInboxViewModel(
       ? "Hinweise bleiben lokal und werden erst nach Review übernommen."
       : "Noch keine Empfehlung möglich.",
     planning: aiPlanning,
-    outcomes: activeIsTriaged
-      ? ["Task erstellt"]
-      : activeIsTaskCapture
-        ? ["Standalone task"]
-        : active
-          ? ["Outcome Route prüfen"]
-          : [],
+    outcomes: active && !activeIsTaskCapture ? ["Outcome Route prüfen"] : [],
     canApply: false,
     emptyState: {
       title: "Noch keine Empfehlung möglich",

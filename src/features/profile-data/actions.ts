@@ -173,7 +173,6 @@ export async function resetManualProfileAction() {
 function mapQuickCaptureKind(kind: string): InboxCaptureType {
   const normalized = kind as QuickCaptureKind;
 
-  if (normalized === "Aufgaben-Capture") return "task";
   if (normalized === "Question") return "question";
   if (normalized === "Agent") return "agent";
   if (normalized === "Loop") return "idea";
@@ -251,10 +250,7 @@ export async function captureDashboardQuickThoughtAction(
   revalidateDashboardViews();
 
   return {
-    message:
-      inboxType === "task"
-        ? "Als Aufgaben-Capture in der Inbox gespeichert"
-        : "In der Inbox gespeichert.",
+    message: "In der Inbox gespeichert.",
     status: "success",
   };
 }

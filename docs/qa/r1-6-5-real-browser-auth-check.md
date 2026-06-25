@@ -14,7 +14,7 @@
 3. Sign in with local Supabase email/password.
 4. Open `/inbox`.
 5. Capture a Manual Inbox item.
-6. Convert it with `Als Task anlegen`.
+6. Convert it from the `Task Draft` panel with `Task erstellen`.
 7. Open `/portfolio?view=tasks` and confirm the task is visible.
 8. Use `Heute planen`.
 9. Open `/today` and `/dashboard` and confirm the task is visible for the local day.
@@ -22,18 +22,30 @@
 11. Open `/calendar` and confirm the task appears in the timed grid.
 12. Reload `/inbox`, `/portfolio?view=tasks`, `/today`, `/dashboard`, and `/calendar`.
 
+## Entry Semantics
+
+- Capture ≠ Task.
+- Task ≠ Termin.
+- Terminierte Task = Task + `scheduledStartAt`.
+- Dashboard Quick Thought is generic Inbox capture.
+- Inbox is where classification and Task Draft review happen.
+- Portfolio owns task inventory and planning.
+- Today shows today's execution view.
+- Calendar shows scheduled time blocks.
+
 ## R1.6.5B Follow-up Checks
 
 1. If `/settings#supabase-session` shows `invalid session`, use `Session zurücksetzen`.
 2. Confirm `/inbox`, `/portfolio?view=tasks`, `/today`, `/dashboard`, and `/calendar` stop showing repeated invalid refresh-token noise after reset.
 3. Sign in again with local Supabase email/password.
-4. Open `/dashboard`, choose `Aufgaben-Capture`, use `In Inbox speichern`, and confirm `Als Aufgaben-Capture in der Inbox gespeichert`.
-5. Follow `In Inbox als Task anlegen`, confirm the captured thought appears there, and use `Als Task anlegen`.
-6. Confirm `Task erstellt` and `Portfolio öffnen` are visible after triage.
-7. Confirm the already triaged item disables `Als Task anlegen` after reload, so no second task can be created from the same inbox item.
-8. Confirm the Outcome Route checklist does not block task captures; task captures should show the direct task path as ready.
-9. Confirm the created task is visible through Portfolio, Today, Dashboard, and Calendar planning views after the normal manual DB flow.
-10. If Portfolio, Today, Dashboard, or Calendar stay empty, verify that the item was triaged in Inbox and that the task is visible under `/portfolio?view=tasks` before checking planning or scheduling actions.
+4. Open `/dashboard`, confirm no `Inbox-Typ` dropdown is visible in `Quick Thought`, use `In Inbox speichern`, and confirm `In der Inbox gespeichert.` plus `Inbox öffnen`.
+5. Open `/inbox`, confirm the captured thought appears as a generic Inbox capture without `Task erstellen`.
+6. Capture a Manual Inbox item with type `Task`, confirm the `Task Draft` panel shows title, description/context, next action, area, priority, effort/duration, energy, and review-needed fields, then use `Task erstellen`.
+7. Confirm exactly one `Task erstellt` state and `Portfolio öffnen` are visible after triage.
+8. Confirm the already triaged item no longer shows a large `Task erstellen` button after reload, so no second task can be created from the same inbox item.
+9. Confirm the checklist shows `Task Draft vorhanden` for task captures; non-task captures continue to use Outcome Route.
+10. Confirm the created task is visible through Portfolio, Today, Dashboard, and Calendar planning views after the normal manual DB flow.
+11. If Portfolio, Today, Dashboard, or Calendar stay empty, verify that the item was triaged in Inbox and that the task is visible under `/portfolio?view=tasks` before checking planning or scheduling actions.
 
 ## Known Boundaries
 

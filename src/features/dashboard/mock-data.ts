@@ -100,12 +100,13 @@ export const dashboardMockData = {
     priority: "P1",
     title: "Quick Thought",
     destinationLabel: "AI Inbox",
-    placeholder: "Write a thought, task or instruction...",
-    helperText: "Inbox-Capture für Aufgabe · Note · Question · Agent",
+    placeholder: "Gedanke, Aufgabe oder Frage erfassen...",
+    helperText:
+      "Speichert als Inbox-Capture. Die Task-Entscheidung passiert in der Inbox.",
     captureLabel: "In Inbox speichern",
     contentState: { capacity: 1, itemCount: 1, state: "filled" },
-    kinds: ["Aufgaben-Capture", "Note", "Question", "Agent"],
-    activeKind: "Aufgaben-Capture",
+    kinds: ["Note"],
+    activeKind: "Note",
   },
   dailyControl: {
     priority: "P0",

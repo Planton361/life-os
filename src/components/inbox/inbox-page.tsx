@@ -628,6 +628,125 @@ function InboxOutcomeRoutes({
   );
 }
 
+function TaskDraftField({
+  label,
+  value,
+}: Readonly<{
+  label: string;
+  value: string;
+}>) {
+  return (
+    <div className="min-w-0 rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.70)] px-3 py-2">
+      <p className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+        {label}
+      </p>
+      <p className="mt-1 min-h-5 text-xs leading-5 text-[var(--text-primary)]">
+        {value || "—"}
+      </p>
+    </div>
+  );
+}
+
+function InboxTaskDraft({
+  activeItem,
+  nextAction,
+}: Readonly<{
+  activeItem: InboxViewModel["activeItem"];
+  nextAction: InboxClarificationField;
+}>) {
+  const area =
+    activeItem.planningSignals.find((signal) => signal.label === "Area")
+      ?.value ?? "Review";
+
+  if (activeItem.triagedTaskId) {
+    return (
+      <section
+        aria-labelledby="task-created-title"
+        className="rounded-[18px] border border-[rgba(66,184,131,.34)] bg-[rgba(66,184,131,.10)] p-3"
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3
+              className="text-sm font-semibold text-[var(--text-primary)]"
+              id="task-created-title"
+            >
+              Task erstellt
+            </h3>
+            <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+              Diese Inbox wurde in eine Task umgewandelt. Planung und
+              Terminierung bleiben in Portfolio, Today und Calendar.
+            </p>
+          </div>
+          <Link
+            className={cn(
+              "inline-flex min-h-8 items-center rounded-[12px] border border-[rgba(91,124,250,.34)] bg-[rgba(91,124,250,.16)] px-3 text-xs font-semibold text-[var(--text-primary)]",
+              focusClasses,
+            )}
+            href={activeItem.portfolioHref ?? "/portfolio?view=tasks"}
+          >
+            Portfolio öffnen
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section
+      aria-labelledby="task-draft-title"
+      className="rounded-[18px] border border-[rgba(66,184,131,.30)] bg-[rgba(66,184,131,.075)] p-3"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3
+            className="text-sm font-semibold text-[var(--text-primary)]"
+            id="task-draft-title"
+          >
+            Task Draft
+          </h3>
+          <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+            Review aus der Inbox. Task-Erstellung passiert erst über diese
+            Aktion.
+          </p>
+        </div>
+        <form action={triageInboxItemToTaskFormAction}>
+          <input name="inboxItemId" type="hidden" value={activeItem.id} />
+          <input name="title" type="hidden" value={activeItem.title} />
+          <input
+            name="description"
+            type="hidden"
+            value={activeItem.originalCapture}
+          />
+          <button
+            className={cn(
+              "min-h-9 rounded-[12px] border border-[rgba(66,184,131,.42)] bg-[rgba(66,184,131,.22)] px-3 text-xs font-semibold text-[var(--text-primary)]",
+              focusClasses,
+              disabledActionClasses,
+            )}
+            disabled={!activeItem.canTriageToTask}
+            type="submit"
+          >
+            Task erstellen
+          </button>
+        </form>
+      </div>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        <TaskDraftField label="Titel" value={activeItem.title} />
+        <TaskDraftField
+          label="Beschreibung / Kontext"
+          value={activeItem.originalCapture}
+        />
+        <TaskDraftField label="Nächste Aktion" value={nextAction.value} />
+        <TaskDraftField label="Area" value={area} />
+        <TaskDraftField label="Priorität" value="nicht gesetzt" />
+        <TaskDraftField label="Effort / Dauer" value="nicht gesetzt" />
+        <TaskDraftField label="Energie" value="nicht gesetzt" />
+        <TaskDraftField label="Review nötig" value="Ja" />
+      </div>
+    </section>
+  );
+}
+
 function InboxActiveItemPanel({
   activeItem,
   contentState,
@@ -640,7 +759,6 @@ function InboxActiveItemPanel({
   profileId: InboxViewModel["profileId"];
 }>) {
   const [cleanTitle, description, nextAction, missingInfo] = activeItem.fields;
-  const showTaskAction = activeItem.hasSelection && activeItem.isTaskCapture;
 
   return (
     <section
@@ -671,46 +789,6 @@ function InboxActiveItemPanel({
             </Pill>
           </div>
         </div>
-        {showTaskAction ? (
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <form action={triageInboxItemToTaskFormAction}>
-              <input name="inboxItemId" type="hidden" value={activeItem.id} />
-              <input name="title" type="hidden" value={activeItem.title} />
-              <input
-                name="description"
-                type="hidden"
-                value={activeItem.originalCapture}
-              />
-              <button
-                className={cn(
-                  "min-h-9 rounded-[12px] border border-[rgba(66,184,131,.42)] bg-[rgba(66,184,131,.22)] px-3 text-xs font-semibold text-[var(--text-primary)]",
-                  focusClasses,
-                  disabledActionClasses,
-                )}
-                disabled={!activeItem.canTriageToTask}
-                type="submit"
-              >
-                Als Task anlegen
-              </button>
-            </form>
-            {activeItem.triagedTaskId ? (
-              <>
-                <Pill active accent="var(--accent-green)">
-                  Task erstellt
-                </Pill>
-                <Link
-                  className={cn(
-                    "inline-flex min-h-9 items-center rounded-[12px] border border-[rgba(91,124,250,.34)] bg-[rgba(91,124,250,.16)] px-3 text-xs font-semibold text-[var(--text-primary)]",
-                    focusClasses,
-                  )}
-                  href={activeItem.portfolioHref ?? "/portfolio?view=tasks"}
-                >
-                  Portfolio öffnen
-                </Link>
-              </>
-            ) : null}
-          </div>
-        ) : null}
       </div>
 
       {activeItem.hasSelection ? (
@@ -771,32 +849,20 @@ function InboxActiveItemPanel({
           actionsEnabled={activeItem.actionsEnabled}
           signals={activeItem.planningSignals}
         />
-        <InboxOutcomeRoutes
-          actionsEnabled={outcome.actionsEnabled}
-          description={outcome.description}
-          options={outcome.options}
-          title={outcome.title}
-        />
+        {activeItem.isTaskCapture ? (
+          <InboxTaskDraft activeItem={activeItem} nextAction={nextAction} />
+        ) : (
+          <InboxOutcomeRoutes
+            actionsEnabled={outcome.actionsEnabled}
+            description={outcome.description}
+            options={outcome.options}
+            title={outcome.title}
+          />
+        )}
         <div
           aria-label="Inbox item actions"
           className="mt-auto flex flex-wrap gap-2 border-t border-[var(--border-subtle)] pt-3"
         >
-          {activeItem.triagedTaskId ? (
-            <>
-              <Pill active accent="var(--accent-green)">
-                Task erstellt
-              </Pill>
-              <Link
-                className={cn(
-                  "inline-flex min-h-8 items-center rounded-[12px] border border-[rgba(91,124,250,.34)] bg-[rgba(91,124,250,.16)] px-3 text-xs font-semibold text-[var(--text-primary)]",
-                  focusClasses,
-                )}
-                href={activeItem.portfolioHref ?? "/portfolio?view=tasks"}
-              >
-                Portfolio öffnen
-              </Link>
-            </>
-          ) : null}
           {["Save progress", "Mark as clarified", "Snooze", "Dismiss"].map(
             (action, index) => (
               <button

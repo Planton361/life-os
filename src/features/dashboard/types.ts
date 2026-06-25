@@ -77,12 +77,7 @@ export type DashboardCommandCenterMeta = {
   moodCheck: DashboardMoodCheck;
 };
 
-export type QuickCaptureKind =
-  | "Aufgaben-Capture"
-  | "Note"
-  | "Question"
-  | "Loop"
-  | "Agent";
+export type QuickCaptureKind = "Note" | "Question" | "Loop" | "Agent";
 
 export type DashboardQuickCapture = {
   priority: Extract<DashboardPriority, "P1">;

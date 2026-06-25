@@ -78,7 +78,7 @@ async function captureAndTriageManualInboxTask(
   await page.getByRole("button", { name: "Capture" }).click();
   await page.waitForLoadState("networkidle");
   await expect(page.getByText(title).first()).toBeVisible();
-  await page.getByRole("button", { name: "Als Task anlegen" }).click();
+  await page.getByRole("button", { name: "Task erstellen" }).click();
   await page.waitForLoadState("networkidle");
   await expect(page.getByText("Task erstellt").first()).toBeVisible();
 }
@@ -1481,26 +1481,19 @@ test.describe("Dashboard content states", () => {
     await expectNoHydrationErrors(page, async () => {
       await page.goto("/dashboard");
     });
+    const quickThought = page.getByRole("region", { name: "Quick Thought" });
+    await expect(quickThought.getByLabel("Inbox-Typ")).toHaveCount(0);
+    await expect(
+      quickThought.getByRole("button", { name: "Task erstellen" }),
+    ).toHaveCount(0);
     await page.getByRole("textbox", { name: "Quick Thought" }).fill(thought);
-    await page.getByLabel("Inbox-Typ").selectOption("Aufgaben-Capture");
     await page.getByRole("button", { name: "In Inbox speichern" }).click();
-    await expect(
-      page.getByText("Als Aufgaben-Capture in der Inbox gespeichert"),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: "In Inbox als Task anlegen" }),
-    ).toBeVisible();
+    await expect(page.getByText("In der Inbox gespeichert.")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Inbox öffnen" })).toBeVisible();
 
     await page.goto("/inbox");
     await expect(page.getByText(thought).first()).toBeVisible();
-    await expect(page.getByRole("button", { name: "Als Task anlegen" })).toBeVisible();
-    await page.getByRole("button", { name: "Als Task anlegen" }).click();
-    await page.waitForLoadState("networkidle");
-    await expect(page.getByText("Task erstellt").first()).toBeVisible();
-    await expect(page.getByRole("link", { name: "Portfolio öffnen" })).toBeVisible();
-    await page.getByRole("link", { name: "Portfolio öffnen" }).first().click();
-    await expect(page).toHaveURL(/\/portfolio\?view=tasks/);
-    await expect(page.getByText(thought).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: "Task erstellen" })).toHaveCount(0);
   });
 
   test("projects a manual DB task into Today Agenda", async ({ page }) => {
@@ -1787,20 +1780,30 @@ test.describe("Inbox content states", () => {
     await page.getByRole("button", { name: "Capture" }).click();
     await page.waitForLoadState("networkidle");
 
+    const activeItem = page.locator('[data-inbox-section="active-item"]');
     await expect(page.getByText(title).first()).toBeVisible();
-    await expect(page.getByText("Outcome Route gewählt").first()).toBeVisible();
+    await expect(activeItem.getByText("Task Draft")).toBeVisible();
+    await expect(activeItem.getByText("Titel")).toBeVisible();
+    await expect(activeItem.getByText("Beschreibung / Kontext")).toBeVisible();
+    await expect(activeItem.getByText("Nächste Aktion")).toBeVisible();
+    await expect(activeItem.getByText("Area")).toBeVisible();
+    await expect(activeItem.getByText("Priorität")).toBeVisible();
+    await expect(activeItem.getByText("Effort / Dauer")).toBeVisible();
+    await expect(activeItem.getByText("Energie")).toBeVisible();
+    await expect(activeItem.getByText("Review nötig")).toBeVisible();
+    await expect(page.getByText("Task Draft vorhanden").first()).toBeVisible();
     await expect(page.getByText("4 / 4 ready").first()).toBeVisible();
-    await page.getByRole("button", { name: "Als Task anlegen" }).click();
+    await page.getByRole("button", { name: "Task erstellen" }).click();
     await page.waitForLoadState("networkidle");
 
-    await expect(page.getByText("Task erstellt").first()).toBeVisible();
+    await expect(activeItem.getByText("Task erstellt")).toHaveCount(1);
     await expect(page.getByRole("link", { name: "Portfolio öffnen" })).toBeVisible();
     await page.reload();
     await expect(page.getByText(title).first()).toBeVisible();
-    await expect(page.getByText("Task erstellt").first()).toBeVisible();
+    await expect(activeItem.getByText("Task erstellt")).toHaveCount(1);
     await expect(
-      page.getByRole("button", { name: "Als Task anlegen" }),
-    ).toBeDisabled();
+      page.getByRole("button", { name: "Task erstellen" }),
+    ).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Portfolio öffnen" })).toBeVisible();
     await expectNoInboxDemoStrings(page);
   });
@@ -1834,7 +1837,7 @@ test.describe("Inbox content states", () => {
     await page.getByLabel("Quick Capture type").selectOption("task");
     await page.getByRole("button", { name: "Capture" }).click();
     await page.waitForLoadState("networkidle");
-    await page.getByRole("button", { name: "Als Task anlegen" }).click();
+    await page.getByRole("button", { name: "Task erstellen" }).click();
     await page.waitForLoadState("networkidle");
 
     await expect(page.getByText("Task erstellt").first()).toBeVisible();
@@ -1869,12 +1872,12 @@ test.describe("Inbox content states", () => {
     await page.goto("/inbox");
     await expect(page.getByText(title).first()).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Als Task anlegen" }),
-    ).toBeDisabled();
+      page.getByRole("button", { name: "Task erstellen" }),
+    ).toHaveCount(0);
     await page.reload();
     await expect(
-      page.getByRole("button", { name: "Als Task anlegen" }),
-    ).toBeDisabled();
+      page.getByRole("button", { name: "Task erstellen" }),
+    ).toHaveCount(0);
     await expect(await readProfileDataTaskCount(page)).toBe(taskCountAfterTriage);
   });
 });
