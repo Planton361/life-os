@@ -44,6 +44,21 @@ async function applySupabaseAuthState(page: Page) {
   return true;
 }
 
+async function readProfileDataTaskCount(page: Page) {
+  await page.goto("/settings");
+
+  const profileDataPanel = page
+    .getByText("Profile Data Source")
+    .locator("xpath=ancestor::section[1]");
+  const taskCount = profileDataPanel
+    .locator("dt")
+    .filter({ hasText: "Tasks" })
+    .locator("xpath=following-sibling::dd[1]");
+  const countText = (await taskCount.textContent())?.trim() ?? "";
+
+  return Number(countText);
+}
+
 async function setProfile(page: Page, profile: ProfileId) {
   await page.context().clearCookies();
   await page.context().addCookies([
@@ -1671,6 +1686,39 @@ test.describe("Inbox content states", () => {
     await page.reload();
     await expect(page.getByText(title).first()).toBeVisible();
     await expect(page.getByText("Task erstellt").first()).toBeVisible();
+    await expectNoInboxDemoStrings(page);
+  });
+
+  test("Manual Inbox triage exposes DB task read model", async ({ page }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session; no broad DB cleanup action is available.",
+    );
+
+    const title = `Manual Inbox task read model ${Date.now()}`;
+
+    await setProfile(page, "manual");
+    await applySupabaseAuthState(page);
+    const taskCountBefore = await readProfileDataTaskCount(page);
+
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/inbox");
+    });
+    await page
+      .getByRole("textbox", { exact: true, name: "Quick Capture" })
+      .fill(title);
+    await page
+      .getByRole("textbox", { name: "Quick Capture note" })
+      .fill("Expose this triaged item through the task read model.");
+    await page.getByRole("button", { name: "Capture" }).click();
+    await page.waitForLoadState("networkidle");
+    await page.getByRole("button", { name: "Als Task anlegen" }).click();
+    await page.waitForLoadState("networkidle");
+
+    await expect(page.getByText("Task erstellt").first()).toBeVisible();
+    await expect
+      .poll(async () => readProfileDataTaskCount(page))
+      .toBeGreaterThan(taskCountBefore);
     await expectNoInboxDemoStrings(page);
   });
 });

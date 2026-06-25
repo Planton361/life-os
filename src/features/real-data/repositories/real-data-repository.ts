@@ -57,6 +57,13 @@ export type CalendarTaskRangeInput = {
   toDate: LocalDateString;
 };
 
+export type TaskListInput = {
+  userId: UserId;
+  profileId: ProfileId;
+  sortBy?: "created" | "planned" | "scheduled";
+  ascending?: boolean;
+};
+
 export interface ProfileRepository {
   getProfileById(
     userId: UserId,
@@ -88,6 +95,7 @@ export interface TaskRepository {
   scheduleTask(input: ScheduleTaskInput): Promise<RepositoryResult<Task>>;
   completeTask(input: CompleteTaskInput): Promise<RepositoryResult<Task>>;
   carryTaskForward(input: CarryTaskForwardInput): Promise<RepositoryResult<Task>>;
+  getTasksByUser(input: TaskListInput): Promise<RepositoryListResult<Task>>;
   getTasksForToday(
     userId: UserId,
     profileId: ProfileId,

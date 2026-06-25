@@ -45,8 +45,15 @@ import type {
   LifeTask,
   TaskStatus,
 } from "@/features/entities/types";
-import { captureInboxItemInputSchema, type InboxItem } from "@/features/real-data";
-import { createSupabaseInboxRepository } from "@/features/real-data/supabase";
+import {
+  captureInboxItemInputSchema,
+  type InboxItem,
+  type Task as RealDataTask,
+} from "@/features/real-data";
+import {
+  createSupabaseInboxRepository,
+  createSupabaseTaskRepository,
+} from "@/features/real-data/supabase";
 import {
   createManualHabit,
   createManualGoal,
@@ -1312,6 +1319,62 @@ function realInboxToManualInboxItem(item: InboxItem): ManualInboxItem {
   };
 }
 
+function realTaskStatusToLifeTaskStatus(
+  status: RealDataTask["status"],
+): TaskStatus | null {
+  if (status === "archived") return null;
+
+  return status;
+}
+
+function realTaskToLifeTask(task: RealDataTask): LifeTask | null {
+  const status = realTaskStatusToLifeTaskStatus(task.status);
+
+  if (!status) return null;
+
+  return {
+    areaId: "review",
+    calendarBlockIds: [],
+    date: task.plannedDate ?? undefined,
+    description: task.description ?? "",
+    durationMinutes: task.durationMinutes ?? undefined,
+    energy: task.energy ?? undefined,
+    evidence: task.sourceInboxItemId
+      ? [
+          {
+            detail: "Created from Inbox triage.",
+            href: `/inbox`,
+            sourceLabel: "Supabase",
+            title: "Source Inbox Item",
+          },
+        ]
+      : [],
+    goalId: task.goalId ?? undefined,
+    id: task.id,
+    inboxItemIds: task.sourceInboxItemId ? [task.sourceInboxItemId] : [],
+    nextStep:
+      task.description ??
+      (task.sourceInboxItemId
+        ? "Review the task created from Inbox triage."
+        : "Review the Supabase task."),
+    priority: task.priority,
+    projectId: task.projectId ?? undefined,
+    resultNote: task.completedAt ? "Completed in Supabase." : undefined,
+    reviewNeeded: status === "inbox",
+    source: task.sourceInboxItemId ? "Supabase inbox triage" : "Supabase task",
+    status,
+    timeline: [
+      {
+        dateLabel: "DB",
+        detail: "Loaded from Supabase tasks.",
+        label: "Read model",
+      },
+    ],
+    title: task.title,
+    type: "task",
+  };
+}
+
 async function getManualInboxProfileData(): Promise<{
   data: ManualProfileData;
   unavailableReason?: string;
@@ -1343,6 +1406,43 @@ async function getManualInboxProfileData(): Promise<{
       ...emptyManualProfile(),
       inboxItems: result.data.map(realInboxToManualInboxItem),
     },
+  };
+}
+
+async function getManualTaskProfileData(): Promise<{
+  tasks: LifeTask[];
+  unavailableReason?: string;
+}> {
+  const auth = await createAuthenticatedSupabaseServerClient();
+
+  if (!auth.ok) {
+    return {
+      tasks: [],
+      unavailableReason:
+        auth.error === "missing_env"
+          ? "Supabase ist lokal noch nicht konfiguriert."
+          : "Melde dich an, um DB-backed Tasks zu laden.",
+    };
+  }
+
+  const repository = createSupabaseTaskRepository(auth.client);
+  const result = await repository.getTasksByUser({
+    profileId: auth.user.id,
+    sortBy: "created",
+    userId: auth.user.id,
+  });
+
+  if (!result.ok) {
+    return {
+      tasks: [],
+      unavailableReason: "Tasks konnten nicht aus Supabase geladen werden.",
+    };
+  }
+
+  return {
+    tasks: result.data
+      .map(realTaskToLifeTask)
+      .filter((task): task is LifeTask => Boolean(task)),
   };
 }
 
@@ -2209,6 +2309,22 @@ export async function getEntityCollection(): Promise<EntityCollection> {
   };
 }
 
+export async function getTasks(): Promise<LifeTask[]> {
+  const profileId = await getCurrentLifeOsProfileId();
+
+  if (profileId === "demo") {
+    return [...clone(demoEntityCollection.tasks)];
+  }
+
+  if (profileId === "manual") {
+    const manualTasks = await getManualTaskProfileData();
+
+    return manualTasks.tasks;
+  }
+
+  return [...(await getProfileData(profileId)).tasks];
+}
+
 export async function getDashboardViewModel(): Promise<DashboardViewModel> {
   const profileId = await getCurrentLifeOsProfileId();
 
@@ -2296,10 +2412,7 @@ export async function getLifeOsDataSource(): Promise<LifeOsDataSource> {
     profile,
     getDashboardViewModel,
     getEntityCollection,
-    async getTasks() {
-      const collection = await getEntityCollection();
-      return [...collection.tasks];
-    },
+    getTasks,
     async createTask(input: CreateTaskInput) {
       assertManualProfile();
       return createManualTask(input);

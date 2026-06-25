@@ -1,5 +1,9 @@
 import type { Task } from "../../domain";
-import type { CalendarTaskRangeInput, TaskRepository } from "../../repositories";
+import type {
+  CalendarTaskRangeInput,
+  TaskListInput,
+  TaskRepository,
+} from "../../repositories";
 import type {
   RepositoryListResult,
   RepositoryResult,
@@ -54,6 +58,13 @@ function notFoundFailure(entity: string): RepositoryFailure {
     },
     ok: false,
   };
+}
+
+function taskListSortColumn(sortBy: TaskListInput["sortBy"]) {
+  if (sortBy === "planned") return "planned_date";
+  if (sortBy === "scheduled") return "scheduled_start_at";
+
+  return "created_at";
 }
 
 async function updateTaskById(
@@ -160,6 +171,33 @@ export function createSupabaseTaskRepository(
       if (scopeFailure) return scopeFailure;
 
       return getTasksForRange(client, input);
+    },
+
+    async getTasksByUser(input) {
+      const scopeFailure = profileScopeFailure(input.userId, input.profileId);
+      if (scopeFailure) return scopeFailure;
+
+      const sortColumn = taskListSortColumn(input.sortBy);
+      const ascending = input.ascending ?? false;
+      let query = client
+        .from(realDataTableNames.tasks)
+        .select("*")
+        .eq("user_id", input.userId)
+        .is("archived_at", null)
+        .order(sortColumn, { ascending });
+
+      if (sortColumn !== "created_at") {
+        query = query.order("created_at", { ascending: false });
+      }
+
+      const result = (await query) as SupabaseQueryResult<readonly TaskRow[]>;
+
+      if (result.error) return adapterFailure("load tasks");
+
+      return {
+        data: (result.data ?? []).map(mapTaskRowToDomain),
+        ok: true,
+      };
     },
 
     async getPortfolioTasks(userId, profileId) {

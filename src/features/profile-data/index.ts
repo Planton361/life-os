@@ -6,6 +6,7 @@ export {
   getLifeOsDataSource,
   getMentalHealthViewModel,
   getPortfolioViewModel,
+  getTasks,
   getTodayViewModel,
 } from "./view-models";
 export {
