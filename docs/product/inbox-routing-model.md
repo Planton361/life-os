@@ -53,7 +53,7 @@ Die Inbox darf Planungsabsichten sammeln. Konkrete Tagesplanung und Zeitplanung 
 | Add to Existing | Rohmaterial wird an ein bestehendes Objekt angehaengt oder in dessen Kontext in eine Task/Note/Relation umgewandelt. | Raw Capture -> Existing Entity auswaehlen -> Beitrag, Task, Note oder Relation erstellen | Zielmodell; UI-Route sichtbar, aber noch nicht verbunden. | Keine Blindverlinkung ohne Target Picker und User-Bestaetigung. |
 | Create New | Rohmaterial wird Ausgangspunkt fuer ein neues Objekt. | Raw Capture -> Project/Goal/Skill/Resource Draft -> spaetere Verfeinerung | Zielmodell; noch kein Inbox-Create-New-Flow. | Keine neuen Entities aus Rohtext ohne Draft und Folge-Review. |
 | Resource | Rohmaterial wird Resource oder Resource-Link. | Raw Capture -> Resource erstellen oder an bestehende Resource haengen -> Resource Graph / Knowledge Network | Resource-Domain existiert konzeptionell/technisch, Inbox-Route ist noch nicht verbunden. | Keine Resource-Graph-Kanten automatisch erzeugen. |
-| Solved / Archive | Eintrag ist erledigt, geklaert oder bewusst nicht weiterverfolgt. | Raw Capture -> Close Draft -> done/archive | Zielmodell; noch kein dedizierter Inbox-Close-Flow. | Nicht still loeschen. Kein Zielobjekt erzwingen. |
+| Solved / Archive | Eintrag ist erledigt, geklaert oder bewusst nicht weiterverfolgt. | Raw Capture -> Close Draft -> done/archive | Erster verbundener Nicht-Task-Pfad; archiviert per Soft Archive und erzeugt kein Zielobjekt. | Nicht still loeschen. Kein Zielobjekt erzwingen. |
 
 ### Add to Existing Targets
 

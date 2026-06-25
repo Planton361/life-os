@@ -14,6 +14,7 @@ import type {
   UserId,
 } from "../domain";
 import type {
+  ArchiveInboxItemInput,
   CaptureInboxItemInput,
   CarryTaskForwardInput,
   CloseDailyLogInput,
@@ -77,6 +78,9 @@ export interface ProfileRepository {
 }
 
 export interface InboxRepository {
+  archiveInboxItem(
+    input: ArchiveInboxItemInput,
+  ): Promise<RepositoryResult<InboxItem>>;
   createInboxItem(
     input: CaptureInboxItemInput,
   ): Promise<RepositoryResult<InboxItem>>;

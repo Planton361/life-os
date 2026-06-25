@@ -50,3 +50,13 @@ export const triageInboxItemToTaskInputSchema = triageTaskFieldsSchema.extend({
 export type TriageInboxItemToTaskInput = z.infer<
   typeof triageInboxItemToTaskInputSchema
 >;
+
+export const archiveInboxItemInputSchema = z.object({
+  inboxItemId: requiredIdSchema,
+  profileId: requiredIdSchema,
+  userId: requiredIdSchema,
+});
+
+export type ArchiveInboxItemInput = z.infer<
+  typeof archiveInboxItemInputSchema
+>;

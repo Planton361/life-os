@@ -1695,7 +1695,41 @@ test.describe("Inbox content states", () => {
 
     await expect(
       activeItem.locator('[data-outcome-route="solved_archive"]'),
-    ).toContainText("Status: Noch nicht verbunden");
+    ).toContainText("Status: Verbunden");
+  });
+
+  test("opens the connected Solved / Archive draft without target-object actions", async ({
+    page,
+  }) => {
+    await setProfile(page, "demo");
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/inbox");
+    });
+
+    const activeItem = page.locator('[data-inbox-section="active-item"]');
+    await activeItem.locator('[data-outcome-route="solved_archive"]').click();
+    const closeDraft = activeItem
+      .getByRole("heading", { name: "Solved / Archive Draft" })
+      .locator("xpath=ancestor::section[1]");
+    await expect(closeDraft).toBeVisible();
+    await expect(
+      closeDraft.getByText("Kein Zielobjekt nötig. Dieses Capture wird aus der aktiven Inbox entfernt und archiviert."),
+    ).toBeVisible();
+    await expect(
+      closeDraft.getByRole("button", { name: "Als erledigt archivieren" }),
+    ).toBeDisabled();
+    await expect(
+      activeItem.getByRole("button", { exact: true, name: "Task erstellen" }),
+    ).toHaveCount(0);
+    await expect(
+      activeItem.getByRole("link", { name: "Portfolio öffnen" }),
+    ).toHaveCount(0);
+    await expect(
+      activeItem.getByRole("heading", { name: "Resource Draft" }),
+    ).toHaveCount(0);
+    await expect(
+      activeItem.getByRole("heading", { name: "Create New Draft" }),
+    ).toHaveCount(0);
   });
 
   test("opens the Task Draft from the Standalone Task route", async ({
@@ -1848,6 +1882,54 @@ test.describe("Inbox content states", () => {
     await expect(page.getByText(title).first()).toBeVisible();
     await page.reload();
     await expect(page.getByText(title).first()).toBeVisible();
+    await expectNoInboxDemoStrings(page);
+  });
+
+  test("Manual Inbox Solved Archive removes the item from active inbox", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session; no broad DB cleanup action is available.",
+    );
+
+    const title = `Manual Inbox solved archive ${Date.now()}`;
+
+    await setProfile(page, "manual");
+    await applySupabaseAuthState(page);
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/inbox");
+    });
+    await skipIfManualDbUnavailable(page);
+    await page
+      .getByRole("textbox", { exact: true, name: "Quick Capture" })
+      .fill(title);
+    await page
+      .getByRole("textbox", { name: "Quick Capture note" })
+      .fill("Close this capture without creating a target object.");
+    await page.getByRole("button", { name: "Capture" }).click();
+    await page.waitForLoadState("networkidle");
+
+    const activeItem = page.locator('[data-inbox-section="active-item"]');
+    await expect(page.getByText(title).first()).toBeVisible();
+    await activeItem.locator('[data-outcome-route="solved_archive"]').click();
+    await expect(
+      activeItem.getByRole("heading", { name: "Solved / Archive Draft" }),
+    ).toBeVisible();
+    await expect(
+      activeItem.getByRole("button", { exact: true, name: "Task erstellen" }),
+    ).toHaveCount(0);
+    await activeItem
+      .getByRole("button", { name: "Als erledigt archivieren" })
+      .click();
+    await page.waitForLoadState("networkidle");
+
+    await expect(page.getByText(title)).toHaveCount(0);
+    await expect(
+      page.getByRole("link", { name: "Portfolio öffnen" }),
+    ).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByText(title)).toHaveCount(0);
     await expectNoInboxDemoStrings(page);
   });
 

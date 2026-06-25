@@ -51,6 +51,15 @@
 - Planning Signals are hints for later planning, not scheduling.
 - AI Assistant suggests routes and fields, but it does not decide or apply changes.
 
+## R1.6.6C Solved / Archive Route
+
+- Solved / Archive is connected as the first non-task persistent route.
+- The route removes an Inbox item from the active Inbox by soft archive.
+- It must not hard-delete the row.
+- It must not create a Task, Resource, Project, or Goal.
+- Archived items are reload-stable outside the active Inbox.
+- Archive view does not exist yet.
+
 ## R1.6.5B Follow-up Checks
 
 1. If `/settings#supabase-session` shows `invalid session`, use `Session zurücksetzen`.

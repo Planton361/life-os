@@ -7,6 +7,7 @@ import type {
 } from "../row-types";
 
 export type InboxItemUpdatePatchInput = {
+  archivedAt?: string;
   createdTaskId?: string;
   processedAt?: string;
   status?: InboxItemUpdate["status"];
@@ -51,6 +52,10 @@ export function mapInboxItemUpdateToPatch(
   input: InboxItemUpdatePatchInput,
 ): InboxItemUpdate {
   const patch: InboxItemUpdate = {};
+
+  if (input.archivedAt !== undefined) {
+    patch.archived_at = input.archivedAt;
+  }
 
   if (input.createdTaskId !== undefined) {
     patch.created_task_id = input.createdTaskId;

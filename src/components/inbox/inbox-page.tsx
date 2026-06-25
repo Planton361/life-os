@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties, ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import Link from "next/link";
 import type { ContentStateMeta } from "@/features/content-state";
 import {
@@ -19,7 +19,9 @@ import {
   type InboxViewModel,
 } from "@/features/inbox";
 import {
+  archiveInboxItemFormStateAction,
   captureInboxItemFormAction,
+  type InboxArchiveActionResult,
   triageInboxItemToTaskFormAction,
 } from "@/features/real-data/actions/inbox.actions";
 import { cn } from "@/lib/cn";
@@ -157,7 +159,10 @@ function captureTypeAccent(type: InboxQueueItem["type"]) {
 }
 
 function outcomeRouteStatus(route: InboxOutcomeRoute) {
-  if (route === "standalone_task") return "Verbunden";
+  if (route === "standalone_task" || route === "solved_archive") {
+    return "Verbunden";
+  }
+
   return "Noch nicht verbunden";
 }
 
@@ -662,7 +667,8 @@ function InboxOutcomeRoutes({
       <div className="mt-2 grid gap-2 lg:grid-cols-2 2xl:flex-1">
         {options.map((option) => {
           const isSelected = selectedRoute === option.id;
-          const isConnected = option.id === "standalone_task";
+          const isConnected =
+            option.id === "standalone_task" || option.id === "solved_archive";
           const status = outcomeRouteStatus(option.id);
 
           return (
@@ -713,7 +719,9 @@ function InboxOutcomeRoutes({
                   </span>
                   <span className="mt-0.5 block text-[10px] text-[var(--text-muted)]">
                     {isConnected
-                      ? "Aktiviert den Task Draft. Erst Task erstellen schreibt in Supabase."
+                      ? option.id === "standalone_task"
+                        ? "Aktiviert den Task Draft. Erst Task erstellen schreibt in Supabase."
+                        : "Aktiviert den Close Draft. Erst der Abschluss archiviert den Eintrag."
                       : `${outcomeRouteResult(option)} Persistenz folgt in einem späteren Block.`}
                   </span>
                 </span>
@@ -857,7 +865,7 @@ function PreparedDraftShell({
   route,
 }: Readonly<{
   activeItem: InboxViewModel["activeItem"];
-  route: Exclude<InboxOutcomeRoute, "standalone_task">;
+  route: Exclude<InboxOutcomeRoute, "standalone_task" | "solved_archive">;
 }>) {
   const shell = {
     add_to_existing: {
@@ -930,30 +938,8 @@ function PreparedDraftShell({
         </>
       ),
     },
-    solved_archive: {
-      accent: "var(--accent-cyan)",
-      title: "Solved / Archive Draft",
-      description:
-        "Diese Route schließt ein Inbox Item später ohne Zielobjekt. Es gibt noch keine neue Archiv-Logik.",
-      fields: (
-        <>
-          <DraftShellReadOnlyField
-            label="Kein Zielobjekt nötig"
-            value="Bestätigt als vorbereiteter Close Draft"
-          />
-          <DraftShellReadOnlyField
-            label="Grund / Notiz"
-            value="Noch nicht verbunden"
-          />
-          <DraftShellReadOnlyField
-            label="Später"
-            value="Inbox erledigen oder archivieren"
-          />
-        </>
-      ),
-    },
   } satisfies Record<
-    Exclude<InboxOutcomeRoute, "standalone_task">,
+    Exclude<InboxOutcomeRoute, "standalone_task" | "solved_archive">,
     {
       accent: string;
       description: string;
@@ -991,6 +977,101 @@ function PreparedDraftShell({
       <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
         Diese Auswahl erzeugt keinen Submit und schreibt keine Daten.
       </p>
+    </section>
+  );
+}
+
+function InboxSolvedArchiveDraft({
+  activeItem,
+  canArchive,
+}: Readonly<{
+  activeItem: InboxViewModel["activeItem"];
+  canArchive: boolean;
+}>) {
+  const [archiveState, archiveFormAction, archivePending] = useActionState<
+    InboxArchiveActionResult | null,
+    FormData
+  >(archiveInboxItemFormStateAction, null);
+  const archivedCurrentItem =
+    archiveState?.status === "success" &&
+    archiveState.inboxItemId === activeItem.id;
+
+  if (archivedCurrentItem) {
+    return (
+      <section
+        aria-labelledby="inbox-archive-success-title"
+        className="rounded-[18px] border border-[rgba(66,184,131,.34)] bg-[rgba(66,184,131,.10)] p-3"
+      >
+        <h3
+          className="text-sm font-semibold text-[var(--text-primary)]"
+          id="inbox-archive-success-title"
+        >
+          Inbox-Eintrag abgeschlossen
+        </h3>
+        <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+          Dieser Eintrag wurde aus der aktiven Inbox entfernt. Es wurde kein
+          Zielobjekt erstellt.
+        </p>
+      </section>
+    );
+  }
+
+  return (
+    <section
+      aria-labelledby="solved-archive-draft-title"
+      className="rounded-[18px] border border-[rgba(95,200,215,.30)] bg-[rgba(95,200,215,.075)] p-3"
+    >
+      <form action={archiveFormAction}>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3
+              className="text-sm font-semibold text-[var(--text-primary)]"
+              id="solved-archive-draft-title"
+            >
+              Solved / Archive Draft
+            </h3>
+            <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+              Kein Zielobjekt nötig. Dieses Capture wird aus der aktiven Inbox
+              entfernt und archiviert.
+            </p>
+          </div>
+          <input name="inboxItemId" type="hidden" value={activeItem.id} />
+          <button
+            className={cn(
+              "min-h-9 rounded-[12px] border border-[rgba(95,200,215,.42)] bg-[rgba(95,200,215,.18)] px-3 text-xs font-semibold text-[var(--text-primary)]",
+              focusClasses,
+              disabledActionClasses,
+            )}
+            disabled={!canArchive || archivePending}
+            type="submit"
+          >
+            {archivePending ? "Archiviert..." : "Als erledigt archivieren"}
+          </button>
+        </div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          <DraftShellReadOnlyField
+            label="Kein Zielobjekt nötig"
+            value="Wird ohne Task, Project, Goal oder Resource abgeschlossen"
+          />
+          <DraftShellReadOnlyField
+            label="Archivstatus"
+            value="Setzt archived_at und Status archived"
+          />
+          <DraftShellReadOnlyField
+            label="Abschlussnotiz"
+            value="Nicht dauerhaft gespeichert"
+          />
+        </div>
+        <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
+          Kein Hard Delete. Die Abschlussnotiz wird aktuell nicht dauerhaft
+          gespeichert.
+        </p>
+        {archiveState?.status === "blocked" || archiveState?.status === "error" ? (
+          <p className="mt-2 text-[11px] leading-4 text-[var(--accent-orange)]">
+            {archiveState.message}
+          </p>
+        ) : null}
+      </form>
     </section>
   );
 }
@@ -1159,6 +1240,7 @@ function InboxTaskDraft({
 
 function InboxActiveItemPanel({
   activeItem,
+  archiveEnabled,
   contentState,
   onSelectOutcomeRoute,
   outcome,
@@ -1167,6 +1249,7 @@ function InboxActiveItemPanel({
   profileId,
 }: Readonly<{
   activeItem: InboxViewModel["activeItem"];
+  archiveEnabled: boolean;
   contentState: ContentStateMeta;
   onSelectOutcomeRoute: (route: InboxOutcomeRoute) => void;
   outcome: InboxViewModel["outcome"];
@@ -1288,6 +1371,11 @@ function InboxActiveItemPanel({
                 activeItem={activeItem}
                 canCreateTask={taskCreationEnabled}
                 nextAction={nextAction}
+              />
+            ) : selectedDraftRoute === "solved_archive" ? (
+              <InboxSolvedArchiveDraft
+                activeItem={activeItem}
+                canArchive={archiveEnabled}
               />
             ) : selectedDraftRoute && selectedDraftRoute !== "standalone_task" ? (
               <PreparedDraftShell
@@ -1699,6 +1787,11 @@ export function InboxPage({
       !viewModel.activeItem.triagedTaskId &&
       taskDraftActive,
   );
+  const archiveEnabled = Boolean(
+    viewModel.quickCapture.enabled &&
+      viewModel.activeItem.hasSelection &&
+      !viewModel.activeItem.triagedTaskId,
+  );
   const routeSelected = Boolean(selectedOutcomeRoute) || taskDraftActive;
   const checklist = useMemo(() => {
     const items = viewModel.checklist.items.map((item) => {
@@ -1745,6 +1838,7 @@ export function InboxPage({
         />
         <InboxActiveItemPanel
           activeItem={viewModel.activeItem}
+          archiveEnabled={archiveEnabled}
           contentState={viewModel.contentStates.activeItem}
           onSelectOutcomeRoute={setSelectedOutcomeRoute}
           outcome={viewModel.outcome}

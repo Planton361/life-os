@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import {
+  archiveInboxItemInputSchema,
   captureInboxItemInputSchema,
   triageInboxItemToTaskInputSchema,
 } from "@/features/real-data";
@@ -23,6 +24,12 @@ export type InboxTriageActionResult = {
   message: string;
   status: "blocked" | "error" | "success";
   taskId?: string;
+};
+
+export type InboxArchiveActionResult = {
+  inboxItemId?: string;
+  message: string;
+  status: "blocked" | "error" | "success";
 };
 
 function formString(formData: FormData, key: string) {
@@ -76,6 +83,12 @@ function revalidateInboxTriageRoutes() {
   revalidatePath("/today");
   revalidatePath("/dashboard");
   revalidatePath("/calendar");
+}
+
+function revalidateInboxArchiveRoutes() {
+  revalidatePath("/inbox");
+  revalidatePath("/dashboard");
+  revalidatePath("/today");
 }
 
 function authBlockedMessage(
@@ -233,4 +246,72 @@ export async function triageInboxItemToTaskFormAction(
   formData: FormData,
 ): Promise<void> {
   await triageInboxItemToTaskAction(formData);
+}
+
+export async function archiveInboxItemAction(
+  formData: FormData,
+): Promise<InboxArchiveActionResult> {
+  const profileId = await getCurrentLifeOsProfileId();
+
+  if (profileId !== "manual") {
+    revalidatePath("/inbox");
+
+    return {
+      message: "Wechsle ins Manual-Profil, um Inbox-Einträge abzuschließen.",
+      status: "blocked",
+    };
+  }
+
+  const auth = await createAuthenticatedSupabaseServerClient();
+
+  if (!auth.ok) {
+    return {
+      message: authBlockedMessage(auth.error, "abzuschließen"),
+      status: "blocked",
+    };
+  }
+
+  const parsed = archiveInboxItemInputSchema.safeParse({
+    inboxItemId: formString(formData, "inboxItemId"),
+    profileId: auth.user.id,
+    userId: auth.user.id,
+  });
+
+  if (!parsed.success) {
+    return {
+      message: "Der Inbox-Eintrag konnte nicht abgeschlossen werden.",
+      status: "error",
+    };
+  }
+
+  const repository = createSupabaseInboxRepository(auth.client);
+  const result = await repository.archiveInboxItem(parsed.data);
+
+  if (!result.ok) {
+    return {
+      message: "Der Inbox-Eintrag konnte nicht archiviert werden.",
+      status: "error",
+    };
+  }
+
+  revalidateInboxArchiveRoutes();
+
+  return {
+    inboxItemId: result.data.id,
+    message: "Inbox-Eintrag abgeschlossen.",
+    status: "success",
+  };
+}
+
+export async function archiveInboxItemFormAction(
+  formData: FormData,
+): Promise<void> {
+  await archiveInboxItemAction(formData);
+}
+
+export async function archiveInboxItemFormStateAction(
+  _previousState: InboxArchiveActionResult | null,
+  formData: FormData,
+): Promise<InboxArchiveActionResult> {
+  return archiveInboxItemAction(formData);
 }

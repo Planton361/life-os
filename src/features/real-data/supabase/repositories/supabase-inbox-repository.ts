@@ -53,6 +53,35 @@ export function createSupabaseInboxRepository(
   client: SupabaseClientLike,
 ): InboxRepository {
   return {
+    async archiveInboxItem(input) {
+      const scopeFailure = profileScopeFailure(input.userId, input.profileId);
+      if (scopeFailure) return scopeFailure;
+
+      const archivedAt = new Date().toISOString();
+      const patch = mapInboxItemUpdateToPatch({
+        archivedAt,
+        processedAt: archivedAt,
+        status: "archived",
+      });
+
+      const result = (await client
+        .from(realDataTableNames.inboxItems)
+        .update(patch)
+        .eq("user_id", input.userId)
+        .eq("id", input.inboxItemId)
+        .is("archived_at", null)
+        .select("*")
+        .single()) as SupabaseQueryResult<InboxItemRow>;
+
+      if (result.error) return adapterFailure("archive inbox item");
+      if (!result.data) return notFoundFailure("Inbox item");
+
+      return {
+        data: mapInboxItemRowToDomain(result.data),
+        ok: true,
+      };
+    },
+
     async createInboxItem(input) {
       const scopeFailure = profileScopeFailure(input.userId, input.profileId);
       if (scopeFailure) return scopeFailure;
