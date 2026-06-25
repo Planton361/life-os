@@ -42,6 +42,15 @@
 - Planning signals such as priority, energy, effort, area, Today candidate, deadline hint, or recurrence hint are not fixed scheduling.
 - Calendar creates or shows time blocks after planning confirmation; it is not the place where raw Inbox clarification happens.
 
+## R1.6.6B Inbox Router UI
+
+- Outcome Routes are visible as the primary router for the selected Inbox item.
+- Standalone Task is marked as connected and opens the functional Task Draft.
+- Add to Existing, Create New, Resource, and Solved / Archive are prepared routes, but they are marked as not connected.
+- Prepared routes show draft shells and must not expose a persistence submit action.
+- Planning Signals are hints for later planning, not scheduling.
+- AI Assistant suggests routes and fields, but it does not decide or apply changes.
+
 ## R1.6.5B Follow-up Checks
 
 1. If `/settings#supabase-session` shows `invalid session`, use `Session zurücksetzen`.

@@ -77,9 +77,9 @@ async function captureAndTriageManualInboxTask(
   await page.getByRole("button", { name: "Capture" }).click();
   await page.waitForLoadState("networkidle");
   await expect(page.getByText(title).first()).toBeVisible();
-  await page.getByRole("button", { name: "Standalone task" }).click();
-  await expect(page.getByText("Task Draft")).toBeVisible();
-  await page.getByRole("button", { name: "Task erstellen" }).click();
+  await page.getByRole("button", { name: /Standalone Task/ }).click();
+  await expect(page.getByRole("heading", { name: "Task Draft" })).toBeVisible();
+  await page.getByRole("button", { exact: true, name: "Task erstellen" }).click();
   await page.waitForLoadState("networkidle");
   await expect(page.getByText("Task erstellt").first()).toBeVisible();
 }
@@ -1485,7 +1485,7 @@ test.describe("Dashboard content states", () => {
     const quickThought = page.getByRole("region", { name: "Quick Thought" });
     await expect(quickThought.getByLabel("Inbox-Typ")).toHaveCount(0);
     await expect(
-      quickThought.getByRole("button", { name: "Task erstellen" }),
+      quickThought.getByRole("button", { exact: true, name: "Task erstellen" }),
     ).toHaveCount(0);
     await page.getByRole("textbox", { name: "Quick Thought" }).fill(thought);
     await page.getByRole("button", { name: "In Inbox speichern" }).click();
@@ -1494,7 +1494,9 @@ test.describe("Dashboard content states", () => {
 
     await page.goto("/inbox");
     await expect(page.getByText(thought).first()).toBeVisible();
-    await expect(page.getByRole("button", { name: "Task erstellen" })).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { exact: true, name: "Task erstellen" }),
+    ).toHaveCount(0);
   });
 
   test("projects a manual DB task into Today Agenda", async ({ page }) => {
@@ -1622,7 +1624,9 @@ test.describe("Inbox content states", () => {
     const aiAssistant = page.locator('[data-inbox-section="ai-assistant"]');
     await expect(aiAssistant).toHaveAttribute("data-content-state", "empty");
     await expect(aiAssistant.getByText("—")).toHaveCount(4);
-    await expect(aiAssistant.getByRole("button", { name: "Apply" })).toBeDisabled();
+    await expect(
+      aiAssistant.getByText("Vorschlagsschicht. Keine automatische Übernahme."),
+    ).toBeVisible();
 
     const checklist = page.locator('[data-inbox-section="decision-checklist"]');
     await expect(checklist).toHaveAttribute("data-content-state", "empty");
@@ -1656,11 +1660,101 @@ test.describe("Inbox content states", () => {
     });
     await expect(quickCapture).toBeVisible();
 
-    if (hasSupabaseAuth) {
+    if (hasSupabaseAuth && (await quickCapture.isEnabled())) {
       await expect(quickCapture).toBeEnabled();
     } else {
       await expect(quickCapture).toBeDisabled();
     }
+  });
+
+  test("renders the Inbox Outcome Router with connected and prepared routes", async ({
+    page,
+  }) => {
+    await setProfile(page, "demo");
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/inbox");
+    });
+
+    const activeItem = page.locator('[data-inbox-section="active-item"]');
+    await expect(
+      activeItem.getByRole("heading", { name: "Outcome Route" }),
+    ).toBeVisible();
+    await expect(
+      activeItem.locator('[data-outcome-route="standalone_task"]'),
+    ).toContainText("Status: Verbunden");
+
+    for (const route of [
+      "add_to_existing",
+      "create_new",
+      "knowledge_resource",
+    ]) {
+      await expect(
+        activeItem.locator(`[data-outcome-route="${route}"]`),
+      ).toContainText("Status: Noch nicht verbunden");
+    }
+
+    await expect(
+      activeItem.locator('[data-outcome-route="solved_archive"]'),
+    ).toContainText("Status: Noch nicht verbunden");
+  });
+
+  test("opens the Task Draft from the Standalone Task route", async ({
+    page,
+  }) => {
+    await setProfile(page, "demo");
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/inbox");
+    });
+
+    const activeItem = page.locator('[data-inbox-section="active-item"]');
+    await activeItem.getByRole("button", { name: /Standalone Task/ }).click();
+    await expect(
+      activeItem.getByRole("heading", { name: "Task Draft" }),
+    ).toBeVisible();
+    await expect(
+      activeItem.getByRole("button", { exact: true, name: "Task erstellen" }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Helfen beim späteren Planen.").first(),
+    ).toBeVisible();
+  });
+
+  test("prepared Outcome Routes expose draft shells without persistence submit", async ({
+    page,
+  }) => {
+    await setProfile(page, "demo");
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/inbox");
+    });
+
+    const activeItem = page.locator('[data-inbox-section="active-item"]');
+    await activeItem.locator('[data-outcome-route="add_to_existing"]').click();
+    const addToExistingDraft = activeItem
+      .getByRole("heading", { name: "Add to Existing Draft" })
+      .locator("xpath=ancestor::section[1]");
+    await expect(addToExistingDraft).toBeVisible();
+    await expect(
+      addToExistingDraft.getByText("Persistenz folgt in einem späteren Block."),
+    ).toBeVisible();
+    await expect(
+      activeItem.getByRole("button", { exact: true, name: "Task erstellen" }),
+    ).toHaveCount(0);
+
+    await activeItem.locator('[data-outcome-route="create_new"]').click();
+    const createNewDraft = activeItem
+      .getByRole("heading", { name: "Create New Draft" })
+      .locator("xpath=ancestor::section[1]");
+    await expect(createNewDraft).toBeVisible();
+    await expect(createNewDraft.getByText("Noch nicht verbunden").first()).toBeVisible();
+
+    await activeItem.locator('[data-outcome-route="knowledge_resource"]').click();
+    const resourceDraft = activeItem
+      .getByRole("heading", { name: "Resource Draft" })
+      .locator("xpath=ancestor::section[1]");
+    await expect(resourceDraft).toBeVisible();
+    await expect(
+      resourceDraft.getByText("Diese Auswahl erzeugt keinen Submit und schreibt keine Daten."),
+    ).toBeVisible();
   });
 
   test("Manual missing auth state stays visible across daily core routes", async ({
@@ -1787,8 +1881,10 @@ test.describe("Inbox content states", () => {
     await expect(page.getByText(title).first()).toBeVisible();
     await expect(page.getByText("Outcome Route gewählt").first()).toBeVisible();
     await expect(page.getByText("3 / 4 ready").first()).toBeVisible();
-    await page.getByRole("button", { name: "Standalone task" }).click();
-    await expect(activeItem.getByText("Task Draft")).toBeVisible();
+    await page.getByRole("button", { name: /Standalone Task/ }).click();
+    await expect(
+      activeItem.getByRole("heading", { name: "Task Draft" }),
+    ).toBeVisible();
     await expect(activeItem.getByLabel("Titel")).toBeVisible();
     await expect(activeItem.getByLabel("Beschreibung / Kontext")).toBeVisible();
     await expect(activeItem.getByLabel("Nächste Aktion")).toBeVisible();
@@ -1814,7 +1910,7 @@ test.describe("Inbox content states", () => {
     await expect(activeItem.getByLabel("Effort / Dauer")).toHaveValue("60");
     await expect(activeItem.getByLabel("Energie")).toHaveValue("high");
     await expect(page.getByText("4 / 4 ready").first()).toBeVisible();
-    await page.getByRole("button", { name: "Task erstellen" }).click();
+    await page.getByRole("button", { exact: true, name: "Task erstellen" }).click();
     await page.waitForLoadState("networkidle");
 
     await expect(activeItem.getByText("Task erstellt")).toHaveCount(1);
@@ -1830,7 +1926,7 @@ test.describe("Inbox content states", () => {
     await expect(page.getByText(title).first()).toBeVisible();
     await expect(activeItem.getByText("Task erstellt")).toHaveCount(1);
     await expect(
-      page.getByRole("button", { name: "Task erstellen" }),
+      page.getByRole("button", { exact: true, name: "Task erstellen" }),
     ).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Portfolio öffnen" })).toBeVisible();
     await expectNoInboxDemoStrings(page);
@@ -1864,8 +1960,8 @@ test.describe("Inbox content states", () => {
       .fill("Expose this triaged item through the task read model.");
     await page.getByRole("button", { name: "Capture" }).click();
     await page.waitForLoadState("networkidle");
-    await page.getByRole("button", { name: "Standalone task" }).click();
-    await page.getByRole("button", { name: "Task erstellen" }).click();
+    await page.getByRole("button", { name: /Standalone Task/ }).click();
+    await page.getByRole("button", { exact: true, name: "Task erstellen" }).click();
     await page.waitForLoadState("networkidle");
 
     await expect(page.getByText("Task erstellt").first()).toBeVisible();
@@ -1900,11 +1996,11 @@ test.describe("Inbox content states", () => {
     await page.goto("/inbox");
     await expect(page.getByText(title).first()).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Task erstellen" }),
+      page.getByRole("button", { exact: true, name: "Task erstellen" }),
     ).toHaveCount(0);
     await page.reload();
     await expect(
-      page.getByRole("button", { name: "Task erstellen" }),
+      page.getByRole("button", { exact: true, name: "Task erstellen" }),
     ).toHaveCount(0);
     await expect(await readProfileDataTaskCount(page)).toBe(taskCountAfterTriage);
   });

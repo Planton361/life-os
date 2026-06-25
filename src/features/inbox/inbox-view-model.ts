@@ -20,7 +20,8 @@ export type InboxOutcomeRoute =
   | "add_to_existing"
   | "create_new"
   | "standalone_task"
-  | "knowledge_resource";
+  | "knowledge_resource"
+  | "solved_archive";
 
 export type InboxSignal = {
   label: string;
@@ -134,7 +135,7 @@ export type InboxViewModel = {
     emptyState: InboxEmptyState;
   };
   outcome: {
-    title: "Outcome route";
+    title: "Outcome Route";
     description: string;
     options: InboxOutcomeOption[];
     actionsEnabled: boolean;
@@ -257,8 +258,8 @@ export function getInboxViewModel(): InboxViewModel {
     title: "Inbox",
     kicker: "CAPTURE & CLARIFY",
     purpose:
-      "Clarify captured thoughts until each item has enough context, a next action and one standalone outcome.",
-    modePills: ["Queue + focused item", "Standalone outcomes"],
+      "Clarify captured thoughts, choose an outcome route, then confirm the right draft.",
+    modePills: ["Capture", "Clarify", "Route", "Draft"],
     signals: [
       {
         label: "Open",
@@ -442,48 +443,54 @@ export function getInboxViewModel(): InboxViewModel {
       },
     },
     outcome: {
-      title: "Outcome route",
+      title: "Outcome Route",
       description:
-        "Choose what this item becomes next. Each option opens its own complete flow.",
+        "Choose what this Inbox item should become. Route selection alone does not create or link anything.",
       actionsEnabled: false,
       options: [
         {
           id: "add_to_existing",
-          title: "Add to existing",
+          title: "Add to Existing",
           description:
-            "Attach this item to an existing object selected inside the route.",
-          examples: "Project · Goal · Skill · Note",
+            "An bestehendes Project, Goal, Skill oder Resource anhängen.",
+          examples: "Zielobjekt: bestehendes Objekt + Beitrag, Task, Note oder Relation.",
           accent: "var(--accent-blue)",
         },
         {
           id: "create_new",
-          title: "Create new",
-          description: "Create a new object directly from this inbox item.",
-          examples: "Project · Goal · Skill · Idea",
+          title: "Create New",
+          description: "Aus dem Capture einen neuen Project-, Goal- oder Resource-Draft vorbereiten.",
+          examples: "Zielobjekt: neuer Draft; Skill erst mit echter Persistenz.",
           accent: "var(--accent-green)",
         },
         {
           id: "standalone_task",
-          title: "Standalone task",
-          description:
-            "Create one independent task without portfolio dependency.",
-          examples: "Task only",
+          title: "Standalone Task",
+          description: "Eigene ausführbare Aufgabe erstellen.",
+          examples: "Zielobjekt: Task nach bestätigtem Task Draft.",
           accent: "var(--accent-orange)",
         },
         {
           id: "knowledge_resource",
-          title: "Knowledge / resource",
-          description:
-            "Store as knowledge, note, idea or external reference.",
-          examples: "Note · Resource · Idea",
+          title: "Resource",
+          description: "Als Wissen, Link, Notiz oder Material speichern.",
+          examples: "Zielobjekt: Resource Draft oder Resource Link.",
           accent: "var(--accent-purple)",
+        },
+        {
+          id: "solved_archive",
+          title: "Solved / Archive",
+          description: "Kein Zielobjekt nötig; später erledigen oder archivieren.",
+          examples: "Ergebnis: Close Draft ohne Zielobjekt.",
+          accent: "var(--accent-cyan)",
         },
       ],
     },
     aiAssistant: {
       title: "AI Assistant",
       mode: "discuss item",
-      description: "Suggestions update as content changes.",
+      description:
+        "Suggestions update as content changes. AI proposes routes and fields; it does not decide.",
       planning: [
         {
           label: "Area",
@@ -507,9 +514,9 @@ export function getInboxViewModel(): InboxViewModel {
         },
       ],
       outcomes: [
-        "Add to existing: Life OS MVP",
-        "Knowledge possible",
-        "Task possible",
+        "May suggest: Add to Existing",
+        "May suggest: Resource",
+        "May suggest: Standalone Task",
       ],
       placeholder:
         "Ask which outcome fits, what context is missing, or why a related item was suggested...",

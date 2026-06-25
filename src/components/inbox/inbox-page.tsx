@@ -53,6 +53,17 @@ const taskDraftPriorities = ["P0", "P1", "P2", "P3", "none"] as const;
 const taskDraftEnergies = ["low", "medium", "high"] as const;
 const taskDraftDurations = [15, 30, 45, 60, 90, 120] as const;
 
+const planningSignalDefinitions = [
+  { label: "Priority", savedInTaskDraft: true },
+  { label: "Energy", savedInTaskDraft: true },
+  { label: "Effort / Duration", savedInTaskDraft: true },
+  { label: "Area", savedInTaskDraft: true },
+  { label: "Review needed", savedInTaskDraft: false },
+  { label: "Today candidate", savedInTaskDraft: true },
+  { label: "Deadline hint", savedInTaskDraft: false },
+  { label: "Recurrence hint", savedInTaskDraft: false },
+] as const;
+
 function contentStateAttributes(
   meta: ContentStateMeta,
   profileId: InboxViewModel["profileId"],
@@ -143,6 +154,53 @@ function captureTypeAccent(type: InboxQueueItem["type"]) {
     case "decision":
       return "var(--accent-orange)";
   }
+}
+
+function outcomeRouteStatus(route: InboxOutcomeRoute) {
+  if (route === "standalone_task") return "Verbunden";
+  return "Noch nicht verbunden";
+}
+
+function outcomeRouteResult(option: InboxOutcomeOption) {
+  return option.examples.startsWith("Zielobjekt:") ||
+    option.examples.startsWith("Ergebnis:")
+    ? option.examples
+    : `Zielobjekt: ${option.examples}`;
+}
+
+function planningSignalValue(
+  label: (typeof planningSignalDefinitions)[number]["label"],
+  signals: readonly InboxPlanningSignal[],
+) {
+  const signal = signals.find((item) => {
+    if (label === "Effort / Duration") {
+      return item.label === "Effort" || item.label === "Duration";
+    }
+
+    if (label === "Review needed") return item.label === "Review needed";
+    if (label === "Today candidate") return item.label === "Today candidate";
+    if (label === "Deadline hint") return item.label === "Deadline hint";
+    if (label === "Recurrence hint") return item.label === "Recurrence hint";
+
+    return item.label === label;
+  });
+
+  return signal?.value ?? "Noch nicht gesetzt";
+}
+
+function planningSignalAccent(
+  label: (typeof planningSignalDefinitions)[number]["label"],
+  signals: readonly InboxPlanningSignal[],
+) {
+  const signal = signals.find((item) => {
+    if (label === "Effort / Duration") {
+      return item.label === "Effort" || item.label === "Duration";
+    }
+
+    return item.label === label;
+  });
+
+  return signal?.accent ?? "var(--text-muted)";
 }
 
 function Dot({
@@ -500,16 +558,18 @@ function FieldSurface({
 }
 
 function InboxPlanningSignals({
-  actionsEnabled,
+  activeItem,
+  selectedRoute,
   signals,
 }: Readonly<{
-  actionsEnabled: boolean;
+  activeItem: InboxViewModel["activeItem"];
+  selectedRoute: InboxOutcomeRoute | null;
   signals: InboxPlanningSignal[];
 }>) {
   return (
     <section
       aria-labelledby="planning-signals-title"
-      className="rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.52)] p-3 2xl:min-h-[132px]"
+      className="rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.52)] p-3"
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
@@ -520,54 +580,46 @@ function InboxPlanningSignals({
             Planning Signals
           </h3>
           <p className="mt-1 text-[11px] leading-4 text-[var(--text-secondary)]">
-            Guidance only. AI suggestions become final only after review.
+            Helfen beim späteren Planen. Sie sind keine feste Terminierung.
           </p>
         </div>
-        <div className="flex gap-2">
-          <button
-            className={cn(
-              "min-h-8 rounded-[12px] border border-[var(--border-default)] bg-[rgba(18,28,43,.76)] px-3 text-xs font-semibold text-[var(--text-secondary)]",
-              focusClasses,
-              disabledActionClasses,
-            )}
-            disabled={!actionsEnabled}
-            type="button"
-          >
-            Apply
-          </button>
-          <button
-            className={cn(
-              "min-h-8 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(168,183,204,.045)] px-3 text-xs font-semibold text-[var(--text-secondary)]",
-              focusClasses,
-              disabledActionClasses,
-            )}
-            disabled={!actionsEnabled}
-            type="button"
-          >
-            Edit
-          </button>
-        </div>
+        <Pill accent="var(--accent-cyan)">Hinweise, kein Scheduling</Pill>
       </div>
       <div className="mt-2.5 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-        {signals.length > 0 ? (
-          signals.map((signal, index) => (
-            <article
-              className="rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.70)] px-3 py-2"
-              key={`inbox-queue-signal-${index}`}
-              style={accentStyle(signal.accent)}
-            >
-              <p className="flex items-center gap-1.5 text-[10px] font-medium text-[var(--text-muted)]">
-                <Dot accent={signal.accent} className="size-1.5 opacity-75" />
-                <span>{signal.label}</span>
-              </p>
-              <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
-                {signal.value}
-              </p>
-              <p className="mt-1 text-[10px] text-[var(--text-muted)]">
-                {signal.source}
-              </p>
-            </article>
-          ))
+        {activeItem.hasSelection ? (
+          planningSignalDefinitions.map((definition) => {
+            const accent = planningSignalAccent(definition.label, signals);
+            const savedInTaskDraft =
+              selectedRoute === "standalone_task" &&
+              definition.savedInTaskDraft &&
+              (definition.label !== "Area" || Boolean(activeItem.persistedAreaId));
+            const status =
+              definition.label === "Today candidate" &&
+              selectedRoute === "standalone_task"
+                ? "optional im Task Draft"
+                : savedInTaskDraft
+                  ? "wird im Task Draft gespeichert"
+                  : "Hinweis - nicht gespeichert";
+
+            return (
+              <article
+                className="rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.70)] px-3 py-2"
+                key={`inbox-planning-signal-${definition.label}`}
+                style={accentStyle(accent)}
+              >
+                <p className="flex items-center gap-1.5 text-[10px] font-medium text-[var(--text-muted)]">
+                  <Dot accent={accent} className="size-1.5 opacity-75" />
+                  <span>{definition.label}</span>
+                </p>
+                <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
+                  {planningSignalValue(definition.label, signals)}
+                </p>
+                <p className="mt-1 text-[10px] text-[var(--text-muted)]">
+                  {status}
+                </p>
+              </article>
+            );
+          })
         ) : (
           <InboxEmptyState
             className="sm:col-span-2 xl:col-span-4"
@@ -585,14 +637,12 @@ function InboxOutcomeRoutes({
   onSelectRoute,
   options,
   selectedRoute,
-  standaloneTaskEnabled,
   title,
 }: Readonly<{
   description: string;
   onSelectRoute: (route: InboxOutcomeRoute) => void;
   options: InboxOutcomeOption[];
   selectedRoute: InboxOutcomeRoute | null;
-  standaloneTaskEnabled: boolean;
   title: string;
 }>) {
   return (
@@ -611,26 +661,31 @@ function InboxOutcomeRoutes({
       </p>
       <div className="mt-2 grid gap-2 lg:grid-cols-2 2xl:flex-1">
         {options.map((option) => {
-          const isStandaloneTask = option.id === "standalone_task";
           const isSelected = selectedRoute === option.id;
-          const enabled = isStandaloneTask && standaloneTaskEnabled;
+          const isConnected = option.id === "standalone_task";
+          const status = outcomeRouteStatus(option.id);
 
           return (
             <button
               aria-pressed={isSelected}
               className={cn(
                 "min-h-[100px] rounded-[14px] border px-3 py-3 text-left 2xl:h-full",
-                enabled
+                isConnected
                   ? "border-[color-mix(in_srgb,var(--accent)_30%,transparent)] bg-[color-mix(in_srgb,var(--accent)_8%,rgba(15,23,36,.68))]"
-                  : "border-[var(--border-subtle)] bg-[rgba(15,23,36,.40)] opacity-80",
+                  : "border-[var(--border-subtle)] bg-[rgba(15,23,36,.40)]",
                 isSelected &&
                   "border-[color-mix(in_srgb,var(--accent)_48%,transparent)] bg-[color-mix(in_srgb,var(--accent)_14%,rgba(15,23,36,.74))]",
                 focusClasses,
-                disabledActionClasses,
               )}
-              disabled={!enabled}
+              data-outcome-route={option.id}
               key={option.id}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  onSelectRoute(option.id);
+                }
+              }}
               onClick={() => onSelectRoute(option.id)}
+              onPointerDown={() => onSelectRoute(option.id)}
               style={accentStyle(option.accent)}
               type="button"
             >
@@ -645,17 +700,21 @@ function InboxOutcomeRoutes({
                       <Pill active accent={option.accent}>
                         gewählt
                       </Pill>
-                    ) : !enabled ? (
-                      <Pill accent="var(--text-muted)">Noch nicht verbunden</Pill>
                     ) : null}
+                    <Pill
+                      accent={isConnected ? "var(--accent-green)" : "var(--text-muted)"}
+                      tinted={isConnected}
+                    >
+                      Status: {status}
+                    </Pill>
                   </span>
                   <span className="mt-1 block border-t border-[var(--border-subtle)] pt-1 text-[11px] leading-4 text-[var(--text-secondary)]">
                     {option.description}
                   </span>
                   <span className="mt-0.5 block text-[10px] text-[var(--text-muted)]">
-                    {isStandaloneTask
+                    {isConnected
                       ? "Aktiviert den Task Draft. Erst Task erstellen schreibt in Supabase."
-                      : option.examples}
+                      : `${outcomeRouteResult(option)} Persistenz folgt in einem späteren Block.`}
                   </span>
                 </span>
               </span>
@@ -742,6 +801,197 @@ function DraftSelect({
         {children}
       </select>
     </label>
+  );
+}
+
+function DraftShellReadOnlyField({
+  label,
+  value,
+}: Readonly<{
+  label: string;
+  value: string;
+}>) {
+  return (
+    <label className="block min-w-0">
+      <span className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+        {label}
+      </span>
+      <input
+        className={cn(draftInputClasses, focusClasses)}
+        readOnly
+        value={value}
+      />
+    </label>
+  );
+}
+
+function DraftShellSelect({
+  label,
+  options,
+}: Readonly<{
+  label: string;
+  options: readonly string[];
+}>) {
+  return (
+    <label className="block min-w-0">
+      <span className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+        {label}
+      </span>
+      <select
+        className={cn(draftInputClasses, focusClasses)}
+        defaultValue={options[0]}
+        disabled
+      >
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function PreparedDraftShell({
+  activeItem,
+  route,
+}: Readonly<{
+  activeItem: InboxViewModel["activeItem"];
+  route: Exclude<InboxOutcomeRoute, "standalone_task">;
+}>) {
+  const shell = {
+    add_to_existing: {
+      accent: "var(--accent-blue)",
+      title: "Add to Existing Draft",
+      description:
+        "Diese Route verbindet ein Inbox Item später mit einem bestehenden Objekt. Persistenz folgt in einem späteren Block.",
+      fields: (
+        <>
+          <DraftShellSelect
+            label="Zieltyp"
+            options={["Project", "Goal", "Skill", "Resource"]}
+          />
+          <DraftShellReadOnlyField
+            label="Ziel auswählen"
+            value="Noch nicht verbunden"
+          />
+          <DraftShellSelect
+            label="Beitragstyp"
+            options={["Task", "Note", "Resource Link", "Decision"]}
+          />
+        </>
+      ),
+    },
+    create_new: {
+      accent: "var(--accent-green)",
+      title: "Create New Draft",
+      description:
+        "Diese Route bereitet ein neues Objekt vor. Es wird noch kein Project, Goal, Skill oder Resource erstellt.",
+      fields: (
+        <>
+          <DraftShellSelect
+            label="Neues Objekt"
+            options={["Project", "Goal", "Skill", "Resource"]}
+          />
+          <DraftShellReadOnlyField
+            label="Arbeitstitel"
+            value={activeItem.title}
+          />
+          <DraftShellReadOnlyField
+            label="Warum relevant?"
+            value="Noch nicht verbunden"
+          />
+          <DraftShellReadOnlyField
+            label="Nächster Schritt"
+            value="Noch nicht verbunden"
+          />
+        </>
+      ),
+    },
+    knowledge_resource: {
+      accent: "var(--accent-purple)",
+      title: "Resource Draft",
+      description:
+        "Diese Route bereitet Wissen, Link, Notiz oder Material vor. Es wird noch keine Resource gespeichert.",
+      fields: (
+        <>
+          <DraftShellSelect
+            label="Resource Typ"
+            options={["Note", "Link", "Document", "Idea"]}
+          />
+          <DraftShellReadOnlyField
+            label="Cluster / Bezug"
+            value="Noch nicht verbunden"
+          />
+          <DraftShellReadOnlyField
+            label="Kurzfassung"
+            value={activeItem.originalCapture || "Noch nicht verbunden"}
+          />
+        </>
+      ),
+    },
+    solved_archive: {
+      accent: "var(--accent-cyan)",
+      title: "Solved / Archive Draft",
+      description:
+        "Diese Route schließt ein Inbox Item später ohne Zielobjekt. Es gibt noch keine neue Archiv-Logik.",
+      fields: (
+        <>
+          <DraftShellReadOnlyField
+            label="Kein Zielobjekt nötig"
+            value="Bestätigt als vorbereiteter Close Draft"
+          />
+          <DraftShellReadOnlyField
+            label="Grund / Notiz"
+            value="Noch nicht verbunden"
+          />
+          <DraftShellReadOnlyField
+            label="Später"
+            value="Inbox erledigen oder archivieren"
+          />
+        </>
+      ),
+    },
+  } satisfies Record<
+    Exclude<InboxOutcomeRoute, "standalone_task">,
+    {
+      accent: string;
+      description: string;
+      fields: ReactNode;
+      title: string;
+    }
+  >;
+  const config = shell[route];
+
+  return (
+    <section
+      aria-labelledby="prepared-draft-title"
+      className="rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.52)] p-3"
+      style={accentStyle(config.accent)}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3
+            className="text-sm font-semibold text-[var(--text-primary)]"
+            id="prepared-draft-title"
+          >
+            {config.title}
+          </h3>
+          <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+            {config.description}
+          </p>
+        </div>
+        <Pill accent="var(--text-muted)">
+          Noch nicht verbunden
+        </Pill>
+      </div>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+        {config.fields}
+      </div>
+      <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
+        Diese Auswahl erzeugt keinen Submit und schreibt keine Daten.
+      </p>
+    </section>
   );
 }
 
@@ -926,10 +1176,12 @@ function InboxActiveItemPanel({
 }>) {
   const [cleanTitle, description, nextAction, missingInfo] = activeItem.fields;
   const taskDraftActive =
-    Boolean(activeItem.isTaskCapture) ||
-    selectedOutcomeRoute === "standalone_task";
-  const canSelectStandaloneTask =
-    activeItem.hasSelection && !activeItem.triagedTaskId;
+    !activeItem.triagedTaskId &&
+    ((Boolean(activeItem.isTaskCapture) && !selectedOutcomeRoute) ||
+      selectedOutcomeRoute === "standalone_task");
+  const selectedDraftRoute = activeItem.triagedTaskId
+    ? null
+    : selectedOutcomeRoute;
 
   return (
     <section
@@ -1016,26 +1268,45 @@ function InboxActiveItemPanel({
           </div>
         </section>
 
-        <InboxPlanningSignals
-          actionsEnabled={activeItem.actionsEnabled}
-          signals={activeItem.planningSignals}
-        />
-        {taskDraftActive ? (
+        {activeItem.triagedTaskId ? (
           <InboxTaskDraft
             activeItem={activeItem}
-            canCreateTask={taskCreationEnabled}
+            canCreateTask={false}
             nextAction={nextAction}
           />
         ) : (
-          <InboxOutcomeRoutes
-            description={outcome.description}
-            onSelectRoute={onSelectOutcomeRoute}
-            options={outcome.options}
-            selectedRoute={selectedOutcomeRoute}
-            standaloneTaskEnabled={canSelectStandaloneTask}
-            title={outcome.title}
-          />
+          <>
+            <InboxOutcomeRoutes
+              description={outcome.description}
+              onSelectRoute={onSelectOutcomeRoute}
+              options={outcome.options}
+              selectedRoute={selectedDraftRoute}
+              title={outcome.title}
+            />
+            {taskDraftActive ? (
+              <InboxTaskDraft
+                activeItem={activeItem}
+                canCreateTask={taskCreationEnabled}
+                nextAction={nextAction}
+              />
+            ) : selectedDraftRoute && selectedDraftRoute !== "standalone_task" ? (
+              <PreparedDraftShell
+                activeItem={activeItem}
+                route={selectedDraftRoute}
+              />
+            ) : (
+              <InboxEmptyState
+                description="Wähle zuerst eine Outcome Route. Danach erscheint der passende Draft."
+                title="Noch kein Draft ausgewählt"
+              />
+            )}
+          </>
         )}
+        <InboxPlanningSignals
+          activeItem={activeItem}
+          selectedRoute={selectedDraftRoute}
+          signals={activeItem.planningSignals}
+        />
         <div
           aria-label="Inbox item actions"
           className="mt-auto flex flex-wrap gap-2 border-t border-[var(--border-subtle)] pt-3"
@@ -1137,21 +1408,13 @@ function AIAssistantPanel({
               />
             ))}
           </div>
-          <button
-            className={cn(
-              "mt-2 min-h-8 rounded-[12px] border border-[var(--border-default)] bg-[rgba(18,28,43,.76)] px-3 text-xs font-semibold text-[var(--text-secondary)]",
-              focusClasses,
-              disabledActionClasses,
-            )}
-            disabled={!assistant.canApply}
-            type="button"
-          >
-            Apply
-          </button>
+          <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
+            Vorschlagsschicht. Keine automatische Übernahme.
+          </p>
         </div>
         <div className="rounded-[16px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.52)] p-3">
           <p className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-            Suggested Outcome
+            Suggested Routes
           </p>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {assistant.outcomes.length > 0 ? (
@@ -1408,7 +1671,8 @@ export function InboxPage({
   const activeItemKey = `${viewModel.activeItem.id ?? "empty"}:${
     viewModel.activeItem.type
   }:${viewModel.activeItem.triagedTaskId ?? "open"}`;
-  const defaultOutcomeRoute = viewModel.activeItem.isTaskCapture
+  const defaultOutcomeRoute =
+    viewModel.activeItem.isTaskCapture && !viewModel.activeItem.triagedTaskId
     ? "standalone_task"
     : null;
   const [outcomeSelection, setOutcomeSelection] = useState<{
@@ -1427,7 +1691,7 @@ export function InboxPage({
   };
 
   const taskDraftActive =
-    Boolean(viewModel.activeItem.isTaskCapture) ||
+    (Boolean(viewModel.activeItem.isTaskCapture) && !selectedOutcomeRoute) ||
     selectedOutcomeRoute === "standalone_task";
   const taskCreationEnabled = Boolean(
     viewModel.quickCapture.enabled &&
@@ -1435,9 +1699,10 @@ export function InboxPage({
       !viewModel.activeItem.triagedTaskId &&
       taskDraftActive,
   );
+  const routeSelected = Boolean(selectedOutcomeRoute) || taskDraftActive;
   const checklist = useMemo(() => {
     const items = viewModel.checklist.items.map((item) => {
-      if (item.label === "Outcome Route gewählt" && taskDraftActive) {
+      if (item.label === "Outcome Route gewählt" && routeSelected) {
         return { ...item, state: "done" as const };
       }
 
@@ -1450,7 +1715,7 @@ export function InboxPage({
       items,
       progress: `${doneCount} / ${items.length} ready`,
     };
-  }, [taskDraftActive, viewModel.checklist]);
+  }, [routeSelected, viewModel.checklist]);
 
   return (
     <div
