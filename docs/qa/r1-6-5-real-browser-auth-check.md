@@ -22,8 +22,18 @@
 11. Open `/calendar` and confirm the task appears in the timed grid.
 12. Reload `/inbox`, `/portfolio?view=tasks`, `/today`, `/dashboard`, and `/calendar`.
 
+## R1.6.5B Follow-up Checks
+
+1. If `/settings#supabase-session` shows `invalid session`, use `Session zurücksetzen`.
+2. Confirm `/inbox`, `/portfolio?view=tasks`, `/today`, `/dashboard`, and `/calendar` stop showing repeated invalid refresh-token noise after reset.
+3. Sign in again with local Supabase email/password.
+4. Open `/dashboard`, capture a `Quick Thought`, and confirm the success state links to `/inbox`.
+5. Open `/inbox`, confirm the captured thought appears there, and use `Als Task anlegen`.
+6. Confirm the created task is visible through Portfolio, Today, Dashboard, and Calendar planning views after the normal manual DB flow.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.
 - Sign-up may require local Supabase email confirmation depending on Auth config.
 - Project, Goal, Resource, Daily Log, complete/edit/archive flows are out of R1.6.5 scope.
+- Session reset clears Supabase auth cookies only; it does not change database rows, RLS, policies, or migrations.

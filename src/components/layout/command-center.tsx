@@ -266,6 +266,17 @@ function QuickThought({
             {state.message}
           </p>
         ) : null}
+        {state.status === "success" ? (
+          <Link
+            className={cn(
+              "mt-1 inline-flex text-[9px] font-semibold text-[var(--accent-cyan)]",
+              DASHBOARD_LINK_FOCUS_CLASSES,
+            )}
+            href="/inbox"
+          >
+            Inbox öffnen
+          </Link>
+        ) : null}
       </form>
     </section>
   );

@@ -44,6 +44,25 @@ function revalidateInboxTriageRoutes() {
   revalidatePath("/calendar");
 }
 
+function authBlockedMessage(
+  error: "auth_error" | "invalid_session" | "missing_env" | "unauthenticated",
+  actionLabel: string,
+) {
+  if (error === "missing_env") {
+    return "Supabase ist lokal noch nicht konfiguriert.";
+  }
+
+  if (error === "invalid_session") {
+    return "Die Supabase Session ist ungültig. Setze sie in den Settings zurück und melde dich neu an.";
+  }
+
+  if (error === "auth_error") {
+    return "Supabase Auth konnte die Session nicht prüfen. Setze sie in den Settings zurück.";
+  }
+
+  return `Melde dich an, um Inbox-Einträge zu ${actionLabel}.`;
+}
+
 export async function captureInboxItemAction(
   formData: FormData,
 ): Promise<InboxCaptureActionResult> {
@@ -62,10 +81,7 @@ export async function captureInboxItemAction(
 
   if (!auth.ok) {
     return {
-      message:
-        auth.error === "missing_env"
-          ? "Supabase ist lokal noch nicht konfiguriert."
-          : "Melde dich an, um Inbox-Einträge zu speichern.",
+      message: authBlockedMessage(auth.error, "speichern"),
       status: "blocked",
     };
   }
@@ -133,10 +149,7 @@ export async function triageInboxItemToTaskAction(
 
   if (!auth.ok) {
     return {
-      message:
-        auth.error === "missing_env"
-          ? "Supabase ist lokal noch nicht konfiguriert."
-          : "Melde dich an, um Inbox-Einträge zu triagieren.",
+      message: authBlockedMessage(auth.error, "triagieren"),
       status: "blocked",
     };
   }

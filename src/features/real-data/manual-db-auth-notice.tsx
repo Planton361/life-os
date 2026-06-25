@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { resetSupabaseSessionAction } from "@/features/auth/actions";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
 import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -6,6 +7,22 @@ const noticeClass =
   "rounded-[14px] border border-[rgba(216,180,90,.24)] bg-[rgba(216,180,90,.07)] px-3 py-3 text-[11px] leading-5 text-[var(--text-secondary)]";
 const actionClass =
   "inline-flex min-h-8 items-center rounded-full border border-[rgba(216,180,90,.28)] bg-[rgba(216,180,90,.10)] px-3 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(216,180,90,.44)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]";
+
+function noticeBody(error: "auth_error" | "invalid_session" | "missing_env" | "unauthenticated") {
+  if (error === "missing_env") {
+    return "Supabase ist lokal noch nicht konfiguriert. DB-backed Inbox und Tasks können deshalb nicht geladen werden.";
+  }
+
+  if (error === "invalid_session") {
+    return "Die gespeicherte Supabase Session ist abgelaufen oder ungültig. Setze die Session zurück und melde dich neu an.";
+  }
+
+  if (error === "auth_error") {
+    return "Supabase Auth konnte die aktuelle Session nicht stabil prüfen. Setze die Session zurück oder melde dich neu an.";
+  }
+
+  return "Manual Profile ist aktiv, aber Supabase Auth fehlt. DB-backed Inbox und Tasks sind deshalb nicht verfügbar.";
+}
 
 export async function getManualDbAuthNotice() {
   const profileId = await getCurrentLifeOsProfileId();
@@ -21,10 +38,9 @@ export async function getManualDbAuthNotice() {
   }
 
   return {
-    body:
-      auth.error === "missing_env"
-        ? "Supabase ist lokal noch nicht konfiguriert. DB-backed Inbox und Tasks können deshalb nicht geladen werden."
-        : "Manual Profile ist aktiv, aber Supabase Auth fehlt. DB-backed Inbox und Tasks sind deshalb nicht verfügbar.",
+    body: noticeBody(auth.error),
+    canResetSession:
+      auth.error === "invalid_session" || auth.error === "auth_error",
     title: "Manual DB benötigt Supabase Anmeldung",
   };
 }
@@ -45,9 +61,19 @@ export async function ManualDbAuthNotice() {
             {notice.body} Melde dich an, um lokale DB-backed Tasks zu laden.
           </p>
         </div>
-        <Link className={actionClass} href="/settings#supabase-session">
-          Supabase anmelden
-        </Link>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          {notice.canResetSession ? (
+            <form action={resetSupabaseSessionAction}>
+              <input name="next" type="hidden" value="/settings#supabase-session" />
+              <button className={actionClass} type="submit">
+                Session zurücksetzen
+              </button>
+            </form>
+          ) : null}
+          <Link className={actionClass} href="/settings#supabase-session">
+            Supabase anmelden
+          </Link>
+        </div>
       </div>
     </aside>
   );

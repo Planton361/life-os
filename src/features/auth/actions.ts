@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -36,6 +37,26 @@ function safeNextPath(value: string | undefined, fallback: `/${string}`) {
 function revalidateDailyCorePaths() {
   for (const path of dailyCorePaths) {
     revalidatePath(path);
+  }
+}
+
+function isSupabaseAuthCookie(name: string) {
+  return (
+    (name.startsWith("sb-") && name.includes("-auth-token")) ||
+    name === "supabase-auth-token"
+  );
+}
+
+async function clearSupabaseAuthCookies() {
+  const cookieStore = await cookies();
+
+  for (const cookie of cookieStore.getAll()) {
+    if (isSupabaseAuthCookie(cookie.name)) {
+      cookieStore.set(cookie.name, "", {
+        maxAge: 0,
+        path: "/",
+      });
+    }
   }
 }
 
@@ -128,8 +149,26 @@ export async function signOutAction(formData: FormData): Promise<void> {
   const supabase = await createSupabaseServerClient();
 
   if (supabase.ok) {
-    await supabase.client.auth.signOut();
+    await supabase.client.auth.signOut().catch(() => undefined);
   }
+
+  await clearSupabaseAuthCookies();
+
+  revalidateDailyCorePaths();
+  redirect(safeNextPath(parsed.success ? parsed.data.next : undefined, "/settings"));
+}
+
+export async function resetSupabaseSessionAction(formData: FormData): Promise<void> {
+  const parsed = signOutSchema.safeParse({
+    next: formData.get("next"),
+  });
+  const supabase = await createSupabaseServerClient();
+
+  if (supabase.ok) {
+    await supabase.client.auth.signOut().catch(() => undefined);
+  }
+
+  await clearSupabaseAuthCookies();
 
   revalidateDailyCorePaths();
   redirect(safeNextPath(parsed.success ? parsed.data.next : undefined, "/settings"));

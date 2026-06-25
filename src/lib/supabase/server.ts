@@ -24,9 +24,15 @@ export type AuthenticatedSupabaseServerClient =
       user: User;
     }
   | {
-      error: "missing_env" | "unauthenticated";
+      error: SupabaseServerAuthError;
       ok: false;
     };
+
+export type SupabaseServerAuthError =
+  | "auth_error"
+  | "invalid_session"
+  | "missing_env"
+  | "unauthenticated";
 
 function getSupabaseServerConfig(): SupabaseServerConfig {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -78,6 +84,27 @@ export async function createSupabaseServerClient() {
   };
 }
 
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "";
+}
+
+export function getSupabaseServerAuthError(error: unknown): SupabaseServerAuthError {
+  const message = getErrorMessage(error).toLowerCase();
+
+  if (
+    message.includes("invalid refresh token") ||
+    message.includes("refresh token not found")
+  ) {
+    return "invalid_session";
+  }
+
+  if (error) {
+    return "auth_error";
+  }
+
+  return "unauthenticated";
+}
+
 export async function createAuthenticatedSupabaseServerClient(): Promise<AuthenticatedSupabaseServerClient> {
   const supabase = await createSupabaseServerClient();
 
@@ -88,21 +115,28 @@ export async function createAuthenticatedSupabaseServerClient(): Promise<Authent
     };
   }
 
-  const {
-    data: { user },
-    error,
-  } = await supabase.client.auth.getUser();
+  try {
+    const {
+      data: { user },
+      error,
+    } = await supabase.client.auth.getUser();
 
-  if (error || !user) {
+    if (error || !user) {
+      return {
+        error: getSupabaseServerAuthError(error),
+        ok: false,
+      };
+    }
+
     return {
-      error: "unauthenticated",
+      client: supabase.client,
+      ok: true,
+      user,
+    };
+  } catch (error) {
+    return {
+      error: getSupabaseServerAuthError(error),
       ok: false,
     };
   }
-
-  return {
-    client: supabase.client,
-    ok: true,
-    user,
-  };
 }

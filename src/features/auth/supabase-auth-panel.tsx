@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
-import { signOutAction } from "./actions";
+import { resetSupabaseSessionAction, signOutAction } from "./actions";
 import { SupabaseAuthForm } from "./supabase-auth-form";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
 
 const accent = "var(--accent-cyan)";
 const panelClass =
@@ -13,11 +13,31 @@ const labelClass =
 const buttonClass =
   "inline-flex min-h-10 items-center justify-center rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.82)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]";
 
+function statusLabel(auth: Awaited<ReturnType<typeof createAuthenticatedSupabaseServerClient>>) {
+  if (auth.ok) return "signed in";
+  if (auth.error === "invalid_session") return "invalid session";
+  if (auth.error === "auth_error") return "auth error";
+
+  return "signed out";
+}
+
+function statusDescription(
+  auth: Awaited<ReturnType<typeof createAuthenticatedSupabaseServerClient>>,
+) {
+  if (auth.ok) return "Signed in";
+  if (auth.error === "missing_env") return "Missing local Supabase env";
+  if (auth.error === "invalid_session") return "Invalid refresh token";
+  if (auth.error === "auth_error") return "Supabase Auth konnte die Session nicht prüfen.";
+
+  return "Signed out";
+}
+
 export async function SupabaseAuthPanel() {
-  const supabase = await createSupabaseServerClient();
-  const session =
-    supabase.ok ? await supabase.client.auth.getUser() : { data: { user: null } };
-  const user = session.data.user;
+  const auth = await createAuthenticatedSupabaseServerClient();
+  const user = auth.ok ? auth.user : null;
+  const canUseAuth = auth.ok || auth.error !== "missing_env";
+  const needsSessionReset =
+    !auth.ok && (auth.error === "invalid_session" || auth.error === "auth_error");
 
   return (
     <section
@@ -40,7 +60,7 @@ export async function SupabaseAuthPanel() {
             </p>
           </div>
           <span className="inline-flex min-h-7 items-center rounded-full border border-[color-mix(in_srgb,var(--accent)_30%,transparent)] bg-[color-mix(in_srgb,var(--accent)_12%,transparent)] px-2.5 py-1 text-[10px] font-semibold text-[var(--text-secondary)]">
-            {user ? "signed in" : "signed out"}
+            {statusLabel(auth)}
           </span>
         </div>
       </div>
@@ -49,7 +69,7 @@ export async function SupabaseAuthPanel() {
           <div>
             <dt className={labelClass}>Status</dt>
             <dd className="mt-1 text-[var(--text-secondary)]">
-              {user ? "Signed in" : "Signed out"}
+              {statusDescription(auth)}
             </dd>
           </div>
           <div>
@@ -60,7 +80,7 @@ export async function SupabaseAuthPanel() {
           </div>
         </dl>
 
-        {supabase.ok ? (
+        {canUseAuth ? (
           user ? (
             <form action={signOutAction}>
               <input name="next" type="hidden" value="/settings" />
@@ -69,7 +89,17 @@ export async function SupabaseAuthPanel() {
               </button>
             </form>
           ) : (
-            <SupabaseAuthForm next="/inbox" />
+            <div className="grid gap-3">
+              {needsSessionReset ? (
+                <form action={resetSupabaseSessionAction}>
+                  <input name="next" type="hidden" value="/settings#supabase-session" />
+                  <button className={buttonClass} type="submit">
+                    Session zurücksetzen
+                  </button>
+                </form>
+              ) : null}
+              <SupabaseAuthForm next="/inbox" />
+            </div>
           )
         ) : (
           <p className="rounded-[12px] border border-[rgba(221,107,95,.26)] bg-[rgba(221,107,95,.08)] px-3 py-2 text-[11px] font-semibold text-[var(--accent-red)]">

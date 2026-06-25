@@ -6,7 +6,6 @@ import { redirect } from "next/navigation";
 import {
   createManualHabit,
   createManualGoal,
-  createManualInboxItem,
   createManualProject,
   createManualTask,
   resetManualProfile,
@@ -127,21 +126,7 @@ export async function createInboxQuickCaptureAction(formData: FormData) {
     redirect("/inbox");
   }
 
-  const title = formString(formData, "title");
-  const note = formString(formData, "note");
-  const fallbackTitle = note.split(/\s+/).slice(0, 9).join(" ");
-
-  if (!title && !fallbackTitle) {
-    revalidatePath("/inbox");
-    redirect("/inbox");
-  }
-
-  await createManualInboxItem({
-    areaId: "review",
-    note,
-    title: title || fallbackTitle,
-    type: formString(formData, "type") as InboxCaptureType,
-  });
+  await captureInboxItemAction(formData);
   revalidateDashboardViews();
   redirect("/inbox");
 }
@@ -249,12 +234,19 @@ export async function captureDashboardQuickThoughtAction(
     };
   }
 
-  await createManualInboxItem({
-    areaId: "review",
-    note: content,
-    title: content.split(/\s+/).slice(0, 9).join(" "),
-    type: mapQuickCaptureKind(kind),
-  });
+  const inboxFormData = new FormData();
+  inboxFormData.set("title", content.split(/\s+/).slice(0, 9).join(" "));
+  inboxFormData.set("note", content);
+  inboxFormData.set("type", mapQuickCaptureKind(kind));
+  const result = await captureInboxItemAction(inboxFormData);
+
+  if (result.status !== "success") {
+    return {
+      message: result.message,
+      status: result.status,
+    };
+  }
+
   revalidateDashboardViews();
 
   return {

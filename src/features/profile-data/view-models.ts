@@ -1010,7 +1010,7 @@ function buildProfileDashboardViewModel(
       {
         label: "Inbox",
         value: `${inboxItems.length} open`,
-        detail: inboxItems.length > 0 ? "Captured locally" : "Capture thought",
+        detail: inboxItems.length > 0 ? "Captured to Inbox" : "Capture thought",
         progress: Math.min(100, inboxItems.length * 18),
         accent: "var(--accent-green)",
         area: "review",
@@ -1432,6 +1432,25 @@ function realTaskToLifeTask(task: RealDataTask): LifeTask | null {
   };
 }
 
+function manualDbUnavailableReason(
+  error: "auth_error" | "invalid_session" | "missing_env" | "unauthenticated",
+  actionLabel: string,
+) {
+  if (error === "missing_env") {
+    return "Supabase ist lokal noch nicht konfiguriert.";
+  }
+
+  if (error === "invalid_session") {
+    return "Die Supabase Session ist ungültig. Setze sie in den Settings zurück und melde dich neu an.";
+  }
+
+  if (error === "auth_error") {
+    return "Supabase Auth konnte die Session nicht prüfen. Setze sie in den Settings zurück.";
+  }
+
+  return `Melde dich an, um ${actionLabel}.`;
+}
+
 async function getManualInboxProfileData(): Promise<{
   data: ManualProfileData;
   unavailableReason?: string;
@@ -1441,10 +1460,10 @@ async function getManualInboxProfileData(): Promise<{
   if (!auth.ok) {
     return {
       data: emptyManualProfile(),
-      unavailableReason:
-        auth.error === "missing_env"
-          ? "Supabase ist lokal noch nicht konfiguriert."
-          : "Melde dich an, um DB-backed Inbox Items zu laden.",
+      unavailableReason: manualDbUnavailableReason(
+        auth.error,
+        "DB-backed Inbox Items zu laden",
+      ),
     };
   }
 
@@ -1475,10 +1494,10 @@ async function getManualTaskProfileData(): Promise<{
   if (!auth.ok) {
     return {
       tasks: [],
-      unavailableReason:
-        auth.error === "missing_env"
-          ? "Supabase ist lokal noch nicht konfiguriert."
-          : "Melde dich an, um DB-backed Tasks zu laden.",
+      unavailableReason: manualDbUnavailableReason(
+        auth.error,
+        "DB-backed Tasks zu laden",
+      ),
     };
   }
 

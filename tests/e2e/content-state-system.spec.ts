@@ -1460,10 +1460,23 @@ test.describe("Dashboard content states", () => {
     await expect(page.getByRole("region", { name: "Active Portfolio" })).toHaveAttribute("data-content-state", "empty");
   });
 
-  test.skip("captures a manual quick thought into inbox", async ({ page }) => {
-    const thought = "Manual dashboard quick thought";
+  test("captures a manual dashboard quick thought into the DB inbox", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session; no broad DB cleanup action is available.",
+    );
+
+    const thought = `Manual dashboard quick thought ${Date.now()}`;
 
     await setProfile(page, "manual");
+    await applySupabaseAuthState(page);
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/inbox");
+    });
+    await skipIfManualDbUnavailable(page);
+
     await expectNoHydrationErrors(page, async () => {
       await page.goto("/dashboard");
     });
@@ -1471,9 +1484,13 @@ test.describe("Dashboard content states", () => {
     await page.getByLabel("Capture type").selectOption("Note");
     await page.getByRole("button", { name: "Capture" }).click();
     await expect(page.getByText("Gespeichert. Der Eintrag liegt in der Inbox.")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Inbox öffnen" })).toBeVisible();
 
     await page.goto("/inbox");
     await expect(page.getByText(thought).first()).toBeVisible();
+    await page.getByRole("button", { name: "Als Task anlegen" }).click();
+    await page.waitForLoadState("networkidle");
+    await expect(page.getByText("Task erstellt").first()).toBeVisible();
   });
 
   test("projects a manual DB task into Today Agenda", async ({ page }) => {
