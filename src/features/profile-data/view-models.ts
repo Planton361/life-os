@@ -70,10 +70,17 @@ import {
   getInboxCaptureTypeLabel,
   getInboxStageLabel,
   type InboxAISuggestion,
+  type InboxExistingTarget,
+  type InboxExistingTargets,
   InboxQueueItem,
   InboxStage,
   InboxViewModel,
 } from "@/features/inbox";
+import type {
+  SupabaseClientLike,
+  SupabaseQueryResult,
+  TableRow,
+} from "@/features/real-data/supabase";
 import {
   getMentalHealthViewModel as getDemoMentalHealthViewModel,
   type MentalHealthPageViewModel,
@@ -132,6 +139,15 @@ function emptyManualProfile(): ManualProfileData {
     habits: [],
     mood: null,
     meals: [],
+  };
+}
+
+function emptyInboxExistingTargets(): InboxExistingTargets {
+  return {
+    goals: [],
+    projects: [],
+    resources: [],
+    skills: [],
   };
 }
 
@@ -1453,8 +1469,108 @@ function manualDbUnavailableReason(
   return `Melde dich an, um ${actionLabel}.`;
 }
 
+type ProjectTargetRow = Pick<
+  TableRow<"projects">,
+  "id" | "priority" | "status" | "title" | "updated_at"
+>;
+
+type GoalTargetRow = Pick<
+  TableRow<"goals">,
+  "horizon" | "id" | "status" | "title" | "updated_at"
+>;
+
+type ResourceTargetRow = Pick<
+  TableRow<"resources">,
+  "id" | "review_needed" | "title" | "type" | "updated_at"
+>;
+
+function targetUpdatedLabel(updatedAt: string) {
+  return `updated ${updatedAt.slice(0, 10)}`;
+}
+
+function projectTargetFromRow(row: ProjectTargetRow): InboxExistingTarget {
+  return {
+    accent: "var(--accent-blue)",
+    href: `/projects/${row.id}`,
+    id: row.id,
+    meta: `${row.status} · ${row.priority} · ${targetUpdatedLabel(row.updated_at)}`,
+    title: row.title,
+    type: "project",
+  };
+}
+
+function goalTargetFromRow(row: GoalTargetRow): InboxExistingTarget {
+  return {
+    accent: "var(--accent-green)",
+    href: `/goals/${row.id}`,
+    id: row.id,
+    meta: `${row.status} · ${row.horizon ?? "no horizon"} · ${targetUpdatedLabel(row.updated_at)}`,
+    title: row.title,
+    type: "goal",
+  };
+}
+
+function resourceTargetFromRow(row: ResourceTargetRow): InboxExistingTarget {
+  return {
+    accent: "var(--accent-yellow)",
+    href: "/resources",
+    id: row.id,
+    meta: `${row.type} · ${
+      row.review_needed ? "review needed" : "no review flag"
+    } · ${targetUpdatedLabel(row.updated_at)}`,
+    title: row.title,
+    type: "resource",
+  };
+}
+
+async function getManualInboxExistingTargets(
+  client: SupabaseClientLike,
+  userId: string,
+): Promise<InboxExistingTargets> {
+  const [projectResult, goalResult, resourceResult] = await Promise.all([
+    (async () =>
+      (await client
+      .from("projects")
+      .select("id,title,status,priority,updated_at")
+      .eq("user_id", userId)
+      .is("archived_at", null)
+      .order("updated_at", { ascending: false })
+      .limit(12)) as SupabaseQueryResult<readonly ProjectTargetRow[]>)(),
+    (async () =>
+      (await client
+      .from("goals")
+      .select("id,title,status,horizon,updated_at")
+      .eq("user_id", userId)
+      .is("archived_at", null)
+      .order("updated_at", { ascending: false })
+      .limit(12)) as SupabaseQueryResult<readonly GoalTargetRow[]>)(),
+    (async () =>
+      (await client
+      .from("resources")
+      .select("id,title,type,review_needed,updated_at")
+      .eq("user_id", userId)
+      .is("archived_at", null)
+      .order("updated_at", { ascending: false })
+      .limit(12)) as SupabaseQueryResult<readonly ResourceTargetRow[]>)(),
+  ]);
+
+  return {
+    goals: goalResult.error
+      ? []
+      : (goalResult.data ?? []).map(goalTargetFromRow),
+    projects: projectResult.error
+      ? []
+      : (projectResult.data ?? []).map(projectTargetFromRow),
+    resources: resourceResult.error
+      ? []
+      : (resourceResult.data ?? []).map(resourceTargetFromRow),
+    skills: [],
+  };
+}
+
 async function getManualInboxProfileData(): Promise<{
   data: ManualProfileData;
+  existingTargets: InboxExistingTargets;
   unavailableReason?: string;
 }> {
   const auth = await createAuthenticatedSupabaseServerClient();
@@ -1462,6 +1578,7 @@ async function getManualInboxProfileData(): Promise<{
   if (!auth.ok) {
     return {
       data: emptyManualProfile(),
+      existingTargets: emptyInboxExistingTargets(),
       unavailableReason: manualDbUnavailableReason(
         auth.error,
         "DB-backed Inbox Items zu laden",
@@ -1475,15 +1592,22 @@ async function getManualInboxProfileData(): Promise<{
   if (!result.ok) {
     return {
       data: emptyManualProfile(),
+      existingTargets: emptyInboxExistingTargets(),
       unavailableReason: "Inbox Items konnten nicht aus Supabase geladen werden.",
     };
   }
+
+  const existingTargets = await getManualInboxExistingTargets(
+    auth.client,
+    auth.user.id,
+  );
 
   return {
     data: {
       ...emptyManualProfile(),
       inboxItems: result.data.map(realInboxToManualInboxItem),
     },
+    existingTargets,
   };
 }
 
@@ -1569,11 +1693,19 @@ function buildProfileInboxViewModel(
   profile: ManualProfileData,
   profileId: Exclude<LifeOsProfileId, "demo">,
   options: Readonly<{
+    existingTargets?: InboxExistingTargets;
     unavailableReason?: string;
   }> = {},
 ): InboxViewModel {
   const viewModel = clone(getDemoInboxViewModel());
   const isManual = profileId === "manual";
+  const existingTargets =
+    options.existingTargets ?? emptyInboxExistingTargets();
+  const relatedTargets = [
+    ...existingTargets.projects,
+    ...existingTargets.goals,
+    ...existingTargets.resources,
+  ].slice(0, 5);
   const queue = profile.inboxItems.map((item, index) =>
     manualInboxToQueueItem(item, index === 0),
   );
@@ -1629,7 +1761,7 @@ function buildProfileInboxViewModel(
     checklistDoneCount,
     hasActiveItem: Boolean(active),
     queueCount: queue.length,
-    relatedContextCount: 0,
+    relatedContextCount: relatedTargets.length,
   });
   viewModel.quickCapture = {
     enabled: isManual && !options.unavailableReason,
@@ -1643,6 +1775,7 @@ function buildProfileInboxViewModel(
     title: "Inbox ist leer",
     description: "Capture Gedanken, Aufgaben oder Fragen, wenn sie entstehen.",
   };
+  viewModel.existingTargets = existingTargets;
   viewModel.signals = [
     {
       label: "Open",
@@ -1765,7 +1898,18 @@ function buildProfileInboxViewModel(
   };
   viewModel.relatedContext = {
     ...viewModel.relatedContext,
-    items: [],
+    items: relatedTargets.map((target) => ({
+      accent: target.accent,
+      meta: target.meta,
+      name: target.title,
+      score: "DB",
+      typeArea:
+        target.type === "project"
+          ? "Project"
+          : target.type === "goal"
+            ? "Goal"
+            : "Resource",
+    })),
     actionsEnabled: false,
     emptyState: {
       title: "Kein verwandter Kontext",
@@ -2469,6 +2613,7 @@ export async function getInboxViewModel(): Promise<InboxViewModel> {
     const manualInbox = await getManualInboxProfileData();
 
     return buildProfileInboxViewModel(manualInbox.data, profileId, {
+      existingTargets: manualInbox.existingTargets,
       unavailableReason: manualInbox.unavailableReason,
     });
   }

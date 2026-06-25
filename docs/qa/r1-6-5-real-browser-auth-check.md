@@ -60,6 +60,17 @@
 - Archived items are reload-stable outside the active Inbox.
 - Archive view does not exist yet.
 
+## R1.6.6D Add to Existing Target Picker
+
+- Add to Existing is connected as a Target Picker, not as a generic auto-link.
+- Existing Projects, Goals, and Resources are loaded read-only through the authenticated Supabase client and normal RLS.
+- Task contribution is the only persistent Add-to-Existing path in this block.
+- Project target writes the created task with `project_id`; Goal target writes the created task with `goal_id`.
+- Resource Link is visible as prepared but does not write a Resource relation yet.
+- Skill remains Future Scope until a real persisted Skill entity exists.
+- Without an existing Project or Goal target, Add to Existing must not expose an enabled persistent submit.
+- Route selection alone still writes nothing.
+
 ## R1.6.5B Follow-up Checks
 
 1. If `/settings#supabase-session` shows `invalid session`, use `Session zurücksetzen`.
@@ -77,6 +88,10 @@
 13. Confirm Area persists only when the Inbox item already has a real DB Area; otherwise the UI labels Area as not saved.
 14. Confirm the created task is visible through Portfolio, Today, Dashboard, and Calendar planning views after the normal manual DB flow.
 15. If Portfolio, Today, Dashboard, or Calendar stay empty, verify that the item was triaged in Inbox and that the task is visible under `/portfolio?view=tasks` before checking planning or scheduling actions.
+16. For Add to Existing, open `/inbox`, choose `Add to Existing`, and confirm the Target Picker lists only real DB Projects, Goals, or Resources.
+17. Select a Project or Goal, keep Beitragstyp `Task`, edit the draft, and use `Task-Beitrag erstellen`.
+18. Confirm the Inbox item reaches `Task erstellt` and the task appears in Portfolio with the selected Project or Goal relation when such a target exists.
+19. Select Resource + Resource Link and confirm it is marked prepared without creating a Resource relation.
 
 ## Known Boundaries
 

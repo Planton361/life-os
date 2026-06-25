@@ -10,6 +10,7 @@ import {
   type InboxAISuggestion,
   type InboxChecklistItem,
   type InboxClarificationField,
+  type InboxExistingTargetType,
   type InboxOutcomeRoute,
   type InboxOutcomeOption,
   type InboxPlanningSignal,
@@ -159,7 +160,11 @@ function captureTypeAccent(type: InboxQueueItem["type"]) {
 }
 
 function outcomeRouteStatus(route: InboxOutcomeRoute) {
-  if (route === "standalone_task" || route === "solved_archive") {
+  if (
+    route === "add_to_existing" ||
+    route === "standalone_task" ||
+    route === "solved_archive"
+  ) {
     return "Verbunden";
   }
 
@@ -595,12 +600,14 @@ function InboxPlanningSignals({
           planningSignalDefinitions.map((definition) => {
             const accent = planningSignalAccent(definition.label, signals);
             const savedInTaskDraft =
-              selectedRoute === "standalone_task" &&
+              (selectedRoute === "standalone_task" ||
+                selectedRoute === "add_to_existing") &&
               definition.savedInTaskDraft &&
               (definition.label !== "Area" || Boolean(activeItem.persistedAreaId));
             const status =
               definition.label === "Today candidate" &&
-              selectedRoute === "standalone_task"
+              (selectedRoute === "standalone_task" ||
+                selectedRoute === "add_to_existing")
                 ? "optional im Task Draft"
                 : savedInTaskDraft
                   ? "wird im Task Draft gespeichert"
@@ -668,7 +675,9 @@ function InboxOutcomeRoutes({
         {options.map((option) => {
           const isSelected = selectedRoute === option.id;
           const isConnected =
-            option.id === "standalone_task" || option.id === "solved_archive";
+            option.id === "add_to_existing" ||
+            option.id === "standalone_task" ||
+            option.id === "solved_archive";
           const status = outcomeRouteStatus(option.id);
 
           return (
@@ -719,7 +728,9 @@ function InboxOutcomeRoutes({
                   </span>
                   <span className="mt-0.5 block text-[10px] text-[var(--text-muted)]">
                     {isConnected
-                      ? option.id === "standalone_task"
+                      ? option.id === "add_to_existing"
+                        ? "Aktiviert den Target Picker. Persistiert aktuell nur Task-Beiträge zu Project oder Goal."
+                        : option.id === "standalone_task"
                         ? "Aktiviert den Task Draft. Erst Task erstellen schreibt in Supabase."
                         : "Aktiviert den Close Draft. Erst der Abschluss archiviert den Eintrag."
                       : `${outcomeRouteResult(option)} Persistenz folgt in einem späteren Block.`}
@@ -865,31 +876,12 @@ function PreparedDraftShell({
   route,
 }: Readonly<{
   activeItem: InboxViewModel["activeItem"];
-  route: Exclude<InboxOutcomeRoute, "standalone_task" | "solved_archive">;
+  route: Exclude<
+    InboxOutcomeRoute,
+    "add_to_existing" | "standalone_task" | "solved_archive"
+  >;
 }>) {
   const shell = {
-    add_to_existing: {
-      accent: "var(--accent-blue)",
-      title: "Add to Existing Draft",
-      description:
-        "Diese Route verbindet ein Inbox Item später mit einem bestehenden Objekt. Persistenz folgt in einem späteren Block.",
-      fields: (
-        <>
-          <DraftShellSelect
-            label="Zieltyp"
-            options={["Project", "Goal", "Skill", "Resource"]}
-          />
-          <DraftShellReadOnlyField
-            label="Ziel auswählen"
-            value="Noch nicht verbunden"
-          />
-          <DraftShellSelect
-            label="Beitragstyp"
-            options={["Task", "Note", "Resource Link", "Decision"]}
-          />
-        </>
-      ),
-    },
     create_new: {
       accent: "var(--accent-green)",
       title: "Create New Draft",
@@ -939,7 +931,10 @@ function PreparedDraftShell({
       ),
     },
   } satisfies Record<
-    Exclude<InboxOutcomeRoute, "standalone_task" | "solved_archive">,
+    Exclude<
+      InboxOutcomeRoute,
+      "add_to_existing" | "standalone_task" | "solved_archive"
+    >,
     {
       accent: string;
       description: string;
@@ -977,6 +972,296 @@ function PreparedDraftShell({
       <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
         Diese Auswahl erzeugt keinen Submit und schreibt keine Daten.
       </p>
+    </section>
+  );
+}
+
+const existingTargetTypeLabels: Record<InboxExistingTargetType, string> = {
+  goal: "Goal",
+  project: "Project",
+  resource: "Resource",
+  skill: "Skill",
+};
+
+function targetsForType(
+  targets: InboxViewModel["existingTargets"],
+  type: InboxExistingTargetType,
+) {
+  if (type === "project") return targets.projects;
+  if (type === "goal") return targets.goals;
+  if (type === "resource") return targets.resources;
+
+  return targets.skills;
+}
+
+function InboxAddToExistingDraft({
+  activeItem,
+  canCreateTask,
+  existingTargets,
+  nextAction,
+}: Readonly<{
+  activeItem: InboxViewModel["activeItem"];
+  canCreateTask: boolean;
+  existingTargets: InboxViewModel["existingTargets"];
+  nextAction: InboxClarificationField;
+}>) {
+  const [targetType, setTargetType] =
+    useState<InboxExistingTargetType>("project");
+  const [selectedTargetId, setSelectedTargetId] = useState("");
+  const [contributionType, setContributionType] = useState<
+    "decision" | "note" | "resource_link" | "task"
+  >("task");
+  const area =
+    activeItem.planningSignals.find((signal) => signal.label === "Area")
+      ?.value ?? "Review";
+  const activeTargets = targetsForType(existingTargets, targetType);
+  const selectedTarget =
+    activeTargets.find((target) => target.id === selectedTargetId) ??
+    activeTargets[0] ??
+    null;
+  const canPersistTask =
+    canCreateTask &&
+    contributionType === "task" &&
+    Boolean(selectedTarget) &&
+    (targetType === "project" || targetType === "goal");
+  const contributionStatus =
+    contributionType === "task" && (targetType === "project" || targetType === "goal")
+      ? "Verbunden"
+      : contributionType === "resource_link" && targetType === "resource"
+        ? "Vorbereitet"
+        : "Noch nicht verbunden";
+  const targetEmptyCopy =
+    targetType === "skill"
+      ? "Skill bleibt Future Scope, bis eine echte persistierte Skill-Entity existiert."
+      : `Keine ${existingTargetTypeLabels[targetType]}-Ziele aus der DB gefunden.`;
+
+  return (
+    <section
+      aria-labelledby="add-to-existing-draft-title"
+      className="rounded-[18px] border border-[rgba(91,124,250,.30)] bg-[rgba(91,124,250,.075)] p-3"
+    >
+      <form action={triageInboxItemToTaskFormAction}>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3
+              className="text-sm font-semibold text-[var(--text-primary)]"
+              id="add-to-existing-draft-title"
+            >
+              Add to Existing Target Picker
+            </h3>
+            <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+              Bestehendes Project oder Goal auswählen und daraus einen
+              Task-Beitrag erstellen. Resource Link ist vorbereitet; Skill ist
+              Future Scope.
+            </p>
+          </div>
+          <Pill
+            active={contributionStatus === "Verbunden"}
+            accent={
+              contributionStatus === "Verbunden"
+                ? "var(--accent-green)"
+                : contributionStatus === "Vorbereitet"
+                  ? "var(--accent-yellow)"
+                  : "var(--text-muted)"
+            }
+          >
+            Beitrag: {contributionStatus}
+          </Pill>
+        </div>
+
+        <div
+          aria-label="Target type"
+          className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4"
+        >
+          {(["project", "goal", "resource", "skill"] as const).map((type) => {
+            const count = targetsForType(existingTargets, type).length;
+            const active = targetType === type;
+
+            return (
+              <button
+                aria-pressed={active}
+                className={cn(
+                  "min-h-16 rounded-[14px] border px-3 py-2 text-left",
+                  active
+                    ? "border-[rgba(91,124,250,.42)] bg-[rgba(91,124,250,.16)] text-[var(--text-primary)]"
+                    : "border-[var(--border-subtle)] bg-[rgba(15,23,36,.48)] text-[var(--text-secondary)]",
+                  focusClasses,
+                )}
+                key={type}
+                onClick={() => {
+                  setTargetType(type);
+                  setSelectedTargetId("");
+                }}
+                type="button"
+              >
+                <span className="block text-xs font-semibold">
+                  {existingTargetTypeLabels[type]}
+                </span>
+                <span className="mt-1 block text-[10px] text-[var(--text-muted)]">
+                  {type === "skill"
+                    ? "Future Scope"
+                    : `${count} DB-Ziel${count === 1 ? "" : "e"}`}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="mt-3 grid gap-2 xl:grid-cols-[minmax(0,1fr)_minmax(260px,360px)]">
+          <label className="block min-w-0">
+            <span className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+              Ziel auswählen
+            </span>
+            <select
+              aria-label="Existing target"
+              className={cn(draftInputClasses, focusClasses)}
+              disabled={activeTargets.length === 0}
+              onChange={(event) => setSelectedTargetId(event.target.value)}
+              value={selectedTarget?.id ?? ""}
+            >
+              {selectedTarget ? null : <option value="">{targetEmptyCopy}</option>}
+              {activeTargets.map((target) => (
+                <option key={target.id} value={target.id}>
+                  {target.title}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
+              {selectedTarget ? selectedTarget.meta : targetEmptyCopy}
+            </p>
+          </label>
+
+          <div>
+            <p className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+              Beitragstyp
+            </p>
+            <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+              {[
+                ["task", "Task"],
+                ["note", "Note"],
+                ["resource_link", "Resource Link"],
+                ["decision", "Decision"],
+              ].map(([value, label]) => (
+                <button
+                  aria-pressed={contributionType === value}
+                  className={cn(
+                    "min-h-8 rounded-[12px] border px-2 text-[11px] font-semibold",
+                    contributionType === value
+                      ? "border-[rgba(66,184,131,.38)] bg-[rgba(66,184,131,.16)] text-[var(--text-primary)]"
+                      : "border-[var(--border-subtle)] bg-[rgba(18,28,43,.60)] text-[var(--text-secondary)]",
+                    focusClasses,
+                  )}
+                  key={value}
+                  onClick={() =>
+                    setContributionType(
+                      value as "decision" | "note" | "resource_link" | "task",
+                    )
+                  }
+                  type="button"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {canPersistTask || contributionType === "task" ? (
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+            <input name="inboxItemId" type="hidden" value={activeItem.id} />
+            <input name="outcomeRoute" type="hidden" value="add_to_existing" />
+            {targetType === "project" && selectedTarget ? (
+              <input name="projectId" type="hidden" value={selectedTarget.id} />
+            ) : null}
+            {targetType === "goal" && selectedTarget ? (
+              <input name="goalId" type="hidden" value={selectedTarget.id} />
+            ) : null}
+            <DraftTextInput
+              defaultValue={activeItem.title}
+              label="Titel"
+              name="title"
+            />
+            <DraftTextarea
+              defaultValue={activeItem.originalCapture}
+              label="Beschreibung / Kontext"
+              name="description"
+            />
+            <DraftTextInput
+              defaultValue={nextAction.value}
+              label="Nächste Aktion"
+              name="nextAction"
+            />
+            <DraftSelect label="Area" name="areaId">
+              {activeItem.persistedAreaId ? (
+                <option value={activeItem.persistedAreaId}>{area}</option>
+              ) : null}
+              <option value="">
+                {activeItem.persistedAreaId
+                  ? "Keine Area setzen"
+                  : "Nicht gesetzt - nicht gespeichert"}
+              </option>
+            </DraftSelect>
+            <DraftSelect
+              defaultValue={activeItem.priority ?? "P2"}
+              label="Priorität"
+              name="priority"
+            >
+              {taskDraftPriorities.map((priority) => (
+                <option key={priority} value={priority}>
+                  {priority}
+                </option>
+              ))}
+            </DraftSelect>
+            <DraftSelect
+              defaultValue="30"
+              label="Effort / Dauer"
+              name="durationMinutes"
+            >
+              {taskDraftDurations.map((duration) => (
+                <option key={duration} value={duration}>
+                  {duration} min
+                </option>
+              ))}
+            </DraftSelect>
+            <DraftSelect defaultValue="medium" label="Energie" name="energy">
+              {taskDraftEnergies.map((energy) => (
+                <option key={energy} value={energy}>
+                  {energy}
+                </option>
+              ))}
+            </DraftSelect>
+            <button
+              className={cn(
+                "min-h-10 self-end rounded-[12px] border border-[rgba(66,184,131,.42)] bg-[rgba(66,184,131,.22)] px-3 text-xs font-semibold text-[var(--text-primary)]",
+                focusClasses,
+                disabledActionClasses,
+              )}
+              disabled={!canPersistTask}
+              type="submit"
+            >
+              Task-Beitrag erstellen
+            </button>
+          </div>
+        ) : (
+          <div className="mt-3 rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.58)] p-3">
+            <p className="text-xs font-semibold text-[var(--text-primary)]">
+              {contributionType === "resource_link"
+                ? "Resource Link vorbereitet"
+                : "Beitragstyp noch nicht verbunden"}
+            </p>
+            <p className="mt-1 text-[11px] leading-4 text-[var(--text-secondary)]">
+              Diese Auswahl schreibt aktuell keine Daten. Persistenz ist nur
+              für Task-Beiträge zu bestehenden Projects oder Goals verbunden.
+            </p>
+          </div>
+        )}
+
+        <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
+          Persistenter Pfad: Task + Project/Goal-ID über bestehende
+          Inbox-Triage-RPC. Kein Resource Graph, keine Skill-Persistence, keine
+          neue Entity.
+        </p>
+      </form>
     </section>
   );
 }
@@ -1240,8 +1525,10 @@ function InboxTaskDraft({
 
 function InboxActiveItemPanel({
   activeItem,
+  addToExistingEnabled,
   archiveEnabled,
   contentState,
+  existingTargets,
   onSelectOutcomeRoute,
   outcome,
   selectedOutcomeRoute,
@@ -1249,8 +1536,10 @@ function InboxActiveItemPanel({
   profileId,
 }: Readonly<{
   activeItem: InboxViewModel["activeItem"];
+  addToExistingEnabled: boolean;
   archiveEnabled: boolean;
   contentState: ContentStateMeta;
+  existingTargets: InboxViewModel["existingTargets"];
   onSelectOutcomeRoute: (route: InboxOutcomeRoute) => void;
   outcome: InboxViewModel["outcome"];
   selectedOutcomeRoute: InboxOutcomeRoute | null;
@@ -1376,6 +1665,13 @@ function InboxActiveItemPanel({
               <InboxSolvedArchiveDraft
                 activeItem={activeItem}
                 canArchive={archiveEnabled}
+              />
+            ) : selectedDraftRoute === "add_to_existing" ? (
+              <InboxAddToExistingDraft
+                activeItem={activeItem}
+                canCreateTask={addToExistingEnabled}
+                existingTargets={existingTargets}
+                nextAction={nextAction}
               />
             ) : selectedDraftRoute && selectedDraftRoute !== "standalone_task" ? (
               <PreparedDraftShell
@@ -1787,6 +2083,12 @@ export function InboxPage({
       !viewModel.activeItem.triagedTaskId &&
       taskDraftActive,
   );
+  const addToExistingEnabled = Boolean(
+    viewModel.quickCapture.enabled &&
+      viewModel.activeItem.hasSelection &&
+      !viewModel.activeItem.triagedTaskId &&
+      selectedOutcomeRoute === "add_to_existing",
+  );
   const archiveEnabled = Boolean(
     viewModel.quickCapture.enabled &&
       viewModel.activeItem.hasSelection &&
@@ -1838,8 +2140,10 @@ export function InboxPage({
         />
         <InboxActiveItemPanel
           activeItem={viewModel.activeItem}
+          addToExistingEnabled={addToExistingEnabled}
           archiveEnabled={archiveEnabled}
           contentState={viewModel.contentStates.activeItem}
+          existingTargets={viewModel.existingTargets}
           onSelectOutcomeRoute={setSelectedOutcomeRoute}
           outcome={viewModel.outcome}
           selectedOutcomeRoute={selectedOutcomeRoute}

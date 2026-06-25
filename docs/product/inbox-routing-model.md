@@ -50,7 +50,7 @@ Die Inbox darf Planungsabsichten sammeln. Konkrete Tagesplanung und Zeitplanung 
 | Route | Zielsemantik | Ablauf | Aktueller Status | Nicht tun |
 | --- | --- | --- | --- | --- |
 | Standalone Task | Aus Rohmaterial wird eine eigenstaendige Aufgabe. | Raw Capture -> Task Draft -> Task | Jetzt teilweise moeglich: Inbox item triagiert zu Task mit Titel, Beschreibung, Priority, Energy, Duration und optional Today-Plan. | Keine automatische Task ohne Draft-Bestaetigung. |
-| Add to Existing | Rohmaterial wird an ein bestehendes Objekt angehaengt oder in dessen Kontext in eine Task/Note/Relation umgewandelt. | Raw Capture -> Existing Entity auswaehlen -> Beitrag, Task, Note oder Relation erstellen | Zielmodell; UI-Route sichtbar, aber noch nicht verbunden. | Keine Blindverlinkung ohne Target Picker und User-Bestaetigung. |
+| Add to Existing | Rohmaterial wird an ein bestehendes Objekt angehaengt oder in dessen Kontext in eine Task/Note/Relation umgewandelt. | Raw Capture -> Existing Entity auswaehlen -> Beitrag, Task, Note oder Relation erstellen | Target Picker ist verbunden. Persistenter Pfad aktuell nur: Task-Beitrag zu bestehendem Project oder Goal. | Keine Blindverlinkung ohne Target Picker und User-Bestaetigung. Keine Note-/Resource-/Skill-Persistenz ohne eigenen Confirm-Pfad. |
 | Create New | Rohmaterial wird Ausgangspunkt fuer ein neues Objekt. | Raw Capture -> Project/Goal/Skill/Resource Draft -> spaetere Verfeinerung | Zielmodell; noch kein Inbox-Create-New-Flow. | Keine neuen Entities aus Rohtext ohne Draft und Folge-Review. |
 | Resource | Rohmaterial wird Resource oder Resource-Link. | Raw Capture -> Resource erstellen oder an bestehende Resource haengen -> Resource Graph / Knowledge Network | Resource-Domain existiert konzeptionell/technisch, Inbox-Route ist noch nicht verbunden. | Keine Resource-Graph-Kanten automatisch erzeugen. |
 | Solved / Archive | Eintrag ist erledigt, geklaert oder bewusst nicht weiterverfolgt. | Raw Capture -> Close Draft -> done/archive | Erster verbundener Nicht-Task-Pfad; archiviert per Soft Archive und erzeugt kein Zielobjekt. | Nicht still loeschen. Kein Zielobjekt erzwingen. |
@@ -59,10 +59,10 @@ Die Inbox darf Planungsabsichten sammeln. Konkrete Tagesplanung und Zeitplanung 
 
 | Target | Bedeutung | Status |
 | --- | --- | --- |
-| Project | Capture wird Projektkontext, Projektnotiz, Projektaufgabe oder Projektrelation. | Needs existing entity + Target Picker + Relation/Task-Action. |
-| Goal | Capture wird Goal-Kontext, Goal-nahe Aufgabe oder Relation. | Needs existing entity + Target Picker + Relation/Task-Action. |
+| Project | Capture wird Projektkontext, Projektnotiz, Projektaufgabe oder Projektrelation. | Verbunden fuer Task-Beitrag per bestehender Inbox-Triage-RPC mit `project_id`. Note/Relation bleiben Future Scope. |
+| Goal | Capture wird Goal-Kontext, Goal-nahe Aufgabe oder Relation. | Verbunden fuer Task-Beitrag per bestehender Inbox-Triage-RPC mit `goal_id`. Note/Relation bleiben Future Scope. |
 | Skill | Nur verwenden, wenn eine reale Skill-Entity und Persistence existieren. | Future Scope, solange Skill nicht als echte persistierte Entity verfuegbar ist. |
-| Resource | Capture wird an bestehende Resource gehaengt oder als Resource-Relation modelliert. | Needs Resource Picker + Relation-Action. |
+| Resource | Capture wird an bestehende Resource gehaengt oder als Resource-Relation modelliert. | Resource Picker liest vorhandene Resources; Resource Link ist vorbereitet, schreibt aber noch keine Relation. |
 
 ### Create New Targets
 
@@ -132,7 +132,7 @@ Kritische Outcomes brauchen User-Bestaetigung. AI bleibt Vorschlags- und Klaerun
 | Outcome Route Cards | Standalone Task aktiv; andere Routen sichtbar, aber `Noch nicht verbunden`. | Jede Route hat klare Draft- und Confirm-Semantik. | Add/Create/Resource/Archive fehlen als echte Flows. | R1.6.6B |
 | Task Draft | Editierbar und schreibt bestaetigten Task. | Task Draft ist ein Review-Zwischenschritt, kein stiller Auto-Task. | Next Action ist in Description eingebettet; Review/Deadline/Recurrence fehlen. | R1.6.6F |
 | Task erstellen | Bestaetigter Inbox-Triage-Pfad erstellt Task. | Nur User-Bestaetigung schreibt Task. | Weitere Validierung und Lifecycle-Haertung folgen. | R1.6.7 |
-| Add to Existing | Route sichtbar, nicht verbunden. | Target Picker + Relation/Task/Note-Entscheidung. | Entity Picker, Relation Action und Confirm Copy fehlen. | R1.6.6C |
+| Add to Existing | Target Picker liest bestehende Projects, Goals und Resources. Task-Beitrag zu Project/Goal ist verbunden; Resource Link/Note/Decision/Skill sind sichtbar begrenzt. | Target Picker + Relation/Task/Note-Entscheidung. | Relation Action, Note/Decision-Persistence, Resource Graph Confirm und Skill-Persistence fehlen. | R1.6.6E |
 | Create New | Route sichtbar, nicht verbunden. | Project/Goal/Resource Drafts, Skill nur bei realer Persistence. | Draft UIs und Actions fehlen. | R1.6.6E |
 | Resource | Route sichtbar, nicht verbunden. | Resource Draft oder Attach to existing Resource. | Resource Draft UI, Resource Picker und Graph Entry fehlen. | R1.6.6D |
 | Portfolio Task Projection | Tasks aus Inbox-Triage werden in Portfolio sichtbar. | Portfolio bleibt Task-Inventur und Refinement Surface. | Detail-Edit/Lifecycle noch nicht vollstaendig. | R1.6.7 |

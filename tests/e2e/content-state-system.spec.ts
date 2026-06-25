@@ -1682,12 +1682,11 @@ test.describe("Inbox content states", () => {
     await expect(
       activeItem.locator('[data-outcome-route="standalone_task"]'),
     ).toContainText("Status: Verbunden");
+    await expect(
+      activeItem.locator('[data-outcome-route="add_to_existing"]'),
+    ).toContainText("Status: Verbunden");
 
-    for (const route of [
-      "add_to_existing",
-      "create_new",
-      "knowledge_resource",
-    ]) {
+    for (const route of ["create_new", "knowledge_resource"]) {
       await expect(
         activeItem.locator(`[data-outcome-route="${route}"]`),
       ).toContainText("Status: Noch nicht verbunden");
@@ -1753,7 +1752,7 @@ test.describe("Inbox content states", () => {
     ).toBeVisible();
   });
 
-  test("prepared Outcome Routes expose draft shells without persistence submit", async ({
+  test("Add to Existing opens the Target Picker with scoped contribution states", async ({
     page,
   }) => {
     await setProfile(page, "demo");
@@ -1764,15 +1763,44 @@ test.describe("Inbox content states", () => {
     const activeItem = page.locator('[data-inbox-section="active-item"]');
     await activeItem.locator('[data-outcome-route="add_to_existing"]').click();
     const addToExistingDraft = activeItem
-      .getByRole("heading", { name: "Add to Existing Draft" })
+      .getByRole("heading", { name: "Add to Existing Target Picker" })
       .locator("xpath=ancestor::section[1]");
     await expect(addToExistingDraft).toBeVisible();
     await expect(
-      addToExistingDraft.getByText("Persistenz folgt in einem späteren Block."),
+      addToExistingDraft.getByText("Beitrag: Verbunden"),
     ).toBeVisible();
     await expect(
-      activeItem.getByRole("button", { exact: true, name: "Task erstellen" }),
-    ).toHaveCount(0);
+      addToExistingDraft.getByLabel("Existing target"),
+    ).toHaveValue("demo-project-life-os-mvp");
+    await expect(
+      addToExistingDraft.getByRole("button", { name: "Task-Beitrag erstellen" }),
+    ).toBeDisabled();
+    await addToExistingDraft.getByRole("button", { name: "Resource Link" }).click();
+    await expect(
+      addToExistingDraft.getByText("Beitrag: Noch nicht verbunden"),
+    ).toBeVisible();
+    await expect(
+      addToExistingDraft.getByText("Beitragstyp noch nicht verbunden"),
+    ).toBeVisible();
+    await addToExistingDraft.getByRole("button", { name: "Resource" }).click();
+    await addToExistingDraft.getByRole("button", { name: "Resource Link" }).click();
+    await expect(
+      addToExistingDraft.getByText("Resource Link vorbereitet"),
+    ).toBeVisible();
+    await expect(
+      addToExistingDraft.getByText("Kein Resource Graph", { exact: false }),
+    ).toBeVisible();
+  });
+
+  test("prepared Outcome Routes expose draft shells without persistence submit", async ({
+    page,
+  }) => {
+    await setProfile(page, "demo");
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/inbox");
+    });
+
+    const activeItem = page.locator('[data-inbox-section="active-item"]');
 
     await activeItem.locator('[data-outcome-route="create_new"]').click();
     const createNewDraft = activeItem

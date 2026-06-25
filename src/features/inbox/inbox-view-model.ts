@@ -81,6 +81,24 @@ export type InboxRelatedContextItem = {
   accent: string;
 };
 
+export type InboxExistingTargetType = "project" | "goal" | "resource" | "skill";
+
+export type InboxExistingTarget = {
+  id: string;
+  type: Exclude<InboxExistingTargetType, "skill">;
+  title: string;
+  meta: string;
+  accent: string;
+  href?: string;
+};
+
+export type InboxExistingTargets = {
+  projects: InboxExistingTarget[];
+  goals: InboxExistingTarget[];
+  resources: InboxExistingTarget[];
+  skills: InboxExistingTarget[];
+};
+
 export type InboxEmptyState = {
   title: string;
   description: string;
@@ -115,6 +133,7 @@ export type InboxViewModel = {
   queue: InboxQueueItem[];
   queueEmptyState: InboxEmptyState;
   quickCapture: InboxQuickCaptureState;
+  existingTargets: InboxExistingTargets;
   activeItem: {
     canTriageToTask?: boolean;
     hasSelection: boolean;
@@ -379,6 +398,39 @@ export function getInboxViewModel(): InboxViewModel {
       title: "Quick Capture",
       description: "Neue Eintraege werden im Manual-Profil lokal gespeichert.",
       disabledReason: "Im Demo-Profil ist Quick Capture nur als Referenz sichtbar.",
+    },
+    existingTargets: {
+      projects: [
+        {
+          id: "demo-project-life-os-mvp",
+          type: "project",
+          title: "Life OS MVP",
+          meta: "active · daily flow",
+          accent: "var(--accent-blue)",
+          href: "/projects/demo-project-life-os-mvp",
+        },
+      ],
+      goals: [
+        {
+          id: "demo-goal-stable-mvp-daily-flow",
+          type: "goal",
+          title: "Stable MVP daily flow",
+          meta: "active · current phase",
+          accent: "var(--accent-green)",
+          href: "/goals/demo-goal-stable-mvp-daily-flow",
+        },
+      ],
+      resources: [
+        {
+          id: "demo-resource-calm-dashboard-article",
+          type: "resource",
+          title: "Calm dashboard article",
+          meta: "reference · prepared only",
+          accent: "var(--accent-yellow)",
+          href: "/resources",
+        },
+      ],
+      skills: [],
     },
     activeItem: {
       hasSelection: true,

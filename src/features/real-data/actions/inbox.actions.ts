@@ -206,11 +206,13 @@ export async function triageInboxItemToTaskAction(
     description: taskDescriptionFromDraft(formData),
     durationMinutes: optionalFormNumber(formData, "durationMinutes"),
     energy: optionalFormString(formData, "energy"),
+    goalId: optionalFormString(formData, "goalId"),
     inboxItemId: formString(formData, "inboxItemId"),
     plannedDate:
       formString(formData, "planToday") === "on" ? localDateLabel() : undefined,
     profileId: auth.user.id,
     priority: optionalFormString(formData, "priority"),
+    projectId: optionalFormString(formData, "projectId"),
     title: formString(formData, "title"),
     userId: auth.user.id,
   });
