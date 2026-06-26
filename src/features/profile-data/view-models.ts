@@ -400,9 +400,10 @@ function scheduledTaskStartTime(task: RealDataTask) {
 }
 
 function sortDashboardTasks(left: LifeTask, right: LifeTask) {
-  const timeCompare = `${left.date ?? ""}${left.startTime ?? "99:99"}`.localeCompare(
-    `${right.date ?? ""}${right.startTime ?? "99:99"}`,
-  );
+  const timeCompare =
+    `${left.date ?? ""}${left.startTime ?? "99:99"}`.localeCompare(
+      `${right.date ?? ""}${right.startTime ?? "99:99"}`,
+    );
 
   if (timeCompare !== 0) return timeCompare;
 
@@ -432,8 +433,13 @@ function manualHabitToDashboardHabit(habit: ManualHabit): DashboardHabit {
   };
 }
 
-function emptyMealSlot(type: Exclude<DashboardMeal["type"], "Snack">): DashboardMeal {
-  const defaultTimes: Record<Exclude<DashboardMeal["type"], "Snack">, string> = {
+function emptyMealSlot(
+  type: Exclude<DashboardMeal["type"], "Snack">,
+): DashboardMeal {
+  const defaultTimes: Record<
+    Exclude<DashboardMeal["type"], "Snack">,
+    string
+  > = {
     Breakfast: "07:30",
     Dinner: "19:00",
     Lunch: "12:30",
@@ -462,10 +468,7 @@ function manualMealToDashboardMeal(meal: ManualMealSlot): DashboardMeal {
     ctaLabel: meal.state === "skipped" ? "Erfassen" : "Planen",
     kcal: meal.kcal ?? (meal.state === "skipped" ? "Ausgelassen" : "-"),
     macros: meal.macros,
-    name:
-      meal.state === "skipped"
-        ? "Ausgelassen"
-        : meal.name || fallback.name,
+    name: meal.state === "skipped" ? "Ausgelassen" : meal.name || fallback.name,
     state: meal.state,
     time: meal.time || fallback.time,
   };
@@ -487,7 +490,8 @@ function moodAccent(label: string): DashboardAccent {
   if (label === "Calm" || label === "Content") return "var(--accent-cyan)";
   if (label === "Focused") return "var(--accent-blue)";
   if (label === "Happy") return "var(--accent-green)";
-  if (label === "Anxious" || label === "Stressed") return "var(--accent-orange)";
+  if (label === "Anxious" || label === "Stressed")
+    return "var(--accent-orange)";
   if (label === "Tired") return "var(--accent-purple)";
 
   return "var(--text-muted)";
@@ -553,7 +557,9 @@ function portfolioRelationLabelLookups(
       new Map(collection.goals.map((goal) => [goal.id, goal.title])),
     projectTitles:
       supplemental?.projectTitles ??
-      new Map(collection.projects.map((project) => [project.id, project.title])),
+      new Map(
+        collection.projects.map((project) => [project.id, project.title]),
+      ),
     skillTitles: new Map(
       collection.skills.map((skill) => [skill.id, skill.title]),
     ),
@@ -565,7 +571,38 @@ function linkedTitle(
   titles: ReadonlyMap<string, string>,
   fallback: string,
 ) {
-  return id ? titles.get(id) ?? fallback : null;
+  return id ? (titles.get(id) ?? fallback) : null;
+}
+
+function taskPlannerRelationLabels(
+  task: LifeTask,
+  lookups: PortfolioRelationLabelLookups,
+) {
+  return [
+    ...relation(
+      "Project",
+      linkedTitle(
+        task.projectId,
+        lookups.projectTitles,
+        "Project nicht gefunden",
+      ) ?? undefined,
+    ).map((item) => `${item.label} · ${item.value}`),
+    ...relation(
+      "Goal",
+      linkedTitle(task.goalId, lookups.goalTitles, "Goal nicht gefunden") ??
+        undefined,
+    ).map((item) => `${item.label} · ${item.value}`),
+  ];
+}
+
+function taskPlannerContextLabel(
+  task: LifeTask,
+  lookups: PortfolioRelationLabelLookups,
+  fallback: string,
+) {
+  const labels = taskPlannerRelationLabels(task, lookups);
+
+  return labels.length > 0 ? labels.join(" · ") : fallback;
 }
 
 function taskPortfolioRelations(
@@ -580,8 +617,7 @@ function taskPortfolioRelations(
           task.projectId,
           lookups.projectTitles,
           "Project nicht gefunden",
-        ) ??
-        "Kein Project verknüpft",
+        ) ?? "Kein Project verknüpft",
     },
     {
       label: "Goal",
@@ -685,8 +721,11 @@ function projectToPortfolioEntity(
     relations: [
       ...relation(
         "Goal",
-        linkedTitle(project.goalId, lookups.goalTitles, "Goal nicht gefunden") ??
-          undefined,
+        linkedTitle(
+          project.goalId,
+          lookups.goalTitles,
+          "Goal nicht gefunden",
+        ) ?? undefined,
       ),
       { label: "Phase", value: project.phase },
     ],
@@ -834,13 +873,19 @@ function buildProfileMentalHealthViewModel(
         capacity: 3,
         itemCount: hasMood ? 1 : 0,
       }),
-      header: resolveContentStateMeta({ capacity: 1, itemCount: hasMood ? 1 : 0 }),
+      header: resolveContentStateMeta({
+        capacity: 1,
+        itemCount: hasMood ? 1 : 0,
+      }),
       journalRhythm: resolveContentStateMeta({ capacity: 7, itemCount: 0 }),
       moodPattern: resolveContentStateMeta({
         capacity: 6,
         itemCount: hasMood ? 1 : 0,
       }),
-      page: resolveContentStateMeta({ capacity: 8, itemCount: hasMood ? 1 : 0 }),
+      page: resolveContentStateMeta({
+        capacity: 8,
+        itemCount: hasMood ? 1 : 0,
+      }),
       repairRoutines: resolveContentStateMeta({ capacity: 3, itemCount: 0 }),
       safety: resolveContentStateMeta({ capacity: 4, itemCount: 4 }),
       sleepRecovery: resolveContentStateMeta({ capacity: 7, itemCount: 0 }),
@@ -937,7 +982,8 @@ function buildProfileMentalHealthViewModel(
       tonightCue: {
         label: "Tonight cue",
         value: "Noch keine Schlafdaten",
-        detail: "Schlafdaten erscheinen erst, wenn eine lokale Quelle existiert.",
+        detail:
+          "Schlafdaten erscheinen erst, wenn eine lokale Quelle existiert.",
       },
     },
     journalRhythm: {
@@ -957,7 +1003,8 @@ function buildProfileMentalHealthViewModel(
       prompt: {
         label: "Daily prompt",
         value: "Noch kein Journal-Kontext",
-        detail: "Reflexionen erscheinen erst, wenn lokale Eintraege existieren.",
+        detail:
+          "Reflexionen erscheinen erst, wenn lokale Eintraege existieren.",
       },
       actionLabel: "Open Journal",
       href: "/life/journal",
@@ -1388,7 +1435,10 @@ function buildProfileDashboardViewModel(
     activeView: activePortfolioView,
     contentState: resolveContentStateMeta({
       capacity: dashboardCapacity.activePortfolio,
-      itemCount: Math.min(portfolioItems.length, dashboardCapacity.activePortfolio),
+      itemCount: Math.min(
+        portfolioItems.length,
+        dashboardCapacity.activePortfolio,
+      ),
     }),
     subtitle:
       profile.projects.length + profile.goals.length > 0
@@ -1671,28 +1721,28 @@ async function getManualInboxExistingTargets(
   const [projectResult, goalResult, resourceResult] = await Promise.all([
     (async () =>
       (await client
-      .from("projects")
-      .select("id,title,status,priority,updated_at")
-      .eq("user_id", userId)
-      .is("archived_at", null)
-      .order("updated_at", { ascending: false })
-      .limit(12)) as SupabaseQueryResult<readonly ProjectTargetRow[]>)(),
+        .from("projects")
+        .select("id,title,status,priority,updated_at")
+        .eq("user_id", userId)
+        .is("archived_at", null)
+        .order("updated_at", { ascending: false })
+        .limit(12)) as SupabaseQueryResult<readonly ProjectTargetRow[]>)(),
     (async () =>
       (await client
-      .from("goals")
-      .select("id,title,status,horizon,updated_at")
-      .eq("user_id", userId)
-      .is("archived_at", null)
-      .order("updated_at", { ascending: false })
-      .limit(12)) as SupabaseQueryResult<readonly GoalTargetRow[]>)(),
+        .from("goals")
+        .select("id,title,status,horizon,updated_at")
+        .eq("user_id", userId)
+        .is("archived_at", null)
+        .order("updated_at", { ascending: false })
+        .limit(12)) as SupabaseQueryResult<readonly GoalTargetRow[]>)(),
     (async () =>
       (await client
-      .from("resources")
-      .select("id,title,type,review_needed,updated_at")
-      .eq("user_id", userId)
-      .is("archived_at", null)
-      .order("updated_at", { ascending: false })
-      .limit(12)) as SupabaseQueryResult<readonly ResourceTargetRow[]>)(),
+        .from("resources")
+        .select("id,title,type,review_needed,updated_at")
+        .eq("user_id", userId)
+        .is("archived_at", null)
+        .order("updated_at", { ascending: false })
+        .limit(12)) as SupabaseQueryResult<readonly ResourceTargetRow[]>)(),
   ]);
 
   return {
@@ -1728,13 +1778,17 @@ async function getManualInboxProfileData(): Promise<{
   }
 
   const repository = createSupabaseInboxRepository(auth.client);
-  const result = await repository.getInboxItemsByUser(auth.user.id, auth.user.id);
+  const result = await repository.getInboxItemsByUser(
+    auth.user.id,
+    auth.user.id,
+  );
 
   if (!result.ok) {
     return {
       data: emptyManualProfile(),
       existingTargets: emptyInboxExistingTargets(),
-      unavailableReason: "Inbox Items konnten nicht aus Supabase geladen werden.",
+      unavailableReason:
+        "Inbox Items konnten nicht aus Supabase geladen werden.",
     };
   }
 
@@ -1936,6 +1990,23 @@ async function getProfileDataWithManualTasks(profileId: LifeOsProfileId) {
     ...profile,
     tasks: manualTasks.tasks,
   };
+}
+
+async function getManualPlannerRelationLabelLookups(
+  profileId: LifeOsProfileId,
+  tasks: readonly LifeTask[],
+) {
+  if (profileId !== "manual" || tasks.length === 0) return undefined;
+
+  const auth = await createAuthenticatedSupabaseServerClient();
+
+  if (!auth.ok) return undefined;
+
+  return getManualPortfolioRelationLabelLookups(
+    auth.client,
+    auth.user.id,
+    tasks,
+  );
 }
 
 function inboxEmptyPlanningSuggestions(): InboxAISuggestion[] {
@@ -2162,7 +2233,8 @@ function buildProfileInboxViewModel(
     canApply: false,
     emptyState: {
       title: "Noch keine Empfehlung möglich",
-      description: "Wähle einen echten Eintrag aus, bevor Vorschläge entstehen.",
+      description:
+        "Wähle einen echten Eintrag aus, bevor Vorschläge entstehen.",
     },
   };
   viewModel.checklist = {
@@ -2235,14 +2307,6 @@ function isOpenTask(task: LifeTask) {
   return task.status !== "done" && task.status !== "canceled";
 }
 
-function taskTodayContextLabel(task: LifeTask) {
-  if (task.projectId && task.goalId) return "Project + Goal linked";
-  if (task.projectId) return "Project linked";
-  if (task.goalId) return "Goal linked";
-
-  return task.source ?? "Task";
-}
-
 function taskCandidateReason(task: LifeTask) {
   const signals = [
     task.priority !== "none" ? task.priority : null,
@@ -2278,14 +2342,17 @@ function sortTodayCandidateTasks(left: LifeTask, right: LifeTask) {
   return (left.createdAt ?? left.id).localeCompare(right.createdAt ?? right.id);
 }
 
-function taskToTodayPlannerTask(task: LifeTask): TodayPlannerTaskViewModel {
+function taskToTodayPlannerTask(
+  task: LifeTask,
+  lookups: PortfolioRelationLabelLookups,
+): TodayPlannerTaskViewModel {
   return {
     id: task.id,
     title: task.title,
     priority: dashboardPriority(task.priority),
     energy: task.energy,
     durationMinutes: task.durationMinutes ?? 30,
-    contextLabel: taskTodayContextLabel(task),
+    contextLabel: taskPlannerContextLabel(task, lookups, task.source ?? "Task"),
     candidateReason: taskCandidateReason(task),
     accent: areaAccent(task.areaId),
   };
@@ -2386,8 +2453,18 @@ function todayClosingNotStartedItems(
 function buildProfileTodayViewModel(
   profile: ManualProfileData,
   profileId: Exclude<LifeOsProfileId, "demo">,
+  relationLookups?: PortfolioRelationLabelLookups,
 ): TodayViewModel {
   const viewModel = clone(getDemoTodayViewModel());
+  const plannerRelationLookups =
+    relationLookups ??
+    portfolioRelationLabelLookups({
+      goals: profile.goals,
+      milestones: [],
+      projects: profile.projects,
+      skills: [],
+      tasks: profile.tasks,
+    });
   const today = todayDateLabel();
   const todayTasks = profile.tasks
     .filter((task) => task.date === today)
@@ -2398,7 +2475,9 @@ function buildProfileTodayViewModel(
     .filter(taskHasPlanningSignals)
     .sort(sortTodayCandidateTasks)
     .slice(0, 4);
-  const plannerTasks = todayCandidateTasks.map(taskToTodayPlannerTask);
+  const plannerTasks = todayCandidateTasks.map((task) =>
+    taskToTodayPlannerTask(task, plannerRelationLookups),
+  );
   const events = [
     ...todayTasks.map(taskToTodayEvent),
     ...profile.inboxItems.map(inboxToTodayEvent),
@@ -2547,7 +2626,8 @@ function buildProfileTodayViewModel(
     signals: todayClosingNotStartedItems(carryForwardItems.length),
     emptyState: {
       title: "Closing Review nicht gestartet",
-      description: "Der Tagesabschluss bleibt sichtbar, bis ein Review gespeichert wird.",
+      description:
+        "Der Tagesabschluss bleibt sichtbar, bis ein Review gespeichert wird.",
     },
   };
   viewModel.carryForward = {
@@ -2637,6 +2717,7 @@ function buildManualCalendarDays(
 
 function taskToCalendarBlock(
   task: LifeTask,
+  lookups: PortfolioRelationLabelLookups,
 ): Omit<
   CalendarTimedBlockViewModel,
   "compact" | "density" | "durationMinutes" | "layout"
@@ -2681,7 +2762,7 @@ function taskToCalendarBlock(
     plannedOutcome: task.nextStep,
     timeLabel: `${task.startTime}-${endTime}`,
     priority: dashboardPriority(task.priority),
-    project: task.projectId,
+    project: taskPlannerContextLabel(task, lookups, areaLabel(task.areaId)),
     taskId: task.id,
     goalId: task.goalId,
     startTime: task.startTime,
@@ -2728,14 +2809,6 @@ function taskQueueEnergyRank(task: LifeTask) {
   return task.energy ? taskEnergyOrder[task.energy] : 3;
 }
 
-function taskQueueContextLabel(task: LifeTask) {
-  if (task.projectId && task.goalId) return "Project + Goal linked";
-  if (task.projectId) return "Project linked";
-  if (task.goalId) return "Goal linked";
-
-  return "Manual";
-}
-
 function taskQueueStatus(
   task: LifeTask,
 ): CalendarViewModel["schedulableTasks"][number]["status"] {
@@ -2767,17 +2840,27 @@ function sortPlannerQueueTasks(left: LifeTask, right: LifeTask) {
 function buildProfileCalendarViewModel(
   profile: ManualProfileData,
   profileId: Exclude<LifeOsProfileId, "demo">,
+  relationLookups?: PortfolioRelationLabelLookups,
 ): CalendarViewModel {
   const isManualProfile = profileId === "manual";
+  const plannerRelationLookups =
+    relationLookups ??
+    portfolioRelationLabelLookups({
+      goals: profile.goals,
+      milestones: [],
+      projects: profile.projects,
+      skills: [],
+      tasks: profile.tasks,
+    });
   const days = buildManualCalendarDays(profile);
   const firstDayId = days[0]?.id ?? "manual-week";
   const demoModel = getDemoCalendarViewModel();
   const rawTimedBlocks = profile.tasks
-    .map(taskToCalendarBlock)
+    .map((task) => taskToCalendarBlock(task, plannerRelationLookups))
     .filter(
       (
         block,
-        ): block is Omit<
+      ): block is Omit<
         CalendarTimedBlockViewModel,
         "compact" | "density" | "durationMinutes" | "layout"
       > => Boolean(block),
@@ -2786,30 +2869,42 @@ function buildProfileCalendarViewModel(
   const allDayBlocks = profile.projects.map((project) =>
     projectToAllDayBlock(project, firstDayId),
   );
-  const scheduledTaskBlocks = timedBlocks.filter((block) => block.source === "task");
+  const scheduledTaskBlocks = timedBlocks.filter(
+    (block) => block.source === "task",
+  );
   const planningQueueTasks = profile.tasks
     .filter((task) => task.date && !task.startTime)
     .filter((task) => task.status !== "done" && task.status !== "canceled")
     .sort(sortPlannerQueueTasks);
 
   const schedulableTasks: CalendarViewModel["schedulableTasks"] =
-    planningQueueTasks.map((task) => ({
-      id: task.id,
-      title: task.title,
-      priority: dashboardPriority(task.priority),
-      area: areaLabel(task.areaId),
-      project: taskQueueContextLabel(task),
-      goal: task.goalId ? "Goal linked" : undefined,
-      energy: task.energy,
-      status: taskQueueStatus(task),
-      estimatedMinutes: task.durationMinutes ?? 30,
-      plannedDate: task.date ?? todayDateLabel(),
-      dueDate: task.date,
-      recentlyUpdated: "local",
-      alreadyScheduled: false,
-      accent: areaAccent(task.areaId),
-    }))
-    .slice(0, 100);
+    planningQueueTasks
+      .map((task) => ({
+        id: task.id,
+        title: task.title,
+        priority: dashboardPriority(task.priority),
+        area: areaLabel(task.areaId),
+        project: taskPlannerContextLabel(
+          task,
+          plannerRelationLookups,
+          "Manual",
+        ),
+        goal:
+          linkedTitle(
+            task.goalId,
+            plannerRelationLookups.goalTitles,
+            "Goal nicht gefunden",
+          ) ?? undefined,
+        energy: task.energy,
+        status: taskQueueStatus(task),
+        estimatedMinutes: task.durationMinutes ?? 30,
+        plannedDate: task.date ?? todayDateLabel(),
+        dueDate: task.date,
+        recentlyUpdated: "local",
+        alreadyScheduled: false,
+        accent: areaAccent(task.areaId),
+      }))
+      .slice(0, 100);
 
   const rightPanel = {
     selectedDay: days.find((day) => day.isToday)?.fullLabel ?? "Manual week",
@@ -2878,7 +2973,8 @@ function buildProfileCalendarViewModel(
       timedBlocks.some((block) => block.dayId === day.id) ||
       allDayBlocks.some((block) => block.dayId === day.id),
   ).length;
-  const headerItemCount = timedBlocks.length > 0 || allDayBlocks.length > 0 ? 1 : 0;
+  const headerItemCount =
+    timedBlocks.length > 0 || allDayBlocks.length > 0 ? 1 : 0;
   const planningQueueCount = planningQueueTasks.length;
   const rightPanelItemCount =
     rightPanel.metrics.length +
@@ -2893,11 +2989,12 @@ function buildProfileCalendarViewModel(
     contentStates: resolveCalendarContentStates({
       allDayBlockCount: allDayBlocks.length,
       daysWithContent,
-        dayColumnItemCount: daysWithContent,
+      dayColumnItemCount: daysWithContent,
       headerItemCount,
       planningQueueCount,
       rightPanelItemCount,
-      scopeRowItemCount: calendarFilters.length + rightPanel.unscheduledTasks.length,
+      scopeRowItemCount:
+        calendarFilters.length + rightPanel.unscheduledTasks.length,
       timedBlockCount: timedBlocks.length,
       weekStatItemCount: demoModel.weekStats.stats.length,
       viewSwitcherItemCount: calendarViewSwitches.length,
@@ -2950,13 +3047,13 @@ function buildProfileCalendarViewModel(
           detail: "visible",
           accent: "var(--accent-red)",
         },
-      {
-        label: "Reviews",
-        value: "0",
-        detail: "offen",
-        accent: "var(--accent-orange)",
-      },
-    ],
+        {
+          label: "Reviews",
+          value: "0",
+          detail: "offen",
+          accent: "var(--accent-orange)",
+        },
+      ],
     },
     days,
     hours: calendarHours,
@@ -3043,9 +3140,12 @@ export async function getTodayViewModel(): Promise<TodayViewModel> {
     return getDemoTodayViewModel();
   }
 
+  const profile = await getProfileDataWithManualTasks(profileId);
+
   return buildProfileTodayViewModel(
-    await getProfileDataWithManualTasks(profileId),
+    profile,
     profileId,
+    await getManualPlannerRelationLabelLookups(profileId, profile.tasks),
   );
 }
 
@@ -3056,9 +3156,12 @@ export async function getCalendarViewModel(): Promise<CalendarViewModel> {
     return getDemoCalendarViewModel();
   }
 
+  const profile = await getProfileDataWithManualTasks(profileId);
+
   return buildProfileCalendarViewModel(
-    await getProfileDataWithManualTasks(profileId),
+    profile,
     profileId,
+    await getManualPlannerRelationLabelLookups(profileId, profile.tasks),
   );
 }
 

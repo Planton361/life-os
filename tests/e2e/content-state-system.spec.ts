@@ -33,9 +33,9 @@ async function applySupabaseAuthState(page: Page) {
 
   if (!storageStatePath) return false;
 
-  const storageState = JSON.parse(
-    await readFile(storageStatePath, "utf8"),
-  ) as { cookies?: StoredCookie[] };
+  const storageState = JSON.parse(await readFile(storageStatePath, "utf8")) as {
+    cookies?: StoredCookie[];
+  };
 
   if (storageState.cookies?.length) {
     await page.context().addCookies(storageState.cookies);
@@ -79,7 +79,9 @@ async function captureAndTriageManualInboxTask(
   await expect(page.getByText(title).first()).toBeVisible();
   await page.getByRole("button", { name: /Standalone Task/ }).click();
   await expect(page.getByRole("heading", { name: "Task Draft" })).toBeVisible();
-  await page.getByRole("button", { exact: true, name: "Task erstellen" }).click();
+  await page
+    .getByRole("button", { exact: true, name: "Task erstellen" })
+    .click();
   await page.waitForLoadState("networkidle");
   await expect(page.getByText("Task erstellt").first()).toBeVisible();
 }
@@ -169,7 +171,10 @@ async function selectExistingProjectTargetByTitle(
   const select = addToExistingDraft.getByLabel("Existing target");
   await expect(select).toBeEnabled();
 
-  const option = select.locator("option").filter({ hasText: targetTitle }).first();
+  const option = select
+    .locator("option")
+    .filter({ hasText: targetTitle })
+    .first();
   const value = await option.getAttribute("value");
 
   expect(value).toBeTruthy();
@@ -181,7 +186,10 @@ async function selectExistingProjectTargetByTitle(
 async function openPortfolioTaskPlanningControls(page: Page, title: string) {
   await page.goto("/portfolio?view=tasks");
   await expect(page.getByText(title).first()).toBeVisible();
-  await page.getByRole("link", { name: new RegExp(title) }).first().click();
+  await page
+    .getByRole("link", { name: new RegExp(title) })
+    .first()
+    .click();
   await expect(page.locator("#selected-entity-heading")).toHaveText(title);
 }
 
@@ -325,18 +333,14 @@ function manualGoal(index: number) {
   };
 }
 
-function manualMeal(
-  type: "Breakfast" | "Lunch" | "Dinner",
-  index: number,
-) {
+function manualMeal(type: "Breakfast" | "Lunch" | "Dinner", index: number) {
   return {
     id: `meal-${type.toLowerCase()}`,
     kcal: `${480 + index * 40} kcal`,
     macros: [`P ${30 + index}g`, `C ${44 + index}g`, `F ${12 + index}g`],
     name: `Manual ${type}`,
     state: "planned",
-    time:
-      type === "Breakfast" ? "08:00" : type === "Lunch" ? "12:30" : "19:00",
+    time: type === "Breakfast" ? "08:00" : type === "Lunch" ? "12:30" : "19:00",
     type,
     updatedAt: "2026-06-24T08:00:00.000Z",
   };
@@ -378,9 +382,11 @@ function manualTodayInboxItem() {
 }
 
 async function expectOnlyProductContentStates(page: Page) {
-  const states = await page.locator("[data-content-state]").evaluateAll((nodes) =>
-    nodes.map((node) => node.getAttribute("data-content-state")),
-  );
+  const states = await page
+    .locator("[data-content-state]")
+    .evaluateAll((nodes) =>
+      nodes.map((node) => node.getAttribute("data-content-state")),
+    );
 
   expect(states.length).toBeGreaterThan(10);
   expect(states).not.toContain("ready");
@@ -682,9 +688,25 @@ async function expectNoMainStrings(
   const mainText = await page.getByRole("main").innerText();
 
   for (const blocked of blockedStrings) {
-    expect(mainText, `${scope} blocked string visible: ${blocked}`).not.toContain(
-      blocked,
-    );
+    expect(
+      mainText,
+      `${scope} blocked string visible: ${blocked}`,
+    ).not.toContain(blocked);
+  }
+}
+
+async function expectNoGenericPlannerRelationLabels(page: Page, scope: string) {
+  const mainText = await page.getByRole("main").innerText();
+
+  for (const blocked of [
+    "Project + Goal linked",
+    "Project linked",
+    "Goal linked",
+  ]) {
+    expect(
+      mainText,
+      `${scope} generic relation label visible: ${blocked}`,
+    ).not.toContain(blocked);
   }
 }
 
@@ -868,7 +890,10 @@ async function expectSettingsWidgetContracts(page: Page, profile: ProfileId) {
   );
 }
 
-async function expectEducationOverviewContracts(page: Page, profile: ProfileId) {
+async function expectEducationOverviewContracts(
+  page: Page,
+  profile: ProfileId,
+) {
   await expectWidgetContract(page.locator("#education-page"), profile, "8");
   await expectWidgetContract(
     page.locator('[data-education-section="summary"]'),
@@ -1236,7 +1261,10 @@ const codingSkillMapBlockedDemoStrings = [
   "Code Review",
 ] as const;
 
-async function expectNoHydrationErrors(page: Page, action: () => Promise<void>) {
+async function expectNoHydrationErrors(
+  page: Page,
+  action: () => Promise<void>,
+) {
   const errors: string[] = [];
   page.on("console", (message) => {
     if (message.type() === "error" || message.type() === "warning") {
@@ -1269,15 +1297,35 @@ test.describe("Coding content states", () => {
         await page.goto("/coding");
       });
 
-      await expect(page.getByRole("heading", { name: "Coding Overview" })).toBeVisible();
-      await expect(page.getByRole("heading", { name: "Active Work" })).toBeVisible();
-      await expect(page.getByRole("heading", { name: "Agent Queue" })).toBeVisible();
-      await expect(page.getByRole("heading", { name: "Repositories requiring attention" })).toBeVisible();
-      await expect(page.getByRole("heading", { name: "Recent Sessions" })).toBeVisible();
-      await expect(page.getByRole("heading", { name: "Skill Focus" })).toBeVisible();
-      await expect(page.getByRole("heading", { name: "Knowledge Updates" })).toBeVisible();
-      await expect(page.getByRole("heading", { name: "Coding Rhythm" })).toBeVisible();
-      await expectNoMainStrings(page, codingOverviewBlockedDemoStrings, "/coding");
+      await expect(
+        page.getByRole("heading", { name: "Coding Overview" }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "Active Work" }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "Agent Queue" }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "Repositories requiring attention" }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "Recent Sessions" }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "Skill Focus" }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "Knowledge Updates" }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "Coding Rhythm" }),
+      ).toBeVisible();
+      await expectNoMainStrings(
+        page,
+        codingOverviewBlockedDemoStrings,
+        "/coding",
+      );
     });
 
     test(`keeps repositories workbench shell for ${profile}`, async ({
@@ -1297,9 +1345,13 @@ test.describe("Coding content states", () => {
         "Repository Health",
         "Recent Repository Activity",
       ]) {
-        await expect(page.getByRole("heading", { name: heading })).toBeVisible();
+        await expect(
+          page.getByRole("heading", { name: heading }),
+        ).toBeVisible();
       }
-      await expect(page.getByRole("button", { name: "Sync GitHub" })).toBeDisabled();
+      await expect(
+        page.getByRole("button", { name: "Sync GitHub" }),
+      ).toBeDisabled();
       await expectNoMainStrings(
         page,
         codingRepositoryBlockedDemoStrings,
@@ -1324,9 +1376,15 @@ test.describe("Coding content states", () => {
         "Prompt Library Snapshot",
         "Context Bundles",
       ]) {
-        await expect(page.getByRole("heading", { name: heading })).toBeVisible();
+        await expect(
+          page.getByRole("heading", { name: heading }),
+        ).toBeVisible();
       }
-      await expectNoMainStrings(page, codingAgentBlockedDemoStrings, "/coding/agents");
+      await expectNoMainStrings(
+        page,
+        codingAgentBlockedDemoStrings,
+        "/coding/agents",
+      );
     });
 
     test(`keeps skill map workbench shell for ${profile}`, async ({ page }) => {
@@ -1343,7 +1401,9 @@ test.describe("Coding content states", () => {
         "Learning Recommendations",
         "Evidence Timeline",
       ]) {
-        await expect(page.getByRole("heading", { name: heading })).toBeVisible();
+        await expect(
+          page.getByRole("heading", { name: heading }),
+        ).toBeVisible();
       }
       await expectNoMainStrings(
         page,
@@ -1395,7 +1455,9 @@ test.describe("Nutrition content states", () => {
       "data-content-state",
       "filled",
     );
-    await expect(page.getByText("Skyr with oats and berries").first()).toBeVisible();
+    await expect(
+      page.getByText("Skyr with oats and berries").first(),
+    ).toBeVisible();
 
     await page.goto("/nutrition/grocery");
     await expect(page.locator("#grocery-page")).toHaveAttribute(
@@ -1443,7 +1505,9 @@ test.describe("Nutrition content states", () => {
     await expect(page.getByText("Zielprofil nicht gesetzt")).toBeVisible();
     await expect(page.getByText("0 / 21").first()).toBeVisible();
     await expect(page.getByText("Keine passenden Rezepte")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Save week" })).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Save week" }),
+    ).toBeDisabled();
 
     await page.goto("/nutrition/recipes");
     await expect(page.locator("#recipes-page")).toHaveAttribute(
@@ -1452,7 +1516,9 @@ test.describe("Nutrition content states", () => {
     );
     await expect(page.getByText("Noch keine Rezepte")).toBeVisible();
     await expect(page.getByText("Kein Rezept ausgewählt")).toBeVisible();
-    await expect(page.getByRole("button", { name: "New recipe" })).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "New recipe" }),
+    ).toBeDisabled();
 
     await page.goto("/nutrition/grocery");
     await expect(page.locator("#grocery-page")).toHaveAttribute(
@@ -1525,10 +1591,18 @@ test.describe("Dashboard content states", () => {
       );
     expect(contentStates).toContain("filled");
     expect(contentStates).toContain("partial");
-    await expect(page.getByText(/Good (morning|afternoon|evening), Anton/)).toBeVisible();
-    await expect(page.locator("header").getByText("Week").first()).toBeVisible();
-    await expect(page.locator("header").getByText("Month").first()).toBeVisible();
-    await expect(page.locator("header").getByText("Year").first()).toBeVisible();
+    await expect(
+      page.getByText(/Good (morning|afternoon|evening), Anton/),
+    ).toBeVisible();
+    await expect(
+      page.locator("header").getByText("Week").first(),
+    ).toBeVisible();
+    await expect(
+      page.locator("header").getByText("Month").first(),
+    ).toBeVisible();
+    await expect(
+      page.locator("header").getByText("Year").first(),
+    ).toBeVisible();
     await expect(page.getByText("Life OS App").first()).toBeVisible();
   });
 
@@ -1555,19 +1629,39 @@ test.describe("Dashboard content states", () => {
       expect(bodyText).not.toContain(blocked);
     }
 
-    await expect(page.getByRole("link", { name: /Sleep: No data/ })).toBeVisible();
-    await expect(page.getByRole("link", { name: /Tracke deinen Schlaf/ })).toBeVisible();
-    await expect(page.getByRole("link", { name: /Review Status: No review/ })).toBeVisible();
-    await expect(page.getByRole("link", { name: /Start Capturing/ })).toBeVisible();
-    await expect(page.getByRole("link", { name: /Nutrition: No plan/ })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: /Sleep: No data/ }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: /Tracke deinen Schlaf/ }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: /Review Status: No review/ }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: /Start Capturing/ }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: /Nutrition: No plan/ }),
+    ).toBeVisible();
     await expect(page.getByRole("link", { name: /Create Plan/ })).toBeVisible();
-    await expect(page.getByRole("link", { name: /Kein aktueller Fokus/ })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: /Kein aktueller Fokus/ }),
+    ).toBeVisible();
     await expect(page.getByRole("link", { name: /Create task/ })).toBeVisible();
     await expect(page.getByText("Keine Mahlzeit")).toHaveCount(3);
-    await expect(page.getByRole("region", { name: "Meals Today" })).toHaveAttribute("data-content-state", "empty");
-    await expect(page.getByRole("region", { name: "Today Agenda" })).toHaveAttribute("data-content-state", "empty");
-    await expect(page.getByRole("region", { name: "Habit Trackers" })).toHaveAttribute("data-item-count", "0");
-    await expect(page.getByRole("region", { name: "Active Portfolio" })).toHaveAttribute("data-item-count", "0");
+    await expect(
+      page.getByRole("region", { name: "Meals Today" }),
+    ).toHaveAttribute("data-content-state", "empty");
+    await expect(
+      page.getByRole("region", { name: "Today Agenda" }),
+    ).toHaveAttribute("data-content-state", "empty");
+    await expect(
+      page.getByRole("region", { name: "Habit Trackers" }),
+    ).toHaveAttribute("data-item-count", "0");
+    await expect(
+      page.getByRole("region", { name: "Active Portfolio" }),
+    ).toHaveAttribute("data-item-count", "0");
   });
 
   test("keeps manual reset aligned with empty dashboard state", async ({
@@ -1581,10 +1675,18 @@ test.describe("Dashboard content states", () => {
     await expectDashboardWidgetContracts(page, "manual");
     await expectOnlyProductContentStates(page);
     await expect(page.getByText("Keine Mahlzeit")).toHaveCount(3);
-    await expect(page.getByRole("region", { name: "Meals Today" })).toHaveAttribute("data-content-state", "empty");
-    await expect(page.getByRole("region", { name: "Today Agenda" })).toHaveAttribute("data-content-state", "empty");
-    await expect(page.getByRole("region", { name: "Habit Trackers" })).toHaveAttribute("data-content-state", "empty");
-    await expect(page.getByRole("region", { name: "Active Portfolio" })).toHaveAttribute("data-content-state", "empty");
+    await expect(
+      page.getByRole("region", { name: "Meals Today" }),
+    ).toHaveAttribute("data-content-state", "empty");
+    await expect(
+      page.getByRole("region", { name: "Today Agenda" }),
+    ).toHaveAttribute("data-content-state", "empty");
+    await expect(
+      page.getByRole("region", { name: "Habit Trackers" }),
+    ).toHaveAttribute("data-content-state", "empty");
+    await expect(
+      page.getByRole("region", { name: "Active Portfolio" }),
+    ).toHaveAttribute("data-content-state", "empty");
   });
 
   test("captures a manual dashboard quick thought into the DB inbox", async ({
@@ -1615,7 +1717,9 @@ test.describe("Dashboard content states", () => {
     await page.getByRole("textbox", { name: "Quick Thought" }).fill(thought);
     await page.getByRole("button", { name: "In Inbox speichern" }).click();
     await expect(page.getByText("In der Inbox gespeichert.")).toBeVisible();
-    await expect(page.getByRole("link", { name: "Inbox öffnen" })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Inbox öffnen" }),
+    ).toBeVisible();
 
     await page.goto("/inbox");
     await expect(page.getByText(thought).first()).toBeVisible();
@@ -1648,7 +1752,9 @@ test.describe("Dashboard content states", () => {
     await expect(todayAgenda.getByText(title).first()).toBeVisible();
   });
 
-  test("reports habit and active portfolio capacity states", async ({ page }) => {
+  test("reports habit and active portfolio capacity states", async ({
+    page,
+  }) => {
     await setProfile(page, "manual");
 
     await writeManualProfile({});
@@ -1656,8 +1762,12 @@ test.describe("Dashboard content states", () => {
       await page.goto("/dashboard");
     });
     await expectOnlyProductContentStates(page);
-    await expect(page.getByRole("region", { name: "Habit Trackers" })).toHaveAttribute("data-item-count", "0");
-    await expect(page.getByRole("region", { name: "Active Portfolio" })).toHaveAttribute("data-item-count", "0");
+    await expect(
+      page.getByRole("region", { name: "Habit Trackers" }),
+    ).toHaveAttribute("data-item-count", "0");
+    await expect(
+      page.getByRole("region", { name: "Active Portfolio" }),
+    ).toHaveAttribute("data-item-count", "0");
 
     await writeManualProfile({
       habits: [manualHabit(1)],
@@ -1667,9 +1777,15 @@ test.describe("Dashboard content states", () => {
       await page.reload();
     });
     await expectOnlyProductContentStates(page);
-    await expect(page.getByRole("region", { name: "Habit Trackers" })).toHaveAttribute("data-content-state", "partial");
-    await expect(page.getByRole("region", { name: "Active Portfolio" })).toHaveAttribute("data-content-state", "partial");
-    await expect(page.getByRole("region", { name: "Meals Today" })).toHaveAttribute("data-content-state", "empty");
+    await expect(
+      page.getByRole("region", { name: "Habit Trackers" }),
+    ).toHaveAttribute("data-content-state", "partial");
+    await expect(
+      page.getByRole("region", { name: "Active Portfolio" }),
+    ).toHaveAttribute("data-content-state", "partial");
+    await expect(
+      page.getByRole("region", { name: "Meals Today" }),
+    ).toHaveAttribute("data-content-state", "empty");
 
     await writeManualProfile({
       habits: Array.from({ length: 8 }, (_, index) => manualHabit(index + 1)),
@@ -1686,9 +1802,15 @@ test.describe("Dashboard content states", () => {
       await page.reload();
     });
     await expectOnlyProductContentStates(page);
-    await expect(page.getByRole("region", { name: "Habit Trackers" })).toHaveAttribute("data-content-state", "filled");
-    await expect(page.getByRole("region", { name: "Active Portfolio" })).toHaveAttribute("data-content-state", "filled");
-    await expect(page.getByRole("region", { name: "Meals Today" })).toHaveAttribute("data-content-state", "filled");
+    await expect(
+      page.getByRole("region", { name: "Habit Trackers" }),
+    ).toHaveAttribute("data-content-state", "filled");
+    await expect(
+      page.getByRole("region", { name: "Active Portfolio" }),
+    ).toHaveAttribute("data-content-state", "filled");
+    await expect(
+      page.getByRole("region", { name: "Meals Today" }),
+    ).toHaveAttribute("data-content-state", "filled");
   });
 });
 
@@ -1706,10 +1828,13 @@ test.describe("Inbox content states", () => {
       "data-content-state",
       "filled",
     );
+    await expect(page.locator('[data-inbox-section="queue"]')).toHaveAttribute(
+      "data-content-state",
+      "filled",
+    );
     await expect(
-      page.locator('[data-inbox-section="queue"]'),
-    ).toHaveAttribute("data-content-state", "filled");
-    await expect(page.getByText("Data access setup question").first()).toBeVisible();
+      page.getByText("Data access setup question").first(),
+    ).toBeVisible();
     await expect(page.getByText("Life OS MVP").first()).toBeVisible();
   });
 
@@ -1725,12 +1850,17 @@ test.describe("Inbox content states", () => {
       "data-content-state",
       "empty",
     );
+    await expect(page.locator('[data-inbox-section="queue"]')).toHaveAttribute(
+      "data-content-state",
+      "empty",
+    );
     await expect(
-      page.locator('[data-inbox-section="queue"]'),
-    ).toHaveAttribute("data-content-state", "empty");
-    await expect(page.getByText("Inbox ist leer", { exact: true })).toBeVisible();
+      page.getByText("Inbox ist leer", { exact: true }),
+    ).toBeVisible();
     await expect(
-      page.getByText("Capture Gedanken, Aufgaben oder Fragen, wenn sie entstehen."),
+      page.getByText(
+        "Capture Gedanken, Aufgaben oder Fragen, wenn sie entstehen.",
+      ),
     ).toBeVisible();
     await expect(
       page.getByRole("textbox", { exact: true, name: "Quick Capture" }),
@@ -1778,7 +1908,9 @@ test.describe("Inbox content states", () => {
       "data-content-state",
       "empty",
     );
-    await expect(page.getByText("Inbox ist leer", { exact: true })).toBeVisible();
+    await expect(
+      page.getByText("Inbox ist leer", { exact: true }),
+    ).toBeVisible();
     const quickCapture = page.getByRole("textbox", {
       exact: true,
       name: "Quick Capture",
@@ -1841,7 +1973,9 @@ test.describe("Inbox content states", () => {
     });
 
     await expect(draftSlot).toBeVisible();
-    await expect(draftSlot.getByText("Noch kein Draft ausgewählt")).toBeVisible();
+    await expect(
+      draftSlot.getByText("Noch kein Draft ausgewählt"),
+    ).toBeVisible();
     await expect(outcomeRoutes).toBeVisible();
     await expect(planningSignals).toBeVisible();
 
@@ -1870,7 +2004,9 @@ test.describe("Inbox content states", () => {
       .locator("xpath=ancestor::section[1]");
     await expect(closeDraft).toBeVisible();
     await expect(
-      closeDraft.getByText("Kein Zielobjekt nötig. Dieses Capture wird aus der aktiven Inbox entfernt und archiviert."),
+      closeDraft.getByText(
+        "Kein Zielobjekt nötig. Dieses Capture wird aus der aktiven Inbox entfernt und archiviert.",
+      ),
     ).toBeVisible();
     await expect(
       closeDraft.getByRole("button", { name: "Als erledigt archivieren" }),
@@ -1930,16 +2066,22 @@ test.describe("Inbox content states", () => {
     await expect(
       activeItem.getByText("Noch kein Draft ausgewählt"),
     ).toHaveCount(0);
-    await expect(addToExistingDraft.getByLabel("Existing target")).toBeDisabled();
+    await expect(
+      addToExistingDraft.getByLabel("Existing target"),
+    ).toBeDisabled();
     await expect(
       addToExistingDraft
         .locator("p")
         .filter({ hasText: "Noch keine bestehenden Projects vorhanden." }),
     ).toBeVisible();
     await expect(
-      addToExistingDraft.getByRole("button", { name: "Task-Beitrag erstellen" }),
+      addToExistingDraft.getByRole("button", {
+        name: "Task-Beitrag erstellen",
+      }),
     ).toBeDisabled();
-    await addToExistingDraft.getByRole("button", { name: "Resource Link" }).click();
+    await addToExistingDraft
+      .getByRole("button", { name: "Resource Link" })
+      .click();
     await expect(
       addToExistingDraft.getByText("Beitrag: Vorbereitet"),
     ).toBeVisible();
@@ -1956,7 +2098,9 @@ test.describe("Inbox content states", () => {
     await addToExistingDraft
       .getByRole("button", { name: "Resource 0 DB-Ziele" })
       .click();
-    await addToExistingDraft.getByRole("button", { name: "Resource Link" }).click();
+    await addToExistingDraft
+      .getByRole("button", { name: "Resource Link" })
+      .click();
     await expect(
       addToExistingDraft.getByText("Resource Link vorbereitet"),
     ).toBeVisible();
@@ -2055,19 +2199,23 @@ test.describe("Inbox content states", () => {
       );
     }
 
-    await expect(addToExistingDraft.getByLabel("Existing target")).toBeDisabled();
+    await expect(
+      addToExistingDraft.getByLabel("Existing target"),
+    ).toBeDisabled();
     await expect(
       addToExistingDraft
         .locator("p")
         .filter({ hasText: "Noch keine bestehenden Projects vorhanden." }),
     ).toBeVisible();
     await expect(
-      addToExistingDraft.getByRole("button", { name: "Task-Beitrag erstellen" }),
+      addToExistingDraft.getByRole("button", {
+        name: "Task-Beitrag erstellen",
+      }),
     ).toBeDisabled();
     await expect(addToExistingDraft.getByText("Life OS MVP")).toHaveCount(0);
-    await expect(addToExistingDraft.getByText("Stable MVP daily flow")).toHaveCount(
-      0,
-    );
+    await expect(
+      addToExistingDraft.getByText("Stable MVP daily flow"),
+    ).toHaveCount(0);
   });
 
   test("Manual Inbox Add to Existing task persists to a real Project or Goal target", async ({
@@ -2117,7 +2265,9 @@ test.describe("Inbox content states", () => {
         `Task contribution for ${selectedTarget.relationLabel}: ${selectedTarget.targetTitle}`,
       );
     await expect(
-      addToExistingDraft.getByRole("button", { name: "Task-Beitrag erstellen" }),
+      addToExistingDraft.getByRole("button", {
+        name: "Task-Beitrag erstellen",
+      }),
     ).toBeEnabled();
     await addToExistingDraft
       .getByRole("button", { name: "Task-Beitrag erstellen" })
@@ -2132,23 +2282,36 @@ test.describe("Inbox content states", () => {
 
     await page.goto("/portfolio?view=tasks");
     await expect(page.getByText(taskTitle).first()).toBeVisible();
-    await page.getByRole("link", { name: new RegExp(taskTitle) }).first().click();
-    await expect(page.locator("#selected-entity-heading")).toHaveText(taskTitle);
-    const contextPanel = page.locator('[data-portfolio-section="context-panel"]');
+    await page
+      .getByRole("link", { name: new RegExp(taskTitle) })
+      .first()
+      .click();
+    await expect(page.locator("#selected-entity-heading")).toHaveText(
+      taskTitle,
+    );
+    const contextPanel = page.locator(
+      '[data-portfolio-section="context-panel"]',
+    );
     await expect(
       contextPanel.getByText(selectedTarget.relationLabel).first(),
     ).toBeVisible();
     await expect(
       contextPanel.getByText(selectedTarget.targetTitle).first(),
     ).toBeVisible();
-    await expect(contextPanel.getByText(selectedTarget.targetId)).toHaveCount(0);
+    await expect(contextPanel.getByText(selectedTarget.targetId)).toHaveCount(
+      0,
+    );
 
     await page.reload();
-    await expect(page.locator("#selected-entity-heading")).toHaveText(taskTitle);
+    await expect(page.locator("#selected-entity-heading")).toHaveText(
+      taskTitle,
+    );
     await expect(
       contextPanel.getByText(selectedTarget.targetTitle).first(),
     ).toBeVisible();
-    await expect(contextPanel.getByText(selectedTarget.targetId)).toHaveCount(0);
+    await expect(contextPanel.getByText(selectedTarget.targetId)).toHaveCount(
+      0,
+    );
 
     await page.goto("/inbox");
     await expect(page.getByText(captureTitle).first()).toBeVisible();
@@ -2159,7 +2322,9 @@ test.describe("Inbox content states", () => {
     await expect(
       page.getByRole("button", { name: "Task-Beitrag erstellen" }),
     ).toHaveCount(0);
-    await expect(await readProfileDataTaskCount(page)).toBe(taskCountAfterTriage);
+    await expect(await readProfileDataTaskCount(page)).toBe(
+      taskCountAfterTriage,
+    );
   });
 
   test("prepared Create New route stays a non-persistent draft shell", async ({
@@ -2177,9 +2342,13 @@ test.describe("Inbox content states", () => {
       .getByRole("heading", { name: "Create New Draft" })
       .locator("xpath=ancestor::section[1]");
     await expect(createNewDraft).toBeVisible();
-    await expect(createNewDraft.getByText("Noch nicht verbunden").first()).toBeVisible();
     await expect(
-      createNewDraft.getByText("Diese Auswahl erzeugt keinen Submit und schreibt keine Daten."),
+      createNewDraft.getByText("Noch nicht verbunden").first(),
+    ).toBeVisible();
+    await expect(
+      createNewDraft.getByText(
+        "Diese Auswahl erzeugt keinen Submit und schreibt keine Daten.",
+      ),
     ).toBeVisible();
   });
 
@@ -2203,7 +2372,9 @@ test.describe("Inbox content states", () => {
         page.getByText("Manual DB benötigt Supabase Anmeldung").first(),
       ).toBeVisible();
       await expect(
-        page.getByText("Melde dich an, um lokale DB-backed Tasks zu laden").first(),
+        page
+          .getByText("Melde dich an, um lokale DB-backed Tasks zu laden")
+          .first(),
       ).toBeVisible();
       await expect(
         page.getByRole("link", { name: "Supabase anmelden" }).first(),
@@ -2346,7 +2517,9 @@ test.describe("Inbox content states", () => {
     await captureManualInboxItem(page, title, note);
 
     const activeItem = page.locator('[data-inbox-section="active-item"]');
-    await activeItem.locator('[data-outcome-route="knowledge_resource"]').click();
+    await activeItem
+      .locator('[data-outcome-route="knowledge_resource"]')
+      .click();
     const resourceDraft = activeItem
       .getByRole("heading", { name: "Resource Draft" })
       .locator("xpath=ancestor::section[1]");
@@ -2358,7 +2531,10 @@ test.describe("Inbox content states", () => {
     await expect(resourceDraft.getByLabel("Inhalt / Notiz")).toBeVisible();
     await expect(resourceDraft.getByLabel("URL optional")).toBeVisible();
     await expect(
-      resourceDraft.getByRole("button", { exact: true, name: "Task erstellen" }),
+      resourceDraft.getByRole("button", {
+        exact: true,
+        name: "Task erstellen",
+      }),
     ).toHaveCount(0);
 
     await page.reload();
@@ -2368,7 +2544,9 @@ test.describe("Inbox content states", () => {
     await page.goto("/inbox");
     await expect(page.getByText(title).first()).toBeVisible();
 
-    const activeItemAfterReload = page.locator('[data-inbox-section="active-item"]');
+    const activeItemAfterReload = page.locator(
+      '[data-inbox-section="active-item"]',
+    );
     await activeItemAfterReload
       .locator('[data-outcome-route="knowledge_resource"]')
       .click();
@@ -2377,7 +2555,9 @@ test.describe("Inbox content states", () => {
       .locator("xpath=ancestor::section[1]");
 
     await resourceDraftAfterReload.getByLabel("Titel").fill(draftTitle);
-    await resourceDraftAfterReload.getByLabel("Resource Typ").selectOption("link");
+    await resourceDraftAfterReload
+      .getByLabel("Resource Typ")
+      .selectOption("link");
     await resourceDraftAfterReload
       .getByLabel("URL optional")
       .fill("https://example.test/life-os-resource");
@@ -2390,14 +2570,20 @@ test.describe("Inbox content states", () => {
       activeItemAfterReload.getByRole("heading", { name: "Resource erstellt" }),
     ).toBeVisible();
     await expect(
-      activeItemAfterReload.getByText("Diese Inbox wurde als Resource gespeichert."),
+      activeItemAfterReload.getByText(
+        "Diese Inbox wurde als Resource gespeichert.",
+      ),
     ).toBeVisible();
     await expect(
       activeItemAfterReload.getByRole("link", { name: "Resources öffnen" }),
     ).toBeVisible();
-    await expect(activeItemAfterReload.getByText("Task erstellt")).toHaveCount(0);
+    await expect(activeItemAfterReload.getByText("Task erstellt")).toHaveCount(
+      0,
+    );
 
-    await activeItemAfterReload.getByRole("link", { name: "Resources öffnen" }).click();
+    await activeItemAfterReload
+      .getByRole("link", { name: "Resources öffnen" })
+      .click();
     await expect(page.locator("#resources-page")).toHaveAttribute(
       "data-content-state",
       /^(partial|filled)$/,
@@ -2458,7 +2644,9 @@ test.describe("Inbox content states", () => {
     await expect(activeItem.getByLabel("Energie")).toBeVisible();
     await expect(activeItem.getByText("Review nötig")).toBeVisible();
     await activeItem.getByLabel("Titel").fill(draftTitle);
-    await activeItem.getByLabel("Beschreibung / Kontext").fill(draftDescription);
+    await activeItem
+      .getByLabel("Beschreibung / Kontext")
+      .fill(draftDescription);
     await activeItem.getByLabel("Nächste Aktion").fill(draftNextAction);
     await activeItem.getByLabel("Priorität").selectOption("P1");
     await activeItem.getByLabel("Effort / Dauer").selectOption("60");
@@ -2474,11 +2662,15 @@ test.describe("Inbox content states", () => {
     await expect(activeItem.getByLabel("Effort / Dauer")).toHaveValue("60");
     await expect(activeItem.getByLabel("Energie")).toHaveValue("high");
     await expect(page.getByText("4 / 4 ready").first()).toBeVisible();
-    await page.getByRole("button", { exact: true, name: "Task erstellen" }).click();
+    await page
+      .getByRole("button", { exact: true, name: "Task erstellen" })
+      .click();
     await page.waitForLoadState("networkidle");
 
     await expect(activeItem.getByText("Task erstellt")).toHaveCount(1);
-    await expect(page.getByRole("link", { name: "Portfolio öffnen" })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Portfolio öffnen" }),
+    ).toBeVisible();
     await page.getByRole("link", { name: "Portfolio öffnen" }).first().click();
     await expect(page).toHaveURL(/\/portfolio\?view=tasks/);
     await expect(page.getByText(draftTitle).first()).toBeVisible();
@@ -2492,7 +2684,9 @@ test.describe("Inbox content states", () => {
     await expect(
       page.getByRole("button", { exact: true, name: "Task erstellen" }),
     ).toHaveCount(0);
-    await expect(page.getByRole("link", { name: "Portfolio öffnen" })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Portfolio öffnen" }),
+    ).toBeVisible();
     await expectNoInboxDemoStrings(page);
   });
 
@@ -2525,7 +2719,9 @@ test.describe("Inbox content states", () => {
     await page.getByRole("button", { name: "Capture" }).click();
     await page.waitForLoadState("networkidle");
     await page.getByRole("button", { name: /Standalone Task/ }).click();
-    await page.getByRole("button", { exact: true, name: "Task erstellen" }).click();
+    await page
+      .getByRole("button", { exact: true, name: "Task erstellen" })
+      .click();
     await page.waitForLoadState("networkidle");
 
     await expect(page.getByText("Task erstellt").first()).toBeVisible();
@@ -2566,7 +2762,9 @@ test.describe("Inbox content states", () => {
     await expect(
       page.getByRole("button", { exact: true, name: "Task erstellen" }),
     ).toHaveCount(0);
-    await expect(await readProfileDataTaskCount(page)).toBe(taskCountAfterTriage);
+    await expect(await readProfileDataTaskCount(page)).toBe(
+      taskCountAfterTriage,
+    );
   });
 });
 
@@ -2643,6 +2841,7 @@ test.describe("Today content states", () => {
 
     await expectTodayWidgetContracts(page, "manual");
     await expectNoTodayDemoStrings(page);
+    await expectNoGenericPlannerRelationLabels(page, "today empty manual");
     await expect(page.locator("#today-page")).toHaveAttribute(
       "data-content-state",
       "empty",
@@ -2663,7 +2862,9 @@ test.describe("Today content states", () => {
     ).toHaveAttribute("data-content-state", "empty");
   });
 
-  test("projects manual today inbox and project data without demo fallback", async ({ page }) => {
+  test("projects manual today inbox and project data without demo fallback", async ({
+    page,
+  }) => {
     await setProfile(page, "manual");
     await writeManualProfile({
       inboxItems: [manualTodayInboxItem()],
@@ -2675,6 +2876,10 @@ test.describe("Today content states", () => {
 
     await expectTodayWidgetContracts(page, "manual");
     await expectNoTodayDemoStrings(page);
+    await expectNoGenericPlannerRelationLabels(
+      page,
+      "today manual project data",
+    );
     await expect(page.locator("#today-page")).toHaveAttribute(
       "data-content-state",
       "partial",
@@ -2688,7 +2893,9 @@ test.describe("Today content states", () => {
     await expect(
       page.locator('[data-today-section="today-planner"]'),
     ).toHaveAttribute("data-content-state", "empty");
-    await expect(page.getByText("Manual Today Inbox Capture").first()).toBeVisible();
+    await expect(
+      page.getByText("Manual Today Inbox Capture").first(),
+    ).toBeVisible();
     await expect(page.getByText("Manual Project 1").first()).toBeVisible();
     await expect(
       page.locator('[data-today-section="carry-forward"]'),
@@ -2727,7 +2934,80 @@ test.describe("Today content states", () => {
 
     await expect(todayPlanner).toHaveAttribute("data-content-state", "partial");
     await expect(todayPlanner.getByText(title).first()).toBeVisible();
+    await expectNoGenericPlannerRelationLabels(page, "today manual candidate");
     await expect(activityTimeline.getByText(title)).toHaveCount(0);
+  });
+
+  test("Manual Planner relation labels resolve a created Project target through Today and Calendar", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session.",
+    );
+
+    const projectTitle = `Manual Planner Relation Project ${Date.now()}`;
+    const captureTitle = `Manual Planner Relation Source ${Date.now()}`;
+    const taskTitle = `Manual Planner Relation Task ${Date.now()}`;
+
+    await openManualPortfolioWithDb(page);
+    await createPortfolioProjectTarget(
+      page,
+      projectTitle,
+      "Resolve this Project title in Today and Calendar planner queues.",
+    );
+
+    await page.goto("/inbox");
+    await captureManualInboxItem(
+      page,
+      captureTitle,
+      "Create a Project-linked task for planner relation label proof.",
+    );
+
+    const addToExistingDraft = await openAddToExistingDraft(page);
+    const targetId = await selectExistingProjectTargetByTitle(
+      addToExistingDraft,
+      projectTitle,
+    );
+
+    await addToExistingDraft.getByLabel("Titel").fill(taskTitle);
+    await addToExistingDraft
+      .getByLabel("Beschreibung / Kontext")
+      .fill(`Task contribution for created Project: ${projectTitle}`);
+    await addToExistingDraft
+      .getByRole("button", { name: "Task-Beitrag erstellen" })
+      .click();
+    await page.waitForLoadState("networkidle");
+    await expect(page.getByText("Task erstellt").first()).toBeVisible();
+
+    await page.goto("/today");
+    const todayPlanner = page.locator('[data-today-section="today-planner"]');
+    await expect(todayPlanner.getByText(taskTitle).first()).toBeVisible();
+    await expect(todayPlanner.getByText(projectTitle).first()).toBeVisible();
+    await expect(todayPlanner.getByText(targetId)).toHaveCount(0);
+    await expectNoGenericPlannerRelationLabels(page, "today relation labels");
+
+    await todayPlanner
+      .getByRole("form", { name: `${taskTitle} heute planen` })
+      .getByRole("button", { name: "Heute planen" })
+      .click();
+    await page.waitForLoadState("networkidle");
+
+    await page.goto("/calendar");
+    const calendarPlannerQueue = page
+      .locator('[data-calendar-section="planning-queue"]')
+      .first();
+    await expect(
+      calendarPlannerQueue.getByText(taskTitle).first(),
+    ).toBeVisible();
+    await expect(
+      calendarPlannerQueue.getByText(projectTitle).first(),
+    ).toBeVisible();
+    await expect(calendarPlannerQueue.getByText(targetId)).toHaveCount(0);
+    await expectNoGenericPlannerRelationLabels(
+      page,
+      "calendar relation labels",
+    );
   });
 
   test("Manual Today Planner plans DB task into Today, Dashboard and Calendar queue", async ({
@@ -2773,6 +3053,10 @@ test.describe("Today content states", () => {
       .first();
     const weekGrid = page.locator('[data-calendar-section="week-grid"]');
     await expect(calendarPlannerQueue.getByText(title).first()).toBeVisible();
+    await expectNoGenericPlannerRelationLabels(
+      page,
+      "calendar queue after today planning",
+    );
     await expect(weekGrid.getByText(title)).toHaveCount(0);
   });
 
@@ -2805,7 +3089,9 @@ test.describe("Today content states", () => {
     await expect(todayPlanner.getByText(title)).toHaveCount(0);
   });
 
-  test("Manual Today and Dashboard project planned DB task", async ({ page }) => {
+  test("Manual Today and Dashboard project planned DB task", async ({
+    page,
+  }) => {
     test.skip(
       !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
       "Requires a local authenticated Supabase Playwright session; no broad DB cleanup action is available.",
@@ -2838,7 +3124,10 @@ test.describe("Today content states", () => {
     await expect(todayAgenda.getByText(title).first()).toBeVisible();
     await page.reload();
     await expect(
-      page.getByRole("region", { name: "Today Agenda" }).getByText(title).first(),
+      page
+        .getByRole("region", { name: "Today Agenda" })
+        .getByText(title)
+        .first(),
     ).toBeVisible();
   });
 });
@@ -2853,12 +3142,16 @@ test.describe("Calendar content states", () => {
     });
 
     await expectCalendarWidgetContracts(page, "demo");
-    await expect(page.locator('[data-calendar-section="page"]')).toHaveAttribute(
-      "data-content-state",
-      "filled",
-    );
-    await expect(page.getByText("Deep Work: Masterarbeit").first()).toBeVisible();
-    await expect(page.getByText("Literature source deadline").first()).toBeVisible();
+    await expectNoGenericPlannerRelationLabels(page, "calendar demo");
+    await expect(
+      page.locator('[data-calendar-section="page"]'),
+    ).toHaveAttribute("data-content-state", "filled");
+    await expect(
+      page.getByText("Deep Work: Masterarbeit").first(),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Literature source deadline").first(),
+    ).toBeVisible();
   });
 
   test("renders empty calendar without demo blocks", async ({ page }) => {
@@ -2869,11 +3162,13 @@ test.describe("Calendar content states", () => {
 
     await expectCalendarWidgetContracts(page, "empty");
     await expectNoMainStrings(page, calendarBlockedDemoStrings, "calendar");
-    await expect(page.locator('[data-calendar-section="week-grid"]')).toHaveAttribute(
-      "data-content-state",
-      "empty",
-    );
-    await expect(page.getByText("Noch keine Termine oder Zeitblöcke")).toBeVisible();
+    await expectNoGenericPlannerRelationLabels(page, "calendar empty");
+    await expect(
+      page.locator('[data-calendar-section="week-grid"]'),
+    ).toHaveAttribute("data-content-state", "empty");
+    await expect(
+      page.getByText("Noch keine Termine oder Zeitblöcke"),
+    ).toBeVisible();
     await expect(
       page.getByText("Keine geplanten Tasks ohne Uhrzeit."),
     ).toBeVisible();
@@ -2901,15 +3196,13 @@ test.describe("Calendar content states", () => {
 
     await expectCalendarWidgetContracts(page, "manual");
     await expectNoMainStrings(page, calendarBlockedDemoStrings, "calendar");
+    await expectNoGenericPlannerRelationLabels(page, "calendar manual queue");
     const weekGrid = page.locator('[data-calendar-section="week-grid"]');
     const plannerQueue = page
       .locator('[data-calendar-section="planning-queue"]')
       .first();
 
-    await expect(weekGrid).toHaveAttribute(
-      "data-content-state",
-      "empty",
-    );
+    await expect(weekGrid).toHaveAttribute("data-content-state", "empty");
     await expect(plannerQueue.getByText(title).first()).toBeVisible();
     await expect(weekGrid.getByText(title)).toHaveCount(0);
 
@@ -2975,7 +3268,9 @@ test.describe("Portfolio content states", () => {
         "empty",
       );
       await expect(page.getByText(emptyTitle)).toBeVisible();
-      await expect(page.getByText("Keine Entity ausgewählt").first()).toBeVisible();
+      await expect(
+        page.getByText("Keine Entity ausgewählt").first(),
+      ).toBeVisible();
     }
   });
 
@@ -3001,7 +3296,9 @@ test.describe("Portfolio content states", () => {
     await expect(page.getByText("Manual Goal 1").first()).toBeVisible();
 
     await page.goto("/portfolio?view=skills");
-    await expect(page.getByText("Noch keine Skills im Portfolio")).toBeVisible();
+    await expect(
+      page.getByText("Noch keine Skills im Portfolio"),
+    ).toBeVisible();
     await expectNoMainStrings(page, portfolioBlockedDemoStrings, "portfolio");
   });
 
@@ -3013,16 +3310,24 @@ test.describe("Portfolio content states", () => {
       await page.goto("/portfolio");
     });
 
-    await expect(page.getByRole("heading", { name: "Neues Target" })).toBeVisible();
-    await expect(page.locator('form[aria-label="Project erstellen"]')).toBeVisible();
-    await expect(page.locator('form[aria-label="Goal erstellen"]')).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Neues Target" }),
+    ).toBeVisible();
+    await expect(
+      page.locator('form[aria-label="Project erstellen"]'),
+    ).toBeVisible();
+    await expect(
+      page.locator('form[aria-label="Goal erstellen"]'),
+    ).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Project erstellen" }),
     ).toBeVisible();
-    await expect(page.getByRole("button", { name: "Goal erstellen" })).toBeVisible();
-    await expect(page.getByRole("button", { name: /löschen|archivieren/i })).toHaveCount(
-      0,
-    );
+    await expect(
+      page.getByRole("button", { name: "Goal erstellen" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /löschen|archivieren/i }),
+    ).toHaveCount(0);
   });
 
   test("Manual Portfolio creates real Project and Goal targets", async ({
@@ -3101,8 +3406,13 @@ test.describe("Portfolio content states", () => {
 
     await page.goto("/portfolio?view=tasks");
     await expect(page.getByText(taskTitle).first()).toBeVisible();
-    await page.getByRole("link", { name: new RegExp(taskTitle) }).first().click();
-    const contextPanel = page.locator('[data-portfolio-section="context-panel"]');
+    await page
+      .getByRole("link", { name: new RegExp(taskTitle) })
+      .first()
+      .click();
+    const contextPanel = page.locator(
+      '[data-portfolio-section="context-panel"]',
+    );
     await expect(contextPanel.getByText(projectTitle).first()).toBeVisible();
     await expect(contextPanel.getByText(targetId)).toHaveCount(0);
     await page.reload();
@@ -3178,7 +3488,9 @@ test.describe("Education content states", () => {
     await expect(page.getByText("Noch keine Forschungsfelder")).toBeVisible();
     await expect(page.getByText("Noch keine Literatur")).toBeVisible();
     await expect(page.getByText("Noch keine Research-Notizen")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Add research idea" })).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Add research idea" }),
+    ).toBeDisabled();
   });
 
   test("Scientific Work empty removes the fake thesis focus", async ({
@@ -3195,12 +3507,22 @@ test.describe("Education content states", () => {
       scientificWorkBlockedDemoStrings,
       "scientific work",
     );
-    await expect(page.getByText("Noch kein wissenschaftlicher Fokus")).toBeVisible();
-    await expect(page.getByText("Keine nächste Forschungsaktion")).toBeVisible();
+    await expect(
+      page.getByText("Noch kein wissenschaftlicher Fokus"),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Keine nächste Forschungsaktion"),
+    ).toBeVisible();
     await expect(page.getByText("Noch keine Forschungsfragen")).toBeVisible();
-    await expect(page.getByText("Noch keine wissenschaftlichen Arbeiten")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Update next action" })).toBeDisabled();
-    await expect(page.getByRole("button", { name: "Open focus" })).toBeDisabled();
+    await expect(
+      page.getByText("Noch keine wissenschaftlichen Arbeiten"),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Update next action" }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Open focus" }),
+    ).toBeDisabled();
   });
 
   test("Literature empty blocks mock source copy and demo sources", async ({
@@ -3216,8 +3538,12 @@ test.describe("Education content states", () => {
     await expect(page.getByText("Noch keine Literatur")).toBeVisible();
     await expect(page.getByText("Keine Quelle in Extraktion")).toBeVisible();
     await expect(page.getByText("Keine priorisierten Quellen")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Add literature" })).toBeDisabled();
-    await expect(page.getByRole("button", { name: "Review queue" })).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Add literature" }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Review queue" }),
+    ).toBeDisabled();
   });
 
   test("Learning Log empty disables Log Session without tracks", async ({
@@ -3229,7 +3555,11 @@ test.describe("Education content states", () => {
     });
 
     await expectLearningLogContracts(page, "empty");
-    await expectNoMainStrings(page, learningLogBlockedDemoStrings, "learning log");
+    await expectNoMainStrings(
+      page,
+      learningLogBlockedDemoStrings,
+      "learning log",
+    );
     await expect(page.getByText("Noch kein Lernfokus")).toBeVisible();
     await expect(page.getByText("Noch keine Lerntracks")).toBeVisible();
     await expect(page.getByText("Keine Practice-Items")).toBeVisible();
@@ -3239,7 +3569,9 @@ test.describe("Education content states", () => {
     await expect(
       page.getByRole("button", { exact: true, name: "Log learning session" }),
     ).toBeDisabled();
-    await expect(page.getByRole("button", { name: "Add practice item" })).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Add practice item" }),
+    ).toBeDisabled();
   });
 
   test("Education manual empty keeps all scoped routes free of demo leaks", async ({
@@ -3267,7 +3599,11 @@ test.describe("Education content states", () => {
 
     await page.goto("/education/literature");
     await expectLiteratureContracts(page, "manual");
-    await expectNoMainStrings(page, literatureBlockedDemoStrings, "literature manual");
+    await expectNoMainStrings(
+      page,
+      literatureBlockedDemoStrings,
+      "literature manual",
+    );
 
     await page.goto("/education/learning-log");
     await expectLearningLogContracts(page, "manual");
@@ -3291,23 +3627,27 @@ test.describe("Work content states", () => {
       "data-content-state",
       "filled",
     );
-    await expect(page.getByText("Schnittstellenverhalten nachvollzogen").first()).toBeVisible();
+    await expect(
+      page.getByText("Schnittstellenverhalten nachvollzogen").first(),
+    ).toBeVisible();
 
     await page.goto("/work/log");
     await expectWorkLogContracts(page, "demo");
-    await expect(page.locator('[data-work-log-section="page"]')).toHaveAttribute(
-      "data-content-state",
-      "filled",
-    );
-    await expect(page.getByText("Testfall rekonstruiert").first()).toBeVisible();
+    await expect(
+      page.locator('[data-work-log-section="page"]'),
+    ).toHaveAttribute("data-content-state", "filled");
+    await expect(
+      page.getByText("Testfall rekonstruiert").first(),
+    ).toBeVisible();
 
     await page.goto("/work/wiki");
     await expectWorkWikiContracts(page, "demo");
-    await expect(page.locator('[data-work-wiki-section="page"]')).toHaveAttribute(
-      "data-content-state",
-      "filled",
-    );
-    await expect(page.getByText("Testdaten prüfen: Vorgehen").first()).toBeVisible();
+    await expect(
+      page.locator('[data-work-wiki-section="page"]'),
+    ).toHaveAttribute("data-content-state", "filled");
+    await expect(
+      page.getByText("Testdaten prüfen: Vorgehen").first(),
+    ).toBeVisible();
   });
 
   test("Work empty keeps shells and blocks demo data", async ({ page }) => {
@@ -3321,12 +3661,22 @@ test.describe("Work content states", () => {
       "data-content-state",
       "empty",
     );
-    await expectNoMainStrings(page, workOverviewBlockedDemoStrings, "work overview");
+    await expectNoMainStrings(
+      page,
+      workOverviewBlockedDemoStrings,
+      "work overview",
+    );
     await expect(page.getByText("Noch kein Work-Journal")).toBeVisible();
-    await expect(page.getByText("Keine offenen Follow-ups").first()).toBeVisible();
+    await expect(
+      page.getByText("Keine offenen Follow-ups").first(),
+    ).toBeVisible();
     await expect(page.getByText("Noch keine Work-Logs").first()).toBeVisible();
-    await expect(page.getByText("Keine Architektur-Notizen").first()).toBeVisible();
-    await expect(page.getByRole("button", { name: "Log work entry" })).toBeDisabled();
+    await expect(
+      page.getByText("Keine Architektur-Notizen").first(),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Log work entry" }),
+    ).toBeDisabled();
     await expect(
       page.getByRole("button", { exact: true, name: "Add wiki note" }),
     ).toBeDisabled();
@@ -3336,33 +3686,47 @@ test.describe("Work content states", () => {
 
     await page.goto("/work/log");
     await expectWorkLogContracts(page, "empty");
-    await expect(page.locator('[data-work-log-section="page"]')).toHaveAttribute(
-      "data-content-state",
-      "empty",
-    );
+    await expect(
+      page.locator('[data-work-log-section="page"]'),
+    ).toHaveAttribute("data-content-state", "empty");
     await expectNoMainStrings(page, workLogBlockedDemoStrings, "work log");
     await expect(page.getByText("Noch kein Work-Eintrag")).toBeVisible();
-    await expect(page.getByText("Keine verknüpften Work-Aufgaben")).toBeVisible();
+    await expect(
+      page.getByText("Keine verknüpften Work-Aufgaben"),
+    ).toBeVisible();
     await expect(page.getByText("Keine Aktivitäten")).toBeVisible();
-    await expect(page.getByText("Keine verknüpften Wiki-Notizen")).toBeVisible();
-    await expect(page.getByRole("button", { exact: true, name: "Log work" }).first()).toBeDisabled();
-    await expect(page.getByRole("button", { name: "Add activity" }).first()).toBeDisabled();
-    await expect(page.getByRole("button", { name: "Add task" }).first()).toBeDisabled();
+    await expect(
+      page.getByText("Keine verknüpften Wiki-Notizen"),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { exact: true, name: "Log work" }).first(),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Add activity" }).first(),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Add task" }).first(),
+    ).toBeDisabled();
 
     await page.goto("/work/wiki");
     await expectWorkWikiContracts(page, "empty");
-    await expect(page.locator('[data-work-wiki-section="page"]')).toHaveAttribute(
-      "data-content-state",
-      "empty",
-    );
+    await expect(
+      page.locator('[data-work-wiki-section="page"]'),
+    ).toHaveAttribute("data-content-state", "empty");
     await expectNoMainStrings(page, workWikiBlockedDemoStrings, "work wiki");
     await expect(page.getByText("Keine gepinnten Referenzen")).toBeVisible();
     await expect(page.getByText("Keine Wiki-Einträge im Review")).toBeVisible();
     await expect(page.getByText("Noch keine Wiki-Einträge")).toBeVisible();
     await expect(page.getByText("Keine Architektur-Notizen")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Add wiki entry" })).toBeDisabled();
-    await expect(page.getByRole("button", { name: "Add architecture note" })).toBeDisabled();
-    await expect(page.getByRole("button", { name: "Review entries" })).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Add wiki entry" }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Add architecture note" }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Review entries" }),
+    ).toBeDisabled();
   });
 
   test("Work manual empty and partial use only local Work data", async ({
@@ -3378,23 +3742,33 @@ test.describe("Work content states", () => {
       "data-content-state",
       "empty",
     );
-    await expectNoMainStrings(page, workOverviewBlockedDemoStrings, "work manual");
+    await expectNoMainStrings(
+      page,
+      workOverviewBlockedDemoStrings,
+      "work manual",
+    );
 
     await page.goto("/work/log");
     await expectWorkLogContracts(page, "manual");
-    await expect(page.locator('[data-work-log-section="page"]')).toHaveAttribute(
-      "data-content-state",
-      "empty",
+    await expect(
+      page.locator('[data-work-log-section="page"]'),
+    ).toHaveAttribute("data-content-state", "empty");
+    await expectNoMainStrings(
+      page,
+      workLogBlockedDemoStrings,
+      "work log manual",
     );
-    await expectNoMainStrings(page, workLogBlockedDemoStrings, "work log manual");
 
     await page.goto("/work/wiki");
     await expectWorkWikiContracts(page, "manual");
-    await expect(page.locator('[data-work-wiki-section="page"]')).toHaveAttribute(
-      "data-content-state",
-      "empty",
+    await expect(
+      page.locator('[data-work-wiki-section="page"]'),
+    ).toHaveAttribute("data-content-state", "empty");
+    await expectNoMainStrings(
+      page,
+      workWikiBlockedDemoStrings,
+      "work wiki manual",
     );
-    await expectNoMainStrings(page, workWikiBlockedDemoStrings, "work wiki manual");
 
     await writeManualProfile({
       tasks: [manualTimedTask()],
@@ -3402,14 +3776,15 @@ test.describe("Work content states", () => {
 
     await page.goto("/work/log");
     await expectWorkLogContracts(page, "manual");
-    await expect(page.locator('[data-work-log-section="page"]')).toHaveAttribute(
-      "data-content-state",
-      "partial",
-    );
+    await expect(
+      page.locator('[data-work-log-section="page"]'),
+    ).toHaveAttribute("data-content-state", "partial");
     await expect(
       page.locator('[data-work-log-section="task-context"]'),
     ).toHaveAttribute("data-content-state", "partial");
-    await expect(page.getByText("Manual 20:00 Agenda Task").first()).toBeVisible();
+    await expect(
+      page.getByText("Manual 20:00 Agenda Task").first(),
+    ).toBeVisible();
     await expectNoMainStrings(
       page,
       workLogBlockedDemoStrings,
@@ -3445,7 +3820,9 @@ test.describe("Resources content states", () => {
     await expect(
       page.getByText("Literature Review Search Strategy").first(),
     ).toBeVisible();
-    await expect(page.locator('[data-resources-section="summary"]').getByText("128")).toBeVisible();
+    await expect(
+      page.locator('[data-resources-section="summary"]').getByText("128"),
+    ).toBeVisible();
   });
 
   test("renders empty resources without demo library or KPI leaks", async ({
@@ -3453,7 +3830,11 @@ test.describe("Resources content states", () => {
   }) => {
     await setProfile(page, "empty");
 
-    for (const route of ["/resources", "/resources?view=map", "/resources?view=review"]) {
+    for (const route of [
+      "/resources",
+      "/resources?view=map",
+      "/resources?view=review",
+    ]) {
       await expectNoHydrationErrors(page, async () => {
         await page.goto(route);
       });
@@ -3465,7 +3846,9 @@ test.describe("Resources content states", () => {
         "data-content-state",
         "empty",
       );
-      await expect(page.getByText("Keine Ressource ausgewählt").first()).toBeVisible();
+      await expect(
+        page.getByText("Keine Ressource ausgewählt").first(),
+      ).toBeVisible();
 
       if (route === "/resources") {
         await expectWidgetContract(
@@ -3499,7 +3882,9 @@ test.describe("Resources content states", () => {
 
     await page.goto("/resources");
     await expect(page.getByText("Noch keine Ressourcen")).toHaveCount(1);
-    await expect(page.getByText("Keine Review-Punkte offen").first()).toBeVisible();
+    await expect(
+      page.getByText("Keine Review-Punkte offen").first(),
+    ).toBeVisible();
     await expect(page.getByText("Noch keine Learnings").first()).toBeVisible();
 
     await page.goto("/resources?view=review");
@@ -3532,7 +3917,9 @@ test.describe("Resources content states", () => {
       "empty",
     );
     await expect(page.getByText("Noch keine Ressourcen")).toHaveCount(1);
-    await expect(page.getByText("Keine Ressource ausgewählt").first()).toBeVisible();
+    await expect(
+      page.getByText("Keine Ressource ausgewählt").first(),
+    ).toBeVisible();
   });
 });
 
@@ -3546,15 +3933,17 @@ test.describe("Utility and system content states", () => {
     });
     await expectShopWidgetContracts(page, "demo");
     await expect(page.getByText("30 min phone time").first()).toBeVisible();
-    await expect(page.locator('[data-shop-section="reward-balance"]')).toContainText(
-      /42\s*LC/,
-    );
+    await expect(
+      page.locator('[data-shop-section="reward-balance"]'),
+    ).toContainText(/42\s*LC/);
 
     await expectNoHydrationErrors(page, async () => {
       await page.goto("/challenges");
     });
     await expectChallengesWidgetContracts(page, "demo");
-    await expect(page.getByText("Weekly Review completed").first()).toBeVisible();
+    await expect(
+      page.getByText("Weekly Review completed").first(),
+    ).toBeVisible();
     await expect(page.getByText("10-minute walk").first()).toBeVisible();
   });
 
@@ -3571,8 +3960,12 @@ test.describe("Utility and system content states", () => {
     await expect(page.getByText("Keine Empfehlungen")).toBeVisible();
     await expect(page.getByText("Keine aktiven Quellen")).toBeVisible();
     await expect(page.getByText("Noch keine Reward-Historie")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Create reward" }).first()).toBeDisabled();
-    await expect(page.getByRole("button", { name: "Claim selected" })).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Create reward" }).first(),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Claim selected" }),
+    ).toBeDisabled();
   });
 
   test("renders empty challenges without challenge fixture leaks", async ({
@@ -3594,8 +3987,12 @@ test.describe("Utility and system content states", () => {
     await expect(page.getByText("Keine Weekly Challenges")).toBeVisible();
     await expect(page.getByText("Keine Monthly Challenges")).toBeVisible();
     await expect(page.getByText("Keine Challenge-Ideen")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Create challenge" })).toBeDisabled();
-    await expect(page.getByRole("button", { name: "Log completion" })).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Create challenge" }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Log completion" }),
+    ).toBeDisabled();
   });
 
   test("keeps manual shop and challenges empty until durable local sources exist", async ({
@@ -3609,10 +4006,9 @@ test.describe("Utility and system content states", () => {
     });
     await expectShopWidgetContracts(page, "manual");
     await expectNoMainStrings(page, shopBlockedDemoStrings, "shop manual");
-    await expect(page.locator('[data-shop-section="reward-shop"]')).toHaveAttribute(
-      "data-item-count",
-      "0",
-    );
+    await expect(
+      page.locator('[data-shop-section="reward-shop"]'),
+    ).toHaveAttribute("data-item-count", "0");
 
     await expectNoHydrationErrors(page, async () => {
       await page.goto("/challenges");
@@ -3637,10 +4033,18 @@ test.describe("Utility and system content states", () => {
     });
 
     await expectSettingsWidgetContracts(page, "manual");
-    await expect(page.getByRole("button", { name: "Save changes" })).toBeDisabled();
-    await expect(page.getByRole("button", { name: "Reset local changes" })).toBeDisabled();
-    await expect(page.getByRole("button", { name: "Export data" })).toBeDisabled();
-    await expect(page.getByRole("button", { name: "Backup settings" })).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Save changes" }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Reset local changes" }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Export data" }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Backup settings" }),
+    ).toBeDisabled();
     await expect(
       page.getByText(/local UI preview state only/i).first(),
     ).toBeVisible();
@@ -3649,8 +4053,12 @@ test.describe("Utility and system content states", () => {
       .locator('[data-settings-section="appearance"]')
       .getByRole("button", { name: "Compact" })
       .click();
-    await expect(page.getByRole("button", { name: "Save changes" })).toBeEnabled();
-    await expect(page.getByRole("button", { name: "Reset local changes" })).toBeEnabled();
+    await expect(
+      page.getByRole("button", { name: "Save changes" }),
+    ).toBeEnabled();
+    await expect(
+      page.getByRole("button", { name: "Reset local changes" }),
+    ).toBeEnabled();
   });
 });
 
@@ -3870,15 +4278,21 @@ test.describe("Life content states", () => {
       await page.goto("/life");
     });
     await expectLifeOverviewContracts(page, "demo");
-    await expect(page.getByText("Wochenreflexion: mehr Ruhe nach Coding-Block").first()).toBeVisible();
+    await expect(
+      page.getByText("Wochenreflexion: mehr Ruhe nach Coding-Block").first(),
+    ).toBeVisible();
 
     await page.goto("/life/journal");
     await expectJournalContracts(page, "demo");
-    await expect(page.getByText("Abendnotiz: zu viele offene Loops").first()).toBeVisible();
+    await expect(
+      page.getByText("Abendnotiz: zu viele offene Loops").first(),
+    ).toBeVisible();
 
     await page.goto("/life/notes");
     await expectNotesContracts(page, "demo");
-    await expect(page.getByText("Gedanke zu neuer Knowledge-Idee").first()).toBeVisible();
+    await expect(
+      page.getByText("Gedanke zu neuer Knowledge-Idee").first(),
+    ).toBeVisible();
 
     await page.goto("/life/entertainment");
     await expectEntertainmentContracts(page, "demo");
@@ -3903,7 +4317,9 @@ test.describe("Life content states", () => {
       "empty",
     );
     await expectNoMainStrings(page, lifeOverviewBlockedDemoStrings, "/life");
-    await expect(page.getByText("Noch kein persönlicher Check-in")).toBeVisible();
+    await expect(
+      page.getByText("Noch kein persönlicher Check-in"),
+    ).toBeVisible();
     await expect(page.getByText("Keine persönliche Aktivität")).toBeVisible();
     for (const sectionTitle of [
       "Journal",
@@ -3937,7 +4353,9 @@ test.describe("Life content states", () => {
     await page.goto("/life/notes");
     await expectNotesContracts(page, "empty");
     await expectNoMainStrings(page, notesBlockedDemoStrings, "/life/notes");
-    await expect(page.getByText("Noch keine losen Notizen").first()).toBeVisible();
+    await expect(
+      page.getByText("Noch keine losen Notizen").first(),
+    ).toBeVisible();
     await expect(page.getByText("Notiz erfassen")).toBeVisible();
     await expect(page.getByText("Noch keine Notiztypen")).toBeVisible();
     await expect(page.getByText("Noch keine Quellen")).toBeVisible();
@@ -3955,18 +4373,34 @@ test.describe("Life content states", () => {
     await expect(
       page.getByText("Keine abgeschlossenen oder pausierten Medien"),
     ).toBeVisible();
-    await expect(page.getByRole("button", { name: "Open media" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Open media" })).toHaveCount(
+      0,
+    );
 
     await page.goto("/life/inventory");
     await expectInventoryContracts(page, "empty");
-    await expectNoMainStrings(page, inventoryBlockedDemoStrings, "/life/inventory");
-    await expectNoMainStrings(page, ["€95", "€240", "€2,400"], "/life/inventory");
+    await expectNoMainStrings(
+      page,
+      inventoryBlockedDemoStrings,
+      "/life/inventory",
+    );
+    await expectNoMainStrings(
+      page,
+      ["€95", "€240", "€2,400"],
+      "/life/inventory",
+    );
     await expect(page.getByText("Noch keine Inventareinträge")).toBeVisible();
     await expect(page.getByText("Keine Wishlist-Entscheidungen")).toBeVisible();
     await expect(page.getByText("Keine Besitz-Einträge")).toBeVisible();
-    await expect(page.getByText("Budget Fit ist nur ein manuelles Planungssignal.")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Review budget" })).toBeDisabled();
-    await expect(page.getByRole("button", { name: "Open item" })).toHaveCount(0);
+    await expect(
+      page.getByText("Budget Fit ist nur ein manuelles Planungssignal."),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Review budget" }),
+    ).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Open item" })).toHaveCount(
+      0,
+    );
   });
 
   test("keeps manual Life routes empty until a durable local source exists", async ({
@@ -4006,7 +4440,11 @@ test.describe("Life content states", () => {
 
     await page.goto("/life/inventory");
     await expectInventoryContracts(page, "manual");
-    await expectNoMainStrings(page, inventoryBlockedDemoStrings, "/life/inventory");
+    await expectNoMainStrings(
+      page,
+      inventoryBlockedDemoStrings,
+      "/life/inventory",
+    );
   });
 });
 
@@ -4326,14 +4764,12 @@ test.describe("Health and Fitness content states", () => {
       "data-content-state",
       "partial",
     );
-    await expect(page.locator('[data-health-section="mental"]')).toHaveAttribute(
-      "data-content-state",
-      "partial",
-    );
-    await expect(page.locator('[data-health-section="habits"]')).toHaveAttribute(
-      "data-content-state",
-      "partial",
-    );
+    await expect(
+      page.locator('[data-health-section="mental"]'),
+    ).toHaveAttribute("data-content-state", "partial");
+    await expect(
+      page.locator('[data-health-section="habits"]'),
+    ).toHaveAttribute("data-content-state", "partial");
     await expect(page.getByText("Manual Habit 1").first()).toBeVisible();
     await expect(page.getByText("Focused").first()).toBeVisible();
   });
@@ -4357,12 +4793,18 @@ test.describe("Health and Fitness content states", () => {
       "empty",
     );
     await expect(page.getByText("Noch kein Check-in").first()).toBeVisible();
-    await expect(page.getByText("Noch kein Stimmungsverlauf").first()).toBeVisible();
-    await expect(page.getByText("Noch keine Schlafdaten").first()).toBeVisible();
+    await expect(
+      page.getByText("Noch kein Stimmungsverlauf").first(),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Noch keine Schlafdaten").first(),
+    ).toBeVisible();
     await expect(
       page.getByText("Noch keine Mental-Health-Aktionen").first(),
     ).toBeVisible();
-    await expect(page.getByRole("button", { name: "Open check-in" })).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Open check-in" }),
+    ).toBeDisabled();
   });
 
   test("renders empty Habits shell and manual partial habit rows", async ({
@@ -4379,7 +4821,9 @@ test.describe("Health and Fitness content states", () => {
       "data-content-state",
       "empty",
     );
-    await expect(page.getByText("Noch keine Habit-Signale").first()).toBeVisible();
+    await expect(
+      page.getByText("Noch keine Habit-Signale").first(),
+    ).toBeVisible();
     await expect(page.getByText("Noch keine Repair Loops")).toBeVisible();
     await expect(page.getByText("Noch kein Habit-Zeitplan")).toBeVisible();
 
@@ -4451,10 +4895,9 @@ test.describe("Health and Fitness content states", () => {
 
     await expectStrengthContracts(page, "manual");
     await expectNoMainStrings(page, strengthBlockedDemoStrings, "strength");
-    await expect(page.locator('[data-strength-section="page"]')).toHaveAttribute(
-      "data-content-state",
-      "empty",
-    );
+    await expect(
+      page.locator('[data-strength-section="page"]'),
+    ).toHaveAttribute("data-content-state", "empty");
     await expect(
       page
         .getByRole("region", { name: "Strength Session Planner" })
