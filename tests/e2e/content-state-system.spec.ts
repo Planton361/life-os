@@ -1,6 +1,6 @@
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 test.describe.configure({ mode: "serial" });
 
@@ -98,6 +98,64 @@ async function skipIfManualDbUnavailable(page: Page) {
       "Requires a local authenticated Supabase Browser/Playwright session.",
     );
   }
+}
+
+async function captureManualInboxItem(page: Page, title: string, note: string) {
+  await page
+    .getByRole("textbox", { exact: true, name: "Quick Capture" })
+    .fill(title);
+  await page.getByRole("textbox", { name: "Quick Capture note" }).fill(note);
+  await page.getByRole("button", { name: "Capture" }).click();
+  await page.waitForLoadState("networkidle");
+  await expect(page.getByText(title).first()).toBeVisible();
+}
+
+async function openAddToExistingDraft(page: Page) {
+  const activeItem = page.locator('[data-inbox-section="active-item"]');
+
+  await activeItem.locator('[data-outcome-route="add_to_existing"]').click();
+
+  const addToExistingDraft = activeItem
+    .getByRole("heading", { name: "Bestehendem Objekt zuordnen" })
+    .locator("xpath=ancestor::section[1]");
+  await expect(addToExistingDraft).toBeVisible();
+
+  return addToExistingDraft;
+}
+
+async function selectFirstExistingProjectOrGoalTarget(
+  addToExistingDraft: Locator,
+) {
+  for (const target of [
+    { label: "Project", relationLabel: "Project" },
+    { label: "Goal", relationLabel: "Goal" },
+  ]) {
+    await addToExistingDraft
+      .getByRole("button", {
+        name: new RegExp(`^${target.label} \\d+ DB-Ziel(?:e)?$`),
+      })
+      .click();
+
+    const select = addToExistingDraft.getByLabel("Existing target");
+
+    if (await select.isDisabled()) continue;
+
+    const option = select.locator("option[value]:not([value=''])").first();
+    const value = await option.getAttribute("value");
+    const title = (await option.textContent())?.trim() ?? "";
+
+    if (!value) continue;
+
+    await select.selectOption(value);
+
+    return {
+      relationLabel: target.relationLabel,
+      targetId: value,
+      targetTitle: title,
+    };
+  }
+
+  return null;
 }
 
 async function openPortfolioTaskPlanningControls(page: Page, title: string) {
@@ -1892,6 +1950,139 @@ test.describe("Inbox content states", () => {
     await expect
       .poll(() => activeBody.evaluate((node) => node.scrollTop))
       .toBeGreaterThan(0);
+  });
+
+  test("Manual Inbox Add to Existing empty Project targets stay non-persistent", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session.",
+    );
+
+    const title = `Manual Inbox empty existing target ${Date.now()}`;
+
+    await setProfile(page, "manual");
+    await applySupabaseAuthState(page);
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/inbox");
+    });
+    await skipIfManualDbUnavailable(page);
+    await captureManualInboxItem(
+      page,
+      title,
+      "Keep Add to Existing blocked when no real Project target is present.",
+    );
+
+    const addToExistingDraft = await openAddToExistingDraft(page);
+
+    await addToExistingDraft
+      .getByRole("button", { name: /^Project \d+ DB-Ziel(?:e)?$/ })
+      .click();
+
+    if (await addToExistingDraft.getByLabel("Existing target").isEnabled()) {
+      test.skip(
+        true,
+        "Local DB has real Project targets; persistence proof covers the connected path.",
+      );
+    }
+
+    await expect(addToExistingDraft.getByLabel("Existing target")).toBeDisabled();
+    await expect(
+      addToExistingDraft
+        .locator("p")
+        .filter({ hasText: "Noch keine bestehenden Projects vorhanden." }),
+    ).toBeVisible();
+    await expect(
+      addToExistingDraft.getByRole("button", { name: "Task-Beitrag erstellen" }),
+    ).toBeDisabled();
+    await expect(addToExistingDraft.getByText("Life OS MVP")).toHaveCount(0);
+    await expect(addToExistingDraft.getByText("Stable MVP daily flow")).toHaveCount(
+      0,
+    );
+  });
+
+  test("Manual Inbox Add to Existing task persists to a real Project or Goal target", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session.",
+    );
+
+    const captureTitle = `Manual Inbox existing target source ${Date.now()}`;
+    const taskTitle = `Manual Inbox existing target task ${Date.now()}`;
+
+    await setProfile(page, "manual");
+    await applySupabaseAuthState(page);
+    const taskCountBefore = await readProfileDataTaskCount(page);
+
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/inbox");
+    });
+    await skipIfManualDbUnavailable(page);
+    await captureManualInboxItem(
+      page,
+      captureTitle,
+      "Create a task contribution against an existing Project or Goal.",
+    );
+
+    const addToExistingDraft = await openAddToExistingDraft(page);
+    const selectedTarget =
+      await selectFirstExistingProjectOrGoalTarget(addToExistingDraft);
+
+    if (!selectedTarget) {
+      test.skip(
+        true,
+        "Requires at least one real Supabase Project or Goal target for the authenticated user.",
+      );
+      return;
+    }
+
+    await expect(
+      addToExistingDraft.getByText("Beitrag: Verbunden"),
+    ).toBeVisible();
+    await addToExistingDraft.getByLabel("Titel").fill(taskTitle);
+    await addToExistingDraft
+      .getByLabel("Beschreibung / Kontext")
+      .fill(
+        `Task contribution for ${selectedTarget.relationLabel}: ${selectedTarget.targetTitle}`,
+      );
+    await expect(
+      addToExistingDraft.getByRole("button", { name: "Task-Beitrag erstellen" }),
+    ).toBeEnabled();
+    await addToExistingDraft
+      .getByRole("button", { name: "Task-Beitrag erstellen" })
+      .click();
+    await page.waitForLoadState("networkidle");
+
+    await expect(page.getByText("Task erstellt").first()).toBeVisible();
+    await expect
+      .poll(async () => readProfileDataTaskCount(page))
+      .toBeGreaterThan(taskCountBefore);
+    const taskCountAfterTriage = await readProfileDataTaskCount(page);
+
+    await page.goto("/portfolio?view=tasks");
+    await expect(page.getByText(taskTitle).first()).toBeVisible();
+    await page.getByRole("link", { name: new RegExp(taskTitle) }).first().click();
+    await expect(page.locator("#selected-entity-heading")).toHaveText(taskTitle);
+    await expect(page.getByText(selectedTarget.relationLabel).first()).toBeVisible();
+    await expect(page.getByText(selectedTarget.targetId).first()).toBeVisible();
+
+    await page.reload();
+    await expect(page.locator("#selected-entity-heading")).toHaveText(taskTitle);
+    await expect(page.getByText(selectedTarget.targetId).first()).toBeVisible();
+
+    await page.goto("/inbox");
+    await expect(page.getByText(captureTitle).first()).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Task-Beitrag erstellen" }),
+    ).toHaveCount(0);
+    await page.reload();
+    await expect(
+      page.getByRole("button", { name: "Task-Beitrag erstellen" }),
+    ).toHaveCount(0);
+    await expect(await readProfileDataTaskCount(page)).toBe(taskCountAfterTriage);
   });
 
   test("prepared Outcome Routes expose draft shells without persistence submit", async ({

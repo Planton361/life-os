@@ -90,6 +90,17 @@
 - Planning Signals may sit below the fold, but must remain reachable through the Active Item scroll area.
 - Queue and assistant columns should remain stable while the Active Item body scrolls.
 
+## R1.6.6E Add-to-Existing Persistence Proof
+
+- Existing Project and Goal targets are read from authenticated Supabase queries scoped by `user_id` and `archived_at is null`; no demo targets are injected into Manual profile.
+- If no real Project or Goal target exists, the Existing target select stays disabled and `Task-Beitrag erstellen` stays disabled.
+- For a real Project target, Add to Existing + Beitragstyp Task submits through the inbox triage RPC with `project_id`.
+- For a real Goal target, Add to Existing + Beitragstyp Task submits through the same RPC with `goal_id`.
+- The RPC validates the Inbox item and selected target against `auth.uid()` before creating the Task.
+- The created Task stores `source_inbox_item_id` and the selected `project_id` or `goal_id`, then marks the Inbox item triaged.
+- Portfolio Tasks show the new Task and the context panel renders the selected Project or Goal relation.
+- Reloading Inbox and Portfolio must not expose another Add-to-Existing submit for the already triaged Inbox item.
+
 ## R1.6.5B Follow-up Checks
 
 1. If `/settings#supabase-session` shows `invalid session`, use `Session zurücksetzen`.
