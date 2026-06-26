@@ -2156,7 +2156,7 @@ test.describe("Inbox content states", () => {
     await expect(await readProfileDataTaskCount(page)).toBe(taskCountAfterTriage);
   });
 
-  test("prepared Outcome Routes expose draft shells without persistence submit", async ({
+  test("prepared Create New route stays a non-persistent draft shell", async ({
     page,
   }) => {
     await setProfile(page, "demo");
@@ -2172,14 +2172,8 @@ test.describe("Inbox content states", () => {
       .locator("xpath=ancestor::section[1]");
     await expect(createNewDraft).toBeVisible();
     await expect(createNewDraft.getByText("Noch nicht verbunden").first()).toBeVisible();
-
-    await activeItem.locator('[data-outcome-route="knowledge_resource"]').click();
-    const resourceDraft = activeItem
-      .getByRole("heading", { name: "Resource Draft" })
-      .locator("xpath=ancestor::section[1]");
-    await expect(resourceDraft).toBeVisible();
     await expect(
-      resourceDraft.getByText("Diese Auswahl erzeugt keinen Submit und schreibt keine Daten."),
+      createNewDraft.getByText("Diese Auswahl erzeugt keinen Submit und schreibt keine Daten."),
     ).toBeVisible();
   });
 
@@ -2323,6 +2317,78 @@ test.describe("Inbox content states", () => {
     await page.reload();
     await expect(page.getByText(title)).toHaveCount(0);
     await expectNoInboxDemoStrings(page);
+  });
+
+  test("Manual Inbox Resource Draft creates a real Resource", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session; no broad DB cleanup action is available.",
+    );
+
+    const title = `Manual Inbox resource ${Date.now()}`;
+    const draftTitle = `${title} draft`;
+    const note = "Save this capture as reusable reference material.";
+
+    await setProfile(page, "manual");
+    await applySupabaseAuthState(page);
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/inbox");
+    });
+    await skipIfManualDbUnavailable(page);
+    await captureManualInboxItem(page, title, note);
+
+    const activeItem = page.locator('[data-inbox-section="active-item"]');
+    await activeItem.locator('[data-outcome-route="knowledge_resource"]').click();
+    const resourceDraft = activeItem
+      .getByRole("heading", { name: "Resource Draft" })
+      .locator("xpath=ancestor::section[1]");
+    await expect(resourceDraft).toBeVisible();
+    await expect(resourceDraft.getByText("Verbunden")).toBeVisible();
+    await expect(resourceDraft.getByLabel("Titel")).toBeVisible();
+    await expect(resourceDraft.getByLabel("Resource Typ")).toBeVisible();
+    await expect(resourceDraft.getByLabel("Kurzfassung")).toBeVisible();
+    await expect(resourceDraft.getByLabel("Inhalt / Notiz")).toBeVisible();
+    await expect(resourceDraft.getByLabel("URL optional")).toBeVisible();
+    await expect(
+      resourceDraft.getByRole("button", { exact: true, name: "Task erstellen" }),
+    ).toHaveCount(0);
+
+    await resourceDraft.getByLabel("Titel").fill(draftTitle);
+    await resourceDraft.getByLabel("Resource Typ").selectOption("link");
+    await resourceDraft
+      .getByLabel("URL optional")
+      .fill("https://example.test/life-os-resource");
+    await resourceDraft
+      .getByRole("button", { exact: true, name: "Resource erstellen" })
+      .click();
+    await page.waitForLoadState("networkidle");
+
+    await expect(
+      activeItem.getByRole("heading", { name: "Resource erstellt" }),
+    ).toBeVisible();
+    await expect(
+      activeItem.getByText("Diese Inbox wurde als Resource gespeichert."),
+    ).toBeVisible();
+    await expect(
+      activeItem.getByRole("link", { name: "Resources öffnen" }),
+    ).toBeVisible();
+    await expect(activeItem.getByText("Task erstellt")).toHaveCount(0);
+
+    await activeItem.getByRole("link", { name: "Resources öffnen" }).click();
+    await expect(page.locator("#resources-page")).toHaveAttribute(
+      "data-content-state",
+      /^(partial|filled)$/,
+    );
+    await expect(page.getByText(draftTitle).first()).toBeVisible();
+    await expectNoMainStrings(page, resourcesBlockedDemoStrings, "resources");
+    await page.reload();
+    await expect(page.getByText(draftTitle).first()).toBeVisible();
+
+    await page.goto("/inbox");
+    await expect(page.getByText(draftTitle)).toHaveCount(0);
+    await expect(page.getByText(title)).toHaveCount(0);
   });
 
   test("Manual Inbox triage to task", async ({ page }) => {

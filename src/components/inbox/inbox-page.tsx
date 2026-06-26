@@ -22,6 +22,8 @@ import {
 import {
   archiveInboxItemFormStateAction,
   captureInboxItemFormAction,
+  createResourceFromInboxFormStateAction,
+  type InboxResourceActionResult,
   type InboxArchiveActionResult,
   triageInboxItemToTaskFormAction,
 } from "@/features/real-data/actions/inbox.actions";
@@ -55,6 +57,14 @@ const draftInputClasses =
 const taskDraftPriorities = ["P0", "P1", "P2", "P3", "none"] as const;
 const taskDraftEnergies = ["low", "medium", "high"] as const;
 const taskDraftDurations = [15, 30, 45, 60, 90, 120] as const;
+const resourceDraftTypes = [
+  { label: "Note", value: "note" },
+  { label: "Link", value: "link" },
+  { label: "Research", value: "research" },
+  { label: "Source", value: "source" },
+  { label: "Learning", value: "learning" },
+  { label: "Decision", value: "decision" },
+] as const;
 
 const planningSignalDefinitions = [
   { label: "Priority", savedInTaskDraft: true },
@@ -1385,6 +1395,121 @@ function InboxSolvedArchiveDraft({
   );
 }
 
+function InboxResourceDraft({
+  activeItem,
+  canCreateResource,
+}: Readonly<{
+  activeItem: InboxViewModel["activeItem"];
+  canCreateResource: boolean;
+}>) {
+  const [resourceState, resourceFormAction, resourcePending] = useActionState<
+    InboxResourceActionResult | null,
+    FormData
+  >(createResourceFromInboxFormStateAction, null);
+  const createdCurrentItem =
+    resourceState?.status === "success" &&
+    resourceState.inboxItemId === activeItem.id;
+
+  if (createdCurrentItem) {
+    return (
+      <section
+        aria-labelledby="resource-created-title"
+        className="rounded-[18px] border border-[rgba(66,184,131,.34)] bg-[rgba(66,184,131,.10)] p-3"
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3
+              className="text-sm font-semibold text-[var(--text-primary)]"
+              id="resource-created-title"
+            >
+              Resource erstellt
+            </h3>
+            <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+              Diese Inbox wurde als Resource gespeichert.
+            </p>
+          </div>
+          <Link
+            className={cn(
+              "inline-flex min-h-8 items-center rounded-[12px] border border-[rgba(66,184,131,.34)] bg-[rgba(66,184,131,.16)] px-3 text-xs font-semibold text-[var(--text-primary)]",
+              focusClasses,
+            )}
+            href="/resources"
+          >
+            Resources öffnen
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section
+      aria-labelledby="resource-draft-title"
+      className="rounded-[18px] border border-[rgba(168,119,255,.30)] bg-[rgba(168,119,255,.075)] p-3"
+    >
+      <form action={resourceFormAction}>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3
+              className="text-sm font-semibold text-[var(--text-primary)]"
+              id="resource-draft-title"
+            >
+              Resource Draft
+            </h3>
+            <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+              Wissen, Link, Notiz oder Material als Resource speichern.
+            </p>
+          </div>
+          <input name="inboxItemId" type="hidden" value={activeItem.id} />
+          <Pill accent="var(--accent-green)">Verbunden</Pill>
+          <button
+            className={cn(
+              "min-h-9 rounded-[12px] border border-[rgba(168,119,255,.42)] bg-[rgba(168,119,255,.18)] px-3 text-xs font-semibold text-[var(--text-primary)]",
+              focusClasses,
+              disabledActionClasses,
+            )}
+            disabled={!canCreateResource || resourcePending}
+            type="submit"
+          >
+            {resourcePending ? "Resource wird erstellt..." : "Resource erstellen"}
+          </button>
+        </div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          <DraftTextInput
+            defaultValue={activeItem.title}
+            label="Titel"
+            name="title"
+          />
+          <DraftSelect label="Resource Typ" name="type">
+            {resourceDraftTypes.map((type) => (
+              <option key={type.value} value={type.value}>
+                {type.label}
+              </option>
+            ))}
+          </DraftSelect>
+          <DraftTextarea
+            defaultValue={activeItem.originalCapture}
+            label="Kurzfassung"
+            name="summary"
+          />
+          <DraftTextarea
+            defaultValue=""
+            label="Inhalt / Notiz"
+            name="content"
+          />
+          <DraftTextInput defaultValue="" label="URL optional" name="url" />
+        </div>
+        {resourceState?.status === "blocked" ||
+        resourceState?.status === "error" ? (
+          <p className="mt-2 text-[11px] leading-4 text-[var(--accent-orange)]">
+            {resourceState.message}
+          </p>
+        ) : null}
+      </form>
+    </section>
+  );
+}
+
 function InboxTaskDraft({
   activeItem,
   canCreateTask,
@@ -1600,9 +1725,15 @@ function InboxActiveItemPanel({
         nextAction={nextAction}
       />
     );
+  } else if (selectedDraftRoute === "knowledge_resource") {
+    draftSlot = (
+      <InboxResourceDraft
+        activeItem={activeItem}
+        canCreateResource={profileId === "manual"}
+      />
+    );
   } else if (
-    selectedDraftRoute === "create_new" ||
-    selectedDraftRoute === "knowledge_resource"
+    selectedDraftRoute === "create_new"
   ) {
     draftSlot = (
       <PreparedDraftShell activeItem={activeItem} route={selectedDraftRoute} />

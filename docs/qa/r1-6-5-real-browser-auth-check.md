@@ -46,7 +46,7 @@
 
 - Outcome Routes are visible as the primary router for the selected Inbox item.
 - Standalone Task is marked as connected and opens the functional Task Draft.
-- Add to Existing, Create New, Resource, and Solved / Archive are prepared routes, but they are marked as not connected.
+- Add to Existing, Create New, and Resource are visible routes. Resource is minimally connected in R1.6.7; Create New remains marked as not connected.
 - Prepared routes show draft shells and must not expose a persistence submit action.
 - Planning Signals are hints for later planning, not scheduling.
 - AI Assistant suggests routes and fields, but it does not decide or apply changes.
@@ -78,7 +78,7 @@
 - Each selected route renders exactly one matching draft in the Draft slot.
 - Add to Existing shows `Bestehendem Objekt zuordnen` with Target type, Existing target, and Beitragstyp controls.
 - Planning Signals sit below the Draft slot and do not overlap Route Cards or Draft content.
-- Create New and Resource can be selected, but their Draft shells clearly say they do not write persistence yet.
+- Create New can be selected, but its Draft shell clearly says it does not write persistence yet. Resource opens a connected Draft with explicit submit.
 - Add to Existing is partially connected: Task to Project/Goal only; Resource Link is prepared; Note/Decision/Skill are not connected.
 - Triaged or archived items show their post-state and must not reopen the active router as the primary work surface.
 
@@ -139,6 +139,14 @@
 17. Select a Project or Goal, keep Beitragstyp `Task`, edit the draft, and use `Task-Beitrag erstellen`.
 18. Confirm the Inbox item reaches `Task erstellt` and the task appears in Portfolio with the selected Project or Goal relation when such a target exists.
 19. Select Resource + Resource Link and confirm it is marked prepared without creating a Resource relation.
+
+## R1.6.7 Resource Draft
+
+- Inbox Resource Draft writes a real `resources` row only after `Resource erstellen`.
+- The draft stores title, existing resource type enum, summary/content, optional URL, `review_needed`, and source provenance in the existing `source` column.
+- The source Inbox item is soft-archived after successful Resource creation; no hard delete and no Task is created.
+- `/resources` reads real Manual resources from Supabase and keeps Demo fixtures only in the Demo profile.
+- Resource Graph, direct Inbox FK, and Resource relations remain future scope.
 
 ## Known Boundaries
 

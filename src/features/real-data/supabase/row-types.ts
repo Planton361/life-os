@@ -12,6 +12,10 @@ export type ProjectRow = TableRow<"projects">;
 export type ProjectInsert = TableInsert<"projects">;
 export type ProjectUpdate = TableUpdate<"projects">;
 
+export type ResourceRow = TableRow<"resources">;
+export type ResourceInsert = TableInsert<"resources">;
+export type ResourceUpdate = TableUpdate<"resources">;
+
 export type TaskRow = TableRow<"tasks">;
 export type TaskInsert = TableInsert<"tasks">;
 export type TaskUpdate = TableUpdate<"tasks">;

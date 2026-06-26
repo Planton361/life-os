@@ -4,11 +4,16 @@ import { revalidatePath } from "next/cache";
 import {
   archiveInboxItemInputSchema,
   captureInboxItemInputSchema,
+  createResourceInputSchema,
   triageInboxItemToTaskInputSchema,
 } from "@/features/real-data";
 import {
   createSupabaseInboxRepository,
   createSupabaseInboxTriageTransaction,
+  createSupabaseResourceRepository,
+  realDataTableNames,
+  type InboxItemRow,
+  type SupabaseQueryResult,
 } from "@/features/real-data/supabase";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
 import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
@@ -29,6 +34,13 @@ export type InboxTriageActionResult = {
 export type InboxArchiveActionResult = {
   inboxItemId?: string;
   message: string;
+  status: "blocked" | "error" | "success";
+};
+
+export type InboxResourceActionResult = {
+  inboxItemId?: string;
+  message: string;
+  resourceId?: string;
   status: "blocked" | "error" | "success";
 };
 
@@ -89,6 +101,12 @@ function revalidateInboxArchiveRoutes() {
   revalidatePath("/inbox");
   revalidatePath("/dashboard");
   revalidatePath("/today");
+}
+
+function revalidateInboxResourceRoutes() {
+  revalidatePath("/inbox");
+  revalidatePath("/resources");
+  revalidatePath("/dashboard");
 }
 
 function authBlockedMessage(
@@ -316,4 +334,106 @@ export async function archiveInboxItemFormStateAction(
   formData: FormData,
 ): Promise<InboxArchiveActionResult> {
   return archiveInboxItemAction(formData);
+}
+
+export async function createResourceFromInboxAction(
+  formData: FormData,
+): Promise<InboxResourceActionResult> {
+  const profileId = await getCurrentLifeOsProfileId();
+
+  if (profileId !== "manual") {
+    revalidatePath("/inbox");
+
+    return {
+      message: "Wechsle ins Manual-Profil, um Resources zu erstellen.",
+      status: "blocked",
+    };
+  }
+
+  const auth = await createAuthenticatedSupabaseServerClient();
+
+  if (!auth.ok) {
+    return {
+      message: authBlockedMessage(auth.error, "als Resource zu speichern"),
+      status: "blocked",
+    };
+  }
+
+  const inboxItemId = formString(formData, "inboxItemId");
+  const summary = formString(formData, "summary");
+  const content = formString(formData, "content");
+  const parsed = createResourceInputSchema.safeParse({
+    body: [summary, content].filter(Boolean).join("\n\n") || undefined,
+    profileId: auth.user.id,
+    reviewNeeded: true,
+    source: inboxItemId ? `inbox:${inboxItemId}` : "inbox.resource_draft",
+    title: formString(formData, "title"),
+    type: formString(formData, "type"),
+    url: optionalFormString(formData, "url"),
+    userId: auth.user.id,
+  });
+
+  if (!inboxItemId || !parsed.success) {
+    return {
+      message: "Der Inbox-Eintrag konnte nicht als Resource gespeichert werden.",
+      status: "error",
+    };
+  }
+
+  const inboxResult = (await auth.client
+    .from(realDataTableNames.inboxItems)
+    .select("id")
+    .eq("user_id", auth.user.id)
+    .eq("id", inboxItemId)
+    .is("archived_at", null)
+    .single()) as SupabaseQueryResult<Pick<InboxItemRow, "id">>;
+
+  if (inboxResult.error || !inboxResult.data) {
+    return {
+      message: "Der Inbox-Eintrag konnte nicht gefunden werden.",
+      status: "error",
+    };
+  }
+
+  const resourceRepository = createSupabaseResourceRepository(auth.client);
+  const resourceResult = await resourceRepository.createResource(parsed.data);
+
+  if (!resourceResult.ok) {
+    return {
+      message: "Die Resource konnte nicht gespeichert werden.",
+      status: "error",
+    };
+  }
+
+  const inboxRepository = createSupabaseInboxRepository(auth.client);
+  const archiveResult = await inboxRepository.archiveInboxItem({
+    inboxItemId,
+    profileId: auth.user.id,
+    userId: auth.user.id,
+  });
+
+  if (!archiveResult.ok) {
+    return {
+      message:
+        "Resource erstellt, aber der Inbox-Eintrag konnte nicht abgeschlossen werden.",
+      resourceId: resourceResult.data.id,
+      status: "error",
+    };
+  }
+
+  revalidateInboxResourceRoutes();
+
+  return {
+    inboxItemId: archiveResult.data.id,
+    message: "Resource erstellt.",
+    resourceId: resourceResult.data.id,
+    status: "success",
+  };
+}
+
+export async function createResourceFromInboxFormStateAction(
+  _previousState: InboxResourceActionResult | null,
+  formData: FormData,
+): Promise<InboxResourceActionResult> {
+  return createResourceFromInboxAction(formData);
 }

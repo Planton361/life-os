@@ -38,7 +38,17 @@ import {
   buildResourcesContentStates,
   getResourcesViewModel as getDemoResourcesViewModel,
 } from "@/features/resources";
+import type {
+  ResourceItem,
+  ResourceReviewQueueItem,
+  ResourcesViewModel,
+} from "@/features/resources";
 import { resolveContentStateMeta } from "@/features/content-state";
+import {
+  createSupabaseResourceRepository,
+  type SupabaseClientLike,
+} from "@/features/real-data/supabase";
+import type { Resource as RealDataResource } from "@/features/real-data";
 import { getShopViewModel as getDemoShopViewModel } from "@/features/shop";
 import {
   getWorkLogViewModel as getDemoWorkLogViewModel,
@@ -63,6 +73,7 @@ import {
   buildWorkWikiContentStates,
 } from "@/features/work/work-content-states";
 import { readManualProfile } from "./manual-profile-store";
+import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
 import { getCurrentLifeOsProfileId } from "./profile-cookie";
 import type { LifeOsProfileId, ManualHabit, ManualProfileData } from "./types";
 import type { MealEntry, NutritionDay } from "@/features/nutrition";
@@ -2344,6 +2355,72 @@ export async function getWorkWikiViewModel(): Promise<WorkWikiViewModel> {
   return buildProfileWorkWikiViewModel(profileId, await readManualProfile());
 }
 
+function manualResourceSourceLabel(source: string | null, url: string | null) {
+  if (source?.startsWith("inbox:")) return "Inbox Capture";
+  if (url) return "URL";
+  return "Manual";
+}
+
+function realResourceToResourceItem(resource: RealDataResource): ResourceItem {
+  const source = manualResourceSourceLabel(resource.source, resource.url);
+  const summary = resource.body ?? resource.url ?? "Keine Kurzfassung erfasst.";
+
+  return {
+    actions: [
+      {
+        detail: "Review in Resources fortsetzen",
+        label: resource.reviewNeeded ? "Review" : "Öffnen",
+      },
+    ],
+    area: "review",
+    clusterId: "manual-resources",
+    id: resource.id,
+    keyLearning: summary,
+    lastTouched: "Manual",
+    linkedContext: "Noch nicht verknüpft",
+    linkedContexts: [],
+    nextUse: resource.reviewNeeded
+      ? "Resource prüfen und bei Bedarf verknüpfen."
+      : "Bei Bedarf in Arbeit oder Lernen wiederverwenden.",
+    relatedResources: [],
+    reviewState: resource.reviewNeeded ? "needs_extraction" : "ready_to_reuse",
+    source,
+    status: resource.reviewNeeded ? "review_needed" : "raw",
+    summary,
+    title: resource.title,
+    topic: resource.url ? "Link" : "Inbox",
+    type: resource.type,
+  };
+}
+
+function manualResourceReviewQueueItem(
+  resource: ResourceItem,
+): ResourceReviewQueueItem {
+  return {
+    accent: "var(--accent-purple)",
+    action: "Review",
+    linkedContext: resource.linkedContext,
+    resourceId: resource.id,
+    sourceType: resource.type,
+    status: "Review needed",
+    suggestedActions: ["Kurzfassung prüfen", "Kontext später verknüpfen"],
+    targetType: "Resource",
+    title: resource.title,
+  };
+}
+
+async function getManualResourcesFromSupabase(
+  client: SupabaseClientLike,
+  userId: string,
+): Promise<ResourceItem[]> {
+  const repository = createSupabaseResourceRepository(client);
+  const result = await repository.getResourcesByUser(userId, userId);
+
+  if (!result.ok) return [];
+
+  return result.data.map(realResourceToResourceItem);
+}
+
 export async function getResourcesViewModel(): Promise<
   ReturnType<typeof getDemoResourcesViewModel>
 > {
@@ -2360,24 +2437,49 @@ export async function getResourcesViewModel(): Promise<
     "Resources",
   );
 
-  return {
+  let manualResources: ResourceItem[] = [];
+
+  if (profileId === "manual") {
+    const auth = await createAuthenticatedSupabaseServerClient();
+
+    if (auth.ok) {
+      manualResources = await getManualResourcesFromSupabase(
+        auth.client,
+        auth.user.id,
+      );
+    }
+  }
+
+  const reviewQueue = manualResources
+    .filter((resource) => resource.status === "review_needed")
+    .map(manualResourceReviewQueueItem);
+  const resourceCount = manualResources.length;
+  const resourcesViewModel: ResourcesViewModel = {
     ...sanitizedViewModel,
     profileId,
-    selectedResource: null,
+    aiSuggestions: [],
+    clusters: [],
+    recentLearnings: [],
+    relations: [],
+    resources: manualResources,
+    reviewQueue,
+    selectedResource: manualResources[0] ?? null,
     summaryStats: sanitizedViewModel.summaryStats.map((stat) => ({
       ...stat,
-      detail: "0 local resources",
-      value: "0",
+      detail: `${resourceCount} local resources`,
+      value: String(resourceCount),
     })),
     contentStates: buildResourcesContentStates({
-      aiSuggestionCount: sanitizedViewModel.aiSuggestions.length,
-      clusterCount: sanitizedViewModel.clusters.length,
-      recentLearningCount: sanitizedViewModel.recentLearnings.length,
-      relationCount: sanitizedViewModel.relations.length,
-      resourceCount: sanitizedViewModel.resources.length,
-      reviewQueueCount: sanitizedViewModel.reviewQueue.length,
+      aiSuggestionCount: 0,
+      clusterCount: 0,
+      recentLearningCount: 0,
+      relationCount: 0,
+      resourceCount,
+      reviewQueueCount: reviewQueue.length,
     }),
   };
+
+  return resourcesViewModel;
 }
 
 export async function getShopViewModel(): Promise<
