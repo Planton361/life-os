@@ -148,6 +148,17 @@
 - `/resources` reads real Manual resources from Supabase and keeps Demo fixtures only in the Demo profile.
 - Resource Graph, direct Inbox FK, and Resource relations remain future scope.
 
+## R1.6.8A Task / Calendar Workflow Lock
+
+- Quick Thought erzeugt nur ein Inbox Item.
+- Inbox Route + Draft erzeugt erst nach expliziter Aktion ein Zielobjekt.
+- Inbox resolved muss nachvollziehbar sein: Route-Auswahl und Draft-Bearbeitung reichen nicht.
+- Portfolio erstellt kontextabhaengig: Tasks View -> Task, Projects View -> Project, Goals View -> Goal, All View -> Typwahl.
+- Today plant den Tag und setzt oder nutzt `plannedDate`.
+- Calendar terminiert Zeitbloecke und zeigt Tasks erst mit `scheduledStartAt` als Time Block.
+- Planning Signals sind keine Terminierung; Priority, Energy, Duration, Area, Review Needed, Today Candidate, Deadline Hint und Recurrence Hint bleiben bis Confirm nur Hinweise.
+- AI darf Route, Felder, Ziele und Calendar Slots vorschlagen, aber keine Zielobjekte erstellen, Inbox Items resolven oder Calendar Blocks setzen ohne User-Bestaetigung.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.
