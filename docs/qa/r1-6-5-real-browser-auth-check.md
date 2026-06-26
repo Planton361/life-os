@@ -109,6 +109,15 @@
 - Tasks without a relation show `Kein Project verknüpft` and `Kein Goal verknüpft`.
 - Manual profile must not fall back to demo Project or Goal titles.
 
+## R1.6.6G Minimal Project/Goal Create
+
+- Manual Portfolio exposes a compact `Neues Target` section for Project and Goal creation.
+- Project/Goal create writes authenticated Supabase rows only; no client `user_id` is accepted.
+- Created Projects/Goals appear in Portfolio after reload.
+- Inbox Add to Existing target picker shows created Projects/Goals as real DB targets.
+- Task contributions to created Projects/Goals show readable relation titles in Portfolio.
+- Manual profile must not use fake or demo targets when no DB targets exist.
+
 ## R1.6.5B Follow-up Checks
 
 1. If `/settings#supabase-session` shows `invalid session`, use `Session zurücksetzen`.

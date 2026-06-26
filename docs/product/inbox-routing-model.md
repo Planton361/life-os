@@ -66,6 +66,8 @@ Die Inbox darf Planungsabsichten sammeln. Konkrete Tagesplanung und Zeitplanung 
 
 Add-to-Existing Task-Beitraege erscheinen in Portfolio mit lesbaren Project-/Goal-Kontextrelationen. IDs bleiben technische Details und sind kein primaeres UI-Label.
 
+Add to Existing setzt echte bestehende Targets voraus. Eine minimale Project-/Goal-Erstellung erfolgt im Portfolio, nicht im Inbox-Router.
+
 ### Create New Targets
 
 | Target | Bedeutung | Status |

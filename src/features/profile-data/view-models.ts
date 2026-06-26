@@ -47,11 +47,15 @@ import type {
 } from "@/features/entities/types";
 import {
   captureInboxItemInputSchema,
+  type Goal as RealDataGoal,
   type InboxItem,
+  type Project as RealDataProject,
   type Task as RealDataTask,
 } from "@/features/real-data";
 import {
+  createSupabaseGoalRepository,
   createSupabaseInboxRepository,
+  createSupabaseProjectRepository,
   createSupabaseTaskRepository,
 } from "@/features/real-data/supabase";
 import {
@@ -1529,6 +1533,58 @@ function realTaskToLifeTask(task: RealDataTask): LifeTask | null {
   };
 }
 
+function realProjectToLifeProject(project: RealDataProject): LifeProject {
+  return {
+    activity: [
+      {
+        dateLabel: "DB",
+        detail: "Loaded from Supabase projects.",
+        label: "Read model",
+      },
+    ],
+    areaId: "review",
+    blocker: undefined,
+    deadline: project.deadline ?? undefined,
+    description: project.description ?? "",
+    focusThisWeek: project.status === "active",
+    goalId: project.goalId ?? undefined,
+    id: project.id,
+    milestoneIds: [],
+    nextStep: project.nextStep ?? "Nächsten Projektschritt klären.",
+    notes: [],
+    phase: "DB Target",
+    priority: project.priority,
+    progress: 0,
+    risk: undefined,
+    skillIds: [],
+    status: project.status,
+    taskIds: [],
+    title: project.title,
+  };
+}
+
+function realGoalToLifeGoal(goal: RealDataGoal): LifeGoal {
+  return {
+    areaId: "review",
+    currentValue: "0",
+    description: goal.description ?? "",
+    horizon: goal.horizon,
+    id: goal.id,
+    linkedProjectIds: [],
+    linkedTaskIds: [],
+    measure: goal.measure ?? "Nicht gesetzt",
+    milestoneIds: [],
+    nextStep: "Nächsten Zielschritt klären.",
+    progress: 0,
+    remaining: goal.targetValue ?? "Nicht gesetzt",
+    reviewNotes: [],
+    status: goal.status,
+    targetValue: goal.targetValue ?? "Nicht gesetzt",
+    title: goal.title,
+    why: goal.why ?? goal.description ?? "",
+  };
+}
+
 function manualDbUnavailableReason(
   error: "auth_error" | "invalid_session" | "missing_env" | "unauthenticated",
   actionLabel: string,
@@ -1750,6 +1806,26 @@ function titleMapFromRows(rows: readonly { id: string; title: string }[]) {
   return new Map(rows.map((row) => [row.id, row.title]));
 }
 
+async function getManualProjectGoalTargetsFromSupabase(
+  client: SupabaseClientLike,
+  userId: string,
+): Promise<{
+  goals: LifeGoal[];
+  projects: LifeProject[];
+}> {
+  const [projectResult, goalResult] = await Promise.all([
+    createSupabaseProjectRepository(client).getProjectsByUser(userId, userId),
+    createSupabaseGoalRepository(client).getGoalsByUser(userId, userId),
+  ]);
+
+  return {
+    goals: goalResult.ok ? goalResult.data.map(realGoalToLifeGoal) : [],
+    projects: projectResult.ok
+      ? projectResult.data.map(realProjectToLifeProject)
+      : [],
+  };
+}
+
 async function getManualPortfolioRelationLabelLookups(
   client: SupabaseClientLike,
   userId: string,
@@ -1820,14 +1896,15 @@ async function getManualPortfolioEntityCollection(): Promise<{
     };
   }
 
-  const [profile, manualTasks] = await Promise.all([
+  const [profile, manualTasks, manualTargets] = await Promise.all([
     readManualProfile(),
     getManualTasksFromSupabase(auth.client, auth.user.id),
+    getManualProjectGoalTargetsFromSupabase(auth.client, auth.user.id),
   ]);
   const collection: EntityCollection = {
     tasks: manualTasks.tasks,
-    projects: profile.projects,
-    goals: profile.goals,
+    projects: [...manualTargets.projects, ...profile.projects],
+    goals: [...manualTargets.goals, ...profile.goals],
     skills: [],
     milestones: [],
   };

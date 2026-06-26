@@ -18,6 +18,10 @@ import type {
   PortfolioView,
   PortfolioViewModel,
 } from "../types";
+import {
+  createGoalFormAction,
+  createProjectFormAction,
+} from "@/features/real-data/actions/portfolio.actions";
 import { PortfolioContextPanel } from "./portfolio-context-panel";
 import { PortfolioEntityList } from "./portfolio-entity-list";
 import { PortfolioFilterBar } from "./portfolio-filter-bar";
@@ -174,6 +178,15 @@ function getViewLabel(viewModel: PortfolioViewModel, view: PortfolioView) {
   );
 }
 
+function targetCreateMessage(value: string | null) {
+  if (value === "project_created") return "Project erstellt.";
+  if (value === "goal_created") return "Goal erstellt.";
+  if (value === "blocked") return "Melde dich an, um Targets zu erstellen.";
+  if (value === "error") return "Target konnte nicht gespeichert werden.";
+
+  return null;
+}
+
 function contentStateAttributes(
   meta: ContentStateMeta,
   profileId: PortfolioViewModel["profileId"],
@@ -184,6 +197,104 @@ function contentStateAttributes(
     "data-item-count": meta.itemCount.toString(),
     "data-profile-id": profileId,
   };
+}
+
+function PortfolioTargetCreatePanel({
+  profileId,
+  statusMessage,
+}: Readonly<{
+  profileId: PortfolioViewModel["profileId"];
+  statusMessage: string | null;
+}>) {
+  if (profileId !== "manual") return null;
+
+  return (
+    <section
+      aria-labelledby="portfolio-target-create-heading"
+      className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.36)] px-3 py-3"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h2
+            className="text-[13px] font-semibold text-[var(--text-primary)]"
+            id="portfolio-target-create-heading"
+          >
+            Neues Target
+          </h2>
+          <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
+            Minimales Project oder Goal für Add to Existing erstellen.
+          </p>
+        </div>
+        {statusMessage ? (
+          <p className="rounded-full border border-[rgba(66,184,131,.26)] bg-[rgba(66,184,131,.10)] px-2.5 py-1 text-[10px] font-semibold text-[var(--text-secondary)]">
+            {statusMessage}
+          </p>
+        ) : null}
+      </div>
+
+      <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+        <form
+          action={createProjectFormAction}
+          aria-label="Project erstellen"
+          className="grid gap-2 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.42)] p-2"
+        >
+          <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+            Project-Titel
+            <input
+              className="min-h-9 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.78)] px-2 text-[12px] normal-case text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)]"
+              name="title"
+              placeholder="Neues Project"
+              required
+            />
+          </label>
+          <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+            Beschreibung
+            <input
+              className="min-h-9 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.78)] px-2 text-[12px] normal-case text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)]"
+              name="description"
+              placeholder="Optionaler Kontext"
+            />
+          </label>
+          <button
+            className="min-h-9 rounded-[9px] border border-[rgba(91,124,250,.34)] bg-[rgba(91,124,250,.14)] px-3 text-[11px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(91,124,250,.52)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+            type="submit"
+          >
+            Project erstellen
+          </button>
+        </form>
+
+        <form
+          action={createGoalFormAction}
+          aria-label="Goal erstellen"
+          className="grid gap-2 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.42)] p-2"
+        >
+          <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+            Goal-Titel
+            <input
+              className="min-h-9 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.78)] px-2 text-[12px] normal-case text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)]"
+              name="title"
+              placeholder="Neues Goal"
+              required
+            />
+          </label>
+          <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+            Beschreibung
+            <input
+              className="min-h-9 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.78)] px-2 text-[12px] normal-case text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)]"
+              name="description"
+              placeholder="Optionaler Kontext"
+            />
+          </label>
+          <button
+            className="min-h-9 rounded-[9px] border border-[rgba(66,184,131,.34)] bg-[rgba(66,184,131,.14)] px-3 text-[11px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(66,184,131,.52)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+            type="submit"
+          >
+            Goal erstellen
+          </button>
+        </form>
+      </div>
+    </section>
+  );
 }
 
 export function PortfolioPage({
@@ -203,6 +314,7 @@ export function PortfolioPage({
   const areaFilter = searchParams.get("area");
   const priorityFilter = searchParams.get("priority");
   const reviewFilter = searchParams.get("review");
+  const statusMessage = targetCreateMessage(searchParams.get("targetCreate"));
 
   const baseEntities = useMemo(
     () =>
@@ -313,6 +425,10 @@ export function PortfolioPage({
           selectedEntityId={selectedEntity?.id ?? null}
         />
         <div className="grid min-w-0 gap-2 xl:min-h-0">
+          <PortfolioTargetCreatePanel
+            profileId={viewModel.profileId}
+            statusMessage={statusMessage}
+          />
           <PortfolioContextPanel
             contentState={viewModel.contentStates.contextPanel}
             entity={selectedEntity}

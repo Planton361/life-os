@@ -158,11 +158,73 @@ async function selectFirstExistingProjectOrGoalTarget(
   return null;
 }
 
+async function selectExistingProjectTargetByTitle(
+  addToExistingDraft: Locator,
+  targetTitle: string,
+) {
+  await addToExistingDraft
+    .getByRole("button", { name: /^Project \d+ DB-Ziel(?:e)?$/ })
+    .click();
+
+  const select = addToExistingDraft.getByLabel("Existing target");
+  await expect(select).toBeEnabled();
+
+  const option = select.locator("option").filter({ hasText: targetTitle }).first();
+  const value = await option.getAttribute("value");
+
+  expect(value).toBeTruthy();
+  await select.selectOption(value ?? "");
+
+  return value ?? "";
+}
+
 async function openPortfolioTaskPlanningControls(page: Page, title: string) {
   await page.goto("/portfolio?view=tasks");
   await expect(page.getByText(title).first()).toBeVisible();
   await page.getByRole("link", { name: new RegExp(title) }).first().click();
   await expect(page.locator("#selected-entity-heading")).toHaveText(title);
+}
+
+async function openManualPortfolioWithDb(page: Page) {
+  await setProfile(page, "manual");
+  await applySupabaseAuthState(page);
+  await expectNoHydrationErrors(page, async () => {
+    await page.goto("/inbox");
+  });
+  await skipIfManualDbUnavailable(page);
+  await page.goto("/portfolio");
+}
+
+async function createPortfolioProjectTarget(
+  page: Page,
+  title: string,
+  description: string,
+) {
+  const form = page.locator('form[aria-label="Project erstellen"]');
+
+  await expect(form).toBeVisible();
+  await form.getByLabel("Project-Titel").fill(title);
+  await form.getByLabel("Beschreibung").fill(description);
+  await form.getByRole("button", { name: "Project erstellen" }).click();
+  await page.waitForLoadState("networkidle");
+  await expect(page.getByText("Project erstellt.").first()).toBeVisible();
+  await expect(page.getByText(title).first()).toBeVisible();
+}
+
+async function createPortfolioGoalTarget(
+  page: Page,
+  title: string,
+  description: string,
+) {
+  const form = page.locator('form[aria-label="Goal erstellen"]');
+
+  await expect(form).toBeVisible();
+  await form.getByLabel("Goal-Titel").fill(title);
+  await form.getByLabel("Beschreibung").fill(description);
+  await form.getByRole("button", { name: "Goal erstellen" }).click();
+  await page.waitForLoadState("networkidle");
+  await expect(page.getByText("Goal erstellt.").first()).toBeVisible();
+  await expect(page.getByText(title).first()).toBeVisible();
 }
 
 async function setProfile(page: Page, profile: ProfileId) {
@@ -2706,6 +2768,110 @@ test.describe("Portfolio content states", () => {
     await page.goto("/portfolio?view=skills");
     await expect(page.getByText("Noch keine Skills im Portfolio")).toBeVisible();
     await expectNoMainStrings(page, portfolioBlockedDemoStrings, "portfolio");
+  });
+
+  test("shows minimal Project and Goal target create UI for manual portfolio", async ({
+    page,
+  }) => {
+    await setProfile(page, "manual");
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/portfolio");
+    });
+
+    await expect(page.getByRole("heading", { name: "Neues Target" })).toBeVisible();
+    await expect(page.locator('form[aria-label="Project erstellen"]')).toBeVisible();
+    await expect(page.locator('form[aria-label="Goal erstellen"]')).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Project erstellen" }),
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Goal erstellen" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /löschen|archivieren/i })).toHaveCount(
+      0,
+    );
+  });
+
+  test("Manual Portfolio creates real Project and Goal targets", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session.",
+    );
+
+    const projectTitle = `Manual Portfolio Project Target ${Date.now()}`;
+    const goalTitle = `Manual Portfolio Goal Target ${Date.now()}`;
+
+    await openManualPortfolioWithDb(page);
+    await createPortfolioProjectTarget(
+      page,
+      projectTitle,
+      "Minimal Project target for Add to Existing.",
+    );
+    await page.reload();
+    await expect(page.getByText(projectTitle).first()).toBeVisible();
+
+    await createPortfolioGoalTarget(
+      page,
+      goalTitle,
+      "Minimal Goal target for Add to Existing.",
+    );
+    await page.reload();
+    await expect(page.getByText(goalTitle).first()).toBeVisible();
+  });
+
+  test("Manual Add to Existing uses a Project target created in Portfolio", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session.",
+    );
+
+    const projectTitle = `Manual Existing Project Target ${Date.now()}`;
+    const captureTitle = `Manual created target source ${Date.now()}`;
+    const taskTitle = `Manual created target task ${Date.now()}`;
+
+    await openManualPortfolioWithDb(page);
+    await createPortfolioProjectTarget(
+      page,
+      projectTitle,
+      "Use this Project as an Add to Existing target.",
+    );
+
+    await page.goto("/inbox");
+    await captureManualInboxItem(
+      page,
+      captureTitle,
+      "Attach this capture to the Project created in Portfolio.",
+    );
+
+    const addToExistingDraft = await openAddToExistingDraft(page);
+    const targetId = await selectExistingProjectTargetByTitle(
+      addToExistingDraft,
+      projectTitle,
+    );
+
+    await expect(
+      addToExistingDraft.getByText("Beitrag: Verbunden"),
+    ).toBeVisible();
+    await addToExistingDraft.getByLabel("Titel").fill(taskTitle);
+    await addToExistingDraft
+      .getByLabel("Beschreibung / Kontext")
+      .fill(`Task contribution for created Project: ${projectTitle}`);
+    await addToExistingDraft
+      .getByRole("button", { name: "Task-Beitrag erstellen" })
+      .click();
+    await page.waitForLoadState("networkidle");
+    await expect(page.getByText("Task erstellt").first()).toBeVisible();
+
+    await page.goto("/portfolio?view=tasks");
+    await expect(page.getByText(taskTitle).first()).toBeVisible();
+    await page.getByRole("link", { name: new RegExp(taskTitle) }).first().click();
+    const contextPanel = page.locator('[data-portfolio-section="context-panel"]');
+    await expect(contextPanel.getByText(projectTitle).first()).toBeVisible();
+    await expect(contextPanel.getByText(targetId)).toHaveCount(0);
+    await page.reload();
+    await expect(contextPanel.getByText(projectTitle).first()).toBeVisible();
   });
 
   test("Manual Portfolio projects triaged DB task reload-stable", async ({
