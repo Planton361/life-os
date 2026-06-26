@@ -41,7 +41,7 @@ const panelClasses =
   "overflow-hidden rounded-[22px] border border-[var(--border-default)] bg-[rgba(15,23,36,.96)] shadow-[0_8px_22px_rgba(0,0,0,.12)]";
 
 const panelHeaderClasses =
-  "border-b border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-4 py-3";
+  "shrink-0 border-b border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-4 py-3";
 
 const focusClasses =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-cyan)]";
@@ -1641,7 +1641,10 @@ function InboxActiveItemPanel({
       </div>
 
       {activeItem.hasSelection ? (
-      <div className="space-y-3 p-3 2xl:flex 2xl:min-h-0 2xl:flex-1 2xl:flex-col 2xl:gap-3 2xl:space-y-0">
+      <div
+        className="space-y-3 p-3 2xl:flex 2xl:min-h-0 2xl:flex-1 2xl:flex-col 2xl:gap-3 2xl:space-y-0 2xl:overflow-y-auto 2xl:pr-2"
+        data-inbox-section="active-item-body"
+      >
         <section
           aria-labelledby="original-capture-title"
           className="rounded-[16px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.52)] p-3 2xl:min-h-[102px]"
@@ -1745,7 +1748,10 @@ function InboxActiveItemPanel({
         </div>
       </div>
       ) : (
-        <div className="space-y-3 p-3 2xl:flex 2xl:min-h-0 2xl:flex-1 2xl:flex-col">
+        <div
+          className="space-y-3 p-3 2xl:flex 2xl:min-h-0 2xl:flex-1 2xl:flex-col 2xl:overflow-y-auto 2xl:pr-2"
+          data-inbox-section="active-item-body"
+        >
           <InboxEmptyState
             className="2xl:min-h-[180px]"
             description={activeItem.emptyState.description}

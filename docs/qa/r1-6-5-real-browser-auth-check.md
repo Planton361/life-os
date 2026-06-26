@@ -82,6 +82,14 @@
 - Add to Existing is partially connected: Task to Project/Goal only; Resource Link is prepared; Note/Decision/Skill are not connected.
 - Triaged or archived items show their post-state and must not reopen the active router as the primary work surface.
 
+## R1.6.6D3 Inbox Router Layout Check
+
+- In the 3-column desktop layout, the Active Item card body must scroll internally.
+- Add-to-Existing Draft must not be clipped by the card or page container.
+- Target type controls, Existing target select, Beitragstyp controls, and lower draft controls must remain reachable.
+- Planning Signals may sit below the fold, but must remain reachable through the Active Item scroll area.
+- Queue and assistant columns should remain stable while the Active Item body scrolls.
+
 ## R1.6.5B Follow-up Checks
 
 1. If `/settings#supabase-session` shows `invalid session`, use `Session zurücksetzen`.

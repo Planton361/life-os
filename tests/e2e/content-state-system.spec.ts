@@ -1839,6 +1839,61 @@ test.describe("Inbox content states", () => {
     ).toBeVisible();
   });
 
+  test("keeps the Add to Existing draft reachable inside the active item scroll area", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ height: 720, width: 1600 });
+    await setProfile(page, "demo");
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/inbox");
+    });
+
+    const activeItem = page.locator('[data-inbox-section="active-item"]');
+    const activeBody = activeItem.locator(
+      '[data-inbox-section="active-item-body"]',
+    );
+
+    await activeItem.locator('[data-outcome-route="add_to_existing"]').click();
+    await expect(
+      activeItem.getByRole("heading", { name: "Bestehendem Objekt zuordnen" }),
+    ).toBeVisible();
+    await expect(
+      activeItem.getByRole("button", { name: "Project 0 DB-Ziele" }),
+    ).toBeVisible();
+    await expect(
+      activeItem.getByRole("button", { name: "Resource Link" }),
+    ).toBeVisible();
+
+    const scrollMetrics = await activeBody.evaluate((node) => ({
+      clientHeight: node.clientHeight,
+      overflowY: window.getComputedStyle(node).overflowY,
+      scrollHeight: node.scrollHeight,
+    }));
+
+    expect(scrollMetrics.overflowY).toBe("auto");
+    expect(scrollMetrics.scrollHeight).toBeGreaterThan(
+      scrollMetrics.clientHeight,
+    );
+
+    await activeItem
+      .getByRole("button", { name: "Task-Beitrag erstellen" })
+      .scrollIntoViewIfNeeded();
+    await expect(
+      activeItem.getByRole("button", { name: "Task-Beitrag erstellen" }),
+    ).toBeVisible();
+
+    await activeItem
+      .getByRole("heading", { name: "Planning Signals" })
+      .scrollIntoViewIfNeeded();
+    await expect(
+      activeItem.getByRole("heading", { name: "Planning Signals" }),
+    ).toBeVisible();
+
+    await expect
+      .poll(() => activeBody.evaluate((node) => node.scrollTop))
+      .toBeGreaterThan(0);
+  });
+
   test("prepared Outcome Routes expose draft shells without persistence submit", async ({
     page,
   }) => {
