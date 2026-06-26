@@ -140,6 +140,7 @@ Calendar Planner Queue:
 - sortiert spaeter nach Priority, Energy, Duration, Deadline und Kontext;
 - erlaubt dem User, einen Slot zu setzen oder per Drag/Picker zu terminieren;
 - schreibt erst nach Confirm `scheduledStartAt`.
+- ist die Oberflaeche, um geplante, aber unterminierte Tasks in Zeitbloecke zu ueberfuehren.
 
 Today Planner:
 
@@ -210,7 +211,7 @@ AI bleibt Vorschlags- und Klaerungsschicht. Kritische Writes brauchen klare User
 | Portfolio Task View | Tasks aus Inbox erscheinen, Planung/Terminierung ueber Context Panel. | Task Inventory und Refinement. | Task Create/Edit/Lifecycle noch nicht vollstaendig. | R1.6.8C |
 | Today | Zeigt Tagesprojektion aus geplanten/terminierten Tasks. | Tagesplan und Ausfuehrung bauen. | Planner/Kandidatenliste noch nicht ausgearbeitet. | R1.6.8E |
 | Calendar Grid | Zeigt terminierte Tasks als Time Blocks. | Zeitprojektion aus `scheduledStartAt`. | Scheduling ist noch einfacher Heute-Button mit Default-Slot. | R1.6.8D |
-| Calendar Planning Queue | Zeigt Tasks mit Datum ohne Uhrzeit als Queue. | Unscheduled Tasks gezielt terminieren. | Kein Drag/Picker/Signal-Sort und kein Write aus Queue. | R1.6.8D |
+| Calendar Planning Queue | Zeigt Tasks mit Datum ohne Uhrzeit als Queue und terminiert per kleinem Confirm-Formular. | Unscheduled Tasks gezielt terminieren. | Kein Drag-and-drop, keine externen Calendar Events, kein Recurring. | R1.6.8C |
 | AI Assistant Panel | Schlaegt demonstrativ Route/Felder vor, keine Apply-Logik. | Vorschlag mit Confirm-Gates. | Guardrails pro Write fehlen. | R1.6.8F |
 | Recurring Tasks | Nur Hint/Future Scope. | Decision + Minimal Model. | Keine Begriffe, Schema-Optionen oder Instanzregeln final. | R1.6.9 |
 

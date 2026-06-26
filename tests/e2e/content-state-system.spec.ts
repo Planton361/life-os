@@ -2750,10 +2750,12 @@ test.describe("Calendar content states", () => {
       "empty",
     );
     await expect(page.getByText("Noch keine Termine oder Zeitblöcke")).toBeVisible();
-    await expect(page.getByText("Keine ungeplanten Aufgaben")).toBeVisible();
+    await expect(
+      page.getByText("Keine geplanten Tasks ohne Uhrzeit."),
+    ).toBeVisible();
   });
 
-  test("Manual Calendar projects scheduled DB task reload-stable", async ({
+  test("Manual Calendar plans DB task through queue and schedules reload-stable", async ({
     page,
   }) => {
     test.skip(
@@ -2766,22 +2768,46 @@ test.describe("Calendar content states", () => {
     await captureAndTriageManualInboxTask(
       page,
       title,
-      "Schedule this task into the Calendar time grid.",
+      "Plan this task into the Calendar Planner Queue before scheduling it.",
     );
     await openPortfolioTaskPlanningControls(page, title);
-    await page.getByRole("button", { name: "Heute terminieren" }).click();
+    await page.getByRole("button", { name: "Heute planen" }).click();
     await page.waitForLoadState("networkidle");
     await page.goto("/calendar");
 
     await expectCalendarWidgetContracts(page, "manual");
     await expectNoMainStrings(page, calendarBlockedDemoStrings, "calendar");
-    await expect(page.locator('[data-calendar-section="week-grid"]')).toHaveAttribute(
+    const weekGrid = page.locator('[data-calendar-section="week-grid"]');
+    const plannerQueue = page
+      .locator('[data-calendar-section="planning-queue"]')
+      .first();
+
+    await expect(weekGrid).toHaveAttribute(
       "data-content-state",
-      "partial",
+      "empty",
     );
-    await expect(page.getByText(title).first()).toBeVisible();
+    await expect(plannerQueue.getByText(title).first()).toBeVisible();
+    await expect(weekGrid.getByText(title)).toHaveCount(0);
+
+    const scheduleForm = plannerQueue.getByRole("form", {
+      name: `${title} terminieren`,
+    });
+    await scheduleForm.getByLabel("Uhrzeit").fill("10:15");
+    await scheduleForm.getByLabel("Dauer").selectOption("45");
+    await scheduleForm.getByRole("button", { name: "Terminieren" }).click();
+    await page.waitForLoadState("networkidle");
+
+    await expect(plannerQueue.getByText(title)).toHaveCount(0);
+    await expect(weekGrid.getByText(title).first()).toBeVisible();
     await page.reload();
+    await expect(weekGrid.getByText(title).first()).toBeVisible();
+
+    await page.goto("/today");
     await expect(page.getByText(title).first()).toBeVisible();
+
+    await page.goto("/dashboard");
+    const todayAgenda = page.getByRole("region", { name: "Today Agenda" });
+    await expect(todayAgenda.getByText(title).first()).toBeVisible();
   });
 });
 

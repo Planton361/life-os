@@ -168,6 +168,15 @@
 - Resource Create darf keine Task erstellen und keinen Portfolio Task Link anzeigen.
 - Bestehende lokale Half-State-Altlasten werden nicht breit automatisch bereinigt; der neue Pfad verhindert neue halbe Resource/Inbox-Zustaende.
 
+## R1.6.8C Calendar Planner Queue
+
+- Calendar Planner Queue zeigt Manual-Tasks mit `plannedDate` und ohne `scheduledStartAt`.
+- Tasks ohne `plannedDate` bleiben aus Calendar Grid und Planner Queue heraus.
+- `Terminieren` in der Queue schreibt nach User-Confirm `scheduledStartAt` und `durationMinutes`; danach verschwindet der Task aus der Queue und erscheint im Time Grid.
+- Reload muss Queue/Grid stabil halten; Today und Dashboard muessen denselben geplanten oder terminierten Task weiter anzeigen.
+- Empty State der Queue: `Keine geplanten Tasks ohne Uhrzeit.`
+- Manual ohne gueltige Supabase-Session zeigt weiter den bestehenden Auth-/DB-Hinweis und darf nicht auf Demo-Tasks zurueckfallen.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.

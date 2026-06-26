@@ -32,8 +32,54 @@ function localDateLabel(date = new Date(), timeZone = appTimeZone) {
   return `${part("year")}-${part("month")}-${part("day")}`;
 }
 
-function stableTodayScheduleStart(localDate: string) {
-  return `${localDate}T09:00:00.000Z`;
+function isLocalDate(value: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function isLocalTime(value: string) {
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+}
+
+function zonedLocalDateTimeToIso(
+  localDate: string,
+  localTime: string,
+  timeZone = appTimeZone,
+) {
+  const [year, month, day] = localDate.split("-").map(Number);
+  const [hour, minute] = localTime.split(":").map(Number);
+  const desiredUtcMs = Date.UTC(year, month - 1, day, hour, minute);
+  const utcGuess = new Date(desiredUtcMs);
+  const parts = new Intl.DateTimeFormat("en", {
+    day: "2-digit",
+    hour: "2-digit",
+    hourCycle: "h23",
+    minute: "2-digit",
+    month: "2-digit",
+    timeZone,
+    year: "numeric",
+  }).formatToParts(utcGuess);
+  const part = (type: string) =>
+    parts.find((item) => item.type === type)?.value ?? "00";
+  const renderedAsUtcMs = Date.UTC(
+    Number(part("year")),
+    Number(part("month")) - 1,
+    Number(part("day")),
+    Number(part("hour")),
+    Number(part("minute")),
+  );
+  const offsetMs = renderedAsUtcMs - utcGuess.getTime();
+
+  return new Date(desiredUtcMs - offsetMs).toISOString();
+}
+
+function durationMinutesFromForm(formData: FormData, mode: "plan" | "schedule") {
+  const rawDuration = formString(formData, "durationMinutes");
+
+  if (!rawDuration) return mode === "schedule" ? 30 : undefined;
+
+  const duration = Number(rawDuration);
+
+  return Number.isInteger(duration) && duration > 0 ? duration : undefined;
 }
 
 function revalidateTaskProjectionRoutes() {
@@ -83,13 +129,24 @@ export async function scheduleTaskForTodayAction(
   }
 
   const mode = formString(formData, "mode") === "schedule" ? "schedule" : "plan";
-  const plannedDate = localDateLabel();
+  const plannedDateInput = formString(formData, "plannedDate");
+  const plannedDate = isLocalDate(plannedDateInput)
+    ? plannedDateInput
+    : localDateLabel();
+  const scheduledTimeInput = formString(formData, "scheduledTime");
+  const scheduledTime = isLocalTime(scheduledTimeInput)
+    ? scheduledTimeInput
+    : "09:00";
+  const scheduledStartAtInput = formString(formData, "scheduledStartAt");
+  const scheduledStartAt =
+    mode === "schedule"
+      ? scheduledStartAtInput || zonedLocalDateTimeToIso(plannedDate, scheduledTime)
+      : undefined;
   const parsed = scheduleTaskInputSchema.safeParse({
-    durationMinutes: mode === "schedule" ? 30 : undefined,
+    durationMinutes: durationMinutesFromForm(formData, mode),
     plannedDate,
     profileId: auth.user.id,
-    scheduledStartAt:
-      mode === "schedule" ? stableTodayScheduleStart(plannedDate) : undefined,
+    scheduledStartAt,
     taskId: formString(formData, "taskId"),
     userId: auth.user.id,
   });

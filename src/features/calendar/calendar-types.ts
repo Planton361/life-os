@@ -222,8 +222,11 @@ export type SchedulableTaskViewModel = {
   priority: "P0" | "P1" | "P2" | "P3";
   area: string;
   project: string;
+  goal?: string;
+  energy?: "low" | "medium" | "high";
   status: SchedulableTaskStatus;
   estimatedMinutes: number;
+  plannedDate: string;
   dueDate?: string;
   recentlyUpdated: string;
   alreadyScheduled?: boolean;
@@ -310,6 +313,8 @@ export type CalendarViewModel = {
   hours: string[];
   allDayBlocks: CalendarAllDayBlockViewModel[];
   timedBlocks: CalendarTimedBlockViewModel[];
+  scheduledTasks: CalendarTimedBlockViewModel[];
+  plannerQueueTasks: SchedulableTaskViewModel[];
   selectedBlock?: CalendarAllDayBlockViewModel | CalendarTimedBlockViewModel;
   schedulableTasks: SchedulableTaskViewModel[];
   rightPanel: CalendarRightPanelViewModel;

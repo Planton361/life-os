@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Pill, accentStyle } from "@/components/layout/route-page-primitives";
+import { scheduleTaskForTodayFormAction } from "@/features/real-data/actions/task.actions";
 import { cn } from "@/lib/cn";
 import { type ContentStateMeta } from "@/features/content-state";
 import {
@@ -56,8 +57,26 @@ const monthNames = [
 ];
 const weekdayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+const queueInputClass =
+  "mt-1 min-h-8 w-full rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.76)] px-2.5 text-[12px] text-[var(--text-primary)] outline-none focus:border-[var(--focus-ring)]";
+
 function todayDateIso() {
   return formatIsoDate(new Date());
+}
+
+function durationLabel(minutes: number) {
+  if (minutes < 60) return `${minutes} min`;
+
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+
+  return rest > 0 ? `${hours}h ${rest}m` : `${hours}h`;
+}
+
+function scheduleDurationOptions(minutes: number) {
+  return Array.from(new Set([minutes, 15, 30, 45, 60, 90, 120])).sort(
+    (left, right) => left - right,
+  );
 }
 
 function stripTimedBlock(block: CalendarTimedBlockViewModel): CalendarRawTimedBlock {
@@ -517,11 +536,10 @@ function CalendarEmptyRightPanel({
                 className="text-[13px] font-semibold text-[var(--text-primary)]"
                 id="calendar-empty-planning-queue-heading"
               >
-                Planning Queue
+                Calendar Planner Queue
               </h3>
               <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
-                Aufgaben ohne Uhrzeit bleiben hier, statt in Fake-Slots zu
-                erscheinen.
+                Geplante Tasks ohne Uhrzeit in Zeitblöcke überführen.
               </p>
             </div>
             <Pill quiet>{visibleTasks.length}</Pill>
@@ -530,33 +548,91 @@ function CalendarEmptyRightPanel({
             <div className="mt-3 grid gap-1.5">
               {visibleTasks.map((task) => (
                 <article
-                  className="grid min-h-8 grid-cols-[8px_minmax(0,1fr)] gap-2"
+                  className="rounded-[10px] border border-[color-mix(in_srgb,var(--accent)_24%,transparent)] bg-[rgba(18,28,43,.44)] p-2"
                   key={task.id}
                   style={accentStyle(task.accent)}
                 >
-                  <span
-                    aria-hidden="true"
-                    className="mt-1.5 size-1.5 rounded-full bg-[var(--accent)]"
-                  />
-                  <div className="min-w-0">
-                    <p className="truncate text-[11px] font-medium text-[var(--text-secondary)]">
-                      {task.title}
-                    </p>
-                    <p className="truncate text-[10px] leading-4 text-[var(--text-muted)]">
-                      {task.priority} · {task.estimatedMinutes} min · {task.project}
-                    </p>
+                  <div className="grid min-h-8 grid-cols-[8px_minmax(0,1fr)] gap-2">
+                    <span
+                      aria-hidden="true"
+                      className="mt-1.5 size-1.5 rounded-full bg-[var(--accent)]"
+                    />
+                    <div className="min-w-0">
+                      <p className="truncate text-[11px] font-medium text-[var(--text-secondary)]">
+                        {task.title}
+                      </p>
+                      <p className="truncate text-[10px] leading-4 text-[var(--text-muted)]">
+                        {task.plannedDate} · {task.priority} ·{" "}
+                        {task.energy ?? "energy offen"} ·{" "}
+                        {durationLabel(task.estimatedMinutes)}
+                      </p>
+                      <p className="truncate text-[10px] leading-4 text-[var(--text-muted)]">
+                        {task.project}
+                      </p>
+                    </div>
                   </div>
+
+                  {profileId === "manual" ? (
+                    <form
+                      action={scheduleTaskForTodayFormAction}
+                      aria-label={`${task.title} terminieren`}
+                      className="mt-2 grid gap-1.5 sm:grid-cols-[minmax(0,1fr)_76px_auto]"
+                    >
+                      <input name="taskId" type="hidden" value={task.id} />
+                      <input name="mode" type="hidden" value="schedule" />
+                      <input
+                        name="plannedDate"
+                        type="hidden"
+                        value={task.plannedDate}
+                      />
+                      <label className="min-w-0">
+                        <span className="sr-only">Uhrzeit</span>
+                        <input
+                          className={queueInputClass}
+                          defaultValue="09:00"
+                          name="scheduledTime"
+                          type="time"
+                        />
+                      </label>
+                      <label className="min-w-0">
+                        <span className="sr-only">Dauer</span>
+                        <select
+                          className={queueInputClass}
+                          defaultValue={String(task.estimatedMinutes)}
+                          name="durationMinutes"
+                        >
+                          {scheduleDurationOptions(task.estimatedMinutes).map(
+                            (minutes) => (
+                              <option key={minutes} value={minutes}>
+                                {durationLabel(minutes)}
+                              </option>
+                            ),
+                          )}
+                        </select>
+                      </label>
+                      <button
+                        className="mt-1 min-h-8 rounded-full border border-[rgba(95,200,215,.34)] bg-[rgba(95,200,215,.14)] px-3 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(95,200,215,.48)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                        type="submit"
+                      >
+                        Terminieren
+                      </button>
+                    </form>
+                  ) : (
+                    <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
+                      Demo-Fixture. Persistente Terminierung ist im Manual-Profil aktiv.
+                    </p>
+                  )}
                 </article>
               ))}
             </div>
           ) : (
             <div className="mt-3 rounded-[10px] border border-dashed border-[var(--border-subtle)] bg-[rgba(168,183,204,.035)] px-3 py-4">
               <p className="text-[12px] font-semibold leading-4 text-[var(--text-primary)]">
-                Keine ungeplanten Aufgaben
+                Keine geplanten Tasks ohne Uhrzeit.
               </p>
               <p className="mt-1 text-[10px] leading-4 text-[var(--text-secondary)]">
-                Aufgaben ohne Uhrzeit erscheinen hier, sobald sie ein Datum oder
-                eine Planung brauchen.
+                Tasks erscheinen hier erst nach Tagesplanung und vor der
+                Terminierung.
               </p>
             </div>
           )}

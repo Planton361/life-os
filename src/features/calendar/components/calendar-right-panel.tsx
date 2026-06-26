@@ -4,6 +4,7 @@ import type { ContentStateMeta } from "@/features/content-state";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Pill, accentStyle } from "@/components/layout/route-page-primitives";
+import { scheduleTaskForTodayFormAction } from "@/features/real-data/actions/task.actions";
 import { cn } from "@/lib/cn";
 import type { CalendarRawTimedBlock } from "../calendar-view-model";
 import {
@@ -81,6 +82,12 @@ function durationLabel(minutes: number) {
   const rest = minutes % 60;
 
   return rest > 0 ? `${hours}h ${rest}m` : `${hours}h`;
+}
+
+function scheduleDurationOptions(minutes: number) {
+  return Array.from(new Set([minutes, 15, 30, 45, 60, 90, 120])).sort(
+    (left, right) => left - right,
+  );
 }
 
 function isTimedBlock(block: SelectedBlock): block is CalendarTimedBlockViewModel {
@@ -407,6 +414,10 @@ function PlanningQueue({
   tasks: readonly SchedulableTaskViewModel[];
 }>) {
   const [tab, setTab] = useState<QueueTab>("unscheduled");
+  const queueTasks = useMemo(
+    () => tasks.filter((task) => !task.alreadyScheduled),
+    [tasks],
+  );
   const queueItems = useMemo(() => {
     if (tab === "open-loops") {
       return panel.openLoops.map((item) => ({
@@ -424,14 +435,14 @@ function PlanningQueue({
       }));
     }
 
-    return tasks
-      .filter((task) => !task.alreadyScheduled)
-      .map((task) => ({
-        title: task.title,
-        meta: `${task.priority} · ${task.estimatedMinutes} min · ${task.project}`,
-        accent: task.accent,
-      }));
-  }, [panel.openLoops, panel.reviewsOpen, tab, tasks]);
+    return queueTasks.map((task) => ({
+      title: task.title,
+      meta: `${task.priority} · ${task.estimatedMinutes} min · ${task.project}`,
+      accent: task.accent,
+    }));
+  }, [panel.openLoops, panel.reviewsOpen, queueTasks, tab]);
+  const queueCount = tab === "unscheduled" ? queueTasks.length : queueItems.length;
+  const canSchedule = profileId === "manual";
 
   return (
     <section
@@ -446,17 +457,17 @@ function PlanningQueue({
             className="text-[13px] font-semibold text-[var(--text-primary)]"
             id="calendar-planning-queue-heading"
           >
-            Planning Queue
+            Calendar Planner Queue
           </h3>
           <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
-            Secondary queue for items that need time.
+            Geplante Tasks ohne Uhrzeit in Zeitblöcke überführen.
           </p>
         </div>
-        <Pill quiet>{queueItems.length}</Pill>
+        <Pill quiet>{queueCount}</Pill>
       </div>
       <div className="mt-2 flex rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.48)] p-1">
         {[
-          ["unscheduled", "Unscheduled"],
+          ["unscheduled", "Tasks"],
           ["open-loops", "Open loops"],
           ["reviews", "Reviews"],
         ].map(([value, label], index) => (
@@ -477,26 +488,111 @@ function PlanningQueue({
         ))}
       </div>
       <div className="mt-2 grid gap-1.5">
-        {queueItems.slice(0, 4).map((item) => (
-          <article
-            className="grid min-h-8 grid-cols-[8px_minmax(0,1fr)] gap-2"
-            key={`${tab}-${item.title}`}
-            style={accentStyle(item.accent)}
-          >
-            <span
-              aria-hidden="true"
-              className="mt-1.5 size-1.5 rounded-full bg-[var(--accent)]"
-            />
-            <div className="min-w-0">
-              <p className="truncate text-[11px] font-medium text-[var(--text-secondary)]">
-                {item.title}
-              </p>
-              <p className="truncate text-[10px] leading-4 text-[var(--text-muted)]">
-                {item.meta}
-              </p>
-            </div>
-          </article>
-        ))}
+        {tab === "unscheduled" && queueTasks.length === 0 ? (
+          <p className="rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.42)] px-3 py-2 text-[11px] text-[var(--text-muted)]">
+            Keine geplanten Tasks ohne Uhrzeit.
+          </p>
+        ) : null}
+
+        {tab === "unscheduled"
+          ? queueTasks.slice(0, 4).map((task) => (
+              <article
+                className="rounded-[10px] border border-[color-mix(in_srgb,var(--accent)_24%,transparent)] bg-[rgba(18,28,43,.44)] p-2"
+                key={task.id}
+                style={accentStyle(task.accent)}
+              >
+                <div className="grid min-h-8 grid-cols-[8px_minmax(0,1fr)] gap-2">
+                  <span
+                    aria-hidden="true"
+                    className="mt-1.5 size-1.5 rounded-full bg-[var(--accent)]"
+                  />
+                  <div className="min-w-0">
+                    <p className="truncate text-[11px] font-medium text-[var(--text-secondary)]">
+                      {task.title}
+                    </p>
+                    <p className="truncate text-[10px] leading-4 text-[var(--text-muted)]">
+                      {task.plannedDate} · {task.priority} ·{" "}
+                      {task.energy ?? "energy offen"} ·{" "}
+                      {durationLabel(task.estimatedMinutes)}
+                    </p>
+                    <p className="truncate text-[10px] leading-4 text-[var(--text-muted)]">
+                      {task.project}
+                    </p>
+                  </div>
+                </div>
+
+                {canSchedule ? (
+                  <form
+                    action={scheduleTaskForTodayFormAction}
+                    aria-label={`${task.title} terminieren`}
+                    className="mt-2 grid gap-1.5 sm:grid-cols-[minmax(0,1fr)_76px_auto]"
+                  >
+                    <input name="taskId" type="hidden" value={task.id} />
+                    <input name="mode" type="hidden" value="schedule" />
+                    <input
+                      name="plannedDate"
+                      type="hidden"
+                      value={task.plannedDate}
+                    />
+                    <label className="min-w-0">
+                      <span className="sr-only">Uhrzeit</span>
+                      <input
+                        className={inputClass}
+                        defaultValue="09:00"
+                        name="scheduledTime"
+                        type="time"
+                      />
+                    </label>
+                    <label className="min-w-0">
+                      <span className="sr-only">Dauer</span>
+                      <select
+                        className={inputClass}
+                        defaultValue={String(task.estimatedMinutes)}
+                        name="durationMinutes"
+                      >
+                        {scheduleDurationOptions(task.estimatedMinutes).map(
+                          (minutes) => (
+                            <option key={minutes} value={minutes}>
+                              {durationLabel(minutes)}
+                            </option>
+                          ),
+                        )}
+                      </select>
+                    </label>
+                    <button
+                      className="mt-1 min-h-8 rounded-full border border-[rgba(95,200,215,.34)] bg-[rgba(95,200,215,.14)] px-3 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(95,200,215,.48)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                      type="submit"
+                    >
+                      Terminieren
+                    </button>
+                  </form>
+                ) : (
+                  <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
+                    Demo-Fixture. Persistente Terminierung ist im Manual-Profil aktiv.
+                  </p>
+                )}
+              </article>
+            ))
+          : queueItems.slice(0, 4).map((item) => (
+              <article
+                className="grid min-h-8 grid-cols-[8px_minmax(0,1fr)] gap-2"
+                key={`${tab}-${item.title}`}
+                style={accentStyle(item.accent)}
+              >
+                <span
+                  aria-hidden="true"
+                  className="mt-1.5 size-1.5 rounded-full bg-[var(--accent)]"
+                />
+                <div className="min-w-0">
+                  <p className="truncate text-[11px] font-medium text-[var(--text-secondary)]">
+                    {item.title}
+                  </p>
+                  <p className="truncate text-[10px] leading-4 text-[var(--text-muted)]">
+                    {item.meta}
+                  </p>
+                </div>
+              </article>
+            ))}
       </div>
     </section>
   );

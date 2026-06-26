@@ -468,6 +468,8 @@ export function getCalendarViewModel(): CalendarViewModel {
     hours: calendarHours,
     allDayBlocks,
     timedBlocks: timedBlockViewModels,
+    scheduledTasks: timedBlockViewModels.filter((block) => block.source === "task"),
+    plannerQueueTasks: schedulableTasks.filter((task) => !task.alreadyScheduled),
     selectedBlock,
     schedulableTasks,
     currentTime: {

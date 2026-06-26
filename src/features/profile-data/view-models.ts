@@ -2622,6 +2622,52 @@ function projectToAllDayBlock(
   };
 }
 
+const taskEnergyOrder: Record<NonNullable<LifeTask["energy"]>, number> = {
+  high: 0,
+  medium: 1,
+  low: 2,
+};
+
+function taskQueueEnergyRank(task: LifeTask) {
+  return task.energy ? taskEnergyOrder[task.energy] : 3;
+}
+
+function taskQueueContextLabel(task: LifeTask) {
+  if (task.projectId && task.goalId) return "Project + Goal linked";
+  if (task.projectId) return "Project linked";
+  if (task.goalId) return "Goal linked";
+
+  return "Manual";
+}
+
+function taskQueueStatus(
+  task: LifeTask,
+): CalendarViewModel["schedulableTasks"][number]["status"] {
+  if (task.status === "done") return "done";
+  if (task.status === "active") return "in-progress";
+  if (task.status === "planned") return "planned";
+
+  return "open";
+}
+
+function sortPlannerQueueTasks(left: LifeTask, right: LifeTask) {
+  const dateCompare = (left.date ?? "").localeCompare(right.date ?? "");
+  if (dateCompare !== 0) return dateCompare;
+
+  const priorityCompare =
+    taskPriorityOrder[left.priority] - taskPriorityOrder[right.priority];
+  if (priorityCompare !== 0) return priorityCompare;
+
+  const energyCompare = taskQueueEnergyRank(left) - taskQueueEnergyRank(right);
+  if (energyCompare !== 0) return energyCompare;
+
+  const durationCompare =
+    (left.durationMinutes ?? 30) - (right.durationMinutes ?? 30);
+  if (durationCompare !== 0) return durationCompare;
+
+  return left.id.localeCompare(right.id);
+}
+
 function buildProfileCalendarViewModel(
   profile: ManualProfileData,
   profileId: Exclude<LifeOsProfileId, "demo">,
@@ -2644,9 +2690,11 @@ function buildProfileCalendarViewModel(
   const allDayBlocks = profile.projects.map((project) =>
     projectToAllDayBlock(project, firstDayId),
   );
-  const planningQueueTasks = profile.tasks.filter(
-    (task) => task.date && !task.startTime,
-  );
+  const scheduledTaskBlocks = timedBlocks.filter((block) => block.source === "task");
+  const planningQueueTasks = profile.tasks
+    .filter((task) => task.date && !task.startTime)
+    .filter((task) => task.status !== "done" && task.status !== "canceled")
+    .sort(sortPlannerQueueTasks);
 
   const schedulableTasks: CalendarViewModel["schedulableTasks"] =
     planningQueueTasks.map((task) => ({
@@ -2654,14 +2702,12 @@ function buildProfileCalendarViewModel(
       title: task.title,
       priority: dashboardPriority(task.priority),
       area: areaLabel(task.areaId),
-      project: task.projectId ?? "Manual",
-      status:
-        task.status === "done"
-          ? ("done" as const)
-          : task.status === "active"
-            ? ("in-progress" as const)
-            : ("open" as const),
+      project: taskQueueContextLabel(task),
+      goal: task.goalId ? "Goal linked" : undefined,
+      energy: task.energy,
+      status: taskQueueStatus(task),
       estimatedMinutes: task.durationMinutes ?? 30,
+      plannedDate: task.date ?? todayDateLabel(),
       dueDate: task.date,
       recentlyUpdated: "local",
       alreadyScheduled: false,
@@ -2820,6 +2866,8 @@ function buildProfileCalendarViewModel(
     hours: calendarHours,
     allDayBlocks,
     timedBlocks,
+    scheduledTasks: scheduledTaskBlocks,
+    plannerQueueTasks: schedulableTasks,
     selectedBlock,
     schedulableTasks,
     rightPanel,
