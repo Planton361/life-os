@@ -64,6 +64,8 @@ Die Inbox darf Planungsabsichten sammeln. Konkrete Tagesplanung und Zeitplanung 
 | Skill | Nur verwenden, wenn eine reale Skill-Entity und Persistence existieren. | Future Scope, solange Skill nicht als echte persistierte Entity verfuegbar ist. |
 | Resource | Capture wird an bestehende Resource gehaengt oder als Resource-Relation modelliert. | Resource Picker liest vorhandene Resources; Resource Link ist vorbereitet, schreibt aber noch keine Relation. |
 
+Add-to-Existing Task-Beitraege erscheinen in Portfolio mit lesbaren Project-/Goal-Kontextrelationen. IDs bleiben technische Details und sind kein primaeres UI-Label.
+
 ### Create New Targets
 
 | Target | Bedeutung | Status |

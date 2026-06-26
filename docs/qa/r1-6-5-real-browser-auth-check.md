@@ -101,6 +101,14 @@
 - Portfolio Tasks show the new Task and the context panel renders the selected Project or Goal relation.
 - Reloading Inbox and Portfolio must not expose another Add-to-Existing submit for the already triaged Inbox item.
 
+## R1.6.6F Portfolio Relation Labels
+
+- Add-to-Existing Tasks must not show raw Project or Goal UUIDs as the primary relation label in Portfolio.
+- Project and Goal titles appear in the Portfolio context panel when the selected target still exists and is active.
+- Missing or archived targets show `Project nicht gefunden` or `Goal nicht gefunden`.
+- Tasks without a relation show `Kein Project verknüpft` and `Kein Goal verknüpft`.
+- Manual profile must not fall back to demo Project or Goal titles.
+
 ## R1.6.5B Follow-up Checks
 
 1. If `/settings#supabase-session` shows `invalid session`, use `Session zurücksetzen`.

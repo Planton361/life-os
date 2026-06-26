@@ -529,7 +529,74 @@ function relation(label: string, value?: string) {
   return value ? [{ label, value }] : [];
 }
 
-function taskToPortfolioEntity(task: LifeTask, index: number): PortfolioEntity {
+type PortfolioRelationLabelLookups = {
+  goalTitles: ReadonlyMap<string, string>;
+  projectTitles: ReadonlyMap<string, string>;
+  skillTitles: ReadonlyMap<string, string>;
+};
+
+function portfolioRelationLabelLookups(
+  collection: EntityCollection,
+  supplemental?: {
+    goalTitles?: ReadonlyMap<string, string>;
+    projectTitles?: ReadonlyMap<string, string>;
+  },
+): PortfolioRelationLabelLookups {
+  return {
+    goalTitles:
+      supplemental?.goalTitles ??
+      new Map(collection.goals.map((goal) => [goal.id, goal.title])),
+    projectTitles:
+      supplemental?.projectTitles ??
+      new Map(collection.projects.map((project) => [project.id, project.title])),
+    skillTitles: new Map(
+      collection.skills.map((skill) => [skill.id, skill.title]),
+    ),
+  };
+}
+
+function linkedTitle(
+  id: string | undefined,
+  titles: ReadonlyMap<string, string>,
+  fallback: string,
+) {
+  return id ? titles.get(id) ?? fallback : null;
+}
+
+function taskPortfolioRelations(
+  task: LifeTask,
+  lookups: PortfolioRelationLabelLookups,
+) {
+  return [
+    {
+      label: "Project",
+      value:
+        linkedTitle(
+          task.projectId,
+          lookups.projectTitles,
+          "Project nicht gefunden",
+        ) ??
+        "Kein Project verknüpft",
+    },
+    {
+      label: "Goal",
+      value:
+        linkedTitle(task.goalId, lookups.goalTitles, "Goal nicht gefunden") ??
+        "Kein Goal verknüpft",
+    },
+    ...relation(
+      "Skill",
+      linkedTitle(task.skillId, lookups.skillTitles, "Skill nicht gefunden") ??
+        undefined,
+    ),
+  ];
+}
+
+function taskToPortfolioEntity(
+  task: LifeTask,
+  index: number,
+  lookups: PortfolioRelationLabelLookups,
+): PortfolioEntity {
   const blocked = task.status === "waiting";
 
   return {
@@ -550,11 +617,7 @@ function taskToPortfolioEntity(task: LifeTask, index: number): PortfolioEntity {
     recentRank: index + 1,
     reviewNeeded: task.reviewNeeded,
     blocked,
-    relations: [
-      ...relation("Project", task.projectId),
-      ...relation("Goal", task.goalId),
-      ...relation("Skill", task.skillId),
-    ],
+    relations: taskPortfolioRelations(task, lookups),
     decisions: blocked
       ? [
           {
@@ -581,6 +644,7 @@ function projectPortfolioStatus(project: LifeProject): PortfolioStatus {
 function projectToPortfolioEntity(
   project: LifeProject,
   index: number,
+  lookups: PortfolioRelationLabelLookups,
 ): PortfolioEntity {
   const blocked = Boolean(project.blocker) || project.status === "blocked";
   const decisions: PortfolioDecision[] = blocked
@@ -614,7 +678,11 @@ function projectToPortfolioEntity(
     reviewNeeded: false,
     blocked,
     relations: [
-      ...relation("Goal", project.goalId),
+      ...relation(
+        "Goal",
+        linkedTitle(project.goalId, lookups.goalTitles, "Goal nicht gefunden") ??
+          undefined,
+      ),
       { label: "Phase", value: project.phase },
     ],
     decisions,
@@ -697,10 +765,17 @@ function skillToPortfolioEntity(
   };
 }
 
-function collectionToPortfolioEntities(collection: EntityCollection) {
+function collectionToPortfolioEntities(
+  collection: EntityCollection,
+  lookups = portfolioRelationLabelLookups(collection),
+) {
   return [
-    ...collection.tasks.map(taskToPortfolioEntity),
-    ...collection.projects.map(projectToPortfolioEntity),
+    ...collection.tasks.map((task, index) =>
+      taskToPortfolioEntity(task, index, lookups),
+    ),
+    ...collection.projects.map((project, index) =>
+      projectToPortfolioEntity(project, index, lookups),
+    ),
     ...collection.goals.map(goalToPortfolioEntity),
     ...collection.skills.map(skillToPortfolioEntity),
   ];
@@ -709,6 +784,7 @@ function collectionToPortfolioEntities(collection: EntityCollection) {
 function buildProfilePortfolioViewModel(
   profileId: LifeOsProfileId,
   collection: EntityCollection,
+  relationLookups?: PortfolioRelationLabelLookups,
 ): PortfolioViewModel {
   const entityCount =
     collection.tasks.length +
@@ -716,22 +792,25 @@ function buildProfilePortfolioViewModel(
     collection.goals.length +
     collection.skills.length;
 
-  return getDemoPortfolioViewModel(collectionToPortfolioEntities(collection), {
-    profileId,
-    summary:
-      profileId === "manual"
-        ? "Lokale Tasks, Projekte und Ziele aus dem Manual Local Profile steuern. Demo-Fixtures bleiben ausgeblendet."
-        : "Leere Portfolio-Struktur ohne Demo-Tasks, Demo-Projekte, Demo-Ziele oder Demo-Skills.",
-    dateRange:
-      profileId === "manual"
-        ? `${entityCount} local entities`
-        : "0 local entities",
-    pageType: "Portfolio / Profile-aware Entity Workbench",
-    canonicalSource:
-      profileId === "manual"
-        ? "Portfolio reads the local Manual profile entity collection. It does not duplicate demo fixtures."
-        : "Portfolio reads the Empty profile entity collection. Demo fixtures are disabled outside the Demo profile.",
-  });
+  return getDemoPortfolioViewModel(
+    collectionToPortfolioEntities(collection, relationLookups),
+    {
+      profileId,
+      summary:
+        profileId === "manual"
+          ? "Lokale Tasks, Projekte und Ziele aus dem Manual Local Profile steuern. Demo-Fixtures bleiben ausgeblendet."
+          : "Leere Portfolio-Struktur ohne Demo-Tasks, Demo-Projekte, Demo-Ziele oder Demo-Skills.",
+      dateRange:
+        profileId === "manual"
+          ? `${entityCount} local entities`
+          : "0 local entities",
+      pageType: "Portfolio / Profile-aware Entity Workbench",
+      canonicalSource:
+        profileId === "manual"
+          ? "Portfolio reads the local Manual profile entity collection. It does not duplicate demo fixtures."
+          : "Portfolio reads the Empty profile entity collection. Demo fixtures are disabled outside the Demo profile.",
+    },
+  );
 }
 
 function buildProfileMentalHealthViewModel(
@@ -1484,6 +1563,9 @@ type ResourceTargetRow = Pick<
   "id" | "review_needed" | "title" | "type" | "updated_at"
 >;
 
+type PortfolioRelationTargetRow = Pick<TableRow<"projects">, "id" | "title">;
+type PortfolioRelationGoalRow = Pick<TableRow<"goals">, "id" | "title">;
+
 function targetUpdatedLabel(updatedAt: string) {
   return `updated ${updatedAt.slice(0, 10)}`;
 }
@@ -1611,6 +1693,34 @@ async function getManualInboxProfileData(): Promise<{
   };
 }
 
+async function getManualTasksFromSupabase(
+  client: SupabaseClientLike,
+  userId: string,
+): Promise<{
+  tasks: LifeTask[];
+  unavailableReason?: string;
+}> {
+  const repository = createSupabaseTaskRepository(client);
+  const result = await repository.getTasksByUser({
+    profileId: userId,
+    sortBy: "created",
+    userId,
+  });
+
+  if (!result.ok) {
+    return {
+      tasks: [],
+      unavailableReason: "Tasks konnten nicht aus Supabase geladen werden.",
+    };
+  }
+
+  return {
+    tasks: result.data
+      .map(realTaskToLifeTask)
+      .filter((task): task is LifeTask => Boolean(task)),
+  };
+}
+
 async function getManualTaskProfileData(): Promise<{
   tasks: LifeTask[];
   unavailableReason?: string;
@@ -1627,24 +1737,108 @@ async function getManualTaskProfileData(): Promise<{
     };
   }
 
-  const repository = createSupabaseTaskRepository(auth.client);
-  const result = await repository.getTasksByUser({
-    profileId: auth.user.id,
-    sortBy: "created",
-    userId: auth.user.id,
-  });
+  return getManualTasksFromSupabase(auth.client, auth.user.id);
+}
 
-  if (!result.ok) {
-    return {
+function uniqueDefined(values: readonly (string | undefined)[]) {
+  return Array.from(
+    new Set(values.filter((value): value is string => Boolean(value))),
+  );
+}
+
+function titleMapFromRows(rows: readonly { id: string; title: string }[]) {
+  return new Map(rows.map((row) => [row.id, row.title]));
+}
+
+async function getManualPortfolioRelationLabelLookups(
+  client: SupabaseClientLike,
+  userId: string,
+  tasks: readonly LifeTask[],
+): Promise<PortfolioRelationLabelLookups> {
+  const projectIds = uniqueDefined(tasks.map((task) => task.projectId));
+  const goalIds = uniqueDefined(tasks.map((task) => task.goalId));
+
+  const [projectResult, goalResult] = await Promise.all([
+    projectIds.length > 0
+      ? ((await client
+          .from("projects")
+          .select("id,title")
+          .eq("user_id", userId)
+          .is("archived_at", null)
+          .in("id", projectIds)) as SupabaseQueryResult<
+          readonly PortfolioRelationTargetRow[]
+        >)
+      : Promise.resolve({
+          data: [],
+          error: null,
+        } as SupabaseQueryResult<readonly PortfolioRelationTargetRow[]>),
+    goalIds.length > 0
+      ? ((await client
+          .from("goals")
+          .select("id,title")
+          .eq("user_id", userId)
+          .is("archived_at", null)
+          .in("id", goalIds)) as SupabaseQueryResult<
+          readonly PortfolioRelationGoalRow[]
+        >)
+      : Promise.resolve({
+          data: [],
+          error: null,
+        } as SupabaseQueryResult<readonly PortfolioRelationGoalRow[]>),
+  ]);
+
+  return {
+    goalTitles: goalResult.error
+      ? new Map()
+      : titleMapFromRows(goalResult.data ?? []),
+    projectTitles: projectResult.error
+      ? new Map()
+      : titleMapFromRows(projectResult.data ?? []),
+    skillTitles: new Map(),
+  };
+}
+
+async function getManualPortfolioEntityCollection(): Promise<{
+  collection: EntityCollection;
+  relationLookups?: PortfolioRelationLabelLookups;
+}> {
+  const auth = await createAuthenticatedSupabaseServerClient();
+
+  if (!auth.ok) {
+    const profile = await readManualProfile();
+    const collection: EntityCollection = {
       tasks: [],
-      unavailableReason: "Tasks konnten nicht aus Supabase geladen werden.",
+      projects: profile.projects,
+      goals: profile.goals,
+      skills: [],
+      milestones: [],
+    };
+
+    return {
+      collection,
+      relationLookups: portfolioRelationLabelLookups(collection),
     };
   }
 
+  const [profile, manualTasks] = await Promise.all([
+    readManualProfile(),
+    getManualTasksFromSupabase(auth.client, auth.user.id),
+  ]);
+  const collection: EntityCollection = {
+    tasks: manualTasks.tasks,
+    projects: profile.projects,
+    goals: profile.goals,
+    skills: [],
+    milestones: [],
+  };
+
   return {
-    tasks: result.data
-      .map(realTaskToLifeTask)
-      .filter((task): task is LifeTask => Boolean(task)),
+    collection,
+    relationLookups: await getManualPortfolioRelationLabelLookups(
+      auth.client,
+      auth.user.id,
+      collection.tasks,
+    ),
   };
 }
 
@@ -2652,6 +2846,16 @@ export async function getPortfolioViewModel(): Promise<PortfolioViewModel> {
 
   if (profileId === "demo") {
     return getDemoPortfolioViewModel();
+  }
+
+  if (profileId === "manual") {
+    const manualPortfolio = await getManualPortfolioEntityCollection();
+
+    return buildProfilePortfolioViewModel(
+      profileId,
+      manualPortfolio.collection,
+      manualPortfolio.relationLookups,
+    );
   }
 
   return buildProfilePortfolioViewModel(profileId, await getEntityCollection());

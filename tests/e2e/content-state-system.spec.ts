@@ -2066,12 +2066,21 @@ test.describe("Inbox content states", () => {
     await expect(page.getByText(taskTitle).first()).toBeVisible();
     await page.getByRole("link", { name: new RegExp(taskTitle) }).first().click();
     await expect(page.locator("#selected-entity-heading")).toHaveText(taskTitle);
-    await expect(page.getByText(selectedTarget.relationLabel).first()).toBeVisible();
-    await expect(page.getByText(selectedTarget.targetId).first()).toBeVisible();
+    const contextPanel = page.locator('[data-portfolio-section="context-panel"]');
+    await expect(
+      contextPanel.getByText(selectedTarget.relationLabel).first(),
+    ).toBeVisible();
+    await expect(
+      contextPanel.getByText(selectedTarget.targetTitle).first(),
+    ).toBeVisible();
+    await expect(contextPanel.getByText(selectedTarget.targetId)).toHaveCount(0);
 
     await page.reload();
     await expect(page.locator("#selected-entity-heading")).toHaveText(taskTitle);
-    await expect(page.getByText(selectedTarget.targetId).first()).toBeVisible();
+    await expect(
+      contextPanel.getByText(selectedTarget.targetTitle).first(),
+    ).toBeVisible();
+    await expect(contextPanel.getByText(selectedTarget.targetId)).toHaveCount(0);
 
     await page.goto("/inbox");
     await expect(page.getByText(captureTitle).first()).toBeVisible();
