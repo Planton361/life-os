@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { Pill, accentStyle } from "@/components/layout/route-page-primitives";
 import type { ContentStateMeta } from "@/features/content-state";
+import { scheduleTaskForTodayFormAction } from "@/features/real-data/actions/task.actions";
 import { cn } from "@/lib/cn";
 import type {
   TodayActivityEventViewModel,
@@ -12,6 +13,7 @@ import type {
   TodayDeltaMetricViewModel,
   TodayReviewSignalViewModel,
   TodayLinkedEntityType,
+  TodayPlannerTaskViewModel,
   TodayViewModel,
 } from "./today-view-model";
 
@@ -172,9 +174,15 @@ function TodayHeader({
 function ActivityStream({
   emptyState,
   events,
+  planner,
+  plannerContentState,
+  profileId,
 }: Readonly<{
   emptyState: TodayViewModel["activityStream"]["emptyState"];
   events: TodayActivityEventViewModel[];
+  planner: TodayViewModel["todayPlanner"];
+  plannerContentState: ContentStateMeta;
+  profileId: TodayViewModel["profileId"];
 }>) {
   return (
     <div className="flex h-full min-h-0 flex-col 2xl:overflow-y-auto 2xl:pr-1">
@@ -184,6 +192,12 @@ function ActivityStream({
         </p>
         <Pill accent="var(--accent-cyan)">{events.length} events</Pill>
       </div>
+
+      <TodayPlannerQueue
+        contentState={plannerContentState}
+        planner={planner}
+        profileId={profileId}
+      />
 
       {events.length > 0 ? (
         <ol className="relative mt-3 grid gap-2.5 before:absolute before:bottom-2 before:left-[3.55rem] before:top-2 before:w-px before:bg-[var(--border-subtle)]">
@@ -233,6 +247,122 @@ function ActivityStream({
         </p>
       </div>
     </div>
+  );
+}
+
+function durationLabel(minutes: number) {
+  if (minutes < 60) return `${minutes} min`;
+
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+
+  return rest > 0 ? `${hours}h ${rest}m` : `${hours}h`;
+}
+
+function TodayPlannerQueue({
+  contentState,
+  planner,
+  profileId,
+}: Readonly<{
+  contentState: ContentStateMeta;
+  planner: TodayViewModel["todayPlanner"];
+  profileId: TodayViewModel["profileId"];
+}>) {
+  return (
+    <section
+      aria-labelledby="today-planner-heading"
+      className="mt-3 rounded-[12px] border border-[rgba(148,163,184,.10)] bg-[rgba(11,17,28,.34)] p-3"
+      data-today-section="today-planner"
+      {...contentStateAttributes(contentState, profileId)}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3
+            className="text-[13px] font-semibold text-[var(--text-primary)]"
+            id="today-planner-heading"
+          >
+            {planner.title}
+          </h3>
+          <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
+            {planner.subtitle}
+          </p>
+        </div>
+        <Pill quiet>{planner.tasks.length}</Pill>
+      </div>
+
+      {planner.tasks.length > 0 ? (
+        <div className="mt-2 grid gap-1.5">
+          {planner.tasks.map((task) => (
+            <TodayPlannerTaskCard
+              canPlan={profileId === "manual"}
+              key={task.id}
+              task={task}
+            />
+          ))}
+        </div>
+      ) : (
+        <EmptyStateBlock
+          className="mt-2"
+          description={planner.emptyState.description}
+          title={planner.emptyState.title}
+        />
+      )}
+    </section>
+  );
+}
+
+function TodayPlannerTaskCard({
+  canPlan,
+  task,
+}: Readonly<{
+  canPlan: boolean;
+  task: TodayPlannerTaskViewModel;
+}>) {
+  return (
+    <article
+      className="rounded-[10px] border border-[color-mix(in_srgb,var(--accent)_24%,transparent)] bg-[rgba(18,28,43,.44)] p-2"
+      style={accentStyle(task.accent)}
+    >
+      <div className="grid min-h-8 grid-cols-[8px_minmax(0,1fr)] gap-2">
+        <span
+          aria-hidden="true"
+          className="mt-1.5 size-1.5 rounded-full bg-[var(--accent)]"
+        />
+        <div className="min-w-0">
+          <p className="truncate text-[11px] font-medium text-[var(--text-secondary)]">
+            {task.title}
+          </p>
+          <p className="truncate text-[10px] leading-4 text-[var(--text-muted)]">
+            {task.priority} · {task.energy ?? "energy offen"} ·{" "}
+            {durationLabel(task.durationMinutes)}
+          </p>
+          <p className="truncate text-[10px] leading-4 text-[var(--text-muted)]">
+            {task.contextLabel} · {task.candidateReason}
+          </p>
+        </div>
+      </div>
+
+      {canPlan ? (
+        <form
+          action={scheduleTaskForTodayFormAction}
+          aria-label={`${task.title} heute planen`}
+          className="mt-2 flex justify-end"
+        >
+          <input name="taskId" type="hidden" value={task.id} />
+          <input name="mode" type="hidden" value="plan" />
+          <button
+            className="min-h-8 rounded-full border border-[rgba(95,200,215,.34)] bg-[rgba(95,200,215,.14)] px-3 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(95,200,215,.48)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+            type="submit"
+          >
+            Heute planen
+          </button>
+        </form>
+      ) : (
+        <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
+          Demo-/Empty-Profil. Persistente Tagesplanung ist im Manual-Profil aktiv.
+        </p>
+      )}
+    </article>
   );
 }
 
@@ -706,6 +836,9 @@ export function TodayMemoryLogPage({
           <ActivityStream
             emptyState={viewModel.activityStream.emptyState}
             events={viewModel.activityStream.events}
+            planner={viewModel.todayPlanner}
+            plannerContentState={viewModel.contentStates.todayPlanner}
+            profileId={viewModel.profileId}
           />
         </MemoryPanel>
 

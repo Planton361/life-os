@@ -90,6 +90,8 @@ export type LifeTask = {
   description: string;
   status: TaskStatus;
   priority: EntityPriority;
+  createdAt?: string;
+  updatedAt?: string;
   date?: string;
   startTime?: string;
   durationMinutes?: number;

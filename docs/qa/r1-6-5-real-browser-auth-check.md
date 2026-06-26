@@ -177,6 +177,16 @@
 - Empty State der Queue: `Keine geplanten Tasks ohne Uhrzeit.`
 - Manual ohne gueltige Supabase-Session zeigt weiter den bestehenden Auth-/DB-Hinweis und darf nicht auf Demo-Tasks zurueckfallen.
 
+## R1.6.8D Today Planner
+
+- Candidate Tasks sind offene Tasks mit Planning Signals, aber noch ohne heutiges `plannedDate`.
+- `Heute planen` im Today Planner setzt `plannedDate` fuer den lokalen Tag und setzt kein `scheduledStartAt`.
+- Today Agenda zeigt geplante heutige Tasks.
+- Dashboard Today Agenda bleibt nach `Heute planen` konsistent.
+- Calendar Planner Queue zeigt geplante Tasks ohne Uhrzeit.
+- Calendar Time Grid zeigt Tasks erst mit `scheduledStartAt`.
+- Empty State: `Keine offenen Kandidaten für heute.`
+
 ## Known Boundaries
 
 - Browser auth is email/password only.

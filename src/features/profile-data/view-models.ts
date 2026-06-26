@@ -95,6 +95,7 @@ import {
 } from "@/features/today/today-view-model";
 import type {
   TodayActivityEventViewModel,
+  TodayPlannerTaskViewModel,
   TodayReviewSignalViewModel,
   TodayViewModel,
 } from "@/features/today";
@@ -1492,6 +1493,7 @@ function realTaskToLifeTask(task: RealDataTask): LifeTask | null {
   return {
     areaId: "review",
     calendarBlockIds: [],
+    createdAt: task.createdAt,
     date: task.plannedDate ?? scheduledDate,
     description: task.description ?? "",
     durationMinutes: task.durationMinutes ?? undefined,
@@ -1530,6 +1532,7 @@ function realTaskToLifeTask(task: RealDataTask): LifeTask | null {
     ],
     title: task.title,
     type: "task",
+    updatedAt: task.updatedAt,
   };
 }
 
@@ -2218,6 +2221,76 @@ function taskToTodayEvent(task: LifeTask): TodayActivityEventViewModel {
   };
 }
 
+function taskHasPlanningSignals(task: LifeTask) {
+  return (
+    task.priority !== "none" ||
+    Boolean(task.energy) ||
+    Boolean(task.durationMinutes) ||
+    task.reviewNeeded ||
+    Boolean(task.inboxItemIds?.length)
+  );
+}
+
+function isOpenTask(task: LifeTask) {
+  return task.status !== "done" && task.status !== "canceled";
+}
+
+function taskTodayContextLabel(task: LifeTask) {
+  if (task.projectId && task.goalId) return "Project + Goal linked";
+  if (task.projectId) return "Project linked";
+  if (task.goalId) return "Goal linked";
+
+  return task.source ?? "Task";
+}
+
+function taskCandidateReason(task: LifeTask) {
+  const signals = [
+    task.priority !== "none" ? task.priority : null,
+    task.energy ? `${task.energy} energy` : null,
+    task.durationMinutes ? `${task.durationMinutes} min` : null,
+    task.reviewNeeded ? "review needed" : null,
+    task.inboxItemIds?.length ? "from Inbox" : null,
+  ].filter((item): item is string => Boolean(item));
+
+  return signals.length > 0 ? signals.join(" · ") : "Planning Signal";
+}
+
+function taskEnergyRank(task: LifeTask) {
+  if (task.energy === "high") return 0;
+  if (task.energy === "medium") return 1;
+  if (task.energy === "low") return 2;
+
+  return 3;
+}
+
+function sortTodayCandidateTasks(left: LifeTask, right: LifeTask) {
+  const priorityCompare =
+    taskPriorityOrder[left.priority] - taskPriorityOrder[right.priority];
+  if (priorityCompare !== 0) return priorityCompare;
+
+  const energyCompare = taskEnergyRank(left) - taskEnergyRank(right);
+  if (energyCompare !== 0) return energyCompare;
+
+  const durationCompare =
+    (left.durationMinutes ?? 30) - (right.durationMinutes ?? 30);
+  if (durationCompare !== 0) return durationCompare;
+
+  return (left.createdAt ?? left.id).localeCompare(right.createdAt ?? right.id);
+}
+
+function taskToTodayPlannerTask(task: LifeTask): TodayPlannerTaskViewModel {
+  return {
+    id: task.id,
+    title: task.title,
+    priority: dashboardPriority(task.priority),
+    energy: task.energy,
+    durationMinutes: task.durationMinutes ?? 30,
+    contextLabel: taskTodayContextLabel(task),
+    candidateReason: taskCandidateReason(task),
+    accent: areaAccent(task.areaId),
+  };
+}
+
 function inboxToTodayEvent(item: ManualInboxItem): TodayActivityEventViewModel {
   return {
     id: `today-${item.id}`,
@@ -2316,7 +2389,16 @@ function buildProfileTodayViewModel(
 ): TodayViewModel {
   const viewModel = clone(getDemoTodayViewModel());
   const today = todayDateLabel();
-  const todayTasks = profile.tasks.filter((task) => task.date === today);
+  const todayTasks = profile.tasks
+    .filter((task) => task.date === today)
+    .filter((task) => task.status !== "canceled");
+  const todayCandidateTasks = profile.tasks
+    .filter(isOpenTask)
+    .filter((task) => !task.date && !task.startTime)
+    .filter(taskHasPlanningSignals)
+    .sort(sortTodayCandidateTasks)
+    .slice(0, 4);
+  const plannerTasks = todayCandidateTasks.map(taskToTodayPlannerTask);
   const events = [
     ...todayTasks.map(taskToTodayEvent),
     ...profile.inboxItems.map(inboxToTodayEvent),
@@ -2359,6 +2441,7 @@ function buildProfileTodayViewModel(
     decisionsArtifactsCount: artifacts.length,
     deltaValueCount,
     openingReviewCount: 0,
+    todayPlannerCount: plannerTasks.length,
   });
   viewModel.firstRunNotice = hasTodayData
     ? undefined
@@ -2386,6 +2469,10 @@ function buildProfileTodayViewModel(
         accent: "var(--accent-blue)",
       },
       {
+        label: `${plannerTasks.length} candidates`,
+        accent: "var(--accent-orange)",
+      },
+      {
         label: `${profile.inboxItems.length} inbox`,
         accent: "var(--accent-green)",
       },
@@ -2402,6 +2489,15 @@ function buildProfileTodayViewModel(
       title: "Noch keine Tagesereignisse",
       description:
         "Geplante Aufgaben, aktuelle Blöcke und geloggte Entscheidungen erscheinen hier.",
+    },
+  };
+  viewModel.todayPlanner = {
+    ...viewModel.todayPlanner,
+    tasks: plannerTasks,
+    emptyState: {
+      title: "Keine offenen Kandidaten für heute.",
+      description:
+        "Offene Tasks mit Planning Signals erscheinen hier, bevor sie in den heutigen Plan übernommen werden.",
     },
   };
   viewModel.openingReview = {

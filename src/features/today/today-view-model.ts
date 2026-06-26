@@ -14,6 +14,7 @@ export type TodayContentStates = {
   page: ContentStateMeta;
   header: ContentStateMeta;
   activityStream: ContentStateMeta;
+  todayPlanner: ContentStateMeta;
   openingReview: ContentStateMeta;
   deltaSummary: ContentStateMeta;
   decisionsArtifacts: ContentStateMeta;
@@ -80,6 +81,17 @@ export type TodayActivityEventViewModel = {
   accent: string;
 };
 
+export type TodayPlannerTaskViewModel = {
+  id: string;
+  title: string;
+  priority: "P0" | "P1" | "P2" | "P3";
+  energy?: "low" | "medium" | "high";
+  durationMinutes: number;
+  contextLabel: string;
+  candidateReason: string;
+  accent: string;
+};
+
 export type TodayDeltaMetricViewModel = {
   label: string;
   value: string;
@@ -128,6 +140,12 @@ export type TodayViewModel = {
     title: "Activity Stream";
     subtitle: string;
     events: TodayActivityEventViewModel[];
+    emptyState: TodayEmptyState;
+  };
+  todayPlanner: {
+    title: "Today Planner";
+    subtitle: string;
+    tasks: TodayPlannerTaskViewModel[];
     emptyState: TodayEmptyState;
   };
   openingReview: {
@@ -197,6 +215,7 @@ export function buildTodayContentStates({
   decisionsArtifactsCount,
   deltaValueCount,
   openingReviewCount,
+  todayPlannerCount,
 }: Readonly<{
   activityEventCount: number;
   carryForwardCount: number;
@@ -204,6 +223,7 @@ export function buildTodayContentStates({
   decisionsArtifactsCount: number;
   deltaValueCount: number;
   openingReviewCount: number;
+  todayPlannerCount: number;
 }>): TodayContentStates {
   const pageItemCount =
     activityEventCount +
@@ -211,12 +231,18 @@ export function buildTodayContentStates({
     closingReviewCount +
     decisionsArtifactsCount +
     deltaValueCount +
-    openingReviewCount;
+    openingReviewCount +
+    todayPlannerCount;
 
   return {
     activityStream: resolveContentStateMeta({
       capacity: todayStateCapacities.activityStream,
       itemCount: activityEventCount,
+    }),
+    todayPlanner: resolveContentStateMeta({
+      capacity: 4,
+      itemCount: todayPlannerCount,
+      hasHistory: activityEventCount > 0,
     }),
     carryForward: resolveContentStateMeta({
       capacity: todayStateCapacities.carryForward,
@@ -428,6 +454,7 @@ export function getTodayViewModel(): TodayViewModel {
       decisionsArtifactsCount: 10,
       deltaValueCount: 6,
       openingReviewCount: 6,
+      todayPlannerCount: 0,
     }),
     header: {
       eyebrow: "DAY MEMORY LOG",
@@ -467,6 +494,16 @@ export function getTodayViewModel(): TodayViewModel {
         title: "Noch keine Tagesereignisse",
         description:
           "Geplante Aufgaben, aktuelle Blöcke und geloggte Entscheidungen erscheinen hier.",
+      },
+    },
+    todayPlanner: {
+      title: "Today Planner",
+      subtitle: "Kandidaten für heute.",
+      tasks: [],
+      emptyState: {
+        title: "Keine offenen Kandidaten für heute.",
+        description:
+          "Tasks mit Planning Signals erscheinen hier, bevor du sie in den heutigen Plan übernimmst.",
       },
     },
     openingReview: {

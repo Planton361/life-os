@@ -148,6 +148,7 @@ Today Planner:
 - hilft aus Backlog/Portfolio heraus den Tag zu bauen;
 - setzt `plannedDate`, aber nicht automatisch Uhrzeit;
 - bleibt Daily-Workflow, kein generisches Task-Management.
+- ist die Oberflaeche, um Task-Kandidaten in den heutigen Plan zu uebernehmen.
 
 ## Recurring Task Scope
 

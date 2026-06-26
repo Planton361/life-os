@@ -557,6 +557,11 @@ async function expectTodayWidgetContracts(page: Page, profile: ProfileId) {
     "9",
   );
   await expectWidgetContract(
+    page.locator('[data-today-section="today-planner"]'),
+    profile,
+    "4",
+  );
+  await expectWidgetContract(
     page.locator('[data-today-section="opening-review"]'),
     profile,
     "6",
@@ -2604,6 +2609,12 @@ test.describe("Today content states", () => {
       page.locator('[data-today-section="activity-stream"]'),
     ).toHaveAttribute("data-content-state", "empty");
     await expect(
+      page.locator('[data-today-section="today-planner"]'),
+    ).toHaveAttribute("data-content-state", "empty");
+    await expect(
+      page.getByText("Keine offenen Kandidaten für heute."),
+    ).toBeVisible();
+    await expect(
       page.getByText("Für heute wurde noch nichts erfasst."),
     ).toBeVisible();
     await expect(page.getByText("Noch keine Tagesereignisse")).toBeVisible();
@@ -2639,6 +2650,12 @@ test.describe("Today content states", () => {
     await expect(page.getByText("Manual").first()).toBeVisible();
     await expect(page.getByText("Noch keine Tagesereignisse")).toBeVisible();
     await expect(
+      page.locator('[data-today-section="today-planner"]'),
+    ).toHaveAttribute("data-content-state", "empty");
+    await expect(
+      page.getByText("Keine offenen Kandidaten für heute."),
+    ).toBeVisible();
+    await expect(
       page.locator('[data-today-section="opening-review"]'),
     ).toHaveAttribute("data-content-state", "empty");
     await expect(
@@ -2668,6 +2685,9 @@ test.describe("Today content states", () => {
     await expect(
       page.locator('[data-today-section="activity-stream"]'),
     ).toHaveAttribute("data-item-count", "1");
+    await expect(
+      page.locator('[data-today-section="today-planner"]'),
+    ).toHaveAttribute("data-content-state", "empty");
     await expect(page.getByText("Manual Today Inbox Capture").first()).toBeVisible();
     await expect(page.getByText("Manual Project 1").first()).toBeVisible();
     await expect(
@@ -2679,6 +2699,110 @@ test.describe("Today content states", () => {
     await expect(
       page.locator('[data-today-section="closing-review"]'),
     ).toHaveAttribute("data-content-state", "empty");
+  });
+
+  test("Manual Today shows DB task candidate before planning", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session; no broad DB cleanup action is available.",
+    );
+
+    const title = `Manual Today Candidate ${Date.now()}`;
+
+    await captureAndTriageManualInboxTask(
+      page,
+      title,
+      "Keep this task as an unplanned Today candidate.",
+    );
+    await page.goto("/today");
+
+    await expectTodayWidgetContracts(page, "manual");
+    await expectNoTodayDemoStrings(page);
+    const todayPlanner = page.locator('[data-today-section="today-planner"]');
+    const activityTimeline = page.locator(
+      '[data-today-section="activity-stream"] ol',
+    );
+
+    await expect(todayPlanner).toHaveAttribute("data-content-state", "partial");
+    await expect(todayPlanner.getByText(title).first()).toBeVisible();
+    await expect(activityTimeline.getByText(title)).toHaveCount(0);
+  });
+
+  test("Manual Today Planner plans DB task into Today, Dashboard and Calendar queue", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session; no broad DB cleanup action is available.",
+    );
+
+    const title = `Manual Today Planner DB Task ${Date.now()}`;
+
+    await captureAndTriageManualInboxTask(
+      page,
+      title,
+      "Plan this task from the Today Planner queue.",
+    );
+    await page.goto("/today");
+    const todayPlanner = page.locator('[data-today-section="today-planner"]');
+    const planForm = todayPlanner.getByRole("form", {
+      name: `${title} heute planen`,
+    });
+
+    await expect(todayPlanner.getByText(title).first()).toBeVisible();
+    await planForm.getByRole("button", { name: "Heute planen" }).click();
+    await page.waitForLoadState("networkidle");
+
+    const activityTimeline = page.locator(
+      '[data-today-section="activity-stream"] ol',
+    );
+    await expect(todayPlanner.getByText(title)).toHaveCount(0);
+    await expect(activityTimeline.getByText(title).first()).toBeVisible();
+    await page.reload();
+    await expect(activityTimeline.getByText(title).first()).toBeVisible();
+
+    await page.goto("/dashboard");
+    const todayAgenda = page.getByRole("region", { name: "Today Agenda" });
+    await expect(todayAgenda.getByText(title).first()).toBeVisible();
+
+    await page.goto("/calendar");
+    const calendarPlannerQueue = page
+      .locator('[data-calendar-section="planning-queue"]')
+      .first();
+    const weekGrid = page.locator('[data-calendar-section="week-grid"]');
+    await expect(calendarPlannerQueue.getByText(title).first()).toBeVisible();
+    await expect(weekGrid.getByText(title)).toHaveCount(0);
+  });
+
+  test("Manual Today keeps scheduled DB task out of planner candidates", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session; no broad DB cleanup action is available.",
+    );
+
+    const title = `Manual Today Scheduled ${Date.now()}`;
+
+    await captureAndTriageManualInboxTask(
+      page,
+      title,
+      "Schedule this task and keep it out of the Today Planner queue.",
+    );
+    await openPortfolioTaskPlanningControls(page, title);
+    await page.getByRole("button", { name: "Heute terminieren" }).click();
+    await page.waitForLoadState("networkidle");
+
+    await page.goto("/today");
+    const todayPlanner = page.locator('[data-today-section="today-planner"]');
+    const activityTimeline = page.locator(
+      '[data-today-section="activity-stream"] ol',
+    );
+
+    await expect(activityTimeline.getByText(title).first()).toBeVisible();
+    await expect(todayPlanner.getByText(title)).toHaveCount(0);
   });
 
   test("Manual Today and Dashboard project planned DB task", async ({ page }) => {

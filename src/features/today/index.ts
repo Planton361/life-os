@@ -13,6 +13,7 @@ export type {
   TodayEmptyState,
   TodayHeaderViewModel,
   TodayLinkedEntityType,
+  TodayPlannerTaskViewModel,
   TodayProfileId,
   TodayReviewSignalViewModel,
   TodayStatusPillViewModel,
