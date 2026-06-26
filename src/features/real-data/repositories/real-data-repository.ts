@@ -40,6 +40,10 @@ export type MarkInboxItemTriagedInput = {
   taskId: string;
 };
 
+export type CreateResourceFromInboxInput = CreateResourceInput & {
+  inboxItemId: string;
+};
+
 export type LinkTaskToDailyLogInput = {
   userId: UserId;
   profileId: ProfileId;
@@ -176,3 +180,7 @@ export type TriageInboxItemToTaskTransaction = (
     task: Task;
   }>
 >;
+
+export type CreateResourceFromInboxTransaction = (
+  input: CreateResourceFromInboxInput,
+) => Promise<RepositoryResult<Resource>>;

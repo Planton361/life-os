@@ -174,7 +174,11 @@ function outcomeRouteStatus(route: InboxOutcomeRoute) {
     return "Teilweise verbunden";
   }
 
-  if (route === "standalone_task" || route === "solved_archive") {
+  if (
+    route === "standalone_task" ||
+    route === "knowledge_resource" ||
+    route === "solved_archive"
+  ) {
     return "Verbunden";
   }
 
@@ -679,6 +683,7 @@ function InboxOutcomeRoutes({
           const isSelected = selectedRoute === option.id;
           const isConnected =
             option.id === "add_to_existing" ||
+            option.id === "knowledge_resource" ||
             option.id === "standalone_task" ||
             option.id === "solved_archive";
           const status = outcomeRouteStatus(option.id);

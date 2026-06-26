@@ -86,7 +86,7 @@ Resolve / Archive
 -> Inbox Item verschwindet aus aktiver Inbox
 ```
 
-Aktueller Lock: Fuer verbundene Task-, Add-to-existing-Task-, Resource- und Archive-Flows ist Create/Link/Archive zugleich Resolve. Die UI muss das nachvollziehbar zeigen. Falls ein Zielobjekt geschrieben wurde, aber Resolve fehlschlaegt, muss die UI spaeter einen Recovery-Zustand zeigen statt stiller Inkonsistenz.
+Aktueller Lock: Fuer verbundene Task-, Add-to-existing-Task-, Resource- und Archive-Flows ist Create/Link/Archive zugleich Resolve. Die UI muss das nachvollziehbar zeigen. Seit R1.6.8B laeuft Resource Create + Inbox Resolve ueber eine transaktionale RPC. Falls andere Zielobjekt-Flows spaeter partielle Fehler zeigen, brauchen sie einen Recovery-Zustand statt stiller Inkonsistenz.
 
 ## Planning Signals
 
@@ -205,7 +205,7 @@ AI bleibt Vorschlags- und Klaerungsschicht. Kritische Writes brauchen klare User
 | Planning Signals | Sichtbar unter Draft, Copy trennt Scheduling. | Signals koennen vor Zielerstellung gesetzt und spaeter bearbeitet werden. | Persistenz ist uneinheitlich und Task-zentriert. | R1.6.8F |
 | Solved / Archive | Soft-Archiv per Confirm, kein Zielobjekt. | Abschluss ist nachvollziehbar resolved. | Kein Archive-View/Undo/Reason. | R1.6.8B |
 | Add to Existing | Target Picker liest Projects/Goals/Resources; Task-Beitrag zu Project/Goal persistiert. | Contribution oder Relation zu bestehendem Ziel. | Resource Link, Note, Decision, Skill bleiben vorbereitet. | R1.6.8B / R1.6.8F |
-| Resource Route | Resource Draft erstellt echte Resource und archiviert Inbox Item. | Resource wird bestaetigt erstellt und in Resources verfeinert. | Nicht atomar; keine direkte Inbox-FK, keine Relation. | R1.6.8B |
+| Resource Route | Resource Draft erstellt echte Resource und archiviert Inbox Item ueber RPC. | Resource wird bestaetigt erstellt und in Resources verfeinert. | Keine direkte Inbox-FK, keine Relation; Idempotency nutzt `resources.source`. | R1.6.8B |
 | Portfolio Create | Minimal Project/Goal Create sichtbar. | Contextual Create je View. | View-spezifische Defaults und All-View-Typwahl fehlen. | R1.6.8C |
 | Portfolio Task View | Tasks aus Inbox erscheinen, Planung/Terminierung ueber Context Panel. | Task Inventory und Refinement. | Task Create/Edit/Lifecycle noch nicht vollstaendig. | R1.6.8C |
 | Today | Zeigt Tagesprojektion aus geplanten/terminierten Tasks. | Tagesplan und Ausfuehrung bauen. | Planner/Kandidatenliste noch nicht ausgearbeitet. | R1.6.8E |

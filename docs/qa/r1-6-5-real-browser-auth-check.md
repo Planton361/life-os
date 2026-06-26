@@ -159,6 +159,15 @@
 - Planning Signals sind keine Terminierung; Priority, Energy, Duration, Area, Review Needed, Today Candidate, Deadline Hint und Recurrence Hint bleiben bis Confirm nur Hinweise.
 - AI darf Route, Felder, Ziele und Calendar Slots vorschlagen, aber keine Zielobjekte erstellen, Inbox Items resolven oder Calendar Blocks setzen ohne User-Bestaetigung.
 
+## R1.6.8B Inbox Resolve Semantics
+
+- Route waehlen resolved kein Inbox Item.
+- Draft bearbeiten resolved kein Inbox Item.
+- Confirm/Create/Link/Archive resolved verbundene Routen.
+- Resource Create + Inbox Resolve laeuft ueber eine transaktionale lokale RPC und nutzt `resources.source = inbox:<inboxItemId>` als Idempotency-Marker.
+- Resource Create darf keine Task erstellen und keinen Portfolio Task Link anzeigen.
+- Bestehende lokale Half-State-Altlasten werden nicht breit automatisch bereinigt; der neue Pfad verhindert neue halbe Resource/Inbox-Zustaende.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.

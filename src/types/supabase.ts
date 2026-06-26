@@ -588,6 +588,37 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_resource_from_inbox: {
+        Args: {
+          p_area_id?: string
+          p_inbox_item_id: string
+          p_review_needed?: boolean
+          p_summary?: string
+          p_title: string
+          p_type: Database["public"]["Enums"]["resource_type"]
+          p_url?: string
+        }
+        Returns: {
+          archived_at: string | null
+          area_id: string | null
+          created_at: string
+          id: string
+          review_needed: boolean
+          source: string | null
+          summary: string | null
+          title: string
+          type: Database["public"]["Enums"]["resource_type"]
+          updated_at: string
+          url: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "resources"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       triage_inbox_item_to_task: {
         Args: {
           p_area_id?: string

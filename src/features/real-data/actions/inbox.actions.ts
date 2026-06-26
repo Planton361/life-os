@@ -9,11 +9,8 @@ import {
 } from "@/features/real-data";
 import {
   createSupabaseInboxRepository,
+  createSupabaseInboxResourceTransaction,
   createSupabaseInboxTriageTransaction,
-  createSupabaseResourceRepository,
-  realDataTableNames,
-  type InboxItemRow,
-  type SupabaseQueryResult,
 } from "@/features/real-data/supabase";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
 import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
@@ -380,43 +377,15 @@ export async function createResourceFromInboxAction(
     };
   }
 
-  const inboxResult = (await auth.client
-    .from(realDataTableNames.inboxItems)
-    .select("id")
-    .eq("user_id", auth.user.id)
-    .eq("id", inboxItemId)
-    .is("archived_at", null)
-    .single()) as SupabaseQueryResult<Pick<InboxItemRow, "id">>;
-
-  if (inboxResult.error || !inboxResult.data) {
-    return {
-      message: "Der Inbox-Eintrag konnte nicht gefunden werden.",
-      status: "error",
-    };
-  }
-
-  const resourceRepository = createSupabaseResourceRepository(auth.client);
-  const resourceResult = await resourceRepository.createResource(parsed.data);
+  const resourceTransaction = createSupabaseInboxResourceTransaction(auth.client);
+  const resourceResult = await resourceTransaction({
+    ...parsed.data,
+    inboxItemId,
+  });
 
   if (!resourceResult.ok) {
     return {
-      message: "Die Resource konnte nicht gespeichert werden.",
-      status: "error",
-    };
-  }
-
-  const inboxRepository = createSupabaseInboxRepository(auth.client);
-  const archiveResult = await inboxRepository.archiveInboxItem({
-    inboxItemId,
-    profileId: auth.user.id,
-    userId: auth.user.id,
-  });
-
-  if (!archiveResult.ok) {
-    return {
-      message:
-        "Resource erstellt, aber der Inbox-Eintrag konnte nicht abgeschlossen werden.",
-      resourceId: resourceResult.data.id,
+      message: "Resource konnte nicht gespeichert werden.",
       status: "error",
     };
   }
@@ -424,7 +393,7 @@ export async function createResourceFromInboxAction(
   revalidateInboxResourceRoutes();
 
   return {
-    inboxItemId: archiveResult.data.id,
+    inboxItemId,
     message: "Resource erstellt.",
     resourceId: resourceResult.data.id,
     status: "success",

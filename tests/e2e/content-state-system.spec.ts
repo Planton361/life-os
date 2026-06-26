@@ -1805,12 +1805,13 @@ test.describe("Inbox content states", () => {
     await expect(
       activeItem.locator('[data-outcome-route="add_to_existing"]'),
     ).toContainText("Status: Teilweise verbunden");
+    await expect(
+      activeItem.locator('[data-outcome-route="knowledge_resource"]'),
+    ).toContainText("Status: Verbunden");
 
-    for (const route of ["create_new", "knowledge_resource"]) {
-      await expect(
-        activeItem.locator(`[data-outcome-route="${route}"]`),
-      ).toContainText("Status: Noch nicht verbunden");
-    }
+    await expect(
+      activeItem.locator('[data-outcome-route="create_new"]'),
+    ).toContainText("Status: Noch nicht verbunden");
 
     await expect(
       activeItem.locator('[data-outcome-route="solved_archive"]'),
@@ -2355,28 +2356,43 @@ test.describe("Inbox content states", () => {
       resourceDraft.getByRole("button", { exact: true, name: "Task erstellen" }),
     ).toHaveCount(0);
 
-    await resourceDraft.getByLabel("Titel").fill(draftTitle);
-    await resourceDraft.getByLabel("Resource Typ").selectOption("link");
-    await resourceDraft
+    await page.reload();
+    await expect(page.getByText(title).first()).toBeVisible();
+    await page.goto("/resources");
+    await expect(page.getByText(draftTitle)).toHaveCount(0);
+    await page.goto("/inbox");
+    await expect(page.getByText(title).first()).toBeVisible();
+
+    const activeItemAfterReload = page.locator('[data-inbox-section="active-item"]');
+    await activeItemAfterReload
+      .locator('[data-outcome-route="knowledge_resource"]')
+      .click();
+    const resourceDraftAfterReload = activeItemAfterReload
+      .getByRole("heading", { name: "Resource Draft" })
+      .locator("xpath=ancestor::section[1]");
+
+    await resourceDraftAfterReload.getByLabel("Titel").fill(draftTitle);
+    await resourceDraftAfterReload.getByLabel("Resource Typ").selectOption("link");
+    await resourceDraftAfterReload
       .getByLabel("URL optional")
       .fill("https://example.test/life-os-resource");
-    await resourceDraft
+    await resourceDraftAfterReload
       .getByRole("button", { exact: true, name: "Resource erstellen" })
       .click();
     await page.waitForLoadState("networkidle");
 
     await expect(
-      activeItem.getByRole("heading", { name: "Resource erstellt" }),
+      activeItemAfterReload.getByRole("heading", { name: "Resource erstellt" }),
     ).toBeVisible();
     await expect(
-      activeItem.getByText("Diese Inbox wurde als Resource gespeichert."),
+      activeItemAfterReload.getByText("Diese Inbox wurde als Resource gespeichert."),
     ).toBeVisible();
     await expect(
-      activeItem.getByRole("link", { name: "Resources öffnen" }),
+      activeItemAfterReload.getByRole("link", { name: "Resources öffnen" }),
     ).toBeVisible();
-    await expect(activeItem.getByText("Task erstellt")).toHaveCount(0);
+    await expect(activeItemAfterReload.getByText("Task erstellt")).toHaveCount(0);
 
-    await activeItem.getByRole("link", { name: "Resources öffnen" }).click();
+    await activeItemAfterReload.getByRole("link", { name: "Resources öffnen" }).click();
     await expect(page.locator("#resources-page")).toHaveAttribute(
       "data-content-state",
       /^(partial|filled)$/,
@@ -2385,6 +2401,9 @@ test.describe("Inbox content states", () => {
     await expectNoMainStrings(page, resourcesBlockedDemoStrings, "resources");
     await page.reload();
     await expect(page.getByText(draftTitle).first()).toBeVisible();
+
+    await page.goto("/portfolio?view=tasks");
+    await expect(page.getByText(draftTitle)).toHaveCount(0);
 
     await page.goto("/inbox");
     await expect(page.getByText(draftTitle)).toHaveCount(0);
