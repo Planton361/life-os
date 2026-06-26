@@ -400,36 +400,9 @@ export function getInboxViewModel(): InboxViewModel {
       disabledReason: "Im Demo-Profil ist Quick Capture nur als Referenz sichtbar.",
     },
     existingTargets: {
-      projects: [
-        {
-          id: "demo-project-life-os-mvp",
-          type: "project",
-          title: "Life OS MVP",
-          meta: "active · daily flow",
-          accent: "var(--accent-blue)",
-          href: "/projects/demo-project-life-os-mvp",
-        },
-      ],
-      goals: [
-        {
-          id: "demo-goal-stable-mvp-daily-flow",
-          type: "goal",
-          title: "Stable MVP daily flow",
-          meta: "active · current phase",
-          accent: "var(--accent-green)",
-          href: "/goals/demo-goal-stable-mvp-daily-flow",
-        },
-      ],
-      resources: [
-        {
-          id: "demo-resource-calm-dashboard-article",
-          type: "resource",
-          title: "Calm dashboard article",
-          meta: "reference · prepared only",
-          accent: "var(--accent-yellow)",
-          href: "/resources",
-        },
-      ],
+      projects: [],
+      goals: [],
+      resources: [],
       skills: [],
     },
     activeItem: {
@@ -497,42 +470,41 @@ export function getInboxViewModel(): InboxViewModel {
     outcome: {
       title: "Outcome Route",
       description:
-        "Choose what this Inbox item should become. Route selection alone does not create or link anything.",
+        "Wähle genau eine Route. Die Auswahl allein schreibt noch nichts.",
       actionsEnabled: false,
       options: [
         {
           id: "add_to_existing",
           title: "Add to Existing",
-          description:
-            "An bestehendes Project, Goal, Skill oder Resource anhängen.",
+          description: "An bestehendes Objekt anhängen.",
           examples: "Zielobjekt: bestehendes Objekt + Beitrag, Task, Note oder Relation.",
           accent: "var(--accent-blue)",
         },
         {
           id: "create_new",
           title: "Create New",
-          description: "Aus dem Capture einen neuen Project-, Goal- oder Resource-Draft vorbereiten.",
+          description: "Neues Objekt vorbereiten.",
           examples: "Zielobjekt: neuer Draft; Skill erst mit echter Persistenz.",
           accent: "var(--accent-green)",
         },
         {
           id: "standalone_task",
           title: "Standalone Task",
-          description: "Eigene ausführbare Aufgabe erstellen.",
+          description: "Eigene Aufgabe erstellen.",
           examples: "Zielobjekt: Task nach bestätigtem Task Draft.",
           accent: "var(--accent-orange)",
         },
         {
           id: "knowledge_resource",
           title: "Resource",
-          description: "Als Wissen, Link, Notiz oder Material speichern.",
+          description: "Wissen oder Material vorbereiten.",
           examples: "Zielobjekt: Resource Draft oder Resource Link.",
           accent: "var(--accent-purple)",
         },
         {
           id: "solved_archive",
           title: "Solved / Archive",
-          description: "Kein Zielobjekt nötig; später erledigen oder archivieren.",
+          description: "Ohne Zielobjekt abschließen.",
           examples: "Ergebnis: Close Draft ohne Zielobjekt.",
           accent: "var(--accent-cyan)",
         },

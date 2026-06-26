@@ -160,22 +160,15 @@ function captureTypeAccent(type: InboxQueueItem["type"]) {
 }
 
 function outcomeRouteStatus(route: InboxOutcomeRoute) {
-  if (
-    route === "add_to_existing" ||
-    route === "standalone_task" ||
-    route === "solved_archive"
-  ) {
+  if (route === "add_to_existing") {
+    return "Teilweise verbunden";
+  }
+
+  if (route === "standalone_task" || route === "solved_archive") {
     return "Verbunden";
   }
 
   return "Noch nicht verbunden";
-}
-
-function outcomeRouteResult(option: InboxOutcomeOption) {
-  return option.examples.startsWith("Zielobjekt:") ||
-    option.examples.startsWith("Ergebnis:")
-    ? option.examples
-    : `Zielobjekt: ${option.examples}`;
 }
 
 function planningSignalValue(
@@ -590,7 +583,7 @@ function InboxPlanningSignals({
             Planning Signals
           </h3>
           <p className="mt-1 text-[11px] leading-4 text-[var(--text-secondary)]">
-            Helfen beim späteren Planen. Sie sind keine feste Terminierung.
+            Hinweise für spätere Planung. Keine feste Terminierung.
           </p>
         </div>
         <Pill accent="var(--accent-cyan)">Hinweise, kein Scheduling</Pill>
@@ -660,7 +653,7 @@ function InboxOutcomeRoutes({
   return (
     <section
       aria-labelledby="outcome-route-title"
-      className="rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.52)] p-3 2xl:flex 2xl:min-h-[250px] 2xl:flex-1 2xl:flex-col"
+      className="rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.52)] p-3"
     >
       <h3
         className="text-sm font-semibold text-[var(--text-primary)]"
@@ -668,10 +661,10 @@ function InboxOutcomeRoutes({
       >
         {title}
       </h3>
-      <p className="mt-1 text-xs leading-4 text-[var(--text-secondary)]">
+      <p className="mt-1 text-[11px] leading-4 text-[var(--text-secondary)]">
         {description}
       </p>
-      <div className="mt-2 grid gap-2 lg:grid-cols-2 2xl:flex-1">
+      <div className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
         {options.map((option) => {
           const isSelected = selectedRoute === option.id;
           const isConnected =
@@ -684,7 +677,7 @@ function InboxOutcomeRoutes({
             <button
               aria-pressed={isSelected}
               className={cn(
-                "min-h-[100px] rounded-[14px] border px-3 py-3 text-left 2xl:h-full",
+                "min-h-[76px] rounded-[14px] border px-3 py-2.5 text-left",
                 isConnected
                   ? "border-[color-mix(in_srgb,var(--accent)_30%,transparent)] bg-[color-mix(in_srgb,var(--accent)_8%,rgba(15,23,36,.68))]"
                   : "border-[var(--border-subtle)] bg-[rgba(15,23,36,.40)]",
@@ -707,7 +700,7 @@ function InboxOutcomeRoutes({
               <span className="flex items-start gap-2.5">
                 <Dot accent={option.accent} className="mt-1 shrink-0" />
                 <span className="min-w-0">
-                  <span className="flex flex-wrap items-center gap-2">
+                  <span className="flex flex-wrap items-center gap-1.5">
                     <span className="block text-[13px] font-semibold text-[var(--text-primary)]">
                       {option.title}
                     </span>
@@ -723,17 +716,8 @@ function InboxOutcomeRoutes({
                       Status: {status}
                     </Pill>
                   </span>
-                  <span className="mt-1 block border-t border-[var(--border-subtle)] pt-1 text-[11px] leading-4 text-[var(--text-secondary)]">
+                  <span className="mt-1 block text-[11px] leading-4 text-[var(--text-secondary)]">
                     {option.description}
-                  </span>
-                  <span className="mt-0.5 block text-[10px] text-[var(--text-muted)]">
-                    {isConnected
-                      ? option.id === "add_to_existing"
-                        ? "Aktiviert den Target Picker. Persistiert aktuell nur Task-Beiträge zu Project oder Goal."
-                        : option.id === "standalone_task"
-                        ? "Aktiviert den Task Draft. Erst Task erstellen schreibt in Supabase."
-                        : "Aktiviert den Close Draft. Erst der Abschluss archiviert den Eintrag."
-                      : `${outcomeRouteResult(option)} Persistenz folgt in einem späteren Block.`}
                   </span>
                 </span>
               </span>
@@ -1025,15 +1009,24 @@ function InboxAddToExistingDraft({
     Boolean(selectedTarget) &&
     (targetType === "project" || targetType === "goal");
   const contributionStatus =
-    contributionType === "task" && (targetType === "project" || targetType === "goal")
+    contributionType === "task" &&
+    Boolean(selectedTarget) &&
+    (targetType === "project" || targetType === "goal")
       ? "Verbunden"
-      : contributionType === "resource_link" && targetType === "resource"
+      : contributionType === "resource_link"
         ? "Vorbereitet"
+        : contributionType === "task" &&
+            (targetType === "project" || targetType === "goal")
+          ? "Ziel fehlt"
         : "Noch nicht verbunden";
   const targetEmptyCopy =
     targetType === "skill"
       ? "Skill bleibt Future Scope, bis eine echte persistierte Skill-Entity existiert."
-      : `Keine ${existingTargetTypeLabels[targetType]}-Ziele aus der DB gefunden.`;
+      : targetType === "project"
+        ? "Noch keine bestehenden Projects vorhanden. Create New folgt später."
+        : targetType === "goal"
+          ? "Noch keine bestehenden Goals vorhanden. Create New folgt später."
+          : "Noch keine bestehenden Resources vorhanden. Resource Link folgt später.";
 
   return (
     <section
@@ -1047,7 +1040,7 @@ function InboxAddToExistingDraft({
               className="text-sm font-semibold text-[var(--text-primary)]"
               id="add-to-existing-draft-title"
             >
-              Add to Existing Target Picker
+              Bestehendem Objekt zuordnen
             </h3>
             <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
               Bestehendes Project oder Goal auswählen und daraus einen
@@ -1263,6 +1256,37 @@ function InboxAddToExistingDraft({
         </p>
       </form>
     </section>
+  );
+}
+
+function DraftSlot({
+  children,
+}: Readonly<{
+  children: ReactNode;
+}>) {
+  return (
+    <section
+      aria-labelledby="draft-slot-title"
+      className="rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(12,20,34,.38)] p-2.5"
+      data-inbox-section="draft-slot"
+    >
+      <p
+        className="px-1 pb-2 text-[10px] font-semibold uppercase text-[var(--text-muted)]"
+        id="draft-slot-title"
+      >
+        Draft
+      </p>
+      {children}
+    </section>
+  );
+}
+
+function EmptyDraftSlot() {
+  return (
+    <InboxEmptyState
+      description="Wähle zuerst eine Outcome Route."
+      title="Noch kein Draft ausgewählt"
+    />
   );
 }
 
@@ -1547,13 +1571,43 @@ function InboxActiveItemPanel({
   profileId: InboxViewModel["profileId"];
 }>) {
   const [cleanTitle, description, nextAction, missingInfo] = activeItem.fields;
-  const taskDraftActive =
-    !activeItem.triagedTaskId &&
-    ((Boolean(activeItem.isTaskCapture) && !selectedOutcomeRoute) ||
-      selectedOutcomeRoute === "standalone_task");
   const selectedDraftRoute = activeItem.triagedTaskId
     ? null
     : selectedOutcomeRoute;
+  let draftSlot: ReactNode = <EmptyDraftSlot />;
+
+  if (selectedDraftRoute === "standalone_task") {
+    draftSlot = (
+      <InboxTaskDraft
+        activeItem={activeItem}
+        canCreateTask={taskCreationEnabled}
+        nextAction={nextAction}
+      />
+    );
+  } else if (selectedDraftRoute === "solved_archive") {
+    draftSlot = (
+      <InboxSolvedArchiveDraft
+        activeItem={activeItem}
+        canArchive={archiveEnabled}
+      />
+    );
+  } else if (selectedDraftRoute === "add_to_existing") {
+    draftSlot = (
+      <InboxAddToExistingDraft
+        activeItem={activeItem}
+        canCreateTask={addToExistingEnabled}
+        existingTargets={existingTargets}
+        nextAction={nextAction}
+      />
+    );
+  } else if (
+    selectedDraftRoute === "create_new" ||
+    selectedDraftRoute === "knowledge_resource"
+  ) {
+    draftSlot = (
+      <PreparedDraftShell activeItem={activeItem} route={selectedDraftRoute} />
+    );
+  }
 
   return (
     <section
@@ -1641,11 +1695,13 @@ function InboxActiveItemPanel({
         </section>
 
         {activeItem.triagedTaskId ? (
-          <InboxTaskDraft
-            activeItem={activeItem}
-            canCreateTask={false}
-            nextAction={nextAction}
-          />
+          <DraftSlot>
+            <InboxTaskDraft
+              activeItem={activeItem}
+              canCreateTask={false}
+              nextAction={nextAction}
+            />
+          </DraftSlot>
         ) : (
           <>
             <InboxOutcomeRoutes
@@ -1655,35 +1711,7 @@ function InboxActiveItemPanel({
               selectedRoute={selectedDraftRoute}
               title={outcome.title}
             />
-            {taskDraftActive ? (
-              <InboxTaskDraft
-                activeItem={activeItem}
-                canCreateTask={taskCreationEnabled}
-                nextAction={nextAction}
-              />
-            ) : selectedDraftRoute === "solved_archive" ? (
-              <InboxSolvedArchiveDraft
-                activeItem={activeItem}
-                canArchive={archiveEnabled}
-              />
-            ) : selectedDraftRoute === "add_to_existing" ? (
-              <InboxAddToExistingDraft
-                activeItem={activeItem}
-                canCreateTask={addToExistingEnabled}
-                existingTargets={existingTargets}
-                nextAction={nextAction}
-              />
-            ) : selectedDraftRoute && selectedDraftRoute !== "standalone_task" ? (
-              <PreparedDraftShell
-                activeItem={activeItem}
-                route={selectedDraftRoute}
-              />
-            ) : (
-              <InboxEmptyState
-                description="Wähle zuerst eine Outcome Route. Danach erscheint der passende Draft."
-                title="Noch kein Draft ausgewählt"
-              />
-            )}
+            <DraftSlot>{draftSlot}</DraftSlot>
           </>
         )}
         <InboxPlanningSignals
@@ -2055,33 +2083,26 @@ export function InboxPage({
   const activeItemKey = `${viewModel.activeItem.id ?? "empty"}:${
     viewModel.activeItem.type
   }:${viewModel.activeItem.triagedTaskId ?? "open"}`;
-  const defaultOutcomeRoute =
-    viewModel.activeItem.isTaskCapture && !viewModel.activeItem.triagedTaskId
-    ? "standalone_task"
-    : null;
   const [outcomeSelection, setOutcomeSelection] = useState<{
     key: string;
     route: InboxOutcomeRoute | null;
   }>({
     key: activeItemKey,
-    route: defaultOutcomeRoute,
+    route: null,
   });
   const selectedOutcomeRoute =
     outcomeSelection.key === activeItemKey
       ? outcomeSelection.route
-      : defaultOutcomeRoute;
+      : null;
   const setSelectedOutcomeRoute = (route: InboxOutcomeRoute) => {
     setOutcomeSelection({ key: activeItemKey, route });
   };
 
-  const taskDraftActive =
-    (Boolean(viewModel.activeItem.isTaskCapture) && !selectedOutcomeRoute) ||
-    selectedOutcomeRoute === "standalone_task";
   const taskCreationEnabled = Boolean(
     viewModel.quickCapture.enabled &&
       viewModel.activeItem.hasSelection &&
       !viewModel.activeItem.triagedTaskId &&
-      taskDraftActive,
+      selectedOutcomeRoute === "standalone_task",
   );
   const addToExistingEnabled = Boolean(
     viewModel.quickCapture.enabled &&
@@ -2094,7 +2115,7 @@ export function InboxPage({
       viewModel.activeItem.hasSelection &&
       !viewModel.activeItem.triagedTaskId,
   );
-  const routeSelected = Boolean(selectedOutcomeRoute) || taskDraftActive;
+  const routeSelected = Boolean(selectedOutcomeRoute);
   const checklist = useMemo(() => {
     const items = viewModel.checklist.items.map((item) => {
       if (item.label === "Outcome Route gewählt" && routeSelected) {

@@ -1684,7 +1684,7 @@ test.describe("Inbox content states", () => {
     ).toContainText("Status: Verbunden");
     await expect(
       activeItem.locator('[data-outcome-route="add_to_existing"]'),
-    ).toContainText("Status: Verbunden");
+    ).toContainText("Status: Teilweise verbunden");
 
     for (const route of ["create_new", "knowledge_resource"]) {
       await expect(
@@ -1695,6 +1695,38 @@ test.describe("Inbox content states", () => {
     await expect(
       activeItem.locator('[data-outcome-route="solved_archive"]'),
     ).toContainText("Status: Verbunden");
+  });
+
+  test("keeps the empty draft message inside the Draft Slot until a route is selected", async ({
+    page,
+  }) => {
+    await setProfile(page, "demo");
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/inbox");
+    });
+
+    const activeItem = page.locator('[data-inbox-section="active-item"]');
+    const draftSlot = activeItem.locator('[data-inbox-section="draft-slot"]');
+    const outcomeRoutes = activeItem.getByRole("heading", {
+      name: "Outcome Route",
+    });
+    const planningSignals = activeItem.getByRole("heading", {
+      name: "Planning Signals",
+    });
+
+    await expect(draftSlot).toBeVisible();
+    await expect(draftSlot.getByText("Noch kein Draft ausgewählt")).toBeVisible();
+    await expect(outcomeRoutes).toBeVisible();
+    await expect(planningSignals).toBeVisible();
+
+    const routeBox = await outcomeRoutes.boundingBox();
+    const draftBox = await draftSlot.boundingBox();
+    const planningBox = await planningSignals.boundingBox();
+    expect(routeBox).not.toBeNull();
+    expect(draftBox).not.toBeNull();
+    expect(planningBox).not.toBeNull();
+    expect(draftBox!.y).toBeGreaterThan(routeBox!.y);
+    expect(planningBox!.y).toBeGreaterThan(draftBox!.y);
   });
 
   test("opens the connected Solved / Archive draft without target-object actions", async ({
@@ -1748,7 +1780,7 @@ test.describe("Inbox content states", () => {
       activeItem.getByRole("button", { exact: true, name: "Task erstellen" }),
     ).toBeVisible();
     await expect(
-      page.getByText("Helfen beim späteren Planen.").first(),
+      page.getByText("Hinweise für spätere Planung.").first(),
     ).toBeVisible();
   });
 
@@ -1763,26 +1795,41 @@ test.describe("Inbox content states", () => {
     const activeItem = page.locator('[data-inbox-section="active-item"]');
     await activeItem.locator('[data-outcome-route="add_to_existing"]').click();
     const addToExistingDraft = activeItem
-      .getByRole("heading", { name: "Add to Existing Target Picker" })
+      .getByRole("heading", { name: "Bestehendem Objekt zuordnen" })
       .locator("xpath=ancestor::section[1]");
     await expect(addToExistingDraft).toBeVisible();
     await expect(
-      addToExistingDraft.getByText("Beitrag: Verbunden"),
+      addToExistingDraft.getByText("Beitrag: Ziel fehlt"),
     ).toBeVisible();
     await expect(
-      addToExistingDraft.getByLabel("Existing target"),
-    ).toHaveValue("demo-project-life-os-mvp");
+      activeItem.getByText("Noch kein Draft ausgewählt"),
+    ).toHaveCount(0);
+    await expect(addToExistingDraft.getByLabel("Existing target")).toBeDisabled();
+    await expect(
+      addToExistingDraft
+        .locator("p")
+        .filter({ hasText: "Noch keine bestehenden Projects vorhanden." }),
+    ).toBeVisible();
     await expect(
       addToExistingDraft.getByRole("button", { name: "Task-Beitrag erstellen" }),
     ).toBeDisabled();
     await addToExistingDraft.getByRole("button", { name: "Resource Link" }).click();
+    await expect(
+      addToExistingDraft.getByText("Beitrag: Vorbereitet"),
+    ).toBeVisible();
+    await expect(
+      addToExistingDraft.getByText("Resource Link vorbereitet"),
+    ).toBeVisible();
+    await addToExistingDraft.getByRole("button", { name: "Note" }).click();
     await expect(
       addToExistingDraft.getByText("Beitrag: Noch nicht verbunden"),
     ).toBeVisible();
     await expect(
       addToExistingDraft.getByText("Beitragstyp noch nicht verbunden"),
     ).toBeVisible();
-    await addToExistingDraft.getByRole("button", { name: "Resource" }).click();
+    await addToExistingDraft
+      .getByRole("button", { name: "Resource 0 DB-Ziele" })
+      .click();
     await addToExistingDraft.getByRole("button", { name: "Resource Link" }).click();
     await expect(
       addToExistingDraft.getByText("Resource Link vorbereitet"),

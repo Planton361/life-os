@@ -71,6 +71,17 @@
 - Without an existing Project or Goal target, Add to Existing must not expose an enabled persistent submit.
 - Route selection alone still writes nothing.
 
+## R1.6.6D2 Inbox Router Visual Check
+
+- Inbox Active Item must render in this order: Original Capture, Clarify Fields, Outcome Route, Draft, Planning Signals.
+- `Noch kein Draft ausgewählt` appears only inside the Draft slot and only before a route is selected.
+- Each selected route renders exactly one matching draft in the Draft slot.
+- Add to Existing shows `Bestehendem Objekt zuordnen` with Target type, Existing target, and Beitragstyp controls.
+- Planning Signals sit below the Draft slot and do not overlap Route Cards or Draft content.
+- Create New and Resource can be selected, but their Draft shells clearly say they do not write persistence yet.
+- Add to Existing is partially connected: Task to Project/Goal only; Resource Link is prepared; Note/Decision/Skill are not connected.
+- Triaged or archived items show their post-state and must not reopen the active router as the primary work surface.
+
 ## R1.6.5B Follow-up Checks
 
 1. If `/settings#supabase-session` shows `invalid session`, use `Session zurücksetzen`.
