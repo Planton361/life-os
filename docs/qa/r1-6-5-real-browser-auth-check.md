@@ -409,6 +409,17 @@
 - Keine Background Jobs, keine Cron Jobs und keine automatische Page-Load-Generation.
 - Keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB und kein Service-Role-Zugriff.
 
+## R1.7.6 Nutrition Recipe / Meal Data Model Lock
+
+- Nutrition Ist-Zustand auditiert: Overview, Meal Planner, Recipes und Grocery laufen ueber ViewModels, Mockdaten und lokalen Client-State.
+- Recipe vs Meal vs Meal Plan vs Nutrition Log getrennt.
+- MVP-Entscheidung dokumentiert: `recipes + meals`.
+- Nicht im MVP: Ingredients, Recipe Ingredients, Nutrition Entries, Macro Targets, Grocery Lists und Meal Plan Templates.
+- Migration Gate dokumentiert; keine Migration in R1.7.6.
+- Privacy/Security geprueft: Nutrition-Persistenz ist `health_sensitive`, braucht `user_id`, RLS, serverseitige Zod-Validierung, keine Service Role und keine externen APIs.
+- Keine UI-, Source-Code- oder Migration-Aenderung in diesem Block.
+- Kein Playwright-Lauf erforderlich, weil nur Product-/QA-Dokumentation geaendert wurde.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.
