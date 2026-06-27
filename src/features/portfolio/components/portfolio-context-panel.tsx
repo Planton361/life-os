@@ -197,126 +197,70 @@ function FieldCard({
   );
 }
 
-function ProjectTaskCreateForm({
-  disabled,
-  project,
+type WorkbenchTaskCreateContext = {
+  ariaLabel: string;
+  contextPlaceholder: string;
+  entity: PortfolioEntity;
+  hiddenIdName: "goalId" | "projectId";
+  returnView: "goals" | "projects";
+  selectedIdName: "selectedGoalId" | "selectedProjectId";
+  titlePlaceholder: string;
+};
+
+function WorkbenchCreateSection({
+  children,
+  description,
+  heading,
+  id,
 }: Readonly<{
-  disabled: boolean;
-  project: PortfolioEntity;
+  children: ReactNode;
+  description: string;
+  heading: string;
+  id: string;
 }>) {
   return (
-    <form
-      action={createPortfolioTaskFormAction}
-      aria-label="Project Task erstellen"
-      className="grid gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.40)] p-3"
-    >
-      <input name="projectId" type="hidden" value={project.id} />
-      <input name="returnView" type="hidden" value="projects" />
-      <input name="selectedProjectId" type="hidden" value={project.id} />
-      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-        Task-Titel
-        <input
-          className={formInputClassName}
-          disabled={disabled}
-          name="title"
-          placeholder="Nächster Project Task"
-          required
-        />
-      </label>
-      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-        Next Action
-        <input
-          className={formInputClassName}
-          disabled={disabled}
-          name="nextAction"
-          placeholder="Konkreter nächster Schritt"
-        />
-      </label>
-      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-        Kontext
-        <input
-          className={formInputClassName}
-          disabled={disabled}
-          name="description"
-          placeholder="Optionaler Project-Kontext"
-        />
-      </label>
-      <div className="grid gap-2 sm:grid-cols-3">
-        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-          Priorität
-          <select
-            className={formInputClassName}
-            defaultValue="P2"
-            disabled={disabled}
-            name="priority"
-          >
-            <option value="none">None</option>
-            <option value="P0">P0</option>
-            <option value="P1">P1</option>
-            <option value="P2">P2</option>
-            <option value="P3">P3</option>
-          </select>
-        </label>
-        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-          Energie
-          <select className={formInputClassName} disabled={disabled} name="energy">
-            <option value="">-</option>
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-          </select>
-        </label>
-        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-          Minuten
-          <input
-            className={formInputClassName}
-            disabled={disabled}
-            min="1"
-            name="durationMinutes"
-            placeholder="30"
-            type="number"
-          />
-        </label>
-      </div>
-      <label className="flex min-h-8 items-center gap-2 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.58)] px-2 text-[11px] font-semibold text-[var(--text-secondary)]">
-        <input
-          className="size-4 accent-[rgb(91,124,250)]"
-          disabled={disabled}
-          name="todayCandidate"
-          type="checkbox"
-        />
-        Heute planen
-      </label>
-      <button className={formButtonClassName} disabled={disabled} type="submit">
-        Task für Project erstellen
-      </button>
-    </form>
+    <section aria-labelledby={id}>
+      <h3
+        className="text-[13px] font-semibold text-[var(--text-primary)]"
+        id={id}
+      >
+        {heading}
+      </h3>
+      <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
+        {description}
+      </p>
+      <div className="mt-2">{children}</div>
+    </section>
   );
 }
 
-function GoalTaskCreateForm({
+function WorkbenchTaskCreateForm({
+  context,
   disabled,
-  goal,
 }: Readonly<{
+  context: WorkbenchTaskCreateContext;
   disabled: boolean;
-  goal: PortfolioEntity;
 }>) {
   return (
     <form
       action={createPortfolioTaskFormAction}
-      aria-label="Goal Task erstellen"
+      aria-label={context.ariaLabel}
       className="grid gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.40)] p-3"
     >
-      <input name="goalId" type="hidden" value={goal.id} />
-      <input name="returnView" type="hidden" value="goals" />
-      <input name="selectedGoalId" type="hidden" value={goal.id} />
+      <input name={context.hiddenIdName} type="hidden" value={context.entity.id} />
+      <input name="returnView" type="hidden" value={context.returnView} />
+      <input
+        name={context.selectedIdName}
+        type="hidden"
+        value={context.entity.id}
+      />
       <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
         Task-Titel
         <input
           className={formInputClassName}
           disabled={disabled}
           name="title"
-          placeholder="Nächster Goal Task"
+          placeholder={context.titlePlaceholder}
           required
         />
       </label>
@@ -335,7 +279,7 @@ function GoalTaskCreateForm({
           className={formInputClassName}
           disabled={disabled}
           name="description"
-          placeholder="Optionaler Goal-Kontext"
+          placeholder={context.contextPlaceholder}
         />
       </label>
       <div className="grid gap-2 sm:grid-cols-3">
@@ -385,7 +329,7 @@ function GoalTaskCreateForm({
         Heute planen
       </label>
       <button className={formButtonClassName} disabled={disabled} type="submit">
-        Task für Goal erstellen
+        Task erstellen
       </button>
     </form>
   );
@@ -427,7 +371,7 @@ function GoalProjectCreateForm({
         />
       </label>
       <button className={formButtonClassName} disabled={disabled} type="submit">
-        Project für Goal erstellen
+        Project erstellen
       </button>
     </form>
   );
@@ -622,19 +566,21 @@ function TaskLifecycleActions({
 
 function ProjectTaskCard({
   profileId,
+  relationHint,
   task,
 }: Readonly<{
   profileId: PortfolioViewModel["profileId"];
+  relationHint?: string;
   task: PortfolioTaskEntity;
 }>) {
   const lifecycle = task.taskLifecycle;
   const meta = [
     portfolioStatusMeta[task.status].label,
     task.priority,
+    task.energy ? `${task.energy} energy` : null,
+    `${lifecycle.durationMinutes} min`,
     task.taskLifecycle.plannedDate,
     task.taskLifecycle.scheduledTime,
-    `${lifecycle.durationMinutes} min`,
-    task.countLabel,
   ].filter(Boolean);
 
   return (
@@ -655,6 +601,11 @@ function ProjectTaskCard({
       {task.nextAction ? (
         <p className="mt-2 text-[11px] leading-4 text-[var(--text-secondary)]">
           {task.nextAction}
+        </p>
+      ) : null}
+      {relationHint ? (
+        <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
+          {relationHint}
         </p>
       ) : null}
       {profileId === "manual" ? (
@@ -720,6 +671,18 @@ function PreparedWorkbenchSection({
   );
 }
 
+function WorkbenchFutureScopeNote({
+  body,
+}: Readonly<{
+  body: string;
+}>) {
+  return (
+    <p className="rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.32)] px-3 py-2 text-[10px] leading-4 text-[var(--text-muted)]">
+      {body}
+    </p>
+  );
+}
+
 function GoalWorkbench({
   entities,
   goal,
@@ -732,6 +695,11 @@ function GoalWorkbench({
   const workbench = buildGoalWorkbench(goal, entities);
   const disabled = profileId !== "manual";
   const taskCountByProject = new Map<string, number>();
+  const projectTitleById = new Map<string, string>();
+
+  for (const project of workbench.linkedProjects) {
+    projectTitleById.set(project.id, project.title);
+  }
 
   for (const task of workbench.linkedTasks) {
     if (!task.projectId) continue;
@@ -766,10 +734,11 @@ function GoalWorkbench({
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
           <FieldCard
             accent="var(--accent-purple)"
-            label="Progress"
+            label="Linked Work Progress"
             value={
-              typeof workbench.goal.progress === "number"
-                ? `${workbench.goal.progress}%`
+              workbench.metrics.totalProjects > 0 ||
+              workbench.metrics.totalTasks > 0
+                ? `${workbench.metrics.totalProjects} projects / ${workbench.metrics.totalTasks} tasks · ${workbench.metrics.completedTasks} tasks done`
                 : "Noch kein Fortschritt berechnet"
             }
           />
@@ -810,39 +779,40 @@ function GoalWorkbench({
       </div>
 
       <div className="mt-3 grid gap-3">
-        <section aria-labelledby="goal-task-create-heading">
-          <h3
-            className="text-[13px] font-semibold text-[var(--text-primary)]"
-            id="goal-task-create-heading"
-          >
-            Task für Goal erstellen
-          </h3>
-          <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
-            {disabled
+        <WorkbenchCreateSection
+          description={
+            disabled
               ? "Wechsle ins Manual-Profil, um echte Goal Tasks zu erstellen."
-              : "Erstellt eine Task mit diesem Goal als Kontext."}
-          </p>
-          <div className="mt-2">
-            <GoalTaskCreateForm disabled={disabled} goal={goal} />
-          </div>
-        </section>
+              : "Erstellt eine Task mit diesem Goal als Kontext."
+          }
+          heading="Task für Goal erstellen"
+          id="goal-task-create-heading"
+        >
+          <WorkbenchTaskCreateForm
+            context={{
+              ariaLabel: "Goal Task erstellen",
+              contextPlaceholder: "Optionaler Goal-Kontext",
+              entity: goal,
+              hiddenIdName: "goalId",
+              returnView: "goals",
+              selectedIdName: "selectedGoalId",
+              titlePlaceholder: "Nächster Goal Task",
+            }}
+            disabled={disabled}
+          />
+        </WorkbenchCreateSection>
 
-        <section aria-labelledby="goal-project-create-heading">
-          <h3
-            className="text-[13px] font-semibold text-[var(--text-primary)]"
-            id="goal-project-create-heading"
-          >
-            Project für Goal erstellen
-          </h3>
-          <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
-            {disabled
+        <WorkbenchCreateSection
+          description={
+            disabled
               ? "Wechsle ins Manual-Profil, um echte Goal Projects zu erstellen."
-              : "Project-Schema unterstützt Goal-Kontext; keine neue Entity wird erfunden."}
-          </p>
-          <div className="mt-2">
-            <GoalProjectCreateForm disabled={disabled} goal={goal} />
-          </div>
-        </section>
+              : "Project-Schema unterstützt Goal-Kontext; keine neue Entity wird erfunden."
+          }
+          heading="Project für Goal erstellen"
+          id="goal-project-create-heading"
+        >
+          <GoalProjectCreateForm disabled={disabled} goal={goal} />
+        </WorkbenchCreateSection>
 
         <section aria-labelledby="goal-linked-projects-heading">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -886,19 +856,25 @@ function GoalWorkbench({
             </Pill>
           </div>
           <div className="mt-2 grid gap-2">
+            {workbench.linkedTasks.length === 0 ? (
+              <p className="rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.38)] px-3 py-2 text-[11px] leading-4 text-[var(--text-muted)]">
+                Keine verknüpften Tasks.
+              </p>
+            ) : null}
             {workbench.nextTasks.length > 0 ? (
               workbench.nextTasks.map((task) => (
                 <ProjectTaskCard
                   key={`goal-open-task-${task.id}`}
                   profileId={profileId}
+                  relationHint={
+                    task.projectId
+                      ? `Project: ${projectTitleById.get(task.projectId) ?? "Project nicht gefunden"}`
+                      : undefined
+                  }
                   task={task}
                 />
               ))
-            ) : (
-              <p className="rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.38)] px-3 py-2 text-[11px] leading-4 text-[var(--text-muted)]">
-                Keine offenen Goal Tasks.
-              </p>
-            )}
+            ) : null}
             {workbench.completedTasks.length > 0 ? (
               <div className="grid gap-2">
                 <p className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">
@@ -908,6 +884,11 @@ function GoalWorkbench({
                   <ProjectTaskCard
                     key={`goal-completed-task-${task.id}`}
                     profileId={profileId}
+                    relationHint={
+                      task.projectId
+                        ? `Project: ${projectTitleById.get(task.projectId) ?? "Project nicht gefunden"}`
+                        : undefined
+                    }
                     task={task}
                   />
                 ))}
@@ -925,7 +906,7 @@ function GoalWorkbench({
           </h3>
           <div className="mt-2 grid gap-2">
             <PreparedWorkbenchSection
-              body="Milestones folgen im Goal Workbench Ausbau."
+              body="Noch keine vorbereiteten Milestones verbunden. Milestones folgen im Goal Workbench Ausbau."
               title="Milestones"
             />
             <PreparedWorkbenchSection
@@ -933,7 +914,7 @@ function GoalWorkbench({
               title="Review Cadence"
             />
             <PreparedWorkbenchSection
-              body="Resources werden später verknüpft."
+              body="Resources folgen später und schreiben hier noch keine Relation."
               title="Resources"
             />
             <PreparedWorkbenchSection
@@ -942,6 +923,8 @@ function GoalWorkbench({
             />
           </div>
         </section>
+
+        <WorkbenchFutureScopeNote body="Future Scope: Goal Workbench zeigt nur vorhandene Projects und Tasks. Milestones, Review Cadence, Resources und Goal Log schreiben hier noch keine Persistenz." />
       </div>
     </section>
   );
@@ -984,10 +967,10 @@ function ProjectWorkbench({
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
           <FieldCard
             accent="var(--accent-orange)"
-            label="Progress"
+            label="Task-Fortschritt"
             value={
-              typeof workbench.project.progress === "number"
-                ? `${workbench.project.progress}%`
+              workbench.metrics.totalTasks > 0
+                ? `${workbench.metrics.completedTasks} / ${workbench.metrics.totalTasks} completed linked tasks`
                 : "Noch kein Fortschritt berechnet"
             }
           />
@@ -998,34 +981,40 @@ function ProjectWorkbench({
           />
           <FieldCard
             accent="var(--accent-blue)"
-            label="Task Counts"
+            label="Linked Tasks"
             value={`${workbench.metrics.openTasks} open / ${workbench.metrics.completedTasks} done`}
           />
           <FieldCard
             accent="var(--accent-green)"
-            label="Task-Fortschritt"
-            value={`${workbench.metrics.completedTasks} / ${workbench.metrics.totalTasks} completed`}
+            label="Scheduled"
+            value={`${workbench.metrics.scheduledTasks} scheduled tasks`}
           />
         </div>
       </div>
 
       <div className="mt-3 grid gap-3">
-        <section aria-labelledby="project-task-create-heading">
-          <h3
-            className="text-[13px] font-semibold text-[var(--text-primary)]"
-            id="project-task-create-heading"
-          >
-            Task für Project erstellen
-          </h3>
-          <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
-            {disabled
+        <WorkbenchCreateSection
+          description={
+            disabled
               ? "Wechsle ins Manual-Profil, um echte Project Tasks zu erstellen."
-              : "Erstellt eine Task mit diesem Project als Kontext."}
-          </p>
-          <div className="mt-2">
-            <ProjectTaskCreateForm disabled={disabled} project={project} />
-          </div>
-        </section>
+              : "Erstellt eine Task mit diesem Project als Kontext."
+          }
+          heading="Task für Project erstellen"
+          id="project-task-create-heading"
+        >
+          <WorkbenchTaskCreateForm
+            context={{
+              ariaLabel: "Project Task erstellen",
+              contextPlaceholder: "Optionaler Project-Kontext",
+              entity: project,
+              hiddenIdName: "projectId",
+              returnView: "projects",
+              selectedIdName: "selectedProjectId",
+              titlePlaceholder: "Nächster Project Task",
+            }}
+            disabled={disabled}
+          />
+        </WorkbenchCreateSection>
 
         <section aria-labelledby="project-linked-tasks-heading">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1040,6 +1029,11 @@ function ProjectWorkbench({
             </Pill>
           </div>
           <div className="mt-2 grid gap-2">
+            {workbench.linkedTasks.length === 0 ? (
+              <p className="rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.38)] px-3 py-2 text-[11px] leading-4 text-[var(--text-muted)]">
+                Keine verknüpften Tasks.
+              </p>
+            ) : null}
             {workbench.nextTasks.length > 0 ? (
               workbench.nextTasks.map((task) => (
                 <ProjectTaskCard
@@ -1048,11 +1042,7 @@ function ProjectWorkbench({
                   task={task}
                 />
               ))
-            ) : (
-              <p className="rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.38)] px-3 py-2 text-[11px] leading-4 text-[var(--text-muted)]">
-                Noch keine offenen Project Tasks.
-              </p>
-            )}
+            ) : null}
             {workbench.completedTasks.length > 0 ? (
               <div className="grid gap-2">
                 <p className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">
@@ -1079,11 +1069,11 @@ function ProjectWorkbench({
           </h3>
           <div className="mt-2 grid gap-2">
             <PreparedWorkbenchSection
-              body="Milestones folgen im Project Workbench Ausbau."
+              body="Noch keine vorbereiteten Milestones verbunden. Milestones folgen im Project Workbench Ausbau."
               title="Milestones"
             />
             <PreparedWorkbenchSection
-              body="Resources werden später verknüpft."
+              body="Resources folgen später und schreiben hier noch keine Relation."
               title="Resources"
             />
             <PreparedWorkbenchSection
@@ -1092,6 +1082,8 @@ function ProjectWorkbench({
             />
           </div>
         </section>
+
+        <WorkbenchFutureScopeNote body="Future Scope: Project Workbench zeigt nur vorhandene linked Tasks. Milestones, Resources und Project Log schreiben hier noch keine Persistenz." />
       </div>
     </section>
   );

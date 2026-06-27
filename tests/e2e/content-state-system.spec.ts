@@ -312,9 +312,7 @@ async function createProjectWorkbenchTask(
   await form.getByLabel("Energie").selectOption("medium");
   await form.getByLabel("Minuten").fill("25");
   await form.getByLabel("Heute planen").check();
-  await form
-    .getByRole("button", { name: "Task für Project erstellen" })
-    .click();
+  await form.getByRole("button", { name: "Task erstellen" }).click();
   await page.waitForLoadState("networkidle");
   await expect(page.getByText("Task erstellt.").first()).toBeVisible();
   await expect(contextPanel.getByText(title).first()).toBeVisible();
@@ -337,7 +335,7 @@ async function createGoalWorkbenchTask(
   await form.getByLabel("Energie").selectOption("medium");
   await form.getByLabel("Minuten").fill("25");
   await form.getByLabel("Heute planen").check();
-  await form.getByRole("button", { name: "Task für Goal erstellen" }).click();
+  await form.getByRole("button", { name: "Task erstellen" }).click();
   await page.waitForLoadState("networkidle");
   await expect(page.getByText("Task erstellt.").first()).toBeVisible();
   await expect(contextPanel.getByText(title).first()).toBeVisible();
@@ -354,9 +352,7 @@ async function createGoalWorkbenchProject(
   await expect(form).toBeVisible();
   await form.getByLabel("Project-Titel").fill(title);
   await form.getByLabel("Beschreibung").fill(description);
-  await form
-    .getByRole("button", { name: "Project für Goal erstellen" })
-    .click();
+  await form.getByRole("button", { name: "Project erstellen" }).click();
   await page.waitForLoadState("networkidle");
   await expect(page.getByText("Project erstellt.").first()).toBeVisible();
   await expect(contextPanel.getByText(title).first()).toBeVisible();
@@ -3610,11 +3606,22 @@ test.describe("Portfolio content states", () => {
       contextPanel.getByRole("heading", { name: "Linked Tasks" }),
     ).toBeVisible();
     await expect(
-      contextPanel.getByText("Noch keine offenen Project Tasks."),
+      contextPanel.getByRole("heading", { name: "Task für Project erstellen" }),
+    ).toBeVisible();
+    await expect(
+      contextPanel
+        .locator('form[aria-label="Project Task erstellen"]')
+        .getByRole("button", { name: "Task erstellen" }),
+    ).toBeVisible();
+    await expect(
+      contextPanel.getByText("Keine verknüpften Tasks.").first(),
     ).toBeVisible();
     await expect(
       contextPanel.getByRole("heading", { name: "Prepared Sections" }),
     ).toBeVisible();
+    const projectPreparedSections = contextPanel
+      .getByRole("heading", { name: "Prepared Sections" })
+      .locator("xpath=ancestor::section[1]");
     await expect(
       contextPanel.getByRole("heading", { name: "Milestones" }),
     ).toBeVisible();
@@ -3624,7 +3631,12 @@ test.describe("Portfolio content states", () => {
     await expect(
       contextPanel.getByRole("heading", { name: "Project Log" }),
     ).toBeVisible();
-    await expect(contextPanel.getByText("Vorbereitet")).toHaveCount(3);
+    await expect(
+      projectPreparedSections.getByText("Vorbereitet", { exact: true }),
+    ).toHaveCount(3);
+    await expect(
+      contextPanel.getByText("Future Scope: Project Workbench"),
+    ).toBeVisible();
     await expectNoMainStrings(page, portfolioBlockedDemoStrings, "portfolio");
   });
 
@@ -3657,10 +3669,29 @@ test.describe("Portfolio content states", () => {
     await expect(
       contextPanel.getByRole("heading", { name: "Linked Tasks" }),
     ).toBeVisible();
-    await expect(contextPanel.getByText("Keine offenen Goal Tasks.")).toBeVisible();
+    await expect(
+      contextPanel.getByRole("heading", { name: "Task für Goal erstellen" }),
+    ).toBeVisible();
+    await expect(
+      contextPanel
+        .locator('form[aria-label="Goal Task erstellen"]')
+        .getByRole("button", { name: "Task erstellen" }),
+    ).toBeVisible();
+    await expect(
+      contextPanel.getByRole("heading", { name: "Project für Goal erstellen" }),
+    ).toBeVisible();
+    await expect(
+      contextPanel
+        .locator('form[aria-label="Goal Project erstellen"]')
+        .getByRole("button", { name: "Project erstellen" }),
+    ).toBeVisible();
+    await expect(contextPanel.getByText("Keine verknüpften Tasks.")).toBeVisible();
     await expect(
       contextPanel.getByRole("heading", { name: "Prepared Sections" }),
     ).toBeVisible();
+    const goalPreparedSections = contextPanel
+      .getByRole("heading", { name: "Prepared Sections" })
+      .locator("xpath=ancestor::section[1]");
     await expect(
       contextPanel.getByRole("heading", { name: "Milestones" }),
     ).toBeVisible();
@@ -3673,8 +3704,76 @@ test.describe("Portfolio content states", () => {
     await expect(
       contextPanel.getByRole("heading", { name: "Goal Log" }),
     ).toBeVisible();
-    await expect(contextPanel.getByText("Vorbereitet")).toHaveCount(4);
+    await expect(
+      goalPreparedSections.getByText("Vorbereitet", { exact: true }),
+    ).toHaveCount(4);
+    await expect(
+      contextPanel.getByText("Future Scope: Goal Workbench"),
+    ).toBeVisible();
     await expectNoMainStrings(page, portfolioBlockedDemoStrings, "portfolio");
+  });
+
+  test("Project and Goal Workbench keep create controls and prepared sections reachable", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ height: 720, width: 1600 });
+    await setProfile(page, "manual");
+    await writeManualProfile({
+      goals: [manualGoal(1)],
+      projects: [
+        {
+          ...manualProject(1),
+          goalId: "goal-1",
+        },
+      ],
+    });
+
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/portfolio?view=projects");
+    });
+    let contextPanel = page.locator('[data-portfolio-section="context-panel"]');
+    await contextPanel
+      .locator('form[aria-label="Project Task erstellen"]')
+      .getByRole("button", { name: "Task erstellen" })
+      .scrollIntoViewIfNeeded();
+    await expect(
+      contextPanel
+        .locator('form[aria-label="Project Task erstellen"]')
+        .getByRole("button", { name: "Task erstellen" }),
+    ).toBeVisible();
+    await contextPanel
+      .getByRole("heading", { name: "Project Log" })
+      .scrollIntoViewIfNeeded();
+    await expect(
+      contextPanel.getByRole("heading", { name: "Project Log" }),
+    ).toBeVisible();
+
+    await page.goto("/portfolio?view=goals");
+    contextPanel = page.locator('[data-portfolio-section="context-panel"]');
+    await contextPanel
+      .locator('form[aria-label="Goal Task erstellen"]')
+      .getByRole("button", { name: "Task erstellen" })
+      .scrollIntoViewIfNeeded();
+    await expect(
+      contextPanel
+        .locator('form[aria-label="Goal Task erstellen"]')
+        .getByRole("button", { name: "Task erstellen" }),
+    ).toBeVisible();
+    await contextPanel
+      .locator('form[aria-label="Goal Project erstellen"]')
+      .getByRole("button", { name: "Project erstellen" })
+      .scrollIntoViewIfNeeded();
+    await expect(
+      contextPanel
+        .locator('form[aria-label="Goal Project erstellen"]')
+        .getByRole("button", { name: "Project erstellen" }),
+    ).toBeVisible();
+    await contextPanel
+      .getByRole("heading", { name: "Goal Log" })
+      .scrollIntoViewIfNeeded();
+    await expect(
+      contextPanel.getByRole("heading", { name: "Goal Log" }),
+    ).toBeVisible();
   });
 
   test("Manual Portfolio Task erstellen persists reload-stable", async ({

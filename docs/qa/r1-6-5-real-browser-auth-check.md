@@ -257,6 +257,18 @@
 - Focused Browser Command:
   `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Portfolio|Goal Workbench|Goal erstellen|Linked Tasks|Linked Projects|Manual"`
 
+## R1.7.2B Project/Goal Workbench Consistency
+
+- Project Workbench und Goal Workbench folgen derselben Reihenfolge: Overview, Metrics/Progress, Create in Context, Linked Work, Prepared Sections und Future Scope Hinweis.
+- Create Forms nutzen dieselbe Task-Form-Logik; Workbench-Buttons heissen `Task erstellen` und `Project erstellen`.
+- Linked Tasks zeigen konsistent Titel, Status, Priority, Energy, Duration sowie geplante oder terminierte Zeit, falls vorhanden.
+- Goal Linked Projects bleiben kompakt und zeigen nur echte verknuepfte Projects aus `goalId`; keine Fake-Projekte.
+- Progress-Sprache ist abgeleitet: Project nutzt Task-Fortschritt, Goal nutzt Linked Work Progress. Ohne Linked Work steht `Noch kein Fortschritt berechnet`.
+- Prepared Sections bleiben textgestuetzt und markieren Milestones, Review Cadence, Resources und Logs nur als `Vorbereitet`; keine Fake-Milestones, keine Fake-Resources und keine Log-Persistenz.
+- Empty States unterscheiden klar `Keine verknüpften Tasks.` und `Keine verknüpften Projects.`.
+- Context Panel Scroll wurde fokussiert geprueft: Create Controls und untere Prepared Sections bleiben erreichbar.
+- Keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB-Aktion und kein Service-Role-Zugriff.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.

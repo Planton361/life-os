@@ -665,6 +665,7 @@ function taskToPortfolioEntity(
     nextAction: task.nextStep,
     dueLabel: task.date ?? "No date",
     dueRank: dueRankFromDate(task.date),
+    energy: task.energy,
     progress: task.status === "done" ? 100 : task.status === "active" ? 42 : 0,
     countLabel: `${task.durationMinutes ?? 30} min`,
     lastTouched: "today",

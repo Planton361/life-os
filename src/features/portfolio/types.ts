@@ -169,6 +169,7 @@ export type PortfolioEntity = {
   nextAction: string;
   dueLabel: string;
   dueRank: number;
+  energy?: string;
   progress: number;
   countLabel: string;
   lastTouched: string;
