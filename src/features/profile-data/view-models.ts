@@ -351,6 +351,29 @@ const taskPriorityOrder: Record<EntityPriority, number> = {
   none: 4,
 };
 
+function sortDashboardAgendaTasks(left: LifeTask, right: LifeTask) {
+  const activeCompare =
+    Number(right.status === "active") - Number(left.status === "active");
+  if (activeCompare !== 0) return activeCompare;
+
+  const recencyCompare = (right.updatedAt ?? right.createdAt ?? "").localeCompare(
+    left.updatedAt ?? left.createdAt ?? "",
+  );
+  if (recencyCompare !== 0) return recencyCompare;
+
+  const priorityCompare =
+    taskPriorityOrder[left.priority] - taskPriorityOrder[right.priority];
+  if (priorityCompare !== 0) return priorityCompare;
+
+  return sortDashboardTasks(left, right);
+}
+
+function visibleDashboardAgendaTasks(tasks: readonly LifeTask[]) {
+  return [...tasks]
+    .sort(sortDashboardAgendaTasks)
+    .slice(0, dashboardCapacity.agenda);
+}
+
 const appTimeZone = "Europe/Berlin";
 
 const mealSlots: readonly Exclude<DashboardMeal["type"], "Snack">[] = [
@@ -1367,7 +1390,7 @@ function buildProfileDashboardViewModel(
       itemCount: tasks.length,
     }),
     preparedViewsLabel: "Week and month views prepared",
-    events: tasks.slice(0, 9).map(taskToAgendaEvent),
+    events: visibleDashboardAgendaTasks(tasks).map(taskToAgendaEvent),
   };
 
   viewModel.healthNutrition.weightLossGoal = {
@@ -2436,7 +2459,7 @@ function sortTodayCandidateTasks(left: LifeTask, right: LifeTask) {
     (left.durationMinutes ?? 30) - (right.durationMinutes ?? 30);
   if (durationCompare !== 0) return durationCompare;
 
-  return (left.createdAt ?? left.id).localeCompare(right.createdAt ?? right.id);
+  return (right.createdAt ?? right.id).localeCompare(left.createdAt ?? left.id);
 }
 
 function taskToTodayPlannerTask(
@@ -2919,6 +2942,11 @@ function taskQueueStatus(
 function sortPlannerQueueTasks(left: LifeTask, right: LifeTask) {
   const dateCompare = (left.date ?? "").localeCompare(right.date ?? "");
   if (dateCompare !== 0) return dateCompare;
+
+  const recencyCompare = (right.updatedAt ?? right.createdAt ?? "").localeCompare(
+    left.updatedAt ?? left.createdAt ?? "",
+  );
+  if (recencyCompare !== 0) return recencyCompare;
 
   const priorityCompare =
     taskPriorityOrder[left.priority] - taskPriorityOrder[right.priority];

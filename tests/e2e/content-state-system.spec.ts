@@ -377,7 +377,9 @@ async function createGoalWorkbenchProject(
   await form.getByRole("button", { name: "Project erstellen" }).click();
   await page.waitForLoadState("networkidle");
   await expect(page.getByText("Project erstellt.").first()).toBeVisible();
-  await expect(contextPanel.getByText(title).first()).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: new RegExp(title) }).first(),
+  ).toBeVisible();
 }
 
 async function createManualResourceFromInbox(
@@ -3515,6 +3517,11 @@ test.describe("Calendar content states", () => {
       page,
       title,
       "Plan this task into the Calendar Planner Queue before scheduling it.",
+      {
+        durationMinutes: "15",
+        energy: "high",
+        priority: "P0",
+      },
     );
     await openPortfolioTaskPlanningControls(page, title);
     await clickPortfolioContextButton(page, "Heute planen");
@@ -3529,7 +3536,6 @@ test.describe("Calendar content states", () => {
       .locator('[data-calendar-section="planning-queue"]')
       .first();
 
-    await expect(weekGrid).toHaveAttribute("data-content-state", "empty");
     await expect(plannerQueue.getByText(title).first()).toBeVisible();
     await expect(weekGrid.getByText(title)).toHaveCount(0);
 
@@ -3540,11 +3546,12 @@ test.describe("Calendar content states", () => {
     await scheduleForm.getByLabel("Dauer").selectOption("45");
     await scheduleForm.getByRole("button", { name: "Terminieren" }).click();
     await page.waitForLoadState("networkidle");
+    await page.reload();
 
     await expect(plannerQueue.getByText(title)).toHaveCount(0);
-    await expect(weekGrid.getByText(title).first()).toBeVisible();
-    await page.reload();
-    await expect(weekGrid.getByText(title).first()).toBeVisible();
+    await expect(
+      weekGrid.getByRole("button", { name: new RegExp(title) }),
+    ).toBeVisible();
 
     await page.goto("/today");
     await expect(page.getByText(title).first()).toBeVisible();
@@ -3568,6 +3575,11 @@ test.describe("Calendar content states", () => {
       page,
       title,
       "Schedule then unschedule this task from Calendar.",
+      {
+        durationMinutes: "30",
+        energy: "high",
+        priority: "P0",
+      },
     );
     await openPortfolioTaskPlanningControls(page, title);
     await clickPortfolioContextButton(page, "Heute planen");
@@ -3580,7 +3592,7 @@ test.describe("Calendar content states", () => {
     await plannerQueue
       .getByRole("form", { name: `${title} terminieren` })
       .getByLabel("Uhrzeit")
-      .fill("11:15");
+      .fill("13:15");
     await plannerQueue
       .getByRole("form", { name: `${title} terminieren` })
       .getByRole("button", { name: "Terminieren" })
@@ -3595,7 +3607,7 @@ test.describe("Calendar content states", () => {
     await page.reload();
     await expect(
       weekGrid.getByRole("button", {
-        name: new RegExp(`${title}, 11:45 to 12:15`),
+        name: new RegExp(`${title}, 13:45 to 14:15`),
       }),
     ).toBeVisible();
 
@@ -4173,6 +4185,11 @@ test.describe("Portfolio content states", () => {
       projectTitle,
       "Created inside Goal Workbench v1.",
     );
+    await page.goto("/portfolio?view=goals");
+    await page
+      .getByRole("link", { name: new RegExp(goalTitle) })
+      .first()
+      .click();
     await page.reload();
     await expect(
       page

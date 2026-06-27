@@ -310,6 +310,23 @@
 - Breiter Manual/Auth-Grep erreicht echte DB-Flows, stoppt aber weiterhin ausserhalb des Resource-Relation-Scopes an `Manual Today Planner plans DB task into Today, Dashboard and Calendar queue`: 21 passed, 2 skipped, dann ist ein geplantes Test-Task bei gefuellter lokaler DB nicht in der sichtbaren Dashboard Today Agenda.
 - Keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB-Aktion und kein Service-Role-Zugriff.
 
+## R1.7.3E Daily Core Manual DB Visibility Repair
+
+- Root Cause des Daily-Core-Visibility-Fehlers: Dashboard Today Agenda, Today Planner und Calendar Planner Queue schnitten ihre sichtbaren Listen bei gefuellter lokaler DB, bevor frisch geplante oder terminierte Manual-Tasks sicher in der sichtbaren Auswahl landeten.
+- Dashboard Today Agenda nutzt fuer Manual-DB-Projektionen jetzt eine eigene Agenda-Relevanz: aktive Tasks zuerst, dann frisch aktualisierte/geplante Tasks, danach Priority und Zeitlogik. Daily Control bleibt unveraendert.
+- Today Planner nutzt bei gleichen Planning-Signalen frischere Kandidaten zuerst, damit neu erzeugte Manual-Kandidaten nicht hinter alten lokalen Testdaten verschwinden.
+- Calendar Planner Queue sortiert pro Datum frisch aktualisierte Tasks vor aelteren Kandidaten; Calendar-Tests pruefen nicht mehr auf eine leere lokale Week Grid DB.
+- Calendar Scheduling Proof wurde gegen Revalidation und dichte Time-Grid-Ueberlappung stabilisiert: nach Terminierung wird reload-stabil der interaktive Calendar-Block geprueft.
+- Goal-Workbench-Regression im breiten Manual-Grep wurde harnessseitig stabilisiert, indem nach Project-Create das urspruengliche Goal erneut geoeffnet wird, bevor der Linked-Project-Eintrag im Context Panel geprueft wird.
+- Fokussierter Daily-Core-Test:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Manual Today Planner plans DB task into Today, Dashboard and Calendar queue"`
+- Ergebnis: 1 passed.
+- Breiter Manual/Auth-Grep:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Manual|Today|Dashboard|Calendar|Resource Relations"`
+- Ergebnis: 58 passed, 2 skipped.
+- Resource Relation Browser Proofs bleiben im breiten Lauf gruen.
+- Keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB-Aktion und kein Service-Role-Zugriff.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.
