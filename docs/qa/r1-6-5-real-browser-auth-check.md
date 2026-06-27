@@ -343,6 +343,16 @@
 - Ergebnis: 39 passed, 22 skipped. Die fokussierten Calendar-Interaction-Proofs sind im eigenen Lauf gruen; breite Serial-DB-Flows bleiben durch lokalen Manual-DB/Auth-State und vorhandene Daten-Dichte skip-gated.
 - Keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB-Aktion und kein Service-Role-Zugriff.
 
+## R1.7.5 Recurring Task / Routine Model Lock
+
+- Task vs Recurring Task vs Routine vs Habit wurde auditiert und getrennt.
+- Generate-vs-Reference Entscheidung ist dokumentiert: Recurring Tasks werden als Template + generated Task Instances modelliert.
+- Daily Core Auswirkungen sind dokumentiert: Today und Dashboard zeigen konkrete Instanzen, keine Templates.
+- Calendar Auswirkungen sind dokumentiert: Nur generated instances mit `scheduledStartAt` werden Time Blocks; geplante Instanzen ohne Uhrzeit bleiben Queue-Objekte.
+- Review Auswirkungen sind dokumentiert: Completion, Skip, Missed und Carry Forward beziehen sich auf Instanzen oder Daily-Log-Bezuege, nicht auf Templates.
+- Migration Gate ist dokumentiert; R1.7.5 baut keine Migration.
+- Keine Implementierung, keine Source-Types, keine Generation Engine, keine Remote-DB-Aktion, keine RLS-/Policy-Aenderung und kein Service-Role-Zugriff in diesem Block.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.
