@@ -320,6 +320,48 @@ async function createProjectWorkbenchTask(
   await expect(contextPanel.getByText(title).first()).toBeVisible();
 }
 
+async function createGoalWorkbenchTask(
+  page: Page,
+  title: string,
+  nextAction: string,
+  description: string,
+) {
+  const contextPanel = page.locator('[data-portfolio-section="context-panel"]');
+  const form = contextPanel.locator('form[aria-label="Goal Task erstellen"]');
+
+  await expect(form).toBeVisible();
+  await form.getByLabel("Task-Titel").fill(title);
+  await form.getByLabel("Next Action").fill(nextAction);
+  await form.getByLabel("Kontext").fill(description);
+  await form.getByLabel("Priorität").selectOption("P2");
+  await form.getByLabel("Energie").selectOption("medium");
+  await form.getByLabel("Minuten").fill("25");
+  await form.getByLabel("Heute planen").check();
+  await form.getByRole("button", { name: "Task für Goal erstellen" }).click();
+  await page.waitForLoadState("networkidle");
+  await expect(page.getByText("Task erstellt.").first()).toBeVisible();
+  await expect(contextPanel.getByText(title).first()).toBeVisible();
+}
+
+async function createGoalWorkbenchProject(
+  page: Page,
+  title: string,
+  description: string,
+) {
+  const contextPanel = page.locator('[data-portfolio-section="context-panel"]');
+  const form = contextPanel.locator('form[aria-label="Goal Project erstellen"]');
+
+  await expect(form).toBeVisible();
+  await form.getByLabel("Project-Titel").fill(title);
+  await form.getByLabel("Beschreibung").fill(description);
+  await form
+    .getByRole("button", { name: "Project für Goal erstellen" })
+    .click();
+  await page.waitForLoadState("networkidle");
+  await expect(page.getByText("Project erstellt.").first()).toBeVisible();
+  await expect(contextPanel.getByText(title).first()).toBeVisible();
+}
+
 async function setProfile(page: Page, profile: ProfileId) {
   await page.context().clearCookies();
   await page.context().addCookies([
@@ -3586,6 +3628,55 @@ test.describe("Portfolio content states", () => {
     await expectNoMainStrings(page, portfolioBlockedDemoStrings, "portfolio");
   });
 
+  test("Goal Workbench shows overview, linked projects, linked tasks and prepared sections without fake data", async ({
+    page,
+  }) => {
+    await setProfile(page, "manual");
+    await writeManualProfile({
+      goals: [manualGoal(1)],
+      projects: [
+        {
+          ...manualProject(1),
+          goalId: "goal-1",
+        },
+      ],
+    });
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/portfolio?view=goals");
+    });
+
+    const contextPanel = page.locator('[data-portfolio-section="context-panel"]');
+
+    await expect(
+      contextPanel.getByRole("heading", { name: "Goal Overview" }),
+    ).toBeVisible();
+    await expect(
+      contextPanel.getByRole("heading", { name: "Linked Projects" }),
+    ).toBeVisible();
+    await expect(contextPanel.getByText("Manual Project 1").first()).toBeVisible();
+    await expect(
+      contextPanel.getByRole("heading", { name: "Linked Tasks" }),
+    ).toBeVisible();
+    await expect(contextPanel.getByText("Keine offenen Goal Tasks.")).toBeVisible();
+    await expect(
+      contextPanel.getByRole("heading", { name: "Prepared Sections" }),
+    ).toBeVisible();
+    await expect(
+      contextPanel.getByRole("heading", { name: "Milestones" }),
+    ).toBeVisible();
+    await expect(
+      contextPanel.getByRole("heading", { name: "Review Cadence" }),
+    ).toBeVisible();
+    await expect(
+      contextPanel.getByRole("heading", { name: "Resources" }),
+    ).toBeVisible();
+    await expect(
+      contextPanel.getByRole("heading", { name: "Goal Log" }),
+    ).toBeVisible();
+    await expect(contextPanel.getByText("Vorbereitet")).toHaveCount(4);
+    await expectNoMainStrings(page, portfolioBlockedDemoStrings, "portfolio");
+  });
+
   test("Manual Portfolio Task erstellen persists reload-stable", async ({
     page,
   }) => {
@@ -3721,6 +3812,140 @@ test.describe("Portfolio content states", () => {
       taskTitle,
       "Complete and reopen this project task.",
       "Lifecycle proof inside Project Workbench v1.",
+    );
+
+    await clickPortfolioContextButton(page, "Abschließen");
+    await page.waitForLoadState("networkidle");
+    await expect(
+      page
+        .locator('[data-portfolio-section="context-panel"]')
+        .getByText("Completed"),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Wieder öffnen" }).first(),
+    ).toBeVisible();
+
+    await clickPortfolioContextButton(page, "Wieder öffnen");
+    await page.waitForLoadState("networkidle");
+    await expect(
+      page.getByRole("button", { name: "Abschließen" }).first(),
+    ).toBeVisible();
+  });
+
+  test("Manual Goal Workbench creates linked Goal task reload-stable", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session.",
+    );
+
+    const goalTitle = `Manual Workbench Goal ${Date.now()}`;
+    const taskTitle = `Manual Workbench Goal Task ${Date.now()}`;
+
+    await openManualPortfolioWithDb(page);
+    await page.goto("/portfolio?view=goals");
+    await createPortfolioGoalTarget(
+      page,
+      goalTitle,
+      "Goal Workbench v1 target.",
+    );
+    await page
+      .getByRole("link", { name: new RegExp(goalTitle) })
+      .first()
+      .click();
+    await expect(page.locator("#selected-entity-heading")).toHaveText(goalTitle);
+    await createGoalWorkbenchTask(
+      page,
+      taskTitle,
+      "Review the goal task.",
+      "Created inside Goal Workbench v1.",
+    );
+    await page.reload();
+    await expect(
+      page
+        .locator('[data-portfolio-section="context-panel"]')
+        .getByText(taskTitle)
+        .first(),
+    ).toBeVisible();
+
+    await page.goto("/portfolio?view=tasks");
+    await expect(page.getByText(taskTitle).first()).toBeVisible();
+    await page
+      .getByRole("link", { name: new RegExp(taskTitle) })
+      .first()
+      .click();
+    await expect(
+      page
+        .locator('[data-portfolio-section="context-panel"]')
+        .getByText(goalTitle)
+        .first(),
+    ).toBeVisible();
+  });
+
+  test("Manual Goal Workbench creates linked Goal project reload-stable", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session.",
+    );
+
+    const goalTitle = `Manual Workbench Project Goal ${Date.now()}`;
+    const projectTitle = `Manual Workbench Goal Project ${Date.now()}`;
+
+    await openManualPortfolioWithDb(page);
+    await page.goto("/portfolio?view=goals");
+    await createPortfolioGoalTarget(
+      page,
+      goalTitle,
+      "Goal Workbench project target.",
+    );
+    await page
+      .getByRole("link", { name: new RegExp(goalTitle) })
+      .first()
+      .click();
+    await createGoalWorkbenchProject(
+      page,
+      projectTitle,
+      "Created inside Goal Workbench v1.",
+    );
+    await page.reload();
+    await expect(
+      page
+        .locator('[data-portfolio-section="context-panel"]')
+        .getByText(projectTitle)
+        .first(),
+    ).toBeVisible();
+  });
+
+  test("Manual Goal Workbench keeps linked task lifecycle intact", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session.",
+    );
+
+    const goalTitle = `Manual Workbench Lifecycle Goal ${Date.now()}`;
+    const taskTitle = `Manual Workbench Goal Lifecycle Task ${Date.now()}`;
+
+    await openManualPortfolioWithDb(page);
+    await page.goto("/portfolio?view=goals");
+    await createPortfolioGoalTarget(
+      page,
+      goalTitle,
+      "Goal Workbench lifecycle target.",
+    );
+    await page
+      .getByRole("link", { name: new RegExp(goalTitle) })
+      .first()
+      .click();
+    await createGoalWorkbenchTask(
+      page,
+      taskTitle,
+      "Complete and reopen this goal task.",
+      "Lifecycle proof inside Goal Workbench v1.",
     );
 
     await clickPortfolioContextButton(page, "Abschließen");

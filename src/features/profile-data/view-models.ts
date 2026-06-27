@@ -729,6 +729,7 @@ function projectToPortfolioEntity(
     focusLevel: project.focusThisWeek
       ? "high"
       : portfolioFocusLevel(project.priority),
+    goalId: project.goalId,
     nextAction: project.nextStep,
     dueLabel: project.deadline ?? "No deadline",
     dueRank: dueRankFromDate(project.deadline),

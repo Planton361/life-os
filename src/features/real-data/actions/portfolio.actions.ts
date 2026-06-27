@@ -10,6 +10,7 @@ import {
   createSupabaseGoalRepository,
   createSupabaseProjectRepository,
 } from "@/features/real-data/supabase";
+import type { SupabaseClientLike } from "@/features/real-data/supabase";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
 import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -64,11 +65,50 @@ function returnViewFromForm(
   return formString(formData, "returnView") === "all" ? "all" : fallback;
 }
 
+function portfolioCreateReturnUrl(
+  state: string,
+  view: PortfolioCreateReturnView,
+  formData?: FormData,
+) {
+  const params = new URLSearchParams({
+    targetCreate: state,
+    view,
+  });
+  const selectedGoalId = formData
+    ? optionalFormString(formData, "selectedGoalId")
+    : undefined;
+
+  if (selectedGoalId) {
+    params.set("selected", selectedGoalId);
+  }
+
+  return `/portfolio?${params.toString()}`;
+}
+
 function redirectToPortfolioCreateState(
   state: string,
   view: PortfolioCreateReturnView,
+  formData?: FormData,
 ) {
-  redirect(`/portfolio?view=${view}&targetCreate=${state}`);
+  redirect(portfolioCreateReturnUrl(state, view, formData));
+}
+
+async function validateGoalScope(
+  client: SupabaseClientLike,
+  userId: string,
+  goalId: string | undefined,
+) {
+  if (!goalId) return true;
+
+  const result = await client
+    .from("goals")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("id", goalId)
+    .is("archived_at", null)
+    .maybeSingle();
+
+  return !result.error && Boolean(result.data);
 }
 
 export async function createProjectAction(
@@ -92,8 +132,18 @@ export async function createProjectAction(
     };
   }
 
+  const goalId = optionalFormString(formData, "goalId");
+
+  if (!(await validateGoalScope(auth.client, auth.user.id, goalId))) {
+    return {
+      message: "Das Goal konnte nicht als Project-Kontext bestätigt werden.",
+      status: "error",
+    };
+  }
+
   const parsed = createProjectInputSchema.safeParse({
     description: optionalFormString(formData, "description"),
+    goalId,
     profileId: auth.user.id,
     title: formString(formData, "title"),
     userId: auth.user.id,
@@ -184,10 +234,10 @@ export async function createProjectFormAction(formData: FormData): Promise<void>
   const returnView = returnViewFromForm(formData, "projects");
 
   if (result.status === "success") {
-    redirectToPortfolioCreateState("project_created", returnView);
+    redirectToPortfolioCreateState("project_created", returnView, formData);
   }
 
-  redirectToPortfolioCreateState(result.status, returnView);
+  redirectToPortfolioCreateState(result.status, returnView, formData);
 }
 
 export async function createGoalFormAction(formData: FormData): Promise<void> {
@@ -195,8 +245,8 @@ export async function createGoalFormAction(formData: FormData): Promise<void> {
   const returnView = returnViewFromForm(formData, "goals");
 
   if (result.status === "success") {
-    redirectToPortfolioCreateState("goal_created", returnView);
+    redirectToPortfolioCreateState("goal_created", returnView, formData);
   }
 
-  redirectToPortfolioCreateState(result.status, returnView);
+  redirectToPortfolioCreateState(result.status, returnView, formData);
 }

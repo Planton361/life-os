@@ -242,6 +242,21 @@
   `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Portfolio|Project Workbench|Project erstellen|Linked Tasks|Manual"`
 - Ergebnis im aktuellen lokalen Auth-State: 23 passed, 28 skipped. Project Workbench sichtbar/no-fake ist gruen; DB-Persistenz- und Lifecycle-Proofs skippen, weil die lokale Manual-Supabase-Session nicht aktiv verfuegbar ist.
 
+## R1.7.2 Goal Workbench v1
+
+- Portfolio Goal View oeffnet die Goal Workbench im bestehenden Portfolio Context Panel; keine neue Goal-Detailroute wurde eingefuehrt.
+- Goal Overview zeigt Titel, Beschreibung/Summary, Status, Progress, Area, Project Counts und Task Counts.
+- Linked Projects werden aus vorhandenen Portfolio Project Entities ueber `goalId` abgeleitet.
+- Linked Tasks werden aus vorhandenen Portfolio Task Entities ueber `goalId` abgeleitet.
+- Task fuer Goal erstellen nutzt den bestehenden Portfolio Task Create Pfad, setzt `goalId` automatisch und prueft das Goal serverseitig im User-Scope.
+- Project fuer Goal erstellen nutzt den bestehenden Portfolio Project Create Pfad, setzt `goalId` automatisch und prueft das Goal serverseitig im User-Scope.
+- Bestehende Task Lifecycle Controls bleiben fuer Linked Tasks sichtbar und werden nicht neu modelliert.
+- Milestones, Review Cadence, Resources und Goal Log sind als vorbereitet markiert; keine Fake-Milestones, keine Fake-Key-Results, keine Fake-Resources und keine Log-Persistenz.
+- Task-Fortschritt ist nur abgeleitet: completed linked tasks / total linked tasks; kein DB-Write.
+- Keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB-Aktion und kein Service-Role-Zugriff.
+- Focused Browser Command:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Portfolio|Goal Workbench|Goal erstellen|Linked Tasks|Linked Projects|Manual"`
+
 ## Known Boundaries
 
 - Browser auth is email/password only.

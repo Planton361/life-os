@@ -99,6 +99,10 @@ export type PortfolioTaskEntity = PortfolioEntity & {
   taskLifecycle: PortfolioTaskLifecycle;
 };
 
+export type PortfolioProjectEntity = PortfolioEntity & {
+  type: "project";
+};
+
 export type ProjectWorkbenchViewModel = {
   project: {
     id: string;
@@ -119,6 +123,35 @@ export type ProjectWorkbenchViewModel = {
   };
   sections: {
     milestones: "connected" | "prepared";
+    resources: "connected" | "prepared";
+    logs: "connected" | "prepared";
+  };
+};
+
+export type GoalWorkbenchViewModel = {
+  goal: {
+    id: string;
+    title: string;
+    summary?: string;
+    status?: string;
+    progress?: number;
+    areaLabel?: string;
+  };
+  linkedProjects: PortfolioProjectEntity[];
+  linkedTasks: PortfolioTaskEntity[];
+  nextTasks: PortfolioTaskEntity[];
+  completedTasks: PortfolioTaskEntity[];
+  metrics: {
+    totalProjects: number;
+    activeProjects: number;
+    totalTasks: number;
+    openTasks: number;
+    completedTasks: number;
+    scheduledTasks: number;
+  };
+  sections: {
+    milestones: "connected" | "prepared";
+    reviewCadence: "connected" | "prepared";
     resources: "connected" | "prepared";
     logs: "connected" | "prepared";
   };

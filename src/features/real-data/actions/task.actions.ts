@@ -113,7 +113,7 @@ function portfolioTaskDescriptionFromForm(formData: FormData) {
 function portfolioTaskReturnView(formData: FormData) {
   const returnView = formString(formData, "returnView");
 
-  if (returnView === "all" || returnView === "projects") return returnView;
+  if (["all", "goals", "projects"].includes(returnView)) return returnView;
 
   return "tasks";
 }
@@ -124,9 +124,14 @@ function portfolioTaskReturnUrl(formData: FormData, state: string) {
     view: portfolioTaskReturnView(formData),
   });
   const selectedProjectId = optionalFormString(formData, "selectedProjectId");
+  const selectedGoalId = optionalFormString(formData, "selectedGoalId");
 
   if (selectedProjectId) {
     params.set("selected", selectedProjectId);
+  }
+
+  if (selectedGoalId) {
+    params.set("selected", selectedGoalId);
   }
 
   return `/portfolio?${params.toString()}`;
@@ -219,6 +224,23 @@ async function validateProjectScope(
   return !result.error && Boolean(result.data);
 }
 
+async function validateGoalScope(
+  context: Awaited<ReturnType<typeof getAuthenticatedManualTaskContext>>,
+  goalId: string | undefined,
+) {
+  if (!goalId || !context.ok) return true;
+
+  const result = await context.auth.client
+    .from("goals")
+    .select("id")
+    .eq("user_id", context.auth.user.id)
+    .eq("id", goalId)
+    .is("archived_at", null)
+    .maybeSingle();
+
+  return !result.error && Boolean(result.data);
+}
+
 export async function scheduleTaskForTodayAction(
   formData: FormData,
 ): Promise<TaskScheduleActionResult> {
@@ -290,6 +312,7 @@ export async function createPortfolioTaskAction(
   if (!context.ok) return context.result;
 
   const todayCandidate = formData.get("todayCandidate") === "on";
+  const goalId = optionalFormString(formData, "goalId");
   const projectId = optionalFormString(formData, "projectId");
 
   if (!(await validateProjectScope(context, projectId))) {
@@ -299,10 +322,18 @@ export async function createPortfolioTaskAction(
     };
   }
 
+  if (!(await validateGoalScope(context, goalId))) {
+    return {
+      message: "Das Goal konnte nicht als Task-Kontext bestätigt werden.",
+      status: "error",
+    };
+  }
+
   const parsed = createTaskInputSchema.safeParse({
     description: portfolioTaskDescriptionFromForm(formData),
     durationMinutes: durationMinutesFromForm(formData, "plan"),
     energy: optionalFormString(formData, "energy"),
+    goalId,
     plannedDate: todayCandidate ? localDateLabel() : undefined,
     priority: formString(formData, "priority") || "none",
     projectId,
