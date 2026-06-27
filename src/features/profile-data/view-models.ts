@@ -1617,9 +1617,12 @@ function realTaskToLifeTask(task: RealDataTask): LifeTask | null {
           },
         ]
       : [],
+    generatedFromTemplateId: task.generatedFromTemplateId ?? undefined,
     goalId: task.goalId ?? undefined,
     id: task.id,
     inboxItemIds: task.sourceInboxItemId ? [task.sourceInboxItemId] : [],
+    instanceDate: task.instanceDate ?? undefined,
+    isGenerated: Boolean(task.generatedFromTemplateId),
     nextStep:
       task.description ??
       (task.sourceInboxItemId
@@ -1629,7 +1632,11 @@ function realTaskToLifeTask(task: RealDataTask): LifeTask | null {
     projectId: task.projectId ?? undefined,
     resultNote: task.completedAt ? "Completed in Supabase." : undefined,
     reviewNeeded: status === "inbox",
-    source: task.sourceInboxItemId ? "Supabase inbox triage" : "Supabase task",
+    source: task.generatedFromTemplateId
+      ? "Wiederkehrende Vorlage"
+      : task.sourceInboxItemId
+        ? "Supabase inbox triage"
+        : "Supabase task",
     startTime: scheduledStartTime,
     status,
     timeline: [
@@ -2401,6 +2408,7 @@ function taskToTodayEvent(task: LifeTask): TodayActivityEventViewModel {
     sourceHref: `/tasks/${task.id}`,
     sourceActionLabel: "Open source",
     accent: areaAccent(task.areaId),
+    isGenerated: task.isGenerated,
     taskLifecycle: {
       status:
         task.status === "done"
@@ -2428,6 +2436,8 @@ function isOpenTask(task: LifeTask) {
 }
 
 function taskCandidateReason(task: LifeTask) {
+  if (task.isGenerated) return "Wiederkehrend";
+
   const signals = [
     task.priority !== "none" ? task.priority : null,
     task.energy ? `${task.energy} energy` : null,
@@ -2475,6 +2485,7 @@ function taskToTodayPlannerTask(
     contextLabel: taskPlannerContextLabel(task, lookups, task.source ?? "Task"),
     candidateReason: taskCandidateReason(task),
     accent: areaAccent(task.areaId),
+    isGenerated: task.isGenerated,
   };
 }
 
@@ -2574,6 +2585,7 @@ function buildProfileTodayViewModel(
   profile: ManualProfileData,
   profileId: Exclude<LifeOsProfileId, "demo">,
   relationLookups?: PortfolioRelationLabelLookups,
+  options: { manualDbAvailable?: boolean } = {},
 ): TodayViewModel {
   const viewModel = clone(getDemoTodayViewModel());
   const plannerRelationLookups =
@@ -2698,6 +2710,10 @@ function buildProfileTodayViewModel(
       description:
         "Offene Tasks mit Planning Signals erscheinen hier, bevor sie in den heutigen Plan übernommen werden.",
     },
+  };
+  viewModel.recurringGeneration = {
+    enabled: profileId === "manual" && Boolean(options.manualDbAvailable),
+    today,
   };
   viewModel.openingReview = {
     ...viewModel.openingReview,
@@ -3028,6 +3044,7 @@ function buildProfileCalendarViewModel(
         recentlyUpdated: "local",
         alreadyScheduled: false,
         accent: areaAccent(task.areaId),
+        isGenerated: task.isGenerated,
       }))
       .slice(0, 100);
 
@@ -3265,13 +3282,27 @@ export async function getTodayViewModel(): Promise<TodayViewModel> {
     return getDemoTodayViewModel();
   }
 
+  if (profileId === "manual") {
+    const [profile, manualTasks] = await Promise.all([
+      readManualProfile(),
+      getManualTaskProfileData(),
+    ]);
+    const mergedProfile = {
+      ...profile,
+      tasks: manualTasks.tasks,
+    };
+
+    return buildProfileTodayViewModel(
+      mergedProfile,
+      profileId,
+      await getManualPlannerRelationLabelLookups(profileId, mergedProfile.tasks),
+      { manualDbAvailable: !manualTasks.unavailableReason },
+    );
+  }
+
   const profile = await getProfileDataWithManualTasks(profileId);
 
-  return buildProfileTodayViewModel(
-    profile,
-    profileId,
-    await getManualPlannerRelationLabelLookups(profileId, profile.tasks),
-  );
+  return buildProfileTodayViewModel(profile, profileId);
 }
 
 export async function getCalendarViewModel(): Promise<CalendarViewModel> {

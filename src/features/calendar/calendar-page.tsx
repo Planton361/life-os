@@ -569,6 +569,9 @@ function CalendarEmptyRightPanel({
                       <p className="truncate text-[10px] leading-4 text-[var(--text-muted)]">
                         {task.project}
                       </p>
+                      {task.isGenerated ? (
+                        <Pill accent="var(--accent-cyan)">Wiederkehrend</Pill>
+                      ) : null}
                     </div>
                   </div>
 

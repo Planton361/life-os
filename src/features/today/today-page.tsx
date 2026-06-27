@@ -7,6 +7,8 @@ import {
   reopenTaskFormAction,
   scheduleTaskForTodayFormAction,
 } from "@/features/real-data/actions/task.actions";
+import { generateRecurringTaskInstancesForTodayFormAction } from "@/features/real-data/actions/recurring-task-generation.actions";
+import { createRecurringTaskTemplateTodayFormAction } from "@/features/real-data/actions/recurring-task-template.actions";
 import { cn } from "@/lib/cn";
 import type {
   TodayActivityEventViewModel,
@@ -20,6 +22,11 @@ import type {
   TodayPlannerTaskViewModel,
   TodayViewModel,
 } from "./today-view-model";
+
+export type TodayRecurringFeedback = {
+  generation?: "blocked" | "error" | "generated" | "idle";
+  template?: "blocked" | "created" | "error";
+};
 
 function contentStateAttributes(
   meta: ContentStateMeta,
@@ -178,15 +185,19 @@ function TodayHeader({
 function ActivityStream({
   emptyState,
   events,
+  recurringFeedback,
   planner,
   plannerContentState,
   profileId,
+  recurringGeneration,
 }: Readonly<{
   emptyState: TodayViewModel["activityStream"]["emptyState"];
   events: TodayActivityEventViewModel[];
+  recurringFeedback?: TodayRecurringFeedback;
   planner: TodayViewModel["todayPlanner"];
   plannerContentState: ContentStateMeta;
   profileId: TodayViewModel["profileId"];
+  recurringGeneration: TodayViewModel["recurringGeneration"];
 }>) {
   return (
     <div className="flex h-full min-h-0 flex-col 2xl:overflow-y-auto 2xl:pr-1">
@@ -201,6 +212,8 @@ function ActivityStream({
         contentState={plannerContentState}
         planner={planner}
         profileId={profileId}
+        recurringFeedback={recurringFeedback}
+        recurringGeneration={recurringGeneration}
       />
 
       {events.length > 0 ? (
@@ -263,14 +276,190 @@ function durationLabel(minutes: number) {
   return rest > 0 ? `${hours}h ${rest}m` : `${hours}h`;
 }
 
+function RecurringFeedbackMessage({
+  feedback,
+}: Readonly<{
+  feedback?: TodayRecurringFeedback;
+}>) {
+  const messages = [
+    feedback?.template === "created"
+      ? "Wiederkehrende Vorlage erstellt."
+      : null,
+    feedback?.template === "blocked"
+      ? "Melde dich an, um wiederkehrende Vorlagen zu erstellen."
+      : null,
+    feedback?.template === "error"
+      ? "Wiederkehrende Vorlage konnte nicht erstellt werden."
+      : null,
+    feedback?.generation === "generated"
+      ? "Wiederkehrende Aufgaben erzeugt."
+      : null,
+    feedback?.generation === "idle"
+      ? "Keine neuen wiederkehrenden Aufgaben fällig."
+      : null,
+    feedback?.generation === "blocked"
+      ? "Melde dich an, um wiederkehrende Aufgaben zu erzeugen."
+      : null,
+    feedback?.generation === "error"
+      ? "Wiederkehrende Aufgaben konnten nicht erzeugt werden."
+      : null,
+  ].filter((message): message is string => Boolean(message));
+
+  if (messages.length === 0) return null;
+
+  return (
+    <div
+      aria-live="polite"
+      className="mt-2 rounded-[9px] border border-[rgba(66,184,131,.24)] bg-[rgba(66,184,131,.08)] px-3 py-2 text-[10px] font-semibold leading-4 text-[var(--text-secondary)]"
+    >
+      {messages.map((message) => (
+        <p key={message}>{message}</p>
+      ))}
+    </div>
+  );
+}
+
+const weekdayOptions = [
+  ["1", "Mo"],
+  ["2", "Di"],
+  ["3", "Mi"],
+  ["4", "Do"],
+  ["5", "Fr"],
+  ["6", "Sa"],
+  ["7", "So"],
+] as const;
+
+function RecurringGenerationControl({
+  feedback,
+  recurringGeneration,
+}: Readonly<{
+  feedback?: TodayRecurringFeedback;
+  recurringGeneration: TodayViewModel["recurringGeneration"];
+}>) {
+  if (!recurringGeneration.enabled) return null;
+
+  return (
+    <div
+      className="mt-2 rounded-[10px] border border-[rgba(95,200,215,.18)] bg-[rgba(18,28,43,.50)] p-2.5"
+      data-today-section="recurring-generation"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold text-[var(--text-primary)]">
+            Wiederkehrende Aufgaben
+          </p>
+          <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
+            {recurringGeneration.today}
+          </p>
+        </div>
+        <form action={generateRecurringTaskInstancesForTodayFormAction}>
+          <input name="date" type="hidden" value={recurringGeneration.today} />
+          <button
+            className="min-h-8 rounded-full border border-[rgba(95,200,215,.34)] bg-[rgba(95,200,215,.14)] px-3 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(95,200,215,.48)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+            type="submit"
+          >
+            Wiederkehrende Aufgaben für heute erzeugen
+          </button>
+        </form>
+      </div>
+
+      <RecurringFeedbackMessage feedback={feedback} />
+
+      <details
+        className="mt-2 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.42)] px-2.5 py-2"
+        data-today-section="recurring-template-setup"
+      >
+        <summary className="cursor-pointer text-[10px] font-semibold text-[var(--text-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]">
+          Wiederkehrende Vorlage
+        </summary>
+        <form
+          action={createRecurringTaskTemplateTodayFormAction}
+          className="mt-2 grid gap-2"
+        >
+          <input name="startsOn" type="hidden" value={recurringGeneration.today} />
+          <input name="timezone" type="hidden" value="Europe/Berlin" />
+          <input name="isActive" type="hidden" value="true" />
+
+          <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)]">
+            Title
+            <input
+              className="min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.76)] px-2.5 text-[12px] text-[var(--text-primary)] outline-none focus:border-[var(--focus-ring)]"
+              name="title"
+              required
+              type="text"
+            />
+          </label>
+
+          <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_120px]">
+            <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)]">
+              Frequency
+              <select
+                className="min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.76)] px-2.5 text-[12px] text-[var(--text-primary)] outline-none focus:border-[var(--focus-ring)]"
+                defaultValue="daily"
+                name="frequency"
+              >
+                <option value="daily">daily</option>
+                <option value="weekly">weekly</option>
+              </select>
+            </label>
+            <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)]">
+              Duration
+              <input
+                className="min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.76)] px-2.5 text-[12px] text-[var(--text-primary)] outline-none focus:border-[var(--focus-ring)]"
+                min="1"
+                name="durationMinutes"
+                placeholder="15"
+                type="number"
+              />
+            </label>
+          </div>
+
+          <fieldset className="rounded-[9px] border border-[var(--border-subtle)] px-2 py-1.5">
+            <legend className="px-1 text-[10px] font-semibold text-[var(--text-muted)]">
+              Weekdays
+            </legend>
+            <div className="flex flex-wrap gap-1.5">
+              {weekdayOptions.map(([value, label]) => (
+                <label
+                  className="inline-flex min-h-7 items-center gap-1 rounded-full border border-[var(--border-subtle)] bg-[rgba(168,183,204,.05)] px-2 text-[10px] font-semibold text-[var(--text-secondary)]"
+                  key={value}
+                >
+                  <input
+                    className="size-3 accent-[var(--accent-cyan)]"
+                    name="byWeekday"
+                    type="checkbox"
+                    value={value}
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          <button
+            className="justify-self-end min-h-8 rounded-full border border-[rgba(66,184,131,.30)] bg-[rgba(66,184,131,.12)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[rgba(66,184,131,.46)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+            type="submit"
+          >
+            Create template
+          </button>
+        </form>
+      </details>
+    </div>
+  );
+}
+
 function TodayPlannerQueue({
   contentState,
   planner,
   profileId,
+  recurringFeedback,
+  recurringGeneration,
 }: Readonly<{
   contentState: ContentStateMeta;
   planner: TodayViewModel["todayPlanner"];
   profileId: TodayViewModel["profileId"];
+  recurringFeedback?: TodayRecurringFeedback;
+  recurringGeneration: TodayViewModel["recurringGeneration"];
 }>) {
   return (
     <section
@@ -293,6 +482,11 @@ function TodayPlannerQueue({
         </div>
         <Pill quiet>{planner.tasks.length}</Pill>
       </div>
+
+      <RecurringGenerationControl
+        feedback={recurringFeedback}
+        recurringGeneration={recurringGeneration}
+      />
 
       {planner.tasks.length > 0 ? (
         <div className="mt-2 grid gap-1.5">
@@ -343,6 +537,9 @@ function TodayPlannerTaskCard({
           <p className="truncate text-[10px] leading-4 text-[var(--text-muted)]">
             {task.contextLabel} · {task.candidateReason}
           </p>
+          {task.isGenerated ? (
+            <Pill accent="var(--accent-cyan)">Wiederkehrend</Pill>
+          ) : null}
         </div>
       </div>
 
@@ -478,6 +675,9 @@ function ActivityEventCardContent({
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-1.5">
           <Pill accent={event.accent}>{event.eventTypeLabel}</Pill>
+          {event.isGenerated ? (
+            <Pill accent="var(--accent-cyan)">Wiederkehrend</Pill>
+          ) : null}
           <Pill accent={statusAccent(event.status, event.accent)}>
             {event.statusLabel}
           </Pill>
@@ -846,8 +1046,10 @@ function ClosingReview({
 }
 
 export function TodayMemoryLogPage({
+  recurringFeedback,
   viewModel,
 }: Readonly<{
+  recurringFeedback?: TodayRecurringFeedback;
   viewModel: TodayViewModel;
 }>) {
   return (
@@ -876,6 +1078,8 @@ export function TodayMemoryLogPage({
             planner={viewModel.todayPlanner}
             plannerContentState={viewModel.contentStates.todayPlanner}
             profileId={viewModel.profileId}
+            recurringFeedback={recurringFeedback}
+            recurringGeneration={viewModel.recurringGeneration}
           />
         </MemoryPanel>
 

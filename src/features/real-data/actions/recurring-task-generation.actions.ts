@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import {
   generateRecurringTaskInstancesForDate,
   generateRecurringTaskInstancesForRange,
@@ -215,4 +216,26 @@ export async function generateRecurringTaskInstancesForRangeAction(
     result.data.existing,
     result.data.skippedTemplates,
   );
+}
+
+function todayGenerationReturnUrl(result: RecurringTaskGenerationActionResult) {
+  const params = new URLSearchParams();
+
+  if (result.status !== "success") {
+    params.set("recurringGeneration", result.status);
+  } else if (result.generatedCount > 0) {
+    params.set("recurringGeneration", "generated");
+  } else {
+    params.set("recurringGeneration", "idle");
+  }
+
+  return `/today?${params.toString()}`;
+}
+
+export async function generateRecurringTaskInstancesForTodayFormAction(
+  formData: FormData,
+): Promise<void> {
+  const result = await generateRecurringTaskInstancesForDateAction(formData);
+
+  redirect(todayGenerationReturnUrl(result));
 }

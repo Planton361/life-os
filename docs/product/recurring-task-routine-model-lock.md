@@ -427,6 +427,26 @@ Nicht Teil von R1.7.5D:
 - keine Cron Jobs
 - keine Monthly-/Yearly-/Exception-Regeln
 
+## R1.7.5E Today/Calendar Integration
+
+R1.7.5E verbindet die explizite Generation mit dem Daily Core:
+
+- Today enthaelt einen manuellen Trigger fuer das heutige Datum.
+- Der Trigger ist Manual/Auth-gated und fuehrt keine Page-Load-Generation aus.
+- Ein kompakter Manual-QA-Pfad kann eine einzelne Vorlage erzeugen, ohne Template-Management oder Routine UI einzufuehren.
+- Generated Instances bleiben normale Tasks und erscheinen in Today, Dashboard Today Agenda und Calendar Planner Queue.
+- Calendar Time Grid bleibt an `scheduled_start_at` gebunden; generated planned Tasks ohne Uhrzeit werden nicht als Time Block gerendert.
+- Erneutes Generate bleibt idempotent und erzeugt keine Duplikate.
+
+Nicht Teil von R1.7.5E:
+
+- keine vollstaendige Template UI
+- keine Routine UI
+- keine Migration
+- keine Background Jobs
+- keine Cron Jobs
+- keine automatische Generation beim Page Load
+
 ## Implementation Plan
 
 ### R1.7.5B - Recurring Task Schema Lock/Migration

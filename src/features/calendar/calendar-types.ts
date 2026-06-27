@@ -231,6 +231,7 @@ export type SchedulableTaskViewModel = {
   recentlyUpdated: string;
   alreadyScheduled?: boolean;
   accent: string;
+  isGenerated?: boolean;
 };
 
 export type CalendarPlanningAssistantSuggestionViewModel = {

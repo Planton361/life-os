@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import {
   createRecurringTaskTemplateInputSchema,
   deactivateRecurringTaskTemplateInputSchema,
@@ -53,8 +54,6 @@ function optionalFormBoolean(formData: FormData, key: string) {
 }
 
 function recurrenceRuleFromForm(formData: FormData) {
-  if (!formData.has("recurrenceRule")) return undefined;
-
   const raw = formString(formData, "recurrenceRule");
   if (!raw) return undefined;
 
@@ -63,6 +62,32 @@ function recurrenceRuleFromForm(formData: FormData) {
   } catch {
     return raw;
   }
+}
+
+function recurrenceRuleFromFrequencyForm(formData: FormData) {
+  const frequency = formString(formData, "frequency");
+
+  if (frequency === "daily") {
+    return {
+      frequency: "daily",
+      version: "v1",
+    };
+  }
+
+  if (frequency === "weekly") {
+    const byWeekday = formData
+      .getAll("byWeekday")
+      .map((value) => Number(value))
+      .filter((value) => Number.isInteger(value) && value >= 1 && value <= 7);
+
+    return {
+      byWeekday,
+      frequency: "weekly",
+      version: "v1",
+    };
+  }
+
+  return undefined;
 }
 
 function revalidateRecurringTemplateRoutes() {
@@ -160,7 +185,8 @@ export async function createRecurringTaskTemplateAction(
     nextAction: optionalFormString(formData, "nextAction"),
     priority: optionalFormString(formData, "priority"),
     projectId: optionalFormString(formData, "projectId"),
-    recurrenceRule: recurrenceRuleFromForm(formData),
+    recurrenceRule:
+      recurrenceRuleFromForm(formData) ?? recurrenceRuleFromFrequencyForm(formData),
     startsOn: formString(formData, "startsOn"),
     timezone: formString(formData, "timezone"),
     title: formString(formData, "title"),
@@ -205,6 +231,22 @@ export async function createRecurringTaskTemplateAction(
     status: "success",
     templateId: result.data.id,
   };
+}
+
+function todayTemplateReturnUrl(result: RecurringTaskTemplateActionResult) {
+  const params = new URLSearchParams({
+    recurringTemplate: result.status === "success" ? "created" : result.status,
+  });
+
+  return `/today?${params.toString()}`;
+}
+
+export async function createRecurringTaskTemplateTodayFormAction(
+  formData: FormData,
+): Promise<void> {
+  const result = await createRecurringTaskTemplateAction(formData);
+
+  redirect(todayTemplateReturnUrl(result));
 }
 
 export async function updateRecurringTaskTemplateAction(

@@ -79,6 +79,7 @@ export type TodayActivityEventViewModel = {
   sourceHref?: string;
   sourceActionLabel: string;
   accent: string;
+  isGenerated?: boolean;
   taskLifecycle?: {
     status: "planned" | "current" | "completed";
     taskId: string;
@@ -94,6 +95,12 @@ export type TodayPlannerTaskViewModel = {
   contextLabel: string;
   candidateReason: string;
   accent: string;
+  isGenerated?: boolean;
+};
+
+export type TodayRecurringGenerationViewModel = {
+  enabled: boolean;
+  today: string;
 };
 
 export type TodayDeltaMetricViewModel = {
@@ -187,6 +194,7 @@ export type TodayViewModel = {
     artifacts: TodayArtifactViewModel[];
     emptyState: TodayEmptyState;
   };
+  recurringGeneration: TodayRecurringGenerationViewModel;
   contract: TodayContractViewModel;
   pageContract: {
     pageType: "Daily Record / Activity Memory Log";
@@ -754,6 +762,10 @@ export function getTodayViewModel(): TodayViewModel {
           accent: "var(--accent-green)",
         },
       ],
+    },
+    recurringGeneration: {
+      enabled: false,
+      today: new Date().toISOString().slice(0, 10),
     },
     pageContract: {
       pageType: "Daily Record / Activity Memory Log",

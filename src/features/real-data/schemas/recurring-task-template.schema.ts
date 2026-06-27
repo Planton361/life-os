@@ -45,38 +45,46 @@ const optionalUuidSchema = z.preprocess(
   z.string().uuid().optional(),
 );
 
-const recurringTaskTemplatePatchSchema = z
-  .object({
-    areaId: optionalUuidSchema,
-    description: optionalTrimmedStringSchema,
-    durationMinutes: optionalPositiveIntegerSchema.refine(
-      (value) => value === undefined || value <= 1440,
-      {
-        message: "Expected a duration of at most 1440 minutes.",
-      },
-    ),
-    endsOn: optionalLocalDateSchema,
-    energy: optionalEnumSchema(taskEnergies),
-    goalId: optionalUuidSchema,
-    isActive: optionalBooleanSchema,
-    nextAction: optionalTrimmedStringSchema,
-    priority: optionalEnumSchema(taskPriorities),
-    projectId: optionalUuidSchema,
-    recurrenceRule: recurrenceRuleSchema,
-    startsOn: localDateSchema,
-    timezone: timezoneSchema,
-    title: titleSchema,
-  })
-  .refine(
-    (input) =>
-      input.endsOn === undefined ||
-      input.startsOn === undefined ||
-      Date.parse(input.endsOn) >= Date.parse(input.startsOn),
+const recurringTaskTemplateBaseSchema = z.object({
+  areaId: optionalUuidSchema,
+  description: optionalTrimmedStringSchema,
+  durationMinutes: optionalPositiveIntegerSchema.refine(
+    (value) => value === undefined || value <= 1440,
     {
-      message: "Expected endsOn to be on or after startsOn.",
-      path: ["endsOn"],
+      message: "Expected a duration of at most 1440 minutes.",
     },
+  ),
+  endsOn: optionalLocalDateSchema,
+  energy: optionalEnumSchema(taskEnergies),
+  goalId: optionalUuidSchema,
+  isActive: optionalBooleanSchema,
+  nextAction: optionalTrimmedStringSchema,
+  priority: optionalEnumSchema(taskPriorities),
+  projectId: optionalUuidSchema,
+  recurrenceRule: recurrenceRuleSchema,
+  startsOn: localDateSchema,
+  timezone: timezoneSchema,
+  title: titleSchema,
+});
+
+function endsOnIsAfterStartsOn(input: {
+  endsOn?: string;
+  startsOn?: string;
+}) {
+  return (
+    input.endsOn === undefined ||
+    input.startsOn === undefined ||
+    Date.parse(input.endsOn) >= Date.parse(input.startsOn)
   );
+}
+
+const recurringTaskTemplatePatchSchema = recurringTaskTemplateBaseSchema.refine(
+  endsOnIsAfterStartsOn,
+  {
+    message: "Expected endsOn to be on or after startsOn.",
+    path: ["endsOn"],
+  },
+);
 
 export const recurringTaskTemplateInputSchema =
   recurringTaskTemplatePatchSchema;
@@ -96,9 +104,15 @@ export type CreateRecurringTaskTemplateInput = z.infer<
 >;
 
 export const updateRecurringTaskTemplateActionInputSchema =
-  recurringTaskTemplatePatchSchema.partial().extend({
-    templateId: requiredUuidSchema,
-  });
+  recurringTaskTemplateBaseSchema
+    .partial()
+    .extend({
+      templateId: requiredUuidSchema,
+    })
+    .refine(endsOnIsAfterStartsOn, {
+      message: "Expected endsOn to be on or after startsOn.",
+      path: ["endsOn"],
+    });
 
 export type UpdateRecurringTaskTemplateActionInput = z.infer<
   typeof updateRecurringTaskTemplateActionInputSchema

@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
-import { TodayMemoryLogPage } from "@/features/today";
+import {
+  TodayMemoryLogPage,
+  type TodayRecurringFeedback,
+} from "@/features/today";
 import { getTodayViewModel } from "@/features/profile-data";
 import { ManualDbAuthNotice } from "@/features/real-data/manual-db-auth-notice";
 
@@ -7,15 +10,55 @@ export const metadata: Metadata = {
   title: "Today | Life OS",
 };
 
-export default async function TodayPage() {
+type TodaySearchParams = {
+  recurringGeneration?: string | string[];
+  recurringTemplate?: string | string[];
+};
+
+function searchValue(value?: string | string[]) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function recurringFeedbackFromSearchParams(
+  searchParams: TodaySearchParams,
+): TodayRecurringFeedback | undefined {
+  const generation = searchValue(searchParams.recurringGeneration);
+  const template = searchValue(searchParams.recurringTemplate);
+
+  return {
+    generation:
+      generation === "blocked" ||
+      generation === "error" ||
+      generation === "generated" ||
+      generation === "idle"
+        ? generation
+        : undefined,
+    template:
+      template === "blocked" || template === "created" || template === "error"
+        ? template
+        : undefined,
+  };
+}
+
+export default async function TodayPage({
+  searchParams,
+}: Readonly<{
+  searchParams: Promise<TodaySearchParams>;
+}>) {
   const viewModel = await getTodayViewModel();
+  const recurringFeedback = recurringFeedbackFromSearchParams(
+    await searchParams,
+  );
 
   return (
     <>
       <div className="mx-auto mb-3 w-full max-w-[2208px]">
         <ManualDbAuthNotice />
       </div>
-      <TodayMemoryLogPage viewModel={viewModel} />
+      <TodayMemoryLogPage
+        recurringFeedback={recurringFeedback}
+        viewModel={viewModel}
+      />
     </>
   );
 }

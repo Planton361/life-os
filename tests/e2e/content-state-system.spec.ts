@@ -34,6 +34,16 @@ function addClockMinutes(time: string, offsetMinutes: number) {
   return clockFromMinutes(minutesFromClock(time) + offsetMinutes);
 }
 
+function currentIsoWeekday() {
+  const day = new Date().getDay();
+
+  return day === 0 ? 7 : day;
+}
+
+function nextIsoWeekday() {
+  return (currentIsoWeekday() % 7) + 1;
+}
+
 function calendarRangeOverlaps(
   leftStart: number,
   leftEnd: number,
@@ -130,6 +140,77 @@ async function captureAndTriageManualInboxTask(
     .click();
   await page.waitForLoadState("networkidle");
   await expect(page.getByText("Task erstellt").first()).toBeVisible();
+}
+
+async function openRecurringGenerationControl(page: Page) {
+  await setProfile(page, "manual");
+  await applySupabaseAuthState(page);
+  await expectNoHydrationErrors(page, async () => {
+    await page.goto("/today");
+  });
+
+  const recurringControl = page.locator(
+    '[data-today-section="recurring-generation"]',
+  );
+
+  if ((await recurringControl.count()) === 0) {
+    test.skip(
+      true,
+      "Requires a local authenticated Supabase Playwright session.",
+    );
+  }
+
+  await expect(recurringControl).toBeVisible();
+
+  return recurringControl;
+}
+
+async function createRecurringTemplateFromToday(
+  page: Page,
+  title: string,
+  options: {
+    durationMinutes?: string;
+    frequency?: "daily" | "weekly";
+    weekday?: number;
+  } = {},
+) {
+  const recurringControl = await openRecurringGenerationControl(page);
+  const setup = recurringControl.locator(
+    '[data-today-section="recurring-template-setup"]',
+  );
+
+  await setup.locator("summary").click();
+  await setup.getByLabel("Title").fill(title);
+  await setup
+    .getByLabel("Frequency")
+    .selectOption(options.frequency ?? "daily");
+
+  if (options.durationMinutes) {
+    await setup.getByLabel("Duration").fill(options.durationMinutes);
+  }
+
+  if (options.frequency === "weekly" && options.weekday) {
+    await setup
+      .locator(`input[name="byWeekday"][value="${options.weekday}"]`)
+      .check();
+  }
+
+  await setup.getByRole("button", { name: "Create template" }).click();
+  await page.waitForLoadState("networkidle");
+  await expect(
+    page.getByText("Wiederkehrende Vorlage erstellt.").first(),
+  ).toBeVisible();
+}
+
+async function generateRecurringTasksForToday(page: Page) {
+  const recurringControl = await openRecurringGenerationControl(page);
+
+  await recurringControl
+    .getByRole("button", {
+      name: "Wiederkehrende Aufgaben für heute erzeugen",
+    })
+    .click();
+  await page.waitForLoadState("networkidle");
 }
 
 async function skipIfManualDbUnavailable(
@@ -3449,6 +3530,96 @@ test.describe("Today content states", () => {
       "calendar queue after today planning",
     );
     await expect(weekGrid.getByText(title)).toHaveCount(0);
+  });
+
+  test("Manual Recurring generates task into Today, Dashboard and Calendar queue", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session.",
+    );
+
+    const title = `Manual Recurring Today ${Date.now()}`;
+
+    await createRecurringTemplateFromToday(page, title, {
+      durationMinutes: "15",
+      frequency: "daily",
+    });
+    await generateRecurringTasksForToday(page);
+    await expect(
+      page.getByText("Wiederkehrende Aufgaben erzeugt.").first(),
+    ).toBeVisible();
+
+    const activityTimeline = page.locator(
+      '[data-today-section="activity-stream"] ol',
+    );
+    const generatedEvent = activityTimeline.locator("article").filter({
+      hasText: title,
+    });
+
+    await expect(generatedEvent).toHaveCount(1);
+    await expect(generatedEvent.getByText("Wiederkehrend")).toBeVisible();
+    await page.reload();
+    await expect(
+      page.locator('[data-today-section="activity-stream"] ol').getByText(title),
+    ).toHaveCount(1);
+
+    await page.goto("/dashboard");
+    const todayAgenda = page.getByRole("region", { name: "Today Agenda" });
+    await expect(todayAgenda.getByText(title).first()).toBeVisible();
+
+    await page.goto("/calendar");
+    const calendarPlannerQueue = page
+      .locator('[data-calendar-section="planning-queue"]')
+      .first();
+    await expect(calendarPlannerQueue.getByText(title).first()).toBeVisible();
+    await expect(
+      calendarPlannerQueue.getByText("Wiederkehrend").first(),
+    ).toBeVisible();
+
+    await page.goto("/today");
+    await generateRecurringTasksForToday(page);
+    await expect(
+      page.getByText("Keine neuen wiederkehrenden Aufgaben fällig.").first(),
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-today-section="activity-stream"] ol').getByText(title),
+    ).toHaveCount(1);
+  });
+
+  test("Manual Recurring weekly rule respects ISO weekday", async ({ page }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session.",
+    );
+
+    const dueTitle = `Manual Recurring Weekly Due ${Date.now()}`;
+    const skippedTitle = `Manual Recurring Weekly Skip ${Date.now()}`;
+
+    await createRecurringTemplateFromToday(page, dueTitle, {
+      durationMinutes: "15",
+      frequency: "weekly",
+      weekday: currentIsoWeekday(),
+    });
+    await generateRecurringTasksForToday(page);
+    await expect(
+      page
+        .locator('[data-today-section="activity-stream"] ol')
+        .getByText(dueTitle),
+    ).toHaveCount(1);
+
+    await createRecurringTemplateFromToday(page, skippedTitle, {
+      durationMinutes: "15",
+      frequency: "weekly",
+      weekday: nextIsoWeekday(),
+    });
+    await generateRecurringTasksForToday(page);
+    await expect(
+      page
+        .locator('[data-today-section="activity-stream"] ol')
+        .getByText(skippedTitle),
+    ).toHaveCount(0);
   });
 
   test("Manual Today completes DB task and removes it from Dashboard agenda", async ({

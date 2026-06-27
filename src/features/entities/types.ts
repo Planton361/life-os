@@ -100,6 +100,9 @@ export type LifeTask = {
   projectId?: string;
   goalId?: string;
   skillId?: string;
+  generatedFromTemplateId?: string;
+  instanceDate?: string;
+  isGenerated?: boolean;
   type: TaskType;
   nextStep: string;
   resultNote?: string;

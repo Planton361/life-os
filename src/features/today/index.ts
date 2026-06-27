@@ -1,5 +1,6 @@
 export { buildTodayContentStates, getTodayViewModel } from "./today-view-model";
 export { TodayMemoryLogPage } from "./today-page";
+export type { TodayRecurringFeedback } from "./today-page";
 export type {
   TodayActivityEventViewModel,
   TodayActivityEventType,

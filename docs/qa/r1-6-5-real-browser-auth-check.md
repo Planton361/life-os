@@ -388,6 +388,27 @@
 - Keine UI, keine Migration, keine Background Jobs, keine Cron Jobs, keine automatische Today-/Calendar-/Dashboard-Integration.
 - Kein Playwright-Lauf erforderlich, weil dieser Block keine UI aendert.
 
+## R1.7.5E Recurring Task Today/Calendar Integration
+
+- Manual Today zeigt einen expliziten Trigger: `Wiederkehrende Aufgaben fuer heute erzeugen`.
+- Der Trigger ist nur fuer Manual mit aktiver lokaler Supabase Session sichtbar.
+- Ein kompakter Manual-QA-Pfad kann eine `Wiederkehrende Vorlage` erstellen; es gibt keinen Template-Listenmanager, keine Edit-UI und keine Routine UI.
+- Generated Task Instances erscheinen wie normale geplante Tasks in Today.
+- Generated Task Instances erscheinen in Dashboard Today Agenda / Daily Core.
+- Generated Task Instances erscheinen in Calendar Planner Queue, solange `scheduled_start_at` leer bleibt.
+- Generated Task Instances werden dezent als `Wiederkehrend` markiert.
+- Idempotenz ist im Browser-Proof abgedeckt: erneutes Generate erzeugt keine Duplikate und meldet `Keine neuen wiederkehrenden Aufgaben faellig.`
+- Weekly Rule Proof nutzt ISO-Wochentage: heutiger Wochentag erzeugt, anderer Wochentag erzeugt nicht.
+- Lokaler Playwright Auth-State wurde fuer den Browser-Proof gegen die lokale Supabase Auth Runtime refreshed; `.local/` bleibt unversioniert.
+- Fokussierter Recurring-Lauf:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Recurring"`
+- Ergebnis: 2 passed.
+- Breiter Manual/Today/Dashboard/Calendar-Lauf:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Recurring|Manual|Today|Dashboard|Calendar"`
+- Ergebnis: 60 passed, 2 skipped.
+- Keine Background Jobs, keine Cron Jobs und keine automatische Page-Load-Generation.
+- Keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB und kein Service-Role-Zugriff.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.
