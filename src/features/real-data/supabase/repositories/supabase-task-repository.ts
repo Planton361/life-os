@@ -1,6 +1,7 @@
 import type { Task } from "../../domain";
 import type {
   CalendarTaskRangeInput,
+  CreateGeneratedTaskInstanceInput,
   TaskListInput,
   TaskRepository,
 } from "../../repositories";
@@ -26,6 +27,7 @@ import {
   mapUpdateTaskInputToPatch,
 } from "../mappers";
 import type { TaskRow, TaskUpdate } from "../row-types";
+import type { TaskInsert } from "../row-types";
 
 type RepositoryFailure = RepositoryResult<never>;
 
@@ -121,6 +123,54 @@ async function getTasksForRange(
   };
 }
 
+async function loadGeneratedTaskInstance(
+  client: SupabaseClientLike,
+  userId: string,
+  templateId: string,
+  instanceDate: string,
+): Promise<RepositoryResult<Task | null>> {
+  const result = (await client
+    .from(realDataTableNames.tasks)
+    .select("*")
+    .eq("user_id", userId)
+    .eq("generated_from_template_id", templateId)
+    .eq("instance_date", instanceDate)
+    .maybeSingle()) as SupabaseQueryResult<TaskRow>;
+
+  if (result.error) return adapterFailure("load generated task instance");
+
+  return {
+    data: result.data ? mapTaskRowToDomain(result.data) : null,
+    ok: true,
+  };
+}
+
+function mapGeneratedTaskInstanceInputToInsert(
+  input: CreateGeneratedTaskInstanceInput,
+): TaskInsert {
+  const insert: TaskInsert = {
+    generated_from_template_id: input.templateId,
+    instance_date: input.instanceDate,
+    planned_date: input.instanceDate,
+    title: input.title,
+    user_id: input.userId,
+  };
+
+  if (input.areaId !== undefined) insert.area_id = input.areaId;
+  if (input.description !== undefined) insert.description = input.description;
+  if (input.durationMinutes !== undefined) {
+    insert.duration_minutes = input.durationMinutes;
+  }
+  if (input.energy !== undefined) insert.energy = input.energy;
+  if (input.goalId !== undefined) insert.goal_id = input.goalId;
+  if (input.priority !== undefined && input.priority !== null) {
+    insert.priority = input.priority;
+  }
+  if (input.projectId !== undefined) insert.project_id = input.projectId;
+
+  return insert;
+}
+
 export function createSupabaseTaskRepository(
   client: SupabaseClientLike,
 ): TaskRepository {
@@ -162,6 +212,65 @@ export function createSupabaseTaskRepository(
         mapCompleteTaskInputToPatch(input),
         "complete task",
       );
+    },
+
+    async createGeneratedTaskInstance(input) {
+      const scopeFailure = profileScopeFailure(input.userId, input.profileId);
+      if (scopeFailure) return scopeFailure;
+
+      const existing = await loadGeneratedTaskInstance(
+        client,
+        input.userId,
+        input.templateId,
+        input.instanceDate,
+      );
+
+      if (!existing.ok) return existing;
+      if (existing.data) {
+        return {
+          data: {
+            existing: true,
+            task: existing.data,
+          },
+          ok: true,
+        };
+      }
+
+      const created = (await client
+        .from(realDataTableNames.tasks)
+        .insert(mapGeneratedTaskInstanceInputToInsert(input))
+        .select("*")
+        .single()) as SupabaseQueryResult<TaskRow>;
+
+      if (!created.error && created.data) {
+        return {
+          data: {
+            existing: false,
+            task: mapTaskRowToDomain(created.data),
+          },
+          ok: true,
+        };
+      }
+
+      const duplicate = await loadGeneratedTaskInstance(
+        client,
+        input.userId,
+        input.templateId,
+        input.instanceDate,
+      );
+
+      if (!duplicate.ok) return duplicate;
+      if (duplicate.data) {
+        return {
+          data: {
+            existing: true,
+            task: duplicate.data,
+          },
+          ok: true,
+        };
+      }
+
+      return adapterFailure("create generated task instance");
     },
 
     async createTask(input) {

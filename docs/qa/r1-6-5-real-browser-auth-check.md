@@ -376,6 +376,18 @@
 - Keine Remote-DB, kein `supabase link`, kein `supabase db push`, kein Service-Role-Zugriff.
 - Kein Playwright-Lauf erforderlich, weil dieser Block keine UI aendert.
 
+## R1.7.5D Recurring Task Instance Generation
+
+- RecurrenceRuleV1 definiert: `daily` und `weekly` mit optionalem `interval`, `weekly.byWeekday` nutzt ISO-Wochentage 1 bis 7.
+- Explizite Generation fuer ein Datum oder einen Zeitraum bis maximal 31 Tage ergaenzt.
+- Nur aktive Templates innerhalb `startsOn`/`endsOn` werden bewertet.
+- Generated Task Instances setzen `generated_from_template_id`, `instance_date` und `planned_date = instance_date`.
+- `scheduled_start_at` wird nicht automatisch gesetzt; Calendar Scheduling bleibt ein bewusster spaeterer Schritt.
+- Idempotenz gibt bestehende Instanzen zurueck und erzeugt keine Duplikate.
+- Unsupported Rules werden als `unsupported_recurrence_rule` uebersprungen, nicht still interpretiert.
+- Keine UI, keine Migration, keine Background Jobs, keine Cron Jobs, keine automatische Today-/Calendar-/Dashboard-Integration.
+- Kein Playwright-Lauf erforderlich, weil dieser Block keine UI aendert.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.

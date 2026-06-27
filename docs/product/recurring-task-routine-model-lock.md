@@ -398,6 +398,35 @@ Nicht Teil von R1.7.5C:
 - keine Cron Jobs
 - keine Today-/Calendar-/Dashboard-Integration
 
+## R1.7.5D Instance Generation
+
+R1.7.5D ergaenzt den expliziten Use Case zur Instanzgenerierung.
+
+RecurrenceRuleV1:
+
+- `version: "v1"`
+- `frequency: "daily"` mit optionalem `interval`
+- `frequency: "weekly"` mit optionalem `interval` und `byWeekday`
+- `byWeekday` nutzt ISO-Wochentage: 1 Montag bis 7 Sonntag
+
+Generation:
+
+- aktive Templates koennen fuer ein Datum oder einen Zeitraum bis 31 Tage bewertet werden.
+- `startsOn`, `endsOn`, `isActive`, `daily`, `weekly`, `interval` und `byWeekday` werden beruecksichtigt.
+- erzeugte Tasks setzen `generated_from_template_id` und `instance_date`.
+- `planned_date` entspricht `instance_date`.
+- `scheduled_start_at` wird nicht automatisch gesetzt.
+- Idempotenz nutzt `user_id + generated_from_template_id + instance_date`; bestehende Instanzen werden zurueckgegeben, nicht ueberschrieben oder dupliziert.
+
+Nicht Teil von R1.7.5D:
+
+- keine UI
+- keine Migration
+- keine automatische Ausfuehrung beim Oeffnen von Today, Calendar oder Dashboard
+- keine Background Jobs
+- keine Cron Jobs
+- keine Monthly-/Yearly-/Exception-Regeln
+
 ## Implementation Plan
 
 ### R1.7.5B - Recurring Task Schema Lock/Migration

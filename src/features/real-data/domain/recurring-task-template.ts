@@ -10,7 +10,20 @@ import type {
 } from "./ids";
 import type { TaskEnergy, TaskPriority } from "./task";
 
-export type RecurrenceRule = Record<string, unknown>;
+export type RecurrenceRuleV1 =
+  | {
+      version: "v1";
+      frequency: "daily";
+      interval?: number;
+    }
+  | {
+      version: "v1";
+      frequency: "weekly";
+      interval?: number;
+      byWeekday: number[];
+    };
+
+export type RecurrenceRule = RecurrenceRuleV1 | Record<string, unknown>;
 
 export type RecurringTaskTemplate = UserScopedEntity & {
   id: RecurringTaskTemplateId;

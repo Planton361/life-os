@@ -18,6 +18,7 @@ export const repositoryNames = [
   "goals",
   "dailyLogs",
   "resources",
+  "recurringTaskTemplates",
 ] as const;
 
 export type RepositoryName = (typeof repositoryNames)[number];

@@ -7,6 +7,7 @@ import type {
   LocalDateString,
   ProfileId,
   ProjectId,
+  RecurringTaskTemplateId,
   TaskId,
   UserScopedEntity,
 } from "./ids";
@@ -48,4 +49,6 @@ export type Task = UserScopedEntity & {
   dueAt: IsoDateTimeString | null;
   completedAt: IsoDateTimeString | null;
   carriedFromDailyLogId?: DailyLogId | null;
+  generatedFromTemplateId?: RecurringTaskTemplateId | null;
+  instanceDate?: LocalDateString | null;
 };

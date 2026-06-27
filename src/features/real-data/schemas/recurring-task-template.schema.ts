@@ -14,7 +14,23 @@ const requiredIdSchema = requiredTrimmedStringSchema();
 const requiredUuidSchema = z.string().trim().uuid();
 const titleSchema = requiredTrimmedStringSchema(2);
 const timezoneSchema = requiredTrimmedStringSchema();
-const recurrenceRuleSchema = z.record(z.string(), z.unknown());
+const recurrenceIntervalSchema = z.coerce.number().int().positive().max(366);
+const recurrenceRuleSchema = z.discriminatedUnion("frequency", [
+  z.object({
+    frequency: z.literal("daily"),
+    interval: recurrenceIntervalSchema.optional(),
+    version: z.literal("v1"),
+  }),
+  z.object({
+    byWeekday: z
+      .array(z.coerce.number().int().min(1).max(7))
+      .min(1)
+      .max(7),
+    frequency: z.literal("weekly"),
+    interval: recurrenceIntervalSchema.optional(),
+    version: z.literal("v1"),
+  }),
+]);
 const optionalUuidSchema = z.preprocess(
   (value) => {
     if (value === null) return undefined;
@@ -114,4 +130,42 @@ export const deactivateRecurringTaskTemplateInputSchema =
 
 export type DeactivateRecurringTaskTemplateInput = z.infer<
   typeof deactivateRecurringTaskTemplateInputSchema
+>;
+
+export const generateRecurringTaskInstancesForDateActionInputSchema = z.object({
+  date: localDateSchema,
+});
+
+export type GenerateRecurringTaskInstancesForDateActionInput = z.infer<
+  typeof generateRecurringTaskInstancesForDateActionInputSchema
+>;
+
+const maxGenerationRangeDays = 31;
+
+function rangeLengthInDays(startDate: string, endDate: string) {
+  const start = Date.parse(`${startDate}T00:00:00.000Z`);
+  const end = Date.parse(`${endDate}T00:00:00.000Z`);
+
+  return Math.floor((end - start) / 86_400_000) + 1;
+}
+
+export const generateRecurringTaskInstancesForRangeActionInputSchema = z
+  .object({
+    endDate: localDateSchema,
+    startDate: localDateSchema,
+  })
+  .refine((input) => Date.parse(input.endDate) >= Date.parse(input.startDate), {
+    message: "Expected endDate to be on or after startDate.",
+    path: ["endDate"],
+  })
+  .refine(
+    (input) => rangeLengthInDays(input.startDate, input.endDate) <= maxGenerationRangeDays,
+    {
+      message: `Expected a generation range of at most ${maxGenerationRangeDays} days.`,
+      path: ["endDate"],
+    },
+  );
+
+export type GenerateRecurringTaskInstancesForRangeActionInput = z.infer<
+  typeof generateRecurringTaskInstancesForRangeActionInputSchema
 >;

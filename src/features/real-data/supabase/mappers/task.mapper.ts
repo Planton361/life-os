@@ -21,8 +21,10 @@ export function mapTaskRowToDomain(row: TaskRow): Task {
     dueAt: row.due_at,
     durationMinutes: row.duration_minutes,
     energy: row.energy,
+    generatedFromTemplateId: row.generated_from_template_id,
     goalId: row.goal_id,
     id: row.id,
+    instanceDate: row.instance_date,
     plannedDate: row.planned_date,
     priority: row.priority,
     profileId: row.user_id,
@@ -52,7 +54,11 @@ export function mapCreateTaskInputToInsert(
     insert.duration_minutes = input.durationMinutes;
   }
   if (input.energy !== undefined) insert.energy = input.energy;
+  if (input.generatedFromTemplateId !== undefined) {
+    insert.generated_from_template_id = input.generatedFromTemplateId;
+  }
   if (input.goalId !== undefined) insert.goal_id = input.goalId;
+  if (input.instanceDate !== undefined) insert.instance_date = input.instanceDate;
   if (input.plannedDate !== undefined) insert.planned_date = input.plannedDate;
   if (input.priority !== undefined) insert.priority = input.priority;
   if (input.projectId !== undefined) insert.project_id = input.projectId;
@@ -77,7 +83,11 @@ export function mapUpdateTaskInputToPatch(input: UpdateTaskInput): TaskUpdate {
     patch.duration_minutes = input.durationMinutes;
   }
   if (input.energy !== undefined) patch.energy = input.energy;
+  if (input.generatedFromTemplateId !== undefined) {
+    patch.generated_from_template_id = input.generatedFromTemplateId;
+  }
   if (input.goalId !== undefined) patch.goal_id = input.goalId;
+  if (input.instanceDate !== undefined) patch.instance_date = input.instanceDate;
   if (input.plannedDate !== undefined) patch.planned_date = input.plannedDate;
   if (input.priority !== undefined) patch.priority = input.priority;
   if (input.projectId !== undefined) patch.project_id = input.projectId;

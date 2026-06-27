@@ -14,7 +14,9 @@ import type {
   ResourceId,
   SupportedResourceRelationTargetType,
   Task,
+  TaskEnergy,
   UserId,
+  TaskPriority,
 } from "../domain";
 import type {
   ArchiveInboxItemInput,
@@ -79,6 +81,26 @@ export type TaskListInput = {
   ascending?: boolean;
 };
 
+export type CreateGeneratedTaskInstanceInput = {
+  userId: UserId;
+  profileId: ProfileId;
+  templateId: string;
+  instanceDate: LocalDateString;
+  title: string;
+  description?: string | null;
+  areaId?: string | null;
+  projectId?: string | null;
+  goalId?: string | null;
+  priority?: TaskPriority | null;
+  energy?: TaskEnergy | null;
+  durationMinutes?: number | null;
+};
+
+export type GeneratedTaskInstanceResult = {
+  task: Task;
+  existing: boolean;
+};
+
 export interface ProfileRepository {
   getProfileById(
     userId: UserId,
@@ -109,6 +131,9 @@ export interface InboxRepository {
 
 export interface TaskRepository {
   archiveTask(input: ArchiveTaskInput): Promise<RepositoryResult<Task>>;
+  createGeneratedTaskInstance(
+    input: CreateGeneratedTaskInstanceInput,
+  ): Promise<RepositoryResult<GeneratedTaskInstanceResult>>;
   createTask(input: CreateTaskInput): Promise<RepositoryResult<Task>>;
   updateTask(input: UpdateTaskInput): Promise<RepositoryResult<Task>>;
   scheduleTask(input: ScheduleTaskInput): Promise<RepositoryResult<Task>>;
