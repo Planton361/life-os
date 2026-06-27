@@ -193,6 +193,21 @@ async function openPortfolioTaskPlanningControls(page: Page, title: string) {
   await expect(page.locator("#selected-entity-heading")).toHaveText(title);
 }
 
+async function clickPortfolioContextButton(page: Page, name: string) {
+  const button = page
+    .locator('[data-portfolio-section="context-panel"]')
+    .getByRole("button", { exact: true, name })
+    .first();
+
+  await button.evaluate((element) => {
+    element.scrollIntoView({ block: "center", inline: "nearest" });
+  });
+  await expect(button).toBeVisible();
+  await button.focus();
+  await expect(button).toBeFocused();
+  await button.press("Enter");
+}
+
 async function openManualPortfolioWithDb(page: Page) {
   await setProfile(page, "manual");
   await applySupabaseAuthState(page);
@@ -1742,7 +1757,7 @@ test.describe("Dashboard content states", () => {
       "Schedule this task for the Dashboard Today Agenda.",
     );
     await openPortfolioTaskPlanningControls(page, title);
-    await page.getByRole("button", { name: "Heute terminieren" }).click();
+    await clickPortfolioContextButton(page, "Heute terminieren");
     await page.waitForLoadState("networkidle");
     await page.goto("/dashboard");
 
@@ -3076,7 +3091,7 @@ test.describe("Today content states", () => {
       "Complete this task from Today and remove it from Dashboard agenda.",
     );
     await openPortfolioTaskPlanningControls(page, title);
-    await page.getByRole("button", { name: "Heute planen" }).click();
+    await clickPortfolioContextButton(page, "Heute planen");
     await page.waitForLoadState("networkidle");
 
     await page.goto("/today");
@@ -3111,7 +3126,7 @@ test.describe("Today content states", () => {
       "Schedule this task and keep it out of the Today Planner queue.",
     );
     await openPortfolioTaskPlanningControls(page, title);
-    await page.getByRole("button", { name: "Heute terminieren" }).click();
+    await clickPortfolioContextButton(page, "Heute terminieren");
     await page.waitForLoadState("networkidle");
 
     await page.goto("/today");
@@ -3140,7 +3155,7 @@ test.describe("Today content states", () => {
       "Plan this task for the daily core views.",
     );
     await openPortfolioTaskPlanningControls(page, title);
-    await page.getByRole("button", { name: "Heute planen" }).click();
+    await clickPortfolioContextButton(page, "Heute planen");
     await page.waitForLoadState("networkidle");
 
     await page.goto("/today");
@@ -3225,7 +3240,7 @@ test.describe("Calendar content states", () => {
       "Plan this task into the Calendar Planner Queue before scheduling it.",
     );
     await openPortfolioTaskPlanningControls(page, title);
-    await page.getByRole("button", { name: "Heute planen" }).click();
+    await clickPortfolioContextButton(page, "Heute planen");
     await page.waitForLoadState("networkidle");
     await page.goto("/calendar");
 
@@ -3278,7 +3293,7 @@ test.describe("Calendar content states", () => {
       "Schedule then unschedule this task from Calendar.",
     );
     await openPortfolioTaskPlanningControls(page, title);
-    await page.getByRole("button", { name: "Heute planen" }).click();
+    await clickPortfolioContextButton(page, "Heute planen");
     await page.waitForLoadState("networkidle");
     await page.goto("/calendar");
 
@@ -3294,10 +3309,21 @@ test.describe("Calendar content states", () => {
       .getByRole("button", { name: "Terminieren" })
       .click();
     await page.waitForLoadState("networkidle");
+    await page.reload();
 
     const weekGrid = page.locator('[data-calendar-section="week-grid"]');
     await weekGrid.getByRole("button", { name: new RegExp(title) }).click();
-    await page.getByRole("button", { name: "Unschedule" }).click();
+    await page.getByRole("button", { name: "Move later" }).click();
+    await page.waitForLoadState("networkidle");
+    await page.reload();
+    await expect(
+      weekGrid.getByRole("button", {
+        name: new RegExp(`${title}, 11:45 to 12:15`),
+      }),
+    ).toBeVisible();
+
+    await weekGrid.getByRole("button", { name: new RegExp(title) }).click();
+    await page.getByRole("button", { exact: true, name: "Unschedule" }).click();
     await page.waitForLoadState("networkidle");
     await page.reload();
 
@@ -3537,13 +3563,13 @@ test.describe("Portfolio content states", () => {
       "Complete and reopen this Portfolio task.",
     );
     await openPortfolioTaskPlanningControls(page, title);
-    await page.getByRole("button", { name: "Abschließen" }).click();
+    await clickPortfolioContextButton(page, "Abschließen");
     await page.waitForLoadState("networkidle");
     await expect(page.getByRole("button", { name: "Wieder öffnen" })).toBeVisible();
     await page.reload();
     await expect(page.getByRole("button", { name: "Wieder öffnen" })).toBeVisible();
 
-    await page.getByRole("button", { name: "Wieder öffnen" }).click();
+    await clickPortfolioContextButton(page, "Wieder öffnen");
     await page.waitForLoadState("networkidle");
     await expect(page.getByRole("button", { name: "Abschließen" })).toBeVisible();
   });
@@ -3564,7 +3590,7 @@ test.describe("Portfolio content states", () => {
       "Archive this task out of active Portfolio views.",
     );
     await openPortfolioTaskPlanningControls(page, title);
-    await page.getByRole("button", { name: "Archivieren" }).click();
+    await clickPortfolioContextButton(page, "Archivieren");
     await page.waitForLoadState("networkidle");
     await page.reload();
 

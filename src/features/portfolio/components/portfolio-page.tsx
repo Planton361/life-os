@@ -424,7 +424,7 @@ export function PortfolioPage({
           profileId={viewModel.profileId}
           selectedEntityId={selectedEntity?.id ?? null}
         />
-        <div className="grid min-w-0 gap-2 xl:min-h-0">
+        <div className="grid min-w-0 gap-2 xl:min-h-0 xl:overflow-y-auto xl:pr-1">
           <PortfolioTargetCreatePanel
             profileId={viewModel.profileId}
             statusMessage={statusMessage}

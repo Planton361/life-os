@@ -202,6 +202,17 @@
 - Unscheduled Tasks verschwinden aus dem Calendar Time Grid und erscheinen wieder in der Planner Queue, wenn `plannedDate` vorhanden ist.
 - Portfolio / Today / Dashboard / Calendar nach jeder Lifecycle-Aktion reload-stabil prüfen.
 
+## R1.6.9B Lifecycle Verification
+
+- `PLAYWRIGHT_HOST=127.0.0.1` mit dem bestehenden Auth-State zeigte, dass der alte Auth-State abgelaufen war.
+- Fuer `localhost` wurde ein neuer lokaler Playwright Supabase Auth-State erzeugt; `.local/` bleibt unversioniert.
+- Known host workaround: `PLAYWRIGHT_HOST=localhost` mit einem localhost-scoped Auth-State verwenden, wenn die Cookie-Domain nicht zu `127.0.0.1` passt.
+- Lifecycle-spezifischer Browser-Proof ist gruen: complete/reopen, unschedule/reschedule, archive.
+- Portfolio Context Actions werden per fokussiertem Button aktiviert; der rechte Portfolio-Rail muss scrollbar bleiben, damit Lifecycle Controls erreichbar sind.
+- Calendar Timed Blocks muessen ueber Free-Slot-Hit-Targets liegen, damit task-backed Blocks fuer Inspector-Aktionen waehlbar sind.
+- Portfolio / Today / Dashboard / Calendar consistency wurde fuer die Lifecycle-spezifischen DB-Flows im Browser geprueft.
+- Der breite Legacy-Grep mit `Manual` erreicht jetzt echte DB-Tests, kann aber durch nicht-lifecycle Resource/Inbox-Serial-State stoppen; R1.6.9B bewertet die Lifecycle-spezifischen Tests separat.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.
