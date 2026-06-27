@@ -327,6 +327,22 @@
 - Resource Relation Browser Proofs bleiben im breiten Lauf gruen.
 - Keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB-Aktion und kein Service-Role-Zugriff.
 
+## R1.7.4 Calendar Drag/Resize Design Lock
+
+- Calendar Drag/Resize ist als Design Lock dokumentiert; Pointer-Drag und echte Resize-Handles bleiben bewusst ausserhalb von R1.7.4.
+- Interaction v1 nutzt bestehende Task-Server-Actions fuer persistente 15-Minuten-Steuerung terminierter Manual-Tasks.
+- Calendar Inspector bietet fuer scheduled Manual-Tasks `15 min frueher`, `15 min spaeter`, `Dauer -15 min` und `Dauer +15 min`.
+- Das Conflict-Gate prueft nur geladene sichtbare scheduled Task Blocks im Calendar ViewModel; es ist keine DB-weite Sperre.
+- Bei sichtbarem Konflikt bleibt der normale Save deaktiviert und ein expliziter `Trotz Konflikt speichern` Override wird angeboten.
+- Unschedule, Complete und bestehende Calendar Queue Scheduling-Pfade bleiben auf den vorhandenen Task-Actions.
+- Fokussierter Calendar-Lauf:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Manual Calendar|Calendar content states"`
+- Ergebnis: 5 passed.
+- Breiter Manual/Calendar/Today/Dashboard/Resource-Relations-Grep:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Manual|Calendar|Today|Dashboard|Resource Relations"`
+- Ergebnis: 39 passed, 22 skipped. Die fokussierten Calendar-Interaction-Proofs sind im eigenen Lauf gruen; breite Serial-DB-Flows bleiben durch lokalen Manual-DB/Auth-State und vorhandene Daten-Dichte skip-gated.
+- Keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB-Aktion und kein Service-Role-Zugriff.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.

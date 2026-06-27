@@ -16,6 +16,33 @@ const playwrightBaseUrl = `http://${playwrightHost}:${playwrightPort}`;
 
 type ProfileId = "demo" | "empty" | "manual";
 
+function clockFromMinutes(totalMinutes: number) {
+  const minutes = ((totalMinutes % (24 * 60)) + 24 * 60) % (24 * 60);
+
+  return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(
+    minutes % 60,
+  ).padStart(2, "0")}`;
+}
+
+function minutesFromClock(time: string) {
+  const [hours, minutes] = time.split(":").map(Number);
+
+  return hours * 60 + minutes;
+}
+
+function addClockMinutes(time: string, offsetMinutes: number) {
+  return clockFromMinutes(minutesFromClock(time) + offsetMinutes);
+}
+
+function calendarRangeOverlaps(
+  leftStart: number,
+  leftEnd: number,
+  rightStart: number,
+  rightEnd: number,
+) {
+  return leftStart < rightEnd && rightStart < leftEnd;
+}
+
 type StoredCookie = {
   domain?: string;
   expires?: number;
@@ -248,6 +275,76 @@ async function clickPortfolioContextButton(page: Page, name: string) {
   await button.focus();
   await expect(button).toBeFocused();
   await button.press("Enter");
+}
+
+async function scheduleCalendarQueueTask(
+  page: Page,
+  title: string,
+  scheduledTime: string,
+  durationMinutes: string,
+) {
+  const plannerQueue = page
+    .locator('[data-calendar-section="planning-queue"]')
+    .first();
+  const scheduleForm = plannerQueue.getByRole("form", {
+    name: `${title} terminieren`,
+  });
+
+  await scheduleForm.getByLabel("Uhrzeit").fill(scheduledTime);
+  await scheduleForm.getByLabel("Dauer").selectOption(durationMinutes);
+  await scheduleForm.getByRole("button", { name: "Terminieren" }).click();
+  await page.waitForLoadState("networkidle");
+  await page.reload();
+}
+
+async function selectCalendarTimedBlock(page: Page, title: string) {
+  const block = page
+    .locator('[data-calendar-section="week-grid"]')
+    .getByRole("button", { name: new RegExp(title) })
+    .first();
+
+  await expect(block).toBeVisible();
+  await block.evaluate((element) => {
+    element.scrollIntoView({ block: "center", inline: "nearest" });
+  });
+  await block.focus();
+  await expect(block).toBeFocused();
+  await block.press("Enter");
+}
+
+async function findFreeCalendarStartTime(
+  page: Page,
+  requiredWindowMinutes: number,
+  preferredStartMinutes: number,
+) {
+  const labels = await page
+    .locator('[data-calendar-section="week-grid"]')
+    .getByRole("button")
+    .evaluateAll((elements) =>
+      elements.map((element) => element.getAttribute("aria-label") ?? ""),
+    );
+  const occupiedRanges = labels
+    .map((label) => label.match(/, (\d{2}:\d{2}) to (\d{2}:\d{2}),/))
+    .filter((match): match is RegExpMatchArray => Boolean(match))
+    .map((match) => ({
+      end: minutesFromClock(match[2] ?? "00:00"),
+      start: minutesFromClock(match[1] ?? "00:00"),
+    }));
+
+  for (let offset = 0; offset < 24 * 4; offset += 1) {
+    const candidateStart = preferredStartMinutes + offset * 15;
+    const candidateEnd = candidateStart + requiredWindowMinutes;
+
+    if (candidateEnd > 24 * 60) break;
+
+    const hasConflict = occupiedRanges.some((range) =>
+      calendarRangeOverlaps(candidateStart, candidateEnd, range.start, range.end),
+    );
+
+    if (!hasConflict) return clockFromMinutes(candidateStart);
+  }
+
+  return clockFromMinutes(preferredStartMinutes);
 }
 
 async function openManualPortfolioWithDb(
@@ -3535,6 +3632,10 @@ test.describe("Calendar content states", () => {
     const plannerQueue = page
       .locator('[data-calendar-section="planning-queue"]')
       .first();
+    const startTime = await findFreeCalendarStartTime(page, 75, 60);
+    const movedStartTime = addClockMinutes(startTime, 15);
+    const movedEndTime = addClockMinutes(movedStartTime, 45);
+    const resizedEndTime = addClockMinutes(movedStartTime, 60);
 
     await expect(plannerQueue.getByText(title).first()).toBeVisible();
     await expect(weekGrid.getByText(title)).toHaveCount(0);
@@ -3542,7 +3643,7 @@ test.describe("Calendar content states", () => {
     const scheduleForm = plannerQueue.getByRole("form", {
       name: `${title} terminieren`,
     });
-    await scheduleForm.getByLabel("Uhrzeit").fill("10:15");
+    await scheduleForm.getByLabel("Uhrzeit").fill(startTime);
     await scheduleForm.getByLabel("Dauer").selectOption("45");
     await scheduleForm.getByRole("button", { name: "Terminieren" }).click();
     await page.waitForLoadState("networkidle");
@@ -3551,6 +3652,26 @@ test.describe("Calendar content states", () => {
     await expect(plannerQueue.getByText(title)).toHaveCount(0);
     await expect(
       weekGrid.getByRole("button", { name: new RegExp(title) }),
+    ).toBeVisible();
+
+    await selectCalendarTimedBlock(page, title);
+    await page.getByRole("button", { exact: true, name: "15 min später" }).click();
+    await page.waitForLoadState("networkidle");
+    await page.reload();
+    await expect(
+      weekGrid.getByRole("button", {
+        name: new RegExp(`${title}, ${movedStartTime} to ${movedEndTime}`),
+      }),
+    ).toBeVisible();
+
+    await selectCalendarTimedBlock(page, title);
+    await page.getByRole("button", { exact: true, name: "Dauer +15 min" }).click();
+    await page.waitForLoadState("networkidle");
+    await page.reload();
+    await expect(
+      weekGrid.getByRole("button", {
+        name: new RegExp(`${title}, ${movedStartTime} to ${resizedEndTime}`),
+      }),
     ).toBeVisible();
 
     await page.goto("/today");
@@ -3589,10 +3710,14 @@ test.describe("Calendar content states", () => {
     const plannerQueue = page
       .locator('[data-calendar-section="planning-queue"]')
       .first();
+    const startTime = await findFreeCalendarStartTime(page, 45, 3 * 60);
+    const movedStartTime = addClockMinutes(startTime, 15);
+    const movedEndTime = addClockMinutes(movedStartTime, 30);
+
     await plannerQueue
       .getByRole("form", { name: `${title} terminieren` })
       .getByLabel("Uhrzeit")
-      .fill("13:15");
+      .fill(startTime);
     await plannerQueue
       .getByRole("form", { name: `${title} terminieren` })
       .getByRole("button", { name: "Terminieren" })
@@ -3601,23 +3726,90 @@ test.describe("Calendar content states", () => {
     await page.reload();
 
     const weekGrid = page.locator('[data-calendar-section="week-grid"]');
-    await weekGrid.getByRole("button", { name: new RegExp(title) }).click();
-    await page.getByRole("button", { name: "Move later" }).click();
+    await selectCalendarTimedBlock(page, title);
+    await page.getByRole("button", { exact: true, name: "15 min später" }).click();
     await page.waitForLoadState("networkidle");
     await page.reload();
     await expect(
       weekGrid.getByRole("button", {
-        name: new RegExp(`${title}, 13:45 to 14:15`),
+        name: new RegExp(`${title}, ${movedStartTime} to ${movedEndTime}`),
       }),
     ).toBeVisible();
 
-    await weekGrid.getByRole("button", { name: new RegExp(title) }).click();
+    await selectCalendarTimedBlock(page, title);
     await page.getByRole("button", { exact: true, name: "Unschedule" }).click();
     await page.waitForLoadState("networkidle");
     await page.reload();
 
     await expect(weekGrid.getByText(title)).toHaveCount(0);
     await expect(plannerQueue.getByText(title).first()).toBeVisible();
+  });
+
+  test("Manual Calendar blocks visible conflicts without explicit override", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session; no broad DB cleanup action is available.",
+    );
+
+    const timestamp = Date.now();
+    const firstTitle = `Manual Calendar Conflict A ${timestamp}`;
+    const secondTitle = `Manual Calendar Conflict B ${timestamp}`;
+
+    await captureAndTriageManualInboxTask(
+      page,
+      firstTitle,
+      "Create the visible conflict target for Calendar scheduling controls.",
+      {
+        durationMinutes: "30",
+        energy: "high",
+        priority: "P0",
+      },
+    );
+    await openPortfolioTaskPlanningControls(page, firstTitle);
+    await clickPortfolioContextButton(page, "Heute planen");
+    await page.waitForLoadState("networkidle");
+    await page.goto("/calendar");
+
+    const firstStartTime = await findFreeCalendarStartTime(page, 60, 5 * 60);
+    const secondStartTime = addClockMinutes(firstStartTime, 30);
+    const secondEndTime = addClockMinutes(secondStartTime, 30);
+
+    await scheduleCalendarQueueTask(page, firstTitle, firstStartTime, "30");
+    await captureAndTriageManualInboxTask(
+      page,
+      secondTitle,
+      "Create the adjacent Calendar block that should not silently overlap.",
+      {
+        durationMinutes: "30",
+        energy: "high",
+        priority: "P0",
+      },
+    );
+    await openPortfolioTaskPlanningControls(page, secondTitle);
+    await clickPortfolioContextButton(page, "Heute planen");
+    await page.waitForLoadState("networkidle");
+    await page.goto("/calendar");
+    await scheduleCalendarQueueTask(page, secondTitle, secondStartTime, "30");
+
+    const weekGrid = page.locator('[data-calendar-section="week-grid"]');
+
+    await selectCalendarTimedBlock(page, secondTitle);
+    await expect(
+      page.getByRole("button", { exact: true, name: "15 min früher" }),
+    ).toBeDisabled();
+    await expect(page.getByText("Konflikt mit").first()).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Trotz Konflikt speichern" }).first(),
+    ).toBeVisible();
+
+    await page.reload();
+    await expect(
+      weekGrid.getByRole("button", {
+        name: new RegExp(`${secondTitle}, ${secondStartTime} to ${secondEndTime}`),
+      }),
+    ).toBeVisible();
   });
 });
 

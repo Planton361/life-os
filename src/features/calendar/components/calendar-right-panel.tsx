@@ -30,9 +30,31 @@ import { CalendarCreateMenu } from "./calendar-create-flow";
 
 type SelectedBlock = CalendarAllDayBlockViewModel | CalendarTimedBlockViewModel;
 type QueueTab = "unscheduled" | "open-loops" | "reviews";
+type SchedulingConflict = {
+  title: string;
+  timeLabel: string;
+};
+type SchedulingCandidate = {
+  conflict?: SchedulingConflict;
+  disabledReason?: string;
+  durationMinutes: number;
+  label: string;
+  plannedDate: string;
+  scheduledTime: string;
+};
 
 const inputClass =
   "mt-1 min-h-8 w-full rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.76)] px-2.5 text-[12px] text-[var(--text-primary)] outline-none focus:border-[var(--focus-ring)]";
+const primaryActionButtonClass =
+  "min-h-8 w-full rounded-full border border-[rgba(95,200,215,.34)] bg-[rgba(95,200,215,.14)] px-3 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(95,200,215,.48)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-50";
+const secondaryActionButtonClass =
+  "min-h-8 w-full rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-50";
+const overrideActionButtonClass =
+  "min-h-8 w-full rounded-full border border-[rgba(221,107,95,.34)] bg-[rgba(221,107,95,.12)] px-3 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(221,107,95,.52)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]";
+const FIFTEEN_MINUTES = 15;
+const MINIMUM_DURATION_MINUTES = 15;
+const DAY_START_MINUTES = 0;
+const DAY_END_MINUTES = 24 * 60;
 
 function contentStateAttributes(
   meta: ContentStateMeta,
@@ -56,8 +78,85 @@ function minutesToTime(minutes: number) {
   return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
 }
 
-function offsetTime(time: string, offset: number) {
-  return minutesToTime(timeToMinutes(time) + offset);
+function timeRangeLabel(startTime: string, durationMinutes: number) {
+  return `${startTime}-${minutesToTime(timeToMinutes(startTime) + durationMinutes)}`;
+}
+
+function isWithinDay(startMinutes: number, durationMinutes: number) {
+  return (
+    startMinutes >= DAY_START_MINUTES &&
+    startMinutes + durationMinutes <= DAY_END_MINUTES
+  );
+}
+
+function findSchedulingConflict(
+  block: CalendarTimedBlockViewModel,
+  candidate: Pick<
+    SchedulingCandidate,
+    "durationMinutes" | "plannedDate" | "scheduledTime"
+  >,
+  scheduledTasks: readonly CalendarTimedBlockViewModel[],
+): SchedulingConflict | undefined {
+  const candidateStart = timeToMinutes(candidate.scheduledTime);
+  const candidateEnd = candidateStart + candidate.durationMinutes;
+  const conflict = scheduledTasks
+    .filter((taskBlock) => taskBlock.taskId !== block.taskId)
+    .filter((taskBlock) => taskBlock.date === candidate.plannedDate)
+    .find(
+      (taskBlock) =>
+        candidateStart < taskBlock.endMinutes &&
+        taskBlock.startMinutes < candidateEnd,
+    );
+
+  if (!conflict) return undefined;
+
+  return {
+    title: conflict.title,
+    timeLabel: conflict.timeLabel ?? `${conflict.startTime}-${conflict.endTime}`,
+  };
+}
+
+function buildSchedulingCandidate({
+  block,
+  date,
+  durationMinutes,
+  label,
+  scheduledTasks,
+  startMinutes,
+}: {
+  block: CalendarTimedBlockViewModel;
+  date: string;
+  durationMinutes: number;
+  label: string;
+  scheduledTasks: readonly CalendarTimedBlockViewModel[];
+  startMinutes: number;
+}): SchedulingCandidate {
+  const scheduledTime = minutesToTime(startMinutes);
+  const candidate: SchedulingCandidate = {
+    durationMinutes,
+    label,
+    plannedDate: date,
+    scheduledTime,
+  };
+
+  if (durationMinutes < MINIMUM_DURATION_MINUTES) {
+    return {
+      ...candidate,
+      disabledReason: "Minimum 15 min.",
+    };
+  }
+
+  if (!isWithinDay(startMinutes, durationMinutes)) {
+    return {
+      ...candidate,
+      disabledReason: "Ausserhalb des Tages.",
+    };
+  }
+
+  return {
+    ...candidate,
+    conflict: findSchedulingConflict(block, candidate, scheduledTasks),
+  };
 }
 
 function Field({
@@ -89,6 +188,74 @@ function Field({
         value={value}
       />
     </label>
+  );
+}
+
+function RescheduleTaskForm({
+  candidate,
+  taskId,
+  variant = "secondary",
+}: Readonly<{
+  candidate: SchedulingCandidate;
+  taskId: string;
+  variant?: "primary" | "secondary";
+}>) {
+  const buttonClassName =
+    variant === "primary" ? primaryActionButtonClass : secondaryActionButtonClass;
+  const conflictLabel = candidate.conflict
+    ? `Konflikt mit ${candidate.conflict.title}, ${candidate.conflict.timeLabel}`
+    : null;
+
+  return (
+    <div className="grid gap-1">
+      <form
+        action={rescheduleTaskFormAction}
+        aria-label={`${candidate.label} ${timeRangeLabel(
+          candidate.scheduledTime,
+          candidate.durationMinutes,
+        )}`}
+        className="grid gap-1"
+      >
+        <input name="taskId" type="hidden" value={taskId} />
+        <input name="plannedDate" type="hidden" value={candidate.plannedDate} />
+        <input name="scheduledTime" type="hidden" value={candidate.scheduledTime} />
+        <input
+          name="durationMinutes"
+          type="hidden"
+          value={candidate.durationMinutes}
+        />
+        <button
+          className={buttonClassName}
+          disabled={Boolean(candidate.disabledReason ?? candidate.conflict)}
+          type="submit"
+        >
+          {candidate.label}
+        </button>
+        {candidate.conflict ? (
+          <button
+            className={overrideActionButtonClass}
+            name="manualOverride"
+            type="submit"
+            value="true"
+          >
+            Trotz Konflikt speichern
+          </button>
+        ) : null}
+      </form>
+      {candidate.disabledReason ? (
+        <p className="text-[10px] leading-4 text-[var(--text-muted)]">
+          {candidate.disabledReason}
+        </p>
+      ) : null}
+      {conflictLabel ? (
+        <p
+          className="rounded-[8px] border border-[rgba(221,107,95,.22)] bg-[rgba(221,107,95,.08)] px-2 py-1 text-[10px] leading-4 text-[var(--text-secondary)]"
+          role="alert"
+        >
+          {conflictLabel}
+        </p>
+      ) : null}
+    </div>
   );
 }
 
@@ -255,6 +422,7 @@ function TimeSettings({
   onMoveLater,
   onSaveTime,
   profileId,
+  scheduledTasks,
   selectedSlot,
 }: Readonly<{
   block?: SelectedBlock;
@@ -263,6 +431,7 @@ function TimeSettings({
   onMoveLater: (blockId: string) => void;
   onSaveTime: (blockId: string, date: string, startTime: string, endTime: string) => void;
   profileId: CalendarViewModel["profileId"];
+  scheduledTasks: readonly CalendarTimedBlockViewModel[];
   selectedSlot?: CalendarSelectedTimeSlotViewModel | null;
 }>) {
   const baseDate = block?.date ?? selectedSlot?.date ?? "2026-06-12";
@@ -274,12 +443,62 @@ function TimeSettings({
   const [error, setError] = useState<string | null>(null);
 
   const duration = Math.max(0, timeToMinutes(endTime) - timeToMinutes(startTime));
-  const taskId = block?.source === "task" && block.taskId ? block.taskId : null;
+  const timedTaskBlock =
+    block && isTimedBlock(block) && block.source === "task" && block.taskId
+      ? block
+      : null;
+  const taskId = timedTaskBlock?.taskId ?? null;
   const isPersistedTaskBlock = Boolean(
-    profileId === "manual" && taskId && block && isTimedBlock(block),
+    profileId === "manual" && taskId && timedTaskBlock,
   );
   const safeDuration = duration > 0 ? duration : block && isTimedBlock(block) ? block.durationMinutes : 30;
-  const laterStartTime = offsetTime(startTime, 30);
+  const startMinutes = timeToMinutes(startTime);
+  const saveCandidate = timedTaskBlock
+    ? buildSchedulingCandidate({
+        block: timedTaskBlock,
+        date,
+        durationMinutes: safeDuration,
+        label: "Reschedule",
+        scheduledTasks,
+        startMinutes,
+      })
+    : null;
+  const adjustmentCandidates = timedTaskBlock
+    ? [
+        buildSchedulingCandidate({
+          block: timedTaskBlock,
+          date,
+          durationMinutes: safeDuration,
+          label: "15 min früher",
+          scheduledTasks,
+          startMinutes: startMinutes - FIFTEEN_MINUTES,
+        }),
+        buildSchedulingCandidate({
+          block: timedTaskBlock,
+          date,
+          durationMinutes: safeDuration,
+          label: "15 min später",
+          scheduledTasks,
+          startMinutes: startMinutes + FIFTEEN_MINUTES,
+        }),
+        buildSchedulingCandidate({
+          block: timedTaskBlock,
+          date,
+          durationMinutes: safeDuration - FIFTEEN_MINUTES,
+          label: "Dauer -15 min",
+          scheduledTasks,
+          startMinutes,
+        }),
+        buildSchedulingCandidate({
+          block: timedTaskBlock,
+          date,
+          durationMinutes: safeDuration + FIFTEEN_MINUTES,
+          label: "Dauer +15 min",
+          scheduledTasks,
+          startMinutes,
+        }),
+      ]
+    : [];
 
   function save() {
     if (!block) {
@@ -310,7 +529,9 @@ function TimeSettings({
             Time Settings
           </h3>
           <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
-            Local edit only. Changes update the visible calendar mock state.
+            {isPersistedTaskBlock
+              ? "Persistente Task-Zeitsteuerung."
+              : "Local edit for fixture blocks."}
           </p>
         </div>
         <Pill accent="var(--accent-cyan)">{durationLabel(duration)}</Pill>
@@ -340,34 +561,24 @@ function TimeSettings({
       <div className="mt-3 grid gap-1.5 sm:grid-cols-2">
         {isPersistedTaskBlock ? (
           <>
-            <form action={rescheduleTaskFormAction}>
-              <input name="taskId" type="hidden" value={taskId ?? ""} />
-              <input name="plannedDate" type="hidden" value={date} />
-              <input name="scheduledTime" type="hidden" value={startTime} />
-              <input name="durationMinutes" type="hidden" value={safeDuration} />
-              <button
-                className="min-h-8 w-full rounded-full border border-[rgba(95,200,215,.34)] bg-[rgba(95,200,215,.14)] px-3 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(95,200,215,.48)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-                type="submit"
-              >
-                Reschedule
-              </button>
-            </form>
-            <form action={rescheduleTaskFormAction}>
-              <input name="taskId" type="hidden" value={taskId ?? ""} />
-              <input name="plannedDate" type="hidden" value={date} />
-              <input name="scheduledTime" type="hidden" value={laterStartTime} />
-              <input name="durationMinutes" type="hidden" value={safeDuration} />
-              <button
-                className="min-h-8 w-full rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-                type="submit"
-              >
-                Move later
-              </button>
-            </form>
+            {saveCandidate ? (
+              <RescheduleTaskForm
+                candidate={saveCandidate}
+                taskId={taskId ?? ""}
+                variant="primary"
+              />
+            ) : null}
+            {adjustmentCandidates.map((candidate) => (
+              <RescheduleTaskForm
+                candidate={candidate}
+                key={`${candidate.label}-${candidate.scheduledTime}-${candidate.durationMinutes}`}
+                taskId={taskId ?? ""}
+              />
+            ))}
             <form action={unscheduleTaskFormAction}>
               <input name="taskId" type="hidden" value={taskId ?? ""} />
               <button
-                className="min-h-8 w-full rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                className={secondaryActionButtonClass}
                 type="submit"
               >
                 Unschedule
@@ -702,6 +913,7 @@ export function CalendarRightPanel({
   selectedBlock,
   selectedDay,
   selectedSlot,
+  scheduledTasks,
   tasks,
 }: Readonly<{
   onCreateBlock: (block: CalendarRawTimedBlock) => void;
@@ -716,6 +928,7 @@ export function CalendarRightPanel({
   selectedBlock?: SelectedBlock;
   selectedDay?: CalendarDayViewModel;
   selectedSlot?: CalendarSelectedTimeSlotViewModel | null;
+  scheduledTasks: readonly CalendarTimedBlockViewModel[];
   tasks: readonly SchedulableTaskViewModel[];
 }>) {
   const selectedLabel = selectedBlock
@@ -746,6 +959,7 @@ export function CalendarRightPanel({
           onMoveLater={onMoveLater}
           onSaveTime={onSaveTime}
           profileId={profileId}
+          scheduledTasks={scheduledTasks}
           selectedSlot={selectedSlot}
         />
 

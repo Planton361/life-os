@@ -1357,6 +1357,7 @@ export function CalendarPlanningPage({
               selectedBlock={selectedBlock}
               selectedDay={selectedDay}
               selectedSlot={selectedSlot}
+              scheduledTasks={viewModel.scheduledTasks}
               tasks={viewModel.schedulableTasks}
             />
           )}
