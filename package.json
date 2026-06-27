@@ -8,6 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "typegen": "next typegen",
+    "typecheck": "next typegen && tsc --noEmit --incremental false",
     "test:e2e": "playwright test",
     "qa:dashboard": "playwright test tests/e2e/dashboard.spec.ts"
   },

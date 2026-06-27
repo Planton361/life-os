@@ -75,6 +75,7 @@ Regeln:
 - Dashboard-Layout ist locked.
 - Layoutwerte dürfen nur mit explizitem Layout-Scope geändert werden.
 - Color-/Content-/Motion-/Refactor-Aufgaben dürfen keine Layoutwerte ändern.
+- `next-env.d.ts` ist generated und wird nicht versioniert; vor TypeScript-Checks `pnpm typecheck` nutzen. Nicht auf `next-env.d.ts`-Diffs stoppen, wenn die Datei ignoriert oder untracked ist.
 
 ## Design-Hard-Limits
 
