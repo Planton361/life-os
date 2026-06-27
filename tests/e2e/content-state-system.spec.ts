@@ -183,6 +183,29 @@ async function selectExistingProjectTargetByTitle(
   return value ?? "";
 }
 
+async function selectExistingGoalTargetByTitle(
+  addToExistingDraft: Locator,
+  targetTitle: string,
+) {
+  await addToExistingDraft
+    .getByRole("button", { name: /^Goal \d+ DB-Ziel(?:e)?$/ })
+    .click();
+
+  const select = addToExistingDraft.getByLabel("Existing target");
+  await expect(select).toBeEnabled();
+
+  const option = select
+    .locator("option")
+    .filter({ hasText: targetTitle })
+    .first();
+  const value = await option.getAttribute("value");
+
+  expect(value).toBeTruthy();
+  await select.selectOption(value ?? "");
+
+  return value ?? "";
+}
+
 async function openPortfolioTaskPlanningControls(page: Page, title: string) {
   await page.goto("/portfolio?view=tasks");
   await expect(page.getByText(title).first()).toBeVisible();
@@ -247,6 +270,28 @@ async function createPortfolioGoalTarget(
   await form.getByRole("button", { name: "Goal erstellen" }).click();
   await page.waitForLoadState("networkidle");
   await expect(page.getByText("Goal erstellt.").first()).toBeVisible();
+  await expect(page.getByText(title).first()).toBeVisible();
+}
+
+async function createPortfolioTaskTarget(
+  page: Page,
+  title: string,
+  nextAction: string,
+  description: string,
+) {
+  const form = page.locator('form[aria-label="Task erstellen"]');
+
+  await expect(form).toBeVisible();
+  await form.getByLabel("Task-Titel").fill(title);
+  await form.getByLabel("Next Action").fill(nextAction);
+  await form.getByLabel("Kontext").fill(description);
+  await form.getByLabel("Priorität").selectOption("P2");
+  await form.getByLabel("Energie").selectOption("medium");
+  await form.getByLabel("Minuten").fill("25");
+  await form.getByLabel("Heute planen").check();
+  await form.getByRole("button", { name: "Task erstellen" }).click();
+  await page.waitForLoadState("networkidle");
+  await expect(page.getByText("Task erstellt.").first()).toBeVisible();
   await expect(page.getByText(title).first()).toBeVisible();
 }
 
@@ -1919,6 +1964,17 @@ test.describe("Inbox content states", () => {
 
     await expectInboxWidgetContracts(page, "manual");
     await expectNoInboxDemoStrings(page);
+    const inboxState = await page
+      .locator("#inbox-page")
+      .getAttribute("data-content-state");
+
+    if (hasSupabaseAuth && inboxState !== "empty") {
+      test.skip(
+        true,
+        "Manual DB contains persisted Inbox rows; empty-shell assertion requires a fresh Manual DB.",
+      );
+    }
+
     await expect(page.locator("#inbox-page")).toHaveAttribute(
       "data-content-state",
       "empty",
@@ -3406,35 +3462,92 @@ test.describe("Portfolio content states", () => {
     await expectNoMainStrings(page, portfolioBlockedDemoStrings, "portfolio");
   });
 
-  test("shows minimal Project and Goal target create UI for manual portfolio", async ({
+  test("Portfolio Contextual Create routes each view to the matching create model", async ({
     page,
   }) => {
     await setProfile(page, "manual");
+
     await expectNoHydrationErrors(page, async () => {
-      await page.goto("/portfolio");
+      await page.goto("/portfolio?view=tasks");
     });
 
+    await expect(page.getByRole("heading", { name: "Task erstellen" })).toBeVisible();
+    await expect(page.locator('form[aria-label="Task erstellen"]')).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Neues Target" }),
+      page.locator('form[aria-label="Project erstellen"]'),
+    ).toHaveCount(0);
+    await expect(
+      page.locator('form[aria-label="Goal erstellen"]'),
+    ).toHaveCount(0);
+
+    await page.goto("/portfolio?view=projects");
+    await expect(
+      page.getByRole("heading", { name: "Project erstellen" }),
     ).toBeVisible();
     await expect(
       page.locator('form[aria-label="Project erstellen"]'),
     ).toBeVisible();
     await expect(
-      page.locator('form[aria-label="Goal erstellen"]'),
+      page.locator('form[aria-label="Task erstellen"]'),
+    ).toHaveCount(0);
+
+    await page.goto("/portfolio?view=goals");
+    await expect(page.getByRole("heading", { name: "Goal erstellen" })).toBeVisible();
+    await expect(page.locator('form[aria-label="Goal erstellen"]')).toBeVisible();
+    await expect(
+      page.locator('form[aria-label="Project erstellen"]'),
+    ).toHaveCount(0);
+
+    await page.goto("/portfolio?view=skills");
+    await expect(
+      page.getByRole("heading", { name: "Skill Model folgt" }).first(),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Project erstellen" }),
+      page.getByRole("button", { name: "Skill später" }),
     ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Skill später" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Skill erstellen" })).toHaveCount(0);
+
+    await page.goto("/portfolio");
+    await expect(page.getByRole("heading", { name: "Typ wählen" })).toBeVisible();
+    await expect(page.locator('form[aria-label="Task erstellen"]')).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Goal erstellen" }),
+      page.locator('form[aria-label="Project erstellen"]'),
+    ).toBeVisible();
+    await expect(page.locator('form[aria-label="Goal erstellen"]')).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Skill Model folgt" }).first(),
     ).toBeVisible();
     await expect(
       page.getByRole("button", { name: /löschen|archivieren/i }),
     ).toHaveCount(0);
   });
 
-  test("Manual Portfolio creates real Project and Goal targets", async ({
+  test("Manual Portfolio Task erstellen persists reload-stable", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session.",
+    );
+
+    const title = `Manual Portfolio Created Task ${Date.now()}`;
+
+    await openManualPortfolioWithDb(page);
+    await page.goto("/portfolio?view=tasks");
+    await createPortfolioTaskTarget(
+      page,
+      title,
+      "Review the Portfolio-created task.",
+      "Created directly from Portfolio contextual create.",
+    );
+    await page.reload();
+    await expect(page.getByText(title).first()).toBeVisible();
+    await page.goto("/today");
+    await expect(page.getByText(title).first()).toBeVisible();
+  });
+
+  test("Manual Portfolio Project erstellen and Goal erstellen persist reload-stable", async ({
     page,
   }) => {
     test.skip(
@@ -3446,6 +3559,7 @@ test.describe("Portfolio content states", () => {
     const goalTitle = `Manual Portfolio Goal Target ${Date.now()}`;
 
     await openManualPortfolioWithDb(page);
+    await page.goto("/portfolio?view=projects");
     await createPortfolioProjectTarget(
       page,
       projectTitle,
@@ -3454,6 +3568,7 @@ test.describe("Portfolio content states", () => {
     await page.reload();
     await expect(page.getByText(projectTitle).first()).toBeVisible();
 
+    await page.goto("/portfolio?view=goals");
     await createPortfolioGoalTarget(
       page,
       goalTitle,
@@ -3521,6 +3636,67 @@ test.describe("Portfolio content states", () => {
     await expect(contextPanel.getByText(targetId)).toHaveCount(0);
     await page.reload();
     await expect(contextPanel.getByText(projectTitle).first()).toBeVisible();
+  });
+
+  test("Manual Add to Existing uses a Goal target created in Portfolio", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session.",
+    );
+
+    const goalTitle = `Manual Existing Goal Target ${Date.now()}`;
+    const captureTitle = `Manual created goal source ${Date.now()}`;
+    const taskTitle = `Manual created goal task ${Date.now()}`;
+
+    await openManualPortfolioWithDb(page);
+    await page.goto("/portfolio?view=goals");
+    await createPortfolioGoalTarget(
+      page,
+      goalTitle,
+      "Use this Goal as an Add to Existing target.",
+    );
+
+    await page.goto("/inbox");
+    await captureManualInboxItem(
+      page,
+      captureTitle,
+      "Attach this capture to the Goal created in Portfolio.",
+    );
+
+    const addToExistingDraft = await openAddToExistingDraft(page);
+    const targetId = await selectExistingGoalTargetByTitle(
+      addToExistingDraft,
+      goalTitle,
+    );
+
+    await expect(
+      addToExistingDraft.getByText("Beitrag: Verbunden"),
+    ).toBeVisible();
+    await addToExistingDraft.getByLabel("Titel").fill(taskTitle);
+    await addToExistingDraft
+      .getByLabel("Beschreibung / Kontext")
+      .fill(`Task contribution for created Goal: ${goalTitle}`);
+    await addToExistingDraft
+      .getByRole("button", { name: "Task-Beitrag erstellen" })
+      .click();
+    await page.waitForLoadState("networkidle");
+    await expect(page.getByText("Task erstellt").first()).toBeVisible();
+
+    await page.goto("/portfolio?view=tasks");
+    await expect(page.getByText(taskTitle).first()).toBeVisible();
+    await page
+      .getByRole("link", { name: new RegExp(taskTitle) })
+      .first()
+      .click();
+    const contextPanel = page.locator(
+      '[data-portfolio-section="context-panel"]',
+    );
+    await expect(contextPanel.getByText(goalTitle).first()).toBeVisible();
+    await expect(contextPanel.getByText(targetId)).toHaveCount(0);
+    await page.reload();
+    await expect(contextPanel.getByText(goalTitle).first()).toBeVisible();
   });
 
   test("Manual Portfolio projects triaged DB task reload-stable", async ({

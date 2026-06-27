@@ -18,6 +18,7 @@ import type {
   PortfolioView,
   PortfolioViewModel,
 } from "../types";
+import { createPortfolioTaskFormAction } from "@/features/real-data/actions/task.actions";
 import {
   createGoalFormAction,
   createProjectFormAction,
@@ -35,6 +36,23 @@ const viewTypeMap: Record<PortfolioView, PortfolioEntityType | "all"> = {
   goals: "goal",
   skills: "skill",
 };
+
+const createModeByView: Record<
+  PortfolioView,
+  "goal" | "project" | "select" | "skill_future" | "task"
+> = {
+  all: "select",
+  goals: "goal",
+  projects: "project",
+  skills: "skill_future",
+  tasks: "task",
+};
+
+const inputClassName =
+  "min-h-9 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.78)] px-2 text-[12px] normal-case text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-55";
+
+const buttonClassName =
+  "min-h-9 rounded-[9px] border px-3 text-[11px] font-semibold text-[var(--text-primary)] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:border-[var(--border-subtle)] disabled:bg-[rgba(18,28,43,.34)] disabled:text-[var(--text-muted)]";
 
 function matchesView(entity: PortfolioEntity, view: PortfolioView) {
   const entityType = viewTypeMap[view];
@@ -179,10 +197,11 @@ function getViewLabel(viewModel: PortfolioViewModel, view: PortfolioView) {
 }
 
 function targetCreateMessage(value: string | null) {
+  if (value === "task_created") return "Task erstellt.";
   if (value === "project_created") return "Project erstellt.";
   if (value === "goal_created") return "Goal erstellt.";
-  if (value === "blocked") return "Melde dich an, um Targets zu erstellen.";
-  if (value === "error") return "Target konnte nicht gespeichert werden.";
+  if (value === "blocked") return "Melde dich an, um Portfolio-Items zu erstellen.";
+  if (value === "error") return "Portfolio-Item konnte nicht gespeichert werden.";
 
   return null;
 }
@@ -199,99 +218,290 @@ function contentStateAttributes(
   };
 }
 
-function PortfolioTargetCreatePanel({
+function CreateStatusPill({
+  statusMessage,
+}: Readonly<{
+  statusMessage: string | null;
+}>) {
+  if (!statusMessage) return null;
+
+  return (
+    <p className="rounded-full border border-[rgba(66,184,131,.26)] bg-[rgba(66,184,131,.10)] px-2.5 py-1 text-[10px] font-semibold text-[var(--text-secondary)]">
+      {statusMessage}
+    </p>
+  );
+}
+
+function TaskCreateForm({
+  disabled,
+  returnView,
+}: Readonly<{
+  disabled: boolean;
+  returnView: PortfolioView;
+}>) {
+  return (
+    <form
+      action={createPortfolioTaskFormAction}
+      aria-label="Task erstellen"
+      className="grid gap-2 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.42)] p-2"
+    >
+      <input name="returnView" type="hidden" value={returnView} />
+      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+        Task-Titel
+        <input
+          className={inputClassName}
+          disabled={disabled}
+          name="title"
+          placeholder="Neuer Task"
+          required
+        />
+      </label>
+      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+        Next Action
+        <input
+          className={inputClassName}
+          disabled={disabled}
+          name="nextAction"
+          placeholder="Nächster konkreter Schritt"
+        />
+      </label>
+      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+        Kontext
+        <input
+          className={inputClassName}
+          disabled={disabled}
+          name="description"
+          placeholder="Optionaler Kontext"
+        />
+      </label>
+      <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+          Priorität
+          <select className={inputClassName} disabled={disabled} name="priority">
+            <option value="none">None</option>
+            <option value="P0">P0</option>
+            <option value="P1">P1</option>
+            <option value="P2">P2</option>
+            <option value="P3">P3</option>
+          </select>
+        </label>
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+          Energie
+          <select className={inputClassName} disabled={disabled} name="energy">
+            <option value="">-</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </label>
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+          Minuten
+          <input
+            className={inputClassName}
+            disabled={disabled}
+            min="1"
+            name="durationMinutes"
+            placeholder="30"
+            type="number"
+          />
+        </label>
+      </div>
+      <label className="flex min-h-9 items-center gap-2 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.58)] px-2 text-[11px] font-semibold text-[var(--text-secondary)]">
+        <input
+          className="size-4 accent-[rgb(91,124,250)]"
+          disabled={disabled}
+          name="todayCandidate"
+          type="checkbox"
+        />
+        Heute planen
+      </label>
+      <button
+        className={`${buttonClassName} border-[rgba(91,124,250,.34)] bg-[rgba(91,124,250,.14)] hover:border-[rgba(91,124,250,.52)]`}
+        disabled={disabled}
+        type="submit"
+      >
+        Task erstellen
+      </button>
+    </form>
+  );
+}
+
+function ProjectCreateForm({
+  disabled,
+  returnView,
+}: Readonly<{
+  disabled: boolean;
+  returnView: PortfolioView;
+}>) {
+  return (
+    <form
+      action={createProjectFormAction}
+      aria-label="Project erstellen"
+      className="grid gap-2 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.42)] p-2"
+    >
+      <input name="returnView" type="hidden" value={returnView} />
+      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+        Project-Titel
+        <input
+          className={inputClassName}
+          disabled={disabled}
+          name="title"
+          placeholder="Neues Project"
+          required
+        />
+      </label>
+      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+        Beschreibung
+        <input
+          className={inputClassName}
+          disabled={disabled}
+          name="description"
+          placeholder="Optionaler Kontext"
+        />
+      </label>
+      <button
+        className={`${buttonClassName} border-[rgba(91,124,250,.34)] bg-[rgba(91,124,250,.14)] hover:border-[rgba(91,124,250,.52)]`}
+        disabled={disabled}
+        type="submit"
+      >
+        Project erstellen
+      </button>
+    </form>
+  );
+}
+
+function GoalCreateForm({
+  disabled,
+  returnView,
+}: Readonly<{
+  disabled: boolean;
+  returnView: PortfolioView;
+}>) {
+  return (
+    <form
+      action={createGoalFormAction}
+      aria-label="Goal erstellen"
+      className="grid gap-2 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.42)] p-2"
+    >
+      <input name="returnView" type="hidden" value={returnView} />
+      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+        Goal-Titel
+        <input
+          className={inputClassName}
+          disabled={disabled}
+          name="title"
+          placeholder="Neues Goal"
+          required
+        />
+      </label>
+      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+        Beschreibung
+        <input
+          className={inputClassName}
+          disabled={disabled}
+          name="description"
+          placeholder="Optionaler Kontext"
+        />
+      </label>
+      <button
+        className={`${buttonClassName} border-[rgba(66,184,131,.34)] bg-[rgba(66,184,131,.14)] hover:border-[rgba(66,184,131,.52)]`}
+        disabled={disabled}
+        type="submit"
+      >
+        Goal erstellen
+      </button>
+    </form>
+  );
+}
+
+function SkillFuturePanel() {
+  return (
+    <div className="rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.42)] p-2">
+      <h3 className="text-[12px] font-semibold text-[var(--text-primary)]">
+        Skill Model folgt
+      </h3>
+      <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
+        Skill-Erstellung bleibt deaktiviert, bis ein echtes Persistenzmodell
+        existiert.
+      </p>
+      <button
+        className={`${buttonClassName} mt-2 w-full`}
+        disabled
+        type="button"
+      >
+        Skill später
+      </button>
+    </div>
+  );
+}
+
+function PortfolioContextualCreatePanel({
+  activeView,
   profileId,
   statusMessage,
 }: Readonly<{
+  activeView: PortfolioView;
   profileId: PortfolioViewModel["profileId"];
   statusMessage: string | null;
 }>) {
-  if (profileId !== "manual") return null;
+  const createMode = createModeByView[activeView];
+  const disabled = profileId !== "manual";
+  const heading =
+    createMode === "task"
+      ? "Task erstellen"
+      : createMode === "project"
+        ? "Project erstellen"
+        : createMode === "goal"
+          ? "Goal erstellen"
+          : createMode === "skill_future"
+            ? "Skill Model folgt"
+            : "Typ wählen";
+  const description =
+    createMode === "select"
+      ? "Task, Project oder Goal bewusst auswählen."
+      : disabled
+        ? "Wechsle ins Manual-Profil, um echte Items zu erstellen."
+        : "Speichert im Manual-Profil über Supabase.";
 
   return (
     <section
-      aria-labelledby="portfolio-target-create-heading"
+      aria-labelledby="portfolio-contextual-create-heading"
       className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.36)] px-3 py-3"
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <h2
             className="text-[13px] font-semibold text-[var(--text-primary)]"
-            id="portfolio-target-create-heading"
+            id="portfolio-contextual-create-heading"
           >
-            Neues Target
+            {heading}
           </h2>
           <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
-            Minimales Project oder Goal für Add to Existing erstellen.
+            {description}
           </p>
         </div>
-        {statusMessage ? (
-          <p className="rounded-full border border-[rgba(66,184,131,.26)] bg-[rgba(66,184,131,.10)] px-2.5 py-1 text-[10px] font-semibold text-[var(--text-secondary)]">
-            {statusMessage}
-          </p>
-        ) : null}
+        <CreateStatusPill statusMessage={statusMessage} />
       </div>
 
-      <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-        <form
-          action={createProjectFormAction}
-          aria-label="Project erstellen"
-          className="grid gap-2 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.42)] p-2"
-        >
-          <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-            Project-Titel
-            <input
-              className="min-h-9 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.78)] px-2 text-[12px] normal-case text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)]"
-              name="title"
-              placeholder="Neues Project"
-              required
-            />
-          </label>
-          <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-            Beschreibung
-            <input
-              className="min-h-9 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.78)] px-2 text-[12px] normal-case text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)]"
-              name="description"
-              placeholder="Optionaler Kontext"
-            />
-          </label>
-          <button
-            className="min-h-9 rounded-[9px] border border-[rgba(91,124,250,.34)] bg-[rgba(91,124,250,.14)] px-3 text-[11px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(91,124,250,.52)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-            type="submit"
-          >
-            Project erstellen
-          </button>
-        </form>
-
-        <form
-          action={createGoalFormAction}
-          aria-label="Goal erstellen"
-          className="grid gap-2 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.42)] p-2"
-        >
-          <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-            Goal-Titel
-            <input
-              className="min-h-9 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.78)] px-2 text-[12px] normal-case text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)]"
-              name="title"
-              placeholder="Neues Goal"
-              required
-            />
-          </label>
-          <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-            Beschreibung
-            <input
-              className="min-h-9 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.78)] px-2 text-[12px] normal-case text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)]"
-              name="description"
-              placeholder="Optionaler Kontext"
-            />
-          </label>
-          <button
-            className="min-h-9 rounded-[9px] border border-[rgba(66,184,131,.34)] bg-[rgba(66,184,131,.14)] px-3 text-[11px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(66,184,131,.52)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-            type="submit"
-          >
-            Goal erstellen
-          </button>
-        </form>
+      <div className="mt-3 grid gap-2">
+        {createMode === "task" ? (
+          <TaskCreateForm disabled={disabled} returnView={activeView} />
+        ) : null}
+        {createMode === "project" ? (
+          <ProjectCreateForm disabled={disabled} returnView={activeView} />
+        ) : null}
+        {createMode === "goal" ? (
+          <GoalCreateForm disabled={disabled} returnView={activeView} />
+        ) : null}
+        {createMode === "skill_future" ? <SkillFuturePanel /> : null}
+        {createMode === "select" ? (
+          <>
+            <TaskCreateForm disabled={disabled} returnView={activeView} />
+            <ProjectCreateForm disabled={disabled} returnView={activeView} />
+            <GoalCreateForm disabled={disabled} returnView={activeView} />
+            <SkillFuturePanel />
+          </>
+        ) : null}
       </div>
     </section>
   );
@@ -425,7 +635,8 @@ export function PortfolioPage({
           selectedEntityId={selectedEntity?.id ?? null}
         />
         <div className="grid min-w-0 gap-2 xl:min-h-0 xl:overflow-y-auto xl:pr-1">
-          <PortfolioTargetCreatePanel
+          <PortfolioContextualCreatePanel
+            activeView={activeView}
             profileId={viewModel.profileId}
             statusMessage={statusMessage}
           />

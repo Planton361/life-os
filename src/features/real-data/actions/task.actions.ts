@@ -1,9 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import {
   archiveTaskInputSchema,
   completeTaskInputSchema,
+  createTaskInputSchema,
   reopenTaskInputSchema,
   rescheduleTaskInputSchema,
   scheduleTaskInputSchema,
@@ -30,6 +32,10 @@ const appTimeZone = "Europe/Berlin";
 function formString(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" ? value.trim() : "";
+}
+
+function optionalFormString(formData: FormData, key: string) {
+  return formString(formData, key) || undefined;
 }
 
 function localDateLabel(date = new Date(), timeZone = appTimeZone) {
@@ -93,6 +99,19 @@ function durationMinutesFromForm(formData: FormData, mode: "plan" | "schedule") 
   const duration = Number(rawDuration);
 
   return Number.isInteger(duration) && duration > 0 ? duration : undefined;
+}
+
+function portfolioTaskDescriptionFromForm(formData: FormData) {
+  const description = optionalFormString(formData, "description");
+  const nextAction = optionalFormString(formData, "nextAction");
+
+  return [description, nextAction ? `Nächste Aktion: ${nextAction}` : null]
+    .filter(Boolean)
+    .join("\n\n") || undefined;
+}
+
+function portfolioTaskReturnView(formData: FormData) {
+  return formString(formData, "returnView") === "all" ? "all" : "tasks";
 }
 
 function scheduledStartAtFromForm(formData: FormData, plannedDate: string) {
@@ -226,6 +245,65 @@ export async function scheduleTaskForTodayFormAction(
   formData: FormData,
 ): Promise<void> {
   await scheduleTaskForTodayAction(formData);
+}
+
+export async function createPortfolioTaskAction(
+  formData: FormData,
+): Promise<TaskLifecycleActionResult> {
+  const context = await getAuthenticatedManualTaskContext("erstellen");
+
+  if (!context.ok) return context.result;
+
+  const todayCandidate = formData.get("todayCandidate") === "on";
+  const parsed = createTaskInputSchema.safeParse({
+    description: portfolioTaskDescriptionFromForm(formData),
+    durationMinutes: durationMinutesFromForm(formData, "plan"),
+    energy: optionalFormString(formData, "energy"),
+    plannedDate: todayCandidate ? localDateLabel() : undefined,
+    priority: formString(formData, "priority") || "none",
+    profileId: context.auth.user.id,
+    status: "planned",
+    title: formString(formData, "title"),
+    userId: context.auth.user.id,
+  });
+
+  if (!parsed.success) {
+    return {
+      message: "Gib einen gültigen Task-Titel ein.",
+      status: "error",
+    };
+  }
+
+  const repository = createSupabaseTaskRepository(context.auth.client);
+  const result = await repository.createTask(parsed.data);
+
+  if (!result.ok) {
+    return {
+      message: "Der Task konnte in Supabase nicht erstellt werden.",
+      status: "error",
+    };
+  }
+
+  revalidateTaskProjectionRoutes();
+
+  return {
+    message: "Task erstellt.",
+    status: "success",
+    taskId: result.data.id,
+  };
+}
+
+export async function createPortfolioTaskFormAction(
+  formData: FormData,
+): Promise<void> {
+  const result = await createPortfolioTaskAction(formData);
+  const returnView = portfolioTaskReturnView(formData);
+
+  if (result.status === "success") {
+    redirect(`/portfolio?view=${returnView}&targetCreate=task_created`);
+  }
+
+  redirect(`/portfolio?view=${returnView}&targetCreate=${result.status}`);
 }
 
 export async function completeTaskAction(

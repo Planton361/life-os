@@ -55,7 +55,19 @@ function revalidatePortfolioTargetRoutes() {
   revalidatePath("/calendar");
 }
 
-function redirectToPortfolioCreateState(state: string, view: "goals" | "projects") {
+type PortfolioCreateReturnView = "all" | "goals" | "projects";
+
+function returnViewFromForm(
+  formData: FormData,
+  fallback: Exclude<PortfolioCreateReturnView, "all">,
+): PortfolioCreateReturnView {
+  return formString(formData, "returnView") === "all" ? "all" : fallback;
+}
+
+function redirectToPortfolioCreateState(
+  state: string,
+  view: PortfolioCreateReturnView,
+) {
   redirect(`/portfolio?view=${view}&targetCreate=${state}`);
 }
 
@@ -169,20 +181,22 @@ export async function createGoalAction(
 
 export async function createProjectFormAction(formData: FormData): Promise<void> {
   const result = await createProjectAction(formData);
+  const returnView = returnViewFromForm(formData, "projects");
 
   if (result.status === "success") {
-    redirectToPortfolioCreateState("project_created", "projects");
+    redirectToPortfolioCreateState("project_created", returnView);
   }
 
-  redirectToPortfolioCreateState(result.status, "projects");
+  redirectToPortfolioCreateState(result.status, returnView);
 }
 
 export async function createGoalFormAction(formData: FormData): Promise<void> {
   const result = await createGoalAction(formData);
+  const returnView = returnViewFromForm(formData, "goals");
 
   if (result.status === "success") {
-    redirectToPortfolioCreateState("goal_created", "goals");
+    redirectToPortfolioCreateState("goal_created", returnView);
   }
 
-  redirectToPortfolioCreateState(result.status, "goals");
+  redirectToPortfolioCreateState(result.status, returnView);
 }

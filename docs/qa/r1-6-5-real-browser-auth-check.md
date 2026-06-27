@@ -213,6 +213,21 @@
 - Portfolio / Today / Dashboard / Calendar consistency wurde fuer die Lifecycle-spezifischen DB-Flows im Browser geprueft.
 - Der breite Legacy-Grep mit `Manual` erreicht jetzt echte DB-Tests, kann aber durch nicht-lifecycle Resource/Inbox-Serial-State stoppen; R1.6.9B bewertet die Lifecycle-spezifischen Tests separat.
 
+## R1.7.0 Portfolio Contextual Create
+
+- Portfolio Create ist view-gebunden: `tasks` zeigt Task Create, `projects` zeigt Project Create, `goals` zeigt Goal Create, `skills` zeigt nur Future Scope, `all` zeigt die bewusste Auswahl Task/Project/Goal.
+- Task Create schreibt ueber die bestehende Supabase Task Repository Boundary und nutzt den authentifizierten User/Profile Scope vom Server.
+- Project und Goal Create verwenden weiter die bestehenden Portfolio Actions und behalten im All View den Ruecksprung nach `view=all`.
+- Skill Create bleibt ohne Persistenz deaktiviert; es wird kein Fake-Skill und kein Skill-DB-Modell erzeugt.
+- Manual mit gueltiger lokaler Supabase-Session persistiert Task, Project und Goal reload-stabil.
+- Demo und Empty bleiben Profil-States; echte Create-Actions bleiben an Manual/Auth gebunden.
+- Add to Existing sieht im Inbox Target Picker die neu erstellten Project- und Goal-Ziele als reale DB-Targets.
+- Keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB-Aktion und kein Service-Role-Zugriff.
+- Focused Browser Command:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Portfolio|Contextual Create|Task erstellen|Project erstellen|Goal erstellen|Add to Existing|Manual"`
+- Der breite Grep wurde gestartet und erreicht wegen `Manual` auch Legacy-Inbox/Resource-Tests; er stoppt vor dem Portfolio-Block am bestehenden Resource-Draft-Serial-State.
+- R1.7.0-spezifischer Portfolio-Grep ist gruen: Contextual Create, Task erstellen, Project erstellen, Goal erstellen, Add to Existing Project und Add to Existing Goal.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.
