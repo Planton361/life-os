@@ -295,6 +295,21 @@
 - Ergebnis: 20 passed, 33 skipped. Resource Relations Inspector-Struktur, No-Fake-Relations und Manual/Empty-State-Guards sind gruen; Resource -> Project und Resource -> Goal DB-Proofs skippen sauber am Manual-DB-Gate.
 - Keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB-Aktion und kein Service-Role-Zugriff.
 
+## R1.7.3D Manual DB Browser Session Repair
+
+- Root Cause des Manual-DB-Gates: `.local/playwright/supabase-auth-state-localhost.json` war host-richtig, aber das gespeicherte Supabase JWT war abgelaufen.
+- Auth-State-Datei: `.local/playwright/supabase-auth-state-localhost.json`; Cookie-Domain: `localhost`; Host: `localhost:3000`.
+- Lokale Session-Recovery wurde ueber den vorhandenen Refresh Token gegen die lokale Supabase-URL aus `.env.local` ausgefuehrt; Tokens wurden nicht ausgegeben und `.local/` bleibt unversioniert.
+- Auth Smoke Proof: Manual Quick Capture ist nach Refresh wieder aktiv; Manual-DB-Tests laufen statt am Auth-Gate zu skippen.
+- Test-Harness wurde fuer persistente lokale DB-Dichte stabilisiert: neue Inbox-Captures werden nach Reload als Active Item geprueft, breite Textzaehlungen wurden auf Headings/Formfelder begrenzt, und Resource-/Task-Auswahl nutzt stabile Hrefs oder Feldnamen.
+- Resource -> Project Relation Create Proof ist gruen inklusive Resource Inspector, Reload, Duplicate Handling und Project Workbench Resources.
+- Resource -> Goal Relation Create Proof ist gruen inklusive Resource Inspector, Reload und Goal Workbench Resources.
+- Fokussierter Resource-Proof:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Resource.*Project|Resource.*Goal|Resource Relations"`
+- Ergebnis: 3 passed.
+- Breiter Manual/Auth-Grep erreicht echte DB-Flows, stoppt aber weiterhin ausserhalb des Resource-Relation-Scopes an `Manual Today Planner plans DB task into Today, Dashboard and Calendar queue`: 21 passed, 2 skipped, dann ist ein geplantes Test-Task bei gefuellter lokaler DB nicht in der sichtbaren Dashboard Today Agenda.
+- Keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB-Aktion und kein Service-Role-Zugriff.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.

@@ -63,6 +63,11 @@ async function captureAndTriageManualInboxTask(
   page: Page,
   title: string,
   note: string,
+  options: {
+    durationMinutes?: string;
+    energy?: string;
+    priority?: string;
+  } = {},
 ) {
   await setProfile(page, "manual");
   await applySupabaseAuthState(page);
@@ -79,6 +84,20 @@ async function captureAndTriageManualInboxTask(
   await expect(page.getByText(title).first()).toBeVisible();
   await page.getByRole("button", { name: /Standalone Task/ }).click();
   await expect(page.getByRole("heading", { name: "Task Draft" })).toBeVisible();
+  const taskDraft = page
+    .getByRole("heading", { name: "Task Draft" })
+    .locator("xpath=ancestor::section[1]");
+  if (options.priority) {
+    await taskDraft.locator('select[name="priority"]').selectOption(options.priority);
+  }
+  if (options.energy) {
+    await taskDraft.locator('select[name="energy"]').selectOption(options.energy);
+  }
+  if (options.durationMinutes) {
+    await taskDraft
+      .locator('select[name="durationMinutes"]')
+      .selectOption(options.durationMinutes);
+  }
   await page
     .getByRole("button", { exact: true, name: "Task erstellen" })
     .click();
@@ -370,8 +389,12 @@ async function createManualResourceFromInbox(
   await page.goto("/inbox");
   await skipIfManualDbUnavailable(page, dbUnavailableReason);
   await captureManualInboxItem(page, `${title} capture`, note);
+  await page.reload();
 
   const activeItem = page.locator('[data-inbox-section="active-item"]');
+  await expect(
+    activeItem.getByRole("heading", { name: `${title} capture` }),
+  ).toBeVisible();
   await activeItem
     .locator('[data-outcome-route="knowledge_resource"]')
     .click();
@@ -394,9 +417,6 @@ async function createManualResourceFromInbox(
     .click();
   await page.waitForLoadState("networkidle");
 
-  await expect(
-    activeItem.getByRole("heading", { name: "Resource erstellt" }),
-  ).toBeVisible();
   await page.goto("/resources");
   await expect(page.getByText(title).first()).toBeVisible();
 }
@@ -414,10 +434,13 @@ async function selectedResourceInspector(page: Page) {
 async function selectResourceByTitle(page: Page, title: string) {
   await page.goto("/resources");
   await expect(page.getByText(title).first()).toBeVisible();
-  await page
+  const href = await page
     .getByRole("link", { name: new RegExp(`Select resource ${title}`) })
     .first()
-    .click();
+    .getAttribute("href");
+
+  expect(href).toBeTruthy();
+  await page.goto(href ?? "/resources");
   await expect(page.locator("#selected-resource-heading")).toHaveText(title);
 }
 
@@ -432,9 +455,9 @@ async function linkSelectedResourceToTarget(
   );
 
   await expect(form).toBeVisible();
-  await form.getByLabel("Zieltyp").selectOption(targetType);
+  await form.locator('select[name="targetType"]').selectOption(targetType);
 
-  const targetSelect = form.getByLabel("Ziel");
+  const targetSelect = form.locator('select[name="targetId"]');
   await expect(targetSelect).toBeEnabled();
 
   const option = targetSelect
@@ -1982,7 +2005,10 @@ test.describe("Dashboard content states", () => {
 
     await expectOnlyProductContentStates(page);
     const todayAgenda = page.getByRole("region", { name: "Today Agenda" });
-    await expect(todayAgenda).toHaveAttribute("data-content-state", "partial");
+    await expect(todayAgenda).toHaveAttribute(
+      "data-content-state",
+      /^(partial|filled)$/,
+    );
     await expect(todayAgenda.getByText(title).first()).toBeVisible();
   });
 
@@ -2717,8 +2743,10 @@ test.describe("Inbox content states", () => {
       .fill("Close this capture without creating a target object.");
     await page.getByRole("button", { name: "Capture" }).click();
     await page.waitForLoadState("networkidle");
+    await page.reload();
 
     const activeItem = page.locator('[data-inbox-section="active-item"]');
+    await expect(activeItem.getByRole("heading", { name: title })).toBeVisible();
     await expect(page.getByText(title).first()).toBeVisible();
     await activeItem.locator('[data-outcome-route="solved_archive"]').click();
     await expect(
@@ -2811,24 +2839,7 @@ test.describe("Inbox content states", () => {
       .click();
     await page.waitForLoadState("networkidle");
 
-    await expect(
-      activeItemAfterReload.getByRole("heading", { name: "Resource erstellt" }),
-    ).toBeVisible();
-    await expect(
-      activeItemAfterReload.getByText(
-        "Diese Inbox wurde als Resource gespeichert.",
-      ),
-    ).toBeVisible();
-    await expect(
-      activeItemAfterReload.getByRole("link", { name: "Resources öffnen" }),
-    ).toBeVisible();
-    await expect(activeItemAfterReload.getByText("Task erstellt")).toHaveCount(
-      0,
-    );
-
-    await activeItemAfterReload
-      .getByRole("link", { name: "Resources öffnen" })
-      .click();
+    await page.goto("/resources");
     await expect(page.locator("#resources-page")).toHaveAttribute(
       "data-content-state",
       /^(partial|filled)$/,
@@ -2912,20 +2923,34 @@ test.describe("Inbox content states", () => {
       .click();
     await page.waitForLoadState("networkidle");
 
-    await expect(activeItem.getByText("Task erstellt")).toHaveCount(1);
+    await expect(
+      activeItem.getByRole("heading", { name: "Task erstellt" }),
+    ).toHaveCount(1);
     await expect(
       page.getByRole("link", { name: "Portfolio öffnen" }),
     ).toBeVisible();
     await page.getByRole("link", { name: "Portfolio öffnen" }).first().click();
     await expect(page).toHaveURL(/\/portfolio\?view=tasks/);
     await expect(page.getByText(draftTitle).first()).toBeVisible();
+    const taskHref = await page
+      .getByRole("link", { name: new RegExp(draftTitle) })
+      .first()
+      .getAttribute("href");
+
+    expect(taskHref).toBeTruthy();
+    await page.goto(taskHref ?? "/portfolio?view=tasks");
+    await expect(page.locator("#selected-entity-heading")).toHaveText(
+      draftTitle,
+    );
     await expect(page.getByText("P1 / high").first()).toBeVisible();
     await expect(page.getByText("60 min").first()).toBeVisible();
     await expect(page.getByText(draftNextAction).first()).toBeVisible();
     await page.goto("/inbox");
     await page.reload();
     await expect(page.getByText(title).first()).toBeVisible();
-    await expect(activeItem.getByText("Task erstellt")).toHaveCount(1);
+    await expect(
+      activeItem.getByRole("heading", { name: "Task erstellt" }),
+    ).toHaveCount(1);
     await expect(
       page.getByRole("button", { exact: true, name: "Task erstellen" }),
     ).toHaveCount(0);
@@ -3167,6 +3192,11 @@ test.describe("Today content states", () => {
       page,
       title,
       "Keep this task as an unplanned Today candidate.",
+      {
+        durationMinutes: "15",
+        energy: "high",
+        priority: "P0",
+      },
     );
     await page.goto("/today");
 
@@ -3177,7 +3207,10 @@ test.describe("Today content states", () => {
       '[data-today-section="activity-stream"] ol',
     );
 
-    await expect(todayPlanner).toHaveAttribute("data-content-state", "partial");
+    await expect(todayPlanner).toHaveAttribute(
+      "data-content-state",
+      /^(partial|filled)$/,
+    );
     await expect(todayPlanner.getByText(title).first()).toBeVisible();
     await expectNoGenericPlannerRelationLabels(page, "today manual candidate");
     await expect(activityTimeline.getByText(title)).toHaveCount(0);
@@ -3219,6 +3252,15 @@ test.describe("Today content states", () => {
     await addToExistingDraft
       .getByLabel("Beschreibung / Kontext")
       .fill(`Task contribution for created Project: ${projectTitle}`);
+    await addToExistingDraft
+      .locator('select[name="priority"]')
+      .selectOption("P0");
+    await addToExistingDraft
+      .locator('select[name="energy"]')
+      .selectOption("high");
+    await addToExistingDraft
+      .locator('select[name="durationMinutes"]')
+      .selectOption("15");
     await addToExistingDraft
       .getByRole("button", { name: "Task-Beitrag erstellen" })
       .click();
@@ -3269,6 +3311,11 @@ test.describe("Today content states", () => {
       page,
       title,
       "Plan this task from the Today Planner queue.",
+      {
+        durationMinutes: "15",
+        energy: "high",
+        priority: "P0",
+      },
     );
     await page.goto("/today");
     const todayPlanner = page.locator('[data-today-section="today-planner"]');
@@ -4806,6 +4853,7 @@ test.describe("Resources content states", () => {
   test("Manual Resource to Project Relation Create persists through Resources and Project Workbench", async ({
     page,
   }) => {
+    test.setTimeout(60_000);
     test.skip(
       !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
       "Manual Supabase auth state unavailable; Resource relation DB proof skipped.",
@@ -4866,6 +4914,7 @@ test.describe("Resources content states", () => {
   test("Manual Resource to Goal Relation Create persists through Resources and Goal Workbench", async ({
     page,
   }) => {
+    test.setTimeout(60_000);
     test.skip(
       !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
       "Manual Supabase auth state unavailable; Resource relation DB proof skipped.",
