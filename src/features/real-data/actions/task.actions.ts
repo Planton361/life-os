@@ -111,7 +111,25 @@ function portfolioTaskDescriptionFromForm(formData: FormData) {
 }
 
 function portfolioTaskReturnView(formData: FormData) {
-  return formString(formData, "returnView") === "all" ? "all" : "tasks";
+  const returnView = formString(formData, "returnView");
+
+  if (returnView === "all" || returnView === "projects") return returnView;
+
+  return "tasks";
+}
+
+function portfolioTaskReturnUrl(formData: FormData, state: string) {
+  const params = new URLSearchParams({
+    targetCreate: state,
+    view: portfolioTaskReturnView(formData),
+  });
+  const selectedProjectId = optionalFormString(formData, "selectedProjectId");
+
+  if (selectedProjectId) {
+    params.set("selected", selectedProjectId);
+  }
+
+  return `/portfolio?${params.toString()}`;
 }
 
 function scheduledStartAtFromForm(formData: FormData, plannedDate: string) {
@@ -182,6 +200,23 @@ async function getAuthenticatedManualTaskContext(actionLabel: string) {
     auth,
     ok: true as const,
   };
+}
+
+async function validateProjectScope(
+  context: Awaited<ReturnType<typeof getAuthenticatedManualTaskContext>>,
+  projectId: string | undefined,
+) {
+  if (!projectId || !context.ok) return true;
+
+  const result = await context.auth.client
+    .from("projects")
+    .select("id")
+    .eq("user_id", context.auth.user.id)
+    .eq("id", projectId)
+    .is("archived_at", null)
+    .maybeSingle();
+
+  return !result.error && Boolean(result.data);
 }
 
 export async function scheduleTaskForTodayAction(
@@ -255,12 +290,22 @@ export async function createPortfolioTaskAction(
   if (!context.ok) return context.result;
 
   const todayCandidate = formData.get("todayCandidate") === "on";
+  const projectId = optionalFormString(formData, "projectId");
+
+  if (!(await validateProjectScope(context, projectId))) {
+    return {
+      message: "Das Project konnte nicht als Task-Kontext bestätigt werden.",
+      status: "error",
+    };
+  }
+
   const parsed = createTaskInputSchema.safeParse({
     description: portfolioTaskDescriptionFromForm(formData),
     durationMinutes: durationMinutesFromForm(formData, "plan"),
     energy: optionalFormString(formData, "energy"),
     plannedDate: todayCandidate ? localDateLabel() : undefined,
     priority: formString(formData, "priority") || "none",
+    projectId,
     profileId: context.auth.user.id,
     status: "planned",
     title: formString(formData, "title"),
@@ -297,13 +342,12 @@ export async function createPortfolioTaskFormAction(
   formData: FormData,
 ): Promise<void> {
   const result = await createPortfolioTaskAction(formData);
-  const returnView = portfolioTaskReturnView(formData);
 
   if (result.status === "success") {
-    redirect(`/portfolio?view=${returnView}&targetCreate=task_created`);
+    redirect(portfolioTaskReturnUrl(formData, "task_created"));
   }
 
-  redirect(`/portfolio?view=${returnView}&targetCreate=${result.status}`);
+  redirect(portfolioTaskReturnUrl(formData, result.status));
 }
 
 export async function completeTaskAction(

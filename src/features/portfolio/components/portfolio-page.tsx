@@ -641,6 +641,7 @@ export function PortfolioPage({
             statusMessage={statusMessage}
           />
           <PortfolioContextPanel
+            allEntities={viewModel.entities}
             contentState={viewModel.contentStates.contextPanel}
             entity={selectedEntity}
             profileId={viewModel.profileId}

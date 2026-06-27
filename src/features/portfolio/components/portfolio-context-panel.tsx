@@ -4,6 +4,7 @@ import type { ContentStateMeta } from "@/features/content-state";
 import {
   archiveTaskFormAction,
   completeTaskFormAction,
+  createPortfolioTaskFormAction,
   reopenTaskFormAction,
   rescheduleTaskFormAction,
   scheduleTaskForTodayFormAction,
@@ -27,8 +28,16 @@ import {
 import type {
   PortfolioDecision,
   PortfolioEntity,
+  PortfolioTaskEntity,
   PortfolioViewModel,
+  ProjectWorkbenchViewModel,
 } from "../types";
+
+const formInputClassName =
+  "min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.78)] px-2 text-[11px] normal-case text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-55";
+
+const formButtonClassName =
+  "min-h-8 rounded-full border border-[rgba(91,124,250,.34)] bg-[rgba(91,124,250,.14)] px-3 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(91,124,250,.52)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:border-[var(--border-subtle)] disabled:bg-[rgba(18,28,43,.34)] disabled:text-[var(--text-muted)]";
 
 function progressWidth(progress: number) {
   return `${Math.max(0, Math.min(100, progress))}%`;
@@ -48,6 +57,56 @@ function decisionAccent(decision: PortfolioDecision) {
   }
 
   return "var(--text-muted)";
+}
+
+function isPortfolioTaskEntity(
+  entity: PortfolioEntity,
+): entity is PortfolioTaskEntity {
+  return entity.type === "task" && Boolean(entity.taskLifecycle);
+}
+
+function buildProjectWorkbench(
+  project: PortfolioEntity,
+  entities: readonly PortfolioEntity[],
+): ProjectWorkbenchViewModel {
+  const linkedTasks = entities.filter(
+    (entity): entity is PortfolioTaskEntity =>
+      isPortfolioTaskEntity(entity) && entity.projectId === project.id,
+  );
+  const completedTasks = linkedTasks.filter(
+    (task) => task.taskLifecycle.status === "done",
+  );
+  const nextTasks = linkedTasks.filter(
+    (task) => task.taskLifecycle.status !== "done",
+  );
+  const scheduledTasks = linkedTasks.filter((task) =>
+    Boolean(task.taskLifecycle.scheduledTime),
+  );
+
+  return {
+    project: {
+      areaLabel: portfolioAreaMeta[project.area].label,
+      id: project.id,
+      progress: project.progress,
+      status: portfolioStatusMeta[project.status].label,
+      summary: project.description || undefined,
+      title: project.title,
+    },
+    linkedTasks,
+    nextTasks,
+    completedTasks,
+    metrics: {
+      completedTasks: completedTasks.length,
+      openTasks: nextTasks.length,
+      scheduledTasks: scheduledTasks.length,
+      totalTasks: linkedTasks.length,
+    },
+    sections: {
+      logs: "prepared",
+      milestones: "prepared",
+      resources: "prepared",
+    },
+  };
 }
 
 function FieldCard({
@@ -71,6 +130,103 @@ function FieldCard({
         {value}
       </p>
     </div>
+  );
+}
+
+function ProjectTaskCreateForm({
+  disabled,
+  project,
+}: Readonly<{
+  disabled: boolean;
+  project: PortfolioEntity;
+}>) {
+  return (
+    <form
+      action={createPortfolioTaskFormAction}
+      aria-label="Project Task erstellen"
+      className="grid gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.40)] p-3"
+    >
+      <input name="projectId" type="hidden" value={project.id} />
+      <input name="returnView" type="hidden" value="projects" />
+      <input name="selectedProjectId" type="hidden" value={project.id} />
+      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+        Task-Titel
+        <input
+          className={formInputClassName}
+          disabled={disabled}
+          name="title"
+          placeholder="Nächster Project Task"
+          required
+        />
+      </label>
+      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+        Next Action
+        <input
+          className={formInputClassName}
+          disabled={disabled}
+          name="nextAction"
+          placeholder="Konkreter nächster Schritt"
+        />
+      </label>
+      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+        Kontext
+        <input
+          className={formInputClassName}
+          disabled={disabled}
+          name="description"
+          placeholder="Optionaler Project-Kontext"
+        />
+      </label>
+      <div className="grid gap-2 sm:grid-cols-3">
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+          Priorität
+          <select
+            className={formInputClassName}
+            defaultValue="P2"
+            disabled={disabled}
+            name="priority"
+          >
+            <option value="none">None</option>
+            <option value="P0">P0</option>
+            <option value="P1">P1</option>
+            <option value="P2">P2</option>
+            <option value="P3">P3</option>
+          </select>
+        </label>
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+          Energie
+          <select className={formInputClassName} disabled={disabled} name="energy">
+            <option value="">-</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </label>
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+          Minuten
+          <input
+            className={formInputClassName}
+            disabled={disabled}
+            min="1"
+            name="durationMinutes"
+            placeholder="30"
+            type="number"
+          />
+        </label>
+      </div>
+      <label className="flex min-h-8 items-center gap-2 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.58)] px-2 text-[11px] font-semibold text-[var(--text-secondary)]">
+        <input
+          className="size-4 accent-[rgb(91,124,250)]"
+          disabled={disabled}
+          name="todayCandidate"
+          type="checkbox"
+        />
+        Heute planen
+      </label>
+      <button className={formButtonClassName} disabled={disabled} type="submit">
+        Task für Project erstellen
+      </button>
+    </form>
   );
 }
 
@@ -261,6 +417,224 @@ function TaskLifecycleActions({
   );
 }
 
+function ProjectTaskCard({
+  profileId,
+  task,
+}: Readonly<{
+  profileId: PortfolioViewModel["profileId"];
+  task: PortfolioTaskEntity;
+}>) {
+  const lifecycle = task.taskLifecycle;
+  const meta = [
+    portfolioStatusMeta[task.status].label,
+    task.priority,
+    task.taskLifecycle.plannedDate,
+    task.taskLifecycle.scheduledTime,
+    `${lifecycle.durationMinutes} min`,
+    task.countLabel,
+  ].filter(Boolean);
+
+  return (
+    <article className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.40)] p-3">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[12px] font-semibold leading-4 text-[var(--text-primary)]">
+            {task.title}
+          </p>
+          <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
+            {meta.join(" · ")}
+          </p>
+        </div>
+        <Pill accent={portfolioStatusMeta[task.status].accent}>
+          {portfolioStatusMeta[task.status].label}
+        </Pill>
+      </div>
+      {task.nextAction ? (
+        <p className="mt-2 text-[11px] leading-4 text-[var(--text-secondary)]">
+          {task.nextAction}
+        </p>
+      ) : null}
+      {profileId === "manual" ? (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          <TaskLifecycleActions entity={task} />
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
+function PreparedWorkbenchSection({
+  body,
+  title,
+}: Readonly<{
+  body: string;
+  title: string;
+}>) {
+  return (
+    <article className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.34)] p-3">
+      <div className="flex items-start justify-between gap-3">
+        <h4 className="text-[12px] font-semibold text-[var(--text-primary)]">
+          {title}
+        </h4>
+        <Pill accent="var(--text-muted)">Vorbereitet</Pill>
+      </div>
+      <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
+        {body}
+      </p>
+    </article>
+  );
+}
+
+function ProjectWorkbench({
+  entities,
+  profileId,
+  project,
+}: Readonly<{
+  entities: readonly PortfolioEntity[];
+  profileId: PortfolioViewModel["profileId"];
+  project: PortfolioEntity;
+}>) {
+  const workbench = buildProjectWorkbench(project, entities);
+  const disabled = profileId !== "manual";
+
+  return (
+    <section aria-labelledby="project-workbench-heading">
+      <div className="rounded-[14px] border border-[rgba(217,146,79,.22)] bg-[rgba(217,146,79,.07)] p-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-orange)]">
+              Project Workbench
+            </p>
+            <h3
+              className="mt-1 text-[15px] font-semibold text-[var(--text-primary)]"
+              id="project-workbench-heading"
+            >
+              Project Overview
+            </h3>
+            <p className="mt-1 text-[11px] leading-4 text-[var(--text-secondary)]">
+              {workbench.project.summary ?? "Keine Beschreibung"}
+            </p>
+          </div>
+          <Pill accent="var(--accent-orange)">
+            {workbench.project.status ?? "Status offen"}
+          </Pill>
+        </div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <FieldCard
+            accent="var(--accent-orange)"
+            label="Progress"
+            value={
+              typeof workbench.project.progress === "number"
+                ? `${workbench.project.progress}%`
+                : "Noch kein Fortschritt berechnet"
+            }
+          />
+          <FieldCard
+            accent="var(--accent-cyan)"
+            label="Area"
+            value={workbench.project.areaLabel ?? "Keine Area gesetzt"}
+          />
+          <FieldCard
+            accent="var(--accent-blue)"
+            label="Task Counts"
+            value={`${workbench.metrics.openTasks} open / ${workbench.metrics.completedTasks} done`}
+          />
+          <FieldCard
+            accent="var(--accent-green)"
+            label="Task-Fortschritt"
+            value={`${workbench.metrics.completedTasks} / ${workbench.metrics.totalTasks} completed`}
+          />
+        </div>
+      </div>
+
+      <div className="mt-3 grid gap-3">
+        <section aria-labelledby="project-task-create-heading">
+          <h3
+            className="text-[13px] font-semibold text-[var(--text-primary)]"
+            id="project-task-create-heading"
+          >
+            Task für Project erstellen
+          </h3>
+          <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
+            {disabled
+              ? "Wechsle ins Manual-Profil, um echte Project Tasks zu erstellen."
+              : "Erstellt eine Task mit diesem Project als Kontext."}
+          </p>
+          <div className="mt-2">
+            <ProjectTaskCreateForm disabled={disabled} project={project} />
+          </div>
+        </section>
+
+        <section aria-labelledby="project-linked-tasks-heading">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3
+              className="text-[13px] font-semibold text-[var(--text-primary)]"
+              id="project-linked-tasks-heading"
+            >
+              Linked Tasks
+            </h3>
+            <Pill accent="var(--accent-blue)">
+              {workbench.metrics.totalTasks} total
+            </Pill>
+          </div>
+          <div className="mt-2 grid gap-2">
+            {workbench.nextTasks.length > 0 ? (
+              workbench.nextTasks.map((task) => (
+                <ProjectTaskCard
+                  key={`project-open-task-${task.id}`}
+                  profileId={profileId}
+                  task={task}
+                />
+              ))
+            ) : (
+              <p className="rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.38)] px-3 py-2 text-[11px] leading-4 text-[var(--text-muted)]">
+                Noch keine offenen Project Tasks.
+              </p>
+            )}
+            {workbench.completedTasks.length > 0 ? (
+              <div className="grid gap-2">
+                <p className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+                  Completed
+                </p>
+                {workbench.completedTasks.map((task) => (
+                  <ProjectTaskCard
+                    key={`project-completed-task-${task.id}`}
+                    profileId={profileId}
+                    task={task}
+                  />
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </section>
+
+        <section aria-labelledby="project-prepared-sections-heading">
+          <h3
+            className="text-[13px] font-semibold text-[var(--text-primary)]"
+            id="project-prepared-sections-heading"
+          >
+            Prepared Sections
+          </h3>
+          <div className="mt-2 grid gap-2">
+            <PreparedWorkbenchSection
+              body="Milestones folgen im Project Workbench Ausbau."
+              title="Milestones"
+            />
+            <PreparedWorkbenchSection
+              body="Resources werden später verknüpft."
+              title="Resources"
+            />
+            <PreparedWorkbenchSection
+              body="Project Log folgt mit Review/Execution."
+              title="Project Log"
+            />
+          </div>
+        </section>
+      </div>
+    </section>
+  );
+}
+
 function contentStateAttributes(
   meta: ContentStateMeta,
   profileId: PortfolioViewModel["profileId"],
@@ -274,10 +648,12 @@ function contentStateAttributes(
 }
 
 export function PortfolioContextPanel({
+  allEntities,
   contentState,
   entity,
   profileId,
 }: Readonly<{
+  allEntities: readonly PortfolioEntity[];
   contentState: ContentStateMeta;
   entity: PortfolioEntity | null;
   profileId: PortfolioViewModel["profileId"];
@@ -307,6 +683,7 @@ export function PortfolioContextPanel({
     entity.sourceLinks.find((link) => link.href !== entityRoute) ??
     entity.sourceLinks[0] ??
     null;
+  const isProjectWorkbench = entity.type === "project";
 
   return (
     <aside
@@ -394,6 +771,14 @@ export function PortfolioContextPanel({
             Progress is text-backed above; color is only an accent.
           </p>
         </div>
+
+        {isProjectWorkbench ? (
+          <ProjectWorkbench
+            entities={allEntities}
+            profileId={profileId}
+            project={entity}
+          />
+        ) : null}
 
         {entity.type === "skill" && entity.skillContext ? (
           <section aria-labelledby="entity-skill-context-heading">

@@ -94,6 +94,36 @@ export type PortfolioSkillContext = {
   evidence: string;
 };
 
+export type PortfolioTaskEntity = PortfolioEntity & {
+  type: "task";
+  taskLifecycle: PortfolioTaskLifecycle;
+};
+
+export type ProjectWorkbenchViewModel = {
+  project: {
+    id: string;
+    title: string;
+    summary?: string;
+    status?: string;
+    progress?: number;
+    areaLabel?: string;
+  };
+  linkedTasks: PortfolioTaskEntity[];
+  nextTasks: PortfolioTaskEntity[];
+  completedTasks: PortfolioTaskEntity[];
+  metrics: {
+    totalTasks: number;
+    openTasks: number;
+    completedTasks: number;
+    scheduledTasks: number;
+  };
+  sections: {
+    milestones: "connected" | "prepared";
+    resources: "connected" | "prepared";
+    logs: "connected" | "prepared";
+  };
+};
+
 export type PortfolioEntity = {
   id: string;
   type: PortfolioEntityType;
@@ -116,6 +146,8 @@ export type PortfolioEntity = {
   decisions: PortfolioDecision[];
   sourceLinks: PortfolioSourceLink[];
   noteSnippet: string;
+  goalId?: string;
+  projectId?: string;
   taskLifecycle?: PortfolioTaskLifecycle;
   skillContext?: PortfolioSkillContext;
 };

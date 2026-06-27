@@ -228,6 +228,20 @@
 - Der breite Grep wurde gestartet und erreicht wegen `Manual` auch Legacy-Inbox/Resource-Tests; er stoppt vor dem Portfolio-Block am bestehenden Resource-Draft-Serial-State.
 - R1.7.0-spezifischer Portfolio-Grep ist gruen: Contextual Create, Task erstellen, Project erstellen, Goal erstellen, Add to Existing Project und Add to Existing Goal.
 
+## R1.7.1 Project Workbench v1
+
+- Portfolio Project View oeffnet die Project Workbench im bestehenden Portfolio Context Panel; keine neue Project-Detailroute wurde eingefuehrt.
+- Project Overview zeigt Titel, Beschreibung/Summary, Status, Progress, Area und Task Counts.
+- Linked Tasks werden aus vorhandenen Portfolio Task Entities ueber `projectId` abgeleitet.
+- Task fuer Project erstellen nutzt den bestehenden Portfolio Task Create Pfad, setzt `projectId` automatisch und prueft das Project serverseitig im User-Scope.
+- Bestehende Task Lifecycle Controls bleiben fuer Linked Tasks sichtbar und werden nicht neu modelliert.
+- Milestones, Resources und Project Log sind als vorbereitet markiert; keine Fake-Milestones, keine Fake-Resources und keine Log-Persistenz.
+- Task-Fortschritt ist nur abgeleitet: completed linked tasks / total linked tasks; kein DB-Write.
+- Keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB-Aktion und kein Service-Role-Zugriff.
+- Focused Browser Command:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Portfolio|Project Workbench|Project erstellen|Linked Tasks|Manual"`
+- Ergebnis im aktuellen lokalen Auth-State: 23 passed, 28 skipped. Project Workbench sichtbar/no-fake ist gruen; DB-Persistenz- und Lifecycle-Proofs skippen, weil die lokale Manual-Supabase-Session nicht aktiv verfuegbar ist.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.
