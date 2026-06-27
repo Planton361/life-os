@@ -216,15 +216,16 @@ Ein spaeterer R1.7.6B- oder R1.7.7-Scope darf eine lokale Migration nur bauen, w
 
 R1.7.6B Status: Das lokale Schema enthaelt jetzt `public.recipes` und `public.meals`. Beide Tabellen haben `user_id`, Timestamps, RLS, authenticated Grants und `updated_at` Trigger. `recipes` nutzt `is_archived` als Soft-Archive-Flag. `meals.recipe_id` bleibt optional. Same-user Ownership fuer `recipe_id` wird nicht per Trigger erzwungen; spaetere Repository-/Server-Action-Flows muessen `recipe_id` gegen denselben `user_id` pruefen.
 
+R1.7.6C Status: Domain Types, Mapper, Repository Contract, Supabase Nutrition Repository und Server Actions sind vorbereitet. Actions holen `user_id` serverseitig aus Supabase Auth und akzeptieren keine clientseitige `userId`. Das Repository prueft `areaId` gegen eigene aktive Areas und `recipeId` gegen eigene nicht archivierte Recipes, bevor es schreibt. Es gibt weiterhin keine UI-Anbindung und keine automatische Nutrition-Auswertung.
+
 Weiterhin nicht vorhanden: `ingredients`, `recipe_ingredients`, `nutrition_entries`, `macro_targets`, `grocery_lists`, `meal_plan_templates` oder externe Nutrition-Datenquellen.
 
-Nach R1.7.6B bleiben als naechste Gates:
+Nach R1.7.6C bleiben als naechste Gates:
 
-- Repository Interface und Supabase Repository fuer Recipes/Meals.
-- Server Actions, die `user_id` aus Supabase Auth holen.
-- Same-user Ownership-Pruefung fuer `recipe_id`.
+- ReadModel-Integration fuer Nutrition UI.
 - UI-Binding nur nach separater Freigabe.
-- Browser-/Manual-QA erst nach Actions/UI.
+- Browser-/Manual-QA erst nach UI-Binding.
+- Optional spaetere Erweiterung fuer Ingredients, Grocery oder Macro Targets nur mit eigenem Model Lock.
 
 ## 12. Spaetere Ausbaustufen
 

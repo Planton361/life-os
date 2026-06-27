@@ -5,10 +5,12 @@ import type {
   Goal,
   InboxItem,
   LocalDateString,
+  Meal,
   Profile,
   ProfileId,
   Project,
   RecurringTaskTemplate,
+  Recipe,
   Resource,
   ResourceRelation,
   ResourceId,
@@ -27,8 +29,14 @@ import type {
   CompleteTaskInput,
   CreateRecurringTaskTemplateInput,
   CreateGoalInput,
+  MealCompleteInput,
+  MealCreateInput,
+  MealUpdateInput,
   CreateProjectInput,
   CreateResourceInput,
+  RecipeArchiveInput,
+  RecipeCreateInput,
+  RecipeUpdateInput,
   CreateTaskInput,
   DeactivateRecurringTaskTemplateInput,
   LinkResourceInput,
@@ -99,6 +107,43 @@ export type CreateGeneratedTaskInstanceInput = {
 export type GeneratedTaskInstanceResult = {
   task: Task;
   existing: boolean;
+};
+
+export type MealDateRangeListInput = {
+  userId: UserId;
+  profileId: ProfileId;
+  startDate: LocalDateString;
+  endDate: LocalDateString;
+};
+
+export type CreateRecipeRepositoryInput = RecipeCreateInput & {
+  userId: UserId;
+  profileId: ProfileId;
+};
+
+export type UpdateRecipeRepositoryInput = RecipeUpdateInput & {
+  userId: UserId;
+  profileId: ProfileId;
+};
+
+export type ArchiveRecipeRepositoryInput = RecipeArchiveInput & {
+  userId: UserId;
+  profileId: ProfileId;
+};
+
+export type CreateMealRepositoryInput = MealCreateInput & {
+  userId: UserId;
+  profileId: ProfileId;
+};
+
+export type UpdateMealRepositoryInput = MealUpdateInput & {
+  userId: UserId;
+  profileId: ProfileId;
+};
+
+export type CompleteMealRepositoryInput = MealCompleteInput & {
+  userId: UserId;
+  profileId: ProfileId;
 };
 
 export interface ProfileRepository {
@@ -236,6 +281,34 @@ export interface RecurringTaskTemplateRepository {
   ): Promise<RepositoryResult<RecurringTaskTemplate>>;
 }
 
+export interface NutritionRepository {
+  archiveRecipe(
+    input: ArchiveRecipeRepositoryInput,
+  ): Promise<RepositoryResult<Recipe>>;
+  completeMeal(
+    input: CompleteMealRepositoryInput,
+  ): Promise<RepositoryResult<Meal>>;
+  createMeal(input: CreateMealRepositoryInput): Promise<RepositoryResult<Meal>>;
+  createRecipe(
+    input: CreateRecipeRepositoryInput,
+  ): Promise<RepositoryResult<Recipe>>;
+  getActiveRecipesByUser(
+    userId: UserId,
+    profileId: ProfileId,
+  ): Promise<RepositoryListResult<Recipe>>;
+  getMealsByUserAndDateRange(
+    input: MealDateRangeListInput,
+  ): Promise<RepositoryListResult<Meal>>;
+  getRecipesByUser(
+    userId: UserId,
+    profileId: ProfileId,
+  ): Promise<RepositoryListResult<Recipe>>;
+  updateMeal(input: UpdateMealRepositoryInput): Promise<RepositoryResult<Meal>>;
+  updateRecipe(
+    input: UpdateRecipeRepositoryInput,
+  ): Promise<RepositoryResult<Recipe>>;
+}
+
 export interface RealDataRepository {
   profiles: ProfileRepository;
   inbox: InboxRepository;
@@ -245,6 +318,7 @@ export interface RealDataRepository {
   dailyLogs: DailyLogRepository;
   resources: ResourceRepository;
   recurringTaskTemplates: RecurringTaskTemplateRepository;
+  nutrition: NutritionRepository;
 }
 
 export type TriageInboxItemToTaskTransaction = (

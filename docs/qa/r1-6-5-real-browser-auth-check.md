@@ -433,6 +433,18 @@
 - Keine UI, keine Repository-Implementation, keine Server Actions, keine externe Nutrition API, kein Remote-DB-Zugriff.
 - Kein Playwright-Lauf erforderlich, weil dieser Block nur Schema/Data-Foundation und Docs aendert.
 
+## R1.7.6C Nutrition Repository + Actions
+
+- Nutrition Domain Types fuer Recipe und Meal ergaenzt.
+- Recipe/Meal Mapper ergaenzt: snake_case zu camelCase, sichere Tags, optionales Nutrition Estimate und Meal-Type-Guard.
+- Nutrition Repository Contract ergaenzt.
+- Supabase Nutrition Repository implementiert: Recipes lesen, aktive Recipes lesen, Meals im maximal 31-Tage-Date-Range lesen, Recipe erstellen/aktualisieren/archivieren, Meal erstellen/aktualisieren/abschliessen.
+- Same-user Ownership wird vor Writes geprueft: `areaId` muss eigene aktive Area sein; `recipeId` muss eigenes nicht archiviertes Recipe sein.
+- Server Actions fuer Recipe/Meal CRUD-lite ergaenzt; `userId` kommt serverseitig aus Supabase Auth, nicht vom Client.
+- Actions revalidieren `/nutrition`, `/dashboard` und `/today`; diese Revalidation ist vorbereitet, auch wenn UI-ReadModels noch nicht auf echte Nutrition-Daten umgestellt sind.
+- Keine UI, keine Migration, keine Repository-UI-Anbindung, keine externe Nutrition API, keine Barcode-/Grocery-/Ingredient-Logik.
+- Kein Playwright-Lauf erforderlich, weil dieser Block keine UI aendert.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.

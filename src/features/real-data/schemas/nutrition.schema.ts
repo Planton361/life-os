@@ -94,6 +94,12 @@ export const recipeUpdateInputSchema = recipeBaseSchema.partial().extend({
 
 export type RecipeUpdateInput = z.infer<typeof recipeUpdateInputSchema>;
 
+export const recipeArchiveInputSchema = z.object({
+  recipeId: requiredUuidSchema,
+});
+
+export type RecipeArchiveInput = z.infer<typeof recipeArchiveInputSchema>;
+
 const mealBaseSchema = z.object({
   completedAt: optionalDateTimeStringSchema,
   date: localDateSchema,
@@ -113,3 +119,39 @@ export const mealUpdateInputSchema = mealBaseSchema.partial().extend({
 });
 
 export type MealUpdateInput = z.infer<typeof mealUpdateInputSchema>;
+
+export const mealCompleteInputSchema = z.object({
+  completedAt: optionalDateTimeStringSchema,
+  mealId: requiredUuidSchema,
+});
+
+export type MealCompleteInput = z.infer<typeof mealCompleteInputSchema>;
+
+const maxMealDateRangeDays = 31;
+
+function rangeLengthInDays(startDate: string, endDate: string) {
+  const start = Date.parse(`${startDate}T00:00:00.000Z`);
+  const end = Date.parse(`${endDate}T00:00:00.000Z`);
+
+  return Math.floor((end - start) / 86_400_000) + 1;
+}
+
+export const mealDateRangeInputSchema = z
+  .object({
+    endDate: localDateSchema,
+    startDate: localDateSchema,
+  })
+  .refine((input) => Date.parse(input.endDate) >= Date.parse(input.startDate), {
+    message: "Expected endDate to be on or after startDate.",
+    path: ["endDate"],
+  })
+  .refine(
+    (input) =>
+      rangeLengthInDays(input.startDate, input.endDate) <= maxMealDateRangeDays,
+    {
+      message: `Expected a meal date range of at most ${maxMealDateRangeDays} days.`,
+      path: ["endDate"],
+    },
+  );
+
+export type MealDateRangeInput = z.infer<typeof mealDateRangeInputSchema>;

@@ -3,4 +3,5 @@ export * from "./goal.mapper";
 export * from "./project.mapper";
 export * from "./resource.mapper";
 export * from "./recurring-task-template.mapper";
+export * from "./nutrition.mapper";
 export * from "./task.mapper";
