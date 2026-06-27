@@ -282,6 +282,19 @@
   `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Resources|Resource Relations|Project Workbench|Goal Workbench|Portfolio|Manual"`
 - Ergebnis: 29 passed, 31 skipped. Resource Relations Strukturtests, Project Workbench Resources Empty State und Goal Workbench Resources Empty State sind gruen; breite DB-Persistenztests bleiben auth-/cleanup-gated und skippen.
 
+## R1.7.3C Resource Relations Real Browser Proof
+
+- Lokaler `localhost` Playwright Supabase Auth-State ist vorhanden; Cookie-Domain ist `localhost`.
+- Resource Relation DB Proofs nutzen denselben Manual/Auth-Gate wie fruehere Manual-DB-Browsertests.
+- Resource -> Project Relation Create, Reload, Resource Inspector, Project Workbench Resources und Duplicate Handling sind als fokussierter Browser-Pfad abgedeckt, wurden im aktuellen Lauf aber geskippt.
+- Resource -> Goal Relation Create, Reload, Resource Inspector und Goal Workbench Resources sind als fokussierter Browser-Pfad abgedeckt, wurden im aktuellen Lauf aber geskippt.
+- Skip-Grund: Manual Supabase auth state unavailable; Resource relation DB proof skipped.
+- Im Browser ist die Manual Quick Capture trotz geladener Auth-State-Datei deaktiviert; damit steht keine aktive lokale Manual-DB-Session fuer Relation-Create-Proofs zur Verfuegung.
+- Fokussierter lokaler Lauf:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Resource Relations|Resource.*Project|Resource.*Goal|Manual"`
+- Ergebnis: 20 passed, 33 skipped. Resource Relations Inspector-Struktur, No-Fake-Relations und Manual/Empty-State-Guards sind gruen; Resource -> Project und Resource -> Goal DB-Proofs skippen sauber am Manual-DB-Gate.
+- Keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB-Aktion und kein Service-Role-Zugriff.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.

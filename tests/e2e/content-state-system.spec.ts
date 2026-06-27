@@ -86,7 +86,10 @@ async function captureAndTriageManualInboxTask(
   await expect(page.getByText("Task erstellt").first()).toBeVisible();
 }
 
-async function skipIfManualDbUnavailable(page: Page) {
+async function skipIfManualDbUnavailable(
+  page: Page,
+  reason = "Requires a local authenticated Supabase Browser/Playwright session.",
+) {
   const quickCapture = page.getByRole("textbox", {
     exact: true,
     name: "Quick Capture",
@@ -95,10 +98,7 @@ async function skipIfManualDbUnavailable(page: Page) {
   await expect(quickCapture).toBeVisible();
 
   if (!(await quickCapture.isEnabled())) {
-    test.skip(
-      true,
-      "Requires a local authenticated Supabase Browser/Playwright session.",
-    );
+    test.skip(true, reason);
   }
 }
 
@@ -231,13 +231,16 @@ async function clickPortfolioContextButton(page: Page, name: string) {
   await button.press("Enter");
 }
 
-async function openManualPortfolioWithDb(page: Page) {
+async function openManualPortfolioWithDb(
+  page: Page,
+  dbUnavailableReason?: string,
+) {
   await setProfile(page, "manual");
   await applySupabaseAuthState(page);
   await expectNoHydrationErrors(page, async () => {
     await page.goto("/inbox");
   });
-  await skipIfManualDbUnavailable(page);
+  await skipIfManualDbUnavailable(page, dbUnavailableReason);
   await page.goto("/portfolio");
 }
 
@@ -356,6 +359,114 @@ async function createGoalWorkbenchProject(
   await page.waitForLoadState("networkidle");
   await expect(page.getByText("Project erstellt.").first()).toBeVisible();
   await expect(contextPanel.getByText(title).first()).toBeVisible();
+}
+
+async function createManualResourceFromInbox(
+  page: Page,
+  title: string,
+  note: string,
+  dbUnavailableReason?: string,
+) {
+  await page.goto("/inbox");
+  await skipIfManualDbUnavailable(page, dbUnavailableReason);
+  await captureManualInboxItem(page, `${title} capture`, note);
+
+  const activeItem = page.locator('[data-inbox-section="active-item"]');
+  await activeItem
+    .locator('[data-outcome-route="knowledge_resource"]')
+    .click();
+
+  const resourceDraft = activeItem
+    .getByRole("heading", { name: "Resource Draft" })
+    .locator("xpath=ancestor::section[1]");
+
+  await expect(resourceDraft).toBeVisible();
+  await resourceDraft.getByLabel("Titel").fill(title);
+  await resourceDraft.getByLabel("Resource Typ").selectOption("link");
+  await resourceDraft
+    .getByLabel("Kurzfassung")
+    .fill("R1.7.3C Resource relation browser proof resource.");
+  await resourceDraft
+    .getByLabel("URL optional")
+    .fill("https://example.test/life-os-resource-relation-proof");
+  await resourceDraft
+    .getByRole("button", { exact: true, name: "Resource erstellen" })
+    .click();
+  await page.waitForLoadState("networkidle");
+
+  await expect(
+    activeItem.getByRole("heading", { name: "Resource erstellt" }),
+  ).toBeVisible();
+  await page.goto("/resources");
+  await expect(page.getByText(title).first()).toBeVisible();
+}
+
+async function selectedResourceInspector(page: Page) {
+  const inspector = page.locator('[data-resources-section="relation-inspector"]');
+
+  await expect(
+    inspector.getByRole("heading", { name: "Resource Overview" }),
+  ).toBeVisible();
+
+  return inspector;
+}
+
+async function selectResourceByTitle(page: Page, title: string) {
+  await page.goto("/resources");
+  await expect(page.getByText(title).first()).toBeVisible();
+  await page
+    .getByRole("link", { name: new RegExp(`Select resource ${title}`) })
+    .first()
+    .click();
+  await expect(page.locator("#selected-resource-heading")).toHaveText(title);
+}
+
+async function linkSelectedResourceToTarget(
+  page: Page,
+  targetType: "goal" | "project",
+  targetTitle: string,
+) {
+  const inspector = await selectedResourceInspector(page);
+  const form = inspector.locator(
+    'form[aria-label="Resource Beziehung hinzufügen"]',
+  );
+
+  await expect(form).toBeVisible();
+  await form.getByLabel("Zieltyp").selectOption(targetType);
+
+  const targetSelect = form.getByLabel("Ziel");
+  await expect(targetSelect).toBeEnabled();
+
+  const option = targetSelect
+    .locator("option")
+    .filter({ hasText: targetTitle })
+    .first();
+  const targetId = await option.getAttribute("value");
+
+  expect(targetId).toBeTruthy();
+  await targetSelect.selectOption(targetId ?? "");
+  await form.getByRole("button", { name: "Speichern" }).click();
+  await page.waitForLoadState("networkidle");
+
+  await expect(
+    page.getByText(/Beziehung gespeichert|Beziehung besteht bereits/).first(),
+  ).toBeVisible();
+
+  return targetId ?? "";
+}
+
+async function expectSingleResourceRelationCard(
+  page: Page,
+  targetTitle: string,
+  targetId: string,
+) {
+  const inspector = await selectedResourceInspector(page);
+  const cards = inspector
+    .locator('[data-resource-relation-card]')
+    .filter({ hasText: targetTitle });
+
+  await expect(cards).toHaveCount(1);
+  await expect(cards.first()).not.toContainText(targetId);
 }
 
 async function setProfile(page: Page, profile: ProfileId) {
@@ -4623,6 +4734,9 @@ test.describe("Work content states", () => {
 });
 
 test.describe("Resources content states", () => {
+  const resourceRelationDbProofSkipReason =
+    "Manual Supabase auth state unavailable; Resource relation DB proof skipped.";
+
   test("keeps demo resources as the filled knowledge reference", async ({
     page,
   }) => {
@@ -4687,6 +4801,114 @@ test.describe("Resources content states", () => {
     await expect(
       inspector.locator('[data-resource-relation-card]'),
     ).toHaveCount(0);
+  });
+
+  test("Manual Resource to Project Relation Create persists through Resources and Project Workbench", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Manual Supabase auth state unavailable; Resource relation DB proof skipped.",
+    );
+
+    const suffix = Date.now();
+    const projectTitle = `R173C Project Proof ${suffix}`;
+    const resourceTitle = `R173C Resource Project Proof ${suffix}`;
+
+    await openManualPortfolioWithDb(page, resourceRelationDbProofSkipReason);
+    await page.goto("/portfolio?view=projects");
+    await createPortfolioProjectTarget(
+      page,
+      projectTitle,
+      "R1.7.3C Resource relation Project proof target.",
+    );
+    await createManualResourceFromInbox(
+      page,
+      resourceTitle,
+      "Create a real resource for Project relation proof.",
+      resourceRelationDbProofSkipReason,
+    );
+    await selectResourceByTitle(page, resourceTitle);
+
+    const projectId = await linkSelectedResourceToTarget(
+      page,
+      "project",
+      projectTitle,
+    );
+
+    await expectSingleResourceRelationCard(page, projectTitle, projectId);
+    await page.reload();
+    await expectSingleResourceRelationCard(page, projectTitle, projectId);
+
+    await linkSelectedResourceToTarget(page, "project", projectTitle);
+    await expect(
+      page.getByText("Beziehung besteht bereits.").first(),
+    ).toBeVisible();
+    await expectSingleResourceRelationCard(page, projectTitle, projectId);
+
+    await page.goto("/portfolio?view=projects");
+    await page
+      .getByRole("link", { name: new RegExp(projectTitle) })
+      .first()
+      .click();
+
+    const contextPanel = page.locator('[data-portfolio-section="context-panel"]');
+
+    await expect(page.locator("#selected-entity-heading")).toHaveText(
+      projectTitle,
+    );
+    await expect(
+      contextPanel.getByRole("heading", { name: "Resources" }),
+    ).toBeVisible();
+    await expect(contextPanel.getByText(resourceTitle).first()).toBeVisible();
+  });
+
+  test("Manual Resource to Goal Relation Create persists through Resources and Goal Workbench", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Manual Supabase auth state unavailable; Resource relation DB proof skipped.",
+    );
+
+    const suffix = Date.now();
+    const goalTitle = `R173C Goal Proof ${suffix}`;
+    const resourceTitle = `R173C Resource Goal Proof ${suffix}`;
+
+    await openManualPortfolioWithDb(page, resourceRelationDbProofSkipReason);
+    await page.goto("/portfolio?view=goals");
+    await createPortfolioGoalTarget(
+      page,
+      goalTitle,
+      "R1.7.3C Resource relation Goal proof target.",
+    );
+    await createManualResourceFromInbox(
+      page,
+      resourceTitle,
+      "Create a real resource for Goal relation proof.",
+      resourceRelationDbProofSkipReason,
+    );
+    await selectResourceByTitle(page, resourceTitle);
+
+    const goalId = await linkSelectedResourceToTarget(page, "goal", goalTitle);
+
+    await expectSingleResourceRelationCard(page, goalTitle, goalId);
+    await page.reload();
+    await expectSingleResourceRelationCard(page, goalTitle, goalId);
+
+    await page.goto("/portfolio?view=goals");
+    await page
+      .getByRole("link", { name: new RegExp(goalTitle) })
+      .first()
+      .click();
+
+    const contextPanel = page.locator('[data-portfolio-section="context-panel"]');
+
+    await expect(page.locator("#selected-entity-heading")).toHaveText(goalTitle);
+    await expect(
+      contextPanel.getByRole("heading", { name: "Resources" }),
+    ).toBeVisible();
+    await expect(contextPanel.getByText(resourceTitle).first()).toBeVisible();
   });
 
   test("renders empty resources without demo library or KPI leaks", async ({
