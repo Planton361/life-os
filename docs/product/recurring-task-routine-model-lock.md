@@ -358,6 +358,26 @@ Spaeter sinnvoll:
 - `TaskGenerationResult`
 - `TaskGenerationConflict`
 
+## R1.7.5B Schema/Migration
+
+R1.7.5B setzt die Datenbasis fuer Option B lokal um:
+
+- `recurring_task_templates` als nutzerspezifische Template-Tabelle mit `user_id`, `created_at`, `updated_at`, Kontext-FKs, `recurrence_rule`, `starts_on`, `ends_on`, `timezone` und `is_active`.
+- `tasks.generated_from_template_id` und `tasks.instance_date` fuer konkrete generated Task Instances.
+- Idempotenz ueber `user_id + generated_from_template_id + instance_date`.
+- RLS und authenticated Grants fuer `recurring_task_templates`.
+- `updated_at` folgt dem bestehenden `set_updated_at`-Trigger-Pattern.
+
+Nicht Teil von R1.7.5B:
+
+- keine Generation Engine
+- keine UI
+- keine Actions
+- keine Repository-Implementation fuer Templates
+- keine Background Jobs
+- keine Cron Jobs
+- keine Remote-DB
+
 ## Implementation Plan
 
 ### R1.7.5B - Recurring Task Schema Lock/Migration

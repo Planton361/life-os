@@ -387,6 +387,91 @@ export type Database = {
           },
         ]
       }
+      recurring_task_templates: {
+        Row: {
+          area_id: string | null
+          created_at: string
+          description: string | null
+          duration_minutes: number | null
+          ends_on: string | null
+          energy: Database["public"]["Enums"]["task_energy"] | null
+          goal_id: string | null
+          id: string
+          is_active: boolean
+          next_action: string | null
+          priority: Database["public"]["Enums"]["task_priority"] | null
+          project_id: string | null
+          recurrence_rule: Json
+          starts_on: string
+          timezone: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          area_id?: string | null
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number | null
+          ends_on?: string | null
+          energy?: Database["public"]["Enums"]["task_energy"] | null
+          goal_id?: string | null
+          id?: string
+          is_active?: boolean
+          next_action?: string | null
+          priority?: Database["public"]["Enums"]["task_priority"] | null
+          project_id?: string | null
+          recurrence_rule: Json
+          starts_on: string
+          timezone?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          area_id?: string | null
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number | null
+          ends_on?: string | null
+          energy?: Database["public"]["Enums"]["task_energy"] | null
+          goal_id?: string | null
+          id?: string
+          is_active?: boolean
+          next_action?: string | null
+          priority?: Database["public"]["Enums"]["task_priority"] | null
+          project_id?: string | null
+          recurrence_rule?: Json
+          starts_on?: string
+          timezone?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_task_templates_area_id_fkey"
+            columns: ["area_id"]
+            isOneToOne: false
+            referencedRelation: "areas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_task_templates_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_task_templates_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       resource_relations: {
         Row: {
           created_at: string
@@ -489,8 +574,10 @@ export type Database = {
           due_at: string | null
           duration_minutes: number | null
           energy: Database["public"]["Enums"]["task_energy"] | null
+          generated_from_template_id: string | null
           goal_id: string | null
           id: string
+          instance_date: string | null
           planned_date: string | null
           priority: Database["public"]["Enums"]["task_priority"]
           project_id: string | null
@@ -511,8 +598,10 @@ export type Database = {
           due_at?: string | null
           duration_minutes?: number | null
           energy?: Database["public"]["Enums"]["task_energy"] | null
+          generated_from_template_id?: string | null
           goal_id?: string | null
           id?: string
+          instance_date?: string | null
           planned_date?: string | null
           priority?: Database["public"]["Enums"]["task_priority"]
           project_id?: string | null
@@ -533,8 +622,10 @@ export type Database = {
           due_at?: string | null
           duration_minutes?: number | null
           energy?: Database["public"]["Enums"]["task_energy"] | null
+          generated_from_template_id?: string | null
           goal_id?: string | null
           id?: string
+          instance_date?: string | null
           planned_date?: string | null
           priority?: Database["public"]["Enums"]["task_priority"]
           project_id?: string | null
@@ -558,6 +649,13 @@ export type Database = {
             columns: ["carried_from_daily_log_id"]
             isOneToOne: false
             referencedRelation: "daily_logs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_generated_from_template_id_fkey"
+            columns: ["generated_from_template_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_task_templates"
             referencedColumns: ["id"]
           },
           {
@@ -644,8 +742,10 @@ export type Database = {
           due_at: string | null
           duration_minutes: number | null
           energy: Database["public"]["Enums"]["task_energy"] | null
+          generated_from_template_id: string | null
           goal_id: string | null
           id: string
+          instance_date: string | null
           planned_date: string | null
           priority: Database["public"]["Enums"]["task_priority"]
           project_id: string | null

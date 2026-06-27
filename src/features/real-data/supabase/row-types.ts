@@ -20,6 +20,12 @@ export type ResourceRelationRow = TableRow<"resource_relations">;
 export type ResourceRelationInsert = TableInsert<"resource_relations">;
 export type ResourceRelationUpdate = TableUpdate<"resource_relations">;
 
+export type RecurringTaskTemplateRow = TableRow<"recurring_task_templates">;
+export type RecurringTaskTemplateInsert =
+  TableInsert<"recurring_task_templates">;
+export type RecurringTaskTemplateUpdate =
+  TableUpdate<"recurring_task_templates">;
+
 export type TaskRow = TableRow<"tasks">;
 export type TaskInsert = TableInsert<"tasks">;
 export type TaskUpdate = TableUpdate<"tasks">;

@@ -19,6 +19,7 @@ export const realDataTableNames = {
   goals: "goals",
   inboxItems: "inbox_items",
   projects: "projects",
+  recurringTaskTemplates: "recurring_task_templates",
   resourceRelations: "resource_relations",
   resources: "resources",
   tasks: "tasks",

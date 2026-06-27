@@ -353,6 +353,17 @@
 - Migration Gate ist dokumentiert; R1.7.5 baut keine Migration.
 - Keine Implementierung, keine Source-Types, keine Generation Engine, keine Remote-DB-Aktion, keine RLS-/Policy-Aenderung und kein Service-Role-Zugriff in diesem Block.
 
+## R1.7.5B Recurring Task Schema / Local Migration
+
+- Lokale Migration erstellt und angewendet: `recurring_task_templates`.
+- `tasks` um `generated_from_template_id` und `instance_date` erweitert.
+- Idempotenz ist ueber `user_id + generated_from_template_id + instance_date` abgesichert; completed oder archivierte Instanzen werden dadurch nicht still neu erzeugt.
+- `recurring_task_templates` nutzt `user_id`, RLS, authenticated Grants und das bestehende `updated_at`-Trigger-Pattern.
+- Typegen wurde lokal aktualisiert; Row Types, Table Names und ein vorbereitetes Zod-Input-Schema wurden ergaenzt.
+- Keine Generation Engine, keine UI, keine Actions, keine Repository-Implementation, keine Background Jobs, keine Cron Jobs.
+- Keine Remote-DB, kein `supabase link`, kein `supabase db push`, kein Service-Role-Zugriff.
+- Kein Playwright-Lauf erforderlich, weil dieser Block keine UI oder Actions aendert.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.
