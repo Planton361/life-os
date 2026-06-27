@@ -30,6 +30,7 @@ import type {
   GoalWorkbenchViewModel,
   PortfolioDecision,
   PortfolioEntity,
+  PortfolioLinkedResource,
   PortfolioProjectEntity,
   PortfolioTaskEntity,
   PortfolioViewModel,
@@ -671,6 +672,69 @@ function PreparedWorkbenchSection({
   );
 }
 
+function WorkbenchResourceCard({
+  resource,
+}: Readonly<{
+  resource: PortfolioLinkedResource;
+}>) {
+  const meta = [
+    resource.type,
+    resource.source,
+    resource.relationType,
+    resource.createdAt.slice(0, 10),
+  ].filter(Boolean);
+
+  return (
+    <article className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.40)] p-3">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="truncate text-[12px] font-semibold leading-4 text-[var(--text-primary)]">
+            {resource.title}
+          </p>
+          <p className="mt-1 truncate text-[10px] leading-4 text-[var(--text-muted)]">
+            {meta.join(" · ")}
+          </p>
+        </div>
+        <Pill accent="var(--accent-yellow)">Resource</Pill>
+      </div>
+    </article>
+  );
+}
+
+function WorkbenchResourcesSection({
+  resources,
+}: Readonly<{
+  resources: readonly PortfolioLinkedResource[];
+}>) {
+  return (
+    <section aria-labelledby="workbench-resources-heading">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3
+          className="text-[13px] font-semibold text-[var(--text-primary)]"
+          id="workbench-resources-heading"
+        >
+          Resources
+        </h3>
+        <Pill accent="var(--accent-yellow)">{resources.length} total</Pill>
+      </div>
+      <div className="mt-2 grid gap-2">
+        {resources.length > 0 ? (
+          resources.map((resource) => (
+            <WorkbenchResourceCard
+              key={`workbench-resource-${resource.id}-${resource.relationType}`}
+              resource={resource}
+            />
+          ))
+        ) : (
+          <p className="rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.38)] px-3 py-2 text-[11px] leading-4 text-[var(--text-muted)]">
+            Keine verknüpften Resources.
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function WorkbenchFutureScopeNote({
   body,
 }: Readonly<{
@@ -897,6 +961,8 @@ function GoalWorkbench({
           </div>
         </section>
 
+        <WorkbenchResourcesSection resources={goal.linkedResources ?? []} />
+
         <section aria-labelledby="goal-prepared-sections-heading">
           <h3
             className="text-[13px] font-semibold text-[var(--text-primary)]"
@@ -914,17 +980,13 @@ function GoalWorkbench({
               title="Review Cadence"
             />
             <PreparedWorkbenchSection
-              body="Resources folgen später und schreiben hier noch keine Relation."
-              title="Resources"
-            />
-            <PreparedWorkbenchSection
               body="Goal Log folgt mit Review/Execution."
               title="Goal Log"
             />
           </div>
         </section>
 
-        <WorkbenchFutureScopeNote body="Future Scope: Goal Workbench zeigt nur vorhandene Projects und Tasks. Milestones, Review Cadence, Resources und Goal Log schreiben hier noch keine Persistenz." />
+        <WorkbenchFutureScopeNote body="Future Scope: Goal Workbench zeigt nur vorhandene Projects, Tasks und Resource Relations. Milestones, Review Cadence und Goal Log schreiben hier noch keine Persistenz." />
       </div>
     </section>
   );
@@ -1060,6 +1122,8 @@ function ProjectWorkbench({
           </div>
         </section>
 
+        <WorkbenchResourcesSection resources={project.linkedResources ?? []} />
+
         <section aria-labelledby="project-prepared-sections-heading">
           <h3
             className="text-[13px] font-semibold text-[var(--text-primary)]"
@@ -1073,17 +1137,13 @@ function ProjectWorkbench({
               title="Milestones"
             />
             <PreparedWorkbenchSection
-              body="Resources folgen später und schreiben hier noch keine Relation."
-              title="Resources"
-            />
-            <PreparedWorkbenchSection
               body="Project Log folgt mit Review/Execution."
               title="Project Log"
             />
           </div>
         </section>
 
-        <WorkbenchFutureScopeNote body="Future Scope: Project Workbench zeigt nur vorhandene linked Tasks. Milestones, Resources und Project Log schreiben hier noch keine Persistenz." />
+        <WorkbenchFutureScopeNote body="Future Scope: Project Workbench zeigt nur vorhandene linked Tasks und Resource Relations. Milestones und Project Log schreiben hier noch keine Persistenz." />
       </div>
     </section>
   );

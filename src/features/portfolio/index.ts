@@ -13,6 +13,7 @@ export type {
   PortfolioEntityType,
   PortfolioFocusLevel,
   PortfolioGroup,
+  PortfolioLinkedResource,
   PortfolioOption,
   PortfolioPriority,
   PortfolioRelation,

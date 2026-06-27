@@ -6,6 +6,9 @@ export {
 export type {
   RecentLearning,
   RelatedResource,
+  ResourceRelationCreateTarget,
+  ResourceRelationTargetType,
+  ResourceRelationViewModel,
   ResourceProfileId,
   ResourceAction,
   ResourceArea,

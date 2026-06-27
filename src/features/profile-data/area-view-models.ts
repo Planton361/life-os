@@ -40,9 +40,16 @@ import {
 } from "@/features/resources";
 import type {
   ResourceItem,
+  ResourceRelationCreateTarget,
+  ResourceRelationViewModel,
   ResourceReviewQueueItem,
   ResourcesViewModel,
 } from "@/features/resources";
+import {
+  getResourceRelationCreateTargets,
+  resourceRelationToViewModel,
+  resolveResourceRelationTargets,
+} from "@/features/resources/resource-relations-read-model";
 import { resolveContentStateMeta } from "@/features/content-state";
 import {
   createSupabaseResourceRepository,
@@ -2412,13 +2419,83 @@ function manualResourceReviewQueueItem(
 async function getManualResourcesFromSupabase(
   client: SupabaseClientLike,
   userId: string,
-): Promise<ResourceItem[]> {
+): Promise<{
+  relationTargets: ResourceRelationCreateTarget[];
+  resources: ResourceItem[];
+}> {
   const repository = createSupabaseResourceRepository(client);
-  const result = await repository.getResourcesByUser(userId, userId);
+  const [resourceResult, relationResult, relationTargets] = await Promise.all([
+    repository.getResourcesByUser(userId, userId),
+    repository.getResourceRelationsByUser(userId, userId),
+    getResourceRelationCreateTargets(client, userId),
+  ]);
 
-  if (!result.ok) return [];
+  if (!resourceResult.ok) {
+    return {
+      relationTargets,
+      resources: [],
+    };
+  }
 
-  return result.data.map(realResourceToResourceItem);
+  const resourceItems = resourceResult.data.map(realResourceToResourceItem);
+
+  if (!relationResult.ok || relationResult.data.length === 0) {
+    return {
+      relationTargets,
+      resources: resourceItems.map((resource) => ({
+        ...resource,
+        relatedGoals: [],
+        relatedProjects: [],
+        relatedResourceRelations: [],
+        relatedTasks: [],
+        relations: [],
+      })),
+    };
+  }
+
+  const resolvedTargets = await resolveResourceRelationTargets({
+    client,
+    relations: relationResult.data,
+    userId,
+  });
+  const relationViewModels = relationResult.data.map((relation) =>
+    resourceRelationToViewModel(relation, resolvedTargets),
+  );
+  const relationsByResource = new Map<string, ResourceRelationViewModel[]>();
+
+  for (const relation of relationViewModels) {
+    const resourceRelations = relationsByResource.get(relation.resourceId) ?? [];
+    resourceRelations.push(relation);
+    relationsByResource.set(relation.resourceId, resourceRelations);
+  }
+
+  return {
+    relationTargets,
+    resources: resourceItems.map((resource) => {
+      const resourceRelations = relationsByResource.get(resource.id) ?? [];
+
+      return {
+        ...resource,
+        linkedContext:
+          resourceRelations.length > 0
+            ? `${resourceRelations.length} Beziehungen`
+            : resource.linkedContext,
+        relatedGoals: resourceRelations.filter(
+          (relation) => relation.targetType === "goal",
+        ),
+        relatedProjects: resourceRelations.filter(
+          (relation) => relation.targetType === "project",
+        ),
+        relatedResourceRelations: resourceRelations.filter(
+          (relation) => relation.targetType === "resource",
+        ),
+        relatedTasks: resourceRelations.filter(
+          (relation) => relation.targetType === "task",
+        ),
+        relations: resourceRelations,
+      };
+    }),
+  };
 }
 
 export async function getResourcesViewModel(): Promise<
@@ -2438,15 +2515,18 @@ export async function getResourcesViewModel(): Promise<
   );
 
   let manualResources: ResourceItem[] = [];
+  let relationTargets: ResourceRelationCreateTarget[] = [];
 
   if (profileId === "manual") {
     const auth = await createAuthenticatedSupabaseServerClient();
 
     if (auth.ok) {
-      manualResources = await getManualResourcesFromSupabase(
+      const manualResourceData = await getManualResourcesFromSupabase(
         auth.client,
         auth.user.id,
       );
+      manualResources = manualResourceData.resources;
+      relationTargets = manualResourceData.relationTargets;
     }
   }
 
@@ -2460,6 +2540,7 @@ export async function getResourcesViewModel(): Promise<
     aiSuggestions: [],
     clusters: [],
     recentLearnings: [],
+    relationTargets,
     relations: [],
     resources: manualResources,
     reviewQueue,

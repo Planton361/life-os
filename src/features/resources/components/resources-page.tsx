@@ -8,8 +8,9 @@ import {
 } from "@/components/layout/route-page-primitives";
 import { cn } from "@/lib/cn";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
+import { linkResourceToTargetAction } from "@/features/real-data/actions/resource.actions";
 import {
   resourceAreaMeta,
   resourceReviewStateMeta,
@@ -24,6 +25,10 @@ import type {
   ResourceLinkedContextKind,
   ResourceOption,
   ResourceRelation,
+  ResourceDataRelationType,
+  ResourceRelationCreateTarget,
+  ResourceRelationTargetType,
+  ResourceRelationViewModel,
   ResourceRelationType,
   ResourceReviewQueueItem,
   ResourceSummaryStat,
@@ -46,7 +51,7 @@ const WIDE_DESKTOP_LIBRARY_LIMIT = 8;
 const DESKTOP_RECENT_LEARNINGS_LIMIT = 3;
 const WIDE_DESKTOP_RECENT_LEARNINGS_LIMIT = 4;
 
-const relationTypeLabels: Record<ResourceRelationType, string> = {
+const graphRelationTypeLabels: Record<ResourceRelationType, string> = {
   related_to: "related to",
   derived_from: "derived from",
   supports: "supports",
@@ -57,6 +62,32 @@ const relationTypeLabels: Record<ResourceRelationType, string> = {
   source_for: "source for",
   follow_up_of: "follow-up of",
   same_topic: "same topic",
+};
+
+const dataRelationTypeLabels: Record<ResourceDataRelationType, string> = {
+  context: "Context",
+  decision: "Decision",
+  evidence: "Evidence",
+  related: "Related",
+  source: "Source",
+  supports: "Supports",
+};
+
+const relationTargetTypeLabels: Record<ResourceRelationTargetType, string> = {
+  goal: "Goal",
+  project: "Project",
+  resource: "Resource",
+  task: "Task",
+};
+
+const relationCreateMessages: Record<string, string> = {
+  blocked: "Melde dich im Manual-Profil an, um Beziehungen zu speichern.",
+  existing: "Beziehung besteht bereits.",
+  invalid: "Beziehung konnte nicht gespeichert werden.",
+  missing_resource: "Die Resource konnte nicht bestätigt werden.",
+  missing_target: "Das Ziel konnte nicht bestätigt werden.",
+  saved: "Beziehung gespeichert.",
+  unsupported: "Dieser Zieltyp ist für Resource Relations nicht freigegeben.",
 };
 
 const contextKindLabels: Record<ResourceLinkedContextKind, string> = {
@@ -177,7 +208,8 @@ function getResourceConnections(
 
 function connectionLabel(connection: ResourceConnection) {
   const label =
-    connection.relation.label ?? relationTypeLabels[connection.relation.type];
+    connection.relation.label ??
+    graphRelationTypeLabels[connection.relation.type];
 
   return connection.direction === "outgoing" ? label : `incoming ${label}`;
 }
@@ -794,19 +826,216 @@ function ConnectionList({
   );
 }
 
+function resourceRelationMeta(relation: ResourceRelationViewModel) {
+  return [
+    relationTargetTypeLabels[relation.targetType],
+    relation.targetStatus,
+    relation.targetProgress !== null && relation.targetProgress !== undefined
+      ? `${relation.targetProgress}%`
+      : null,
+    dataRelationTypeLabels[relation.relationType],
+  ].filter(Boolean);
+}
+
+function ResourceTargetRelationList({
+  emptyText,
+  relations,
+  title,
+}: Readonly<{
+  emptyText: string;
+  relations: readonly ResourceRelationViewModel[];
+  title: string;
+}>) {
+  return (
+    <section>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-[13px] font-semibold text-[var(--text-primary)] xl:text-[12px]">
+          {title}
+        </h3>
+        <Pill quiet>{relations.length} total</Pill>
+      </div>
+      <div className="mt-2 grid gap-1.5 xl:mt-1.5 xl:gap-1">
+        {relations.length > 0 ? (
+          relations.map((relation) => (
+            <article
+              className="rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.40)] px-3 py-2 xl:px-2 xl:py-1.5"
+              data-resource-relation-card
+              key={relation.id}
+            >
+              <div className="flex min-w-0 items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-[12px] font-semibold leading-4 text-[var(--text-primary)] xl:text-[11px] xl:leading-3">
+                    {relation.targetTitle}
+                  </p>
+                  <p className="mt-1 truncate text-[10px] leading-3 text-[var(--text-muted)]">
+                    {resourceRelationMeta(relation).join(" · ")}
+                  </p>
+                </div>
+                {relation.targetMissing ? (
+                  <Pill accent="var(--accent-red)">Nicht mehr verfügbar</Pill>
+                ) : null}
+              </div>
+            </article>
+          ))
+        ) : (
+          <p className="rounded-[10px] border border-dashed border-[var(--border-subtle)] bg-[rgba(11,17,28,.30)] px-3 py-2 text-[10px] leading-4 text-[var(--text-muted)]">
+            {emptyText}
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function relationTargetTypesWithCounts(
+  targets: readonly ResourceRelationCreateTarget[],
+  currentResourceId: string,
+) {
+  const entries = (Object.keys(relationTargetTypeLabels) as ResourceRelationTargetType[])
+    .map((type) => {
+      const count = targets.filter(
+        (target) =>
+          target.type === type &&
+          !(target.type === "resource" && target.id === currentResourceId),
+      ).length;
+
+      return { count, type };
+    });
+
+  return entries;
+}
+
+function ResourceRelationCreateForm({
+  createState,
+  relationTargets,
+  resource,
+}: Readonly<{
+  createState: string | null;
+  relationTargets: readonly ResourceRelationCreateTarget[];
+  resource: ResourceItem;
+}>) {
+  const [targetType, setTargetType] =
+    useState<ResourceRelationTargetType>("project");
+  const typeCounts = relationTargetTypesWithCounts(relationTargets, resource.id);
+  const fallbackType = typeCounts.find((entry) => entry.count > 0)?.type;
+  const selectedTargetType =
+    typeCounts.some((entry) => entry.type === targetType && entry.count > 0)
+      ? targetType
+      : (fallbackType ?? targetType);
+  const targets = relationTargets.filter(
+    (target) =>
+      target.type === selectedTargetType &&
+      !(target.type === "resource" && target.id === resource.id),
+  );
+  const disabled = targets.length === 0;
+  const message = createState ? relationCreateMessages[createState] : null;
+
+  return (
+    <section aria-labelledby="resource-relation-create-heading">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3
+          className="text-[13px] font-semibold text-[var(--text-primary)] xl:text-[12px]"
+          id="resource-relation-create-heading"
+        >
+          Beziehung hinzufügen
+        </h3>
+        <Pill accent="var(--accent-cyan)">Manual</Pill>
+      </div>
+      <form
+        action={linkResourceToTargetAction}
+        aria-label="Resource Beziehung hinzufügen"
+        className="mt-2 grid gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.40)] p-3 xl:p-2"
+      >
+        <input name="resourceId" type="hidden" value={resource.id} />
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+          Zieltyp
+          <select
+            className="min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.78)] px-2 text-[11px] normal-case text-[var(--text-primary)] outline-none focus:border-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-55"
+            name="targetType"
+            onChange={(event) =>
+              setTargetType(event.currentTarget.value as ResourceRelationTargetType)
+            }
+            value={selectedTargetType}
+          >
+            {typeCounts.map((entry) => (
+              <option
+                disabled={entry.count === 0}
+                key={entry.type}
+                value={entry.type}
+              >
+                {relationTargetTypeLabels[entry.type]} ({entry.count})
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+          Ziel
+          <select
+            className="min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.78)] px-2 text-[11px] normal-case text-[var(--text-primary)] outline-none focus:border-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-55"
+            disabled={disabled}
+            name="targetId"
+            required
+          >
+            {targets.map((target) => (
+              <option key={`${target.type}-${target.id}`} value={target.id}>
+                {target.title} · {target.meta}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+          Relation
+          <select
+            className="min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.78)] px-2 text-[11px] normal-case text-[var(--text-primary)] outline-none focus:border-[var(--focus-ring)]"
+            defaultValue="related"
+            name="relationType"
+          >
+            {Object.entries(dataRelationTypeLabels).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button
+          className="min-h-8 rounded-full border border-[rgba(95,200,215,.34)] bg-[rgba(95,200,215,.14)] px-3 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(95,200,215,.48)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:border-[var(--border-subtle)] disabled:bg-[rgba(18,28,43,.34)] disabled:text-[var(--text-muted)]"
+          disabled={disabled}
+          type="submit"
+        >
+          Speichern
+        </button>
+        {disabled ? (
+          <p className="text-[10px] leading-4 text-[var(--text-muted)]">
+            Keine Ziele verfügbar.
+          </p>
+        ) : null}
+        {message ? (
+          <p className="text-[10px] leading-4 text-[var(--text-secondary)]">
+            {message}
+          </p>
+        ) : null}
+      </form>
+    </section>
+  );
+}
+
 function ResourceRelationInspector({
   clusters,
   contentState,
+  createState,
   makeHref,
   profileId,
+  relationTargets,
   resource,
   resources,
   relations,
 }: Readonly<{
   clusters: ResourceCluster[];
   contentState: ContentStateMeta;
+  createState: string | null;
   makeHref: (updates: ResourceHrefUpdates) => string;
   profileId: ResourcesViewModel["profileId"];
+  relationTargets: readonly ResourceRelationCreateTarget[];
   resource: ResourceItem;
   resources: ResourceItem[];
   relations: ResourceRelation[];
@@ -846,6 +1075,10 @@ function ResourceRelationInspector({
       items: resource.linkedContexts.filter((context) => context.kind === kind),
     }))
     .filter((group) => group.items.length > 0);
+  const relatedProjects = resource.relatedProjects ?? [];
+  const relatedGoals = resource.relatedGoals ?? [];
+  const relatedTasks = resource.relatedTasks ?? [];
+  const relatedResourceRelations = resource.relatedResourceRelations ?? [];
 
   return (
     <aside
@@ -875,20 +1108,28 @@ function ResourceRelationInspector({
       </div>
 
       <div className="grid gap-3 p-3 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:p-2">
-        <div className="grid gap-2 sm:grid-cols-4 xl:gap-1.5">
-          <FieldCard accent={type.accent} label="Type" value={type.label} />
-          <FieldCard accent={area.accent} label="Area" value={area.label} />
-          <FieldCard
-            accent={review.accent}
-            label="Review"
-            value={review.label}
-          />
-          <FieldCard
-            accent={status.accent}
-            label="Reusable"
-            value={status.label}
-          />
-        </div>
+        <section aria-labelledby="resource-overview-heading">
+          <h3
+            className="text-[13px] font-semibold text-[var(--text-primary)] xl:text-[12px]"
+            id="resource-overview-heading"
+          >
+            Resource Overview
+          </h3>
+          <div className="mt-2 grid gap-2 sm:grid-cols-4 xl:gap-1.5">
+            <FieldCard accent={type.accent} label="Type" value={type.label} />
+            <FieldCard accent={area.accent} label="Area" value={area.label} />
+            <FieldCard
+              accent={review.accent}
+              label="Review"
+              value={review.label}
+            />
+            <FieldCard
+              accent={status.accent}
+              label="Reusable"
+              value={status.label}
+            />
+          </div>
+        </section>
 
         <div className="grid gap-2 xl:grid-cols-2">
           <DetailBlock expanded label="Short Summary" value={resource.summary} />
@@ -933,30 +1174,73 @@ function ResourceRelationInspector({
           </div>
         </section>
 
-        <ConnectionList
-          connections={relatedConnections}
-          emptyText="No direct related-resource edge is in the current mock neighborhood."
-          makeHref={makeHref}
-          title="Related Resources"
-        />
-        <ConnectionList
-          connections={sourceChainConnections}
-          emptyText="No source chain edge has been modeled for this resource yet."
-          makeHref={makeHref}
-          title="Source Chain"
-        />
-        <ConnectionList
-          connections={relatedDecisions}
-          emptyText="No related decision note is connected to this resource."
-          makeHref={makeHref}
-          title="Related Decisions"
-        />
-        <ConnectionList
-          connections={derivedResources}
-          emptyText="No derived prompt, learning or decision is connected yet."
-          makeHref={makeHref}
-          title="Derived Resources"
-        />
+        <section aria-labelledby="resource-relations-heading">
+          <h3
+            className="text-[13px] font-semibold text-[var(--text-primary)] xl:text-[12px]"
+            id="resource-relations-heading"
+          >
+            Beziehungen
+          </h3>
+          <div className="mt-2 grid gap-2">
+            <ResourceTargetRelationList
+              emptyText="Keine verknüpften Projects."
+              relations={relatedProjects}
+              title="Verknüpfte Projects"
+            />
+            <ResourceTargetRelationList
+              emptyText="Keine verknüpften Goals."
+              relations={relatedGoals}
+              title="Verknüpfte Goals"
+            />
+            <ResourceTargetRelationList
+              emptyText="Keine verknüpften Tasks."
+              relations={relatedTasks}
+              title="Verknüpfte Tasks"
+            />
+            <ResourceTargetRelationList
+              emptyText="Keine verknüpften Resources."
+              relations={relatedResourceRelations}
+              title="Verknüpfte Resources"
+            />
+          </div>
+        </section>
+
+        {profileId === "manual" ? (
+          <ResourceRelationCreateForm
+            createState={createState}
+            relationTargets={relationTargets}
+            resource={resource}
+          />
+        ) : null}
+
+        {profileId === "demo" ? (
+          <>
+            <ConnectionList
+              connections={relatedConnections}
+              emptyText="No direct related-resource edge is in the current mock neighborhood."
+              makeHref={makeHref}
+              title="Related Resources"
+            />
+            <ConnectionList
+              connections={sourceChainConnections}
+              emptyText="No source chain edge has been modeled for this resource yet."
+              makeHref={makeHref}
+              title="Source Chain"
+            />
+            <ConnectionList
+              connections={relatedDecisions}
+              emptyText="No related decision note is connected to this resource."
+              makeHref={makeHref}
+              title="Related Decisions"
+            />
+            <ConnectionList
+              connections={derivedResources}
+              emptyText="No derived prompt, learning or decision is connected yet."
+              makeHref={makeHref}
+              title="Derived Resources"
+            />
+          </>
+        ) : null}
 
         <section aria-labelledby="resource-actions-heading">
           <h3
@@ -1669,6 +1953,7 @@ export function ResourcesPage({
   const searchParams = useSearchParams();
   const activeView = normalizeResourceView(searchParams.get("view"));
   const selectedResourceId = searchParams.get("selected");
+  const relationCreateState = searchParams.get("relationCreate");
   const selectedResource = useMemo(
     () =>
       viewModel.resources.find((resource) => resource.id === selectedResourceId) ??
@@ -1771,8 +2056,10 @@ export function ResourcesPage({
             <ResourceRelationInspector
               clusters={viewModel.clusters}
               contentState={viewModel.contentStates.relationInspector}
+              createState={relationCreateState}
               makeHref={makeHref}
               profileId={viewModel.profileId}
+              relationTargets={viewModel.relationTargets}
               relations={viewModel.relations}
               resource={selectedResource}
               resources={viewModel.resources}

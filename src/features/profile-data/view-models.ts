@@ -50,12 +50,14 @@ import {
   type Goal as RealDataGoal,
   type InboxItem,
   type Project as RealDataProject,
+  type Resource as RealDataResource,
   type Task as RealDataTask,
 } from "@/features/real-data";
 import {
   createSupabaseGoalRepository,
   createSupabaseInboxRepository,
   createSupabaseProjectRepository,
+  createSupabaseResourceRepository,
   createSupabaseTaskRepository,
 } from "@/features/real-data/supabase";
 import {
@@ -109,6 +111,7 @@ import type {
   PortfolioDecision,
   PortfolioEntity,
   PortfolioFocusLevel,
+  PortfolioLinkedResource,
   PortfolioPriority,
   PortfolioStatus,
   PortfolioViewModel,
@@ -553,6 +556,7 @@ function relation(label: string, value?: string) {
 type PortfolioRelationLabelLookups = {
   goalTitles: ReadonlyMap<string, string>;
   projectTitles: ReadonlyMap<string, string>;
+  resourceLinksByTarget: ReadonlyMap<string, readonly PortfolioLinkedResource[]>;
   skillTitles: ReadonlyMap<string, string>;
 };
 
@@ -572,6 +576,7 @@ function portfolioRelationLabelLookups(
       new Map(
         collection.projects.map((project) => [project.id, project.title]),
       ),
+    resourceLinksByTarget: new Map(),
     skillTitles: new Map(
       collection.skills.map((skill) => [skill.id, skill.title]),
     ),
@@ -754,6 +759,8 @@ function projectToPortfolioEntity(
     decisions,
     sourceLinks: [{ label: "Project", href: `/projects/${project.id}` }],
     noteSnippet: project.risk ?? project.description,
+    linkedResources:
+      lookups.resourceLinksByTarget.get(`project:${project.id}`) ?? [],
   };
 }
 
@@ -763,7 +770,11 @@ function goalPortfolioStatus(goal: LifeGoal): PortfolioStatus {
   return "planned";
 }
 
-function goalToPortfolioEntity(goal: LifeGoal, index: number): PortfolioEntity {
+function goalToPortfolioEntity(
+  goal: LifeGoal,
+  index: number,
+  lookups: PortfolioRelationLabelLookups,
+): PortfolioEntity {
   return {
     id: goal.id,
     type: "goal",
@@ -789,6 +800,7 @@ function goalToPortfolioEntity(goal: LifeGoal, index: number): PortfolioEntity {
     decisions: [],
     sourceLinks: [{ label: "Goal", href: `/goals/${goal.id}` }],
     noteSnippet: goal.why,
+    linkedResources: lookups.resourceLinksByTarget.get(`goal:${goal.id}`) ?? [],
   };
 }
 
@@ -842,7 +854,9 @@ function collectionToPortfolioEntities(
     ...collection.projects.map((project, index) =>
       projectToPortfolioEntity(project, index, lookups),
     ),
-    ...collection.goals.map(goalToPortfolioEntity),
+    ...collection.goals.map((goal, index) =>
+      goalToPortfolioEntity(goal, index, lookups),
+    ),
     ...collection.skills.map(skillToPortfolioEntity),
   ];
 }
@@ -1885,6 +1899,53 @@ function titleMapFromRows(rows: readonly { id: string; title: string }[]) {
   return new Map(rows.map((row) => [row.id, row.title]));
 }
 
+function portfolioResourceSourceLabel(resource: RealDataResource) {
+  if (resource.source) return resource.source;
+  if (resource.url) return "URL";
+  return null;
+}
+
+async function getManualPortfolioResourceLinks(
+  client: SupabaseClientLike,
+  userId: string,
+): Promise<ReadonlyMap<string, readonly PortfolioLinkedResource[]>> {
+  const repository = createSupabaseResourceRepository(client);
+  const [resourceResult, relationResult] = await Promise.all([
+    repository.getResourcesByUser(userId, userId),
+    repository.getResourceRelationsByUser(userId, userId),
+  ]);
+
+  if (!resourceResult.ok || !relationResult.ok) return new Map();
+
+  const resourcesById = new Map(
+    resourceResult.data.map((resource) => [resource.id, resource]),
+  );
+  const linksByTarget = new Map<string, PortfolioLinkedResource[]>();
+
+  for (const relation of relationResult.data) {
+    if (relation.targetType !== "project" && relation.targetType !== "goal") {
+      continue;
+    }
+
+    const resource = resourcesById.get(relation.resourceId);
+    if (!resource) continue;
+
+    const targetKey = `${relation.targetType}:${relation.targetId}`;
+    const links = linksByTarget.get(targetKey) ?? [];
+    links.push({
+      createdAt: relation.createdAt,
+      id: resource.id,
+      relationType: relation.relationType,
+      source: portfolioResourceSourceLabel(resource),
+      title: resource.title,
+      type: resource.type,
+    });
+    linksByTarget.set(targetKey, links);
+  }
+
+  return linksByTarget;
+}
+
 async function getManualProjectGoalTargetsFromSupabase(
   client: SupabaseClientLike,
   userId: string,
@@ -1941,6 +2002,10 @@ async function getManualPortfolioRelationLabelLookups(
           error: null,
         } as SupabaseQueryResult<readonly PortfolioRelationGoalRow[]>),
   ]);
+  const resourceLinksByTarget = await getManualPortfolioResourceLinks(
+    client,
+    userId,
+  );
 
   return {
     goalTitles: goalResult.error
@@ -1949,6 +2014,7 @@ async function getManualPortfolioRelationLabelLookups(
     projectTitles: projectResult.error
       ? new Map()
       : titleMapFromRows(projectResult.data ?? []),
+    resourceLinksByTarget,
     skillTitles: new Map(),
   };
 }

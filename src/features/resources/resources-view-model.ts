@@ -1261,6 +1261,7 @@ export function getResourcesViewModel(
     },
     summaryStats,
     viewOptions,
+    relationTargets: [],
     typeOptions,
     filterOptions,
     mapScopes,

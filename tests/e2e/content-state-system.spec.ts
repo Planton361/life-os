@@ -3629,11 +3629,14 @@ test.describe("Portfolio content states", () => {
       contextPanel.getByRole("heading", { name: "Resources" }),
     ).toBeVisible();
     await expect(
+      contextPanel.getByText("Keine verknüpften Resources.").first(),
+    ).toBeVisible();
+    await expect(
       contextPanel.getByRole("heading", { name: "Project Log" }),
     ).toBeVisible();
     await expect(
       projectPreparedSections.getByText("Vorbereitet", { exact: true }),
-    ).toHaveCount(3);
+    ).toHaveCount(2);
     await expect(
       contextPanel.getByText("Future Scope: Project Workbench"),
     ).toBeVisible();
@@ -3702,11 +3705,14 @@ test.describe("Portfolio content states", () => {
       contextPanel.getByRole("heading", { name: "Resources" }),
     ).toBeVisible();
     await expect(
+      contextPanel.getByText("Keine verknüpften Resources.").first(),
+    ).toBeVisible();
+    await expect(
       contextPanel.getByRole("heading", { name: "Goal Log" }),
     ).toBeVisible();
     await expect(
       goalPreparedSections.getByText("Vorbereitet", { exact: true }),
-    ).toHaveCount(4);
+    ).toHaveCount(3);
     await expect(
       contextPanel.getByText("Future Scope: Goal Workbench"),
     ).toBeVisible();
@@ -4648,6 +4654,41 @@ test.describe("Resources content states", () => {
     ).toBeVisible();
   });
 
+  test("Resource Relations inspector exposes real relation sections without UUID labels", async ({
+    page,
+  }) => {
+    await setProfile(page, "demo");
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/resources");
+    });
+
+    const inspector = page.locator(
+      '[data-resources-section="relation-inspector"]',
+    );
+
+    await expect(
+      inspector.getByRole("heading", { name: "Resource Overview" }),
+    ).toBeVisible();
+    await expect(
+      inspector.getByRole("heading", { name: "Beziehungen" }),
+    ).toBeVisible();
+    await expect(
+      inspector.getByRole("heading", { name: "Verknüpfte Projects" }),
+    ).toBeVisible();
+    await expect(
+      inspector.getByRole("heading", { name: "Verknüpfte Goals" }),
+    ).toBeVisible();
+    await expect(
+      inspector.getByRole("heading", { name: "Verknüpfte Tasks" }),
+    ).toBeVisible();
+    await expect(
+      inspector.getByRole("heading", { name: "Verknüpfte Resources" }),
+    ).toBeVisible();
+    await expect(
+      inspector.locator('[data-resource-relation-card]'),
+    ).toHaveCount(0);
+  });
+
   test("renders empty resources without demo library or KPI leaks", async ({
     page,
   }) => {
@@ -4743,6 +4784,21 @@ test.describe("Resources content states", () => {
     await expect(
       page.getByText("Keine Ressource ausgewählt").first(),
     ).toBeVisible();
+    await expect(page.locator('[data-resource-relation-card]')).toHaveCount(0);
+  });
+
+  test("Manual or empty resources do not render fake relation cards", async ({
+    page,
+  }) => {
+    for (const profile of ["empty", "manual"] as const) {
+      await setProfile(page, profile);
+      await expectNoHydrationErrors(page, async () => {
+        await page.goto("/resources");
+      });
+
+      await expectNoMainStrings(page, resourcesBlockedDemoStrings, "resources");
+      await expect(page.locator('[data-resource-relation-card]')).toHaveCount(0);
+    }
   });
 });
 

@@ -62,6 +62,15 @@ export type PortfolioRelation = {
   value: string;
 };
 
+export type PortfolioLinkedResource = {
+  id: string;
+  title: string;
+  type: string;
+  source?: string | null;
+  relationType: string;
+  createdAt: string;
+};
+
 export type PortfolioDecision = {
   title: string;
   detail: string;
@@ -182,6 +191,7 @@ export type PortfolioEntity = {
   noteSnippet: string;
   goalId?: string;
   projectId?: string;
+  linkedResources?: readonly PortfolioLinkedResource[];
   taskLifecycle?: PortfolioTaskLifecycle;
   skillContext?: PortfolioSkillContext;
 };

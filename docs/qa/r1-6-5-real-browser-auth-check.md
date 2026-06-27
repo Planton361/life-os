@@ -269,6 +269,19 @@
 - Context Panel Scroll wurde fokussiert geprueft: Create Controls und untere Prepared Sections bleiben erreichbar.
 - Keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB-Aktion und kein Service-Role-Zugriff.
 
+## R1.7.3B Resource Relations UI Binding
+
+- Resource Inspector liest echte Resource Relations aus `resource_relations`, wenn Manual Auth verfuegbar ist.
+- Target Labels werden fuer Project, Goal, Task und Resource aufgeloest; UUIDs duerfen nicht als primaere Labels erscheinen.
+- Fehlende Targets zeigen `Nicht mehr verfügbar`.
+- Relation Create ist im Resource Inspector als kompakter Manual-Flow angebunden und nutzt serverseitige Auth plus `ResourceRepository.linkResource`.
+- Project Workbench und Goal Workbench zeigen echte verknuepfte Resources oder `Keine verknüpften Resources.`.
+- Demo bleibt Fixture; Empty und Manual ohne Daten zeigen keine Fake Relations.
+- Keine Graph-Library, Node Map, AI-Linking-Automation, Embeddings, Migration, Remote-DB oder RLS-/Policy-Aenderung eingefuehrt.
+- Fokussierter lokaler Lauf:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Resources|Resource Relations|Project Workbench|Goal Workbench|Portfolio|Manual"`
+- Ergebnis: 29 passed, 31 skipped. Resource Relations Strukturtests, Project Workbench Resources Empty State und Goal Workbench Resources Empty State sind gruen; breite DB-Persistenztests bleiben auth-/cleanup-gated und skippen.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.

@@ -57,9 +57,39 @@ export type ResourceRelationType =
   | "follow_up_of"
   | "same_topic";
 
+export type ResourceRelationTargetType = "project" | "goal" | "task" | "resource";
+
+export type ResourceDataRelationType =
+  | "source"
+  | "context"
+  | "supports"
+  | "evidence"
+  | "decision"
+  | "related";
+
 export type RelatedResource = {
   title: string;
   relation: string;
+};
+
+export type ResourceRelationViewModel = {
+  id: string;
+  resourceId: string;
+  targetType: ResourceRelationTargetType;
+  targetId: string;
+  targetTitle: string;
+  targetStatus?: string | null;
+  targetProgress?: number | null;
+  targetMissing: boolean;
+  relationType: ResourceDataRelationType;
+  createdAt: string;
+};
+
+export type ResourceRelationCreateTarget = {
+  id: string;
+  type: ResourceRelationTargetType;
+  title: string;
+  meta: string;
 };
 
 export type ResourceLinkedContextKind =
@@ -98,6 +128,11 @@ export type ResourceItem = {
   keyLearning: string;
   nextUse: string;
   relatedResources: RelatedResource[];
+  relations?: ResourceRelationViewModel[];
+  relatedProjects?: ResourceRelationViewModel[];
+  relatedGoals?: ResourceRelationViewModel[];
+  relatedTasks?: ResourceRelationViewModel[];
+  relatedResourceRelations?: ResourceRelationViewModel[];
   actions: ResourceAction[];
 };
 
@@ -204,6 +239,7 @@ export type ResourcesViewModel = {
   };
   summaryStats: ResourceSummaryStat[];
   viewOptions: ResourceOption<ResourceViewMode>[];
+  relationTargets: ResourceRelationCreateTarget[];
   typeOptions: ResourceOption<ResourceType | "all">[];
   filterOptions: ResourceOption<string>[];
   mapScopes: ResourceOption<string>[];
