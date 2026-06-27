@@ -1,6 +1,24 @@
-import type { CreateResourceInput } from "../../schemas";
-import type { Resource } from "../../domain";
-import type { ResourceInsert, ResourceRow } from "../row-types";
+import type { CreateResourceInput, LinkResourceInput } from "../../schemas";
+import {
+  supportedResourceRelationTargetTypes,
+  type Resource,
+  type ResourceRelation,
+  type SupportedResourceRelationTargetType,
+} from "../../domain";
+import type {
+  ResourceInsert,
+  ResourceRelationInsert,
+  ResourceRelationRow,
+  ResourceRow,
+} from "../row-types";
+
+function isSupportedResourceRelationTargetType(
+  value: string,
+): value is SupportedResourceRelationTargetType {
+  return supportedResourceRelationTargetTypes.includes(
+    value as SupportedResourceRelationTargetType,
+  );
+}
 
 export function mapResourceRowToDomain(row: ResourceRow): Resource {
   return {
@@ -44,4 +62,38 @@ export function mapCreateResourceInputToInsert(
   if (input.url !== undefined) insert.url = input.url;
 
   return insert;
+}
+
+export function mapResourceRelationRowToDomain(
+  row: ResourceRelationRow,
+): ResourceRelation {
+  if (!isSupportedResourceRelationTargetType(row.target_type)) {
+    throw new Error("Unsupported resource relation target type.");
+  }
+
+  return {
+    archivedAt: null,
+    createdAt: row.created_at,
+    id: row.id,
+    profileId: row.user_id,
+    relationType: row.relation_type,
+    resourceId: row.resource_id,
+    targetId: row.target_id,
+    targetType: row.target_type,
+    updatedAt: row.created_at,
+    userId: row.user_id,
+  };
+}
+
+export function mapLinkResourceInputToInsert(
+  input: LinkResourceInput,
+  userId: string,
+): ResourceRelationInsert {
+  return {
+    relation_type: input.relationType,
+    resource_id: input.resourceId,
+    target_id: input.targetId,
+    target_type: input.targetType,
+    user_id: userId,
+  };
 }

@@ -1,9 +1,9 @@
 import {
   privacyClasses,
-  resourceRelationTargetTypes,
   resourceRelationTypes,
   resourceStatuses,
   resourceTypes,
+  supportedResourceRelationTargetTypes,
 } from "../domain/resource";
 import {
   optionalBooleanSchema,
@@ -15,7 +15,21 @@ import {
 } from "./schema-contract";
 
 const requiredIdSchema = requiredTrimmedStringSchema();
+const requiredUuidSchema = z.string().trim().uuid();
 const titleSchema = requiredTrimmedStringSchema(2);
+const optionalResourceRelationTypeSchema = z
+  .preprocess(
+    (value) => {
+      if (value === null) return undefined;
+      if (typeof value === "string" && value.trim().length === 0) {
+        return undefined;
+      }
+
+      return value;
+    },
+    z.enum(resourceRelationTypes).optional(),
+  )
+  .default("related");
 
 export const createResourceInputSchema = z.object({
   areaId: optionalTrimmedStringSchema,
@@ -34,13 +48,20 @@ export const createResourceInputSchema = z.object({
 
 export type CreateResourceInput = z.infer<typeof createResourceInputSchema>;
 
-export const linkResourceInputSchema = z.object({
-  profileId: requiredIdSchema,
-  relationType: requiredEnumSchema(resourceRelationTypes),
-  resourceId: requiredIdSchema,
-  targetId: requiredIdSchema,
-  targetType: requiredEnumSchema(resourceRelationTargetTypes),
-  userId: requiredIdSchema,
+export const linkResourceToTargetInputSchema = z.object({
+  profileId: requiredUuidSchema,
+  relationType: optionalResourceRelationTypeSchema,
+  resourceId: requiredUuidSchema,
+  targetId: requiredUuidSchema,
+  targetType: requiredEnumSchema(supportedResourceRelationTargetTypes),
+});
+
+export type LinkResourceToTargetInput = z.infer<
+  typeof linkResourceToTargetInputSchema
+>;
+
+export const linkResourceInputSchema = linkResourceToTargetInputSchema.extend({
+  userId: requiredUuidSchema,
 });
 
 export type LinkResourceInput = z.infer<typeof linkResourceInputSchema>;

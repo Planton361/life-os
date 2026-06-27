@@ -19,6 +19,7 @@ export const realDataTableNames = {
   goals: "goals",
   inboxItems: "inbox_items",
   projects: "projects",
+  resourceRelations: "resource_relations",
   resources: "resources",
   tasks: "tasks",
 } as const satisfies Record<string, PublicTableName>;

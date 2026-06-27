@@ -45,6 +45,13 @@ export const resourceRelationTargetTypes = [
   "area",
 ] as const;
 
+export const supportedResourceRelationTargetTypes = [
+  "project",
+  "goal",
+  "task",
+  "resource",
+] as const;
+
 export const resourceRelationTypes = [
   "source",
   "context",
@@ -59,6 +66,8 @@ export type ResourceStatus = (typeof resourceStatuses)[number];
 export type PrivacyClass = (typeof privacyClasses)[number];
 export type ResourceRelationTargetType =
   (typeof resourceRelationTargetTypes)[number];
+export type SupportedResourceRelationTargetType =
+  (typeof supportedResourceRelationTargetTypes)[number];
 export type ResourceRelationType = (typeof resourceRelationTypes)[number];
 
 export type Resource = UserScopedEntity & {
@@ -80,7 +89,7 @@ export type ResourceRelation = UserScopedEntity & {
   id: ResourceRelationId;
   profileId: ProfileId;
   resourceId: ResourceId;
-  targetType: ResourceRelationTargetType;
+  targetType: SupportedResourceRelationTargetType;
   targetId: EntityId;
   relationType: ResourceRelationType;
 };

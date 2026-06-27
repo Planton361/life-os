@@ -16,6 +16,10 @@ export type ResourceRow = TableRow<"resources">;
 export type ResourceInsert = TableInsert<"resources">;
 export type ResourceUpdate = TableUpdate<"resources">;
 
+export type ResourceRelationRow = TableRow<"resource_relations">;
+export type ResourceRelationInsert = TableInsert<"resource_relations">;
+export type ResourceRelationUpdate = TableUpdate<"resource_relations">;
+
 export type TaskRow = TableRow<"tasks">;
 export type TaskInsert = TableInsert<"tasks">;
 export type TaskUpdate = TableUpdate<"tasks">;

@@ -10,6 +10,8 @@ import type {
   Project,
   Resource,
   ResourceRelation,
+  ResourceId,
+  SupportedResourceRelationTargetType,
   Task,
   UserId,
 } from "../domain";
@@ -161,6 +163,21 @@ export interface DailyLogRepository {
 
 export interface ResourceRepository {
   createResource(input: CreateResourceInput): Promise<RepositoryResult<Resource>>;
+  getResourceRelationsByUser(
+    userId: UserId,
+    profileId: ProfileId,
+  ): Promise<RepositoryListResult<ResourceRelation>>;
+  getResourceRelationsForResource(
+    userId: UserId,
+    profileId: ProfileId,
+    resourceId: ResourceId,
+  ): Promise<RepositoryListResult<ResourceRelation>>;
+  getResourceRelationsForTarget(
+    userId: UserId,
+    profileId: ProfileId,
+    targetType: SupportedResourceRelationTargetType,
+    targetId: string,
+  ): Promise<RepositoryListResult<ResourceRelation>>;
   linkResource(
     input: LinkResourceInput,
   ): Promise<RepositoryResult<ResourceRelation>>;
