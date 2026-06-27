@@ -187,6 +187,21 @@
 - Calendar Time Grid zeigt Tasks erst mit `scheduledStartAt`.
 - Empty State: `Keine offenen Kandidaten für heute.`
 
+## R1.6.9 Task Lifecycle
+
+- Task abschließen setzt `completed_at` und `status = done`.
+- Task wieder öffnen entfernt `completed_at` und macht die Task wieder aktiv planbar.
+- Task entterminieren entfernt `scheduled_start_at`; `planned_date` bleibt erhalten.
+- Task umplanen aktualisiert `planned_date`, `scheduled_start_at` und Dauer.
+- Task archivieren setzt `archived_at` und entfernt sie aus aktiven Portfolio-/Today-/Dashboard-/Calendar-Views.
+- Portfolio Context Panel zeigt nur passende Lifecycle-Aktionen je Task-Zustand.
+- Today Activity Stream kann sichtbare Tasks abschließen und completed Tasks wieder öffnen.
+- Dashboard Daily Control kann den aktuellen Manual-Task abschließen, ohne Dashboard-Rekomposition.
+- Calendar Inspector persistiert Mark done, Move later/Reschedule und Unschedule für task-backed Time Blocks.
+- Completed Tasks dürfen nicht mehr in Today Planner Candidate oder Calendar Planner Queue erscheinen.
+- Unscheduled Tasks verschwinden aus dem Calendar Time Grid und erscheinen wieder in der Planner Queue, wenn `plannedDate` vorhanden ist.
+- Portfolio / Today / Dashboard / Calendar nach jeder Lifecycle-Aktion reload-stabil prüfen.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.

@@ -1,12 +1,25 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { scheduleTaskInputSchema } from "@/features/real-data";
+import {
+  archiveTaskInputSchema,
+  completeTaskInputSchema,
+  reopenTaskInputSchema,
+  rescheduleTaskInputSchema,
+  scheduleTaskInputSchema,
+  unscheduleTaskInputSchema,
+} from "@/features/real-data";
 import { createSupabaseTaskRepository } from "@/features/real-data/supabase";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
 import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
 
 export type TaskScheduleActionResult = {
+  message: string;
+  status: "blocked" | "error" | "success";
+  taskId?: string;
+};
+
+export type TaskLifecycleActionResult = {
   message: string;
   status: "blocked" | "error" | "success";
   taskId?: string;
@@ -82,6 +95,19 @@ function durationMinutesFromForm(formData: FormData, mode: "plan" | "schedule") 
   return Number.isInteger(duration) && duration > 0 ? duration : undefined;
 }
 
+function scheduledStartAtFromForm(formData: FormData, plannedDate: string) {
+  const scheduledStartAtInput = formString(formData, "scheduledStartAt");
+
+  if (scheduledStartAtInput) return scheduledStartAtInput;
+
+  const scheduledTimeInput = formString(formData, "scheduledTime");
+  const scheduledTime = isLocalTime(scheduledTimeInput)
+    ? scheduledTimeInput
+    : "09:00";
+
+  return zonedLocalDateTimeToIso(plannedDate, scheduledTime);
+}
+
 function revalidateTaskProjectionRoutes() {
   revalidatePath("/portfolio");
   revalidatePath("/today");
@@ -91,6 +117,7 @@ function revalidateTaskProjectionRoutes() {
 
 function authBlockedMessage(
   error: "auth_error" | "invalid_session" | "missing_env" | "unauthenticated",
+  actionLabel = "planen",
 ) {
   if (error === "missing_env") {
     return "Supabase ist lokal noch nicht konfiguriert.";
@@ -104,18 +131,19 @@ function authBlockedMessage(
     return "Supabase Auth konnte die Session nicht prüfen. Setze sie in den Settings zurück.";
   }
 
-  return "Melde dich an, um Tasks zu planen.";
+  return `Melde dich an, um Tasks zu ${actionLabel}.`;
 }
 
-export async function scheduleTaskForTodayAction(
-  formData: FormData,
-): Promise<TaskScheduleActionResult> {
+async function getAuthenticatedManualTaskContext(actionLabel: string) {
   const profileId = await getCurrentLifeOsProfileId();
 
   if (profileId !== "manual") {
     return {
-      message: "Wechsle ins Manual-Profil, um Tasks zu planen.",
-      status: "blocked",
+      ok: false as const,
+      result: {
+        message: `Wechsle ins Manual-Profil, um Tasks zu ${actionLabel}.`,
+        status: "blocked" as const,
+      },
     };
   }
 
@@ -123,10 +151,26 @@ export async function scheduleTaskForTodayAction(
 
   if (!auth.ok) {
     return {
-      message: authBlockedMessage(auth.error),
-      status: "blocked",
+      ok: false as const,
+      result: {
+        message: authBlockedMessage(auth.error, actionLabel),
+        status: "blocked" as const,
+      },
     };
   }
+
+  return {
+    auth,
+    ok: true as const,
+  };
+}
+
+export async function scheduleTaskForTodayAction(
+  formData: FormData,
+): Promise<TaskScheduleActionResult> {
+  const context = await getAuthenticatedManualTaskContext("planen");
+
+  if (!context.ok) return context.result;
 
   const mode = formString(formData, "mode") === "schedule" ? "schedule" : "plan";
   const plannedDateInput = formString(formData, "plannedDate");
@@ -145,10 +189,10 @@ export async function scheduleTaskForTodayAction(
   const parsed = scheduleTaskInputSchema.safeParse({
     durationMinutes: durationMinutesFromForm(formData, mode),
     plannedDate,
-    profileId: auth.user.id,
+    profileId: context.auth.user.id,
     scheduledStartAt,
     taskId: formString(formData, "taskId"),
-    userId: auth.user.id,
+    userId: context.auth.user.id,
   });
 
   if (!parsed.success) {
@@ -158,7 +202,7 @@ export async function scheduleTaskForTodayAction(
     };
   }
 
-  const repository = createSupabaseTaskRepository(auth.client);
+  const repository = createSupabaseTaskRepository(context.auth.client);
   const result = await repository.scheduleTask(parsed.data);
 
   if (!result.ok) {
@@ -182,4 +226,233 @@ export async function scheduleTaskForTodayFormAction(
   formData: FormData,
 ): Promise<void> {
   await scheduleTaskForTodayAction(formData);
+}
+
+export async function completeTaskAction(
+  formData: FormData,
+): Promise<TaskLifecycleActionResult> {
+  const context = await getAuthenticatedManualTaskContext("erledigen");
+
+  if (!context.ok) return context.result;
+
+  const parsed = completeTaskInputSchema.safeParse({
+    completedAt: formString(formData, "completedAt") || new Date().toISOString(),
+    completionNote: formString(formData, "completionNote") || undefined,
+    profileId: context.auth.user.id,
+    taskId: formString(formData, "taskId"),
+    userId: context.auth.user.id,
+  });
+
+  if (!parsed.success) {
+    return {
+      message: "Der Task konnte nicht abgeschlossen werden.",
+      status: "error",
+    };
+  }
+
+  const repository = createSupabaseTaskRepository(context.auth.client);
+  const result = await repository.completeTask(parsed.data);
+
+  if (!result.ok) {
+    return {
+      message: "Der Task konnte in Supabase nicht abgeschlossen werden.",
+      status: "error",
+    };
+  }
+
+  revalidateTaskProjectionRoutes();
+
+  return {
+    message: "Task abgeschlossen.",
+    status: "success",
+    taskId: result.data.id,
+  };
+}
+
+export async function reopenTaskAction(
+  formData: FormData,
+): Promise<TaskLifecycleActionResult> {
+  const context = await getAuthenticatedManualTaskContext("wieder öffnen");
+
+  if (!context.ok) return context.result;
+
+  const parsed = reopenTaskInputSchema.safeParse({
+    profileId: context.auth.user.id,
+    taskId: formString(formData, "taskId"),
+    userId: context.auth.user.id,
+  });
+
+  if (!parsed.success) {
+    return {
+      message: "Der Task konnte nicht wieder geöffnet werden.",
+      status: "error",
+    };
+  }
+
+  const repository = createSupabaseTaskRepository(context.auth.client);
+  const result = await repository.reopenTask(parsed.data);
+
+  if (!result.ok) {
+    return {
+      message: "Der Task konnte in Supabase nicht wieder geöffnet werden.",
+      status: "error",
+    };
+  }
+
+  revalidateTaskProjectionRoutes();
+
+  return {
+    message: "Task wieder geöffnet.",
+    status: "success",
+    taskId: result.data.id,
+  };
+}
+
+export async function archiveTaskAction(
+  formData: FormData,
+): Promise<TaskLifecycleActionResult> {
+  const context = await getAuthenticatedManualTaskContext("archivieren");
+
+  if (!context.ok) return context.result;
+
+  const parsed = archiveTaskInputSchema.safeParse({
+    archivedAt: formString(formData, "archivedAt") || new Date().toISOString(),
+    profileId: context.auth.user.id,
+    taskId: formString(formData, "taskId"),
+    userId: context.auth.user.id,
+  });
+
+  if (!parsed.success) {
+    return {
+      message: "Der Task konnte nicht archiviert werden.",
+      status: "error",
+    };
+  }
+
+  const repository = createSupabaseTaskRepository(context.auth.client);
+  const result = await repository.archiveTask(parsed.data);
+
+  if (!result.ok) {
+    return {
+      message: "Der Task konnte in Supabase nicht archiviert werden.",
+      status: "error",
+    };
+  }
+
+  revalidateTaskProjectionRoutes();
+
+  return {
+    message: "Task archiviert.",
+    status: "success",
+    taskId: result.data.id,
+  };
+}
+
+export async function unscheduleTaskAction(
+  formData: FormData,
+): Promise<TaskLifecycleActionResult> {
+  const context = await getAuthenticatedManualTaskContext("entterminieren");
+
+  if (!context.ok) return context.result;
+
+  const parsed = unscheduleTaskInputSchema.safeParse({
+    profileId: context.auth.user.id,
+    taskId: formString(formData, "taskId"),
+    userId: context.auth.user.id,
+  });
+
+  if (!parsed.success) {
+    return {
+      message: "Der Task konnte nicht entterminiert werden.",
+      status: "error",
+    };
+  }
+
+  const repository = createSupabaseTaskRepository(context.auth.client);
+  const result = await repository.unscheduleTask(parsed.data);
+
+  if (!result.ok) {
+    return {
+      message: "Der Task konnte in Supabase nicht entterminiert werden.",
+      status: "error",
+    };
+  }
+
+  revalidateTaskProjectionRoutes();
+
+  return {
+    message: "Task entterminiert.",
+    status: "success",
+    taskId: result.data.id,
+  };
+}
+
+export async function rescheduleTaskAction(
+  formData: FormData,
+): Promise<TaskLifecycleActionResult> {
+  const context = await getAuthenticatedManualTaskContext("umplanen");
+
+  if (!context.ok) return context.result;
+
+  const plannedDateInput = formString(formData, "plannedDate");
+  const plannedDate = isLocalDate(plannedDateInput)
+    ? plannedDateInput
+    : localDateLabel();
+  const parsed = rescheduleTaskInputSchema.safeParse({
+    durationMinutes: durationMinutesFromForm(formData, "schedule"),
+    plannedDate,
+    profileId: context.auth.user.id,
+    scheduledStartAt: scheduledStartAtFromForm(formData, plannedDate),
+    taskId: formString(formData, "taskId"),
+    userId: context.auth.user.id,
+  });
+
+  if (!parsed.success) {
+    return {
+      message: "Der Task konnte nicht umgeplant werden.",
+      status: "error",
+    };
+  }
+
+  const repository = createSupabaseTaskRepository(context.auth.client);
+  const result = await repository.rescheduleTask(parsed.data);
+
+  if (!result.ok) {
+    return {
+      message: "Der Task konnte in Supabase nicht umgeplant werden.",
+      status: "error",
+    };
+  }
+
+  revalidateTaskProjectionRoutes();
+
+  return {
+    message: "Task umgeplant.",
+    status: "success",
+    taskId: result.data.id,
+  };
+}
+
+export async function completeTaskFormAction(formData: FormData): Promise<void> {
+  await completeTaskAction(formData);
+}
+
+export async function reopenTaskFormAction(formData: FormData): Promise<void> {
+  await reopenTaskAction(formData);
+}
+
+export async function archiveTaskFormAction(formData: FormData): Promise<void> {
+  await archiveTaskAction(formData);
+}
+
+export async function unscheduleTaskFormAction(
+  formData: FormData,
+): Promise<void> {
+  await unscheduleTaskAction(formData);
+}
+
+export async function rescheduleTaskFormAction(
+  formData: FormData,
+): Promise<void> {
+  await rescheduleTaskAction(formData);
 }

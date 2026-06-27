@@ -3060,6 +3060,41 @@ test.describe("Today content states", () => {
     await expect(weekGrid.getByText(title)).toHaveCount(0);
   });
 
+  test("Manual Today completes DB task and removes it from Dashboard agenda", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session; no broad DB cleanup action is available.",
+    );
+
+    const title = `Manual Today Complete DB Task ${Date.now()}`;
+
+    await captureAndTriageManualInboxTask(
+      page,
+      title,
+      "Complete this task from Today and remove it from Dashboard agenda.",
+    );
+    await openPortfolioTaskPlanningControls(page, title);
+    await page.getByRole("button", { name: "Heute planen" }).click();
+    await page.waitForLoadState("networkidle");
+
+    await page.goto("/today");
+    await page
+      .getByRole("form", { name: `${title} abschließen` })
+      .getByRole("button", { name: "Abschließen" })
+      .click();
+    await page.waitForLoadState("networkidle");
+    await expect(
+      page.getByRole("form", { name: `${title} wieder öffnen` }),
+    ).toBeVisible();
+
+    await page.goto("/dashboard");
+    await expect(
+      page.getByRole("region", { name: "Today Agenda" }).getByText(title),
+    ).toHaveCount(0);
+  });
+
   test("Manual Today keeps scheduled DB task out of planner candidates", async ({
     page,
   }) => {
@@ -3225,6 +3260,49 @@ test.describe("Calendar content states", () => {
     await page.goto("/dashboard");
     const todayAgenda = page.getByRole("region", { name: "Today Agenda" });
     await expect(todayAgenda.getByText(title).first()).toBeVisible();
+  });
+
+  test("Manual Calendar unschedules DB task back into planner queue", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session; no broad DB cleanup action is available.",
+    );
+
+    const title = `Manual Calendar Unschedule DB Task ${Date.now()}`;
+
+    await captureAndTriageManualInboxTask(
+      page,
+      title,
+      "Schedule then unschedule this task from Calendar.",
+    );
+    await openPortfolioTaskPlanningControls(page, title);
+    await page.getByRole("button", { name: "Heute planen" }).click();
+    await page.waitForLoadState("networkidle");
+    await page.goto("/calendar");
+
+    const plannerQueue = page
+      .locator('[data-calendar-section="planning-queue"]')
+      .first();
+    await plannerQueue
+      .getByRole("form", { name: `${title} terminieren` })
+      .getByLabel("Uhrzeit")
+      .fill("11:15");
+    await plannerQueue
+      .getByRole("form", { name: `${title} terminieren` })
+      .getByRole("button", { name: "Terminieren" })
+      .click();
+    await page.waitForLoadState("networkidle");
+
+    const weekGrid = page.locator('[data-calendar-section="week-grid"]');
+    await weekGrid.getByRole("button", { name: new RegExp(title) }).click();
+    await page.getByRole("button", { name: "Unschedule" }).click();
+    await page.waitForLoadState("networkidle");
+    await page.reload();
+
+    await expect(weekGrid.getByText(title)).toHaveCount(0);
+    await expect(plannerQueue.getByText(title).first()).toBeVisible();
   });
 });
 
@@ -3441,6 +3519,62 @@ test.describe("Portfolio content states", () => {
     await expect(page.getByText(title).first()).toBeVisible();
     await page.reload();
     await expect(page.getByText(title).first()).toBeVisible();
+  });
+
+  test("Manual Portfolio completes and reopens DB task reload-stable", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session; no broad DB cleanup action is available.",
+    );
+
+    const title = `Manual Portfolio Lifecycle DB Task ${Date.now()}`;
+
+    await captureAndTriageManualInboxTask(
+      page,
+      title,
+      "Complete and reopen this Portfolio task.",
+    );
+    await openPortfolioTaskPlanningControls(page, title);
+    await page.getByRole("button", { name: "Abschließen" }).click();
+    await page.waitForLoadState("networkidle");
+    await expect(page.getByRole("button", { name: "Wieder öffnen" })).toBeVisible();
+    await page.reload();
+    await expect(page.getByRole("button", { name: "Wieder öffnen" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Wieder öffnen" }).click();
+    await page.waitForLoadState("networkidle");
+    await expect(page.getByRole("button", { name: "Abschließen" })).toBeVisible();
+  });
+
+  test("Manual Portfolio archives DB task out of active views", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session; no broad DB cleanup action is available.",
+    );
+
+    const title = `Manual Portfolio Archive DB Task ${Date.now()}`;
+
+    await captureAndTriageManualInboxTask(
+      page,
+      title,
+      "Archive this task out of active Portfolio views.",
+    );
+    await openPortfolioTaskPlanningControls(page, title);
+    await page.getByRole("button", { name: "Archivieren" }).click();
+    await page.waitForLoadState("networkidle");
+    await page.reload();
+
+    await expect(page.getByText(title)).toHaveCount(0);
+    await page.goto("/today");
+    await expect(page.getByText(title)).toHaveCount(0);
+    await page.goto("/dashboard");
+    await expect(page.getByText(title)).toHaveCount(0);
+    await page.goto("/calendar");
+    await expect(page.getByText(title)).toHaveCount(0);
   });
 });
 

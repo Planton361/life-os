@@ -14,11 +14,15 @@ import type {
   SupabaseQueryResult,
 } from "../database.types";
 import {
+  mapArchiveTaskInputToPatch,
   mapCarryTaskForwardInputToPatch,
   mapCompleteTaskInputToPatch,
   mapCreateTaskInputToInsert,
+  mapReopenTaskInputToPatch,
+  mapRescheduleTaskInputToPatch,
   mapScheduleTaskInputToPatch,
   mapTaskRowToDomain,
+  mapUnscheduleTaskInputToPatch,
   mapUpdateTaskInputToPatch,
 } from "../mappers";
 import type { TaskRow, TaskUpdate } from "../row-types";
@@ -121,6 +125,19 @@ export function createSupabaseTaskRepository(
   client: SupabaseClientLike,
 ): TaskRepository {
   return {
+    async archiveTask(input) {
+      const scopeFailure = profileScopeFailure(input.userId, input.profileId);
+      if (scopeFailure) return scopeFailure;
+
+      return updateTaskById(
+        client,
+        input.userId,
+        input.taskId,
+        mapArchiveTaskInputToPatch(input),
+        "archive task",
+      );
+    },
+
     async carryTaskForward(input) {
       const scopeFailure = profileScopeFailure(input.userId, input.profileId);
       if (scopeFailure) return scopeFailure;
@@ -254,6 +271,45 @@ export function createSupabaseTaskRepository(
         input.taskId,
         mapScheduleTaskInputToPatch(input),
         "schedule task",
+      );
+    },
+
+    async reopenTask(input) {
+      const scopeFailure = profileScopeFailure(input.userId, input.profileId);
+      if (scopeFailure) return scopeFailure;
+
+      return updateTaskById(
+        client,
+        input.userId,
+        input.taskId,
+        mapReopenTaskInputToPatch(),
+        "reopen task",
+      );
+    },
+
+    async rescheduleTask(input) {
+      const scopeFailure = profileScopeFailure(input.userId, input.profileId);
+      if (scopeFailure) return scopeFailure;
+
+      return updateTaskById(
+        client,
+        input.userId,
+        input.taskId,
+        mapRescheduleTaskInputToPatch(input),
+        "reschedule task",
+      );
+    },
+
+    async unscheduleTask(input) {
+      const scopeFailure = profileScopeFailure(input.userId, input.profileId);
+      if (scopeFailure) return scopeFailure;
+
+      return updateTaskById(
+        client,
+        input.userId,
+        input.taskId,
+        mapUnscheduleTaskInputToPatch(),
+        "unschedule task",
       );
     },
 

@@ -103,6 +103,10 @@ export type DashboardCurrentTask = {
   accent: DashboardAccent;
   area: DashboardArea;
   href?: DashboardHref;
+  taskLifecycle?: {
+    status: "planned" | "active" | "done" | "blocked";
+    taskId: string;
+  };
 };
 
 export type DashboardQueueItem = {

@@ -1,7 +1,14 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { ContentStateMeta } from "@/features/content-state";
-import { scheduleTaskForTodayFormAction } from "@/features/real-data/actions/task.actions";
+import {
+  archiveTaskFormAction,
+  completeTaskFormAction,
+  reopenTaskFormAction,
+  rescheduleTaskFormAction,
+  scheduleTaskForTodayFormAction,
+  unscheduleTaskFormAction,
+} from "@/features/real-data/actions/task.actions";
 import {
   EmptyState,
   Pill,
@@ -105,6 +112,155 @@ function TaskPlanningForm({
   );
 }
 
+function TaskLifecycleButton({
+  action,
+  label,
+  taskId,
+  tone = "neutral",
+}: Readonly<{
+  action: (formData: FormData) => Promise<void>;
+  label: string;
+  taskId: string;
+  tone?: "neutral" | "primary" | "danger";
+}>) {
+  const toneClass =
+    tone === "primary"
+      ? "border-[rgba(66,184,131,.34)] bg-[rgba(66,184,131,.14)] text-[var(--text-primary)] hover:border-[rgba(66,184,131,.52)]"
+      : tone === "danger"
+        ? "border-[rgba(221,107,95,.28)] bg-[rgba(221,107,95,.10)] text-[var(--text-secondary)] hover:border-[rgba(221,107,95,.44)]"
+        : "border-[var(--border-subtle)] bg-[rgba(18,28,43,.76)] text-[var(--text-secondary)] hover:border-[var(--border-default)]";
+
+  return (
+    <form action={action}>
+      <input name="taskId" type="hidden" value={taskId} />
+      <button
+        className={`inline-flex min-h-8 items-center rounded-full border px-3 text-[10px] font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] ${toneClass}`}
+        type="submit"
+      >
+        {label}
+      </button>
+    </form>
+  );
+}
+
+function TaskRescheduleForm({
+  durationMinutes,
+  plannedDate,
+  scheduledTime,
+  taskId,
+}: Readonly<{
+  durationMinutes: number;
+  plannedDate?: string;
+  scheduledTime?: string;
+  taskId: string;
+}>) {
+  return (
+    <form
+      action={rescheduleTaskFormAction}
+      aria-label="Task umplanen"
+      className="grid w-full gap-1.5 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.36)] p-2 sm:grid-cols-[minmax(0,1fr)_88px_auto]"
+    >
+      <input name="taskId" type="hidden" value={taskId} />
+      <label className="min-w-0">
+        <span className="sr-only">Datum</span>
+        <input
+          className="min-h-8 w-full rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.78)] px-2 text-[11px] text-[var(--text-primary)] outline-none focus:border-[var(--focus-ring)]"
+          defaultValue={plannedDate}
+          name="plannedDate"
+          required
+          type="date"
+        />
+      </label>
+      <label className="min-w-0">
+        <span className="sr-only">Uhrzeit</span>
+        <input
+          className="min-h-8 w-full rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.78)] px-2 text-[11px] text-[var(--text-primary)] outline-none focus:border-[var(--focus-ring)]"
+          defaultValue={scheduledTime ?? "09:00"}
+          name="scheduledTime"
+          required
+          type="time"
+        />
+      </label>
+      <input name="durationMinutes" type="hidden" value={durationMinutes} />
+      <button
+        className="min-h-8 rounded-full border border-[rgba(95,200,215,.34)] bg-[rgba(95,200,215,.14)] px-3 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(95,200,215,.48)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+        type="submit"
+      >
+        Umplanen
+      </button>
+    </form>
+  );
+}
+
+function TaskLifecycleActions({
+  entity,
+}: Readonly<{
+  entity: PortfolioEntity;
+}>) {
+  const lifecycle = entity.taskLifecycle;
+
+  if (!lifecycle) return null;
+
+  const isDone = lifecycle.status === "done";
+  const isScheduled = Boolean(lifecycle.scheduledTime);
+
+  return (
+    <>
+      {isDone ? (
+        <>
+          <TaskLifecycleButton
+            action={reopenTaskFormAction}
+            label="Wieder öffnen"
+            taskId={entity.id}
+            tone="primary"
+          />
+          <TaskLifecycleButton
+            action={archiveTaskFormAction}
+            label="Archivieren"
+            taskId={entity.id}
+            tone="danger"
+          />
+        </>
+      ) : (
+        <>
+          <TaskLifecycleButton
+            action={completeTaskFormAction}
+            label="Abschließen"
+            taskId={entity.id}
+            tone="primary"
+          />
+          {!lifecycle.plannedDate ? (
+            <TaskPlanningForm mode="plan" taskId={entity.id} />
+          ) : null}
+          {isScheduled ? (
+            <TaskLifecycleButton
+              action={unscheduleTaskFormAction}
+              label="Entterminieren"
+              taskId={entity.id}
+            />
+          ) : (
+            <TaskPlanningForm mode="schedule" taskId={entity.id} />
+          )}
+          <TaskLifecycleButton
+            action={archiveTaskFormAction}
+            label="Archivieren"
+            taskId={entity.id}
+            tone="danger"
+          />
+        </>
+      )}
+      {isScheduled ? (
+        <TaskRescheduleForm
+          durationMinutes={lifecycle.durationMinutes}
+          plannedDate={lifecycle.plannedDate}
+          scheduledTime={lifecycle.scheduledTime}
+          taskId={entity.id}
+        />
+      ) : null}
+    </>
+  );
+}
+
 function contentStateAttributes(
   meta: ContentStateMeta,
   profileId: PortfolioViewModel["profileId"],
@@ -188,10 +344,7 @@ export function PortfolioContextPanel({
             <ActionLink href={sourceLink.href}>Open source</ActionLink>
           ) : null}
           {profileId === "manual" && entity.type === "task" ? (
-            <>
-              <TaskPlanningForm mode="plan" taskId={entity.id} />
-              <TaskPlanningForm mode="schedule" taskId={entity.id} />
-            </>
+            <TaskLifecycleActions entity={entity} />
           ) : null}
         </div>
       </div>

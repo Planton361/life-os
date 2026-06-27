@@ -22,6 +22,7 @@ export type {
   PortfolioSkillContext,
   PortfolioStat,
   PortfolioStatus,
+  PortfolioTaskLifecycle,
   PortfolioVisibilityReason,
   PortfolioView,
   PortfolioViewModel,

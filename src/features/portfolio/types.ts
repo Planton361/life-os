@@ -73,6 +73,20 @@ export type PortfolioSourceLink = {
   href: `/${string}`;
 };
 
+export type PortfolioTaskLifecycle = {
+  status:
+    | "inbox"
+    | "planned"
+    | "active"
+    | "waiting"
+    | "done"
+    | "canceled"
+    | "someday";
+  plannedDate?: string;
+  scheduledTime?: string;
+  durationMinutes: number;
+};
+
 export type PortfolioSkillContext = {
   practiceStatus: string;
   confidence: "low" | "medium" | "high";
@@ -102,6 +116,7 @@ export type PortfolioEntity = {
   decisions: PortfolioDecision[];
   sourceLinks: PortfolioSourceLink[];
   noteSnippet: string;
+  taskLifecycle?: PortfolioTaskLifecycle;
   skillContext?: PortfolioSkillContext;
 };
 

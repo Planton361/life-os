@@ -1,6 +1,7 @@
 import { taskEnergies, taskPriorities, taskStatuses } from "../domain/task";
 import {
   localDateSchema,
+  dateTimeStringSchema,
   optionalDateTimeStringSchema,
   optionalEnumSchema,
   optionalLocalDateSchema,
@@ -65,6 +66,42 @@ export const completeTaskInputSchema = z.object({
 });
 
 export type CompleteTaskInput = z.infer<typeof completeTaskInputSchema>;
+
+export const reopenTaskInputSchema = z.object({
+  profileId: requiredIdSchema,
+  taskId: requiredIdSchema,
+  userId: requiredIdSchema,
+});
+
+export type ReopenTaskInput = z.infer<typeof reopenTaskInputSchema>;
+
+export const archiveTaskInputSchema = z.object({
+  archivedAt: optionalDateTimeStringSchema,
+  profileId: requiredIdSchema,
+  taskId: requiredIdSchema,
+  userId: requiredIdSchema,
+});
+
+export type ArchiveTaskInput = z.infer<typeof archiveTaskInputSchema>;
+
+export const unscheduleTaskInputSchema = z.object({
+  profileId: requiredIdSchema,
+  taskId: requiredIdSchema,
+  userId: requiredIdSchema,
+});
+
+export type UnscheduleTaskInput = z.infer<typeof unscheduleTaskInputSchema>;
+
+export const rescheduleTaskInputSchema = z.object({
+  durationMinutes: optionalPositiveIntegerSchema,
+  profileId: requiredIdSchema,
+  plannedDate: localDateSchema,
+  scheduledStartAt: dateTimeStringSchema,
+  taskId: requiredIdSchema,
+  userId: requiredIdSchema,
+});
+
+export type RescheduleTaskInput = z.infer<typeof rescheduleTaskInputSchema>;
 
 export const carryTaskForwardInputSchema = z.object({
   carryForwardNote: optionalTrimmedStringSchema,

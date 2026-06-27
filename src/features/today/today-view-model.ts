@@ -79,6 +79,10 @@ export type TodayActivityEventViewModel = {
   sourceHref?: string;
   sourceActionLabel: string;
   accent: string;
+  taskLifecycle?: {
+    status: "planned" | "current" | "completed";
+    taskId: string;
+  };
 };
 
 export type TodayPlannerTaskViewModel = {

@@ -15,6 +15,7 @@ import type {
 } from "../domain";
 import type {
   ArchiveInboxItemInput,
+  ArchiveTaskInput,
   CaptureInboxItemInput,
   CarryTaskForwardInput,
   CloseDailyLogInput,
@@ -24,8 +25,11 @@ import type {
   CreateResourceInput,
   CreateTaskInput,
   LinkResourceInput,
+  ReopenTaskInput,
+  RescheduleTaskInput,
   ScheduleTaskInput,
   TriageInboxItemToTaskInput,
+  UnscheduleTaskInput,
   UpdateGoalInput,
   UpdateProjectInput,
   UpdateTaskInput,
@@ -98,10 +102,14 @@ export interface InboxRepository {
 }
 
 export interface TaskRepository {
+  archiveTask(input: ArchiveTaskInput): Promise<RepositoryResult<Task>>;
   createTask(input: CreateTaskInput): Promise<RepositoryResult<Task>>;
   updateTask(input: UpdateTaskInput): Promise<RepositoryResult<Task>>;
   scheduleTask(input: ScheduleTaskInput): Promise<RepositoryResult<Task>>;
   completeTask(input: CompleteTaskInput): Promise<RepositoryResult<Task>>;
+  reopenTask(input: ReopenTaskInput): Promise<RepositoryResult<Task>>;
+  rescheduleTask(input: RescheduleTaskInput): Promise<RepositoryResult<Task>>;
+  unscheduleTask(input: UnscheduleTaskInput): Promise<RepositoryResult<Task>>;
   carryTaskForward(input: CarryTaskForwardInput): Promise<RepositoryResult<Task>>;
   getTasksByUser(input: TaskListInput): Promise<RepositoryListResult<Task>>;
   getTasksForToday(

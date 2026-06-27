@@ -3,6 +3,8 @@ import type {
   CarryTaskForwardInput,
   CompleteTaskInput,
   CreateTaskInput,
+  ArchiveTaskInput,
+  RescheduleTaskInput,
   ScheduleTaskInput,
   UpdateTaskInput,
 } from "../../schemas";
@@ -112,12 +114,42 @@ export function mapScheduleTaskInputToPatch(
 export function mapCompleteTaskInputToPatch(
   input: CompleteTaskInput,
 ): TaskUpdate {
-  const patch: TaskUpdate = {
+  return {
+    completed_at: input.completedAt ?? new Date().toISOString(),
     status: "done",
   };
+}
 
-  if (input.completedAt !== undefined) {
-    patch.completed_at = input.completedAt;
+export function mapReopenTaskInputToPatch(): TaskUpdate {
+  return {
+    completed_at: null,
+    status: "planned",
+  };
+}
+
+export function mapArchiveTaskInputToPatch(input: ArchiveTaskInput): TaskUpdate {
+  return {
+    archived_at: input.archivedAt ?? new Date().toISOString(),
+    status: "archived",
+  };
+}
+
+export function mapUnscheduleTaskInputToPatch(): TaskUpdate {
+  return {
+    scheduled_start_at: null,
+  };
+}
+
+export function mapRescheduleTaskInputToPatch(
+  input: RescheduleTaskInput,
+): TaskUpdate {
+  const patch: TaskUpdate = {
+    planned_date: input.plannedDate,
+    scheduled_start_at: input.scheduledStartAt,
+  };
+
+  if (input.durationMinutes !== undefined) {
+    patch.duration_minutes = input.durationMinutes;
   }
 
   return patch;

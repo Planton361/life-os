@@ -272,6 +272,14 @@ function taskToQueueItem(task: LifeTask) {
 
 function taskToCurrentTask(task: LifeTask) {
   const endTime = taskEndTime(task);
+  const lifecycleStatus: "planned" | "active" | "done" | "blocked" =
+    task.status === "done"
+      ? "done"
+      : task.status === "waiting"
+        ? "blocked"
+        : task.status === "active"
+          ? "active"
+          : "planned";
 
   return {
     id: task.id,
@@ -287,6 +295,10 @@ function taskToCurrentTask(task: LifeTask) {
     accent: areaAccent(task.areaId),
     area: task.areaId as DashboardArea,
     href: `/tasks/${task.id}` as `/${string}`,
+    taskLifecycle: {
+      status: lifecycleStatus,
+      taskId: task.id,
+    },
   };
 }
 
@@ -670,6 +682,12 @@ function taskToPortfolioEntity(
       : [],
     sourceLinks: [{ label: "Task", href: `/tasks/${task.id}` }],
     noteSnippet: task.resultNote ?? task.description,
+    taskLifecycle: {
+      durationMinutes: task.durationMinutes ?? 30,
+      plannedDate: task.date,
+      scheduledTime: task.startTime,
+      status: task.status,
+    },
   };
 }
 
@@ -2290,6 +2308,15 @@ function taskToTodayEvent(task: LifeTask): TodayActivityEventViewModel {
     sourceHref: `/tasks/${task.id}`,
     sourceActionLabel: "Open source",
     accent: areaAccent(task.areaId),
+    taskLifecycle: {
+      status:
+        task.status === "done"
+          ? "completed"
+          : task.status === "active"
+            ? "current"
+            : "planned",
+      taskId: task.id,
+    },
   };
 }
 

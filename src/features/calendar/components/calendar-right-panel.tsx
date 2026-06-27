@@ -4,7 +4,12 @@ import type { ContentStateMeta } from "@/features/content-state";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Pill, accentStyle } from "@/components/layout/route-page-primitives";
-import { scheduleTaskForTodayFormAction } from "@/features/real-data/actions/task.actions";
+import {
+  completeTaskFormAction,
+  rescheduleTaskFormAction,
+  scheduleTaskForTodayFormAction,
+  unscheduleTaskFormAction,
+} from "@/features/real-data/actions/task.actions";
 import { cn } from "@/lib/cn";
 import type { CalendarRawTimedBlock } from "../calendar-view-model";
 import {
@@ -47,14 +52,26 @@ function timeToMinutes(time: string) {
   return hours * 60 + minutes;
 }
 
+function minutesToTime(minutes: number) {
+  return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+}
+
+function offsetTime(time: string, offset: number) {
+  return minutesToTime(timeToMinutes(time) + offset);
+}
+
 function Field({
   label,
+  name,
   onChange,
+  required = false,
   type = "text",
   value,
 }: Readonly<{
   label: string;
+  name?: string;
   onChange: (value: string) => void;
+  required?: boolean;
   type?: "date" | "text" | "time";
   value: string;
 }>) {
@@ -65,7 +82,9 @@ function Field({
       </span>
       <input
         className={inputClass}
+        name={name}
         onChange={(event) => onChange(event.target.value)}
+        required={required}
         type={type}
         value={value}
       />
@@ -235,6 +254,7 @@ function TimeSettings({
   onMarkDone,
   onMoveLater,
   onSaveTime,
+  profileId,
   selectedSlot,
 }: Readonly<{
   block?: SelectedBlock;
@@ -242,6 +262,7 @@ function TimeSettings({
   onMarkDone: (blockId: string) => void;
   onMoveLater: (blockId: string) => void;
   onSaveTime: (blockId: string, date: string, startTime: string, endTime: string) => void;
+  profileId: CalendarViewModel["profileId"];
   selectedSlot?: CalendarSelectedTimeSlotViewModel | null;
 }>) {
   const baseDate = block?.date ?? selectedSlot?.date ?? "2026-06-12";
@@ -253,6 +274,12 @@ function TimeSettings({
   const [error, setError] = useState<string | null>(null);
 
   const duration = Math.max(0, timeToMinutes(endTime) - timeToMinutes(startTime));
+  const taskId = block?.source === "task" && block.taskId ? block.taskId : null;
+  const isPersistedTaskBlock = Boolean(
+    profileId === "manual" && taskId && block && isTimedBlock(block),
+  );
+  const safeDuration = duration > 0 ? duration : block && isTimedBlock(block) ? block.durationMinutes : 30;
+  const laterStartTime = offsetTime(startTime, 30);
 
   function save() {
     if (!block) {
@@ -290,56 +317,120 @@ function TimeSettings({
       </div>
 
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        <Field label="Date" onChange={setDate} type="date" value={date} />
+        <Field
+          label="Date"
+          name={isPersistedTaskBlock ? "plannedDate" : undefined}
+          onChange={setDate}
+          required={Boolean(isPersistedTaskBlock)}
+          type="date"
+          value={date}
+        />
         <Field label="Duration" onChange={() => undefined} value={durationLabel(duration)} />
-        <Field label="Start time" onChange={setStartTime} type="time" value={startTime} />
+        <Field
+          label="Start time"
+          name={isPersistedTaskBlock ? "scheduledTime" : undefined}
+          onChange={setStartTime}
+          required={Boolean(isPersistedTaskBlock)}
+          type="time"
+          value={startTime}
+        />
         <Field label="End time" onChange={setEndTime} type="time" value={endTime} />
       </div>
 
       <div className="mt-3 grid gap-1.5 sm:grid-cols-2">
-        <button
-          className="min-h-8 rounded-full border border-[rgba(95,200,215,.34)] bg-[rgba(95,200,215,.14)] px-3 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(95,200,215,.48)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-          onClick={save}
-          type="button"
-        >
-          Save time
-        </button>
-        <button
-          className="min-h-8 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-          onClick={() => {
-            setDate(baseDate);
-            setStartTime(baseStart);
-            setEndTime(baseEnd);
-            setError(null);
-          }}
-          type="button"
-        >
-          Cancel
-        </button>
-        <button
-          className="min-h-8 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-50"
-          disabled={!block}
-          onClick={() => block && onMoveLater(block.id)}
-          type="button"
-        >
-          Move later
-        </button>
-        <button
-          className="min-h-8 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-50"
-          disabled={!block}
-          onClick={() => block && onDuplicateBlock(block.id)}
-          type="button"
-        >
-          Duplicate
-        </button>
-        <button
-          className="min-h-8 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-2"
-          disabled={!block || block.status === "done"}
-          onClick={() => block && onMarkDone(block.id)}
-          type="button"
-        >
-          Mark done
-        </button>
+        {isPersistedTaskBlock ? (
+          <>
+            <form action={rescheduleTaskFormAction}>
+              <input name="taskId" type="hidden" value={taskId ?? ""} />
+              <input name="plannedDate" type="hidden" value={date} />
+              <input name="scheduledTime" type="hidden" value={startTime} />
+              <input name="durationMinutes" type="hidden" value={safeDuration} />
+              <button
+                className="min-h-8 w-full rounded-full border border-[rgba(95,200,215,.34)] bg-[rgba(95,200,215,.14)] px-3 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(95,200,215,.48)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                type="submit"
+              >
+                Reschedule
+              </button>
+            </form>
+            <form action={rescheduleTaskFormAction}>
+              <input name="taskId" type="hidden" value={taskId ?? ""} />
+              <input name="plannedDate" type="hidden" value={date} />
+              <input name="scheduledTime" type="hidden" value={laterStartTime} />
+              <input name="durationMinutes" type="hidden" value={safeDuration} />
+              <button
+                className="min-h-8 w-full rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                type="submit"
+              >
+                Move later
+              </button>
+            </form>
+            <form action={unscheduleTaskFormAction}>
+              <input name="taskId" type="hidden" value={taskId ?? ""} />
+              <button
+                className="min-h-8 w-full rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                type="submit"
+              >
+                Unschedule
+              </button>
+            </form>
+            <form action={completeTaskFormAction}>
+              <input name="taskId" type="hidden" value={taskId ?? ""} />
+              <button
+                className="min-h-8 w-full rounded-full border border-[rgba(66,184,131,.32)] bg-[rgba(66,184,131,.12)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[rgba(66,184,131,.48)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={block?.status === "done"}
+                type="submit"
+              >
+                Mark done
+              </button>
+            </form>
+          </>
+        ) : (
+          <>
+            <button
+              className="min-h-8 rounded-full border border-[rgba(95,200,215,.34)] bg-[rgba(95,200,215,.14)] px-3 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(95,200,215,.48)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+              onClick={save}
+              type="button"
+            >
+              Save time
+            </button>
+            <button
+              className="min-h-8 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+              onClick={() => {
+                setDate(baseDate);
+                setStartTime(baseStart);
+                setEndTime(baseEnd);
+                setError(null);
+              }}
+              type="button"
+            >
+              Cancel
+            </button>
+            <button
+              className="min-h-8 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={!block}
+              onClick={() => block && onMoveLater(block.id)}
+              type="button"
+            >
+              Move later
+            </button>
+            <button
+              className="min-h-8 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={!block}
+              onClick={() => block && onDuplicateBlock(block.id)}
+              type="button"
+            >
+              Duplicate
+            </button>
+            <button
+              className="min-h-8 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-2"
+              disabled={!block || block.status === "done"}
+              onClick={() => block && onMarkDone(block.id)}
+              type="button"
+            >
+              Mark done
+            </button>
+          </>
+        )}
       </div>
 
       {error ? (
@@ -654,6 +745,7 @@ export function CalendarRightPanel({
           onMarkDone={onMarkDone}
           onMoveLater={onMoveLater}
           onSaveTime={onSaveTime}
+          profileId={profileId}
           selectedSlot={selectedSlot}
         />
 

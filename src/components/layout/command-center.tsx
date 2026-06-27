@@ -8,6 +8,7 @@ import {
   captureDashboardQuickThoughtAction,
   setDashboardMoodAction,
 } from "@/features/profile-data/actions";
+import { completeTaskFormAction } from "@/features/real-data/actions/task.actions";
 import { initialDashboardActionState } from "@/features/profile-data/dashboard-action-state";
 import type {
   DashboardCommandCenterMeta,
@@ -280,13 +281,20 @@ function DailyControlStatusPill({
 }
 
 function DailyControlCurrentTask({
+  profileId,
   task,
 }: Readonly<{
+  profileId: DashboardCommandCenterViewModel["profileId"];
   task: DashboardCurrentTask;
 }>) {
+  const canComplete =
+    profileId === "manual" &&
+    task.taskLifecycle &&
+    task.taskLifecycle.status !== "done" &&
+    task.taskLifecycle.status !== "blocked";
   const className = cn(
     "h-[204px] rounded-[18px] border border-[rgba(91,124,250,.34)] bg-[linear-gradient(180deg,rgba(24,42,70,.98),rgba(16,29,49,.98))] p-3 shadow-[inset_0_0_0_1px_rgba(91,124,250,.10)]",
-    task.href && `block ${DASHBOARD_LINK_FOCUS_CLASSES}`,
+    task.href && !canComplete && `block ${DASHBOARD_LINK_FOCUS_CLASSES}`,
   );
   const content = (
     <>
@@ -310,13 +318,45 @@ function DailyControlCurrentTask({
       <div className="mt-2">
         <ProgressBar accent={task.accent} progress={task.progress} />
       </div>
-      <span className="mt-3 flex min-h-[24px] items-center justify-center rounded-full border border-[rgba(95,200,215,.38)] bg-[rgba(91,124,250,.22)] text-[10px] font-medium text-[var(--text-secondary)]">
-        {task.actionLabel}
-      </span>
+      <div className="mt-3 flex min-h-[24px] items-center gap-1.5">
+        {task.href && canComplete ? (
+          <Link
+            className={cn(
+              "flex min-h-[24px] flex-1 items-center justify-center rounded-full border border-[rgba(95,200,215,.38)] bg-[rgba(91,124,250,.22)] text-[10px] font-medium text-[var(--text-secondary)] transition hover:border-[rgba(95,200,215,.52)] hover:text-[var(--text-primary)]",
+              DASHBOARD_LINK_FOCUS_CLASSES,
+            )}
+            href={task.href}
+          >
+            {task.actionLabel}
+          </Link>
+        ) : (
+          <span className="flex min-h-[24px] flex-1 items-center justify-center rounded-full border border-[rgba(95,200,215,.38)] bg-[rgba(91,124,250,.22)] text-[10px] font-medium text-[var(--text-secondary)]">
+            {task.actionLabel}
+          </span>
+        )}
+        {canComplete ? (
+          <form action={completeTaskFormAction}>
+            <input
+              name="taskId"
+              type="hidden"
+              value={task.taskLifecycle?.taskId ?? ""}
+            />
+            <button
+              className={cn(
+                "min-h-[24px] rounded-full border border-[rgba(66,184,131,.32)] bg-[rgba(66,184,131,.14)] px-2.5 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[rgba(66,184,131,.48)] hover:text-[var(--text-primary)]",
+                DASHBOARD_LINK_FOCUS_CLASSES,
+              )}
+              type="submit"
+            >
+              Abschließen
+            </button>
+          </form>
+        ) : null}
+      </div>
     </>
   );
 
-  if (task.href) {
+  if (task.href && !canComplete) {
     return (
       <Link
         aria-label={`${task.sectionLabel}: ${task.title}`}
@@ -452,7 +492,10 @@ function DailyControl({
         </div>
       </div>
 
-      <DailyControlCurrentTask task={data.currentTask} />
+      <DailyControlCurrentTask
+        profileId={profileId}
+        task={data.currentTask}
+      />
       <DailyControlQueue data={data} />
     </section>
   );

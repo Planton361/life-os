@@ -2,7 +2,11 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { Pill, accentStyle } from "@/components/layout/route-page-primitives";
 import type { ContentStateMeta } from "@/features/content-state";
-import { scheduleTaskForTodayFormAction } from "@/features/real-data/actions/task.actions";
+import {
+  completeTaskFormAction,
+  reopenTaskFormAction,
+  scheduleTaskForTodayFormAction,
+} from "@/features/real-data/actions/task.actions";
 import { cn } from "@/lib/cn";
 import type {
   TodayActivityEventViewModel,
@@ -225,7 +229,7 @@ function ActivityStream({
                     "bg-[var(--text-faint)]",
                 )}
               />
-              <ActivityEventCard event={event} />
+              <ActivityEventCard event={event} profileId={profileId} />
             </li>
           ))}
         </ol>
@@ -423,10 +427,41 @@ function ActivitySourceActionLabel({
   );
 }
 
-function ActivityEventCardContent({
+function TaskActivityActions({
   event,
+  profileId,
 }: Readonly<{
   event: TodayActivityEventViewModel;
+  profileId: TodayViewModel["profileId"];
+}>) {
+  if (profileId !== "manual" || !event.taskLifecycle) return null;
+
+  const isCompleted = event.taskLifecycle.status === "completed";
+
+  return (
+    <form
+      action={isCompleted ? reopenTaskFormAction : completeTaskFormAction}
+      aria-label={
+        isCompleted ? `${event.title} wieder öffnen` : `${event.title} abschließen`
+      }
+    >
+      <input name="taskId" type="hidden" value={event.taskLifecycle.taskId} />
+      <button
+        className="inline-flex min-h-7 items-center rounded-full border border-[rgba(66,184,131,.30)] bg-[rgba(66,184,131,.12)] px-2.5 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[rgba(66,184,131,.46)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+        type="submit"
+      >
+        {isCompleted ? "Wieder öffnen" : "Abschließen"}
+      </button>
+    </form>
+  );
+}
+
+function ActivityEventCardContent({
+  event,
+  profileId,
+}: Readonly<{
+  event: TodayActivityEventViewModel;
+  profileId: TodayViewModel["profileId"];
 }>) {
   return (
     <div className="grid grid-cols-[3px_minmax(0,1fr)] gap-3">
@@ -471,7 +506,20 @@ function ActivityEventCardContent({
           ) : null}
           <span aria-hidden="true">·</span>
           <span>{linkedEntityLabel(event.linkedEntityType)}</span>
-          <ActivitySourceActionLabel event={event} />
+        </div>
+
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {event.sourceHref ? (
+            <Link
+              className="inline-flex min-h-7 items-center rounded-full border border-[var(--border-subtle)] bg-[rgba(168,183,204,.05)] px-2.5 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+              href={event.sourceHref}
+            >
+              {event.sourceActionLabel}
+            </Link>
+          ) : (
+            <ActivitySourceActionLabel event={event} />
+          )}
+          <TaskActivityActions event={event} profileId={profileId} />
         </div>
       </div>
     </div>
@@ -480,29 +528,18 @@ function ActivityEventCardContent({
 
 function ActivityEventCard({
   event,
+  profileId,
 }: Readonly<{
   event: TodayActivityEventViewModel;
+  profileId: TodayViewModel["profileId"];
 }>) {
   const className = activityCardClass(event.status);
   const style = accentStyle(event.accent);
 
-  if (!event.sourceHref) {
-    return (
-      <article className={className} style={style}>
-        <ActivityEventCardContent event={event} />
-      </article>
-    );
-  }
-
   return (
-    <Link
-      aria-label={`Open ${event.title}`}
-      className={className}
-      href={event.sourceHref}
-      style={style}
-    >
-      <ActivityEventCardContent event={event} />
-    </Link>
+    <article className={className} style={style}>
+      <ActivityEventCardContent event={event} profileId={profileId} />
+    </article>
   );
 }
 
