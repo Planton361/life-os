@@ -4,14 +4,19 @@ import { revalidatePath } from "next/cache";
 import {
   archiveInboxItemInputSchema,
   captureInboxItemInputSchema,
+  createGoalInputSchema,
+  createProjectInputSchema,
   createResourceInputSchema,
   triageInboxItemToTaskInputSchema,
 } from "@/features/real-data";
 import {
+  createSupabaseGoalRepository,
   createSupabaseInboxRepository,
   createSupabaseInboxResourceTransaction,
   createSupabaseInboxTriageTransaction,
+  createSupabaseProjectRepository,
 } from "@/features/real-data/supabase";
+import type { SupabaseClientLike } from "@/features/real-data/supabase";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
 import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -38,6 +43,14 @@ export type InboxResourceActionResult = {
   inboxItemId?: string;
   message: string;
   resourceId?: string;
+  status: "blocked" | "error" | "success";
+};
+
+export type InboxCreateNewActionResult = {
+  goalId?: string;
+  inboxItemId?: string;
+  message: string;
+  projectId?: string;
   status: "blocked" | "error" | "success";
 };
 
@@ -106,6 +119,13 @@ function revalidateInboxResourceRoutes() {
   revalidatePath("/dashboard");
 }
 
+function revalidateInboxCreateNewRoutes() {
+  revalidatePath("/inbox");
+  revalidatePath("/portfolio");
+  revalidatePath("/dashboard");
+  revalidatePath("/today");
+}
+
 function authBlockedMessage(
   error: "auth_error" | "invalid_session" | "missing_env" | "unauthenticated",
   actionLabel: string,
@@ -123,6 +143,24 @@ function authBlockedMessage(
   }
 
   return `Melde dich an, um Inbox-Einträge zu ${actionLabel}.`;
+}
+
+async function validateAreaScope(
+  client: SupabaseClientLike,
+  userId: string,
+  areaId: string | undefined,
+) {
+  if (!areaId) return true;
+
+  const result = await client
+    .from("areas")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("id", areaId)
+    .is("archived_at", null)
+    .maybeSingle();
+
+  return !result.error && Boolean(result.data);
 }
 
 export async function captureInboxItemAction(
@@ -405,4 +443,201 @@ export async function createResourceFromInboxFormStateAction(
   formData: FormData,
 ): Promise<InboxResourceActionResult> {
   return createResourceFromInboxAction(formData);
+}
+
+export async function createProjectFromInboxAction(
+  formData: FormData,
+): Promise<InboxCreateNewActionResult> {
+  const profileId = await getCurrentLifeOsProfileId();
+
+  if (profileId !== "manual") {
+    revalidatePath("/inbox");
+
+    return {
+      message: "Wechsle ins Manual-Profil, um Projects zu erstellen.",
+      status: "blocked",
+    };
+  }
+
+  const auth = await createAuthenticatedSupabaseServerClient();
+
+  if (!auth.ok) {
+    return {
+      message: authBlockedMessage(auth.error, "als Project zu routen"),
+      status: "blocked",
+    };
+  }
+
+  const inboxItemId = formString(formData, "inboxItemId");
+  const areaId = optionalFormString(formData, "areaId");
+
+  if (!(await validateAreaScope(auth.client, auth.user.id, areaId))) {
+    return {
+      inboxItemId,
+      message: "Der Area-Kontext konnte nicht bestätigt werden.",
+      status: "error",
+    };
+  }
+
+  const parsed = createProjectInputSchema.safeParse({
+    areaId,
+    description: optionalFormString(formData, "description"),
+    nextStep: optionalFormString(formData, "nextAction"),
+    profileId: auth.user.id,
+    title: formString(formData, "title"),
+    userId: auth.user.id,
+  });
+  const archiveInput = archiveInboxItemInputSchema.safeParse({
+    inboxItemId,
+    profileId: auth.user.id,
+    userId: auth.user.id,
+  });
+
+  if (!parsed.success || !archiveInput.success) {
+    return {
+      inboxItemId,
+      message: "Der Inbox-Eintrag konnte nicht als Project angelegt werden.",
+      status: "error",
+    };
+  }
+
+  const projectRepository = createSupabaseProjectRepository(auth.client);
+  const projectResult = await projectRepository.createProject(parsed.data);
+
+  if (!projectResult.ok) {
+    return {
+      inboxItemId,
+      message: "Das Project konnte nicht gespeichert werden.",
+      status: "error",
+    };
+  }
+
+  const inboxRepository = createSupabaseInboxRepository(auth.client);
+  const archiveResult = await inboxRepository.archiveInboxItem(
+    archiveInput.data,
+  );
+
+  if (!archiveResult.ok) {
+    return {
+      inboxItemId,
+      message:
+        "Das Project wurde gespeichert, aber der Inbox-Eintrag konnte nicht abgeschlossen werden.",
+      projectId: projectResult.data.id,
+      status: "error",
+    };
+  }
+
+  revalidateInboxCreateNewRoutes();
+
+  return {
+    inboxItemId,
+    message: "Project erstellt.",
+    projectId: projectResult.data.id,
+    status: "success",
+  };
+}
+
+export async function createProjectFromInboxFormStateAction(
+  _previousState: InboxCreateNewActionResult | null,
+  formData: FormData,
+): Promise<InboxCreateNewActionResult> {
+  return createProjectFromInboxAction(formData);
+}
+
+export async function createGoalFromInboxAction(
+  formData: FormData,
+): Promise<InboxCreateNewActionResult> {
+  const profileId = await getCurrentLifeOsProfileId();
+
+  if (profileId !== "manual") {
+    revalidatePath("/inbox");
+
+    return {
+      message: "Wechsle ins Manual-Profil, um Goals zu erstellen.",
+      status: "blocked",
+    };
+  }
+
+  const auth = await createAuthenticatedSupabaseServerClient();
+
+  if (!auth.ok) {
+    return {
+      message: authBlockedMessage(auth.error, "als Goal zu routen"),
+      status: "blocked",
+    };
+  }
+
+  const inboxItemId = formString(formData, "inboxItemId");
+  const areaId = optionalFormString(formData, "areaId");
+
+  if (!(await validateAreaScope(auth.client, auth.user.id, areaId))) {
+    return {
+      inboxItemId,
+      message: "Der Area-Kontext konnte nicht bestätigt werden.",
+      status: "error",
+    };
+  }
+
+  const parsed = createGoalInputSchema.safeParse({
+    areaId,
+    description: optionalFormString(formData, "description"),
+    profileId: auth.user.id,
+    title: formString(formData, "title"),
+    userId: auth.user.id,
+  });
+  const archiveInput = archiveInboxItemInputSchema.safeParse({
+    inboxItemId,
+    profileId: auth.user.id,
+    userId: auth.user.id,
+  });
+
+  if (!parsed.success || !archiveInput.success) {
+    return {
+      inboxItemId,
+      message: "Der Inbox-Eintrag konnte nicht als Goal angelegt werden.",
+      status: "error",
+    };
+  }
+
+  const goalRepository = createSupabaseGoalRepository(auth.client);
+  const goalResult = await goalRepository.createGoal(parsed.data);
+
+  if (!goalResult.ok) {
+    return {
+      inboxItemId,
+      message: "Das Goal konnte nicht gespeichert werden.",
+      status: "error",
+    };
+  }
+
+  const inboxRepository = createSupabaseInboxRepository(auth.client);
+  const archiveResult = await inboxRepository.archiveInboxItem(
+    archiveInput.data,
+  );
+
+  if (!archiveResult.ok) {
+    return {
+      goalId: goalResult.data.id,
+      inboxItemId,
+      message:
+        "Das Goal wurde gespeichert, aber der Inbox-Eintrag konnte nicht abgeschlossen werden.",
+      status: "error",
+    };
+  }
+
+  revalidateInboxCreateNewRoutes();
+
+  return {
+    goalId: goalResult.data.id,
+    inboxItemId,
+    message: "Goal erstellt.",
+    status: "success",
+  };
+}
+
+export async function createGoalFromInboxFormStateAction(
+  _previousState: InboxCreateNewActionResult | null,
+  formData: FormData,
+): Promise<InboxCreateNewActionResult> {
+  return createGoalFromInboxAction(formData);
 }

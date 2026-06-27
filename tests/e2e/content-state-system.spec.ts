@@ -237,6 +237,16 @@ async function captureManualInboxItem(page: Page, title: string, note: string) {
   await page.getByRole("button", { name: "Capture" }).click();
   await page.waitForLoadState("networkidle");
   await expect(page.getByText(title).first()).toBeVisible();
+  await page
+    .locator("[data-inbox-queue-item]")
+    .filter({ hasText: title })
+    .first()
+    .click();
+  await expect(
+    page
+      .locator('[data-inbox-section="active-item"]')
+      .getByRole("heading", { name: title }),
+  ).toBeVisible();
 }
 
 async function openAddToExistingDraft(page: Page) {
@@ -2399,7 +2409,7 @@ test.describe("Inbox content states", () => {
 
     await expect(
       activeItem.locator('[data-outcome-route="create_new"]'),
-    ).toContainText("Status: Noch nicht verbunden");
+    ).toContainText("Status: Teilweise verbunden");
 
     await expect(
       activeItem.locator('[data-outcome-route="solved_archive"]'),
@@ -2778,7 +2788,7 @@ test.describe("Inbox content states", () => {
     );
   });
 
-  test("prepared Create New route stays a non-persistent draft shell", async ({
+  test("Create New route exposes Project and Goal draft controls", async ({
     page,
   }) => {
     await setProfile(page, "demo");
@@ -2794,13 +2804,142 @@ test.describe("Inbox content states", () => {
       .locator("xpath=ancestor::section[1]");
     await expect(createNewDraft).toBeVisible();
     await expect(
-      createNewDraft.getByText("Noch nicht verbunden").first(),
+      createNewDraft.getByText("Teilweise verbunden").first(),
     ).toBeVisible();
     await expect(
-      createNewDraft.getByText(
-        "Diese Auswahl erzeugt keinen Submit und schreibt keine Daten.",
-      ),
-    ).toBeVisible();
+      createNewDraft.getByRole("button", { name: "Project erstellen" }),
+    ).toBeDisabled();
+    await createNewDraft
+      .getByRole("button", { name: "Goal DB-Erstellung" })
+      .click();
+    await expect(
+      createNewDraft.getByRole("button", { name: "Goal erstellen" }),
+    ).toBeDisabled();
+    await createNewDraft
+      .getByRole("button", { name: "Resource Vorbereitet" })
+      .click();
+    await expect(createNewDraft.getByLabel("Status")).toHaveValue(
+      "Resource nutzt eigene Inbox-Route",
+    );
+    await createNewDraft
+      .getByRole("button", { name: "Skill Vorbereitet" })
+      .click();
+    await expect(createNewDraft.getByLabel("Status")).toHaveValue(
+      "Future Scope",
+    );
+    await expect(
+      createNewDraft.getByRole("link", { name: "Portfolio öffnen" }),
+    ).toHaveCount(0);
+  });
+
+  test("Manual Inbox Create New Project persists and resolves", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session.",
+    );
+
+    const timestamp = Date.now();
+    const captureTitle = `Manual Inbox create project source ${timestamp}`;
+    const projectTitle = `Manual Inbox created project ${timestamp}`;
+
+    await setProfile(page, "manual");
+    await applySupabaseAuthState(page);
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/inbox");
+    });
+    await skipIfManualDbUnavailable(page);
+    await captureManualInboxItem(
+      page,
+      captureTitle,
+      "Create a new Project from this inbox capture.",
+    );
+
+    const activeItem = page.locator('[data-inbox-section="active-item"]');
+    await activeItem.locator('[data-outcome-route="create_new"]').click();
+    const createNewDraft = activeItem
+      .getByRole("heading", { name: "Create New Draft" })
+      .locator("xpath=ancestor::section[1]");
+    await expect(createNewDraft).toBeVisible();
+    await createNewDraft.getByLabel("Titel").fill(projectTitle);
+    await createNewDraft
+      .getByLabel("Beschreibung / Kontext")
+      .fill("Project created from Inbox Create New.");
+    await createNewDraft
+      .getByLabel("Nächste Aktion")
+      .fill("Review the created project.");
+    await expect(
+      createNewDraft.getByRole("button", { name: "Project erstellen" }),
+    ).toBeEnabled();
+    await createNewDraft
+      .getByRole("button", { name: "Project erstellen" })
+      .click();
+    await page.waitForLoadState("networkidle");
+
+    await page.goto("/portfolio?view=projects");
+    await expect(page.getByText(projectTitle).first()).toBeVisible();
+    await page.reload();
+    await expect(page.getByText(projectTitle).first()).toBeVisible();
+    await page.goto("/inbox");
+    await expect(page.getByText(captureTitle)).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByText(captureTitle)).toHaveCount(0);
+  });
+
+  test("Manual Inbox Create New Goal persists and resolves", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session.",
+    );
+
+    const timestamp = Date.now();
+    const captureTitle = `Manual Inbox create goal source ${timestamp}`;
+    const goalTitle = `Manual Inbox created goal ${timestamp}`;
+
+    await setProfile(page, "manual");
+    await applySupabaseAuthState(page);
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/inbox");
+    });
+    await skipIfManualDbUnavailable(page);
+    await captureManualInboxItem(
+      page,
+      captureTitle,
+      "Create a new Goal from this inbox capture.",
+    );
+
+    const activeItem = page.locator('[data-inbox-section="active-item"]');
+    await activeItem.locator('[data-outcome-route="create_new"]').click();
+    const createNewDraft = activeItem
+      .getByRole("heading", { name: "Create New Draft" })
+      .locator("xpath=ancestor::section[1]");
+    await expect(createNewDraft).toBeVisible();
+    await createNewDraft
+      .getByRole("button", { name: "Goal DB-Erstellung" })
+      .click();
+    await createNewDraft.getByLabel("Titel").fill(goalTitle);
+    await createNewDraft
+      .getByLabel("Beschreibung / Kontext")
+      .fill("Goal created from Inbox Create New.");
+    await expect(
+      createNewDraft.getByRole("button", { name: "Goal erstellen" }),
+    ).toBeEnabled();
+    await createNewDraft
+      .getByRole("button", { name: "Goal erstellen" })
+      .click();
+    await page.waitForLoadState("networkidle");
+
+    await page.goto("/portfolio?view=goals");
+    await expect(page.getByText(goalTitle).first()).toBeVisible();
+    await page.reload();
+    await expect(page.getByText(goalTitle).first()).toBeVisible();
+    await page.goto("/inbox");
+    await expect(page.getByText(captureTitle)).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByText(captureTitle)).toHaveCount(0);
   });
 
   test("Manual missing auth state stays visible across daily core routes", async ({

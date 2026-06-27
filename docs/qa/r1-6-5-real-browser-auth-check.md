@@ -445,6 +445,24 @@
 - Keine UI, keine Migration, keine Repository-UI-Anbindung, keine externe Nutrition API, keine Barcode-/Grocery-/Ingredient-Logik.
 - Kein Playwright-Lauf erforderlich, weil dieser Block keine UI aendert.
 
+## Inbox Routing Completion / Daily Flow Repair
+
+- Nutrition-Follow-up bleibt pausiert, bis der Inbox Completion Gate gruen ist.
+- Completion Gate: P0/Daily Flow ist erst feature-complete, wenn Inbox UI funktioniert, real persistiert, nach Reload stabil bleibt und der Browser-Proof gruen ist.
+- Outcome Routes: Standalone Task, Knowledge Resource und Solved / Archive bleiben verbunden; Add to Existing und Create New sind teilweise verbunden.
+- Create New persistiert Project und Goal aus dem Inbox-Draft und archiviert danach den Inbox-Eintrag.
+- Resource bleibt ueber die eigene Knowledge-Resource-Route verbunden; Skill bleibt Future Scope.
+- Planning Signals bleiben im Task-Draft editierbar und werden nur gespeichert, wenn die Ziel-Action sie unterstuetzt.
+- Inbox Queue Items sind direkt auswaehlbar; der aktive Eintrag ist ueber `/inbox?item=...` reload-stabil.
+- Lokaler Playwright Auth-State wurde ueber den vorhandenen Refresh Token gegen die lokale Supabase Auth Runtime erneuert; `.local/` bleibt unversioniert.
+- Fokussierter Inbox/Daily-Flow-Lauf:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Inbox|Manual|Standalone Task|Create New|Solved|Archive|Planning Signals"`
+- Ergebnis: 64 passed, 2 skipped. Die Skips sind datenabhaengige Empty-State-Gates bei gefuellter lokaler Manual-DB.
+- Regression Manual/Today/Dashboard/Calendar/Portfolio:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Manual|Today|Dashboard|Calendar|Portfolio"`
+- Ergebnis: 68 passed, 2 skipped.
+- Keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB und kein Service-Role-Zugriff.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.

@@ -7,8 +7,23 @@ export const metadata: Metadata = {
   title: "Inbox | Life OS",
 };
 
-export default async function InboxPage() {
-  const viewModel = await getInboxViewModel();
+type InboxSearchParams = {
+  item?: string | string[];
+};
+
+function searchValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+export default async function InboxPage({
+  searchParams,
+}: Readonly<{
+  searchParams: Promise<InboxSearchParams>;
+}>) {
+  const params = await searchParams;
+  const viewModel = await getInboxViewModel({
+    selectedInboxItemId: searchValue(params.item),
+  });
 
   return (
     <>

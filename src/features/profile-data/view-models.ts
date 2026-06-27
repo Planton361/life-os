@@ -2157,6 +2157,7 @@ function buildProfileInboxViewModel(
   profileId: Exclude<LifeOsProfileId, "demo">,
   options: Readonly<{
     existingTargets?: InboxExistingTargets;
+    selectedInboxItemId?: string;
     unavailableReason?: string;
   }> = {},
 ): InboxViewModel {
@@ -2169,10 +2170,15 @@ function buildProfileInboxViewModel(
     ...existingTargets.goals,
     ...existingTargets.resources,
   ].slice(0, 5);
-  const queue = profile.inboxItems.map((item, index) =>
-    manualInboxToQueueItem(item, index === 0),
+  const active =
+    profile.inboxItems.find(
+      (item) => item.id === options.selectedInboxItemId,
+    ) ??
+    profile.inboxItems[0] ??
+    null;
+  const queue = profile.inboxItems.map((item) =>
+    manualInboxToQueueItem(item, item.id === active?.id),
   );
-  const active = profile.inboxItems[0] ?? null;
   const activeIsTaskCapture = active?.type === "task";
   const activeIsTriaged = Boolean(active?.triagedTaskId);
   const activeHasExitDecision = Boolean(
@@ -2956,6 +2962,11 @@ function taskQueueStatus(
 }
 
 function sortPlannerQueueTasks(left: LifeTask, right: LifeTask) {
+  const today = todayDateLabel();
+  const todayCompare =
+    Number(right.date === today) - Number(left.date === today);
+  if (todayCompare !== 0) return todayCompare;
+
   const dateCompare = (left.date ?? "").localeCompare(right.date ?? "");
   if (dateCompare !== 0) return dateCompare;
 
@@ -3256,7 +3267,9 @@ export async function getDashboardViewModel(): Promise<DashboardViewModel> {
   );
 }
 
-export async function getInboxViewModel(): Promise<InboxViewModel> {
+export async function getInboxViewModel(
+  options: { selectedInboxItemId?: string } = {},
+): Promise<InboxViewModel> {
   const profileId = await getCurrentLifeOsProfileId();
 
   if (profileId === "demo") {
@@ -3268,11 +3281,14 @@ export async function getInboxViewModel(): Promise<InboxViewModel> {
 
     return buildProfileInboxViewModel(manualInbox.data, profileId, {
       existingTargets: manualInbox.existingTargets,
+      selectedInboxItemId: options.selectedInboxItemId,
       unavailableReason: manualInbox.unavailableReason,
     });
   }
 
-  return buildProfileInboxViewModel(await getProfileData(profileId), profileId);
+  return buildProfileInboxViewModel(await getProfileData(profileId), profileId, {
+    selectedInboxItemId: options.selectedInboxItemId,
+  });
 }
 
 export async function getTodayViewModel(): Promise<TodayViewModel> {

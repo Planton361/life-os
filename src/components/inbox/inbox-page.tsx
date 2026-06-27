@@ -23,6 +23,9 @@ import {
   archiveInboxItemFormStateAction,
   captureInboxItemFormAction,
   createResourceFromInboxFormStateAction,
+  createGoalFromInboxFormStateAction,
+  createProjectFromInboxFormStateAction,
+  type InboxCreateNewActionResult,
   type InboxResourceActionResult,
   type InboxArchiveActionResult,
   triageInboxItemToTaskFormAction,
@@ -171,6 +174,10 @@ function captureTypeAccent(type: InboxQueueItem["type"]) {
 
 function outcomeRouteStatus(route: InboxOutcomeRoute) {
   if (route === "add_to_existing") {
+    return "Teilweise verbunden";
+  }
+
+  if (route === "create_new") {
     return "Teilweise verbunden";
   }
 
@@ -343,7 +350,13 @@ function InboxQueueItemView({ item }: Readonly<{ item: InboxQueueItem }>) {
   const typeColor = captureTypeAccent(item.type);
 
   return (
-    <article
+    <Link
+      aria-current={item.active ? "true" : undefined}
+      className={cn("block rounded-[16px]", focusClasses)}
+      data-inbox-queue-item={item.id}
+      href={`/inbox?item=${encodeURIComponent(item.id)}`}
+    >
+      <article
       className={cn(
         "grid min-h-[92px] grid-cols-[4px_minmax(0,1fr)] overflow-hidden rounded-[16px] border bg-[rgba(18,28,43,.54)] transition",
         item.active
@@ -375,7 +388,8 @@ function InboxQueueItemView({ item }: Readonly<{ item: InboxQueueItem }>) {
           {item.next}
         </p>
       </div>
-    </article>
+      </article>
+    </Link>
   );
 }
 
@@ -683,6 +697,7 @@ function InboxOutcomeRoutes({
           const isSelected = selectedRoute === option.id;
           const isConnected =
             option.id === "add_to_existing" ||
+            option.id === "create_new" ||
             option.id === "knowledge_resource" ||
             option.id === "standalone_task" ||
             option.id === "solved_archive";
@@ -843,134 +858,219 @@ function DraftShellReadOnlyField({
   );
 }
 
-function DraftShellSelect({
-  label,
-  options,
-}: Readonly<{
-  label: string;
-  options: readonly string[];
-}>) {
-  return (
-    <label className="block min-w-0">
-      <span className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-        {label}
-      </span>
-      <select
-        className={cn(draftInputClasses, focusClasses)}
-        defaultValue={options[0]}
-        disabled
-      >
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
-
-function PreparedDraftShell({
+function InboxCreateNewDraft({
   activeItem,
-  route,
+  canCreateNew,
+  nextAction,
 }: Readonly<{
   activeItem: InboxViewModel["activeItem"];
-  route: Exclude<
-    InboxOutcomeRoute,
-    "add_to_existing" | "standalone_task" | "solved_archive"
-  >;
+  canCreateNew: boolean;
+  nextAction: InboxClarificationField;
 }>) {
-  const shell = {
-    create_new: {
-      accent: "var(--accent-green)",
-      title: "Create New Draft",
-      description:
-        "Diese Route bereitet ein neues Objekt vor. Es wird noch kein Project, Goal, Skill oder Resource erstellt.",
-      fields: (
-        <>
-          <DraftShellSelect
+  const [targetType, setTargetType] = useState<
+    "goal" | "project" | "resource" | "skill"
+  >("project");
+  const [projectState, projectFormAction, projectPending] = useActionState<
+    InboxCreateNewActionResult | null,
+    FormData
+  >(createProjectFromInboxFormStateAction, null);
+  const [goalState, goalFormAction, goalPending] = useActionState<
+    InboxCreateNewActionResult | null,
+    FormData
+  >(createGoalFromInboxFormStateAction, null);
+  const area =
+    activeItem.planningSignals.find((signal) => signal.label === "Area")
+      ?.value ?? "Review";
+  const currentState =
+    targetType === "project"
+      ? projectState
+      : targetType === "goal"
+        ? goalState
+        : null;
+  const createdCurrentItem =
+    currentState?.status === "success" &&
+    currentState.inboxItemId === activeItem.id;
+  const isProject = targetType === "project";
+  const isGoal = targetType === "goal";
+  const canSubmit = canCreateNew && (isProject || isGoal);
+  const pending = isProject ? projectPending : isGoal ? goalPending : false;
+
+  if (createdCurrentItem) {
+    return (
+      <section
+        aria-labelledby="create-new-created-title"
+        className="rounded-[18px] border border-[rgba(66,184,131,.34)] bg-[rgba(66,184,131,.10)] p-3"
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3
+              className="text-sm font-semibold text-[var(--text-primary)]"
+              id="create-new-created-title"
+            >
+              {isProject ? "Project erstellt" : "Goal erstellt"}
+            </h3>
+            <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+              {currentState.message}
+            </p>
+          </div>
+          <Link
+            className={cn(
+              "inline-flex min-h-8 items-center rounded-[12px] border border-[rgba(66,184,131,.34)] bg-[rgba(66,184,131,.16)] px-3 text-xs font-semibold text-[var(--text-primary)]",
+              focusClasses,
+            )}
+            href={
+              isProject ? "/portfolio?view=projects" : "/portfolio?view=goals"
+            }
+          >
+            Portfolio öffnen
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
+  const formAction = isProject ? projectFormAction : goalFormAction;
+  const submitLabel = isProject ? "Project erstellen" : "Goal erstellen";
+
+  return (
+    <section
+      aria-labelledby="create-new-draft-title"
+      className="rounded-[18px] border border-[rgba(66,184,131,.30)] bg-[rgba(66,184,131,.075)] p-3"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3
+            className="text-sm font-semibold text-[var(--text-primary)]"
+            id="create-new-draft-title"
+          >
+            Create New Draft
+          </h3>
+          <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+            Neues Project oder Goal direkt aus der Inbox erstellen. Resource
+            und Skill bleiben in dieser Route vorbereitet.
+          </p>
+        </div>
+        <Pill active accent="var(--accent-green)">
+          Teilweise verbunden
+        </Pill>
+      </div>
+
+      <div
+        aria-label="Create new target type"
+        className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4"
+      >
+        {(["project", "goal", "resource", "skill"] as const).map((type) => {
+          const active = targetType === type;
+          const label =
+            type === "project"
+              ? "Project"
+              : type === "goal"
+                ? "Goal"
+                : type === "resource"
+                  ? "Resource"
+                  : "Skill";
+
+          return (
+            <button
+              aria-pressed={active}
+              className={cn(
+                "min-h-16 rounded-[14px] border px-3 py-2 text-left",
+                active
+                  ? "border-[rgba(66,184,131,.42)] bg-[rgba(66,184,131,.16)] text-[var(--text-primary)]"
+                  : "border-[var(--border-subtle)] bg-[rgba(15,23,36,.48)] text-[var(--text-secondary)]",
+                focusClasses,
+              )}
+              key={type}
+              onClick={() => setTargetType(type)}
+              type="button"
+            >
+              <span className="block text-xs font-semibold">{label}</span>
+              <span className="mt-1 block text-[10px] text-[var(--text-muted)]">
+                {type === "project" || type === "goal"
+                  ? "DB-Erstellung"
+                  : "Vorbereitet"}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {isProject || isGoal ? (
+        <form action={formAction} className="mt-3">
+          <input name="inboxItemId" type="hidden" value={activeItem.id} />
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            <DraftTextInput
+              defaultValue={activeItem.title}
+              label="Titel"
+              name="title"
+            />
+            <DraftTextarea
+              defaultValue={activeItem.originalCapture}
+              label="Beschreibung / Kontext"
+              name="description"
+            />
+            {isProject ? (
+              <DraftTextInput
+                defaultValue={nextAction.value}
+                label="Nächste Aktion"
+                name="nextAction"
+              />
+            ) : null}
+            <DraftSelect label="Area" name="areaId">
+              {activeItem.persistedAreaId ? (
+                <option value={activeItem.persistedAreaId}>{area}</option>
+              ) : null}
+              <option value="">
+                {activeItem.persistedAreaId
+                  ? "Keine Area setzen"
+                  : "Nicht gesetzt - nicht gespeichert"}
+              </option>
+            </DraftSelect>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-[10px] leading-4 text-[var(--text-muted)]">
+              Persistiert: Titel, Beschreibung, Area-Kontext und bei Projects
+              die nächste Aktion. Der Inbox-Eintrag wird danach archiviert.
+            </p>
+            <button
+              className={cn(
+                "min-h-9 rounded-[12px] border border-[rgba(66,184,131,.42)] bg-[rgba(66,184,131,.18)] px-3 text-xs font-semibold text-[var(--text-primary)]",
+                focusClasses,
+                disabledActionClasses,
+              )}
+              disabled={!canSubmit || pending}
+              type="submit"
+            >
+              {pending ? "Wird erstellt..." : submitLabel}
+            </button>
+          </div>
+          {currentState?.status === "blocked" ||
+          currentState?.status === "error" ? (
+            <p className="mt-2 text-[11px] leading-4 text-[var(--accent-orange)]">
+              {currentState.message}
+            </p>
+          ) : null}
+        </form>
+      ) : (
+        <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          <DraftShellReadOnlyField
             label="Neues Objekt"
-            options={["Project", "Goal", "Skill", "Resource"]}
+            value={targetType === "resource" ? "Resource" : "Skill"}
           />
           <DraftShellReadOnlyField
             label="Arbeitstitel"
             value={activeItem.title}
           />
           <DraftShellReadOnlyField
-            label="Warum relevant?"
-            value="Noch nicht verbunden"
+            label="Status"
+            value={
+              targetType === "resource"
+                ? "Resource nutzt eigene Inbox-Route"
+                : "Future Scope"
+            }
           />
-          <DraftShellReadOnlyField
-            label="Nächster Schritt"
-            value="Noch nicht verbunden"
-          />
-        </>
-      ),
-    },
-    knowledge_resource: {
-      accent: "var(--accent-purple)",
-      title: "Resource Draft",
-      description:
-        "Diese Route bereitet Wissen, Link, Notiz oder Material vor. Es wird noch keine Resource gespeichert.",
-      fields: (
-        <>
-          <DraftShellSelect
-            label="Resource Typ"
-            options={["Note", "Link", "Document", "Idea"]}
-          />
-          <DraftShellReadOnlyField
-            label="Cluster / Bezug"
-            value="Noch nicht verbunden"
-          />
-          <DraftShellReadOnlyField
-            label="Kurzfassung"
-            value={activeItem.originalCapture || "Noch nicht verbunden"}
-          />
-        </>
-      ),
-    },
-  } satisfies Record<
-    Exclude<
-      InboxOutcomeRoute,
-      "add_to_existing" | "standalone_task" | "solved_archive"
-    >,
-    {
-      accent: string;
-      description: string;
-      fields: ReactNode;
-      title: string;
-    }
-  >;
-  const config = shell[route];
-
-  return (
-    <section
-      aria-labelledby="prepared-draft-title"
-      className="rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.52)] p-3"
-      style={accentStyle(config.accent)}
-    >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h3
-            className="text-sm font-semibold text-[var(--text-primary)]"
-            id="prepared-draft-title"
-          >
-            {config.title}
-          </h3>
-          <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
-            {config.description}
-          </p>
         </div>
-        <Pill accent="var(--text-muted)">
-          Noch nicht verbunden
-        </Pill>
-      </div>
-      <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-        {config.fields}
-      </div>
-      <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
-        Diese Auswahl erzeugt keinen Submit und schreibt keine Daten.
-      </p>
+      )}
     </section>
   );
 }
@@ -1038,9 +1138,9 @@ function InboxAddToExistingDraft({
     targetType === "skill"
       ? "Skill bleibt Future Scope, bis eine echte persistierte Skill-Entity existiert."
       : targetType === "project"
-        ? "Noch keine bestehenden Projects vorhanden. Create New folgt später."
+        ? "Noch keine bestehenden Projects vorhanden. Nutze Create New, um ein neues Project anzulegen."
         : targetType === "goal"
-          ? "Noch keine bestehenden Goals vorhanden. Create New folgt später."
+          ? "Noch keine bestehenden Goals vorhanden. Nutze Create New, um ein neues Goal anzulegen."
           : "Noch keine bestehenden Resources vorhanden. Resource Link folgt später.";
 
   return (
@@ -1682,6 +1782,7 @@ function InboxActiveItemPanel({
   addToExistingEnabled,
   archiveEnabled,
   contentState,
+  createNewEnabled,
   existingTargets,
   onSelectOutcomeRoute,
   outcome,
@@ -1693,6 +1794,7 @@ function InboxActiveItemPanel({
   addToExistingEnabled: boolean;
   archiveEnabled: boolean;
   contentState: ContentStateMeta;
+  createNewEnabled: boolean;
   existingTargets: InboxViewModel["existingTargets"];
   onSelectOutcomeRoute: (route: InboxOutcomeRoute) => void;
   outcome: InboxViewModel["outcome"];
@@ -1737,11 +1839,13 @@ function InboxActiveItemPanel({
         canCreateResource={profileId === "manual"}
       />
     );
-  } else if (
-    selectedDraftRoute === "create_new"
-  ) {
+  } else if (selectedDraftRoute === "create_new") {
     draftSlot = (
-      <PreparedDraftShell activeItem={activeItem} route={selectedDraftRoute} />
+      <InboxCreateNewDraft
+        activeItem={activeItem}
+        canCreateNew={createNewEnabled}
+        nextAction={nextAction}
+      />
     );
   }
 
@@ -2252,6 +2356,12 @@ export function InboxPage({
       !viewModel.activeItem.triagedTaskId &&
       selectedOutcomeRoute === "add_to_existing",
   );
+  const createNewEnabled = Boolean(
+    viewModel.quickCapture.enabled &&
+      viewModel.activeItem.hasSelection &&
+      !viewModel.activeItem.triagedTaskId &&
+      selectedOutcomeRoute === "create_new",
+  );
   const archiveEnabled = Boolean(
     viewModel.quickCapture.enabled &&
       viewModel.activeItem.hasSelection &&
@@ -2306,6 +2416,7 @@ export function InboxPage({
           addToExistingEnabled={addToExistingEnabled}
           archiveEnabled={archiveEnabled}
           contentState={viewModel.contentStates.activeItem}
+          createNewEnabled={createNewEnabled}
           existingTargets={viewModel.existingTargets}
           onSelectOutcomeRoute={setSelectedOutcomeRoute}
           outcome={viewModel.outcome}
