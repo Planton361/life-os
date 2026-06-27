@@ -364,6 +364,18 @@
 - Keine Remote-DB, kein `supabase link`, kein `supabase db push`, kein Service-Role-Zugriff.
 - Kein Playwright-Lauf erforderlich, weil dieser Block keine UI oder Actions aendert.
 
+## R1.7.5C Recurring Template Repository + Actions
+
+- Repository Contract fuer Recurring Task Templates ergaenzt.
+- Supabase Repository implementiert: alle Templates lesen, aktive Templates lesen, erstellen, aktualisieren und deaktivieren.
+- Mapper fuer `recurring_task_templates` Row <-> Domain ergaenzt.
+- Same-user Ownership fuer `areaId`, `projectId` und `goalId` wird vor Create/Update geprueft.
+- Server Actions fuer Create, Update und Deactivate vorbereitet; `userId` kommt serverseitig aus Supabase Auth, nicht vom Client.
+- Zod validiert Template-Input inklusive Title, Duration Range, Recurrence Object, Dates, Timezone und optionaler UUID-Kontexte.
+- Keine Generation Engine, keine UI, keine Migration, keine Auto-Generation, keine Background Jobs, keine Cron Jobs.
+- Keine Remote-DB, kein `supabase link`, kein `supabase db push`, kein Service-Role-Zugriff.
+- Kein Playwright-Lauf erforderlich, weil dieser Block keine UI aendert.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.

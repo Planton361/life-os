@@ -7,3 +7,4 @@ export * from "./project";
 export * from "./goal";
 export * from "./daily-log";
 export * from "./resource";
+export * from "./recurring-task-template";

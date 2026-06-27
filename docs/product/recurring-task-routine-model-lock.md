@@ -378,6 +378,26 @@ Nicht Teil von R1.7.5B:
 - keine Cron Jobs
 - keine Remote-DB
 
+## R1.7.5C Repository/Actions
+
+R1.7.5C ergaenzt die Data-/Action-Schicht fuer Recurring Task Templates:
+
+- Domain Type fuer `RecurringTaskTemplate`.
+- Mapper fuer `recurring_task_templates` Row <-> Domain.
+- Repository Contract und Supabase Repository fuer Lesen, aktive Templates lesen, Create, Update und Deactivate.
+- Same-user Ownership-Pruefung fuer `areaId`, `projectId` und `goalId` vor Create/Update.
+- Server Actions fuer Create, Update und Deactivate mit serverseitiger Auth und ohne Client-`userId`.
+
+Nicht Teil von R1.7.5C:
+
+- keine Generation Engine
+- keine UI
+- keine Migration
+- keine Auto-Generation von Tasks
+- keine Background Jobs
+- keine Cron Jobs
+- keine Today-/Calendar-/Dashboard-Integration
+
 ## Implementation Plan
 
 ### R1.7.5B - Recurring Task Schema Lock/Migration

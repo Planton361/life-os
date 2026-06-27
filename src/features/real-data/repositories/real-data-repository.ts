@@ -8,6 +8,7 @@ import type {
   Profile,
   ProfileId,
   Project,
+  RecurringTaskTemplate,
   Resource,
   ResourceRelation,
   ResourceId,
@@ -22,12 +23,15 @@ import type {
   CarryTaskForwardInput,
   CloseDailyLogInput,
   CompleteTaskInput,
+  CreateRecurringTaskTemplateInput,
   CreateGoalInput,
   CreateProjectInput,
   CreateResourceInput,
   CreateTaskInput,
+  DeactivateRecurringTaskTemplateInput,
   LinkResourceInput,
   ReopenTaskInput,
+  UpdateRecurringTaskTemplateInput,
   RescheduleTaskInput,
   ScheduleTaskInput,
   TriageInboxItemToTaskInput,
@@ -187,6 +191,26 @@ export interface ResourceRepository {
   ): Promise<RepositoryListResult<Resource>>;
 }
 
+export interface RecurringTaskTemplateRepository {
+  createRecurringTaskTemplate(
+    input: CreateRecurringTaskTemplateInput,
+  ): Promise<RepositoryResult<RecurringTaskTemplate>>;
+  deactivateRecurringTaskTemplate(
+    input: DeactivateRecurringTaskTemplateInput,
+  ): Promise<RepositoryResult<RecurringTaskTemplate>>;
+  getActiveRecurringTaskTemplatesByUser(
+    userId: UserId,
+    profileId: ProfileId,
+  ): Promise<RepositoryListResult<RecurringTaskTemplate>>;
+  getRecurringTaskTemplatesByUser(
+    userId: UserId,
+    profileId: ProfileId,
+  ): Promise<RepositoryListResult<RecurringTaskTemplate>>;
+  updateRecurringTaskTemplate(
+    input: UpdateRecurringTaskTemplateInput,
+  ): Promise<RepositoryResult<RecurringTaskTemplate>>;
+}
+
 export interface RealDataRepository {
   profiles: ProfileRepository;
   inbox: InboxRepository;
@@ -195,6 +219,7 @@ export interface RealDataRepository {
   goals: GoalRepository;
   dailyLogs: DailyLogRepository;
   resources: ResourceRepository;
+  recurringTaskTemplates: RecurringTaskTemplateRepository;
 }
 
 export type TriageInboxItemToTaskTransaction = (

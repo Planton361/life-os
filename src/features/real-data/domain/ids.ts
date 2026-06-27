@@ -9,6 +9,7 @@ export type DailyLogId = string;
 export type DailyLogTaskId = string;
 export type ResourceId = string;
 export type ResourceRelationId = string;
+export type RecurringTaskTemplateId = string;
 export type EntityId = string;
 
 export type LocalDateString = string;
