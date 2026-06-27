@@ -420,6 +420,19 @@
 - Keine UI-, Source-Code- oder Migration-Aenderung in diesem Block.
 - Kein Playwright-Lauf erforderlich, weil nur Product-/QA-Dokumentation geaendert wurde.
 
+## R1.7.6B Nutrition Recipe / Meal Schema Migration
+
+- Lokale Supabase-Migration fuer `recipes` und `meals` erstellt und lokal angewendet.
+- `recipes` enthaelt `user_id`, optionale `area_id`, Titel, Summary, Instructions, Servings, Prep Minutes, Tags, optionale `nutrition_estimate`, Source, `is_archived`, `created_at` und `updated_at`.
+- `meals` enthaelt `user_id`, optionale `recipe_id`, user-lokales `date`, kontrollierten `meal_type`, Titel, optionale Plan-/Completion-Zeitpunkte, Notes, `created_at` und `updated_at`.
+- RLS fuer beide Tabellen aktiviert; Policies nutzen `to authenticated` plus `(select auth.uid()) = user_id`.
+- Authenticated Grants fuer Select, Insert, Update und Delete gesetzt.
+- `public.set_updated_at()` Trigger fuer beide Tabellen gesetzt.
+- Typegen aktualisiert; Row Types und zentrale Table Names fuer `recipes` und `meals` ergaenzt.
+- Zod-Schemas vorbereitet: Recipe Create/Update und Meal Create/Update ohne clientseitige `userId`.
+- Keine UI, keine Repository-Implementation, keine Server Actions, keine externe Nutrition API, kein Remote-DB-Zugriff.
+- Kein Playwright-Lauf erforderlich, weil dieser Block nur Schema/Data-Foundation und Docs aendert.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.

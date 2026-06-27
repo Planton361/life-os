@@ -294,6 +294,56 @@ export type Database = {
           },
         ]
       }
+      meals: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          date: string
+          id: string
+          meal_type: string
+          notes: string | null
+          planned_at: string | null
+          recipe_id: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          date: string
+          id?: string
+          meal_type: string
+          notes?: string | null
+          planned_at?: string | null
+          recipe_id?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          meal_type?: string
+          notes?: string | null
+          planned_at?: string | null
+          recipe_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meals_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -383,6 +433,65 @@ export type Database = {
             columns: ["goal_id"]
             isOneToOne: false
             referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipes: {
+        Row: {
+          area_id: string | null
+          created_at: string
+          id: string
+          instructions: string | null
+          is_archived: boolean
+          nutrition_estimate: Json | null
+          prep_minutes: number | null
+          servings: number | null
+          source: string | null
+          summary: string | null
+          tags: Json
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          area_id?: string | null
+          created_at?: string
+          id?: string
+          instructions?: string | null
+          is_archived?: boolean
+          nutrition_estimate?: Json | null
+          prep_minutes?: number | null
+          servings?: number | null
+          source?: string | null
+          summary?: string | null
+          tags?: Json
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          area_id?: string | null
+          created_at?: string
+          id?: string
+          instructions?: string | null
+          is_archived?: boolean
+          nutrition_estimate?: Json | null
+          prep_minutes?: number | null
+          servings?: number | null
+          source?: string | null
+          summary?: string | null
+          tags?: Json
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipes_area_id_fkey"
+            columns: ["area_id"]
+            isOneToOne: false
+            referencedRelation: "areas"
             referencedColumns: ["id"]
           },
         ]

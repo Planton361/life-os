@@ -4,6 +4,14 @@ export type InboxItemRow = TableRow<"inbox_items">;
 export type InboxItemInsert = TableInsert<"inbox_items">;
 export type InboxItemUpdate = TableUpdate<"inbox_items">;
 
+export type MealRow = TableRow<"meals">;
+export type MealInsert = TableInsert<"meals">;
+export type MealUpdate = TableUpdate<"meals">;
+
+export type RecipeRow = TableRow<"recipes">;
+export type RecipeInsert = TableInsert<"recipes">;
+export type RecipeUpdate = TableUpdate<"recipes">;
+
 export type GoalRow = TableRow<"goals">;
 export type GoalInsert = TableInsert<"goals">;
 export type GoalUpdate = TableUpdate<"goals">;

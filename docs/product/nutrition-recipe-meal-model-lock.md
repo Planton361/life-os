@@ -1,14 +1,14 @@
 # Nutrition Recipe / Meal Model Lock
 
-Stand: 2026-06-27
+Stand: 2026-06-28
 Status: Active
-Scope: R1.7.6 Nutrition Recipe / Meal Data Model Lock
+Scope: R1.7.6 Nutrition Recipe / Meal Data Model Lock, R1.7.6B Nutrition Recipe / Meal Schema Migration
 
 ## 1. Zweck
 
 Dieses Dokument sperrt die Produkt- und Datenmodellsemantik fuer Nutrition. R1.7.6 fuehrt Nutrition nicht als vollstaendige Ernaehrungsplattform ein, sondern trennt Recipe, Meal, Meal Plan und Nutrition Log so, dass ein spaeteres persistentes MVP ohne Dashboard- oder Daily-Core-Verdrangung gebaut werden kann.
 
-R1.7.6 baut keine Migration, keine Repository-Implementierung, keine Server Actions und keine UI-Neugestaltung.
+R1.7.6 baut keine Migration, keine Repository-Implementierung, keine Server Actions und keine UI-Neugestaltung. R1.7.6B ergaenzt die lokale Schema-Foundation fuer `recipes` und `meals`, aber weiterhin keine UI, keine Repository-Implementierung und keine Server Actions.
 
 ## 2. Begriffe
 
@@ -214,7 +214,17 @@ Ein spaeterer R1.7.6B- oder R1.7.7-Scope darf eine lokale Migration nur bauen, w
 - Typegen und Zod-Schemas werden aktualisiert.
 - Keine Remote-DB, kein `supabase link`, kein `supabase db push`, kein `db reset`.
 
-Aktuelle Feasibility: Das lokale Schema hat `area_key = nutrition`, aber keine Tabellen fuer `recipes`, `meals`, `ingredients`, `grocery` oder Nutrition Logs. Das bestehende Real-Data-Layer-Pattern ist verwendbar, aber Nutrition braucht einen eigenen lokalen Migrationsblock mit RLS und Repository.
+R1.7.6B Status: Das lokale Schema enthaelt jetzt `public.recipes` und `public.meals`. Beide Tabellen haben `user_id`, Timestamps, RLS, authenticated Grants und `updated_at` Trigger. `recipes` nutzt `is_archived` als Soft-Archive-Flag. `meals.recipe_id` bleibt optional. Same-user Ownership fuer `recipe_id` wird nicht per Trigger erzwungen; spaetere Repository-/Server-Action-Flows muessen `recipe_id` gegen denselben `user_id` pruefen.
+
+Weiterhin nicht vorhanden: `ingredients`, `recipe_ingredients`, `nutrition_entries`, `macro_targets`, `grocery_lists`, `meal_plan_templates` oder externe Nutrition-Datenquellen.
+
+Nach R1.7.6B bleiben als naechste Gates:
+
+- Repository Interface und Supabase Repository fuer Recipes/Meals.
+- Server Actions, die `user_id` aus Supabase Auth holen.
+- Same-user Ownership-Pruefung fuer `recipe_id`.
+- UI-Binding nur nach separater Freigabe.
+- Browser-/Manual-QA erst nach Actions/UI.
 
 ## 12. Spaetere Ausbaustufen
 
