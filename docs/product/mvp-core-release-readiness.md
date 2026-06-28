@@ -1,18 +1,20 @@
 # MVP Core Release Readiness
 
 Stand: 2026-06-28
-Status: R1.9.1 local RLS/security audit documented
+Status: R1.9.2 backup export restore strategy documented
 Zweck: Roadmap-Reconciliation und Release-Entscheidung nach R1.8.3 MVP Core Hardening.
 Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `DATA_MODEL.md`,
 `SECURITY.md`, `ACCESSIBILITY.md`, `docs/product/mvp-core-status.md` und
 `docs/qa/r1-6-5-real-browser-auth-check.md`,
-`docs/security/rls-security-audit-r1-9-1.md`.
+`docs/security/rls-security-audit-r1-9-1.md`,
+`docs/security/backup-export-restore-strategy-r1-9-2.md`.
 
 ## 1. Zweck
 
 Dieses Dokument fasst den MVP-Core-Stand nach R1.8.3 zusammen, gleicht die
 Roadmap gegen den tatsaechlichen Repo- und QA-Stand ab und legt die naechste
 empfohlene Phase fest. R1.9.1 ergaenzt den lokalen RLS-/Security-Audit-Stand.
+R1.9.2 ergaenzt die Backup-/Export-/Restore-Strategie.
 
 R1.8.4 baut keine neuen Features, aendert keine UI, fuehrt keine Migration aus
 und nimmt keine RLS-/Policy-Aenderung vor.
@@ -20,6 +22,11 @@ und nimmt keine RLS-/Policy-Aenderung vor.
 R1.9.1 baut keine neuen Produktfeatures und aendert keine UI. R1.9.1 fuehrt
 lokales Security-Hardening fuer Grants, Function Search Path und
 Repository-Ownership-Gates aus.
+
+R1.9.2 baut keine neuen Produktfeatures und aendert keine UI. R1.9.2 definiert
+Backup-/Export-/Restore-Anforderungen, Dateninventar, Exportformat,
+Restore-Reihenfolge und lokale Export-Hygiene, ohne echte Nutzerdaten zu
+exportieren.
 
 ## 2. Stand
 
@@ -40,7 +47,8 @@ Begruendung:
 - Deployment-Hardening ist noch nicht abgeschlossen.
 - Der lokale RLS-/Security-Audit ist abgeschlossen; Remote-/Production-DB und
   Deployment Env sind noch nicht auditiert.
-- Backup/Export und Restore-Strategie fehlen.
+- Backup-/Export-/Restore-Strategie ist definiert; echte Production-Backups,
+  Restore-Drill und Automation fehlen.
 - Performance Review fehlt.
 - Externer AI Provider fehlt bewusst; AI bleibt lokaler deterministischer Mock.
 
@@ -97,7 +105,7 @@ Prepared oder Future Scope bleibt klar getrennt:
 - Externer AI Provider.
 - Calendar Pointer Drag/Resize.
 - Automation, Background Jobs, Cron Jobs.
-- Export/Backup und Restore.
+- Production Backup Automation und Restore Drill.
 - Performance Review.
 - Full Accessibility Audit.
 - Remote-/Production-Security-Audit.
@@ -139,6 +147,9 @@ Prepared oder Future Scope bleibt klar getrennt:
   entfernt.
 - R1.9.1 hat Repository-Level Ownership-Gates fuer relationale Kontext-FKs in
   Goal, Project, Inbox, Resource und Task hardening-ergaenzt.
+- R1.9.2 hat Backup-/Export-/Restore-Strategie, Dateninventar,
+  Sensitivity-Klassen, JSONL-Exportformat, Restore-Reihenfolge und lokale
+  Dump-/Export-Git-Hygiene dokumentiert.
 - Keine externe AI API.
 - Kein Client API Key.
 - Kein Service Role Key.
@@ -149,7 +160,8 @@ Noch offen fuer Production Readiness:
 
 - Remote-/Production-DB Audit.
 - Deployment Env Check.
-- Backup/Export und Restore-Plan.
+- Production Backup Konfiguration.
+- Restore Drill.
 - Security Review fuer echte AI Provider, falls spaeter freigegeben.
 
 ## 9. Accessibility Status
@@ -177,7 +189,7 @@ Noch offen fuer Production Readiness:
 - Keine neue Library.
 - Keine externe AI Provider Integration.
 - Keine Automation.
-- Kein Export/Backup.
+- Kein echter Export und kein echter Backup-Dump in R1.9.2.
 - Kein Production Deployment Claim.
 
 ## 11. Roadmap Audit
@@ -200,6 +212,7 @@ Noch offen fuer Production Readiness:
 | Manual DB Proof Hygiene | Complete | Stabilized Core/Extensions proofs | Cleanup/retention policy |
 | MVP Core Hardening | Complete | R1.8.3 validation green | Full production audit |
 | RLS/Security Local Audit | Complete locally | R1.9.1 CLI/advisor/source audit | Remote production audit |
+| Backup/Export/Restore Strategy | Complete as strategy | R1.9.2 docs/tooling hygiene | Production backup drill |
 
 ### Partially Complete
 
@@ -215,6 +228,8 @@ Noch offen fuer Production Readiness:
 - Accessibility: MVP-flow hardening is done; full audit is deferred.
 - RLS/Security: local formal audit and hardening are done; remote production
   audit and deployment env review are deferred.
+- Backup/Export/Restore: strategy and local hygiene are done; production backup
+  configuration, automation and restore drill are deferred.
 
 ### Deferred
 
@@ -225,7 +240,8 @@ Noch offen fuer Production Readiness:
 - External AI Provider.
 - Calendar Pointer Drag/Resize.
 - Automation.
-- Export/Backup.
+- Production Backup Automation.
+- Restore Drill.
 - Performance.
 - Full Accessibility Audit.
 - Remote Production RLS/Env Audit.
@@ -234,7 +250,7 @@ Noch offen fuer Production Readiness:
 
 - Lokale Manual-DB ist stark gefuellt; einzelne Empty-State-Proofs bleiben
   bewusst skip-gated.
-- Production Readiness ist ohne Remote-DB/Env-Audit, Backup/Export,
+- Production Readiness ist ohne Remote-DB/Env-Audit, Production Backup Drill,
   Deployment-Hardening und Performance Review nicht gegeben.
 - Externer AI Provider braucht vor Integration einen separaten Privacy-,
   Cost-, Logging- und Failure-State-Block.
@@ -250,7 +266,7 @@ Weiter mit R1.9 - Production Hardening.
 Scope:
 
 - Remote-/Production-Security-Audit.
-- Export/Backup und Restore-Plan.
+- Production Backup Konfiguration und Restore Drill.
 - Deployment Env Check.
 - Performance Review.
 - Accessibility Pass.
@@ -286,4 +302,4 @@ Nicht freigegeben fuer:
 - Remote DB Push
 - Deployment ohne Hardening Gate
 - externe AI Provider Integration
-- produktive Daten ohne Backup/Export-Plan
+- produktive Daten ohne Production Backup/Restore Drill

@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "typegen": "next typegen",
     "typecheck": "next typegen && tsc --noEmit --incremental false",
+    "export:local": "echo \"Export not implemented yet. See docs/security/backup-export-restore-strategy-r1-9-2.md\"",
     "test:e2e": "playwright test",
     "qa:dashboard": "playwright test tests/e2e/dashboard.spec.ts"
   },

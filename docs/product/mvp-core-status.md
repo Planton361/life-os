@@ -1,9 +1,9 @@
 # MVP Core Status
 
 Stand: 2026-06-28
-Status: R1.9.1 local RLS/security audit
-Zweck: Konsolidierter MVP-Core-Status nach R1.8.4 Release Readiness und R1.9.1 lokalem RLS-/Security-Audit.
-Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/product/mvp-core-release-readiness.md`, `docs/security/rls-security-audit-r1-9-1.md` und `docs/qa/r1-6-5-real-browser-auth-check.md`.
+Status: R1.9.2 backup export restore strategy
+Zweck: Konsolidierter MVP-Core-Status nach R1.8.4 Release Readiness, R1.9.1 lokalem RLS-/Security-Audit und R1.9.2 Backup-/Export-/Restore-Strategie.
+Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/product/mvp-core-release-readiness.md`, `docs/security/rls-security-audit-r1-9-1.md`, `docs/security/backup-export-restore-strategy-r1-9-2.md` und `docs/qa/r1-6-5-real-browser-auth-check.md`.
 
 ## 1. Abgeschlossene Bloecke
 
@@ -16,6 +16,7 @@ Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/p
 - Skills: Skills und Evidence sind real angebunden inklusive Edit, Archive, Delete und Project/Resource Source Linking.
 - AI Inbox Suggestions: lokale deterministische Vorschlaege fuellen Drafts, persistieren aber nichts ohne User-Confirm.
 - RLS/Security Local Audit: alle lokalen Public-User-Tabellen, RLS Policies, Grants, Functions, Server Actions und Ownership Gates sind in R1.9.1 auditiert und gehardent.
+- Backup/Export/Restore Strategy: MVP-Dateninventar, Sensitivity-Klassen, JSONL-Exportformat, Restore-Reihenfolge und lokale Export-Hygiene sind in R1.9.2 definiert.
 
 ## 2. Browserbewiesene Flows
 
@@ -65,8 +66,8 @@ Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/p
 - R1.8.4 Roadmap Reconciliation ist abgeschlossen: MVP Core ist lokal/manual-browser-ready, aber noch nicht production-release-ready.
 - Completed: Daily Core, Inbox Routing Completion, Task Lifecycle, Project Workbench v1, Goal Workbench v1, Resource Relations v1, Calendar Scheduling Controls, Recurring Tasks v1, Nutrition Recipes/Meals v1, Skills/Evidence v1, AI Inbox Suggestions v1, Manual DB Proof Hygiene und MVP Core Hardening.
 - Partially Complete: Calendar Pointer Drag/Resize, Recurring Template Management, Nutrition Deep Features, Skill Map/Graph, Resource Graph, External AI Provider, Full Accessibility Audit und Remote-/Production-Security-Audit.
-- Deferred: Automation, Export/Backup, Performance Review, Deployment Hardening, echte AI Provider Integration, Remote-/Production-DB-Audit und Production Release Claim.
-- Naechste empfohlene Phase: R1.9 Production Hardening fortsetzen mit Remote-/Production-Security-Audit, Export/Backup, Deployment Env Check, Performance und Accessibility Pass.
+- Deferred: Automation, Production Backup Drill, Performance Review, Deployment Hardening, echte AI Provider Integration, Remote-/Production-DB-Audit und Production Release Claim.
+- Naechste empfohlene Phase: R1.9 Production Hardening fortsetzen mit Remote-/Production-Security-Audit, Production Backup Drill, Deployment Env Check, Performance und Accessibility Pass.
 - R1.8.4 ist ein Produkt-/QA-/Roadmap-Block: keine neuen Features, keine UI-Rekomposition, keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB, keine Service Role, keine neue Library.
 
 ## 4.4 R1.9.1 RLS / Security Audit
@@ -80,7 +81,18 @@ Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/p
 - Validation: `git diff --check`, `pnpm typecheck`, `pnpm lint`, Supabase local `db lint` und Security Advisors gruen.
 - Status: `LOCAL_RLS_SECURITY_AUDIT_PASS_AFTER_FIX`, aber weiterhin `NOT_PRODUCTION_RELEASE_READY`.
 
-## 4.5 Status-Matrix
+## 4.5 R1.9.2 Backup / Export / Restore Strategy
+
+- Strategie dokumentiert in `docs/security/backup-export-restore-strategy-r1-9-2.md`.
+- Export Scope: 15 MVP-Tabellen fuer Core Identity, Daily Flow, Portfolio, Resources, Recurring, Nutrition und Skills.
+- Sensitivity: Nutrition ist `health_sensitive`; Work-/Coding-nahe Inhalte koennen `work_sensitive` sein; spaetere AI-Artefakte bleiben `ai_sensitive`.
+- Export Format: spaeter JSON Lines pro Tabelle plus `manifest.json`; technischer DB-Recovery-Pfad bleibt SQL/Postgres/Supabase-Dump.
+- Restore Order: `profiles`, `areas`, `goals`, `projects`, `inbox_items`, `daily_logs`, `recurring_task_templates`, `tasks`, `daily_log_tasks`, `resources`, `resource_relations`, `recipes`, `meals`, `skills`, `skill_evidence`.
+- Tooling: `scripts/export/` enthaelt nur README und synthetisches Manifest-Beispiel; `export:local` ist ein Placeholder und exportiert keine Daten.
+- Git Hygiene: `exports/`, `backups/`, `*.dump`, `*.sql.gz` und `*.backup` sind ignoriert.
+- Status: `BACKUP_EXPORT_RESTORE_STRATEGY_DEFINED`, aber weiterhin `NOT_PRODUCTION_RELEASE_READY`.
+
+## 4.6 Status-Matrix
 
 | Feature | Status | Browser Proof | Deferred |
 | --- | --- | --- | --- |
@@ -98,6 +110,7 @@ Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/p
 | Manual DB Proof Hygiene | Complete | Stabilized selectors/proofs | Cleanup/retention policy |
 | MVP Core Hardening | Complete | R1.8.3 validation green | Full production audit |
 | RLS/Security Local Audit | Complete locally | R1.9.1 CLI/advisor/source audit | Remote production audit |
+| Backup/Export/Restore Strategy | Complete as strategy | R1.9.2 docs/tooling hygiene | Production backup drill |
 
 ## 5. Prepared/Future Scope
 
@@ -114,7 +127,7 @@ Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/p
 R1.9 sollte Production Hardening fortsetzen:
 
 - Remote-/Production-Security-Audit und Deployment Env Check.
-- Backup/Export und Restore-Plan.
+- Production Backup Drill.
 - Performance Review.
 - Vollstaendiger Accessibility Pass.
 - Keine neue Automation, Graph-Visualisierung oder externe AI vor abgeschlossenem Production-Hardening.

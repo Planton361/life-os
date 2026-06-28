@@ -15,3 +15,10 @@ playwright-report/
 # Supabase local artifacts
 supabase/.temp/
 supabase/.branches/
+
+# Local backup/export artifacts
+exports/
+backups/
+*.dump
+*.sql.gz
+*.backup

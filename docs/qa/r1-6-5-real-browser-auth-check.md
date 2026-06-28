@@ -670,9 +670,9 @@
   Management, Nutrition Deep Features, Skill Map/Graph, Resource Graph,
   External AI Provider, Full Accessibility Audit und Remote-/Production-
   Security-Audit.
-- Future Scope bleibt getrennt: Automation, Export/Backup, Performance Review,
-  Deployment Hardening, echte AI Provider Integration und Production Release
-  Claim.
+- Future Scope bleibt getrennt: Automation, Production Backup Drill,
+  Performance Review, Deployment Hardening, echte AI Provider Integration und
+  Production Release Claim.
 - Browser-proofed flows bleiben die R1.8.3 Ergebnisse: Core-Grep
   `Manual|Inbox|Today|Dashboard|Calendar|Portfolio` mit 86 passed, 2 skipped;
   Extensions-Grep `Resources|Nutrition|Skill|AI|Recurring` mit 25 passed.
@@ -682,8 +682,8 @@
   Aenderung, keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB,
   keine Service Role und keine neue Library.
 - Next Phase: weiter mit R1.9 Production Hardening: Remote-/Production-
-  Security-Audit, Export/Backup, Deployment Env Check, Performance und
-  Accessibility Pass.
+  Security-Audit, Production Backup Drill, Deployment Env Check, Performance
+  und Accessibility Pass.
 
 ## R1.9.1 RLS / Security Audit
 
@@ -724,7 +724,49 @@
 - Ergebnis:
   `LOCAL_RLS_SECURITY_AUDIT_PASS_AFTER_FIX`.
 - Production Release bleibt geblockt durch Remote-/Production-DB-Audit,
-  Deployment Env Check, Backup/Restore und Performance Review.
+  Deployment Env Check, Production Backup Drill und Performance Review.
+
+## R1.9.2 Backup / Export / Restore Strategy
+
+- Strategie dokumentiert in
+  `docs/security/backup-export-restore-strategy-r1-9-2.md`.
+- Dateninventar definiert fuer 15 MVP-Tabellen: `profiles`, `areas`,
+  `goals`, `projects`, `inbox_items`, `daily_logs`,
+  `recurring_task_templates`, `tasks`, `daily_log_tasks`, `resources`,
+  `resource_relations`, `recipes`, `meals`, `skills` und `skill_evidence`.
+- Optional gepruefte Future-Tabellen wie `habits`, `habit_logs`,
+  `weekly_reviews`, `agent_sessions` und weitere Health-/Nutrition-Tabellen
+  sind aktuell nicht im lokalen Public-Schema vorhanden.
+- Export-Format festgelegt: spaeter JSON Lines pro Tabelle plus
+  `manifest.json`; technischer Recovery-Pfad bleibt SQL/Postgres/Supabase-Dump.
+- Restore-Reihenfolge festgelegt:
+  `profiles`, `areas`, `goals`, `projects`, `inbox_items`, `daily_logs`,
+  `recurring_task_templates`, `tasks`, `daily_log_tasks`, `resources`,
+  `resource_relations`, `recipes`, `meals`, `skills`, `skill_evidence`.
+- Sensitivity Classification dokumentiert: Nutrition ist `health_sensitive`;
+  Work-/Coding-nahe Inhalte koennen `work_sensitive` sein; spaetere AI-
+  Artefakte bleiben `ai_sensitive`.
+- Lokale Export-Hygiene vorbereitet: `exports/`, `backups/`, `*.dump`,
+  `*.sql.gz` und `*.backup` sind ignoriert.
+- Tooling-Skeleton ergaenzt: `scripts/export/README.md` und
+  `scripts/export/export-manifest.example.json` enthalten nur Platzhalter und
+  keine Nutzerdaten.
+- Placeholder Script ergaenzt: `pnpm export:local` gibt nur einen Hinweis aus
+  und exportiert keine Daten.
+- Validierung:
+  `git diff --check`, `pnpm typecheck`, `pnpm lint`,
+  `pnpm exec supabase db lint --local --level warning` und
+  `pnpm exec supabase db advisors --local --type security --level warn --fail-on none`
+  sind gruen.
+- Kein echter Export, kein echter Backup-Dump, kein Restore, kein Playwright,
+  keine Migration und keine UI-Aenderung.
+- Keine Remote-DB, kein `supabase link`, kein `supabase db push`, kein
+  `supabase db reset`, keine Service Role, keine neue Library, keine externe AI
+  API.
+- Production Backup Konfiguration, Automation, Encryption Key Management und
+  Restore Drill bleiben deferred.
+- Ergebnis:
+  `BACKUP_EXPORT_RESTORE_STRATEGY_DEFINED`.
 
 ## Known Boundaries
 

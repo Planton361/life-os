@@ -1,0 +1,149 @@
+{
+  "app": "life-os",
+  "appVersion": "0.1.0",
+  "checksumAlgorithm": "sha256",
+  "createdAt": "2026-06-28T00:00:00.000Z",
+  "exportVersion": "r1.9.2-mvp-jsonl-v1",
+  "notes": "Synthetic manifest example only. No user data is included.",
+  "restoreOrder": [
+    "profiles",
+    "areas",
+    "goals",
+    "projects",
+    "inbox_items",
+    "daily_logs",
+    "recurring_task_templates",
+    "tasks",
+    "daily_log_tasks",
+    "resources",
+    "resource_relations",
+    "recipes",
+    "meals",
+    "skills",
+    "skill_evidence"
+  ],
+  "rowCounts": {
+    "areas": 0,
+    "daily_log_tasks": 0,
+    "daily_logs": 0,
+    "goals": 0,
+    "inbox_items": 0,
+    "meals": 0,
+    "profiles": 0,
+    "projects": 0,
+    "recipes": 0,
+    "recurring_task_templates": 0,
+    "resource_relations": 0,
+    "resources": 0,
+    "skill_evidence": 0,
+    "skills": 0,
+    "tasks": 0
+  },
+  "tables": [
+    {
+      "category": "Core Identity",
+      "checksum": "sha256-placeholder",
+      "file": "profiles.jsonl",
+      "sensitivity": "standard_private",
+      "table": "profiles"
+    },
+    {
+      "category": "Core Identity",
+      "checksum": "sha256-placeholder",
+      "file": "areas.jsonl",
+      "sensitivity": "standard_private",
+      "table": "areas"
+    },
+    {
+      "category": "Portfolio",
+      "checksum": "sha256-placeholder",
+      "file": "goals.jsonl",
+      "sensitivity": "standard_private",
+      "table": "goals"
+    },
+    {
+      "category": "Portfolio",
+      "checksum": "sha256-placeholder",
+      "file": "projects.jsonl",
+      "sensitivity": "standard_private/work_sensitive",
+      "table": "projects"
+    },
+    {
+      "category": "Daily Flow",
+      "checksum": "sha256-placeholder",
+      "file": "inbox_items.jsonl",
+      "sensitivity": "standard_private",
+      "table": "inbox_items"
+    },
+    {
+      "category": "Daily Flow",
+      "checksum": "sha256-placeholder",
+      "file": "daily_logs.jsonl",
+      "sensitivity": "standard_private",
+      "table": "daily_logs"
+    },
+    {
+      "category": "Recurring",
+      "checksum": "sha256-placeholder",
+      "file": "recurring_task_templates.jsonl",
+      "sensitivity": "standard_private",
+      "table": "recurring_task_templates"
+    },
+    {
+      "category": "Daily Flow",
+      "checksum": "sha256-placeholder",
+      "file": "tasks.jsonl",
+      "sensitivity": "standard_private/work_sensitive",
+      "table": "tasks"
+    },
+    {
+      "category": "Daily Flow",
+      "checksum": "sha256-placeholder",
+      "file": "daily_log_tasks.jsonl",
+      "sensitivity": "standard_private",
+      "table": "daily_log_tasks"
+    },
+    {
+      "category": "Resources",
+      "checksum": "sha256-placeholder",
+      "file": "resources.jsonl",
+      "sensitivity": "standard_private/work_sensitive",
+      "table": "resources"
+    },
+    {
+      "category": "Resources",
+      "checksum": "sha256-placeholder",
+      "file": "resource_relations.jsonl",
+      "sensitivity": "standard_private/work_sensitive",
+      "table": "resource_relations"
+    },
+    {
+      "category": "Nutrition",
+      "checksum": "sha256-placeholder",
+      "file": "recipes.jsonl",
+      "sensitivity": "health_sensitive",
+      "table": "recipes"
+    },
+    {
+      "category": "Nutrition",
+      "checksum": "sha256-placeholder",
+      "file": "meals.jsonl",
+      "sensitivity": "health_sensitive",
+      "table": "meals"
+    },
+    {
+      "category": "Skills",
+      "checksum": "sha256-placeholder",
+      "file": "skills.jsonl",
+      "sensitivity": "standard_private/work_sensitive",
+      "table": "skills"
+    },
+    {
+      "category": "Skills",
+      "checksum": "sha256-placeholder",
+      "file": "skill_evidence.jsonl",
+      "sensitivity": "standard_private/work_sensitive",
+      "table": "skill_evidence"
+    }
+  ]
+}
