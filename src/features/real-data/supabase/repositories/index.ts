@@ -6,4 +6,5 @@ export * from "./supabase-project-repository";
 export * from "./supabase-nutrition-repository";
 export * from "./supabase-recurring-task-template-repository";
 export * from "./supabase-resource-repository";
+export * from "./supabase-skill-repository";
 export * from "./supabase-task-repository";

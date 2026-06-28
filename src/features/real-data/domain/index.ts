@@ -9,3 +9,4 @@ export * from "./daily-log";
 export * from "./resource";
 export * from "./recurring-task-template";
 export * from "./nutrition";
+export * from "./skill";

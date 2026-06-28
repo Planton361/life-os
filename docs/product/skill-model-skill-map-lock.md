@@ -475,6 +475,29 @@ Offene Gate-Regel:
 
 - Same-user Ownership fuer polymorphe Evidence-Targets muss in spaeteren Repository-/Action-Schritten serverseitig geprueft werden.
 
+## 16. R1.7.7C Repository/Actions Stand
+
+R1.7.7C setzt die Skill Data-/Action-Schicht um:
+
+- Skill Domain Types fuer `Skill`, `SkillStatus`, `SkillEvidence` und `SkillEvidenceSourceType`.
+- Mapper fuer `skills` und `skill_evidence` Row-to-Domain und Input-to-Insert/Patch.
+- Skill Repository Contract fuer Read/Create/Update/Archive und Evidence Read/Create/Update/Delete.
+- Supabase Skill Repository mit user-scoped Queries und Mutations.
+- Same-user Ownership Checks fuer optionale `areaId`, `skillId` und polymorphe Evidence Sources.
+- `manual_note` Evidence verlangt keine `sourceId`; Task/Project/Goal/Resource Evidence verlangt eine user-owned aktive Source.
+- Server Actions fuer Skill/Evidence CRUD-lite mit serverseitiger Auth und ohne Client-`userId`.
+- Revalidation fuer Portfolio, Education und Coding; Resource-Evidence revalidiert zusaetzlich Resources.
+
+Nicht gebaut in R1.7.7C:
+
+- keine UI
+- keine Migration
+- keine Skill Page Anbindung
+- keine Skill Map
+- keine Graph-Library
+- keine AI Skill Inference
+- keine automatische Evidence-Erzeugung
+
 ## Audit: aktueller Skill-Ist-Zustand
 
 ### Skill UI Ist

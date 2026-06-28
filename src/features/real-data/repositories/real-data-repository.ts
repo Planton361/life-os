@@ -14,6 +14,8 @@ import type {
   Resource,
   ResourceRelation,
   ResourceId,
+  Skill,
+  SkillEvidence,
   SupportedResourceRelationTargetType,
   Task,
   TaskEnergy,
@@ -48,6 +50,12 @@ import type {
   UnscheduleTaskInput,
   UpdateGoalInput,
   UpdateProjectInput,
+  SkillArchiveInput,
+  SkillCreateInput,
+  SkillEvidenceCreateInput,
+  SkillEvidenceDeleteInput,
+  SkillEvidenceUpdateInput,
+  SkillUpdateInput,
   UpdateTaskInput,
   UpsertDailyLogInput,
 } from "../schemas";
@@ -144,6 +152,30 @@ export type UpdateMealRepositoryInput = MealUpdateInput & {
 export type CompleteMealRepositoryInput = MealCompleteInput & {
   userId: UserId;
   profileId: ProfileId;
+};
+
+export type CreateSkillRepositoryInput = SkillCreateInput & {
+  userId: UserId;
+};
+
+export type UpdateSkillRepositoryInput = SkillUpdateInput & {
+  userId: UserId;
+};
+
+export type ArchiveSkillRepositoryInput = SkillArchiveInput & {
+  userId: UserId;
+};
+
+export type CreateSkillEvidenceRepositoryInput = SkillEvidenceCreateInput & {
+  userId: UserId;
+};
+
+export type UpdateSkillEvidenceRepositoryInput = SkillEvidenceUpdateInput & {
+  userId: UserId;
+};
+
+export type DeleteSkillEvidenceRepositoryInput = SkillEvidenceDeleteInput & {
+  userId: UserId;
 };
 
 export interface ProfileRepository {
@@ -309,6 +341,36 @@ export interface NutritionRepository {
   ): Promise<RepositoryResult<Recipe>>;
 }
 
+export interface SkillRepository {
+  archiveSkill(
+    input: ArchiveSkillRepositoryInput,
+  ): Promise<RepositoryResult<Skill>>;
+  createSkill(
+    input: CreateSkillRepositoryInput,
+  ): Promise<RepositoryResult<Skill>>;
+  createSkillEvidence(
+    input: CreateSkillEvidenceRepositoryInput,
+  ): Promise<RepositoryResult<SkillEvidence>>;
+  deleteSkillEvidence(
+    input: DeleteSkillEvidenceRepositoryInput,
+  ): Promise<RepositoryResult<SkillEvidence>>;
+  getActiveSkillsByUser(userId: UserId): Promise<RepositoryListResult<Skill>>;
+  getSkillEvidenceByUser(
+    userId: UserId,
+  ): Promise<RepositoryListResult<SkillEvidence>>;
+  getSkillEvidenceForSkill(input: {
+    userId: UserId;
+    skillId: string;
+  }): Promise<RepositoryListResult<SkillEvidence>>;
+  getSkillsByUser(userId: UserId): Promise<RepositoryListResult<Skill>>;
+  updateSkill(
+    input: UpdateSkillRepositoryInput,
+  ): Promise<RepositoryResult<Skill>>;
+  updateSkillEvidence(
+    input: UpdateSkillEvidenceRepositoryInput,
+  ): Promise<RepositoryResult<SkillEvidence>>;
+}
+
 export interface RealDataRepository {
   profiles: ProfileRepository;
   inbox: InboxRepository;
@@ -319,6 +381,7 @@ export interface RealDataRepository {
   resources: ResourceRepository;
   recurringTaskTemplates: RecurringTaskTemplateRepository;
   nutrition: NutritionRepository;
+  skills: SkillRepository;
 }
 
 export type TriageInboxItemToTaskTransaction = (

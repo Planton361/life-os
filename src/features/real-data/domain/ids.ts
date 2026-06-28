@@ -12,6 +12,8 @@ export type ResourceRelationId = string;
 export type RecurringTaskTemplateId = string;
 export type RecipeId = string;
 export type MealId = string;
+export type SkillId = string;
+export type SkillEvidenceId = string;
 export type EntityId = string;
 
 export type LocalDateString = string;

@@ -1,4 +1,9 @@
 import {
+  skillEvidenceSourceTypes,
+  skillStatuses,
+  type SkillEvidenceSourceType,
+} from "../domain/skill";
+import {
   localDateSchema,
   optionalEnumSchema,
   optionalTrimmedStringSchema,
@@ -6,16 +11,6 @@ import {
   requiredTrimmedStringSchema,
   z,
 } from "./schema-contract";
-
-export const skillStatuses = ["active", "paused", "archived"] as const;
-
-export const skillEvidenceSourceTypes = [
-  "task",
-  "project",
-  "goal",
-  "resource",
-  "manual_note",
-] as const;
 
 const blankInputToUndefined = (value: unknown) => {
   if (typeof value === "string" && value.trim().length === 0) {
@@ -54,6 +49,12 @@ export const skillUpdateInputSchema = skillBaseSchema.partial().extend({
 
 export type SkillUpdateInput = z.infer<typeof skillUpdateInputSchema>;
 
+export const skillArchiveInputSchema = z.object({
+  skillId: requiredUuidSchema,
+});
+
+export type SkillArchiveInput = z.infer<typeof skillArchiveInputSchema>;
+
 const skillEvidenceBaseSchema = z.object({
   evidenceDate: localDateSchema,
   note: optionalTrimmedStringSchema,
@@ -64,7 +65,29 @@ const skillEvidenceBaseSchema = z.object({
   weight: optionalEvidenceWeightSchema,
 });
 
-export const skillEvidenceCreateInputSchema = skillEvidenceBaseSchema;
+function hasValidSourceReference(input: {
+  sourceId?: string | null;
+  sourceType?: SkillEvidenceSourceType;
+}) {
+  if (input.sourceType === undefined) return true;
+
+  if (input.sourceType === "manual_note") {
+    return input.sourceId === undefined || input.sourceId === null;
+  }
+
+  return typeof input.sourceId === "string" && input.sourceId.length > 0;
+}
+
+const skillEvidenceSourceReferenceMessage =
+  "manual_note evidence must not include sourceId; task/project/goal/resource evidence must include sourceId.";
+
+export const skillEvidenceCreateInputSchema = skillEvidenceBaseSchema.refine(
+  hasValidSourceReference,
+  {
+    message: skillEvidenceSourceReferenceMessage,
+    path: ["sourceId"],
+  },
+);
 
 export type SkillEvidenceCreateInput = z.infer<
   typeof skillEvidenceCreateInputSchema
@@ -74,8 +97,20 @@ export const skillEvidenceUpdateInputSchema = skillEvidenceBaseSchema
   .partial()
   .extend({
     evidenceId: requiredUuidSchema,
+  })
+  .refine(hasValidSourceReference, {
+    message: skillEvidenceSourceReferenceMessage,
+    path: ["sourceId"],
   });
 
 export type SkillEvidenceUpdateInput = z.infer<
   typeof skillEvidenceUpdateInputSchema
+>;
+
+export const skillEvidenceDeleteInputSchema = z.object({
+  evidenceId: requiredUuidSchema,
+});
+
+export type SkillEvidenceDeleteInput = z.infer<
+  typeof skillEvidenceDeleteInputSchema
 >;

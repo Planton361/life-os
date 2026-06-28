@@ -503,6 +503,21 @@
 - Keine UI, keine Repository-Implementation, keine Server Actions, keine Skill Map, keine Graph-Library, keine AI Skill Inference und keine automatische Evidence-Erzeugung.
 - Kein Playwright-Lauf erforderlich, weil dieser Block nur Schema/Data-Foundation und Docs aendert.
 
+## R1.7.7C Skill Repository + Actions
+
+- Skill Domain Types fuer `Skill` und `SkillEvidence` ergaenzt.
+- Skill/Evidence Mapper ergaenzt: snake_case zu camelCase, Status-/Source-Type-Guards und Input-to-Insert/Patch.
+- Skill Repository Contract ergaenzt.
+- Supabase Skill Repository implementiert Skills lesen, aktive Skills lesen, Skill erstellen/aktualisieren/archivieren.
+- Supabase Skill Repository implementiert Evidence lesen, Evidence pro Skill lesen, Evidence erstellen/aktualisieren/loeschen.
+- Same-user Ownership wird vor Writes geprueft: `areaId` muss eigene aktive Area sein, `skillId` muss eigene aktive Skill sein.
+- Polymorphe Evidence Sources werden serverseitig geprueft: Task/Project/Goal/Resource brauchen `sourceId` und muessen user-owned und nicht archiviert sein.
+- `manual_note` Evidence nutzt keine Source-FK und verlangt `sourceId = null`.
+- Server Actions fuer Skill/Evidence CRUD-lite ergaenzt; `userId` kommt serverseitig aus Supabase Auth, nicht vom Client.
+- Actions revalidieren `/portfolio`, `/education` und `/coding`; Resource-Evidence revalidiert zusaetzlich `/resources`.
+- Keine UI, keine Migration, keine Skill Map, keine Graph-Library, keine AI Skill Inference und keine automatische Evidence-Erzeugung.
+- Kein Playwright-Lauf erforderlich, weil dieser Block keine UI aendert.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.
