@@ -488,6 +488,21 @@
 - Migration Gate dokumentiert; R1.7.7 baut keine Migration.
 - Keine UI-Implementierung, keine Source-Code-Aenderung, keine Remote-DB, keine RLS-/Policy-Aenderung und kein Service-Role-Zugriff.
 
+## R1.7.7B Skill Schema Migration
+
+- Lokale Supabase-Migration fuer `skills` und `skill_evidence` erstellt und lokal angewendet.
+- `skills` enthaelt `user_id`, optionale `area_id`, Name, Summary, Category, Lifecycle-`status`, optionales `level`, `archived_at`, `created_at` und `updated_at`.
+- `skill_evidence` enthaelt `user_id`, `skill_id`, kontrollierten `source_type`, polymorphes optionales `source_id`, Titel, Note, Evidence-Date, optionales Weight, `created_at` und `updated_at`.
+- `source_type` ist auf `task`, `project`, `goal`, `resource` und `manual_note` begrenzt.
+- `source_id` bleibt bewusst polymorph ohne DB-FKs; same-user Ownership fuer Zielobjekte muss spaeter in Repository/Actions geprueft werden.
+- RLS fuer beide Tabellen aktiviert; Policies nutzen `to authenticated` plus `(select auth.uid()) = user_id`.
+- Authenticated Grants fuer Select, Insert, Update und Delete gesetzt.
+- `public.set_updated_at()` Trigger fuer beide Tabellen gesetzt.
+- Typegen aktualisiert; Row Types und zentrale Table Names fuer `skills` und `skill_evidence` ergaenzt.
+- Zod-Schemas vorbereitet: Skill Create/Update und Skill Evidence Create/Update ohne clientseitige `userId`.
+- Keine UI, keine Repository-Implementation, keine Server Actions, keine Skill Map, keine Graph-Library, keine AI Skill Inference und keine automatische Evidence-Erzeugung.
+- Kein Playwright-Lauf erforderlich, weil dieser Block nur Schema/Data-Foundation und Docs aendert.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.

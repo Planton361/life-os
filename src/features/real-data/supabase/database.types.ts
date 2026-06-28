@@ -24,6 +24,8 @@ export const realDataTableNames = {
   recurringTaskTemplates: "recurring_task_templates",
   resourceRelations: "resource_relations",
   resources: "resources",
+  skillEvidence: "skill_evidence",
+  skills: "skills",
   tasks: "tasks",
 } as const satisfies Record<string, PublicTableName>;
 

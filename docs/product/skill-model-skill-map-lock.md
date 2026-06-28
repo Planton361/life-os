@@ -448,6 +448,33 @@ Moegliche Folge-Slices:
 - Keine Graph-Library.
 - Kein Service Role Key.
 
+## 15. R1.7.7B Schema/Migration Stand
+
+R1.7.7B setzt den MVP-Persistence-Layer lokal um:
+
+- `public.skills` als user-owned zentrale Skill-Entity.
+- `public.skill_evidence` als user-owned Evidence-Tabelle mit kontrolliertem `source_type`.
+- `source_id` bleibt polymorph und bekommt bewusst keine Fake-FKs.
+- `skills.status` ist Lifecycle: `active`, `paused`, `archived`.
+- `skills.level` bleibt nullable text ohne harte Enum-Constraint.
+- `skills.archived_at` ist der Soft-Archive-Zeitpunkt.
+- Beide Tabellen nutzen `created_at`, `updated_at`, `public.set_updated_at()`, RLS und authenticated Grants.
+- Typegen, Row Types, Table Names und Zod-Schemas sind vorbereitet.
+
+Nicht gebaut in R1.7.7B:
+
+- keine UI
+- keine Repository-Implementation
+- keine Server Actions
+- keine Skill Map
+- keine Graph-Library
+- keine AI Skill Inference
+- keine automatische Evidence-Erzeugung
+
+Offene Gate-Regel:
+
+- Same-user Ownership fuer polymorphe Evidence-Targets muss in spaeteren Repository-/Action-Schritten serverseitig geprueft werden.
+
 ## Audit: aktueller Skill-Ist-Zustand
 
 ### Skill UI Ist

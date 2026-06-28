@@ -34,6 +34,14 @@ export type RecurringTaskTemplateInsert =
 export type RecurringTaskTemplateUpdate =
   TableUpdate<"recurring_task_templates">;
 
+export type SkillRow = TableRow<"skills">;
+export type SkillInsert = TableInsert<"skills">;
+export type SkillUpdate = TableUpdate<"skills">;
+
+export type SkillEvidenceRow = TableRow<"skill_evidence">;
+export type SkillEvidenceInsert = TableInsert<"skill_evidence">;
+export type SkillEvidenceUpdate = TableUpdate<"skill_evidence">;
+
 export type TaskRow = TableRow<"tasks">;
 export type TaskInsert = TableInsert<"tasks">;
 export type TaskUpdate = TableUpdate<"tasks">;

@@ -672,6 +672,106 @@ export type Database = {
           },
         ]
       }
+      skill_evidence: {
+        Row: {
+          created_at: string
+          evidence_date: string
+          id: string
+          note: string | null
+          skill_id: string
+          source_id: string | null
+          source_type: string
+          title: string
+          updated_at: string
+          user_id: string
+          weight: number | null
+        }
+        Insert: {
+          created_at?: string
+          evidence_date: string
+          id?: string
+          note?: string | null
+          skill_id: string
+          source_id?: string | null
+          source_type: string
+          title: string
+          updated_at?: string
+          user_id: string
+          weight?: number | null
+        }
+        Update: {
+          created_at?: string
+          evidence_date?: string
+          id?: string
+          note?: string | null
+          skill_id?: string
+          source_id?: string | null
+          source_type?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_evidence_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      skills: {
+        Row: {
+          archived_at: string | null
+          area_id: string | null
+          category: string | null
+          created_at: string
+          id: string
+          level: string | null
+          name: string
+          status: string
+          summary: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          area_id?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          level?: string | null
+          name: string
+          status?: string
+          summary?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          area_id?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          level?: string | null
+          name?: string
+          status?: string
+          summary?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skills_area_id_fkey"
+            columns: ["area_id"]
+            isOneToOne: false
+            referencedRelation: "areas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           archived_at: string | null
