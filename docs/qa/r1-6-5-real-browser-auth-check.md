@@ -477,6 +477,17 @@
 - Ergebnis: 58 passed, 2 skipped. Die Skips sind bestehende datenabhaengige Manual-DB/Empty-Gates.
 - Keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB, keine Service Role, keine externe Nutrition API.
 
+## R1.7.7 Skill Model & Skill Map Lock
+
+- Skill Ist-Zustand auditiert: Portfolio, Coding Skill Map, Coding Overview, Education Learning Log, Resources und Profile-Data.
+- Skill vs Project/Goal/Resource/Habit/Task getrennt.
+- MVP-Modell entschieden: `skills + skill_evidence`.
+- Skill Evidence Semantik dokumentiert: expliziter oder nachvollziehbarer Nachweis, keine automatische AI-Behauptung.
+- Skill Practice und Skill Progress Semantik dokumentiert; Progress bleibt evidenzbasiert begrenzt.
+- Skill Map Regeln dokumentiert: keine Graph-Library, keine Node Map, keine AI-generierten Kanten ohne Review.
+- Migration Gate dokumentiert; R1.7.7 baut keine Migration.
+- Keine UI-Implementierung, keine Source-Code-Aenderung, keine Remote-DB, keine RLS-/Policy-Aenderung und kein Service-Role-Zugriff.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.
