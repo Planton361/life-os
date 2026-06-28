@@ -51,6 +51,8 @@ import {
   type InboxItem,
   type Project as RealDataProject,
   type Resource as RealDataResource,
+  type Skill as RealDataSkill,
+  type SkillEvidence as RealDataSkillEvidence,
   type Task as RealDataTask,
 } from "@/features/real-data";
 import {
@@ -58,6 +60,7 @@ import {
   createSupabaseInboxRepository,
   createSupabaseProjectRepository,
   createSupabaseResourceRepository,
+  createSupabaseSkillRepository,
   createSupabaseTaskRepository,
 } from "@/features/real-data/supabase";
 import {
@@ -844,7 +847,10 @@ function skillToPortfolioEntity(
     dueLabel: skill.practiceFrequency,
     dueRank: skill.practiceFrequency ? 2 : 3,
     progress: boundedProgress(skill.progress),
-    countLabel: `${skill.learningPath.length} steps`,
+    countLabel:
+      skill.evidence.length > 0
+        ? `${skill.evidence.length} evidence`
+        : `${skill.learningPath.length} steps`,
     lastTouched: skill.lastPracticedAt || "not practiced",
     recentRank: index + 1,
     reviewNeeded: false,
@@ -862,6 +868,7 @@ function skillToPortfolioEntity(
         skill.progress >= 70 ? "high" : skill.progress >= 35 ? "medium" : "low",
       nextSession: skill.nextPractice,
       evidence: `${skill.evidence.length} evidence records`,
+      evidenceRows: skill.evidence,
     },
   };
 }
@@ -1704,6 +1711,80 @@ function realGoalToLifeGoal(goal: RealDataGoal): LifeGoal {
   };
 }
 
+function skillAreaFromCategory(category: string | null): EntityArea {
+  const normalized = category?.toLowerCase() ?? "";
+
+  if (
+    normalized.includes("code") ||
+    normalized.includes("coding") ||
+    normalized.includes("typescript") ||
+    normalized.includes("react")
+  ) {
+    return "coding";
+  }
+
+  if (normalized.includes("work")) return "work";
+  if (normalized.includes("health")) return "health";
+  if (normalized.includes("nutrition")) return "nutrition";
+  if (normalized.includes("personal")) return "personal";
+
+  return "education";
+}
+
+function skillStatusToLifeStatus(
+  status: RealDataSkill["status"],
+): LifeSkill["status"] {
+  if (status === "paused" || status === "archived") return "paused";
+
+  return "practicing";
+}
+
+function skillEvidenceSourceLabel(
+  sourceType: RealDataSkillEvidence["sourceType"],
+) {
+  if (sourceType === "manual_note") return "Manual note";
+
+  return sourceType;
+}
+
+function realSkillToLifeSkill(
+  skill: RealDataSkill,
+  evidence: readonly RealDataSkillEvidence[],
+): LifeSkill {
+  const latestEvidence = evidence[0];
+  const evidenceCount = evidence.length;
+
+  return {
+    areaId: skillAreaFromCategory(skill.category),
+    currentLevel: skill.level ?? "Nicht gesetzt",
+    description: skill.summary ?? "Manual Skill ohne Summary.",
+    evidence: evidence.map((item) => ({
+      detail: [item.evidenceDate, item.note].filter(Boolean).join(" · "),
+      sourceLabel: skillEvidenceSourceLabel(item.sourceType),
+      title: item.title,
+    })),
+    id: skill.id,
+    lastPracticedAt: latestEvidence?.evidenceDate ?? "not practiced",
+    learningPath: [],
+    linkedGoalIds: [],
+    linkedProjectIds: [],
+    linkedTaskIds: [],
+    milestoneIds: [],
+    nextPractice:
+      evidenceCount > 0
+        ? "Nächste manuelle Evidence ergänzen."
+        : "Erste manuelle Evidence ergänzen.",
+    practiceFrequency:
+      evidenceCount > 0
+        ? `${evidenceCount} evidence records`
+        : "No evidence yet",
+    progress: Math.min(100, evidenceCount * 20),
+    status: skillStatusToLifeStatus(skill.status),
+    targetLevel: skill.category ?? "Evidence ausbauen",
+    title: skill.name,
+  };
+}
+
 function manualDbUnavailableReason(
   error: "auth_error" | "invalid_session" | "missing_env" | "unauthenticated",
   actionLabel: string,
@@ -1996,10 +2077,44 @@ async function getManualProjectGoalTargetsFromSupabase(
   };
 }
 
+async function getManualSkillsFromSupabase(
+  client: SupabaseClientLike,
+  userId: string,
+): Promise<{
+  skills: LifeSkill[];
+}> {
+  const repository = createSupabaseSkillRepository(client);
+  const [skillResult, evidenceResult] = await Promise.all([
+    repository.getActiveSkillsByUser(userId),
+    repository.getSkillEvidenceByUser(userId),
+  ]);
+
+  if (!skillResult.ok || !evidenceResult.ok) {
+    return {
+      skills: [],
+    };
+  }
+
+  const evidenceBySkillId = new Map<string, RealDataSkillEvidence[]>();
+
+  for (const evidence of evidenceResult.data) {
+    const rows = evidenceBySkillId.get(evidence.skillId) ?? [];
+    rows.push(evidence);
+    evidenceBySkillId.set(evidence.skillId, rows);
+  }
+
+  return {
+    skills: skillResult.data.map((skill) =>
+      realSkillToLifeSkill(skill, evidenceBySkillId.get(skill.id) ?? []),
+    ),
+  };
+}
+
 async function getManualPortfolioRelationLabelLookups(
   client: SupabaseClientLike,
   userId: string,
   tasks: readonly LifeTask[],
+  skills: readonly LifeSkill[] = [],
 ): Promise<PortfolioRelationLabelLookups> {
   const projectIds = uniqueDefined(tasks.map((task) => task.projectId));
   const goalIds = uniqueDefined(tasks.map((task) => task.goalId));
@@ -2045,7 +2160,7 @@ async function getManualPortfolioRelationLabelLookups(
       ? new Map()
       : titleMapFromRows(projectResult.data ?? []),
     resourceLinksByTarget,
-    skillTitles: new Map(),
+    skillTitles: new Map(skills.map((skill) => [skill.id, skill.title])),
   };
 }
 
@@ -2071,16 +2186,17 @@ async function getManualPortfolioEntityCollection(): Promise<{
     };
   }
 
-  const [profile, manualTasks, manualTargets] = await Promise.all([
+  const [profile, manualTasks, manualTargets, manualSkills] = await Promise.all([
     readManualProfile(),
     getManualTasksFromSupabase(auth.client, auth.user.id),
     getManualProjectGoalTargetsFromSupabase(auth.client, auth.user.id),
+    getManualSkillsFromSupabase(auth.client, auth.user.id),
   ]);
   const collection: EntityCollection = {
     tasks: manualTasks.tasks,
     projects: [...manualTargets.projects, ...profile.projects],
     goals: [...manualTargets.goals, ...profile.goals],
-    skills: [],
+    skills: manualSkills.skills,
     milestones: [],
   };
 
@@ -2090,6 +2206,7 @@ async function getManualPortfolioEntityCollection(): Promise<{
       auth.client,
       auth.user.id,
       collection.tasks,
+      collection.skills,
     ),
   };
 }

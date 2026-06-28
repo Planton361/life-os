@@ -229,7 +229,7 @@ function getPortfolioEmptyStateCopy(activeViewLabel: string) {
     Skills: {
       title: "Noch keine Skills im Portfolio",
       description:
-        "Skills haben aktuell keine lokale Quelle und bleiben außerhalb des Demo-Profils leer.",
+        "Manual Skills erscheinen hier, sobald sie im Manual-Profil angelegt sind.",
     },
   };
 

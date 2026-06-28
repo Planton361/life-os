@@ -518,6 +518,26 @@
 - Keine UI, keine Migration, keine Skill Map, keine Graph-Library, keine AI Skill Inference und keine automatische Evidence-Erzeugung.
 - Kein Playwright-Lauf erforderlich, weil dieser Block keine UI aendert.
 
+## R1.7.7D Skill UI Binding / Manual Browser Proof
+
+- Portfolio Skills liest im Manual-Profil aktive `skills` aus Supabase und gruppiert `skill_evidence` pro Skill.
+- Demo bleibt curated fixture; Empty bleibt leer; Manual nutzt keine Demo-Fallback-Skills.
+- Portfolio Skills View hat einen minimalen Skill-Create-Flow fuer Name, Summary, Category und Level.
+- Skill Context zeigt Practice/Level-Signal, Evidence Count, gespeicherte Evidence Rows und ein minimales `manual_note` Evidence-Formular.
+- Related Projects, Related Resources und Skill Map bleiben vorbereitet; es gibt keine Fake-Relations, keine Graph-UI und keine Skill Map DB-Bindung.
+- Keine AI Skill Inference, keine automatische Evidence-Erzeugung, keine Embeddings.
+- Lokaler Playwright Auth-State wurde ueber den vorhandenen Refresh Token gegen die lokale Supabase Auth Runtime erneuert; `.local/` bleibt unversioniert.
+- Einzelner Skill-Proof:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Manual Portfolio Skill erstellen and Evidence"`
+- Ergebnis: 1 passed.
+- Fokussierter Skill/Portfolio/Manual-Lauf:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Skill|Portfolio|Manual"`
+- Ergebnis: 64 passed, 2 skipped. Die Skips sind datenabhaengige Empty-State-Gates bei gefuellter lokaler Manual-DB.
+- Regression Inbox/Manual/Today/Dashboard/Calendar/Portfolio:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Inbox|Manual|Today|Dashboard|Calendar|Portfolio"`
+- Ergebnis: 78 passed, 2 skipped. Die Skips sind datenabhaengige Empty-State-Gates bei gefuellter lokaler Manual-DB.
+- Keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB, keine Service Role, keine neue Library.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.

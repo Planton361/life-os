@@ -11,6 +11,7 @@ import {
   unscheduleTaskFormAction,
 } from "@/features/real-data/actions/task.actions";
 import { createProjectFormAction } from "@/features/real-data/actions/portfolio.actions";
+import { createSkillEvidenceFormAction } from "@/features/real-data/actions/skill.actions";
 import {
   EmptyState,
   Pill,
@@ -672,6 +673,71 @@ function PreparedWorkbenchSection({
   );
 }
 
+function SkillEvidenceCreateForm({
+  disabled,
+  skillId,
+}: Readonly<{
+  disabled: boolean;
+  skillId: string;
+}>) {
+  return (
+    <form
+      action={createSkillEvidenceFormAction}
+      aria-label="Evidence hinzufügen"
+      className="grid gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.40)] p-3"
+    >
+      <input name="skillId" type="hidden" value={skillId} />
+      <input name="sourceType" type="hidden" value="manual_note" />
+      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+        Evidence-Titel
+        <input
+          className={formInputClassName}
+          disabled={disabled}
+          name="title"
+          placeholder="Manueller Nachweis"
+          required
+        />
+      </label>
+      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_96px]">
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+          Datum
+          <input
+            className={formInputClassName}
+            disabled={disabled}
+            name="evidenceDate"
+            required
+            type="date"
+          />
+        </label>
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+          Gewicht
+          <input
+            className={formInputClassName}
+            disabled={disabled}
+            max="5"
+            min="1"
+            name="weight"
+            placeholder="3"
+            type="number"
+          />
+        </label>
+      </div>
+      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+        Notiz
+        <input
+          className={formInputClassName}
+          disabled={disabled}
+          name="note"
+          placeholder="Optionaler Evidence-Kontext"
+        />
+      </label>
+      <button className={formButtonClassName} disabled={disabled} type="submit">
+        Evidence hinzufügen
+      </button>
+    </form>
+  );
+}
+
 function WorkbenchResourceCard({
   resource,
 }: Readonly<{
@@ -1199,6 +1265,8 @@ export function PortfolioContextPanel({
     null;
   const isGoalWorkbench = entity.type === "goal";
   const isProjectWorkbench = entity.type === "project";
+  const skillEvidenceRows =
+    entity.type === "skill" ? (entity.skillContext?.evidenceRows ?? []) : [];
 
   return (
     <aside
@@ -1332,6 +1400,89 @@ export function PortfolioContextPanel({
                 label="Evidence"
                 value={entity.skillContext.evidence}
               />
+            </div>
+            <div className="mt-3 grid gap-3">
+              <WorkbenchCreateSection
+                description={
+                  profileId === "manual"
+                    ? "Speichert eine manuelle Evidence-Zeile für die ausgewählte Skill."
+                    : "Wechsle ins Manual-Profil, um echte Skill Evidence zu speichern."
+                }
+                heading="Evidence hinzufügen"
+                id="skill-evidence-create-heading"
+              >
+                <SkillEvidenceCreateForm
+                  disabled={profileId !== "manual"}
+                  skillId={entity.id}
+                />
+              </WorkbenchCreateSection>
+
+              <section aria-labelledby="skill-evidence-heading">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3
+                    className="text-[13px] font-semibold text-[var(--text-primary)]"
+                    id="skill-evidence-heading"
+                  >
+                    Evidence
+                  </h3>
+                  <Pill accent="var(--accent-cyan)">
+                    {skillEvidenceRows.length} total
+                  </Pill>
+                </div>
+                <div className="mt-2 grid gap-2">
+                  {skillEvidenceRows.length > 0 ? (
+                    skillEvidenceRows.map((evidence, index) => (
+                      <article
+                        className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.40)] p-3"
+                        key={`skill-evidence-${entity.id}-${index}-${evidence.title}`}
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-[12px] font-semibold leading-4 text-[var(--text-primary)]">
+                              {evidence.title}
+                            </p>
+                            {evidence.detail ? (
+                              <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
+                                {evidence.detail}
+                              </p>
+                            ) : null}
+                          </div>
+                          <Pill accent="var(--accent-cyan)">
+                            {evidence.sourceLabel}
+                          </Pill>
+                        </div>
+                      </article>
+                    ))
+                  ) : (
+                    <p className="rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.38)] px-3 py-2 text-[11px] leading-4 text-[var(--text-muted)]">
+                      Noch keine Skill Evidence gespeichert.
+                    </p>
+                  )}
+                </div>
+              </section>
+
+              <section aria-labelledby="skill-prepared-sections-heading">
+                <h3
+                  className="text-[13px] font-semibold text-[var(--text-primary)]"
+                  id="skill-prepared-sections-heading"
+                >
+                  Prepared Sections
+                </h3>
+                <div className="mt-2 grid gap-2">
+                  <PreparedWorkbenchSection
+                    body="Project-Verknüpfungen folgen in einem separaten Relation-Scope."
+                    title="Related Projects"
+                  />
+                  <PreparedWorkbenchSection
+                    body="Resource-Verknüpfungen folgen ohne Fake-Karten."
+                    title="Related Resources"
+                  />
+                  <PreparedWorkbenchSection
+                    body="Skill Map bleibt vorbereitet und rendert noch keinen Graph."
+                    title="Skill Map"
+                  />
+                </div>
+              </section>
             </div>
           </section>
         ) : null}

@@ -512,6 +512,46 @@ async function createPortfolioTaskTarget(
   await expect(page.getByText(title).first()).toBeVisible();
 }
 
+async function createPortfolioSkillTarget(
+  page: Page,
+  title: string,
+  summary: string,
+) {
+  const form = page.locator('form[aria-label="Skill erstellen"]');
+
+  await expect(form).toBeVisible();
+  await form.getByLabel("Skill-Name").fill(title);
+  await form.getByLabel("Summary").fill(summary);
+  await form.getByLabel("Kategorie").fill("Coding");
+  await form.getByLabel("Level").fill("Applied");
+  await form.getByRole("button", { name: "Skill erstellen" }).click();
+  await page.waitForLoadState("networkidle");
+  await expect(page.getByText("Skill erstellt.").first()).toBeVisible();
+  await expect(page.getByText(title).first()).toBeVisible();
+}
+
+async function createSkillEvidenceTarget(
+  page: Page,
+  title: string,
+  note: string,
+) {
+  const contextPanel = page.locator('[data-portfolio-section="context-panel"]');
+  const form = contextPanel.locator('form[aria-label="Evidence hinzufügen"]');
+
+  await expect(form).toBeVisible();
+  await form.getByLabel("Evidence-Titel").fill(title);
+  await form.getByLabel("Datum").fill(currentLocalDate());
+  await form.getByLabel("Gewicht").fill("3");
+  await form.getByLabel("Notiz").fill(note);
+  const submitButton = form.getByRole("button", { name: "Evidence hinzufügen" });
+  await expect(submitButton).toBeEnabled();
+  await submitButton.focus();
+  await page.keyboard.press("Enter");
+  await page.waitForLoadState("networkidle");
+  await expect(page.getByText("Skill Evidence erstellt.").first()).toBeVisible();
+  await expect(contextPanel.getByText(title).first()).toBeVisible();
+}
+
 async function createProjectWorkbenchTask(
   page: Page,
   title: string,
@@ -4299,13 +4339,14 @@ test.describe("Portfolio content states", () => {
 
     await page.goto("/portfolio?view=skills");
     await expect(
-      page.getByRole("heading", { name: "Skill Model folgt" }).first(),
+      page.getByRole("heading", { name: "Skill erstellen" }).first(),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Skill später" }),
+      page.locator('form[aria-label="Skill erstellen"]'),
     ).toBeVisible();
-    await expect(page.getByRole("button", { name: "Skill später" })).toBeDisabled();
-    await expect(page.getByRole("button", { name: "Skill erstellen" })).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "Skill erstellen" }),
+    ).toBeVisible();
 
     await page.goto("/portfolio");
     await expect(page.getByRole("heading", { name: "Typ wählen" })).toBeVisible();
@@ -4315,7 +4356,7 @@ test.describe("Portfolio content states", () => {
     ).toBeVisible();
     await expect(page.locator('form[aria-label="Goal erstellen"]')).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Skill Model folgt" }).first(),
+      page.locator('form[aria-label="Skill erstellen"]'),
     ).toBeVisible();
     await expect(
       page.getByRole("button", { name: /löschen|archivieren/i }),
@@ -4540,6 +4581,44 @@ test.describe("Portfolio content states", () => {
     await expect(page.getByText(title).first()).toBeVisible();
     await page.goto("/today");
     await expect(page.getByText(title).first()).toBeVisible();
+  });
+
+  test("Manual Portfolio Skill erstellen and Evidence hinzufügen persist reload-stable", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session.",
+    );
+
+    const timestamp = Date.now();
+    const skillTitle = `Manual Portfolio Skill ${timestamp}`;
+    const evidenceTitle = `Manual Skill Evidence ${timestamp}`;
+
+    await openManualPortfolioWithDb(page);
+    await page.goto("/portfolio?view=skills");
+    await createPortfolioSkillTarget(
+      page,
+      skillTitle,
+      "Manual Skill UI binding proof.",
+    );
+    await page.reload();
+    await expect(page.getByText(skillTitle).first()).toBeVisible();
+    await expect(
+      page
+        .locator('[data-portfolio-section="context-panel"]')
+        .getByText("Noch keine Skill Evidence gespeichert.")
+        .first(),
+    ).toBeVisible();
+    await createSkillEvidenceTarget(
+      page,
+      evidenceTitle,
+      "Manual evidence added from Portfolio Skill Context.",
+    );
+    await page.reload();
+    await expect(page.getByText(skillTitle).first()).toBeVisible();
+    await expect(page.getByText(evidenceTitle).first()).toBeVisible();
+    await expectNoMainStrings(page, portfolioBlockedDemoStrings, "portfolio");
   });
 
   test("Manual Project Workbench creates linked Project task reload-stable", async ({

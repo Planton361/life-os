@@ -96,11 +96,19 @@ export type PortfolioTaskLifecycle = {
   durationMinutes: number;
 };
 
+export type PortfolioSkillEvidence = {
+  detail?: string;
+  href?: `/${string}`;
+  sourceLabel: string;
+  title: string;
+};
+
 export type PortfolioSkillContext = {
   practiceStatus: string;
   confidence: "low" | "medium" | "high";
   nextSession: string;
   evidence: string;
+  evidenceRows?: readonly PortfolioSkillEvidence[];
 };
 
 export type PortfolioTaskEntity = PortfolioEntity & {

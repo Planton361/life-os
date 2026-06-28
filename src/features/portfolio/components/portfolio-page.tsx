@@ -23,6 +23,7 @@ import {
   createGoalFormAction,
   createProjectFormAction,
 } from "@/features/real-data/actions/portfolio.actions";
+import { createSkillFormAction } from "@/features/real-data/actions/skill.actions";
 import { PortfolioContextPanel } from "./portfolio-context-panel";
 import { PortfolioEntityList } from "./portfolio-entity-list";
 import { PortfolioFilterBar } from "./portfolio-filter-bar";
@@ -39,12 +40,12 @@ const viewTypeMap: Record<PortfolioView, PortfolioEntityType | "all"> = {
 
 const createModeByView: Record<
   PortfolioView,
-  "goal" | "project" | "select" | "skill_future" | "task"
+  "goal" | "project" | "select" | "skill" | "task"
 > = {
   all: "select",
   goals: "goal",
   projects: "project",
-  skills: "skill_future",
+  skills: "skill",
   tasks: "task",
 };
 
@@ -200,6 +201,8 @@ function targetCreateMessage(value: string | null) {
   if (value === "task_created") return "Task erstellt.";
   if (value === "project_created") return "Project erstellt.";
   if (value === "goal_created") return "Goal erstellt.";
+  if (value === "skill_created") return "Skill erstellt.";
+  if (value === "skill_evidence_created") return "Skill Evidence erstellt.";
   if (value === "blocked") return "Melde dich an, um Portfolio-Items zu erstellen.";
   if (value === "error") return "Portfolio-Item konnte nicht gespeichert werden.";
 
@@ -414,24 +417,65 @@ function GoalCreateForm({
   );
 }
 
-function SkillFuturePanel() {
+function SkillCreateForm({
+  disabled,
+}: Readonly<{
+  disabled: boolean;
+}>) {
   return (
-    <div className="rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.42)] p-2">
-      <h3 className="text-[12px] font-semibold text-[var(--text-primary)]">
-        Skill Model folgt
-      </h3>
-      <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
-        Skill-Erstellung bleibt deaktiviert, bis ein echtes Persistenzmodell
-        existiert.
-      </p>
+    <form
+      action={createSkillFormAction}
+      aria-label="Skill erstellen"
+      className="grid gap-2 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.42)] p-2"
+    >
+      <input name="status" type="hidden" value="active" />
+      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+        Skill-Name
+        <input
+          className={inputClassName}
+          disabled={disabled}
+          name="name"
+          placeholder="Neuer Skill"
+          required
+        />
+      </label>
+      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+        Summary
+        <input
+          className={inputClassName}
+          disabled={disabled}
+          name="summary"
+          placeholder="Optionaler Kontext"
+        />
+      </label>
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+          Kategorie
+          <input
+            className={inputClassName}
+            disabled={disabled}
+            name="category"
+            placeholder="Learning, Coding..."
+          />
+        </label>
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+          Level
+          <input
+            className={inputClassName}
+            disabled={disabled}
+            name="level"
+            placeholder="Beginner, Applied..."
+          />
+        </label>
+      </div>
       <button
-        className={`${buttonClassName} mt-2 w-full`}
-        disabled
-        type="button"
+        className={`${buttonClassName} border-[rgba(95,200,215,.34)] bg-[rgba(95,200,215,.14)] hover:border-[rgba(95,200,215,.52)]`}
+        disabled={disabled}
+        type="submit"
       >
-        Skill später
+        Skill erstellen
       </button>
-    </div>
+    </form>
   );
 }
 
@@ -453,8 +497,8 @@ function PortfolioContextualCreatePanel({
         ? "Project erstellen"
         : createMode === "goal"
           ? "Goal erstellen"
-          : createMode === "skill_future"
-            ? "Skill Model folgt"
+          : createMode === "skill"
+            ? "Skill erstellen"
             : "Typ wählen";
   const description =
     createMode === "select"
@@ -493,13 +537,13 @@ function PortfolioContextualCreatePanel({
         {createMode === "goal" ? (
           <GoalCreateForm disabled={disabled} returnView={activeView} />
         ) : null}
-        {createMode === "skill_future" ? <SkillFuturePanel /> : null}
+        {createMode === "skill" ? <SkillCreateForm disabled={disabled} /> : null}
         {createMode === "select" ? (
           <>
             <TaskCreateForm disabled={disabled} returnView={activeView} />
             <ProjectCreateForm disabled={disabled} returnView={activeView} />
             <GoalCreateForm disabled={disabled} returnView={activeView} />
-            <SkillFuturePanel />
+            <SkillCreateForm disabled={disabled} />
           </>
         ) : null}
       </div>

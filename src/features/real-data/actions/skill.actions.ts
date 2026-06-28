@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import {
   skillArchiveInputSchema,
   skillCreateInputSchema,
@@ -74,6 +75,22 @@ function revalidateSkillRoutes(sourceType?: string) {
   if (sourceType === "resource") {
     revalidatePath("/resources");
   }
+}
+
+function skillRedirectUrl(
+  targetCreate: "blocked" | "error" | "skill_created" | "skill_evidence_created",
+  skillId?: string,
+) {
+  const params = new URLSearchParams({
+    targetCreate,
+    view: "skills",
+  });
+
+  if (skillId) {
+    params.set("selected", skillId);
+  }
+
+  return `/portfolio?${params.toString()}`;
 }
 
 function authBlockedMessage(
@@ -192,6 +209,16 @@ export async function createSkillAction(
     skillId: result.data.id,
     status: "success",
   };
+}
+
+export async function createSkillFormAction(formData: FormData): Promise<void> {
+  const result = await createSkillAction(formData);
+
+  if (result.status === "success") {
+    redirect(skillRedirectUrl("skill_created", result.skillId));
+  }
+
+  redirect(skillRedirectUrl(result.status === "blocked" ? "blocked" : "error"));
 }
 
 export async function updateSkillAction(
@@ -325,6 +352,24 @@ export async function createSkillEvidenceAction(
     skillId: result.data.skillId,
     status: "success",
   };
+}
+
+export async function createSkillEvidenceFormAction(
+  formData: FormData,
+): Promise<void> {
+  const result = await createSkillEvidenceAction(formData);
+  const skillId = result.skillId ?? formString(formData, "skillId");
+
+  if (result.status === "success") {
+    redirect(skillRedirectUrl("skill_evidence_created", skillId));
+  }
+
+  redirect(
+    skillRedirectUrl(
+      result.status === "blocked" ? "blocked" : "error",
+      skillId,
+    ),
+  );
 }
 
 export async function updateSkillEvidenceAction(
