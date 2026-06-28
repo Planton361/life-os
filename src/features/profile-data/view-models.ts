@@ -116,6 +116,7 @@ import type {
   PortfolioFocusLevel,
   PortfolioLinkedResource,
   PortfolioPriority,
+  PortfolioSkillSourceTarget,
   PortfolioStatus,
   PortfolioViewModel,
 } from "@/features/portfolio";
@@ -583,6 +584,8 @@ type PortfolioRelationLabelLookups = {
   goalTitles: ReadonlyMap<string, string>;
   projectTitles: ReadonlyMap<string, string>;
   resourceLinksByTarget: ReadonlyMap<string, readonly PortfolioLinkedResource[]>;
+  skillEvidenceSourceLabels: ReadonlyMap<string, string>;
+  skillSourceTargets: readonly PortfolioSkillSourceTarget[];
   skillTitles: ReadonlyMap<string, string>;
 };
 
@@ -603,6 +606,8 @@ function portfolioRelationLabelLookups(
         collection.projects.map((project) => [project.id, project.title]),
       ),
     resourceLinksByTarget: new Map(),
+    skillEvidenceSourceLabels: new Map(),
+    skillSourceTargets: [],
     skillTitles: new Map(
       collection.skills.map((skill) => [skill.id, skill.title]),
     ),
@@ -833,6 +838,7 @@ function goalToPortfolioEntity(
 function skillToPortfolioEntity(
   skill: LifeSkill,
   index: number,
+  lookups: PortfolioRelationLabelLookups,
 ): PortfolioEntity {
   return {
     id: skill.id,
@@ -866,9 +872,62 @@ function skillToPortfolioEntity(
       practiceStatus: skill.status,
       confidence:
         skill.progress >= 70 ? "high" : skill.progress >= 35 ? "medium" : "low",
+      editValues: {
+        category:
+          skill.targetLevel === "Evidence ausbauen"
+            ? undefined
+            : skill.targetLevel,
+        level:
+          skill.currentLevel === "Nicht gesetzt" ? undefined : skill.currentLevel,
+        name: skill.title,
+        status: skill.status === "paused" ? "paused" : "active",
+        summary: skill.description,
+      },
       nextSession: skill.nextPractice,
       evidence: `${skill.evidence.length} evidence records`,
-      evidenceRows: skill.evidence,
+      evidenceRows: skill.evidence.map((evidence) => {
+        const sourceType = "sourceType" in evidence ? evidence.sourceType : undefined;
+        const sourceId = "sourceId" in evidence ? evidence.sourceId : undefined;
+        const sourceLabel =
+          typeof sourceType === "string" &&
+          typeof sourceId === "string" &&
+          sourceId.length > 0
+            ? (lookups.skillEvidenceSourceLabels.get(`${sourceType}:${sourceId}`) ??
+              "Nicht mehr verfügbar")
+            : evidence.sourceLabel;
+
+        return {
+          detail: evidence.detail,
+          evidenceDate:
+            "evidenceDate" in evidence && typeof evidence.evidenceDate === "string"
+              ? evidence.evidenceDate
+              : undefined,
+          href: evidence.href,
+          id:
+            "id" in evidence && typeof evidence.id === "string"
+              ? evidence.id
+              : undefined,
+          note:
+            "note" in evidence && typeof evidence.note === "string"
+              ? evidence.note
+              : undefined,
+          sourceLabel,
+          sourceType:
+            sourceType === "goal" ||
+            sourceType === "manual_note" ||
+            sourceType === "project" ||
+            sourceType === "resource" ||
+            sourceType === "task"
+              ? sourceType
+              : undefined,
+          title: evidence.title,
+          weight:
+            "weight" in evidence && typeof evidence.weight === "number"
+              ? evidence.weight
+              : undefined,
+        };
+      }),
+      sourceTargets: lookups.skillSourceTargets,
     },
   };
 }
@@ -887,7 +946,9 @@ function collectionToPortfolioEntities(
     ...collection.goals.map((goal, index) =>
       goalToPortfolioEntity(goal, index, lookups),
     ),
-    ...collection.skills.map(skillToPortfolioEntity),
+    ...collection.skills.map((skill, index) =>
+      skillToPortfolioEntity(skill, index, lookups),
+    ),
   ];
 }
 
@@ -1758,11 +1819,20 @@ function realSkillToLifeSkill(
     areaId: skillAreaFromCategory(skill.category),
     currentLevel: skill.level ?? "Nicht gesetzt",
     description: skill.summary ?? "Manual Skill ohne Summary.",
-    evidence: evidence.map((item) => ({
-      detail: [item.evidenceDate, item.note].filter(Boolean).join(" · "),
-      sourceLabel: skillEvidenceSourceLabel(item.sourceType),
-      title: item.title,
-    })),
+    evidence: evidence.map(
+      (item) =>
+        ({
+          detail: [item.evidenceDate, item.note].filter(Boolean).join(" · "),
+          evidenceDate: item.evidenceDate,
+          id: item.id,
+          note: item.note ?? undefined,
+          sourceId: item.sourceId ?? undefined,
+          sourceLabel: skillEvidenceSourceLabel(item.sourceType),
+          sourceType: item.sourceType,
+          title: item.title,
+          weight: item.weight,
+        }) as LifeSkill["evidence"][number],
+    ),
     id: skill.id,
     lastPracticedAt: latestEvidence?.evidenceDate ?? "not practiced",
     learningPath: [],
@@ -2110,11 +2180,85 @@ async function getManualSkillsFromSupabase(
   };
 }
 
+function skillSourceTarget(
+  sourceType: PortfolioSkillSourceTarget["sourceType"],
+  id: string,
+  label: string,
+  meta?: string,
+): PortfolioSkillSourceTarget {
+  return {
+    id,
+    label,
+    meta,
+    sourceType,
+  };
+}
+
+async function getManualSkillSourceTargets(
+  client: SupabaseClientLike,
+  userId: string,
+  input: {
+    goals: readonly LifeGoal[];
+    projects: readonly LifeProject[];
+    tasks: readonly LifeTask[];
+  },
+): Promise<{
+  labels: ReadonlyMap<string, string>;
+  targets: readonly PortfolioSkillSourceTarget[];
+}> {
+  const resourceResult = await createSupabaseResourceRepository(
+    client,
+  ).getResourcesByUser(userId, userId);
+
+  const taskTargets = input.tasks
+    .slice(0, 24)
+    .map((task) =>
+      skillSourceTarget("task", task.id, task.title, task.status),
+    );
+  const projectTargets = input.projects
+    .slice(0, 24)
+    .map((project) =>
+      skillSourceTarget("project", project.id, project.title, project.status),
+    );
+  const goalTargets = input.goals
+    .slice(0, 24)
+    .map((goal) =>
+      skillSourceTarget("goal", goal.id, goal.title, goal.status),
+    );
+  const resourceTargets = resourceResult.ok
+    ? resourceResult.data
+        .slice(0, 24)
+        .map((resource) =>
+          skillSourceTarget("resource", resource.id, resource.title, resource.type),
+        )
+    : [];
+  const targets = [
+    ...projectTargets,
+    ...resourceTargets,
+    ...goalTargets,
+    ...taskTargets,
+  ];
+
+  return {
+    labels: new Map(
+      targets.map((target) => [
+        `${target.sourceType}:${target.id}`,
+        target.label,
+      ]),
+    ),
+    targets,
+  };
+}
+
 async function getManualPortfolioRelationLabelLookups(
   client: SupabaseClientLike,
   userId: string,
   tasks: readonly LifeTask[],
   skills: readonly LifeSkill[] = [],
+  skillSourceTargets?: {
+    labels: ReadonlyMap<string, string>;
+    targets: readonly PortfolioSkillSourceTarget[];
+  },
 ): Promise<PortfolioRelationLabelLookups> {
   const projectIds = uniqueDefined(tasks.map((task) => task.projectId));
   const goalIds = uniqueDefined(tasks.map((task) => task.goalId));
@@ -2160,6 +2304,8 @@ async function getManualPortfolioRelationLabelLookups(
       ? new Map()
       : titleMapFromRows(projectResult.data ?? []),
     resourceLinksByTarget,
+    skillEvidenceSourceLabels: skillSourceTargets?.labels ?? new Map(),
+    skillSourceTargets: skillSourceTargets?.targets ?? [],
     skillTitles: new Map(skills.map((skill) => [skill.id, skill.title])),
   };
 }
@@ -2199,6 +2345,15 @@ async function getManualPortfolioEntityCollection(): Promise<{
     skills: manualSkills.skills,
     milestones: [],
   };
+  const skillSourceTargets = await getManualSkillSourceTargets(
+    auth.client,
+    auth.user.id,
+    {
+      goals: manualTargets.goals,
+      projects: manualTargets.projects,
+      tasks: manualTasks.tasks,
+    },
+  );
 
   return {
     collection,
@@ -2207,6 +2362,7 @@ async function getManualPortfolioEntityCollection(): Promise<{
       auth.user.id,
       collection.tasks,
       collection.skills,
+      skillSourceTargets,
     ),
   };
 }

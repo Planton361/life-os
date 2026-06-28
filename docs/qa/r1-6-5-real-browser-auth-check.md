@@ -538,6 +538,26 @@
 - Ergebnis: 78 passed, 2 skipped. Die Skips sind datenabhaengige Empty-State-Gates bei gefuellter lokaler Manual-DB.
 - Keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB, keine Service Role, keine neue Library.
 
+## R1.7.7E Skill Core Completion / Evidence Source Linking
+
+- Skill Edit ist im Portfolio Skill Context angebunden und nutzt die bestehende Skill Update Action.
+- Skill Archive ist als Soft-Archive im Skill Context angebunden; archivierte Skills verschwinden aus der aktiven Skills View.
+- Evidence Delete ist pro Evidence Row angebunden und nutzt die bestehende Delete Action.
+- Evidence Create nutzt einen Source Picker fuer `manual_note`, Project, Resource, Goal und Task; die sichtbaren Targets kommen aus echten Manual-DB-Objekten.
+- Evidence Source Labels werden im ReadModel aufgelöst; bei fehlendem Ziel wird `Nicht mehr verfügbar` gezeigt statt einer UUID.
+- Source-Evidence bleibt explizit user-gesteuert; keine automatische Evidence, keine AI Skill Inference, keine Embeddings.
+- Skill Map bleibt prepared/future; keine Graph-UI und keine Graph-Library.
+- R1.7.7E-Subset:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Skill edit|Skill archive|Evidence delete|Project and Resource sources"`
+- Ergebnis: 4 passed.
+- Fokussierter Skill Proof:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Skill|Evidence|Portfolio|Manual"`
+- Ergebnis: 68 passed, 2 skipped. Die Skips sind bestehende datenabhaengige Empty-State-Gates bei gefuellter lokaler Manual-DB.
+- Daily-Flow-Regression:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Inbox|Manual|Today|Dashboard|Calendar|Portfolio"`
+- Ergebnis: 82 passed, 2 skipped. Die Skips sind bestehende datenabhaengige Empty-State-Gates bei gefuellter lokaler Manual-DB.
+- Keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB, keine Service Role, keine neue Library.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.

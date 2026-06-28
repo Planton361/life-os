@@ -11,7 +11,12 @@ import {
   unscheduleTaskFormAction,
 } from "@/features/real-data/actions/task.actions";
 import { createProjectFormAction } from "@/features/real-data/actions/portfolio.actions";
-import { createSkillEvidenceFormAction } from "@/features/real-data/actions/skill.actions";
+import {
+  archiveSkillFormAction,
+  createSkillEvidenceFormAction,
+  deleteSkillEvidenceFormAction,
+  updateSkillFormAction,
+} from "@/features/real-data/actions/skill.actions";
 import {
   EmptyState,
   Pill,
@@ -676,9 +681,11 @@ function PreparedWorkbenchSection({
 function SkillEvidenceCreateForm({
   disabled,
   skillId,
+  sourceTargets,
 }: Readonly<{
   disabled: boolean;
   skillId: string;
+  sourceTargets: NonNullable<PortfolioEntity["skillContext"]>["sourceTargets"];
 }>) {
   return (
     <form
@@ -687,7 +694,25 @@ function SkillEvidenceCreateForm({
       className="grid gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.40)] p-3"
     >
       <input name="skillId" type="hidden" value={skillId} />
-      <input name="sourceType" type="hidden" value="manual_note" />
+      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+        Evidence Source
+        <select
+          className={formInputClassName}
+          defaultValue="manual_note:"
+          disabled={disabled}
+          name="sourceReference"
+        >
+          <option value="manual_note:">Manual note</option>
+          {(sourceTargets ?? []).map((target) => (
+            <option
+              key={`skill-source-target-${target.sourceType}-${target.id}`}
+              value={`${target.sourceType}:${target.id}`}
+            >
+              {target.sourceType} · {target.label}
+            </option>
+          ))}
+        </select>
+      </label>
       <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
         Evidence-Titel
         <input
@@ -733,6 +758,101 @@ function SkillEvidenceCreateForm({
       </label>
       <button className={formButtonClassName} disabled={disabled} type="submit">
         Evidence hinzufügen
+      </button>
+    </form>
+  );
+}
+
+function SkillEditForm({
+  disabled,
+  entity,
+}: Readonly<{
+  disabled: boolean;
+  entity: PortfolioEntity;
+}>) {
+  const values = entity.skillContext?.editValues;
+
+  return (
+    <form
+      action={updateSkillFormAction}
+      aria-label="Skill bearbeiten"
+      className="grid gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.40)] p-3"
+    >
+      <input name="skillId" type="hidden" value={entity.id} />
+      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+        Skill-Name
+        <input
+          className={formInputClassName}
+          defaultValue={values?.name ?? entity.title}
+          disabled={disabled}
+          name="name"
+          required
+        />
+      </label>
+      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+        Summary
+        <input
+          className={formInputClassName}
+          defaultValue={values?.summary ?? entity.description}
+          disabled={disabled}
+          name="summary"
+        />
+      </label>
+      <div className="grid gap-2 sm:grid-cols-3">
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+          Kategorie
+          <input
+            className={formInputClassName}
+            defaultValue={values?.category}
+            disabled={disabled}
+            name="category"
+          />
+        </label>
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+          Level
+          <input
+            className={formInputClassName}
+            defaultValue={values?.level}
+            disabled={disabled}
+            name="level"
+          />
+        </label>
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+          Status
+          <select
+            className={formInputClassName}
+            defaultValue={values?.status ?? "active"}
+            disabled={disabled}
+            name="status"
+          >
+            <option value="active">active</option>
+            <option value="paused">paused</option>
+          </select>
+        </label>
+      </div>
+      <button className={formButtonClassName} disabled={disabled} type="submit">
+        Skill speichern
+      </button>
+    </form>
+  );
+}
+
+function SkillArchiveForm({
+  disabled,
+  skillId,
+}: Readonly<{
+  disabled: boolean;
+  skillId: string;
+}>) {
+  return (
+    <form action={archiveSkillFormAction} aria-label="Skill archivieren">
+      <input name="skillId" type="hidden" value={skillId} />
+      <button
+        className="inline-flex min-h-8 items-center rounded-full border border-[rgba(221,107,95,.28)] bg-[rgba(221,107,95,.10)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[rgba(221,107,95,.44)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:border-[var(--border-subtle)] disabled:bg-[rgba(18,28,43,.34)] disabled:text-[var(--text-muted)]"
+        disabled={disabled}
+        type="submit"
+      >
+        Skill archivieren
       </button>
     </form>
   );
@@ -1405,7 +1525,22 @@ export function PortfolioContextPanel({
               <WorkbenchCreateSection
                 description={
                   profileId === "manual"
-                    ? "Speichert eine manuelle Evidence-Zeile für die ausgewählte Skill."
+                    ? "Aktualisiert die ausgewählte Skill über die bestehende Skill Action."
+                    : "Wechsle ins Manual-Profil, um echte Skill-Daten zu bearbeiten."
+                }
+                heading="Skill bearbeiten"
+                id="skill-edit-heading"
+              >
+                <SkillEditForm
+                  disabled={profileId !== "manual"}
+                  entity={entity}
+                />
+              </WorkbenchCreateSection>
+
+              <WorkbenchCreateSection
+                description={
+                  profileId === "manual"
+                    ? "Speichert eine Evidence-Zeile für die ausgewählte Skill. Source Targets sind echte Manual-DB-Objekte."
                     : "Wechsle ins Manual-Profil, um echte Skill Evidence zu speichern."
                 }
                 heading="Evidence hinzufügen"
@@ -1414,6 +1549,7 @@ export function PortfolioContextPanel({
                 <SkillEvidenceCreateForm
                   disabled={profileId !== "manual"}
                   skillId={entity.id}
+                  sourceTargets={entity.skillContext.sourceTargets}
                 />
               </WorkbenchCreateSection>
 
@@ -1434,12 +1570,21 @@ export function PortfolioContextPanel({
                     skillEvidenceRows.map((evidence, index) => (
                       <article
                         className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.40)] p-3"
-                        key={`skill-evidence-${entity.id}-${index}-${evidence.title}`}
+                        key={`skill-evidence-${entity.id}-${evidence.id ?? index}-${evidence.title}`}
                       >
                         <div className="flex flex-wrap items-start justify-between gap-2">
                           <div className="min-w-0">
                             <p className="text-[12px] font-semibold leading-4 text-[var(--text-primary)]">
                               {evidence.title}
+                            </p>
+                            <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
+                              {[
+                                evidence.evidenceDate,
+                                evidence.sourceType,
+                                evidence.weight ? `weight ${evidence.weight}` : null,
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
                             </p>
                             {evidence.detail ? (
                               <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
@@ -1451,6 +1596,28 @@ export function PortfolioContextPanel({
                             {evidence.sourceLabel}
                           </Pill>
                         </div>
+                        {evidence.id ? (
+                          <form
+                            action={deleteSkillEvidenceFormAction}
+                            aria-label={`Evidence löschen ${evidence.title}`}
+                            className="mt-2"
+                          >
+                            <input
+                              name="evidenceId"
+                              type="hidden"
+                              value={evidence.id}
+                            />
+                            <input name="skillId" type="hidden" value={entity.id} />
+                            <button
+                              aria-label={`Evidence löschen ${evidence.title}`}
+                              className="inline-flex min-h-8 items-center rounded-full border border-[rgba(221,107,95,.28)] bg-[rgba(221,107,95,.10)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[rgba(221,107,95,.44)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:border-[var(--border-subtle)] disabled:bg-[rgba(18,28,43,.34)] disabled:text-[var(--text-muted)]"
+                              disabled={profileId !== "manual"}
+                              type="submit"
+                            >
+                              Evidence löschen
+                            </button>
+                          </form>
+                        ) : null}
                       </article>
                     ))
                   ) : (
@@ -1460,6 +1627,17 @@ export function PortfolioContextPanel({
                   )}
                 </div>
               </section>
+
+              <WorkbenchCreateSection
+                description="Archiviert die Skill per Soft Archive. Die aktive Skills View blendet archivierte Skills aus."
+                heading="Skill archivieren"
+                id="skill-archive-heading"
+              >
+                <SkillArchiveForm
+                  disabled={profileId !== "manual"}
+                  skillId={entity.id}
+                />
+              </WorkbenchCreateSection>
 
               <section aria-labelledby="skill-prepared-sections-heading">
                 <h3

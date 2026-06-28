@@ -56,15 +56,39 @@ function optionalFormNumber(formData: FormData, key: string) {
 }
 
 function evidenceSourceIdFromForm(formData: FormData) {
-  if (formString(formData, "sourceType") === "manual_note") return null;
+  const sourceReference = formString(formData, "sourceReference");
+
+  if (sourceReference) {
+    const [sourceType, sourceId = ""] = sourceReference.split(":", 2);
+
+    if (sourceType === "manual_note") return null;
+
+    return sourceId || undefined;
+  }
+
+  if (evidenceSourceTypeFromForm(formData) === "manual_note") return null;
 
   return optionalNullableFormString(formData, "sourceId");
 }
 
 function evidenceSourceIdFromFormIfPresent(formData: FormData) {
-  if (formString(formData, "sourceType") === "manual_note") return null;
+  if (formData.has("sourceReference")) {
+    return evidenceSourceIdFromForm(formData);
+  }
+
+  if (evidenceSourceTypeFromForm(formData) === "manual_note") return null;
 
   return optionalNullableFormStringIfPresent(formData, "sourceId");
+}
+
+function evidenceSourceTypeFromForm(formData: FormData) {
+  const sourceReference = formString(formData, "sourceReference");
+
+  if (sourceReference) {
+    return sourceReference.split(":", 1)[0];
+  }
+
+  return formString(formData, "sourceType");
 }
 
 function revalidateSkillRoutes(sourceType?: string) {
@@ -78,7 +102,14 @@ function revalidateSkillRoutes(sourceType?: string) {
 }
 
 function skillRedirectUrl(
-  targetCreate: "blocked" | "error" | "skill_created" | "skill_evidence_created",
+  targetCreate:
+    | "blocked"
+    | "error"
+    | "skill_archived"
+    | "skill_created"
+    | "skill_evidence_created"
+    | "skill_evidence_deleted"
+    | "skill_updated",
   skillId?: string,
 ) {
   const params = new URLSearchParams({
@@ -267,6 +298,22 @@ export async function updateSkillAction(
   };
 }
 
+export async function updateSkillFormAction(formData: FormData): Promise<void> {
+  const result = await updateSkillAction(formData);
+  const skillId = result.skillId ?? formString(formData, "skillId");
+
+  if (result.status === "success") {
+    redirect(skillRedirectUrl("skill_updated", skillId));
+  }
+
+  redirect(
+    skillRedirectUrl(
+      result.status === "blocked" ? "blocked" : "error",
+      skillId,
+    ),
+  );
+}
+
 export async function archiveSkillAction(
   formData: FormData,
 ): Promise<SkillActionResult> {
@@ -307,6 +354,21 @@ export async function archiveSkillAction(
   };
 }
 
+export async function archiveSkillFormAction(formData: FormData): Promise<void> {
+  const result = await archiveSkillAction(formData);
+
+  if (result.status === "success") {
+    redirect(skillRedirectUrl("skill_archived"));
+  }
+
+  redirect(
+    skillRedirectUrl(
+      result.status === "blocked" ? "blocked" : "error",
+      formString(formData, "skillId"),
+    ),
+  );
+}
+
 export async function createSkillEvidenceAction(
   formData: FormData,
 ): Promise<SkillActionResult> {
@@ -319,7 +381,7 @@ export async function createSkillEvidenceAction(
     note: optionalFormString(formData, "note"),
     skillId: formString(formData, "skillId"),
     sourceId: evidenceSourceIdFromForm(formData),
-    sourceType: formString(formData, "sourceType"),
+    sourceType: evidenceSourceTypeFromForm(formData),
     title: formString(formData, "title"),
     weight: optionalFormNumber(formData, "weight"),
   });
@@ -385,7 +447,9 @@ export async function updateSkillEvidenceAction(
     note: optionalFormStringIfPresent(formData, "note"),
     skillId: optionalFormStringIfPresent(formData, "skillId"),
     sourceId: evidenceSourceIdFromFormIfPresent(formData),
-    sourceType: optionalFormStringIfPresent(formData, "sourceType"),
+    sourceType: formData.has("sourceReference")
+      ? evidenceSourceTypeFromForm(formData)
+      : optionalFormStringIfPresent(formData, "sourceType"),
     title: optionalFormStringIfPresent(formData, "title"),
     weight: optionalFormNumber(formData, "weight"),
   });
@@ -459,4 +523,22 @@ export async function deleteSkillEvidenceAction(
     skillId: result.data.skillId,
     status: "success",
   };
+}
+
+export async function deleteSkillEvidenceFormAction(
+  formData: FormData,
+): Promise<void> {
+  const result = await deleteSkillEvidenceAction(formData);
+  const skillId = result.skillId ?? formString(formData, "skillId");
+
+  if (result.status === "success") {
+    redirect(skillRedirectUrl("skill_evidence_deleted", skillId));
+  }
+
+  redirect(
+    skillRedirectUrl(
+      result.status === "blocked" ? "blocked" : "error",
+      skillId,
+    ),
+  );
 }

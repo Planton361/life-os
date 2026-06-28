@@ -202,7 +202,10 @@ function targetCreateMessage(value: string | null) {
   if (value === "project_created") return "Project erstellt.";
   if (value === "goal_created") return "Goal erstellt.";
   if (value === "skill_created") return "Skill erstellt.";
+  if (value === "skill_updated") return "Skill aktualisiert.";
+  if (value === "skill_archived") return "Skill archiviert.";
   if (value === "skill_evidence_created") return "Skill Evidence erstellt.";
+  if (value === "skill_evidence_deleted") return "Skill Evidence gelöscht.";
   if (value === "blocked") return "Melde dich an, um Portfolio-Items zu erstellen.";
   if (value === "error") return "Portfolio-Item konnte nicht gespeichert werden.";
 

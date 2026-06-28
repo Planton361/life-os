@@ -21,6 +21,7 @@ export type {
   PortfolioSortMode,
   PortfolioSourceLink,
   PortfolioSkillContext,
+  PortfolioSkillSourceTarget,
   PortfolioStat,
   PortfolioStatus,
   PortfolioTaskLifecycle,

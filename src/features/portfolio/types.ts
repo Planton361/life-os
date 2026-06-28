@@ -98,9 +98,29 @@ export type PortfolioTaskLifecycle = {
 
 export type PortfolioSkillEvidence = {
   detail?: string;
+  evidenceDate?: string;
   href?: `/${string}`;
+  id?: string;
+  note?: string;
+  sourceType?: "goal" | "manual_note" | "project" | "resource" | "task";
   sourceLabel: string;
   title: string;
+  weight?: number | null;
+};
+
+export type PortfolioSkillSourceTarget = {
+  id: string;
+  label: string;
+  meta?: string;
+  sourceType: "goal" | "project" | "resource" | "task";
+};
+
+export type PortfolioSkillEditValues = {
+  category?: string;
+  level?: string;
+  name: string;
+  status: "active" | "paused";
+  summary?: string;
 };
 
 export type PortfolioSkillContext = {
@@ -108,7 +128,9 @@ export type PortfolioSkillContext = {
   confidence: "low" | "medium" | "high";
   nextSession: string;
   evidence: string;
+  editValues?: PortfolioSkillEditValues;
   evidenceRows?: readonly PortfolioSkillEvidence[];
+  sourceTargets?: readonly PortfolioSkillSourceTarget[];
 };
 
 export type PortfolioTaskEntity = PortfolioEntity & {
