@@ -49,6 +49,24 @@ function notFoundFailure(entity: string): RepositoryFailure {
   };
 }
 
+async function verifyAreaOwnership(
+  client: SupabaseClientLike,
+  userId: string,
+  areaId: string | null | undefined,
+): Promise<boolean> {
+  if (areaId === undefined || areaId === null) return true;
+
+  const result = (await client
+    .from("areas")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("id", areaId)
+    .is("archived_at", null)
+    .maybeSingle()) as SupabaseQueryResult<{ id: string }>;
+
+  return Boolean(!result.error && result.data);
+}
+
 export function createSupabaseGoalRepository(
   client: SupabaseClientLike,
 ): GoalRepository {
@@ -56,6 +74,13 @@ export function createSupabaseGoalRepository(
     async createGoal(input) {
       const scopeFailure = profileScopeFailure(input.userId, input.profileId);
       if (scopeFailure) return scopeFailure;
+
+      const areaOwned = await verifyAreaOwnership(
+        client,
+        input.userId,
+        input.areaId,
+      );
+      if (!areaOwned) return notFoundFailure("Area");
 
       const result = (await client
         .from(realDataTableNames.goals)

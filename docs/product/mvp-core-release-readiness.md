@@ -1,20 +1,25 @@
 # MVP Core Release Readiness
 
 Stand: 2026-06-28
-Status: R1.8.4 Release Readiness documented
+Status: R1.9.1 local RLS/security audit documented
 Zweck: Roadmap-Reconciliation und Release-Entscheidung nach R1.8.3 MVP Core Hardening.
 Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `DATA_MODEL.md`,
 `SECURITY.md`, `ACCESSIBILITY.md`, `docs/product/mvp-core-status.md` und
-`docs/qa/r1-6-5-real-browser-auth-check.md`.
+`docs/qa/r1-6-5-real-browser-auth-check.md`,
+`docs/security/rls-security-audit-r1-9-1.md`.
 
 ## 1. Zweck
 
 Dieses Dokument fasst den MVP-Core-Stand nach R1.8.3 zusammen, gleicht die
 Roadmap gegen den tatsaechlichen Repo- und QA-Stand ab und legt die naechste
-empfohlene Phase fest.
+empfohlene Phase fest. R1.9.1 ergaenzt den lokalen RLS-/Security-Audit-Stand.
 
 R1.8.4 baut keine neuen Features, aendert keine UI, fuehrt keine Migration aus
 und nimmt keine RLS-/Policy-Aenderung vor.
+
+R1.9.1 baut keine neuen Produktfeatures und aendert keine UI. R1.9.1 fuehrt
+lokales Security-Hardening fuer Grants, Function Search Path und
+Repository-Ownership-Gates aus.
 
 ## 2. Stand
 
@@ -33,7 +38,8 @@ Begruendung:
 
 - Die App laeuft gegen lokale Supabase- und Manual-DB-Proofs.
 - Deployment-Hardening ist noch nicht abgeschlossen.
-- Ein finaler RLS-Audit steht noch aus.
+- Der lokale RLS-/Security-Audit ist abgeschlossen; Remote-/Production-DB und
+  Deployment Env sind noch nicht auditiert.
 - Backup/Export und Restore-Strategie fehlen.
 - Performance Review fehlt.
 - Externer AI Provider fehlt bewusst; AI bleibt lokaler deterministischer Mock.
@@ -94,7 +100,7 @@ Prepared oder Future Scope bleibt klar getrennt:
 - Export/Backup und Restore.
 - Performance Review.
 - Full Accessibility Audit.
-- Finaler RLS Audit.
+- Remote-/Production-Security-Audit.
 
 ## 6. Bekannte Skips
 
@@ -123,6 +129,16 @@ Prepared oder Future Scope bleibt klar getrennt:
 - Zod validiert Mutation Inputs.
 - Repositories und RPCs pruefen User-/Ownership-Scope fuer die verbundenen
   Targets.
+- R1.9.1 hat lokal alle 15 Public-User-Tabellen auditiert; RLS ist enabled,
+  Policies sind authenticated-scoped und Grants sind nach Hardening
+  least-privilege fuer den lokalen Stand.
+- R1.9.1 hat unnoetige `TRUNCATE`-, `REFERENCES`- und `TRIGGER`-Grants fuer
+  `anon`/`authenticated` entfernt.
+- R1.9.1 hat `public.set_updated_at()` mit fixiertem `search_path` versehen.
+- R1.9.1 hat PUBLIC/anon Execute fuer `triage_inbox_item_to_task(...)`
+  entfernt.
+- R1.9.1 hat Repository-Level Ownership-Gates fuer relationale Kontext-FKs in
+  Goal, Project, Inbox, Resource und Task hardening-ergaenzt.
 - Keine externe AI API.
 - Kein Client API Key.
 - Kein Service Role Key.
@@ -131,7 +147,7 @@ Prepared oder Future Scope bleibt klar getrennt:
 
 Noch offen fuer Production Readiness:
 
-- Finaler RLS Audit.
+- Remote-/Production-DB Audit.
 - Deployment Env Check.
 - Backup/Export und Restore-Plan.
 - Security Review fuer echte AI Provider, falls spaeter freigegeben.
@@ -155,8 +171,8 @@ Noch offen fuer Production Readiness:
 - Keine neuen Features.
 - Keine UI-Rekomposition.
 - Keine Dashboard-Layout-Aenderung.
-- Keine Migration.
-- Keine RLS-/Policy-Aenderung.
+- R1.8.4 hatte keine Migration und keine RLS-/Policy-Aenderung; R1.9.1 enthaelt
+  eine lokale Security-Hardening-Migration.
 - Keine Remote-DB.
 - Keine neue Library.
 - Keine externe AI Provider Integration.
@@ -183,6 +199,7 @@ Noch offen fuer Production Readiness:
 | AI Inbox Suggestions v1 | Complete as local mock | AI/Inbox proofs | External provider |
 | Manual DB Proof Hygiene | Complete | Stabilized Core/Extensions proofs | Cleanup/retention policy |
 | MVP Core Hardening | Complete | R1.8.3 validation green | Full production audit |
+| RLS/Security Local Audit | Complete locally | R1.9.1 CLI/advisor/source audit | Remote production audit |
 
 ### Partially Complete
 
@@ -196,8 +213,8 @@ Noch offen fuer Production Readiness:
 - Resources: Relation workbench exists; Resource Graph is deferred.
 - AI: Local deterministic suggestions exist; external provider is deferred.
 - Accessibility: MVP-flow hardening is done; full audit is deferred.
-- RLS/Security: local lint and action-boundary review are done; final formal
-  RLS audit is deferred.
+- RLS/Security: local formal audit and hardening are done; remote production
+  audit and deployment env review are deferred.
 
 ### Deferred
 
@@ -211,14 +228,14 @@ Noch offen fuer Production Readiness:
 - Export/Backup.
 - Performance.
 - Full Accessibility Audit.
-- Final RLS Audit.
+- Remote Production RLS/Env Audit.
 
 ### Risks
 
 - Lokale Manual-DB ist stark gefuellt; einzelne Empty-State-Proofs bleiben
   bewusst skip-gated.
-- Production Readiness ist ohne RLS Audit, Backup/Export, Deployment-Hardening
-  und Performance Review nicht gegeben.
+- Production Readiness ist ohne Remote-DB/Env-Audit, Backup/Export,
+  Deployment-Hardening und Performance Review nicht gegeben.
 - Externer AI Provider braucht vor Integration einen separaten Privacy-,
   Cost-, Logging- und Failure-State-Block.
 
@@ -227,12 +244,12 @@ Noch offen fuer Production Readiness:
 Empfehlung:
 
 ```text
-Zuerst R1.9 - Production Hardening.
+Weiter mit R1.9 - Production Hardening.
 ```
 
 Scope:
 
-- RLS Audit.
+- Remote-/Production-Security-Audit.
 - Export/Backup und Restore-Plan.
 - Deployment Env Check.
 - Performance Review.

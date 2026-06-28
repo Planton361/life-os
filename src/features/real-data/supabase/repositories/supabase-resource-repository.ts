@@ -65,6 +65,24 @@ function validationFailure(message: string): RepositoryFailure {
   };
 }
 
+async function verifyAreaOwnership(
+  client: SupabaseClientLike,
+  userId: string,
+  areaId: string | null | undefined,
+): Promise<boolean> {
+  if (areaId === undefined || areaId === null) return true;
+
+  const result = (await client
+    .from("areas")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("id", areaId)
+    .is("archived_at", null)
+    .maybeSingle()) as SupabaseQueryResult<{ id: string }>;
+
+  return Boolean(!result.error && result.data);
+}
+
 function mapResourceRelationRows(
   rows: readonly ResourceRelationRow[],
 ): RepositoryResult<readonly ResourceRelation[]> {
@@ -154,6 +172,13 @@ export function createSupabaseResourceRepository(
     async createResource(input) {
       const scopeFailure = profileScopeFailure(input.userId, input.profileId);
       if (scopeFailure) return scopeFailure;
+
+      const areaOwned = await verifyAreaOwnership(
+        client,
+        input.userId,
+        input.areaId,
+      );
+      if (!areaOwned) return notFoundFailure("Area");
 
       const insert = mapCreateResourceInputToInsert(input, input.userId);
       const result = (await client

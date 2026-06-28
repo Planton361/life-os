@@ -668,7 +668,8 @@
   AI Inbox Suggestions v1, Manual DB Proof Hygiene und MVP Core Hardening.
 - Partially Complete: Calendar Pointer Drag/Resize, Recurring Template
   Management, Nutrition Deep Features, Skill Map/Graph, Resource Graph,
-  External AI Provider, Full Accessibility Audit und finaler RLS Audit.
+  External AI Provider, Full Accessibility Audit und Remote-/Production-
+  Security-Audit.
 - Future Scope bleibt getrennt: Automation, Export/Backup, Performance Review,
   Deployment Hardening, echte AI Provider Integration und Production Release
   Claim.
@@ -680,8 +681,50 @@
 - R1.8.4 ist docs-only: kein Playwright-Lauf erforderlich, keine UI-/Code-
   Aenderung, keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB,
   keine Service Role und keine neue Library.
-- Next Phase: zuerst R1.9 Production Hardening mit RLS Audit, Export/Backup,
-  Deployment Env Check, Performance und Accessibility Pass.
+- Next Phase: weiter mit R1.9 Production Hardening: Remote-/Production-
+  Security-Audit, Export/Backup, Deployment Env Check, Performance und
+  Accessibility Pass.
+
+## R1.9.1 RLS / Security Audit
+
+- Audit dokumentiert in `docs/security/rls-security-audit-r1-9-1.md`.
+- Lokaler Supabase-Stand: 15 Public-User-Tabellen auditiert; alle haben RLS
+  enabled.
+- Policy-Stand: Policies sind `to authenticated` gescoped und nutzen
+  `(select auth.uid()) = user_id` beziehungsweise bei `profiles`
+  `(select auth.uid()) = id`.
+- Grants-Hardening: kein `anon` DML, authenticated DML nur im erwarteten
+  Tabellenumfang, unnoetige `TRUNCATE`-/`REFERENCES`-/`TRIGGER`-Grants fuer
+  `public`, `anon` und `authenticated` entfernt.
+- Function-Hardening: `public.set_updated_at()` hat `search_path = public`;
+  `triage_inbox_item_to_task(...)` ist nicht mehr per PUBLIC/anon Execute
+  erreichbar und bleibt fuer `authenticated` explizit freigegeben.
+- Repository-Hardening: Goals, Projects, Inbox Items, Resources und Tasks
+  pruefen relationale Kontext-FKs jetzt direkt in der Repository Boundary gegen
+  aktive same-user Rows.
+- Polymorphe Gates bestaetigt: Resource Relations pruefen Target Ownership;
+  Skill Evidence prueft Source Ownership; Inbox RPCs pruefen Inbox/Area/Project/
+  Goal im aktuellen User-Scope.
+- Server Actions bestaetigt: serverseitige Supabase Auth, Zod `safeParse`,
+  serverseitiges `auth.user.id`, keine clientseitige `userId` als Trust
+  Boundary, keine Service Role.
+- Secrets/Supabase Client: keine Service-Role-Verwendung im App-Code gefunden;
+  keine Secret-Werte committed; `private/` blieb unberuehrt.
+- Lokale Migration angewendet:
+  `supabase/migrations/20260628200709_r1_9_1_rls_security_hardening.sql`.
+- Validierung:
+  `git diff --check`, `pnpm typecheck`, `pnpm lint`,
+  `pnpm exec supabase db lint --local --level warning` und
+  `pnpm exec supabase db advisors --local --type security --level warn --fail-on none`
+  sind gruen.
+- Kein Playwright-Lauf erforderlich, weil keine UI geaendert wurde.
+- Keine Remote-DB, kein `supabase link`, kein `supabase db push`, kein
+  `supabase db reset`, keine Service Role, keine neue Library, keine externe AI
+  API.
+- Ergebnis:
+  `LOCAL_RLS_SECURITY_AUDIT_PASS_AFTER_FIX`.
+- Production Release bleibt geblockt durch Remote-/Production-DB-Audit,
+  Deployment Env Check, Backup/Restore und Performance Review.
 
 ## Known Boundaries
 

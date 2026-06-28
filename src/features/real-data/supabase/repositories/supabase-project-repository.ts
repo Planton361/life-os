@@ -49,6 +49,52 @@ function notFoundFailure(entity: string): RepositoryFailure {
   };
 }
 
+async function verifyOwnedContextRow(
+  client: SupabaseClientLike,
+  tableName: "areas" | "goals",
+  userId: string,
+  id: string | null | undefined,
+): Promise<boolean> {
+  if (id === undefined || id === null) return true;
+
+  const result = (await client
+    .from(tableName)
+    .select("id")
+    .eq("user_id", userId)
+    .eq("id", id)
+    .is("archived_at", null)
+    .maybeSingle()) as SupabaseQueryResult<{ id: string }>;
+
+  return Boolean(!result.error && result.data);
+}
+
+async function validateProjectContextOwnership(
+  client: SupabaseClientLike,
+  userId: string,
+  input: {
+    areaId?: string | null;
+    goalId?: string | null;
+  },
+): Promise<RepositoryFailure | null> {
+  const areaOwned = await verifyOwnedContextRow(
+    client,
+    "areas",
+    userId,
+    input.areaId,
+  );
+  if (!areaOwned) return notFoundFailure("Area");
+
+  const goalOwned = await verifyOwnedContextRow(
+    client,
+    realDataTableNames.goals,
+    userId,
+    input.goalId,
+  );
+  if (!goalOwned) return notFoundFailure("Goal");
+
+  return null;
+}
+
 export function createSupabaseProjectRepository(
   client: SupabaseClientLike,
 ): ProjectRepository {
@@ -56,6 +102,13 @@ export function createSupabaseProjectRepository(
     async createProject(input) {
       const scopeFailure = profileScopeFailure(input.userId, input.profileId);
       if (scopeFailure) return scopeFailure;
+
+      const contextFailure = await validateProjectContextOwnership(
+        client,
+        input.userId,
+        input,
+      );
+      if (contextFailure) return contextFailure;
 
       const result = (await client
         .from(realDataTableNames.projects)

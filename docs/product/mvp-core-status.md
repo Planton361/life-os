@@ -1,9 +1,9 @@
 # MVP Core Status
 
 Stand: 2026-06-28
-Status: R1.8.4 MVP Core Release Readiness
-Zweck: Konsolidierter MVP-Core-Status nach R1.8.4 Release Readiness und Roadmap Reconciliation.
-Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/product/mvp-core-release-readiness.md` und `docs/qa/r1-6-5-real-browser-auth-check.md`.
+Status: R1.9.1 local RLS/security audit
+Zweck: Konsolidierter MVP-Core-Status nach R1.8.4 Release Readiness und R1.9.1 lokalem RLS-/Security-Audit.
+Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/product/mvp-core-release-readiness.md`, `docs/security/rls-security-audit-r1-9-1.md` und `docs/qa/r1-6-5-real-browser-auth-check.md`.
 
 ## 1. Abgeschlossene Bloecke
 
@@ -15,6 +15,7 @@ Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/p
 - Nutrition: Recipes und Meals sind als Manual-DB-Flow angebunden; Planner-Edit, Grocery und tiefe Nutrition-Features bleiben begrenzt.
 - Skills: Skills und Evidence sind real angebunden inklusive Edit, Archive, Delete und Project/Resource Source Linking.
 - AI Inbox Suggestions: lokale deterministische Vorschlaege fuellen Drafts, persistieren aber nichts ohne User-Confirm.
+- RLS/Security Local Audit: alle lokalen Public-User-Tabellen, RLS Policies, Grants, Functions, Server Actions und Ownership Gates sind in R1.9.1 auditiert und gehardent.
 
 ## 2. Browserbewiesene Flows
 
@@ -63,12 +64,23 @@ Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/p
 - R1.8.3 ist abgeschlossen; MVP Core Hardening ist abgeschlossen.
 - R1.8.4 Roadmap Reconciliation ist abgeschlossen: MVP Core ist lokal/manual-browser-ready, aber noch nicht production-release-ready.
 - Completed: Daily Core, Inbox Routing Completion, Task Lifecycle, Project Workbench v1, Goal Workbench v1, Resource Relations v1, Calendar Scheduling Controls, Recurring Tasks v1, Nutrition Recipes/Meals v1, Skills/Evidence v1, AI Inbox Suggestions v1, Manual DB Proof Hygiene und MVP Core Hardening.
-- Partially Complete: Calendar Pointer Drag/Resize, Recurring Template Management, Nutrition Deep Features, Skill Map/Graph, Resource Graph, External AI Provider, Full Accessibility Audit und finaler RLS Audit.
-- Deferred: Automation, Export/Backup, Performance Review, Deployment Hardening, echte AI Provider Integration und Production Release Claim.
-- Naechste empfohlene Phase: R1.9 Production Hardening mit RLS Audit, Export/Backup, Deployment Env Check, Performance und Accessibility Pass.
+- Partially Complete: Calendar Pointer Drag/Resize, Recurring Template Management, Nutrition Deep Features, Skill Map/Graph, Resource Graph, External AI Provider, Full Accessibility Audit und Remote-/Production-Security-Audit.
+- Deferred: Automation, Export/Backup, Performance Review, Deployment Hardening, echte AI Provider Integration, Remote-/Production-DB-Audit und Production Release Claim.
+- Naechste empfohlene Phase: R1.9 Production Hardening fortsetzen mit Remote-/Production-Security-Audit, Export/Backup, Deployment Env Check, Performance und Accessibility Pass.
 - R1.8.4 ist ein Produkt-/QA-/Roadmap-Block: keine neuen Features, keine UI-Rekomposition, keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB, keine Service Role, keine neue Library.
 
-## 4.4 Status-Matrix
+## 4.4 R1.9.1 RLS / Security Audit
+
+- Audit dokumentiert in `docs/security/rls-security-audit-r1-9-1.md`.
+- Local RLS Status: alle 15 user-relevanten Public-Tabellen haben RLS enabled.
+- Grants Status: kein `anon` DML, keine unnoetigen `TRUNCATE`-/`REFERENCES`-/`TRIGGER`-Grants fuer `public`, `anon` oder `authenticated`.
+- Function Status: Supabase Security Advisor meldet nach Fix keine Warnungen; `set_updated_at()` hat `search_path = public`; `triage_inbox_item_to_task(...)` ist nur fuer `authenticated` explizit freigegeben.
+- Server Actions: serverseitige Supabase Auth, Zod `safeParse`, serverseitiges `auth.user.id`, keine Service Role und keine externe AI API.
+- Repository Gates: Goals, Projects, Inbox Items, Resources und Tasks pruefen relationale Kontext-FKs gegen aktive same-user Rows; polymorphe Resource- und Skill-Gates bleiben bestaetigt.
+- Validation: `git diff --check`, `pnpm typecheck`, `pnpm lint`, Supabase local `db lint` und Security Advisors gruen.
+- Status: `LOCAL_RLS_SECURITY_AUDIT_PASS_AFTER_FIX`, aber weiterhin `NOT_PRODUCTION_RELEASE_READY`.
+
+## 4.5 Status-Matrix
 
 | Feature | Status | Browser Proof | Deferred |
 | --- | --- | --- | --- |
@@ -85,6 +97,7 @@ Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/p
 | AI Inbox Suggestions v1 | Complete as local mock | AI/Inbox proofs | External AI Provider |
 | Manual DB Proof Hygiene | Complete | Stabilized selectors/proofs | Cleanup/retention policy |
 | MVP Core Hardening | Complete | R1.8.3 validation green | Full production audit |
+| RLS/Security Local Audit | Complete locally | R1.9.1 CLI/advisor/source audit | Remote production audit |
 
 ## 5. Prepared/Future Scope
 
@@ -98,9 +111,10 @@ Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/p
 
 ## 6. Naechste empfohlene Phase
 
-R1.8.x sollte den MVP-Core nicht verbreitern, sondern Datenhygiene und Bedienbarkeit stabilisieren:
+R1.9 sollte Production Hardening fortsetzen:
 
-- Manual-DB-Testdaten-Strategie klaeren, damit Listen-Proofs nicht von lokal akkumulierten Daten abhaengen.
-- ReadModel-Sortierung/Selected-Redirects fuer frisch erzeugte Project/Goal/Resource-Zielobjekte bleiben ein moeglicher separater App-Selection-Scope.
-- Remaining prepared sections nur in separaten, eng freigegebenen Slices anbinden.
-- Keine neue Automation, Graph-Visualisierung oder externe AI vor stabilem manuellen Core-Betrieb.
+- Remote-/Production-Security-Audit und Deployment Env Check.
+- Backup/Export und Restore-Plan.
+- Performance Review.
+- Vollstaendiger Accessibility Pass.
+- Keine neue Automation, Graph-Visualisierung oder externe AI vor abgeschlossenem Production-Hardening.

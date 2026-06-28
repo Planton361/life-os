@@ -66,6 +66,61 @@ function notFoundFailure(entity: string): RepositoryFailure {
   };
 }
 
+async function verifyOwnedContextRow(
+  client: SupabaseClientLike,
+  tableName: "areas" | "goals" | "projects",
+  userId: string,
+  id: string | null | undefined,
+): Promise<boolean> {
+  if (id === undefined || id === null) return true;
+
+  const result = (await client
+    .from(tableName)
+    .select("id")
+    .eq("user_id", userId)
+    .eq("id", id)
+    .is("archived_at", null)
+    .maybeSingle()) as SupabaseQueryResult<{ id: string }>;
+
+  return Boolean(!result.error && result.data);
+}
+
+async function validateTaskContextOwnership(
+  client: SupabaseClientLike,
+  userId: string,
+  input: {
+    areaId?: string | null;
+    goalId?: string | null;
+    projectId?: string | null;
+  },
+): Promise<RepositoryFailure | null> {
+  const areaOwned = await verifyOwnedContextRow(
+    client,
+    "areas",
+    userId,
+    input.areaId,
+  );
+  if (!areaOwned) return notFoundFailure("Area");
+
+  const projectOwned = await verifyOwnedContextRow(
+    client,
+    realDataTableNames.projects,
+    userId,
+    input.projectId,
+  );
+  if (!projectOwned) return notFoundFailure("Project");
+
+  const goalOwned = await verifyOwnedContextRow(
+    client,
+    realDataTableNames.goals,
+    userId,
+    input.goalId,
+  );
+  if (!goalOwned) return notFoundFailure("Goal");
+
+  return null;
+}
+
 function taskListSortColumn(sortBy: TaskListInput["sortBy"]) {
   if (sortBy === "planned") return "planned_date";
   if (sortBy === "scheduled") return "scheduled_start_at";
@@ -218,6 +273,13 @@ export function createSupabaseTaskRepository(
       const scopeFailure = profileScopeFailure(input.userId, input.profileId);
       if (scopeFailure) return scopeFailure;
 
+      const contextFailure = await validateTaskContextOwnership(
+        client,
+        input.userId,
+        input,
+      );
+      if (contextFailure) return contextFailure;
+
       const existing = await loadGeneratedTaskInstance(
         client,
         input.userId,
@@ -276,6 +338,13 @@ export function createSupabaseTaskRepository(
     async createTask(input) {
       const scopeFailure = profileScopeFailure(input.userId, input.profileId);
       if (scopeFailure) return scopeFailure;
+
+      const contextFailure = await validateTaskContextOwnership(
+        client,
+        input.userId,
+        input,
+      );
+      if (contextFailure) return contextFailure;
 
       const result = (await client
         .from(realDataTableNames.tasks)
@@ -425,6 +494,13 @@ export function createSupabaseTaskRepository(
     async updateTask(input) {
       const scopeFailure = profileScopeFailure(input.userId, input.profileId);
       if (scopeFailure) return scopeFailure;
+
+      const contextFailure = await validateTaskContextOwnership(
+        client,
+        input.userId,
+        input,
+      );
+      if (contextFailure) return contextFailure;
 
       return updateTaskById(
         client,
