@@ -256,6 +256,29 @@ async function captureManualInboxItem(page: Page, title: string, note: string) {
   ).toBeVisible();
 }
 
+async function generateInboxAISuggestion(page: Page) {
+  const assistant = page.locator('[data-inbox-section="ai-assistant"]');
+
+  await expect(
+    assistant.getByRole("button", { name: "AI Vorschlag erzeugen" }),
+  ).toBeEnabled();
+  await assistant
+    .getByRole("button", { name: "AI Vorschlag erzeugen" })
+    .click();
+  await expect(assistant.getByLabel("AI Vorschlag Review")).toBeVisible();
+
+  return assistant;
+}
+
+async function applyInboxAISuggestion(page: Page) {
+  const assistant = page.locator('[data-inbox-section="ai-assistant"]');
+
+  await assistant.getByRole("button", { name: "Vorschlag übernehmen" }).click();
+  await expect(
+    page.locator('[data-inbox-section="draft-slot"]'),
+  ).not.toContainText("Noch kein Draft ausgewählt");
+}
+
 async function openAddToExistingDraft(page: Page) {
   const activeItem = page.locator('[data-inbox-section="active-item"]');
 
@@ -3195,6 +3218,187 @@ test.describe("Inbox content states", () => {
     await page.reload();
     await expect(page.getByText(title).first()).toBeVisible();
     await expectNoInboxDemoStrings(page);
+  });
+
+  test("Manual AI Suggestion fills Task Draft and persists only after confirm", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session.",
+    );
+
+    const timestamp = Date.now();
+    const captureTitle = `Call dentist today ${timestamp}`;
+    const editedTaskTitle = `AI Inbox task accepted ${timestamp}`;
+    const taskCountBefore = await readProfileDataTaskCount(page);
+
+    await setProfile(page, "manual");
+    await applySupabaseAuthState(page);
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/inbox");
+    });
+    await skipIfManualDbUnavailable(page);
+    await captureManualInboxItem(
+      page,
+      captureTitle,
+      "Call dentist today and prepare one short follow up.",
+    );
+
+    const assistant = await generateInboxAISuggestion(page);
+
+    await expect(assistant.getByText("Route: Standalone Task")).toBeVisible();
+    await expect(assistant.getByText("Confidence: high")).toBeVisible();
+    await applyInboxAISuggestion(page);
+
+    const activeItem = page.locator('[data-inbox-section="active-item"]');
+    await expect(
+      activeItem.getByRole("heading", { name: "Task Draft" }),
+    ).toBeVisible();
+    await expect(activeItem.getByLabel("Titel")).toHaveValue(captureTitle);
+    await expect(activeItem.getByLabel("Nächste Aktion")).toHaveValue(
+      /Call dentist/,
+    );
+    await expect(activeItem.getByLabel("Priorität")).toHaveValue("P2");
+    await expect(activeItem.getByLabel("Energie")).toHaveValue("low");
+    await expect(activeItem.getByLabel("Heute planen")).toBeChecked();
+
+    await activeItem.getByLabel("Titel").fill(editedTaskTitle);
+    await activeItem
+      .getByRole("button", { exact: true, name: "Task erstellen" })
+      .click();
+    await page.waitForLoadState("networkidle");
+
+    await expect
+      .poll(async () => readProfileDataTaskCount(page))
+      .toBeGreaterThan(taskCountBefore);
+    await page.goto("/portfolio?view=tasks");
+    await expect(page.getByText(editedTaskTitle).first()).toBeVisible();
+    await page.reload();
+    await expect(page.getByText(editedTaskTitle).first()).toBeVisible();
+  });
+
+  test("Manual AI Suggestion does not auto-persist target objects", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session.",
+    );
+
+    const timestamp = Date.now();
+    const captureTitle = `Email pharmacy AI no persist ${timestamp}`;
+
+    await setProfile(page, "manual");
+    await applySupabaseAuthState(page);
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/inbox");
+    });
+    await skipIfManualDbUnavailable(page);
+    const taskCountBefore = await readProfileDataTaskCount(page);
+    await page.goto("/inbox");
+    await captureManualInboxItem(
+      page,
+      captureTitle,
+      "Email pharmacy tomorrow but do not create the task yet.",
+    );
+
+    const assistant = await generateInboxAISuggestion(page);
+
+    await expect(assistant.getByText("Route: Standalone Task")).toBeVisible();
+    await page.reload();
+    await expect(page.getByText(captureTitle).first()).toBeVisible();
+    await expect(await readProfileDataTaskCount(page)).toBe(taskCountBefore);
+    await page.goto("/portfolio?view=tasks");
+    await expect(page.getByText(captureTitle)).toHaveCount(0);
+  });
+
+  test("Manual AI Suggestion fills Resource Draft and persists after confirm", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session.",
+    );
+
+    const timestamp = Date.now();
+    const captureTitle = `Read article AI inbox resource ${timestamp}`;
+    const resourceTitle = `AI Inbox resource accepted ${timestamp}`;
+
+    await setProfile(page, "manual");
+    await applySupabaseAuthState(page);
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/inbox");
+    });
+    await skipIfManualDbUnavailable(page);
+    await captureManualInboxItem(
+      page,
+      captureTitle,
+      "Read article https://example.test/ai-inbox-suggestions for later reference.",
+    );
+
+    const assistant = await generateInboxAISuggestion(page);
+
+    await expect(assistant.getByText("Route: Resource")).toBeVisible();
+    await applyInboxAISuggestion(page);
+
+    const activeItem = page.locator('[data-inbox-section="active-item"]');
+    const resourceDraft = activeItem
+      .getByRole("heading", { name: "Resource Draft" })
+      .locator("xpath=ancestor::section[1]");
+
+    await expect(resourceDraft).toBeVisible();
+    await expect(resourceDraft.getByLabel("Titel")).toHaveValue(captureTitle);
+    await expect(resourceDraft.getByLabel("Resource Typ")).toHaveValue("link");
+    await resourceDraft.getByLabel("Titel").fill(resourceTitle);
+    await resourceDraft
+      .getByRole("button", { exact: true, name: "Resource erstellen" })
+      .click();
+    await page.waitForLoadState("networkidle");
+
+    await page.goto("/resources");
+    await expect(page.getByText(resourceTitle).first()).toBeVisible();
+    await page.reload();
+    await expect(page.getByText(resourceTitle).first()).toBeVisible();
+  });
+
+  test("Manual AI Suggestion solved archive requires user confirmation", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session.",
+    );
+
+    const captureTitle = `Already solved AI inbox ${Date.now()}`;
+
+    await setProfile(page, "manual");
+    await applySupabaseAuthState(page);
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/inbox");
+    });
+    await skipIfManualDbUnavailable(page);
+    await captureManualInboxItem(
+      page,
+      captureTitle,
+      "Already solved and fixed. Keep it active until user confirmation.",
+    );
+
+    const assistant = await generateInboxAISuggestion(page);
+
+    await expect(assistant.getByText("Route: Solved / Archive")).toBeVisible();
+    await applyInboxAISuggestion(page);
+
+    const activeItem = page.locator('[data-inbox-section="active-item"]');
+    await expect(
+      activeItem.getByRole("heading", { name: "Solved / Archive Draft" }),
+    ).toBeVisible();
+    await expect(
+      activeItem.getByRole("button", { name: "Als erledigt archivieren" }),
+    ).toBeVisible();
+    await expect(page.getByText(captureTitle).first()).toBeVisible();
+    await page.reload();
+    await expect(page.getByText(captureTitle).first()).toBeVisible();
   });
 
   test("Manual Inbox Solved Archive removes the item from active inbox", async ({

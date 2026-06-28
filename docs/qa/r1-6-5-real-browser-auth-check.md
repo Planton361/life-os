@@ -558,6 +558,28 @@
 - Ergebnis: 82 passed, 2 skipped. Die Skips sind bestehende datenabhaengige Empty-State-Gates bei gefuellter lokaler Manual-DB.
 - Keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB, keine Service Role, keine neue Library.
 
+## R1.8.0 AI Inbox Suggestions v1
+
+- AI Inbox Suggestions sind als reviewpflichtige Vorschlagsschicht dokumentiert.
+- Mock Provider ist deterministisch und lokal; keine externe AI API, kein Client API Key, keine Secrets.
+- Server Action liest nur user-owned Manual Inbox Items und persistiert nichts.
+- Suggestion kann Standalone Task, Resource und Solved/Archive Drafts lokal befuellen.
+- Task Draft Uebernahme wurde so umgesetzt, dass erst `Task erstellen` persistiert.
+- Resource Draft Uebernahme wurde so umgesetzt, dass erst `Resource erstellen` persistiert.
+- Solved/Archive Suggestion oeffnet nur den Confirm Draft; Archivieren braucht weiterhin User Confirmation.
+- Reload ohne Uebernahme/Persistenz erzeugt kein Zielobjekt.
+- R1.8.0 Einzel-Proof:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "AI Suggestion"`
+- Ergebnis: 4 passed.
+- Fokussierter AI/Inbox Proof:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "AI|Inbox|Suggestion|Manual"`
+- Ergebnis: 73 passed, 2 skipped. Die Skips sind bestehende datenabhaengige Empty-State-Gates bei gefuellter lokaler Manual-DB.
+- Daily-Flow-Regression:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Inbox|Manual|Today|Dashboard|Calendar|Portfolio"`
+- Ergebnis: 86 passed, 2 skipped. Die Skips sind bestehende datenabhaengige Empty-State-Gates bei gefuellter lokaler Manual-DB.
+- Lokaler Playwright Auth-State wurde gegen lokale Supabase Auth Runtime erneuert; `.local/` bleibt unversioniert.
+- Keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB, keine Service Role, keine neue Library.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.

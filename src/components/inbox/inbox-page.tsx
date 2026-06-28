@@ -7,7 +7,7 @@ import type { ContentStateMeta } from "@/features/content-state";
 import {
   getInboxCaptureTypeLabel,
   getInboxStageLabel,
-  type InboxAISuggestion,
+  type InboxAISuggestion as InboxPlanningSuggestion,
   type InboxChecklistItem,
   type InboxClarificationField,
   type InboxExistingTargetType,
@@ -30,6 +30,11 @@ import {
   type InboxArchiveActionResult,
   triageInboxItemToTaskFormAction,
 } from "@/features/real-data/actions/inbox.actions";
+import { suggestInboxRouteAction } from "@/features/real-data/actions/inbox-ai.actions";
+import type {
+  InboxAISuggestion as InboxRouteAISuggestion,
+  InboxAISuggestionActionResult,
+} from "@/features/inbox/ai/inbox-ai-suggestion.types";
 import { cn } from "@/lib/cn";
 
 type AccentStyle = CSSProperties & {
@@ -79,6 +84,45 @@ const planningSignalDefinitions = [
   { label: "Deadline hint", savedInTaskDraft: false },
   { label: "Recurrence hint", savedInTaskDraft: false },
 ] as const;
+
+function outcomeRouteFromSuggestion(route: InboxRouteAISuggestion["route"]) {
+  if (route === "resource") return "knowledge_resource";
+
+  return route satisfies Exclude<InboxOutcomeRoute, "knowledge_resource">;
+}
+
+function suggestionDisplayRoute(route: InboxRouteAISuggestion["route"]) {
+  if (route === "resource") return "Resource";
+  if (route === "standalone_task") return "Standalone Task";
+  if (route === "add_to_existing") return "Add to Existing";
+  if (route === "create_new") return "Create New";
+
+  return "Solved / Archive";
+}
+
+function validTaskPriority(value: string | undefined) {
+  return taskDraftPriorities.some((priority) => priority === value)
+    ? value
+    : undefined;
+}
+
+function validTaskEnergy(value: string | undefined) {
+  return taskDraftEnergies.some((energy) => energy === value)
+    ? value
+    : undefined;
+}
+
+function validTaskDuration(value: number | undefined) {
+  return taskDraftDurations.some((duration) => duration === value)
+    ? String(value)
+    : undefined;
+}
+
+function validResourceType(value: string | undefined) {
+  return resourceDraftTypes.some((type) => type.value === value)
+    ? value
+    : undefined;
+}
 
 function contentStateAttributes(
   meta: ContentStateMeta,
@@ -862,14 +906,16 @@ function InboxCreateNewDraft({
   activeItem,
   canCreateNew,
   nextAction,
+  suggestion,
 }: Readonly<{
   activeItem: InboxViewModel["activeItem"];
   canCreateNew: boolean;
   nextAction: InboxClarificationField;
+  suggestion?: InboxRouteAISuggestion;
 }>) {
   const [targetType, setTargetType] = useState<
     "goal" | "project" | "resource" | "skill"
-  >("project");
+  >(suggestion?.createNewDraft?.type ?? "project");
   const [projectState, projectFormAction, projectPending] = useActionState<
     InboxCreateNewActionResult | null,
     FormData
@@ -1000,18 +1046,23 @@ function InboxCreateNewDraft({
           <input name="inboxItemId" type="hidden" value={activeItem.id} />
           <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
             <DraftTextInput
-              defaultValue={activeItem.title}
+              defaultValue={suggestion?.createNewDraft?.title ?? activeItem.title}
               label="Titel"
               name="title"
             />
             <DraftTextarea
-              defaultValue={activeItem.originalCapture}
+              defaultValue={
+                suggestion?.createNewDraft?.summary ??
+                activeItem.originalCapture
+              }
               label="Beschreibung / Kontext"
               name="description"
             />
             {isProject ? (
               <DraftTextInput
-                defaultValue={nextAction.value}
+                defaultValue={
+                  suggestion?.taskDraft?.nextAction ?? nextAction.value
+                }
                 label="Nächste Aktion"
                 name="nextAction"
               />
@@ -1503,9 +1554,11 @@ function InboxSolvedArchiveDraft({
 function InboxResourceDraft({
   activeItem,
   canCreateResource,
+  suggestion,
 }: Readonly<{
   activeItem: InboxViewModel["activeItem"];
   canCreateResource: boolean;
+  suggestion?: InboxRouteAISuggestion;
 }>) {
   const [resourceState, resourceFormAction, resourcePending] = useActionState<
     InboxResourceActionResult | null,
@@ -1581,11 +1634,15 @@ function InboxResourceDraft({
         </div>
         <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
           <DraftTextInput
-            defaultValue={activeItem.title}
+            defaultValue={suggestion?.resourceDraft?.title ?? activeItem.title}
             label="Titel"
             name="title"
           />
-          <DraftSelect label="Resource Typ" name="type">
+          <DraftSelect
+            defaultValue={validResourceType(suggestion?.resourceDraft?.type)}
+            label="Resource Typ"
+            name="type"
+          >
             {resourceDraftTypes.map((type) => (
               <option key={type.value} value={type.value}>
                 {type.label}
@@ -1593,12 +1650,14 @@ function InboxResourceDraft({
             ))}
           </DraftSelect>
           <DraftTextarea
-            defaultValue={activeItem.originalCapture}
+            defaultValue={
+              suggestion?.resourceDraft?.summary ?? activeItem.originalCapture
+            }
             label="Kurzfassung"
             name="summary"
           />
           <DraftTextarea
-            defaultValue=""
+            defaultValue={suggestion?.resourceDraft?.source ?? ""}
             label="Inhalt / Notiz"
             name="content"
           />
@@ -1619,10 +1678,12 @@ function InboxTaskDraft({
   activeItem,
   canCreateTask,
   nextAction,
+  suggestion,
 }: Readonly<{
   activeItem: InboxViewModel["activeItem"];
   canCreateTask: boolean;
   nextAction: InboxClarificationField;
+  suggestion?: InboxRouteAISuggestion;
 }>) {
   const area =
     activeItem.planningSignals.find((signal) => signal.label === "Area")
@@ -1697,17 +1758,19 @@ function InboxTaskDraft({
         </div>
         <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
           <DraftTextInput
-            defaultValue={activeItem.title}
+            defaultValue={suggestion?.taskDraft?.title ?? activeItem.title}
             label="Titel"
             name="title"
           />
           <DraftTextarea
-            defaultValue={activeItem.originalCapture}
+            defaultValue={
+              suggestion?.taskDraft?.description ?? activeItem.originalCapture
+            }
             label="Beschreibung / Kontext"
             name="description"
           />
           <DraftTextInput
-            defaultValue={nextAction.value}
+            defaultValue={suggestion?.taskDraft?.nextAction ?? nextAction.value}
             label="Nächste Aktion"
             name="nextAction"
           />
@@ -1722,7 +1785,11 @@ function InboxTaskDraft({
             </option>
           </DraftSelect>
           <DraftSelect
-            defaultValue={activeItem.priority ?? "P2"}
+            defaultValue={
+              validTaskPriority(suggestion?.taskDraft?.priority) ??
+              activeItem.priority ??
+              "P2"
+            }
             label="Priorität"
             name="priority"
           >
@@ -1733,7 +1800,9 @@ function InboxTaskDraft({
             ))}
           </DraftSelect>
           <DraftSelect
-            defaultValue="30"
+            defaultValue={
+              validTaskDuration(suggestion?.taskDraft?.durationMinutes) ?? "30"
+            }
             label="Effort / Dauer"
             name="durationMinutes"
           >
@@ -1743,7 +1812,11 @@ function InboxTaskDraft({
               </option>
             ))}
           </DraftSelect>
-          <DraftSelect defaultValue="medium" label="Energie" name="energy">
+          <DraftSelect
+            defaultValue={validTaskEnergy(suggestion?.taskDraft?.energy) ?? "medium"}
+            label="Energie"
+            name="energy"
+          >
             {taskDraftEnergies.map((energy) => (
               <option key={energy} value={energy}>
                 {energy}
@@ -1762,6 +1835,7 @@ function InboxTaskDraft({
         <label className="mt-3 flex items-center gap-2 text-xs text-[var(--text-secondary)]">
           <input
             className={cn("size-4 accent-[var(--accent-green)]", focusClasses)}
+            defaultChecked={suggestion?.taskDraft?.planToday ?? false}
             name="planToday"
             type="checkbox"
           />
@@ -1779,6 +1853,7 @@ function InboxTaskDraft({
 
 function InboxActiveItemPanel({
   activeItem,
+  appliedSuggestion,
   addToExistingEnabled,
   archiveEnabled,
   contentState,
@@ -1791,6 +1866,7 @@ function InboxActiveItemPanel({
   profileId,
 }: Readonly<{
   activeItem: InboxViewModel["activeItem"];
+  appliedSuggestion?: InboxRouteAISuggestion;
   addToExistingEnabled: boolean;
   archiveEnabled: boolean;
   contentState: ContentStateMeta;
@@ -1806,6 +1882,9 @@ function InboxActiveItemPanel({
   const selectedDraftRoute = activeItem.triagedTaskId
     ? null
     : selectedOutcomeRoute;
+  const appliedSuggestionKey = appliedSuggestion
+    ? `${appliedSuggestion.route}:${appliedSuggestion.reason}`
+    : "none";
   let draftSlot: ReactNode = <EmptyDraftSlot />;
 
   if (selectedDraftRoute === "standalone_task") {
@@ -1814,6 +1893,7 @@ function InboxActiveItemPanel({
         activeItem={activeItem}
         canCreateTask={taskCreationEnabled}
         nextAction={nextAction}
+        suggestion={appliedSuggestion}
       />
     );
   } else if (selectedDraftRoute === "solved_archive") {
@@ -1837,6 +1917,7 @@ function InboxActiveItemPanel({
       <InboxResourceDraft
         activeItem={activeItem}
         canCreateResource={profileId === "manual"}
+        suggestion={appliedSuggestion}
       />
     );
   } else if (selectedDraftRoute === "create_new") {
@@ -1845,6 +1926,7 @@ function InboxActiveItemPanel({
         activeItem={activeItem}
         canCreateNew={createNewEnabled}
         nextAction={nextAction}
+        suggestion={appliedSuggestion}
       />
     );
   }
@@ -1954,7 +2036,9 @@ function InboxActiveItemPanel({
               selectedRoute={selectedDraftRoute}
               title={outcome.title}
             />
-            <DraftSlot>{draftSlot}</DraftSlot>
+            <DraftSlot key={`${selectedDraftRoute ?? "empty"}:${appliedSuggestionKey}`}>
+              {draftSlot}
+            </DraftSlot>
           </>
         )}
         <InboxPlanningSignals
@@ -2028,14 +2112,37 @@ function InboxActiveItemPanel({
 }
 
 function AIAssistantPanel({
+  activeItem,
   assistant,
   contentState,
+  onApplySuggestion,
   profileId,
 }: Readonly<{
+  activeItem: InboxViewModel["activeItem"];
   assistant: InboxViewModel["aiAssistant"];
   contentState: ContentStateMeta;
+  onApplySuggestion: (suggestion: InboxRouteAISuggestion) => void;
   profileId: InboxViewModel["profileId"];
 }>) {
+  const [suggestionState, suggestionFormAction, suggestionPending] =
+    useActionState<InboxAISuggestionActionResult | null, FormData>(
+      suggestInboxRouteAction,
+      null,
+    );
+  const suggestion = suggestionState?.suggestion;
+  const suggestionKey = suggestion
+    ? `${activeItem.id ?? "empty"}:${suggestion.route}:${suggestion.reason}`
+    : "";
+  const [dismissedSuggestionKey, setDismissedSuggestionKey] = useState("");
+  const canSuggest = Boolean(
+    profileId === "manual" && activeItem.hasSelection && activeItem.id,
+  );
+  const showSuggestion = Boolean(
+    suggestion &&
+      suggestionState?.status === "success" &&
+      dismissedSuggestionKey !== suggestionKey,
+  );
+
   return (
     <section
       aria-labelledby="ai-assistant-title"
@@ -2054,6 +2161,139 @@ function AIAssistantPanel({
         <p className="text-xs text-[var(--text-secondary)]">
           {assistant.description}
         </p>
+        <form
+          action={suggestionFormAction}
+          aria-label="AI Vorschlag erzeugen"
+          className="rounded-[16px] border border-[rgba(168,119,255,.28)] bg-[rgba(168,119,255,.075)] p-3"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-[var(--text-primary)]">
+                AI Vorschlag
+              </p>
+              <p className="mt-1 text-[11px] leading-4 text-[var(--text-secondary)]">
+                Deterministischer Mock. Erzeugt nur einen Review-Vorschlag,
+                keine Persistenz.
+              </p>
+            </div>
+            <input name="inboxItemId" type="hidden" value={activeItem.id ?? ""} />
+            <button
+              className={cn(
+                "min-h-9 rounded-[12px] border border-[rgba(168,119,255,.42)] bg-[rgba(168,119,255,.18)] px-3 text-xs font-semibold text-[var(--text-primary)]",
+                focusClasses,
+                disabledActionClasses,
+              )}
+              disabled={!canSuggest || suggestionPending}
+              type="submit"
+            >
+              {suggestionPending ? "Vorschlag läuft..." : "AI Vorschlag erzeugen"}
+            </button>
+          </div>
+          {!canSuggest ? (
+            <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
+              Wähle im Manual-Profil einen echten Inbox-Eintrag aus.
+            </p>
+          ) : null}
+          {suggestionState?.status === "blocked" ||
+          suggestionState?.status === "error" ? (
+            <p className="mt-2 text-[11px] leading-4 text-[var(--accent-orange)]">
+              {suggestionState.message}
+            </p>
+          ) : null}
+        </form>
+        {showSuggestion && suggestion ? (
+          <article
+            aria-label="AI Vorschlag Review"
+            className="rounded-[16px] border border-[rgba(168,119,255,.30)] bg-[rgba(15,23,36,.78)] p-3"
+          >
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+                  Vorschlag prüfen
+                </p>
+                <h3 className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
+                  Route: {suggestionDisplayRoute(suggestion.route)}
+                </h3>
+              </div>
+              <Pill active accent="var(--accent-purple)">
+                Confidence: {suggestion.confidence}
+              </Pill>
+            </div>
+            <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
+              {suggestion.reason}
+            </p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {suggestion.taskDraft?.title ? (
+                <SuggestionBox
+                  suggestion={{
+                    accent: "var(--accent-green)",
+                    label: "Task Title",
+                    value: suggestion.taskDraft.title,
+                  }}
+                />
+              ) : null}
+              {suggestion.taskDraft?.nextAction ? (
+                <SuggestionBox
+                  suggestion={{
+                    accent: "var(--accent-green)",
+                    label: "Next Action",
+                    value: suggestion.taskDraft.nextAction,
+                  }}
+                />
+              ) : null}
+              {suggestion.resourceDraft?.title ? (
+                <SuggestionBox
+                  suggestion={{
+                    accent: "var(--accent-purple)",
+                    label: "Resource Title",
+                    value: suggestion.resourceDraft.title,
+                  }}
+                />
+              ) : null}
+              {suggestion.createNewDraft?.title ? (
+                <SuggestionBox
+                  suggestion={{
+                    accent: "var(--accent-green)",
+                    label:
+                      suggestion.createNewDraft.type === "goal"
+                        ? "Goal Title"
+                        : "Project Title",
+                    value: suggestion.createNewDraft.title,
+                  }}
+                />
+              ) : null}
+            </div>
+            {suggestion.warnings?.length ? (
+              <ul className="mt-3 space-y-1 text-[10px] leading-4 text-[var(--text-muted)]">
+                {suggestion.warnings.map((warning) => (
+                  <li key={warning}>Warnung: {warning}</li>
+                ))}
+              </ul>
+            ) : null}
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                className={cn(
+                  "min-h-8 rounded-[12px] border border-[rgba(66,184,131,.40)] bg-[rgba(66,184,131,.18)] px-3 text-xs font-semibold text-[var(--text-primary)]",
+                  focusClasses,
+                )}
+                onClick={() => onApplySuggestion(suggestion)}
+                type="button"
+              >
+                Vorschlag übernehmen
+              </button>
+              <button
+                className={cn(
+                  "min-h-8 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.70)] px-3 text-xs font-semibold text-[var(--text-secondary)]",
+                  focusClasses,
+                )}
+                onClick={() => setDismissedSuggestionKey(suggestionKey)}
+                type="button"
+              >
+                Verwerfen
+              </button>
+            </div>
+          </article>
+        ) : null}
         <div className="rounded-[16px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.52)] p-3">
           <p className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">
             Suggested Planning
@@ -2119,7 +2359,7 @@ function AIAssistantPanel({
 function SuggestionBox({
   suggestion,
 }: Readonly<{
-  suggestion: InboxAISuggestion;
+  suggestion: InboxPlanningSuggestion;
 }>) {
   return (
     <article
@@ -2293,8 +2533,12 @@ function RelatedContextRow({
 }
 
 function InboxAIAssistantPanel({
+  activeItem,
+  onApplySuggestion,
   viewModel,
 }: Readonly<{
+  activeItem: InboxViewModel["activeItem"];
+  onApplySuggestion: (suggestion: InboxRouteAISuggestion) => void;
   viewModel: InboxViewModel;
 }>) {
   return (
@@ -2303,8 +2547,10 @@ function InboxAIAssistantPanel({
       aria-label="Inbox assistant and context"
     >
       <AIAssistantPanel
+        activeItem={activeItem}
         assistant={viewModel.aiAssistant}
         contentState={viewModel.contentStates.aiAssistant}
+        onApplySuggestion={onApplySuggestion}
         profileId={viewModel.profileId}
       />
       <DecisionChecklist
@@ -2340,8 +2586,26 @@ export function InboxPage({
     outcomeSelection.key === activeItemKey
       ? outcomeSelection.route
       : null;
+  const [appliedSuggestionState, setAppliedSuggestionState] = useState<{
+    key: string;
+    suggestion: InboxRouteAISuggestion;
+  } | null>(null);
+  const appliedSuggestion =
+    appliedSuggestionState?.key === activeItemKey
+      ? appliedSuggestionState.suggestion
+      : undefined;
   const setSelectedOutcomeRoute = (route: InboxOutcomeRoute) => {
     setOutcomeSelection({ key: activeItemKey, route });
+  };
+  const applySuggestion = (suggestion: InboxRouteAISuggestion) => {
+    setOutcomeSelection({
+      key: activeItemKey,
+      route: outcomeRouteFromSuggestion(suggestion.route),
+    });
+    setAppliedSuggestionState({
+      key: activeItemKey,
+      suggestion,
+    });
   };
 
   const taskCreationEnabled = Boolean(
@@ -2413,6 +2677,7 @@ export function InboxPage({
         />
         <InboxActiveItemPanel
           activeItem={viewModel.activeItem}
+          appliedSuggestion={appliedSuggestion}
           addToExistingEnabled={addToExistingEnabled}
           archiveEnabled={archiveEnabled}
           contentState={viewModel.contentStates.activeItem}
@@ -2425,6 +2690,8 @@ export function InboxPage({
           profileId={viewModel.profileId}
         />
         <InboxAIAssistantPanel
+          activeItem={viewModel.activeItem}
+          onApplySuggestion={applySuggestion}
           viewModel={{
             ...viewModel,
             checklist,
