@@ -19,7 +19,7 @@ export type NutritionMetricType =
   | "fat"
   | "water";
 
-export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
+export type MealType = "breakfast" | "lunch" | "dinner" | "snack" | "other";
 
 export type MealSource = "manual" | "meal_planner" | "recipe" | "imported";
 
@@ -126,6 +126,10 @@ export type NutritionOverviewViewModel = {
     grocerySignal: ContentStateMeta;
   };
   actionsEnabled?: boolean;
+  recipeOptions?: readonly {
+    id: string;
+    title: string;
+  }[];
   header: {
     eyebrow: "Life OS / Nutrition";
     title: "Nutrition Overview";
@@ -140,10 +144,10 @@ export type NutritionOverviewViewModel = {
   pageContract: {
     pageType: "Area Overview";
     primaryPurpose: string;
-    writes: "local UI state only in Phase 2";
+    writes: string;
     reads: string;
     canonicalSource: string;
-    sensitiveData: "standard_private";
+    sensitiveData: "standard_private" | "health_sensitive";
     mobileOrder: string;
   };
   day: NutritionDay;

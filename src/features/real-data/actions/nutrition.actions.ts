@@ -188,6 +188,13 @@ export async function createRecipeAction(
   };
 }
 
+export async function createRecipeFormStateAction(
+  _previousState: NutritionActionResult,
+  formData: FormData,
+): Promise<NutritionActionResult> {
+  return createRecipeAction(formData);
+}
+
 export async function updateRecipeAction(
   formData: FormData,
 ): Promise<NutritionActionResult> {
@@ -326,6 +333,13 @@ export async function createMealAction(
   };
 }
 
+export async function createMealFormStateAction(
+  _previousState: NutritionActionResult,
+  formData: FormData,
+): Promise<NutritionActionResult> {
+  return createMealAction(formData);
+}
+
 export async function updateMealAction(
   formData: FormData,
 ): Promise<NutritionActionResult> {
@@ -414,4 +428,11 @@ export async function completeMealAction(
     message: "Meal abgeschlossen.",
     status: "success",
   };
+}
+
+export async function completeMealFormStateAction(
+  _previousState: NutritionActionResult,
+  formData: FormData,
+): Promise<NutritionActionResult> {
+  return completeMealAction(formData);
 }

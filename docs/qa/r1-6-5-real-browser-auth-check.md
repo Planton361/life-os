@@ -463,6 +463,20 @@
 - Ergebnis: 68 passed, 2 skipped.
 - Keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB und kein Service-Role-Zugriff.
 
+## R1.7.6D Nutrition UI Binding / Manual Browser Proof
+
+- Nutrition Overview liest Manual Recipes und Meals aus Supabase ueber das bestehende Nutrition Repository.
+- Recipes zeigt echte Manual Recipes und erstellt neue Recipes ueber die bestehende Server Action.
+- Nutrition Overview erstellt Manual Meals ueber die bestehende Server Action; optionale Recipe-Verknuepfung bleibt user-scoped.
+- Offene Meals erscheinen im Next-Meal-Panel; weitere offene Meals werden kompakt in derselben Card sichtbar.
+- Meal Complete nutzt die bestehende Server Action und ist nach Reload in Recent Meals sichtbar.
+- Meal Planner projiziert recipe-linked Manual Meals in die aktuelle Woche; Planner-Edit-Persistenz bleibt deferred.
+- Demo und Empty bleiben ohne Manual-Fallback; Manual entfernt Nutrition-Demo-Copy wie `Paprika` und `3 missing ingredients`.
+- Fokussierter Nutrition/Manual-Regression-Lauf:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Nutrition|Recipe|Meal|Manual"`
+- Ergebnis: 58 passed, 2 skipped. Die Skips sind bestehende datenabhaengige Manual-DB/Empty-Gates.
+- Keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB, keine Service Role, keine externe Nutrition API.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.

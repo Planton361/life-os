@@ -162,7 +162,7 @@ export type MealPlannerViewModel = {
   pageContract: {
     pageType: "Workflow / Area Subpage";
     primaryPurpose: string;
-    writes: "local UI state only in Phase 2";
+    writes: string;
     reads: string;
     canonicalSource: string;
     sensitiveData: "health_sensitive";

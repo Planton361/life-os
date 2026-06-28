@@ -40,6 +40,13 @@ function currentIsoWeekday() {
   return day === 0 ? 7 : day;
 }
 
+function currentLocalDate() {
+  const date = new Date();
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+
+  return localDate.toISOString().slice(0, 10);
+}
+
 function nextIsoWeekday() {
   return (currentIsoWeekday() % 7) + 1;
 }
@@ -1979,40 +1986,97 @@ test.describe("Nutrition content states", () => {
     ).toBeDisabled();
   });
 
-  test("projects manual nutrition meals without recipe or grocery demo fallback", async ({
+  test("Manual Nutrition creates recipe meal and completes it reload-stable", async ({
     page,
   }) => {
+    const timestamp = Date.now();
+    const recipeTitle = `Manual Nutrition Recipe ${timestamp}`;
+    const mealTitle = `Manual Nutrition Meal ${timestamp}`;
+    const mealDate = currentLocalDate();
+
     await setProfile(page, "manual");
-    await writeManualProfile({
-      meals: [
-        {
-          ...manualMeal("Breakfast", 1),
-          state: "logged",
-        },
-        manualMeal("Lunch", 2),
-      ],
-    });
+    const hasSupabaseAuth = await applySupabaseAuthState(page);
+
+    if (!hasSupabaseAuth) {
+      test.skip(
+        true,
+        "Manual Supabase auth state unavailable; Nutrition DB proof skipped.",
+      );
+    }
 
     await expectNoHydrationErrors(page, async () => {
-      await page.goto("/nutrition");
+      await page.goto("/inbox");
     });
+    await skipIfManualDbUnavailable(
+      page,
+      "Manual Supabase auth state unavailable; Nutrition DB proof skipped.",
+    );
+
+    await page.goto("/nutrition/recipes");
+    await expectNoNutritionDemoStrings(page);
+    const recipeForm = page
+      .getByRole("heading", { name: "Recipe erstellen" })
+      .locator("xpath=ancestor::section[1]");
+
+    await expect(recipeForm).toBeVisible();
+    await recipeForm.getByLabel("Title").fill(recipeTitle);
+    await recipeForm.getByLabel("Summary").fill("Browser proof recipe");
+    await recipeForm.getByLabel("Tags").fill("lunch, proof");
+    await recipeForm.getByRole("button", { name: "Recipe erstellen" }).click();
+    await page.waitForLoadState("networkidle");
+    await expect(page.getByText(recipeTitle).first()).toBeVisible();
+    await page.reload();
+    await expect(page.getByText(recipeTitle).first()).toBeVisible();
+    await expectNoNutritionDemoStrings(page);
+
+    await page.goto("/nutrition");
+    await expectNoNutritionDemoStrings(page);
+    const mealForm = page
+      .getByRole("heading", { name: "Meal erstellen" })
+      .locator("xpath=ancestor::section[1]");
+
+    await expect(mealForm).toBeVisible();
+    await mealForm.getByLabel("Title").fill(mealTitle);
+    await mealForm.getByLabel("Date").fill(mealDate);
+    await mealForm.getByLabel("Type").selectOption("lunch");
+    await mealForm.getByLabel("Planned").fill(`${mealDate}T12:30`);
+    await mealForm.getByLabel("Recipe").selectOption({ label: recipeTitle });
+    await mealForm
+      .getByRole("button", { exact: true, name: "Meal erstellen" })
+      .click();
+    await page.waitForLoadState("networkidle");
     await expect(page.locator("#nutrition-page")).toHaveAttribute(
       "data-content-state",
       "partial",
     );
+    await expect(page.getByText(mealTitle).first()).toBeVisible();
+    await page.reload();
+    await expect(page.getByText(mealTitle).first()).toBeVisible();
     await expectNoNutritionDemoStrings(page);
-    await expect(page.getByText("Manual Breakfast").first()).toBeVisible();
-    await expect(page.getByText("Manual Lunch").first()).toBeVisible();
+
+    const createdMealRow = page.locator("article").filter({ hasText: mealTitle });
+
+    if ((await createdMealRow.count()) > 0) {
+      await createdMealRow
+        .first()
+        .getByRole("button", { name: "Gegessen" })
+        .click();
+    } else {
+      await page.getByRole("button", { name: "Gegessen" }).first().click();
+    }
+    await page.waitForLoadState("networkidle");
+    await page.reload();
     await expect(
-      page.getByText("Lokale Mahlzeiten sind sichtbar").first(),
+      page.getByRole("region", { name: "Recent Meals" }).getByText(mealTitle),
     ).toBeVisible();
 
     await page.goto("/nutrition/meal-planner");
-    await expect(page.locator("#meal-planner-page")).toHaveAttribute(
+    await expect(page.locator("#meal-planner-page")).not.toHaveAttribute(
       "data-content-state",
       "empty",
     );
-    await expect(page.getByText("Keine passenden Rezepte")).toBeVisible();
+    await expect(page.getByText(recipeTitle).first()).toBeVisible();
+    await expectNoNutritionDemoStrings(page);
   });
 });
 

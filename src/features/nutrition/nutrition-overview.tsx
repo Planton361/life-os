@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {
   useEffect,
+  useActionState,
   useMemo,
   useRef,
   useState,
@@ -16,6 +17,11 @@ import {
   resolveContentStateMeta,
   type ContentStateMeta,
 } from "@/features/content-state";
+import {
+  completeMealFormStateAction,
+  createMealFormStateAction,
+  type NutritionActionResult,
+} from "@/features/real-data/actions/nutrition.actions";
 import { cn } from "@/lib/cn";
 import { buildNutritionMetrics } from "./nutrition-view-model";
 import type {
@@ -57,6 +63,7 @@ const mealTypeLabels: Record<MealType, string> = {
   lunch: "Lunch",
   dinner: "Dinner",
   snack: "Snack",
+  other: "Other",
 };
 
 const mealSourceLabels: Record<MealSource, string> = {
@@ -84,6 +91,11 @@ const ghostButtonClass =
 
 const inputClass =
   "mt-1 min-h-11 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.62)] px-3 text-[12px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)] disabled:opacity-60";
+
+const initialNutritionActionState: NutritionActionResult = {
+  message: "",
+  status: "blocked",
+};
 
 function formatNumber(value: number, maximumFractionDigits = 0) {
   return new Intl.NumberFormat("en-US", {
@@ -125,16 +137,14 @@ function metricByType(
   return metrics.find((metric) => metric.type === type) ?? metrics[0];
 }
 
-function nextOpenMeal(meals: readonly MealEntry[]) {
-  return (
-    [...meals]
-      .filter((meal) => meal.planned_at && !meal.consumed_at)
-      .sort(
-        (left, right) =>
-          new Date(left.planned_at ?? "").getTime() -
-          new Date(right.planned_at ?? "").getTime(),
-      )[0] ?? null
-  );
+function plannedOpenMeals(meals: readonly MealEntry[]) {
+  return [...meals]
+    .filter((meal) => meal.planned_at && !meal.consumed_at)
+    .sort(
+      (left, right) =>
+        new Date(left.planned_at ?? "").getTime() -
+        new Date(right.planned_at ?? "").getTime(),
+    );
 }
 
 function recentMeals(meals: readonly MealEntry[]) {
@@ -203,6 +213,30 @@ function stateAttrs(meta: ContentStateMeta, profileId: string) {
   return contentStateDataAttributes(meta, profileId);
 }
 
+function NutritionActionMessage({
+  message,
+  status,
+}: Readonly<{
+  message: string;
+  status: "blocked" | "error" | "success";
+}>) {
+  if (!message) return null;
+
+  return (
+    <p
+      className={cn(
+        "text-[11px] font-semibold leading-4",
+        status === "success"
+          ? "text-[var(--accent-green)]"
+          : "text-[var(--accent-red)]",
+      )}
+      role="status"
+    >
+      {message}
+    </p>
+  );
+}
+
 function NutritionPanel({
   title,
   subtitle,
@@ -267,6 +301,165 @@ function FieldLabel({
         </span>
       ) : null}
     </span>
+  );
+}
+
+function ManualMealCreateForm({
+  actionsEnabled,
+  date,
+  recipeOptions,
+}: Readonly<{
+  actionsEnabled: boolean;
+  date: string;
+  recipeOptions: NutritionOverviewViewModel["recipeOptions"];
+}>) {
+  const [state, formAction, isPending] = useActionState(
+    createMealFormStateAction,
+    initialNutritionActionState,
+  );
+
+  useEffect(() => {
+    if (state.status === "success") {
+      window.location.reload();
+    }
+  }, [state.status]);
+
+  return (
+    <section
+      aria-labelledby="manual-meal-create-heading"
+      className="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--surface-1)] p-4 shadow-[0_8px_22px_rgba(0,0,0,.12)]"
+    >
+      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+        <div className="min-w-0">
+          <h2
+            className="text-[14px] font-semibold text-[var(--text-primary)]"
+            id="manual-meal-create-heading"
+          >
+            Meal erstellen
+          </h2>
+          <p className="mt-1 text-[11px] leading-4 text-[var(--text-muted)]">
+            Persistiert im Manual Nutrition Store.
+          </p>
+        </div>
+        <NutritionActionMessage message={state.message} status={state.status} />
+      </div>
+
+      <form action={formAction} className="mt-3 grid gap-3 lg:grid-cols-6">
+        <label className="min-w-0 lg:col-span-2">
+          <FieldLabel>Title</FieldLabel>
+          <input
+            className={inputClass}
+            disabled={!actionsEnabled || isPending}
+            name="title"
+            placeholder="Manual Lunch"
+            required
+          />
+        </label>
+        <label className="min-w-0">
+          <FieldLabel>Date</FieldLabel>
+          <input
+            className={inputClass}
+            defaultValue={date}
+            disabled={!actionsEnabled || isPending}
+            name="date"
+            required
+            type="date"
+          />
+        </label>
+        <label className="min-w-0">
+          <FieldLabel>Type</FieldLabel>
+          <select
+            className={inputClass}
+            defaultValue="lunch"
+            disabled={!actionsEnabled || isPending}
+            name="mealType"
+            required
+          >
+            {Object.entries(mealTypeLabels).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="min-w-0">
+          <FieldLabel optional>Planned</FieldLabel>
+          <input
+            className={inputClass}
+            defaultValue={`${date}T12:00`}
+            disabled={!actionsEnabled || isPending}
+            name="plannedAt"
+            type="datetime-local"
+          />
+        </label>
+        <label className="min-w-0">
+          <FieldLabel optional>Recipe</FieldLabel>
+          <select
+            className={inputClass}
+            disabled={!actionsEnabled || isPending}
+            name="recipeId"
+          >
+            <option value="">No recipe</option>
+            {(recipeOptions ?? []).map((recipe) => (
+              <option key={recipe.id} value={recipe.id}>
+                {recipe.title}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="min-w-0 lg:col-span-5">
+          <FieldLabel optional>Notes</FieldLabel>
+          <input
+            className={inputClass}
+            disabled={!actionsEnabled || isPending}
+            name="notes"
+            placeholder="Prep note"
+          />
+        </label>
+        <div className="flex items-end">
+          <button
+            className={primaryButtonClass}
+            disabled={!actionsEnabled || isPending}
+            type="submit"
+          >
+            Meal erstellen
+          </button>
+        </div>
+      </form>
+    </section>
+  );
+}
+
+function CompleteMealForm({
+  actionsEnabled,
+  meal,
+}: Readonly<{
+  actionsEnabled: boolean;
+  meal: MealEntry;
+}>) {
+  const [state, formAction, isPending] = useActionState(
+    completeMealFormStateAction,
+    initialNutritionActionState,
+  );
+
+  useEffect(() => {
+    if (state.status === "success") {
+      window.location.reload();
+    }
+  }, [state.status]);
+
+  return (
+    <form action={formAction} className="contents">
+      <input name="mealId" type="hidden" value={meal.id} />
+      <button
+        className={primaryButtonClass}
+        disabled={!actionsEnabled || isPending}
+        type="submit"
+      >
+        Gegessen
+      </button>
+      <NutritionActionMessage message={state.message} status={state.status} />
+    </form>
   );
 }
 
@@ -426,16 +619,20 @@ function TodayNutritionCard({
 
 function NextMealCard({
   meal,
+  openMeals,
   profileId,
   stateMeta,
   actionsEnabled,
+  persistedActions,
   onMarkAsEaten,
   onOpenMeal,
 }: Readonly<{
   meal: MealEntry | null;
+  openMeals: readonly MealEntry[];
   profileId: string;
   stateMeta: ContentStateMeta;
   actionsEnabled: boolean;
+  persistedActions: boolean;
   onMarkAsEaten: (meal: MealEntry) => void;
   onOpenMeal: (meal: MealEntry) => void;
 }>) {
@@ -466,7 +663,9 @@ function NextMealCard({
                 {meal.title}
               </h3>
               <p className="mt-1 text-[11px] leading-4 text-[var(--text-muted)]">
-                {actionsEnabled
+                {persistedActions
+                  ? "Manual Meal · Supabase Recipe-Verknüpfung"
+                  : actionsEnabled
                   ? "Meal Planner · Rezept aus Wochenplan · 3 missing ingredients"
                   : "Lokale Mahlzeit · noch keine Recipe- oder Grocery-Verknüpfung"}
               </p>
@@ -498,7 +697,9 @@ function NextMealCard({
 
           <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
             <p className="text-[11px] leading-5 text-[var(--text-muted)]">
-              {actionsEnabled
+              {persistedActions
+                ? "Grocery Signal: keine Zutatenliste ohne Ingredient-Modell."
+                : actionsEnabled
                 ? "Grocery Signal: Paprika ist optional. Alternative vorhanden."
                 : "Grocery Signal: keine Zutaten ohne Recipe-Verknüpfung."}
             </p>
@@ -510,15 +711,66 @@ function NextMealCard({
             >
               Open
             </button>
-            <button
-              className={primaryButtonClass}
-              disabled={!actionsEnabled}
-              onClick={() => onMarkAsEaten(meal)}
-              type="button"
-            >
-              Mark as eaten
-            </button>
+            {persistedActions ? (
+              <CompleteMealForm actionsEnabled={actionsEnabled} meal={meal} />
+            ) : (
+              <button
+                className={primaryButtonClass}
+                disabled={!actionsEnabled}
+                onClick={() => onMarkAsEaten(meal)}
+                type="button"
+              >
+                Mark as eaten
+              </button>
+            )}
           </div>
+
+          {openMeals.length > 1 ? (
+            <div className="grid gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.36)] p-2">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+                Weitere offene Meals
+              </p>
+              {openMeals.slice(1).map((queuedMeal) => (
+                <article
+                  className="grid gap-2 rounded-[10px] border border-[rgba(148,163,184,.08)] bg-[rgba(15,23,36,.54)] px-3 py-2 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center"
+                  key={queuedMeal.id}
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-[12px] font-semibold text-[var(--text-primary)]">
+                      {queuedMeal.title}
+                    </p>
+                    <p className="text-[10px] leading-4 text-[var(--text-muted)]">
+                      {formatMealTime(queuedMeal.planned_at)} ·{" "}
+                      {mealTypeLabels[queuedMeal.meal_type]}
+                    </p>
+                  </div>
+                  <button
+                    className={secondaryButtonClass}
+                    disabled={!actionsEnabled}
+                    onClick={() => onOpenMeal(queuedMeal)}
+                    type="button"
+                  >
+                    Open
+                  </button>
+                  {persistedActions ? (
+                    <CompleteMealForm
+                      actionsEnabled={actionsEnabled}
+                      meal={queuedMeal}
+                    />
+                  ) : (
+                    <button
+                      className={primaryButtonClass}
+                      disabled={!actionsEnabled}
+                      onClick={() => onMarkAsEaten(queuedMeal)}
+                      type="button"
+                    >
+                      Mark as eaten
+                    </button>
+                  )}
+                </article>
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : (
         <EmptyNutritionState
@@ -1682,6 +1934,7 @@ export function NutritionOverviewPage({
 }>) {
   const profileId = viewModel.profileId ?? "demo";
   const actionsEnabled = viewModel.actionsEnabled ?? true;
+  const hasPersistedManualActions = profileId === "manual";
   const [period, setPeriod] = useState<NutritionPeriod>("today");
   const [day, setDay] = useState<NutritionDay>(viewModel.day);
   const [meals, setMeals] = useState<MealEntry[]>([...viewModel.meals]);
@@ -1692,7 +1945,8 @@ export function NutritionOverviewPage({
   const [toast, setToast] = useState<ToastState | null>(null);
 
   const metrics = useMemo(() => buildNutritionMetrics(day), [day]);
-  const openMeal = useMemo(() => nextOpenMeal(meals), [meals]);
+  const openMeals = useMemo(() => plannedOpenMeals(meals), [meals]);
+  const openMeal = openMeals[0] ?? null;
   const loggedMeals = useMemo(() => recentMeals(meals), [meals]);
   const waterMetric = metricByType(metrics, "water");
   const hasData =
@@ -1829,10 +2083,29 @@ export function NutritionOverviewPage({
         <PageHeader
           actionsEnabled={actionsEnabled}
           header={viewModel.header}
-          onLogMeal={() => setLogDialogOpen(true)}
+          onLogMeal={() => {
+            if (hasPersistedManualActions) {
+              showToast({
+                body: "Nutze das Manual Meal Formular direkt unter dem Header.",
+                title: "Manual Meal Create",
+                tone: "info",
+              });
+              return;
+            }
+
+            setLogDialogOpen(true);
+          }}
           onPeriodChange={handlePeriodChange}
           period={period}
         />
+
+        {hasPersistedManualActions ? (
+          <ManualMealCreateForm
+            actionsEnabled={actionsEnabled}
+            date={viewModel.day.date}
+            recipeOptions={viewModel.recipeOptions}
+          />
+        ) : null}
 
         <div className="grid min-w-0 gap-2 xl:grid-cols-12">
           <TodayNutritionCard
@@ -1849,6 +2122,8 @@ export function NutritionOverviewPage({
             meal={openMeal}
             onMarkAsEaten={handleMarkAsEaten}
             onOpenMeal={setActiveMeal}
+            openMeals={openMeals}
+            persistedActions={hasPersistedManualActions}
             profileId={profileId}
             stateMeta={contentStates.nextMeal}
           />
@@ -1908,7 +2183,7 @@ export function NutritionOverviewPage({
         defaultMeal={openMeal}
         onClose={() => setLogDialogOpen(false)}
         onSave={handleSaveMeal}
-        open={logDialogOpen}
+        open={!hasPersistedManualActions && logDialogOpen}
       />
       <MacroDetailDialog
         metric={activeMetric}

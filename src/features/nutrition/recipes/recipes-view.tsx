@@ -2,11 +2,15 @@
 
 import Link from "next/link";
 import type { CSSProperties } from "react";
-import { useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
 import {
   contentStateDataAttributes,
   resolveContentStateMeta,
 } from "@/features/content-state";
+import {
+  createRecipeFormStateAction,
+  type NutritionActionResult,
+} from "@/features/real-data/actions/nutrition.actions";
 import type { MealType, Recipe } from "../meal-planner/meal-planner-types";
 import {
   primaryButtonClass,
@@ -35,6 +39,145 @@ type EditorState = {
   mode: RecipeFormMode;
   recipe: Recipe;
 };
+
+const initialNutritionActionState: NutritionActionResult = {
+  message: "",
+  status: "blocked",
+};
+
+function RecipeActionMessage({
+  message,
+  status,
+}: Readonly<{
+  message: string;
+  status: "blocked" | "error" | "success";
+}>) {
+  if (!message) return null;
+
+  return (
+    <p
+      className={
+        status === "success"
+          ? "text-[11px] font-semibold text-[var(--accent-green)]"
+          : "text-[11px] font-semibold text-[var(--accent-red)]"
+      }
+      role="status"
+    >
+      {message}
+    </p>
+  );
+}
+
+function ManualRecipeCreateForm({
+  actionsEnabled,
+}: Readonly<{
+  actionsEnabled: boolean;
+}>) {
+  const [state, formAction, isPending] = useActionState(
+    createRecipeFormStateAction,
+    initialNutritionActionState,
+  );
+
+  useEffect(() => {
+    if (state.status === "success") {
+      window.location.reload();
+    }
+  }, [state.status]);
+
+  return (
+    <section
+      aria-labelledby="manual-recipe-create-heading"
+      className="shrink-0 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--surface-1)] p-3 shadow-[0_8px_22px_rgba(0,0,0,.12)]"
+    >
+      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+        <div className="min-w-0">
+          <h2
+            className="text-[13px] font-semibold text-[var(--text-primary)]"
+            id="manual-recipe-create-heading"
+          >
+            Recipe erstellen
+          </h2>
+          <p className="mt-1 text-[11px] leading-4 text-[var(--text-muted)]">
+            Persistiert im Manual Nutrition Store.
+          </p>
+        </div>
+        <RecipeActionMessage message={state.message} status={state.status} />
+      </div>
+
+      <form action={formAction} className="mt-3 grid gap-3 lg:grid-cols-6">
+        <label className="min-w-0 lg:col-span-2">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+            Title
+          </span>
+          <input
+            className="mt-1 min-h-11 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.62)] px-3 text-[12px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)] disabled:opacity-60"
+            disabled={!actionsEnabled || isPending}
+            name="title"
+            placeholder="Manual Recipe"
+            required
+          />
+        </label>
+        <label className="min-w-0 lg:col-span-2">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+            Summary
+          </span>
+          <input
+            className="mt-1 min-h-11 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.62)] px-3 text-[12px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)] disabled:opacity-60"
+            disabled={!actionsEnabled || isPending}
+            name="summary"
+            placeholder="Short prep note"
+          />
+        </label>
+        <label className="min-w-0">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+            Servings
+          </span>
+          <input
+            className="mt-1 min-h-11 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.62)] px-3 text-[12px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)] disabled:opacity-60"
+            defaultValue="1"
+            disabled={!actionsEnabled || isPending}
+            min="1"
+            name="servings"
+            type="number"
+          />
+        </label>
+        <label className="min-w-0">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+            Prep min
+          </span>
+          <input
+            className="mt-1 min-h-11 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.62)] px-3 text-[12px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)] disabled:opacity-60"
+            disabled={!actionsEnabled || isPending}
+            min="1"
+            name="prepMinutes"
+            type="number"
+          />
+        </label>
+        <label className="min-w-0 lg:col-span-5">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+            Tags
+          </span>
+          <input
+            className="mt-1 min-h-11 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.62)] px-3 text-[12px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)] disabled:opacity-60"
+            disabled={!actionsEnabled || isPending}
+            name="tags"
+            placeholder="lunch, quick"
+          />
+        </label>
+        <input name="source" type="hidden" value="manual" />
+        <div className="flex items-end">
+          <button
+            className={primaryButtonClass}
+            disabled={!actionsEnabled || isPending}
+            type="submit"
+          >
+            Recipe erstellen
+          </button>
+        </div>
+      </form>
+    </section>
+  );
+}
 
 function StatTile({
   label,
@@ -136,6 +279,7 @@ export function RecipesView({
 }>) {
   const profileId = viewModel.profileId ?? "demo";
   const actionsEnabled = viewModel.actionsEnabled ?? true;
+  const hasPersistedManualActions = profileId === "manual";
   const [recipes, setRecipes] = useState<Recipe[]>(() =>
     viewModel.recipes.map(cloneRecipe),
   );
@@ -273,7 +417,7 @@ export function RecipesView({
             </Link>
             <button
               className={primaryButtonClass}
-              disabled={!actionsEnabled}
+              disabled={!actionsEnabled || hasPersistedManualActions}
               onClick={openNewRecipe}
               type="button"
             >
@@ -298,6 +442,10 @@ export function RecipesView({
           </div>
         ) : null}
       </header>
+
+      {hasPersistedManualActions ? (
+        <ManualRecipeCreateForm actionsEnabled={actionsEnabled} />
+      ) : null}
 
       <RecipeSummary
         stateAttributes={stateAttrs(contentStates.summary)}
@@ -325,7 +473,7 @@ export function RecipesView({
 
         <RecipeDetailPanel
           confirmingArchive={confirmingArchive}
-          actionsEnabled={actionsEnabled}
+          actionsEnabled={actionsEnabled && !hasPersistedManualActions}
           onCancelArchive={() => setConfirmingArchive(false)}
           onConfirmArchive={archiveSelectedRecipe}
           onDuplicate={duplicateSelectedRecipe}

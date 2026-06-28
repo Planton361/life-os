@@ -34,6 +34,11 @@ import { getGroceryViewModel as getDemoGroceryViewModel } from "@/features/nutri
 import { getMealPlannerViewModel as getDemoMealPlannerViewModel } from "@/features/nutrition/meal-planner";
 import { getRecipesViewModel as getDemoRecipesViewModel } from "@/features/nutrition/recipes";
 import { summarizeRecipes } from "@/features/nutrition/recipes/recipe-utils";
+import type {
+  MealPlanWeek,
+  MealType as PlannerMealType,
+  Recipe as PlannerRecipe,
+} from "@/features/nutrition/meal-planner/meal-planner-types";
 import {
   buildResourcesContentStates,
   getResourcesViewModel as getDemoResourcesViewModel,
@@ -52,10 +57,15 @@ import {
 } from "@/features/resources/resource-relations-read-model";
 import { resolveContentStateMeta } from "@/features/content-state";
 import {
+  createSupabaseNutritionRepository,
   createSupabaseResourceRepository,
   type SupabaseClientLike,
 } from "@/features/real-data/supabase";
-import type { Resource as RealDataResource } from "@/features/real-data";
+import type {
+  Meal as RealDataMeal,
+  Recipe as RealDataRecipe,
+  Resource as RealDataResource,
+} from "@/features/real-data";
 import { getShopViewModel as getDemoShopViewModel } from "@/features/shop";
 import {
   getWorkLogViewModel as getDemoWorkLogViewModel,
@@ -1057,13 +1067,111 @@ function buildProfileStrengthTrackerViewModel(
   return viewModel;
 }
 
-function emptyNutritionDay(): NutritionDay {
+type ManualNutritionData = {
+  meals: readonly RealDataMeal[];
+  recipes: readonly RealDataRecipe[];
+  unavailableReason?: string;
+};
+
+const plannerMealTypes: readonly PlannerMealType[] = [
+  "breakfast",
+  "lunch",
+  "dinner",
+];
+
+function formatLocalDate(date: Date) {
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+
+  return localDate.toISOString().slice(0, 10);
+}
+
+function todayDateLabel() {
+  return formatLocalDate(new Date());
+}
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+
+  return next;
+}
+
+function startOfIsoWeek(date: Date) {
+  const start = new Date(date);
+  const day = start.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+
+  start.setDate(start.getDate() + diff);
+  start.setHours(0, 0, 0, 0);
+
+  return start;
+}
+
+function nutritionAuthUnavailableReason(
+  error: "auth_error" | "invalid_session" | "missing_env" | "unauthenticated",
+) {
+  if (error === "missing_env") {
+    return "Supabase ist lokal noch nicht konfiguriert.";
+  }
+
+  if (error === "invalid_session") {
+    return "Die Supabase Session ist ungültig. Setze sie in den Settings zurück und melde dich neu an.";
+  }
+
+  if (error === "auth_error") {
+    return "Supabase Auth konnte die Session nicht prüfen. Setze sie in den Settings zurück.";
+  }
+
+  return "Melde dich an, um Nutrition-Daten zu laden.";
+}
+
+async function getManualNutritionData(): Promise<ManualNutritionData> {
+  const auth = await createAuthenticatedSupabaseServerClient();
+
+  if (!auth.ok) {
+    return {
+      meals: [],
+      recipes: [],
+      unavailableReason: nutritionAuthUnavailableReason(auth.error),
+    };
+  }
+
+  const repository = createSupabaseNutritionRepository(auth.client);
+  const today = new Date();
+  const startDate = formatLocalDate(startOfIsoWeek(today));
+  const endDate = formatLocalDate(addDays(startOfIsoWeek(today), 30));
+  const [recipesResult, mealsResult] = await Promise.all([
+    repository.getActiveRecipesByUser(auth.user.id, auth.user.id),
+    repository.getMealsByUserAndDateRange({
+      endDate,
+      profileId: auth.user.id,
+      startDate,
+      userId: auth.user.id,
+    }),
+  ]);
+
+  if (!recipesResult.ok || !mealsResult.ok) {
+    return {
+      meals: [],
+      recipes: [],
+      unavailableReason:
+        "Nutrition-Daten konnten nicht aus Supabase geladen werden.",
+    };
+  }
+
+  return {
+    meals: mealsResult.data,
+    recipes: recipesResult.data,
+  };
+}
+
+function emptyNutritionDay(date = todayDateLabel()): NutritionDay {
   return {
     calorie_actual: 0,
     calorie_target: 0,
     carbs_actual: 0,
     carbs_target: 0,
-    date: "2026-06-24",
+    date,
     fat_actual: 0,
     fat_target: 0,
     protein_actual: 0,
@@ -1073,57 +1181,126 @@ function emptyNutritionDay(): NutritionDay {
   };
 }
 
-function parseMacroValue(macros: readonly string[], prefix: "P" | "C" | "F") {
-  const raw = macros.find((macro) => macro.trim().startsWith(prefix));
-  const value = Number(raw?.replace(/[^0-9.]/g, "") ?? 0);
-
-  return Number.isFinite(value) ? value : 0;
-}
-
-function parseKcal(value?: string) {
-  const parsed = Number(value?.replace(/[^0-9.]/g, "") ?? 0);
-
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function manualMealTypeToNutritionType(
-  type: ManualProfileData["meals"][number]["type"],
+function nutritionEstimateNumber(
+  estimate: RealDataRecipe["nutritionEstimate"],
+  keys: readonly string[],
 ) {
-  return type.toLowerCase() as MealEntry["meal_type"];
+  if (!estimate) return 0;
+
+  for (const key of keys) {
+    const value = estimate[key];
+    const numberValue =
+      typeof value === "number"
+        ? value
+        : typeof value === "string"
+          ? Number(value)
+          : Number.NaN;
+
+    if (Number.isFinite(numberValue)) {
+      return numberValue;
+    }
+  }
+
+  return 0;
 }
 
-function manualMealToNutritionEntry(
-  meal: ManualProfileData["meals"][number],
-): MealEntry {
-  const plannedAt = `2026-06-24T${meal.time || "12:00"}:00.000Z`;
-  const isLogged = meal.state === "logged";
+function recipeTotals(recipe?: RealDataRecipe | null) {
+  return {
+    calories: nutritionEstimateNumber(recipe?.nutritionEstimate ?? null, [
+      "calories",
+      "kcal",
+      "energy",
+    ]),
+    carbs: nutritionEstimateNumber(recipe?.nutritionEstimate ?? null, [
+      "carbs",
+      "carbohydrates",
+    ]),
+    fat: nutritionEstimateNumber(recipe?.nutritionEstimate ?? null, ["fat"]),
+    protein: nutritionEstimateNumber(recipe?.nutritionEstimate ?? null, [
+      "protein",
+    ]),
+  };
+}
+
+function recipeMealTypes(recipe: RealDataRecipe): PlannerMealType[] {
+  const matchingTags = recipe.tags.filter((tag): tag is PlannerMealType =>
+    plannerMealTypes.includes(tag as PlannerMealType),
+  );
+
+  return matchingTags.length > 0 ? matchingTags : [...plannerMealTypes];
+}
+
+function recipeInstructions(recipe: RealDataRecipe) {
+  return (recipe.instructions ?? "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((text, index) => ({
+      id: `${recipe.id}-instruction-${index + 1}`,
+      order: index + 1,
+      text,
+    }));
+}
+
+function realRecipeToPlannerRecipe(recipe: RealDataRecipe): PlannerRecipe {
+  const totals = recipeTotals(recipe);
 
   return {
-    calories: parseKcal(meal.kcal),
-    consumed_at: isLogged ? meal.updatedAt : undefined,
+    archived: recipe.isArchived,
+    createdAt: recipe.createdAt,
+    defaultServings: recipe.servings ?? 1,
+    description: recipe.summary ?? undefined,
+    id: recipe.id,
+    ingredients: [],
+    instructions: recipeInstructions(recipe),
+    mealTypes: recipeMealTypes(recipe),
+    prepMinutes: recipe.prepMinutes ?? undefined,
+    tags: [...recipe.tags],
+    title: recipe.title,
+    totals,
+    updatedAt: recipe.updatedAt,
+  };
+}
+
+function realMealToNutritionEntry(
+  meal: RealDataMeal,
+  recipesById: ReadonlyMap<string, RealDataRecipe>,
+): MealEntry {
+  const totals = recipeTotals(
+    meal.recipeId ? recipesById.get(meal.recipeId) : null,
+  );
+  const plannedAt =
+    meal.completedAt !== null ? undefined : meal.plannedAt ?? `${meal.date}T12:00`;
+
+  return {
+    calories: totals.calories,
+    consumed_at: meal.completedAt ?? undefined,
     id: meal.id,
     macros: {
-      carbs: parseMacroValue(meal.macros, "C"),
-      fat: parseMacroValue(meal.macros, "F"),
-      protein: parseMacroValue(meal.macros, "P"),
+      carbs: totals.carbs,
+      fat: totals.fat,
+      protein: totals.protein,
     },
-    meal_type: manualMealTypeToNutritionType(meal.type),
-    planned_at: isLogged ? undefined : plannedAt,
-    source: "manual",
-    title: meal.name,
+    meal_type: meal.mealType,
+    planned_at: plannedAt,
+    source: meal.recipeId ? "recipe" : "manual",
+    title: meal.title,
   };
 }
 
 function buildProfileNutritionOverviewViewModel(
   profileId: Exclude<LifeOsProfileId, "demo">,
-  profile: ManualProfileData,
+  nutritionData?: ManualNutritionData,
 ): ReturnType<typeof getDemoNutritionOverviewViewModel> {
   const viewModel = clone(getDemoNutritionOverviewViewModel());
+  const today = todayDateLabel();
+  const recipes = nutritionData?.recipes ?? [];
+  const recipesById = new Map(recipes.map((recipe) => [recipe.id, recipe]));
   const meals =
     profileId === "manual"
-      ? profile.meals
-          .filter((meal) => meal.state === "planned" || meal.state === "logged")
-          .map(manualMealToNutritionEntry)
+      ? (nutritionData?.meals ?? [])
+          .filter((meal) => meal.date === today)
+          .map((meal) => realMealToNutritionEntry(meal, recipesById))
       : [];
   const loggedMeals = meals.filter((meal) => meal.consumed_at);
   const plannedMeals = meals.filter(
@@ -1137,19 +1314,42 @@ function buildProfileNutritionOverviewViewModel(
       fat_actual: current.fat_actual + meal.macros.fat,
       protein_actual: current.protein_actual + meal.macros.protein,
     }),
-    emptyNutritionDay(),
+    emptyNutritionDay(today),
   );
   const primaryItemCount = loggedMeals.length + plannedMeals.length;
+  const manualDbAvailable =
+    profileId === "manual" && nutritionData?.unavailableReason === undefined;
 
   viewModel.profileId = profileId;
-  viewModel.actionsEnabled = false;
+  viewModel.actionsEnabled = manualDbAvailable;
+  viewModel.recipeOptions = recipes.map((recipe) => ({
+    id: recipe.id,
+    title: recipe.title,
+  }));
   viewModel.header = {
     ...viewModel.header,
     dateLabel: "Heute",
     summary:
-      primaryItemCount > 0
-        ? "Heute · lokale Mahlzeiten ohne Zielprofil"
-        : "Heute · Nutrition-Shell ohne Demo-Daten",
+      nutritionData?.unavailableReason ??
+      (primaryItemCount > 0
+        ? "Heute · Manual Meals aus Supabase"
+        : "Heute · Nutrition-Shell ohne Demo-Daten"),
+  };
+  viewModel.pageContract = {
+    ...viewModel.pageContract,
+    canonicalSource:
+      profileId === "manual"
+        ? "Supabase recipes and meals scoped to the authenticated Manual user."
+        : "Empty nutrition shell without demo data.",
+    reads:
+      profileId === "manual"
+        ? "Manual recipes and meals from Supabase via the nutrition repository."
+        : "No nutrition entities for the empty profile.",
+    sensitiveData: "health_sensitive",
+    writes:
+      profileId === "manual"
+        ? "Manual recipe and meal server actions."
+        : "No writes in the empty profile.",
   };
   viewModel.day = day;
   viewModel.goals = [];
@@ -1178,7 +1378,7 @@ function buildProfileNutritionOverviewViewModel(
     replaced: 0,
     statement:
       primaryItemCount > 0
-        ? "Lokale Mahlzeiten werden angezeigt; ein Wochenplan ist noch nicht gesetzt."
+        ? "Manual Meals werden aus Supabase angezeigt; Zielprofile bleiben noch leer."
         : "Noch kein Wochenplan gesetzt.",
   };
   viewModel.priorities = [];
@@ -1247,10 +1447,76 @@ function buildEmptyMealPlanWeek(
   };
 }
 
+function weekdayLabel(date: Date) {
+  return new Intl.DateTimeFormat("de-DE", {
+    weekday: "short",
+  }).format(date);
+}
+
+function buildManualMealPlanWeek(
+  recipes: readonly RealDataRecipe[],
+  meals: readonly RealDataMeal[],
+): MealPlanWeek {
+  const start = startOfIsoWeek(new Date());
+  const recipeIds = new Set(recipes.map((recipe) => recipe.id));
+
+  return {
+    id: `manual-${formatLocalDate(start)}`,
+    weekStartsOn: formatLocalDate(start),
+    days: Array.from({ length: 7 }, (_, dayIndex) => {
+      const date = addDays(start, dayIndex);
+      const dateLabel = formatLocalDate(date);
+
+      return {
+        date: dateLabel,
+        label: weekdayLabel(date),
+        slots: plannerMealTypes.map((mealType) => {
+          const meal = meals.find(
+            (candidate) =>
+              candidate.date === dateLabel &&
+              candidate.mealType === mealType &&
+              candidate.recipeId &&
+              recipeIds.has(candidate.recipeId),
+          );
+
+          return {
+            date: dateLabel,
+            mealType,
+            plannedMeal:
+              meal && meal.recipeId
+                ? {
+                    date: meal.date,
+                    id: meal.id,
+                    ingredientAdjustments: [],
+                    mealType,
+                    recipeId: meal.recipeId,
+                    servings: 1,
+                  }
+                : undefined,
+          };
+        }),
+      };
+    }),
+  };
+}
+
 function buildProfileMealPlannerViewModel(
   profileId: Exclude<LifeOsProfileId, "demo">,
+  nutritionData?: ManualNutritionData,
 ): ReturnType<typeof getDemoMealPlannerViewModel> {
   const viewModel = clone(getDemoMealPlannerViewModel());
+  const recipes =
+    profileId === "manual" && nutritionData
+      ? nutritionData.recipes.map(realRecipeToPlannerRecipe)
+      : [];
+  const plannedMealCount =
+    profileId === "manual" && nutritionData
+      ? nutritionData.meals.filter(
+          (meal) =>
+            plannerMealTypes.includes(meal.mealType as PlannerMealType) &&
+            meal.recipeId,
+        ).length
+      : 0;
 
   viewModel.profileId = profileId;
   viewModel.actionsEnabled = false;
@@ -1258,16 +1524,37 @@ function buildProfileMealPlannerViewModel(
     ...viewModel.header,
     weekLabel: "Aktuelle Woche",
   };
+  viewModel.pageContract = {
+    ...viewModel.pageContract,
+    canonicalSource:
+      profileId === "manual"
+        ? "Supabase meals projected into the current planner week."
+        : "Empty planner shell without demo data.",
+    reads:
+      profileId === "manual"
+        ? "Manual recipes and meals from Supabase."
+        : "No meal plan entities for the empty profile.",
+    writes: "Planner edit persistence remains deferred; use Nutrition Overview to create meals.",
+  };
   viewModel.profiles = [];
   viewModel.defaultProfileId = "";
-  viewModel.recipes = [];
-  viewModel.week = buildEmptyMealPlanWeek(viewModel.week);
+  viewModel.recipes = recipes;
+  viewModel.week =
+    profileId === "manual" && nutritionData
+      ? buildManualMealPlanWeek(nutritionData.recipes, nutritionData.meals)
+      : buildEmptyMealPlanWeek(viewModel.week);
   viewModel.contentStates = {
     inspector: resolveContentStateMeta({ capacity: 1, itemCount: 0 }),
-    page: resolveContentStateMeta({ capacity: 21, itemCount: 0 }),
-    recipeSuggestions: resolveContentStateMeta({ capacity: 8, itemCount: 0 }),
+    page: resolveContentStateMeta({ capacity: 21, itemCount: plannedMealCount }),
+    recipeSuggestions: resolveContentStateMeta({
+      capacity: 8,
+      itemCount: recipes.length,
+    }),
     targetProfile: resolveContentStateMeta({ capacity: 1, itemCount: 0 }),
-    weekPlan: resolveContentStateMeta({ capacity: 21, itemCount: 0 }),
+    weekPlan: resolveContentStateMeta({
+      capacity: 21,
+      itemCount: plannedMealCount,
+    }),
   };
 
   return viewModel;
@@ -1275,18 +1562,45 @@ function buildProfileMealPlannerViewModel(
 
 function buildProfileRecipesViewModel(
   profileId: Exclude<LifeOsProfileId, "demo">,
+  nutritionData?: ManualNutritionData,
 ): ReturnType<typeof getDemoRecipesViewModel> {
   const viewModel = clone(getDemoRecipesViewModel());
+  const recipes =
+    profileId === "manual" && nutritionData
+      ? nutritionData.recipes.map(realRecipeToPlannerRecipe)
+      : [];
 
   viewModel.profileId = profileId;
-  viewModel.actionsEnabled = false;
-  viewModel.recipes = [];
-  viewModel.stats = summarizeRecipes([]);
+  viewModel.actionsEnabled =
+    profileId === "manual" && nutritionData?.unavailableReason === undefined;
+  viewModel.recipes = recipes;
+  viewModel.stats = summarizeRecipes(recipes);
+  viewModel.pageContract = {
+    ...viewModel.pageContract,
+    canonicalSource:
+      profileId === "manual"
+        ? "Supabase recipes scoped to the authenticated Manual user."
+        : "Empty recipe shell without demo data.",
+    reads:
+      profileId === "manual"
+        ? "Manual recipes from Supabase via the nutrition repository."
+        : "No recipes for the empty profile.",
+    writes:
+      profileId === "manual"
+        ? "Manual recipe create server action."
+        : "No writes in the empty profile.",
+  };
   viewModel.contentStates = {
-    browser: resolveContentStateMeta({ capacity: 8, itemCount: 0 }),
-    page: resolveContentStateMeta({ capacity: 8, itemCount: 0 }),
-    selectedRecipe: resolveContentStateMeta({ capacity: 1, itemCount: 0 }),
-    summary: resolveContentStateMeta({ capacity: 5, itemCount: 0 }),
+    browser: resolveContentStateMeta({ capacity: 8, itemCount: recipes.length }),
+    page: resolveContentStateMeta({ capacity: 8, itemCount: recipes.length }),
+    selectedRecipe: resolveContentStateMeta({
+      capacity: 1,
+      itemCount: recipes.length > 0 ? 1 : 0,
+    }),
+    summary: resolveContentStateMeta({
+      capacity: 5,
+      itemCount: recipes.length > 0 ? 5 : 0,
+    }),
   };
 
   return viewModel;
@@ -1563,7 +1877,7 @@ export async function getNutritionOverviewViewModel(): Promise<
 
   return buildProfileNutritionOverviewViewModel(
     profileId,
-    await readManualProfile(),
+    profileId === "manual" ? await getManualNutritionData() : undefined,
   );
 }
 
@@ -1576,7 +1890,10 @@ export async function getMealPlannerViewModel(): Promise<
     return getDemoMealPlannerViewModel();
   }
 
-  return buildProfileMealPlannerViewModel(profileId);
+  return buildProfileMealPlannerViewModel(
+    profileId,
+    profileId === "manual" ? await getManualNutritionData() : undefined,
+  );
 }
 
 export async function getRecipesViewModel(): Promise<
@@ -1588,7 +1905,10 @@ export async function getRecipesViewModel(): Promise<
     return getDemoRecipesViewModel();
   }
 
-  return buildProfileRecipesViewModel(profileId);
+  return buildProfileRecipesViewModel(
+    profileId,
+    profileId === "manual" ? await getManualNutritionData() : undefined,
+  );
 }
 
 export async function getGroceryViewModel(): Promise<

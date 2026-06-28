@@ -437,7 +437,12 @@ export function MealPlannerView({
               {viewModel.header.subline}
             </p>
             <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
-              {formatWeekRange(week)} - Mock recipes - local planning state
+              {formatWeekRange(week)} -{" "}
+              {profileId === "demo"
+                ? "Mock recipes - local planning state"
+                : profileId === "manual"
+                  ? "Manual Supabase meals - planner edits deferred"
+                  : "No meal plan data"}
             </p>
           </div>
 
