@@ -270,15 +270,18 @@ Code-Hardening:
 
 - Remote-/Production-DB wurde nicht auditiert; lokaler PASS ist kein Production
   Release Claim.
-- Deploy-Environment-Secrets koennen durch Repo-Suche nicht bewiesen werden.
+- Deploy-Environment-Secrets koennen durch Repo-Suche nicht bewiesen werden;
+  R1.9.3 definiert nur die Env-Boundary, nicht die Zielumgebung.
 - Polymorphe Felder bleiben bewusst ohne DB-FK; die App erzwingt Ownership in
   Repository/RPC Gates. Ein spaeterer Trigger- oder Constraint-Ansatz waere ein
   eigener Scope.
 - Es gibt noch keinen pgTAP-/SQL-Test-Harness fuer negative Cross-User-RLS-Cases.
-- Production Backup Drill, Deployment Env Check und Performance Review bleiben
-  R1.9-Blocker.
+- Production Backup Drill, Deployment-Rehearsal/Target-Env-Verifikation und
+  Performance Review bleiben R1.9-Blocker.
 - R1.9.2 definiert die Backup-/Export-/Restore-Strategie und lokale
   Export-Hygiene; echter Production Backup Drill bleibt weiterhin deferred.
+- R1.9.3 definiert die Deployment-Env-Boundary; echter Deployment-Rehearsal
+  und Target-Env-Audit bleiben weiterhin deferred.
 
 ## 11. Production Readiness Status
 
@@ -289,4 +292,5 @@ NOT_PRODUCTION_RELEASE_READY
 
 R1.9.1 schliesst den lokalen RLS-/Grants-/Ownership-Gate-Audit fuer den MVP
 Core ab. Production Readiness bleibt geblockt, bis Remote Env, Production
-Backup Drill, Deployment Hardening und Performance abgeschlossen sind.
+Backup Drill, Deployment-Rehearsal/Target-Env-Verifikation und Performance
+abgeschlossen sind.

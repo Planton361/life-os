@@ -682,8 +682,8 @@
   Aenderung, keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB,
   keine Service Role und keine neue Library.
 - Next Phase: weiter mit R1.9 Production Hardening: Remote-/Production-
-  Security-Audit, Production Backup Drill, Deployment Env Check, Performance
-  und Accessibility Pass.
+  Security-Audit, Production Backup Drill, Deployment Rehearsal/Target-Env-
+  Verifikation, Performance und Accessibility Pass.
 
 ## R1.9.1 RLS / Security Audit
 
@@ -724,7 +724,8 @@
 - Ergebnis:
   `LOCAL_RLS_SECURITY_AUDIT_PASS_AFTER_FIX`.
 - Production Release bleibt geblockt durch Remote-/Production-DB-Audit,
-  Deployment Env Check, Production Backup Drill und Performance Review.
+  Deployment Rehearsal/Target-Env-Verifikation, Production Backup Drill und
+  Performance Review.
 
 ## R1.9.2 Backup / Export / Restore Strategy
 
@@ -767,6 +768,33 @@
   Restore Drill bleiben deferred.
 - Ergebnis:
   `BACKUP_EXPORT_RESTORE_STRATEGY_DEFINED`.
+
+## R1.9.3 Deployment Environment Readiness
+
+- Readiness dokumentiert in
+  `docs/ops/deployment-env-readiness-r1-9-3.md`.
+- Env-Inventar abgeschlossen: `NEXT_PUBLIC_SUPABASE_URL`,
+  `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`,
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `PLAYWRIGHT_HOST`, `PLAYWRIGHT_PORT`,
+  `PLAYWRIGHT_SUPABASE_AUTH_STATE`, `CI`, Supabase local service placeholders
+  aus `supabase/config.toml` und Future-only server secrets.
+- Client Env begrenzt auf browser-safe `NEXT_PUBLIC_*` Supabase URL/Key-Werte.
+- Server Env: aktuelle App-Runtime nutzt keine server-only Secrets; Service
+  Role, AI Provider Keys und Export Encryption Key bleiben Future Scope.
+- Test Env: Playwright Host/Port/Auth-State sind local/test-only; Auth-State
+  bleibt unter `.local/` und unversioniert.
+- Supabase Boundary: lokaler Supabase-Stand bleibt getrennt von spaeterer
+  Staging-/Production-Konfiguration. Kein `supabase link`, kein
+  `supabase db push`, keine Remote-DB-Aktion.
+- `.env.example` enthaelt nur Platzhalter und keine echten Werte.
+- `.gitignore` deckt `.env*`, `.local/`, Supabase CLI-Artefakte und lokale
+  Backup-/Export-Artefakte ab; `.env.example` ist explizit versionierbar.
+- Validierung umfasst `pnpm build` zusaetzlich zu TypeScript, ESLint,
+  Supabase local lint/advisors und Git-Diff-Hygiene; alle Checks sind gruen.
+- Kein Playwright-Lauf erforderlich, weil keine UI- oder Feature-Aenderung
+  erfolgt.
+- Ergebnis:
+  `DEPLOYMENT_ENV_BOUNDARY_DEFINED`.
 
 ## Known Boundaries
 

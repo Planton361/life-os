@@ -312,5 +312,7 @@ NOT_PRODUCTION_RELEASE_READY
 
 R1.9.2 reduziert das Product-/Data-Ops-Risiko, ersetzt aber keinen
 Production-Backup-Drill. Production Readiness bleibt blockiert, bis echte
-Backup-Konfiguration, Restore-Test, Deployment Env Check, Performance Review
-und Accessibility Pass abgeschlossen sind.
+Backup-Konfiguration, Restore-Test, Deployment-Rehearsal/Target-Env-
+Verifikation, Performance Review und Accessibility Pass abgeschlossen sind.
+R1.9.3 definiert die Deployment-Env-Boundary, ersetzt aber keinen echten
+Deployment-Test in einer Zielumgebung.

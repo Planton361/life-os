@@ -1,9 +1,9 @@
 # MVP Core Status
 
 Stand: 2026-06-28
-Status: R1.9.2 backup export restore strategy
-Zweck: Konsolidierter MVP-Core-Status nach R1.8.4 Release Readiness, R1.9.1 lokalem RLS-/Security-Audit und R1.9.2 Backup-/Export-/Restore-Strategie.
-Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/product/mvp-core-release-readiness.md`, `docs/security/rls-security-audit-r1-9-1.md`, `docs/security/backup-export-restore-strategy-r1-9-2.md` und `docs/qa/r1-6-5-real-browser-auth-check.md`.
+Status: R1.9.3 deployment environment boundaries
+Zweck: Konsolidierter MVP-Core-Status nach R1.8.4 Release Readiness, R1.9.1 lokalem RLS-/Security-Audit, R1.9.2 Backup-/Export-/Restore-Strategie und R1.9.3 Deployment-Env-Boundary.
+Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/product/mvp-core-release-readiness.md`, `docs/security/rls-security-audit-r1-9-1.md`, `docs/security/backup-export-restore-strategy-r1-9-2.md`, `docs/ops/deployment-env-readiness-r1-9-3.md` und `docs/qa/r1-6-5-real-browser-auth-check.md`.
 
 ## 1. Abgeschlossene Bloecke
 
@@ -17,6 +17,7 @@ Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/p
 - AI Inbox Suggestions: lokale deterministische Vorschlaege fuellen Drafts, persistieren aber nichts ohne User-Confirm.
 - RLS/Security Local Audit: alle lokalen Public-User-Tabellen, RLS Policies, Grants, Functions, Server Actions und Ownership Gates sind in R1.9.1 auditiert und gehardent.
 - Backup/Export/Restore Strategy: MVP-Dateninventar, Sensitivity-Klassen, JSONL-Exportformat, Restore-Reihenfolge und lokale Export-Hygiene sind in R1.9.2 definiert.
+- Deployment Environment Boundary: Env-Inventar, Client-/Server-Env-Klassen, Supabase Local-vs-Production-Grenzen, `.env.example`-Placeholder und Secrets-Hygiene sind in R1.9.3 definiert.
 
 ## 2. Browserbewiesene Flows
 
@@ -67,7 +68,7 @@ Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/p
 - Completed: Daily Core, Inbox Routing Completion, Task Lifecycle, Project Workbench v1, Goal Workbench v1, Resource Relations v1, Calendar Scheduling Controls, Recurring Tasks v1, Nutrition Recipes/Meals v1, Skills/Evidence v1, AI Inbox Suggestions v1, Manual DB Proof Hygiene und MVP Core Hardening.
 - Partially Complete: Calendar Pointer Drag/Resize, Recurring Template Management, Nutrition Deep Features, Skill Map/Graph, Resource Graph, External AI Provider, Full Accessibility Audit und Remote-/Production-Security-Audit.
 - Deferred: Automation, Production Backup Drill, Performance Review, Deployment Hardening, echte AI Provider Integration, Remote-/Production-DB-Audit und Production Release Claim.
-- Naechste empfohlene Phase: R1.9 Production Hardening fortsetzen mit Remote-/Production-Security-Audit, Production Backup Drill, Deployment Env Check, Performance und Accessibility Pass.
+- Naechste empfohlene Phase: R1.9 Production Hardening fortsetzen mit Remote-/Production-Security-Audit, Production Backup Drill, Deployment Rehearsal/Target-Env-Verifikation, Performance und Accessibility Pass.
 - R1.8.4 ist ein Produkt-/QA-/Roadmap-Block: keine neuen Features, keine UI-Rekomposition, keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB, keine Service Role, keine neue Library.
 
 ## 4.4 R1.9.1 RLS / Security Audit
@@ -92,7 +93,29 @@ Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/p
 - Git Hygiene: `exports/`, `backups/`, `*.dump`, `*.sql.gz` und `*.backup` sind ignoriert.
 - Status: `BACKUP_EXPORT_RESTORE_STRATEGY_DEFINED`, aber weiterhin `NOT_PRODUCTION_RELEASE_READY`.
 
-## 4.6 Status-Matrix
+## 4.6 R1.9.3 Deployment Environment Readiness
+
+- Readiness dokumentiert in `docs/ops/deployment-env-readiness-r1-9-3.md`.
+- Env-Inventar: `NEXT_PUBLIC_SUPABASE_URL`,
+  `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`,
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `PLAYWRIGHT_HOST`,
+  `PLAYWRIGHT_PORT`, `PLAYWRIGHT_SUPABASE_AUTH_STATE`, `CI` sowie lokale
+  Supabase-Service-Placeholder aus `supabase/config.toml`.
+- Client Env: Nur `NEXT_PUBLIC_*` Supabase URL/Publishable/Anon-Werte sind
+  browser-safe; echte Secrets duerfen nie `NEXT_PUBLIC_` verwenden.
+- Server Env: aktuelle App-Runtime nutzt keine server-only Secrets; Service
+  Role, AI Provider Keys und Export Encryption Key bleiben Future Scope und
+  server-only.
+- Supabase Boundary: lokaler Supabase-Stand bleibt getrennt von spaeteren
+  Staging-/Production-Projekten; kein `supabase link`, kein `supabase db push`
+  und keine Remote-DB-Aktion.
+- Git Hygiene: `.env*`, `.local/`, Supabase CLI-Artefakte und Backup-/Export-
+  Artefakte sind ignoriert; `.env.example` enthaelt nur Platzhalter.
+- Build/Validation: `pnpm build` ist Teil des R1.9.3 Gates und lokal gruen.
+- Status: `DEPLOYMENT_ENV_BOUNDARY_DEFINED`, aber weiterhin
+  `NOT_PRODUCTION_RELEASE_READY`.
+
+## 4.7 Status-Matrix
 
 | Feature | Status | Browser Proof | Deferred |
 | --- | --- | --- | --- |
@@ -111,6 +134,7 @@ Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/p
 | MVP Core Hardening | Complete | R1.8.3 validation green | Full production audit |
 | RLS/Security Local Audit | Complete locally | R1.9.1 CLI/advisor/source audit | Remote production audit |
 | Backup/Export/Restore Strategy | Complete as strategy | R1.9.2 docs/tooling hygiene | Production backup drill |
+| Deployment Env Boundary | Complete as boundary definition | R1.9.3 env/docs/build audit | Deployment rehearsal, target env verification |
 
 ## 5. Prepared/Future Scope
 
@@ -126,7 +150,8 @@ Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/p
 
 R1.9 sollte Production Hardening fortsetzen:
 
-- Remote-/Production-Security-Audit und Deployment Env Check.
+- Remote-/Production-Security-Audit und Deployment Rehearsal/Target-Env-
+  Verifikation.
 - Production Backup Drill.
 - Performance Review.
 - Vollstaendiger Accessibility Pass.

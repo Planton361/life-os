@@ -1,13 +1,14 @@
 # MVP Core Release Readiness
 
 Stand: 2026-06-28
-Status: R1.9.2 backup export restore strategy documented
+Status: R1.9.3 deployment environment boundaries documented
 Zweck: Roadmap-Reconciliation und Release-Entscheidung nach R1.8.3 MVP Core Hardening.
 Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `DATA_MODEL.md`,
 `SECURITY.md`, `ACCESSIBILITY.md`, `docs/product/mvp-core-status.md` und
 `docs/qa/r1-6-5-real-browser-auth-check.md`,
 `docs/security/rls-security-audit-r1-9-1.md`,
-`docs/security/backup-export-restore-strategy-r1-9-2.md`.
+`docs/security/backup-export-restore-strategy-r1-9-2.md` und
+`docs/ops/deployment-env-readiness-r1-9-3.md`.
 
 ## 1. Zweck
 
@@ -28,6 +29,11 @@ Backup-/Export-/Restore-Anforderungen, Dateninventar, Exportformat,
 Restore-Reihenfolge und lokale Export-Hygiene, ohne echte Nutzerdaten zu
 exportieren.
 
+R1.9.3 baut keine neuen Produktfeatures und aendert keine UI. R1.9.3 definiert
+Deployment-Env-Grenzen, Client-/Server-Env-Klassen, Supabase Local-vs-
+Production-Boundaries und Secrets-Hygiene, ohne echte Secrets zu
+dokumentieren, ohne Remote-Supabase-Aktion und ohne Deployment.
+
 ## 2. Stand
 
 Der MVP Core ist lokal und manuell im Browser nutzbar. Die zentralen Capture-,
@@ -44,11 +50,14 @@ MVP Core ist lokal/manual-browser-ready, aber noch nicht production-release-read
 Begruendung:
 
 - Die App laeuft gegen lokale Supabase- und Manual-DB-Proofs.
-- Deployment-Hardening ist noch nicht abgeschlossen.
+- Deployment-Env-Grenzen sind dokumentiert; echter Deployment-Rehearsal und
+  Target-Env-Verifikation fehlen.
 - Der lokale RLS-/Security-Audit ist abgeschlossen; Remote-/Production-DB und
-  Deployment Env sind noch nicht auditiert.
+  Target-Env sind noch nicht auditiert.
 - Backup-/Export-/Restore-Strategie ist definiert; echte Production-Backups,
   Restore-Drill und Automation fehlen.
+- Deployment-Env-Boundary ist definiert; echte Deployment-Konfiguration wurde
+  nicht in einer Zielumgebung verifiziert.
 - Performance Review fehlt.
 - Externer AI Provider fehlt bewusst; AI bleibt lokaler deterministischer Mock.
 
@@ -150,6 +159,9 @@ Prepared oder Future Scope bleibt klar getrennt:
 - R1.9.2 hat Backup-/Export-/Restore-Strategie, Dateninventar,
   Sensitivity-Klassen, JSONL-Exportformat, Restore-Reihenfolge und lokale
   Dump-/Export-Git-Hygiene dokumentiert.
+- R1.9.3 hat Env-Inventar, Client-/Server-Env-Grenzen,
+  Supabase-Local-vs-Production-Boundary, `.env.example`-Placeholder und
+  Secrets-Hygiene dokumentiert.
 - Keine externe AI API.
 - Kein Client API Key.
 - Kein Service Role Key.
@@ -159,7 +171,7 @@ Prepared oder Future Scope bleibt klar getrennt:
 Noch offen fuer Production Readiness:
 
 - Remote-/Production-DB Audit.
-- Deployment Env Check.
+- Deployment-Rehearsal und Zielumgebungs-Env-Verifikation.
 - Production Backup Konfiguration.
 - Restore Drill.
 - Security Review fuer echte AI Provider, falls spaeter freigegeben.
@@ -190,6 +202,7 @@ Noch offen fuer Production Readiness:
 - Keine externe AI Provider Integration.
 - Keine Automation.
 - Kein echter Export und kein echter Backup-Dump in R1.9.2.
+- Kein echtes Deployment und keine Remote-Env-Verifikation in R1.9.3.
 - Kein Production Deployment Claim.
 
 ## 11. Roadmap Audit
@@ -213,6 +226,7 @@ Noch offen fuer Production Readiness:
 | MVP Core Hardening | Complete | R1.8.3 validation green | Full production audit |
 | RLS/Security Local Audit | Complete locally | R1.9.1 CLI/advisor/source audit | Remote production audit |
 | Backup/Export/Restore Strategy | Complete as strategy | R1.9.2 docs/tooling hygiene | Production backup drill |
+| Deployment Env Boundary | Complete as boundary definition | R1.9.3 env/docs/build audit | Deployment rehearsal, target env verification |
 
 ### Partially Complete
 
@@ -227,9 +241,11 @@ Noch offen fuer Production Readiness:
 - AI: Local deterministic suggestions exist; external provider is deferred.
 - Accessibility: MVP-flow hardening is done; full audit is deferred.
 - RLS/Security: local formal audit and hardening are done; remote production
-  audit and deployment env review are deferred.
+  audit is deferred.
 - Backup/Export/Restore: strategy and local hygiene are done; production backup
   configuration, automation and restore drill are deferred.
+- Deployment Env: client/server boundaries and local-vs-production assumptions
+  are defined; target deployment verification is deferred.
 
 ### Deferred
 
@@ -245,13 +261,15 @@ Noch offen fuer Production Readiness:
 - Performance.
 - Full Accessibility Audit.
 - Remote Production RLS/Env Audit.
+- Deployment rehearsal / target environment verification.
 
 ### Risks
 
 - Lokale Manual-DB ist stark gefuellt; einzelne Empty-State-Proofs bleiben
   bewusst skip-gated.
-- Production Readiness ist ohne Remote-DB/Env-Audit, Production Backup Drill,
-  Deployment-Hardening und Performance Review nicht gegeben.
+- Production Readiness ist ohne Remote-DB-Audit, Target-Env-Verifikation,
+  Production Backup Drill, Deployment-Rehearsal und Performance Review nicht
+  gegeben.
 - Externer AI Provider braucht vor Integration einen separaten Privacy-,
   Cost-, Logging- und Failure-State-Block.
 
@@ -267,7 +285,7 @@ Scope:
 
 - Remote-/Production-Security-Audit.
 - Production Backup Konfiguration und Restore Drill.
-- Deployment Env Check.
+- Deployment Rehearsal und Target-Env-Verifikation.
 - Performance Review.
 - Accessibility Pass.
 
