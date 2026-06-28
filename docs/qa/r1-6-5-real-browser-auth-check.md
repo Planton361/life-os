@@ -653,6 +653,36 @@
   Calendar Pointer Drag, Routine UI und Education/Coding Skill Map behaupten
   keine nicht vorhandene Persistenz.
 
+## R1.8.4 MVP Core Release Readiness
+
+- Release Readiness dokumentiert in
+  `docs/product/mvp-core-release-readiness.md`.
+- Roadmap Reconciliation abgeschlossen: Der tatsaechliche Repo-/QA-Stand wurde
+  gegen `PRODUCT.md`, `ROADMAP.md`, die Produkt-Locks und die R1.8.x
+  QA-Dokumentation abgeglichen.
+- Release-Entscheidung: MVP Core ist lokal/manual-browser-ready, aber noch
+  nicht production-release-ready.
+- Completed: Daily Core, Inbox Routing Completion, Task Lifecycle, Project
+  Workbench v1, Goal Workbench v1, Resource Relations v1, Calendar Scheduling
+  Controls, Recurring Tasks v1, Nutrition Recipes/Meals v1, Skills/Evidence v1,
+  AI Inbox Suggestions v1, Manual DB Proof Hygiene und MVP Core Hardening.
+- Partially Complete: Calendar Pointer Drag/Resize, Recurring Template
+  Management, Nutrition Deep Features, Skill Map/Graph, Resource Graph,
+  External AI Provider, Full Accessibility Audit und finaler RLS Audit.
+- Future Scope bleibt getrennt: Automation, Export/Backup, Performance Review,
+  Deployment Hardening, echte AI Provider Integration und Production Release
+  Claim.
+- Browser-proofed flows bleiben die R1.8.3 Ergebnisse: Core-Grep
+  `Manual|Inbox|Today|Dashboard|Calendar|Portfolio` mit 86 passed, 2 skipped;
+  Extensions-Grep `Resources|Nutrition|Skill|AI|Recurring` mit 25 passed.
+- Known Skips: zwei datenabhaengige Manual-Empty-Gates bei gefuellter lokaler
+  Manual-DB; kein DB Reset oder Cleanup in R1.8.4.
+- R1.8.4 ist docs-only: kein Playwright-Lauf erforderlich, keine UI-/Code-
+  Aenderung, keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB,
+  keine Service Role und keine neue Library.
+- Next Phase: zuerst R1.9 Production Hardening mit RLS Audit, Export/Backup,
+  Deployment Env Check, Performance und Accessibility Pass.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.
