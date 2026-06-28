@@ -62,13 +62,20 @@ function returnViewFromForm(
   formData: FormData,
   fallback: Exclude<PortfolioCreateReturnView, "all">,
 ): PortfolioCreateReturnView {
-  return formString(formData, "returnView") === "all" ? "all" : fallback;
+  const returnView = formString(formData, "returnView");
+
+  if (returnView === "all" || returnView === "goals" || returnView === "projects") {
+    return returnView;
+  }
+
+  return fallback;
 }
 
 function portfolioCreateReturnUrl(
   state: string,
   view: PortfolioCreateReturnView,
   formData?: FormData,
+  createdEntityId?: string,
 ) {
   const params = new URLSearchParams({
     targetCreate: state,
@@ -80,6 +87,8 @@ function portfolioCreateReturnUrl(
 
   if (selectedGoalId) {
     params.set("selected", selectedGoalId);
+  } else if (createdEntityId) {
+    params.set("selected", createdEntityId);
   }
 
   return `/portfolio?${params.toString()}`;
@@ -89,8 +98,9 @@ function redirectToPortfolioCreateState(
   state: string,
   view: PortfolioCreateReturnView,
   formData?: FormData,
+  createdEntityId?: string,
 ) {
-  redirect(portfolioCreateReturnUrl(state, view, formData));
+  redirect(portfolioCreateReturnUrl(state, view, formData, createdEntityId));
 }
 
 async function validateGoalScope(
@@ -234,7 +244,12 @@ export async function createProjectFormAction(formData: FormData): Promise<void>
   const returnView = returnViewFromForm(formData, "projects");
 
   if (result.status === "success") {
-    redirectToPortfolioCreateState("project_created", returnView, formData);
+    redirectToPortfolioCreateState(
+      "project_created",
+      returnView,
+      formData,
+      result.projectId,
+    );
   }
 
   redirectToPortfolioCreateState(result.status, returnView, formData);
@@ -245,7 +260,12 @@ export async function createGoalFormAction(formData: FormData): Promise<void> {
   const returnView = returnViewFromForm(formData, "goals");
 
   if (result.status === "success") {
-    redirectToPortfolioCreateState("goal_created", returnView, formData);
+    redirectToPortfolioCreateState(
+      "goal_created",
+      returnView,
+      formData,
+      result.goalId,
+    );
   }
 
   redirectToPortfolioCreateState(result.status, returnView, formData);

@@ -1,8 +1,8 @@
 # MVP Core Status
 
 Stand: 2026-06-28
-Status: R1.8.1 Audit
-Zweck: Konsolidierter MVP-Core-Status nach R1.8.0 AI Inbox Suggestions.
+Status: R1.8.2 Manual DB Proof Stability
+Zweck: Konsolidierter MVP-Core-Status nach R1.8.2 Manual DB Test Data Hygiene.
 Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks und `docs/qa/r1-6-5-real-browser-auth-check.md`.
 
 ## 1. Abgeschlossene Bloecke
@@ -35,6 +35,16 @@ Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks und `doc
 - Keine Environment-Bind- oder Auth-State-Skips im R1.8.1-Lauf.
 - Skips sind kein App-Failure fuer die bewiesenen Manual-DB-Flows.
 
+## 4.1 R1.8.2 Proof Stability
+
+- Manual-DB-Hygieneregeln sind in `docs/qa/manual-db-test-data-hygiene.md` dokumentiert.
+- Kritische Browser-Proofs verwenden eindeutige `uniqueTitle(prefix)`-Titel mit Zeitstempel und Zufallssuffix.
+- Inbox-Proofs selektieren neue Captures ueber Queue Item und Active Item statt globale Textsuche.
+- Portfolio-Proofs oeffnen erzeugte Entities ueber Entity-List-Link und pruefen `#selected-entity-heading`.
+- Resource-Proofs oeffnen Resources ueber Library-Link und pruefen `#selected-resource-heading`.
+- Nutrition- und Skill-Proofs verwenden scoped Assertions in der passenden Page bzw. im Context Panel.
+- Keine DB-Reset-Pflicht, keine Cleanup-Aktion und keine Migration in R1.8.2.
+
 ## 5. Prepared/Future Scope
 
 - Project Workbench: Milestones und Project Log bleiben prepared.
@@ -50,6 +60,6 @@ Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks und `doc
 R1.8.x sollte den MVP-Core nicht verbreitern, sondern Datenhygiene und Bedienbarkeit stabilisieren:
 
 - Manual-DB-Testdaten-Strategie klaeren, damit Listen-Proofs nicht von lokal akkumulierten Daten abhaengen.
-- ReadModel-Sortierung/Selected-Redirects fuer frisch erzeugte Project/Goal/Resource-Zielobjekte pruefen.
+- ReadModel-Sortierung/Selected-Redirects fuer frisch erzeugte Project/Goal/Resource-Zielobjekte bleiben ein moeglicher separater App-Selection-Scope.
 - Remaining prepared sections nur in separaten, eng freigegebenen Slices anbinden.
 - Keine neue Automation, Graph-Visualisierung oder externe AI vor stabilem manuellen Core-Betrieb.

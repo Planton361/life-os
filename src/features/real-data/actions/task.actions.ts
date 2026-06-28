@@ -118,7 +118,11 @@ function portfolioTaskReturnView(formData: FormData) {
   return "tasks";
 }
 
-function portfolioTaskReturnUrl(formData: FormData, state: string) {
+function portfolioTaskReturnUrl(
+  formData: FormData,
+  state: string,
+  createdTaskId?: string,
+) {
   const params = new URLSearchParams({
     targetCreate: state,
     view: portfolioTaskReturnView(formData),
@@ -128,10 +132,10 @@ function portfolioTaskReturnUrl(formData: FormData, state: string) {
 
   if (selectedProjectId) {
     params.set("selected", selectedProjectId);
-  }
-
-  if (selectedGoalId) {
+  } else if (selectedGoalId) {
     params.set("selected", selectedGoalId);
+  } else if (createdTaskId) {
+    params.set("selected", createdTaskId);
   }
 
   return `/portfolio?${params.toString()}`;
@@ -375,7 +379,7 @@ export async function createPortfolioTaskFormAction(
   const result = await createPortfolioTaskAction(formData);
 
   if (result.status === "success") {
-    redirect(portfolioTaskReturnUrl(formData, "task_created"));
+    redirect(portfolioTaskReturnUrl(formData, "task_created", result.taskId));
   }
 
   redirect(portfolioTaskReturnUrl(formData, result.status));

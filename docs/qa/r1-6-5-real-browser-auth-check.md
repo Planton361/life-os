@@ -603,6 +603,18 @@
 - Ergebnis: 25 passed.
 - Keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB, kein Supabase Link/Push/Reset, keine Service Role, keine neue Library.
 
+## R1.8.2 Manual DB Test Data Hygiene
+
+- Manual-DB-Testdatenstrategie dokumentiert in `docs/qa/manual-db-test-data-hygiene.md`.
+- Persistente Proof-Daten akkumulieren lokal bewusst; kein `supabase db reset` als Standard und keine Cleanup-Aktion in diesem Block.
+- Audit-Ergebnis: persistente Daten entstehen vor allem in Inbox Capture/Triage, Portfolio Create/Lifecycle, Resource Create/Relations, Nutrition Recipe/Meal, Skill/Evidence und Recurring Generation.
+- List-position-sensitive Stellen wurden in zentralen Helfern stabilisiert: Inbox Capture waehlt das Queue Item gezielt, Portfolio-Objekte werden ueber Entity-List-Link plus `#selected-entity-heading` geoeffnet, Resources ueber Library-Link plus `#selected-resource-heading`.
+- Kritische globale Text-Assertions wurden reduziert oder scoped: Skill Evidence im Context Panel, Nutrition Meal im Nutrition Page Scope, Resource/Portfolio Selection ueber konkrete Container.
+- `uniqueTitle(prefix)` eingefuehrt und fuer kritische Flows genutzt: Create-New Project/Goal, AI Resource Confirm, Nutrition Recipe/Meal, Recurring Generation und Resource Relation Proofs.
+- Create-New Project/Goal und AI Resource Confirm bleiben bewusst auf Inbox-Resolve beweisbar, weil die Zielobjekt-Writes lokal verifiziert wurden und gefuellte Listen kein stabiler unmittelbarer Beweis sind.
+- Empty-State-Skips bleiben bewusst: zwei Core-Skips sind datenabhaengige Manual-Empty-Gates bei gefuellter lokaler DB.
+- Keine Produktfeatures, keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB, kein Supabase Link/Push/Reset, keine Service Role, keine neue Library.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.

@@ -51,6 +51,16 @@ function nextIsoWeekday() {
   return (currentIsoWeekday() % 7) + 1;
 }
 
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function uniqueTitle(prefix: string) {
+  const suffix = Math.random().toString(36).slice(2, 8);
+
+  return `${prefix} ${Date.now()}-${suffix}`;
+}
+
 function calendarRangeOverlaps(
   leftStart: number,
   leftEnd: number,
@@ -103,6 +113,86 @@ async function readProfileDataTaskCount(page: Page) {
   return Number(countText);
 }
 
+async function expectInRegion(region: Locator, text: string | RegExp) {
+  await expect(region.getByText(text).first()).toBeVisible();
+}
+
+async function selectCreatedInboxItem(page: Page, title: string) {
+  const queueItem = page
+    .locator("[data-inbox-queue-item]")
+    .filter({ hasText: title })
+    .first();
+
+  await expect(queueItem).toBeVisible();
+  await queueItem.click();
+  await expect(
+    page
+      .locator('[data-inbox-section="active-item"]')
+      .getByRole("heading", { name: title }),
+  ).toBeVisible();
+}
+
+async function openPortfolioEntityByTitle(
+  page: Page,
+  view: "goals" | "projects" | "skills" | "tasks",
+  title: string,
+) {
+  await page.goto(`/portfolio?view=${view}`);
+
+  const entityList = page.locator('[data-portfolio-section="entity-list"]');
+  const entityLink = entityList
+    .getByRole("link", { name: new RegExp(escapeRegExp(title)) })
+    .first();
+
+  await expect(entityLink).toBeVisible();
+  await entityLink.click();
+  await expect(page.locator("#selected-entity-heading")).toHaveText(title);
+}
+
+async function expectSelectedPortfolioEntity(page: Page, title: string) {
+  await expect(page.locator("#selected-entity-heading")).toHaveText(title);
+}
+
+async function expectPortfolioContextText(page: Page, text: string) {
+  const contextPanel = page.locator('[data-portfolio-section="context-panel"]');
+  const contextText = contextPanel.getByText(text).first();
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await expect(contextPanel).toBeVisible();
+
+    if (await contextText.isVisible()) return contextPanel;
+
+    await page.reload({ waitUntil: "networkidle" });
+  }
+
+  await expect(contextText).toBeVisible();
+
+  return contextPanel;
+}
+
+async function openResourceByTitle(page: Page, title: string) {
+  await page.goto("/resources");
+
+  const resourceLink = page
+    .locator('[data-resources-section="library"]')
+    .getByRole("link", {
+      name: new RegExp(`Select resource ${escapeRegExp(title)}`),
+    })
+    .first();
+  const href = await resourceLink.getAttribute("href");
+
+  expect(href).toBeTruthy();
+  await page.goto(href ?? "/resources");
+  await expect(page.locator("#selected-resource-heading")).toHaveText(title);
+}
+
+async function openNutritionMealByTitle(page: Page, title: string) {
+  await page.goto("/nutrition");
+  await expect(
+    page.locator("#nutrition-page").getByText(title).first(),
+  ).toBeVisible();
+}
+
 async function captureAndTriageManualInboxTask(
   page: Page,
   title: string,
@@ -125,12 +215,14 @@ async function captureAndTriageManualInboxTask(
   await page.getByRole("textbox", { name: "Quick Capture note" }).fill(note);
   await page.getByRole("button", { name: "Capture" }).click();
   await page.waitForLoadState("networkidle");
-  await expect(page.getByText(title).first()).toBeVisible();
-  await page.getByRole("button", { name: /Standalone Task/ }).click();
-  await expect(page.getByRole("heading", { name: "Task Draft" })).toBeVisible();
-  const taskDraft = page
+  await selectCreatedInboxItem(page, title);
+
+  const activeItem = page.locator('[data-inbox-section="active-item"]');
+  await activeItem.locator('[data-outcome-route="standalone_task"]').click();
+  const taskDraft = activeItem
     .getByRole("heading", { name: "Task Draft" })
     .locator("xpath=ancestor::section[1]");
+  await expect(taskDraft).toBeVisible();
   if (options.priority) {
     await taskDraft.locator('select[name="priority"]').selectOption(options.priority);
   }
@@ -243,17 +335,7 @@ async function captureManualInboxItem(page: Page, title: string, note: string) {
   await page.getByRole("textbox", { name: "Quick Capture note" }).fill(note);
   await page.getByRole("button", { name: "Capture" }).click();
   await page.waitForLoadState("networkidle");
-  await expect(page.getByText(title).first()).toBeVisible();
-  await page
-    .locator("[data-inbox-queue-item]")
-    .filter({ hasText: title })
-    .first()
-    .click();
-  await expect(
-    page
-      .locator('[data-inbox-section="active-item"]')
-      .getByRole("heading", { name: title }),
-  ).toBeVisible();
+  await selectCreatedInboxItem(page, title);
 }
 
 async function expectManualInboxItemResolved(page: Page, title: string) {
@@ -385,13 +467,7 @@ async function selectExistingGoalTargetByTitle(
 }
 
 async function openPortfolioTaskPlanningControls(page: Page, title: string) {
-  await page.goto("/portfolio?view=tasks");
-  await expect(page.getByText(title).first()).toBeVisible();
-  await page
-    .getByRole("link", { name: new RegExp(title) })
-    .first()
-    .click();
-  await expect(page.locator("#selected-entity-heading")).toHaveText(title);
+  await openPortfolioEntityByTitle(page, "tasks", title);
 }
 
 async function clickPortfolioContextButton(page: Page, name: string) {
@@ -415,9 +491,7 @@ async function scheduleCalendarQueueTask(
   scheduledTime: string,
   durationMinutes: string,
 ) {
-  const plannerQueue = page
-    .locator('[data-calendar-section="planning-queue"]')
-    .first();
+  const plannerQueue = await expectCalendarPlannerQueueTask(page, title);
   const scheduleForm = plannerQueue.getByRole("form", {
     name: `${title} terminieren`,
   });
@@ -427,6 +501,84 @@ async function scheduleCalendarQueueTask(
   await scheduleForm.getByRole("button", { name: "Terminieren" }).click();
   await page.waitForLoadState("networkidle");
   await page.reload();
+}
+
+async function expectCalendarPlannerQueueTask(page: Page, title: string) {
+  const plannerQueue = page
+    .locator('[data-calendar-section="planning-queue"]')
+    .first();
+  const queueTask = plannerQueue.getByText(title).first();
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await expect(plannerQueue).toBeVisible();
+
+    if (await queueTask.isVisible()) return plannerQueue;
+
+    await page.reload({ waitUntil: "networkidle" });
+  }
+
+  await expect(queueTask).toBeVisible();
+
+  return plannerQueue;
+}
+
+async function expectTodayTaskLifecycleForm(
+  page: Page,
+  title: string,
+  action: "abschließen" | "wieder öffnen",
+) {
+  const activityStream = page.locator('[data-today-section="activity-stream"]');
+  const form = activityStream.getByRole("form", {
+    name: `${title} ${action}`,
+  });
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await expect(activityStream).toBeVisible();
+
+    if (await form.isVisible()) return form;
+
+    await page.reload({ waitUntil: "networkidle" });
+  }
+
+  await expect(form).toBeVisible();
+
+  return form;
+}
+
+async function expectTodayActivityText(page: Page, title: string) {
+  const activityTimeline = page.locator(
+    '[data-today-section="activity-stream"] ol',
+  );
+  const activityItem = activityTimeline.getByText(title).first();
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await expect(activityTimeline).toBeVisible();
+
+    if (await activityItem.isVisible()) return activityTimeline;
+
+    await page.reload({ waitUntil: "networkidle" });
+  }
+
+  await expect(activityItem).toBeVisible();
+
+  return activityTimeline;
+}
+
+async function expectDashboardTodayAgendaText(page: Page, title: string) {
+  const todayAgenda = page.getByRole("region", { name: "Today Agenda" });
+  const agendaItem = todayAgenda.getByText(title).first();
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await expect(todayAgenda).toBeVisible();
+
+    if (await agendaItem.isVisible()) return todayAgenda;
+
+    await page.reload({ waitUntil: "networkidle" });
+  }
+
+  await expect(agendaItem).toBeVisible();
+
+  return todayAgenda;
 }
 
 async function selectCalendarTimedBlock(page: Page, title: string) {
@@ -505,7 +657,7 @@ async function createPortfolioProjectTarget(
   await form.getByRole("button", { name: "Project erstellen" }).click();
   await page.waitForLoadState("networkidle");
   await expect(page.getByText("Project erstellt.").first()).toBeVisible();
-  await expect(page.getByText(title).first()).toBeVisible();
+  await expectSelectedPortfolioEntity(page, title);
 }
 
 async function createPortfolioGoalTarget(
@@ -521,7 +673,7 @@ async function createPortfolioGoalTarget(
   await form.getByRole("button", { name: "Goal erstellen" }).click();
   await page.waitForLoadState("networkidle");
   await expect(page.getByText("Goal erstellt.").first()).toBeVisible();
-  await expect(page.getByText(title).first()).toBeVisible();
+  await expectSelectedPortfolioEntity(page, title);
 }
 
 async function createPortfolioTaskTarget(
@@ -543,7 +695,7 @@ async function createPortfolioTaskTarget(
   await form.getByRole("button", { name: "Task erstellen" }).click();
   await page.waitForLoadState("networkidle");
   await expect(page.getByText("Task erstellt.").first()).toBeVisible();
-  await expect(page.getByText(title).first()).toBeVisible();
+  await expectSelectedPortfolioEntity(page, title);
 }
 
 async function createPortfolioSkillTarget(
@@ -561,7 +713,7 @@ async function createPortfolioSkillTarget(
   await form.getByRole("button", { name: "Skill erstellen" }).click();
   await page.waitForLoadState("networkidle");
   await expect(page.getByText("Skill erstellt.").first()).toBeVisible();
-  await expect(page.getByText(title).first()).toBeVisible();
+  await expectSelectedPortfolioEntity(page, title);
 }
 
 async function createSkillEvidenceTarget(
@@ -608,7 +760,7 @@ async function editPortfolioSkillTarget(
   await page.keyboard.press("Enter");
   await page.waitForLoadState("networkidle");
   await expect(page.getByText("Skill aktualisiert.").first()).toBeVisible();
-  await expect(page.getByText(title).first()).toBeVisible();
+  await expectInRegion(contextPanel, title);
 }
 
 async function archivePortfolioSkillTarget(page: Page, title: string) {
@@ -661,7 +813,7 @@ async function createProjectWorkbenchTask(
   await form.getByRole("button", { name: "Task erstellen" }).click();
   await page.waitForLoadState("networkidle");
   await expect(page.getByText("Task erstellt.").first()).toBeVisible();
-  await expect(contextPanel.getByText(title).first()).toBeVisible();
+  await expectPortfolioContextText(page, title);
 }
 
 async function createGoalWorkbenchTask(
@@ -684,7 +836,7 @@ async function createGoalWorkbenchTask(
   await form.getByRole("button", { name: "Task erstellen" }).click();
   await page.waitForLoadState("networkidle");
   await expect(page.getByText("Task erstellt.").first()).toBeVisible();
-  await expect(contextPanel.getByText(title).first()).toBeVisible();
+  await expectPortfolioContextText(page, title);
 }
 
 async function createGoalWorkbenchProject(
@@ -701,9 +853,7 @@ async function createGoalWorkbenchProject(
   await form.getByRole("button", { name: "Project erstellen" }).click();
   await page.waitForLoadState("networkidle");
   await expect(page.getByText("Project erstellt.").first()).toBeVisible();
-  await expect(
-    page.getByRole("link", { name: new RegExp(title) }).first(),
-  ).toBeVisible();
+  await expectPortfolioContextText(page, title);
 }
 
 async function createManualResourceFromInbox(
@@ -743,8 +893,7 @@ async function createManualResourceFromInbox(
     .click();
   await page.waitForLoadState("networkidle");
 
-  await page.goto("/resources");
-  await expect(page.getByText(title).first()).toBeVisible();
+  await openResourceByTitle(page, title);
 }
 
 async function selectedResourceInspector(page: Page) {
@@ -758,16 +907,7 @@ async function selectedResourceInspector(page: Page) {
 }
 
 async function selectResourceByTitle(page: Page, title: string) {
-  await page.goto("/resources");
-  await expect(page.getByText(title).first()).toBeVisible();
-  const href = await page
-    .getByRole("link", { name: new RegExp(`Select resource ${title}`) })
-    .first()
-    .getAttribute("href");
-
-  expect(href).toBeTruthy();
-  await page.goto(href ?? "/resources");
-  await expect(page.locator("#selected-resource-heading")).toHaveText(title);
+  await openResourceByTitle(page, title);
 }
 
 async function linkSelectedResourceToTarget(
@@ -2118,9 +2258,8 @@ test.describe("Nutrition content states", () => {
   test("Manual Nutrition creates recipe meal and completes it reload-stable", async ({
     page,
   }) => {
-    const timestamp = Date.now();
-    const recipeTitle = `Manual Nutrition Recipe ${timestamp}`;
-    const mealTitle = `Manual Nutrition Meal ${timestamp}`;
+    const recipeTitle = uniqueTitle("Manual Nutrition Recipe");
+    const mealTitle = uniqueTitle("Manual Nutrition Meal");
     const mealDate = currentLocalDate();
 
     await setProfile(page, "manual");
@@ -2178,9 +2317,9 @@ test.describe("Nutrition content states", () => {
       "data-content-state",
       /partial|filled/,
     );
-    await expect(page.getByText(mealTitle).first()).toBeVisible();
+    await openNutritionMealByTitle(page, mealTitle);
     await page.reload();
-    await expect(page.getByText(mealTitle).first()).toBeVisible();
+    await expect(page.locator("#nutrition-page").getByText(mealTitle).first()).toBeVisible();
     await expectNoNutritionDemoStrings(page);
 
     const createdMealRow = page.locator("article").filter({ hasText: mealTitle });
@@ -2392,7 +2531,7 @@ test.describe("Dashboard content states", () => {
       "data-content-state",
       /^(partial|filled)$/,
     );
-    await expect(todayAgenda.getByText(title).first()).toBeVisible();
+    await expectDashboardTodayAgendaText(page, title);
   });
 
   test("reports habit and active portfolio capacity states", async ({
@@ -3033,9 +3172,8 @@ test.describe("Inbox content states", () => {
       "Requires a local authenticated Supabase Playwright session.",
     );
 
-    const timestamp = Date.now();
-    const captureTitle = `Manual Inbox create project source ${timestamp}`;
-    const projectTitle = `Manual Inbox created project ${timestamp}`;
+    const captureTitle = uniqueTitle("Manual Inbox create project source");
+    const projectTitle = uniqueTitle("Manual Inbox created project");
 
     await setProfile(page, "manual");
     await applySupabaseAuthState(page);
@@ -3081,9 +3219,8 @@ test.describe("Inbox content states", () => {
       "Requires a local authenticated Supabase Playwright session.",
     );
 
-    const timestamp = Date.now();
-    const captureTitle = `Manual Inbox create goal source ${timestamp}`;
-    const goalTitle = `Manual Inbox created goal ${timestamp}`;
+    const captureTitle = uniqueTitle("Manual Inbox create goal source");
+    const goalTitle = uniqueTitle("Manual Inbox created goal");
 
     await setProfile(page, "manual");
     await applySupabaseAuthState(page);
@@ -3318,9 +3455,8 @@ test.describe("Inbox content states", () => {
       "Requires a local authenticated Supabase Playwright session.",
     );
 
-    const timestamp = Date.now();
-    const captureTitle = `Read article AI inbox resource ${timestamp}`;
-    const resourceTitle = `AI Inbox resource accepted ${timestamp}`;
+    const captureTitle = uniqueTitle("Read article AI inbox resource");
+    const resourceTitle = uniqueTitle("AI Inbox resource accepted");
 
     await setProfile(page, "manual");
     await applySupabaseAuthState(page);
@@ -4012,8 +4148,7 @@ test.describe("Today content states", () => {
     await expect(activityTimeline.getByText(title).first()).toBeVisible();
 
     await page.goto("/dashboard");
-    const todayAgenda = page.getByRole("region", { name: "Today Agenda" });
-    await expect(todayAgenda.getByText(title).first()).toBeVisible();
+    await expectDashboardTodayAgendaText(page, title);
 
     await page.goto("/calendar");
     const calendarPlannerQueue = page
@@ -4031,12 +4166,13 @@ test.describe("Today content states", () => {
   test("Manual Recurring generates task into Today, Dashboard and Calendar queue", async ({
     page,
   }) => {
+    test.slow();
     test.skip(
       !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
       "Requires a local authenticated Supabase Playwright session.",
     );
 
-    const title = `Manual Recurring Today ${Date.now()}`;
+    const title = uniqueTitle("Manual Recurring Today");
 
     await createRecurringTemplateFromToday(page, title, {
       durationMinutes: "15",
@@ -4062,8 +4198,7 @@ test.describe("Today content states", () => {
     ).toHaveCount(1);
 
     await page.goto("/dashboard");
-    const todayAgenda = page.getByRole("region", { name: "Today Agenda" });
-    await expect(todayAgenda.getByText(title).first()).toBeVisible();
+    await expectDashboardTodayAgendaText(page, title);
 
     await page.goto("/calendar");
     const calendarPlannerQueue = page
@@ -4085,13 +4220,14 @@ test.describe("Today content states", () => {
   });
 
   test("Manual Recurring weekly rule respects ISO weekday", async ({ page }) => {
+    test.slow();
     test.skip(
       !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
       "Requires a local authenticated Supabase Playwright session.",
     );
 
-    const dueTitle = `Manual Recurring Weekly Due ${Date.now()}`;
-    const skippedTitle = `Manual Recurring Weekly Skip ${Date.now()}`;
+    const dueTitle = uniqueTitle("Manual Recurring Weekly Due");
+    const skippedTitle = uniqueTitle("Manual Recurring Weekly Skip");
 
     await createRecurringTemplateFromToday(page, dueTitle, {
       durationMinutes: "15",
@@ -4126,7 +4262,7 @@ test.describe("Today content states", () => {
       "Requires a local authenticated Supabase Playwright session; no broad DB cleanup action is available.",
     );
 
-    const title = `Manual Today Complete DB Task ${Date.now()}`;
+    const title = uniqueTitle("Manual Today Complete DB Task");
 
     await captureAndTriageManualInboxTask(
       page,
@@ -4138,14 +4274,14 @@ test.describe("Today content states", () => {
     await page.waitForLoadState("networkidle");
 
     await page.goto("/today");
-    await page
-      .getByRole("form", { name: `${title} abschließen` })
-      .getByRole("button", { name: "Abschließen" })
-      .click();
+    const completeForm = await expectTodayTaskLifecycleForm(
+      page,
+      title,
+      "abschließen",
+    );
+    await completeForm.getByRole("button", { name: "Abschließen" }).click();
     await page.waitForLoadState("networkidle");
-    await expect(
-      page.getByRole("form", { name: `${title} wieder öffnen` }),
-    ).toBeVisible();
+    await expectTodayTaskLifecycleForm(page, title, "wieder öffnen");
 
     await page.goto("/dashboard");
     await expect(
@@ -4161,7 +4297,7 @@ test.describe("Today content states", () => {
       "Requires a local authenticated Supabase Playwright session; no broad DB cleanup action is available.",
     );
 
-    const title = `Manual Today Scheduled ${Date.now()}`;
+    const title = uniqueTitle("Manual Today Scheduled");
 
     await captureAndTriageManualInboxTask(
       page,
@@ -4174,11 +4310,8 @@ test.describe("Today content states", () => {
 
     await page.goto("/today");
     const todayPlanner = page.locator('[data-today-section="today-planner"]');
-    const activityTimeline = page.locator(
-      '[data-today-section="activity-stream"] ol',
-    );
 
-    await expect(activityTimeline.getByText(title).first()).toBeVisible();
+    await expectTodayActivityText(page, title);
     await expect(todayPlanner.getByText(title)).toHaveCount(0);
   });
 
@@ -4190,7 +4323,7 @@ test.describe("Today content states", () => {
       "Requires a local authenticated Supabase Playwright session; no broad DB cleanup action is available.",
     );
 
-    const title = `Manual Today DB Task ${Date.now()}`;
+    const title = uniqueTitle("Manual Today DB Task");
 
     await captureAndTriageManualInboxTask(
       page,
@@ -4204,9 +4337,9 @@ test.describe("Today content states", () => {
     await page.goto("/today");
     await expectTodayWidgetContracts(page, "manual");
     await expectNoTodayDemoStrings(page);
-    await expect(page.getByText(title).first()).toBeVisible();
+    await expectTodayActivityText(page, title);
     await page.reload();
-    await expect(page.getByText(title).first()).toBeVisible();
+    await expectTodayActivityText(page, title);
 
     await page.goto("/dashboard");
     const todayAgenda = page.getByRole("region", { name: "Today Agenda" });
@@ -4214,14 +4347,9 @@ test.describe("Today content states", () => {
       "data-content-state",
       /^(partial|filled)$/,
     );
-    await expect(todayAgenda.getByText(title).first()).toBeVisible();
+    await expectDashboardTodayAgendaText(page, title);
     await page.reload();
-    await expect(
-      page
-        .getByRole("region", { name: "Today Agenda" })
-        .getByText(title)
-        .first(),
-    ).toBeVisible();
+    await expectDashboardTodayAgendaText(page, title);
   });
 });
 
@@ -4275,7 +4403,7 @@ test.describe("Calendar content states", () => {
       "Requires a local authenticated Supabase Playwright session; no broad DB cleanup action is available.",
     );
 
-    const title = `Manual Calendar DB Task ${Date.now()}`;
+    const title = uniqueTitle("Manual Calendar DB Task");
 
     await captureAndTriageManualInboxTask(
       page,
@@ -4296,15 +4424,12 @@ test.describe("Calendar content states", () => {
     await expectNoMainStrings(page, calendarBlockedDemoStrings, "calendar");
     await expectNoGenericPlannerRelationLabels(page, "calendar manual queue");
     const weekGrid = page.locator('[data-calendar-section="week-grid"]');
-    const plannerQueue = page
-      .locator('[data-calendar-section="planning-queue"]')
-      .first();
     const startTime = await findFreeCalendarStartTime(page, 75, 60);
     const movedStartTime = addClockMinutes(startTime, 15);
     const movedEndTime = addClockMinutes(movedStartTime, 45);
     const resizedEndTime = addClockMinutes(movedStartTime, 60);
+    const plannerQueue = await expectCalendarPlannerQueueTask(page, title);
 
-    await expect(plannerQueue.getByText(title).first()).toBeVisible();
     await expect(weekGrid.getByText(title)).toHaveCount(0);
 
     const scheduleForm = plannerQueue.getByRole("form", {
@@ -4364,8 +4489,7 @@ test.describe("Calendar content states", () => {
     await expect(page.getByText(title).first()).toBeVisible();
 
     await page.goto("/dashboard");
-    const todayAgenda = page.getByRole("region", { name: "Today Agenda" });
-    await expect(todayAgenda.getByText(title).first()).toBeVisible();
+    await expectDashboardTodayAgendaText(page, title);
   });
 
   test("Manual Calendar unschedules DB task back into planner queue", async ({
@@ -4376,7 +4500,7 @@ test.describe("Calendar content states", () => {
       "Requires a local authenticated Supabase Playwright session; no broad DB cleanup action is available.",
     );
 
-    const title = `Manual Calendar Unschedule DB Task ${Date.now()}`;
+    const title = uniqueTitle("Manual Calendar Unschedule DB Task");
 
     await captureAndTriageManualInboxTask(
       page,
@@ -4393,23 +4517,11 @@ test.describe("Calendar content states", () => {
     await page.waitForLoadState("networkidle");
     await page.goto("/calendar");
 
-    const plannerQueue = page
-      .locator('[data-calendar-section="planning-queue"]')
-      .first();
     const startTime = await findFreeCalendarStartTime(page, 45, 3 * 60);
     const movedStartTime = addClockMinutes(startTime, 15);
     const movedEndTime = addClockMinutes(movedStartTime, 30);
 
-    await plannerQueue
-      .getByRole("form", { name: `${title} terminieren` })
-      .getByLabel("Uhrzeit")
-      .fill(startTime);
-    await plannerQueue
-      .getByRole("form", { name: `${title} terminieren` })
-      .getByRole("button", { name: "Terminieren" })
-      .click();
-    await page.waitForLoadState("networkidle");
-    await page.reload();
+    await scheduleCalendarQueueTask(page, title, startTime, "30");
 
     const weekGrid = page.locator('[data-calendar-section="week-grid"]');
     await selectCalendarTimedBlock(page, title);
@@ -4428,7 +4540,7 @@ test.describe("Calendar content states", () => {
     await page.reload();
 
     await expect(weekGrid.getByText(title)).toHaveCount(0);
-    await expect(plannerQueue.getByText(title).first()).toBeVisible();
+    await expectCalendarPlannerQueueTask(page, title);
   });
 
   test("Manual Calendar blocks visible conflicts without explicit override", async ({
@@ -5226,8 +5338,8 @@ test.describe("Portfolio content states", () => {
       "Requires a local authenticated Supabase Playwright session.",
     );
 
-    const goalTitle = `Manual Workbench Project Goal ${Date.now()}`;
-    const projectTitle = `Manual Workbench Goal Project ${Date.now()}`;
+    const goalTitle = uniqueTitle("Manual Workbench Project Goal");
+    const projectTitle = uniqueTitle("Manual Workbench Goal Project");
 
     await openManualPortfolioWithDb(page);
     await page.goto("/portfolio?view=goals");
@@ -5236,27 +5348,16 @@ test.describe("Portfolio content states", () => {
       goalTitle,
       "Goal Workbench project target.",
     );
-    await page
-      .getByRole("link", { name: new RegExp(goalTitle) })
-      .first()
-      .click();
+    await expectSelectedPortfolioEntity(page, goalTitle);
     await createGoalWorkbenchProject(
       page,
       projectTitle,
       "Created inside Goal Workbench v1.",
     );
-    await page.goto("/portfolio?view=goals");
-    await page
-      .getByRole("link", { name: new RegExp(goalTitle) })
-      .first()
-      .click();
+    await openPortfolioEntityByTitle(page, "goals", goalTitle);
     await page.reload();
-    await expect(
-      page
-        .locator('[data-portfolio-section="context-panel"]')
-        .getByText(projectTitle)
-        .first(),
-    ).toBeVisible();
+    await expectSelectedPortfolioEntity(page, goalTitle);
+    await expectPortfolioContextText(page, projectTitle);
   });
 
   test("Manual Goal Workbench keeps linked task lifecycle intact", async ({
@@ -5936,9 +6037,8 @@ test.describe("Resources content states", () => {
       "Manual Supabase auth state unavailable; Resource relation DB proof skipped.",
     );
 
-    const suffix = Date.now();
-    const projectTitle = `R173C Project Proof ${suffix}`;
-    const resourceTitle = `R173C Resource Project Proof ${suffix}`;
+    const projectTitle = uniqueTitle("R173C Project Proof");
+    const resourceTitle = uniqueTitle("R173C Resource Project Proof");
 
     await openManualPortfolioWithDb(page, resourceRelationDbProofSkipReason);
     await page.goto("/portfolio?view=projects");
@@ -5997,9 +6097,8 @@ test.describe("Resources content states", () => {
       "Manual Supabase auth state unavailable; Resource relation DB proof skipped.",
     );
 
-    const suffix = Date.now();
-    const goalTitle = `R173C Goal Proof ${suffix}`;
-    const resourceTitle = `R173C Resource Goal Proof ${suffix}`;
+    const goalTitle = uniqueTitle("R173C Goal Proof");
+    const resourceTitle = uniqueTitle("R173C Resource Goal Proof");
 
     await openManualPortfolioWithDb(page, resourceRelationDbProofSkipReason);
     await page.goto("/portfolio?view=goals");
