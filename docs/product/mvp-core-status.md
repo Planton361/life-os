@@ -1,8 +1,8 @@
 # MVP Core Status
 
 Stand: 2026-06-28
-Status: R1.8.2 Manual DB Proof Stability
-Zweck: Konsolidierter MVP-Core-Status nach R1.8.2 Manual DB Test Data Hygiene.
+Status: R1.8.3 MVP Core Hardening
+Zweck: Konsolidierter MVP-Core-Status nach R1.8.3 Accessibility/Security Hardening.
 Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks und `docs/qa/r1-6-5-real-browser-auth-check.md`.
 
 ## 1. Abgeschlossene Bloecke
@@ -21,6 +21,7 @@ Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks und `doc
 - Core-Grep: `Manual|Inbox|Today|Dashboard|Calendar|Portfolio` mit 86 passed, 2 skipped.
 - Extensions-Grep: `Resources|Nutrition|Skill|AI|Recurring` mit 25 passed.
 - Bewiesen sind Quick Capture, Inbox Resolve, AI Suggestion Review, Task/Resource/Create-New Confirm, Today Planning, Calendar Scheduling/Unschedule/Conflict-Gate, Portfolio Lifecycle, Resource Relations, Recurring Generation, Nutrition Meal Completion und Skill Evidence Source Linking.
+- R1.8.3 ergaenzt Accessibility-/Hardening-Assertions fuer Inbox Task-Draft Labels, Calendar Previous/Next Week Accessible Names und AI No-Persistence Copy.
 
 ## 3. Teilweise bewiesene Flows
 
@@ -44,6 +45,17 @@ Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks und `doc
 - Resource-Proofs oeffnen Resources ueber Library-Link und pruefen `#selected-resource-heading`.
 - Nutrition- und Skill-Proofs verwenden scoped Assertions in der passenden Page bzw. im Context Panel.
 - Keine DB-Reset-Pflicht, keine Cleanup-Aktion und keine Migration in R1.8.2.
+
+## 4.2 R1.8.3 MVP Core Hardening
+
+- Hardening Review dokumentiert in `docs/qa/mvp-core-hardening-review.md`.
+- Accessibility Review der MVP-Hauptflows abgeschlossen: Inbox Routing/AI, Today Planner, Calendar Scheduling, Portfolio Workbenches, Resources, Nutrition und Recurring Trigger.
+- Inbox async Feedback nutzt fuer Success `role="status"` und fuer Blocked/Error `role="alert"`.
+- Portfolio Task Archive redirectet nach erfolgreicher Server Action zu einem sichtbaren `Task archiviert.` Status und entfernt den stale selected-task Zustand.
+- Security/Privacy Review der neuen Actions bestaetigt serverseitige Supabase Auth, Zod-Validierung, Repository-/RPC-User-Scope, keine Service Role, keine Secrets und keine externe AI API.
+- Prepared/Future UI bleibt begrenzt: Skill Map, Resource Graph, Recurring Automation, Nutrition Deep Features, AI Provider, Grocery/Ingredients, Calendar Pointer Drag und Routine UI behaupten keine nicht vorhandene Persistenz.
+- R1.8.3 Validation: `git diff --check`, `pnpm typecheck`, `pnpm lint`, `pnpm exec supabase db lint --local --level warning`, Core-Grep und Extensions-Grep gruen.
+- Keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB, kein Supabase Link/Push/Reset, keine Service Role, keine neue Library.
 
 ## 5. Prepared/Future Scope
 

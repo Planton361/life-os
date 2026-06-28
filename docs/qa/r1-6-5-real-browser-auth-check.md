@@ -615,6 +615,44 @@
 - Empty-State-Skips bleiben bewusst: zwei Core-Skips sind datenabhaengige Manual-Empty-Gates bei gefuellter lokaler DB.
 - Keine Produktfeatures, keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB, kein Supabase Link/Push/Reset, keine Service Role, keine neue Library.
 
+## R1.8.3 MVP Core Hardening
+
+- Hardening Review dokumentiert in `docs/qa/mvp-core-hardening-review.md`.
+- Accessibility Review geprueft: Inbox Routing + AI Suggestions, Today Planner,
+  Calendar Scheduling Controls, Portfolio Project/Goal/Skill Workbenches,
+  Resource Inspector/Relations, Nutrition Recipe/Meal Forms und Recurring
+  Trigger.
+- Inbox Feedback-Hardening: Success-Meldungen sind `role="status"`,
+  Blocked/Error-Meldungen sind `role="alert"`.
+- E2E-Hardening: Inbox Task Draft Label Assertions, Calendar Previous/Next Week
+  Accessible Name Assertions und AI No-Persistence Copy Assertion ergaenzt.
+- Core-Grep deckte eine Portfolio Archive Race auf: Nach Archive-Submit konnte
+  ein direkter Reload stale selected-task UI behalten.
+- Fix: `archiveTaskFormAction` wartet auf das serverseitige Result und
+  redirectet nach Success zu `/portfolio?view=tasks&targetCreate=task_archived`;
+  Portfolio zeigt `Task archiviert.` als sichtbaren Status.
+- Einzelner Archive Regression Proof:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Manual Portfolio archives DB task out of active views"`
+- Ergebnis: 1 passed.
+- R1.8.3 Core-Grep:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Manual|Inbox|Today|Dashboard|Calendar|Portfolio"`
+- Ergebnis: 86 passed, 2 skipped. Die Skips bleiben datenabhaengige
+  Manual-Empty-Gates bei gefuellter lokaler Manual-DB.
+- R1.8.3 Extensions-Grep:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Resources|Nutrition|Skill|AI|Recurring"`
+- Ergebnis: 25 passed.
+- Security/Privacy Review: Actions nutzen serverseitige Supabase Auth,
+  Zod-Validierung, Repository-/RPC-User-Scope und keine clientseitige `userId`.
+  Resource Relations, Skill Evidence, Recurring Templates, Nutrition und Inbox
+  RPCs pruefen same-user Ownership fuer polymorphe oder kontextuelle Targets.
+- Keine externe AI API, keine Secrets, kein Service Role Key, keine sensiblen
+  Logs, keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB, kein
+  Supabase Link/Push/Reset und keine neue Library.
+- Prepared/Future UI bleibt begrenzt: Skill Map, Resource Graph, Recurring
+  Automation, Nutrition Deep Features, AI Provider, Ingredients/Grocery,
+  Calendar Pointer Drag, Routine UI und Education/Coding Skill Map behaupten
+  keine nicht vorhandene Persistenz.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.

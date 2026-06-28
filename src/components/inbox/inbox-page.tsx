@@ -62,6 +62,30 @@ const disabledActionClasses =
 const draftInputClasses =
   "mt-1.5 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(12,20,34,.74)] px-3 py-2 text-xs leading-5 text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]";
 
+function InboxActionMessage({
+  message,
+  status,
+}: Readonly<{
+  message: string;
+  status: "blocked" | "error" | "success";
+}>) {
+  if (!message) return null;
+
+  return (
+    <p
+      className={cn(
+        "mt-2 text-[11px] leading-4",
+        status === "success"
+          ? "text-[var(--accent-green)]"
+          : "text-[var(--accent-orange)]",
+      )}
+      role={status === "success" ? "status" : "alert"}
+    >
+      {message}
+    </p>
+  );
+}
+
 const taskDraftPriorities = ["P0", "P1", "P2", "P3", "none"] as const;
 const taskDraftEnergies = ["low", "medium", "high"] as const;
 const taskDraftDurations = [15, 30, 45, 60, 90, 120] as const;
@@ -955,7 +979,10 @@ function InboxCreateNewDraft({
             >
               {isProject ? "Project erstellt" : "Goal erstellt"}
             </h3>
-            <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+            <p
+              className="mt-1 text-xs leading-5 text-[var(--text-secondary)]"
+              role="status"
+            >
               {currentState.message}
             </p>
           </div>
@@ -1097,9 +1124,10 @@ function InboxCreateNewDraft({
           </div>
           {currentState?.status === "blocked" ||
           currentState?.status === "error" ? (
-            <p className="mt-2 text-[11px] leading-4 text-[var(--accent-orange)]">
-              {currentState.message}
-            </p>
+            <InboxActionMessage
+              message={currentState.message}
+              status={currentState.status}
+            />
           ) : null}
         </form>
       ) : (
@@ -1483,7 +1511,10 @@ function InboxSolvedArchiveDraft({
         >
           Inbox-Eintrag abgeschlossen
         </h3>
-        <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+        <p
+          className="mt-1 text-xs leading-5 text-[var(--text-secondary)]"
+          role="status"
+        >
           Dieser Eintrag wurde aus der aktiven Inbox entfernt. Es wurde kein
           Zielobjekt erstellt.
         </p>
@@ -1542,9 +1573,10 @@ function InboxSolvedArchiveDraft({
           gespeichert.
         </p>
         {archiveState?.status === "blocked" || archiveState?.status === "error" ? (
-          <p className="mt-2 text-[11px] leading-4 text-[var(--accent-orange)]">
-            {archiveState.message}
-          </p>
+          <InboxActionMessage
+            message={archiveState.message}
+            status={archiveState.status}
+          />
         ) : null}
       </form>
     </section>
@@ -1582,7 +1614,10 @@ function InboxResourceDraft({
             >
               Resource erstellt
             </h3>
-            <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+            <p
+              className="mt-1 text-xs leading-5 text-[var(--text-secondary)]"
+              role="status"
+            >
               Diese Inbox wurde als Resource gespeichert.
             </p>
           </div>
@@ -1665,9 +1700,10 @@ function InboxResourceDraft({
         </div>
         {resourceState?.status === "blocked" ||
         resourceState?.status === "error" ? (
-          <p className="mt-2 text-[11px] leading-4 text-[var(--accent-orange)]">
-            {resourceState.message}
-          </p>
+          <InboxActionMessage
+            message={resourceState.message}
+            status={resourceState.status}
+          />
         ) : null}
       </form>
     </section>
@@ -1703,7 +1739,10 @@ function InboxTaskDraft({
             >
               Task erstellt
             </h3>
-            <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+            <p
+              className="mt-1 text-xs leading-5 text-[var(--text-secondary)]"
+              role="status"
+            >
               Diese Inbox wurde in eine Task umgewandelt. Planung und
               Terminierung bleiben in Portfolio, Today und Calendar.
             </p>
@@ -2196,9 +2235,10 @@ function AIAssistantPanel({
           ) : null}
           {suggestionState?.status === "blocked" ||
           suggestionState?.status === "error" ? (
-            <p className="mt-2 text-[11px] leading-4 text-[var(--accent-orange)]">
-              {suggestionState.message}
-            </p>
+            <InboxActionMessage
+              message={suggestionState.message}
+              status={suggestionState.status}
+            />
           ) : null}
         </form>
         {showSuggestion && suggestion ? (

@@ -199,6 +199,7 @@ function getViewLabel(viewModel: PortfolioViewModel, view: PortfolioView) {
 
 function targetCreateMessage(value: string | null) {
   if (value === "task_created") return "Task erstellt.";
+  if (value === "task_archived") return "Task archiviert.";
   if (value === "project_created") return "Project erstellt.";
   if (value === "goal_created") return "Goal erstellt.";
   if (value === "skill_created") return "Skill erstellt.";

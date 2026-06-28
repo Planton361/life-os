@@ -2834,6 +2834,13 @@ test.describe("Inbox content states", () => {
     await expect(
       activeItem.getByRole("button", { exact: true, name: "Task erstellen" }),
     ).toBeVisible();
+    await expect(activeItem.getByLabel("Titel")).toBeVisible();
+    await expect(activeItem.getByLabel("Beschreibung / Kontext")).toBeVisible();
+    await expect(activeItem.getByLabel("Nächste Aktion")).toBeVisible();
+    await expect(activeItem.getByLabel("Priorität")).toBeVisible();
+    await expect(activeItem.getByLabel("Effort / Dauer")).toBeVisible();
+    await expect(activeItem.getByLabel("Energie")).toBeVisible();
+    await expect(activeItem.getByLabel("Heute planen")).toBeVisible();
     await expect(
       page.getByText("Hinweise für spätere Planung.").first(),
     ).toBeVisible();
@@ -3439,6 +3446,10 @@ test.describe("Inbox content states", () => {
 
     const assistant = await generateInboxAISuggestion(page);
 
+    await expect(
+      assistant.getByText("Deterministischer Mock.").first(),
+    ).toBeVisible();
+    await expect(assistant.getByText("keine Persistenz").first()).toBeVisible();
     await expect(assistant.getByText("Route: Standalone Task")).toBeVisible();
     await page.reload();
     await expect(page.getByText(captureTitle).first()).toBeVisible();
@@ -4372,6 +4383,12 @@ test.describe("Calendar content states", () => {
     ).toBeVisible();
     await expect(
       page.getByText("Literature source deadline").first(),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Previous week" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Next week" }),
     ).toBeVisible();
   });
 

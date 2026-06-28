@@ -599,7 +599,13 @@ export async function reopenTaskFormAction(formData: FormData): Promise<void> {
 }
 
 export async function archiveTaskFormAction(formData: FormData): Promise<void> {
-  await archiveTaskAction(formData);
+  const result = await archiveTaskAction(formData);
+
+  if (result.status === "success") {
+    redirect("/portfolio?view=tasks&targetCreate=task_archived");
+  }
+
+  redirect(`/portfolio?view=tasks&targetCreate=${result.status}`);
 }
 
 export async function unscheduleTaskFormAction(
