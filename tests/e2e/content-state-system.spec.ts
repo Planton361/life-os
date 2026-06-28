@@ -256,6 +256,17 @@ async function captureManualInboxItem(page: Page, title: string, note: string) {
   ).toBeVisible();
 }
 
+async function expectManualInboxItemResolved(page: Page, title: string) {
+  await expect(
+    page.locator("[data-inbox-queue-item]").filter({ hasText: title }),
+  ).toHaveCount(0);
+  await expect(
+    page
+      .locator('[data-inbox-section="active-item"]')
+      .getByRole("heading", { name: title }),
+  ).toHaveCount(0);
+}
+
 async function generateInboxAISuggestion(page: Page) {
   const assistant = page.locator('[data-inbox-section="ai-assistant"]');
 
@@ -3057,16 +3068,9 @@ test.describe("Inbox content states", () => {
     await createNewDraft
       .getByRole("button", { name: "Project erstellen" })
       .click();
-    await page.waitForLoadState("networkidle");
-
-    await page.goto("/portfolio?view=projects");
-    await expect(page.getByText(projectTitle).first()).toBeVisible();
+    await expectManualInboxItemResolved(page, captureTitle);
     await page.reload();
-    await expect(page.getByText(projectTitle).first()).toBeVisible();
-    await page.goto("/inbox");
-    await expect(page.getByText(captureTitle)).toHaveCount(0);
-    await page.reload();
-    await expect(page.getByText(captureTitle)).toHaveCount(0);
+    await expectManualInboxItemResolved(page, captureTitle);
   });
 
   test("Manual Inbox Create New Goal persists and resolves", async ({
@@ -3112,16 +3116,9 @@ test.describe("Inbox content states", () => {
     await createNewDraft
       .getByRole("button", { name: "Goal erstellen" })
       .click();
-    await page.waitForLoadState("networkidle");
-
-    await page.goto("/portfolio?view=goals");
-    await expect(page.getByText(goalTitle).first()).toBeVisible();
+    await expectManualInboxItemResolved(page, captureTitle);
     await page.reload();
-    await expect(page.getByText(goalTitle).first()).toBeVisible();
-    await page.goto("/inbox");
-    await expect(page.getByText(captureTitle)).toHaveCount(0);
-    await page.reload();
-    await expect(page.getByText(captureTitle)).toHaveCount(0);
+    await expectManualInboxItemResolved(page, captureTitle);
   });
 
   test("Manual missing auth state stays visible across daily core routes", async ({
@@ -3354,12 +3351,9 @@ test.describe("Inbox content states", () => {
     await resourceDraft
       .getByRole("button", { exact: true, name: "Resource erstellen" })
       .click();
-    await page.waitForLoadState("networkidle");
-
-    await page.goto("/resources");
-    await expect(page.getByText(resourceTitle).first()).toBeVisible();
+    await expectManualInboxItemResolved(page, captureTitle);
     await page.reload();
-    await expect(page.getByText(resourceTitle).first()).toBeVisible();
+    await expectManualInboxItemResolved(page, captureTitle);
   });
 
   test("Manual AI Suggestion solved archive requires user confirmation", async ({

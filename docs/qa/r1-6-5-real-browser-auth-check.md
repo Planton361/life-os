@@ -580,6 +580,29 @@
 - Lokaler Playwright Auth-State wurde gegen lokale Supabase Auth Runtime erneuert; `.local/` bleibt unversioniert.
 - Keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB, keine Service Role, keine neue Library.
 
+## R1.8.1 MVP Core Completion Audit
+
+- MVP-Core nach `66b01fb feat: add inbox ai suggestions` auditiert.
+- Daily Core ist im aktuellen Manual-DB-Proof verbunden: Dashboard Quick Thought, Inbox, Today, Calendar und Portfolio Task Lifecycle laufen ueber echte Server Actions/ReadModels.
+- Inbox ist als Routing-/Review-System stabilisiert: Standalone Task, Add to Existing Task-Beitrag, Create New Project/Goal, Resource Draft, Solved/Archive und AI Suggestions bleiben bestaetigungsgebunden.
+- Portfolio Workbenches zeigen echte Tasks, Projects, Goals, Skills und Evidence fuer die freigegebenen Slices; Prepared Sections bleiben textgestuetzt und ohne Fake-Persistenz.
+- Resource Relations zu Project und Goal bleiben browserbewiesen; Resource Graph/Skill Map Visualisierung bleibt Future Scope.
+- Recurring bleibt explizit: Template-Erstellung und manuelle Generierung sind bewiesen, aber keine Cron Jobs, Background Jobs oder automatische Page-Load-Generation.
+- Nutrition ist als Recipes/Meals-Manual-Flow bewiesen; Planner-Edit, Grocery-Persistenz, Ingredients, Macro Targets und externe APIs bleiben Future Scope.
+- Skills sind inklusive Evidence Source Linking bewiesen; Skill Map bleibt prepared/future, keine Graph-UI und keine AI Skill Inference.
+- AI Inbox Suggestions nutzen weiter nur den deterministischen lokalen Mock Provider; keine externe AI API, kein Client API Key, keine autonomen Writes.
+- Manual/Demo/Empty-Grenzen bleiben erhalten. Die bekannten Skips sind datenabhaengige Manual-Empty-Gates bei gefuellter lokaler Manual-DB.
+- Prepared/Future Labels wurden gegen die Locks geprueft: Project/Goal Prepared Sections, Skill Map, Resource Graph, Nutrition Deep Features, Recurring Automation und AI Provider bleiben korrekt begrenzt.
+- E2E-Stabilisierung: Create-New Project/Goal und AI-Resource-Confirm pruefen jetzt den stabilen Inbox-Queue/Active-Item-Resolve statt globaler Listen-Texte. Grund: Die lokale Manual-DB ist stark gefuellt; Portfolio-/Resource-Defaultlisten sind dadurch kein stabiler unmittelbarer Selector fuer frisch erzeugte Zielobjekte.
+- Lokale DB-Gegenpruefung fuer die roten Vorlaeufe bestaetigte, dass das Project bzw. die Resource geschrieben und der Inbox-Eintrag archiviert wurde.
+- R1.8.1 Core-Grep:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Manual|Inbox|Today|Dashboard|Calendar|Portfolio"`
+- Ergebnis: 86 passed, 2 skipped.
+- R1.8.1 Extensions-Grep:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Resources|Nutrition|Skill|AI|Recurring"`
+- Ergebnis: 25 passed.
+- Keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB, kein Supabase Link/Push/Reset, keine Service Role, keine neue Library.
+
 ## Known Boundaries
 
 - Browser auth is email/password only.
