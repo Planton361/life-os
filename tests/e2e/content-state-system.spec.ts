@@ -193,6 +193,18 @@ async function openNutritionMealByTitle(page: Page, title: string) {
   ).toBeVisible();
 }
 
+async function expectRecipeVisibleInRecipeResults(
+  page: Page,
+  title: string,
+) {
+  await expect(
+    page
+      .getByRole("list", { name: "Recipe results" })
+      .getByRole("button", { name: new RegExp(escapeRegExp(title)) })
+      .first(),
+  ).toBeVisible();
+}
+
 async function captureAndTriageManualInboxTask(
   page: Page,
   title: string,
@@ -2292,9 +2304,9 @@ test.describe("Nutrition content states", () => {
     await recipeForm.getByLabel("Tags").fill("lunch, proof");
     await recipeForm.getByRole("button", { name: "Recipe erstellen" }).click();
     await page.waitForLoadState("networkidle");
-    await expect(page.getByText(recipeTitle).first()).toBeVisible();
+    await expectRecipeVisibleInRecipeResults(page, recipeTitle);
     await page.reload();
-    await expect(page.getByText(recipeTitle).first()).toBeVisible();
+    await expectRecipeVisibleInRecipeResults(page, recipeTitle);
     await expectNoNutritionDemoStrings(page);
 
     await page.goto("/nutrition");
@@ -2343,7 +2355,8 @@ test.describe("Nutrition content states", () => {
       "data-content-state",
       "empty",
     );
-    await expect(page.getByText(recipeTitle).first()).toBeVisible();
+    await page.goto("/nutrition/recipes");
+    await expectRecipeVisibleInRecipeResults(page, recipeTitle);
     await expectNoNutritionDemoStrings(page);
   });
 });

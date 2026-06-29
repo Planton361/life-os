@@ -1,14 +1,15 @@
 # MVP Core Release Readiness
 
-Stand: 2026-06-28
-Status: R1.9.3 deployment environment boundaries documented
+Stand: 2026-06-29
+Status: R1.9.4 performance baseline documented
 Zweck: Roadmap-Reconciliation und Release-Entscheidung nach R1.8.3 MVP Core Hardening.
 Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `DATA_MODEL.md`,
 `SECURITY.md`, `ACCESSIBILITY.md`, `docs/product/mvp-core-status.md` und
 `docs/qa/r1-6-5-real-browser-auth-check.md`,
 `docs/security/rls-security-audit-r1-9-1.md`,
 `docs/security/backup-export-restore-strategy-r1-9-2.md` und
-`docs/ops/deployment-env-readiness-r1-9-3.md`.
+`docs/ops/deployment-env-readiness-r1-9-3.md` und
+`docs/qa/performance-baseline-r1-9-4.md`.
 
 ## 1. Zweck
 
@@ -34,6 +35,11 @@ Deployment-Env-Grenzen, Client-/Server-Env-Klassen, Supabase Local-vs-
 Production-Boundaries und Secrets-Hygiene, ohne echte Secrets zu
 dokumentieren, ohne Remote-Supabase-Aktion und ohne Deployment.
 
+R1.9.4 baut keine neuen Produktfeatures und aendert keine UI. R1.9.4
+dokumentiert Build-/Runtime-/Repository-/ReadModel- und UI-Render-Baseline,
+stabilisiert einen dichtebedingten Nutrition-E2E-Selector und macht keine
+Production-Performance-Freigabe.
+
 ## 2. Stand
 
 Der MVP Core ist lokal und manuell im Browser nutzbar. Die zentralen Capture-,
@@ -58,7 +64,8 @@ Begruendung:
   Restore-Drill und Automation fehlen.
 - Deployment-Env-Boundary ist definiert; echte Deployment-Konfiguration wurde
   nicht in einer Zielumgebung verifiziert.
-- Performance Review fehlt.
+- Performance Baseline ist lokal dokumentiert; Production Performance bleibt
+  bis Deployment-/Real-Data-Baseline offen.
 - Externer AI Provider fehlt bewusst; AI bleibt lokaler deterministischer Mock.
 
 ## 3. Browserbewiesene Flows
@@ -91,6 +98,9 @@ Aktuelle Proofs:
 - Core-Grep `Manual|Inbox|Today|Dashboard|Calendar|Portfolio`: 86 passed,
   2 skipped.
 - Extensions-Grep `Resources|Nutrition|Skill|AI|Recurring`: 25 passed.
+- R1.9.4 Core-Grep `Manual|Inbox|Today|Dashboard|Calendar|Portfolio`: 86
+  passed, 2 skipped.
+- R1.9.4 Extensions-Grep `Resources|Nutrition|Skill|AI|Recurring`: 25 passed.
 
 ## 4. Manuell nutzbare Features
 
@@ -115,7 +125,7 @@ Prepared oder Future Scope bleibt klar getrennt:
 - Calendar Pointer Drag/Resize.
 - Automation, Background Jobs, Cron Jobs.
 - Production Backup Automation und Restore Drill.
-- Performance Review.
+- Production Performance Baseline nach Deployment-/Real-Data-Rehearsal.
 - Full Accessibility Audit.
 - Remote-/Production-Security-Audit.
 
@@ -162,6 +172,9 @@ Prepared oder Future Scope bleibt klar getrennt:
 - R1.9.3 hat Env-Inventar, Client-/Server-Env-Grenzen,
   Supabase-Local-vs-Production-Boundary, `.env.example`-Placeholder und
   Secrets-Hygiene dokumentiert.
+- R1.9.4 hat Build-/Runtime-Baseline, Repository-/ReadModel-Findings,
+  UI-Render-Findings und Manual-DB-Dichte als lokales Performance-Risiko
+  dokumentiert.
 - Keine externe AI API.
 - Kein Client API Key.
 - Kein Service Role Key.
@@ -174,6 +187,7 @@ Noch offen fuer Production Readiness:
 - Deployment-Rehearsal und Zielumgebungs-Env-Verifikation.
 - Production Backup Konfiguration.
 - Restore Drill.
+- Production Performance Baseline mit echten Zielumgebungsdaten.
 - Security Review fuer echte AI Provider, falls spaeter freigegeben.
 
 ## 9. Accessibility Status
@@ -203,6 +217,7 @@ Noch offen fuer Production Readiness:
 - Keine Automation.
 - Kein echter Export und kein echter Backup-Dump in R1.9.2.
 - Kein echtes Deployment und keine Remote-Env-Verifikation in R1.9.3.
+- Kein Production Performance Claim in R1.9.4.
 - Kein Production Deployment Claim.
 
 ## 11. Roadmap Audit
@@ -227,6 +242,7 @@ Noch offen fuer Production Readiness:
 | RLS/Security Local Audit | Complete locally | R1.9.1 CLI/advisor/source audit | Remote production audit |
 | Backup/Export/Restore Strategy | Complete as strategy | R1.9.2 docs/tooling hygiene | Production backup drill |
 | Deployment Env Boundary | Complete as boundary definition | R1.9.3 env/docs/build audit | Deployment rehearsal, target env verification |
+| Performance Baseline | Complete locally | R1.9.4 build/runtime greps | Production performance baseline |
 
 ### Partially Complete
 
@@ -246,6 +262,8 @@ Noch offen fuer Production Readiness:
   configuration, automation and restore drill are deferred.
 - Deployment Env: client/server boundaries and local-vs-production assumptions
   are defined; target deployment verification is deferred.
+- Performance: local baseline is documented; production performance baseline is
+  deferred.
 
 ### Deferred
 
@@ -258,7 +276,7 @@ Noch offen fuer Production Readiness:
 - Automation.
 - Production Backup Automation.
 - Restore Drill.
-- Performance.
+- Production Performance Baseline.
 - Full Accessibility Audit.
 - Remote Production RLS/Env Audit.
 - Deployment rehearsal / target environment verification.
@@ -268,8 +286,8 @@ Noch offen fuer Production Readiness:
 - Lokale Manual-DB ist stark gefuellt; einzelne Empty-State-Proofs bleiben
   bewusst skip-gated.
 - Production Readiness ist ohne Remote-DB-Audit, Target-Env-Verifikation,
-  Production Backup Drill, Deployment-Rehearsal und Performance Review nicht
-  gegeben.
+  Production Backup Drill, Deployment-Rehearsal und Production Performance
+  Baseline nicht gegeben.
 - Externer AI Provider braucht vor Integration einen separaten Privacy-,
   Cost-, Logging- und Failure-State-Block.
 
@@ -286,7 +304,7 @@ Scope:
 - Remote-/Production-Security-Audit.
 - Production Backup Konfiguration und Restore Drill.
 - Deployment Rehearsal und Target-Env-Verifikation.
-- Performance Review.
+- Production Performance Baseline.
 - Accessibility Pass.
 
 Warum:

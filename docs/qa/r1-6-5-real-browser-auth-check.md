@@ -7,6 +7,22 @@
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` or `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 - No remote DB, `supabase link`, `supabase db push`, migrations, or policy changes.
 
+## R1.9.4 Performance Baseline
+
+- Documented in `docs/qa/performance-baseline-r1-9-4.md`.
+- Build baseline: `pnpm build` green locally/escalated; sandbox build was
+  blocked by Turbopack process/port-binding permissions.
+- Runtime Core-Grep green:
+  `Manual|Inbox|Today|Dashboard|Calendar|Portfolio` with 86 passed, 2 skipped.
+- Runtime Extensions-Grep green:
+  `Resources|Nutrition|Skill|AI|Recurring` with 25 passed.
+- Manual-DB density remains a local performance and QA risk; Nutrition E2E was
+  stabilized with scoped Recipe assertions instead of DB cleanup/reset.
+- No Production Performance release claim. Production performance remains open
+  until deployment-/real-data baseline.
+- No new features, no migration, no RLS/policy changes, no remote DB, no
+  deployment and no Service Role Key.
+
 ## Browser Check
 
 1. Open `/settings#supabase-session`.
@@ -671,8 +687,8 @@
   External AI Provider, Full Accessibility Audit und Remote-/Production-
   Security-Audit.
 - Future Scope bleibt getrennt: Automation, Production Backup Drill,
-  Performance Review, Deployment Hardening, echte AI Provider Integration und
-  Production Release Claim.
+  Production Performance Baseline, Deployment Hardening, echte AI Provider
+  Integration und Production Release Claim.
 - Browser-proofed flows bleiben die R1.8.3 Ergebnisse: Core-Grep
   `Manual|Inbox|Today|Dashboard|Calendar|Portfolio` mit 86 passed, 2 skipped;
   Extensions-Grep `Resources|Nutrition|Skill|AI|Recurring` mit 25 passed.
@@ -683,7 +699,7 @@
   keine Service Role und keine neue Library.
 - Next Phase: weiter mit R1.9 Production Hardening: Remote-/Production-
   Security-Audit, Production Backup Drill, Deployment Rehearsal/Target-Env-
-  Verifikation, Performance und Accessibility Pass.
+  Verifikation, Production Performance Baseline und Accessibility Pass.
 
 ## R1.9.1 RLS / Security Audit
 
@@ -725,7 +741,7 @@
   `LOCAL_RLS_SECURITY_AUDIT_PASS_AFTER_FIX`.
 - Production Release bleibt geblockt durch Remote-/Production-DB-Audit,
   Deployment Rehearsal/Target-Env-Verifikation, Production Backup Drill und
-  Performance Review.
+  Production Performance Baseline.
 
 ## R1.9.2 Backup / Export / Restore Strategy
 

@@ -1,9 +1,9 @@
 # MVP Core Status
 
-Stand: 2026-06-28
-Status: R1.9.3 deployment environment boundaries
-Zweck: Konsolidierter MVP-Core-Status nach R1.8.4 Release Readiness, R1.9.1 lokalem RLS-/Security-Audit, R1.9.2 Backup-/Export-/Restore-Strategie und R1.9.3 Deployment-Env-Boundary.
-Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/product/mvp-core-release-readiness.md`, `docs/security/rls-security-audit-r1-9-1.md`, `docs/security/backup-export-restore-strategy-r1-9-2.md`, `docs/ops/deployment-env-readiness-r1-9-3.md` und `docs/qa/r1-6-5-real-browser-auth-check.md`.
+Stand: 2026-06-29
+Status: R1.9.4 performance baseline
+Zweck: Konsolidierter MVP-Core-Status nach R1.8.4 Release Readiness, R1.9.1 lokalem RLS-/Security-Audit, R1.9.2 Backup-/Export-/Restore-Strategie, R1.9.3 Deployment-Env-Boundary und R1.9.4 Performance Baseline.
+Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/product/mvp-core-release-readiness.md`, `docs/security/rls-security-audit-r1-9-1.md`, `docs/security/backup-export-restore-strategy-r1-9-2.md`, `docs/ops/deployment-env-readiness-r1-9-3.md`, `docs/qa/performance-baseline-r1-9-4.md` und `docs/qa/r1-6-5-real-browser-auth-check.md`.
 
 ## 1. Abgeschlossene Bloecke
 
@@ -18,11 +18,13 @@ Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/p
 - RLS/Security Local Audit: alle lokalen Public-User-Tabellen, RLS Policies, Grants, Functions, Server Actions und Ownership Gates sind in R1.9.1 auditiert und gehardent.
 - Backup/Export/Restore Strategy: MVP-Dateninventar, Sensitivity-Klassen, JSONL-Exportformat, Restore-Reihenfolge und lokale Export-Hygiene sind in R1.9.2 definiert.
 - Deployment Environment Boundary: Env-Inventar, Client-/Server-Env-Klassen, Supabase Local-vs-Production-Grenzen, `.env.example`-Placeholder und Secrets-Hygiene sind in R1.9.3 definiert.
+- Performance Baseline: Build-/Runtime-Baseline, Repository-/ReadModel-Findings, UI-Render-Findings und Manual-DB-Dichte-Risiken sind in R1.9.4 dokumentiert.
 
 ## 2. Browserbewiesene Flows
 
 - Core-Grep: `Manual|Inbox|Today|Dashboard|Calendar|Portfolio` mit 86 passed, 2 skipped.
 - Extensions-Grep: `Resources|Nutrition|Skill|AI|Recurring` mit 25 passed.
+- R1.9.4 bestaetigt dieselben Greps nach Performance-/Runtime-Audit: Core 86 passed, 2 skipped; Extensions 25 passed.
 - Bewiesen sind Quick Capture, Inbox Resolve, AI Suggestion Review, Task/Resource/Create-New Confirm, Today Planning, Calendar Scheduling/Unschedule/Conflict-Gate, Portfolio Lifecycle, Resource Relations, Recurring Generation, Nutrition Meal Completion und Skill Evidence Source Linking.
 - R1.8.3 ergaenzt Accessibility-/Hardening-Assertions fuer Inbox Task-Draft Labels, Calendar Previous/Next Week Accessible Names und AI No-Persistence Copy.
 
@@ -67,8 +69,8 @@ Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/p
 - R1.8.4 Roadmap Reconciliation ist abgeschlossen: MVP Core ist lokal/manual-browser-ready, aber noch nicht production-release-ready.
 - Completed: Daily Core, Inbox Routing Completion, Task Lifecycle, Project Workbench v1, Goal Workbench v1, Resource Relations v1, Calendar Scheduling Controls, Recurring Tasks v1, Nutrition Recipes/Meals v1, Skills/Evidence v1, AI Inbox Suggestions v1, Manual DB Proof Hygiene und MVP Core Hardening.
 - Partially Complete: Calendar Pointer Drag/Resize, Recurring Template Management, Nutrition Deep Features, Skill Map/Graph, Resource Graph, External AI Provider, Full Accessibility Audit und Remote-/Production-Security-Audit.
-- Deferred: Automation, Production Backup Drill, Performance Review, Deployment Hardening, echte AI Provider Integration, Remote-/Production-DB-Audit und Production Release Claim.
-- Naechste empfohlene Phase: R1.9 Production Hardening fortsetzen mit Remote-/Production-Security-Audit, Production Backup Drill, Deployment Rehearsal/Target-Env-Verifikation, Performance und Accessibility Pass.
+- Deferred: Automation, Production Backup Drill, Production Performance Baseline, Deployment Hardening, echte AI Provider Integration, Remote-/Production-DB-Audit und Production Release Claim.
+- Naechste empfohlene Phase: R1.9 Production Hardening fortsetzen mit Remote-/Production-Security-Audit, Production Backup Drill, Deployment Rehearsal/Target-Env-Verifikation, Production Performance Baseline und Accessibility Pass.
 - R1.8.4 ist ein Produkt-/QA-/Roadmap-Block: keine neuen Features, keine UI-Rekomposition, keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB, keine Service Role, keine neue Library.
 
 ## 4.4 R1.9.1 RLS / Security Audit
@@ -115,7 +117,27 @@ Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/p
 - Status: `DEPLOYMENT_ENV_BOUNDARY_DEFINED`, aber weiterhin
   `NOT_PRODUCTION_RELEASE_READY`.
 
-## 4.7 Status-Matrix
+## 4.7 R1.9.4 Performance Baseline
+
+- Performance Baseline dokumentiert in `docs/qa/performance-baseline-r1-9-4.md`.
+- Build Baseline: `pnpm build` ist lokal/escalated gruen; der Sandboxlauf war
+  durch Turbopack Prozess-/Portbinding-Rechte blockiert.
+- Runtime Baseline: Core-Grep `Manual|Inbox|Today|Dashboard|Calendar|Portfolio`
+  ist gruen mit 86 passed und 2 skipped.
+- Runtime Baseline: Extensions-Grep `Resources|Nutrition|Skill|AI|Recurring`
+  ist gruen mit 25 passed.
+- Repository-/ReadModel-Findings: serverseitige User-/Archive-Filter sind
+  vorhanden; breite aktive Listen fuer Portfolio, Inbox, Resources, Skills und
+  Recipes bleiben Production-Scope.
+- UI-Render-Findings: grosse Client-Surfaces in Inbox, Portfolio Context,
+  Resources, Calendar und Today sind lokal ausreichend, aber bei wachsender
+  Manual-DB zu beobachten.
+- Manual-DB-Dichte: ein Nutrition-E2E-Selector wurde gegen globale/alte
+  Texttreffer stabilisiert; kein DB Cleanup und kein Reset.
+- Status: `LOCAL_PERFORMANCE_BASELINE_DOCUMENTED`, aber weiterhin
+  `NOT_PRODUCTION_RELEASE_READY`.
+
+## 4.8 Status-Matrix
 
 | Feature | Status | Browser Proof | Deferred |
 | --- | --- | --- | --- |
@@ -135,6 +157,7 @@ Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/p
 | RLS/Security Local Audit | Complete locally | R1.9.1 CLI/advisor/source audit | Remote production audit |
 | Backup/Export/Restore Strategy | Complete as strategy | R1.9.2 docs/tooling hygiene | Production backup drill |
 | Deployment Env Boundary | Complete as boundary definition | R1.9.3 env/docs/build audit | Deployment rehearsal, target env verification |
+| Performance Baseline | Complete locally | R1.9.4 build/runtime greps | Production performance baseline |
 
 ## 5. Prepared/Future Scope
 
@@ -153,6 +176,6 @@ R1.9 sollte Production Hardening fortsetzen:
 - Remote-/Production-Security-Audit und Deployment Rehearsal/Target-Env-
   Verifikation.
 - Production Backup Drill.
-- Performance Review.
+- Production Performance Baseline.
 - Vollstaendiger Accessibility Pass.
 - Keine neue Automation, Graph-Visualisierung oder externe AI vor abgeschlossenem Production-Hardening.
