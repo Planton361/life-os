@@ -1,9 +1,9 @@
 # MVP Core Status
 
-Stand: 2026-06-29
-Status: R1.9.4 performance baseline
-Zweck: Konsolidierter MVP-Core-Status nach R1.8.4 Release Readiness, R1.9.1 lokalem RLS-/Security-Audit, R1.9.2 Backup-/Export-/Restore-Strategie, R1.9.3 Deployment-Env-Boundary und R1.9.4 Performance Baseline.
-Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/product/mvp-core-release-readiness.md`, `docs/security/rls-security-audit-r1-9-1.md`, `docs/security/backup-export-restore-strategy-r1-9-2.md`, `docs/ops/deployment-env-readiness-r1-9-3.md`, `docs/qa/performance-baseline-r1-9-4.md` und `docs/qa/r1-6-5-real-browser-auth-check.md`.
+Stand: 2026-06-30
+Status: R1.9.5 accessibility pass
+Zweck: Konsolidierter MVP-Core-Status nach R1.8.4 Release Readiness, R1.9.1 lokalem RLS-/Security-Audit, R1.9.2 Backup-/Export-/Restore-Strategie, R1.9.3 Deployment-Env-Boundary, R1.9.4 Performance Baseline und R1.9.5 Accessibility Pass.
+Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/product/mvp-core-release-readiness.md`, `docs/security/rls-security-audit-r1-9-1.md`, `docs/security/backup-export-restore-strategy-r1-9-2.md`, `docs/ops/deployment-env-readiness-r1-9-3.md`, `docs/qa/performance-baseline-r1-9-4.md`, `docs/qa/accessibility-pass-r1-9-5.md` und `docs/qa/r1-6-5-real-browser-auth-check.md`.
 
 ## 1. Abgeschlossene Bloecke
 
@@ -19,12 +19,16 @@ Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/p
 - Backup/Export/Restore Strategy: MVP-Dateninventar, Sensitivity-Klassen, JSONL-Exportformat, Restore-Reihenfolge und lokale Export-Hygiene sind in R1.9.2 definiert.
 - Deployment Environment Boundary: Env-Inventar, Client-/Server-Env-Klassen, Supabase Local-vs-Production-Grenzen, `.env.example`-Placeholder und Secrets-Hygiene sind in R1.9.3 definiert.
 - Performance Baseline: Build-/Runtime-Baseline, Repository-/ReadModel-Findings, UI-Render-Findings und Manual-DB-Dichte-Risiken sind in R1.9.4 dokumentiert.
+- Accessibility Pass: lokale MVP-Core-Hauptflows sind in R1.9.5 auf Labels, Keyboard-Fokus, Button-Namen, Status-/Alert-Semantik und Farbe-nicht-allein geprueft.
 
 ## 2. Browserbewiesene Flows
 
 - Core-Grep: `Manual|Inbox|Today|Dashboard|Calendar|Portfolio` mit 86 passed, 2 skipped.
 - Extensions-Grep: `Resources|Nutrition|Skill|AI|Recurring` mit 25 passed.
 - R1.9.4 bestaetigt dieselben Greps nach Performance-/Runtime-Audit: Core 86 passed, 2 skipped; Extensions 25 passed.
+- R1.9.5 erweitert die bestehenden Greps um Accessibility-Proofs fuer Dashboard Quick Thought, Inbox AI Suggestions, Inbox Feedback, Calendar Scheduling, Portfolio Skills, Resource Relations und Nutrition Forms.
+- R1.9.5 bestaetigt dieselben Greps nach Accessibility Pass: Core 86 passed,
+  2 skipped; Extensions 25 passed.
 - Bewiesen sind Quick Capture, Inbox Resolve, AI Suggestion Review, Task/Resource/Create-New Confirm, Today Planning, Calendar Scheduling/Unschedule/Conflict-Gate, Portfolio Lifecycle, Resource Relations, Recurring Generation, Nutrition Meal Completion und Skill Evidence Source Linking.
 - R1.8.3 ergaenzt Accessibility-/Hardening-Assertions fuer Inbox Task-Draft Labels, Calendar Previous/Next Week Accessible Names und AI No-Persistence Copy.
 
@@ -68,9 +72,9 @@ Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/p
 - R1.8.3 ist abgeschlossen; MVP Core Hardening ist abgeschlossen.
 - R1.8.4 Roadmap Reconciliation ist abgeschlossen: MVP Core ist lokal/manual-browser-ready, aber noch nicht production-release-ready.
 - Completed: Daily Core, Inbox Routing Completion, Task Lifecycle, Project Workbench v1, Goal Workbench v1, Resource Relations v1, Calendar Scheduling Controls, Recurring Tasks v1, Nutrition Recipes/Meals v1, Skills/Evidence v1, AI Inbox Suggestions v1, Manual DB Proof Hygiene und MVP Core Hardening.
-- Partially Complete: Calendar Pointer Drag/Resize, Recurring Template Management, Nutrition Deep Features, Skill Map/Graph, Resource Graph, External AI Provider, Full Accessibility Audit und Remote-/Production-Security-Audit.
+- Partially Complete: Calendar Pointer Drag/Resize, Recurring Template Management, Nutrition Deep Features, Skill Map/Graph, Resource Graph, External AI Provider, Production Accessibility Audit und Remote-/Production-Security-Audit.
 - Deferred: Automation, Production Backup Drill, Production Performance Baseline, Deployment Hardening, echte AI Provider Integration, Remote-/Production-DB-Audit und Production Release Claim.
-- Naechste empfohlene Phase: R1.9 Production Hardening fortsetzen mit Remote-/Production-Security-Audit, Production Backup Drill, Deployment Rehearsal/Target-Env-Verifikation, Production Performance Baseline und Accessibility Pass.
+- Naechste empfohlene Phase: R1.9 Production Hardening fortsetzen mit Remote-/Production-Security-Audit, Production Backup Drill, Deployment Rehearsal/Target-Env-Verifikation, Production Performance Baseline und Production Accessibility Audit.
 - R1.8.4 ist ein Produkt-/QA-/Roadmap-Block: keine neuen Features, keine UI-Rekomposition, keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB, keine Service Role, keine neue Library.
 
 ## 4.4 R1.9.1 RLS / Security Audit
@@ -137,7 +141,23 @@ Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/p
 - Status: `LOCAL_PERFORMANCE_BASELINE_DOCUMENTED`, aber weiterhin
   `NOT_PRODUCTION_RELEASE_READY`.
 
-## 4.8 Status-Matrix
+## 4.8 R1.9.5 Accessibility Pass
+
+- Accessibility Pass dokumentiert in `docs/qa/accessibility-pass-r1-9-5.md`.
+- Scope: Dashboard, Inbox Routing, Inbox AI Suggestions, Today Planner,
+  Calendar Scheduling Controls, Portfolio Workbenches, Resources, Nutrition
+  und Recurring Trigger.
+- Dashboard Quick Thought, Mood und Add Task Feedback unterscheiden Success
+  als `role="status"` von Error/Blocked als `role="alert"`.
+- Resource Relation Feedback ist als `role="status"` ausgezeichnet.
+- E2E-Proofs pruefen Label-Erreichbarkeit, Fokus, benannte Buttons,
+  Status-/Alert-Zustaende und keine reine Farbabhaengigkeit der geprueften
+  MVP-Hauptflows.
+- Validation: Core-Grep 86 passed, 2 skipped; Extensions-Grep 25 passed.
+- Status: `LOCAL_ACCESSIBILITY_PASS_COMPLETED`, aber weiterhin
+  `NOT_PRODUCTION_RELEASE_READY`.
+
+## 4.9 Status-Matrix
 
 | Feature | Status | Browser Proof | Deferred |
 | --- | --- | --- | --- |
@@ -158,6 +178,7 @@ Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `docs/product/*` Locks, `docs/p
 | Backup/Export/Restore Strategy | Complete as strategy | R1.9.2 docs/tooling hygiene | Production backup drill |
 | Deployment Env Boundary | Complete as boundary definition | R1.9.3 env/docs/build audit | Deployment rehearsal, target env verification |
 | Performance Baseline | Complete locally | R1.9.4 build/runtime greps | Production performance baseline |
+| Accessibility Pass | Complete locally | R1.9.5 label/keyboard/status proofs | Production accessibility audit |
 
 ## 5. Prepared/Future Scope
 
@@ -177,5 +198,6 @@ R1.9 sollte Production Hardening fortsetzen:
   Verifikation.
 - Production Backup Drill.
 - Production Performance Baseline.
-- Vollstaendiger Accessibility Pass.
+- Production Accessibility Audit mit Zielumgebung und vollstaendigem manuellen
+  Screenreader-/Keyboard-Test.
 - Keine neue Automation, Graph-Visualisierung oder externe AI vor abgeschlossenem Production-Hardening.

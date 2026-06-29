@@ -250,6 +250,12 @@ async function captureAndTriageManualInboxTask(
     .getByRole("button", { exact: true, name: "Task erstellen" })
     .click();
   await page.waitForLoadState("networkidle");
+  await expect(
+    page
+      .getByRole("status")
+      .filter({ hasText: "Diese Inbox wurde in eine Task umgewandelt" })
+      .first(),
+  ).toBeVisible();
   await expect(page.getByText("Task erstellt").first()).toBeVisible();
 }
 
@@ -363,14 +369,21 @@ async function expectManualInboxItemResolved(page: Page, title: string) {
 
 async function generateInboxAISuggestion(page: Page) {
   const assistant = page.locator('[data-inbox-section="ai-assistant"]');
+  const generateButton = assistant.getByRole("button", {
+    name: "AI Vorschlag erzeugen",
+  });
 
-  await expect(
-    assistant.getByRole("button", { name: "AI Vorschlag erzeugen" }),
-  ).toBeEnabled();
-  await assistant
-    .getByRole("button", { name: "AI Vorschlag erzeugen" })
-    .click();
+  await expect(generateButton).toBeEnabled();
+  await generateButton.focus();
+  await expect(generateButton).toBeFocused();
+  await generateButton.click();
   await expect(assistant.getByLabel("AI Vorschlag Review")).toBeVisible();
+  await expect(
+    assistant.getByRole("button", { name: "Vorschlag übernehmen" }),
+  ).toBeVisible();
+  await expect(
+    assistant.getByRole("button", { name: "Verwerfen" }),
+  ).toBeVisible();
 
   return assistant;
 }
@@ -507,10 +520,18 @@ async function scheduleCalendarQueueTask(
   const scheduleForm = plannerQueue.getByRole("form", {
     name: `${title} terminieren`,
   });
+  const scheduleButton = scheduleForm.getByRole("button", {
+    name: "Terminieren",
+  });
 
+  await expect(scheduleForm.getByLabel("Uhrzeit")).toBeVisible();
+  await expect(scheduleForm.getByLabel("Dauer")).toBeVisible();
   await scheduleForm.getByLabel("Uhrzeit").fill(scheduledTime);
   await scheduleForm.getByLabel("Dauer").selectOption(durationMinutes);
-  await scheduleForm.getByRole("button", { name: "Terminieren" }).click();
+  await expect(scheduleButton).toBeEnabled();
+  await scheduleButton.focus();
+  await expect(scheduleButton).toBeFocused();
+  await scheduleButton.click();
   await page.waitForLoadState("networkidle");
   await page.reload();
 }
@@ -722,7 +743,11 @@ async function createPortfolioSkillTarget(
   await form.getByLabel("Summary").fill(summary);
   await form.getByLabel("Kategorie").fill("Coding");
   await form.getByLabel("Level").fill("Applied");
-  await form.getByRole("button", { name: "Skill erstellen" }).click();
+  const submitButton = form.getByRole("button", { name: "Skill erstellen" });
+  await expect(submitButton).toBeEnabled();
+  await submitButton.focus();
+  await expect(submitButton).toBeFocused();
+  await submitButton.press("Enter");
   await page.waitForLoadState("networkidle");
   await expect(page.getByText("Skill erstellt.").first()).toBeVisible();
   await expectSelectedPortfolioEntity(page, title);
@@ -933,9 +958,12 @@ async function linkSelectedResourceToTarget(
   );
 
   await expect(form).toBeVisible();
-  await form.locator('select[name="targetType"]').selectOption(targetType);
+  await expect(form.getByLabel("Zieltyp")).toBeVisible();
+  await expect(form.getByLabel("Ziel", { exact: true })).toBeVisible();
+  await expect(form.getByLabel("Relation")).toBeVisible();
+  await form.getByLabel("Zieltyp").selectOption(targetType);
 
-  const targetSelect = form.locator('select[name="targetId"]');
+  const targetSelect = form.getByLabel("Ziel", { exact: true });
   await expect(targetSelect).toBeEnabled();
 
   const option = targetSelect
@@ -946,11 +974,18 @@ async function linkSelectedResourceToTarget(
 
   expect(targetId).toBeTruthy();
   await targetSelect.selectOption(targetId ?? "");
-  await form.getByRole("button", { name: "Speichern" }).click();
+  const saveButton = form.getByRole("button", { name: "Speichern" });
+  await expect(saveButton).toBeEnabled();
+  await saveButton.focus();
+  await expect(saveButton).toBeFocused();
+  await saveButton.press("Enter");
   await page.waitForLoadState("networkidle");
 
   await expect(
-    page.getByText(/Beziehung gespeichert|Beziehung besteht bereits/).first(),
+    page
+      .getByRole("status")
+      .filter({ hasText: /Beziehung gespeichert|Beziehung besteht bereits/ })
+      .first(),
   ).toBeVisible();
 
   return targetId ?? "";
@@ -2299,7 +2334,13 @@ test.describe("Nutrition content states", () => {
       .locator("xpath=ancestor::section[1]");
 
     await expect(recipeForm).toBeVisible();
-    await recipeForm.getByLabel("Title").fill(recipeTitle);
+    const recipeTitleInput = recipeForm.getByLabel("Title");
+    await expect(recipeTitleInput).toBeVisible();
+    await recipeTitleInput.focus();
+    await expect(recipeTitleInput).toBeFocused();
+    await recipeTitleInput.fill(recipeTitle);
+    await expect(recipeForm.getByLabel("Summary")).toBeVisible();
+    await expect(recipeForm.getByLabel("Tags")).toBeVisible();
     await recipeForm.getByLabel("Summary").fill("Browser proof recipe");
     await recipeForm.getByLabel("Tags").fill("lunch, proof");
     await recipeForm.getByRole("button", { name: "Recipe erstellen" }).click();
@@ -2316,7 +2357,15 @@ test.describe("Nutrition content states", () => {
       .locator("xpath=ancestor::section[1]");
 
     await expect(mealForm).toBeVisible();
-    await mealForm.getByLabel("Title").fill(mealTitle);
+    const mealTitleInput = mealForm.getByLabel("Title");
+    await expect(mealTitleInput).toBeVisible();
+    await mealTitleInput.focus();
+    await expect(mealTitleInput).toBeFocused();
+    await mealTitleInput.fill(mealTitle);
+    await expect(mealForm.getByLabel("Date")).toBeVisible();
+    await expect(mealForm.getByLabel("Type")).toBeVisible();
+    await expect(mealForm.getByLabel("Planned")).toBeVisible();
+    await expect(mealForm.getByLabel("Recipe")).toBeVisible();
     await mealForm.getByLabel("Date").fill(mealDate);
     await mealForm.getByLabel("Type").selectOption("lunch");
     await mealForm.getByLabel("Planned").fill(`${mealDate}T12:30`);
@@ -2506,9 +2555,28 @@ test.describe("Dashboard content states", () => {
     await expect(
       quickThought.getByRole("button", { exact: true, name: "Task erstellen" }),
     ).toHaveCount(0);
-    await page.getByRole("textbox", { name: "Quick Thought" }).fill(thought);
-    await page.getByRole("button", { name: "In Inbox speichern" }).click();
-    await expect(page.getByText("In der Inbox gespeichert.")).toBeVisible();
+    const quickThoughtInput = quickThought.getByRole("textbox", {
+      name: "Quick Thought",
+    });
+    const quickThoughtSubmit = quickThought.getByRole("button", {
+      name: "In Inbox speichern",
+    });
+    await expect(quickThoughtInput).toBeVisible();
+    await quickThoughtInput.focus();
+    await expect(quickThoughtInput).toBeFocused();
+    await quickThoughtSubmit.click();
+    await expect(
+      quickThought.getByRole("alert").filter({
+        hasText: "Erfasse zuerst einen Gedanken.",
+      }),
+    ).toBeVisible();
+    await quickThoughtInput.fill(thought);
+    await quickThoughtSubmit.click();
+    await expect(
+      quickThought.getByRole("status").filter({
+        hasText: "In der Inbox gespeichert.",
+      }),
+    ).toBeVisible();
     await expect(
       page.getByRole("link", { name: "Inbox öffnen" }),
     ).toBeVisible();

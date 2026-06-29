@@ -947,10 +947,15 @@ function ResourceRelationCreateForm({
         className="mt-2 grid gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.40)] p-3 xl:p-2"
       >
         <input name="resourceId" type="hidden" value={resource.id} />
-        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+        <label
+          className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]"
+          htmlFor="resource-relation-target-type"
+        >
           Zieltyp
           <select
+            aria-label="Zieltyp"
             className="min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.78)] px-2 text-[11px] normal-case text-[var(--text-primary)] outline-none focus:border-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-55"
+            id="resource-relation-target-type"
             name="targetType"
             onChange={(event) =>
               setTargetType(event.currentTarget.value as ResourceRelationTargetType)
@@ -968,11 +973,16 @@ function ResourceRelationCreateForm({
             ))}
           </select>
         </label>
-        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+        <label
+          className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]"
+          htmlFor="resource-relation-target"
+        >
           Ziel
           <select
+            aria-label="Ziel"
             className="min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.78)] px-2 text-[11px] normal-case text-[var(--text-primary)] outline-none focus:border-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-55"
             disabled={disabled}
+            id="resource-relation-target"
             name="targetId"
             required
           >
@@ -983,11 +993,16 @@ function ResourceRelationCreateForm({
             ))}
           </select>
         </label>
-        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+        <label
+          className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]"
+          htmlFor="resource-relation-type"
+        >
           Relation
           <select
+            aria-label="Relation"
             className="min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.78)] px-2 text-[11px] normal-case text-[var(--text-primary)] outline-none focus:border-[var(--focus-ring)]"
             defaultValue="related"
+            id="resource-relation-type"
             name="relationType"
           >
             {Object.entries(dataRelationTypeLabels).map(([value, label]) => (
@@ -1010,7 +1025,10 @@ function ResourceRelationCreateForm({
           </p>
         ) : null}
         {message ? (
-          <p className="text-[10px] leading-4 text-[var(--text-secondary)]">
+          <p
+            className="text-[10px] leading-4 text-[var(--text-secondary)]"
+            role="status"
+          >
             {message}
           </p>
         ) : null}

@@ -1,15 +1,16 @@
 # MVP Core Release Readiness
 
-Stand: 2026-06-29
-Status: R1.9.4 performance baseline documented
+Stand: 2026-06-30
+Status: R1.9.5 accessibility pass documented
 Zweck: Roadmap-Reconciliation und Release-Entscheidung nach R1.8.3 MVP Core Hardening.
 Quelle der Wahrheit: `PRODUCT.md`, `ROADMAP.md`, `DATA_MODEL.md`,
 `SECURITY.md`, `ACCESSIBILITY.md`, `docs/product/mvp-core-status.md` und
 `docs/qa/r1-6-5-real-browser-auth-check.md`,
 `docs/security/rls-security-audit-r1-9-1.md`,
 `docs/security/backup-export-restore-strategy-r1-9-2.md` und
-`docs/ops/deployment-env-readiness-r1-9-3.md` und
-`docs/qa/performance-baseline-r1-9-4.md`.
+`docs/ops/deployment-env-readiness-r1-9-3.md`,
+`docs/qa/performance-baseline-r1-9-4.md` und
+`docs/qa/accessibility-pass-r1-9-5.md`.
 
 ## 1. Zweck
 
@@ -40,6 +41,11 @@ dokumentiert Build-/Runtime-/Repository-/ReadModel- und UI-Render-Baseline,
 stabilisiert einen dichtebedingten Nutrition-E2E-Selector und macht keine
 Production-Performance-Freigabe.
 
+R1.9.5 baut keine neuen Produktfeatures und fuehrt keine UI-Rekomposition ein.
+R1.9.5 verbessert kleine Accessibility-Semantiken fuer Dashboard- und Resource-
+Feedback, erweitert E2E-Proofs fuer Labels, Keyboard-Fokus, Status und Alerts
+und macht keine Production-Accessibility-Freigabe.
+
 ## 2. Stand
 
 Der MVP Core ist lokal und manuell im Browser nutzbar. Die zentralen Capture-,
@@ -66,6 +72,9 @@ Begruendung:
   nicht in einer Zielumgebung verifiziert.
 - Performance Baseline ist lokal dokumentiert; Production Performance bleibt
   bis Deployment-/Real-Data-Baseline offen.
+- Accessibility Pass ist lokal dokumentiert; Production Accessibility bleibt
+  bis Zielumgebung und vollstaendigem manuellen Screenreader-/Keyboard-Test
+  offen.
 - Externer AI Provider fehlt bewusst; AI bleibt lokaler deterministischer Mock.
 
 ## 3. Browserbewiesene Flows
@@ -101,6 +110,11 @@ Aktuelle Proofs:
 - R1.9.4 Core-Grep `Manual|Inbox|Today|Dashboard|Calendar|Portfolio`: 86
   passed, 2 skipped.
 - R1.9.4 Extensions-Grep `Resources|Nutrition|Skill|AI|Recurring`: 25 passed.
+- R1.9.5 erweitert dieselben Greps um Accessibility-Proofs fuer Labels,
+  Keyboard-Fokus, Status und Alerts.
+- R1.9.5 Core-Grep `Manual|Inbox|Today|Dashboard|Calendar|Portfolio`: 86
+  passed, 2 skipped.
+- R1.9.5 Extensions-Grep `Resources|Nutrition|Skill|AI|Recurring`: 25 passed.
 
 ## 4. Manuell nutzbare Features
 
@@ -126,7 +140,7 @@ Prepared oder Future Scope bleibt klar getrennt:
 - Automation, Background Jobs, Cron Jobs.
 - Production Backup Automation und Restore Drill.
 - Production Performance Baseline nach Deployment-/Real-Data-Rehearsal.
-- Full Accessibility Audit.
+- Production Accessibility Audit.
 - Remote-/Production-Security-Audit.
 
 ## 6. Bekannte Skips
@@ -175,6 +189,9 @@ Prepared oder Future Scope bleibt klar getrennt:
 - R1.9.4 hat Build-/Runtime-Baseline, Repository-/ReadModel-Findings,
   UI-Render-Findings und Manual-DB-Dichte als lokales Performance-Risiko
   dokumentiert.
+- R1.9.5 hat lokale Accessibility-Findings dokumentiert, Dashboard-Feedback
+  von Success-vs-Error semantisch getrennt und Resource-Relation-Feedback als
+  Status ausgezeichnet.
 - Keine externe AI API.
 - Kein Client API Key.
 - Kein Service Role Key.
@@ -188,21 +205,30 @@ Noch offen fuer Production Readiness:
 - Production Backup Konfiguration.
 - Restore Drill.
 - Production Performance Baseline mit echten Zielumgebungsdaten.
+- Production Accessibility Audit mit Zielbrowsern, Zielgeraeten und
+  vollstaendigem manuellen Screenreader-/Keyboard-Test.
 - Security Review fuer echte AI Provider, falls spaeter freigegeben.
 
 ## 9. Accessibility Status
 
 - R1.8.3 pruefte die MVP-Hauptflows auf Accessibility- und Error-State-Risiken.
 - Inbox Feedback nutzt Status-/Alert-Semantik.
+- R1.9.5 dokumentiert einen lokalen Full Accessibility Pass fuer MVP-Core-
+  Hauptflows.
+- Dashboard Quick Thought, Mood und Add Task Feedback nutzen Success als
+  `role="status"` und Error/Blocked als `role="alert"`.
+- Resource Relation Feedback nutzt `role="status"`.
+- E2E prueft Labels, Fokus, benannte Buttons, Status und Alerts fuer Dashboard,
+  Inbox, Calendar, Portfolio, Resources und Nutrition.
 - Calendar Previous/Next Week Accessible Names werden per E2E geprueft.
 - Task Draft Labels werden per E2E geprueft.
 - AI No-Persistence Copy wird per E2E geprueft.
 
 Noch offen fuer Production Readiness:
 
-- Vollstaendiger WCAG-orientierter Audit.
-- Mobile/Keyboard-Pass ueber alle spaeteren Deep Features.
-- Kontrast-/Focus-Pass fuer neue Future-Scope-Oberflaechen.
+- Production-Zielumgebung mit vollstaendigem manuellen Screenreader-,
+  Keyboard-, Mobile- und Kontrast-Pass.
+- Accessibility-Pass ueber spaetere Deep Features.
 
 ## 10. Nicht-Ziele fuer diesen Release
 
@@ -218,6 +244,7 @@ Noch offen fuer Production Readiness:
 - Kein echter Export und kein echter Backup-Dump in R1.9.2.
 - Kein echtes Deployment und keine Remote-Env-Verifikation in R1.9.3.
 - Kein Production Performance Claim in R1.9.4.
+- Kein Production Accessibility Claim in R1.9.5.
 - Kein Production Deployment Claim.
 
 ## 11. Roadmap Audit
@@ -243,6 +270,7 @@ Noch offen fuer Production Readiness:
 | Backup/Export/Restore Strategy | Complete as strategy | R1.9.2 docs/tooling hygiene | Production backup drill |
 | Deployment Env Boundary | Complete as boundary definition | R1.9.3 env/docs/build audit | Deployment rehearsal, target env verification |
 | Performance Baseline | Complete locally | R1.9.4 build/runtime greps | Production performance baseline |
+| Accessibility Pass | Complete locally | R1.9.5 label/keyboard/status proofs | Production accessibility audit |
 
 ### Partially Complete
 
@@ -255,7 +283,8 @@ Noch offen fuer Production Readiness:
 - Skills: Skills/Evidence MVP exists; Skill Map/Graph is deferred.
 - Resources: Relation workbench exists; Resource Graph is deferred.
 - AI: Local deterministic suggestions exist; external provider is deferred.
-- Accessibility: MVP-flow hardening is done; full audit is deferred.
+- Accessibility: lokaler MVP-Core Accessibility Pass ist dokumentiert;
+  Production-Zielumgebungs-Audit bleibt deferred.
 - RLS/Security: local formal audit and hardening are done; remote production
   audit is deferred.
 - Backup/Export/Restore: strategy and local hygiene are done; production backup
@@ -277,7 +306,7 @@ Noch offen fuer Production Readiness:
 - Production Backup Automation.
 - Restore Drill.
 - Production Performance Baseline.
-- Full Accessibility Audit.
+- Production Accessibility Audit.
 - Remote Production RLS/Env Audit.
 - Deployment rehearsal / target environment verification.
 
@@ -305,7 +334,7 @@ Scope:
 - Production Backup Konfiguration und Restore Drill.
 - Deployment Rehearsal und Target-Env-Verifikation.
 - Production Performance Baseline.
-- Accessibility Pass.
+- Production Accessibility Audit.
 
 Warum:
 

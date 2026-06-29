@@ -7,6 +7,22 @@
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` or `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 - No remote DB, `supabase link`, `supabase db push`, migrations, or policy changes.
 
+## R1.9.5 Accessibility Pass
+
+- Documented in `docs/qa/accessibility-pass-r1-9-5.md`.
+- Dashboard Quick Thought, Mood and Add Task feedback now expose success as
+  `role="status"` and error/blocked feedback as `role="alert"`.
+- Resource Relation feedback now exposes saved/already-exists messages as
+  `role="status"`.
+- E2E proofs were extended for Dashboard Quick Thought labels and status/alert,
+  Inbox AI Suggestion button names, Inbox status feedback, Calendar Scheduling
+  labels/buttons, Portfolio Skill create/edit/archive keyboard paths, Resource
+  Relation labels/status and Nutrition Recipe/Meal labels.
+- No new features, no UI recomposition, no layout-token changes, no migration,
+  no RLS/policy changes, no remote DB, no deployment and no Service Role Key.
+- Production Accessibility remains open until target environment and full
+  manual screenreader/keyboard testing are verified.
+
 ## R1.9.4 Performance Baseline
 
 - Documented in `docs/qa/performance-baseline-r1-9-4.md`.
@@ -684,7 +700,7 @@
   AI Inbox Suggestions v1, Manual DB Proof Hygiene und MVP Core Hardening.
 - Partially Complete: Calendar Pointer Drag/Resize, Recurring Template
   Management, Nutrition Deep Features, Skill Map/Graph, Resource Graph,
-  External AI Provider, Full Accessibility Audit und Remote-/Production-
+  External AI Provider, Production Accessibility Audit und Remote-/Production-
   Security-Audit.
 - Future Scope bleibt getrennt: Automation, Production Backup Drill,
   Production Performance Baseline, Deployment Hardening, echte AI Provider
@@ -699,7 +715,7 @@
   keine Service Role und keine neue Library.
 - Next Phase: weiter mit R1.9 Production Hardening: Remote-/Production-
   Security-Audit, Production Backup Drill, Deployment Rehearsal/Target-Env-
-  Verifikation, Production Performance Baseline und Accessibility Pass.
+  Verifikation, Production Performance Baseline und Production Accessibility Audit.
 
 ## R1.9.1 RLS / Security Audit
 

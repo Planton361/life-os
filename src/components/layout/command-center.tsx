@@ -247,7 +247,7 @@ function QuickThought({
                   ? "text-[var(--accent-orange)]"
                   : "text-[var(--text-muted)]",
             )}
-            role="status"
+            role={state.status === "success" ? "status" : "alert"}
           >
             {state.message}
           </p>
@@ -721,7 +721,7 @@ function MoodBoard({
                     ? "text-[var(--accent-orange)]"
                     : "text-[var(--text-muted)]",
               )}
-              role="status"
+              role={state.status === "success" ? "status" : "alert"}
             >
               {state.message}
             </p>

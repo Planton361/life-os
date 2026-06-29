@@ -376,7 +376,7 @@ function AddTaskDialog({
                   ? "text-[var(--accent-orange)]"
                   : "text-[var(--text-muted)]",
             )}
-            role="status"
+            role={state.status === "success" ? "status" : "alert"}
           >
             {state.message}
           </p>
