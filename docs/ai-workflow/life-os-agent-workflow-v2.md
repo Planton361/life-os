@@ -157,6 +157,23 @@ Reload-Stabilitaet und aktueller Browser-Proof nicht zusammen nachgewiesen
 sind.
 ```
 
+## 3.5 W1.0G Final Product Completion Roadmap
+
+W1.0G uebersetzt den W1.0F-Debt in eine finale Produkt-Completion-Roadmap.
+Nach W1.0G beginnt die Ausfuehrung finaler Vertical Slices, startend mit
+Browser-Proof Recovery statt neuer Produktfeatures.
+
+Detailquelle:
+
+- `docs/product/final-product-completion-roadmap.md`
+
+W1.0G-Regel:
+
+```text
+Proof- und Production-Claims werden zuerst stabilisiert. Feature-Tiefe,
+Graph, AI und Automation folgen erst als kleine, validierbare Vertical Slices.
+```
+
 ## 4. Vertical-Slice Completion Gate
 
 Ein Feature gilt erst als abgeschlossen, wenn alle relevanten Punkte erfuellt
