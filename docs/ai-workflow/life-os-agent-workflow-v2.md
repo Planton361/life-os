@@ -4,8 +4,8 @@ Stand: 2026-07-07
 Status: Active
 Zweck: Operative Agentenregeln fuer vollstaendige Life-OS-Featurearbeit mit UI, Backend und Browser-Proof.
 Quelle der Wahrheit: `AGENTS.md`, `AI_WORKFLOW.md`, `PRODUCT.md`, `DESIGN.md`, `ARCHITECTURE.md`, `DATA_MODEL.md`, `SECURITY.md`, `ACCESSIBILITY.md`, `ROADMAP.md`.
-Gilt fuer: Codex-, Claude-, Cursor-, Copilot- und andere Agentenarbeiten an Features, Prompts, Reviews und Workflow-Dokumentation.
-Nicht gilt fuer: Produktstrategie im Detail, automatische Toolinstallation, neue Skills, MCP-Aktivierung oder Remote-DB-Aktionen.
+Gilt fuer: Codex-, Claude-, Cursor-, Copilot- und andere Agentenarbeiten an Features, Prompts, Reviews, Skills und Workflow-Dokumentation.
+Nicht gilt fuer: Produktstrategie im Detail, automatische Toolinstallation, MCP-Aktivierung oder Remote-DB-Aktionen.
 
 ## 1. Zweck
 
@@ -52,6 +52,34 @@ Aktive eigene Skills:
 
 - `.agents/skills/life-os-design-taste/SKILL.md`
 - `.agents/skills/life-os-codex-task-writer/SKILL.md`
+- `.agents/skills/life-os-vertical-slice/SKILL.md`
+- `.agents/skills/life-os-backend-action-slice/SKILL.md`
+- `.agents/skills/life-os-browser-proof/SKILL.md`
+- `.agents/skills/life-os-completion-gate/SKILL.md`
+
+## 3.1 W1.0C Skills Baseline
+
+W1.0C macht die dokumentierten Workflow-Gates als project-local Skills
+nutzbar. Neue Codex-Prompts sollen die relevanten Skills explizit nennen,
+statt die Gates nur frei zu paraphrasieren.
+
+Aktive Baseline:
+
+- `life-os-vertical-slice`: fuer Featurearbeit als vollstaendigen Nutzerfluss.
+- `life-os-backend-action-slice`: fuer Server Actions, Repositories, Zod, Auth, Ownership und data-layer-only Arbeit.
+- `life-os-browser-proof`: fuer Browser-, Reload- und Flow-Proof ohne MCP-Installationspflicht.
+- `life-os-completion-gate`: fuer den Abschlussentscheid `PASS`, `PASS_WITH_DEFERRED` oder `BLOCKED`.
+- `life-os-design-taste`: fuer V5 UI Review und Anti-generic UI. Kein separater konkurrierender V5-Review-Skill.
+
+Prompt-Referenzen:
+
+```text
+Use $life-os-vertical-slice.
+Use $life-os-backend-action-slice when mutations or repositories are touched.
+Use $life-os-design-taste when UI is touched.
+Use $life-os-browser-proof when UI, forms, buttons, navigation, prepared states, or persistence behavior must be proven.
+Use $life-os-completion-gate before final reporting.
+```
 
 ## 4. Vertical-Slice Completion Gate
 
@@ -175,15 +203,17 @@ Regeln:
 
 ## 9. MCP-Migration Reihenfolge
 
-Keine MCP-Installation in diesem Block.
+MCP bleibt Phase W1.0E. Keine MCP-Installation in diesem Block.
 
 Empfohlene Reihenfolge:
 
-1. Context7 fuer aktuelle Library-/API-Dokumentation, nur bei Docs-Bedarf.
-2. Playwright MCP als spaeteres lokales Browser-/Screenshot-/A11y-QA-Werkzeug.
-3. Figma MCP nur read-/review-scoped und nie als Ersatz fuer V5.
-4. Chrome/Next DevTools MCP spaeter fuer Runtime-, Hydration- oder Performance-Diagnose.
-5. Supabase MCP erst nach separatem Local/Staging-Scope mit klarer Secret- und Remote-DB-Grenze.
+1. Playwright MCP als erstes lokales Browser-/Screenshot-/A11y-QA-Werkzeug.
+2. Next DevTools MCP danach fuer Runtime-, Hydration- oder Performance-Diagnose.
+3. Figma MCP danach nur read-/review-scoped und nie als Ersatz fuer V5.
+4. Supabase MCP erst spaeter local/read-only mit klarer Secret- und Remote-DB-Grenze.
+
+Context7 bleibt die bevorzugte aktuelle Docs-Quelle fuer Libraries und APIs,
+ist aber nicht Teil dieser W1.0E-Installationsreihenfolge.
 
 Vor Aktivierung immer pruefen:
 

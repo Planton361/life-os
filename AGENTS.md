@@ -52,6 +52,10 @@ Aktive eigene Skills:
 
 - `$life-os-design-taste`: nutzen, wenn UI-, Dashboard-, Komponenten-, Layout- oder visuelle Vorschläge gegen V5 geprüft werden.
 - `$life-os-codex-task-writer`: nutzen, wenn vage Anforderungen in kleine, sichere, prüfbare Codex-Aufträge übersetzt werden.
+- `$life-os-vertical-slice`: nutzen, wenn Featurearbeit als vollständiger Nutzerfluss geplant, gebaut oder geprüft wird.
+- `$life-os-backend-action-slice`: nutzen, wenn Server Actions, Repositories, Zod, Auth, Ownership oder Supabase-backed Mutations betroffen sind.
+- `$life-os-browser-proof`: nutzen, wenn UI-, Form-, Button-, Navigations-, Prepared-State- oder Persistenzverhalten im Browser bewiesen werden muss.
+- `$life-os-completion-gate`: vor Abschluss größerer Blocks nutzen, um PASS, PASS_WITH_DEFERRED oder BLOCKED ehrlich zu entscheiden.
 
 Regeln:
 

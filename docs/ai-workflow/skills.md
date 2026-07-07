@@ -9,7 +9,9 @@ Nicht gilt für: automatische Installation externer Skills.
 
 ## Kurzfassung
 
-Life OS nutzt zwei aktive eigene Codex-Skills für wiederholbare Agentenarbeit. Externe Skills bleiben optional, reviewpflichtig und dürfen V5 oder die Root-Dateien nicht ersetzen.
+Life OS nutzt project-local Codex-Skills fuer wiederholbare Agentenarbeit.
+Externe Skills bleiben optional, reviewpflichtig und duerfen V5 oder die
+Root-Dateien nicht ersetzen.
 
 Canonical Skill Path:
 
@@ -26,12 +28,44 @@ Canonical Skill Path:
 Status: Active
 Pfad: `.agents/skills/life-os-design-taste/SKILL.md`
 Zweck: UI-, Dashboard-, Komponenten-, Layout- und visuelle Vorschläge gegen V5, Anti-AI-Slop, Component-System, Visualisierungsregeln und Accessibility prüfen.
+Nutzen, wenn Codex UI, Dashboard, Komponenten, Layout, visuelle Vorschlaege oder V5-Konformitaet reviewt.
+
+Hinweis: Dieser Skill deckt V5 UI Review und Anti-generic UI ab. Es wird kein separater konkurrierender `life-os-v5-ui-review`-Skill gepflegt.
 
 ### `life-os-codex-task-writer`
 
 Status: Active
 Pfad: `.agents/skills/life-os-codex-task-writer/SKILL.md`
 Zweck: vage Produkt-, Design-, Dokumentations- oder Implementierungsabsichten in kleine, sichere, prüfbare Codex-Aufträge übersetzen.
+Nutzen, wenn ein unklarer Wunsch in einen sicheren, scoped Codex-Auftrag uebersetzt werden soll.
+
+### `life-os-vertical-slice`
+
+Status: Active
+Pfad: `.agents/skills/life-os-vertical-slice/SKILL.md`
+Zweck: Featurearbeit als vollstaendigen Nutzerfluss planen, bauen oder pruefen.
+Nutzen, wenn UI, Navigation, Persistenz, Server Actions, Prepared States, Reload-Stabilitaet, Browser-Proof oder QA-Doku zusammenpassen muessen.
+
+### `life-os-backend-action-slice`
+
+Status: Active
+Pfad: `.agents/skills/life-os-backend-action-slice/SKILL.md`
+Zweck: Backend-/Server-Action-Arbeit innerhalb der Life-OS Security- und Data-Boundary halten.
+Nutzen, wenn Server Actions, Repositories, Supabase-backed Mutations, Zod-Schemas, Ownership, Revalidation oder data-layer-only Arbeit betroffen sind.
+
+### `life-os-browser-proof`
+
+Status: Active
+Pfad: `.agents/skills/life-os-browser-proof/SKILL.md`
+Zweck: UI-, Form-, Button-, Navigations-, Prepared-State- und Persistenzverhalten im Browser beweisen.
+Nutzen, wenn Codex User Flows, Reload-Stabilitaet oder sichtbares Verhalten mit lokalem Browser oder Playwright-kompatiblem Ablauf pruefen muss.
+
+### `life-os-completion-gate`
+
+Status: Active
+Pfad: `.agents/skills/life-os-completion-gate/SKILL.md`
+Zweck: Vor Abschluss eines Blocks entscheiden, ob der Scope wirklich fertig, sauber deferred oder blocked ist.
+Nutzen vor finalem Bericht bei Feature-, Backend-, UI-, Workflow-, Docs- oder Review-Blocks.
 
 ## Optionale externe Skills
 
@@ -59,6 +93,32 @@ Regel:
 - `.github/skills/life-os-design-taste` nicht als aktive Quelle verwenden.
 - Keine Aenderung dort vornehmen, solange kein expliziter Copilot-/Mirror-Sync-Scope bestaetigt ist.
 - Falls ein Mirror benoetigt wird, muss er Owner, Status, Sync-Regel und Quelle `.agents/skills/life-os-design-taste/SKILL.md` nennen.
+
+## Empfohlene Kombinationen
+
+UI feature:
+
+```text
+life-os-vertical-slice
+life-os-design-taste
+life-os-browser-proof
+life-os-completion-gate
+```
+
+Backend feature:
+
+```text
+life-os-backend-action-slice
+life-os-browser-proof
+life-os-completion-gate
+```
+
+Review only:
+
+```text
+life-os-completion-gate
+life-os-design-taste
+```
 
 ## Spätere eigene Kandidaten
 
