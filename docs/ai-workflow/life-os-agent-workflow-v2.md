@@ -113,6 +113,32 @@ Report Format
 MCP bleibt Phase W1.0E. W1.0D installiert keine MCPs und aendert keine MCP-
 Konfiguration.
 
+## 3.3 W1.0E MCP Pilot Readiness
+
+W1.0E bereitet die lokale MCP-Pilotentscheidung vor, installiert aber kein MCP
+und schreibt keine aktive Config.
+
+Detailquelle:
+
+- `docs/ai-workflow/mcp-pilot-readiness-w1-0e.md`
+
+Pilot-Reihenfolge:
+
+1. Playwright MCP zuerst fuer lokale Browser-Proofs.
+2. Next DevTools MCP danach fuer lokale Runtime-, Route-, Hydration- und Server-Action-Diagnose.
+3. Figma MCP spaeter read/review-scoped fuer V5-Fidelity und Design-Kontext.
+4. Supabase MCP spaeter local/read-only fuer Schema-, RLS-/Policy- und Query-Kontext.
+
+Nicht erlaubt in W1.0E:
+
+- MCP-Installation
+- `.mcp.json`
+- `.codex/config.toml`
+- User-Home-Konfiguration
+- IDE-Konfiguration
+- Remote-DB-Aktion
+- Secret- oder Auth-State-Ausgabe
+
 ## 4. Vertical-Slice Completion Gate
 
 Ein Feature gilt erst als abgeschlossen, wenn alle relevanten Punkte erfuellt
@@ -235,7 +261,7 @@ Regeln:
 
 ## 9. MCP-Migration Reihenfolge
 
-MCP bleibt Phase W1.0E. Keine MCP-Installation in diesem Block.
+W1.0E ist Readiness, keine Installation.
 
 Empfohlene Reihenfolge:
 
