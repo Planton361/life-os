@@ -139,6 +139,24 @@ Nicht erlaubt in W1.0E:
 - Remote-DB-Aktion
 - Secret- oder Auth-State-Ausgabe
 
+## 3.4 W1.0F UI / Function Debt Audit
+
+W1.0F ist der Uebergang von Workflow-Migration zu finalen Vertical Slices.
+Der Block baut keine Features, sondern klassifiziert UI-, Function-, Backend-
+und Browser-Proof-Debt der bestehenden Life-OS-Flaechen gegen Agent Workflow v2.
+
+Detailquelle:
+
+- `docs/ai-workflow/ui-function-debt-audit-w1-0f.md`
+
+W1.0F-Regel:
+
+```text
+Keine Surface gilt final connected, wenn UI, Action/Persistenz,
+Reload-Stabilitaet und aktueller Browser-Proof nicht zusammen nachgewiesen
+sind.
+```
+
 ## 4. Vertical-Slice Completion Gate
 
 Ein Feature gilt erst als abgeschlossen, wenn alle relevanten Punkte erfuellt
