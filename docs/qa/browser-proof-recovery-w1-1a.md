@@ -294,3 +294,65 @@ Remaining Blocker:
 - Kein checked-in, secret-sicherer Auth-State-Recovery-Helper existiert.
 - Eine automatisierte Recovery waere ein eigener kleiner Auth-/QA-Tooling-Scope
   mit ausdruecklicher Secret- und Logging-Grenze.
+
+## 13. W1.1A.2 Secret-safe Auth-State Capture Helper
+
+Stand: 2026-07-07
+Status: BLOCKED_MANUAL_BROWSER_INTERACTION
+
+Helper:
+
+- Checked-in Script: `scripts/playwright/capture-local-auth-state.mjs`
+- Package Script: `pnpm auth:playwright:capture`
+- Zielpfad: `.local/playwright/supabase-auth-state-localhost.json`
+- Ziel-Route: `http://localhost:3000/settings#supabase-session`
+
+Secret-/Scope-Grenze:
+
+- Der Helper liest keine `.env.local`.
+- Der Helper liest keine bestehende `.local/playwright/*.json`.
+- Der Helper gibt keine Cookies, Tokens, LocalStorage-Werte, Supabase Keys,
+  User-IDs, E-Mail-Adressen oder Auth-State-Inhalte aus.
+- Der Helper schreibt nur nach `.local/playwright/supabase-auth-state-localhost.json`.
+- `.local/` bleibt durch `.gitignore` unversioniert und wurde nicht gestaged.
+
+Capture-Verhalten:
+
+1. Der Helper verlangt ein interaktives Terminal.
+2. Der Helper erwartet die lokale App unter `http://localhost:3000`.
+3. Der Helper oeffnet Chromium headed auf `/settings#supabase-session`.
+4. Die Anmeldung erfolgt manuell im Browser mit lokalen Supabase-Credentials.
+5. Nach Enter prueft der Helper nur sichtbare Session-Indikatoren auf der
+   Settings-Seite.
+6. Nur bei aktivem Session-Indikator speichert Playwright `storageState`.
+
+Capture Result in Codex:
+
+- `pnpm auth:playwright:capture` wurde in der nicht-interaktiven Codex-Session
+  nicht als Browser-Capture ausgefuehrt.
+- Erwarteter Blocker: `Interactive terminal required`.
+- Ergebnis: kein Browserstart, kein Auth-State-Write, keine `.env.local`- oder
+  Auth-State-Inhalte gelesen oder ausgegeben.
+
+Core/Extensions after W1.1A.2:
+
+- Nach W1.1A.2 wurde kein neuer erfolgreicher Auth-State erzeugt.
+- Die zwei W1.1A-Greps wurden deshalb nicht erneut als post-capture Proof
+  ausgefuehrt.
+- Letzter belegter Stand bleibt W1.1A.1: Core 40 passed / 48 skipped / 0
+  failed; Extensions 11 passed / 14 skipped / 0 failed.
+
+DB-Write-Proof Impact:
+
+- Keine DB-Write-Proofs wurden durch W1.1A.2 reaktiviert.
+- Manual DB write controls bleiben ohne interaktiv erneuerte lokale
+  Supabase-Session im Playwright-Kontext inaktiv.
+
+Manual Next Step:
+
+1. Lokale App in einem Terminal starten: `pnpm dev`.
+2. In einem zweiten interaktiven Terminal ausfuehren:
+   `pnpm auth:playwright:capture`.
+3. Im Browser unter `/settings#supabase-session` lokal anmelden.
+4. Erst nach sichtbarer aktiver Supabase Session Enter im Terminal druecken.
+5. Danach die beiden W1.1A-Greps sequenziell, nicht parallel, ausfuehren.

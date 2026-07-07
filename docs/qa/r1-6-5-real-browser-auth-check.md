@@ -46,6 +46,23 @@
   remote DB action, migration, RLS/policy change, MCP install or product code
   change was used.
 
+## W1.1A.2 Secret-safe Playwright Auth-State Capture Helper
+
+- Documented in `docs/qa/browser-proof-recovery-w1-1a.md`.
+- Current result: `BLOCKED_MANUAL_BROWSER_INTERACTION` in Codex.
+- Added `scripts/playwright/capture-local-auth-state.mjs` and
+  `pnpm auth:playwright:capture`.
+- The helper opens `http://localhost:3000/settings#supabase-session` in headed
+  Chromium from an interactive local terminal and writes only
+  `.local/playwright/supabase-auth-state-localhost.json`.
+- The helper does not read `.env.local`, does not read existing
+  `.local/playwright/*.json`, and does not print cookies, tokens, localStorage,
+  Supabase keys, user IDs, email addresses or Auth-State contents.
+- In Codex, the helper stopped before browser launch with
+  `Interactive terminal required`; no Auth-State was written.
+- Post-capture Core/Extensions greps were not rerun because no successful
+  capture occurred.
+
 ## R1.9.5 Accessibility Pass
 
 - Documented in `docs/qa/accessibility-pass-r1-9-5.md`.
