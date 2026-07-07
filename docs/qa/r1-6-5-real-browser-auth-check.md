@@ -22,6 +22,30 @@
   Playwright Supabase auth state is renewed by the established project
   convention.
 
+## W1.1A.1 Playwright Supabase Auth-State Recovery
+
+- Documented in `docs/qa/browser-proof-recovery-w1-1a.md`.
+- Current result: `BLOCKED_NO_SAFE_AUTH_RECOVERY_METHOD`.
+- Auth-State Path:
+  `.local/playwright/supabase-auth-state-localhost.json`.
+- Expected Host: `localhost:3000`; `127.0.0.1` storage/cookies are not the
+  current convention.
+- Existing checked-in recovery method: none found.
+- Historical recovery method required existing refresh-token/session material
+  plus local Supabase env values; W1.1A.1 did not use it because `.env.local`
+  and Auth-State contents were out of scope.
+- `pnpm exec supabase status` was run with output suppressed so local JWT,
+  anon or service keys were not printed.
+- Core-Grep `Manual|Inbox|Today|Dashboard|Calendar|Portfolio`: 40 passed,
+  48 skipped, 0 failed.
+- Extensions-Grep `Resources|Nutrition|Skill|AI|Recurring`: 11 passed,
+  14 skipped, 0 failed.
+- No DB-write proof was reactivated; Manual DB write controls remain inactive
+  in current Playwright proof runs.
+- No `.env.local`, Auth-State JSON content, `.local/`, `private/`, DB reset,
+  remote DB action, migration, RLS/policy change, MCP install or product code
+  change was used.
+
 ## R1.9.5 Accessibility Pass
 
 - Documented in `docs/qa/accessibility-pass-r1-9-5.md`.

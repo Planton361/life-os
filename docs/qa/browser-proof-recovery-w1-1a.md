@@ -216,3 +216,81 @@ Entscheidung:
 4. Optional einen expliziten Auth-Preflight fuer W1.1B/Folgebloecke planen, der
    vor breiten DB-Write-Greps klar zwischen "Auth-State fehlt", "Session
    ungueltig" und "DB-Dichte-Gate" unterscheidet.
+
+## 12. W1.1A.1 Auth-State Recovery
+
+Stand: 2026-07-07
+Status: BLOCKED_NO_SAFE_AUTH_RECOVERY_METHOD
+
+Auth-State Path:
+
+- `.local/playwright/supabase-auth-state-localhost.json`
+
+Expected Host:
+
+- `PLAYWRIGHT_HOST=localhost`
+- `PLAYWRIGHT_PORT=3000`
+- Cookie-/Storage-State muss zu `localhost:3000` passen, nicht zu
+  `127.0.0.1`.
+
+Existing Recovery Method:
+
+- Die aktive Testkonvention ist in `.env.example`, `playwright.config.ts` und
+  `tests/e2e/content-state-system.spec.ts` dokumentiert.
+- `tests/e2e/content-state-system.spec.ts` liest
+  `PLAYWRIGHT_SUPABASE_AUTH_STATE` und fuegt Cookies aus der Storage-State-Datei
+  in den Browser-Kontext ein.
+- Ein checked-in Auth-State-Refresh-Script oder Package-Script existiert nicht.
+- Die historisch dokumentierte lokale Reparatur nutzte vorhandene Refresh-
+  Token-Daten gegen lokale Supabase-Env-Werte aus `.env.local`. Dieser Weg ist
+  fuer W1.1A.1 nicht ausfuehrbar, weil `.env.local` und Auth-State-Inhalte in
+  diesem Block nicht gelesen oder ausgegeben werden duerfen.
+
+Local Supabase Basis:
+
+- `pnpm exec supabase status` wurde mit unterdrueckter Ausgabe ausgefuehrt, um
+  lokale Keys nicht zu drucken.
+- Ergebnis: lokaler Supabase-Status pruefbar, kein Start, keine Migration, kein
+  Link, kein Push und kein Reset noetig.
+
+Recovery Result:
+
+- Auth-State wurde nicht erneuert.
+- Kein Secret, keine `.env.local`-Werte und keine Auth-State-Inhalte wurden
+  gelesen oder ausgegeben.
+- `.local/` wurde nicht gestaged.
+
+Core/Extensions after W1.1A.1:
+
+- Core-Grep `Manual|Inbox|Today|Dashboard|Calendar|Portfolio`: 88 total,
+  40 passed, 48 skipped, 0 failed.
+- Extensions-Grep `Resources|Nutrition|Skill|AI|Recurring`: 25 total,
+  11 passed, 14 skipped, 0 failed.
+
+DB-Write-Proof Impact:
+
+- Keine DB-Write-Proofs wurden reaktiviert.
+- Manual DB write controls bleiben im aktuellen Proof-Kontext nicht aktiv.
+- Dashboard Quick Capture, Inbox Capture/Triage/Create-New/Resource/Archive/AI
+  Confirm, Today Planner, Calendar Scheduling, Portfolio Task/Project/Goal,
+  Resource Relation, Nutrition Recipe/Meal, Skill/Evidence und Recurring
+  Generate bleiben `skipped; stale historical proof only`.
+
+Manual Recovery Steps for the project owner:
+
+1. `PLAYWRIGHT_HOST=localhost` und `PLAYWRIGHT_PORT=3000` verwenden.
+2. Lokale App gegen `localhost:3000` starten.
+3. `/settings#supabase-session` oeffnen.
+4. Falls die Session ungueltig ist, `Session zuruecksetzen` ausfuehren.
+5. Mit dem bestehenden lokalen Supabase-Testkonto anmelden; keine Credentials
+   in Chat, Logs oder Docs schreiben.
+6. Die Browser-Storage-State-Datei fuer `localhost` unter
+   `.local/playwright/supabase-auth-state-localhost.json` speichern.
+7. `.local/` weiterhin unversioniert lassen.
+8. Danach die zwei W1.1A-Greps sequenziell erneut ausfuehren.
+
+Remaining Blocker:
+
+- Kein checked-in, secret-sicherer Auth-State-Recovery-Helper existiert.
+- Eine automatisierte Recovery waere ein eigener kleiner Auth-/QA-Tooling-Scope
+  mit ausdruecklicher Secret- und Logging-Grenze.
