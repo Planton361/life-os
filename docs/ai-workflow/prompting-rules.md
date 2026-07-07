@@ -1,6 +1,6 @@
 # Prompting Rules
 
-Stand: 2026-06-17  
+Stand: 2026-07-07
 Status: Active  
 Zweck: Standard für Codex-/Claude-/Copilot-Aufträge.  
 Quelle der Wahrheit: `AGENTS.md`.  
@@ -22,6 +22,41 @@ Akzeptanzkriterien
 Prüfung nach Fertigstellung
 Ausgabeformat
 ```
+
+## Featureprompt V2
+
+Jeder neue Codex-Featureprompt nutzt kuenftig diese Struktur:
+
+```text
+Goal:
+Context:
+Constraints:
+Files to read:
+Files to change:
+Files not to change:
+Vertical Slice Scope:
+Done When:
+Validation:
+Report Format:
+```
+
+`Vertical Slice Scope` muss explizit klaeren:
+
+- UI oder Prepared/Future State
+- Server Action oder Begruendung, warum keine Mutation noetig ist
+- Repository/DB-Pfad, wenn Persistenz behauptet wird
+- Zod/Auth/Ownership-Gates bei Mutations
+- Reload-Stabilitaet
+- Browser-Proof oder begruendete Ausnahme
+- Manual/Demo/Empty-Grenze
+- QA-Doku oder E2E-/Browser-Proof
+
+Featureprompt-Regeln:
+
+- Kein Button ohne Persistenz, echte Navigation oder klar markierten Prepared/Future State.
+- Keine Persistenzbehauptung ohne Reload-Proof.
+- Kein Feature-complete ohne Browser-Proof, wenn UI betroffen ist.
+- Keine globale Textsuche als alleiniger Browser-Beweis.
 
 ## Plan Mode
 
@@ -59,6 +94,8 @@ Aktive eigene Skills können explizit im Prompt genannt werden:
 
 Skills ersetzen nicht `AGENTS.md`, `DESIGN.md`, `AI_WORKFLOW.md`, `ROADMAP.md` oder V5. Externe Skills werden nur nach Review genutzt und nicht automatisch installiert.
 
+Canonical Skill Path ist `.agents/skills`. `.github/skills` ist nicht aktiv, ausser ein File ist explizit als Copilot-/Mirror-Pfad dokumentiert.
+
 ## Gute Prompts
 
 ```text
@@ -88,4 +125,5 @@ Bei großen Änderungen zuerst Plan ausgeben. Bei Security, Datenmodell oder Des
 - keine neue Designrichtung einführen
 - V5 nicht durch externe Skills, MCPs, Screenshots oder generierte UI ersetzen
 - keine externen Tools automatisch installieren oder aktivieren
+- keine Feature-Completion ohne Vertical-Slice-Gate aus `docs/ai-workflow/life-os-agent-workflow-v2.md`
 - Bericht immer im Format aus `AGENTS.md` liefern, wenn eine Aufgabe umgesetzt wurde

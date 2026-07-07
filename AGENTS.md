@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Stand: 2026-06-17  
+Stand: 2026-07-07
 Status: Active  
 Zweck: Operative Arbeitsregeln für Codex, Claude, Cursor, Copilot und andere Coding Agents.  
 Quelle der Wahrheit: Diese Datei für Agentenverhalten.  
@@ -41,6 +41,7 @@ Bei Produkt-/Route-Aufgaben zusätzlich:
 
 Bei Agenten-/Prompt-Aufgaben zusätzlich:
 
+- `docs/ai-workflow/life-os-agent-workflow-v2.md`
 - `docs/ai-workflow/prompting-rules.md`
 - `docs/ai-workflow/review-workflow.md`
 - `docs/ai-workflow/tools-and-repos.md`
@@ -54,6 +55,9 @@ Aktive eigene Skills:
 
 Regeln:
 
+- Canonical Skill Path ist `.agents/skills`.
+- `.github/skills` ist nicht aktiv, ausser explizit als Copilot-/Mirror-Pfad dokumentiert.
+- Keine divergenten Skill-Versionen ohne Owner, Status und klaren Zweck pflegen.
 - Skills ergänzen die Arbeit, ersetzen aber nicht `DESIGN.md`, `AI_WORKFLOW.md`, `ROADMAP.md` oder andere Root-Wahrheiten.
 - `$life-os-design-taste` ersetzt V5 nicht. V5 bleibt die verbindliche Designwahrheit.
 - Skills treffen keine autonomen Produktentscheidungen.
@@ -76,6 +80,68 @@ Regeln:
 - Layoutwerte dürfen nur mit explizitem Layout-Scope geändert werden.
 - Color-/Content-/Motion-/Refactor-Aufgaben dürfen keine Layoutwerte ändern.
 - `next-env.d.ts` ist generated und wird nicht versioniert; vor TypeScript-Checks `pnpm typecheck` nutzen. Nicht auf `next-env.d.ts`-Diffs stoppen, wenn die Datei ignoriert oder untracked ist.
+
+## Vertical-Slice Completion Gate
+
+Ein Feature gilt erst als abgeschlossen, wenn:
+
+- Product Intent und Nicht-Ziele klar sind.
+- UI bedienbar ist oder der Zustand klar als Prepared/Future markiert ist.
+- Jeder Button entweder persistiert, navigiert oder eindeutig als Prepared/Future blockiert ist.
+- Server Action oder Repository/DB-Pfad existiert, wenn Persistenz behauptet wird.
+- Zod, Auth und same-user Ownership fuer Mutations und relationale Targets geprueft sind.
+- Reload-Stabilitaet geprueft ist, wenn ein Write oder eine Projektion behauptet wird.
+- Browser-Proof gruen ist, wenn UI oder User Flow betroffen sind.
+- Manual, Demo und Empty sauber getrennt bleiben.
+- QA-Doku oder E2E-/Browser-Proof aktualisiert ist.
+
+Keine Persistenzbehauptung ohne Reload-Proof. Kein Feature-complete ohne Browser-Proof, wenn UI betroffen ist.
+
+## Backend Action Gate
+
+Neue Server Actions muessen:
+
+- serverseitig authentifizieren.
+- keine clientseitige `userId` als Trust Boundary akzeptieren.
+- Zod `safeParse` nutzen.
+- Repository oder RPC mit User-Scope nutzen.
+- same-user Ownership fuer FKs und polymorphe Targets pruefen.
+- keine Service Role nutzen.
+- relevante App-Pfade revalidieren.
+- sichtbare Success-, Error- und Blocked-Zustaende ermoeglichen.
+
+## UI/V5 Gate
+
+V5 bleibt Designwahrheit. Codex darf keine neue Designrichtung, keine generische SaaS-Card-Wand und keine Dashboard-Kopie fuer Bereichsseiten einfuehren.
+
+Vor UI-Arbeit pruefen:
+
+- bestehende V5-Komponenten und Tokens.
+- `DESIGN.md` und relevante `docs/design/*`.
+- vorhandene Figma-, Screenshot- oder DOM-Kontexte, falls vorhanden.
+- ob die UI direkt an echte Funktionalitaet, Navigation oder klaren Prepared State gekoppelt ist.
+
+Produktmodell:
+
+```text
+Dashboard = Steuerung
+Bereichsseiten = Kontext
+Detailseiten = Tiefe
+Archiv = Vergangenheit
+```
+
+## Browser-Proof Gate
+
+Bei UI- oder Funktionsaenderungen muss Codex einen Browser-Proof liefern oder konkret begruenden, warum keiner noetig ist.
+
+Browser-Proof bedeutet:
+
+- User Flow ausfuehren.
+- Button oder Form wirklich bedienen.
+- Persistenz oder Prepared-State-Verhalten bestaetigen.
+- Reload ausfuehren, wenn Daten geschrieben oder projiziert werden.
+- Ergebnis im konkreten Kontext pruefen.
+- Keine globale Textsuche als alleinigen Beweis verwenden.
 
 ## Design-Hard-Limits
 

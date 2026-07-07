@@ -1,6 +1,6 @@
 # AI_WORKFLOW.md
 
-Stand: 2026-06-17  
+Stand: 2026-07-07
 Status: Active  
 Zweck: operative AI-/Agenten-Workflow-Regeln.  
 Quelle der Wahrheit: Diese Datei; Details in `docs/ai-workflow/*`.  
@@ -17,8 +17,21 @@ Agents sollen dieselben Root-Wahrheiten lesen, nur relevante Detaildateien laden
 2. `docs/`: Detailwissen nach Bedarf.
 3. `.github/instructions`: wiederverwendbare Kontextregeln.
 4. `.github/prompts`: wiederholbare Aufgabenprompts.
-5. Eigene Skills: aktiv, eng gescoped und an Root-Wahrheiten gebunden.
+5. Eigene Skills: aktiv, eng gescoped und an Root-Wahrheiten gebunden. Canonical Skill Path ist `.agents/skills`.
 6. Externe Skills/MCP/Agents: optional, reviewpflichtig und nicht automatisch aktiviert.
+
+## Agent Workflow v2
+
+`docs/ai-workflow/life-os-agent-workflow-v2.md` ist die zentrale Detailquelle fuer allgemeine Codex-Featurearbeit jenseits des Dashboard-spezifischen Workflows.
+
+Operative Gates:
+
+- Vertical-Slice Completion: Product Intent, UI, Server Action oder Prepared State, Repository/DB-Pfad, Zod/Auth/Ownership, Reload-Stabilitaet, Browser-Proof, Manual/Demo/Empty und QA-Doku/E2E muessen zusammenpassen.
+- Backend Action: neue Mutations authentifizieren serverseitig, akzeptieren keine clientseitige `userId`, validieren mit Zod `safeParse`, pruefen User-Scope und Ownership, nutzen keine Service Role, revalidieren relevante Pfade und liefern sichtbare Statuszustaende.
+- UI/V5: V5 bleibt Designwahrheit; Dashboard ist Steuerung, Bereichsseiten Kontext, Detailseiten Tiefe und Archiv Vergangenheit.
+- Browser-Proof: UI- oder Funktionsaenderungen brauchen einen konkreten Flow-Proof oder eine begruendete Ausnahme.
+
+Kein Button ohne Persistenz, echte Navigation oder klar markierten Prepared/Future State. Keine Persistenzbehauptung ohne Reload-Proof. Kein UI-Feature-complete ohne Browser-Proof.
 
 ## Phase 1.6 - Codex Capability Enablement
 
@@ -41,9 +54,11 @@ Scope:
 - `.github/prompts/*.prompt.md` für wiederholbare Workflows.
 - `$life-os-design-taste` für V5-gebundene UI-/Designreviews.
 - `$life-os-codex-task-writer` für sichere, prüfbare Codex-Aufträge.
+- `docs/ai-workflow/life-os-agent-workflow-v2.md` fuer allgemeine Vertical-Slice-, Backend-, UI- und Browser-Proof-Gates.
 - `docs/ai-workflow/codex-dashboard-workflow.md` für sichere Dashboard-Änderungen nach Change Type.
 - `.github/instructions/life-os-dashboard.instructions.md` für kompakte Dashboard-Regeln im GitHub-/Copilot-/Codex-Kontext.
 - `.github/prompts/dashboard-safe-change.prompt.md` für kleine, dateigenaue Dashboard-Änderungen.
+- `.github/prompts/vertical-slice.prompt.md` fuer Featurearbeit mit UI, Server Action, Repository, Zod, Ownership, Reload und Browser-Proof.
 - Context7 als erste empfohlene aktuelle Docs-Quelle für Libraries und APIs.
 - Playwright MCP später für lokale Screenshot-/Browser-/Accessibility-QA.
 - Repomix/Gitingest für große Kontextanalysen.
@@ -65,3 +80,5 @@ Dashboard-Änderungen müssen künftig zuerst nach Change Type getrennt werden: 
 MCP-/Agenten-Tools bekommen nie pauschal Zugriff auf Secrets, private Daten oder Produktionssysteme. Jede Integration braucht Zweck, Scope, Rechte, Risiko und Review.
 
 Aktive eigene Skills dürfen Dokumentation und Reviews strukturieren. Sie geben keine Autonomie-Freigabe für Produktentscheidungen, externe Installationen, Commits, Toolketten oder Zugriff auf Secrets.
+
+`.github/skills` ist kein aktiver Skill-Kanon. Der Ordner darf nur als explizit dokumentierter Copilot-/Mirror-Pfad dienen und darf nicht divergent zu `.agents/skills` gepflegt werden.
