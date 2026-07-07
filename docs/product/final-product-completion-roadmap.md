@@ -170,6 +170,18 @@ Risk:
 - Gefuellte Manual-DB kann globale Selector- oder Listenannahmen brechen.
 - Cleanup darf nicht private oder manuell angelegte Daten loeschen.
 
+W1.1A Live-Status 2026-07-07:
+
+- Dokumentiert in `docs/qa/browser-proof-recovery-w1-1a.md`.
+- Ergebnis: `BLOCKED_AUTH_STATE`.
+- Core-Grep `Manual|Inbox|Today|Dashboard|Calendar|Portfolio`: 40 passed,
+  48 skipped, 0 failed.
+- Extensions-Grep `Resources|Nutrition|Skill|AI|Recurring`: 11 passed,
+  14 skipped, 0 failed.
+- Keine Surface wurde auf `connected` hochgestuft; DB-Write-Claims bleiben
+  partial/stale historical, bis der lokale Playwright-Supabase-Auth-State nach
+  Projektkonvention erneuert ist.
+
 ### W1.1B
 
 Titel: Production Readiness Closure Plan

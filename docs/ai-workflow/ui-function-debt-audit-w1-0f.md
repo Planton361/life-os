@@ -271,6 +271,16 @@ Browser-/Proof-Debt:
 - P2: Produktionsbrowser-Proof mit echter Deployment-URL, Production Env,
   Backup/Restore- und Remote-RLS-Grenzen.
 
+W1.1A Recovery-Update 2026-07-07:
+
+- Dokumentiert in `docs/qa/browser-proof-recovery-w1-1a.md`.
+- Ergebnis: `BLOCKED_AUTH_STATE`.
+- Core-Grep: 40 passed, 48 skipped, 0 failed.
+- Extensions-Grep: 11 passed, 14 skipped, 0 failed.
+- Die Skips sind aktuell Auth-/Manual-Supabase-Session-gated, nicht durch einen
+  neuen App-Fehler belegt. W1.0F-Connected-Risiko bleibt bestehen; keine
+  Surface wird durch W1.1A final `connected`.
+
 ## 9. Final Product Completion Matrix
 
 | Surface | UI Quality | Functionality | Backend | Reload Proof | Browser Proof | Status | Priority | Next Vertical Slice |

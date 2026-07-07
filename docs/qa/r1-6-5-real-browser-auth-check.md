@@ -7,6 +7,21 @@
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` or `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 - No remote DB, `supabase link`, `supabase db push`, migrations, or policy changes.
 
+## W1.1A Browser Proof Recovery
+
+- Documented in `docs/qa/browser-proof-recovery-w1-1a.md`.
+- Current result: `BLOCKED_AUTH_STATE`.
+- Core-Grep `Manual|Inbox|Today|Dashboard|Calendar|Portfolio`: 40 passed,
+  48 skipped, 0 failed.
+- Extensions-Grep `Resources|Nutrition|Skill|AI|Recurring`: 11 passed,
+  14 skipped, 0 failed.
+- The localhost auth-state path exists, but current Manual DB write controls
+  are not active in browser proof runs. No `.env.local`, Auth-State content,
+  DB reset, remote DB action, migration or RLS/policy change was used.
+- Historical non-skipped DB-write proofs remain historical only until the local
+  Playwright Supabase auth state is renewed by the established project
+  convention.
+
 ## R1.9.5 Accessibility Pass
 
 - Documented in `docs/qa/accessibility-pass-r1-9-5.md`.
