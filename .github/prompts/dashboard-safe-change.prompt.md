@@ -6,6 +6,11 @@ Use this prompt for small, reviewable Life OS Dashboard V5 changes.
 Ziel:
 [Beschreibe die konkrete Dashboard-Aenderung.]
 
+Use Skills:
+- life-os-design-taste
+- life-os-completion-gate
+- life-os-browser-proof, falls sichtbare UI oder Interaktion betroffen ist
+
 Change Type:
 [layout | color | content | motion | refactor]
 

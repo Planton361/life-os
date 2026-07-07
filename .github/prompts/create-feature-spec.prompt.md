@@ -2,6 +2,10 @@
 
 Use this prompt to turn a Life OS feature idea into a focused spec.
 
+Use Skills:
+- life-os-codex-task-writer
+- life-os-completion-gate
+
 Read first:
 - `PRODUCT.md`
 - `DESIGN.md`

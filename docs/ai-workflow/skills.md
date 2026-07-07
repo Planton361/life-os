@@ -120,6 +120,42 @@ life-os-completion-gate
 life-os-design-taste
 ```
 
+Backend/data feature with UI:
+
+```text
+life-os-backend-action-slice
+life-os-browser-proof
+life-os-completion-gate
+```
+
+Bugfix:
+
+```text
+life-os-completion-gate
+life-os-browser-proof, falls Verhalten betroffen ist
+```
+
+Docs/workflow:
+
+```text
+life-os-completion-gate
+```
+
+## W1.0D Prompt Integration
+
+Neue Codex-Prompts muessen einen `Use Skills`-Abschnitt enthalten. Der
+`life-os-codex-task-writer` erzeugt kuenftig Aufgaben mit passender
+Skill-Kombination, klaren Hard Boundaries, Validation, Staging und Report
+Format.
+
+Prompt-Dateien:
+
+- `.github/prompts/vertical-slice.prompt.md`
+- `.github/prompts/backend-action-slice.prompt.md`
+- `.github/prompts/browser-proof.prompt.md`
+- `.github/prompts/completion-review.prompt.md`
+- `.github/prompts/create-codex-task.prompt.md`
+
 ## Spätere eigene Kandidaten
 
 ### `life-os-dashboard-review`

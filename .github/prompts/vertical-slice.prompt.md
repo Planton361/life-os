@@ -3,6 +3,13 @@
 Use this prompt for Life OS feature work that touches UI, persistence, server
 actions, or user-visible workflows.
 
+Use Skills:
+- life-os-vertical-slice
+- life-os-design-taste
+- life-os-backend-action-slice, if persistence, repositories, schemas, or Server Actions are affected
+- life-os-browser-proof
+- life-os-completion-gate
+
 ```text
 Goal:
 [One concrete feature or repair.]
@@ -27,6 +34,12 @@ Files to read:
 - ACCESSIBILITY.md, if UI is touched
 - AI_WORKFLOW.md
 - docs/ai-workflow/life-os-agent-workflow-v2.md
+- docs/ai-workflow/skills.md
+- .agents/skills/life-os-vertical-slice/SKILL.md
+- .agents/skills/life-os-design-taste/SKILL.md
+- .agents/skills/life-os-backend-action-slice/SKILL.md, if persistence is affected
+- .agents/skills/life-os-browser-proof/SKILL.md
+- .agents/skills/life-os-completion-gate/SKILL.md
 - [feature-specific files]
 
 Files to change:
@@ -45,6 +58,7 @@ Vertical Slice Scope:
 - Server Action: [required action or why none is needed]
 - Repository/DB path: [required path if persistence is claimed]
 - Zod/Auth/Ownership: [validation and same-user gates]
+- Action Response: [success/error/blocked pattern]
 - Manual/Demo/Empty: [expected behavior in each profile]
 - Reload Proof: [what must survive reload]
 - Browser Proof: [flow to execute]
@@ -57,6 +71,7 @@ Done When:
 - Manual does not fall back to Demo.
 - UI follows V5 and accessibility basics.
 - Server mutations use Zod, Auth, user-scope and Ownership gates.
+- UI, Server Action, Repository, Zod, Ownership, Reload, and Browser-Proof are aligned when persistence is in scope.
 - Browser proof is green or a skipped proof is justified with risk.
 
 Validation:

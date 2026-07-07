@@ -2,6 +2,10 @@
 
 Review the current UI or diff for accessibility.
 
+Use Skills:
+- life-os-completion-gate
+- life-os-browser-proof, if interactive behavior must be proven
+
 Read:
 - `ACCESSIBILITY.md`
 - `.github/instructions/security-accessibility.instructions.md`

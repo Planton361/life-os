@@ -3,6 +3,12 @@
 Goal:
 Implement or update one Dashboard V5 component.
 
+Use Skills:
+- life-os-vertical-slice
+- life-os-design-taste
+- life-os-browser-proof
+- life-os-completion-gate
+
 Read first:
 - `AGENTS.md`
 - `DESIGN.md`

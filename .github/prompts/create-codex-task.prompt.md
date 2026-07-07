@@ -2,20 +2,25 @@
 
 Turn a broad Life OS request into a safe Codex task.
 
+Use Skills:
+- life-os-codex-task-writer
+- life-os-completion-gate
+
 Include:
 
 ```text
-Ziel
-Dateien lesen
-Dateien ändern
-Dateien nicht ändern
-Layout-Anforderungen
-Datenmodell-Anforderungen
-Designregeln
-Security/Accessibility-Regeln
-Akzeptanzkriterien
-Prüfung nach Fertigstellung
-Ausgabeformat
+Goal
+Use Skills
+Context
+Files to Read
+Files to Change
+Files Not to Change
+Hard Boundaries
+Vertical Slice Scope
+Done When
+Validation
+Staging
+Report Format
 ```
 
 Rules:
@@ -23,3 +28,4 @@ Rules:
 - Existing files preferred.
 - V5 remains source of truth.
 - Keep task small and reviewable.
+- Use `life-os-vertical-slice`, `life-os-design-taste`, `life-os-backend-action-slice`, `life-os-browser-proof`, and `life-os-completion-gate` only when they fit the task type.

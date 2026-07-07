@@ -1,6 +1,6 @@
 ---
 name: life-os-codex-task-writer
-description: Active Life OS task-writing skill. Use when Codex needs to turn vague product, design, documentation, agent-workflow, or implementation intent into small, scoped, testable Codex tasks with explicit files to read/change/not change, V5 design constraints, security/accessibility requirements, acceptance criteria, validation, and reporting obligations.
+description: Active Life OS task-writing skill. Use when Codex needs to turn vague product, design, documentation, agent-workflow, backend, browser-proof, review, or implementation intent into small, scoped, testable Codex tasks with explicit Use Skills mappings, files to read/change/not change, V5 design constraints, security/accessibility requirements, acceptance criteria, validation, staging, and reporting obligations.
 ---
 
 # Life OS Codex Task Writer
@@ -16,6 +16,7 @@ Use the smallest relevant source set:
 - For product/routes, include `docs/product/pages-and-routes.md`, `docs/product/ux-flows.md`, and `docs/product/feature-spec.md`.
 - For agent/prompt/tooling tasks, include `docs/ai-workflow/prompting-rules.md`, `docs/ai-workflow/review-workflow.md`, and `docs/ai-workflow/tools-and-repos.md`.
 - For security, auth, data, or AI-generated content, include `SECURITY.md`, `DATA_MODEL.md`, and `ACCESSIBILITY.md` as relevant.
+- For Agent Workflow v2 tasks, include `docs/ai-workflow/life-os-agent-workflow-v2.md`, `docs/ai-workflow/skills.md`, and the relevant `.agents/skills/*/SKILL.md` files.
 
 ## Hard Rules
 
@@ -27,25 +28,59 @@ Use the smallest relevant source set:
 - Do not install external tools automatically.
 - Do not touch secrets, `.env`, production data, or private user data.
 - Prefer improving existing files/components over duplicating them.
+- Include a `Use Skills` section in every produced Codex task.
+- Match skill combinations to the task type instead of listing every skill by default.
 - Include validation commands or explain why validation is not applicable.
+
+## Skill Mapping
+
+Select the smallest useful combination:
+
+```text
+UI Feature:
+- life-os-vertical-slice
+- life-os-design-taste
+- life-os-browser-proof
+- life-os-completion-gate
+
+Backend/Data Feature:
+- life-os-backend-action-slice
+- life-os-completion-gate
+- life-os-browser-proof, if UI is affected
+
+UI Review:
+- life-os-design-taste
+- life-os-completion-gate
+
+Bugfix:
+- life-os-completion-gate
+- life-os-browser-proof, if behavior is affected
+
+Docs/Workflow:
+- life-os-completion-gate
+```
 
 ## Standard Task Structure
 
 Every produced Codex task must include these sections, even when a section says `Nicht relevant`:
 
 ```text
-Ziel:
-Dateien lesen:
-Dateien ändern:
-Dateien nicht ändern:
-Layout-Anforderungen:
-Datenmodell-Anforderungen:
-Designregeln:
-Security/Accessibility-Regeln:
-Akzeptanzkriterien:
-Prüfung:
-Ausgabeformat:
+Goal:
+Use Skills:
+Context:
+Files to Read:
+Files to Change:
+Files Not to Change:
+Hard Boundaries:
+Vertical Slice Scope:
+Done When:
+Validation:
+Staging:
+Report Format:
 ```
+
+For non-feature work, keep `Vertical Slice Scope:` and write `Nicht relevant`
+with a short reason.
 
 ## Writing Method
 
@@ -54,9 +89,11 @@ Ausgabeformat:
 3. Name explicit non-goals and forbidden files.
 4. Add V5 and Life OS design constraints when any UI is involved.
 5. Add data/security/accessibility constraints when user data, auth, server work, or generated content is involved.
-6. Convert fuzzy success into observable acceptance criteria.
-7. Add exact validation commands where useful.
-8. Require the standard report format.
+6. Add the matching `Use Skills` block from Skill Mapping.
+7. Convert fuzzy success into observable acceptance criteria.
+8. Add exact validation commands where useful.
+9. Add staging boundaries for generated, private, auth, env, and out-of-scope files.
+10. Require the standard report format.
 
 ## Berichtspflicht
 

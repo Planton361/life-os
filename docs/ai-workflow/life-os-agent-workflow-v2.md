@@ -81,6 +81,38 @@ Use $life-os-browser-proof when UI, forms, buttons, navigation, prepared states,
 Use $life-os-completion-gate before final reporting.
 ```
 
+## 3.2 W1.0D Prompt Standards
+
+W1.0D richtet die wiederholbaren Codex-Prompts auf Agent Workflow v2 aus.
+Neue und aktualisierte Prompts muessen Skills explizit im Abschnitt
+`Use Skills` referenzieren.
+
+Aktive generische Prompts:
+
+- `.github/prompts/vertical-slice.prompt.md`
+- `.github/prompts/backend-action-slice.prompt.md`
+- `.github/prompts/browser-proof.prompt.md`
+- `.github/prompts/completion-review.prompt.md`
+- `.github/prompts/create-codex-task.prompt.md`
+
+Prompt-Ausgaben des `life-os-codex-task-writer` folgen dieser Struktur:
+
+```text
+Goal
+Use Skills
+Context
+Files to Read
+Hard Boundaries
+Vertical Slice Scope
+Done When
+Validation
+Staging
+Report Format
+```
+
+MCP bleibt Phase W1.0E. W1.0D installiert keine MCPs und aendert keine MCP-
+Konfiguration.
+
 ## 4. Vertical-Slice Completion Gate
 
 Ein Feature gilt erst als abgeschlossen, wenn alle relevanten Punkte erfuellt

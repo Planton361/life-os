@@ -2,6 +2,11 @@
 
 Review the provided screenshot or diff against Life OS V5.
 
+Use Skills:
+- life-os-design-taste
+- life-os-completion-gate
+- life-os-browser-proof, if UI or flow behavior is claimed
+
 Read:
 - `DESIGN.md`
 - `docs/design/dashboard-v5.md`

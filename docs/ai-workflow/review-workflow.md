@@ -20,6 +20,23 @@ Nicht gilt für: formale Release-Freigabe.
 9. Browser-Proof oder begruendete Ausnahme prüfen, falls UI oder User Flow betroffen ist.
 10. Konkreten nächsten Prompt formulieren.
 
+## W1.0D Review Prompts
+
+Fuer wiederholbare Reviews:
+
+- `.github/prompts/completion-review.prompt.md` fuer Abschlussreviews nach Codex-Blocks.
+- `.github/prompts/browser-proof.prompt.md` fuer konkrete Browser-/E2E-Proofs.
+- `.github/prompts/review-ui-against-design.prompt.md` fuer reine V5-UI-Reviews.
+- `.github/prompts/accessibility-review.prompt.md` fuer reine Accessibility-Reviews.
+
+Completion Reviews nutzen:
+
+```text
+life-os-completion-gate
+life-os-design-taste, falls UI betroffen ist
+life-os-browser-proof, falls UI oder Flow betroffen ist
+```
+
 ## Vertical-Slice Review Gate
 
 Feature-Reviews muessen klaeren:
