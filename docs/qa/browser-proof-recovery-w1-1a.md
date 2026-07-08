@@ -1,7 +1,7 @@
 # W1.1A Browser Proof Recovery
 
-Stand: 2026-07-07
-Status: BLOCKED_AUTH_STATE
+Stand: 2026-07-08
+Status: PARTIAL_AI_TASK_FIX_NEW_RESOURCE_BLOCKER
 Zweck: Current Browser-Proof-Recovery fuer lokale Manual-DB-Write-Flows nach W1.0F/W1.0G.
 Quelle der Wahrheit: `AGENTS.md`, Root-Dokumente, `docs/product/final-product-completion-roadmap.md`, `docs/ai-workflow/ui-function-debt-audit-w1-0f.md`, `docs/qa/manual-db-test-data-hygiene.md`, `tests/e2e/content-state-system.spec.ts`.
 Nicht gilt fuer: Produktfeatures, UI-Rekomposition, Migrationen, RLS-/Policy-Aenderungen, Remote-DB, MCP-Installation oder Auth-State-/Secret-Ausgabe.
@@ -356,3 +356,85 @@ Manual Next Step:
 3. Im Browser unter `/settings#supabase-session` lokal anmelden.
 4. Erst nach sichtbarer aktiver Supabase Session Enter im Terminal druecken.
 5. Danach die beiden W1.1A-Greps sequenziell, nicht parallel, ausfuehren.
+
+## 14. W1.1A.3 AI Suggestion Task Confirm Proof Fix
+
+Stand: 2026-07-08
+Status: PARTIAL_SINGLE_GREEN_CORE_NEW_RESOURCE_BLOCKER
+
+Failure:
+
+- Betroffener Test:
+  `Manual AI Suggestion fills Task Draft and persists only after confirm`
+- Reproduktion vor Fix:
+  `Expected: > 16`, `Received: 3`
+- Screenshot und Error Context wurden von Playwright erzeugt:
+  `test-results/content-state-system-Inbox-1db56-persists-only-after-confirm/`
+
+Root Cause:
+
+- Der Test las `taskCountBefore` vor `setProfile(page, "manual")`.
+- `readProfileDataTaskCount(page)` navigiert nach `/settings` und las dadurch
+  den Default-/Demo-Profil-Task-Count.
+- Nach Confirm las dieselbe Helper-Funktion den Manual-DB-Task-Count.
+- Der Task-Write war nicht als fehlgeschlagen bewiesen; die Assertion verglich
+  zwei verschiedene Profilkontexte.
+
+Classification:
+
+- `TEST_ASSERTION_BUG`
+- Profil-Kontext-Subursache: Before-Count aus Demo, After-Count aus Manual.
+- Kein bewiesener `APP_CONFIRM_BUG`.
+
+Fix:
+
+- `taskCountBefore` wird erst nach Manual-Profilwechsel, Auth-State-Anwendung,
+  `/inbox`-Open und `skipIfManualDbUnavailable` gelesen.
+- Der Test prueft sichtbar `Aktives Profil: manual`, bevor er zur Inbox
+  zurueckkehrt.
+- Nach Confirm prueft der Test den Success-State `Task erstellt` plus den
+  scoped Status `Diese Inbox wurde in eine Task umgewandelt`.
+- Der konkrete `editedTaskTitle` wird ueber die Portfolio-Entity-Liste
+  geoeffnet und nach Reload ueber `#selected-entity-heading` bestaetigt.
+- Die globale Textsuche ist nicht mehr der alleinige Persistenzbeweis.
+
+Single Test Result:
+
+- Command:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Manual AI Suggestion fills Task Draft and persists only after confirm"`
+- Result: 1 passed, 0 skipped, 0 failed.
+
+Core-Grep Result:
+
+- Command:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Manual|Inbox|Today|Dashboard|Calendar|Portfolio"`
+- Result: 88 total, 31 passed, 2 skipped, 1 failed, 54 did not run.
+- W1.1A.3-Ziel erreicht: Core laeuft ueber Test 29 hinaus.
+- Neuer Blocker:
+  `Manual Inbox Resource Draft creates a real Resource`
+- Neuer Failure:
+  `Expected getByText(draftTitle) to have count 0, received 1` auf
+  `/inbox` nach Resource-Erstellung.
+- Neuer Screenshot/Error Context:
+  `test-results/content-state-system-Inbox-17c59-aft-creates-a-real-Resource/`
+
+Remaining Failures/Skips:
+
+- Failures: 1 neuer Core-Blocker bei Resource Draft.
+- Skips vor dem neuen Blocker: 2.
+- Did not run: 54 wegen serial stop nach dem neuen Failure.
+
+DB-Write-Proof Impact:
+
+- AI Suggestion Task Draft -> Confirm ist jetzt als einzelner non-skipped
+  Browser-Proof gruen.
+- Der Proof bestaetigt confirm-only Persistenz, Success-State, konkreten
+  Task-Titel, Portfolio-Sichtbarkeit und Reload-Stabilitaet.
+- Keine Surface wurde dadurch insgesamt auf `connected` hochgestuft, weil der
+  Core-Grep weiter bei einem spaeteren DB-Write-Proof rot ist.
+
+Nicht geloest in W1.1A.3:
+
+- `Manual Inbox Resource Draft creates a real Resource` bleibt als neuer
+  separater Proof-Blocker offen.
+- Extensions-Grep wurde in W1.1A.3 nicht erneut ausgefuehrt.

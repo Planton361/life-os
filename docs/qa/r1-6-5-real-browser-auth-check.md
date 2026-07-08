@@ -63,6 +63,27 @@
 - Post-capture Core/Extensions greps were not rerun because no successful
   capture occurred.
 
+## W1.1A.3 AI Suggestion Task Confirm Proof Fix
+
+- Documented in `docs/qa/browser-proof-recovery-w1-1a.md`.
+- Current result: `PARTIAL_SINGLE_GREEN_CORE_NEW_RESOURCE_BLOCKER`.
+- Failure isolated:
+  `Manual AI Suggestion fills Task Draft and persists only after confirm`
+  compared a Demo-profile before-count with a Manual-profile after-count.
+- Classification: `TEST_ASSERTION_BUG`; no app confirm bug was proven.
+- Fix: read `taskCountBefore` only after Manual profile/Auth gate, assert
+  `Aktives Profil: manual`, return to `/inbox`, verify success state, then
+  prove the edited task title via Portfolio entity selection and reload.
+- Single test result: 1 passed.
+- Core-Grep result: 31 passed, 2 skipped, 1 failed, 54 did not run.
+- Core now runs beyond the former Test 29 blocker and stops at the later
+  Resource-Draft proof:
+  `Manual Inbox Resource Draft creates a real Resource`.
+- Extensions-Grep was not rerun in W1.1A.3.
+- No `.env.local`, Auth-State JSON content, `.local/`, `private/`, DB reset,
+  remote DB action, migration, RLS/policy change, MCP install or product UI
+  change was used.
+
 ## R1.9.5 Accessibility Pass
 
 - Documented in `docs/qa/accessibility-pass-r1-9-5.md`.

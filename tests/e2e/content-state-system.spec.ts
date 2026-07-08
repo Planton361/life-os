@@ -3453,7 +3453,6 @@ test.describe("Inbox content states", () => {
     const timestamp = Date.now();
     const captureTitle = `Call dentist today ${timestamp}`;
     const editedTaskTitle = `AI Inbox task accepted ${timestamp}`;
-    const taskCountBefore = await readProfileDataTaskCount(page);
 
     await setProfile(page, "manual");
     await applySupabaseAuthState(page);
@@ -3461,6 +3460,9 @@ test.describe("Inbox content states", () => {
       await page.goto("/inbox");
     });
     await skipIfManualDbUnavailable(page);
+    const taskCountBefore = await readProfileDataTaskCount(page);
+    await expect(page.getByText("Aktives Profil: manual")).toBeVisible();
+    await page.goto("/inbox");
     await captureManualInboxItem(
       page,
       captureTitle,
@@ -3491,13 +3493,19 @@ test.describe("Inbox content states", () => {
       .click();
     await page.waitForLoadState("networkidle");
 
+    await expect(page.getByText("Task erstellt").first()).toBeVisible();
+    await expect(
+      page
+        .getByRole("status")
+        .filter({ hasText: "Diese Inbox wurde in eine Task umgewandelt" })
+        .first(),
+    ).toBeVisible();
     await expect
       .poll(async () => readProfileDataTaskCount(page))
       .toBeGreaterThan(taskCountBefore);
-    await page.goto("/portfolio?view=tasks");
-    await expect(page.getByText(editedTaskTitle).first()).toBeVisible();
+    await openPortfolioEntityByTitle(page, "tasks", editedTaskTitle);
     await page.reload();
-    await expect(page.getByText(editedTaskTitle).first()).toBeVisible();
+    await expectSelectedPortfolioEntity(page, editedTaskTitle);
   });
 
   test("Manual AI Suggestion does not auto-persist target objects", async ({
