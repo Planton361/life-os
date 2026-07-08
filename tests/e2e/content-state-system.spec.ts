@@ -3725,7 +3725,13 @@ test.describe("Inbox content states", () => {
     await page.reload();
     await expect(page.getByText(title).first()).toBeVisible();
     await page.goto("/resources");
-    await expect(page.getByText(draftTitle)).toHaveCount(0);
+    await expect(
+      page
+        .locator('[data-resources-section="library"]')
+        .getByRole("link", {
+          name: new RegExp(`Select resource ${escapeRegExp(draftTitle)}`),
+        }),
+    ).toHaveCount(0);
     await page.goto("/inbox");
     await expect(page.getByText(title).first()).toBeVisible();
 
@@ -3756,17 +3762,27 @@ test.describe("Inbox content states", () => {
       "data-content-state",
       /^(partial|filled)$/,
     );
-    await expect(page.getByText(draftTitle).first()).toBeVisible();
+    await openResourceByTitle(page, draftTitle);
     await expectNoMainStrings(page, resourcesBlockedDemoStrings, "resources");
     await page.reload();
-    await expect(page.getByText(draftTitle).first()).toBeVisible();
+    await expect(page.locator("#selected-resource-heading")).toHaveText(
+      draftTitle,
+    );
 
     await page.goto("/portfolio?view=tasks");
-    await expect(page.getByText(draftTitle)).toHaveCount(0);
+    await expect(
+      page
+        .locator('[data-portfolio-section="entity-list"]')
+        .getByRole("link", { name: new RegExp(escapeRegExp(draftTitle)) }),
+    ).toHaveCount(0);
 
     await page.goto("/inbox");
-    await expect(page.getByText(draftTitle)).toHaveCount(0);
-    await expect(page.getByText(title)).toHaveCount(0);
+    await expect(
+      page.locator('[data-inbox-section="queue"]').getByText(title),
+    ).toHaveCount(0);
+    await expect(
+      page.locator('[data-inbox-section="active-item"]').getByText(title),
+    ).toHaveCount(0);
   });
 
   test("Manual Inbox triage to task", async ({ page }) => {

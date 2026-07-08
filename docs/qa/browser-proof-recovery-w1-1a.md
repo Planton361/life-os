@@ -1,7 +1,7 @@
 # W1.1A Browser Proof Recovery
 
 Stand: 2026-07-08
-Status: PARTIAL_AI_TASK_FIX_NEW_RESOURCE_BLOCKER
+Status: PARTIAL_RESOURCE_FIX_NEW_TRIAGE_COUNT_BLOCKER
 Zweck: Current Browser-Proof-Recovery fuer lokale Manual-DB-Write-Flows nach W1.0F/W1.0G.
 Quelle der Wahrheit: `AGENTS.md`, Root-Dokumente, `docs/product/final-product-completion-roadmap.md`, `docs/ai-workflow/ui-function-debt-audit-w1-0f.md`, `docs/qa/manual-db-test-data-hygiene.md`, `tests/e2e/content-state-system.spec.ts`.
 Nicht gilt fuer: Produktfeatures, UI-Rekomposition, Migrationen, RLS-/Policy-Aenderungen, Remote-DB, MCP-Installation oder Auth-State-/Secret-Ausgabe.
@@ -438,3 +438,89 @@ Nicht geloest in W1.1A.3:
 - `Manual Inbox Resource Draft creates a real Resource` bleibt als neuer
   separater Proof-Blocker offen.
 - Extensions-Grep wurde in W1.1A.3 nicht erneut ausgefuehrt.
+
+## 15. W1.1A.4 Inbox Resource Draft Proof Fix
+
+Stand: 2026-07-08
+Status: PARTIAL_SINGLE_GREEN_CORE_NEW_TRIAGE_COUNT_BLOCKER
+
+Failure:
+
+- Betroffener Test:
+  `Manual Inbox Resource Draft creates a real Resource`
+- Reproduktion vor Fix:
+  `Expected getByText(draftTitle) to have count 0, received 1` auf `/inbox`
+  nach Resource-Erstellung.
+- Screenshot und Error Context wurden von Playwright erzeugt:
+  `test-results/content-state-system-Inbox-17c59-aft-creates-a-real-Resource/`
+
+Root Cause:
+
+- Der Test bewies die Resource-Erstellung bereits ueber `/resources` und Reload,
+  pruefte danach aber global auf `/inbox`, dass der Resource-Draft-Titel
+  nirgendwo mehr sichtbar ist.
+- `/inbox` kennt persistierte Resources als bestehende Zielobjekte fuer
+  Add-to-existing-Kontexte; Resource-Titel duerfen dort legitim in einem
+  Resource-Zielkontext auftauchen.
+- Der Resolve-Pfad selbst ist checked-in als
+  `create_resource_from_inbox`-RPC dokumentiert und archiviert das Inbox Item
+  mit `status = 'archived'`, `processed_at` und `archived_at`.
+
+Classification:
+
+- `TEST_ASSERTION_BUG`
+- Kein bewiesener `APP_CREATE_BUG`.
+- Kein bewiesener `APP_RESOLVE_BUG`.
+
+Fix:
+
+- Resource-Nicht-Existenz vor Create wird auf die Resource-Library gescoped.
+- Resource-Existenz nach Create wird ueber `openResourceByTitle()` und
+  `#selected-resource-heading` bewiesen.
+- Reload-Stabilitaet wird auf dem selected Resource Inspector geprueft.
+- Portfolio-Nicht-Task-Beweis wird auf
+  `[data-portfolio-section="entity-list"]` gescoped.
+- Inbox-Resolve wird auf Queue und Active Item fuer den urspruenglichen
+  Inbox-Titel gescoped, statt global den Resource-Titel aus `/inbox` zu
+  verbannen.
+
+Single Test Result:
+
+- Command:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Manual Inbox Resource Draft creates a real Resource"`
+- Result: 1 passed, 0 skipped, 0 failed.
+
+Core-Grep Result:
+
+- Command:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Manual|Inbox|Today|Dashboard|Calendar|Portfolio"`
+- Result: 88 total, 34 passed, 2 skipped, 1 failed, 51 did not run.
+- W1.1A.4-Ziel erreicht: Core laeuft ueber den Resource-Draft-Blocker hinaus.
+- Neuer Blocker:
+  `Manual Inbox triaged task cannot be submitted twice`
+- Neuer Failure:
+  `Expected: > 16`, `Received: 13` bei `readProfileDataTaskCount(page)`.
+- Neuer Screenshot/Error Context:
+  `test-results/content-state-system-Inbox-41933-k-cannot-be-submitted-twice/`
+
+Remaining Failures/Skips:
+
+- Failures: 1 neuer Core-Blocker bei Duplicate-Submit-Proof.
+- Skips vor dem neuen Blocker: 2.
+- Did not run: 51 wegen serial stop nach dem neuen Failure.
+
+DB-Write-Proof Impact:
+
+- Inbox Resource Draft -> Resource Create ist jetzt als einzelner non-skipped
+  Browser-Proof gruen.
+- Der Proof bestaetigt Resource-Library-Sichtbarkeit, selected Resource
+  Inspector, Reload-Stabilitaet, kein Portfolio-Task-Falschpositiv und
+  gescoped Inbox-Resolve fuer den urspruenglichen Inbox-Titel.
+- Keine Surface wurde dadurch insgesamt auf `connected` hochgestuft, weil der
+  Core-Grep weiter bei einem spaeteren DB-Write-Proof rot ist.
+
+Nicht geloest in W1.1A.4:
+
+- `Manual Inbox triaged task cannot be submitted twice` bleibt als neuer
+  separater Proof-Blocker offen.
+- Extensions-Grep wurde in W1.1A.4 nicht erneut ausgefuehrt.
