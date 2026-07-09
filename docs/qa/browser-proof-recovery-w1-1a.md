@@ -1,7 +1,7 @@
 # W1.1A Browser Proof Recovery
 
 Stand: 2026-07-08
-Status: PARTIAL_RESOURCE_FIX_NEW_TRIAGE_COUNT_BLOCKER
+Status: PARTIAL_RESOURCE_FIX_CORE_GREEN_EXTENSIONS_NOT_RERUN
 Zweck: Current Browser-Proof-Recovery fuer lokale Manual-DB-Write-Flows nach W1.0F/W1.0G.
 Quelle der Wahrheit: `AGENTS.md`, Root-Dokumente, `docs/product/final-product-completion-roadmap.md`, `docs/ai-workflow/ui-function-debt-audit-w1-0f.md`, `docs/qa/manual-db-test-data-hygiene.md`, `tests/e2e/content-state-system.spec.ts`.
 Nicht gilt fuer: Produktfeatures, UI-Rekomposition, Migrationen, RLS-/Policy-Aenderungen, Remote-DB, MCP-Installation oder Auth-State-/Secret-Ausgabe.
@@ -442,7 +442,7 @@ Nicht geloest in W1.1A.3:
 ## 15. W1.1A.4 Inbox Resource Draft Proof Fix
 
 Stand: 2026-07-08
-Status: PARTIAL_SINGLE_GREEN_CORE_NEW_TRIAGE_COUNT_BLOCKER
+Status: PARTIAL_SINGLE_GREEN_CORE_GREEN_EXTENSIONS_NOT_RERUN
 
 Failure:
 
@@ -494,20 +494,17 @@ Core-Grep Result:
 
 - Command:
   `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Manual|Inbox|Today|Dashboard|Calendar|Portfolio"`
-- Result: 88 total, 34 passed, 2 skipped, 1 failed, 51 did not run.
-- W1.1A.4-Ziel erreicht: Core laeuft ueber den Resource-Draft-Blocker hinaus.
-- Neuer Blocker:
-  `Manual Inbox triaged task cannot be submitted twice`
-- Neuer Failure:
-  `Expected: > 16`, `Received: 13` bei `readProfileDataTaskCount(page)`.
-- Neuer Screenshot/Error Context:
-  `test-results/content-state-system-Inbox-41933-k-cannot-be-submitted-twice/`
+- Result: 88 total, 86 passed, 2 skipped, 0 failed.
+- W1.1A.4-Ziel erreicht: Core laeuft ueber den Resource-Draft-Blocker hinaus
+  und beendet den Core-Grep gruen.
+- Kein neuer Core-Blocker.
+- Kein neuer Core-Screenshot/Error Context.
 
 Remaining Failures/Skips:
 
-- Failures: 1 neuer Core-Blocker bei Duplicate-Submit-Proof.
-- Skips vor dem neuen Blocker: 2.
-- Did not run: 51 wegen serial stop nach dem neuen Failure.
+- Failures: 0.
+- Skips: 2.
+- Did not run: 0.
 
 DB-Write-Proof Impact:
 
@@ -517,10 +514,8 @@ DB-Write-Proof Impact:
   Inspector, Reload-Stabilitaet, kein Portfolio-Task-Falschpositiv und
   gescoped Inbox-Resolve fuer den urspruenglichen Inbox-Titel.
 - Keine Surface wurde dadurch insgesamt auf `connected` hochgestuft, weil der
-  Core-Grep weiter bei einem spaeteren DB-Write-Proof rot ist.
+  Extensions-Grep in W1.1A.4 nicht erneut ausgefuehrt wurde.
 
 Nicht geloest in W1.1A.4:
 
-- `Manual Inbox triaged task cannot be submitted twice` bleibt als neuer
-  separater Proof-Blocker offen.
 - Extensions-Grep wurde in W1.1A.4 nicht erneut ausgefuehrt.
