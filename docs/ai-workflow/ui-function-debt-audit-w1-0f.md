@@ -281,6 +281,18 @@ W1.1A Recovery-Update 2026-07-07:
   neuen App-Fehler belegt. W1.0F-Connected-Risiko bleibt bestehen; keine
   Surface wird durch W1.1A final `connected`.
 
+W1.1A Closure-Update 2026-07-09:
+
+- Dokumentiert in `docs/qa/browser-proof-recovery-w1-1a.md`.
+- Ergebnis: `CLOSED_CORE_EXTENSIONS_GREEN`.
+- Core-Grep `Manual|Inbox|Today|Dashboard|Calendar|Portfolio`: 86 passed,
+  2 skipped, 0 failed.
+- Extensions-Grep `Resources|Nutrition|Skill|AI|Recurring`: 25 passed,
+  0 skipped, 0 failed.
+- W1.0F Current Browser-Proof Debt ist lokal fuer Core und Extensions
+  geschlossen. Production-, Remote-/Target-Env- und finale Completion-Claims
+  bleiben separate Folgegates.
+
 ## 9. Final Product Completion Matrix
 
 | Surface | UI Quality | Functionality | Backend | Reload Proof | Browser Proof | Status | Priority | Next Vertical Slice |

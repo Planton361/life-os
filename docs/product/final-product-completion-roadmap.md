@@ -182,6 +182,17 @@ W1.1A Live-Status 2026-07-07:
   partial/stale historical, bis der lokale Playwright-Supabase-Auth-State nach
   Projektkonvention erneuert ist.
 
+W1.1A Closure-Status 2026-07-09:
+
+- Dokumentiert in `docs/qa/browser-proof-recovery-w1-1a.md`.
+- Ergebnis: `CLOSED_CORE_EXTENSIONS_GREEN`.
+- Core-Grep `Manual|Inbox|Today|Dashboard|Calendar|Portfolio`: 86 passed,
+  2 skipped, 0 failed.
+- Extensions-Grep `Resources|Nutrition|Skill|AI|Recurring`: 25 passed,
+  0 skipped, 0 failed.
+- Lokale DB-Write- und Reload-Proofs sind fuer W1.1A wieder aktuell belastbar;
+  Production-Readiness und Remote-/Target-Env-Claims bleiben W1.1B.
+
 ### W1.1B
 
 Titel: Production Readiness Closure Plan

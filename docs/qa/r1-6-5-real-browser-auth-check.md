@@ -10,7 +10,7 @@
 ## W1.1A Browser Proof Recovery
 
 - Documented in `docs/qa/browser-proof-recovery-w1-1a.md`.
-- Current result: `BLOCKED_AUTH_STATE`.
+- Initial result before W1.1A.5 closure: `BLOCKED_AUTH_STATE`.
 - Core-Grep `Manual|Inbox|Today|Dashboard|Calendar|Portfolio`: 40 passed,
   48 skipped, 0 failed.
 - Extensions-Grep `Resources|Nutrition|Skill|AI|Recurring`: 11 passed,
@@ -102,6 +102,26 @@
 - Core-Grep result: 86 passed, 2 skipped, 0 failed.
 - Core now runs beyond the Resource-Draft blocker and completes green.
 - Extensions-Grep was not rerun in W1.1A.4.
+- No `.env.local`, Auth-State JSON content, `.local/`, `private/`, DB reset,
+  remote DB action, migration, RLS/policy change, MCP install or product UI
+  change was used.
+
+## W1.1A.5 Extensions Proof Recovery / Browser Proof Closure
+
+- Documented in `docs/qa/browser-proof-recovery-w1-1a.md`.
+- Current result: `CLOSED_CORE_EXTENSIONS_GREEN`.
+- Extensions-Grep `Resources|Nutrition|Skill|AI|Recurring`: 25 passed, 0
+  skipped, 0 failed.
+- Failure: none.
+- Classification: `PASS_NO_FAILURE`; no test assertion or app mutation bug was
+  proven.
+- Fix: docs-/QA-only status update; no test, app, UI, backend, migration,
+  RLS/policy or remote DB change.
+- Optional Core confirmation `Manual|Inbox|Today|Dashboard|Calendar|Portfolio`:
+  86 passed, 2 skipped, 0 failed.
+- W1.1A Browser Proof Recovery is locally closed with current Core and
+  Extensions browser-/reload-proofs. Production readiness and remote/target-env
+  claims remain separate gates.
 - No `.env.local`, Auth-State JSON content, `.local/`, `private/`, DB reset,
   remote DB action, migration, RLS/policy change, MCP install or product UI
   change was used.

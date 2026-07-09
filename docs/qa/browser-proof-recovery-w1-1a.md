@@ -1,7 +1,7 @@
 # W1.1A Browser Proof Recovery
 
-Stand: 2026-07-08
-Status: PARTIAL_RESOURCE_FIX_CORE_GREEN_EXTENSIONS_NOT_RERUN
+Stand: 2026-07-09
+Status: CLOSED_CORE_EXTENSIONS_GREEN
 Zweck: Current Browser-Proof-Recovery fuer lokale Manual-DB-Write-Flows nach W1.0F/W1.0G.
 Quelle der Wahrheit: `AGENTS.md`, Root-Dokumente, `docs/product/final-product-completion-roadmap.md`, `docs/ai-workflow/ui-function-debt-audit-w1-0f.md`, `docs/qa/manual-db-test-data-hygiene.md`, `tests/e2e/content-state-system.spec.ts`.
 Nicht gilt fuer: Produktfeatures, UI-Rekomposition, Migrationen, RLS-/Policy-Aenderungen, Remote-DB, MCP-Installation oder Auth-State-/Secret-Ausgabe.
@@ -20,6 +20,11 @@ PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.l
 ```bash
 PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Resources|Nutrition|Skill|AI|Recurring"
 ```
+
+Hinweis:
+
+- Abschnitte 3 bis 15 dokumentieren den Verlauf und fruehere Teilzustaende.
+- Abschnitt 16 ist der aktuelle W1.1A-Abschlussstand.
 
 ## 2. Nicht-Ziele
 
@@ -519,3 +524,65 @@ DB-Write-Proof Impact:
 Nicht geloest in W1.1A.4:
 
 - Extensions-Grep wurde in W1.1A.4 nicht erneut ausgefuehrt.
+
+## 16. W1.1A.5 Extensions Proof Recovery / Closure
+
+Stand: 2026-07-09
+Status: CLOSED_CORE_EXTENSIONS_GREEN
+
+Initial Extensions Proof:
+
+- Command:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Resources|Nutrition|Skill|AI|Recurring"`
+- Result: 25 total, 25 passed, 0 skipped, 0 failed.
+- Erster Failure: keiner.
+- Screenshot/Error Context: keiner.
+
+Classification:
+
+- `PASS_NO_FAILURE`
+- Kein `TEST_ASSERTION_BUG`, kein App-Create/Update/Delete/Relation-Bug, kein
+  Route-/Revalidation-/Auth-State-Bug im Extensions-Grep bewiesen.
+
+Fix:
+
+- Kein Test-, App-, UI-, Backend-, Schema-, Repository- oder Migrationsfix
+  noetig.
+- W1.1A.5 ist docs-/QA-only.
+
+Final Extensions Result:
+
+- Result: 25 total, 25 passed, 0 skipped, 0 failed.
+- Resource Relation, Nutrition Recipe/Meal, Skill/Evidence, AI Suggestion und
+  Recurring Generate sind aktuell non-skipped und reload-stabil browserbewiesen.
+
+Optional Core Confirmation:
+
+- Command:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Manual|Inbox|Today|Dashboard|Calendar|Portfolio"`
+- Result: 88 total, 86 passed, 2 skipped, 0 failed.
+- Kein neuer Core-Blocker.
+
+Remaining Skips:
+
+- Core: 2 erwartete Skips fuer daten-/zustandsabhaengige Empty-Target-/Manual-
+  Reset-Proofs.
+- Extensions: 0.
+
+Connected Claim Impact:
+
+- W1.1A Browser Proof Recovery ist lokal abgeschlossen.
+- Core- und Extensions-DB-Write-Proofs sind wieder aktuell belastbar.
+- Dashboard Quick Capture, Inbox Capture/Triage/Create-New/Resource/Archive/AI
+  Confirm, Today Planner/Recurring, Calendar Scheduling, Portfolio
+  Task/Project/Goal/Skill/Evidence, Resource Relations und Nutrition
+  Recipe/Meal haben aktuelle lokale Browser-/Reload-Proofs.
+- Finale Produkt-`connected`-Claims bleiben trotzdem an spaetere
+  Production-Readiness-, Target-Env-, Backup/Restore-, Accessibility- und
+  Performance-Gates gebunden.
+
+Nicht geloest in W1.1A.5:
+
+- Keine Production- oder Remote-DB-Behauptung.
+- Keine neuen Produktfeatures, keine UI-Rekomposition, keine Migration, keine
+  RLS-/Policy-Aenderung.
