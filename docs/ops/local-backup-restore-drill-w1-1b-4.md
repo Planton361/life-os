@@ -1,7 +1,7 @@
 # W1.1B.4 Local Backup / Restore Drill
 
 Stand: 2026-07-10
-Status: Tooling prepared; restore-smoke reaches SQL compatibility gate
+Status: Local restore-smoke passes with temporary Supabase compatibility bootstrap
 Quelle der Wahrheit: `AGENTS.md`, Root-Dokumente, W1.1B.2 Personal
 Operational Readiness, W1.1B.3 Local Personal Operations Runbook,
 `docs/security/backup-export-restore-strategy-r1-9-2.md`, lokale Supabase CLI
@@ -181,10 +181,11 @@ Verhalten:
 3. Docker daemon pruefen.
 4. Lokal vorhandenes Docker Image pruefen.
 5. Temporaeren Container starten.
-6. `roles.sql`, `schema.sql` und `data.sql` via `psql` in den Container
+6. Minimalen Supabase-Rollen-Bootstrap nur im temporaeren Container anwenden.
+7. `roles.sql`, `schema.sql` und `data.sql` via `psql` in den Container
    einspielen.
-7. `restore-smoke-result.json` in den Backup-Ordner schreiben.
-8. Container stoppen.
+8. `restore-smoke-result.json` in den Backup-Ordner schreiben.
+9. Container stoppen.
 
 Default Image:
 
@@ -204,9 +205,14 @@ Sichere Blocker:
   `BLOCKED_RESTORE_SMOKE_ENVIRONMENT`
 - Wenn das Docker Image lokal nicht vorhanden ist:
   `BLOCKED_RESTORE_SMOKE_ENVIRONMENT`
-- Wenn Supabase-spezifische Rollen, Schemas, Extensions oder Auth-Objekte nicht
-  in generischem Postgres wiederherstellbar sind:
-  `BLOCKED_RESTORE_SMOKE_ENVIRONMENT`
+- Wenn Supabase-spezifische Rollen trotz Bootstrap fehlen:
+  `BLOCKED_RESTORE_SMOKE_ROLE_COMPATIBILITY`
+- Wenn Supabase-Auth-Schema-Objekte nicht sicher wiederherstellbar sind:
+  `BLOCKED_RESTORE_SMOKE_AUTH_SCHEMA_COMPATIBILITY`
+- Wenn Extensions fehlen oder nicht kompatibel sind:
+  `BLOCKED_RESTORE_SMOKE_EXTENSION_COMPATIBILITY`
+- Wenn anderer SQL-Restore fehlschlaegt:
+  `BLOCKED_RESTORE_SMOKE_SQL_COMPATIBILITY`
 
 Der Blocker ist sicher, weil die aktive lokale App-DB nicht veraendert wird.
 
@@ -321,12 +327,14 @@ Retention:
 3. Owner fuehrt mit dem erzeugten Ordner
    `pnpm backup:local:restore-smoke backups/local-drills/<timestamp>` aus.
 4. Owner prueft `git status --short`; `backups/` darf nicht auftauchen.
-5. Falls Restore-Smoke `PASS` meldet, ist der lokale technische
-   Drill fuer diesen Stand erledigt.
-6. Falls Restore-Smoke `BLOCKED_RESTORE_SMOKE_ENVIRONMENT` meldet, wird der
+5. Falls Restore-Smoke `PASS_WITH_COMPATIBILITY_BOOTSTRAP` meldet, ist der
+   lokale logische Restore-Smoke fuer diesen Stand erledigt.
+6. Das ist kein vollstaendiger Supabase-Runtime-, Cloud- oder Production-
+   Restore-Claim.
+7. Falls Restore-Smoke einen `BLOCKED_RESTORE_SMOKE_*` Status meldet, wird der
    genaue technische Blocker in `restore-smoke-result.json` lokal gehalten und
    nicht committed.
-7. Nach lokal ausgefuehrtem Drill kann W1.1B.5 Optional Private Remote Decision
+8. Nach lokal ausgefuehrtem Drill kann W1.1B.5 Optional Private Remote Decision
    vorbereitet werden.
 
 ## 13. W1.1B.4b Restore-Smoke Container Readiness Fix
@@ -383,3 +391,60 @@ Bewertung:
 - Kein `db reset`, keine Remote-DB, keine Migration, keine RLS-/Policy-
   Aenderung und kein Deployment.
 - SQL-Dump-Inhalte, DB-URL und Secrets wurden nicht ausgegeben.
+
+## 14. W1.1B.4c Supabase-compatible Restore-Smoke Strategy
+
+Stand: 2026-07-10
+
+Compatibility Cause:
+
+- Der bestehende Restore-Smoke gegen `postgres:17-alpine` scheiterte nach der
+  Container-Readiness-Reparatur bei Supabase-Rollen.
+- Initial fehlte `anon` beim Rollen-Restore.
+- Nach minimalem Rollen-Bootstrap erreichte der Smoke den Schema-Restore und
+  zeigte als naechste fehlende Rolle `supabase_auth_admin`.
+- Ursache ist `ROLE_AND_AUTH_SCHEMA_COMPATIBILITY`: der Backup-Scope enthaelt
+  `public,auth`, und Supabase-Dumps erwarten Supabase-Standardrollen, die ein
+  generischer Postgres-Container nicht mitbringt.
+
+Strategy:
+
+- Gewaehlt wurde Option A: Minimal Supabase Compatibility Bootstrap.
+- Option B, eine echte disposable Supabase Restore Runtime, bleibt spaeterer
+  eigener Drill, weil sie Ports, Container, Config und Runtime-Verhalten
+  deutlich staerker koppelt.
+
+Bootstrap-Grenzen:
+
+- Der Bootstrap laeuft nur im temporaeren Restore-Smoke-Container.
+- Er legt Rollen ohne Passwortwerte an:
+  `anon`, `authenticated`, `service_role`, `authenticator`, `supabase_admin`,
+  `supabase_auth_admin` und `dashboard_user`.
+- Er baut keine eigene `auth.uid()`-/`auth.jwt()`-Semantik.
+- Er aendert keine aktive lokale Life-OS-DB.
+- Er nutzt keine Remote-DB und fuehrt kein `db reset` aus.
+
+Restore-Smoke Result:
+
+```text
+PASS_WITH_COMPATIBILITY_BOOTSTRAP
+phase: restore complete
+```
+
+Proof Level:
+
+- Bewiesen ist ein lokaler logischer Restore-Smoke von Rollen, Schema und Daten
+  in einem isolierten Postgres-Container mit minimaler Supabase-
+  Rollenkompatibilitaet.
+- Nicht bewiesen ist ein vollstaendiger Supabase-Runtime-, Supabase-Cloud-,
+  Remote- oder Production-Restore.
+- Nicht bewiesen sind App-ReadModels, Browser-Flows, RLS-Negativtests,
+  Point-in-Time-Recovery, Monitoring oder Offsite-Retention.
+
+Sicherheit:
+
+- SQL-Dump-Inhalte, DB-URL, `.env.local`-Werte und Secrets wurden nicht
+  ausgegeben oder committed.
+- Backup-Artefakte bleiben unter `backups/` ignoriert und werden nicht
+  gestaged.
+- Keine Migration, keine RLS-/Policy-Aenderung, kein Deployment.

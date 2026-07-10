@@ -420,3 +420,18 @@ W1.1B.4b Status 2026-07-10:
   generische Postgres-Umgebung eine Supabase-Rolle erwartet.
 - Aktive lokale Life-OS-DB bleibt unveraendert; keine Backup-Dumps werden
   gestaged oder dokumentiert.
+
+W1.1B.4c Status 2026-07-10:
+
+- Restore-Smoke nutzt jetzt einen minimalen Supabase-Rollen-Bootstrap nur im
+  temporaeren Restore-Smoke-Container.
+- Der Bootstrap deckt lokale logische Restore-Kompatibilitaet fuer Supabase-
+  Rollen ab, darunter `anon`, `authenticated`, `service_role`,
+  `authenticator`, `supabase_admin`, `supabase_auth_admin` und
+  `dashboard_user`.
+- Ergebnis gegen `backups/local-drills/20260710T173943Z`:
+  `PASS_WITH_COMPATIBILITY_BOOTSTRAP`.
+- Dieser Status beweist einen lokalen logischen Restore-Smoke, aber keinen
+  vollstaendigen Supabase-Runtime-, Remote-, Cloud- oder Production-Restore.
+- Aktive lokale Life-OS-DB bleibt unveraendert; kein `db reset`, keine
+  Remote-DB, keine Migration, keine RLS-/Policy-Aenderung und kein Deployment.

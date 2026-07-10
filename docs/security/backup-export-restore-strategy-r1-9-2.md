@@ -350,3 +350,27 @@ Stand: 2026-07-10
   ausgegeben oder committed.
 - Aktive lokale Life-OS-DB blieb unveraendert; kein `db reset`, keine
   Remote-DB, keine Migration und keine RLS-/Policy-Aenderung.
+
+## 17. W1.1B.4c Supabase-compatible Restore-Smoke Status
+
+Stand: 2026-07-10
+
+- Der verbleibende W1.1B.4b-Blocker wurde als Supabase-Rollenkompatibilitaet
+  klassifiziert.
+- Gewaehlte Strategie: minimaler Supabase Compatibility Bootstrap im
+  temporaeren Restore-Smoke-Container.
+- Bootstrap-Rollen:
+  `anon`, `authenticated`, `service_role`, `authenticator`, `supabase_admin`,
+  `supabase_auth_admin` und `dashboard_user`.
+- Ergebnis gegen `backups/local-drills/20260710T173943Z`:
+  `PASS_WITH_COMPATIBILITY_BOOTSTRAP`.
+- Bewiesen ist ein lokaler logischer Restore-Smoke von Rollen, Schema und Daten
+  unter minimaler Supabase-Rollenkompatibilitaet.
+- Nicht bewiesen ist ein vollstaendiger Supabase-Runtime-, Supabase-Cloud-,
+  Remote- oder Production-Restore.
+- Der Bootstrap erzeugt keine Passwoerter und keine Service-Role-Secrets und
+  laeuft nicht gegen die aktive lokale Life-OS-DB.
+- Keine SQL-Dump-Inhalte, DB-URLs, `.env.local`-Werte oder Secrets wurden
+  ausgegeben oder committed.
+- Kein `db reset`, keine Remote-DB, keine Migration, keine RLS-/Policy-
+  Aenderung und kein Deployment.

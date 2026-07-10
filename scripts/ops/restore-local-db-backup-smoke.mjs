@@ -13,6 +13,52 @@ const CONTAINER_USER = "postgres";
 const CONTAINER_PASSWORD = "life_os_restore_smoke";
 const WAIT_TIMEOUT_MS = 60_000;
 const READY_STABILITY_MS = 1_000;
+const COMPATIBILITY_BOOTSTRAP_ROLES = [
+  "anon",
+  "authenticated",
+  "service_role",
+  "authenticator",
+  "supabase_admin",
+  "supabase_auth_admin",
+  "dashboard_user",
+];
+const COMPATIBILITY_BOOTSTRAP_SQL = `
+do $$
+begin
+  if not exists (select 1 from pg_roles where rolname = 'anon') then
+    create role anon nologin noinherit;
+  end if;
+
+  if not exists (select 1 from pg_roles where rolname = 'authenticated') then
+    create role authenticated nologin noinherit;
+  end if;
+
+  if not exists (select 1 from pg_roles where rolname = 'service_role') then
+    create role service_role nologin noinherit bypassrls;
+  end if;
+
+  if not exists (select 1 from pg_roles where rolname = 'authenticator') then
+    create role authenticator nologin noinherit;
+  end if;
+
+  if not exists (select 1 from pg_roles where rolname = 'supabase_admin') then
+    create role supabase_admin nologin noinherit createdb createrole replication bypassrls;
+  end if;
+
+  if not exists (select 1 from pg_roles where rolname = 'supabase_auth_admin') then
+    create role supabase_auth_admin nologin noinherit;
+  end if;
+
+  if not exists (select 1 from pg_roles where rolname = 'dashboard_user') then
+    create role dashboard_user nologin noinherit createrole;
+  end if;
+end
+$$;
+
+grant anon to authenticator;
+grant authenticated to authenticator;
+grant service_role to authenticator;
+`;
 
 function backupDirFromArg() {
   const input = process.argv[2];
@@ -37,6 +83,7 @@ function resultBase(status, phase, reason, detail = "") {
     checkedAt: new Date().toISOString(),
     image: DEFAULT_IMAGE,
     artifactNames: REQUIRED_FILES,
+    compatibilityBootstrapRoles: COMPATIBILITY_BOOTSTRAP_ROLES,
     phase,
     reason,
     detail: sanitized(detail),
@@ -44,6 +91,7 @@ function resultBase(status, phase, reason, detail = "") {
       "Active local Life OS database was not changed.",
       "No db reset, remote DB, or deployment was used.",
       "Generated SQL contents were not printed.",
+      "Compatibility bootstrap is limited to the temporary restore-smoke container.",
     ],
   };
 }
@@ -181,7 +229,7 @@ async function waitForPostgresReady(containerName) {
   throw new Error(`Temporary restore-smoke Postgres container did not become ready. ${lastDetail}`);
 }
 
-function psqlCommand(containerName, databaseName) {
+function psqlCommand(containerName, databaseName, extraArgs = []) {
   return [
     "exec",
     "-i",
@@ -199,7 +247,54 @@ function psqlCommand(containerName, databaseName) {
     CONTAINER_USER,
     "-d",
     databaseName,
+    ...extraArgs,
   ];
+}
+
+function classifyRestoreFailure(error) {
+  const detail = error instanceof Error ? error.message : String(error);
+  const normalized = detail.toLowerCase();
+
+  if (/role "[^"]+" does not exist/i.test(detail) || normalized.includes("role does not exist")) {
+    return {
+      status: "BLOCKED_RESTORE_SMOKE_ROLE_COMPATIBILITY",
+      reason: "Restore-smoke SQL requires Supabase/Postgres roles that are not present in the isolated container.",
+      detail,
+    };
+  }
+
+  if (
+    normalized.includes("schema \"auth\" does not exist") ||
+    normalized.includes("function auth.") ||
+    normalized.includes("auth.uid") ||
+    normalized.includes("auth.jwt") ||
+    normalized.includes("auth schema")
+  ) {
+    return {
+      status: "BLOCKED_RESTORE_SMOKE_AUTH_SCHEMA_COMPATIBILITY",
+      reason: "Restore-smoke SQL requires Supabase Auth schema objects that were not safely bootstrapped.",
+      detail,
+    };
+  }
+
+  if (
+    normalized.includes("extension") ||
+    normalized.includes("could not open extension control file") ||
+    normalized.includes("must be owner of extension") ||
+    normalized.includes("schema \"extensions\" does not exist")
+  ) {
+    return {
+      status: "BLOCKED_RESTORE_SMOKE_EXTENSION_COMPATIBILITY",
+      reason: "Restore-smoke SQL requires Postgres/Supabase extension compatibility not present in the isolated container.",
+      detail,
+    };
+  }
+
+  return {
+    status: "BLOCKED_RESTORE_SMOKE_SQL_COMPATIBILITY",
+    reason: "Restore-smoke SQL was not compatible with the isolated Postgres container.",
+    detail,
+  };
 }
 
 async function main() {
@@ -268,6 +363,11 @@ async function main() {
     currentPhase = "container readiness";
     await waitForPostgresReady(containerName);
 
+    currentPhase = "supabase compatibility bootstrap";
+    await runRequired("docker", psqlCommand(containerName, MAINTENANCE_DB, ["-c", COMPATIBILITY_BOOTSTRAP_SQL]), {
+      label: "supabase compatibility bootstrap",
+    });
+
     for (const step of [
       { phase: "restore roles", file: "roles.sql", database: MAINTENANCE_DB },
       { phase: "restore schema", file: "schema.sql", database: CONTAINER_DB },
@@ -279,12 +379,13 @@ async function main() {
           label: step.phase,
         });
       } catch (error) {
+        const classification = classifyRestoreFailure(error);
         await recordResult(
           backupDir,
-          "BLOCKED_RESTORE_SMOKE_SQL_COMPATIBILITY",
+          classification.status,
           step.phase,
-          "Restore-smoke SQL was not compatible with the isolated Postgres container.",
-          error instanceof Error ? error.message : String(error),
+          classification.reason,
+          classification.detail,
         );
         return;
       }
@@ -292,30 +393,38 @@ async function main() {
 
     currentPhase = "result write";
     await writeResult(backupDir, {
-      status: "PASS",
+      status: "PASS_WITH_COMPATIBILITY_BOOTSTRAP",
       checkedAt: new Date().toISOString(),
       image: DEFAULT_IMAGE,
       artifactNames: REQUIRED_FILES,
+      compatibilityBootstrapRoles: COMPATIBILITY_BOOTSTRAP_ROLES,
       phase: "restore complete",
-      reason: "Roles, schema, and data restored into isolated Postgres.",
+      reason: "Roles, schema, and data restored into isolated Postgres after a temporary Supabase role bootstrap.",
       detail: "",
       notes: [
-        "Roles, schema, and data restored into an isolated temporary Postgres container.",
+        "Roles, schema, and data restored into an isolated temporary Postgres container with compatibility bootstrap.",
+        "This is a local logical restore-smoke, not a full Supabase runtime or production restore claim.",
         "Active local Life OS database was not changed.",
         "No db reset, remote DB, or deployment was used.",
         "Generated SQL contents were not printed.",
+        "Compatibility bootstrap is limited to the temporary restore-smoke container.",
       ],
     });
 
     console.log(`Restore smoke passed. Result written to ${join(backupDir, RESULT_FILE).replace(`${process.cwd()}/`, "")}`);
   } catch (error) {
     const environmentPhases = new Set(["container start", "container readiness"]);
-    const status = environmentPhases.has(currentPhase)
+    let status = environmentPhases.has(currentPhase)
       ? "BLOCKED_RESTORE_SMOKE_ENVIRONMENT"
       : "FAILED_RESTORE_SMOKE_UNKNOWN";
-    const reason = environmentPhases.has(currentPhase)
+    let reason = environmentPhases.has(currentPhase)
       ? "Restore-smoke container did not start or become ready."
       : "Restore-smoke failed after container readiness for an unexpected reason.";
+
+    if (currentPhase === "supabase compatibility bootstrap") {
+      status = "BLOCKED_RESTORE_SMOKE_ROLE_COMPATIBILITY";
+      reason = "Temporary Supabase role compatibility bootstrap failed in the isolated container.";
+    }
 
     await recordResult(
       backupDir,
