@@ -409,3 +409,14 @@ Status 2026-07-10:
   lokale DB-Connection-String nur aus der Shell-Umgebung gelesen werden darf.
 - Keine Backup-Artefakte wurden committed; kein `db reset`, keine Remote-DB,
   keine Migration, keine RLS-/Policy-Aenderung und kein Deployment.
+
+W1.1B.4b Status 2026-07-10:
+
+- Restore-Smoke-Container-Readiness wurde im Helper stabilisiert.
+- `pg_isready` wartet jetzt per TCP auf die Maintenance-DB `postgres` und
+  bestaetigt Readiness nach kurzer Stabilitaetswartezeit.
+- Restore-Smoke erreicht nun den SQL-Restore-Pfad und blockiert praezise mit
+  `BLOCKED_RESTORE_SMOKE_SQL_COMPATIBILITY` bei `restore roles`, weil die
+  generische Postgres-Umgebung eine Supabase-Rolle erwartet.
+- Aktive lokale Life-OS-DB bleibt unveraendert; keine Backup-Dumps werden
+  gestaged oder dokumentiert.

@@ -332,3 +332,21 @@ Stand: 2026-07-10
   Backup-Artefakte erzeugt oder committed.
 - Keine Remote-DB, kein `db reset`, kein Deployment, keine Migration und keine
   RLS-/Policy-Aenderung.
+
+## 16. W1.1B.4b Restore-Smoke Container Readiness Status
+
+Stand: 2026-07-10
+
+- Restore-Smoke-Container-Readiness wurde in
+  `scripts/ops/restore-local-db-backup-smoke.mjs` stabilisiert.
+- Der Helper wartet jetzt per TCP-`pg_isready` auf `postgres` und fuehrt
+  Restore-Schritte erst nach bestaetigter Stabilitaet aus.
+- Ergebnis gegen `backups/local-drills/20260710T173943Z`:
+  `BLOCKED_RESTORE_SMOKE_SQL_COMPATIBILITY`.
+- Der verbleibende Blocker liegt bei Supabase-spezifischer Rollen-/SQL-
+  Kompatibilitaet im generischen `postgres:17-alpine` Container, nicht mehr bei
+  Container-Readiness.
+- Keine SQL-Dump-Inhalte, DB-URLs, `.env.local`-Werte oder Secrets wurden
+  ausgegeben oder committed.
+- Aktive lokale Life-OS-DB blieb unveraendert; kein `db reset`, keine
+  Remote-DB, keine Migration und keine RLS-/Policy-Aenderung.

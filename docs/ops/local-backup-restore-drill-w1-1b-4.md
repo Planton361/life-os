@@ -1,7 +1,7 @@
 # W1.1B.4 Local Backup / Restore Drill
 
 Stand: 2026-07-10
-Status: Tooling prepared; drill execution pending local DB URL
+Status: Tooling prepared; restore-smoke reaches SQL compatibility gate
 Quelle der Wahrheit: `AGENTS.md`, Root-Dokumente, W1.1B.2 Personal
 Operational Readiness, W1.1B.3 Local Personal Operations Runbook,
 `docs/security/backup-export-restore-strategy-r1-9-2.md`, lokale Supabase CLI
@@ -321,10 +321,65 @@ Retention:
 3. Owner fuehrt mit dem erzeugten Ordner
    `pnpm backup:local:restore-smoke backups/local-drills/<timestamp>` aus.
 4. Owner prueft `git status --short`; `backups/` darf nicht auftauchen.
-5. Falls Restore-Smoke `RESTORE_SMOKE_PASS` meldet, ist der lokale technische
+5. Falls Restore-Smoke `PASS` meldet, ist der lokale technische
    Drill fuer diesen Stand erledigt.
 6. Falls Restore-Smoke `BLOCKED_RESTORE_SMOKE_ENVIRONMENT` meldet, wird der
    genaue technische Blocker in `restore-smoke-result.json` lokal gehalten und
    nicht committed.
 7. Nach lokal ausgefuehrtem Drill kann W1.1B.5 Optional Private Remote Decision
    vorbereitet werden.
+
+## 13. W1.1B.4b Restore-Smoke Container Readiness Fix
+
+Stand: 2026-07-10
+
+Ausgangsfehler:
+
+```text
+BLOCKED_RESTORE_SMOKE_ENVIRONMENT
+phase: restore roles
+detail: database system is shutting down
+```
+
+Root Cause:
+
+- Der Helper pruefte `pg_isready` gegen die Ziel-DB ueber Default-Socket und
+  startete den Rollen-Restore unmittelbar danach.
+- Der erste `psql`-Aufruf konnte dadurch noch in eine instabile Container-
+  Readiness-Phase laufen.
+- Das Ergebnis wurde pauschal als Environment-Blocker klassifiziert, obwohl
+  spaetere Restore-Fehler auch SQL-Kompatibilitaet sein koennen.
+
+Fix:
+
+- Restore-Smoke wartet jetzt bis zu 60 Sekunden auf Postgres-Readiness.
+- `pg_isready` nutzt TCP gegen `127.0.0.1:5432`, User `postgres` und die
+  Maintenance-DB `postgres`.
+- Nach erstem `pg_isready` PASS folgt eine kurze Stabilitaetswartezeit plus
+  zweiter Readiness-Check.
+- `roles.sql` wird gegen `postgres` angewendet; `schema.sql` und `data.sql`
+  gegen die isolierte Drill-DB.
+- Ergebnisstatus unterscheidet jetzt:
+  `PASS`, `BLOCKED_RESTORE_SMOKE_ENVIRONMENT`,
+  `BLOCKED_RESTORE_SMOKE_SQL_COMPATIBILITY`,
+  `BLOCKED_RESTORE_SMOKE_ARTIFACTS` und `FAILED_RESTORE_SMOKE_UNKNOWN`.
+
+Restore-Smoke Result:
+
+```text
+BLOCKED_RESTORE_SMOKE_SQL_COMPATIBILITY
+phase: restore roles
+reason: Restore-smoke SQL was not compatible with the isolated Postgres container.
+detail: role "anon" does not exist
+```
+
+Bewertung:
+
+- Container-Readiness ist repariert; der Smoke erreicht jetzt den
+  SQL-Restore-Pfad.
+- Der verbleibende Blocker ist Supabase-spezifische Rollen-/SQL-
+  Kompatibilitaet im generischen `postgres:17-alpine` Container.
+- Aktive lokale Life-OS-DB wurde nicht veraendert.
+- Kein `db reset`, keine Remote-DB, keine Migration, keine RLS-/Policy-
+  Aenderung und kein Deployment.
+- SQL-Dump-Inhalte, DB-URL und Secrets wurden nicht ausgegeben.
