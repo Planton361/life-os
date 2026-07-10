@@ -235,6 +235,19 @@ Risk:
 - Production readiness kann nicht vollstaendig lokal bewiesen werden.
 - Remote-/target-env Schritte brauchen spaetere explizite Freigabe.
 
+W1.1B Closure-Plan Status 2026-07-10:
+
+- Dokumentiert in `docs/product/production-readiness-closure-plan-w1-1b.md`.
+- Entscheidung: Life OS ist lokal proof-stable, aber noch nicht
+  production-ready.
+- Production Gates sind inventarisiert: Remote Supabase Audit, Target Env
+  Verification, Deployment Rehearsal, Backup/Restore Drill, Production
+  Performance, Production Accessibility, External AI Provider Governance,
+  Export/Import und Monitoring/Logging.
+- Naechster ausfuehrbarer Block: W1.1B.1 Target Environment Inventory.
+- Keine Remote-DB-Aktion, kein Deployment, keine Migration, keine RLS-/Policy-
+  Aenderung und kein Production Release Claim.
+
 ### F1.0
 
 Titel: Calendar Finalization

@@ -293,6 +293,19 @@ W1.1A Closure-Update 2026-07-09:
   geschlossen. Production-, Remote-/Target-Env- und finale Completion-Claims
   bleiben separate Folgegates.
 
+W1.1B Production Readiness Update 2026-07-10:
+
+- Dokumentiert in `docs/product/production-readiness-closure-plan-w1-1b.md`.
+- Lokale Browser-Proof-Debt bleibt geschlossen, aber Production/System Debt ist
+  nicht geloest.
+- Offene Gates sind Remote Supabase Audit, Target Env Verification, Deployment
+  Rehearsal, Backup/Restore Drill, Production Performance Baseline,
+  Production Accessibility Manual Review, External AI Provider Governance,
+  Export/Import und Monitoring/Logging.
+- Naechster ausfuehrbarer Block ist W1.1B.1 Target Environment Inventory.
+- Kein Remote Supabase, kein Deployment, keine Migration, keine RLS-/Policy-
+  Aenderung und kein Production Release Claim in W1.1B.
+
 ## 9. Final Product Completion Matrix
 
 | Surface | UI Quality | Functionality | Backend | Reload Proof | Browser Proof | Status | Priority | Next Vertical Slice |

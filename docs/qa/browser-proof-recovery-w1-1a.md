@@ -586,3 +586,20 @@ Nicht geloest in W1.1A.5:
 - Keine Production- oder Remote-DB-Behauptung.
 - Keine neuen Produktfeatures, keine UI-Rekomposition, keine Migration, keine
   RLS-/Policy-Aenderung.
+
+## 17. W1.1B Production Readiness Follow-up
+
+Stand: 2026-07-10
+Status: LOCAL_PROOF_STABLE_NOT_PRODUCTION_READY
+
+- Dokumentiert in `docs/product/production-readiness-closure-plan-w1-1b.md`.
+- W1.1B bestaetigt den W1.1A-Abschluss als lokale Proof-Basis, ohne daraus
+  Production Readiness abzuleiten.
+- Offen bleiben Remote Supabase Audit, Target Env Verification, Deployment
+  Rehearsal, Backup/Restore Drill, Production Performance Baseline und
+  Production Accessibility Manual Review.
+- Fuer W1.1B wurde kein neuer Browser-Proof ausgefuehrt, weil der Block
+  docs-only ist und keine UI, Form, Navigation, Persistenz oder Target-Env
+  bedient.
+- Keine Remote-DB-Aktion, kein Deployment, keine Migration, keine RLS-/Policy-
+  Aenderung, keine Secrets und kein Production Release Claim.
