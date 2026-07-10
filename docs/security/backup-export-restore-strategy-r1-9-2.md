@@ -316,3 +316,19 @@ Backup-Konfiguration, Restore-Test, Deployment-Rehearsal/Target-Env-
 Verifikation, Performance Review und Accessibility Pass abgeschlossen sind.
 R1.9.3 definiert die Deployment-Env-Boundary, ersetzt aber keinen echten
 Deployment-Test in einer Zielumgebung.
+
+## 15. W1.1B.4 Local Backup / Restore Drill Status
+
+Stand: 2026-07-10
+
+- Dokumentiert in `docs/ops/local-backup-restore-drill-w1-1b-4.md`.
+- Lokales logisches DB-Backup-Tooling wurde vorbereitet:
+  `scripts/ops/create-local-db-backup.mjs`.
+- Isoliertes Restore-Smoke-Tooling wurde vorbereitet:
+  `scripts/ops/restore-local-db-backup-smoke.mjs`.
+- `LIFE_OS_LOCAL_DB_URL` wird nur aus der lokalen Shell-Umgebung gelesen und
+  nie in Docs, Logs, Manifesten oder Git geschrieben.
+- Drill-Ausfuehrung in Codex: `NEEDS_USER_LOCAL_DB_URL`; es wurden keine
+  Backup-Artefakte erzeugt oder committed.
+- Keine Remote-DB, kein `db reset`, kein Deployment, keine Migration und keine
+  RLS-/Policy-Aenderung.

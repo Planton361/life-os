@@ -12,6 +12,8 @@
     "typecheck": "next typegen && tsc --noEmit --incremental false",
     "auth:playwright:capture": "node scripts/playwright/capture-local-auth-state.mjs",
     "export:local": "echo \"Export not implemented yet. See docs/security/backup-export-restore-strategy-r1-9-2.md\"",
+    "backup:local:create": "node scripts/ops/create-local-db-backup.mjs",
+    "backup:local:restore-smoke": "node scripts/ops/restore-local-db-backup-smoke.mjs",
     "test:e2e": "playwright test",
     "qa:dashboard": "playwright test tests/e2e/dashboard.spec.ts"
   },

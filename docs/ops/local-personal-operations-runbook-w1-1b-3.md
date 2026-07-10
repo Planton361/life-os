@@ -398,3 +398,14 @@ Weiterhin nicht erlaubt:
 - Restore in Remote/Production.
 - Secrets dokumentieren.
 - Production- oder Remote-Readiness aus lokalem Runbook allein behaupten.
+
+Status 2026-07-10:
+
+- W1.1B.4 ist dokumentiert in
+  `docs/ops/local-backup-restore-drill-w1-1b-4.md`.
+- Backup- und Restore-Smoke-Tooling ist vorbereitet:
+  `pnpm backup:local:create` und `pnpm backup:local:restore-smoke`.
+- Drill-Ausfuehrung bleibt lokal offen mit `NEEDS_USER_LOCAL_DB_URL`, weil der
+  lokale DB-Connection-String nur aus der Shell-Umgebung gelesen werden darf.
+- Keine Backup-Artefakte wurden committed; kein `db reset`, keine Remote-DB,
+  keine Migration, keine RLS-/Policy-Aenderung und kein Deployment.

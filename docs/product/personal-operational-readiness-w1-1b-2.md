@@ -279,3 +279,17 @@ Stand: 2026-07-10
 - Keine Produktfeatures, keine UI-Aenderungen, keine `src`-Aenderungen, keine
   Tests, keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB, kein
   Deployment und kein Production Release Claim.
+
+## 13. W1.1B.4 Status
+
+Stand: 2026-07-10
+
+- Dokumentiert in `docs/ops/local-backup-restore-drill-w1-1b-4.md`.
+- Lokale Backup-/Restore-Tooling-Scripts sind vorbereitet:
+  `pnpm backup:local:create` und `pnpm backup:local:restore-smoke`.
+- Drill-Ergebnis in Codex: `NEEDS_USER_LOCAL_DB_URL`, weil der lokale
+  DB-Connection-String nur aus der Shell-Umgebung gelesen werden darf und in
+  dieser Session nicht gesetzt war.
+- Keine Backup-Artefakte erzeugt oder committed; kein `.env.local` Zugriff,
+  kein `db reset`, keine Remote-DB, kein Deployment, keine Migration und keine
+  RLS-/Policy-Aenderung.

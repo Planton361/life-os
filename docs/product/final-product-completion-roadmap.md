@@ -279,6 +279,18 @@ W1.1B.3 Local Personal Operations Runbook Status 2026-07-10:
 - Kein Deployment, keine Remote-DB-Aktion, keine Secrets, keine Migration,
   keine RLS-/Policy-Aenderung und kein Production Release Claim.
 
+W1.1B.4 Local Backup / Restore Drill Status 2026-07-10:
+
+- Dokumentiert in `docs/ops/local-backup-restore-drill-w1-1b-4.md`.
+- Local-first Backup-/Restore-Tooling ist vorbereitet:
+  `pnpm backup:local:create` und `pnpm backup:local:restore-smoke`.
+- Drill-Ausfuehrung bleibt lokal offen mit `NEEDS_USER_LOCAL_DB_URL`; der
+  Connection String darf nur aus der Shell-Umgebung kommen und wurde nicht aus
+  `.env.local` gelesen.
+- Keine Backup-Artefakte committed, kein `db reset`, keine Remote-DB-Aktion,
+  keine Migration, keine RLS-/Policy-Aenderung, kein Deployment und kein
+  Production Release Claim.
+
 ### F1.0
 
 Titel: Calendar Finalization
