@@ -291,6 +291,19 @@ W1.1B.4 Local Backup / Restore Drill Status 2026-07-10:
   keine Migration, keine RLS-/Policy-Aenderung, kein Deployment und kein
   Production Release Claim.
 
+W1.1B.5 Optional Private Remote Decision Status 2026-07-10:
+
+- Dokumentiert in
+  `docs/product/optional-private-remote-decision-w1-1b-5.md`.
+- Entscheidung: Local-first bleibt der aktuelle Pfad; Private Remote ist
+  deferred bis zu einer expliziten Nutzerentscheidung.
+- Local-first ist fuer den aktuellen personal-only Betrieb als
+  `local_first_ready` bewertet.
+- Public SaaS bleibt Nicht-Ziel; keine Remote-DB-Aktion, kein Deployment,
+  keine Migration, keine RLS-/Policy-Aenderung und kein Secret-Zugriff.
+- Naechster empfohlener Produktpfad: optional F0.1 Final Surface
+  Connected-Claim Review vor F1.0 Calendar Finalization.
+
 ### F1.0
 
 Titel: Calendar Finalization

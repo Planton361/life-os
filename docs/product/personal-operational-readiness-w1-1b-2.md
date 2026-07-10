@@ -309,3 +309,17 @@ Stand: 2026-07-10
 - Optional Private Remote Readiness bleibt ein spaeterer separater Block.
   Remote-DB, Deployment, Migration, RLS-/Policy-Aenderung und `db reset`
   wurden nicht genutzt.
+
+## 15. W1.1B.5 Status
+
+Stand: 2026-07-10
+
+- Dokumentiert in
+  `docs/product/optional-private-remote-decision-w1-1b-5.md`.
+- Entscheidung: `A: Local-first only for now`.
+- Bewertung: `local_first_ready` fuer den aktuellen personal-only Betrieb.
+- Private Remote bleibt `B: Private Remote later`, nur nach expliziter
+  Nutzerentscheidung und separatem W1.1C-Plan.
+- Public SaaS bleibt Nicht-Ziel.
+- Keine Remote-DB, kein Deployment, keine Migration, keine RLS-/Policy-
+  Aenderung, kein `db reset` und keine Secrets wurden genutzt.

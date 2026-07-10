@@ -366,6 +366,19 @@ Nicht erlaubt:
 - kein Remote Supabase Zugriff
 - kein Public SaaS Scope
 
+Status 2026-07-10:
+
+- Ausgefuehrt in
+  `docs/product/optional-private-remote-decision-w1-1b-5.md`.
+- Entscheidung: `A: Local-first only for now`.
+- Private Remote bleibt als `B: Private Remote later` optional, aber nur nach
+  expliziter Nutzerentscheidung und separatem W1.1C-Scope.
+- Local-first ist fuer den aktuellen personal-only Betrieb
+  `local_first_ready`.
+- Kein Deployment, kein Remote Supabase Zugriff, keine Remote-DB, keine
+  Secrets, keine Migration, keine RLS-/Policy-Aenderung und kein Public-SaaS-
+  Scope.
+
 ### W1.1C Private Remote Setup Plan
 
 Ziel: nur bei aktiver Nutzerentscheidung fuer private remote einen separaten
@@ -417,16 +430,18 @@ Status: `deferred_future`
 2. W1.1B.3 Local Personal Operations Runbook
 3. W1.1B.4 Local Backup / Restore Drill
 4. W1.1B.5 Optional Private Remote Decision
-5. W1.1C Private Remote Setup Plan, nur wenn der Nutzer Remote will
-6. W1.1B.7 Export / Import / Monitoring Preflight, lokal zuerst
-7. W1.1B.6 External AI Provider Governance Preflight, spaeter
+5. F0.1 Final Surface Connected-Claim Review oder F1.0 Calendar Finalization,
+   solange Local-first bleibt
+6. W1.1C Private Remote Setup Plan, nur wenn der Nutzer Remote will
+7. W1.1B.7 Export / Import / Monitoring Preflight, lokal zuerst
+8. W1.1B.6 External AI Provider Governance Preflight, spaeter
 
 Begruendung:
 
 - Personal-only ist der neue Zielkontext.
 - Local-first braucht zuerst ein Runbook und lokalen Restore Drill.
-- Private Remote ist optional und darf erst nach Nutzerentscheidung geplant
-  werden.
+- Private Remote ist optional und bleibt nach W1.1B.5 deferred, bis der Nutzer
+  sie aktiv entscheidet.
 - Remote Supabase Audit, Deployment Rehearsal, Production Performance Baseline
   und Public Accessibility Claim sind nicht mehr als naechste Pflichtbloecke zu
   erzwingen.
@@ -497,22 +512,20 @@ mindestens diese Gates dokumentiert gruen sind:
 Naechster Block:
 
 ```text
-W1.1B.3 Local Personal Operations Runbook
+F0.1 Final Surface Connected-Claim Review
 ```
 
 Warum:
 
-- Er benoetigt keine Secrets.
-- Er fuehrt keine Remote-DB-Aktion aus.
-- Er passt zum neuen personal-only Zielkontext.
-- Er bereitet lokalen Backup-/Restore-Drill vor.
-- Er ersetzt Remote-Audit/Deployment-Rehearsal als naechsten Pflichtblock.
+- W1.1B.5 bestaetigt Local-first als aktuellen Pfad.
+- Vor neuen F1-Slices sollte die lokale Connected-/Partial-/Prepared-
+  Claim-Lage nach W1.1A und W1.1B knapp reconciled werden.
+- Der Block benoetigt keine Remote-DB, kein Deployment und keine Secrets.
+- Danach bleibt F1.0 Calendar Finalization der naechste zentrale Produktblock.
 
-Definition of Done fuer W1.1B.3:
+Definition of Done fuer F0.1:
 
-- lokaler Start/Stop ist dokumentiert.
-- lokale Supabase/Auth-State-Grenzen sind dokumentiert.
-- lokale Validierungsbefehle sind dokumentiert.
-- lokale Backup-/Restore-Vorbereitung ist dokumentiert.
-- keine Remote-DB-Aktion, kein Deployment, keine Secrets und keine Public-
-  Production-Claims wurden ausgefuehrt oder dokumentiert.
+- Surface-Claims sind nach aktuellem Proof-Stand als connected, partial oder
+  prepared/deferred klassifiziert.
+- Kein neuer Produktumfang, keine UI-Aenderung, keine Remote-DB-Aktion, kein
+  Deployment und keine Secrets.
