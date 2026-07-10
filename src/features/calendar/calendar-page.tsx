@@ -539,11 +539,16 @@ function CalendarEmptyRightPanel({
                 Calendar Planner Queue
               </h3>
               <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
-                Geplante Tasks ohne Uhrzeit in Zeitblöcke überführen.
+                Geplante Tasks ohne Uhrzeit. Terminieren schreibt Task-Zeitfelder
+                im Manual-Profil.
               </p>
             </div>
             <Pill quiet>{visibleTasks.length}</Pill>
           </div>
+          <p className="mt-2 text-[10px] leading-4 text-[var(--text-faint)]">
+            Open Loops und Reviews sind hier vorbereitet und nicht mit der
+            lokalen Datenquelle verbunden.
+          </p>
           {visibleTasks.length > 0 ? (
             <div className="mt-3 grid gap-1.5">
               {visibleTasks.map((task) => (
@@ -622,7 +627,8 @@ function CalendarEmptyRightPanel({
                     </form>
                   ) : (
                     <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
-                      Demo-Fixture. Persistente Terminierung ist im Manual-Profil aktiv.
+                      Demo-/Empty-Fixture. Persistente Terminierung ist nur im
+                      Manual-Profil aktiv.
                     </p>
                   )}
                 </article>
@@ -792,7 +798,8 @@ function CalendarMonthSurface({
             Month grid
           </h2>
           <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
-            Compact event density only.
+            Vorbereitete Übersicht. Task-Terminierung bleibt in Week/Day und
+            Planner Queue.
           </p>
         </div>
         <Pill accent="var(--accent-cyan)">{monthLabel(currentDate)}</Pill>
@@ -896,7 +903,7 @@ function CalendarYearSurface({
             Year roadmap
           </h2>
           <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
-            Prototype overview with deadlines, reviews and project markers.
+            Vorbereitete Übersicht mit Deadlines, Reviews und Projektmarkern.
           </p>
         </div>
         <Pill accent="var(--accent-cyan)">{year}</Pill>

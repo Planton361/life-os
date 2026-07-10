@@ -237,7 +237,8 @@ Calendar-relevante E2E-Coverage in `tests/e2e/content-state-system.spec.ts`:
 - Pointer Drag/Resize.
 - Touch-Drag.
 - Free Calendar Event Persistence.
-- Calendar Create Dialog fuer Existing Task/New Item bleibt lokal/mock-only.
+- Calendar Create Dialog fuer Task Preview/Free Item Preview bleibt
+  vorbereitet und lokale UI-Preview.
 - Review/Open-Loops Panels sind noch keine final verbundenen Review-Flows.
 - Week/Day/Month/Year Tiefe ist sichtbar, aber nicht alle Views haben gleiche
   Daten- und Proof-Tiefe.
@@ -245,11 +246,14 @@ Calendar-relevante E2E-Coverage in `tests/e2e/content-state-system.spec.ts`:
   separater F2.1-Scope.
 - Schedule History und Override Audit fehlen.
 
-### Known Gaps
+### Known Gaps (F1.0A Audit)
 
-- Die UI enthaelt weiterhin prototype-nahe lokale Calendar-Create-Funktionen.
-- Einige Right-Panel Labels nutzen noch generische oder englische Copy
-  (`local mock`, `Schedule something`, `Save to mock calendar`).
+- Vor F1.0B enthielt die UI prototype-nahe lokale
+  Calendar-Create-Funktionen.
+- Vor F1.0B nutzten einige Right-Panel Labels noch generische oder englische
+  Copy (`local mock`, `Schedule something`, `Save to mock calendar`).
+- F1.0B hat Calendar Create, Inspector-State, Queue-Copy und Conflict-Copy
+  geschaerft; siehe Abschnitt 13.
 - Conflict Gate ist nur client-/ViewModel-basiert.
 - Override ist bewusst sichtbar, aber nicht serverseitig differenziert.
 - No fake Drag/Drop: aktuell gibt es keine Drag-Versprechen, aber die finale
@@ -351,7 +355,7 @@ Was passt zu V5:
 - P1-Planungsfokus dominiert, ohne Dashboard P0 zu kopieren.
 - Manual/Demo/Empty Grenzen sind weitgehend sichtbar.
 
-Was verletzt V5:
+Was verletzt V5 (F1.0A Audit vor F1.0B):
 - Calendar Create Dialog und einige Inspector-Labels wirken noch prototype-
   und mock-nahe.
 - `Planning Assistant`, Reviews und Open Loops sind sichtbare Tiefe, aber nicht
@@ -361,11 +365,10 @@ Was verletzt V5:
 - English/German-Mischcopy reduziert finale Produktschaerfe.
 
 Konkrete Fixes:
-- F1.0B soll Copy, States und Prepared/Future-Markierungen finalisieren.
-- Mock-only Calendar Create klarer als prepared markieren oder aus dem finalen
-  Kern herausnehmen.
-- Inspector-Controls auf persistente Task-Steuerung fokussieren.
-- Conflict/Override Copy fachlich schaerfen.
+- F1.0B hat Copy, States und Prepared/Future-Markierungen finalisiert.
+- Mock-only Calendar Create ist klar als prepared/local preview markiert.
+- Inspector-Controls sind auf persistente Task-Steuerung fokussiert.
+- Conflict/Override Copy ist fachlich geschaerft.
 - Review/Open-Loop/Planning-Assistant Bereiche als future/prepared oder eigene
   spaetere Slices markieren.
 
@@ -705,5 +708,63 @@ Completion Gate:
 PASS_WITH_DEFERRED
 ```
 
-F1.0A ist ein Scope-Lock. Feature-Tiefe bleibt bewusst in F1.0B-F1.0F
-deferred.
+F1.0A ist ein Scope-Lock. Die erste Umsetzung liegt in F1.0B; weitere
+Feature-Tiefe bleibt bewusst in F1.0C-F1.0F deferred.
+
+## 13. F1.0B Implementation Status
+
+Stand: 2026-07-11
+Status: Completed UX/Copy/State Clarity
+QA: `docs/qa/calendar-ux-state-clarity-f1-0b.md`
+
+F1.0B hat den ersten Implementierungsblock nach dem Scope Lock umgesetzt.
+
+Geaendert:
+
+- Calendar Create ist jetzt klar als vorbereiteter lokaler Preview-State
+  markiert.
+- Header und Source Contract unterscheiden echte Manual-Task-Zeitwrites von
+  lokaler UI-Navigation und Prepared Create.
+- Calendar Inspector trennt `Task-Zeitsteuerung`, Projektion und vorbereitete
+  Slot-Kontexte.
+- Planner Queue sagt explizit, dass Tasks ohne Uhrzeit dort terminiert werden
+  und `Terminieren` im Manual-Profil Task-Zeitfelder schreibt.
+- Open Loops und Reviews sind als vorbereitete Kontextlisten markiert, nicht
+  als lokal verbundene Calendar-Quellen.
+- Conflict/Override Copy stellt klar, dass das Gate nur gegen geladene
+  sichtbare Zeitbloecke laeuft und keine DB-weite Sperre ist.
+- Month/Year Views sind als vorbereitete Uebersichten beschrieben.
+- Scoped E2E-Assertions pruefen Prepared Create, Queue-Klarheit und Conflict
+  Scope.
+
+Nicht geaendert:
+
+- kein Pointer Drag/Resize
+- keine neue Calendar-Event-Persistenz
+- keine Scheduling-Action- oder Repository-Aenderung
+- keine Conflict-Algorithmus-Aenderung
+- keine Migration
+- keine RLS-/Policy-Aenderung
+- keine Remote-DB-Aktion
+- kein Deployment
+- keine Secrets
+
+Browser-Proof:
+
+```text
+PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Calendar|Today|Dashboard|Manual"
+
+71 passed
+2 skipped
+0 failed
+```
+
+Completion Gate:
+
+```text
+PASS_WITH_DEFERRED
+```
+
+Deferred bleiben Pointer Drag/Resize, freie Calendar-Event-Persistenz,
+DB-weite Conflict-Sperre, Override-Audit und Calendar-owned Review/Open-Loop
+Persistenz.

@@ -94,8 +94,9 @@ export function CalendarPageHeader({
           </div>
 
           <p className="max-w-[476px] text-[10px] leading-4 text-[var(--text-faint)]">
-            View switcher, period navigation and scheduling are local prototype
-            controls.
+            View switcher and period navigation are local UI. Manual task
+            scheduling writes task time fields through Queue and Inspector;
+            Calendar Create is a prepared local preview.
           </p>
         </div>
       </div>

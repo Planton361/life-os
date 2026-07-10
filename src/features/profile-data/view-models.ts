@@ -3433,7 +3433,7 @@ function buildProfileCalendarViewModel(
         days[6]?.fullLabel ?? "Manual week"
       }`,
       summary: isManualProfile
-        ? "Calendar content comes from timed local tasks and local projects only."
+        ? "Calendar shows local task time blocks, project context and planned tasks without time; free calendar events stay prepared."
         : "Calendar renders an empty shell in empty mode.",
       controls: {
         currentAction: "Today",

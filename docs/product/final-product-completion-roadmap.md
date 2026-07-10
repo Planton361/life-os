@@ -330,8 +330,9 @@ F1.0A Calendar Finalization Scope Lock Status 2026-07-10:
   keine Remote-DB und kein Deployment.
 - Entscheidung: Button-/Keyboard-Scheduling ist der finale Kern; Pointer
   Drag/Resize bleibt ein spaeterer Komfort-Slice.
-- Naechster ausfuehrbarer Implementierungsblock: F1.0B Calendar UX/Copy/State
-  Clarity.
+- F1.0B Calendar UX/Copy/State Clarity wurde am 2026-07-11 umgesetzt; der
+  naechste Calendar-Block ist F1.0C Scheduling Proof Hardening oder F1.0D
+  Conflict/Override Finalization.
 
 ### F1.0
 
@@ -378,6 +379,25 @@ F1.0A Scope Lock Status 2026-07-10:
   Design-/Backend-/Proof-Gaps und die F1.0B-F1.0F Slice-Struktur.
 - F1.0A implementiert nichts; die erste Umsetzung ist F1.0B Calendar
   UX/Copy/State Clarity.
+
+F1.0B Calendar UX/Copy/State Clarity Status 2026-07-11:
+
+- Dokumentiert in `docs/qa/calendar-ux-state-clarity-f1-0b.md` und
+  `docs/product/calendar-finalization-scope-f1-0a.md`.
+- Calendar Create ist als vorbereiteter lokaler Preview-State markiert; freie
+  Calendar Events bleiben deferred.
+- Queue, Timegrid und Scheduled Task Blocks sind textlich getrennt.
+- Manual Task Scheduling bleibt der echte Button-/Keyboard-Kern ueber
+  Queue/Inspector und bestehende Task Actions.
+- Conflict/Override Copy stellt klar, dass das Gate nur gegen geladene
+  sichtbare Zeitbloecke prueft und keine DB-weite Sperre ist.
+- Focused Browser Proof `Calendar|Today|Dashboard|Manual`: 71 passed, 2
+  skipped, 0 failed.
+- Keine Pointer Drag/Resize-Implementierung, keine Migration, keine
+  RLS-/Policy-Aenderung, keine Remote-DB-Aktion, kein Deployment und keine
+  Secrets.
+- Naechster Calendar-Block: F1.0C Calendar Scheduling Proof Hardening oder
+  F1.0D Conflict/Override Finalization, falls weitere Tiefe gewuenscht ist.
 
 ### F1.1
 

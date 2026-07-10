@@ -449,7 +449,8 @@ export function getCalendarViewModel(): CalendarViewModel {
     header: {
       eyebrow: "TEMPORAL VIEW",
       title: "Calendar",
-      summary: "Plan and inspect time across events, tasks, deadlines and reviews.",
+      summary:
+        "Plan task time blocks and inspect prepared calendar context across events, deadlines and reviews.",
       dateRange: "09-15 June 2026",
       controls: {
         currentAction: "Today",
@@ -480,12 +481,13 @@ export function getCalendarViewModel(): CalendarViewModel {
     pageContract: {
       pageType: "Temporal Projection / Planning Surface",
       primaryPurpose:
-        "Inspect and prepare the week across dated work, free events, deadlines and review readiness.",
-      writes: "V2 prepares manual events and time blocks in UI only. Later only free calendar events and time blocks are calendar-owned.",
+        "Inspect task time blocks, prepared free-event context, deadlines and review readiness.",
+      writes:
+        "Manual task scheduling writes task time fields through existing Task actions. Calendar Create only prepares a local UI preview; free calendar event persistence follows later.",
       reads:
         "Tasks, projects, reviews, meals, workouts, meetings and free calendar events.",
       canonicalSource:
-        "Calendar projects source entities and does not duplicate task, project, meal, workout or review records.",
+        "Calendar projects source entities, writes only Manual task time fields through Task actions, and does not own free calendar events yet.",
       sensitiveData:
         "Work and health-adjacent time blocks are visible but mocked without private content.",
       primaryDecision:

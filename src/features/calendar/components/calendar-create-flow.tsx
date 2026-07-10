@@ -206,9 +206,13 @@ function buildBlock({
       href: sourceHref,
     },
     accent: accentForType(type),
-    meta: type === "task_block" ? "Scheduled existing task" : "Local calendar draft",
+    meta:
+      type === "task_block"
+        ? "Prepared task preview"
+        : "Prepared local calendar draft",
     linkedEntity: project,
-    plannedOutcome: "Prepared from the Calendar scheduling flow.",
+    plannedOutcome:
+      "Prepared preview from Calendar Create. Persisted task scheduling stays in the Planner Queue and Inspector.",
     priority,
     project,
     taskId,
@@ -379,7 +383,7 @@ export function CalendarCreateMenu({
         priority: selectedTask.priority,
         project: selectedTask.project,
         sourceHref: "/tasks",
-        sourceLabel: "Task / Scheduling Queue",
+        sourceLabel: "Prepared task preview",
         startTime,
         status: "planned",
         taskId: selectedTask.id,
@@ -390,7 +394,9 @@ export function CalendarCreateMenu({
         type: blockType,
       }),
     );
-    setNotice("Task scheduled locally. No backend record was written.");
+    setNotice(
+      "Task preview added locally. No task time fields or backend record were written.",
+    );
   }
 
   function saveNewItem() {
@@ -415,20 +421,24 @@ export function CalendarCreateMenu({
         type: newType,
       }),
     );
-    setNotice("New item added to the local calendar mock state.");
+    setNotice(
+      "Prepared item added to local UI state. No calendar event record was written.",
+    );
   }
 
   return (
     <>
       <button
+        aria-label="Open prepared calendar create dialog"
         className="min-h-8 rounded-full border border-[rgba(95,200,215,.28)] bg-[rgba(95,200,215,.14)] px-3 text-[11px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(95,200,215,.42)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
         onClick={() => setOpen(true)}
         type="button"
       >
-        + New
+        + Prepared item
       </button>
 
       <dialog
+        aria-describedby="calendar-schedule-dialog-description"
         aria-labelledby="calendar-schedule-dialog-heading"
         className="w-[min(980px,calc(100vw-24px))] max-h-[calc(100dvh-24px)] overflow-hidden rounded-[18px] border border-[var(--border-default)] bg-[var(--surface-1)] p-0 text-left text-[var(--text-primary)] shadow-[0_24px_80px_rgba(0,0,0,.48)] backdrop:bg-[rgba(0,0,0,.58)]"
         onCancel={(event) => {
@@ -447,17 +457,21 @@ export function CalendarCreateMenu({
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-cyan)]">
-                  Calendar scheduling
+                  Prepared calendar create
                 </p>
                 <h2
                   className="mt-1 text-[18px] font-semibold leading-6 text-[var(--text-primary)]"
                   id="calendar-schedule-dialog-heading"
                 >
-                  Schedule something
+                  Prepared calendar item
                 </h2>
-                <p className="mt-1 max-w-2xl text-[11px] leading-4 text-[var(--text-muted)]">
-                  Existing tasks and new calendar items are added to local mock
-                  state only.
+                <p
+                  className="mt-1 max-w-2xl text-[11px] leading-4 text-[var(--text-muted)]"
+                  id="calendar-schedule-dialog-description"
+                >
+                  Task scheduling is active in the Planner Queue and Inspector.
+                  This dialog only creates a local UI preview for free events,
+                  focus blocks and task previews.
                 </p>
               </div>
               <button
@@ -472,8 +486,8 @@ export function CalendarCreateMenu({
 
             <div className="mt-3 flex w-full max-w-[360px] rounded-full border border-[var(--border-subtle)] bg-[rgba(11,17,28,.72)] p-1">
               {[
-                ["existing-task", "Existing task"],
-                ["new-item", "New item"],
+                ["existing-task", "Task preview"],
+                ["new-item", "Free item preview"],
               ].map(([value, label]) => (
                 <button
                   aria-pressed={tab === value}
@@ -683,7 +697,10 @@ export function CalendarCreateMenu({
                 <p className="font-semibold text-[var(--text-secondary)]">
                   Suggested slots
                 </p>
-                <p>Stub only: Thu 15:30-17:00, Fri 09:00-10:00.</p>
+                <p>
+                  Vorbereitet: Vorschläge ohne lokale Datenquelle. Kein Slot
+                  wird automatisch geschrieben.
+                </p>
               </div>
               {error ? (
                 <p
@@ -706,8 +723,8 @@ export function CalendarCreateMenu({
 
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--border-subtle)] bg-[rgba(11,17,28,.58)] px-4 py-3">
             <p className="max-w-md text-[10px] leading-4 text-[var(--text-faint)]">
-              Phase 2 UI only. No calendar sync, automation or Supabase write is
-              performed.
+              Vorbereitet. Task-Scheduling ist aktiv über Queue/Inspector; freie
+              Kalendertermine folgen später. Kein Supabase-Write.
             </p>
             <div className="flex flex-wrap gap-2">
               <button className={actionButtonClass} onClick={closeDialog} type="button">
@@ -718,7 +735,7 @@ export function CalendarCreateMenu({
                 onClick={tab === "existing-task" ? saveExistingTask : saveNewItem}
                 type="button"
               >
-                Save to mock calendar
+                Save local preview
               </button>
             </div>
           </div>

@@ -248,12 +248,17 @@ function RescheduleTaskForm({
         </p>
       ) : null}
       {conflictLabel ? (
-        <p
+        <div
           className="rounded-[8px] border border-[rgba(221,107,95,.22)] bg-[rgba(221,107,95,.08)] px-2 py-1 text-[10px] leading-4 text-[var(--text-secondary)]"
           role="alert"
         >
-          {conflictLabel}
-        </p>
+          <p>{conflictLabel}</p>
+          <p className="mt-1 text-[var(--text-muted)]">
+            Standard-Speichern ist blockiert. Override speichert bewusst über
+            denselben Task-Zeitpfad; dieser Check gilt nur für geladene
+            sichtbare Zeitblöcke, nicht DB-weit.
+          </p>
+        </div>
       ) : null}
     </div>
   );
@@ -280,9 +285,24 @@ function isTimedBlock(block: SelectedBlock): block is CalendarTimedBlockViewMode
   return "startTime" in block;
 }
 
+function isManualPersistedTaskBlock(
+  block: SelectedBlock | undefined,
+  profileId: CalendarViewModel["profileId"],
+) {
+  return Boolean(
+    profileId === "manual" &&
+      block &&
+      isTimedBlock(block) &&
+      block.source === "task" &&
+      block.taskId,
+  );
+}
+
 function InspectorHeader({
+  modeLabel,
   selectedLabel,
 }: Readonly<{
+  modeLabel: string;
   selectedLabel: string;
 }>) {
   return (
@@ -299,7 +319,7 @@ function InspectorHeader({
             Selected: {selectedLabel}
           </h2>
         </div>
-        <Pill accent="var(--accent-cyan)">local mock</Pill>
+        <Pill accent="var(--accent-cyan)">{modeLabel}</Pill>
       </div>
     </div>
   );
@@ -366,6 +386,14 @@ function SelectedContext({
               {block.plannedOutcome ?? "Prepared for later scheduling."}
             </dd>
           </div>
+          <div>
+            <dt className="inline text-[var(--text-muted)]">State: </dt>
+            <dd className="inline">
+              {isTimedBlock(block) && block.source === "task" && block.taskId
+                ? "Task projection. Manual profile controls write task time fields."
+                : "Prepared/local projection. Calendar does not own this record yet."}
+            </dd>
+          </div>
         </dl>
       </section>
     );
@@ -387,7 +415,8 @@ function SelectedContext({
           {selectedSlot.dayLabel} · {selectedSlot.startTime}-{selectedSlot.endTime}
         </h3>
         <p className="mt-2 text-[11px] leading-4 text-[var(--text-muted)]">
-          Free slot. Use it for an event, task block or focus block.
+          Freier Slot ausgewählt. Task-Scheduling läuft über die Planner Queue;
+          freie Events und Fokusblöcke sind hier nur vorbereitet.
         </p>
       </section>
     );
@@ -408,8 +437,8 @@ function SelectedContext({
         {selectedDay?.fullLabel ?? "No specific day selected"}
       </h3>
       <p className="mt-2 text-[11px] leading-4 text-[var(--text-muted)]">
-        Scan the planned blocks, pick a free slot, or schedule an item from the
-        queue.
+        Zeitblöcke prüfen, einen freien Slot als vorbereiteten Kontext wählen
+        oder einen geplanten Task aus der Queue terminieren.
       </p>
     </section>
   );
@@ -530,8 +559,8 @@ function TimeSettings({
           </h3>
           <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
             {isPersistedTaskBlock
-              ? "Persistente Task-Zeitsteuerung."
-              : "Local edit for fixture blocks."}
+              ? "Schreibt Datum, Uhrzeit und Dauer über bestehende Task-Actions."
+              : "Vorbereitet / lokal: diese Controls schreiben nicht in die lokale Datenquelle."}
           </p>
         </div>
         <Pill accent="var(--accent-cyan)">{durationLabel(duration)}</Pill>
@@ -762,18 +791,24 @@ function PlanningQueue({
             Calendar Planner Queue
           </h3>
           <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
-            Geplante Tasks ohne Uhrzeit in Zeitblöcke überführen.
+            Geplante Tasks ohne Uhrzeit. Terminieren schreibt Task-Zeitfelder
+            im Manual-Profil.
           </p>
         </div>
         <Pill quiet>{queueCount}</Pill>
       </div>
+      <p className="mt-2 text-[10px] leading-4 text-[var(--text-faint)]">
+        Tasks werden terminiert; Open Loops und Reviews sind vorbereitete
+        Kontextlisten und nicht mit der lokalen Datenquelle verbunden.
+      </p>
       <div className="mt-2 flex rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.48)] p-1">
         {[
-          ["unscheduled", "Tasks"],
-          ["open-loops", "Open loops"],
-          ["reviews", "Reviews"],
-        ].map(([value, label], index) => (
+          ["unscheduled", "Tasks", "Tasks planned without time"],
+          ["open-loops", "Open loops", "Prepared open-loop context"],
+          ["reviews", "Reviews", "Prepared review context"],
+        ].map(([value, label, ariaLabel], index) => (
           <button
+            aria-label={ariaLabel}
             aria-pressed={tab === value}
             className={cn(
               "min-h-6 flex-1 rounded-full px-2 text-[9px] font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
@@ -873,7 +908,8 @@ function PlanningQueue({
                   </form>
                 ) : (
                   <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
-                    Demo-Fixture. Persistente Terminierung ist im Manual-Profil aktiv.
+                    Demo-/Empty-Fixture. Persistente Terminierung ist nur im
+                    Manual-Profil aktiv.
                   </p>
                 )}
               </article>
@@ -939,13 +975,24 @@ export function CalendarRightPanel({
     : selectedSlot
       ? "Empty Slot"
       : "Day";
+  const selectedIsPersistedTask = isManualPersistedTaskBlock(
+    selectedBlock,
+    profileId,
+  );
+  const modeLabel = selectedIsPersistedTask
+    ? "Task-Zeitsteuerung"
+    : selectedSlot
+      ? "Vorbereitet"
+      : selectedBlock
+        ? "Projektion"
+        : "Kontext";
 
   return (
     <aside
       aria-labelledby="calendar-right-panel-heading"
       className="overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.86)] shadow-[0_8px_22px_rgba(0,0,0,.12)] xl:flex xl:min-h-0 xl:flex-col"
     >
-      <InspectorHeader selectedLabel={selectedLabel} />
+      <InspectorHeader modeLabel={modeLabel} selectedLabel={selectedLabel} />
 
       <div className="grid gap-2 p-2.5 xl:min-h-0 xl:flex-1 xl:content-start xl:overflow-y-auto">
         <SelectedContext

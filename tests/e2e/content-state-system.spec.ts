@@ -544,6 +544,12 @@ async function expectCalendarPlannerQueueTask(page: Page, title: string) {
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
     await expect(plannerQueue).toBeVisible();
+    await expect(
+      plannerQueue.getByText("Terminieren schreibt Task-Zeitfelder").first(),
+    ).toBeVisible();
+    await expect(
+      plannerQueue.getByText("Open Loops und Reviews").first(),
+    ).toBeVisible();
 
     if (await queueTask.isVisible()) return plannerQueue;
 
@@ -4495,6 +4501,21 @@ test.describe("Calendar content states", () => {
     await expect(
       page.getByRole("button", { name: "Next week" }),
     ).toBeVisible();
+    await page
+      .getByRole("button", { name: "Open prepared calendar create dialog" })
+      .click();
+    await expect(
+      page.getByRole("dialog", { name: "Prepared calendar item" }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Task scheduling is active in the Planner Queue and Inspector."),
+    ).toBeVisible();
+    await expect(
+      page.getByText("freie Kalendertermine folgen später"),
+    ).toBeVisible();
+    await page
+      .getByRole("button", { name: "Close scheduling dialog" })
+      .click();
   });
 
   test("renders empty calendar without demo blocks", async ({ page }) => {
@@ -4720,6 +4741,9 @@ test.describe("Calendar content states", () => {
       page.getByRole("button", { exact: true, name: "15 min früher" }),
     ).toBeDisabled();
     await expect(page.getByText("Konflikt mit").first()).toBeVisible();
+    await expect(
+      page.getByText("dieser Check gilt nur für geladene").first(),
+    ).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Trotz Konflikt speichern" }).first(),
     ).toBeVisible();

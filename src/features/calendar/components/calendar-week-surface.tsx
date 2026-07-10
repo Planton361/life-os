@@ -96,18 +96,19 @@ export function CalendarWeekSurface({
             className="text-[14px] font-semibold text-[var(--text-primary)]"
             id="calendar-week-surface-heading"
           >
-            Outlook Week Surface
+            Week Timegrid
           </h2>
           <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
-            Projected time blocks keep source entities visible.
+            Scheduled task blocks appear here; planned tasks without time stay
+            in the Planner Queue.
           </p>
         </div>
         <div className="flex flex-wrap gap-1.5 text-[10px] text-[var(--text-muted)]">
           <span>Current time {viewModel.currentTime.label}</span>
           <span aria-hidden="true">·</span>
-          <span>Selected Thu 12</span>
+          <span>Free slots select context</span>
           <span aria-hidden="true">·</span>
-          <span>Create from slot in right panel</span>
+          <span>Prepared create opens in the Inspector</span>
         </div>
       </div>
 
@@ -299,7 +300,8 @@ export function CalendarWeekSurface({
             </div>
             <p className="text-[10px] leading-4 text-[var(--text-faint)]">
               Color supports scanning only. Every block includes text label,
-              type and status.
+              type and status. Persisted scheduling currently comes from task
+              blocks.
             </p>
           </div>
         </div>
