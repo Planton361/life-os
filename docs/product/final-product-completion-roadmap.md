@@ -399,6 +399,23 @@ F1.0B Calendar UX/Copy/State Clarity Status 2026-07-11:
 - Naechster Calendar-Block: F1.0C Calendar Scheduling Proof Hardening oder
   F1.0D Conflict/Override Finalization, falls weitere Tiefe gewuenscht ist.
 
+F1.0C Calendar Scheduling Proof Hardening Status 2026-07-11:
+
+- Dokumentiert in `docs/qa/calendar-scheduling-proof-hardening-f1-0c.md` und
+  `docs/product/calendar-finalization-scope-f1-0a.md`.
+- Existing Calendar Scheduling Proofs wurden gehaertet, ohne neue Calendar-
+  Features, App-Code, Backend-Code oder Layout-Scope.
+- Queue Scheduling, exakte scheduled Range, `15 min frueher`,
+  `15 min spaeter`, `Dauer +15 min`, `Dauer -15 min`, Unschedule,
+  Today Activity, Today Planner Absenz, Dashboard Today Agenda und sichtbares
+  Conflict Blocking sind scoped und reload-stabil abgedeckt.
+- Gezielter Proof der drei geaenderten Manual Calendar Tests: 3 passed,
+  0 failed.
+- Focused Full-Grep `Calendar|Today|Dashboard|Manual`: 71 passed, 2 skipped,
+  0 failed.
+- Override-Ausfuehrung, DB-weite Conflict-Sperre, Override-Audit, Pointer
+  Drag/Resize und freie Calendar-Event-Persistenz bleiben deferred.
+
 ### F1.1
 
 Titel: Project/Goal Workbench Depth

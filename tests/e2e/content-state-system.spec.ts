@@ -623,7 +623,7 @@ async function expectDashboardTodayAgendaText(page: Page, title: string) {
 async function selectCalendarTimedBlock(page: Page, title: string) {
   const block = page
     .locator('[data-calendar-section="week-grid"]')
-    .getByRole("button", { name: new RegExp(title) })
+    .getByRole("button", { name: new RegExp(escapeRegExp(title)) })
     .first();
 
   await expect(block).toBeVisible();
@@ -633,6 +633,42 @@ async function selectCalendarTimedBlock(page: Page, title: string) {
   await block.focus();
   await expect(block).toBeFocused();
   await block.press("Enter");
+}
+
+async function expectCalendarTimedBlockRange(
+  page: Page,
+  title: string,
+  startTime: string,
+  endTime: string,
+) {
+  const weekGrid = page.locator('[data-calendar-section="week-grid"]');
+  const block = weekGrid
+    .getByRole("button", {
+      name: new RegExp(`${escapeRegExp(title)}, ${startTime} to ${endTime}`),
+    })
+    .first();
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await expect(weekGrid).toBeVisible();
+
+    if (await block.isVisible()) return block;
+
+    await page.reload({ waitUntil: "networkidle" });
+  }
+
+  await expect(block).toBeVisible();
+
+  return block;
+}
+
+async function expectNoCalendarTimedBlock(page: Page, title: string) {
+  const weekGrid = page.locator('[data-calendar-section="week-grid"]');
+
+  await expect(
+    weekGrid.getByRole("button", {
+      name: new RegExp(escapeRegExp(title)),
+    }),
+  ).toHaveCount(0);
 }
 
 async function findFreeCalendarStartTime(
@@ -4566,14 +4602,19 @@ test.describe("Calendar content states", () => {
     await expectCalendarWidgetContracts(page, "manual");
     await expectNoMainStrings(page, calendarBlockedDemoStrings, "calendar");
     await expectNoGenericPlannerRelationLabels(page, "calendar manual queue");
-    const weekGrid = page.locator('[data-calendar-section="week-grid"]');
-    const startTime = await findFreeCalendarStartTime(page, 75, 60);
-    const movedStartTime = addClockMinutes(startTime, 15);
-    const movedEndTime = addClockMinutes(movedStartTime, 45);
-    const resizedEndTime = addClockMinutes(movedStartTime, 60);
+    const freeWindowStartTime = await findFreeCalendarStartTime(
+      page,
+      75,
+      8 * 60,
+    );
+    const startTime = addClockMinutes(freeWindowStartTime, 15);
+    const scheduledEndTime = addClockMinutes(startTime, 45);
+    const earlierStartTime = freeWindowStartTime;
+    const earlierEndTime = addClockMinutes(earlierStartTime, 45);
+    const extendedEndTime = addClockMinutes(startTime, 60);
     const plannerQueue = await expectCalendarPlannerQueueTask(page, title);
 
-    await expect(weekGrid.getByText(title)).toHaveCount(0);
+    await expectNoCalendarTimedBlock(page, title);
 
     const scheduleForm = plannerQueue.getByRole("form", {
       name: `${title} terminieren`,
@@ -4585,51 +4626,86 @@ test.describe("Calendar content states", () => {
     await page.reload();
 
     await expect(plannerQueue.getByText(title)).toHaveCount(0);
-    await expect(
-      weekGrid.getByRole("button", { name: new RegExp(title) }),
-    ).toBeVisible();
+    await expectCalendarTimedBlockRange(
+      page,
+      title,
+      startTime,
+      scheduledEndTime,
+    );
+
+    await selectCalendarTimedBlock(page, title);
+    const moveEarlierButton = page.getByRole("button", {
+      exact: true,
+      name: "15 min früher",
+    });
+
+    await expect(moveEarlierButton).toBeEnabled();
+    await moveEarlierButton.click();
+    await page.waitForLoadState("networkidle");
+    await page.reload();
+    await expectCalendarTimedBlockRange(
+      page,
+      title,
+      earlierStartTime,
+      earlierEndTime,
+    );
 
     await selectCalendarTimedBlock(page, title);
     const moveLaterButton = page.getByRole("button", {
       exact: true,
       name: "15 min später",
     });
-    const canMoveLater = await moveLaterButton.isEnabled();
 
-    if (canMoveLater) {
-      await moveLaterButton.click();
-      await page.waitForLoadState("networkidle");
-      await page.reload();
-      await expect(
-        weekGrid.getByRole("button", {
-          name: new RegExp(`${title}, ${movedStartTime} to ${movedEndTime}`),
-        }),
-      ).toBeVisible();
-    }
+    await expect(moveLaterButton).toBeEnabled();
+    await moveLaterButton.click();
+    await page.waitForLoadState("networkidle");
+    await page.reload();
+    await expectCalendarTimedBlockRange(
+      page,
+      title,
+      startTime,
+      scheduledEndTime,
+    );
 
     await selectCalendarTimedBlock(page, title);
-    const resizeButton = page.getByRole("button", {
+    const increaseDurationButton = page.getByRole("button", {
       exact: true,
       name: "Dauer +15 min",
     });
 
-    if (await resizeButton.isEnabled()) {
-      await resizeButton.click();
-      await page.waitForLoadState("networkidle");
-      await page.reload();
-      await expect(
-        weekGrid.getByRole("button", {
-          name: new RegExp(
-            canMoveLater
-              ? `${title}, ${movedStartTime} to ${resizedEndTime}`
-              : `${title}, ${startTime} to ${addClockMinutes(startTime, 60)}`,
-          ),
-        }),
-      ).toBeVisible();
-    }
+    await expect(increaseDurationButton).toBeEnabled();
+    await increaseDurationButton.click();
+    await page.waitForLoadState("networkidle");
+    await page.reload();
+    await expectCalendarTimedBlockRange(
+      page,
+      title,
+      startTime,
+      extendedEndTime,
+    );
+
+    await selectCalendarTimedBlock(page, title);
+    const decreaseDurationButton = page.getByRole("button", {
+      exact: true,
+      name: "Dauer -15 min",
+    });
+
+    await expect(decreaseDurationButton).toBeEnabled();
+    await decreaseDurationButton.click();
+    await page.waitForLoadState("networkidle");
+    await page.reload();
+    await expectCalendarTimedBlockRange(
+      page,
+      title,
+      startTime,
+      scheduledEndTime,
+    );
 
     await page.goto("/today");
-    await expect(page.getByText(title).first()).toBeVisible();
+    await expectTodayActivityText(page, title);
+    await expect(
+      page.locator('[data-today-section="today-planner"]').getByText(title),
+    ).toHaveCount(0);
 
     await page.goto("/dashboard");
     await expectDashboardTodayAgendaText(page, title);
@@ -4660,29 +4736,42 @@ test.describe("Calendar content states", () => {
     await page.waitForLoadState("networkidle");
     await page.goto("/calendar");
 
-    const startTime = await findFreeCalendarStartTime(page, 45, 3 * 60);
+    const startTime = await findFreeCalendarStartTime(page, 45, 9 * 60);
     const movedStartTime = addClockMinutes(startTime, 15);
+    const scheduledEndTime = addClockMinutes(startTime, 30);
     const movedEndTime = addClockMinutes(movedStartTime, 30);
 
     await scheduleCalendarQueueTask(page, title, startTime, "30");
+    await expectCalendarTimedBlockRange(
+      page,
+      title,
+      startTime,
+      scheduledEndTime,
+    );
 
-    const weekGrid = page.locator('[data-calendar-section="week-grid"]');
     await selectCalendarTimedBlock(page, title);
-    await page.getByRole("button", { exact: true, name: "15 min später" }).click();
+    const moveLaterButton = page.getByRole("button", {
+      exact: true,
+      name: "15 min später",
+    });
+
+    await expect(moveLaterButton).toBeEnabled();
+    await moveLaterButton.click();
     await page.waitForLoadState("networkidle");
     await page.reload();
-    await expect(
-      weekGrid.getByRole("button", {
-        name: new RegExp(`${title}, ${movedStartTime} to ${movedEndTime}`),
-      }),
-    ).toBeVisible();
+    await expectCalendarTimedBlockRange(
+      page,
+      title,
+      movedStartTime,
+      movedEndTime,
+    );
 
     await selectCalendarTimedBlock(page, title);
     await page.getByRole("button", { exact: true, name: "Unschedule" }).click();
     await page.waitForLoadState("networkidle");
     await page.reload();
 
-    await expect(weekGrid.getByText(title)).toHaveCount(0);
+    await expectNoCalendarTimedBlock(page, title);
     await expectCalendarPlannerQueueTask(page, title);
   });
 
@@ -4713,11 +4802,18 @@ test.describe("Calendar content states", () => {
     await page.waitForLoadState("networkidle");
     await page.goto("/calendar");
 
-    const firstStartTime = await findFreeCalendarStartTime(page, 60, 5 * 60);
+    const firstStartTime = await findFreeCalendarStartTime(page, 60, 10 * 60);
+    const firstEndTime = addClockMinutes(firstStartTime, 30);
     const secondStartTime = addClockMinutes(firstStartTime, 30);
     const secondEndTime = addClockMinutes(secondStartTime, 30);
 
     await scheduleCalendarQueueTask(page, firstTitle, firstStartTime, "30");
+    await expectCalendarTimedBlockRange(
+      page,
+      firstTitle,
+      firstStartTime,
+      firstEndTime,
+    );
     await captureAndTriageManualInboxTask(
       page,
       secondTitle,
@@ -4733,27 +4829,36 @@ test.describe("Calendar content states", () => {
     await page.waitForLoadState("networkidle");
     await page.goto("/calendar");
     await scheduleCalendarQueueTask(page, secondTitle, secondStartTime, "30");
+    await expectCalendarTimedBlockRange(
+      page,
+      secondTitle,
+      secondStartTime,
+      secondEndTime,
+    );
 
-    const weekGrid = page.locator('[data-calendar-section="week-grid"]');
+    const inspector = page.locator('[data-calendar-section="inspector"]');
 
     await selectCalendarTimedBlock(page, secondTitle);
     await expect(
-      page.getByRole("button", { exact: true, name: "15 min früher" }),
+      inspector.getByRole("button", { exact: true, name: "15 min früher" }),
     ).toBeDisabled();
-    await expect(page.getByText("Konflikt mit").first()).toBeVisible();
+    await expect(inspector.getByText("Konflikt mit").first()).toBeVisible();
     await expect(
-      page.getByText("dieser Check gilt nur für geladene").first(),
+      inspector.getByText("dieser Check gilt nur für geladene").first(),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Trotz Konflikt speichern" }).first(),
+      inspector
+        .getByRole("button", { name: "Trotz Konflikt speichern" })
+        .first(),
     ).toBeVisible();
 
     await page.reload();
-    await expect(
-      weekGrid.getByRole("button", {
-        name: new RegExp(`${secondTitle}, ${secondStartTime} to ${secondEndTime}`),
-      }),
-    ).toBeVisible();
+    await expectCalendarTimedBlockRange(
+      page,
+      secondTitle,
+      secondStartTime,
+      secondEndTime,
+    );
   });
 });
 

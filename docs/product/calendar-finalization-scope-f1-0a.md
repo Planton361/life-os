@@ -768,3 +768,65 @@ PASS_WITH_DEFERRED
 Deferred bleiben Pointer Drag/Resize, freie Calendar-Event-Persistenz,
 DB-weite Conflict-Sperre, Override-Audit und Calendar-owned Review/Open-Loop
 Persistenz.
+
+## 14. F1.0C Scheduling Proof Hardening Status
+
+Stand: 2026-07-11
+Status: Completed
+QA: `docs/qa/calendar-scheduling-proof-hardening-f1-0c.md`
+
+F1.0C hat den bestehenden Calendar Scheduling Proof gehaertet, ohne neue
+Calendar-Funktionen oder App-Code zu bauen.
+
+Geaendert:
+
+- Calendar Timed Block Assertions pruefen jetzt scoped Week-Grid Buttons mit
+  exakter `HH:MM to HH:MM` Range.
+- Der Schedule-Proof nutzt ein deterministisches sichtbares Zeitfenster und
+  beweist `15 min frueher`, `15 min spaeter`, `Dauer +15 min` und
+  `Dauer -15 min` jeweils mit enabled Button, Reload und exakter Range.
+- Der Unschedule-Proof prueft initiale Range, verschobene Range, Grid-Absenz
+  nach Reload und Rueckkehr in die Planner Queue.
+- Der Projection-Proof nutzt Today Activity Stream, Today Planner Absenz und
+  Dashboard Today Agenda scoped.
+- Der Conflict-Proof ist auf Calendar Inspector und exakte Timed-Block-Ranges
+  gescoped.
+
+Nicht geaendert:
+
+- kein Pointer Drag/Resize
+- keine freie Calendar-Event-Persistenz
+- keine App-/Backend-Datei
+- keine DB-Struktur, Migration, RLS- oder Policy-Aenderung
+- keine Remote-DB-Aktion
+- kein Deployment
+- keine Secrets
+
+Gezielter Browser-Proof der geaenderten Calendar Tests:
+
+```text
+Manual Calendar plans DB task through queue and schedules reload-stable
+Manual Calendar unschedules DB task back into planner queue
+Manual Calendar blocks visible conflicts without explicit override
+
+3 passed
+0 failed
+```
+
+Der focused Full-Grep `Calendar|Today|Dashboard|Manual` wird als finale
+F1.0C-Validation ausgefuehrt:
+
+```text
+71 passed
+2 skipped
+0 failed
+```
+
+Completion Gate:
+
+```text
+PASS_WITH_DEFERRED
+```
+
+Deferred bleiben Override-Ausfuehrung/F1.0D, DB-weite Conflict-Sperre,
+Override-Audit, Pointer Drag/Resize und freie Calendar-Event-Persistenz.
