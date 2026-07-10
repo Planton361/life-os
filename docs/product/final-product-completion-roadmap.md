@@ -433,6 +433,27 @@ F1.0D Calendar Conflict / Override Finalization Status 2026-07-11:
 - DB-weite Conflict-Sperre, Override-Audit/Schedule-History, Pointer
   Drag/Resize und freie Calendar-Event-Persistenz bleiben deferred.
 
+F1.0E Calendar Today / Dashboard Projection Review Status 2026-07-11:
+
+- Dokumentiert in `docs/qa/calendar-projection-review-f1-0e.md` und
+  `docs/product/calendar-finalization-scope-f1-0a.md`.
+- Projection-Semantik ist geprueft: Calendar Queue/Timed Blocks, Today Planner,
+  Today Activity und Dashboard Today Agenda folgen weiter den Task-Feldern
+  `planned_date`, `scheduled_start_at`, `duration_minutes` und `completed_at`.
+- Proofs wurden test-only gehaertet: planned-only zeigt Dashboard `Flexible`,
+  scheduled zeigt exakte Zeit-/Dauer-Copy, unscheduled kehrt in Today/
+  Dashboard als flexible Tagesaufgabe zurueck, completed verschwindet nach
+  Reload aus Dashboard/Calendar active views und reopened erscheint wieder.
+- Conflict Override projiziert nach bewusstem Override auch nach Today und
+  Dashboard als scheduled Task.
+- Gezielter Projection-Proof: 6 passed, 0 failed.
+- Focused Full-Grep `Calendar|Today|Dashboard|Manual`: 72 passed,
+  2 skipped, 0 failed.
+- Projektchecks, Build und lokale Supabase Lint/Security Advisors: passed.
+- DB-weite Conflict-Sperre, Override-Audit/Schedule-History, Calendar
+  Inspector `Mark done` scheduled-block Deep-Proof, Pointer Drag/Resize und
+  freie Calendar-Event-Persistenz bleiben deferred.
+
 ### F1.1
 
 Titel: Project/Goal Workbench Depth

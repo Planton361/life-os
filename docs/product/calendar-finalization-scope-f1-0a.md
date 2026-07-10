@@ -904,3 +904,89 @@ PASS_WITH_DEFERRED
 
 Deferred bleiben DB-weite Conflict-Sperre, Override-Audit/Schedule-History,
 Pointer Drag/Resize und freie Calendar-Event-Persistenz.
+
+## 16. F1.0E Today / Dashboard Projection Review Status
+
+Stand: 2026-07-11
+Status: Completed
+QA: `docs/qa/calendar-projection-review-f1-0e.md`
+
+F1.0E prueft und haertet die bestehende Calendar -> Today -> Dashboard
+Projection-Semantik, ohne neue Calendar-Funktionen oder App-Code zu bauen.
+
+Geaendert:
+
+- Dashboard Today Agenda Assertions pruefen jetzt geplante Tasks als
+  `Flexible` und scheduled Tasks mit exakter Zeit-/Dauer-Copy.
+- Today Planner Proof prueft Today Activity, Dashboard `Flexible` und Calendar
+  Queue/Week-Grid-Absenz scoped.
+- Calendar Scheduling Proof prueft nach Schedule/Move/Duration die Dashboard
+  scheduled Detail-Copy.
+- Unschedule Proof prueft Calendar Queue, Today Activity, Today Planner Absenz
+  und Dashboard `Flexible`.
+- Complete/Reopen Proof prueft Dashboard-Absenz nach Reload, Calendar aktive
+  Absenz, Reopen und Rueckkehr in Dashboard/Calendar Queue.
+- Conflict Override Proof prueft nach bewusstem Override auch Today Activity,
+  Today Planner Absenz und Dashboard scheduled Detail.
+
+Nicht geaendert:
+
+- keine Calendar-, Today- oder Dashboard-Recomposition
+- keine App-/Backend-/Schema-/Repository-Aenderung
+- keine DB-weite Conflict-Sperre
+- kein Override-Audit
+- kein Pointer Drag/Resize
+- keine freie Calendar-Event-Persistenz
+- keine Migration
+- keine RLS-/Policy-Aenderung
+- keine Remote-DB-Aktion
+- kein Deployment
+- keine Secrets
+
+Gezielter Projection-Proof:
+
+```text
+Manual Today Planner plans DB task into Today, Dashboard and Calendar queue
+Manual Recurring generates task into Today, Dashboard and Calendar queue
+Manual Today completes DB task and removes it from Dashboard agenda
+Manual Calendar plans DB task through queue and schedules reload-stable
+Manual Calendar unschedules DB task back into planner queue
+Manual Calendar executes explicit conflict override reload-stable
+
+6 passed
+0 failed
+```
+
+Focused Full-Grep Validation:
+
+```text
+PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Calendar|Today|Dashboard|Manual"
+
+72 passed
+2 skipped
+0 failed
+```
+
+Projektchecks:
+
+```text
+git diff --check
+git diff --cached --check
+pnpm typecheck
+pnpm lint
+pnpm build
+pnpm exec supabase db lint --local --level warning
+pnpm exec supabase db advisors --local --type security --level warn --fail-on none
+
+all passed
+```
+
+Completion Gate:
+
+```text
+PASS_WITH_DEFERRED
+```
+
+Deferred bleiben DB-weite Conflict-Sperre, Override-Audit/Schedule-History,
+Calendar Inspector `Mark done` scheduled-block Deep-Proof, Pointer Drag/Resize
+und freie Calendar-Event-Persistenz.

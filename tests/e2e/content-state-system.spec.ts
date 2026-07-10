@@ -620,6 +620,22 @@ async function expectDashboardTodayAgendaText(page: Page, title: string) {
   return todayAgenda;
 }
 
+async function expectDashboardTodayAgendaItemDetail(
+  page: Page,
+  title: string,
+  detail: string | RegExp,
+) {
+  const todayAgenda = await expectDashboardTodayAgendaText(page, title);
+  const agendaItem = todayAgenda
+    .getByRole("link", { name: `Open agenda item: ${title}` })
+    .first();
+
+  await expect(agendaItem).toBeVisible();
+  await expect(agendaItem).toContainText(detail);
+
+  return agendaItem;
+}
+
 async function selectCalendarTimedBlock(page: Page, title: string) {
   const block = page
     .locator('[data-calendar-section="week-grid"]')
@@ -4306,7 +4322,7 @@ test.describe("Today content states", () => {
     await expect(activityTimeline.getByText(title).first()).toBeVisible();
 
     await page.goto("/dashboard");
-    await expectDashboardTodayAgendaText(page, title);
+    await expectDashboardTodayAgendaItemDetail(page, title, "Flexible · 15 min");
 
     await page.goto("/calendar");
     const calendarPlannerQueue = page
@@ -4356,7 +4372,7 @@ test.describe("Today content states", () => {
     ).toHaveCount(1);
 
     await page.goto("/dashboard");
-    await expectDashboardTodayAgendaText(page, title);
+    await expectDashboardTodayAgendaItemDetail(page, title, "Flexible · 15 min");
 
     await page.goto("/calendar");
     const calendarPlannerQueue = page
@@ -4442,9 +4458,36 @@ test.describe("Today content states", () => {
     await expectTodayTaskLifecycleForm(page, title, "wieder öffnen");
 
     await page.goto("/dashboard");
+    const todayAgenda = page.getByRole("region", { name: "Today Agenda" });
+    await expect(todayAgenda.getByText(title)).toHaveCount(0);
+    await page.reload();
+    await expect(todayAgenda.getByText(title)).toHaveCount(0);
+
+    await page.goto("/calendar");
+    await expectNoCalendarTimedBlock(page, title);
     await expect(
-      page.getByRole("region", { name: "Today Agenda" }).getByText(title),
+      page
+        .locator('[data-calendar-section="planning-queue"]')
+        .first()
+        .getByText(title),
     ).toHaveCount(0);
+
+    await page.goto("/today");
+    const reopenForm = await expectTodayTaskLifecycleForm(
+      page,
+      title,
+      "wieder öffnen",
+    );
+    await reopenForm.getByRole("button", { name: "Wieder öffnen" }).click();
+    await page.waitForLoadState("networkidle");
+    await page.reload();
+    await expectTodayTaskLifecycleForm(page, title, "abschließen");
+
+    await page.goto("/dashboard");
+    await expectDashboardTodayAgendaItemDetail(page, title, "Flexible");
+
+    await page.goto("/calendar");
+    await expectCalendarPlannerQueueTask(page, title);
   });
 
   test("Manual Today keeps scheduled DB task out of planner candidates", async ({
@@ -4708,7 +4751,11 @@ test.describe("Calendar content states", () => {
     ).toHaveCount(0);
 
     await page.goto("/dashboard");
-    await expectDashboardTodayAgendaText(page, title);
+    await expectDashboardTodayAgendaItemDetail(
+      page,
+      title,
+      `${startTime}-${scheduledEndTime} · 45 min`,
+    );
   });
 
   test("Manual Calendar unschedules DB task back into planner queue", async ({
@@ -4773,6 +4820,15 @@ test.describe("Calendar content states", () => {
 
     await expectNoCalendarTimedBlock(page, title);
     await expectCalendarPlannerQueueTask(page, title);
+
+    await page.goto("/today");
+    await expectTodayActivityText(page, title);
+    await expect(
+      page.locator('[data-today-section="today-planner"]').getByText(title),
+    ).toHaveCount(0);
+
+    await page.goto("/dashboard");
+    await expectDashboardTodayAgendaItemDetail(page, title, "Flexible · 30 min");
   });
 
   test("Manual Calendar blocks visible conflicts without explicit override", async ({
@@ -4966,6 +5022,19 @@ test.describe("Calendar content states", () => {
       secondTitle,
       overrideStartTime,
       overrideEndTime,
+    );
+
+    await page.goto("/today");
+    await expectTodayActivityText(page, secondTitle);
+    await expect(
+      page.locator('[data-today-section="today-planner"]').getByText(secondTitle),
+    ).toHaveCount(0);
+
+    await page.goto("/dashboard");
+    await expectDashboardTodayAgendaItemDetail(
+      page,
+      secondTitle,
+      `${overrideStartTime}-${overrideEndTime} · 30 min`,
     );
   });
 });
