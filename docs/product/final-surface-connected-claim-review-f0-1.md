@@ -104,7 +104,7 @@ Startcheck F0.1:
 | Dashboard | `local_connected_with_depth_gap` | Quick Thought, Daily Control, Today Agenda und Projektionen sind im Core-Proof aktuell gruen. | Finaler Dashboard-Polish und tiefere Daily-Record-/Review-Zustaende bleiben getrennt. | W1.1A Core 86/2/0 | V5 bleibt passend; P0 dominiert. | User-scoped ReadModels/Actions, kein Production-Claim. | Nach F1.x ggf. Dashboard final polish. |
 | Inbox | `local_connected_with_depth_gap` | Capture, Routing zu Task/Project/Goal/Resource, Archive/Solve und AI Review Flow sind aktuell proof-stable. | Note/Decision/Skill/Resource-Link Routing bleibt prepared/future oder separater Scope. | W1.1A Core 86/2/0 | Outcome Router bleibt funktional dicht. | Actions/RPCs sind lokal user-scoped bewiesen. | Route-level feedback / remaining routing completion. |
 | Today | `local_connected_with_depth_gap` | Planner, Completion und Recurring-Projektion sind lokal reload-stabil bewiesen. | Daily Record und Review-Tiefe fehlen. | W1.1A Core 86/2/0 | Today ergaenzt Dashboard, keine Kopie. | Task-/Recurring-Pfade lokal connected. | Review-depth slice. |
-| Calendar | `local_connected_with_depth_gap` | Schedule, Unschedule, Reschedule-nahe Controls und Conflict Gate sind lokal bewiesen. | Finale Interaktionsentscheidung: Drag/Resize oder keyboard/button-first. | W1.1A Core 86/2/0 | Temporal Planning Surface ist ruhig und funktional. | Schedule-Felder, Conflict Scope und Revalidation lokal bewiesen. | F1.0 Calendar Finalization. |
+| Calendar | `local_connected_with_depth_gap` | Schedule, Unschedule, Reschedule, sichtbares Conflict Gate, bewusster Override und Today/Dashboard-Projektion sind lokal bewiesen; F1.0F schliesst den task-based Scheduling Core. | Pointer Drag/Resize, freie Events und Schedule-History/Override-Audit bleiben Future Scope. | F1.0E Focused 72/2/0 plus F1.0F Closure | Temporal Planning Surface ist ruhig und funktional; Button-/Keyboard-Kern bleibt final fuer F1.0. | Schedule-Felder, Conflict Scope und Revalidation lokal bewiesen; keine DB-weite Conflict-Sperre. | F1.1 Project/Goal Workbench Depth als naechster Produktblock; Calendar Comfort-Slices nur separat. |
 | Portfolio | `local_connected_with_depth_gap` | Task Lifecycle, Project/Goal/Skill Workbench und Evidence-Flows sind aktuell lokal bewiesen. | Project/Goal Workbench-Tiefe fehlt. | W1.1A Core 86/2/0 plus Extensions 25/0/0 | Steuerungsbereich statt Dashboard-Kopie. | Repositories/Relation Labels lokal user-scoped. | F1.1 Project/Goal Workbench Depth. |
 | Projects | `local_connected_with_depth_gap` | Project Create/Linked Task/Lifecycle-Pfade sind ueber Portfolio/Entity-Proofs aktuell belastbar. | Milestones, Logs, Resources und Review-Kontext fehlen. | W1.1A Core 86/2/0 | Detailseite braucht mehr Tiefe. | Project ownership gates fuer bestehende Kernflows vorhanden. | F1.1 Project/Goal Workbench Depth. |
 | Goals | `local_connected_with_depth_gap` | Goal Create/Linked Project/Linked Task-Pfade sind aktuell lokal belastbar. | Review Cadence, Milestones, Logs und Zielhistorie fehlen. | W1.1A Core 86/2/0 | Zielarbeit braucht echte Progress-Tiefe. | Goal ownership gates fuer bestehende Kernflows vorhanden. | F1.1 Project/Goal Workbench Depth. |
@@ -223,17 +223,15 @@ F0.1 behauptet nicht:
 Naechster ausfuehrbarer Produktblock:
 
 ```text
-F1.0 Calendar Finalization
+F1.1 Project/Goal Workbench Depth
 ```
 
 Begruendung:
 
-- Calendar ist ein zentraler P1-Planungsbereich.
-- Der Kernflow ist lokal connected, aber die finale Interaktion ist noch nicht
-  entschieden.
-- F1.0 kann abschliessen, ob Drag/Resize implementiert wird oder die
-  vorhandene keyboard/button-first 15-Minuten-Steuerung der finale
-  Accessibility-konforme Pfad ist.
+- F1.0 hat den lokalen task-based Scheduling Core geschlossen.
+- Calendar bleibt `local_connected_with_depth_gap`, aber die offenen Calendar-
+  Themen sind klar Future Scope statt Blocker fuer den naechsten Produktblock.
+- Project- und Goal-Workbenches tragen die naechste zentrale P1-Depth-Luecke.
 
 F1.0A Status 2026-07-10:
 
@@ -242,7 +240,17 @@ F1.0A Status 2026-07-10:
 - F1.0A implementiert nichts und aendert keine Produktflaechen.
 - Entscheidung: Button-/Keyboard-Scheduling ist der finale Kern; Pointer
   Drag/Resize bleibt ein spaeterer Komfort-Slice.
-- Naechster Implementierungsblock: F1.0B Calendar UX/Copy/State Clarity.
+
+F1.0F Closure Status 2026-07-11:
+
+- Dokumentiert in `docs/product/calendar-finalization-closure-f1-0f.md`.
+- `Task Scheduling Core = local_connected`.
+- `Calendar = local_connected_with_depth_gap`.
+- Latest Focused Calendar Proof `Calendar|Today|Dashboard|Manual`: 72 passed,
+  2 skipped, 0 failed.
+- Pointer Drag/Resize, freie Calendar Events und Schedule-History/Override-
+  Audit bleiben Future Scope.
+- Kein final-complete-, Production-, Remote- oder Public-SaaS-Claim.
 
 Weitere Reihenfolge:
 

@@ -990,3 +990,53 @@ PASS_WITH_DEFERRED
 Deferred bleiben DB-weite Conflict-Sperre, Override-Audit/Schedule-History,
 Calendar Inspector `Mark done` scheduled-block Deep-Proof, Pointer Drag/Resize
 und freie Calendar-Event-Persistenz.
+
+## 17. F1.0F Calendar Finalization Closure Status
+
+Stand: 2026-07-11
+Status: Completed docs-only closure
+
+F1.0F schliesst Calendar Finalization als local-first, task-based Scheduling
+Core, ohne neue Calendar-Funktionen zu bauen.
+
+Dokumentiert in:
+
+- `docs/product/calendar-finalization-closure-f1-0f.md`
+- `docs/product/calendar-finalization-scope-f1-0a.md`
+
+Ergebnis:
+
+- `Task Scheduling Core = local_connected`
+- `Calendar = local_connected_with_depth_gap`
+- Button-/Keyboard-Scheduling bleibt der finale F1.0-Kern.
+- Pointer Drag/Resize bleibt ein spaeterer Komfort-Slice.
+- freie Calendar Events bleiben Future Scope.
+- Schedule-History/Override-Audit bleibt Future Scope.
+
+Proof-Basis:
+
+- F1.0E Projection-Proof: 6 passed, 0 failed.
+- Latest Focused Full-Grep `Calendar|Today|Dashboard|Manual`: 72 passed,
+  2 skipped, 0 failed.
+- F1.0F fuehrt keinen neuen Playwright-Proof aus, weil der Block docs-only ist
+  und keine UI, Form, Navigation, Persistenz oder Projektion aendert.
+
+Nicht geloest:
+
+- keine DB-weite Conflict-Sperre
+- kein Override-Audit oder Schedule-History
+- kein Pointer/Touch Drag-Resize
+- keine freie Calendar-Event-Persistenz
+- kein Production-, Remote- oder final-complete-Claim
+
+Completion Gate:
+
+```text
+PASS_WITH_DEFERRED
+```
+
+Naechster Produktblock:
+
+```text
+F1.1 Project/Goal Workbench Depth
+```

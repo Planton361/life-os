@@ -330,9 +330,8 @@ F1.0A Calendar Finalization Scope Lock Status 2026-07-10:
   keine Remote-DB und kein Deployment.
 - Entscheidung: Button-/Keyboard-Scheduling ist der finale Kern; Pointer
   Drag/Resize bleibt ein spaeterer Komfort-Slice.
-- F1.0B Calendar UX/Copy/State Clarity wurde am 2026-07-11 umgesetzt; der
-  naechste Calendar-Block ist F1.0C Scheduling Proof Hardening oder F1.0D
-  Conflict/Override Finalization.
+- F1.0B-F1.0E sind abgeschlossen; F1.0F schliesst Calendar Finalization als
+  docs-only Claim- und Future-Scope-Abschluss.
 
 ### F1.0
 
@@ -453,6 +452,25 @@ F1.0E Calendar Today / Dashboard Projection Review Status 2026-07-11:
 - DB-weite Conflict-Sperre, Override-Audit/Schedule-History, Calendar
   Inspector `Mark done` scheduled-block Deep-Proof, Pointer Drag/Resize und
   freie Calendar-Event-Persistenz bleiben deferred.
+
+F1.0F Calendar Finalization Closure Status 2026-07-11:
+
+- Dokumentiert in
+  `docs/product/calendar-finalization-closure-f1-0f.md` und
+  `docs/product/calendar-finalization-scope-f1-0a.md`.
+- Ergebnis: F1.0 Calendar Finalization ist als local-first, task-based
+  Scheduling Core geschlossen.
+- `Task Scheduling Core = local_connected`; `Calendar =
+  local_connected_with_depth_gap`.
+- Button-/Keyboard-Scheduling bleibt der finale F1.0-Kern; Pointer Drag/Resize
+  bleibt ein spaeterer Komfort-Slice.
+- Freie Calendar Events und Schedule-History/Override-Audit bleiben Future
+  Scope mit eigenem Datenmodell-, Security- und Proof-Gate.
+- Latest Focused Full-Grep `Calendar|Today|Dashboard|Manual`: 72 passed,
+  2 skipped, 0 failed. F1.0F fuehrt keinen neuen Playwright-Proof aus, weil
+  der Block docs-only ist.
+- Kein Production-, Remote-, Public-SaaS- oder final-complete-Claim.
+- Naechster ausfuehrbarer Produktblock: F1.1 Project/Goal Workbench Depth.
 
 ### F1.1
 
