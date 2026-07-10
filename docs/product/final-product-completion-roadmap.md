@@ -248,6 +248,15 @@ W1.1B Closure-Plan Status 2026-07-10:
 - Keine Remote-DB-Aktion, kein Deployment, keine Migration, keine RLS-/Policy-
   Aenderung und kein Production Release Claim.
 
+W1.1B.1 Target Environment Inventory Status 2026-07-10:
+
+- Dokumentiert in `docs/ops/target-environment-inventory-w1-1b-1.md`.
+- Ergebnis: `blocked_needs_target`, weil Zielhosting, Remote Supabase Projekt,
+  Domain, Preview-Strategie, Auth Redirects, Backup/Restore und Monitoring
+  noch Nutzerentscheidungen brauchen.
+- Kein Deployment, keine Remote-DB-Aktion, keine Secrets, keine Migration,
+  keine RLS-/Policy-Aenderung und kein Production Release Claim.
+
 ### F1.0
 
 Titel: Calendar Finalization

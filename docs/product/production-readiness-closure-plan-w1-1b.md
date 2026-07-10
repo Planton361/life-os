@@ -271,6 +271,16 @@ Nicht erlaubt:
 - kein Remote Supabase Link
 - kein Secret-Read
 
+Status 2026-07-10:
+
+- Ausgefuehrt in `docs/ops/target-environment-inventory-w1-1b-1.md`.
+- Ergebnis: `blocked_needs_target`.
+- Known local environment, Zielumgebungsoptionen, Env-/Secret-Inventar,
+  Supabase Local-vs-Remote Boundary, Auth-/Redirect-/Domain-Anforderungen,
+  Deployment Preflight und Nutzerfragen sind dokumentiert.
+- W1.1B.1 waehlt keine Production-Umgebung, fuehrt kein Deployment aus und
+  beruehrt keine Remote-DB.
+
 ### W1.1B.2 Remote Supabase Readiness Audit Plan
 
 Ziel: Remote-Audit als sicheren, explizit freigegebenen Folgeblock planen.
