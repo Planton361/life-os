@@ -264,3 +264,18 @@ NO_REMOTE_DB
 NO_DEPLOYMENT
 NO_PRODUCTION_RELEASE_CLAIM
 ```
+
+## 12. W1.1B.3 Status
+
+Stand: 2026-07-10
+
+- Dokumentiert in
+  `docs/ops/local-personal-operations-runbook-w1-1b-3.md`.
+- Daily Startup, Supabase Local Operations, Env-/Secret-Hygiene,
+  Playwright Auth-State Capture, lokale QA-/Browser-Proof-Routine,
+  Device Switch, Backup-Transition und Troubleshooting sind fuer den
+  personal-only local-first Betrieb dokumentiert.
+- Naechster Block bleibt W1.1B.4 Local Backup / Restore Drill.
+- Keine Produktfeatures, keine UI-Aenderungen, keine `src`-Aenderungen, keine
+  Tests, keine Migration, keine RLS-/Policy-Aenderung, keine Remote-DB, kein
+  Deployment und kein Production Release Claim.

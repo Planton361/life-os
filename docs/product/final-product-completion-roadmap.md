@@ -268,6 +268,17 @@ W1.1B.2 Personal Operational Readiness Status 2026-07-10:
   bleiben verbindlich.
 - Naechster empfohlener Block: W1.1B.3 Local Personal Operations Runbook.
 
+W1.1B.3 Local Personal Operations Runbook Status 2026-07-10:
+
+- Dokumentiert in `docs/ops/local-personal-operations-runbook-w1-1b-3.md`.
+- Lokaler personal-only Betrieb ist als Owner-Runbook dokumentiert: Daily
+  Startup, Supabase Local Operations, Env-/Secret-Hygiene, Playwright
+  Auth-State Capture, lokale QA-/Browser-Proof-Routine, Device Switch,
+  Backup-Transition und Troubleshooting.
+- Naechster empfohlener Block: W1.1B.4 Local Backup / Restore Drill.
+- Kein Deployment, keine Remote-DB-Aktion, keine Secrets, keine Migration,
+  keine RLS-/Policy-Aenderung und kein Production Release Claim.
+
 ### F1.0
 
 Titel: Calendar Finalization
