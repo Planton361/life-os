@@ -830,3 +830,77 @@ PASS_WITH_DEFERRED
 
 Deferred bleiben Override-Ausfuehrung/F1.0D, DB-weite Conflict-Sperre,
 Override-Audit, Pointer Drag/Resize und freie Calendar-Event-Persistenz.
+
+## 15. F1.0D Conflict / Override Finalization Status
+
+Stand: 2026-07-11
+Status: Completed
+QA: `docs/qa/calendar-conflict-override-finalization-f1-0d.md`
+
+F1.0D finalisiert die bestehende Conflict-/Override-Semantik des
+Button-/Keyboard-Kerns.
+
+Geaendert:
+
+- Conflict Copy sagt jetzt explizit `Sichtbarer Konflikt`.
+- Override Button sagt `Trotzdem terminieren` und hat einen eindeutigen
+  `aria-label` fuer den sichtbaren Konflikt und die Zielrange.
+- Conflict Copy sagt `Nur sichtbare Blöcke geprüft; nicht DB-weit`.
+- Ein neuer Browser-Proof fuehrt den Override bewusst aus und prueft nach
+  Reload beide ueberlappenden timed blocks mit exakter Range.
+
+Nicht geaendert:
+
+- keine DB-weite Conflict-Sperre
+- kein Backend-Override-Contract
+- kein Override-Audit
+- kein Pointer Drag/Resize
+- keine freie Calendar-Event-Persistenz
+- keine Migration
+- keine RLS-/Policy-Aenderung
+- keine Remote-DB-Aktion
+- kein Deployment
+- keine Secrets
+
+Gezielter Browser-Proof der Conflict-/Override-Tests:
+
+```text
+Manual Calendar blocks visible conflicts without explicit override
+Manual Calendar executes explicit conflict override reload-stable
+
+2 passed
+0 failed
+```
+
+Focused Full-Grep Validation:
+
+```text
+PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Calendar|Today|Dashboard|Manual"
+
+72 passed
+2 skipped
+0 failed
+```
+
+Projektchecks:
+
+```text
+git diff --check
+git diff --cached --check
+pnpm typecheck
+pnpm lint
+pnpm build
+pnpm exec supabase db lint --local --level warning
+pnpm exec supabase db advisors --local --type security --level warn --fail-on none
+
+all passed
+```
+
+Completion Gate:
+
+```text
+PASS_WITH_DEFERRED
+```
+
+Deferred bleiben DB-weite Conflict-Sperre, Override-Audit/Schedule-History,
+Pointer Drag/Resize und freie Calendar-Event-Persistenz.

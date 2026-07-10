@@ -4842,13 +4842,17 @@ test.describe("Calendar content states", () => {
     await expect(
       inspector.getByRole("button", { exact: true, name: "15 min früher" }),
     ).toBeDisabled();
-    await expect(inspector.getByText("Konflikt mit").first()).toBeVisible();
     await expect(
-      inspector.getByText("dieser Check gilt nur für geladene").first(),
+      inspector.getByText("Sichtbarer Konflikt mit").first(),
+    ).toBeVisible();
+    await expect(
+      inspector.getByText("Nur sichtbare Blöcke geprüft").first(),
     ).toBeVisible();
     await expect(
       inspector
-        .getByRole("button", { name: "Trotz Konflikt speichern" })
+        .getByRole("button", {
+          name: /Trotzdem terminieren trotz sichtbarem Konflikt/,
+        })
         .first(),
     ).toBeVisible();
 
@@ -4858,6 +4862,110 @@ test.describe("Calendar content states", () => {
       secondTitle,
       secondStartTime,
       secondEndTime,
+    );
+  });
+
+  test("Manual Calendar executes explicit conflict override reload-stable", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session; no broad DB cleanup action is available.",
+    );
+
+    const timestamp = Date.now();
+    const firstTitle = `Manual Calendar Override A ${timestamp}`;
+    const secondTitle = `Manual Calendar Override B ${timestamp}`;
+
+    await captureAndTriageManualInboxTask(
+      page,
+      firstTitle,
+      "Create the visible conflict target for Calendar override execution.",
+      {
+        durationMinutes: "30",
+        energy: "high",
+        priority: "P0",
+      },
+    );
+    await openPortfolioTaskPlanningControls(page, firstTitle);
+    await clickPortfolioContextButton(page, "Heute planen");
+    await page.waitForLoadState("networkidle");
+    await page.goto("/calendar");
+
+    const firstStartTime = await findFreeCalendarStartTime(page, 60, 11 * 60);
+    const firstEndTime = addClockMinutes(firstStartTime, 30);
+    const secondStartTime = addClockMinutes(firstStartTime, 30);
+    const secondEndTime = addClockMinutes(secondStartTime, 30);
+    const overrideStartTime = addClockMinutes(secondStartTime, -15);
+    const overrideEndTime = addClockMinutes(overrideStartTime, 30);
+
+    await scheduleCalendarQueueTask(page, firstTitle, firstStartTime, "30");
+    await expectCalendarTimedBlockRange(
+      page,
+      firstTitle,
+      firstStartTime,
+      firstEndTime,
+    );
+
+    await captureAndTriageManualInboxTask(
+      page,
+      secondTitle,
+      "Create the adjacent Calendar block that will be consciously overlapped.",
+      {
+        durationMinutes: "30",
+        energy: "high",
+        priority: "P0",
+      },
+    );
+    await openPortfolioTaskPlanningControls(page, secondTitle);
+    await clickPortfolioContextButton(page, "Heute planen");
+    await page.waitForLoadState("networkidle");
+    await page.goto("/calendar");
+    await scheduleCalendarQueueTask(page, secondTitle, secondStartTime, "30");
+    await expectCalendarTimedBlockRange(
+      page,
+      secondTitle,
+      secondStartTime,
+      secondEndTime,
+    );
+
+    const inspector = page.locator('[data-calendar-section="inspector"]');
+
+    await selectCalendarTimedBlock(page, secondTitle);
+    await expect(
+      inspector.getByRole("button", { exact: true, name: "15 min früher" }),
+    ).toBeDisabled();
+    await expect(
+      inspector.getByText("Sichtbarer Konflikt mit").first(),
+    ).toBeVisible();
+    await expect(
+      inspector.getByText("Nur sichtbare Blöcke geprüft").first(),
+    ).toBeVisible();
+
+    const overrideButton = inspector
+      .getByRole("button", {
+        name: /Trotzdem terminieren trotz sichtbarem Konflikt/,
+      })
+      .first();
+
+    await expect(overrideButton).toBeEnabled();
+    await overrideButton.focus();
+    await expect(overrideButton).toBeFocused();
+    await overrideButton.click();
+    await page.waitForLoadState("networkidle");
+    await page.reload();
+
+    await expectCalendarTimedBlockRange(
+      page,
+      firstTitle,
+      firstStartTime,
+      firstEndTime,
+    );
+    await expectCalendarTimedBlockRange(
+      page,
+      secondTitle,
+      overrideStartTime,
+      overrideEndTime,
     );
   });
 });

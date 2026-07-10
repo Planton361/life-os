@@ -203,17 +203,18 @@ function RescheduleTaskForm({
   const buttonClassName =
     variant === "primary" ? primaryActionButtonClass : secondaryActionButtonClass;
   const conflictLabel = candidate.conflict
-    ? `Konflikt mit ${candidate.conflict.title}, ${candidate.conflict.timeLabel}`
+    ? `Sichtbarer Konflikt mit ${candidate.conflict.title}, ${candidate.conflict.timeLabel}`
     : null;
+  const timeRange = timeRangeLabel(
+    candidate.scheduledTime,
+    candidate.durationMinutes,
+  );
 
   return (
     <div className="grid gap-1">
       <form
         action={rescheduleTaskFormAction}
-        aria-label={`${candidate.label} ${timeRangeLabel(
-          candidate.scheduledTime,
-          candidate.durationMinutes,
-        )}`}
+        aria-label={`${candidate.label} ${timeRange}`}
         className="grid gap-1"
       >
         <input name="taskId" type="hidden" value={taskId} />
@@ -233,12 +234,13 @@ function RescheduleTaskForm({
         </button>
         {candidate.conflict ? (
           <button
+            aria-label={`Trotzdem terminieren trotz sichtbarem Konflikt: ${candidate.label} ${timeRange}`}
             className={overrideActionButtonClass}
             name="manualOverride"
             type="submit"
             value="true"
           >
-            Trotz Konflikt speichern
+            Trotzdem terminieren
           </button>
         ) : null}
       </form>
@@ -254,9 +256,9 @@ function RescheduleTaskForm({
         >
           <p>{conflictLabel}</p>
           <p className="mt-1 text-[var(--text-muted)]">
-            Standard-Speichern ist blockiert. Override speichert bewusst über
-            denselben Task-Zeitpfad; dieser Check gilt nur für geladene
-            sichtbare Zeitblöcke, nicht DB-weit.
+            Standard-Speichern ist blockiert. Trotzdem terminieren speichert
+            bewusst über denselben Task-Zeitpfad. Nur sichtbare Blöcke geprüft;
+            nicht DB-weit.
           </p>
         </div>
       ) : null}

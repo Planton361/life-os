@@ -416,6 +416,23 @@ F1.0C Calendar Scheduling Proof Hardening Status 2026-07-11:
 - Override-Ausfuehrung, DB-weite Conflict-Sperre, Override-Audit, Pointer
   Drag/Resize und freie Calendar-Event-Persistenz bleiben deferred.
 
+F1.0D Calendar Conflict / Override Finalization Status 2026-07-11:
+
+- Dokumentiert in `docs/qa/calendar-conflict-override-finalization-f1-0d.md`
+  und `docs/product/calendar-finalization-scope-f1-0a.md`.
+- Sichtbare Conflict-Semantik ist finalisiert: Conflict Gate prueft nur
+  geladene sichtbare Calendar ViewModel Blocks und behauptet keine DB-weite
+  Sperre.
+- Override ist als bewusste Nutzerentscheidung getrennt: `Trotzdem
+  terminieren` nutzt denselben Task-Reschedule-Pfad, ohne neuen
+  Backend-Override-Contract.
+- Gezielter Conflict-/Override-Proof: 2 passed, 0 failed.
+- Focused Full-Grep `Calendar|Today|Dashboard|Manual`: 72 passed,
+  2 skipped, 0 failed.
+- Projektchecks, Build und lokale Supabase Lint/Security Advisors: passed.
+- DB-weite Conflict-Sperre, Override-Audit/Schedule-History, Pointer
+  Drag/Resize und freie Calendar-Event-Persistenz bleiben deferred.
+
 ### F1.1
 
 Titel: Project/Goal Workbench Depth
