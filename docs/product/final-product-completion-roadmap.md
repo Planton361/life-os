@@ -304,6 +304,23 @@ W1.1B.5 Optional Private Remote Decision Status 2026-07-10:
 - Naechster empfohlener Produktpfad: optional F0.1 Final Surface
   Connected-Claim Review vor F1.0 Calendar Finalization.
 
+F0.1 Final Surface Connected-Claim Review Status 2026-07-10:
+
+- Dokumentiert in
+  `docs/product/final-surface-connected-claim-review-f0-1.md`.
+- Ergebnis: `PASS_WITH_DEFERRED`.
+- W1.1A Core `86 passed, 2 skipped, 0 failed` und Extensions `25 passed,
+  0 skipped, 0 failed` sind in Surface-Claims uebersetzt.
+- Dashboard, Inbox, Today, Calendar, Portfolio, Projects, Goals, Resources,
+  Nutrition, Skills, Recurring und lokale AI Suggestions sind nicht mehr
+  pauschal stale `partial`, sondern `local_connected_with_depth_gap`.
+- Settings/System bleibt `partial`, weil Production/Remote/Target-Env,
+  Monitoring, Privacy-/Backup-Systemtiefe und vollstaendige System-UX nicht
+  final verbunden sind.
+- F0.1 behauptet kein `final complete`, kein Production Ready, kein Remote
+  Ready und keinen Public-SaaS-Status.
+- Naechster ausfuehrbarer Produktblock: F1.0 Calendar Finalization.
+
 ### F1.0
 
 Titel: Calendar Finalization

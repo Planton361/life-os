@@ -323,3 +323,18 @@ Stand: 2026-07-10
 - Public SaaS bleibt Nicht-Ziel.
 - Keine Remote-DB, kein Deployment, keine Migration, keine RLS-/Policy-
   Aenderung, kein `db reset` und keine Secrets wurden genutzt.
+
+## 16. F0.1 Connected-Claim Review Status
+
+Stand: 2026-07-10
+
+- Dokumentiert in
+  `docs/product/final-surface-connected-claim-review-f0-1.md`.
+- Local-first bleibt der aktuelle personal-only Pfad.
+- Mehrere Kernflows sind lokal connected und mehrere Surfaces werden als
+  `local_connected_with_depth_gap` eingeordnet.
+- Settings/System bleibt `partial`, weil Production/Remote/Target-Env,
+  Monitoring, Privacy-/Backup-Systemtiefe und vollstaendige System-UX nicht
+  final verbunden sind.
+- F0.1 ist kein Production-, Remote-, Public-SaaS- oder final-complete-Claim.
+- Naechster Produktblock: F1.0 Calendar Finalization.

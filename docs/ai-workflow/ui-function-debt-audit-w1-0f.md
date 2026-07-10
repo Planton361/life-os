@@ -306,6 +306,24 @@ W1.1B Production Readiness Update 2026-07-10:
 - Kein Remote Supabase, kein Deployment, keine Migration, keine RLS-/Policy-
   Aenderung und kein Production Release Claim in W1.1B.
 
+F0.1 Connected-Claim Review Update 2026-07-10:
+
+- Dokumentiert in
+  `docs/product/final-surface-connected-claim-review-f0-1.md`.
+- W1.0F bleibt als historische Momentaufnahme gueltig, aber die pauschale
+  `partial`-/skip-lastig-Einordnung fuer alle Kernflaechen ist nach W1.1A zu
+  praezisieren.
+- Aktuelle Proof-Basis: Core `86 passed, 2 skipped, 0 failed`; Extensions
+  `25 passed, 0 skipped, 0 failed`.
+- Dashboard, Inbox, Today, Calendar, Portfolio, Projects, Goals, Resources,
+  Nutrition, Skills, Recurring und lokale AI Suggestions sind jetzt
+  `local_connected_with_depth_gap`.
+- Settings/System bleibt `partial`, weil Production/Remote/Target-Env,
+  Monitoring, Privacy-/Backup-Systemtiefe und vollstaendige System-UX offen
+  sind.
+- F0.1 ist kein final-complete-, Production-, Remote- oder Public-SaaS-Claim.
+- Naechster ausfuehrbarer Produktblock ist F1.0 Calendar Finalization.
+
 ## 9. Final Product Completion Matrix
 
 | Surface | UI Quality | Functionality | Backend | Reload Proof | Browser Proof | Status | Priority | Next Vertical Slice |
