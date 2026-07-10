@@ -25,6 +25,17 @@ W1.1B.1 waehlt keine Production-Umgebung ohne Nutzerentscheidung.
 W1.1B.1 fuehrt kein Deployment und keine Remote-Aktion aus.
 ```
 
+W1.1B.2 Reconciliation 2026-07-10:
+
+- Dokumentiert in `docs/product/personal-operational-readiness-w1-1b-2.md`.
+- Neue Nutzerentscheidung: Life OS ist personal-only, keine oeffentliche SaaS,
+  keine oeffentliche Registrierung und keine Skalierungsplanung.
+- Die Optionen aus diesem Inventory werden neu bewertet:
+  A Local-first personal use = kurzfristig empfohlen,
+  B Private remote personal use = spaeter optional,
+  C Public SaaS / multi-user production = Nicht-Ziel.
+- Die Target-Env-Fragen bleiben nur fuer Option B relevant.
+
 ## 2. Nicht-Ziele
 
 - keine Produktfeatures
@@ -410,10 +421,10 @@ Spaeter fuer Remote zu pruefen:
 - Storage, falls spaeter relevant
 - Log-/Retention-/Alerting-Grenzen
 
-Remote Audit bleibt:
+Remote Audit nach W1.1B.2:
 
 ```text
-W1.1B.2 Remote Supabase Readiness Audit Plan
+Nur bei Option B Private Remote im separaten W1.1C Private Remote Setup Plan.
 ```
 
 ## 8. Auth / Redirect / Domain Requirements
@@ -527,30 +538,33 @@ Blocker:
 Nicht blockiert:
 
 - lokale Doku- und Readiness-Arbeit.
-- W1.1B.2 als Plan fuer Remote Supabase Audit, solange er keine Remote-Aktion
-  ausfuehrt.
+- W1.1B.3 Local Personal Operations Runbook.
+- W1.1B.4 Local Backup / Restore Drill.
 
 ## 12. Next Block Recommendation
 
-Empfohlen:
+Empfohlen nach W1.1B.2:
 
 ```text
-User Target Decision -> W1.1B.2 Remote Supabase Readiness Audit Plan
+W1.1B.3 Local Personal Operations Runbook
 ```
 
 Begruendung:
 
-- W1.1B.1 kann keine Zielumgebung auswaehlen.
-- W1.1B.2 sollte erst Remote-Audit-Kommandos, Rollen und No-Service-Role-
-  Grenzen definieren, bevor irgendein Remote-Zugriff erlaubt wird.
-- Ein Deployment-Rehearsal sollte erst nach Target-Env-Entscheidung und Remote-
-  Supabase Readiness Plan starten.
+- W1.1B.2 hat den Zielkontext auf personal-only korrigiert.
+- Local-first ist kurzfristig empfohlen.
+- Remote Supabase Audit und Deployment-Rehearsal sind nur relevant, wenn der
+  Nutzer spaeter Option B Private Remote aktiv waehlt.
+- Ein Deployment-Rehearsal sollte erst nach Optional Private Remote Decision
+  und eigenem W1.1C Setup-Plan starten.
 
 Bis dahin erlaubter Claim:
 
 ```text
 Life OS ist lokal proof-stable.
-Life OS ist noch nicht production-ready.
+Personal Operational Readiness ist der aktive Zielkontext.
+Private Remote ist optional.
+Public SaaS ist kein Ziel.
 ```
 
 Browser-Proof:

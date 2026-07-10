@@ -24,6 +24,19 @@ Life OS ist lokal proof-stable.
 Life OS ist noch nicht production-ready.
 ```
 
+W1.1B.2 Reconciliation 2026-07-10:
+
+```text
+Personal Operational Readiness = aktiv
+Optional Private Remote Readiness = spaeter optional
+Public Production Readiness = Nicht-Ziel
+```
+
+Die historischen Production-Readiness-Dateinamen bleiben als Dokumentationspfad
+bestehen. Inhaltlich werden die W1.1B-Gates ab W1.1B.2 fuer eine persoenliche
+Owner-only-App neu interpretiert: local-first ist der empfohlene Pfad, private
+remote ist optional, Public SaaS ist kein Ziel.
+
 ## 2 Nicht-Ziele
 
 W1.1B fuehrt nicht aus:
@@ -92,9 +105,9 @@ Status: `blocked_needs_remote_access`
   Zielumgebung.
 - Risiko: lokaler PASS kann von Remote-Konfiguration, Auth-Settings, Grants
   oder Projekt-Policies abweichen.
-- Benoetigte naechste Aktion: W1.1B.2 als remote-readiness Plan mit explizitem
-  Remote-Scope, Operator-Rollen, erlaubten Read-only-Kommandos und
-  No-Service-Role-Regel vorbereiten.
+- Einordnung nach W1.1B.2: nicht naechster Pflichtblock; nur bei Option B
+  Private Remote als W1.1C-Teil mit explizitem Remote-Scope, Operator-Rollen,
+  erlaubten Read-only-Kommandos und No-Service-Role-Regel vorbereiten.
 
 ### Target Env Verification
 
@@ -108,7 +121,8 @@ Status: `blocked_needs_target`
   List, public Supabase URL/Key fuer die Zielumgebung und Runtime-Node-Version.
 - Risiko: falsche Env-Werte koennen Auth, Browser-Bundles, Redirects oder
   Manual-Supabase-Flows brechen.
-- Benoetigte naechste Aktion: W1.1B.1 Target Environment Inventory ausfuehren.
+- Einordnung nach W1.1B.2: W1.1B.1 ist erledigt; Target-Env-Entscheidung wird
+  erst wieder relevant, wenn Option B Private Remote aktiv gewaehlt wird.
 
 ### Deployment Rehearsal
 
@@ -121,8 +135,8 @@ Status: `blocked_needs_target`
   deployed routing, deployed Server Actions und deployed Supabase SSR cookies.
 - Risiko: lokale Builds koennen Deployment-spezifische Runtime-, Route-,
   Cookie- oder Env-Probleme nicht abdecken.
-- Benoetigte naechste Aktion: W1.1B.3 Deployment Rehearsal Dry Run nach
-  W1.1B.1/W1.1B.2 planen.
+- Einordnung nach W1.1B.2: nicht naechster Pflichtblock; Deployment-Rehearsal
+  nur bei Option B Private Remote im separaten W1.1C-Plan vorbereiten.
 
 ### Production Backup / Restore Drill
 
@@ -137,8 +151,8 @@ Status: `blocked_needs_target`
   Ownership nach Restore.
 - Risiko: produktive Daten koennten ohne geprueften Restore-Pfad nicht
   verlaesslich wiederherstellbar sein.
-- Benoetigte naechste Aktion: W1.1B.4 Backup / Restore Drill Plan erstellen und
-  erst danach einen echten Drill in isolierter Umgebung freigeben.
+- Einordnung nach W1.1B.2: lokaler Backup-/Restore-Drill bleibt Pflicht und
+  wird als W1.1B.4 Local Backup / Restore Drill geplant.
 
 ### Production Performance Baseline
 
@@ -152,8 +166,8 @@ Status: `blocked_needs_target`
   Supabase Query-Latenzen, Index-/EXPLAIN-Bewertung und Zielgeraete-Performance.
 - Risiko: lokale Performance kann Zielplattform, Netzwerk, Supabase-Region,
   Datenvolumen oder Browsergeraete nicht abbilden.
-- Benoetigte naechste Aktion: W1.1B.5 Production Performance Baseline Plan mit
-  Messpunkten und Row-Count-Annahmen definieren.
+- Einordnung nach W1.1B.2: keine Public Production Performance Baseline fuer
+  Local-first; private remote Performance-Fragen nur bei Option B.
 
 ### Production Accessibility Claim
 
@@ -168,8 +182,9 @@ Status: `blocked_needs_manual_review`
   spaeterer Deep Features und deployed Runtime.
 - Risiko: lokale Playwright-/DOM-Proofs ersetzen keinen manuellen
   Accessibility-Review in Zielumgebung.
-- Benoetigte naechste Aktion: W1.1B.6 Production Accessibility Manual Review Plan
-  mit Geraeten, Browsern, Screenreader-Matrix und Abbruchkriterien definieren.
+- Einordnung nach W1.1B.2: kein Public Accessibility Claim fuer Local-first;
+  Accessibility darf lokal nicht verschlechtert werden, Private-Remote-Review
+  nur bei Option B.
 
 ### External AI Provider Governance
 
@@ -184,8 +199,8 @@ Status: `blocked_needs_secrets_policy`
   Provider-spezifischer Browser-Proof.
 - Risiko: ein externer Provider kann Privacy-, Kosten-, Logging- und
   Compliance-Risiken einfuehren.
-- Benoetigte naechste Aktion: separater AI Provider Governance Preflight erst
-  nach P0 Production-System-Gates.
+- Einordnung nach W1.1B.2: weiterhin spaeterer Governance-Scope; externe AI
+  ist nicht Teil von Personal Operational Readiness.
 
 ### Export / Import Implementation
 
@@ -200,8 +215,8 @@ Status: `deferred_future`
   Cross-User-Restore.
 - Risiko: Portabilitaet oder Restore darf nicht behauptet werden, bevor ein
   echter Implementierungs- und Drill-Pfad existiert.
-- Benoetigte naechste Aktion: eigener Export/Import Implementation Slice nach
-  Backup/Restore-Drill-Plan, ohne echte Nutzerdaten im Repo.
+- Einordnung nach W1.1B.2: Export/Import bleibt spaeter; lokaler
+  Backup-/Restore-Drill kommt zuerst und ohne echte Nutzerdaten im Repo.
 
 ### Monitoring / Logging / Error Handling
 
@@ -216,8 +231,8 @@ Status: `blocked_needs_target`
   Alerting, Runtime-Failures, Deployment-Logs und Backup-Job-Monitoring.
 - Risiko: Production-Probleme koennten unbemerkt bleiben oder Logs koennten
   sensible Daten enthalten, wenn Logging nicht vorher begrenzt wird.
-- Benoetigte naechste Aktion: Monitoring/Logging-Preflight nach Target Env
-  Inventory und vor Release Claim.
+- Einordnung nach W1.1B.2: Local-first braucht zunaechst lokale Fehler- und
+  Recovery-Dokumentation; Remote Monitoring/Logging nur bei Option B.
 
 ## 5 Gate-Statuswerte
 
@@ -281,90 +296,95 @@ Status 2026-07-10:
 - W1.1B.1 waehlt keine Production-Umgebung, fuehrt kein Deployment aus und
   beruehrt keine Remote-DB.
 
-### W1.1B.2 Remote Supabase Readiness Audit Plan
+### W1.1B.2 Personal Use Scope Reconciliation
 
-Ziel: Remote-Audit als sicheren, explizit freigegebenen Folgeblock planen.
+Ziel: bisherigen Production-Readiness-Begriff auf Personal Operational
+Readiness korrigieren.
 
-Scope:
+Status 2026-07-10:
 
-- erlaubte Read-only-Pruefungen definieren
-- verbotene Kommandos benennen
-- Operator-Rolle und No-Service-Role-Regel festlegen
-- RLS, Grants, Advisors, Auth-Redirects und Data-API-Exposure als Checkliste
-  strukturieren
+- Ausgefuehrt in `docs/product/personal-operational-readiness-w1-1b-2.md`.
+- Ergebnis: `PERSONAL_OPERATIONAL_READINESS_SCOPE_DEFINED`.
+- Local-first ist kurzfristig empfohlen.
+- Private Remote bleibt optional.
+- Public SaaS, oeffentliche Registrierung, Public Launch und
+  Skalierungsplanung sind Nicht-Ziele.
+- Auth, RLS, Backup, Restore, Ownership, Service-Role-Verbot und Secret-Hygiene
+  bleiben verbindlich.
 
-Nicht erlaubt:
+### W1.1B.3 Local Personal Operations Runbook
 
-- kein automatischer Remote-Zugriff in diesem Dokument
-- kein `supabase db push`
-- kein `supabase db reset`
-
-### W1.1B.3 Deployment Rehearsal Dry Run
-
-Ziel: Deployment-Dry-Run ohne Production Release Claim vorbereiten.
+Ziel: lokalen persoenlichen Betrieb als Owner-Runbook dokumentieren.
 
 Scope:
 
-- Zielplattform-Build ausfuehren
-- Env-Werte gegen Inventory pruefen
-- Auth- und Server-Action-Smoke in Zielumgebung pruefen
-- Browser-Proof nur gegen freigegebene Target URL ausfuehren
+- Start/Stop der App und lokalen Supabase Runtime.
+- Lokale Auth-/Manual-Supabase-Grenzen.
+- Welche Checks vor Nutzung oder Updates laufen.
+- Umgang mit `.env.local`, `.local/**`, Backups, Exports und Playwright-
+  Artefakten.
+- Recovery- und Troubleshooting-Schritte fuer den Eigentuemer.
 
 Nicht erlaubt:
 
-- kein Production Claim ohne gruenes Gate
-- keine produktiven Daten ohne Backup/Restore-Gate
-
-### W1.1B.4 Backup / Restore Drill Plan
-
-Ziel: echten Restore Drill sicher vorbereiten.
-
-Scope:
-
-- RPO/RTO festlegen
-- isolierte Restore-Umgebung definieren
-- Backup-Quelle, Verschluesselung, Checksums und Row Counts planen
-- Restore-Reihenfolge aus R1.9.2 verwenden
-- Ownership-/RLS-Smokes nach Restore definieren
-
-Nicht erlaubt:
-
-- keine Backup-Artefakte committen
+- kein Deployment
+- keine Remote-DB
 - keine Secrets dokumentieren
-- kein Restore in Production
 
-### W1.1B.5 Production Performance Baseline Plan
+### W1.1B.4 Local Backup / Restore Drill
 
-Ziel: Production Performance messbar machen.
-
-Scope:
-
-- Routen, Interaktionen und Supabase Queries auswaehlen
-- Datenmengen und Row Counts festlegen
-- TTFB, route load, interaction latency und hosted Supabase Query-Latenzen
-  messen
-- Query-/Index-/EXPLAIN-Follow-ups sauber trennen
-
-Nicht erlaubt:
-
-- kein Performance Claim aus lokalen Zahlen allein
-
-### W1.1B.6 Production Accessibility Manual Review Plan
-
-Ziel: Production Accessibility Review reproduzierbar machen.
+Ziel: lokalen Backup-/Restore-Pfad fuer persoenliche Daten beweisen.
 
 Scope:
 
-- Zielbrowser, Zielgeraete und Screenreader-Matrix definieren
-- Keyboard-only Pass fuer MVP-Core-Hauptflows ausfuehren
-- Screenreader-Pass fuer Navigation, Forms, Status und Alerts ausfuehren
-- Mobile Touch-/Focus-Checks fuer Zielgeraete dokumentieren
+- lokales Backup-Format und Speicherort ohne Repo-Staging
+- Restore in isolierte lokale Umgebung oder kontrollierten lokalen Testpfad
+- Checksums/Row Counts, falls passend
+- RLS-/Ownership-Smoke nach Restore
+- Dokumentierte Loesch-/Aufbewahrungsregel fuer lokale Artefakte
 
 Nicht erlaubt:
 
-- kein Production Accessibility Claim aus Playwright allein
+- keine echten Backup-Artefakte committen
+- kein Restore in Remote/Production
+- keine Secrets dokumentieren
 
-### W1.1B.7 External AI Provider Governance Preflight
+### W1.1B.5 Optional Private Remote Decision
+
+Ziel: bewusst entscheiden, ob private Remote ueberhaupt gewuenscht ist.
+
+Scope:
+
+- Local-first bleibt ausreichend oder private remote wird gewuenscht.
+- Falls remote: Hoster, Supabase Cloud, Domain, Auth nur fuer Eigentuemer,
+  keine oeffentliche Registrierung und Datenpolicy entscheiden.
+- Falls nicht remote: Remote-Gates bleiben deferred.
+
+Nicht erlaubt:
+
+- kein Deployment
+- kein Remote Supabase Zugriff
+- kein Public SaaS Scope
+
+### W1.1C Private Remote Setup Plan
+
+Ziel: nur bei aktiver Nutzerentscheidung fuer private remote einen separaten
+Setup-Plan erstellen.
+
+Scope:
+
+- Remote Supabase Readiness Audit Plan.
+- Deployment Rehearsal fuer private Owner-only App.
+- Auth Site URL und Redirect-Allow-List.
+- Remote Backup/Restore und Monitoring nur im privaten Zielkontext.
+
+Nicht erlaubt:
+
+- keine oeffentliche Registrierung
+- kein Public Launch
+- keine Remote-Aktion ohne eigenen expliziten Scope
+
+### W1.1B.6 External AI Provider Governance Preflight
 
 Ziel: externe AI erst nach System-Gates bewertbar machen.
 
@@ -379,7 +399,7 @@ Status: `blocked_needs_secrets_policy`
 Scheduling: `deferred_future`, bis P0 Production-System-Gates abgeschlossen
 sind.
 
-### W1.1B.8 Export / Import / Monitoring Preflight
+### W1.1B.7 Export / Import / Monitoring Preflight
 
 Ziel: Portability und Production Operations ohne Datenleck vorbereiten.
 
@@ -393,26 +413,25 @@ Status: `deferred_future`
 
 ## 8 Empfohlene Reihenfolge
 
-1. W1.1B.1 Target Environment Inventory
-2. W1.1B.2 Remote Supabase Readiness Audit Plan
-3. W1.1B.3 Deployment Rehearsal Dry Run
-4. W1.1B.4 Backup / Restore Drill Plan
-5. W1.1B.5 Production Performance Baseline Plan
-6. W1.1B.6 Production Accessibility Manual Review Plan
-7. W1.1B.8 Export / Import / Monitoring Preflight
-8. W1.1B.7 External AI Provider Governance Preflight
+1. W1.1B.2 Personal Use Scope Reconciliation
+2. W1.1B.3 Local Personal Operations Runbook
+3. W1.1B.4 Local Backup / Restore Drill
+4. W1.1B.5 Optional Private Remote Decision
+5. W1.1C Private Remote Setup Plan, nur wenn der Nutzer Remote will
+6. W1.1B.7 Export / Import / Monitoring Preflight, lokal zuerst
+7. W1.1B.6 External AI Provider Governance Preflight, spaeter
 
 Begruendung:
 
-- Target Env muss vor Remote-, Deployment-, Performance- und Accessibility-
-  Claims bekannt sein.
-- Remote Supabase Audit muss vor produktiven Daten- oder Release-Claims
-  stattfinden.
-- Backup/Restore muss vor echten produktiven Daten und vor Release Claim
-  nachweisbar sein.
-- Performance und Accessibility muessen in der Zielumgebung validiert werden.
-- Externe AI und Operations-Ausbau duerfen nicht vor P0 Production-System-Gates
-  priorisiert werden.
+- Personal-only ist der neue Zielkontext.
+- Local-first braucht zuerst ein Runbook und lokalen Restore Drill.
+- Private Remote ist optional und darf erst nach Nutzerentscheidung geplant
+  werden.
+- Remote Supabase Audit, Deployment Rehearsal, Production Performance Baseline
+  und Public Accessibility Claim sind nicht mehr als naechste Pflichtbloecke zu
+  erzwingen.
+- Auth, RLS, Backup/Restore, Ownership und Secret-Hygiene bleiben trotz
+  kleinerem Scope verbindlich.
 
 ## 9 Welche Zugaenge spaeter benoetigt werden
 
@@ -444,57 +463,56 @@ Playwright-Artefakte geschrieben werden.
 
 ## 11 Release-Claim-Regel
 
-Erlaubter Claim nach W1.1B:
+Erlaubter Claim nach W1.1B.2:
 
 ```text
 Life OS ist lokal proof-stable.
-Life OS ist noch nicht production-ready.
+Personal Operational Readiness ist der aktive Zielkontext.
+Private Remote ist optional.
+Public SaaS ist kein Ziel.
 ```
 
 Nicht erlaubt:
 
-- `production-ready`
-- `production-release-ready`
+- `public production-ready`
+- `public production-release-ready`
 - `remote Supabase audited`
 - `deployment verified`
 - `backup/restore proven`
-- `production accessibility passed`
-- `production performance baseline passed`
+- `public accessibility passed`
+- `public performance baseline passed`
+- `public SaaS ready`
 
-Ein Production Release Claim ist erst erlaubt, wenn mindestens diese Gates
-dokumentiert gruen sind:
+Ein privater Remote-Claim ist erst erlaubt, wenn Option B aktiv gewaehlt und
+mindestens diese Gates dokumentiert gruen sind:
 
-- Target Env Verification
 - Remote Supabase Audit
 - Deployment Rehearsal
 - Production Backup / Restore Drill
-- Production Performance Baseline
-- Production Accessibility Claim
-- Monitoring / Logging / Error Handling Preflight
+- Private Remote Auth-/Redirect-Pruefung
+- Private Remote Backup/Restore- und Monitoring-Grenzen
 
 ## 12 Naechster ausfuehrbarer Block
 
 Naechster Block:
 
 ```text
-W1.1B.1 Target Environment Inventory
+W1.1B.3 Local Personal Operations Runbook
 ```
 
 Warum:
 
 - Er benoetigt keine Secrets.
 - Er fuehrt keine Remote-DB-Aktion aus.
-- Er entscheidet die konkrete Zielumgebung, von der alle spaeteren Production-
-  Gates abhaengen.
-- Er macht W1.1B.2 bis W1.1B.6 erst sauber ausfuehrbar.
+- Er passt zum neuen personal-only Zielkontext.
+- Er bereitet lokalen Backup-/Restore-Drill vor.
+- Er ersetzt Remote-Audit/Deployment-Rehearsal als naechsten Pflichtblock.
 
-Definition of Done fuer W1.1B.1:
+Definition of Done fuer W1.1B.3:
 
-- Zielplattform, Ziel-URL-Typ, Runtime und Node-Version sind dokumentiert.
-- Supabase-Zielprojekt ist als Kategorie/Identifier dokumentiert, ohne Secrets.
-- Auth Site URL und Redirect-Allow-List sind als Betreiber-Checkpunkte
-  erfasst.
-- Remote Supabase Audit, Deployment Rehearsal, Backup/Restore, Performance und
-  Accessibility haben danach klare Preconditions.
-- Keine Remote-DB-Aktion, kein Deployment, keine Secrets und keine
+- lokaler Start/Stop ist dokumentiert.
+- lokale Supabase/Auth-State-Grenzen sind dokumentiert.
+- lokale Validierungsbefehle sind dokumentiert.
+- lokale Backup-/Restore-Vorbereitung ist dokumentiert.
+- keine Remote-DB-Aktion, kein Deployment, keine Secrets und keine Public-
   Production-Claims wurden ausgefuehrt oder dokumentiert.

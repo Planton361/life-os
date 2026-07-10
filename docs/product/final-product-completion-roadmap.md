@@ -257,6 +257,17 @@ W1.1B.1 Target Environment Inventory Status 2026-07-10:
 - Kein Deployment, keine Remote-DB-Aktion, keine Secrets, keine Migration,
   keine RLS-/Policy-Aenderung und kein Production Release Claim.
 
+W1.1B.2 Personal Operational Readiness Status 2026-07-10:
+
+- Dokumentiert in `docs/product/personal-operational-readiness-w1-1b-2.md`.
+- Neue Zielinterpretation: Life OS ist personal-only, local-first und keine
+  oeffentliche SaaS.
+- Private Remote bleibt optional; Public SaaS, oeffentliche Registrierung,
+  Public Launch und Skalierungsplanung sind Nicht-Ziele.
+- Auth, RLS, Backup, Restore, Ownership, Service-Role-Verbot und Secret-Hygiene
+  bleiben verbindlich.
+- Naechster empfohlener Block: W1.1B.3 Local Personal Operations Runbook.
+
 ### F1.0
 
 Titel: Calendar Finalization
