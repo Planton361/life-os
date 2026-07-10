@@ -235,6 +235,15 @@ Begruendung:
   vorhandene keyboard/button-first 15-Minuten-Steuerung der finale
   Accessibility-konforme Pfad ist.
 
+F1.0A Status 2026-07-10:
+
+- F1.0 Calendar Finalization ist mit
+  `docs/product/calendar-finalization-scope-f1-0a.md` als Scope-Lock gestartet.
+- F1.0A implementiert nichts und aendert keine Produktflaechen.
+- Entscheidung: Button-/Keyboard-Scheduling ist der finale Kern; Pointer
+  Drag/Resize bleibt ein spaeterer Komfort-Slice.
+- Naechster Implementierungsblock: F1.0B Calendar UX/Copy/State Clarity.
+
 Weitere Reihenfolge:
 
 1. F1.1 Project/Goal Workbench Depth.

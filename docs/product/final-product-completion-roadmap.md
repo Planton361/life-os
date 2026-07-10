@@ -321,6 +321,18 @@ F0.1 Final Surface Connected-Claim Review Status 2026-07-10:
   Ready und keinen Public-SaaS-Status.
 - Naechster ausfuehrbarer Produktblock: F1.0 Calendar Finalization.
 
+F1.0A Calendar Finalization Scope Lock Status 2026-07-10:
+
+- Dokumentiert in
+  `docs/product/calendar-finalization-scope-f1-0a.md`.
+- Ergebnis: Calendar Finalization ist als Docs-/Scope-Lock gestartet; keine
+  Produktfeatures, keine UI-/`src`-Aenderungen, keine Tests, keine Migration,
+  keine Remote-DB und kein Deployment.
+- Entscheidung: Button-/Keyboard-Scheduling ist der finale Kern; Pointer
+  Drag/Resize bleibt ein spaeterer Komfort-Slice.
+- Naechster ausfuehrbarer Implementierungsblock: F1.0B Calendar UX/Copy/State
+  Clarity.
+
 ### F1.0
 
 Titel: Calendar Finalization
@@ -359,6 +371,13 @@ Validation:
 Risk:
 
 - Pointer interaction can create accessibility and mobile complexity.
+
+F1.0A Scope Lock Status 2026-07-10:
+
+- F1.0A dokumentiert Current State, finalen Zielzustand, Pointer-Entscheidung,
+  Design-/Backend-/Proof-Gaps und die F1.0B-F1.0F Slice-Struktur.
+- F1.0A implementiert nichts; die erste Umsetzung ist F1.0B Calendar
+  UX/Copy/State Clarity.
 
 ### F1.1
 
