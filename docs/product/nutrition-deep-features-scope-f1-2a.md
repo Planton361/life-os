@@ -14,6 +14,16 @@ Datenmodellgrenzen, Slice-Reihenfolge und ersten ausfuehrbaren Folgeblock.
 Nicht gilt fuer: Produktfeatures, UI-Aenderungen, `src`, Tests, Migrationen,
 RLS-/Policy-Aenderungen, Remote-DB, Deployment oder Secrets.
 
+Closure Update 2026-07-11:
+
+- F1.2A–H sind abgeschlossen.
+- F1.2I schließt den Block in
+  `docs/product/nutrition-closure-f1-2i.md`.
+- Finaler Claim: `Nutrition = local_connected_with_depth_gap`.
+- Nächster Produktbereich: F1.3 Resource/Skill Graph Read Model.
+- Die nachfolgenden Current-State-Abschnitte dokumentieren teilweise die
+  historische F1.2A-Ausgangslage; der Closure-Stand hat Vorrang.
+
 ## 1. Zweck
 
 F1.2A startet den Produktbereich:
@@ -274,9 +284,9 @@ food-database product.
 | --- | --- | --- |
 | Recipe Detail | partial | Recipe fields, update/archive and Ingredients are bound in Manual Recipes UI; detail route remains a stub. |
 | Ingredients | local_connected | F1.2C adds `recipe_ingredients` rows and Manual UI create/edit/delete with reload proof. |
-| Meal Planning | partial | Meals support date, meal type, recipe relation, planned/completed state and projection; planner edit, serving/portion and recipe replacement are not connected. |
-| Grocery | blocked_by_generation | Grocery can now depend on Recipe Ingredients, but generation/review/items remain deferred. |
-| Nutrition Metrics | partial | Rough `nutrition_estimate` exists on Recipe; no trusted nutrition source, targets, macro engine or health claims. |
+| Meal Planning | local_connected_with_depth_gap | Meal Create/Edit/Reschedule/Complete und aktiver Same-User-Recipe-Wechsel sind verbunden; Portionen und Drag-and-drop bleiben deferred. |
+| Grocery | connected_read_projection | Read-only Draft aus echten offenen Meals und Recipe Ingredients; Persistenz, Check-off und Pantry bleiben deferred. |
+| Nutrition Metrics | estimate_only | `nutrition_estimate` bleibt optionale manuelle Recipe-Schätzung; keine Intake- oder Metrics Engine. |
 
 Recipe Detail scope:
 
@@ -808,6 +818,14 @@ F1.2H Status 2026-07-11:
 
 ### F1.2I Nutrition Closure
 
+Status 2026-07-11: PASS_WITH_DEFERRED.
+
+- Closure-Dokument: `docs/product/nutrition-closure-f1-2i.md`.
+- Connected Claims und Deferred Work sind gegen F1.2B–H abgeglichen.
+- Nutrition bleibt `local_connected_with_depth_gap`.
+- Kein neuer Browser-Proof, da F1.2I ausschließlich Dokumentation ändert.
+- Nächster Produktbereich: F1.3 Resource/Skill Graph Read Model.
+
 Ziel:
 
 - Close F1.2 claims after connected slices and document remaining deferred
@@ -905,3 +923,12 @@ PASS_WITH_DEFERRED
 
 F1.2A is complete as a docs-only scope lock. Deferred work is explicitly
 bounded into F1.2B-F1.2I.
+
+F1.2I Closure Decision:
+
+```text
+PASS_WITH_DEFERRED
+```
+
+F1.2 Nutrition Deep Features ist fachlich und operativ geschlossen. Spätere
+Nutrition-Tiefe bleibt im Closure-Dokument explizit deferred.

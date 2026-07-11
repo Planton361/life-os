@@ -735,7 +735,15 @@ F1.2C Status 2026-07-11:
   `nutrition_estimate` bleibt optionale manuelle Recipe-Schätzung; automatische
   Macro-/Calorie-Berechnung, Tagesziele, Defizitlogik und Health Claims bleiben
   deferred. Decision Lock: `docs/product/nutrition-metrics-decision-f1-2h.md`.
-- Nächster Nutrition-Block: F1.2I Closure.
+- F1.2H setzte F1.2I Closure als nächsten Nutrition-Block.
+- F1.2I schließt Nutrition Deep Features als
+  `local_connected_with_depth_gap`. Connected sind Recipe CRUD/Archive,
+  Ingredient CRUD, Meal Create/Edit/Reschedule/Complete, Recipe-Wechsel,
+  read-only Grocery Draft und manuelle Estimate-Projektion. Persistente
+  Grocery Items, Pantry, Portionen, Metrics Engine, externe Food APIs,
+  Health Claims, AI Advice, Recipe Detail und Drag-and-drop bleiben deferred.
+  Closure: `docs/product/nutrition-closure-f1-2i.md`.
+- Nächster Produktbereich: F1.3 Resource/Skill Graph Read Model.
 
 Surfaces: Nutrition Overview, Meal Planner, Recipes, Grocery.
 

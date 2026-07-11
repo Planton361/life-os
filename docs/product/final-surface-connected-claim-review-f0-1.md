@@ -1,5 +1,16 @@
 # F0.1 Final Surface Connected-Claim Review
 
+## F1.2I Nutrition Closure 2026-07-11
+
+F1.2 Nutrition Deep Features ist geschlossen. Nutrition bleibt
+`local_connected_with_depth_gap`: Recipe Create/Edit/Archive, Ingredient
+Create/Edit/Delete, Meal Create/Edit/Reschedule/Complete, Recipe-Wechsel,
+read-only Grocery Draft und manuelle Estimate-Projektion sind lokal verbunden.
+Persistente Grocery Review, Pantry, Portionen, Metrics Engine, externe Food
+APIs, Health Claims, AI Nutrition Advice, Recipe Detail und Drag-and-drop
+bleiben deferred. Nächster Produktbereich ist F1.3 Resource/Skill Graph Read
+Model.
+
 ## F1.2H Nutrition Update 2026-07-11
 
 Nutrition Metrics sind als `estimate_only` entschieden. Das optionale Recipe-
@@ -130,7 +141,7 @@ Startcheck F0.1:
 | Projects | `local_connected_with_depth_gap` | Project Create, Linked Task Create/Lifecycle, Entity Edit, Status Edit, Soft Archive, Resource Relation Link und Skill Evidence Display read-only sind lokal belastbar. | Milestones, Project Log, Review-/History-Kontext, Undo/Restore, finaler Close-Flow, Progress Engine, Graph, AI Coach und Evidence Create fehlen. | F1.1C 69/6/0, F1.1F 37/0/0, F1.1G Closure | Detailseite braucht mehr Tiefe, aber Workbench-Core ist proof-stable. | Project ownership gates fuer bestehende Kernflows, Resource Relations und Evidence Sources vorhanden. | F1.2 Nutrition; Project Milestones/Logs spaeter. |
 | Goals | `local_connected_with_depth_gap` | Goal Create, Linked Project Create, Linked Task Create/Lifecycle, Entity Edit, Status/Horizon Edit, Soft Archive, Resource Relation Link und Skill Evidence Display read-only sind lokal belastbar. | Review Cadence, Milestones, Goal Log, Zielhistorie, Undo/Restore, finaler Achieve-Flow, Progress Engine, Graph, AI Coach und Evidence Create fehlen. | F1.1D 28/0/0, F1.1F 37/0/0, F1.1G Closure | Zielarbeit braucht echte Progress-Tiefe, aber Workbench-Core ist proof-stable. | Goal ownership gates fuer bestehende Kernflows, Resource Relations und Evidence Sources vorhanden. | F1.2 Nutrition; Goal Review/Milestones/Logs spaeter. |
 | Resources | `local_connected_with_depth_gap` | Resource Create, Inspector und Relation Create sind aktuell non-skipped gruen. | Graph-/ReadModel-Tiefe und Pagination/Scope fehlen. | W1.1A Extensions 25/0/0 | Knowledge Workbench, Graph nicht dekorativ. | Relation Labels/Targets lokal user-scoped. | F1.3 Resource/Skill Graph. |
-| Nutrition | `local_connected_with_depth_gap` | Recipe/Meal Create, Meal Complete, Recipe Ingredients, Meal Planner Edit/Reschedule und read-only Grocery Draft sind lokal verbunden; Metrics sind `estimate_only`. | Grocery-Persistenz/Review, Pantry, echte Metrics Engine und volle Recipe Detail-Tiefe fehlen. | F1.2B–F1.2G focused proofs plus F1.2H Decision Lock | Health-sensitive; Grocery ist Draft und Nährwerte sind als Schätzung oder unbekannt markiert. | User-scoped Nutrition Reads/Writes und Date Scopes lokal bewiesen; keine Nutrition-Engine. | F1.2I Nutrition Closure. |
+| Nutrition | `local_connected_with_depth_gap` | Recipe Create/Edit/Archive, Ingredient Create/Edit/Delete, Meal Create/Edit/Reschedule/Complete, Recipe-Wechsel, read-only Grocery Draft und manuelle Estimate-Projektion sind lokal verbunden. | Persistente Grocery Review, Pantry, Unit Conversion, Portionen, Metrics Engine, Recipe Detail und Drag-and-drop bleiben deferred. | F1.2B–F1.2G focused proofs, F1.2H Decision Lock, F1.2I Closure | Health-sensitive; Grocery ist Draft und Nährwerte sind Schätzung oder unbekannt. | User-scoped Nutrition Reads/Writes und Date Scopes lokal bewiesen; keine Nutrition-/Intake-Engine. | F1.3 Resource/Skill Graph Read Model. |
 | Skills | `local_connected_with_depth_gap` | Skill Create/Edit/Archive und Evidence/Source-Linking sind aktuell gruen. | Skill Map/Graph und Evidence-Historie-Tiefe fehlen. | W1.1A Extensions 25/0/0 | Kompetenznachweise, kein AI-Behauptungsgraph. | Evidence Source Ownership lokal bewiesen. | F1.3 Resource/Skill Graph. |
 | Recurring | `local_connected_with_depth_gap` | Template Create und explizite idempotente Generate-Flows sind aktuell gruen. | Full Template Management und Automation fehlen. | W1.1A Extensions 25/0/0 | Routine UI ohne Gamification-Druck. | Idempotente Generation lokal bewiesen, keine Auto-Write-Ueberraschung. | F2.1 Recurring Full Management. |
 | AI Suggestions | `local_connected_with_depth_gap` | Lokaler deterministischer Review/Confirm-Flow ist aktuell gruen und schreibt nur nach User-Bestaetigung. | External Provider, Privacy, Logging, Cost und Failure Governance fehlen. | W1.1A Core 86/2/0 plus Extensions 25/0/0 | AI bleibt Review-Schicht, nicht autonom. | Mock/Review-Grenze lokal connected; Provider Boundary future. | F2.0 External AI Provider Governance. |
@@ -152,7 +163,9 @@ Surfaces:
 - Project/Goal Resource Relation Link fuer vorhandene Resources.
 - Project/Goal Skill Evidence Display read-only.
 - Resource Create und Resource Relation Create.
-- Nutrition Recipe/Meal Create und Meal Complete.
+- Nutrition Recipe Create/Edit/Archive, Ingredient Create/Edit/Delete, Meal
+  Create/Edit/Reschedule/Complete, Recipe-Wechsel, read-only Grocery Draft und
+  manuelle Estimate-Projektion mit Provenance.
 - Recurring Template Create und explizite Generate-Aktion.
 
 ## 8. Local Connected with Depth Gap
@@ -191,7 +204,8 @@ Slices gefuehrt.
   beweisbare Persistenz behauptet wird.
 - Project/Goal Milestones, Logs, Review Cadence und Resource Depth.
 - Resource/Skill Graph Visualisierung vor gesicherter Semantik.
-- Nutrition Grocery/Ingredients/Macros/Planner Edit.
+- Nutrition Pantry, persistente Grocery Review, Portionen, Metrics Engine,
+  Recipe Detail und Drag-and-drop.
 - Route-level Manual/Auth Feedback auf noch nicht finalisierten Flaechen.
 
 `future`:
@@ -244,19 +258,19 @@ F0.1 behauptet nicht:
 
 ## 12. Next Vertical Slices
 
-Naechster ausfuehrbarer Produktblock nach F1.1G:
+Naechster ausfuehrbarer Produktblock nach F1.2I:
 
 ```text
-F1.2 Nutrition Deep Features
+F1.3 Resource/Skill Graph Read Model
 ```
 
 Begruendung:
 
-- F1.1 hat Project/Goal Workbench Core als local-first proof-stable
-  geschlossen.
-- Project/Goal bleibt `local_connected_with_depth_gap`, aber die offenen
-  Milestones-/Logs-/Review-/Graph-/AI-Themen sind bewusst spaetere Slices.
-- Nutrition ist der naechste daily-use-relevante P1-Depth-Bereich.
+- F1.2 hat den verbundenen Nutrition-Kern geschlossen und verbleibende
+  Grocery-, Portion-, Metrics-, Detail- und Planner-Tiefe klar deferred.
+- Die Roadmap setzt als nächsten P1-Block F1.3.
+- F1.3 startet mit Relation Semantics und Read Model, nicht mit dekorativer
+  Graph-UI.
 
 F1.0A Status 2026-07-10:
 
@@ -315,15 +329,23 @@ F1.2A Nutrition Deep Features Scope Lock Status 2026-07-11:
   Metrics.
 - Erster ausfuehrbarer Folgeblock: F1.2B Recipe Entity Edit / Archive.
 
+F1.2I Nutrition Closure Status 2026-07-11:
+
+- Dokumentiert in `docs/product/nutrition-closure-f1-2i.md`.
+- Nutrition bleibt `local_connected_with_depth_gap`.
+- Connected Claims und Deferred Work entsprechen F1.2B–H und den aktuellen
+  Browser-Proofs.
+- F1.2I ist docs-only; kein neuer Browser-Proof nötig.
+- Nächster Produktbereich: F1.3 Resource/Skill Graph Read Model.
+
 Weitere Reihenfolge:
 
-1. F1.2 Nutrition Deep Features.
-2. F1.3 Resource/Skill Graph Read Model.
-3. Spaeterer Project/Goal Slice: Milestones, Logs, Review Cadence oder Archive/Undo.
-4. F1.4 Route-level Manual/Auth Feedback.
-5. F2.0 External AI Provider Governance.
-6. F2.1 Recurring Full Management.
-7. F2.2 Archive Browser and Undo.
+1. F1.3 Resource/Skill Graph Read Model.
+2. Spaeterer Project/Goal Slice: Milestones, Logs, Review Cadence oder Archive/Undo.
+3. F1.4 Route-level Manual/Auth Feedback.
+4. F2.0 External AI Provider Governance.
+5. F2.1 Recurring Full Management.
+6. F2.2 Archive Browser and Undo.
 
 Completion Gate:
 
