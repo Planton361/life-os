@@ -5195,7 +5195,22 @@ test.describe("Portfolio content states", () => {
       contextPanel.getByRole("heading", { name: "Linked Tasks" }),
     ).toBeVisible();
     await expect(
-      contextPanel.getByRole("heading", { name: "Task für Project erstellen" }),
+      contextPanel.getByRole("heading", {
+        name: "Linked Task für Project erstellen",
+      }),
+    ).toBeVisible();
+    await expect(
+      contextPanel.getByText(
+        "Persistiert eine Task mit diesem Project als Kontext.",
+      ),
+    ).toBeVisible();
+    await expect(
+      contextPanel.getByText("Task-basiertes Signal").first(),
+    ).toBeVisible();
+    await expect(
+      contextPanel.getByText(
+        "Noch keine verknüpften Tasks; Fortschritt wird nur aus Tasks berechnet",
+      ),
     ).toBeVisible();
     await expect(
       contextPanel
@@ -5206,10 +5221,12 @@ test.describe("Portfolio content states", () => {
       contextPanel.getByText("Keine verknüpften Tasks.").first(),
     ).toBeVisible();
     await expect(
-      contextPanel.getByRole("heading", { name: "Prepared Sections" }),
+      contextPanel.getByRole("heading", {
+        name: "Prepared / Future Sections",
+      }),
     ).toBeVisible();
     const projectPreparedSections = contextPanel
-      .getByRole("heading", { name: "Prepared Sections" })
+      .getByRole("heading", { name: "Prepared / Future Sections" })
       .locator("xpath=ancestor::section[1]");
     await expect(
       contextPanel.getByRole("heading", { name: "Milestones" }),
@@ -5224,8 +5241,18 @@ test.describe("Portfolio content states", () => {
       contextPanel.getByRole("heading", { name: "Project Log" }),
     ).toBeVisible();
     await expect(
+      projectPreparedSections.getByText(
+        "Vorbereitet: noch nicht mit lokaler Datenquelle verbunden.",
+      ),
+    ).toBeVisible();
+    await expect(
       projectPreparedSections.getByText("Vorbereitet", { exact: true }),
     ).toHaveCount(2);
+    await expect(
+      contextPanel.getByText(
+        "Resource Relations werden hier nur angezeigt.",
+      ),
+    ).toBeVisible();
     await expect(
       contextPanel.getByText("Future Scope: Project Workbench"),
     ).toBeVisible();
@@ -5262,7 +5289,14 @@ test.describe("Portfolio content states", () => {
       contextPanel.getByRole("heading", { name: "Linked Tasks" }),
     ).toBeVisible();
     await expect(
-      contextPanel.getByRole("heading", { name: "Task für Goal erstellen" }),
+      contextPanel.getByRole("heading", {
+        name: "Linked Task für Goal erstellen",
+      }),
+    ).toBeVisible();
+    await expect(
+      contextPanel.getByText(
+        "Persistiert eine Task mit diesem Goal als Kontext.",
+      ),
     ).toBeVisible();
     await expect(
       contextPanel
@@ -5270,7 +5304,14 @@ test.describe("Portfolio content states", () => {
         .getByRole("button", { name: "Task erstellen" }),
     ).toBeVisible();
     await expect(
-      contextPanel.getByRole("heading", { name: "Project für Goal erstellen" }),
+      contextPanel.getByRole("heading", {
+        name: "Linked Project für Goal erstellen",
+      }),
+    ).toBeVisible();
+    await expect(
+      contextPanel.getByText(
+        "Persistiert ein Project mit diesem Goal als Kontext.",
+      ),
     ).toBeVisible();
     await expect(
       contextPanel
@@ -5279,10 +5320,12 @@ test.describe("Portfolio content states", () => {
     ).toBeVisible();
     await expect(contextPanel.getByText("Keine verknüpften Tasks.")).toBeVisible();
     await expect(
-      contextPanel.getByRole("heading", { name: "Prepared Sections" }),
+      contextPanel.getByRole("heading", {
+        name: "Prepared / Future Sections",
+      }),
     ).toBeVisible();
     const goalPreparedSections = contextPanel
-      .getByRole("heading", { name: "Prepared Sections" })
+      .getByRole("heading", { name: "Prepared / Future Sections" })
       .locator("xpath=ancestor::section[1]");
     await expect(
       contextPanel.getByRole("heading", { name: "Milestones" }),
@@ -5300,8 +5343,16 @@ test.describe("Portfolio content states", () => {
       contextPanel.getByRole("heading", { name: "Goal Log" }),
     ).toBeVisible();
     await expect(
+      goalPreparedSections.getByText(
+        "Vorbereitet: Review-Rhythmus, nächster Review und Review Notes schreiben hier noch keine Persistenz.",
+      ),
+    ).toBeVisible();
+    await expect(
       goalPreparedSections.getByText("Vorbereitet", { exact: true }),
     ).toHaveCount(3);
+    await expect(
+      contextPanel.getByText("Arbeitsbasiertes Signal"),
+    ).toBeVisible();
     await expect(
       contextPanel.getByText("Future Scope: Goal Workbench"),
     ).toBeVisible();

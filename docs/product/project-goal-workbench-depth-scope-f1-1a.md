@@ -326,6 +326,18 @@ Acceptance:
 - Project/Goal Workbench bleibt V5-konform und keine Dashboard-Kopie.
 - Focused Portfolio/Project/Goal Browser Proof ist aktuell.
 
+F1.1B Implementation Status 2026-07-11:
+
+- Dokumentiert in
+  `docs/qa/project-goal-workbench-state-clarity-f1-1b.md`.
+- Ergebnis: Workbench-Copy, Prepared/Future-Zustaende, Resource Relation
+  Display und Progress-/Metric-Sprache wurden geschaerft.
+- Keine neue Project-/Goal-Persistenz, kein neues Datenmodell, keine
+  Migration, keine RLS-/Policy-Aenderung und keine Remote-DB-Aktion.
+- Project Workbench, Goal Workbench und Portfolio bleiben
+  `local_connected_with_depth_gap`.
+- F1.1C/F1.1D bleiben die naechsten moeglichen Status-/Semantik-Slices.
+
 ### F1.1C Project Workbench Linked Work / Status Semantics
 
 Ziel: Project-spezifische Status- und Linked-Work-Semantik entscheiden und

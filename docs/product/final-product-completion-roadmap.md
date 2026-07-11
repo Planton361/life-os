@@ -488,6 +488,21 @@ F1.1A Project / Goal Workbench Depth Scope Lock Status 2026-07-11:
   Scope.
 - Naechster ausfuehrbarer Block: F1.1B Project / Goal Workbench State Clarity.
 
+F1.1B Project / Goal Workbench State Clarity Status 2026-07-11:
+
+- Dokumentiert in
+  `docs/qa/project-goal-workbench-state-clarity-f1-1b.md` und
+  `docs/product/project-goal-workbench-depth-scope-f1-1a.md`.
+- Ergebnis: Project/Goal Workbench-Copy, Prepared/Future-Zustaende,
+  Resource Relation Display und Progress-/Metric-Sprache sind klarer.
+- Bestehende connected Flows bleiben erhalten: linked Task Create/Lifecycle,
+  Goal-linked Project Create, Scheduling Controls und Resource Relation
+  Display.
+- Keine Milestones, Logs, Review Cadence, Progress Engine, Archive/Undo,
+  Graph oder AI Coach implementiert.
+- Project Workbench, Goal Workbench und Portfolio bleiben
+  `local_connected_with_depth_gap`.
+
 ### F1.1
 
 Titel: Project/Goal Workbench Depth

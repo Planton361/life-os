@@ -639,8 +639,8 @@ function GoalProjectCard({
             {project.title}
           </p>
           <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
-            {portfolioStatusMeta[project.status].label} · {project.progress}% ·{" "}
-            {taskCount} linked tasks
+            {portfolioStatusMeta[project.status].label} · {taskCount}{" "}
+            verknüpfte Tasks
           </p>
         </div>
         <Pill accent={portfolioStatusMeta[project.status].accent}>
@@ -675,6 +675,18 @@ function PreparedWorkbenchSection({
         {body}
       </p>
     </article>
+  );
+}
+
+function WorkbenchSectionIntro({
+  children,
+}: Readonly<{
+  children: ReactNode;
+}>) {
+  return (
+    <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
+      {children}
+    </p>
   );
 }
 
@@ -903,6 +915,10 @@ function WorkbenchResourcesSection({
         </h3>
         <Pill accent="var(--accent-yellow)">{resources.length} total</Pill>
       </div>
+      <WorkbenchSectionIntro>
+        Resource Relations werden hier nur angezeigt. Workbench-local Resource
+        Management bleibt vorbereitet.
+      </WorkbenchSectionIntro>
       <div className="mt-2 grid gap-2">
         {resources.length > 0 ? (
           resources.map((resource) => (
@@ -931,6 +947,18 @@ function WorkbenchFutureScopeNote({
       {body}
     </p>
   );
+}
+
+function getProgressSignalNote(entity: PortfolioEntity) {
+  if (entity.type === "project") {
+    return "Project Progress ist aktuell ein einfaches Signal. Milestones, Logs und Project Archive/Undo sind noch nicht verbunden.";
+  }
+
+  if (entity.type === "goal") {
+    return "Goal Progress ist aktuell ein einfaches Signal. Review Cadence, Key Results und Zielhistorie sind noch nicht verbunden.";
+  }
+
+  return "Progress is text-backed above; color is only an accent.";
 }
 
 function GoalWorkbench({
@@ -984,12 +1012,12 @@ function GoalWorkbench({
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
           <FieldCard
             accent="var(--accent-purple)"
-            label="Linked Work Progress"
+            label="Arbeitsbasiertes Signal"
             value={
               workbench.metrics.totalProjects > 0 ||
               workbench.metrics.totalTasks > 0
-                ? `${workbench.metrics.totalProjects} projects / ${workbench.metrics.totalTasks} tasks · ${workbench.metrics.completedTasks} tasks done`
-                : "Noch kein Fortschritt berechnet"
+                ? `${workbench.metrics.totalProjects} Projects / ${workbench.metrics.totalTasks} Tasks · ${workbench.metrics.completedTasks} Tasks erledigt`
+                : "Noch kein arbeitsbasiertes Signal"
             }
           />
           <FieldCard
@@ -1002,7 +1030,7 @@ function GoalWorkbench({
             label="Linked Projects"
             value={
               workbench.metrics.totalProjects > 0
-                ? `${workbench.metrics.activeProjects} active / ${workbench.metrics.totalProjects} total`
+                ? `${workbench.metrics.activeProjects} aktiv / ${workbench.metrics.totalProjects} gesamt`
                 : "Keine verknüpften Projects"
             }
           />
@@ -1011,19 +1039,19 @@ function GoalWorkbench({
             label="Linked Tasks"
             value={
               workbench.metrics.totalTasks > 0
-                ? `${workbench.metrics.openTasks} open / ${workbench.metrics.completedTasks} done`
+                ? `${workbench.metrics.openTasks} offen / ${workbench.metrics.completedTasks} erledigt`
                 : "Keine verknüpften Tasks"
             }
           />
           <FieldCard
             accent="var(--accent-green)"
-            label="Task-Fortschritt"
-            value={`${workbench.metrics.completedTasks} / ${workbench.metrics.totalTasks} completed`}
+            label="Task-basiertes Signal"
+            value={`${workbench.metrics.completedTasks} / ${workbench.metrics.totalTasks} verknüpfte Tasks erledigt`}
           />
           <FieldCard
             accent="var(--accent-yellow)"
-            label="Scheduled"
-            value={`${workbench.metrics.scheduledTasks} scheduled tasks`}
+            label="Terminiert"
+            value={`${workbench.metrics.scheduledTasks} terminierte Tasks`}
           />
         </div>
       </div>
@@ -1033,9 +1061,9 @@ function GoalWorkbench({
           description={
             disabled
               ? "Wechsle ins Manual-Profil, um echte Goal Tasks zu erstellen."
-              : "Erstellt eine Task mit diesem Goal als Kontext."
+              : "Persistiert eine Task mit diesem Goal als Kontext."
           }
-          heading="Task für Goal erstellen"
+          heading="Linked Task für Goal erstellen"
           id="goal-task-create-heading"
         >
           <WorkbenchTaskCreateForm
@@ -1056,9 +1084,9 @@ function GoalWorkbench({
           description={
             disabled
               ? "Wechsle ins Manual-Profil, um echte Goal Projects zu erstellen."
-              : "Project-Schema unterstützt Goal-Kontext; keine neue Entity wird erfunden."
+              : "Persistiert ein Project mit diesem Goal als Kontext."
           }
-          heading="Project für Goal erstellen"
+          heading="Linked Project für Goal erstellen"
           id="goal-project-create-heading"
         >
           <GoalProjectCreateForm disabled={disabled} goal={goal} />
@@ -1076,6 +1104,10 @@ function GoalWorkbench({
               {workbench.metrics.totalProjects} total
             </Pill>
           </div>
+          <WorkbenchSectionIntro>
+            Mit diesem Goal verknüpft. Diese Liste liest vorhandene Projects aus
+            dem lokalen Datenpfad.
+          </WorkbenchSectionIntro>
           <div className="mt-2 grid gap-2">
             {workbench.linkedProjects.length > 0 ? (
               workbench.linkedProjects.map((project) => (
@@ -1105,6 +1137,10 @@ function GoalWorkbench({
               {workbench.metrics.totalTasks} total
             </Pill>
           </div>
+          <WorkbenchSectionIntro>
+            Mit diesem Goal verknüpft. Lifecycle- und Scheduling-Controls sind
+            echte Task Actions.
+          </WorkbenchSectionIntro>
           <div className="mt-2 grid gap-2">
             {workbench.linkedTasks.length === 0 ? (
               <p className="rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.38)] px-3 py-2 text-[11px] leading-4 text-[var(--text-muted)]">
@@ -1154,25 +1190,25 @@ function GoalWorkbench({
             className="text-[13px] font-semibold text-[var(--text-primary)]"
             id="goal-prepared-sections-heading"
           >
-            Prepared Sections
+            Prepared / Future Sections
           </h3>
           <div className="mt-2 grid gap-2">
             <PreparedWorkbenchSection
-              body="Noch keine vorbereiteten Milestones verbunden. Milestones folgen im Goal Workbench Ausbau."
+              body="Vorbereitet: noch nicht mit lokaler Datenquelle verbunden. Milestones folgen als eigener F1.1 Slice."
               title="Milestones"
             />
             <PreparedWorkbenchSection
-              body="Review Cadence folgt mit Goal Review."
+              body="Vorbereitet: Review-Rhythmus, nächster Review und Review Notes schreiben hier noch keine Persistenz."
               title="Review Cadence"
             />
             <PreparedWorkbenchSection
-              body="Goal Log folgt mit Review/Execution."
+              body="Vorbereitet: keine Zielhistorie oder Log-Einträge in diesem Workbench gespeichert."
               title="Goal Log"
             />
           </div>
         </section>
 
-        <WorkbenchFutureScopeNote body="Future Scope: Goal Workbench zeigt nur vorhandene Projects, Tasks und Resource Relations. Milestones, Review Cadence und Goal Log schreiben hier noch keine Persistenz." />
+        <WorkbenchFutureScopeNote body="Future Scope: Goal Workbench zeigt nur vorhandene Projects, Tasks und Resource Relations. Milestones, Review Cadence, Goal Log, Goal Archive/Undo, Graph und AI Coach schreiben hier noch keine Persistenz." />
       </div>
     </section>
   );
@@ -1215,11 +1251,11 @@ function ProjectWorkbench({
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
           <FieldCard
             accent="var(--accent-orange)"
-            label="Task-Fortschritt"
+            label="Task-basiertes Signal"
             value={
               workbench.metrics.totalTasks > 0
-                ? `${workbench.metrics.completedTasks} / ${workbench.metrics.totalTasks} completed linked tasks`
-                : "Noch kein Fortschritt berechnet"
+                ? `${workbench.metrics.completedTasks} / ${workbench.metrics.totalTasks} verknüpfte Tasks erledigt`
+                : "Noch keine verknüpften Tasks; Fortschritt wird nur aus Tasks berechnet"
             }
           />
           <FieldCard
@@ -1230,12 +1266,12 @@ function ProjectWorkbench({
           <FieldCard
             accent="var(--accent-blue)"
             label="Linked Tasks"
-            value={`${workbench.metrics.openTasks} open / ${workbench.metrics.completedTasks} done`}
+            value={`${workbench.metrics.openTasks} offen / ${workbench.metrics.completedTasks} erledigt`}
           />
           <FieldCard
             accent="var(--accent-green)"
-            label="Scheduled"
-            value={`${workbench.metrics.scheduledTasks} scheduled tasks`}
+            label="Terminiert"
+            value={`${workbench.metrics.scheduledTasks} terminierte Tasks`}
           />
         </div>
       </div>
@@ -1245,9 +1281,9 @@ function ProjectWorkbench({
           description={
             disabled
               ? "Wechsle ins Manual-Profil, um echte Project Tasks zu erstellen."
-              : "Erstellt eine Task mit diesem Project als Kontext."
+              : "Persistiert eine Task mit diesem Project als Kontext."
           }
-          heading="Task für Project erstellen"
+          heading="Linked Task für Project erstellen"
           id="project-task-create-heading"
         >
           <WorkbenchTaskCreateForm
@@ -1276,6 +1312,10 @@ function ProjectWorkbench({
               {workbench.metrics.totalTasks} total
             </Pill>
           </div>
+          <WorkbenchSectionIntro>
+            Mit diesem Project verknüpft. Lifecycle- und Scheduling-Controls
+            sind echte Task Actions.
+          </WorkbenchSectionIntro>
           <div className="mt-2 grid gap-2">
             {workbench.linkedTasks.length === 0 ? (
               <p className="rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.38)] px-3 py-2 text-[11px] leading-4 text-[var(--text-muted)]">
@@ -1315,21 +1355,21 @@ function ProjectWorkbench({
             className="text-[13px] font-semibold text-[var(--text-primary)]"
             id="project-prepared-sections-heading"
           >
-            Prepared Sections
+            Prepared / Future Sections
           </h3>
           <div className="mt-2 grid gap-2">
             <PreparedWorkbenchSection
-              body="Noch keine vorbereiteten Milestones verbunden. Milestones folgen im Project Workbench Ausbau."
+              body="Vorbereitet: noch nicht mit lokaler Datenquelle verbunden. Linked Tasks sind aktiv; Milestones folgen als eigener F1.1 Slice."
               title="Milestones"
             />
             <PreparedWorkbenchSection
-              body="Project Log folgt mit Review/Execution."
+              body="Vorbereitet: kein persistentes Project Log in diesem Workbench. Review/Execution bleibt eigener Slice."
               title="Project Log"
             />
           </div>
         </section>
 
-        <WorkbenchFutureScopeNote body="Future Scope: Project Workbench zeigt nur vorhandene linked Tasks und Resource Relations. Milestones und Project Log schreiben hier noch keine Persistenz." />
+        <WorkbenchFutureScopeNote body="Future Scope: Project Workbench zeigt nur vorhandene linked Tasks und Resource Relations. Milestones, Project Log, Project Archive/Undo, Graph und AI Coach schreiben hier noch keine Persistenz." />
       </div>
     </section>
   );
@@ -1454,7 +1494,7 @@ export function PortfolioContextPanel({
           />
           <FieldCard
             accent={typeAccent}
-            label="Progress / Count"
+            label="Progress-Signal / Count"
             value={`${entity.progress}% / ${entity.countLabel}`}
           />
         </div>
@@ -1471,7 +1511,7 @@ export function PortfolioContextPanel({
             />
           </div>
           <p className="text-[10px] leading-4 text-[var(--text-muted)]">
-            Progress is text-backed above; color is only an accent.
+            {getProgressSignalNote(entity)}
           </p>
         </div>
 
