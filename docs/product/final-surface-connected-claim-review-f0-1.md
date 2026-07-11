@@ -104,10 +104,10 @@ Startcheck F0.1:
 | Dashboard | `local_connected_with_depth_gap` | Quick Thought, Daily Control, Today Agenda und Projektionen sind im Core-Proof aktuell gruen. | Finaler Dashboard-Polish und tiefere Daily-Record-/Review-Zustaende bleiben getrennt. | W1.1A Core 86/2/0 | V5 bleibt passend; P0 dominiert. | User-scoped ReadModels/Actions, kein Production-Claim. | Nach F1.x ggf. Dashboard final polish. |
 | Inbox | `local_connected_with_depth_gap` | Capture, Routing zu Task/Project/Goal/Resource, Archive/Solve und AI Review Flow sind aktuell proof-stable. | Note/Decision/Skill/Resource-Link Routing bleibt prepared/future oder separater Scope. | W1.1A Core 86/2/0 | Outcome Router bleibt funktional dicht. | Actions/RPCs sind lokal user-scoped bewiesen. | Route-level feedback / remaining routing completion. |
 | Today | `local_connected_with_depth_gap` | Planner, Completion und Recurring-Projektion sind lokal reload-stabil bewiesen. | Daily Record und Review-Tiefe fehlen. | W1.1A Core 86/2/0 | Today ergaenzt Dashboard, keine Kopie. | Task-/Recurring-Pfade lokal connected. | Review-depth slice. |
-| Calendar | `local_connected_with_depth_gap` | Schedule, Unschedule, Reschedule, sichtbares Conflict Gate, bewusster Override und Today/Dashboard-Projektion sind lokal bewiesen; F1.0F schliesst den task-based Scheduling Core. | Pointer Drag/Resize, freie Events und Schedule-History/Override-Audit bleiben Future Scope. | F1.0E Focused 72/2/0 plus F1.0F Closure | Temporal Planning Surface ist ruhig und funktional; Button-/Keyboard-Kern bleibt final fuer F1.0. | Schedule-Felder, Conflict Scope und Revalidation lokal bewiesen; keine DB-weite Conflict-Sperre. | F1.1 Project/Goal Workbench Depth als naechster Produktblock; Calendar Comfort-Slices nur separat. |
-| Portfolio | `local_connected_with_depth_gap` | Task Lifecycle, Project/Goal/Skill Workbench und Evidence-Flows sind aktuell lokal bewiesen. | Project/Goal Workbench-Tiefe fehlt. | W1.1A Core 86/2/0 plus Extensions 25/0/0 | Steuerungsbereich statt Dashboard-Kopie. | Repositories/Relation Labels lokal user-scoped. | F1.1 Project/Goal Workbench Depth. |
-| Projects | `local_connected_with_depth_gap` | Project Create/Linked Task/Lifecycle-Pfade sind ueber Portfolio/Entity-Proofs aktuell belastbar. | Milestones, Logs, Resources und Review-Kontext fehlen. | W1.1A Core 86/2/0 | Detailseite braucht mehr Tiefe. | Project ownership gates fuer bestehende Kernflows vorhanden. | F1.1 Project/Goal Workbench Depth. |
-| Goals | `local_connected_with_depth_gap` | Goal Create/Linked Project/Linked Task-Pfade sind aktuell lokal belastbar. | Review Cadence, Milestones, Logs und Zielhistorie fehlen. | W1.1A Core 86/2/0 | Zielarbeit braucht echte Progress-Tiefe. | Goal ownership gates fuer bestehende Kernflows vorhanden. | F1.1 Project/Goal Workbench Depth. |
+| Calendar | `local_connected_with_depth_gap` | Schedule, Unschedule, Reschedule, sichtbares Conflict Gate, bewusster Override und Today/Dashboard-Projektion sind lokal bewiesen; F1.0F schliesst den task-based Scheduling Core. | Pointer Drag/Resize, freie Events und Schedule-History/Override-Audit bleiben Future Scope. | F1.0E Focused 72/2/0 plus F1.0F Closure | Temporal Planning Surface ist ruhig und funktional; Button-/Keyboard-Kern bleibt final fuer F1.0. | Schedule-Felder, Conflict Scope und Revalidation lokal bewiesen; keine DB-weite Conflict-Sperre. | Calendar Comfort-Slices nur separat; aktueller naechster Produktblock ist F1.2 Nutrition. |
+| Portfolio | `local_connected_with_depth_gap` | Task Lifecycle, Project/Goal Entity Edit, Soft Archive, Resource Relation Link, Skill Evidence Display und Skill Workbench Evidence-Flows sind aktuell lokal bewiesen. | Milestones, Logs, Review Cadence, Undo/Restore, Progress Engine, Graph, AI Coach und Evidence Create aus der Workbench bleiben deferred. | W1.1A Core 86/2/0 plus Extensions 25/0/0, F1.1F 37/0/0, F1.1G Closure | Steuerungsbereich statt Dashboard-Kopie. | Repositories/Relation Labels lokal user-scoped; Resource/Evidence Ownership lokal bewiesen. | F1.2 Nutrition; Project/Goal Deep-Slices spaeter. |
+| Projects | `local_connected_with_depth_gap` | Project Create, Linked Task Create/Lifecycle, Entity Edit, Status Edit, Soft Archive, Resource Relation Link und Skill Evidence Display read-only sind lokal belastbar. | Milestones, Project Log, Review-/History-Kontext, Undo/Restore, finaler Close-Flow, Progress Engine, Graph, AI Coach und Evidence Create fehlen. | F1.1C 69/6/0, F1.1F 37/0/0, F1.1G Closure | Detailseite braucht mehr Tiefe, aber Workbench-Core ist proof-stable. | Project ownership gates fuer bestehende Kernflows, Resource Relations und Evidence Sources vorhanden. | F1.2 Nutrition; Project Milestones/Logs spaeter. |
+| Goals | `local_connected_with_depth_gap` | Goal Create, Linked Project Create, Linked Task Create/Lifecycle, Entity Edit, Status/Horizon Edit, Soft Archive, Resource Relation Link und Skill Evidence Display read-only sind lokal belastbar. | Review Cadence, Milestones, Goal Log, Zielhistorie, Undo/Restore, finaler Achieve-Flow, Progress Engine, Graph, AI Coach und Evidence Create fehlen. | F1.1D 28/0/0, F1.1F 37/0/0, F1.1G Closure | Zielarbeit braucht echte Progress-Tiefe, aber Workbench-Core ist proof-stable. | Goal ownership gates fuer bestehende Kernflows, Resource Relations und Evidence Sources vorhanden. | F1.2 Nutrition; Goal Review/Milestones/Logs spaeter. |
 | Resources | `local_connected_with_depth_gap` | Resource Create, Inspector und Relation Create sind aktuell non-skipped gruen. | Graph-/ReadModel-Tiefe und Pagination/Scope fehlen. | W1.1A Extensions 25/0/0 | Knowledge Workbench, Graph nicht dekorativ. | Relation Labels/Targets lokal user-scoped. | F1.3 Resource/Skill Graph. |
 | Nutrition | `local_connected_with_depth_gap` | Recipe/Meal Create, Meal Complete und reload-stabile Projektion sind aktuell gruen. | Grocery, Ingredients, Macros und Planner Edit fehlen. | W1.1A Extensions 25/0/0 | Health-sensitive, keine medizinische Ueberbehauptung. | Nutrition Repositories und Date Scopes lokal bewiesen. | F1.2 Nutrition Deep Features. |
 | Skills | `local_connected_with_depth_gap` | Skill Create/Edit/Archive und Evidence/Source-Linking sind aktuell gruen. | Skill Map/Graph und Evidence-Historie-Tiefe fehlen. | W1.1A Extensions 25/0/0 | Kompetenznachweise, kein AI-Behauptungsgraph. | Evidence Source Ownership lokal bewiesen. | F1.3 Resource/Skill Graph. |
@@ -127,6 +127,9 @@ Surfaces:
 - Calendar Schedule/Unschedule/Conflict Gate ueber vorhandene Controls.
 - Portfolio Task Lifecycle, Skill CRUD und Evidence Source Linking.
 - Project/Goal linked Task/Project Kernpfade.
+- Project/Goal Entity Edit, Status Edit und Soft Archive.
+- Project/Goal Resource Relation Link fuer vorhandene Resources.
+- Project/Goal Skill Evidence Display read-only.
 - Resource Create und Resource Relation Create.
 - Nutrition Recipe/Meal Create und Meal Complete.
 - Recurring Template Create und explizite Generate-Aktion.
@@ -220,18 +223,19 @@ F0.1 behauptet nicht:
 
 ## 12. Next Vertical Slices
 
-Naechster ausfuehrbarer Produktblock:
+Naechster ausfuehrbarer Produktblock nach F1.1G:
 
 ```text
-F1.1 Project/Goal Workbench Depth
+F1.2 Nutrition Deep Features
 ```
 
 Begruendung:
 
-- F1.0 hat den lokalen task-based Scheduling Core geschlossen.
-- Calendar bleibt `local_connected_with_depth_gap`, aber die offenen Calendar-
-  Themen sind klar Future Scope statt Blocker fuer den naechsten Produktblock.
-- Project- und Goal-Workbenches tragen die naechste zentrale P1-Depth-Luecke.
+- F1.1 hat Project/Goal Workbench Core als local-first proof-stable
+  geschlossen.
+- Project/Goal bleibt `local_connected_with_depth_gap`, aber die offenen
+  Milestones-/Logs-/Review-/Graph-/AI-Themen sind bewusst spaetere Slices.
+- Nutrition ist der naechste daily-use-relevante P1-Depth-Bereich.
 
 F1.0A Status 2026-07-10:
 
@@ -263,11 +267,26 @@ F1.1A Project / Goal Workbench Depth Scope Lock Status 2026-07-11:
   Progress-/Archive-Semantik bleiben Depth-Gaps.
 - Naechster ausfuehrbarer Block: F1.1B Project / Goal Workbench State Clarity.
 
+F1.1G Project / Goal Workbench Closure Status 2026-07-11:
+
+- Dokumentiert in
+  `docs/product/project-goal-workbench-closure-f1-1g.md`.
+- Project Workbench und Goal Workbench bleiben
+  `local_connected_with_depth_gap`.
+- Connected Claims sind Entity Edit, Status Edit, Soft Archive, Linked Task
+  Create/Lifecycle, Goal linked Project Create, Resource Relation Link und
+  Skill Evidence Display read-only.
+- Project/Goal Workbench Core ist local-first proof-stable, aber nicht final
+  complete.
+- Milestones, Logs, Review Cadence, Undo/Restore, Progress Engine, Graph,
+  AI Coach und Evidence Create direkt aus der Workbench bleiben deferred.
+- Naechster Produktbereich: F1.2 Nutrition Deep Features.
+
 Weitere Reihenfolge:
 
-1. F1.1 Project/Goal Workbench Depth.
-2. F1.2 Nutrition Deep Features.
-3. F1.3 Resource/Skill Graph Read Model.
+1. F1.2 Nutrition Deep Features.
+2. F1.3 Resource/Skill Graph Read Model.
+3. Spaeterer Project/Goal Slice: Milestones, Logs, Review Cadence oder Archive/Undo.
 4. F1.4 Route-level Manual/Auth Feedback.
 5. F2.0 External AI Provider Governance.
 6. F2.1 Recurring Full Management.

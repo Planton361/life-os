@@ -1,7 +1,7 @@
 # F1.1A Project / Goal Workbench Depth Scope Lock
 
 Stand: 2026-07-11
-Status: Completed scope lock; implementation notes through F1.1F
+Status: Completed scope lock; implementation notes through F1.1G closure
 Quelle der Wahrheit: `PRODUCT.md`, `DESIGN.md`, `ROADMAP.md`,
 `AI_WORKFLOW.md`, `docs/product/final-surface-connected-claim-review-f0-1.md`,
 `docs/product/final-product-completion-roadmap.md`,
@@ -512,27 +512,41 @@ F1.1F Implementation Status 2026-07-11:
   Graph, Skill Map, Milestones, Logs, Review Cadence, Progress Engine und AI
   Coach bleiben deferred.
 
-### F1.1G Milestones / Logs / Review Cadence Decision
+### F1.1G Project / Goal Workbench Closure & Next Depth Decision
 
-Ziel: Prepared Depth final entscheiden.
+Ziel: F1.1 Project/Goal Workbench Depth nach F1.1F sauber schliessen,
+Connected Claims praezisieren, Deferred Work begrenzen und den naechsten
+Produktbereich entscheiden.
 
-Moeglicher Scope:
+F1.1G Closure Status 2026-07-11:
 
-- Project Milestones
-- Goal Milestones
-- Project Log
-- Goal Log
-- Goal Review Cadence
-- Review Notes / Zielhistorie
+- Dokumentiert in
+  `docs/product/project-goal-workbench-closure-f1-1g.md`.
+- Ergebnis: Project/Goal Workbench Core ist local-first proof-stable.
+- Project Workbench und Goal Workbench bleiben
+  `local_connected_with_depth_gap`.
+- Connected Claims: Entity Edit, Status Edit, Soft Archive, Linked Task
+  Create/Lifecycle, Goal linked Project Create, Resource Relation Link und
+  Skill Evidence Display read-only.
+- Project/Goal Workbench ist nicht final complete.
+- Milestones, Logs, Review Cadence, Undo/Restore, Progress Engine, Graph,
+  AI Coach und Evidence Create direkt aus der Workbench bleiben deferred.
+- F1.1G ist docs-only; aktuellster Workbench-Proof bleibt F1.1F mit
+  37 passed, 0 failed, 0 skipped.
+- Naechster Produktbereich: F1.2 Nutrition Deep Features.
+- Keine Produktfeatures, keine UI-/`src`-/Test-Aenderungen, keine Migration,
+  keine RLS-/Policy-/Grant-Aenderung, keine Remote-DB-Aktion, kein Deployment
+  und keine Secrets.
 
-Regel:
+Bewusst nicht gestartet:
 
-- Wenn Persistenz gebaut wird, ist dies ein Backend Action Slice mit Migration,
-  Security Review und Reload-Proof.
-- Wenn Persistenz nicht gebaut wird, bleibt die UI final ehrlich Prepared oder
-  Future und darf keine falsche Schreibbarkeit andeuten.
+- Milestones / Logs / Review Cadence Persistenz.
+- Entity Route Alignment.
+- Resource/Skill Graph.
+- AI Coach.
+- Evidence Create direkt aus Project/Goal Workbench.
 
-### F1.1H Entity Route Alignment / Closure
+### Deferred Entity Route Alignment
 
 Ziel: klaeren, wie `/projects`, `/projects/[projectId]`, `/goals` und
 `/goals/[goalId]` zur Portfolio Workbench stehen.

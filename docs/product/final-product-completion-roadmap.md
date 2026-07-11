@@ -580,6 +580,29 @@ F1.1F Project / Goal Resource & Evidence Depth Status 2026-07-11:
 - Resource Management, Unlink, Graph, Skill Map, Milestones, Logs, Review
   Cadence, Progress Engine, Undo/Restore und AI Coach bleiben deferred.
 
+F1.1G Project / Goal Workbench Closure & Next Depth Decision Status 2026-07-11:
+
+- Dokumentiert in
+  `docs/product/project-goal-workbench-closure-f1-1g.md` und
+  `docs/product/project-goal-workbench-depth-scope-f1-1a.md`.
+- Ergebnis: F1.1 Project/Goal Workbench Depth ist als Closure-/Decision-Block
+  abgeschlossen.
+- Project Workbench und Goal Workbench bleiben
+  `local_connected_with_depth_gap`.
+- Connected Claims sind praezisiert: Entity Edit, Status Edit, Soft Archive,
+  Linked Task Create/Lifecycle, Goal linked Project Create, Resource Relation
+  Link und Skill Evidence Display read-only.
+- Project/Goal Workbench Core ist local-first proof-stable, aber nicht final
+  complete.
+- Milestones, Logs, Review Cadence, Undo/Restore, Progress Engine, Graph,
+  AI Coach und Evidence Create direkt aus der Workbench bleiben deferred.
+- F1.1G ist docs-only; kein neuer Browser-Proof noetig. Aktuellster
+  Workbench-Proof bleibt F1.1F mit 37 passed, 0 failed, 0 skipped.
+- Naechster Produktbereich: F1.2 Nutrition Deep Features.
+- Keine Produktfeatures, keine UI-/`src`-/Test-Aenderungen, keine Migration,
+  keine RLS-/Policy-/Grant-Aenderung, keine Remote-DB-Aktion, kein Deployment
+  und keine Secrets.
+
 ### F1.1
 
 Titel: Project/Goal Workbench Depth
