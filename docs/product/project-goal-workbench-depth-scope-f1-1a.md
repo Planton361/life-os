@@ -1,7 +1,7 @@
 # F1.1A Project / Goal Workbench Depth Scope Lock
 
 Stand: 2026-07-11
-Status: Completed scope lock; implementation notes through F1.1C
+Status: Completed scope lock; implementation notes through F1.1E
 Quelle der Wahrheit: `PRODUCT.md`, `DESIGN.md`, `ROADMAP.md`,
 `AI_WORKFLOW.md`, `docs/product/final-surface-connected-claim-review-f0-1.md`,
 `docs/product/final-product-completion-roadmap.md`,
@@ -110,9 +110,9 @@ Future oder Depth Gap:
   finaler Workbench-Lifecycle verbunden.
 - Project Status ist als Feld-Update verbunden; ein finales Statusmodell mit
   Audit, Abschlusslogik oder Undo existiert nicht.
-- Project Progress ist noch kein finales Modell. Supabase-Project-Readmodels
-  tragen aktuell keine echte Milestone-/TaskId-Tiefe; die Workbench leitet
-  Arbeitsfortschritt aus verknuepften Tasks ab.
+- Project Progress Engine ist seit F1.1E bewusst future. Die Workbench darf
+  linked Task Counts als Arbeits-Signal zeigen, aber daraus keine finale
+  Completion-Prozentzahl ableiten.
 - Project Detail Routes existieren, sind aber nicht die final connected
   Workbench-Tiefe und enthalten weiterhin mock-/static-nahe Aktionen.
 - Project Review-Kontext, Ressourcenentscheidungen, History und Audit Trail
@@ -170,9 +170,9 @@ Future oder Depth Gap:
   finaler Workbench-Lifecycle verbunden.
 - Goal Status ist als Feld-Update verbunden; ein finales Statusmodell mit
   Review-, Abschluss-, Audit- oder Undo-Logik existiert nicht.
-- Goal Progress ist noch kein finales Modell. Supabase-Goal-Readmodels tragen
-  aktuell keine echte linkedProjectIds-/linkedTaskIds-Tiefe; die Workbench
-  leitet verknuepfte Arbeit aus Project-/Task-Foreign-Keys ab.
+- Goal Progress Engine ist seit F1.1E bewusst future. Die Workbench darf linked
+  Project/Task Counts als Arbeits-Signal zeigen, aber daraus keine finale
+  Achievement-Prozentzahl oder Key-Result-Wahrheit ableiten.
 - Goal Detail Routes existieren, sind aber nicht die final connected
   Workbench-Tiefe und enthalten weiterhin mock-/static-nahe Aktionen.
 - Zielhistorie, Review Notes, Key Results und Audit Trail sind nicht
@@ -238,8 +238,8 @@ Prepared oder bewusst Future.
 | Project Review Context | `future` | Nur aufnehmen, wenn Project Review fachlich von Logs/Milestones getrennt wird. |
 | Resources | `local_connected_with_depth_gap` | Relations lesen/anzeigen ist connected; Workbench-lokales Link/Create/Manage ist Future Depth. |
 | Skill Evidence | `local_connected_with_depth_gap` adjacent | Skill Evidence kann Project/Goal-Kontext beruehren, bleibt aber kein F1.1A-Kernfeature. |
-| Progress Model | `local_connected_with_depth_gap` | Task-basierte Kennzahlen existieren; finale Project-/Goal-Progress-Semantik fehlt. |
-| Project/Goal Archive and Undo | `local_connected_with_depth_gap` / `future` | Project Soft Archive ist seit F1.1C verbunden; Goal Soft Archive ist seit F1.1D verbunden; Project/Goal Undo und finale Complete/Close-/Achieve-Semantik brauchen eigene Gates. |
+| Progress Model | `local_connected_work_signal` / `future_progress_engine` | Seit F1.1E locked: linked Task/Project Counts sind Arbeits-Signale; finale Prozent-/Outcome-Semantik bleibt Future. |
+| Project/Goal Archive and Undo | `local_connected_soft_archive` / `future_restore` | Project Soft Archive ist seit F1.1C verbunden; Goal Soft Archive ist seit F1.1D verbunden; F1.1E trennt Archive von Complete/Achieve/Pause. Undo/Restore und finale Complete-/Achieve-Semantik brauchen eigene Gates. |
 | Graph / Relations Map | `future` | Kein F1.1-Scope vor gesicherter Relation-Semantik. |
 | AI Suggestions / Coach | `future` | Keine autonomen Vorschlaege im Workbench-Depth-Scope. |
 
@@ -262,8 +262,8 @@ Design Debt:
   Nutzererwartung eindeutig zu steuern.
 - Portfolio Workbench und Entity Detail Routes duerfen nicht zwei
   konkurrierende Wahrheiten fuer Project/Goal Tiefe bleiben.
-- Progress Copy kann zu final wirken, wenn die Daten nur aus Task-Relationen
-  abgeleitet sind.
+- Progress Copy darf seit F1.1E nur Arbeits-Signale behaupten, solange die
+  Daten aus Task-/Project-Relationen abgeleitet sind.
 - Resource Sections zeigen echte Relations, bieten aber im Workbench selbst
   noch keine vollstaendige Relation-Verwaltung.
 - Mehr Karten, Graphen oder Charts wuerden die F1.1-Luecke nicht loesen; die
@@ -295,8 +295,9 @@ Bekannte Backend-Gaps:
 - Milestones haben kein entschiedenes Project-/Goal-Datenmodell.
 - Project Log, Goal Log, Review Cadence und Zielhistorie haben kein
   entschiedenes Datenmodell.
-- Project-/Goal-Progress hat keine finale Formel und kein eigenes persisted
-  ReadModel.
+- Project-/Goal-Progress hat seit F1.1E eine fachliche Grenze: linked
+  Task-/Project-Counts sind Work Signals; eine finale Progress Engine oder ein
+  persisted ReadModel bleibt Future Scope.
 - Resource Relations sind vorhanden, aber Workbench-lokales Resource Management
   braucht einen eigenen Slice.
 
@@ -422,16 +423,35 @@ F1.1D Implementation Status 2026-07-11:
 - Goal Key Results, Milestones, Goal Log, Review Cadence, finales Progress-
   Modell, Graph und AI Coach bleiben deferred.
 
-### F1.1E Project / Goal Progress Model Decision
+### F1.1E Project / Goal Lifecycle & Progress Model Decision
 
 Ziel: Fortschritt nicht ueberbehaupten.
 
-Moeglicher Scope:
+Scope:
 
-- entscheiden, ob Progress rein task-basiert bleibt
-- entscheiden, ob Milestones oder Key Results spaeter Progress treiben
-- Copy und ReadModel-Grenzen dokumentieren
-- keine Prozentzahl final nennen, wenn die Datenbasis nur partial ist
+- Lifecycle-Semantik fuer Project und Goal locken.
+- Archive, Complete, Achieve, Pause und Blocked trennen.
+- entscheiden, dass Workbench-Counts Arbeits-Signale, aber keine finale
+  Prozent-/Outcome-Wahrheit sind.
+- dokumentieren, dass `projects.progress` und `goals.progress` bestehende
+  DB-Felder bleiben, aber nicht als finale Workbench-Wahrheit gelten.
+- Undo/Restore als Folge-Scope einordnen.
+
+F1.1E Decision Status 2026-07-11:
+
+- Dokumentiert in
+  `docs/product/project-goal-lifecycle-progress-decision-f1-1e.md`.
+- Ergebnis: Project Complete und Goal Achieve bleiben Outcome-Statusfelder,
+  aber keine finalen Close-/Achievement-Flows.
+- Project/Goal Soft Archive bleibt Sichtbarkeit/Ablage und kein Outcome-Claim.
+- Pause bleibt reversibler Wartezustand; Project Blocked bleibt
+  Klaerungszustand.
+- Project/Goal Work Signal ist als textbasierte linked Task-/Project-Metrik
+  akzeptiert.
+- Project/Goal Progress Engine, Undo/Restore, Milestones, Logs, Review
+  Cadence, Graph und AI Coach bleiben deferred.
+- Keine UI-/src-/Test-Aenderung, keine Migration, keine RLS-/Policy-Aenderung,
+  keine Remote-DB-Aktion und kein Deployment.
 
 ### F1.1F Workbench Resource / Evidence Depth
 

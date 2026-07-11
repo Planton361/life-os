@@ -542,6 +542,23 @@ F1.1D Goal Workbench Entity Edit / Status Slice Status 2026-07-11:
 - Project/Goal Workbench bleiben `local_connected_with_depth_gap`, mit
   connected Entity Edit und Soft Archive fuer beide Entity-Typen.
 
+F1.1E Project / Goal Lifecycle & Progress Model Decision Status 2026-07-11:
+
+- Dokumentiert in
+  `docs/product/project-goal-lifecycle-progress-decision-f1-1e.md` und
+  `docs/product/project-goal-workbench-depth-scope-f1-1a.md`.
+- Ergebnis: Archive, Complete, Achieve, Pause und Project Blocked sind
+  fachlich getrennt.
+- Project/Goal Soft Archive bleibt Sichtbarkeit/Ablage und kein Outcome-Claim.
+- Project Complete und Goal Achieve bleiben als Statusfeld verbunden, aber
+  finale Close-/Achievement-Flows mit Datum, Audit, Review oder Messlogik sind
+  deferred.
+- Project/Goal Work Signal ist als textbasierte linked Task-/Project-Metrik
+  akzeptiert; Project/Goal Progress Engine bleibt future.
+- Undo/Restore ist als eigener Folge-Scope bewertet und nicht implementiert.
+- Keine UI-/src-/Test-Aenderung, keine Migration, keine RLS-/Policy-Aenderung,
+  keine Remote-DB-Aktion, kein Deployment und keine Secrets.
+
 ### F1.1
 
 Titel: Project/Goal Workbench Depth
