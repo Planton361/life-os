@@ -70,6 +70,8 @@ function nutritionEstimateFromForm(formData: FormData) {
 
 function revalidateNutritionRoutes() {
   revalidatePath("/nutrition");
+  revalidatePath("/nutrition/meal-planner");
+  revalidatePath("/nutrition/recipes");
   revalidatePath("/dashboard");
   revalidatePath("/today");
 }
@@ -245,6 +247,13 @@ export async function updateRecipeAction(
   };
 }
 
+export async function updateRecipeFormStateAction(
+  _previousState: NutritionActionResult,
+  formData: FormData,
+): Promise<NutritionActionResult> {
+  return updateRecipeAction(formData);
+}
+
 export async function archiveRecipeAction(
   formData: FormData,
 ): Promise<NutritionActionResult> {
@@ -284,6 +293,13 @@ export async function archiveRecipeAction(
     recipeId: result.data.id,
     status: "success",
   };
+}
+
+export async function archiveRecipeFormStateAction(
+  _previousState: NutritionActionResult,
+  formData: FormData,
+): Promise<NutritionActionResult> {
+  return archiveRecipeAction(formData);
 }
 
 export async function createMealAction(

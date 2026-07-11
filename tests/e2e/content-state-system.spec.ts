@@ -218,6 +218,14 @@ async function expectRecipeVisibleInRecipeResults(
   ).toBeVisible();
 }
 
+async function expectRecipeAbsentFromRecipeResults(page: Page, title: string) {
+  await expect(
+    page
+      .getByRole("list", { name: "Recipe results" })
+      .getByRole("button", { name: new RegExp(escapeRegExp(title)) }),
+  ).toHaveCount(0);
+}
+
 async function captureAndTriageManualInboxTask(
   page: Page,
   title: string,
@@ -2640,6 +2648,173 @@ test.describe("Nutrition content states", () => {
     );
     await page.goto("/nutrition/recipes");
     await expectRecipeVisibleInRecipeResults(page, recipeTitle);
+    await expectNoNutritionDemoStrings(page);
+  });
+
+  test("Manual Nutrition edits Recipe Entity reload-stable", async ({
+    page,
+  }) => {
+    const recipeTitle = uniqueTitle("Manual Nutrition Edit Recipe");
+    const updatedSummary = "Browser proof updated recipe summary";
+    const updatedInstructions = [
+      "Mix updated proof ingredients.",
+      "Plate updated proof meal.",
+    ].join("\n");
+
+    await setProfile(page, "manual");
+    const hasSupabaseAuth = await applySupabaseAuthState(page);
+
+    if (!hasSupabaseAuth) {
+      test.skip(
+        true,
+        "Manual Supabase auth state unavailable; Recipe edit proof skipped.",
+      );
+    }
+
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/inbox");
+    });
+    await skipIfManualDbUnavailable(
+      page,
+      "Manual Supabase auth state unavailable; Recipe edit proof skipped.",
+    );
+
+    await page.goto("/nutrition/recipes");
+    await expectNoNutritionDemoStrings(page);
+    const recipeForm = page
+      .getByRole("heading", { name: "Recipe erstellen" })
+      .locator("xpath=ancestor::section[1]");
+
+    await recipeForm.getByLabel("Title").fill(recipeTitle);
+    await recipeForm.getByLabel("Summary").fill("Browser proof pre-edit");
+    await recipeForm.getByLabel("Tags").fill("lunch, proof");
+    await recipeForm.getByRole("button", { name: "Recipe erstellen" }).click();
+    await page.waitForLoadState("networkidle");
+    await expectRecipeVisibleInRecipeResults(page, recipeTitle);
+
+    await page
+      .getByRole("list", { name: "Recipe results" })
+      .getByRole("button", { name: new RegExp(escapeRegExp(recipeTitle)) })
+      .first()
+      .click();
+    const detailPanel = page.getByRole("region", { name: "Selected Recipe" });
+    const editForm = detailPanel
+      .getByRole("heading", { name: "Recipe bearbeiten" })
+      .locator("xpath=ancestor::form[1]");
+
+    await expect(editForm).toBeVisible();
+    await editForm.getByLabel("Summary").fill(updatedSummary);
+    await editForm.getByLabel("Instructions").fill(updatedInstructions);
+    await editForm.getByLabel("Servings").fill("3");
+    await editForm.getByLabel("Prep min").fill("12");
+    await editForm.getByLabel("Tags").fill("dinner, proof");
+    await editForm.getByRole("button", { name: "Recipe speichern" }).click();
+    await expect(editForm.getByRole("status")).toContainText(
+      "Recipe aktualisiert.",
+    );
+
+    await page.reload();
+    await expectRecipeVisibleInRecipeResults(page, recipeTitle);
+    await page
+      .getByRole("list", { name: "Recipe results" })
+      .getByRole("button", { name: new RegExp(escapeRegExp(recipeTitle)) })
+      .first()
+      .click();
+    const reloadedDetailPanel = page.getByRole("region", {
+      name: "Selected Recipe",
+    });
+
+    await expect(reloadedDetailPanel.getByText(updatedSummary)).toBeVisible();
+    const instructionsSection = reloadedDetailPanel
+      .getByRole("heading", { name: "Instructions" })
+      .locator("xpath=ancestor::section[1]");
+
+    await expect(
+      instructionsSection.getByText("Mix updated proof ingredients."),
+    ).toBeVisible();
+    await expect(
+      instructionsSection.getByText("Plate updated proof meal."),
+    ).toBeVisible();
+    await expectNoNutritionDemoStrings(page);
+  });
+
+  test("Manual Nutrition archives Recipe Entity without deleting existing Meal", async ({
+    page,
+  }) => {
+    const recipeTitle = uniqueTitle("Manual Nutrition Archive Recipe");
+    const mealTitle = uniqueTitle("Manual Nutrition Archive Meal");
+    const mealDate = currentLocalDate();
+
+    await setProfile(page, "manual");
+    const hasSupabaseAuth = await applySupabaseAuthState(page);
+
+    if (!hasSupabaseAuth) {
+      test.skip(
+        true,
+        "Manual Supabase auth state unavailable; Recipe archive proof skipped.",
+      );
+    }
+
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/inbox");
+    });
+    await skipIfManualDbUnavailable(
+      page,
+      "Manual Supabase auth state unavailable; Recipe archive proof skipped.",
+    );
+
+    await page.goto("/nutrition/recipes");
+    await expectNoNutritionDemoStrings(page);
+    const recipeForm = page
+      .getByRole("heading", { name: "Recipe erstellen" })
+      .locator("xpath=ancestor::section[1]");
+
+    await recipeForm.getByLabel("Title").fill(recipeTitle);
+    await recipeForm.getByLabel("Summary").fill("Browser proof archive recipe");
+    await recipeForm.getByLabel("Tags").fill("lunch, proof");
+    await recipeForm.getByRole("button", { name: "Recipe erstellen" }).click();
+    await page.waitForLoadState("networkidle");
+    await expectRecipeVisibleInRecipeResults(page, recipeTitle);
+
+    await page.goto("/nutrition");
+    const mealForm = page
+      .getByRole("heading", { name: "Meal erstellen" })
+      .locator("xpath=ancestor::section[1]");
+
+    await mealForm.getByLabel("Title").fill(mealTitle);
+    await mealForm.getByLabel("Date").fill(mealDate);
+    await mealForm.getByLabel("Type").selectOption("lunch");
+    await mealForm.getByLabel("Planned").fill(`${mealDate}T12:45`);
+    await mealForm.getByLabel("Recipe").selectOption({ label: recipeTitle });
+    await mealForm
+      .getByRole("button", { exact: true, name: "Meal erstellen" })
+      .click();
+    await page.waitForLoadState("networkidle");
+    await expect(page.locator("#nutrition-page").getByText(mealTitle).first()).toBeVisible();
+
+    await page.goto("/nutrition/recipes");
+    await expectRecipeVisibleInRecipeResults(page, recipeTitle);
+    await page
+      .getByRole("list", { name: "Recipe results" })
+      .getByRole("button", { name: new RegExp(escapeRegExp(recipeTitle)) })
+      .first()
+      .click();
+    const detailPanel = page.getByRole("region", { name: "Selected Recipe" });
+    const archiveForm = detailPanel
+      .getByRole("heading", { name: "Recipe archivieren" })
+      .locator("xpath=ancestor::form[1]");
+
+    await archiveForm.getByRole("button", { name: "Recipe archivieren" }).click();
+    await expect(archiveForm.getByRole("status")).toContainText(
+      "Recipe archiviert.",
+    );
+
+    await page.reload();
+    await expectRecipeAbsentFromRecipeResults(page, recipeTitle);
+    await page.goto("/nutrition");
+    await expect(page.locator("#nutrition-page").getByText(mealTitle).first()).toBeVisible();
+    await page.reload();
+    await expect(page.locator("#nutrition-page").getByText(mealTitle).first()).toBeVisible();
     await expectNoNutritionDemoStrings(page);
   });
 });

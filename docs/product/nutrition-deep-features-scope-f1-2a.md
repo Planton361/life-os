@@ -70,7 +70,8 @@ Aktuelle lokale Nutrition-Basis:
 
 Nicht aktuell final verbunden:
 
-- Recipe Entity Edit und Archive in der Manual UI.
+- Recipe Entity Edit und Archive in der Manual UI wurden durch F1.2B am
+  2026-07-11 verbunden.
 - Recipe Detail Route als echte Tiefe.
 - Ingredients als persistentes Datenmodell.
 - Meal Planner Edit / Reschedule / Recipe-Wechsel.
@@ -102,7 +103,7 @@ Connected Flows:
 Partial Flows:
 
 - Recipe Update und Recipe Archive existieren als Server Actions und
-  Repository-Methoden, sind aber in der Manual Recipes UI nicht verbunden.
+  Repository-Methoden; F1.2B bindet sie in der Manual Recipes UI.
 - Meal Update existiert als Server Action und Repository-Methode, hat aber
   keine sichtbare Edit-UI.
 - Recipe instructions, servings, prep minutes, tags and rough nutrition
@@ -135,7 +136,7 @@ Known Proofs:
 
 Known Gaps:
 
-- Kein Browser-Proof fuer Recipe Edit / Archive.
+- Recipe Edit / Archive Browser-Proof ist durch F1.2B geschlossen.
 - Kein persistentes Ingredient-Modell.
 - Kein Grocery-ReadModel aus echten geplanten Meals und Ingredients.
 - Kein Planner-Edit-Write-Pfad.
@@ -271,7 +272,7 @@ food-database product.
 
 | Domain | Current classification | Reason |
 | --- | --- | --- |
-| Recipe Detail | partial | Recipe fields and update/archive backend exist, but detail route is a stub and Manual UI edit/archive is not bound. |
+| Recipe Detail | partial | Recipe fields and update/archive are bound in Manual Recipes UI; detail route remains a stub and Ingredients are not persisted. |
 | Ingredients | blocked_by_data_model | Ingredients exist only in mock/local planner types, not as persisted rows or Recipe fields. |
 | Meal Planning | partial | Meals support date, meal type, recipe relation, planned/completed state and projection; planner edit, serving/portion and recipe replacement are not connected. |
 | Grocery | blocked_by_data_model | Grocery requires Recipe Ingredients; current Grocery is demo/mock or empty Manual state. |
@@ -468,6 +469,25 @@ Risiko:
 
 - Existing local-only editor includes fields not in DB, especially Ingredients
   and cook time. F1.2B must not pretend those persist.
+
+F1.2B Status 2026-07-11:
+
+- Dokumentiert in `docs/qa/recipe-entity-edit-archive-f1-2b.md`.
+- Ergebnis: PASS.
+- Manual Recipes UI bindet `updateRecipeAction` und `archiveRecipeAction`
+  ueber form-state wrappers im bestehenden Selected Recipe Panel.
+- Editierbare Manual-Felder sind auf persistierte Recipe-Felder begrenzt:
+  Title, Summary, Instructions, Servings, Prep min und Tags.
+- Soft Archive setzt `is_archived = true`; aktive Recipe Reads filtern danach
+  das archivierte Recipe nach Reload aus.
+- Existing Meals bleiben erhalten; der Browser-Proof erstellt ein Meal vor dem
+  Archive und bestaetigt es nach Archive + Reload in `/nutrition`.
+- Fokussierter Proof:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Nutrition|Recipe|Meal"`:
+  6 passed.
+- Keine Ingredients, keine Grocery Generation, kein Meal Planner Edit, keine
+  Nutrition Metrics, keine Migration, keine RLS-/Policy-/Grant-Aenderung,
+  keine Remote-DB-Aktion und kein Deployment.
 
 ### F1.2C Recipe Ingredients Model Lock
 

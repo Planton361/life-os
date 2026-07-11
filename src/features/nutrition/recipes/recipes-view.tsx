@@ -8,12 +8,15 @@ import {
   resolveContentStateMeta,
 } from "@/features/content-state";
 import {
+  archiveRecipeFormStateAction,
   createRecipeFormStateAction,
+  updateRecipeFormStateAction,
   type NutritionActionResult,
 } from "@/features/real-data/actions/nutrition.actions";
 import type { MealType, Recipe } from "../meal-planner/meal-planner-types";
 import {
   primaryButtonClass,
+  quietButtonClass,
   secondaryButtonClass,
 } from "../meal-planner/meal-planner-primitives";
 import { RecipeBrowser } from "./recipe-browser";
@@ -61,10 +64,167 @@ function RecipeActionMessage({
           ? "text-[11px] font-semibold text-[var(--accent-green)]"
           : "text-[11px] font-semibold text-[var(--accent-red)]"
       }
-      role="status"
+      role={status === "error" ? "alert" : "status"}
     >
       {message}
     </p>
+  );
+}
+
+function recipeInstructionsText(recipe: Recipe) {
+  return [...recipe.instructions]
+    .sort((first, second) => first.order - second.order)
+    .map((instruction) => instruction.text)
+    .join("\n");
+}
+
+function ManualRecipePersistedActions({
+  actionsEnabled,
+  recipe,
+}: Readonly<{
+  actionsEnabled: boolean;
+  recipe: Recipe;
+}>) {
+  const [updateState, updateAction, isUpdating] = useActionState(
+    updateRecipeFormStateAction,
+    initialNutritionActionState,
+  );
+  const [archiveState, archiveAction, isArchiving] = useActionState(
+    archiveRecipeFormStateAction,
+    initialNutritionActionState,
+  );
+  const disabled = !actionsEnabled || isUpdating || isArchiving;
+
+  return (
+    <div className="grid gap-3">
+      <form
+        action={updateAction}
+        aria-labelledby="manual-recipe-edit-heading"
+        className="grid gap-3 rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(14,23,38,.48)] p-3"
+      >
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <h3
+            className="text-[12px] font-semibold text-[var(--text-primary)]"
+            id="manual-recipe-edit-heading"
+          >
+            Recipe bearbeiten
+          </h3>
+          <RecipeActionMessage
+            message={updateState.message}
+            status={updateState.status}
+          />
+        </div>
+
+        <input name="recipeId" type="hidden" value={recipe.id} />
+
+        <label className="min-w-0">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+            Title
+          </span>
+          <input
+            className="mt-1 min-h-11 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.62)] px-3 text-[12px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)] disabled:opacity-60"
+            defaultValue={recipe.title}
+            disabled={disabled}
+            name="title"
+            required
+          />
+        </label>
+
+        <label className="min-w-0">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+            Summary
+          </span>
+          <input
+            className="mt-1 min-h-11 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.62)] px-3 text-[12px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)] disabled:opacity-60"
+            defaultValue={recipe.description ?? ""}
+            disabled={disabled}
+            name="summary"
+          />
+        </label>
+
+        <label className="min-w-0">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+            Instructions
+          </span>
+          <textarea
+            className="mt-1 min-h-24 w-full resize-y rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.62)] px-3 py-2 text-[12px] leading-5 text-[var(--text-primary)] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)] disabled:opacity-60"
+            defaultValue={recipeInstructionsText(recipe)}
+            disabled={disabled}
+            name="instructions"
+          />
+        </label>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="min-w-0">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+              Servings
+            </span>
+            <input
+              className="mt-1 min-h-11 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.62)] px-3 text-[12px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)] disabled:opacity-60"
+              defaultValue={recipe.defaultServings}
+              disabled={disabled}
+              min="1"
+              name="servings"
+              type="number"
+            />
+          </label>
+
+          <label className="min-w-0">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+              Prep min
+            </span>
+            <input
+              className="mt-1 min-h-11 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.62)] px-3 text-[12px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)] disabled:opacity-60"
+              defaultValue={recipe.prepMinutes ?? ""}
+              disabled={disabled}
+              min="0"
+              name="prepMinutes"
+              type="number"
+            />
+          </label>
+        </div>
+
+        <label className="min-w-0">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+            Tags
+          </span>
+          <input
+            className="mt-1 min-h-11 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.62)] px-3 text-[12px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)] disabled:opacity-60"
+            defaultValue={recipe.tags.join(", ")}
+            disabled={disabled}
+            name="tags"
+          />
+        </label>
+
+        <button className={primaryButtonClass} disabled={disabled} type="submit">
+          Recipe speichern
+        </button>
+      </form>
+
+      <form
+        action={archiveAction}
+        aria-labelledby="manual-recipe-archive-heading"
+        className="grid gap-2 rounded-[14px] border border-[rgba(221,107,95,.28)] bg-[rgba(221,107,95,.06)] p-3"
+      >
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <h3
+            className="text-[12px] font-semibold text-[var(--text-primary)]"
+            id="manual-recipe-archive-heading"
+          >
+            Recipe archivieren
+          </h3>
+          <RecipeActionMessage
+            message={archiveState.message}
+            status={archiveState.status}
+          />
+        </div>
+
+        <input name="recipeId" type="hidden" value={recipe.id} />
+        <button className={quietButtonClass} disabled={disabled} type="submit">
+          Recipe archivieren
+        </button>
+      </form>
+    </div>
   );
 }
 
@@ -474,6 +634,15 @@ export function RecipesView({
         <RecipeDetailPanel
           confirmingArchive={confirmingArchive}
           actionsEnabled={actionsEnabled && !hasPersistedManualActions}
+          manualActions={
+            hasPersistedManualActions && selectedRecipe ? (
+              <ManualRecipePersistedActions
+                actionsEnabled={actionsEnabled}
+                key={selectedRecipe.id}
+                recipe={selectedRecipe}
+              />
+            ) : undefined
+          }
           onCancelArchive={() => setConfirmingArchive(false)}
           onConfirmArchive={archiveSelectedRecipe}
           onDuplicate={duplicateSelectedRecipe}

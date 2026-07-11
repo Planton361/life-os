@@ -620,6 +620,22 @@ F1.2A Nutrition Deep Features Scope Lock Status 2026-07-11:
   Decision Draft fuer den spaeteren Ingredients-Scope.
 - Erster ausfuehrbarer Folgeblock: F1.2B Recipe Entity Edit / Archive.
 
+F1.2B Recipe Entity Edit / Archive Status 2026-07-11:
+
+- Dokumentiert in `docs/qa/recipe-entity-edit-archive-f1-2b.md`.
+- Ergebnis: PASS.
+- Manual Recipes UI bindet Recipe Update und Recipe Archive im bestehenden
+  Selected Recipe Panel.
+- Edit bleibt auf persistierte Recipe-Felder begrenzt: Title, Summary,
+  Instructions, Servings, Prep min und Tags.
+- Soft Archive entfernt Recipes nach Reload aus der aktiven Recipe-Liste,
+  ohne bestehende Meals zu loeschen.
+- Browser-Proof `Nutrition|Recipe|Meal`: 6 passed.
+- Nutrition bleibt `local_connected_with_depth_gap`; Ingredients, Grocery,
+  Meal Planner Edit und Nutrition Metrics bleiben deferred.
+- Keine Migration, keine RLS-/Policy-/Grant-Aenderung, keine Remote-DB-Aktion,
+  kein Deployment und keine Secrets.
+
 ### F1.1
 
 Titel: Project/Goal Workbench Depth
@@ -676,6 +692,13 @@ F1.2A Status 2026-07-11:
 - Erster ausfuehrbarer Block: F1.2B Recipe Entity Edit / Archive, weil
   Update-/Archive-Backend existiert, aber die Manual Recipes UI noch nicht
   verbunden ist.
+
+F1.2B Status 2026-07-11:
+
+- Manual Recipe Edit und Manual Recipe Archive sind in `/nutrition/recipes`
+  verbunden und reload-stabil browser-bewiesen.
+- Bestehende Meals bleiben nach Recipe Archive erhalten.
+- Naechster offener Nutrition-Block: F1.2C Recipe Ingredients Model Lock.
 
 Surfaces: Nutrition Overview, Meal Planner, Recipes, Grocery.
 

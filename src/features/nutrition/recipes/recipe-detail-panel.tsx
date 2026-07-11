@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { RecipeImage } from "../meal-planner/recipe-image";
 import {
   primaryButtonClass,
@@ -45,6 +46,7 @@ export function RecipeDetailPanel({
   confirmingArchive,
   actionsEnabled,
   stateAttributes,
+  manualActions,
   onEdit,
   onDuplicate,
   onRequestArchive,
@@ -54,6 +56,7 @@ export function RecipeDetailPanel({
   recipe: Recipe | null;
   confirmingArchive: boolean;
   actionsEnabled: boolean;
+  manualActions?: ReactNode;
   stateAttributes?: Record<string, string>;
   onEdit: (recipe: Recipe) => void;
   onDuplicate: (recipe: Recipe) => void;
@@ -196,63 +199,69 @@ export function RecipeDetailPanel({
       </section>
 
       <div className="mt-auto grid gap-2 border-t border-[var(--border-subtle)] pt-3">
-        <div className="flex flex-wrap gap-2">
-          <button
-            className={primaryButtonClass}
-            disabled={!actionsEnabled}
-            onClick={() => onEdit(recipe)}
-            type="button"
-          >
-            Edit
-          </button>
-          <button
-            className={secondaryButtonClass}
-            disabled={!actionsEnabled}
-            onClick={() => onDuplicate(recipe)}
-            type="button"
-          >
-            Duplicate
-          </button>
-          <button
-            className={quietButtonClass}
-            disabled={!actionsEnabled}
-            onClick={onRequestArchive}
-            type="button"
-          >
-            Archive
-          </button>
-        </div>
-
-        {confirmingArchive ? (
-          <div
-            className="rounded-[12px] border border-[rgba(221,107,95,.30)] bg-[rgba(221,107,95,.08)] p-3"
-            role="alert"
-          >
-            <p className="text-[12px] font-semibold text-[var(--text-secondary)]">
-              Archive this recipe locally?
-            </p>
-            <p className="mt-1 text-[11px] leading-5 text-[var(--text-muted)]">
-              Archived recipes are hidden from this browser state. No backend data is
-              changed.
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button
-                className={secondaryButtonClass}
-                onClick={onCancelArchive}
-                type="button"
-              >
-                Cancel
-              </button>
+        {manualActions ? (
+          manualActions
+        ) : (
+          <>
+            <div className="flex flex-wrap gap-2">
               <button
                 className={primaryButtonClass}
-                onClick={onConfirmArchive}
+                disabled={!actionsEnabled}
+                onClick={() => onEdit(recipe)}
                 type="button"
               >
-                Confirm archive
+                Edit
+              </button>
+              <button
+                className={secondaryButtonClass}
+                disabled={!actionsEnabled}
+                onClick={() => onDuplicate(recipe)}
+                type="button"
+              >
+                Duplicate
+              </button>
+              <button
+                className={quietButtonClass}
+                disabled={!actionsEnabled}
+                onClick={onRequestArchive}
+                type="button"
+              >
+                Archive
               </button>
             </div>
-          </div>
-        ) : null}
+
+            {confirmingArchive ? (
+              <div
+                className="rounded-[12px] border border-[rgba(221,107,95,.30)] bg-[rgba(221,107,95,.08)] p-3"
+                role="alert"
+              >
+                <p className="text-[12px] font-semibold text-[var(--text-secondary)]">
+                  Archive this recipe locally?
+                </p>
+                <p className="mt-1 text-[11px] leading-5 text-[var(--text-muted)]">
+                  Archived recipes are hidden from this browser state. No backend
+                  data is changed.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    className={secondaryButtonClass}
+                    onClick={onCancelArchive}
+                    type="button"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className={primaryButtonClass}
+                    onClick={onConfirmArchive}
+                    type="button"
+                  >
+                    Confirm archive
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </>
+        )}
       </div>
     </PlannerPanel>
   );

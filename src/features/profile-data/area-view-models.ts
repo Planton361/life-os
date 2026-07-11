@@ -1587,7 +1587,7 @@ function buildProfileRecipesViewModel(
         : "No recipes for the empty profile.",
     writes:
       profileId === "manual"
-        ? "Manual recipe create server action."
+        ? "Manual recipe create, update and archive server actions."
         : "No writes in the empty profile.",
   };
   viewModel.contentStates = {
