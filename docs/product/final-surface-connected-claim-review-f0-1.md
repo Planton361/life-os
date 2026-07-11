@@ -282,6 +282,18 @@ F1.1G Project / Goal Workbench Closure Status 2026-07-11:
   AI Coach und Evidence Create direkt aus der Workbench bleiben deferred.
 - Naechster Produktbereich: F1.2 Nutrition Deep Features.
 
+F1.2A Nutrition Deep Features Scope Lock Status 2026-07-11:
+
+- Dokumentiert in
+  `docs/product/nutrition-deep-features-scope-f1-2a.md`.
+- Nutrition bleibt `local_connected_with_depth_gap`.
+- Verbunden bleiben Recipe Create, Meal Create, Meal Complete und
+  Meal-Planner-Projektion.
+- Nicht verbunden bleiben Recipe Edit/Archive in der Manual UI, echte Recipe
+  Detail-Tiefe, Ingredients, Grocery Generation, Planner Edit und belastbare
+  Metrics.
+- Erster ausfuehrbarer Folgeblock: F1.2B Recipe Entity Edit / Archive.
+
 Weitere Reihenfolge:
 
 1. F1.2 Nutrition Deep Features.

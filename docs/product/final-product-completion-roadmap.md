@@ -603,6 +603,23 @@ F1.1G Project / Goal Workbench Closure & Next Depth Decision Status 2026-07-11:
   keine RLS-/Policy-/Grant-Aenderung, keine Remote-DB-Aktion, kein Deployment
   und keine Secrets.
 
+F1.2A Nutrition Deep Features Scope Lock Status 2026-07-11:
+
+- Dokumentiert in
+  `docs/product/nutrition-deep-features-scope-f1-2a.md`.
+- Ergebnis: Nutrition Deep Features ist als Scope-/Data-Model-/Vertical-Slice-
+  Planungsblock gestartet; keine Produktfeatures, keine UI-/`src`-/
+  Test-Aenderungen, keine Migration, keine RLS-/Policy-/Grant-Aenderung,
+  keine Remote-DB-Aktion, kein Deployment und keine Secrets.
+- Bestehende Nutrition-UI und verbundene Recipe-/Meal-Flows bleiben Grundlage.
+- Current State: Recipe Create, Meal Create, Meal Complete und Meal-Planner-
+  Projektion sind local-first verbunden; Recipe Edit/Archive ist backendseitig
+  vorhanden, aber in der Manual UI noch nicht verbunden.
+- Ingredients, Grocery, Meal Planner Depth und Nutrition Metrics sind fachlich
+  getrennt; `recipe_ingredients` als eigene Tabelle ist der bevorzugte
+  Decision Draft fuer den spaeteren Ingredients-Scope.
+- Erster ausfuehrbarer Folgeblock: F1.2B Recipe Entity Edit / Archive.
+
 ### F1.1
 
 Titel: Project/Goal Workbench Depth
@@ -648,6 +665,17 @@ Titel: Nutrition Deep Features
 
 Ziel: Nutrition beyond Recipes/Meals decide and implement the next true depth:
 Grocery, Ingredients, Macros or Planner Edit, one slice at a time.
+
+F1.2A Status 2026-07-11:
+
+- F1.2A dokumentiert Current State, bestehendes Recipe-/Meal-Datenmodell,
+  Domain-Separation, Ingredients-Model-Optionen, Grocery-Abhaengigkeiten,
+  Design Debt und die F1.2B-F1.2I Slice-Struktur.
+- Entscheidung: keine Nutrition-Neuentwicklung; bestehende UI und connected
+  Recipe-/Meal-Flows bleiben Grundlage.
+- Erster ausfuehrbarer Block: F1.2B Recipe Entity Edit / Archive, weil
+  Update-/Archive-Backend existiert, aber die Manual Recipes UI noch nicht
+  verbunden ist.
 
 Surfaces: Nutrition Overview, Meal Planner, Recipes, Grocery.
 
