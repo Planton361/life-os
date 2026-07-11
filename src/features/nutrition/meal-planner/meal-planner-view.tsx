@@ -441,7 +441,7 @@ export function MealPlannerView({
               {profileId === "demo"
                 ? "Mock recipes - local planning state"
                 : profileId === "manual"
-                  ? "Manual Supabase meals - planner edits deferred"
+                  ? "Manual Supabase meals - edit and reschedule connected"
                   : "No meal plan data"}
             </p>
           </div>
@@ -518,6 +518,7 @@ export function MealPlannerView({
               availability={selectedAvailability}
               dayTotals={selectedDayTotals}
               ingredientErrors={ingredientErrors}
+              manualEditEnabled={Boolean(viewModel.mealEditEnabled)}
               onApplyChanges={() => setToast("Meal changes applied locally")}
               onCancelReplace={() => setReplaceMode(false)}
               onClearSlot={clearSlot}
@@ -526,6 +527,7 @@ export function MealPlannerView({
               onResetIngredientChanges={resetIngredientChanges}
               onServingsChange={changeServings}
               replaceMode={replaceMode}
+              recipes={viewModel.recipes}
               selectedDay={selectedDay}
               selectedMealTotals={selectedMealTotals}
               selectedRecipe={selectedRecipe}

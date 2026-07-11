@@ -1,5 +1,9 @@
 # F0.1 Final Surface Connected-Claim Review
 
+## F1.2F Nutrition Update 2026-07-11
+
+Meal Planner Edit / Reschedule ist lokal Manual-connected: sichtbares Inspector-Formular, authentifizierte Update Action, user-scoped Repository, Same-User-Recipe-Ownership und Reload-Proof. Demo/Empty bleiben getrennt. Der Claim gilt nicht fuer Production, Remote DB, Drag-and-drop, Grocery, Portionen oder Metrics.
+
 Stand: 2026-07-10
 Status: Completed docs/product/QA review; no product implementation
 Quelle der Wahrheit: W1.1A Browser-Proof Recovery, W1.1B personal/local-first

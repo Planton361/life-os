@@ -47,6 +47,14 @@ function currentLocalDate() {
   return localDate.toISOString().slice(0, 10);
 }
 
+function currentIsoWeekDate(dayOffset: number) {
+  const date = new Date();
+  const isoDay = date.getDay() === 0 ? 7 : date.getDay();
+  date.setDate(date.getDate() - isoDay + 1 + dayOffset);
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return localDate.toISOString().slice(0, 10);
+}
+
 function calendarDayColumnLabel(isoDate = currentLocalDate()) {
   return new Intl.DateTimeFormat("en", {
     day: "2-digit",
@@ -2649,6 +2657,91 @@ test.describe("Nutrition content states", () => {
     await page.goto("/nutrition/recipes");
     await expectRecipeVisibleInRecipeResults(page, recipeTitle);
     await expectNoNutritionDemoStrings(page);
+  });
+
+  test("Manual Meal Planner edits reschedules and relinks a completed Meal reload-stable", async ({ page }) => {
+    test.setTimeout(90_000);
+    const recipeA = uniqueTitle("Meal Planner Recipe A");
+    const recipeB = uniqueTitle("Meal Planner Recipe B");
+    const mealTitle = uniqueTitle("Meal Planner Edit Meal");
+    const updatedTitle = `${mealTitle} updated`;
+    const updatedNotes = "Reload-stable planner edit proof";
+    const dateA = currentLocalDate();
+    const dateB = currentIsoWeekDate(currentIsoWeekday() === 1 ? 1 : 0);
+
+    await setProfile(page, "manual");
+    const hasSupabaseAuth = await applySupabaseAuthState(page);
+    if (!hasSupabaseAuth) test.skip(true, "Manual Supabase auth state unavailable; Meal Planner edit proof skipped.");
+    await page.goto("/inbox");
+    await skipIfManualDbUnavailable(page, "Manual Supabase auth state unavailable; Meal Planner edit proof skipped.");
+
+    for (const title of [recipeA, recipeB]) {
+      await page.goto("/nutrition/recipes");
+      const recipeForm = page.getByRole("heading", { name: "Recipe erstellen" }).locator("xpath=ancestor::section[1]");
+      await recipeForm.getByLabel("Title").fill(title);
+      await recipeForm.getByLabel("Tags").fill("breakfast, dinner, proof");
+      await recipeForm.getByRole("button", { name: "Recipe erstellen" }).click();
+      await expectRecipeVisibleInRecipeResults(page, title);
+    }
+
+    await page.goto("/nutrition");
+    const mealForm = page.getByRole("heading", { name: "Meal erstellen" }).locator("xpath=ancestor::section[1]");
+    await mealForm.getByLabel("Title").fill(mealTitle);
+    await mealForm.getByLabel("Date").fill(dateA);
+    await mealForm.getByLabel("Type").selectOption("breakfast");
+    await mealForm.getByLabel("Planned").fill(`${dateA}T08:15`);
+    await mealForm.getByLabel("Recipe").selectOption({ label: recipeA });
+    await mealForm.getByLabel("Notes").fill("Before planner edit");
+    await mealForm.getByRole("button", { exact: true, name: "Meal erstellen" }).click();
+
+    await expect(page.locator("#nutrition-page").getByText(mealTitle).first()).toBeVisible();
+    const mealArticle = page.locator("article").filter({ hasText: mealTitle }).first();
+    if ((await mealArticle.count()) > 0) {
+      await mealArticle.getByRole("button", { name: "Gegessen" }).click();
+    } else {
+      await page.getByRole("button", { name: "Gegessen" }).first().click();
+    }
+    await page.waitForLoadState("networkidle");
+    await expect(page.getByRole("region", { name: "Recent Meals" }).getByText(mealTitle)).toBeVisible();
+
+    await page.goto("/nutrition/meal-planner");
+    const oldSlot = page.getByRole("button").filter({ hasText: recipeA }).first();
+    await expect(oldSlot).toBeVisible();
+    await oldSlot.focus();
+    await oldSlot.press("Enter");
+    const editForm = page.getByRole("heading", { name: "Meal bearbeiten" }).locator("xpath=ancestor::section[1]");
+    await expect(editForm).toBeVisible();
+    const plannedTimeBefore = await editForm.getByLabel("Geplante Zeit").inputValue();
+    await editForm.getByLabel("Titel").fill(updatedTitle);
+    await editForm.getByLabel("Notizen").fill(updatedNotes);
+    await editForm.getByLabel("Datum").fill(dateB);
+    await editForm.getByLabel("Meal Type").selectOption("dinner");
+    await editForm.getByLabel("Recipe").selectOption({ label: recipeB });
+    await expect(editForm.getByLabel("Geplante Zeit")).toHaveValue(`${dateB}${plannedTimeBefore.slice(10)}`);
+    await editForm.getByRole("button", { name: "Meal speichern" }).click();
+    await expect(editForm.getByRole("status")).toContainText("Meal aktualisiert.");
+    await page.waitForLoadState("networkidle");
+
+    await expect(page.getByRole("button").filter({ hasText: recipeA })).toHaveCount(0);
+    const newSlot = page.getByRole("button").filter({ hasText: recipeB }).first();
+    await expect(newSlot).toBeVisible();
+    await newSlot.focus();
+    await newSlot.press("Enter");
+    const reloadedEditForm = page.getByRole("heading", { name: "Meal bearbeiten" }).locator("xpath=ancestor::section[1]");
+    await expect(reloadedEditForm.getByLabel("Titel")).toHaveValue(updatedTitle);
+    await expect(reloadedEditForm.getByLabel("Notizen")).toHaveValue(updatedNotes);
+    await expect(reloadedEditForm.getByLabel("Datum")).toHaveValue(dateB);
+    await expect(reloadedEditForm.getByLabel("Meal Type")).toHaveValue("dinner");
+    await expect(reloadedEditForm.getByLabel("Recipe")).toHaveValue(/.+/);
+    await expect(reloadedEditForm.getByText("Der Abschlussstatus bleibt unverändert.")).toBeVisible();
+    await expect(reloadedEditForm.getByText("Status: Abgeschlossen")).toBeVisible();
+
+    await page.reload();
+    await expect(page.getByRole("button").filter({ hasText: recipeA })).toHaveCount(0);
+    await expect(page.getByRole("button").filter({ hasText: recipeB }).first()).toBeVisible();
+    await page.getByRole("button").filter({ hasText: recipeB }).first().focus();
+    await page.getByRole("button").filter({ hasText: recipeB }).first().press("Enter");
+    await expect(page.getByRole("heading", { name: "Meal bearbeiten" }).locator("xpath=ancestor::section[1]").getByText("Status: Abgeschlossen")).toBeVisible();
   });
 
   test("Manual Nutrition edits Recipe Entity reload-stable", async ({

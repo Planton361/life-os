@@ -598,9 +598,9 @@ export async function updateMealAction(
     date: optionalFormStringIfPresent(formData, "date"),
     mealId: formString(formData, "mealId"),
     mealType: optionalFormStringIfPresent(formData, "mealType"),
-    notes: optionalFormStringIfPresent(formData, "notes"),
-    plannedAt: optionalFormStringIfPresent(formData, "plannedAt"),
-    recipeId: optionalFormStringIfPresent(formData, "recipeId"),
+    notes: nullableFormStringIfPresent(formData, "notes"),
+    plannedAt: nullableFormStringIfPresent(formData, "plannedAt"),
+    recipeId: nullableFormStringIfPresent(formData, "recipeId"),
     title: optionalFormStringIfPresent(formData, "title"),
   });
 
@@ -632,6 +632,13 @@ export async function updateMealAction(
     message: "Meal aktualisiert.",
     status: "success",
   };
+}
+
+export async function updateMealFormStateAction(
+  _previousState: NutritionActionResult,
+  formData: FormData,
+): Promise<NutritionActionResult> {
+  return updateMealAction(formData);
 }
 
 export async function completeMealAction(

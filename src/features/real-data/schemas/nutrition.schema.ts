@@ -176,7 +176,19 @@ export type MealCreateInput = z.infer<typeof mealCreateInputSchema>;
 
 export const mealUpdateInputSchema = mealBaseSchema.partial().extend({
   mealId: requiredUuidSchema,
-});
+  notes: z.preprocess(blankInputToNull, z.string().trim().nullable().optional()),
+  plannedAt: z.preprocess(
+    blankInputToNull,
+    z.string().datetime({ local: true }).nullable().optional(),
+  ),
+  recipeId: z.preprocess(
+    blankInputToNull,
+    z.string().trim().uuid().nullable().optional(),
+  ),
+}).refine(
+  (input) => !input.date || !input.plannedAt || input.plannedAt.slice(0, 10) === input.date,
+  { message: "Planned time must use the selected meal date.", path: ["plannedAt"] },
+);
 
 export type MealUpdateInput = z.infer<typeof mealUpdateInputSchema>;
 

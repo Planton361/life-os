@@ -1552,7 +1552,7 @@ function buildManualMealPlanWeek(
         date: dateLabel,
         label: weekdayLabel(date),
         slots: plannerMealTypes.map((mealType) => {
-          const meal = meals.find(
+          const meal = [...meals].reverse().find(
             (candidate) =>
               candidate.date === dateLabel &&
               candidate.mealType === mealType &&
@@ -1571,6 +1571,10 @@ function buildManualMealPlanWeek(
                     ingredientAdjustments: [],
                     mealType,
                     recipeId: meal.recipeId,
+                    title: meal.title,
+                    notes: meal.notes,
+                    plannedAt: meal.plannedAt,
+                    completedAt: meal.completedAt,
                     servings: 1,
                   }
                 : undefined,
@@ -1606,6 +1610,8 @@ function buildProfileMealPlannerViewModel(
 
   viewModel.profileId = profileId;
   viewModel.actionsEnabled = false;
+  viewModel.mealEditEnabled =
+    profileId === "manual" && Boolean(nutritionData) && !nutritionData?.unavailableReason;
   viewModel.header = {
     ...viewModel.header,
     weekLabel: "Aktuelle Woche",
@@ -1620,7 +1626,10 @@ function buildProfileMealPlannerViewModel(
       profileId === "manual"
         ? "Manual recipes and meals from Supabase."
         : "No meal plan entities for the empty profile.",
-    writes: "Planner edit persistence remains deferred; use Nutrition Overview to create meals.",
+    writes:
+      profileId === "manual"
+        ? "Selected meals can be edited through the authenticated Supabase update path."
+        : "No writes in the Empty planner shell.",
   };
   viewModel.profiles = [];
   viewModel.defaultProfileId = "";

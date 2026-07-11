@@ -725,7 +725,7 @@ F1.2C Status 2026-07-11:
   Repository/Actions angebunden und in `/nutrition/recipes` browser-proofed.
 - F1.2D/F1.2E Ingredients-Schritte sind dadurch absorbiert.
 - Browser-Proof `Nutrition|Recipe|Ingredient`: 7 passed.
-- Naechster offener Nutrition-Block: F1.2F Meal Planner Edit / Reschedule
+- F1.2F Meal Planner Edit / Reschedule ist lokal im bestehenden Manual Inspector verbunden; Edit, Recipe-Wechsel, Completion-Erhalt und Reschedule werden in `docs/qa/meal-planner-edit-reschedule-f1-2f.md` nachgewiesen.
   Depth oder F1.2G Grocery Generation, separat zu entscheiden.
 
 Surfaces: Nutrition Overview, Meal Planner, Recipes, Grocery.

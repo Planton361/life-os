@@ -85,6 +85,10 @@ export type PlannedMeal = {
   recipeId: string;
   mealType: MealType;
   date: string;
+  title?: string;
+  notes?: string | null;
+  plannedAt?: string | null;
+  completedAt?: string | null;
   servings: number;
   ingredientAdjustments: IngredientAdjustment[];
 };
@@ -157,6 +161,7 @@ export type MealPlannerViewModel = {
     recipeSuggestions: ContentStateMeta;
   };
   actionsEnabled?: boolean;
+  mealEditEnabled?: boolean;
   header: {
     eyebrow: "Life OS / Nutrition / Meal Planner";
     title: "Meal Planner";

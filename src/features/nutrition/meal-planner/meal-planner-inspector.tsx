@@ -8,6 +8,7 @@ import {
   mealAvailabilityLabel,
 } from "../grocery/grocery-utils";
 import { SelectedRecipePanel } from "./selected-recipe-panel";
+import { ManualMealEditForm } from "./manual-meal-edit-form";
 import {
   PlannerPanel,
   quietButtonClass,
@@ -64,6 +65,8 @@ export function MealPlannerInspector({
   onResetIngredientChanges,
   availability,
   stateAttributes,
+  manualEditEnabled,
+  recipes,
 }: Readonly<{
   selectedSlot: SelectedMealSlot | null;
   selectedDay: MealPlanDay | null;
@@ -87,6 +90,8 @@ export function MealPlannerInspector({
     "status" | "missingIngredients" | "coveredIngredientCount" | "totalIngredientCount"
   > | null;
   stateAttributes?: Record<string, string>;
+  manualEditEnabled: boolean;
+  recipes: readonly Recipe[];
 }>) {
   const plannedMeal = selectedSlotData?.plannedMeal ?? null;
   const hasSelectedSlot = selectedSlot && selectedDay && selectedSlotData;
@@ -134,6 +139,9 @@ export function MealPlannerInspector({
             })}
           />
           <AvailabilityNotice availability={availability} />
+          {manualEditEnabled ? (
+            <ManualMealEditForm meal={plannedMeal} recipes={recipes} />
+          ) : null}
           <SelectedRecipePanel
             ingredientErrors={ingredientErrors}
             onApplyChanges={onApplyChanges}

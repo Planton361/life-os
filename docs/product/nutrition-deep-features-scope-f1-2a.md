@@ -656,6 +656,8 @@ Risiko:
 
 ### F1.2F Meal Planner Edit / Reschedule Depth
 
+Status 2026-07-11: Implementiert in `docs/qa/meal-planner-edit-reschedule-f1-2f.md`. Manual Meal Edit, Datum-/Slot-Reschedule, aktiver Same-User-Recipe-Wechsel und unverändertes `completed_at` sind im bestehenden Inspector verbunden; keine Migration.
+
 Ziel:
 
 - Connect planner edits to real Meals: change date, meal type, Recipe and
