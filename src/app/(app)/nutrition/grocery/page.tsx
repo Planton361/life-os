@@ -7,10 +7,15 @@ export const metadata: Metadata = {
     "Plan grocery demand from meals, estimate pantry coverage, and review receipt stubs locally.",
 };
 
-export default async function GroceryPage() {
+export default async function GroceryPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ week?: string }>;
+}) {
   const { GroceryView } =
     await import("@/features/nutrition/grocery");
-  const viewModel = await getGroceryViewModel();
+  const { week } = await searchParams;
+  const viewModel = await getGroceryViewModel(week);
 
   return <GroceryView viewModel={viewModel} />;
 }

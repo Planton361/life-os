@@ -1,5 +1,13 @@
 # F0.1 Final Surface Connected-Claim Review
 
+## F1.2G Nutrition Update 2026-07-11
+
+Grocery Generation ist lokal Manual-connected als serverseitige, read-only
+Wochenprojektion aus offenen user-owned Meals, Recipes und persistierten Recipe
+Ingredients. Aggregation erfolgt ohne Planner-Matrix, Unit Conversion oder
+Serving-Skalierung; unresolved Meals bleiben sichtbar. Der Claim umfasst keine
+Grocery-Persistenz, Pantry, Bestellung, Remote DB oder Production.
+
 ## F1.2F Nutrition Update 2026-07-11
 
 Meal Planner Edit / Reschedule ist lokal Manual-connected: sichtbares Inspector-Formular, authentifizierte Update Action, user-scoped Repository, Same-User-Recipe-Ownership und Reload-Proof. Demo/Empty bleiben getrennt. Der Claim gilt nicht fuer Production, Remote DB, Drag-and-drop, Grocery, Portionen oder Metrics.
@@ -113,7 +121,7 @@ Startcheck F0.1:
 | Projects | `local_connected_with_depth_gap` | Project Create, Linked Task Create/Lifecycle, Entity Edit, Status Edit, Soft Archive, Resource Relation Link und Skill Evidence Display read-only sind lokal belastbar. | Milestones, Project Log, Review-/History-Kontext, Undo/Restore, finaler Close-Flow, Progress Engine, Graph, AI Coach und Evidence Create fehlen. | F1.1C 69/6/0, F1.1F 37/0/0, F1.1G Closure | Detailseite braucht mehr Tiefe, aber Workbench-Core ist proof-stable. | Project ownership gates fuer bestehende Kernflows, Resource Relations und Evidence Sources vorhanden. | F1.2 Nutrition; Project Milestones/Logs spaeter. |
 | Goals | `local_connected_with_depth_gap` | Goal Create, Linked Project Create, Linked Task Create/Lifecycle, Entity Edit, Status/Horizon Edit, Soft Archive, Resource Relation Link und Skill Evidence Display read-only sind lokal belastbar. | Review Cadence, Milestones, Goal Log, Zielhistorie, Undo/Restore, finaler Achieve-Flow, Progress Engine, Graph, AI Coach und Evidence Create fehlen. | F1.1D 28/0/0, F1.1F 37/0/0, F1.1G Closure | Zielarbeit braucht echte Progress-Tiefe, aber Workbench-Core ist proof-stable. | Goal ownership gates fuer bestehende Kernflows, Resource Relations und Evidence Sources vorhanden. | F1.2 Nutrition; Goal Review/Milestones/Logs spaeter. |
 | Resources | `local_connected_with_depth_gap` | Resource Create, Inspector und Relation Create sind aktuell non-skipped gruen. | Graph-/ReadModel-Tiefe und Pagination/Scope fehlen. | W1.1A Extensions 25/0/0 | Knowledge Workbench, Graph nicht dekorativ. | Relation Labels/Targets lokal user-scoped. | F1.3 Resource/Skill Graph. |
-| Nutrition | `local_connected_with_depth_gap` | Recipe/Meal Create, Meal Complete und reload-stabile Projektion sind aktuell gruen. | Grocery, Ingredients, Macros und Planner Edit fehlen. | W1.1A Extensions 25/0/0 | Health-sensitive, keine medizinische Ueberbehauptung. | Nutrition Repositories und Date Scopes lokal bewiesen. | F1.2 Nutrition Deep Features. |
+| Nutrition | `local_connected_with_depth_gap` | Recipe/Meal Create, Meal Complete, Recipe Ingredients, Meal Planner Edit/Reschedule und read-only Grocery Draft sind lokal verbunden. | Grocery-Persistenz/Review, Pantry, Macros und volle Recipe Detail-Tiefe fehlen. | F1.2B–F1.2G focused proofs | Health-sensitive, Grocery bleibt als ungeprüfter Draft markiert. | User-scoped Nutrition Reads/Writes und Date Scopes lokal bewiesen. | F1.2H Nutrition Metrics Decision. |
 | Skills | `local_connected_with_depth_gap` | Skill Create/Edit/Archive und Evidence/Source-Linking sind aktuell gruen. | Skill Map/Graph und Evidence-Historie-Tiefe fehlen. | W1.1A Extensions 25/0/0 | Kompetenznachweise, kein AI-Behauptungsgraph. | Evidence Source Ownership lokal bewiesen. | F1.3 Resource/Skill Graph. |
 | Recurring | `local_connected_with_depth_gap` | Template Create und explizite idempotente Generate-Flows sind aktuell gruen. | Full Template Management und Automation fehlen. | W1.1A Extensions 25/0/0 | Routine UI ohne Gamification-Druck. | Idempotente Generation lokal bewiesen, keine Auto-Write-Ueberraschung. | F2.1 Recurring Full Management. |
 | AI Suggestions | `local_connected_with_depth_gap` | Lokaler deterministischer Review/Confirm-Flow ist aktuell gruen und schreibt nur nach User-Bestaetigung. | External Provider, Privacy, Logging, Cost und Failure Governance fehlen. | W1.1A Core 86/2/0 plus Extensions 25/0/0 | AI bleibt Review-Schicht, nicht autonom. | Mock/Review-Grenze lokal connected; Provider Boundary future. | F2.0 External AI Provider Governance. |

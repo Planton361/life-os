@@ -24,6 +24,7 @@ import {
   secondaryButtonClass,
 } from "../meal-planner/meal-planner-primitives";
 import type { GroceryViewModel } from "./grocery-view-model";
+import type { GroceryDraftProjection } from "./grocery-generation";
 import type {
   GroceryCategory,
   GroceryListItem,
@@ -1349,7 +1350,100 @@ function ReceiptReviewDialog({
   );
 }
 
-export function GroceryWorkbenchView({
+function formatDraftQuantity(quantity: number | null, unit: string | null) {
+  if (quantity === null) return unit ? `Menge offen · ${unit}` : "Menge offen";
+  const value = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 3 }).format(quantity);
+  return unit ? `${value} ${unit}` : value;
+}
+
+function ManualGroceryDraftView({ viewModel }: { viewModel: GroceryViewModel }) {
+  const draft: GroceryDraftProjection = viewModel.generatedDraft ?? {
+    items: [],
+    mealsConsidered: 0,
+    unresolvedMeals: [],
+  };
+  const range = viewModel.range;
+  const pageState = viewModel.contentStates?.page;
+
+  return (
+    <div
+      className="mx-auto flex w-full max-w-7xl flex-col gap-3 pb-8"
+      id="grocery-page"
+      {...(pageState ? contentStateDataAttributes(pageState, viewModel.profileId ?? "manual") : {})}
+    >
+      <header className="overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[var(--surface-1)] shadow-[0_8px_22px_rgba(0,0,0,.12)]">
+        <div className="flex flex-col gap-3 px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">{viewModel.header.eyebrow}</p>
+            <h1 className="mt-1 text-3xl font-semibold text-[var(--text-primary)]">{viewModel.header.title}</h1>
+            <p className="mt-1 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">{viewModel.header.subline}</p>
+            <p className="mt-1 text-[11px] font-semibold text-[var(--text-muted)]">Woche {viewModel.header.weekLabel}</p>
+          </div>
+          {range ? (
+            <nav aria-label="Grocery week" className="flex flex-wrap gap-2">
+              <Link className={secondaryButtonClass} href={`/nutrition/grocery?week=${range.previousStartDate}`}>Previous week</Link>
+              <Link className={secondaryButtonClass} href="/nutrition/grocery">Current week</Link>
+              <Link className={secondaryButtonClass} href={`/nutrition/grocery?week=${range.nextStartDate}`}>Next week</Link>
+            </nav>
+          ) : null}
+        </div>
+      </header>
+
+      {viewModel.unavailableReason ? (
+        <section className="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--surface-1)] p-4" role="alert">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">Grocery Draft nicht verfügbar</h2>
+          <p className="mt-1 text-sm text-[var(--text-secondary)]">{viewModel.unavailableReason}</p>
+        </section>
+      ) : (
+        <>
+          <section aria-labelledby="grocery-draft-heading" className="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--surface-1)] p-4" data-grocery-section="draft">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 id="grocery-draft-heading" className="text-base font-semibold text-[var(--text-primary)]">Generated Grocery Draft</h2>
+                <p className="mt-1 text-[11px] leading-5 text-[var(--text-muted)]">{draft.mealsConsidered} offene Meals berücksichtigt · read-only · nicht geprüft</p>
+              </div>
+              <span className="rounded-full border border-[rgba(217,146,79,.28)] px-3 py-1 text-[10px] font-semibold text-[var(--accent-orange)]">Draft</span>
+            </div>
+            {draft.items.length > 0 ? (
+              <ul aria-label="Generated grocery items" className="mt-4 grid gap-2">
+                {draft.items.map((item) => (
+                  <li className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.5)] px-3 py-3" data-grocery-item={item.name} key={item.id}>
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                      <span className="text-[13px] font-semibold text-[var(--text-primary)]">{item.name}</span>
+                      <span className="text-[12px] font-semibold text-[var(--text-secondary)]">{formatDraftQuantity(item.quantity, item.unit)}</span>
+                    </div>
+                    <p className="mt-1 text-[10px] text-[var(--text-muted)]">{item.sourceMealIds.length} Meal{item.sourceMealIds.length === 1 ? "" : "s"}{item.note ? ` · ${item.note}` : ""}</p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-4 text-sm text-[var(--text-muted)]">Keine Einkaufspunkte offen.</p>
+            )}
+          </section>
+
+          <section aria-labelledby="unresolved-grocery-heading" className="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--surface-1)] p-4" data-grocery-section="unresolved">
+            <h2 id="unresolved-grocery-heading" className="text-base font-semibold text-[var(--text-primary)]">Unresolved Meals</h2>
+            <p className="mt-1 text-[11px] text-[var(--text-muted)]">Meals ohne auflösbare Recipe Ingredients werden nicht verschwiegen.</p>
+            {draft.unresolvedMeals.length > 0 ? (
+              <ul aria-label="Unresolved grocery meals" className="mt-3 grid gap-2">
+                {draft.unresolvedMeals.map((meal) => (
+                  <li className="rounded-[12px] border border-[rgba(217,146,79,.22)] bg-[rgba(217,146,79,.04)] px-3 py-2" key={meal.id}>
+                    <p className="text-[12px] font-semibold text-[var(--text-primary)]">{meal.title}</p>
+                    <p className="mt-1 text-[10px] text-[var(--text-muted)]">{meal.date} · {meal.mealType} · {meal.reason === "missing_recipe" ? "Recipe fehlt" : "Recipe ohne Ingredients"}</p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-3 text-sm text-[var(--text-muted)]">Keine unresolved Meals.</p>
+            )}
+          </section>
+        </>
+      )}
+    </div>
+  );
+}
+
+function GroceryInteractiveWorkbenchView({
   viewModel,
 }: Readonly<{
   viewModel: GroceryViewModel;
@@ -1727,4 +1821,12 @@ export function GroceryWorkbenchView({
       ) : null}
     </div>
   );
+}
+
+export function GroceryWorkbenchView({ viewModel }: Readonly<{ viewModel: GroceryViewModel }>) {
+  if (viewModel.profileId === "manual") {
+    return <ManualGroceryDraftView viewModel={viewModel} />;
+  }
+
+  return <GroceryInteractiveWorkbenchView viewModel={viewModel} />;
 }

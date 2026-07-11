@@ -2987,6 +2987,103 @@ test.describe("Nutrition content states", () => {
     await expectNoNutritionDemoStrings(page);
   });
 
+  test("Manual Grocery generates a reload-stable weekly draft from every open Meal", async ({ page }) => {
+    test.setTimeout(120_000);
+    const recipeA = uniqueTitle("Grocery Recipe A");
+    const recipeB = uniqueTitle("Grocery Recipe B");
+    const recipeWithoutIngredients = uniqueTitle("Grocery Recipe Empty");
+    const completedRecipe = uniqueTitle("Grocery Recipe Completed");
+    const sharedIngredient = uniqueTitle("Grocery Shared Rice");
+    const splitIngredient = uniqueTitle("Grocery Split Flour");
+    const completedOnlyIngredient = uniqueTitle("Grocery Completed Only");
+    const mealA = uniqueTitle("Grocery Same Slot A");
+    const mealB = uniqueTitle("Grocery Same Slot B");
+    const unresolvedNoRecipe = uniqueTitle("Grocery Missing Recipe");
+    const unresolvedNoIngredients = uniqueTitle("Grocery Missing Ingredients");
+    const completedMeal = uniqueTitle("Grocery Completed Meal");
+    const mealDate = currentLocalDate();
+
+    await setProfile(page, "manual");
+    const hasSupabaseAuth = await applySupabaseAuthState(page);
+    if (!hasSupabaseAuth) test.skip(true, "Manual Supabase auth state unavailable; Grocery proof skipped.");
+    await page.goto("/inbox");
+    await skipIfManualDbUnavailable(page, "Manual Supabase auth state unavailable; Grocery proof skipped.");
+
+    async function createRecipe(title: string, ingredients: readonly { name: string; quantity: string; unit: string; note?: string }[]) {
+      await page.goto("/nutrition/recipes");
+      const recipeForm = page.getByRole("heading", { name: "Recipe erstellen" }).locator("xpath=ancestor::section[1]");
+      await recipeForm.getByLabel("Title").fill(title);
+      await recipeForm.getByLabel("Tags").fill("lunch, proof");
+      await recipeForm.getByRole("button", { name: "Recipe erstellen" }).click();
+      await expectRecipeVisibleInRecipeResults(page, title);
+      await page.getByRole("list", { name: "Recipe results" }).getByRole("button", { name: new RegExp(escapeRegExp(title)) }).first().click();
+      const manager = page.getByRole("region", { name: "Selected Recipe" }).getByRole("heading", { name: "Zutaten verwalten" }).locator("xpath=ancestor::section[1]");
+      for (const ingredient of ingredients) {
+        const form = manager.getByRole("heading", { name: "Zutat hinzufügen" }).locator("xpath=ancestor::form[1]");
+        await form.getByLabel("Name").fill(ingredient.name);
+        await form.getByLabel("Menge").fill(ingredient.quantity);
+        await form.getByLabel("Einheit").fill(ingredient.unit);
+        if (ingredient.note) await form.getByLabel("Notiz optional").fill(ingredient.note);
+        await form.getByRole("button", { name: "Zutat hinzufügen" }).click();
+        await expect(form.getByRole("status")).toContainText("Zutat erstellt.");
+      }
+    }
+
+    async function createMeal(title: string, recipe?: string) {
+      await page.goto("/nutrition");
+      const form = page.getByRole("heading", { name: "Meal erstellen" }).locator("xpath=ancestor::section[1]");
+      await form.getByLabel("Title").fill(title);
+      await form.getByLabel("Date").fill(mealDate);
+      await form.getByLabel("Type").selectOption("lunch");
+      await form.getByLabel("Planned").fill(`${mealDate}T12:30`);
+      if (recipe) await form.getByLabel("Recipe").selectOption({ label: recipe });
+      await form.getByRole("button", { exact: true, name: "Meal erstellen" }).click();
+      await expect(page.locator("#nutrition-page").getByText(title).first()).toBeVisible();
+    }
+
+    await createRecipe(recipeA, [
+      { name: sharedIngredient, quantity: "100", unit: "g", note: "rinse" },
+      { name: splitIngredient, quantity: "1", unit: "g" },
+    ]);
+    await createRecipe(recipeB, [
+      { name: sharedIngredient, quantity: "250", unit: "g", note: "rinse" },
+      { name: splitIngredient, quantity: "1", unit: "kg" },
+    ]);
+    await createRecipe(recipeWithoutIngredients, []);
+    await createRecipe(completedRecipe, [
+      { name: completedOnlyIngredient, quantity: "5", unit: "piece" },
+    ]);
+
+    await createMeal(mealA, recipeA);
+    await createMeal(mealB, recipeB);
+    await createMeal(unresolvedNoRecipe);
+    await createMeal(unresolvedNoIngredients, recipeWithoutIngredients);
+    await createMeal(completedMeal, completedRecipe);
+    const completedArticle = page.locator("article").filter({ hasText: completedMeal }).first();
+    await completedArticle.getByRole("button", { name: "Gegessen" }).click();
+    await page.waitForLoadState("networkidle");
+
+    await page.goto("/nutrition/grocery");
+    const draft = page.locator('[data-grocery-section="draft"]');
+    await expect(draft).toContainText(/\d+ offene Meals berücksichtigt/);
+    const sharedRow = draft.locator("[data-grocery-item]").filter({ hasText: sharedIngredient });
+    await expect(sharedRow).toContainText("350 g");
+    await expect(sharedRow).toContainText("2 Meals");
+    const splitRows = draft.locator("[data-grocery-item]").filter({ hasText: splitIngredient });
+    await expect(splitRows).toHaveCount(2);
+    await expect(splitRows.filter({ hasText: "1 g" })).toHaveCount(1);
+    await expect(splitRows.filter({ hasText: "1 kg" })).toHaveCount(1);
+    await expect(draft.getByText(completedOnlyIngredient)).toHaveCount(0);
+    const unresolved = page.locator('[data-grocery-section="unresolved"]');
+    await expect(unresolved.getByText(unresolvedNoRecipe)).toBeVisible();
+    await expect(unresolved.getByText(unresolvedNoIngredients)).toBeVisible();
+
+    await page.reload();
+    await expect(page.locator('[data-grocery-section="draft"]').locator("[data-grocery-item]").filter({ hasText: sharedIngredient })).toContainText("350 g");
+    await expect(page.locator('[data-grocery-section="unresolved"]').getByText(unresolvedNoRecipe)).toBeVisible();
+    await expect(page.getByText(completedOnlyIngredient)).toHaveCount(0);
+  });
+
   test("Manual Nutrition archives Recipe Entity without deleting existing Meal", async ({
     page,
   }) => {

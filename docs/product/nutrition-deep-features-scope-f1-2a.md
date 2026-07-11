@@ -703,6 +703,13 @@ Risiko:
 
 ### F1.2G Grocery Generation Model / UI
 
+Status 2026-07-11: Implementiert als serverseitige, ephemere Manual-Read-
+Projektion. Alle offenen Meals im ausgewählten Wochenbereich werden unabhängig
+von der Planner-Matrix berücksichtigt. Gleicher Ingredient-Name wird nur bei
+gleicher Unit und kompatibler Note ohne Conversion oder Serving-Skalierung
+summiert; nicht auflösbare Meals bleiben sichtbar unresolved. Keine Migration
+und keine Grocery-Persistenz. Details: `docs/qa/grocery-generation-f1-2g.md`.
+
 Ziel:
 
 - Generate Grocery demand from planned Meals and Recipe Ingredients.

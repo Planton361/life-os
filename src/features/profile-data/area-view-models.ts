@@ -30,7 +30,10 @@ import {
   getNotesPageViewModel as getDemoNotesPageViewModel,
 } from "@/features/life";
 import { getNutritionOverviewViewModel as getDemoNutritionOverviewViewModel } from "@/features/nutrition";
-import { getGroceryViewModel as getDemoGroceryViewModel } from "@/features/nutrition/grocery";
+import {
+  generateGroceryDraft,
+  getGroceryViewModel as getDemoGroceryViewModel,
+} from "@/features/nutrition/grocery";
 import { getMealPlannerViewModel as getDemoMealPlannerViewModel } from "@/features/nutrition/meal-planner";
 import { getRecipesViewModel as getDemoRecipesViewModel } from "@/features/nutrition/recipes";
 import { summarizeRecipes } from "@/features/nutrition/recipes/recipe-utils";
@@ -1139,7 +1142,10 @@ function nutritionAuthUnavailableReason(
   return "Melde dich an, um Nutrition-Daten zu laden.";
 }
 
-async function getManualNutritionData(): Promise<ManualNutritionData> {
+async function getManualNutritionData(range?: {
+  endDate: string;
+  startDate: string;
+}): Promise<ManualNutritionData> {
   const auth = await createAuthenticatedSupabaseServerClient();
 
   if (!auth.ok) {
@@ -1153,8 +1159,8 @@ async function getManualNutritionData(): Promise<ManualNutritionData> {
 
   const repository = createSupabaseNutritionRepository(auth.client);
   const today = new Date();
-  const startDate = formatLocalDate(startOfIsoWeek(today));
-  const endDate = formatLocalDate(addDays(startOfIsoWeek(today), 30));
+  const startDate = range?.startDate ?? formatLocalDate(startOfIsoWeek(today));
+  const endDate = range?.endDate ?? formatLocalDate(addDays(startOfIsoWeek(today), 30));
   const [recipesResult, mealsResult] = await Promise.all([
     repository.getActiveRecipesByUser(auth.user.id, auth.user.id),
     repository.getMealsByUserAndDateRange({
@@ -1708,11 +1714,52 @@ function buildProfileRecipesViewModel(
 
 function buildProfileGroceryViewModel(
   profileId: Exclude<LifeOsProfileId, "demo">,
+  nutritionData?: ManualNutritionData,
+  rangeStart?: string,
 ): ReturnType<typeof getDemoGroceryViewModel> {
   const viewModel = clone(getDemoGroceryViewModel());
+  const start = rangeStart ? new Date(`${rangeStart}T12:00:00`) : startOfIsoWeek(new Date());
+  const startDate = formatLocalDate(start);
+  const endDate = formatLocalDate(addDays(start, 6));
+  const generatedDraft =
+    profileId === "manual" && nutritionData && !nutritionData.unavailableReason
+      ? generateGroceryDraft({
+          ingredientsByRecipeId: nutritionData.recipeIngredientsByRecipeId,
+          meals: nutritionData.meals,
+          recipes: nutritionData.recipes,
+        })
+      : { items: [], mealsConsidered: 0, unresolvedMeals: [] };
 
   viewModel.profileId = profileId;
   viewModel.actionsEnabled = false;
+  viewModel.generatedDraft = generatedDraft;
+  viewModel.range = {
+    endDate,
+    nextStartDate: formatLocalDate(addDays(start, 7)),
+    previousStartDate: formatLocalDate(addDays(start, -7)),
+    startDate,
+  };
+  viewModel.unavailableReason = nutritionData?.unavailableReason;
+  viewModel.header = {
+    ...viewModel.header,
+    subline:
+      profileId === "manual"
+        ? "Serverseitiger Grocery Draft aus offenen Meals und persistierten Recipe Ingredients."
+        : viewModel.header.subline,
+    weekLabel: `${startDate} – ${endDate}`,
+  };
+  viewModel.pageContract = {
+    ...viewModel.pageContract,
+    canonicalSource:
+      profileId === "manual"
+        ? "Supabase meals, recipes and recipe ingredients scoped to the authenticated Manual user."
+        : "Empty Grocery shell without demo data.",
+    reads:
+      profileId === "manual"
+        ? "Server-side Grocery Draft projection for the selected week."
+        : "No Grocery source entities for the Empty profile.",
+    writes: "No Grocery persistence; generated draft is read-only.",
+  };
   viewModel.week = buildEmptyMealPlanWeek(viewModel.week);
   viewModel.recipes = [];
   viewModel.pantryItems = [];
@@ -1729,11 +1776,17 @@ function buildProfileGroceryViewModel(
   };
   viewModel.contentStates = {
     mustHave: resolveContentStateMeta({ capacity: 6, itemCount: 0 }),
-    page: resolveContentStateMeta({ capacity: 12, itemCount: 0 }),
+    page: resolveContentStateMeta({
+      capacity: 12,
+      itemCount: generatedDraft.items.length + generatedDraft.unresolvedMeals.length,
+    }),
     pantry: resolveContentStateMeta({ capacity: 8, itemCount: 0 }),
     receipts: resolveContentStateMeta({ capacity: 4, itemCount: 0 }),
-    summary: resolveContentStateMeta({ capacity: 5, itemCount: 0 }),
-    toBuy: resolveContentStateMeta({ capacity: 8, itemCount: 0 }),
+    summary: resolveContentStateMeta({
+      capacity: 5,
+      itemCount: generatedDraft.mealsConsidered > 0 ? 1 : 0,
+    }),
+    toBuy: resolveContentStateMeta({ capacity: 8, itemCount: generatedDraft.items.length }),
   };
 
   return viewModel;
@@ -2011,7 +2064,7 @@ export async function getRecipesViewModel(): Promise<
   );
 }
 
-export async function getGroceryViewModel(): Promise<
+export async function getGroceryViewModel(rangeStart?: string): Promise<
   ReturnType<typeof getDemoGroceryViewModel>
 > {
   const profileId = await getCurrentLifeOsProfileId();
@@ -2020,7 +2073,19 @@ export async function getGroceryViewModel(): Promise<
     return getDemoGroceryViewModel();
   }
 
-  return buildProfileGroceryViewModel(profileId);
+  const parsedStart = rangeStart && /^\d{4}-\d{2}-\d{2}$/.test(rangeStart)
+    ? rangeStart
+    : formatLocalDate(startOfIsoWeek(new Date()));
+  const range = {
+    startDate: parsedStart,
+    endDate: formatLocalDate(addDays(new Date(`${parsedStart}T12:00:00`), 6)),
+  };
+
+  return buildProfileGroceryViewModel(
+    profileId,
+    profileId === "manual" ? await getManualNutritionData(range) : undefined,
+    parsedStart,
+  );
 }
 
 export async function getCodingOverviewViewModel(): Promise<

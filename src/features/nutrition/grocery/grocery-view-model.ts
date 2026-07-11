@@ -28,6 +28,7 @@ import type {
   ReceiptUpload,
 } from "./grocery-types";
 import type { MealPlanWeek, Recipe } from "../meal-planner/meal-planner-types";
+import type { GroceryDraftProjection } from "./grocery-generation";
 
 export type GroceryViewModel = {
   profileId?: LifeOsProfileId;
@@ -43,13 +44,13 @@ export type GroceryViewModel = {
   header: {
     eyebrow: "Life OS / Nutrition / Grocery";
     title: "Grocery";
-    subline: "Plan shopping from meal plans, must-have items and pantry estimates.";
+    subline: string;
     weekLabel: string;
   };
   pageContract: {
     pageType: "Workflow / Area Subpage";
     primaryPurpose: string;
-    writes: "local UI state only in Phase 2";
+    writes: string;
     reads: string;
     canonicalSource: string;
     sensitiveData: "health_sensitive";
@@ -66,6 +67,14 @@ export type GroceryViewModel = {
   receiptLineItems: readonly ReceiptLineItem[];
   initialDemand: readonly GroceryDemandItem[];
   summary: GrocerySummary;
+  generatedDraft?: GroceryDraftProjection;
+  range?: {
+    endDate: string;
+    nextStartDate: string;
+    previousStartDate: string;
+    startDate: string;
+  };
+  unavailableReason?: string;
 };
 
 export function getGroceryViewModel(): GroceryViewModel {

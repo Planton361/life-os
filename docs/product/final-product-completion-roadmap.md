@@ -726,7 +726,11 @@ F1.2C Status 2026-07-11:
 - F1.2D/F1.2E Ingredients-Schritte sind dadurch absorbiert.
 - Browser-Proof `Nutrition|Recipe|Ingredient`: 7 passed.
 - F1.2F Meal Planner Edit / Reschedule ist lokal im bestehenden Manual Inspector verbunden; Edit, Recipe-Wechsel, Completion-Erhalt und Reschedule werden in `docs/qa/meal-planner-edit-reschedule-f1-2f.md` nachgewiesen.
-  Depth oder F1.2G Grocery Generation, separat zu entscheiden.
+- F1.2G Grocery Generation bindet die bestehende Manual-Grocery-Fläche an
+  eine ephemere serverseitige Wochenprojektion aus offenen Meals, Recipes und
+  Recipe Ingredients. Keine Planner-Matrix-Ableitung, Conversion, Serving-
+  Skalierung, Migration oder Grocery-Persistenz; unresolved Meals bleiben
+  sichtbar. Proof: `docs/qa/grocery-generation-f1-2g.md`.
 
 Surfaces: Nutrition Overview, Meal Planner, Recipes, Grocery.
 
