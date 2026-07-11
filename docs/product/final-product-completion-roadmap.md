@@ -503,6 +503,26 @@ F1.1B Project / Goal Workbench State Clarity Status 2026-07-11:
 - Project Workbench, Goal Workbench und Portfolio bleiben
   `local_connected_with_depth_gap`.
 
+F1.1C Project Workbench Entity Edit / Status Slice Status 2026-07-11:
+
+- Dokumentiert in
+  `docs/qa/project-workbench-entity-edit-f1-1c.md` und
+  `docs/product/project-goal-workbench-depth-scope-f1-1a.md`.
+- Ergebnis: Project Workbench kann Titel, Summary, Next Action und Status des
+  ausgewählten Projects aktualisieren.
+- Project Soft Archive ist als explizite Workbench-Aktion verbunden und blendet
+  archivierte Projects aus aktiven Portfolio-Listen aus.
+- Browser Proof `Project Workbench|Portfolio|Manual`: 69 passed, 6 skipped,
+  0 failed. F1.1C-relevante Project Workbench Tests passed; Calendar-Skips
+  resultierten aus lokal voll belegtem Manual-DB-Tag ohne Cleanup/Reset.
+- Backend nutzt bestehende Project-Tabelle, vorhandenes Update-Schema,
+  serverseitige Auth, same-user Scope, Repository-Grenze und Revalidation.
+- Keine Migration, keine RLS-/Policy-/Grant-Aenderung, keine Remote-DB-Aktion,
+  kein Deployment und keine Secrets.
+- Project Complete/Close, Undo, Milestones, Project Log, finales Progress-
+  Modell, Graph und AI Coach bleiben deferred.
+- Goal Workbench bleibt unveraendert und ist naechster moeglicher F1.1D-Scope.
+
 ### F1.1
 
 Titel: Project/Goal Workbench Depth

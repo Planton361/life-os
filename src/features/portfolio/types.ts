@@ -1,4 +1,5 @@
 import type { ContentStateMeta } from "@/features/content-state";
+import type { ProjectStatus } from "@/features/entities/types";
 
 export type PortfolioProfileId = "demo" | "empty" | "manual";
 
@@ -133,6 +134,13 @@ export type PortfolioSkillContext = {
   sourceTargets?: readonly PortfolioSkillSourceTarget[];
 };
 
+export type PortfolioProjectEditValues = {
+  description?: string;
+  nextStep?: string;
+  status: ProjectStatus;
+  title: string;
+};
+
 export type PortfolioTaskEntity = PortfolioEntity & {
   type: "task";
   taskLifecycle: PortfolioTaskLifecycle;
@@ -222,6 +230,7 @@ export type PortfolioEntity = {
   goalId?: string;
   projectId?: string;
   linkedResources?: readonly PortfolioLinkedResource[];
+  projectEditValues?: PortfolioProjectEditValues;
   taskLifecycle?: PortfolioTaskLifecycle;
   skillContext?: PortfolioSkillContext;
 };

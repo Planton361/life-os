@@ -9,8 +9,12 @@ import type {
   SupabaseClientLike,
   SupabaseQueryResult,
 } from "../database.types";
-import { mapCreateProjectInputToInsert, mapProjectRowToDomain } from "../mappers";
-import type { ProjectRow } from "../row-types";
+import {
+  mapCreateProjectInputToInsert,
+  mapProjectRowToDomain,
+  mapUpdateProjectInputToPatch,
+} from "../mappers";
+import type { ProjectRow, ProjectUpdate } from "../row-types";
 
 type RepositoryFailure = RepositoryResult<never>;
 
@@ -95,6 +99,31 @@ async function validateProjectContextOwnership(
   return null;
 }
 
+async function updateProjectById(
+  client: SupabaseClientLike,
+  userId: string,
+  projectId: string,
+  patch: ProjectUpdate,
+  operation: string,
+): Promise<RepositoryResult<Project>> {
+  const result = (await client
+    .from(realDataTableNames.projects)
+    .update(patch)
+    .eq("user_id", userId)
+    .eq("id", projectId)
+    .is("archived_at", null)
+    .select("*")
+    .single()) as SupabaseQueryResult<ProjectRow>;
+
+  if (result.error) return adapterFailure(operation);
+  if (!result.data) return notFoundFailure("Project");
+
+  return {
+    data: mapProjectRowToDomain(result.data),
+    ok: true,
+  };
+}
+
 export function createSupabaseProjectRepository(
   client: SupabaseClientLike,
 ): ProjectRepository {
@@ -146,8 +175,24 @@ export function createSupabaseProjectRepository(
       };
     },
 
-    async updateProject() {
-      return adapterFailure("update project");
+    async updateProject(input) {
+      const scopeFailure = profileScopeFailure(input.userId, input.profileId);
+      if (scopeFailure) return scopeFailure;
+
+      const contextFailure = await validateProjectContextOwnership(
+        client,
+        input.userId,
+        input,
+      );
+      if (contextFailure) return contextFailure;
+
+      return updateProjectById(
+        client,
+        input.userId,
+        input.projectId,
+        mapUpdateProjectInputToPatch(input),
+        "update project",
+      );
     },
   };
 }

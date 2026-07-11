@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import {
   createGoalInputSchema,
   createProjectInputSchema,
+  updateProjectInputSchema,
 } from "@/features/real-data";
 import {
   createSupabaseGoalRepository,
@@ -16,6 +17,12 @@ import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
 
 export type PortfolioTargetCreateActionResult = {
   goalId?: string;
+  message: string;
+  projectId?: string;
+  status: "blocked" | "error" | "success";
+};
+
+export type PortfolioProjectEditActionResult = {
   message: string;
   projectId?: string;
   status: "blocked" | "error" | "success";
@@ -54,6 +61,32 @@ function revalidatePortfolioTargetRoutes() {
   revalidatePath("/dashboard");
   revalidatePath("/today");
   revalidatePath("/calendar");
+}
+
+function projectActionReturnUrl(
+  state: string,
+  formData: FormData,
+  projectId?: string,
+) {
+  const params = new URLSearchParams({
+    targetCreate: state,
+    view: "projects",
+  });
+  const selectedProjectId = optionalFormString(formData, "selectedProjectId");
+
+  if (projectId ?? selectedProjectId) {
+    params.set("selected", projectId ?? selectedProjectId ?? "");
+  }
+
+  return `/portfolio?${params.toString()}`;
+}
+
+function redirectToProjectActionState(
+  state: string,
+  formData: FormData,
+  projectId?: string,
+) {
+  redirect(projectActionReturnUrl(state, formData, projectId));
 }
 
 type PortfolioCreateReturnView = "all" | "goals" | "projects";
@@ -185,6 +218,120 @@ export async function createProjectAction(
   };
 }
 
+async function getAuthenticatedManualProjectContext(actionLabel: string) {
+  const profileId = await getCurrentLifeOsProfileId();
+
+  if (profileId !== "manual") {
+    return {
+      ok: false as const,
+      result: {
+        message: `Wechsle ins Manual-Profil, um Projects zu ${actionLabel}.`,
+        status: "blocked" as const,
+      },
+    };
+  }
+
+  const auth = await createAuthenticatedSupabaseServerClient();
+
+  if (!auth.ok) {
+    return {
+      ok: false as const,
+      result: {
+        message: authBlockedMessage(auth.error),
+        status: "blocked" as const,
+      },
+    };
+  }
+
+  return {
+    auth,
+    ok: true as const,
+  };
+}
+
+export async function updateProjectAction(
+  formData: FormData,
+): Promise<PortfolioProjectEditActionResult> {
+  const context = await getAuthenticatedManualProjectContext("bearbeiten");
+
+  if (!context.ok) return context.result;
+
+  const parsed = updateProjectInputSchema.safeParse({
+    description: optionalFormString(formData, "description"),
+    nextStep: optionalFormString(formData, "nextStep"),
+    profileId: context.auth.user.id,
+    projectId: formString(formData, "projectId"),
+    status: optionalFormString(formData, "status"),
+    title: optionalFormString(formData, "title"),
+    userId: context.auth.user.id,
+  });
+
+  if (!parsed.success) {
+    return {
+      message: "Das Project konnte nicht aktualisiert werden.",
+      status: "error",
+    };
+  }
+
+  const repository = createSupabaseProjectRepository(context.auth.client);
+  const result = await repository.updateProject(parsed.data);
+
+  if (!result.ok) {
+    return {
+      message: "Das Project konnte nicht in Supabase aktualisiert werden.",
+      status: "error",
+    };
+  }
+
+  revalidatePortfolioTargetRoutes();
+
+  return {
+    message: "Project aktualisiert.",
+    projectId: result.data.id,
+    status: "success",
+  };
+}
+
+export async function archiveProjectAction(
+  formData: FormData,
+): Promise<PortfolioProjectEditActionResult> {
+  const context = await getAuthenticatedManualProjectContext("archivieren");
+
+  if (!context.ok) return context.result;
+
+  const parsed = updateProjectInputSchema.safeParse({
+    profileId: context.auth.user.id,
+    projectId: formString(formData, "projectId"),
+    status: "archived",
+    userId: context.auth.user.id,
+  });
+
+  if (!parsed.success) {
+    return {
+      message: "Das Project konnte nicht archiviert werden.",
+      status: "error",
+    };
+  }
+
+  const repository = createSupabaseProjectRepository(context.auth.client);
+  const result = await repository.updateProject(parsed.data);
+
+  if (!result.ok) {
+    return {
+      message: "Das Project konnte nicht in Supabase archiviert werden.",
+      status: "error",
+    };
+  }
+
+  revalidatePortfolioTargetRoutes();
+
+  return {
+    message: "Project archiviert.",
+    projectId: result.data.id,
+    status: "success",
+  };
+}
+
 export async function createGoalAction(
   formData: FormData,
 ): Promise<PortfolioTargetCreateActionResult> {
@@ -269,4 +416,24 @@ export async function createGoalFormAction(formData: FormData): Promise<void> {
   }
 
   redirectToPortfolioCreateState(result.status, returnView, formData);
+}
+
+export async function updateProjectFormAction(formData: FormData): Promise<void> {
+  const result = await updateProjectAction(formData);
+
+  if (result.status === "success") {
+    redirectToProjectActionState("project_updated", formData, result.projectId);
+  }
+
+  redirectToProjectActionState(result.status, formData);
+}
+
+export async function archiveProjectFormAction(formData: FormData): Promise<void> {
+  const result = await archiveProjectAction(formData);
+
+  if (result.status === "success") {
+    redirectToProjectActionState("project_archived", formData);
+  }
+
+  redirectToProjectActionState(result.status, formData);
 }

@@ -1,7 +1,7 @@
 # F1.1A Project / Goal Workbench Depth Scope Lock
 
 Stand: 2026-07-11
-Status: Completed docs-only scope lock; no product implementation
+Status: Completed scope lock; implementation notes through F1.1C
 Quelle der Wahrheit: `PRODUCT.md`, `DESIGN.md`, `ROADMAP.md`,
 `AI_WORKFLOW.md`, `docs/product/final-surface-connected-claim-review-f0-1.md`,
 `docs/product/final-product-completion-roadmap.md`,
@@ -85,6 +85,10 @@ Lokal connected:
   Kontext.
 - Linked Tasks werden aus echten Tasks mit `projectId` abgeleitet.
 - `Task fuer Project erstellen` erzeugt echte Project-verknuepfte Tasks.
+- Project Edit aktualisiert im Workbench Titel, Summary, Next Action und
+  Status ueber eine real-data Project Action.
+- Project Soft Archive ist als explizite Workbench-Aktion verbunden und blendet
+  archivierte Projects aus aktiven Portfolio-Listen aus.
 - Task Lifecycle bleibt im Project Workbench nutzbar: Complete, Reopen,
   Archive sowie vorhandene Schedule-/Unschedule-/Reschedule-Pfade.
 - Linked Resources werden angezeigt, wenn eine echte Resource Relation auf das
@@ -102,8 +106,10 @@ Prepared:
 
 Future oder Depth Gap:
 
-- Project Update, Archive, Complete/Close und Status-Semantik sind nicht als
+- Project Complete/Close, Undo und finale Lifecycle-Semantik sind nicht als
   finaler Workbench-Lifecycle verbunden.
+- Project Status ist als Feld-Update verbunden; ein finales Statusmodell mit
+  Audit, Abschlusslogik oder Undo existiert nicht.
 - Project Progress ist noch kein finales Modell. Supabase-Project-Readmodels
   tragen aktuell keine echte Milestone-/TaskId-Tiefe; die Workbench leitet
   Arbeitsfortschritt aus verknuepften Tasks ab.
@@ -115,6 +121,7 @@ Future oder Depth Gap:
 Proof-Basis:
 
 - `Manual Project Workbench creates linked Project task reload-stable`.
+- `Manual Project Workbench edits status and archives Project reload-stable`.
 - `Manual Project Workbench keeps linked task lifecycle intact`.
 - `Manual Resource to Project Relation Create persists through Resources and
   Project Workbench`.
@@ -225,7 +232,7 @@ Prepared oder bewusst Future.
 | Resources | `local_connected_with_depth_gap` | Relations lesen/anzeigen ist connected; Workbench-lokales Link/Create/Manage ist Future Depth. |
 | Skill Evidence | `local_connected_with_depth_gap` adjacent | Skill Evidence kann Project/Goal-Kontext beruehren, bleibt aber kein F1.1A-Kernfeature. |
 | Progress Model | `local_connected_with_depth_gap` | Task-basierte Kennzahlen existieren; finale Project-/Goal-Progress-Semantik fehlt. |
-| Project/Goal Archive and Undo | `future` | Task Archive ist connected; Project/Goal Archive/Undo braucht eigenes Gate. |
+| Project/Goal Archive and Undo | `local_connected_with_depth_gap` / `future` | Project Soft Archive ist seit F1.1C verbunden; Project Undo, Complete/Close und Goal Archive/Undo brauchen eigene Gates. |
 | Graph / Relations Map | `future` | Kein F1.1-Scope vor gesicherter Relation-Semantik. |
 | AI Suggestions / Coach | `future` | Keine autonomen Vorschlaege im Workbench-Depth-Scope. |
 
@@ -260,6 +267,8 @@ Design Debt:
 Vorhanden und fuer F1.1 wiederverwendbar:
 
 - `projects` und `goals` koennen user-scoped erstellt und gelesen werden.
+- `projects` koennen seit F1.1C user-scoped aktualisiert und per Soft Archive
+  archiviert werden.
 - `tasks` koennen user-scoped mit `projectId` oder `goalId` erstellt,
   geplant, abgeschlossen, wieder geoeffnet, archiviert und unscheduled/
   rescheduled werden.
@@ -270,8 +279,8 @@ Vorhanden und fuer F1.1 wiederverwendbar:
 
 Bekannte Backend-Gaps:
 
-- Project Update/Archive/Complete/Close ist nicht als finaler Workbench-Pfad
-  verbunden.
+- Project Complete/Close, Undo, History und finale Lifecycle-Semantik sind
+  nicht als finaler Workbench-Pfad verbunden.
 - Goal Update/Pause/Achieve/Archive ist nicht als finaler Workbench-Pfad
   verbunden.
 - Milestones haben kein entschiedenes Project-/Goal-Datenmodell.
@@ -338,21 +347,39 @@ F1.1B Implementation Status 2026-07-11:
   `local_connected_with_depth_gap`.
 - F1.1C/F1.1D bleiben die naechsten moeglichen Status-/Semantik-Slices.
 
-### F1.1C Project Workbench Linked Work / Status Semantics
+### F1.1C Project Workbench Entity Edit / Status Slice
 
-Ziel: Project-spezifische Status- und Linked-Work-Semantik entscheiden und
-verbinden oder bewusst deferred halten.
+Ziel: Project-spezifische Entity-Edit- und Status-Semantik verbinden, wenn das
+vorhandene Datenmodell dies ohne Migration erlaubt, und groessere
+Lifecycle-Tiefe bewusst deferred halten.
 
-Moeglicher Scope:
+Scope:
 
-- Project Status Copy, next actions und Abschluss-/Archive-Grenzen.
-- Linked Task Kennzahlen und Project Progress Copy.
-- Entscheidung, ob Project Update/Archive jetzt gebaut oder final deferred
-  wird.
+- Project Title, Summary, Next Action und Status im Workbench bearbeiten.
+- Project Soft Archive im Workbench ausloesen.
+- Existing Project repository, Zod Schema, Auth, ownership scope und
+  Revalidation verwenden.
+- Linked Task Kennzahlen und Project Progress Copy nicht neu modellieren.
 
 Backend Skill erforderlich, sobald Actions oder Repositories betroffen sind:
 
 - `life-os-backend-action-slice`
+
+F1.1C Implementation Status 2026-07-11:
+
+- Dokumentiert in
+  `docs/qa/project-workbench-entity-edit-f1-1c.md`.
+- Ergebnis: Project Workbench Entity Edit, Statusfeld und Soft Archive sind
+  verbunden.
+- Browser Proof `Project Workbench|Portfolio|Manual`: 69 passed, 6 skipped,
+  0 failed. F1.1C-relevante Project Workbench Tests passed; Calendar-Skips
+  resultierten aus lokal voll belegtem Manual-DB-Tag ohne Cleanup/Reset.
+- Keine Migration, keine RLS-/Policy-/Grant-Aenderung, keine Remote-DB-Aktion,
+  kein Deployment und keine Secrets.
+- Project Complete/Close, Undo, Milestones, Project Log, finales Progress-
+  Modell, Graph und AI Coach bleiben deferred.
+- Naechster Project/Goal-Depth-Block: F1.1D Goal Workbench Linked Work /
+  Status Semantics.
 
 ### F1.1D Goal Workbench Linked Work / Status Semantics
 

@@ -790,6 +790,12 @@ function projectToPortfolioEntity(
     decisions,
     sourceLinks: [{ label: "Project", href: `/projects/${project.id}` }],
     noteSnippet: project.risk ?? project.description,
+    projectEditValues: {
+      description: project.description,
+      nextStep: project.nextStep,
+      status: project.status,
+      title: project.title,
+    },
     linkedResources:
       lookups.resourceLinksByTarget.get(`project:${project.id}`) ?? [],
   };

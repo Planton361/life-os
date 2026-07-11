@@ -10,7 +10,11 @@ import {
   scheduleTaskForTodayFormAction,
   unscheduleTaskFormAction,
 } from "@/features/real-data/actions/task.actions";
-import { createProjectFormAction } from "@/features/real-data/actions/portfolio.actions";
+import {
+  archiveProjectFormAction,
+  createProjectFormAction,
+  updateProjectFormAction,
+} from "@/features/real-data/actions/portfolio.actions";
 import {
   archiveSkillFormAction,
   createSkillEvidenceFormAction,
@@ -379,6 +383,97 @@ function GoalProjectCreateForm({
       </label>
       <button className={formButtonClassName} disabled={disabled} type="submit">
         Project erstellen
+      </button>
+    </form>
+  );
+}
+
+function ProjectEditForm({
+  disabled,
+  project,
+}: Readonly<{
+  disabled: boolean;
+  project: PortfolioEntity;
+}>) {
+  const values = project.projectEditValues;
+
+  return (
+    <form
+      action={updateProjectFormAction}
+      aria-label="Project bearbeiten"
+      className="grid gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.40)] p-3"
+    >
+      <input name="projectId" type="hidden" value={project.id} />
+      <input name="returnView" type="hidden" value="projects" />
+      <input name="selectedProjectId" type="hidden" value={project.id} />
+      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+        Project-Titel
+        <input
+          className={formInputClassName}
+          defaultValue={values?.title ?? project.title}
+          disabled={disabled}
+          name="title"
+          required
+        />
+      </label>
+      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+        Summary
+        <input
+          className={formInputClassName}
+          defaultValue={values?.description ?? project.description}
+          disabled={disabled}
+          name="description"
+        />
+      </label>
+      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_132px]">
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+          Next Action
+          <input
+            className={formInputClassName}
+            defaultValue={values?.nextStep ?? project.nextAction}
+            disabled={disabled}
+            name="nextStep"
+          />
+        </label>
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+          Status
+          <select
+            className={formInputClassName}
+            defaultValue={values?.status ?? "active"}
+            disabled={disabled}
+            name="status"
+          >
+            <option value="idea">idea</option>
+            <option value="active">active</option>
+            <option value="paused">paused</option>
+            <option value="blocked">blocked</option>
+            <option value="completed">completed</option>
+          </select>
+        </label>
+      </div>
+      <button className={formButtonClassName} disabled={disabled} type="submit">
+        Project speichern
+      </button>
+    </form>
+  );
+}
+
+function ProjectArchiveForm({
+  disabled,
+  projectId,
+}: Readonly<{
+  disabled: boolean;
+  projectId: string;
+}>) {
+  return (
+    <form action={archiveProjectFormAction} aria-label="Project archivieren">
+      <input name="projectId" type="hidden" value={projectId} />
+      <button
+        className="inline-flex min-h-8 items-center rounded-full border border-[rgba(221,107,95,.28)] bg-[rgba(221,107,95,.10)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[rgba(221,107,95,.44)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:border-[var(--border-subtle)] disabled:bg-[rgba(18,28,43,.34)] disabled:text-[var(--text-muted)]"
+        disabled={disabled}
+        type="submit"
+      >
+        Project archivieren
       </button>
     </form>
   );
@@ -951,7 +1046,7 @@ function WorkbenchFutureScopeNote({
 
 function getProgressSignalNote(entity: PortfolioEntity) {
   if (entity.type === "project") {
-    return "Project Progress ist aktuell ein einfaches Signal. Milestones, Logs und Project Archive/Undo sind noch nicht verbunden.";
+    return "Project Progress ist aktuell ein einfaches Signal. Milestones, Logs und Project Undo sind noch nicht verbunden.";
   }
 
   if (entity.type === "goal") {
@@ -1280,6 +1375,18 @@ function ProjectWorkbench({
         <WorkbenchCreateSection
           description={
             disabled
+              ? "Wechsle ins Manual-Profil, um echte Project-Daten zu bearbeiten."
+              : "Aktualisiert Titel, Summary, Next Action und Status des ausgewählten Projects."
+          }
+          heading="Project bearbeiten"
+          id="project-edit-heading"
+        >
+          <ProjectEditForm disabled={disabled} project={project} />
+        </WorkbenchCreateSection>
+
+        <WorkbenchCreateSection
+          description={
+            disabled
               ? "Wechsle ins Manual-Profil, um echte Project Tasks zu erstellen."
               : "Persistiert eine Task mit diesem Project als Kontext."
           }
@@ -1350,6 +1457,18 @@ function ProjectWorkbench({
 
         <WorkbenchResourcesSection resources={project.linkedResources ?? []} />
 
+        <WorkbenchCreateSection
+          description={
+            disabled
+              ? "Wechsle ins Manual-Profil, um echte Projects zu archivieren."
+              : "Archiviert das Project per Soft Archive. Aktive Portfolio-Listen blenden es danach aus."
+          }
+          heading="Project archivieren"
+          id="project-archive-heading"
+        >
+          <ProjectArchiveForm disabled={disabled} projectId={project.id} />
+        </WorkbenchCreateSection>
+
         <section aria-labelledby="project-prepared-sections-heading">
           <h3
             className="text-[13px] font-semibold text-[var(--text-primary)]"
@@ -1369,7 +1488,7 @@ function ProjectWorkbench({
           </div>
         </section>
 
-        <WorkbenchFutureScopeNote body="Future Scope: Project Workbench zeigt nur vorhandene linked Tasks und Resource Relations. Milestones, Project Log, Project Archive/Undo, Graph und AI Coach schreiben hier noch keine Persistenz." />
+        <WorkbenchFutureScopeNote body="Future Scope: Project Edit, Status und Soft Archive sind verbunden. Milestones, Project Log, Project Undo, Graph und AI Coach schreiben hier noch keine Persistenz." />
       </div>
     </section>
   );
