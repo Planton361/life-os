@@ -144,6 +144,78 @@ Nicht behauptet:
 - keine DB-weite Conflict-Garantie
 - kein Pointer Drag/Resize
 
+## 12. F1.0C.1 Move-Later Regression Triage
+
+Failure:
+
+- Der exakte Proof-Grep `15 min spaeter` findet keinen Test, weil der Text nur
+  ein Buttonlabel ist und kein Testname.
+- Der kleinste passende Calendar-Test
+  `Manual Calendar unschedules DB task back into planner queue` reproduzierte
+  den Blocker vor dem Fix: `15 min spaeter` war disabled.
+- Screenshot und Error Context wurden von Playwright erzeugt, aber nicht
+  gestaged.
+
+Root Cause:
+
+- `findFreeCalendarStartTime()` las Timed Blocks aus der gesamten Week Grid
+  statt aus dem Calendar-Tag, auf den der neue Task geplant wurde.
+- Wenn die lokale Manual-DB durch fruehere Proof-Laeufe dicht war, konnte der
+  Helper keinen sicheren Slot beweisen und fiel trotzdem auf die bevorzugte
+  Uhrzeit zurueck.
+- Die Planner Queue terminiert ohne Conflict-Precheck. Danach blockierte der
+  Inspector `15 min spaeter` korrekt gegen einen sichtbaren Task-Konflikt.
+
+Classification:
+
+```text
+TEST_SLOT_SELECTION_BUG
+```
+
+Manual-DB-Dichte war der Ausloeser, aber kein App-Reschedule-Bug.
+
+Fix:
+
+- `findFreeCalendarStartTime()` wartet jetzt auf Week Grid und Ziel-Tag,
+  scoped belegte Ranges auf den aktuellen lokalen Calendar-Tag und sucht
+  15-Minuten-Kandidaten ab der bevorzugten Uhrzeit mit Tages-Wrap.
+- Wenn kein konfliktfreier Slot existiert, wirft der Helper einen klaren
+  Slot-Selection-Fehler statt still auf eine moeglich belegte Uhrzeit
+  zurueckzufallen.
+- Der Unschedule-Proof reserviert ein 60-Minuten-Fenster und plant den Task
+  15 Minuten nach Fensterbeginn, damit `15 min spaeter` im Testzustand
+  konfliktfrei sein muss.
+
+F1.0C.1 Proofs:
+
+```text
+PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "15 min spaeter"
+
+No tests found.
+```
+
+```text
+PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Manual Calendar unschedules DB task back into planner queue"
+
+1 passed
+0 failed
+```
+
+```text
+PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Manual Calendar.*15 min|Manual Calendar plans DB task through queue and schedules reload-stable"
+
+1 passed
+0 failed
+```
+
+```text
+PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Calendar|Today|Dashboard|Manual"
+
+72 passed
+2 skipped
+0 failed
+```
+
 ## Validation
 
 Gezielter Proof der geaenderten Calendar Tests:

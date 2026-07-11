@@ -246,8 +246,17 @@ Browser proof:
   Calendar manual test before the Portfolio block. Failure:
   `Manual Calendar unschedules DB task back into planner queue` expected
   `15 min spaeter` to be enabled, but it was disabled.
+- F1.0C.1 isolated this blocker as `TEST_SLOT_SELECTION_BUG`: the Calendar
+  free-slot helper could fall back to a crowded Manual-DB slot instead of
+  proving a same-day free move-later window. The Calendar app correctly
+  disabled `15 min spaeter` once the test had scheduled into a visible
+  conflict.
+- F1.0C.1 fixed the Calendar proof helper and reran the focused Calendar proof
+  `Calendar|Today|Dashboard|Manual`: passed, 72 passed, 2 skipped, 0 failed.
 - Narrow F1.1B proof
   `Portfolio|Project Workbench|Goal Workbench`: passed, 27 passed, 0 failed.
+- F1.0C.1 reran the same narrow F1.1B proof after the Calendar fix:
+  passed, 27 passed, 0 failed.
 
 Proof impact:
 
@@ -255,5 +264,6 @@ Proof impact:
 - Connected Project/Goal linked Task, Goal-linked Project, Task lifecycle,
   Portfolio Add-to-Existing, Archive, Resource-to-Project and Resource-to-Goal
   relation flows remain green in the focused proof.
-- The Calendar manual blocker is not changed in F1.1B and remains outside this
-  Workbench state-clarity scope.
+- Broad `Manual` remains a cross-surface regression grep, not the Workbench
+  acceptance proof. F1.1B acceptance stays the focused
+  `Portfolio|Project Workbench|Goal Workbench` proof.

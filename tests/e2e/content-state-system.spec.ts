@@ -47,6 +47,19 @@ function currentLocalDate() {
   return localDate.toISOString().slice(0, 10);
 }
 
+function calendarDayColumnLabel(isoDate = currentLocalDate()) {
+  return new Intl.DateTimeFormat("en", {
+    day: "2-digit",
+    month: "long",
+    timeZone: "UTC",
+    weekday: "long",
+  }).format(new Date(`${isoDate}T00:00:00.000Z`));
+}
+
+function cssAttributeValue(value: string) {
+  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
+
 function nextIsoWeekday() {
   return (currentIsoWeekday() % 7) + 1;
 }
@@ -692,8 +705,16 @@ async function findFreeCalendarStartTime(
   requiredWindowMinutes: number,
   preferredStartMinutes: number,
 ) {
-  const labels = await page
-    .locator('[data-calendar-section="week-grid"]')
+  const weekGrid = page.locator('[data-calendar-section="week-grid"]');
+  const dayLabel = calendarDayColumnLabel();
+  const dayColumn = weekGrid
+    .locator(`[aria-label="${cssAttributeValue(dayLabel)}"]`)
+    .first();
+
+  await expect(weekGrid).toBeVisible();
+  await expect(dayColumn).toBeVisible();
+
+  const labels = await dayColumn
     .getByRole("button")
     .evaluateAll((elements) =>
       elements.map((element) => element.getAttribute("aria-label") ?? ""),
@@ -706,11 +727,21 @@ async function findFreeCalendarStartTime(
       start: minutesFromClock(match[1] ?? "00:00"),
     }));
 
-  for (let offset = 0; offset < 24 * 4; offset += 1) {
-    const candidateStart = preferredStartMinutes + offset * 15;
+  const candidateStarts = [
+    ...Array.from(
+      { length: Math.ceil((24 * 60 - preferredStartMinutes) / 15) },
+      (_, index) => preferredStartMinutes + index * 15,
+    ),
+    ...Array.from(
+      { length: Math.ceil(preferredStartMinutes / 15) },
+      (_, index) => index * 15,
+    ),
+  ];
+
+  for (const candidateStart of candidateStarts) {
     const candidateEnd = candidateStart + requiredWindowMinutes;
 
-    if (candidateEnd > 24 * 60) break;
+    if (candidateEnd > 24 * 60) continue;
 
     const hasConflict = occupiedRanges.some((range) =>
       calendarRangeOverlaps(candidateStart, candidateEnd, range.start, range.end),
@@ -719,7 +750,9 @@ async function findFreeCalendarStartTime(
     if (!hasConflict) return clockFromMinutes(candidateStart);
   }
 
-  return clockFromMinutes(preferredStartMinutes);
+  throw new Error(
+    `No conflict-free ${requiredWindowMinutes} min Calendar slot found on ${dayLabel}.`,
+  );
 }
 
 async function openManualPortfolioWithDb(
@@ -4783,7 +4816,12 @@ test.describe("Calendar content states", () => {
     await page.waitForLoadState("networkidle");
     await page.goto("/calendar");
 
-    const startTime = await findFreeCalendarStartTime(page, 45, 9 * 60);
+    const freeWindowStartTime = await findFreeCalendarStartTime(
+      page,
+      60,
+      9 * 60,
+    );
+    const startTime = addClockMinutes(freeWindowStartTime, 15);
     const movedStartTime = addClockMinutes(startTime, 15);
     const scheduledEndTime = addClockMinutes(startTime, 30);
     const movedEndTime = addClockMinutes(movedStartTime, 30);
