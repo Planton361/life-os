@@ -11,8 +11,10 @@ import {
   unscheduleTaskFormAction,
 } from "@/features/real-data/actions/task.actions";
 import {
+  archiveGoalFormAction,
   archiveProjectFormAction,
   createProjectFormAction,
+  updateGoalFormAction,
   updateProjectFormAction,
 } from "@/features/real-data/actions/portfolio.actions";
 import {
@@ -383,6 +385,102 @@ function GoalProjectCreateForm({
       </label>
       <button className={formButtonClassName} disabled={disabled} type="submit">
         Project erstellen
+      </button>
+    </form>
+  );
+}
+
+function GoalEditForm({
+  disabled,
+  goal,
+}: Readonly<{
+  disabled: boolean;
+  goal: PortfolioEntity;
+}>) {
+  const values = goal.goalEditValues;
+
+  return (
+    <form
+      action={updateGoalFormAction}
+      aria-label="Goal bearbeiten"
+      className="grid gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.40)] p-3"
+    >
+      <input name="goalId" type="hidden" value={goal.id} />
+      <input name="returnView" type="hidden" value="goals" />
+      <input name="selectedGoalId" type="hidden" value={goal.id} />
+      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+        Goal-Titel
+        <input
+          className={formInputClassName}
+          defaultValue={values?.title ?? goal.title}
+          disabled={disabled}
+          name="title"
+          required
+        />
+      </label>
+      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+        Summary
+        <input
+          className={formInputClassName}
+          defaultValue={values?.description ?? goal.description}
+          disabled={disabled}
+          name="description"
+        />
+      </label>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+          Horizon
+          <select
+            className={formInputClassName}
+            defaultValue={values?.horizon ?? "someday"}
+            disabled={disabled}
+            name="horizon"
+          >
+            <option value="week">week</option>
+            <option value="month">month</option>
+            <option value="quarter">quarter</option>
+            <option value="year">year</option>
+            <option value="someday">someday</option>
+          </select>
+        </label>
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+          Status
+          <select
+            className={formInputClassName}
+            defaultValue={values?.status ?? "active"}
+            disabled={disabled}
+            name="status"
+          >
+            <option value="draft">draft</option>
+            <option value="active">active</option>
+            <option value="paused">paused</option>
+            <option value="achieved">achieved</option>
+          </select>
+        </label>
+      </div>
+      <button className={formButtonClassName} disabled={disabled} type="submit">
+        Goal speichern
+      </button>
+    </form>
+  );
+}
+
+function GoalArchiveForm({
+  disabled,
+  goalId,
+}: Readonly<{
+  disabled: boolean;
+  goalId: string;
+}>) {
+  return (
+    <form action={archiveGoalFormAction} aria-label="Goal archivieren">
+      <input name="goalId" type="hidden" value={goalId} />
+      <button
+        className="inline-flex min-h-8 items-center rounded-full border border-[rgba(221,107,95,.28)] bg-[rgba(221,107,95,.10)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[rgba(221,107,95,.44)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:border-[var(--border-subtle)] disabled:bg-[rgba(18,28,43,.34)] disabled:text-[var(--text-muted)]"
+        disabled={disabled}
+        type="submit"
+      >
+        Goal archivieren
       </button>
     </form>
   );
@@ -1155,6 +1253,18 @@ function GoalWorkbench({
         <WorkbenchCreateSection
           description={
             disabled
+              ? "Wechsle ins Manual-Profil, um echte Goal-Daten zu bearbeiten."
+              : "Aktualisiert Titel, Summary, Horizon und Status des ausgewählten Goals."
+          }
+          heading="Goal bearbeiten"
+          id="goal-edit-heading"
+        >
+          <GoalEditForm disabled={disabled} goal={goal} />
+        </WorkbenchCreateSection>
+
+        <WorkbenchCreateSection
+          description={
+            disabled
               ? "Wechsle ins Manual-Profil, um echte Goal Tasks zu erstellen."
               : "Persistiert eine Task mit diesem Goal als Kontext."
           }
@@ -1280,6 +1390,18 @@ function GoalWorkbench({
 
         <WorkbenchResourcesSection resources={goal.linkedResources ?? []} />
 
+        <WorkbenchCreateSection
+          description={
+            disabled
+              ? "Wechsle ins Manual-Profil, um echte Goals zu archivieren."
+              : "Archiviert das Goal per Soft Archive. Aktive Portfolio-Listen blenden es danach aus."
+          }
+          heading="Goal archivieren"
+          id="goal-archive-heading"
+        >
+          <GoalArchiveForm disabled={disabled} goalId={goal.id} />
+        </WorkbenchCreateSection>
+
         <section aria-labelledby="goal-prepared-sections-heading">
           <h3
             className="text-[13px] font-semibold text-[var(--text-primary)]"
@@ -1303,7 +1425,7 @@ function GoalWorkbench({
           </div>
         </section>
 
-        <WorkbenchFutureScopeNote body="Future Scope: Goal Workbench zeigt nur vorhandene Projects, Tasks und Resource Relations. Milestones, Review Cadence, Goal Log, Goal Archive/Undo, Graph und AI Coach schreiben hier noch keine Persistenz." />
+        <WorkbenchFutureScopeNote body="Future Scope: Goal Edit, Status und Soft Archive sind verbunden. Milestones, Review Cadence, Goal Log, Goal Undo, Graph und AI Coach schreiben hier noch keine Persistenz." />
       </div>
     </section>
   );

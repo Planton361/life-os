@@ -523,6 +523,25 @@ F1.1C Project Workbench Entity Edit / Status Slice Status 2026-07-11:
   Modell, Graph und AI Coach bleiben deferred.
 - Goal Workbench bleibt unveraendert und ist naechster moeglicher F1.1D-Scope.
 
+F1.1D Goal Workbench Entity Edit / Status Slice Status 2026-07-11:
+
+- Dokumentiert in
+  `docs/qa/goal-workbench-entity-edit-f1-1d.md` und
+  `docs/product/project-goal-workbench-depth-scope-f1-1a.md`.
+- Ergebnis: Goal Workbench kann Titel, Summary, Horizon und Status des
+  ausgewählten Goals aktualisieren.
+- Goal Soft Archive ist als explizite Workbench-Aktion verbunden und blendet
+  archivierte Goals aus aktiven Portfolio-Listen aus.
+- Browser Proof `Goal Workbench|Portfolio`: 28 passed, 0 failed.
+- Backend nutzt bestehende Goal-Tabelle, vorhandenes Update-Schema,
+  serverseitige Auth, same-user Scope, Repository-Grenze und Revalidation.
+- Keine Migration, keine RLS-/Policy-/Grant-Aenderung, keine Remote-DB-Aktion,
+  kein Deployment und keine Secrets.
+- Goal Key Results, Milestones, Goal Log, Review Cadence, finales Progress-
+  Modell, Graph und AI Coach bleiben deferred.
+- Project/Goal Workbench bleiben `local_connected_with_depth_gap`, mit
+  connected Entity Edit und Soft Archive fuer beide Entity-Typen.
+
 ### F1.1
 
 Titel: Project/Goal Workbench Depth

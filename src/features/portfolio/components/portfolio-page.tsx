@@ -204,6 +204,8 @@ function targetCreateMessage(value: string | null) {
   if (value === "project_updated") return "Project aktualisiert.";
   if (value === "project_archived") return "Project archiviert.";
   if (value === "goal_created") return "Goal erstellt.";
+  if (value === "goal_updated") return "Goal aktualisiert.";
+  if (value === "goal_archived") return "Goal archiviert.";
   if (value === "skill_created") return "Skill erstellt.";
   if (value === "skill_updated") return "Skill aktualisiert.";
   if (value === "skill_archived") return "Skill archiviert.";

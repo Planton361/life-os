@@ -143,6 +143,10 @@ Lokal connected:
 - Linked Tasks werden aus echten Tasks mit `goalId` abgeleitet.
 - `Task fuer Goal erstellen` erzeugt echte Goal-verknuepfte Tasks.
 - `Project fuer Goal erstellen` erzeugt echte Goal-verknuepfte Projects.
+- Goal Edit aktualisiert im Workbench Titel, Summary, Horizon und Status ueber
+  eine real-data Goal Action.
+- Goal Soft Archive ist als explizite Workbench-Aktion verbunden und blendet
+  archivierte Goals aus aktiven Portfolio-Listen aus.
 - Task Lifecycle bleibt im Goal Workbench nutzbar: Complete, Reopen, Archive
   sowie vorhandene Schedule-/Unschedule-/Reschedule-Pfade.
 - Linked Resources werden angezeigt, wenn eine echte Resource Relation auf das
@@ -162,8 +166,10 @@ Prepared:
 
 Future oder Depth Gap:
 
-- Goal Update, Pause, Achieve, Archive und Status-Semantik sind nicht als
+- Goal Achieve/Close, Undo und finale Lifecycle-Semantik sind nicht als
   finaler Workbench-Lifecycle verbunden.
+- Goal Status ist als Feld-Update verbunden; ein finales Statusmodell mit
+  Review-, Abschluss-, Audit- oder Undo-Logik existiert nicht.
 - Goal Progress ist noch kein finales Modell. Supabase-Goal-Readmodels tragen
   aktuell keine echte linkedProjectIds-/linkedTaskIds-Tiefe; die Workbench
   leitet verknuepfte Arbeit aus Project-/Task-Foreign-Keys ab.
@@ -176,6 +182,7 @@ Proof-Basis:
 
 - `Manual Goal Workbench creates linked Goal task reload-stable`.
 - `Manual Goal Workbench creates linked Goal project reload-stable`.
+- `Manual Goal Workbench edits status and archives Goal reload-stable`.
 - `Manual Goal Workbench keeps linked task lifecycle intact`.
 - `Manual Resource to Goal Relation Create persists through Resources and Goal
   Workbench`.
@@ -232,7 +239,7 @@ Prepared oder bewusst Future.
 | Resources | `local_connected_with_depth_gap` | Relations lesen/anzeigen ist connected; Workbench-lokales Link/Create/Manage ist Future Depth. |
 | Skill Evidence | `local_connected_with_depth_gap` adjacent | Skill Evidence kann Project/Goal-Kontext beruehren, bleibt aber kein F1.1A-Kernfeature. |
 | Progress Model | `local_connected_with_depth_gap` | Task-basierte Kennzahlen existieren; finale Project-/Goal-Progress-Semantik fehlt. |
-| Project/Goal Archive and Undo | `local_connected_with_depth_gap` / `future` | Project Soft Archive ist seit F1.1C verbunden; Project Undo, Complete/Close und Goal Archive/Undo brauchen eigene Gates. |
+| Project/Goal Archive and Undo | `local_connected_with_depth_gap` / `future` | Project Soft Archive ist seit F1.1C verbunden; Goal Soft Archive ist seit F1.1D verbunden; Project/Goal Undo und finale Complete/Close-/Achieve-Semantik brauchen eigene Gates. |
 | Graph / Relations Map | `future` | Kein F1.1-Scope vor gesicherter Relation-Semantik. |
 | AI Suggestions / Coach | `future` | Keine autonomen Vorschlaege im Workbench-Depth-Scope. |
 
@@ -269,6 +276,8 @@ Vorhanden und fuer F1.1 wiederverwendbar:
 - `projects` und `goals` koennen user-scoped erstellt und gelesen werden.
 - `projects` koennen seit F1.1C user-scoped aktualisiert und per Soft Archive
   archiviert werden.
+- `goals` koennen seit F1.1D user-scoped aktualisiert und per Soft Archive
+  archiviert werden.
 - `tasks` koennen user-scoped mit `projectId` oder `goalId` erstellt,
   geplant, abgeschlossen, wieder geoeffnet, archiviert und unscheduled/
   rescheduled werden.
@@ -281,8 +290,8 @@ Bekannte Backend-Gaps:
 
 - Project Complete/Close, Undo, History und finale Lifecycle-Semantik sind
   nicht als finaler Workbench-Pfad verbunden.
-- Goal Update/Pause/Achieve/Archive ist nicht als finaler Workbench-Pfad
-  verbunden.
+- Goal Achieve/Close, Undo, History und finale Lifecycle-Semantik sind nicht
+  als finaler Workbench-Pfad verbunden.
 - Milestones haben kein entschiedenes Project-/Goal-Datenmodell.
 - Project Log, Goal Log, Review Cadence und Zielhistorie haben kein
   entschiedenes Datenmodell.
@@ -381,21 +390,37 @@ F1.1C Implementation Status 2026-07-11:
 - Naechster Project/Goal-Depth-Block: F1.1D Goal Workbench Linked Work /
   Status Semantics.
 
-### F1.1D Goal Workbench Linked Work / Status Semantics
+### F1.1D Goal Workbench Entity Edit / Status Slice
 
-Ziel: Goal-spezifische Status-, Linked Project- und Linked Task-Semantik
-entscheiden und verbinden oder bewusst deferred halten.
+Ziel: Goal-spezifische Entity-Edit- und Status-Semantik verbinden, wenn das
+vorhandene Datenmodell dies ohne Migration erlaubt, und groessere
+Lifecycle-Tiefe bewusst deferred halten.
 
-Moeglicher Scope:
+Scope:
 
-- Goal Status Copy, Pause/Achieve/Archive-Grenzen.
-- Linked Projects, Linked Tasks und Goal Progress Copy.
-- Entscheidung, ob Goal Update/Achieve/Archive jetzt gebaut oder final
-  deferred wird.
+- Goal Title, Summary, Horizon und Status im Workbench bearbeiten.
+- Goal Soft Archive im Workbench ausloesen.
+- Existing Goal repository, Zod Schema, Auth, ownership scope und Revalidation
+  verwenden.
+- Linked Projects, Linked Tasks und Goal Progress Copy nicht neu modellieren.
+- Beim Goal Archive keine linked Projects oder Tasks loeschen oder
+  kaskadieren.
 
 Backend Skill erforderlich, sobald Actions oder Repositories betroffen sind:
 
 - `life-os-backend-action-slice`
+
+F1.1D Implementation Status 2026-07-11:
+
+- Dokumentiert in
+  `docs/qa/goal-workbench-entity-edit-f1-1d.md`.
+- Ergebnis: Goal Workbench Entity Edit, Status-/Horizon-Feld und Soft Archive
+  sind verbunden.
+- Browser Proof `Goal Workbench|Portfolio`: 28 passed, 0 failed.
+- Keine Migration, keine RLS-/Policy-/Grant-Aenderung, keine Remote-DB-Aktion,
+  kein Deployment und keine Secrets.
+- Goal Key Results, Milestones, Goal Log, Review Cadence, finales Progress-
+  Modell, Graph und AI Coach bleiben deferred.
 
 ### F1.1E Project / Goal Progress Model Decision
 

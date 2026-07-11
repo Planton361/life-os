@@ -9,8 +9,12 @@ import type {
   SupabaseClientLike,
   SupabaseQueryResult,
 } from "../database.types";
-import { mapCreateGoalInputToInsert, mapGoalRowToDomain } from "../mappers";
-import type { GoalRow } from "../row-types";
+import {
+  mapCreateGoalInputToInsert,
+  mapGoalRowToDomain,
+  mapUpdateGoalInputToPatch,
+} from "../mappers";
+import type { GoalRow, GoalUpdate } from "../row-types";
 
 type RepositoryFailure = RepositoryResult<never>;
 
@@ -67,6 +71,31 @@ async function verifyAreaOwnership(
   return Boolean(!result.error && result.data);
 }
 
+async function updateGoalById(
+  client: SupabaseClientLike,
+  userId: string,
+  goalId: string,
+  patch: GoalUpdate,
+  operation: string,
+): Promise<RepositoryResult<Goal>> {
+  const result = (await client
+    .from(realDataTableNames.goals)
+    .update(patch)
+    .eq("user_id", userId)
+    .eq("id", goalId)
+    .is("archived_at", null)
+    .select("*")
+    .single()) as SupabaseQueryResult<GoalRow>;
+
+  if (result.error) return adapterFailure(operation);
+  if (!result.data) return notFoundFailure("Goal");
+
+  return {
+    data: mapGoalRowToDomain(result.data),
+    ok: true,
+  };
+}
+
 export function createSupabaseGoalRepository(
   client: SupabaseClientLike,
 ): GoalRepository {
@@ -118,8 +147,24 @@ export function createSupabaseGoalRepository(
       };
     },
 
-    async updateGoal() {
-      return adapterFailure("update goal");
+    async updateGoal(input) {
+      const scopeFailure = profileScopeFailure(input.userId, input.profileId);
+      if (scopeFailure) return scopeFailure;
+
+      const areaOwned = await verifyAreaOwnership(
+        client,
+        input.userId,
+        input.areaId,
+      );
+      if (!areaOwned) return notFoundFailure("Area");
+
+      return updateGoalById(
+        client,
+        input.userId,
+        input.goalId,
+        mapUpdateGoalInputToPatch(input),
+        "update goal",
+      );
     },
   };
 }

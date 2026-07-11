@@ -837,6 +837,12 @@ function goalToPortfolioEntity(
     decisions: [],
     sourceLinks: [{ label: "Goal", href: `/goals/${goal.id}` }],
     noteSnippet: goal.why,
+    goalEditValues: {
+      description: goal.description,
+      horizon: goal.horizon,
+      status: goal.status,
+      title: goal.title,
+    },
     linkedResources: lookups.resourceLinksByTarget.get(`goal:${goal.id}`) ?? [],
   };
 }

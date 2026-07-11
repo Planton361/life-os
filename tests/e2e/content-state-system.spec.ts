@@ -953,6 +953,51 @@ async function archivePortfolioProjectTarget(page: Page, title: string) {
   ).toHaveCount(0);
 }
 
+async function editPortfolioGoalTarget(
+  page: Page,
+  title: string,
+  summary: string,
+) {
+  const contextPanel = page.locator('[data-portfolio-section="context-panel"]');
+  const form = contextPanel.locator('form[aria-label="Goal bearbeiten"]');
+
+  await expect(form).toBeVisible();
+  await form.getByLabel("Goal-Titel").fill(title);
+  await form.getByLabel("Summary").fill(summary);
+  await form.getByLabel("Horizon").selectOption("month");
+  await form.getByLabel("Status").selectOption("paused");
+  const submitButton = form.getByRole("button", { name: "Goal speichern" });
+  await expect(submitButton).toBeEnabled();
+  await submitButton.focus();
+  await page.keyboard.press("Enter");
+  await page.waitForLoadState("networkidle");
+  await expect(page.getByText("Goal aktualisiert.").first()).toBeVisible();
+  await expectSelectedPortfolioEntity(page, title);
+  await expectInRegion(contextPanel, summary);
+  await expectInRegion(contextPanel, "planned");
+  await expect(form.getByLabel("Horizon")).toHaveValue("month");
+  await expect(form.getByLabel("Status")).toHaveValue("paused");
+}
+
+async function archivePortfolioGoalTarget(page: Page, title: string) {
+  const contextPanel = page.locator('[data-portfolio-section="context-panel"]');
+  const archiveButton = contextPanel.getByRole("button", {
+    name: "Goal archivieren",
+  });
+
+  await expect(archiveButton).toBeVisible();
+  await expect(archiveButton).toBeEnabled();
+  await archiveButton.focus();
+  await page.keyboard.press("Enter");
+  await page.waitForLoadState("networkidle");
+  await expect(page.getByText("Goal archiviert.").first()).toBeVisible();
+  await expect(
+    page
+      .locator('[data-portfolio-section="entity-list"]')
+      .getByRole("link", { name: new RegExp(escapeRegExp(title)) }),
+  ).toHaveCount(0);
+}
+
 async function deleteSkillEvidenceTarget(page: Page, title: string) {
   const contextPanel = page.locator('[data-portfolio-section="context-panel"]');
   const deleteButton = contextPanel.getByRole("button", {
@@ -5439,7 +5484,7 @@ test.describe("Portfolio content states", () => {
       contextPanel.getByText("Arbeitsbasiertes Signal"),
     ).toBeVisible();
     await expect(
-      contextPanel.getByText("Future Scope: Goal Workbench"),
+      contextPanel.getByText("Future Scope: Goal Edit, Status"),
     ).toBeVisible();
     await expectNoMainStrings(page, portfolioBlockedDemoStrings, "portfolio");
   });
@@ -5965,6 +6010,70 @@ test.describe("Portfolio content states", () => {
     await page.reload();
     await expectSelectedPortfolioEntity(page, goalTitle);
     await expectPortfolioContextText(page, projectTitle);
+  });
+
+  test("Manual Goal Workbench edits status and archives Goal reload-stable", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session.",
+    );
+
+    const timestamp = Date.now();
+    const goalTitle = `Manual Workbench Edit Goal ${timestamp}`;
+    const updatedTitle = `Manual Workbench Edited Goal ${timestamp}`;
+    const updatedSummary = `Goal Workbench edit summary ${timestamp}`;
+    const projectTitle = `Manual Workbench Goal Archive Project ${timestamp}`;
+    const taskTitle = `Manual Workbench Goal Archive Task ${timestamp}`;
+
+    await openManualPortfolioWithDb(page);
+    await page.goto("/portfolio?view=goals");
+    await createPortfolioGoalTarget(
+      page,
+      goalTitle,
+      "Goal Workbench entity edit target.",
+    );
+    await createGoalWorkbenchProject(
+      page,
+      projectTitle,
+      "Linked project must survive Goal archive.",
+    );
+    await createGoalWorkbenchTask(
+      page,
+      taskTitle,
+      "Linked task must survive Goal archive.",
+      "Linked task created before Goal archive.",
+    );
+    await openPortfolioEntityByTitle(page, "goals", goalTitle);
+    await editPortfolioGoalTarget(page, updatedTitle, updatedSummary);
+    await page.reload();
+    await expectSelectedPortfolioEntity(page, updatedTitle);
+    await expectPortfolioContextText(page, updatedSummary);
+    await expectPortfolioContextText(page, "planned");
+    await expect(
+      page
+        .locator('[data-portfolio-section="context-panel"]')
+        .locator('form[aria-label="Goal bearbeiten"]')
+        .getByLabel("Horizon"),
+    ).toHaveValue("month");
+
+    await archivePortfolioGoalTarget(page, updatedTitle);
+    await page.reload();
+    await expect(
+      page
+        .locator('[data-portfolio-section="entity-list"]')
+        .getByRole("link", { name: new RegExp(escapeRegExp(updatedTitle)) }),
+    ).toHaveCount(0);
+
+    await page.goto("/portfolio?view=projects");
+    await expect(
+      page.getByRole("link", { name: new RegExp(escapeRegExp(projectTitle)) }),
+    ).toBeVisible();
+    await page.goto("/portfolio?view=tasks");
+    await expect(
+      page.getByRole("link", { name: new RegExp(escapeRegExp(taskTitle)) }),
+    ).toBeVisible();
   });
 
   test("Manual Goal Workbench keeps linked task lifecycle intact", async ({

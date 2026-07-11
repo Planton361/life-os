@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import {
   createGoalInputSchema,
   createProjectInputSchema,
+  updateGoalInputSchema,
   updateProjectInputSchema,
 } from "@/features/real-data";
 import {
@@ -25,6 +26,12 @@ export type PortfolioTargetCreateActionResult = {
 export type PortfolioProjectEditActionResult = {
   message: string;
   projectId?: string;
+  status: "blocked" | "error" | "success";
+};
+
+export type PortfolioGoalEditActionResult = {
+  goalId?: string;
+  message: string;
   status: "blocked" | "error" | "success";
 };
 
@@ -87,6 +94,28 @@ function redirectToProjectActionState(
   projectId?: string,
 ) {
   redirect(projectActionReturnUrl(state, formData, projectId));
+}
+
+function goalActionReturnUrl(state: string, formData: FormData, goalId?: string) {
+  const params = new URLSearchParams({
+    targetCreate: state,
+    view: "goals",
+  });
+  const selectedGoalId = optionalFormString(formData, "selectedGoalId");
+
+  if (goalId ?? selectedGoalId) {
+    params.set("selected", goalId ?? selectedGoalId ?? "");
+  }
+
+  return `/portfolio?${params.toString()}`;
+}
+
+function redirectToGoalActionState(
+  state: string,
+  formData: FormData,
+  goalId?: string,
+) {
+  redirect(goalActionReturnUrl(state, formData, goalId));
 }
 
 type PortfolioCreateReturnView = "all" | "goals" | "projects";
@@ -332,6 +361,37 @@ export async function archiveProjectAction(
   };
 }
 
+async function getAuthenticatedManualGoalContext(actionLabel: string) {
+  const profileId = await getCurrentLifeOsProfileId();
+
+  if (profileId !== "manual") {
+    return {
+      ok: false as const,
+      result: {
+        message: `Wechsle ins Manual-Profil, um Goals zu ${actionLabel}.`,
+        status: "blocked" as const,
+      },
+    };
+  }
+
+  const auth = await createAuthenticatedSupabaseServerClient();
+
+  if (!auth.ok) {
+    return {
+      ok: false as const,
+      result: {
+        message: authBlockedMessage(auth.error),
+        status: "blocked" as const,
+      },
+    };
+  }
+
+  return {
+    auth,
+    ok: true as const,
+  };
+}
+
 export async function createGoalAction(
   formData: FormData,
 ): Promise<PortfolioTargetCreateActionResult> {
@@ -386,6 +446,89 @@ export async function createGoalAction(
   };
 }
 
+export async function updateGoalAction(
+  formData: FormData,
+): Promise<PortfolioGoalEditActionResult> {
+  const context = await getAuthenticatedManualGoalContext("bearbeiten");
+
+  if (!context.ok) return context.result;
+
+  const parsed = updateGoalInputSchema.safeParse({
+    description: optionalFormString(formData, "description"),
+    goalId: formString(formData, "goalId"),
+    horizon: optionalFormString(formData, "horizon"),
+    profileId: context.auth.user.id,
+    status: optionalFormString(formData, "status"),
+    title: optionalFormString(formData, "title"),
+    userId: context.auth.user.id,
+  });
+
+  if (!parsed.success) {
+    return {
+      message: "Das Goal konnte nicht aktualisiert werden.",
+      status: "error",
+    };
+  }
+
+  const repository = createSupabaseGoalRepository(context.auth.client);
+  const result = await repository.updateGoal(parsed.data);
+
+  if (!result.ok) {
+    return {
+      message: "Das Goal konnte nicht in Supabase aktualisiert werden.",
+      status: "error",
+    };
+  }
+
+  revalidatePortfolioTargetRoutes();
+
+  return {
+    goalId: result.data.id,
+    message: "Goal aktualisiert.",
+    status: "success",
+  };
+}
+
+export async function archiveGoalAction(
+  formData: FormData,
+): Promise<PortfolioGoalEditActionResult> {
+  const context = await getAuthenticatedManualGoalContext("archivieren");
+
+  if (!context.ok) return context.result;
+
+  const parsed = updateGoalInputSchema.safeParse({
+    goalId: formString(formData, "goalId"),
+    profileId: context.auth.user.id,
+    status: "archived",
+    userId: context.auth.user.id,
+  });
+
+  if (!parsed.success) {
+    return {
+      message: "Das Goal konnte nicht archiviert werden.",
+      status: "error",
+    };
+  }
+
+  const repository = createSupabaseGoalRepository(context.auth.client);
+  const result = await repository.updateGoal(parsed.data);
+
+  if (!result.ok) {
+    return {
+      message: "Das Goal konnte nicht in Supabase archiviert werden.",
+      status: "error",
+    };
+  }
+
+  revalidatePortfolioTargetRoutes();
+
+  return {
+    goalId: result.data.id,
+    message: "Goal archiviert.",
+    status: "success",
+  };
+}
+
 export async function createProjectFormAction(formData: FormData): Promise<void> {
   const result = await createProjectAction(formData);
   const returnView = returnViewFromForm(formData, "projects");
@@ -436,4 +579,24 @@ export async function archiveProjectFormAction(formData: FormData): Promise<void
   }
 
   redirectToProjectActionState(result.status, formData);
+}
+
+export async function updateGoalFormAction(formData: FormData): Promise<void> {
+  const result = await updateGoalAction(formData);
+
+  if (result.status === "success") {
+    redirectToGoalActionState("goal_updated", formData, result.goalId);
+  }
+
+  redirectToGoalActionState(result.status, formData);
+}
+
+export async function archiveGoalFormAction(formData: FormData): Promise<void> {
+  const result = await archiveGoalAction(formData);
+
+  if (result.status === "success") {
+    redirectToGoalActionState("goal_archived", formData);
+  }
+
+  redirectToGoalActionState(result.status, formData);
 }
