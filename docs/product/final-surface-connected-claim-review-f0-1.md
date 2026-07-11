@@ -252,6 +252,17 @@ F1.0F Closure Status 2026-07-11:
   Audit bleiben Future Scope.
 - Kein final-complete-, Production-, Remote- oder Public-SaaS-Claim.
 
+F1.1A Project / Goal Workbench Depth Scope Lock Status 2026-07-11:
+
+- Dokumentiert in
+  `docs/product/project-goal-workbench-depth-scope-f1-1a.md`.
+- F1.1A aendert keine Surface Claims und implementiert keine Features.
+- Portfolio, Projects und Goals bleiben `local_connected_with_depth_gap`.
+- Connected bleiben Project/Goal Create, linked Task/Project Kernpfade und
+  Resource Relation Display; Milestones, Logs, Review Cadence und finale
+  Progress-/Archive-Semantik bleiben Depth-Gaps.
+- Naechster ausfuehrbarer Block: F1.1B Project / Goal Workbench State Clarity.
+
 Weitere Reihenfolge:
 
 1. F1.1 Project/Goal Workbench Depth.

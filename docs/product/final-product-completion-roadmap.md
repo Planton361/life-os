@@ -472,6 +472,22 @@ F1.0F Calendar Finalization Closure Status 2026-07-11:
 - Kein Production-, Remote-, Public-SaaS- oder final-complete-Claim.
 - Naechster ausfuehrbarer Produktblock: F1.1 Project/Goal Workbench Depth.
 
+F1.1A Project / Goal Workbench Depth Scope Lock Status 2026-07-11:
+
+- Dokumentiert in
+  `docs/product/project-goal-workbench-depth-scope-f1-1a.md`.
+- Ergebnis: F1.1 ist als docs-only Scope Lock gestartet; keine Produkt-,
+  UI-, Test-, Migration-, RLS-, Remote- oder Deployment-Aenderung.
+- Project Workbench und Goal Workbench bleiben
+  `local_connected_with_depth_gap`.
+- Connected Kernflows: Project/Goal Create, linked Task Create/Lifecycle,
+  Goal-linked Project Create und Resource Relation Display nach echten
+  Resource Relations.
+- Prepared/Future Depth: Milestones, Project Log, Goal Log, Goal Review
+  Cadence, finales Progress-Modell, Project/Goal Archive/Undo und Graph/AI-
+  Scope.
+- Naechster ausfuehrbarer Block: F1.1B Project / Goal Workbench State Clarity.
+
 ### F1.1
 
 Titel: Project/Goal Workbench Depth
