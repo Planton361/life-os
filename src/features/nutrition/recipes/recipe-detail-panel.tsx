@@ -166,12 +166,21 @@ export function RecipeDetailPanel({
         >
           Macro totals
         </h3>
+        <p className="text-[10px] leading-4 text-[var(--text-muted)]">
+          {recipe.nutritionEstimateAvailable === false
+            ? "Keine manuelle Nährwertschätzung hinterlegt."
+            : "Optionale Recipe-Schätzung; keine berechneten oder gemessenen Werte."}
+        </p>
         <div className="grid grid-cols-2 gap-1.5">
           {(["calories", "protein", "carbs", "fat"] as const).map((macro) => (
             <DetailMetric
               key={macro}
               label={macroLabels[macro]}
-              value={formatMacro(recipe.totals[macro], macroUnits[macro])}
+              value={
+                recipe.nutritionEstimateAvailable === false
+                  ? "—"
+                  : formatMacro(recipe.totals[macro], macroUnits[macro])
+              }
             />
           ))}
         </div>

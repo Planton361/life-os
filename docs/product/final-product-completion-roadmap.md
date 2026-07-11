@@ -731,6 +731,11 @@ F1.2C Status 2026-07-11:
   Recipe Ingredients. Keine Planner-Matrix-Ableitung, Conversion, Serving-
   Skalierung, Migration oder Grocery-Persistenz; unresolved Meals bleiben
   sichtbar. Proof: `docs/qa/grocery-generation-f1-2g.md`.
+- F1.2H entscheidet Nutrition Metrics verbindlich als `estimate_only`:
+  `nutrition_estimate` bleibt optionale manuelle Recipe-Schätzung; automatische
+  Macro-/Calorie-Berechnung, Tagesziele, Defizitlogik und Health Claims bleiben
+  deferred. Decision Lock: `docs/product/nutrition-metrics-decision-f1-2h.md`.
+- Nächster Nutrition-Block: F1.2I Closure.
 
 Surfaces: Nutrition Overview, Meal Planner, Recipes, Grocery.
 

@@ -2629,6 +2629,7 @@ test.describe("Nutrition content states", () => {
       /partial|filled/,
     );
     await openNutritionMealByTitle(page, mealTitle);
+    await expect(page.getByText("Keine Nährwertschätzung").first()).toBeVisible();
     await page.reload();
     await expect(page.locator("#nutrition-page").getByText(mealTitle).first()).toBeVisible();
     await expectNoNutritionDemoStrings(page);
@@ -2876,6 +2877,9 @@ test.describe("Nutrition content states", () => {
       .click();
 
     const detailPanel = page.getByRole("region", { name: "Selected Recipe" });
+    await expect(
+      detailPanel.getByText("Keine manuelle Nährwertschätzung hinterlegt."),
+    ).toBeVisible();
     const ingredientManager = detailPanel
       .getByRole("heading", { name: "Zutaten verwalten" })
       .locator("xpath=ancestor::section[1]");
@@ -3062,6 +3066,10 @@ test.describe("Nutrition content states", () => {
     const completedArticle = page.locator("article").filter({ hasText: completedMeal }).first();
     await completedArticle.getByRole("button", { name: "Gegessen" }).click();
     await page.waitForLoadState("networkidle");
+    await page.reload();
+    await expect(
+      page.getByRole("region", { name: "Recent Meals" }).getByText(completedMeal),
+    ).toBeVisible();
 
     await page.goto("/nutrition/grocery");
     const draft = page.locator('[data-grocery-section="draft"]');

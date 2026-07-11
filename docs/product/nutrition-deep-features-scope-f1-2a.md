@@ -795,6 +795,17 @@ Risiko:
 - High fake-data risk if metrics are made prominent before source quality is
   solved.
 
+F1.2H Status 2026-07-11:
+
+- Decision Lock: `docs/product/nutrition-metrics-decision-f1-2h.md`.
+- `nutrition_estimate` bleibt eine optionale manuelle Recipe-Schätzung.
+- Keine automatische Calorie-/Macro-Berechnung, Tagesziel-/Defizitlogik,
+  Health Claims, externe Food API oder Portionsannahme.
+- Fehlende Manual-Schätzwerte werden nicht mehr als exakte Nullwerte gezeigt.
+- Eine echte Metrics Engine bleibt deferred, bis Ingredient-Nährwerte,
+  Unit-Semantik, Recipe Yield, Meal Portion und Provenance existieren.
+- Nächster Block: F1.2I Nutrition Closure.
+
 ### F1.2I Nutrition Closure
 
 Ziel:

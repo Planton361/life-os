@@ -70,6 +70,7 @@ export type Recipe = {
   ingredients: RecipeIngredient[];
   instructions: RecipeInstruction[];
   totals: NutritionMacroTarget;
+  nutritionEstimateAvailable?: boolean;
   createdAt?: string;
   updatedAt?: string;
   archived?: boolean;

@@ -95,16 +95,16 @@ export function SelectedRecipePanel({
         </label>
 
         <div className="grid grid-cols-2 gap-2 2xl:grid-cols-4">
-          <MacroCard label="Calories" value={formatMacro(totals.calories, "kcal")} />
+          <MacroCard label="Calories" value={recipe.nutritionEstimateAvailable === false ? "—" : formatMacro(totals.calories, "kcal")} />
           <MacroCard
             label="Protein"
-            value={formatMacro(totals.protein, macroUnits.protein)}
+            value={recipe.nutritionEstimateAvailable === false ? "—" : formatMacro(totals.protein, macroUnits.protein)}
           />
           <MacroCard
             label="Carbs"
-            value={formatMacro(totals.carbs, macroUnits.carbs)}
+            value={recipe.nutritionEstimateAvailable === false ? "—" : formatMacro(totals.carbs, macroUnits.carbs)}
           />
-          <MacroCard label="Fat" value={formatMacro(totals.fat, macroUnits.fat)} />
+          <MacroCard label="Fat" value={recipe.nutritionEstimateAvailable === false ? "—" : formatMacro(totals.fat, macroUnits.fat)} />
         </div>
 
         <div className="flex flex-wrap gap-2">

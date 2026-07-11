@@ -674,24 +674,24 @@ function NextMealCard({
 
           <div className="grid gap-2 sm:grid-cols-2 2xl:grid-cols-4">
             <MealMacroCard
-              detail="planned"
+              detail={meal.nutritionEstimateAvailable === false ? "not available" : "manual estimate"}
               label="Calories"
-              value={`${meal.calories} kcal`}
+              value={meal.nutritionEstimateAvailable === false ? "—" : `${meal.calories} kcal`}
             />
             <MealMacroCard
-              detail="schliesst Luecke"
+              detail={meal.nutritionEstimateAvailable === false ? "not available" : "manual estimate"}
               label="Protein"
-              value={`${meal.macros.protein} g`}
+              value={meal.nutritionEstimateAvailable === false ? "—" : `${meal.macros.protein} g`}
             />
             <MealMacroCard
-              detail="balanced"
+              detail={meal.nutritionEstimateAvailable === false ? "not available" : "manual estimate"}
               label="Carbs"
-              value={`${meal.macros.carbs} g`}
+              value={meal.nutritionEstimateAvailable === false ? "—" : `${meal.macros.carbs} g`}
             />
             <MealMacroCard
-              detail="within target"
+              detail={meal.nutritionEstimateAvailable === false ? "not available" : "manual estimate"}
               label="Fat"
-              value={`${meal.macros.fat} g`}
+              value={meal.nutritionEstimateAvailable === false ? "—" : `${meal.macros.fat} g`}
             />
           </div>
 
@@ -1218,8 +1218,9 @@ function RecentMealsCard({
                 {formatMealTime(meal.consumed_at)} · {mealTypeLabels[meal.meal_type]}
               </span>
               <span className="text-[10px] leading-4 text-[var(--text-secondary)] sm:text-right">
-                {meal.calories} kcal · P{meal.macros.protein} C
-                {meal.macros.carbs} F{meal.macros.fat}
+                {meal.nutritionEstimateAvailable === false
+                  ? "Keine Nährwertschätzung"
+                  : `${meal.calories} kcal · P${meal.macros.protein} C${meal.macros.carbs} F${meal.macros.fat} · Schätzung`}
               </span>
             </button>
           ))}
@@ -1829,24 +1830,24 @@ function MealDetailDialog({
           <div className="p-4">
             <div className="grid gap-2 sm:grid-cols-2">
               <MealMacroCard
-                detail={meal.consumed_at ? "logged" : "planned"}
+                detail={meal.nutritionEstimateAvailable === false ? "not available" : "manual estimate"}
                 label="Calories"
-                value={`${meal.calories} kcal`}
+                value={meal.nutritionEstimateAvailable === false ? "—" : `${meal.calories} kcal`}
               />
               <MealMacroCard
-                detail="macro"
+                detail={meal.nutritionEstimateAvailable === false ? "not available" : "manual estimate"}
                 label="Protein"
-                value={`${meal.macros.protein} g`}
+                value={meal.nutritionEstimateAvailable === false ? "—" : `${meal.macros.protein} g`}
               />
               <MealMacroCard
-                detail="macro"
+                detail={meal.nutritionEstimateAvailable === false ? "not available" : "manual estimate"}
                 label="Carbs"
-                value={`${meal.macros.carbs} g`}
+                value={meal.nutritionEstimateAvailable === false ? "—" : `${meal.macros.carbs} g`}
               />
               <MealMacroCard
-                detail="macro"
+                detail={meal.nutritionEstimateAvailable === false ? "not available" : "manual estimate"}
                 label="Fat"
-                value={`${meal.macros.fat} g`}
+                value={meal.nutritionEstimateAvailable === false ? "—" : `${meal.macros.fat} g`}
               />
             </div>
             <p className="mt-4 text-[12px] leading-5 text-[var(--text-secondary)]">

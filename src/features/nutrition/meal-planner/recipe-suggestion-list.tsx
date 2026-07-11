@@ -240,16 +240,16 @@ export function RecipeSuggestionList({
                 </div>
 
                 <div className="mt-3 grid grid-cols-4 gap-2 text-[10px]">
-                  <MacroMini label="kcal" value={formatMacro(recipe.totals.calories, "kcal")} />
+                  <MacroMini label="kcal" value={recipe.nutritionEstimateAvailable === false ? "—" : formatMacro(recipe.totals.calories, "kcal")} />
                   <MacroMini
                     label="Protein"
-                    value={formatMacro(recipe.totals.protein, macroUnits.protein)}
+                    value={recipe.nutritionEstimateAvailable === false ? "—" : formatMacro(recipe.totals.protein, macroUnits.protein)}
                   />
                   <MacroMini
                     label="Carbs"
-                    value={formatMacro(recipe.totals.carbs, macroUnits.carbs)}
+                    value={recipe.nutritionEstimateAvailable === false ? "—" : formatMacro(recipe.totals.carbs, macroUnits.carbs)}
                   />
-                  <MacroMini label="Fat" value={formatMacro(recipe.totals.fat, macroUnits.fat)} />
+                  <MacroMini label="Fat" value={recipe.nutritionEstimateAvailable === false ? "—" : formatMacro(recipe.totals.fat, macroUnits.fat)} />
                 </div>
 
                 <div className="mt-2 flex flex-wrap gap-2">

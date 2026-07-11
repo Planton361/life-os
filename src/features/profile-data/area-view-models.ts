@@ -1257,6 +1257,25 @@ function nutritionEstimateNumber(
   return 0;
 }
 
+function hasUsableNutritionEstimate(recipe?: RealDataRecipe) {
+  const estimate = recipe?.nutritionEstimate;
+  if (!estimate) return false;
+
+  return ["calories", "kcal", "energy", "protein", "carbs", "carbohydrates", "fat"].some(
+    (key) => {
+      const value = estimate[key];
+      const numeric =
+        typeof value === "number"
+          ? value
+          : typeof value === "string"
+            ? Number(value)
+            : Number.NaN;
+
+      return Number.isFinite(numeric);
+    },
+  );
+}
+
 function recipeTotals(recipe?: RealDataRecipe | null) {
   return {
     calories: nutritionEstimateNumber(recipe?.nutritionEstimate ?? null, [
@@ -1341,6 +1360,7 @@ function realRecipeToPlannerRecipe(
     ingredients: ingredients.map(realRecipeIngredientToPlannerIngredient),
     instructions: recipeInstructions(recipe),
     mealTypes: recipeMealTypes(recipe),
+    nutritionEstimateAvailable: hasUsableNutritionEstimate(recipe),
     prepMinutes: recipe.prepMinutes ?? undefined,
     tags: [...recipe.tags],
     title: recipe.title,
@@ -1353,9 +1373,8 @@ function realMealToNutritionEntry(
   meal: RealDataMeal,
   recipesById: ReadonlyMap<string, RealDataRecipe>,
 ): MealEntry {
-  const totals = recipeTotals(
-    meal.recipeId ? recipesById.get(meal.recipeId) : null,
-  );
+  const recipe = meal.recipeId ? recipesById.get(meal.recipeId) : undefined;
+  const totals = recipeTotals(recipe);
   const plannedAt =
     meal.completedAt !== null ? undefined : meal.plannedAt ?? `${meal.date}T12:00`;
 
@@ -1369,6 +1388,8 @@ function realMealToNutritionEntry(
       protein: totals.protein,
     },
     meal_type: meal.mealType,
+    nutritionEstimateAvailable:
+      hasUsableNutritionEstimate(recipe),
     planned_at: plannedAt,
     source: meal.recipeId ? "recipe" : "manual",
     title: meal.title,

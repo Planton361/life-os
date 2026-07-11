@@ -51,6 +51,7 @@ export type MealEntry = {
     carbs: number;
     fat: number;
   };
+  nutritionEstimateAvailable?: boolean;
   source: MealSource;
 };
 

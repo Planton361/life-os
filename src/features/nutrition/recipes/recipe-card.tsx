@@ -72,10 +72,16 @@ export function RecipeCard({
       </div>
 
       <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-[var(--border-subtle)] pt-2 text-[10px] font-semibold text-[var(--text-muted)]">
-        <span>{Math.round(recipe.totals.calories)} kcal</span>
-        <span>{Math.round(recipe.totals.protein)}g protein</span>
-        <span>{Math.round(recipe.totals.carbs)}g carbs</span>
-        <span>{Math.round(recipe.totals.fat)}g fat</span>
+        {recipe.nutritionEstimateAvailable === false ? (
+          <span>Keine Nährwertschätzung</span>
+        ) : (
+          <>
+            <span>{Math.round(recipe.totals.calories)} kcal</span>
+            <span>{Math.round(recipe.totals.protein)}g protein</span>
+            <span>{Math.round(recipe.totals.carbs)}g carbs</span>
+            <span>{Math.round(recipe.totals.fat)}g fat</span>
+          </>
+        )}
         <span>{totalMinutes} min total</span>
       </div>
     </button>
