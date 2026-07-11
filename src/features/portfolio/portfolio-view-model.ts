@@ -4,6 +4,7 @@ import type {
   PortfolioEntity,
   PortfolioOption,
   PortfolioProfileId,
+  PortfolioResourceLinkOption,
   PortfolioScopeFilter,
   PortfolioSortMode,
   PortfolioStat,
@@ -161,6 +162,7 @@ export function getPortfolioViewModel(
     PortfolioViewModel["header"] &
       PortfolioViewModel["pageContract"] & {
         profileId: PortfolioProfileId;
+        resourceLinkOptions: readonly PortfolioResourceLinkOption[];
       }
   > = {},
 ): PortfolioViewModel {
@@ -185,6 +187,7 @@ export function getPortfolioViewModel(
     sorts,
     stats: getStats(entities),
     entities: [...entities],
+    resourceLinkOptions: [...(copy.resourceLinkOptions ?? [])],
     contentStates: buildPortfolioContentStates(entities),
   };
 }

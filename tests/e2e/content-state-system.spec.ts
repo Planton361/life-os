@@ -1174,6 +1174,57 @@ async function linkSelectedResourceToTarget(
   return targetId ?? "";
 }
 
+async function linkWorkbenchResourceToTarget(
+  page: Page,
+  targetType: "Goal" | "Project",
+  resourceTitle: string,
+) {
+  const contextPanel = page.locator('[data-portfolio-section="context-panel"]');
+  const form = contextPanel.locator(
+    `form[aria-label="${targetType} Resource verknüpfen"]`,
+  );
+
+  await expect(form).toBeVisible();
+  await expect(form.getByLabel("Resource", { exact: true })).toBeVisible();
+  await expect(form.getByLabel("Relation")).toBeVisible();
+
+  const resourceSelect = form.getByLabel("Resource", { exact: true });
+  await expect(resourceSelect).toBeEnabled();
+
+  const option = resourceSelect
+    .locator("option")
+    .filter({ hasText: resourceTitle })
+    .first();
+  const resourceId = await option.getAttribute("value");
+
+  expect(resourceId).toBeTruthy();
+  await resourceSelect.selectOption(resourceId ?? "");
+  await form.getByLabel("Relation").selectOption("supports");
+
+  const saveButton = form.getByRole("button", {
+    name: "Resource verknüpfen",
+  });
+  await expect(saveButton).toBeEnabled();
+  await saveButton.focus();
+  await expect(saveButton).toBeFocused();
+  await saveButton.press("Enter");
+  await page.waitForLoadState("networkidle");
+  await expect(page.getByText("Resource verknüpft.").first()).toBeVisible();
+
+  return resourceId ?? "";
+}
+
+async function expectWorkbenchResourceVisible(page: Page, resourceTitle: string) {
+  const contextPanel = page.locator('[data-portfolio-section="context-panel"]');
+  const resourceCard = contextPanel
+    .locator("article")
+    .filter({ hasText: resourceTitle })
+    .filter({ hasText: "Resource" })
+    .first();
+
+  await expect(resourceCard).toBeVisible();
+}
+
 async function expectSingleResourceRelationCard(
   page: Page,
   targetTitle: string,
@@ -5368,6 +5419,17 @@ test.describe("Portfolio content states", () => {
       contextPanel.getByText("Keine verknüpften Resources.").first(),
     ).toBeVisible();
     await expect(
+      contextPanel
+        .locator('form[aria-label="Project Resource verknüpfen"]')
+        .getByRole("button", { name: "Resource verknüpfen" }),
+    ).toBeVisible();
+    await expect(
+      contextPanel.getByRole("heading", { name: "Skill Evidence" }),
+    ).toBeVisible();
+    await expect(
+      contextPanel.getByText("Keine verknüpfte Skill Evidence.").first(),
+    ).toBeVisible();
+    await expect(
       contextPanel.getByRole("heading", { name: "Project Log" }),
     ).toBeVisible();
     await expect(
@@ -5380,7 +5442,7 @@ test.describe("Portfolio content states", () => {
     ).toHaveCount(2);
     await expect(
       contextPanel.getByText(
-        "Resource Relations werden hier nur angezeigt.",
+        "Resource Relations lesen und schreiben über die bestehende Resource Action.",
       ),
     ).toBeVisible();
     await expect(
@@ -5468,6 +5530,17 @@ test.describe("Portfolio content states", () => {
     ).toBeVisible();
     await expect(
       contextPanel.getByText("Keine verknüpften Resources.").first(),
+    ).toBeVisible();
+    await expect(
+      contextPanel
+        .locator('form[aria-label="Goal Resource verknüpfen"]')
+        .getByRole("button", { name: "Resource verknüpfen" }),
+    ).toBeVisible();
+    await expect(
+      contextPanel.getByRole("heading", { name: "Skill Evidence" }),
+    ).toBeVisible();
+    await expect(
+      contextPanel.getByText("Keine verknüpfte Skill Evidence.").first(),
     ).toBeVisible();
     await expect(
       contextPanel.getByRole("heading", { name: "Goal Log" }),
@@ -5695,7 +5768,7 @@ test.describe("Portfolio content states", () => {
     await expect(page.getByText(skillTitle).first()).toBeVisible();
   });
 
-  test("Manual Portfolio Skill Evidence links Project and Resource sources reload-stable", async ({
+  test("Manual Portfolio Skill Evidence links Project, Goal and Resource sources reload-stable", async ({
     page,
   }) => {
     test.skip(
@@ -5705,9 +5778,11 @@ test.describe("Portfolio content states", () => {
 
     const timestamp = Date.now();
     const projectTitle = `Manual Skill Source Project ${timestamp}`;
+    const goalTitle = `Manual Skill Source Goal ${timestamp}`;
     const resourceTitle = `Manual Skill Source Resource ${timestamp}`;
     const skillTitle = `Manual Skill Source Evidence ${timestamp}`;
     const projectEvidenceTitle = `Project Source Evidence ${timestamp}`;
+    const goalEvidenceTitle = `Goal Source Evidence ${timestamp}`;
     const resourceEvidenceTitle = `Resource Source Evidence ${timestamp}`;
 
     await openManualPortfolioWithDb(page);
@@ -5716,6 +5791,12 @@ test.describe("Portfolio content states", () => {
       page,
       projectTitle,
       "Manual Skill source project proof.",
+    );
+    await page.goto("/portfolio?view=goals");
+    await createPortfolioGoalTarget(
+      page,
+      goalTitle,
+      "Manual Skill source goal proof.",
     );
     await createManualResourceFromInbox(
       page,
@@ -5736,6 +5817,12 @@ test.describe("Portfolio content states", () => {
     );
     await createSkillEvidenceTarget(
       page,
+      goalEvidenceTitle,
+      "Evidence linked to a Goal source.",
+      `goal · ${goalTitle}`,
+    );
+    await createSkillEvidenceTarget(
+      page,
       resourceEvidenceTitle,
       "Evidence linked to a Resource source.",
       `resource · ${resourceTitle}`,
@@ -5746,14 +5833,33 @@ test.describe("Portfolio content states", () => {
     const projectEvidence = contextPanel
       .locator("article")
       .filter({ hasText: projectEvidenceTitle });
+    const goalEvidence = contextPanel
+      .locator("article")
+      .filter({ hasText: goalEvidenceTitle });
     const resourceEvidence = contextPanel
       .locator("article")
       .filter({ hasText: resourceEvidenceTitle });
 
     await expect(projectEvidence.first()).toBeVisible();
+    await expect(goalEvidence.first()).toBeVisible();
     await expect(resourceEvidence.first()).toBeVisible();
     await expect(projectEvidence.getByText(projectTitle).first()).toBeVisible();
+    await expect(goalEvidence.getByText(goalTitle).first()).toBeVisible();
     await expect(resourceEvidence.getByText(resourceTitle).first()).toBeVisible();
+
+    await openPortfolioEntityByTitle(page, "projects", projectTitle);
+    await expectPortfolioContextText(page, projectEvidenceTitle);
+    await expectPortfolioContextText(page, skillTitle);
+    await page.reload();
+    await expectPortfolioContextText(page, projectEvidenceTitle);
+    await expectPortfolioContextText(page, skillTitle);
+
+    await openPortfolioEntityByTitle(page, "goals", goalTitle);
+    await expectPortfolioContextText(page, goalEvidenceTitle);
+    await expectPortfolioContextText(page, skillTitle);
+    await page.reload();
+    await expectPortfolioContextText(page, goalEvidenceTitle);
+    await expectPortfolioContextText(page, skillTitle);
     await expectNoMainStrings(page, portfolioBlockedDemoStrings, "portfolio");
   });
 
@@ -6801,7 +6907,7 @@ test.describe("Resources content states", () => {
     await expect(
       contextPanel.getByRole("heading", { name: "Resources" }),
     ).toBeVisible();
-    await expect(contextPanel.getByText(resourceTitle).first()).toBeVisible();
+    await expectWorkbenchResourceVisible(page, resourceTitle);
   });
 
   test("Manual Resource to Goal Relation Create persists through Resources and Goal Workbench", async ({
@@ -6849,7 +6955,55 @@ test.describe("Resources content states", () => {
     await expect(
       contextPanel.getByRole("heading", { name: "Resources" }),
     ).toBeVisible();
-    await expect(contextPanel.getByText(resourceTitle).first()).toBeVisible();
+    await expectWorkbenchResourceVisible(page, resourceTitle);
+  });
+
+  test("Manual Project and Goal Workbench Resource Relation Create persists reload-stable", async ({
+    page,
+  }) => {
+    test.setTimeout(75_000);
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Manual Supabase auth state unavailable; Workbench Resource relation DB proof skipped.",
+    );
+
+    const projectTitle = uniqueTitle("F11F Workbench Resource Project");
+    const goalTitle = uniqueTitle("F11F Workbench Resource Goal");
+    const resourceTitle = uniqueTitle("F11F Workbench Resource");
+
+    await openManualPortfolioWithDb(page, resourceRelationDbProofSkipReason);
+    await page.goto("/portfolio?view=projects");
+    await createPortfolioProjectTarget(
+      page,
+      projectTitle,
+      "F1.1F Workbench Resource relation Project target.",
+    );
+    await page.goto("/portfolio?view=goals");
+    await createPortfolioGoalTarget(
+      page,
+      goalTitle,
+      "F1.1F Workbench Resource relation Goal target.",
+    );
+    await createManualResourceFromInbox(
+      page,
+      resourceTitle,
+      "Create a real resource for Workbench relation proof.",
+      resourceRelationDbProofSkipReason,
+    );
+
+    await openPortfolioEntityByTitle(page, "projects", projectTitle);
+    await linkWorkbenchResourceToTarget(page, "Project", resourceTitle);
+    await expectWorkbenchResourceVisible(page, resourceTitle);
+    await page.reload();
+    await expectSelectedPortfolioEntity(page, projectTitle);
+    await expectWorkbenchResourceVisible(page, resourceTitle);
+
+    await openPortfolioEntityByTitle(page, "goals", goalTitle);
+    await linkWorkbenchResourceToTarget(page, "Goal", resourceTitle);
+    await expectWorkbenchResourceVisible(page, resourceTitle);
+    await page.reload();
+    await expectSelectedPortfolioEntity(page, goalTitle);
+    await expectWorkbenchResourceVisible(page, resourceTitle);
   });
 
   test("renders empty resources without demo library or KPI leaks", async ({

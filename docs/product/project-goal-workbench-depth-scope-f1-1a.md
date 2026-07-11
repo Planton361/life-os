@@ -1,7 +1,7 @@
 # F1.1A Project / Goal Workbench Depth Scope Lock
 
 Stand: 2026-07-11
-Status: Completed scope lock; implementation notes through F1.1E
+Status: Completed scope lock; implementation notes through F1.1F
 Quelle der Wahrheit: `PRODUCT.md`, `DESIGN.md`, `ROADMAP.md`,
 `AI_WORKFLOW.md`, `docs/product/final-surface-connected-claim-review-f0-1.md`,
 `docs/product/final-product-completion-roadmap.md`,
@@ -95,14 +95,21 @@ Lokal connected:
   Project existiert.
 - Resource-to-Project Relation Create ist ueber den Resources-Flow bewiesen und
   erscheint nach Reload im Project Workbench.
+- Project Workbench kann seit F1.1F vorhandene Resources direkt mit dem
+  Project verknuepfen.
+- Project Workbench zeigt seit F1.1F vorhandene Skill Evidence, deren Source
+  dieses Project ist.
 
 Prepared:
 
 - Milestones sind sichtbar vorbereitet, aber ohne eigenes persistentes
   Milestone-Modell.
 - Project Log ist sichtbar vorbereitet, aber ohne persistente Log-Eintraege.
-- Resource Depth ist nur teilweise vorhanden: Relation lesen/anzeigen ist
-  connected, Project-lokales Resource Management ist nicht final.
+- Resource Depth ist teilweise verbunden: Relation lesen/anzeigen und
+  Workbench-lokales Linken vorhandener Resources sind connected; vollstaendiges
+  Resource Management bleibt nicht final.
+- Evidence Depth ist teilweise verbunden: vorhandene Project-Source Skill
+  Evidence wird angezeigt; Evidence Create bleibt im Skill Workbench.
 
 Future oder Depth Gap:
 
@@ -125,6 +132,10 @@ Proof-Basis:
 - `Manual Project Workbench keeps linked task lifecycle intact`.
 - `Manual Resource to Project Relation Create persists through Resources and
   Project Workbench`.
+- `Manual Project and Goal Workbench Resource Relation Create persists
+  reload-stable`.
+- `Manual Portfolio Skill Evidence links Project, Goal and Resource sources
+  reload-stable`.
 
 ## 5. Goal Workbench Current State
 
@@ -153,6 +164,10 @@ Lokal connected:
   Goal existiert.
 - Resource-to-Goal Relation Create ist ueber den Resources-Flow bewiesen und
   erscheint nach Reload im Goal Workbench.
+- Goal Workbench kann seit F1.1F vorhandene Resources direkt mit dem Goal
+  verknuepfen.
+- Goal Workbench zeigt seit F1.1F vorhandene Skill Evidence, deren Source
+  dieses Goal ist.
 
 Prepared:
 
@@ -161,8 +176,11 @@ Prepared:
 - Review Cadence ist sichtbar vorbereitet, aber ohne persistente Review-
   Cadence-Daten oder Review-Instanzen.
 - Goal Log ist sichtbar vorbereitet, aber ohne persistente Log-Eintraege.
-- Resource Depth ist nur teilweise vorhanden: Relation lesen/anzeigen ist
-  connected, Goal-lokales Resource Management ist nicht final.
+- Resource Depth ist teilweise verbunden: Relation lesen/anzeigen und
+  Workbench-lokales Linken vorhandener Resources sind connected; vollstaendiges
+  Resource Management bleibt nicht final.
+- Evidence Depth ist teilweise verbunden: vorhandene Goal-Source Skill
+  Evidence wird angezeigt; Evidence Create bleibt im Skill Workbench.
 
 Future oder Depth Gap:
 
@@ -186,6 +204,10 @@ Proof-Basis:
 - `Manual Goal Workbench keeps linked task lifecycle intact`.
 - `Manual Resource to Goal Relation Create persists through Resources and Goal
   Workbench`.
+- `Manual Project and Goal Workbench Resource Relation Create persists
+  reload-stable`.
+- `Manual Portfolio Skill Evidence links Project, Goal and Resource sources
+  reload-stable`.
 
 ## 6. Final Workbench Target State
 
@@ -236,8 +258,8 @@ Prepared oder bewusst Future.
 | Goal Log | `prepared` | Persistentes Zieljournal nur mit Backend-Slice; sonst final Prepared/Future copy. |
 | Goal Review Cadence | `prepared` | Review-Rhythmus, naechster Review und Review Notes brauchen Datenmodellentscheidung. |
 | Project Review Context | `future` | Nur aufnehmen, wenn Project Review fachlich von Logs/Milestones getrennt wird. |
-| Resources | `local_connected_with_depth_gap` | Relations lesen/anzeigen ist connected; Workbench-lokales Link/Create/Manage ist Future Depth. |
-| Skill Evidence | `local_connected_with_depth_gap` adjacent | Skill Evidence kann Project/Goal-Kontext beruehren, bleibt aber kein F1.1A-Kernfeature. |
+| Resources | `local_connected_with_depth_gap` | Seit F1.1F: Relations lesen/anzeigen und Workbench-lokales Linken vorhandener Resources sind connected; Resource Create/Edit/Unlink/Manage im Project/Goal Workbench bleibt Future Depth. |
+| Skill Evidence | `local_connected_read_with_depth_gap` adjacent | Seit F1.1F: Project/Goal Workbench zeigt vorhandene Skill Evidence fuer Project-/Goal-Sources; Evidence Create bleibt im Skill Workbench. |
 | Progress Model | `local_connected_work_signal` / `future_progress_engine` | Seit F1.1E locked: linked Task/Project Counts sind Arbeits-Signale; finale Prozent-/Outcome-Semantik bleibt Future. |
 | Project/Goal Archive and Undo | `local_connected_soft_archive` / `future_restore` | Project Soft Archive ist seit F1.1C verbunden; Goal Soft Archive ist seit F1.1D verbunden; F1.1E trennt Archive von Complete/Achieve/Pause. Undo/Restore und finale Complete-/Achieve-Semantik brauchen eigene Gates. |
 | Graph / Relations Map | `future` | Kein F1.1-Scope vor gesicherter Relation-Semantik. |
@@ -264,8 +286,9 @@ Design Debt:
   konkurrierende Wahrheiten fuer Project/Goal Tiefe bleiben.
 - Progress Copy darf seit F1.1E nur Arbeits-Signale behaupten, solange die
   Daten aus Task-/Project-Relationen abgeleitet sind.
-- Resource Sections zeigen echte Relations, bieten aber im Workbench selbst
-  noch keine vollstaendige Relation-Verwaltung.
+- Resource Sections zeigen echte Relations und koennen seit F1.1F vorhandene
+  Resources Workbench-lokal verknuepfen; vollstaendige Relation-Verwaltung
+  bleibt deferred.
 - Mehr Karten, Graphen oder Charts wuerden die F1.1-Luecke nicht loesen; die
   Tiefe muss aus Verhalten, Daten und klarer Zustandssprache kommen.
 
@@ -282,7 +305,10 @@ Vorhanden und fuer F1.1 wiederverwendbar:
   geplant, abgeschlossen, wieder geoeffnet, archiviert und unscheduled/
   rescheduled werden.
 - `resources` und `resource_relations` koennen user-scoped Relations zu
-  Project und Goal lesen/anzeigen.
+  Project und Goal lesen/anzeigen und seit F1.1F im Project/Goal Workbench
+  vorhandene Resources verknuepfen.
+- `skill_evidence` kann user-scoped Project-/Goal-Sources lesen und wird seit
+  F1.1F im Project/Goal Workbench als echte Evidence-Projektion angezeigt.
 - Server Actions nutzen serverseitige Auth, Zod `safeParse`, Repository-
   Grenzen, same-user Ownership fuer relevante Foreign Keys und Revalidation.
 
@@ -298,8 +324,9 @@ Bekannte Backend-Gaps:
 - Project-/Goal-Progress hat seit F1.1E eine fachliche Grenze: linked
   Task-/Project-Counts sind Work Signals; eine finale Progress Engine oder ein
   persisted ReadModel bleibt Future Scope.
-- Resource Relations sind vorhanden, aber Workbench-lokales Resource Management
-  braucht einen eigenen Slice.
+- Resource Relations sind vorhanden; Workbench-lokales Linken vorhandener
+  Resources ist seit F1.1F verbunden. Resource Management, Unlink, Graph und
+  Evidence Create bleiben eigene Slices.
 
 Backend-Regel fuer alle spaeteren F1.1-Implementierungen:
 
@@ -458,12 +485,32 @@ F1.1E Decision Status 2026-07-11:
 Ziel: Resource Relations und Skill Evidence als echte Workbench-Tiefe ordnen,
 ohne Graph-Scope zu starten.
 
-Moeglicher Scope:
+Scope:
 
-- Project/Goal Resource Relation Display finalisieren
-- Workbench-lokales Link/Create/Manage bewusst bauen oder deferred halten
-- Skill Evidence nur als adjacent Project/Goal Kontext aufnehmen, wenn der
-  Proof- und Ownership-Pfad klar ist
+- Project/Goal Resource Relation Display erhalten.
+- Project/Goal Workbench-lokales Linken vorhandener Resources verbinden.
+- Skill Evidence als Project/Goal Kontext anzeigen, wenn die Evidence Source
+  das ausgewaehlte Project oder Goal ist.
+- Evidence Create im Skill Workbench belassen.
+- Resource Graph, Resource Management, Unlink und Skill Map nicht starten.
+
+F1.1F Implementation Status 2026-07-11:
+
+- Dokumentiert in
+  `docs/qa/project-goal-resource-evidence-depth-f1-1f.md`.
+- Ergebnis: Project und Goal Workbench koennen vorhandene Resources ueber die
+  bestehende Resource Relation Action verknuepfen.
+- Ergebnis: Project und Goal Workbench zeigen vorhandene Skill Evidence fuer
+  Project-/Goal-Sources.
+- Browser Proof Scope:
+  `Project Workbench|Goal Workbench|Resource|Evidence|Portfolio`.
+- F1.1F.1 stabilisiert die Resource-Select Accessible-Label-Bindung.
+- Finaler Browser Proof: 37 passed, 0 failed, 0 skipped.
+- Keine Migration, keine RLS-/Policy-/Grant-Aenderung, keine Remote-DB-Aktion,
+  kein Deployment und keine Secrets.
+- Evidence Create im Project/Goal Workbench, Resource Management, Unlink,
+  Graph, Skill Map, Milestones, Logs, Review Cadence, Progress Engine und AI
+  Coach bleiben deferred.
 
 ### F1.1G Milestones / Logs / Review Cadence Decision
 

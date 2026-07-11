@@ -559,6 +559,27 @@ F1.1E Project / Goal Lifecycle & Progress Model Decision Status 2026-07-11:
 - Keine UI-/src-/Test-Aenderung, keine Migration, keine RLS-/Policy-Aenderung,
   keine Remote-DB-Aktion, kein Deployment und keine Secrets.
 
+F1.1F Project / Goal Resource & Evidence Depth Status 2026-07-11:
+
+- Dokumentiert in
+  `docs/qa/project-goal-resource-evidence-depth-f1-1f.md` und
+  `docs/product/project-goal-workbench-depth-scope-f1-1a.md`.
+- Ergebnis: Project und Goal Workbench koennen vorhandene Resources ueber die
+  bestehende Resource Relation Action verknuepfen.
+- Ergebnis: Project und Goal Workbench zeigen vorhandene Skill Evidence, wenn
+  die Evidence Source das ausgewaehlte Project oder Goal ist.
+- Backend nutzt bestehende Resource Relation Tabelle, bestehendes Schema,
+  serverseitige Auth, same-user Ownership, Repository-Grenze und Revalidation.
+- Skill Evidence bleibt read-only im Project/Goal Workbench; Evidence Create
+  bleibt im Skill Workbench.
+- F1.1F.1 stabilisiert die Resource-Select Accessible-Label-Bindung.
+- Finaler Browser Proof `Project Workbench|Goal Workbench|Resource|Evidence|Portfolio`:
+  37 passed, 0 failed, 0 skipped.
+- Keine Migration, keine RLS-/Policy-/Grant-Aenderung, keine Remote-DB-Aktion,
+  kein Deployment und keine Secrets.
+- Resource Management, Unlink, Graph, Skill Map, Milestones, Logs, Review
+  Cadence, Progress Engine, Undo/Restore und AI Coach bleiben deferred.
+
 ### F1.1
 
 Titel: Project/Goal Workbench Depth

@@ -76,6 +76,13 @@ export type PortfolioLinkedResource = {
   createdAt: string;
 };
 
+export type PortfolioResourceLinkOption = {
+  id: string;
+  title: string;
+  type: string;
+  source?: string | null;
+};
+
 export type PortfolioDecision = {
   title: string;
   detail: string;
@@ -107,6 +114,8 @@ export type PortfolioSkillEvidence = {
   href?: `/${string}`;
   id?: string;
   note?: string;
+  skillId?: string;
+  skillTitle?: string;
   sourceType?: "goal" | "manual_note" | "project" | "resource" | "task";
   sourceLabel: string;
   title: string;
@@ -241,6 +250,7 @@ export type PortfolioEntity = {
   goalId?: string;
   goalEditValues?: PortfolioGoalEditValues;
   projectId?: string;
+  linkedEvidence?: readonly PortfolioSkillEvidence[];
   linkedResources?: readonly PortfolioLinkedResource[];
   projectEditValues?: PortfolioProjectEditValues;
   taskLifecycle?: PortfolioTaskLifecycle;
@@ -277,6 +287,7 @@ export type PortfolioViewModel = {
   sorts: PortfolioOption<PortfolioSortMode>[];
   stats: PortfolioStat[];
   entities: PortfolioEntity[];
+  resourceLinkOptions: readonly PortfolioResourceLinkOption[];
   contentStates: {
     page: ContentStateMeta;
     summary: ContentStateMeta;

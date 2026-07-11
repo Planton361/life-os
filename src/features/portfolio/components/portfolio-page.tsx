@@ -211,6 +211,12 @@ function targetCreateMessage(value: string | null) {
   if (value === "skill_archived") return "Skill archiviert.";
   if (value === "skill_evidence_created") return "Skill Evidence erstellt.";
   if (value === "skill_evidence_deleted") return "Skill Evidence gelöscht.";
+  if (value === "resource_linked") return "Resource verknüpft.";
+  if (value === "resource_existing") return "Resource war bereits verknüpft.";
+  if (value === "resource_missing_resource") return "Resource nicht gefunden.";
+  if (value === "resource_missing_target") return "Ziel nicht gefunden.";
+  if (value === "resource_unsupported") return "Resource-Ziel nicht freigegeben.";
+  if (value === "resource_error") return "Resource konnte nicht verknüpft werden.";
   if (value === "blocked") return "Melde dich an, um Portfolio-Items zu erstellen.";
   if (value === "error") return "Portfolio-Item konnte nicht gespeichert werden.";
 
@@ -697,6 +703,7 @@ export function PortfolioPage({
             contentState={viewModel.contentStates.contextPanel}
             entity={selectedEntity}
             profileId={viewModel.profileId}
+            resourceLinkOptions={viewModel.resourceLinkOptions}
           />
           <section
             aria-label="Selected entity state"

@@ -10,6 +10,7 @@ import {
   scheduleTaskForTodayFormAction,
   unscheduleTaskFormAction,
 } from "@/features/real-data/actions/task.actions";
+import { linkPortfolioResourceToTargetAction } from "@/features/real-data/actions/resource.actions";
 import {
   archiveGoalFormAction,
   archiveProjectFormAction,
@@ -23,6 +24,7 @@ import {
   deleteSkillEvidenceFormAction,
   updateSkillFormAction,
 } from "@/features/real-data/actions/skill.actions";
+import type { ResourceRelationType } from "@/features/real-data";
 import {
   EmptyState,
   Pill,
@@ -44,6 +46,8 @@ import type {
   PortfolioEntity,
   PortfolioLinkedResource,
   PortfolioProjectEntity,
+  PortfolioResourceLinkOption,
+  PortfolioSkillEvidence,
   PortfolioTaskEntity,
   PortfolioViewModel,
   ProjectWorkbenchViewModel,
@@ -54,6 +58,18 @@ const formInputClassName =
 
 const formButtonClassName =
   "min-h-8 rounded-full border border-[rgba(91,124,250,.34)] bg-[rgba(91,124,250,.14)] px-3 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(91,124,250,.52)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:border-[var(--border-subtle)] disabled:bg-[rgba(18,28,43,.34)] disabled:text-[var(--text-muted)]";
+
+const workbenchResourceRelationTypeLabels: Record<
+  ResourceRelationType,
+  string
+> = {
+  context: "Context",
+  decision: "Decision",
+  evidence: "Evidence",
+  related: "Related",
+  source: "Source",
+  supports: "Supports",
+};
 
 function progressWidth(progress: number) {
   return `${Math.max(0, Math.min(100, progress))}%`;
@@ -1093,10 +1109,22 @@ function WorkbenchResourceCard({
 }
 
 function WorkbenchResourcesSection({
+  disabled,
+  entity,
+  resourceOptions,
   resources,
 }: Readonly<{
+  disabled: boolean;
+  entity: PortfolioEntity;
+  resourceOptions: readonly PortfolioResourceLinkOption[];
   resources: readonly PortfolioLinkedResource[];
 }>) {
+  const targetLabel = entity.type === "goal" ? "Goal" : "Project";
+  const returnView = entity.type === "goal" ? "goals" : "projects";
+  const formDisabled = disabled || resourceOptions.length === 0;
+  const resourceSelectId = `workbench-resource-select-${entity.type}-${entity.id}`;
+  const relationSelectId = `workbench-resource-relation-${entity.type}-${entity.id}`;
+
   return (
     <section aria-labelledby="workbench-resources-heading">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1109,9 +1137,69 @@ function WorkbenchResourcesSection({
         <Pill accent="var(--accent-yellow)">{resources.length} total</Pill>
       </div>
       <WorkbenchSectionIntro>
-        Resource Relations werden hier nur angezeigt. Workbench-local Resource
-        Management bleibt vorbereitet.
+        Resource Relations lesen und schreiben über die bestehende Resource
+        Action. Es werden nur vorhandene Resources verknüpft.
       </WorkbenchSectionIntro>
+      <form
+        action={linkPortfolioResourceToTargetAction}
+        aria-label={`${targetLabel} Resource verknüpfen`}
+        className="mt-2 grid gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.40)] p-3"
+      >
+        <input name="returnView" type="hidden" value={returnView} />
+        <input name="selectedTargetId" type="hidden" value={entity.id} />
+        <input name="targetId" type="hidden" value={entity.id} />
+        <input name="targetType" type="hidden" value={entity.type} />
+        <div className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+          <label htmlFor={resourceSelectId}>Resource</label>
+          <select
+            className={formInputClassName}
+            disabled={formDisabled}
+            id={resourceSelectId}
+            name="resourceId"
+            required
+          >
+            {resourceOptions.map((resource) => (
+              <option key={`resource-link-option-${resource.id}`} value={resource.id}>
+                {[resource.title, resource.type, resource.source]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+          <label htmlFor={relationSelectId}>Relation</label>
+          <select
+            className={formInputClassName}
+            defaultValue="supports"
+            disabled={formDisabled}
+            id={relationSelectId}
+            name="relationType"
+          >
+            {Object.entries(workbenchResourceRelationTypeLabels).map(
+              ([value, label]) => (
+                <option key={`workbench-resource-relation-${value}`} value={value}>
+                  {label}
+                </option>
+              ),
+            )}
+          </select>
+        </div>
+        <button className={formButtonClassName} disabled={formDisabled} type="submit">
+          Resource verknüpfen
+        </button>
+        {disabled ? (
+          <p className="text-[10px] leading-4 text-[var(--text-muted)]">
+            Wechsle ins Manual-Profil, um echte Resource Relations zu speichern.
+          </p>
+        ) : null}
+        {!disabled && resourceOptions.length === 0 ? (
+          <p className="text-[10px] leading-4 text-[var(--text-muted)]">
+            Keine Resource verfügbar. Erstelle zuerst eine Resource im
+            Resource Workbench.
+          </p>
+        ) : null}
+      </form>
       <div className="mt-2 grid gap-2">
         {resources.length > 0 ? (
           resources.map((resource) => (
@@ -1123,6 +1211,79 @@ function WorkbenchResourcesSection({
         ) : (
           <p className="rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.38)] px-3 py-2 text-[11px] leading-4 text-[var(--text-muted)]">
             Keine verknüpften Resources.
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function WorkbenchEvidenceCard({
+  evidence,
+}: Readonly<{
+  evidence: PortfolioSkillEvidence;
+}>) {
+  const meta = [
+    evidence.evidenceDate,
+    evidence.skillTitle ? `Skill: ${evidence.skillTitle}` : null,
+    evidence.weight ? `weight ${evidence.weight}` : null,
+  ].filter(Boolean);
+
+  return (
+    <article className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.40)] p-3">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[12px] font-semibold leading-4 text-[var(--text-primary)]">
+            {evidence.title}
+          </p>
+          <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
+            {meta.join(" · ")}
+          </p>
+          {evidence.detail ? (
+            <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
+              {evidence.detail}
+            </p>
+          ) : null}
+        </div>
+        <Pill accent="var(--accent-cyan)">
+          {evidence.skillTitle ?? evidence.sourceLabel}
+        </Pill>
+      </div>
+    </article>
+  );
+}
+
+function WorkbenchEvidenceSection({
+  evidence,
+}: Readonly<{
+  evidence: readonly PortfolioSkillEvidence[];
+}>) {
+  return (
+    <section aria-labelledby="workbench-evidence-heading">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3
+          className="text-[13px] font-semibold text-[var(--text-primary)]"
+          id="workbench-evidence-heading"
+        >
+          Skill Evidence
+        </h3>
+        <Pill accent="var(--accent-cyan)">{evidence.length} total</Pill>
+      </div>
+      <WorkbenchSectionIntro>
+        Zeigt vorhandene Skill Evidence, deren Source dieses Project oder Goal
+        ist. Evidence Create bleibt im Skill Workbench.
+      </WorkbenchSectionIntro>
+      <div className="mt-2 grid gap-2">
+        {evidence.length > 0 ? (
+          evidence.map((row, index) => (
+            <WorkbenchEvidenceCard
+              evidence={row}
+              key={`workbench-evidence-${row.id ?? index}-${row.title}`}
+            />
+          ))
+        ) : (
+          <p className="rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.38)] px-3 py-2 text-[11px] leading-4 text-[var(--text-muted)]">
+            Keine verknüpfte Skill Evidence.
           </p>
         )}
       </div>
@@ -1158,10 +1319,12 @@ function GoalWorkbench({
   entities,
   goal,
   profileId,
+  resourceLinkOptions,
 }: Readonly<{
   entities: readonly PortfolioEntity[];
   goal: PortfolioEntity;
   profileId: PortfolioViewModel["profileId"];
+  resourceLinkOptions: readonly PortfolioResourceLinkOption[];
 }>) {
   const workbench = buildGoalWorkbench(goal, entities);
   const disabled = profileId !== "manual";
@@ -1388,7 +1551,14 @@ function GoalWorkbench({
           </div>
         </section>
 
-        <WorkbenchResourcesSection resources={goal.linkedResources ?? []} />
+        <WorkbenchResourcesSection
+          disabled={disabled}
+          entity={goal}
+          resourceOptions={resourceLinkOptions}
+          resources={goal.linkedResources ?? []}
+        />
+
+        <WorkbenchEvidenceSection evidence={goal.linkedEvidence ?? []} />
 
         <WorkbenchCreateSection
           description={
@@ -1435,10 +1605,12 @@ function ProjectWorkbench({
   entities,
   profileId,
   project,
+  resourceLinkOptions,
 }: Readonly<{
   entities: readonly PortfolioEntity[];
   profileId: PortfolioViewModel["profileId"];
   project: PortfolioEntity;
+  resourceLinkOptions: readonly PortfolioResourceLinkOption[];
 }>) {
   const workbench = buildProjectWorkbench(project, entities);
   const disabled = profileId !== "manual";
@@ -1577,7 +1749,14 @@ function ProjectWorkbench({
           </div>
         </section>
 
-        <WorkbenchResourcesSection resources={project.linkedResources ?? []} />
+        <WorkbenchResourcesSection
+          disabled={disabled}
+          entity={project}
+          resourceOptions={resourceLinkOptions}
+          resources={project.linkedResources ?? []}
+        />
+
+        <WorkbenchEvidenceSection evidence={project.linkedEvidence ?? []} />
 
         <WorkbenchCreateSection
           description={
@@ -1633,11 +1812,13 @@ export function PortfolioContextPanel({
   contentState,
   entity,
   profileId,
+  resourceLinkOptions,
 }: Readonly<{
   allEntities: readonly PortfolioEntity[];
   contentState: ContentStateMeta;
   entity: PortfolioEntity | null;
   profileId: PortfolioViewModel["profileId"];
+  resourceLinkOptions: readonly PortfolioResourceLinkOption[];
 }>) {
   if (!entity) {
     return (
@@ -1761,6 +1942,7 @@ export function PortfolioContextPanel({
             entities={allEntities}
             profileId={profileId}
             project={entity}
+            resourceLinkOptions={resourceLinkOptions}
           />
         ) : null}
 
@@ -1769,6 +1951,7 @@ export function PortfolioContextPanel({
             entities={allEntities}
             goal={entity}
             profileId={profileId}
+            resourceLinkOptions={resourceLinkOptions}
           />
         ) : null}
 

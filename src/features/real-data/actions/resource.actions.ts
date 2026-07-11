@@ -48,6 +48,49 @@ function redirectToResourceRelationState(
   redirect(resourceRelationReturnUrl(formData, state));
 }
 
+function portfolioResourceRelationState(
+  state: ResourceRelationCreateState,
+): string {
+  if (state === "saved") return "resource_linked";
+  if (state === "existing") return "resource_existing";
+  if (state === "missing_resource") return "resource_missing_resource";
+  if (state === "missing_target") return "resource_missing_target";
+  if (state === "unsupported") return "resource_unsupported";
+  if (state === "blocked") return "blocked";
+
+  return "resource_error";
+}
+
+function portfolioResourceRelationReturnUrl(
+  formData: FormData,
+  state: ResourceRelationCreateState,
+) {
+  const returnView = optionalFormString(formData, "returnView");
+  const selectedTargetId =
+    optionalFormString(formData, "selectedTargetId") ??
+    optionalFormString(formData, "targetId");
+  const params = new URLSearchParams({
+    targetCreate: portfolioResourceRelationState(state),
+  });
+
+  if (returnView) {
+    params.set("view", returnView);
+  }
+
+  if (selectedTargetId) {
+    params.set("selected", selectedTargetId);
+  }
+
+  return `/portfolio?${params.toString()}`;
+}
+
+function redirectToPortfolioResourceRelationState(
+  formData: FormData,
+  state: ResourceRelationCreateState,
+): never {
+  redirect(portfolioResourceRelationReturnUrl(formData, state));
+}
+
 function revalidateResourceRelationRoutes(targetType: string) {
   revalidatePath("/resources");
   revalidatePath("/portfolio");
@@ -59,19 +102,19 @@ function revalidateResourceRelationRoutes(targetType: string) {
   }
 }
 
-export async function linkResourceToTargetAction(
+async function createResourceRelationState(
   formData: FormData,
-): Promise<void> {
+): Promise<ResourceRelationCreateState> {
   const profileId = await getCurrentLifeOsProfileId();
 
   if (profileId !== "manual") {
-    redirectToResourceRelationState(formData, "blocked");
+    return "blocked";
   }
 
   const auth = await createAuthenticatedSupabaseServerClient();
 
   if (!auth.ok) {
-    redirectToResourceRelationState(formData, "blocked");
+    return "blocked";
   }
 
   const parsed = linkResourceToTargetInputSchema.safeParse({
@@ -83,7 +126,7 @@ export async function linkResourceToTargetAction(
   });
 
   if (!parsed.success) {
-    redirectToResourceRelationState(formData, "invalid");
+    return "invalid";
   }
 
   const repository = createSupabaseResourceRepository(auth.client);
@@ -107,24 +150,38 @@ export async function linkResourceToTargetAction(
 
   if (!result.ok) {
     if (result.error.code === "validation_error") {
-      redirectToResourceRelationState(formData, "unsupported");
+      return "unsupported";
     }
 
     if (result.error.code === "not_found") {
-      const missingState = result.error.message
+      return result.error.message
         .toLowerCase()
         .includes("target")
         ? "missing_target"
         : "missing_resource";
-      redirectToResourceRelationState(formData, missingState);
     }
 
-    redirectToResourceRelationState(formData, "invalid");
+    return "invalid";
   }
 
   revalidateResourceRelationRoutes(parsed.data.targetType);
+  return duplicateBeforeWrite ? "existing" : "saved";
+}
+
+export async function linkResourceToTargetAction(
+  formData: FormData,
+): Promise<void> {
   redirectToResourceRelationState(
     formData,
-    duplicateBeforeWrite ? "existing" : "saved",
+    await createResourceRelationState(formData),
+  );
+}
+
+export async function linkPortfolioResourceToTargetAction(
+  formData: FormData,
+): Promise<void> {
+  redirectToPortfolioResourceRelationState(
+    formData,
+    await createResourceRelationState(formData),
   );
 }
