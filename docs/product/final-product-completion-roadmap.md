@@ -616,8 +616,8 @@ F1.2A Nutrition Deep Features Scope Lock Status 2026-07-11:
   Projektion sind local-first verbunden; Recipe Edit/Archive ist backendseitig
   vorhanden, aber in der Manual UI noch nicht verbunden.
 - Ingredients, Grocery, Meal Planner Depth und Nutrition Metrics sind fachlich
-  getrennt; `recipe_ingredients` als eigene Tabelle ist der bevorzugte
-  Decision Draft fuer den spaeteren Ingredients-Scope.
+  getrennt; `recipe_ingredients` als eigene Tabelle war der bevorzugte
+  Decision Draft und wurde spaeter durch F1.2C umgesetzt.
 - Erster ausfuehrbarer Folgeblock: F1.2B Recipe Entity Edit / Archive.
 
 F1.2B Recipe Entity Edit / Archive Status 2026-07-11:
@@ -631,10 +631,29 @@ F1.2B Recipe Entity Edit / Archive Status 2026-07-11:
 - Soft Archive entfernt Recipes nach Reload aus der aktiven Recipe-Liste,
   ohne bestehende Meals zu loeschen.
 - Browser-Proof `Nutrition|Recipe|Meal`: 6 passed.
-- Nutrition bleibt `local_connected_with_depth_gap`; Ingredients, Grocery,
-  Meal Planner Edit und Nutrition Metrics bleiben deferred.
+- Nutrition blieb nach F1.2B `local_connected_with_depth_gap`; Ingredients,
+  Grocery, Meal Planner Edit und Nutrition Metrics waren dort deferred.
 - Keine Migration, keine RLS-/Policy-/Grant-Aenderung, keine Remote-DB-Aktion,
   kein Deployment und keine Secrets.
+
+F1.2C Recipe Ingredients End-to-End Vertical Slice Status 2026-07-11:
+
+- Dokumentiert in `docs/product/recipe-ingredients-model-f1-2c.md` und
+  `docs/qa/recipe-ingredients-vertical-slice-f1-2c.md`.
+- Ergebnis: Ingredients wurden als eigene user-scoped
+  `public.recipe_ingredients` Tabelle lokal migriert und in Manual Recipes
+  verbunden.
+- F1.2C absorbiert die zuvor getrennten F1.2D/F1.2E Ingredients-Schritte:
+  Model Lock, Migration, Typegen, Domain/Zod, Mapper, Repository, Actions, UI
+  Binding und Browser-Proof gehoeren jetzt zu diesem End-to-End-Slice.
+- Manual `/nutrition/recipes` kann Ingredients im bestehenden Selected Recipe
+  Panel erstellen, bearbeiten, entfernen und reload-stabil anzeigen.
+- Browser-Proof `Nutrition|Recipe|Ingredient`: 7 passed.
+- Grocery, Pantry, Ingredient Catalog, Macro Engine, externe Food APIs,
+  AI Meal Suggestions, Meal Planner Edit und Recipe Detail Route bleiben
+  deferred.
+- Keine Remote-DB-Aktion, kein `supabase link`, kein `db push`, kein
+  `db reset`, kein Deployment und keine Secrets.
 
 ### F1.1
 
@@ -698,7 +717,16 @@ F1.2B Status 2026-07-11:
 - Manual Recipe Edit und Manual Recipe Archive sind in `/nutrition/recipes`
   verbunden und reload-stabil browser-bewiesen.
 - Bestehende Meals bleiben nach Recipe Archive erhalten.
-- Naechster offener Nutrition-Block: F1.2C Recipe Ingredients Model Lock.
+- F1.2C Recipe Ingredients wurde danach als End-to-End-Slice umgesetzt.
+
+F1.2C Status 2026-07-11:
+
+- Recipe Ingredients sind lokal modelliert, migriert, typisiert, ueber
+  Repository/Actions angebunden und in `/nutrition/recipes` browser-proofed.
+- F1.2D/F1.2E Ingredients-Schritte sind dadurch absorbiert.
+- Browser-Proof `Nutrition|Recipe|Ingredient`: 7 passed.
+- Naechster offener Nutrition-Block: F1.2F Meal Planner Edit / Reschedule
+  Depth oder F1.2G Grocery Generation, separat zu entscheiden.
 
 Surfaces: Nutrition Overview, Meal Planner, Recipes, Grocery.
 

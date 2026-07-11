@@ -2,18 +2,27 @@
 
 import Link from "next/link";
 import type { CSSProperties } from "react";
-import { useActionState, useEffect, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import {
   contentStateDataAttributes,
   resolveContentStateMeta,
 } from "@/features/content-state";
 import {
   archiveRecipeFormStateAction,
+  createRecipeIngredientFormStateAction,
   createRecipeFormStateAction,
+  deleteRecipeIngredientFormStateAction,
+  updateRecipeIngredientFormStateAction,
   updateRecipeFormStateAction,
+  type NutritionIngredientActionPayload,
   type NutritionActionResult,
 } from "@/features/real-data/actions/nutrition.actions";
-import type { MealType, Recipe } from "../meal-planner/meal-planner-types";
+import type {
+  IngredientUnit,
+  MealType,
+  Recipe,
+  RecipeIngredient,
+} from "../meal-planner/meal-planner-types";
 import {
   primaryButtonClass,
   quietButtonClass,
@@ -28,6 +37,7 @@ import {
   createBlankRecipe,
   duplicateRecipe,
   filterRecipeList,
+  ingredientUnitOptions,
   summarizeRecipes,
   type ReadinessFilter,
   type RecipeFormMode,
@@ -47,6 +57,10 @@ const initialNutritionActionState: NutritionActionResult = {
   message: "",
   status: "blocked",
 };
+const manualInputClass =
+  "mt-1 min-h-11 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.62)] px-3 text-[12px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)] disabled:opacity-60";
+const manualTextareaClass =
+  "mt-1 min-h-20 w-full resize-y rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.62)] px-3 py-2 text-[12px] leading-5 text-[var(--text-primary)] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)] disabled:opacity-60";
 
 function RecipeActionMessage({
   message,
@@ -78,11 +92,397 @@ function recipeInstructionsText(recipe: Recipe) {
     .join("\n");
 }
 
+function coerceIngredientUnit(unit: string | null): IngredientUnit {
+  const normalized = (unit ?? "").trim().toLowerCase();
+
+  if (normalized === "el") return "tbsp";
+  if (normalized === "tl") return "tsp";
+  if (normalized === "stück" || normalized === "stueck") return "piece";
+
+  return ingredientUnitOptions.includes(normalized as IngredientUnit)
+    ? (normalized as IngredientUnit)
+    : "g";
+}
+
+function ingredientPayloadToRecipeIngredient(
+  ingredient: NutritionIngredientActionPayload,
+): RecipeIngredient {
+  return {
+    amount: ingredient.quantity ?? 0,
+    calories: 0,
+    carbs: 0,
+    displayUnit: ingredient.unit,
+    fat: 0,
+    id: ingredient.id,
+    name: ingredient.name,
+    note: ingredient.note,
+    position: ingredient.position,
+    protein: 0,
+    quantity: ingredient.quantity,
+    unit: coerceIngredientUnit(ingredient.unit),
+  };
+}
+
+function sortedRecipeIngredients(
+  ingredients: readonly RecipeIngredient[],
+): RecipeIngredient[] {
+  return [...ingredients].sort((first, second) => {
+    const firstPosition = first.position ?? 0;
+    const secondPosition = second.position ?? 0;
+
+    if (firstPosition !== secondPosition) {
+      return firstPosition - secondPosition;
+    }
+
+    return first.name.localeCompare(second.name);
+  });
+}
+
+function ManualRecipeIngredientCreateForm({
+  actionsEnabled,
+  recipe,
+  onIngredientSaved,
+}: Readonly<{
+  actionsEnabled: boolean;
+  recipe: Recipe;
+  onIngredientSaved: (ingredient: NutritionIngredientActionPayload) => void;
+}>) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const handledStateRef = useRef<NutritionActionResult | null>(null);
+  const [state, formAction, isPending] = useActionState(
+    createRecipeIngredientFormStateAction,
+    initialNutritionActionState,
+  );
+  const disabled = !actionsEnabled || isPending;
+
+  useEffect(() => {
+    if (
+      state.status !== "success" ||
+      !state.ingredient ||
+      state === handledStateRef.current
+    ) {
+      return;
+    }
+
+    handledStateRef.current = state;
+    onIngredientSaved(state.ingredient);
+    formRef.current?.reset();
+  }, [onIngredientSaved, state]);
+
+  return (
+    <form
+      action={formAction}
+      aria-labelledby="manual-recipe-ingredient-create-heading"
+      className="grid gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(168,183,204,.04)] p-2.5"
+      ref={formRef}
+    >
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <h4
+          className="text-[11px] font-semibold text-[var(--text-primary)]"
+          id="manual-recipe-ingredient-create-heading"
+        >
+          Zutat hinzufügen
+        </h4>
+        <RecipeActionMessage message={state.message} status={state.status} />
+      </div>
+
+      <input name="recipeId" type="hidden" value={recipe.id} />
+      <input name="position" type="hidden" value={recipe.ingredients.length} />
+
+      <div className="grid gap-2 sm:grid-cols-[minmax(0,1.2fr)_88px_88px]">
+        <label className="min-w-0">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+            Name
+          </span>
+          <input
+            className={manualInputClass}
+            disabled={disabled}
+            name="name"
+            placeholder="Olivenöl"
+            required
+          />
+        </label>
+
+        <label className="min-w-0">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+            Menge
+          </span>
+          <input
+            className={manualInputClass}
+            disabled={disabled}
+            inputMode="decimal"
+            min="0.01"
+            name="quantity"
+            step="0.01"
+            type="number"
+          />
+        </label>
+
+        <label className="min-w-0">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+            Einheit
+          </span>
+          <input
+            className={manualInputClass}
+            disabled={disabled}
+            name="unit"
+            placeholder="EL"
+          />
+        </label>
+      </div>
+
+      <label className="min-w-0">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+          Notiz optional
+        </span>
+        <textarea
+          className={manualTextareaClass}
+          disabled={disabled}
+          name="note"
+          placeholder="z. B. kalt gepresst"
+        />
+      </label>
+
+      <button className={primaryButtonClass} disabled={disabled} type="submit">
+        Zutat hinzufügen
+      </button>
+    </form>
+  );
+}
+
+function ManualRecipeIngredientRowForm({
+  actionsEnabled,
+  ingredient,
+  recipeId,
+  onIngredientDeleted,
+  onIngredientSaved,
+}: Readonly<{
+  actionsEnabled: boolean;
+  ingredient: RecipeIngredient;
+  recipeId: string;
+  onIngredientDeleted: (recipeId: string, ingredientId: string) => void;
+  onIngredientSaved: (ingredient: NutritionIngredientActionPayload) => void;
+}>) {
+  const handledUpdateStateRef = useRef<NutritionActionResult | null>(null);
+  const handledDeleteStateRef = useRef<NutritionActionResult | null>(null);
+  const [updateState, updateAction, isUpdating] = useActionState(
+    updateRecipeIngredientFormStateAction,
+    initialNutritionActionState,
+  );
+  const [deleteState, deleteAction, isDeleting] = useActionState(
+    deleteRecipeIngredientFormStateAction,
+    initialNutritionActionState,
+  );
+  const disabled = !actionsEnabled || isUpdating || isDeleting;
+
+  useEffect(() => {
+    if (
+      updateState.status !== "success" ||
+      !updateState.ingredient ||
+      updateState === handledUpdateStateRef.current
+    ) {
+      return;
+    }
+
+    handledUpdateStateRef.current = updateState;
+    onIngredientSaved(updateState.ingredient);
+  }, [onIngredientSaved, updateState]);
+
+  useEffect(() => {
+    if (
+      deleteState.status !== "success" ||
+      !deleteState.ingredientId ||
+      deleteState === handledDeleteStateRef.current
+    ) {
+      return;
+    }
+
+    handledDeleteStateRef.current = deleteState;
+    onIngredientDeleted(deleteState.recipeId ?? recipeId, deleteState.ingredientId);
+  }, [deleteState, onIngredientDeleted, recipeId]);
+
+  return (
+    <div
+      className="grid gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(14,23,38,.44)] p-2.5"
+      data-recipe-ingredient-id={ingredient.id}
+      role="listitem"
+    >
+      <form
+        action={updateAction}
+        aria-label={`Zutat bearbeiten: ${ingredient.name}`}
+        className="grid gap-2"
+      >
+        <input name="ingredientId" type="hidden" value={ingredient.id} />
+        <input name="recipeId" type="hidden" value={recipeId} />
+        <input
+          name="position"
+          type="hidden"
+          value={ingredient.position ?? 0}
+        />
+
+        <div className="grid gap-2 sm:grid-cols-[minmax(0,1.2fr)_88px_88px]">
+          <label className="min-w-0">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+              Name
+            </span>
+            <input
+              className={manualInputClass}
+              defaultValue={ingredient.name}
+              disabled={disabled}
+              name="name"
+              required
+            />
+          </label>
+
+          <label className="min-w-0">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+              Menge
+            </span>
+            <input
+              className={manualInputClass}
+              defaultValue={ingredient.quantity ?? (ingredient.amount || "")}
+              disabled={disabled}
+              inputMode="decimal"
+              min="0.01"
+              name="quantity"
+              step="0.01"
+              type="number"
+            />
+          </label>
+
+          <label className="min-w-0">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+              Einheit
+            </span>
+            <input
+              className={manualInputClass}
+              defaultValue={ingredient.displayUnit ?? ""}
+              disabled={disabled}
+              name="unit"
+            />
+          </label>
+        </div>
+
+        <label className="min-w-0">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+            Notiz optional
+          </span>
+          <textarea
+            className={manualTextareaClass}
+            defaultValue={ingredient.note ?? ""}
+            disabled={disabled}
+            name="note"
+          />
+        </label>
+
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <RecipeActionMessage
+            message={updateState.message}
+            status={updateState.status}
+          />
+          <button className={secondaryButtonClass} disabled={disabled} type="submit">
+            Zutat speichern
+          </button>
+        </div>
+      </form>
+
+      <form
+        action={deleteAction}
+        aria-label={`Zutat entfernen: ${ingredient.name}`}
+        className="flex flex-col gap-2 border-t border-[var(--border-subtle)] pt-2 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <input name="ingredientId" type="hidden" value={ingredient.id} />
+        <input name="recipeId" type="hidden" value={recipeId} />
+        <RecipeActionMessage
+          message={deleteState.message}
+          status={deleteState.status}
+        />
+        <button className={quietButtonClass} disabled={disabled} type="submit">
+          Zutat entfernen
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function ManualRecipeIngredientManager({
+  actionsEnabled,
+  recipe,
+  onIngredientDeleted,
+  onIngredientSaved,
+}: Readonly<{
+  actionsEnabled: boolean;
+  recipe: Recipe;
+  onIngredientDeleted: (recipeId: string, ingredientId: string) => void;
+  onIngredientSaved: (ingredient: NutritionIngredientActionPayload) => void;
+}>) {
+  const ingredients = sortedRecipeIngredients(recipe.ingredients);
+
+  return (
+    <section
+      aria-labelledby="manual-recipe-ingredients-heading"
+      className="grid gap-2 rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(14,23,38,.48)] p-3"
+    >
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h3
+            className="text-[12px] font-semibold text-[var(--text-primary)]"
+            id="manual-recipe-ingredients-heading"
+          >
+            Zutaten verwalten
+          </h3>
+          <p className="mt-0.5 text-[11px] leading-4 text-[var(--text-muted)]">
+            Persistierte Zutaten ohne Katalog-, Grocery- oder Makroberechnung.
+          </p>
+        </div>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-faint)]">
+          {ingredients.length} aktiv
+        </p>
+      </div>
+
+      {ingredients.length > 0 ? (
+        <div
+          aria-label="Persistierte Zutaten"
+          className="grid gap-2"
+          role="list"
+        >
+          {ingredients.map((ingredient) => (
+            <ManualRecipeIngredientRowForm
+              actionsEnabled={actionsEnabled}
+              ingredient={ingredient}
+              key={ingredient.id}
+              onIngredientDeleted={onIngredientDeleted}
+              onIngredientSaved={onIngredientSaved}
+              recipeId={recipe.id}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-[12px] border border-dashed border-[var(--border-default)] bg-[rgba(168,183,204,.04)] p-3">
+          <p className="text-[11px] leading-5 text-[var(--text-muted)]">
+            Noch keine Zutaten hinterlegt.
+          </p>
+        </div>
+      )}
+
+      <ManualRecipeIngredientCreateForm
+        actionsEnabled={actionsEnabled}
+        onIngredientSaved={onIngredientSaved}
+        recipe={recipe}
+      />
+    </section>
+  );
+}
+
 function ManualRecipePersistedActions({
   actionsEnabled,
+  onIngredientDeleted,
+  onIngredientSaved,
   recipe,
 }: Readonly<{
   actionsEnabled: boolean;
+  onIngredientDeleted: (recipeId: string, ingredientId: string) => void;
+  onIngredientSaved: (ingredient: NutritionIngredientActionPayload) => void;
   recipe: Recipe;
 }>) {
   const [updateState, updateAction, isUpdating] = useActionState(
@@ -200,6 +600,13 @@ function ManualRecipePersistedActions({
           Recipe speichern
         </button>
       </form>
+
+      <ManualRecipeIngredientManager
+        actionsEnabled={actionsEnabled && !isUpdating && !isArchiving}
+        onIngredientDeleted={onIngredientDeleted}
+        onIngredientSaved={onIngredientSaved}
+        recipe={recipe}
+      />
 
       <form
         action={archiveAction}
@@ -552,6 +959,51 @@ export function RecipesView({
     setToast("Recipe archived locally for this session");
   }
 
+  function upsertRecipeIngredient(
+    ingredient: NutritionIngredientActionPayload,
+  ) {
+    const nextIngredient = ingredientPayloadToRecipeIngredient(ingredient);
+
+    setRecipes((current) =>
+      current.map((recipe) => {
+        if (recipe.id !== ingredient.recipeId) {
+          return recipe;
+        }
+
+        const existingIngredients = recipe.ingredients.filter(
+          (candidate) => candidate.id !== ingredient.id,
+        );
+
+        return {
+          ...recipe,
+          ingredients: sortedRecipeIngredients([
+            ...existingIngredients,
+            nextIngredient,
+          ]),
+          updatedAt: new Date().toISOString().slice(0, 10),
+        };
+      }),
+    );
+    setSelectedRecipeId(ingredient.recipeId);
+  }
+
+  function deleteRecipeIngredient(recipeId: string, ingredientId: string) {
+    setRecipes((current) =>
+      current.map((recipe) =>
+        recipe.id === recipeId
+          ? {
+              ...recipe,
+              ingredients: recipe.ingredients.filter(
+                (ingredient) => ingredient.id !== ingredientId,
+              ),
+              updatedAt: new Date().toISOString().slice(0, 10),
+            }
+          : recipe,
+      ),
+    );
+    setSelectedRecipeId(recipeId);
+  }
+
   return (
     <div
       className="mx-auto flex w-full max-w-7xl flex-col gap-3 pb-4 xl:h-[calc(100dvh-88px)] xl:min-h-0 xl:overflow-hidden xl:pb-0"
@@ -639,6 +1091,8 @@ export function RecipesView({
               <ManualRecipePersistedActions
                 actionsEnabled={actionsEnabled}
                 key={selectedRecipe.id}
+                onIngredientDeleted={deleteRecipeIngredient}
+                onIngredientSaved={upsertRecipeIngredient}
                 recipe={selectedRecipe}
               />
             ) : undefined

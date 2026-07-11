@@ -7,22 +7,44 @@ import {
   mealUpdateInputSchema,
   recipeArchiveInputSchema,
   recipeCreateInputSchema,
+  recipeIngredientCreateInputSchema,
+  recipeIngredientDeleteInputSchema,
+  recipeIngredientUpdateInputSchema,
   recipeUpdateInputSchema,
+  type RecipeIngredient as RealDataRecipeIngredient,
 } from "@/features/real-data";
 import { createSupabaseNutritionRepository } from "@/features/real-data/supabase";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
 import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
 
 export type NutritionActionResult = {
+  ingredient?: NutritionIngredientActionPayload;
+  ingredientId?: string;
   mealId?: string;
   message: string;
   recipeId?: string;
   status: "blocked" | "error" | "success";
 };
 
+export type NutritionIngredientActionPayload = {
+  id: string;
+  name: string;
+  note: string | null;
+  position: number;
+  quantity: number | null;
+  recipeId: string;
+  unit: string | null;
+};
+
 function formString(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" ? value.trim() : "";
+}
+
+function formStringIfPresent(formData: FormData, key: string) {
+  if (!formData.has(key)) return undefined;
+
+  return formString(formData, key);
 }
 
 function optionalFormString(formData: FormData, key: string) {
@@ -41,6 +63,34 @@ function optionalFormNumber(formData: FormData, key: string) {
   const value = Number(formString(formData, key));
 
   return Number.isFinite(value) ? value : undefined;
+}
+
+function nullableFormString(formData: FormData, key: string) {
+  const value = formString(formData, key);
+
+  return value || null;
+}
+
+function nullableFormStringIfPresent(formData: FormData, key: string) {
+  if (!formData.has(key)) return undefined;
+
+  return nullableFormString(formData, key);
+}
+
+function nullableFormNumber(formData: FormData, key: string) {
+  const raw = formString(formData, key);
+
+  if (!raw) return null;
+
+  const value = Number(raw);
+
+  return Number.isFinite(value) ? value : raw;
+}
+
+function nullableFormNumberIfPresent(formData: FormData, key: string) {
+  if (!formData.has(key)) return undefined;
+
+  return nullableFormNumber(formData, key);
 }
 
 function tagsFromForm(formData: FormData) {
@@ -99,6 +149,10 @@ function repositoryFailureMessage(message: string) {
     return "Der Area-Kontext konnte nicht bestätigt werden.";
   }
 
+  if (message.includes("Ingredient")) {
+    return "Die Zutat wurde im aktuellen User-Scope nicht gefunden.";
+  }
+
   if (message.includes("Recipe")) {
     return "Das Recipe wurde im aktuellen User-Scope nicht gefunden.";
   }
@@ -138,6 +192,20 @@ async function getAuthenticatedNutritionContext() {
   return {
     auth,
     ok: true as const,
+  };
+}
+
+function recipeIngredientPayload(
+  ingredient: RealDataRecipeIngredient,
+): NutritionIngredientActionPayload {
+  return {
+    id: ingredient.id,
+    name: ingredient.name,
+    note: ingredient.note,
+    position: ingredient.position,
+    quantity: ingredient.quantity,
+    recipeId: ingredient.recipeId,
+    unit: ingredient.unit,
   };
 }
 
@@ -300,6 +368,168 @@ export async function archiveRecipeFormStateAction(
   formData: FormData,
 ): Promise<NutritionActionResult> {
   return archiveRecipeAction(formData);
+}
+
+export async function createRecipeIngredientAction(
+  formData: FormData,
+): Promise<NutritionActionResult> {
+  const context = await getAuthenticatedNutritionContext();
+
+  if (!context.ok) return context.result;
+
+  const parsed = recipeIngredientCreateInputSchema.safeParse({
+    name: formString(formData, "name"),
+    note: nullableFormString(formData, "note"),
+    position: optionalFormNumber(formData, "position"),
+    quantity: nullableFormNumber(formData, "quantity"),
+    recipeId: formString(formData, "recipeId"),
+    unit: nullableFormString(formData, "unit"),
+  });
+
+  if (!parsed.success) {
+    return {
+      message: "Gib gültige Zutaten-Daten ein.",
+      status: "error",
+    };
+  }
+
+  const repository = createSupabaseNutritionRepository(context.auth.client);
+  const result = await repository.createRecipeIngredient({
+    ...parsed.data,
+    profileId: context.auth.user.id,
+    userId: context.auth.user.id,
+  });
+
+  if (!result.ok) {
+    return {
+      message: repositoryFailureMessage(result.error.message),
+      status: "error",
+    };
+  }
+
+  revalidateNutritionRoutes();
+
+  return {
+    ingredient: recipeIngredientPayload(result.data),
+    ingredientId: result.data.id,
+    message: "Zutat erstellt.",
+    recipeId: result.data.recipeId,
+    status: "success",
+  };
+}
+
+export async function createRecipeIngredientFormStateAction(
+  _previousState: NutritionActionResult,
+  formData: FormData,
+): Promise<NutritionActionResult> {
+  return createRecipeIngredientAction(formData);
+}
+
+export async function updateRecipeIngredientAction(
+  formData: FormData,
+): Promise<NutritionActionResult> {
+  const context = await getAuthenticatedNutritionContext();
+
+  if (!context.ok) return context.result;
+
+  const parsed = recipeIngredientUpdateInputSchema.safeParse({
+    ingredientId: formString(formData, "ingredientId"),
+    name: formStringIfPresent(formData, "name"),
+    note: nullableFormStringIfPresent(formData, "note"),
+    position: optionalFormNumber(formData, "position"),
+    quantity: nullableFormNumberIfPresent(formData, "quantity"),
+    recipeId: optionalFormStringIfPresent(formData, "recipeId"),
+    unit: nullableFormStringIfPresent(formData, "unit"),
+  });
+
+  if (!parsed.success) {
+    return {
+      message: "Gib gültige Zutaten-Daten ein.",
+      status: "error",
+    };
+  }
+
+  const repository = createSupabaseNutritionRepository(context.auth.client);
+  const result = await repository.updateRecipeIngredient({
+    ...parsed.data,
+    profileId: context.auth.user.id,
+    userId: context.auth.user.id,
+  });
+
+  if (!result.ok) {
+    return {
+      message: repositoryFailureMessage(result.error.message),
+      status: "error",
+    };
+  }
+
+  revalidateNutritionRoutes();
+
+  return {
+    ingredient: recipeIngredientPayload(result.data),
+    ingredientId: result.data.id,
+    message: "Zutat aktualisiert.",
+    recipeId: result.data.recipeId,
+    status: "success",
+  };
+}
+
+export async function updateRecipeIngredientFormStateAction(
+  _previousState: NutritionActionResult,
+  formData: FormData,
+): Promise<NutritionActionResult> {
+  return updateRecipeIngredientAction(formData);
+}
+
+export async function deleteRecipeIngredientAction(
+  formData: FormData,
+): Promise<NutritionActionResult> {
+  const context = await getAuthenticatedNutritionContext();
+
+  if (!context.ok) return context.result;
+
+  const parsed = recipeIngredientDeleteInputSchema.safeParse({
+    ingredientId: formString(formData, "ingredientId"),
+    recipeId: optionalFormStringIfPresent(formData, "recipeId"),
+  });
+
+  if (!parsed.success) {
+    return {
+      message: "Die Zutat konnte nicht validiert werden.",
+      status: "error",
+    };
+  }
+
+  const repository = createSupabaseNutritionRepository(context.auth.client);
+  const result = await repository.deleteRecipeIngredient({
+    ...parsed.data,
+    profileId: context.auth.user.id,
+    userId: context.auth.user.id,
+  });
+
+  if (!result.ok) {
+    return {
+      message: repositoryFailureMessage(result.error.message),
+      status: "error",
+    };
+  }
+
+  revalidateNutritionRoutes();
+
+  return {
+    ingredient: recipeIngredientPayload(result.data),
+    ingredientId: result.data.id,
+    message: "Zutat entfernt.",
+    recipeId: result.data.recipeId,
+    status: "success",
+  };
+}
+
+export async function deleteRecipeIngredientFormStateAction(
+  _previousState: NutritionActionResult,
+  formData: FormData,
+): Promise<NutritionActionResult> {
+  return deleteRecipeIngredientAction(formData);
 }
 
 export async function createMealAction(

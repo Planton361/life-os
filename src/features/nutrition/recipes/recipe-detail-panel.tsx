@@ -41,6 +41,33 @@ function DetailMetric({
   );
 }
 
+function formatIngredientQuantity(
+  quantity: number | null | undefined,
+  fallbackAmount: number,
+) {
+  const amount = quantity ?? fallbackAmount;
+
+  if (!Number.isFinite(amount) || amount <= 0) return "";
+
+  return new Intl.NumberFormat("de-DE", {
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+
+function ingredientAmountLabel(
+  ingredient: Recipe["ingredients"][number],
+) {
+  const amount = formatIngredientQuantity(
+    ingredient.quantity,
+    ingredient.amount,
+  );
+  const unit = ingredient.displayUnit ?? ingredient.unit;
+
+  if (!amount && !unit) return "";
+
+  return [amount, unit].filter(Boolean).join(" ");
+}
+
 export function RecipeDetailPanel({
   recipe,
   confirmingArchive,
@@ -155,22 +182,43 @@ export function RecipeDetailPanel({
           className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-faint)]"
           id="recipe-ingredients-heading"
         >
-          Ingredients
+          Zutaten
         </h3>
         <div className="grid gap-1.5">
-          {recipe.ingredients.map((ingredient) => (
-            <div
-              className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(168,183,204,.04)] px-2.5 py-1.5"
-              key={ingredient.id}
-            >
-              <p className="min-w-0 truncate text-[11px] font-semibold text-[var(--text-secondary)]">
-                {ingredient.name}
-              </p>
-              <p className="text-[10px] text-[var(--text-muted)]">
-                {ingredient.amount} {ingredient.unit}
+          {recipe.ingredients.length > 0 ? (
+            recipe.ingredients.map((ingredient) => {
+              const amountLabel = ingredientAmountLabel(ingredient);
+
+              return (
+                <div
+                  className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(168,183,204,.04)] px-2.5 py-1.5"
+                  key={ingredient.id}
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-[11px] font-semibold text-[var(--text-secondary)]">
+                      {ingredient.name}
+                    </p>
+                    {ingredient.note ? (
+                      <p className="mt-0.5 line-clamp-2 text-[10px] leading-4 text-[var(--text-muted)]">
+                        {ingredient.note}
+                      </p>
+                    ) : null}
+                  </div>
+                  {amountLabel ? (
+                    <p className="text-[10px] text-[var(--text-muted)]">
+                      {amountLabel}
+                    </p>
+                  ) : null}
+                </div>
+              );
+            })
+          ) : (
+            <div className="rounded-[10px] border border-dashed border-[var(--border-default)] bg-[rgba(168,183,204,.04)] px-2.5 py-2">
+              <p className="text-[11px] leading-5 text-[var(--text-muted)]">
+                Noch keine Zutaten hinterlegt.
               </p>
             </div>
-          ))}
+          )}
         </div>
       </section>
 

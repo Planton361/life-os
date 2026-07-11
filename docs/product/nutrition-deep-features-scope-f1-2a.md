@@ -272,10 +272,10 @@ food-database product.
 
 | Domain | Current classification | Reason |
 | --- | --- | --- |
-| Recipe Detail | partial | Recipe fields and update/archive are bound in Manual Recipes UI; detail route remains a stub and Ingredients are not persisted. |
-| Ingredients | blocked_by_data_model | Ingredients exist only in mock/local planner types, not as persisted rows or Recipe fields. |
+| Recipe Detail | partial | Recipe fields, update/archive and Ingredients are bound in Manual Recipes UI; detail route remains a stub. |
+| Ingredients | local_connected | F1.2C adds `recipe_ingredients` rows and Manual UI create/edit/delete with reload proof. |
 | Meal Planning | partial | Meals support date, meal type, recipe relation, planned/completed state and projection; planner edit, serving/portion and recipe replacement are not connected. |
-| Grocery | blocked_by_data_model | Grocery requires Recipe Ingredients; current Grocery is demo/mock or empty Manual state. |
+| Grocery | blocked_by_generation | Grocery can now depend on Recipe Ingredients, but generation/review/items remain deferred. |
 | Nutrition Metrics | partial | Rough `nutrition_estimate` exists on Recipe; no trusted nutrition source, targets, macro engine or health claims. |
 
 Recipe Detail scope:
@@ -300,7 +300,8 @@ Meal Planning scope:
 Grocery scope:
 
 - should be derived from planned Meals and Recipe Ingredients.
-- current state: blocked by Ingredient model.
+- current state after F1.2C: Ingredient rows exist locally and are connected
+  in Manual Recipes; Grocery Generation remains deferred.
 - user review remains required before treating generated items as a list.
 
 Nutrition Metrics scope:
@@ -351,8 +352,17 @@ Option C - Ingredients + Ingredient Catalog:
 Recommendation:
 
 ```text
-Choose Option B after F1.2B, but do not create the migration in F1.2A.
+Choose Option B after F1.2B.
 ```
+
+F1.2C Status 2026-07-11:
+
+- Option B was implemented as a local end-to-end vertical slice in
+  `docs/product/recipe-ingredients-model-f1-2c.md`.
+- `public.recipe_ingredients` is a user-scoped table with Recipe ownership,
+  RLS, authenticated Grants and local Typegen.
+- No Ingredient Catalog, Grocery Items, Pantry, Macro Engine, external food
+  source or AI Meal Suggestions were introduced.
 
 ## 9. Grocery Dependencies
 
@@ -384,7 +394,7 @@ Was passt zu V5:
 - Nutrition already acts as a dense operational area, not a marketing page.
 - Overview, Planner, Recipes and Grocery are visually separated by purpose.
 - Empty and Manual states avoid demo fallback for Nutrition.
-- Grocery Signal text is honest when Ingredients do not exist.
+- Grocery Signal text must stay honest until real Grocery Generation exists.
 - P2 dashboard Nutrition concepts do not override P0 Today/Daily Control.
 
 Was verletzt V5:
@@ -400,7 +410,7 @@ Konkrete Fixes:
 
 - First connect Recipe Entity Edit / Archive so the visible Recipe Workbench
   matches backend truth.
-- Keep Grocery Manual empty until real Ingredients exist.
+- Keep Grocery Manual empty until real Grocery Generation exists.
 - Keep Planner Save/Replace/Serving controls disabled or clearly deferred
   until Meal Planner writes are connected.
 - Keep Metrics tied to explicit `nutrition_estimate` values only.
@@ -526,7 +536,30 @@ Risiko:
 
 - Over-modeling into ingredient catalog too early.
 
+F1.2C Status 2026-07-11:
+
+- Dokumentiert in `docs/product/recipe-ingredients-model-f1-2c.md` und
+  `docs/qa/recipe-ingredients-vertical-slice-f1-2c.md`.
+- Ergebnis: F1.2C wurde als End-to-End Vertical Slice umgesetzt und absorbiert
+  den frueher geplanten F1.2D/F1.2E Ingredients-Pfad.
+- Lokale Migration `20260711184831_recipe_ingredients.sql` erstellt
+  `public.recipe_ingredients` mit Constraints, Indexen, Trigger, RLS und
+  authenticated Grants.
+- Domain, Zod, Mapper, Repository Contract, Supabase Repository und Server
+  Actions fuer Ingredient Create/Update/Delete sind verbunden.
+- Manual `/nutrition/recipes` bindet Ingredients im bestehenden Selected
+  Recipe Panel.
+- Fokussierter Proof:
+  `PLAYWRIGHT_HOST=localhost PLAYWRIGHT_PORT=3000 PLAYWRIGHT_SUPABASE_AUTH_STATE=.local/playwright/supabase-auth-state-localhost.json pnpm exec playwright test tests/e2e/content-state-system.spec.ts --grep "Nutrition|Recipe|Ingredient"`:
+  7 passed.
+- Grocery bleibt deferred; F1.2C erzeugt keine Grocery Items, keine Pantry und
+  keine Makro-/Kalorienengine.
+
 ### F1.2D Recipe Ingredients Schema / Repository / Actions
+
+Status 2026-07-11:
+
+- Absorbiert durch F1.2C Recipe Ingredients End-to-End Vertical Slice.
 
 Ziel:
 
@@ -574,6 +607,10 @@ Risiko:
 - Deleting/reordering ingredients can create UI and concurrency complexity.
 
 ### F1.2E Recipe Ingredients UI Binding / Browser Proof
+
+Status 2026-07-11:
+
+- Absorbiert durch F1.2C Recipe Ingredients End-to-End Vertical Slice.
 
 Ziel:
 
@@ -806,15 +843,16 @@ Begruendung:
 
 Not chosen first:
 
-- Recipe Ingredients needs a model lock and migration.
+- Recipe Ingredients is closed by F1.2C.
 - Meal Planner Depth likely needs serving/portion decisions.
 - Grocery Generation depends on Recipe Ingredients.
 - Nutrition Metrics has high fake-data risk.
 
 No long docs-only chain:
 
-- After F1.2B, F1.2C should lock Ingredients briefly, then F1.2D/F1.2E should
-  implement and prove the Ingredients path.
+- After F1.2B, F1.2C implemented and proved the Ingredients path end to end.
+- Next Nutrition depth must stay separate: Meal Planner Edit, Grocery
+  Generation or Metrics Decision, one slice at a time.
 
 ## 13. Acceptance Criteria
 
@@ -823,10 +861,11 @@ No long docs-only chain:
 - Recipe and Meal data model was checked against code and migration.
 - Ingredients, Recipe Detail, Meal Planning, Grocery and Metrics are separated.
 - Ingredients model options are evaluated.
-- F1.2 is cut into executable Vertical Slices.
+- F1.2 is cut into executable Vertical Slices, with Ingredients now closed by
+  F1.2C.
 - First functional follow-up block is clear.
-- No product features were implemented.
-- No UI, `src`, test or migration files were changed.
+- F1.2A itself implemented no product features; later F1.2B/F1.2C status
+  blocks document their source, test and migration changes.
 - No remote DB, deployment or secret access occurred.
 
 ## 14. Risks

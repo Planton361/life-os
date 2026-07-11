@@ -33,6 +33,10 @@ export type RecipeIngredient = {
   name: string;
   amount: number;
   unit: IngredientUnit;
+  displayUnit?: string | null;
+  note?: string | null;
+  position?: number;
+  quantity?: number | null;
   calories: number;
   protein: number;
   carbs: number;

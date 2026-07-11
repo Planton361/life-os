@@ -2738,6 +2738,162 @@ test.describe("Nutrition content states", () => {
     await expectNoNutritionDemoStrings(page);
   });
 
+  test("Manual Nutrition manages Recipe Ingredients reload-stable", async ({
+    page,
+  }) => {
+    const recipeTitle = uniqueTitle("Manual Nutrition Ingredient Recipe");
+    const ingredientName = uniqueTitle("Manual Ingredient Olive Oil");
+    const updatedIngredientName = uniqueTitle("Manual Ingredient Avocado Oil");
+
+    await setProfile(page, "manual");
+    const hasSupabaseAuth = await applySupabaseAuthState(page);
+
+    if (!hasSupabaseAuth) {
+      test.skip(
+        true,
+        "Manual Supabase auth state unavailable; Recipe ingredient proof skipped.",
+      );
+    }
+
+    await expectNoHydrationErrors(page, async () => {
+      await page.goto("/inbox");
+    });
+    await skipIfManualDbUnavailable(
+      page,
+      "Manual Supabase auth state unavailable; Recipe ingredient proof skipped.",
+    );
+
+    await page.goto("/nutrition/recipes");
+    await expectNoNutritionDemoStrings(page);
+    const recipeForm = page
+      .getByRole("heading", { name: "Recipe erstellen" })
+      .locator("xpath=ancestor::section[1]");
+
+    await recipeForm.getByLabel("Title").fill(recipeTitle);
+    await recipeForm.getByLabel("Summary").fill("Browser proof ingredients");
+    await recipeForm.getByLabel("Tags").fill("lunch, proof");
+    await recipeForm.getByRole("button", { name: "Recipe erstellen" }).click();
+    await page.waitForLoadState("networkidle");
+    await expectRecipeVisibleInRecipeResults(page, recipeTitle);
+
+    await page
+      .getByRole("list", { name: "Recipe results" })
+      .getByRole("button", { name: new RegExp(escapeRegExp(recipeTitle)) })
+      .first()
+      .click();
+
+    const detailPanel = page.getByRole("region", { name: "Selected Recipe" });
+    const ingredientManager = detailPanel
+      .getByRole("heading", { name: "Zutaten verwalten" })
+      .locator("xpath=ancestor::section[1]");
+    const createIngredientForm = ingredientManager
+      .getByRole("heading", { name: "Zutat hinzufügen" })
+      .locator("xpath=ancestor::form[1]");
+
+    await expect(createIngredientForm).toBeVisible();
+    await createIngredientForm.getByLabel("Name").fill(ingredientName);
+    await createIngredientForm.getByLabel("Menge").fill("2");
+    await createIngredientForm.getByLabel("Einheit").fill("EL");
+    await createIngredientForm
+      .getByLabel("Notiz optional")
+      .fill("kalt gepresst");
+    await createIngredientForm
+      .getByRole("button", { name: "Zutat hinzufügen" })
+      .click();
+    await expect(createIngredientForm.getByRole("status")).toContainText(
+      "Zutat erstellt.",
+    );
+    await expect(
+      ingredientManager.locator("[data-recipe-ingredient-id]"),
+    ).toHaveCount(1);
+    await expect(detailPanel.getByText(ingredientName).first()).toBeVisible();
+    await expect(detailPanel.getByText("2 EL").first()).toBeVisible();
+
+    await page.reload();
+    await expectRecipeVisibleInRecipeResults(page, recipeTitle);
+    await page
+      .getByRole("list", { name: "Recipe results" })
+      .getByRole("button", { name: new RegExp(escapeRegExp(recipeTitle)) })
+      .first()
+      .click();
+    const reloadedDetailPanel = page.getByRole("region", {
+      name: "Selected Recipe",
+    });
+    const reloadedIngredientManager = reloadedDetailPanel
+      .getByRole("heading", { name: "Zutaten verwalten" })
+      .locator("xpath=ancestor::section[1]");
+    const ingredientRow = reloadedIngredientManager
+      .locator("[data-recipe-ingredient-id]")
+      .first();
+
+    await expect(reloadedDetailPanel.getByText(ingredientName).first()).toBeVisible();
+    await expect(reloadedDetailPanel.getByText("2 EL").first()).toBeVisible();
+    await ingredientRow.getByLabel("Name").fill(updatedIngredientName);
+    await ingredientRow.getByLabel("Menge").fill("1.5");
+    await ingredientRow.getByLabel("Einheit").fill("EL");
+    await ingredientRow.getByLabel("Notiz optional").fill("mild");
+    await ingredientRow
+      .getByRole("button", { name: "Zutat speichern" })
+      .click();
+    await expect(ingredientRow.getByRole("status")).toContainText(
+      "Zutat aktualisiert.",
+    );
+    await expect(
+      reloadedDetailPanel.getByText(updatedIngredientName).first(),
+    ).toBeVisible();
+
+    await page.reload();
+    await expectRecipeVisibleInRecipeResults(page, recipeTitle);
+    await page
+      .getByRole("list", { name: "Recipe results" })
+      .getByRole("button", { name: new RegExp(escapeRegExp(recipeTitle)) })
+      .first()
+      .click();
+    const updatedDetailPanel = page.getByRole("region", {
+      name: "Selected Recipe",
+    });
+    const updatedIngredientManager = updatedDetailPanel
+      .getByRole("heading", { name: "Zutaten verwalten" })
+      .locator("xpath=ancestor::section[1]");
+    const updatedIngredientRow = updatedIngredientManager
+      .locator("[data-recipe-ingredient-id]")
+      .first();
+
+    await expect(updatedDetailPanel.getByText(updatedIngredientName).first()).toBeVisible();
+    await expect(updatedDetailPanel.getByText("1,5 EL").first()).toBeVisible();
+    await updatedIngredientRow
+      .getByRole("button", { name: "Zutat entfernen" })
+      .click();
+    await expect(
+      updatedIngredientManager.locator("[data-recipe-ingredient-id]"),
+    ).toHaveCount(0);
+    await expect(
+      updatedDetailPanel.getByText(updatedIngredientName),
+    ).toHaveCount(0);
+
+    await page.reload();
+    await expectRecipeVisibleInRecipeResults(page, recipeTitle);
+    await page
+      .getByRole("list", { name: "Recipe results" })
+      .getByRole("button", { name: new RegExp(escapeRegExp(recipeTitle)) })
+      .first()
+      .click();
+    const finalDetailPanel = page.getByRole("region", {
+      name: "Selected Recipe",
+    });
+    const finalIngredientManager = finalDetailPanel
+      .getByRole("heading", { name: "Zutaten verwalten" })
+      .locator("xpath=ancestor::section[1]");
+
+    await expect(
+      finalIngredientManager.locator("[data-recipe-ingredient-id]"),
+    ).toHaveCount(0);
+    await expect(
+      finalDetailPanel.getByText("Noch keine Zutaten hinterlegt.").first(),
+    ).toBeVisible();
+    await expectNoNutritionDemoStrings(page);
+  });
+
   test("Manual Nutrition archives Recipe Entity without deleting existing Meal", async ({
     page,
   }) => {

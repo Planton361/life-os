@@ -46,14 +46,17 @@ Das MVP soll:
 - Nutrition kompakt in Dashboard und Today einordnen.
 - Demo, Empty und Manual States ohne Fake-Fallbacks weiter respektieren.
 
-Nicht im MVP:
+Nicht im direkten R1.7.6-MVP:
 
 - `ingredients`
-- `recipe_ingredients`
 - `nutrition_entries`
 - `macro_targets`
 - `grocery_lists`
 - `meal_plan_templates`
+
+F1.2C Status 2026-07-11: `recipe_ingredients` wurde spaeter als eigener
+lokaler Vertical Slice ergaenzt. Das ist keine globale Ingredient-Catalog- oder
+Grocery-Entscheidung.
 
 ## 5. Nicht-Ziele
 
@@ -218,21 +221,30 @@ R1.7.6B Status: Das lokale Schema enthaelt jetzt `public.recipes` und `public.me
 
 R1.7.6C Status: Domain Types, Mapper, Repository Contract, Supabase Nutrition Repository und Server Actions sind vorbereitet. Actions holen `user_id` serverseitig aus Supabase Auth und akzeptieren keine clientseitige `userId`. Das Repository prueft `areaId` gegen eigene aktive Areas und `recipeId` gegen eigene nicht archivierte Recipes, bevor es schreibt. Es gibt weiterhin keine UI-Anbindung und keine automatische Nutrition-Auswertung.
 
-Weiterhin nicht vorhanden: `ingredients`, `recipe_ingredients`, `nutrition_entries`, `macro_targets`, `grocery_lists`, `meal_plan_templates` oder externe Nutrition-Datenquellen.
+F1.2C Status: Das lokale Schema enthaelt jetzt `public.recipe_ingredients`.
+Die Tabelle ist user-scoped, referenziert `recipes`, nutzt RLS, authenticated
+Grants, einen `updated_at` Trigger und bleibt auf Recipe-Zutaten beschraenkt.
+Es gibt weiterhin keinen Ingredient Catalog, keine Pantry, keine Grocery Items
+und keine automatische Nutrition-Auswertung.
+
+Weiterhin nicht vorhanden: `ingredients`, `nutrition_entries`,
+`macro_targets`, `grocery_lists`, `meal_plan_templates` oder externe
+Nutrition-Datenquellen.
 
 Nach R1.7.6C bleiben als naechste Gates:
 
 - ReadModel-Integration fuer Nutrition UI.
 - UI-Binding nur nach separater Freigabe.
 - Browser-/Manual-QA erst nach UI-Binding.
-- Optional spaetere Erweiterung fuer Ingredients, Grocery oder Macro Targets nur mit eigenem Model Lock.
+- Optional spaetere Erweiterung fuer Ingredient Catalog, Grocery oder Macro
+  Targets nur mit eigenem Model Lock.
 
 ## 12. Spaetere Ausbaustufen
 
 Nach einem stabilen `recipes + meals` MVP koennen separat folgen:
 
-- Ingredients
-- Recipe Ingredients
+- Ingredient Catalog
+- Grocery Demand aus Recipe Ingredients
 - Nutrition Entries
 - Macro Targets
 - Grocery Lists
@@ -249,7 +261,8 @@ Diese Ausbaustufen duerfen den Daily Core nicht dominieren und brauchen jeweils 
 
 - Recipe, Meal, Meal Plan und Nutrition Log sind eindeutig getrennt.
 - MVP-Entscheidung ist `recipes + meals`.
-- Ingredients, Macro Targets, Grocery Lists und Meal Plan Templates sind nicht im MVP.
+- Ingredient Catalog, Macro Targets, Grocery Lists und Meal Plan Templates sind
+  nicht im direkten R1.7.6-MVP.
 - Dashboard bleibt kompakt.
 - Today bleibt Daily-Core-fuehrend.
 - Persistente Nutrition-Daten gelten als `health_sensitive`.

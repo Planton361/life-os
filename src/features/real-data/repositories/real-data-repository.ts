@@ -11,6 +11,7 @@ import type {
   Project,
   RecurringTaskTemplate,
   Recipe,
+  RecipeIngredient,
   Resource,
   ResourceRelation,
   ResourceId,
@@ -38,6 +39,9 @@ import type {
   CreateResourceInput,
   RecipeArchiveInput,
   RecipeCreateInput,
+  RecipeIngredientCreateInput,
+  RecipeIngredientDeleteInput,
+  RecipeIngredientUpdateInput,
   RecipeUpdateInput,
   CreateTaskInput,
   DeactivateRecurringTaskTemplateInput,
@@ -138,6 +142,30 @@ export type ArchiveRecipeRepositoryInput = RecipeArchiveInput & {
   userId: UserId;
   profileId: ProfileId;
 };
+
+export type RecipeIngredientListInput = {
+  userId: UserId;
+  profileId: ProfileId;
+  recipeId: string;
+};
+
+export type CreateRecipeIngredientRepositoryInput =
+  RecipeIngredientCreateInput & {
+    userId: UserId;
+    profileId: ProfileId;
+  };
+
+export type UpdateRecipeIngredientRepositoryInput =
+  RecipeIngredientUpdateInput & {
+    userId: UserId;
+    profileId: ProfileId;
+  };
+
+export type DeleteRecipeIngredientRepositoryInput =
+  RecipeIngredientDeleteInput & {
+    userId: UserId;
+    profileId: ProfileId;
+  };
 
 export type CreateMealRepositoryInput = MealCreateInput & {
   userId: UserId;
@@ -324,10 +352,19 @@ export interface NutritionRepository {
   createRecipe(
     input: CreateRecipeRepositoryInput,
   ): Promise<RepositoryResult<Recipe>>;
+  createRecipeIngredient(
+    input: CreateRecipeIngredientRepositoryInput,
+  ): Promise<RepositoryResult<RecipeIngredient>>;
+  deleteRecipeIngredient(
+    input: DeleteRecipeIngredientRepositoryInput,
+  ): Promise<RepositoryResult<RecipeIngredient>>;
   getActiveRecipesByUser(
     userId: UserId,
     profileId: ProfileId,
   ): Promise<RepositoryListResult<Recipe>>;
+  getRecipeIngredients(
+    input: RecipeIngredientListInput,
+  ): Promise<RepositoryListResult<RecipeIngredient>>;
   getMealsByUserAndDateRange(
     input: MealDateRangeListInput,
   ): Promise<RepositoryListResult<Meal>>;
@@ -339,6 +376,9 @@ export interface NutritionRepository {
   updateRecipe(
     input: UpdateRecipeRepositoryInput,
   ): Promise<RepositoryResult<Recipe>>;
+  updateRecipeIngredient(
+    input: UpdateRecipeIngredientRepositoryInput,
+  ): Promise<RepositoryResult<RecipeIngredient>>;
 }
 
 export interface SkillRepository {

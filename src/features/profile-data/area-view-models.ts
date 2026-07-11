@@ -35,9 +35,11 @@ import { getMealPlannerViewModel as getDemoMealPlannerViewModel } from "@/featur
 import { getRecipesViewModel as getDemoRecipesViewModel } from "@/features/nutrition/recipes";
 import { summarizeRecipes } from "@/features/nutrition/recipes/recipe-utils";
 import type {
+  IngredientUnit,
   MealPlanWeek,
   MealType as PlannerMealType,
   Recipe as PlannerRecipe,
+  RecipeIngredient as PlannerRecipeIngredient,
 } from "@/features/nutrition/meal-planner/meal-planner-types";
 import {
   buildResourcesContentStates,
@@ -64,6 +66,7 @@ import {
 import type {
   Meal as RealDataMeal,
   Recipe as RealDataRecipe,
+  RecipeIngredient as RealDataRecipeIngredient,
   Resource as RealDataResource,
 } from "@/features/real-data";
 import { getShopViewModel as getDemoShopViewModel } from "@/features/shop";
@@ -1068,6 +1071,10 @@ function buildProfileStrengthTrackerViewModel(
 }
 
 type ManualNutritionData = {
+  recipeIngredientsByRecipeId: ReadonlyMap<
+    string,
+    readonly RealDataRecipeIngredient[]
+  >;
   meals: readonly RealDataMeal[];
   recipes: readonly RealDataRecipe[];
   unavailableReason?: string;
@@ -1077,6 +1084,13 @@ const plannerMealTypes: readonly PlannerMealType[] = [
   "breakfast",
   "lunch",
   "dinner",
+];
+const plannerIngredientUnits: readonly IngredientUnit[] = [
+  "g",
+  "ml",
+  "piece",
+  "tbsp",
+  "tsp",
 ];
 
 function formatLocalDate(date: Date) {
@@ -1130,6 +1144,7 @@ async function getManualNutritionData(): Promise<ManualNutritionData> {
 
   if (!auth.ok) {
     return {
+      recipeIngredientsByRecipeId: new Map(),
       meals: [],
       recipes: [],
       unavailableReason: nutritionAuthUnavailableReason(auth.error),
@@ -1152,6 +1167,7 @@ async function getManualNutritionData(): Promise<ManualNutritionData> {
 
   if (!recipesResult.ok || !mealsResult.ok) {
     return {
+      recipeIngredientsByRecipeId: new Map(),
       meals: [],
       recipes: [],
       unavailableReason:
@@ -1159,7 +1175,38 @@ async function getManualNutritionData(): Promise<ManualNutritionData> {
     };
   }
 
+  const ingredientResults = await Promise.all(
+    recipesResult.data.map((recipe) =>
+      repository.getRecipeIngredients({
+        profileId: auth.user.id,
+        recipeId: recipe.id,
+        userId: auth.user.id,
+      }),
+    ),
+  );
+
+  if (ingredientResults.some((result) => !result.ok)) {
+    return {
+      recipeIngredientsByRecipeId: new Map(),
+      meals: [],
+      recipes: [],
+      unavailableReason:
+        "Nutrition-Zutaten konnten nicht aus Supabase geladen werden.",
+    };
+  }
+
+  const recipeIngredientsByRecipeId = new Map<
+    string,
+    readonly RealDataRecipeIngredient[]
+  >();
+
+  recipesResult.data.forEach((recipe, index) => {
+    const result = ingredientResults[index];
+    recipeIngredientsByRecipeId.set(recipe.id, result.ok ? result.data : []);
+  });
+
   return {
+    recipeIngredientsByRecipeId,
     meals: mealsResult.data,
     recipes: recipesResult.data,
   };
@@ -1242,7 +1289,41 @@ function recipeInstructions(recipe: RealDataRecipe) {
     }));
 }
 
-function realRecipeToPlannerRecipe(recipe: RealDataRecipe): PlannerRecipe {
+function plannerIngredientUnit(unit: string | null): IngredientUnit {
+  const normalized = (unit ?? "").trim().toLowerCase();
+
+  if (normalized === "el") return "tbsp";
+  if (normalized === "tl") return "tsp";
+  if (normalized === "stueck" || normalized === "stück") return "piece";
+
+  return plannerIngredientUnits.includes(normalized as IngredientUnit)
+    ? (normalized as IngredientUnit)
+    : "g";
+}
+
+function realRecipeIngredientToPlannerIngredient(
+  ingredient: RealDataRecipeIngredient,
+): PlannerRecipeIngredient {
+  return {
+    amount: ingredient.quantity ?? 0,
+    calories: 0,
+    carbs: 0,
+    displayUnit: ingredient.unit,
+    fat: 0,
+    id: ingredient.id,
+    name: ingredient.name,
+    note: ingredient.note,
+    position: ingredient.position,
+    protein: 0,
+    quantity: ingredient.quantity,
+    unit: plannerIngredientUnit(ingredient.unit),
+  };
+}
+
+function realRecipeToPlannerRecipe(
+  recipe: RealDataRecipe,
+  ingredients: readonly RealDataRecipeIngredient[] = [],
+): PlannerRecipe {
   const totals = recipeTotals(recipe);
 
   return {
@@ -1251,7 +1332,7 @@ function realRecipeToPlannerRecipe(recipe: RealDataRecipe): PlannerRecipe {
     defaultServings: recipe.servings ?? 1,
     description: recipe.summary ?? undefined,
     id: recipe.id,
-    ingredients: [],
+    ingredients: ingredients.map(realRecipeIngredientToPlannerIngredient),
     instructions: recipeInstructions(recipe),
     mealTypes: recipeMealTypes(recipe),
     prepMinutes: recipe.prepMinutes ?? undefined,
@@ -1507,7 +1588,12 @@ function buildProfileMealPlannerViewModel(
   const viewModel = clone(getDemoMealPlannerViewModel());
   const recipes =
     profileId === "manual" && nutritionData
-      ? nutritionData.recipes.map(realRecipeToPlannerRecipe)
+      ? nutritionData.recipes.map((recipe) =>
+          realRecipeToPlannerRecipe(
+            recipe,
+            nutritionData.recipeIngredientsByRecipeId.get(recipe.id) ?? [],
+          ),
+        )
       : [];
   const plannedMealCount =
     profileId === "manual" && nutritionData
@@ -1567,7 +1653,12 @@ function buildProfileRecipesViewModel(
   const viewModel = clone(getDemoRecipesViewModel());
   const recipes =
     profileId === "manual" && nutritionData
-      ? nutritionData.recipes.map(realRecipeToPlannerRecipe)
+      ? nutritionData.recipes.map((recipe) =>
+          realRecipeToPlannerRecipe(
+            recipe,
+            nutritionData.recipeIngredientsByRecipeId.get(recipe.id) ?? [],
+          ),
+        )
       : [];
 
   viewModel.profileId = profileId;

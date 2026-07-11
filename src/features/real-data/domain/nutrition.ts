@@ -33,6 +33,17 @@ export type Recipe = UserScopedEntity & {
   isArchived: boolean;
 };
 
+export type RecipeIngredient = UserScopedEntity & {
+  id: string;
+  profileId: ProfileId;
+  recipeId: RecipeId;
+  name: string;
+  quantity: number | null;
+  unit: string | null;
+  note: string | null;
+  position: number;
+};
+
 export type Meal = UserScopedEntity & {
   id: MealId;
   profileId: ProfileId;

@@ -4,11 +4,14 @@ import {
   type MealType,
   type NutritionEstimate,
   type Recipe,
+  type RecipeIngredient,
 } from "../../domain";
 import type {
   MealCompleteInput,
   MealCreateInput,
   MealUpdateInput,
+  RecipeIngredientCreateInput,
+  RecipeIngredientUpdateInput,
   RecipeCreateInput,
   RecipeUpdateInput,
 } from "../../schemas";
@@ -16,6 +19,9 @@ import type {
   MealInsert,
   MealRow,
   MealUpdate,
+  RecipeIngredientInsert,
+  RecipeIngredientRow,
+  RecipeIngredientUpdate,
   RecipeInsert,
   RecipeRow,
   RecipeUpdate,
@@ -59,6 +65,18 @@ function mapMealType(value: string): MealType {
   return value;
 }
 
+function mapNullableNumeric(value: number | string | null): number | null {
+  if (value === null) return null;
+
+  const numeric = typeof value === "number" ? value : Number(value);
+
+  if (!Number.isFinite(numeric)) {
+    throw new Error("Unsupported numeric value.");
+  }
+
+  return numeric;
+}
+
 export function mapRecipeRowToDomain(row: RecipeRow): Recipe {
   return {
     areaId: row.area_id,
@@ -96,6 +114,24 @@ export function mapMealRowToDomain(row: MealRow): Meal {
   };
 }
 
+export function mapRecipeIngredientRowToDomain(
+  row: RecipeIngredientRow,
+): RecipeIngredient {
+  return {
+    createdAt: row.created_at,
+    id: row.id,
+    name: row.name,
+    note: row.note,
+    position: row.position,
+    profileId: row.user_id,
+    quantity: mapNullableNumeric(row.quantity),
+    recipeId: row.recipe_id,
+    unit: row.unit,
+    updatedAt: row.updated_at,
+    userId: row.user_id,
+  };
+}
+
 export function mapRecipeCreateInputToInsert(
   input: RecipeCreateInput,
   userId: string,
@@ -121,6 +157,24 @@ export function mapRecipeCreateInputToInsert(
   return insert;
 }
 
+export function mapRecipeIngredientCreateInputToInsert(
+  input: RecipeIngredientCreateInput,
+  userId: string,
+): RecipeIngredientInsert {
+  const insert: RecipeIngredientInsert = {
+    name: input.name,
+    recipe_id: input.recipeId,
+    user_id: userId,
+  };
+
+  if (input.note !== undefined) insert.note = input.note;
+  if (input.position !== undefined) insert.position = input.position;
+  if (input.quantity !== undefined) insert.quantity = input.quantity;
+  if (input.unit !== undefined) insert.unit = input.unit;
+
+  return insert;
+}
+
 export function mapRecipeUpdateInputToPatch(
   input: RecipeUpdateInput,
 ): RecipeUpdate {
@@ -139,6 +193,20 @@ export function mapRecipeUpdateInputToPatch(
   if (input.summary !== undefined) patch.summary = input.summary;
   if (input.tags !== undefined) patch.tags = mapTagsToJson(input.tags);
   if (input.title !== undefined) patch.title = input.title;
+
+  return patch;
+}
+
+export function mapRecipeIngredientUpdateInputToPatch(
+  input: RecipeIngredientUpdateInput,
+): RecipeIngredientUpdate {
+  const patch: RecipeIngredientUpdate = {};
+
+  if (input.name !== undefined) patch.name = input.name;
+  if (input.note !== undefined) patch.note = input.note;
+  if (input.position !== undefined) patch.position = input.position;
+  if (input.quantity !== undefined) patch.quantity = input.quantity;
+  if (input.unit !== undefined) patch.unit = input.unit;
 
   return patch;
 }

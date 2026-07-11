@@ -1,4 +1,4 @@
-import type { Meal, Recipe } from "../../domain";
+import type { Meal, Recipe, RecipeIngredient } from "../../domain";
 import type { NutritionRepository } from "../../repositories";
 import type {
   RepositoryListResult,
@@ -9,6 +9,9 @@ import {
   mapMealCreateInputToInsert,
   mapMealRowToDomain,
   mapMealUpdateInputToPatch,
+  mapRecipeIngredientCreateInputToInsert,
+  mapRecipeIngredientRowToDomain,
+  mapRecipeIngredientUpdateInputToPatch,
   mapRecipeCreateInputToInsert,
   mapRecipeRowToDomain,
   mapRecipeUpdateInputToPatch,
@@ -18,7 +21,14 @@ import type {
   SupabaseClientLike,
   SupabaseQueryResult,
 } from "../database.types";
-import type { MealRow, MealUpdate, RecipeRow, RecipeUpdate } from "../row-types";
+import type {
+  MealRow,
+  MealUpdate,
+  RecipeIngredientRow,
+  RecipeIngredientUpdate,
+  RecipeRow,
+  RecipeUpdate,
+} from "../row-types";
 
 type RepositoryFailure = RepositoryResult<never>;
 
@@ -125,6 +135,32 @@ async function verifyActiveRecipeOwnership(
   return Boolean(!result.error && result.data);
 }
 
+async function verifyIngredientOwnership(
+  client: SupabaseClientLike,
+  userId: string,
+  ingredientId: string,
+  recipeId: string | null | undefined,
+): Promise<boolean> {
+  let query = client
+    .from(realDataTableNames.recipeIngredients)
+    .select("id, recipe_id")
+    .eq("user_id", userId)
+    .eq("id", ingredientId);
+
+  if (recipeId !== undefined && recipeId !== null) {
+    query = query.eq("recipe_id", recipeId);
+  }
+
+  const result = (await query.maybeSingle()) as SupabaseQueryResult<{
+    id: string;
+    recipe_id: string;
+  }>;
+
+  if (result.error || !result.data) return false;
+
+  return verifyActiveRecipeOwnership(client, userId, result.data.recipe_id);
+}
+
 function mapRecipeRows(
   rows: readonly RecipeRow[],
 ): RepositoryListResult<Recipe> {
@@ -132,6 +168,19 @@ function mapRecipeRows(
     data: rows.map(mapRecipeRowToDomain),
     ok: true,
   };
+}
+
+function mapRecipeIngredientRows(
+  rows: readonly RecipeIngredientRow[],
+): RepositoryListResult<RecipeIngredient> {
+  try {
+    return {
+      data: rows.map(mapRecipeIngredientRowToDomain),
+      ok: true,
+    };
+  } catch {
+    return adapterFailure("map recipe ingredients");
+  }
 }
 
 function mapMealRows(rows: readonly MealRow[]): RepositoryListResult<Meal> {
@@ -142,6 +191,31 @@ function mapMealRows(rows: readonly MealRow[]): RepositoryListResult<Meal> {
     };
   } catch {
     return adapterFailure("map meals");
+  }
+}
+
+async function loadRecipeIngredientById(
+  client: SupabaseClientLike,
+  userId: string,
+  ingredientId: string,
+): Promise<RepositoryResult<RecipeIngredient>> {
+  const result = (await client
+    .from(realDataTableNames.recipeIngredients)
+    .select("*")
+    .eq("user_id", userId)
+    .eq("id", ingredientId)
+    .maybeSingle()) as SupabaseQueryResult<RecipeIngredientRow>;
+
+  if (result.error) return adapterFailure("load recipe ingredient");
+  if (!result.data) return notFoundFailure("Ingredient");
+
+  try {
+    return {
+      data: mapRecipeIngredientRowToDomain(result.data),
+      ok: true,
+    };
+  } catch {
+    return adapterFailure("map recipe ingredient");
   }
 }
 
@@ -217,6 +291,38 @@ async function updateRecipeById(
     data: mapRecipeRowToDomain(result.data),
     ok: true,
   };
+}
+
+async function updateRecipeIngredientById(
+  client: SupabaseClientLike,
+  userId: string,
+  ingredientId: string,
+  patch: RecipeIngredientUpdate,
+  operation: string,
+): Promise<RepositoryResult<RecipeIngredient>> {
+  if (Object.keys(patch).length === 0) {
+    return loadRecipeIngredientById(client, userId, ingredientId);
+  }
+
+  const result = (await client
+    .from(realDataTableNames.recipeIngredients)
+    .update(patch)
+    .eq("user_id", userId)
+    .eq("id", ingredientId)
+    .select("*")
+    .single()) as SupabaseQueryResult<RecipeIngredientRow>;
+
+  if (result.error) return adapterFailure(operation);
+  if (!result.data) return notFoundFailure("Ingredient");
+
+  try {
+    return {
+      data: mapRecipeIngredientRowToDomain(result.data),
+      ok: true,
+    };
+  } catch {
+    return adapterFailure("map recipe ingredient");
+  }
 }
 
 async function updateMealById(
@@ -337,6 +443,69 @@ export function createSupabaseNutritionRepository(
       };
     },
 
+    async createRecipeIngredient(input) {
+      const scopeFailure = profileScopeFailure(input.userId, input.profileId);
+      if (scopeFailure) return scopeFailure;
+
+      const recipeOwned = await verifyActiveRecipeOwnership(
+        client,
+        input.userId,
+        input.recipeId,
+      );
+      if (!recipeOwned) return notFoundFailure("Recipe");
+
+      const result = (await client
+        .from(realDataTableNames.recipeIngredients)
+        .insert(mapRecipeIngredientCreateInputToInsert(input, input.userId))
+        .select("*")
+        .single()) as SupabaseQueryResult<RecipeIngredientRow>;
+
+      if (result.error) return adapterFailure("create recipe ingredient");
+      if (!result.data) return notFoundFailure("Ingredient");
+
+      try {
+        return {
+          data: mapRecipeIngredientRowToDomain(result.data),
+          ok: true,
+        };
+      } catch {
+        return adapterFailure("map recipe ingredient");
+      }
+    },
+
+    async deleteRecipeIngredient(input) {
+      const scopeFailure = profileScopeFailure(input.userId, input.profileId);
+      if (scopeFailure) return scopeFailure;
+
+      const ingredientOwned = await verifyIngredientOwnership(
+        client,
+        input.userId,
+        input.ingredientId,
+        input.recipeId,
+      );
+      if (!ingredientOwned) return notFoundFailure("Ingredient");
+
+      const result = (await client
+        .from(realDataTableNames.recipeIngredients)
+        .delete()
+        .eq("user_id", input.userId)
+        .eq("id", input.ingredientId)
+        .select("*")
+        .single()) as SupabaseQueryResult<RecipeIngredientRow>;
+
+      if (result.error) return adapterFailure("delete recipe ingredient");
+      if (!result.data) return notFoundFailure("Ingredient");
+
+      try {
+        return {
+          data: mapRecipeIngredientRowToDomain(result.data),
+          ok: true,
+        };
+      } catch {
+        return adapterFailure("map recipe ingredient");
+      }
+    },
+
     async getActiveRecipesByUser(userId, profileId) {
       const scopeFailure = profileScopeFailure(userId, profileId);
       if (scopeFailure) return scopeFailure;
@@ -353,6 +522,32 @@ export function createSupabaseNutritionRepository(
       if (result.error) return adapterFailure("load active recipes");
 
       return mapRecipeRows(result.data ?? []);
+    },
+
+    async getRecipeIngredients(input) {
+      const scopeFailure = profileScopeFailure(input.userId, input.profileId);
+      if (scopeFailure) return scopeFailure;
+
+      const recipeOwned = await verifyActiveRecipeOwnership(
+        client,
+        input.userId,
+        input.recipeId,
+      );
+      if (!recipeOwned) return notFoundFailure("Recipe");
+
+      const result = (await client
+        .from(realDataTableNames.recipeIngredients)
+        .select("*")
+        .eq("user_id", input.userId)
+        .eq("recipe_id", input.recipeId)
+        .order("position", { ascending: true })
+        .order("created_at", { ascending: true })) as SupabaseQueryResult<
+        readonly RecipeIngredientRow[]
+      >;
+
+      if (result.error) return adapterFailure("load recipe ingredients");
+
+      return mapRecipeIngredientRows(result.data ?? []);
     },
 
     async getMealsByUserAndDateRange(input) {
@@ -433,6 +628,27 @@ export function createSupabaseNutritionRepository(
         input.recipeId,
         mapRecipeUpdateInputToPatch(input),
         "update recipe",
+      );
+    },
+
+    async updateRecipeIngredient(input) {
+      const scopeFailure = profileScopeFailure(input.userId, input.profileId);
+      if (scopeFailure) return scopeFailure;
+
+      const ingredientOwned = await verifyIngredientOwnership(
+        client,
+        input.userId,
+        input.ingredientId,
+        input.recipeId,
+      );
+      if (!ingredientOwned) return notFoundFailure("Ingredient");
+
+      return updateRecipeIngredientById(
+        client,
+        input.userId,
+        input.ingredientId,
+        mapRecipeIngredientUpdateInputToPatch(input),
+        "update recipe ingredient",
       );
     },
   };

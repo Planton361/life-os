@@ -24,6 +24,17 @@ const blankInputToUndefined = (value: unknown) => {
   return value;
 };
 
+const blankInputToNull = (value: unknown) => {
+  if (value === undefined || value === null) return null;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
+  return value;
+};
+
 const requiredUuidSchema = z.string().trim().uuid();
 const optionalUuidSchema = z.preprocess(
   blankInputToUndefined,
@@ -35,11 +46,24 @@ const optionalBoundedStringSchema = (maxLength: number) =>
     blankInputToUndefined,
     z.string().trim().min(1).max(maxLength).optional(),
   );
+const nullableBoundedStringSchema = (maxLength: number) =>
+  z.preprocess(
+    blankInputToNull,
+    z.string().trim().min(1).max(maxLength).nullable().optional(),
+  );
 const optionalIntegerRangeSchema = (minimum: number, maximum: number) =>
   z.preprocess(
     blankInputToUndefined,
     z.coerce.number().int().min(minimum).max(maximum).optional(),
   );
+const nullablePositiveNumberSchema = z.preprocess(
+  blankInputToNull,
+  z.coerce.number().positive().nullable().optional(),
+);
+const optionalNonnegativeIntegerSchema = z.preprocess(
+  blankInputToUndefined,
+  z.coerce.number().int().min(0).optional(),
+);
 const optionalTagsSchema = z
   .preprocess(
     (value) => {
@@ -99,6 +123,42 @@ export const recipeArchiveInputSchema = z.object({
 });
 
 export type RecipeArchiveInput = z.infer<typeof recipeArchiveInputSchema>;
+
+const recipeIngredientBaseSchema = z.object({
+  name: titleSchema,
+  note: nullableBoundedStringSchema(500),
+  position: optionalNonnegativeIntegerSchema,
+  quantity: nullablePositiveNumberSchema,
+  unit: nullableBoundedStringSchema(64),
+});
+
+export const recipeIngredientCreateInputSchema =
+  recipeIngredientBaseSchema.extend({
+    recipeId: requiredUuidSchema,
+  });
+
+export type RecipeIngredientCreateInput = z.infer<
+  typeof recipeIngredientCreateInputSchema
+>;
+
+export const recipeIngredientUpdateInputSchema =
+  recipeIngredientBaseSchema.partial().extend({
+    ingredientId: requiredUuidSchema,
+    recipeId: requiredUuidSchema.optional(),
+  });
+
+export type RecipeIngredientUpdateInput = z.infer<
+  typeof recipeIngredientUpdateInputSchema
+>;
+
+export const recipeIngredientDeleteInputSchema = z.object({
+  ingredientId: requiredUuidSchema,
+  recipeId: requiredUuidSchema.optional(),
+});
+
+export type RecipeIngredientDeleteInput = z.infer<
+  typeof recipeIngredientDeleteInputSchema
+>;
 
 const mealBaseSchema = z.object({
   completedAt: optionalDateTimeStringSchema,
