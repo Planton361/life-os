@@ -1,84 +1,276 @@
-# AI_WORKFLOW.md
+# Life OS – AI and Codex Workflow
 
-Stand: 2026-07-07
-Status: Active  
-Zweck: operative AI-/Agenten-Workflow-Regeln.  
-Quelle der Wahrheit: Diese Datei; Details in `docs/ai-workflow/*`.  
-Gilt für: Codex, Claude, Cursor, Copilot, MCP, Skills.  
-Nicht gilt für: verpflichtende Installation externer Tools.
+**Status:** Active
+**Scope:** repository work with Codex, ChatGPT and optional tooling
+**Canonical work rules:** `AGENTS.md`
 
-## Kurzfassung
+## 1. Purpose
 
-Agents sollen dieselben Root-Wahrheiten lesen, nur relevante Detaildateien laden und keine alten Research- oder Dashboard-Varianten als aktive Quelle nutzen.
+AI tools accelerate Life OS delivery. They do not replace product truth, security boundaries or user review.
 
-## Ebenen
+The workflow optimizes for:
 
-1. Root-Dateien: immer relevante Wahrheit.
-2. `docs/`: Detailwissen nach Bedarf.
-3. `.github/instructions`: wiederverwendbare Kontextregeln.
-4. `.github/prompts`: wiederholbare Aufgabenprompts.
-5. Eigene Skills: aktiv, eng gescoped und an Root-Wahrheiten gebunden. Canonical Skill Path ist `.agents/skills`.
-6. Externe Skills/MCP/Agents: optional, reviewpflichtig und nicht automatisch aktiviert.
+- complete user capabilities;
+- reuse of the existing V5 frontend;
+- real backend and database behavior;
+- fewer docs-only micro-blocks;
+- short prompts backed by repository context;
+- focused tests and reliable commits.
 
-## Agent Workflow v2
+## 2. Active Context
 
-`docs/ai-workflow/life-os-agent-workflow-v2.md` ist die zentrale Detailquelle fuer allgemeine Codex-Featurearbeit jenseits des Dashboard-spezifischen Workflows.
+Every implementation task starts from:
 
-Operative Gates:
+```text
+AGENTS.md
+PRODUCT.md
+DESIGN.md
+ROADMAP.md
+docs/product/capability-registry.md
+ROADMAP.md Active Work Block
+```
 
-- Vertical-Slice Completion: Product Intent, UI, Server Action oder Prepared State, Repository/DB-Pfad, Zod/Auth/Ownership, Reload-Stabilitaet, Browser-Proof, Manual/Demo/Empty und QA-Doku/E2E muessen zusammenpassen.
-- Backend Action: neue Mutations authentifizieren serverseitig, akzeptieren keine clientseitige `userId`, validieren mit Zod `safeParse`, pruefen User-Scope und Ownership, nutzen keine Service Role, revalidieren relevante Pfade und liefern sichtbare Statuszustaende.
-- UI/V5: V5 bleibt Designwahrheit; Dashboard ist Steuerung, Bereichsseiten Kontext, Detailseiten Tiefe und Archiv Vergangenheit.
-- Browser-Proof: UI- oder Funktionsaenderungen brauchen einen konkreten Flow-Proof oder eine begruendete Ausnahme.
+Read architecture, data, security and accessibility files only as needed for the active scope.
 
-Kein Button ohne Persistenz, echte Navigation oder klar markierten Prepared/Future State. Keine Persistenzbehauptung ohne Reload-Proof. Kein UI-Feature-complete ohne Browser-Proof.
+Historical roadmaps, QA logs and closure documents are evidence. They are not active priority sources.
 
-## Phase 1.6 - Codex Capability Enablement
+## 3. Delivery Loop
 
-Phase 1.6 liegt vor Phase 2. Sie finalisiert die Agentenfähigkeit, ohne App-Features zu bauen.
+```text
+ROADMAP Active Work Block
+→ short Codex plan
+→ complete Vertical Slice
+→ dependent projections
+→ focused validation
+→ Codex review
+→ Capability Registry and Roadmap update
+→ commit
+```
+
+A normal feature should be delivered in one coherent block when possible.
+
+Separate model/security decisions only when the risk justifies it.
+
+## 4. Prompt Standard
+
+Prompts should be short because stable rules already live in the repository.
+
+Use this structure:
+
+```text
+Goal:
+[visible user outcome]
+
+Roadmap Block:
+[D1.1]
+
+Use Skills:
+- life-os-epic-delivery
+- life-os-vertical-slice
+- life-os-backend-action-slice
+- life-os-browser-proof
+- life-os-completion-gate
+- life-os-design-taste, when UI is affected
+
+Read:
+- AGENTS.md
+- ROADMAP.md
+- docs/product/capability-registry.md
+- ROADMAP.md (`Active Work Block`)
 
 Scope:
+[capabilities and cross-domain reactions]
 
-- eigene Life-OS-Skills dokumentieren und aktiv nutzbar machen
-- MCP-Regeln und sichere Tool-Nutzung einordnen
-- Prompting-Regeln für Plan Mode, Pursue Goal und Skill-Aktivierung ergänzen
-- Context7 als erste empfohlene Quelle für aktuelle Library-Dokumentation einordnen
-- Playwright MCP als späteres UI-/Screenshot-/Accessibility-QA-Tool dokumentieren
-- externe Tools, Skills und MCPs nicht automatisch installieren oder aktivieren
+Constraints:
+- preserve V5
+- no parallel architecture
+- no fake persistence
+- no remote database
 
-## Aktuell sinnvoll
+Done when:
+- UI, backend, database and projections are connected
+- reload/browser proof is green
+- Capability Registry is updated
+- review is complete
+- commit exists
+```
 
-- AGENTS.md für Codex und andere Coding Agents.
-- `.github/copilot-instructions.md` für repositoryweite Copilot-Regeln.
-- `.github/instructions/*.instructions.md` für bereichsspezifische Regeln.
-- `.github/prompts/*.prompt.md` für wiederholbare Workflows.
-- `$life-os-design-taste` für V5-gebundene UI-/Designreviews.
-- `$life-os-codex-task-writer` für sichere, prüfbare Codex-Aufträge.
-- `docs/ai-workflow/life-os-agent-workflow-v2.md` fuer allgemeine Vertical-Slice-, Backend-, UI- und Browser-Proof-Gates.
-- `docs/ai-workflow/codex-dashboard-workflow.md` für sichere Dashboard-Änderungen nach Change Type.
-- `.github/instructions/life-os-dashboard.instructions.md` für kompakte Dashboard-Regeln im GitHub-/Copilot-/Codex-Kontext.
-- `.github/prompts/dashboard-safe-change.prompt.md` für kleine, dateigenaue Dashboard-Änderungen.
-- `.github/prompts/vertical-slice.prompt.md` fuer Featurearbeit mit UI, Server Action, Repository, Zod, Ownership, Reload und Browser-Proof.
-- Context7 als erste empfohlene aktuelle Docs-Quelle für Libraries und APIs.
-- Playwright MCP später für lokale Screenshot-/Browser-/Accessibility-QA.
-- Repomix/Gitingest für große Kontextanalysen.
+Do not paste the complete security, staging and design rules into every prompt.
 
-Dashboard-Änderungen müssen künftig zuerst nach Change Type getrennt werden: `layout`, `color`, `content`, `motion`, `refactor`.
+## 5. Skill Mapping
 
-## Nur optional/später
+### Full Epic or cross-domain feature
 
-- Task Master / CCPM
-- Stagehand
-- OpenHands
-- Cline/Aider als Alternativharness
-- Subagents
-- weitere eigene Skills
-- Memory Layer
+- `life-os-epic-delivery`
+- `life-os-vertical-slice`
+- `life-os-backend-action-slice`
+- `life-os-browser-proof`
+- `life-os-completion-gate`
+- `life-os-design-taste` when UI is involved
 
-## Sicherheitsregel
+### Small backend capability
 
-MCP-/Agenten-Tools bekommen nie pauschal Zugriff auf Secrets, private Daten oder Produktionssysteme. Jede Integration braucht Zweck, Scope, Rechte, Risiko und Review.
+- `life-os-backend-action-slice`
+- `life-os-completion-gate`
+- `life-os-browser-proof` if a user flow is affected
 
-Aktive eigene Skills dürfen Dokumentation und Reviews strukturieren. Sie geben keine Autonomie-Freigabe für Produktentscheidungen, externe Installationen, Commits, Toolketten oder Zugriff auf Secrets.
+### Bug fix
 
-`.github/skills` ist kein aktiver Skill-Kanon. Der Ordner darf nur als explizit dokumentierter Copilot-/Mirror-Pfad dienen und darf nicht divergent zu `.agents/skills` gepflegt werden.
+- `life-os-completion-gate`
+- `life-os-browser-proof` for behavioral bugs
+- relevant backend/design skill only when needed
+
+### UI review only
+
+- `life-os-design-taste`
+- `life-os-completion-gate`
+
+### Prompt generation
+
+- `life-os-codex-task-writer`
+
+## 6. Codex Session Pattern
+
+At the start of a new Epic:
+
+1. open the repository root;
+2. use a fresh Codex session;
+3. ask Codex to read active sources;
+4. ask for a short plan;
+5. allow workspace writes with on-request approvals;
+6. keep one main writing agent.
+
+Suggested CLI mode:
+
+```bash
+codex --sandbox workspace-write --ask-for-approval on-request
+```
+
+Model selection remains a local Codex configuration concern and must not be hard-coded into repository instructions.
+
+## 7. Subagents
+
+Use up to three read-only subagents for large Epics:
+
+- Data/Ownership Audit;
+- UI/Capability Audit;
+- Proof/Regression Audit.
+
+The main agent owns writes and final integration.
+
+Do not let multiple agents independently modify overlapping feature files.
+
+## 8. Validation Tiers
+
+### Tier 1 – every code change
+
+```bash
+git diff --check
+pnpm typecheck
+pnpm lint
+```
+
+### Tier 2 – affected backend/schema
+
+```bash
+pnpm exec supabase db lint --local --level warning
+pnpm exec supabase db advisors --local --type security --level warn --fail-on none
+```
+
+### Tier 3 – affected user flow
+
+Focused Playwright proof with:
+
+- real interaction;
+- scoped assertions;
+- reload after writes;
+- unique test data.
+
+### Tier 4 – Epic closure
+
+```bash
+pnpm build
+```
+
+Plus the focused Epic regression scope and Codex review.
+
+Avoid full-suite or unrelated broad-grep runs after every small change.
+
+## 9. Documentation Strategy
+
+Maintain as active delivery sources only:
+
+- `ROADMAP.md` for active delivery order;
+- `docs/product/capability-registry.md` for actual status;
+- one complete Active Work Block in `ROADMAP.md`;
+- decision records for real model/security decisions;
+- QA documents only for complex proof cases.
+
+Do not create a scope, proof-hardening and closure document for every small fix.
+
+## 10. MCP and External Tools
+
+### Playwright MCP
+
+Use for local browser diagnosis, role/label interaction and screenshot-assisted review. It supplements, not replaces, committed Playwright tests.
+
+### Next DevTools MCP
+
+Use for local App Router, runtime, hydration and Server Action debugging.
+
+### Figma MCP
+
+Use read/review-scoped for V5 fidelity when actual UI work requires design context.
+
+### Supabase MCP
+
+Not required. Supabase CLI, migrations and generated types remain canonical.
+
+### UI generators
+
+v0, Lovable or similar tools may produce isolated design references. Their generated application architecture is not automatically imported into Life OS.
+
+## 11. Runtime AI Assistant
+
+The future DeepSeek assistant is a product capability, not a development agent.
+
+Rules:
+
+- no direct database connection for the LLM;
+- server-side provider credentials;
+- structured read tools;
+- Zod-validated proposed writes;
+- user confirmation before mutation;
+- existing Server Actions/Repositories execute confirmed writes;
+- tool results and review records are auditable;
+- provider/model configuration remains swappable.
+
+## 12. Review Questions
+
+Before committing, Codex reviews:
+
+- Did the feature reuse existing UI and architecture?
+- Is every visible action real or honestly deferred?
+- Is there one canonical data source?
+- Are auth, validation, ownership and RLS correct?
+- Did all affected projections update?
+- Did Manual/Demo/Empty/Auth-blocked remain separated?
+- Is the focused reload/browser proof green?
+- Was the Capability Registry updated?
+- Is the diff limited to the Epic scope?
+
+## 13. Handoff
+
+At the end of a substantial Epic, report:
+
+```text
+Current state:
+Delivered capability:
+Important decisions:
+Files changed:
+Validation:
+Capability Registry changes:
+Deferred:
+Next Roadmap block:
+Commit:
+```

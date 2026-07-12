@@ -1,180 +1,310 @@
-# AGENTS.md
+# AGENTS.md – Life OS Repository Rules
 
-Stand: 2026-07-07
-Status: Active  
-Zweck: Operative Arbeitsregeln für Codex, Claude, Cursor, Copilot und andere Coding Agents.  
-Quelle der Wahrheit: Diese Datei für Agentenverhalten.  
-Gilt für: alle Agentenarbeiten im Repo.  
-Nicht gilt für: Produktstrategie im Detail; siehe `PRODUCT.md`.
+## 1. Project Context
 
-## Kurzfassung
+Life OS is a personal-only, local-first web application for daily control, scheduling, projects, knowledge, health, nutrition, work, education, coding and private life.
 
-Arbeite erst prüfend, dann ändernd. Nichts löschen ohne ausdrückliche Bestätigung. Bestehende Dateien und Komponenten bevorzugt verbessern statt duplizieren. V5 ist die finale Dashboard-Designrichtung.
+The existing application is the foundation. Do not restart the product, replace Dashboard V5 or introduce a parallel architecture.
 
-## Immer zuerst lesen
-
-- `PRODUCT.md`
-- `DESIGN.md`
-- `ARCHITECTURE.md`
-- `DATA_MODEL.md`
-- `SECURITY.md`
-- `ACCESSIBILITY.md`
-- `ROADMAP.md`
-- `AI_WORKFLOW.md`
-
-Bei UI-/Dashboard-Aufgaben zusätzlich:
-
-- `docs/design/dashboard-v5.md`
-- `docs/design/dashboard-layout-lock.md`
-- `docs/design/design-tokens.md`
-- `docs/design/component-system.md`
-- `docs/design/visualization-rules.md`
-- `docs/design/effects-and-motion.md`
-- `docs/engineering/dashboard-code-structure.md`
-- `docs/ai-workflow/codex-dashboard-workflow.md`
-
-Bei Produkt-/Route-Aufgaben zusätzlich:
-
-- `docs/product/pages-and-routes.md`
-- `docs/product/ux-flows.md`
-- `docs/product/feature-spec.md`
-
-Bei Agenten-/Prompt-Aufgaben zusätzlich:
-
-- `docs/ai-workflow/life-os-agent-workflow-v2.md`
-- `docs/ai-workflow/prompting-rules.md`
-- `docs/ai-workflow/review-workflow.md`
-- `docs/ai-workflow/tools-and-repos.md`
-
-## Codex Capability Layer
-
-Aktive eigene Skills:
-
-- `$life-os-design-taste`: nutzen, wenn UI-, Dashboard-, Komponenten-, Layout- oder visuelle Vorschläge gegen V5 geprüft werden.
-- `$life-os-codex-task-writer`: nutzen, wenn vage Anforderungen in kleine, sichere, prüfbare Codex-Aufträge übersetzt werden.
-- `$life-os-vertical-slice`: nutzen, wenn Featurearbeit als vollständiger Nutzerfluss geplant, gebaut oder geprüft wird.
-- `$life-os-backend-action-slice`: nutzen, wenn Server Actions, Repositories, Zod, Auth, Ownership oder Supabase-backed Mutations betroffen sind.
-- `$life-os-browser-proof`: nutzen, wenn UI-, Form-, Button-, Navigations-, Prepared-State- oder Persistenzverhalten im Browser bewiesen werden muss.
-- `$life-os-completion-gate`: vor Abschluss größerer Blocks nutzen, um PASS, PASS_WITH_DEFERRED oder BLOCKED ehrlich zu entscheiden.
-
-Regeln:
-
-- Canonical Skill Path ist `.agents/skills`.
-- `.github/skills` ist nicht aktiv, ausser explizit als Copilot-/Mirror-Pfad dokumentiert.
-- Keine divergenten Skill-Versionen ohne Owner, Status und klaren Zweck pflegen.
-- Skills ergänzen die Arbeit, ersetzen aber nicht `DESIGN.md`, `AI_WORKFLOW.md`, `ROADMAP.md` oder andere Root-Wahrheiten.
-- `$life-os-design-taste` ersetzt V5 nicht. V5 bleibt die verbindliche Designwahrheit.
-- Skills treffen keine autonomen Produktentscheidungen.
-- Externe Skills, MCPs und Agententools werden erst nach Review von Zweck, Scope, Rechten und Risiko genutzt.
-- Externe Tools werden nicht automatisch installiert oder aktiviert.
-- Große Aufgaben zuerst im Plan Mode klären, dann erst im bestätigten Scope umsetzen.
-
-## Arbeitsregeln
-
-- Vor größeren Änderungen Plan ausgeben.
-- Keine Dateien löschen.
-- Keine alten Dashboard-Varianten reaktivieren.
-- Keine neue Library ohne Begründung.
-- Keine Secrets anfassen oder erzeugen.
-- Keine RLS/Security-Regeln umgehen.
-- Keine umfangreichen Refactors nebenbei.
-- Kleine, reviewbare Änderungen bevorzugen.
-- Nach Änderungen relevante Checks ausführen oder begründen, warum nicht möglich.
-- Dashboard-Layout ist locked.
-- Layoutwerte dürfen nur mit explizitem Layout-Scope geändert werden.
-- Color-/Content-/Motion-/Refactor-Aufgaben dürfen keine Layoutwerte ändern.
-- `next-env.d.ts` ist generated und wird nicht versioniert; vor TypeScript-Checks `pnpm typecheck` nutzen. Nicht auf `next-env.d.ts`-Diffs stoppen, wenn die Datei ignoriert oder untracked ist.
-
-## Vertical-Slice Completion Gate
-
-Ein Feature gilt erst als abgeschlossen, wenn:
-
-- Product Intent und Nicht-Ziele klar sind.
-- UI bedienbar ist oder der Zustand klar als Prepared/Future markiert ist.
-- Jeder Button entweder persistiert, navigiert oder eindeutig als Prepared/Future blockiert ist.
-- Server Action oder Repository/DB-Pfad existiert, wenn Persistenz behauptet wird.
-- Zod, Auth und same-user Ownership fuer Mutations und relationale Targets geprueft sind.
-- Reload-Stabilitaet geprueft ist, wenn ein Write oder eine Projektion behauptet wird.
-- Browser-Proof gruen ist, wenn UI oder User Flow betroffen sind.
-- Manual, Demo und Empty sauber getrennt bleiben.
-- QA-Doku oder E2E-/Browser-Proof aktualisiert ist.
-
-Keine Persistenzbehauptung ohne Reload-Proof. Kein Feature-complete ohne Browser-Proof, wenn UI betroffen ist.
-
-## Backend Action Gate
-
-Neue Server Actions muessen:
-
-- serverseitig authentifizieren.
-- keine clientseitige `userId` als Trust Boundary akzeptieren.
-- Zod `safeParse` nutzen.
-- Repository oder RPC mit User-Scope nutzen.
-- same-user Ownership fuer FKs und polymorphe Targets pruefen.
-- keine Service Role nutzen.
-- relevante App-Pfade revalidieren.
-- sichtbare Success-, Error- und Blocked-Zustaende ermoeglichen.
-
-## UI/V5 Gate
-
-V5 bleibt Designwahrheit. Codex darf keine neue Designrichtung, keine generische SaaS-Card-Wand und keine Dashboard-Kopie fuer Bereichsseiten einfuehren.
-
-Vor UI-Arbeit pruefen:
-
-- bestehende V5-Komponenten und Tokens.
-- `DESIGN.md` und relevante `docs/design/*`.
-- vorhandene Figma-, Screenshot- oder DOM-Kontexte, falls vorhanden.
-- ob die UI direkt an echte Funktionalitaet, Navigation oder klaren Prepared State gekoppelt ist.
-
-Produktmodell:
+Product model:
 
 ```text
-Dashboard = Steuerung
-Bereichsseiten = Kontext
-Detailseiten = Tiefe
-Archiv = Vergangenheit
+Dashboard = control
+Area pages = context
+Detail pages = depth
+Archive = history
 ```
 
-## Browser-Proof Gate
+## 2. Active Source Hierarchy
 
-Bei UI- oder Funktionsaenderungen muss Codex einen Browser-Proof liefern oder konkret begruenden, warum keiner noetig ist.
+Read active sources in this order:
 
-Browser-Proof bedeutet:
+1. `AGENTS.md` – repository work rules;
+2. `PRODUCT.md` – complete product contract;
+3. `DESIGN.md` – V5 design truth;
+4. `ROADMAP.md` – active delivery order and complete current work order in `Active Work Block`;
+5. `docs/product/capability-registry.md` – actual capability status;
+6. `ARCHITECTURE.md`, `DATA_MODEL.md`, `SECURITY.md`, `ACCESSIBILITY.md` – technical boundaries;
+7. `AI_WORKFLOW.md` and project Skills – delivery method;
+8. QA, closure and historical roadmap files – evidence/history only.
 
-- User Flow ausfuehren.
-- Button oder Form wirklich bedienen.
-- Persistenz oder Prepared-State-Verhalten bestaetigen.
-- Reload ausfuehren, wenn Daten geschrieben oder projiziert werden.
-- Ergebnis im konkreten Kontext pruefen.
-- Keine globale Textsuche als alleinigen Beweis verwenden.
+Legacy research, historical roadmaps and closure files must not override the active sources above.
 
-## Design-Hard-Limits
+## 3. Work Mode
 
-- Aktive Designrichtung: `Life OS – Linear Calm Dark Command Center`.
-- Figma-Basis: `Dashboard Overhaul V5 – Subtle Color Identity Polish`.
-- Keine Neon-Gradients.
-- Keine Glass-Lawine.
-- Keine Chart-Flut.
-- Keine generische AI-Slop-Optik.
-- Keine übertriebene Gamification.
-- P0 dominiert: Today Agenda und Daily Control.
+For substantial tasks:
 
-## Ausgabeformat
+1. inspect relevant project files;
+2. summarize the current implementation and gaps;
+3. output a short execution plan;
+4. implement a complete Vertical Slice;
+5. run focused validation;
+6. review the diff;
+7. update the Capability Registry;
+8. commit only when the Completion Gate passes.
+
+Prefer one coherent, visible capability over many small layer-only blocks.
+
+## 4. Vertical Slice Rule
+
+A complete capability normally includes:
+
+```text
+UI / interaction
+→ Server Action
+→ Zod validation
+→ server-side authentication
+→ user-scoped repository or RPC
+→ PostgreSQL / RLS
+→ route/read-model revalidation
+→ reload proof
+→ browser proof
+```
+
+If a layer is intentionally deferred, report the feature as partial. Never describe a data-only layer as feature complete.
+
+## 5. Existing Architecture
+
+Use the established feature-local structure:
+
+```text
+src/features/real-data/actions
+src/features/real-data/schemas
+src/features/real-data/domain
+src/features/real-data/supabase/mappers
+src/features/real-data/supabase/repositories
+src/features/<domain>
+src/features/profile-data
+```
+
+Rules:
+
+- Server Components are the default for reads.
+- Client Components are used only for genuine interaction.
+- Do not create a parallel `src/server` architecture.
+- Reuse existing actions, schemas and repositories before adding new ones.
+- Do not add a global state machine unless an explicit architecture decision approves it.
+- Do not add a library when the current stack can solve the problem safely.
+
+## 6. Backend and Data Rules
+
+Every user-specific write must:
+
+- authenticate server-side;
+- derive `userId` from authenticated context, never trust a client-supplied user id;
+- validate with Zod `safeParse` or the existing equivalent;
+- use a user-scoped repository or controlled RPC;
+- verify same-user ownership for linked and polymorphic targets;
+- respect soft archive and active-row semantics;
+- avoid Service Role in normal application flows;
+- revalidate every affected route/read model;
+- return visible success and error states when UI is involved.
+
+Every user-specific table must have RLS and appropriate grants. RLS is defense in depth, not a replacement for explicit user-scoped queries.
+
+No remote database actions without explicit scope and approval:
+
+```text
+no supabase link
+no supabase db push
+no remote reset
+no production mutation
+```
+
+Local migrations are allowed only when required by the `ROADMAP.md` Active Work Block.
+
+## 7. Cross-Domain Consistency
+
+Dashboard, Today, Calendar and area pages are projections. They do not own duplicate domain data.
+
+When a mutation affects another surface, update and prove the dependent projection.
+
+Examples:
+
+- task scheduling affects Calendar, Today and Dashboard;
+- meal completion affects Meals Today, Nutrition summary and reviews;
+- habit increments affect Dashboard and Habit analytics;
+- project/goal changes affect Portfolio and related queues;
+- mood/sleep/weight entries affect Dashboard and Health trends.
+
+Use atomic updates or transactional RPCs for coupled writes where partial success would create an invalid state.
+
+## 8. Design Rules
+
+`DESIGN.md` and Dashboard V5 are binding.
+
+- Preserve Life OS – Linear Calm Dark Command Center.
+- Do not introduce a new design direction.
+- Do not rebuild existing pages when a focused capability addition is sufficient.
+- Avoid generic SaaS card walls, neon gradients, decorative analytics and AI-slop patterns.
+- Keep semantic colors text-supported.
+- Dashboard remains a cockpit, not a data warehouse.
+- Prepared/Future states must be calm and honest.
+- No visual control may imply a write that does not exist.
+- Use existing tokens and components before adding new styles.
+
+Primary usage is a 4K second monitor. Standard desktop and mobile must remain usable.
+
+## 9. Manual / Demo / Empty / Auth-Blocked
+
+These modes must remain separate:
+
+- **Manual:** real authenticated Supabase data and real writes;
+- **Demo:** curated reference data, no real persistence claims;
+- **Empty:** no demo leakage and no fake metrics;
+- **Auth-blocked:** visible reason, no apparently functional writes.
+
+Do not use Demo fixtures as fallback for Manual reads.
+
+## 10. Testing and Validation
+
+Use the smallest meaningful validation for the change.
+
+### Always
+
+```bash
+git diff --check
+pnpm typecheck
+pnpm lint
+```
+
+### When build/runtime or an Epic closes
+
+```bash
+pnpm build
+```
+
+### When schema/backend changes
+
+```bash
+pnpm exec supabase db lint --local --level warning
+pnpm exec supabase db advisors --local --type security --level warn --fail-on none
+```
+
+### When UI or a write flow changes
+
+Run focused Playwright tests that:
+
+- interact with the real control;
+- use unique test data;
+- assert within a concrete region;
+- reload after writes;
+- prove the result remains;
+- avoid global text search as the sole proof.
+
+Do not run broad unrelated greps for every small change. Run the focused regression scope for the affected Epic and a broader smoke at Epic closure.
+
+## 11. Capability Registry
+
+After a material feature change, update:
+
+```text
+docs/product/capability-registry.md
+```
+
+Use only these statuses:
+
+- `CONNECTED`
+- `CONNECTED_GAP`
+- `UI_ONLY`
+- `MODEL_ONLY`
+- `NOT_STARTED`
+- `EXTERNAL_GATE`
+- `DECISION_REQUIRED`
+
+Do not claim an entire surface as complete when visible capabilities remain UI-only.
+
+## 12. Documentation Rule
+
+Normal feature work should not create multiple scope/closure documents.
+
+Create a dedicated document only when one of these applies:
+
+- a new data model or migration needs a decision record;
+- a security/privacy/external integration decision is required;
+- a complex model, security or integration decision needs a persistent decision record;
+- browser-proof details cannot be expressed by tests and the Capability Registry alone.
+
+Roadmap history and QA documents are evidence, not active prioritization sources.
+
+## 13. Protected Paths
+
+Do not read, modify, stage or print unless the user explicitly authorizes it:
+
+```text
+.env
+.env.local
+.env.*.local
+.local/**
+private/**
+backups/**
+exports/**
+docs/product/life-os-full-roadmap-checklist.md
+```
+
+Do not stage generated or sensitive artifacts:
+
+```text
+next-env.d.ts
+supabase/.temp/**
+supabase/.branches/**
+*.dump
+*.backup
+*.sql.gz
+```
+
+Do not delete or move files without explicit confirmation.
+
+## 14. External Tools and Providers
+
+- Playwright MCP: allowed later for local browser diagnosis under a scoped config.
+- Next DevTools MCP: allowed later for local runtime diagnosis.
+- Figma MCP: read/review-scoped unless write access is explicitly approved.
+- Supabase MCP: not required; CLI and migrations remain canonical.
+- DeepSeek or another runtime provider: server-only, confirmed tools, no direct database access.
+- Garmin, Weather, GitHub and other external APIs require their own decision/security scope.
+
+## 15. Completion Gate
+
+Before calling a block complete, confirm:
+
+- product outcome is met;
+- visible controls work or are honestly deferred;
+- backend/auth/validation/ownership are correct;
+- dependent read models are updated;
+- Manual/Demo/Empty/Auth-blocked are correct;
+- write flows survive reload;
+- focused browser proof is green;
+- required checks are green;
+- Capability Registry is updated;
+- the diff contains only the active scope;
+- a coherent commit was created.
+
+Output one of:
+
+```text
+PASS
+PASS_WITH_DEFERRED
+BLOCKED
+```
+
+`PASS_WITH_DEFERRED` is acceptable only when the delivered capability is complete and the deferred items are separate future capabilities.
+
+## 16. Standard Report
 
 ```text
 Erstellt:
 Geändert:
 Nicht geändert:
 Validierung:
-Offene Punkte:
+Capability Outcome:
+Backend/Data:
+UI/Projection:
+Browser Proof:
+Capability Registry:
+Deferred:
+Commit:
+Commit Hash:
+Nicht gelöst:
 Risiken:
 ```
-
-## Definition of Done
-
-- [ ] Aufgabe erfüllt.
-- [ ] Designsystem respektiert.
-- [ ] Mobile-Verhalten bedacht.
-- [ ] Accessibility nicht verschlechtert.
-- [ ] Security/Privacy nicht verletzt.
-- [ ] Keine unnötigen Duplikate erzeugt.
-- [ ] Keine alte Wahrheit aktiv gehalten.
