@@ -44,7 +44,7 @@
 | Mood current state | `CONNECTED` | latest local-day Mood entry plus Mental Health history | maintain timezone/reload proof |
 | Weight goal | `CONNECTED` | canonical weight entries and single personal goal with honest measured start-to-target progress | maintain |
 | Nutrient Balance | `CONNECTED_GAP` | completed meals + manual recipe estimates; unknown remains unknown | add reliable portion and target semantics |
-| Meals Today | `CONNECTED_GAP` | user-scoped meal records in Dashboard Read Model | schedule-source synchronization remains |
+| Meals Today | `CONNECTED_GAP` | user-scoped meals plus canonical linked Task scheduling and atomic completion synchronization | multiple-meal slot depth and portion semantics remain |
 | Latest Run | `UI_ONLY` | honest Unavailable state | implement manual running sessions first |
 | Muscle Map | `UI_ONLY` | honest Unavailable state | derive from strength plan/session exercises |
 | Today Agenda day view | `CONNECTED` | task scheduling fields | maintain task-based core |
@@ -104,9 +104,9 @@
 | Calendar filters | `UI_ONLY` | visual filters | implement area/type/project/goal/skill filtering |
 | Project/Goal queue | `UI_ONLY` | visual concepts | derive tasks and roadmap order from canonical relations |
 | Recurring/routine scheduling | `CONNECTED_GAP` | recurring templates/instances | add management and cross-domain routines |
-| Meal schedule source | `NOT_STARTED` | meals exist | add controlled link and completion sync |
+| Meal schedule source | `CONNECTED` | idempotent user-scoped source link to canonical Task scheduling; Calendar/Today/Dashboard projection and atomic bidirectional completion | maintain reload and ownership proofs |
 | Workout schedule source | `NOT_STARTED` | workout model absent | implement after H2 foundation |
-| Review schedule source | `NOT_STARTED` | review model now exists; Calendar shows review status context only | implement canonical schedule-source links in D2.1 |
+| Review schedule source | `CONNECTED` | Daily/Weekly Reviews link idempotently to canonical executable Tasks with atomic bidirectional completion | maintain reload and ownership proofs |
 | Free calendar events | `NOT_STARTED` | none | separate model decision |
 | Drag/drop/resize | `NOT_STARTED` | none | accessible comfort slice after source model |
 | Schedule history/audit | `NOT_STARTED` | none | later lifecycle/audit model |
@@ -160,7 +160,7 @@
 | Meal Planner week view | `CONNECTED_GAP` | meals read projection | multiple meals per slot and additional slots need depth |
 | Grocery Draft | `CONNECTED_GAP` | derived open meals + ingredients | no persistence/check-off/pantry |
 | Manual nutrition estimate | `CONNECTED_GAP` | optional recipe JSON estimate | provenance only; no real engine |
-| Meals Today | `CONNECTED_GAP` | meals | connect schedule/completion and Dashboard read model |
+| Meals Today | `CONNECTED_GAP` | meals plus canonical schedule-source and completion synchronization | multiple meals per slot and portion semantics remain |
 | Nutrient Balance | `CONNECTED_GAP` | completed meals + estimates | no fake totals; portion semantics missing |
 | Persistent grocery items | `NOT_STARTED` | none | model later |
 | Pantry/inventory | `NOT_STARTED` | none | model and receipt workflow later |

@@ -577,7 +577,7 @@ async function expectCalendarPlannerQueueTask(page: Page, title: string) {
       plannerQueue.getByText("Terminieren schreibt Task-Zeitfelder").first(),
     ).toBeVisible();
     await expect(
-      plannerQueue.getByText("Open Loops und Reviews").first(),
+      plannerQueue.getByRole("heading", { name: "Calendar Planner Queue" }),
     ).toBeVisible();
 
     if (await queueTask.isVisible()) return plannerQueue;
@@ -3522,6 +3522,187 @@ test.describe("D1.2 Daily and Weekly Review", () => {
   });
 });
 
+test.describe("D2.1 Schedule Source Links", () => {
+  test("plans a Meal idempotently across Calendar Today Dashboard and completes it atomically", async ({ page }) => {
+    test.setTimeout(120_000);
+    test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires local authenticated Supabase.");
+    const recipeTitle = uniqueTitle("D2.1 Recipe");
+    const mealTitle = uniqueTitle("D2.1 Meal");
+    const mealDate = currentIsoWeekDate(6);
+
+    await setProfile(page, "manual");
+    await applySupabaseAuthState(page);
+    await page.goto("/nutrition/recipes");
+    const recipeForm = page.getByRole("heading", { name: "Recipe erstellen" }).locator("xpath=ancestor::section[1]");
+    await recipeForm.getByLabel("Title").fill(recipeTitle);
+    await recipeForm.getByLabel("Tags").fill("lunch, proof");
+    await recipeForm.getByRole("button", { name: "Recipe erstellen" }).click();
+    await expectRecipeVisibleInRecipeResults(page, recipeTitle);
+
+    await page.goto("/nutrition");
+    const mealForm = page.getByRole("heading", { name: "Meal erstellen" }).locator("xpath=ancestor::section[1]");
+    await mealForm.getByLabel("Title").fill(mealTitle);
+    await mealForm.getByLabel("Date").fill(mealDate);
+    await mealForm.getByLabel("Type").selectOption("dinner");
+    await mealForm.getByLabel("Planned").fill(`${mealDate}T19:30`);
+    await mealForm.getByLabel("Recipe").selectOption({ label: recipeTitle });
+    await mealForm.getByRole("button", { exact: true, name: "Meal erstellen" }).click();
+    await expect(page.locator("#nutrition-page").getByText(mealTitle).first()).toBeVisible();
+
+    await page.goto("/nutrition/meal-planner");
+    const slot = page.getByRole("button").filter({ hasText: recipeTitle }).first();
+    await slot.focus();
+    await slot.press("Enter");
+    const scheduleForm = page.getByRole("form", { name: `${mealTitle} als Zeitblock planen` });
+    await scheduleForm.getByLabel("Blockzeit").fill("19:30");
+    await scheduleForm.getByRole("button", { name: "Im Calendar planen" }).click();
+    await page.waitForLoadState("networkidle");
+    await scheduleForm.getByRole("button", { name: "Im Calendar planen" }).click();
+    await page.waitForLoadState("networkidle");
+
+    for (const route of ["/calendar", "/today", "/dashboard"]) {
+      await page.goto(route);
+      const projection = route === "/calendar"
+        ? page.locator('[data-calendar-section="page"]')
+        : route === "/today"
+          ? page.locator('[data-today-section="activity-stream"]')
+          : page.locator('section[aria-labelledby="today-agenda-title"]');
+      await expect(projection.getByText(mealTitle).filter({ visible: true }).first()).toBeVisible();
+      await page.reload();
+      await expect(projection.getByText(mealTitle).filter({ visible: true }).first()).toBeVisible();
+    }
+
+    await page.goto("/calendar");
+    await selectCalendarTimedBlock(page, mealTitle);
+    const inspector = page.locator('aside[aria-labelledby="calendar-right-panel-heading"]');
+    await expect(inspector).toContainText("Meal / Nutrition");
+    await expect(inspector.getByRole("link", { name: "Open source" })).toHaveAttribute("href", "/nutrition/meal-planner");
+    const completionForm = inspector.getByRole("form", { name: `${mealTitle} abschließen` });
+    const taskIdInput = completionForm.locator('input[name="taskId"]');
+    const linkedTaskId = await taskIdInput.inputValue();
+    await taskIdInput.evaluate((input) => { (input as HTMLInputElement).value = "00000000-0000-4000-8000-000000000001"; });
+    await completionForm.getByRole("button", { name: "Mark done" }).click();
+    await expect(inspector.getByRole("alert").filter({ hasText: "Task konnte" })).toBeVisible();
+    await taskIdInput.evaluate((input, value) => { (input as HTMLInputElement).value = value; }, linkedTaskId);
+    await completionForm.getByRole("button", { name: "Mark done" }).click();
+    await expect(inspector.getByRole("status")).toContainText("abgeschlossen");
+    await page.waitForLoadState("networkidle");
+    await page.goto("/nutrition");
+    await expect(page.getByRole("region", { name: "Recent Meals" }).getByText(mealTitle)).toBeVisible();
+  });
+
+  for (const kind of ["daily", "weekly"] as const) {
+    test(`plans and completes the ${kind} Review through its linked Calendar block`, async ({ page }) => {
+      test.setTimeout(90_000);
+      test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires local authenticated Supabase.");
+      const title = kind === "daily" ? "Daily Review" : "Weekly Review";
+      await setProfile(page, "manual");
+      await applySupabaseAuthState(page);
+      await page.goto(`/review/${kind}`);
+      const reviewForm = page.locator(`[data-review-form="${kind}"]`);
+      await reviewForm.getByRole("button", { name: "Save draft" }).click();
+      await page.waitForLoadState("networkidle");
+      const scheduleForm = page.getByRole("form", { name: `${title} als Zeitblock planen` });
+      await scheduleForm.getByLabel("Review-Blockdatum").fill(currentLocalDate());
+      await scheduleForm.getByLabel("Review-Blockzeit").fill(kind === "daily" ? "20:30" : "18:00");
+      await scheduleForm.getByRole("button", { name: "Im Calendar planen" }).click();
+      await page.waitForLoadState("networkidle");
+      await page.goto("/calendar");
+      await selectCalendarTimedBlock(page, title);
+      const inspector = page.locator('aside[aria-labelledby="calendar-right-panel-heading"]');
+      await expect(inspector).toContainText("Review / Daily loop");
+      await expect(inspector.getByRole("link", { name: "Open source" })).toHaveAttribute("href", `/review/${kind}`);
+      await inspector.getByRole("button", { name: "Mark done" }).click();
+      await page.waitForLoadState("networkidle");
+      await page.goto(`/review/${kind}`);
+      await expect(page.locator('[data-review-section="status"]')).toContainText("completed");
+      await page.reload();
+      await expect(page.locator('[data-review-section="status"]')).toContainText("completed");
+    });
+  }
+
+  test("completes a linked Meal from Nutrition and keeps the Calendar task done idempotently", async ({ page }) => {
+    test.setTimeout(120_000);
+    test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires local authenticated Supabase.");
+    const recipeTitle = uniqueTitle("D2.1 Nutrition Completion Recipe");
+    const mealTitle = uniqueTitle("D2.1 Nutrition Completion Meal");
+    const mealDate = currentIsoWeekDate(6);
+    await setProfile(page, "manual");
+    await applySupabaseAuthState(page);
+    await page.goto("/nutrition/recipes");
+    const recipeForm = page.getByRole("heading", { name: "Recipe erstellen" }).locator("xpath=ancestor::section[1]");
+    await recipeForm.getByLabel("Title").fill(recipeTitle);
+    await recipeForm.getByLabel("Tags").fill("lunch, proof");
+    await recipeForm.getByRole("button", { name: "Recipe erstellen" }).click();
+    await expectRecipeVisibleInRecipeResults(page, recipeTitle);
+    await page.goto("/nutrition");
+    const mealForm = page.getByRole("heading", { name: "Meal erstellen" }).locator("xpath=ancestor::section[1]");
+    await mealForm.getByLabel("Title").fill(mealTitle);
+    await mealForm.getByLabel("Date").fill(mealDate);
+    await mealForm.getByLabel("Type").selectOption("breakfast");
+    await mealForm.getByLabel("Planned").fill(`${mealDate}T08:15`);
+    await mealForm.getByLabel("Recipe").selectOption({ label: recipeTitle });
+    await mealForm.getByRole("button", { exact: true, name: "Meal erstellen" }).click();
+    await expect(page.locator("#nutrition-page").getByText(mealTitle).first()).toBeVisible();
+    await page.goto("/nutrition/meal-planner");
+    const slot = page.getByRole("button").filter({ hasText: recipeTitle }).first();
+    await slot.focus();
+    await slot.press("Enter");
+    const scheduleForm = page.getByRole("form", { name: `${mealTitle} als Zeitblock planen` });
+    await scheduleForm.getByLabel("Blockzeit").fill("08:15");
+    await scheduleForm.getByRole("button", { name: "Im Calendar planen" }).click();
+    await page.waitForLoadState("networkidle");
+    await page.goto("/nutrition");
+    const mealArticle = page.locator("article").filter({ hasText: mealTitle }).first();
+    if ((await mealArticle.count()) > 0) {
+      await mealArticle.getByRole("button", { name: "Gegessen" }).click();
+    } else {
+      const nextMeal = page.getByRole("region", { name: "Next Meal" });
+      await expect(nextMeal.getByText(mealTitle)).toBeVisible();
+      await nextMeal.getByRole("button", { name: "Gegessen" }).first().click();
+    }
+    await page.waitForLoadState("networkidle");
+    await page.reload();
+    await expect(page.getByRole("region", { name: "Recent Meals" }).getByText(mealTitle)).toBeVisible();
+    await page.goto("/calendar");
+    await selectCalendarTimedBlock(page, mealTitle);
+    const inspector = page.locator('aside[aria-labelledby="calendar-right-panel-heading"]');
+    await expect(inspector).toContainText("done");
+    await expect(inspector.getByRole("button", { name: "Mark done" })).toBeDisabled();
+    await page.reload();
+    await selectCalendarTimedBlock(page, mealTitle);
+    await expect(page.locator('aside[aria-labelledby="calendar-right-panel-heading"]').getByRole("button", { name: "Mark done" })).toBeDisabled();
+  });
+
+  test("completes a linked Review from its Review page and keeps the Calendar task done idempotently", async ({ page }) => {
+    test.setTimeout(90_000);
+    test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires local authenticated Supabase.");
+    await setProfile(page, "manual");
+    await applySupabaseAuthState(page);
+    await page.goto("/review/daily");
+    const reviewForm = page.locator('[data-review-form="daily"]');
+    await reviewForm.getByRole("button", { name: "Save draft" }).click();
+    await page.waitForLoadState("networkidle");
+    const scheduleForm = page.getByRole("form", { name: "Daily Review als Zeitblock planen" });
+    await scheduleForm.getByLabel("Review-Blockdatum").fill(currentLocalDate());
+    await scheduleForm.getByLabel("Review-Blockzeit").fill("21:15");
+    await scheduleForm.getByRole("button", { name: "Im Calendar planen" }).click();
+    await page.waitForLoadState("networkidle");
+    await page.goto("/review/daily");
+    await page.locator('[data-review-form="daily"]').getByRole("button", { name: "Complete Daily Review" }).click();
+    await page.waitForLoadState("networkidle");
+    await expect(page).toHaveURL(/\/review\/daily\?review=saved/);
+    await page.reload();
+    await expect(page.locator('[data-review-section="status"]')).toContainText("completed");
+    await page.goto("/calendar");
+    await selectCalendarTimedBlock(page, "Daily Review");
+    const inspector = page.locator('aside[aria-labelledby="calendar-right-panel-heading"]');
+    await expect(inspector).toContainText("done");
+    await expect(inspector.getByRole("button", { name: "Mark done" })).toBeDisabled();
+  });
+
+});
+
 test.describe("Inbox content states", () => {
   test("keeps demo inbox filled with the V5 reference queue", async ({
     page,
@@ -5342,6 +5523,7 @@ test.describe("Today content states", () => {
 });
 
 test.describe("Calendar content states", () => {
+  test.use({ viewport: { height: 1440, width: 2560 } });
   test("keeps demo calendar as the filled planning reference", async ({
     page,
   }) => {

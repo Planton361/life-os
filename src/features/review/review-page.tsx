@@ -9,6 +9,7 @@ import {
   saveDailyReviewFormAction,
   saveWeeklyReviewFormAction,
 } from "@/features/real-data/actions/review.actions";
+import { scheduleSourceFormAction } from "@/features/real-data/actions/schedule-source.actions";
 import type { ReviewPageViewModel } from "./review-view-model";
 
 const fieldClass =
@@ -80,6 +81,17 @@ export function ReviewPage({
         >
           {viewModel.blockedReason}
         </div>
+      ) : null}
+
+      {review && review.status !== "completed" && viewModel.canWrite ? (
+        <form action={scheduleSourceFormAction} aria-label={`${title} als Zeitblock planen`} className="mb-4 grid gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--surface-1)] p-3 sm:grid-cols-[1fr_1fr_100px_auto]">
+          <input name="sourceType" type="hidden" value="review" />
+          <input name="sourceId" type="hidden" value={review.id} />
+          <input className={fieldClass} name="plannedDate" type="date" defaultValue={daily ? review.periodStart : review.periodEnd} aria-label="Review-Blockdatum" />
+          <input className={fieldClass} name="scheduledTime" type="time" defaultValue={daily ? "20:30" : "18:00"} aria-label="Review-Blockzeit" />
+          <select className={fieldClass} name="durationMinutes" defaultValue={daily ? "30" : "60"} aria-label="Review-Blockdauer"><option value="30">30 min</option><option value="45">45 min</option><option value="60">60 min</option><option value="90">90 min</option></select>
+          <button className="min-h-11 rounded-[10px] border border-[rgba(95,200,215,.34)] bg-[rgba(95,200,215,.12)] px-4 text-sm font-semibold text-[var(--text-primary)]" type="submit">Im Calendar planen</button>
+        </form>
       ) : null}
 
       <form action={action} data-review-form={viewModel.kind}>

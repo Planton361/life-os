@@ -9,4 +9,5 @@ export * from "./recurring-task-template.schema";
 export * from "./nutrition.schema";
 export * from "./skill.schema";
 export * from "./review.schema";
+export * from "./schedule-source.schema";
 export * from "./health.schema";

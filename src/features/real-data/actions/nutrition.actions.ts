@@ -13,7 +13,7 @@ import {
   recipeUpdateInputSchema,
   type RecipeIngredient as RealDataRecipeIngredient,
 } from "@/features/real-data";
-import { createSupabaseNutritionRepository } from "@/features/real-data/supabase";
+import { createSupabaseNutritionRepository, createSupabaseScheduleSourceRepository } from "@/features/real-data/supabase";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
 import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -661,11 +661,13 @@ export async function completeMealAction(
   }
 
   const repository = createSupabaseNutritionRepository(context.auth.client);
-  const result = await repository.completeMeal({
+  const completedAt = parsed.data.completedAt ?? new Date().toISOString();
+  const linkedResult = await createSupabaseScheduleSourceRepository(context.auth.client).completeLinkedMeal(parsed.data.mealId, completedAt);
+  const result = linkedResult.error || !linkedResult.data ? await repository.completeMeal({
     ...parsed.data,
     profileId: context.auth.user.id,
     userId: context.auth.user.id,
-  });
+  }) : { data: { id: linkedResult.data.id }, ok: true as const };
 
   if (!result.ok) {
     return {

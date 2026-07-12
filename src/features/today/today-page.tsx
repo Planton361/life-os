@@ -579,6 +579,7 @@ const linkedEntityLabels: Record<TodayLinkedEntityType, string> = {
   note: "linked note",
   resource: "linked resource",
   review: "linked review",
+  meal: "linked meal",
 };
 
 function linkedEntityLabel(entityType?: TodayLinkedEntityType) {

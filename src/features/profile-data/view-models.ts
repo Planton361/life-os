@@ -73,6 +73,7 @@ import {
   createSupabaseNutritionRepository,
   createSupabaseProjectRepository,
   createSupabaseReviewRepository,
+  createSupabaseScheduleSourceRepository,
   createSupabaseResourceRepository,
   createSupabaseSkillRepository,
   createSupabaseTaskRepository,
@@ -261,9 +262,9 @@ function taskToAgendaEvent(
       endTime ? `-${endTime}` : ""
     } · ${taskDurationLabel(task)}`,
     note: task.description || task.nextStep,
-    areaLabel: areaLabel(task.areaId),
-    type: "task",
-    typeLabel: "Task",
+    areaLabel: task.scheduleSource?.type === "meal" ? "Nutrition" : areaLabel(task.areaId),
+    type: task.scheduleSource?.type ?? "task",
+    typeLabel: task.scheduleSource?.type === "meal" ? "Meal" : task.scheduleSource?.type === "review" ? "Review" : "Task",
     status: taskAgendaStatus(task),
     statusLabel: taskStatusLabel(task),
     relevanceLabel: priority,
@@ -277,7 +278,7 @@ function taskToAgendaEvent(
     active: task.status === "active",
     strong: priority === "P0" || priority === "P1",
     tall: index === 0 && (task.durationMinutes ?? 30) >= 60,
-    href: `/tasks/${task.id}`,
+    href: task.scheduleSource?.type === "meal" ? "/nutrition/meal-planner" : task.scheduleSource?.type === "review" ? `/review/${task.title.startsWith("Weekly") ? "weekly" : "daily"}` : `/tasks/${task.id}`,
   };
 }
 
@@ -388,6 +389,7 @@ type DashboardReadSources = {
   nutrition: DashboardNutritionTotals;
   weeklyReview: ReviewRecord | null;
   health: HealthSnapshot | null;
+  scheduleLinks: readonly { source_id: string; source_type: "meal" | "review"; task_id: string }[];
 };
 
 const emptyDashboardReadSources: DashboardReadSources = {
@@ -405,6 +407,7 @@ const emptyDashboardReadSources: DashboardReadSources = {
   },
   weeklyReview: null,
   health: null,
+  scheduleLinks: [],
 };
 
 const dashboardCapacity = {
@@ -2649,6 +2652,7 @@ async function getManualDashboardReadData(): Promise<{
     dailyReviewResult,
     weeklyReviewResult,
     healthSnapshot,
+    scheduleLinkResult,
   ] = await Promise.all([
     getManualTasksFromSupabase(auth.client, userId),
     createSupabaseInboxRepository(auth.client).getInboxItemsByUser(
@@ -2672,7 +2676,14 @@ async function getManualDashboardReadData(): Promise<{
     ),
     reviewRepository.getReviewByPeriod(userId, userId, "weekly", week.start),
     healthRepository.getSnapshot(userId, userId),
+    createSupabaseScheduleSourceRepository(auth.client).getLinks(userId),
   ]);
+  const scheduleLinks = scheduleLinkResult.error ? [] : (scheduleLinkResult.data ?? []);
+  const scheduleLinkByTask = new Map(scheduleLinks.map((link) => [link.task_id, link]));
+  const linkedTasks = taskResult.tasks.map((task) => {
+    const link = scheduleLinkByTask.get(task.id);
+    return link ? { ...task, scheduleSource: { id: link.source_id, type: link.source_type } } : task;
+  });
   const recipes = recipeResult.ok ? recipeResult.data : [];
   const recipeById = new Map(recipes.map((recipe) => [recipe.id, recipe]));
   const realMeals = mealResult.ok ? mealResult.data : [];
@@ -2712,7 +2723,7 @@ async function getManualDashboardReadData(): Promise<{
         ? inboxResult.data.map(realInboxToManualInboxItem)
         : [],
       projects: targets.projects,
-      tasks: taskResult.tasks,
+      tasks: linkedTasks,
     },
     sources: {
       authAvailable: true,
@@ -2723,6 +2734,7 @@ async function getManualDashboardReadData(): Promise<{
       skills: skills.skills,
       weeklyReview: weeklyReviewResult.ok ? weeklyReviewResult.data : null,
       health: healthSnapshot,
+      scheduleLinks,
     },
   };
 }
@@ -3020,15 +3032,15 @@ function taskToTodayEvent(task: LifeTask): TodayActivityEventViewModel {
           ? "current"
           : "planned",
     statusLabel: taskStatusLabel(task).toLowerCase(),
-    eventType: "task",
-    eventTypeLabel: "Task",
+    eventType: task.scheduleSource?.type ?? "task",
+    eventTypeLabel: task.scheduleSource?.type === "meal" ? "Meal" : task.scheduleSource?.type === "review" ? "Review" : "Task",
     title: task.title,
     description: task.description,
-    sourceLabel: "Tasks",
-    areaLabel: areaLabel(task.areaId),
-    linkedEntityType: "task",
-    linkedEntityId: task.id,
-    sourceHref: `/tasks/${task.id}`,
+    sourceLabel: task.scheduleSource?.type === "meal" ? "Nutrition" : task.scheduleSource?.type === "review" ? "Reviews" : "Tasks",
+    areaLabel: task.scheduleSource?.type === "meal" ? "Nutrition" : areaLabel(task.areaId),
+    linkedEntityType: task.scheduleSource?.type ?? "task",
+    linkedEntityId: task.scheduleSource?.id ?? task.id,
+    sourceHref: task.scheduleSource?.type === "meal" ? "/nutrition/meal-planner" : task.scheduleSource?.type === "review" ? `/review/${task.title.startsWith("Weekly") ? "weekly" : "daily"}` : `/tasks/${task.id}`,
     sourceActionLabel: "Open source",
     accent: areaAccent(task.areaId),
     isGenerated: task.isGenerated,
@@ -3549,7 +3561,7 @@ function taskToCalendarBlock(
     dayId: dayIdFromDate(task.date),
     date: task.date,
     title: task.title,
-    type: "task_block",
+    type: task.scheduleSource?.type === "meal" ? "meal" : task.scheduleSource?.type === "review" ? "review" : "task_block",
     status:
       task.status === "done"
         ? "done"
@@ -3558,12 +3570,12 @@ function taskToCalendarBlock(
           : task.status === "waiting"
             ? "needs_decision"
             : "planned",
-    source: "task",
-    area: areaLabel(task.areaId),
+    source: task.scheduleSource?.type === "meal" ? "meal_planner" : task.scheduleSource?.type ?? "task",
+    area: task.scheduleSource?.type === "meal" ? "Nutrition" : task.scheduleSource?.type === "review" ? "Review" : areaLabel(task.areaId),
     sourceEntity: {
-      type: "task",
-      label: `Task / ${areaLabel(task.areaId)}`,
-      href: `/tasks/${task.id}`,
+      type: task.scheduleSource?.type ?? "task",
+      label: task.scheduleSource?.type === "meal" ? "Meal / Nutrition" : task.scheduleSource?.type === "review" ? "Review / Daily loop" : `Task / ${areaLabel(task.areaId)}`,
+      href: task.scheduleSource?.type === "meal" ? "/nutrition/meal-planner" : task.scheduleSource?.type === "review" ? `/review/${task.title.startsWith("Weekly") ? "weekly" : "daily"}` : `/tasks/${task.id}`,
     },
     accent: areaAccent(task.areaId),
     meta: task.priority,
@@ -3703,7 +3715,7 @@ function buildProfileCalendarViewModel(
     projectToAllDayBlock(project, firstDayId),
   );
   const scheduledTaskBlocks = timedBlocks.filter(
-    (block) => block.source === "task",
+    (block) => Boolean(block.taskId),
   );
   const planningQueueTasks = profile.tasks
     .filter(

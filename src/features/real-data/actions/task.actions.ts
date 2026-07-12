@@ -12,6 +12,7 @@ import {
   unscheduleTaskInputSchema,
 } from "@/features/real-data";
 import { createSupabaseTaskRepository } from "@/features/real-data/supabase";
+import { createSupabaseScheduleSourceRepository } from "@/features/real-data/supabase";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
 import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -407,8 +408,10 @@ export async function completeTaskAction(
     };
   }
 
-  const repository = createSupabaseTaskRepository(context.auth.client);
-  const result = await repository.completeTask(parsed.data);
+  const linkedResult = await createSupabaseScheduleSourceRepository(context.auth.client).completeLinkedTask(parsed.data.taskId, parsed.data.completedAt ?? new Date().toISOString());
+  const result = linkedResult.error || !linkedResult.data
+    ? await createSupabaseTaskRepository(context.auth.client).completeTask(parsed.data)
+    : { data: linkedResult.data, ok: true as const };
 
   if (!result.ok) {
     return {
@@ -592,6 +595,13 @@ export async function rescheduleTaskAction(
 
 export async function completeTaskFormAction(formData: FormData): Promise<void> {
   await completeTaskAction(formData);
+}
+
+export async function completeTaskFormStateAction(
+  _previousState: TaskLifecycleActionResult,
+  formData: FormData,
+): Promise<TaskLifecycleActionResult> {
+  return completeTaskAction(formData);
 }
 
 export async function reopenTaskFormAction(formData: FormData): Promise<void> {

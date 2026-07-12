@@ -6,6 +6,7 @@ import {
   type NutritionActionResult,
 } from "@/features/real-data/actions/nutrition.actions";
 import { inputClass, primaryButtonClass } from "./meal-planner-primitives";
+import { scheduleSourceFormAction } from "@/features/real-data/actions/schedule-source.actions";
 import type { PlannedMeal, Recipe } from "./meal-planner-types";
 import { mealTypeLabels } from "./meal-planner-utils";
 
@@ -69,6 +70,16 @@ export function ManualMealEditForm({ meal, recipes }: Readonly<{
         <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)] sm:col-span-2">Notizen<textarea className={`${inputClass} min-h-20 resize-y py-2`} defaultValue={meal.notes ?? ""} name="notes" /></label>
         <div className="sm:col-span-2"><button className={primaryButtonClass} disabled={isPending} type="submit">{isPending ? "Meal wird gespeichert …" : "Meal speichern"}</button></div>
       </form>
+      {!meal.completedAt ? (
+        <form action={scheduleSourceFormAction} aria-label={`${meal.title} als Zeitblock planen`} className="mt-3 grid gap-2 border-t border-[var(--border-subtle)] pt-3 sm:grid-cols-[1fr_1fr_100px_auto]">
+          <input name="sourceType" type="hidden" value="meal" />
+          <input name="sourceId" type="hidden" value={meal.id} />
+          <input name="plannedDate" type="date" defaultValue={meal.date} className={inputClass} aria-label="Blockdatum" />
+          <input name="scheduledTime" type="time" defaultValue={meal.plannedAt ? localDateTimeValue(meal.plannedAt).slice(11, 16) : "12:00"} className={inputClass} aria-label="Blockzeit" />
+          <select name="durationMinutes" defaultValue="30" className={inputClass} aria-label="Blockdauer"><option value="30">30 min</option><option value="45">45 min</option><option value="60">60 min</option><option value="90">90 min</option></select>
+          <button className={primaryButtonClass} type="submit">Im Calendar planen</button>
+        </form>
+      ) : null}
     </section>
   );
 }

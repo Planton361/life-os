@@ -112,6 +112,7 @@ export type LifeTask = {
   evidence: readonly EntityEvidence[];
   calendarBlockIds?: readonly string[];
   inboxItemIds?: readonly string[];
+  scheduleSource?: { id: string; type: "meal" | "review" };
 };
 
 export type LifeProject = {

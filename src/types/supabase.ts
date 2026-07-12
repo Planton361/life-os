@@ -849,6 +849,44 @@ export type Database = {
           },
         ]
       }
+      schedule_source_links: {
+        Row: {
+          created_at: string
+          id: string
+          source_id: string
+          source_type: string
+          task_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          source_id: string
+          source_type: string
+          task_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          source_id?: string
+          source_type?: string
+          task_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_source_links_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       skill_evidence: {
         Row: {
           created_at: string
@@ -1192,6 +1230,61 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      complete_linked_meal: {
+        Args: { p_completed_at: string; p_meal_id: string }
+        Returns: {
+          completed_at: string | null
+          created_at: string
+          date: string
+          id: string
+          meal_type: string
+          notes: string | null
+          planned_at: string | null
+          recipe_id: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "meals"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      complete_linked_task: {
+        Args: { p_completed_at: string; p_task_id: string }
+        Returns: {
+          archived_at: string | null
+          area_id: string | null
+          carried_from_daily_log_id: string | null
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          due_at: string | null
+          duration_minutes: number | null
+          energy: Database["public"]["Enums"]["task_energy"] | null
+          generated_from_template_id: string | null
+          goal_id: string | null
+          id: string
+          instance_date: string | null
+          planned_date: string | null
+          priority: Database["public"]["Enums"]["task_priority"]
+          project_id: string | null
+          scheduled_start_at: string | null
+          source_inbox_item_id: string | null
+          status: Database["public"]["Enums"]["task_status"]
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tasks"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       create_resource_from_inbox: {
         Args: {
           p_area_id?: string
@@ -1298,6 +1391,45 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "review_records"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      schedule_linked_source: {
+        Args: {
+          p_duration_minutes: number
+          p_planned_date: string
+          p_scheduled_start_at: string
+          p_source_id: string
+          p_source_type: string
+        }
+        Returns: {
+          archived_at: string | null
+          area_id: string | null
+          carried_from_daily_log_id: string | null
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          due_at: string | null
+          duration_minutes: number | null
+          energy: Database["public"]["Enums"]["task_energy"] | null
+          generated_from_template_id: string | null
+          goal_id: string | null
+          id: string
+          instance_date: string | null
+          planned_date: string | null
+          priority: Database["public"]["Enums"]["task_priority"]
+          project_id: string | null
+          scheduled_start_at: string | null
+          source_inbox_item_id: string | null
+          status: Database["public"]["Enums"]["task_status"]
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tasks"
           isOneToOne: true
           isSetofReturn: false
         }

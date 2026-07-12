@@ -2,10 +2,10 @@
 
 import type { ContentStateMeta } from "@/features/content-state";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import { Pill, accentStyle } from "@/components/layout/route-page-primitives";
 import {
-  completeTaskFormAction,
+  completeTaskFormStateAction,
   rescheduleTaskFormAction,
   scheduleTaskForTodayFormAction,
   unscheduleTaskFormAction,
@@ -42,6 +42,11 @@ type SchedulingCandidate = {
   plannedDate: string;
   scheduledTime: string;
 };
+
+const initialCompletionState = {
+  message: "",
+  status: "blocked",
+} as const;
 
 const inputClass =
   "mt-1 min-h-8 w-full rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.76)] px-2.5 text-[12px] text-[var(--text-primary)] outline-none focus:border-[var(--focus-ring)]";
@@ -304,7 +309,6 @@ function isManualPersistedTaskBlock(
     profileId === "manual" &&
     block &&
     isTimedBlock(block) &&
-    block.source === "task" &&
     block.taskId,
   );
 }
@@ -404,8 +408,8 @@ function SelectedContext({
           <div>
             <dt className="inline text-[var(--text-muted)]">State: </dt>
             <dd className="inline">
-              {isTimedBlock(block) && block.source === "task" && block.taskId
-                ? "Task projection. Manual profile controls write task time fields."
+              {isTimedBlock(block) && block.taskId
+                ? "Linked executable projection. Manual profile controls write canonical task time fields."
                 : "Prepared/local projection. Calendar does not own this record yet."}
             </dd>
           </div>
@@ -503,12 +507,16 @@ function TimeSettings({
     timeToMinutes(endTime) - timeToMinutes(startTime),
   );
   const timedTaskBlock =
-    block && isTimedBlock(block) && block.source === "task" && block.taskId
+    block && isTimedBlock(block) && block.taskId
       ? block
       : null;
   const taskId = timedTaskBlock?.taskId ?? null;
   const isPersistedTaskBlock = Boolean(
     profileId === "manual" && taskId && timedTaskBlock,
+  );
+  const [completionState, completionAction, completionPending] = useActionState(
+    completeTaskFormStateAction,
+    initialCompletionState,
   );
   const safeDuration =
     duration > 0
@@ -654,16 +662,24 @@ function TimeSettings({
                 Unschedule
               </button>
             </form>
-            <form action={completeTaskFormAction}>
+            <form action={completionAction} aria-label={`${block?.title ?? "Task"} abschließen`}>
               <input name="taskId" type="hidden" value={taskId ?? ""} />
               <button
                 className="min-h-8 w-full rounded-full border border-[rgba(66,184,131,.32)] bg-[rgba(66,184,131,.12)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[rgba(66,184,131,.48)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-50"
-                disabled={block?.status === "done"}
+                disabled={block?.status === "done" || completionPending}
                 type="submit"
               >
-                Mark done
+                {completionPending ? "Completing …" : "Mark done"}
               </button>
             </form>
+            {completionState.message ? (
+              <p
+                className="sm:col-span-2 rounded-[8px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-2 py-1 text-[10px] leading-4 text-[var(--text-secondary)]"
+                role={completionState.status === "success" ? "status" : "alert"}
+              >
+                {completionState.message}
+              </p>
+            ) : null}
           </>
         ) : (
           <>
