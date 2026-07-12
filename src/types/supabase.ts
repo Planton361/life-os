@@ -319,6 +319,53 @@ export type Database = {
           },
         ]
       }
+      mood_entries: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          id: string
+          local_date: string
+          mood: string
+          profile_id: string
+          recorded_at: string
+          timezone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          id?: string
+          local_date: string
+          mood: string
+          profile_id: string
+          recorded_at?: string
+          timezone?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          id?: string
+          local_date?: string
+          mood?: string
+          profile_id?: string
+          recorded_at?: string
+          timezone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mood_entries_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -902,6 +949,50 @@ export type Database = {
           },
         ]
       }
+      sleep_entries: {
+        Row: {
+          created_at: string
+          duration_minutes: number
+          id: string
+          note: string | null
+          profile_id: string
+          quality: number | null
+          sleep_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_minutes: number
+          id?: string
+          note?: string | null
+          profile_id: string
+          quality?: number | null
+          sleep_date: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          note?: string | null
+          profile_id?: string
+          quality?: number | null
+          sleep_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sleep_entries_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           archived_at: string | null
@@ -1016,6 +1107,82 @@ export type Database = {
             columns: ["source_inbox_item_id"]
             isOneToOne: false
             referencedRelation: "inbox_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weight_entries: {
+        Row: {
+          created_at: string
+          id: string
+          measured_on: string
+          profile_id: string
+          updated_at: string
+          user_id: string
+          weight_kg: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          measured_on: string
+          profile_id: string
+          updated_at?: string
+          user_id: string
+          weight_kg: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          measured_on?: string
+          profile_id?: string
+          updated_at?: string
+          user_id?: string
+          weight_kg?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weight_entries_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weight_goals: {
+        Row: {
+          created_at: string
+          id: string
+          profile_id: string
+          target_date: string | null
+          target_weight_kg: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          profile_id: string
+          target_date?: string | null
+          target_weight_kg: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          profile_id?: string
+          target_date?: string | null
+          target_weight_kg?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weight_goals_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

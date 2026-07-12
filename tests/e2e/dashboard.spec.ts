@@ -204,10 +204,10 @@ test.describe("Dashboard D1.1 read-model truth", () => {
     ).toHaveAttribute("href", "/inbox");
     await expect(
       commandStats.getByRole("link", { name: /Review Status:/ }),
-    ).toContainText("Prepared");
+    ).toContainText("Not started");
     await expect(
       commandStats.getByRole("link", { name: /Sleep:/ }),
-    ).toContainText("Unavailable");
+    ).toContainText("Unknown");
 
     const dashboard = page.getByRole("region", { name: "Dashboard-Zonen" });
     await expect(dashboard.getByText("Habit tracking prepared")).toBeVisible();
@@ -215,7 +215,7 @@ test.describe("Dashboard D1.1 read-model truth", () => {
       dashboard.getByText(/Prepared · challenge source/),
     ).toBeVisible();
     await expect(
-      page.getByText(/Prepared · mood entries and history/),
+      page.getByText(/Mood writes are unavailable in this profile/),
     ).toBeVisible();
     await expect(
       page.getByRole("button", { name: /Set · Calm|Calm$/ }),

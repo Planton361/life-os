@@ -11,3 +11,4 @@ export * from "./recurring-task-template";
 export * from "./nutrition";
 export * from "./skill";
 export * from "./review";
+export * from "./health";

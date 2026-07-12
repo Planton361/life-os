@@ -35,14 +35,14 @@
 | Inbox summary | `CONNECTED` | user-scoped inbox items in Dashboard Read Model | maintain |
 | Nutrition summary | `CONNECTED_GAP` | today's meals and completed-meal recipe estimates | portion/target semantics remain separate |
 | Review Status summary | `CONNECTED` | canonical current Daily/Weekly Review records and navigation | maintain review projection proofs |
-| Sleep summary | `UI_ONLY` | honest Unavailable state | requires sleep entries and latest-night projection |
+| Sleep summary | `CONNECTED` | canonical latest sleep entry from the shared Health repository; reload/browser proof | maintain |
 | Daily Control current task | `CONNECTED` | deterministic state/time/priority/date/recency/id policy | maintain policy tests |
 | Daily Control Up Next | `CONNECTED` | same deterministic persisted-signal ranking, bounded to three | maintain policy tests |
 | Time Progress | `CONNECTED` | Europe/Berlin local-day elapsed time plus scheduled task load | maintain |
 | Weather | `NOT_STARTED` | honest Unavailable state; no API | optional external read gate |
-| Mood entry | `UI_ONLY` | Demo-only reference; Manual/Empty Prepared state without fake write | D1.3 canonical mood entries |
-| Mood current state | `UI_ONLY` | honest Prepared state | D1.3 latest entry and trend |
-| Weight goal | `UI_ONLY` | honest Unavailable card linked to Health | D1.3 entries and target model |
+| Mood entry | `CONNECTED` | timestamped user-scoped mood entries from Dashboard with same-day soft undo | maintain labels, semantic color and ownership proof |
+| Mood current state | `CONNECTED` | latest local-day Mood entry plus Mental Health history | maintain timezone/reload proof |
+| Weight goal | `CONNECTED` | canonical weight entries and single personal goal with honest measured start-to-target progress | maintain |
 | Nutrient Balance | `CONNECTED_GAP` | completed meals + manual recipe estimates; unknown remains unknown | add reliable portion and target semantics |
 | Meals Today | `CONNECTED_GAP` | user-scoped meal records in Dashboard Read Model | schedule-source synchronization remains |
 | Latest Run | `UI_ONLY` | honest Unavailable state | implement manual running sessions first |
@@ -174,14 +174,14 @@
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Mood entry | `UI_ONLY` | Dashboard UI | create mood_entries and history |
-| Mood trend | `UI_ONLY` | visual concepts | derive from entries |
-| Sleep entry | `UI_ONLY` | Dashboard UI | create sleep_entries and latest-night summary |
-| Sleep trend | `NOT_STARTED` | none | history/read model |
-| Weight entry | `UI_ONLY` | Dashboard card | create weight_entries |
-| Weight goal | `UI_ONLY` | Dashboard card | create target model and progress |
+| Mood entry | `CONNECTED` | mood_entries, Dashboard action, auth/Zod/RLS and reload proof | maintain |
+| Mood trend | `CONNECTED` | timestamped labeled/color-paired Mental Health history | richer aggregation remains optional, without diagnosis |
+| Sleep entry | `CONNECTED` | date-keyed editable sleep_entries with duration, optional quality/note | maintain |
+| Sleep trend | `CONNECTED` | reload-stable Mental Health history and Dashboard latest-night projection | maintain |
+| Weight entry | `CONNECTED` | date-keyed editable weight_entries and Health history | maintain |
+| Weight goal | `CONNECTED` | single user-scoped weight_goals row, optional target date and honest progress | maintain |
 | Journal linkage | `UI_ONLY` | journal/nav exists | canonical journal/notes and privacy |
-| Mental Health overview | `UI_ONLY` | page shell | bind entries and insights without medical claims |
+| Mental Health overview | `CONNECTED_GAP` | canonical Mood history and Sleep entry/history are connected without medical claims | journal linkage and later review associations remain separate |
 
 # 9. Habits
 

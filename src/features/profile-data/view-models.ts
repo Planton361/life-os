@@ -61,6 +61,7 @@ import {
   type Recipe as RealDataRecipe,
   type ReviewRecord,
   type ReviewTaskDecision,
+  type HealthSnapshot,
   type Resource as RealDataResource,
   type Skill as RealDataSkill,
   type SkillEvidence as RealDataSkillEvidence,
@@ -75,6 +76,7 @@ import {
   createSupabaseResourceRepository,
   createSupabaseSkillRepository,
   createSupabaseTaskRepository,
+  createSupabaseHealthRepository,
 } from "@/features/real-data/supabase";
 import {
   createManualHabit,
@@ -385,6 +387,7 @@ type DashboardReadSources = {
   meals: readonly ManualMealSlot[];
   nutrition: DashboardNutritionTotals;
   weeklyReview: ReviewRecord | null;
+  health: HealthSnapshot | null;
 };
 
 const emptyDashboardReadSources: DashboardReadSources = {
@@ -401,6 +404,7 @@ const emptyDashboardReadSources: DashboardReadSources = {
     completedMealCount: 0,
   },
   weeklyReview: null,
+  health: null,
 };
 
 const dashboardCapacity = {
@@ -1324,7 +1328,8 @@ function buildProfileDashboardViewModel(
   const focusMinutes = scheduledFocusMinutes(tasks);
   const meals = buildMealSlots({ ...profile, meals: [...sources.meals] });
   const decidedMealCount = meals.filter(mealIsDecided).length;
-  const activeMood = "Empty";
+  const latestMood = sources.health?.moods.find((entry) => entry.localDate === dashboardLocalDate());
+  const activeMood = latestMood ? `${latestMood.mood.charAt(0).toUpperCase()}${latestMood.mood.slice(1)}` : "Empty";
   const dashboardHabits = {
     Morning: [],
     Midday: [],
@@ -1445,14 +1450,14 @@ function buildProfileDashboardViewModel(
       },
       {
         label: "Sleep",
-        value: "Unavailable",
-        detail: "Sleep source not implemented",
+        value: sources.health?.sleep[0] ? `${Math.floor(sources.health.sleep[0].durationMinutes / 60)}h ${String(sources.health.sleep[0].durationMinutes % 60).padStart(2, "0")}m` : "Unknown",
+        detail: sources.health?.sleep[0] ? `Night ${sources.health.sleep[0].sleepDate}` : "No sleep entry",
         progress: 0,
         accent: "var(--accent-blue)",
         area: "health",
         contentState: resolveContentStateMeta({
-          hasPrimaryValue: false,
-          itemCount: 0,
+          hasPrimaryValue: Boolean(sources.health?.sleep[0]),
+          itemCount: sources.health?.sleep[0] ? 1 : 0,
         }),
         href: "/health/mental?section=sleep",
       },
@@ -1462,7 +1467,7 @@ function buildProfileDashboardViewModel(
       activeOption: activeMood,
       detail: moodDetail(activeMood),
       moodLabel: activeMood,
-      options: [
+      options: sources.authAvailable ? [
         "Calm",
         "Content",
         "Focused",
@@ -1470,10 +1475,10 @@ function buildProfileDashboardViewModel(
         "Anxious",
         "Stressed",
         "Happy",
-      ],
-      progress: profile.mood ? 64 : 0,
-      progressLabel: profile.mood ? "Current signal" : "No signal",
-      scoreLabel: profile.mood ? "Saved" : "-",
+      ] : [],
+      progress: latestMood ? 100 : 0,
+      progressLabel: latestMood ? "Today's signal" : "No signal",
+      scoreLabel: latestMood ? "Saved" : "-",
       accent: moodAccent(activeMood),
     },
     timeProgress: [
@@ -1597,20 +1602,25 @@ function buildProfileDashboardViewModel(
     events: visibleDashboardAgendaTasks(tasks).map(taskToAgendaEvent),
   };
 
+  const latestWeight = sources.health?.weights[0];
+  const oldestWeight = sources.health?.weights[sources.health.weights.length - 1];
+  const weightGoal = sources.health?.weightGoal;
+  const weightProgress = latestWeight && oldestWeight && weightGoal && oldestWeight.weightKg !== weightGoal.targetWeightKg
+    ? Math.max(0, Math.min(100, Math.round(((oldestWeight.weightKg - latestWeight.weightKg) / (oldestWeight.weightKg - weightGoal.targetWeightKg)) * 100))) : latestWeight && weightGoal && latestWeight.weightKg === weightGoal.targetWeightKg ? 100 : 0;
   viewModel.healthNutrition.weightLossGoal = {
     ...viewModel.healthNutrition.weightLossGoal,
     contentState: resolveContentStateMeta({
-      hasPrimaryValue: false,
-      itemCount: 0,
+      hasPrimaryValue: Boolean(latestWeight),
+      itemCount: latestWeight ? 1 : 0,
     }),
     title: "Weight Goal",
     href: "/health",
-    currentWeight: "Unavailable",
-    targetLabel: "Weight source not implemented",
-    remainingLabel: "Prepared",
-    weeklyStatusLabel: "No source",
+    currentWeight: latestWeight ? `${latestWeight.weightKg.toFixed(2)} kg` : "Unknown",
+    targetLabel: weightGoal ? `Target ${weightGoal.targetWeightKg.toFixed(2)} kg${weightGoal.targetDate ? ` · ${weightGoal.targetDate}` : ""}` : "No target set",
+    remainingLabel: latestWeight && weightGoal ? `${Math.abs(latestWeight.weightKg - weightGoal.targetWeightKg).toFixed(2)} kg distance` : "Progress unknown",
+    weeklyStatusLabel: latestWeight && weightGoal ? `${weightProgress}%` : "Unknown",
     weeklyStatusAccent: "var(--text-muted)",
-    progress: 0,
+    progress: weightProgress,
   };
   viewModel.healthNutrition.nutrientBalance = {
     ...viewModel.healthNutrition.nutrientBalance,
@@ -2628,6 +2638,7 @@ async function getManualDashboardReadData(): Promise<{
   const nutritionRepository = createSupabaseNutritionRepository(auth.client);
   const week = reviewWeek(dashboardLocalDate());
   const reviewRepository = createSupabaseReviewRepository(auth.client);
+  const healthRepository = createSupabaseHealthRepository(auth.client);
   const [
     taskResult,
     inboxResult,
@@ -2637,6 +2648,7 @@ async function getManualDashboardReadData(): Promise<{
     recipeResult,
     dailyReviewResult,
     weeklyReviewResult,
+    healthSnapshot,
   ] = await Promise.all([
     getManualTasksFromSupabase(auth.client, userId),
     createSupabaseInboxRepository(auth.client).getInboxItemsByUser(
@@ -2659,6 +2671,7 @@ async function getManualDashboardReadData(): Promise<{
       dashboardLocalDate(),
     ),
     reviewRepository.getReviewByPeriod(userId, userId, "weekly", week.start),
+    healthRepository.getSnapshot(userId, userId),
   ]);
   const recipes = recipeResult.ok ? recipeResult.data : [];
   const recipeById = new Map(recipes.map((recipe) => [recipe.id, recipe]));
@@ -2709,6 +2722,7 @@ async function getManualDashboardReadData(): Promise<{
       nutrition,
       skills: skills.skills,
       weeklyReview: weeklyReviewResult.ok ? weeklyReviewResult.data : null,
+      health: healthSnapshot,
     },
   };
 }

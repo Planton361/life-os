@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState } from "react";
 import {
   captureDashboardQuickThoughtAction,
-  setDashboardMoodAction,
 } from "@/features/profile-data/actions";
+import { saveMoodAction } from "@/features/real-data/actions/health.actions";
 import { completeTaskFormAction } from "@/features/real-data/actions/task.actions";
 import { initialDashboardActionState } from "@/features/profile-data/dashboard-action-state";
 import type {
@@ -586,21 +586,10 @@ function MoodBoard({
   profileId: DashboardCommandCenterViewModel["profileId"];
 }>) {
   const [activeMood, setActiveMood] = useState(data.moodCheck.activeOption);
-  const [state, formAction, pending] = useActionState(
-    setDashboardMoodAction,
-    initialDashboardActionState,
-  );
-  const router = useRouter();
   const activeMoodTone = moodToneFor(activeMood);
   const moodAccent = activeMoodTone.accent;
 
-  const sourceAvailable = profileId === "demo";
-
-  useEffect(() => {
-    if (state.status === "success") {
-      router.refresh();
-    }
-  }, [router, state.status]);
+  const sourceAvailable = profileId === "manual" && data.moodCheck.options.length > 0;
 
   return (
     <section
@@ -677,7 +666,8 @@ function MoodBoard({
             />
           </div>
           {sourceAvailable ? (
-            <form action={formAction} className="mt-1.5 grid grid-cols-3 gap-1">
+            <form action={saveMoodAction} className="mt-1.5 grid grid-cols-3 gap-1">
+              <input type="hidden" name="returnTo" value="/dashboard" />
               {data.moodCheck.options.map((mood) => {
                 const moodTone = moodToneFor(mood);
 
@@ -693,7 +683,6 @@ function MoodBoard({
                     )}
                     key={mood}
                     onClick={() => setActiveMood(mood)}
-                    disabled={pending}
                     name="mood"
                     style={accentStyle(moodTone.accent)}
                     type="submit"
@@ -707,24 +696,9 @@ function MoodBoard({
             </form>
           ) : (
             <div className="mt-1.5 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(168,183,204,.04)] px-2 py-1.5 text-[9px] font-semibold leading-4 text-[var(--text-muted)]">
-              Prepared · mood entries and history are not implemented.
+              {profileId === "manual" ? "Sign in to use Manual mood writes." : "Mood writes are unavailable in this profile."}
             </div>
           )}
-          {state.message ? (
-            <p
-              className={cn(
-                "mt-1 text-[9px] font-semibold",
-                state.status === "success"
-                  ? "text-[var(--accent-green)]"
-                  : state.status === "blocked"
-                    ? "text-[var(--accent-orange)]"
-                    : "text-[var(--text-muted)]",
-              )}
-              role={state.status === "success" ? "status" : "alert"}
-            >
-              {state.message}
-            </p>
-          ) : null}
         </div>
       </div>
     </section>

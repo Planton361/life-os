@@ -9,3 +9,4 @@ export * from "./supabase-resource-repository";
 export * from "./supabase-skill-repository";
 export * from "./supabase-task-repository";
 export * from "./supabase-review-repository";
+export * from "./supabase-health-repository";

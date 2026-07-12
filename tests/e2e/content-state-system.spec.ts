@@ -3221,10 +3221,10 @@ test.describe("Dashboard content states", () => {
     }
 
     await expect(
-      page.getByRole("link", { name: /Sleep: Unavailable/ }),
+      page.getByRole("link", { name: /Sleep: Unknown/ }),
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: /Sleep source not implemented/ }),
+      page.getByRole("link", { name: /No sleep entry/ }),
     ).toBeVisible();
     await expect(
       page.getByRole("link", { name: /Review Status: Not started/ }),
@@ -3381,7 +3381,7 @@ test.describe("Dashboard content states", () => {
       page.getByRole("region", { name: "Active Portfolio" }),
     ).toHaveAttribute("data-item-count", "0");
     await expect(page.getByText("Habit tracking prepared")).toBeVisible();
-    await expect(page.getByText(/Prepared · mood entries and history/)).toBeVisible();
+    await expect(page.getByText(/Sign in to use Manual mood writes/)).toBeVisible();
     await expect(page.getByText(/Prepared · challenge source/)).toBeVisible();
   });
 });
