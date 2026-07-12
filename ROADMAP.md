@@ -34,17 +34,15 @@ The existing application is the foundation. This roadmap does not restart the pr
 
 Capability-level truth is maintained in `docs/product/capability-registry.md`.
 
-## 3. Active Work Block
+## 3. Delivery Program
 
-# D1 – Daily Command Center & Reviews
+### D1 – Daily Command Center & Reviews
 
 **Outcome:** Dashboard, Inbox, Today, Calendar, Daily Review and Weekly Review form one closed daily operating loop.
 
-### 3.1 Completed Block
-
 ### D1.1 – Dashboard Read Model & Navigation Completion
 
-**Status:** Complete
+**Baseline note:** Implemented at the time of this roadmap revision. Ongoing capability truth remains in the Capability Registry, code, tests and Git history.
 
 **Outcome:** Every Dashboard panel either reads real canonical data and navigates correctly, or is explicitly marked as unavailable until its source domain is implemented.
 
@@ -203,11 +201,7 @@ Use scoped regions and unique test data.
 - Ranking policies can become opaque or unstable.
 - Missing source domains must not be rushed into D1.1 solely to make every card non-empty.
 
-### 3.2 Current Block
-
 ### D1.2 – Daily & Weekly Review
-
-**Status:** Active
 
 **Outcome:** Daily Review and Weekly Review become canonical, reload-stable records that close the loop between Today, Dashboard and the next planning period without duplicating Tasks, Projects or Goals.
 
@@ -251,7 +245,7 @@ Use scoped regions and unique test data.
 - Carry-over decisions are explicit and cannot partially apply.
 - Empty and Manual modes never show Demo review content.
 - Focused browser proofs cover save, edit/reload, Dashboard projection and carry-over behavior.
-- Capability Registry is updated and D1.3 becomes the next block.
+- Capability Registry is updated.
 
 #### Focused proof plan
 
@@ -268,19 +262,25 @@ Use scoped regions and unique test data.
 - Local-date and ISO-week identity must remain stable across timezone boundaries.
 - Dashboard and Today can drift if they do not share the same review read model.
 
-## 4. Next Up
+## 4. Permanent Delivery Sequence
 
-| Order | Block | Outcome |
-|---:|---|---|
-| 1 | D1.2 Daily & Weekly Review | canonical review records, carry-over and week planning |
-| 2 | D1.3 Mood, Sleep & Weight | real entries, Dashboard writes and historical views |
-| 3 | D2.1 Schedule Source Links | Meals, Workouts and Reviews link safely to schedule blocks |
-| 4 | D2.2 Recurring & Routine Management | templates can be listed, edited, paused and generated predictably |
-| 5 | H1.1 Habit Tracking | definitions, flexible increments, timestamped logs and Dashboard interaction |
-| 6 | H2.1 Running & Strength Core | manual sessions, plans, exercise library and Calendar link |
-| 7 | K1.1 Resource/Skill Relation Read Model | semantic relation model before graph visualization |
-| 8 | A1.1 Area Domain Foundation | Coding, Education, Work and Life gain canonical entities and writes |
-| 9 | M1.1 Challenges, Anti-Rot & Rewards | real challenge lifecycle and reward ledger |
+This sequence is the complete product plan, not a live status queue. A Codex prompt names the concrete block ID. Current implementation truth comes from the Capability Registry, code, tests and Git.
+
+| Order | Block | Outcome | Main scope | Depends on | Non-goals |
+|---:|---|---|---|---|---|
+| 1 | D1.1 Dashboard Read Model & Navigation | Dashboard panels use canonical sources or honest unavailable states and navigate correctly | server read model, deterministic Daily Control, Today/Calendar projection, navigation | existing Tasks, Inbox, Portfolio and Nutrition foundations | Dashboard redesign; missing Health-domain tables |
+| 2 | D1.2 Daily & Weekly Review | reviews close the daily and weekly planning loop | review records, carry-over decisions, Dashboard/Today status | D1.1 read-model boundary | AI reviews; silent task duplication |
+| 3 | D1.3 Mood, Sleep & Weight | Health summary signals become real and historical | entries, goals, history, Dashboard projection | D1.1 source-state contract; D1.2 review links | diagnosis or medical advice |
+| 4 | D2.1 Schedule Source Links | Meals, Workouts and Reviews participate safely in scheduling | source links, completion consistency, revalidation | D1 daily loop; existing Calendar task core | duplicate Calendar-owned domain records |
+| 5 | D2.2 Recurring & Routine Management | recurring work is predictable and manageable | list/edit/pause templates, idempotent generation, routines | D2.1 scheduling contract | autonomous background writes |
+| 6 | H1.1 Habit Tracking | flexible habits can be defined, incremented and reviewed | definitions, windows, units, targets, timestamped logs, Dashboard | D1.3 Health foundation | shame mechanics or decorative streak pressure |
+| 7 | H2.1 Running & Strength Core | training supports a complete manual-first plan-to-session loop | run/session entry, plans, exercises, sets, muscle derivation, Calendar link | D2 scheduling links; Health foundation | Garmin dependency |
+| 8 | K1.1 Portfolio, Resource & Knowledge Depth | core work and knowledge gain full relation, search and archive depth | task detail, milestones/logs, attachments, semantic relation read model, archive/restore | established Portfolio/Resource/Skill foundations | decorative graph before semantics |
+| 9 | A1.1 Coding, Education, Work & Life Domains | area shells gain canonical entities and complete workflows | first complete CRUD slices, core relations, area projections | K1 relation conventions | area-local duplicate Tasks or Resources |
+| 10 | M1.1 Challenges, Anti-Rot, Shop & Rewards | motivation becomes functional, auditable and calm | action library, challenge lifecycle, reward ledger, redemption | Habits/activity events | manipulative gamification or unaudited currency |
+| 11 | AI1 Personal Assistant | a controlled assistant can brief, answer and propose confirmed actions | provider boundary, read tools, confirmation-gated writes, morning/evening flows | stable canonical domains and security decisions | direct model DB access or autonomous writes |
+| 12 | I1 Integrations & Analytics | optional external context and reports extend proven core flows | weather, Garmin/GitHub gates, events, trends, provenance | relevant canonical source domains; privacy decisions | integrations as core-flow prerequisites |
+| 13 | Z1 Final Local Product Closure | Life OS is dependable for sustained personal local-first use | registry closure, full proofs, accessibility, performance, backup/restore, recovery | all non-external-gated product blocks | public SaaS launch or mandatory cloud deployment |
 
 ## 5. Completed Major Work
 
@@ -305,7 +305,7 @@ The following major capabilities are already established and must not be rebuilt
 
 Historical details remain in QA, closure and archived roadmap documents.
 
-## 6. Program Epics
+## 6. Program Scope by Domain
 
 ### D1 – Daily Command Center & Reviews
 
@@ -381,6 +381,16 @@ Historical details remain in QA, closure and archived roadmap documents.
 - reports and trends;
 - semantic search only after a privacy and permissions decision.
 
+### Z1 – Final Local Product Closure
+
+- all Capability Registry entries are `CONNECTED` or justified `EXTERNAL_GATE`;
+- no misleading visible controls or Demo leakage in Manual/Empty modes;
+- focused and full product proofs are green;
+- 4K, standard desktop and mobile smoke coverage;
+- accessibility and performance passes;
+- local backup, restore, startup and recovery proof;
+- sustained personal-use period without a critical blocker.
+
 ## 7. Definition of Done
 
 A feature block is complete only when:
@@ -402,11 +412,12 @@ A data layer without its required user flow is not a completed feature.
 
 ## 8. Delivery Rules
 
-- One active work block at a time.
+- The user/Codex prompt selects one block ID from the permanent sequence.
+- Audit the Capability Registry, code, tests and Git before deciding the concrete gap inside that block.
 - Prefer larger complete Vertical Slices over many docs-only micro-blocks.
-- Model locks are separate only when data, security or external integration risk requires them.
+- Do not create separate Epic, scope-lock or closure files for normal work. Decision records are reserved for material data, security, privacy or external-integration decisions.
 - Stable rules belong in `AGENTS.md` and Skills, not repeated in every prompt.
-- Historical roadmap entries never determine current priority.
+- Historical roadmap entries never determine implementation status or prompt scope.
 - No remote database, deployment, provider or external API work without an explicit decision/security scope.
 - No files are deleted without explicit approval.
 
@@ -434,7 +445,7 @@ Operations and product completion are tracked separately.
 
 ## 10. Deferred and External Gates
 
-Deferred until their prerequisite Epic:
+Deferred until their prerequisite block and explicit gate:
 
 - public deployment and public registration;
 - Garmin API;
@@ -447,11 +458,15 @@ Deferred until their prerequisite Epic:
 
 Deferred does not mean removed. It means the prerequisite model, privacy or integration gate is not yet complete.
 
-## 11. Update Rule
+## 11. Roadmap Maintenance Rule
 
-After each completed work block or material Capability change:
+This file is a static product-completion plan, not an implementation log.
 
-1. update `docs/product/capability-registry.md`;
-2. update this file only if Active/Next-Up priorities changed;
-3. replace or update the complete `Active Work Block` when priority advances;
-4. keep detailed proof output in tests or `docs/qa/`, not in this roadmap.
+- Normal feature work updates `docs/product/capability-registry.md`, code, tests and Git history.
+- Change this roadmap only when the product plan, permanent sequence, block outcome, dependency or material functional scope changes.
+- Do not move blocks through active/current/completed sections.
+- Keep detailed proof output in tests or, when genuinely necessary, focused QA/decision documents.
+
+## 12. Final Closure Target
+
+Life OS reaches product closure when the Z1 outcome is met: every non-external-gated visible capability is connected end to end, projections remain consistent after reload, local operation is recoverable, accessibility and performance gates pass and the application supports sustained real personal use without a critical blocker.

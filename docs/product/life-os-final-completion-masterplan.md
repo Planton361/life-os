@@ -53,15 +53,14 @@ Die zentrale Roadmap muss nicht fragen: „Welche Seite ist als Nächstes dran?�
 
 ### 3.1 Neue Quelle der Wahrheit
 
-**`ROADMAP.md` wird die kanonische Ausführungsroadmap.**
+**`ROADMAP.md` ist der kanonische statische Fertigstellungsplan.**
 
 Sie enthält nur:
 
 - Product Contract,
-- aktuellen Systemstatus,
-- Capability Matrix,
-- aktiven Meilenstein,
-- priorisierte nächste Blöcke,
+- grobe Current Baseline,
+- permanente Programm- und Blockreihenfolge,
+- Outcomes, Scope, Abhängigkeiten und Nicht-Ziele,
 - Definition of Done,
 - Deferred/Future,
 - Links auf Detail- und Proof-Dokumente.
@@ -80,14 +79,14 @@ Sie enthält **keine chronologische Langhistorie**.
 | `ACCESSIBILITY.md` | A11y-Gates |
 | `AI_WORKFLOW.md` | Codex- und KI-Arbeitsweise |
 | `docs/product/capability-registry.md` | detaillierter Capability-Status pro sichtbarer Funktion |
-| `ROADMAP.md` (`Active Work Block`) | vollständiger aktueller Arbeitsauftrag |
+| `ROADMAP.md` | vollständiger statischer Fertigstellungsplan mit permanenter Blockreihenfolge |
 | `docs/qa/*.md` | Browser-Proofs und Closure-Nachweise |
 | `docs/decisions/*.md` | echte Model-/Security-/Integration-Entscheidungen |
 | bestehende Roadmap-, QA- und Closure-Dokumente | historische Nachweise an ihren bisherigen Pfaden |
 
 ### 3.3 Umgang mit bestehenden Roadmaps
 
-- Die aktuelle Root-`ROADMAP.md` wird **inhaltlich ersetzt**, nicht gelöscht.
+- Die Root-`ROADMAP.md` wurde **inhaltlich konsolidiert**, nicht gelöscht.
 - `docs/product/final-product-completion-roadmap.md` wird nach expliziter Freigabe in `docs/archive/roadmap-history/` verschoben oder mit `Status: Archived` versehen.
 - Closure- und QA-Dokumente bleiben erhalten und werden von der neuen Roadmap verlinkt.
 - `docs/product/life-os-full-roadmap-checklist.md` bleibt unangetastet, bis ausdrücklich entschieden wird, ob sie archiviert oder in die Capability Registry überführt wird.
@@ -398,17 +397,17 @@ Modellname, Base URL und Provider bleiben konfigurierbar, damit Provider-/Modelw
 
 ## 8. Final Completion Program
 
-## Epic R0 – Roadmap & Capability Control
+## Program Foundation – Roadmap & Capability Control
 
 **Outcome:** Eine kurze kanonische Root-Roadmap und eine vollständige Capability Registry ersetzen die bisherige Statuschronik.
 
 **DoD:**
 
-- neue Root-`ROADMAP.md`,
+- konsolidierte Root-`ROADMAP.md`,
 - Capability Registry mit Status pro sichtbarer Funktion,
 - historische Roadmap archiviert/markiert,
-- genau ein aktiver Epic,
-- maximal zehn priorisierte Next-Up-Blöcke.
+- permanente Blockreihenfolge; der konkrete Block wird im Codex-Prompt genannt,
+- statischer Plan ohne Active-/Current-Block-Rotation.
 
 ---
 
@@ -684,24 +683,25 @@ Modellname, Base URL und Provider bleiben konfigurierbar, damit Provider-/Modelw
 
 ---
 
-## 9. Priorisierte nächste 10 Blöcke
+## 9. Permanente Fertigstellungsreihenfolge
 
 Diese Reihenfolge ersetzt den bisherigen automatischen Sprung zu F1.3 Graph.
 
 | # | Block | Outcome | DoD-Kern |
 |---:|---|---|---|
-| 1 | `R0.1 Roadmap Rework` | Root-Roadmap + Capability Registry | keine Statuschronik mehr |
-| 2 | `D1.1 Dashboard Read Model` | alle Dashboard-Panels erhalten echte Quellen/Status | server read model + navigation |
-| 3 | `D1.2 Daily/Weekly Review` | Review Records und Abschlussflow | create/edit/close/reload |
-| 4 | `D1.3 Mood/Sleep/Weight` | Health Summary Cards real | logs + dashboard projection |
-| 5 | `D2.1 Schedule Source Link` | Meal/Workout/Review ↔ Task/Calendar | completion sync |
-| 6 | `D2.2 Recurring/Routines Management` | templates vollständig verwaltbar | idempotent, no surprise writes |
-| 7 | `H1.1 Habit Tracking` | 24 flexible Habits + logs | units/increments/timestamps |
-| 8 | `H2.1 Running & Strength Core` | plans/sessions/dashboard | manual-first complete loop |
-| 9 | `K1.1 Resource/Skill Graph Read Model` | reale Relation Query + list/tree view | keine dekorative Graph-Library |
-| 10 | `A1.1 Area Domain Foundation` | Coding/Education/Work/Life Models | first complete CRUD slice per area |
-
-Danach: Motivation → AI Assistant → Integrations/Analytics → Final Closure.
+| 1 | `D1.1 Dashboard Read Model & Navigation` | alle Dashboard-Panels erhalten echte Quellen/Status | server read model + navigation |
+| 2 | `D1.2 Daily & Weekly Review` | Review Records und Abschlussflow | create/edit/close/reload |
+| 3 | `D1.3 Mood, Sleep & Weight` | Health Summary Cards real | logs + dashboard projection |
+| 4 | `D2.1 Schedule Source Links` | Meal/Workout/Review ↔ Task/Calendar | completion sync |
+| 5 | `D2.2 Recurring & Routine Management` | templates vollständig verwaltbar | idempotent, no surprise writes |
+| 6 | `H1.1 Habit Tracking` | flexible Habits + logs | units/increments/timestamps |
+| 7 | `H2.1 Running & Strength Core` | plans/sessions/dashboard | manual-first complete loop |
+| 8 | `K1.1 Portfolio, Resource & Knowledge Depth` | reale Relationen, Search und Archive | keine dekorative Graph-Library |
+| 9 | `A1.1 Coding, Education, Work & Life Domains` | Area Models und vollständige Workflows | first complete CRUD slice per area |
+| 10 | `M1.1 Challenges, Anti-Rot, Shop & Rewards` | nachvollziehbare Motivation und Ledger | keine manipulative Gamification |
+| 11 | `AI1 Personal Assistant` | kontrollierte Read-/Confirmed-Write-Tools | kein direkter DB-Zugriff |
+| 12 | `I1 Integrations & Analytics` | optionale Integrationen und Trends | Core bleibt provider-unabhängig |
+| 13 | `Z1 Final Local Product Closure` | belastbare local-first Produktabnahme | alle nicht extern gegateten Capabilities connected |
 
 ---
 
@@ -747,7 +747,7 @@ Figma wird später read-only ergänzt. Keine MCP-Konfiguration erhält Secrets.
    - UI/Capability Audit,
    - Proof/Regression Audit.
 4. Nur der Hauptagent schreibt Code.
-5. Ein vollständiger `ROADMAP.md` Active Work Block, ein Branch/Commit-Block.
+5. Eine Block-ID aus dem Codex-Prompt, ein kohärenter Branch/Commit-Block.
 6. Fokussierte Tests während der Arbeit.
 7. Full Epic Proof erst vor Commit.
 8. `/review` vor dem Commit.
@@ -795,9 +795,9 @@ Done when:
 
 Keine separate Produkt-, QA- und Closure-Datei für jeden kleinen Fix.
 
-Pro Arbeitsblock genügen:
+Für normale Arbeitsblöcke genügen:
 
-- ein vollständiger `Active Work Block` in `ROADMAP.md`,
+- die stabile Blockbeschreibung in `ROADMAP.md`,
 - ein aktualisierter Abschnitt mit Ergebnis und Proof-Link,
 - QA-Datei nur bei komplexem Security-/Migration-/Integrationsthema.
 
@@ -901,11 +901,11 @@ Die DeepSeek-API ist OpenAI-kompatibel und unterstützt JSON Output sowie Tool C
 - Root-`ROADMAP.md`, Final Completion Roadmap und Closure-Dokumente abgleichen.
 - Capability Registry aus Code, Screenshots, Actions und Browser-Proofs erzeugen.
 
-### Schritt 2 – Kanonische Dateien erstellen
+### Schritt 2 – Kanonische Dateien konsolidieren
 
-- neue `ROADMAP.md`
+- statische `ROADMAP.md`
 - `docs/product/capability-registry.md`
-- vollständiger aktueller Arbeitsauftrag im `ROADMAP.md` Active Work Block
+- vollständiger statischer Plan und permanente Blockreihenfolge in `ROADMAP.md`
 
 ### Schritt 3 – Historie entkoppeln
 
@@ -946,7 +946,7 @@ Diese Entscheidungen müssen im jeweiligen Epic getroffen werden, nicht global v
 
 ---
 
-# Entwurf für eine neue `ROADMAP.md`
+# Referenzstruktur für `ROADMAP.md`
 
 ```markdown
 # Life OS Roadmap
@@ -980,7 +980,7 @@ Reload stimmen und keine UI mehr Funktion vortäuscht.
 
 Detaillierte Wahrheit: `docs/product/capability-registry.md`
 
-## Active Milestone
+## Delivery Program
 
 ### D1 – Daily Command Center & Reviews
 
@@ -988,8 +988,8 @@ Outcome:
 Dashboard, Inbox, Today, Calendar, Daily Review und Weekly Review bilden einen
 geschlossenen täglichen Regelkreis.
 
-Current block:
-`D1.1 Dashboard Read Model & Navigation Completion`
+Der konkrete Block wird im Nutzer-/Codex-Prompt per ID gewählt. Statuswahrheit:
+`docs/product/capability-registry.md`, Code, Tests und Git.
 
 Done when:
 - alle Dashboard Panels besitzen echte Quellen oder ehrliche Empty States
@@ -998,7 +998,7 @@ Done when:
 - Daily Control und Up Next folgen einer dokumentierten Policy
 - Browser-Proofs mit Reload sind grün
 
-## Next Up
+## Permanent Sequence
 
 1. D1.1 Dashboard Read Model & Navigation Completion
 2. D1.2 Daily/Weekly Review
@@ -1010,6 +1010,9 @@ Done when:
 8. K1.1 Resource/Skill Graph Read Model
 9. A1.1 Area Domain Foundation
 10. M1.1 Anti-Rot/Challenges/Rewards
+11. AI1 Personal Assistant
+12. I1 Integrations & Analytics
+13. Z1 Final Local Product Closure
 
 ## Later Included Work
 

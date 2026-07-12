@@ -291,10 +291,6 @@
 | Private remote | `EXTERNAL_GATE` | intentionally not active | explicit user decision later |
 | Public SaaS | `NOT_STARTED` | not a goal | do not plan by default |
 
-## Current Priority
+## Update Rule
 
-```text
-D1.2 Daily & Weekly Review
-```
-
-After each completed capability, update this registry before closing the work block.
+The user/Codex prompt selects a `ROADMAP.md` block ID. Update this registry after each completed material capability so it remains the sole dynamic documentation source for implementation status.

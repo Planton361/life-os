@@ -22,12 +22,12 @@ The workflow optimizes for:
 Every implementation task starts from:
 
 ```text
+Block ID from the user/Codex prompt
 AGENTS.md
 PRODUCT.md
 DESIGN.md
 ROADMAP.md
 docs/product/capability-registry.md
-ROADMAP.md Active Work Block
 ```
 
 Read architecture, data, security and accessibility files only as needed for the active scope.
@@ -37,13 +37,15 @@ Historical roadmaps, QA logs and closure documents are evidence. They are not ac
 ## 3. Delivery Loop
 
 ```text
-ROADMAP Active Work Block
-→ short Codex plan
+Block ID from the Codex prompt
+→ read ROADMAP scope
+→ audit Capability Registry and code
+→ short plan
 → complete Vertical Slice
 → dependent projections
 → focused validation
-→ Codex review
-→ Capability Registry and Roadmap update
+→ update Capability Registry
+→ review
 → commit
 ```
 
@@ -76,7 +78,7 @@ Read:
 - AGENTS.md
 - ROADMAP.md
 - docs/product/capability-registry.md
-- ROADMAP.md (`Active Work Block`)
+- code, tests and Git history relevant to the named block
 
 Scope:
 [capabilities and cross-domain reactions]
@@ -131,7 +133,7 @@ Do not paste the complete security, staging and design rules into every prompt.
 
 ## 6. Codex Session Pattern
 
-At the start of a new Epic:
+At the start of a new block:
 
 1. open the repository root;
 2. use a fresh Codex session;
@@ -186,27 +188,26 @@ Focused Playwright proof with:
 - reload after writes;
 - unique test data.
 
-### Tier 4 – Epic closure
+### Tier 4 – major block closure
 
 ```bash
 pnpm build
 ```
 
-Plus the focused Epic regression scope and Codex review.
+Plus the focused block regression scope and Codex review.
 
 Avoid full-suite or unrelated broad-grep runs after every small change.
 
 ## 9. Documentation Strategy
 
-Maintain as active delivery sources only:
+Maintain as canonical delivery sources:
 
-- `ROADMAP.md` for active delivery order;
-- `docs/product/capability-registry.md` for actual status;
-- one complete Active Work Block in `ROADMAP.md`;
+- `ROADMAP.md` for the static complete plan, permanent sequence and stable block scope;
+- `docs/product/capability-registry.md` as the dynamic actual-status source;
 - decision records for real model/security decisions;
 - QA documents only for complex proof cases.
 
-Do not create a scope, proof-hardening and closure document for every small fix.
+Normal work does not create separate Epic, scope-lock, proof-hardening or closure files. Change `ROADMAP.md` only when the product plan, order, dependency or material scope changes.
 
 ## 10. MCP and External Tools
 
@@ -261,7 +262,7 @@ Before committing, Codex reviews:
 
 ## 13. Handoff
 
-At the end of a substantial Epic, report:
+At the end of a substantial block, report:
 
 ```text
 Current state:

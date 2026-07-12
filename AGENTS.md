@@ -22,8 +22,8 @@ Read active sources in this order:
 1. `AGENTS.md` – repository work rules;
 2. `PRODUCT.md` – complete product contract;
 3. `DESIGN.md` – V5 design truth;
-4. `ROADMAP.md` – active delivery order and complete current work order in `Active Work Block`;
-5. `docs/product/capability-registry.md` – actual capability status;
+4. `ROADMAP.md` – complete static product-completion plan, block sequence and scope;
+5. `docs/product/capability-registry.md` – dynamic truth for actual capability status;
 6. `ARCHITECTURE.md`, `DATA_MODEL.md`, `SECURITY.md`, `ACCESSIBILITY.md` – technical boundaries;
 7. `AI_WORKFLOW.md` and project Skills – delivery method;
 8. QA, closure and historical roadmap files – evidence/history only.
@@ -34,14 +34,15 @@ Legacy research, historical roadmaps and closure files must not override the act
 
 For substantial tasks:
 
-1. inspect relevant project files;
-2. summarize the current implementation and gaps;
-3. output a short execution plan;
-4. implement a complete Vertical Slice;
-5. run focused validation;
-6. review the diff;
-7. update the Capability Registry;
-8. commit only when the Completion Gate passes.
+1. take the concrete block ID from the user/Codex prompt;
+2. read that block's stable scope in `ROADMAP.md`;
+3. inspect the Capability Registry, relevant code, tests and Git history;
+4. summarize the current implementation and gaps;
+5. output a short execution plan;
+6. implement a complete Vertical Slice;
+7. run focused validation and review the diff;
+8. update the Capability Registry;
+9. commit only when the Completion Gate passes.
 
 Prefer one coherent, visible capability over many small layer-only blocks.
 
@@ -111,7 +112,7 @@ no remote reset
 no production mutation
 ```
 
-Local migrations are allowed only when required by the `ROADMAP.md` Active Work Block.
+Local migrations are allowed only when required by the prompt-selected `ROADMAP.md` block.
 
 ## 7. Cross-Domain Consistency
 
@@ -168,7 +169,7 @@ pnpm typecheck
 pnpm lint
 ```
 
-### When build/runtime or an Epic closes
+### When build/runtime or a major block closes
 
 ```bash
 pnpm build
@@ -192,11 +193,11 @@ Run focused Playwright tests that:
 - prove the result remains;
 - avoid global text search as the sole proof.
 
-Do not run broad unrelated greps for every small change. Run the focused regression scope for the affected Epic and a broader smoke at Epic closure.
+Do not run broad unrelated greps for every small change. Run the focused regression scope for the prompt-selected block and a broader smoke at major block closure.
 
 ## 11. Capability Registry
 
-After a material feature change, update:
+After normal material feature work, update:
 
 ```text
 docs/product/capability-registry.md
@@ -218,6 +219,8 @@ Do not claim an entire surface as complete when visible capabilities remain UI-o
 
 Normal feature work should not create multiple scope/closure documents.
 
+Do not create separate Epic, scope-lock or closure files for normal work. The prompt selects the block ID, `ROADMAP.md` supplies its stable scope and the Capability Registry records current status.
+
 Create a dedicated document only when one of these applies:
 
 - a new data model or migration needs a decision record;
@@ -226,6 +229,8 @@ Create a dedicated document only when one of these applies:
 - browser-proof details cannot be expressed by tests and the Capability Registry alone.
 
 Roadmap history and QA documents are evidence, not active prioritization sources.
+
+`ROADMAP.md` is changed only when the product plan, permanent order, dependency or material functional scope changes. Do not update it merely to advance, activate or close a normal work block.
 
 ## 13. Protected Paths
 
