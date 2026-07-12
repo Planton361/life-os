@@ -11,3 +11,4 @@ export * from "./skill.schema";
 export * from "./review.schema";
 export * from "./schedule-source.schema";
 export * from "./health.schema";
+export * from "./habit.schema";

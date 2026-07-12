@@ -8,3 +8,4 @@ export * from "./skill.mapper";
 export * from "./review.mapper";
 export * from "./health.mapper";
 export * from "./task.mapper";
+export * from "./habit.mapper";

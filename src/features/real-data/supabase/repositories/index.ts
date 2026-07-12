@@ -11,3 +11,4 @@ export * from "./supabase-task-repository";
 export * from "./supabase-review-repository";
 export * from "./supabase-schedule-source-repository";
 export * from "./supabase-health-repository";
+export * from "./supabase-habit-repository";

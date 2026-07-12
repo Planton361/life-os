@@ -6,10 +6,12 @@ import type {
   DashboardProfileId,
   HabitTrackerWindow,
 } from "@/features/dashboard";
-import { useActionState, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { createDashboardHabitAction } from "@/features/profile-data/actions";
-import { initialDashboardActionState } from "@/features/profile-data/dashboard-action-state";
+import { useState } from "react";
+import {
+  createHabitAction,
+  incrementHabitAction,
+  undoHabitAction,
+} from "@/features/real-data/actions/habit.actions";
 import { cn } from "@/lib/cn";
 import {
   DashboardEmptyState,
@@ -27,10 +29,6 @@ import {
 const DASHBOARD_LINK_FOCUS_CLASSES =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-cyan)]";
 
-function clampHabitValue(habit: DashboardHabit) {
-  return Math.min(Math.max(habit.currentValue, 0), habit.targetValue);
-}
-
 function formatHabitNumber(value: number) {
   if (Number.isInteger(value)) {
     return value.toString();
@@ -40,7 +38,12 @@ function formatHabitNumber(value: number) {
 }
 
 function formatHabitValue(habit: DashboardHabit) {
-  const currentValue = formatHabitNumber(clampHabitValue(habit));
+  const currentValue = formatHabitNumber(habit.currentValue);
+
+  if (habit.targetValue === null) {
+    return `${currentValue}${habit.unit ? ` ${habit.unit}` : ""} · no target`;
+  }
+
   const targetValue = formatHabitNumber(habit.targetValue);
 
   if (habit.unit === "h") {
@@ -51,11 +54,11 @@ function formatHabitValue(habit: DashboardHabit) {
 }
 
 function completedHabitDots(habit: DashboardHabit) {
-  if (habit.targetValue <= 0 || habit.total <= 0) {
+  if (habit.targetValue === null || habit.targetValue <= 0 || habit.total <= 0) {
     return 0;
   }
 
-  const currentValue = clampHabitValue(habit);
+  const currentValue = habit.currentValue;
 
   if (currentValue <= 0) {
     return 0;
@@ -71,18 +74,6 @@ function completedHabitDots(habit: DashboardHabit) {
   );
 }
 
-function nextHabitCurrentValue(habit: DashboardHabit) {
-  const targetValue = Math.max(habit.targetValue, 0);
-  const stepValue = Math.max(habit.stepValue, 0.01);
-  const currentValue = Math.min(Math.max(habit.currentValue, 0), targetValue);
-
-  if (currentValue >= targetValue) {
-    return Math.max(0, targetValue - stepValue);
-  }
-
-  return Math.min(targetValue, currentValue + stepValue);
-}
-
 function AddHabitDialog({
   activeWindow,
   onClose,
@@ -92,26 +83,14 @@ function AddHabitDialog({
   onClose: () => void;
   profileId: DashboardProfileId;
 }>) {
-  const [state, formAction, pending] = useActionState(
-    createDashboardHabitAction,
-    initialDashboardActionState,
-  );
-  const router = useRouter();
-
-  useEffect(() => {
-    if (state.status === "success") {
-      router.refresh();
-      onClose();
-    }
-  }, [onClose, router, state.status]);
-
   return (
     <DashboardDialog
       labelledBy="add-habit-dialog-heading"
       onClose={onClose}
       open
     >
-      <form action={formAction}>
+      <form action={createHabitAction}>
+        <input name="returnTo" type="hidden" value="/dashboard" />
         <div className="border-b border-[var(--border-subtle)] px-5 py-4">
           <h2
             className="text-lg font-semibold text-[var(--text-primary)]"
@@ -121,7 +100,7 @@ function AddHabitDialog({
           </h2>
           <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
             {profileId === "manual"
-              ? "Speichert den Habit lokal im Manual-Profil."
+              ? "Speichert Definition und Slot im authentifizierten Manual-Profil."
               : "Wechsle ins Manual-Profil, um Habits lokal zu speichern."}
           </p>
         </div>
@@ -136,29 +115,16 @@ function AddHabitDialog({
             <option>Midday</option>
             <option>Evening</option>
           </SelectField>
-          <TextField defaultValue="1" label="Target" name="target" />
+          <TextField defaultValue="1" label="Target" name="dailyTarget" />
           <TextField
             label="Unit"
             name="unit"
             optional
             placeholder="min, ml, pages"
           />
+          <TextField defaultValue="1" label="Increment" name="defaultIncrement" />
+          <TextField defaultValue="1" label="Slot 1–8" name="sortOrder" />
         </div>
-        {state.message ? (
-          <p
-            className={cn(
-              "px-5 pb-2 text-[11px] font-semibold",
-              state.status === "success"
-                ? "text-[var(--accent-green)]"
-                : state.status === "blocked"
-                  ? "text-[var(--accent-orange)]"
-                  : "text-[var(--text-muted)]",
-            )}
-            role="status"
-          >
-            {state.message}
-          </p>
-        ) : null}
         <div className="flex justify-end gap-2 border-t border-[var(--border-subtle)] px-5 py-4">
           <button
             className={dashboardActionButtonClass}
@@ -169,10 +135,9 @@ function AddHabitDialog({
           </button>
           <button
             className={dashboardPrimaryButtonClass}
-            disabled={pending}
             type="submit"
           >
-            {pending ? "Saving..." : "Save"}
+            Save
           </button>
         </div>
       </form>
@@ -182,35 +147,18 @@ function AddHabitDialog({
 
 export function HabitTrackers({
   data,
+  feedback,
   profileId,
 }: Readonly<{
   data: DashboardHabitTrackers;
+  feedback?: string;
   profileId: DashboardProfileId;
 }>) {
   const [activeWindow, setActiveWindow] = useState<HabitTrackerWindow>(
     data.activeWindow,
   );
-  const [habitsByWindow, setHabitsByWindow] = useState(() => ({
-    Morning: [...data.habitsByWindow.Morning],
-    Midday: [...data.habitsByWindow.Midday],
-    Evening: [...data.habitsByWindow.Evening],
-  }));
   const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const habits = habitsByWindow[activeWindow];
-
-  function toggleHabit(habitId: string) {
-    setHabitsByWindow((current) => ({
-      ...current,
-      [activeWindow]: current[activeWindow].map((habit) =>
-        habit.id === habitId
-          ? {
-              ...habit,
-              currentValue: nextHabitCurrentValue(habit),
-            }
-          : habit,
-      ),
-    }));
-  }
+  const habits = data.habitsByWindow[activeWindow];
 
   const windowSwitch = (
     <div className="flex min-w-0 items-center justify-end">
@@ -255,30 +203,45 @@ export function HabitTrackers({
       title={data.title}
       titleHref={data.href}
     >
-      <div className="p-4 2xl:px-[24px] 2xl:pb-5 2xl:pt-4">
-        {profileId !== "demo" ? (
+      <div className="p-4 2xl:px-[24px] 2xl:pb-5 2xl:pt-4" data-dashboard-section="habit-tracker">
+        {feedback ? (
+          <p
+            className={cn(
+              "mb-2 rounded-[9px] border px-3 py-2 text-[10px] font-semibold",
+              feedback === "saved"
+                ? "border-[rgba(66,184,131,.28)] text-[var(--accent-green)]"
+                : "border-[rgba(217,146,79,.28)] text-[var(--accent-orange)]",
+            )}
+            role={feedback === "saved" ? "status" : "alert"}
+          >
+            {feedback === "saved"
+              ? "Habit aktualisiert."
+              : feedback === "blocked"
+                ? "Habit-Tracking benötigt das authentifizierte Manual-Profil."
+                : "Habit-Aktion konnte nicht gespeichert werden."}
+          </p>
+        ) : null}
+        {profileId === "empty" ? (
           <DashboardEmptyState
-            description="Habit definitions and timestamped logs are not implemented yet. Open Habits for the prepared domain surface."
-            title="Habit tracking prepared"
+            description="Im Empty-Profil werden keine Demo-Habits oder scheinbar persistente Controls gezeigt."
+            title="Keine Habit-Daten"
           />
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 2xl:grid-cols-[130px_130px_130px_130px] 2xl:gap-x-[14px] 2xl:gap-y-3">
+          <div className="grid grid-cols-2 gap-3 2xl:grid-cols-[130px_130px_130px_130px] 2xl:gap-x-[14px] 2xl:gap-y-3">
             {habits.map((habit) => {
               const valueLabel = formatHabitValue(habit);
               const activeDots = completedHabitDots(habit);
 
               return (
-                <button
-                  aria-label={`${habit.label}: ${valueLabel}. ${activeDots} of ${habit.total} active. Toggle progress.`}
+                <article
+                  aria-label={`${habit.label}: ${valueLabel}. ${activeDots} of ${habit.total} active.`}
                   className={cn(
                     "min-h-[68px] rounded-[14px] border border-[rgba(155,124,246,.16)] bg-[color-mix(in_srgb,var(--accent-purple)_5%,#101a2a)] p-2.5 text-left transition hover:border-[rgba(155,124,246,.30)]",
                     DASHBOARD_LINK_FOCUS_CLASSES,
                   )}
                   key={habit.id}
-                  onClick={() => toggleHabit(habit.id)}
-                  type="button"
                 >
-                  <div className="flex items-start gap-2.5">
+                  <div className="flex items-start justify-between gap-2.5">
                     <span className="grid size-6 shrink-0 place-items-center rounded-full border border-[rgba(155,124,246,.24)] bg-[rgba(155,124,246,.12)] text-[10px] font-semibold text-[var(--text-primary)]">
                       {habit.marker}
                     </span>
@@ -290,6 +253,19 @@ export function HabitTrackers({
                         {valueLabel}
                       </p>
                     </div>
+                    {profileId === "manual" ? (
+                      <form action={incrementHabitAction}>
+                        <input name="habitId" type="hidden" value={habit.id} />
+                        <input name="returnTo" type="hidden" value="/dashboard" />
+                        <button
+                          aria-label={`${habit.label} um ${formatHabitNumber(habit.stepValue)} ${habit.unit ?? "Count"} erhöhen`}
+                          className="grid size-8 place-items-center rounded-full border border-[rgba(155,124,246,.30)] text-sm font-semibold text-[var(--text-primary)]"
+                          type="submit"
+                        >
+                          +
+                        </button>
+                      </form>
+                    ) : null}
                   </div>
                   <p className="mt-1 text-[8px] font-semibold text-[var(--text-muted)]">
                     {activeDots} of {habit.total} active
@@ -310,16 +286,25 @@ export function HabitTrackers({
                       />
                     ))}
                   </div>
-                </button>
+                  {profileId === "manual" && habit.currentValue > 0 ? (
+                    <form action={undoHabitAction} className="mt-2">
+                      <input name="habitId" type="hidden" value={habit.id} />
+                      <input name="returnTo" type="hidden" value="/dashboard" />
+                      <button className="text-[9px] font-semibold text-[var(--text-muted)] underline-offset-2 hover:underline" type="submit">
+                        Letzten Eintrag rückgängig
+                      </button>
+                    </form>
+                  ) : null}
+                </article>
               );
             })}
-            {habits.length < 8 ? (
+            {profileId === "manual" && habits.length < 8 ? (
               <button
                 className={cn(
                   "grid min-h-[68px] place-items-center rounded-[14px] border border-[rgba(155,124,246,.16)] bg-[color-mix(in_srgb,var(--accent-purple)_5%,#101a2a)] p-2.5 text-center transition hover:border-[rgba(155,124,246,.30)]",
                   DASHBOARD_LINK_FOCUS_CLASSES,
                 )}
-                onClick={() => setAddDialogOpen(true)}
+                onClick={() => profileId === "manual" && setAddDialogOpen(true)}
                 type="button"
               >
                 <div>
@@ -338,7 +323,7 @@ export function HabitTrackers({
           </div>
         )}
       </div>
-      {profileId === "demo" && addDialogOpen ? (
+      {profileId === "manual" && addDialogOpen ? (
         <AddHabitDialog
           activeWindow={activeWindow}
           onClose={() => setAddDialogOpen(false)}

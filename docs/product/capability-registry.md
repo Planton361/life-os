@@ -50,7 +50,7 @@
 | Today Agenda day view | `CONNECTED` | task scheduling fields | maintain task-based core |
 | Today Agenda week/month | `CONNECTED_GAP` | Calendar/visual projection | align with canonical Calendar views |
 | Urgent time-block create | `UI_ONLY` | visible action | implement schedule/create flow without duplicate data |
-| Habit Tracker | `UI_ONLY` | Demo reference; Manual/Empty Prepared state without fake increment | implement definitions, increments, logs and windows |
+| Habit Tracker | `CONNECTED` | canonical Habits/Habit Logs, automatic profile-window projection and authenticated increment/undo reload proof | maintain eight-slot/window and timezone proofs |
 | Active Portfolio | `CONNECTED_GAP` | user-scoped projects/goals/skills, bounded existing ranking | explicit pin/favorite model remains |
 | Anti-Rot Actions | `UI_ONLY` | honest Prepared state without fake completion | implement library, rotation and completion |
 | Challenges | `UI_ONLY` | honest Prepared state without fake completion | implement challenge lifecycle and reward link |
@@ -187,13 +187,13 @@
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Habit definition | `UI_ONLY` | Dashboard/page shell | create habits model |
-| Flexible unit/increment | `NOT_STARTED` | none | define quantity, unit and default increment |
-| Morning/Midday/Evening window | `UI_ONLY` | visual tabs | persist windows and user time boundaries |
-| Dashboard increment click | `UI_ONLY` | visible blocks | create timestamped habit_logs |
-| Daily completion | `NOT_STARTED` | none | derive from goal/increments |
-| Habit history/trends | `UI_ONLY` | analytics shell | derive week/month views |
-| Habit archive | `NOT_STARTED` | none | lifecycle slice |
+| Habit definition | `CONNECTED` | user-scoped canonical habits with create/edit/order/archive UI and RLS | maintain |
+| Flexible unit/increment | `CONNECTED` | optional unit/target plus positive default increment; no-target state proven | maintain |
+| Morning/Midday/Evening window | `CONNECTED` | ordered profile boundaries, full-day resolution and per-window DB slot constraint | maintain timezone and boundary tests |
+| Dashboard increment click | `CONNECTED` | each click appends an owned timestamped habit_log; visible status and reload proof | maintain |
+| Daily completion | `CONNECTED` | local-date log aggregation with honest overachievement and no invented percentage | maintain |
+| Habit history/trends | `CONNECTED` | real log-derived seven-day cards and 30-day signals on Habits/Health | maintain |
+| Habit archive | `CONNECTED` | soft archive removes active Dashboard slot while retaining historical log projection | restore remains a separate future lifecycle capability |
 
 # 10. Running and Strength
 

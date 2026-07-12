@@ -251,7 +251,7 @@ export type DashboardHabit = {
   marker: string;
   label: string;
   currentValue: number;
-  targetValue: number;
+  targetValue: number | null;
   unit?: string;
   stepValue: number;
   total: number;

@@ -200,6 +200,116 @@ export type Database = {
           },
         ]
       }
+      habit_logs: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          habit_id: string
+          id: string
+          local_date: string
+          profile_id: string
+          recorded_at: string
+          timezone: string
+          updated_at: string
+          user_id: string
+          value: number
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          habit_id: string
+          id?: string
+          local_date: string
+          profile_id: string
+          recorded_at?: string
+          timezone: string
+          updated_at?: string
+          user_id: string
+          value: number
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          habit_id?: string
+          id?: string
+          local_date?: string
+          profile_id?: string
+          recorded_at?: string
+          timezone?: string
+          updated_at?: string
+          user_id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habit_logs_habit_id_fkey"
+            columns: ["habit_id"]
+            isOneToOne: false
+            referencedRelation: "habits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "habit_logs_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      habits: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          daily_target: number | null
+          default_increment: number
+          id: string
+          name: string
+          profile_id: string
+          sort_order: number
+          time_window: string
+          unit: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          daily_target?: number | null
+          default_increment?: number
+          id?: string
+          name: string
+          profile_id: string
+          sort_order: number
+          time_window: string
+          unit?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          daily_target?: number | null
+          default_increment?: number
+          id?: string
+          name?: string
+          profile_id?: string
+          sort_order?: number
+          time_window?: string
+          unit?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habits_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inbox_items: {
         Row: {
           archived_at: string | null
@@ -370,6 +480,9 @@ export type Database = {
         Row: {
           created_at: string
           display_name: string | null
+          habit_evening_starts_at: string
+          habit_midday_starts_at: string
+          habit_morning_starts_at: string
           id: string
           timezone: string
           updated_at: string
@@ -377,6 +490,9 @@ export type Database = {
         Insert: {
           created_at?: string
           display_name?: string | null
+          habit_evening_starts_at?: string
+          habit_midday_starts_at?: string
+          habit_morning_starts_at?: string
           id: string
           timezone?: string
           updated_at?: string
@@ -384,6 +500,9 @@ export type Database = {
         Update: {
           created_at?: string
           display_name?: string | null
+          habit_evening_starts_at?: string
+          habit_midday_starts_at?: string
+          habit_morning_starts_at?: string
           id?: string
           timezone?: string
           updated_at?: string

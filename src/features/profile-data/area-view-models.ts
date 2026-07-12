@@ -63,15 +63,18 @@ import {
 import { resolveContentStateMeta } from "@/features/content-state";
 import {
   createSupabaseNutritionRepository,
+  createSupabaseHabitRepository,
   createSupabaseResourceRepository,
   type SupabaseClientLike,
 } from "@/features/real-data/supabase";
 import type {
+  HabitSnapshot,
   Meal as RealDataMeal,
   Recipe as RealDataRecipe,
   RecipeIngredient as RealDataRecipeIngredient,
   Resource as RealDataResource,
 } from "@/features/real-data";
+import { localDateInTimeZone } from "@/features/real-data";
 import { getShopViewModel as getDemoShopViewModel } from "@/features/shop";
 import {
   getWorkLogViewModel as getDemoWorkLogViewModel,
@@ -462,12 +465,14 @@ function habitGroupFromManualHabit(
 function buildProfileHealthOverviewViewModel(
   profileId: Exclude<LifeOsProfileId, "demo">,
   profile: ManualProfileData,
+  habitSnapshot?: HabitSnapshot | null,
 ): ReturnType<typeof getDemoHealthOverviewViewModel> {
   const viewModel = clone(getDemoHealthOverviewViewModel());
-  const habitCount = profile.habits.length;
+  const canonicalHabits = habitSnapshot?.habits.filter((habit) => habit.archivedAt === null) ?? [];
+  const habitCount = habitSnapshot ? canonicalHabits.length : 0;
   const moodCount = profile.mood ? 1 : 0;
   const pageItemCount = moodCount + habitCount;
-  const firstHabit = profile.habits[0] ?? null;
+  const firstHabit = canonicalHabits[0] ?? null;
 
   viewModel.profileId = profileId;
   viewModel.contentStates = {
@@ -553,7 +558,24 @@ function buildProfileHealthOverviewViewModel(
     badge: habitCount > 0 ? `${habitCount} Routinen` : "0 Routinen",
     heatmap: {
       ...viewModel.habits.heatmap,
-      rows: [],
+      rows: habitSnapshot
+        ? (["Morning", "Midday", "Evening"] as const).map((window) => ({
+            label: window,
+            values: Array.from({ length: 30 }, (_, index) => {
+              const date = new Date();
+              date.setUTCDate(date.getUTCDate() - (29 - index));
+              const localDate = localDateInTimeZone(date, habitSnapshot.settings.timezone);
+              const count = habitSnapshot.logs.filter(
+                (log) =>
+                  log.localDate === localDate &&
+                  canonicalHabits.some(
+                    (habit) => habit.id === log.habitId && habit.window === window,
+                  ),
+              ).length;
+              return Math.min(3, count);
+            }),
+          }))
+        : [],
     },
     metrics: [
       {
@@ -565,11 +587,12 @@ function buildProfileHealthOverviewViewModel(
         label: "Active routines",
         value: String(habitCount),
       },
-      emptyHealthMetric(
-        "Habit logs",
-        "Noch keine Habit-Logs",
-        "var(--accent-green)",
-      ),
+      {
+        accent: "var(--accent-green)",
+        detail: habitSnapshot ? "timestamped in den letzten 30 Tagen" : "Noch keine Habit-Logs",
+        label: "Habit logs",
+        value: String(habitSnapshot?.logs.length ?? 0),
+      },
       emptyHealthMetric(
         "Next repair",
         "Repair Loops erscheinen nach lokalen Signalen.",
@@ -579,7 +602,7 @@ function buildProfileHealthOverviewViewModel(
     nextFocus: {
       ...viewModel.habits.nextFocus,
       title: firstHabit
-        ? `${firstHabit.label} · noch keine Logs`
+        ? `${firstHabit.name} · nächster ruhiger Schritt`
         : "Noch keine Habit-Signale",
     },
   };
@@ -1998,7 +2021,31 @@ export async function getHealthOverviewViewModel(): Promise<
     return getDemoHealthOverviewViewModel();
   }
 
-  return buildProfileHealthOverviewViewModel(profileId, await readManualProfile());
+  if (profileId === "manual") {
+    const auth = await createAuthenticatedSupabaseServerClient();
+    if (auth.ok) {
+      const repository = createSupabaseHabitRepository(auth.client);
+      const settings = await repository.getSettings(auth.user.id, auth.user.id);
+      if (settings) {
+        const today = localDateInTimeZone(new Date(), settings.timezone);
+        const start = new Date(`${today}T00:00:00.000Z`);
+        start.setUTCDate(start.getUTCDate() - 29);
+        const snapshot = await repository.getSnapshot(
+          auth.user.id,
+          auth.user.id,
+          start.toISOString().slice(0, 10),
+          today,
+        );
+        return buildProfileHealthOverviewViewModel(
+          profileId,
+          await readManualProfile(),
+          snapshot.ok ? snapshot.data : null,
+        );
+      }
+    }
+  }
+
+  return buildProfileHealthOverviewViewModel(profileId, await readManualProfile(), null);
 }
 
 export async function getHabitsAnalyticsViewModel(): Promise<

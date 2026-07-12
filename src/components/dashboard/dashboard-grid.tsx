@@ -12,7 +12,7 @@ import { ActivePortfolio } from "@/components/dashboard/sections/active-portfoli
 import { getDashboardViewModel } from "@/features/profile-data";
 import { ManualDbAuthNotice } from "@/features/real-data/manual-db-auth-notice";
 
-export async function DashboardGrid() {
+export async function DashboardGrid({ habitFeedback }: Readonly<{ habitFeedback?: string }>) {
   const dashboard = await getDashboardViewModel();
   const { profileId } = dashboard;
 
@@ -47,7 +47,7 @@ export async function DashboardGrid() {
         <TodayAgenda data={dashboard.todayAgenda} profileId={profileId} />
 
         <div className="min-w-0 space-y-[var(--grid-gap)]">
-          <HabitTrackers data={dashboard.habitTrackers} profileId={profileId} />
+          <HabitTrackers data={dashboard.habitTrackers} feedback={habitFeedback} profileId={profileId} />
           <ActivePortfolio
             data={dashboard.activePortfolio}
             profileId={profileId}

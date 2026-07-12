@@ -63,6 +63,10 @@ import {
   type ReviewTaskDecision,
   type RecurringTaskTemplate,
   type HealthSnapshot,
+  type HabitSnapshot,
+  aggregateHabitDay,
+  orderedDashboardHabits,
+  resolveHabitWindow,
   type Resource as RealDataResource,
   type Skill as RealDataSkill,
   type SkillEvidence as RealDataSkillEvidence,
@@ -80,6 +84,7 @@ import {
   createSupabaseSkillRepository,
   createSupabaseTaskRepository,
   createSupabaseHealthRepository,
+  createSupabaseHabitRepository,
 } from "@/features/real-data/supabase";
 import {
   createManualHabit,
@@ -391,6 +396,7 @@ type DashboardReadSources = {
   nutrition: DashboardNutritionTotals;
   weeklyReview: ReviewRecord | null;
   health: HealthSnapshot | null;
+  habits: HabitSnapshot | null;
   scheduleLinks: readonly { source_id: string; source_type: "meal" | "review"; task_id: string }[];
 };
 
@@ -409,6 +415,7 @@ const emptyDashboardReadSources: DashboardReadSources = {
   },
   weeklyReview: null,
   health: null,
+  habits: null,
   scheduleLinks: [],
 };
 
@@ -1335,12 +1342,39 @@ function buildProfileDashboardViewModel(
   const decidedMealCount = meals.filter(mealIsDecided).length;
   const latestMood = sources.health?.moods.find((entry) => entry.localDate === dashboardLocalDate());
   const activeMood = latestMood ? `${latestMood.mood.charAt(0).toUpperCase()}${latestMood.mood.slice(1)}` : "Empty";
-  const dashboardHabits = {
-    Morning: [],
-    Midday: [],
-    Evening: [],
-  } satisfies Record<HabitTrackerWindow, DashboardHabit[]>;
-  const activeHabitCount = dashboardHabits.Morning.length;
+  const dashboardHabits = Object.fromEntries(
+    (["Morning", "Midday", "Evening"] as const).map((window) => [
+      window,
+      orderedDashboardHabits(
+        (sources.habits?.habits ?? []).filter(
+          (habit) => habit.archivedAt === null && habit.window === window,
+        ),
+      ).map((habit) => ({
+        area: "health" as const,
+        currentValue: aggregateHabitDay(
+          (sources.habits?.logs ?? []).filter(
+            (log) =>
+              log.habitId === habit.id &&
+              log.localDate === dashboardLocalDate(),
+          ),
+        ),
+        id: habit.id,
+        label: habit.name,
+        marker: habit.name.slice(0, 1).toUpperCase(),
+        stepValue: habit.defaultIncrement,
+        targetValue: habit.dailyTarget,
+        total: 5,
+        unit: habit.unit ?? undefined,
+      })),
+    ]),
+  ) as Record<HabitTrackerWindow, DashboardHabit[]>;
+  const activeHabitWindow = sources.habits
+    ? resolveHabitWindow(
+        localTimeLabel(new Date(), sources.habits.settings.timezone),
+        sources.habits.settings,
+      )
+    : "Morning";
+  const activeHabitCount = dashboardHabits[activeHabitWindow].length;
   const portfolioItems = [
     ...profile.projects.map(projectToPortfolioItem),
     ...profile.goals.map(goalToPortfolioItem),
@@ -1714,13 +1748,14 @@ function buildProfileDashboardViewModel(
   viewModel.habitTrackers = {
     ...viewModel.habitTrackers,
     href: "/health/habits",
-    addHabitLabel: "Prepared",
-    addHabitMeta: "Habit source not implemented",
+    activeWindow: activeHabitWindow,
+    addHabitLabel: "Add habit",
+    addHabitMeta: "open management",
     contentState: resolveContentStateMeta({
       capacity: dashboardCapacity.habits,
       itemCount: activeHabitCount,
     }),
-    totalSlotsLabel: `${activeHabitCount}/${dashboardCapacity.habits}`,
+    totalSlotsLabel: `${activeHabitCount}/${dashboardCapacity.habits} · ${activeHabitWindow}`,
     habitsByWindow: dashboardHabits,
   };
   viewModel.activePortfolio = {
@@ -2644,6 +2679,7 @@ async function getManualDashboardReadData(): Promise<{
   const week = reviewWeek(dashboardLocalDate());
   const reviewRepository = createSupabaseReviewRepository(auth.client);
   const healthRepository = createSupabaseHealthRepository(auth.client);
+  const habitRepository = createSupabaseHabitRepository(auth.client);
   const [
     taskResult,
     inboxResult,
@@ -2654,6 +2690,7 @@ async function getManualDashboardReadData(): Promise<{
     dailyReviewResult,
     weeklyReviewResult,
     healthSnapshot,
+    habitSnapshot,
     scheduleLinkResult,
   ] = await Promise.all([
     getManualTasksFromSupabase(auth.client, userId),
@@ -2678,6 +2715,7 @@ async function getManualDashboardReadData(): Promise<{
     ),
     reviewRepository.getReviewByPeriod(userId, userId, "weekly", week.start),
     healthRepository.getSnapshot(userId, userId),
+    habitRepository.getSnapshot(userId, userId, dashboardLocalDate(), dashboardLocalDate()),
     createSupabaseScheduleSourceRepository(auth.client).getLinks(userId),
   ]);
   const scheduleLinks = scheduleLinkResult.error ? [] : (scheduleLinkResult.data ?? []);
@@ -2736,6 +2774,7 @@ async function getManualDashboardReadData(): Promise<{
       skills: skills.skills,
       weeklyReview: weeklyReviewResult.ok ? weeklyReviewResult.data : null,
       health: healthSnapshot,
+      habits: habitSnapshot.ok ? habitSnapshot.data : null,
       scheduleLinks,
     },
   };
