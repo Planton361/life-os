@@ -22,44 +22,45 @@ const recurrenceRuleSchema = z.discriminatedUnion("frequency", [
     version: z.literal("v1"),
   }),
   z.object({
-    byWeekday: z
-      .array(z.coerce.number().int().min(1).max(7))
-      .min(1)
-      .max(7),
+    byWeekday: z.array(z.coerce.number().int().min(1).max(7)).min(1).max(7),
     frequency: z.literal("weekly"),
     interval: recurrenceIntervalSchema.optional(),
     version: z.literal("v1"),
   }),
 ]);
-const optionalUuidSchema = z.preprocess(
-  (value) => {
-    if (value === null) return undefined;
-    if (typeof value === "string") {
-      const trimmed = value.trim();
+const optionalUuidSchema = z.preprocess((value) => {
+  if (value === null) return null;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
 
-      return trimmed.length > 0 ? trimmed : undefined;
-    }
+    return trimmed.length > 0 ? trimmed : undefined;
+  }
 
-    return value;
-  },
-  z.string().uuid().optional(),
-);
+  return value;
+}, z.string().uuid().nullable().optional());
+
+const optionalNullableStringSchema = optionalTrimmedStringSchema.nullable();
+const optionalNullableDateSchema = optionalLocalDateSchema.nullable();
+const optionalNullablePrioritySchema =
+  optionalEnumSchema(taskPriorities).nullable();
+const optionalNullableEnergySchema =
+  optionalEnumSchema(taskEnergies).nullable();
+const optionalNullableDurationSchema = optionalPositiveIntegerSchema
+  .nullable()
+  .refine((value) => value === undefined || value === null || value <= 1440, {
+    message: "Expected a duration of at most 1440 minutes.",
+  });
 
 const recurringTaskTemplateBaseSchema = z.object({
   areaId: optionalUuidSchema,
-  description: optionalTrimmedStringSchema,
-  durationMinutes: optionalPositiveIntegerSchema.refine(
-    (value) => value === undefined || value <= 1440,
-    {
-      message: "Expected a duration of at most 1440 minutes.",
-    },
-  ),
-  endsOn: optionalLocalDateSchema,
-  energy: optionalEnumSchema(taskEnergies),
+  description: optionalNullableStringSchema,
+  durationMinutes: optionalNullableDurationSchema,
+  endsOn: optionalNullableDateSchema,
+  energy: optionalNullableEnergySchema,
   goalId: optionalUuidSchema,
   isActive: optionalBooleanSchema,
-  nextAction: optionalTrimmedStringSchema,
-  priority: optionalEnumSchema(taskPriorities),
+  nextAction: optionalNullableStringSchema,
+  priority: optionalNullablePrioritySchema,
   projectId: optionalUuidSchema,
   recurrenceRule: recurrenceRuleSchema,
   startsOn: localDateSchema,
@@ -68,11 +69,11 @@ const recurringTaskTemplateBaseSchema = z.object({
 });
 
 function endsOnIsAfterStartsOn(input: {
-  endsOn?: string;
+  endsOn?: string | null;
   startsOn?: string;
 }) {
   return (
-    input.endsOn === undefined ||
+    input.endsOn == null ||
     input.startsOn === undefined ||
     Date.parse(input.endsOn) >= Date.parse(input.startsOn)
   );
@@ -173,7 +174,9 @@ export const generateRecurringTaskInstancesForRangeActionInputSchema = z
     path: ["endDate"],
   })
   .refine(
-    (input) => rangeLengthInDays(input.startDate, input.endDate) <= maxGenerationRangeDays,
+    (input) =>
+      rangeLengthInDays(input.startDate, input.endDate) <=
+      maxGenerationRangeDays,
     {
       message: `Expected a generation range of at most ${maxGenerationRangeDays} days.`,
       path: ["endDate"],

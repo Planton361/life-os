@@ -61,6 +61,7 @@ import {
   type Recipe as RealDataRecipe,
   type ReviewRecord,
   type ReviewTaskDecision,
+  type RecurringTaskTemplate,
   type HealthSnapshot,
   type Resource as RealDataResource,
   type Skill as RealDataSkill,
@@ -72,6 +73,7 @@ import {
   createSupabaseInboxRepository,
   createSupabaseNutritionRepository,
   createSupabaseProjectRepository,
+  createSupabaseRecurringTaskTemplateRepository,
   createSupabaseReviewRepository,
   createSupabaseScheduleSourceRepository,
   createSupabaseResourceRepository,
@@ -3224,6 +3226,7 @@ function buildProfileTodayViewModel(
     dailyDecisions?: readonly ReviewTaskDecision[];
     dailyReview?: ReviewRecord | null;
     manualDbAvailable?: boolean;
+    recurringTemplates?: readonly RecurringTaskTemplate[];
   } = {},
 ): TodayViewModel {
   const viewModel = clone(getDemoTodayViewModel());
@@ -3362,6 +3365,37 @@ function buildProfileTodayViewModel(
   };
   viewModel.recurringGeneration = {
     enabled: profileId === "manual" && Boolean(options.manualDbAvailable),
+    templates: (options.recurringTemplates ?? []).flatMap((template) => {
+      const rule = template.recurrenceRule;
+      const frequency = rule.frequency;
+      if (frequency !== "daily" && frequency !== "weekly") return [];
+
+      return [{
+        byWeekday:
+          frequency === "weekly" && Array.isArray(rule.byWeekday)
+            ? rule.byWeekday.filter(
+                (value): value is number =>
+                  typeof value === "number" && value >= 1 && value <= 7,
+              )
+            : [],
+        description: template.description,
+        durationMinutes: template.durationMinutes,
+        endsOn: template.endsOn,
+        energy: template.energy,
+        frequency,
+        id: template.id,
+        interval:
+          typeof rule.interval === "number" && rule.interval > 0
+            ? rule.interval
+            : 1,
+        isActive: template.isActive,
+        nextAction: template.nextAction,
+        priority: template.priority,
+        startsOn: template.startsOn,
+        timezone: template.timezone,
+        title: template.title,
+      }];
+    }),
     today,
   };
   viewModel.openingReview = {
@@ -4037,6 +4071,17 @@ export async function getTodayViewModel(): Promise<TodayViewModel> {
 
   if (profileId === "manual") {
     const dashboard = await getManualDashboardReadData();
+    let recurringTemplates: readonly RecurringTaskTemplate[] = [];
+
+    if (dashboard.sources.authAvailable) {
+      const auth = await createAuthenticatedSupabaseServerClient();
+      if (auth.ok) {
+        const result = await createSupabaseRecurringTaskTemplateRepository(
+          auth.client,
+        ).getRecurringTaskTemplatesByUser(auth.user.id, auth.user.id);
+        if (result.ok) recurringTemplates = result.data;
+      }
+    }
 
     return buildProfileTodayViewModel(
       dashboard.profile,
@@ -4049,6 +4094,7 @@ export async function getTodayViewModel(): Promise<TodayViewModel> {
         dailyDecisions: dashboard.sources.dailyDecisions,
         dailyReview: dashboard.sources.dailyReview,
         manualDbAvailable: dashboard.sources.authAvailable,
+        recurringTemplates,
       },
     );
   }

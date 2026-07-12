@@ -7,8 +7,16 @@ import {
   reopenTaskFormAction,
   scheduleTaskForTodayFormAction,
 } from "@/features/real-data/actions/task.actions";
-import { generateRecurringTaskInstancesForTodayFormAction } from "@/features/real-data/actions/recurring-task-generation.actions";
-import { createRecurringTaskTemplateTodayFormAction } from "@/features/real-data/actions/recurring-task-template.actions";
+import {
+  generateRecurringTaskInstancesForRangeTodayFormAction,
+  generateRecurringTaskInstancesForTodayFormAction,
+} from "@/features/real-data/actions/recurring-task-generation.actions";
+import {
+  createRecurringTaskTemplateTodayFormAction,
+  deactivateRecurringTaskTemplateTodayFormAction,
+  reactivateRecurringTaskTemplateTodayFormAction,
+  updateRecurringTaskTemplateTodayFormAction,
+} from "@/features/real-data/actions/recurring-task-template.actions";
 import { cn } from "@/lib/cn";
 import type {
   TodayActivityEventViewModel,
@@ -25,7 +33,13 @@ import type {
 
 export type TodayRecurringFeedback = {
   generation?: "blocked" | "error" | "generated" | "idle";
-  template?: "blocked" | "created" | "error";
+  template?:
+    | "activated"
+    | "blocked"
+    | "created"
+    | "error"
+    | "paused"
+    | "updated";
 };
 
 function contentStateAttributes(
@@ -285,6 +299,13 @@ function RecurringFeedbackMessage({
     feedback?.template === "created"
       ? "Wiederkehrende Vorlage erstellt."
       : null,
+    feedback?.template === "updated"
+      ? "Wiederkehrende Vorlage aktualisiert. Bereits erzeugte Aufgaben bleiben unverändert."
+      : null,
+    feedback?.template === "paused" ? "Wiederkehrende Vorlage pausiert." : null,
+    feedback?.template === "activated"
+      ? "Wiederkehrende Vorlage reaktiviert."
+      : null,
     feedback?.template === "blocked"
       ? "Melde dich an, um wiederkehrende Vorlagen zu erstellen."
       : null,
@@ -338,6 +359,11 @@ function RecurringGenerationControl({
 }>) {
   if (!recurringGeneration.enabled) return null;
 
+  const inputClass =
+    "min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.76)] px-2.5 text-[12px] text-[var(--text-primary)] outline-none focus:border-[var(--focus-ring)]";
+  const labelClass =
+    "grid gap-1 text-[10px] font-semibold text-[var(--text-muted)]";
+
   return (
     <div
       className="mt-2 rounded-[10px] border border-[rgba(95,200,215,.18)] bg-[rgba(18,28,43,.50)] p-2.5"
@@ -365,6 +391,39 @@ function RecurringGenerationControl({
 
       <RecurringFeedbackMessage feedback={feedback} />
 
+      <form
+        action={generateRecurringTaskInstancesForRangeTodayFormAction}
+        className="mt-2 grid gap-2 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.42)] p-2.5 sm:grid-cols-[1fr_1fr_auto] sm:items-end"
+        data-recurring-section="range-generation"
+      >
+        <label className={labelClass}>
+          Von
+          <input
+            className={inputClass}
+            defaultValue={recurringGeneration.today}
+            name="startDate"
+            required
+            type="date"
+          />
+        </label>
+        <label className={labelClass}>
+          Bis (max. 31 Tage)
+          <input
+            className={inputClass}
+            defaultValue={recurringGeneration.today}
+            name="endDate"
+            required
+            type="date"
+          />
+        </label>
+        <button
+          className="min-h-8 rounded-full border border-[rgba(95,200,215,.34)] bg-[rgba(95,200,215,.10)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+          type="submit"
+        >
+          Zeitraum explizit erzeugen
+        </button>
+      </form>
+
       <details
         className="mt-2 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.42)] px-2.5 py-2"
         data-today-section="recurring-template-setup"
@@ -376,29 +435,19 @@ function RecurringGenerationControl({
           action={createRecurringTaskTemplateTodayFormAction}
           className="mt-2 grid gap-2"
         >
-          <input
-            name="startsOn"
-            type="hidden"
-            value={recurringGeneration.today}
-          />
           <input name="timezone" type="hidden" value="Europe/Berlin" />
           <input name="isActive" type="hidden" value="true" />
 
           <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)]">
             Title
-            <input
-              className="min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.76)] px-2.5 text-[12px] text-[var(--text-primary)] outline-none focus:border-[var(--focus-ring)]"
-              name="title"
-              required
-              type="text"
-            />
+            <input className={inputClass} name="title" required type="text" />
           </label>
 
-          <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_120px]">
+          <div className="grid gap-2 sm:grid-cols-3">
             <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)]">
               Frequency
               <select
-                className="min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.76)] px-2.5 text-[12px] text-[var(--text-primary)] outline-none focus:border-[var(--focus-ring)]"
+                className={inputClass}
                 defaultValue="daily"
                 name="frequency"
               >
@@ -406,17 +455,80 @@ function RecurringGenerationControl({
                 <option value="weekly">weekly</option>
               </select>
             </label>
+            <label className={labelClass}>
+              Intervall
+              <input
+                className={inputClass}
+                defaultValue="1"
+                max="366"
+                min="1"
+                name="interval"
+                required
+                type="number"
+              />
+            </label>
             <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)]">
               Duration
               <input
-                className="min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.76)] px-2.5 text-[12px] text-[var(--text-primary)] outline-none focus:border-[var(--focus-ring)]"
-                min="1"
+                className={inputClass}
+                min="5"
                 name="durationMinutes"
                 placeholder="15"
                 type="number"
               />
             </label>
           </div>
+
+          <div className="grid gap-2 sm:grid-cols-2">
+            <label className={labelClass}>
+              Startdatum
+              <input
+                className={inputClass}
+                defaultValue={recurringGeneration.today}
+                name="startsOn"
+                required
+                type="date"
+              />
+            </label>
+            <label className={labelClass}>
+              Optionales Enddatum
+              <input className={inputClass} name="endsOn" type="date" />
+            </label>
+            <label className={labelClass}>
+              Priorität
+              <select
+                className={inputClass}
+                defaultValue="none"
+                name="priority"
+              >
+                <option value="none">Keine</option>
+                <option value="P0">P0</option>
+                <option value="P1">P1</option>
+                <option value="P2">P2</option>
+                <option value="P3">P3</option>
+              </select>
+            </label>
+            <label className={labelClass}>
+              Energie
+              <select className={inputClass} defaultValue="" name="energy">
+                <option value="">Nicht gesetzt</option>
+                <option value="low">Niedrig</option>
+                <option value="medium">Mittel</option>
+                <option value="high">Hoch</option>
+              </select>
+            </label>
+          </div>
+          <label className={labelClass}>
+            Beschreibung
+            <textarea
+              className={`${inputClass} min-h-16 py-2`}
+              name="description"
+            />
+          </label>
+          <label className={labelClass}>
+            Nächste Aktion
+            <input className={inputClass} name="nextAction" type="text" />
+          </label>
 
           <fieldset className="rounded-[9px] border border-[var(--border-subtle)] px-2 py-1.5">
             <legend className="px-1 text-[10px] font-semibold text-[var(--text-muted)]">
@@ -448,6 +560,201 @@ function RecurringGenerationControl({
           </button>
         </form>
       </details>
+
+      <div className="mt-2 grid gap-2" data-recurring-section="template-list">
+        {recurringGeneration.templates.length === 0 ? (
+          <p className="rounded-[9px] border border-dashed border-[var(--border-subtle)] px-3 py-2 text-[10px] text-[var(--text-muted)]">
+            Noch keine wiederkehrenden Vorlagen. Erstellen erzeugt noch keine
+            Aufgaben.
+          </p>
+        ) : (
+          recurringGeneration.templates.map((template) => (
+            <details
+              className="rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.42)] px-2.5 py-2"
+              data-recurring-template-id={template.id}
+              key={template.id}
+            >
+              <summary className="cursor-pointer text-[10px] font-semibold text-[var(--text-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]">
+                {template.title} · {template.isActive ? "Aktiv" : "Pausiert"} ·{" "}
+                {template.frequency === "daily" ? "Täglich" : "Wöchentlich"}
+              </summary>
+              <form
+                action={updateRecurringTaskTemplateTodayFormAction}
+                className="mt-2 grid gap-2"
+              >
+                <input name="templateId" type="hidden" value={template.id} />
+                <input
+                  name="timezone"
+                  type="hidden"
+                  value={template.timezone}
+                />
+                <label className={labelClass}>
+                  Titel
+                  <input
+                    className={inputClass}
+                    defaultValue={template.title}
+                    name="title"
+                    required
+                    type="text"
+                  />
+                </label>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  <label className={labelClass}>
+                    Frequenz
+                    <select
+                      className={inputClass}
+                      defaultValue={template.frequency}
+                      name="frequency"
+                    >
+                      <option value="daily">Täglich</option>
+                      <option value="weekly">Wöchentlich</option>
+                    </select>
+                  </label>
+                  <label className={labelClass}>
+                    Intervall
+                    <input
+                      className={inputClass}
+                      defaultValue={template.interval}
+                      max="366"
+                      min="1"
+                      name="interval"
+                      required
+                      type="number"
+                    />
+                  </label>
+                  <label className={labelClass}>
+                    Standarddauer
+                    <input
+                      className={inputClass}
+                      defaultValue={template.durationMinutes ?? ""}
+                      min="5"
+                      name="durationMinutes"
+                      type="number"
+                    />
+                  </label>
+                </div>
+                <fieldset className="rounded-[9px] border border-[var(--border-subtle)] px-2 py-1.5">
+                  <legend className="px-1 text-[10px] font-semibold text-[var(--text-muted)]">
+                    Wochentage
+                  </legend>
+                  <div className="flex flex-wrap gap-1.5">
+                    {weekdayOptions.map(([value, label]) => (
+                      <label
+                        className="inline-flex min-h-7 items-center gap-1 rounded-full border border-[var(--border-subtle)] px-2 text-[10px]"
+                        key={value}
+                      >
+                        <input
+                          defaultChecked={template.byWeekday.includes(
+                            Number(value),
+                          )}
+                          name="byWeekday"
+                          type="checkbox"
+                          value={value}
+                        />
+                        {label}
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <label className={labelClass}>
+                    Startdatum
+                    <input
+                      className={inputClass}
+                      defaultValue={template.startsOn}
+                      name="startsOn"
+                      required
+                      type="date"
+                    />
+                  </label>
+                  <label className={labelClass}>
+                    Optionales Enddatum
+                    <input
+                      className={inputClass}
+                      defaultValue={template.endsOn ?? ""}
+                      name="endsOn"
+                      type="date"
+                    />
+                  </label>
+                  <label className={labelClass}>
+                    Priorität
+                    <select
+                      className={inputClass}
+                      defaultValue={template.priority ?? "none"}
+                      name="priority"
+                    >
+                      <option value="none">Keine</option>
+                      <option value="P0">P0</option>
+                      <option value="P1">P1</option>
+                      <option value="P2">P2</option>
+                      <option value="P3">P3</option>
+                    </select>
+                  </label>
+                  <label className={labelClass}>
+                    Energie
+                    <select
+                      className={inputClass}
+                      defaultValue={template.energy ?? ""}
+                      name="energy"
+                    >
+                      <option value="">Nicht gesetzt</option>
+                      <option value="low">Niedrig</option>
+                      <option value="medium">Mittel</option>
+                      <option value="high">Hoch</option>
+                    </select>
+                  </label>
+                </div>
+                <label className={labelClass}>
+                  Beschreibung
+                  <textarea
+                    className={`${inputClass} min-h-16 py-2`}
+                    defaultValue={template.description ?? ""}
+                    name="description"
+                  />
+                </label>
+                <label className={labelClass}>
+                  Nächste Aktion
+                  <input
+                    className={inputClass}
+                    defaultValue={template.nextAction ?? ""}
+                    name="nextAction"
+                    type="text"
+                  />
+                </label>
+                <p className="text-[10px] leading-4 text-[var(--text-muted)]">
+                  Änderungen gelten nur für künftig erzeugte Instanzen.
+                  Bestehende oder bearbeitete Aufgaben werden nicht
+                  überschrieben.
+                </p>
+                <button
+                  className="justify-self-end min-h-8 rounded-full border border-[rgba(95,200,215,.34)] px-3 text-[10px] font-semibold"
+                  type="submit"
+                >
+                  Vorlage speichern
+                </button>
+              </form>
+              <form
+                action={
+                  template.isActive
+                    ? deactivateRecurringTaskTemplateTodayFormAction
+                    : reactivateRecurringTaskTemplateTodayFormAction
+                }
+                className="mt-2 flex justify-end"
+              >
+                <input name="templateId" type="hidden" value={template.id} />
+                <button
+                  className="min-h-8 rounded-full border border-[var(--border-default)] px-3 text-[10px] font-semibold text-[var(--text-secondary)]"
+                  type="submit"
+                >
+                  {template.isActive
+                    ? "Vorlage pausieren"
+                    : "Vorlage reaktivieren"}
+                </button>
+              </form>
+            </details>
+          ))
+        )}
+      </div>
     </div>
   );
 }

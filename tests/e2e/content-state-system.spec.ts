@@ -317,6 +317,7 @@ async function createRecurringTemplateFromToday(
   options: {
     durationMinutes?: string;
     frequency?: "daily" | "weekly";
+    priority?: string;
     weekday?: number;
   } = {},
 ) {
@@ -333,6 +334,10 @@ async function createRecurringTemplateFromToday(
 
   if (options.durationMinutes) {
     await setup.getByLabel("Duration").fill(options.durationMinutes);
+  }
+
+  if (options.priority) {
+    await setup.getByLabel("Priorität").selectOption(options.priority);
   }
 
   if (options.frequency === "weekly" && options.weekday) {
@@ -5319,6 +5324,7 @@ test.describe("Today content states", () => {
     await createRecurringTemplateFromToday(page, title, {
       durationMinutes: "15",
       frequency: "daily",
+      priority: "P0",
     });
     await generateRecurringTasksForToday(page);
     await expect(
@@ -5359,6 +5365,68 @@ test.describe("Today content states", () => {
     await expect(
       page.locator('[data-today-section="activity-stream"] ol').getByText(title),
     ).toHaveCount(1);
+  });
+
+  test("Manual Recurring creates and edits a template across reload", async ({ page }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session.",
+    );
+
+    const title = uniqueTitle("Manual Recurring Manage");
+    const updatedTitle = `${title} Updated`;
+    await createRecurringTemplateFromToday(page, title, {
+      durationMinutes: "30",
+      frequency: "daily",
+    });
+
+    const template = page
+      .locator('[data-recurring-section="template-list"] details')
+      .filter({ hasText: title });
+    await expect(template).toHaveCount(1);
+    await template.locator("summary").click();
+    await template.getByLabel("Titel").fill(updatedTitle);
+    await template.getByLabel("Intervall").fill("2");
+    await template.getByLabel("Standarddauer").fill("45");
+    await template.getByRole("button", { name: "Vorlage speichern" }).click();
+    await page.waitForLoadState("networkidle");
+    await expect(page.getByText("Wiederkehrende Vorlage aktualisiert.")).toBeVisible();
+    await page.reload();
+    const updatedTemplate = page
+      .locator('[data-recurring-section="template-list"] details')
+      .filter({ hasText: updatedTitle });
+    await expect(updatedTemplate).toHaveCount(1);
+    await updatedTemplate.locator("summary").click();
+    await expect(updatedTemplate.getByLabel("Intervall")).toHaveValue("2");
+    await expect(updatedTemplate.getByLabel("Standarddauer")).toHaveValue("45");
+  });
+
+  test("Manual Recurring pauses and reactivates a template", async ({ page }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session.",
+    );
+
+    const title = uniqueTitle("Manual Recurring Pause");
+    await createRecurringTemplateFromToday(page, title);
+    let template = page
+      .locator('[data-recurring-section="template-list"] details')
+      .filter({ hasText: title });
+    await template.locator("summary").click();
+    await template.getByRole("button", { name: "Vorlage pausieren" }).click();
+    await page.waitForLoadState("networkidle");
+    template = page
+      .locator('[data-recurring-section="template-list"] details')
+      .filter({ hasText: title });
+    await expect(template.locator("summary")).toContainText("Pausiert");
+    await template.locator("summary").click();
+    await template.getByRole("button", { name: "Vorlage reaktivieren" }).click();
+    await page.waitForLoadState("networkidle");
+    await page.reload();
+    template = page
+      .locator('[data-recurring-section="template-list"] details')
+      .filter({ hasText: title });
+    await expect(template.locator("summary")).toContainText("Aktiv");
   });
 
   test("Manual Recurring weekly rule respects ISO weekday", async ({ page }) => {

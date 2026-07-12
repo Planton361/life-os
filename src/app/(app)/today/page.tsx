@@ -34,7 +34,12 @@ function recurringFeedbackFromSearchParams(
         ? generation
         : undefined,
     template:
-      template === "blocked" || template === "created" || template === "error"
+      template === "activated" ||
+      template === "blocked" ||
+      template === "created" ||
+      template === "error" ||
+      template === "paused" ||
+      template === "updated"
         ? template
         : undefined,
   };

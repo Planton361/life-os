@@ -122,11 +122,10 @@ export async function generateRecurringTaskInstancesForDateAction(
 
   if (!context.ok) return context.result;
 
-  const parsed = generateRecurringTaskInstancesForDateActionInputSchema.safeParse(
-    {
+  const parsed =
+    generateRecurringTaskInstancesForDateActionInputSchema.safeParse({
       date: formString(formData, "date"),
-    },
-  );
+    });
 
   if (!parsed.success) {
     return emptyGenerationResult(
@@ -237,5 +236,12 @@ export async function generateRecurringTaskInstancesForTodayFormAction(
 ): Promise<void> {
   const result = await generateRecurringTaskInstancesForDateAction(formData);
 
+  redirect(todayGenerationReturnUrl(result));
+}
+
+export async function generateRecurringTaskInstancesForRangeTodayFormAction(
+  formData: FormData,
+): Promise<void> {
+  const result = await generateRecurringTaskInstancesForRangeAction(formData);
   redirect(todayGenerationReturnUrl(result));
 }

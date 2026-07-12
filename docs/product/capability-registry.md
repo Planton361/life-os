@@ -81,7 +81,7 @@
 | Today task projection | `CONNECTED` | planned/scheduled tasks | maintain |
 | Task planning | `CONNECTED` | task planning actions | maintain |
 | Task complete/reopen | `CONNECTED` | lifecycle actions | maintain |
-| Recurring instance projection | `CONNECTED_GAP` | generated task instances | add full template management and routine UX |
+| Recurring instance projection | `CONNECTED` | explicit idempotent generation, DB uniqueness, pure-rule tests and authenticated Today/Dashboard/Calendar reload proof | maintain |
 | Carry-over/open loops | `CONNECTED` | canonical review records plus atomic user-scoped task decisions | maintain ownership and reload proofs |
 | Daily Review | `CONNECTED` | canonical user-scoped review record, V5 flow and Dashboard/Today projections | maintain |
 | Weekly Review | `CONNECTED` | canonical user-scoped review record with derived task/project movement | maintain |
@@ -103,7 +103,7 @@
 | Month view | `UI_ONLY` | prepared view | connect to canonical schedule sources |
 | Calendar filters | `UI_ONLY` | visual filters | implement area/type/project/goal/skill filtering |
 | Project/Goal queue | `UI_ONLY` | visual concepts | derive tasks and roadmap order from canonical relations |
-| Recurring/routine scheduling | `CONNECTED_GAP` | recurring templates/instances | add management and cross-domain routines |
+| Recurring/routine scheduling | `CONNECTED` | user-scoped template list/create/edit/pause/reactivate, explicit date/range generation and authenticated reload proof; no background writes | maintain |
 | Meal schedule source | `CONNECTED` | idempotent user-scoped source link to canonical Task scheduling; Calendar/Today/Dashboard projection and atomic bidirectional completion | maintain reload and ownership proofs |
 | Workout schedule source | `NOT_STARTED` | workout model absent | implement after H2 foundation |
 | Review schedule source | `CONNECTED` | Daily/Weekly Reviews link idempotently to canonical executable Tasks with atomic bidirectional completion | maintain reload and ownership proofs |

@@ -31,13 +31,15 @@ function optionalFormString(formData: FormData, key: string) {
 function optionalFormStringIfPresent(formData: FormData, key: string) {
   if (!formData.has(key)) return undefined;
 
-  return optionalFormString(formData, key);
+  return optionalFormString(formData, key) ?? null;
 }
 
 function optionalFormNumber(formData: FormData, key: string) {
   if (!formData.has(key)) return undefined;
 
-  const value = Number(formString(formData, key));
+  const raw = formString(formData, key);
+  if (!raw) return null;
+  const value = Number(raw);
 
   return Number.isFinite(value) && value > 0 ? value : undefined;
 }
@@ -66,10 +68,14 @@ function recurrenceRuleFromForm(formData: FormData) {
 
 function recurrenceRuleFromFrequencyForm(formData: FormData) {
   const frequency = formString(formData, "frequency");
+  const rawInterval = Number(formString(formData, "interval"));
+  const interval =
+    Number.isInteger(rawInterval) && rawInterval > 0 ? rawInterval : 1;
 
   if (frequency === "daily") {
     return {
       frequency: "daily",
+      interval,
       version: "v1",
     };
   }
@@ -83,6 +89,7 @@ function recurrenceRuleFromFrequencyForm(formData: FormData) {
     return {
       byWeekday,
       frequency: "weekly",
+      interval,
       version: "v1",
     };
   }
@@ -186,7 +193,8 @@ export async function createRecurringTaskTemplateAction(
     priority: optionalFormString(formData, "priority"),
     projectId: optionalFormString(formData, "projectId"),
     recurrenceRule:
-      recurrenceRuleFromForm(formData) ?? recurrenceRuleFromFrequencyForm(formData),
+      recurrenceRuleFromForm(formData) ??
+      recurrenceRuleFromFrequencyForm(formData),
     startsOn: formString(formData, "startsOn"),
     timezone: formString(formData, "timezone"),
     title: formString(formData, "title"),
@@ -241,6 +249,17 @@ function todayTemplateReturnUrl(result: RecurringTaskTemplateActionResult) {
   return `/today?${params.toString()}`;
 }
 
+function recurringTemplateReturnUrl(
+  result: RecurringTaskTemplateActionResult,
+  success: "activated" | "paused" | "updated",
+) {
+  const params = new URLSearchParams({
+    recurringTemplate: result.status === "success" ? success : result.status,
+  });
+
+  return `/today?${params.toString()}`;
+}
+
 export async function createRecurringTaskTemplateTodayFormAction(
   formData: FormData,
 ): Promise<void> {
@@ -267,7 +286,9 @@ export async function updateRecurringTaskTemplateAction(
     nextAction: optionalFormStringIfPresent(formData, "nextAction"),
     priority: optionalFormStringIfPresent(formData, "priority"),
     projectId: optionalFormStringIfPresent(formData, "projectId"),
-    recurrenceRule: recurrenceRuleFromForm(formData),
+    recurrenceRule:
+      recurrenceRuleFromForm(formData) ??
+      recurrenceRuleFromFrequencyForm(formData),
     startsOn: optionalFormStringIfPresent(formData, "startsOn"),
     templateId: formString(formData, "templateId"),
     timezone: optionalFormStringIfPresent(formData, "timezone"),
@@ -315,6 +336,13 @@ export async function updateRecurringTaskTemplateAction(
   };
 }
 
+export async function updateRecurringTaskTemplateTodayFormAction(
+  formData: FormData,
+): Promise<void> {
+  const result = await updateRecurringTaskTemplateAction(formData);
+  redirect(recurringTemplateReturnUrl(result, "updated"));
+}
+
 export async function deactivateRecurringTaskTemplateAction(
   formData: FormData,
 ): Promise<RecurringTaskTemplateActionResult> {
@@ -354,4 +382,21 @@ export async function deactivateRecurringTaskTemplateAction(
     status: "success",
     templateId: result.data.id,
   };
+}
+
+export async function deactivateRecurringTaskTemplateTodayFormAction(
+  formData: FormData,
+): Promise<void> {
+  const result = await deactivateRecurringTaskTemplateAction(formData);
+  redirect(recurringTemplateReturnUrl(result, "paused"));
+}
+
+export async function reactivateRecurringTaskTemplateTodayFormAction(
+  formData: FormData,
+): Promise<void> {
+  const nextFormData = new FormData();
+  nextFormData.set("templateId", formString(formData, "templateId"));
+  nextFormData.set("isActive", "true");
+  const result = await updateRecurringTaskTemplateAction(nextFormData);
+  redirect(recurringTemplateReturnUrl(result, "activated"));
 }

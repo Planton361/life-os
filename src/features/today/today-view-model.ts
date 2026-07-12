@@ -103,6 +103,24 @@ export type TodayPlannerTaskViewModel = {
 export type TodayRecurringGenerationViewModel = {
   enabled: boolean;
   today: string;
+  templates: TodayRecurringTemplateViewModel[];
+};
+
+export type TodayRecurringTemplateViewModel = {
+  id: string;
+  title: string;
+  description: string | null;
+  nextAction: string | null;
+  priority: "P0" | "P1" | "P2" | "P3" | "none" | null;
+  energy: "low" | "medium" | "high" | null;
+  durationMinutes: number | null;
+  frequency: "daily" | "weekly";
+  interval: number;
+  byWeekday: number[];
+  startsOn: string;
+  endsOn: string | null;
+  timezone: string;
+  isActive: boolean;
 };
 
 export type TodayDeltaMetricViewModel = {
@@ -300,7 +318,8 @@ export function getTodayViewModel(): TodayViewModel {
       eventType: "task",
       eventTypeLabel: "Task completed",
       title: "Morning baseline checked",
-      description: "Personal startup task finished and recorded as actual work.",
+      description:
+        "Personal startup task finished and recorded as actual work.",
       sourceLabel: "Tasks",
       areaLabel: "Personal",
       linkedEntityType: "task",
@@ -336,7 +355,8 @@ export function getTodayViewModel(): TodayViewModel {
       eventType: "capture",
       eventTypeLabel: "Quick Thought captured",
       title: "Supabase RLS setup question",
-      description: "Captured to Inbox as a coding question, not a completed task.",
+      description:
+        "Captured to Inbox as a coding question, not a completed task.",
       sourceLabel: "Inbox",
       areaLabel: "Coding",
       linkedEntityType: "inbox_item",
@@ -444,7 +464,8 @@ export function getTodayViewModel(): TodayViewModel {
       eventType: "review",
       eventTypeLabel: "Review started",
       title: "Daily Review panel opened",
-      description: "Review is started, with carry-forward handled below the stream.",
+      description:
+        "Review is started, with carry-forward handled below the stream.",
       sourceLabel: "Review",
       areaLabel: "Today",
       linkedEntityType: "review",
@@ -501,8 +522,7 @@ export function getTodayViewModel(): TodayViewModel {
     },
     activityStream: {
       title: "Activity Stream",
-      subtitle:
-        "Timeline of planned, current and logged activity.",
+      subtitle: "Timeline of planned, current and logged activity.",
       events: activityEvents,
       emptyState: {
         title: "Noch keine Tagesereignisse",
@@ -767,6 +787,7 @@ export function getTodayViewModel(): TodayViewModel {
     },
     recurringGeneration: {
       enabled: false,
+      templates: [],
       today: new Date().toISOString().slice(0, 10),
     },
     pageContract: {
