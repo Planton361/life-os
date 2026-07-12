@@ -3227,10 +3227,10 @@ test.describe("Dashboard content states", () => {
       page.getByRole("link", { name: /Sleep source not implemented/ }),
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: /Review Status: Prepared/ }),
+      page.getByRole("link", { name: /Review Status: Not started/ }),
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: /Review source not implemented/ }),
+      page.getByRole("link", { name: /Daily and weekly review/ }),
     ).toBeVisible();
     await expect(
       page.getByRole("link", { name: /Nutrition: No meals/ }),
@@ -3383,6 +3383,142 @@ test.describe("Dashboard content states", () => {
     await expect(page.getByText("Habit tracking prepared")).toBeVisible();
     await expect(page.getByText(/Prepared · mood entries and history/)).toBeVisible();
     await expect(page.getByText(/Prepared · challenge source/)).toBeVisible();
+  });
+});
+
+test.describe("D1.2 Daily and Weekly Review", () => {
+  test.describe.configure({ mode: "serial" });
+
+  test("saves Daily Review, carries a task atomically and updates projections reload-stable", async ({
+    page,
+  }) => {
+    test.slow();
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session.",
+    );
+
+    const taskTitle = uniqueTitle("D1.2 Carry Task");
+    const outcome = uniqueTitle("D1.2 Daily Outcome");
+    const tomorrowFocus = uniqueTitle("D1.2 Tomorrow Focus");
+
+    await captureAndTriageManualInboxTask(
+      page,
+      taskTitle,
+      "Carry this task through the canonical Daily Review.",
+      { durationMinutes: "15", priority: "P1" },
+    );
+    await openPortfolioTaskPlanningControls(page, taskTitle);
+    await clickPortfolioContextButton(page, "Heute planen");
+    await page.waitForLoadState("networkidle");
+
+    await page.goto("/review/daily");
+    const form = page.locator('[data-review-form="daily"]');
+    await form.getByRole("textbox", { exact: true, name: "Outcome" }).fill(outcome);
+    await form
+      .getByRole("textbox", { exact: true, name: "Open loops · one per line" })
+      .fill(taskTitle);
+    await form
+      .getByRole("textbox", { exact: true, name: "Tomorrow focus" })
+      .fill(tomorrowFocus);
+    await form.getByRole("checkbox", { name: new RegExp(taskTitle) }).check();
+    await form.getByRole("button", { name: "Complete Daily Review" }).click();
+    await page.waitForLoadState("networkidle");
+
+    await expect(page).toHaveURL(/\/review\/daily\?review=saved/);
+    await page.reload();
+    await expect(page.locator('[data-review-section="status"]')).toContainText(
+      "completed",
+    );
+    await expect(
+      form.getByRole("textbox", { exact: true, name: "Outcome" }),
+    ).toHaveValue(outcome);
+    await expect(
+      form.getByRole("checkbox", { name: new RegExp(taskTitle) }),
+    ).toBeChecked();
+
+    await page.goto("/dashboard");
+    await expect(
+      page.getByRole("link", { name: /Review Status: Complete/ }),
+    ).toBeVisible();
+
+    await page.goto("/today");
+    const closingReview = page.locator('[data-today-section="closing-review"]');
+    await expect(closingReview).toContainText(tomorrowFocus);
+    await expect(closingReview).toContainText(taskTitle);
+    await page.reload();
+    await expect(
+      page.locator('[data-today-section="closing-review"]'),
+    ).toContainText(taskTitle);
+
+    await page.goto("/calendar");
+    const queue = page.locator('[data-calendar-section="planning-queue"]');
+    await queue.getByRole("button", { name: "Review status context" }).click();
+    await expect(queue.getByRole("link", { name: "Daily Review" })).toHaveCount(0);
+    await queue
+      .getByRole("button", { name: "Tasks planned without time" })
+      .click();
+    await expect(queue.getByText(taskTitle).first()).toBeVisible();
+  });
+
+  test("saves Weekly Review with canonical movement reload-stable", async ({
+    page,
+  }) => {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires a local authenticated Supabase Playwright session.",
+    );
+    const outcome = uniqueTitle("D1.2 Weekly Outcome");
+    const nextWeek = uniqueTitle("D1.2 Next Week Focus");
+
+    await setProfile(page, "manual");
+    await applySupabaseAuthState(page);
+    await page.goto("/review/weekly");
+    const form = page.locator('[data-review-form="weekly"]');
+    await expect(form.locator('[data-review-section="movement"]')).toBeVisible();
+    await form.getByRole("textbox", { exact: true, name: "Outcome" }).fill(outcome);
+    await form
+      .getByRole("textbox", { exact: true, name: "Next-week focus" })
+      .fill(nextWeek);
+    await form.getByRole("button", { name: "Complete Weekly Review" }).click();
+    await page.waitForLoadState("networkidle");
+
+    await expect(page).toHaveURL(/\/review\/weekly\?review=saved/);
+    await page.reload();
+    await expect(page.locator('[data-review-section="status"]')).toContainText(
+      "completed",
+    );
+    await expect(
+      form.getByRole("textbox", { exact: true, name: "Next-week focus" }),
+    ).toHaveValue(nextWeek);
+
+    await page.goto("/dashboard");
+    await expect(
+      page.getByRole("link", {
+        name: /Review Status: Complete, Weekly completed/,
+      }),
+    ).toBeVisible();
+  });
+
+  test("keeps Empty and unauthenticated Manual review states honest", async ({
+    page,
+  }) => {
+    await setProfile(page, "empty");
+    await page.goto("/review/daily");
+    await expect(
+      page
+        .locator('[data-review-form="daily"]')
+        .getByRole("button", { name: "Complete Daily Review" }),
+    ).toBeDisabled();
+
+    await setProfile(page, "manual");
+    await page.goto("/review/weekly");
+    await expect(page.getByText(/Melde dich lokal mit Supabase an/)).toBeVisible();
+    await expect(
+      page
+        .locator('[data-review-form="weekly"]')
+        .getByRole("button", { name: "Complete Weekly Review" }),
+    ).toBeDisabled();
   });
 });
 

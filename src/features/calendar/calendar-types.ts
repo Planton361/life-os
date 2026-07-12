@@ -199,6 +199,7 @@ export type CalendarContextListItemViewModel = {
   title: string;
   meta: string;
   accent: string;
+  href?: string;
 };
 
 export type CalendarSelectedTimeSlotViewModel = {
@@ -210,11 +211,7 @@ export type CalendarSelectedTimeSlotViewModel = {
   endTime: string;
 };
 
-export type SchedulableTaskStatus =
-  | "open"
-  | "planned"
-  | "in-progress"
-  | "done";
+export type SchedulableTaskStatus = "open" | "planned" | "in-progress" | "done";
 
 export type SchedulableTaskViewModel = {
   id: string;

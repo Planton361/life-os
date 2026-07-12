@@ -59,6 +59,8 @@ import {
   type Meal as RealDataMeal,
   type Project as RealDataProject,
   type Recipe as RealDataRecipe,
+  type ReviewRecord,
+  type ReviewTaskDecision,
   type Resource as RealDataResource,
   type Skill as RealDataSkill,
   type SkillEvidence as RealDataSkillEvidence,
@@ -69,6 +71,7 @@ import {
   createSupabaseInboxRepository,
   createSupabaseNutritionRepository,
   createSupabaseProjectRepository,
+  createSupabaseReviewRepository,
   createSupabaseResourceRepository,
   createSupabaseSkillRepository,
   createSupabaseTaskRepository,
@@ -115,6 +118,7 @@ import type {
   TodayViewModel,
 } from "@/features/today";
 import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { reviewWeek } from "@/features/review/review-period";
 import {
   getCurrentLifeOsProfileId,
   getLifeOsProfileSummary,
@@ -374,12 +378,19 @@ type DashboardNutritionTotals = {
 };
 
 type DashboardReadSources = {
+  authAvailable: boolean;
+  dailyDecisions: readonly ReviewTaskDecision[];
+  dailyReview: ReviewRecord | null;
   skills: readonly LifeSkill[];
   meals: readonly ManualMealSlot[];
   nutrition: DashboardNutritionTotals;
+  weeklyReview: ReviewRecord | null;
 };
 
 const emptyDashboardReadSources: DashboardReadSources = {
+  authAvailable: false,
+  dailyDecisions: [],
+  dailyReview: null,
   skills: [],
   meals: [],
   nutrition: {
@@ -389,6 +400,7 @@ const emptyDashboardReadSources: DashboardReadSources = {
     fat: 0,
     completedMealCount: 0,
   },
+  weeklyReview: null,
 };
 
 const dashboardCapacity = {
@@ -1408,14 +1420,26 @@ function buildProfileDashboardViewModel(
       },
       {
         label: "Review Status",
-        value: "Prepared",
-        detail: "Review source not implemented",
-        progress: 0,
+        value:
+          sources.dailyReview?.status === "completed"
+            ? "Complete"
+            : sources.dailyReview?.status === "draft"
+              ? "Draft"
+              : "Not started",
+        detail: sources.weeklyReview
+          ? `Weekly ${sources.weeklyReview.status}`
+          : "Daily and weekly review",
+        progress:
+          sources.dailyReview?.status === "completed"
+            ? 100
+            : sources.dailyReview
+              ? 50
+              : 0,
         accent: "var(--accent-cyan)",
         area: "review",
         contentState: resolveContentStateMeta({
-          hasPrimaryValue: false,
-          itemCount: 0,
+          hasPrimaryValue: Boolean(sources.dailyReview),
+          itemCount: sources.dailyReview ? 1 : 0,
         }),
         href: "/review/daily",
       },
@@ -1546,8 +1570,13 @@ function buildProfileDashboardViewModel(
       {
         kind: "review",
         label: "Review",
-        value: "No review",
-        detail: "Start Capturing",
+        value:
+          sources.dailyReview?.status === "completed"
+            ? "Complete"
+            : sources.dailyReview?.status === "draft"
+              ? "Draft"
+              : "Not started",
+        detail: sources.dailyReview ? "Saved today" : "Open Daily Review",
         accent: "var(--accent-cyan)",
       },
     ],
@@ -2597,23 +2626,40 @@ async function getManualDashboardReadData(): Promise<{
 
   const userId = auth.user.id;
   const nutritionRepository = createSupabaseNutritionRepository(auth.client);
-  const [taskResult, inboxResult, targets, skills, mealResult, recipeResult] =
-    await Promise.all([
-      getManualTasksFromSupabase(auth.client, userId),
-      createSupabaseInboxRepository(auth.client).getInboxItemsByUser(
-        userId,
-        userId,
-      ),
-      getManualProjectGoalTargetsFromSupabase(auth.client, userId),
-      getManualSkillsFromSupabase(auth.client, userId),
-      nutritionRepository.getMealsByUserAndDateRange({
-        endDate: dashboardLocalDate(),
-        profileId: userId,
-        startDate: dashboardLocalDate(),
-        userId,
-      }),
-      nutritionRepository.getActiveRecipesByUser(userId, userId),
-    ]);
+  const week = reviewWeek(dashboardLocalDate());
+  const reviewRepository = createSupabaseReviewRepository(auth.client);
+  const [
+    taskResult,
+    inboxResult,
+    targets,
+    skills,
+    mealResult,
+    recipeResult,
+    dailyReviewResult,
+    weeklyReviewResult,
+  ] = await Promise.all([
+    getManualTasksFromSupabase(auth.client, userId),
+    createSupabaseInboxRepository(auth.client).getInboxItemsByUser(
+      userId,
+      userId,
+    ),
+    getManualProjectGoalTargetsFromSupabase(auth.client, userId),
+    getManualSkillsFromSupabase(auth.client, userId),
+    nutritionRepository.getMealsByUserAndDateRange({
+      endDate: dashboardLocalDate(),
+      profileId: userId,
+      startDate: dashboardLocalDate(),
+      userId,
+    }),
+    nutritionRepository.getActiveRecipesByUser(userId, userId),
+    reviewRepository.getReviewByPeriod(
+      userId,
+      userId,
+      "daily",
+      dashboardLocalDate(),
+    ),
+    reviewRepository.getReviewByPeriod(userId, userId, "weekly", week.start),
+  ]);
   const recipes = recipeResult.ok ? recipeResult.data : [];
   const recipeById = new Map(recipes.map((recipe) => [recipe.id, recipe]));
   const realMeals = mealResult.ok ? mealResult.data : [];
@@ -2626,6 +2672,10 @@ async function getManualDashboardReadData(): Promise<{
     )
     .filter((meal): meal is ManualMealSlot => Boolean(meal));
   const completedMeals = realMeals.filter((meal) => meal.completedAt);
+  const dailyReview = dailyReviewResult.ok ? dailyReviewResult.data : null;
+  const dailyDecisionResult = dailyReview
+    ? await reviewRepository.getTaskDecisions(userId, dailyReview.id)
+    : { data: [], ok: true as const };
   const nutrition = completedMeals.reduce<DashboardNutritionTotals>(
     (totals, meal) => {
       const estimate = meal.recipeId
@@ -2651,7 +2701,15 @@ async function getManualDashboardReadData(): Promise<{
       projects: targets.projects,
       tasks: taskResult.tasks,
     },
-    sources: { meals, nutrition, skills: skills.skills },
+    sources: {
+      authAvailable: true,
+      dailyDecisions: dailyDecisionResult.ok ? dailyDecisionResult.data : [],
+      dailyReview,
+      meals,
+      nutrition,
+      skills: skills.skills,
+      weeklyReview: weeklyReviewResult.ok ? weeklyReviewResult.data : null,
+    },
   };
 }
 
@@ -3136,7 +3194,11 @@ function buildProfileTodayViewModel(
   profile: ManualProfileData,
   profileId: Exclude<LifeOsProfileId, "demo">,
   relationLookups?: PortfolioRelationLabelLookups,
-  options: { manualDbAvailable?: boolean } = {},
+  options: {
+    dailyDecisions?: readonly ReviewTaskDecision[];
+    dailyReview?: ReviewRecord | null;
+    manualDbAvailable?: boolean;
+  } = {},
 ): TodayViewModel {
   const viewModel = clone(getDemoTodayViewModel());
   const plannerRelationLookups =
@@ -3180,14 +3242,23 @@ function buildProfileTodayViewModel(
       accent: areaAccent(goal.areaId),
     })),
   ];
-  const carryForwardItems = todayTasks
-    .filter((task) => task.status !== "done")
-    .slice(0, 4)
-    .map((task) => ({
-      label: task.title,
-      description: task.nextStep,
-      accent: areaAccent(task.areaId),
-    }));
+  const carryForwardItems = options.dailyReview
+    ? (options.dailyDecisions ?? []).slice(0, 4).map((decision) => {
+        const task = profile.tasks.find((item) => item.id === decision.taskId);
+        return {
+          accent: task ? areaAccent(task.areaId) : "var(--accent-blue)",
+          description: `Moved to ${decision.targetDate}`,
+          label: task?.title ?? "Carried task",
+        };
+      })
+    : todayTasks
+        .filter((task) => task.status !== "done")
+        .slice(0, 4)
+        .map((task) => ({
+          label: task.title,
+          description: task.nextStep,
+          accent: areaAccent(task.areaId),
+        }));
   const deltaValueCount =
     todayTasks.length +
     profile.inboxItems.length +
@@ -3200,10 +3271,10 @@ function buildProfileTodayViewModel(
   viewModel.contentStates = buildTodayContentStates({
     activityEventCount: events.length,
     carryForwardCount: carryForwardItems.length,
-    closingReviewCount: 0,
+    closingReviewCount: options.dailyReview ? 4 : 0,
     decisionsArtifactsCount: artifacts.length,
     deltaValueCount,
-    openingReviewCount: 0,
+    openingReviewCount: options.dailyReview ? 1 : 0,
     todayPlannerCount: plannerTasks.length,
   });
   viewModel.firstRunNotice = hasTodayData
@@ -3269,7 +3340,19 @@ function buildProfileTodayViewModel(
   };
   viewModel.openingReview = {
     ...viewModel.openingReview,
-    items: todayReviewNotSetItems(),
+    items: options.dailyReview
+      ? [
+          {
+            label: "Daily Review",
+            value: options.dailyReview.status,
+            detail: options.dailyReview.outcome ?? "Saved without outcome",
+            accent:
+              options.dailyReview.status === "completed"
+                ? "var(--accent-green)"
+                : "var(--accent-cyan)",
+          },
+        ]
+      : todayReviewNotSetItems(),
   };
   viewModel.deltaSummary = {
     ...viewModel.deltaSummary,
@@ -3294,8 +3377,10 @@ function buildProfileTodayViewModel(
       },
       {
         label: "Review records",
-        value: "—",
-        detail: "noch keine lokale Review-Quelle",
+        value: options.dailyReview ? "1" : "0",
+        detail: options.dailyReview
+          ? `${options.dailyReview.status} · canonical review record`
+          : "noch kein Daily Review Record",
         accent: "var(--accent-purple)",
       },
     ],
@@ -3311,7 +3396,34 @@ function buildProfileTodayViewModel(
   };
   viewModel.closingReview = {
     ...viewModel.closingReview,
-    signals: todayClosingNotStartedItems(carryForwardItems.length),
+    signals: options.dailyReview
+      ? [
+          {
+            label: "Review",
+            value: options.dailyReview.status,
+            detail: options.dailyReview.outcome ?? "Outcome not set",
+            accent: "var(--accent-green)",
+          },
+          {
+            label: "Open Loops",
+            value: String(options.dailyReview.openLoops.length),
+            detail: "saved in Daily Review",
+            accent: "var(--accent-orange)",
+          },
+          {
+            label: "Carry Forward",
+            value: String((options.dailyDecisions ?? []).length),
+            detail: "explicit task decisions",
+            accent: "var(--accent-blue)",
+          },
+          {
+            label: "Tomorrow Hint",
+            value: options.dailyReview.nextPeriodFocus ?? "—",
+            detail: "saved preparation",
+            accent: "var(--accent-cyan)",
+          },
+        ]
+      : todayClosingNotStartedItems(carryForwardItems.length),
     emptyState: {
       title: "Closing Review nicht gestartet",
       description:
@@ -3536,6 +3648,10 @@ function buildProfileCalendarViewModel(
   profile: ManualProfileData,
   profileId: Exclude<LifeOsProfileId, "demo">,
   relationLookups?: PortfolioRelationLabelLookups,
+  reviews: Pick<
+    DashboardReadSources,
+    "dailyDecisions" | "dailyReview" | "weeklyReview"
+  > = emptyDashboardReadSources,
 ): CalendarViewModel {
   const isManualProfile = profileId === "manual";
   const plannerRelationLookups =
@@ -3549,6 +3665,12 @@ function buildProfileCalendarViewModel(
     });
   const days = buildManualCalendarDays();
   const visibleDates = new Set(days.map((day) => day.date));
+  const carriedTaskIds = new Set(
+    reviews.dailyDecisions.map((decision) => decision.taskId),
+  );
+  const carriedTaskRank = new Map(
+    reviews.dailyDecisions.map((decision, index) => [decision.taskId, index]),
+  );
   const firstDayId = days[0]?.id ?? "manual-week";
   const demoModel = getDemoCalendarViewModel();
   const rawTimedBlocks = profile.tasks
@@ -3571,10 +3693,23 @@ function buildProfileCalendarViewModel(
   );
   const planningQueueTasks = profile.tasks
     .filter(
-      (task) => task.date && visibleDates.has(task.date) && !task.startTime,
+      (task) =>
+        task.date &&
+        !task.startTime &&
+        (visibleDates.has(task.date) || carriedTaskIds.has(task.id)),
     )
     .filter((task) => task.status !== "done" && task.status !== "canceled")
-    .sort(sortPlannerQueueTasks);
+    .sort((left, right) => {
+      const carryCompare =
+        Number(carriedTaskIds.has(right.id)) -
+        Number(carriedTaskIds.has(left.id));
+      const carryRankCompare =
+        (carriedTaskRank.get(left.id) ?? Number.MAX_SAFE_INTEGER) -
+        (carriedTaskRank.get(right.id) ?? Number.MAX_SAFE_INTEGER);
+      return (
+        carryCompare || carryRankCompare || sortPlannerQueueTasks(left, right)
+      );
+    });
 
   const schedulableTasks: CalendarViewModel["schedulableTasks"] =
     planningQueueTasks
@@ -3645,7 +3780,24 @@ function buildProfileCalendarViewModel(
       meta: `${task.priority} task - no time block yet`,
       accent: areaAccent(task.areaId),
     })),
-    reviewsOpen: [],
+    reviewsOpen: [
+      reviews.dailyReview?.status !== "completed"
+        ? {
+            accent: "var(--accent-cyan)",
+            href: "/review/daily",
+            meta: reviews.dailyReview ? "draft saved" : "not started",
+            title: "Daily Review",
+          }
+        : null,
+      reviews.weeklyReview?.status !== "completed"
+        ? {
+            accent: "var(--accent-purple)",
+            href: "/review/weekly",
+            meta: reviews.weeklyReview ? "draft saved" : "not started",
+            title: "Weekly Review",
+          }
+        : null,
+    ].filter((item): item is NonNullable<typeof item> => Boolean(item)),
     suggestedPlanningActions: [],
     selectedTimeSlot: {
       label: "Selected time slot",
@@ -3661,11 +3813,13 @@ function buildProfileCalendarViewModel(
       suggestions: [],
     },
     weeklyReview: {
-      title: "Review",
-      status: "offen",
-      description: "Noch kein Wochenreview im lokalen Profil.",
+      title: "Weekly Review",
+      status: reviews.weeklyReview?.status ?? "not started",
+      description:
+        reviews.weeklyReview?.nextPeriodFocus ??
+        "Noch kein Wochenreview im lokalen Profil.",
       placeholder: "Review-Notiz erfassen...",
-      actionLabel: "Review öffnen",
+      actionLabel: "Weekly Review öffnen",
     },
   } satisfies CalendarViewModel["rightPanel"];
   const daysWithContent = days.filter(
@@ -3856,23 +4010,20 @@ export async function getTodayViewModel(): Promise<TodayViewModel> {
   }
 
   if (profileId === "manual") {
-    const [profile, manualTasks] = await Promise.all([
-      readManualProfile(),
-      getManualTaskProfileData(),
-    ]);
-    const mergedProfile = {
-      ...profile,
-      tasks: manualTasks.tasks,
-    };
+    const dashboard = await getManualDashboardReadData();
 
     return buildProfileTodayViewModel(
-      mergedProfile,
+      dashboard.profile,
       profileId,
       await getManualPlannerRelationLabelLookups(
         profileId,
-        mergedProfile.tasks,
+        dashboard.profile.tasks,
       ),
-      { manualDbAvailable: !manualTasks.unavailableReason },
+      {
+        dailyDecisions: dashboard.sources.dailyDecisions,
+        dailyReview: dashboard.sources.dailyReview,
+        manualDbAvailable: dashboard.sources.authAvailable,
+      },
     );
   }
 
@@ -3886,6 +4037,19 @@ export async function getCalendarViewModel(): Promise<CalendarViewModel> {
 
   if (profileId === "demo") {
     return getDemoCalendarViewModel();
+  }
+
+  if (profileId === "manual") {
+    const dashboard = await getManualDashboardReadData();
+    return buildProfileCalendarViewModel(
+      dashboard.profile,
+      profileId,
+      await getManualPlannerRelationLabelLookups(
+        profileId,
+        dashboard.profile.tasks,
+      ),
+      dashboard.sources,
+    );
   }
 
   const profile = await getProfileDataWithManualTasks(profileId);

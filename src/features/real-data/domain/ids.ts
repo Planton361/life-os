@@ -14,6 +14,7 @@ export type RecipeId = string;
 export type MealId = string;
 export type SkillId = string;
 export type SkillEvidenceId = string;
+export type ReviewRecordId = string;
 export type EntityId = string;
 
 export type LocalDateString = string;

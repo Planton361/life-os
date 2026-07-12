@@ -5,4 +5,5 @@ export * from "./resource.mapper";
 export * from "./recurring-task-template.mapper";
 export * from "./nutrition.mapper";
 export * from "./skill.mapper";
+export * from "./review.mapper";
 export * from "./task.mapper";

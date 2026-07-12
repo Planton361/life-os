@@ -8,3 +8,4 @@ export * from "./resource.schemas";
 export * from "./recurring-task-template.schema";
 export * from "./nutrition.schema";
 export * from "./skill.schema";
+export * from "./review.schema";

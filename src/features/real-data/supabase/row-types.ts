@@ -49,3 +49,6 @@ export type SkillEvidenceUpdate = TableUpdate<"skill_evidence">;
 export type TaskRow = TableRow<"tasks">;
 export type TaskInsert = TableInsert<"tasks">;
 export type TaskUpdate = TableUpdate<"tasks">;
+
+export type ReviewRecordRow = TableRow<"review_records">;
+export type ReviewTaskDecisionRow = TableRow<"review_task_decisions">;

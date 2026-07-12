@@ -2,16 +2,16 @@ import type { Metadata } from "next";
 import { ReviewPage, getReviewPageViewModel } from "@/features/review";
 
 export const metadata: Metadata = {
-  title: "Daily Review | Life OS",
+  title: "Weekly Review | Life OS",
 };
 
-export default async function DailyReviewPage({
+export default async function WeeklyReviewPage({
   searchParams,
 }: Readonly<{
   searchParams: Promise<{ review?: string }>;
 }>) {
   const [viewModel, query] = await Promise.all([
-    getReviewPageViewModel("daily"),
+    getReviewPageViewModel("weekly"),
     searchParams,
   ]);
 

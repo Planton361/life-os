@@ -694,6 +694,114 @@ export type Database = {
           },
         ]
       }
+      review_records: {
+        Row: {
+          archived_at: string | null
+          blockers: string[]
+          completed_at: string | null
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["review_kind"]
+          next_period_focus: string | null
+          open_loops: string[]
+          outcome: string | null
+          period_end: string
+          period_start: string
+          planning_note: string | null
+          status: Database["public"]["Enums"]["review_record_status"]
+          timezone: string
+          updated_at: string
+          user_id: string
+          wins: string[]
+        }
+        Insert: {
+          archived_at?: string | null
+          blockers?: string[]
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          kind: Database["public"]["Enums"]["review_kind"]
+          next_period_focus?: string | null
+          open_loops?: string[]
+          outcome?: string | null
+          period_end: string
+          period_start: string
+          planning_note?: string | null
+          status?: Database["public"]["Enums"]["review_record_status"]
+          timezone: string
+          updated_at?: string
+          user_id: string
+          wins?: string[]
+        }
+        Update: {
+          archived_at?: string | null
+          blockers?: string[]
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["review_kind"]
+          next_period_focus?: string | null
+          open_loops?: string[]
+          outcome?: string | null
+          period_end?: string
+          period_start?: string
+          planning_note?: string | null
+          status?: Database["public"]["Enums"]["review_record_status"]
+          timezone?: string
+          updated_at?: string
+          user_id?: string
+          wins?: string[]
+        }
+        Relationships: []
+      }
+      review_task_decisions: {
+        Row: {
+          created_at: string
+          decision: Database["public"]["Enums"]["review_task_decision"]
+          id: string
+          note: string | null
+          review_id: string
+          target_date: string
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          decision: Database["public"]["Enums"]["review_task_decision"]
+          id?: string
+          note?: string | null
+          review_id: string
+          target_date: string
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          decision?: Database["public"]["Enums"]["review_task_decision"]
+          id?: string
+          note?: string | null
+          review_id?: string
+          target_date?: string
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_task_decisions_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "review_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_task_decisions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       skill_evidence: {
         Row: {
           created_at: string
@@ -948,6 +1056,85 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      save_daily_review_with_carry_over: {
+        Args: {
+          p_blockers: string[]
+          p_carry_task_ids: string[]
+          p_next_period_focus: string
+          p_open_loops: string[]
+          p_outcome: string
+          p_period_start: string
+          p_planning_note: string
+          p_status: Database["public"]["Enums"]["review_record_status"]
+          p_timezone: string
+          p_wins: string[]
+        }
+        Returns: {
+          archived_at: string | null
+          blockers: string[]
+          completed_at: string | null
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["review_kind"]
+          next_period_focus: string | null
+          open_loops: string[]
+          outcome: string | null
+          period_end: string
+          period_start: string
+          planning_note: string | null
+          status: Database["public"]["Enums"]["review_record_status"]
+          timezone: string
+          updated_at: string
+          user_id: string
+          wins: string[]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "review_records"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      save_review_record: {
+        Args: {
+          p_blockers: string[]
+          p_kind: Database["public"]["Enums"]["review_kind"]
+          p_next_period_focus: string
+          p_open_loops: string[]
+          p_outcome: string
+          p_period_end: string
+          p_period_start: string
+          p_planning_note: string
+          p_status: Database["public"]["Enums"]["review_record_status"]
+          p_timezone: string
+          p_wins: string[]
+        }
+        Returns: {
+          archived_at: string | null
+          blockers: string[]
+          completed_at: string | null
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["review_kind"]
+          next_period_focus: string | null
+          open_loops: string[]
+          outcome: string | null
+          period_end: string
+          period_start: string
+          planning_note: string | null
+          status: Database["public"]["Enums"]["review_record_status"]
+          timezone: string
+          updated_at: string
+          user_id: string
+          wins: string[]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "review_records"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       triage_inbox_item_to_task: {
         Args: {
           p_area_id?: string
@@ -1068,6 +1255,9 @@ export type Database = {
         | "source"
         | "snippet"
         | "decision"
+      review_kind: "daily" | "weekly"
+      review_record_status: "draft" | "completed" | "archived"
+      review_task_decision: "carry_forward"
       task_energy: "low" | "medium" | "high"
       task_priority: "P0" | "P1" | "P2" | "P3" | "none"
       task_status:
@@ -1286,6 +1476,9 @@ export const Constants = {
         "snippet",
         "decision",
       ],
+      review_kind: ["daily", "weekly"],
+      review_record_status: ["draft", "completed", "archived"],
+      review_task_decision: ["carry_forward"],
       task_energy: ["low", "medium", "high"],
       task_priority: ["P0", "P1", "P2", "P3", "none"],
       task_status: [

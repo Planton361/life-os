@@ -22,6 +22,8 @@ export const realDataTableNames = {
   recipeIngredients: "recipe_ingredients",
   projects: "projects",
   recipes: "recipes",
+  reviewRecords: "review_records",
+  reviewTaskDecisions: "review_task_decisions",
   recurringTaskTemplates: "recurring_task_templates",
   resourceRelations: "resource_relations",
   resources: "resources",

@@ -112,7 +112,8 @@ function findSchedulingConflict(
 
   return {
     title: conflict.title,
-    timeLabel: conflict.timeLabel ?? `${conflict.startTime}-${conflict.endTime}`,
+    timeLabel:
+      conflict.timeLabel ?? `${conflict.startTime}-${conflict.endTime}`,
   };
 }
 
@@ -201,7 +202,9 @@ function RescheduleTaskForm({
   variant?: "primary" | "secondary";
 }>) {
   const buttonClassName =
-    variant === "primary" ? primaryActionButtonClass : secondaryActionButtonClass;
+    variant === "primary"
+      ? primaryActionButtonClass
+      : secondaryActionButtonClass;
   const conflictLabel = candidate.conflict
     ? `Sichtbarer Konflikt mit ${candidate.conflict.title}, ${candidate.conflict.timeLabel}`
     : null;
@@ -219,7 +222,11 @@ function RescheduleTaskForm({
       >
         <input name="taskId" type="hidden" value={taskId} />
         <input name="plannedDate" type="hidden" value={candidate.plannedDate} />
-        <input name="scheduledTime" type="hidden" value={candidate.scheduledTime} />
+        <input
+          name="scheduledTime"
+          type="hidden"
+          value={candidate.scheduledTime}
+        />
         <input
           name="durationMinutes"
           type="hidden"
@@ -283,7 +290,9 @@ function scheduleDurationOptions(minutes: number) {
   );
 }
 
-function isTimedBlock(block: SelectedBlock): block is CalendarTimedBlockViewModel {
+function isTimedBlock(
+  block: SelectedBlock,
+): block is CalendarTimedBlockViewModel {
   return "startTime" in block;
 }
 
@@ -293,10 +302,10 @@ function isManualPersistedTaskBlock(
 ) {
   return Boolean(
     profileId === "manual" &&
-      block &&
-      isTimedBlock(block) &&
-      block.source === "task" &&
-      block.taskId,
+    block &&
+    isTimedBlock(block) &&
+    block.source === "task" &&
+    block.taskId,
   );
 }
 
@@ -339,7 +348,7 @@ function SelectedContext({
   if (block) {
     const timeLabel = isTimedBlock(block)
       ? `${block.startTime}-${block.endTime}`
-      : block.timeLabel ?? "All day";
+      : (block.timeLabel ?? "All day");
 
     return (
       <section
@@ -357,7 +366,9 @@ function SelectedContext({
           {block.title}
         </h3>
         <div className="mt-2 flex flex-wrap gap-1.5">
-          <Pill accent={block.accent}>{calendarBlockTypeLabels[block.type]}</Pill>
+          <Pill accent={block.accent}>
+            {calendarBlockTypeLabels[block.type]}
+          </Pill>
           <Pill accent={block.accent}>
             {calendarBlockStatusLabels[block.status]}
           </Pill>
@@ -366,7 +377,9 @@ function SelectedContext({
         <dl className="mt-2 grid gap-1 text-[11px] leading-4 text-[var(--text-secondary)]">
           <div>
             <dt className="inline text-[var(--text-muted)]">Date: </dt>
-            <dd className="inline">{block.date ?? selectedDay?.date ?? "2026-06-12"}</dd>
+            <dd className="inline">
+              {block.date ?? selectedDay?.date ?? "2026-06-12"}
+            </dd>
           </div>
           <div>
             <dt className="inline text-[var(--text-muted)]">Time: </dt>
@@ -414,7 +427,8 @@ function SelectedContext({
           className="mt-1 text-[15px] font-semibold leading-5 text-[var(--text-primary)]"
           id="calendar-slot-context-heading"
         >
-          {selectedSlot.dayLabel} · {selectedSlot.startTime}-{selectedSlot.endTime}
+          {selectedSlot.dayLabel} · {selectedSlot.startTime}-
+          {selectedSlot.endTime}
         </h3>
         <p className="mt-2 text-[11px] leading-4 text-[var(--text-muted)]">
           Freier Slot ausgewählt. Task-Scheduling läuft über die Planner Queue;
@@ -460,20 +474,34 @@ function TimeSettings({
   onDuplicateBlock: (blockId: string) => void;
   onMarkDone: (blockId: string) => void;
   onMoveLater: (blockId: string) => void;
-  onSaveTime: (blockId: string, date: string, startTime: string, endTime: string) => void;
+  onSaveTime: (
+    blockId: string,
+    date: string,
+    startTime: string,
+    endTime: string,
+  ) => void;
   profileId: CalendarViewModel["profileId"];
   scheduledTasks: readonly CalendarTimedBlockViewModel[];
   selectedSlot?: CalendarSelectedTimeSlotViewModel | null;
 }>) {
   const baseDate = block?.date ?? selectedSlot?.date ?? "2026-06-12";
-  const baseStart = block && isTimedBlock(block) ? block.startTime : selectedSlot?.startTime ?? "09:00";
-  const baseEnd = block && isTimedBlock(block) ? block.endTime : selectedSlot?.endTime ?? "10:00";
+  const baseStart =
+    block && isTimedBlock(block)
+      ? block.startTime
+      : (selectedSlot?.startTime ?? "09:00");
+  const baseEnd =
+    block && isTimedBlock(block)
+      ? block.endTime
+      : (selectedSlot?.endTime ?? "10:00");
   const [date, setDate] = useState(baseDate);
   const [startTime, setStartTime] = useState(baseStart);
   const [endTime, setEndTime] = useState(baseEnd);
   const [error, setError] = useState<string | null>(null);
 
-  const duration = Math.max(0, timeToMinutes(endTime) - timeToMinutes(startTime));
+  const duration = Math.max(
+    0,
+    timeToMinutes(endTime) - timeToMinutes(startTime),
+  );
   const timedTaskBlock =
     block && isTimedBlock(block) && block.source === "task" && block.taskId
       ? block
@@ -482,7 +510,12 @@ function TimeSettings({
   const isPersistedTaskBlock = Boolean(
     profileId === "manual" && taskId && timedTaskBlock,
   );
-  const safeDuration = duration > 0 ? duration : block && isTimedBlock(block) ? block.durationMinutes : 30;
+  const safeDuration =
+    duration > 0
+      ? duration
+      : block && isTimedBlock(block)
+        ? block.durationMinutes
+        : 30;
   const startMinutes = timeToMinutes(startTime);
   const saveCandidate = timedTaskBlock
     ? buildSchedulingCandidate({
@@ -577,7 +610,11 @@ function TimeSettings({
           type="date"
           value={date}
         />
-        <Field label="Duration" onChange={() => undefined} value={durationLabel(duration)} />
+        <Field
+          label="Duration"
+          onChange={() => undefined}
+          value={durationLabel(duration)}
+        />
         <Field
           label="Start time"
           name={isPersistedTaskBlock ? "scheduledTime" : undefined}
@@ -586,7 +623,12 @@ function TimeSettings({
           type="time"
           value={startTime}
         />
-        <Field label="End time" onChange={setEndTime} type="time" value={endTime} />
+        <Field
+          label="End time"
+          onChange={setEndTime}
+          type="time"
+          value={endTime}
+        />
       </div>
 
       <div className="mt-3 grid gap-1.5 sm:grid-cols-2">
@@ -608,10 +650,7 @@ function TimeSettings({
             ))}
             <form action={unscheduleTaskFormAction}>
               <input name="taskId" type="hidden" value={taskId ?? ""} />
-              <button
-                className={secondaryActionButtonClass}
-                type="submit"
-              >
+              <button className={secondaryActionButtonClass} type="submit">
                 Unschedule
               </button>
             </form>
@@ -711,12 +750,15 @@ function SourcePanel({
         <div>
           <dt className="inline text-[var(--text-muted)]">Source: </dt>
           <dd className="inline">
-            {calendarBlockSourceLabels[block.source]} / {block.sourceEntity.label}
+            {calendarBlockSourceLabels[block.source]} /{" "}
+            {block.sourceEntity.label}
           </dd>
         </div>
         <div>
           <dt className="inline text-[var(--text-muted)]">Linked item: </dt>
-          <dd className="inline">{block.linkedEntity ?? block.sourceEntity.label}</dd>
+          <dd className="inline">
+            {block.linkedEntity ?? block.sourceEntity.label}
+          </dd>
         </div>
         <div>
           <dt className="inline text-[var(--text-muted)]">Status: </dt>
@@ -765,6 +807,7 @@ function PlanningQueue({
         title: item.title,
         meta: item.meta,
         accent: item.accent,
+        href: item.href,
       }));
     }
 
@@ -774,7 +817,8 @@ function PlanningQueue({
       accent: task.accent,
     }));
   }, [panel.openLoops, panel.reviewsOpen, queueTasks, tab]);
-  const queueCount = tab === "unscheduled" ? queueTasks.length : queueItems.length;
+  const queueCount =
+    tab === "unscheduled" ? queueTasks.length : queueItems.length;
   const canSchedule = profileId === "manual";
 
   return (
@@ -793,21 +837,21 @@ function PlanningQueue({
             Calendar Planner Queue
           </h3>
           <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
-            Geplante Tasks ohne Uhrzeit. Terminieren schreibt Task-Zeitfelder
-            im Manual-Profil.
+            Geplante Tasks ohne Uhrzeit. Terminieren schreibt Task-Zeitfelder im
+            Manual-Profil.
           </p>
         </div>
         <Pill quiet>{queueCount}</Pill>
       </div>
       <p className="mt-2 text-[10px] leading-4 text-[var(--text-faint)]">
-        Tasks werden terminiert; Open Loops und Reviews sind vorbereitete
-        Kontextlisten und nicht mit der lokalen Datenquelle verbunden.
+        Tasks werden terminiert; Open Loops bleiben Kontext. Reviews lesen den
+        kanonischen Review-Status und öffnen den verantwortlichen Flow.
       </p>
       <div className="mt-2 flex rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.48)] p-1">
         {[
           ["unscheduled", "Tasks", "Tasks planned without time"],
           ["open-loops", "Open loops", "Prepared open-loop context"],
-          ["reviews", "Reviews", "Prepared review context"],
+          ["reviews", "Reviews", "Review status context"],
         ].map(([value, label, ariaLabel], index) => (
           <button
             aria-label={ariaLabel}
@@ -928,7 +972,16 @@ function PlanningQueue({
                 />
                 <div className="min-w-0">
                   <p className="truncate text-[11px] font-medium text-[var(--text-secondary)]">
-                    {item.title}
+                    {"href" in item && item.href ? (
+                      <Link
+                        className="rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                        href={item.href}
+                      >
+                        {item.title}
+                      </Link>
+                    ) : (
+                      item.title
+                    )}
                   </p>
                   <p className="truncate text-[10px] leading-4 text-[var(--text-muted)]">
                     {item.meta}
@@ -961,7 +1014,12 @@ export function CalendarRightPanel({
   onDuplicateBlock: (blockId: string) => void;
   onMarkDone: (blockId: string) => void;
   onMoveLater: (blockId: string) => void;
-  onSaveTime: (blockId: string, date: string, startTime: string, endTime: string) => void;
+  onSaveTime: (
+    blockId: string,
+    date: string,
+    startTime: string,
+    endTime: string,
+  ) => void;
   panel: CalendarRightPanelViewModel;
   planningQueueContentState: ContentStateMeta;
   profileId: CalendarViewModel["profileId"];

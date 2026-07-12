@@ -376,7 +376,11 @@ function RecurringGenerationControl({
           action={createRecurringTaskTemplateTodayFormAction}
           className="mt-2 grid gap-2"
         >
-          <input name="startsOn" type="hidden" value={recurringGeneration.today} />
+          <input
+            name="startsOn"
+            type="hidden"
+            value={recurringGeneration.today}
+          />
           <input name="timezone" type="hidden" value="Europe/Berlin" />
           <input name="isActive" type="hidden" value="true" />
 
@@ -560,7 +564,8 @@ function TodayPlannerTaskCard({
         </form>
       ) : (
         <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
-          Demo-/Empty-Profil. Persistente Tagesplanung ist im Manual-Profil aktiv.
+          Demo-/Empty-Profil. Persistente Tagesplanung ist im Manual-Profil
+          aktiv.
         </p>
       )}
     </article>
@@ -639,7 +644,9 @@ function TaskActivityActions({
     <form
       action={isCompleted ? reopenTaskFormAction : completeTaskFormAction}
       aria-label={
-        isCompleted ? `${event.title} wieder öffnen` : `${event.title} abschließen`
+        isCompleted
+          ? `${event.title} wieder öffnen`
+          : `${event.title} abschließen`
       }
     >
       <input name="taskId" type="hidden" value={event.taskLifecycle.taskId} />
@@ -974,7 +981,10 @@ function DecisionsArtifacts({
           <Pill quiet>{decisions.length} decisions</Pill>
         </div>
         <div className="mt-2">
-          <DecisionRows decisions={decisions} emptyState={decisionsEmptyState} />
+          <DecisionRows
+            decisions={decisions}
+            emptyState={decisionsEmptyState}
+          />
         </div>
       </section>
 
@@ -1057,7 +1067,10 @@ export function TodayMemoryLogPage({
       className="mx-auto flex w-full max-w-[2208px] flex-col gap-3 pb-0 2xl:h-[calc(100dvh-1.25rem)] 2xl:min-h-0"
       data-today-section="page-root"
       id="today-page"
-      {...contentStateAttributes(viewModel.contentStates.page, viewModel.profileId)}
+      {...contentStateAttributes(
+        viewModel.contentStates.page,
+        viewModel.profileId,
+      )}
     >
       <TodayHeader viewModel={viewModel} />
 
@@ -1096,6 +1109,20 @@ export function TodayMemoryLogPage({
               className="2xl:grid-cols-3"
               items={viewModel.openingReview.items}
             />
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Link
+                className="rounded-full border border-[var(--border-default)] px-3 py-1.5 text-[10px] font-semibold text-[var(--text-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                href="/review/daily"
+              >
+                Open Daily Review
+              </Link>
+              <Link
+                className="rounded-full border border-[var(--border-default)] px-3 py-1.5 text-[10px] font-semibold text-[var(--text-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                href="/review/weekly"
+              >
+                Open Weekly Review
+              </Link>
+            </div>
           </MemoryPanel>
 
           <div className="grid gap-3 2xl:min-h-0 2xl:grid-cols-[minmax(0,.72fr)_minmax(0,1fr)]">

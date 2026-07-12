@@ -15,6 +15,9 @@ import type {
   Resource,
   ResourceRelation,
   ResourceId,
+  ReviewRecord,
+  ReviewTaskDecision,
+  ReviewKind,
   Skill,
   SkillEvidence,
   SupportedResourceRelationTargetType,
@@ -62,8 +65,12 @@ import type {
   SkillUpdateInput,
   UpdateTaskInput,
   UpsertDailyLogInput,
+  SaveReviewRepositoryInput,
 } from "../schemas";
-import type { RepositoryListResult, RepositoryResult } from "./repository-result";
+import type {
+  RepositoryListResult,
+  RepositoryResult,
+} from "./repository-result";
 
 export type MarkInboxItemTriagedInput = {
   userId: UserId;
@@ -246,7 +253,9 @@ export interface TaskRepository {
   reopenTask(input: ReopenTaskInput): Promise<RepositoryResult<Task>>;
   rescheduleTask(input: RescheduleTaskInput): Promise<RepositoryResult<Task>>;
   unscheduleTask(input: UnscheduleTaskInput): Promise<RepositoryResult<Task>>;
-  carryTaskForward(input: CarryTaskForwardInput): Promise<RepositoryResult<Task>>;
+  carryTaskForward(
+    input: CarryTaskForwardInput,
+  ): Promise<RepositoryResult<Task>>;
   getTasksByUser(input: TaskListInput): Promise<RepositoryListResult<Task>>;
   getTasksForToday(
     userId: UserId,
@@ -295,8 +304,32 @@ export interface DailyLogRepository {
   ): Promise<RepositoryResult<DailyLog>>;
 }
 
+export interface ReviewRepository {
+  saveReview(
+    input: SaveReviewRepositoryInput,
+  ): Promise<RepositoryResult<ReviewRecord>>;
+  getReviewByPeriod(
+    userId: UserId,
+    profileId: ProfileId,
+    kind: ReviewKind,
+    periodStart: LocalDateString,
+  ): Promise<RepositoryResult<ReviewRecord | null>>;
+  getReviewsInRange(
+    userId: UserId,
+    profileId: ProfileId,
+    fromDate: LocalDateString,
+    toDate: LocalDateString,
+  ): Promise<RepositoryListResult<ReviewRecord>>;
+  getTaskDecisions(
+    userId: UserId,
+    reviewId: string,
+  ): Promise<RepositoryListResult<ReviewTaskDecision>>;
+}
+
 export interface ResourceRepository {
-  createResource(input: CreateResourceInput): Promise<RepositoryResult<Resource>>;
+  createResource(
+    input: CreateResourceInput,
+  ): Promise<RepositoryResult<Resource>>;
   getResourceRelationsByUser(
     userId: UserId,
     profileId: ProfileId,
@@ -418,6 +451,7 @@ export interface RealDataRepository {
   projects: ProjectRepository;
   goals: GoalRepository;
   dailyLogs: DailyLogRepository;
+  reviews: ReviewRepository;
   resources: ResourceRepository;
   recurringTaskTemplates: RecurringTaskTemplateRepository;
   nutrition: NutritionRepository;

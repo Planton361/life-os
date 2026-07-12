@@ -34,7 +34,7 @@
 | Focus Time summary | `UI_ONLY` | honest unavailable source state | add canonical focus/deep-work classification before deriving minutes |
 | Inbox summary | `CONNECTED` | user-scoped inbox items in Dashboard Read Model | maintain |
 | Nutrition summary | `CONNECTED_GAP` | today's meals and completed-meal recipe estimates | portion/target semantics remain separate |
-| Review Status summary | `UI_ONLY` | honest Prepared state | requires canonical Daily/Weekly Review records |
+| Review Status summary | `CONNECTED` | canonical current Daily/Weekly Review records and navigation | maintain review projection proofs |
 | Sleep summary | `UI_ONLY` | honest Unavailable state | requires sleep entries and latest-night projection |
 | Daily Control current task | `CONNECTED` | deterministic state/time/priority/date/recency/id policy | maintain policy tests |
 | Daily Control Up Next | `CONNECTED` | same deterministic persisted-signal ranking, bounded to three | maintain policy tests |
@@ -82,10 +82,10 @@
 | Task planning | `CONNECTED` | task planning actions | maintain |
 | Task complete/reopen | `CONNECTED` | lifecycle actions | maintain |
 | Recurring instance projection | `CONNECTED_GAP` | generated task instances | add full template management and routine UX |
-| Carry-over/open loops | `CONNECTED_GAP` | task/daily-log fields | formalize carry-over and day close semantics |
-| Daily Review | `UI_ONLY` | review-related visual/task hints | implement canonical review entity and flow |
-| Weekly Review | `UI_ONLY` | week/review visual hints | implement weekly record and planning flow |
-| Next-day preparation | `NOT_STARTED` | none | derive from review carry-over and scheduled work |
+| Carry-over/open loops | `CONNECTED` | canonical review records plus atomic user-scoped task decisions | maintain ownership and reload proofs |
+| Daily Review | `CONNECTED` | canonical user-scoped review record, V5 flow and Dashboard/Today projections | maintain |
+| Weekly Review | `CONNECTED` | canonical user-scoped review record with derived task/project movement | maintain |
+| Next-day preparation | `CONNECTED` | Daily Review focus plus explicit carry-over target date | maintain |
 | Review history | `NOT_STARTED` | none | add detail/history after canonical records |
 
 # 4. Calendar and Scheduling
@@ -106,7 +106,7 @@
 | Recurring/routine scheduling | `CONNECTED_GAP` | recurring templates/instances | add management and cross-domain routines |
 | Meal schedule source | `NOT_STARTED` | meals exist | add controlled link and completion sync |
 | Workout schedule source | `NOT_STARTED` | workout model absent | implement after H2 foundation |
-| Review schedule source | `NOT_STARTED` | review model absent | implement after D1.2 |
+| Review schedule source | `NOT_STARTED` | review model now exists; Calendar shows review status context only | implement canonical schedule-source links in D2.1 |
 | Free calendar events | `NOT_STARTED` | none | separate model decision |
 | Drag/drop/resize | `NOT_STARTED` | none | accessible comfort slice after source model |
 | Schedule history/audit | `NOT_STARTED` | none | later lifecycle/audit model |

@@ -8,3 +8,4 @@ export * from "./supabase-recurring-task-template-repository";
 export * from "./supabase-resource-repository";
 export * from "./supabase-skill-repository";
 export * from "./supabase-task-repository";
+export * from "./supabase-review-repository";
