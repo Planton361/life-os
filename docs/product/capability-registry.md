@@ -30,30 +30,30 @@
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
 | Quick Thought → Inbox | `CONNECTED` | Inbox capture action and reload proof | maintain |
-| Tasks Today summary | `CONNECTED_GAP` | task read projection | define one central Dashboard Read Model and exact count semantics |
-| Focus Time summary | `UI_ONLY` | current visual KPI | derive from scheduled focus/task blocks |
-| Inbox summary | `CONNECTED` | inbox items | add navigation and shared read-model contract if missing |
-| Nutrition summary | `CONNECTED_GAP` | meals and manual recipe estimates | derive only from completed meals; no fake precision |
-| Review Status summary | `UI_ONLY` | visual state | requires canonical Daily/Weekly Review records |
-| Sleep summary | `UI_ONLY` | visual state | requires sleep entries and latest-night projection |
-| Daily Control current task | `CONNECTED_GAP` | current task projection | lock deterministic selection policy |
-| Daily Control Up Next | `CONNECTED_GAP` | task queue | lock ranking policy and explain why items appear |
-| Time Progress | `UI_ONLY` | visual progress | compute from current day and scheduled/planned load |
-| Weather | `NOT_STARTED` | none | optional Open-Meteo or equivalent external read gate |
-| Mood entry | `UI_ONLY` | visible controls | create mood entries and Dashboard write flow |
-| Mood current state | `UI_ONLY` | visible state | derive latest entry and day trend |
-| Weight goal | `UI_ONLY` | visible card | implement weight entries and target model |
-| Nutrient Balance | `CONNECTED_GAP` | meals + manual estimates | update from completed meals only; unknown remains unknown |
-| Meals Today | `CONNECTED_GAP` | meal records | complete/change meal and schedule-source synchronization |
-| Latest Run | `UI_ONLY` | demo/visual state | implement manual running sessions first |
-| Muscle Map | `UI_ONLY` | visual state | derive from strength plan/session exercises |
+| Tasks Today summary | `CONNECTED` | central server-side Dashboard task projection; completed/open count semantics | maintain |
+| Focus Time summary | `UI_ONLY` | honest unavailable source state | add canonical focus/deep-work classification before deriving minutes |
+| Inbox summary | `CONNECTED` | user-scoped inbox items in Dashboard Read Model | maintain |
+| Nutrition summary | `CONNECTED_GAP` | today's meals and completed-meal recipe estimates | portion/target semantics remain separate |
+| Review Status summary | `UI_ONLY` | honest Prepared state | requires canonical Daily/Weekly Review records |
+| Sleep summary | `UI_ONLY` | honest Unavailable state | requires sleep entries and latest-night projection |
+| Daily Control current task | `CONNECTED` | deterministic state/time/priority/date/recency/id policy | maintain policy tests |
+| Daily Control Up Next | `CONNECTED` | same deterministic persisted-signal ranking, bounded to three | maintain policy tests |
+| Time Progress | `CONNECTED` | Europe/Berlin local-day elapsed time plus scheduled task load | maintain |
+| Weather | `NOT_STARTED` | honest Unavailable state; no API | optional external read gate |
+| Mood entry | `UI_ONLY` | Demo-only reference; Manual/Empty Prepared state without fake write | D1.3 canonical mood entries |
+| Mood current state | `UI_ONLY` | honest Prepared state | D1.3 latest entry and trend |
+| Weight goal | `UI_ONLY` | honest Unavailable card linked to Health | D1.3 entries and target model |
+| Nutrient Balance | `CONNECTED_GAP` | completed meals + manual recipe estimates; unknown remains unknown | add reliable portion and target semantics |
+| Meals Today | `CONNECTED_GAP` | user-scoped meal records in Dashboard Read Model | schedule-source synchronization remains |
+| Latest Run | `UI_ONLY` | honest Unavailable state | implement manual running sessions first |
+| Muscle Map | `UI_ONLY` | honest Unavailable state | derive from strength plan/session exercises |
 | Today Agenda day view | `CONNECTED` | task scheduling fields | maintain task-based core |
 | Today Agenda week/month | `CONNECTED_GAP` | Calendar/visual projection | align with canonical Calendar views |
 | Urgent time-block create | `UI_ONLY` | visible action | implement schedule/create flow without duplicate data |
-| Habit Tracker | `UI_ONLY` | visible habit blocks | implement definitions, increments, logs and windows |
-| Active Portfolio | `CONNECTED_GAP` | projects/goals/skills | add explicit pin/favorite/ranking model, max four per category |
-| Anti-Rot Actions | `UI_ONLY` | visual collection | implement library, rotation and completion |
-| Challenges | `UI_ONLY` | visual cards | implement challenge lifecycle and reward link |
+| Habit Tracker | `UI_ONLY` | Demo reference; Manual/Empty Prepared state without fake increment | implement definitions, increments, logs and windows |
+| Active Portfolio | `CONNECTED_GAP` | user-scoped projects/goals/skills, bounded existing ranking | explicit pin/favorite model remains |
+| Anti-Rot Actions | `UI_ONLY` | honest Prepared state without fake completion | implement library, rotation and completion |
+| Challenges | `UI_ONLY` | honest Prepared state without fake completion | implement challenge lifecycle and reward link |
 
 # 2. Inbox
 
@@ -294,7 +294,7 @@
 ## Current Priority
 
 ```text
-D1.1 Dashboard Read Model & Navigation Completion
+D1.2 Daily & Weekly Review
 ```
 
-After each completed capability, update this registry before closing the Epic.
+After each completed capability, update this registry before closing the work block.

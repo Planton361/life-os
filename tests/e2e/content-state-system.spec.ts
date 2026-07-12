@@ -1353,19 +1353,6 @@ function manualGoal(index: number) {
   };
 }
 
-function manualMeal(type: "Breakfast" | "Lunch" | "Dinner", index: number) {
-  return {
-    id: `meal-${type.toLowerCase()}`,
-    kcal: `${480 + index * 40} kcal`,
-    macros: [`P ${30 + index}g`, `C ${44 + index}g`, `F ${12 + index}g`],
-    name: `Manual ${type}`,
-    state: "planned",
-    time: type === "Breakfast" ? "08:00" : type === "Lunch" ? "12:30" : "19:00",
-    type,
-    updatedAt: "2026-06-24T08:00:00.000Z",
-  };
-}
-
 function manualTimedTask() {
   return {
     areaId: "work",
@@ -1455,7 +1442,7 @@ async function expectDashboardWidgetContracts(page: Page, profile: ProfileId) {
     "4",
   );
   await expectWidgetContract(
-    page.getByRole("link", { name: "Open year timeline" }),
+    page.getByRole("link", { name: "Open Today time progress" }),
     profile,
     "3",
   );
@@ -3234,25 +3221,26 @@ test.describe("Dashboard content states", () => {
     }
 
     await expect(
-      page.getByRole("link", { name: /Sleep: No data/ }),
+      page.getByRole("link", { name: /Sleep: Unavailable/ }),
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: /Tracke deinen Schlaf/ }),
+      page.getByRole("link", { name: /Sleep source not implemented/ }),
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: /Review Status: No review/ }),
+      page.getByRole("link", { name: /Review Status: Prepared/ }),
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: /Start Capturing/ }),
+      page.getByRole("link", { name: /Review source not implemented/ }),
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: /Nutrition: No plan/ }),
+      page.getByRole("link", { name: /Nutrition: No meals/ }),
     ).toBeVisible();
-    await expect(page.getByRole("link", { name: /Create Plan/ })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: /Recipe estimates unavailable/ }),
+    ).toBeVisible();
     await expect(
       page.getByRole("link", { name: /Kein aktueller Fokus/ }),
     ).toBeVisible();
-    await expect(page.getByRole("link", { name: /Create task/ })).toBeVisible();
     await expect(page.getByText("Keine Mahlzeit")).toHaveCount(3);
     await expect(
       page.getByRole("region", { name: "Meals Today" }),
@@ -3378,12 +3366,10 @@ test.describe("Dashboard content states", () => {
     await expectDashboardTodayAgendaText(page, title);
   });
 
-  test("reports habit and active portfolio capacity states", async ({
+  test("keeps unsupported Manual prototype widgets honest", async ({
     page,
   }) => {
     await setProfile(page, "manual");
-
-    await writeManualProfile({});
     await expectNoHydrationErrors(page, async () => {
       await page.goto("/dashboard");
     });
@@ -3394,49 +3380,9 @@ test.describe("Dashboard content states", () => {
     await expect(
       page.getByRole("region", { name: "Active Portfolio" }),
     ).toHaveAttribute("data-item-count", "0");
-
-    await writeManualProfile({
-      habits: [manualHabit(1)],
-      projects: [manualProject(1)],
-    });
-    await expectNoHydrationErrors(page, async () => {
-      await page.reload();
-    });
-    await expectOnlyProductContentStates(page);
-    await expect(
-      page.getByRole("region", { name: "Habit Trackers" }),
-    ).toHaveAttribute("data-content-state", "partial");
-    await expect(
-      page.getByRole("region", { name: "Active Portfolio" }),
-    ).toHaveAttribute("data-content-state", "partial");
-    await expect(
-      page.getByRole("region", { name: "Meals Today" }),
-    ).toHaveAttribute("data-content-state", "empty");
-
-    await writeManualProfile({
-      habits: Array.from({ length: 8 }, (_, index) => manualHabit(index + 1)),
-      projects: Array.from({ length: 4 }, (_, index) =>
-        manualProject(index + 1),
-      ),
-      meals: [
-        manualMeal("Breakfast", 1),
-        manualMeal("Lunch", 2),
-        manualMeal("Dinner", 3),
-      ],
-    });
-    await expectNoHydrationErrors(page, async () => {
-      await page.reload();
-    });
-    await expectOnlyProductContentStates(page);
-    await expect(
-      page.getByRole("region", { name: "Habit Trackers" }),
-    ).toHaveAttribute("data-content-state", "filled");
-    await expect(
-      page.getByRole("region", { name: "Active Portfolio" }),
-    ).toHaveAttribute("data-content-state", "filled");
-    await expect(
-      page.getByRole("region", { name: "Meals Today" }),
-    ).toHaveAttribute("data-content-state", "filled");
+    await expect(page.getByText("Habit tracking prepared")).toBeVisible();
+    await expect(page.getByText(/Prepared · mood entries and history/)).toBeVisible();
+    await expect(page.getByText(/Prepared · challenge source/)).toBeVisible();
   });
 });
 

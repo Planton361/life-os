@@ -40,9 +40,11 @@ Capability-level truth is maintained in `docs/product/capability-registry.md`.
 
 **Outcome:** Dashboard, Inbox, Today, Calendar, Daily Review and Weekly Review form one closed daily operating loop.
 
-### 3.1 Current Block
+### 3.1 Completed Block
 
 ### D1.1 – Dashboard Read Model & Navigation Completion
+
+**Status:** Complete
 
 **Outcome:** Every Dashboard panel either reads real canonical data and navigates correctly, or is explicitly marked as unavailable until its source domain is implemented.
 
@@ -201,26 +203,91 @@ Use scoped regions and unique test data.
 - Ranking policies can become opaque or unstable.
 - Missing source domains must not be rushed into D1.1 solely to make every card non-empty.
 
+### 3.2 Current Block
+
+### D1.2 – Daily & Weekly Review
+
+**Status:** Active
+
+**Outcome:** Daily Review and Weekly Review become canonical, reload-stable records that close the loop between Today, Dashboard and the next planning period without duplicating Tasks, Projects or Goals.
+
+#### User flows
+
+- The user opens the Daily Review from Today or the Dashboard Review Status card.
+- The user records wins, blockers, open loops, carry-over decisions and next-day preparation.
+- Saving updates the current review state, survives reload and makes Review Status truthful on Dashboard and Today.
+- The user opens Weekly Review, sees task/project movement derived from canonical sources and records focus plus next-week decisions.
+- Carry-over creates or updates explicit planning decisions; it does not silently duplicate tasks.
+
+#### Canonical data and backend
+
+- Define canonical Daily Review and Weekly Review records with user ownership, local date/week identity and explicit lifecycle.
+- Reuse tasks, projects, goals and logs as source projections; reviews store reflection and decisions, not copies of domain entities.
+- Every write uses Zod, server-side authentication, user-scoped repositories, same-user ownership checks for linked targets and route/read-model revalidation.
+- Use a local migration only if the active schema has no safe review model. No remote database action.
+- Coupled review/carry-over writes must be atomic or use a controlled transactional RPC.
+
+#### UI and projections
+
+- Preserve V5 and the existing Today/Review surfaces.
+- Dashboard Review Status reads the canonical current review state and navigates to the responsible route.
+- Today shows honest Opening/Closing Review states and reload-stable saved content.
+- Calendar receives review schedule sources only if an existing canonical scheduling link supports them; otherwise scheduling remains a separate D2.1 capability.
+- Demo, Manual, Empty and Auth-blocked states remain distinct.
+
+#### Non-goals
+
+- Mood, Sleep and Weight entries;
+- AI-generated reviews;
+- autonomous carry-over or task duplication;
+- Calendar schedule-source migrations owned by D2.1;
+- Dashboard redesign.
+
+#### Acceptance criteria
+
+- Daily and Weekly Review records are canonical, user-scoped and RLS-protected.
+- Create/update flows validate input, show success/error/auth-blocked states and survive reload.
+- Dashboard Review Status and Today project the same current review truth.
+- Carry-over decisions are explicit and cannot partially apply.
+- Empty and Manual modes never show Demo review content.
+- Focused browser proofs cover save, edit/reload, Dashboard projection and carry-over behavior.
+- Capability Registry is updated and D1.3 becomes the next block.
+
+#### Focused proof plan
+
+1. Create and update a unique Daily Review; reload and verify the concrete Review region.
+2. Verify Dashboard Review Status changes and navigates to the saved review.
+3. Record an explicit carry-over decision and verify Today/task projection after reload.
+4. Create/update Weekly Review and verify derived project/task movement remains read-only source data.
+5. Prove Empty and Auth-blocked states without Demo leakage or apparently functional writes.
+
+#### Risks
+
+- Review records can accidentally duplicate task/project state.
+- Carry-over can create partial or duplicate work without an atomic boundary.
+- Local-date and ISO-week identity must remain stable across timezone boundaries.
+- Dashboard and Today can drift if they do not share the same review read model.
+
 ## 4. Next Up
 
 | Order | Block | Outcome |
 |---:|---|---|
-| 1 | D1.1 Dashboard Read Model & Navigation | Dashboard panels use real sources and correct navigation |
-| 2 | D1.2 Daily & Weekly Review | canonical review records, carry-over and week planning |
-| 3 | D1.3 Mood, Sleep & Weight | real entries, Dashboard writes and historical views |
-| 4 | D2.1 Schedule Source Links | Meals, Workouts and Reviews link safely to schedule blocks |
-| 5 | D2.2 Recurring & Routine Management | templates can be listed, edited, paused and generated predictably |
-| 6 | H1.1 Habit Tracking | definitions, flexible increments, timestamped logs and Dashboard interaction |
-| 7 | H2.1 Running & Strength Core | manual sessions, plans, exercise library and Calendar link |
-| 8 | K1.1 Resource/Skill Relation Read Model | semantic relation model before graph visualization |
-| 9 | A1.1 Area Domain Foundation | Coding, Education, Work and Life gain canonical entities and writes |
-| 10 | M1.1 Challenges, Anti-Rot & Rewards | real challenge lifecycle and reward ledger |
+| 1 | D1.2 Daily & Weekly Review | canonical review records, carry-over and week planning |
+| 2 | D1.3 Mood, Sleep & Weight | real entries, Dashboard writes and historical views |
+| 3 | D2.1 Schedule Source Links | Meals, Workouts and Reviews link safely to schedule blocks |
+| 4 | D2.2 Recurring & Routine Management | templates can be listed, edited, paused and generated predictably |
+| 5 | H1.1 Habit Tracking | definitions, flexible increments, timestamped logs and Dashboard interaction |
+| 6 | H2.1 Running & Strength Core | manual sessions, plans, exercise library and Calendar link |
+| 7 | K1.1 Resource/Skill Relation Read Model | semantic relation model before graph visualization |
+| 8 | A1.1 Area Domain Foundation | Coding, Education, Work and Life gain canonical entities and writes |
+| 9 | M1.1 Challenges, Anti-Rot & Rewards | real challenge lifecycle and reward ledger |
 
 ## 5. Completed Major Work
 
 The following major capabilities are already established and must not be rebuilt:
 
 - Dashboard V5 foundation;
+- Dashboard D1.1 server-side read model, deterministic Daily Control, source truth and navigation;
 - Inbox capture and routing core;
 - task lifecycle and planning;
 - Calendar task scheduling, reschedule, unschedule and visible conflict override;

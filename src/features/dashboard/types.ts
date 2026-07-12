@@ -364,7 +364,11 @@ export type DashboardWeightLossGoal = {
   accent: DashboardAccent;
 };
 
-export type DashboardNutrientStatus = "Under" | "On target" | "Over";
+export type DashboardNutrientStatus =
+  | "Under"
+  | "On target"
+  | "Over"
+  | "Unavailable";
 
 export type DashboardNutrientBalanceItem = {
   label: string;
@@ -406,7 +410,7 @@ export type DashboardMuscleWorkout = {
   detail: string;
   focusGroups: readonly string[];
   nextStep: string;
-  statusLabel: "Planned" | "Done" | "Missed";
+  statusLabel: "Planned" | "Done" | "Missed" | "Unavailable";
   href?: DashboardHref;
 };
 

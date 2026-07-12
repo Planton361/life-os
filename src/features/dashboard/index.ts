@@ -1,5 +1,14 @@
 export { dashboardMockData } from "./mock-data";
 export { getDashboardViewModel } from "./dashboard-view-model";
+export {
+  compareDashboardTasks,
+  dashboardLocalDate,
+  dashboardLocalDayProgress,
+  dashboardTaskSelection,
+  dashboardTasksForDate,
+  dashboardTimeZone,
+  scheduledFocusMinutes,
+} from "./dashboard-read-model";
 export type {
   DashboardCommandCenterViewModel,
   DashboardHealthNutritionViewModel,

@@ -122,9 +122,7 @@ function MetricCard({
           )}
           style={{ "--accent": accent } as CSSProperties}
         >
-          <span
-            className="size-2.5 rounded-full bg-[var(--accent)] shadow-[0_0_8px_color-mix(in_srgb,var(--accent)_22%,transparent)]"
-          />
+          <span className="size-2.5 rounded-full bg-[var(--accent)] shadow-[0_0_8px_color-mix(in_srgb,var(--accent)_22%,transparent)]" />
         </span>
       </div>
       <p
@@ -368,11 +366,7 @@ function DailyControlCurrentTask({
     );
   }
 
-  return (
-    <article className={className}>
-      {content}
-    </article>
-  );
+  return <article className={className}>{content}</article>;
 }
 
 function DailyControlQueueItem({
@@ -399,7 +393,10 @@ function DailyControlQueueItem({
       <span className="rounded-full border border-[rgba(91,124,250,.32)] bg-[rgba(91,124,250,.10)] px-2 py-1 text-center text-[10px] font-medium text-[var(--text-secondary)]">
         {item.tag}
       </span>
-      <span aria-hidden="true" className="text-base text-[var(--text-secondary)]">
+      <span
+        aria-hidden="true"
+        className="text-base text-[var(--text-secondary)]"
+      >
         ›
       </span>
     </>
@@ -417,11 +414,7 @@ function DailyControlQueueItem({
     );
   }
 
-  return (
-    <article className={className}>
-      {content}
-    </article>
-  );
+  return <article className={className}>{content}</article>;
 }
 
 function DailyControlQueue({
@@ -492,10 +485,7 @@ function DailyControl({
         </div>
       </div>
 
-      <DailyControlCurrentTask
-        profileId={profileId}
-        task={data.currentTask}
-      />
+      <DailyControlCurrentTask profileId={profileId} task={data.currentTask} />
       <DailyControlQueue data={data} />
     </section>
   );
@@ -550,7 +540,10 @@ function TimeProgress({
         </div>
       </div>
       <div className="rounded-[18px] border border-[rgba(95,200,215,.10)] bg-[rgba(95,200,215,.07)] p-2 text-center">
-        <div aria-hidden="true" className="mx-auto h-6 w-12 rounded-full bg-[rgba(95,200,215,.30)]" />
+        <div
+          aria-hidden="true"
+          className="mx-auto h-6 w-12 rounded-full bg-[rgba(95,200,215,.30)]"
+        />
         <p className="mt-2 text-[9px] font-medium text-[var(--text-muted)]">
           {data.weather.temperatureLabel}
         </p>
@@ -564,7 +557,7 @@ function TimeProgress({
   if (data.timeProgressHref) {
     return (
       <Link
-        aria-label="Open year timeline"
+        aria-label="Open Today time progress"
         className={className}
         href={data.timeProgressHref}
         {...stateAttrs}
@@ -600,6 +593,8 @@ function MoodBoard({
   const router = useRouter();
   const activeMoodTone = moodToneFor(activeMood);
   const moodAccent = activeMoodTone.accent;
+
+  const sourceAvailable = profileId === "demo";
 
   useEffect(() => {
     if (state.status === "success") {
@@ -681,9 +676,9 @@ function MoodBoard({
               quiet
             />
           </div>
-          <form action={formAction} className="mt-1.5 grid grid-cols-3 gap-1">
-            {data.moodCheck.options.map(
-              (mood) => {
+          {sourceAvailable ? (
+            <form action={formAction} className="mt-1.5 grid grid-cols-3 gap-1">
+              {data.moodCheck.options.map((mood) => {
                 const moodTone = moodToneFor(mood);
 
                 return (
@@ -708,9 +703,13 @@ function MoodBoard({
                     {mood}
                   </button>
                 );
-              },
-            )}
-          </form>
+              })}
+            </form>
+          ) : (
+            <div className="mt-1.5 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(168,183,204,.04)] px-2 py-1.5 text-[9px] font-semibold leading-4 text-[var(--text-muted)]">
+              Prepared · mood entries and history are not implemented.
+            </div>
+          )}
           {state.message ? (
             <p
               className={cn(

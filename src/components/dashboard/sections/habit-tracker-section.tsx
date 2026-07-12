@@ -8,12 +8,14 @@ import type {
 } from "@/features/dashboard";
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  createDashboardHabitAction,
-} from "@/features/profile-data/actions";
+import { createDashboardHabitAction } from "@/features/profile-data/actions";
 import { initialDashboardActionState } from "@/features/profile-data/dashboard-action-state";
 import { cn } from "@/lib/cn";
-import { Panel, contentStateAttrs } from "./section-primitives";
+import {
+  DashboardEmptyState,
+  Panel,
+  contentStateAttrs,
+} from "./section-primitives";
 import {
   DashboardDialog,
   SelectField,
@@ -63,7 +65,10 @@ function completedHabitDots(habit: DashboardHabit) {
     return habit.total;
   }
 
-  return Math.max(1, Math.ceil((currentValue / habit.targetValue) * habit.total));
+  return Math.max(
+    1,
+    Math.ceil((currentValue / habit.targetValue) * habit.total),
+  );
 }
 
 function nextHabitCurrentValue(habit: DashboardHabit) {
@@ -122,13 +127,22 @@ function AddHabitDialog({
         </div>
         <div className="grid gap-3 p-5 sm:grid-cols-2">
           <TextField label="Name" name="name" placeholder="Habit name" />
-          <SelectField defaultValue={activeWindow} label="Time of day" name="window">
+          <SelectField
+            defaultValue={activeWindow}
+            label="Time of day"
+            name="window"
+          >
             <option>Morning</option>
             <option>Midday</option>
             <option>Evening</option>
           </SelectField>
           <TextField defaultValue="1" label="Target" name="target" />
-          <TextField label="Unit" name="unit" optional placeholder="min, ml, pages" />
+          <TextField
+            label="Unit"
+            name="unit"
+            optional
+            placeholder="min, ml, pages"
+          />
         </div>
         {state.message ? (
           <p
@@ -173,8 +187,9 @@ export function HabitTrackers({
   data: DashboardHabitTrackers;
   profileId: DashboardProfileId;
 }>) {
-  const [activeWindow, setActiveWindow] =
-    useState<HabitTrackerWindow>(data.activeWindow);
+  const [activeWindow, setActiveWindow] = useState<HabitTrackerWindow>(
+    data.activeWindow,
+  );
   const [habitsByWindow, setHabitsByWindow] = useState(() => ({
     Morning: [...data.habitsByWindow.Morning],
     Midday: [...data.habitsByWindow.Midday],
@@ -241,82 +256,89 @@ export function HabitTrackers({
       titleHref={data.href}
     >
       <div className="p-4 2xl:px-[24px] 2xl:pb-5 2xl:pt-4">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 2xl:grid-cols-[130px_130px_130px_130px] 2xl:gap-x-[14px] 2xl:gap-y-3">
-          {habits.map((habit) => {
-            const valueLabel = formatHabitValue(habit);
-            const activeDots = completedHabitDots(habit);
+        {profileId !== "demo" ? (
+          <DashboardEmptyState
+            description="Habit definitions and timestamped logs are not implemented yet. Open Habits for the prepared domain surface."
+            title="Habit tracking prepared"
+          />
+        ) : (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 2xl:grid-cols-[130px_130px_130px_130px] 2xl:gap-x-[14px] 2xl:gap-y-3">
+            {habits.map((habit) => {
+              const valueLabel = formatHabitValue(habit);
+              const activeDots = completedHabitDots(habit);
 
-            return (
+              return (
+                <button
+                  aria-label={`${habit.label}: ${valueLabel}. ${activeDots} of ${habit.total} active. Toggle progress.`}
+                  className={cn(
+                    "min-h-[68px] rounded-[14px] border border-[rgba(155,124,246,.16)] bg-[color-mix(in_srgb,var(--accent-purple)_5%,#101a2a)] p-2.5 text-left transition hover:border-[rgba(155,124,246,.30)]",
+                    DASHBOARD_LINK_FOCUS_CLASSES,
+                  )}
+                  key={habit.id}
+                  onClick={() => toggleHabit(habit.id)}
+                  type="button"
+                >
+                  <div className="flex items-start gap-2.5">
+                    <span className="grid size-6 shrink-0 place-items-center rounded-full border border-[rgba(155,124,246,.24)] bg-[rgba(155,124,246,.12)] text-[10px] font-semibold text-[var(--text-primary)]">
+                      {habit.marker}
+                    </span>
+                    <div className="min-w-0">
+                      <h3 className="text-[10px] font-semibold text-[var(--text-primary)]">
+                        {habit.label}
+                      </h3>
+                      <p className="mt-0.5 text-[11px] font-semibold leading-tight text-[var(--text-primary)]">
+                        {valueLabel}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="mt-1 text-[8px] font-semibold text-[var(--text-muted)]">
+                    {activeDots} of {habit.total} active
+                  </p>
+                  <div
+                    className="mt-2 flex gap-1.5"
+                    aria-label={`${activeDots} of ${habit.total} completed`}
+                  >
+                    {Array.from({ length: habit.total }).map((_, index) => (
+                      <span
+                        className={cn(
+                          "size-1.5 rounded-full",
+                          index < activeDots
+                            ? "bg-[var(--accent-purple)] shadow-[0_0_10px_rgba(155,124,246,.36)]"
+                            : "bg-[rgba(148,163,184,.20)]",
+                        )}
+                        key={`${habit.label}-${index}`}
+                      />
+                    ))}
+                  </div>
+                </button>
+              );
+            })}
+            {habits.length < 8 ? (
               <button
-                aria-label={`${habit.label}: ${valueLabel}. ${activeDots} of ${habit.total} active. Toggle progress.`}
                 className={cn(
-                  "min-h-[68px] rounded-[14px] border border-[rgba(155,124,246,.16)] bg-[color-mix(in_srgb,var(--accent-purple)_5%,#101a2a)] p-2.5 text-left transition hover:border-[rgba(155,124,246,.30)]",
+                  "grid min-h-[68px] place-items-center rounded-[14px] border border-[rgba(155,124,246,.16)] bg-[color-mix(in_srgb,var(--accent-purple)_5%,#101a2a)] p-2.5 text-center transition hover:border-[rgba(155,124,246,.30)]",
                   DASHBOARD_LINK_FOCUS_CLASSES,
                 )}
-                key={habit.id}
-                onClick={() => toggleHabit(habit.id)}
+                onClick={() => setAddDialogOpen(true)}
                 type="button"
               >
-                <div className="flex items-start gap-2.5">
-                  <span className="grid size-6 shrink-0 place-items-center rounded-full border border-[rgba(155,124,246,.24)] bg-[rgba(155,124,246,.12)] text-[10px] font-semibold text-[var(--text-primary)]">
-                    {habit.marker}
-                  </span>
-                  <div className="min-w-0">
-                    <h3 className="text-[10px] font-semibold text-[var(--text-primary)]">
-                      {habit.label}
-                    </h3>
-                    <p className="mt-0.5 text-[11px] font-semibold leading-tight text-[var(--text-primary)]">
-                      {valueLabel}
-                    </p>
-                  </div>
-                </div>
-                <p className="mt-1 text-[8px] font-semibold text-[var(--text-muted)]">
-                  {activeDots} of {habit.total} active
-                </p>
-                <div
-                  className="mt-2 flex gap-1.5"
-                  aria-label={`${activeDots} of ${habit.total} completed`}
-                >
-                  {Array.from({ length: habit.total }).map((_, index) => (
-                    <span
-                      className={cn(
-                        "size-1.5 rounded-full",
-                        index < activeDots
-                          ? "bg-[var(--accent-purple)] shadow-[0_0_10px_rgba(155,124,246,.36)]"
-                          : "bg-[rgba(148,163,184,.20)]",
-                      )}
-                      key={`${habit.label}-${index}`}
-                    />
-                  ))}
+                <div>
+                  <p className="text-lg font-semibold leading-none text-[var(--text-primary)]">
+                    +
+                  </p>
+                  <p className="mt-1.5 text-[10px] font-semibold text-[var(--text-primary)]">
+                    {data.addHabitLabel}
+                  </p>
+                  <p className="mt-0.5 text-[8px] font-semibold text-[var(--text-muted)]">
+                    {data.addHabitMeta}
+                  </p>
                 </div>
               </button>
-            );
-          })}
-          {habits.length < 8 ? (
-            <button
-              className={cn(
-                "grid min-h-[68px] place-items-center rounded-[14px] border border-[rgba(155,124,246,.16)] bg-[color-mix(in_srgb,var(--accent-purple)_5%,#101a2a)] p-2.5 text-center transition hover:border-[rgba(155,124,246,.30)]",
-                DASHBOARD_LINK_FOCUS_CLASSES,
-              )}
-              onClick={() => setAddDialogOpen(true)}
-              type="button"
-            >
-              <div>
-                <p className="text-lg font-semibold leading-none text-[var(--text-primary)]">
-                  +
-                </p>
-                <p className="mt-1.5 text-[10px] font-semibold text-[var(--text-primary)]">
-                  {data.addHabitLabel}
-                </p>
-                <p className="mt-0.5 text-[8px] font-semibold text-[var(--text-muted)]">
-                  {data.addHabitMeta}
-                </p>
-              </div>
-            </button>
-          ) : null}
-        </div>
+            ) : null}
+          </div>
+        )}
       </div>
-      {addDialogOpen ? (
+      {profileId === "demo" && addDialogOpen ? (
         <AddHabitDialog
           activeWindow={activeWindow}
           onClose={() => setAddDialogOpen(false)}
