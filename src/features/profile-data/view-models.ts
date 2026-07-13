@@ -30,6 +30,11 @@ import {
   scheduledFocusMinutes,
 } from "@/features/dashboard/dashboard-read-model";
 import { resolveContentStateMeta } from "@/features/content-state";
+import {
+  buildSemanticConnectedContext,
+  portfolioEntityHref,
+  type SemanticRelationEntry,
+} from "@/features/semantic-relations/read-model";
 import type {
   DashboardAccent,
   DashboardAgendaEvent,
@@ -1100,7 +1105,7 @@ function collectionToPortfolioEntities(
   collection: EntityCollection,
   lookups = portfolioRelationLabelLookups(collection),
 ) {
-  return [
+  const entities = [
     ...collection.tasks.map((task, index) =>
       taskToPortfolioEntity(task, index, lookups),
     ),
@@ -1114,6 +1119,51 @@ function collectionToPortfolioEntities(
       skillToPortfolioEntity(skill, index, lookups),
     ),
   ];
+
+  const byId = new Map(entities.map((entity) => [`${entity.type}:${entity.id}`, entity]));
+  const relationEntry = (
+    target: PortfolioEntity,
+    values: Omit<SemanticRelationEntry, "archived" | "href" | "targetId" | "targetTitle" | "targetType">,
+  ): SemanticRelationEntry => ({
+    ...values,
+    archived: false,
+    href: portfolioEntityHref(target.type as "task" | "project" | "goal", target.id),
+    targetId: target.id,
+    targetTitle: target.title,
+    targetType: target.type,
+  });
+
+  return entities.map((entity) => {
+    if (entity.type === "skill") return entity;
+    const candidates: SemanticRelationEntry[] = [];
+    const project = entity.projectId ? byId.get(`project:${entity.projectId}`) : undefined;
+    const goal = entity.goalId ? byId.get(`goal:${entity.goalId}`) : undefined;
+
+    if (entity.type === "task" && project) candidates.push(relationEntry(project, { direct: true, direction: "outgoing", relationType: "belongs to project", source: "tasks.project_id" }));
+    if (entity.type === "task" && goal) {
+      candidates.push(relationEntry(goal, { direct: true, direction: "outgoing", relationType: "supports goal", source: "tasks.goal_id" }));
+    } else if (entity.type === "task" && project?.goalId) {
+      const projectGoal = byId.get(`goal:${project.goalId}`);
+      if (projectGoal) candidates.push(relationEntry(projectGoal, { direct: false, direction: "outgoing", relationType: "supports goal via project", source: "tasks.project_id → projects.goal_id", via: { id: project.id, title: project.title, type: "project" } }));
+    }
+    if (entity.type === "project" && goal) candidates.push(relationEntry(goal, { direct: true, direction: "outgoing", relationType: "supports goal", source: "projects.goal_id" }));
+
+    for (const candidate of entities) {
+      if (candidate.type === "task" && entity.type === "project" && candidate.projectId === entity.id) candidates.push(relationEntry(candidate, { direct: true, direction: "incoming", relationType: "task in project", source: "tasks.project_id" }));
+      if (candidate.type === "project" && entity.type === "goal" && candidate.goalId === entity.id) candidates.push(relationEntry(candidate, { direct: true, direction: "incoming", relationType: "project supports goal", source: "projects.goal_id" }));
+      if (candidate.type === "task" && entity.type === "goal") {
+        if (candidate.goalId === entity.id) candidates.push(relationEntry(candidate, { direct: true, direction: "incoming", relationType: "task supports goal", source: "tasks.goal_id" }));
+        else if (candidate.projectId) {
+          const candidateProject = byId.get(`project:${candidate.projectId}`);
+          if (candidateProject?.goalId === entity.id) candidates.push(relationEntry(candidate, { direct: false, direction: "incoming", relationType: "task supports goal via project", source: "tasks.project_id → projects.goal_id", via: { id: candidateProject.id, title: candidateProject.title, type: "project" } }));
+        }
+      }
+    }
+
+    for (const resource of entity.linkedResources ?? []) candidates.push({ archived: false, direct: true, direction: "incoming", href: `/resources?selected=${resource.id}`, relationType: resource.relationType, source: "resource_relations", targetId: resource.id, targetTitle: resource.title, targetType: "resource" });
+
+    return { ...entity, connectedContext: buildSemanticConnectedContext(candidates) };
+  });
 }
 
 function buildProfilePortfolioViewModel(

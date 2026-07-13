@@ -146,7 +146,7 @@
 | Resource search | `CONNECTED` | K1.1B user-scoped Manual read model filter across title, description, URL and type | tags/full-text ranking remain deferred |
 | Files/attachments | `NOT_STARTED` | none | storage/privacy decision |
 | Notes/wiki resources | `CONNECTED_GAP` | resource/note concepts | canonical Note/Wiki model needed |
-| Semantic relation read model | `NOT_STARTED` | raw relations exist | implement before graph |
+| Semantic relation read model | `CONNECTED` | K1.1C server-side projection of `tasks.project_id`, `tasks.goal_id`, `projects.goal_id` and `resource_relations`; deterministic direct-over-via dedupe, stable grouping, source/direction labels, navigation and reload proof | Skill relations remain deferred until a safe canonical relation exists |
 | Resource/Skill graph | `NOT_STARTED` | no proven graph read model | no visual library before semantics |
 | Embeddings/semantic search | `DECISION_REQUIRED` | none | privacy and permission decision |
 

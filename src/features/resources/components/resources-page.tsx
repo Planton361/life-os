@@ -11,6 +11,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { archiveResourceFormAction, createResourceFormAction, linkResourceToTargetAction, restoreResourceFormAction, unlinkResourceFromTargetAction, updateResourceFormAction } from "@/features/real-data/actions/resource.actions";
+import { ConnectedContext } from "@/features/semantic-relations/connected-context";
 import {
   resourceAreaMeta,
   resourceReviewStateMeta,
@@ -1064,6 +1065,9 @@ function ResourceRelationInspector({
 
       <div className="grid gap-3 p-3 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:p-2">
         {profileId === "manual" ? <ResourceManagementForm resource={resource} /> : null}
+        {resource.connectedContext ? (
+          <ConnectedContext context={resource.connectedContext} />
+        ) : null}
         <section aria-labelledby="resource-overview-heading">
           <h3
             className="text-[13px] font-semibold text-[var(--text-primary)] xl:text-[12px]"

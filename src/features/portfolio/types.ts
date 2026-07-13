@@ -1,4 +1,5 @@
 import type { ContentStateMeta } from "@/features/content-state";
+import type { SemanticConnectedContext } from "@/features/semantic-relations/read-model";
 import type {
   GoalHorizon,
   GoalStatus,
@@ -259,6 +260,7 @@ export type PortfolioEntity = {
   recentRank: number;
   reviewNeeded: boolean;
   blocked: boolean;
+  connectedContext?: SemanticConnectedContext;
   relations: PortfolioRelation[];
   decisions: PortfolioDecision[];
   sourceLinks: PortfolioSourceLink[];

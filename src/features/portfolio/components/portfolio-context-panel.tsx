@@ -26,6 +26,7 @@ import {
   updateSkillFormAction,
 } from "@/features/real-data/actions/skill.actions";
 import type { ResourceRelationType } from "@/features/real-data";
+import { ConnectedContext } from "@/features/semantic-relations/connected-context";
 import {
   EmptyState,
   Pill,
@@ -1932,6 +1933,9 @@ export function PortfolioContextPanel({
       </div>
 
       <div className="grid gap-3 p-3 xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
+        {entity.connectedContext ? (
+          <ConnectedContext context={entity.connectedContext} />
+        ) : null}
         <div className="grid gap-2 sm:grid-cols-2">
           <FieldCard
             accent={typeAccent}

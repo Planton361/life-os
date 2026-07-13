@@ -60,6 +60,7 @@ import {
   resourceRelationToViewModel,
   resolveResourceRelationTargets,
 } from "@/features/resources/resource-relations-read-model";
+import { buildSemanticConnectedContext } from "@/features/semantic-relations/read-model";
 import { resolveContentStateMeta } from "@/features/content-state";
 import {
   createSupabaseNutritionRepository,
@@ -3002,6 +3003,9 @@ async function getManualResourcesFromSupabase(
       relationTargets,
       resources: resourceItems.map((resource) => ({
         ...resource,
+        connectedContext: buildSemanticConnectedContext([], {
+          historical: Boolean(resource.archivedAt),
+        }),
         relatedGoals: [],
         relatedProjects: [],
         relatedResourceRelations: [],
@@ -3034,6 +3038,25 @@ async function getManualResourcesFromSupabase(
 
       return {
         ...resource,
+        connectedContext: buildSemanticConnectedContext(
+          resourceRelations
+            .filter(
+              (relation) =>
+                !relation.targetMissing && relation.targetType !== "resource",
+            )
+            .map((relation) => ({
+              archived: false,
+              direct: true,
+              direction: "outgoing" as const,
+              href: `/portfolio?view=${relation.targetType}s&selected=${relation.targetId}` as `/${string}`,
+              relationType: relation.relationType,
+              source: "resource_relations",
+              targetId: relation.targetId,
+              targetTitle: relation.targetTitle,
+              targetType: relation.targetType,
+            })),
+          { historical: Boolean(resource.archivedAt) },
+        ),
         linkedContext:
           resourceRelations.length > 0
             ? `${resourceRelations.length} Beziehungen`

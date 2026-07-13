@@ -1,4 +1,5 @@
 import type { ContentStateMeta } from "@/features/content-state";
+import type { SemanticConnectedContext } from "@/features/semantic-relations/read-model";
 
 export type ResourceProfileId = "demo" | "empty" | "manual";
 
@@ -136,6 +137,7 @@ export type ResourceItem = {
   relatedTasks?: ResourceRelationViewModel[];
   relatedResourceRelations?: ResourceRelationViewModel[];
   actions: ResourceAction[];
+  connectedContext?: SemanticConnectedContext;
 };
 
 export type ResourceRelation = {

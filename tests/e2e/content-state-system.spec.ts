@@ -7993,6 +7993,96 @@ test.describe("Resources content states", () => {
     await expect(inspector.getByRole("form", { name: "Resource bearbeiten" })).toBeVisible();
   });
 
+  test("K1.1C projects canonical relations across task project goal and resource", async ({ page }) => {
+    test.setTimeout(90_000);
+    test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires local authenticated Supabase state.");
+    const stamp = Date.now();
+    const goalTitle = `K1.1C Goal ${stamp}`;
+    const projectTitle = `K1.1C Project ${stamp}`;
+    const taskTitle = `K1.1C Task ${stamp}`;
+    const resourceTitle = `K1.1C Resource ${stamp}`;
+
+    await openManualPortfolioWithDb(page, resourceRelationDbProofSkipReason);
+    await page.goto("/portfolio?view=goals");
+    await createPortfolioGoalTarget(page, goalTitle, "K1.1C canonical goal");
+    await createGoalWorkbenchProject(page, projectTitle, "K1.1C canonical project");
+    await openPortfolioEntityByTitle(page, "projects", projectTitle);
+    await createProjectWorkbenchTask(page, taskTitle, "K1.1C next", "K1.1C canonical task");
+    await createK11BResource(page, resourceTitle, "K1.1C canonical resource", `https://example.test/k11c-${stamp}`);
+    await linkSelectedResourceToTarget(page, "project", projectTitle);
+    await linkSelectedResourceToTarget(page, "goal", goalTitle);
+
+    const inspector = page.locator('[data-resources-section="relation-inspector"]');
+    const relationForm = inspector.getByRole("form", { name: "Resource Beziehung hinzufügen" });
+    await relationForm.getByLabel("Zieltyp").selectOption("task");
+    const taskOption = relationForm
+      .getByLabel("Ziel", { exact: true })
+      .locator("option")
+      .filter({ hasText: taskTitle });
+    await expect(taskOption).toHaveCount(1);
+    const taskId = await taskOption.getAttribute("value");
+    await relationForm.getByLabel("Ziel", { exact: true }).selectOption(taskId ?? "");
+    await relationForm.getByRole("button", { name: "Speichern" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Beziehung gespeichert" })).toBeVisible();
+
+    const expectContextEntry = async (root: ReturnType<Page["locator"]>, type: string, title: string) => {
+      const entry = root.locator(`[data-connected-context-entry^="${type}:"]`).filter({ hasText: title });
+      await expect(entry).toHaveCount(1);
+      await expect(entry).toContainText(/resource_relations|tasks\.project_id|tasks\.goal_id|projects\.goal_id/);
+    };
+
+    const resourceContext = inspector.locator("[data-connected-context]");
+    await expectContextEntry(resourceContext, "task", taskTitle);
+    await expectContextEntry(resourceContext, "project", projectTitle);
+    await expectContextEntry(resourceContext, "goal", goalTitle);
+
+    await openPortfolioEntityByTitle(page, "projects", projectTitle);
+    const projectContext = page.locator('[data-portfolio-section="context-panel"] [data-connected-context]');
+    await expectContextEntry(projectContext, "task", taskTitle);
+    await expectContextEntry(projectContext, "goal", goalTitle);
+    await expectContextEntry(projectContext, "resource", resourceTitle);
+
+    await openPortfolioEntityByTitle(page, "goals", goalTitle);
+    const goalContext = page.locator('[data-portfolio-section="context-panel"] [data-connected-context]');
+    await expectContextEntry(goalContext, "project", projectTitle);
+    await expectContextEntry(goalContext, "task", taskTitle);
+    await expect(goalContext.locator(`[data-connected-context-entry^="task:"]`).filter({ hasText: taskTitle })).toContainText("Via project");
+    await expectContextEntry(goalContext, "resource", resourceTitle);
+
+    await openPortfolioEntityByTitle(page, "tasks", taskTitle);
+    const taskContext = page.locator('[data-portfolio-section="context-panel"] [data-connected-context]');
+    await expectContextEntry(taskContext, "project", projectTitle);
+    await expectContextEntry(taskContext, "goal", goalTitle);
+    await expectContextEntry(taskContext, "resource", resourceTitle);
+  });
+
+  test("K1.1C navigates connected context and remains reload stable", async ({ page }) => {
+    test.setTimeout(60_000);
+    test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires local authenticated Supabase state.");
+    const stamp = Date.now();
+    const projectTitle = `K1.1C Navigation Project ${stamp}`;
+    const resourceTitle = `K1.1C Navigation Resource ${stamp}`;
+
+    await openManualPortfolioWithDb(page, resourceRelationDbProofSkipReason);
+    await page.goto("/portfolio?view=projects");
+    await createPortfolioProjectTarget(page, projectTitle, "K1.1C navigation target");
+    await createK11BResource(page, resourceTitle, "K1.1C navigation resource", `https://example.test/k11c-nav-${stamp}`);
+    await linkSelectedResourceToTarget(page, "project", projectTitle);
+    await openPortfolioEntityByTitle(page, "projects", projectTitle);
+
+    const portfolioContext = page.locator('[data-portfolio-section="context-panel"] [data-connected-context]');
+    const resourceEntry = portfolioContext.locator('[data-connected-context-entry^="resource:"]').filter({ hasText: resourceTitle });
+    await resourceEntry.getByRole("link", { name: "Öffnen" }).click();
+    const resourceInspector = page.locator('[data-resources-section="relation-inspector"]');
+    await expect(resourceInspector.locator("#selected-resource-heading")).toHaveText(resourceTitle);
+    await page.reload();
+    const resourceContext = resourceInspector.locator("[data-connected-context]");
+    const projectEntry = resourceContext.locator('[data-connected-context-entry^="project:"]').filter({ hasText: projectTitle });
+    await expect(projectEntry).toHaveCount(1);
+    await projectEntry.getByRole("link", { name: "Öffnen" }).click();
+    await expect(page.locator("#selected-entity-heading")).toHaveText(projectTitle);
+  });
+
   test("keeps demo resources as the filled knowledge reference", async ({
     page,
   }) => {
