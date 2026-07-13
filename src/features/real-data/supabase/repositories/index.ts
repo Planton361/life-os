@@ -2,6 +2,7 @@ export * from "./supabase-goal-repository";
 export * from "./supabase-coding-repository";
 export * from "./supabase-education-repository";
 export * from "./supabase-work-repository";
+export * from "./supabase-work-knowledge-repository";
 export * from "./supabase-inbox-resource-transaction";
 export * from "./supabase-inbox-repository";
 export * from "./supabase-inbox-triage-transaction";

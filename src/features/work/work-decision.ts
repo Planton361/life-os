@@ -1,0 +1,2 @@
+export type WorkWikiEntry = { id: string; projectId: string | null; projectTitle: string | null; title: string; body: string | null; archivedAt: string | null };
+export type WorkDecision = { id: string; projectId: string; projectTitle: string; decisionDate: string; title: string; decision: string; rationale: string | null; status: "active" | "revisited" | "superseded"; archivedAt: string | null };

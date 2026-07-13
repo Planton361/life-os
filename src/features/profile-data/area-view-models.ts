@@ -68,6 +68,7 @@ import {
   createSupabaseCodingRepository,
   createSupabaseEducationRepository,
   createSupabaseWorkRepository,
+  createSupabaseWorkKnowledgeRepository,
   createSupabaseResourceRepository,
   createSupabaseTrainingRepository,
   type SupabaseClientLike,
@@ -2932,9 +2933,9 @@ export async function getWorkOverviewViewModel(): Promise<WorkOverviewViewModel>
 
   const viewModel = buildProfileWorkOverviewViewModel(profileId, await readManualProfile());
   const auth = await createAuthenticatedSupabaseServerClient();
-  if (!auth.ok) return { ...viewModel, manualWorkspace: { authAvailable: false, projects: [] } };
-  const workspace = await createSupabaseWorkRepository(auth.client).getWorkspace(auth.user.id);
-  return { ...viewModel, manualWorkspace: { authAvailable: true, projects: workspace.projects } };
+  if (!auth.ok) return { ...viewModel, manualWorkspace: { authAvailable: false, projects: [], wiki: [], decisions: [] } };
+  const [workspace, knowledge] = await Promise.all([createSupabaseWorkRepository(auth.client).getWorkspace(auth.user.id), createSupabaseWorkKnowledgeRepository(auth.client).getKnowledge(auth.user.id)]);
+  return { ...viewModel, manualWorkspace: { authAvailable: true, projects: workspace.projects, ...knowledge } };
 }
 
 export async function getWorkLogViewModel(): Promise<WorkLogViewModel> {

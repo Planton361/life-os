@@ -1,0 +1,2 @@
+import type { WorkDecision } from "@/features/work/work-decision";
+export function mapWorkDecisionRow(row: { id: string; project_id: string; decision_date: string; title: string; decision: string; rationale: string | null; status: string; archived_at: string | null }, projectTitle: string): WorkDecision { return { archivedAt: row.archived_at, decision: row.decision, decisionDate: row.decision_date, id: row.id, projectId: row.project_id, projectTitle, rationale: row.rationale, status: row.status as WorkDecision["status"], title: row.title }; }

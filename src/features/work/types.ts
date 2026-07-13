@@ -207,6 +207,8 @@ export type WorkOverviewViewModel = {
       resources: Array<{ id: string; title: string; relationType: string }>;
       logs: import("./work-log").WorkLog[];
     }>;
+    wiki: import("./work-decision").WorkWikiEntry[];
+    decisions: import("./work-decision").WorkDecision[];
   };
 };
 

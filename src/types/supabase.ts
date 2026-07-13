@@ -1848,6 +1848,56 @@ export type Database = {
           },
         ]
       }
+      work_decisions: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          decision: string
+          decision_date: string
+          id: string
+          project_id: string
+          rationale: string | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          decision: string
+          decision_date: string
+          id?: string
+          project_id: string
+          rationale?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          decision?: string
+          decision_date?: string
+          id?: string
+          project_id?: string
+          rationale?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_decisions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_logs: {
         Row: {
           archived_at: string | null

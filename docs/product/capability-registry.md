@@ -241,11 +241,11 @@
 |---|---|---|---|
 | Work projects/tasks | `CONNECTED` | A1.1C1 user-owned `work` Area with canonical Projects, Project edit, Tasks/Deadlines and Resources in the Manual Work workspace | maintain reload and same-user ownership proofs |
 | Work log | `CONNECTED` | A1.1C1 user-scoped `work_logs` with create/edit/soft archive, historical readability and reload-stable Manual workspace | automatic time tracking and analytics remain out of scope |
-| Work wiki | `UI_ONLY` | route/page shell | A1.1C2: canonical wiki/notes or scoped Resources |
-| Meetings | `UI_ONLY` | route/page shell | A1.1C2: canonical meeting records and Work Project context |
-| Decisions | `NOT_STARTED` | none | A1.1C2: canonical decision records and search |
-| Follow-ups | `NOT_STARTED` | none | A1.1C2: canonical follow-up records and lifecycle |
-| Work dashboard | `CONNECTED_GAP` | A1.1C1 Manual Work workspace reads canonical Projects, Tasks/Deadlines, Resources and Work Logs | A1.1C2 depth for Wiki, Meetings, Decisions and Follow-ups |
+| Work wiki | `CONNECTED_GAP` | A1.1C2a canonical Work-Area `resources` (`note`) with optional Project relation, create/edit/archive and reload-stable history | create-and-link is sequential, so a relation failure can leave a standalone Work Resource; no refactor in this slice |
+| Meetings | `UI_ONLY` | route/page shell | A1.1C2b: canonical meeting records and Work Project context |
+| Decisions | `CONNECTED` | A1.1C2a user-scoped `work_decisions` with Work-Project ownership, status, create/edit/archive and reload-stable history | maintain ownership and status proofs |
+| Follow-ups | `NOT_STARTED` | none | A1.1C2b: canonical follow-up records and lifecycle |
+| Work dashboard | `CONNECTED_GAP` | A1.1C1/A1.1C2a Manual Work workspace reads canonical Projects, Tasks/Deadlines, Resources, Logs, Wiki and Decisions | A1.1C2b depth for Meetings and Follow-ups |
 
 # 14. Life and Personal
 
