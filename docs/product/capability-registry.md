@@ -45,8 +45,8 @@
 | Weight goal | `CONNECTED` | canonical weight entries and single personal goal with honest measured start-to-target progress | maintain |
 | Nutrient Balance | `CONNECTED_GAP` | completed meals + manual recipe estimates; unknown remains unknown | add reliable portion and target semantics |
 | Meals Today | `CONNECTED_GAP` | user-scoped meals plus canonical linked Task scheduling and atomic completion synchronization | multiple-meal slot depth and portion semantics remain |
-| Latest Run | `UI_ONLY` | honest Unavailable state | implement manual running sessions first |
-| Muscle Map | `UI_ONLY` | honest Unavailable state | derive from strength plan/session exercises |
+| Latest Run | `CONNECTED` | latest completed, non-archived running_session with derived pace on Dashboard and Health | maintain reload and timezone proof |
+| Muscle Map | `CONNECTED` | explicit exercise_muscles mappings plus real strength_set_logs; planned fallback is source-labeled | maintain source labels and set-log proof |
 | Today Agenda day view | `CONNECTED` | task scheduling fields | maintain task-based core |
 | Today Agenda week/month | `CONNECTED_GAP` | Calendar/visual projection | align with canonical Calendar views |
 | Urgent time-block create | `UI_ONLY` | visible action | implement schedule/create flow without duplicate data |
@@ -105,7 +105,7 @@
 | Project/Goal queue | `UI_ONLY` | visual concepts | derive tasks and roadmap order from canonical relations |
 | Recurring/routine scheduling | `CONNECTED` | user-scoped template list/create/edit/pause/reactivate, explicit date/range generation and authenticated reload proof; no background writes | maintain |
 | Meal schedule source | `CONNECTED` | idempotent user-scoped source link to canonical Task scheduling; Calendar/Today/Dashboard projection and atomic bidirectional completion | maintain reload and ownership proofs |
-| Workout schedule source | `NOT_STARTED` | workout model absent | implement after H2 foundation |
+| Workout schedule source | `CONNECTED` | idempotent running_plan_item/strength_plan links to canonical Tasks with transactional session completion sync | maintain Calendar/Today/Dashboard and ownership proofs |
 | Review schedule source | `CONNECTED` | Daily/Weekly Reviews link idempotently to canonical executable Tasks with atomic bidirectional completion | maintain reload and ownership proofs |
 | Free calendar events | `NOT_STARTED` | none | separate model decision |
 | Drag/drop/resize | `NOT_STARTED` | none | accessible comfort slice after source model |
@@ -199,16 +199,16 @@
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Manual run entry | `UI_ONLY` | running page/dashboard | implement running_sessions |
-| Latest run Dashboard | `UI_ONLY` | visual card | derive from sessions |
-| Running plan | `UI_ONLY` | page concepts | implement plan and targets |
-| Running trends | `UI_ONLY` | visual shell | derive after sessions |
+| Manual run entry | `CONNECTED` | user-scoped running_sessions with create/edit/soft archive, positive distance/duration and optional time/HR/notes | maintain reload and RLS proofs |
+| Latest run Dashboard | `CONNECTED` | latest completed running_session; pace deterministically derived from distance and duration | maintain |
+| Running plan | `CONNECTED` | archived running_plans plus ordered editable running_plan_items and executable schedule links | maintain idempotent scheduling proof |
+| Running trends | `CONNECTED` | real completed-session Today/7-day/30-day totals and history on Running/Health | maintain timezone boundary proof |
 | Garmin import | `EXTERNAL_GATE` | none | partner/API decision; manual path remains complete |
-| Exercise library | `UI_ONLY` | strength shell | implement exercises |
-| Strength plan | `UI_ONLY` | shell | implement plans/exercises |
-| Strength session/sets | `UI_ONLY` | shell | implement sessions and set logs |
-| Muscle map | `UI_ONLY` | Dashboard/health visual | derive from exercise mappings |
-| Workout schedule source | `NOT_STARTED` | no canonical workout model | implement after strength/running core |
+| Exercise library | `CONNECTED` | user-scoped exercises with transactional controlled muscle mappings, edit and soft archive | maintain historical readability |
+| Strength plan | `CONNECTED` | editable strength_plans and ordered strength_plan_items with sets/reps/optional load | maintain ownership and ordering proofs |
+| Strength session/sets | `CONNECTED` | reload-stable strength_sessions and real strength_set_logs with transactional task completion sync | maintain weighted/unweighted semantics |
+| Muscle map | `CONNECTED` | explicit exercise-muscle relations and log-derived set intensity/weighted volume with textual source labels | maintain |
+| Workout schedule source | `CONNECTED` | D2.1 schedule_source_links extended idempotently for running units and strength plans | maintain no-duplicate and completion-sync proofs |
 
 # 11. Coding and Agents
 

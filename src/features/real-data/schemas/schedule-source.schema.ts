@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const scheduleSourceTypes = ["meal", "review"] as const;
+export const scheduleSourceTypes = ["meal", "review", "running_plan_item", "strength_plan"] as const;
 
 export const scheduleSourceInputSchema = z.object({
   durationMinutes: z.coerce.number().int().min(1).max(1440),

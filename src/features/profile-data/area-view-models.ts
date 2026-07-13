@@ -65,16 +65,19 @@ import {
   createSupabaseNutritionRepository,
   createSupabaseHabitRepository,
   createSupabaseResourceRepository,
+  createSupabaseTrainingRepository,
   type SupabaseClientLike,
 } from "@/features/real-data/supabase";
 import type {
   HabitSnapshot,
+  TrainingSnapshot,
   Meal as RealDataMeal,
   Recipe as RealDataRecipe,
   RecipeIngredient as RealDataRecipeIngredient,
   Resource as RealDataResource,
 } from "@/features/real-data";
 import { localDateInTimeZone } from "@/features/real-data";
+import { formatPace, muscleLoad, strengthVolume } from "@/features/real-data";
 import { getShopViewModel as getDemoShopViewModel } from "@/features/shop";
 import {
   getWorkLogViewModel as getDemoWorkLogViewModel,
@@ -466,12 +469,15 @@ function buildProfileHealthOverviewViewModel(
   profileId: Exclude<LifeOsProfileId, "demo">,
   profile: ManualProfileData,
   habitSnapshot?: HabitSnapshot | null,
+  trainingSnapshot?: TrainingSnapshot | null,
 ): ReturnType<typeof getDemoHealthOverviewViewModel> {
   const viewModel = clone(getDemoHealthOverviewViewModel());
   const canonicalHabits = habitSnapshot?.habits.filter((habit) => habit.archivedAt === null) ?? [];
   const habitCount = habitSnapshot ? canonicalHabits.length : 0;
   const moodCount = profile.mood ? 1 : 0;
-  const pageItemCount = moodCount + habitCount;
+  const completedRuns = trainingSnapshot?.runningSessions.filter((session) => session.status === "completed" && !session.archivedAt) ?? [];
+  const completedStrength = trainingSnapshot?.strengthSessions.filter((session) => session.status === "completed" && !session.archivedAt) ?? [];
+  const pageItemCount = moodCount + habitCount + completedRuns.length + completedStrength.length;
   const firstHabit = canonicalHabits[0] ?? null;
 
   viewModel.profileId = profileId;
@@ -488,9 +494,9 @@ function buildProfileHealthOverviewViewModel(
       capacity: 5,
       itemCount: pageItemCount,
     }),
-    running: resolveContentStateMeta({ capacity: 3, itemCount: 0 }),
+    running: resolveContentStateMeta({ capacity: 3, itemCount: completedRuns.length }),
     schedule: resolveContentStateMeta({ capacity: 10, itemCount: 0 }),
-    strength: resolveContentStateMeta({ capacity: 3, itemCount: 0 }),
+    strength: resolveContentStateMeta({ capacity: 3, itemCount: completedStrength.length }),
   };
   viewModel.header.dateRange =
     profileId === "manual"
@@ -524,33 +530,29 @@ function buildProfileHealthOverviewViewModel(
     },
   };
 
+  const latestRun = completedRuns[0];
+  const todayTimestamp = new Date(`${localDateInTimeZone(new Date(), "Europe/Berlin")}T12:00:00`).getTime();
+  const runsInDays = (days: number) => completedRuns.filter((session) => todayTimestamp - new Date(`${session.sessionDate}T12:00:00`).getTime() <= days * 86400000);
+  const sevenDayRuns = runsInDays(7);
+  const thirtyDayRuns = runsInDays(30);
   viewModel.running = {
     ...viewModel.running,
-    loadStatus: "Noch kein Laufkontext",
+    loadStatus: latestRun ? `${sevenDayRuns.length} run(s) · 7 days` : "Noch kein Laufkontext",
     metrics: [
-      emptyHealthMetric(
-        "Weekly distance",
-        "Laufdaten erscheinen nach der ersten lokalen Session.",
-        "var(--accent-orange)",
-      ),
-      emptyHealthMetric(
-        "Avg pace",
-        "Pace bleibt leer, bis echte Laufdaten existieren.",
-        "var(--accent-cyan)",
-      ),
-      emptyHealthMetric(
-        "Run history",
-        "Noch kein letzter Lauf",
-        "var(--accent-green)",
-      ),
+      { label: "Weekly distance", value: `${sevenDayRuns.reduce((sum, run) => sum + run.distanceKm, 0).toFixed(1)} km`, detail: `${sevenDayRuns.length} real session(s)`, accent: "var(--accent-orange)" },
+      latestRun ? { label: "Latest pace", value: formatPace(latestRun.distanceKm, latestRun.durationMinutes) ?? "—", detail: "derived from distance and duration", accent: "var(--accent-cyan)" } : emptyHealthMetric("Avg pace", "Pace bleibt leer, bis echte Laufdaten existieren.", "var(--accent-cyan)"),
+      latestRun ? { label: "Last run", value: `${latestRun.distanceKm} km`, detail: `${latestRun.sessionDate} · ${latestRun.durationMinutes} min`, accent: "var(--accent-green)" } : emptyHealthMetric("Run history", "Noch kein letzter Lauf", "var(--accent-green)"),
     ],
     nextRun: {
       ...viewModel.running.nextRun,
       detail:
         "Sobald Laufdaten oder ein lokaler Plan existieren, erscheint hier ein Vorschlag.",
-      title: "Noch kein Laufkontext",
+      title: trainingSnapshot?.runningPlanItems.find((item) => !item.archivedAt)?.title ?? "Noch kein Laufkontext",
     },
-    trends: [],
+    trends: latestRun ? [
+      { title: "7-day trend", statement: `${sevenDayRuns.length} completed run(s)`, values: sevenDayRuns.map((run) => run.distanceKm), accent: "var(--accent-cyan)" },
+      { title: "30-day trend", statement: `${thirtyDayRuns.reduce((sum, run) => sum + run.distanceKm, 0).toFixed(1)} km total`, values: thirtyDayRuns.map((run) => run.distanceKm), accent: "var(--accent-orange)" },
+    ] : [],
   };
 
   viewModel.habits = {
@@ -607,31 +609,24 @@ function buildProfileHealthOverviewViewModel(
     },
   };
 
+  const completedSessionIds = new Set(completedStrength.map((session) => session.id));
+  const completedSets = trainingSnapshot?.strengthSetLogs.filter((log) => completedSessionIds.has(log.sessionId)) ?? [];
+  const volume = strengthVolume(completedSets);
+  const loads = muscleLoad(completedSets, trainingSnapshot?.exercises ?? []);
+  const latestStrength = completedStrength[0];
   viewModel.strength = {
     ...viewModel.strength,
-    badge: "0 Sessions",
+    badge: `${completedStrength.length} Sessions`,
     metrics: [
-      emptyHealthMetric(
-        "Sessions",
-        "Noch keine Kraftsessions",
-        "var(--accent-red)",
-      ),
-      emptyHealthMetric(
-        "Recovery",
-        "Recovery bleibt leer ohne lokale Session.",
-        "var(--accent-green)",
-      ),
-      emptyHealthMetric(
-        "Session history",
-        "Noch keine letzte Session",
-        "var(--accent-orange)",
-      ),
+      { label: "Sessions", value: String(completedStrength.length), detail: "completed manual sessions", accent: "var(--accent-red)" },
+      { label: "Weighted volume", value: volume.weightedSetCount ? `${volume.weightedVolumeKg.toFixed(1)} kg` : "—", detail: volume.unweightedRepetitions ? `${volume.unweightedRepetitions} unweighted reps separate` : "from weighted set logs only", accent: "var(--accent-green)" },
+      latestStrength ? { label: "Last session", value: latestStrength.sessionDate, detail: `${completedSets.filter((log) => log.sessionId === latestStrength.id).length} set log(s)`, accent: "var(--accent-orange)" } : emptyHealthMetric("Session history", "Noch keine letzte Session", "var(--accent-orange)"),
     ],
     nextSession: {
       ...viewModel.strength.nextSession,
       detail:
         "Sobald eine lokale Kraftsession existiert, erscheint hier Kontext.",
-      title: "Noch kein Krafttrainingskontext",
+      title: trainingSnapshot?.strengthPlans.find((plan) => !plan.archivedAt)?.name ?? "Noch kein Krafttrainingskontext",
     },
     sessionBalance: {
       ...viewModel.strength.sessionBalance,
@@ -640,7 +635,7 @@ function buildProfileHealthOverviewViewModel(
     trainingPattern: {
       ...viewModel.strength.trainingPattern,
       days: [],
-      note: "Krafteinheiten erscheinen nach der ersten lokalen Session.",
+      note: loads.length ? `Muscle source: ${loads.map(([muscle]) => muscle).slice(0, 3).join(", ")}` : "Krafteinheiten erscheinen nach der ersten lokalen Session.",
     },
   };
 
@@ -2025,6 +2020,7 @@ export async function getHealthOverviewViewModel(): Promise<
     const auth = await createAuthenticatedSupabaseServerClient();
     if (auth.ok) {
       const repository = createSupabaseHabitRepository(auth.client);
+      const training = await createSupabaseTrainingRepository(auth.client).getSnapshot(auth.user.id);
       const settings = await repository.getSettings(auth.user.id, auth.user.id);
       if (settings) {
         const today = localDateInTimeZone(new Date(), settings.timezone);
@@ -2040,8 +2036,15 @@ export async function getHealthOverviewViewModel(): Promise<
           profileId,
           await readManualProfile(),
           snapshot.ok ? snapshot.data : null,
+          training.ok ? training.data : null,
         );
       }
+      return buildProfileHealthOverviewViewModel(
+        profileId,
+        await readManualProfile(),
+        null,
+        training.ok ? training.data : null,
+      );
     }
   }
 

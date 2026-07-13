@@ -32,6 +32,15 @@ export const realDataTableNames = {
   skillEvidence: "skill_evidence",
   skills: "skills",
   tasks: "tasks",
+  runningPlans: "running_plans",
+  runningPlanItems: "running_plan_items",
+  runningSessions: "running_sessions",
+  exercises: "exercises",
+  exerciseMuscles: "exercise_muscles",
+  strengthPlans: "strength_plans",
+  strengthPlanItems: "strength_plan_items",
+  strengthSessions: "strength_sessions",
+  strengthSetLogs: "strength_set_logs",
 } as const satisfies Record<string, PublicTableName>;
 
 export type SupabaseRepositoryError = {

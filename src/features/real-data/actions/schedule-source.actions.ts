@@ -12,7 +12,7 @@ function value(formData: FormData, key: string) {
 }
 
 function revalidateScheduleProjections() {
-  for (const path of ["/calendar", "/today", "/dashboard", "/nutrition", "/nutrition/meal-planner", "/review/daily", "/review/weekly"]) revalidatePath(path);
+  for (const path of ["/calendar", "/today", "/dashboard", "/nutrition", "/nutrition/meal-planner", "/review/daily", "/review/weekly", "/health", "/health/running", "/health/strength"]) revalidatePath(path);
 }
 
 export async function scheduleSourceFormAction(formData: FormData) {

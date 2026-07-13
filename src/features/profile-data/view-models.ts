@@ -64,6 +64,9 @@ import {
   type RecurringTaskTemplate,
   type HealthSnapshot,
   type HabitSnapshot,
+  type TrainingSnapshot,
+  formatPace,
+  muscleLoad,
   aggregateHabitDay,
   orderedDashboardHabits,
   resolveHabitWindow,
@@ -85,6 +88,7 @@ import {
   createSupabaseTaskRepository,
   createSupabaseHealthRepository,
   createSupabaseHabitRepository,
+  createSupabaseTrainingRepository,
 } from "@/features/real-data/supabase";
 import {
   createManualHabit,
@@ -254,6 +258,26 @@ function taskAgendaStatus(task: LifeTask): DashboardAgendaEvent["status"] {
   return "planned";
 }
 
+function isWorkoutScheduleSource(task: LifeTask) {
+  return task.scheduleSource?.type === "running_plan_item" || task.scheduleSource?.type === "strength_plan";
+}
+
+function workoutSourceHref(task: LifeTask) {
+  return task.scheduleSource?.type === "strength_plan" ? "/health/strength" : "/health/running";
+}
+
+function projectedScheduleSourceType(task: LifeTask): "meal" | "review" | "workout" | "task" {
+  if (task.scheduleSource?.type === "meal") return "meal";
+  if (task.scheduleSource?.type === "review") return "review";
+  return isWorkoutScheduleSource(task) ? "workout" : "task";
+}
+
+function projectedAgendaType(task: LifeTask): DashboardAgendaEvent["type"] {
+  if (isWorkoutScheduleSource(task)) return "training";
+  const type = projectedScheduleSourceType(task);
+  return type === "workout" ? "task" : type;
+}
+
 function taskToAgendaEvent(
   task: LifeTask,
   index: number,
@@ -269,9 +293,9 @@ function taskToAgendaEvent(
       endTime ? `-${endTime}` : ""
     } · ${taskDurationLabel(task)}`,
     note: task.description || task.nextStep,
-    areaLabel: task.scheduleSource?.type === "meal" ? "Nutrition" : areaLabel(task.areaId),
-    type: task.scheduleSource?.type ?? "task",
-    typeLabel: task.scheduleSource?.type === "meal" ? "Meal" : task.scheduleSource?.type === "review" ? "Review" : "Task",
+    areaLabel: task.scheduleSource?.type === "meal" ? "Nutrition" : isWorkoutScheduleSource(task) ? "Health" : areaLabel(task.areaId),
+    type: projectedAgendaType(task),
+    typeLabel: task.scheduleSource?.type === "meal" ? "Meal" : task.scheduleSource?.type === "review" ? "Review" : isWorkoutScheduleSource(task) ? "Workout" : "Task",
     status: taskAgendaStatus(task),
     statusLabel: taskStatusLabel(task),
     relevanceLabel: priority,
@@ -285,7 +309,7 @@ function taskToAgendaEvent(
     active: task.status === "active",
     strong: priority === "P0" || priority === "P1",
     tall: index === 0 && (task.durationMinutes ?? 30) >= 60,
-    href: task.scheduleSource?.type === "meal" ? "/nutrition/meal-planner" : task.scheduleSource?.type === "review" ? `/review/${task.title.startsWith("Weekly") ? "weekly" : "daily"}` : `/tasks/${task.id}`,
+    href: task.scheduleSource?.type === "meal" ? "/nutrition/meal-planner" : task.scheduleSource?.type === "review" ? `/review/${task.title.startsWith("Weekly") ? "weekly" : "daily"}` : isWorkoutScheduleSource(task) ? workoutSourceHref(task) : `/tasks/${task.id}`,
   };
 }
 
@@ -397,7 +421,8 @@ type DashboardReadSources = {
   weeklyReview: ReviewRecord | null;
   health: HealthSnapshot | null;
   habits: HabitSnapshot | null;
-  scheduleLinks: readonly { source_id: string; source_type: "meal" | "review"; task_id: string }[];
+  training: TrainingSnapshot | null;
+  scheduleLinks: readonly { source_id: string; source_type: "meal" | "review" | "running_plan_item" | "strength_plan"; task_id: string }[];
 };
 
 const emptyDashboardReadSources: DashboardReadSources = {
@@ -416,6 +441,7 @@ const emptyDashboardReadSources: DashboardReadSources = {
   weeklyReview: null,
   health: null,
   habits: null,
+  training: null,
   scheduleLinks: [],
 };
 
@@ -1712,36 +1738,49 @@ function buildProfileDashboardViewModel(
     items: meals,
     recipeOptions: [],
   };
+  const completedRuns = (sources.training?.runningSessions ?? []).filter((session) => session.status === "completed" && !session.archivedAt);
+  const latestRun = completedRuns[0];
+  const scheduledRunSourceIds = new Set(sources.scheduleLinks.filter((link) => link.source_type === "running_plan_item").map((link) => link.source_id));
+  const nextRunItem = (sources.training?.runningPlanItems ?? []).find((item) => !item.archivedAt && scheduledRunSourceIds.has(item.id));
+  const completedStrengthSession = (sources.training?.strengthSessions ?? []).find((session) => session.status === "completed" && !session.archivedAt);
+  const completedStrengthLogs = completedStrengthSession ? (sources.training?.strengthSetLogs ?? []).filter((log) => log.sessionId === completedStrengthSession.id) : [];
+  const completedMuscleLoads = muscleLoad(completedStrengthLogs, sources.training?.exercises ?? []);
+  const activeStrengthPlan = (sources.training?.strengthPlans ?? []).find((plan) => !plan.archivedAt);
+  const plannedExerciseIds = new Set((sources.training?.strengthPlanItems ?? []).filter((item) => item.planId === activeStrengthPlan?.id).map((item) => item.exerciseId));
+  const plannedMuscles = [...new Set((sources.training?.exercises ?? []).filter((exercise) => plannedExerciseIds.has(exercise.id)).flatMap((exercise) => exercise.muscles))];
+  const muscleFocusGroups = completedMuscleLoads.length > 0 ? completedMuscleLoads.slice(0, 4).map(([muscle, load]) => `${muscle} · ${load.sets} sets`) : plannedMuscles.slice(0, 4).map((muscle) => `${muscle} · planned`);
+  const muscleSource = completedMuscleLoads.length > 0 ? "Latest completed session" : plannedMuscles.length > 0 ? "Active strength plan" : "No strength source";
   viewModel.healthNutrition.runningRecovery = {
     ...viewModel.healthNutrition.runningRecovery,
     contentState: resolveContentStateMeta({
-      hasPrimaryValue: false,
-      itemCount: 0,
+      hasPrimaryValue: Boolean(latestRun || muscleFocusGroups.length),
+      itemCount: Number(Boolean(latestRun)) + Number(Boolean(muscleFocusGroups.length)),
     }),
     href: "/health/running",
-    subtitle: "Prepared · no running source",
+    subtitle: latestRun ? "Latest completed manual run" : "No completed running session",
     stats: [
-      { label: "Distance", value: "-", delta: "Unavailable" },
-      { label: "Pace", value: "-", delta: "Unavailable" },
-      { label: "Time", value: "-", delta: "Unavailable" },
+      { label: "Distance", value: latestRun ? `${latestRun.distanceKm} km` : "-", delta: latestRun?.sessionDate ?? "Unavailable" },
+      { label: "Pace", value: latestRun ? (formatPace(latestRun.distanceKm, latestRun.durationMinutes) ?? "-") : "-", delta: latestRun ? "Derived" : "Unavailable" },
+      { label: "Time", value: latestRun ? `${latestRun.durationMinutes} min` : "-", delta: latestRun?.averageHeartRate ? `${latestRun.averageHeartRate} bpm` : "Manual log" },
     ],
     rhythm: {
-      title: "Noch keine Laufeinheit",
-      detail: "Workout-Daten erscheinen nach der ersten lokalen Einheit.",
-      progress: 0,
-      statusLabel: "Unavailable",
-      accent: "var(--text-muted)",
+      title: latestRun ? `Latest run · ${latestRun.sessionDate}` : "Noch keine Laufeinheit",
+      detail: latestRun ? `${latestRun.distanceKm} km in ${latestRun.durationMinutes} min` : "Workout-Daten erscheinen nach der ersten lokalen Einheit.",
+      progress: latestRun ? 100 : 0,
+      statusLabel: latestRun ? "Logged" : "Unavailable",
+      accent: latestRun ? "var(--accent-cyan)" : "var(--text-muted)",
     },
-    todayGoalLabel: "Today goal: not set",
-    lastSyncLabel: "No health data",
+    todayGoalLabel: nextRunItem ? `Next: ${nextRunItem.title}` : "Today goal: not set",
+    lastSyncLabel: latestRun?.completedAt ? `Logged ${latestRun.completedAt}` : "No health data",
     muscle: {
       ...viewModel.healthNutrition.runningRecovery.muscle,
-      title: "No strength session planned",
-      detail: "Workout-Daten erscheinen nach der ersten lokalen Einheit.",
-      focusGroups: [],
+      workoutId: completedStrengthSession?.id ?? activeStrengthPlan?.id ?? "no-workout",
+      title: completedStrengthSession ? `Strength · ${completedStrengthSession.sessionDate}` : activeStrengthPlan?.name ?? "No strength session planned",
+      detail: `${muscleSource}. ${completedStrengthLogs.length} real set log(s).`,
+      focusGroups: muscleFocusGroups,
       href: "/health/strength",
-      nextStep: "Strength source not implemented",
-      statusLabel: "Unavailable",
+      nextStep: completedStrengthSession ? "Open strength history" : activeStrengthPlan ? "Start the planned session" : "Create a strength plan",
+      statusLabel: completedStrengthSession ? "Done" : activeStrengthPlan ? "Planned" : "Unavailable",
     },
   };
 
@@ -2680,6 +2719,7 @@ async function getManualDashboardReadData(): Promise<{
   const reviewRepository = createSupabaseReviewRepository(auth.client);
   const healthRepository = createSupabaseHealthRepository(auth.client);
   const habitRepository = createSupabaseHabitRepository(auth.client);
+  const trainingRepository = createSupabaseTrainingRepository(auth.client);
   const [
     taskResult,
     inboxResult,
@@ -2692,6 +2732,7 @@ async function getManualDashboardReadData(): Promise<{
     healthSnapshot,
     habitSnapshot,
     scheduleLinkResult,
+    trainingSnapshot,
   ] = await Promise.all([
     getManualTasksFromSupabase(auth.client, userId),
     createSupabaseInboxRepository(auth.client).getInboxItemsByUser(
@@ -2717,6 +2758,7 @@ async function getManualDashboardReadData(): Promise<{
     healthRepository.getSnapshot(userId, userId),
     habitRepository.getSnapshot(userId, userId, dashboardLocalDate(), dashboardLocalDate()),
     createSupabaseScheduleSourceRepository(auth.client).getLinks(userId),
+    trainingRepository.getSnapshot(userId),
   ]);
   const scheduleLinks = scheduleLinkResult.error ? [] : (scheduleLinkResult.data ?? []);
   const scheduleLinkByTask = new Map(scheduleLinks.map((link) => [link.task_id, link]));
@@ -2776,6 +2818,7 @@ async function getManualDashboardReadData(): Promise<{
       health: healthSnapshot,
       habits: habitSnapshot.ok ? habitSnapshot.data : null,
       scheduleLinks,
+      training: trainingSnapshot.ok ? trainingSnapshot.data : null,
     },
   };
 }
@@ -3073,15 +3116,15 @@ function taskToTodayEvent(task: LifeTask): TodayActivityEventViewModel {
           ? "current"
           : "planned",
     statusLabel: taskStatusLabel(task).toLowerCase(),
-    eventType: task.scheduleSource?.type ?? "task",
-    eventTypeLabel: task.scheduleSource?.type === "meal" ? "Meal" : task.scheduleSource?.type === "review" ? "Review" : "Task",
+    eventType: projectedScheduleSourceType(task),
+    eventTypeLabel: task.scheduleSource?.type === "meal" ? "Meal" : task.scheduleSource?.type === "review" ? "Review" : isWorkoutScheduleSource(task) ? "Workout" : "Task",
     title: task.title,
     description: task.description,
-    sourceLabel: task.scheduleSource?.type === "meal" ? "Nutrition" : task.scheduleSource?.type === "review" ? "Reviews" : "Tasks",
-    areaLabel: task.scheduleSource?.type === "meal" ? "Nutrition" : areaLabel(task.areaId),
-    linkedEntityType: task.scheduleSource?.type ?? "task",
+    sourceLabel: task.scheduleSource?.type === "meal" ? "Nutrition" : task.scheduleSource?.type === "review" ? "Reviews" : isWorkoutScheduleSource(task) ? "Health" : "Tasks",
+    areaLabel: task.scheduleSource?.type === "meal" ? "Nutrition" : isWorkoutScheduleSource(task) ? "Health" : areaLabel(task.areaId),
+    linkedEntityType: projectedScheduleSourceType(task),
     linkedEntityId: task.scheduleSource?.id ?? task.id,
-    sourceHref: task.scheduleSource?.type === "meal" ? "/nutrition/meal-planner" : task.scheduleSource?.type === "review" ? `/review/${task.title.startsWith("Weekly") ? "weekly" : "daily"}` : `/tasks/${task.id}`,
+    sourceHref: task.scheduleSource?.type === "meal" ? "/nutrition/meal-planner" : task.scheduleSource?.type === "review" ? `/review/${task.title.startsWith("Weekly") ? "weekly" : "daily"}` : isWorkoutScheduleSource(task) ? workoutSourceHref(task) : `/tasks/${task.id}`,
     sourceActionLabel: "Open source",
     accent: areaAccent(task.areaId),
     isGenerated: task.isGenerated,
@@ -3634,7 +3677,7 @@ function taskToCalendarBlock(
     dayId: dayIdFromDate(task.date),
     date: task.date,
     title: task.title,
-    type: task.scheduleSource?.type === "meal" ? "meal" : task.scheduleSource?.type === "review" ? "review" : "task_block",
+    type: task.scheduleSource?.type === "meal" ? "meal" : task.scheduleSource?.type === "review" ? "review" : isWorkoutScheduleSource(task) ? "workout" : "task_block",
     status:
       task.status === "done"
         ? "done"
@@ -3643,12 +3686,12 @@ function taskToCalendarBlock(
           : task.status === "waiting"
             ? "needs_decision"
             : "planned",
-    source: task.scheduleSource?.type === "meal" ? "meal_planner" : task.scheduleSource?.type ?? "task",
-    area: task.scheduleSource?.type === "meal" ? "Nutrition" : task.scheduleSource?.type === "review" ? "Review" : areaLabel(task.areaId),
+    source: task.scheduleSource?.type === "meal" ? "meal_planner" : task.scheduleSource?.type === "review" ? "review" : isWorkoutScheduleSource(task) ? "health" : "task",
+    area: task.scheduleSource?.type === "meal" ? "Nutrition" : task.scheduleSource?.type === "review" ? "Review" : isWorkoutScheduleSource(task) ? "Health" : areaLabel(task.areaId),
     sourceEntity: {
-      type: task.scheduleSource?.type ?? "task",
-      label: task.scheduleSource?.type === "meal" ? "Meal / Nutrition" : task.scheduleSource?.type === "review" ? "Review / Daily loop" : `Task / ${areaLabel(task.areaId)}`,
-      href: task.scheduleSource?.type === "meal" ? "/nutrition/meal-planner" : task.scheduleSource?.type === "review" ? `/review/${task.title.startsWith("Weekly") ? "weekly" : "daily"}` : `/tasks/${task.id}`,
+      type: projectedScheduleSourceType(task),
+      label: task.scheduleSource?.type === "meal" ? "Meal / Nutrition" : task.scheduleSource?.type === "review" ? "Review / Daily loop" : isWorkoutScheduleSource(task) ? "Workout / Health" : `Task / ${areaLabel(task.areaId)}`,
+      href: task.scheduleSource?.type === "meal" ? "/nutrition/meal-planner" : task.scheduleSource?.type === "review" ? `/review/${task.title.startsWith("Weekly") ? "weekly" : "daily"}` : isWorkoutScheduleSource(task) ? workoutSourceHref(task) : `/tasks/${task.id}`,
     },
     accent: areaAccent(task.areaId),
     meta: task.priority,

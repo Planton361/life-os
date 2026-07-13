@@ -5,7 +5,7 @@ import type { MealRow } from "../row-types";
 
 export type ScheduleSourceLinkRow = {
   source_id: string;
-  source_type: "meal" | "review";
+  source_type: "meal" | "review" | "running_plan_item" | "strength_plan";
   task_id: string;
   user_id: string;
 };

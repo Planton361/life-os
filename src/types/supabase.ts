@@ -138,6 +138,71 @@ export type Database = {
         }
         Relationships: []
       }
+      exercise_muscles: {
+        Row: {
+          created_at: string
+          exercise_id: string
+          id: string
+          muscle_group: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          exercise_id: string
+          id?: string
+          muscle_group: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          exercise_id?: string
+          id?: string
+          muscle_group?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercise_muscles_exercise_owner_fkey"
+            columns: ["exercise_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "exercises"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      exercises: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          description: string | null
+          equipment: string | null
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          description?: string | null
+          equipment?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          description?: string | null
+          equipment?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       goals: {
         Row: {
           archived_at: string | null
@@ -968,6 +1033,142 @@ export type Database = {
           },
         ]
       }
+      running_plan_items: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          id: string
+          plan_id: string
+          planned_distance_km: number | null
+          planned_duration_minutes: number | null
+          sort_order: number
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          id?: string
+          plan_id: string
+          planned_distance_km?: number | null
+          planned_duration_minutes?: number | null
+          sort_order: number
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          id?: string
+          plan_id?: string
+          planned_distance_km?: number | null
+          planned_duration_minutes?: number | null
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "running_plan_items_plan_owner_fkey"
+            columns: ["plan_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "running_plans"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      running_plans: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          goal: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          goal: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          goal?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      running_sessions: {
+        Row: {
+          archived_at: string | null
+          average_heart_rate: number | null
+          completed_at: string | null
+          created_at: string
+          distance_km: number
+          duration_minutes: number
+          id: string
+          notes: string | null
+          plan_item_id: string | null
+          session_date: string
+          started_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          average_heart_rate?: number | null
+          completed_at?: string | null
+          created_at?: string
+          distance_km: number
+          duration_minutes: number
+          id?: string
+          notes?: string | null
+          plan_item_id?: string | null
+          session_date: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          average_heart_rate?: number | null
+          completed_at?: string | null
+          created_at?: string
+          distance_km?: number
+          duration_minutes?: number
+          id?: string
+          notes?: string | null
+          plan_item_id?: string | null
+          session_date?: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "running_sessions_plan_item_owner_fkey"
+            columns: ["plan_item_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "running_plan_items"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
       schedule_source_links: {
         Row: {
           created_at: string
@@ -1147,6 +1348,191 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      strength_plan_items: {
+        Row: {
+          created_at: string
+          exercise_id: string
+          id: string
+          plan_id: string
+          sort_order: number
+          target_reps: number
+          target_sets: number
+          target_weight_kg: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          exercise_id: string
+          id?: string
+          plan_id: string
+          sort_order: number
+          target_reps: number
+          target_sets: number
+          target_weight_kg?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          exercise_id?: string
+          id?: string
+          plan_id?: string
+          sort_order?: number
+          target_reps?: number
+          target_sets?: number
+          target_weight_kg?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strength_plan_items_exercise_owner_fkey"
+            columns: ["exercise_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "exercises"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
+            foreignKeyName: "strength_plan_items_plan_owner_fkey"
+            columns: ["plan_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "strength_plans"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      strength_plans: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          goal: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          goal: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          goal?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      strength_sessions: {
+        Row: {
+          archived_at: string | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          plan_id: string | null
+          session_date: string
+          started_at: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          plan_id?: string | null
+          session_date: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          plan_id?: string | null
+          session_date?: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strength_sessions_plan_owner_fkey"
+            columns: ["plan_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "strength_plans"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      strength_set_logs: {
+        Row: {
+          exercise_id: string
+          id: string
+          notes: string | null
+          recorded_at: string
+          repetitions: number
+          session_id: string
+          set_order: number
+          user_id: string
+          weight_kg: number | null
+        }
+        Insert: {
+          exercise_id: string
+          id?: string
+          notes?: string | null
+          recorded_at?: string
+          repetitions: number
+          session_id: string
+          set_order: number
+          user_id: string
+          weight_kg?: number | null
+        }
+        Update: {
+          exercise_id?: string
+          id?: string
+          notes?: string | null
+          recorded_at?: string
+          repetitions?: number
+          session_id?: string
+          set_order?: number
+          user_id?: string
+          weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strength_set_logs_exercise_owner_fkey"
+            columns: ["exercise_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "exercises"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
+            foreignKeyName: "strength_set_logs_session_owner_fkey"
+            columns: ["session_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "strength_sessions"
+            referencedColumns: ["id", "user_id"]
           },
         ]
       }
@@ -1404,6 +1790,53 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      complete_running_session: {
+        Args: { p_completed_at: string; p_session_id: string }
+        Returns: {
+          archived_at: string | null
+          average_heart_rate: number | null
+          completed_at: string | null
+          created_at: string
+          distance_km: number
+          duration_minutes: number
+          id: string
+          notes: string | null
+          plan_item_id: string | null
+          session_date: string
+          started_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "running_sessions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      complete_strength_session: {
+        Args: { p_completed_at: string; p_session_id: string }
+        Returns: {
+          archived_at: string | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          plan_id: string | null
+          session_date: string
+          started_at: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "strength_sessions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       create_resource_from_inbox: {
         Args: {
           p_area_id?: string
@@ -1431,6 +1864,41 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "resources"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      save_completed_running_session: {
+        Args: {
+          p_average_heart_rate: number
+          p_completed_at: string
+          p_distance_km: number
+          p_duration_minutes: number
+          p_notes: string
+          p_plan_item_id: string
+          p_session_date: string
+          p_session_id: string
+          p_started_at: string
+        }
+        Returns: {
+          archived_at: string | null
+          average_heart_rate: number | null
+          completed_at: string | null
+          created_at: string
+          distance_km: number
+          duration_minutes: number
+          id: string
+          notes: string | null
+          plan_item_id: string | null
+          session_date: string
+          started_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "running_sessions"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -1470,6 +1938,31 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "review_records"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      save_exercise_with_muscles: {
+        Args: {
+          p_description: string
+          p_equipment: string
+          p_exercise_id: string
+          p_muscles: string[]
+          p_name: string
+        }
+        Returns: {
+          archived_at: string | null
+          created_at: string
+          description: string | null
+          equipment: string | null
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "exercises"
           isOneToOne: true
           isSetofReturn: false
         }

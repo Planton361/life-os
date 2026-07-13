@@ -53,7 +53,8 @@ export type TodayActivityEventType =
   | "health"
   | "review"
   | "project"
-  | "meal";
+  | "meal"
+  | "workout";
 
 export type TodayLinkedEntityType =
   | "task"
@@ -62,7 +63,8 @@ export type TodayLinkedEntityType =
   | "note"
   | "resource"
   | "review"
-  | "meal";
+  | "meal"
+  | "workout";
 
 export type TodayActivityEventViewModel = {
   id: string;
