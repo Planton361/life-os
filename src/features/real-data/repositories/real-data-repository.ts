@@ -348,6 +348,11 @@ export interface ResourceRepository {
   linkResource(
     input: LinkResourceInput,
   ): Promise<RepositoryResult<ResourceRelation>>;
+  unlinkResource(
+    userId: UserId,
+    profileId: ProfileId,
+    relationId: string,
+  ): Promise<RepositoryResult<ResourceRelation>>;
   getResourcesByUser(
     userId: UserId,
     profileId: ProfileId,

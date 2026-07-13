@@ -351,5 +351,19 @@ export function createSupabaseResourceRepository(
 
       return adapterFailure("link resource");
     },
+
+    async unlinkResource(userId, profileId, relationId) {
+      const scopeFailure = profileScopeFailure(userId, profileId);
+      if (scopeFailure) return scopeFailure;
+      const result = (await client
+        .from(realDataTableNames.resourceRelations)
+        .delete()
+        .eq("user_id", userId)
+        .eq("id", relationId)
+        .select("*")
+        .single()) as SupabaseQueryResult<ResourceRelationRow>;
+      if (result.error || !result.data) return notFoundFailure("Resource relation");
+      return { data: mapResourceRelationRowToDomain(result.data), ok: true };
+    },
   };
 }

@@ -10,6 +10,7 @@ import {
   rescheduleTaskInputSchema,
   scheduleTaskInputSchema,
   unscheduleTaskInputSchema,
+  updateTaskInputSchema,
 } from "@/features/real-data";
 import { createSupabaseTaskRepository } from "@/features/real-data/supabase";
 import { createSupabaseScheduleSourceRepository } from "@/features/real-data/supabase";
@@ -160,6 +161,60 @@ function revalidateTaskProjectionRoutes() {
   revalidatePath("/today");
   revalidatePath("/dashboard");
   revalidatePath("/calendar");
+}
+
+function optionalNullableFormString(formData: FormData, key: string) {
+  return formData.has(key) ? optionalFormString(formData, key) ?? null : undefined;
+}
+
+export async function updatePortfolioTaskAction(
+  formData: FormData,
+): Promise<TaskLifecycleActionResult> {
+  const context = await getAuthenticatedManualTaskContext("bearbeiten");
+  if (!context.ok) return context.result;
+
+  const projectId = optionalNullableFormString(formData, "projectId");
+  const goalId = optionalNullableFormString(formData, "goalId");
+  if (!(await validateProjectScope(context, projectId ?? undefined))) {
+    return { message: "Das Project konnte nicht bestätigt werden.", status: "error" };
+  }
+  if (!(await validateGoalScope(context, goalId ?? undefined))) {
+    return { message: "Das Goal konnte nicht bestätigt werden.", status: "error" };
+  }
+
+  const nextAction = optionalFormString(formData, "nextAction");
+  const description = optionalFormString(formData, "description");
+  const combinedDescription = [description, nextAction ? `Nächste Aktion: ${nextAction}` : null]
+    .filter(Boolean).join("\n\n") || null;
+  const dueDate = optionalFormString(formData, "dueAt");
+  const parsed = updateTaskInputSchema.safeParse({
+    areaId: optionalNullableFormString(formData, "areaId"),
+    description: combinedDescription,
+    dueAt: dueDate ? `${dueDate}T23:59:59.000Z` : null,
+    durationMinutes: optionalFormString(formData, "durationMinutes") ? formString(formData, "durationMinutes") : null,
+    energy: optionalNullableFormString(formData, "energy"),
+    goalId,
+    plannedDate: optionalNullableFormString(formData, "plannedDate"),
+    priority: formString(formData, "priority"),
+    profileId: context.auth.user.id,
+    projectId,
+    status: formString(formData, "status"),
+    taskId: formString(formData, "taskId"),
+    title: formString(formData, "title"),
+    userId: context.auth.user.id,
+  });
+  if (!parsed.success) return { message: "Prüfe die Task-Felder.", status: "error" };
+  const result = await createSupabaseTaskRepository(context.auth.client).updateTask(parsed.data);
+  if (!result.ok) return { message: "Der Task konnte nicht gespeichert werden.", status: "error" };
+  revalidateTaskProjectionRoutes();
+  revalidatePath("/resources");
+  return { message: "Task gespeichert.", status: "success", taskId: result.data.id };
+}
+
+export async function updatePortfolioTaskFormAction(formData: FormData): Promise<void> {
+  const result = await updatePortfolioTaskAction(formData);
+  const selected = formString(formData, "taskId");
+  redirect(`/portfolio?view=tasks&selected=${encodeURIComponent(selected)}&targetCreate=task_${result.status}`);
 }
 
 function authBlockedMessage(

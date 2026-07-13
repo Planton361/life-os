@@ -200,6 +200,8 @@ function getViewLabel(viewModel: PortfolioViewModel, view: PortfolioView) {
 function targetCreateMessage(value: string | null) {
   if (value === "task_created") return "Task erstellt.";
   if (value === "task_archived") return "Task archiviert.";
+  if (value === "task_success") return "Task gespeichert.";
+  if (value === "task_error") return "Task konnte nicht gespeichert werden.";
   if (value === "project_created") return "Project erstellt.";
   if (value === "project_updated") return "Project aktualisiert.";
   if (value === "project_archived") return "Project archiviert.";
@@ -692,12 +694,14 @@ export function PortfolioPage({
           profileId={viewModel.profileId}
           selectedEntityId={selectedEntity?.id ?? null}
         />
-        <div className="grid min-w-0 gap-2 xl:min-h-0 xl:overflow-y-auto xl:pr-1">
-          <PortfolioContextualCreatePanel
-            activeView={activeView}
-            profileId={viewModel.profileId}
-            statusMessage={statusMessage}
-          />
+        <div className="grid min-w-0 gap-2 xl:min-h-0 xl:grid-rows-[minmax(0,0.38fr)_minmax(0,1fr)_auto] xl:overflow-hidden xl:pr-1">
+          <div className="xl:min-h-0 xl:overflow-y-auto">
+            <PortfolioContextualCreatePanel
+              activeView={activeView}
+              profileId={viewModel.profileId}
+              statusMessage={statusMessage}
+            />
+          </div>
           <PortfolioContextPanel
             allEntities={viewModel.entities}
             contentState={viewModel.contentStates.contextPanel}

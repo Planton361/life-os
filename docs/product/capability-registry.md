@@ -115,9 +115,9 @@
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Task create/edit/lifecycle | `CONNECTED` | tasks/actions | maintain |
-| Task relation to Project/Goal | `CONNECTED` | task relation fields | add richer task detail if needed |
-| Task relation to Skill/Resource | `CONNECTED_GAP` | evidence/resource relations | provide complete management UI |
+| Task create/edit/lifecycle | `CONNECTED` | K1.1A Portfolio Task Detail, task actions/repository, reload proof | maintain |
+| Task relation to Project/Goal | `CONNECTED` | K1.1A Task Detail with nullable task relation fields and ownership checks | maintain |
+| Task relation to Skill/Resource | `CONNECTED_GAP` | K1.1A Resource link/unlink via `resource_relations`; Skill evidence only | dedicated Task↔Skill relation remains deferred until safely modeled |
 | Project create/edit/status/archive | `CONNECTED` | project actions/repository | add restore/complete semantics later |
 | Goal create/edit/status/archive | `CONNECTED` | goal actions/repository | add achieve/restore semantics later |
 | Skill create/edit/archive | `CONNECTED` | skill actions/repository | maintain |
@@ -140,7 +140,7 @@
 |---|---|---|---|
 | Resource create/read | `CONNECTED` | resources | maintain |
 | Resource inspector | `CONNECTED` | resource read model | maintain |
-| Resource relations | `CONNECTED` | resource_relations | add edit/unlink/manage |
+| Resource relations | `CONNECTED` | K1.1A task link/unlink plus existing Project/Goal relation flows | relation-type editing remains separate future depth |
 | Project/Goal workbench display | `CONNECTED` | relation read model | maintain |
 | Resource search | `CONNECTED_GAP` | existing search surface | confirm full-text scope and ranking |
 | Files/attachments | `NOT_STARTED` | none | storage/privacy decision |

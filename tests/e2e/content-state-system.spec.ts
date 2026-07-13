@@ -7485,6 +7485,81 @@ test.describe("Portfolio content states", () => {
     await page.goto("/calendar");
     await expect(page.getByText(title)).toHaveCount(0);
   });
+
+  test("K1.1A Task detail edits fields and Project Goal relations reload-stable", async ({ page }) => {
+    test.setTimeout(60_000);
+    test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires local authenticated Supabase state.");
+    const stamp = Date.now();
+    const title = `K1.1A Task ${stamp}`;
+    const updatedTitle = `K1.1A Edited Task ${stamp}`;
+    const projectTitle = `K1.1A Project ${stamp}`;
+    const goalTitle = `K1.1A Goal ${stamp}`;
+    await openManualPortfolioWithDb(page);
+    await page.goto("/portfolio?view=projects");
+    await createPortfolioProjectTarget(page, projectTitle, "K1.1A project target");
+    await page.goto("/portfolio?view=goals");
+    await createPortfolioGoalTarget(page, goalTitle, "K1.1A goal target");
+    await captureAndTriageManualInboxTask(page, title, "K1.1A task context");
+    await openPortfolioTaskPlanningControls(page, title);
+    const form = page.locator('form[aria-label="Task bearbeiten"]');
+    await form.getByLabel("Titel").fill(updatedTitle);
+    await form.getByLabel("Beschreibung / Kontext").fill("K1.1A updated context");
+    await form.getByLabel("Next Action").fill("K1.1A execute next");
+    await form.getByLabel("Status").selectOption("active");
+    await form.getByLabel("Priorität").selectOption("P1");
+    await form.getByLabel("Energie / Aufwand").selectOption("high");
+    await form.getByLabel("Dauer (Min.)").fill("45");
+    const projectId = await form.locator('select[name="projectId"] option').filter({ hasText: projectTitle }).getAttribute("value");
+    const goalId = await form.locator('select[name="goalId"] option').filter({ hasText: goalTitle }).getAttribute("value");
+    await form.locator('select[name="projectId"]').selectOption(projectId ?? "");
+    await form.locator('select[name="goalId"]').selectOption(goalId ?? "");
+    await form.getByRole("button", { name: "Task speichern" }).click();
+    await expect(page.getByText("Task gespeichert.").first()).toBeVisible();
+    await page.reload();
+    await expect(page.locator("#selected-entity-heading")).toHaveText(updatedTitle);
+    const reloaded = page.locator('form[aria-label="Task bearbeiten"]');
+    await expect(reloaded.getByLabel("Next Action")).toHaveValue("K1.1A execute next");
+    await expect(reloaded.locator('select[name="projectId"]')).toHaveValue(/.+/);
+    await expect(reloaded.locator('select[name="goalId"]')).toHaveValue(/.+/);
+  });
+
+  test("K1.1A Task resource relation links and unlinks reload-stable", async ({ page }) => {
+    test.setTimeout(60_000);
+    test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires local authenticated Supabase state.");
+    const stamp = Date.now();
+    const taskTitle = `K1.1A Resource Task ${stamp}`;
+    const resourceTitle = `K1.1A Resource ${stamp}`;
+    await openManualPortfolioWithDb(page);
+    await createManualResourceFromInbox(page, resourceTitle, "K1.1A relation resource", "K1.1A requires local Supabase auth.");
+    await captureAndTriageManualInboxTask(page, taskTitle, "K1.1A relation task");
+    await openPortfolioTaskPlanningControls(page, taskTitle);
+    const resources = page.getByRole("region", { name: "Resources", exact: true });
+    const resourceForm = resources.getByRole("form", {
+      name: "Task Resource verknüpfen",
+    });
+    const resourceCard = resources.locator("article").filter({
+      has: page.getByText(resourceTitle, { exact: true }),
+    });
+    const resourceId = await resourceForm
+      .getByRole("option", { name: new RegExp(resourceTitle) })
+      .getAttribute("value");
+    await resourceForm
+      .getByLabel("Resource", { exact: true })
+      .selectOption(resourceId ?? "");
+    await resourceForm
+      .getByRole("button", { name: "Resource verknüpfen" })
+      .click();
+    await expect(resourceCard).toHaveCount(1);
+    await expect(resourceCard.getByText(resourceTitle, { exact: true })).toBeVisible();
+    await page.reload();
+    await expect(resourceCard).toHaveCount(1);
+    await expect(resourceCard.getByText(resourceTitle, { exact: true })).toBeVisible();
+    await resourceCard
+      .getByRole("button", { name: "Verknüpfung lösen" })
+      .click();
+    await page.reload();
+    await expect(resourceCard).toHaveCount(0);
+  });
 });
 
 test.describe("Education content states", () => {

@@ -14,6 +14,12 @@ import {
 const requiredIdSchema = requiredTrimmedStringSchema();
 const titleSchema = requiredTrimmedStringSchema(2);
 
+const nullableOptionalString = z.union([z.string().trim().min(1), z.null()]).optional();
+const nullableOptionalDateTime = z.union([dateTimeStringSchema, z.null()]).optional();
+const nullableOptionalLocalDate = z.union([localDateSchema, z.null()]).optional();
+const nullableOptionalPositiveInteger = z.union([z.coerce.number().int().positive(), z.null()]).optional();
+const nullableOptionalEnergy = z.union([z.enum(taskEnergies), z.null()]).optional();
+
 const taskPatchSchema = z.object({
   areaId: optionalTrimmedStringSchema,
   description: optionalTrimmedStringSchema,
@@ -40,6 +46,14 @@ export const createTaskInputSchema = taskPatchSchema.extend({
 export type CreateTaskInput = z.infer<typeof createTaskInputSchema>;
 
 export const updateTaskInputSchema = taskPatchSchema.extend({
+  areaId: nullableOptionalString,
+  description: nullableOptionalString,
+  dueAt: nullableOptionalDateTime,
+  durationMinutes: nullableOptionalPositiveInteger,
+  energy: nullableOptionalEnergy,
+  goalId: nullableOptionalString,
+  plannedDate: nullableOptionalLocalDate,
+  projectId: nullableOptionalString,
   profileId: requiredIdSchema,
   taskId: requiredIdSchema,
   title: optionalTrimmedStringSchema,

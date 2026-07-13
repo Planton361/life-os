@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { linkResourceToTargetInputSchema } from "@/features/real-data";
+import { linkResourceToTargetInputSchema, unlinkResourceFromTargetInputSchema } from "@/features/real-data";
 import { createSupabaseResourceRepository } from "@/features/real-data/supabase";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
 import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
@@ -184,4 +184,22 @@ export async function linkPortfolioResourceToTargetAction(
     formData,
     await createResourceRelationState(formData),
   );
+}
+
+export async function unlinkPortfolioResourceFromTargetAction(formData: FormData): Promise<void> {
+  const profileId = await getCurrentLifeOsProfileId();
+  if (profileId !== "manual") redirectToPortfolioResourceRelationState(formData, "blocked");
+  const auth = await createAuthenticatedSupabaseServerClient();
+  if (!auth.ok) redirectToPortfolioResourceRelationState(formData, "blocked");
+  const parsed = unlinkResourceFromTargetInputSchema.safeParse({
+    profileId: auth.user.id,
+    relationId: formString(formData, "relationId"),
+  });
+  if (!parsed.success) redirectToPortfolioResourceRelationState(formData, "invalid");
+  const result = await createSupabaseResourceRepository(auth.client).unlinkResource(
+    auth.user.id, auth.user.id, parsed.data.relationId,
+  );
+  if (!result.ok) redirectToPortfolioResourceRelationState(formData, "invalid");
+  revalidateResourceRelationRoutes(result.data.targetType);
+  redirectToPortfolioResourceRelationState(formData, "saved");
 }

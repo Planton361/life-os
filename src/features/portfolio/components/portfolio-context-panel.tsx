@@ -9,8 +9,9 @@ import {
   rescheduleTaskFormAction,
   scheduleTaskForTodayFormAction,
   unscheduleTaskFormAction,
+  updatePortfolioTaskFormAction,
 } from "@/features/real-data/actions/task.actions";
-import { linkPortfolioResourceToTargetAction } from "@/features/real-data/actions/resource.actions";
+import { linkPortfolioResourceToTargetAction, unlinkPortfolioResourceFromTargetAction } from "@/features/real-data/actions/resource.actions";
 import {
   archiveGoalFormAction,
   archiveProjectFormAction,
@@ -631,6 +632,41 @@ function TaskPlanningForm({
   );
 }
 
+function TaskDetailForm({
+  entities,
+  entity,
+}: Readonly<{ entities: readonly PortfolioEntity[]; entity: PortfolioEntity }>) {
+  const values = entity.taskEditValues;
+  const projects = entities.filter((item) => item.type === "project");
+  const goals = entities.filter((item) => item.type === "goal");
+  if (!values) return null;
+
+  return (
+    <form action={updatePortfolioTaskFormAction} aria-label="Task bearbeiten" className="grid gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.40)] p-3">
+      <input name="taskId" type="hidden" value={entity.id} />
+      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">Titel<input className={formInputClassName} defaultValue={values.title} name="title" required /></label>
+      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">Beschreibung / Kontext<textarea className={`${formInputClassName} min-h-20 py-2`} defaultValue={values.description} name="description" /></label>
+      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">Next Action<input className={formInputClassName} defaultValue={values.nextAction} name="nextAction" /></label>
+      <div className="grid gap-2 sm:grid-cols-3">
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">Status<select className={formInputClassName} defaultValue={values.status} name="status">{["inbox","planned","active","waiting","done","canceled","someday"].map(value => <option key={value} value={value}>{value}</option>)}</select></label>
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">Priorität<select className={formInputClassName} defaultValue={values.priority} name="priority">{["P0","P1","P2","P3","none"].map(value => <option key={value} value={value}>{value}</option>)}</select></label>
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">Energie / Aufwand<select className={formInputClassName} defaultValue={values.energy ?? ""} name="energy"><option value="">Nicht gesetzt</option><option value="low">low</option><option value="medium">medium</option><option value="high">high</option></select></label>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-3">
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">Dauer (Min.)<input className={formInputClassName} defaultValue={values.durationMinutes} min="1" name="durationMinutes" type="number" /></label>
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">Geplantes Datum<input className={formInputClassName} defaultValue={values.plannedDate} name="plannedDate" type="date" /></label>
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">Deadline<input className={formInputClassName} defaultValue={values.dueAt} name="dueAt" type="date" /></label>
+      </div>
+      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">Bereich-ID<input className={formInputClassName} defaultValue={values.areaId} name="areaId" placeholder="Optional" /></label>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">Project<select className={formInputClassName} defaultValue={values.projectId ?? ""} name="projectId"><option value="">Kein Project</option>{projects.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label>
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">Goal<select className={formInputClassName} defaultValue={values.goalId ?? ""} name="goalId"><option value="">Kein Goal</option>{goals.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label>
+      </div>
+      <button className={formButtonClassName} type="submit">Task speichern</button>
+    </form>
+  );
+}
+
 function TaskLifecycleButton({
   action,
   label,
@@ -1080,8 +1116,10 @@ function SkillArchiveForm({
 }
 
 function WorkbenchResourceCard({
+  entity,
   resource,
 }: Readonly<{
+  entity: PortfolioEntity;
   resource: PortfolioLinkedResource;
 }>) {
   const meta = [
@@ -1102,8 +1140,9 @@ function WorkbenchResourceCard({
             {meta.join(" · ")}
           </p>
         </div>
-        <Pill accent="var(--accent-yellow)">Resource</Pill>
+        <div className="flex items-center gap-2"><Link className="text-[10px] text-[var(--accent-cyan)] underline-offset-2 hover:underline" href={`/resources?selected=${resource.id}`}>Öffnen</Link><Pill accent="var(--accent-yellow)">Resource</Pill></div>
       </div>
+      {resource.relationId ? <form action={unlinkPortfolioResourceFromTargetAction} className="mt-2"><input name="relationId" type="hidden" value={resource.relationId} /><input name="returnView" type="hidden" value={`${entity.type}s`} /><input name="selectedTargetId" type="hidden" value={entity.id} /><button className="text-[10px] font-semibold text-[var(--accent-red)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]" type="submit">Verknüpfung lösen</button></form> : null}
     </article>
   );
 }
@@ -1119,8 +1158,8 @@ function WorkbenchResourcesSection({
   resourceOptions: readonly PortfolioResourceLinkOption[];
   resources: readonly PortfolioLinkedResource[];
 }>) {
-  const targetLabel = entity.type === "goal" ? "Goal" : "Project";
-  const returnView = entity.type === "goal" ? "goals" : "projects";
+  const targetLabel = entity.type === "goal" ? "Goal" : entity.type === "task" ? "Task" : "Project";
+  const returnView = entity.type === "goal" ? "goals" : entity.type === "task" ? "tasks" : "projects";
   const formDisabled = disabled || resourceOptions.length === 0;
   const resourceSelectId = `workbench-resource-select-${entity.type}-${entity.id}`;
   const relationSelectId = `workbench-resource-relation-${entity.type}-${entity.id}`;
@@ -1204,6 +1243,7 @@ function WorkbenchResourcesSection({
         {resources.length > 0 ? (
           resources.map((resource) => (
             <WorkbenchResourceCard
+              entity={entity}
               key={`workbench-resource-${resource.id}-${resource.relationType}`}
               resource={resource}
             />
@@ -1853,7 +1893,7 @@ export function PortfolioContextPanel({
   return (
     <aside
       aria-labelledby="selected-entity-heading"
-      className="overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.86)] shadow-[0_8px_22px_rgba(0,0,0,.12)] xl:min-h-0"
+      className="overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.86)] shadow-[0_8px_22px_rgba(0,0,0,.12)] xl:flex xl:min-h-0 xl:flex-col"
       data-portfolio-section="context-panel"
       {...contentStateAttributes(contentState, profileId)}
     >
@@ -1891,7 +1931,7 @@ export function PortfolioContextPanel({
         </div>
       </div>
 
-      <div className="grid gap-3 p-3 xl:max-h-[calc(100dvh-25rem)] xl:overflow-y-auto">
+      <div className="grid gap-3 p-3 xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
         <div className="grid gap-2 sm:grid-cols-2">
           <FieldCard
             accent={typeAccent}
@@ -1944,6 +1984,14 @@ export function PortfolioContextPanel({
             project={entity}
             resourceLinkOptions={resourceLinkOptions}
           />
+        ) : null}
+
+        {entity.type === "task" && profileId === "manual" ? (
+          <section aria-labelledby="task-detail-heading" className="grid gap-3">
+            <h3 className="text-[13px] font-semibold text-[var(--text-primary)]" id="task-detail-heading">Task Detail</h3>
+            <TaskDetailForm entities={allEntities} entity={entity} />
+            <WorkbenchResourcesSection disabled={false} entity={entity} resourceOptions={resourceLinkOptions} resources={entity.linkedResources ?? []} />
+          </section>
         ) : null}
 
         {isGoalWorkbench ? (

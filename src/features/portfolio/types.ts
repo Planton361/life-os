@@ -69,6 +69,7 @@ export type PortfolioRelation = {
 
 export type PortfolioLinkedResource = {
   id: string;
+  relationId?: string;
   title: string;
   type: string;
   source?: string | null;
@@ -106,6 +107,21 @@ export type PortfolioTaskLifecycle = {
   plannedDate?: string;
   scheduledTime?: string;
   durationMinutes: number;
+};
+
+export type PortfolioTaskEditValues = {
+  areaId?: string;
+  description?: string;
+  dueAt?: string;
+  durationMinutes?: number;
+  energy?: "low" | "medium" | "high";
+  goalId?: string;
+  nextAction?: string;
+  plannedDate?: string;
+  priority: "P0" | "P1" | "P2" | "P3" | "none";
+  projectId?: string;
+  status: PortfolioTaskLifecycle["status"];
+  title: string;
 };
 
 export type PortfolioSkillEvidence = {
@@ -254,6 +270,7 @@ export type PortfolioEntity = {
   linkedResources?: readonly PortfolioLinkedResource[];
   projectEditValues?: PortfolioProjectEditValues;
   taskLifecycle?: PortfolioTaskLifecycle;
+  taskEditValues?: PortfolioTaskEditValues;
   skillContext?: PortfolioSkillContext;
 };
 

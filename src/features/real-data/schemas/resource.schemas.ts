@@ -56,6 +56,11 @@ export const linkResourceToTargetInputSchema = z.object({
   targetType: requiredEnumSchema(supportedResourceRelationTargetTypes),
 });
 
+export const unlinkResourceFromTargetInputSchema = z.object({
+  profileId: requiredTrimmedStringSchema(),
+  relationId: requiredTrimmedStringSchema(),
+});
+
 export type LinkResourceToTargetInput = z.infer<
   typeof linkResourceToTargetInputSchema
 >;

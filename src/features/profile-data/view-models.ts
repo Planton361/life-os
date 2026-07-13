@@ -875,6 +875,7 @@ function taskToPortfolioEntity(
     progress: task.status === "done" ? 100 : task.status === "active" ? 42 : 0,
     countLabel: `${task.durationMinutes ?? 30} min`,
     lastTouched: "today",
+    linkedResources: lookups.resourceLinksByTarget.get(`task:${task.id}`) ?? [],
     recentRank: index + 1,
     projectId: task.projectId,
     reviewNeeded: task.reviewNeeded,
@@ -896,6 +897,20 @@ function taskToPortfolioEntity(
       plannedDate: task.date,
       scheduledTime: task.startTime,
       status: task.status,
+    },
+    taskEditValues: {
+      areaId: task.canonicalAreaId,
+      description: task.description,
+      dueAt: task.dueAt?.slice(0, 10),
+      durationMinutes: task.durationMinutes,
+      energy: task.energy,
+      goalId: task.goalId,
+      nextAction: task.nextStep,
+      plannedDate: task.date,
+      priority: task.priority,
+      projectId: task.projectId,
+      status: task.status,
+      title: task.title,
     },
   };
 }
@@ -1912,10 +1927,12 @@ function realTaskToLifeTask(task: RealDataTask): LifeTask | null {
 
   return {
     areaId: "review",
+    canonicalAreaId: task.areaId ?? undefined,
+    dueAt: task.dueAt ?? undefined,
     calendarBlockIds: [],
     createdAt: task.createdAt,
     date: task.plannedDate ?? scheduledDate,
-    description: task.description ?? "",
+    description: (task.description ?? "").split("\n\nNächste Aktion:")[0],
     durationMinutes: task.durationMinutes ?? undefined,
     energy: task.energy ?? undefined,
     evidence: task.sourceInboxItemId
@@ -1935,7 +1952,7 @@ function realTaskToLifeTask(task: RealDataTask): LifeTask | null {
     instanceDate: task.instanceDate ?? undefined,
     isGenerated: Boolean(task.generatedFromTemplateId),
     nextStep:
-      task.description ??
+      task.description?.split("Nächste Aktion:")[1]?.trim() ?? task.description ??
       (task.sourceInboxItemId
         ? "Review the task created from Inbox triage."
         : "Review the Supabase task."),
@@ -2361,7 +2378,7 @@ async function getManualPortfolioResourceLinks(
   const linksByTarget = new Map<string, PortfolioLinkedResource[]>();
 
   for (const relation of relationResult.data) {
-    if (relation.targetType !== "project" && relation.targetType !== "goal") {
+    if (relation.targetType !== "project" && relation.targetType !== "goal" && relation.targetType !== "task") {
       continue;
     }
 
@@ -2373,6 +2390,7 @@ async function getManualPortfolioResourceLinks(
     links.push({
       createdAt: relation.createdAt,
       id: resource.id,
+      relationId: relation.id,
       relationType: relation.relationType,
       source: portfolioResourceSourceLabel(resource),
       title: resource.title,

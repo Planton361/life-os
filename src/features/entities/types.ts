@@ -93,6 +93,8 @@ export type LifeTask = {
   createdAt?: string;
   updatedAt?: string;
   date?: string;
+  dueAt?: string;
+  canonicalAreaId?: string;
   startTime?: string;
   durationMinutes?: number;
   energy?: "low" | "medium" | "high";
