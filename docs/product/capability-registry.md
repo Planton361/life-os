@@ -215,10 +215,10 @@
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Repository library | `UI_ONLY` | coding pages | create repository/coding project model |
-| GitHub link | `UI_ONLY` | visual/project links | support manual URL first |
+| Repository library | `CONNECTED` | A1.1A Coding-Area projection of canonical Projects with editable metadata and manual repository URL | automated repository sync remains external-gated |
+| GitHub link | `CONNECTED_GAP` | A1.1A optional manual Project repository URL | no GitHub API or automatic sync |
 | GitHub API | `EXTERNAL_GATE` | none | later read-only decision |
-| Coding project log | `UI_ONLY` | page shell | canonical logs/sessions |
+| Coding project log | `CONNECTED` | A1.1A user-scoped `coding_sessions` create/edit/soft-archive history with canonical Project ownership and reload proof | automatic time tracking remains out of scope |
 | Course/learning path | `UI_ONLY` | skills/education concepts | connect to skills/evidence |
 | Agent session tracking | `UI_ONLY` | agents page | create session/tool/result model |
 | Prompt library | `UI_ONLY` | page concepts | canonical resources/templates |

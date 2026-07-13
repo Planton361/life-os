@@ -37,6 +37,7 @@ import type {
   RecentCodingSessionViewModel,
   RepositoryAttentionViewModel,
 } from "./types";
+import { CodingManualWorkspace } from "./coding-manual-workspace";
 
 type ToastTone = "success" | "info" | "error";
 
@@ -1515,7 +1516,7 @@ function PageContractNote({
   );
 }
 
-export function CodingOverviewPage({
+function DemoCodingOverviewPage({
   viewModel,
 }: Readonly<{
   viewModel: CodingOverviewViewModel;
@@ -1730,5 +1731,13 @@ export function CodingOverviewPage({
       />
       <Toast onDismiss={() => setToast(null)} toast={toast} />
     </div>
+  );
+}
+
+export function CodingOverviewPage({ viewModel }: Readonly<{ viewModel: CodingOverviewViewModel }>) {
+  return viewModel.manualWorkspace ? (
+    <CodingManualWorkspace viewModel={viewModel} />
+  ) : (
+    <DemoCodingOverviewPage viewModel={viewModel} />
   );
 }

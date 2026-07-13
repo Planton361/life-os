@@ -34,6 +34,12 @@ The existing application is the foundation. This roadmap does not restart the pr
 
 Capability-level truth is maintained in `docs/product/capability-registry.md`.
 
+## Active Work Block
+
+- `K1.1 Portfolio, Resource & Knowledge Depth`: abgeschlossen.
+- `A1.1A Coding Projects & Sessions`: abgeschlossen.
+- `A1.1B Education Domain Foundation`: aktiv; nächster Teilblock von A1.1.
+
 ## 3. Delivery Program
 
 ### D1 – Daily Command Center & Reviews

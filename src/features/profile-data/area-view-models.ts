@@ -65,6 +65,7 @@ import { resolveContentStateMeta } from "@/features/content-state";
 import {
   createSupabaseNutritionRepository,
   createSupabaseHabitRepository,
+  createSupabaseCodingRepository,
   createSupabaseResourceRepository,
   createSupabaseTrainingRepository,
   type SupabaseClientLike,
@@ -2170,6 +2171,14 @@ export async function getCodingOverviewViewModel(): Promise<
     return viewModel;
   }
 
+  const auth =
+    profileId === "manual"
+      ? await createAuthenticatedSupabaseServerClient()
+      : null;
+  const workspace = auth?.ok
+    ? await createSupabaseCodingRepository(auth.client).getWorkspace(auth.user.id)
+    : null;
+
   return {
     ...clone(viewModel),
     profileId,
@@ -2183,6 +2192,15 @@ export async function getCodingOverviewViewModel(): Promise<
       ],
     },
     projects: [],
+    manualWorkspace: profileId === "manual" ? {
+      authAvailable: Boolean(auth?.ok),
+      projects: (workspace?.projects ?? []).map((project) => ({
+        ...project,
+        resources: [...(workspace?.resourcesByProject.get(project.id) ?? [])],
+        tasks: [...(workspace?.tasksByProject.get(project.id) ?? [])],
+      })),
+      sessions: workspace?.sessions ?? [],
+    } : undefined,
     repositories: [],
     currentFocus: null,
     activeWork: [],

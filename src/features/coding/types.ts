@@ -181,4 +181,28 @@ export type CodingOverviewViewModel = {
       description: string;
     };
   };
+  manualWorkspace?: {
+    authAvailable: boolean;
+    projects: Array<{
+      description: string | null;
+      id: string;
+      repositoryUrl: string | null;
+      resources: Array<{ id: string; relationType: string; title: string }>;
+      status: string;
+      tasks: Array<{ id: string; status: string; title: string }>;
+      title: string;
+    }>;
+    sessions: Array<{
+      activity: string;
+      archivedAt: string | null;
+      durationMinutes: number;
+      id: string;
+      note: string | null;
+      outcome: string;
+      projectId: string;
+      projectTitle: string;
+      sessionDate: string;
+      startTime: string | null;
+    }>;
+  };
 };

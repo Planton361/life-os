@@ -2481,6 +2481,86 @@ test.afterEach(async () => {
 });
 
 test.describe("Coding content states", () => {
+  test("A1.1A creates edits and reloads a coding project", async ({ page }) => {
+    test.setTimeout(60_000);
+    test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires local authenticated Supabase state.");
+    const stamp = Date.now();
+    const title = `A1.1A Coding Project ${stamp}`;
+    const editedTitle = `A1.1A Edited Coding Project ${stamp}`;
+
+    await openManualPortfolioWithDb(page, "A1.1A requires the local Manual database.");
+    await page.goto("/coding");
+    const projectsRegion = page.locator('[data-coding-region="projects"]');
+    const createForm = page.getByRole("form", { name: "Coding-Projekt erstellen" });
+    await createForm.getByLabel("Titel", { exact: true }).fill(title);
+    await createForm.getByLabel("Beschreibung", { exact: true }).fill("A1.1A canonical project");
+    await createForm.locator('select[name="status"]').selectOption("active");
+    await createForm.getByLabel("Repository-URL", { exact: true }).fill(`https://example.test/a11a-${stamp}`);
+    await createForm.getByRole("button", { name: "Coding-Projekt erstellen" }).click();
+    await expect(page.locator("[data-coding-action-status]")).toHaveText("Coding-Projekt erstellt.");
+    const projectCard = projectsRegion.locator("[data-coding-project-card]").filter({ hasText: title });
+    await expect(projectCard).toHaveCount(1);
+
+    const editForm = page.getByRole("form", { name: "Coding-Projekt bearbeiten" });
+    await editForm.getByLabel("Titel", { exact: true }).fill(editedTitle);
+    await editForm.locator('textarea[name="description"]').fill("A1.1A edited context");
+    await editForm.locator('select[name="status"]').selectOption("paused");
+    await editForm.getByRole("button", { name: "Project speichern" }).click();
+    await expect(page.locator("[data-coding-action-status]")).toHaveText("Coding-Projekt aktualisiert.");
+    await page.reload();
+    const reloadedForm = page.getByRole("form", { name: "Coding-Projekt bearbeiten" });
+    await expect(reloadedForm.getByLabel("Titel", { exact: true })).toHaveValue(editedTitle);
+    await expect(reloadedForm.locator('textarea[name="description"]')).toHaveValue("A1.1A edited context");
+    await expect(reloadedForm.locator('select[name="status"]')).toHaveValue("paused");
+    await expect(reloadedForm.getByLabel("Repository-URL", { exact: true })).toHaveValue(`https://example.test/a11a-${stamp}`);
+  });
+
+  test("A1.1A logs edits archives and reloads a coding session", async ({ page }) => {
+    test.setTimeout(60_000);
+    test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires local authenticated Supabase state.");
+    const stamp = Date.now();
+    const projectTitle = `A1.1A Session Project ${stamp}`;
+    const activity = `A1.1A Session Focus ${stamp}`;
+    const editedActivity = `A1.1A Edited Session Focus ${stamp}`;
+
+    await openManualPortfolioWithDb(page, "A1.1A requires the local Manual database.");
+    await page.goto("/coding");
+    const createProject = page.getByRole("form", { name: "Coding-Projekt erstellen" });
+    await createProject.getByLabel("Titel", { exact: true }).fill(projectTitle);
+    await createProject.locator('select[name="status"]').selectOption("active");
+    await createProject.getByRole("button", { name: "Coding-Projekt erstellen" }).click();
+    await expect(page.locator("[data-coding-action-status]")).toHaveText("Coding-Projekt erstellt.");
+
+    const sessionForm = page.getByRole("form", { name: "Coding Session erfassen" });
+    await sessionForm.getByLabel("Dauer (Minuten)", { exact: true }).fill("45");
+    await sessionForm.getByLabel("Tätigkeit / Fokus", { exact: true }).fill(activity);
+    await sessionForm.getByLabel("Ergebnis", { exact: true }).fill("A1.1A initial result");
+    await sessionForm.getByLabel("Notiz", { exact: true }).fill("A1.1A initial note");
+    await sessionForm.getByRole("button", { name: "Session speichern" }).click();
+    await expect(page.locator("[data-coding-action-status]")).toHaveText("Coding Session gespeichert.");
+    const sessionLog = page.locator('[data-coding-region="session-log"]');
+    const sessionCard = sessionLog.locator("[data-coding-session-card]").filter({ hasText: activity });
+    await expect(sessionCard).toHaveCount(1);
+
+    const editForm = sessionCard.getByRole("form", { name: `Coding Session bearbeiten ${activity}` });
+    await editForm.getByLabel("Dauer (Minuten)", { exact: true }).fill("60");
+    await editForm.getByLabel("Tätigkeit / Fokus", { exact: true }).fill(editedActivity);
+    await editForm.locator('textarea[name="outcome"]').fill("A1.1A edited result");
+    await editForm.getByRole("button", { name: "Session aktualisieren" }).click();
+    await expect(page.locator("[data-coding-action-status]")).toHaveText("Coding Session aktualisiert.");
+    await page.reload();
+    const editedCard = sessionLog.locator("[data-coding-session-card]").filter({ hasText: editedActivity });
+    await expect(editedCard).toHaveCount(1);
+    await expect(editedCard).toContainText("60 min");
+    await expect(editedCard).toContainText("A1.1A edited result");
+    await editedCard.getByRole("form", { name: `Coding Session archivieren ${editedActivity}` }).getByRole("button", { name: "Session archivieren" }).click();
+    await expect(page.locator("[data-coding-action-status]")).toHaveText("Coding Session archiviert.");
+    await page.reload();
+    const archivedCard = sessionLog.locator("[data-coding-session-card]").filter({ hasText: editedActivity });
+    await expect(archivedCard).toContainText("archived");
+    await expect(archivedCard.getByRole("form", { name: new RegExp(`Coding Session bearbeiten ${editedActivity}`) })).toHaveCount(0);
+  });
+
   for (const profile of ["empty", "manual"] as const) {
     test(`keeps coding overview state-proof for ${profile}`, async ({
       page,

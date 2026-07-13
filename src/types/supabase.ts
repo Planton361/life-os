@@ -45,6 +45,59 @@ export type Database = {
         }
         Relationships: []
       }
+      coding_sessions: {
+        Row: {
+          activity: string
+          archived_at: string | null
+          created_at: string
+          duration_minutes: number
+          id: string
+          note: string | null
+          outcome: string
+          project_id: string
+          session_date: string
+          start_time: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activity: string
+          archived_at?: string | null
+          created_at?: string
+          duration_minutes: number
+          id?: string
+          note?: string | null
+          outcome: string
+          project_id: string
+          session_date: string
+          start_time?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activity?: string
+          archived_at?: string | null
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          note?: string | null
+          outcome?: string
+          project_id?: string
+          session_date?: string
+          start_time?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coding_sessions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_log_tasks: {
         Row: {
           created_at: string
@@ -585,6 +638,7 @@ export type Database = {
           next_step: string | null
           priority: Database["public"]["Enums"]["task_priority"]
           progress: number
+          repository_url: string | null
           start_date: string | null
           status: Database["public"]["Enums"]["project_status"]
           target_date: string | null
@@ -602,6 +656,7 @@ export type Database = {
           next_step?: string | null
           priority?: Database["public"]["Enums"]["task_priority"]
           progress?: number
+          repository_url?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["project_status"]
           target_date?: string | null
@@ -619,6 +674,7 @@ export type Database = {
           next_step?: string | null
           priority?: Database["public"]["Enums"]["task_priority"]
           progress?: number
+          repository_url?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["project_status"]
           target_date?: string | null
