@@ -1951,6 +1951,104 @@ export type Database = {
           },
         ]
       }
+      work_meeting_followups: {
+        Row: {
+          created_at: string
+          id: string
+          meeting_id: string
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          meeting_id: string
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          meeting_id?: string
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_meeting_followups_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "work_meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_meeting_followups_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_meetings: {
+        Row: {
+          agenda: string | null
+          archived_at: string | null
+          created_at: string
+          duration_minutes: number
+          id: string
+          meeting_date: string
+          notes: string | null
+          outcome: string
+          participants: string | null
+          project_id: string
+          started_at: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agenda?: string | null
+          archived_at?: string | null
+          created_at?: string
+          duration_minutes: number
+          id?: string
+          meeting_date: string
+          notes?: string | null
+          outcome: string
+          participants?: string | null
+          project_id: string
+          started_at?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agenda?: string | null
+          archived_at?: string | null
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          meeting_date?: string
+          notes?: string | null
+          outcome?: string
+          participants?: string | null
+          project_id?: string
+          started_at?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_meetings_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -2088,6 +2186,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      create_work_meeting_followup: {
+        Args: { p_description?: string; p_meeting_id: string; p_title: string }
+        Returns: string
       }
       save_completed_running_session: {
         Args: {

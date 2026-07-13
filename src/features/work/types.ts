@@ -209,6 +209,7 @@ export type WorkOverviewViewModel = {
     }>;
     wiki: import("./work-decision").WorkWikiEntry[];
     decisions: import("./work-decision").WorkDecision[];
+    meetings: import("./work-meeting").WorkMeeting[];
   };
 };
 

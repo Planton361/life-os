@@ -2495,6 +2495,109 @@ test.describe("Work content states", () => {
     await expect(archivedCard.getByRole("link")).toHaveCount(0);
     await expect(archivedCard.getByRole("button", { name: "Archivieren" })).toHaveCount(0);
   });
+
+  test("A1.1C2b creates edits archives and reloads a work meeting", async ({ page }) => {
+    test.setTimeout(60_000);
+    test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires local authenticated Supabase state.");
+    const stamp = Date.now(); const projectTitle = `A1.1C2b Meeting Project ${stamp}`; const title = `A1.1C2b Meeting ${stamp}`; const editedTitle = `A1.1C2b Edited Meeting ${stamp}`; const date = new Date().toISOString().slice(0, 10);
+    await openManualPortfolioWithDb(page, "A1.1C2b requires the local Manual database."); await page.goto("/work");
+    const projects = page.locator('[data-work-region="projects"]'); const projectForm = projects.getByRole("form", { name: "Work Project erstellen" }); await projectForm.getByLabel("Titel", { exact: true }).fill(projectTitle); await projectForm.getByRole("button", { name: "Work Project erstellen" }).click(); await expect(page.locator("[data-work-action-status]")).toHaveText("Work Project erstellt."); await page.reload();
+    const meetings = page.locator('[data-work-region="meetings"]'); const create = meetings.getByRole("form", { name: "Work Meeting erstellen" }); await create.locator('input[name="meetingDate"]').fill(date); await create.locator('input[name="startedAt"]').fill("09:30"); await create.locator('input[name="durationMinutes"]').fill("45"); await create.getByLabel("Titel", { exact: true }).fill(title); await create.locator('input[name="participants"]').fill("Anton, Team"); await create.locator('textarea[name="agenda"]').fill("A1.1C2b agenda"); await create.locator('textarea[name="outcome"]').fill("A1.1C2b outcome"); await create.locator('textarea[name="notes"]').fill("A1.1C2b notes"); await create.getByRole("button", { name: "Meeting erfassen" }).click(); await expect(page.locator("[data-work-action-status]")).toHaveText("Work Meeting erfasst.");
+    const card = meetings.locator('[data-work-meeting-card]').filter({ hasText: title }); await expect(card).toHaveCount(1); await card.getByRole("link", { name: title }).click(); await page.reload(); const edit = page.locator('[data-work-region="meetings"]').getByRole("form", { name: "Work Meeting bearbeiten" }); await edit.getByLabel("Titel", { exact: true }).fill(editedTitle); await edit.locator('textarea[name="agenda"]').fill("A1.1C2b edited agenda"); await edit.locator('textarea[name="outcome"]').fill("A1.1C2b edited outcome"); await edit.locator('textarea[name="notes"]').fill("A1.1C2b edited notes"); await edit.getByRole("button", { name: "Meeting speichern" }).click(); await expect(page.locator("[data-work-action-status]")).toHaveText("Work Meeting aktualisiert."); await page.reload();
+    const reloadedMeetings = page.locator('[data-work-region="meetings"]'); const reloadedEdit = reloadedMeetings.getByRole("form", { name: "Work Meeting bearbeiten" }); await expect(reloadedEdit.getByLabel("Titel", { exact: true })).toHaveValue(editedTitle); await expect(reloadedEdit.locator('textarea[name="agenda"]')).toHaveValue("A1.1C2b edited agenda"); await expect(reloadedEdit.locator('textarea[name="outcome"]')).toHaveValue("A1.1C2b edited outcome"); await expect(reloadedEdit.locator('textarea[name="notes"]')).toHaveValue("A1.1C2b edited notes"); const reloadedCard = reloadedMeetings.locator('[data-work-meeting-card]').filter({ hasText: editedTitle }); await reloadedCard.getByRole("link", { name: editedTitle }).click(); await expect(page.locator('[data-work-region="project-context"]')).toContainText(projectTitle); await page.goBack();
+    const archiveCard = page.locator('[data-work-region="meetings"] [data-work-meeting-card]').filter({ hasText: editedTitle }); await archiveCard.getByRole("form", { name: `Work Meeting archivieren ${editedTitle}` }).getByRole("button", { name: "Archivieren" }).click(); await expect(page.locator("[data-work-action-status]")).toHaveText("Work Meeting archiviert."); await page.reload(); const archivedCard = page.locator('[data-work-region="meetings"] [data-work-meeting-card="archived"]').filter({ hasText: editedTitle }); await expect(archivedCard).toHaveCount(1); await expect(archivedCard.getByRole("link")).toHaveCount(0); await expect(archivedCard.getByRole("button", { name: "Archivieren" })).toHaveCount(0);
+  });
+
+  test("A1.1C2b creates links unlinks and reloads meeting follow-ups", async ({ page }) => {
+    test.setTimeout(60_000);
+    test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires local authenticated Supabase state.");
+    const stamp = Date.now();
+    const projectTitle = `A1.1C2b Follow-up Project ${stamp}`;
+    const meetingTitle = `A1.1C2b Follow-up Meeting ${stamp}`;
+    const createdTaskTitle = `A1.1C2b Created Follow-up ${stamp}`;
+    const existingTaskTitle = `A1.1C2b Existing Follow-up ${stamp}`;
+
+    await openManualPortfolioWithDb(page, "A1.1C2b requires the local Manual database.");
+    await page.goto("/work");
+    const projects = page.locator('[data-work-region="projects"]');
+    const projectForm = projects.getByRole("form", { name: "Work Project erstellen" });
+    await projectForm.getByLabel("Titel", { exact: true }).fill(projectTitle);
+    await projectForm.getByRole("button", { name: "Work Project erstellen" }).click();
+    await expect(page.locator("[data-work-action-status]")).toHaveText("Work Project erstellt.");
+    await page.reload();
+
+    const meetings = page.locator('[data-work-region="meetings"]');
+    const meetingForm = meetings.getByRole("form", { name: "Work Meeting erstellen" });
+    await meetingForm.locator('input[name="durationMinutes"]').fill("30");
+    await meetingForm.getByLabel("Titel", { exact: true }).fill(meetingTitle);
+    await meetingForm.locator('textarea[name="outcome"]').fill("A1.1C2b follow-up context");
+    await meetingForm.getByRole("button", { name: "Meeting erfassen" }).click();
+    await expect(page.locator("[data-work-action-status]")).toHaveText("Work Meeting erfasst.");
+    const meetingCard = meetings.locator('[data-work-meeting-card]').filter({ hasText: meetingTitle });
+    const meetingLink = meetingCard.getByRole("link", { name: meetingTitle });
+    const meetingHref = await meetingLink.getAttribute("href");
+    expect(meetingHref).toBeTruthy();
+    await meetingLink.click();
+
+    const followups = page.locator('[data-work-region="followups"]');
+    const createFollowup = followups.getByRole("form", { name: "Meeting Follow-up erstellen" });
+    await createFollowup.getByLabel("Task-Titel", { exact: true }).fill(createdTaskTitle);
+    await createFollowup.locator('textarea[name="description"]').fill("A1.1C2b atomic task");
+    await createFollowup.getByRole("button", { name: "Follow-up erstellen" }).click();
+    await expect(page.locator("[data-work-action-status]")).toHaveText("Follow-up erstellt.");
+    const createdCard = followups.locator('[data-work-followup-card]').filter({ hasText: createdTaskTitle });
+    await expect(createdCard).toHaveCount(1);
+    await expect(createdCard).toContainText("planned");
+    const createdTaskHref = await createdCard.getByRole("link", { name: createdTaskTitle }).getAttribute("href");
+    expect(createdTaskHref).toBeTruthy();
+    await createdCard.getByRole("link", { name: createdTaskTitle }).click();
+    await expect(page.locator("#selected-entity-heading")).toHaveText(createdTaskTitle);
+    await page.goBack();
+    await page.goto("/work");
+    const reloadedMeetingCard = page.locator('[data-work-region="meetings"] [data-work-meeting-card]').filter({ hasText: meetingTitle });
+    await reloadedMeetingCard.getByRole("link", { name: meetingTitle }).click();
+    const persistedFollowups = page.locator('[data-work-region="followups"]');
+    const persistedCreatedCard = persistedFollowups.locator('[data-work-followup-card]').filter({ hasText: createdTaskTitle });
+    await expect(persistedCreatedCard).toHaveCount(1);
+    await expect(persistedCreatedCard).toContainText("planned");
+
+    const projectOpen = page.locator('[data-work-region="project-context"]').getByRole("link", { name: "Project öffnen" });
+    const projectHref = await projectOpen.getAttribute("href");
+    expect(projectHref).toBeTruthy();
+    await page.goto(projectHref ?? "/portfolio?view=projects");
+    const contextPanel = page.locator('[data-portfolio-section="context-panel"]');
+    const taskForm = contextPanel.locator('form[aria-label="Project Task erstellen"]');
+    await expect(taskForm).toBeVisible();
+    await taskForm.getByLabel("Task-Titel").fill(existingTaskTitle);
+    await taskForm.getByLabel("Next Action").fill("A1.1C2b existing task");
+    await taskForm.getByLabel("Kontext").fill("A1.1C2b canonical Work task");
+    await taskForm.getByLabel("Priorität").selectOption("P2");
+    await taskForm.getByLabel("Energie").selectOption("medium");
+    await taskForm.getByLabel("Minuten").fill("25");
+    await taskForm.getByLabel("Heute planen").check();
+    await taskForm.getByRole("button", { name: "Task erstellen" }).click();
+
+    await page.goto(meetingHref ?? "/work");
+    const reloadedFollowups = page.locator('[data-work-region="followups"]');
+    const linkForm = reloadedFollowups.getByRole("form", { name: "Bestehenden Follow-up verknüpfen" });
+    await linkForm.locator('select[name="taskId"]').selectOption({ label: existingTaskTitle });
+    await linkForm.getByRole("button", { name: "Task verknüpfen" }).click();
+    await expect(page.locator("[data-work-action-status]")).toHaveText("Follow-up verknüpft.");
+    const existingCard = reloadedFollowups.locator('[data-work-followup-card]').filter({ hasText: existingTaskTitle });
+    await expect(existingCard).toHaveCount(1);
+    await existingCard.getByRole("form", { name: `Follow-up lösen ${existingTaskTitle}` }).getByRole("button", { name: "Verknüpfung lösen" }).click();
+    await expect(page.locator("[data-work-action-status]")).toHaveText("Follow-up-Verknüpfung gelöst.");
+    await page.reload();
+    await expect(page.locator('[data-work-region="followups"] [data-work-followup-card]').filter({ hasText: existingTaskTitle })).toHaveCount(0);
+
+    const activeMeeting = page.locator('[data-work-region="meetings"] [data-work-meeting-card]').filter({ hasText: meetingTitle });
+    await activeMeeting.getByRole("form", { name: `Work Meeting archivieren ${meetingTitle}` }).getByRole("button", { name: "Archivieren" }).click();
+    await expect(page.locator("[data-work-action-status]")).toHaveText("Work Meeting archiviert.");
+    await page.reload();
+    await expect(page.locator('[data-work-region="meetings"] [data-work-meeting-card="archived"]').filter({ hasText: meetingTitle })).toHaveCount(1);
+    await page.goto(createdTaskHref ?? "/portfolio?view=tasks");
+    await expect(page.locator("#selected-entity-heading")).toHaveText(createdTaskTitle);
+  });
 });
 
 test.describe("H2.1 Running Strength Workout core", () => {

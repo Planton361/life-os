@@ -18,3 +18,11 @@ export const updateWorkDecisionInputSchema = decisionFields.extend({ decisionId:
 export const archiveWorkDecisionInputSchema = z.object({ decisionId: id, projectId: id });
 export type WorkWikiInput = z.infer<typeof createWorkWikiInputSchema>;
 export type WorkDecisionInput = z.infer<typeof createWorkDecisionInputSchema>;
+const meetingFields = z.object({ projectId: id, meetingDate: z.string().date(), startedAt: z.preprocess((v) => v === "" ? undefined : v, z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional()), durationMinutes: z.coerce.number().int().positive().max(1440), title: requiredTrimmedStringSchema(2), participants: optionalTrimmedStringSchema, agenda: optionalTrimmedStringSchema, outcome: requiredTrimmedStringSchema(2), notes: optionalTrimmedStringSchema });
+export const createWorkMeetingInputSchema = meetingFields;
+export const updateWorkMeetingInputSchema = meetingFields.extend({ meetingId: id });
+export const archiveWorkMeetingInputSchema = z.object({ meetingId: id, projectId: id });
+export const linkWorkMeetingFollowupInputSchema = z.object({ meetingId: id, taskId: id });
+export const unlinkWorkMeetingFollowupInputSchema = z.object({ relationId: id, meetingId: id });
+export const createWorkMeetingFollowupInputSchema = z.object({ meetingId: id, title: requiredTrimmedStringSchema(2), description: optionalTrimmedStringSchema });
+export type WorkMeetingInput = z.infer<typeof createWorkMeetingInputSchema>;

@@ -1,0 +1,2 @@
+export type WorkMeetingFollowup = { relationId: string; taskId: string; title: string; status: string; archivedAt: string | null };
+export type WorkMeeting = { id: string; projectId: string; projectTitle: string; meetingDate: string; startedAt: string | null; durationMinutes: number; title: string; participants: string | null; agenda: string | null; outcome: string; notes: string | null; archivedAt: string | null; followups: WorkMeetingFollowup[] };
