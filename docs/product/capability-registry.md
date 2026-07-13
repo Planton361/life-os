@@ -228,12 +228,12 @@
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Scientific work | `CONNECTED_GAP` | A1.1B1 Education-Area projection of canonical Projects with Tasks, Deadlines and Resources | A1.1B2 adds Learning and Writing Logs; no parallel scientific-work model |
+| Scientific work | `CONNECTED_GAP` | A1.1B1 Education-Area projection of canonical Projects with Tasks, Deadlines, Resources and A1.1B2 logs | dedicated scientific-work metadata remains intentionally deferred; no parallel model |
 | Literature library | `CONNECTED_GAP` | A1.1B1 canonical Resources create/edit and reload-stable Project link/unlink through `resource_relations` | create-and-link is sequential rather than atomic, so a link failure can leave a standalone Resource; reading status and bibliographic metadata remain deferred until safely modeled |
-| Learning log | `UI_ONLY` | route/page shell | create learning log records |
+| Learning log | `CONNECTED` | A1.1B2 user-scoped `education_logs` with create/edit/archive, reload-stable history and 7-/30-day log-derived signals | maintain aggregation and ownership proofs |
 | Thesis/project relation | `CONNECTED` | A1.1B1 user-owned `education` Area with canonical Projects, Tasks, Deadlines and literature Resources | maintain same-user relation ownership |
-| Writing best practices/resources | `CONNECTED_GAP` | A1.1B1 scoped Resources with title, note, URL and type | dedicated writing workflow belongs to A1.1B2 |
-| Education dashboard | `CONNECTED_GAP` | A1.1B1 Manual Education workspace projects, task/deadline context and literature management | Learning and Writing Logs remain UI-only until A1.1B2 |
+| Writing best practices/resources | `CONNECTED_GAP` | A1.1B1 scoped Resources plus A1.1B2 Writing Logs with signed word deltas | dedicated prompt/template management remains separate depth |
+| Education dashboard | `CONNECTED_GAP` | Manual Education workspace projects, task/deadline context, literature and A1.1B2 Learning/Writing activity | Literature create-and-link remains non-atomic; richer scientific metadata remains deferred |
 
 # 13. Work
 

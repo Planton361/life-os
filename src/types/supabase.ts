@@ -191,6 +191,68 @@ export type Database = {
         }
         Relationships: []
       }
+      education_logs: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          duration_minutes: number
+          focus: string
+          id: string
+          log_date: string
+          log_type: Database["public"]["Enums"]["education_log_type"]
+          notes: string | null
+          outcome: string
+          project_id: string
+          start_time: string | null
+          units_completed: number | null
+          updated_at: string
+          user_id: string
+          word_count_delta: number | null
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          duration_minutes: number
+          focus: string
+          id?: string
+          log_date: string
+          log_type: Database["public"]["Enums"]["education_log_type"]
+          notes?: string | null
+          outcome: string
+          project_id: string
+          start_time?: string | null
+          units_completed?: number | null
+          updated_at?: string
+          user_id: string
+          word_count_delta?: number | null
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          duration_minutes?: number
+          focus?: string
+          id?: string
+          log_date?: string
+          log_type?: Database["public"]["Enums"]["education_log_type"]
+          notes?: string | null
+          outcome?: string
+          project_id?: string
+          start_time?: string | null
+          units_completed?: number | null
+          updated_at?: string
+          user_id?: string
+          word_count_delta?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "education_logs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exercise_muscles: {
         Row: {
           created_at: string
@@ -2176,6 +2238,7 @@ export type Database = {
         | "carried_forward"
         | "skipped"
         | "note"
+      education_log_type: "learning" | "writing"
       goal_status: "draft" | "active" | "paused" | "achieved" | "archived"
       inbox_item_status:
         | "raw"
@@ -2391,6 +2454,7 @@ export const Constants = {
         "skipped",
         "note",
       ],
+      education_log_type: ["learning", "writing"],
       goal_status: ["draft", "active", "paused", "achieved", "archived"],
       inbox_item_status: [
         "raw",

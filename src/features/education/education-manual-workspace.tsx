@@ -12,13 +12,14 @@ import {
   updateEducationProjectFormAction,
 } from "@/features/real-data/actions/education.actions";
 import type { EducationOverviewViewModel } from "./types";
+import { EducationLogsWorkspace } from "./education-logs-workspace";
 
 const input = "min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.78)] px-2 text-[11px] text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]";
 const button = "min-h-8 rounded-full border border-[rgba(95,200,215,.34)] bg-[rgba(95,200,215,.12)] px-3 text-[10px] font-semibold text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]";
 const panel = "min-w-0 rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.86)] p-3 shadow-[0_8px_22px_rgba(0,0,0,.12)]";
 const statuses = ["idea", "active", "paused", "blocked", "completed", "archived"];
 const types = ["research", "source", "link", "learning", "note"];
-const messages: Record<string, string> = { blocked: "Anmeldung erforderlich.", literature_created: "Literatur erstellt und verknüpft.", literature_error: "Literatur konnte nicht gespeichert werden.", literature_linked: "Literatur verknüpft.", literature_unlinked: "Literaturverknüpfung gelöst.", literature_updated: "Literatur aktualisiert.", project_created: "Education Project erstellt.", project_error: "Education Project konnte nicht gespeichert werden.", project_updated: "Education Project aktualisiert." };
+const messages: Record<string, string> = { blocked: "Anmeldung erforderlich.", literature_created: "Literatur erstellt und verknüpft.", literature_error: "Literatur konnte nicht gespeichert werden.", literature_linked: "Literatur verknüpft.", literature_unlinked: "Literaturverknüpfung gelöst.", literature_updated: "Literatur aktualisiert.", log_archived: "Education Log archiviert.", log_created: "Education Log erstellt.", log_error: "Education Log konnte nicht gespeichert werden.", log_updated: "Education Log aktualisiert.", project_created: "Education Project erstellt.", project_error: "Education Project konnte nicht gespeichert werden.", project_updated: "Education Project aktualisiert." };
 
 function Field({ children, label }: Readonly<{ children: React.ReactNode; label: string }>) { return <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)]"><span>{label}</span>{children}</label>; }
 
@@ -49,6 +50,6 @@ export function EducationManualWorkspace({ viewModel }: Readonly<{ viewModel: Ed
         <form action={linkEducationLiteratureFormAction} aria-label="Bestehende Resource verknüpfen" className="mt-3 grid gap-2"><input name="projectId" type="hidden" value={project.id} /><Field label="Resource"><select className={input} name="resourceId" required><option value="">Resource wählen</option>{availableResources.map((resource) => <option key={resource.id} value={resource.id}>{resource.title} · {resource.type}</option>)}</select></Field><button className={button} disabled={!availableResources.length}>Resource verknüpfen</button></form>
         {selectedResource ? <form action={updateEducationLiteratureFormAction} aria-label="Literatur bearbeiten" className="mt-3 grid gap-2 rounded-[11px] border border-[var(--border-subtle)] p-2"><input name="projectId" type="hidden" value={project.id} /><input name="resourceId" type="hidden" value={selectedResource.id} /><h3 className="text-[12px] font-semibold text-[var(--text-primary)]">Resource Detail</h3><Field label="Titel"><input className={input} defaultValue={selectedResource.title} name="title" required /></Field><Field label="Notiz"><textarea className={input} defaultValue={selectedResource.body ?? ""} name="body" /></Field><Field label="URL"><input className={input} defaultValue={selectedResource.url ?? ""} name="url" type="url" /></Field><Field label="Resource-Typ"><select className={input} defaultValue={selectedResource.type} name="type">{types.map((type) => <option key={type}>{type}</option>)}</select></Field><button className={button}>Literatur aktualisieren</button><Link className="text-[10px] text-[var(--accent-cyan)]" href={`/resources?selected=${selectedResource.id}`}>Resource öffnen</Link></form> : null}
       </> : <EmptyState title="Kein Literaturkontext" description="Wähle zuerst ein Education Project." />}</section>
-    </div>
+    </div>{project ? <EducationLogsWorkspace project={project} selectedLogId={params.get("log") ?? params.get("resource")} /> : null}
   </div>;
 }

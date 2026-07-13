@@ -14,3 +14,4 @@ export * from "./health.schema";
 export * from "./habit.schema";
 export * from "./training.schema";
 export * from "./coding.schemas";
+export * from "./education-log.schemas";

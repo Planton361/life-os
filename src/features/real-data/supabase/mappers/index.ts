@@ -1,4 +1,5 @@
 export * from "./inbox.mapper";
+export * from "./education-log.mapper";
 export * from "./goal.mapper";
 export * from "./project.mapper";
 export * from "./resource.mapper";

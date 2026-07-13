@@ -306,6 +306,7 @@ export type EducationOverviewViewModel = {
     projects: Array<{
       description: string | null;
       id: string;
+      logs: import("./education-log").EducationLog[];
       literature: Array<{ body: string | null; id: string; relationId: string; relationType: string; title: string; type: string; url: string | null }>;
       status: string;
       tasks: Array<{ dueAt: string | null; id: string; plannedDate: string | null; status: string; title: string }>;

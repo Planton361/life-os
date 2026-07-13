@@ -10,6 +10,7 @@ import {
   updateProjectInputSchema,
   updateResourceInputSchema,
 } from "../schemas";
+import { archiveEducationLogInputSchema, createEducationLogInputSchema, updateEducationLogInputSchema } from "../schemas/education-log.schemas";
 import {
   createSupabaseEducationRepository,
   createSupabaseResourceRepository,
@@ -22,6 +23,7 @@ function optionalField(formData: FormData, key: string) { return field(formData,
 function destination(state: string, projectId?: string, resourceId?: string) { const params = new URLSearchParams({ educationAction: state }); if (projectId) params.set("selected", projectId); if (resourceId) params.set("resource", resourceId); return `/education?${params}`; }
 async function context() { if ((await getCurrentLifeOsProfileId()) !== "manual") return null; const auth = await createAuthenticatedSupabaseServerClient(); return auth.ok ? auth : null; }
 function revalidateEducation() { revalidatePath("/education"); revalidatePath("/portfolio"); revalidatePath("/projects"); revalidatePath("/tasks"); revalidatePath("/resources"); }
+function logInput(formData: FormData) { return { durationMinutes: field(formData, "durationMinutes"), focus: field(formData, "focus"), logDate: field(formData, "logDate"), logType: field(formData, "logType"), notes: optionalField(formData, "notes"), outcome: field(formData, "outcome"), projectId: field(formData, "projectId"), startTime: optionalField(formData, "startTime"), unitsCompleted: field(formData, "unitsCompleted"), wordCountDelta: field(formData, "wordCountDelta") }; }
 
 export async function createEducationProjectFormAction(formData: FormData) {
   const auth = await context(); if (!auth) redirect(destination("blocked"));
@@ -78,4 +80,25 @@ export async function updateEducationLiteratureFormAction(formData: FormData) {
   const parsed = updateResourceInputSchema.safeParse({ body: optionalField(formData, "body") ?? null, profileId: auth.user.id, resourceId, title: field(formData, "title"), type: field(formData, "type"), url: optionalField(formData, "url") ?? null, userId: auth.user.id }); if (!parsed.success) redirect(destination("literature_error", projectId, resourceId));
   const result = await createSupabaseResourceRepository(auth.client).updateResource(parsed.data); if (!result.ok) redirect(destination("literature_error", projectId, resourceId));
   revalidateEducation(); redirect(destination("literature_updated", projectId, resourceId));
+}
+
+export async function createEducationLogFormAction(formData: FormData) {
+  const projectId = field(formData, "projectId"); const auth = await context(); if (!auth) redirect(destination("blocked", projectId));
+  const parsed = createEducationLogInputSchema.safeParse(logInput(formData)); if (!parsed.success) redirect(destination("log_error", projectId));
+  const result = await createSupabaseEducationRepository(auth.client).createLog(auth.user.id, parsed.data); if (!result.ok) redirect(destination("log_error", projectId));
+  revalidateEducation(); redirect(destination("log_created", projectId, result.data.id));
+}
+
+export async function updateEducationLogFormAction(formData: FormData) {
+  const projectId = field(formData, "projectId"); const auth = await context(); if (!auth) redirect(destination("blocked", projectId));
+  const parsed = updateEducationLogInputSchema.safeParse({ ...logInput(formData), logId: field(formData, "logId") }); if (!parsed.success) redirect(destination("log_error", projectId));
+  const result = await createSupabaseEducationRepository(auth.client).updateLog(auth.user.id, parsed.data.logId, parsed.data); if (!result.ok) redirect(destination("log_error", projectId));
+  revalidateEducation(); redirect(destination("log_updated", projectId, parsed.data.logId));
+}
+
+export async function archiveEducationLogFormAction(formData: FormData) {
+  const projectId = field(formData, "projectId"); const auth = await context(); if (!auth) redirect(destination("blocked", projectId));
+  const parsed = archiveEducationLogInputSchema.safeParse({ logId: field(formData, "logId"), projectId }); if (!parsed.success) redirect(destination("log_error", projectId));
+  const result = await createSupabaseEducationRepository(auth.client).archiveLog(auth.user.id, parsed.data.projectId, parsed.data.logId); if (!result.ok) redirect(destination("log_error", projectId));
+  revalidateEducation(); redirect(destination("log_archived", projectId));
 }

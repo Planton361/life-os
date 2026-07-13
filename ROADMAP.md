@@ -28,7 +28,7 @@ The existing application is the foundation. This roadmap does not restart the pr
 - Resources and Skills: connected with graph/search/management gaps.
 - Nutrition: recipes, ingredients, meals, planner edit and grocery draft are connected with remaining advanced gaps.
 - Mood, Sleep, Weight, Habits, Running and Strength: connected core loops with remaining depth gaps.
-- Coding, Education, Work and Life domains: largely UI-only or incomplete.
+- Coding and Education have connected core workflows; Work and Life remain largely UI-only or incomplete.
 - Personal AI Assistant: not started as a production capability.
 - Operation: local-first ready; private remote is optional and not active.
 
@@ -38,9 +38,10 @@ Capability-level truth is maintained in `docs/product/capability-registry.md`.
 
 - `K1.1 Portfolio, Resource & Knowledge Depth`: abgeschlossen.
 - `A1.1A Coding Projects & Sessions`: abgeschlossen.
-- `A1.1B Education Domain Foundation`: aktiv.
+- `A1.1B Education Domain Foundation`: abgeschlossen.
 - `A1.1B1 Education Projects & Literature Core`: abgeschlossen.
-- `A1.1B2 Learning & Writing Logs`: nächster Slice.
+- `A1.1B2 Learning & Writing Logs`: abgeschlossen.
+- `A1.1C Work Domain Foundation`: aktiv.
 
 ## 3. Delivery Program
 

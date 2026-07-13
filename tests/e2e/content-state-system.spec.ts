@@ -7643,6 +7643,81 @@ test.describe("Portfolio content states", () => {
 });
 
 test.describe("Education content states", () => {
+  test("A1.1B2 creates edits and reloads a learning log", async ({ page }) => {
+    test.setTimeout(60_000);
+    test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires local authenticated Supabase state.");
+    const stamp = Date.now();
+    const projectTitle = `A1.1B2 Learning Project ${stamp}`;
+    const focus = `A1.1B2 Learning Focus ${stamp}`;
+    const editedFocus = `A1.1B2 Edited Learning Focus ${stamp}`;
+    const logDate = new Date().toISOString().slice(0, 10);
+    await openManualPortfolioWithDb(page, "A1.1B2 requires the local Manual database.");
+    await page.goto("/education");
+    const projectForm = page.getByRole("form", { name: "Education Project erstellen" });
+    await projectForm.getByLabel("Titel", { exact: true }).fill(projectTitle);
+    await projectForm.getByRole("button", { name: "Education Project erstellen" }).click();
+    const activity = page.locator('[data-education-region="activity"]');
+    const createForm = activity.getByRole("form", { name: "Education Log erstellen" });
+    await createForm.locator('select[name="logType"]').selectOption("learning");
+    await createForm.locator('input[name="logDate"]').fill(logDate);
+    await createForm.locator('input[name="durationMinutes"]').fill("45");
+    await createForm.locator('input[name="focus"]').fill(focus);
+    await createForm.locator('textarea[name="outcome"]').fill("A1.1B2 learning outcome");
+    await createForm.locator('input[name="unitsCompleted"]').fill("4");
+    await createForm.locator('textarea[name="notes"]').fill("A1.1B2 learning notes");
+    await createForm.getByRole("button", { name: "Log speichern" }).click();
+    await expect(page.locator("[data-education-action-status]")).toHaveText("Education Log erstellt.");
+    const card = activity.locator('[data-education-log-card][data-log-status="active"]').filter({ hasText: focus });
+    await expect(card).toHaveCount(1);
+    const editForm = activity.getByRole("form", { name: "Education Log bearbeiten" });
+    await editForm.locator('input[name="focus"]').fill(editedFocus);
+    await editForm.locator('textarea[name="outcome"]').fill("A1.1B2 edited learning outcome");
+    await editForm.locator('textarea[name="notes"]').fill("A1.1B2 edited learning notes");
+    await editForm.getByRole("button", { name: "Log aktualisieren" }).click();
+    await expect(page.locator("[data-education-action-status]")).toHaveText("Education Log aktualisiert.");
+    await page.reload();
+    const reloadedActivity = page.locator('[data-education-region="activity"]');
+    const reloadedEdit = reloadedActivity.getByRole("form", { name: "Education Log bearbeiten" });
+    await expect(reloadedEdit.locator('input[name="focus"]')).toHaveValue(editedFocus);
+    await expect(reloadedEdit.locator('textarea[name="outcome"]')).toHaveValue("A1.1B2 edited learning outcome");
+    await expect(reloadedEdit.locator('textarea[name="notes"]')).toHaveValue("A1.1B2 edited learning notes");
+  });
+
+  test("A1.1B2 creates writing progress archives and reloads activity", async ({ page }) => {
+    test.setTimeout(60_000);
+    test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires local authenticated Supabase state.");
+    const stamp = Date.now();
+    const projectTitle = `A1.1B2 Writing Project ${stamp}`;
+    const focus = `A1.1B2 Writing Focus ${stamp}`;
+    const logDate = new Date().toISOString().slice(0, 10);
+    await openManualPortfolioWithDb(page, "A1.1B2 requires the local Manual database.");
+    await page.goto("/education");
+    const projectForm = page.getByRole("form", { name: "Education Project erstellen" });
+    await projectForm.getByLabel("Titel", { exact: true }).fill(projectTitle);
+    await projectForm.getByRole("button", { name: "Education Project erstellen" }).click();
+    const activity = page.locator('[data-education-region="activity"]');
+    const createForm = activity.getByRole("form", { name: "Education Log erstellen" });
+    await createForm.locator('select[name="logType"]').selectOption("writing");
+    await createForm.locator('input[name="logDate"]').fill(logDate);
+    await createForm.locator('input[name="durationMinutes"]').fill("60");
+    await createForm.locator('input[name="focus"]').fill(focus);
+    await createForm.locator('textarea[name="outcome"]').fill("A1.1B2 writing outcome");
+    await createForm.locator('input[name="wordCountDelta"]').fill("120");
+    await createForm.getByRole("button", { name: "Log speichern" }).click();
+    await expect(page.locator("[data-education-action-status]")).toHaveText("Education Log erstellt.");
+    await expect(activity.locator('[data-education-signal="7-days"]')).toContainText("1 Logs · 60 Min · 0 Einheiten · +120 Wörter");
+    await expect(activity.locator('[data-education-signal="30-days"]')).toContainText("1 Logs · 60 Min · 0 Einheiten · +120 Wörter");
+    const card = activity.locator('[data-education-log-card][data-log-status="active"]').filter({ hasText: focus });
+    await expect(card).toHaveCount(1);
+    await card.getByRole("form", { name: `Log archivieren ${focus}` }).getByRole("button", { name: "Archivieren" }).click();
+    await expect(page.locator("[data-education-action-status]")).toHaveText("Education Log archiviert.");
+    await page.reload();
+    const reloadedActivity = page.locator('[data-education-region="activity"]');
+    await expect(reloadedActivity.locator('[data-education-log-card][data-log-status="archived"]').filter({ hasText: focus })).toHaveCount(1);
+    await expect(reloadedActivity.locator('[data-education-signal="7-days"]')).toContainText("0 Logs · 0 Min · 0 Einheiten · +0 Wörter");
+    await expect(reloadedActivity.locator('[data-education-signal="30-days"]')).toContainText("0 Logs · 0 Min · 0 Einheiten · +0 Wörter");
+  });
+
   test("A1.1B1 creates edits and reloads an education project", async ({
     page,
   }) => {
