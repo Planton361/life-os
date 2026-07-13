@@ -27,7 +27,7 @@ The existing application is the foundation. This roadmap does not restart the pr
 - Project/Goal workbenches: connected with remaining depth gaps.
 - Resources and Skills: connected with graph/search/management gaps.
 - Nutrition: recipes, ingredients, meals, planner edit and grocery draft are connected with remaining advanced gaps.
-- Mood, Sleep, Weight, Habits, Running and Strength: largely UI-only or incomplete.
+- Mood, Sleep, Weight, Habits, Running and Strength: connected core loops with remaining depth gaps.
 - Coding, Education, Work and Life domains: largely UI-only or incomplete.
 - Personal AI Assistant: not started as a production capability.
 - Operation: local-first ready; private remote is optional and not active.
