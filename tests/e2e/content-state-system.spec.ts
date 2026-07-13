@@ -7915,6 +7915,84 @@ test.describe("Resources content states", () => {
   const resourceRelationDbProofSkipReason =
     "Manual Supabase auth state unavailable; Resource relation DB proof skipped.";
 
+  async function createK11BResource(page: Page, title: string, body: string, url: string, type = "research") {
+    await page.goto("/resources");
+    const form = page.getByRole("form", { name: "Resource erstellen" });
+    await expect(form).toBeVisible();
+    await form.getByLabel("Titel", { exact: true }).fill(title);
+    await form.getByLabel("Beschreibung / Notiz", { exact: true }).fill(body);
+    await form.getByLabel("URL", { exact: true }).fill(url);
+    await form.locator('select[name="type"]').selectOption(type);
+    await form.getByRole("button", { name: "Resource speichern" }).click();
+    await expect(page.locator("#resources-page").getByRole("status")).toContainText("Resource erstellt.");
+    await expect(page.locator('[data-resources-section="relation-inspector"] #selected-resource-heading')).toHaveText(title);
+  }
+
+  test("K1.1B creates edits and reloads a resource", async ({ page }) => {
+    test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires local authenticated Supabase state.");
+    const stamp = Date.now();
+    const title = `K1.1B Resource ${stamp}`;
+    const editedTitle = `K1.1B Edited Resource ${stamp}`;
+    await openManualPortfolioWithDb(page, resourceRelationDbProofSkipReason);
+    await createK11BResource(page, title, `K1.1B note ${stamp}`, `https://example.test/k11b-${stamp}`);
+    const inspector = page.locator('[data-resources-section="relation-inspector"]');
+    const editForm = inspector.getByRole("form", { name: "Resource bearbeiten" });
+    await editForm.getByLabel("Titel", { exact: true }).fill(editedTitle);
+    await editForm.locator('textarea[name="body"]').fill(`K1.1B edited note ${stamp}`);
+    await editForm.locator('select[name="type"]').selectOption("learning");
+    await editForm.getByRole("button", { name: "Änderungen speichern" }).click();
+    await expect(page.locator("#resources-page").getByRole("status")).toContainText("Resource aktualisiert.");
+    await page.reload();
+    await expect(inspector.locator("#selected-resource-heading")).toHaveText(editedTitle);
+    await expect(inspector.getByRole("form", { name: "Resource bearbeiten" }).locator('textarea[name="body"]')).toHaveValue(`K1.1B edited note ${stamp}`);
+  });
+
+  test("K1.1B searches resources by canonical fields", async ({ page }) => {
+    test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires local authenticated Supabase state.");
+    const stamp = Date.now();
+    const title = `K1.1B Search Resource ${stamp}`;
+    const note = `Canonical Needle ${stamp}`;
+    const url = `https://example.test/search-${stamp}`;
+    await openManualPortfolioWithDb(page, resourceRelationDbProofSkipReason);
+    await createK11BResource(page, title, note, url, "research");
+    const assertSearch = async (query: string, unique = true) => {
+      await page.goto(`/resources?q=${encodeURIComponent(query)}`);
+      const library = page.locator('[data-resources-section="library"]');
+      await expect(library.getByRole("link", { name: `Select resource ${title}` })).toBeVisible();
+      if (unique) await expect(library.locator("[data-resource-row]")).toHaveCount(1);
+    };
+    await assertSearch(title.toLocaleLowerCase());
+    await assertSearch(note.toLocaleUpperCase());
+    await assertSearch(`search-${stamp}`);
+    await assertSearch("research", false);
+  });
+
+  test("K1.1B links unlinks archives and restores resource context", async ({ page }) => {
+    test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires local authenticated Supabase state.");
+    const stamp = Date.now();
+    const projectTitle = `K1.1B Project ${stamp}`;
+    const resourceTitle = `K1.1B Lifecycle Resource ${stamp}`;
+    await openManualPortfolioWithDb(page, resourceRelationDbProofSkipReason);
+    await page.goto("/portfolio?view=projects");
+    await createPortfolioProjectTarget(page, projectTitle, "K1.1B relation target");
+    await createK11BResource(page, resourceTitle, "K1.1B lifecycle note", `https://example.test/lifecycle-${stamp}`);
+    await linkSelectedResourceToTarget(page, "project", projectTitle);
+    const inspector = page.locator('[data-resources-section="relation-inspector"]');
+    const projectSection = inspector.getByRole("region", { name: "Verknüpfte Projects" });
+    const relationCard = projectSection.locator("[data-resource-relation-card]").filter({ hasText: projectTitle });
+    await expect(relationCard).toHaveCount(1);
+    await relationCard.getByRole("button", { name: "Verknüpfung lösen" }).click();
+    await page.reload();
+    await expect(relationCard).toHaveCount(0);
+    await inspector.getByRole("form", { name: "Resource archivieren" }).getByRole("button", { name: "Resource archivieren" }).click();
+    await expect(page.locator("#resources-page").getByRole("status")).toContainText("Resource archiviert.");
+    await expect(inspector.getByRole("region", { name: "Resource Overview" }).getByText("Archived", { exact: true })).toBeVisible();
+    await inspector.getByRole("form", { name: "Resource wiederherstellen" }).getByRole("button", { name: "Resource wiederherstellen" }).click();
+    await expect(page.locator("#resources-page").getByRole("status")).toContainText("Resource wiederhergestellt.");
+    await page.reload();
+    await expect(inspector.getByRole("form", { name: "Resource bearbeiten" })).toBeVisible();
+  });
+
   test("keeps demo resources as the filled knowledge reference", async ({
     page,
   }) => {

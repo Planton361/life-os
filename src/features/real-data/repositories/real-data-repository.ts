@@ -49,6 +49,8 @@ import type {
   CreateTaskInput,
   DeactivateRecurringTaskTemplateInput,
   LinkResourceInput,
+  ResourceLifecycleInput,
+  UpdateResourceInput,
   ReopenTaskInput,
   UpdateRecurringTaskTemplateInput,
   RescheduleTaskInput,
@@ -330,6 +332,9 @@ export interface ResourceRepository {
   createResource(
     input: CreateResourceInput,
   ): Promise<RepositoryResult<Resource>>;
+  updateResource(input: UpdateResourceInput): Promise<RepositoryResult<Resource>>;
+  archiveResource(input: ResourceLifecycleInput): Promise<RepositoryResult<Resource>>;
+  restoreResource(input: ResourceLifecycleInput): Promise<RepositoryResult<Resource>>;
   getResourceRelationsByUser(
     userId: UserId,
     profileId: ProfileId,
@@ -356,6 +361,7 @@ export interface ResourceRepository {
   getResourcesByUser(
     userId: UserId,
     profileId: ProfileId,
+    includeArchived?: boolean,
   ): Promise<RepositoryListResult<Resource>>;
 }
 

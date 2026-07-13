@@ -48,6 +48,24 @@ export const createResourceInputSchema = z.object({
 
 export type CreateResourceInput = z.infer<typeof createResourceInputSchema>;
 
+export const updateResourceInputSchema = z.object({
+  body: z.union([z.string().trim().min(1), z.null()]).optional(),
+  profileId: requiredUuidSchema,
+  resourceId: requiredUuidSchema,
+  title: titleSchema.optional(),
+  type: requiredEnumSchema(resourceTypes).optional(),
+  url: z.union([z.string().trim().url(), z.null()]).optional(),
+  userId: requiredUuidSchema,
+});
+export type UpdateResourceInput = z.infer<typeof updateResourceInputSchema>;
+
+export const resourceLifecycleInputSchema = z.object({
+  profileId: requiredUuidSchema,
+  resourceId: requiredUuidSchema,
+  userId: requiredUuidSchema,
+});
+export type ResourceLifecycleInput = z.infer<typeof resourceLifecycleInputSchema>;
+
 export const linkResourceToTargetInputSchema = z.object({
   profileId: requiredUuidSchema,
   relationType: optionalResourceRelationTypeSchema,

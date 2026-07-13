@@ -5,6 +5,7 @@ import {
   mapLinkResourceInputToInsert,
   mapResourceRelationRowToDomain,
   mapResourceRowToDomain,
+  mapUpdateResourceInputToPatch,
 } from "../mappers";
 import {
   supportedResourceRelationTargetTypes,
@@ -169,6 +170,16 @@ export function createSupabaseResourceRepository(
   client: SupabaseClientLike,
 ): ResourceRepository {
   return {
+    async archiveResource(input) {
+      const scopeFailure = profileScopeFailure(input.userId, input.profileId);
+      if (scopeFailure) return scopeFailure;
+      const result = (await client.from(realDataTableNames.resources)
+        .update({ archived_at: new Date().toISOString() })
+        .eq("user_id", input.userId).eq("id", input.resourceId).is("archived_at", null)
+        .select("*").single()) as SupabaseQueryResult<ResourceRow>;
+      if (result.error || !result.data) return notFoundFailure("Resource");
+      return { data: mapResourceRowToDomain(result.data), ok: true };
+    },
     async createResource(input) {
       const scopeFailure = profileScopeFailure(input.userId, input.profileId);
       if (scopeFailure) return scopeFailure;
@@ -256,16 +267,17 @@ export function createSupabaseResourceRepository(
       return mapResourceRelationRows(result.data ?? []);
     },
 
-    async getResourcesByUser(userId, profileId) {
+    async getResourcesByUser(userId, profileId, includeArchived = false) {
       const scopeFailure = profileScopeFailure(userId, profileId);
       if (scopeFailure) return scopeFailure;
 
-      const result = (await client
+      let query = client
         .from(realDataTableNames.resources)
         .select("*")
         .eq("user_id", userId)
-        .is("archived_at", null)
-        .order("updated_at", { ascending: false })) as SupabaseQueryResult<
+        .order("updated_at", { ascending: false });
+      if (!includeArchived) query = query.is("archived_at", null);
+      const result = (await query) as SupabaseQueryResult<
         readonly ResourceRow[]
       >;
 
@@ -275,6 +287,28 @@ export function createSupabaseResourceRepository(
         data: (result.data ?? []).map(mapResourceRowToDomain),
         ok: true,
       };
+    },
+
+    async restoreResource(input) {
+      const scopeFailure = profileScopeFailure(input.userId, input.profileId);
+      if (scopeFailure) return scopeFailure;
+      const result = (await client.from(realDataTableNames.resources)
+        .update({ archived_at: null })
+        .eq("user_id", input.userId).eq("id", input.resourceId)
+        .select("*").single()) as SupabaseQueryResult<ResourceRow>;
+      if (result.error || !result.data) return notFoundFailure("Resource");
+      return { data: mapResourceRowToDomain(result.data), ok: true };
+    },
+
+    async updateResource(input) {
+      const scopeFailure = profileScopeFailure(input.userId, input.profileId);
+      if (scopeFailure) return scopeFailure;
+      const result = (await client.from(realDataTableNames.resources)
+        .update(mapUpdateResourceInputToPatch(input))
+        .eq("user_id", input.userId).eq("id", input.resourceId).is("archived_at", null)
+        .select("*").single()) as SupabaseQueryResult<ResourceRow>;
+      if (result.error || !result.data) return notFoundFailure("Resource");
+      return { data: mapResourceRowToDomain(result.data), ok: true };
     },
 
     async linkResource(input) {

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { linkResourceToTargetInputSchema, unlinkResourceFromTargetInputSchema } from "@/features/real-data";
+import { createResourceInputSchema, linkResourceToTargetInputSchema, resourceLifecycleInputSchema, unlinkResourceFromTargetInputSchema, updateResourceInputSchema } from "@/features/real-data";
 import { createSupabaseResourceRepository } from "@/features/real-data/supabase";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
 import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
@@ -101,6 +101,81 @@ function revalidateResourceRelationRoutes(targetType: string) {
     revalidatePath("/dashboard");
   }
 }
+
+function revalidateResourceRoutes() {
+  revalidatePath("/resources");
+  revalidatePath("/portfolio");
+  revalidatePath("/projects");
+  revalidatePath("/goals");
+  revalidatePath("/tasks");
+}
+
+async function authenticatedManualResourceContext() {
+  const profileId = await getCurrentLifeOsProfileId();
+  if (profileId !== "manual") return null;
+  const auth = await createAuthenticatedSupabaseServerClient();
+  return auth.ok ? auth : null;
+}
+
+function redirectResourceState(state: string, resourceId?: string): never {
+  const params = new URLSearchParams({ resourceState: state });
+  if (resourceId) params.set("selected", resourceId);
+  redirect(`/resources?${params.toString()}`);
+}
+
+export async function createResourceFormAction(formData: FormData): Promise<void> {
+  const auth = await authenticatedManualResourceContext();
+  if (!auth) redirectResourceState("blocked");
+  const parsed = createResourceInputSchema.safeParse({
+    body: optionalFormString(formData, "body"),
+    profileId: auth.user.id,
+    reviewNeeded: false,
+    title: formString(formData, "title"),
+    type: formString(formData, "type"),
+    url: optionalFormString(formData, "url"),
+    userId: auth.user.id,
+  });
+  if (!parsed.success) redirectResourceState("invalid");
+  const result = await createSupabaseResourceRepository(auth.client).createResource(parsed.data);
+  if (!result.ok) redirectResourceState("error");
+  revalidateResourceRoutes();
+  redirectResourceState("created", result.data.id);
+}
+
+export async function updateResourceFormAction(formData: FormData): Promise<void> {
+  const auth = await authenticatedManualResourceContext();
+  if (!auth) redirectResourceState("blocked", formString(formData, "resourceId"));
+  const parsed = updateResourceInputSchema.safeParse({
+    body: optionalFormString(formData, "body") ?? null,
+    profileId: auth.user.id,
+    resourceId: formString(formData, "resourceId"),
+    title: formString(formData, "title"),
+    type: formString(formData, "type"),
+    url: optionalFormString(formData, "url") ?? null,
+    userId: auth.user.id,
+  });
+  if (!parsed.success) redirectResourceState("invalid", formString(formData, "resourceId"));
+  const result = await createSupabaseResourceRepository(auth.client).updateResource(parsed.data);
+  if (!result.ok) redirectResourceState("error", parsed.data.resourceId);
+  revalidateResourceRoutes();
+  redirectResourceState("updated", result.data.id);
+}
+
+async function resourceLifecycleAction(formData: FormData, mode: "archive" | "restore") {
+  const auth = await authenticatedManualResourceContext();
+  const resourceId = formString(formData, "resourceId");
+  if (!auth) redirectResourceState("blocked", resourceId);
+  const parsed = resourceLifecycleInputSchema.safeParse({ profileId: auth.user.id, resourceId, userId: auth.user.id });
+  if (!parsed.success) redirectResourceState("invalid", resourceId);
+  const repository = createSupabaseResourceRepository(auth.client);
+  const result = mode === "archive" ? await repository.archiveResource(parsed.data) : await repository.restoreResource(parsed.data);
+  if (!result.ok) redirectResourceState("error", resourceId);
+  revalidateResourceRoutes();
+  redirectResourceState(mode === "archive" ? "archived" : "restored", resourceId);
+}
+
+export async function archiveResourceFormAction(formData: FormData): Promise<void> { await resourceLifecycleAction(formData, "archive"); }
+export async function restoreResourceFormAction(formData: FormData): Promise<void> { await resourceLifecycleAction(formData, "restore"); }
 
 async function createResourceRelationState(
   formData: FormData,
@@ -202,4 +277,19 @@ export async function unlinkPortfolioResourceFromTargetAction(formData: FormData
   if (!result.ok) redirectToPortfolioResourceRelationState(formData, "invalid");
   revalidateResourceRelationRoutes(result.data.targetType);
   redirectToPortfolioResourceRelationState(formData, "saved");
+}
+
+export async function unlinkResourceFromTargetAction(formData: FormData): Promise<void> {
+  const auth = await authenticatedManualResourceContext();
+  const resourceId = formString(formData, "resourceId");
+  if (!auth) redirectResourceState("blocked", resourceId);
+  const parsed = unlinkResourceFromTargetInputSchema.safeParse({
+    profileId: auth.user.id,
+    relationId: formString(formData, "relationId"),
+  });
+  if (!parsed.success) redirectResourceState("invalid", resourceId);
+  const result = await createSupabaseResourceRepository(auth.client).unlinkResource(auth.user.id, auth.user.id, parsed.data.relationId);
+  if (!result.ok) redirectResourceState("error", resourceId);
+  revalidateResourceRelationRoutes(result.data.targetType);
+  redirectResourceState("unlinked", resourceId);
 }

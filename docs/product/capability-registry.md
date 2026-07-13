@@ -138,11 +138,12 @@
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Resource create/read | `CONNECTED` | resources | maintain |
-| Resource inspector | `CONNECTED` | resource read model | maintain |
-| Resource relations | `CONNECTED` | K1.1A task link/unlink plus existing Project/Goal relation flows | relation-type editing remains separate future depth |
+| Resource create/read | `CONNECTED` | K1.1B canonical Resource create/edit read model with reload proof | maintain |
+| Resource inspector | `CONNECTED` | K1.1B editable metadata, archive status and real relation sections | maintain |
+| Resource archive/restore | `CONNECTED` | K1.1B soft archive via `archived_at` and restore lifecycle | maintain |
+| Resource relations | `CONNECTED` | K1.1B Resource inspector link/unlink plus K1.1A task and existing Project/Goal flows | relation-type editing remains separate future depth |
 | Project/Goal workbench display | `CONNECTED` | relation read model | maintain |
-| Resource search | `CONNECTED_GAP` | existing search surface | confirm full-text scope and ranking |
+| Resource search | `CONNECTED` | K1.1B user-scoped Manual read model filter across title, description, URL and type | tags/full-text ranking remain deferred |
 | Files/attachments | `NOT_STARTED` | none | storage/privacy decision |
 | Notes/wiki resources | `CONNECTED_GAP` | resource/note concepts | canonical Note/Wiki model needed |
 | Semantic relation read model | `NOT_STARTED` | raw relations exist | implement before graph |

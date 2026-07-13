@@ -2948,9 +2948,11 @@ function realResourceToResourceItem(resource: RealDataResource): ResourceItem {
     relatedResources: [],
     reviewState: resource.reviewNeeded ? "needs_extraction" : "ready_to_reuse",
     source,
-    status: resource.reviewNeeded ? "review_needed" : "raw",
+    status: resource.archivedAt ? "archived" : resource.reviewNeeded ? "review_needed" : "raw",
     summary,
     title: resource.title,
+    url: resource.url ?? undefined,
+    archivedAt: resource.archivedAt ?? undefined,
     topic: resource.url ? "Link" : "Inbox",
     type: resource.type,
   };
@@ -2981,7 +2983,7 @@ async function getManualResourcesFromSupabase(
 }> {
   const repository = createSupabaseResourceRepository(client);
   const [resourceResult, relationResult, relationTargets] = await Promise.all([
-    repository.getResourcesByUser(userId, userId),
+    repository.getResourcesByUser(userId, userId, true),
     repository.getResourceRelationsByUser(userId, userId),
     getResourceRelationCreateTargets(client, userId),
   ]);

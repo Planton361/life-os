@@ -1,4 +1,4 @@
-import type { CreateResourceInput, LinkResourceInput } from "../../schemas";
+import type { CreateResourceInput, LinkResourceInput, UpdateResourceInput } from "../../schemas";
 import {
   supportedResourceRelationTargetTypes,
   type Resource,
@@ -10,6 +10,7 @@ import type {
   ResourceRelationInsert,
   ResourceRelationRow,
   ResourceRow,
+  ResourceUpdate,
 } from "../row-types";
 
 function isSupportedResourceRelationTargetType(
@@ -18,6 +19,15 @@ function isSupportedResourceRelationTargetType(
   return supportedResourceRelationTargetTypes.includes(
     value as SupportedResourceRelationTargetType,
   );
+}
+
+export function mapUpdateResourceInputToPatch(input: UpdateResourceInput): ResourceUpdate {
+  const patch: ResourceUpdate = {};
+  if (input.body !== undefined) patch.summary = input.body;
+  if (input.title !== undefined) patch.title = input.title;
+  if (input.type !== undefined) patch.type = input.type;
+  if (input.url !== undefined) patch.url = input.url;
+  return patch;
 }
 
 export function mapResourceRowToDomain(row: ResourceRow): Resource {

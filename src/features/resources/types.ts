@@ -114,6 +114,8 @@ export type ResourceLinkedContext = {
 export type ResourceItem = {
   id: string;
   title: string;
+  url?: string;
+  archivedAt?: string;
   type: ResourceType;
   area: ResourceArea;
   status: ResourceStatus;

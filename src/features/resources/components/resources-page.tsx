@@ -10,7 +10,7 @@ import { cn } from "@/lib/cn";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { linkResourceToTargetAction } from "@/features/real-data/actions/resource.actions";
+import { archiveResourceFormAction, createResourceFormAction, linkResourceToTargetAction, restoreResourceFormAction, unlinkResourceFromTargetAction, updateResourceFormAction } from "@/features/real-data/actions/resource.actions";
 import {
   resourceAreaMeta,
   resourceReviewStateMeta,
@@ -88,6 +88,17 @@ const relationCreateMessages: Record<string, string> = {
   missing_target: "Das Ziel konnte nicht bestätigt werden.",
   saved: "Beziehung gespeichert.",
   unsupported: "Dieser Zieltyp ist für Resource Relations nicht freigegeben.",
+};
+
+const resourceStateMessages: Record<string, string> = {
+  archived: "Resource archiviert.",
+  blocked: "Resource-Aktion ist ohne Manual-Anmeldung blockiert.",
+  created: "Resource erstellt.",
+  error: "Resource-Aktion konnte nicht gespeichert werden.",
+  invalid: "Prüfe die Resource-Felder.",
+  restored: "Resource wiederhergestellt.",
+  unlinked: "Resource-Verknüpfung gelöst.",
+  updated: "Resource aktualisiert.",
 };
 
 const contextKindLabels: Record<ResourceLinkedContextKind, string> = {
@@ -343,123 +354,21 @@ function ResourceViewSwitcher({
 
 function SaveResourceCard({
   captureTypes,
+  profileId,
 }: Readonly<{
   captureTypes: ResourceOption<ResourceType>[];
+  profileId: ResourcesViewModel["profileId"];
 }>) {
+  const disabled = profileId !== "manual";
   return (
-    <section
-      aria-label="Save Resource"
-      className="min-w-0 overflow-hidden rounded-[16px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.74)] xl:min-h-[96px]"
-    >
-      <div className="border-b border-[var(--border-subtle)] bg-[rgba(18,28,43,.48)] px-3 py-3 xl:hidden">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-cyan)]">
-              Quick Capture
-            </p>
-            <h2
-              className="mt-1 text-[16px] font-semibold leading-5 text-[var(--text-primary)]"
-            >
-              Save Resource
-            </h2>
-          </div>
-          <Pill accent="var(--accent-cyan)">Inbox separate</Pill>
-        </div>
-      </div>
-
-      <div className="grid gap-3 p-3 xl:grid-cols-[190px_minmax(0,1.1fr)_minmax(170px,.55fr)_minmax(0,1fr)_auto] xl:items-end xl:gap-2 xl:p-2.5">
-        <div className="hidden min-w-0 xl:block">
-          <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-cyan)]">
-            Quick Capture
-          </p>
-          <h2
-            className="mt-0.5 text-[15px] font-semibold leading-4 text-[var(--text-primary)]"
-          >
-            Save Resource
-          </h2>
-          <p className="mt-1 text-[9px] leading-3 text-[var(--text-muted)]">
-            Canonical resource, not Inbox.
-          </p>
-        </div>
-
-        <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_minmax(220px,280px)] xl:contents">
-          <div className="min-w-0">
-            <label
-              className="text-[10px] font-semibold text-[var(--text-muted)]"
-              htmlFor="resource-title"
-            >
-              Title or source
-            </label>
-            <input
-              className="mt-1 min-h-10 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.62)] px-3 text-xs text-[var(--text-secondary)] outline-none placeholder:text-[var(--text-faint)] focus-visible:border-[var(--accent-cyan)] xl:min-h-8 xl:px-2.5 xl:text-[10px]"
-              defaultValue="Capture a reusable thought, prompt or source"
-              id="resource-title"
-              readOnly
-              type="text"
-            />
-          </div>
-          <div className="min-w-0">
-            <label
-              className="text-[10px] font-semibold text-[var(--text-muted)]"
-              htmlFor="resource-context"
-            >
-              Linked Context
-            </label>
-            <input
-              className="mt-1 min-h-10 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.62)] px-3 text-xs text-[var(--text-secondary)] outline-none placeholder:text-[var(--text-faint)] focus-visible:border-[var(--accent-cyan)] xl:min-h-8 xl:px-2.5 xl:text-[10px]"
-              defaultValue="Project, goal, skill or area"
-              id="resource-context"
-              readOnly
-              type="text"
-            />
-          </div>
-        </div>
-
-        <div className="min-w-0">
-          <label
-            className="text-[10px] font-semibold text-[var(--text-muted)]"
-            htmlFor="resource-summary"
-          >
-            Short Summary
-          </label>
-          <textarea
-            className="mt-1 min-h-16 w-full resize-none rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.62)] px-3 py-2 text-xs leading-5 text-[var(--text-secondary)] outline-none placeholder:text-[var(--text-faint)] focus-visible:border-[var(--accent-cyan)] xl:min-h-8 xl:overflow-hidden xl:px-2.5 xl:py-1.5 xl:text-[10px] xl:leading-4"
-            defaultValue="Static MVP preview. Save will later create a canonical resource, not an Inbox item."
-            id="resource-summary"
-            readOnly
-            rows={1}
-          />
-        </div>
-
-        <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end xl:contents">
-          <div className="min-w-0">
-            <p className="text-[10px] font-semibold text-[var(--text-muted)]">
-              Resource Type
-            </p>
-            <div className="-mx-1 mt-1 overflow-x-auto px-1">
-              <div className="flex w-max min-w-full gap-1.5 xl:gap-1">
-                {captureTypes.map((type) => (
-                  <button
-                    aria-pressed={Boolean(type.active)}
-                    className={controlClass(type.active)}
-                    key={type.value}
-                    style={accentStyle(type.accent ?? "var(--accent-cyan)")}
-                    type="button"
-                  >
-                    {type.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-          <button
-            className="min-h-9 rounded-full border border-[rgba(95,200,215,.32)] bg-[rgba(95,200,215,.12)] px-4 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(95,200,215,.48)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] xl:min-h-8 xl:px-3"
-            type="button"
-          >
-            Save Resource
-          </button>
-        </div>
-      </div>
+    <section aria-label="Save Resource" className="min-w-0 overflow-hidden rounded-[16px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.74)] p-3">
+      <form action={createResourceFormAction} aria-label="Resource erstellen" className="grid gap-2 xl:grid-cols-[minmax(180px,1fr)_minmax(220px,1.4fr)_minmax(180px,1fr)_140px_auto] xl:items-end">
+        <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)]">Titel<input className="min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.62)] px-2 text-[11px] text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]" disabled={disabled} name="title" required /></label>
+        <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)]">Beschreibung / Notiz<input className="min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.62)] px-2 text-[11px] text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]" disabled={disabled} name="body" /></label>
+        <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)]">URL<input className="min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.62)] px-2 text-[11px] text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]" disabled={disabled} name="url" type="url" /></label>
+        <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)]">Typ<select className="min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.62)] px-2 text-[11px] text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]" disabled={disabled} name="type">{captureTypes.map(type => <option key={type.value} value={type.value}>{type.label}</option>)}</select></label>
+        <button className="min-h-8 rounded-full border border-[rgba(95,200,215,.32)] bg-[rgba(95,200,215,.12)] px-4 text-[10px] font-semibold text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] disabled:opacity-50" disabled={disabled} type="submit">Resource speichern</button>
+      </form>
     </section>
   );
 }
@@ -467,9 +376,11 @@ function SaveResourceCard({
 function ResourceControls({
   typeOptions,
   filterOptions,
+  query,
 }: Readonly<{
   typeOptions: ResourceOption<string>[];
   filterOptions: ResourceOption<string>[];
+  query: string;
 }>) {
   return (
     <section
@@ -477,7 +388,7 @@ function ResourceControls({
       className="min-w-0 rounded-[14px] border border-[rgba(148,163,184,.08)] bg-[rgba(11,17,28,.48)] px-3 py-2 xl:min-h-[56px]"
     >
       <div className="grid gap-2 xl:grid-cols-[minmax(180px,.42fr)_minmax(0,1.05fr)_minmax(0,.95fr)_auto] xl:items-center">
-        <div className="min-w-0">
+        <form className="flex min-w-0 gap-1" method="get">
           <label
             className="sr-only"
             htmlFor="resource-search"
@@ -486,12 +397,14 @@ function ResourceControls({
           </label>
           <input
             className="min-h-9 w-full rounded-full border border-[var(--border-subtle)] bg-[rgba(11,17,28,.62)] px-3 text-[11px] text-[var(--text-secondary)] outline-none placeholder:text-[var(--text-faint)] focus-visible:border-[var(--accent-cyan)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] xl:min-h-7 xl:px-2.5 xl:text-[10px]"
-            defaultValue="Search resources, topics or context"
+            defaultValue={query}
             id="resource-search"
-            readOnly
+            name="q"
+            placeholder="Search resources"
             type="search"
           />
-        </div>
+          <button className={controlClass()} type="submit">Suchen</button>
+        </form>
 
         <div className="min-w-0">
           <div className="-mx-1 overflow-x-auto px-1">
@@ -803,7 +716,7 @@ function ConnectionList({
   title: string;
 }>) {
   return (
-    <section>
+    <section aria-label={title}>
       <h3 className="text-[13px] font-semibold text-[var(--text-primary)] xl:text-[12px]">
         {title}
       </h3>
@@ -839,15 +752,19 @@ function resourceRelationMeta(relation: ResourceRelationViewModel) {
 
 function ResourceTargetRelationList({
   emptyText,
+  profileId,
   relations,
+  resourceId,
   title,
 }: Readonly<{
   emptyText: string;
+  profileId: ResourcesViewModel["profileId"];
   relations: readonly ResourceRelationViewModel[];
+  resourceId: string;
   title: string;
 }>) {
   return (
-    <section>
+    <section aria-label={title}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-[13px] font-semibold text-[var(--text-primary)] xl:text-[12px]">
           {title}
@@ -875,6 +792,8 @@ function ResourceTargetRelationList({
                   <Pill accent="var(--accent-red)">Nicht mehr verfügbar</Pill>
                 ) : null}
               </div>
+              {!relation.targetMissing ? <Link className="mt-1 inline-flex text-[10px] text-[var(--accent-cyan)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]" href={relation.targetType === "resource" ? `/resources?selected=${relation.targetId}` : `/portfolio?view=${relation.targetType}s&selected=${relation.targetId}`}>Kontext öffnen</Link> : null}
+              {profileId === "manual" ? <form action={unlinkResourceFromTargetAction} className="mt-1"><input name="relationId" type="hidden" value={relation.id} /><input name="resourceId" type="hidden" value={resourceId} /><button className="text-[10px] font-semibold text-[var(--accent-red)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]" type="submit">Verknüpfung lösen</button></form> : null}
             </article>
           ))
         ) : (
@@ -883,6 +802,24 @@ function ResourceTargetRelationList({
           </p>
         )}
       </div>
+    </section>
+  );
+}
+
+function ResourceManagementForm({ resource }: Readonly<{ resource: ResourceItem }>) {
+  const archived = Boolean(resource.archivedAt);
+  return (
+    <section aria-labelledby="resource-management-heading" className="grid gap-2">
+      <h3 className="text-[13px] font-semibold text-[var(--text-primary)]" id="resource-management-heading">Resource bearbeiten</h3>
+      {!archived ? <form action={updateResourceFormAction} aria-label="Resource bearbeiten" className="grid gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.40)] p-2">
+        <input name="resourceId" type="hidden" value={resource.id} />
+        <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)]">Titel<input className="min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.78)] px-2 text-[11px] text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]" defaultValue={resource.title} name="title" required /></label>
+        <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)]">Beschreibung / Notiz<textarea className="min-h-16 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.78)] px-2 py-1 text-[11px] text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]" defaultValue={resource.summary} name="body" /></label>
+        <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)]">URL<input className="min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.78)] px-2 text-[11px] text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]" defaultValue={resource.url} name="url" type="url" /></label>
+        <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)]">Typ<select className="min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.78)] px-2 text-[11px] text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]" defaultValue={resource.type} name="type">{Object.entries(resourceTypeMeta).map(([value, meta]) => <option key={value} value={value}>{meta.label}</option>)}</select></label>
+        <button className="min-h-8 rounded-full border border-[rgba(95,200,215,.34)] bg-[rgba(95,200,215,.12)] text-[10px] font-semibold text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]" type="submit">Änderungen speichern</button>
+      </form> : null}
+      <form action={archived ? restoreResourceFormAction : archiveResourceFormAction} aria-label={archived ? "Resource wiederherstellen" : "Resource archivieren"}><input name="resourceId" type="hidden" value={resource.id} /><button className="min-h-8 rounded-full border border-[var(--border-subtle)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]" type="submit">{archived ? "Resource wiederherstellen" : "Resource archivieren"}</button></form>
     </section>
   );
 }
@@ -1126,6 +1063,7 @@ function ResourceRelationInspector({
       </div>
 
       <div className="grid gap-3 p-3 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:p-2">
+        {profileId === "manual" ? <ResourceManagementForm resource={resource} /> : null}
         <section aria-labelledby="resource-overview-heading">
           <h3
             className="text-[13px] font-semibold text-[var(--text-primary)] xl:text-[12px]"
@@ -1202,28 +1140,36 @@ function ResourceRelationInspector({
           <div className="mt-2 grid gap-2">
             <ResourceTargetRelationList
               emptyText="Keine verknüpften Projects."
+              profileId={profileId}
               relations={relatedProjects}
+              resourceId={resource.id}
               title="Verknüpfte Projects"
             />
             <ResourceTargetRelationList
               emptyText="Keine verknüpften Goals."
+              profileId={profileId}
               relations={relatedGoals}
+              resourceId={resource.id}
               title="Verknüpfte Goals"
             />
             <ResourceTargetRelationList
               emptyText="Keine verknüpften Tasks."
+              profileId={profileId}
               relations={relatedTasks}
+              resourceId={resource.id}
               title="Verknüpfte Tasks"
             />
             <ResourceTargetRelationList
               emptyText="Keine verknüpften Resources."
+              profileId={profileId}
               relations={relatedResourceRelations}
+              resourceId={resource.id}
               title="Verknüpfte Resources"
             />
           </div>
         </section>
 
-        {profileId === "manual" ? (
+        {profileId === "manual" && !resource.archivedAt ? (
           <ResourceRelationCreateForm
             createState={createState}
             relationTargets={relationTargets}
@@ -1971,13 +1917,23 @@ export function ResourcesPage({
   const searchParams = useSearchParams();
   const activeView = normalizeResourceView(searchParams.get("view"));
   const selectedResourceId = searchParams.get("selected");
+  const resourceState = searchParams.get("resourceState");
+  const query = (searchParams.get("q") ?? "").trim().toLocaleLowerCase();
   const relationCreateState = searchParams.get("relationCreate");
+  const filteredResources = useMemo(() => {
+    if (!query) return viewModel.resources;
+    return viewModel.resources.filter((resource) =>
+      [resource.title, resource.summary, resource.url, resource.type, resourceTypeMeta[resource.type].label]
+        .filter(Boolean)
+        .some((value) => value?.toLocaleLowerCase().includes(query)),
+    );
+  }, [query, viewModel.resources]);
   const selectedResource = useMemo(
     () =>
-      viewModel.resources.find((resource) => resource.id === selectedResourceId) ??
-      viewModel.resources[0] ??
+      filteredResources.find((resource) => resource.id === selectedResourceId) ??
+      filteredResources[0] ??
       null,
-    [selectedResourceId, viewModel.resources],
+    [filteredResources, selectedResourceId],
   );
   const viewOptions = useMemo(
     () =>
@@ -1998,6 +1954,7 @@ export function ResourcesPage({
       id="resources-page"
     >
       <ResourcesPageHeader viewModel={viewModel} />
+      {resourceState && resourceStateMessages[resourceState] ? <p className="rounded-[10px] border border-[var(--border-subtle)] px-3 py-2 text-[11px] text-[var(--text-secondary)]" role="status">{resourceStateMessages[resourceState]}</p> : null}
       <ResourceSummaryStrip
         contentState={viewModel.contentStates.summary}
         profileId={viewModel.profileId}
@@ -2008,10 +1965,11 @@ export function ResourcesPage({
         makeHref={makeHref}
         viewOptions={viewOptions}
       />
-      <SaveResourceCard captureTypes={viewModel.captureTypes} />
+      <SaveResourceCard captureTypes={viewModel.captureTypes} profileId={viewModel.profileId} />
       {activeView === "library" ? (
         <ResourceControls
           filterOptions={viewModel.filterOptions}
+          query={query}
           typeOptions={viewModel.typeOptions}
         />
       ) : null}
@@ -2034,7 +1992,7 @@ export function ResourcesPage({
                 contentState={viewModel.contentStates.library}
                 makeHref={makeHref}
                 profileId={viewModel.profileId}
-                resources={viewModel.resources}
+                resources={filteredResources}
                 selectedResource={selectedResource}
               />
               <div className="hidden xl:block xl:min-h-0">
