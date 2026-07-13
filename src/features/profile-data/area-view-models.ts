@@ -66,6 +66,7 @@ import {
   createSupabaseNutritionRepository,
   createSupabaseHabitRepository,
   createSupabaseCodingRepository,
+  createSupabaseEducationRepository,
   createSupabaseResourceRepository,
   createSupabaseTrainingRepository,
   type SupabaseClientLike,
@@ -2884,7 +2885,21 @@ export async function getEducationOverviewViewModel(): Promise<EducationOverview
     return getDemoEducationOverviewViewModel();
   }
 
-  return buildProfileEducationOverviewViewModel(profileId);
+  const viewModel = buildProfileEducationOverviewViewModel(profileId);
+  if (profileId !== "manual") return viewModel;
+  const auth = await createAuthenticatedSupabaseServerClient();
+  const workspace = auth.ok
+    ? await createSupabaseEducationRepository(auth.client).getWorkspace(auth.user.id)
+    : { projects: [], resources: [] };
+  return {
+    ...viewModel,
+    actionsEnabled: auth.ok,
+    manualWorkspace: {
+      authAvailable: auth.ok,
+      projects: workspace.projects,
+      resources: workspace.resources,
+    },
+  };
 }
 
 export async function getEducationWorkspaceViewModel(): Promise<EducationWorkspaceViewModel> {

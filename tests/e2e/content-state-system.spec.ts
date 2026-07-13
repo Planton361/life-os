@@ -7643,6 +7643,192 @@ test.describe("Portfolio content states", () => {
 });
 
 test.describe("Education content states", () => {
+  test("A1.1B1 creates edits and reloads an education project", async ({
+    page,
+  }) => {
+    test.setTimeout(60_000);
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires local authenticated Supabase state.",
+    );
+    const stamp = Date.now();
+    const title = `A1.1B1 Education Project ${stamp}`;
+    const editedTitle = `A1.1B1 Edited Education Project ${stamp}`;
+
+    await openManualPortfolioWithDb(
+      page,
+      "A1.1B1 requires the local Manual database.",
+    );
+    await page.goto("/education");
+    const projectsRegion = page.locator(
+      '[data-education-region="projects"]',
+    );
+    const createForm = page.getByRole("form", {
+      name: "Education Project erstellen",
+    });
+    await createForm.getByLabel("Titel", { exact: true }).fill(title);
+    await createForm
+      .locator('textarea[name="description"]')
+      .fill("A1.1B1 canonical research context");
+    await createForm.locator('select[name="status"]').selectOption("active");
+    await createForm
+      .getByRole("button", { name: "Education Project erstellen" })
+      .click();
+    await expect(page.locator("[data-education-action-status]")).toHaveText(
+      "Education Project erstellt.",
+    );
+    await expect(
+      projectsRegion
+        .locator("[data-education-project-card]")
+        .filter({ hasText: title }),
+    ).toHaveCount(1);
+
+    const editForm = page.getByRole("form", {
+      name: "Education Project bearbeiten",
+    });
+    await editForm.getByLabel("Titel", { exact: true }).fill(editedTitle);
+    await editForm
+      .locator('textarea[name="description"]')
+      .fill("A1.1B1 edited research context");
+    await editForm.locator('select[name="status"]').selectOption("paused");
+    await editForm.getByRole("button", { name: "Project speichern" }).click();
+    await expect(page.locator("[data-education-action-status]")).toHaveText(
+      "Education Project aktualisiert.",
+    );
+
+    await page.reload();
+    const reloadedForm = page.getByRole("form", {
+      name: "Education Project bearbeiten",
+    });
+    await expect(
+      reloadedForm.getByLabel("Titel", { exact: true }),
+    ).toHaveValue(editedTitle);
+    await expect(
+      reloadedForm.locator('textarea[name="description"]'),
+    ).toHaveValue("A1.1B1 edited research context");
+    await expect(reloadedForm.locator('select[name="status"]')).toHaveValue(
+      "paused",
+    );
+  });
+
+  test("A1.1B1 creates links unlinks and reloads literature context", async ({
+    page,
+  }) => {
+    test.setTimeout(60_000);
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires local authenticated Supabase state.",
+    );
+    const stamp = Date.now();
+    const projectTitle = `A1.1B1 Literature Project ${stamp}`;
+    const resourceTitle = `A1.1B1 Source ${stamp}`;
+    const editedResourceTitle = `A1.1B1 Edited Source ${stamp}`;
+
+    await openManualPortfolioWithDb(
+      page,
+      "A1.1B1 requires the local Manual database.",
+    );
+    await page.goto("/education");
+    const createProjectForm = page.getByRole("form", {
+      name: "Education Project erstellen",
+    });
+    await createProjectForm
+      .getByLabel("Titel", { exact: true })
+      .fill(projectTitle);
+    await createProjectForm
+      .locator('select[name="status"]')
+      .selectOption("active");
+    await createProjectForm
+      .getByRole("button", { name: "Education Project erstellen" })
+      .click();
+    await expect(page.locator("[data-education-action-status]")).toHaveText(
+      "Education Project erstellt.",
+    );
+
+    const literatureRegion = page.locator(
+      '[data-education-region="literature"]',
+    );
+    const createLiteratureForm = literatureRegion.getByRole("form", {
+      name: "Literatur erstellen",
+    });
+    await createLiteratureForm
+      .getByLabel("Titel", { exact: true })
+      .fill(resourceTitle);
+    await createLiteratureForm
+      .locator('textarea[name="body"]')
+      .fill("A1.1B1 source note");
+    await createLiteratureForm
+      .locator('input[name="url"]')
+      .fill(`https://example.test/a11b1-${stamp}`);
+    await createLiteratureForm
+      .locator('select[name="type"]')
+      .selectOption("research");
+    await createLiteratureForm
+      .getByRole("button", { name: "Literatur speichern und verknüpfen" })
+      .click();
+    await expect(page.locator("[data-education-action-status]")).toHaveText(
+      "Literatur erstellt und verknüpft.",
+    );
+    const resourceCard = literatureRegion
+      .locator("[data-education-resource-card]")
+      .filter({ hasText: resourceTitle });
+    await expect(resourceCard).toHaveCount(1);
+
+    const editForm = literatureRegion.getByRole("form", {
+      name: "Literatur bearbeiten",
+    });
+    await editForm
+      .getByLabel("Titel", { exact: true })
+      .fill(editedResourceTitle);
+    await editForm
+      .locator('textarea[name="body"]')
+      .fill("A1.1B1 edited source note");
+    await editForm
+      .locator('input[name="url"]')
+      .fill(`https://example.test/a11b1-edited-${stamp}`);
+    await editForm.locator('select[name="type"]').selectOption("source");
+    await editForm
+      .getByRole("button", { name: "Literatur aktualisieren" })
+      .click();
+    await expect(page.locator("[data-education-action-status]")).toHaveText(
+      "Literatur aktualisiert.",
+    );
+
+    await page.reload();
+    const editedCard = literatureRegion
+      .locator("[data-education-resource-card]")
+      .filter({ hasText: editedResourceTitle });
+    await expect(editedCard).toHaveCount(1);
+    const reloadedEditForm = literatureRegion.getByRole("form", {
+      name: "Literatur bearbeiten",
+    });
+    await expect(
+      reloadedEditForm.getByLabel("Titel", { exact: true }),
+    ).toHaveValue(editedResourceTitle);
+    await expect(
+      reloadedEditForm.locator('textarea[name="body"]'),
+    ).toHaveValue("A1.1B1 edited source note");
+    await expect(
+      reloadedEditForm.locator('select[name="type"]'),
+    ).toHaveValue("source");
+
+    await editedCard
+      .getByRole("form", {
+        name: `Literatur lösen ${editedResourceTitle}`,
+      })
+      .getByRole("button", { name: "Verknüpfung lösen" })
+      .click();
+    await expect(page.locator("[data-education-action-status]")).toHaveText(
+      "Literaturverknüpfung gelöst.",
+    );
+    await page.reload();
+    await expect(
+      literatureRegion
+        .locator("[data-education-resource-card]")
+        .filter({ hasText: editedResourceTitle }),
+    ).toHaveCount(0);
+  });
+
   test("Education Overview demo keeps the filled reference shell", async ({
     page,
   }) => {

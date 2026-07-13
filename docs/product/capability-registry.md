@@ -228,12 +228,12 @@
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Scientific work | `UI_ONLY` | route/page shell | create canonical scientific_work model |
-| Literature library | `UI_ONLY` | route/page shell | create literature/source model or scoped resources |
+| Scientific work | `CONNECTED_GAP` | A1.1B1 Education-Area projection of canonical Projects with Tasks, Deadlines and Resources | A1.1B2 adds Learning and Writing Logs; no parallel scientific-work model |
+| Literature library | `CONNECTED` | A1.1B1 canonical Resources create/edit and reload-stable Project link/unlink through `resource_relations` | reading status and bibliographic metadata remain deferred until safely modeled |
 | Learning log | `UI_ONLY` | route/page shell | create learning log records |
-| Thesis/project relation | `CONNECTED_GAP` | Projects/Goals exist | add education domain context |
-| Writing best practices/resources | `CONNECTED_GAP` | Resources | add classifications/search |
-| Education dashboard | `UI_ONLY` | area shell | bind canonical entities |
+| Thesis/project relation | `CONNECTED` | A1.1B1 user-owned `education` Area with canonical Projects, Tasks, Deadlines and literature Resources | maintain same-user relation ownership |
+| Writing best practices/resources | `CONNECTED_GAP` | A1.1B1 scoped Resources with title, note, URL and type | dedicated writing workflow belongs to A1.1B2 |
+| Education dashboard | `CONNECTED_GAP` | A1.1B1 Manual Education workspace projects, task/deadline context and literature management | Learning and Writing Logs remain UI-only until A1.1B2 |
 
 # 13. Work
 

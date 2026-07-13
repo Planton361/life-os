@@ -38,7 +38,9 @@ Capability-level truth is maintained in `docs/product/capability-registry.md`.
 
 - `K1.1 Portfolio, Resource & Knowledge Depth`: abgeschlossen.
 - `A1.1A Coding Projects & Sessions`: abgeschlossen.
-- `A1.1B Education Domain Foundation`: aktiv; nächster Teilblock von A1.1.
+- `A1.1B Education Domain Foundation`: aktiv.
+- `A1.1B1 Education Projects & Literature Core`: abgeschlossen.
+- `A1.1B2 Learning & Writing Logs`: nächster Slice.
 
 ## 3. Delivery Program
 

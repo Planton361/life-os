@@ -30,6 +30,7 @@ import type {
   ResearchQuestion,
   ThesisPotential,
 } from "./types";
+import { EducationManualWorkspace } from "./education-manual-workspace";
 
 type EducationStyle = CSSProperties & {
   "--accent"?: string;
@@ -2960,7 +2961,7 @@ function createId(prefix: string) {
   return `${prefix}-${Date.now().toString(36)}`;
 }
 
-export function EducationOverviewPage({
+function DemoEducationOverviewPage({
   viewModel,
 }: Readonly<{
   viewModel: EducationOverviewViewModel;
@@ -3640,4 +3641,8 @@ export function EducationOverviewPage({
       <Toast onDismiss={dismissToast} toast={toast} />
     </div>
   );
+}
+
+export function EducationOverviewPage({ viewModel }: Readonly<{ viewModel: EducationOverviewViewModel }>) {
+  return viewModel.manualWorkspace ? <EducationManualWorkspace viewModel={viewModel} /> : <DemoEducationOverviewPage viewModel={viewModel} />;
 }

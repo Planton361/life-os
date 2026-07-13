@@ -301,6 +301,18 @@ export type EducationOverviewViewModel = {
   questions: ResearchQuestion[];
   rhythm: AcademicRhythmSignal[];
   methodNotes: string[];
+  manualWorkspace?: {
+    authAvailable: boolean;
+    projects: Array<{
+      description: string | null;
+      id: string;
+      literature: Array<{ body: string | null; id: string; relationId: string; relationType: string; title: string; type: string; url: string | null }>;
+      status: string;
+      tasks: Array<{ dueAt: string | null; id: string; plannedDate: string | null; status: string; title: string }>;
+      title: string;
+    }>;
+    resources: Array<{ body: string | null; id: string; title: string; type: string; url: string | null }>;
+  };
 };
 
 export type EducationWorkspaceViewModel = {
