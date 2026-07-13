@@ -42,6 +42,8 @@ Capability-level truth is maintained in `docs/product/capability-registry.md`.
 - `A1.1B1 Education Projects & Literature Core`: abgeschlossen.
 - `A1.1B2 Learning & Writing Logs`: abgeschlossen.
 - `A1.1C Work Domain Foundation`: aktiv.
+- `A1.1C1 Work Projects & Work Logs`: abgeschlossen.
+- `A1.1C2 Work Wiki, Meetings, Decisions & Follow-ups`: nächster Slice.
 
 ## 3. Delivery Program
 

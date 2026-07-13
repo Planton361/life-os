@@ -24,6 +24,7 @@ import type {
   WorkWikiEntry,
   WorkWikiType,
 } from "./types";
+import { WorkManualWorkspace } from "./work-manual-workspace";
 
 type WorkStyle = CSSProperties & {
   "--accent"?: string;
@@ -894,6 +895,16 @@ function JournalBlock({ label, value }: Readonly<{ label: string; value: string 
 }
 
 export function WorkOverviewPage({
+  viewModel,
+}: Readonly<{ viewModel: WorkOverviewViewModel }>) {
+  return viewModel.manualWorkspace ? (
+    <WorkManualWorkspace viewModel={viewModel} />
+  ) : (
+    <DemoWorkOverviewPage viewModel={viewModel} />
+  );
+}
+
+function DemoWorkOverviewPage({
   viewModel,
 }: Readonly<{ viewModel: WorkOverviewViewModel }>) {
   const [logs, setLogs] = useState<WorkLogEntry[]>(viewModel.logs);

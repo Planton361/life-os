@@ -1,0 +1,10 @@
+import { optionalTrimmedStringSchema, requiredTrimmedStringSchema, z } from "./schema-contract";
+import { projectStatuses } from "../domain/project";
+const id = requiredTrimmedStringSchema();
+const fields = z.object({ projectId: id, logDate: z.string().date(), startedAt: z.preprocess((v) => v === "" ? undefined : v, z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional()), durationMinutes: z.coerce.number().int().positive().max(1440), focus: requiredTrimmedStringSchema(2), outcome: requiredTrimmedStringSchema(2), notes: optionalTrimmedStringSchema });
+export const createWorkProjectInputSchema = z.object({ title: requiredTrimmedStringSchema(2), description: optionalTrimmedStringSchema, status: z.enum(projectStatuses).default("active") });
+export const updateWorkProjectInputSchema = createWorkProjectInputSchema.extend({ projectId: id });
+export const createWorkLogInputSchema = fields;
+export const updateWorkLogInputSchema = fields.extend({ logId: id });
+export const archiveWorkLogInputSchema = z.object({ projectId: id, logId: id });
+export type WorkLogInput = z.infer<typeof createWorkLogInputSchema>;

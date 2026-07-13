@@ -2300,6 +2300,100 @@ test.beforeEach(async () => {
   await resetManualProfileFile();
 });
 
+test.describe("Work content states", () => {
+  test("A1.1C1 creates edits and reloads a work project", async ({ page }) => {
+    test.setTimeout(60_000);
+    test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires local authenticated Supabase state.");
+    const stamp = Date.now();
+    const title = `A1.1C1 Work Project ${stamp}`;
+    const editedTitle = `A1.1C1 Edited Work Project ${stamp}`;
+
+    await openManualPortfolioWithDb(page, "A1.1C1 requires the local Manual database.");
+    await page.goto("/work");
+    const projectsRegion = page.locator('[data-work-region="projects"]');
+    const createForm = projectsRegion.getByRole("form", { name: "Work Project erstellen" });
+    await createForm.getByLabel("Titel", { exact: true }).fill(title);
+    await createForm.locator('textarea[name="description"]').fill("A1.1C1 canonical work context");
+    await createForm.locator('select[name="status"]').selectOption("active");
+    await createForm.getByRole("button", { name: "Work Project erstellen" }).click();
+    await expect(page.locator("[data-work-action-status]")).toHaveText("Work Project erstellt.");
+    const projectCard = projectsRegion.locator("[data-work-project-card]").filter({ hasText: title });
+    await expect(projectCard).toHaveCount(1);
+
+    const context = page.locator('[data-work-region="project-context"]');
+    const editForm = context.getByRole("form", { name: "Work Project bearbeiten" });
+    await expect(editForm).toBeVisible();
+    await expect(context.getByRole("heading", { name: "Tasks & Deadlines" })).toBeVisible();
+    await expect(context.getByRole("heading", { name: "Resources" })).toBeVisible();
+    await editForm.getByLabel("Titel", { exact: true }).fill(editedTitle);
+    await editForm.locator('textarea[name="description"]').fill("A1.1C1 edited work context");
+    await editForm.locator('select[name="status"]').selectOption("paused");
+    await editForm.getByRole("button", { name: "Project speichern" }).click();
+    await expect(page.locator("[data-work-action-status]")).toHaveText("Work Project aktualisiert.");
+    await page.reload();
+
+    const reloadedContext = page.locator('[data-work-region="project-context"]');
+    const reloadedForm = reloadedContext.getByRole("form", { name: "Work Project bearbeiten" });
+    await expect(reloadedForm.getByLabel("Titel", { exact: true })).toHaveValue(editedTitle);
+    await expect(reloadedForm.locator('textarea[name="description"]')).toHaveValue("A1.1C1 edited work context");
+    await expect(reloadedForm.locator('select[name="status"]')).toHaveValue("paused");
+  });
+
+  test("A1.1C1 creates edits archives and reloads a work log", async ({ page }) => {
+    test.setTimeout(60_000);
+    test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires local authenticated Supabase state.");
+    const stamp = Date.now();
+    const projectTitle = `A1.1C1 Log Project ${stamp}`;
+    const focus = `A1.1C1 Work Focus ${stamp}`;
+    const editedFocus = `A1.1C1 Edited Work Focus ${stamp}`;
+    const logDate = new Date().toISOString().slice(0, 10);
+
+    await openManualPortfolioWithDb(page, "A1.1C1 requires the local Manual database.");
+    await page.goto("/work");
+    const projectsRegion = page.locator('[data-work-region="projects"]');
+    const projectForm = projectsRegion.getByRole("form", { name: "Work Project erstellen" });
+    await projectForm.getByLabel("Titel", { exact: true }).fill(projectTitle);
+    await projectForm.getByRole("button", { name: "Work Project erstellen" }).click();
+
+    const logsRegion = page.locator('[data-work-region="logs"]');
+    const createForm = logsRegion.getByRole("form", { name: "Work Log erstellen" });
+    await createForm.locator('input[name="logDate"]').fill(logDate);
+    await createForm.locator('input[name="durationMinutes"]').fill("45");
+    await createForm.locator('input[name="focus"]').fill(focus);
+    await createForm.locator('textarea[name="outcome"]').fill("A1.1C1 work outcome");
+    await createForm.locator('textarea[name="notes"]').fill("A1.1C1 work notes");
+    await createForm.getByRole("button", { name: "Work Log erfassen" }).click();
+    await expect(page.locator("[data-work-action-status]")).toHaveText("Work Log erstellt.");
+    const activeCard = logsRegion.locator('[data-work-log-card]').filter({ hasText: focus });
+    await expect(activeCard).toHaveCount(1);
+
+    const editForm = logsRegion.getByRole("form", { name: "Work Log bearbeiten" });
+    await expect(editForm).toBeVisible();
+    await editForm.locator('input[name="focus"]').fill(editedFocus);
+    await editForm.locator('textarea[name="outcome"]').fill("A1.1C1 edited work outcome");
+    await editForm.locator('textarea[name="notes"]').fill("A1.1C1 edited work notes");
+    await editForm.getByRole("button", { name: "Work Log speichern" }).click();
+    await expect(page.locator("[data-work-action-status]")).toHaveText("Work Log aktualisiert.");
+    await page.reload();
+
+    const reloadedLogs = page.locator('[data-work-region="logs"]');
+    const reloadedEdit = reloadedLogs.getByRole("form", { name: "Work Log bearbeiten" });
+    await expect(reloadedEdit.locator('input[name="focus"]')).toHaveValue(editedFocus);
+    await expect(reloadedEdit.locator('textarea[name="outcome"]')).toHaveValue("A1.1C1 edited work outcome");
+    await expect(reloadedEdit.locator('textarea[name="notes"]')).toHaveValue("A1.1C1 edited work notes");
+    const reloadedCard = reloadedLogs.locator('[data-work-log-card]').filter({ hasText: editedFocus });
+    await expect(reloadedCard).toHaveCount(1);
+    await reloadedCard.getByRole("form", { name: `Work Log archivieren ${editedFocus}` }).getByRole("button", { name: "Archivieren" }).click();
+    await expect(page.locator("[data-work-action-status]")).toHaveText("Work Log archiviert.");
+    await page.reload();
+
+    const archivedCard = page.locator('[data-work-region="logs"] [data-work-log-card="archived"]').filter({ hasText: editedFocus });
+    await expect(archivedCard).toHaveCount(1);
+    await expect(archivedCard.getByRole("link", { name: "Bearbeiten" })).toHaveCount(0);
+    await expect(archivedCard.getByRole("button", { name: "Archivieren" })).toHaveCount(0);
+  });
+});
+
 test.describe("H2.1 Running Strength Workout core", () => {
   async function openManualTraining(page: Page, path: "/health/running" | "/health/strength") {
     test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires the authorized local Supabase Playwright auth state.");

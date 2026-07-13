@@ -196,6 +196,18 @@ export type WorkOverviewViewModel = {
   meetings: WorkMeetingNote[];
   sections: WorkSection[];
   privacyNotes: string[];
+  manualWorkspace?: {
+    authAvailable: boolean;
+    projects: Array<{
+      id: string;
+      title: string;
+      description: string | null;
+      status: string;
+      tasks: Array<{ id: string; title: string; status: string; dueAt: string | null }>;
+      resources: Array<{ id: string; title: string; relationType: string }>;
+      logs: import("./work-log").WorkLog[];
+    }>;
+  };
 };
 
 export type WorkLogViewModel = {

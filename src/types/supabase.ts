@@ -1848,6 +1848,59 @@ export type Database = {
           },
         ]
       }
+      work_logs: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          duration_minutes: number
+          focus: string
+          id: string
+          log_date: string
+          notes: string | null
+          outcome: string
+          project_id: string
+          started_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          duration_minutes: number
+          focus: string
+          id?: string
+          log_date: string
+          notes?: string | null
+          outcome: string
+          project_id: string
+          started_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          duration_minutes?: number
+          focus?: string
+          id?: string
+          log_date?: string
+          notes?: string | null
+          outcome?: string
+          project_id?: string
+          started_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_logs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

@@ -67,6 +67,7 @@ import {
   createSupabaseHabitRepository,
   createSupabaseCodingRepository,
   createSupabaseEducationRepository,
+  createSupabaseWorkRepository,
   createSupabaseResourceRepository,
   createSupabaseTrainingRepository,
   type SupabaseClientLike,
@@ -2929,7 +2930,11 @@ export async function getWorkOverviewViewModel(): Promise<WorkOverviewViewModel>
     return getDemoWorkOverviewViewModel();
   }
 
-  return buildProfileWorkOverviewViewModel(profileId, await readManualProfile());
+  const viewModel = buildProfileWorkOverviewViewModel(profileId, await readManualProfile());
+  const auth = await createAuthenticatedSupabaseServerClient();
+  if (!auth.ok) return { ...viewModel, manualWorkspace: { authAvailable: false, projects: [] } };
+  const workspace = await createSupabaseWorkRepository(auth.client).getWorkspace(auth.user.id);
+  return { ...viewModel, manualWorkspace: { authAvailable: true, projects: workspace.projects } };
 }
 
 export async function getWorkLogViewModel(): Promise<WorkLogViewModel> {
