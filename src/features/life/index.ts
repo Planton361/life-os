@@ -3,6 +3,7 @@ export { InventoryPage } from "./inventory-page";
 export { JournalPage } from "./journal-page";
 export { LifeOverviewPage } from "./components/life-overview-page";
 export { NotesPage } from "./notes-page";
+export { JournalManualWorkspace, LifeManualOverview, NotesManualWorkspace } from "./life-manual-workspaces";
 export { getLifeOverviewViewModel } from "./life-overview-view-model";
 export {
   getEntertainmentPageViewModel,

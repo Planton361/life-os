@@ -14,3 +14,4 @@ export * from "./health.mapper";
 export * from "./task.mapper";
 export * from "./habit.mapper";
 export * from "./training.mapper";
+export * from "./life.mapper";

@@ -18,3 +18,4 @@ export * from "./supabase-schedule-source-repository";
 export * from "./supabase-health-repository";
 export * from "./supabase-habit-repository";
 export * from "./supabase-training-repository";
+export * from "./supabase-life-repository";

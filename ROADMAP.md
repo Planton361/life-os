@@ -46,6 +46,8 @@ Capability-level truth is maintained in `docs/product/capability-registry.md`.
 - `A1.1C2a Work Wiki & Decisions`: abgeschlossen.
 - `A1.1C2b Meetings & Follow-ups`: abgeschlossen.
 - `A1.1D Life Domain Foundation`: aktiv.
+- `A1.1D1 Life Journal & Notes`: abgeschlossen.
+- `A1.1D2 Entertainment Collections`: aktiv.
 
 ## 3. Delivery Program
 

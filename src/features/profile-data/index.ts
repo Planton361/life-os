@@ -24,6 +24,7 @@ export {
   getJournalPageViewModel,
   getLearningLogViewModel,
   getLifeOverviewViewModel,
+  getLifeManualWorkspace,
   getMealPlannerViewModel,
   getNotesPageViewModel,
   getNutritionOverviewViewModel,

@@ -559,6 +559,39 @@ export type Database = {
           },
         ]
       }
+      journal_entries: {
+        Row: {
+          archived_at: string | null
+          body: string
+          created_at: string
+          entry_date: string
+          id: string
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          body: string
+          created_at?: string
+          entry_date: string
+          id?: string
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          body?: string
+          created_at?: string
+          entry_date?: string
+          id?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       meals: {
         Row: {
           completed_at: string | null

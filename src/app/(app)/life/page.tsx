@@ -1,15 +1,16 @@
-import { getLifeOverviewViewModel } from "@/features/profile-data";
+import { getLifeManualWorkspace, getLifeOverviewViewModel } from "@/features/profile-data";
 
 export const metadata = {
   title: "Life Overview | Life OS",
   description:
-    "Personal Life overview for journal, loose notes, entertainment and inventory with local mock interactions.",
+    "Private Life context for reload-stable journal entries and canonical personal notes.",
 };
 
 export default async function LifePage() {
-  const { LifeOverviewPage } =
+  const { LifeManualOverview, LifeOverviewPage } =
     await import("@/features/life");
-  const viewModel = await getLifeOverviewViewModel();
+  const [viewModel, workspace] = await Promise.all([getLifeOverviewViewModel(), getLifeManualWorkspace()]);
 
+  if (workspace !== undefined) return <LifeManualOverview workspace={workspace} />;
   return <LifeOverviewPage viewModel={viewModel} />;
 }

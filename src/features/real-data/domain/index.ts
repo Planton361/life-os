@@ -14,3 +14,4 @@ export * from "./review";
 export * from "./health";
 export * from "./habit";
 export * from "./training";
+export * from "./life";

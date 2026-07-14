@@ -72,6 +72,7 @@ import {
   createSupabaseWorkMeetingRepository,
   createSupabaseResourceRepository,
   createSupabaseTrainingRepository,
+  createSupabaseLifeRepository,
   type SupabaseClientLike,
 } from "@/features/real-data/supabase";
 import type {
@@ -2529,6 +2530,13 @@ export async function getLifeOverviewViewModel(): Promise<
       personalSignals: resolveContentStateMeta({ capacity: 4, itemCount: 0 }),
     },
   };
+}
+
+export async function getLifeManualWorkspace() {
+  if (await getCurrentLifeOsProfileId() !== "manual") return undefined;
+  const auth = await createAuthenticatedSupabaseServerClient();
+  if (!auth.ok) return null;
+  return createSupabaseLifeRepository(auth.client).getWorkspace(auth.user.id);
 }
 
 export async function getJournalPageViewModel(): Promise<

@@ -2600,6 +2600,111 @@ test.describe("Work content states", () => {
   });
 });
 
+test.describe("A1.1D1 Life Journal and Notes", () => {
+  test("A1.1D1 creates edits archives and reloads a journal entry", async ({ page }) => {
+    test.setTimeout(60_000);
+    test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires local authenticated Supabase state.");
+    const title = uniqueTitle("A1.1D1 Journal");
+    const editedTitle = `${title} edited`;
+    const entryDate = currentLocalDate();
+
+    await openManualPortfolioWithDb(page, "A1.1D1 requires the local Manual database.");
+    await page.goto("/life/journal");
+    const journal = page.locator("main");
+    const createRegion = journal.getByRole("heading", { name: "New journal entry", exact: true }).locator("xpath=ancestor::section[1]");
+    const createForm = createRegion.locator("form");
+    await createForm.locator('input[name="entryDate"]').fill(entryDate);
+    await createForm.locator('input[name="title"]').fill(title);
+    await createForm.locator('textarea[name="body"]').fill("A1.1D1 journal body");
+    await createForm.getByRole("button", { name: "Save entry" }).click();
+    await expect(journal.getByRole("status")).toHaveText(/Gespeichert/);
+
+    const activeRegion = journal.getByRole("heading", { name: "Active entries", exact: true }).locator("xpath=ancestor::section[1]");
+    const activeCard = activeRegion.getByRole("heading", { name: title, exact: true }).locator("xpath=ancestor::article[1]");
+    await expect(activeCard).toHaveCount(1);
+    await activeCard.getByText("Edit entry", { exact: true }).click();
+    const editForm = activeCard.locator("details form");
+    await editForm.locator('input[name="title"]').fill(editedTitle);
+    await editForm.locator('textarea[name="body"]').fill("A1.1D1 edited journal body");
+    await editForm.getByRole("button", { name: "Save changes" }).click();
+    await expect(journal.getByRole("status")).toHaveText(/Änderungen gespeichert/);
+    await page.reload();
+
+    const reloadedJournal = page.locator("main");
+    const reloadedActive = reloadedJournal.getByRole("heading", { name: "Active entries", exact: true }).locator("xpath=ancestor::section[1]");
+    const reloadedCard = reloadedActive.getByRole("heading", { name: editedTitle, exact: true }).locator("xpath=ancestor::article[1]");
+    await expect(reloadedCard.locator('input[name="title"]')).toHaveValue(editedTitle);
+    await expect(reloadedCard.locator('textarea[name="body"]')).toHaveValue("A1.1D1 edited journal body");
+    await reloadedCard.getByText("Edit entry", { exact: true }).click();
+    await reloadedCard.getByRole("button", { name: "Archive" }).click();
+    await expect(reloadedJournal.getByRole("status")).toHaveText(/archiviert/);
+    await page.reload();
+
+    const archivedJournal = page.locator("main");
+    const historyRegion = archivedJournal.getByRole("heading", { name: "Journal history", exact: true }).locator("xpath=ancestor::section[1]");
+    const archivedCard = historyRegion.getByRole("heading", { name: editedTitle, exact: true }).locator("xpath=ancestor::article[1]");
+    await expect(archivedCard).toContainText("A1.1D1 edited journal body");
+    await expect(archivedCard.locator("details form")).toHaveCount(0);
+    await expect(archivedCard.getByRole("button", { name: "Archive" })).toHaveCount(0);
+  });
+
+  test("A1.1D1 creates edits archives restores and reloads a life note", async ({ page }) => {
+    test.setTimeout(60_000);
+    test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires local authenticated Supabase state.");
+    const title = uniqueTitle("A1.1D1 Life Note");
+    const editedTitle = `${title} edited`;
+
+    await openManualPortfolioWithDb(page, "A1.1D1 requires the local Manual database.");
+    await page.goto("/life/notes");
+    const notes = page.locator("main");
+    const createRegion = notes.getByRole("heading", { name: "New note", exact: true }).locator("xpath=ancestor::section[1]");
+    const createForm = createRegion.locator("form");
+    await createForm.locator('input[name="title"]').fill(title);
+    await createForm.locator('textarea[name="body"]').fill("A1.1D1 note body");
+    await createForm.getByRole("button", { name: "Save note" }).click();
+    await expect(notes.getByRole("status")).toHaveText(/Gespeichert/);
+
+    const activeRegion = notes.getByRole("heading", { name: "Active notes", exact: true }).locator("xpath=ancestor::section[1]");
+    const activeCard = activeRegion.getByRole("heading", { name: title, exact: true }).locator("xpath=ancestor::article[1]");
+    await expect(activeCard).toHaveCount(1);
+    await expect(activeCard.getByText("No Project, Goal or Task relations.", { exact: true })).toBeVisible();
+    await activeCard.getByText("Edit note", { exact: true }).click();
+    const editForm = activeCard.locator("details form");
+    await editForm.locator('input[name="title"]').fill(editedTitle);
+    await editForm.locator('textarea[name="body"]').fill("A1.1D1 edited note body");
+    await editForm.getByRole("button", { name: "Save changes" }).click();
+    await expect(notes.getByRole("status")).toHaveText(/Änderungen gespeichert/);
+    await page.reload();
+
+    const reloadedNotes = page.locator("main");
+    const reloadedActive = reloadedNotes.getByRole("heading", { name: "Active notes", exact: true }).locator("xpath=ancestor::section[1]");
+    const reloadedCard = reloadedActive.getByRole("heading", { name: editedTitle, exact: true }).locator("xpath=ancestor::article[1]");
+    await expect(reloadedCard.locator('input[name="title"]')).toHaveValue(editedTitle);
+    await expect(reloadedCard.locator('textarea[name="body"]')).toHaveValue("A1.1D1 edited note body");
+    await reloadedCard.getByText("Edit note", { exact: true }).click();
+    await reloadedCard.getByRole("button", { name: "Archive" }).click();
+    await expect(reloadedNotes.getByRole("status")).toHaveText(/archiviert/);
+    await page.reload();
+
+    const archivedNotes = page.locator("main");
+    const archivedRegion = archivedNotes.getByRole("heading", { name: "Archived notes", exact: true }).locator("xpath=ancestor::section[1]");
+    const archivedCard = archivedRegion.getByRole("heading", { name: editedTitle, exact: true }).locator("xpath=ancestor::article[1]");
+    await expect(archivedCard).toContainText("A1.1D1 edited note body");
+    await expect(archivedCard.locator("details form")).toHaveCount(0);
+    await archivedCard.getByRole("button", { name: "Restore note" }).click();
+    await expect(archivedNotes.getByRole("status")).toHaveText(/wiederhergestellt/);
+    await page.reload();
+
+    const restoredNotes = page.locator("main");
+    const restoredActive = restoredNotes.getByRole("heading", { name: "Active notes", exact: true }).locator("xpath=ancestor::section[1]");
+    const restoredCard = restoredActive.getByRole("heading", { name: editedTitle, exact: true }).locator("xpath=ancestor::article[1]");
+    await expect(restoredCard.locator('input[name="title"]')).toHaveValue(editedTitle);
+    await expect(restoredCard.locator('textarea[name="body"]')).toHaveValue("A1.1D1 edited note body");
+    await restoredCard.getByText("Edit note", { exact: true }).click();
+    await expect(restoredCard.getByRole("button", { name: "Archive" })).toBeVisible();
+  });
+});
+
 test.describe("H2.1 Running Strength Workout core", () => {
   async function openManualTraining(page: Page, path: "/health/running" | "/health/strength") {
     test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires the authorized local Supabase Playwright auth state.");
