@@ -3,10 +3,12 @@ import type {
   CreateLifeNoteInput,
   UpdateJournalEntryInput,
   UpdateLifeNoteInput,
+  EntertainmentItemInput,
+  UpdateEntertainmentItemInput,
 } from "../../schemas/life.schemas";
-import type { LifeNote, LifeNoteRelation, LifeWorkspace } from "../../domain/life";
+import type { EntertainmentWorkspace, LifeNote, LifeNoteRelation, LifeWorkspace } from "../../domain/life";
 import type { SupabaseClientLike } from "../database.types";
-import { mapJournalEntryRow } from "../mappers/life.mapper";
+import { mapEntertainmentItemRow, mapJournalEntryRow } from "../mappers/life.mapper";
 
 function failure(message: string) {
   return { error: message, ok: false as const };
@@ -110,6 +112,54 @@ export function createSupabaseLifeRepository(client: SupabaseClientLike) {
       query = archived ? query.is("archived_at", null) : query.not("archived_at", "is", null);
       const result = await query.select("id").maybeSingle();
       return result.error || !result.data ? failure("Note lifecycle could not be updated.") : { data: result.data, ok: true as const };
+    },
+    async getEntertainmentWorkspace(userId: string): Promise<EntertainmentWorkspace> {
+      const areaId = await ensureArea(userId);
+      if (!areaId) return { areaAvailable: false, items: [] };
+      const result = await client.from("entertainment_items").select("*").eq("user_id", userId).order("updated_at", { ascending: false });
+      return { areaAvailable: true, items: (result.data ?? []).map(mapEntertainmentItemRow) };
+    },
+    async createEntertainmentItem(userId: string, input: EntertainmentItemInput) {
+      if (!(await ensureArea(userId))) return failure("Life area is unavailable.");
+      const result = await client.from("entertainment_items").insert({
+        completed_on: input.completedOn,
+        creator_or_studio: input.creatorOrStudio,
+        media_type: input.mediaType,
+        notes: input.notes,
+        progress_current: input.progressCurrent,
+        progress_total: input.progressTotal,
+        progress_unit: input.progressUnit,
+        rating: input.rating,
+        release_year: input.releaseYear,
+        started_on: input.startedOn,
+        status: input.status,
+        title: input.title,
+        user_id: userId,
+      }).select("*").single();
+      return result.error || !result.data ? failure("Entertainment item could not be created.") : { data: mapEntertainmentItemRow(result.data), ok: true as const };
+    },
+    async updateEntertainmentItem(userId: string, input: UpdateEntertainmentItemInput) {
+      const result = await client.from("entertainment_items").update({
+        completed_on: input.completedOn,
+        creator_or_studio: input.creatorOrStudio,
+        media_type: input.mediaType,
+        notes: input.notes,
+        progress_current: input.progressCurrent,
+        progress_total: input.progressTotal,
+        progress_unit: input.progressUnit,
+        rating: input.rating,
+        release_year: input.releaseYear,
+        started_on: input.startedOn,
+        status: input.status,
+        title: input.title,
+      }).eq("user_id", userId).eq("id", input.entertainmentItemId).is("archived_at", null).select("*").maybeSingle();
+      return result.error || !result.data ? failure("Entertainment item is unavailable.") : { data: mapEntertainmentItemRow(result.data), ok: true as const };
+    },
+    async setEntertainmentItemArchived(userId: string, entertainmentItemId: string, archived: boolean) {
+      let query = client.from("entertainment_items").update({ archived_at: archived ? new Date().toISOString() : null }).eq("user_id", userId).eq("id", entertainmentItemId);
+      query = archived ? query.is("archived_at", null) : query.not("archived_at", "is", null);
+      const result = await query.select("id").maybeSingle();
+      return result.error || !result.data ? failure("Entertainment item lifecycle could not be updated.") : { data: result.data, ok: true as const };
     },
   };
 }

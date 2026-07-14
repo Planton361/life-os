@@ -253,7 +253,7 @@
 |---|---|---|---|
 | Journal | `CONNECTED` | A1.1D1 user-scoped `journal_entries` with date, optional title, body, create/edit/soft archive, chronological active/history views and reload proof | Mood, Health and Daily/Weekly Reviews remain separate canonical domains |
 | Notes | `CONNECTED` | A1.1D1 canonical Life-Area `resources` (`note`) with create/edit/archive/restore, reload-stable active/history views and visible existing Project/Goal/Task relations or honest empty state | relation creation remains on the established Resource surfaces; no parallel Notes platform |
-| Entertainment collection | `UI_ONLY` | route/page shell | collection/item model |
+| Entertainment collection | `CONNECTED` | A1.1D2 canonical user-scoped `entertainment_items`; Books, Movies, Series and Games are type-filtered projections with controlled status, progress and 1–10 rating plus create/edit/soft archive/restore and reload proof | external media metadata, cover search and provider APIs remain unimplemented external integrations |
 | Inventory | `UI_ONLY` | route/page shell | inventory items and lifecycle |
 | Wishlist/purchase evaluation | `UI_ONLY` | route/page shell | wishlist and decision records |
 | Personal dashboard | `UI_ONLY` | area shell | bind canonical data |

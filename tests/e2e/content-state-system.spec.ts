@@ -2705,6 +2705,141 @@ test.describe("A1.1D1 Life Journal and Notes", () => {
   });
 });
 
+test.describe("A1.1D2 Entertainment Collections", () => {
+  test("A1.1D2 creates edits filters and reloads entertainment items", async ({ page }) => {
+    test.setTimeout(60_000);
+    test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires local authenticated Supabase state.");
+    const bookTitle = uniqueTitle("A1.1D2 Book");
+    const editedBookTitle = `${bookTitle} edited`;
+    const gameTitle = uniqueTitle("A1.1D2 Game");
+
+    await openManualPortfolioWithDb(page, "A1.1D2 requires the local Manual database.");
+    await page.goto("/life/entertainment");
+    const entertainment = page.locator("main");
+    const createRegion = entertainment.getByRole("heading", { name: "Add media", exact: true }).locator("xpath=ancestor::section[1]");
+    const createForm = createRegion.locator("form");
+    await createForm.locator('select[name="mediaType"]').selectOption("book");
+    await createForm.locator('input[name="title"]').fill(bookTitle);
+    await createForm.locator('input[name="creatorOrStudio"]').fill("A1.1D2 Author");
+    await createForm.locator('input[name="releaseYear"]').fill("2024");
+    await createForm.locator('select[name="status"]').selectOption("in_progress");
+    await createForm.locator('input[name="rating"]').fill("8");
+    await createForm.locator('input[name="progressCurrent"]').fill("120");
+    await createForm.locator('input[name="progressTotal"]').fill("300");
+    await createForm.locator('select[name="progressUnit"]').selectOption("pages");
+    await createForm.locator('textarea[name="notes"]').fill("A1.1D2 book notes");
+    await createForm.getByRole("button", { name: "Save item" }).click();
+    await expect(entertainment.getByRole("status")).toHaveText("Entertainment item saved.");
+
+    const reloadedCreate = page.locator("main").getByRole("heading", { name: "Add media", exact: true }).locator("xpath=ancestor::section[1]").locator("form");
+    await reloadedCreate.locator('select[name="mediaType"]').selectOption("game");
+    await reloadedCreate.locator('input[name="title"]').fill(gameTitle);
+    await reloadedCreate.locator('input[name="creatorOrStudio"]').fill("A1.1D2 Studio");
+    await reloadedCreate.locator('input[name="releaseYear"]').fill("2025");
+    await reloadedCreate.locator('select[name="status"]').selectOption("planned");
+    await reloadedCreate.locator('input[name="rating"]').fill("7");
+    await reloadedCreate.locator('input[name="progressCurrent"]').fill("3");
+    await reloadedCreate.locator('input[name="progressTotal"]').fill("20");
+    await reloadedCreate.locator('select[name="progressUnit"]').selectOption("hours");
+    await reloadedCreate.locator('textarea[name="notes"]').fill("A1.1D2 game notes");
+    await reloadedCreate.getByRole("button", { name: "Save item" }).click();
+    await expect(page.locator("main").getByRole("status")).toHaveText("Entertainment item saved.");
+
+    const activeRegion = page.locator("main").getByRole("heading", { name: "Active collection", exact: true }).locator("xpath=ancestor::section[1]");
+    const bookCard = activeRegion.getByRole("heading", { name: bookTitle, exact: true }).locator("xpath=ancestor::article[1]");
+    const gameCard = activeRegion.getByRole("heading", { name: gameTitle, exact: true }).locator("xpath=ancestor::article[1]");
+    await expect(bookCard).toContainText("120 / 300 pages");
+    await expect(gameCard).toContainText("3 / 20 hours");
+    await bookCard.getByText("Edit item", { exact: true }).click();
+    const editForm = bookCard.locator("details form");
+    await editForm.locator('input[name="title"]').fill(editedBookTitle);
+    await editForm.locator('input[name="creatorOrStudio"]').fill("A1.1D2 Edited Author");
+    await editForm.locator('input[name="rating"]').fill("9");
+    await editForm.locator('textarea[name="notes"]').fill("A1.1D2 edited book notes");
+    await editForm.getByRole("button", { name: "Save changes" }).click();
+    await expect(page.locator("main").getByRole("status")).toHaveText("Entertainment item updated.");
+    await page.reload();
+
+    const reloadedActive = page.locator("main").getByRole("heading", { name: "Active collection", exact: true }).locator("xpath=ancestor::section[1]");
+    const reloadedBook = reloadedActive.getByRole("heading", { name: editedBookTitle, exact: true }).locator("xpath=ancestor::article[1]");
+    await expect(reloadedBook).toContainText("A1.1D2 Edited Author");
+    await expect(reloadedBook).toContainText("9/10");
+    await expect(reloadedBook).toContainText("A1.1D2 edited book notes");
+    await expect(reloadedActive.getByRole("heading", { name: gameTitle, exact: true })).toBeVisible();
+
+    const navigation = page.locator("main").getByRole("navigation", { name: "Entertainment collections" });
+    await navigation.getByRole("link", { name: "Books", exact: true }).click();
+    const booksPage = page.locator("main");
+    const booksActive = booksPage.getByRole("heading", { name: "Active collection", exact: true }).locator("xpath=ancestor::section[1]");
+    await expect(booksPage.getByRole("heading", { name: "Book Collection", exact: true })).toBeVisible();
+    await expect(booksActive.getByRole("heading", { name: editedBookTitle, exact: true })).toBeVisible();
+    await expect(booksActive.getByRole("heading", { name: gameTitle, exact: true })).toHaveCount(0);
+    await booksPage.getByRole("navigation", { name: "Entertainment collections" }).getByRole("link", { name: "Games", exact: true }).click();
+    const gamesPage = page.locator("main");
+    const gamesActive = gamesPage.getByRole("heading", { name: "Active collection", exact: true }).locator("xpath=ancestor::section[1]");
+    await expect(gamesActive.getByRole("heading", { name: gameTitle, exact: true })).toBeVisible();
+    await expect(gamesActive.getByRole("heading", { name: editedBookTitle, exact: true })).toHaveCount(0);
+    await gamesPage.getByRole("navigation", { name: "Entertainment collections" }).getByRole("link", { name: "Movies", exact: true }).click();
+    await expect(page.locator("main").getByRole("heading", { name: editedBookTitle, exact: true })).toHaveCount(0);
+    await expect(page.locator("main").getByRole("heading", { name: gameTitle, exact: true })).toHaveCount(0);
+    await page.locator("main").getByRole("navigation", { name: "Entertainment collections" }).getByRole("link", { name: "Series", exact: true }).click();
+    await expect(page.locator("main").getByRole("heading", { name: editedBookTitle, exact: true })).toHaveCount(0);
+    await expect(page.locator("main").getByRole("heading", { name: gameTitle, exact: true })).toHaveCount(0);
+    await page.locator("main").getByRole("navigation", { name: "Entertainment collections" }).getByRole("link", { name: "Overview", exact: true }).click();
+    await expect(page.locator("main").getByRole("heading", { name: "Entertainment", exact: true })).toBeVisible();
+  });
+
+  test("A1.1D2 archives restores and reloads entertainment lifecycle", async ({ page }) => {
+    test.setTimeout(60_000);
+    test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires local authenticated Supabase state.");
+    const title = uniqueTitle("A1.1D2 Lifecycle Series");
+
+    await openManualPortfolioWithDb(page, "A1.1D2 requires the local Manual database.");
+    await page.goto("/life/entertainment/series");
+    const series = page.locator("main");
+    const createForm = series.getByRole("heading", { name: "Add series", exact: true }).locator("xpath=ancestor::section[1]").locator("form");
+    await createForm.locator('input[name="title"]').fill(title);
+    await createForm.locator('input[name="creatorOrStudio"]').fill("A1.1D2 Series Studio");
+    await createForm.locator('select[name="status"]').selectOption("in_progress");
+    await createForm.locator('input[name="rating"]').fill("8");
+    await createForm.locator('input[name="progressCurrent"]').fill("4");
+    await createForm.locator('input[name="progressTotal"]').fill("12");
+    await createForm.locator('select[name="progressUnit"]').selectOption("episodes");
+    await createForm.locator('textarea[name="notes"]').fill("A1.1D2 lifecycle notes");
+    await createForm.getByRole("button", { name: "Save item" }).click();
+    await expect(series.getByRole("status")).toHaveText("Entertainment item saved.");
+
+    const activeRegion = page.locator("main").getByRole("heading", { name: "Active collection", exact: true }).locator("xpath=ancestor::section[1]");
+    const activeCard = activeRegion.getByRole("heading", { name: title, exact: true }).locator("xpath=ancestor::article[1]");
+    await activeCard.getByText("Edit item", { exact: true }).click();
+    await activeCard.getByRole("button", { name: "Archive" }).click();
+    await expect(page.locator("main").getByRole("status")).toHaveText(/archived/);
+    await page.reload();
+
+    const archiveRegion = page.locator("main").getByRole("heading", { name: "Archive history", exact: true }).locator("xpath=ancestor::section[1]");
+    const archivedCard = archiveRegion.getByRole("heading", { name: title, exact: true }).locator("xpath=ancestor::article[1]");
+    await expect(archivedCard).toContainText("In progress");
+    await expect(archivedCard).toContainText("8/10");
+    await expect(archivedCard).toContainText("4 / 12 episodes");
+    await expect(archivedCard.locator("details form")).toHaveCount(0);
+    await expect(archivedCard.getByRole("button", { name: "Archive" })).toHaveCount(0);
+    await archivedCard.getByRole("button", { name: "Restore item" }).click();
+    await expect(page.locator("main").getByRole("status")).toHaveText(/restored/);
+    await page.reload();
+
+    const restoredRegion = page.locator("main").getByRole("heading", { name: "Active collection", exact: true }).locator("xpath=ancestor::section[1]");
+    const restoredCard = restoredRegion.getByRole("heading", { name: title, exact: true }).locator("xpath=ancestor::article[1]");
+    await restoredCard.getByText("Edit item", { exact: true }).click();
+    const restoredForm = restoredCard.locator("details form");
+    await expect(restoredForm.locator('select[name="status"]')).toHaveValue("in_progress");
+    await expect(restoredForm.locator('input[name="rating"]')).toHaveValue("8");
+    await expect(restoredForm.locator('input[name="progressCurrent"]')).toHaveValue("4");
+    await expect(restoredForm.locator('input[name="progressTotal"]')).toHaveValue("12");
+    await expect(restoredForm.locator('select[name="progressUnit"]')).toHaveValue("episodes");
+    await expect(restoredForm.getByRole("button", { name: "Archive" })).toBeVisible();
+  });
+});
+
 test.describe("H2.1 Running Strength Workout core", () => {
   async function openManualTraining(page: Page, path: "/health/running" | "/health/strength") {
     test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires the authorized local Supabase Playwright auth state.");

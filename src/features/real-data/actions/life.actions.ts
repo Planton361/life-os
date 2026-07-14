@@ -9,6 +9,9 @@ import {
   lifeNoteLifecycleInputSchema,
   updateJournalEntryInputSchema,
   updateLifeNoteInputSchema,
+  entertainmentItemInputSchema,
+  entertainmentItemLifecycleInputSchema,
+  updateEntertainmentItemInputSchema,
 } from "../schemas/life.schemas";
 import { createSupabaseLifeRepository } from "../supabase/repositories/supabase-life-repository";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
@@ -25,15 +28,22 @@ function revalidateLife() {
   revalidatePath("/life/notes");
   revalidatePath("/resources");
   revalidatePath("/portfolio");
+  revalidatePath("/life/entertainment");
+  revalidatePath("/life/entertainment/books");
+  revalidatePath("/life/entertainment/movies");
+  revalidatePath("/life/entertainment/series");
+  revalidatePath("/life/entertainment/games");
 }
 
-function destination(path: "/life/journal" | "/life/notes", state: string, selected?: string): never {
+type LifeActionPath = "/life/journal" | "/life/notes" | "/life/entertainment" | "/life/entertainment/books" | "/life/entertainment/movies" | "/life/entertainment/series" | "/life/entertainment/games";
+
+function destination(path: LifeActionPath, state: string, selected?: string): never {
   const params = new URLSearchParams({ state });
   if (selected) params.set("selected", selected);
   redirect(`${path}?${params.toString()}`);
 }
 
-async function context(path: "/life/journal" | "/life/notes") {
+async function context(path: LifeActionPath) {
   if (await getCurrentLifeOsProfileId() !== "manual") destination(path, "auth_blocked");
   const auth = await createAuthenticatedSupabaseServerClient();
   if (!auth.ok) destination(path, "auth_blocked");
@@ -110,3 +120,62 @@ async function noteLifecycle(formData: FormData, archived: boolean) {
 
 export async function archiveLifeNoteFormAction(formData: FormData) { await noteLifecycle(formData, true); }
 export async function restoreLifeNoteFormAction(formData: FormData) { await noteLifecycle(formData, false); }
+
+function entertainmentPath(formData: FormData): LifeActionPath {
+  const returnTo = value(formData, "returnTo");
+  if (returnTo === "books" || returnTo === "movies" || returnTo === "series" || returnTo === "games") return `/life/entertainment/${returnTo}`;
+  return "/life/entertainment";
+}
+
+function entertainmentInput(formData: FormData) {
+  return {
+    completedOn: value(formData, "completedOn"),
+    creatorOrStudio: value(formData, "creatorOrStudio"),
+    mediaType: value(formData, "mediaType"),
+    notes: value(formData, "notes"),
+    progressCurrent: value(formData, "progressCurrent"),
+    progressTotal: value(formData, "progressTotal"),
+    progressUnit: value(formData, "progressUnit"),
+    rating: value(formData, "rating"),
+    releaseYear: value(formData, "releaseYear"),
+    startedOn: value(formData, "startedOn"),
+    status: value(formData, "status"),
+    title: value(formData, "title"),
+  };
+}
+
+export async function createEntertainmentItemFormAction(formData: FormData) {
+  const path = entertainmentPath(formData);
+  const auth = await context(path);
+  const parsed = entertainmentItemInputSchema.safeParse(entertainmentInput(formData));
+  if (!parsed.success) destination(path, "invalid");
+  const result = await createSupabaseLifeRepository(auth.client).createEntertainmentItem(auth.user.id, parsed.data);
+  if (!result.ok) destination(path, "error");
+  revalidateLife();
+  destination(path, "created", result.data.id);
+}
+
+export async function updateEntertainmentItemFormAction(formData: FormData) {
+  const path = entertainmentPath(formData);
+  const auth = await context(path);
+  const parsed = updateEntertainmentItemInputSchema.safeParse({ ...entertainmentInput(formData), entertainmentItemId: value(formData, "entertainmentItemId") });
+  if (!parsed.success) destination(path, "invalid");
+  const result = await createSupabaseLifeRepository(auth.client).updateEntertainmentItem(auth.user.id, parsed.data);
+  if (!result.ok) destination(path, "error", parsed.data.entertainmentItemId);
+  revalidateLife();
+  destination(path, "updated", result.data.id);
+}
+
+async function entertainmentLifecycle(formData: FormData, archived: boolean) {
+  const path = entertainmentPath(formData);
+  const auth = await context(path);
+  const parsed = entertainmentItemLifecycleInputSchema.safeParse({ entertainmentItemId: value(formData, "entertainmentItemId") });
+  if (!parsed.success) destination(path, "invalid");
+  const result = await createSupabaseLifeRepository(auth.client).setEntertainmentItemArchived(auth.user.id, parsed.data.entertainmentItemId, archived);
+  if (!result.ok) destination(path, "error", parsed.data.entertainmentItemId);
+  revalidateLife();
+  destination(path, archived ? "archived" : "restored", parsed.data.entertainmentItemId);
+}
+
+export async function archiveEntertainmentItemFormAction(formData: FormData) { await entertainmentLifecycle(formData, true); }
+export async function restoreEntertainmentItemFormAction(formData: FormData) { await entertainmentLifecycle(formData, false); }

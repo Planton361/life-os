@@ -253,6 +253,66 @@ export type Database = {
           },
         ]
       }
+      entertainment_items: {
+        Row: {
+          archived_at: string | null
+          completed_on: string | null
+          created_at: string
+          creator_or_studio: string | null
+          id: string
+          media_type: string
+          notes: string | null
+          progress_current: number | null
+          progress_total: number | null
+          progress_unit: string | null
+          rating: number | null
+          release_year: number | null
+          started_on: string | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          completed_on?: string | null
+          created_at?: string
+          creator_or_studio?: string | null
+          id?: string
+          media_type: string
+          notes?: string | null
+          progress_current?: number | null
+          progress_total?: number | null
+          progress_unit?: string | null
+          rating?: number | null
+          release_year?: number | null
+          started_on?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          completed_on?: string | null
+          created_at?: string
+          creator_or_studio?: string | null
+          id?: string
+          media_type?: string
+          notes?: string | null
+          progress_current?: number | null
+          progress_total?: number | null
+          progress_unit?: string | null
+          rating?: number | null
+          release_year?: number | null
+          started_on?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       exercise_muscles: {
         Row: {
           created_at: string

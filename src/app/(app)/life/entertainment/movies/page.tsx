@@ -3,6 +3,7 @@ import {
   createRouteSkeletonMetadata,
   type RouteSkeletonConfig,
 } from "@/components/layout/route-skeleton-page";
+import { getLifeEntertainmentWorkspace } from "@/features/profile-data";
 
 const routeConfig = {
   title: "Movies",
@@ -19,6 +20,8 @@ const routeConfig = {
 
 export const metadata = createRouteSkeletonMetadata(routeConfig);
 
-export default function MoviesPage() {
+export default async function MoviesPage({ searchParams }: Readonly<{ searchParams: Promise<{ state?: string }> }>) {
+  const workspace = await getLifeEntertainmentWorkspace();
+  if (workspace !== undefined) { const { EntertainmentManualWorkspace } = await import("@/features/life"); const params = await searchParams; return <EntertainmentManualWorkspace mediaType="movie" state={params.state} workspace={workspace}/>; }
   return <RouteSkeletonPage config={routeConfig} />;
 }

@@ -1,15 +1,16 @@
-import { getEntertainmentPageViewModel } from "@/features/profile-data";
+import { getEntertainmentPageViewModel, getLifeEntertainmentWorkspace } from "@/features/profile-data";
 
 export const metadata = {
   title: "Entertainment | Life OS",
   description:
-    "Personal media list and recovery shelf with local mock media state.",
+    "Private manual collections for books, movies, series and games.",
 };
 
-export default async function LifeEntertainmentRoute() {
-  const { EntertainmentPage } =
+export default async function LifeEntertainmentRoute({ searchParams }: Readonly<{ searchParams: Promise<{ state?: string }> }>) {
+  const { EntertainmentManualWorkspace, EntertainmentPage } =
     await import("@/features/life");
-  const viewModel = await getEntertainmentPageViewModel();
+  const [viewModel, workspace, params] = await Promise.all([getEntertainmentPageViewModel(), getLifeEntertainmentWorkspace(), searchParams]);
 
+  if (workspace !== undefined) return <EntertainmentManualWorkspace state={params.state} workspace={workspace}/>;
   return <EntertainmentPage viewModel={viewModel} />;
 }

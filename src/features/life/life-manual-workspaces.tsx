@@ -8,7 +8,7 @@ import {
   updateJournalEntryFormAction,
   updateLifeNoteFormAction,
 } from "@/features/real-data/actions/life.actions";
-import type { JournalEntry, LifeNote, LifeWorkspace } from "@/features/real-data/domain/life";
+import type { EntertainmentWorkspace, JournalEntry, LifeNote, LifeWorkspace } from "@/features/real-data/domain/life";
 import { cn } from "@/lib/cn";
 import { inputClass, primaryButtonClass, secondaryButtonClass } from "./components/life-workbench-primitives";
 
@@ -71,10 +71,11 @@ function NoteCard({ note }: Readonly<{ note: LifeNote }>) {
   );
 }
 
-export function LifeManualOverview({ workspace }: Readonly<{ workspace: LifeWorkspace | null }>) {
+export function LifeManualOverview({ entertainmentWorkspace, workspace }: Readonly<{ entertainmentWorkspace: EntertainmentWorkspace | null; workspace: LifeWorkspace | null }>) {
   const activeJournal = workspace?.journalEntries.filter((item) => !item.archivedAt).length ?? 0;
   const activeNotes = workspace?.notes.filter((item) => !item.archivedAt).length ?? 0;
-  return <main className="mx-auto flex w-full max-w-[2208px] flex-col gap-2 pb-6">{header("life", "Life Overview", "Private context for journal and canonical personal notes. Entertainment and inventory remain outside this slice.")}{!workspace ? feedback("auth_blocked") : <div className="grid gap-2 md:grid-cols-2"><Link className={panel} href="/life/journal"><p className="text-xs font-semibold text-[var(--accent-purple)]">Journal</p><p className="mt-2 text-3xl font-semibold text-[var(--text-primary)]">{activeJournal}</p><p className="text-xs text-[var(--text-muted)]">active entries · {workspace.journalEntries.length - activeJournal} archived</p></Link><Link className={panel} href="/life/notes"><p className="text-xs font-semibold text-[var(--accent-cyan)]">Notes</p><p className="mt-2 text-3xl font-semibold text-[var(--text-primary)]">{activeNotes}</p><p className="text-xs text-[var(--text-muted)]">active notes · {workspace.notes.length - activeNotes} archived</p></Link></div>}</main>;
+  const activeEntertainment = entertainmentWorkspace?.items.filter((item) => !item.archivedAt).length ?? 0;
+  return <main className="mx-auto flex w-full max-w-[2208px] flex-col gap-2 pb-6">{header("life", "Life Overview", "Private context for journal, canonical personal notes and entertainment collections. Inventory and wishlist remain separate future slices.")}{!workspace ? feedback("auth_blocked") : <div className="grid gap-2 md:grid-cols-3"><Link className={panel} href="/life/journal"><p className="text-xs font-semibold text-[var(--accent-purple)]">Journal</p><p className="mt-2 text-3xl font-semibold text-[var(--text-primary)]">{activeJournal}</p><p className="text-xs text-[var(--text-muted)]">active entries · {workspace.journalEntries.length - activeJournal} archived</p></Link><Link className={panel} href="/life/notes"><p className="text-xs font-semibold text-[var(--accent-cyan)]">Notes</p><p className="mt-2 text-3xl font-semibold text-[var(--text-primary)]">{activeNotes}</p><p className="text-xs text-[var(--text-muted)]">active notes · {workspace.notes.length - activeNotes} archived</p></Link><Link className={panel} href="/life/entertainment"><p className="text-xs font-semibold text-[var(--accent-purple)]">Entertainment</p><p className="mt-2 text-3xl font-semibold text-[var(--text-primary)]">{activeEntertainment}</p><p className="text-xs text-[var(--text-muted)]">active items · {(entertainmentWorkspace?.items.length ?? 0) - activeEntertainment} archived</p></Link></div>}</main>;
 }
 
 export function JournalManualWorkspace({ state, workspace }: Readonly<{ state?: string; workspace: LifeWorkspace | null }>) {
