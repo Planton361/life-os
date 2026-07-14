@@ -50,6 +50,8 @@ Capability-level truth is maintained in `docs/product/capability-registry.md`.
 - `A1.1D2 Entertainment Collections`: abgeschlossen.
 - `A1.1D3 Inventory, Wishlist & Purchase Decisions`: abgeschlossen.
 - `M1.1 Challenges, Anti-Rot, Shop & Rewards`: aktiv.
+- `M1.1A Challenges & Reward Ledger`: abgeschlossen.
+- `M1.1B Anti-Rot, Shop & Redemption`: aktiv.
 
 ## 3. Delivery Program
 

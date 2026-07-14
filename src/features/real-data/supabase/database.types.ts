@@ -16,6 +16,8 @@ export type TableUpdate<TTable extends PublicTableName> =
   PublicTables[TTable]["Update"];
 
 export const realDataTableNames = {
+  challengeProgressLogs: "challenge_progress_logs",
+  challenges: "challenges",
   entertainmentItems: "entertainment_items",
   inventoryItems: "inventory_items",
   journalEntries: "journal_entries",
@@ -28,6 +30,7 @@ export const realDataTableNames = {
   recipeIngredients: "recipe_ingredients",
   projects: "projects",
   recipes: "recipes",
+  rewardLedgerEntries: "reward_ledger_entries",
   reviewRecords: "review_records",
   reviewTaskDecisions: "review_task_decisions",
   recurringTaskTemplates: "recurring_task_templates",

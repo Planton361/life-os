@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
-import { getChallengesViewModel } from "@/features/profile-data";
+import { getChallengesViewModel, getChallengesWorkspace } from "@/features/profile-data";
 
 export const metadata: Metadata = {
   title: "Challenges | Life OS",
   description:
-    "Challenge Hub for daily, weekly and monthly special tasks with local progress simulation.",
+    "Manual challenges with progress tracking and an append-only reward ledger.",
 };
 
-export default async function ChallengesPage() {
-  const { ChallengesPage: ChallengesFeaturePage } =
+export default async function ChallengesPage({ searchParams }: Readonly<{ searchParams: Promise<{ state?: string }> }>) {
+  const { ChallengesManualWorkspace, ChallengesPage: ChallengesFeaturePage } =
     await import("@/features/challenges");
-  const viewModel = await getChallengesViewModel();
+  const [viewModel, workspace, params] = await Promise.all([getChallengesViewModel(), getChallengesWorkspace(), searchParams]);
 
+  if (workspace !== undefined) return <ChallengesManualWorkspace state={params.state} workspace={workspace}/>;
   return <ChallengesFeaturePage viewModel={viewModel} />;
 }

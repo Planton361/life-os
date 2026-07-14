@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getChallengesViewModel as getDemoChallengesViewModel } from "@/features/challenges";
+import { createSupabaseChallengeRepository } from "@/features/real-data/supabase/repositories/supabase-challenge-repository";
 import { getCodingOverviewViewModel as getDemoCodingOverviewViewModel } from "@/features/coding";
 import { getAgentHubViewModel as getDemoAgentHubViewModel } from "@/features/coding/agents";
 import { getRepositoriesViewModel as getDemoRepositoriesViewModel } from "@/features/coding/repositories";
@@ -3260,4 +3261,11 @@ export async function getChallengesViewModel(): Promise<
     ],
     templates: [],
   };
+}
+
+export async function getChallengesWorkspace() {
+  if (await getCurrentLifeOsProfileId() !== "manual") return undefined;
+  const auth = await createAuthenticatedSupabaseServerClient();
+  if (!auth.ok) return null;
+  return createSupabaseChallengeRepository(auth.client).getWorkspace(auth.user.id);
 }

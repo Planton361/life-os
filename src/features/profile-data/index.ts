@@ -13,6 +13,7 @@ export {
   getAgentHubViewModel,
   getBlockedDemoFragments,
   getChallengesViewModel,
+  getChallengesWorkspace,
   getCodingOverviewViewModel,
   getEducationOverviewViewModel,
   getEducationWorkspaceViewModel,

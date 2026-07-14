@@ -45,6 +45,104 @@ export type Database = {
         }
         Relationships: []
       }
+      challenge_progress_logs: {
+        Row: {
+          archived_at: string | null
+          challenge_id: string
+          created_at: string
+          id: string
+          increment: number
+          note: string | null
+          recorded_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          challenge_id: string
+          created_at?: string
+          id?: string
+          increment: number
+          note?: string | null
+          recorded_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          challenge_id?: string
+          created_at?: string
+          id?: string
+          increment?: number
+          note?: string | null
+          recorded_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_progress_logs_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenges: {
+        Row: {
+          archived_at: string | null
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          end_date: string
+          id: string
+          period_type: string
+          reward_coins: number
+          start_date: string
+          status: string
+          target_value: number
+          title: string
+          unit: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          end_date: string
+          id?: string
+          period_type: string
+          reward_coins?: number
+          start_date: string
+          status?: string
+          target_value: number
+          title: string
+          unit: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          end_date?: string
+          id?: string
+          period_type?: string
+          reward_coins?: number
+          start_date?: string
+          status?: string
+          target_value?: number
+          title?: string
+          unit?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       coding_sessions: {
         Row: {
           activity: string
@@ -1372,6 +1470,39 @@ export type Database = {
           },
         ]
       }
+      reward_ledger_entries: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          entry_type: string
+          id: string
+          source_id: string
+          source_type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description: string
+          entry_type: string
+          id?: string
+          source_id: string
+          source_type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          entry_type?: string
+          id?: string
+          source_id?: string
+          source_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       running_plan_items: {
         Row: {
           archived_at: string | null
@@ -2323,6 +2454,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      complete_challenge_with_reward: {
+        Args: { p_challenge_id: string }
+        Returns: string
+      }
       complete_linked_meal: {
         Args: { p_completed_at: string; p_meal_id: string }
         Returns: {

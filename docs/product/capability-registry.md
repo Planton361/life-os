@@ -265,9 +265,9 @@
 |---|---|---|---|
 | Anti-Rot action library | `UI_ONLY` | Dashboard visual | create action definitions |
 | Anti-Rot rotation | `NOT_STARTED` | none | deterministic rotation/read model |
-| Challenge create/edit | `UI_ONLY` | challenge shell | create challenge model |
-| Daily/weekly/monthly progress | `UI_ONLY` | visual state | logs/events and reset semantics |
-| Reward currency ledger | `NOT_STARTED` | none | ledger model and rules |
+| Challenge Management | `CONNECTED` | M1.1A user-scoped `challenges` with create/edit/abandon/archive, explicit eligible-only completion and reload-stable active/history views | no automatic generation; Dashboard recomposition remains separate |
+| Challenge Progress | `CONNECTED` | M1.1A append-style `challenge_progress_logs` with positive increments, latest-log correction/archive, active-log aggregation and overachievement proof | no Habit or recurring-task duplication |
+| Reward Ledger | `CONNECTED` | M1.1A append-only `reward_ledger_entries`; balance is derived by sum and atomic idempotent completion credits at most one positive Challenge reward | Anti-Rot, Shop spending and Redemption remain open |
 | Shop rewards | `UI_ONLY` | shop shell | create reward items and redemption |
 
 # 16. Personal AI Assistant
