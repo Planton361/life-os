@@ -254,8 +254,9 @@
 | Journal | `CONNECTED` | A1.1D1 user-scoped `journal_entries` with date, optional title, body, create/edit/soft archive, chronological active/history views and reload proof | Mood, Health and Daily/Weekly Reviews remain separate canonical domains |
 | Notes | `CONNECTED` | A1.1D1 canonical Life-Area `resources` (`note`) with create/edit/archive/restore, reload-stable active/history views and visible existing Project/Goal/Task relations or honest empty state | relation creation remains on the established Resource surfaces; no parallel Notes platform |
 | Entertainment collection | `CONNECTED` | A1.1D2 canonical user-scoped `entertainment_items`; Books, Movies, Series and Games are type-filtered projections with controlled status, progress and 1–10 rating plus create/edit/soft archive/restore and reload proof | external media metadata, cover search and provider APIs remain unimplemented external integrations |
-| Inventory | `UI_ONLY` | route/page shell | inventory items and lifecycle |
-| Wishlist/purchase evaluation | `UI_ONLY` | route/page shell | wishlist and decision records |
+| Inventory | `CONNECTED` | A1.1D3 user-scoped `inventory_items` with create/edit/archive/restore, controlled condition, quantity/value documentation, reload proof and visible Wishlist origin | external merchants, guarantees, insurance and accounting remain unimplemented |
+| Wishlist | `CONNECTED` | A1.1D3 user-scoped `wishlist_items` with controlled priority/status, price documentation, create/edit/archive/restore and reload proof | external price tracking, ordering and product APIs remain external gates |
+| Purchase Decisions | `CONNECTED` | A1.1D3 historical `purchase_decisions` plus explicit atomic and idempotent Wishlist→Inventory RPC; acquired status, Inventory relation and no-duplicate proof are connected | no payment, merchant integration or automated purchase action |
 | Personal dashboard | `UI_ONLY` | area shell | bind canonical data |
 
 # 15. Challenges, Anti-Rot and Shop

@@ -1,5 +1,5 @@
 import { requiredTrimmedStringSchema, z } from "./schema-contract";
-import { entertainmentMediaTypes, entertainmentProgressUnits, entertainmentStatuses } from "../domain/life";
+import { entertainmentMediaTypes, entertainmentProgressUnits, entertainmentStatuses, inventoryConditions, purchaseDecisionStatuses, wishlistPriorities, wishlistStatuses } from "../domain/life";
 
 const uuid = z.string().trim().uuid();
 const entryDate = z.string().date();
@@ -80,3 +80,66 @@ export const entertainmentItemLifecycleInputSchema = z.object({ entertainmentIte
 
 export type EntertainmentItemInput = z.infer<typeof entertainmentItemInputSchema>;
 export type UpdateEntertainmentItemInput = z.infer<typeof updateEntertainmentItemInputSchema>;
+
+const optionalCurrency = z.preprocess(
+  (value) => typeof value === "string" && value.trim() === "" ? null : typeof value === "string" ? value.trim().toUpperCase() : value,
+  z.string().regex(/^[A-Z]{3}$/).nullable(),
+);
+const moneyFields = {
+  currency: optionalCurrency,
+  amount: optionalNumber(z.number().nonnegative()),
+};
+function validateMoneyPair(input: { amount: number | null; currency: string | null }, context: z.RefinementCtx) {
+  if ((input.amount === null) !== (input.currency === null)) context.addIssue({ code: "custom", message: "Amount and currency must be provided together.", path: [input.amount === null ? "amount" : "currency"] });
+}
+
+export const inventoryItemInputSchema = z.object({
+  acquiredOn: optionalDate,
+  amount: moneyFields.amount,
+  category: requiredTrimmedStringSchema(1),
+  condition: z.preprocess((value) => value === "" ? null : value, z.enum(inventoryConditions).nullable()),
+  currency: moneyFields.currency,
+  description: optionalText,
+  location: optionalText,
+  name: requiredTrimmedStringSchema(1),
+  quantity: optionalNumber(z.number().positive()),
+  unit: optionalText,
+}).superRefine((input, context) => {
+  validateMoneyPair(input, context);
+  if ((input.quantity === null) !== (input.unit === null)) context.addIssue({ code: "custom", message: "Quantity and unit must be provided together.", path: [input.quantity === null ? "quantity" : "unit"] });
+});
+export const updateInventoryItemInputSchema = inventoryItemInputSchema.and(z.object({ inventoryItemId: uuid }));
+export const inventoryItemLifecycleInputSchema = z.object({ inventoryItemId: uuid });
+
+export const wishlistItemInputSchema = z.object({
+  amount: moneyFields.amount,
+  category: requiredTrimmedStringSchema(1),
+  currency: moneyFields.currency,
+  description: optionalText,
+  priority: z.enum(wishlistPriorities),
+  status: z.enum(wishlistStatuses),
+  targetDate: optionalDate,
+  title: requiredTrimmedStringSchema(1),
+}).superRefine(validateMoneyPair);
+export const updateWishlistItemInputSchema = wishlistItemInputSchema.and(z.object({ wishlistItemId: uuid }));
+export const wishlistItemLifecycleInputSchema = z.object({ wishlistItemId: uuid });
+
+export const purchaseDecisionInputSchema = z.object({
+  context: requiredTrimmedStringSchema(1),
+  criteria: optionalText,
+  decision: requiredTrimmedStringSchema(1),
+  decisionDate: entryDate,
+  rationale: requiredTrimmedStringSchema(1),
+  status: z.enum(purchaseDecisionStatuses),
+  wishlistItemId: uuid,
+});
+export const updatePurchaseDecisionInputSchema = purchaseDecisionInputSchema.and(z.object({ purchaseDecisionId: uuid }));
+export const purchaseDecisionLifecycleInputSchema = z.object({ purchaseDecisionId: uuid });
+export const convertWishlistItemInputSchema = z.object({ wishlistItemId: uuid });
+
+export type InventoryItemInput = z.infer<typeof inventoryItemInputSchema>;
+export type UpdateInventoryItemInput = z.infer<typeof updateInventoryItemInputSchema>;
+export type WishlistItemInput = z.infer<typeof wishlistItemInputSchema>;
+export type UpdateWishlistItemInput = z.infer<typeof updateWishlistItemInputSchema>;
+export type PurchaseDecisionInput = z.infer<typeof purchaseDecisionInputSchema>;
+export type UpdatePurchaseDecisionInput = z.infer<typeof updatePurchaseDecisionInputSchema>;

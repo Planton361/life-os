@@ -17,7 +17,9 @@ export type TableUpdate<TTable extends PublicTableName> =
 
 export const realDataTableNames = {
   entertainmentItems: "entertainment_items",
+  inventoryItems: "inventory_items",
   journalEntries: "journal_entries",
+  purchaseDecisions: "purchase_decisions",
   goals: "goals",
   habits: "habits",
   habitLogs: "habit_logs",
@@ -43,6 +45,7 @@ export const realDataTableNames = {
   strengthPlanItems: "strength_plan_items",
   strengthSessions: "strength_sessions",
   strengthSetLogs: "strength_set_logs",
+  wishlistItems: "wishlist_items",
 } as const satisfies Record<string, PublicTableName>;
 
 export type SupabaseRepositoryError = {

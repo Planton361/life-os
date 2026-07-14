@@ -2546,6 +2546,13 @@ export async function getLifeEntertainmentWorkspace() {
   return createSupabaseLifeRepository(auth.client).getEntertainmentWorkspace(auth.user.id);
 }
 
+export async function getLifeInventoryWorkspace() {
+  if (await getCurrentLifeOsProfileId() !== "manual") return undefined;
+  const auth = await createAuthenticatedSupabaseServerClient();
+  if (!auth.ok) return null;
+  return createSupabaseLifeRepository(auth.client).getInventoryWorkspace(auth.user.id);
+}
+
 export async function getJournalPageViewModel(): Promise<
   ReturnType<typeof getDemoJournalPageViewModel>
 > {

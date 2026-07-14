@@ -619,6 +619,71 @@ export type Database = {
           },
         ]
       }
+      inventory_items: {
+        Row: {
+          acquired_on: string | null
+          acquisition_value: number | null
+          archived_at: string | null
+          category: string
+          condition: string | null
+          created_at: string
+          currency: string | null
+          description: string | null
+          id: string
+          location: string | null
+          name: string
+          quantity: number | null
+          source_wishlist_item_id: string | null
+          unit: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          acquired_on?: string | null
+          acquisition_value?: number | null
+          archived_at?: string | null
+          category: string
+          condition?: string | null
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          id?: string
+          location?: string | null
+          name: string
+          quantity?: number | null
+          source_wishlist_item_id?: string | null
+          unit?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          acquired_on?: string | null
+          acquisition_value?: number | null
+          archived_at?: string | null
+          category?: string
+          condition?: string | null
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          id?: string
+          location?: string | null
+          name?: string
+          quantity?: number | null
+          source_wishlist_item_id?: string | null
+          unit?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_source_wishlist_item_id_fkey"
+            columns: ["source_wishlist_item_id"]
+            isOneToOne: true
+            referencedRelation: "wishlist_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       journal_entries: {
         Row: {
           archived_at: string | null
@@ -850,6 +915,69 @@ export type Database = {
             columns: ["goal_id"]
             isOneToOne: false
             referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_decisions: {
+        Row: {
+          archived_at: string | null
+          context: string
+          created_at: string
+          criteria: string | null
+          decision: string
+          decision_date: string
+          id: string
+          inventory_item_id: string | null
+          rationale: string
+          status: string
+          updated_at: string
+          user_id: string
+          wishlist_item_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          context: string
+          created_at?: string
+          criteria?: string | null
+          decision: string
+          decision_date: string
+          id?: string
+          inventory_item_id?: string | null
+          rationale: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          wishlist_item_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          context?: string
+          created_at?: string
+          criteria?: string | null
+          decision?: string
+          decision_date?: string
+          id?: string
+          inventory_item_id?: string | null
+          rationale?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          wishlist_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_decisions_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_decisions_wishlist_item_id_fkey"
+            columns: ["wishlist_item_id"]
+            isOneToOne: false
+            referencedRelation: "wishlist_items"
             referencedColumns: ["id"]
           },
         ]
@@ -1941,6 +2069,54 @@ export type Database = {
           },
         ]
       }
+      wishlist_items: {
+        Row: {
+          archived_at: string | null
+          category: string
+          created_at: string
+          currency: string | null
+          description: string | null
+          expected_price: number | null
+          id: string
+          priority: string
+          status: string
+          target_date: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          category: string
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          expected_price?: number | null
+          id?: string
+          priority?: string
+          status?: string
+          target_date?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          category?: string
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          expected_price?: number | null
+          id?: string
+          priority?: string
+          status?: string
+          target_date?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       work_decisions: {
         Row: {
           archived_at: string | null
@@ -2248,6 +2424,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      convert_wishlist_item_to_inventory: {
+        Args: { p_wishlist_item_id: string }
+        Returns: string
       }
       create_resource_from_inbox: {
         Args: {

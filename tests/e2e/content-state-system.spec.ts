@@ -2840,6 +2840,162 @@ test.describe("A1.1D2 Entertainment Collections", () => {
   });
 });
 
+test.describe("A1.1D3 Inventory, Wishlist & Purchase Decisions", () => {
+  test("A1.1D3 creates edits archives restores and reloads inventory items", async ({ page }) => {
+    test.setTimeout(60_000);
+    test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires local authenticated Supabase state.");
+    const name = uniqueTitle("A1.1D3 Inventory");
+    const editedName = `${name} edited`;
+
+    await openManualPortfolioWithDb(page, "A1.1D3 requires the local Manual database.");
+    await page.goto("/life/inventory");
+    const inventory = page.locator("main");
+    await expect(inventory.getByRole("heading", { name: "Inventory & Wishlist", exact: true })).toBeVisible();
+    const createForm = inventory.getByRole("heading", { name: "Add inventory item", exact: true }).locator("xpath=ancestor::section[1]").locator("form");
+    await createForm.locator('input[name="name"]').fill(name);
+    await createForm.locator('input[name="category"]').fill("Tech");
+    await createForm.locator('textarea[name="description"]').fill("A1.1D3 inventory description");
+    await createForm.locator('input[name="quantity"]').fill("2");
+    await createForm.locator('input[name="unit"]').fill("pieces");
+    await createForm.locator('select[name="condition"]').selectOption("good");
+    await createForm.locator('input[name="location"]').fill("Office shelf");
+    await createForm.locator('input[name="acquiredOn"]').fill("2026-07-10");
+    await createForm.locator('input[name="amount"]').fill("249.50");
+    await createForm.locator('input[name="currency"]').fill("EUR");
+    await createForm.getByRole("button", { name: "Save inventory item" }).click();
+    await expect(page.locator("main").getByRole("status")).toHaveText("Inventory item saved.");
+
+    const active = page.locator("main").getByRole("heading", { name: "Active inventory", exact: true }).locator("xpath=ancestor::section[1]");
+    const card = active.getByRole("heading", { name, exact: true }).locator("xpath=ancestor::article[1]");
+    await expect(card).toContainText("2 pieces");
+    await expect(card).toContainText("Office shelf");
+    await card.getByText("Edit inventory item", { exact: true }).click();
+    const editForm = card.locator("details form");
+    await editForm.locator('input[name="name"]').fill(editedName);
+    await editForm.locator('textarea[name="description"]').fill("A1.1D3 edited inventory description");
+    await editForm.locator('input[name="location"]').fill("Studio cabinet");
+    await editForm.locator('select[name="condition"]').selectOption("used");
+    await editForm.getByRole("button", { name: "Save changes" }).click();
+    await expect(page.locator("main").getByRole("status")).toHaveText("Inventory item updated.");
+    await page.reload();
+
+    const reloadedActive = page.locator("main").getByRole("heading", { name: "Active inventory", exact: true }).locator("xpath=ancestor::section[1]");
+    const reloadedCard = reloadedActive.getByRole("heading", { name: editedName, exact: true }).locator("xpath=ancestor::article[1]");
+    await expect(reloadedCard).toContainText("Studio cabinet");
+    await expect(reloadedCard).toContainText("used");
+    await reloadedCard.getByText("Edit inventory item", { exact: true }).click();
+    const reloadedForm = reloadedCard.locator("details form");
+    await expect(reloadedForm.locator('textarea[name="description"]')).toHaveValue("A1.1D3 edited inventory description");
+    await expect(reloadedForm.locator('input[name="quantity"]')).toHaveValue("2");
+    await expect(reloadedForm.locator('input[name="amount"]')).toHaveValue("249.5");
+    await expect(reloadedForm.locator('input[name="currency"]')).toHaveValue("EUR");
+    await reloadedForm.getByRole("button", { name: "Archive" }).click();
+    await expect(page.locator("main").getByRole("status")).toHaveText("Inventory item archived.");
+    await page.reload();
+
+    const history = page.locator("main").getByRole("heading", { name: "Inventory history", exact: true }).locator("xpath=ancestor::section[1]");
+    const archivedCard = history.getByRole("heading", { name: editedName, exact: true }).locator("xpath=ancestor::article[1]");
+    await expect(archivedCard).toContainText("Archived");
+    await expect(archivedCard.locator("details form")).toHaveCount(0);
+    await expect(archivedCard.getByRole("button", { name: "Archive" })).toHaveCount(0);
+    await archivedCard.getByRole("button", { name: "Restore item" }).click();
+    await expect(page.locator("main").getByRole("status")).toHaveText("Inventory item restored.");
+    await page.reload();
+
+    const restoredActive = page.locator("main").getByRole("heading", { name: "Active inventory", exact: true }).locator("xpath=ancestor::section[1]");
+    const restoredCard = restoredActive.getByRole("heading", { name: editedName, exact: true }).locator("xpath=ancestor::article[1]");
+    await restoredCard.getByText("Edit inventory item", { exact: true }).click();
+    await expect(restoredCard.locator("details form").getByRole("button", { name: "Archive" })).toBeVisible();
+  });
+
+  test("A1.1D3 decides converts and reloads wishlist inventory flow", async ({ page }) => {
+    test.setTimeout(60_000);
+    test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires local authenticated Supabase state.");
+    const title = uniqueTitle("A1.1D3 Wishlist");
+    const decision = uniqueTitle("A1.1D3 Buy decision");
+    const editedDecision = `${decision} edited`;
+
+    await openManualPortfolioWithDb(page, "A1.1D3 requires the local Manual database.");
+    await page.goto("/life/inventory");
+    const wishlistForm = page.locator("main").getByRole("heading", { name: "Add wishlist item", exact: true }).locator("xpath=ancestor::section[1]").locator("form");
+    await wishlistForm.locator('input[name="title"]').fill(title);
+    await wishlistForm.locator('input[name="category"]').fill("Desk");
+    await wishlistForm.locator('textarea[name="description"]').fill("A1.1D3 wishlist description");
+    await wishlistForm.locator('select[name="priority"]').selectOption("high");
+    await wishlistForm.locator('select[name="status"]').selectOption("approved");
+    await wishlistForm.locator('input[name="targetDate"]').fill("2026-08-15");
+    await wishlistForm.locator('input[name="amount"]').fill("399.90");
+    await wishlistForm.locator('input[name="currency"]').fill("EUR");
+    await wishlistForm.getByRole("button", { name: "Save wishlist item" }).click();
+    await expect(page.locator("main").getByRole("status")).toHaveText("Wishlist item saved.");
+
+    const wishlistRegion = page.locator("main").getByRole("heading", { name: "Active wishlist & decisions", exact: true }).locator("xpath=ancestor::section[1]");
+    let wishlistCard = wishlistRegion.getByRole("heading", { name: title, exact: true }).locator("xpath=ancestor::article[1]");
+    await expect(wishlistCard).toContainText("high · approved");
+    await wishlistCard.getByText("Purchase decisions", { exact: true }).click();
+    const decisionForm = wishlistCard.getByRole("heading", { name: "New purchase decision", exact: true }).locator("xpath=ancestor::form[1]");
+    await decisionForm.locator('input[name="decisionDate"]').fill("2026-07-14");
+    await decisionForm.locator('textarea[name="context"]').fill("A1.1D3 original need context");
+    await decisionForm.locator('textarea[name="criteria"]').fill("A1.1D3 original criteria");
+    await decisionForm.locator('input[name="decision"]').fill(decision);
+    await decisionForm.locator('select[name="status"]').selectOption("decided_buy");
+    await decisionForm.locator('textarea[name="rationale"]').fill("A1.1D3 original rationale");
+    await decisionForm.getByRole("button", { name: "Save decision" }).click();
+    await expect(page.locator("main").getByRole("status")).toHaveText("Purchase decision saved.");
+
+    const updatedWishlistRegion = page.locator("main").getByRole("heading", { name: "Active wishlist & decisions", exact: true }).locator("xpath=ancestor::section[1]");
+    wishlistCard = updatedWishlistRegion.getByRole("heading", { name: title, exact: true }).locator("xpath=ancestor::article[1]");
+    await wishlistCard.getByText("Purchase decisions", { exact: true }).click();
+    const decisionCard = wishlistCard.getByRole("heading", { name: decision, exact: true }).locator("xpath=ancestor::article[1]");
+    await decisionCard.getByText("Edit decision", { exact: true }).click();
+    const editDecision = decisionCard.locator("details form");
+    await editDecision.locator('textarea[name="context"]').fill("A1.1D3 edited need context");
+    await editDecision.locator('textarea[name="criteria"]').fill("A1.1D3 edited criteria");
+    await editDecision.locator('input[name="decision"]').fill(editedDecision);
+    await editDecision.locator('textarea[name="rationale"]').fill("A1.1D3 edited rationale");
+    await editDecision.getByRole("button", { name: "Save decision" }).click();
+    await expect(page.locator("main").getByRole("status")).toHaveText("Purchase decision updated.");
+    await page.reload();
+
+    const reloadedWishlist = page.locator("main").getByRole("heading", { name: "Active wishlist & decisions", exact: true }).locator("xpath=ancestor::section[1]");
+    wishlistCard = reloadedWishlist.getByRole("heading", { name: title, exact: true }).locator("xpath=ancestor::article[1]");
+    await wishlistCard.getByText("Purchase decisions", { exact: true }).click();
+    const reloadedDecision = wishlistCard.getByRole("heading", { name: editedDecision, exact: true }).locator("xpath=ancestor::article[1]");
+    await expect(reloadedDecision).toContainText("A1.1D3 edited need context");
+    await expect(reloadedDecision).toContainText("A1.1D3 edited rationale");
+    await wishlistCard.getByRole("button", { name: "In Inventory übernehmen" }).click();
+    await expect(page.locator("main").getByRole("status")).toHaveText("Wishlist item transferred to inventory.");
+
+    const acquiredWishlist = page.locator("main").getByRole("heading", { name: "Active wishlist & decisions", exact: true }).locator("xpath=ancestor::section[1]");
+    const acquiredCard = acquiredWishlist.getByRole("heading", { name: title, exact: true }).locator("xpath=ancestor::article[1]");
+    await expect(acquiredCard).toContainText("high · acquired");
+    const activeInventory = page.locator("main").getByRole("heading", { name: "Active inventory", exact: true }).locator("xpath=ancestor::section[1]");
+    const inventoryCard = activeInventory.getByRole("heading", { name: title, exact: true }).locator("xpath=ancestor::article[1]");
+    await expect(inventoryCard).toHaveCount(1);
+    await expect(inventoryCard).toContainText(`Origin: Wishlist · ${title}`);
+    const acquiredSummary = acquiredCard.locator("summary").filter({ hasText: /^Purchase decisions$/ });
+    const acquiredDecisions = acquiredSummary.locator("xpath=ancestor::details[1]");
+    await acquiredSummary.click();
+    await expect(acquiredDecisions).toHaveAttribute("open", "");
+    await expect(acquiredDecisions.getByRole("heading", { name: editedDecision, exact: true })).toBeVisible();
+    await expect(acquiredDecisions).toContainText("Inventory linked");
+    await acquiredCard.getByRole("button", { name: "In Inventory übernehmen" }).click();
+    await expect(page.locator("main").getByRole("status")).toHaveText("Wishlist item transferred to inventory.");
+    await page.reload();
+
+    const persistedInventory = page.locator("main").getByRole("heading", { name: "Active inventory", exact: true }).locator("xpath=ancestor::section[1]");
+    await expect(persistedInventory.getByRole("heading", { name: title, exact: true })).toHaveCount(1);
+    await expect(persistedInventory.getByRole("heading", { name: title, exact: true }).locator("xpath=ancestor::article[1]")).toContainText(`Origin: Wishlist · ${title}`);
+    const persistedWishlist = page.locator("main").getByRole("heading", { name: "Active wishlist & decisions", exact: true }).locator("xpath=ancestor::section[1]");
+    const persistedWishlistCard = persistedWishlist.getByRole("heading", { name: title, exact: true }).locator("xpath=ancestor::article[1]");
+    await expect(persistedWishlistCard).toContainText("acquired");
+    const persistedSummary = persistedWishlistCard.locator("summary").filter({ hasText: /^Purchase decisions$/ });
+    const persistedDecisions = persistedSummary.locator("xpath=ancestor::details[1]");
+    await persistedSummary.click();
+    await expect(persistedDecisions.getByRole("heading", { name: editedDecision, exact: true })).toBeVisible();
+  });
+});
+
 test.describe("H2.1 Running Strength Workout core", () => {
   async function openManualTraining(page: Page, path: "/health/running" | "/health/strength") {
     test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires the authorized local Supabase Playwright auth state.");

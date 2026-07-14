@@ -12,6 +12,16 @@ import {
   entertainmentItemInputSchema,
   entertainmentItemLifecycleInputSchema,
   updateEntertainmentItemInputSchema,
+  convertWishlistItemInputSchema,
+  inventoryItemInputSchema,
+  inventoryItemLifecycleInputSchema,
+  purchaseDecisionInputSchema,
+  purchaseDecisionLifecycleInputSchema,
+  updateInventoryItemInputSchema,
+  updatePurchaseDecisionInputSchema,
+  updateWishlistItemInputSchema,
+  wishlistItemInputSchema,
+  wishlistItemLifecycleInputSchema,
 } from "../schemas/life.schemas";
 import { createSupabaseLifeRepository } from "../supabase/repositories/supabase-life-repository";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
@@ -33,9 +43,10 @@ function revalidateLife() {
   revalidatePath("/life/entertainment/movies");
   revalidatePath("/life/entertainment/series");
   revalidatePath("/life/entertainment/games");
+  revalidatePath("/life/inventory");
 }
 
-type LifeActionPath = "/life/journal" | "/life/notes" | "/life/entertainment" | "/life/entertainment/books" | "/life/entertainment/movies" | "/life/entertainment/series" | "/life/entertainment/games";
+type LifeActionPath = "/life/journal" | "/life/notes" | "/life/inventory" | "/life/entertainment" | "/life/entertainment/books" | "/life/entertainment/movies" | "/life/entertainment/series" | "/life/entertainment/games";
 
 function destination(path: LifeActionPath, state: string, selected?: string): never {
   const params = new URLSearchParams({ state });
@@ -179,3 +190,64 @@ async function entertainmentLifecycle(formData: FormData, archived: boolean) {
 
 export async function archiveEntertainmentItemFormAction(formData: FormData) { await entertainmentLifecycle(formData, true); }
 export async function restoreEntertainmentItemFormAction(formData: FormData) { await entertainmentLifecycle(formData, false); }
+
+function inventoryInput(formData: FormData) { return { acquiredOn: value(formData, "acquiredOn"), amount: value(formData, "amount"), category: value(formData, "category"), condition: value(formData, "condition"), currency: value(formData, "currency"), description: value(formData, "description"), location: value(formData, "location"), name: value(formData, "name"), quantity: value(formData, "quantity"), unit: value(formData, "unit") }; }
+function wishlistInput(formData: FormData) { return { amount: value(formData, "amount"), category: value(formData, "category"), currency: value(formData, "currency"), description: value(formData, "description"), priority: value(formData, "priority"), status: value(formData, "status"), targetDate: value(formData, "targetDate"), title: value(formData, "title") }; }
+function decisionInput(formData: FormData) { return { context: value(formData, "context"), criteria: value(formData, "criteria"), decision: value(formData, "decision"), decisionDate: value(formData, "decisionDate"), rationale: value(formData, "rationale"), status: value(formData, "status"), wishlistItemId: value(formData, "wishlistItemId") }; }
+
+export async function createInventoryItemFormAction(formData: FormData) {
+  const auth = await context("/life/inventory"); const parsed = inventoryItemInputSchema.safeParse(inventoryInput(formData));
+  if (!parsed.success) destination("/life/inventory", "invalid"); const result = await createSupabaseLifeRepository(auth.client).createInventoryItem(auth.user.id, parsed.data);
+  if (!result.ok) destination("/life/inventory", "error"); revalidateLife(); destination("/life/inventory", "inventory_created", result.data.id);
+}
+export async function updateInventoryItemFormAction(formData: FormData) {
+  const auth = await context("/life/inventory"); const parsed = updateInventoryItemInputSchema.safeParse({ ...inventoryInput(formData), inventoryItemId: value(formData, "inventoryItemId") });
+  if (!parsed.success) destination("/life/inventory", "invalid"); const result = await createSupabaseLifeRepository(auth.client).updateInventoryItem(auth.user.id, parsed.data);
+  if (!result.ok) destination("/life/inventory", "error"); revalidateLife(); destination("/life/inventory", "inventory_updated", result.data.id);
+}
+async function inventoryLifecycle(formData: FormData, archived: boolean) {
+  const auth = await context("/life/inventory"); const parsed = inventoryItemLifecycleInputSchema.safeParse({ inventoryItemId: value(formData, "inventoryItemId") });
+  if (!parsed.success) destination("/life/inventory", "invalid"); const result = await createSupabaseLifeRepository(auth.client).setInventoryItemArchived(auth.user.id, parsed.data.inventoryItemId, archived);
+  if (!result.ok) destination("/life/inventory", "error"); revalidateLife(); destination("/life/inventory", archived ? "inventory_archived" : "inventory_restored", parsed.data.inventoryItemId);
+}
+export async function archiveInventoryItemFormAction(formData: FormData) { await inventoryLifecycle(formData, true); }
+export async function restoreInventoryItemFormAction(formData: FormData) { await inventoryLifecycle(formData, false); }
+
+export async function createWishlistItemFormAction(formData: FormData) {
+  const auth = await context("/life/inventory"); const parsed = wishlistItemInputSchema.safeParse(wishlistInput(formData));
+  if (!parsed.success) destination("/life/inventory", "invalid"); const result = await createSupabaseLifeRepository(auth.client).createWishlistItem(auth.user.id, parsed.data);
+  if (!result.ok) destination("/life/inventory", "error"); revalidateLife(); destination("/life/inventory", "wishlist_created", result.data.id);
+}
+export async function updateWishlistItemFormAction(formData: FormData) {
+  const auth = await context("/life/inventory"); const parsed = updateWishlistItemInputSchema.safeParse({ ...wishlistInput(formData), wishlistItemId: value(formData, "wishlistItemId") });
+  if (!parsed.success) destination("/life/inventory", "invalid"); const result = await createSupabaseLifeRepository(auth.client).updateWishlistItem(auth.user.id, parsed.data);
+  if (!result.ok) destination("/life/inventory", "error"); revalidateLife(); destination("/life/inventory", "wishlist_updated", result.data.id);
+}
+async function wishlistLifecycle(formData: FormData, archived: boolean) {
+  const auth = await context("/life/inventory"); const parsed = wishlistItemLifecycleInputSchema.safeParse({ wishlistItemId: value(formData, "wishlistItemId") });
+  if (!parsed.success) destination("/life/inventory", "invalid"); const result = await createSupabaseLifeRepository(auth.client).setWishlistItemArchived(auth.user.id, parsed.data.wishlistItemId, archived);
+  if (!result.ok) destination("/life/inventory", "error"); revalidateLife(); destination("/life/inventory", archived ? "wishlist_archived" : "wishlist_restored", parsed.data.wishlistItemId);
+}
+export async function archiveWishlistItemFormAction(formData: FormData) { await wishlistLifecycle(formData, true); }
+export async function restoreWishlistItemFormAction(formData: FormData) { await wishlistLifecycle(formData, false); }
+
+export async function createPurchaseDecisionFormAction(formData: FormData) {
+  const auth = await context("/life/inventory"); const parsed = purchaseDecisionInputSchema.safeParse(decisionInput(formData));
+  if (!parsed.success) destination("/life/inventory", "invalid"); const result = await createSupabaseLifeRepository(auth.client).createPurchaseDecision(auth.user.id, parsed.data);
+  if (!result.ok) destination("/life/inventory", "error"); revalidateLife(); destination("/life/inventory", "decision_created", result.data.id);
+}
+export async function updatePurchaseDecisionFormAction(formData: FormData) {
+  const auth = await context("/life/inventory"); const parsed = updatePurchaseDecisionInputSchema.safeParse({ ...decisionInput(formData), purchaseDecisionId: value(formData, "purchaseDecisionId") });
+  if (!parsed.success) destination("/life/inventory", "invalid"); const result = await createSupabaseLifeRepository(auth.client).updatePurchaseDecision(auth.user.id, parsed.data);
+  if (!result.ok) destination("/life/inventory", "error"); revalidateLife(); destination("/life/inventory", "decision_updated", result.data.id);
+}
+export async function archivePurchaseDecisionFormAction(formData: FormData) {
+  const auth = await context("/life/inventory"); const parsed = purchaseDecisionLifecycleInputSchema.safeParse({ purchaseDecisionId: value(formData, "purchaseDecisionId") });
+  if (!parsed.success) destination("/life/inventory", "invalid"); const result = await createSupabaseLifeRepository(auth.client).archivePurchaseDecision(auth.user.id, parsed.data.purchaseDecisionId);
+  if (!result.ok) destination("/life/inventory", "error"); revalidateLife(); destination("/life/inventory", "decision_archived", parsed.data.purchaseDecisionId);
+}
+export async function convertWishlistItemToInventoryFormAction(formData: FormData) {
+  const auth = await context("/life/inventory"); const parsed = convertWishlistItemInputSchema.safeParse({ wishlistItemId: value(formData, "wishlistItemId") });
+  if (!parsed.success) destination("/life/inventory", "invalid"); const result = await createSupabaseLifeRepository(auth.client).convertWishlistItemToInventory(auth.user.id, parsed.data.wishlistItemId);
+  if (!result.ok) destination("/life/inventory", "error"); revalidateLife(); destination("/life/inventory", "converted", result.data.id);
+}

@@ -1,4 +1,4 @@
-import { getLifeEntertainmentWorkspace, getLifeManualWorkspace, getLifeOverviewViewModel } from "@/features/profile-data";
+import { getLifeEntertainmentWorkspace, getLifeInventoryWorkspace, getLifeManualWorkspace, getLifeOverviewViewModel } from "@/features/profile-data";
 
 export const metadata = {
   title: "Life Overview | Life OS",
@@ -9,8 +9,8 @@ export const metadata = {
 export default async function LifePage() {
   const { LifeManualOverview, LifeOverviewPage } =
     await import("@/features/life");
-  const [viewModel, workspace, entertainmentWorkspace] = await Promise.all([getLifeOverviewViewModel(), getLifeManualWorkspace(), getLifeEntertainmentWorkspace()]);
+  const [viewModel, workspace, entertainmentWorkspace, inventoryWorkspace] = await Promise.all([getLifeOverviewViewModel(), getLifeManualWorkspace(), getLifeEntertainmentWorkspace(), getLifeInventoryWorkspace()]);
 
-  if (workspace !== undefined) return <LifeManualOverview entertainmentWorkspace={entertainmentWorkspace ?? null} workspace={workspace} />;
+  if (workspace !== undefined) return <LifeManualOverview entertainmentWorkspace={entertainmentWorkspace ?? null} inventoryWorkspace={inventoryWorkspace ?? null} workspace={workspace} />;
   return <LifeOverviewPage viewModel={viewModel} />;
 }

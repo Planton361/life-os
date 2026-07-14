@@ -1,5 +1,4 @@
-import type { JournalEntry } from "../../domain/life";
-import type { EntertainmentItem } from "../../domain/life";
+import type { EntertainmentItem, InventoryItem, JournalEntry, PurchaseDecision, WishlistItem } from "../../domain/life";
 import type { TableRow } from "../database.types";
 
 export function mapJournalEntryRow(row: TableRow<"journal_entries">): JournalEntry {
@@ -12,6 +11,18 @@ export function mapJournalEntryRow(row: TableRow<"journal_entries">): JournalEnt
     title: row.title,
     updatedAt: row.updated_at,
   };
+}
+
+export function mapInventoryItemRow(row: TableRow<"inventory_items">, sourceWishlistTitle: string | null = null): InventoryItem {
+  return { acquiredOn: row.acquired_on, acquisitionValue: row.acquisition_value === null ? null : Number(row.acquisition_value), archivedAt: row.archived_at, category: row.category, condition: row.condition as InventoryItem["condition"], createdAt: row.created_at, currency: row.currency, description: row.description, id: row.id, location: row.location, name: row.name, quantity: row.quantity === null ? null : Number(row.quantity), sourceWishlistItemId: row.source_wishlist_item_id, sourceWishlistTitle, unit: row.unit, updatedAt: row.updated_at };
+}
+
+export function mapWishlistItemRow(row: TableRow<"wishlist_items">): WishlistItem {
+  return { archivedAt: row.archived_at, category: row.category, createdAt: row.created_at, currency: row.currency, description: row.description, expectedPrice: row.expected_price === null ? null : Number(row.expected_price), id: row.id, priority: row.priority as WishlistItem["priority"], status: row.status as WishlistItem["status"], targetDate: row.target_date, title: row.title, updatedAt: row.updated_at };
+}
+
+export function mapPurchaseDecisionRow(row: TableRow<"purchase_decisions">): PurchaseDecision {
+  return { archivedAt: row.archived_at, context: row.context, createdAt: row.created_at, criteria: row.criteria, decision: row.decision, decisionDate: row.decision_date, id: row.id, inventoryItemId: row.inventory_item_id, rationale: row.rationale, status: row.status as PurchaseDecision["status"], updatedAt: row.updated_at, wishlistItemId: row.wishlist_item_id };
 }
 
 export function mapEntertainmentItemRow(row: TableRow<"entertainment_items">): EntertainmentItem {

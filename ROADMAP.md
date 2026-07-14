@@ -45,10 +45,11 @@ Capability-level truth is maintained in `docs/product/capability-registry.md`.
 - `A1.1C1 Work Projects & Work Logs`: abgeschlossen.
 - `A1.1C2a Work Wiki & Decisions`: abgeschlossen.
 - `A1.1C2b Meetings & Follow-ups`: abgeschlossen.
-- `A1.1D Life Domain Foundation`: aktiv.
+- `A1.1D Life Domain Foundation`: abgeschlossen.
 - `A1.1D1 Life Journal & Notes`: abgeschlossen.
 - `A1.1D2 Entertainment Collections`: abgeschlossen.
-- `A1.1D3 Inventory, Wishlist & Purchase Decisions`: aktiv.
+- `A1.1D3 Inventory, Wishlist & Purchase Decisions`: abgeschlossen.
+- `M1.1 Challenges, Anti-Rot, Shop & Rewards`: aktiv.
 
 ## 3. Delivery Program
 

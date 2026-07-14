@@ -1,15 +1,16 @@
-import { getInventoryPageViewModel } from "@/features/profile-data";
+import { getInventoryPageViewModel, getLifeInventoryWorkspace } from "@/features/profile-data";
 
 export const metadata = {
   title: "Inventory | Life OS",
   description:
-    "Owned items, replacements and wishlist decisions with local mock inventory state.",
+    "Private inventory, wishlist and purchase decisions with explicit acquisition transfer.",
 };
 
-export default async function LifeInventoryRoute() {
-  const { InventoryPage } =
+export default async function LifeInventoryRoute({ searchParams }: Readonly<{ searchParams: Promise<{ state?: string }> }>) {
+  const { InventoryManualWorkspace, InventoryPage } =
     await import("@/features/life");
-  const viewModel = await getInventoryPageViewModel();
+  const [viewModel, workspace, params] = await Promise.all([getInventoryPageViewModel(), getLifeInventoryWorkspace(), searchParams]);
 
+  if (workspace !== undefined) return <InventoryManualWorkspace state={params.state} workspace={workspace}/>;
   return <InventoryPage viewModel={viewModel} />;
 }

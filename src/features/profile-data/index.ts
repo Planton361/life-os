@@ -26,6 +26,7 @@ export {
   getLifeOverviewViewModel,
   getLifeManualWorkspace,
   getLifeEntertainmentWorkspace,
+  getLifeInventoryWorkspace,
   getMealPlannerViewModel,
   getNotesPageViewModel,
   getNutritionOverviewViewModel,
