@@ -5,7 +5,7 @@ export type ChallengeStatus = (typeof challengeStatuses)[number];
 
 export type ChallengeProgressLog = { archivedAt: string | null; challengeId: string; createdAt: string; id: string; increment: number; note: string | null; recordedAt: string; updatedAt: string };
 export type ChallengeRecord = { archivedAt: string | null; completedAt: string | null; createdAt: string; description: string | null; endDate: string; id: string; periodType: ChallengePeriod; rewardCoins: number; startDate: string; status: ChallengeStatus; targetValue: number; title: string; unit: string; updatedAt: string };
-export type RewardLedgerEntry = { amount: number; createdAt: string; description: string; entryType: "challenge_reward"; id: string; sourceId: string; sourceType: "challenge" };
+export type RewardLedgerEntry = { amount: number; createdAt: string; description: string; entryType: "challenge_reward" | "shop_redemption"; id: string; sourceId: string; sourceType: "challenge" | "shop_redemption" };
 export type ChallengeWorkspace = { balance: number; challenges: ChallengeRecord[]; ledger: RewardLedgerEntry[]; logs: ChallengeProgressLog[] };
 
 export function aggregateChallengeProgress(logs: readonly Pick<ChallengeProgressLog, "archivedAt" | "increment">[]) { return logs.filter((log) => !log.archivedAt).reduce((sum, log) => sum + log.increment, 0); }

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getShopViewModel } from "@/features/profile-data";
+import { getShopViewModel, getShopWorkspace } from "@/features/profile-data";
 
 export const metadata: Metadata = {
   title: "Shop | Life OS",
@@ -7,10 +7,18 @@ export const metadata: Metadata = {
     "Reward Shop for intentional local Life Credit rewards without payments or random rewards.",
 };
 
-export default async function ShopPage() {
-  const { ShopPage: ShopFeaturePage } =
+export default async function ShopPage({
+  searchParams,
+}: Readonly<{ searchParams: Promise<{ state?: string }> }>) {
+  const { ShopManualWorkspace, ShopPage: ShopFeaturePage } =
     await import("@/features/shop");
-  const viewModel = await getShopViewModel();
+  const [viewModel, workspace, params] = await Promise.all([
+    getShopViewModel(),
+    getShopWorkspace(),
+    searchParams,
+  ]);
 
+  if (workspace !== undefined)
+    return <ShopManualWorkspace state={params.state} workspace={workspace} />;
   return <ShopFeaturePage viewModel={viewModel} />;
 }

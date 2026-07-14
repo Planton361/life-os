@@ -33,6 +33,8 @@ export const realDataTableNames = {
   projects: "projects",
   recipes: "recipes",
   rewardLedgerEntries: "reward_ledger_entries",
+  shopItems: "shop_items",
+  shopRedemptions: "shop_redemptions",
   reviewRecords: "review_records",
   reviewTaskDecisions: "review_task_decisions",
   recurringTaskTemplates: "recurring_task_templates",

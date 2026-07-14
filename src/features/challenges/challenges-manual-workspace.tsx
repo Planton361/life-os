@@ -460,12 +460,12 @@ export function ChallengesManualWorkspace({
                         <p className="text-xs text-[var(--text-primary)]">
                           {e.description}
                         </p>
-                        <p className="text-xs font-semibold text-[var(--accent-green)]">
-                          +{e.amount} coins
+                        <p className="text-xs font-semibold text-[var(--text-secondary)]">
+                          {e.amount > 0 ? `+${e.amount} earned` : `${e.amount} spent`} coins
                         </p>
                       </div>
                       <p className="mt-1 text-[10px] text-[var(--text-muted)]">
-                        Challenge reward · {e.createdAt}
+                        {e.entryType === "challenge_reward" ? "Challenge reward" : "Shop redemption"} · {e.createdAt}
                       </p>
                     </article>
                   ))

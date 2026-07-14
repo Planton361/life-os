@@ -38,6 +38,7 @@ export {
   getResourcesViewModel,
   getRunningTrackerViewModel,
   getShopViewModel,
+  getShopWorkspace,
   getSkillMapViewModel,
   getStrengthTrackerViewModel,
   getWorkLogViewModel,

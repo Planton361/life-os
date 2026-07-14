@@ -3274,6 +3274,250 @@ test.describe("M1.1B1 Anti-Rot Action Library & Rotation", () => {
   });
 });
 
+test.describe("M1.1B2 Shop Items & Atomic Redemption", () => {
+  async function openShop(page: Page) {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires the authorized local Supabase Playwright auth state.",
+    );
+    await openManualPortfolioWithDb(
+      page,
+      "M1.1B2 requires the local Manual database.",
+    );
+    await page.goto("/shop");
+    const shop = page
+      .getByRole("heading", { name: "Reward Shop", exact: true })
+      .locator("xpath=ancestor::main[1]");
+    await expect(shop).toBeVisible();
+    return shop;
+  }
+
+  function shopCard(page: Page, title: string) {
+    return page
+      .getByRole("region", { name: "Current Shop items" })
+      .getByRole("heading", { name: title, exact: true })
+      .locator("xpath=ancestor::article[1]");
+  }
+
+  function shopBalance(page: Page) {
+    return page
+      .getByRole("heading", { name: "Reward Shop", exact: true })
+      .locator("xpath=ancestor::main[1]")
+      .locator("header")
+      .getByText("Coin balance", { exact: true })
+      .locator("xpath=..")
+      .locator("p")
+      .filter({ hasText: /^\d+ coins$/ });
+  }
+
+  test("M1.1B2 manages shop item lifecycle and reloads catalog", async ({
+    page,
+  }) => {
+    test.setTimeout(60_000);
+    const title = uniqueTitle("M1.1B2 Catalog");
+    const editedTitle = `${title} edited`;
+    const shop = await openShop(page);
+    const createForm = shop
+      .getByRole("region", { name: "Create Shop item" })
+      .locator("form");
+    await createForm.locator('input[name="title"]').fill(title);
+    await createForm
+      .locator('textarea[name="description"]')
+      .fill("M1.1B2 original reward description");
+    await createForm.locator('input[name="category"]').fill("recovery");
+    await createForm.locator('input[name="costCoins"]').fill("9");
+    await createForm.getByRole("button", { name: "Create item" }).click();
+    await expect(page.locator("main").getByRole("status")).toHaveText(
+      "Shop item created.",
+    );
+
+    let card = shopCard(page, title);
+    await expect(card).toContainText("Active · recovery");
+    await expect(card).toContainText("9 coins");
+    await card.getByText("Edit item", { exact: true }).click();
+    const editForm = card.locator("details form");
+    await editForm.locator('input[name="title"]').fill(editedTitle);
+    await editForm
+      .locator('textarea[name="description"]')
+      .fill("M1.1B2 edited reward description");
+    await editForm.locator('input[name="category"]').fill("custom");
+    await editForm.locator('input[name="costCoins"]').fill("11");
+    await editForm.getByRole("button", { name: "Save item" }).click();
+    await expect(page.locator("main").getByRole("status")).toHaveText(
+      "Shop item updated.",
+    );
+
+    card = shopCard(page, editedTitle);
+    await card.getByRole("button", { name: "Pause" }).click();
+    card = shopCard(page, editedTitle);
+    await expect(card).toContainText("Paused · custom");
+    await expect(card).toContainText("Paused · unavailable");
+    await expect(card.getByRole("button", { name: "Einlösen" })).toHaveCount(0);
+    await card.getByRole("button", { name: "Reactivate" }).click();
+    await page.reload();
+
+    card = shopCard(page, editedTitle);
+    await expect(card).toContainText("Active · custom");
+    await expect(card).toContainText("M1.1B2 edited reward description");
+    await expect(card.getByText("Edit item", { exact: true })).toBeVisible();
+    await card.getByRole("button", { name: "Archive" }).click();
+    const catalog = page.getByRole("region", { name: "Current Shop items" });
+    const archivedSummary = catalog.locator("summary").filter({
+      hasText: /^Archived items/,
+    });
+    await archivedSummary.click();
+    const archivedCard = catalog
+      .getByRole("heading", { name: editedTitle, exact: true })
+      .locator("xpath=ancestor::article[1]");
+    await expect(archivedCard).toContainText("Archived");
+    await expect(archivedCard.getByText("Edit item", { exact: true })).toHaveCount(0);
+    await expect(
+      archivedCard.getByRole("button", { name: /Einlösen|Pause|Archive/ }),
+    ).toHaveCount(0);
+    await archivedCard.getByRole("button", { name: "Restore" }).click();
+    await page.reload();
+    card = shopCard(page, editedTitle);
+    await expect(card).toContainText("Active · custom");
+    await expect(card.getByText("Edit item", { exact: true })).toBeVisible();
+  });
+
+  test("M1.1B2 redeems atomically prevents overspend and reloads ledger", async ({
+    page,
+  }) => {
+    test.setTimeout(90_000);
+    const challengeTitle = uniqueTitle("M1.1B2 Balance");
+    await openManualPortfolioWithDb(
+      page,
+      "M1.1B2 requires the local Manual database.",
+    );
+    await page.goto("/challenges");
+    const challenges = page.locator("main");
+    const challengeForm = challenges
+      .getByRole("heading", { name: "Create challenge", exact: true })
+      .locator("xpath=ancestor::section[1]")
+      .locator("form");
+    await challengeForm.locator('input[name="title"]').fill(challengeTitle);
+    await challengeForm
+      .locator('textarea[name="description"]')
+      .fill("M1.1B2 positive balance setup");
+    await challengeForm.locator('input[name="targetValue"]').fill("1");
+    await challengeForm.locator('input[name="unit"]').fill("step");
+    await challengeForm.locator('input[name="rewardCoins"]').fill("50");
+    await challengeForm.getByRole("button", { name: "Create challenge" }).click();
+    let challengeCard = page
+      .getByRole("heading", { name: "Active challenges", exact: true })
+      .locator("xpath=ancestor::section[1]")
+      .getByRole("heading", { name: challengeTitle, exact: true })
+      .locator("xpath=ancestor::article[1]");
+    const progressForm = challengeCard
+      .getByRole("button", { name: "Log progress" })
+      .locator("xpath=ancestor::form[1]");
+    await progressForm.locator('input[name="increment"]').fill("1");
+    await progressForm
+      .locator('textarea[name="note"]')
+      .fill("M1.1B2 target reached");
+    await progressForm.getByRole("button", { name: "Log progress" }).click();
+    challengeCard = page
+      .getByRole("heading", { name: "Active challenges", exact: true })
+      .locator("xpath=ancestor::section[1]")
+      .getByRole("heading", { name: challengeTitle, exact: true })
+      .locator("xpath=ancestor::article[1]");
+    await challengeCard.getByRole("button", { name: "Complete challenge" }).click();
+    await expect(page.locator("main").getByRole("status")).toHaveText(
+      "Challenge completed and reward credited once.",
+    );
+
+    await page.goto("/shop");
+    const initialBalance = Number((await shopBalance(page).textContent())?.match(/\d+/)?.[0]);
+    expect(initialBalance).toBeGreaterThanOrEqual(50);
+    const redeemTitle = uniqueTitle("M1.1B2 Redeem");
+    const overspendTitle = uniqueTitle("M1.1B2 Overspend");
+    const cost = 7;
+    const createItem = async (title: string, coins: number) => {
+      const form = page
+        .getByRole("region", { name: "Create Shop item" })
+        .locator("form");
+      await form.locator('input[name="title"]').fill(title);
+      await form
+        .locator('textarea[name="description"]')
+        .fill(`Snapshot description for ${title}`);
+      await form.locator('input[name="category"]').fill("personal");
+      await form.locator('input[name="costCoins"]').fill(String(coins));
+      await form.getByRole("button", { name: "Create item" }).click();
+    };
+    await createItem(redeemTitle, cost);
+    await createItem(overspendTitle, initialBalance);
+
+    const redeemCard = shopCard(page, redeemTitle);
+    const redeemForm = redeemCard
+      .getByRole("button", { name: "Einlösen" })
+      .locator("xpath=ancestor::form[1]");
+    const requestKey = await redeemForm.locator('input[name="requestKey"]').inputValue();
+    const replayPage = await page.context().newPage();
+    const overspendPage = await page.context().newPage();
+    await Promise.all([replayPage.goto("/shop"), overspendPage.goto("/shop")]);
+    const replayCard = shopCard(replayPage, redeemTitle);
+    const replayForm = replayCard
+      .getByRole("button", { name: "Einlösen" })
+      .locator("xpath=ancestor::form[1]");
+    await replayForm.locator('input[name="requestKey"]').evaluate(
+      (input, key) => {
+        (input as HTMLInputElement).value = key;
+      },
+      requestKey,
+    );
+    const staleOverspendCard = shopCard(overspendPage, overspendTitle);
+    await expect(
+      staleOverspendCard.getByRole("button", { name: "Einlösen" }),
+    ).toBeEnabled();
+
+    await redeemForm.getByRole("button", { name: "Einlösen" }).click();
+    await expect(page.locator("main").getByRole("status")).toHaveText(
+      "Reward redeemed and coins booked once.",
+    );
+    await replayForm.getByRole("button", { name: "Einlösen" }).click();
+    await expect(replayPage.locator("main").getByRole("status")).toHaveText(
+      "Reward redeemed and coins booked once.",
+    );
+    await staleOverspendCard.getByRole("button", { name: "Einlösen" }).click();
+    await expect(overspendPage.locator("main").getByRole("alert")).toHaveText(
+      "Redemption failed: the item is unavailable or the coin balance is insufficient.",
+    );
+    await replayPage.close();
+    await overspendPage.close();
+    await page.reload();
+
+    const remainingBalance = initialBalance - cost;
+    await expect(shopBalance(page)).toHaveText(`${remainingBalance} coins`);
+    const redemptionHistory = page.getByRole("region", {
+      name: "Shop redemption history",
+    });
+    const redemption = redemptionHistory.locator("article").filter({
+      hasText: redeemTitle,
+    });
+    await expect(redemption).toHaveCount(1);
+    await expect(redemption).toContainText(`Spent ${cost} coins`);
+    await expect(
+      redemptionHistory.locator("article").filter({ hasText: overspendTitle }),
+    ).toHaveCount(0);
+    const ledger = page.getByRole("region", { name: "Reward ledger history" });
+    const debit = ledger.locator("article").filter({
+      hasText: `Shop redemption: ${redeemTitle}`,
+    });
+    await expect(debit).toHaveCount(1);
+    await expect(debit).toContainText(`-${cost} spent coins`);
+    await expect(
+      ledger.locator("article").filter({
+        hasText: `Shop redemption: ${overspendTitle}`,
+      }),
+    ).toHaveCount(0);
+    await expect(shopCard(page, overspendTitle)).toContainText("Not enough coins");
+    await expect(
+      shopCard(page, overspendTitle).getByRole("button", { name: "Einlösen" }),
+    ).toBeDisabled();
+  });
+});
+
 test.describe("H2.1 Running Strength Workout core", () => {
   async function openManualTraining(page: Page, path: "/health/running" | "/health/strength") {
     test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires the authorized local Supabase Playwright auth state.");

@@ -88,6 +88,7 @@ import type {
 import { localDateInTimeZone } from "@/features/real-data";
 import { formatPace, muscleLoad, strengthVolume } from "@/features/real-data";
 import { getShopViewModel as getDemoShopViewModel } from "@/features/shop";
+import { createSupabaseShopRepository } from "@/features/real-data/supabase/repositories/supabase-shop-repository";
 import {
   getWorkLogViewModel as getDemoWorkLogViewModel,
   getWorkOverviewViewModel as getDemoWorkOverviewViewModel,
@@ -3238,6 +3239,13 @@ export async function getShopViewModel(): Promise<
     ],
     transactions: [],
   };
+}
+
+export async function getShopWorkspace() {
+  if (await getCurrentLifeOsProfileId() !== "manual") return undefined;
+  const auth = await createAuthenticatedSupabaseServerClient();
+  if (!auth.ok) return null;
+  return createSupabaseShopRepository(auth.client).getWorkspace(auth.user.id);
 }
 
 export async function getChallengesViewModel(): Promise<

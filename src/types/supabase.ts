@@ -1761,6 +1761,83 @@ export type Database = {
           },
         ]
       }
+      shop_items: {
+        Row: {
+          archived_at: string | null
+          category: string | null
+          cost_coins: number
+          created_at: string
+          description: string | null
+          id: string
+          is_paused: boolean
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          category?: string | null
+          cost_coins: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_paused?: boolean
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          category?: string | null
+          cost_coins?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_paused?: boolean
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      shop_redemptions: {
+        Row: {
+          cost_coins: number
+          id: string
+          redeemed_at: string
+          request_key: string
+          shop_item_id: string
+          title_snapshot: string
+          user_id: string
+        }
+        Insert: {
+          cost_coins: number
+          id?: string
+          redeemed_at?: string
+          request_key: string
+          shop_item_id: string
+          title_snapshot: string
+          user_id: string
+        }
+        Update: {
+          cost_coins?: number
+          id?: string
+          redeemed_at?: string
+          request_key?: string
+          shop_item_id?: string
+          title_snapshot?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_redemptions_shop_item_id_fkey"
+            columns: ["shop_item_id"]
+            isOneToOne: false
+            referencedRelation: "shop_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       skill_evidence: {
         Row: {
           created_at: string
@@ -2681,6 +2758,10 @@ export type Database = {
       }
       create_work_meeting_followup: {
         Args: { p_description?: string; p_meeting_id: string; p_title: string }
+        Returns: string
+      }
+      redeem_shop_item: {
+        Args: { p_request_key: string; p_shop_item_id: string }
         Returns: string
       }
       resolve_anti_rot_recommendation: {
