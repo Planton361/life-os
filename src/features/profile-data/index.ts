@@ -14,6 +14,7 @@ export {
   getBlockedDemoFragments,
   getChallengesViewModel,
   getChallengesWorkspace,
+  getAntiRotWorkspace,
   getCodingOverviewViewModel,
   getEducationOverviewViewModel,
   getEducationWorkspaceViewModel,

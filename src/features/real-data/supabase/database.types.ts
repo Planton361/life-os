@@ -16,6 +16,8 @@ export type TableUpdate<TTable extends PublicTableName> =
   PublicTables[TTable]["Update"];
 
 export const realDataTableNames = {
+  antiRotActions: "anti_rot_actions",
+  antiRotEvents: "anti_rot_events",
   challengeProgressLogs: "challenge_progress_logs",
   challenges: "challenges",
   entertainmentItems: "entertainment_items",

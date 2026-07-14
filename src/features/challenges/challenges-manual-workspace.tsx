@@ -16,6 +16,8 @@ import {
   type ChallengeWorkspace,
 } from "@/features/real-data/domain/challenge";
 import { cn } from "@/lib/cn";
+import type { AntiRotWorkspace } from "@/features/real-data/domain/anti-rot";
+import { AntiRotManualWorkspace } from "./anti-rot-manual-workspace";
 import {
   inputClass,
   primaryButtonClass,
@@ -28,9 +30,14 @@ const card =
 const label = "text-[11px] font-semibold text-[var(--text-secondary)]";
 function Feedback({ state }: { state?: string }) {
   if (!state) return null;
-  const error = ["error", "invalid", "auth_blocked", "not_ready"].includes(
-    state,
-  );
+  const error =
+    ["error", "invalid", "auth_blocked", "not_ready"].includes(state) ||
+    [
+      "anti_rot_error",
+      "anti_rot_invalid",
+      "anti_rot_empty",
+      "anti_rot_resolve_first",
+    ].includes(state);
   const messages: Record<string, string> = {
     abandoned: "Challenge abandoned.",
     archived: "Challenge archived.",
@@ -44,6 +51,20 @@ function Feedback({ state }: { state?: string }) {
     progress_archived: "Latest progress entry archived.",
     progress_updated: "Latest progress entry corrected.",
     updated: "Challenge updated.",
+    anti_rot_archived: "Anti-Rot action archived.",
+    anti_rot_completed: "Recommendation completed and recorded.",
+    anti_rot_created: "Anti-Rot action created.",
+    anti_rot_empty: "No active Anti-Rot action is available.",
+    anti_rot_error: "The Anti-Rot change could not be saved.",
+    anti_rot_invalid: "Check the Anti-Rot action fields.",
+    anti_rot_paused: "Anti-Rot action paused.",
+    anti_rot_reactivated: "Anti-Rot action reactivated.",
+    anti_rot_recommended: "A new Anti-Rot action was selected.",
+    anti_rot_resolve_first:
+      "Complete, skip or rotate the current recommendation before pausing or archiving it.",
+    anti_rot_restored: "Anti-Rot action restored.",
+    anti_rot_skipped: "Recommendation skipped and recorded.",
+    anti_rot_updated: "Anti-Rot action updated.",
   };
   return (
     <p
@@ -311,7 +332,9 @@ function ChallengeCard({
           {challenge.status === "completed" ? (
             <form action={completeChallengeAction}>
               <input name="challengeId" type="hidden" value={challenge.id} />
-              <button className={secondaryButtonClass}>Complete challenge</button>
+              <button className={secondaryButtonClass}>
+                Complete challenge
+              </button>
             </form>
           ) : null}
           <form action={archiveChallengeAction}>
@@ -324,9 +347,11 @@ function ChallengeCard({
   );
 }
 export function ChallengesManualWorkspace({
+  antiRotWorkspace,
   state,
   workspace,
 }: {
+  antiRotWorkspace: AntiRotWorkspace | null;
   state?: string;
   workspace: ChallengeWorkspace | null;
 }) {
@@ -367,6 +392,11 @@ export function ChallengesManualWorkspace({
       <Feedback state={state} />
       {workspace ? (
         <>
+          {antiRotWorkspace ? (
+            <AntiRotManualWorkspace workspace={antiRotWorkspace} />
+          ) : (
+            <Feedback state="auth_blocked" />
+          )}
           <div className="grid gap-2 xl:grid-cols-[minmax(320px,.65fr)_minmax(0,1.35fr)]">
             <section className={panel}>
               <h2 className="text-base font-semibold text-[var(--text-primary)]">

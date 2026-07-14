@@ -9,6 +9,90 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      anti_rot_actions: {
+        Row: {
+          archived_at: string | null
+          category: string | null
+          created_at: string
+          description: string | null
+          energy: string | null
+          estimated_minutes: number | null
+          id: string
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          energy?: string | null
+          estimated_minutes?: number | null
+          id?: string
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          energy?: string | null
+          estimated_minutes?: number | null
+          id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      anti_rot_events: {
+        Row: {
+          action_id: string
+          created_at: string
+          event_type: string
+          id: string
+          recommendation_event_id: string | null
+          user_id: string
+        }
+        Insert: {
+          action_id: string
+          created_at?: string
+          event_type: string
+          id?: string
+          recommendation_event_id?: string | null
+          user_id: string
+        }
+        Update: {
+          action_id?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          recommendation_event_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anti_rot_events_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "anti_rot_actions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anti_rot_events_recommendation_event_id_fkey"
+            columns: ["recommendation_event_id"]
+            isOneToOne: false
+            referencedRelation: "anti_rot_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       areas: {
         Row: {
           archived_at: string | null
@@ -2599,6 +2683,11 @@ export type Database = {
         Args: { p_description?: string; p_meeting_id: string; p_title: string }
         Returns: string
       }
+      resolve_anti_rot_recommendation: {
+        Args: { p_event_type: string; p_recommendation_event_id: string }
+        Returns: string
+      }
+      rotate_anti_rot_action: { Args: never; Returns: string }
       save_completed_running_session: {
         Args: {
           p_average_heart_rate: number

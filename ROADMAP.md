@@ -52,6 +52,8 @@ Capability-level truth is maintained in `docs/product/capability-registry.md`.
 - `M1.1 Challenges, Anti-Rot, Shop & Rewards`: aktiv.
 - `M1.1A Challenges & Reward Ledger`: abgeschlossen.
 - `M1.1B Anti-Rot, Shop & Redemption`: aktiv.
+- `M1.1B1 Anti-Rot Action Library & Rotation`: abgeschlossen.
+- `M1.1B2 Shop Items & Atomic Redemption`: aktiv.
 
 ## 3. Delivery Program
 

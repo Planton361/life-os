@@ -263,11 +263,12 @@
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Anti-Rot action library | `UI_ONLY` | Dashboard visual | create action definitions |
-| Anti-Rot rotation | `NOT_STARTED` | none | deterministic rotation/read model |
+| Anti-Rot action library | `CONNECTED` | M1.1B1 user-scoped `anti_rot_actions` with create/edit, pause/reactivate, soft archive/restore and reload-stable Manual library on `/challenges` | Dashboard Anti-Rot projection remains a separate prepared surface |
+| Anti-Rot rotation | `CONNECTED` | M1.1B1 explicit deterministic least-recently-used selection over active actions; user-serialized atomic RPC preserves the recommendation across reload and avoids an immediately skipped action when alternatives exist | no automatic recommendation, notification or AI selection |
+| Anti-Rot completion / skip history | `CONNECTED` | M1.1B1 append-only `anti_rot_events`; atomic and idempotent Completion/Skip RPCs resolve each recommendation at most once with reload-stable provenance | no Anti-Rot coin reward; Shop and Redemption remain open |
 | Challenge Management | `CONNECTED` | M1.1A user-scoped `challenges` with create/edit/abandon/archive, explicit eligible-only completion and reload-stable active/history views | no automatic generation; Dashboard recomposition remains separate |
 | Challenge Progress | `CONNECTED` | M1.1A append-style `challenge_progress_logs` with positive increments, latest-log correction/archive, active-log aggregation and overachievement proof | no Habit or recurring-task duplication |
-| Reward Ledger | `CONNECTED` | M1.1A append-only `reward_ledger_entries`; balance is derived by sum and atomic idempotent completion credits at most one positive Challenge reward | Anti-Rot, Shop spending and Redemption remain open |
+| Reward Ledger | `CONNECTED` | M1.1A append-only `reward_ledger_entries`; balance is derived by sum and atomic idempotent completion credits at most one positive Challenge reward | Shop spending and Redemption remain open; Anti-Rot completion intentionally creates no coins |
 | Shop rewards | `UI_ONLY` | shop shell | create reward items and redemption |
 
 # 16. Personal AI Assistant

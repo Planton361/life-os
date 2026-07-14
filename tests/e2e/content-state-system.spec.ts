@@ -3031,6 +3031,249 @@ test.describe("M1.1A Challenges & Reward Ledger", () => {
   });
 });
 
+test.describe("M1.1B1 Anti-Rot Action Library & Rotation", () => {
+  async function openAntiRot(page: Page) {
+    test.skip(
+      !process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE,
+      "Requires the authorized local Supabase Playwright auth state.",
+    );
+    await openManualPortfolioWithDb(
+      page,
+      "M1.1B1 requires the local Manual database.",
+    );
+    await page.goto("/challenges");
+    const region = page
+      .getByRole("heading", { name: "Action Library & Rotation", exact: true })
+      .locator("xpath=ancestor::section[1]");
+    await expect(region).toBeVisible();
+    return region;
+  }
+
+  test("M1.1B1 manages anti rot action lifecycle and reloads library", async ({
+    page,
+  }) => {
+    test.setTimeout(60_000);
+    const title = uniqueTitle("M1.1B1 Library");
+    const editedTitle = `${title} edited`;
+    const antiRot = await openAntiRot(page);
+    const createRegion = antiRot.getByRole("region", {
+      name: "Anti-Rot action library",
+    });
+    const createForm = createRegion.locator("form");
+    await createForm.locator('input[name="title"]').fill(title);
+    await createForm
+      .locator('textarea[name="description"]')
+      .fill("M1.1B1 original action description");
+    await createForm.locator('select[name="category"]').selectOption("creative");
+    await createForm.locator('input[name="estimatedMinutes"]').fill("18");
+    await createForm.locator('select[name="energy"]').selectOption("medium");
+    await createForm.getByRole("button", { name: "Create action" }).click();
+    await expect(page.locator("main").getByRole("status")).toHaveText(
+      "Anti-Rot action created.",
+    );
+
+    let library = page.getByRole("region", {
+      name: "Active and paused Anti-Rot actions",
+    });
+    let card = library
+      .getByRole("heading", { name: title, exact: true })
+      .locator("xpath=ancestor::article[1]");
+    await expect(card).toContainText("active · creative · 18 min");
+    await expect(card).toContainText("medium energy");
+    await card.getByText("Edit action", { exact: true }).click();
+    const editForm = card.locator("details form");
+    await editForm.locator('input[name="title"]').fill(editedTitle);
+    await editForm
+      .locator('textarea[name="description"]')
+      .fill("M1.1B1 edited action description");
+    await editForm.locator('select[name="category"]').selectOption("outside");
+    await editForm.locator('input[name="estimatedMinutes"]').fill("24");
+    await editForm.locator('select[name="energy"]').selectOption("high");
+    await editForm.getByRole("button", { name: "Save changes" }).click();
+    await expect(page.locator("main").getByRole("status")).toHaveText(
+      "Anti-Rot action updated.",
+    );
+
+    library = page.getByRole("region", {
+      name: "Active and paused Anti-Rot actions",
+    });
+    card = library
+      .getByRole("heading", { name: editedTitle, exact: true })
+      .locator("xpath=ancestor::article[1]");
+    await card.getByRole("button", { name: "Pause" }).click();
+    await expect(page.locator("main").getByRole("status")).toHaveText(
+      "Anti-Rot action paused.",
+    );
+    card = page
+      .getByRole("region", { name: "Active and paused Anti-Rot actions" })
+      .getByRole("heading", { name: editedTitle, exact: true })
+      .locator("xpath=ancestor::article[1]");
+    await expect(card).toContainText("paused · outside · 24 min");
+    await card.getByRole("button", { name: "Reactivate" }).click();
+    await page.reload();
+
+    library = page.getByRole("region", {
+      name: "Active and paused Anti-Rot actions",
+    });
+    card = library
+      .getByRole("heading", { name: editedTitle, exact: true })
+      .locator("xpath=ancestor::article[1]");
+    await expect(card).toContainText("active · outside · 24 min");
+    await expect(card).toContainText("M1.1B1 edited action description");
+    await expect(card).toContainText("high energy");
+    await card.getByRole("button", { name: "Archive" }).click();
+    await expect(page.locator("main").getByRole("status")).toHaveText(
+      "Anti-Rot action archived.",
+    );
+    library = page.getByRole("region", {
+      name: "Active and paused Anti-Rot actions",
+    });
+    const archivedSummary = library.locator("summary").filter({
+      hasText: /^Archived actions/,
+    });
+    await archivedSummary.click();
+    const archivedCard = library
+      .getByRole("heading", { name: editedTitle, exact: true })
+      .locator("xpath=ancestor::article[1]");
+    await expect(archivedCard).toContainText("Archived");
+    await expect(archivedCard.getByText("Edit action", { exact: true })).toHaveCount(0);
+    await expect(archivedCard.getByRole("button", { name: /Pause|Archive/ })).toHaveCount(0);
+    await archivedCard.getByRole("button", { name: "Restore" }).click();
+    await page.reload();
+    card = page
+      .getByRole("region", { name: "Active and paused Anti-Rot actions" })
+      .getByRole("heading", { name: editedTitle, exact: true })
+      .locator("xpath=ancestor::article[1]");
+    await expect(card).toContainText("active · outside · 24 min");
+    await expect(card.getByText("Edit action", { exact: true })).toBeVisible();
+  });
+
+  test("M1.1B1 rotates completes skips and reloads recommendation history", async ({
+    page,
+  }) => {
+    test.setTimeout(60_000);
+    const titles = [
+      uniqueTitle("M1.1B1 Rotation A"),
+      uniqueTitle("M1.1B1 Rotation B"),
+      uniqueTitle("M1.1B1 Rotation C"),
+    ];
+    let antiRot = await openAntiRot(page);
+    const currentRegion = () =>
+      page.getByRole("region", { name: "Current Anti-Rot recommendation" });
+    const historyRegion = () =>
+      page.getByRole("region", { name: "Anti-Rot event history" });
+    const currentTitle = () => currentRegion().locator("article > p.font-semibold");
+    const beforeCurrent = (await currentTitle().count())
+      ? await currentTitle().textContent()
+      : null;
+    const beforeHistoryCount = await historyRegion().locator("article").count();
+    await page.reload();
+    await expect(historyRegion().locator("article")).toHaveCount(beforeHistoryCount);
+    if (beforeCurrent) {
+      await expect(currentTitle()).toHaveText(beforeCurrent);
+    } else {
+      await expect(currentRegion().locator("article")).toHaveCount(0);
+    }
+
+    for (const title of titles) {
+      antiRot = page
+        .getByRole("heading", { name: "Action Library & Rotation", exact: true })
+        .locator("xpath=ancestor::section[1]");
+      const form = antiRot
+        .getByRole("region", { name: "Anti-Rot action library" })
+        .locator("form");
+      await form.locator('input[name="title"]').fill(title);
+      await form
+        .locator('textarea[name="description"]')
+        .fill(`Deterministic rotation proof for ${title}`);
+      await form.locator('select[name="category"]').selectOption("reset");
+      await form.locator('input[name="estimatedMinutes"]').fill("5");
+      await form.locator('select[name="energy"]').selectOption("low");
+      await form.getByRole("button", { name: "Create action" }).click();
+    }
+
+    if (await currentRegion().locator("article").count()) {
+      await currentRegion().getByRole("button", { name: "Überspringen" }).click();
+    }
+    await currentRegion().getByRole("button", { name: "Aktion auswählen" }).click();
+    let selectedTitle = (await currentTitle().textContent())?.trim() ?? "";
+    await expect(currentTitle()).toHaveText(selectedTitle);
+    await page.reload();
+    await expect(currentTitle()).toHaveText(selectedTitle);
+
+    const completionForm = currentRegion()
+      .getByRole("button", { name: "Erledigt" })
+      .locator("xpath=ancestor::form[1]");
+    const completionReplayPage = await page.context().newPage();
+    await completionReplayPage.goto("/challenges");
+    const completionReplayRegion = completionReplayPage.getByRole("region", {
+      name: "Current Anti-Rot recommendation",
+    });
+    await expect(
+      completionReplayRegion.locator("article > p.font-semibold"),
+    ).toHaveText(selectedTitle);
+    await completionForm.getByRole("button", { name: "Erledigt" }).click();
+    await expect(page.locator("main").getByRole("status")).toHaveText(
+      "Recommendation completed and recorded.",
+    );
+    await completionReplayRegion
+      .getByRole("button", { name: "Erledigt" })
+      .click();
+    await expect(
+      completionReplayPage.locator("main").getByRole("status"),
+    ).toHaveText("Recommendation completed and recorded.");
+    await completionReplayPage.close();
+    await page.reload();
+    const completionRows = historyRegion()
+      .locator("article")
+      .filter({ hasText: selectedTitle })
+      .filter({ hasText: "completed" });
+    await expect(completionRows).toHaveCount(1);
+
+    await currentRegion().getByRole("button", { name: "Aktion auswählen" }).click();
+    selectedTitle = (await currentTitle().textContent())?.trim() ?? "";
+    const skipForm = currentRegion()
+      .getByRole("button", { name: "Überspringen" })
+      .locator("xpath=ancestor::form[1]");
+    const skipReplayPage = await page.context().newPage();
+    await skipReplayPage.goto("/challenges");
+    const skipReplayRegion = skipReplayPage.getByRole("region", {
+      name: "Current Anti-Rot recommendation",
+    });
+    await expect(skipReplayRegion.locator("article > p.font-semibold")).toHaveText(
+      selectedTitle,
+    );
+    await skipForm.getByRole("button", { name: "Überspringen" }).click();
+    await skipReplayRegion
+      .getByRole("button", { name: "Überspringen" })
+      .click();
+    await expect(skipReplayPage.locator("main").getByRole("status")).toHaveText(
+      "Recommendation skipped and recorded.",
+    );
+    await skipReplayPage.close();
+    await currentRegion().getByRole("button", { name: "Aktion auswählen" }).click();
+    const nextTitle = (await currentTitle().textContent())?.trim() ?? "";
+    expect(nextTitle).not.toBe(selectedTitle);
+    await page.reload();
+    await expect(currentTitle()).toHaveText(nextTitle);
+    await expect(
+      historyRegion().locator("article").filter({ hasText: "recommended" }),
+    ).not.toHaveCount(0);
+    await expect(
+      historyRegion().locator("article").filter({ hasText: "completed" }),
+    ).not.toHaveCount(0);
+    await expect(
+      historyRegion().locator("article").filter({ hasText: "skipped" }),
+    ).not.toHaveCount(0);
+    await expect(
+      historyRegion()
+        .locator("article")
+        .filter({ hasText: selectedTitle })
+        .filter({ hasText: "skipped" }),
+    ).toHaveCount(1);
+  });
+});
+
 test.describe("H2.1 Running Strength Workout core", () => {
   async function openManualTraining(page: Page, path: "/health/running" | "/health/strength") {
     test.skip(!process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE, "Requires the authorized local Supabase Playwright auth state.");

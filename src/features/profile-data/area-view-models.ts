@@ -2,6 +2,7 @@ import "server-only";
 
 import { getChallengesViewModel as getDemoChallengesViewModel } from "@/features/challenges";
 import { createSupabaseChallengeRepository } from "@/features/real-data/supabase/repositories/supabase-challenge-repository";
+import { createSupabaseAntiRotRepository } from "@/features/real-data/supabase/repositories/supabase-anti-rot-repository";
 import { getCodingOverviewViewModel as getDemoCodingOverviewViewModel } from "@/features/coding";
 import { getAgentHubViewModel as getDemoAgentHubViewModel } from "@/features/coding/agents";
 import { getRepositoriesViewModel as getDemoRepositoriesViewModel } from "@/features/coding/repositories";
@@ -3268,4 +3269,11 @@ export async function getChallengesWorkspace() {
   const auth = await createAuthenticatedSupabaseServerClient();
   if (!auth.ok) return null;
   return createSupabaseChallengeRepository(auth.client).getWorkspace(auth.user.id);
+}
+
+export async function getAntiRotWorkspace() {
+  if (await getCurrentLifeOsProfileId() !== "manual") return undefined;
+  const auth = await createAuthenticatedSupabaseServerClient();
+  if (!auth.ok) return null;
+  return createSupabaseAntiRotRepository(auth.client).getWorkspace(auth.user.id);
 }
