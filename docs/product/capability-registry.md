@@ -25,6 +25,40 @@
 - Demo fixtures do not count as connected Manual capability.
 - Historical QA is supporting evidence, not current truth if the code changed.
 
+## Active Product Boundary (R0)
+
+Implementation status and product visibility are separate truths: `CONNECTED` code may be deferred and hidden without being deleted or relabeled as unimplemented.
+
+| Surface / domain | Boundary | Current implementation truth | Visibility truth / next action |
+|---|---|---|---|
+| Dashboard | `ACTIVE` | connected daily-control projection with named gaps below | daily control only; remove deferred Motivation projections |
+| Inbox | `ACTIVE` | connected capture/triage core | fast capture and triage into the canonical spine |
+| Today | `ACTIVE` | connected execution/review core | daily protocol and planned-vs-done depth belongs to C3 |
+| Calendar | `ACTIVE` | connected task scheduling with named gaps | week-first planning hub depth belongs to C2 |
+| Portfolio | `ACTIVE` | connected Task/Project/Goal/Skill workbenches with graph gaps | canonical management hub; C1 is next |
+| Resources | `ACTIVE` | connected knowledge core with relation depth gaps | knowledge base and evidence; K1 follows C3 |
+| Health / Fitness | `ACTIVE` | connected core records and projections | domain records link to Task Occurrences; H1/H2 depth later |
+| Nutrition | `ACTIVE` | connected recipes/meals with portion gaps | domain records link to Task Occurrences; N1 depth later |
+| Work / Education / Coding | `ACTIVE` | connected core workflows with named gaps | area projections over the canonical spine; A1 depth later |
+| Inventory / Wishlist | `ACTIVE` | connected shared Manual workspace and purchase conversion | retain and keep reachable in active Life navigation |
+| Anti-Rot / Challenges / Shop | `DEFERRED_HIDDEN` | connected feature code/data; Dashboard Anti-Rot/Challenge panels remain prepared rather than connected | hide navigation/Dashboard entry points; retain routes, migrations and data |
+| Entertainment | `DEFERRED_HIDDEN` | connected collection code/data | hide navigation entry points; retain routes, migrations and data |
+| AI1 Personal Assistant | `DEFERRED` | not started / external decisions outstanding | do not continue during C1→A1 |
+
+Current visibility drift: `src/config/navigation.ts` still exposes Entertainment, Shop and Challenges and lacks a direct Wishlist label. R0 is documentation-only; C1.1-01 owns the actual hide/reachability change. This registry does not claim that code change has already happened.
+
+## Active Delivery Sequence
+
+```text
+C1 Core Work Graph
+→ C2 Weekly Planning Calendar
+→ C3 Daily Companion Loop
+→ K1 Knowledge Base
+→ H1/H2 Health and Fitness
+→ N1 Nutrition
+→ A1 Work/Education/Coding/Inventory
+```
+
 # 1. Dashboard
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
@@ -52,8 +86,8 @@
 | Urgent time-block create | `UI_ONLY` | visible action | implement schedule/create flow without duplicate data |
 | Habit Tracker | `CONNECTED` | canonical Habits/Habit Logs, automatic profile-window projection and authenticated increment/undo reload proof | maintain eight-slot/window and timezone proofs |
 | Active Portfolio | `CONNECTED_GAP` | user-scoped projects/goals/skills, bounded existing ranking | explicit pin/favorite model remains |
-| Anti-Rot Actions | `UI_ONLY` | honest Prepared state without fake completion | implement library, rotation and completion |
-| Challenges | `UI_ONLY` | honest Prepared state without fake completion | implement challenge lifecycle and reward link |
+| Anti-Rot Actions | `UI_ONLY` | Dashboard has an honest Prepared projection; the underlying feature is connected elsewhere | deferred/hidden by R0; do not connect on Dashboard |
+| Challenges | `UI_ONLY` | Dashboard has an honest Prepared projection; the underlying feature is connected elsewhere | deferred/hidden by R0; do not connect on Dashboard |
 
 # 2. Inbox
 
@@ -117,7 +151,9 @@
 |---|---|---|---|
 | Task create/edit/lifecycle | `CONNECTED` | K1.1A Portfolio Task Detail, task actions/repository, reload proof | maintain |
 | Task relation to Project/Goal | `CONNECTED` | K1.1A Task Detail with nullable task relation fields and ownership checks | maintain |
-| Task relation to Skill/Resource | `CONNECTED_GAP` | K1.1A Resource link/unlink via `resource_relations`; Skill evidence only | dedicated Task↔Skill relation remains deferred until safely modeled |
+| Task relation to Skill/Resource | `CONNECTED_GAP` | Resource link/unlink via `resource_relations`; Skill evidence exists but is not Task↔Skill context | C1.1 adds a dedicated owned Task↔Skill context relation without automatic Evidence |
+| Project Goal inheritance in Task context | `CONNECTED_GAP` | `projects.goal_id` and `tasks.goal_id` exist and are projected | C1.1 must distinguish direct/inherited context and prevent contradictory alignment |
+| Core work graph backlinks | `CONNECTED_GAP` | semantic relation read model covers Task/Project/Goal/Resource direct and via paths | add Skill context, stable provenance and bounded five-entity backlinks in C1.1 |
 | Project create/edit/status/archive | `CONNECTED` | project actions/repository | add restore/complete semantics later |
 | Goal create/edit/status/archive | `CONNECTED` | goal actions/repository | add achieve/restore semantics later |
 | Skill create/edit/archive | `CONNECTED` | skill actions/repository | maintain |
@@ -253,13 +289,13 @@
 |---|---|---|---|
 | Journal | `CONNECTED` | A1.1D1 user-scoped `journal_entries` with date, optional title, body, create/edit/soft archive, chronological active/history views and reload proof | Mood, Health and Daily/Weekly Reviews remain separate canonical domains |
 | Notes | `CONNECTED` | A1.1D1 canonical Life-Area `resources` (`note`) with create/edit/archive/restore, reload-stable active/history views and visible existing Project/Goal/Task relations or honest empty state | relation creation remains on the established Resource surfaces; no parallel Notes platform |
-| Entertainment collection | `CONNECTED` | A1.1D2 canonical user-scoped `entertainment_items`; Books, Movies, Series and Games are type-filtered projections with controlled status, progress and 1–10 rating plus create/edit/soft archive/restore and reload proof | external media metadata, cover search and provider APIs remain unimplemented external integrations |
+| Entertainment collection | `CONNECTED` | A1.1D2 canonical user-scoped `entertainment_items`; Books, Movies, Series and Games are type-filtered projections with controlled status, progress and 1–10 rating plus create/edit/soft archive/restore and reload proof | `DEFERRED_HIDDEN` product boundary; retain code/data, remove active navigation entry points |
 | Inventory | `CONNECTED` | A1.1D3 user-scoped `inventory_items` with create/edit/archive/restore, controlled condition, quantity/value documentation, reload proof and visible Wishlist origin | external merchants, guarantees, insurance and accounting remain unimplemented |
 | Wishlist | `CONNECTED` | A1.1D3 user-scoped `wishlist_items` with controlled priority/status, price documentation, create/edit/archive/restore and reload proof | external price tracking, ordering and product APIs remain external gates |
 | Purchase Decisions | `CONNECTED` | A1.1D3 historical `purchase_decisions` plus explicit atomic and idempotent Wishlist→Inventory RPC; acquired status, Inventory relation and no-duplicate proof are connected | no payment, merchant integration or automated purchase action |
 | Personal dashboard | `UI_ONLY` | area shell | bind canonical data |
 
-# 15. Challenges, Anti-Rot and Shop
+# 15. Challenges, Anti-Rot and Shop (`DEFERRED_HIDDEN`)
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
@@ -273,15 +309,15 @@
 | Shop Redemption | `CONNECTED` | M1.1B2 explicit `redeem_shop_item` RPC serializes per user, checks current server-side balance and item availability, and atomically creates one `shop_redemptions` row plus its negative ledger entry | no automatic redemption or refund |
 | Reward Ledger Spending | `CONNECTED` | M1.1B2 idempotent request keys prevent duplicate redemption/debit; immutable title and cost snapshots preserve historical truth after Shop Item edits | no Real-Money value, exchange rate or payment semantics |
 
-# 16. Personal AI Assistant
+# 16. Personal AI Assistant (`DEFERRED`)
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Morning briefing | `NOT_STARTED` | none | D1/review read tools first |
-| Evening review conversation | `NOT_STARTED` | none | review model first |
-| Database questions | `NOT_STARTED` | none | structured read tools, no direct DB |
-| Resource search | `CONNECTED_GAP` | resource search exists | expose safe tool after search model |
-| Confirmed write tools | `NOT_STARTED` | existing actions exist | provider/tool boundary and confirmation UI |
+| Morning briefing | `NOT_STARTED` | none | do not continue during C1→A1 |
+| Evening review conversation | `NOT_STARTED` | none | do not continue during C1→A1 |
+| Database questions | `NOT_STARTED` | none | deferred; future structured reads only, no direct DB |
+| Resource search | `CONNECTED_GAP` | resource search exists | product search remains active; AI tool exposure is deferred |
+| Confirmed write tools | `NOT_STARTED` | existing actions exist | deferred provider/tool boundary and confirmation UI |
 | DeepSeek provider | `EXTERNAL_GATE` | none | server-only API/security/cost decision |
 | AI conversation/history | `DECISION_REQUIRED` | none | privacy, retention and review decision |
 

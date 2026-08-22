@@ -1,6 +1,6 @@
 # DATA_MODEL.md
 
-Stand: 2026-06-18
+Stand: 2026-08-22
 Status: Active
 Zweck: operative Datenmodellregeln.
 Quelle der Wahrheit: Diese Datei.
@@ -24,15 +24,69 @@ Source-of-Truth-Regeln:
 - Portfolio speichert Tasks, Projects, Goals und Skills nicht als Kopien.
 - Resources ist die zentrale kanonische Resource-Entity.
 - Notes, Wiki, Literature, Coding Resources und Work Wiki lesen, filtern oder verlinken zentrale Daten.
-- Calendar liest zeitliche Felder aus kanonischen Entities und speichert nur freie Events separat.
-- Today speichert Daily-Record-Daten, aber keine Kopien von Tasks, Meals, Workouts, Mood oder Sleep.
+- Calendar liest ausführbare Task Occurrences und deren Schedule Blocks. Freie Events erhalten erst nach einer eigenen Modellentscheidung eine separate Quelle.
+- Today speichert Review-/Daily-Protocol-Daten, aber keine Kopien von Tasks, Meals, Workouts, Mood oder Sleep.
 - Review Records bleiben fachlich erhalten, aber nicht als Sidebar-Navigation.
 - Analytics und Reports sind abgeleitet und keine zweite Rohdatenquelle.
 - Archive ist Lifecycle-Status oder Soft Archive, keine Kopie.
 
+## Binding Entity Semantics
+
+### Task
+
+Ein Task ist eine dauerhafte, ausführbare Verpflichtung mit genau einem Lifecycle. Er beschreibt, **was** getan werden soll; `planned_date` beschreibt eine Tagesabsicht, Scheduling beschreibt **wann** gearbeitet wird. Ein Task kann optional zu einem Project, direkt zu einem Goal, zu mehreren Skills und zu mehreren Resources in Beziehung stehen.
+
+### Project
+
+Ein Project ist ein endliches, mehrschrittiges Ergebnis. Es bündelt Tasks, besitzt aber weder deren Completion noch deren Zeitplanung. Ein Project kann höchstens ein primäres Goal voranbringen. Area ist Kontext, nicht Ownership.
+
+### Goal
+
+Ein Goal ist ein gewünschtes Ergebnis mit Horizont und optionalem Zieltermin. Es wird durch Projects, direkte Tasks, Skill-Evidence und Resources unterstützt. Goal-Fortschritt darf nur aus expliziten Measures oder nachvollziehbarer kanonischer Arbeit abgeleitet werden; keine dekorative Prozentzahl.
+
+### Skill
+
+Ein Skill ist eine persönliche Fähigkeit, die entwickelt, angewendet oder nachgewiesen wird. Tasks können mehrere Skills üben oder anwenden. Skill-Fortschritt entsteht aus expliziter Evidence; die bloße Task-Verknüpfung ist Kontext und kein automatischer Kompetenznachweis.
+
+### Resource
+
+Eine Resource ist wiederverwendbares Wissen, Kontext oder Evidence. Sie kann viele Tasks, Projects, Goals, Skills oder andere Resources unterstützen. Resources sind nicht ausführbar und besitzen keine Planungs- oder Completion-Semantik.
+
+### Routine Template
+
+Ein Routine Template ist eine versionierte Wiederholungsregel mit Defaults für neue Task Occurrences. Es ist kein Task, kein Calendar Block und wird nie selbst abgeschlossen. Eine Änderung wirkt standardmäßig nur auf zukünftig erzeugte Occurrences; bereits erzeugte Tasks bleiben historische Wahrheit.
+
+### Task Occurrence
+
+Eine Task Occurrence ist die konkrete ausführbare Einheit, die Today, Calendar und Completion verwenden. Im aktuellen Modell ist ein einmaliger Task zugleich seine eine Occurrence. Eine wiederkehrende Occurrence ist als eigener `tasks`-Datensatz mit `generated_from_template_id` und `instance_date` materialisiert. Diese bestehende Repräsentation bleibt für C1 verbindlich; keine parallele Occurrence-Tabelle ohne spätere Modellentscheidung.
+
+### Schedule Block
+
+Ein Schedule Block ist eine Zeitallokation für genau eine ausführbare Task Occurrence. Im aktuellen Core wird er durch `tasks.scheduled_start_at` plus `duration_minutes` repräsentiert. Er besitzt weder eigene Completion noch kopierte Task-/Domain-Felder. Mehrfachblöcke pro Occurrence oder freie Events gehören in C2 und erfordern eine explizite Modellentscheidung.
+
+### Domain Record
+
+Ein Domain Record ist ein fachlicher Health-, Nutrition- oder Fitness-Datensatz, zum Beispiel Meal, Running Plan Item, Strength Plan oder Review. Sein Fachbereich besitzt Inhalt und Fachstatus. Soll er im Tagesablauf ausgeführt werden, verweist `schedule_source_links` idempotent auf eine kanonische Task Occurrence. Scheduling verschiebt nicht die Domain-Ownership; gekoppelte Completion muss atomar oder über ein kontrolliertes RPC synchronisiert werden.
+
+## Binding Relationships and Invariants
+
+| From | Relationship | To | Rule |
+|---|---|---|---|
+| Task | optional many-to-one | Project | Task bleibt eigenständig ausführbar |
+| Project | optional many-to-one | Goal | höchstens ein primäres Goal |
+| Task | optional many-to-one | Goal | direkte Ausrichtung; wenn sein Project ein Goal besitzt, darf sie nicht widersprechen |
+| Task | many-to-many | Skill | Kontext für Übung/Anwendung; keine automatische Evidence |
+| Resource | many-to-many typed relation | Task / Project / Goal / Skill / Resource | gleicher User, expliziter Relationstyp |
+| Skill Evidence | many-to-one | Skill | Quelle kann Task, Project, Goal, Resource oder Manual Note sein und muss demselben User gehören |
+| Routine Template | one-to-many generation | Task Occurrence | `(template, instance_date)` ist idempotent |
+| Task Occurrence | zero-or-one current block | Schedule Block | aktuelle Repräsentation auf dem Task; C2 darf sie nur durch bewusste Migration erweitern |
+| Domain Record | zero-or-one executable link per source | Task Occurrence | `schedule_source_links` ist die Brücke, nicht eine Kopie |
+
+User-spezifische Relationsziele müssen serverseitig auf Same-User-Ownership geprüft werden. Archivierte Targets dürfen nicht neu verknüpft werden. Das Archivieren einer Entity löscht keine historische Evidence oder Occurrence.
+
 ## Entity-Gruppen
 
-### now
+### established
 
 - profiles
 - areas
@@ -42,44 +96,37 @@ Source-of-Truth-Regeln:
 - goals
 - skills
 - resources
-- daily_records
-- calendar_events
+- daily_logs and daily_log_tasks
 - review_records
+- recurring_task_templates and generated task instances
+- resource_relations and skill_evidence
+- mood, sleep, weight, habits and habit logs
+- running and strength plans/sessions
+- recipes, ingredients and meals
+- schedule_source_links
+- work/education/life records
+- inventory_items, wishlist_items and purchase_decisions
 
-### soon
+### active sequence depth
 
-- notes
-- wiki_pages
-- habits
-- habit_logs
-- work_logs
-- meetings
-- journal_entries
-- scientific_works
-- learning_logs
-- repositories
-- agent_profiles
+- canonical Task / Project / Goal / Skill / Resource graph integrity
+- week-first schedule and planning semantics
+- planned-vs-done daily protocol
+- knowledge/evidence depth
+- Health/Fitness and Nutrition occurrence linkage depth
+- Work/Education/Coding/Inventory projections
 
-### later
+### deferred and retained
 
-- workouts
-- running_sessions
-- strength_sessions
-- meals
-- recipes
 - grocery_items
-- inventory_items
 - entertainment_items
 - literature_items
 - reports
 - activity_events
 - relationship_edges
-
-### maybe
-
 - challenges
 - rewards
-- purchase_decisions
+- shop_items
 - imports
 - ai_summaries
 - agent_sessions
@@ -118,11 +165,11 @@ Konzeptionelle Privacy-Level:
 
 ## Statusgrundsätze
 
-- Tasks: `inbox`, `planned`, `active`, `waiting`, `done`, `canceled`, `someday`
+- Tasks: `inbox`, `planned`, `active`, `waiting`, `done`, `canceled`, `someday`, `archived`
 - Inbox: `raw`, `clarified`, `converted`, `archived`
-- Projects: `idea`, `active`, `paused`, `completed`, `archived`
+- Projects: `idea`, `active`, `paused`, `blocked`, `completed`, `archived`
 - Goals: `draft`, `active`, `paused`, `achieved`, `archived`
-- Skills: `interested`, `learning`, `practicing`, `applied`, `demonstrated`, `maintaining`
+- Skills (current implementation): `active`, `paused`, `archived`; richer proficiency is Evidence, not Lifecycle
 - Resources: `captured`, `processing`, `ready`, `applied`, `archived`
 - Review Records: `draft`, `completed`, `archived`
-- Priorities: `P1`, `P2`, `P3`, `none`
+- Priorities: `P0`, `P1`, `P2`, `P3`, `none`

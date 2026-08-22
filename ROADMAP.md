@@ -4,7 +4,7 @@
 **Product mode:** personal-only, local-first
 **Design truth:** Life OS – Linear Calm Dark Command Center / Dashboard V5
 **Detailed status:** `docs/product/capability-registry.md`
-**Long-term target:** `docs/product/life-os-final-completion-masterplan.md`
+**Active sequence:** C1 → C2 → C3 → K1 → H1/H2 → N1 → A1
 
 ## 1. Product Contract
 
@@ -28,35 +28,50 @@ The existing application is the foundation. This roadmap does not restart the pr
 - Resources and Skills: connected with graph/search/management gaps.
 - Nutrition: recipes, ingredients, meals, planner edit and grocery draft are connected with remaining advanced gaps.
 - Mood, Sleep, Weight, Habits, Running and Strength: connected core loops with remaining depth gaps.
-- Coding and Education have connected core workflows; Work and Life remain largely UI-only or incomplete.
+- Coding, Education, Work and Life have connected core workflows with capability-level depth gaps.
 - Personal AI Assistant: not started as a production capability.
 - Operation: local-first ready; private remote is optional and not active.
 
 Capability-level truth is maintained in `docs/product/capability-registry.md`.
 
-## Active Work Block
+## R0 – Product Rebaseline & Visibility Reset
 
-- `K1.1 Portfolio, Resource & Knowledge Depth`: abgeschlossen.
-- `A1.1A Coding Projects & Sessions`: abgeschlossen.
-- `A1.1B Education Domain Foundation`: abgeschlossen.
-- `A1.1B1 Education Projects & Literature Core`: abgeschlossen.
-- `A1.1B2 Learning & Writing Logs`: abgeschlossen.
-- `A1.1C Work Domain Foundation`: abgeschlossen.
-- `A1.1C1 Work Projects & Work Logs`: abgeschlossen.
-- `A1.1C2a Work Wiki & Decisions`: abgeschlossen.
-- `A1.1C2b Meetings & Follow-ups`: abgeschlossen.
-- `A1.1D Life Domain Foundation`: abgeschlossen.
-- `A1.1D1 Life Journal & Notes`: abgeschlossen.
-- `A1.1D2 Entertainment Collections`: abgeschlossen.
-- `A1.1D3 Inventory, Wishlist & Purchase Decisions`: abgeschlossen.
-- `M1.1 Challenges, Anti-Rot, Shop & Rewards`: abgeschlossen.
-- `M1.1A Challenges & Reward Ledger`: abgeschlossen.
-- `M1.1B Anti-Rot, Shop & Redemption`: abgeschlossen.
-- `M1.1B1 Anti-Rot Action Library & Rotation`: abgeschlossen.
-- `M1.1B2 Shop Items & Atomic Redemption`: abgeschlossen.
-- `AI1 Personal Assistant`: aktiv.
+R0 replaces the former AI1 continuation point. It changes product priority and visibility only: existing feature code, migrations and data remain retained. No product capability is implemented by R0.
 
-## 3. Delivery Program
+Active navigation contract:
+
+```text
+PRIMARY
+Dashboard · Inbox · Today · Calendar · Portfolio · Resources
+
+ACTIVE AREAS
+Health & Fitness · Nutrition · Coding · Education · Work · Life
+
+ACTIVE LIFE DEPTH
+Journal · Notes · Inventory · Wishlist
+
+UTILITY
+Settings
+```
+
+Portfolio owns Task / Project / Goal / Skill management. Resources owns knowledge and evidence. Anti-Rot, Challenges, Shop and Entertainment are deferred and must be hidden from active navigation and Dashboard projections while their routes, code and data are retained. The current `src/config/navigation.ts` still exposes Entertainment, Shop and Challenges and does not expose Wishlist directly; this is documented implementation drift, not a completed visibility change.
+
+### R0 audit findings
+
+| Finding | Evidence | Delivery consequence |
+|---|---|---|
+| Product drift | former sequence advanced to AI1 and Motivation although the daily-companion core still has relation/planning depth gaps | do not continue AI1; restart delivery at C1 |
+| Navigation drift | `src/config/navigation.ts` exposes Entertainment, Shop and Challenges; Dashboard registry still lists Anti-Rot/Challenges surfaces | first C1 task applies the documented visibility boundary without deleting routes |
+| Data-model drift | prior `DATA_MODEL.md` grouped already implemented domains as soon/later and did not define Task Occurrence, Schedule Block or Domain Record | binding semantics now live in `DATA_MODEL.md` |
+| Route-doc drift | `docs/product/pages-and-routes.md` still describes Entertainment, Shop and Challenges as target navigation and uses an older MVP priority | treat it as follow-up documentation debt; `PRODUCT.md`, this roadmap and the registry take precedence |
+| Architecture friction | canonical reads/writes are established, but large projection/view-model files combine mapping, policy, content-state and presentation responsibilities | extract only inside the owning C-block when required; no broad cleanup |
+| Core graph friction | Task→Project/Goal and Resource relations exist, while direct Task↔Skill and consistent inherited Goal semantics do not | C1 closes graph integrity using the existing feature-local architecture |
+| Oversized modules | `profile-data/view-models.ts` 4,409 lines; `education-workspace-page.tsx` 4,187; `education-overview-page.tsx` 3,648; `area-view-models.ts` 3,287; `work-overview-page.tsx` 2,791; `inbox-page.tsx` 2,743; Portfolio context 2,313; Resources page 2,077 | split only where an active slice must edit the module, preserving behavior and ownership |
+| Monolithic browser debt | `tests/e2e/content-state-system.spec.ts` is 10,926 lines, far larger than all focused specs and mixes many domains | each new block adds/uses a focused spec; touched legacy cases may move only with identical proof, never via broad cleanup |
+
+## 3. Pre-R0 Delivery Evidence
+
+The following D1 detail is retained as implemented baseline evidence. It does not define the post-R0 delivery order or reopen completed features; current truth remains in the Capability Registry.
 
 ### D1 – Daily Command Center & Reviews
 
@@ -290,19 +305,203 @@ This sequence is the complete product plan, not a live status queue. A Codex pro
 
 | Order | Block | Outcome | Main scope | Depends on | Non-goals |
 |---:|---|---|---|---|---|
-| 1 | D1.1 Dashboard Read Model & Navigation | Dashboard panels use canonical sources or honest unavailable states and navigate correctly | server read model, deterministic Daily Control, Today/Calendar projection, navigation | existing Tasks, Inbox, Portfolio and Nutrition foundations | Dashboard redesign; missing Health-domain tables |
-| 2 | D1.2 Daily & Weekly Review | reviews close the daily and weekly planning loop | review records, carry-over decisions, Dashboard/Today status | D1.1 read-model boundary | AI reviews; silent task duplication |
-| 3 | D1.3 Mood, Sleep & Weight | Health summary signals become real and historical | entries, goals, history, Dashboard projection | D1.1 source-state contract; D1.2 review links | diagnosis or medical advice |
-| 4 | D2.1 Schedule Source Links | Meals, Workouts and Reviews participate safely in scheduling | source links, completion consistency, revalidation | D1 daily loop; existing Calendar task core | duplicate Calendar-owned domain records |
-| 5 | D2.2 Recurring & Routine Management | recurring work is predictable and manageable | list/edit/pause templates, idempotent generation, routines | D2.1 scheduling contract | autonomous background writes |
-| 6 | H1.1 Habit Tracking | flexible habits can be defined, incremented and reviewed | definitions, windows, units, targets, timestamped logs, Dashboard | D1.3 Health foundation | shame mechanics or decorative streak pressure |
-| 7 | H2.1 Running & Strength Core | training supports a complete manual-first plan-to-session loop | run/session entry, plans, exercises, sets, muscle derivation, Calendar link | D2 scheduling links; Health foundation | Garmin dependency |
-| 8 | K1.1 Portfolio, Resource & Knowledge Depth | core work and knowledge gain full relation, search and archive depth | task detail, milestones/logs, attachments, semantic relation read model, archive/restore | established Portfolio/Resource/Skill foundations | decorative graph before semantics |
-| 9 | A1.1 Coding, Education, Work & Life Domains | area shells gain canonical entities and complete workflows | first complete CRUD slices, core relations, area projections | K1 relation conventions | area-local duplicate Tasks or Resources |
-| 10 | M1.1 Challenges, Anti-Rot, Shop & Rewards | motivation becomes functional, auditable and calm | action library, challenge lifecycle, reward ledger, redemption | Habits/activity events | manipulative gamification or unaudited currency |
-| 11 | AI1 Personal Assistant | a controlled assistant can brief, answer and propose confirmed actions | provider boundary, read tools, confirmation-gated writes, morning/evening flows | stable canonical domains and security decisions | direct model DB access or autonomous writes |
-| 12 | I1 Integrations & Analytics | optional external context and reports extend proven core flows | weather, Garmin/GitHub gates, events, trends, provenance | relevant canonical source domains; privacy decisions | integrations as core-flow prerequisites |
-| 13 | Z1 Final Local Product Closure | Life OS is dependable for sustained personal local-first use | registry closure, full proofs, accessibility, performance, backup/restore, recovery | all non-external-gated product blocks | public SaaS launch or mandatory cloud deployment |
+| 1 | C1 Core Work Graph | Task / Project / Goal / Skill / Resource form one coherent, editable and inspectable spine | relation integrity, ownership, lifecycle, Task context, graph read models | established canonical entities | redesign; project-management engine; broad refactor |
+| 2 | C2 Weekly Planning Calendar | the user turns the core graph into a realistic week | week-first queue, occurrence scheduling, conflicts, routine management | C1 graph semantics | duplicate Calendar entities; drag/drop before accessible controls |
+| 3 | C3 Daily Companion Loop | Dashboard, Inbox and Today support capture → execute → planned-vs-done → review | daily protocol, projections, carry-over and review truth | C2 occurrence/schedule contract | AI briefing; gamification |
+| 4 | K1 Knowledge Base | Resources become searchable context and evidence across the core graph | typed relations, backlinks, search, archive and evidence workflows | C1 relation semantics | decorative graph; embeddings without decision |
+| 5 | H1/H2 Health and Fitness | health facts and fitness plans participate in the daily loop through occurrences | health records, habits, running, strength and linked execution | C2/C3 scheduling and daily protocol | diagnosis; Garmin dependency |
+| 6 | N1 Nutrition | meal planning and completion participate in weekly/daily execution | recipes, meals, portions, groceries and occurrence links | C2/C3 scheduling and daily protocol | medical claims; unsupported macro precision |
+| 7 | A1 Work/Education/Coding/Inventory | area views reuse the core spine and Resources for domain context | projections and bounded domain records; Inventory and Wishlist remain active | C1 and K1 conventions | Entertainment; parallel Tasks/Projects/Resources |
+
+## 4.1 Exact Next Implementation Block: C1.1 – Work Graph Integrity & Task Context
+
+**Outcome:** From capture or Portfolio, the user can place a Task in coherent Project/Goal/Skill/Resource context, inspect that context from the responsible workbenches and trust that every relation is user-owned, non-contradictory and reload-stable.
+
+### User flow
+
+```text
+Capture or open Task
+→ choose optional Project
+→ see inherited Project Goal
+→ choose a compatible direct Goal when needed
+→ link one or more Skills as practice/application context
+→ link Resources as context/evidence
+→ save with visible success/error state
+→ inspect backlinks from Project, Goal, Skill and Resource
+→ reload and see the same graph
+```
+
+### Data ownership and invariants
+
+- `tasks`, `projects`, `goals`, `skills` and `resources` remain the canonical sources.
+- Existing `tasks.project_id`, `tasks.goal_id`, `projects.goal_id`, `resource_relations` and `skill_evidence` are reused.
+- Add only the smallest user-scoped Task↔Skill relation and `resource_relations` Skill target support required by the proven UI; do not create a generic global edge store.
+- A Task's direct Goal must be empty or compatible with its Project's Goal. Changing Project/Goal must reject or explicitly resolve a conflict; no silent relinking.
+- Task↔Skill means practice/application context. It never creates Skill Evidence automatically.
+- Every relation write authenticates server-side, validates with Zod, checks both endpoints for same-user active ownership, respects archive state and revalidates Task, Portfolio, Project, Goal, Skill and Resource projections that changed.
+- RLS and grants protect any new user-specific relation table. No Service Role or remote database operation.
+
+### Acceptance criteria
+
+- Deferred surfaces are absent from active navigation and Dashboard controls while their routes/data remain intact; Inventory and Wishlist remain reachable.
+- A Manual-mode Task can add, change and remove Project, compatible Goal, Skills and Resources from the existing V5 workbench/detail flow.
+- Inherited versus direct Goal context is textually distinguishable and contradictory alignment cannot persist.
+- Project, Goal, Skill and Resource views show deterministic Task backlinks without duplicate or cross-user records.
+- Archive/restore and relation removal preserve historical Skill Evidence and do not cascade-delete canonical entities.
+- Manual, Demo, Empty and Auth-blocked states remain separate; all writes show visible result states.
+- Focused Playwright proof uses unique data, scoped regions and reloads after each relation mutation.
+- `git diff --check`, `pnpm typecheck`, `pnpm lint`, focused unit/repository tests, local Supabase lint/advisors, focused Playwright and `pnpm build` are green.
+- Capability Registry is updated and one coherent C1.1 commit exists.
+
+### Risks
+
+- Existing data may contain Task/Project/Goal combinations that violate the newly explicit invariant; migration must report and resolve deterministically, never discard links.
+- A generic graph abstraction would duplicate existing typed relations and obscure ownership.
+- Backlink queries can become unbounded or duplicate direct and inherited relationships.
+- Editing the oversized Portfolio/Resources components can trigger broad accidental UI churn.
+- The monolithic Playwright spec can encourage unrelated test movement and slow diagnosis.
+
+### No-gos
+
+- no Dashboard V5 redesign or parallel navigation architecture;
+- no replacement of canonical entity tables or generic `relationship_edges` platform;
+- no milestones, OKR engine, progress percentages, multi-block Calendar model or AI ranking;
+- no automatic Skill Evidence from Task linkage;
+- no deletion of deferred feature code, routes, migrations or data;
+- no broad module cleanup or broad Playwright split;
+- no AI1, external API or remote database work.
+
+### Bounded Codex tasks
+
+#### C1.1-01 – Active Navigation Visibility Reset
+
+**Goal:** Apply the R0 active navigation boundary without deleting routes or feature data.
+
+**Use Skills:** `life-os-design-taste`, `life-os-browser-proof`, `life-os-completion-gate`.
+
+**Context:** V5 remains unchanged; Anti-Rot, Challenges, Shop and Entertainment become hidden from global, route-local and Dashboard entry points, while Inventory, Wishlist and Settings remain reachable.
+
+**Files to Read:** `AGENTS.md`, `PRODUCT.md`, `DESIGN.md`, this block, Capability Registry, `src/config/navigation.ts`, layout/navigation tests, Dashboard composition and Life route-local navigation.
+
+**Files to Change:** existing navigation configuration/components, Dashboard composition only to remove deferred sections, route-local context navigation, the smallest focused navigation test, Capability Registry.
+
+**Files Not to Change:** deferred feature implementations, migrations, Dashboard layout, protected paths.
+
+**Hard Boundaries:** hide entry points/sections only; no route deletion, redirect, data mutation or visual redesign. Add a Wishlist entry only by routing to the existing Inventory/Wishlist surface.
+
+**Vertical Slice Scope:** Navigation-only user-visible slice: desktop and mobile/keyboard access, active/deferred truth and Inventory/Wishlist reachability.
+
+**Done When:** deferred entries are absent from navigation, route-local context links, command surfaces and Dashboard composition; active entries remain usable, direct deferred URLs still preserve data/code, and focused browser proof is green.
+
+**Validation:** `git diff --check`; `pnpm typecheck`; `pnpm lint`; focused navigation Playwright; `pnpm build` at C1.1 closure.
+
+**Staging:** stage only navigation, focused proof and registry changes; exclude `.idea`, generated, protected and deferred feature files.
+
+**Report Format:** `Erstellt:`, `Geändert:`, `Nicht geändert:`, `Validierung:`, `Offene Punkte:`, `Risiken:`.
+
+#### C1.1-02 – Task↔Skill Context Vertical Slice
+
+**Goal:** Let the user link/unlink multiple owned active Skills from Task detail without implying Evidence.
+
+**Use Skills:** `life-os-vertical-slice`, `life-os-backend-action-slice`, `life-os-design-taste`, `life-os-browser-proof`, `life-os-completion-gate`.
+
+**Context:** Reuse Task Detail, Skills and feature-local real-data boundaries; introduce only the minimal typed relation and local migration if the audit confirms none exists.
+
+**Files to Read:** core migrations/types, Task/Skill domain/schema/action/repository code, Task detail and Skill workbench, security/accessibility rules.
+
+**Files to Change:** minimal local migration/generated types, feature-local Task/Skill domain-schema-action-repository files, existing Task/Skill UI, focused tests and Registry.
+
+**Files Not to Change:** `src/server`, unrelated domains, deferred features, remote Supabase, protected paths.
+
+**Hard Boundaries:** same-user active endpoints, idempotent link, explicit unlink, no automatic `skill_evidence`, no generic edge table.
+
+**Vertical Slice Scope:** UI → Zod → server auth → user-scoped repository → RLS → Task/Skill revalidation → reload/browser proof.
+
+**Done When:** multiple Skills can be linked/unlinked, Skill backlinks are deterministic, cross-user/archived targets fail safely and reload preserves the result.
+
+**Validation:** required always checks; focused unit/repository tests; local Supabase lint/advisors; focused Task↔Skill Playwright.
+
+**Staging:** stage only this relation slice, generated types when migration requires them, tests and Registry; exclude local/generated-sensitive artifacts.
+
+**Report Format:** `Erstellt:`, `Geändert:`, `Nicht geändert:`, `Validierung:`, `Offene Punkte:`, `Risiken:`.
+
+#### C1.1-03 – Project/Goal Alignment Integrity
+
+**Goal:** Make direct and inherited Goal context understandable and prevent contradictory Task alignment.
+
+**Use Skills:** `life-os-vertical-slice`, `life-os-backend-action-slice`, `life-os-design-taste`, `life-os-browser-proof`, `life-os-completion-gate`.
+
+**Context:** Keep existing nullable Task→Project/Goal and Project→Goal fields; audit existing rows before deciding whether a constraint or controlled RPC is safe.
+
+**Files to Read:** Task/Project/Goal schemas, actions, repositories, Portfolio detail/workbench, core migration, existing relation tests.
+
+**Files to Change:** smallest existing backend/UI boundaries, a local corrective migration or RPC only if required, focused tests and Registry.
+
+**Files Not to Change:** Calendar scheduling, progress/milestone models, unrelated area pages, deferred features.
+
+**Hard Boundaries:** no silent data loss or silent relinking; direct/inherited labels must be text-backed; existing conflicts require a deterministic reported resolution path.
+
+**Vertical Slice Scope:** Task context edit through ownership validation, conflict-safe persistence, dependent Project/Goal projections and reload proof.
+
+**Done When:** compatible relations save, incompatible relations fail or request explicit resolution, Project/Goal backlinks agree after reload and existing data is preserved.
+
+**Validation:** required always checks; focused domain/repository tests; local Supabase checks if schema changes; focused Project/Goal alignment Playwright.
+
+**Staging:** stage only alignment logic, required migration, focused tests and Registry; no opportunistic Portfolio refactor.
+
+**Report Format:** `Erstellt:`, `Geändert:`, `Nicht geändert:`, `Validierung:`, `Offene Punkte:`, `Risiken:`.
+
+#### C1.1-04 – Resource↔Skill Context and Backlink Projection
+
+**Goal:** Let Resources provide typed Skill context and show one deterministic, bounded work-context projection across Task, Project, Goal, Skill and Resource surfaces.
+
+**Use Skills:** `life-os-vertical-slice`, `life-os-backend-action-slice`, `life-os-design-taste`, `life-os-browser-proof`, `life-os-completion-gate`.
+
+**Context:** Extend the existing semantic relation read model; direct relations outrank inherited paths and duplicates disclose provenance once.
+
+**Files to Read:** semantic-relations read model/tests, Resource inspector/view model, Portfolio/Task/Skill detail components and repositories.
+
+**Files to Change:** existing bounded read-model and responsible UI sections, focused tests and Registry.
+
+**Files Not to Change:** graph visualization libraries, global state, unrelated area projections, deferred features.
+
+**Hard Boundaries:** reuse `resource_relations` with an owned active Skill target; server-side user-scoped writes/reads, bounded query/result sizes, stable ordering, text labels for direct/inherited/evidence context.
+
+**Vertical Slice Scope:** Resource inspector link/unlink → Zod/auth/ownership/RLS → canonical relation reads → deduped projection → responsible V5 inspectors → navigation/reload proof.
+
+**Done When:** all five spine entities expose correct backlinks with no cross-user leak, duplicate or fabricated progress and links open the responsible existing route.
+
+**Validation:** required always checks; semantic read-model unit tests; focused backlink/navigation Playwright.
+
+**Staging:** stage only the read-model/UI projection, focused tests and Registry; do not split oversized files beyond the touched responsibility.
+
+**Report Format:** `Erstellt:`, `Geändert:`, `Nicht geändert:`, `Validierung:`, `Offene Punkte:`, `Risiken:`.
+
+#### C1.1-05 – C1.1 Proof and Registry Closure
+
+**Goal:** Prove the complete C1.1 flow and record honest implementation truth without broad test cleanup.
+
+**Use Skills:** `life-os-browser-proof`, `life-os-completion-gate`.
+
+**Context:** Consolidate focused proofs for navigation, Task context, alignment, backlinks, ownership, Empty/Auth-blocked and reload behavior.
+
+**Files to Read:** all C1.1 diffs, focused specs, relevant cases in `content-state-system.spec.ts`, Capability Registry.
+
+**Files to Change:** one focused C1 work-graph spec (or existing focused specs), Registry and only necessary touched test helpers.
+
+**Files Not to Change:** unrelated legacy E2E cases, product code unless a proven C1.1 defect requires a scoped fix, protected paths.
+
+**Hard Boundaries:** do not claim full-suite or cross-domain completion; do not move unrelated tests merely to reduce line count.
+
+**Vertical Slice Scope:** Not a new feature; closure proof for the preceding C1.1 slices.
+
+**Done When:** all C1.1 acceptance criteria have scoped reload proofs, required checks are green, Registry is precise and the Completion Gate returns `PASS`.
+
+**Validation:** `git diff --check`; `pnpm typecheck`; `pnpm lint`; focused unit/repository tests; local Supabase lint/advisors; focused Playwright; `pnpm build`; final diff review.
+
+**Staging:** stage only the coherent C1.1 diff; exclude `.idea`, generated sensitive artifacts and every unrelated user change.
+
+**Report Format:** `Erstellt:`, `Geändert:`, `Nicht geändert:`, `Validierung:`, `Offene Punkte:`, `Risiken:`.
 
 ## 5. Completed Major Work
 
@@ -329,23 +528,32 @@ Historical details remain in QA, closure and archived roadmap documents.
 
 ## 6. Program Scope by Domain
 
-### D1 – Daily Command Center & Reviews
+These headings describe stable domain scope, not delivery order. The binding order is the sequence in section 4.
 
-- Dashboard Read Model and navigation;
-- Daily Control and Up Next policy;
-- Daily Review;
-- Weekly Review and week planning;
-- Mood, Sleep and Weight signals;
-- Weather context.
+### C1 – Core Work Graph
 
-### D2 – Scheduling, Routines & Cross-Domain Execution
+- canonical Task / Project / Goal / Skill / Resource relation integrity;
+- explicit inherited/direct Goal semantics;
+- Task↔Skill context separate from Skill Evidence;
+- typed Resource relations and backlinks;
+- lifecycle and archive safety;
+- visibility reset for deferred surfaces without route or data deletion.
 
-- schedule-source links for Tasks, Meals, Workouts and Reviews;
-- recurring/routine management;
-- Calendar filters and source-aware queues;
-- free events;
-- accessible drag/drop/resize after the keyboard/button core;
-- cross-domain completion consistency.
+### C2 – Weekly Planning Calendar
+
+- week-first planning and source-aware queues;
+- Routine Templates and explicit Task Occurrences;
+- Schedule Block semantics and conflict handling;
+- Calendar filters over core graph relations;
+- accessible controls before drag/drop/resize comfort.
+
+### C3 – Daily Companion Loop
+
+- Dashboard daily control;
+- Inbox capture and triage;
+- Today daily protocol and planned-vs-done analysis;
+- carry-over, Daily Review and Weekly Review;
+- shared projections over canonical occurrences.
 
 ### H1 – Mood, Sleep, Weight & Habits
 
@@ -364,31 +572,32 @@ Historical details remain in QA, closure and archived roadmap documents.
 - muscle-map derivation;
 - optional Garmin integration only through a separate external gate.
 
-### K1 – Portfolio, Resources & Knowledge Completion
+### K1 – Knowledge Base
 
-- task detail and relation management;
-- project/goal milestones, logs and review cadence;
-- archive/restore;
-- resource attachments and search;
+- Resource inspector, archive/restore and search;
+- knowledge/evidence workflows over the C1 graph;
 - semantic relation read model;
 - graph visualization only after the read model is proven.
 
-### A1 – Coding, Education, Work & Life
+### N1 – Nutrition
+
+- recipes, ingredients and meals;
+- weekly meal planning and daily completion;
+- honest portion/nutrition semantics;
+- grocery derivation;
+- scheduled Task Occurrence links.
+
+### A1 – Work, Education, Coding and Inventory
 
 - repositories, coding projects and agent sessions;
 - scientific work, literature and learning logs;
 - work logs and wiki;
-- journal, notes, entertainment, inventory and wishlist.
-
-### M1 – Anti-Rot, Challenges, Shop & Rewards
-
-- Anti-Rot library and rotation;
-- daily/weekly/monthly challenge lifecycle;
-- reward ledger;
-- shop rewards and redemption.
+- inventory, wishlist and purchase decisions;
+- no area-local duplicate Tasks, Projects, Skills or Resources.
 
 ### AI1 – Personal Assistant
 
+- deferred; do not continue during the active C1→A1 sequence;
 - Morning Briefing;
 - Evening Review;
 - structured read tools;
@@ -469,6 +678,9 @@ Operations and product completion are tracked separately.
 
 Deferred until their prerequisite block and explicit gate:
 
+- Anti-Rot, Challenges and Shop (implemented and retained, hidden from active navigation);
+- Entertainment (implemented and retained, hidden; Inventory and Wishlist stay active);
+- AI1 Personal Assistant; do not continue it before an explicit post-A1 decision;
 - public deployment and public registration;
 - Garmin API;
 - external food APIs and medical nutrition claims;
