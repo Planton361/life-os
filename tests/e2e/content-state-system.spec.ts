@@ -1481,18 +1481,6 @@ async function expectDashboardWidgetContracts(page: Page, profile: ProfileId) {
     profile,
     "4",
   );
-  await expectWidgetContract(
-    page.getByRole("region", {
-      name: "Anti-Rot Actions / Bad Habit Reset Row",
-    }),
-    profile,
-    "5",
-  );
-  await expectWidgetContract(
-    page.getByRole("region", { name: "Challenges" }),
-    profile,
-    "3",
-  );
 }
 
 const inboxBlockedDemoStrings = [
@@ -10196,11 +10184,6 @@ async function expectLifeOverviewContracts(page: Page, profile: ProfileId) {
     "4",
   );
   await expectWidgetContract(
-    page.locator('[data-life-section="entertainment-shelf"]'),
-    profile,
-    "4",
-  );
-  await expectWidgetContract(
     page.locator('[data-life-section="recent-activity"]'),
     profile,
     "5",
@@ -10378,7 +10361,6 @@ test.describe("Life content states", () => {
     for (const sectionTitle of [
       "Journal",
       "Notes",
-      "Entertainment",
       "Inventory",
     ]) {
       await expect(

@@ -90,6 +90,7 @@ type WishlistDraft = {
 };
 
 const lifeAccent = "var(--accent-purple)";
+const showDeferredEntertainmentEntryPoints = false;
 
 const lifeViews: readonly { value: LifeView; label: string }[] = [
   { value: "overview", label: "Overview" },
@@ -458,13 +459,15 @@ function LifePageHeader({
           >
             Add wishlist item
           </button>
-          <button
-            className={cn(secondaryButtonClass, "hidden md:inline-flex")}
-            onClick={onAddMedia}
-            type="button"
-          >
-            Add media
-          </button>
+          {showDeferredEntertainmentEntryPoints ? (
+            <button
+              className={cn(secondaryButtonClass, "hidden md:inline-flex")}
+              onClick={onAddMedia}
+              type="button"
+            >
+              Add media
+            </button>
+          ) : null}
         </div>
       </div>
     </header>
@@ -483,7 +486,13 @@ function SegmentControl({
       aria-label="Life overview views"
       className="flex flex-wrap gap-2 rounded-[16px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.68)] p-2"
     >
-      {lifeViews.map((view) => {
+      {lifeViews
+        .filter(
+          (view) =>
+            showDeferredEntertainmentEntryPoints ||
+            view.value !== "entertainment",
+        )
+        .map((view) => {
         const active = view.value === activeView;
 
         return (
@@ -502,7 +511,7 @@ function SegmentControl({
             {view.label}
           </button>
         );
-      })}
+        })}
     </section>
   );
 }
@@ -634,7 +643,7 @@ function QuickActions({
   return (
     <section
       aria-label="Life quick actions"
-      className="grid grid-cols-2 gap-2 rounded-[16px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.68)] p-2 sm:grid-cols-4 lg:hidden"
+      className="grid grid-cols-2 gap-2 rounded-[16px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.68)] p-2 sm:grid-cols-3 lg:hidden"
     >
       <button className={secondaryButtonClass} onClick={onNewJournal} type="button">
         Journal
@@ -642,9 +651,11 @@ function QuickActions({
       <button className={secondaryButtonClass} onClick={onCaptureNote} type="button">
         Note
       </button>
-      <button className={secondaryButtonClass} onClick={onAddMedia} type="button">
-        Media
-      </button>
+      {showDeferredEntertainmentEntryPoints ? (
+        <button className={secondaryButtonClass} onClick={onAddMedia} type="button">
+          Media
+        </button>
+      ) : null}
       <button className={secondaryButtonClass} onClick={onWishlist} type="button">
         Wishlist
       </button>
@@ -2325,7 +2336,9 @@ export function LifeOverviewPage({
       {activeView === "overview" ? (
         <LifeSectionCards
           onAction={handleSectionAction}
-          sections={viewModel.sections}
+          sections={viewModel.sections.filter(
+            (section) => section.title !== "Entertainment",
+          )}
           stateAttributes={stateAttrs(contentStates.lifeSections, profileId)}
         />
       ) : null}
@@ -2363,7 +2376,8 @@ export function LifeOverviewPage({
       </div>
 
       <div className="grid gap-2 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,.85fr)]">
-        {shouldShow(activeView, "entertainment") ? (
+        {showDeferredEntertainmentEntryPoints &&
+        shouldShow(activeView, "entertainment") ? (
           <EntertainmentShelf
             items={filteredEntertainment}
             mediaStatus={mediaStatus}
@@ -2404,7 +2418,7 @@ export function LifeOverviewPage({
       {activeDialog === "note" ? (
         <CaptureLifeNoteDialog onClose={closeDialog} onSave={handleNoteSave} />
       ) : null}
-      {activeDialog === "media" ? (
+      {showDeferredEntertainmentEntryPoints && activeDialog === "media" ? (
         <AddEntertainmentItemDialog onClose={closeDialog} onSave={handleMediaSave} />
       ) : null}
       {activeDialog === "wishlist" ? (

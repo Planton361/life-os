@@ -228,36 +228,15 @@ export const sidebarNavigation: SidebarNavigation = {
           status: "ready",
         },
         {
-          label: "Entertainment",
-          href: "/life/entertainment",
-          status: "ready",
-          children: [
-            {
-              label: "Games",
-              href: "/life/entertainment/games",
-              status: "ready",
-            },
-            {
-              label: "Books",
-              href: "/life/entertainment/books",
-              status: "ready",
-            },
-            {
-              label: "Series",
-              href: "/life/entertainment/series",
-              status: "ready",
-            },
-            {
-              label: "Movies",
-              href: "/life/entertainment/movies",
-              status: "ready",
-            },
-          ],
-        },
-        {
           label: "Inventory",
           href: "/life/inventory",
           status: "ready",
+        },
+        {
+          label: "Wishlist",
+          href: "/life/inventory?view=wishlist",
+          status: "ready",
+          description: "Wishlist and purchase decisions",
         },
       ],
     },
@@ -302,16 +281,6 @@ export const sidebarNavigation: SidebarNavigation = {
     },
   ],
   utility: [
-    {
-      label: "Shop",
-      href: "/shop",
-      status: "ready",
-    },
-    {
-      label: "Challenges",
-      href: "/challenges",
-      status: "ready",
-    },
     {
       label: "Settings",
       href: "/settings",

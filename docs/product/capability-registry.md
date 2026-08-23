@@ -31,7 +31,7 @@ Implementation status and product visibility are separate truths: `CONNECTED` co
 
 | Surface / domain | Boundary | Current implementation truth | Visibility truth / next action |
 |---|---|---|---|
-| Dashboard | `ACTIVE` | connected daily-control projection with named gaps below | daily control only; remove deferred Motivation projections |
+| Dashboard | `ACTIVE` | connected daily-control projection with named gaps below | daily control only; deferred Motivation projections removed in C1.1-01 |
 | Inbox | `ACTIVE` | connected capture/triage core | fast capture and triage into the canonical spine |
 | Today | `ACTIVE` | connected execution/review core | daily protocol and planned-vs-done depth belongs to C3 |
 | Calendar | `ACTIVE` | connected task scheduling with named gaps | week-first planning hub depth belongs to C2 |
@@ -40,12 +40,12 @@ Implementation status and product visibility are separate truths: `CONNECTED` co
 | Health / Fitness | `ACTIVE` | connected core records and projections | domain records link to Task Occurrences; H1/H2 depth later |
 | Nutrition | `ACTIVE` | connected recipes/meals with portion gaps | domain records link to Task Occurrences; N1 depth later |
 | Work / Education / Coding | `ACTIVE` | connected core workflows with named gaps | area projections over the canonical spine; A1 depth later |
-| Inventory / Wishlist | `ACTIVE` | connected shared Manual workspace and purchase conversion | retain and keep reachable in active Life navigation |
-| Anti-Rot / Challenges / Shop | `DEFERRED_HIDDEN` | connected feature code/data; Dashboard Anti-Rot/Challenge panels remain prepared rather than connected | hide navigation/Dashboard entry points; retain routes, migrations and data |
-| Entertainment | `DEFERRED_HIDDEN` | connected collection code/data | hide navigation entry points; retain routes, migrations and data |
+| Inventory / Wishlist | `ACTIVE` | connected shared Manual workspace and purchase conversion | Inventory and explicit Wishlist links remain reachable in active Life navigation |
+| Anti-Rot / Challenges / Shop | `DEFERRED_HIDDEN` | connected feature code/data; direct routes remain intact | C1.1-01 removed Sidebar, Dashboard and normal Daily-Companion entry points |
+| Entertainment | `DEFERRED_HIDDEN` | connected collection code/data; direct routes remain intact | C1.1-01 removed Sidebar, Life overview and obvious active cross-links |
 | AI1 Personal Assistant | `DEFERRED` | not started / external decisions outstanding | do not continue during C1→A1 |
 
-Current visibility drift: `src/config/navigation.ts` still exposes Entertainment, Shop and Challenges and lacks a direct Wishlist label. R0 is documentation-only; C1.1-01 owns the actual hide/reachability change. This registry does not claim that code change has already happened.
+Visibility state after C1.1-01: active navigation exposes Inventory and Wishlist, while Entertainment, Shop and Challenges are absent. Dashboard no longer composes Anti-Rot or Challenge panels. Deferred routes, feature code, migrations and data remain retained and directly addressable.
 
 ## Active Delivery Sequence
 
@@ -86,8 +86,8 @@ C1 Core Work Graph
 | Urgent time-block create | `UI_ONLY` | visible action | implement schedule/create flow without duplicate data |
 | Habit Tracker | `CONNECTED` | canonical Habits/Habit Logs, automatic profile-window projection and authenticated increment/undo reload proof | maintain eight-slot/window and timezone proofs |
 | Active Portfolio | `CONNECTED_GAP` | user-scoped projects/goals/skills, bounded existing ranking | explicit pin/favorite model remains |
-| Anti-Rot Actions | `UI_ONLY` | Dashboard has an honest Prepared projection; the underlying feature is connected elsewhere | deferred/hidden by R0; do not connect on Dashboard |
-| Challenges | `UI_ONLY` | Dashboard has an honest Prepared projection; the underlying feature is connected elsewhere | deferred/hidden by R0; do not connect on Dashboard |
+| Anti-Rot Actions | `UI_ONLY` | retained Dashboard component is no longer composed; the underlying feature is connected elsewhere | deferred/hidden by R0 and C1.1-01 |
+| Challenges | `UI_ONLY` | retained Dashboard component is no longer composed; the underlying feature is connected elsewhere | deferred/hidden by R0 and C1.1-01 |
 
 # 2. Inbox
 
@@ -289,7 +289,7 @@ C1 Core Work Graph
 |---|---|---|---|
 | Journal | `CONNECTED` | A1.1D1 user-scoped `journal_entries` with date, optional title, body, create/edit/soft archive, chronological active/history views and reload proof | Mood, Health and Daily/Weekly Reviews remain separate canonical domains |
 | Notes | `CONNECTED` | A1.1D1 canonical Life-Area `resources` (`note`) with create/edit/archive/restore, reload-stable active/history views and visible existing Project/Goal/Task relations or honest empty state | relation creation remains on the established Resource surfaces; no parallel Notes platform |
-| Entertainment collection | `CONNECTED` | A1.1D2 canonical user-scoped `entertainment_items`; Books, Movies, Series and Games are type-filtered projections with controlled status, progress and 1–10 rating plus create/edit/soft archive/restore and reload proof | `DEFERRED_HIDDEN` product boundary; retain code/data, remove active navigation entry points |
+| Entertainment collection | `CONNECTED` | A1.1D2 canonical user-scoped `entertainment_items`; direct routes and complete lifecycle remain retained | `DEFERRED_HIDDEN` boundary is applied to Sidebar, Life overview and active cross-links by C1.1-01 |
 | Inventory | `CONNECTED` | A1.1D3 user-scoped `inventory_items` with create/edit/archive/restore, controlled condition, quantity/value documentation, reload proof and visible Wishlist origin | external merchants, guarantees, insurance and accounting remain unimplemented |
 | Wishlist | `CONNECTED` | A1.1D3 user-scoped `wishlist_items` with controlled priority/status, price documentation, create/edit/archive/restore and reload proof | external price tracking, ordering and product APIs remain external gates |
 | Purchase Decisions | `CONNECTED` | A1.1D3 historical `purchase_decisions` plus explicit atomic and idempotent Wishlist→Inventory RPC; acquired status, Inventory relation and no-duplicate proof are connected | no payment, merchant integration or automated purchase action |

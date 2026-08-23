@@ -1,6 +1,4 @@
 import {
-  AntiRotActions,
-  Challenges,
   HabitTrackers,
   MealsToday,
   NutrientBalance,
@@ -55,13 +53,6 @@ export async function DashboardGrid({ habitFeedback }: Readonly<{ habitFeedback?
         </div>
       </div>
 
-      <div className="grid min-w-0 grid-cols-1 gap-[var(--grid-gap)] xl:grid-cols-[minmax(0,1fr)_minmax(300px,540px)] xl:items-start 2xl:grid-cols-[1415px_minmax(0,1fr)] 2xl:gap-x-[7px]">
-        <AntiRotActions data={dashboard.antiRotActions} profileId={profileId} />
-        <Challenges
-          data={dashboard.challengesRewardFocus}
-          profileId={profileId}
-        />
-      </div>
     </section>
   );
 }

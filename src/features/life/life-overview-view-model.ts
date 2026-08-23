@@ -53,20 +53,20 @@ export function getLifeOverviewViewModel(): LifeOverviewViewModel {
     header: {
       title: "Life Overview",
       eyebrow: "Area dashboard / personal context",
-      summary: "Journal, loose notes, entertainment and personal inventory",
+      summary: "Journal, loose notes, inventory and deliberate wishlist decisions",
       statusLabel: "Stable, mentally full",
       context: "Private personal context, static mock data, no persistence.",
     },
     pageContract: {
       pageType: "Area Overview",
       primaryPurpose:
-        "Personal context for reflection, keeping loose thoughts, remembering media and deciding personal inventory questions.",
+        "Personal context for reflection, keeping loose thoughts and deciding personal inventory questions.",
       writes:
-        "Local UI-only mock records for journal entries, notes, media and wishlist items.",
+        "Local UI-only mock records for journal entries, notes and wishlist items.",
       reads:
-        "Static mock journal entries, loose notes, entertainment items, inventory items and personal activity.",
+        "Static mock journal entries, loose notes, inventory items and personal activity.",
       canonicalSource:
-        "Later journal_entries, notes, entertainment_items, inventory_items and activity_events.",
+        "Later journal_entries, notes, inventory_items and activity_events.",
       sensitiveData:
         "Journal and personal notes are treated as personal_sensitive and private by default.",
       primaryDecision:
@@ -81,7 +81,6 @@ export function getLifeOverviewViewModel(): LifeOverviewViewModel {
         "Life Sections",
         "Loose Notes",
         "Inventory & Wishlist Focus",
-        "Entertainment Shelf",
         "Recent Personal Activity",
         "Privacy Notes",
       ],

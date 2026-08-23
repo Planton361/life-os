@@ -1,6 +1,6 @@
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { expect, type Locator, type Page, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import {
   compareDashboardTasks,
   dashboardLocalDayProgress,
@@ -68,22 +68,6 @@ async function expectNoHorizontalOverflow(page: Page) {
   ).toBeLessThanOrEqual(1);
 }
 
-async function isPartiallyVisible(page: Page, locator: Locator) {
-  const box = await locator.boundingBox();
-  const viewport = page.viewportSize();
-
-  if (!box || !viewport) {
-    return false;
-  }
-
-  return (
-    box.x < viewport.width &&
-    box.x + box.width > 0 &&
-    box.y < viewport.height &&
-    box.y + box.height > 0
-  );
-}
-
 async function saveScreenshot(page: Page, outputPath: string) {
   await mkdir(outputPath, { recursive: true });
   await page.screenshot({
@@ -123,15 +107,17 @@ test.describe("Dashboard viewport QA", () => {
       page.getByRole("heading", { name: "Today Agenda" }),
     ).toBeVisible();
 
-    const antiRot = page.getByRole("heading", {
-      name: "Anti-Rot Actions / Bad Habit Reset Row",
+    const dashboardZones = page.getByRole("region", {
+      name: "Dashboard-Zonen",
     });
-    const challenges = page.getByRole("heading", { name: "Challenges" });
-    const bottomZoneVisible =
-      (await isPartiallyVisible(page, antiRot)) ||
-      (await isPartiallyVisible(page, challenges));
-
-    expect(bottomZoneVisible).toBe(true);
+    await expect(
+      dashboardZones.getByRole("heading", {
+        name: "Anti-Rot Actions / Bad Habit Reset Row",
+      }),
+    ).toHaveCount(0);
+    await expect(
+      dashboardZones.getByRole("heading", { name: "Challenges" }),
+    ).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
     await saveScreenshot(page, testInfo.outputPath("screenshots"));
   });
@@ -211,9 +197,6 @@ test.describe("Dashboard D1.1 read-model truth", () => {
 
     const dashboard = page.getByRole("region", { name: "Dashboard-Zonen" });
     await expect(dashboard.getByText("Habit tracking prepared")).toBeVisible();
-    await expect(
-      dashboard.getByText(/Prepared · challenge source/),
-    ).toBeVisible();
     await expect(
       page.getByText(/Mood writes are unavailable in this profile/),
     ).toBeVisible();
