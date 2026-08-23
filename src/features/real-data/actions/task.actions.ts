@@ -593,7 +593,7 @@ export async function completeTaskAction(
 
   const linkedResult = await createSupabaseScheduleSourceRepository(context.auth.client).completeLinkedTask(parsed.data.taskId, parsed.data.completedAt ?? new Date().toISOString());
   const result = linkedResult.error || !linkedResult.data
-    ? await createSupabaseTaskRepository(context.auth.client).completeTask(parsed.data)
+    ? { ok: false as const }
     : { data: linkedResult.data, ok: true as const };
 
   if (!result.ok) {

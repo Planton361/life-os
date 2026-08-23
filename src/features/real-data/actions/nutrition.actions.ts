@@ -660,18 +660,15 @@ export async function completeMealAction(
     };
   }
 
-  const repository = createSupabaseNutritionRepository(context.auth.client);
   const completedAt = parsed.data.completedAt ?? new Date().toISOString();
   const linkedResult = await createSupabaseScheduleSourceRepository(context.auth.client).completeLinkedMeal(parsed.data.mealId, completedAt);
-  const result = linkedResult.error || !linkedResult.data ? await repository.completeMeal({
-    ...parsed.data,
-    profileId: context.auth.user.id,
-    userId: context.auth.user.id,
-  }) : { data: { id: linkedResult.data.id }, ok: true as const };
+  const result = linkedResult.error || !linkedResult.data
+    ? { ok: false as const }
+    : { data: { id: linkedResult.data.id }, ok: true as const };
 
   if (!result.ok) {
     return {
-      message: repositoryFailureMessage(result.error.message),
+      message: repositoryFailureMessage(linkedResult.error?.message ?? "complete meal"),
       status: "error",
     };
   }

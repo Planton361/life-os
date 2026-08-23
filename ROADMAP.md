@@ -322,7 +322,7 @@ until SR1 has a proven canonical local stack.
 
 ### SR1-01A – Canonical Schedule-Source Foundation
 
-**Current slice:** Build a fully isolated local Supabase stack solely from the
+**Completed:** Build a fully isolated local Supabase stack solely from the
 versioned migration chain and add the smallest forward migration that
 canonically secures `schedule_source_links` plus its controlled
 `schedule_linked_source` write boundary. This slice excludes all completion,
@@ -333,6 +333,18 @@ rescheduling, data-import and cutover work.
 `schedule_source_links` has the explicit four-source canonical foundation, and
 source/task ownership, duplicate and direct-mutation bypass attempts are
 rejected without changing the old local stack.
+
+### SR1-01B1 – Canonical Meal Schedule & Completion Sync
+
+**Current slice:** On the isolated Git-only stack, make the existing Meal
+Schedule Source flow atomically synchronize the canonical Meal and its linked
+Task Occurrence for scheduling and completion. This is limited to Meals; it
+does not advance Review, Running, Strength, import or cutover work.
+
+**Done when:** the Git-only migration chain proves Meal-to-Task and
+Task-to-Meal completion plus Meal schedule/reschedule consistency under the
+controlled Schedule Source boundary, with ownership and rollback protection
+and without changing the old local stack.
 
 ## 4.2 Paused Work Block: C1.1 – Work Graph Integrity & Task Context
 
