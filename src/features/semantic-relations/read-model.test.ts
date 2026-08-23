@@ -25,10 +25,13 @@ describe("semantic relation read model", () => {
     expect(result.tasks.find((entry) => entry.targetId === "1")?.direct).toBe(true);
   });
 
-  it("filters archives and unsupported skill relations unless history is requested", () => {
+  it("filters archives and projects canonical skill relations", () => {
     const archived = { ...base, archived: true };
     const skill = { ...base, targetId: "skill", targetType: "skill" as const };
     expect(buildSemanticConnectedContext([archived, skill]).tasks).toHaveLength(0);
+    expect(buildSemanticConnectedContext([archived, skill]).skills).toEqual([
+      skill,
+    ]);
     expect(buildSemanticConnectedContext([archived], { historical: true }).tasks).toHaveLength(1);
   });
 });

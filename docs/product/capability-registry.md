@@ -151,9 +151,9 @@ C1 Core Work Graph
 |---|---|---|---|
 | Task create/edit/lifecycle | `CONNECTED` | K1.1A Portfolio Task Detail, task actions/repository, reload proof | maintain |
 | Task relation to Project/Goal | `CONNECTED` | K1.1A Task Detail with nullable task relation fields and ownership checks | maintain |
-| Task relation to Skill/Resource | `CONNECTED_GAP` | Resource link/unlink via `resource_relations`; Skill evidence exists but is not Task↔Skill context | C1.1 adds a dedicated owned Task↔Skill context relation without automatic Evidence |
+| Task relation to Skill/Resource | `CONNECTED` | Resource link/unlink via `resource_relations`; C1.1-02 adds owned n:m `task_skill_links`, idempotent link, explicit unlink, Task detail projection and Skill backlink without creating Evidence | maintain endpoint ownership, reload and no-auto-Evidence proofs |
 | Project Goal inheritance in Task context | `CONNECTED_GAP` | `projects.goal_id` and `tasks.goal_id` exist and are projected | C1.1 must distinguish direct/inherited context and prevent contradictory alignment |
-| Core work graph backlinks | `CONNECTED_GAP` | semantic relation read model covers Task/Project/Goal/Resource direct and via paths | add Skill context, stable provenance and bounded five-entity backlinks in C1.1 |
+| Core work graph backlinks | `CONNECTED_GAP` | semantic relation read model covers Task/Project/Goal/Resource direct and via paths plus C1.1-02 Task↔Skill context on both workbenches | Project/Goal alignment and remaining bounded five-entity provenance continue in later C1.1 subtasks |
 | Project create/edit/status/archive | `CONNECTED` | project actions/repository | add restore/complete semantics later |
 | Goal create/edit/status/archive | `CONNECTED` | goal actions/repository | add achieve/restore semantics later |
 | Skill create/edit/archive | `CONNECTED` | skill actions/repository | maintain |
@@ -182,7 +182,7 @@ C1 Core Work Graph
 | Resource search | `CONNECTED` | K1.1B user-scoped Manual read model filter across title, description, URL and type | tags/full-text ranking remain deferred |
 | Files/attachments | `NOT_STARTED` | none | storage/privacy decision |
 | Notes/wiki resources | `CONNECTED_GAP` | resource/note concepts | canonical Note/Wiki model needed |
-| Semantic relation read model | `CONNECTED` | K1.1C server-side projection of `tasks.project_id`, `tasks.goal_id`, `projects.goal_id` and `resource_relations`; deterministic direct-over-via dedupe, stable grouping, source/direction labels, navigation and reload proof | Skill relations remain deferred until a safe canonical relation exists |
+| Semantic relation read model | `CONNECTED` | server-side projection of `tasks.project_id`, `tasks.goal_id`, `projects.goal_id`, `resource_relations` and C1.1-02 `task_skill_links`; deterministic dedupe, stable grouping, source/direction labels, navigation and reload proof | Resource→Skill target support and wider knowledge provenance remain later bounded scope |
 | Resource/Skill graph | `NOT_STARTED` | no proven graph read model | no visual library before semantics |
 | Embeddings/semantic search | `DECISION_REQUIRED` | none | privacy and permission decision |
 

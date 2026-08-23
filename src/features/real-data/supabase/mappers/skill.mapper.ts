@@ -5,6 +5,7 @@ import {
   type SkillEvidence,
   type SkillEvidenceSourceType,
   type SkillStatus,
+  type TaskSkillLink,
 } from "../../domain";
 import type {
   SkillCreateInput,
@@ -19,6 +20,8 @@ import type {
   SkillInsert,
   SkillRow,
   SkillUpdate,
+  TaskSkillLinkInsert,
+  TaskSkillLinkRow,
 } from "../row-types";
 
 function isSkillStatus(value: string): value is SkillStatus {
@@ -81,6 +84,31 @@ export function mapSkillEvidenceRowToDomain(
     updatedAt: row.updated_at,
     userId: row.user_id,
     weight: row.weight,
+  };
+}
+
+export function mapTaskSkillLinkRowToDomain(
+  row: TaskSkillLinkRow,
+): TaskSkillLink {
+  return {
+    archivedAt: null,
+    createdAt: row.created_at,
+    id: row.id,
+    skillId: row.skill_id,
+    taskId: row.task_id,
+    updatedAt: row.updated_at,
+    userId: row.user_id,
+  };
+}
+
+export function mapTaskSkillLinkToInsert(
+  input: { skillId: string; taskId: string },
+  userId: string,
+): TaskSkillLinkInsert {
+  return {
+    skill_id: input.skillId,
+    task_id: input.taskId,
+    user_id: userId,
   };
 }
 

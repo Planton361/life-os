@@ -9,10 +9,14 @@ import {
   reopenTaskInputSchema,
   rescheduleTaskInputSchema,
   scheduleTaskInputSchema,
+  taskSkillLinkInputSchema,
   unscheduleTaskInputSchema,
   updateTaskInputSchema,
 } from "@/features/real-data";
-import { createSupabaseTaskRepository } from "@/features/real-data/supabase";
+import {
+  createSupabaseSkillRepository,
+  createSupabaseTaskRepository,
+} from "@/features/real-data/supabase";
 import { createSupabaseScheduleSourceRepository } from "@/features/real-data/supabase";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
 import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
@@ -27,6 +31,10 @@ export type TaskLifecycleActionResult = {
   message: string;
   status: "blocked" | "error" | "success";
   taskId?: string;
+};
+
+export type TaskSkillActionResult = TaskLifecycleActionResult & {
+  skillId?: string;
 };
 
 const appTimeZone = "Europe/Berlin";
@@ -163,6 +171,14 @@ function revalidateTaskProjectionRoutes() {
   revalidatePath("/calendar");
 }
 
+function revalidateTaskSkillProjectionRoutes(taskId: string, skillId: string) {
+  revalidatePath("/portfolio");
+  revalidatePath("/tasks");
+  revalidatePath(`/tasks/${taskId}`);
+  revalidatePath("/skills");
+  revalidatePath(`/skills/${skillId}`);
+}
+
 function optionalNullableFormString(formData: FormData, key: string) {
   return formData.has(key) ? optionalFormString(formData, key) ?? null : undefined;
 }
@@ -215,6 +231,118 @@ export async function updatePortfolioTaskFormAction(formData: FormData): Promise
   const result = await updatePortfolioTaskAction(formData);
   const selected = formString(formData, "taskId");
   redirect(`/portfolio?view=tasks&selected=${encodeURIComponent(selected)}&targetCreate=task_${result.status}`);
+}
+
+export async function linkTaskSkillAction(
+  formData: FormData,
+): Promise<TaskSkillActionResult> {
+  const context = await getAuthenticatedManualTaskContext("mit Skills zu verknüpfen");
+  if (!context.ok) return context.result;
+
+  const parsed = taskSkillLinkInputSchema.safeParse({
+    skillId: formString(formData, "skillId"),
+    taskId: formString(formData, "taskId"),
+  });
+  if (!parsed.success) {
+    return {
+      message: "Wähle einen gültigen Skill aus.",
+      status: "error",
+    };
+  }
+
+  const result = await createSupabaseSkillRepository(
+    context.auth.client,
+  ).linkTaskSkill({
+    ...parsed.data,
+    userId: context.auth.user.id,
+  });
+  if (!result.ok) {
+    return {
+      message: "Task und Skill konnten im aktuellen User-Scope nicht verknüpft werden.",
+      status: "error",
+    };
+  }
+
+  revalidateTaskSkillProjectionRoutes(parsed.data.taskId, parsed.data.skillId);
+
+  return {
+    message: "Skill mit Task verknüpft.",
+    skillId: parsed.data.skillId,
+    status: "success",
+    taskId: parsed.data.taskId,
+  };
+}
+
+export async function linkTaskSkillFormAction(formData: FormData): Promise<void> {
+  const result = await linkTaskSkillAction(formData);
+  const taskId = formString(formData, "taskId");
+  const state =
+    result.status === "success"
+      ? "task_skill_linked"
+      : result.status === "blocked"
+        ? "blocked"
+        : "task_skill_error";
+
+  redirect(
+    `/portfolio?view=tasks&selected=${encodeURIComponent(taskId)}&targetCreate=${state}`,
+  );
+}
+
+export async function unlinkTaskSkillAction(
+  formData: FormData,
+): Promise<TaskSkillActionResult> {
+  const context = await getAuthenticatedManualTaskContext("von Skills zu lösen");
+  if (!context.ok) return context.result;
+
+  const parsed = taskSkillLinkInputSchema.safeParse({
+    skillId: formString(formData, "skillId"),
+    taskId: formString(formData, "taskId"),
+  });
+  if (!parsed.success) {
+    return {
+      message: "Die Task-Skill-Verbindung konnte nicht validiert werden.",
+      status: "error",
+    };
+  }
+
+  const result = await createSupabaseSkillRepository(
+    context.auth.client,
+  ).unlinkTaskSkill({
+    ...parsed.data,
+    userId: context.auth.user.id,
+  });
+  if (!result.ok) {
+    return {
+      message: "Die Task-Skill-Verbindung konnte nicht entfernt werden.",
+      status: "error",
+    };
+  }
+
+  revalidateTaskSkillProjectionRoutes(parsed.data.taskId, parsed.data.skillId);
+
+  return {
+    message: "Skill-Verbindung entfernt.",
+    skillId: parsed.data.skillId,
+    status: "success",
+    taskId: parsed.data.taskId,
+  };
+}
+
+export async function unlinkTaskSkillFormAction(
+  formData: FormData,
+): Promise<void> {
+  const result = await unlinkTaskSkillAction(formData);
+  const taskId = formString(formData, "taskId");
+  const state =
+    result.status === "success"
+      ? "task_skill_unlinked"
+      : result.status === "blocked"
+        ? "blocked"
+        : "task_skill_error";
+
+  redirect(
+    `/portfolio?view=tasks&selected=${encodeURIComponent(taskId)}&targetCreate=${state}`,
+  );
 }
 
 function authBlockedMessage(

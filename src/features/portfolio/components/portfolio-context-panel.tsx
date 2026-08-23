@@ -6,10 +6,12 @@ import {
   completeTaskFormAction,
   createPortfolioTaskFormAction,
   reopenTaskFormAction,
+  linkTaskSkillFormAction,
   rescheduleTaskFormAction,
   scheduleTaskForTodayFormAction,
   unscheduleTaskFormAction,
   updatePortfolioTaskFormAction,
+  unlinkTaskSkillFormAction,
 } from "@/features/real-data/actions/task.actions";
 import { linkPortfolioResourceToTargetAction, unlinkPortfolioResourceFromTargetAction } from "@/features/real-data/actions/resource.actions";
 import {
@@ -665,6 +667,115 @@ function TaskDetailForm({
       </div>
       <button className={formButtonClassName} type="submit">Task speichern</button>
     </form>
+  );
+}
+
+function TaskSkillsSection({
+  entities,
+  entity,
+}: Readonly<{
+  entities: readonly PortfolioEntity[];
+  entity: PortfolioEntity;
+}>) {
+  const linkedSkills = entity.linkedSkills ?? [];
+  const linkedSkillIds = new Set(linkedSkills.map((link) => link.skillId));
+  const availableSkills = entities
+    .filter((item) => item.type === "skill" && !linkedSkillIds.has(item.id))
+    .sort((left, right) => left.title.localeCompare(right.title));
+
+  return (
+    <section
+      aria-labelledby="task-skills-heading"
+      className="grid gap-2"
+      data-task-skill-region="task"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h3
+            className="text-[13px] font-semibold text-[var(--text-primary)]"
+            id="task-skills-heading"
+          >
+            Verbundene Skills
+          </h3>
+          <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
+            Praxis- oder Anwendungskontext. Eine Zuordnung ist keine Skill
+            Evidence und verändert kein Skill-Level.
+          </p>
+        </div>
+        <Pill accent="var(--accent-cyan)">{linkedSkills.length} total</Pill>
+      </div>
+
+      <form
+        action={linkTaskSkillFormAction}
+        aria-label="Skill mit Task verknüpfen"
+        className="grid gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.40)] p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end"
+      >
+        <input name="taskId" type="hidden" value={entity.id} />
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+          Skill suchen / auswählen
+          <select
+            className={formInputClassName}
+            disabled={availableSkills.length === 0}
+            name="skillId"
+            required
+          >
+            <option value="">
+              {availableSkills.length === 0
+                ? "Kein weiterer aktiver Skill verfügbar"
+                : "Aktiven Skill auswählen"}
+            </option>
+            {availableSkills.map((skill) => (
+              <option key={skill.id} value={skill.id}>
+                {skill.title}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button
+          className={formButtonClassName}
+          disabled={availableSkills.length === 0}
+          type="submit"
+        >
+          Skill verknüpfen
+        </button>
+      </form>
+
+      {linkedSkills.length === 0 ? (
+        <p className="rounded-[10px] border border-dashed border-[var(--border-subtle)] px-3 py-2 text-[10px] text-[var(--text-muted)]">
+          Noch kein Skill als Praxis- oder Anwendungskontext verknüpft.
+        </p>
+      ) : (
+        <ul className="grid gap-1.5">
+          {linkedSkills.map((link) => (
+            <li
+              className="flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.40)] px-3 py-2"
+              data-task-skill-link={link.skillId}
+              key={link.relationId}
+            >
+              <Link
+                className="text-[11px] font-semibold text-[var(--accent-cyan)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                href={`/portfolio?view=skills&selected=${encodeURIComponent(link.skillId)}`}
+              >
+                {link.skillTitle}
+              </Link>
+              <form
+                action={unlinkTaskSkillFormAction}
+                aria-label={`Skill-Verbindung entfernen ${link.skillTitle}`}
+              >
+                <input name="taskId" type="hidden" value={link.taskId} />
+                <input name="skillId" type="hidden" value={link.skillId} />
+                <button
+                  className="inline-flex min-h-8 items-center rounded-full border border-[rgba(221,107,95,.28)] bg-[rgba(221,107,95,.10)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[rgba(221,107,95,.44)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                  type="submit"
+                >
+                  Verbindung entfernen
+                </button>
+              </form>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 
@@ -1994,6 +2105,7 @@ export function PortfolioContextPanel({
           <section aria-labelledby="task-detail-heading" className="grid gap-3">
             <h3 className="text-[13px] font-semibold text-[var(--text-primary)]" id="task-detail-heading">Task Detail</h3>
             <TaskDetailForm entities={allEntities} entity={entity} />
+            <TaskSkillsSection entities={allEntities} entity={entity} />
             <WorkbenchResourcesSection disabled={false} entity={entity} resourceOptions={resourceLinkOptions} resources={entity.linkedResources ?? []} />
           </section>
         ) : null}
@@ -2052,6 +2164,52 @@ export function PortfolioContextPanel({
                   entity={entity}
                 />
               </WorkbenchCreateSection>
+
+              <section
+                aria-labelledby="skill-linked-tasks-heading"
+                data-task-skill-region="skill"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h3
+                      className="text-[13px] font-semibold text-[var(--text-primary)]"
+                      id="skill-linked-tasks-heading"
+                    >
+                      Verknüpfte Tasks
+                    </h3>
+                    <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
+                      Praxis- oder Anwendungskontext aus Task-Zuordnungen; keine
+                      Skill Evidence und kein automatischer Fortschritt.
+                    </p>
+                  </div>
+                  <Pill accent="var(--accent-cyan)">
+                    {entity.skillContext.linkedTasks?.length ?? 0} total
+                  </Pill>
+                </div>
+                {entity.skillContext.linkedTasks?.length ? (
+                  <ul className="mt-2 grid gap-1.5">
+                    {entity.skillContext.linkedTasks.map((link) => (
+                      <li
+                        className="rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.40)] px-3 py-2"
+                        data-task-skill-link={link.taskId}
+                        key={link.relationId}
+                      >
+                        <Link
+                          className="text-[11px] font-semibold text-[var(--accent-cyan)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                          href={`/portfolio?view=tasks&selected=${encodeURIComponent(link.taskId)}`}
+                        >
+                          {link.taskTitle}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-2 rounded-[10px] border border-dashed border-[var(--border-subtle)] px-3 py-2 text-[10px] text-[var(--text-muted)]">
+                    Noch keine Task als Praxis- oder Anwendungskontext
+                    verknüpft.
+                  </p>
+                )}
+              </section>
 
               <WorkbenchCreateSection
                 description={

@@ -78,6 +78,7 @@ import {
   type Resource as RealDataResource,
   type Skill as RealDataSkill,
   type SkillEvidence as RealDataSkillEvidence,
+  type TaskSkillLink as RealDataTaskSkillLink,
   type Task as RealDataTask,
 } from "@/features/real-data";
 import {
@@ -152,6 +153,7 @@ import type {
   PortfolioResourceLinkOption,
   PortfolioSkillEvidence,
   PortfolioSkillSourceTarget,
+  PortfolioTaskSkillLink,
   PortfolioStatus,
   PortfolioViewModel,
 } from "@/features/portfolio";
@@ -666,7 +668,54 @@ type PortfolioRelationLabelLookups = {
   skillEvidenceSourceLabels: ReadonlyMap<string, string>;
   skillSourceTargets: readonly PortfolioSkillSourceTarget[];
   skillTitles: ReadonlyMap<string, string>;
+  taskSkillLinksBySkillId: ReadonlyMap<
+    string,
+    readonly PortfolioTaskSkillLink[]
+  >;
+  taskSkillLinksByTaskId: ReadonlyMap<
+    string,
+    readonly PortfolioTaskSkillLink[]
+  >;
 };
+
+function portfolioTaskSkillLinkLookups(
+  tasks: readonly LifeTask[],
+  skills: readonly LifeSkill[],
+  links: readonly RealDataTaskSkillLink[],
+) {
+  const taskTitles = new Map(tasks.map((task) => [task.id, task.title]));
+  const skillTitles = new Map(skills.map((skill) => [skill.id, skill.title]));
+  const bySkillId = new Map<string, PortfolioTaskSkillLink[]>();
+  const byTaskId = new Map<string, PortfolioTaskSkillLink[]>();
+
+  for (const link of links) {
+    const taskTitle = taskTitles.get(link.taskId);
+    const skillTitle = skillTitles.get(link.skillId);
+    if (!taskTitle || !skillTitle) continue;
+
+    const row: PortfolioTaskSkillLink = {
+      createdAt: link.createdAt,
+      relationId: link.id,
+      skillId: link.skillId,
+      skillTitle,
+      taskId: link.taskId,
+      taskTitle,
+    };
+    bySkillId.set(link.skillId, [...(bySkillId.get(link.skillId) ?? []), row]);
+    byTaskId.set(link.taskId, [...(byTaskId.get(link.taskId) ?? []), row]);
+  }
+
+  for (const rows of [...bySkillId.values(), ...byTaskId.values()]) {
+    rows.sort(
+      (left, right) =>
+        left.taskTitle.localeCompare(right.taskTitle) ||
+        left.skillTitle.localeCompare(right.skillTitle) ||
+        left.relationId.localeCompare(right.relationId),
+    );
+  }
+
+  return { bySkillId, byTaskId };
+}
 
 function isPortfolioSkillEvidenceSourceType(
   value: unknown,
@@ -778,6 +827,8 @@ function portfolioRelationLabelLookups(
     skillTitles: new Map(
       collection.skills.map((skill) => [skill.id, skill.title]),
     ),
+    taskSkillLinksBySkillId: new Map(),
+    taskSkillLinksByTaskId: new Map(),
   };
 
   return {
@@ -832,6 +883,8 @@ function taskPortfolioRelations(
   task: LifeTask,
   lookups: PortfolioRelationLabelLookups,
 ) {
+  const linkedSkills = lookups.taskSkillLinksByTaskId.get(task.id) ?? [];
+
   return [
     {
       label: "Project",
@@ -848,11 +901,14 @@ function taskPortfolioRelations(
         linkedTitle(task.goalId, lookups.goalTitles, "Goal nicht gefunden") ??
         "Kein Goal verknüpft",
     },
-    ...relation(
-      "Skill",
-      linkedTitle(task.skillId, lookups.skillTitles, "Skill nicht gefunden") ??
-        undefined,
-    ),
+    ...linkedSkills.map((link) => ({ label: "Skill", value: link.skillTitle })),
+    ...(linkedSkills.length === 0
+      ? relation(
+          "Skill",
+          linkedTitle(task.skillId, lookups.skillTitles, "Skill nicht gefunden") ??
+            undefined,
+        )
+      : []),
   ];
 }
 
@@ -881,6 +937,7 @@ function taskToPortfolioEntity(
     countLabel: `${task.durationMinutes ?? 30} min`,
     lastTouched: "today",
     linkedResources: lookups.resourceLinksByTarget.get(`task:${task.id}`) ?? [],
+    linkedSkills: lookups.taskSkillLinksByTaskId.get(task.id) ?? [],
     recentRank: index + 1,
     projectId: task.projectId,
     reviewNeeded: task.reviewNeeded,
@@ -1096,6 +1153,7 @@ function skillToPortfolioEntity(
       evidenceRows: skill.evidence.map((evidence) =>
         portfolioSkillEvidenceRow(skill, evidence, lookups),
       ),
+      linkedTasks: lookups.taskSkillLinksBySkillId.get(skill.id) ?? [],
       sourceTargets: lookups.skillSourceTargets,
     },
   };
@@ -1127,14 +1185,16 @@ function collectionToPortfolioEntities(
   ): SemanticRelationEntry => ({
     ...values,
     archived: false,
-    href: portfolioEntityHref(target.type as "task" | "project" | "goal", target.id),
+    href: portfolioEntityHref(
+      target.type as "task" | "project" | "goal" | "skill",
+      target.id,
+    ),
     targetId: target.id,
     targetTitle: target.title,
     targetType: target.type,
   });
 
   return entities.map((entity) => {
-    if (entity.type === "skill") return entity;
     const candidates: SemanticRelationEntry[] = [];
     const project = entity.projectId ? byId.get(`project:${entity.projectId}`) : undefined;
     const goal = entity.goalId ? byId.get(`goal:${entity.goalId}`) : undefined;
@@ -1147,6 +1207,19 @@ function collectionToPortfolioEntities(
       if (projectGoal) candidates.push(relationEntry(projectGoal, { direct: false, direction: "outgoing", relationType: "supports goal via project", source: "tasks.project_id → projects.goal_id", via: { id: project.id, title: project.title, type: "project" } }));
     }
     if (entity.type === "project" && goal) candidates.push(relationEntry(goal, { direct: true, direction: "outgoing", relationType: "supports goal", source: "projects.goal_id" }));
+
+    if (entity.type === "task") {
+      for (const link of entity.linkedSkills ?? []) {
+        const skill = byId.get(`skill:${link.skillId}`);
+        if (skill) candidates.push(relationEntry(skill, { direct: true, direction: "outgoing", relationType: "practices/applies skill", source: "task_skill_links" }));
+      }
+    }
+    if (entity.type === "skill") {
+      for (const link of entity.skillContext?.linkedTasks ?? []) {
+        const task = byId.get(`task:${link.taskId}`);
+        if (task) candidates.push(relationEntry(task, { direct: true, direction: "incoming", relationType: "task practices/applies skill", source: "task_skill_links" }));
+      }
+    }
 
     for (const candidate of entities) {
       if (candidate.type === "task" && entity.type === "project" && candidate.projectId === entity.id) candidates.push(relationEntry(candidate, { direct: true, direction: "incoming", relationType: "task in project", source: "tasks.project_id" }));
@@ -2480,16 +2553,19 @@ async function getManualSkillsFromSupabase(
   userId: string,
 ): Promise<{
   skills: LifeSkill[];
+  taskSkillLinks: RealDataTaskSkillLink[];
 }> {
   const repository = createSupabaseSkillRepository(client);
-  const [skillResult, evidenceResult] = await Promise.all([
+  const [skillResult, evidenceResult, taskSkillLinkResult] = await Promise.all([
     repository.getActiveSkillsByUser(userId),
     repository.getSkillEvidenceByUser(userId),
+    repository.getTaskSkillLinksByUser(userId),
   ]);
 
   if (!skillResult.ok || !evidenceResult.ok) {
     return {
       skills: [],
+      taskSkillLinks: [],
     };
   }
 
@@ -2505,6 +2581,7 @@ async function getManualSkillsFromSupabase(
     skills: skillResult.data.map((skill) =>
       realSkillToLifeSkill(skill, evidenceBySkillId.get(skill.id) ?? []),
     ),
+    taskSkillLinks: taskSkillLinkResult.ok ? [...taskSkillLinkResult.data] : [],
   };
 }
 
@@ -2584,6 +2661,7 @@ async function getManualPortfolioRelationLabelLookups(
   userId: string,
   tasks: readonly LifeTask[],
   skills: readonly LifeSkill[] = [],
+  taskSkillLinks: readonly RealDataTaskSkillLink[] = [],
   skillSourceTargets?: {
     labels: ReadonlyMap<string, string>;
     targets: readonly PortfolioSkillSourceTarget[];
@@ -2621,6 +2699,11 @@ async function getManualPortfolioRelationLabelLookups(
         } as SupabaseQueryResult<readonly PortfolioRelationGoalRow[]>),
   ]);
   const resourceLookups = await getManualPortfolioResourceLinks(client, userId);
+  const taskSkillLookups = portfolioTaskSkillLinkLookups(
+    tasks,
+    skills,
+    taskSkillLinks,
+  );
   const baseLookups: PortfolioRelationLabelLookups = {
     goalTitles: goalResult.error
       ? new Map()
@@ -2634,6 +2717,8 @@ async function getManualPortfolioRelationLabelLookups(
     skillEvidenceSourceLabels: skillSourceTargets?.labels ?? new Map(),
     skillSourceTargets: skillSourceTargets?.targets ?? [],
     skillTitles: new Map(skills.map((skill) => [skill.id, skill.title])),
+    taskSkillLinksBySkillId: taskSkillLookups.bySkillId,
+    taskSkillLinksByTaskId: taskSkillLookups.byTaskId,
   };
 
   return {
@@ -2699,6 +2784,7 @@ async function getManualPortfolioEntityCollection(): Promise<{
       auth.user.id,
       collection.tasks,
       collection.skills,
+      manualSkills.taskSkillLinks,
       skillSourceTargets,
     ),
   };

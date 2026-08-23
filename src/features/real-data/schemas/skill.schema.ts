@@ -114,3 +114,10 @@ export const skillEvidenceDeleteInputSchema = z.object({
 export type SkillEvidenceDeleteInput = z.infer<
   typeof skillEvidenceDeleteInputSchema
 >;
+
+export const taskSkillLinkInputSchema = z.object({
+  skillId: requiredUuidSchema,
+  taskId: requiredUuidSchema,
+});
+
+export type TaskSkillLinkInput = z.infer<typeof taskSkillLinkInputSchema>;

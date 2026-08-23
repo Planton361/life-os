@@ -20,6 +20,7 @@ import type {
   ReviewKind,
   Skill,
   SkillEvidence,
+  TaskSkillLink,
   SupportedResourceRelationTargetType,
   Task,
   TaskEnergy,
@@ -65,6 +66,7 @@ import type {
   SkillEvidenceDeleteInput,
   SkillEvidenceUpdateInput,
   SkillUpdateInput,
+  TaskSkillLinkInput,
   UpdateTaskInput,
   UpsertDailyLogInput,
   SaveReviewRepositoryInput,
@@ -212,6 +214,10 @@ export type UpdateSkillEvidenceRepositoryInput = SkillEvidenceUpdateInput & {
 };
 
 export type DeleteSkillEvidenceRepositoryInput = SkillEvidenceDeleteInput & {
+  userId: UserId;
+};
+
+export type TaskSkillLinkRepositoryInput = TaskSkillLinkInput & {
   userId: UserId;
 };
 
@@ -447,6 +453,15 @@ export interface SkillRepository {
     skillId: string;
   }): Promise<RepositoryListResult<SkillEvidence>>;
   getSkillsByUser(userId: UserId): Promise<RepositoryListResult<Skill>>;
+  getTaskSkillLinksByUser(
+    userId: UserId,
+  ): Promise<RepositoryListResult<TaskSkillLink>>;
+  linkTaskSkill(
+    input: TaskSkillLinkRepositoryInput,
+  ): Promise<RepositoryResult<TaskSkillLink>>;
+  unlinkTaskSkill(
+    input: TaskSkillLinkRepositoryInput,
+  ): Promise<RepositoryResult<TaskSkillLink>>;
   updateSkill(
     input: UpdateSkillRepositoryInput,
   ): Promise<RepositoryResult<Skill>>;

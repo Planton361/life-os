@@ -17,6 +17,7 @@ export type SemanticConnectedContext = {
   goals: readonly SemanticRelationEntry[];
   projects: readonly SemanticRelationEntry[];
   resources: readonly SemanticRelationEntry[];
+  skills: readonly SemanticRelationEntry[];
   tasks: readonly SemanticRelationEntry[];
 };
 
@@ -44,7 +45,6 @@ export function buildSemanticConnectedContext(
   const unique = new Map<string, SemanticRelationEntry>();
 
   for (const candidate of candidates) {
-    if (candidate.targetType === "skill") continue;
     if (candidate.archived && !options.historical) continue;
     const key = `${candidate.targetType}:${candidate.targetId}`;
     unique.set(key, preferredEntry(unique.get(key), candidate));
@@ -55,10 +55,11 @@ export function buildSemanticConnectedContext(
     goals: entries.filter((entry) => entry.targetType === "goal"),
     projects: entries.filter((entry) => entry.targetType === "project"),
     resources: entries.filter((entry) => entry.targetType === "resource"),
+    skills: entries.filter((entry) => entry.targetType === "skill"),
     tasks: entries.filter((entry) => entry.targetType === "task"),
   };
 }
 
-export function portfolioEntityHref(type: "task" | "project" | "goal", id: string) {
+export function portfolioEntityHref(type: "task" | "project" | "goal" | "skill", id: string) {
   return `/portfolio?view=${type}s&selected=${id}` as `/${string}`;
 }

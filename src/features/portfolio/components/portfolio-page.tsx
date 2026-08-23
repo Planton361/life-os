@@ -202,6 +202,9 @@ function targetCreateMessage(value: string | null) {
   if (value === "task_archived") return "Task archiviert.";
   if (value === "task_success") return "Task gespeichert.";
   if (value === "task_error") return "Task konnte nicht gespeichert werden.";
+  if (value === "task_skill_linked") return "Skill mit Task verknüpft.";
+  if (value === "task_skill_unlinked") return "Skill-Verbindung entfernt.";
+  if (value === "task_skill_error") return "Task-Skill-Verbindung konnte nicht gespeichert werden.";
   if (value === "project_created") return "Project erstellt.";
   if (value === "project_updated") return "Project aktualisiert.";
   if (value === "project_archived") return "Project archiviert.";

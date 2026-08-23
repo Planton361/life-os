@@ -42,6 +42,7 @@ export const realDataTableNames = {
   resources: "resources",
   skillEvidence: "skill_evidence",
   skills: "skills",
+  taskSkillLinks: "task_skill_links",
   tasks: "tasks",
   runningPlans: "running_plans",
   runningPlanItems: "running_plan_items",

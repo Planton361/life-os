@@ -146,6 +146,15 @@ export type PortfolioSkillSourceTarget = {
   sourceType: "goal" | "project" | "resource" | "task";
 };
 
+export type PortfolioTaskSkillLink = {
+  createdAt: string;
+  relationId: string;
+  skillId: string;
+  skillTitle: string;
+  taskId: string;
+  taskTitle: string;
+};
+
 export type PortfolioSkillEditValues = {
   category?: string;
   level?: string;
@@ -161,6 +170,7 @@ export type PortfolioSkillContext = {
   evidence: string;
   editValues?: PortfolioSkillEditValues;
   evidenceRows?: readonly PortfolioSkillEvidence[];
+  linkedTasks?: readonly PortfolioTaskSkillLink[];
   sourceTargets?: readonly PortfolioSkillSourceTarget[];
 };
 
@@ -269,6 +279,7 @@ export type PortfolioEntity = {
   goalEditValues?: PortfolioGoalEditValues;
   projectId?: string;
   linkedEvidence?: readonly PortfolioSkillEvidence[];
+  linkedSkills?: readonly PortfolioTaskSkillLink[];
   linkedResources?: readonly PortfolioLinkedResource[];
   projectEditValues?: PortfolioProjectEditValues;
   taskLifecycle?: PortfolioTaskLifecycle;

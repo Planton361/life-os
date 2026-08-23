@@ -9,6 +9,7 @@ const groups = [
   ["projects", "Projects"],
   ["goals", "Goals"],
   ["resources", "Resources"],
+  ["skills", "Skills"],
 ] as const;
 
 function RelationEntry({ entry }: Readonly<{ entry: SemanticRelationEntry }>) {

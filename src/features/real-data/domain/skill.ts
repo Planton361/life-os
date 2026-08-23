@@ -4,6 +4,8 @@ import type {
   ProfileId,
   SkillEvidenceId,
   SkillId,
+  TaskId,
+  TaskSkillLinkId,
   UserScopedEntity,
 } from "./ids";
 
@@ -43,4 +45,10 @@ export type SkillEvidence = UserScopedEntity & {
   note: string | null;
   evidenceDate: LocalDateString;
   weight: number | null;
+};
+
+export type TaskSkillLink = UserScopedEntity & {
+  id: TaskSkillLinkId;
+  taskId: TaskId;
+  skillId: SkillId;
 };

@@ -2167,6 +2167,48 @@ export type Database = {
           },
         ]
       }
+      task_skill_links: {
+        Row: {
+          created_at: string
+          id: string
+          skill_id: string
+          task_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          skill_id: string
+          task_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          skill_id?: string
+          task_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_skill_links_skill_owner_fkey"
+            columns: ["user_id", "skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["user_id", "id"]
+          },
+          {
+            foreignKeyName: "task_skill_links_task_owner_fkey"
+            columns: ["user_id", "task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["user_id", "id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           archived_at: string | null

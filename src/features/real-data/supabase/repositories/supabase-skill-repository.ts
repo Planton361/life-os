@@ -1,4 +1,9 @@
-import type { Skill, SkillEvidence, SkillEvidenceSourceType } from "../../domain";
+import type {
+  Skill,
+  SkillEvidence,
+  SkillEvidenceSourceType,
+  TaskSkillLink,
+} from "../../domain";
 import type { SkillRepository } from "../../repositories";
 import type {
   RepositoryListResult,
@@ -11,6 +16,8 @@ import {
   mapSkillEvidenceUpdateInputToPatch,
   mapSkillRowToDomain,
   mapSkillUpdateInputToPatch,
+  mapTaskSkillLinkRowToDomain,
+  mapTaskSkillLinkToInsert,
 } from "../mappers";
 import { realDataTableNames } from "../database.types";
 import type {
@@ -22,6 +29,7 @@ import type {
   SkillEvidenceUpdate,
   SkillRow,
   SkillUpdate,
+  TaskSkillLinkRow,
 } from "../row-types";
 
 type RepositoryFailure = RepositoryResult<never>;
@@ -85,6 +93,15 @@ function mapSkillEvidenceRows(
   }
 }
 
+function mapTaskSkillLinkRows(
+  rows: readonly TaskSkillLinkRow[],
+): RepositoryListResult<TaskSkillLink> {
+  return {
+    data: rows.map(mapTaskSkillLinkRowToDomain),
+    ok: true,
+  };
+}
+
 async function verifyAreaOwnership(
   client: SupabaseClientLike,
   userId: string,
@@ -113,6 +130,23 @@ async function verifyActiveSkillOwnership(
     .select("id")
     .eq("user_id", userId)
     .eq("id", skillId)
+    .neq("status", "archived")
+    .is("archived_at", null)
+    .maybeSingle()) as SupabaseQueryResult<{ id: string }>;
+
+  return Boolean(!result.error && result.data);
+}
+
+async function verifyActiveTaskOwnership(
+  client: SupabaseClientLike,
+  userId: string,
+  taskId: string,
+): Promise<boolean> {
+  const result = (await client
+    .from(realDataTableNames.tasks)
+    .select("id")
+    .eq("user_id", userId)
+    .eq("id", taskId)
     .neq("status", "archived")
     .is("archived_at", null)
     .maybeSingle()) as SupabaseQueryResult<{ id: string }>;
@@ -212,6 +246,28 @@ async function loadSkillEvidenceById(
 
   return {
     data: result.data,
+    ok: true,
+  };
+}
+
+async function loadTaskSkillLink(
+  client: SupabaseClientLike,
+  userId: string,
+  input: { skillId: string; taskId: string },
+): Promise<RepositoryResult<TaskSkillLink>> {
+  const result = (await client
+    .from(realDataTableNames.taskSkillLinks)
+    .select("*")
+    .eq("user_id", userId)
+    .eq("task_id", input.taskId)
+    .eq("skill_id", input.skillId)
+    .maybeSingle()) as SupabaseQueryResult<TaskSkillLinkRow>;
+
+  if (result.error) return adapterFailure("load task skill link");
+  if (!result.data) return notFoundFailure("Task skill link");
+
+  return {
+    data: mapTaskSkillLinkRowToDomain(result.data),
     ok: true,
   };
 }
@@ -461,6 +517,78 @@ export function createSupabaseSkillRepository(
       if (result.error) return adapterFailure("load skills");
 
       return mapSkillRows(result.data ?? []);
+    },
+
+    async getTaskSkillLinksByUser(userId) {
+      const result = (await client
+        .from(realDataTableNames.taskSkillLinks)
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: true })) as SupabaseQueryResult<
+        readonly TaskSkillLinkRow[]
+      >;
+
+      if (result.error) return adapterFailure("load task skill links");
+
+      return mapTaskSkillLinkRows(result.data ?? []);
+    },
+
+    async linkTaskSkill(input) {
+      const [taskOwned, skillOwned] = await Promise.all([
+        verifyActiveTaskOwnership(client, input.userId, input.taskId),
+        verifyActiveSkillOwnership(client, input.userId, input.skillId),
+      ]);
+      if (!taskOwned) return notFoundFailure("Task");
+      if (!skillOwned) return notFoundFailure("Skill");
+
+      const result = (await client
+        .from(realDataTableNames.taskSkillLinks)
+        .upsert(mapTaskSkillLinkToInsert(input, input.userId), {
+          ignoreDuplicates: true,
+          onConflict: "user_id,task_id,skill_id",
+        })
+        .select("*")
+        .maybeSingle()) as SupabaseQueryResult<TaskSkillLinkRow>;
+
+      if (result.error) return adapterFailure("link task skill");
+      if (result.data) {
+        return {
+          data: mapTaskSkillLinkRowToDomain(result.data),
+          ok: true,
+        };
+      }
+
+      return loadTaskSkillLink(client, input.userId, input);
+    },
+
+    async unlinkTaskSkill(input) {
+      const [taskOwned, skillOwned] = await Promise.all([
+        verifyActiveTaskOwnership(client, input.userId, input.taskId),
+        verifyActiveSkillOwnership(client, input.userId, input.skillId),
+      ]);
+      if (!taskOwned) return notFoundFailure("Task");
+      if (!skillOwned) return notFoundFailure("Skill");
+
+      const current = await loadTaskSkillLink(client, input.userId, input);
+      if (!current.ok) return current;
+
+      const result = (await client
+        .from(realDataTableNames.taskSkillLinks)
+        .delete()
+        .eq("user_id", input.userId)
+        .eq("task_id", input.taskId)
+        .eq("skill_id", input.skillId)
+        .select("*")
+        .single()) as SupabaseQueryResult<TaskSkillLinkRow>;
+
+      if (result.error) return adapterFailure("unlink task skill");
+
+      return {
+        data: result.data
+          ? mapTaskSkillLinkRowToDomain(result.data)
+          : current.data,
+        ok: true,
+      };
     },
 
     async updateSkill(input) {

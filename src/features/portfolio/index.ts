@@ -24,6 +24,7 @@ export type {
   PortfolioSkillContext,
   PortfolioSkillEvidence,
   PortfolioSkillSourceTarget,
+  PortfolioTaskSkillLink,
   PortfolioStat,
   PortfolioStatus,
   PortfolioTaskLifecycle,
