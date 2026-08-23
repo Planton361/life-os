@@ -1753,11 +1753,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "schedule_source_links_task_id_fkey"
-            columns: ["task_id"]
-            isOneToOne: false
+            foreignKeyName: "schedule_source_links_task_owner_fkey"
+            columns: ["user_id", "task_id"]
+            isOneToOne: true
             referencedRelation: "tasks"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id", "id"]
           },
         ]
       }

@@ -313,7 +313,28 @@ This sequence is the complete product plan, not a live status queue. A Codex pro
 | 6 | N1 Nutrition | meal planning and completion participate in weekly/daily execution | recipes, meals, portions, groceries and occurrence links | C2/C3 scheduling and daily protocol | medical claims; unsupported macro precision |
 | 7 | A1 Work/Education/Coding/Inventory | area views reuse the core spine and Resources for domain context | projections and bounded domain records; Inventory and Wishlist remain active | C1 and K1 conventions | Entertainment; parallel Tasks/Projects/Resources |
 
-## 4.1 Exact Next Implementation Block: C1.1 – Work Graph Integrity & Task Context
+## 4.1 Active Work Block: SR1 – Local Schema Recovery
+
+**Status:** Active. C1.1 is paused after C1.1-02 until the local Supabase
+schema is again reproducible from versioned Git migrations. The existing local
+stack remains the protected data source and fallback; no C1.1-03 work advances
+until SR1 has a proven canonical local stack.
+
+### SR1-01A – Canonical Schedule-Source Foundation
+
+**Current slice:** Build a fully isolated local Supabase stack solely from the
+versioned migration chain and add the smallest forward migration that
+canonically secures `schedule_source_links` plus its controlled
+`schedule_linked_source` write boundary. This slice excludes all completion,
+rescheduling, data-import and cutover work.
+
+**Done when:** the isolated stack has Git-identical migration history,
+`task_skill_links` is registered through its versioned migration,
+`schedule_source_links` has the explicit four-source canonical foundation, and
+source/task ownership, duplicate and direct-mutation bypass attempts are
+rejected without changing the old local stack.
+
+## 4.2 Paused Work Block: C1.1 – Work Graph Integrity & Task Context
 
 **Outcome:** From capture or Portfolio, the user can place a Task in coherent Project/Goal/Skill/Resource context, inspect that context from the responsible workbenches and trust that every relation is user-owned, non-contradictory and reload-stable.
 
