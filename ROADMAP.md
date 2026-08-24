@@ -360,7 +360,7 @@ without changing the old local stack or Review carry-over semantics.
 
 ### SR1-01C1 – Canonical Running Schedule & Session Completion
 
-**Current slice:** On the isolated Git-only stack, make a Running Plan Item
+**Completed:** On the isolated Git-only stack, make a Running Plan Item
 use its Schedule Source Task as its only calendar occurrence. A fully recorded
 Running Session atomically completes that Task; completing an open Running
 Task is rejected and cannot fabricate a Session or training data.
@@ -368,6 +368,19 @@ Task is rejected and cannot fabricate a Session or training data.
 **Done when:** the Git-only chain proves active Plan/Plan Item ownership,
 Task-only scheduling, real Session-to-Task completion, open-Task rejection,
 archive safety and rollback protection while retaining the A/B1/B2 proofs and
+leaving the old local stack unchanged.
+
+### SR1-01C2 – Canonical Strength Schedule & Session Completion
+
+**Current slice:** On the isolated Git-only stack, make a Strength Plan use
+its Schedule Source Task as its only calendar occurrence. A completed Strength
+Session with real Set Logs atomically completes that Task; completing an open
+Strength Task is rejected and cannot fabricate a Session, Sets or training
+evidence.
+
+**Done when:** the Git-only chain proves Strength Plan ownership, Task-only
+scheduling, valid Session-to-Task completion, open-Task rejection, archive
+safety and rollback protection while retaining the A/B1/B2/C1 proofs and
 leaving the old local stack unchanged.
 
 ## 4.2 Paused Work Block: C1.1 – Work Graph Integrity & Task Context

@@ -602,6 +602,8 @@ export async function completeTaskAction(
         ? "Dieser Task gehört zu einem offenen Review. Schließe das Review über seinen Review-Flow ab."
         : linkedResult.error?.message.includes("running flow")
           ? "Dieser Task gehört zu einer offenen Laufeinheit. Schließe den Lauf über den Running-Flow ab."
+          : linkedResult.error?.message.includes("strength flow")
+            ? "Dieser Task gehört zu einer offenen Krafttrainingseinheit. Schließe das Training über den Strength-Flow ab."
         : "Der Task konnte in Supabase nicht abgeschlossen werden.",
       status: "error",
     };
