@@ -348,7 +348,7 @@ and without changing the old local stack.
 
 ### SR1-01B2 – Canonical Review Schedule & Completion Semantics
 
-**Current slice:** On the isolated Git-only stack, make Daily and Weekly
+**Completed:** On the isolated Git-only stack, make Daily and Weekly
 Review Records use their canonical Schedule Source Task as their sole planned
 occurrence. A completed Review atomically completes that Task; completing an
 open Review Task is rejected and cannot fabricate a completed Review.
@@ -357,6 +357,18 @@ open Review Task is rejected and cannot fabricate a completed Review.
 Review-to-Task ownership, Task-only scheduling, Review-to-Task completion,
 open-Review Task-completion rejection, archive safety and rollback protection
 without changing the old local stack or Review carry-over semantics.
+
+### SR1-01C1 – Canonical Running Schedule & Session Completion
+
+**Current slice:** On the isolated Git-only stack, make a Running Plan Item
+use its Schedule Source Task as its only calendar occurrence. A fully recorded
+Running Session atomically completes that Task; completing an open Running
+Task is rejected and cannot fabricate a Session or training data.
+
+**Done when:** the Git-only chain proves active Plan/Plan Item ownership,
+Task-only scheduling, real Session-to-Task completion, open-Task rejection,
+archive safety and rollback protection while retaining the A/B1/B2 proofs and
+leaving the old local stack unchanged.
 
 ## 4.2 Paused Work Block: C1.1 – Work Graph Integrity & Task Context
 
