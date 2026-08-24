@@ -598,7 +598,9 @@ export async function completeTaskAction(
 
   if (!result.ok) {
     return {
-      message: "Der Task konnte in Supabase nicht abgeschlossen werden.",
+      message: linkedResult.error?.message.includes("review through its review flow")
+        ? "Dieser Task gehört zu einem offenen Review. Schließe das Review über seinen Review-Flow ab."
+        : "Der Task konnte in Supabase nicht abgeschlossen werden.",
       status: "error",
     };
   }

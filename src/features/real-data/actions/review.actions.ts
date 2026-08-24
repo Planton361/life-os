@@ -34,6 +34,8 @@ function revalidateReviewProjections() {
   revalidatePath("/dashboard");
   revalidatePath("/today");
   revalidatePath("/calendar");
+  revalidatePath("/tasks");
+  revalidatePath("/portfolio");
 }
 
 async function saveReview(

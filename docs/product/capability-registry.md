@@ -140,7 +140,7 @@ C1 Core Work Graph
 | Recurring/routine scheduling | `CONNECTED` | user-scoped template list/create/edit/pause/reactivate, explicit date/range generation and authenticated reload proof; no background writes | maintain |
 | Meal schedule source | `CONNECTED_GAP` | canonical Git-only stack proves idempotent user-scoped Meal↔Task scheduling and atomic bidirectional completion; the drifted local runtime has not cut over | runtime cutover, then retain reload and ownership proofs |
 | Workout schedule source | `CONNECTED` | idempotent running_plan_item/strength_plan links to canonical Tasks with transactional session completion sync | maintain Calendar/Today/Dashboard and ownership proofs |
-| Review schedule source | `CONNECTED` | Daily/Weekly Reviews link idempotently to canonical executable Tasks with atomic bidirectional completion | maintain reload and ownership proofs |
+| Review schedule source | `CONNECTED_GAP` | canonical Git-only stack proves Daily/Weekly Review↔Task ownership, Task-only scheduling and atomic Review→Task completion; open Review Tasks are guarded and the drifted local runtime has not cut over | runtime cutover, then retain reload and ownership proofs |
 | Free calendar events | `NOT_STARTED` | none | separate model decision |
 | Drag/drop/resize | `NOT_STARTED` | none | accessible comfort slice after source model |
 | Schedule history/audit | `NOT_STARTED` | none | later lifecycle/audit model |

@@ -336,7 +336,7 @@ rejected without changing the old local stack.
 
 ### SR1-01B1 – Canonical Meal Schedule & Completion Sync
 
-**Current slice:** On the isolated Git-only stack, make the existing Meal
+**Completed:** On the isolated Git-only stack, make the existing Meal
 Schedule Source flow atomically synchronize the canonical Meal and its linked
 Task Occurrence for scheduling and completion. This is limited to Meals; it
 does not advance Review, Running, Strength, import or cutover work.
@@ -345,6 +345,18 @@ does not advance Review, Running, Strength, import or cutover work.
 Task-to-Meal completion plus Meal schedule/reschedule consistency under the
 controlled Schedule Source boundary, with ownership and rollback protection
 and without changing the old local stack.
+
+### SR1-01B2 – Canonical Review Schedule & Completion Semantics
+
+**Current slice:** On the isolated Git-only stack, make Daily and Weekly
+Review Records use their canonical Schedule Source Task as their sole planned
+occurrence. A completed Review atomically completes that Task; completing an
+open Review Task is rejected and cannot fabricate a completed Review.
+
+**Done when:** the Git-only migration chain proves Daily and Weekly
+Review-to-Task ownership, Task-only scheduling, Review-to-Task completion,
+open-Review Task-completion rejection, archive safety and rollback protection
+without changing the old local stack or Review carry-over semantics.
 
 ## 4.2 Paused Work Block: C1.1 – Work Graph Integrity & Task Context
 
