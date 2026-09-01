@@ -17,7 +17,6 @@ import {
   createSupabaseSkillRepository,
   createSupabaseTaskRepository,
 } from "@/features/real-data/supabase";
-import { createSupabaseScheduleSourceRepository } from "@/features/real-data/supabase";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
 import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -591,20 +590,19 @@ export async function completeTaskAction(
     };
   }
 
-  const linkedResult = await createSupabaseScheduleSourceRepository(context.auth.client).completeLinkedTask(parsed.data.taskId, parsed.data.completedAt ?? new Date().toISOString());
-  const result = linkedResult.error || !linkedResult.data
-    ? { ok: false as const }
-    : { data: linkedResult.data, ok: true as const };
+  const result = await createSupabaseTaskRepository(
+    context.auth.client,
+  ).completeTask(parsed.data);
 
   if (!result.ok) {
     return {
-      message: linkedResult.error?.message.includes("review through its review flow")
+      message: result.error.message.includes("review through its review flow")
         ? "Dieser Task gehört zu einem offenen Review. Schließe das Review über seinen Review-Flow ab."
-        : linkedResult.error?.message.includes("running flow")
+        : result.error.message.includes("running flow")
           ? "Dieser Task gehört zu einer offenen Laufeinheit. Schließe den Lauf über den Running-Flow ab."
-          : linkedResult.error?.message.includes("strength flow")
+          : result.error.message.includes("strength flow")
             ? "Dieser Task gehört zu einer offenen Krafttrainingseinheit. Schließe das Training über den Strength-Flow ab."
-        : "Der Task konnte in Supabase nicht abgeschlossen werden.",
+            : "Der Task konnte in Supabase nicht abgeschlossen werden.",
       status: "error",
     };
   }
@@ -643,7 +641,9 @@ export async function reopenTaskAction(
 
   if (!result.ok) {
     return {
-      message: "Der Task konnte in Supabase nicht wieder geöffnet werden.",
+      message: result.error.code === "conflict"
+        ? "Verknüpfte Tasks werden über ihren zuständigen Domain-Flow wieder geöffnet."
+        : "Der Task konnte in Supabase nicht wieder geöffnet werden.",
       status: "error",
     };
   }
@@ -683,7 +683,9 @@ export async function archiveTaskAction(
 
   if (!result.ok) {
     return {
-      message: "Der Task konnte in Supabase nicht archiviert werden.",
+      message: result.error.code === "conflict"
+        ? "Verknüpfte Tasks werden über ihren zuständigen Domain-Flow archiviert."
+        : "Der Task konnte in Supabase nicht archiviert werden.",
       status: "error",
     };
   }

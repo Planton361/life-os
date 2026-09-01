@@ -113,8 +113,8 @@ C1 Core Work Graph
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
 | Today task projection | `CONNECTED` | planned/scheduled tasks | maintain |
-| Task planning | `CONNECTED` | task planning actions | maintain |
-| Task complete/reopen | `CONNECTED` | lifecycle actions | maintain |
+| Task planning | `CONNECTED_GAP` | isolated Git-only Runtime proof covers source-aware application planning: normal Tasks remain direct; Meal-linked plan/reschedule/unschedule use canonical atomic Meal↔Task writes; Review/Workout remain Task-time-only | personal runtime cutover remains outstanding |
+| Task complete/reopen | `CONNECTED_GAP` | isolated Git-only Runtime proof routes generic completion through the canonical linked-task guard; open Review/Running/Strength Tasks stay open and Meal completion remains atomic; source-linked generic reopen is deliberately refused | personal runtime cutover and direct Data API hardening remain outstanding |
 | Recurring instance projection | `CONNECTED` | explicit idempotent generation, DB uniqueness, pure-rule tests and authenticated Today/Dashboard/Calendar reload proof | maintain |
 | Carry-over/open loops | `CONNECTED_GAP` | isolated Git-only stack proves atomic exact-set Daily Review carry-over reconciliation, idempotent retained selections, minimal planning snapshots, safe restoration and newer-planning protection; the drifted runtime has not cut over | runtime cutover, then retain ownership and reload/browser proofs |
 | Daily Review | `CONNECTED` | canonical user-scoped review record, V5 flow and Dashboard/Today projections | maintain |
@@ -138,9 +138,9 @@ C1 Core Work Graph
 | Calendar filters | `UI_ONLY` | visual filters | implement area/type/project/goal/skill filtering |
 | Project/Goal queue | `UI_ONLY` | visual concepts | derive tasks and roadmap order from canonical relations |
 | Recurring/routine scheduling | `CONNECTED` | user-scoped template list/create/edit/pause/reactivate, explicit date/range generation and authenticated reload proof; no background writes | maintain |
-| Meal schedule source | `CONNECTED_GAP` | canonical Git-only stack proves idempotent user-scoped Meal↔Task scheduling and atomic bidirectional completion; the drifted local runtime has not cut over | runtime cutover, then retain reload and ownership proofs |
-| Workout schedule source | `CONNECTED_GAP` | canonical Git-only stack proves active Running Plan Item and Strength Plan ownership, Task-only scheduling, and atomic completion from real Running/Strength Sessions; open Workout Tasks are guarded and Strength requires its existing real Set Log before completion | runtime cutover, then retain reload and ownership proofs |
-| Review schedule source | `CONNECTED_GAP` | canonical Git-only stack proves Daily/Weekly Review↔Task ownership, Task-only scheduling and atomic Review→Task completion; open Review Tasks are guarded and the drifted local runtime has not cut over | runtime cutover, then retain reload and ownership proofs |
+| Meal schedule source | `CONNECTED_GAP` | isolated Git-only SQL and Runtime proof covers source-aware active Task plan/reschedule/unschedule, atomic Meal↔Task completion, ownership and rollback | personal runtime cutover; direct Data API hardening remains deferred |
+| Workout schedule source | `CONNECTED_GAP` | isolated Git-only Runtime proof covers generic active Task completion guards for Running Plan Item and Strength Plan Tasks; Task-only scheduling remains canonical and no Session/Set Log is invented | personal runtime cutover; direct Data API hardening remains deferred |
+| Review schedule source | `CONNECTED_GAP` | isolated Git-only Runtime proof covers generic active Task completion rejection for an open Review; Review keeps no duplicate scheduling fields | personal runtime cutover; direct Data API hardening remains deferred |
 | Free calendar events | `NOT_STARTED` | none | separate model decision |
 | Drag/drop/resize | `NOT_STARTED` | none | accessible comfort slice after source model |
 | Schedule history/audit | `NOT_STARTED` | none | later lifecycle/audit model |
@@ -245,7 +245,7 @@ C1 Core Work Graph
 | Strength plan | `CONNECTED` | editable strength_plans and ordered strength_plan_items with sets/reps/optional load | maintain ownership and ordering proofs |
 | Strength session/sets | `CONNECTED` | reload-stable strength_sessions and real strength_set_logs with transactional task completion sync | maintain weighted/unweighted semantics |
 | Muscle map | `CONNECTED` | explicit exercise-muscle relations and log-derived set intensity/weighted volume with textual source labels | maintain |
-| Workout schedule source | `CONNECTED` | D2.1 schedule_source_links extended idempotently for running units and strength plans | maintain no-duplicate and completion-sync proofs |
+| Workout schedule source | `CONNECTED_GAP` | isolated Git-only Runtime proof now covers the source-aware active Task write boundary for Running Plan Item and Strength Plan Tasks | personal runtime cutover; retain no-duplicate and completion-sync proofs |
 
 # 11. Coding and Agents
 

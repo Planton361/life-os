@@ -17,7 +17,6 @@ import type {
 import {
   mapArchiveTaskInputToPatch,
   mapCarryTaskForwardInputToPatch,
-  mapCompleteTaskInputToPatch,
   mapCreateTaskInputToInsert,
   mapReopenTaskInputToPatch,
   mapRescheduleTaskInputToPatch,
@@ -28,6 +27,19 @@ import {
 } from "../mappers";
 import type { TaskRow, TaskUpdate } from "../row-types";
 import type { TaskInsert } from "../row-types";
+
+type ScheduleSourceType =
+  | "meal"
+  | "review"
+  | "running_plan_item"
+  | "strength_plan";
+
+type ScheduleSourceLinkRow = {
+  source_id: string;
+  source_type: ScheduleSourceType;
+  task_id: string;
+  user_id: string;
+};
 
 type RepositoryFailure = RepositoryResult<never>;
 
@@ -64,6 +76,156 @@ function notFoundFailure(entity: string): RepositoryFailure {
     },
     ok: false,
   };
+}
+
+function conflictFailure(message: string): RepositoryFailure {
+  return {
+    error: { code: "conflict", message },
+    ok: false,
+  };
+}
+
+async function getScheduleSourceLink(
+  client: SupabaseClientLike,
+  userId: string,
+  taskId: string,
+): Promise<RepositoryResult<ScheduleSourceLinkRow | null>> {
+  const result = (await client
+    .from("schedule_source_links")
+    .select("user_id,source_type,source_id,task_id")
+    .eq("user_id", userId)
+    .eq("task_id", taskId)
+    .maybeSingle()) as SupabaseQueryResult<ScheduleSourceLinkRow>;
+
+  if (result.error) return adapterFailure("load task schedule source");
+
+  return { data: result.data ?? null, ok: true };
+}
+
+async function getActiveTask(
+  client: SupabaseClientLike,
+  userId: string,
+  taskId: string,
+): Promise<RepositoryResult<TaskRow>> {
+  const result = (await client
+    .from(realDataTableNames.tasks)
+    .select("*")
+    .eq("user_id", userId)
+    .eq("id", taskId)
+    .is("archived_at", null)
+    .maybeSingle()) as SupabaseQueryResult<TaskRow>;
+
+  if (result.error) return adapterFailure("load task");
+  if (!result.data) return notFoundFailure("Task");
+
+  return { data: result.data, ok: true };
+}
+
+async function scheduleMealLinkedTask(
+  client: SupabaseClientLike,
+  link: ScheduleSourceLinkRow,
+  input: {
+    durationMinutes?: number;
+    plannedDate: string;
+    scheduledStartAt: string;
+  },
+): Promise<RepositoryResult<Task>> {
+  const result = (await client.rpc("schedule_linked_source", {
+    p_duration_minutes: input.durationMinutes ?? 30,
+    p_planned_date: input.plannedDate,
+    p_scheduled_start_at: input.scheduledStartAt,
+    p_source_id: link.source_id,
+    p_source_type: link.source_type,
+  })) as SupabaseQueryResult<TaskRow>;
+
+  if (result.error || !result.data) {
+    return conflictFailure(result.error?.message ?? "Unable to schedule linked meal.");
+  }
+
+  return { data: mapTaskRowToDomain(result.data), ok: true };
+}
+
+async function unscheduleMealLinkedTask(
+  client: SupabaseClientLike,
+  taskId: string,
+  input?: { durationMinutes?: number; plannedDate?: string },
+): Promise<RepositoryResult<Task>> {
+  const result = (await client.rpc("unschedule_linked_meal_task", {
+    p_duration_minutes: input?.durationMinutes,
+    p_planned_date: input?.plannedDate,
+    p_task_id: taskId,
+  })) as SupabaseQueryResult<TaskRow>;
+
+  if (result.error || !result.data) {
+    return conflictFailure(result.error?.message ?? "Unable to unschedule linked meal.");
+  }
+
+  return { data: mapTaskRowToDomain(result.data), ok: true };
+}
+
+async function completeTaskThroughSourceBoundary(
+  client: SupabaseClientLike,
+  taskId: string,
+  completedAt: string,
+): Promise<RepositoryResult<Task>> {
+  const result = (await client.rpc("complete_linked_task", {
+    p_completed_at: completedAt,
+    p_task_id: taskId,
+  })) as SupabaseQueryResult<TaskRow>;
+
+  if (result.error || !result.data) {
+    return conflictFailure(result.error?.message ?? "Unable to complete task.");
+  }
+
+  return { data: mapTaskRowToDomain(result.data), ok: true };
+}
+
+function sourceLinkedSchedulingFailure(): RepositoryFailure {
+  return conflictFailure(
+    "Source-linked task scheduling must use the dedicated planning controls.",
+  );
+}
+
+function sourceLinkedLifecycleFailure(action: "archive" | "reopen"): RepositoryFailure {
+  return conflictFailure(
+    `Source-linked tasks must be ${action === "archive" ? "archived" : "reopened"} through their domain flow.`,
+  );
+}
+
+function patchChangesSourceScheduling(patch: TaskUpdate, task: TaskRow) {
+  return (
+    (patch.planned_date !== undefined && patch.planned_date !== task.planned_date) ||
+    (patch.scheduled_start_at !== undefined &&
+      patch.scheduled_start_at !== task.scheduled_start_at) ||
+    (patch.duration_minutes !== undefined &&
+      patch.duration_minutes !== task.duration_minutes)
+  );
+}
+
+function patchChangesSourceLifecycle(patch: TaskUpdate, task: TaskRow) {
+  return patch.status !== undefined && patch.status !== task.status;
+}
+
+function withoutSourceSensitivePatchFields(patch: TaskUpdate): TaskUpdate {
+  const metadataPatch = { ...patch };
+  delete metadataPatch.duration_minutes;
+  delete metadataPatch.planned_date;
+  delete metadataPatch.scheduled_start_at;
+  delete metadataPatch.status;
+  return metadataPatch;
+}
+
+function patchChangesTaskMetadata(patch: TaskUpdate, task: TaskRow) {
+  return (
+    (patch.area_id !== undefined && patch.area_id !== task.area_id) ||
+    (patch.description !== undefined && patch.description !== task.description) ||
+    (patch.due_at !== undefined && patch.due_at !== task.due_at) ||
+    (patch.energy !== undefined && patch.energy !== task.energy) ||
+    (patch.goal_id !== undefined && patch.goal_id !== task.goal_id) ||
+    (patch.priority !== undefined && patch.priority !== task.priority) ||
+    (patch.project_id !== undefined && patch.project_id !== task.project_id) ||
+    (patch.title !== undefined && patch.title !== task.title)
+  );
 }
 
 async function verifyOwnedContextRow(
@@ -234,6 +396,10 @@ export function createSupabaseTaskRepository(
       const scopeFailure = profileScopeFailure(input.userId, input.profileId);
       if (scopeFailure) return scopeFailure;
 
+      const link = await getScheduleSourceLink(client, input.userId, input.taskId);
+      if (!link.ok) return link;
+      if (link.data) return sourceLinkedLifecycleFailure("archive");
+
       return updateTaskById(
         client,
         input.userId,
@@ -246,6 +412,10 @@ export function createSupabaseTaskRepository(
     async carryTaskForward(input) {
       const scopeFailure = profileScopeFailure(input.userId, input.profileId);
       if (scopeFailure) return scopeFailure;
+
+      const link = await getScheduleSourceLink(client, input.userId, input.taskId);
+      if (!link.ok) return link;
+      if (link.data) return sourceLinkedSchedulingFailure();
 
       return updateTaskById(
         client,
@@ -260,12 +430,10 @@ export function createSupabaseTaskRepository(
       const scopeFailure = profileScopeFailure(input.userId, input.profileId);
       if (scopeFailure) return scopeFailure;
 
-      return updateTaskById(
+      return completeTaskThroughSourceBoundary(
         client,
-        input.userId,
         input.taskId,
-        mapCompleteTaskInputToPatch(input),
-        "complete task",
+        input.completedAt ?? new Date().toISOString(),
       );
     },
 
@@ -443,6 +611,19 @@ export function createSupabaseTaskRepository(
       const scopeFailure = profileScopeFailure(input.userId, input.profileId);
       if (scopeFailure) return scopeFailure;
 
+      const link = await getScheduleSourceLink(client, input.userId, input.taskId);
+      if (!link.ok) return link;
+      if (link.data?.source_type === "meal") {
+        if (input.scheduledStartAt) {
+          return scheduleMealLinkedTask(client, link.data, {
+            ...input,
+            scheduledStartAt: input.scheduledStartAt,
+          });
+        }
+
+        return unscheduleMealLinkedTask(client, input.taskId, input);
+      }
+
       return updateTaskById(
         client,
         input.userId,
@@ -455,6 +636,10 @@ export function createSupabaseTaskRepository(
     async reopenTask(input) {
       const scopeFailure = profileScopeFailure(input.userId, input.profileId);
       if (scopeFailure) return scopeFailure;
+
+      const link = await getScheduleSourceLink(client, input.userId, input.taskId);
+      if (!link.ok) return link;
+      if (link.data) return sourceLinkedLifecycleFailure("reopen");
 
       return updateTaskById(
         client,
@@ -469,6 +654,12 @@ export function createSupabaseTaskRepository(
       const scopeFailure = profileScopeFailure(input.userId, input.profileId);
       if (scopeFailure) return scopeFailure;
 
+      const link = await getScheduleSourceLink(client, input.userId, input.taskId);
+      if (!link.ok) return link;
+      if (link.data?.source_type === "meal") {
+        return scheduleMealLinkedTask(client, link.data, input);
+      }
+
       return updateTaskById(
         client,
         input.userId,
@@ -481,6 +672,12 @@ export function createSupabaseTaskRepository(
     async unscheduleTask(input) {
       const scopeFailure = profileScopeFailure(input.userId, input.profileId);
       if (scopeFailure) return scopeFailure;
+
+      const link = await getScheduleSourceLink(client, input.userId, input.taskId);
+      if (!link.ok) return link;
+      if (link.data?.source_type === "meal") {
+        return unscheduleMealLinkedTask(client, input.taskId);
+      }
 
       return updateTaskById(
         client,
@@ -502,11 +699,51 @@ export function createSupabaseTaskRepository(
       );
       if (contextFailure) return contextFailure;
 
+      const link = await getScheduleSourceLink(client, input.userId, input.taskId);
+      if (!link.ok) return link;
+
+      const patch = mapUpdateTaskInputToPatch(input);
+      if (!link.data) {
+        return updateTaskById(
+          client,
+          input.userId,
+          input.taskId,
+          patch,
+          "update task",
+        );
+      }
+
+      const currentTask = await getActiveTask(client, input.userId, input.taskId);
+      if (!currentTask.ok) return currentTask;
+
+      if (patchChangesSourceScheduling(patch, currentTask.data)) {
+        return sourceLinkedSchedulingFailure();
+      }
+
+      if (patchChangesSourceLifecycle(patch, currentTask.data)) {
+        if (patch.status === "done") {
+          const metadataPatch = withoutSourceSensitivePatchFields(patch);
+          if (patchChangesTaskMetadata(metadataPatch, currentTask.data)) {
+            return conflictFailure(
+              "Complete source-linked tasks separately from metadata changes.",
+            );
+          }
+
+          return completeTaskThroughSourceBoundary(
+            client,
+            input.taskId,
+            new Date().toISOString(),
+          );
+        }
+
+        return sourceLinkedLifecycleFailure("reopen");
+      }
+
       return updateTaskById(
         client,
         input.userId,
         input.taskId,
-        mapUpdateTaskInputToPatch(input),
+        withoutSourceSensitivePatchFields(patch),
         "update task",
       );
     },

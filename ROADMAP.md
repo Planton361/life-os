@@ -385,7 +385,7 @@ leaving the old local stack unchanged.
 
 ### SR1-02 – Canonical Review Carry-over Reconciliation
 
-**Current slice:** On the isolated Git-only stack, make Daily Review
+**Completed:** On the isolated Git-only stack, make Daily Review
 carry-over an atomic, repeatable and reversible decision. After every save,
 the active carry-over decisions exactly equal the submitted Task IDs; newly
 selected Tasks are carried forward, retained selections are idempotent and
@@ -398,6 +398,24 @@ minimal original-planning snapshots, safe restore and newer-write protection,
 same-user active Task validation, whole-operation rollback, duplicate-input
 determinism and no unintended Activity or Weekly Review effect while retaining
 the SR1-01A/B1/B2/C1/C2 proofs and leaving the old local stack unchanged.
+
+### SR1-03 – Source-linked Task Write Boundary
+
+**Current slice:** On the isolated Git-only stack, make active generic Task
+write paths source-aware at the server/repository boundary. Normal Tasks keep
+their existing edit, planning and lifecycle behavior. Meal-linked Task
+scheduling, rescheduling and unscheduling must keep the Meal projection
+atomically consistent; generic completion must use the canonical linked-task
+completion path. Review, Running and Strength retain Task-only scheduling and
+must reject generic completion until their existing domain evidence is valid.
+Source-linked reopen and archive must not silently desynchronize a completed
+domain record.
+
+**Done when:** focused SQL and isolated Runtime/Browser proofs show normal Task
+behavior, Meal schedule/reschedule/unschedule/completion consistency,
+source-dependent Review/Running/Strength completion guards, metadata-only
+source-linked edits, ownership/rollback protection and all SR1 regressions,
+without changing the old local stack or beginning the runtime cutover.
 
 ## 4.2 Paused Work Block: C1.1 – Work Graph Integrity & Task Context
 

@@ -3044,6 +3044,43 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      unschedule_linked_meal_task: {
+        Args: {
+          p_duration_minutes?: number
+          p_planned_date?: string
+          p_task_id: string
+        }
+        Returns: {
+          archived_at: string | null
+          area_id: string | null
+          carried_from_daily_log_id: string | null
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          due_at: string | null
+          duration_minutes: number | null
+          energy: Database["public"]["Enums"]["task_energy"] | null
+          generated_from_template_id: string | null
+          goal_id: string | null
+          id: string
+          instance_date: string | null
+          planned_date: string | null
+          priority: Database["public"]["Enums"]["task_priority"]
+          project_id: string | null
+          scheduled_start_at: string | null
+          source_inbox_item_id: string | null
+          status: Database["public"]["Enums"]["task_status"]
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tasks"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       area_key:
