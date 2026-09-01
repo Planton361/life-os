@@ -1512,6 +1512,9 @@ export type Database = {
           decision: Database["public"]["Enums"]["review_task_decision"]
           id: string
           note: string | null
+          original_planned_date: string | null
+          original_scheduled_start_at: string | null
+          planning_snapshot_captured: boolean
           review_id: string
           target_date: string
           task_id: string
@@ -1522,6 +1525,9 @@ export type Database = {
           decision: Database["public"]["Enums"]["review_task_decision"]
           id?: string
           note?: string | null
+          original_planned_date?: string | null
+          original_scheduled_start_at?: string | null
+          planning_snapshot_captured?: boolean
           review_id: string
           target_date: string
           task_id: string
@@ -1532,6 +1538,9 @@ export type Database = {
           decision?: Database["public"]["Enums"]["review_task_decision"]
           id?: string
           note?: string | null
+          original_planned_date?: string | null
+          original_scheduled_start_at?: string | null
+          planning_snapshot_captured?: boolean
           review_id?: string
           target_date?: string
           task_id?: string

@@ -116,7 +116,7 @@ C1 Core Work Graph
 | Task planning | `CONNECTED` | task planning actions | maintain |
 | Task complete/reopen | `CONNECTED` | lifecycle actions | maintain |
 | Recurring instance projection | `CONNECTED` | explicit idempotent generation, DB uniqueness, pure-rule tests and authenticated Today/Dashboard/Calendar reload proof | maintain |
-| Carry-over/open loops | `CONNECTED` | canonical review records plus atomic user-scoped task decisions | maintain ownership and reload proofs |
+| Carry-over/open loops | `CONNECTED_GAP` | isolated Git-only stack proves atomic exact-set Daily Review carry-over reconciliation, idempotent retained selections, minimal planning snapshots, safe restoration and newer-planning protection; the drifted runtime has not cut over | runtime cutover, then retain ownership and reload/browser proofs |
 | Daily Review | `CONNECTED` | canonical user-scoped review record, V5 flow and Dashboard/Today projections | maintain |
 | Weekly Review | `CONNECTED` | canonical user-scoped review record with derived task/project movement | maintain |
 | Next-day preparation | `CONNECTED` | Daily Review focus plus explicit carry-over target date | maintain |

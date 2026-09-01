@@ -372,7 +372,7 @@ leaving the old local stack unchanged.
 
 ### SR1-01C2 – Canonical Strength Schedule & Session Completion
 
-**Current slice:** On the isolated Git-only stack, make a Strength Plan use
+**Completed:** On the isolated Git-only stack, make a Strength Plan use
 its Schedule Source Task as its only calendar occurrence. A completed Strength
 Session with real Set Logs atomically completes that Task; completing an open
 Strength Task is rejected and cannot fabricate a Session, Sets or training
@@ -382,6 +382,22 @@ evidence.
 scheduling, valid Session-to-Task completion, open-Task rejection, archive
 safety and rollback protection while retaining the A/B1/B2/C1 proofs and
 leaving the old local stack unchanged.
+
+### SR1-02 – Canonical Review Carry-over Reconciliation
+
+**Current slice:** On the isolated Git-only stack, make Daily Review
+carry-over an atomic, repeatable and reversible decision. After every save,
+the active carry-over decisions exactly equal the submitted Task IDs; newly
+selected Tasks are carried forward, retained selections are idempotent and
+deselected Decisions are removed. An untouched carry-over plan restores its
+captured prior planning state, while a newer deliberate Task planning change is
+never overwritten.
+
+**Done when:** the Git-only chain proves exact decision-set reconciliation,
+minimal original-planning snapshots, safe restore and newer-write protection,
+same-user active Task validation, whole-operation rollback, duplicate-input
+determinism and no unintended Activity or Weekly Review effect while retaining
+the SR1-01A/B1/B2/C1/C2 proofs and leaving the old local stack unchanged.
 
 ## 4.2 Paused Work Block: C1.1 – Work Graph Integrity & Task Context
 
