@@ -315,10 +315,10 @@ This sequence is the complete product plan, not a live status queue. A Codex pro
 
 ## 4.1 Active Work Block: SR1 – Local Schema Recovery
 
-**Status:** Active. C1.1 is paused after C1.1-02 until the local Supabase
-schema is again reproducible from versioned Git migrations. The existing local
-stack remains the protected data source and fallback; no C1.1-03 work advances
-until SR1 has a proven canonical local stack.
+**Status:** Active. C1.1 remains paused after C1.1-02 through the SR1-04
+personal data transfer and runtime cutover. The existing local stack remains
+the protected data source and fallback; no C1.1-03 work advances until SR1 is
+closed.
 
 ### SR1-01A – Canonical Schedule-Source Foundation
 
@@ -401,7 +401,7 @@ the SR1-01A/B1/B2/C1/C2 proofs and leaving the old local stack unchanged.
 
 ### SR1-03 – Source-linked Task Write Boundary
 
-**Current slice:** On the isolated Git-only stack, make active generic Task
+**Completed:** On the isolated Git-only stack, make active generic Task
 write paths source-aware at the server/repository boundary. Normal Tasks keep
 their existing edit, planning and lifecycle behavior. Meal-linked Task
 scheduling, rescheduling and unscheduling must keep the Meal projection
@@ -416,6 +416,29 @@ behavior, Meal schedule/reschedule/unschedule/completion consistency,
 source-dependent Review/Running/Strength completion guards, metadata-only
 source-linked edits, ownership/rollback protection and all SR1 regressions,
 without changing the old local stack or beginning the runtime cutover.
+
+### SR1-04 – Personal Data Transfer & Runtime Cutover
+
+**Active cutover phase:** Transfer only after a reproducible Git-only target,
+a complete synthetic rehearsal and a read-only personal-data preflight prove
+the canonical contract. The protected old stack remains the data source and
+fallback until a separate runtime cutover is complete.
+
+#### SR1-04A – Personal Data Transfer Contract & Synthetic Rehearsal
+
+**Completed:** The explicit local transfer runner, synthetic legacy fixture,
+integrity proof and isolated Manual/Auth runtime smoke prove the canonical
+transfer contract. Legacy task context is deterministically transformed,
+AI/Briefing metadata stays deferred, and the read-only personal-data preflight
+is `READY_WITH_KNOWN_DEFERRED`. No personal data was imported and no runtime
+cutover occurred.
+
+#### SR1-04B – Personal Data Transfer
+
+**Current slice:** Execute the approved personal-data transfer only after a
+fresh read-only preflight confirms the SR1-04A contract remains applicable.
+Keep the old stack and fallback intact; runtime cutover follows only after the
+personal transfer is independently proven.
 
 ## 4.2 Paused Work Block: C1.1 – Work Graph Integrity & Task Context
 

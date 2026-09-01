@@ -2760,8 +2760,21 @@ async function getManualPortfolioEntityCollection(): Promise<{
       getManualSkillsFromSupabase(auth.client, auth.user.id),
     ],
   );
+  const skillIdsByTaskId = new Map<string, string[]>();
+
+  for (const link of manualSkills.taskSkillLinks) {
+    const skillIds = skillIdsByTaskId.get(link.taskId) ?? [];
+    skillIds.push(link.skillId);
+    skillIdsByTaskId.set(link.taskId, skillIds);
+  }
+
+  const tasks = manualTasks.tasks.map((task) => {
+    const skillIds = skillIdsByTaskId.get(task.id);
+
+    return skillIds?.length ? { ...task, skillIds } : task;
+  });
   const collection: EntityCollection = {
-    tasks: manualTasks.tasks,
+    tasks,
     projects: [...manualTargets.projects, ...profile.projects],
     goals: [...manualTargets.goals, ...profile.goals],
     skills: manualSkills.skills,
@@ -4222,6 +4235,10 @@ export async function getEntityCollection(): Promise<EntityCollection> {
 
   if (profileId === "demo") {
     return clone(demoEntityCollection);
+  }
+
+  if (profileId === "manual") {
+    return (await getManualPortfolioEntityCollection()).collection;
   }
 
   const profile = await getProfileDataWithManualTasks(profileId);

@@ -308,6 +308,21 @@ export function getTaskSkill(
   return task.skillId ? getSkill(task.skillId, collection) : null;
 }
 
+export function getTaskSkills(
+  task: LifeTask,
+  collection: EntityCollection,
+) {
+  const skillIds = task.skillIds?.length
+    ? task.skillIds
+    : task.skillId
+      ? [task.skillId]
+      : [];
+
+  return skillIds
+    .map((skillId) => getSkill(skillId, collection))
+    .filter((skill): skill is LifeSkill => Boolean(skill));
+}
+
 export function getEntityHref(kind: EntityKind, id: string): `/${string}` {
   return `${entityKindMeta[kind].route}/${id}` as `/${string}`;
 }

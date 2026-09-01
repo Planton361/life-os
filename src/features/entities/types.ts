@@ -102,6 +102,7 @@ export type LifeTask = {
   projectId?: string;
   goalId?: string;
   skillId?: string;
+  skillIds?: readonly string[];
   generatedFromTemplateId?: string;
   instanceDate?: string;
   isGenerated?: boolean;

@@ -28,7 +28,7 @@ import {
   getTask,
   getTaskGoal,
   getTaskProject,
-  getTaskSkill,
+  getTaskSkills,
   goalStatusMeta,
   milestoneStatusMeta,
   projectStatusMeta,
@@ -848,7 +848,7 @@ function TaskDetail({
   const area = entityAreaMeta[task.areaId];
   const project = getTaskProject(task, collection);
   const goal = getTaskGoal(task, collection);
-  const skill = getTaskSkill(task, collection);
+  const skills = getTaskSkills(task, collection);
 
   return (
     <DetailShell
@@ -918,15 +918,16 @@ function TaskDetail({
                   Goal: {goal.title}
                 </Link>
               ) : null}
-              {skill ? (
+              {skills.map((skill) => (
                 <Link
                   className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.42)] p-3 text-sm font-semibold text-[var(--text-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                   href={getEntityHref("skill", skill.id)}
+                  key={skill.id}
                 >
                   Skill: {skill.title}
                 </Link>
-              ) : null}
-              {!project && !goal && !skill ? (
+              ))}
+              {!project && !goal && skills.length === 0 ? (
                 <EmptyState
                   description="This task has no larger object attached."
                   title="No parent relation"
