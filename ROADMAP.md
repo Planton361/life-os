@@ -313,12 +313,11 @@ This sequence is the complete product plan, not a live status queue. A Codex pro
 | 6 | N1 Nutrition | meal planning and completion participate in weekly/daily execution | recipes, meals, portions, groceries and occurrence links | C2/C3 scheduling and daily protocol | medical claims; unsupported macro precision |
 | 7 | A1 Work/Education/Coding/Inventory | area views reuse the core spine and Resources for domain context | projections and bounded domain records; Inventory and Wishlist remain active | C1 and K1 conventions | Entertainment; parallel Tasks/Projects/Resources |
 
-## 4.1 Active Work Block: SR1 – Local Schema Recovery
+## 4.1 Completed Work Block: SR1 – Local Schema Recovery
 
-**Status:** Active. C1.1 remains paused after C1.1-02 through the SR1-04
-personal data transfer and runtime cutover. The existing local stack remains
-the protected data source and fallback; no C1.1-03 work advances until SR1 is
-closed.
+**Status:** Completed. The verified Target is the canonical local runtime;
+the Source is retained only as `LEGACY_FALLBACK_READ_ONLY`. C1.1 resumes at
+C1.1-03.
 
 ### SR1-01A – Canonical Schedule-Source Foundation
 
@@ -441,8 +440,8 @@ and fallback; no runtime cutover occurred.
 
 #### SR1-04C – Runtime Cutover
 
-**Status:** Active. The controlled Target writer proof is complete; the
-persistent local runtime switch remains separate. C1.1 remains paused.
+**Completed:** Target has passed the controlled writer proof and persistent
+normal-runtime switch. The Source remains `LEGACY_FALLBACK_READ_ONLY`.
 
 ##### SR1-04C1 – Controlled Writer Cutover Proof
 
@@ -452,11 +451,11 @@ Source remains unchanged and is no longer used by the proof runtime.
 
 ##### SR1-04C2 – Persistent Runtime Switch
 
-**Current slice:** Make the normal local Life OS runtime use the verified
-Target through an explicitly approved persistent configuration change, while
-preserving the Source fallback boundary.
+**Completed:** The normal local runtime uses the verified Target without
+process overrides. The Target identity, transferred data and controlled
+writes remain preserved.
 
-## 4.2 Paused Work Block: C1.1 – Work Graph Integrity & Task Context
+## 4.2 Active Work Block: C1.1 – Work Graph Integrity & Task Context
 
 **Outcome:** From capture or Portfolio, the user can place a Task in coherent Project/Goal/Skill/Resource context, inspect that context from the responsible workbenches and trust that every relation is user-owned, non-contradictory and reload-stable.
 
@@ -569,6 +568,8 @@ Capture or open Task
 **Report Format:** `Erstellt:`, `Geändert:`, `Nicht geändert:`, `Validierung:`, `Offene Punkte:`, `Risiken:`.
 
 #### C1.1-03 – Project/Goal Alignment Integrity
+
+**Current slice.**
 
 **Goal:** Make direct and inherited Goal context understandable and prevent contradictory Task alignment.
 
