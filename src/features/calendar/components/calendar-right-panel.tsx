@@ -4,6 +4,7 @@ import type { ContentStateMeta } from "@/features/content-state";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useState } from "react";
+import type { PointerEvent } from "react";
 import { Pill, accentStyle } from "@/components/layout/route-page-primitives";
 import {
   completeTaskFormStateAction,
@@ -265,7 +266,9 @@ function RescheduleTaskForm({
         />
         <button
           className={buttonClassName}
-          disabled={pending || Boolean(candidate.disabledReason ?? candidate.conflict)}
+          disabled={
+            pending || Boolean(candidate.disabledReason ?? candidate.conflict)
+          }
           type="submit"
         >
           {pending ? "Saving …" : candidate.label}
@@ -327,7 +330,11 @@ function UnscheduleTaskForm({ taskId }: Readonly<{ taskId: string }>) {
   return (
     <form action={formAction} className="grid gap-1">
       <input name="taskId" type="hidden" value={taskId} />
-      <button className={secondaryActionButtonClass} disabled={pending} type="submit">
+      <button
+        className={secondaryActionButtonClass}
+        disabled={pending}
+        type="submit"
+      >
         {pending ? "Unscheduling …" : "Unschedule"}
       </button>
       {state.message ? (
@@ -370,10 +377,7 @@ function isManualPersistedTaskBlock(
   profileId: CalendarViewModel["profileId"],
 ) {
   return Boolean(
-    profileId === "manual" &&
-    block &&
-    isTimedBlock(block) &&
-    block.taskId,
+    profileId === "manual" && block && isTimedBlock(block) && block.taskId,
   );
 }
 
@@ -571,9 +575,7 @@ function TimeSettings({
     timeToMinutes(endTime) - timeToMinutes(startTime),
   );
   const timedTaskBlock =
-    block && isTimedBlock(block) && block.taskId
-      ? block
-      : null;
+    block && isTimedBlock(block) && block.taskId ? block : null;
   const taskId = timedTaskBlock?.taskId ?? null;
   const isPersistedTaskBlock = Boolean(
     profileId === "manual" && taskId && timedTaskBlock,
@@ -671,7 +673,7 @@ function TimeSettings({
               ? "Schreibt Datum, Uhrzeit und Dauer über bestehende Task-Actions."
               : isManualNonTaskProjection
                 ? "Für die Manual-Runtime sind nur kanonische Task-Zeitblöcke planbar."
-              : "Vorbereitet / lokal: diese Controls schreiben nicht in die lokale Datenquelle."}
+                : "Vorbereitet / lokal: diese Controls schreiben nicht in die lokale Datenquelle."}
           </p>
         </div>
         <Pill accent="var(--accent-cyan)">{durationLabel(duration)}</Pill>
@@ -732,7 +734,10 @@ function TimeSettings({
               />
             ))}
             <UnscheduleTaskForm taskId={taskId ?? ""} />
-            <form action={completionAction} aria-label={`${block?.title ?? "Task"} abschließen`}>
+            <form
+              action={completionAction}
+              aria-label={`${block?.title ?? "Task"} abschließen`}
+            >
               <input name="taskId" type="hidden" value={taskId ?? ""} />
               <button
                 className="min-h-8 w-full rounded-full border border-[rgba(66,184,131,.32)] bg-[rgba(66,184,131,.12)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[rgba(66,184,131,.48)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-50"
@@ -913,7 +918,8 @@ function QueueTaskSchedule({
             {task.title}
           </h3>
           <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
-            {task.rankingReason} · {task.priority} · {durationLabel(task.durationMinutes)}
+            {task.rankingReason} · {task.priority} ·{" "}
+            {durationLabel(task.durationMinutes)}
           </p>
         </div>
         <Pill accent={task.accent ?? "var(--accent-blue)"}>Schedule</Pill>
@@ -923,7 +929,8 @@ function QueueTaskSchedule({
         {task.project ? <span>Project · {task.project.title}</span> : null}
         {task.goal ? (
           <span>
-            Goal · {task.goal.title} · {task.goal.alignment === "via_project" ? "via Project" : "Direct"}
+            Goal · {task.goal.title} ·{" "}
+            {task.goal.alignment === "via_project" ? "via Project" : "Direct"}
           </span>
         ) : null}
         {task.skills.slice(0, 2).map((skill) => (
@@ -933,7 +940,11 @@ function QueueTaskSchedule({
         {sourceLabel ? <span>{sourceLabel}</span> : null}
       </div>
 
-      <form action={formAction} className="mt-3 grid gap-2" aria-label={`${task.title} planen`}>
+      <form
+        action={formAction}
+        className="mt-3 grid gap-2"
+        aria-label={`${task.title} planen`}
+      >
         <input name="taskId" type="hidden" value={task.id} />
         <input name="mode" type="hidden" value="schedule" />
         <div className="grid gap-2 sm:grid-cols-3">
@@ -970,7 +981,9 @@ function QueueTaskSchedule({
             <select
               className={inputClass}
               name="durationMinutes"
-              onChange={(event) => setDurationMinutes(Number(event.target.value))}
+              onChange={(event) =>
+                setDurationMinutes(Number(event.target.value))
+              }
               value={String(durationMinutes)}
             >
               {scheduleDurationOptions(task.durationMinutes).map((minutes) => (
@@ -987,7 +1000,8 @@ function QueueTaskSchedule({
             className="rounded-[9px] border border-[rgba(221,107,95,.28)] bg-[rgba(221,107,95,.08)] px-2.5 py-2 text-[10px] leading-4 text-[var(--text-secondary)]"
             role="alert"
           >
-            Visible conflict with an already loaded block. Confirm the override to keep this time.
+            Visible conflict with an already loaded block. Confirm the override
+            to keep this time.
           </p>
         ) : null}
         <button
@@ -997,7 +1011,11 @@ function QueueTaskSchedule({
           value={conflict ? "true" : undefined}
           disabled={pending || !plannedDate}
         >
-          {pending ? "Scheduling …" : conflict ? "Schedule anyway" : "Schedule task"}
+          {pending
+            ? "Scheduling …"
+            : conflict
+              ? "Schedule anyway"
+              : "Schedule task"}
         </button>
         {state.message ? (
           <p
@@ -1014,14 +1032,21 @@ function QueueTaskSchedule({
 
 function PlanningQueue({
   contentState,
+  onQueuePointerStart,
   panel,
+  pointerEnabled = false,
   profileId,
   onSelectTask,
   selectedTaskId,
   tasks,
 }: Readonly<{
   contentState: ContentStateMeta;
+  onQueuePointerStart?: (
+    task: SchedulableTaskViewModel,
+    pointer: { clientX: number; clientY: number; pointerId: number },
+  ) => void;
   panel: CalendarRightPanelViewModel;
+  pointerEnabled?: boolean;
   profileId: CalendarViewModel["profileId"];
   onSelectTask: (taskId: string) => void;
   selectedTaskId?: string;
@@ -1063,45 +1088,60 @@ function PlanningQueue({
           </p>
         ) : null}
         {tasks.map((task) => (
-              <button
-                aria-pressed={selectedTaskId === task.id}
-                className={cn(
-                  "rounded-[10px] border bg-[rgba(18,28,43,.44)] p-2 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
-                  selectedTaskId === task.id
-                    ? "border-[color-mix(in_srgb,var(--accent)_60%,transparent)] ring-1 ring-[color-mix(in_srgb,var(--accent)_30%,transparent)]"
-                    : "border-[color-mix(in_srgb,var(--accent)_24%,transparent)] hover:border-[color-mix(in_srgb,var(--accent)_44%,transparent)]",
-                )}
-                key={task.id}
-                onClick={() => onSelectTask(task.id)}
-                style={accentStyle(task.accent ?? "var(--accent-blue)")}
-                type="button"
-              >
-                <div className="grid min-h-8 grid-cols-[8px_minmax(0,1fr)] gap-2">
-                  <span
-                    aria-hidden="true"
-                    className="mt-1.5 size-1.5 rounded-full bg-[var(--accent)]"
-                  />
-                  <div className="min-w-0">
-                    <p className="truncate text-[11px] font-medium text-[var(--text-secondary)]">
-                      {task.title}
-                    </p>
-                    <p className="truncate text-[10px] leading-4 text-[var(--text-muted)]">
-                      {task.rankingReason} · {task.priority} · {durationLabel(task.durationMinutes)}
-                    </p>
-                    <p className="truncate text-[10px] leading-4 text-[var(--text-muted)]">
-                      {task.dueDate ? `Deadline ${task.dueDate}` : "No deadline"}
-                      {task.project ? ` · Project ${task.project.title}` : ""}
-                    </p>
-                    <p className="truncate text-[10px] leading-4 text-[var(--text-faint)]">
-                      {task.goal ? `Goal ${task.goal.title} · ${task.goal.alignment === "via_project" ? "via Project" : "Direct"}` : ""}
-                      {task.skills.length > 0 ? ` · Skill ${task.skills[0]?.title}` : ""}
-                      {task.isRecurringOccurrence ? " · Recurring" : ""}
-                      {sourceTypeLabel(task.scheduleSourceType) ? ` · ${sourceTypeLabel(task.scheduleSourceType)}` : ""}
-                    </p>
-                  </div>
-                </div>
-              </button>
-            ))}
+          <button
+            aria-pressed={selectedTaskId === task.id}
+            className={cn(
+              "rounded-[10px] border bg-[rgba(18,28,43,.44)] p-2 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
+              selectedTaskId === task.id
+                ? "border-[color-mix(in_srgb,var(--accent)_60%,transparent)] ring-1 ring-[color-mix(in_srgb,var(--accent)_30%,transparent)]"
+                : "border-[color-mix(in_srgb,var(--accent)_24%,transparent)] hover:border-[color-mix(in_srgb,var(--accent)_44%,transparent)]",
+            )}
+            key={task.id}
+            onPointerDown={(event: PointerEvent<HTMLButtonElement>) => {
+              if (!pointerEnabled || event.button !== 0) return;
+              onQueuePointerStart?.(task, {
+                clientX: event.clientX,
+                clientY: event.clientY,
+                pointerId: event.pointerId,
+              });
+            }}
+            onClick={() => onSelectTask(task.id)}
+            style={accentStyle(task.accent ?? "var(--accent-blue)")}
+            type="button"
+          >
+            <div className="grid min-h-8 grid-cols-[8px_minmax(0,1fr)] gap-2">
+              <span
+                aria-hidden="true"
+                className="mt-1.5 size-1.5 rounded-full bg-[var(--accent)]"
+              />
+              <div className="min-w-0">
+                <p className="truncate text-[11px] font-medium text-[var(--text-secondary)]">
+                  {task.title}
+                </p>
+                <p className="truncate text-[10px] leading-4 text-[var(--text-muted)]">
+                  {task.rankingReason} · {task.priority} ·{" "}
+                  {durationLabel(task.durationMinutes)}
+                </p>
+                <p className="truncate text-[10px] leading-4 text-[var(--text-muted)]">
+                  {task.dueDate ? `Deadline ${task.dueDate}` : "No deadline"}
+                  {task.project ? ` · Project ${task.project.title}` : ""}
+                </p>
+                <p className="truncate text-[10px] leading-4 text-[var(--text-faint)]">
+                  {task.goal
+                    ? `Goal ${task.goal.title} · ${task.goal.alignment === "via_project" ? "via Project" : "Direct"}`
+                    : ""}
+                  {task.skills.length > 0
+                    ? ` · Skill ${task.skills[0]?.title}`
+                    : ""}
+                  {task.isRecurringOccurrence ? " · Recurring" : ""}
+                  {sourceTypeLabel(task.scheduleSourceType)
+                    ? ` · ${sourceTypeLabel(task.scheduleSourceType)}`
+                    : ""}
+                </p>
+              </div>
+            </div>
+          </button>
+        ))}
       </div>
     </section>
   );
@@ -1111,9 +1151,11 @@ export function CalendarRightPanel({
   onDuplicateBlock,
   onMarkDone,
   onMoveLater,
+  onQueuePointerStart,
   onSaveTime,
   panel,
   planningQueueContentState,
+  pointerEnabled = false,
   profileId,
   selectedBlock,
   selectedDay,
@@ -1126,6 +1168,10 @@ export function CalendarRightPanel({
   onDuplicateBlock: (blockId: string) => void;
   onMarkDone: (blockId: string) => void;
   onMoveLater: (blockId: string) => void;
+  onQueuePointerStart?: (
+    task: SchedulableTaskViewModel,
+    pointer: { clientX: number; clientY: number; pointerId: number },
+  ) => void;
   onSaveTime: (
     blockId: string,
     date: string,
@@ -1134,6 +1180,7 @@ export function CalendarRightPanel({
   ) => void;
   panel: CalendarRightPanelViewModel;
   planningQueueContentState: ContentStateMeta;
+  pointerEnabled?: boolean;
   profileId: CalendarViewModel["profileId"];
   selectedBlock?: SelectedBlock;
   selectedDay?: CalendarDayViewModel;
@@ -1146,23 +1193,24 @@ export function CalendarRightPanel({
   const selectedLabel = selectedQueueTask
     ? "Queue task"
     : selectedBlock
-    ? calendarBlockTypeLabels[selectedBlock.type]
-    : selectedSlot
-      ? "Empty Slot"
-      : "Day";
+      ? calendarBlockTypeLabels[selectedBlock.type]
+      : selectedSlot
+        ? "Empty Slot"
+        : "Day";
   const selectedIsPersistedTask = isManualPersistedTaskBlock(
     selectedBlock,
     profileId,
   );
-  const modeLabel = selectedQueueTask && profileId === "manual"
-    ? "Task-Zeitsteuerung"
-    : selectedIsPersistedTask
-    ? "Task-Zeitsteuerung"
-    : selectedSlot
-      ? "Vorbereitet"
-      : selectedBlock
-        ? "Projektion"
-        : "Kontext";
+  const modeLabel =
+    selectedQueueTask && profileId === "manual"
+      ? "Task-Zeitsteuerung"
+      : selectedIsPersistedTask
+        ? "Task-Zeitsteuerung"
+        : selectedSlot
+          ? "Vorbereitet"
+          : selectedBlock
+            ? "Projektion"
+            : "Kontext";
 
   return (
     <aside
@@ -1202,7 +1250,9 @@ export function CalendarRightPanel({
         <SourcePanel block={selectedBlock} />
         <PlanningQueue
           contentState={planningQueueContentState}
+          onQueuePointerStart={onQueuePointerStart}
           panel={panel}
+          pointerEnabled={pointerEnabled}
           profileId={profileId}
           onSelectTask={onSelectQueueTask}
           selectedTaskId={selectedQueueTask?.id}

@@ -1,9 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { Pill, accentStyle } from "@/components/layout/route-page-primitives";
-import { scheduleTaskForTodayFormAction } from "@/features/real-data/actions/task.actions";
+import {
+  rescheduleTaskAction,
+  scheduleTaskForTodayAction,
+  scheduleTaskForTodayFormAction,
+} from "@/features/real-data/actions/task.actions";
 import { cn } from "@/lib/cn";
+import { useRouter } from "next/navigation";
 import { type ContentStateMeta } from "@/features/content-state";
 import {
   CALENDAR_DAY_END_MINUTES,
@@ -22,8 +27,14 @@ import type {
   CalendarViewModel,
   CalendarWeekStatViewModel,
 } from "./calendar-types";
-import { calendarBlockStatusLabels, calendarBlockTypeLabels } from "./calendar-types";
-import { CalendarAllDayBlock, CalendarTimedBlock } from "./components/calendar-block";
+import {
+  calendarBlockStatusLabels,
+  calendarBlockTypeLabels,
+} from "./calendar-types";
+import {
+  CalendarAllDayBlock,
+  CalendarTimedBlock,
+} from "./components/calendar-block";
 import { CalendarPageHeader } from "./components/calendar-page-header";
 import { CalendarRightPanel } from "./components/calendar-right-panel";
 import { CalendarScopeRow } from "./components/calendar-scope-row";
@@ -39,6 +50,28 @@ type Selection =
 type DateParts = {
   date: Date;
   iso: string;
+};
+
+type PointerDragState = {
+  durationMinutes: number;
+  kind: "block" | "queue";
+  pointerId: number;
+  startX: number;
+  startY: number;
+  taskId: string;
+};
+
+type PointerSchedulingProposal = {
+  durationMinutes: number;
+  kind: "schedule" | "reschedule";
+  plannedDate: string;
+  scheduledTime: string;
+  taskId: string;
+};
+
+type PointerConflictProposal = PointerSchedulingProposal & {
+  conflictTitle: string;
+  conflictTimeLabel: string;
 };
 
 const MOCK_TODAY = todayDateIso();
@@ -80,7 +113,9 @@ function scheduleDurationOptions(minutes: number) {
   );
 }
 
-function stripTimedBlock(block: CalendarTimedBlockViewModel): CalendarRawTimedBlock {
+function stripTimedBlock(
+  block: CalendarTimedBlockViewModel,
+): CalendarRawTimedBlock {
   const { compact, density, durationMinutes, layout, ...rawBlock } = block;
 
   void compact;
@@ -216,6 +251,94 @@ function offsetTime(time: string, offset: number) {
   return minutesToTime(timeToMinutes(time) + offset);
 }
 
+function pointerConflictForProposal(
+  proposal: PointerSchedulingProposal,
+  timedBlocks: readonly CalendarTimedBlockViewModel[],
+) {
+  const candidateStart = timeToMinutes(proposal.scheduledTime);
+  const candidateEnd = candidateStart + proposal.durationMinutes;
+  const conflict = timedBlocks
+    .filter((block) => block.taskId !== proposal.taskId)
+    .filter((block) => block.date === proposal.plannedDate)
+    .find(
+      (block) =>
+        candidateStart < block.endMinutes && block.startMinutes < candidateEnd,
+    );
+
+  if (!conflict) return null;
+
+  return {
+    ...proposal,
+    conflictTimeLabel:
+      conflict.timeLabel ?? `${conflict.startTime}-${conflict.endTime}`,
+    conflictTitle: conflict.title,
+  } satisfies PointerConflictProposal;
+}
+
+function PointerSchedulingStatus({
+  conflict,
+  onCancel,
+  onConfirm,
+  pending,
+  result,
+}: Readonly<{
+  conflict: PointerConflictProposal | null;
+  onCancel: () => void;
+  onConfirm: () => void;
+  pending: boolean;
+  result: { message: string; status: "blocked" | "error" | "success" } | null;
+}>) {
+  if (!conflict && !result) return null;
+
+  return (
+    <section
+      aria-live="polite"
+      className="relative z-20 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.94)] px-3 py-2 shadow-[0_8px_18px_rgba(0,0,0,.16)]"
+      data-calendar-section="pointer-scheduling-status"
+    >
+      {conflict ? (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold text-[var(--text-secondary)]">
+              Visible conflict with {conflict.conflictTitle} at{" "}
+              {conflict.conflictTimeLabel}.
+            </p>
+            <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
+              Pointer drop is paused. Confirm explicitly to use the existing
+              canonical task-time path; only loaded blocks are checked.
+            </p>
+          </div>
+          <div className="flex shrink-0 gap-1.5">
+            <button
+              className="min-h-8 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+              onClick={onCancel}
+              type="button"
+            >
+              Cancel pointer scheduling
+            </button>
+            <button
+              className="min-h-8 rounded-full border border-[rgba(221,107,95,.34)] bg-[rgba(221,107,95,.12)] px-3 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(221,107,95,.52)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={pending}
+              onClick={onConfirm}
+              type="button"
+            >
+              {pending ? "Saving …" : "Schedule anyway"}
+            </button>
+          </div>
+        </div>
+      ) : null}
+      {result ? (
+        <p
+          className="text-[10px] leading-4 text-[var(--text-secondary)]"
+          role={result.status === "success" ? "status" : "alert"}
+        >
+          {result.message}
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
 function hourToTop(hour: string) {
   const range = CALENDAR_DAY_END_MINUTES - CALENDAR_DAY_START_MINUTES;
   const offset = timeToMinutes(hour) - CALENDAR_DAY_START_MINUTES;
@@ -224,18 +347,25 @@ function hourToTop(hour: string) {
 }
 
 function scopeMatches(
-  block: CalendarAllDayBlockViewModel | CalendarTimedBlockViewModel | CalendarRawTimedBlock,
+  block:
+    | CalendarAllDayBlockViewModel
+    | CalendarTimedBlockViewModel
+    | CalendarRawTimedBlock,
   scope: CalendarScope,
 ) {
   if (scope === "All") return true;
   if (scope === "Events") return block.type === "event";
-  if (scope === "Tasks") return block.type === "task_block" || block.source === "task";
-  if (scope === "Focus") return block.type === "focus_block" || block.type === "batch_block";
+  if (scope === "Tasks")
+    return block.type === "task_block" || block.source === "task";
+  if (scope === "Focus")
+    return block.type === "focus_block" || block.type === "batch_block";
   if (scope === "Routines") return block.type === "routine";
   if (scope === "Projects") return block.source === "project";
   if (scope === "Meals") return block.type === "meal";
-  if (scope === "Health") return block.source === "health" || block.type === "workout";
-  if (scope === "Reviews") return block.type === "review" || block.source === "review";
+  if (scope === "Health")
+    return block.source === "health" || block.type === "workout";
+  if (scope === "Reviews")
+    return block.type === "review" || block.source === "review";
   return block.type === "deadline" || block.type === "reminder";
 }
 
@@ -292,7 +422,9 @@ function CalendarWeekOverview({
               className="text-[15px] font-semibold text-[var(--text-primary)]"
               id="calendar-week-overview-heading"
             >
-              {activeView === "week" ? "Week View" : `${activeView[0].toUpperCase()}${activeView.slice(1)} View`}
+              {activeView === "week"
+                ? "Week View"
+                : `${activeView[0].toUpperCase()}${activeView.slice(1)} View`}
             </h2>
             <Pill accent="var(--accent-cyan)">planning surface</Pill>
           </div>
@@ -375,7 +507,9 @@ function CalendarEmptyPageHeader({
                     : "border border-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)]",
                 )}
                 key={`calendar-empty-view-${index}`}
-                onClick={() => onViewChange(view.label.toLowerCase() as CalendarView)}
+                onClick={() =>
+                  onViewChange(view.label.toLowerCase() as CalendarView)
+                }
                 type="button"
               >
                 {view.label}
@@ -510,18 +644,22 @@ function CalendarEmptyRightPanel({
             <Pill quiet>—</Pill>
           </div>
           <div className="mt-3 grid gap-1.5 sm:grid-cols-2">
-            {["Save time", "Cancel", "Move later", "Duplicate", "Mark done"].map(
-              (label) => (
-                <button
-                  className="min-h-8 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] opacity-50"
-                  disabled
-                  key={`calendar-empty-action-${label}`}
-                  type="button"
-                >
-                  {label}
-                </button>
-              ),
-            )}
+            {[
+              "Save time",
+              "Cancel",
+              "Move later",
+              "Duplicate",
+              "Mark done",
+            ].map((label) => (
+              <button
+                className="min-h-8 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] opacity-50"
+                disabled
+                key={`calendar-empty-action-${label}`}
+                type="button"
+              >
+                {label}
+              </button>
+            ))}
           </div>
         </section>
 
@@ -540,8 +678,8 @@ function CalendarEmptyRightPanel({
                 Calendar Planner Queue
               </h3>
               <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
-                Geplante Tasks ohne Uhrzeit. Terminieren schreibt Task-Zeitfelder
-                im Manual-Profil.
+                Geplante Tasks ohne Uhrzeit. Terminieren schreibt
+                Task-Zeitfelder im Manual-Profil.
               </p>
             </div>
             <Pill quiet>{visibleTasks.length}</Pill>
@@ -673,7 +811,9 @@ function CalendarDaySurface({
   contentStateProfileId: CalendarViewModel["profileId"];
 }>) {
   const dayTimedBlocks = timedBlocks.filter((block) => block.dayId === day.id);
-  const dayAllDayBlocks = allDayBlocks.filter((block) => block.dayId === day.id);
+  const dayAllDayBlocks = allDayBlocks.filter(
+    (block) => block.dayId === day.id,
+  );
   const hasBlocks = dayTimedBlocks.length > 0 || dayAllDayBlocks.length > 0;
 
   return (
@@ -981,15 +1121,16 @@ export function CalendarPlanningPage({
 }: Readonly<{
   viewModel: CalendarViewModel;
 }>) {
+  const router = useRouter();
   const [activeView, setActiveView] = useState<CalendarView>("week");
   const [activeScope, setActiveScope] = useState<CalendarScope>("All");
   const [currentDate, setCurrentDate] = useState(MOCK_TODAY);
   const [rawTimedBlocks, setRawTimedBlocks] = useState<CalendarRawTimedBlock[]>(
     () => viewModel.timedBlocks.map(stripTimedBlock),
   );
-  const [allDayBlocks, setAllDayBlocks] = useState<CalendarAllDayBlockViewModel[]>(
-    () => viewModel.allDayBlocks,
-  );
+  const [allDayBlocks, setAllDayBlocks] = useState<
+    CalendarAllDayBlockViewModel[]
+  >(() => viewModel.allDayBlocks);
   const [selection, setSelection] = useState<Selection>(() =>
     viewModel.selectedBlock
       ? {
@@ -1001,6 +1142,15 @@ export function CalendarPlanningPage({
           dayId: viewModel.days[0]?.id ?? "calendar-day",
         },
   );
+  const [activePointerDrag, setActivePointerDrag] =
+    useState<PointerDragState | null>(null);
+  const [pointerConflict, setPointerConflict] =
+    useState<PointerConflictProposal | null>(null);
+  const [pointerResult, setPointerResult] = useState<{
+    message: string;
+    status: "blocked" | "error" | "success";
+  } | null>(null);
+  const [pointerPending, startPointerTransition] = useTransition();
 
   const dateByDayId = useMemo(
     () => new Map(viewModel.days.map((day) => [day.id, day.date])),
@@ -1119,12 +1269,116 @@ export function CalendarPlanningPage({
     setSelection({ kind: "block", blockId });
   }
 
+  function runPointerScheduling(proposal: PointerSchedulingProposal) {
+    setPointerConflict(null);
+    setPointerResult(null);
+    startPointerTransition(async () => {
+      const formData = new FormData();
+      formData.set("taskId", proposal.taskId);
+      formData.set("plannedDate", proposal.plannedDate);
+      formData.set("scheduledTime", proposal.scheduledTime);
+      formData.set("durationMinutes", String(proposal.durationMinutes));
+      if (proposal.kind === "schedule") formData.set("mode", "schedule");
+      const result =
+        proposal.kind === "schedule"
+          ? await scheduleTaskForTodayAction(formData)
+          : await rescheduleTaskAction(formData);
+
+      setPointerResult(result);
+      if (result.status === "success") router.refresh();
+    });
+  }
+
+  function requestPointerScheduling(proposal: PointerSchedulingProposal) {
+    const conflict = pointerConflictForProposal(proposal, timedBlocks);
+    if (conflict) {
+      setPointerConflict(conflict);
+      setPointerResult(null);
+      return;
+    }
+
+    runPointerScheduling(proposal);
+  }
+
+  function beginQueuePointer(
+    task: CalendarViewModel["schedulableTasks"][number],
+    pointer: { clientX: number; clientY: number; pointerId: number },
+  ) {
+    setPointerResult(null);
+    setSelection({ kind: "queue", taskId: task.id });
+    setActivePointerDrag({
+      durationMinutes: task.durationMinutes,
+      kind: "queue",
+      pointerId: pointer.pointerId,
+      startX: pointer.clientX,
+      startY: pointer.clientY,
+      taskId: task.id,
+    });
+  }
+
+  function beginBlockPointer(
+    block: CalendarTimedBlockViewModel,
+    pointer: { clientX: number; clientY: number; pointerId: number },
+  ) {
+    if (!block.taskId) return;
+    setPointerResult(null);
+    setSelection({ kind: "block", blockId: block.id });
+    setActivePointerDrag({
+      durationMinutes: block.durationMinutes,
+      kind: "block",
+      pointerId: pointer.pointerId,
+      startX: pointer.clientX,
+      startY: pointer.clientY,
+      taskId: block.taskId,
+    });
+  }
+
+  function endPointerDrag() {
+    setActivePointerDrag(null);
+  }
+
+  function dropPointerTask({
+    drag,
+    slot,
+  }: {
+    drag: PointerDragState;
+    slot: { date: string; dayId: string; startTime: string };
+  }) {
+    setActivePointerDrag(null);
+    requestPointerScheduling({
+      durationMinutes: drag.durationMinutes,
+      kind: drag.kind === "queue" ? "schedule" : "reschedule",
+      plannedDate: slot.date,
+      scheduledTime: slot.startTime,
+      taskId: drag.taskId,
+    });
+  }
+
+  function resizePointerTask(
+    block: CalendarTimedBlockViewModel,
+    durationMinutes: number,
+  ) {
+    if (!block.taskId) return;
+    requestPointerScheduling({
+      durationMinutes,
+      kind: "reschedule",
+      plannedDate: block.date ?? dateByDayId.get(block.dayId) ?? "",
+      scheduledTime: block.startTime,
+      taskId: block.taskId,
+    });
+  }
+
   function createBlock(block: CalendarRawTimedBlock) {
     setRawTimedBlocks((blocks) => [...blocks, block]);
     setSelection({ kind: "block", blockId: block.id });
   }
 
-  function saveTime(blockId: string, date: string, startTime: string, endTime: string) {
+  function saveTime(
+    blockId: string,
+    date: string,
+    startTime: string,
+    endTime: string,
+  ) {
     const nextDayId = resolveDayId(date);
 
     setRawTimedBlocks((blocks) =>
@@ -1221,7 +1475,8 @@ export function CalendarPlanningPage({
     );
   }
 
-  const selectedBlockId = selection.kind === "block" ? selection.blockId : undefined;
+  const selectedBlockId =
+    selection.kind === "block" ? selection.blockId : undefined;
   const calendarHasBlocks =
     filteredTimedBlocks.length > 0 || filteredAllDayBlocks.length > 0;
   const showEmptyCalendarShell =
@@ -1290,8 +1545,16 @@ export function CalendarPlanningPage({
               )}
             >
               <CalendarWeekSurface
+                activeDrag={activePointerDrag ?? undefined}
+                onBlockPointerStart={beginBlockPointer}
+                onDropTask={dropPointerTask}
+                onPointerDragEnd={endPointerDrag}
                 onSelectBlock={selectBlock}
                 onSelectSlot={(slot) => setSelection({ kind: "slot", slot })}
+                onResizeTask={resizePointerTask}
+                pointerEnabled={
+                  viewModel.profileId === "manual" && !pointerPending
+                }
                 selectedBlockId={selectedBlockId}
                 viewModel={dynamicViewModel}
               />
@@ -1342,6 +1605,16 @@ export function CalendarPlanningPage({
             />
           ) : null}
 
+          <PointerSchedulingStatus
+            conflict={pointerConflict}
+            onCancel={() => setPointerConflict(null)}
+            onConfirm={() => {
+              if (pointerConflict) runPointerScheduling(pointerConflict);
+            }}
+            pending={pointerPending}
+            result={pointerResult}
+          />
+
           <CalendarSourceContract
             contentState={viewModel.contentStates.page}
             profileId={viewModel.profileId}
@@ -1368,15 +1641,21 @@ export function CalendarPlanningPage({
               onDuplicateBlock={duplicateBlock}
               onMarkDone={markDone}
               onMoveLater={moveLater}
+              onQueuePointerStart={beginQueuePointer}
               onSaveTime={saveTime}
               panel={viewModel.rightPanel}
               planningQueueContentState={viewModel.contentStates.planningQueue}
+              pointerEnabled={
+                viewModel.profileId === "manual" && !pointerPending
+              }
               profileId={viewModel.profileId}
               selectedBlock={selectedBlock}
               selectedDay={selectedDay}
               selectedQueueTask={selectedQueueTask}
               selectedSlot={selectedSlot}
-              onSelectQueueTask={(taskId) => setSelection({ kind: "queue", taskId })}
+              onSelectQueueTask={(taskId) =>
+                setSelection({ kind: "queue", taskId })
+              }
               scheduledTasks={viewModel.scheduledTasks}
               tasks={viewModel.schedulableTasks}
             />

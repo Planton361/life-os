@@ -2,12 +2,19 @@ import {
   CALENDAR_DAY_END_MINUTES,
   CALENDAR_DAY_START_MINUTES,
 } from "../calendar-mock-data";
-import type { CalendarViewModel } from "../calendar-types";
 import {
-  CalendarAllDayBlock,
-  CalendarTimedBlock,
-} from "./calendar-block";
+  calendarMinutesToTime,
+  calendarSlotFromRelativeOffset,
+  resizedCalendarDuration,
+} from "../calendar-pointer-utils";
+import type {
+  CalendarTimedBlockViewModel,
+  CalendarViewModel,
+} from "../calendar-types";
+import { CalendarAllDayBlock, CalendarTimedBlock } from "./calendar-block";
 import { cn } from "@/lib/cn";
+import type { PointerEvent as ReactPointerEvent } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const TIME_GUTTER_WIDTH = 56;
 
@@ -48,6 +55,28 @@ function calendarHourRows() {
   return rows;
 }
 
+type WeekDragState = {
+  durationMinutes: number;
+  kind: "block" | "queue";
+  pointerId: number;
+  startX: number;
+  startY: number;
+  taskId: string;
+};
+
+type WeekDropSlot = {
+  date: string;
+  dayId: string;
+  startTime: string;
+};
+
+const POINTER_DRAG_THRESHOLD_PX = 8;
+
+type ResizeState = {
+  block: CalendarTimedBlockViewModel;
+  durationMinutes: number;
+};
+
 function CalendarWeekEmptyOverlay() {
   return (
     <div className="pointer-events-none absolute left-[80px] right-4 top-[34%] z-10 flex justify-center">
@@ -64,11 +93,24 @@ function CalendarWeekEmptyOverlay() {
 }
 
 export function CalendarWeekSurface({
+  activeDrag,
+  onBlockPointerStart,
+  onDropTask,
+  onPointerDragEnd,
   onSelectBlock,
   onSelectSlot,
+  onResizeTask,
+  pointerEnabled = false,
   selectedBlockId,
   viewModel,
 }: Readonly<{
+  activeDrag?: WeekDragState;
+  onBlockPointerStart: (
+    block: CalendarTimedBlockViewModel,
+    pointer: { clientX: number; clientY: number; pointerId: number },
+  ) => void;
+  onDropTask: (payload: { drag: WeekDragState; slot: WeekDropSlot }) => void;
+  onPointerDragEnd: () => void;
   onSelectBlock: (blockId: string) => void;
   onSelectSlot: (slot: {
     dayId: string;
@@ -78,12 +120,163 @@ export function CalendarWeekSurface({
     endTime: string;
     label: string;
   }) => void;
+  onResizeTask: (
+    block: CalendarTimedBlockViewModel,
+    durationMinutes: number,
+  ) => void;
+  pointerEnabled?: boolean;
   selectedBlockId?: string;
   viewModel: CalendarViewModel;
 }>) {
   const hourRows = calendarHourRows();
+  const dayColumnRefs = useRef(new Map<string, HTMLDivElement>());
+  const resizeStateRef = useRef<ResizeState | null>(null);
+  const [dropPreview, setDropPreview] = useState<WeekDropSlot | null>(null);
+  const [resizeState, setResizeState] = useState<ResizeState | null>(null);
   const hasBlocks =
     viewModel.allDayBlocks.length > 0 || viewModel.timedBlocks.length > 0;
+
+  const relativeOffsetForDay = useCallback((dayId: string, clientY: number) => {
+    const column = dayColumnRefs.current.get(dayId);
+    if (!column) return null;
+
+    const bounds = column.getBoundingClientRect();
+    if (bounds.height <= 0) return null;
+
+    return Math.max(0, Math.min(1, (clientY - bounds.top) / bounds.height));
+  }, []);
+
+  const dropSlotForDay = useCallback(
+    (
+      day: CalendarViewModel["days"][number],
+      clientY: number,
+      drag: WeekDragState | undefined,
+    ): WeekDropSlot | null => {
+      if (!drag) return null;
+      const relativeOffset = relativeOffsetForDay(day.id, clientY);
+      if (relativeOffset === null) return null;
+      const startMinutes = calendarSlotFromRelativeOffset({
+        durationMinutes: drag.durationMinutes,
+        relativeOffset,
+      });
+
+      return {
+        date: day.date,
+        dayId: day.id,
+        startTime: calendarMinutesToTime(startMinutes),
+      };
+    },
+    [relativeOffsetForDay],
+  );
+
+  function handleResizeStart(
+    block: CalendarTimedBlockViewModel,
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    const nextState = {
+      block,
+      durationMinutes: block.durationMinutes,
+    };
+    resizeStateRef.current = nextState;
+    setResizeState(nextState);
+  }
+
+  useEffect(() => {
+    function updateResize(clientY: number) {
+      const current = resizeStateRef.current;
+      if (!current) return null;
+      const relativeOffset = relativeOffsetForDay(current.block.dayId, clientY);
+      if (relativeOffset === null) return current;
+      const durationMinutes = resizedCalendarDuration({
+        relativeOffset,
+        startMinutes: current.block.startMinutes,
+      });
+      const nextState = { ...current, durationMinutes };
+      resizeStateRef.current = nextState;
+      setResizeState(nextState);
+      return nextState;
+    }
+
+    function handlePointerMove(event: globalThis.PointerEvent) {
+      updateResize(event.clientY);
+    }
+
+    function handlePointerUp(event: globalThis.PointerEvent) {
+      const completed = updateResize(event.clientY);
+      resizeStateRef.current = null;
+      setResizeState(null);
+      if (
+        completed &&
+        completed.durationMinutes !== completed.block.durationMinutes
+      ) {
+        onResizeTask(completed.block, completed.durationMinutes);
+      }
+    }
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+    };
+  }, [onResizeTask, relativeOffsetForDay]);
+
+  useEffect(() => {
+    if (!activeDrag) {
+      return;
+    }
+    const pointerDrag: WeekDragState = activeDrag;
+
+    function resolveDropSlot(event: globalThis.PointerEvent) {
+      if (event.pointerId !== pointerDrag.pointerId) return null;
+      if (
+        Math.hypot(
+          event.clientX - pointerDrag.startX,
+          event.clientY - pointerDrag.startY,
+        ) < POINTER_DRAG_THRESHOLD_PX
+      ) {
+        return null;
+      }
+      const target = document.elementFromPoint(event.clientX, event.clientY);
+      const dayId = target?.closest<HTMLElement>("[data-calendar-day]")?.dataset
+        .calendarDay;
+      const day = viewModel.days.find((candidate) => candidate.id === dayId);
+
+      return day ? dropSlotForDay(day, event.clientY, pointerDrag) : null;
+    }
+
+    function handlePointerMove(event: globalThis.PointerEvent) {
+      setDropPreview(resolveDropSlot(event));
+    }
+
+    function handlePointerUp(event: globalThis.PointerEvent) {
+      const slot = resolveDropSlot(event);
+      setDropPreview(null);
+      if (slot) {
+        onDropTask({ drag: pointerDrag, slot });
+      } else {
+        onPointerDragEnd();
+      }
+    }
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+    };
+  }, [
+    activeDrag,
+    dropSlotForDay,
+    onDropTask,
+    onPointerDragEnd,
+    viewModel.days,
+  ]);
 
   return (
     <section
@@ -220,8 +413,20 @@ export function CalendarWeekSurface({
                 return (
                   <div
                     aria-label={day.fullLabel}
-                    className="relative overflow-hidden"
+                    className={cn(
+                      "relative overflow-hidden",
+                      activeDrag && "bg-[rgba(95,200,215,.035)]",
+                    )}
+                    data-calendar-day={day.id}
+                    data-calendar-date={day.date}
                     key={day.id}
+                    ref={(node) => {
+                      if (node) {
+                        dayColumnRefs.current.set(day.id, node);
+                      } else {
+                        dayColumnRefs.current.delete(day.id);
+                      }
+                    }}
                   >
                     {viewModel.hours.map((hour) => (
                       <button
@@ -250,11 +455,46 @@ export function CalendarWeekSurface({
                     {dayBlocks.map((block) => (
                       <CalendarTimedBlock
                         block={block}
+                        dragging={
+                          activeDrag?.kind === "block" &&
+                          activeDrag.taskId === block.taskId
+                        }
                         key={block.id}
+                        onPointerDown={
+                          pointerEnabled && block.taskId
+                            ? (event) => {
+                                if (event.button !== 0) return;
+                                onBlockPointerStart(block, {
+                                  clientX: event.clientX,
+                                  clientY: event.clientY,
+                                  pointerId: event.pointerId,
+                                });
+                              }
+                            : undefined
+                        }
+                        onResizePointerDown={
+                          pointerEnabled && block.taskId
+                            ? (event) => handleResizeStart(block, event)
+                            : undefined
+                        }
                         onSelect={onSelectBlock}
+                        previewDurationMinutes={
+                          resizeState?.block.id === block.id
+                            ? resizeState.durationMinutes
+                            : undefined
+                        }
                         selected={block.id === selectedBlockId}
                       />
                     ))}
+                    {dropPreview?.dayId === day.id ? (
+                      <div
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-x-1 z-[2] h-8 rounded-[7px] border border-dashed border-[rgba(95,200,215,.62)] bg-[rgba(95,200,215,.12)]"
+                        style={{
+                          top: `${hourTop(dropPreview.startTime)}%`,
+                        }}
+                      />
+                    ) : null}
                   </div>
                 );
               })}

@@ -655,8 +655,8 @@ Capture or open Task
 
 ## 4.3 Active Work Block: C2 – Weekly Planning Calendar
 
-**Status:** C2-01 completed. The active bounded slice is **C2-02 – Pointer
-Drag/Drop + Resize**.
+**Status:** C2-01 and C2-02 completed. The active bounded slice is **C2-03 –
+Day/Month Projection + Deadline/Milestone View**.
 
 **Outcome:** Calendar remains a temporal projection of canonical executable
 Tasks. Week View is the primary planning surface; it does not create a second
@@ -676,13 +676,17 @@ relation filters and pointer drag/resize remain outside this slice.
 
 #### C2-02 – Pointer Drag/Drop + Resize
 
-**Active.** Add accessible pointer comfort only over the proven Week scheduling
-boundary. Keyboard/button scheduling remains a complete alternative; no new
-scheduling data model or direct Task writes.
+**Completed.** Queue-to-Week pointer placement, cross-day block movement and
+bottom-handle duration resize use only the established authenticated,
+source-aware schedule/reschedule actions. The Week grid maps relative pointer
+positions to one 15-minute snap contract, presents loaded-block conflicts for
+explicit confirmation and leaves cancelled or invalid drops unchanged. The
+Inspector remains the complete keyboard/button alternative; reload proofs cover
+canonical Task, Meal and Running-source projections.
 
 #### C2-03 – Day/Month Projection + Deadline/Milestone View
 
-**Pending.** Connect the remaining Calendar views and their truthful
+**Active.** Connect the remaining Calendar views and their truthful
 deadline/milestone semantics to canonical sources without making a parallel
 event model.
 

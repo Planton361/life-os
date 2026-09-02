@@ -1,6 +1,7 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties, PointerEvent } from "react";
 import { Pill, accentStyle } from "@/components/layout/route-page-primitives";
 import { cn } from "@/lib/cn";
+import { calendarDurationToHeightPercent } from "../calendar-pointer-utils";
 import {
   calendarBlockStatusLabels,
   calendarBlockTypeLabels,
@@ -20,11 +21,19 @@ function blockLabel(block: CalendarTimedBlockViewModel) {
 
 export function CalendarTimedBlock({
   block,
+  dragging = false,
+  onPointerDown,
+  onResizePointerDown,
   onSelect,
+  previewDurationMinutes,
   selected = false,
 }: Readonly<{
   block: CalendarTimedBlockViewModel;
+  dragging?: boolean;
+  onPointerDown?: (event: PointerEvent<HTMLDivElement>) => void;
+  onResizePointerDown?: (event: PointerEvent<HTMLButtonElement>) => void;
   onSelect?: (blockId: string) => void;
+  previewDurationMinutes?: number;
   selected?: boolean;
 }>) {
   const isRegular = block.density === "regular";
@@ -33,90 +42,115 @@ export function CalendarTimedBlock({
   const blockStyle: TimedBlockStyle = {
     ...accentStyle(block.accent),
     top: `${block.layout.top}%`,
-    height: `${block.layout.height}%`,
+    height: `${
+      previewDurationMinutes === undefined
+        ? block.layout.height
+        : calendarDurationToHeightPercent(previewDurationMinutes)
+    }%`,
     left: `calc(${block.layout.left}% + 3px)`,
     width: `calc(${block.layout.width}% - 6px)`,
   };
 
   return (
-    <button
-      aria-label={blockLabel(block)}
-      aria-pressed={selected}
-      onClick={() => onSelect?.(block.id)}
-      title={blockLabel(block)}
-      type="button"
+    <div
       className={cn(
-        "absolute z-[3] overflow-hidden rounded-[8px] border bg-[color-mix(in_srgb,var(--accent)_12%,rgba(18,28,43,.92))] text-left shadow-[0_6px_14px_rgba(0,0,0,.12)] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
-        selected
-          ? "border-[color-mix(in_srgb,var(--accent)_62%,transparent)] ring-1 ring-[color-mix(in_srgb,var(--accent)_42%,transparent)]"
-          : "border-[color-mix(in_srgb,var(--accent)_26%,transparent)] hover:border-[color-mix(in_srgb,var(--accent)_42%,transparent)]",
-        isRegular && "min-h-[72px] px-2.5 py-2",
-        isCompact && "min-h-[52px] px-2 py-1.5",
-        isMicro && "min-h-[40px] px-2 py-1",
+        "absolute z-[3]",
+        dragging && "opacity-45",
+        onPointerDown && "cursor-grab active:cursor-grabbing",
       )}
+      data-calendar-task-block={block.taskId ? "true" : undefined}
+      data-calendar-timed-block={block.id}
+      onPointerDown={onPointerDown}
       style={blockStyle}
     >
-      {isRegular ? (
-        <div className="flex h-full min-w-0 flex-col">
-          <div className="flex min-w-0 items-start justify-between gap-1.5">
-            <p className="min-w-0 overflow-hidden text-[10px] font-semibold leading-3 text-[var(--text-primary)] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
-              {block.title}
-            </p>
-            <span
-              aria-hidden="true"
-              className="mt-0.5 size-1.5 shrink-0 rounded-full bg-[var(--accent)]"
-            />
-          </div>
-          <p className="mt-0.5 truncate text-[9px] font-medium leading-3 text-[var(--text-secondary)]">
-            {block.startTime}-{block.endTime} ·{" "}
-            {calendarBlockTypeLabels[block.type]}
-          </p>
-          <p className="mt-0.5 truncate text-[9px] leading-3 text-[var(--text-muted)]">
-            {block.area} · {block.meta ?? block.sourceEntity.label}
-          </p>
-          <div className="mt-auto pt-1">
-            <Pill accent={block.accent} quiet={block.status === "planned"}>
-              {calendarBlockStatusLabels[block.status]}
-            </Pill>
-          </div>
-        </div>
-      ) : null}
-
-      {isCompact ? (
-        <div className="grid h-full min-w-0 content-center gap-0.5">
-          <div className="flex min-w-0 items-center justify-between gap-1.5">
-            <p className="truncate text-[10px] font-semibold leading-3 text-[var(--text-primary)]">
-              {block.title}
-            </p>
-            <span
-              aria-hidden="true"
-              className="size-1.5 shrink-0 rounded-full bg-[var(--accent)]"
-            />
-          </div>
-          <div className="flex min-w-0 items-center justify-between gap-1.5">
-            <p className="min-w-0 truncate text-[9px] font-medium leading-3 text-[var(--text-secondary)]">
+      <button
+        aria-label={blockLabel(block)}
+        aria-pressed={selected}
+        className={cn(
+          "h-full w-full overflow-hidden rounded-[8px] border bg-[color-mix(in_srgb,var(--accent)_12%,rgba(18,28,43,.92))] text-left shadow-[0_6px_14px_rgba(0,0,0,.12)] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
+          selected
+            ? "border-[color-mix(in_srgb,var(--accent)_62%,transparent)] ring-1 ring-[color-mix(in_srgb,var(--accent)_42%,transparent)]"
+            : "border-[color-mix(in_srgb,var(--accent)_26%,transparent)] hover:border-[color-mix(in_srgb,var(--accent)_42%,transparent)]",
+          isRegular && "min-h-[72px] px-2.5 py-2",
+          isCompact && "min-h-[52px] px-2 py-1.5",
+          isMicro && "min-h-[40px] px-2 py-1",
+        )}
+        onClick={() => onSelect?.(block.id)}
+        title={blockLabel(block)}
+        type="button"
+      >
+        {isRegular ? (
+          <div className="flex h-full min-w-0 flex-col">
+            <div className="flex min-w-0 items-start justify-between gap-1.5">
+              <p className="min-w-0 overflow-hidden text-[10px] font-semibold leading-3 text-[var(--text-primary)] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
+                {block.title}
+              </p>
+              <span
+                aria-hidden="true"
+                className="mt-0.5 size-1.5 shrink-0 rounded-full bg-[var(--accent)]"
+              />
+            </div>
+            <p className="mt-0.5 truncate text-[9px] font-medium leading-3 text-[var(--text-secondary)]">
               {block.startTime}-{block.endTime} ·{" "}
               {calendarBlockTypeLabels[block.type]}
             </p>
-            <p className="shrink-0 truncate text-[9px] font-semibold leading-3 text-[var(--accent)]">
+            <p className="mt-0.5 truncate text-[9px] leading-3 text-[var(--text-muted)]">
+              {block.area} · {block.meta ?? block.sourceEntity.label}
+            </p>
+            <div className="mt-auto pt-1">
+              <Pill accent={block.accent} quiet={block.status === "planned"}>
+                {calendarBlockStatusLabels[block.status]}
+              </Pill>
+            </div>
+          </div>
+        ) : null}
+
+        {isCompact ? (
+          <div className="grid h-full min-w-0 content-center gap-0.5">
+            <div className="flex min-w-0 items-center justify-between gap-1.5">
+              <p className="truncate text-[10px] font-semibold leading-3 text-[var(--text-primary)]">
+                {block.title}
+              </p>
+              <span
+                aria-hidden="true"
+                className="size-1.5 shrink-0 rounded-full bg-[var(--accent)]"
+              />
+            </div>
+            <div className="flex min-w-0 items-center justify-between gap-1.5">
+              <p className="min-w-0 truncate text-[9px] font-medium leading-3 text-[var(--text-secondary)]">
+                {block.startTime}-{block.endTime} ·{" "}
+                {calendarBlockTypeLabels[block.type]}
+              </p>
+              <p className="shrink-0 truncate text-[9px] font-semibold leading-3 text-[var(--accent)]">
+                {calendarBlockStatusLabels[block.status]}
+              </p>
+            </div>
+          </div>
+        ) : null}
+
+        {isMicro ? (
+          <div className="grid h-full min-w-0 content-center gap-0.5">
+            <p className="truncate text-[10px] font-semibold leading-3 text-[var(--text-primary)]">
+              {block.title}
+            </p>
+            <p className="truncate text-[9px] font-medium leading-3 text-[var(--text-secondary)]">
+              {block.startTime}-{block.endTime} ·{" "}
               {calendarBlockStatusLabels[block.status]}
             </p>
           </div>
-        </div>
+        ) : null}
+      </button>
+      {onResizePointerDown ? (
+        <button
+          aria-label="Resize task duration"
+          className="absolute inset-x-2 bottom-0 z-[4] h-3 cursor-ns-resize rounded-b-[6px] border-t border-[color-mix(in_srgb,var(--accent)_46%,transparent)] bg-[color-mix(in_srgb,var(--accent)_20%,transparent)] opacity-0 transition hover:opacity-100 focus:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--focus-ring)]"
+          data-calendar-resize-handle={block.id}
+          onPointerDown={onResizePointerDown}
+          title="Resize duration"
+          type="button"
+        />
       ) : null}
-
-      {isMicro ? (
-        <div className="grid h-full min-w-0 content-center gap-0.5">
-          <p className="truncate text-[10px] font-semibold leading-3 text-[var(--text-primary)]">
-            {block.title}
-          </p>
-          <p className="truncate text-[9px] font-medium leading-3 text-[var(--text-secondary)]">
-            {block.startTime}-{block.endTime} ·{" "}
-            {calendarBlockStatusLabels[block.status]}
-          </p>
-        </div>
-      ) : null}
-    </button>
+    </div>
   );
 }
 
@@ -156,7 +190,8 @@ export function CalendarAllDayBlock({
         </div>
         <div className="flex min-w-0 items-center justify-between gap-1">
           <p className="min-w-0 truncate text-[9px] leading-3 text-[var(--text-muted)]">
-            {block.timeLabel ?? "All day"} · {calendarBlockTypeLabels[block.type]}
+            {block.timeLabel ?? "All day"} ·{" "}
+            {calendarBlockTypeLabels[block.type]}
           </p>
           <p className="shrink-0 truncate text-[9px] font-semibold leading-3 text-[var(--accent)]">
             {calendarBlockStatusLabels[block.status]}
