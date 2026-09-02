@@ -44,6 +44,10 @@ function optionalFormString(formData: FormData, key: string) {
   return formString(formData, key) || undefined;
 }
 
+function optionalNullableFormString(formData: FormData, key: string) {
+  return formData.has(key) ? optionalFormString(formData, key) ?? null : undefined;
+}
+
 function authBlockedMessage(
   error: "auth_error" | "invalid_session" | "missing_env" | "unauthenticated",
 ) {
@@ -68,6 +72,9 @@ function revalidatePortfolioTargetRoutes() {
   revalidatePath("/dashboard");
   revalidatePath("/today");
   revalidatePath("/calendar");
+  revalidatePath("/projects");
+  revalidatePath("/goals");
+  revalidatePath("/tasks");
 }
 
 function projectActionReturnUrl(
@@ -287,6 +294,7 @@ export async function updateProjectAction(
 
   const parsed = updateProjectInputSchema.safeParse({
     description: optionalFormString(formData, "description"),
+    goalId: optionalNullableFormString(formData, "goalId"),
     nextStep: optionalFormString(formData, "nextStep"),
     profileId: context.auth.user.id,
     projectId: formString(formData, "projectId"),
@@ -307,7 +315,10 @@ export async function updateProjectAction(
 
   if (!result.ok) {
     return {
-      message: "Das Project konnte nicht in Supabase aktualisiert werden.",
+      message:
+        result.error.code === "conflict"
+          ? "Das Project kann dieses Goal nicht übernehmen, weil verbundene Tasks ein anderes direktes Goal haben. Passe zuerst Project oder direktes Task-Goal bewusst an."
+          : "Das Project konnte nicht in Supabase aktualisiert werden.",
       status: "error",
     };
   }
@@ -568,7 +579,12 @@ export async function updateProjectFormAction(formData: FormData): Promise<void>
     redirectToProjectActionState("project_updated", formData, result.projectId);
   }
 
-  redirectToProjectActionState(result.status, formData);
+  redirectToProjectActionState(
+    result.status === "error" && result.message.startsWith("Das Project kann dieses Goal")
+      ? "project_alignment_conflict"
+      : result.status,
+    formData,
+  );
 }
 
 export async function archiveProjectFormAction(formData: FormData): Promise<void> {

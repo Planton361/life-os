@@ -151,10 +151,10 @@ C1 Core Work Graph
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
 | Task create/edit/lifecycle | `CONNECTED` | K1.1A Portfolio Task Detail, task actions/repository, reload proof | maintain |
-| Task relation to Project/Goal | `CONNECTED` | K1.1A Task Detail with nullable task relation fields and ownership checks | maintain |
+| Task relation to Project/Goal | `CONNECTED` | nullable Task→Project/Goal fields, server-authenticated/Zod/user-scoped alignment checks and focused reload proof | maintain explicit user choices; no silent relinking |
 | Task relation to Skill/Resource | `CONNECTED` | Resource link/unlink via `resource_relations`; C1.1-02 adds owned n:m `task_skill_links`, idempotent link, explicit unlink, Task detail projection and Skill backlink without creating Evidence | maintain endpoint ownership, reload and no-auto-Evidence proofs |
-| Project Goal inheritance in Task context | `CONNECTED_GAP` | `projects.goal_id` and `tasks.goal_id` exist and are projected | C1.1 must distinguish direct/inherited context and prevent contradictory alignment |
-| Core work graph backlinks | `CONNECTED_GAP` | semantic relation read model covers Task/Project/Goal/Resource direct and via paths plus C1.1-02 Task↔Skill context on both workbenches | Project/Goal alignment and remaining bounded five-entity provenance continue in later C1.1 subtasks |
+| Project Goal inheritance in Task context | `CONNECTED` | direct, via-Project, redundant and existing-conflict states are explicit; Task and Project writes reject new contradictions, and read models deduplicate matching paths | preserve existing rows; resolve any future reported existing conflicts deliberately |
+| Core work graph backlinks | `CONNECTED_GAP` | Task/Project/Goal backlinks now deduplicate direct + via-Project Goal paths with provenance; Task↔Skill remains connected | C1.1-04 adds bounded Resource↔Skill context and five-entity provenance |
 | Project create/edit/status/archive | `CONNECTED` | project actions/repository | add restore/complete semantics later |
 | Goal create/edit/status/archive | `CONNECTED` | goal actions/repository | add achieve/restore semantics later |
 | Skill create/edit/archive | `CONNECTED` | skill actions/repository | maintain |

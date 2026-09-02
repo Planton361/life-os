@@ -10,12 +10,13 @@ import {
 
 const requiredIdSchema = requiredTrimmedStringSchema();
 const titleSchema = requiredTrimmedStringSchema(2);
+const nullableOptionalString = z.union([z.string().trim().min(1), z.null()]).optional();
 
 const projectPatchSchema = z.object({
   areaId: optionalTrimmedStringSchema,
   deadline: optionalDateTimeStringSchema,
   description: optionalTrimmedStringSchema,
-  goalId: optionalTrimmedStringSchema,
+  goalId: nullableOptionalString,
   nextStep: optionalTrimmedStringSchema,
   priority: optionalEnumSchema(taskPriorities),
   status: optionalEnumSchema(projectStatuses),

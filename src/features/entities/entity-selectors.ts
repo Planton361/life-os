@@ -212,27 +212,33 @@ export function getProjectTasks(
   project: LifeProject,
   collection: EntityCollection,
 ) {
-  return project.taskIds
-    .map((taskId) => getTask(taskId, collection))
-    .filter((task): task is LifeTask => Boolean(task));
+  return collection.tasks.filter(
+    (task) => task.projectId === project.id || project.taskIds.includes(task.id),
+  );
 }
 
 export function getGoalTasks(
   goal: LifeGoal,
   collection: EntityCollection,
 ) {
-  return goal.linkedTaskIds
-    .map((taskId) => getTask(taskId, collection))
-    .filter((task): task is LifeTask => Boolean(task));
+  return collection.tasks.filter((task) => {
+    if (task.goalId === goal.id || goal.linkedTaskIds.includes(task.id)) {
+      return true;
+    }
+
+    const project = task.projectId ? getProject(task.projectId, collection) : null;
+    return project?.goalId === goal.id;
+  });
 }
 
 export function getGoalProjects(
   goal: LifeGoal,
   collection: EntityCollection,
 ) {
-  return goal.linkedProjectIds
-    .map((projectId) => getProject(projectId, collection))
-    .filter((project): project is LifeProject => Boolean(project));
+  return collection.projects.filter(
+    (project) =>
+      project.goalId === goal.id || goal.linkedProjectIds.includes(project.id),
+  );
 }
 
 export function getSkillTasks(
@@ -299,6 +305,34 @@ export function getTaskGoal(
   collection: EntityCollection,
 ) {
   return task.goalId ? getGoal(task.goalId, collection) : null;
+}
+
+export type TaskGoalContext = {
+  directGoal: LifeGoal | null;
+  inheritedGoal: LifeGoal | null;
+  state: "none" | "direct" | "via_project" | "redundant" | "conflict";
+};
+
+export function getTaskGoalContext(
+  task: LifeTask,
+  collection: EntityCollection,
+): TaskGoalContext {
+  const directGoal = getTaskGoal(task, collection);
+  const project = getTaskProject(task, collection);
+  const inheritedGoal = project ? getProjectGoal(project, collection) : null;
+
+  if (directGoal && inheritedGoal) {
+    return {
+      directGoal,
+      inheritedGoal,
+      state: directGoal.id === inheritedGoal.id ? "redundant" : "conflict",
+    };
+  }
+
+  if (directGoal) return { directGoal, inheritedGoal, state: "direct" };
+  if (inheritedGoal) return { directGoal, inheritedGoal, state: "via_project" };
+
+  return { directGoal, inheritedGoal, state: "none" };
 }
 
 export function getTaskSkill(

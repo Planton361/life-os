@@ -163,11 +163,15 @@ function scheduledStartAtFromForm(formData: FormData, plannedDate: string) {
   return zonedLocalDateTimeToIso(plannedDate, scheduledTime);
 }
 
-function revalidateTaskProjectionRoutes() {
+function revalidateTaskProjectionRoutes(taskId?: string) {
   revalidatePath("/portfolio");
   revalidatePath("/today");
   revalidatePath("/dashboard");
   revalidatePath("/calendar");
+  revalidatePath("/tasks");
+  revalidatePath("/projects");
+  revalidatePath("/goals");
+  if (taskId) revalidatePath(`/tasks/${taskId}`);
 }
 
 function revalidateTaskSkillProjectionRoutes(taskId: string, skillId: string) {
@@ -220,8 +224,16 @@ export async function updatePortfolioTaskAction(
   });
   if (!parsed.success) return { message: "Prüfe die Task-Felder.", status: "error" };
   const result = await createSupabaseTaskRepository(context.auth.client).updateTask(parsed.data);
-  if (!result.ok) return { message: "Der Task konnte nicht gespeichert werden.", status: "error" };
-  revalidateTaskProjectionRoutes();
+  if (!result.ok) {
+    return {
+      message:
+        result.error.code === "conflict"
+          ? "Dieses direkte Goal widerspricht dem Goal des ausgewählten Projects. Passe Project oder direktes Goal bewusst an."
+          : "Der Task konnte nicht gespeichert werden.",
+      status: "error",
+    };
+  }
+  revalidateTaskProjectionRoutes(result.data.id);
   revalidatePath("/resources");
   return { message: "Task gespeichert.", status: "success", taskId: result.data.id };
 }
@@ -229,7 +241,11 @@ export async function updatePortfolioTaskAction(
 export async function updatePortfolioTaskFormAction(formData: FormData): Promise<void> {
   const result = await updatePortfolioTaskAction(formData);
   const selected = formString(formData, "taskId");
-  redirect(`/portfolio?view=tasks&selected=${encodeURIComponent(selected)}&targetCreate=task_${result.status}`);
+  const state =
+    result.status === "error" && result.message.startsWith("Dieses direkte Goal")
+      ? "task_alignment_conflict"
+      : `task_${result.status}`;
+  redirect(`/portfolio?view=tasks&selected=${encodeURIComponent(selected)}&targetCreate=${state}`);
 }
 
 export async function linkTaskSkillAction(
@@ -475,7 +491,7 @@ export async function scheduleTaskForTodayAction(
     };
   }
 
-  revalidateTaskProjectionRoutes();
+  revalidateTaskProjectionRoutes(result.data.id);
 
   return {
     message:
@@ -542,12 +558,15 @@ export async function createPortfolioTaskAction(
 
   if (!result.ok) {
     return {
-      message: "Der Task konnte in Supabase nicht erstellt werden.",
+      message:
+        result.error.code === "conflict"
+          ? "Dieses direkte Goal widerspricht dem Goal des ausgewählten Projects. Passe Project oder direktes Goal bewusst an."
+          : "Der Task konnte in Supabase nicht erstellt werden.",
       status: "error",
     };
   }
 
-  revalidateTaskProjectionRoutes();
+  revalidateTaskProjectionRoutes(result.data.id);
 
   return {
     message: "Task erstellt.",
@@ -565,7 +584,14 @@ export async function createPortfolioTaskFormAction(
     redirect(portfolioTaskReturnUrl(formData, "task_created", result.taskId));
   }
 
-  redirect(portfolioTaskReturnUrl(formData, result.status));
+  redirect(
+    portfolioTaskReturnUrl(
+      formData,
+      result.status === "error" && result.message.startsWith("Dieses direkte Goal")
+        ? "task_alignment_conflict"
+        : result.status,
+    ),
+  );
 }
 
 export async function completeTaskAction(

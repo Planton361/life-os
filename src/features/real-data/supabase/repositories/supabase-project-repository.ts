@@ -1,4 +1,7 @@
-import type { Project } from "../../domain";
+import {
+  projectGoalChangeConflictsWithDirectTasks,
+  type Project,
+} from "../../domain";
 import type { ProjectRepository } from "../../repositories";
 import type {
   RepositoryListResult,
@@ -53,6 +56,22 @@ function notFoundFailure(entity: string): RepositoryFailure {
   };
 }
 
+function conflictFailure(message: string): RepositoryFailure {
+  return {
+    error: { code: "conflict", message },
+    ok: false,
+  };
+}
+
+type ProjectGoalRow = {
+  goal_id: string | null;
+  id: string;
+};
+
+type DirectTaskGoalRow = {
+  goal_id: string | null;
+};
+
 async function verifyOwnedContextRow(
   client: SupabaseClientLike,
   tableName: "areas" | "goals",
@@ -95,6 +114,67 @@ async function validateProjectContextOwnership(
     input.goalId,
   );
   if (!goalOwned) return notFoundFailure("Goal");
+
+  return null;
+}
+
+async function getActiveProjectGoal(
+  client: SupabaseClientLike,
+  userId: string,
+  projectId: string,
+): Promise<RepositoryResult<ProjectGoalRow>> {
+  const result = (await client
+    .from(realDataTableNames.projects)
+    .select("id,goal_id")
+    .eq("user_id", userId)
+    .eq("id", projectId)
+    .is("archived_at", null)
+    .maybeSingle()) as SupabaseQueryResult<ProjectGoalRow>;
+
+  if (result.error) return adapterFailure("load project");
+  if (!result.data) return notFoundFailure("Project");
+
+  return { data: result.data, ok: true };
+}
+
+async function validateProjectGoalAlignment(
+  client: SupabaseClientLike,
+  userId: string,
+  projectId: string,
+  nextGoalId: string | null | undefined,
+): Promise<RepositoryFailure | null> {
+  if (nextGoalId === undefined) return null;
+
+  const currentProject = await getActiveProjectGoal(client, userId, projectId);
+  if (!currentProject.ok) return currentProject;
+  if (currentProject.data.goal_id === nextGoalId || nextGoalId === null) {
+    return null;
+  }
+
+  const directTaskGoals = (await client
+    .from(realDataTableNames.tasks)
+    .select("goal_id")
+    .eq("user_id", userId)
+    .eq("project_id", projectId)
+    .is("archived_at", null)
+    .not("goal_id", "is", null)) as SupabaseQueryResult<
+    readonly DirectTaskGoalRow[]
+  >;
+
+  if (directTaskGoals.error) {
+    return adapterFailure("check project task goal alignment");
+  }
+
+  if (
+    projectGoalChangeConflictsWithDirectTasks(
+      nextGoalId,
+      (directTaskGoals.data ?? []).map((task) => task.goal_id),
+    )
+  ) {
+    return conflictFailure(
+      "This project has tasks with direct goals that conflict with the new project goal.",
+    );
+  }
 
   return null;
 }
@@ -185,6 +265,14 @@ export function createSupabaseProjectRepository(
         input,
       );
       if (contextFailure) return contextFailure;
+
+      const alignmentFailure = await validateProjectGoalAlignment(
+        client,
+        input.userId,
+        input.projectId,
+        input.goalId,
+      );
+      if (alignmentFailure) return alignmentFailure;
 
       return updateProjectById(
         client,

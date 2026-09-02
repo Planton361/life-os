@@ -3,6 +3,7 @@ export * from "./profile";
 export * from "./area";
 export * from "./inbox";
 export * from "./task";
+export * from "./task-goal-alignment";
 export * from "./project";
 export * from "./goal";
 export * from "./daily-log";

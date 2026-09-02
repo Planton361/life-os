@@ -176,6 +176,7 @@ export type PortfolioSkillContext = {
 
 export type PortfolioProjectEditValues = {
   description?: string;
+  goalId?: string;
   nextStep?: string;
   status: ProjectStatus;
   title: string;

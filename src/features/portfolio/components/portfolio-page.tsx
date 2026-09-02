@@ -202,11 +202,13 @@ function targetCreateMessage(value: string | null) {
   if (value === "task_archived") return "Task archiviert.";
   if (value === "task_success") return "Task gespeichert.";
   if (value === "task_error") return "Task konnte nicht gespeichert werden.";
+  if (value === "task_alignment_conflict") return "Dieses direkte Goal widerspricht dem Goal des ausgewählten Projects. Passe Project oder direktes Goal bewusst an.";
   if (value === "task_skill_linked") return "Skill mit Task verknüpft.";
   if (value === "task_skill_unlinked") return "Skill-Verbindung entfernt.";
   if (value === "task_skill_error") return "Task-Skill-Verbindung konnte nicht gespeichert werden.";
   if (value === "project_created") return "Project erstellt.";
   if (value === "project_updated") return "Project aktualisiert.";
+  if (value === "project_alignment_conflict") return "Das Project kann dieses Goal nicht übernehmen, weil verbundene Tasks ein anderes direktes Goal haben. Passe zuerst Project oder direktes Task-Goal bewusst an.";
   if (value === "project_archived") return "Project archiviert.";
   if (value === "goal_created") return "Goal erstellt.";
   if (value === "goal_updated") return "Goal aktualisiert.";

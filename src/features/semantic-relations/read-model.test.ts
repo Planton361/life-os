@@ -25,6 +25,27 @@ describe("semantic relation read model", () => {
     expect(result.tasks.find((entry) => entry.targetId === "1")?.direct).toBe(true);
   });
 
+  it("retains direct and via-project provenance when the same goal is reached twice", () => {
+    const direct = {
+      ...base,
+      origins: ["direct"] as const,
+      targetId: "goal",
+      targetType: "goal" as const,
+    };
+    const viaProject = {
+      ...direct,
+      direct: false,
+      origins: ["via_project"] as const,
+      relationType: "supports goal via project",
+      via: { id: "project", title: "Project", type: "project" as const },
+    };
+
+    const result = buildSemanticConnectedContext([direct, viaProject]);
+
+    expect(result.goals).toHaveLength(1);
+    expect(result.goals[0]?.origins).toEqual(["direct", "via_project"]);
+  });
+
   it("filters archives and projects canonical skill relations", () => {
     const archived = { ...base, archived: true };
     const skill = { ...base, targetId: "skill", targetType: "skill" as const };

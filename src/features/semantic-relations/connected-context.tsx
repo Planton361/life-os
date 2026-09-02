@@ -13,9 +13,11 @@ const groups = [
 ] as const;
 
 function RelationEntry({ entry }: Readonly<{ entry: SemanticRelationEntry }>) {
-  const pathLabel = entry.direct
-    ? "Direkt"
-    : `Via ${entry.via?.type ?? "Kontext"}: ${entry.via?.title ?? "kanonische Relation"}`;
+  const pathLabel = entry.origins?.includes("direct") && entry.origins.includes("via_project")
+    ? `Direkt und via ${entry.via?.type ?? "Project"}`
+    : entry.direct
+      ? "Direkt"
+      : `Via ${entry.via?.type ?? "Kontext"}: ${entry.via?.title ?? "kanonische Relation"}`;
 
   return (
     <li className="rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.40)] px-3 py-2" data-connected-context-entry={`${entry.targetType}:${entry.targetId}`}>

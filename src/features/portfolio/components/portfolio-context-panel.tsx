@@ -159,9 +159,12 @@ function buildGoalWorkbench(
     (entity): entity is PortfolioProjectEntity =>
       isPortfolioProjectEntity(entity) && entity.goalId === goal.id,
   );
+  const projectIdsForGoal = new Set(linkedProjects.map((project) => project.id));
   const linkedTasks = entities.filter(
     (entity): entity is PortfolioTaskEntity =>
-      isPortfolioTaskEntity(entity) && entity.goalId === goal.id,
+      isPortfolioTaskEntity(entity) &&
+      (entity.goalId === goal.id ||
+        Boolean(entity.projectId && projectIdsForGoal.has(entity.projectId))),
   );
   const completedTasks = linkedTasks.filter(
     (task) => task.taskLifecycle.status === "done",
@@ -508,12 +511,15 @@ function GoalArchiveForm({
 
 function ProjectEditForm({
   disabled,
+  entities,
   project,
 }: Readonly<{
   disabled: boolean;
+  entities: readonly PortfolioEntity[];
   project: PortfolioEntity;
 }>) {
   const values = project.projectEditValues;
+  const goals = entities.filter((entity) => entity.type === "goal");
 
   return (
     <form
@@ -542,6 +548,22 @@ function ProjectEditForm({
           disabled={disabled}
           name="description"
         />
+      </label>
+      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+        Goal-Kontext
+        <select
+          className={formInputClassName}
+          defaultValue={values?.goalId ?? project.goalId ?? ""}
+          disabled={disabled}
+          name="goalId"
+        >
+          <option value="">Kein Goal</option>
+          {goals.map((goal) => (
+            <option key={goal.id} value={goal.id}>
+              {goal.title}
+            </option>
+          ))}
+        </select>
       </label>
       <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_132px]">
         <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
@@ -1827,7 +1849,7 @@ function ProjectWorkbench({
           heading="Project bearbeiten"
           id="project-edit-heading"
         >
-          <ProjectEditForm disabled={disabled} project={project} />
+          <ProjectEditForm disabled={disabled} entities={entities} project={project} />
         </WorkbenchCreateSection>
 
         <WorkbenchCreateSection

@@ -316,8 +316,8 @@ This sequence is the complete product plan, not a live status queue. A Codex pro
 ## 4.1 Completed Work Block: SR1 – Local Schema Recovery
 
 **Status:** Completed. The verified Target is the canonical local runtime;
-the Source is retained only as `LEGACY_FALLBACK_READ_ONLY`. C1.1 resumes at
-C1.1-03.
+the Source is retained only as `LEGACY_FALLBACK_READ_ONLY`. C1.1 continues at
+C1.1-04.
 
 ### SR1-01A – Canonical Schedule-Source Foundation
 
@@ -569,7 +569,7 @@ Capture or open Task
 
 #### C1.1-03 – Project/Goal Alignment Integrity
 
-**Current slice.**
+**Completed.**
 
 **Goal:** Make direct and inherited Goal context understandable and prevent contradictory Task alignment.
 
@@ -596,6 +596,8 @@ Capture or open Task
 **Report Format:** `Erstellt:`, `Geändert:`, `Nicht geändert:`, `Validierung:`, `Offene Punkte:`, `Risiken:`.
 
 #### C1.1-04 – Resource↔Skill Context and Backlink Projection
+
+**Current slice.**
 
 **Goal:** Let Resources provide typed Skill context and show one deterministic, bounded work-context projection across Task, Project, Goal, Skill and Resource surfaces.
 

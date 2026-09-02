@@ -26,7 +26,7 @@ import {
   getSkillProjects,
   getSkillTasks,
   getTask,
-  getTaskGoal,
+  getTaskGoalContext,
   getTaskProject,
   getTaskSkills,
   goalStatusMeta,
@@ -847,7 +847,7 @@ function TaskDetail({
   const status = taskStatusMeta[task.status];
   const area = entityAreaMeta[task.areaId];
   const project = getTaskProject(task, collection);
-  const goal = getTaskGoal(task, collection);
+  const goalContext = getTaskGoalContext(task, collection);
   const skills = getTaskSkills(task, collection);
 
   return (
@@ -910,13 +910,52 @@ function TaskDetail({
                   Project: {project.title}
                 </Link>
               ) : null}
-              {goal ? (
+              {goalContext.state === "direct" && goalContext.directGoal ? (
                 <Link
                   className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.42)] p-3 text-sm font-semibold text-[var(--text-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-                  href={getEntityHref("goal", goal.id)}
+                  href={getEntityHref("goal", goalContext.directGoal.id)}
                 >
-                  Goal: {goal.title}
+                  Goal · Direct: {goalContext.directGoal.title}
                 </Link>
+              ) : null}
+              {goalContext.state === "via_project" && goalContext.inheritedGoal ? (
+                <Link
+                  className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.42)] p-3 text-sm font-semibold text-[var(--text-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                  href={getEntityHref("goal", goalContext.inheritedGoal.id)}
+                >
+                  Goal · via Project: {goalContext.inheritedGoal.title}
+                </Link>
+              ) : null}
+              {goalContext.state === "redundant" && goalContext.directGoal ? (
+                <Link
+                  className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.42)] p-3 text-sm font-semibold text-[var(--text-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                  href={getEntityHref("goal", goalContext.directGoal.id)}
+                >
+                  Goal · Direct and via Project: {goalContext.directGoal.title}
+                </Link>
+              ) : null}
+              {goalContext.state === "conflict" ? (
+                <div className="grid gap-2" data-task-goal-alignment="conflict">
+                  <p className="rounded-[10px] border border-[rgba(221,107,95,.34)] bg-[rgba(221,107,95,.08)] px-3 py-2 text-xs leading-5 text-[var(--text-secondary)]">
+                    Alignment warning: this task has a direct goal that differs from its project goal. Adjust one relation deliberately.
+                  </p>
+                  {goalContext.directGoal ? (
+                    <Link
+                      className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.42)] p-3 text-sm font-semibold text-[var(--text-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                      href={getEntityHref("goal", goalContext.directGoal.id)}
+                    >
+                      Direct Goal: {goalContext.directGoal.title}
+                    </Link>
+                  ) : null}
+                  {goalContext.inheritedGoal ? (
+                    <Link
+                      className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.42)] p-3 text-sm font-semibold text-[var(--text-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                      href={getEntityHref("goal", goalContext.inheritedGoal.id)}
+                    >
+                      Goal via Project: {goalContext.inheritedGoal.title}
+                    </Link>
+                  ) : null}
+                </div>
               ) : null}
               {skills.map((skill) => (
                 <Link
@@ -927,7 +966,7 @@ function TaskDetail({
                   Skill: {skill.title}
                 </Link>
               ))}
-              {!project && !goal && skills.length === 0 ? (
+              {!project && goalContext.state === "none" && skills.length === 0 ? (
                 <EmptyState
                   description="This task has no larger object attached."
                   title="No parent relation"

@@ -7,6 +7,7 @@ export type SemanticRelationEntry = {
   href: `/${string}`;
   relationType: string;
   source: string;
+  origins?: readonly ("direct" | "via_project")[];
   targetId: string;
   targetTitle: string;
   targetType: SemanticEntityType;
@@ -34,8 +35,22 @@ function preferredEntry(
   candidate: SemanticRelationEntry,
 ) {
   if (!current) return candidate;
-  if (candidate.direct !== current.direct) return candidate.direct ? candidate : current;
-  return compareEntries(candidate, current) < 0 ? candidate : current;
+  const preferred =
+    candidate.direct !== current.direct
+      ? candidate.direct
+        ? candidate
+        : current
+      : compareEntries(candidate, current) < 0
+        ? candidate
+        : current;
+  const origins = Array.from(
+    new Set([
+      ...(current.origins ?? [current.direct ? "direct" : "via_project"]),
+      ...(candidate.origins ?? [candidate.direct ? "direct" : "via_project"]),
+    ]),
+  );
+
+  return { ...preferred, origins };
 }
 
 export function buildSemanticConnectedContext(

@@ -1,4 +1,4 @@
-import type { Task } from "../../domain";
+import { hasTaskGoalConflict, type Task } from "../../domain";
 import type {
   CalendarTaskRangeInput,
   CreateGeneratedTaskInstanceInput,
@@ -39,6 +39,11 @@ type ScheduleSourceLinkRow = {
   source_type: ScheduleSourceType;
   task_id: string;
   user_id: string;
+};
+
+type ProjectGoalRow = {
+  goal_id: string | null;
+  id: string;
 };
 
 type RepositoryFailure = RepositoryResult<never>;
@@ -283,6 +288,47 @@ async function validateTaskContextOwnership(
   return null;
 }
 
+async function loadActiveProjectGoal(
+  client: SupabaseClientLike,
+  userId: string,
+  projectId: string,
+): Promise<RepositoryResult<ProjectGoalRow>> {
+  const result = (await client
+    .from(realDataTableNames.projects)
+    .select("id,goal_id")
+    .eq("user_id", userId)
+    .eq("id", projectId)
+    .is("archived_at", null)
+    .maybeSingle()) as SupabaseQueryResult<ProjectGoalRow>;
+
+  if (result.error) return adapterFailure("load project goal context");
+  if (!result.data) return notFoundFailure("Project");
+
+  return { data: result.data, ok: true };
+}
+
+async function validateTaskGoalAlignment(
+  client: SupabaseClientLike,
+  userId: string,
+  context: Readonly<{
+    goalId?: string | null;
+    projectId?: string | null;
+  }>,
+): Promise<RepositoryFailure | null> {
+  if (!context.projectId) return null;
+
+  const project = await loadActiveProjectGoal(client, userId, context.projectId);
+  if (!project.ok) return project;
+
+  if (hasTaskGoalConflict(context.goalId, project.data.goal_id)) {
+    return conflictFailure(
+      "This task has a direct goal that conflicts with the goal of its project.",
+    );
+  }
+
+  return null;
+}
+
 function taskListSortColumn(sortBy: TaskListInput["sortBy"]) {
   if (sortBy === "planned") return "planned_date";
   if (sortBy === "scheduled") return "scheduled_start_at";
@@ -448,6 +494,13 @@ export function createSupabaseTaskRepository(
       );
       if (contextFailure) return contextFailure;
 
+      const alignmentFailure = await validateTaskGoalAlignment(
+        client,
+        input.userId,
+        input,
+      );
+      if (alignmentFailure) return alignmentFailure;
+
       const existing = await loadGeneratedTaskInstance(
         client,
         input.userId,
@@ -513,6 +566,13 @@ export function createSupabaseTaskRepository(
         input,
       );
       if (contextFailure) return contextFailure;
+
+      const alignmentFailure = await validateTaskGoalAlignment(
+        client,
+        input.userId,
+        input,
+      );
+      if (alignmentFailure) return alignmentFailure;
 
       const result = (await client
         .from(realDataTableNames.tasks)
@@ -699,6 +759,22 @@ export function createSupabaseTaskRepository(
       );
       if (contextFailure) return contextFailure;
 
+      const currentTask = await getActiveTask(client, input.userId, input.taskId);
+      if (!currentTask.ok) return currentTask;
+
+      const alignmentFailure = await validateTaskGoalAlignment(
+        client,
+        input.userId,
+        {
+          goalId: input.goalId === undefined ? currentTask.data.goal_id : input.goalId,
+          projectId:
+            input.projectId === undefined
+              ? currentTask.data.project_id
+              : input.projectId,
+        },
+      );
+      if (alignmentFailure) return alignmentFailure;
+
       const link = await getScheduleSourceLink(client, input.userId, input.taskId);
       if (!link.ok) return link;
 
@@ -712,9 +788,6 @@ export function createSupabaseTaskRepository(
           "update task",
         );
       }
-
-      const currentTask = await getActiveTask(client, input.userId, input.taskId);
-      if (!currentTask.ok) return currentTask;
 
       if (patchChangesSourceScheduling(patch, currentTask.data)) {
         return sourceLinkedSchedulingFailure();

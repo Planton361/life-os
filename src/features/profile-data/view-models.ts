@@ -1039,6 +1039,7 @@ function projectToPortfolioEntity(
     noteSnippet: project.risk ?? project.description,
     projectEditValues: {
       description: project.description,
+      goalId: project.goalId,
       nextStep: project.nextStep,
       status: project.status,
       title: project.title,
@@ -1201,10 +1202,11 @@ function collectionToPortfolioEntities(
 
     if (entity.type === "task" && project) candidates.push(relationEntry(project, { direct: true, direction: "outgoing", relationType: "belongs to project", source: "tasks.project_id" }));
     if (entity.type === "task" && goal) {
-      candidates.push(relationEntry(goal, { direct: true, direction: "outgoing", relationType: "supports goal", source: "tasks.goal_id" }));
-    } else if (entity.type === "task" && project?.goalId) {
+      candidates.push(relationEntry(goal, { direct: true, direction: "outgoing", relationType: "supports goal", source: "tasks.goal_id", origins: ["direct"] }));
+    }
+    if (entity.type === "task" && project?.goalId) {
       const projectGoal = byId.get(`goal:${project.goalId}`);
-      if (projectGoal) candidates.push(relationEntry(projectGoal, { direct: false, direction: "outgoing", relationType: "supports goal via project", source: "tasks.project_id → projects.goal_id", via: { id: project.id, title: project.title, type: "project" } }));
+      if (projectGoal) candidates.push(relationEntry(projectGoal, { direct: false, direction: "outgoing", relationType: "supports goal via project", source: "tasks.project_id → projects.goal_id", origins: ["via_project"], via: { id: project.id, title: project.title, type: "project" } }));
     }
     if (entity.type === "project" && goal) candidates.push(relationEntry(goal, { direct: true, direction: "outgoing", relationType: "supports goal", source: "projects.goal_id" }));
 
@@ -1225,10 +1227,10 @@ function collectionToPortfolioEntities(
       if (candidate.type === "task" && entity.type === "project" && candidate.projectId === entity.id) candidates.push(relationEntry(candidate, { direct: true, direction: "incoming", relationType: "task in project", source: "tasks.project_id" }));
       if (candidate.type === "project" && entity.type === "goal" && candidate.goalId === entity.id) candidates.push(relationEntry(candidate, { direct: true, direction: "incoming", relationType: "project supports goal", source: "projects.goal_id" }));
       if (candidate.type === "task" && entity.type === "goal") {
-        if (candidate.goalId === entity.id) candidates.push(relationEntry(candidate, { direct: true, direction: "incoming", relationType: "task supports goal", source: "tasks.goal_id" }));
-        else if (candidate.projectId) {
+        if (candidate.goalId === entity.id) candidates.push(relationEntry(candidate, { direct: true, direction: "incoming", relationType: "task supports goal", source: "tasks.goal_id", origins: ["direct"] }));
+        if (candidate.projectId) {
           const candidateProject = byId.get(`project:${candidate.projectId}`);
-          if (candidateProject?.goalId === entity.id) candidates.push(relationEntry(candidate, { direct: false, direction: "incoming", relationType: "task supports goal via project", source: "tasks.project_id → projects.goal_id", via: { id: candidateProject.id, title: candidateProject.title, type: "project" } }));
+          if (candidateProject?.goalId === entity.id) candidates.push(relationEntry(candidate, { direct: false, direction: "incoming", relationType: "task supports goal via project", source: "tasks.project_id → projects.goal_id", origins: ["via_project"], via: { id: candidateProject.id, title: candidateProject.title, type: "project" } }));
         }
       }
     }
