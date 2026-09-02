@@ -23,6 +23,7 @@ export type {
   PortfolioSourceLink,
   PortfolioSkillContext,
   PortfolioSkillEvidence,
+  PortfolioSkillRelatedResource,
   PortfolioSkillSourceTarget,
   PortfolioTaskSkillLink,
   PortfolioStat,

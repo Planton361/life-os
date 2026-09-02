@@ -3140,6 +3140,7 @@ export type Database = {
         | "daily_log"
         | "resource"
         | "area"
+        | "skill"
       resource_relation_type:
         | "source"
         | "context"
@@ -3359,6 +3360,7 @@ export const Constants = {
         "daily_log",
         "resource",
         "area",
+        "skill",
       ],
       resource_relation_type: [
         "source",

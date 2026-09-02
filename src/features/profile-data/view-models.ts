@@ -151,6 +151,7 @@ import type {
   PortfolioLinkedResource,
   PortfolioPriority,
   PortfolioResourceLinkOption,
+  PortfolioSkillRelatedResource,
   PortfolioSkillEvidence,
   PortfolioSkillSourceTarget,
   PortfolioTaskSkillLink,
@@ -661,6 +662,11 @@ type PortfolioRelationLabelLookups = {
     string,
     readonly PortfolioLinkedResource[]
   >;
+  resourceOptionsById: ReadonlyMap<string, PortfolioResourceLinkOption>;
+  skillRelatedResourcesBySkillId: ReadonlyMap<
+    string,
+    readonly PortfolioSkillRelatedResource[]
+  >;
   skillEvidenceBySourceTarget: ReadonlyMap<
     string,
     readonly PortfolioSkillEvidence[]
@@ -715,6 +721,61 @@ function portfolioTaskSkillLinkLookups(
   }
 
   return { bySkillId, byTaskId };
+}
+
+function portfolioSkillRelatedResourceLookups(
+  skills: readonly LifeSkill[],
+  resourceLinksByTarget: ReadonlyMap<
+    string,
+    readonly PortfolioLinkedResource[]
+  >,
+  resourceOptionsById: ReadonlyMap<string, PortfolioResourceLinkOption>,
+) {
+  const result = new Map<string, PortfolioSkillRelatedResource[]>();
+
+  for (const skill of skills) {
+    const byResourceId = new Map<string, PortfolioSkillRelatedResource>();
+    const contextLinks = resourceLinksByTarget.get(`skill:${skill.id}`) ?? [];
+
+    for (const link of contextLinks) {
+      byResourceId.set(link.id, {
+        contextRelationId: link.relationId,
+        id: link.id,
+        origins: ["context"],
+        source: link.source,
+        title: link.title,
+        type: link.type,
+      });
+    }
+
+    for (const evidence of skill.evidence) {
+      const sourceType = "sourceType" in evidence ? evidence.sourceType : undefined;
+      const sourceId = "sourceId" in evidence ? evidence.sourceId : undefined;
+      if (sourceType !== "resource" || typeof sourceId !== "string") continue;
+
+      const resource = resourceOptionsById.get(sourceId);
+      if (!resource) continue;
+      const current = byResourceId.get(sourceId);
+      byResourceId.set(sourceId, {
+        archived: resource.archived,
+        contextRelationId: current?.contextRelationId,
+        id: sourceId,
+        origins: current ? ["context", "evidence"] : ["evidence"],
+        source: resource.source,
+        title: resource.title,
+        type: resource.type,
+      });
+    }
+
+    const rows = Array.from(byResourceId.values()).sort(
+      (left, right) =>
+        left.title.localeCompare(right.title, undefined, { sensitivity: "base" }) ||
+        left.id.localeCompare(right.id),
+    );
+    result.set(skill.id, rows);
+  }
+
+  return result;
 }
 
 function isPortfolioSkillEvidenceSourceType(
@@ -821,8 +882,10 @@ function portfolioRelationLabelLookups(
       ),
     resourceLinkOptions: [],
     resourceLinksByTarget: new Map(),
+    resourceOptionsById: new Map(),
     skillEvidenceBySourceTarget: new Map(),
     skillEvidenceSourceLabels: new Map(),
+    skillRelatedResourcesBySkillId: new Map(),
     skillSourceTargets: [],
     skillTitles: new Map(
       collection.skills.map((skill) => [skill.id, skill.title]),
@@ -1155,6 +1218,8 @@ function skillToPortfolioEntity(
         portfolioSkillEvidenceRow(skill, evidence, lookups),
       ),
       linkedTasks: lookups.taskSkillLinksBySkillId.get(skill.id) ?? [],
+      relatedResources:
+        lookups.skillRelatedResourcesBySkillId.get(skill.id) ?? [],
       sourceTargets: lookups.skillSourceTargets,
     },
   };
@@ -1236,6 +1301,24 @@ function collectionToPortfolioEntities(
     }
 
     for (const resource of entity.linkedResources ?? []) candidates.push({ archived: false, direct: true, direction: "incoming", href: `/resources?selected=${resource.id}`, relationType: resource.relationType, source: "resource_relations", targetId: resource.id, targetTitle: resource.title, targetType: "resource" });
+    if (entity.type === "skill") {
+      for (const resource of entity.skillContext?.relatedResources ?? []) {
+        for (const origin of resource.origins) {
+          candidates.push({
+            archived: Boolean(resource.archived),
+            direct: true,
+            direction: "incoming",
+            href: `/resources?selected=${resource.id}`,
+            origins: [origin],
+            relationType: origin,
+            source: origin === "context" ? "resource_relations" : "skill_evidence",
+            targetId: resource.id,
+            targetTitle: resource.title,
+            targetType: "resource",
+          });
+        }
+      }
+    }
 
     return { ...entity, connectedContext: buildSemanticConnectedContext(candidates) };
   });
@@ -2477,10 +2560,11 @@ async function getManualPortfolioResourceLinks(
 ): Promise<{
   linksByTarget: ReadonlyMap<string, readonly PortfolioLinkedResource[]>;
   options: readonly PortfolioResourceLinkOption[];
+  optionsById: ReadonlyMap<string, PortfolioResourceLinkOption>;
 }> {
   const repository = createSupabaseResourceRepository(client);
   const [resourceResult, relationResult] = await Promise.all([
-    repository.getResourcesByUser(userId, userId),
+    repository.getResourcesByUser(userId, userId, true),
     repository.getResourceRelationsByUser(userId, userId),
   ]);
 
@@ -2488,22 +2572,26 @@ async function getManualPortfolioResourceLinks(
     return {
       linksByTarget: new Map(),
       options: [],
+      optionsById: new Map(),
     };
   }
 
   const resourcesById = new Map(
     resourceResult.data.map((resource) => [resource.id, resource]),
   );
-  const options = resourceResult.data.slice(0, 48).map((resource) => ({
+  const allOptions = resourceResult.data.map((resource) => ({
+    archived: Boolean(resource.archivedAt),
     id: resource.id,
     source: portfolioResourceSourceLabel(resource),
     title: resource.title,
     type: resource.type,
   }));
+  const options = allOptions.filter((resource) => !resource.archived).slice(0, 48);
+  const optionsById = new Map(allOptions.map((resource) => [resource.id, resource]));
   const linksByTarget = new Map<string, PortfolioLinkedResource[]>();
 
   for (const relation of relationResult.data) {
-    if (relation.targetType !== "project" && relation.targetType !== "goal" && relation.targetType !== "task") {
+    if (relation.targetType !== "project" && relation.targetType !== "goal" && relation.targetType !== "task" && relation.targetType !== "skill") {
       continue;
     }
 
@@ -2513,6 +2601,7 @@ async function getManualPortfolioResourceLinks(
     const targetKey = `${relation.targetType}:${relation.targetId}`;
     const links = linksByTarget.get(targetKey) ?? [];
     links.push({
+      archived: Boolean(resource.archivedAt),
       createdAt: relation.createdAt,
       id: resource.id,
       relationId: relation.id,
@@ -2527,6 +2616,7 @@ async function getManualPortfolioResourceLinks(
   return {
     linksByTarget,
     options,
+    optionsById,
   };
 }
 
@@ -2715,8 +2805,14 @@ async function getManualPortfolioRelationLabelLookups(
       : titleMapFromRows(projectResult.data ?? []),
     resourceLinkOptions: resourceLookups.options,
     resourceLinksByTarget: resourceLookups.linksByTarget,
+    resourceOptionsById: resourceLookups.optionsById,
     skillEvidenceBySourceTarget: new Map(),
     skillEvidenceSourceLabels: skillSourceTargets?.labels ?? new Map(),
+    skillRelatedResourcesBySkillId: portfolioSkillRelatedResourceLookups(
+      skills,
+      resourceLookups.linksByTarget,
+      resourceLookups.optionsById,
+    ),
     skillSourceTargets: skillSourceTargets?.targets ?? [],
     skillTitles: new Map(skills.map((skill) => [skill.id, skill.title])),
     taskSkillLinksBySkillId: taskSkillLookups.bySkillId,

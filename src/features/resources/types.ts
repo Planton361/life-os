@@ -58,7 +58,12 @@ export type ResourceRelationType =
   | "follow_up_of"
   | "same_topic";
 
-export type ResourceRelationTargetType = "project" | "goal" | "task" | "resource";
+export type ResourceRelationTargetType =
+  | "project"
+  | "goal"
+  | "task"
+  | "resource"
+  | "skill";
 
 export type ResourceDataRelationType =
   | "source"
@@ -135,6 +140,7 @@ export type ResourceItem = {
   relatedProjects?: ResourceRelationViewModel[];
   relatedGoals?: ResourceRelationViewModel[];
   relatedTasks?: ResourceRelationViewModel[];
+  relatedSkills?: ResourceRelationViewModel[];
   relatedResourceRelations?: ResourceRelationViewModel[];
   actions: ResourceAction[];
   connectedContext?: SemanticConnectedContext;

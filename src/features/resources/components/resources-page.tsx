@@ -78,6 +78,7 @@ const relationTargetTypeLabels: Record<ResourceRelationTargetType, string> = {
   goal: "Goal",
   project: "Project",
   resource: "Resource",
+  skill: "Skill",
   task: "Task",
 };
 
@@ -865,6 +866,7 @@ function ResourceRelationCreateForm({
       target.type === selectedTargetType &&
       !(target.type === "resource" && target.id === resource.id),
   );
+  const skillContext = selectedTargetType === "skill";
   const disabled = targets.length === 0;
   const message = createState ? relationCreateMessages[createState] : null;
 
@@ -931,25 +933,33 @@ function ResourceRelationCreateForm({
             ))}
           </select>
         </label>
-        <label
-          className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]"
-          htmlFor="resource-relation-type"
-        >
-          Relation
-          <select
-            aria-label="Relation"
-            className="min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.78)] px-2 text-[11px] normal-case text-[var(--text-primary)] outline-none focus:border-[var(--focus-ring)]"
-            defaultValue="related"
-            id="resource-relation-type"
-            name="relationType"
+        {skillContext ? (
+          <div className="rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.48)] px-2 py-2 text-[10px] leading-4 text-[var(--text-muted)]">
+            <input name="relationType" type="hidden" value="context" />
+            Kontext-Verknüpfung: Diese Resource ist für den Skill relevant.
+            Sie erzeugt keine Evidence und verändert keinen Skill-Fortschritt.
+          </div>
+        ) : (
+          <label
+            className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]"
+            htmlFor="resource-relation-type"
           >
-            {Object.entries(dataRelationTypeLabels).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
+            Relation
+            <select
+              aria-label="Relation"
+              className="min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.78)] px-2 text-[11px] normal-case text-[var(--text-primary)] outline-none focus:border-[var(--focus-ring)]"
+              defaultValue="related"
+              id="resource-relation-type"
+              name="relationType"
+            >
+              {Object.entries(dataRelationTypeLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <button
           className="min-h-8 rounded-full border border-[rgba(95,200,215,.34)] bg-[rgba(95,200,215,.14)] px-3 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(95,200,215,.48)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:border-[var(--border-subtle)] disabled:bg-[rgba(18,28,43,.34)] disabled:text-[var(--text-muted)]"
           disabled={disabled}
@@ -1034,6 +1044,7 @@ function ResourceRelationInspector({
   const relatedProjects = resource.relatedProjects ?? [];
   const relatedGoals = resource.relatedGoals ?? [];
   const relatedTasks = resource.relatedTasks ?? [];
+  const relatedSkills = resource.relatedSkills ?? [];
   const relatedResourceRelations = resource.relatedResourceRelations ?? [];
 
   return (
@@ -1162,6 +1173,13 @@ function ResourceRelationInspector({
               relations={relatedTasks}
               resourceId={resource.id}
               title="Verknüpfte Tasks"
+            />
+            <ResourceTargetRelationList
+              emptyText="Keine verknüpften Skills."
+              profileId={profileId}
+              relations={relatedSkills}
+              resourceId={resource.id}
+              title="Verknüpfte Skills"
             />
             <ResourceTargetRelationList
               emptyText="Keine verknüpften Resources."

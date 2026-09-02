@@ -55,4 +55,26 @@ describe("semantic relation read model", () => {
     ]);
     expect(buildSemanticConnectedContext([archived], { historical: true }).tasks).toHaveLength(1);
   });
+
+  it("deduplicates Resource↔Skill context and evidence while retaining both origins", () => {
+    const context = {
+      ...base,
+      origins: ["context"] as const,
+      relationType: "context",
+      source: "resource_relations",
+      targetId: "resource",
+      targetType: "resource" as const,
+    };
+    const evidence = {
+      ...context,
+      origins: ["evidence"] as const,
+      relationType: "evidence",
+      source: "skill_evidence",
+    };
+
+    const result = buildSemanticConnectedContext([evidence, context]);
+
+    expect(result.resources).toHaveLength(1);
+    expect(result.resources[0]?.origins).toEqual(["evidence", "context"]);
+  });
 });

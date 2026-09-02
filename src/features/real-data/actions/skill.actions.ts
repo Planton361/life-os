@@ -50,7 +50,10 @@ function optionalNullableFormStringIfPresent(formData: FormData, key: string) {
 function optionalFormNumber(formData: FormData, key: string) {
   if (!formData.has(key)) return undefined;
 
-  const value = Number(formString(formData, key));
+  const raw = formString(formData, key);
+  if (!raw) return undefined;
+
+  const value = Number(raw);
 
   return Number.isFinite(value) ? value : undefined;
 }
@@ -91,14 +94,12 @@ function evidenceSourceTypeFromForm(formData: FormData) {
   return formString(formData, "sourceType");
 }
 
-function revalidateSkillRoutes(sourceType?: string) {
+function revalidateSkillRoutes() {
   revalidatePath("/portfolio");
   revalidatePath("/education");
   revalidatePath("/coding");
+  revalidatePath("/resources");
 
-  if (sourceType === "resource") {
-    revalidatePath("/resources");
-  }
 }
 
 function skillRedirectUrl(
@@ -406,7 +407,7 @@ export async function createSkillEvidenceAction(
     };
   }
 
-  revalidateSkillRoutes(result.data.sourceType);
+  revalidateSkillRoutes();
 
   return {
     evidenceId: result.data.id,
@@ -474,7 +475,7 @@ export async function updateSkillEvidenceAction(
     };
   }
 
-  revalidateSkillRoutes(result.data.sourceType);
+  revalidateSkillRoutes();
 
   return {
     evidenceId: result.data.id,
@@ -515,7 +516,7 @@ export async function deleteSkillEvidenceAction(
     };
   }
 
-  revalidateSkillRoutes(result.data.sourceType);
+  revalidateSkillRoutes();
 
   return {
     evidenceId: result.data.id,

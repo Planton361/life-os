@@ -1,4 +1,9 @@
 export type SemanticEntityType = "task" | "project" | "goal" | "resource" | "skill";
+export type SemanticRelationOrigin =
+  | "direct"
+  | "via_project"
+  | "context"
+  | "evidence";
 
 export type SemanticRelationEntry = {
   archived: boolean;
@@ -7,7 +12,7 @@ export type SemanticRelationEntry = {
   href: `/${string}`;
   relationType: string;
   source: string;
-  origins?: readonly ("direct" | "via_project")[];
+  origins?: readonly SemanticRelationOrigin[];
   targetId: string;
   targetTitle: string;
   targetType: SemanticEntityType;

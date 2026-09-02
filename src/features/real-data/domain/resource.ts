@@ -43,6 +43,7 @@ export const resourceRelationTargetTypes = [
   "daily_log",
   "resource",
   "area",
+  "skill",
 ] as const;
 
 export const supportedResourceRelationTargetTypes = [
@@ -50,6 +51,7 @@ export const supportedResourceRelationTargetTypes = [
   "goal",
   "task",
   "resource",
+  "skill",
 ] as const;
 
 export const resourceRelationTypes = [

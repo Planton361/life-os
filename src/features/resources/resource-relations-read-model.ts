@@ -6,6 +6,7 @@ import type {
   SupabaseQueryResult,
   TableRow,
 } from "@/features/real-data/supabase";
+import { createSupabaseSkillRepository } from "@/features/real-data/supabase";
 import type {
   ResourceDataRelationType,
   ResourceRelationCreateTarget,
@@ -198,19 +199,72 @@ async function readResourceTargets(
   );
 }
 
+async function readSkillTargets(
+  client: SupabaseClientLike,
+  userId: string,
+  ids: readonly string[],
+) {
+  if (ids.length === 0) return [];
+
+  const result = await createSupabaseSkillRepository(client).getActiveSkillsByUser(
+    userId,
+  );
+  if (!result.ok) return [];
+
+  const requestedIds = new Set(ids);
+  return result.data
+    .filter(
+      (skill) =>
+        skill.status === "active" &&
+        skill.archivedAt === null &&
+        requestedIds.has(skill.id),
+    )
+    .map(
+      (skill): ResolvedResourceRelationTarget => ({
+        id: skill.id,
+        missing: false,
+        progress: null,
+        status: skill.level ?? skill.category ?? skill.status,
+        title: skill.name,
+        type: "skill",
+      }),
+    );
+}
+
+async function getSkillRelationCreateTargets(
+  client: SupabaseClientLike,
+  userId: string,
+): Promise<ResourceRelationCreateTarget[]> {
+  const result = await createSupabaseSkillRepository(client).getActiveSkillsByUser(
+    userId,
+  );
+  if (!result.ok) return [];
+
+  return result.data
+    .filter((skill) => skill.status === "active" && skill.archivedAt === null)
+    .slice(0, 50)
+    .map((skill) => ({
+      id: skill.id,
+      meta: `${skill.level ?? skill.category ?? skill.status} · updated ${skill.updatedAt.slice(0, 10)}`,
+      title: skill.name,
+      type: "skill" as const,
+    }));
+}
+
 export async function resolveResourceRelationTargets({
   client,
   relations,
   userId,
 }: ResolveResourceRelationTargetsInput) {
-  const [projects, goals, tasks, resources] = await Promise.all([
+  const [projects, goals, tasks, resources, skills] = await Promise.all([
     readProjectTargets(client, userId, targetIdsByType(relations, "project")),
     readGoalTargets(client, userId, targetIdsByType(relations, "goal")),
     readTaskTargets(client, userId, targetIdsByType(relations, "task")),
     readResourceTargets(client, userId, targetIdsByType(relations, "resource")),
+    readSkillTargets(client, userId, targetIdsByType(relations, "skill")),
   ]);
 
-  return createTargetMap([...projects, ...goals, ...tasks, ...resources]);
+  return createTargetMap([...projects, ...goals, ...tasks, ...resources, ...skills]);
 }
 
 export function resourceRelationToViewModel(
@@ -242,7 +296,7 @@ export async function getResourceRelationCreateTargets(
   client: SupabaseClientLike,
   userId: string,
 ): Promise<ResourceRelationCreateTarget[]> {
-  const [projectResult, goalResult, taskResult, resourceResult] =
+  const [projectResult, goalResult, taskResult, resourceResult, skillTargets] =
     await Promise.all([
       client
         .from("projects")
@@ -280,6 +334,7 @@ export async function getResourceRelationCreateTargets(
         .limit(50) as unknown as Promise<
         SupabaseQueryResult<readonly ResourceTargetRow[]>
       >,
+      getSkillRelationCreateTargets(client, userId),
     ]);
 
   return [
@@ -315,5 +370,6 @@ export async function getResourceRelationCreateTargets(
           title: row.title,
           type: "resource" as const,
         }))),
+    ...skillTargets,
   ];
 }

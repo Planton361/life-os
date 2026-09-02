@@ -66,13 +66,21 @@ export const resourceLifecycleInputSchema = z.object({
 });
 export type ResourceLifecycleInput = z.infer<typeof resourceLifecycleInputSchema>;
 
-export const linkResourceToTargetInputSchema = z.object({
-  profileId: requiredUuidSchema,
-  relationType: optionalResourceRelationTypeSchema,
-  resourceId: requiredUuidSchema,
-  targetId: requiredUuidSchema,
-  targetType: requiredEnumSchema(supportedResourceRelationTargetTypes),
-});
+export const linkResourceToTargetInputSchema = z
+  .object({
+    profileId: requiredUuidSchema,
+    relationType: optionalResourceRelationTypeSchema,
+    resourceId: requiredUuidSchema,
+    targetId: requiredUuidSchema,
+    targetType: requiredEnumSchema(supportedResourceRelationTargetTypes),
+  })
+  .refine(
+    (input) => input.targetType !== "skill" || input.relationType === "context",
+    {
+      message: "Resource-to-skill links are context relations.",
+      path: ["relationType"],
+    },
+  );
 
 export const unlinkResourceFromTargetInputSchema = z.object({
   profileId: requiredTrimmedStringSchema(),

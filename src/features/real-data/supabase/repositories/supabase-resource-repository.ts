@@ -152,6 +152,18 @@ async function verifyTargetOwnership(
     }
     case "resource":
       return verifyResourceOwnership(client, userId, targetId);
+    case "skill": {
+      const result = (await client
+        .from(realDataTableNames.skills)
+        .select("id")
+        .eq("user_id", userId)
+        .eq("id", targetId)
+        .eq("status", "active")
+        .is("archived_at", null)
+        .maybeSingle()) as SupabaseQueryResult<{ id: string }>;
+
+      return Boolean(!result.error && result.data);
+    }
     case "task": {
       const result = (await client
         .from(realDataTableNames.tasks)

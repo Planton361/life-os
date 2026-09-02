@@ -52,6 +52,7 @@ import type {
   PortfolioProjectEntity,
   PortfolioResourceLinkOption,
   PortfolioSkillEvidence,
+  PortfolioSkillRelatedResource,
   PortfolioTaskEntity,
   PortfolioViewModel,
   ProjectWorkbenchViewModel,
@@ -796,6 +797,74 @@ function TaskSkillsSection({
             </li>
           ))}
         </ul>
+      )}
+    </section>
+  );
+}
+
+function SkillRelatedResourcesSection({
+  resources,
+}: Readonly<{
+  resources: readonly PortfolioSkillRelatedResource[];
+}>) {
+  return (
+    <section aria-labelledby="skill-related-resources-heading">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h3
+            className="text-[13px] font-semibold text-[var(--text-primary)]"
+            id="skill-related-resources-heading"
+          >
+            Related Resources
+          </h3>
+          <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
+            Wissenskontext und Evidence bleiben getrennte Aussagen. Ein
+            Kontext-Link verändert keinen Skill-Fortschritt.
+          </p>
+        </div>
+        <Pill accent="var(--accent-cyan)">{resources.length} total</Pill>
+      </div>
+      {resources.length > 0 ? (
+        <ul className="mt-2 grid gap-1.5" data-skill-related-resources>
+          {resources.map((resource) => (
+            <li
+              className="flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.40)] px-3 py-2"
+              data-skill-related-resource={resource.id}
+              key={resource.id}
+            >
+              <div className="min-w-0">
+                <Link
+                  className="text-[11px] font-semibold text-[var(--accent-cyan)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                  href={`/resources?selected=${encodeURIComponent(resource.id)}`}
+                >
+                  {resource.title}
+                </Link>
+                <p className="mt-1 text-[10px] text-[var(--text-muted)]">
+                  {resource.type}
+                  {resource.archived ? " · Archiviert" : ""}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {resource.origins.map((origin) => (
+                  <Pill
+                    accent={
+                      origin === "evidence"
+                        ? "var(--accent-orange)"
+                        : "var(--accent-cyan)"
+                    }
+                    key={origin}
+                  >
+                    {origin === "evidence" ? "Evidence" : "Context"}
+                  </Pill>
+                ))}
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-2 rounded-[10px] border border-dashed border-[var(--border-subtle)] px-3 py-2 text-[10px] text-[var(--text-muted)]">
+          Noch keine Resource als Skill-Kontext oder Evidence verbunden.
+        </p>
       )}
     </section>
   );
@@ -2324,6 +2393,10 @@ export function PortfolioContextPanel({
                 </div>
               </section>
 
+              <SkillRelatedResourcesSection
+                resources={entity.skillContext.relatedResources ?? []}
+              />
+
               <WorkbenchCreateSection
                 description="Archiviert die Skill per Soft Archive. Die aktive Skills View blendet archivierte Skills aus."
                 heading="Skill archivieren"
@@ -2346,10 +2419,6 @@ export function PortfolioContextPanel({
                   <PreparedWorkbenchSection
                     body="Project-Verknüpfungen folgen in einem separaten Relation-Scope."
                     title="Related Projects"
-                  />
-                  <PreparedWorkbenchSection
-                    body="Resource-Verknüpfungen folgen ohne Fake-Karten."
-                    title="Related Resources"
                   />
                   <PreparedWorkbenchSection
                     body="Skill Map bleibt vorbereitet und rendert noch keinen Graph."

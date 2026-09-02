@@ -597,7 +597,7 @@ Capture or open Task
 
 #### C1.1-04 – Resource↔Skill Context and Backlink Projection
 
-**Current slice.**
+**Completed.**
 
 **Goal:** Let Resources provide typed Skill context and show one deterministic, bounded work-context projection across Task, Project, Goal, Skill and Resource surfaces.
 
@@ -624,6 +624,8 @@ Capture or open Task
 **Report Format:** `Erstellt:`, `Geändert:`, `Nicht geändert:`, `Validierung:`, `Offene Punkte:`, `Risiken:`.
 
 #### C1.1-05 – C1.1 Proof and Registry Closure
+
+**Current slice.**
 
 **Goal:** Prove the complete C1.1 flow and record honest implementation truth without broad test cleanup.
 

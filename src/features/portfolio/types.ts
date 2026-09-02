@@ -69,6 +69,7 @@ export type PortfolioRelation = {
 };
 
 export type PortfolioLinkedResource = {
+  archived?: boolean;
   id: string;
   relationId?: string;
   title: string;
@@ -79,6 +80,7 @@ export type PortfolioLinkedResource = {
 };
 
 export type PortfolioResourceLinkOption = {
+  archived?: boolean;
   id: string;
   title: string;
   type: string;
@@ -155,6 +157,16 @@ export type PortfolioTaskSkillLink = {
   taskTitle: string;
 };
 
+export type PortfolioSkillRelatedResource = {
+  archived?: boolean;
+  contextRelationId?: string;
+  id: string;
+  origins: readonly ("context" | "evidence")[];
+  source?: string | null;
+  title: string;
+  type: string;
+};
+
 export type PortfolioSkillEditValues = {
   category?: string;
   level?: string;
@@ -171,6 +183,7 @@ export type PortfolioSkillContext = {
   editValues?: PortfolioSkillEditValues;
   evidenceRows?: readonly PortfolioSkillEvidence[];
   linkedTasks?: readonly PortfolioTaskSkillLink[];
+  relatedResources?: readonly PortfolioSkillRelatedResource[];
   sourceTargets?: readonly PortfolioSkillSourceTarget[];
 };
 

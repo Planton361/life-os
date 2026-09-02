@@ -13,7 +13,14 @@ const groups = [
 ] as const;
 
 function RelationEntry({ entry }: Readonly<{ entry: SemanticRelationEntry }>) {
-  const pathLabel = entry.origins?.includes("direct") && entry.origins.includes("via_project")
+  const origins = entry.origins ?? [entry.direct ? "direct" : "via_project"];
+  const pathLabel = origins.includes("context") && origins.includes("evidence")
+    ? "Context + Evidence"
+    : origins.includes("context")
+      ? "Context"
+      : origins.includes("evidence")
+        ? "Evidence"
+    : origins.includes("direct") && origins.includes("via_project")
     ? `Direkt und via ${entry.via?.type ?? "Project"}`
     : entry.direct
       ? "Direkt"

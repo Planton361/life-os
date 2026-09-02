@@ -3074,6 +3074,7 @@ async function getManualResourcesFromSupabase(
         relatedGoals: [],
         relatedProjects: [],
         relatedResourceRelations: [],
+        relatedSkills: [],
         relatedTasks: [],
         relations: [],
       })),
@@ -3116,6 +3117,8 @@ async function getManualResourcesFromSupabase(
               href: `/portfolio?view=${relation.targetType}s&selected=${relation.targetId}` as `/${string}`,
               relationType: relation.relationType,
               source: "resource_relations",
+              origins:
+                relation.targetType === "skill" ? ["context"] : ["direct"],
               targetId: relation.targetId,
               targetTitle: relation.targetTitle,
               targetType: relation.targetType,
@@ -3134,6 +3137,9 @@ async function getManualResourcesFromSupabase(
         ),
         relatedResourceRelations: resourceRelations.filter(
           (relation) => relation.targetType === "resource",
+        ),
+        relatedSkills: resourceRelations.filter(
+          (relation) => relation.targetType === "skill",
         ),
         relatedTasks: resourceRelations.filter(
           (relation) => relation.targetType === "task",
