@@ -435,10 +435,15 @@ cutover occurred.
 
 #### SR1-04B – Personal Data Transfer
 
-**Current slice:** Execute the approved personal-data transfer only after a
-fresh read-only preflight confirms the SR1-04A contract remains applicable.
-Keep the old stack and fallback intact; runtime cutover follows only after the
-personal transfer is independently proven.
+**Completed:** The personal data transfer, candidate preservation and
+read-only Target Runtime proof are complete. The old stack remains the writer
+and fallback; no runtime cutover occurred.
+
+#### SR1-04C – Runtime Cutover
+
+**Current slice:** Plan and execute the separately approved runtime cutover
+only after preserving the SR1-04B Target Candidate and its read-only proof.
+Keep rollback boundaries explicit; C1.1 remains paused.
 
 ## 4.2 Paused Work Block: C1.1 – Work Graph Integrity & Task Context
 

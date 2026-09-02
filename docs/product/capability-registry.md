@@ -63,6 +63,7 @@ C1 Core Work Graph
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
+| SR1-04 personal Target candidate | `CONNECTED_GAP` | personal transfer, candidate-volume preservation, same-user reauthorization and authenticated read-only runtime/browser proof passed on the isolated local Target | runtime cutover remains outstanding; Source remains writer/fallback |
 | Quick Thought → Inbox | `CONNECTED` | Inbox capture action and reload proof | maintain |
 | Tasks Today summary | `CONNECTED` | central server-side Dashboard task projection; completed/open count semantics | maintain |
 | Focus Time summary | `UI_ONLY` | honest unavailable source state | add canonical focus/deep-work classification before deriving minutes |
