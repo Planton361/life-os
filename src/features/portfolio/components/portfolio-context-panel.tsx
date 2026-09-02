@@ -1042,9 +1042,12 @@ function ProjectTaskCard({
     <article className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.40)] p-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-[12px] font-semibold leading-4 text-[var(--text-primary)]">
+          <Link
+            className="text-[12px] font-semibold leading-4 text-[var(--accent-cyan)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+            href={`/portfolio?view=tasks&selected=${encodeURIComponent(task.id)}`}
+          >
             {task.title}
-          </p>
+          </Link>
           <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
             {meta.join(" · ")}
           </p>
@@ -1083,9 +1086,12 @@ function GoalProjectCard({
     <article className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.40)] p-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-[12px] font-semibold leading-4 text-[var(--text-primary)]">
+          <Link
+            className="text-[12px] font-semibold leading-4 text-[var(--accent-cyan)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+            href={`/portfolio?view=projects&selected=${encodeURIComponent(project.id)}`}
+          >
             {project.title}
-          </p>
+          </Link>
           <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
             {portfolioStatusMeta[project.status].label} · {taskCount}{" "}
             verknüpfte Tasks

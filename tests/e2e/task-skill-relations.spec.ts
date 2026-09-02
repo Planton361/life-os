@@ -1,64 +1,8 @@
-import { readFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
-
-const host = process.env.PLAYWRIGHT_HOST ?? "127.0.0.1";
-const port = process.env.PLAYWRIGHT_PORT ?? "3000";
-const baseUrl = `http://${host}:${port}`;
-
-type StoredCookie = {
-  domain?: string;
-  expires?: number;
-  httpOnly?: boolean;
-  name: string;
-  path?: string;
-  sameSite?: "Strict" | "Lax" | "None";
-  secure?: boolean;
-  url?: string;
-  value: string;
-};
+import { signUpTechnicalManualUser } from "./support/local-manual-auth";
 
 async function openAuthenticatedManualPortfolio(page: Page, stamp: number) {
-  const storageStatePath = process.env.PLAYWRIGHT_SUPABASE_AUTH_STATE;
-  let restoredSession = false;
-
-  if (storageStatePath) {
-    try {
-      const storageState = JSON.parse(
-        await readFile(storageStatePath, "utf8"),
-      ) as { cookies?: StoredCookie[] };
-      await page.context().addCookies(storageState.cookies ?? []);
-      restoredSession = Boolean(storageState.cookies?.length);
-    } catch {
-      restoredSession = false;
-    }
-  }
-
-  test.skip(
-    !restoredSession &&
-      (!process.env.NEXT_PUBLIC_SUPABASE_URL ||
-        (!process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY &&
-          !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)),
-    "Requires a saved local auth state or a configured local Supabase signup path.",
-  );
-
-  await page.context().addCookies([
-    {
-      httpOnly: true,
-      name: "life_os_profile",
-      sameSite: "Lax",
-      url: baseUrl,
-      value: "manual",
-    },
-  ]);
-
-  if (!restoredSession) {
-    await page.goto("/settings#supabase-session");
-    const authPanel = page.locator("#supabase-session");
-    await authPanel.getByLabel("Email").fill(`c1-1-02-${stamp}@example.local`);
-    await authPanel.getByLabel("Password").fill(`C1proof-${stamp}`);
-    await authPanel.getByRole("button", { name: "Sign up" }).click();
-    await expect(page).toHaveURL(/\/inbox$/);
-  }
+  await signUpTechnicalManualUser(page, "c1-1-02", stamp);
 
   await page.goto("/portfolio?view=tasks");
   await expect(page.locator('form[aria-label="Task erstellen"]')).toBeVisible();

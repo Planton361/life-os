@@ -1,33 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-
-const host = process.env.PLAYWRIGHT_HOST ?? "127.0.0.1";
-const port = process.env.PLAYWRIGHT_PORT ?? "3000";
-const baseUrl = `http://${host}:${port}`;
-
-async function authenticateManual(page: Page) {
-  test.skip(
-    !process.env.TARGET_EMAIL || !process.env.TARGET_PASSWORD,
-    "Requires the authorized local Target credentials.",
-  );
-
-  await page.context().addCookies([
-    {
-      httpOnly: true,
-      name: "life_os_profile",
-      sameSite: "Lax",
-      url: baseUrl,
-      value: "manual",
-    },
-  ]);
-  await page.goto("/settings#supabase-session");
-
-  const panel = page.locator("#supabase-session");
-  await expect(panel.getByRole("button", { name: "Sign in" })).toBeVisible();
-  await panel.getByLabel("Email").fill(process.env.TARGET_EMAIL!);
-  await panel.getByLabel("Password").fill(process.env.TARGET_PASSWORD!);
-  await panel.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/inbox(?:#.*)?$/);
-}
+import { signUpTechnicalManualUser } from "./support/local-manual-auth";
 
 async function createResource(page: Page, title: string) {
   await page.goto("/resources");
@@ -80,7 +52,7 @@ test("C1.1-04 keeps Resource↔Skill context distinct from evidence across backl
   const skillATitle = `C11 skill context A ${stamp}`;
   const skillBTitle = `C11 skill context B ${stamp}`;
 
-  await authenticateManual(page);
+  await signUpTechnicalManualUser(page, "c1-1-04", stamp);
   const resourceId = await createResource(page, resourceTitle);
   const skillAId = await createSkill(page, skillATitle);
   const skillBId = await createSkill(page, skillBTitle);

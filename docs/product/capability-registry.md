@@ -151,10 +151,10 @@ C1 Core Work Graph
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
 | Task create/edit/lifecycle | `CONNECTED` | K1.1A Portfolio Task Detail, task actions/repository, reload proof | maintain |
-| Task relation to Project/Goal | `CONNECTED` | nullable Task→Project/Goal fields, server-authenticated/Zod/user-scoped alignment checks and focused reload proof | maintain explicit user choices; no silent relinking |
-| Task relation to Skill/Resource | `CONNECTED` | Resource link/unlink via `resource_relations`; C1.1-02 adds owned n:m `task_skill_links`, idempotent link, explicit unlink, Task detail projection and Skill backlink without creating Evidence | maintain endpoint ownership, reload and no-auto-Evidence proofs |
-| Project Goal inheritance in Task context | `CONNECTED` | direct, via-Project, redundant and existing-conflict states are explicit; Task and Project writes reject new contradictions, and read models deduplicate matching paths | preserve existing rows; resolve any future reported existing conflicts deliberately |
-| Core work graph backlinks | `CONNECTED` | Task/Project/Goal alignment plus Task↔Skill and Resource↔Skill context backlinks are user-scoped, reload-proven and deduplicate direct, via-Project, Context and Evidence provenance | retain bounded explicit relations; graph visualization stays deferred |
+| Task relation to Project/Goal | `CONNECTED` | nullable Task→Project/Goal fields, server-authenticated/Zod/user-scoped alignment checks and C1.1 integrated Target reload proof | maintain explicit user choices; no silent relinking |
+| Task relation to Skill/Resource | `CONNECTED` | owned n:m `task_skill_links` plus Resource relations, idempotent link/unlink, Task detail projection and Skill backlink without creating Evidence; C1.1 integrated proof PASS | maintain endpoint ownership, reload and no-auto-Evidence proofs |
+| Project Goal inheritance in Task context | `CONNECTED` | direct, via-Project, redundant and existing-conflict states are explicit; Task and Project writes reject new contradictions, and C1.1 integrated read models deduplicate matching paths | preserve existing rows; resolve any future reported existing conflicts deliberately |
+| Core work graph backlinks | `CONNECTED` | C1.1 integrated Target proof covers Task/Project/Goal/Skill/Resource navigation, reload, ownership boundaries and deterministic direct, via-Project, Context and Evidence provenance | retain bounded explicit relations; graph visualization stays deferred |
 | Project create/edit/status/archive | `CONNECTED` | project actions/repository | add restore/complete semantics later |
 | Goal create/edit/status/archive | `CONNECTED` | goal actions/repository | add achieve/restore semantics later |
 | Skill create/edit/archive | `CONNECTED` | skill actions/repository | maintain |
@@ -178,12 +178,12 @@ C1 Core Work Graph
 | Resource create/read | `CONNECTED` | K1.1B canonical Resource create/edit read model with reload proof | maintain |
 | Resource inspector | `CONNECTED` | K1.1B editable metadata, archive status and real relation sections | maintain |
 | Resource archive/restore | `CONNECTED` | K1.1B soft archive via `archived_at` and restore lifecycle | maintain |
-| Resource relations | `CONNECTED` | K1.1B Resource inspector link/unlink plus Task, Project, Goal and C1.1-04 owned Skill Context links; Skill Context is explicitly separate from Evidence | relation-type editing remains separate future depth |
+| Resource relations | `CONNECTED` | Resource inspector link/unlink plus owned Task, Project, Goal and Skill Context links; C1.1 integrated proof preserves separate Evidence semantics and reload-stable backlinks | relation-type editing remains separate future depth |
 | Project/Goal workbench display | `CONNECTED` | relation read model | maintain |
 | Resource search | `CONNECTED` | K1.1B user-scoped Manual read model filter across title, description, URL and type | tags/full-text ranking remain deferred |
 | Files/attachments | `NOT_STARTED` | none | storage/privacy decision |
 | Notes/wiki resources | `CONNECTED_GAP` | resource/note concepts | canonical Note/Wiki model needed |
-| Semantic relation read model | `CONNECTED` | server-side projection of `tasks.project_id`, `tasks.goal_id`, `projects.goal_id`, `resource_relations`, Skill Evidence and C1.1-02 `task_skill_links`; deterministic dedupe preserves direct, via-Project, Context and Evidence origins | wider knowledge provenance remains a later bounded scope |
+| Semantic relation read model | `CONNECTED` | server-side projection of `tasks.project_id`, `tasks.goal_id`, `projects.goal_id`, `resource_relations`, Skill Evidence and `task_skill_links`; C1.1 integrated proof verifies deterministic direct, via-Project, Context and Evidence dedupe | wider knowledge provenance remains a later bounded scope |
 | Resource/Skill graph | `NOT_STARTED` | no proven graph read model | no visual library before semantics |
 | Embeddings/semantic search | `DECISION_REQUIRED` | none | privacy and permission decision |
 

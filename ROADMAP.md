@@ -455,7 +455,9 @@ Source remains unchanged and is no longer used by the proof runtime.
 process overrides. The Target identity, transferred data and controlled
 writes remain preserved.
 
-## 4.2 Active Work Block: C1.1 – Work Graph Integrity & Task Context
+## 4.2 Completed Work Block: C1.1 – Work Graph Integrity & Task Context
+
+**Status:** Completed. The next active block is **C2 – Weekly Planning Calendar**.
 
 **Outcome:** From capture or Portfolio, the user can place a Task in coherent Project/Goal/Skill/Resource context, inspect that context from the responsible workbenches and trust that every relation is user-owned, non-contradictory and reload-stable.
 
@@ -625,7 +627,7 @@ Capture or open Task
 
 #### C1.1-05 – C1.1 Proof and Registry Closure
 
-**Current slice.**
+**Completed.**
 
 **Goal:** Prove the complete C1.1 flow and record honest implementation truth without broad test cleanup.
 

@@ -1,35 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-
-const host = process.env.PLAYWRIGHT_HOST ?? "127.0.0.1";
-const port = process.env.PLAYWRIGHT_PORT ?? "3000";
-const baseUrl = `http://${host}:${port}`;
-
-async function authenticateManual(page: Page) {
-  test.skip(
-    !process.env.TARGET_EMAIL || !process.env.TARGET_PASSWORD,
-    "Requires the authorized local Target credentials.",
-  );
-
-  await page.context().addCookies([
-    {
-      httpOnly: true,
-      name: "life_os_profile",
-      sameSite: "Lax",
-      url: baseUrl,
-      value: "manual",
-    },
-  ]);
-  await page.goto("/settings#supabase-session");
-
-  const panel = page.locator("#supabase-session");
-  if (await panel.getByRole("button", { name: "Sign in" }).isVisible()) {
-    await panel.getByLabel("Email").fill(process.env.TARGET_EMAIL!);
-    await panel.getByLabel("Password").fill(process.env.TARGET_PASSWORD!);
-    await panel.getByRole("button", { name: "Sign in" }).click();
-    await expect(page).toHaveURL(/\/inbox(?:#.*)?$/);
-  }
-
-}
+import { signUpTechnicalManualUser } from "./support/local-manual-auth";
 
 async function createGoal(page: Page, title: string) {
   await page.goto("/portfolio?view=goals");
@@ -80,7 +50,7 @@ test("C1.1-03 aligns direct and inherited task goals without silent conflicts", 
   const directTaskTitle = `C11 alignment direct task ${stamp}`;
   const inheritedTaskTitle = `C11 alignment inherited task ${stamp}`;
 
-  await authenticateManual(page);
+  await signUpTechnicalManualUser(page, "c1-1-03", stamp);
   const goalAId = await createGoal(page, goalATitle);
   await createGoal(page, goalBTitle);
   const projectId = await createProject(page, projectTitle);
