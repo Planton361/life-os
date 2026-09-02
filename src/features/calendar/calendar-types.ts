@@ -213,23 +213,45 @@ export type CalendarSelectedTimeSlotViewModel = {
 
 export type SchedulableTaskStatus = "open" | "planned" | "in-progress" | "done";
 
-export type SchedulableTaskViewModel = {
+export type PlannerQueueRankGroup =
+  | "overdue"
+  | "due_this_week"
+  | "recurring_due"
+  | "project_next_work"
+  | "goal_context_work"
+  | "backlog";
+
+export type PlannerQueueGoalContext = {
+  alignment: "direct" | "via_project" | "redundant" | "conflict" | "none";
   id: string;
   title: string;
-  priority: "P0" | "P1" | "P2" | "P3";
-  area: string;
-  project: string;
-  goal?: string;
-  energy?: "low" | "medium" | "high";
-  status: SchedulableTaskStatus;
-  estimatedMinutes: number;
-  plannedDate: string;
-  dueDate?: string;
-  recentlyUpdated: string;
-  alreadyScheduled?: boolean;
-  accent: string;
-  isGenerated?: boolean;
 };
+
+export type PlannerQueueSkillContext = {
+  id: string;
+  title: string;
+};
+
+export type PlannerQueueItem = {
+  accent?: string;
+  area: string;
+  createdAt?: string;
+  dueDate?: string;
+  durationMinutes: number;
+  goal?: PlannerQueueGoalContext;
+  id: string;
+  isRecurringOccurrence: boolean;
+  plannedDate?: string;
+  title: string;
+  priority: "P0" | "P1" | "P2" | "P3" | "none";
+  project?: { id: string; title: string };
+  rankingGroup: PlannerQueueRankGroup;
+  rankingReason: string;
+  scheduleSourceType?: "meal" | "review" | "running_plan_item" | "strength_plan";
+  skills: readonly PlannerQueueSkillContext[];
+};
+
+export type SchedulableTaskViewModel = PlannerQueueItem;
 
 export type CalendarPlanningAssistantSuggestionViewModel = {
   title: string;

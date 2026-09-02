@@ -653,6 +653,44 @@ Capture or open Task
 
 **Report Format:** `Erstellt:`, `Geändert:`, `Nicht geändert:`, `Validierung:`, `Offene Punkte:`, `Risiken:`.
 
+## 4.3 Active Work Block: C2 – Weekly Planning Calendar
+
+**Status:** C2-01 completed. The active bounded slice is **C2-02 – Pointer
+Drag/Drop + Resize**.
+
+**Outcome:** Calendar remains a temporal projection of canonical executable
+Tasks. Week View is the primary planning surface; it does not create a second
+Task, recurrence or domain-record truth.
+
+### Bounded C2 sequence
+
+#### C2-01 – Week Planning Surface & Canonical Planner Queue
+
+**Completed.** The Manual Week View presents exactly one deterministic queue of
+open, unscheduled canonical Task Occurrences. It keeps Project, direct/via
+Project Goal, Skill, recurring and typed schedule-source context visible. A
+keyboard-accessible selection opens the existing source-aware Task scheduling
+boundary; schedule, reschedule, duration and unschedule refresh the Week
+projection immediately and remain stable after reload. Free calendar events,
+relation filters and pointer drag/resize remain outside this slice.
+
+#### C2-02 – Pointer Drag/Drop + Resize
+
+**Active.** Add accessible pointer comfort only over the proven Week scheduling
+boundary. Keyboard/button scheduling remains a complete alternative; no new
+scheduling data model or direct Task writes.
+
+#### C2-03 – Day/Month Projection + Deadline/Milestone View
+
+**Pending.** Connect the remaining Calendar views and their truthful
+deadline/milestone semantics to canonical sources without making a parallel
+event model.
+
+#### C2-04 – C2 Integrated Proof
+
+**Pending.** Prove the complete C2 planning contract, cross-domain schedule
+sources and Calendar/Today/Dashboard consistency before closing C2.
+
 ## 5. Completed Major Work
 
 The following major capabilities are already established and must not be rebuilt:

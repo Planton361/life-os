@@ -470,7 +470,7 @@ export function getCalendarViewModel(): CalendarViewModel {
     allDayBlocks,
     timedBlocks: timedBlockViewModels,
     scheduledTasks: timedBlockViewModels.filter((block) => block.source === "task"),
-    plannerQueueTasks: schedulableTasks.filter((task) => !task.alreadyScheduled),
+    plannerQueueTasks: schedulableTasks,
     selectedBlock,
     schedulableTasks,
     currentTime: {

@@ -10,13 +10,16 @@ export const metadata = {
 
 export default async function CalendarPage() {
   const viewModel = await getCalendarViewModel();
+  const calendarProjectionKey = viewModel.timedBlocks
+    .map((block) => `${block.id}:${block.date ?? ""}:${block.startTime}:${block.endTime}`)
+    .join("|");
 
   return (
     <>
       <div className="mx-auto mb-3 w-full max-w-[2208px]">
         <ManualDbAuthNotice />
       </div>
-      <CalendarPlanningPage viewModel={viewModel} />
+      <CalendarPlanningPage key={calendarProjectionKey} viewModel={viewModel} />
     </>
   );
 }

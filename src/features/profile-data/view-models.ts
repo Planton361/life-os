@@ -5,6 +5,7 @@ import {
   getCalendarViewModel as getDemoCalendarViewModel,
   resolveCalendarContentStates,
 } from "@/features/calendar/calendar-view-model";
+import { buildPlannerQueue } from "@/features/calendar/planner-queue";
 import {
   calendarFilters,
   calendarHours,
@@ -2760,36 +2761,33 @@ async function getManualPortfolioRelationLabelLookups(
   },
 ): Promise<PortfolioRelationLabelLookups> {
   const projectIds = uniqueDefined(tasks.map((task) => task.projectId));
+  const projectResult = projectIds.length > 0
+    ? ((await client
+        .from("projects")
+        .select("id,title")
+        .eq("user_id", userId)
+        .is("archived_at", null)
+        .in("id", projectIds)) as SupabaseQueryResult<
+        readonly PortfolioRelationTargetRow[]
+      >)
+    : ({
+        data: [],
+        error: null,
+      } as SupabaseQueryResult<readonly PortfolioRelationTargetRow[]>);
   const goalIds = uniqueDefined(tasks.map((task) => task.goalId));
-
-  const [projectResult, goalResult] = await Promise.all([
-    projectIds.length > 0
-      ? ((await client
-          .from("projects")
-          .select("id,title")
-          .eq("user_id", userId)
-          .is("archived_at", null)
-          .in("id", projectIds)) as SupabaseQueryResult<
-          readonly PortfolioRelationTargetRow[]
-        >)
-      : Promise.resolve({
-          data: [],
-          error: null,
-        } as SupabaseQueryResult<readonly PortfolioRelationTargetRow[]>),
-    goalIds.length > 0
-      ? ((await client
-          .from("goals")
-          .select("id,title")
-          .eq("user_id", userId)
-          .is("archived_at", null)
-          .in("id", goalIds)) as SupabaseQueryResult<
-          readonly PortfolioRelationGoalRow[]
-        >)
-      : Promise.resolve({
-          data: [],
-          error: null,
-        } as SupabaseQueryResult<readonly PortfolioRelationGoalRow[]>),
-  ]);
+  const goalResult = goalIds.length > 0
+    ? ((await client
+        .from("goals")
+        .select("id,title")
+        .eq("user_id", userId)
+        .is("archived_at", null)
+        .in("id", goalIds)) as SupabaseQueryResult<
+        readonly PortfolioRelationGoalRow[]
+      >)
+    : ({
+        data: [],
+        error: null,
+      } as SupabaseQueryResult<readonly PortfolioRelationGoalRow[]>);
   const resourceLookups = await getManualPortfolioResourceLinks(client, userId);
   const taskSkillLookups = portfolioTaskSkillLinkLookups(
     tasks,
@@ -3098,10 +3096,14 @@ async function getManualPlannerRelationLabelLookups(
 
   if (!auth.ok) return undefined;
 
+  const skills = await getManualSkillsFromSupabase(auth.client, auth.user.id);
+
   return getManualPortfolioRelationLabelLookups(
     auth.client,
     auth.user.id,
     tasks,
+    skills.skills,
+    skills.taskSkillLinks,
   );
 }
 
@@ -4001,56 +4003,6 @@ function projectToAllDayBlock(
   };
 }
 
-const taskEnergyOrder: Record<NonNullable<LifeTask["energy"]>, number> = {
-  high: 0,
-  medium: 1,
-  low: 2,
-};
-
-function taskQueueEnergyRank(task: LifeTask) {
-  return task.energy ? taskEnergyOrder[task.energy] : 3;
-}
-
-function taskQueueStatus(
-  task: LifeTask,
-): CalendarViewModel["schedulableTasks"][number]["status"] {
-  if (task.status === "done") return "done";
-  if (task.status === "active") return "in-progress";
-  if (task.status === "planned") return "planned";
-
-  return "open";
-}
-
-function sortPlannerQueueTasks(left: LifeTask, right: LifeTask) {
-  const today = todayDateLabel();
-  const todayCompare =
-    Number(right.date === today) - Number(left.date === today);
-  if (todayCompare !== 0) return todayCompare;
-
-  const dateCompare = (left.date ?? "").localeCompare(right.date ?? "");
-  if (dateCompare !== 0) return dateCompare;
-
-  const recencyCompare = (
-    right.updatedAt ??
-    right.createdAt ??
-    ""
-  ).localeCompare(left.updatedAt ?? left.createdAt ?? "");
-  if (recencyCompare !== 0) return recencyCompare;
-
-  const priorityCompare =
-    taskPriorityOrder[left.priority] - taskPriorityOrder[right.priority];
-  if (priorityCompare !== 0) return priorityCompare;
-
-  const energyCompare = taskQueueEnergyRank(left) - taskQueueEnergyRank(right);
-  if (energyCompare !== 0) return energyCompare;
-
-  const durationCompare =
-    (left.durationMinutes ?? 30) - (right.durationMinutes ?? 30);
-  if (durationCompare !== 0) return durationCompare;
-
-  return left.id.localeCompare(right.id);
-}
-
 function buildProfileCalendarViewModel(
   profile: ManualProfileData,
   profileId: Exclude<LifeOsProfileId, "demo">,
@@ -4072,12 +4024,6 @@ function buildProfileCalendarViewModel(
     });
   const days = buildManualCalendarDays();
   const visibleDates = new Set(days.map((day) => day.date));
-  const carriedTaskIds = new Set(
-    reviews.dailyDecisions.map((decision) => decision.taskId),
-  );
-  const carriedTaskRank = new Map(
-    reviews.dailyDecisions.map((decision, index) => [decision.taskId, index]),
-  );
   const firstDayId = days[0]?.id ?? "manual-week";
   const demoModel = getDemoCalendarViewModel();
   const rawTimedBlocks = profile.tasks
@@ -4098,55 +4044,34 @@ function buildProfileCalendarViewModel(
   const scheduledTaskBlocks = timedBlocks.filter(
     (block) => Boolean(block.taskId),
   );
-  const planningQueueTasks = profile.tasks
-    .filter(
-      (task) =>
-        task.date &&
-        !task.startTime &&
-        (visibleDates.has(task.date) || carriedTaskIds.has(task.id)),
-    )
-    .filter((task) => task.status !== "done" && task.status !== "canceled")
-    .sort((left, right) => {
-      const carryCompare =
-        Number(carriedTaskIds.has(right.id)) -
-        Number(carriedTaskIds.has(left.id));
-      const carryRankCompare =
-        (carriedTaskRank.get(left.id) ?? Number.MAX_SAFE_INTEGER) -
-        (carriedTaskRank.get(right.id) ?? Number.MAX_SAFE_INTEGER);
-      return (
-        carryCompare || carryRankCompare || sortPlannerQueueTasks(left, right)
-      );
-    });
+  const skillsByTaskId = new Map(
+    Array.from(plannerRelationLookups.taskSkillLinksByTaskId.entries()).map(
+      ([taskId, links]) => [
+        taskId,
+        links.map((link) => ({ id: link.skillId, title: link.skillTitle })),
+      ],
+    ),
+  );
+  const schedulableTasks: CalendarViewModel["schedulableTasks"] = buildPlannerQueue({
+    goals: profile.goals,
+    projects: profile.projects,
+    skillsByTaskId,
+    tasks: profile.tasks,
+    today: todayDateLabel(),
+    weekEnd: days[6]?.date ?? todayDateLabel(),
+    weekStart: days[0]?.date ?? todayDateLabel(),
+  })
+    .map((task) => {
+      const sourceTask = profile.tasks.find((candidate) => candidate.id === task.id);
 
-  const schedulableTasks: CalendarViewModel["schedulableTasks"] =
-    planningQueueTasks
-      .map((task) => ({
-        id: task.id,
-        title: task.title,
-        priority: dashboardPriority(task.priority),
-        area: areaLabel(task.areaId),
-        project: taskPlannerContextLabel(
-          task,
-          plannerRelationLookups,
-          "Manual",
-        ),
-        goal:
-          linkedTitle(
-            task.goalId,
-            plannerRelationLookups.goalTitles,
-            "Goal nicht gefunden",
-          ) ?? undefined,
-        energy: task.energy,
-        status: taskQueueStatus(task),
-        estimatedMinutes: task.durationMinutes ?? 30,
-        plannedDate: task.date ?? todayDateLabel(),
-        dueDate: task.date,
-        recentlyUpdated: "local",
-        alreadyScheduled: false,
-        accent: areaAccent(task.areaId),
-        isGenerated: task.isGenerated,
-      }))
-      .slice(0, 100);
+      return {
+        ...task,
+        accent: sourceTask ? areaAccent(sourceTask.areaId) : "var(--accent-blue)",
+        area: sourceTask ? areaLabel(sourceTask.areaId) : task.area,
+      };
+    })
+    .slice(0, 100);
+  const planningQueueTasks = schedulableTasks;
 
   const rightPanel = {
     selectedDay: days.find((day) => day.isToday)?.fullLabel ?? "Manual week",
@@ -4184,8 +4109,8 @@ function buildProfileCalendarViewModel(
     })),
     unscheduledTasks: planningQueueTasks.map((task) => ({
       title: task.title,
-      meta: `${task.priority} task - no time block yet`,
-      accent: areaAccent(task.areaId),
+      meta: `${task.rankingReason} · ${task.priority}`,
+      accent: task.accent ?? "var(--accent-blue)",
     })),
     reviewsOpen: [
       reviews.dailyReview?.status !== "completed"
@@ -4254,8 +4179,7 @@ function buildProfileCalendarViewModel(
       headerItemCount,
       planningQueueCount,
       rightPanelItemCount,
-      scopeRowItemCount:
-        calendarFilters.length + rightPanel.unscheduledTasks.length,
+      scopeRowItemCount: calendarFilters.length + rightPanel.unscheduledTasks.length,
       timedBlockCount: timedBlocks.length,
       weekStatItemCount: demoModel.weekStats.stats.length,
       viewSwitcherItemCount: calendarViewSwitches.length,

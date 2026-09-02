@@ -31,6 +31,7 @@ import { CalendarWeekSurface } from "./components/calendar-week-surface";
 
 type Selection =
   | { kind: "block"; blockId: string }
+  | { kind: "queue"; taskId: string }
   | { kind: "slot"; slot: CalendarSelectedTimeSlotViewModel }
   | { kind: "day"; dayId: string }
   | { kind: "month"; month: number };
@@ -446,7 +447,7 @@ function CalendarEmptyRightPanel({
   selectedDay?: CalendarDayViewModel;
   tasks: readonly CalendarViewModel["schedulableTasks"][number][];
 }>) {
-  const visibleTasks = tasks.filter((task) => !task.alreadyScheduled).slice(0, 4);
+  const visibleTasks = tasks.slice(0, 4);
 
   return (
     <aside
@@ -555,7 +556,7 @@ function CalendarEmptyRightPanel({
                 <article
                   className="rounded-[10px] border border-[color-mix(in_srgb,var(--accent)_24%,transparent)] bg-[rgba(18,28,43,.44)] p-2"
                   key={task.id}
-                  style={accentStyle(task.accent)}
+                  style={accentStyle(task.accent ?? "var(--accent-blue)")}
                 >
                   <div className="grid min-h-8 grid-cols-[8px_minmax(0,1fr)] gap-2">
                     <span
@@ -567,14 +568,13 @@ function CalendarEmptyRightPanel({
                         {task.title}
                       </p>
                       <p className="truncate text-[10px] leading-4 text-[var(--text-muted)]">
-                        {task.plannedDate} · {task.priority} ·{" "}
-                        {task.energy ?? "energy offen"} ·{" "}
-                        {durationLabel(task.estimatedMinutes)}
+                        {task.rankingReason} · {task.priority} ·{" "}
+                        {durationLabel(task.durationMinutes)}
                       </p>
                       <p className="truncate text-[10px] leading-4 text-[var(--text-muted)]">
-                        {task.project}
+                        {task.project?.title ?? "No project"}
                       </p>
-                      {task.isGenerated ? (
+                      {task.isRecurringOccurrence ? (
                         <Pill accent="var(--accent-cyan)">Wiederkehrend</Pill>
                       ) : null}
                     </div>
@@ -591,7 +591,7 @@ function CalendarEmptyRightPanel({
                       <input
                         name="plannedDate"
                         type="hidden"
-                        value={task.plannedDate}
+                        value={task.plannedDate ?? selectedDay?.date ?? ""}
                       />
                       <label className="min-w-0">
                         <span className="sr-only">Uhrzeit</span>
@@ -606,10 +606,10 @@ function CalendarEmptyRightPanel({
                         <span className="sr-only">Dauer</span>
                         <select
                           className={queueInputClass}
-                          defaultValue={String(task.estimatedMinutes)}
+                          defaultValue={String(task.durationMinutes)}
                           name="durationMinutes"
                         >
-                          {scheduleDurationOptions(task.estimatedMinutes).map(
+                          {scheduleDurationOptions(task.durationMinutes).map(
                             (minutes) => (
                               <option key={minutes} value={minutes}>
                                 {durationLabel(minutes)}
@@ -1046,6 +1046,10 @@ export function CalendarPlanningPage({
     );
 
   const selectedSlot = selection.kind === "slot" ? selection.slot : null;
+  const selectedQueueTask =
+    selection.kind === "queue"
+      ? viewModel.schedulableTasks.find((task) => task.id === selection.taskId)
+      : undefined;
   const selectedDay =
     selection.kind === "day"
       ? viewModel.days.find((day) => day.id === selection.dayId)
@@ -1220,7 +1224,10 @@ export function CalendarPlanningPage({
   const selectedBlockId = selection.kind === "block" ? selection.blockId : undefined;
   const calendarHasBlocks =
     filteredTimedBlocks.length > 0 || filteredAllDayBlocks.length > 0;
-  const showEmptyCalendarShell = viewModel.profileId !== "demo" && !calendarHasBlocks;
+  const showEmptyCalendarShell =
+    viewModel.profileId !== "demo" &&
+    viewModel.profileId !== "manual" &&
+    !calendarHasBlocks;
   const showEmptyInspector = showEmptyCalendarShell;
 
   return (
@@ -1253,14 +1260,17 @@ export function CalendarPlanningPage({
           }}
           onViewChange={setActiveView}
           resolveDayId={resolveDayId}
+          profileId={viewModel.profileId}
           schedulableTasks={viewModel.schedulableTasks}
         />
       )}
-      <CalendarScopeRow
-        filters={dynamicViewModel.filters}
-        onScopeChange={setActiveScope}
-        projects={viewModel.projectsThisWeek}
-      />
+      {viewModel.profileId !== "manual" ? (
+        <CalendarScopeRow
+          filters={dynamicViewModel.filters}
+          onScopeChange={setActiveScope}
+          projects={viewModel.projectsThisWeek}
+        />
+      ) : null}
       <CalendarWeekOverview
         activeView={activeView}
         contentState={viewModel.contentStates.weekOverview}
@@ -1355,7 +1365,6 @@ export function CalendarPlanningPage({
             />
           ) : (
             <CalendarRightPanel
-              onCreateBlock={createBlock}
               onDuplicateBlock={duplicateBlock}
               onMarkDone={markDone}
               onMoveLater={moveLater}
@@ -1363,10 +1372,11 @@ export function CalendarPlanningPage({
               panel={viewModel.rightPanel}
               planningQueueContentState={viewModel.contentStates.planningQueue}
               profileId={viewModel.profileId}
-              resolveDayId={resolveDayId}
               selectedBlock={selectedBlock}
               selectedDay={selectedDay}
+              selectedQueueTask={selectedQueueTask}
               selectedSlot={selectedSlot}
+              onSelectQueueTask={(taskId) => setSelection({ kind: "queue", taskId })}
               scheduledTasks={viewModel.scheduledTasks}
               tasks={viewModel.schedulableTasks}
             />

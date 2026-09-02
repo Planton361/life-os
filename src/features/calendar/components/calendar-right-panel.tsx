@@ -2,16 +2,16 @@
 
 import type { ContentStateMeta } from "@/features/content-state";
 import Link from "next/link";
-import { useActionState, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useState } from "react";
 import { Pill, accentStyle } from "@/components/layout/route-page-primitives";
 import {
   completeTaskFormStateAction,
-  rescheduleTaskFormAction,
-  scheduleTaskForTodayFormAction,
-  unscheduleTaskFormAction,
+  rescheduleTaskAction,
+  scheduleTaskForTodayAction,
+  unscheduleTaskAction,
 } from "@/features/real-data/actions/task.actions";
 import { cn } from "@/lib/cn";
-import type { CalendarRawTimedBlock } from "../calendar-view-model";
 import {
   calendarBlockSourceLabels,
   calendarBlockStatusLabels,
@@ -26,10 +26,8 @@ import type {
   CalendarTimedBlockViewModel,
   SchedulableTaskViewModel,
 } from "../calendar-types";
-import { CalendarCreateMenu } from "./calendar-create-flow";
 
 type SelectedBlock = CalendarAllDayBlockViewModel | CalendarTimedBlockViewModel;
-type QueueTab = "unscheduled" | "open-loops" | "reviews";
 type SchedulingConflict = {
   title: string;
   timeLabel: string;
@@ -43,10 +41,19 @@ type SchedulingCandidate = {
   scheduledTime: string;
 };
 
+type QueueSchedulingState = {
+  message: string;
+  status: "blocked" | "error" | "success";
+};
+
 const initialCompletionState = {
   message: "",
   status: "blocked",
 } as const;
+const initialQueueSchedulingState: QueueSchedulingState = {
+  message: "",
+  status: "blocked",
+};
 
 const inputClass =
   "mt-1 min-h-8 w-full rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.76)] px-2.5 text-[12px] text-[var(--text-primary)] outline-none focus:border-[var(--focus-ring)]";
@@ -85,6 +92,16 @@ function minutesToTime(minutes: number) {
 
 function timeRangeLabel(startTime: string, durationMinutes: number) {
   return `${startTime}-${minutesToTime(timeToMinutes(startTime) + durationMinutes)}`;
+}
+
+function sourceTypeLabel(
+  sourceType: SchedulableTaskViewModel["scheduleSourceType"],
+) {
+  if (sourceType === "meal") return "Meal source";
+  if (sourceType === "review") return "Review source";
+  if (sourceType === "running_plan_item") return "Running source";
+  if (sourceType === "strength_plan") return "Strength source";
+  return null;
 }
 
 function isWithinDay(startMinutes: number, durationMinutes: number) {
@@ -206,6 +223,15 @@ function RescheduleTaskForm({
   taskId: string;
   variant?: "primary" | "secondary";
 }>) {
+  const router = useRouter();
+  const [state, formAction, pending] = useActionState(
+    async (_previous: QueueSchedulingState, formData: FormData) => {
+      const result = await rescheduleTaskAction(formData);
+      if (result.status === "success") router.refresh();
+      return result;
+    },
+    initialQueueSchedulingState,
+  );
   const buttonClassName =
     variant === "primary"
       ? primaryActionButtonClass
@@ -221,7 +247,7 @@ function RescheduleTaskForm({
   return (
     <div className="grid gap-1">
       <form
-        action={rescheduleTaskFormAction}
+        action={formAction}
         aria-label={`${candidate.label} ${timeRange}`}
         className="grid gap-1"
       >
@@ -239,16 +265,17 @@ function RescheduleTaskForm({
         />
         <button
           className={buttonClassName}
-          disabled={Boolean(candidate.disabledReason ?? candidate.conflict)}
+          disabled={pending || Boolean(candidate.disabledReason ?? candidate.conflict)}
           type="submit"
         >
-          {candidate.label}
+          {pending ? "Saving …" : candidate.label}
         </button>
         {candidate.conflict ? (
           <button
             aria-label={`Trotzdem terminieren trotz sichtbarem Konflikt: ${candidate.label} ${timeRange}`}
             className={overrideActionButtonClass}
             name="manualOverride"
+            disabled={pending}
             type="submit"
             value="true"
           >
@@ -274,7 +301,44 @@ function RescheduleTaskForm({
           </p>
         </div>
       ) : null}
+      {state.message ? (
+        <p
+          className="rounded-[8px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-2 py-1 text-[10px] leading-4 text-[var(--text-secondary)]"
+          role={state.status === "success" ? "status" : "alert"}
+        >
+          {state.message}
+        </p>
+      ) : null}
     </div>
+  );
+}
+
+function UnscheduleTaskForm({ taskId }: Readonly<{ taskId: string }>) {
+  const router = useRouter();
+  const [state, formAction, pending] = useActionState(
+    async (_previous: QueueSchedulingState, formData: FormData) => {
+      const result = await unscheduleTaskAction(formData);
+      if (result.status === "success") router.refresh();
+      return result;
+    },
+    initialQueueSchedulingState,
+  );
+
+  return (
+    <form action={formAction} className="grid gap-1">
+      <input name="taskId" type="hidden" value={taskId} />
+      <button className={secondaryActionButtonClass} disabled={pending} type="submit">
+        {pending ? "Unscheduling …" : "Unschedule"}
+      </button>
+      {state.message ? (
+        <p
+          className="rounded-[8px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-2 py-1 text-[10px] leading-4 text-[var(--text-secondary)]"
+          role={state.status === "success" ? "status" : "alert"}
+        >
+          {state.message}
+        </p>
+      ) : null}
+    </form>
   );
 }
 
@@ -514,6 +578,8 @@ function TimeSettings({
   const isPersistedTaskBlock = Boolean(
     profileId === "manual" && taskId && timedTaskBlock,
   );
+  const isManualNonTaskProjection =
+    profileId === "manual" && !isPersistedTaskBlock;
   const [completionState, completionAction, completionPending] = useActionState(
     completeTaskFormStateAction,
     initialCompletionState,
@@ -603,41 +669,50 @@ function TimeSettings({
           <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
             {isPersistedTaskBlock
               ? "Schreibt Datum, Uhrzeit und Dauer über bestehende Task-Actions."
+              : isManualNonTaskProjection
+                ? "Für die Manual-Runtime sind nur kanonische Task-Zeitblöcke planbar."
               : "Vorbereitet / lokal: diese Controls schreiben nicht in die lokale Datenquelle."}
           </p>
         </div>
         <Pill accent="var(--accent-cyan)">{durationLabel(duration)}</Pill>
       </div>
 
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        <Field
-          label="Date"
-          name={isPersistedTaskBlock ? "plannedDate" : undefined}
-          onChange={setDate}
-          required={Boolean(isPersistedTaskBlock)}
-          type="date"
-          value={date}
-        />
-        <Field
-          label="Duration"
-          onChange={() => undefined}
-          value={durationLabel(duration)}
-        />
-        <Field
-          label="Start time"
-          name={isPersistedTaskBlock ? "scheduledTime" : undefined}
-          onChange={setStartTime}
-          required={Boolean(isPersistedTaskBlock)}
-          type="time"
-          value={startTime}
-        />
-        <Field
-          label="End time"
-          onChange={setEndTime}
-          type="time"
-          value={endTime}
-        />
-      </div>
+      {isManualNonTaskProjection ? (
+        <p className="mt-3 rounded-[9px] border border-dashed border-[var(--border-subtle)] bg-[rgba(18,28,43,.36)] px-2.5 py-2 text-[10px] leading-4 text-[var(--text-muted)]">
+          Wähle eine offene Task aus der Planner Queue oder einen bestehenden
+          Task-Block. Freie Kalender-Events bleiben deferred.
+        </p>
+      ) : (
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <Field
+            label="Date"
+            name={isPersistedTaskBlock ? "plannedDate" : undefined}
+            onChange={setDate}
+            required={Boolean(isPersistedTaskBlock)}
+            type="date"
+            value={date}
+          />
+          <Field
+            label="Duration"
+            onChange={() => undefined}
+            value={durationLabel(duration)}
+          />
+          <Field
+            label="Start time"
+            name={isPersistedTaskBlock ? "scheduledTime" : undefined}
+            onChange={setStartTime}
+            required={Boolean(isPersistedTaskBlock)}
+            type="time"
+            value={startTime}
+          />
+          <Field
+            label="End time"
+            onChange={setEndTime}
+            type="time"
+            value={endTime}
+          />
+        </div>
+      )}
 
       <div className="mt-3 grid gap-1.5 sm:grid-cols-2">
         {isPersistedTaskBlock ? (
@@ -656,12 +731,7 @@ function TimeSettings({
                 taskId={taskId ?? ""}
               />
             ))}
-            <form action={unscheduleTaskFormAction}>
-              <input name="taskId" type="hidden" value={taskId ?? ""} />
-              <button className={secondaryActionButtonClass} type="submit">
-                Unschedule
-              </button>
-            </form>
+            <UnscheduleTaskForm taskId={taskId ?? ""} />
             <form action={completionAction} aria-label={`${block?.title ?? "Task"} abschließen`}>
               <input name="taskId" type="hidden" value={taskId ?? ""} />
               <button
@@ -681,7 +751,7 @@ function TimeSettings({
               </p>
             ) : null}
           </>
-        ) : (
+        ) : isManualNonTaskProjection ? null : (
           <>
             <button
               className="min-h-8 rounded-full border border-[rgba(95,200,215,.34)] bg-[rgba(95,200,215,.14)] px-3 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(95,200,215,.48)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
@@ -793,49 +863,172 @@ function SourcePanel({
   );
 }
 
+function QueueTaskSchedule({
+  selectedDay,
+  task,
+  timedBlocks,
+}: Readonly<{
+  selectedDay?: CalendarDayViewModel;
+  task: SchedulableTaskViewModel;
+  timedBlocks: readonly CalendarTimedBlockViewModel[];
+}>) {
+  const router = useRouter();
+  const [plannedDate, setPlannedDate] = useState(
+    task.plannedDate ?? selectedDay?.date ?? "",
+  );
+  const [scheduledTime, setScheduledTime] = useState("09:00");
+  const [durationMinutes, setDurationMinutes] = useState(task.durationMinutes);
+  const [state, formAction, pending] = useActionState(
+    async (_previous: QueueSchedulingState, formData: FormData) => {
+      const result = await scheduleTaskForTodayAction(formData);
+      if (result.status === "success") router.refresh();
+      return result;
+    },
+    initialQueueSchedulingState,
+  );
+  const conflict = timedBlocks
+    .filter((block) => block.date === plannedDate)
+    .find((block) => {
+      const start = timeToMinutes(scheduledTime);
+      const end = start + durationMinutes;
+      return start < block.endMinutes && block.startMinutes < end;
+    });
+  const sourceLabel = sourceTypeLabel(task.scheduleSourceType);
+
+  return (
+    <section
+      aria-labelledby="calendar-queue-schedule-heading"
+      className="rounded-[14px] border border-[rgba(95,200,215,.2)] bg-[rgba(11,17,28,.42)] p-3"
+      data-calendar-section="queue-schedule"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-cyan)]">
+            Selected queue task
+          </p>
+          <h3
+            className="mt-1 truncate text-[13px] font-semibold text-[var(--text-primary)]"
+            id="calendar-queue-schedule-heading"
+          >
+            {task.title}
+          </h3>
+          <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
+            {task.rankingReason} · {task.priority} · {durationLabel(task.durationMinutes)}
+          </p>
+        </div>
+        <Pill accent={task.accent ?? "var(--accent-blue)"}>Schedule</Pill>
+      </div>
+
+      <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] text-[var(--text-muted)]">
+        {task.project ? <span>Project · {task.project.title}</span> : null}
+        {task.goal ? (
+          <span>
+            Goal · {task.goal.title} · {task.goal.alignment === "via_project" ? "via Project" : "Direct"}
+          </span>
+        ) : null}
+        {task.skills.slice(0, 2).map((skill) => (
+          <span key={skill.id}>Skill · {skill.title}</span>
+        ))}
+        {task.isRecurringOccurrence ? <span>Recurring occurrence</span> : null}
+        {sourceLabel ? <span>{sourceLabel}</span> : null}
+      </div>
+
+      <form action={formAction} className="mt-3 grid gap-2" aria-label={`${task.title} planen`}>
+        <input name="taskId" type="hidden" value={task.id} />
+        <input name="mode" type="hidden" value="schedule" />
+        <div className="grid gap-2 sm:grid-cols-3">
+          <label className="block min-w-0">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+              Weekday
+            </span>
+            <input
+              className={inputClass}
+              name="plannedDate"
+              onChange={(event) => setPlannedDate(event.target.value)}
+              required
+              type="date"
+              value={plannedDate}
+            />
+          </label>
+          <label className="block min-w-0">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+              Start time
+            </span>
+            <input
+              className={inputClass}
+              name="scheduledTime"
+              onChange={(event) => setScheduledTime(event.target.value)}
+              required
+              type="time"
+              value={scheduledTime}
+            />
+          </label>
+          <label className="block min-w-0">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+              Duration
+            </span>
+            <select
+              className={inputClass}
+              name="durationMinutes"
+              onChange={(event) => setDurationMinutes(Number(event.target.value))}
+              value={String(durationMinutes)}
+            >
+              {scheduleDurationOptions(task.durationMinutes).map((minutes) => (
+                <option key={minutes} value={minutes}>
+                  {durationLabel(minutes)}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        {conflict ? (
+          <p
+            className="rounded-[9px] border border-[rgba(221,107,95,.28)] bg-[rgba(221,107,95,.08)] px-2.5 py-2 text-[10px] leading-4 text-[var(--text-secondary)]"
+            role="alert"
+          >
+            Visible conflict with an already loaded block. Confirm the override to keep this time.
+          </p>
+        ) : null}
+        <button
+          className={primaryActionButtonClass}
+          name={conflict ? "manualOverride" : undefined}
+          type="submit"
+          value={conflict ? "true" : undefined}
+          disabled={pending || !plannedDate}
+        >
+          {pending ? "Scheduling …" : conflict ? "Schedule anyway" : "Schedule task"}
+        </button>
+        {state.message ? (
+          <p
+            className="rounded-[8px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-2 py-1 text-[10px] leading-4 text-[var(--text-secondary)]"
+            role={state.status === "success" ? "status" : "alert"}
+          >
+            {state.message}
+          </p>
+        ) : null}
+      </form>
+    </section>
+  );
+}
+
 function PlanningQueue({
   contentState,
   panel,
   profileId,
+  onSelectTask,
+  selectedTaskId,
   tasks,
 }: Readonly<{
   contentState: ContentStateMeta;
   panel: CalendarRightPanelViewModel;
   profileId: CalendarViewModel["profileId"];
+  onSelectTask: (taskId: string) => void;
+  selectedTaskId?: string;
   tasks: readonly SchedulableTaskViewModel[];
 }>) {
-  const [tab, setTab] = useState<QueueTab>("unscheduled");
-  const queueTasks = useMemo(
-    () => tasks.filter((task) => !task.alreadyScheduled),
-    [tasks],
-  );
-  const queueItems = useMemo(() => {
-    if (tab === "open-loops") {
-      return panel.openLoops.map((item) => ({
-        title: item.title,
-        meta: item.meta,
-        accent: item.accent,
-      }));
-    }
-
-    if (tab === "reviews") {
-      return panel.reviewsOpen.map((item) => ({
-        title: item.title,
-        meta: item.meta,
-        accent: item.accent,
-        href: item.href,
-      }));
-    }
-
-    return queueTasks.map((task) => ({
-      title: task.title,
-      meta: `${task.priority} · ${task.estimatedMinutes} min · ${task.project}`,
-      accent: task.accent,
-    }));
-  }, [panel.openLoops, panel.reviewsOpen, queueTasks, tab]);
-  const queueCount =
-    tab === "unscheduled" ? queueTasks.length : queueItems.length;
-  const canSchedule = profileId === "manual";
+  void panel;
+  const queueCount = tasks.length;
 
   return (
     <section
@@ -853,52 +1046,35 @@ function PlanningQueue({
             Calendar Planner Queue
           </h3>
           <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
-            Geplante Tasks ohne Uhrzeit. Terminieren schreibt Task-Zeitfelder im
-            Manual-Profil.
+            Offene, noch nicht terminierte Task Occurrences. Auswahl öffnet die
+            kanonische Zeitplanung im Inspector.
           </p>
         </div>
         <Pill quiet>{queueCount}</Pill>
       </div>
       <p className="mt-2 text-[10px] leading-4 text-[var(--text-faint)]">
-        Tasks werden terminiert; Open Loops bleiben Kontext. Reviews lesen den
-        kanonischen Review-Status und öffnen den verantwortlichen Flow.
+        Ranking nutzt Deadline, Priority, Routine-Occurrence und vorhandenen
+        Project-/Goal-Kontext. Jede Task erscheint nur einmal.
       </p>
-      <div className="mt-2 flex rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.48)] p-1">
-        {[
-          ["unscheduled", "Tasks", "Tasks planned without time"],
-          ["open-loops", "Open loops", "Prepared open-loop context"],
-          ["reviews", "Reviews", "Review status context"],
-        ].map(([value, label, ariaLabel], index) => (
-          <button
-            aria-label={ariaLabel}
-            aria-pressed={tab === value}
-            className={cn(
-              "min-h-6 flex-1 rounded-full px-2 text-[9px] font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
-              tab === value
-                ? "border border-[rgba(95,200,215,.28)] bg-[rgba(95,200,215,.14)] text-[var(--text-primary)]"
-                : "border border-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)]",
-            )}
-            key={`calendar-queue-tab-${index}`}
-            onClick={() => setTab(value as QueueTab)}
-            type="button"
-          >
-            {label}
-          </button>
-        ))}
-      </div>
       <div className="mt-2 grid gap-1.5">
-        {tab === "unscheduled" && queueTasks.length === 0 ? (
+        {tasks.length === 0 ? (
           <p className="rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.42)] px-3 py-2 text-[11px] text-[var(--text-muted)]">
-            Keine geplanten Tasks ohne Uhrzeit.
+            Keine offenen Tasks ohne Zeitblock.
           </p>
         ) : null}
-
-        {tab === "unscheduled"
-          ? queueTasks.slice(0, 4).map((task) => (
-              <article
-                className="rounded-[10px] border border-[color-mix(in_srgb,var(--accent)_24%,transparent)] bg-[rgba(18,28,43,.44)] p-2"
+        {tasks.map((task) => (
+              <button
+                aria-pressed={selectedTaskId === task.id}
+                className={cn(
+                  "rounded-[10px] border bg-[rgba(18,28,43,.44)] p-2 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
+                  selectedTaskId === task.id
+                    ? "border-[color-mix(in_srgb,var(--accent)_60%,transparent)] ring-1 ring-[color-mix(in_srgb,var(--accent)_30%,transparent)]"
+                    : "border-[color-mix(in_srgb,var(--accent)_24%,transparent)] hover:border-[color-mix(in_srgb,var(--accent)_44%,transparent)]",
+                )}
                 key={task.id}
-                style={accentStyle(task.accent)}
+                onClick={() => onSelectTask(task.id)}
+                style={accentStyle(task.accent ?? "var(--accent-blue)")}
+                type="button"
               >
                 <div className="grid min-h-8 grid-cols-[8px_minmax(0,1fr)] gap-2">
                   <span
@@ -910,100 +1086,21 @@ function PlanningQueue({
                       {task.title}
                     </p>
                     <p className="truncate text-[10px] leading-4 text-[var(--text-muted)]">
-                      {task.plannedDate} · {task.priority} ·{" "}
-                      {task.energy ?? "energy offen"} ·{" "}
-                      {durationLabel(task.estimatedMinutes)}
+                      {task.rankingReason} · {task.priority} · {durationLabel(task.durationMinutes)}
                     </p>
                     <p className="truncate text-[10px] leading-4 text-[var(--text-muted)]">
-                      {task.project}
+                      {task.dueDate ? `Deadline ${task.dueDate}` : "No deadline"}
+                      {task.project ? ` · Project ${task.project.title}` : ""}
                     </p>
-                    {task.isGenerated ? (
-                      <Pill accent="var(--accent-cyan)">Wiederkehrend</Pill>
-                    ) : null}
+                    <p className="truncate text-[10px] leading-4 text-[var(--text-faint)]">
+                      {task.goal ? `Goal ${task.goal.title} · ${task.goal.alignment === "via_project" ? "via Project" : "Direct"}` : ""}
+                      {task.skills.length > 0 ? ` · Skill ${task.skills[0]?.title}` : ""}
+                      {task.isRecurringOccurrence ? " · Recurring" : ""}
+                      {sourceTypeLabel(task.scheduleSourceType) ? ` · ${sourceTypeLabel(task.scheduleSourceType)}` : ""}
+                    </p>
                   </div>
                 </div>
-
-                {canSchedule ? (
-                  <form
-                    action={scheduleTaskForTodayFormAction}
-                    aria-label={`${task.title} terminieren`}
-                    className="mt-2 grid gap-1.5 sm:grid-cols-[minmax(0,1fr)_76px_auto]"
-                  >
-                    <input name="taskId" type="hidden" value={task.id} />
-                    <input name="mode" type="hidden" value="schedule" />
-                    <input
-                      name="plannedDate"
-                      type="hidden"
-                      value={task.plannedDate}
-                    />
-                    <label className="min-w-0">
-                      <span className="sr-only">Uhrzeit</span>
-                      <input
-                        className={inputClass}
-                        defaultValue="09:00"
-                        name="scheduledTime"
-                        type="time"
-                      />
-                    </label>
-                    <label className="min-w-0">
-                      <span className="sr-only">Dauer</span>
-                      <select
-                        className={inputClass}
-                        defaultValue={String(task.estimatedMinutes)}
-                        name="durationMinutes"
-                      >
-                        {scheduleDurationOptions(task.estimatedMinutes).map(
-                          (minutes) => (
-                            <option key={minutes} value={minutes}>
-                              {durationLabel(minutes)}
-                            </option>
-                          ),
-                        )}
-                      </select>
-                    </label>
-                    <button
-                      className="mt-1 min-h-8 rounded-full border border-[rgba(95,200,215,.34)] bg-[rgba(95,200,215,.14)] px-3 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(95,200,215,.48)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-                      type="submit"
-                    >
-                      Terminieren
-                    </button>
-                  </form>
-                ) : (
-                  <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
-                    Demo-/Empty-Fixture. Persistente Terminierung ist nur im
-                    Manual-Profil aktiv.
-                  </p>
-                )}
-              </article>
-            ))
-          : queueItems.slice(0, 4).map((item) => (
-              <article
-                className="grid min-h-8 grid-cols-[8px_minmax(0,1fr)] gap-2"
-                key={`${tab}-${item.title}`}
-                style={accentStyle(item.accent)}
-              >
-                <span
-                  aria-hidden="true"
-                  className="mt-1.5 size-1.5 rounded-full bg-[var(--accent)]"
-                />
-                <div className="min-w-0">
-                  <p className="truncate text-[11px] font-medium text-[var(--text-secondary)]">
-                    {"href" in item && item.href ? (
-                      <Link
-                        className="rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-                        href={item.href}
-                      >
-                        {item.title}
-                      </Link>
-                    ) : (
-                      item.title
-                    )}
-                  </p>
-                  <p className="truncate text-[10px] leading-4 text-[var(--text-muted)]">
-                    {item.meta}
-                  </p>
-                </div>
-              </article>
+              </button>
             ))}
       </div>
     </section>
@@ -1011,7 +1108,6 @@ function PlanningQueue({
 }
 
 export function CalendarRightPanel({
-  onCreateBlock,
   onDuplicateBlock,
   onMarkDone,
   onMoveLater,
@@ -1019,14 +1115,14 @@ export function CalendarRightPanel({
   panel,
   planningQueueContentState,
   profileId,
-  resolveDayId,
   selectedBlock,
   selectedDay,
+  selectedQueueTask,
   selectedSlot,
+  onSelectQueueTask,
   scheduledTasks,
   tasks,
 }: Readonly<{
-  onCreateBlock: (block: CalendarRawTimedBlock) => void;
   onDuplicateBlock: (blockId: string) => void;
   onMarkDone: (blockId: string) => void;
   onMoveLater: (blockId: string) => void;
@@ -1039,14 +1135,17 @@ export function CalendarRightPanel({
   panel: CalendarRightPanelViewModel;
   planningQueueContentState: ContentStateMeta;
   profileId: CalendarViewModel["profileId"];
-  resolveDayId: (date: string) => string;
   selectedBlock?: SelectedBlock;
   selectedDay?: CalendarDayViewModel;
+  selectedQueueTask?: SchedulableTaskViewModel;
   selectedSlot?: CalendarSelectedTimeSlotViewModel | null;
+  onSelectQueueTask: (taskId: string) => void;
   scheduledTasks: readonly CalendarTimedBlockViewModel[];
   tasks: readonly SchedulableTaskViewModel[];
 }>) {
-  const selectedLabel = selectedBlock
+  const selectedLabel = selectedQueueTask
+    ? "Queue task"
+    : selectedBlock
     ? calendarBlockTypeLabels[selectedBlock.type]
     : selectedSlot
       ? "Empty Slot"
@@ -1055,7 +1154,9 @@ export function CalendarRightPanel({
     selectedBlock,
     profileId,
   );
-  const modeLabel = selectedIsPersistedTask
+  const modeLabel = selectedQueueTask && profileId === "manual"
+    ? "Task-Zeitsteuerung"
+    : selectedIsPersistedTask
     ? "Task-Zeitsteuerung"
     : selectedSlot
       ? "Vorbereitet"
@@ -1077,6 +1178,15 @@ export function CalendarRightPanel({
           selectedSlot={selectedSlot}
         />
 
+        {selectedQueueTask && profileId === "manual" ? (
+          <QueueTaskSchedule
+            key={selectedQueueTask.id}
+            selectedDay={selectedDay}
+            task={selectedQueueTask}
+            timedBlocks={scheduledTasks}
+          />
+        ) : null}
+
         <TimeSettings
           block={selectedBlock}
           key={`${selectedBlock?.id ?? "slot"}-${selectedSlot?.date ?? selectedDay?.date ?? "day"}-${selectedSlot?.startTime ?? ""}`}
@@ -1089,33 +1199,13 @@ export function CalendarRightPanel({
           selectedSlot={selectedSlot}
         />
 
-        {selectedSlot ? (
-          <section
-            aria-labelledby="calendar-slot-actions-heading"
-            className="rounded-[12px] border border-[rgba(95,200,215,.14)] bg-[rgba(11,17,28,.38)] p-3"
-          >
-            <h3
-              className="text-[13px] font-semibold text-[var(--text-primary)]"
-              id="calendar-slot-actions-heading"
-            >
-              Create
-            </h3>
-            <div className="mt-2">
-              <CalendarCreateMenu
-                defaults={selectedSlot}
-                onCreateBlock={onCreateBlock}
-                resolveDayId={resolveDayId}
-                tasks={tasks}
-              />
-            </div>
-          </section>
-        ) : null}
-
         <SourcePanel block={selectedBlock} />
         <PlanningQueue
           contentState={planningQueueContentState}
           panel={panel}
           profileId={profileId}
+          onSelectTask={onSelectQueueTask}
+          selectedTaskId={selectedQueueTask?.id}
           tasks={tasks}
         />
       </div>

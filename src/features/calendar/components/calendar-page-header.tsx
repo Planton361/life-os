@@ -9,6 +9,7 @@ export function CalendarPageHeader({
   onMovePeriod,
   onToday,
   onViewChange,
+  profileId,
   resolveDayId,
   schedulableTasks,
 }: Readonly<{
@@ -17,6 +18,7 @@ export function CalendarPageHeader({
   onMovePeriod: (direction: -1 | 1) => void;
   onToday: () => void;
   onViewChange: (view: CalendarView) => void;
+  profileId: CalendarViewModel["profileId"];
   resolveDayId: (date: string) => string;
   schedulableTasks: CalendarViewModel["schedulableTasks"];
 }>) {
@@ -38,44 +40,52 @@ export function CalendarPageHeader({
         <div className="grid gap-1.5 xl:justify-items-end">
           <div className="flex flex-wrap items-center gap-2">
             <Pill quiet>{header.dateRange}</Pill>
-            <CalendarCreateMenu
-              defaults={{
-                date: "2026-06-12",
-                dayLabel: "Thu 12 June",
-                endTime: "17:00",
-                startTime: "15:30",
-              }}
-              onCreateBlock={onCreateBlock}
-              resolveDayId={resolveDayId}
-              tasks={schedulableTasks}
-            />
-            <button
-              className="rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.82)] px-3 py-1 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[var(--border-default)] hover:bg-[rgba(23,34,53,.82)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-              onClick={onToday}
-              type="button"
-            >
-              {header.controls.currentAction}
-            </button>
-            <button
-              aria-label="Previous week"
-              className="size-6 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.74)] text-[12px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-              onClick={() => onMovePeriod(-1)}
-              type="button"
-            >
-              {"<"}
-            </button>
-            <button
-              aria-label="Next week"
-              className="size-6 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.74)] text-[12px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-              onClick={() => onMovePeriod(1)}
-              type="button"
-            >
-              {">"}
-            </button>
+            {profileId !== "manual" ? (
+              <CalendarCreateMenu
+                defaults={{
+                  date: "2026-06-12",
+                  dayLabel: "Thu 12 June",
+                  endTime: "17:00",
+                  startTime: "15:30",
+                }}
+                onCreateBlock={onCreateBlock}
+                resolveDayId={resolveDayId}
+                tasks={schedulableTasks}
+              />
+            ) : null}
+            {profileId !== "manual" ? (
+              <>
+                <button
+                  className="rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.82)] px-3 py-1 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[var(--border-default)] hover:bg-[rgba(23,34,53,.82)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                  onClick={onToday}
+                  type="button"
+                >
+                  {header.controls.currentAction}
+                </button>
+                <button
+                  aria-label="Previous week"
+                  className="size-6 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.74)] text-[12px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                  onClick={() => onMovePeriod(-1)}
+                  type="button"
+                >
+                  {"<"}
+                </button>
+                <button
+                  aria-label="Next week"
+                  className="size-6 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.74)] text-[12px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                  onClick={() => onMovePeriod(1)}
+                  type="button"
+                >
+                  {">"}
+                </button>
+              </>
+            ) : null}
           </div>
 
           <div className="flex w-full min-w-0 flex-wrap rounded-full border border-[var(--border-subtle)] bg-[rgba(11,17,28,.72)] p-1 xl:w-[476px]">
-            {header.controls.views.map((view, index) => (
+            {header.controls.views
+              .filter((view) => profileId !== "manual" || view.label === "Week")
+              .map((view, index) => (
               <button
                 aria-pressed={view.active ? "true" : "false"}
                 className={cn(
@@ -90,13 +100,12 @@ export function CalendarPageHeader({
               >
                 {view.label}
               </button>
-            ))}
+              ))}
           </div>
 
           <p className="max-w-[476px] text-[10px] leading-4 text-[var(--text-faint)]">
-            View switcher and period navigation are local UI. Manual task
-            scheduling writes task time fields through Queue and Inspector;
-            Calendar Create is a prepared local preview.
+            Manual scheduling writes canonical task time fields through the
+            Planner Queue and Inspector. Free calendar events remain deferred.
           </p>
         </div>
       </div>

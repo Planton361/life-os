@@ -127,21 +127,21 @@ C1 Core Work Graph
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Planner Queue | `CONNECTED` | unscheduled/planned tasks | maintain |
-| Schedule task | `CONNECTED` | task schedule fields/actions | maintain |
-| Move earlier/later | `CONNECTED` | reschedule action | maintain |
-| Duration change | `CONNECTED` | duration field/action | maintain |
-| Unschedule | `CONNECTED` | unschedule action | maintain |
+| Planner Queue | `CONNECTED` | C2-01 server read model contains exactly open, unscheduled canonical Task Occurrences, ranked once by overdue/deadline/recurring/Project/direct-Goal/backlog signals with compact context and reason | filters and pointer comfort remain separate C2 slices |
+| Schedule task | `CONNECTED` | C2-01 Week Inspector selection calls the existing authenticated, source-aware Task schedule action and refreshes the canonical block immediately and after reload | maintain |
+| Move earlier/later | `CONNECTED` | existing reschedule action now refreshes the Week projection immediately; focused Target browser proof reloads the new slot | maintain |
+| Duration change | `CONNECTED` | existing reschedule action updates duration and the Timegrid block; focused Target browser proof reloads the result | maintain |
+| Unschedule | `CONNECTED` | existing unschedule action removes the Timegrid block and returns the Task to the canonical queue immediately and after reload | maintain |
 | Visible conflict gate | `CONNECTED_GAP` | loaded blocks | no DB-wide guarantee; source-aware conflict model later |
 | Conscious override | `CONNECTED_GAP` | same reschedule path | no audit/history yet |
-| Day/Week views | `CONNECTED_GAP` | task projections | verify all controls and filters use real data |
+| Day/Week views | `CONNECTED_GAP` | C2-01 Manual Week is the primary canonical planning surface with seven-day timegrid, queue and Inspector; Day remains a separate projection slice | C2-03 connects remaining view semantics |
 | Month view | `UI_ONLY` | prepared view | connect to canonical schedule sources |
-| Calendar filters | `UI_ONLY` | visual filters | implement area/type/project/goal/skill filtering |
-| Project/Goal queue | `UI_ONLY` | visual concepts | derive tasks and roadmap order from canonical relations |
+| Calendar filters | `NOT_STARTED` | no active Manual filter claim; legacy visual scope controls are not exposed as Calendar planning filters | implement only canonical Project/Goal/Skill/Priority filters when needed |
+| Project/Goal/Skill queue context | `CONNECTED` | C2-01 queue reads existing C1 Project, direct/via Project Goal and Task↔Skill relations without copying Task data | add filters only as a separate read-surface depth |
 | Recurring/routine scheduling | `CONNECTED` | user-scoped template list/create/edit/pause/reactivate, explicit date/range generation and authenticated reload proof; no background writes | maintain |
-| Meal schedule source | `CONNECTED_GAP` | isolated Git-only SQL and Runtime proof covers source-aware active Task plan/reschedule/unschedule, atomic Meal↔Task completion, ownership and rollback | personal runtime cutover; direct Data API hardening remains deferred |
-| Workout schedule source | `CONNECTED_GAP` | isolated Git-only Runtime proof covers generic active Task completion guards for Running Plan Item and Strength Plan Tasks; Task-only scheduling remains canonical and no Session/Set Log is invented | personal runtime cutover; direct Data API hardening remains deferred |
-| Review schedule source | `CONNECTED_GAP` | isolated Git-only Runtime proof covers generic active Task completion rejection for an open Review; Review keeps no duplicate scheduling fields | personal runtime cutover; direct Data API hardening remains deferred |
+| Meal schedule source | `CONNECTED_GAP` | canonical Target runtime keeps the SR1 source-aware Meal↔Task schedule/completion boundary; C2-01 retains typed Meal context in the planner queue | direct Data API hardening and wider cross-domain Calendar proof remain deferred |
+| Workout schedule source | `CONNECTED_GAP` | canonical Target runtime keeps Task-only scheduling and generic completion guards for Running Plan Item and Strength Plan Tasks; C2-01 retains typed Running/Strength queue context | direct Data API hardening and wider cross-domain Calendar proof remain deferred |
+| Review schedule source | `CONNECTED_GAP` | canonical Target runtime keeps Review Task scheduling and generic completion rejection; C2-01 retains typed Review queue context | direct Data API hardening and wider cross-domain Calendar proof remain deferred |
 | Free calendar events | `NOT_STARTED` | none | separate model decision |
 | Drag/drop/resize | `NOT_STARTED` | none | accessible comfort slice after source model |
 | Schedule history/audit | `NOT_STARTED` | none | later lifecycle/audit model |

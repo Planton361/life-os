@@ -48,6 +48,7 @@ const priorityRank = {
   P1: 1,
   P2: 2,
   P3: 3,
+  none: 4,
 };
 
 function timeToMinutes(time: string) {
@@ -277,7 +278,10 @@ export function CalendarCreateMenu({
     [tasks],
   );
   const projects = useMemo(
-    () => Array.from(new Set(tasks.map((task) => task.project))).sort(),
+    () =>
+      Array.from(
+        new Set(tasks.flatMap((task) => (task.project ? [task.project.title] : []))),
+      ).sort(),
     [tasks],
   );
 
@@ -286,20 +290,20 @@ export function CalendarCreateMenu({
     const next = tasks.filter((task) => {
       const matchesQuery =
         normalizedQuery.length === 0 ||
-        `${task.title} ${task.area} ${task.project}`
+        `${task.title} ${task.area} ${task.project?.title ?? ""}`
           .toLowerCase()
           .includes(normalizedQuery);
       const matchesPriority = priority === "all" || task.priority === priority;
       const matchesArea = area === "all" || task.area === area;
-      const matchesProject = project === "all" || task.project === project;
-      const matchesStatus = status === "all" || task.status === status;
+      const matchesProject = project === "all" || task.project?.title === project;
+      const matchesStatus = status === "all" || task.rankingGroup === status;
       const matchesDuration =
         duration === "all" ||
-        (duration === "short" && task.estimatedMinutes <= 30) ||
+        (duration === "short" && task.durationMinutes <= 30) ||
         (duration === "medium" &&
-          task.estimatedMinutes > 30 &&
-          task.estimatedMinutes <= 60) ||
-        (duration === "long" && task.estimatedMinutes > 60);
+          task.durationMinutes > 30 &&
+          task.durationMinutes <= 60) ||
+        (duration === "long" && task.durationMinutes > 60);
       const matchesDueDate =
         dueDate === "all" ||
         (dueDate === "scheduled" && task.dueDate) ||
@@ -324,15 +328,15 @@ export function CalendarCreateMenu({
       }
 
       if (sortMode === "shortest") {
-        return a.estimatedMinutes - b.estimatedMinutes;
+        return a.durationMinutes - b.durationMinutes;
       }
 
       if (sortMode === "longest") {
-        return b.estimatedMinutes - a.estimatedMinutes;
+        return b.durationMinutes - a.durationMinutes;
       }
 
       if (sortMode === "recently-updated") {
-        return b.recentlyUpdated.localeCompare(a.recentlyUpdated);
+        return (b.createdAt ?? "").localeCompare(a.createdAt ?? "");
       }
 
       return priorityRank[a.priority] - priorityRank[b.priority];
@@ -381,7 +385,7 @@ export function CalendarCreateMenu({
         endTime,
         id: `scheduled-${selectedTask.id}-${Date.now()}`,
         priority: selectedTask.priority,
-        project: selectedTask.project,
+        project: selectedTask.project?.title,
         sourceHref: "/tasks",
         sourceLabel: "Prepared task preview",
         startTime,
@@ -591,9 +595,9 @@ export function CalendarCreateMenu({
                         key={task.id}
                         onClick={() => {
                           setSelectedTaskId(task.id);
-                          setEndTime(addMinutes(startTime, task.estimatedMinutes));
+                          setEndTime(addMinutes(startTime, task.durationMinutes));
                         }}
-                        style={accentStyle(task.accent)}
+                        style={accentStyle(task.accent ?? "var(--accent-blue)")}
                         type="button"
                       >
                         <div className="flex min-w-0 items-start justify-between gap-3">
@@ -602,22 +606,17 @@ export function CalendarCreateMenu({
                               {task.title}
                             </p>
                             <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
-                              {task.priority} · {task.estimatedMinutes} min ·{" "}
-                              {task.area} / {task.project}
+                              {task.priority} · {task.durationMinutes} min ·{" "}
+                              {task.area} / {task.project?.title ?? "No project"}
                             </p>
                           </div>
                           <div className="flex shrink-0 flex-col items-end gap-1">
-                            <Pill accent={task.accent}>{task.status}</Pill>
-                            {task.alreadyScheduled ? (
-                              <span className="text-[9px] font-semibold text-[var(--text-faint)]">
-                                already scheduled
-                              </span>
-                            ) : null}
+                            <Pill accent={task.accent ?? "var(--accent-blue)"}>{task.rankingReason}</Pill>
                           </div>
                         </div>
                         <p className="mt-1 text-[10px] leading-4 text-[var(--text-secondary)]">
-                          Due {task.dueDate ?? "not set"} · updated{" "}
-                          {task.recentlyUpdated}
+                          Due {task.dueDate ?? "not set"} · planned{" "}
+                          {task.plannedDate ?? "not set"}
                         </p>
                       </button>
                     ))
