@@ -441,9 +441,20 @@ and fallback; no runtime cutover occurred.
 
 #### SR1-04C – Runtime Cutover
 
-**Current slice:** Plan and execute the separately approved runtime cutover
-only after preserving the SR1-04B Target Candidate and its read-only proof.
-Keep rollback boundaries explicit; C1.1 remains paused.
+**Status:** Active. The controlled Target writer proof is complete; the
+persistent local runtime switch remains separate. C1.1 remains paused.
+
+##### SR1-04C1 – Controlled Writer Cutover Proof
+
+**Completed:** The isolated Target Runtime accepted authenticated canonical
+personal writes with projection, reload and post-write integrity proofs. The
+Source remains unchanged and is no longer used by the proof runtime.
+
+##### SR1-04C2 – Persistent Runtime Switch
+
+**Current slice:** Make the normal local Life OS runtime use the verified
+Target through an explicitly approved persistent configuration change, while
+preserving the Source fallback boundary.
 
 ## 4.2 Paused Work Block: C1.1 – Work Graph Integrity & Task Context
 
