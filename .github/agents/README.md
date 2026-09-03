@@ -12,8 +12,11 @@ Suggested roles:
 - life-os-accessibility-reviewer
 - life-os-security-reviewer
 
-For now, keep active instructions in:
+For now, canonical instructions remain in:
 
 - `AGENTS.md`
-- `.github/instructions/*`
-- `.github/prompts/*`
+- `AI_WORKFLOW.md`
+
+The `.github/instructions/*` and `.github/prompts/*` files are thin
+tool-specific adapters. They must not act as an independent product, workflow
+or roadmap authority.

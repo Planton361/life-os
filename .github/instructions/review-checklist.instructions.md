@@ -1,7 +1,10 @@
 # Review Checklist Instructions
 
 Stand: 2026-06-17  
-Status: Active
+Status: Non-canonical Copilot adapter
+
+Use the completion and review rules in `AGENTS.md` and `AI_WORKFLOW.md` as
+canonical. This checklist adds no independent completion standard.
 
 Review against:
 

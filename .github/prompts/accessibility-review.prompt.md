@@ -1,5 +1,8 @@
 # Accessibility Review
 
+> Non-canonical GitHub/Copilot adapter. Follow `AGENTS.md`, `AI_WORKFLOW.md`
+> and the cited canonical sources if this prompt conflicts with them.
+
 Review the current UI or diff for accessibility.
 
 Use Skills:

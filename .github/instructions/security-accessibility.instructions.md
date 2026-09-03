@@ -1,7 +1,10 @@
 # Security and Accessibility Instructions
 
 Stand: 2026-06-17  
-Status: Active
+Status: Non-canonical Copilot adapter
+
+Canonical requirements are `AGENTS.md`, `SECURITY.md` and `ACCESSIBILITY.md`.
+This file is a concise tool-specific reminder only.
 
 Security:
 

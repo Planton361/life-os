@@ -888,11 +888,12 @@ Deferred does not mean removed. It means the prerequisite model, privacy or inte
 
 ## 11. Roadmap Maintenance Rule
 
-This file is a static product-completion plan, not an implementation log.
+This file owns the permanent product-completion plan and exactly one explicit
+Active Work Block. It is not an implementation log.
 
 - Normal feature work updates `docs/product/capability-registry.md`, code, tests and Git history.
-- Change this roadmap only when the product plan, permanent sequence, block outcome, dependency or material functional scope changes.
-- Do not move blocks through active/current/completed sections.
+- Change the permanent plan only when its sequence, block outcome, dependency or material functional scope changes.
+- Update the explicit Active Work Block when a normal block changes status; retain completed slices as concise status evidence and advance only to the next planned bounded slice.
 - Keep detailed proof output in tests or, when genuinely necessary, focused QA/decision documents.
 
 ## 12. Final Closure Target

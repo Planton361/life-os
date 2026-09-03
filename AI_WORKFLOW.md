@@ -22,7 +22,7 @@ The workflow optimizes for:
 Every implementation task starts from:
 
 ```text
-Block ID from the user/Codex prompt
+Block ID from the user/Codex prompt, or the explicit Active Work Block in `ROADMAP.md`
 AGENTS.md
 PRODUCT.md
 DESIGN.md
@@ -37,7 +37,7 @@ Historical roadmaps, QA logs and closure documents are evidence. They are not ac
 ## 3. Delivery Loop
 
 ```text
-Block ID from the Codex prompt
+Block ID from the Codex prompt, or the explicit Active Work Block in `ROADMAP.md`
 → read ROADMAP scope
 → audit Capability Registry and code
 → short plan
@@ -64,15 +64,10 @@ Goal:
 [visible user outcome]
 
 Roadmap Block:
-[D1.1]
+[explicit block ID, or resolve the Active Work Block from ROADMAP.md]
 
 Use Skills:
-- life-os-epic-delivery
-- life-os-vertical-slice
-- life-os-backend-action-slice
-- life-os-browser-proof
-- life-os-completion-gate
-- life-os-design-taste, when UI is affected
+- [only the smallest matching set of active project-local skills]
 
 Read:
 - AGENTS.md
@@ -101,12 +96,11 @@ Do not paste the complete security, staging and design rules into every prompt.
 
 ## 5. Skill Mapping
 
-### Full Epic or cross-domain feature
+### Complete feature or cross-domain slice
 
-- `life-os-epic-delivery`
 - `life-os-vertical-slice`
-- `life-os-backend-action-slice`
-- `life-os-browser-proof`
+- `life-os-backend-action-slice` when writes, repositories or schemas are affected
+- `life-os-browser-proof` when UI, navigation or persistence behavior is affected
 - `life-os-completion-gate`
 - `life-os-design-taste` when UI is involved
 
@@ -152,15 +146,12 @@ Model selection remains a local Codex configuration concern and must not be hard
 
 ## 7. Subagents
 
-Use up to three read-only subagents for large Epics:
+Use one main agent by default. Do not automatically create subagents.
 
-- Data/Ownership Audit;
-- UI/Capability Audit;
-- Proof/Regression Audit.
-
-The main agent owns writes and final integration.
-
-Do not let multiple agents independently modify overlapping feature files.
+Only use an additional agent when the user explicitly requests parallel work or
+delegation, and the audit is concrete, independent and read-only. The main
+agent owns every write, scope decision and final integration. Never let agents
+independently modify overlapping feature files.
 
 ## 8. Validation Tiers
 
@@ -202,12 +193,12 @@ Avoid full-suite or unrelated broad-grep runs after every small change.
 
 Maintain as canonical delivery sources:
 
-- `ROADMAP.md` for the static complete plan, permanent sequence and stable block scope;
+- `ROADMAP.md` for the permanent plan, sequence, stable block scope and exactly one explicit Active Work Block;
 - `docs/product/capability-registry.md` as the dynamic actual-status source;
 - decision records for real model/security decisions;
 - QA documents only for complex proof cases.
 
-Normal work does not create separate Epic, scope-lock, proof-hardening or closure files. Change `ROADMAP.md` only when the product plan, order, dependency or material scope changes.
+Normal work does not create separate Epic, scope-lock, proof-hardening or closure files. Change `ROADMAP.md` when the permanent plan, order, dependency or material scope changes, or to transition its single Active Work Block without rewriting the permanent plan.
 
 ## 10. MCP and External Tools
 
@@ -258,20 +249,25 @@ Before committing, Codex reviews:
 - Did Manual/Demo/Empty/Auth-blocked remain separated?
 - Is the focused reload/browser proof green?
 - Was the Capability Registry updated?
-- Is the diff limited to the Epic scope?
+- Is the diff limited to the active block scope?
 
 ## 13. Handoff
 
 At the end of a substantial block, report:
 
 ```text
-Current state:
-Delivered capability:
-Important decisions:
-Files changed:
-Validation:
-Capability Registry changes:
+Erstellt:
+Geändert:
+Nicht geändert:
+Validierung:
+Capability Outcome:
+Backend/Data:
+UI/Projection:
+Browser Proof:
+Capability Registry:
 Deferred:
-Next Roadmap block:
 Commit:
+Commit Hash:
+Nicht gelöst:
+Risiken:
 ```

@@ -1,5 +1,8 @@
 # Completion Review Prompt
 
+> Non-canonical GitHub/Copilot adapter. Follow `AGENTS.md`, `AI_WORKFLOW.md`
+> and the cited canonical sources if this prompt conflicts with them.
+
 Use this prompt after a Codex block to decide whether the work is truly complete, only partial, prepared, or blocked.
 
 Use Skills:

@@ -1,5 +1,8 @@
 # Create Feature Spec
 
+> Non-canonical GitHub/Copilot adapter. Follow `AGENTS.md`, `AI_WORKFLOW.md`
+> and the cited canonical sources if this prompt conflicts with them.
+
 Use this prompt to turn a Life OS feature idea into a focused spec.
 
 Use Skills:

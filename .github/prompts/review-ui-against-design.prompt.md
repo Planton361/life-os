@@ -1,5 +1,8 @@
 # Review UI Against Design
 
+> Non-canonical GitHub/Copilot adapter. Follow `AGENTS.md`, `AI_WORKFLOW.md`
+> and the cited canonical sources if this prompt conflicts with them.
+
 Review the provided screenshot or diff against Life OS V5.
 
 Use Skills:

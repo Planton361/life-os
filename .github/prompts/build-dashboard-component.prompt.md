@@ -1,5 +1,8 @@
 # Build Dashboard Component
 
+> Non-canonical GitHub/Copilot adapter. Follow `AGENTS.md`, `AI_WORKFLOW.md`
+> and the cited canonical sources if this prompt conflicts with them.
+
 Goal:
 Implement or update one Dashboard V5 component.
 

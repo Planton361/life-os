@@ -17,9 +17,9 @@
 
 ## Overview
 
-Life OS is a personal planning and second-brain web application that brings
-daily execution, long-term direction and important areas of life into one
-controlled system.
+Life OS is a personal-only, local-first daily companion for control,
+scheduling, projects, knowledge and important areas of private life. It brings
+daily execution and long-term direction into one controlled system.
 
 It is designed for situations where many tasks, projects, goals and
 responsibilities feel important at the same time. Instead of adding another
@@ -48,22 +48,21 @@ inside one consistent workspace.
 
 | Area | Purpose |
 |---|---|
-| **Dashboard** | A compact overview of current priorities, progress and open loops. |
+| **Dashboard** | A compact cockpit for current priorities, control and open loops. |
 | **Today** | A focused execution surface for the current day. |
 | **Inbox** | Fast capture followed by deliberate triage. |
-| **Tasks** | Concrete actions with clear state and context. |
-| **Calendar** | Time-based planning, scheduling and conflict handling. |
-| **Projects** | Multi-step outcomes, supporting material and execution state. |
-| **Goals** | Longer-term direction connected to active work. |
+| **Portfolio** | Concrete Tasks, Projects, Goals and Skills with shared context. |
+| **Calendar** | Canonical Task-based planning and temporal projection. |
+| **Resources** | Knowledge, evidence and linked context. |
 | **Review** | Structured reflection and system maintenance. |
-| **Education** | Study planning, learning material and academic responsibilities. |
-| **Work** | Meetings, knowledge, responsibilities and professional follow-up. |
-| **Coding & Agents** | Repositories, technical skills, experiments and agent workflows. |
-| **Health & Nutrition** | Health records, routines, recipes, groceries and nutrition planning. |
-| **Personal** | Personal responsibilities, interests and supporting resources. |
+| **Coding** | Technical projects, Skills and execution context. |
+| **Education, Work & Life** | Domain context built on the shared core workflow. |
+| **Health & Nutrition** | Personal records, routines, recipes, meals and planning. |
+| **Journal, Notes, Inventory & Wishlist** | Active personal depth surfaces. |
 
-Additional systems such as resources, skills, challenges and personal rewards
-support the main planning workflow without replacing it.
+Entertainment, Shop, Challenges and Anti-Rot remain retained but deferred and
+hidden from active navigation. The personal AI assistant is not yet a
+production capability.
 
 ## Core workflow
 
@@ -141,8 +140,9 @@ pnpm dev
 
 Open the local URL printed by Next.js.
 
-Supabase-backed flows require the expected local environment variables and
-database setup. See:
+Supabase-backed flows use the canonical local Target runtime; the older local
+stack is legacy fallback only. They require the expected local environment
+variables and database setup. See:
 
 - [`supabase/README.md`](./supabase/README.md)
 - [`docs/ops/local-personal-operations-runbook-w1-1b-3.md`](./docs/ops/local-personal-operations-runbook-w1-1b-3.md)
@@ -186,8 +186,9 @@ Life OS is an active personal project.
 
 The repository already contains a broad set of product surfaces, Supabase-backed
 data repositories, authentication flows, design documentation and structured
-QA evidence. Development currently focuses on completing and hardening
-end-to-end workflows rather than adding disconnected features.
+QA evidence. Development currently focuses on the C2 integrated calendar
+proof, then on completing and hardening end-to-end daily-companion workflows
+rather than adding disconnected features.
 
 Because the application models personal information and routines, public
 source availability does not imply a public hosted service or shared personal

@@ -1,10 +1,10 @@
 # Life OS Agent Workflow V2
 
 Stand: 2026-07-07
-Status: Active
-Zweck: Operative Agentenregeln fuer vollstaendige Life-OS-Featurearbeit mit UI, Backend und Browser-Proof.
-Quelle der Wahrheit: `AGENTS.md`, `AI_WORKFLOW.md`, `PRODUCT.md`, `DESIGN.md`, `ARCHITECTURE.md`, `DATA_MODEL.md`, `SECURITY.md`, `ACCESSIBILITY.md`, `ROADMAP.md`.
-Gilt fuer: Codex-, Claude-, Cursor-, Copilot- und andere Agentenarbeiten an Features, Prompts, Reviews, Skills und Workflow-Dokumentation.
+Status: Historical supporting reference
+Zweck: Historische Detailreferenz fuer vollstaendige Life-OS-Featurearbeit mit UI, Backend und Browser-Proof.
+Quelle der Wahrheit: die in `AGENTS.md` definierte Reihenfolge; `AGENTS.md` und `AI_WORKFLOW.md` bleiben die kanonischen Codex-Workflow-Regeln.
+Gilt nur als ergänzende Referenz für Codex-, Claude-, Cursor-, Copilot- und andere Agentenarbeiten. Bei Konflikt gilt die kanonische Quelle.
 Nicht gilt fuer: Produktstrategie im Detail, automatische Toolinstallation, MCP-Aktivierung oder Remote-DB-Aktionen.
 
 ## 1. Zweck

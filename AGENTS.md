@@ -22,7 +22,7 @@ Read active sources in this order:
 1. `AGENTS.md` – repository work rules;
 2. `PRODUCT.md` – complete product contract;
 3. `DESIGN.md` – V5 design truth;
-4. `ROADMAP.md` – complete static product-completion plan, block sequence and scope;
+4. `ROADMAP.md` – permanent product-completion sequence, stable block scope and exactly one explicit Active Work Block;
 5. `docs/product/capability-registry.md` – dynamic truth for actual capability status;
 6. `ARCHITECTURE.md`, `DATA_MODEL.md`, `SECURITY.md`, `ACCESSIBILITY.md` – technical boundaries;
 7. `AI_WORKFLOW.md` and project Skills – delivery method;
@@ -34,8 +34,8 @@ Legacy research, historical roadmaps and closure files must not override the act
 
 For substantial tasks:
 
-1. take the concrete block ID from the user/Codex prompt;
-2. read that block's stable scope in `ROADMAP.md`;
+1. take the concrete block ID from the user/Codex prompt, or resolve the explicit Active Work Block in `ROADMAP.md` when none is supplied;
+2. read that block's stable scope and current status in `ROADMAP.md`;
 3. inspect the Capability Registry, relevant code, tests and Git history;
 4. summarize the current implementation and gaps;
 5. output a short execution plan;
@@ -230,7 +230,7 @@ Create a dedicated document only when one of these applies:
 
 Roadmap history and QA documents are evidence, not active prioritization sources.
 
-`ROADMAP.md` is changed only when the product plan, permanent order, dependency or material functional scope changes. Do not update it merely to advance, activate or close a normal work block.
+`ROADMAP.md` changes when the product plan, permanent order, dependency or material functional scope changes. Its one explicit Active Work Block may also be updated for normal status transitions; do not rewrite the permanent plan or turn the roadmap into a proof log.
 
 ## 13. Protected Paths
 

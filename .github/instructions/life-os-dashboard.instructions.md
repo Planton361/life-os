@@ -1,7 +1,10 @@
 # Life OS Dashboard Instructions
 
 Stand: 2026-06-18
-Status: Active
+Status: Non-canonical Copilot adapter
+
+Canonical rules are `AGENTS.md`, `DESIGN.md` and the relevant `docs/design/*`
+sources. This file adds no competing product or workflow truth.
 
 Use for any Dashboard V5 work.
 

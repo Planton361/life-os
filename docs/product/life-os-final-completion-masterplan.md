@@ -919,7 +919,6 @@ Die DeepSeek-API ist OpenAI-kompatibel und unterstützt JSON Output sowie Tool C
 - neue Skills nur, wenn wiederholte Lücke besteht:
   - `life-os-read-model-projection`
   - `life-os-external-integration-gate`
-  - `life-os-epic-delivery`
 
 ### Schritt 5 – Umsetzung starten
 

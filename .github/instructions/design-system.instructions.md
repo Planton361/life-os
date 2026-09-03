@@ -1,7 +1,10 @@
 # Design System Instructions
 
 Stand: 2026-06-17  
-Status: Active
+Status: Non-canonical Copilot adapter
+
+Canonical rules are `AGENTS.md`, `DESIGN.md` and the relevant `docs/design/*`
+sources. This file adds no competing design direction.
 
 Active design source:
 

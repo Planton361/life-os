@@ -1,7 +1,10 @@
 # Life OS Instructions
 
 Stand: 2026-06-17  
-Status: Active
+Status: Non-canonical Copilot adapter
+
+Read `AGENTS.md` and `AI_WORKFLOW.md` first. This file is a concise
+tool-specific reminder and creates no independent authority.
 
 Use for all Life OS repo work.
 

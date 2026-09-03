@@ -1,17 +1,16 @@
-# GitHub Copilot Instructions – Life OS
+# GitHub Copilot Adapter – Life OS
 
-Stand: 2026-06-17
+Status: Non-canonical adapter
 
-Life OS is a personal command-center web app. Follow the repo sources of truth:
+This file is a concise Copilot adapter. It does not create product, workflow or
+roadmap truth. Follow the ordered canonical sources in `AGENTS.md`, especially:
 
 - `AGENTS.md`
 - `PRODUCT.md`
 - `DESIGN.md`
-- `ARCHITECTURE.md`
-- `DATA_MODEL.md`
-- `SECURITY.md`
-- `ACCESSIBILITY.md`
 - `ROADMAP.md`
+- `docs/product/capability-registry.md`
+- `ARCHITECTURE.md`, `DATA_MODEL.md`, `SECURITY.md`, `ACCESSIBILITY.md`
 - `AI_WORKFLOW.md`
 
 Rules:
