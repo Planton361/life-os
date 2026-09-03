@@ -9,6 +9,12 @@ export async function signUpTechnicalManualUser(
   prefix: string,
   stamp: number,
 ) {
+  if (process.env.LIFE_OS_E2E_RUNTIME !== "DISPOSABLE") {
+    throw new Error(
+      "Technical Playwright sign-up requires the disposable local E2E runtime. Use pnpm test:e2e:isolated <focused-spec>.",
+    );
+  }
+
   await page.context().addCookies([
     {
       httpOnly: true,

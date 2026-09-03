@@ -17,7 +17,7 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   webServer: {
-    command: `pnpm dev --hostname ${playwrightHost} --port ${playwrightPort}`,
+    command: `pnpm dev:raw --hostname ${playwrightHost} --port ${playwrightPort}`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     url: playwrightBaseUrl,

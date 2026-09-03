@@ -1,7 +1,7 @@
 # W1.1B.4 Local Backup / Restore Drill
 
 Stand: 2026-07-10
-Status: Local restore-smoke passes with temporary Supabase compatibility bootstrap
+Status: Z1 canonical Target backup and isolated restore-smoke contract
 Quelle der Wahrheit: `AGENTS.md`, Root-Dokumente, W1.1B.2 Personal
 Operational Readiness, W1.1B.3 Local Personal Operations Runbook,
 `docs/security/backup-export-restore-strategy-r1-9-2.md`, lokale Supabase CLI
@@ -52,16 +52,16 @@ Primary Goal:
 
 ## 3. Sicherheitsgrenzen
 
-DB-Connection-String:
+Runtime Guard:
 
-- `LIFE_OS_LOCAL_DB_URL` wird nur aus der aktuellen Shell-Umgebung gelesen.
-- Der Wert wird nie ausgegeben, nie in Manifest-Dateien geschrieben und nie aus
-  `.env.local` gelesen.
-- Wenn die Variable fehlt, stoppt das Backup-Script mit:
-
-```text
-Set LIFE_OS_LOCAL_DB_URL in your local shell. Do not commit or print it.
-```
+- `pnpm backup:local:create` prueft vor jeder Datei-Erzeugung die laufende
+  kanonische Target-DB anhand der nicht-sensitiven Docker-Projekt-Labels
+  `life-os-sr104b-target`.
+- Der Default-CLI-Stack `life-os-app`, ein Legacy-Source-Stack oder ein
+  unbekannter Stack werden nicht als Target akzeptiert.
+- Ein optional gesetztes `LIFE_OS_LOCAL_DB_URL` wird nur auf lokalen Host und
+  den vom Target-Container publizierten DB-Port geprueft; sein Wert wird weder
+  aus einer Datei gelesen noch ausgegeben oder gespeichert.
 
 Backup-Artefakte:
 
@@ -104,13 +104,7 @@ Supabase CLI Flags:
 
 Keine neue Dependency wurde ergaenzt.
 
-## 5. LIFE_OS_LOCAL_DB_URL Handling
-
-Erlaubt:
-
-```bash
-LIFE_OS_LOCAL_DB_URL='<local-postgres-connection-string>' pnpm backup:local:create
-```
+## 5. Runtime Guard and optional DB URL
 
 Nicht erlaubt:
 
@@ -122,12 +116,12 @@ Nicht erlaubt:
 
 Script-Verhalten:
 
-- `scripts/ops/create-local-db-backup.mjs` liest
-  `process.env.LIFE_OS_LOCAL_DB_URL`.
-- Wenn die Variable fehlt, wird kein Backup-Ordner erzeugt.
-- Wenn ein Dump fehlschlaegt, schreibt das Script hoechstens ein
-  `BACKUP_FAILED` Manifest in den ignorierten Backup-Ordner und redigiert den
-  DB-URL-Wert aus Fehlermeldungen.
+- `scripts/ops/create-local-db-backup.mjs` dumpt nur aus dem guarded Target-
+  DB-Container.
+- Ein optionaler `LIFE_OS_LOCAL_DB_URL` ist kein Zugriffspfad; er wird vor dem
+  Dump nur fail-closed gegen den Target-Port geprueft.
+- Wenn Guard oder Dump fehlschlagen, gibt es keinen Erfolg. Ein moegliches
+  `BACKUP_FAILED` Manifest bleibt im ignorierten Backup-Ordner.
 
 ## 6. Backup-Artefakte
 
@@ -153,15 +147,19 @@ backups/local-drills/<timestamp>/
 
 Dump-Strategie:
 
-- `roles.sql`: `supabase db dump --role-only`
-- `schema.sql`: `supabase db dump --schema public,auth`
-- `data.sql`: `supabase db dump --schema public,auth --data-only --use-copy`
+- `roles.sql`: `pg_dumpall --roles-only` im guarded Target-DB-Container
+- `schema.sql`: schema-only `pg_dump --clean --if-exists` der Schemas
+  `public`, `auth` und `supabase_migrations`
+- `data.sql`: data-only `pg_dump` derselben Schemas im guarded Target-DB-
+  Container
 
 Begruendung:
 
 - `public` enthaelt die Life-OS App-Tabellen.
 - `auth` wird im logischen Drill beruecksichtigt, weil `profiles.id` und
   viele User-FKs auf `auth.users` bezogen sind.
+- `supabase_migrations` liefert die Migration-History fuer den isolierten
+  Kompatibilitaets-Smoketest.
 - Auth-Daten sind sensitive lokale Backup-Daten und duerfen deshalb nur in
   ignorierten Backup-Artefakten liegen.
 
@@ -175,17 +173,21 @@ pnpm backup:local:restore-smoke backups/local-drills/<timestamp>
 
 Verhalten:
 
-1. Backup-Ordner als Argument pruefen.
+1. Backup-Ordner inklusive `CANONICAL_TARGET`-Manifest pruefen.
 2. `roles.sql`, `schema.sql`, `data.sql` und `manifest.json` auf Existenz und
    Nicht-Leerheit pruefen.
 3. Docker daemon pruefen.
 4. Lokal vorhandenes Docker Image pruefen.
 5. Temporaeren Container starten.
 6. Minimalen Supabase-Rollen-Bootstrap nur im temporaeren Container anwenden.
-7. `roles.sql`, `schema.sql` und `data.sql` via `psql` in den Container
-   einspielen.
-8. `restore-smoke-result.json` in den Backup-Ordner schreiben.
-9. Container stoppen.
+7. Das sensible `roles.sql`-Artefakt pruefen, aber nicht in die temporaere
+   Runtime replayen; der feste Bootstrap liefert nur die Supabase-Rollen fuer
+   Schema-Grants.
+8. `schema.sql` und `data.sql` via `psql` in den Container einspielen.
+9. Migration-History, die kanonischen Tabellen `profiles`, `tasks`,
+   `projects`, `resources`, `meals` und deren aggregierte Row-Counts gegen das
+   Manifest pruefen.
+10. `restore-smoke-result.json` schreiben und den Container entfernen.
 
 Default Image:
 
@@ -218,51 +220,36 @@ Der Blocker ist sicher, weil die aktive lokale App-DB nicht veraendert wird.
 
 ## 8. Drill-Ergebnis
 
-Tooling Environment:
+Z1 Evidence:
 
-```text
-Supabase CLI available: yes, 2.107.0
-Docker available: yes, CLI 29.6.1 and daemon 29.6.1
-psql available: yes, PostgreSQL 18.4
-pg_dump available: yes, PostgreSQL 18.4
-Restore Drill feasible: tooling feasible; execution pending local DB URL
-Blocker: NEEDS_USER_LOCAL_DB_URL
-```
-
-Ausgefuehrt:
-
-- Startcheck: gruen.
-- Tooling erstellt.
-- Node Syntax Checks fuer beide Scripts: gruen.
-- Kein Backup erzeugt, weil `LIFE_OS_LOCAL_DB_URL` in der Codex-Shell nicht
-  gesetzt ist.
-- Kein Restore-Smoke ausgefuehrt, weil kein Backup-Ordner erzeugt wurde.
-
-Status:
-
-```text
-NEEDS_USER_LOCAL_DB_URL
-```
+- Canonical Target Guard, Backup-Erstellung und falscher-Default-Stack-
+  Rejection wurden ausgefuehrt.
+- Ein frisches Backup wurde in einen isolierten temporaeren Container
+  restauriert; Migration-History, kanonische Tabellen und aggregierte Daten
+  wurden gelesen und mit dem Manifest verglichen.
+- Der Result-Status war `PASS_ISOLATED_READABLE_RESTORE`; ein aggregierter
+  Target-Preservation-Check vor/nach dem Drill blieb unveraendert.
+- Keine SQL-, Auth-, URL- oder persoenliche Row-Inhalte wurden ausgegeben.
 
 ## 9. Blocker, falls vorhanden
 
-Aktueller Blocker:
+Mögliche sichere Blocker:
 
-```text
-NEEDS_USER_LOCAL_DB_URL
-```
-
-Warum:
-
-- Der lokale DB-Connection-String darf nicht aus `.env.local` gelesen werden.
-- `supabase status` darf nicht offen ausgegeben werden, weil es lokale Keys
-  enthalten kann.
-- Die Codex-Shell enthaelt `LIFE_OS_LOCAL_DB_URL` nicht.
+- `RUNTIME_GUARD_CANONICAL_TARGET_UNAVAILABLE` oder
+  `RUNTIME_GUARD_CANONICAL_TARGET_IDENTITY_MISMATCH`: nicht auf den
+  Default-CLI-Stack ausweichen; zuerst die dokumentierte Target-Runtime
+  wiederherstellen.
+- `RUNTIME_GUARD_REJECTED_DIFFERENT_LOCAL_STACK`: einen optionalen lokalen
+  Connection-String nicht weiterverwenden, wenn er auf den Different Stack
+  zeigt.
+- `BLOCKED_RESTORE_SMOKE_*`: nur den isolierten Restore-Container untersuchen;
+  Target und Legacy bleiben unangetastet.
 
 Sichere Fortsetzung lokal:
 
 ```bash
-LIFE_OS_LOCAL_DB_URL='<local-postgres-connection-string>' pnpm backup:local:create
+pnpm runtime:target:check
+pnpm backup:local:create
 pnpm backup:local:restore-smoke backups/local-drills/<timestamp>
 git status --short
 ```
@@ -321,13 +308,13 @@ Retention:
 
 ## 12. Next Steps
 
-1. Owner setzt `LIFE_OS_LOCAL_DB_URL` lokal in der Shell, ohne den Wert zu
-   committen oder zu posten.
+1. Owner prueft `pnpm runtime:target:check` und startet niemals den
+   Default-CLI-Stack als Ersatz.
 2. Owner fuehrt `pnpm backup:local:create` aus.
 3. Owner fuehrt mit dem erzeugten Ordner
    `pnpm backup:local:restore-smoke backups/local-drills/<timestamp>` aus.
 4. Owner prueft `git status --short`; `backups/` darf nicht auftauchen.
-5. Falls Restore-Smoke `PASS_WITH_COMPATIBILITY_BOOTSTRAP` meldet, ist der
+5. Falls Restore-Smoke `PASS_ISOLATED_READABLE_RESTORE` meldet, ist der
    lokale logische Restore-Smoke fuer diesen Stand erledigt.
 6. Das ist kein vollstaendiger Supabase-Runtime-, Cloud- oder Production-
    Restore-Claim.

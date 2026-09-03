@@ -333,7 +333,7 @@ C1 Core Work Graph
 | Playwright auth-state capture | `CONNECTED` | local script | maintain |
 | Local startup runbook | `CONNECTED` | ops docs | maintain |
 | Local backup create | `CONNECTED` | ops script | maintain |
-| Restore smoke | `CONNECTED_GAP` | compatibility-bootstrap smoke | no full Supabase runtime restore claim |
+| Restore smoke | `CONNECTED` | Z1 guarded canonical Target backup restores schema, migration history and aggregate canonical-table data into an isolated disposable container; Target preservation is structurally checked before/after | logical local restore-smoke only; no cloud, remote or production restore claim |
 | Private remote | `EXTERNAL_GATE` | intentionally not active | explicit user decision later |
 | Public SaaS | `NOT_STARTED` | not a goal | do not plan by default |
 

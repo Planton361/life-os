@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { createReadStream } from "node:fs";
-import { access, stat, writeFile } from "node:fs/promises";
+import { access, readFile, stat, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { spawn } from "node:child_process";
 
@@ -59,6 +59,7 @@ grant anon to authenticator;
 grant authenticated to authenticator;
 grant service_role to authenticator;
 `;
+const INTEGRITY_TABLES = ["profiles", "tasks", "projects", "resources", "meals"];
 
 function backupDirFromArg() {
   const input = process.argv[2];
@@ -133,6 +134,9 @@ function runCommand(command, args, options = {}) {
       stream.on("error", (error) => {
         child.stdin.destroy(error);
       });
+      child.stdin.on("error", (error) => {
+        if (error.code !== "EPIPE") child.stdin.destroy(error);
+      });
       stream.pipe(child.stdin);
     }
   });
@@ -162,6 +166,66 @@ async function validateBackupFolder(backupDir) {
     if (!fileStat.isFile() || fileStat.size === 0) {
       throw new Error(`${fileName} is missing or empty.`);
     }
+  }
+
+  let manifest;
+  try {
+    manifest = JSON.parse(await readFile(join(backupDir, "manifest.json"), "utf8"));
+  } catch {
+    throw new Error("manifest.json is not valid backup metadata.");
+  }
+
+  if (
+    manifest?.runtime?.classification !== "CANONICAL_TARGET" ||
+    manifest?.runtime?.dockerProject !== "life-os-sr104b-target" ||
+    !manifest?.integrity ||
+    !Array.isArray(manifest?.integrity?.canonicalTables) ||
+    !manifest?.integrity?.rowCounts
+  ) {
+    throw new Error("Backup metadata does not prove a guarded canonical Target backup.");
+  }
+
+  return manifest;
+}
+
+async function restoredIntegritySnapshot(containerName) {
+  const query = `
+    select json_build_object(
+      'migrationCount', (select count(*) from supabase_migrations.schema_migrations),
+      'canonicalTables', (select coalesce(json_agg(tablename order by tablename), '[]'::json)
+        from pg_tables where schemaname = 'public' and tablename = any(array['profiles','tasks','projects','resources','meals'])),
+      'rowCounts', (select json_object_agg(table_name, row_count)
+        from (
+          select 'profiles'::text as table_name, count(*)::bigint as row_count from public.profiles
+          union all select 'tasks', count(*)::bigint from public.tasks
+          union all select 'projects', count(*)::bigint from public.projects
+          union all select 'resources', count(*)::bigint from public.resources
+          union all select 'meals', count(*)::bigint from public.meals
+        ) counts)
+    )::text;
+  `;
+  const result = await runCommand("docker", psqlCommand(containerName, CONTAINER_DB, ["-At", "-c", query]), {
+    captureStdout: true,
+  });
+  if (!result.ok) throw new Error("Restored integrity metadata query failed.");
+
+  try {
+    return JSON.parse(result.stdout.trim());
+  } catch {
+    throw new Error("Restored integrity metadata was unreadable.");
+  }
+}
+
+function assertRestoredIntegrity(manifest, restored) {
+  const expected = manifest.integrity;
+  const expectedTables = [...INTEGRITY_TABLES].sort();
+  if (
+    expected.migrationCount !== restored.migrationCount ||
+    JSON.stringify(expected.canonicalTables) !== JSON.stringify(expectedTables) ||
+    JSON.stringify(restored.canonicalTables) !== JSON.stringify(expectedTables) ||
+    JSON.stringify(expected.rowCounts) !== JSON.stringify(restored.rowCounts)
+  ) {
+    throw new Error("Restored migration/schema/data aggregate fingerprint did not match the backup manifest.");
   }
 }
 
@@ -299,9 +363,10 @@ function classifyRestoreFailure(error) {
 
 async function main() {
   const backupDir = backupDirFromArg();
+  let manifest;
 
   try {
-    await validateBackupFolder(backupDir);
+    manifest = await validateBackupFolder(backupDir);
   } catch (error) {
     await recordResult(
       backupDir,
@@ -310,6 +375,7 @@ async function main() {
       "Backup folder is missing required restore-smoke artifacts.",
       error instanceof Error ? error.message : String(error),
     );
+    process.exitCode = 1;
     return;
   }
 
@@ -322,6 +388,7 @@ async function main() {
       "Docker daemon is not available.",
       dockerInfo.stderr,
     );
+    process.exitCode = 1;
     return;
   }
 
@@ -334,6 +401,7 @@ async function main() {
       "Restore-smoke Docker image is not present locally. Pulling images is outside this script.",
       imageCheck.stderr,
     );
+    process.exitCode = 1;
     return;
   }
 
@@ -369,7 +437,6 @@ async function main() {
     });
 
     for (const step of [
-      { phase: "restore roles", file: "roles.sql", database: MAINTENANCE_DB },
       { phase: "restore schema", file: "schema.sql", database: CONTAINER_DB },
       { phase: "restore data", file: "data.sql", database: CONTAINER_DB },
     ]) {
@@ -387,23 +454,29 @@ async function main() {
           classification.reason,
           classification.detail,
         );
+        process.exitCode = 1;
         return;
       }
     }
 
+    currentPhase = "integrity verification";
+    const restoredIntegrity = await restoredIntegritySnapshot(containerName);
+    assertRestoredIntegrity(manifest, restoredIntegrity);
+
     currentPhase = "result write";
     await writeResult(backupDir, {
-      status: "PASS_WITH_COMPATIBILITY_BOOTSTRAP",
+      status: "PASS_ISOLATED_READABLE_RESTORE",
       checkedAt: new Date().toISOString(),
       image: DEFAULT_IMAGE,
       artifactNames: REQUIRED_FILES,
       compatibilityBootstrapRoles: COMPATIBILITY_BOOTSTRAP_ROLES,
       phase: "restore complete",
-      reason: "Roles, schema, and data restored into isolated Postgres after a temporary Supabase role bootstrap.",
+      reason: "Schema, migration history, and aggregate canonical-table data restored into an isolated Postgres container after a temporary Supabase role bootstrap.",
       detail: "",
       notes: [
-        "Roles, schema, and data restored into an isolated temporary Postgres container with compatibility bootstrap.",
-        "This is a local logical restore-smoke, not a full Supabase runtime or production restore claim.",
+        "The captured roles artifact was validated but intentionally not replayed; the temporary compatibility bootstrap supplies only the fixed Supabase roles needed for schema grants.",
+        "Schema, data, migration history, and aggregate canonical-table integrity were verified in an isolated temporary Postgres container.",
+        "This is a local logical restore-smoke, not a full Supabase application-runtime or production restore claim.",
         "Active local Life OS database was not changed.",
         "No db reset, remote DB, or deployment was used.",
         "Generated SQL contents were not printed.",

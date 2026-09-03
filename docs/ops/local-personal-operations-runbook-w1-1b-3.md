@@ -1,7 +1,7 @@
 # W1.1B.3 Local Personal Operations Runbook
 
 Stand: 2026-07-10
-Status: Local personal operations documented; no remote action executed
+Status: Active local-first operations contract (Z1 runtime update)
 Quelle der Wahrheit: `AGENTS.md`, Root-Dokumente, W1.1B.2 Personal
 Operational Readiness, W1.1A Browser-Proof-Recovery, R1.9.1 RLS Audit,
 R1.9.2 Backup/Export/Restore Strategy und R1.9.3 Deployment Env Boundary.
@@ -57,8 +57,14 @@ Lokale Voraussetzungen:
 - Docker/Supabase Local Runtime ist lokal verfuegbar.
 - `.env.local` wird lokal manuell aus `.env.example` vorbereitet, ohne echte
   Werte in Git, Chat, Logs oder Docs zu kopieren.
-- Lokale Supabase Runtime nutzt `supabase/config.toml`, Projekt-ID
-  `life-os-app`, Postgres `17` und lokale Ports.
+- Die kanonische lokale Target-Runtime hat die Docker-Projekt-ID
+  `life-os-sr104b-target`. Sie ist die einzige normale Runtime fuer App,
+  Backup und Target-Proofs.
+- Der Default-CLI-Stack `life-os-app` ist ein anderer lokaler Stack. Er darf
+  nicht als Target angenommen, migriert oder fuer Target-Proofs beschrieben
+  werden.
+- Legacy-Source-Stacks bleiben ausgeschaltet und read-only fallback. Sie werden
+  weder durch den normalen Start noch durch Backup-/Test-Skripte gestartet.
 - Lokale App laeuft fuer Auth-State-Capture unter `http://localhost:3000`.
 - Lokaler Supabase User existiert oder wird im lokalen Supabase Studio
   angelegt; keine Credentials werden dokumentiert.
@@ -81,17 +87,15 @@ Tagesroutine:
 1. Worktree pruefen.
 2. Dependencies nur installieren, wenn `package.json` oder Lockfile geaendert
    wurden oder es ein frischer Checkout ist.
-3. Lokale Supabase Runtime starten.
-4. Lokale Migrationen anwenden.
-5. Next.js Devserver starten.
-6. Supabase Session in Settings pruefen.
-7. Optional Browser-Proof-Greps sequenziell laufen lassen.
+3. Die kanonische Target-Identitaet pruefen.
+4. Den guarded Next.js Devserver gegen Target starten.
+5. Supabase Session in Settings pruefen.
+6. Optional Browser-Proof-Greps sequenziell laufen lassen.
 
 ```bash
 git status --short
 pnpm install
-pnpm exec supabase start
-pnpm exec supabase migration up --local
+pnpm runtime:target:check
 pnpm dev
 ```
 
@@ -116,8 +120,7 @@ Kernablaeufe:
 | Repo aktualisieren | `git status --short`, optional `git pull` | lokalen Stand kennen und aktualisieren | tracked Worktree bewusst sauber oder bekannte lokale Aenderungen | fremde/unerklaerte Diffs | `private/`, `.local/`, `.env*`, Backup-Artefakte |
 | Dependencies installieren | `pnpm install` | Abhaengigkeiten passend zu `package.json`/Lockfile herstellen | install ohne neue Library-Entscheidung | falsche Node/pnpm-Version, lockfile drift | `node_modules/`, `.pnpm-store/` |
 | Env vorbereiten | `.env.example` lokal als Vorlage nutzen | Manual Supabase mode konfigurieren | `.env.local` existiert lokal mit echten lokalen Werten | echte Werte in Chat/Diff, fehlende `NEXT_PUBLIC_*` Werte | `.env.local`, `.env`, echte Keys |
-| Supabase starten | `pnpm exec supabase start` | lokale DB/Auth/API/Studio starten | lokale Runtime laeuft | Docker aus, Ports belegt | `supabase/.temp/`, lokale Keys |
-| Migrationen anwenden | `pnpm exec supabase migration up --local` | lokalen Schema-Stand aktualisieren | lokale Migrationen sind angewendet | Supabase nicht gestartet, Migration fehlt | keine neuen Migrationen ohne Scope |
+| Target pruefen | `pnpm runtime:target:check` | Docker-Labels der kanonischen Target-DB pruefen | `CANONICAL_TARGET_READY`; Default bleibt Different Stack | Target nicht gestartet oder Label passt nicht | keine Runtime-Werte |
 | Devserver starten | `pnpm dev` | lokale App bedienen | App erreichbar unter `localhost:3000` | Port belegt, Env fehlt | Build-/Cache-Artefakte |
 | Session pruefen | `/settings#supabase-session` | Manual Supabase Auth sichtbar pruefen | aktive Session oder klarer lokaler Fehler | `Missing local Supabase env`, abgelaufene Session | keine Screenshots/Logs mit privaten Daten |
 | Auth-State erzeugen | `pnpm auth:playwright:capture` | Playwright Storage-State fuer localhost speichern | `.local/playwright/supabase-auth-state-localhost.json` wird geschrieben | nicht-interaktives Terminal, keine aktive Session | `.local/` |
@@ -126,14 +129,22 @@ Kernablaeufe:
 
 ## 5. Supabase Local Operations
 
-Lokale Standardbefehle:
+`pnpm exec supabase start`, `migration up --local`, `db lint --local` und
+`db advisors --local` adressieren aus diesem Repository den Default-CLI-Stack.
+Sie sind deshalb keine Target-Operationen. Sie duerfen nur fuer einen bewusst
+separaten disposable CLI-Stack verwendet werden; nie still als Target-Proof.
+
+Der normale App-Start ist ausschliesslich:
 
 ```bash
-pnpm exec supabase start
-pnpm exec supabase migration up --local
-pnpm exec supabase db lint --local --level warning
-pnpm exec supabase db advisors --local --type security --level warn --fail-on none
+pnpm runtime:target:check
+pnpm dev
 ```
+
+`pnpm dev` prueft den Target-Container per nicht-sensitiven Docker-Labels und
+bezieht die lokalen Public-Client-Werte intern aus genau diesem Stack. Die
+Werte werden weder ausgegeben noch gespeichert. `pnpm dev:raw` ist nur eine
+Diagnose-Fluchtklappe und kein Target-Proof.
 
 Optional lokal:
 
@@ -192,7 +203,19 @@ Regeln:
 
 ## 7. Playwright Auth-State Capture
 
-Command:
+Technische Sign-up-Proofs muessen einen disposable Stack nutzen:
+
+```bash
+pnpm test:e2e:isolated tests/e2e/n1-nutrition-loop.spec.ts
+```
+
+Der Runner startet einen eigenen Supabase-CLI-Stack unter `.local/`, spielt nur
+die versionierten Migrationen ein, setzt die Public-Client-Werte nur im
+Kindprozess und entfernt den Stack danach. `signUpTechnicalManualUser` bricht
+ohne diese Isolation vor dem Write ab. Damit bleiben technische Accounts und
+Rows ausserhalb der persoenlichen Target-Runtime.
+
+Command fuer einen bewusst vorhandenen, manuellen Auth-State:
 
 ```bash
 pnpm auth:playwright:capture
@@ -251,6 +274,16 @@ pnpm exec supabase db advisors --local --type security --level warn --fail-on no
 
 Browser-Proofs, wenn UI-/Persistenzverhalten bewiesen werden soll:
 
+Technische Sign-up-Specs verwenden den isolierten Runner, zum Beispiel:
+
+```bash
+pnpm test:e2e:isolated tests/e2e/n1-nutrition-loop.spec.ts
+```
+
+Ein direkter Aufruf dieser Specs wird vor dem technischen Sign-up abgewiesen.
+Die folgenden vorhandenen Auth-State-Greps bleiben ein bewusst manueller
+Target-Proof und erstellen keine technischen Accounts:
+
 ```bash
 PLAYWRIGHT_HOST=localhost \
 PLAYWRIGHT_PORT=3000 \
@@ -284,8 +317,7 @@ Wechsel auf ein anderes Geraet:
 ```bash
 git pull
 pnpm install
-pnpm exec supabase start
-pnpm exec supabase migration up --local
+pnpm runtime:target:check
 pnpm dev
 pnpm auth:playwright:capture
 ```

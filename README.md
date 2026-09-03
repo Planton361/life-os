@@ -141,8 +141,9 @@ pnpm dev
 Open the local URL printed by Next.js.
 
 Supabase-backed flows use the canonical local Target runtime; the older local
-stack is legacy fallback only. They require the expected local environment
-variables and database setup. See:
+stack is legacy fallback only. `pnpm dev` performs the non-sensitive Target
+guard before starting Next.js; do not substitute the default Supabase CLI stack
+for a Target proof. See:
 
 - [`supabase/README.md`](./supabase/README.md)
 - [`docs/ops/local-personal-operations-runbook-w1-1b-3.md`](./docs/ops/local-personal-operations-runbook-w1-1b-3.md)
