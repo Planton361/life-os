@@ -213,11 +213,11 @@ C1 Core Work Graph
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Mood entry | `CONNECTED` | mood_entries, Dashboard action, auth/Zod/RLS and reload proof | maintain |
+| Mood entry | `CONNECTED` | mood_entries, Dashboard action, auth/Zod/RLS and H1/H2 Target-Runtime reload proof | maintain |
 | Mood trend | `CONNECTED` | timestamped labeled/color-paired Mental Health history | richer aggregation remains optional, without diagnosis |
-| Sleep entry | `CONNECTED` | date-keyed editable sleep_entries with duration, optional quality/note | maintain |
+| Sleep entry | `CONNECTED` | date-keyed editable sleep_entries with duration, optional quality/note; H1/H2 Target-Runtime reload proof | maintain |
 | Sleep trend | `CONNECTED` | reload-stable Mental Health history and Dashboard latest-night projection | maintain |
-| Weight entry | `CONNECTED` | date-keyed editable weight_entries and Health history | maintain |
+| Weight entry | `CONNECTED` | date-keyed editable weight_entries and Health history; H1/H2 Target-Runtime reload proof | maintain |
 | Weight goal | `CONNECTED` | single user-scoped weight_goals row, optional target date and honest progress | maintain |
 | Journal linkage | `UI_ONLY` | journal/nav exists | canonical journal/notes and privacy |
 | Mental Health overview | `CONNECTED_GAP` | canonical Mood history and Sleep entry/history are connected without medical claims | journal linkage and later review associations remain separate |
@@ -229,7 +229,7 @@ C1 Core Work Graph
 | Habit definition | `CONNECTED` | user-scoped canonical habits with create/edit/order/archive UI and RLS | maintain |
 | Flexible unit/increment | `CONNECTED` | optional unit/target plus positive default increment; no-target state proven | maintain |
 | Morning/Midday/Evening window | `CONNECTED` | ordered profile boundaries, full-day resolution and per-window DB slot constraint | maintain timezone and boundary tests |
-| Dashboard increment click | `CONNECTED` | each click appends an owned timestamped habit_log; visible status and reload proof | maintain |
+| Dashboard increment click | `CONNECTED` | each click appends an owned timestamped habit_log; H1/H2 Target-Runtime dashboard/history reload proof | maintain |
 | Daily completion | `CONNECTED` | local-date log aggregation with honest overachievement and no invented percentage | maintain |
 | Habit history/trends | `CONNECTED` | real log-derived seven-day cards and 30-day signals on Habits/Health | maintain |
 | Habit archive | `CONNECTED` | soft archive removes active Dashboard slot while retaining historical log projection | restore remains a separate future lifecycle capability |
@@ -239,15 +239,15 @@ C1 Core Work Graph
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
 | Manual run entry | `CONNECTED` | user-scoped running_sessions with create/edit/soft archive, positive distance/duration and optional time/HR/notes | maintain reload and RLS proofs |
-| Latest run Dashboard | `CONNECTED` | latest completed running_session; pace deterministically derived from distance and duration | maintain |
-| Running plan | `CONNECTED` | archived running_plans plus ordered editable running_plan_items and executable schedule links | maintain idempotent scheduling proof |
+| Latest run Dashboard | `CONNECTED` | latest completed running_session; pace deterministically derived from distance and duration, H1/H2 Target-Runtime reload proof | maintain |
+| Running plan | `CONNECTED` | archived running_plans plus ordered editable running_plan_items and executable schedule links; H1/H2 Target proof keeps a plan task visible across Calendar, Today and Dashboard until a real run completes it | maintain idempotent scheduling proof |
 | Running trends | `CONNECTED` | real completed-session Today/7-day/30-day totals and history on Running/Health | maintain timezone boundary proof |
 | Garmin import | `EXTERNAL_GATE` | none | partner/API decision; manual path remains complete |
 | Exercise library | `CONNECTED` | user-scoped exercises with transactional controlled muscle mappings, edit and soft archive | maintain historical readability |
 | Strength plan | `CONNECTED` | editable strength_plans and ordered strength_plan_items with sets/reps/optional load | maintain ownership and ordering proofs |
-| Strength session/sets | `CONNECTED` | reload-stable strength_sessions and real strength_set_logs with transactional task completion sync | maintain weighted/unweighted semantics |
-| Muscle map | `CONNECTED` | explicit exercise-muscle relations and log-derived set intensity/weighted volume with textual source labels | maintain |
-| Workout schedule source | `CONNECTED_GAP` | isolated Git-only Runtime proof now covers the source-aware active Task write boundary for Running Plan Item and Strength Plan Tasks | personal runtime cutover; retain no-duplicate and completion-sync proofs |
+| Strength session/sets | `CONNECTED` | reload-stable strength_sessions and real strength_set_logs with transactional task completion sync; H1/H2 Target proof requires a real set before task completion | maintain weighted/unweighted semantics |
+| Muscle map | `CONNECTED` | explicit exercise-muscle relations and log-derived set intensity/weighted volume with textual source labels; H1/H2 Target-Runtime Dashboard reload proof | maintain |
+| Workout schedule source | `CONNECTED` | H1/H2 Target-Runtime proof schedules one canonical Running Plan Item and Strength Plan Task, projects each to Calendar/Today/Dashboard, rejects generic Task completion, then completes only from the real Run or Strength Session with set log | retain no-duplicate and completion-sync regressions |
 
 # 11. Coding and Agents
 

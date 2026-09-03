@@ -724,14 +724,26 @@ separate Skill Evidence and non-destructive archive/restore after reload.
 **Outcome:** Resources become searchable context and evidence across the Core
 Work Graph, using the K1 stable scope in the Permanent Delivery Sequence.
 
-## 4.6 Active Work Block: H1/H2 – Health and Fitness
+## 4.6 Completed Work Block: H1/H2 – Health and Fitness
 
-**Status:** Active. H1/H2 is the next permanent-sequence block after completed
-K1.
+**Status:** Completed. The canonical Target Runtime proves reload-stable Mood,
+Sleep, Weight and Habit records, plus source-linked Running and Strength plans
+whose Task Occurrences project consistently to Calendar, Today and Dashboard.
+Generic Task completion cannot invent a Run, Session or Set Log; a real Run or
+Strength Session with a real Set Log owns completion.
 
 **Outcome:** Health facts and fitness plans participate in the daily loop
 through canonical occurrences, using the H1/H2 stable scope in the Permanent
 Delivery Sequence.
+
+## 4.7 Active Work Block: N1 – Nutrition
+
+**Status:** Active. N1 is the next permanent-sequence block after completed
+H1/H2.
+
+**Outcome:** Nutrition records and their scheduled Task Occurrences support
+honest daily meal planning, completion and grocery derivation using the N1
+stable scope in the Permanent Delivery Sequence.
 
 ## 5. Completed Major Work
 
