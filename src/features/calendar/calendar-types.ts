@@ -173,6 +173,13 @@ export type CalendarBlockBase = {
   goalId?: string;
   isFlexible?: boolean;
   isLocked?: boolean;
+  isOverdue?: boolean;
+  markerKind?:
+    | "planned_task"
+    | "task_deadline"
+    | "project_deadline"
+    | "goal_target";
+  markerLabel?: string;
 };
 
 export type CalendarTimedBlockViewModel = CalendarBlockBase & {

@@ -53,38 +53,36 @@ export function CalendarPageHeader({
                 tasks={schedulableTasks}
               />
             ) : null}
-            {profileId !== "manual" ? (
-              <>
-                <button
-                  className="rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.82)] px-3 py-1 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[var(--border-default)] hover:bg-[rgba(23,34,53,.82)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-                  onClick={onToday}
-                  type="button"
-                >
-                  {header.controls.currentAction}
-                </button>
-                <button
-                  aria-label="Previous week"
-                  className="size-6 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.74)] text-[12px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-                  onClick={() => onMovePeriod(-1)}
-                  type="button"
-                >
-                  {"<"}
-                </button>
-                <button
-                  aria-label="Next week"
-                  className="size-6 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.74)] text-[12px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-                  onClick={() => onMovePeriod(1)}
-                  type="button"
-                >
-                  {">"}
-                </button>
-              </>
-            ) : null}
+            <>
+              <button
+                className="rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.82)] px-3 py-1 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[var(--border-default)] hover:bg-[rgba(23,34,53,.82)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                onClick={onToday}
+                type="button"
+              >
+                {header.controls.currentAction}
+              </button>
+              <button
+                aria-label="Previous period"
+                className="size-6 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.74)] text-[12px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                onClick={() => onMovePeriod(-1)}
+                type="button"
+              >
+                {"<"}
+              </button>
+              <button
+                aria-label="Next period"
+                className="size-6 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.74)] text-[12px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                onClick={() => onMovePeriod(1)}
+                type="button"
+              >
+                {">"}
+              </button>
+            </>
           </div>
 
           <div className="flex w-full min-w-0 flex-wrap rounded-full border border-[var(--border-subtle)] bg-[rgba(11,17,28,.72)] p-1 xl:w-[476px]">
             {header.controls.views
-              .filter((view) => profileId !== "manual" || view.label === "Week")
+              .filter((view) => view.label !== "Year")
               .map((view, index) => (
               <button
                 aria-pressed={view.active ? "true" : "false"}

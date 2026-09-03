@@ -5,6 +5,7 @@ import {
   getCalendarViewModel as getDemoCalendarViewModel,
   resolveCalendarContentStates,
 } from "@/features/calendar/calendar-view-model";
+import { buildCalendarTemporalSignals } from "@/features/calendar/calendar-temporal-projection";
 import { buildPlannerQueue } from "@/features/calendar/planner-queue";
 import {
   calendarFilters,
@@ -1102,6 +1103,7 @@ function projectToPortfolioEntity(
     sourceLinks: [{ label: "Project", href: `/projects/${project.id}` }],
     noteSnippet: project.risk ?? project.description,
     projectEditValues: {
+      deadline: project.deadline,
       description: project.description,
       goalId: project.goalId,
       nextStep: project.nextStep,
@@ -1136,8 +1138,12 @@ function goalToPortfolioEntity(
     priority: "P1",
     focusLevel: goal.progress >= 50 ? "medium" : "high",
     nextAction: goal.nextStep,
-    dueLabel: goal.horizon,
-    dueRank: goal.horizon === "week" || goal.horizon === "month" ? 1 : 2,
+    dueLabel: goal.targetDate ?? goal.horizon,
+    dueRank: goal.targetDate
+      ? dueRankFromDate(goal.targetDate)
+      : goal.horizon === "week" || goal.horizon === "month"
+        ? 1
+        : 2,
     progress: boundedProgress(goal.progress),
     countLabel: `${goal.linkedProjectIds.length} projects`,
     lastTouched: "today",
@@ -1155,6 +1161,7 @@ function goalToPortfolioEntity(
       description: goal.description,
       horizon: goal.horizon,
       status: goal.status,
+      targetDate: goal.targetDate,
       title: goal.title,
     },
     linkedResources: lookups.resourceLinksByTarget.get(`goal:${goal.id}`) ?? [],
@@ -2235,6 +2242,7 @@ function realGoalToLifeGoal(goal: RealDataGoal): LifeGoal {
     remaining: goal.targetValue ?? "Nicht gesetzt",
     reviewNotes: [],
     status: goal.status,
+    targetDate: goal.targetDate ?? undefined,
     targetValue: goal.targetValue ?? "Nicht gesetzt",
     title: goal.title,
     why: goal.why ?? goal.description ?? "",
@@ -3976,14 +3984,71 @@ function taskToCalendarBlock(
   };
 }
 
-function projectToAllDayBlock(
-  project: LifeProject,
-  fallbackDayId: string,
+function taskDeadlineToAllDayBlock(
+  task: LifeTask,
+  date: string,
+  isOverdue: boolean,
 ): CalendarAllDayBlockViewModel {
   return {
-    id: `project-${project.id}`,
-    dayId: project.deadline ? dayIdFromDate(project.deadline) : fallbackDayId,
-    date: project.deadline,
+    id: `task-deadline-${task.id}`,
+    dayId: dayIdFromDate(date),
+    date,
+    title: task.title,
+    type: "deadline",
+    status: task.status === "done" ? "done" : "planned",
+    source: "task",
+    area: areaLabel(task.areaId),
+    sourceEntity: {
+      type: "task",
+      label: `Task / ${areaLabel(task.areaId)}`,
+      href: `/tasks/${task.id}`,
+    },
+    accent: isOverdue ? "var(--accent-orange)" : areaAccent(task.areaId),
+    isOverdue,
+    linkedEntity: task.title,
+    markerKind: "task_deadline",
+    markerLabel: isOverdue ? "Task overdue" : "Task due",
+    priority: dashboardPriority(task.priority),
+    timeLabel: isOverdue ? "Overdue" : "Task due",
+  };
+}
+
+function plannedTaskToAllDayBlock(
+  task: LifeTask,
+  date: string,
+  isRecurringOccurrence: boolean,
+): CalendarAllDayBlockViewModel {
+  return {
+    id: `planned-task-${task.id}`,
+    dayId: dayIdFromDate(date),
+    date,
+    title: task.title,
+    type: isRecurringOccurrence ? "routine" : "task_block",
+    status: task.status === "done" ? "done" : "planned",
+    source: isRecurringOccurrence ? "routine" : "task",
+    area: areaLabel(task.areaId),
+    sourceEntity: {
+      type: "task",
+      label: isRecurringOccurrence ? "Recurring task" : "Task",
+      href: `/tasks/${task.id}`,
+    },
+    accent: areaAccent(task.areaId),
+    markerKind: "planned_task",
+    markerLabel: isRecurringOccurrence ? "Recurring task" : "Planned task",
+    priority: dashboardPriority(task.priority),
+    taskId: task.id,
+    timeLabel: isRecurringOccurrence ? "Recurring task" : "Planned task",
+  };
+}
+
+function projectDeadlineToAllDayBlock(
+  project: LifeProject,
+  date: string,
+): CalendarAllDayBlockViewModel {
+  return {
+    id: `project-deadline-${project.id}`,
+    dayId: dayIdFromDate(date),
+    date,
     title: project.title,
     type: "deadline",
     status: project.blocker ? "needs_decision" : "planned",
@@ -3995,11 +4060,40 @@ function projectToAllDayBlock(
       href: `/projects/${project.id}`,
     },
     accent: areaAccent(project.areaId),
-    timeLabel: project.deadline ? "Due" : "No deadline",
     linkedEntity: project.title,
+    markerKind: "project_deadline",
+    markerLabel: "Project due",
     plannedOutcome: project.nextStep,
     priority: dashboardPriority(project.priority),
     project: project.title,
+    timeLabel: "Project due",
+  };
+}
+
+function goalTargetToAllDayBlock(
+  goal: LifeGoal,
+  date: string,
+): CalendarAllDayBlockViewModel {
+  return {
+    id: `goal-target-${goal.id}`,
+    dayId: dayIdFromDate(date),
+    date,
+    title: goal.title,
+    type: "deadline",
+    status: goal.status === "achieved" ? "done" : "planned",
+    source: "goal",
+    area: areaLabel(goal.areaId),
+    sourceEntity: {
+      type: "goal",
+      label: `Goal / ${areaLabel(goal.areaId)}`,
+      href: `/goals/${goal.id}`,
+    },
+    accent: areaAccent(goal.areaId),
+    linkedEntity: goal.title,
+    markerKind: "goal_target",
+    markerLabel: "Goal target",
+    plannedOutcome: goal.nextStep,
+    timeLabel: "Goal target",
   };
 }
 
@@ -4021,13 +4115,38 @@ function buildProfileCalendarViewModel(
       projects: profile.projects,
       skills: [],
       tasks: profile.tasks,
-    });
+  });
   const days = buildManualCalendarDays();
-  const visibleDates = new Set(days.map((day) => day.date));
-  const firstDayId = days[0]?.id ?? "manual-week";
   const demoModel = getDemoCalendarViewModel();
+  const temporalSignals = buildCalendarTemporalSignals({
+    goals: profile.goals.map((goal) => ({
+      id: goal.id,
+      targetDate: goal.targetDate,
+      title: goal.title,
+    })),
+    projects: profile.projects.map((project) => ({
+      deadline: project.deadline,
+      id: project.id,
+      title: project.title,
+    })),
+    tasks: profile.tasks.map((task) => ({
+      dueDate: task.dueAt,
+      id: task.id,
+      isRecurringOccurrence: task.isGenerated,
+      plannedDate: task.date,
+      scheduledDate: task.date && task.startTime ? task.date : undefined,
+      status: task.status,
+      title: task.title,
+    })),
+    today: todayDateLabel(),
+  });
+  const tasksById = new Map(profile.tasks.map((task) => [task.id, task]));
+  const projectsById = new Map(
+    profile.projects.map((project) => [project.id, project]),
+  );
+  const goalsById = new Map(profile.goals.map((goal) => [goal.id, goal]));
   const rawTimedBlocks = profile.tasks
-    .filter((task) => Boolean(task.date && visibleDates.has(task.date)))
+    .filter((task) => Boolean(task.date && task.startTime))
     .map((task) => taskToCalendarBlock(task, plannerRelationLookups))
     .filter(
       (
@@ -4037,10 +4156,41 @@ function buildProfileCalendarViewModel(
         "compact" | "density" | "durationMinutes" | "layout"
       > => Boolean(block),
     );
-  const timedBlocks = buildCalendarTimedBlocks(rawTimedBlocks, days);
-  const allDayBlocks = profile.projects.map((project) =>
-    projectToAllDayBlock(project, firstDayId),
+  const timedBlocks = buildCalendarTimedBlocks(
+    rawTimedBlocks,
+    Array.from(
+      new Set(rawTimedBlocks.map((block) => block.dayId)),
+    ).map((id) => ({ id })),
   );
+  const allDayBlocks = temporalSignals.flatMap((signal) => {
+    if (signal.kind === "planned_task") {
+      const task = tasksById.get(signal.sourceId);
+      return task
+        ? [
+            plannedTaskToAllDayBlock(
+              task,
+              signal.date,
+              Boolean(signal.isRecurringOccurrence),
+            ),
+          ]
+        : [];
+    }
+    if (signal.kind === "task_deadline") {
+      const task = tasksById.get(signal.sourceId);
+      return task
+        ? [taskDeadlineToAllDayBlock(task, signal.date, signal.isOverdue)]
+        : [];
+    }
+    if (signal.kind === "project_deadline") {
+      const project = projectsById.get(signal.sourceId);
+      return project ? [projectDeadlineToAllDayBlock(project, signal.date)] : [];
+    }
+    if (signal.kind === "goal_target") {
+      const goal = goalsById.get(signal.sourceId);
+      return goal ? [goalTargetToAllDayBlock(goal, signal.date)] : [];
+    }
+    return [];
+  });
   const scheduledTaskBlocks = timedBlocks.filter(
     (block) => Boolean(block.taskId),
   );

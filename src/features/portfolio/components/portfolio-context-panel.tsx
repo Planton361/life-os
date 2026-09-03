@@ -451,7 +451,7 @@ function GoalEditForm({
           name="description"
         />
       </label>
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid gap-2 sm:grid-cols-3">
         <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
           Horizon
           <select
@@ -466,6 +466,16 @@ function GoalEditForm({
             <option value="year">year</option>
             <option value="someday">someday</option>
           </select>
+        </label>
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+          Target date
+          <input
+            className={formInputClassName}
+            defaultValue={values?.targetDate ?? ""}
+            disabled={disabled}
+            name="targetDate"
+            type="date"
+          />
         </label>
         <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
           Status
@@ -566,7 +576,7 @@ function ProjectEditForm({
           ))}
         </select>
       </label>
-      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_132px]">
+      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_132px_132px]">
         <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
           Next Action
           <input
@@ -590,6 +600,16 @@ function ProjectEditForm({
             <option value="blocked">blocked</option>
             <option value="completed">completed</option>
           </select>
+        </label>
+        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
+          Deadline
+          <input
+            className={formInputClassName}
+            defaultValue={values?.deadline ?? ""}
+            disabled={disabled}
+            name="deadline"
+            type="date"
+          />
         </label>
       </div>
       <button className={formButtonClassName} disabled={disabled} type="submit">

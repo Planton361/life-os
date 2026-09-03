@@ -134,8 +134,9 @@ C1 Core Work Graph
 | Unschedule | `CONNECTED` | existing unschedule action removes the Timegrid block and returns the Task to the canonical queue immediately and after reload | maintain |
 | Visible conflict gate | `CONNECTED_GAP` | loaded blocks | no DB-wide guarantee; source-aware conflict model later |
 | Conscious override | `CONNECTED_GAP` | same reschedule path | no audit/history yet |
-| Day/Week views | `CONNECTED_GAP` | C2-01 Manual Week is the primary canonical planning surface with seven-day timegrid, queue and Inspector; Day remains a separate projection slice | C2-03 connects remaining view semantics |
-| Month view | `UI_ONLY` | prepared view | connect to canonical schedule sources |
+| Day/Week views | `CONNECTED` | C2-01 Manual Week remains the primary planning surface; C2-03 adds reload-stable Day navigation and reads the same canonical task schedule and all-day temporal signals | filters remain a separate C2 slice |
+| Month view | `CONNECTED` | C2-03 bounded Month grid projects canonical scheduled Task occurrences, Task deadlines, Project deadlines and Goal targets with keyboard Day drill-down and reload proof | filters remain a separate C2 slice |
+| Deadline / Project / Goal date projection | `CONNECTED` | C2-03 keeps scheduled time distinct from Task deadline, Project deadline and Goal target; open overdue Tasks are read-time marked while completed Tasks are not | canonical Project/Goal milestones remain separately unmodeled |
 | Calendar filters | `NOT_STARTED` | no active Manual filter claim; legacy visual scope controls are not exposed as Calendar planning filters | implement only canonical Project/Goal/Skill/Priority filters when needed |
 | Project/Goal/Skill queue context | `CONNECTED` | C2-01 queue reads existing C1 Project, direct/via Project Goal and Task↔Skill relations without copying Task data | add filters only as a separate read-surface depth |
 | Recurring/routine scheduling | `CONNECTED` | user-scoped template list/create/edit/pause/reactivate, explicit date/range generation and authenticated reload proof; no background writes | maintain |
@@ -143,7 +144,7 @@ C1 Core Work Graph
 | Workout schedule source | `CONNECTED_GAP` | canonical Target runtime keeps Task-only scheduling and generic completion guards for Running Plan Item and Strength Plan Tasks; C2-02 pointer-moves a technical Running Task and reloads the canonical projection | direct Data API hardening and wider cross-domain Calendar proof remain deferred |
 | Review schedule source | `CONNECTED_GAP` | canonical Target runtime keeps Review Task scheduling and generic completion rejection; C2-01 retains typed Review queue context | direct Data API hardening and wider cross-domain Calendar proof remain deferred |
 | Free calendar events | `NOT_STARTED` | none | separate model decision |
-| Drag/drop/resize | `CONNECTED` | C2-02 dependency-free pointer layer maps Queue drop, cross-day move and duration resize to existing source-aware schedule/reschedule actions; loaded conflict confirmation, cancel/invalid-drop rollback, reload and Inspector fallback are focused-browser-proven | no keyboard DnD required because the full Inspector scheduling flow remains equivalent; Day/Month and filters remain separate |
+| Drag/drop/resize | `CONNECTED` | C2-02 dependency-free pointer layer maps Queue drop, cross-day move and duration resize to existing source-aware schedule/reschedule actions; loaded conflict confirmation, cancel/invalid-drop rollback, reload and Inspector fallback are focused-browser-proven | no keyboard DnD required because the full Inspector scheduling flow remains equivalent; filters remain separate |
 | Schedule history/audit | `NOT_STARTED` | none | later lifecycle/audit model |
 
 # 5. Portfolio, Projects, Goals and Skills

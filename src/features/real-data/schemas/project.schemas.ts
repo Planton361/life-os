@@ -1,7 +1,7 @@
 import { projectStatuses } from "../domain/project";
 import { taskPriorities } from "../domain/task";
 import {
-  optionalDateTimeStringSchema,
+  dateTimeStringSchema,
   optionalEnumSchema,
   optionalTrimmedStringSchema,
   requiredTrimmedStringSchema,
@@ -11,10 +11,11 @@ import {
 const requiredIdSchema = requiredTrimmedStringSchema();
 const titleSchema = requiredTrimmedStringSchema(2);
 const nullableOptionalString = z.union([z.string().trim().min(1), z.null()]).optional();
+const nullableOptionalDateTime = z.union([dateTimeStringSchema, z.null()]).optional();
 
 const projectPatchSchema = z.object({
   areaId: optionalTrimmedStringSchema,
-  deadline: optionalDateTimeStringSchema,
+  deadline: nullableOptionalDateTime,
   description: optionalTrimmedStringSchema,
   goalId: nullableOptionalString,
   nextStep: optionalTrimmedStringSchema,

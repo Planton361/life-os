@@ -655,8 +655,8 @@ Capture or open Task
 
 ## 4.3 Active Work Block: C2 – Weekly Planning Calendar
 
-**Status:** C2-01 and C2-02 completed. The active bounded slice is **C2-03 –
-Day/Month Projection + Deadline/Milestone View**.
+**Status:** C2-01 through C2-03 completed. The active bounded slice is
+**C2-04 – C2 Integrated Proof**.
 
 **Outcome:** Calendar remains a temporal projection of canonical executable
 Tasks. Week View is the primary planning surface; it does not create a second
@@ -686,13 +686,15 @@ canonical Task, Meal and Running-source projections.
 
 #### C2-03 – Day/Month Projection + Deadline/Milestone View
 
-**Active.** Connect the remaining Calendar views and their truthful
-deadline/milestone semantics to canonical sources without making a parallel
-event model.
+**Completed.** Manual Day and Month now read the same canonical task schedule,
+task deadline, Project deadline and Goal target signals as Week without
+creating a parallel event model. Generated recurring Task Occurrences render
+as planned work while templates remain absent. No canonical milestone model
+exists, so no fake milestone markers or management surface were introduced.
 
 #### C2-04 – C2 Integrated Proof
 
-**Pending.** Prove the complete C2 planning contract, cross-domain schedule
+**Active.** Prove the complete C2 planning contract, cross-domain schedule
 sources and Calendar/Today/Dashboard consistency before closing C2.
 
 ## 5. Completed Major Work

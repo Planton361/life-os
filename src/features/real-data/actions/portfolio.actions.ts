@@ -221,6 +221,7 @@ export async function createProjectAction(
   }
 
   const parsed = createProjectInputSchema.safeParse({
+    deadline: optionalFormString(formData, "deadline"),
     description: optionalFormString(formData, "description"),
     goalId,
     profileId: auth.user.id,
@@ -293,6 +294,7 @@ export async function updateProjectAction(
   if (!context.ok) return context.result;
 
   const parsed = updateProjectInputSchema.safeParse({
+    deadline: optionalNullableFormString(formData, "deadline"),
     description: optionalFormString(formData, "description"),
     goalId: optionalNullableFormString(formData, "goalId"),
     nextStep: optionalFormString(formData, "nextStep"),
@@ -427,6 +429,7 @@ export async function createGoalAction(
   const parsed = createGoalInputSchema.safeParse({
     description: optionalFormString(formData, "description"),
     profileId: auth.user.id,
+    targetDate: optionalFormString(formData, "targetDate"),
     title: formString(formData, "title"),
     userId: auth.user.id,
   });
@@ -470,6 +473,7 @@ export async function updateGoalAction(
     horizon: optionalFormString(formData, "horizon"),
     profileId: context.auth.user.id,
     status: optionalFormString(formData, "status"),
+    targetDate: optionalNullableFormString(formData, "targetDate"),
     title: optionalFormString(formData, "title"),
     userId: context.auth.user.id,
   });

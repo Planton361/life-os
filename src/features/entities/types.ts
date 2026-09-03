@@ -152,6 +152,7 @@ export type LifeGoal = {
   measure: string;
   currentValue: string;
   targetValue: string;
+  targetDate?: string;
   remaining: string;
   progress: number;
   nextStep: string;

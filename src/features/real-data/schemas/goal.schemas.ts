@@ -1,6 +1,6 @@
 import { goalHorizons, goalStatuses } from "../domain/goal";
 import {
-  optionalDateTimeStringSchema,
+  dateTimeStringSchema,
   optionalEnumSchema,
   optionalTrimmedStringSchema,
   requiredTrimmedStringSchema,
@@ -9,6 +9,7 @@ import {
 
 const requiredIdSchema = requiredTrimmedStringSchema();
 const titleSchema = requiredTrimmedStringSchema(2);
+const nullableOptionalDateTime = z.union([dateTimeStringSchema, z.null()]).optional();
 
 const goalPatchSchema = z.object({
   areaId: optionalTrimmedStringSchema,
@@ -16,7 +17,7 @@ const goalPatchSchema = z.object({
   horizon: optionalEnumSchema(goalHorizons),
   measure: optionalTrimmedStringSchema,
   status: optionalEnumSchema(goalStatuses),
-  targetDate: optionalDateTimeStringSchema,
+  targetDate: nullableOptionalDateTime,
   targetValue: optionalTrimmedStringSchema,
   why: optionalTrimmedStringSchema,
 });

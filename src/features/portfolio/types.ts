@@ -188,6 +188,7 @@ export type PortfolioSkillContext = {
 };
 
 export type PortfolioProjectEditValues = {
+  deadline?: string;
   description?: string;
   goalId?: string;
   nextStep?: string;
@@ -199,6 +200,7 @@ export type PortfolioGoalEditValues = {
   description?: string;
   horizon: GoalHorizon;
   status: GoalStatus;
+  targetDate?: string;
   title: string;
 };
 

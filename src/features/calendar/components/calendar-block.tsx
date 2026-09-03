@@ -165,7 +165,7 @@ export function CalendarAllDayBlock({
 }>) {
   return (
     <button
-      aria-label={`${block.title}, ${block.timeLabel ?? "all day"}, ${calendarBlockTypeLabels[block.type]}, ${calendarBlockStatusLabels[block.status]}, source ${block.sourceEntity.label}, area ${block.area}`}
+      aria-label={`${block.markerLabel ?? calendarBlockTypeLabels[block.type]}: ${block.title}, ${block.timeLabel ?? "all day"}, ${calendarBlockStatusLabels[block.status]}, source ${block.sourceEntity.label}, area ${block.area}`}
       aria-pressed={selected}
       onClick={() => onSelect?.(block.id)}
       title={`${block.title}, ${calendarBlockStatusLabels[block.status]}, ${block.sourceEntity.label}`}
@@ -174,6 +174,7 @@ export function CalendarAllDayBlock({
         selected
           ? "border-[color-mix(in_srgb,var(--accent)_62%,transparent)] ring-1 ring-[color-mix(in_srgb,var(--accent)_42%,transparent)]"
           : "border-[color-mix(in_srgb,var(--accent)_20%,transparent)] hover:border-[color-mix(in_srgb,var(--accent)_38%,transparent)]",
+        block.isOverdue && "border-[rgba(217,146,79,.42)]",
       )}
       style={accentStyle(block.accent)}
       type="button"
@@ -190,8 +191,7 @@ export function CalendarAllDayBlock({
         </div>
         <div className="flex min-w-0 items-center justify-between gap-1">
           <p className="min-w-0 truncate text-[9px] leading-3 text-[var(--text-muted)]">
-            {block.timeLabel ?? "All day"} ·{" "}
-            {calendarBlockTypeLabels[block.type]}
+            {block.markerLabel ?? block.timeLabel ?? "All day"}
           </p>
           <p className="shrink-0 truncate text-[9px] font-semibold leading-3 text-[var(--accent)]">
             {calendarBlockStatusLabels[block.status]}

@@ -12,6 +12,11 @@ export default async function CalendarPage() {
   const viewModel = await getCalendarViewModel();
   const calendarProjectionKey = viewModel.timedBlocks
     .map((block) => `${block.id}:${block.date ?? ""}:${block.startTime}:${block.endTime}`)
+    .concat(
+      viewModel.allDayBlocks.map(
+        (block) => `${block.id}:${block.date ?? ""}:${block.status}`,
+      ),
+    )
     .join("|");
 
   return (
