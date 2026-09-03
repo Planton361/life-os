@@ -2951,18 +2951,20 @@ function realMealToDashboardSlot(
   const type = dashboardMealType(meal.mealType);
   if (!type) return null;
   const estimate = recipe?.nutritionEstimate ?? null;
+  const recipeServings = recipe?.servings ?? 1;
+  const servingScale = meal.servings / recipeServings;
   const macros = [
     nutritionNumber(estimate, "protein") > 0
-      ? `P ${nutritionNumber(estimate, "protein")}g`
+      ? `P ${nutritionNumber(estimate, "protein") * servingScale}g`
       : null,
     nutritionNumber(estimate, "carbs") > 0
-      ? `C ${nutritionNumber(estimate, "carbs")}g`
+      ? `C ${nutritionNumber(estimate, "carbs") * servingScale}g`
       : null,
     nutritionNumber(estimate, "fat") > 0
-      ? `F ${nutritionNumber(estimate, "fat")}g`
+      ? `F ${nutritionNumber(estimate, "fat") * servingScale}g`
       : null,
   ].filter((value): value is string => Boolean(value));
-  const calories = nutritionNumber(estimate, "calories");
+  const calories = nutritionNumber(estimate, "calories") * servingScale;
 
   return {
     id: meal.id,
@@ -3062,10 +3064,14 @@ async function getManualDashboardReadData(): Promise<{
       const estimate = meal.recipeId
         ? (recipeById.get(meal.recipeId)?.nutritionEstimate ?? null)
         : null;
-      totals.calories += nutritionNumber(estimate, "calories");
-      totals.protein += nutritionNumber(estimate, "protein");
-      totals.carbs += nutritionNumber(estimate, "carbs");
-      totals.fat += nutritionNumber(estimate, "fat");
+      const recipeServings = meal.recipeId
+        ? (recipeById.get(meal.recipeId)?.servings ?? 1)
+        : 1;
+      const servingScale = meal.servings / recipeServings;
+      totals.calories += nutritionNumber(estimate, "calories") * servingScale;
+      totals.protein += nutritionNumber(estimate, "protein") * servingScale;
+      totals.carbs += nutritionNumber(estimate, "carbs") * servingScale;
+      totals.fat += nutritionNumber(estimate, "fat") * servingScale;
       totals.completedMealCount += 1;
       return totals;
     },

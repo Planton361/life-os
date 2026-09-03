@@ -57,6 +57,7 @@ export function RecipeSuggestionList({
   selectedSlot,
   selectedDay,
   selectedSlotHasPlannedMeal,
+  actionsEnabled,
   stateAttributes,
   filter,
   sort,
@@ -73,6 +74,7 @@ export function RecipeSuggestionList({
   selectedSlot: SelectedMealSlot | null;
   selectedDay: MealPlanDay | null;
   selectedSlotHasPlannedMeal: boolean;
+  actionsEnabled: boolean;
   stateAttributes?: Record<string, string>;
   filter: RecipeFilter;
   sort: RecipeSort;
@@ -255,11 +257,15 @@ export function RecipeSuggestionList({
                 <div className="mt-2 flex flex-wrap gap-2">
                   <button
                     className={primaryButtonClass}
-                    disabled={!selectedSlot}
+                    disabled={!selectedSlot || !actionsEnabled}
                     onClick={() => onAddRecipe(recipe.id)}
                     type="button"
                   >
-                    {selectedSlot ? actionLabel : "Select slot first"}
+                    {!selectedSlot
+                      ? "Select slot first"
+                      : actionsEnabled
+                        ? actionLabel
+                        : "Use Meal erstellen"}
                   </button>
                   {selectedSlot ? (
                     <button

@@ -567,7 +567,8 @@ export function MealPlannerView({
             recipes={viewModel.recipes}
             selectedDay={selectedDay}
             selectedSlot={selectedSlot}
-            selectedSlotHasPlannedMeal={selectedSlotHasPlannedMeal}
+              selectedSlotHasPlannedMeal={selectedSlotHasPlannedMeal}
+              actionsEnabled={actionsEnabled}
             sort={sort}
             stateAttributes={stateAttrs(contentStates.recipeSuggestions)}
             targets={targets}

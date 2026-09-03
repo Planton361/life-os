@@ -313,6 +313,7 @@ function ManualMealCreateForm({
   date: string;
   recipeOptions: NutritionOverviewViewModel["recipeOptions"];
 }>) {
+  const [requestId] = useState(() => crypto.randomUUID());
   const [state, formAction, isPending] = useActionState(
     createMealFormStateAction,
     initialNutritionActionState,
@@ -345,6 +346,7 @@ function ManualMealCreateForm({
       </div>
 
       <form action={formAction} className="mt-3 grid gap-3 lg:grid-cols-6">
+        <input defaultValue={requestId} name="requestId" type="hidden" />
         <label className="min-w-0 lg:col-span-2">
           <FieldLabel>Title</FieldLabel>
           <input
@@ -406,6 +408,19 @@ function ManualMealCreateForm({
               </option>
             ))}
           </select>
+        </label>
+        <label className="min-w-0">
+          <FieldLabel>Portionen</FieldLabel>
+          <input
+            className={inputClass}
+            defaultValue="1"
+            disabled={!actionsEnabled || isPending}
+            max="100"
+            min="0.01"
+            name="servings"
+            step="0.01"
+            type="number"
+          />
         </label>
         <label className="min-w-0 lg:col-span-5">
           <FieldLabel optional>Notes</FieldLabel>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import {
   updateMealFormStateAction,
   type NutritionActionResult,
@@ -29,8 +29,6 @@ export function ManualMealEditForm({ meal, recipes }: Readonly<{
     initialState,
   );
   const headingRef = useRef<HTMLHeadingElement>(null);
-  const [date, setDate] = useState(meal.date);
-  const [plannedAt, setPlannedAt] = useState(localDateTimeValue(meal.plannedAt));
 
   useEffect(() => {
     if (state.status === "success") {
@@ -48,7 +46,7 @@ export function ManualMealEditForm({ meal, recipes }: Readonly<{
             Meal bearbeiten
           </h3>
           <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
-            Datum, Slot und Uhrzeit werden persistiert. Der Abschlussstatus bleibt unverändert.
+            Rezept, Portionen und Notizen werden hier gespeichert. Zeitpunkt und Datum bleiben im source-aware Calendar-Flow.
           </p>
           <p className="mt-1 text-[10px] font-semibold text-[var(--text-secondary)]">
             Status: {meal.completedAt ? "Abgeschlossen" : "Geplant"}
@@ -63,10 +61,9 @@ export function ManualMealEditForm({ meal, recipes }: Readonly<{
       <form action={formAction} className="mt-3 grid gap-3 sm:grid-cols-2">
         <input name="mealId" type="hidden" value={meal.id} />
         <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)]">Titel<input className={inputClass} defaultValue={meal.title} name="title" required /></label>
-        <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)]">Datum<input className={inputClass} name="date" onChange={(event) => { const nextDate = event.target.value; setDate(nextDate); setPlannedAt((current) => current ? `${nextDate}${current.slice(10)}` : current); }} required type="date" value={date} /></label>
         <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)]">Meal Type<select className={inputClass} defaultValue={meal.mealType} name="mealType" required>{Object.entries(mealTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-        <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)]">Geplante Zeit<input className={inputClass} name="plannedAt" onChange={(event) => setPlannedAt(event.target.value)} type="datetime-local" value={plannedAt} /></label>
         <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)] sm:col-span-2">Recipe<select className={inputClass} defaultValue={meal.recipeId} name="recipeId"><option value="">Kein Recipe</option>{recipes.map((recipe) => <option key={recipe.id} value={recipe.id}>{recipe.title}</option>)}</select></label>
+        <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)]">Portionen<input className={inputClass} defaultValue={meal.servings} max="100" min="0.01" name="servings" required step="0.01" type="number" /></label>
         <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)] sm:col-span-2">Notizen<textarea className={`${inputClass} min-h-20 resize-y py-2`} defaultValue={meal.notes ?? ""} name="notes" /></label>
         <div className="sm:col-span-2"><button className={primaryButtonClass} disabled={isPending} type="submit">{isPending ? "Meal wird gespeichert …" : "Meal speichern"}</button></div>
       </form>

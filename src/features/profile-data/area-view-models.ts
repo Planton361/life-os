@@ -1322,6 +1322,19 @@ function recipeTotals(recipe?: RealDataRecipe | null) {
   };
 }
 
+function scaleRecipeTotals(recipe: RealDataRecipe | undefined, servings: number) {
+  const totals = recipeTotals(recipe);
+  const recipeServings = recipe?.servings ?? 1;
+  const scale = servings / recipeServings;
+
+  return {
+    calories: totals.calories * scale,
+    carbs: totals.carbs * scale,
+    fat: totals.fat * scale,
+    protein: totals.protein * scale,
+  };
+}
+
 function recipeMealTypes(recipe: RealDataRecipe): PlannerMealType[] {
   const matchingTags = recipe.tags.filter((tag): tag is PlannerMealType =>
     plannerMealTypes.includes(tag as PlannerMealType),
@@ -1402,7 +1415,7 @@ function realMealToNutritionEntry(
   recipesById: ReadonlyMap<string, RealDataRecipe>,
 ): MealEntry {
   const recipe = meal.recipeId ? recipesById.get(meal.recipeId) : undefined;
-  const totals = recipeTotals(recipe);
+  const totals = scaleRecipeTotals(recipe, meal.servings);
   const plannedAt =
     meal.completedAt !== null ? undefined : meal.plannedAt ?? `${meal.date}T12:00`;
 
@@ -1630,7 +1643,7 @@ function buildManualMealPlanWeek(
                     notes: meal.notes,
                     plannedAt: meal.plannedAt,
                     completedAt: meal.completedAt,
-                    servings: 1,
+                    servings: meal.servings,
                   }
                 : undefined,
           };

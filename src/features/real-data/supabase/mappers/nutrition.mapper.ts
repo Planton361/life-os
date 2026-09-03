@@ -108,6 +108,7 @@ export function mapMealRowToDomain(row: MealRow): Meal {
     plannedAt: row.planned_at,
     profileId: row.user_id,
     recipeId: row.recipe_id,
+    servings: mapNullableNumeric(row.servings) ?? 1,
     title: row.title,
     updatedAt: row.updated_at,
     userId: row.user_id,
@@ -217,6 +218,7 @@ export function mapMealCreateInputToInsert(
 ): MealInsert {
   const insert: MealInsert = {
     date: input.date,
+    id: input.requestId,
     meal_type: input.mealType,
     title: input.title,
     user_id: userId,
@@ -226,6 +228,7 @@ export function mapMealCreateInputToInsert(
   if (input.notes !== undefined) insert.notes = input.notes;
   if (input.plannedAt !== undefined) insert.planned_at = input.plannedAt;
   if (input.recipeId !== undefined) insert.recipe_id = input.recipeId;
+  if (input.servings !== undefined) insert.servings = input.servings;
 
   return insert;
 }
@@ -239,6 +242,7 @@ export function mapMealUpdateInputToPatch(input: MealUpdateInput): MealUpdate {
   if (input.notes !== undefined) patch.notes = input.notes;
   if (input.plannedAt !== undefined) patch.planned_at = input.plannedAt;
   if (input.recipeId !== undefined) patch.recipe_id = input.recipeId;
+  if (input.servings !== undefined) patch.servings = input.servings;
   if (input.title !== undefined) patch.title = input.title;
 
   return patch;

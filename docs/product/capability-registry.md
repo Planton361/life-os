@@ -196,16 +196,16 @@ C1 Core Work Graph
 | Recipe ingredients CRUD | `CONNECTED` | recipe_ingredients | maintain |
 | Meal create/edit/reschedule/complete | `CONNECTED` | meals/actions | maintain |
 | Recipe switch | `CONNECTED` | meal update ownership | maintain |
-| Meal Planner week view | `CONNECTED_GAP` | meals read projection | multiple meals per slot and additional slots need depth |
-| Grocery Draft | `CONNECTED_GAP` | derived open meals + ingredients | no persistence/check-off/pantry |
+| Meal Planner week view | `CONNECTED` | canonical Target N1 proof reloads a recipe-linked Meal in the weekly planner and schedules it only through the source-aware Meal↔Task boundary | multiple meals per slot and additional slots are separate future depth |
+| Grocery Draft | `CONNECTED` | canonical Target N1 proof derives open Meal demand from persisted Recipe Ingredients and Meal/Recipe servings with reload-stable fractional scaling | no persistence/check-off/pantry |
 | Manual nutrition estimate | `CONNECTED_GAP` | optional recipe JSON estimate | provenance only; no real engine |
-| Meals Today | `CONNECTED_GAP` | meals plus canonical schedule-source and completion synchronization | multiple meals per slot and portion semantics remain |
-| Nutrient Balance | `CONNECTED_GAP` | completed meals + estimates | no fake totals; portion semantics missing |
+| Meals Today | `CONNECTED` | canonical Target N1 proof projects the scheduled Meal and canonical completion across Nutrition, Today, Calendar and Dashboard after reload | multiple meals per slot remains separate future depth |
+| Nutrient Balance | `CONNECTED` | completed Meals and persisted Recipe estimates scale deterministically by Meal servings; the Target N1 proof keeps missing estimates explicitly unavailable | no fake totals; absent Recipe estimates remain unknown |
 | Persistent grocery items | `NOT_STARTED` | none | model later |
 | Pantry/inventory | `NOT_STARTED` | none | model and receipt workflow later |
 | Receipt OCR | `EXTERNAL_GATE` | none | privacy/provider decision |
 | Unit conversion | `DECISION_REQUIRED` | free-text units | normalization/catalog decision |
-| Portion/serving model | `NOT_STARTED` | none | required before real intake calculation |
+| Portion/serving model | `CONNECTED` | versioned N1 `meals.servings` is validated, user-scoped and reload-proven on the canonical Target; it scales Recipe-serving-based Grocery demand plus recipe-scoped estimates deterministically | no nutrition value is inferred when its Recipe estimate is absent |
 | Macro/calorie engine | `NOT_STARTED` | no reliable nutrition source | external data/model decision |
 | Recipe detail route | `UI_ONLY` | selected panel exists | build only if it adds real depth |
 

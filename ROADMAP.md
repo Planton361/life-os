@@ -736,14 +736,24 @@ Strength Session with a real Set Log owns completion.
 through canonical occurrences, using the H1/H2 stable scope in the Permanent
 Delivery Sequence.
 
-## 4.7 Active Work Block: N1 – Nutrition
+## 4.7 Completed Work Block: N1 – Nutrition
 
-**Status:** Active. N1 is the next permanent-sequence block after completed
-H1/H2.
+**Status:** Completed. The canonical Target Runtime proves the Nutrition loop:
+Recipe Ingredients and persisted Meal servings derive Grocery demand; source-aware
+Meal↔Task scheduling projects identically to Calendar, Today and Dashboard; and
+canonical Meal completion remains reload-stable with its linked Task.
 
 **Outcome:** Nutrition records and their scheduled Task Occurrences support
 honest daily meal planning, completion and grocery derivation using the N1
 stable scope in the Permanent Delivery Sequence.
+
+## 4.8 Active Work Block: A1 – Work, Education, Coding and Inventory
+
+**Status:** Active. A1 is the next permanent-sequence block after completed N1.
+
+**Outcome:** Work, Education, Coding and Inventory use their existing canonical
+entities and shared Task/Project/Skill/Resource context without creating
+area-local duplicate truths.
 
 ## 5. Completed Major Work
 

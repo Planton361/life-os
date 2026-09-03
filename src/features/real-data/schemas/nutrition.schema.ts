@@ -60,6 +60,10 @@ const nullablePositiveNumberSchema = z.preprocess(
   blankInputToNull,
   z.coerce.number().positive().nullable().optional(),
 );
+const optionalServingCountSchema = z.preprocess(
+  blankInputToUndefined,
+  z.coerce.number().positive().max(100).multipleOf(0.01).optional(),
+);
 const optionalNonnegativeIntegerSchema = z.preprocess(
   blankInputToUndefined,
   z.coerce.number().int().min(0).optional(),
@@ -167,10 +171,13 @@ const mealBaseSchema = z.object({
   notes: optionalTrimmedStringSchema,
   plannedAt: optionalDateTimeStringSchema,
   recipeId: optionalUuidSchema,
+  servings: optionalServingCountSchema,
   title: titleSchema,
 });
 
-export const mealCreateInputSchema = mealBaseSchema;
+export const mealCreateInputSchema = mealBaseSchema.extend({
+  requestId: requiredUuidSchema,
+});
 
 export type MealCreateInput = z.infer<typeof mealCreateInputSchema>;
 
@@ -185,6 +192,7 @@ export const mealUpdateInputSchema = mealBaseSchema.partial().extend({
     blankInputToNull,
     z.string().trim().uuid().nullable().optional(),
   ),
+  servings: optionalServingCountSchema,
 }).refine(
   (input) => !input.date || !input.plannedAt || input.plannedAt.slice(0, 10) === input.date,
   { message: "Planned time must use the selected meal date.", path: ["plannedAt"] },

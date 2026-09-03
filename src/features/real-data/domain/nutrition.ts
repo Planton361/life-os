@@ -51,6 +51,7 @@ export type Meal = UserScopedEntity & {
   date: LocalDateString;
   mealType: MealType;
   title: string;
+  servings: number;
   plannedAt: string | null;
   completedAt: string | null;
   notes: string | null;

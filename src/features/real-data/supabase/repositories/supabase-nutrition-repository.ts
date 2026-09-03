@@ -161,6 +161,22 @@ async function verifyIngredientOwnership(
   return verifyActiveRecipeOwnership(client, userId, result.data.recipe_id);
 }
 
+async function hasMealScheduleLink(
+  client: SupabaseClientLike,
+  userId: string,
+  mealId: string,
+): Promise<boolean> {
+  const result = await client
+    .from("schedule_source_links")
+    .select("task_id")
+    .eq("user_id", userId)
+    .eq("source_type", "meal")
+    .eq("source_id", mealId)
+    .maybeSingle();
+
+  return Boolean(!result.error && result.data);
+}
+
 function mapRecipeRows(
   rows: readonly RecipeRow[],
 ): RepositoryListResult<Recipe> {
@@ -404,7 +420,27 @@ export function createSupabaseNutritionRepository(
         .select("*")
         .single()) as SupabaseQueryResult<MealRow>;
 
-      if (result.error) return adapterFailure("create meal");
+      if (result.error) {
+        if (result.error.code !== "23505") return adapterFailure("create meal");
+
+        const existing = (await client
+          .from(realDataTableNames.meals)
+          .select("*")
+          .eq("user_id", input.userId)
+          .eq("id", input.requestId)
+          .maybeSingle()) as SupabaseQueryResult<MealRow>;
+
+        if (existing.error || !existing.data) return adapterFailure("create meal");
+
+        try {
+          return {
+            data: mapMealRowToDomain(existing.data),
+            ok: true,
+          };
+        } catch {
+          return adapterFailure("map meal");
+        }
+      }
       if (!result.data) return notFoundFailure("Meal");
 
       try {
@@ -601,6 +637,15 @@ export function createSupabaseNutritionRepository(
         input.recipeId,
       );
       if (!recipeOwned) return notFoundFailure("Recipe");
+
+      if (
+        (input.date !== undefined || input.plannedAt !== undefined) &&
+        await hasMealScheduleLink(client, input.userId, input.mealId)
+      ) {
+        return validationFailure(
+          "A linked Meal schedule must be changed through the source-aware Calendar controls.",
+        );
+      }
 
       return updateMealById(
         client,

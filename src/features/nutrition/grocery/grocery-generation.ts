@@ -63,10 +63,15 @@ export function generateGroceryDraft(input: {
       continue;
     }
 
+    const recipeServings = recipe.servings ?? 1;
+    const scale = meal.servings / recipeServings;
+
     for (const ingredient of ingredients) {
       const key = aggregationKey(ingredient);
       const current = items.get(key);
-      const quantity = ingredient.quantity;
+      const quantity = ingredient.quantity === null
+        ? null
+        : ingredient.quantity * scale;
 
       if (!current) {
         items.set(key, {

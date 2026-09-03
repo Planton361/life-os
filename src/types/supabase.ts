@@ -909,6 +909,7 @@ export type Database = {
           notes: string | null
           planned_at: string | null
           recipe_id: string | null
+          servings: number
           title: string
           updated_at: string
           user_id: string
@@ -922,6 +923,7 @@ export type Database = {
           notes?: string | null
           planned_at?: string | null
           recipe_id?: string | null
+          servings?: number
           title: string
           updated_at?: string
           user_id: string
@@ -935,6 +937,7 @@ export type Database = {
           notes?: string | null
           planned_at?: string | null
           recipe_id?: string | null
+          servings?: number
           title?: string
           updated_at?: string
           user_id?: string

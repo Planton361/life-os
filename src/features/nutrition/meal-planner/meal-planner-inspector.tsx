@@ -142,18 +142,20 @@ export function MealPlannerInspector({
           {manualEditEnabled ? (
             <ManualMealEditForm meal={plannedMeal} recipes={recipes} />
           ) : null}
-          <SelectedRecipePanel
-            ingredientErrors={ingredientErrors}
-            onApplyChanges={onApplyChanges}
-            onClearSlot={onClearSlot}
-            onIngredientAmountChange={onIngredientAmountChange}
-            onReplaceRecipe={onReplaceRecipe}
-            onResetIngredientChanges={onResetIngredientChanges}
-            onServingsChange={onServingsChange}
-            plannedMeal={plannedMeal}
-            recipe={selectedRecipe}
-            totals={selectedMealTotals}
-          />
+          {!manualEditEnabled ? (
+            <SelectedRecipePanel
+              ingredientErrors={ingredientErrors}
+              onApplyChanges={onApplyChanges}
+              onClearSlot={onClearSlot}
+              onIngredientAmountChange={onIngredientAmountChange}
+              onReplaceRecipe={onReplaceRecipe}
+              onResetIngredientChanges={onResetIngredientChanges}
+              onServingsChange={onServingsChange}
+              plannedMeal={plannedMeal}
+              recipe={selectedRecipe}
+              totals={selectedMealTotals}
+            />
+          ) : null}
         </div>
       ) : (
         <div className="grid gap-3">

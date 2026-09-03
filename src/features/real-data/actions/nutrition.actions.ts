@@ -145,6 +145,9 @@ function authBlockedMessage(
 }
 
 function repositoryFailureMessage(message: string) {
+  if (message.includes("source-aware Calendar")) {
+    return "Geplante Meals werden über die Calendar-Steuerung umgeplant oder entterminiert.";
+  }
   if (message.includes("Area")) {
     return "Der Area-Kontext konnte nicht bestätigt werden.";
   }
@@ -546,6 +549,8 @@ export async function createMealAction(
     notes: optionalFormString(formData, "notes"),
     plannedAt: optionalFormString(formData, "plannedAt"),
     recipeId: optionalFormString(formData, "recipeId"),
+    requestId: formString(formData, "requestId"),
+    servings: optionalFormNumber(formData, "servings"),
     title: formString(formData, "title"),
   });
 
@@ -601,6 +606,7 @@ export async function updateMealAction(
     notes: nullableFormStringIfPresent(formData, "notes"),
     plannedAt: nullableFormStringIfPresent(formData, "plannedAt"),
     recipeId: nullableFormStringIfPresent(formData, "recipeId"),
+    servings: nullableFormNumberIfPresent(formData, "servings"),
     title: optionalFormStringIfPresent(formData, "title"),
   });
 
