@@ -653,10 +653,10 @@ Capture or open Task
 
 **Report Format:** `Erstellt:`, `Geändert:`, `Nicht geändert:`, `Validierung:`, `Offene Punkte:`, `Risiken:`.
 
-## 4.3 Active Work Block: C2 – Weekly Planning Calendar
+## 4.3 Completed Work Block: C2 – Weekly Planning Calendar
 
-**Status:** C2-01 through C2-03 completed. The active bounded slice is
-**C2-04 – C2 Integrated Proof**.
+**Status:** C2-01 through C2-04 completed. The next explicit Active Work Block
+is **C3 – Daily Companion Loop**.
 
 **Outcome:** Calendar remains a temporal projection of canonical executable
 Tasks. Week View is the primary planning surface; it does not create a second
@@ -694,8 +694,24 @@ exists, so no fake milestone markers or management surface were introduced.
 
 #### C2-04 – C2 Integrated Proof
 
-**Active.** Prove the complete C2 planning contract, cross-domain schedule
-sources and Calendar/Today/Dashboard consistency before closing C2.
+**Completed.** The focused C2 proof suite confirms the deterministic Planner
+Queue; Week scheduling, rescheduling, resizing and unscheduling; the pointer
+comfort layer with visible conflict cancellation; keyboard/Inspector fallback;
+Day/Week/Month consistency; separate deadline, Project-date and Goal-target
+signals; generated (but never template) recurrence occurrences; reload-stable
+Meal, Review, Running and Strength source tasks; and the identical canonical
+schedule projection in Today and the Dashboard Agenda. C2 adds no filters,
+free events, Project/Goal milestone model or parallel Calendar entities.
+
+## 4.4 Active Work Block: C3 – Daily Companion Loop
+
+**Status:** Active. C3 is the next permanent-sequence block after the completed
+C2 planning contract.
+
+**Outcome:** Dashboard, Inbox and Today support capture → execute →
+planned-vs-done → review using the established C2 occurrence and schedule
+contract. Its stable scope and non-goals are defined by the C3 row in the
+Permanent Delivery Sequence; the next prompt selects its bounded slice.
 
 ## 5. Completed Major Work
 
@@ -738,8 +754,10 @@ These headings describe stable domain scope, not delivery order. The binding ord
 - week-first planning and source-aware queues;
 - Routine Templates and explicit Task Occurrences;
 - Schedule Block semantics and conflict handling;
-- Calendar filters over core graph relations;
 - accessible controls before drag/drop/resize comfort.
+
+Canonical Calendar filters remain a later, separately scoped read-surface
+depth; they were deliberately not part of C2 closure.
 
 ### C3 – Daily Companion Loop
 

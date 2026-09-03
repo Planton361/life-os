@@ -204,12 +204,23 @@ test("C2-02 keeps Meal and Running source tasks on their canonical pointer path"
   page,
 }) => {
   test.setTimeout(120_000);
+  await page.setViewportSize({ width: 1920, height: 1080 });
   const stamp = Date.now();
+  const recipeTitle = `C2 pointer recipe ${stamp}`;
   const mealTitle = `C2 pointer meal ${stamp}`;
   const runningTitle = `C2 pointer run ${stamp}`;
   const runningPlanTitle = `C2 pointer running plan ${stamp}`;
 
   await signUpTechnicalManualUser(page, "c2-02-sources", stamp);
+  await page.goto("/nutrition/recipes");
+  const recipeForm = page
+    .getByRole("heading", { name: "Recipe erstellen" })
+    .locator("xpath=ancestor::section[1]");
+  await recipeForm.getByLabel("Title").fill(recipeTitle);
+  await recipeForm.getByLabel("Tags").fill("lunch, proof");
+  await recipeForm.getByRole("button", { name: "Recipe erstellen" }).click();
+  await expect(page.getByText(recipeTitle).first()).toBeVisible();
+
   await page.goto("/nutrition");
   const mealForm = page
     .getByRole("heading", { name: "Meal erstellen" })
@@ -219,14 +230,16 @@ test("C2-02 keeps Meal and Running source tasks on their canonical pointer path"
   await mealForm.getByLabel("Date").fill(calendarDate);
   await mealForm.getByLabel("Type").selectOption("lunch");
   await mealForm.getByLabel("Planned").fill(`${calendarDate}T12:30`);
+  await mealForm.getByLabel("Recipe").selectOption({ label: recipeTitle });
   await mealForm
     .getByRole("button", { exact: true, name: "Meal erstellen" })
     .click();
   await page.waitForLoadState("networkidle");
   await expect(page.getByText(mealTitle).first()).toBeVisible();
   await page.goto("/nutrition/meal-planner");
-  const lunchSlot = page.getByRole("button", { name: /Lunch/ }).first();
-  await lunchSlot.click();
+  const lunchSlot = page.getByRole("button").filter({ hasText: recipeTitle }).first();
+  await lunchSlot.focus();
+  await lunchSlot.press("Enter");
   const mealSchedule = page.locator(
     `form[aria-label="${mealTitle} als Zeitblock planen"]`,
   );
