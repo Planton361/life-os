@@ -39,8 +39,8 @@ Implementation status and product visibility are separate truths: `CONNECTED` co
 | Resources | `ACTIVE` | connected knowledge core with relation depth gaps | knowledge base and evidence; K1 follows C3 |
 | Health / Fitness | `ACTIVE` | connected core records and projections | domain records link to Task Occurrences; H1/H2 depth later |
 | Nutrition | `ACTIVE` | connected recipes/meals with portion gaps | domain records link to Task Occurrences; N1 depth later |
-| Work / Education / Coding | `ACTIVE` | connected core workflows with named gaps | area projections over the canonical spine; A1 depth later |
-| Inventory / Wishlist | `ACTIVE` | connected shared Manual workspace and purchase conversion | Inventory and explicit Wishlist links remain reachable in active Life navigation |
+| Work / Education / Coding | `ACTIVE` | A1 Target browser proof covers canonical Projects, Resources and reload-stable logs; named depth gaps remain below | area projections over the canonical spine; no area-local core copies |
+| Inventory / Wishlist | `ACTIVE` | A1 Target browser proof covers Manual CRUD, purchase decisions and idempotent conversion after reload | Inventory and explicit Wishlist links remain reachable in active Life navigation |
 | Anti-Rot / Challenges / Shop | `DEFERRED_HIDDEN` | connected feature code/data; direct routes remain intact | C1.1-01 removed Sidebar, Dashboard and normal Daily-Companion entry points |
 | Entertainment | `DEFERRED_HIDDEN` | connected collection code/data; direct routes remain intact | C1.1-01 removed Sidebar, Life overview and obvious active cross-links |
 | AI1 Personal Assistant | `DEFERRED` | not started / external decisions outstanding | do not continue during C1→A1 |
@@ -253,12 +253,12 @@ C1 Core Work Graph
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Repository library | `CONNECTED` | A1.1A Coding-Area projection of canonical Projects with editable metadata and manual repository URL | automated repository sync remains external-gated |
+| Repository library | `CONNECTED` | A1 Target browser proof creates a Coding-Area canonical Project with manual repository URL, Core backlink and reload | automated repository sync remains external-gated |
 | GitHub link | `CONNECTED_GAP` | A1.1A optional manual Project repository URL | no GitHub API or automatic sync |
 | GitHub API | `EXTERNAL_GATE` | none | later read-only decision |
-| Coding project log | `CONNECTED` | A1.1A user-scoped `coding_sessions` create/edit/soft-archive history with canonical Project ownership and reload proof | automatic time tracking remains out of scope |
+| Coding project log | `CONNECTED` | A1 Target browser proof creates a user-scoped `coding_sessions` record with canonical Project ownership and reload | automatic time tracking remains out of scope |
 | Course/learning path | `UI_ONLY` | skills/education concepts | connect to skills/evidence |
-| Agent session tracking | `UI_ONLY` | agents page | create session/tool/result model |
+| Agent session tracking | `NOT_STARTED` | no canonical `agent_sessions` model; Manual and Empty render an honest non-interactive Prepared state | deferred retained model; do not start AI1/provider work without a separate decision |
 | Prompt library | `UI_ONLY` | page concepts | canonical resources/templates |
 | Coding knowledge map | `UI_ONLY` | skill map shell | relation read model first |
 
@@ -266,9 +266,9 @@ C1 Core Work Graph
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Scientific work | `CONNECTED_GAP` | A1.1B1 Education-Area projection of canonical Projects with Tasks, Deadlines, Resources and A1.1B2 logs | dedicated scientific-work metadata remains intentionally deferred; no parallel model |
-| Literature library | `CONNECTED_GAP` | A1.1B1 canonical Resources create/edit and reload-stable Project link/unlink through `resource_relations` | create-and-link is sequential rather than atomic, so a link failure can leave a standalone Resource; reading status and bibliographic metadata remain deferred until safely modeled |
-| Learning log | `CONNECTED` | A1.1B2 user-scoped `education_logs` with create/edit/archive, reload-stable history and 7-/30-day log-derived signals | maintain aggregation and ownership proofs |
+| Scientific work | `CONNECTED_GAP` | A1 Target browser proof creates an Education-Area canonical Project with Core backlink, literature Resource and learning log after reload | dedicated scientific-work metadata remains intentionally deferred; no parallel model |
+| Literature library | `CONNECTED_GAP` | A1 Target browser proof creates a canonical Resource and reload-stable Project link through `resource_relations` | create-and-link is sequential rather than atomic, so a link failure can leave a standalone Resource; reading status and bibliographic metadata remain deferred until safely modeled |
+| Learning log | `CONNECTED` | A1 Target browser proof creates a user-scoped `education_logs` record and reloads it in the canonical Project context | maintain aggregation and ownership proofs |
 | Thesis/project relation | `CONNECTED` | A1.1B1 user-owned `education` Area with canonical Projects, Tasks, Deadlines and literature Resources | maintain same-user relation ownership |
 | Writing best practices/resources | `CONNECTED_GAP` | A1.1B1 scoped Resources plus A1.1B2 Writing Logs with signed word deltas | dedicated prompt/template management remains separate depth |
 | Education dashboard | `CONNECTED_GAP` | Manual Education workspace projects, task/deadline context, literature and A1.1B2 Learning/Writing activity | Literature create-and-link remains non-atomic; richer scientific metadata remains deferred |
@@ -277,9 +277,9 @@ C1 Core Work Graph
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Work projects/tasks | `CONNECTED` | A1.1C1 user-owned `work` Area with canonical Projects, Project edit, Tasks/Deadlines and Resources in the Manual Work workspace | maintain reload and same-user ownership proofs |
-| Work log | `CONNECTED` | A1.1C1 user-scoped `work_logs` with create/edit/soft archive, historical readability and reload-stable Manual workspace | automatic time tracking and analytics remain out of scope |
-| Work wiki | `CONNECTED_GAP` | A1.1C2a canonical Work-Area `resources` (`note`) with optional Project relation, create/edit/archive and reload-stable history | create-and-link is sequential, so a relation failure can leave a standalone Work Resource; no refactor in this slice |
+| Work projects/tasks | `CONNECTED` | A1 Target browser proof creates a user-owned Work-Area canonical Project and confirms its Core backlink after reload | maintain reload and same-user ownership proofs |
+| Work log | `CONNECTED` | A1 Target browser proof creates a user-scoped `work_logs` record and reloads it in the Manual workspace | automatic time tracking and analytics remain out of scope |
+| Work wiki | `CONNECTED_GAP` | A1 Target browser proof creates a canonical Work-Area Resource (`note`) with its Project context and reloads it | create-and-link is sequential, so a relation failure can leave a standalone Work Resource; no refactor in this slice |
 | Meetings | `CONNECTED` | A1.1C2b user-scoped `work_meetings` with canonical Work-Project ownership, create/edit/soft archive and reload-stable historical Manual workspace | maintain meeting ownership and archive proofs |
 | Decisions | `CONNECTED` | A1.1C2a user-scoped `work_decisions` with Work-Project ownership, status, create/edit/archive and reload-stable history | maintain ownership and status proofs |
 | Follow-ups | `CONNECTED` | A1.1C2b canonical `tasks` linked by `work_meeting_followups`; Security-Invoker RPC atomically creates the owned Task and Meeting relation, while existing owned Tasks can link/unlink independently | no automatic Task completion or external sync |
@@ -292,9 +292,9 @@ C1 Core Work Graph
 | Journal | `CONNECTED` | A1.1D1 user-scoped `journal_entries` with date, optional title, body, create/edit/soft archive, chronological active/history views and reload proof | Mood, Health and Daily/Weekly Reviews remain separate canonical domains |
 | Notes | `CONNECTED` | A1.1D1 canonical Life-Area `resources` (`note`) with create/edit/archive/restore, reload-stable active/history views and visible existing Project/Goal/Task relations or honest empty state | relation creation remains on the established Resource surfaces; no parallel Notes platform |
 | Entertainment collection | `CONNECTED` | A1.1D2 canonical user-scoped `entertainment_items`; direct routes and complete lifecycle remain retained | `DEFERRED_HIDDEN` boundary is applied to Sidebar, Life overview and active cross-links by C1.1-01 |
-| Inventory | `CONNECTED` | A1.1D3 user-scoped `inventory_items` with create/edit/archive/restore, controlled condition, quantity/value documentation, reload proof and visible Wishlist origin | external merchants, guarantees, insurance and accounting remain unimplemented |
-| Wishlist | `CONNECTED` | A1.1D3 user-scoped `wishlist_items` with controlled priority/status, price documentation, create/edit/archive/restore and reload proof | external price tracking, ordering and product APIs remain external gates |
-| Purchase Decisions | `CONNECTED` | A1.1D3 historical `purchase_decisions` plus explicit atomic and idempotent Wishlist→Inventory RPC; acquired status, Inventory relation and no-duplicate proof are connected | no payment, merchant integration or automated purchase action |
+| Inventory | `CONNECTED` | A1 Target browser proof creates and edits user-scoped `inventory_items`, then reloads the active item | external merchants, guarantees, insurance and accounting remain unimplemented |
+| Wishlist | `CONNECTED` | A1 Target browser proof creates a user-scoped `wishlist_items` record and reloads its acquired lifecycle state | external price tracking, ordering and product APIs remain external gates |
+| Purchase Decisions | `CONNECTED` | A1 Target browser proof creates a historical `purchase_decisions` record, then proves the atomic idempotent Wishlist→Inventory RPC by its single Inventory projection after reload | no payment, merchant integration or automated purchase action |
 | Personal dashboard | `UI_ONLY` | area shell | bind canonical data |
 
 # 15. Challenges, Anti-Rot and Shop (`DEFERRED_HIDDEN`)

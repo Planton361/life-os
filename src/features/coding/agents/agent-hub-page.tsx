@@ -1883,7 +1883,53 @@ function TaskInspectorSheet({
   );
 }
 
-export function AgentHubPage({
+function PreparedAgentHub({
+  profileId,
+}: Readonly<{
+  profileId: AgentHubViewModel["profileId"];
+}>) {
+  const isManual = profileId === "manual";
+
+  return (
+    <div
+      className="mx-auto flex w-full max-w-[2208px] flex-col gap-2 pb-6"
+      data-agent-hub-state="prepared"
+      id="agent-hub-page"
+    >
+      <header className="rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.86)] p-4">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-blue)]">
+          Life OS / Coding
+        </p>
+        <h1 className="mt-1 text-[24px] font-semibold text-[var(--text-primary)]">
+          Agent Sessions
+        </h1>
+        <p className="mt-1 text-[11px] text-[var(--text-secondary)]">
+          {isManual
+            ? "Vorbereitete Fläche: Es existiert noch kein persistenter Agent-Session- oder Prompt-Vertrag."
+            : "Vorbereitete Fläche ohne Demo-Daten, lokale Entwürfe oder Schreibvorgänge."}
+        </p>
+      </header>
+
+      <CodingPanel
+        subtitle="Der vorhandene Coding- und Core-Kontext bleibt unverändert."
+        title="Keine lokale Agent-Queue"
+      >
+        <EmptyStateCard
+          title="Agent Sessions sind noch nicht verbunden"
+          description="Diese Fläche erzeugt keine lokalen Tasks, Prompts, Context Bundles oder Review-Entscheidungen. Coding Projects, Tasks, Skills und Resources werden weiterhin über ihre kanonischen Arbeitsflächen verwaltet."
+        />
+      </CodingPanel>
+
+      <div className="rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.42)] p-3">
+        <p className="text-[10px] leading-4 text-[var(--text-faint)]">
+          Prepared state · no provider connection · no agent execution · no local-only write
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function AgentHubInteractive({
   viewModel,
 }: Readonly<{
   viewModel: AgentHubViewModel;
@@ -2231,5 +2277,17 @@ export function AgentHubPage({
       />
       <Toast onDismiss={() => setToast(null)} toast={toast} />
     </div>
+  );
+}
+
+export function AgentHubPage({
+  viewModel,
+}: Readonly<{
+  viewModel: AgentHubViewModel;
+}>) {
+  return viewModel.profileId === "demo" ? (
+    <AgentHubInteractive viewModel={viewModel} />
+  ) : (
+    <PreparedAgentHub profileId={viewModel.profileId} />
   );
 }

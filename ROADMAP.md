@@ -747,13 +747,21 @@ canonical Meal completion remains reload-stable with its linked Task.
 honest daily meal planning, completion and grocery derivation using the N1
 stable scope in the Permanent Delivery Sequence.
 
-## 4.8 Active Work Block: A1 – Work, Education, Coding and Inventory
+## 4.8 Completed Work Block: A1 – Work, Education, Coding and Inventory
 
-**Status:** Active. A1 is the next permanent-sequence block after completed N1.
+**Status:** Completed with deferred Agent-Session depth. The canonical Target
+browser proof covers Coding Projects/Sessions, Education Projects/Literature/
+Learning Logs, Work Projects/Logs/Wiki and Inventory/Wishlist/Purchase
+Decisions after reload. Manual and Empty Agent Hub routes are an honest
+non-interactive Prepared state because `agent_sessions` remains a separately
+deferred retained model.
 
 **Outcome:** Work, Education, Coding and Inventory use their existing canonical
 entities and shared Task/Project/Skill/Resource context without creating
 area-local duplicate truths.
+
+No next Active Work Block is activated. The permanent delivery sequence ends
+with A1; AI1 remains explicitly deferred pending a separate post-A1 decision.
 
 ## 5. Completed Major Work
 
