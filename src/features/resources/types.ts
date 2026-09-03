@@ -229,6 +229,7 @@ export type ResourceReviewStateMeta = {
 
 export type ResourcesViewModel = {
   profileId: ResourceProfileId;
+  writeEnabled: boolean;
   header: {
     eyebrow: "Knowledge Library";
     title: "Resources";

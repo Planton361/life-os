@@ -12,6 +12,7 @@ import { useMemo, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { archiveResourceFormAction, createResourceFormAction, linkResourceToTargetAction, restoreResourceFormAction, unlinkResourceFromTargetAction, updateResourceFormAction } from "@/features/real-data/actions/resource.actions";
 import { ConnectedContext } from "@/features/semantic-relations/connected-context";
+import { searchActiveResources } from "../resource-search";
 import {
   resourceAreaMeta,
   resourceReviewStateMeta,
@@ -357,11 +358,17 @@ function ResourceViewSwitcher({
 function SaveResourceCard({
   captureTypes,
   profileId,
+  writeEnabled,
 }: Readonly<{
   captureTypes: ResourceOption<ResourceType>[];
   profileId: ResourcesViewModel["profileId"];
+  writeEnabled: boolean;
 }>) {
-  const disabled = profileId !== "manual";
+  const disabled = !writeEnabled;
+  const blockedMessage =
+    profileId === "manual"
+      ? "Melde dich lokal an, um Resources zu speichern."
+      : "Resource Writes sind in Demo und Empty nicht verfügbar.";
   return (
     <section aria-label="Save Resource" className="min-w-0 overflow-hidden rounded-[16px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.74)] p-3">
       <form action={createResourceFormAction} aria-label="Resource erstellen" className="grid gap-2 xl:grid-cols-[minmax(180px,1fr)_minmax(220px,1.4fr)_minmax(180px,1fr)_140px_auto] xl:items-end">
@@ -371,6 +378,7 @@ function SaveResourceCard({
         <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)]">Typ<select className="min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.62)] px-2 text-[11px] text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]" disabled={disabled} name="type">{captureTypes.map(type => <option key={type.value} value={type.value}>{type.label}</option>)}</select></label>
         <button className="min-h-8 rounded-full border border-[rgba(95,200,215,.32)] bg-[rgba(95,200,215,.12)] px-4 text-[10px] font-semibold text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] disabled:opacity-50" disabled={disabled} type="submit">Resource speichern</button>
       </form>
+      {disabled ? <p className="mt-2 text-[10px] text-[var(--text-muted)]" role="status">{blockedMessage}</p> : null}
     </section>
   );
 }
@@ -1228,31 +1236,6 @@ function ResourceRelationInspector({
           </>
         ) : null}
 
-        <section aria-labelledby="resource-actions-heading">
-          <h3
-            className="text-[13px] font-semibold text-[var(--text-primary)] xl:text-[12px]"
-            id="resource-actions-heading"
-          >
-            Actions
-          </h3>
-          <div className="mt-2 grid gap-1.5 xl:mt-1.5 xl:grid-cols-2 xl:gap-1.5">
-            {resource.actions.map((action, index) => (
-              <button
-                className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.42)] px-3 py-2 text-left transition hover:border-[var(--border-default)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] xl:px-2 xl:py-1.5"
-                key={`resource-action-${index}`}
-                type="button"
-              >
-                <span className="block text-[12px] font-semibold leading-4 text-[var(--text-primary)] xl:text-[11px] xl:leading-3">
-                  {action.label}
-                </span>
-                <span className="mt-0.5 block text-[10px] leading-4 text-[var(--text-muted)] xl:line-clamp-1 xl:leading-3">
-                  {action.detail}
-                </span>
-              </button>
-            ))}
-          </div>
-        </section>
-
         <p className="rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.32)] px-3 py-2 text-[10px] leading-4 text-[var(--text-muted)] xl:hidden">
           Cluster: {cluster?.title ?? "Unclustered"} / Last touched:{" "}
           {resource.lastTouched}. Resources stores reusable knowledge. Inbox
@@ -1942,20 +1925,16 @@ export function ResourcesPage({
   const resourceState = searchParams.get("resourceState");
   const query = (searchParams.get("q") ?? "").trim().toLocaleLowerCase();
   const relationCreateState = searchParams.get("relationCreate");
-  const filteredResources = useMemo(() => {
-    if (!query) return viewModel.resources;
-    return viewModel.resources.filter((resource) =>
-      [resource.title, resource.summary, resource.url, resource.type, resourceTypeMeta[resource.type].label]
-        .filter(Boolean)
-        .some((value) => value?.toLocaleLowerCase().includes(query)),
-    );
-  }, [query, viewModel.resources]);
+  const filteredResources = useMemo(
+    () => searchActiveResources(viewModel.resources, query),
+    [query, viewModel.resources],
+  );
   const selectedResource = useMemo(
     () =>
-      filteredResources.find((resource) => resource.id === selectedResourceId) ??
+      viewModel.resources.find((resource) => resource.id === selectedResourceId) ??
       filteredResources[0] ??
       null,
-    [filteredResources, selectedResourceId],
+    [filteredResources, selectedResourceId, viewModel.resources],
   );
   const viewOptions = useMemo(
     () =>
@@ -1987,7 +1966,11 @@ export function ResourcesPage({
         makeHref={makeHref}
         viewOptions={viewOptions}
       />
-      <SaveResourceCard captureTypes={viewModel.captureTypes} profileId={viewModel.profileId} />
+      <SaveResourceCard
+        captureTypes={viewModel.captureTypes}
+        profileId={viewModel.profileId}
+        writeEnabled={viewModel.writeEnabled}
+      />
       {activeView === "library" ? (
         <ResourceControls
           filterOptions={viewModel.filterOptions}

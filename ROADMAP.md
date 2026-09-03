@@ -715,12 +715,23 @@ planned-vs-done → review using the established C2 occurrence and schedule
 contract. Its stable scope and non-goals are defined by the C3 row in the
 Permanent Delivery Sequence; the next prompt selects its bounded slice.
 
-## 4.5 Active Work Block: K1 – Knowledge Base
+## 4.5 Completed Work Block: K1 – Knowledge Base
 
-**Status:** Active. K1 is the next permanent-sequence block after completed C3.
+**Status:** Completed. The canonical Target Runtime proves Resource capture,
+edit, deterministic active search, inspector navigation, Core-Graph context,
+separate Skill Evidence and non-destructive archive/restore after reload.
 
 **Outcome:** Resources become searchable context and evidence across the Core
 Work Graph, using the K1 stable scope in the Permanent Delivery Sequence.
+
+## 4.6 Active Work Block: H1/H2 – Health and Fitness
+
+**Status:** Active. H1/H2 is the next permanent-sequence block after completed
+K1.
+
+**Outcome:** Health facts and fitness plans participate in the daily loop
+through canonical occurrences, using the H1/H2 stable scope in the Permanent
+Delivery Sequence.
 
 ## 5. Completed Major Work
 

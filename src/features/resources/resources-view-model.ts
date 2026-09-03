@@ -1232,6 +1232,7 @@ export function getResourcesViewModel(
 ): ResourcesViewModel {
   return {
     profileId,
+    writeEnabled: false,
     header: {
       eyebrow: "Knowledge Library",
       title: "Resources",

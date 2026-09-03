@@ -176,15 +176,15 @@ C1 Core Work Graph
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Resource create/read | `CONNECTED` | K1.1B canonical Resource create/edit read model with reload proof | maintain |
-| Resource inspector | `CONNECTED` | K1.1B editable metadata, archive status and real relation sections | maintain |
-| Resource archive/restore | `CONNECTED` | K1.1B soft archive via `archived_at` and restore lifecycle | maintain |
-| Resource relations | `CONNECTED` | Resource inspector link/unlink plus owned Task, Project, Goal and Skill Context links; C1.1 integrated proof preserves separate Evidence semantics and reload-stable backlinks | relation-type editing remains separate future depth |
+| Resource create/read | `CONNECTED` | canonical Target Runtime K1 proof creates, edits and reloads Resource metadata | maintain |
+| Resource inspector | `CONNECTED` | canonical Target Runtime K1 proof opens the selected Resource from Library search and shows real Task/Project/Goal/Skill context | maintain |
+| Resource archive/restore | `CONNECTED` | soft `archived_at` lifecycle: K1 Target proof preserves existing relations/Evidence, removes the Resource from active Library/search, then restores it reload-stably | maintain |
+| Resource relations | `CONNECTED` | Resource inspector link/unlink plus owned Task, Project, Goal and Skill Context links; C1/K1 Target proofs preserve separate Evidence semantics and reload-stable backlinks | relation-type editing remains separate future depth |
 | Project/Goal workbench display | `CONNECTED` | relation read model | maintain |
-| Resource search | `CONNECTED` | K1.1B user-scoped Manual read model filter across title, description, URL and type | tags/full-text ranking remain deferred |
+| Resource search | `CONNECTED` | user-scoped deterministic active-Library filter across canonical title, description, URL and type; K1 Target proof covers result-to-inspector navigation and archived exclusion | tags/full-text ranking remain deferred |
 | Files/attachments | `NOT_STARTED` | none | storage/privacy decision |
 | Notes/wiki resources | `CONNECTED_GAP` | resource/note concepts | canonical Note/Wiki model needed |
-| Semantic relation read model | `CONNECTED` | server-side projection of `tasks.project_id`, `tasks.goal_id`, `projects.goal_id`, `resource_relations`, Skill Evidence and `task_skill_links`; C1.1 integrated proof verifies deterministic direct, via-Project, Context and Evidence dedupe | wider knowledge provenance remains a later bounded scope |
+| Semantic relation read model | `CONNECTED` | server-side projection of `tasks.project_id`, `tasks.goal_id`, `projects.goal_id`, `resource_relations`, Skill Evidence and `task_skill_links`; C1/K1 Target proofs verify deterministic direct, via-Project, Context and Evidence dedupe | wider knowledge provenance remains a later bounded scope |
 | Resource/Skill graph | `NOT_STARTED` | no proven graph read model | no visual library before semantics |
 | Embeddings/semantic search | `DECISION_REQUIRED` | none | privacy and permission decision |
 

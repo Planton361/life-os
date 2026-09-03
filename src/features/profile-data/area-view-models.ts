@@ -3167,12 +3167,14 @@ export async function getResourcesViewModel(): Promise<
   );
 
   let manualResources: ResourceItem[] = [];
+  let writeEnabled = false;
   let relationTargets: ResourceRelationCreateTarget[] = [];
 
   if (profileId === "manual") {
     const auth = await createAuthenticatedSupabaseServerClient();
 
     if (auth.ok) {
+      writeEnabled = true;
       const manualResourceData = await getManualResourcesFromSupabase(
         auth.client,
         auth.user.id,
@@ -3189,6 +3191,7 @@ export async function getResourcesViewModel(): Promise<
   const resourcesViewModel: ResourcesViewModel = {
     ...sanitizedViewModel,
     profileId,
+    writeEnabled,
     aiSuggestions: [],
     clusters: [],
     recentLearnings: [],
