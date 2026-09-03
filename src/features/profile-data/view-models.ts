@@ -133,6 +133,10 @@ import {
   buildTodayContentStates,
   getTodayViewModel as getDemoTodayViewModel,
 } from "@/features/today/today-view-model";
+import {
+  buildDailyCompanionTaskProjection,
+  dailyCompanionTaskStatusLabel,
+} from "@/features/today/daily-companion-read-model";
 import type {
   TodayActivityEventViewModel,
   TodayPlannerTaskViewModel,
@@ -1889,13 +1893,13 @@ function buildProfileDashboardViewModel(
     ...viewModel.todayAgenda,
     contentState: resolveContentStateMeta({
       capacity: dashboardCapacity.agenda,
-      itemCount: tasks.length,
+      itemCount: allTodayTasks.length,
     }),
     preparedViewsLabel: "Week and month views prepared",
     currentTimeLabel: localTimeLabel(new Date()),
     currentTimePositionPercent: dashboardAgendaPosition(),
     href: "/calendar",
-    events: visibleDashboardAgendaTasks(tasks).map(taskToAgendaEvent),
+    events: visibleDashboardAgendaTasks(allTodayTasks).map(taskToAgendaEvent),
   };
 
   const latestWeight = sources.health?.weights[0];
@@ -3390,7 +3394,7 @@ function taskToTodayEvent(task: LifeTask): TodayActivityEventViewModel {
         : task.status === "active"
           ? "current"
           : "planned",
-    statusLabel: taskStatusLabel(task).toLowerCase(),
+    statusLabel: dailyCompanionTaskStatusLabel(task),
     eventType: projectedScheduleSourceType(task),
     eventTypeLabel: task.scheduleSource?.type === "meal" ? "Meal" : task.scheduleSource?.type === "review" ? "Review" : isWorkoutScheduleSource(task) ? "Workout" : "Task",
     title: task.title,
@@ -3597,10 +3601,11 @@ function buildProfileTodayViewModel(
       tasks: profile.tasks,
     });
   const today = todayDateLabel();
-  const todayTasks = profile.tasks
-    .filter((task) => task.date === today)
-    .filter((task) => task.status !== "canceled")
-    .sort(compareDashboardTasks);
+  const dailyTaskProjection = buildDailyCompanionTaskProjection(
+    profile.tasks,
+    today,
+  );
+  const todayTasks = [...dailyTaskProjection.planned].sort(compareDashboardTasks);
   const todayCandidateTasks = profile.tasks
     .filter(isOpenTask)
     .filter((task) => !task.date && !task.startTime)
@@ -3645,11 +3650,10 @@ function buildProfileTodayViewModel(
           description: task.nextStep,
           accent: areaAccent(task.areaId),
         }));
-  const deltaValueCount =
-    todayTasks.length +
-    profile.inboxItems.length +
-    profile.projects.length +
-    profile.goals.length;
+  const carriedTaskCount = options.dailyReview
+    ? (options.dailyDecisions ?? []).length
+    : 0;
+  const deltaValueCount = 5;
   const hasTodayData =
     events.length > 0 || artifacts.length > 0 || carryForwardItems.length > 0;
 
@@ -3685,19 +3689,19 @@ function buildProfileTodayViewModel(
         accent: "var(--accent-cyan)",
       },
       {
-        label: `${todayTasks.length} today tasks`,
+        label: `${dailyTaskProjection.scheduled.length} scheduled`,
         accent: "var(--accent-blue)",
       },
       {
-        label: `${plannerTasks.length} candidates`,
+        label: `${dailyTaskProjection.completed.length} done`,
         accent: "var(--accent-orange)",
       },
       {
-        label: `${profile.inboxItems.length} inbox`,
+        label: `${dailyTaskProjection.open.length} open`,
         accent: "var(--accent-green)",
       },
       {
-        label: `${artifacts.length} artifacts`,
+        label: `${carriedTaskCount} carried`,
         accent: "var(--accent-purple)",
       },
     ],
@@ -3775,29 +3779,35 @@ function buildProfileTodayViewModel(
     ...viewModel.deltaSummary,
     metrics: [
       {
-        label: "Today tasks",
+        label: "Planned today",
         value: String(todayTasks.length),
-        detail: "echte Tasks mit heutigem Datum",
+        detail: "canonical task occurrences",
         accent: "var(--accent-blue)",
       },
       {
-        label: "Inbox captures",
-        value: String(profile.inboxItems.length),
-        detail: "lokale Captures",
+        label: "Time scheduled",
+        value: String(dailyTaskProjection.scheduled.length),
+        detail: "planned occurrences with a Calendar block",
+        accent: "var(--accent-cyan)",
+      },
+      {
+        label: "Done",
+        value: String(dailyTaskProjection.completed.length),
+        detail: "completed canonical occurrences",
         accent: "var(--accent-green)",
       },
       {
-        label: "Artifacts",
-        value: String(artifacts.length),
-        detail: "Projects und Goals",
+        label: "Open plan",
+        value: String(dailyTaskProjection.open.length),
+        detail: "planned work not completed yet",
         accent: "var(--accent-orange)",
       },
       {
-        label: "Review records",
-        value: options.dailyReview ? "1" : "0",
+        label: "Carried forward",
+        value: String(carriedTaskCount),
         detail: options.dailyReview
-          ? `${options.dailyReview.status} · canonical review record`
-          : "noch kein Daily Review Record",
+          ? "explicit Daily Review decisions"
+          : "decide in Daily Review",
         accent: "var(--accent-purple)",
       },
     ],

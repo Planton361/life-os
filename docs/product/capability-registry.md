@@ -82,7 +82,7 @@ C1 Core Work Graph
 | Meals Today | `CONNECTED_GAP` | user-scoped meals plus canonical linked Task scheduling and atomic completion synchronization | multiple-meal slot depth and portion semantics remain |
 | Latest Run | `CONNECTED` | latest completed, non-archived running_session with derived pace on Dashboard and Health | maintain reload and timezone proof |
 | Muscle Map | `CONNECTED` | explicit exercise_muscles mappings plus real strength_set_logs; planned fallback is source-labeled | maintain source labels and set-log proof |
-| Today Agenda day view | `CONNECTED` | task scheduling fields | maintain task-based core |
+| Today Agenda day view | `CONNECTED` | canonical task schedule and lifecycle fields; C3 Target browser proof covers planned, open and done work after reload | maintain task-based core |
 | Today Agenda week/month | `CONNECTED_GAP` | Calendar/visual projection | align with canonical Calendar views |
 | Urgent time-block create | `UI_ONLY` | visible action | implement schedule/create flow without duplicate data |
 | Habit Tracker | `CONNECTED` | canonical Habits/Habit Logs, automatic profile-window projection and authenticated increment/undo reload proof | maintain eight-slot/window and timezone proofs |
@@ -113,11 +113,11 @@ C1 Core Work Graph
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Today task projection | `CONNECTED` | planned/scheduled tasks | maintain |
+| Today task projection | `CONNECTED` | canonical Task occurrence schedule/lifecycle fields; C3 Target proof distinguishes scheduled, open planned and done work after reload | maintain |
 | Task planning | `CONNECTED_GAP` | canonical Target Runtime keeps source-aware application planning: normal Tasks remain direct; Meal-linked plan/reschedule/unschedule use canonical atomic Meal↔Task writes; Review/Workout remain Task-time-only; C2-04 verifies the Calendar/Today/Dashboard projection after reload | direct Data API hardening remains separate |
-| Task complete/reopen | `CONNECTED_GAP` | isolated Git-only Runtime proof routes generic completion through the canonical linked-task guard; open Review/Running/Strength Tasks stay open and Meal completion remains atomic; source-linked generic reopen is deliberately refused | personal runtime cutover and direct Data API hardening remain outstanding |
+| Task complete/reopen | `CONNECTED_GAP` | canonical Target Runtime: C3 proves normal Task completion/reopen across Today, Dashboard and Calendar; Review/Running/Strength generic completion rejection and Meal UI completion remain source-aware | direct Data API hardening remains separate |
 | Recurring instance projection | `CONNECTED` | explicit idempotent generation, DB uniqueness, pure-rule tests and authenticated Today/Dashboard/Calendar reload proof | maintain |
-| Carry-over/open loops | `CONNECTED_GAP` | isolated Git-only stack proves atomic exact-set Daily Review carry-over reconciliation, idempotent retained selections, minimal planning snapshots, safe restoration and newer-planning protection; the drifted runtime has not cut over | runtime cutover, then retain ownership and reload/browser proofs |
+| Carry-over/open loops | `CONNECTED` | canonical Target Runtime C3 proof saves an explicit Daily Review carry-over decision, moves only the selected open Task to the next day and reload-proves Review, Today and Task planning together | maintain atomic exact-set reconciliation and newer-planning protection |
 | Daily Review | `CONNECTED` | canonical user-scoped review record, V5 flow and Dashboard/Today projections | maintain |
 | Weekly Review | `CONNECTED` | canonical user-scoped review record with derived task/project movement | maintain |
 | Next-day preparation | `CONNECTED` | Daily Review focus plus explicit carry-over target date | maintain |

@@ -1097,6 +1097,7 @@ function PlanningQueue({
                 : "border-[color-mix(in_srgb,var(--accent)_24%,transparent)] hover:border-[color-mix(in_srgb,var(--accent)_44%,transparent)]",
             )}
             key={task.id}
+            onFocus={() => onSelectTask(task.id)}
             onPointerDown={(event: PointerEvent<HTMLButtonElement>) => {
               if (!pointerEnabled || event.button !== 0) return;
               onQueuePointerStart?.(task, {

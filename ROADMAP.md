@@ -703,15 +703,24 @@ Meal, Review, Running and Strength source tasks; and the identical canonical
 schedule projection in Today and the Dashboard Agenda. C2 adds no filters,
 free events, Project/Goal milestone model or parallel Calendar entities.
 
-## 4.4 Active Work Block: C3 – Daily Companion Loop
+## 4.4 Completed Work Block: C3 – Daily Companion Loop
 
-**Status:** Active. C3 is the next permanent-sequence block after the completed
-C2 planning contract.
+**Status:** Completed. The canonical Target Runtime now proves one reload-stable
+daily loop across Dashboard, Inbox, Today, Calendar and Daily Review: capture,
+planned/open/done projection, source-aware completion and an explicit atomic
+carry-over decision.
 
 **Outcome:** Dashboard, Inbox and Today support capture → execute →
 planned-vs-done → review using the established C2 occurrence and schedule
 contract. Its stable scope and non-goals are defined by the C3 row in the
 Permanent Delivery Sequence; the next prompt selects its bounded slice.
+
+## 4.5 Active Work Block: K1 – Knowledge Base
+
+**Status:** Active. K1 is the next permanent-sequence block after completed C3.
+
+**Outcome:** Resources become searchable context and evidence across the Core
+Work Graph, using the K1 stable scope in the Permanent Delivery Sequence.
 
 ## 5. Completed Major Work
 
