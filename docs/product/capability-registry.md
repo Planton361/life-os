@@ -57,6 +57,7 @@ C1 Core Work Graph
 → H1/H2 Health and Fitness
 → N1 Nutrition
 → A1 Work/Education/Coding/Inventory
+→ Z1 Final Local Product Closure & Hardening
 ```
 
 # 1. Dashboard
@@ -254,7 +255,7 @@ C1 Core Work Graph
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
 | Repository library | `CONNECTED` | A1 Target browser proof creates a Coding-Area canonical Project with manual repository URL, Core backlink and reload | automated repository sync remains external-gated |
-| GitHub link | `CONNECTED_GAP` | A1.1A optional manual Project repository URL | no GitHub API or automatic sync |
+| GitHub link | `CONNECTED` | A1 Target browser proof persists and reloads the optional manual Project repository URL | GitHub API or automatic sync remains a separate external gate |
 | GitHub API | `EXTERNAL_GATE` | none | later read-only decision |
 | Coding project log | `CONNECTED` | A1 Target browser proof creates a user-scoped `coding_sessions` record with canonical Project ownership and reload | automatic time tracking remains out of scope |
 | Course/learning path | `UI_ONLY` | skills/education concepts | connect to skills/evidence |

@@ -4,7 +4,7 @@
 **Product mode:** personal-only, local-first
 **Design truth:** Life OS – Linear Calm Dark Command Center / Dashboard V5
 **Detailed status:** `docs/product/capability-registry.md`
-**Active sequence:** C1 → C2 → C3 → K1 → H1/H2 → N1 → A1
+**Active sequence:** C1 → C2 → C3 → K1 → H1/H2 → N1 → A1 → Z1
 
 ## 1. Product Contract
 
@@ -760,8 +760,88 @@ deferred retained model.
 entities and shared Task/Project/Skill/Resource context without creating
 area-local duplicate truths.
 
-No next Active Work Block is activated. The permanent delivery sequence ends
-with A1; AI1 remains explicitly deferred pending a separate post-A1 decision.
+The permanent feature sequence ends with A1. The Post-A1 decision below selects
+Z1 for local product closure; AI1 remains explicitly deferred pending its own
+separate decision.
+
+## 4.9 Post-A1 Product Closure Decision
+
+**Decision:** The completed C1→A1 sequence is sufficient for the active
+personal daily-control product. The remaining mandatory work is predominantly
+local reliability, recovery, UI truth and quality hardening; it does not
+justify reactivating AI1, integrations, Motivation surfaces or a new domain
+feature sequence.
+
+### Remaining Registry Gap Classification
+
+| Classification | Remaining Registry entries and verified operating findings | Product decision |
+|---|---|---|
+| `CORE_COMPLETION` | Inbox Note route; Inbox Skill route; Inbox planning-signal truth; Urgent time-block control | The active capture/triage surface must either reach its existing canonical target or show a non-interactive, explicit Prepared state. No new entity model belongs here. |
+| `LOCAL_HARDENING` | Task planning and completion Direct Data API boundary; Meal/Workout/Review schedule-source boundaries; visible Calendar conflict gate; Literature library; Education dashboard; Work Wiki; Work dashboard; Restore smoke; canonical Target versus default CLI stack; technical test-data isolation; active-profile `UI_ONLY` controls; Accessibility; 4K/Desktop/Mobile smoke; local performance and focused E2E harness reliability | Required for trustworthy local operation. Z1 hardens existing canonical paths, recovery and proof infrastructure without expanding the product model. |
+| `OPTIONAL_ENHANCEMENT` | Focus Time; Dashboard nutrition target/depth; Today Agenda week/month; Active Portfolio pins; related-context search; Review history; Calendar filters, override audit and schedule history; Project/Goal evidence display, restore/undo, review cadence and pins; Notes/Wiki depth; Manual nutrition estimate; persistent grocery/pantry; Recipe detail; Journal linkage; Mental Health overview depth; Course/Learning path; Coding knowledge map; Scientific metadata; Writing resources; Personal dashboard | Useful depth, but the current personal daily-control loop remains usable without it. Do not add to Z1. |
+| `DEFERRED_PRODUCT` | Anti-Rot and Challenges surfaces; Inbox AI suggestion review; Resource/Skill graph visualization; embeddings/semantic search; Coding Agent Sessions and Prompt Library; all Personal AI Assistant capabilities and its Resource-search exposure; Public SaaS | Retained or prepared only. They remain outside active product closure and must not receive hidden feature work in Z1. |
+| `EXTERNAL_GATE` | Weather; Receipt OCR; Garmin import; GitHub API; DeepSeek provider; private remote | Requires a separately approved provider, access or privacy/security scope. Local manual alternatives remain the complete active path. |
+| `DECISION_REQUIRED` | Free Calendar events; Project milestones; Goal key results/milestones; Project/Goal logs; Progress engine; Files/attachments; Unit conversion; Macro/calorie engine | These need explicit product, data or privacy semantics before implementation. They are not Z1 work. |
+
+Known literature and Work-Wiki create-and-link flows are classified as
+`LOCAL_HARDENING` because the canonical Resource remains valid, but the user
+must never be left with an unexplained partial relation. Their richer metadata
+is an `OPTIONAL_ENHANCEMENT`.
+
+### AI1 Decision Boundary
+
+AI1 remains deferred. A future AI1 decision/security stage must first define a
+provider, secret handling, tool-permission model, per-write confirmation,
+prompt/conversation persistence and retention, auditability, and an explicit
+failure/degraded mode. An LLM never receives direct database access. None of
+these decisions or implementations are part of Z1.
+
+## 4.10 Active Work Block: Z1 – Final Local Product Closure & Hardening
+
+**Status:** Active. Z1 is the sole post-A1 block and closes only the
+`CORE_COMPLETION` and `LOCAL_HARDENING` findings above.
+
+**Outcome:** Life OS is operable as a reliable personal-only, local-first
+product: active controls are truthful, canonical Target operation and recovery
+are reproducible, source-linked invariants resist direct-write bypasses, and
+the active surfaces have current usability and focused-proof evidence.
+
+### Z1 Scope
+
+- connect or honestly prepare the remaining Inbox Note/Skill/planning and
+  urgent-time-block controls using existing canonical entities only;
+- harden source-linked Task schedule/completion boundaries against direct Data
+  API bypass and prove owned, atomic behavior;
+- make Education Literature and Work Wiki create-and-link atomic or provide a
+  visible, reload-stable recovery outcome without duplicate truths;
+- document and prove the non-sensitive canonical Target startup/migration
+  identity, never treating the default CLI stack as Target by assumption;
+- prove a data-preserving local backup→restore path for the canonical local
+  runtime, including owned-data/RLS integrity checks, without remote use;
+- isolate technical E2E data from personal Target data and make focused test
+  commands deterministic without broad `content-state-system.spec.ts` work;
+- audit active Manual/Empty controls for client-only pseudo-writes and convert
+  unsupported controls to clearly non-interactive Prepared states;
+- run current active-surface keyboard/label/status, 4K/desktop/mobile and
+  bounded local performance smoke proofs, fixing only demonstrated blockers.
+
+### Z1 Non-Goals
+
+- no AI1, provider, external API, private remote or public SaaS work;
+- no Anti-Rot, Challenges, Rewards, Shop or Entertainment reactivation;
+- no graph visualization, embeddings, semantic search, Calendar free-event or
+  milestone/progress-engine model;
+- no grocery-commerce, pantry, persistent grocery, OCR or macro engine;
+- no broad component, migration or legacy-test refactor.
+
+### Z1 Completion
+
+Z1 closes only after every scoped hardening path has a focused proof on the
+canonical local Target, no active profile exposes a misleading write control,
+backup/restore and runtime identity are reproducible without secret output,
+and the required local quality checks pass. Optional, deferred, external and
+decision-gated items remain explicitly classified rather than being marked
+complete.
 
 ## 5. Completed Major Work
 
@@ -876,12 +956,14 @@ depth; they were deliberately not part of C2 closure.
 
 ### Z1 – Final Local Product Closure
 
-- all Capability Registry entries are `CONNECTED` or justified `EXTERNAL_GATE`;
-- no misleading visible controls or Demo leakage in Manual/Empty modes;
-- focused and full product proofs are green;
-- 4K, standard desktop and mobile smoke coverage;
-- accessibility and performance passes;
-- local backup, restore, startup and recovery proof;
+- active-surface `CORE_COMPLETION` and `LOCAL_HARDENING` findings from the
+  Post-A1 decision only;
+- no misleading active-profile controls or Demo leakage in Manual/Empty;
+- reproducible canonical Target startup, migration identity and recovery;
+- source-linked direct-write and partial-link integrity proof;
+- focused active-surface 4K, desktop, mobile, accessibility and performance
+  smoke coverage;
+- technical test-data isolation and deterministic focused test harnesses;
 - sustained personal-use period without a critical blocker.
 
 ## 7. Definition of Done
@@ -966,4 +1048,4 @@ Active Work Block. It is not an implementation log.
 
 ## 12. Final Closure Target
 
-Life OS reaches product closure when the Z1 outcome is met: every non-external-gated visible capability is connected end to end, projections remain consistent after reload, local operation is recoverable, accessibility and performance gates pass and the application supports sustained real personal use without a critical blocker.
+Life OS reaches product closure when the Z1 outcome is met: every active, non-prepared visible capability required by the current product contract is connected end to end, projections remain consistent after reload, local operation is recoverable, accessibility and performance gates pass and the application supports sustained real personal use without a critical blocker. Optional and deferred surfaces may remain unavailable or prepared, but must not imply a functioning write or silently re-enter the active product scope.
