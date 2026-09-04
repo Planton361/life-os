@@ -26,6 +26,7 @@ export async function AppShell({ children }: Readonly<{ children: ReactNode }>) 
           <main
             className="min-w-0 flex-1 px-3 pb-3 pt-2 sm:px-4 lg:px-3"
             id="main-content"
+            tabIndex={-1}
           >
             {children}
           </main>

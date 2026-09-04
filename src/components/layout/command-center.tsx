@@ -716,7 +716,7 @@ export function CommandCenter({
       {...contentStateAttrs(data.commandCenter.contentState, data.profileId)}
     >
       <div className="rounded-[var(--panel-radius)] border border-[rgba(95,200,215,.14)] bg-[color-mix(in_srgb,var(--accent-blue)_4%,rgba(12,20,34,.94))] p-3 shadow-[0_10px_26px_rgba(0,0,0,.14)]">
-        <div className="grid gap-3 2xl:h-[var(--top-zone-height)] 2xl:grid-cols-[580px_278px_minmax(700px,1fr)_600px] 2xl:items-start 2xl:gap-[9px] 2xl:overflow-hidden">
+        <div className="grid gap-3 min-[2400px]:h-[var(--top-zone-height)] min-[2400px]:grid-cols-[580px_278px_minmax(700px,1fr)_600px] min-[2400px]:items-start min-[2400px]:gap-[9px] min-[2400px]:overflow-hidden">
           <section
             aria-label="Command Center Stats"
             className="p-1 2xl:h-[265px] 2xl:overflow-hidden"

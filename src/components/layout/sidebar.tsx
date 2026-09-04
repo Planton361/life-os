@@ -234,6 +234,7 @@ function NavItem({
   const flyoutId = useId();
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pointerDownRef = useRef(false);
+  const suppressNextFocusOpenRef = useRef(false);
   const triggerRef = useRef<HTMLElement | null>(null);
   const flyoutRef = useRef<HTMLDivElement>(null);
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(false);
@@ -284,6 +285,11 @@ function NavItem({
     setIsFlyoutOpen(false);
   }
 
+  function returnFocusToTrigger() {
+    suppressNextFocusOpenRef.current = true;
+    triggerRef.current?.focus();
+  }
+
   function scheduleCloseFlyout() {
     clearCloseTimer();
     closeTimerRef.current = setTimeout(() => {
@@ -324,7 +330,7 @@ function NavItem({
 
     event.preventDefault();
     closeFlyout();
-    triggerRef.current?.focus();
+    returnFocusToTrigger();
   }
 
   useEffect(() => {
@@ -390,6 +396,11 @@ function NavItem({
         className="relative"
         onBlur={handleContainerBlur}
         onFocus={() => {
+          if (suppressNextFocusOpenRef.current) {
+            suppressNextFocusOpenRef.current = false;
+            return;
+          }
+
           if (pointerDownRef.current) {
             return;
           }
@@ -613,14 +624,13 @@ export function Sidebar() {
         </div>
 
         <div
-          aria-label="Search / Command"
           className="mt-4 flex min-h-[29px] items-center justify-between rounded-[11px] border border-[rgba(95,200,215,.18)] bg-[color-mix(in_srgb,var(--accent-cyan)_4%,#0c1422)] px-3 text-[10px] font-medium text-[var(--text-secondary)]"
-          role="search"
+          data-prepared-command-search
         >
           <span>Search / Command</span>
-          <kbd className="font-medium text-[10px] text-[var(--text-secondary)]">
-            ⌘K
-          </kbd>
+          <span className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+            Prepared
+          </span>
         </div>
 
         <nav
