@@ -4,7 +4,8 @@
 **Product mode:** personal-only, local-first
 **Design truth:** Life OS – Linear Calm Dark Command Center / Dashboard V5
 **Detailed status:** `docs/product/capability-registry.md`
-**Active sequence:** C1 → C2 → C3 → K1 → H1/H2 → N1 → A1 → Z1
+**Completed sequence:** C1 → C2 → C3 → K1 → H1/H2 → N1 → A1 → Z1
+**Active Work Block:** Post-Z1 Product Decision
 
 ## 1. Product Contract
 
@@ -796,10 +797,10 @@ prompt/conversation persistence and retention, auditability, and an explicit
 failure/degraded mode. An LLM never receives direct database access. None of
 these decisions or implementations are part of Z1.
 
-## 4.10 Active Work Block: Z1 – Final Local Product Closure & Hardening
+## 4.10 Completed Work Block: Z1 – Final Local Product Closure & Hardening
 
-**Status:** Active. Z1 is the sole post-A1 block and closes only the
-`CORE_COMPLETION` and `LOCAL_HARDENING` findings above.
+**Status:** Completed. The closure audit confirms that the scoped
+`CORE_COMPLETION` and `LOCAL_HARDENING` findings have focused current proof.
 
 **Outcome:** Life OS is operable as a reliable personal-only, local-first
 product: active controls are truthful, canonical Target operation and recovery
@@ -842,6 +843,24 @@ backup/restore and runtime identity are reproducible without secret output,
 and the required local quality checks pass. Optional, deferred, external and
 decision-gated items remain explicitly classified rather than being marked
 complete.
+
+## 4.11 Active Work Block: Post-Z1 Product Decision
+
+**Status:** Active decision gate. This block implements no product capability.
+
+**Outcome:** The local-first Life OS baseline is complete. Select one explicit
+next product decision before beginning further work:
+
+- accept the current local Life OS version as the maintained baseline;
+- open a separately scoped AI1 provider/security decision;
+- prioritize one or more `OPTIONAL_ENHANCEMENT` capabilities;
+- decide one or more `DECISION_REQUIRED` capabilities; or
+- open a separately approved external-integration scope.
+
+**Boundary:** Anti-Rot, Challenges, Rewards, Shop, Entertainment, AI1,
+external integrations, graph visualization, embeddings and semantic search do
+not reactivate through this gate. It preserves exactly one active work-block
+semantic and requires a new explicit product decision before implementation.
 
 ## 5. Completed Major Work
 

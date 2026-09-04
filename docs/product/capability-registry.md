@@ -85,7 +85,7 @@ C1 Core Work Graph
 | Muscle Map | `CONNECTED` | explicit exercise_muscles mappings plus real strength_set_logs; planned fallback is source-labeled | maintain source labels and set-log proof |
 | Today Agenda day view | `CONNECTED` | canonical task schedule and lifecycle fields; C3 Target browser proof covers planned, open and done work after reload | maintain task-based core |
 | Today Agenda week/month | `CONNECTED_GAP` | Calendar/visual projection | align with canonical Calendar views |
-| Urgent time-block create | `UI_ONLY` | visible action | implement schedule/create flow without duplicate data |
+| Urgent time-block create | `UI_ONLY` | honest non-interactive Prepared state; Inbox creates canonical Tasks while scheduling remains in Today and Calendar | no separate urgent-time-block contract; requires an explicit scheduling/product decision |
 | Habit Tracker | `CONNECTED` | canonical Habits/Habit Logs, automatic profile-window projection and authenticated increment/undo reload proof | maintain eight-slot/window and timezone proofs |
 | Active Portfolio | `CONNECTED_GAP` | user-scoped projects/goals/skills, bounded existing ranking | explicit pin/favorite model remains |
 | Anti-Rot Actions | `UI_ONLY` | retained Dashboard component is no longer composed; the underlying feature is connected elsewhere | deferred/hidden by R0 and C1.1-01 |
@@ -104,9 +104,9 @@ C1 Core Work Graph
 | Create Resource route | `CONNECTED` | resource action | maintain |
 | Add to existing Project/Goal | `CONNECTED` | task relation actions | maintain |
 | Solve/Archive | `CONNECTED` | inbox resolve path | maintain |
-| Note route | `CONNECTED_GAP` | capture/note-like data | confirm canonical Note entity and destination |
+| Note route | `CONNECTED` | Z1 Inbox proof creates a canonical `resources.type = note` record through the owned Inbox Resource transaction and reloads it in Resources | maintain the canonical Resource destination |
 | Skill route | `CONNECTED` | active user-scoped Skill targets plus atomic `triage_inbox_item_to_task(p_skill_id)` Task-context link; focused disposable UI/API reload and negative proof | maintain; Task↔Skill context never creates Evidence |
-| Planning signals | `CONNECTED_GAP` | supported task fields | expose only persisted fields and clear unsupported hints |
+| Planning signals | `CONNECTED` | Inbox task triage validates and persists canonical Task area, priority, duration, energy, planned-date and supported deadline/schedule fields; the Inbox labels non-scheduling hints explicitly | maintain Task as the only planning truth |
 | AI suggestion review | `CONNECTED_GAP` | deterministic local provider | DeepSeek provider remains future; no auto-write |
 | Related context search | `CONNECTED_GAP` | local related entities | broaden search only after relation/search model |
 
@@ -184,7 +184,7 @@ C1 Core Work Graph
 | Project/Goal workbench display | `CONNECTED` | relation read model | maintain |
 | Resource search | `CONNECTED` | user-scoped deterministic active-Library filter across canonical title, description, URL and type; K1 Target proof covers result-to-inspector navigation and archived exclusion | tags/full-text ranking remain deferred |
 | Files/attachments | `NOT_STARTED` | none | storage/privacy decision |
-| Notes/wiki resources | `CONNECTED_GAP` | resource/note concepts | canonical Note/Wiki model needed |
+| Notes/wiki resources | `CONNECTED` | canonical `resources.type = note` powers Life Notes; Z1 atomically creates Work Wiki Resources with their optional Work-Project context | deeper Wiki behavior remains optional; no parallel knowledge model |
 | Semantic relation read model | `CONNECTED` | server-side projection of `tasks.project_id`, `tasks.goal_id`, `projects.goal_id`, `resource_relations`, Skill Evidence and `task_skill_links`; C1/K1 Target proofs verify deterministic direct, via-Project, Context and Evidence dedupe | wider knowledge provenance remains a later bounded scope |
 | Resource/Skill graph | `NOT_STARTED` | no proven graph read model | no visual library before semantics |
 | Embeddings/semantic search | `DECISION_REQUIRED` | none | privacy and permission decision |
