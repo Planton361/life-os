@@ -44,6 +44,7 @@ Block ID from the Codex prompt, or the explicit Active Work Block in `ROADMAP.md
 → complete Vertical Slice
 → dependent projections
 → focused validation
+→ Surface Acceptance when a core surface is touched
 → update Capability Registry
 → review
 → commit
@@ -101,6 +102,7 @@ Do not paste the complete security, staging and design rules into every prompt.
 - `life-os-vertical-slice`
 - `life-os-backend-action-slice` when writes, repositories or schemas are affected
 - `life-os-browser-proof` when UI, navigation or persistence behavior is affected
+- `life-os-surface-acceptance` when a core surface is implemented, corrected or closed
 - `life-os-completion-gate`
 - `life-os-design-taste` when UI is involved
 
@@ -189,6 +191,26 @@ Plus the focused block regression scope and Codex review.
 
 Avoid full-suite or unrelated broad-grep runs after every small change.
 
+### Tier 5 – Surface Acceptance
+
+For Dashboard, Inbox, Today, Calendar, Portfolio, Health, Fitness and
+Nutrition, an implementation result is not an accepted surface by itself.
+Before core-surface closure:
+
+- read the active Surface Contract in `PRODUCT.md` and `DESIGN.md`;
+- inventory every visible control and directly exercise each one;
+- verify navigation, writes, success/error feedback and reload persistence;
+- inspect console and hydration output;
+- review card/overlay bounds and unjustified whitespace at the primary 4K CSS
+  viewport, `1920×1080` and Mobile guards;
+- retain a complete screenshot for the primary viewport and `1920×1080` for
+  each core surface;
+- complete `life-os-design-taste` review.
+
+`Prepared` cannot close a promised core control without explicit user deferral.
+`IMPLEMENTATION PASS` does not close a core surface. The final active-product
+closure occurs only after the user explicitly records `USER ACCEPTED`.
+
 ## 9. Documentation Strategy
 
 Maintain as canonical delivery sources:
@@ -248,6 +270,9 @@ Before committing, Codex reviews:
 - Did all affected projections update?
 - Did Manual/Demo/Empty/Auth-blocked remain separated?
 - Is the focused reload/browser proof green?
+- Was every visible control inventoried and directly exercised for a core surface?
+- Are console/hydration, bounds, overlap, whitespace and complete screenshots reviewed?
+- Is `USER ACCEPTED` present when this is final core-surface/product closure?
 - Was the Capability Registry updated?
 - Is the diff limited to the active block scope?
 

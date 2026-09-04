@@ -9,7 +9,7 @@
 
 | Status | Meaning |
 |---|---|
-| `CONNECTED` | UI, canonical data, write/read path, reload and focused proof are complete |
+| `CONNECTED` | UI, canonical data, write/read path and reload proof are complete; a visible core path also needs current Surface Acceptance proof before it supports a surface claim |
 | `CONNECTED_GAP` | core works, but an important depth, projection or management capability is missing |
 | `UI_ONLY` | visible UI exists without a canonical data/backend path |
 | `MODEL_ONLY` | schema/backend exists, but the user-facing capability is missing |
@@ -24,6 +24,8 @@
 - `CONNECTED_GAP` must name the missing depth.
 - Demo fixtures do not count as connected Manual capability.
 - Historical QA is supporting evidence, not current truth if the code changed.
+- Backend, repository or historical reload evidence proves that layer only; it
+  does not by itself prove that a visible control currently works.
 
 ## Active Product Boundary (R0)
 
@@ -31,14 +33,14 @@ Implementation status and product visibility are separate truths: `CONNECTED` co
 
 | Surface / domain | Boundary | Current implementation truth | Visibility truth / next action |
 |---|---|---|---|
-| Dashboard | `ACTIVE` | connected daily-control projection with named gaps below | daily control only; deferred Motivation projections removed in C1.1-01 |
-| Inbox | `ACTIVE` | connected capture/triage core | fast capture and triage into the canonical spine |
-| Today | `ACTIVE` | connected execution/review core | daily protocol and planned-vs-done depth belongs to C3 |
-| Calendar | `ACTIVE` | connected task scheduling with named gaps | week-first planning hub depth belongs to C2 |
-| Portfolio | `ACTIVE` | connected Task/Project/Goal/Skill workbenches with graph gaps | canonical management hub; C1 is next |
+| Dashboard | `ACTIVE` | `CONNECTED_GAP`: technical projections exist, but visible-control and layout acceptance failed | R2-01 daily control/quick logging and full control inventory |
+| Inbox | `ACTIVE` | `CONNECTED_GAP`: technical triage paths exist, but search/edit/persistence/flow acceptance failed | R2-02 real triage surface |
+| Today | `ACTIVE` | `CONNECTED_GAP`: technical daily paths exist; role correction and current surface acceptance pending | R2-03 daily-log role |
+| Calendar | `ACTIVE` | `CONNECTED_GAP`: technical scheduling exists; Day/Week/Month controls and viewport acceptance pending | R2-03 real temporal surface |
+| Portfolio | `ACTIVE` | `CONNECTED_GAP`: entity backend exists; information architecture and surface acceptance pending | R2-04 separate entity surfaces |
 | Resources | `ACTIVE` | connected knowledge core with relation depth gaps | knowledge base and evidence; K1 follows C3 |
-| Health / Fitness | `ACTIVE` | connected core records and projections | domain records link to Task Occurrences; H1/H2 depth later |
-| Nutrition | `ACTIVE` | connected recipes/meals with portion gaps | domain records link to Task Occurrences; N1 depth later |
+| Health / Fitness | `ACTIVE` | `CONNECTED_GAP`: core records exist; primary-desktop and role acceptance pending | R2-05 |
+| Nutrition | `ACTIVE` | `CONNECTED_GAP`: meal backend exists; selectable persistent planner-slot acceptance pending | R2-05 |
 | Work / Education / Coding | `ACTIVE` | A1 Target browser proof covers canonical Projects, Resources and reload-stable logs; named depth gaps remain below | area projections over the canonical spine; no area-local core copies |
 | Inventory / Wishlist | `ACTIVE` | A1 Target browser proof covers Manual CRUD, purchase decisions and idempotent conversion after reload | Inventory and explicit Wishlist links remain reachable in active Life navigation |
 | Anti-Rot / Challenges / Shop | `DEFERRED_HIDDEN` | connected feature code/data; direct routes remain intact | C1.1-01 removed Sidebar, Dashboard and normal Daily-Companion entry points |
@@ -58,6 +60,7 @@ C1 Core Work Graph
 → N1 Nutrition
 → A1 Work/Education/Coding/Inventory
 → Z1 Final Local Product Closure & Hardening
+→ R2 Product Reality Recovery & Surface Completion
 ```
 
 # 1. Dashboard
@@ -65,29 +68,30 @@ C1 Core Work Graph
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
 | SR1-04 personal Target runtime | `CONNECTED` | personal transfer, candidate-volume preservation, same-user reauthorization, authenticated read/write proof and persistent default-runtime Target switch passed | maintain Target as canonical local runtime; Source is `LEGACY_FALLBACK_READ_ONLY` |
-| Quick Thought → Inbox | `CONNECTED` | Inbox capture action and reload proof | maintain |
+| Quick Thought → Inbox | `CONNECTED_GAP` | Inbox capture action and historical reload proof remain | add global success toast and current surface proof in R2-01 |
 | Tasks Today summary | `CONNECTED` | central server-side Dashboard task projection; completed/open count semantics | maintain |
 | Focus Time summary | `UI_ONLY` | honest unavailable source state | add canonical focus/deep-work classification before deriving minutes |
 | Inbox summary | `CONNECTED` | user-scoped inbox items in Dashboard Read Model | maintain |
 | Nutrition summary | `CONNECTED_GAP` | today's meals and completed-meal recipe estimates | portion/target semantics remain separate |
 | Review Status summary | `CONNECTED` | canonical current Daily/Weekly Review records and navigation | maintain review projection proofs |
 | Sleep summary | `CONNECTED` | canonical latest sleep entry from the shared Health repository; reload/browser proof | maintain |
-| Daily Control current task | `CONNECTED` | deterministic state/time/priority/date/recency/id policy | maintain policy tests |
-| Daily Control Up Next | `CONNECTED` | same deterministic persisted-signal ranking, bounded to three | maintain policy tests |
-| Time Progress | `CONNECTED` | Europe/Berlin local-day elapsed time plus scheduled task load | maintain |
+| Daily Control current task | `CONNECTED_GAP` | deterministic state/time/priority/date/recency/id policy remains | R2-01: next executable work, no unnecessary creation process, current browser proof |
+| Daily Control Up Next | `CONNECTED_GAP` | same deterministic persisted-signal ranking, bounded to three remains | R2-01: current visible interactions and navigation proof |
+| Time Progress | `CONNECTED_GAP` | historical Europe/Berlin day/load projection remains | R2-01: replace surface contract with Month / Week / Day and prove controls/views |
 | Weather | `NOT_STARTED` | honest Unavailable state; no API | optional external read gate |
 | Mood entry | `CONNECTED` | timestamped user-scoped mood entries from Dashboard with same-day soft undo | maintain labels, semantic color and ownership proof |
 | Mood current state | `CONNECTED` | latest local-day Mood entry plus Mental Health history | maintain timezone/reload proof |
-| Weight goal | `CONNECTED` | canonical weight entries and single personal goal with honest measured start-to-target progress | maintain |
-| Nutrient Balance | `CONNECTED_GAP` | completed meals + manual recipe estimates; unknown remains unknown | add reliable portion and target semantics |
-| Meals Today | `CONNECTED_GAP` | user-scoped meals plus canonical linked Task scheduling and atomic completion synchronization | multiple-meal slot depth and portion semantics remain |
-| Latest Run | `CONNECTED` | latest completed, non-archived running_session with derived pace on Dashboard and Health | maintain reload and timezone proof |
-| Muscle Map | `CONNECTED` | explicit exercise_muscles mappings plus real strength_set_logs; planned fallback is source-labeled | maintain source labels and set-log proof |
-| Today Agenda day view | `CONNECTED` | canonical task schedule and lifecycle fields; C3 Target browser proof covers planned, open and done work after reload | maintain task-based core |
-| Today Agenda week/month | `CONNECTED_GAP` | Calendar/visual projection | align with canonical Calendar views |
-| Urgent time-block create | `UI_ONLY` | honest non-interactive Prepared state; Inbox creates canonical Tasks while scheduling remains in Today and Calendar | no separate urgent-time-block contract; requires an explicit scheduling/product decision |
-| Habit Tracker | `CONNECTED` | canonical Habits/Habit Logs, automatic profile-window projection and authenticated increment/undo reload proof | maintain eight-slot/window and timezone proofs |
-| Active Portfolio | `CONNECTED_GAP` | user-scoped projects/goals/skills, bounded existing ranking | explicit pin/favorite model remains |
+| Weight goal | `CONNECTED_GAP` | canonical weight entries and single personal goal remain | R2-01: correct card spacing and bounds |
+| Nutrient Balance | `CONNECTED_GAP` | completed meals + manual recipe estimates; unknown remains unknown | R2-01: retain data truth and prevent Calendar overlap |
+| Meals Today | `CONNECTED_GAP` | user-scoped meals plus canonical linked Task scheduling and atomic completion synchronization remain | R2-01: `Planen` opens a real persistent planner-slot flow |
+| Latest Run | `CONNECTED_GAP` | latest completed, non-archived running_session with derived pace remains | R2-01: Running view works from Dashboard |
+| Muscle Map | `CONNECTED_GAP` | explicit exercise_muscles mappings plus real strength_set_logs remain | R2-01: Strength view works from Dashboard |
+| Today Agenda day view | `CONNECTED_GAP` | canonical task schedule and lifecycle fields remain | R2-01: current Day control and view interaction proof |
+| Today Agenda week/month | `CONNECTED_GAP` | Calendar/visual projection | R2-01: real Week and Month controls/views |
+| Urgent time-block create | `CONNECTED_GAP` | current visible control is an honest non-interactive Prepared state; Inbox creates canonical Tasks while scheduling remains in Today and Calendar | R2-03 must connect it to a canonical flow or remove it; Prepared is not closure without user deferral |
+| Habit Tracker | `CONNECTED_GAP` | canonical Habits/Habit Logs, automatic profile-window projection and historical increment/undo reload proof remain | R2-01: Habit Windows and Add Habit work from Dashboard |
+| Active Portfolio | `CONNECTED_GAP` | user-scoped projects/goals/skills, bounded existing ranking remains | R2-01: real Project/Goal/Skill views and create paths, never Settings |
+| Dashboard control inventory and bounds | `CONNECTED_GAP` | no complete current click inventory, overlap/whitespace proof or current screenshots | R2-01 must prove every visible button, toast placement, bounds and reclaimed Bottom Zone |
 | Anti-Rot Actions | `UI_ONLY` | retained Dashboard component is no longer composed; the underlying feature is connected elsewhere | deferred/hidden by R0 and C1.1-01 |
 | Challenges | `UI_ONLY` | retained Dashboard component is no longer composed; the underlying feature is connected elsewhere | deferred/hidden by R0 and C1.1-01 |
 
@@ -95,18 +99,14 @@ C1 Core Work Graph
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Quick Capture | `CONNECTED` | inbox items | maintain |
+| Inbox Quick Capture removal | `CONNECTED_GAP` | technical inbox capture path remains | R2-02 removes it from Inbox; Dashboard owns Quick Thought |
+| Inbox search | `UI_ONLY` | visible search behavior is not accepted as a real collection filter | R2-02 real search and browser proof |
 | Active item selection | `CONNECTED` | URL/query selection and reload proof | maintain |
-| Clean title/context/next action | `CONNECTED` | inbox item fields/action path | verify all fields persist across all routes |
-| Standalone Task route | `CONNECTED` | task action | maintain |
-| Create Project route | `CONNECTED` | project action | maintain |
-| Create Goal route | `CONNECTED` | goal action | maintain |
-| Create Resource route | `CONNECTED` | resource action | maintain |
-| Add to existing Project/Goal | `CONNECTED` | task relation actions | maintain |
-| Solve/Archive | `CONNECTED` | inbox resolve path | maintain |
+| Title/description/next action/missing information | `CONNECTED_GAP` | inbox fields/action path remains | R2-02: edit and persist every named field, then reload-prove |
+| Outcome Route and all triage flows | `CONNECTED_GAP` | task/project/goal/resource/relation/archive actions remain | R2-02: selectable route and complete current end-to-end proof |
 | Note route | `CONNECTED` | Z1 Inbox proof creates a canonical `resources.type = note` record through the owned Inbox Resource transaction and reloads it in Resources | maintain the canonical Resource destination |
 | Skill route | `CONNECTED` | active user-scoped Skill targets plus atomic `triage_inbox_item_to_task(p_skill_id)` Task-context link; focused disposable UI/API reload and negative proof | maintain; Task↔Skill context never creates Evidence |
-| Planning signals | `CONNECTED` | Inbox task triage validates and persists canonical Task area, priority, duration, energy, planned-date and supported deadline/schedule fields; the Inbox labels non-scheduling hints explicitly | maintain Task as the only planning truth |
+| Planning signals | `CONNECTED_GAP` | Inbox task triage validates and persists canonical Task area, priority, duration, energy, planned-date and supported deadline/schedule fields | R2-02: make signals editable, visibly persistent and reload-proven |
 | AI suggestion review | `CONNECTED_GAP` | deterministic local provider | DeepSeek provider remains future; no auto-write |
 | Related context search | `CONNECTED_GAP` | local related entities | broaden search only after relation/search model |
 
@@ -114,10 +114,10 @@ C1 Core Work Graph
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Today task projection | `CONNECTED` | canonical Task occurrence schedule/lifecycle fields; C3 Target proof distinguishes scheduled, open planned and done work after reload | maintain |
+| Today daily-log surface | `CONNECTED_GAP` | canonical Task occurrence schedule/lifecycle fields and C3 proof remain | R2-03: Today owns plan-vs-done, completion, review and carry-over |
 | Task planning | `CONNECTED` | canonical Target Runtime keeps source-aware planning: normal Tasks remain direct; Meal-linked plan/reschedule/unschedule use atomic Meal↔Task writes; Review/Workout remain Task-time-only. Z1 Direct-Data-API proof rejects authenticated Meal schedule mutations while C2-04 verifies Calendar/Today/Dashboard after reload | maintain the source-aware boundary |
 | Task complete/reopen | `CONNECTED` | canonical Target Runtime: C3 proves normal Task completion/reopen across Today, Dashboard and Calendar; Z1 Direct-Data-API proof rejects authenticated source-linked lifecycle writes while Meal/Review/Running/Strength complete only through their canonical flows | maintain the source-aware boundary |
-| Recurring instance projection | `CONNECTED` | explicit idempotent generation, DB uniqueness, pure-rule tests and authenticated Today/Dashboard/Calendar reload proof | maintain |
+| Recurring instance projection | `CONNECTED_GAP` | explicit idempotent generation, DB uniqueness and historical proof remain | R2-03: occurrences appear only as daily activity; remove recurrence-management responsibility from Today |
 | Carry-over/open loops | `CONNECTED` | canonical Target Runtime C3 proof saves an explicit Daily Review carry-over decision, moves only the selected open Task to the next day and reload-proves Review, Today and Task planning together | maintain atomic exact-set reconciliation and newer-planning protection |
 | Daily Review | `CONNECTED` | canonical user-scoped review record, V5 flow and Dashboard/Today projections | maintain |
 | Weekly Review | `CONNECTED` | canonical user-scoped review record with derived task/project movement | maintain |
@@ -135,8 +135,9 @@ C1 Core Work Graph
 | Unschedule | `CONNECTED` | Inspector unschedule removes the timed block and returns the Task to the canonical queue immediately and after reload | maintain |
 | Visible conflict gate | `CONNECTED_GAP` | Z1 focused disposable proof routes Queue/Inspector schedule and reschedule, Pointer move and resize through one loaded-block overlap rule; each path requires explicit Confirm or Cancel and preserves the prior block after cancellation/reload | no DB-wide conflict or race guarantee; only loaded blocks are checked |
 | Conscious override | `CONNECTED_GAP` | Z1 focused disposable proof requires a separate explicit confirmation before the existing canonical Task-time path runs, including Meal source scheduling | no schedule audit/history and no DB-wide conflict guarantee |
-| Day/Week views | `CONNECTED` | Manual Week remains the primary planning surface; C2-03/C2-04 confirm reload-stable Day navigation over the same canonical schedule and all-day temporal signals | canonical filters remain a later read-surface depth |
-| Month view | `CONNECTED` | C2-03/C2-04 prove the bounded Month grid projects canonical scheduled Task occurrences, Task deadlines, Project deadlines and Goal targets with keyboard Day drill-down and reload | canonical filters remain a later read-surface depth |
+| Day/Week views | `CONNECTED_GAP` | Manual Week remains the primary planning surface; historical Day navigation proof remains | R2-03: real visible controls, available-height use and current browser proof |
+| Month view | `CONNECTED_GAP` | bounded Month grid projection and historical drill-down proof remain | R2-03: real visible control and current browser proof |
+| Calendar viewport bounds | `CONNECTED_GAP` | no current full-height/no-empty-Bottom-Zone acceptance | R2-03: use available height without a large empty bottom region |
 | Deadline / Project / Goal date projection | `CONNECTED` | C2-03/C2-04 keep scheduled time distinct from Task deadline, Project deadline and Goal target; open overdue Tasks are read-time marked while completed Tasks are not | canonical Project/Goal milestones remain separately unmodeled |
 | Calendar filters | `NOT_STARTED` | no active Manual filter claim; legacy visual scope controls are not exposed as Calendar planning filters | implement only canonical Project/Goal/Skill/Priority filters when needed |
 | Project/Goal/Skill queue context | `CONNECTED` | C2-01 queue reads existing C1 Project, direct/via Project Goal and Task↔Skill relations without copying Task data | add filters only as a separate read-surface depth |
@@ -152,14 +153,15 @@ C1 Core Work Graph
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Task create/edit/lifecycle | `CONNECTED` | K1.1A Portfolio Task Detail, task actions/repository, reload proof | maintain |
+| Portfolio information architecture | `CONNECTED_GAP` | Task/Project/Goal/Skill entity backend and views remain | R2-04: sidebar subpoints plus separate list/create/detail surfaces; Overview not primary creation |
+| Task create/edit/lifecycle | `CONNECTED_GAP` | K1.1A Portfolio Task Detail, task actions/repository and historical reload proof remain | R2-04: Task list/create/detail surface acceptance |
 | Task relation to Project/Goal | `CONNECTED` | nullable Task→Project/Goal fields, server-authenticated/Zod/user-scoped alignment checks and C1.1 integrated Target reload proof | maintain explicit user choices; no silent relinking |
 | Task relation to Skill/Resource | `CONNECTED` | owned n:m `task_skill_links` plus Resource relations, idempotent link/unlink, Task detail projection and Skill backlink without creating Evidence; C1.1 integrated proof PASS | maintain endpoint ownership, reload and no-auto-Evidence proofs |
 | Project Goal inheritance in Task context | `CONNECTED` | direct, via-Project, redundant and existing-conflict states are explicit; Task and Project writes reject new contradictions, and C1.1 integrated read models deduplicate matching paths | preserve existing rows; resolve any future reported existing conflicts deliberately |
 | Core work graph backlinks | `CONNECTED` | C1.1 integrated Target proof covers Task/Project/Goal/Skill/Resource navigation, reload, ownership boundaries and deterministic direct, via-Project, Context and Evidence provenance | retain bounded explicit relations; graph visualization stays deferred |
-| Project create/edit/status/archive | `CONNECTED` | project actions/repository | add restore/complete semantics later |
-| Goal create/edit/status/archive | `CONNECTED` | goal actions/repository | add achieve/restore semantics later |
-| Skill create/edit/archive | `CONNECTED` | skill actions/repository | maintain |
+| Project create/edit/status/archive | `CONNECTED_GAP` | project actions/repository remain | R2-04: Project list/create/detail surface acceptance |
+| Goal create/edit/status/archive | `CONNECTED_GAP` | goal actions/repository remain | R2-04: Goal list/create/detail surface acceptance |
+| Skill create/edit/archive | `CONNECTED_GAP` | skill actions/repository remain | R2-04: Skill list/create/detail surface acceptance |
 | Skill evidence CRUD/source links | `CONNECTED` | skill evidence | maintain |
 | Project linked tasks | `CONNECTED` | task project relation | add sequencing/roadmap model |
 | Goal linked projects/tasks | `CONNECTED` | goal relations | add outcome/review semantics |
@@ -197,7 +199,7 @@ C1 Core Work Graph
 | Recipe ingredients CRUD | `CONNECTED` | recipe_ingredients | maintain |
 | Meal create/edit/reschedule/complete | `CONNECTED` | meals/actions | maintain |
 | Recipe switch | `CONNECTED` | meal update ownership | maintain |
-| Meal Planner week view | `CONNECTED` | canonical Target N1 proof reloads a recipe-linked Meal in the weekly planner and schedules it only through the source-aware Meal↔Task boundary | multiple meals per slot and additional slots are separate future depth |
+| Meal Planner week view | `CONNECTED_GAP` | canonical Target N1 proof reloads a recipe-linked Meal in the weekly planner and schedules it only through the source-aware Meal↔Task boundary | R2-05: selectable persistent planner slots and current browser proof |
 | Grocery Draft | `CONNECTED` | canonical Target N1 proof derives open Meal demand from persisted Recipe Ingredients and Meal/Recipe servings with reload-stable fractional scaling | no persistence/check-off/pantry |
 | Manual nutrition estimate | `CONNECTED_GAP` | optional recipe JSON estimate | provenance only; no real engine |
 | Meals Today | `CONNECTED` | canonical Target N1 proof projects the scheduled Meal and canonical completion across Nutrition, Today, Calendar and Dashboard after reload | multiple meals per slot remains separate future depth |
@@ -227,7 +229,7 @@ C1 Core Work Graph
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Habit definition | `CONNECTED` | user-scoped canonical habits with create/edit/order/archive UI and RLS | maintain |
+| Habits surface role | `CONNECTED_GAP` | user-scoped canonical habits with create/edit/order/archive UI and RLS remain | R2-05: Habits = statistics/history/management; Dashboard = quick logging |
 | Flexible unit/increment | `CONNECTED` | optional unit/target plus positive default increment; no-target state proven | maintain |
 | Morning/Midday/Evening window | `CONNECTED` | ordered profile boundaries, full-day resolution and per-window DB slot constraint | maintain timezone and boundary tests |
 | Dashboard increment click | `CONNECTED` | each click appends an owned timestamped habit_log; H1/H2 Target-Runtime dashboard/history reload proof | maintain |
@@ -249,6 +251,7 @@ C1 Core Work Graph
 | Strength session/sets | `CONNECTED` | reload-stable strength_sessions and real strength_set_logs with transactional task completion sync; H1/H2 Target proof requires a real set before task completion | maintain weighted/unweighted semantics |
 | Muscle map | `CONNECTED` | explicit exercise-muscle relations and log-derived set intensity/weighted volume with textual source labels; H1/H2 Target-Runtime Dashboard reload proof | maintain |
 | Workout schedule source | `CONNECTED` | H1/H2 Target-Runtime proof schedules one canonical Running Plan Item and Strength Plan Task, projects each to Calendar/Today/Dashboard, rejects generic Task completion, then completes only from the real Run or Strength Session with set log | retain no-duplicate and completion-sync regressions |
+| Health / Fitness primary viewport | `CONNECTED_GAP` | canonical records and flows remain | R2-05: no required Body scroll on primary desktop and current surface proof |
 
 # 11. Coding and Agents
 

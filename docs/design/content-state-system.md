@@ -1,10 +1,15 @@
 # Content State System
 
 Stand: 2026-06-24
-Status: Dashboard-Referenzimplementierung R1.4a aktiv, App-weite Umsetzung weiterhin in Slices
-Quelle der Wahrheit: `DESIGN.md`, `docs/design/dashboard-v5.md`, `docs/specs/r1-4-content-state-system.md`
+Status: Historische R1.4a-Referenz, teilweise überholt
+Aktive Wahrheit: `PRODUCT.md` und `DESIGN.md` definieren die Surface-Verträge und Acceptance. Diese Datei bewahrt Content-State-Evidence und darf sie nicht überschreiben.
 
-## R1.4a Dashboard Reference Implementation
+Alle nachfolgenden R1.4a-Audits, Time-Progress-Referenzen,
+Bottom-Zone-Annahmen und Slices sind historische Evidence, sofern sie nicht
+ausdrücklich auf den aktiven Vertrag verweisen. Sie sind keine Freigabe für
+neue Produkt- oder Layoutarbeit.
+
+## Historische R1.4a Dashboard Reference Implementation
 
 Dashboard ist ab diesem Stand die erste Referenzimplementierung fuer
 `empty`, `partial` und `filled`.
@@ -17,8 +22,8 @@ Umgesetzt:
   `data-content-state`, `data-item-count`, `data-capacity`, `data-profile-id`.
 - Profile wechseln weiterhin nur die Datenquelle:
   `demo`, `empty`, `manual`.
-- Time Progress ist profilunabhaengig und berechnet `Week`, `Month`, `Year`
-  aus dem aktuellen Datum.
+- Die frühere Time-Progress-Referenz `Week`, `Month`, `Year` ist überholt.
+  Der aktive Vertrag ist in `PRODUCT.md`: Monat, Woche und Tag.
 - Quick Thought schreibt nur im `manual`-Profil in die lokale Inbox.
 - Daily Control, Today Agenda, Meals Today, Habit Tracker und Active Portfolio
   behalten ihre V5-Shells und leiten State aus echter Datenmenge/Kapazitaet ab.
@@ -37,7 +42,7 @@ Nicht umgesetzt in R1.4a:
 
 ## Scope
 
-Dieser Stand dokumentiert R1.4 weiterhin als app-weites Slice-Modell. R1.4a
+Dieser historische Stand dokumentiert R1.4 weiterhin als app-weites Slice-Modell. R1.4a
 setzt davon zuerst das Dashboard um. Nicht-Dashboard-Routen bleiben in diesem
 Dokument als Audit, Matrix und Implementierungsplan gefuehrt. Es wurden keine
 Supabase-Dateien, keine Migrationen und keine Tabellen geaendert.

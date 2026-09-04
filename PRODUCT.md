@@ -19,7 +19,7 @@ Detail pages = depth
 Archive = history
 ```
 
-Life OS is complete when the visible interface, database, backend actions and cross-domain projections form one reliable personal system. Every visible action must either work, navigate to a real capability or be clearly marked as future scope.
+Life OS is complete when the visible interface, database, backend actions and cross-domain projections form one reliable personal system. Every visible action must either work, navigate to a real capability or be explicitly deferred by the user. A technically connected backend path alone is not acceptance of its visible surface.
 
 ## 2. Product Goals
 
@@ -66,15 +66,30 @@ The following are not current product goals:
 
 ## 5. Core Experience
 
+### 5.0 Surface Acceptance Contract
+
+The product is accepted per visible surface, not inferred from migrations, Server
+Actions, repositories, historical browser evidence or an `IMPLEMENTATION PASS`.
+For every core surface, the current Manual path must make every visible control
+discoverable, operable and honest: a control either performs its named
+navigation or mutation and shows its result, or it is absent until the user
+explicitly defers it. `Prepared` is not an acceptable completion state for a
+promised core control without that explicit user decision.
+
+The current surface contracts below are binding for R2. They supersede older
+Time Progress, Bottom-Zone and profile-state wording in historical design
+references. Dashboard remains control; area pages remain context; detail pages
+remain depth.
+
 The active surface contract is:
 
 | Surface | Product responsibility |
 |---|---|
-| Dashboard | daily control: understand now, choose the next action, navigate to depth |
-| Inbox | fast capture and triage into the canonical spine |
-| Today | daily protocol plus planned-vs-done analysis |
-| Calendar | week-first planning and scheduling hub |
-| Portfolio | canonical Task / Project / Goal / Skill management |
+| Dashboard | daily control and quick logging: understand now, choose the next action, navigate to real depth |
+| Inbox | triage of existing captures into the canonical spine; not a second capture surface |
+| Today | daily log: plan-vs-done, completion, review and carry-over |
+| Calendar | temporal planning and orientation through real Day / Week / Month controls |
+| Portfolio | Task / Project / Goal / Skill information architecture with separate list, create and detail surfaces |
 | Resources | knowledge base and evidence |
 | Health / Nutrition / Fitness | domain records linked to executable scheduled task occurrences |
 
@@ -90,44 +105,44 @@ Required capabilities:
 - card navigation to the relevant area;
 - Quick Thought capture into Inbox;
 - Daily Control with the current task and a ranked Up Next queue;
-- Time Progress for the current day;
+- Time Progress explicitly for the current **month, week and day**, derived from time rather than profile fixtures;
 - optional weather context;
 - Mood entry and current mood state;
 - Weight Goal and progress from health data;
-- Meals Today and Nutrient Balance derived from completed meals and recipe estimates;
-- Latest Run summary;
-- Muscle/Strength summary from the current training plan and recent sessions;
-- Today Agenda from scheduled time blocks;
-- Habit Tracker with morning, midday and evening windows;
-- Active Portfolio with up to four pinned or ranked items per entity category;
+- Meals Today with a real `Planen` path into persistent meal-planner slots, and Nutrient Balance that never overlaps Calendar;
+- Latest Run and Muscle/Strength summaries whose views open the responsible real surfaces;
+- Today Agenda from scheduled time blocks with real Day, Week and Month views;
+- Habit Tracker with morning, midday and evening windows, usable Habit Windows and a real Add Habit path;
+- Active Portfolio with usable Project, Goal and Skill views plus create paths that open the entity surface, never Settings;
 
-Dashboard interactions remain limited and intentional. Complex editing belongs to the corresponding area or detail page.
+Dashboard interactions remain limited and intentional. Complex editing belongs to the corresponding area or detail page. Daily Control must take the user to the next executable work, not into an unnecessary creation process. A visible task CTA must either be removed or create a real task for today. Quick Thought success is acknowledged through the app-wide toast standard, not inline-only feedback. Transparent helper copy without a current decision or action is removed. Weight Goal spacing, card bounds and the removal of former Bottom-Zone features must not create overlap or unjustified empty space. Before Dashboard acceptance, every visible Dashboard button is inventoried and browser-proven.
 
 ### 5.2 Inbox
 
-Inbox turns unstructured thoughts into canonical entities quickly.
+Inbox triages existing unstructured thoughts into canonical entities. Quick Capture belongs to Dashboard and is removed from Inbox.
 
 Required capabilities:
 
-- fast capture;
-- clean title, context, next action and missing-information fields;
-- route to Task, Project, Goal, Resource, Note or Archive/Solved;
+- triage of existing captures without a second Quick-Capture control;
+- search that filters the actual Inbox collection;
+- editable, persistent title, description/context, next action and missing-information fields;
+- selectable Outcome Route to Task, Project, Goal, Resource, Note or Archive/Solved;
 - add to existing Project or Goal;
 - create new Project or Goal;
-- planning signals such as priority, energy, duration, area, review need, deadline and recurrence where the target model supports them;
+- editable, persistent planning signals such as priority, energy, duration, area, review need, deadline and recurrence where the target model supports them;
 - optional AI suggestions that never persist without confirmation;
-- no long-form execution work inside Inbox.
+- all visible triage flows are real, user-scoped and reload-stable; no long-form execution work lives inside Inbox.
 
 ### 5.3 Today and Reviews
 
-Today is the daily protocol and planned-vs-done analysis surface. It answers what was intended, what is scheduled now, what was completed, what moved and what must be decided before tomorrow.
+Today is the daily log and planned-vs-done analysis surface. It answers what was intended, what is scheduled now, what was completed, what moved and what must be decided before tomorrow. It owns neither routine-template nor recurrence management: concrete recurring occurrences may appear only as daily activity, like any other occurrence.
 
 Required capabilities:
 
 - planned and scheduled work;
 - a clear separation between planned-for-today, time-scheduled and completed work;
 - task completion and reopen;
-- recurring instances;
+- concrete recurring occurrences as daily activity, without recurrence-management controls;
 - carry-over and open-loop handling;
 - planned-vs-done summary derived from task occurrences and linked domain records;
 - Daily Review with wins, blockers, open loops, carry-over and next-day preparation;
@@ -136,11 +151,11 @@ Required capabilities:
 
 ### 5.4 Calendar and Scheduling
 
-Calendar is the week-first temporal planning hub. The default planning question is how the coming week fits together; day and month views support execution and orientation.
+Calendar is the temporal planning hub. The default planning question is how the coming week fits together; Day, Week and Month controls support execution and orientation and must change the real projection.
 
 Required capabilities:
 
-- week view as the primary planning surface, with day and month views;
+- week view as the primary planning surface, with real day and month views;
 - planner queue for unscheduled work;
 - schedule, reschedule, duration change and unschedule;
 - conflict visibility and conscious override;
@@ -149,11 +164,12 @@ Required capabilities:
 - planned meals, workouts and reviews as linked schedule sources;
 - urgent time-block creation;
 - accessible drag, drop and resize as a comfort layer after keyboard/button scheduling is complete;
-- no duplicate domain data.
+- no duplicate domain data;
+- use the available primary desktop height intentionally, without a large empty Bottom Zone.
 
 ### 5.5 Portfolio
 
-Portfolio is the management hub for the canonical Task / Project / Goal / Skill spine. Resources are related evidence and context, not a fifth Portfolio tab.
+Portfolio is the management hub for the canonical Task / Project / Goal / Skill spine. Its sidebar exposes Tasks, Projects, Goals and Skills. Each entity has its own list, create and detail surface; Overview is a navigational summary, not the primary inline-creation surface. Resources are related evidence and context, not a fifth Portfolio tab.
 
 Required capabilities:
 
@@ -216,6 +232,10 @@ Required capabilities:
 - timestamped habit increments;
 - daily, weekly and monthly history and visualizations.
 
+The Habits area is the statistics, history and management surface. Dashboard is
+only the quick-logging surface; it must not become a second Habit-management
+page.
+
 #### Running
 
 - manual run entry as the complete base path;
@@ -257,6 +277,10 @@ Required capabilities:
 - Grocery Draft derived from all relevant meals and ingredients;
 - later persistent grocery items, pantry and receipt/OCR only through separate model and privacy decisions;
 - no automatic macro/calorie claims without reliable ingredient nutrition and portion semantics.
+
+Meal-planner slots are selectable and their chosen meal/planning state is
+persisted and reload-stable. A visible Dashboard `Planen` control uses that
+same canonical planner flow.
 
 ### 5.10 Coding and Agents
 

@@ -4,8 +4,8 @@
 **Product mode:** personal-only, local-first
 **Design truth:** Life OS – Linear Calm Dark Command Center / Dashboard V5
 **Detailed status:** `docs/product/capability-registry.md`
-**Completed sequence:** C1 → C2 → C3 → K1 → H1/H2 → N1 → A1 → Z1
-**Active Work Block:** Post-Z1 Product Decision
+**Completed sequence:** C1 → C2 → C3 → K1 → H1/H2 → N1 → A1 → Z1 (technical baseline)
+**Active Work Block:** R2 – Product Reality Recovery & Surface Completion (R2-01 active)
 
 ## 1. Product Contract
 
@@ -22,7 +22,8 @@ The existing application is the foundation. This roadmap does not restart the pr
 
 ## 2. Current State
 
-- V5 frontend and navigation: broadly present.
+- Z1 is a completed technical baseline; it is not a valid product-acceptance claim after the real user test.
+- V5 frontend and navigation: broadly present, with R2 surface-function and layout gaps now binding.
 - Next.js/Supabase/Auth/RLS architecture: established.
 - Inbox, Tasks, Today and Calendar task flows: connected with remaining depth gaps.
 - Project/Goal workbenches: connected with remaining depth gaps.
@@ -844,23 +845,74 @@ and the required local quality checks pass. Optional, deferred, external and
 decision-gated items remain explicitly classified rather than being marked
 complete.
 
-## 4.11 Active Work Block: Post-Z1 Product Decision
+## 4.11 Completed Decision: Post-Z1 Product Decision
 
-**Status:** Active decision gate. This block implements no product capability.
+**Status:** Completed by the explicit user decision that opens R2.
 
-**Outcome:** The local-first Life OS baseline is complete. Select one explicit
-next product decision before beginning further work:
+**Decision:** Z1 remains completed as a technical baseline: canonical paths,
+security/recovery work and its historical focused evidence remain valuable.
+The real product acceptance failed because current visible surfaces contain
+non-working controls, layout collisions and unjustified empty space. Z1 must
+not be represented as valid product acceptance, and historical implementation
+or backend evidence cannot alone restore a `CONNECTED` surface claim.
 
-- accept the current local Life OS version as the maintained baseline;
-- open a separately scoped AI1 provider/security decision;
-- prioritize one or more `OPTIONAL_ENHANCEMENT` capabilities;
-- decide one or more `DECISION_REQUIRED` capabilities; or
-- open a separately approved external-integration scope.
+## 4.12 Active Work Block: R2 – Product Reality Recovery & Surface Completion
 
-**Boundary:** Anti-Rot, Challenges, Rewards, Shop, Entertainment, AI1,
-external integrations, graph visualization, embeddings and semantic search do
-not reactivate through this gate. It preserves exactly one active work-block
-semantic and requires a new explicit product decision before implementation.
+**Status:** R2-00 completed (contract rebaseline). **Current active slice:**
+R2-01. R2 is the only Active Work Block.
+
+**Outcome:** Recover the actual user-facing product contract without replacing
+V5 or the established architecture. A surface is complete only after all of
+its visible controls, layout bounds and Manual behavior pass current Surface
+Acceptance; technical Z1 evidence is retained but is not product acceptance.
+
+### R2-00 – Product Reality Rebaseline & Surface Acceptance Contract
+
+**Status:** Completed.
+
+**Scope:** Reclassify Z1, record the binding product/design contracts, reset
+contradicted Registry claims honestly, establish the Surface Acceptance Gate
+and mark historical dashboard/content-state references as non-authoritative
+where they conflict. No product code, layout implementation, migration or
+dependency belongs in this slice.
+
+### Binding R2 delivery order
+
+1. **R2-01 – Global Feedback + Dashboard Surface Completion** — app-wide
+   success toast; Dashboard control inventory and real interaction proof;
+   Quick Thought, Daily Control, Month/Week/Day Time Progress, Meals, fitness,
+   Agenda, habits and portfolio paths; remove or connect the task CTA, remove
+   unjustified helper copy, correct Weight Goal spacing and prove no Nutrient
+   Balance/Calendar overlap or reclaimed-Bottom-Zone whitespace.
+2. **R2-02 – Inbox Surface Completion** — real search, remove Inbox Quick
+   Capture, editable/persistent triage fields, selectable Outcome Route,
+   persistent Planning Signals and every triage path.
+3. **R2-03 – Today / Calendar Role Correction** — Today as daily log without
+   recurrence management; Calendar Day/Week/Month controls and full-height
+   useful planning surface without an empty Bottom Zone.
+4. **R2-04 – Portfolio Information Architecture** — Tasks/Projects/Goals/
+   Skills sidebar sub-navigation and separate entity list, create and detail
+   surfaces; Overview is not primary inline creation.
+5. **R2-05 – Health / Fitness / Nutrition Surface Completion** — full
+   primary desktop viewport without required Body scroll; Habits statistics,
+   history and management ownership; Dashboard quick logging; selectable,
+   persistent Nutrition meal-planner slots.
+6. **R2-06 – Full Active Product Acceptance** — complete core-surface
+   control inventory, live click/navigation/write/reload proof, bounds/
+   whitespace/console/hydration checks, screenshots, Design-Taste review and
+   explicit `USER ACCEPTED` final gate.
+
+### R2 boundary
+
+- No new product domain, migration, dependency, remote provider or parallel
+  architecture is introduced merely to satisfy Surface Acceptance.
+- Every visible control in R2 scope works, navigates to real depth, or is
+  removed. `Prepared` requires an explicit user deferral and is not closure
+  for a promised core control.
+- Dashboard’s removed Bottom-Zone features remain removed; they cannot return
+  through historical layout references.
+- The R2 order is binding. After R2-00, only R2-01 is active until its status
+  changes in this roadmap.
 
 ## 5. Completed Major Work
 
@@ -973,7 +1025,7 @@ depth; they were deliberately not part of C2 closure.
 - reports and trends;
 - semantic search only after a privacy and permissions decision.
 
-### Z1 – Final Local Product Closure
+### Z1 – Technical Local Baseline
 
 - active-surface `CORE_COMPLETION` and `LOCAL_HARDENING` findings from the
   Post-A1 decision only;
@@ -984,6 +1036,19 @@ depth; they were deliberately not part of C2 closure.
   smoke coverage;
 - technical test-data isolation and deterministic focused test harnesses;
 - sustained personal-use period without a critical blocker.
+
+Z1 evidence remains a technical baseline only. It is not a product-acceptance
+claim after the Post-Z1 decision.
+
+### R2 – Product Reality Recovery & Surface Completion
+
+- app-wide feedback, control truth and no-overlap/no-unjustified-whitespace
+  recovery across Dashboard, Inbox, Today, Calendar, Portfolio, Health,
+  Fitness and Nutrition;
+- full-viewport desktop guards plus `1920×1080` and Mobile usability guards;
+- current control inventory and current browser proof, including mutation,
+  navigation, reload, console/hydration and screenshots;
+- Design-Taste review and explicit user acceptance of the active core product.
 
 ## 7. Definition of Done
 
@@ -1001,6 +1066,14 @@ A feature block is complete only when:
 10. a focused browser proof is green;
 11. the Capability Registry is updated;
 12. review is complete and a single coherent commit exists.
+
+For a core-surface closure, this additionally requires a complete current
+control inventory, direct browser interaction with every visible control,
+navigation/write/reload proof where applicable, console/hydration review,
+primary-viewport and `1920×1080` screenshots, a Design-Taste review and
+explicit `USER ACCEPTED`. An `IMPLEMENTATION PASS` or historical technical
+evidence does not close a core surface. `Prepared` cannot close a promised
+core control without an explicit user deferral.
 
 A data layer without its required user flow is not a completed feature.
 
@@ -1067,4 +1140,10 @@ Active Work Block. It is not an implementation log.
 
 ## 12. Final Closure Target
 
-Life OS reaches product closure when the Z1 outcome is met: every active, non-prepared visible capability required by the current product contract is connected end to end, projections remain consistent after reload, local operation is recoverable, accessibility and performance gates pass and the application supports sustained real personal use without a critical blocker. Optional and deferred surfaces may remain unavailable or prepared, but must not imply a functioning write or silently re-enter the active product scope.
+Life OS reaches product closure only when the R2 outcome is met: every active
+visible capability required by the current product contract is connected end to
+end, projections remain consistent after reload, local operation is
+recoverable, accessibility and performance gates pass, every core surface has
+passed Surface Acceptance and the user has explicitly recorded `USER ACCEPTED`.
+Optional and explicitly deferred surfaces may remain unavailable, but must not
+imply a functioning write or silently re-enter the active product scope.

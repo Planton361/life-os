@@ -1,22 +1,22 @@
 # Dashboard Layout Lock
 
 Stand: 2026-06-18
-Status: Active
-Zweck: Schuetzt das akzeptierte Life OS V5 Dashboard vor unbeabsichtigten Layout-Regressions.
-Quelle der Wahrheit: `DESIGN.md`, `docs/design/dashboard-v5.md`, akzeptierter V5-Stand.
+Status: Historische V5-Referenz, teilweise überholt
+Zweck: Bewahrt die frühere V5-Dashboard-Komposition als Referenz gegen unbeabsichtigte Regressionen.
+Aktive Wahrheit: `PRODUCT.md` und `DESIGN.md` definieren Surface Acceptance, Viewports, Time Progress und Leerflächen. Bei Widerspruch haben sie Vorrang.
 Gilt fuer: `/dashboard`, App Shell, Sidebar, Command Center, Dashboard Grid und Dashboard Sections.
 Nicht gilt fuer: neue Produktstrategie, neue Dashboard-Designrichtungen oder alte V1-V4-Varianten.
 
 ## Kurzfassung
 
-Das Dashboard-Layout ist ab diesem Stand locked. Weitere Arbeit darf Content, Farben, Effekte oder Code-Struktur nur im expliziten Scope aendern und darf die akzeptierte Anordnung, Spalten, Hoehen, Gaps und Widget-Hierarchie nicht beilaufig verschieben.
+Das Dashboard-Layout war ab diesem Stand locked. Die Referenz schützt weiterhin V5-Hierarchie und begründete Komposition, darf aber keine nötige R2-Surface-Korrektur blockieren. Insbesondere sind die frühere Bottom-Zone, historische Viewportgrößen und frühere Time-Progress-Semantik nicht bindend.
 
 ## Canonical Viewports
 
 | Viewport | Status | Bedeutung |
 |---|---|---|
-| `2560×1440` | Primaere V5-WQHD-Referenz | Massgeblich fuer akzeptierte Komposition, Spalten, Hoehen und Sichtbarkeit der Bottom Zone. |
-| `1440×900` | Desktop-Responsive-Guard | Muss nutzbar bleiben und darf keine horizontalen Overflows erzeugen. |
+| `2560×1440` | Historische V5-WQHD-Referenz | Kann die Komposition erläutern, ist aber nicht der primäre R2-Viewport. |
+| `1440×900` | Historischer Desktop-Responsive-Guard | Ergänzende Referenz; aktive Guards stehen in `DESIGN.md`. |
 | Mobile | Nutzbar, nicht pixel-locked | Muss lesbar, bedienbar und ohne horizontalen Overflow bleiben; Pixelgleichheit ist aktuell kein Ziel. |
 
 ## Locked Layoutbereiche
@@ -81,9 +81,9 @@ Relevante Dateien:
 - `src/components/dashboard/dashboard-grid.tsx`
 - `src/components/dashboard/dashboard-sections.tsx`
 
-### Bottom Zone
+### Historische Bottom Zone
 
-Locked sind unterstuetzende Rolle, Reihenfolge, Hoehe und Desktop-Sichtbarkeit von Anti-Rot Actions und Challenges.
+Die frühere unterstützende Bottom Zone mit Anti-Rot Actions und Challenges ist nicht mehr aktiv. Sie darf weder reaktiviert noch als Begründung für große Leerfläche verwendet werden.
 
 Relevante Dateien:
 

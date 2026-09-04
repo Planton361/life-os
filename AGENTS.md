@@ -42,7 +42,8 @@ For substantial tasks:
 6. implement a complete Vertical Slice;
 7. run focused validation and review the diff;
 8. update the Capability Registry;
-9. commit only when the Completion Gate passes.
+9. run the Surface Acceptance Gate when a core surface is touched or closed;
+10. commit only when the Completion Gate passes.
 
 Prefer one coherent, visible capability over many small layer-only blocks.
 
@@ -145,6 +146,28 @@ Use atomic updates or transactional RPCs for coupled writes where partial succes
 - Use existing tokens and components before adding new styles.
 
 Primary usage is a 4K second monitor. Standard desktop and mobile must remain usable.
+
+## 8.1 Surface Acceptance Gate
+
+`IMPLEMENTATION PASS` is implementation evidence, not closure of a core
+surface. Before closing Dashboard, Inbox, Today, Calendar, Portfolio, Health,
+Fitness or Nutrition, read the active Surface Contract in `PRODUCT.md` and
+`DESIGN.md`, then:
+
+- inventory every visible control in the affected surface;
+- directly click every control and prove its navigation or mutation;
+- for writes, prove success/error feedback and reload-stable result;
+- inspect card/overlay bounds, overlap and unjustified whitespace at the
+  primary 4K CSS viewport and `1920×1080`, with Mobile guards;
+- check browser console and hydration warnings/errors;
+- capture a complete screenshot for each core surface at the primary viewport
+  and `1920×1080`;
+- run a V5 Design-Taste review.
+
+Every promised core control must work, navigate to a real capability, or be
+removed. `Prepared` is not an acceptable closure state without an explicit user
+deferral. Final product/surface closure additionally requires `USER ACCEPTED`;
+historical backend or browser evidence cannot substitute it.
 
 ## 9. Manual / Demo / Empty / Auth-Blocked
 
@@ -280,6 +303,11 @@ Before calling a block complete, confirm:
 - Manual/Demo/Empty/Auth-blocked are correct;
 - write flows survive reload;
 - focused browser proof is green;
+- every visible control was inventoried and current browser-proven where a
+  core surface is in scope;
+- console/hydration is clean and full-surface screenshots plus bounds/
+  whitespace review meet the Surface Acceptance Gate where applicable;
+- `USER ACCEPTED` exists for final core-surface/product closure;
 - required checks are green;
 - Capability Registry is updated;
 - the diff contains only the active scope;
