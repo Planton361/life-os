@@ -13,6 +13,7 @@
     "typecheck": "next typegen && tsc --noEmit --incremental false",
     "auth:playwright:capture": "node scripts/playwright/capture-local-auth-state.mjs",
     "runtime:target:check": "node scripts/ops/check-canonical-local-runtime.mjs",
+    "runtime:target:migrate": "node scripts/ops/apply-canonical-target-migrations.mjs",
     "export:local": "echo \"Export not implemented yet. See docs/security/backup-export-restore-strategy-r1-9-2.md\"",
     "backup:local:create": "node scripts/ops/create-local-db-backup.mjs",
     "backup:local:restore-smoke": "node scripts/ops/restore-local-db-backup-smoke.mjs",

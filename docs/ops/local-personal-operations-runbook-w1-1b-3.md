@@ -146,6 +146,19 @@ bezieht die lokalen Public-Client-Werte intern aus genau diesem Stack. Die
 Werte werden weder ausgegeben noch gespeichert. `pnpm dev:raw` ist nur eine
 Diagnose-Fluchtklappe und kein Target-Proof.
 
+Eine beabsichtigte Forward-Migration auf das kanonische Target erfolgt nur
+ueber den gleich geschuetzten Pfad:
+
+```bash
+pnpm runtime:target:migrate
+```
+
+Der Befehl prueft die Target-Identitaet vor dem Schreiben, verwendet einen
+ephemeren CLI-Kontext fuer genau diesen Docker-Stack, wendet ausschliesslich
+die Git-Migrationskette regulär an und prueft danach Migration-List, DB-Lint
+und Security-Advisors. Er repariert keine History und startet, resettet oder
+veraendert keinen Legacy- oder Default-CLI-Stack.
+
 Optional lokal:
 
 ```bash

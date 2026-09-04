@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawn } from "node:child_process";
 import {
@@ -67,8 +68,7 @@ async function main() {
   }
 
   const appPort = 4300 + (process.pid % 500);
-  await mkdir(join(process.cwd(), ".local"), { recursive: true });
-  const root = await mkdtemp(join(process.cwd(), ".local", "z1-e2e-"));
+  const root = await mkdtemp(join(tmpdir(), "life-os-z1-e2e-"));
   const supabaseDir = join(root, "supabase");
   const ports = disposablePorts();
   let started = false;
