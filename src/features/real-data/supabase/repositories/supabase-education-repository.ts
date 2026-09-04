@@ -1,7 +1,10 @@
-import type { SupabaseClientLike } from "../database.types";
+import type { ResourceType } from "../../domain";
+import type { Database, SupabaseClientLike, SupabaseQueryResult } from "../database.types";
 import type { EducationLogInput } from "../../schemas/education-log.schemas";
 import { mapEducationLogRow } from "../mappers/education-log.mapper";
-import { sortEducationLogs, type EducationLog } from "@/features/education/education-log";
+import { mapResourceRowToDomain } from "../mappers/resource.mapper";
+import type { ResourceRow } from "../row-types";
+import { sortEducationLogs, type EducationLog } from "../../../education/education-log";
 
 export type EducationWorkspace = {
   projects: Array<{
@@ -17,6 +20,9 @@ export type EducationWorkspace = {
 };
 
 function failure(message: string) { return { error: message, ok: false as const }; }
+
+type CreateEducationLiteratureArgs =
+  Database["public"]["Functions"]["create_education_literature_resource"]["Args"];
 
 export function createSupabaseEducationRepository(client: SupabaseClientLike) {
   async function educationAreaId(userId: string) {
@@ -47,6 +53,19 @@ export function createSupabaseEducationRepository(client: SupabaseClientLike) {
       if (!areaId) return failure("Education area unavailable.");
       const result = await client.from("projects").insert({ area_id: areaId, description: input.description ?? null, status: input.status as "active", title: input.title, user_id: userId }).select("id").single();
       return result.error ? failure("Project create failed.") : { data: result.data, ok: true as const };
+    },
+    async createLiteratureResource(userId: string, input: { areaId: string; body?: string; projectId: string; title: string; type: ResourceType; url?: string }) {
+      const args: CreateEducationLiteratureArgs = {
+        p_area_id: input.areaId,
+        p_project_id: input.projectId,
+        p_title: input.title,
+        p_type: input.type,
+      };
+      if (input.body !== undefined) args.p_summary = input.body;
+      if (input.url !== undefined) args.p_url = input.url;
+      const result = (await client.rpc("create_education_literature_resource", args)) as SupabaseQueryResult<ResourceRow>;
+      if (result.error || !result.data || result.data.user_id !== userId) return failure("Literature create failed.");
+      return { data: mapResourceRowToDomain(result.data), ok: true as const };
     },
     async createLog(userId: string, input: EducationLogInput) {
       if (!(await ownedProject(userId, input.projectId))) return failure("Education project unavailable.");

@@ -48,6 +48,15 @@ export const createResourceInputSchema = z.object({
 
 export type CreateResourceInput = z.infer<typeof createResourceInputSchema>;
 
+export const createEducationLiteratureInputSchema =
+  createResourceInputSchema.extend({
+    areaId: requiredUuidSchema,
+    projectId: requiredUuidSchema,
+  });
+export type CreateEducationLiteratureInput = z.infer<
+  typeof createEducationLiteratureInputSchema
+>;
+
 export const updateResourceInputSchema = z.object({
   body: z.union([z.string().trim().min(1), z.null()]).optional(),
   profileId: requiredUuidSchema,

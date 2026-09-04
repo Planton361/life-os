@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { linkResourceToTargetInputSchema } from "./resource.schemas";
+import {
+  createEducationLiteratureInputSchema,
+  linkResourceToTargetInputSchema,
+} from "./resource.schemas";
 
 const resourceId = "11111111-1111-4111-8111-111111111111";
 const skillId = "22222222-2222-4222-8222-222222222222";
@@ -37,5 +40,30 @@ describe("linkResourceToTargetInputSchema", () => {
         targetType: "task",
       }).success,
     ).toBe(true);
+  });
+});
+
+describe("createEducationLiteratureInputSchema", () => {
+  it("requires canonical Education Project and Area identifiers alongside Resource input", () => {
+    expect(
+      createEducationLiteratureInputSchema.safeParse({
+        areaId: resourceId,
+        profileId,
+        projectId: skillId,
+        title: "Atomic literature source",
+        type: "research",
+        userId: profileId,
+      }).success,
+    ).toBe(true);
+    expect(
+      createEducationLiteratureInputSchema.safeParse({
+        areaId: resourceId,
+        profileId,
+        projectId: "not-a-project-id",
+        title: "Atomic literature source",
+        type: "research",
+        userId: profileId,
+      }).success,
+    ).toBe(false);
   });
 });

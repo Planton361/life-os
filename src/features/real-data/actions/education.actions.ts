@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
   createProjectInputSchema,
-  createResourceInputSchema,
+  createEducationLiteratureInputSchema,
   linkResourceToTargetInputSchema,
   unlinkResourceFromTargetInputSchema,
   updateProjectInputSchema,
@@ -47,13 +47,13 @@ export async function updateEducationProjectFormAction(formData: FormData) {
 
 export async function createEducationLiteratureFormAction(formData: FormData) {
   const projectId = field(formData, "projectId"); const auth = await context(); if (!auth) redirect(destination("blocked", projectId));
-  const education = createSupabaseEducationRepository(auth.client); if (!(await education.ownedProject(auth.user.id, projectId))) redirect(destination("literature_error", projectId));
+  const education = createSupabaseEducationRepository(auth.client);
   const areaId = await education.ensureEducationArea(auth.user.id);
-  const parsed = createResourceInputSchema.safeParse({ areaId, body: optionalField(formData, "body"), profileId: auth.user.id, reviewNeeded: false, title: field(formData, "title"), type: field(formData, "type"), url: optionalField(formData, "url"), userId: auth.user.id });
+  const parsed = createEducationLiteratureInputSchema.safeParse({ areaId, body: optionalField(formData, "body"), profileId: auth.user.id, projectId, reviewNeeded: false, title: field(formData, "title"), type: field(formData, "type"), url: optionalField(formData, "url"), userId: auth.user.id });
   if (!parsed.success) redirect(destination("literature_error", projectId));
-  const resources = createSupabaseResourceRepository(auth.client); const created = await resources.createResource(parsed.data); if (!created.ok) redirect(destination("literature_error", projectId));
-  const linked = await resources.linkResource({ profileId: auth.user.id, relationType: "source", resourceId: created.data.id, targetId: projectId, targetType: "project", userId: auth.user.id });
-  if (!linked.ok) redirect(destination("literature_error", projectId, created.data.id));
+  if (!areaId) redirect(destination("literature_error", projectId));
+  const created = await education.createLiteratureResource(auth.user.id, { areaId, body: parsed.data.body, projectId, title: parsed.data.title, type: parsed.data.type, url: parsed.data.url });
+  if (!created.ok) redirect(destination("literature_error", projectId));
   revalidateEducation(); redirect(destination("literature_created", projectId, created.data.id));
 }
 

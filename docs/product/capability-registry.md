@@ -268,11 +268,11 @@ C1 Core Work Graph
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
 | Scientific work | `CONNECTED_GAP` | A1 Target browser proof creates an Education-Area canonical Project with Core backlink, literature Resource and learning log after reload | dedicated scientific-work metadata remains intentionally deferred; no parallel model |
-| Literature library | `CONNECTED_GAP` | A1 Target browser proof creates a canonical Resource and reload-stable Project link through `resource_relations` | create-and-link is sequential rather than atomic, so a link failure can leave a standalone Resource; reading status and bibliographic metadata remain deferred until safely modeled |
+| Literature library | `CONNECTED_GAP` | Z1 disposable DB/API and browser proof atomically creates a canonical Resource plus reload-stable Project `source` link; active same-user Education Area and Project ownership are enforced | reading status and bibliographic metadata remain deferred until safely modeled |
 | Learning log | `CONNECTED` | A1 Target browser proof creates a user-scoped `education_logs` record and reloads it in the canonical Project context | maintain aggregation and ownership proofs |
 | Thesis/project relation | `CONNECTED` | A1.1B1 user-owned `education` Area with canonical Projects, Tasks, Deadlines and literature Resources | maintain same-user relation ownership |
 | Writing best practices/resources | `CONNECTED_GAP` | A1.1B1 scoped Resources plus A1.1B2 Writing Logs with signed word deltas | dedicated prompt/template management remains separate depth |
-| Education dashboard | `CONNECTED_GAP` | Manual Education workspace projects, task/deadline context, literature and A1.1B2 Learning/Writing activity | Literature create-and-link remains non-atomic; richer scientific metadata remains deferred |
+| Education dashboard | `CONNECTED_GAP` | Manual Education workspace projects, task/deadline context, atomically linked literature and A1.1B2 Learning/Writing activity | richer scientific metadata remains deferred |
 
 # 13. Work
 
