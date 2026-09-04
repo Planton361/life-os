@@ -1,5 +1,7 @@
 import "server-only";
 
+import { cache } from "react";
+
 import {
   buildCalendarTimedBlocks,
   getCalendarViewModel as getDemoCalendarViewModel,
@@ -4485,7 +4487,7 @@ export async function getTasks(): Promise<LifeTask[]> {
   return [...(await getProfileData(profileId)).tasks];
 }
 
-export async function getDashboardViewModel(): Promise<DashboardViewModel> {
+async function getDashboardViewModelUncached(): Promise<DashboardViewModel> {
   const profileId = await getCurrentLifeOsProfileId();
 
   if (profileId === "demo") {
@@ -4503,6 +4505,11 @@ export async function getDashboardViewModel(): Promise<DashboardViewModel> {
 
   return buildProfileDashboardViewModel(profileId, emptyManualProfile());
 }
+
+// AppShell and DashboardGrid consume this same server read model during one
+// Dashboard render. React keeps this memoization request-scoped, so neither
+// authenticated Manual data nor a profile result can cross request boundaries.
+export const getDashboardViewModel = cache(getDashboardViewModelUncached);
 
 export async function getInboxViewModel(
   options: { selectedInboxItemId?: string } = {},
