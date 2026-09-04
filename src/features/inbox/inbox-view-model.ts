@@ -85,7 +85,7 @@ export type InboxExistingTargetType = "project" | "goal" | "resource" | "skill";
 
 export type InboxExistingTarget = {
   id: string;
-  type: Exclude<InboxExistingTargetType, "skill">;
+  type: InboxExistingTargetType;
   title: string;
   meta: string;
   accent: string;

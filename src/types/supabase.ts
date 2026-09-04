@@ -3014,6 +3014,7 @@ export type Database = {
           p_priority?: Database["public"]["Enums"]["task_priority"]
           p_project_id?: string
           p_scheduled_start_at?: string
+          p_skill_id?: string
           p_title: string
         }
         Returns: {

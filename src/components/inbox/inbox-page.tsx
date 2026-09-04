@@ -1201,21 +1201,21 @@ function InboxAddToExistingDraft({
     canCreateTask &&
     contributionType === "task" &&
     Boolean(selectedTarget) &&
-    (targetType === "project" || targetType === "goal");
+    (targetType === "project" || targetType === "goal" || targetType === "skill");
   const contributionStatus =
     contributionType === "task" &&
     Boolean(selectedTarget) &&
-    (targetType === "project" || targetType === "goal")
+    (targetType === "project" || targetType === "goal" || targetType === "skill")
       ? "Verbunden"
       : contributionType === "resource_link"
         ? "Vorbereitet"
         : contributionType === "task" &&
-            (targetType === "project" || targetType === "goal")
+            (targetType === "project" || targetType === "goal" || targetType === "skill")
           ? "Ziel fehlt"
         : "Noch nicht verbunden";
   const targetEmptyCopy =
     targetType === "skill"
-      ? "Skill bleibt Future Scope, bis eine echte persistierte Skill-Entity existiert."
+      ? "Noch keine verlinkbaren eigenen Skills vorhanden. Erstelle einen Skill in Portfolio."
       : targetType === "project"
         ? "Noch keine bestehenden Projects vorhanden. Nutze Create New, um ein neues Project anzulegen."
         : targetType === "goal"
@@ -1237,9 +1237,9 @@ function InboxAddToExistingDraft({
               Bestehendem Objekt zuordnen
             </h3>
             <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
-              Bestehendes Project oder Goal auswählen und daraus einen
-              Task-Beitrag erstellen. Resource Link ist vorbereitet; Skill ist
-              Future Scope.
+              Bestehendes Project, Goal oder einen verlinkbaren Skill auswählen
+              und daraus einen Task-Beitrag erstellen. Resource Link bleibt
+              vorbereitet.
             </p>
           </div>
           <Pill
@@ -1285,9 +1285,7 @@ function InboxAddToExistingDraft({
                   {existingTargetTypeLabels[type]}
                 </span>
                 <span className="mt-1 block text-[10px] text-[var(--text-muted)]">
-                  {type === "skill"
-                    ? "Future Scope"
-                    : `${count} DB-Ziel${count === 1 ? "" : "e"}`}
+                  {`${count} DB-Ziel${count === 1 ? "" : "e"}`}
                 </span>
               </button>
             );
@@ -1362,6 +1360,9 @@ function InboxAddToExistingDraft({
             ) : null}
             {targetType === "goal" && selectedTarget ? (
               <input name="goalId" type="hidden" value={selectedTarget.id} />
+            ) : null}
+            {targetType === "skill" && selectedTarget ? (
+              <input name="skillId" type="hidden" value={selectedTarget.id} />
             ) : null}
             <DraftTextInput
               defaultValue={activeItem.title}
@@ -1438,15 +1439,16 @@ function InboxAddToExistingDraft({
             </p>
             <p className="mt-1 text-[11px] leading-4 text-[var(--text-secondary)]">
               Diese Auswahl schreibt aktuell keine Daten. Persistenz ist nur
-              für Task-Beiträge zu bestehenden Projects oder Goals verbunden.
+              für Task-Beiträge zu bestehenden Projects, Goals oder
+              verlinkbaren Skills verbunden.
             </p>
           </div>
         )}
 
         <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
-          Persistenter Pfad: Task + Project/Goal-ID über bestehende
-          Inbox-Triage-RPC. Kein Resource Graph, keine Skill-Persistence, keine
-          neue Entity.
+          Persistenter Pfad: Task + optionale Project-/Goal-/Skill-Relation
+          über die bestehende Inbox-Triage-RPC. Eine Skill-Relation ist Kontext,
+          keine Evidence und keine neue Entity.
         </p>
       </form>
     </section>

@@ -105,7 +105,7 @@ C1 Core Work Graph
 | Add to existing Project/Goal | `CONNECTED` | task relation actions | maintain |
 | Solve/Archive | `CONNECTED` | inbox resolve path | maintain |
 | Note route | `CONNECTED_GAP` | capture/note-like data | confirm canonical Note entity and destination |
-| Skill route | `CONNECTED_GAP` | skills exist | complete routing if still prepared |
+| Skill route | `CONNECTED` | active user-scoped Skill targets plus atomic `triage_inbox_item_to_task(p_skill_id)` Task-context link; focused disposable UI/API reload and negative proof | maintain; Task↔Skill context never creates Evidence |
 | Planning signals | `CONNECTED_GAP` | supported task fields | expose only persisted fields and clear unsupported hints |
 | AI suggestion review | `CONNECTED_GAP` | deterministic local provider | DeepSeek provider remains future; no auto-write |
 | Related context search | `CONNECTED_GAP` | local related entities | broaden search only after relation/search model |

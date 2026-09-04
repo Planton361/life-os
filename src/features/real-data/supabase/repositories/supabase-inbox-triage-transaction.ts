@@ -76,6 +76,7 @@ export function createSupabaseInboxTriageTransaction(
     }
     if (input.priority !== undefined) args.p_priority = input.priority;
     if (input.projectId !== undefined) args.p_project_id = input.projectId;
+    if (input.skillId !== undefined) args.p_skill_id = input.skillId;
     if (input.scheduledStartAt !== undefined) {
       args.p_scheduled_start_at = input.scheduledStartAt;
     }

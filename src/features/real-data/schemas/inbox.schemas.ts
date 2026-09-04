@@ -24,6 +24,7 @@ const triageTaskFieldsSchema = z.object({
   priority: optionalEnumSchema(taskPriorities),
   projectId: optionalTrimmedStringSchema,
   scheduledStartAt: optionalDateTimeStringSchema,
+  skillId: z.string().trim().uuid().optional(),
 });
 
 export const captureInboxItemInputSchema = z.object({

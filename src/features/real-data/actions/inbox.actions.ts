@@ -266,6 +266,7 @@ export async function triageInboxItemToTaskAction(
     profileId: auth.user.id,
     priority: optionalFormString(formData, "priority"),
     projectId: optionalFormString(formData, "projectId"),
+    skillId: optionalFormString(formData, "skillId"),
     title: formString(formData, "title"),
     userId: auth.user.id,
   });

@@ -2370,6 +2370,11 @@ type ResourceTargetRow = Pick<
   "id" | "review_needed" | "title" | "type" | "updated_at"
 >;
 
+type SkillTargetRow = Pick<
+  TableRow<"skills">,
+  "category" | "id" | "name" | "status" | "updated_at"
+>;
+
 type PortfolioRelationTargetRow = Pick<TableRow<"projects">, "id" | "title">;
 type PortfolioRelationGoalRow = Pick<TableRow<"goals">, "id" | "title">;
 
@@ -2412,11 +2417,22 @@ function resourceTargetFromRow(row: ResourceTargetRow): InboxExistingTarget {
   };
 }
 
+function skillTargetFromRow(row: SkillTargetRow): InboxExistingTarget {
+  return {
+    accent: "var(--accent-purple)",
+    href: `/portfolio?view=skills&selected=${row.id}`,
+    id: row.id,
+    meta: `${row.status} · ${row.category ?? "no category"} · ${targetUpdatedLabel(row.updated_at)}`,
+    title: row.name,
+    type: "skill",
+  };
+}
+
 async function getManualInboxExistingTargets(
   client: SupabaseClientLike,
   userId: string,
 ): Promise<InboxExistingTargets> {
-  const [projectResult, goalResult, resourceResult] = await Promise.all([
+  const [projectResult, goalResult, resourceResult, skillResult] = await Promise.all([
     (async () =>
       (await client
         .from("projects")
@@ -2441,6 +2457,15 @@ async function getManualInboxExistingTargets(
         .is("archived_at", null)
         .order("updated_at", { ascending: false })
         .limit(12)) as SupabaseQueryResult<readonly ResourceTargetRow[]>)(),
+    (async () =>
+      (await client
+        .from("skills")
+        .select("id,name,status,category,updated_at")
+        .eq("user_id", userId)
+        .is("archived_at", null)
+        .neq("status", "archived")
+        .order("updated_at", { ascending: false })
+        .limit(12)) as SupabaseQueryResult<readonly SkillTargetRow[]>)(),
   ]);
 
   return {
@@ -2453,7 +2478,7 @@ async function getManualInboxExistingTargets(
     resources: resourceResult.error
       ? []
       : (resourceResult.data ?? []).map(resourceTargetFromRow),
-    skills: [],
+    skills: skillResult.error ? [] : (skillResult.data ?? []).map(skillTargetFromRow),
   };
 }
 
@@ -3167,6 +3192,7 @@ function buildProfileInboxViewModel(
     ...existingTargets.projects,
     ...existingTargets.goals,
     ...existingTargets.resources,
+    ...existingTargets.skills,
   ].slice(0, 5);
   const active =
     profile.inboxItems.find(
@@ -3284,7 +3310,10 @@ function buildProfileInboxViewModel(
     id: active?.id,
     isTaskCapture: activeIsTaskCapture,
     persistedAreaId: active?.sourceAreaId ?? null,
-    portfolioHref: activeIsTriaged ? "/portfolio?view=tasks" : undefined,
+    portfolioHref:
+      activeIsTriaged && active?.triagedTaskId
+        ? `/portfolio?view=tasks&selected=${active.triagedTaskId}`
+        : undefined,
     priority: active?.priority ?? "P2",
     title: active?.title ?? "Kein Eintrag ausgewählt",
     triagedTaskId: active?.triagedTaskId ?? null,
