@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   useEffect,
   useMemo,
@@ -1778,7 +1779,7 @@ function PageContractNote({
   );
 }
 
-export function RepositoriesPage({
+function RepositoriesWorkbenchPage({
   viewModel,
 }: Readonly<{
   viewModel: RepositoryWorkbenchViewModel;
@@ -1929,5 +1930,70 @@ export function RepositoriesPage({
       />
       <Toast onDismiss={() => setToast(null)} toast={toast} />
     </div>
+  );
+}
+
+function PreparedRepositoriesPage({
+  profileId,
+}: Readonly<{
+  profileId: RepositoryWorkbenchViewModel["profileId"];
+}>) {
+  const isManual = profileId === "manual";
+
+  return (
+    <div
+      className="mx-auto flex w-full max-w-[2208px] flex-col gap-2 pb-6"
+      data-repositories-state="prepared"
+      id="repositories-page"
+    >
+      <header className="rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.86)] p-4">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-blue)]">
+          Life OS / Coding
+        </p>
+        <h1 className="mt-1 text-[24px] font-semibold text-[var(--text-primary)]">
+          Repositories
+        </h1>
+        <p className="mt-1 text-[11px] text-[var(--text-secondary)]">
+          {isManual
+            ? "Vorbereitete Ansicht: Repository-Kontext wird über kanonische Coding-Projekte gepflegt."
+            : "Vorbereitete Ansicht ohne Demo-Daten, lokale Entwürfe oder Schreibvorgänge."}
+        </p>
+      </header>
+
+      <CodingPanel
+        subtitle="Repository-URLs und Coding-Sessions bleiben an das kanonische Core-Project gebunden."
+        title="Keine zweite Repository-Bibliothek"
+      >
+        <EmptyStateCard
+          action={
+            isManual ? (
+              <Link className={primaryButtonClass} href="/coding">
+                Coding-Projekte öffnen
+              </Link>
+            ) : undefined
+          }
+          description="Diese Route erstellt keine lokalen Repository-, Notiz- oder Sync-Entwürfe. GitHub-Sync bleibt eine externe, nicht verbundene Capability."
+          title="Repository-Workbench ist vorbereitet"
+        />
+      </CodingPanel>
+
+      <div className="rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.42)] p-3">
+        <p className="text-[10px] leading-4 text-[var(--text-faint)]">
+          Prepared state · no local repository drafts · no local resource map · no GitHub sync
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export function RepositoriesPage({
+  viewModel,
+}: Readonly<{
+  viewModel: RepositoryWorkbenchViewModel;
+}>) {
+  return viewModel.profileId === "demo" ? (
+    <RepositoriesWorkbenchPage viewModel={viewModel} />
+  ) : (
+    <PreparedRepositoriesPage profileId={viewModel.profileId} />
   );
 }

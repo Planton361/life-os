@@ -8,6 +8,7 @@ import {
 } from "@/features/content-state";
 import { cn } from "@/lib/cn";
 import type { LifeNote, LifeNoteType, LifeSource, NotesPageViewModel } from "./types";
+import { PreparedEmptyLifeSurface } from "./prepared-empty-life-surface";
 import {
   DetailRow,
   DialogError,
@@ -312,7 +313,7 @@ function buildContentStates(
   };
 }
 
-export function NotesPage({
+function NotesInteractivePage({
   viewModel,
 }: Readonly<{
   viewModel: NotesPageViewModel;
@@ -613,5 +614,20 @@ export function NotesPage({
 
       <Toast onDismiss={() => setToast(null)} toast={toast} />
     </LifePageShell>
+  );
+}
+
+export function NotesPage({
+  viewModel,
+}: Readonly<{
+  viewModel: NotesPageViewModel;
+}>) {
+  return viewModel.profileId === "empty" ? (
+    <PreparedEmptyLifeSurface
+      description="Keine Notes im Empty-Profil; ein lokaler Note-Entwurf würde keine kanonische Resource- oder Notes-Persistenz darstellen."
+      title="Notes"
+    />
+  ) : (
+    <NotesInteractivePage viewModel={viewModel} />
   );
 }

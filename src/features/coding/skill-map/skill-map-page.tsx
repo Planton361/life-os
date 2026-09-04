@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   useEffect,
   useMemo,
@@ -1792,7 +1793,7 @@ function InspectorSheet({
   );
 }
 
-export function SkillMapPage({
+function SkillMapInteractivePage({
   viewModel,
 }: Readonly<{
   viewModel: SkillMapViewModel;
@@ -2136,5 +2137,70 @@ export function SkillMapPage({
       </div>
       <Toast onDismiss={() => setToast(null)} toast={toast} />
     </div>
+  );
+}
+
+function PreparedSkillMap({
+  profileId,
+}: Readonly<{
+  profileId: SkillMapViewModel["profileId"];
+}>) {
+  const isManual = profileId === "manual";
+
+  return (
+    <div
+      className="mx-auto flex w-full max-w-[2208px] flex-col gap-2 pb-6"
+      data-skill-map-state="prepared"
+      id="skill-map-page"
+    >
+      <header className="rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.86)] p-4">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-blue)]">
+          Life OS / Coding
+        </p>
+        <h1 className="mt-1 text-[24px] font-semibold text-[var(--text-primary)]">
+          Skill Map
+        </h1>
+        <p className="mt-1 text-[11px] text-[var(--text-secondary)]">
+          {isManual
+            ? "Vorbereitete Ansicht: Skills und Evidence werden über die kanonischen Core-Arbeitsflächen gepflegt."
+            : "Vorbereitete Ansicht ohne Demo-Daten, lokale Skill-Drafts oder Evidence-Schreibvorgänge."}
+        </p>
+      </header>
+
+      <CodingPanel
+        subtitle="Eine Mapping- oder Progress-Nebenwahrheit wird erst mit einem eigenen Read-Model-Vertrag verbunden."
+        title="Keine lokale Skill-Mapping-Datenbank"
+      >
+        <EmptyStateCard
+          action={
+            isManual ? (
+              <Link className={primaryButtonClass} href="/portfolio?view=skills">
+                Skills öffnen
+              </Link>
+            ) : undefined
+          }
+          description="Diese Route erzeugt keine Skills, Evidence, Progress-Werte oder Practice-Tasks. Bestehende Skills und deren Evidence bleiben im kanonischen Core-Kontext."
+          title="Coding Skill Map ist vorbereitet"
+        />
+      </CodingPanel>
+
+      <div className="rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.42)] p-3">
+        <p className="text-[10px] leading-4 text-[var(--text-faint)]">
+          Prepared state · no local skills · no local evidence · no local practice plan
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export function SkillMapPage({
+  viewModel,
+}: Readonly<{
+  viewModel: SkillMapViewModel;
+}>) {
+  return viewModel.profileId === "demo" ? (
+    <SkillMapInteractivePage viewModel={viewModel} />
+  ) : (
+    <PreparedSkillMap profileId={viewModel.profileId} />
   );
 }

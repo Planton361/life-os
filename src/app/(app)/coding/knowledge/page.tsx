@@ -14,6 +14,7 @@ const routeConfig = {
   emptyTitle: "No coding knowledge view connected yet",
   emptyDescription:
     "This skeleton keeps the Coding Knowledge route available before resource filters and technical context links exist.",
+  status: "Prepared",
   accent: "var(--accent-cyan)",
 } satisfies RouteSkeletonConfig;
 

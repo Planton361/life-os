@@ -8,6 +8,7 @@ import {
 } from "@/features/content-state";
 import { cn } from "@/lib/cn";
 import type { JournalEntry, JournalMood, JournalPageViewModel } from "./types";
+import { PreparedEmptyLifeSurface } from "./prepared-empty-life-surface";
 import {
   DetailRow,
   DialogError,
@@ -274,7 +275,7 @@ function buildContentStates(
   };
 }
 
-export function JournalPage({
+function JournalInteractivePage({
   viewModel,
 }: Readonly<{
   viewModel: JournalPageViewModel;
@@ -563,5 +564,20 @@ export function JournalPage({
 
       <Toast onDismiss={() => setToast(null)} toast={toast} />
     </LifePageShell>
+  );
+}
+
+export function JournalPage({
+  viewModel,
+}: Readonly<{
+  viewModel: JournalPageViewModel;
+}>) {
+  return viewModel.profileId === "empty" ? (
+    <PreparedEmptyLifeSurface
+      description="Keine Journal-Einträge im Empty-Profil; ein lokaler Reflexions-Entwurf würde keine kanonische Persistenz darstellen."
+      title="Journal"
+    />
+  ) : (
+    <JournalInteractivePage viewModel={viewModel} />
   );
 }

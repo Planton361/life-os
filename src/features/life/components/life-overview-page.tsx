@@ -38,6 +38,7 @@ import type {
   LifeReviewDot,
   LifeSectionSummary,
 } from "../types";
+import { PreparedEmptyLifeSurface } from "../prepared-empty-life-surface";
 
 type LifeView = "overview" | "journal" | "notes" | "entertainment" | "inventory";
 type Priority = "low" | "medium" | "high";
@@ -2074,7 +2075,7 @@ function buildOverviewContentStates(
   };
 }
 
-export function LifeOverviewPage({
+function LifeOverviewInteractivePage({
   viewModel,
 }: Readonly<{
   viewModel: LifeOverviewViewModel;
@@ -2427,5 +2428,20 @@ export function LifeOverviewPage({
 
       <Toast onDismiss={() => setToast(null)} toast={toast} />
     </div>
+  );
+}
+
+export function LifeOverviewPage({
+  viewModel,
+}: Readonly<{
+  viewModel: LifeOverviewViewModel;
+}>) {
+  return viewModel.profileId === "empty" ? (
+    <PreparedEmptyLifeSurface
+      description="Keine Life-Daten im Empty-Profil; lokale Journal-, Note-, Entertainment- oder Inventory-Entwürfe wären nicht reload-stabil oder kanonisch."
+      title="Life"
+    />
+  ) : (
+    <LifeOverviewInteractivePage viewModel={viewModel} />
   );
 }

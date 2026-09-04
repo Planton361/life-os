@@ -15,6 +15,7 @@ import type {
   InventoryStatus,
   LifePriority,
 } from "./types";
+import { PreparedEmptyLifeSurface } from "./prepared-empty-life-surface";
 import {
   DetailRow,
   DialogError,
@@ -531,7 +532,7 @@ function BudgetFitSummary({
   );
 }
 
-export function InventoryPage({
+function InventoryInteractivePage({
   viewModel,
 }: Readonly<{
   viewModel: InventoryPageViewModel;
@@ -856,5 +857,20 @@ export function InventoryPage({
 
       <Toast onDismiss={() => setToast(null)} toast={toast} />
     </LifePageShell>
+  );
+}
+
+export function InventoryPage({
+  viewModel,
+}: Readonly<{
+  viewModel: InventoryPageViewModel;
+}>) {
+  return viewModel.profileId === "empty" ? (
+    <PreparedEmptyLifeSurface
+      description="Keine Inventory- oder Wishlist-Items im Empty-Profil; lokale Kauf- oder Item-Entwürfe wären keine kanonischen Records."
+      title="Inventory & Wishlist"
+    />
+  ) : (
+    <InventoryInteractivePage viewModel={viewModel} />
   );
 }

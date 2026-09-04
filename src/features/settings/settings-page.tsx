@@ -496,7 +496,6 @@ export function SettingsPage({
     privacy: viewModel.privacy,
     profile: viewModel.profile,
   }));
-  const [dirty, setDirty] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previewProfile, setPreviewProfile] = useState<SettingsProfile | null>(null);
   const [resetOpen, setResetOpen] = useState(false);
@@ -509,17 +508,14 @@ export function SettingsPage({
 
   function updateProfile(profileDraft: SettingsProfile) {
     setProfile(profileDraft);
-    setDirty(true);
   }
 
   function updateAppearance(appearanceDraft: SettingsAppearance) {
     setAppearance(appearanceDraft);
-    setDirty(true);
   }
 
   function updatePrivacy(privacyDraft: SettingsPrivacy) {
     setPrivacy(privacyDraft);
-    setDirty(true);
   }
 
   function saveChanges(event?: FormEvent<HTMLFormElement>) {
@@ -537,7 +533,6 @@ export function SettingsPage({
       privacy,
       profile,
     });
-    setDirty(false);
     showToast({
       body: "Local UI preview updated for this session. No external persistence was used.",
       title: "Preview state updated",
@@ -551,7 +546,6 @@ export function SettingsPage({
     setPrivacy(savedState.privacy);
     setPreferences(clonePreferences(savedState.preferences));
     setError(null);
-    setDirty(false);
     setResetOpen(false);
     showToast({
       body: "Unsaved local UI changes were discarded.",
@@ -561,7 +555,6 @@ export function SettingsPage({
   }
 
   function updatePreference(id: string, enabled: boolean) {
-    setDirty(true);
     setPreferences((current) =>
       current.map((preference) =>
         preference.id === id ? { ...preference, enabled } : preference,
@@ -570,20 +563,7 @@ export function SettingsPage({
   }
 
   return (
-    <form
-      onChangeCapture={() => setDirty(true)}
-      onClickCapture={(event) => {
-        const target = event.target;
-
-        if (
-          target instanceof HTMLElement &&
-          target.closest('button[aria-pressed="false"]')
-        ) {
-          setDirty(true);
-        }
-      }}
-      onSubmit={saveChanges}
-    >
+    <form onSubmit={saveChanges}>
       <SystemPageShell
         accent={settingsAccent}
         dataAttributes={sectionStateAttributes({
@@ -597,59 +577,71 @@ export function SettingsPage({
         <SystemPageHeader
           eyebrow="System / Settings"
           primaryAction={
-            <button className={primaryButtonClass} disabled={!dirty} type="submit">
-              Save changes
+            <button className={primaryButtonClass} disabled type="submit">
+              Settings prepared
             </button>
           }
           secondaryActions={
             <>
               <button
                 className={secondaryButtonClass}
-                disabled={!dirty}
+                disabled
                 onClick={() => setResetOpen(true)}
                 type="button"
               >
-                Reset local changes
+                Reset prepared settings
               </button>
               <button
                 className={secondaryButtonClass}
+                disabled
                 onClick={() => setPreviewProfile(profile)}
                 type="button"
               >
-                Preview profile
+                Preview prepared profile
               </button>
             </>
           }
-          summary="Profile, appearance and system preferences"
+          summary="Read-only prepared preferences; canonical profile mode and auth controls remain below."
           title="Settings"
         />
 
-        <div className="grid gap-3 lg:grid-cols-2">
-          <ProfileSettingsPanel
-            error={error}
-            onChange={updateProfile}
-            onPreview={() => setPreviewProfile(profile)}
-            profileId={profileId}
-            profile={profile}
-          />
-        </div>
+        <fieldset
+          aria-describedby="settings-prepared-note"
+          className="m-0 grid min-w-0 gap-3 border-0 p-0 disabled:opacity-65"
+          disabled
+        >
+          <p
+            className="rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.42)] px-3 py-2 text-[11px] leading-4 text-[var(--text-muted)]"
+            id="settings-prepared-note"
+          >
+            Diese Einstellungen sind vorbereitet und bewusst read-only: Es wird kein lokaler Vorschau- oder Persistenzzustand erzeugt.
+          </p>
+          <div className="grid gap-3 lg:grid-cols-2">
+            <ProfileSettingsPanel
+              error={error}
+              onChange={updateProfile}
+              onPreview={() => setPreviewProfile(profile)}
+              profileId={profileId}
+              profile={profile}
+            />
+          </div>
 
-        <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <AppearanceSettingsPanel
-            appearance={appearance}
-            onChange={updateAppearance}
-            profileId={profileId}
-          />
-          <PrivacySettingsPanel
-            onChange={updatePrivacy}
-            privacy={privacy}
-            profileId={profileId}
-          />
-        </div>
+          <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <AppearanceSettingsPanel
+              appearance={appearance}
+              onChange={updateAppearance}
+              profileId={profileId}
+            />
+            <PrivacySettingsPanel
+              onChange={updatePrivacy}
+              privacy={privacy}
+              profileId={profileId}
+            />
+          </div>
 
-        <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(320px,.48fr)]">
+          <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(320px,.48fr)]">
           <SystemPanel
-            badge={dirty ? <Pill accent="var(--accent-orange)">Unsaved changes</Pill> : <Pill quiet>Saved mock state</Pill>}
+            badge={<Pill quiet>Prepared</Pill>}
             dataAttributes={sectionStateAttributes({
               capacity: 5,
               itemCount: preferences.length,
@@ -743,7 +735,8 @@ export function SettingsPage({
               </div>
             </SystemPanel>
           </div>
-        </div>
+          </div>
+        </fieldset>
 
         <ProfilePreviewDialog
           onClose={() => setPreviewProfile(null)}

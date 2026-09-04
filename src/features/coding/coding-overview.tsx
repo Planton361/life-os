@@ -1734,10 +1734,49 @@ function DemoCodingOverviewPage({
   );
 }
 
+function PreparedCodingOverview({
+  profileId,
+}: Readonly<{
+  profileId: CodingOverviewViewModel["profileId"];
+}>) {
+  return (
+    <div
+      className="mx-auto flex w-full max-w-[2208px] flex-col gap-2 pb-6"
+      data-coding-overview-state="prepared"
+      id="coding-overview-page"
+    >
+      <header className="rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.86)] p-4">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-blue)]">
+          Life OS / Coding
+        </p>
+        <h1 className="mt-1 text-[24px] font-semibold text-[var(--text-primary)]">
+          Coding
+        </h1>
+        <p className="mt-1 text-[11px] text-[var(--text-secondary)]">
+          {profileId === "empty"
+            ? "Keine Coding-Daten im Empty-Profil. Lokale Session-, Notiz- oder Review-Entwürfe sind hier nicht verfügbar."
+            : "Die Coding-Arbeitsfläche ist vorbereitet."}
+        </p>
+      </header>
+      <CodingPanel
+        subtitle="Coding Projects, Sessions, Tasks, Skills und Resources werden nur über ihre kanonischen Datenpfade gepflegt."
+        title="Kein lokaler Coding-Entwurf"
+      >
+        <EmptyStateCard
+          description="Wechsle in ein authentifiziertes Manual-Profil, um einen echten Coding-Project- oder Session-Write auszuführen."
+          title="Coding ist im Empty-Profil read-only"
+        />
+      </CodingPanel>
+    </div>
+  );
+}
+
 export function CodingOverviewPage({ viewModel }: Readonly<{ viewModel: CodingOverviewViewModel }>) {
   return viewModel.manualWorkspace ? (
     <CodingManualWorkspace viewModel={viewModel} />
-  ) : (
+  ) : viewModel.profileId === "demo" ? (
     <DemoCodingOverviewPage viewModel={viewModel} />
+  ) : (
+    <PreparedCodingOverview profileId={viewModel.profileId} />
   );
 }
