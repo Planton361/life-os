@@ -18,6 +18,10 @@ import {
   calendarBlockStatusLabels,
   calendarBlockTypeLabels,
 } from "../calendar-types";
+import {
+  findVisibleSchedulingConflict,
+  type VisibleSchedulingConflict,
+} from "../calendar-visible-conflict";
 import type {
   CalendarAllDayBlockViewModel,
   CalendarDayViewModel,
@@ -29,12 +33,8 @@ import type {
 } from "../calendar-types";
 
 type SelectedBlock = CalendarAllDayBlockViewModel | CalendarTimedBlockViewModel;
-type SchedulingConflict = {
-  title: string;
-  timeLabel: string;
-};
 type SchedulingCandidate = {
-  conflict?: SchedulingConflict;
+  conflict?: VisibleSchedulingConflict;
   disabledReason?: string;
   durationMinutes: number;
   label: string;
@@ -112,34 +112,6 @@ function isWithinDay(startMinutes: number, durationMinutes: number) {
   );
 }
 
-function findSchedulingConflict(
-  block: CalendarTimedBlockViewModel,
-  candidate: Pick<
-    SchedulingCandidate,
-    "durationMinutes" | "plannedDate" | "scheduledTime"
-  >,
-  scheduledTasks: readonly CalendarTimedBlockViewModel[],
-): SchedulingConflict | undefined {
-  const candidateStart = timeToMinutes(candidate.scheduledTime);
-  const candidateEnd = candidateStart + candidate.durationMinutes;
-  const conflict = scheduledTasks
-    .filter((taskBlock) => taskBlock.taskId !== block.taskId)
-    .filter((taskBlock) => taskBlock.date === candidate.plannedDate)
-    .find(
-      (taskBlock) =>
-        candidateStart < taskBlock.endMinutes &&
-        taskBlock.startMinutes < candidateEnd,
-    );
-
-  if (!conflict) return undefined;
-
-  return {
-    title: conflict.title,
-    timeLabel:
-      conflict.timeLabel ?? `${conflict.startTime}-${conflict.endTime}`,
-  };
-}
-
 function buildSchedulingCandidate({
   block,
   date,
@@ -179,7 +151,14 @@ function buildSchedulingCandidate({
 
   return {
     ...candidate,
-    conflict: findSchedulingConflict(block, candidate, scheduledTasks),
+    conflict:
+      findVisibleSchedulingConflict(
+        {
+          ...candidate,
+          taskId: block.taskId ?? "",
+        },
+        scheduledTasks,
+      ) ?? undefined,
   };
 }
 
@@ -225,6 +204,9 @@ function RescheduleTaskForm({
   variant?: "primary" | "secondary";
 }>) {
   const router = useRouter();
+  const [overrideSignature, setOverrideSignature] = useState<string | null>(
+    null,
+  );
   const [state, formAction, pending] = useActionState(
     async (_previous: QueueSchedulingState, formData: FormData) => {
       const result = await rescheduleTaskAction(formData);
@@ -244,6 +226,14 @@ function RescheduleTaskForm({
     candidate.scheduledTime,
     candidate.durationMinutes,
   );
+  const conflictSignature = [
+    candidate.plannedDate,
+    candidate.scheduledTime,
+    candidate.durationMinutes,
+    candidate.conflict?.title ?? "",
+    candidate.conflict?.timeLabel ?? "",
+  ].join(":");
+  const awaitingOverride = overrideSignature === conflictSignature;
 
   return (
     <div className="grid gap-1">
@@ -266,24 +256,51 @@ function RescheduleTaskForm({
         />
         <button
           className={buttonClassName}
-          disabled={
-            pending || Boolean(candidate.disabledReason ?? candidate.conflict)
+          disabled={pending || Boolean(candidate.disabledReason)}
+          onClick={
+            candidate.conflict
+              ? () => setOverrideSignature(conflictSignature)
+              : undefined
           }
-          type="submit"
+          type={candidate.conflict ? "button" : "submit"}
         >
-          {pending ? "Saving …" : candidate.label}
+          {pending
+            ? "Saving …"
+            : candidate.conflict
+              ? "Konflikt prüfen"
+              : candidate.label}
         </button>
-        {candidate.conflict ? (
-          <button
-            aria-label={`Trotzdem terminieren trotz sichtbarem Konflikt: ${candidate.label} ${timeRange}`}
-            className={overrideActionButtonClass}
-            name="manualOverride"
-            disabled={pending}
-            type="submit"
-            value="true"
+        {candidate.conflict && awaitingOverride ? (
+          <div
+            className="grid gap-1 rounded-[8px] border border-[rgba(221,107,95,.22)] bg-[rgba(221,107,95,.08)] px-2 py-1.5"
+            role="alert"
           >
-            Trotzdem terminieren
-          </button>
+            <p className="text-[10px] leading-4 text-[var(--text-secondary)]">
+              {conflictLabel}
+            </p>
+            <p className="text-[10px] leading-4 text-[var(--text-muted)]">
+              Standard-Speichern bleibt blockiert. Geprüft werden nur geladene
+              Blöcke, nicht die gesamte Datenbank.
+            </p>
+            <div className="grid gap-1 sm:grid-cols-2">
+              <button
+                className={secondaryActionButtonClass}
+                disabled={pending}
+                onClick={() => setOverrideSignature(null)}
+                type="button"
+              >
+                Abbrechen
+              </button>
+              <button
+                aria-label={`Trotzdem terminieren trotz sichtbarem Konflikt: ${candidate.label} ${timeRange}`}
+                className={overrideActionButtonClass}
+                disabled={pending}
+                type="submit"
+              >
+                Trotzdem terminieren
+              </button>
+            </div>
+          </div>
         ) : null}
       </form>
       {candidate.disabledReason ? (
@@ -291,16 +308,15 @@ function RescheduleTaskForm({
           {candidate.disabledReason}
         </p>
       ) : null}
-      {conflictLabel ? (
+      {conflictLabel && !awaitingOverride ? (
         <div
           className="rounded-[8px] border border-[rgba(221,107,95,.22)] bg-[rgba(221,107,95,.08)] px-2 py-1 text-[10px] leading-4 text-[var(--text-secondary)]"
           role="alert"
         >
           <p>{conflictLabel}</p>
           <p className="mt-1 text-[var(--text-muted)]">
-            Standard-Speichern ist blockiert. Trotzdem terminieren speichert
-            bewusst über denselben Task-Zeitpfad. Nur sichtbare Blöcke geprüft;
-            nicht DB-weit.
+            Standard-Speichern ist blockiert. Prüfe den Konflikt, um bewusst
+            abzubrechen oder über denselben Task-Zeitpfad fortzufahren.
           </p>
         </div>
       ) : null}
@@ -883,6 +899,9 @@ function QueueTaskSchedule({
   );
   const [scheduledTime, setScheduledTime] = useState("09:00");
   const [durationMinutes, setDurationMinutes] = useState(task.durationMinutes);
+  const [overrideSignature, setOverrideSignature] = useState<string | null>(
+    null,
+  );
   const [state, formAction, pending] = useActionState(
     async (_previous: QueueSchedulingState, formData: FormData) => {
       const result = await scheduleTaskForTodayAction(formData);
@@ -891,14 +910,25 @@ function QueueTaskSchedule({
     },
     initialQueueSchedulingState,
   );
-  const conflict = timedBlocks
-    .filter((block) => block.date === plannedDate)
-    .find((block) => {
-      const start = timeToMinutes(scheduledTime);
-      const end = start + durationMinutes;
-      return start < block.endMinutes && block.startMinutes < end;
-    });
+  const conflict = findVisibleSchedulingConflict(
+    {
+      durationMinutes,
+      plannedDate,
+      scheduledTime,
+      taskId: task.id,
+    },
+    timedBlocks,
+  );
   const sourceLabel = sourceTypeLabel(task.scheduleSourceType);
+  const conflictSignature = [
+    task.id,
+    plannedDate,
+    scheduledTime,
+    durationMinutes,
+    conflict?.title ?? "",
+    conflict?.timeLabel ?? "",
+  ].join(":");
+  const awaitingOverride = overrideSignature === conflictSignature;
 
   return (
     <section
@@ -995,28 +1025,62 @@ function QueueTaskSchedule({
           </label>
         </div>
 
-        {conflict ? (
+        {conflict && !awaitingOverride ? (
           <p
             className="rounded-[9px] border border-[rgba(221,107,95,.28)] bg-[rgba(221,107,95,.08)] px-2.5 py-2 text-[10px] leading-4 text-[var(--text-secondary)]"
             role="alert"
           >
-            Visible conflict with an already loaded block. Confirm the override
-            to keep this time.
+            Sichtbarer Konflikt mit {conflict.title}, {conflict.timeLabel}.
+            Standard-Speichern ist blockiert; prüfe den Konflikt für Abbrechen
+            oder bewusstes Terminieren.
           </p>
         ) : null}
         <button
           className={primaryActionButtonClass}
-          name={conflict ? "manualOverride" : undefined}
-          type="submit"
-          value={conflict ? "true" : undefined}
           disabled={pending || !plannedDate}
+          onClick={
+            conflict ? () => setOverrideSignature(conflictSignature) : undefined
+          }
+          type={conflict ? "button" : "submit"}
         >
           {pending
             ? "Scheduling …"
             : conflict
-              ? "Schedule anyway"
+              ? "Konflikt prüfen"
               : "Schedule task"}
         </button>
+        {conflict && awaitingOverride ? (
+          <div
+            className="grid gap-1 rounded-[9px] border border-[rgba(221,107,95,.28)] bg-[rgba(221,107,95,.08)] px-2.5 py-2"
+            role="alert"
+          >
+            <p className="text-[10px] leading-4 text-[var(--text-secondary)]">
+              Sichtbarer Konflikt mit {conflict.title}, {conflict.timeLabel}.
+            </p>
+            <p className="text-[10px] leading-4 text-[var(--text-muted)]">
+              Nur geladene Blöcke sind geprüft. Abbrechen erhält den Queue-Task;
+              Trotzdem terminieren verwendet den bestehenden kanonischen
+              Task-Zeitpfad.
+            </p>
+            <div className="grid gap-1 sm:grid-cols-2">
+              <button
+                className={secondaryActionButtonClass}
+                disabled={pending}
+                onClick={() => setOverrideSignature(null)}
+                type="button"
+              >
+                Abbrechen
+              </button>
+              <button
+                className={overrideActionButtonClass}
+                disabled={pending}
+                type="submit"
+              >
+                Trotzdem terminieren
+              </button>
+            </div>
+          </div>
+        ) : null}
         {state.message ? (
           <p
             className="rounded-[8px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-2 py-1 text-[10px] leading-4 text-[var(--text-secondary)]"

@@ -417,9 +417,9 @@ test("C2-02 uses pointer drag, move and resize through the canonical calendar ac
   const conflict = page.locator(
     '[data-calendar-section="pointer-scheduling-status"]',
   );
-  await expect(conflict).toContainText("Visible conflict");
+  await expect(conflict).toContainText("Sichtbarer Konflikt");
   await conflict
-    .getByRole("button", { name: "Cancel pointer scheduling" })
+    .getByRole("button", { name: "Abbrechen" })
     .click();
   await page.reload();
   await expect(conflictingBlock).toBeVisible();

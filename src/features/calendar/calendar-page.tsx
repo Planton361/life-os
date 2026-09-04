@@ -31,6 +31,7 @@ import {
   calendarBlockStatusLabels,
   calendarBlockTypeLabels,
 } from "./calendar-types";
+import { findVisibleSchedulingConflict } from "./calendar-visible-conflict";
 import {
   CalendarAllDayBlock,
   CalendarTimedBlock,
@@ -289,22 +290,13 @@ function pointerConflictForProposal(
   proposal: PointerSchedulingProposal,
   timedBlocks: readonly CalendarTimedBlockViewModel[],
 ) {
-  const candidateStart = timeToMinutes(proposal.scheduledTime);
-  const candidateEnd = candidateStart + proposal.durationMinutes;
-  const conflict = timedBlocks
-    .filter((block) => block.taskId !== proposal.taskId)
-    .filter((block) => block.date === proposal.plannedDate)
-    .find(
-      (block) =>
-        candidateStart < block.endMinutes && block.startMinutes < candidateEnd,
-    );
+  const conflict = findVisibleSchedulingConflict(proposal, timedBlocks);
 
   if (!conflict) return null;
 
   return {
     ...proposal,
-    conflictTimeLabel:
-      conflict.timeLabel ?? `${conflict.startTime}-${conflict.endTime}`,
+    conflictTimeLabel: conflict.timeLabel,
     conflictTitle: conflict.title,
   } satisfies PointerConflictProposal;
 }
@@ -334,12 +326,12 @@ function PointerSchedulingStatus({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="min-w-0">
             <p className="text-[11px] font-semibold text-[var(--text-secondary)]">
-              Visible conflict with {conflict.conflictTitle} at{" "}
+              Sichtbarer Konflikt mit {conflict.conflictTitle} um{" "}
               {conflict.conflictTimeLabel}.
             </p>
             <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
-              Pointer drop is paused. Confirm explicitly to use the existing
-              canonical task-time path; only loaded blocks are checked.
+              Der Pointer-Drop ist angehalten. Bestätige bewusst den bestehenden
+              kanonischen Task-Zeitpfad; geprüft werden nur geladene Blöcke.
             </p>
           </div>
           <div className="flex shrink-0 gap-1.5">
@@ -348,7 +340,7 @@ function PointerSchedulingStatus({
               onClick={onCancel}
               type="button"
             >
-              Cancel pointer scheduling
+              Abbrechen
             </button>
             <button
               className="min-h-8 rounded-full border border-[rgba(221,107,95,.34)] bg-[rgba(221,107,95,.12)] px-3 text-[10px] font-semibold text-[var(--text-primary)] transition hover:border-[rgba(221,107,95,.52)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-50"
@@ -356,7 +348,7 @@ function PointerSchedulingStatus({
               onClick={onConfirm}
               type="button"
             >
-              {pending ? "Saving …" : "Schedule anyway"}
+              {pending ? "Speichern …" : "Trotzdem terminieren"}
             </button>
           </div>
         </div>
@@ -1738,7 +1730,7 @@ export function CalendarPlanningPage({
               onSelectQueueTask={(taskId) =>
                 setSelection({ kind: "queue", taskId })
               }
-              scheduledTasks={viewModel.scheduledTasks}
+              scheduledTasks={timedBlocks}
               tasks={viewModel.schedulableTasks}
             />
           )}
