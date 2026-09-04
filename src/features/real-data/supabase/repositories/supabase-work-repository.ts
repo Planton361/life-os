@@ -1,7 +1,7 @@
 import type { WorkLogInput } from "../../schemas/work.schemas";
 import type { SupabaseClientLike } from "../database.types";
 import { mapWorkLogRow } from "../mappers/work-log.mapper";
-import type { WorkLog } from "@/features/work/work-log";
+import type { WorkLog } from "../../../work/work-log";
 export type WorkLogRecord = WorkLog;
 export type WorkWorkspace = { projects: Array<{ id: string; title: string; description: string | null; status: string; tasks: Array<{ id: string; title: string; status: string; dueAt: string | null }>; resources: Array<{ id: string; title: string; relationType: string }>; logs: WorkLogRecord[] }> };
 const fail = (error: string) => ({ error, ok: false as const });

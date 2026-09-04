@@ -280,11 +280,11 @@ C1 Core Work Graph
 |---|---|---|---|
 | Work projects/tasks | `CONNECTED` | A1 Target browser proof creates a user-owned Work-Area canonical Project and confirms its Core backlink after reload | maintain reload and same-user ownership proofs |
 | Work log | `CONNECTED` | A1 Target browser proof creates a user-scoped `work_logs` record and reloads it in the Manual workspace | automatic time tracking and analytics remain out of scope |
-| Work wiki | `CONNECTED_GAP` | A1 Target browser proof creates a canonical Work-Area Resource (`note`) with its Project context and reloads it | create-and-link is sequential, so a relation failure can leave a standalone Work Resource; no refactor in this slice |
+| Work wiki | `CONNECTED_GAP` | Z1 disposable DB/API and browser proof atomically creates a canonical Work-Area `note` Resource plus its optional Work-Project `context` relation; active same-user Work Area and Project ownership are enforced | deeper Wiki features remain deferred; no parallel knowledge model |
 | Meetings | `CONNECTED` | A1.1C2b user-scoped `work_meetings` with canonical Work-Project ownership, create/edit/soft archive and reload-stable historical Manual workspace | maintain meeting ownership and archive proofs |
 | Decisions | `CONNECTED` | A1.1C2a user-scoped `work_decisions` with Work-Project ownership, status, create/edit/archive and reload-stable history | maintain ownership and status proofs |
 | Follow-ups | `CONNECTED` | A1.1C2b canonical `tasks` linked by `work_meeting_followups`; Security-Invoker RPC atomically creates the owned Task and Meeting relation, while existing owned Tasks can link/unlink independently | no automatic Task completion or external sync |
-| Work dashboard | `CONNECTED_GAP` | Manual Work workspace reads canonical Projects, Tasks/Deadlines, Resources, Logs, Wiki, Decisions, Meetings and Meeting Follow-ups | Work Wiki create-and-link remains sequential and non-atomic |
+| Work dashboard | `CONNECTED_GAP` | Manual Work workspace reads canonical Projects, Tasks/Deadlines, Resources, Logs, atomically created Wiki, Decisions, Meetings and Meeting Follow-ups | deeper Wiki and Work-dashboard depth remain deferred |
 
 # 14. Life and Personal
 

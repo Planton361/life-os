@@ -1,17 +1,19 @@
 import type { WorkDecisionInput, WorkWikiInput } from "../../schemas/work.schemas";
-import type { SupabaseClientLike } from "../database.types";
+import type { Database, SupabaseClientLike, SupabaseQueryResult } from "../database.types";
+import type { ResourceRow } from "../row-types";
 import { mapWorkDecisionRow } from "../mappers/work-decision.mapper";
 import { createSupabaseWorkRepository } from "./supabase-work-repository";
-import type { WorkDecision, WorkWikiEntry } from "@/features/work/work-decision";
+import type { WorkDecision, WorkWikiEntry } from "../../../work/work-decision";
 
 const fail = (error: string) => ({ error, ok: false as const });
+type CreateWorkWikiArgs = Database["public"]["Functions"]["create_work_wiki_resource"]["Args"];
 
 export function createSupabaseWorkKnowledgeRepository(client: SupabaseClientLike) {
   const work = createSupabaseWorkRepository(client);
   async function project(userId: string, projectId: string) { const areaId = await work.ensureArea(userId); if (!areaId) return null; const result = await client.from("projects").select("id,title").eq("user_id", userId).eq("area_id", areaId).eq("id", projectId).is("archived_at", null).maybeSingle(); return result.data; }
   async function wiki(userId: string, resourceId: string) { const areaId = await work.ensureArea(userId); if (!areaId) return null; const result = await client.from("resources").select("id").eq("user_id", userId).eq("area_id", areaId).eq("type", "note").eq("id", resourceId).is("archived_at", null).maybeSingle(); return result.data; }
   return {
-    async createWiki(userId: string, input: WorkWikiInput) { const areaId = await work.ensureArea(userId); if (!areaId || input.projectId && !(await project(userId, input.projectId))) return fail("Work project unavailable."); const created = await client.from("resources").insert({ user_id: userId, area_id: areaId, type: "note", title: input.title, summary: input.body }).select("id").single(); if (created.error || !created.data) return fail("Work wiki create failed."); if (input.projectId) { const linked = await client.from("resource_relations").insert({ user_id: userId, resource_id: created.data.id, target_type: "project", target_id: input.projectId, relation_type: "context" }); if (linked.error) return fail("Work wiki link failed."); } return { data: created.data, ok: true as const }; },
+    async createWiki(userId: string, input: WorkWikiInput) { const areaId = await work.ensureArea(userId); if (!areaId) return fail("Work area unavailable."); const args: CreateWorkWikiArgs = { p_area_id: areaId, p_body: input.body, p_title: input.title }; if (input.projectId) args.p_project_id = input.projectId; const created = (await client.rpc("create_work_wiki_resource", args)) as SupabaseQueryResult<ResourceRow>; if (created.error || !created.data || created.data.user_id !== userId) return fail("Work wiki create failed."); return { data: { id: created.data.id }, ok: true as const }; },
     async updateWiki(userId: string, resourceId: string, input: WorkWikiInput) { if (!(await wiki(userId, resourceId))) return fail("Work wiki unavailable."); const result = await client.from("resources").update({ title: input.title, summary: input.body }).eq("user_id", userId).eq("id", resourceId).select("id").maybeSingle(); return result.error || !result.data ? fail("Work wiki update failed.") : { data: result.data, ok: true as const }; },
     async archiveWiki(userId: string, resourceId: string) { if (!(await wiki(userId, resourceId))) return fail("Work wiki unavailable."); const result = await client.from("resources").update({ archived_at: new Date().toISOString() }).eq("user_id", userId).eq("id", resourceId).is("archived_at", null).select("id").maybeSingle(); return result.error || !result.data ? fail("Work wiki archive failed.") : { data: result.data, ok: true as const }; },
     async createDecision(userId: string, input: WorkDecisionInput) { if (!(await project(userId, input.projectId))) return fail("Work project unavailable."); const result = await client.from("work_decisions").insert({ user_id: userId, project_id: input.projectId, decision_date: input.decisionDate, title: input.title, decision: input.decision, rationale: input.rationale ?? null, status: input.status }).select("id").single(); return result.error || !result.data ? fail("Work decision create failed.") : { data: result.data, ok: true as const }; },

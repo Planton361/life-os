@@ -2840,6 +2840,34 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_work_wiki_resource: {
+        Args: {
+          p_area_id: string
+          p_body: string
+          p_project_id?: string
+          p_title: string
+        }
+        Returns: {
+          archived_at: string | null
+          area_id: string | null
+          created_at: string
+          id: string
+          review_needed: boolean
+          source: string | null
+          summary: string | null
+          title: string
+          type: Database["public"]["Enums"]["resource_type"]
+          updated_at: string
+          url: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "resources"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       create_work_meeting_followup: {
         Args: { p_description?: string; p_meeting_id: string; p_title: string }
         Returns: string
