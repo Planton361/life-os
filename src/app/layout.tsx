@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { ToastProvider } from "@/components/feedback/toast-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -14,7 +15,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="de">
-      <body>{children}</body>
+      <body><ToastProvider>{children}</ToastProvider></body>
     </html>
   );
 }

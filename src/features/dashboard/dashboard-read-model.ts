@@ -66,6 +66,29 @@ export function dashboardLocalDayProgress(
   };
 }
 
+/** Calendar progress only: month, ISO week and local day. No task or profile data. */
+export function dashboardCalendarTimeProgress(
+  date = new Date(),
+  timeZone = dashboardTimeZone,
+) {
+  const { date: localDate, hour, minute } = zonedParts(date, timeZone);
+  const [year, month, day] = localDate.split("-").map(Number);
+  const elapsedDayMinutes = hour * 60 + minute;
+  const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+  const mondayOffset = weekday === 0 ? 6 : weekday - 1;
+  const elapsedWeekMinutes = mondayOffset * 24 * 60 + elapsedDayMinutes;
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const elapsedMonthMinutes = (day - 1) * 24 * 60 + elapsedDayMinutes;
+  const percentage = (elapsed: number, total: number) =>
+    Math.max(0, Math.min(100, Math.round((elapsed / total) * 100)));
+
+  return [
+    { label: "Month", progress: percentage(elapsedMonthMinutes, daysInMonth * 24 * 60) },
+    { label: "Week", progress: percentage(elapsedWeekMinutes, 7 * 24 * 60) },
+    { label: "Day", progress: percentage(elapsedDayMinutes, 24 * 60) },
+  ].map((row) => ({ ...row, value: `${row.progress}%` }));
+}
+
 function taskTimeRank(task: LifeTask) {
   return task.startTime ?? "99:99";
 }

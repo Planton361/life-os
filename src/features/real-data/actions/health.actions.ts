@@ -9,25 +9,31 @@ import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cooki
 import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
 
 function value(formData: FormData, key: string) { const item = formData.get(key); return typeof item === "string" ? item.trim() : ""; }
+function moodTarget(formData: FormData) {
+  const path = value(formData, "returnTo") === "/health/mental" ? "/health/mental" : "/dashboard";
+  const window = value(formData, "dashboardWindow");
+  return path === "/dashboard" && ["Morning", "Midday", "Evening"].includes(window) ? `${path}?habitWindow=${window}` : path;
+}
+function feedbackTarget(target: string, state: string) { return `${target}${target.includes("?") ? "&" : "?"}health=${state}`; }
 function revalidateHealth() { revalidatePath("/dashboard"); revalidatePath("/health"); revalidatePath("/health/mental"); }
 async function context(target: string) {
-  if ((await getCurrentLifeOsProfileId()) !== "manual") redirect(`${target}?health=blocked`);
+  if ((await getCurrentLifeOsProfileId()) !== "manual") redirect(feedbackTarget(target, "blocked"));
   const auth = await createAuthenticatedSupabaseServerClient();
-  if (!auth.ok) redirect(`${target}?health=blocked`);
+  if (!auth.ok) redirect(feedbackTarget(target, "blocked"));
   return { repository: createSupabaseHealthRepository(auth.client), userId: auth.user.id };
 }
-function finish(target: string, state: "saved" | "error"): never { revalidateHealth(); redirect(`${target}?health=${state}`); }
+function finish(target: string, state: "saved" | "error"): never { revalidateHealth(); redirect(feedbackTarget(target, state)); }
 
 export async function saveMoodAction(formData: FormData) {
-  const target = value(formData, "returnTo") || "/dashboard";
+  const target = moodTarget(formData);
   const parsed = moodEntryInputSchema.safeParse({ mood: value(formData, "mood").toLowerCase(), localDate: dashboardLocalDate(), timezone: dashboardTimeZone });
-  if (!parsed.success) redirect(`${target}?health=validation`);
+  if (!parsed.success) redirect(feedbackTarget(target, "validation"));
   const { repository, userId } = await context(target);
   if (!(await repository.ensureProfile(userId, userId))) finish(target, "error");
   finish(target, (await repository.addMood(userId, userId, parsed.data)) ? "saved" : "error");
 }
 export async function undoTodayMoodAction(formData: FormData) {
-  const target = value(formData, "returnTo") || "/dashboard";
+  const target = moodTarget(formData);
   const { repository, userId } = await context(target);
   if (!(await repository.ensureProfile(userId, userId))) finish(target, "error");
   finish(target, (await repository.undoTodayMood(userId, userId, dashboardLocalDate())) ? "saved" : "error");

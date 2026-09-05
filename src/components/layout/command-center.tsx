@@ -1,14 +1,15 @@
 "use client";
 
+import { dashboardMoodOptions } from "@/features/dashboard/mood-options";
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useActionState, useEffect, useRef, useState } from "react";
 import {
   captureDashboardQuickThoughtAction,
 } from "@/features/profile-data/actions";
 import { saveMoodAction } from "@/features/real-data/actions/health.actions";
-import { completeTaskFormAction } from "@/features/real-data/actions/task.actions";
+import { completeTaskFormStateAction } from "@/features/real-data/actions/task.actions";
 import { initialDashboardActionState } from "@/features/profile-data/dashboard-action-state";
 import type {
   DashboardCommandCenterMeta,
@@ -22,6 +23,7 @@ import type {
 import { resolveContentStateMeta } from "@/features/content-state";
 import { contentStateAttrs } from "@/components/dashboard/sections/section-primitives";
 import { cn } from "@/lib/cn";
+import { useToast } from "@/components/feedback/toast-provider";
 
 const DASHBOARD_LINK_FOCUS_CLASSES =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-cyan)]";
@@ -177,13 +179,15 @@ function QuickThought({
   );
   const formRef = useRef<HTMLFormElement>(null);
   const router = useRouter();
+  const { notify } = useToast();
 
   useEffect(() => {
     if (state.status === "success") {
       formRef.current?.reset();
       router.refresh();
+      notify(state.message, "success");
     }
-  }, [router, state.status]);
+  }, [notify, router, state.message, state.status]);
 
   return (
     <section
@@ -219,9 +223,6 @@ function QuickThought({
           name="content"
           placeholder={data.placeholder}
         />
-        <p className="mt-2 text-[9px] font-medium text-[var(--text-faint)]">
-          {data.helperText}
-        </p>
         <input name="kind" type="hidden" value={data.activeKind} />
         <div className="mt-2 flex items-center gap-2">
           <button
@@ -235,31 +236,18 @@ function QuickThought({
             {pending ? "Saving..." : data.captureLabel}
           </button>
         </div>
-        {state.message ? (
+        {state.message && state.status !== "success" ? (
           <p
             className={cn(
               "mt-2 text-[9px] font-semibold leading-4",
-              state.status === "success"
-                ? "text-[var(--accent-green)]"
-                : state.status === "blocked"
+              state.status === "blocked"
                   ? "text-[var(--accent-orange)]"
                   : "text-[var(--text-muted)]",
             )}
-            role={state.status === "success" ? "status" : "alert"}
+            role="alert"
           >
             {state.message}
           </p>
-        ) : null}
-        {state.status === "success" ? (
-          <Link
-            className={cn(
-              "mt-1 inline-flex text-[9px] font-semibold text-[var(--accent-cyan)]",
-              DASHBOARD_LINK_FOCUS_CLASSES,
-            )}
-            href="/inbox"
-          >
-            Inbox öffnen
-          </Link>
         ) : null}
       </form>
     </section>
@@ -285,6 +273,17 @@ function DailyControlCurrentTask({
   profileId: DashboardCommandCenterViewModel["profileId"];
   task: DashboardCurrentTask;
 }>) {
+  const [completionState, completeTask, completionPending] = useActionState(
+    completeTaskFormStateAction,
+    { message: "", status: "success" },
+  );
+  const { notify } = useToast();
+  const router = useRouter();
+  useEffect(() => {
+    if (!completionState.message) return;
+    notify(completionState.message, completionState.status === "success" ? "success" : "error");
+    if (completionState.status === "success") router.refresh();
+  }, [completionState, notify, router]);
   const canComplete =
     profileId === "manual" &&
     task.taskLifecycle &&
@@ -333,7 +332,7 @@ function DailyControlCurrentTask({
           </span>
         )}
         {canComplete ? (
-          <form action={completeTaskFormAction}>
+          <form action={completeTask}>
             <input
               name="taskId"
               type="hidden"
@@ -344,6 +343,7 @@ function DailyControlCurrentTask({
                 "min-h-[24px] rounded-full border border-[rgba(66,184,131,.32)] bg-[rgba(66,184,131,.14)] px-2.5 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[rgba(66,184,131,.48)] hover:text-[var(--text-primary)]",
                 DASHBOARD_LINK_FOCUS_CLASSES,
               )}
+              disabled={completionPending}
               type="submit"
             >
               Abschließen
@@ -510,7 +510,7 @@ function TimeProgress({
     data.timeProgressHref && `block ${DASHBOARD_LINK_FOCUS_CLASSES}`,
   );
   const content = (
-    <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_96px]">
+    <div className="grid gap-3 min-[2400px]:grid-cols-[minmax(0,1fr)_96px]">
       <div>
         <h2
           className="text-xs font-medium text-[var(--text-secondary)]"
@@ -539,7 +539,7 @@ function TimeProgress({
           ))}
         </div>
       </div>
-      <div className="rounded-[18px] border border-[rgba(95,200,215,.10)] bg-[rgba(95,200,215,.07)] p-2 text-center">
+      <div className="hidden min-[2400px]:block rounded-[18px] border border-[rgba(95,200,215,.10)] bg-[rgba(95,200,215,.07)] p-2 text-center">
         <div
           aria-hidden="true"
           className="mx-auto h-6 w-12 rounded-full bg-[rgba(95,200,215,.30)]"
@@ -585,6 +585,7 @@ function MoodBoard({
   data: DashboardCommandCenterMeta;
   profileId: DashboardCommandCenterViewModel["profileId"];
 }>) {
+  const searchParams = useSearchParams();
   const [activeMood, setActiveMood] = useState(data.moodCheck.activeOption);
   const activeMoodTone = moodToneFor(activeMood);
   const moodAccent = activeMoodTone.accent;
@@ -594,7 +595,7 @@ function MoodBoard({
   return (
     <section
       aria-labelledby="mood-title"
-      className="relative isolate h-full overflow-hidden rounded-[var(--panel-radius)] border border-[color-mix(in_srgb,var(--accent)_20%,transparent)] bg-[color-mix(in_srgb,var(--accent)_8%,#0d1625)] p-2.5 shadow-[0_10px_26px_rgba(0,0,0,.14)]"
+      className="dashboard-mood relative isolate h-full rounded-[var(--panel-radius)] border border-[color-mix(in_srgb,var(--accent)_20%,transparent)] bg-[color-mix(in_srgb,var(--accent)_8%,#0d1625)] p-2.5 shadow-[0_10px_26px_rgba(0,0,0,.14)]"
       style={accentStyle(moodAccent)}
       {...contentStateAttrs(
         {
@@ -605,7 +606,7 @@ function MoodBoard({
         profileId,
       )}
     >
-      <div className="relative z-10 grid h-full gap-2 sm:grid-cols-[118px_minmax(0,1fr)] sm:items-center">
+      <div className="relative z-10 grid h-full gap-2 sm:grid-cols-[85px_minmax(0,1fr)] sm:items-center">
         <div className="flex h-full flex-col justify-center">
           <p className="text-[10px] font-semibold uppercase text-[color-mix(in_srgb,var(--accent)_86%,var(--text-secondary))]">
             {data.moodCheck.eyebrow}
@@ -666,9 +667,10 @@ function MoodBoard({
             />
           </div>
           {sourceAvailable ? (
-            <form action={saveMoodAction} className="mt-1.5 grid grid-cols-3 gap-1">
+            <form action={saveMoodAction} className="mt-1.5 grid grid-cols-3 gap-1 [&>button]:min-w-0">
               <input type="hidden" name="returnTo" value="/dashboard" />
-              {data.moodCheck.options.map((mood) => {
+              <input type="hidden" name="dashboardWindow" value={searchParams.get("habitWindow") ?? ""} />
+              {dashboardMoodOptions.map((mood) => {
                 const moodTone = moodToneFor(mood);
 
                 return (
@@ -688,7 +690,6 @@ function MoodBoard({
                     type="submit"
                     value={mood}
                   >
-                    {mood === activeMood ? "Set · " : ""}
                     {mood}
                   </button>
                 );
@@ -716,7 +717,7 @@ export function CommandCenter({
       {...contentStateAttrs(data.commandCenter.contentState, data.profileId)}
     >
       <div className="rounded-[var(--panel-radius)] border border-[rgba(95,200,215,.14)] bg-[color-mix(in_srgb,var(--accent-blue)_4%,rgba(12,20,34,.94))] p-3 shadow-[0_10px_26px_rgba(0,0,0,.14)]">
-        <div className="grid gap-3 min-[2400px]:h-[var(--top-zone-height)] min-[2400px]:grid-cols-[580px_278px_minmax(700px,1fr)_600px] min-[2400px]:items-start min-[2400px]:gap-[9px] min-[2400px]:overflow-hidden">
+        <div className="grid gap-3 min-[1800px]:h-[var(--top-zone-height)] min-[1800px]:grid-cols-[minmax(0,1.15fr)_220px_minmax(0,1.35fr)_minmax(340px,1fr)] min-[1800px]:items-start min-[1800px]:overflow-hidden min-[2400px]:grid-cols-[minmax(0,1.1fr)_278px_minmax(0,1.4fr)_minmax(0,1.1fr)] min-[2400px]:gap-[9px]">
           <section
             aria-label="Command Center Stats"
             className="p-1 2xl:h-[265px] 2xl:overflow-hidden"
@@ -742,7 +743,7 @@ export function CommandCenter({
           <QuickThought data={data.quickCapture} profileId={data.profileId} />
           <DailyControl data={data.dailyControl} profileId={data.profileId} />
 
-          <div className="grid h-[265px] grid-rows-[92px_minmax(0,1fr)] gap-3 overflow-hidden">
+          <div className="dashboard-signals grid min-h-[265px] grid-rows-[110px_minmax(0,1fr)] gap-3">
             <TimeProgress
               data={data.commandCenter}
               profileId={data.profileId}

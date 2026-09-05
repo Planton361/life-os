@@ -179,15 +179,17 @@ function calculateWeekStatus(
 }
 
 export function MealPlannerView({
+  initialSelectedSlot = null,
   viewModel,
 }: Readonly<{
+  initialSelectedSlot?: SelectedMealSlot | null;
   viewModel: MealPlannerViewModel;
 }>) {
   const profileId = viewModel.profileId ?? "demo";
   const actionsEnabled = viewModel.actionsEnabled ?? true;
   const [weekOffset, setWeekOffset] = useState(0);
   const [week, setWeek] = useState(viewModel.week);
-  const [selectedSlot, setSelectedSlot] = useState<SelectedMealSlot | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<SelectedMealSlot | null>(initialSelectedSlot);
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [activeProfileId, setActiveProfileId] = useState(viewModel.defaultProfileId);
   const [filter, setFilter] = useState<RecipeFilter>("all");

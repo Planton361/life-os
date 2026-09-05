@@ -1,13 +1,10 @@
 "use client";
 
+import { useState } from "react";
+import type { CalendarViewModel } from "@/features/calendar/calendar-types";
+import { dashboardAgendaDays, dashboardAgendaBlocks, type DashboardAgendaView } from "@/features/dashboard/agenda-period";
 import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
-import { useActionState, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import {
-  createDashboardTaskAction,
-} from "@/features/profile-data/actions";
-import { initialDashboardActionState } from "@/features/profile-data/dashboard-action-state";
 import {
   type DashboardAgendaEvent,
   type DashboardProfileId,
@@ -20,14 +17,6 @@ import {
   contentStateAttrs,
   styleFor,
 } from "./section-primitives";
-import {
-  DashboardDialog,
-  SelectField,
-  TextAreaField,
-  TextField,
-  dashboardActionButtonClass,
-  dashboardPrimaryButtonClass,
-} from "./dashboard-dialog";
 
 type AgendaSlotStyle = CSSProperties & {
   "--agenda-top"?: string;
@@ -136,24 +125,23 @@ function agendaEventBackground(status: DashboardAgendaEvent["status"]) {
   return "color-mix(in srgb, var(--accent) 16%, #0d1625)";
 }
 
-function AgendaViewSwitch({
-  agenda,
-}: Readonly<{
-  agenda: DashboardTodayAgenda;
-}>) {
+function AgendaViewSwitch({ activeView, onChange }: { activeView: DashboardAgendaView; onChange: (view: DashboardAgendaView) => void }) {
   return (
     <div className="flex w-[286px] max-w-full rounded-full border border-[rgba(91,124,250,.24)] bg-[#0d1727] p-1 text-center text-[10px] font-medium text-[var(--text-muted)]">
-      {agenda.views.map((view) => (
-        <span
+      {(["Day", "Week", "Month"] as const).map((view) => (
+        <button type="button"
+          aria-pressed={view === activeView}
           className={cn(
             "flex-1 rounded-full px-3 py-1.5",
-            view === agenda.activeView &&
+            view === activeView &&
               "border border-[rgba(91,124,250,.34)] bg-[rgba(91,124,250,.13)] text-[var(--text-secondary)]",
+            DASHBOARD_LINK_FOCUS_CLASSES,
           )}
+          onClick={() => onChange(view)}
           key={view}
         >
           {view}
-        </span>
+        </button>
       ))}
     </div>
   );
@@ -165,10 +153,10 @@ function AgendaHourRail({
   hours: DashboardTodayAgenda["hours"];
 }>) {
   return (
-    <div className="overflow-hidden rounded-[14px] border border-[var(--border-subtle)] bg-[#0b1423] py-2">
+    <div className="flex flex-col justify-between rounded-[14px] border border-[var(--border-subtle)] bg-[#0b1423] py-2">
       {hours.map((time) => (
         <div
-          className="flex h-8 items-start justify-end pr-2 text-[11px] font-medium text-[var(--text-secondary)] 2xl:h-[40.35px]"
+          className="flex items-start justify-end pr-2 text-[11px] leading-none font-medium text-[var(--text-secondary)]"
           key={time}
         >
           {time}
@@ -278,139 +266,18 @@ function AgendaPill({
   );
 }
 
-function AddTaskDialog({
-  onClose,
-  profileId,
-}: Readonly<{
-  onClose: () => void;
-  profileId: DashboardProfileId;
-}>) {
-  const [state, formAction, pending] = useActionState(
-    createDashboardTaskAction,
-    initialDashboardActionState,
-  );
-  const router = useRouter();
-
-  useEffect(() => {
-    if (state.status === "success") {
-      router.refresh();
-      onClose();
-    }
-  }, [onClose, router, state.status]);
-
-  return (
-    <DashboardDialog
-      labelledBy="agenda-add-task-dialog-heading"
-      onClose={onClose}
-      open
-    >
-      <form action={formAction}>
-        <div className="border-b border-[var(--border-subtle)] px-5 py-4">
-          <h2
-            className="text-lg font-semibold text-[var(--text-primary)]"
-            id="agenda-add-task-dialog-heading"
-          >
-            Add task
-          </h2>
-          <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
-            {profileId === "manual"
-              ? "Speichert eine lokale Aufgabe und projiziert sie in Agenda, Today und Calendar."
-              : "Wechsle ins Manual-Profil, um lokale Aufgaben zu speichern."}
-          </p>
-        </div>
-        <div className="grid gap-3 p-5 sm:grid-cols-2">
-          <TextField label="Title" name="title" placeholder="Task title" />
-          <SelectField defaultValue="review" label="Label / Area" name="area">
-            <option value="review">Review</option>
-            <option value="education">Education</option>
-            <option value="work">Work</option>
-            <option value="coding">Coding</option>
-            <option value="health">Health</option>
-            <option value="nutrition">Nutrition</option>
-            <option value="personal">Personal</option>
-          </SelectField>
-          <div className="sm:col-span-2">
-            <TextAreaField
-              label="Description"
-              name="description"
-              optional
-              placeholder="What should be true when this block is done?"
-            />
-          </div>
-          <TextField
-            defaultValue="30 min"
-            label="Time block"
-            name="timeBlock"
-            placeholder="30 min"
-          />
-          <SelectField defaultValue="P2" label="Priority" name="priority">
-            <option value="P0">P0</option>
-            <option value="P1">P1</option>
-            <option value="P2">P2</option>
-            <option value="P3">P3</option>
-          </SelectField>
-          <TextField
-            defaultValue="16:30"
-            label="Start time"
-            name="startTime"
-            type="time"
-          />
-          <TextField
-            defaultValue="17:00"
-            label="End time"
-            name="endTime"
-            type="time"
-          />
-          <label className="flex items-center gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(168,183,204,.05)] px-3 py-2 text-[10px] font-semibold text-[var(--text-muted)] sm:col-span-2">
-            <input disabled type="checkbox" />
-            Find free block later
-          </label>
-        </div>
-        {state.message ? (
-          <p
-            className={cn(
-              "px-5 pb-2 text-[11px] font-semibold",
-              state.status === "success"
-                ? "text-[var(--accent-green)]"
-                : state.status === "blocked"
-                  ? "text-[var(--accent-orange)]"
-                  : "text-[var(--text-muted)]",
-            )}
-            role={state.status === "success" ? "status" : "alert"}
-          >
-            {state.message}
-          </p>
-        ) : null}
-        <div className="flex justify-end gap-2 border-t border-[var(--border-subtle)] px-5 py-4">
-          <button
-            className={dashboardActionButtonClass}
-            onClick={onClose}
-            type="button"
-          >
-            Cancel
-          </button>
-          <button
-            className={dashboardPrimaryButtonClass}
-            disabled={pending}
-            type="submit"
-          >
-            {pending ? "Saving..." : "Save"}
-          </button>
-        </div>
-      </form>
-    </DashboardDialog>
-  );
-}
-
 export function TodayAgenda({
+  calendar,
   data,
   profileId,
 }: Readonly<{
+  calendar: CalendarViewModel;
   data: DashboardTodayAgenda;
   profileId: DashboardProfileId;
 }>) {
+  const [activeView, setActiveView] = useState<DashboardAgendaView>("Day");
+  const today = calendar.days.find(day => day.isToday)?.date ?? calendar.days[0]?.date ?? "";
   const events = data.events;
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
   const title = data.href ? (
     <Link
       className={cn("rounded-sm", DASHBOARD_LINK_FOCUS_CLASSES)}
@@ -425,10 +292,10 @@ export function TodayAgenda({
   return (
     <section
       aria-labelledby="today-agenda-title"
-      className="overflow-hidden rounded-[var(--panel-radius)] border border-[rgba(91,124,250,.34)] bg-[color-mix(in_srgb,var(--accent-blue)_4%,#0e1828)] shadow-[0_16px_40px_rgba(0,0,0,.24)] 2xl:h-[820px]"
+      className="dashboard-agenda flex min-h-0 flex-col overflow-hidden rounded-[var(--panel-radius)] border border-[rgba(91,124,250,.34)] bg-[color-mix(in_srgb,var(--accent-blue)_4%,#0e1828)] shadow-[0_16px_40px_rgba(0,0,0,.24)]"
       {...contentStateAttrs(data.contentState, profileId)}
     >
-      <div className="border-b border-[var(--border-subtle)] bg-[rgba(14,23,38,.82)] px-5 py-4 2xl:h-[86px] 2xl:px-[30px] 2xl:py-0">
+      <div className="border-b border-[var(--border-subtle)] bg-[rgba(14,23,38,.82)] px-5 py-4 2xl:h-[86px] 2xl:px-[30px]">
         <div className="flex flex-wrap items-center justify-between gap-4 2xl:h-full">
           <h2
             className="text-[28px] font-semibold text-[var(--text-primary)]"
@@ -437,23 +304,16 @@ export function TodayAgenda({
             {title}
           </h2>
           <div className="flex flex-wrap items-center gap-6">
-            <AgendaViewSwitch agenda={data} />
-            <button
-              className={cn(
-                "rounded-full border border-[rgba(91,124,250,.28)] bg-[rgba(91,124,250,.12)] px-3 py-1.5 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[rgba(91,124,250,.40)] hover:text-[var(--text-primary)]",
-                DASHBOARD_LINK_FOCUS_CLASSES,
-              )}
-              onClick={() => setAddDialogOpen(true)}
-              type="button"
-            >
-            Task anlegen
-            </button>
+            <AgendaViewSwitch activeView={activeView} onChange={setActiveView} />
           </div>
         </div>
       </div>
-      <div className="relative grid h-[clamp(560px,54vh,650px)] min-h-0 grid-cols-[56px_minmax(0,1fr)] gap-3 p-3 2xl:mt-[6px] 2xl:h-[780px] 2xl:grid-cols-[64px_minmax(0,1fr)] 2xl:gap-5 2xl:px-[22px] 2xl:py-0">
+      {activeView === "Day" ? <div className="agenda-body relative grid h-[clamp(560px,54vh,650px)] min-h-0 grid-cols-[56px_minmax(0,1fr)] gap-3 p-3 2xl:grid-cols-[64px_minmax(0,1fr)] 2xl:gap-5 2xl:px-[22px]">
         <AgendaHourRail hours={data.hours} />
         <div className="relative min-h-0 overflow-hidden rounded-[16px] border border-[rgba(91,124,250,.16)] bg-[color-mix(in_srgb,var(--accent-blue)_4%,#0b1423)] p-2.5">
+          <div aria-hidden="true" data-agenda-hour-lines className="pointer-events-none absolute inset-x-0 inset-y-2 flex flex-col justify-between">
+            {data.hours.map((hour) => <div key={hour} className="border-t border-[rgba(148,163,184,.10)]" />)}
+          </div>
           <div
             aria-hidden="true"
             className="absolute left-0 right-0 z-10 h-0.5 bg-[rgba(221,107,95,.95)]"
@@ -489,13 +349,24 @@ export function TodayAgenda({
             )}
           </div>
         </div>
-      </div>
-      {addDialogOpen ? (
-        <AddTaskDialog
-          onClose={() => setAddDialogOpen(false)}
-          profileId={profileId}
-        />
-      ) : null}
+      </div> : (
+        <div className={`dashboard-agenda-period min-h-0 flex-1 overflow-auto p-3 ${activeView === "Month" ? "grid grid-cols-7 grid-rows-6 gap-1" : "grid grid-cols-1 auto-rows-fr gap-2"}`} data-agenda-view={activeView}>
+          {dashboardAgendaDays(today, activeView).map(day => {
+            const blocks = dashboardAgendaBlocks(calendar, day.date);
+            return <section key={day.date} aria-label={day.date} className="min-w-0 overflow-auto rounded-lg border border-[var(--border-subtle)] p-2">
+              <Link href={`/calendar?view=day&date=${day.date}`} className={`text-xs font-semibold ${day.date === today ? "text-[var(--accent-cyan)]" : "text-[var(--text-secondary)]"}`}>
+                {new Date(`${day.date}T12:00:00Z`).toLocaleDateString("de-DE", { day: "numeric", month: activeView === "Week" ? "short" : undefined, weekday: "short", timeZone: "UTC" })}
+              </Link>
+              <div className="mt-2 space-y-1">
+                {blocks.map(block => <Link key={block.id} href={block.sourceEntity.href ?? `/calendar?view=day&date=${day.date}`} className="block rounded border-l-2 border-[var(--accent-blue)] bg-[var(--surface-2)] p-1 text-[10px] text-[var(--text-secondary)]">
+                  {"startTime" in block ? `${block.startTime} · ` : ""}{block.title}
+                </Link>)}
+                {!blocks.length && <p className="text-[10px] text-[var(--text-muted)]">—</p>}
+              </div>
+            </section>;
+          })}
+        </div>
+      )}
     </section>
   );
 }

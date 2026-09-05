@@ -93,7 +93,7 @@ export function ActivePortfolio({
 
   return (
     <Panel
-      className="border-[rgba(91,124,250,.16)] bg-[color-mix(in_srgb,var(--accent-blue)_4%,#101827)] 2xl:h-[515px]"
+      className="dashboard-portfolio border-[rgba(91,124,250,.16)] bg-[color-mix(in_srgb,var(--accent-blue)_4%,#101827)]"
       headerAccessory={headerCounters}
       stateAttrs={contentStateAttrs(
         {
@@ -145,12 +145,12 @@ export function ActivePortfolio({
             </div>
           </div>
         </div>
-        <div className="grid gap-3 2xl:grid-cols-[263px_263px] 2xl:gap-3">
+        <div className="portfolio-slots grid grid-cols-2 auto-rows-fr gap-3">
           {visibleProjects.map((project) => (
               <Link
                 aria-label={`Open portfolio item: ${project.title}`}
                 className={cn(
-                  "block rounded-[13px] border p-3 2xl:min-h-[130px] 2xl:p-2.5",
+                  "min-w-0 block rounded-[13px] border p-3 2xl:min-h-[130px] 2xl:p-2.5",
                   DASHBOARD_LINK_FOCUS_CLASSES,
                 )}
                 href={project.href ?? data.href ?? "/portfolio?status=active"}
@@ -195,28 +195,11 @@ export function ActivePortfolio({
                 </div>
               </Link>
           ))}
-          {activeViewCount < 4 ? (
-            <Link
-              aria-label="Create project"
-              className={cn(
-                "grid rounded-[13px] border border-dashed border-[rgba(91,124,250,.24)] bg-[color-mix(in_srgb,var(--accent-blue)_4%,#101a2a)] p-3 2xl:min-h-[130px] 2xl:p-2.5",
-                DASHBOARD_LINK_FOCUS_CLASSES,
-              )}
-              href="/settings"
-            >
-              <div className="self-center text-center">
-                <p className="text-lg font-semibold leading-none text-[var(--text-primary)]">
-                  +
-                </p>
-                <p className="mt-2 text-[10px] font-semibold text-[var(--text-primary)]">
-                  Add Project
-                </p>
-                <p className="mt-1 text-[9px] font-semibold text-[var(--text-muted)]">
-                  {activeViewCount}/4
-                </p>
-              </div>
+          {Array.from({ length: 4 - activeViewCount }, (_, index) => (
+            <Link href={`/portfolio?view=${kindForPortfolioView(activeView)}s#portfolio-contextual-create-heading`} aria-label={`${kindForPortfolioView(activeView)} erstellen`} key={`empty-${index}`} data-portfolio-placeholder className="grid min-h-[130px] place-items-center rounded-[13px] border border-dashed border-[var(--border-subtle)] p-3 text-center text-[10px] text-[var(--text-muted)]">
+              + {kindForPortfolioView(activeView) === "project" ? "Projekt" : kindForPortfolioView(activeView) === "goal" ? "Ziel" : "Skill"} erstellen
             </Link>
-          ) : null}
+          ))}
         </div>
       </div>
     </Panel>

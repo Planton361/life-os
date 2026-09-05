@@ -88,12 +88,10 @@ export function getSystemTimeProgress(now = new Date()): DashboardTimeProgressRo
 
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  const yearStart = new Date(now.getFullYear(), 0, 1);
-  const yearEnd = new Date(now.getFullYear() + 1, 0, 1);
   const rows = [
-    { label: "Week", progress: percentBetween(weekStart, weekEnd, now) },
     { label: "Month", progress: percentBetween(monthStart, monthEnd, now) },
-    { label: "Year", progress: percentBetween(yearStart, yearEnd, now) },
+    { label: "Week", progress: percentBetween(weekStart, weekEnd, now) },
+    { label: "Day", progress: Math.round(((now.getHours() * 60 + now.getMinutes()) / (24 * 60)) * 100) },
   ];
 
   return rows.map((row) => ({

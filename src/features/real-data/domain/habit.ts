@@ -122,3 +122,8 @@ export function localTimeInTimeZone(date: Date, timeZone: string) {
     timeZone,
   }).format(date);
 }
+
+/** Clamp the final step to the remaining daily target. */
+export function habitIncrementValue(current: number, target: number | null, increment: number) {
+  return target === null ? increment : Math.max(0, Math.min(increment, target - current));
+}

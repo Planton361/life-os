@@ -73,6 +73,7 @@ export type ManualMood = {
 };
 
 export type ManualMealSlot = {
+  recipeId?: string;
   id: string;
   type: Exclude<MealType, "Snack">;
   state: DashboardMealSlotState;

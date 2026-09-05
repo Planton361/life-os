@@ -33,7 +33,7 @@ Implementation status and product visibility are separate truths: `CONNECTED` co
 
 | Surface / domain | Boundary | Current implementation truth | Visibility truth / next action |
 |---|---|---|---|
-| Dashboard | `ACTIVE` | `CONNECTED_GAP`: technical projections exist, but visible-control and layout acceptance failed | R2-01 daily control/quick logging and full control inventory |
+| Dashboard | `ACTIVE` | `CONNECTED`: R2-01 implementation evidence plus explicit USER ACCEPTED on 2026-09-06 | maintain accepted Dashboard |
 | Inbox | `ACTIVE` | `CONNECTED_GAP`: technical triage paths exist, but search/edit/persistence/flow acceptance failed | R2-02 real triage surface |
 | Today | `ACTIVE` | `CONNECTED_GAP`: technical daily paths exist; role correction and current surface acceptance pending | R2-03 daily-log role |
 | Calendar | `ACTIVE` | `CONNECTED_GAP`: technical scheduling exists; Day/Week/Month controls and viewport acceptance pending | R2-03 real temporal surface |
@@ -68,32 +68,112 @@ C1 Core Work Graph
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
 | SR1-04 personal Target runtime | `CONNECTED` | personal transfer, candidate-volume preservation, same-user reauthorization, authenticated read/write proof and persistent default-runtime Target switch passed | maintain Target as canonical local runtime; Source is `LEGACY_FALLBACK_READ_ONLY` |
-| Quick Thought → Inbox | `CONNECTED_GAP` | Inbox capture action and historical reload proof remain | add global success toast and current surface proof in R2-01 |
+| Quick Thought → Inbox | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Tasks Today summary | `CONNECTED` | central server-side Dashboard task projection; completed/open count semantics | maintain |
 | Focus Time summary | `UI_ONLY` | honest unavailable source state | add canonical focus/deep-work classification before deriving minutes |
 | Inbox summary | `CONNECTED` | user-scoped inbox items in Dashboard Read Model | maintain |
 | Nutrition summary | `CONNECTED_GAP` | today's meals and completed-meal recipe estimates | portion/target semantics remain separate |
 | Review Status summary | `CONNECTED` | canonical current Daily/Weekly Review records and navigation | maintain review projection proofs |
 | Sleep summary | `CONNECTED` | canonical latest sleep entry from the shared Health repository; reload/browser proof | maintain |
-| Daily Control current task | `CONNECTED_GAP` | deterministic state/time/priority/date/recency/id policy remains | R2-01: next executable work, no unnecessary creation process, current browser proof |
-| Daily Control Up Next | `CONNECTED_GAP` | same deterministic persisted-signal ranking, bounded to three remains | R2-01: current visible interactions and navigation proof |
-| Time Progress | `CONNECTED_GAP` | historical Europe/Berlin day/load projection remains | R2-01: replace surface contract with Month / Week / Day and prove controls/views |
+| Daily Control current task | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
+| Daily Control Up Next | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
+| Time Progress | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Weather | `NOT_STARTED` | honest Unavailable state; no API | optional external read gate |
 | Mood entry | `CONNECTED` | timestamped user-scoped mood entries from Dashboard with same-day soft undo | maintain labels, semantic color and ownership proof |
 | Mood current state | `CONNECTED` | latest local-day Mood entry plus Mental Health history | maintain timezone/reload proof |
-| Weight goal | `CONNECTED_GAP` | canonical weight entries and single personal goal remain | R2-01: correct card spacing and bounds |
-| Nutrient Balance | `CONNECTED_GAP` | completed meals + manual recipe estimates; unknown remains unknown | R2-01: retain data truth and prevent Calendar overlap |
-| Meals Today | `CONNECTED_GAP` | user-scoped meals plus canonical linked Task scheduling and atomic completion synchronization remain | R2-01: `Planen` opens a real persistent planner-slot flow |
-| Latest Run | `CONNECTED_GAP` | latest completed, non-archived running_session with derived pace remains | R2-01: Running view works from Dashboard |
-| Muscle Map | `CONNECTED_GAP` | explicit exercise_muscles mappings plus real strength_set_logs remain | R2-01: Strength view works from Dashboard |
-| Today Agenda day view | `CONNECTED_GAP` | canonical task schedule and lifecycle fields remain | R2-01: current Day control and view interaction proof |
-| Today Agenda week/month | `CONNECTED_GAP` | Calendar/visual projection | R2-01: real Week and Month controls/views |
+| Weight goal | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
+| Nutrient Balance | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
+| Meals Today | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
+| Latest Run | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
+| Muscle Map | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
+| Today Agenda day view | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
+| Today Agenda week/month | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Urgent time-block create | `CONNECTED_GAP` | current visible control is an honest non-interactive Prepared state; Inbox creates canonical Tasks while scheduling remains in Today and Calendar | R2-03 must connect it to a canonical flow or remove it; Prepared is not closure without user deferral |
-| Habit Tracker | `CONNECTED_GAP` | canonical Habits/Habit Logs, automatic profile-window projection and historical increment/undo reload proof remain | R2-01: Habit Windows and Add Habit work from Dashboard |
-| Active Portfolio | `CONNECTED_GAP` | user-scoped projects/goals/skills, bounded existing ranking remains | R2-01: real Project/Goal/Skill views and create paths, never Settings |
-| Dashboard control inventory and bounds | `CONNECTED_GAP` | no complete current click inventory, overlap/whitespace proof or current screenshots | R2-01 must prove every visible button, toast placement, bounds and reclaimed Bottom Zone |
+| Habit Tracker | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
+| Active Portfolio | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
+| Dashboard control inventory and bounds | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Anti-Rot Actions | `UI_ONLY` | retained Dashboard component is no longer composed; the underlying feature is connected elsewhere | deferred/hidden by R0 and C1.1-01 |
 | Challenges | `UI_ONLY` | retained Dashboard component is no longer composed; the underlying feature is connected elsewhere | deferred/hidden by R0 and C1.1-01 |
+
+## R2-01 confirmed Dashboard finding corrections — 2026-09-05
+
+**R2-01: USER ACCEPTED on 2026-09-06**, explicitly confirmed by the user.
+The following implementation evidence is retained unchanged in scope: browser
+proofs used isolated authenticated data; canonical Target acceptance is the
+user’s confirmation, not an additional automated Target proof.
+
+- `tests/e2e/r2-01-dashboard-surface.spec.ts`: screenshots and body-scroll,
+  horizontal-overflow, card-overlap and inner-content bounds at 2560×1440,
+  3840×2160, 1920×1080 and 390×844. Manual screenshots additionally cover
+  2560×1440 and 1920×1080 with isolated authenticated data.
+- Nutrient Balance retains its bounds without the footnote. Time Progress keeps
+  its three rows and bottom padding. Dashboard Mood offers exactly six choices
+  in two rows of three; historical Content entries are not deleted.
+- Eight Habit slots remain stable across Morning/Midday/Evening. Isolated Manual
+  proof creates Habits automatically without slot selection; increments and
+  compact undo survive reload, including period preservation after a Mood write.
+  Invalid targets stay local to the Add form. Progress dots derive from target
+  and increment, with partial final steps capped at the target.
+- Portfolio retains four slots in a 2×2 grid. Project/Goal/Skill view switching
+  is browser-proven; placeholders link to the respective canonical creation form.
+- Agenda Day/Week/Month render inside the Dashboard using the existing Calendar
+  read model. Day hour lines and the 24:00 endpoint remain bounded. No separate
+  event store or scheduling logic is introduced.
+- V5 screenshot review retains the existing central Agenda hierarchy. The compact
+  Habit grid removes its empty middle; Meals get larger previews and centered
+  planning links. The 1920×1080 meal status/macro rows are no longer clipped.
+- `tests/e2e/r2-01-control-inventory.spec.ts` passes against disposable Manual
+  data. Its control inventory uses CONTROL / EXPECTED / ACTUAL / RESULT:
+
+| CONTROL | EXPECTED | ACTUAL (isolated Manual browser) | RESULT |
+|---|---|---|---|
+| Quick Thought | Capture to Inbox | Captured text survives Inbox reload | PASS |
+| Global toast | Top-right, about 5 seconds | Top-right geometry and automatic dismissal asserted | PASS |
+| Mood Calm / Focused / Tired / Anxious / Stressed / Happy | Real save per option | Each selection survives reload | PASS |
+| Time Progress / card links | Three bars, canonical navigation | Today and available Dashboard card links clicked | PASS |
+| Habit Morning / Midday / Evening | Stable period and eight slots | Each selected; retained after writes and reload | PASS |
+| Habit Add | Automatic free slot; no opening toast | Two creations without slot field; no opening feedback | PASS |
+| Habit Increment | Whole card, target cap, real steps | Target 2.5 / increment 1 yields 1, 2, 2.5; three dots; disabled at target | PASS |
+| Habit Undo | Revert last actual increment | 2.5 becomes 2 and survives reload | PASS |
+| Portfolio Project / Goal / Skill and Add | 2×2 grid; matching creation | Each view and its canonical creation form opened | PASS |
+| Meals Breakfast / Lunch / Dinner Planen | Planner with slot context | Each destination preserves its slot | PASS |
+| Meals dish link | Linked Recipe or general Recipes | Empty-slot navigation and created Recipe selection after reload | PASS |
+| Running / Muscle | Real view switching | Both selected states rendered | PASS |
+| Agenda Day / Week / Month | Real in-card views | Day timeline, seven-day Week and 42-cell Month rendered | PASS |
+| Canonical Target surface acceptance | User tests authenticated Target Dashboard | User explicitly confirmed R2-01 USER ACCEPTED on 2026-09-06 | PASS |
+
+- Atomic Habit target enforcement: `20260905151418_atomic_habit_target_increment.sql`
+  adds one Security-Invoker RPC, `increment_habit_for_local_day`. It derives
+  ownership and profile timezone/local date, locks the active owned Habit,
+  sums active logs and inserts only `min(increment, remaining target)`.
+  `already_at_target` inserts nothing and the action emits no success toast.
+  The normal repository path exclusively uses this RPC. No table/data migration.
+- `tests/e2e/r2-01-atomic-habit.spec.ts` passes on a fresh disposable runtime built
+  from the repository migration chain: authenticated concurrent 5/3 requests
+  finish at 5; eight concurrent 1/1 requests create exactly one log; 10/3 gives
+  3/6/9/10, including the partial final log. Foreign, archived and unauthenticated
+  calls cannot mutate; null targets remain uncapped. A non-default profile
+  timezone is checked against each persisted local-day log.
+- The focused disposable browser proof covers automatic Habit creation, eight
+  slots, whole-card increments, four real progress dots, reload, a stale enabled
+  card submitting an already-at-target no-op without success toast, compact Undo,
+  and stable Evening selection. No card redesign was needed.
+- The migration was applied regularly through the canonical Target guard only
+  after disposable proofs passed. Target migration versions equal all 42 Git
+  migration files. Target DB lint and Security Advisors return empty findings.
+- Final clarification proof: Add Habit is centered horizontally and vertically at
+  2560×1440, 1920×1080 and 390×844, with backdrop, bounded mobile height and
+  focus returned to the opener after Escape. Global toasts are top-right again.
+  Only successful Dashboard Habit creation emits the Habit success toast;
+  increments, rewind Undo and already-at-target submissions stay silent.
+  Canonical RPC, target cap, reload and selected daypart remain browser-proven.
+  Meals Planen now has a minimum 72×36 px target, remains right/vertically centered,
+  and all three slot links are browser-proven. Existing viewport/bounds proofs
+  pass without new body scroll or card overlap. No migration or card redesign.
+- Administrative closure on 2026-09-06: explicit user acceptance recorded;
+  existing evidence retained. Current diff check, typecheck, lint, build and
+  21 focused Dashboard Vitest tests pass. R2-02 is the sole active block.
+  `.idea/` and the unrelated SR1-03 test changes remain excluded.
 
 # 2. Inbox
 
@@ -202,8 +282,8 @@ C1 Core Work Graph
 | Meal Planner week view | `CONNECTED_GAP` | canonical Target N1 proof reloads a recipe-linked Meal in the weekly planner and schedules it only through the source-aware Meal↔Task boundary | R2-05: selectable persistent planner slots and current browser proof |
 | Grocery Draft | `CONNECTED` | canonical Target N1 proof derives open Meal demand from persisted Recipe Ingredients and Meal/Recipe servings with reload-stable fractional scaling | no persistence/check-off/pantry |
 | Manual nutrition estimate | `CONNECTED_GAP` | optional recipe JSON estimate | provenance only; no real engine |
-| Meals Today | `CONNECTED` | canonical Target N1 proof projects the scheduled Meal and canonical completion across Nutrition, Today, Calendar and Dashboard after reload | multiple meals per slot remains separate future depth |
-| Nutrient Balance | `CONNECTED` | completed Meals and persisted Recipe estimates scale deterministically by Meal servings; the Target N1 proof keeps missing estimates explicitly unavailable | no fake totals; absent Recipe estimates remain unknown |
+| Meals Today | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
+| Nutrient Balance | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Persistent grocery items | `NOT_STARTED` | none | model later |
 | Pantry/inventory | `NOT_STARTED` | none | model and receipt workflow later |
 | Receipt OCR | `EXTERNAL_GATE` | none | privacy/provider decision |
@@ -221,7 +301,7 @@ C1 Core Work Graph
 | Sleep entry | `CONNECTED` | date-keyed editable sleep_entries with duration, optional quality/note; H1/H2 Target-Runtime reload proof | maintain |
 | Sleep trend | `CONNECTED` | reload-stable Mental Health history and Dashboard latest-night projection | maintain |
 | Weight entry | `CONNECTED` | date-keyed editable weight_entries and Health history; H1/H2 Target-Runtime reload proof | maintain |
-| Weight goal | `CONNECTED` | single user-scoped weight_goals row, optional target date and honest progress | maintain |
+| Weight goal | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Journal linkage | `UI_ONLY` | journal/nav exists | canonical journal/notes and privacy |
 | Mental Health overview | `CONNECTED_GAP` | canonical Mood history and Sleep entry/history are connected without medical claims | journal linkage and later review associations remain separate |
 

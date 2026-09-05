@@ -48,6 +48,8 @@ export function DashboardDialog({
       return;
     }
 
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
     if (open && !dialog.open) {
       dialog.showModal();
     }
@@ -60,13 +62,14 @@ export function DashboardDialog({
       if (dialog.open) {
         dialog.close();
       }
+      if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
     };
   }, [open]);
 
   return (
     <dialog
       aria-labelledby={labelledBy}
-      className="w-[min(620px,calc(100vw-24px))] rounded-[18px] border border-[var(--border-default)] bg-[var(--surface-1)] p-0 text-[var(--text-primary)] shadow-[0_24px_80px_rgba(0,0,0,.52)] backdrop:bg-[rgba(3,7,18,.72)]"
+      className="fixed inset-0 m-auto max-h-[calc(100dvh-24px)] overflow-y-auto w-[min(620px,calc(100vw-24px))] rounded-[18px] border border-[var(--border-default)] bg-[var(--surface-1)] p-0 text-[var(--text-primary)] shadow-[0_24px_80px_rgba(0,0,0,.52)] backdrop:bg-[rgba(3,7,18,.72)]"
       onCancel={onClose}
       onMouseDown={(event) => dialogBackdropClose(event, onClose)}
       ref={dialogRef}

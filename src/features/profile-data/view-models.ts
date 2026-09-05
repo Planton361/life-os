@@ -27,11 +27,10 @@ import {
 } from "@/features/dashboard/dashboard-view-model";
 import {
   compareDashboardTasks,
+  dashboardCalendarTimeProgress,
   dashboardLocalDate,
-  dashboardLocalDayProgress,
   dashboardTaskSelection,
   dashboardTasksForDate,
-  scheduledFocusMinutes,
 } from "@/features/dashboard/dashboard-read-model";
 import { resolveContentStateMeta } from "@/features/content-state";
 import {
@@ -589,6 +588,7 @@ function manualMealToDashboardMeal(meal: ManualMealSlot): DashboardMeal {
 
   return {
     ...fallback,
+    recipeId: meal.recipeId ?? "",
     ctaLabel: meal.state === "skipped" ? "Erfassen" : "Planen",
     kcal: meal.kcal ?? (meal.state === "skipped" ? "Ausgelassen" : "-"),
     macros: meal.macros,
@@ -1600,7 +1600,6 @@ function buildProfileDashboardViewModel(
   const doneTaskCount = allTodayTasks.filter(
     (task) => task.status === "done",
   ).length;
-  const focusMinutes = scheduledFocusMinutes(tasks);
   const meals = buildMealSlots({ ...profile, meals: [...sources.meals] });
   const decidedMealCount = meals.filter(mealIsDecided).length;
   const latestMood = sources.health?.moods.find((entry) => entry.localDate === dashboardLocalDate());
@@ -1783,15 +1782,8 @@ function buildProfileDashboardViewModel(
       scoreLabel: latestMood ? "Saved" : "-",
       accent: moodAccent(activeMood),
     },
-    timeProgress: [
-      dashboardLocalDayProgress(),
-      {
-        label: "Scheduled",
-        progress: Math.min(100, Math.round((focusMinutes / (8 * 60)) * 100)),
-        value: `${focusMinutes}m`,
-      },
-    ],
-    timeProgressHref: "/today",
+    timeProgress: dashboardCalendarTimeProgress(),
+    timeProgressHref: undefined,
     weather: {
       temperatureLabel: "Unavailable",
       periodLabel: "No weather source",
@@ -1829,7 +1821,7 @@ function buildProfileDashboardViewModel(
       : {
           label: "Tagesfokus",
           title: "Kein aktueller Fokus",
-          detail: "Wähle oder erstelle eine Aufgabe für heute.",
+          detail: "Deine heutige Queue ist noch leer.",
           blockLabel: "Fokusblock",
           block: "nicht geplant",
         },
@@ -1841,8 +1833,8 @@ function buildProfileDashboardViewModel(
         }
       : {
           label: "Nächster Schritt",
-          title: "Aufgabe für heute erstellen",
-          detail: "Wähle oder erstelle eine Aufgabe für heute.",
+          title: "Heute planen",
+          detail: "Plane oder terminiere vorhandene Tasks in Today.",
         },
     currentTask: activeTask
       ? taskToCurrentTask(activeTask)
@@ -1852,12 +1844,11 @@ function buildProfileDashboardViewModel(
           timeRemainingLabel: "Kein Block gewählt",
           statusLabel: "Empty",
           title: "Kein aktueller Fokus",
-          contextLabel: "Wähle oder erstelle eine Aufgabe für heute.",
-          actionLabel: "Create task",
+          contextLabel: "Plane oder terminiere vorhandene Tasks in Today.",
+          actionLabel: "Noch kein Task ausgewählt",
           progress: 0,
           accent: "var(--text-muted)",
           area: "review",
-          href: "/tasks",
         },
     signals: [
       {
@@ -2995,6 +2986,7 @@ function realMealToDashboardSlot(
 
   return {
     id: meal.id,
+    recipeId: recipe?.id,
     kcal: calories > 0 ? `${calories} kcal` : undefined,
     macros,
     name: meal.title,

@@ -5,7 +5,7 @@
 **Design truth:** Life OS – Linear Calm Dark Command Center / Dashboard V5
 **Detailed status:** `docs/product/capability-registry.md`
 **Completed sequence:** C1 → C2 → C3 → K1 → H1/H2 → N1 → A1 → Z1 (technical baseline)
-**Active Work Block:** R2 – Product Reality Recovery & Surface Completion (R2-01 active)
+**Active Work Block:** R2-02 – Inbox Surface Completion
 
 ## 1. Product Contract
 
@@ -856,10 +856,16 @@ non-working controls, layout collisions and unjustified empty space. Z1 must
 not be represented as valid product acceptance, and historical implementation
 or backend evidence cannot alone restore a `CONNECTED` surface claim.
 
-## 4.12 Active Work Block: R2 – Product Reality Recovery & Surface Completion
+## 4.12 R2 – Product Reality Recovery & Surface Completion
 
 **Status:** R2-00 completed (contract rebaseline). **Current active slice:**
-R2-01. R2 is the only Active Work Block.
+R2-02 – Inbox Surface Completion (the only Active Work Block).
+
+**R2-01 status:** Completed; explicitly USER ACCEPTED on 2026-09-06.
+Existing control, browser, layout and migration evidence is retained in the
+Capability Registry and focused R2-01 tests.
+
+**R2-02 status:** Active; USER ACCEPTANCE STATUS: PENDING.
 
 **Outcome:** Recover the actual user-facing product contract without replacing
 V5 or the established architecture. A surface is complete only after all of
@@ -911,8 +917,8 @@ dependency belongs in this slice.
   for a promised core control.
 - Dashboard’s removed Bottom-Zone features remain removed; they cannot return
   through historical layout references.
-- The R2 order is binding. After R2-00, only R2-01 is active until its status
-  changes in this roadmap.
+- The R2 order is binding. R2-01 is accepted and closed; only R2-02 is active
+  until explicit user acceptance changes its status in this roadmap.
 
 ## 5. Completed Major Work
 

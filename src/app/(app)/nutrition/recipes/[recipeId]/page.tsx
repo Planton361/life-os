@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import { DetailStubPage } from "@/components/layout/detail-stub-page";
+import { notFound } from "next/navigation";
+import { getRecipesViewModel } from "@/features/profile-data";
+import { RecipesView } from "@/features/nutrition/recipes";
 
 export const metadata: Metadata = {
   title: "Recipe Detail | Life OS",
@@ -12,14 +14,7 @@ export default async function RecipeDetailPage({
 }>) {
   const { recipeId } = await params;
 
-  return (
-    <DetailStubPage
-      accent="var(--accent-yellow)"
-      dataSource="recipes plus planned meals, macro targets, ingredients, and grocery links."
-      entityId={recipeId}
-      entityLabel="Recipe"
-      summary="Minimal recipe detail target for Meals Today links."
-      title="Recipe Detail"
-    />
-  );
+  const viewModel = await getRecipesViewModel();
+  if (!viewModel.recipes.some(recipe => recipe.id === recipeId && !recipe.archived)) notFound();
+  return <RecipesView viewModel={viewModel} initialRecipeId={recipeId} />;
 }

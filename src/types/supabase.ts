@@ -2669,6 +2669,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      increment_habit_for_local_day: {
+        Args: { p_habit_id: string }
+        Returns: { status: string; log_id: string | null; increment_value: number | null }[]
+      }
       complete_challenge_with_reward: {
         Args: { p_challenge_id: string }
         Returns: string

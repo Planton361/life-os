@@ -841,8 +841,10 @@ function RecipeSummary({
 
 export function RecipesView({
   viewModel,
+  initialRecipeId,
 }: Readonly<{
   viewModel: RecipesViewModel;
+  initialRecipeId?: string;
 }>) {
   const profileId = viewModel.profileId ?? "demo";
   const actionsEnabled = viewModel.actionsEnabled ?? true;
@@ -855,7 +857,7 @@ export function RecipesView({
   const [tag, setTag] = useState<TagFilter>("all");
   const [readiness, setReadiness] = useState<ReadinessFilter>("all");
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(
-    () => viewModel.recipes.find((recipe) => !recipe.archived)?.id ?? null,
+    () => viewModel.recipes.find((recipe) => !recipe.archived && recipe.id === initialRecipeId)?.id ?? viewModel.recipes.find((recipe) => !recipe.archived)?.id ?? null,
   );
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [confirmingArchive, setConfirmingArchive] = useState(false);

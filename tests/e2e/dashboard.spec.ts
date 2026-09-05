@@ -71,7 +71,7 @@ async function expectNoHorizontalOverflow(page: Page) {
 async function saveScreenshot(page: Page, outputPath: string) {
   await mkdir(outputPath, { recursive: true });
   await page.screenshot({
-    fullPage: false,
+    fullPage: true,
     path: join(
       outputPath,
       `dashboard-${page.viewportSize()?.width}x${page.viewportSize()?.height}.png`,
@@ -196,7 +196,7 @@ test.describe("Dashboard D1.1 read-model truth", () => {
     ).toContainText("Unknown");
 
     const dashboard = page.getByRole("region", { name: "Dashboard-Zonen" });
-    await expect(dashboard.getByText("Habit tracking prepared")).toBeVisible();
+    await expect(dashboard.getByText("Keine Habit-Daten")).toBeVisible();
     await expect(
       page.getByText(/Mood writes are unavailable in this profile/),
     ).toBeVisible();

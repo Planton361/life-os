@@ -1,4 +1,4 @@
-import type { Habit, HabitLog, HabitSnapshot } from "../../domain";
+import type { Habit, HabitSnapshot } from "../../domain";
 import type {
   CreateHabitInput,
   HabitWindowSettingsInput,
@@ -107,8 +107,19 @@ export function createSupabaseHabitRepository(client: SupabaseClientLike) {
       userId: string,
       profileId: string,
       input: CreateHabitInput,
+      automaticSlot = false,
     ): Promise<RepositoryResult<Habit>> {
       if (!scoped(userId, profileId)) return failure("Habit scope is invalid.");
+      let sortOrder = input.sortOrder;
+      if (automaticSlot) {
+        const occupied = await client.from("habits").select("sort_order")
+          .eq("user_id", userId).eq("time_window", input.window).is("archived_at", null);
+        if (occupied.error) return failure("Habit slots could not be loaded.");
+        const used = new Set((occupied.data ?? []).map(row => row.sort_order));
+        const next = Array.from({ length: 8 }, (_, index) => index + 1).find(slot => !used.has(slot));
+        if (!next) return failure("Alle acht Habit-Plätze sind belegt.");
+        sortOrder = next;
+      }
       const result = await client
         .from("habits")
         .insert({
@@ -116,7 +127,7 @@ export function createSupabaseHabitRepository(client: SupabaseClientLike) {
           default_increment: input.defaultIncrement,
           name: input.name,
           profile_id: profileId,
-          sort_order: input.sortOrder,
+          sort_order: sortOrder,
           time_window: input.window,
           unit: input.unit,
           user_id: userId,
@@ -181,29 +192,15 @@ export function createSupabaseHabitRepository(client: SupabaseClientLike) {
       userId: string,
       profileId: string,
       habitId: string,
-      localDate: string,
-      timezone: string,
-    ): Promise<RepositoryResult<HabitLog>> {
-      const habit = scoped(userId, profileId)
-        ? await ownedHabit(userId, habitId, true)
-        : null;
-      if (!habit)
-        return failure("Habit was not found in the current user scope.");
-      const result = await client
-        .from("habit_logs")
-        .insert({
-          habit_id: habit.id,
-          local_date: localDate,
-          profile_id: profileId,
-          timezone,
-          user_id: userId,
-          value: habit.defaultIncrement,
-        })
-        .select("*")
-        .single();
-      return result.error || !result.data
-        ? failure("Habit log could not be created.")
-        : { data: mapHabitLog(result.data), ok: true };
+    ): Promise<RepositoryResult<"incremented" | "already_at_target">> {
+      if (!scoped(userId, profileId)) return failure("Habit scope is invalid.");
+      const result = await client.rpc("increment_habit_for_local_day", {
+        p_habit_id: habitId,
+      });
+      const status = result.data?.[0]?.status;
+      if (result.error || (status !== "incremented" && status !== "already_at_target"))
+        return failure("Habit could not be incremented.");
+      return { data: status, ok: true };
     },
 
     async undoLatestLog(

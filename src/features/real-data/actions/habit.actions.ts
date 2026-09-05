@@ -20,20 +20,25 @@ function value(formData: FormData, key: string) {
 
 function target(formData: FormData) {
   const requested = value(formData, "returnTo");
-  return requested === "/dashboard" ? "/dashboard" : "/health/habits";
+  if (requested !== "/dashboard") return "/health/habits";
+  const window = value(formData, "dashboardWindow");
+  return ["Morning", "Midday", "Evening"].includes(window)
+    ? `/dashboard?habitWindow=${window}`
+    : "/dashboard";
 }
 
-function finish(path: string, state: "blocked" | "error" | "saved"): never {
+function finish(path: string, state: "blocked" | "error" | "saved", quietDashboard = false): never {
   revalidatePath("/dashboard");
   revalidatePath("/health");
   revalidatePath("/health/habits");
   revalidatePath("/today");
   revalidatePath("/review/daily");
+  if (quietDashboard && state === "saved" && path.startsWith("/dashboard")) redirect(path);
   const params = new URLSearchParams({
     habit: state,
     habitUpdate: Date.now().toString(),
   });
-  redirect(`${path}?${params.toString()}`);
+  redirect(`${path}${path.includes("?") ? "&" : "?"}${params.toString()}`);
 }
 
 async function context(path: string) {
@@ -100,16 +105,18 @@ export async function incrementHabitAction(formData: FormData) {
   });
   if (!parsed.success) finish(path, "error");
   const { repository, userId } = await context(path);
-  const settings = await repository.getSettings(userId, userId);
-  if (!settings) finish(path, "error");
   const result = await repository.addLog(
     userId,
     userId,
     parsed.data.habitId,
-    localDateInTimeZone(new Date(), settings.timezone),
-    settings.timezone,
   );
-  finish(path, result.ok ? "saved" : "error");
+  if (result.ok && result.data === "already_at_target") {
+    // Refresh a stale projection without manufacturing a success notification.
+    for (const route of ["/dashboard", "/health", "/health/habits", "/today", "/review/daily"])
+      revalidatePath(route);
+    redirect(path);
+  }
+  finish(path, result.ok ? "saved" : "error", true);
 }
 
 export async function undoHabitAction(formData: FormData) {
@@ -131,6 +138,7 @@ export async function undoHabitAction(formData: FormData) {
     ))
       ? "saved"
       : "error",
+    true,
   );
 }
 
@@ -149,4 +157,14 @@ export async function updateHabitWindowSettingsAction(formData: FormData) {
       ? "saved"
       : "error",
   );
+}
+
+export async function createDashboardHabitAction(formData: FormData) {
+  const parsed = createHabitInputSchema.safeParse({ ...habitInput(formData), sortOrder: 1 });
+  if (!parsed.success) return { ok: false as const, errors: parsed.error.flatten().fieldErrors, error: "Bitte prüfe die markierten Felder." };
+  const { repository, userId } = await context(target(formData));
+  const result = await repository.createHabit(userId, userId, parsed.data, true);
+  if (!result.ok) return { ok: false as const, errors: {}, error: "Habit konnte nicht angelegt werden. Prüfe die freien Plätze." };
+  for (const path of ["/dashboard", "/health/habits", "/health", "/today"]) revalidatePath(path);
+  return { ok: true as const, errors: {}, error: "" };
 }

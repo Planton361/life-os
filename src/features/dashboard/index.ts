@@ -2,6 +2,7 @@ export { dashboardMockData } from "./mock-data";
 export { getDashboardViewModel } from "./dashboard-view-model";
 export {
   compareDashboardTasks,
+  dashboardCalendarTimeProgress,
   dashboardLocalDate,
   dashboardLocalDayProgress,
   dashboardTaskSelection,

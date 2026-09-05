@@ -7,11 +7,12 @@ import {
   WeightLossGoal,
 } from "@/components/dashboard/dashboard-sections";
 import { ActivePortfolio } from "@/components/dashboard/sections/active-portfolio-section";
-import { getDashboardViewModel } from "@/features/profile-data";
+import { DashboardFeedbackBridge } from "@/components/dashboard/dashboard-feedback-bridge";
+import { getDashboardViewModel, getCalendarViewModel } from "@/features/profile-data";
 import { ManualDbAuthNotice } from "@/features/real-data/manual-db-auth-notice";
 
-export async function DashboardGrid({ habitFeedback }: Readonly<{ habitFeedback?: string }>) {
-  const dashboard = await getDashboardViewModel();
+export async function DashboardGrid() {
+  const [dashboard, calendar] = await Promise.all([getDashboardViewModel(), getCalendarViewModel()]);
   const { profileId } = dashboard;
 
   return (
@@ -19,10 +20,11 @@ export async function DashboardGrid({ habitFeedback }: Readonly<{ habitFeedback?
       aria-label="Dashboard-Zonen"
       className="min-w-0 space-y-[var(--grid-gap)]"
     >
+      <DashboardFeedbackBridge />
       <ManualDbAuthNotice />
-      <div className="grid min-w-0 grid-cols-1 gap-[var(--grid-gap)] xl:grid-cols-[minmax(270px,520px)_minmax(480px,1fr)_minmax(300px,540px)] xl:items-start min-[2400px]:grid-cols-[590px_1010px_609px] min-[2400px]:gap-x-[9px]">
-        <div className="min-w-0 space-y-[var(--grid-gap)]">
-          <div className="grid gap-[var(--grid-gap)] sm:grid-cols-[minmax(172px,210px)_minmax(0,1fr)] 2xl:grid-cols-[224px_359px] 2xl:gap-[7px] 2xl:pl-0">
+      <div className="dashboard-main-grid grid min-w-0 grid-cols-1 gap-[var(--grid-gap)] xl:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,1.15fr)]">
+        <div className="dashboard-side-stack min-w-0 space-y-[var(--grid-gap)]">
+          <div className="grid gap-[var(--grid-gap)] sm:grid-cols-[minmax(0,.85fr)_minmax(0,1.15fr)]">
             <WeightLossGoal
               data={dashboard.healthNutrition.weightLossGoal}
               profileId={profileId}
@@ -42,10 +44,10 @@ export async function DashboardGrid({ habitFeedback }: Readonly<{ habitFeedback?
           />
         </div>
 
-        <TodayAgenda data={dashboard.todayAgenda} profileId={profileId} />
+        <TodayAgenda calendar={calendar} data={dashboard.todayAgenda} profileId={profileId} />
 
-        <div className="min-w-0 space-y-[var(--grid-gap)]">
-          <HabitTrackers data={dashboard.habitTrackers} feedback={habitFeedback} profileId={profileId} />
+        <div className="dashboard-side-stack min-w-0 space-y-[var(--grid-gap)]">
+          <HabitTrackers data={dashboard.habitTrackers} profileId={profileId} />
           <ActivePortfolio
             data={dashboard.activePortfolio}
             profileId={profileId}

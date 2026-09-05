@@ -10,20 +10,8 @@ import type {
   RunningRecoveryMode,
 } from "@/features/dashboard";
 import Link from "next/link";
-import { useActionState, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import {
-  saveDashboardMealSlotAction,
-} from "@/features/profile-data/actions";
-import { initialDashboardActionState } from "@/features/profile-data/dashboard-action-state";
+import { useState } from "react";
 import { cn } from "@/lib/cn";
-import {
-  DashboardDialog,
-  SelectField,
-  TextField,
-  dashboardActionButtonClass,
-  dashboardPrimaryButtonClass,
-} from "./dashboard-dialog";
 import {
   Panel,
   Pill,
@@ -110,19 +98,19 @@ export function WeightLossGoal({
       >
         {data.title}
       </h2>
-      <p className="mt-3 text-[31px] font-semibold leading-none text-[var(--text-primary)]">
+      <p className="mt-4 text-[31px] font-semibold leading-none text-[var(--text-primary)]">
         {data.currentWeight}
       </p>
       <p className="mt-2 text-[9px] font-semibold leading-tight text-[var(--text-muted)]">
         {data.targetLabel}
       </p>
-      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+      <div className="mt-3 flex flex-wrap items-center gap-1.5">
         <Pill accent={data.weeklyStatusAccent}>{data.weeklyStatusLabel}</Pill>
         <span className="text-[10px] font-semibold text-[var(--text-secondary)]">
           {data.remainingLabel}
         </span>
       </div>
-      <div className="mt-2">
+      <div className="mt-3 px-0.5">
         <ProgressBar accent={data.accent} progress={data.progress} quiet />
       </div>
     </>
@@ -196,9 +184,7 @@ export function NutrientBalance({
           </div>
         ))}
       </div>
-      <p className="mt-2 text-[8px] font-semibold text-[var(--text-faint)]">
-        {data.lastUpdatedLabel}
-      </p>
+
     </>
   );
 
@@ -233,19 +219,6 @@ export function MealsToday({
   data: DashboardMeals;
   profileId: DashboardProfileId;
 }>) {
-  const [editingMeal, setEditingMeal] = useState<DashboardMeal | null>(null);
-  const [state, formAction, pending] = useActionState(
-    saveDashboardMealSlotAction,
-    initialDashboardActionState,
-  );
-  const router = useRouter();
-
-  useEffect(() => {
-    if (state.status === "success") {
-      router.refresh();
-    }
-  }, [router, state.status]);
-
   return (
     <>
       <Panel
@@ -270,7 +243,7 @@ export function MealsToday({
                       "grid min-w-0 grid-cols-[64px_minmax(0,1fr)] gap-4 rounded-[12px] 2xl:grid-cols-[72px_minmax(0,1fr)]",
                       DASHBOARD_LINK_FOCUS_CLASSES,
                     )}
-                    href={meal.href ?? "/nutrition/meal-planner?view=today"}
+                    href={meal.recipeId ? `/nutrition/recipes/${encodeURIComponent(meal.recipeId)}` : "/nutrition/recipes"}
                   >
                     <div
                       className={cn(
@@ -309,121 +282,22 @@ export function MealsToday({
                       </div>
                     </div>
                   </Link>
-                  <button
+                  <Link
                     aria-label={`${meal.ctaLabel ?? "Planen"} ${meal.type}`}
                     className={cn(
-                      "self-start rounded-full border border-[rgba(217,146,79,.22)] bg-[rgba(217,146,79,.09)] px-3 py-1 text-[9px] font-semibold text-[var(--text-secondary)] transition hover:border-[rgba(217,146,79,.36)] hover:text-[var(--text-primary)]",
+                      "inline-flex min-h-9 min-w-[72px] items-center justify-center self-center rounded-full border border-[rgba(217,146,79,.30)] bg-[rgba(217,146,79,.12)] px-4 py-2 text-[11px] font-semibold text-[var(--text-secondary)] transition hover:border-[rgba(217,146,79,.36)] hover:text-[var(--text-primary)]",
                       DASHBOARD_LINK_FOCUS_CLASSES,
                     )}
-                    onClick={() => setEditingMeal(meal)}
-                    type="button"
+                    href={`/nutrition/meal-planner?slot=${encodeURIComponent(meal.type.toLowerCase())}`}
                   >
                     {meal.ctaLabel ?? "Planen"}
-                  </button>
+                  </Link>
                 </article>
               );
             })}
         </div>
       </Panel>
 
-      {editingMeal ? (
-        <DashboardDialog
-          labelledBy="meal-change-dialog-heading"
-          onClose={() => setEditingMeal(null)}
-          open
-        >
-          <form action={formAction}>
-            <div className="border-b border-[var(--border-subtle)] px-5 py-4">
-              <h2
-                className="text-lg font-semibold text-[var(--text-primary)]"
-                id="meal-change-dialog-heading"
-              >
-                Meal slot
-              </h2>
-              <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
-                {profileId === "manual"
-                  ? "Speichert den Slot lokal im Manual-Profil."
-                  : "Wechsle ins Manual-Profil, um Mahlzeiten lokal zu speichern."}
-              </p>
-            </div>
-            <div className="grid gap-3 p-5 sm:grid-cols-2">
-              <SelectField
-                defaultValue={editingMeal.type}
-                label="Meal Slot"
-                name="meal"
-              >
-                <option>Breakfast</option>
-                <option>Lunch</option>
-                <option>Dinner</option>
-              </SelectField>
-              <SelectField
-                defaultValue={editingMeal.state ?? "planned"}
-                label="State"
-                name="state"
-              >
-                <option value="planned">Planned</option>
-                <option value="logged">Logged</option>
-                <option value="skipped">Skipped</option>
-              </SelectField>
-              <TextField
-                defaultValue={
-                  editingMeal.state === "unplanned" ? "" : editingMeal.name
-                }
-                label="Name"
-                name="name"
-                placeholder="Meal name"
-              />
-              <TextField
-                defaultValue={editingMeal.time}
-                label="Time"
-                name="time"
-                type="time"
-              />
-              <TextField
-                defaultValue={editingMeal.kcal === "-" ? "" : editingMeal.kcal}
-                label="Kcal"
-                name="kcal"
-                optional
-                placeholder="560 kcal"
-              />
-              <TextField label="Protein" name="protein" optional placeholder="P 40g" />
-              <TextField label="Carbs" name="carbs" optional placeholder="C 55g" />
-              <TextField label="Fat" name="fat" optional placeholder="F 15g" />
-            </div>
-            {state.message ? (
-              <p
-                className={cn(
-                  "px-5 pb-2 text-[11px] font-semibold",
-                  state.status === "success"
-                    ? "text-[var(--accent-green)]"
-                    : state.status === "blocked"
-                      ? "text-[var(--accent-orange)]"
-                      : "text-[var(--text-muted)]",
-                )}
-                role="status"
-              >
-                {state.message}
-              </p>
-            ) : null}
-            <div className="flex justify-end gap-2 border-t border-[var(--border-subtle)] px-5 py-4">
-              <button
-                className={dashboardActionButtonClass}
-                onClick={() => setEditingMeal(null)}
-                type="button"
-              >
-                Cancel
-              </button>
-              <button
-                className={dashboardPrimaryButtonClass}
-                disabled={pending}
-                type="submit"
-              >
-                {pending ? "Saving..." : "Save"}
-              </button>
-            </div>
-          </form>
-        </DashboardDialog>
-      ) : null}
     </>
   );
 }
