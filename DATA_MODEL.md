@@ -173,3 +173,29 @@ Konzeptionelle Privacy-Level:
 - Resources: `captured`, `processing`, `ready`, `applied`, `archived`
 - Review Records: `draft`, `completed`, `archived`
 - Priorities: `P0`, `P1`, `P2`, `P3`, `none`
+
+## R2-02 Inbox clarification boundary
+
+The existing `inbox_items` row owns cleaned `title` / `body`, `next_action`,
+`missing_info`, Priority, Area, Energy, Duration, Review needed, Today candidate
+and a date-only Deadline hint. Recurrence remains outside Inbox. The smallest
+forward migration adds missing columns rather than a second draft table.
+`original_title` / `original_body` retain pre-migration values and capture-time
+values for new rows; a trigger prevents later replacement. They are source
+history, never another editable truth.
+
+`save_inbox_clarification` and `route_saved_inbox_item` authenticate with
+`auth.uid()`, use Invoker/RLS and lock the owned open row. `updated_at` is an
+optimistic concurrency token: stale saves/routes fail without partial writes.
+Routing reads saved fields only. Existing Task and Resource RPCs are reused;
+Project/Goal creation and Inbox archival occur in the same transaction.
+Task routes to existing Projects/Goals/Skills preserve canonical context links.
+All processed/triaged/archived rows leave the open Inbox projection.
+
+Text context transfers into the target's canonical description/summary;
+Next Action maps to Project `next_step`, otherwise labelled description text.
+Missing Info remains labelled context. Priority transfers to Task/Project;
+Energy/Duration/Today to Task; Area to every supported target; Review needed to
+Resource; Deadline to Task `due_at` (end of day in profile timezone) or
+Project/Goal `target_date`. Unsupported target signals stay in source history,
+with no implied target field. Original capture is never silently discarded.

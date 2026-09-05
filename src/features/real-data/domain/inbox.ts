@@ -39,6 +39,12 @@ export type InboxItem = UserScopedEntity & {
   status: InboxItemStatus;
   priority: TaskPriority;
   source: string | null;
+  clarification?: {
+    originalTitle: string; originalBody: string | null; nextAction: string | null;
+    missingInfo: string | null; energy: "low" | "medium" | "high" | null;
+    durationMinutes: number | null; reviewNeeded: boolean; todayCandidate: boolean;
+    deadlineHint: string | null; updatedAt: string;
+  };
   capturedAt: IsoDateTimeString;
   triagedAt: IsoDateTimeString | null;
   triagedTaskId: TaskId | null;

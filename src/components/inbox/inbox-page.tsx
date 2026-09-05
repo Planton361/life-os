@@ -1,2744 +1,808 @@
 "use client";
 
-import type { CSSProperties, ReactNode } from "react";
-import { useActionState, useMemo, useState } from "react";
 import Link from "next/link";
-import type { ContentStateMeta } from "@/features/content-state";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
-  getInboxCaptureTypeLabel,
-  getInboxStageLabel,
-  type InboxAISuggestion as InboxPlanningSuggestion,
-  type InboxChecklistItem,
-  type InboxClarificationField,
-  type InboxExistingTargetType,
-  type InboxOutcomeRoute,
-  type InboxOutcomeOption,
-  type InboxPlanningSignal,
-  type InboxQueueItem,
-  type InboxRelatedContextItem,
-  type InboxSignal,
-  type InboxViewModel,
-} from "@/features/inbox";
-import {
-  archiveInboxItemFormStateAction,
-  captureInboxItemFormAction,
-  createResourceFromInboxFormStateAction,
-  createGoalFromInboxFormStateAction,
-  createProjectFromInboxFormStateAction,
-  type InboxCreateNewActionResult,
-  type InboxResourceActionResult,
-  type InboxArchiveActionResult,
-  triageInboxItemToTaskFormAction,
-} from "@/features/real-data/actions/inbox.actions";
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
+import type { InboxViewModel } from "@/features/inbox";
+import { useToast } from "@/components/feedback/toast-provider";
 import { suggestInboxRouteAction } from "@/features/real-data/actions/inbox-ai.actions";
+import {
+  routeSavedInboxItemAction,
+  saveInboxClarificationAction,
+  type InboxWorkspaceResult,
+} from "@/features/real-data/actions/inbox-workspace.actions";
 import type {
-  InboxAISuggestion as InboxRouteAISuggestion,
-  InboxAISuggestionActionResult,
-} from "@/features/inbox/ai/inbox-ai-suggestion.types";
+  InboxClarificationInput,
+  InboxRouteInput,
+} from "@/features/real-data/schemas/inbox-workspace.schemas";
 import { cn } from "@/lib/cn";
 
-type AccentStyle = CSSProperties & {
-  "--accent"?: string;
-};
-
-function accentStyle(accent: string): AccentStyle {
-  return {
-    "--accent": accent,
-  };
-}
-
-const panelClasses =
-  "overflow-hidden rounded-[22px] border border-[var(--border-default)] bg-[rgba(15,23,36,.96)] shadow-[0_8px_22px_rgba(0,0,0,.12)]";
-
-const panelHeaderClasses =
-  "shrink-0 border-b border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-4 py-3";
-
-const focusClasses =
+const panel =
+  "min-w-0 rounded-[var(--panel-radius)] border border-[var(--border-subtle)] bg-[var(--surface-1)]";
+const focus =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-cyan)]";
-
-const disabledActionClasses =
-  "disabled:cursor-not-allowed disabled:border-[var(--border-subtle)] disabled:bg-[rgba(18,28,43,.42)] disabled:text-[var(--text-muted)] disabled:opacity-70";
-
-const draftInputClasses =
-  "mt-1.5 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(12,20,34,.74)] px-3 py-2 text-xs leading-5 text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]";
-
-function InboxActionMessage({
-  message,
-  status,
-}: Readonly<{
-  message: string;
-  status: "blocked" | "error" | "success";
-}>) {
-  if (!message) return null;
-
-  return (
-    <p
-      className={cn(
-        "mt-2 text-[11px] leading-4",
-        status === "success"
-          ? "text-[var(--accent-green)]"
-          : "text-[var(--accent-orange)]",
-      )}
-      role={status === "success" ? "status" : "alert"}
-    >
-      {message}
-    </p>
-  );
-}
-
-const taskDraftPriorities = ["P0", "P1", "P2", "P3", "none"] as const;
-const taskDraftEnergies = ["low", "medium", "high"] as const;
-const taskDraftDurations = [15, 30, 45, 60, 90, 120] as const;
-const resourceDraftTypes = [
-  { label: "Note", value: "note" },
-  { label: "Link", value: "link" },
-  { label: "Research", value: "research" },
-  { label: "Source", value: "source" },
-  { label: "Learning", value: "learning" },
-  { label: "Decision", value: "decision" },
-] as const;
-
-const planningSignalDefinitions = [
-  { label: "Priority", savedInTaskDraft: true },
-  { label: "Energy", savedInTaskDraft: true },
-  { label: "Effort / Duration", savedInTaskDraft: true },
-  { label: "Area", savedInTaskDraft: true },
-  { label: "Review needed", savedInTaskDraft: false },
-  { label: "Today candidate", savedInTaskDraft: true },
-  { label: "Deadline hint", savedInTaskDraft: false },
-  { label: "Recurrence hint", savedInTaskDraft: false },
-] as const;
-
-function outcomeRouteFromSuggestion(route: InboxRouteAISuggestion["route"]) {
-  if (route === "resource") return "knowledge_resource";
-
-  return route satisfies Exclude<InboxOutcomeRoute, "knowledge_resource">;
-}
-
-function suggestionDisplayRoute(route: InboxRouteAISuggestion["route"]) {
-  if (route === "resource") return "Resource";
-  if (route === "standalone_task") return "Standalone Task";
-  if (route === "add_to_existing") return "Add to Existing";
-  if (route === "create_new") return "Create New";
-
-  return "Solved / Archive";
-}
-
-function validTaskPriority(value: string | undefined) {
-  return taskDraftPriorities.some((priority) => priority === value)
-    ? value
-    : undefined;
-}
-
-function validTaskEnergy(value: string | undefined) {
-  return taskDraftEnergies.some((energy) => energy === value)
-    ? value
-    : undefined;
-}
-
-function validTaskDuration(value: number | undefined) {
-  return taskDraftDurations.some((duration) => duration === value)
-    ? String(value)
-    : undefined;
-}
-
-function validResourceType(value: string | undefined) {
-  return resourceDraftTypes.some((type) => type.value === value)
-    ? value
-    : undefined;
-}
-
-function contentStateAttributes(
-  meta: ContentStateMeta,
-  profileId: InboxViewModel["profileId"],
-) {
+const button = `min-h-9 rounded-[12px] border border-[var(--border-default)] px-3 text-xs font-semibold text-[var(--text-secondary)] disabled:cursor-not-allowed disabled:opacity-50 ${focus}`;
+const input = `w-full min-w-0 rounded-[12px] border border-[var(--border-default)] bg-[var(--surface-2)] px-3 py-2 text-sm text-[var(--text-primary)] ${focus}`;
+const routes: { id: InboxRouteInput["route"]; title: string }[] = [
+  { id: "task", title: "Standalone Task" },
+  { id: "existing_project", title: "Existing Project" },
+  { id: "existing_goal", title: "Existing Goal" },
+  { id: "existing_skill", title: "Existing Skill" },
+  { id: "project", title: "New Project" },
+  { id: "goal", title: "New Goal" },
+  { id: "resource", title: "Resource" },
+  { id: "note", title: "Note" },
+  { id: "archive", title: "Solved / Archive" },
+];
+function initialFields(
+  item: InboxViewModel["activeItem"],
+): InboxClarificationInput {
   return {
-    "data-capacity": meta.capacity?.toString(),
-    "data-content-state": meta.state,
-    "data-item-count": meta.itemCount.toString(),
-    "data-profile-id": profileId,
+    inboxItemId: item.id ?? "",
+    expectedUpdatedAt: item.clarification?.updatedAt ?? "",
+    title: item.fields[0]?.value ?? "",
+    body: item.fields[1]?.value ?? "",
+    nextAction: item.clarification?.nextAction ?? "",
+    missingInfo: item.clarification?.missingInfo ?? "",
+    priority: (item.priority ?? "P2") as InboxClarificationInput["priority"],
+    energy: item.clarification?.energy ?? null,
+    durationMinutes: item.clarification?.durationMinutes ?? null,
+    areaId: item.persistedAreaId ?? null,
+    reviewNeeded: item.clarification?.reviewNeeded ?? false,
+    todayCandidate: item.clarification?.todayCandidate ?? false,
+    deadlineHint: item.clarification?.deadlineHint ?? null,
   };
 }
 
-function SectionTitle({
-  children,
-  id,
-  label,
-}: Readonly<{
-  children?: ReactNode;
-  id: string;
-  label: string;
-}>) {
-  return (
-    <div className="flex min-w-0 items-start justify-between gap-3">
-      <h2 className="text-base font-semibold text-[var(--text-primary)]" id={id}>
-        {label}
-      </h2>
-      {children}
-    </div>
-  );
-}
-
-function Pill({
-  children,
-  accent = "var(--accent-blue)",
-  active = false,
-  className,
-  tinted = false,
-}: Readonly<{
-  children: ReactNode;
-  accent?: string;
-  active?: boolean;
-  className?: string;
-  tinted?: boolean;
-}>) {
-  return (
-    <span
-      className={cn(
-        "inline-flex min-h-5 items-center rounded-full border px-2 text-[10px] font-medium",
-        active
-          ? "border-[color-mix(in_srgb,var(--accent)_34%,transparent)] bg-[color-mix(in_srgb,var(--accent)_20%,transparent)] text-[var(--text-primary)]"
-          : tinted
-            ? "border-[color-mix(in_srgb,var(--accent)_26%,transparent)] bg-[color-mix(in_srgb,var(--accent)_11%,transparent)] text-[var(--text-secondary)]"
-          : "border-[var(--border-subtle)] bg-[rgba(168,183,204,.045)] text-[var(--text-secondary)]",
-        className,
-      )}
-      style={accentStyle(accent)}
-    >
-      {children}
-    </span>
-  );
-}
-
-function stageAccent(stage: InboxQueueItem["stage"]) {
-  switch (stage) {
-    case "raw":
-      return "var(--accent-blue)";
-    case "clarify":
-      return "var(--accent-orange)";
-    case "review":
-      return "var(--accent-red)";
-    case "ready":
-      return "var(--accent-green)";
-  }
-}
-
-function captureTypeAccent(type: InboxQueueItem["type"]) {
-  switch (type) {
-    case "task":
-      return "var(--accent-green)";
-    case "note":
-    case "question":
-      return "var(--accent-cyan)";
-    case "idea":
-    case "agent":
-      return "var(--accent-purple)";
-    case "resource":
-      return "var(--accent-yellow)";
-    case "decision":
-      return "var(--accent-orange)";
-  }
-}
-
-function outcomeRouteStatus(route: InboxOutcomeRoute) {
-  if (route === "add_to_existing") {
-    return "Teilweise verbunden";
-  }
-
-  if (route === "create_new") {
-    return "Teilweise verbunden";
-  }
-
-  if (
-    route === "standalone_task" ||
-    route === "knowledge_resource" ||
-    route === "solved_archive"
+function InboxEditor({
+  viewModel,
+  onDirty,
+  onComplete,
+}: {
+  viewModel: InboxViewModel;
+  onDirty: (dirty: boolean) => void;
+  onComplete: (result: InboxWorkspaceResult) => void;
+}) {
+  const item = viewModel.activeItem;
+  const [fields, setFields] = useState(() => initialFields(item));
+  const [saved, setSaved] = useState(fields);
+  const dirty = JSON.stringify(fields) !== JSON.stringify(saved);
+  const [route, setRoute] = useState<InboxRouteInput["route"] | "">("");
+  const [targetId, setTargetId] = useState("");
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState("");
+  const { notify } = useToast();
+  const formRef = useRef<HTMLFormElement>(null);
+  const enabled =
+    viewModel.profileId === "manual" &&
+    viewModel.quickCapture.enabled &&
+    Boolean(item.id);
+  useEffect(() => {
+    onDirty(dirty || pending);
+    return () => onDirty(false);
+  }, [dirty, pending, onDirty]);
+  useEffect(() => {
+    if (!dirty) return;
+    const prevent = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+    };
+    window.addEventListener("beforeunload", prevent);
+    // Guard all same-tab navigation, including sidebar links, while edits are unsaved.
+    const guard = (event: MouseEvent) => {
+      const link = (event.target as Element).closest("a[href]");
+      if (
+        link &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !window.confirm("Ungespeicherte Änderungen verwerfen und wechseln?")
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+    document.addEventListener("click", guard, true);
+    return () => {
+      window.removeEventListener("beforeunload", prevent);
+      document.removeEventListener("click", guard, true);
+    };
+  }, [dirty]);
+  function change<K extends keyof InboxClarificationInput>(
+    key: K,
+    value: InboxClarificationInput[K],
   ) {
-    return "Verbunden";
+    setFields((current) => ({ ...current, [key]: value }));
   }
-
-  return "Noch nicht verbunden";
-}
-
-function planningSignalValue(
-  label: (typeof planningSignalDefinitions)[number]["label"],
-  signals: readonly InboxPlanningSignal[],
-) {
-  const signal = signals.find((item) => {
-    if (label === "Effort / Duration") {
-      return item.label === "Effort" || item.label === "Duration";
-    }
-
-    if (label === "Review needed") return item.label === "Review needed";
-    if (label === "Today candidate") return item.label === "Today candidate";
-    if (label === "Deadline hint") return item.label === "Deadline hint";
-    if (label === "Recurrence hint") return item.label === "Recurrence hint";
-
-    return item.label === label;
-  });
-
-  return signal?.value ?? "Noch nicht gesetzt";
-}
-
-function planningSignalAccent(
-  label: (typeof planningSignalDefinitions)[number]["label"],
-  signals: readonly InboxPlanningSignal[],
-) {
-  const signal = signals.find((item) => {
-    if (label === "Effort / Duration") {
-      return item.label === "Effort" || item.label === "Duration";
-    }
-
-    return item.label === label;
-  });
-
-  return signal?.accent ?? "var(--text-muted)";
-}
-
-function Dot({
-  accent,
-  className,
-}: Readonly<{
-  accent: string;
-  className?: string;
-}>) {
+  const targets =
+    route === "existing_project"
+      ? viewModel.existingTargets.projects
+      : route === "existing_goal"
+        ? viewModel.existingTargets.goals
+        : route === "existing_skill"
+          ? viewModel.existingTargets.skills
+          : [];
+  async function save() {
+    if (!formRef.current?.reportValidity()) return;
+    startTransition(async () => {
+      const result = await saveInboxClarificationAction(fields);
+      notify(result.message, result.status === "success" ? "success" : "error");
+      setError(result.status === "success" ? "" : result.message);
+      if (result.status === "success" && result.updatedAt) {
+        const next = { ...fields, expectedUpdatedAt: result.updatedAt };
+        setFields(next);
+        setSaved(next);
+        onDirty(false);
+      }
+    });
+  }
+  function complete() {
+    if (!route || dirty) return;
+    startTransition(async () => {
+      const result = await routeSavedInboxItemAction({
+        inboxItemId: fields.inboxItemId,
+        expectedUpdatedAt: fields.expectedUpdatedAt,
+        route,
+        targetId: targetId || null,
+      });
+      notify(result.message, result.status === "success" ? "success" : "error");
+      setError(result.status === "success" ? "" : result.message);
+      if (result.status === "success") onComplete(result);
+    });
+  }
   return (
-    <span
-      aria-hidden="true"
-      className={cn("size-2 rounded-full bg-[var(--accent)]", className)}
-      style={accentStyle(accent)}
-    />
-  );
-}
-
-function InboxEmptyState({
-  className,
-  description,
-  title,
-}: Readonly<{
-  className?: string;
-  description: string;
-  title: string;
-}>) {
-  return (
-    <div
-      className={cn(
-        "rounded-[16px] border border-dashed border-[var(--border-subtle)] bg-[rgba(168,183,204,.035)] px-4 py-5",
-        className,
-      )}
-    >
-      <p className="text-sm font-semibold text-[var(--text-primary)]">
-        {title}
-      </p>
-      <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
-        {description}
-      </p>
-    </div>
-  );
-}
-
-function InboxPageHeader({
-  contentState,
-  kicker,
-  modePills,
-  purpose,
-  profileId,
-  signals,
-  title,
-}: Readonly<{
-  contentState: ContentStateMeta;
-  kicker: string;
-  modePills: string[];
-  profileId: InboxViewModel["profileId"];
-  purpose: string;
-  signals: InboxSignal[];
-  title: string;
-}>) {
-  return (
-    <header
-      className="shrink-0 rounded-[22px] border border-[var(--border-default)] bg-[rgba(15,23,36,.96)] px-5 py-4 shadow-[0_8px_22px_rgba(0,0,0,.12)] 2xl:px-7"
-      data-inbox-section="header-metrics"
-      {...contentStateAttributes(contentState, profileId)}
-    >
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(520px,788px)] xl:items-center">
-        <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase text-[var(--accent-cyan)]">
-            {kicker}
+    <>
+      <section
+        aria-labelledby="active-item-title"
+        className={cn(panel, "flex max-h-full min-h-0 flex-col self-start")}
+        data-inbox-section="active-item"
+      >
+        <header className="border-b border-[var(--border-subtle)] p-4">
+          <p className="text-[10px] font-semibold uppercase text-[var(--accent-orange)]">
+            Active Item
           </p>
-          <h1 className="mt-1 text-[34px] font-semibold leading-tight text-[var(--text-primary)]">
-            {title}
-          </h1>
-          <p className="mt-1.5 max-w-4xl text-sm leading-5 text-[var(--text-secondary)]">
-            {purpose}
-          </p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {modePills.map((pill, index) => (
-              <Pill
-                active={index === 0}
-                accent={index === 0 ? "var(--accent-blue)" : "var(--accent-green)"}
-                key={pill}
-              >
-                {pill}
-              </Pill>
-            ))}
-          </div>
-        </div>
-
-        <dl className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-          {signals.map((signal, index) => (
-            <div
-              className="rounded-[16px] border border-[var(--border-subtle)] bg-[rgba(12,20,34,.72)] p-2.5"
-              key={`inbox-overview-signal-${index}`}
-              style={accentStyle(signal.accent)}
-            >
-              <dt className="text-[10px] font-medium text-[var(--text-muted)]">
-                {signal.label}
-              </dt>
-              <dd className="mt-0.5 flex items-center justify-between gap-3">
-                <span className="text-[22px] font-semibold leading-none text-[var(--text-primary)]">
-                  {signal.value}
-                </span>
-                <Dot accent={signal.accent} />
-              </dd>
-              <p className="mt-0.5 text-[10px] text-[var(--text-secondary)]">
-                {signal.sublabel}
-              </p>
-            </div>
-          ))}
-        </dl>
-      </div>
-    </header>
-  );
-}
-
-function InboxQueueItemView({ item }: Readonly<{ item: InboxQueueItem }>) {
-  const stage = getInboxStageLabel(item.stage);
-  const type = getInboxCaptureTypeLabel(item.type);
-  const stageColor = stageAccent(item.stage);
-  const typeColor = captureTypeAccent(item.type);
-
-  return (
-    <Link
-      aria-current={item.active ? "true" : undefined}
-      className={cn("block rounded-[16px]", focusClasses)}
-      data-inbox-queue-item={item.id}
-      href={`/inbox?item=${encodeURIComponent(item.id)}`}
-    >
-      <article
-      className={cn(
-        "grid min-h-[92px] grid-cols-[4px_minmax(0,1fr)] overflow-hidden rounded-[16px] border bg-[rgba(18,28,43,.54)] transition",
-        item.active
-          ? "border-[color-mix(in_srgb,var(--accent)_34%,transparent)] bg-[color-mix(in_srgb,var(--accent)_7%,rgba(18,28,43,.72))]"
-          : "border-[var(--border-subtle)]",
-      )}
-      style={accentStyle(item.accent)}
-    >
-      <span className="h-full rounded-full bg-[var(--accent)]" />
-      <div className="min-w-0 p-3">
-        <div className="flex items-start justify-between gap-3">
-          <h3 className="min-w-0 truncate text-sm font-semibold text-[var(--text-primary)]">
+          <h2
+            id="active-item-title"
+            className="mt-1 truncate text-lg font-semibold"
+          >
             {item.title}
-          </h3>
-          <span className="shrink-0 text-[10px] font-medium text-[var(--text-muted)]">
-            {item.age}
-          </span>
-        </div>
-        <div className="mt-1.5 flex flex-wrap gap-1.5">
-          <Pill active={item.active} accent={stageColor} tinted>
-            {stage}
-          </Pill>
-          <Pill accent={typeColor} tinted>
-            {type}
-          </Pill>
-        </div>
-        <p className="mt-2 truncate text-[11px] text-[var(--text-secondary)]">
-          <span className="font-semibold text-[var(--text-muted)]">Next: </span>
-          {item.next}
-        </p>
-      </div>
-      </article>
-    </Link>
-  );
-}
-
-function InboxQueue({
-  contentState,
-  emptyState,
-  filters,
-  items,
-  profileId,
-  quickCapture,
-}: Readonly<{
-  contentState: ContentStateMeta;
-  emptyState: InboxViewModel["queueEmptyState"];
-  filters: string[];
-  items: InboxQueueItem[];
-  profileId: InboxViewModel["profileId"];
-  quickCapture: InboxViewModel["quickCapture"];
-}>) {
-  return (
-    <section
-      aria-labelledby="inbox-queue-title"
-      className={cn(panelClasses, "2xl:flex 2xl:min-h-0 2xl:flex-col")}
-      data-inbox-section="queue"
-      {...contentStateAttributes(contentState, profileId)}
-    >
-      <div className={panelHeaderClasses}>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2
-              className="text-lg font-semibold text-[var(--text-primary)]"
-              id="inbox-queue-title"
-            >
-              Inbox Queue
-            </h2>
-            <p className="mt-1 text-xs text-[var(--text-secondary)]">
-              Stage + Quick Capture label.
-            </p>
-          </div>
-          <input
-            aria-label="Search inbox"
-            className={cn(
-              "h-9 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-3 text-xs text-[var(--text-secondary)] placeholder:text-[var(--text-muted)] sm:w-44",
-              focusClasses,
-            )}
-            placeholder="Search inbox"
-            readOnly
-          />
-        </div>
-      </div>
-
-      <div className="p-3 2xl:flex 2xl:min-h-0 2xl:flex-1 2xl:flex-col">
+          </h2>
+        </header>
         <div
-          aria-label="Inbox filters"
-          className="flex shrink-0 flex-wrap gap-1.5 rounded-[16px] border border-[var(--border-subtle)] bg-[rgba(168,183,204,.035)] p-1.5"
-        >
-          {filters.map((filter) => (
-            <button
-              aria-pressed={filter === "All"}
-              className={cn(
-                "min-h-[26px] rounded-full border px-3 text-[10px] font-medium text-[var(--text-secondary)]",
-                filter === "All"
-                  ? "border-[rgba(91,124,250,.34)] bg-[rgba(91,124,250,.18)] text-[var(--text-primary)]"
-                  : "border-[var(--border-subtle)] bg-[rgba(18,28,43,.60)]",
-                focusClasses,
-                disabledActionClasses,
-              )}
-              disabled={filter !== "All"}
-              key={filter}
-              type="button"
-            >
-              {filter}
-            </button>
-          ))}
-        </div>
-        <form
-          action={captureInboxItemFormAction}
-          aria-label="Inbox Quick Capture"
-          className="mt-3 rounded-[16px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.48)] p-3"
-        >
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-xs font-semibold text-[var(--text-primary)]">
-                {quickCapture.title}
-              </p>
-              <p className="mt-1 text-[11px] leading-4 text-[var(--text-secondary)]">
-                {quickCapture.description}
-              </p>
-            </div>
-            <select
-              aria-label="Quick Capture type"
-              className={cn(
-                "h-8 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(12,20,34,.74)] px-2 text-[11px] text-[var(--text-secondary)]",
-                focusClasses,
-              )}
-              defaultValue="note"
-              disabled={!quickCapture.enabled}
-              name="type"
-            >
-              <option value="note">Note</option>
-              <option value="task">Task</option>
-              <option value="question">Question</option>
-              <option value="idea">Idea</option>
-              <option value="resource">Resource</option>
-              <option value="agent">Agent</option>
-              <option value="decision">Decision</option>
-            </select>
-          </div>
-          <div className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-            <label className="min-w-0">
-              <span className="sr-only">Quick Capture</span>
-              <input
-                aria-label="Quick Capture"
-                className={cn(
-                  "h-9 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(12,20,34,.74)] px-3 text-xs text-[var(--text-secondary)] placeholder:text-[var(--text-muted)]",
-                  focusClasses,
-                )}
-                disabled={!quickCapture.enabled}
-                name="title"
-                placeholder="Gedanken, Aufgabe oder Frage erfassen"
-                required={quickCapture.enabled}
-              />
-            </label>
-            <button
-              className={cn(
-                "min-h-9 rounded-[12px] border border-[rgba(73,209,163,.34)] bg-[rgba(73,209,163,.16)] px-3 text-xs font-semibold text-[var(--text-primary)]",
-                focusClasses,
-                disabledActionClasses,
-              )}
-              disabled={!quickCapture.enabled}
-              type="submit"
-            >
-              Capture
-            </button>
-          </div>
-          <label className="mt-2 block">
-            <span className="sr-only">Quick Capture note</span>
-            <input
-              aria-label="Quick Capture note"
-              className={cn(
-                "h-8 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(12,20,34,.54)] px-3 text-[11px] text-[var(--text-secondary)] placeholder:text-[var(--text-muted)]",
-                focusClasses,
-              )}
-              disabled={!quickCapture.enabled}
-              name="note"
-              placeholder="Optionaler Kontext"
-            />
-          </label>
-          {quickCapture.disabledReason ? (
-            <p className="mt-2 text-[11px] leading-4 text-[var(--text-muted)]">
-              {quickCapture.disabledReason}
-            </p>
-          ) : null}
-        </form>
-        <div className="mt-3 grid gap-2 2xl:min-h-0 2xl:flex-1 2xl:overflow-y-auto 2xl:pr-1">
-          {items.length > 0 ? (
-            items.map((item) => (
-              <InboxQueueItemView item={item} key={item.id} />
-            ))
-          ) : (
-            <InboxEmptyState
-              description={emptyState.description}
-              title={emptyState.title}
-            />
-          )}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function FieldSurface({
-  className,
-  field,
-  rows,
-}: Readonly<{
-  className?: string;
-  field: InboxClarificationField;
-  rows: number;
-}>) {
-  return (
-    <label className="block min-w-0">
-      <span className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-        {field.label}
-      </span>
-      <textarea
-        className={cn(
-          "mt-1.5 w-full resize-none rounded-[14px] border border-[var(--border-default)] bg-[rgba(18,28,43,.64)] px-3 py-2 text-[13px] leading-5 text-[var(--text-secondary)]",
-          className,
-          focusClasses,
-        )}
-        readOnly
-        rows={rows}
-        value={field.value}
-      />
-    </label>
-  );
-}
-
-function InboxPlanningSignals({
-  activeItem,
-  selectedRoute,
-  signals,
-}: Readonly<{
-  activeItem: InboxViewModel["activeItem"];
-  selectedRoute: InboxOutcomeRoute | null;
-  signals: InboxPlanningSignal[];
-}>) {
-  return (
-    <section
-      aria-labelledby="planning-signals-title"
-      className="rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.52)] p-3"
-    >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h3
-            className="text-sm font-semibold text-[var(--text-primary)]"
-            id="planning-signals-title"
-          >
-            Planning Signals
-          </h3>
-          <p className="mt-1 text-[11px] leading-4 text-[var(--text-secondary)]">
-            Hinweise für spätere Planung. Keine feste Terminierung.
-          </p>
-        </div>
-        <Pill accent="var(--accent-cyan)">Hinweise, kein Scheduling</Pill>
-      </div>
-      <div className="mt-2.5 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-        {activeItem.hasSelection ? (
-          planningSignalDefinitions.map((definition) => {
-            const accent = planningSignalAccent(definition.label, signals);
-            const savedInTaskDraft =
-              (selectedRoute === "standalone_task" ||
-                selectedRoute === "add_to_existing") &&
-              definition.savedInTaskDraft &&
-              (definition.label !== "Area" || Boolean(activeItem.persistedAreaId));
-            const status =
-              definition.label === "Today candidate" &&
-              (selectedRoute === "standalone_task" ||
-                selectedRoute === "add_to_existing")
-                ? "optional im Task Draft"
-                : savedInTaskDraft
-                  ? "wird im Task Draft gespeichert"
-                  : "Hinweis - nicht gespeichert";
-
-            return (
-              <article
-                className="rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.70)] px-3 py-2"
-                key={`inbox-planning-signal-${definition.label}`}
-                style={accentStyle(accent)}
-              >
-                <p className="flex items-center gap-1.5 text-[10px] font-medium text-[var(--text-muted)]">
-                  <Dot accent={accent} className="size-1.5 opacity-75" />
-                  <span>{definition.label}</span>
-                </p>
-                <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
-                  {planningSignalValue(definition.label, signals)}
-                </p>
-                <p className="mt-1 text-[10px] text-[var(--text-muted)]">
-                  {status}
-                </p>
-              </article>
-            );
-          })
-        ) : (
-          <InboxEmptyState
-            className="sm:col-span-2 xl:col-span-4"
-            description="Planning-Signale erscheinen erst mit einem ausgewählten Eintrag."
-            title="Keine Planning-Signale"
-          />
-        )}
-      </div>
-    </section>
-  );
-}
-
-function InboxOutcomeRoutes({
-  description,
-  onSelectRoute,
-  options,
-  selectedRoute,
-  title,
-}: Readonly<{
-  description: string;
-  onSelectRoute: (route: InboxOutcomeRoute) => void;
-  options: InboxOutcomeOption[];
-  selectedRoute: InboxOutcomeRoute | null;
-  title: string;
-}>) {
-  return (
-    <section
-      aria-labelledby="outcome-route-title"
-      className="rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.52)] p-3"
-    >
-      <h3
-        className="text-sm font-semibold text-[var(--text-primary)]"
-        id="outcome-route-title"
-      >
-        {title}
-      </h3>
-      <p className="mt-1 text-[11px] leading-4 text-[var(--text-secondary)]">
-        {description}
-      </p>
-      <div className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-        {options.map((option) => {
-          const isSelected = selectedRoute === option.id;
-          const isConnected =
-            option.id === "add_to_existing" ||
-            option.id === "create_new" ||
-            option.id === "knowledge_resource" ||
-            option.id === "standalone_task" ||
-            option.id === "solved_archive";
-          const status = outcomeRouteStatus(option.id);
-
-          return (
-            <button
-              aria-pressed={isSelected}
-              className={cn(
-                "min-h-[76px] rounded-[14px] border px-3 py-2.5 text-left",
-                isConnected
-                  ? "border-[color-mix(in_srgb,var(--accent)_30%,transparent)] bg-[color-mix(in_srgb,var(--accent)_8%,rgba(15,23,36,.68))]"
-                  : "border-[var(--border-subtle)] bg-[rgba(15,23,36,.40)]",
-                isSelected &&
-                  "border-[color-mix(in_srgb,var(--accent)_48%,transparent)] bg-[color-mix(in_srgb,var(--accent)_14%,rgba(15,23,36,.74))]",
-                focusClasses,
-              )}
-              data-outcome-route={option.id}
-              key={option.id}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  onSelectRoute(option.id);
-                }
-              }}
-              onClick={() => onSelectRoute(option.id)}
-              onPointerDown={() => onSelectRoute(option.id)}
-              style={accentStyle(option.accent)}
-              type="button"
-            >
-              <span className="flex items-start gap-2.5">
-                <Dot accent={option.accent} className="mt-1 shrink-0" />
-                <span className="min-w-0">
-                  <span className="flex flex-wrap items-center gap-1.5">
-                    <span className="block text-[13px] font-semibold text-[var(--text-primary)]">
-                      {option.title}
-                    </span>
-                    {isSelected ? (
-                      <Pill active accent={option.accent}>
-                        gewählt
-                      </Pill>
-                    ) : null}
-                    <Pill
-                      accent={isConnected ? "var(--accent-green)" : "var(--text-muted)"}
-                      tinted={isConnected}
-                    >
-                      Status: {status}
-                    </Pill>
-                  </span>
-                  <span className="mt-1 block text-[11px] leading-4 text-[var(--text-secondary)]">
-                    {option.description}
-                  </span>
-                </span>
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-function DraftTextInput({
-  defaultValue,
-  label,
-  name,
-  placeholder,
-}: Readonly<{
-  defaultValue: string;
-  label: string;
-  name: string;
-  placeholder?: string;
-}>) {
-  return (
-    <label className="block min-w-0">
-      <span className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-        {label}
-      </span>
-      <input
-        className={cn(draftInputClasses, focusClasses)}
-        defaultValue={defaultValue}
-        name={name}
-        placeholder={placeholder}
-        required={name === "title"}
-      />
-    </label>
-  );
-}
-
-function DraftTextarea({
-  defaultValue,
-  label,
-  name,
-}: Readonly<{
-  defaultValue: string;
-  label: string;
-  name: string;
-}>) {
-  return (
-    <label className="block min-w-0">
-      <span className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-        {label}
-      </span>
-      <textarea
-        className={cn(draftInputClasses, "min-h-[76px] resize-none", focusClasses)}
-        defaultValue={defaultValue}
-        name={name}
-        rows={3}
-      />
-    </label>
-  );
-}
-
-function DraftSelect({
-  children,
-  defaultValue,
-  label,
-  name,
-}: Readonly<{
-  children: ReactNode;
-  defaultValue?: string;
-  label: string;
-  name: string;
-}>) {
-  return (
-    <label className="block min-w-0">
-      <span className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-        {label}
-      </span>
-      <select
-        className={cn(draftInputClasses, focusClasses)}
-        defaultValue={defaultValue}
-        name={name}
-      >
-        {children}
-      </select>
-    </label>
-  );
-}
-
-function DraftShellReadOnlyField({
-  label,
-  value,
-}: Readonly<{
-  label: string;
-  value: string;
-}>) {
-  return (
-    <label className="block min-w-0">
-      <span className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-        {label}
-      </span>
-      <input
-        className={cn(draftInputClasses, focusClasses)}
-        readOnly
-        value={value}
-      />
-    </label>
-  );
-}
-
-function InboxCreateNewDraft({
-  activeItem,
-  canCreateNew,
-  nextAction,
-  suggestion,
-}: Readonly<{
-  activeItem: InboxViewModel["activeItem"];
-  canCreateNew: boolean;
-  nextAction: InboxClarificationField;
-  suggestion?: InboxRouteAISuggestion;
-}>) {
-  const [targetType, setTargetType] = useState<
-    "goal" | "project" | "resource" | "skill"
-  >(suggestion?.createNewDraft?.type ?? "project");
-  const [projectState, projectFormAction, projectPending] = useActionState<
-    InboxCreateNewActionResult | null,
-    FormData
-  >(createProjectFromInboxFormStateAction, null);
-  const [goalState, goalFormAction, goalPending] = useActionState<
-    InboxCreateNewActionResult | null,
-    FormData
-  >(createGoalFromInboxFormStateAction, null);
-  const area =
-    activeItem.planningSignals.find((signal) => signal.label === "Area")
-      ?.value ?? "Review";
-  const currentState =
-    targetType === "project"
-      ? projectState
-      : targetType === "goal"
-        ? goalState
-        : null;
-  const createdCurrentItem =
-    currentState?.status === "success" &&
-    currentState.inboxItemId === activeItem.id;
-  const isProject = targetType === "project";
-  const isGoal = targetType === "goal";
-  const canSubmit = canCreateNew && (isProject || isGoal);
-  const pending = isProject ? projectPending : isGoal ? goalPending : false;
-
-  if (createdCurrentItem) {
-    return (
-      <section
-        aria-labelledby="create-new-created-title"
-        className="rounded-[18px] border border-[rgba(66,184,131,.34)] bg-[rgba(66,184,131,.10)] p-3"
-      >
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h3
-              className="text-sm font-semibold text-[var(--text-primary)]"
-              id="create-new-created-title"
-            >
-              {isProject ? "Project erstellt" : "Goal erstellt"}
-            </h3>
-            <p
-              className="mt-1 text-xs leading-5 text-[var(--text-secondary)]"
-              role="status"
-            >
-              {currentState.message}
-            </p>
-          </div>
-          <Link
-            className={cn(
-              "inline-flex min-h-8 items-center rounded-[12px] border border-[rgba(66,184,131,.34)] bg-[rgba(66,184,131,.16)] px-3 text-xs font-semibold text-[var(--text-primary)]",
-              focusClasses,
-            )}
-            href={
-              isProject ? "/portfolio?view=projects" : "/portfolio?view=goals"
-            }
-          >
-            Portfolio öffnen
-          </Link>
-        </div>
-      </section>
-    );
-  }
-
-  const formAction = isProject ? projectFormAction : goalFormAction;
-  const submitLabel = isProject ? "Project erstellen" : "Goal erstellen";
-
-  return (
-    <section
-      aria-labelledby="create-new-draft-title"
-      className="rounded-[18px] border border-[rgba(66,184,131,.30)] bg-[rgba(66,184,131,.075)] p-3"
-    >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h3
-            className="text-sm font-semibold text-[var(--text-primary)]"
-            id="create-new-draft-title"
-          >
-            Create New Draft
-          </h3>
-          <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
-            Neues Project oder Goal direkt aus der Inbox erstellen. Resource
-            und Skill bleiben in dieser Route vorbereitet.
-          </p>
-        </div>
-        <Pill active accent="var(--accent-green)">
-          Teilweise verbunden
-        </Pill>
-      </div>
-
-      <div
-        aria-label="Create new target type"
-        className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4"
-      >
-        {(["project", "goal", "resource", "skill"] as const).map((type) => {
-          const active = targetType === type;
-          const label =
-            type === "project"
-              ? "Project"
-              : type === "goal"
-                ? "Goal"
-                : type === "resource"
-                  ? "Resource"
-                  : "Skill";
-
-          return (
-            <button
-              aria-pressed={active}
-              className={cn(
-                "min-h-16 rounded-[14px] border px-3 py-2 text-left",
-                active
-                  ? "border-[rgba(66,184,131,.42)] bg-[rgba(66,184,131,.16)] text-[var(--text-primary)]"
-                  : "border-[var(--border-subtle)] bg-[rgba(15,23,36,.48)] text-[var(--text-secondary)]",
-                focusClasses,
-              )}
-              key={type}
-              onClick={() => setTargetType(type)}
-              type="button"
-            >
-              <span className="block text-xs font-semibold">{label}</span>
-              <span className="mt-1 block text-[10px] text-[var(--text-muted)]">
-                {type === "project" || type === "goal"
-                  ? "DB-Erstellung"
-                  : "Vorbereitet"}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {isProject || isGoal ? (
-        <form action={formAction} className="mt-3">
-          <input name="inboxItemId" type="hidden" value={activeItem.id} />
-          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-            <DraftTextInput
-              defaultValue={suggestion?.createNewDraft?.title ?? activeItem.title}
-              label="Titel"
-              name="title"
-            />
-            <DraftTextarea
-              defaultValue={
-                suggestion?.createNewDraft?.summary ??
-                activeItem.originalCapture
-              }
-              label="Beschreibung / Kontext"
-              name="description"
-            />
-            {isProject ? (
-              <DraftTextInput
-                defaultValue={
-                  suggestion?.taskDraft?.nextAction ?? nextAction.value
-                }
-                label="Nächste Aktion"
-                name="nextAction"
-              />
-            ) : null}
-            <DraftSelect label="Area" name="areaId">
-              {activeItem.persistedAreaId ? (
-                <option value={activeItem.persistedAreaId}>{area}</option>
-              ) : null}
-              <option value="">
-                {activeItem.persistedAreaId
-                  ? "Keine Area setzen"
-                  : "Nicht gesetzt - nicht gespeichert"}
-              </option>
-            </DraftSelect>
-          </div>
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-            <p className="text-[10px] leading-4 text-[var(--text-muted)]">
-              Persistiert: Titel, Beschreibung, Area-Kontext und bei Projects
-              die nächste Aktion. Der Inbox-Eintrag wird danach archiviert.
-            </p>
-            <button
-              className={cn(
-                "min-h-9 rounded-[12px] border border-[rgba(66,184,131,.42)] bg-[rgba(66,184,131,.18)] px-3 text-xs font-semibold text-[var(--text-primary)]",
-                focusClasses,
-                disabledActionClasses,
-              )}
-              disabled={!canSubmit || pending}
-              type="submit"
-            >
-              {pending ? "Wird erstellt..." : submitLabel}
-            </button>
-          </div>
-          {currentState?.status === "blocked" ||
-          currentState?.status === "error" ? (
-            <InboxActionMessage
-              message={currentState.message}
-              status={currentState.status}
-            />
-          ) : null}
-        </form>
-      ) : (
-        <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-          <DraftShellReadOnlyField
-            label="Neues Objekt"
-            value={targetType === "resource" ? "Resource" : "Skill"}
-          />
-          <DraftShellReadOnlyField
-            label="Arbeitstitel"
-            value={activeItem.title}
-          />
-          <DraftShellReadOnlyField
-            label="Status"
-            value={
-              targetType === "resource"
-                ? "Resource nutzt eigene Inbox-Route"
-                : "Future Scope"
-            }
-          />
-        </div>
-      )}
-    </section>
-  );
-}
-
-const existingTargetTypeLabels: Record<InboxExistingTargetType, string> = {
-  goal: "Goal",
-  project: "Project",
-  resource: "Resource",
-  skill: "Skill",
-};
-
-function targetsForType(
-  targets: InboxViewModel["existingTargets"],
-  type: InboxExistingTargetType,
-) {
-  if (type === "project") return targets.projects;
-  if (type === "goal") return targets.goals;
-  if (type === "resource") return targets.resources;
-
-  return targets.skills;
-}
-
-function InboxAddToExistingDraft({
-  activeItem,
-  canCreateTask,
-  existingTargets,
-  nextAction,
-}: Readonly<{
-  activeItem: InboxViewModel["activeItem"];
-  canCreateTask: boolean;
-  existingTargets: InboxViewModel["existingTargets"];
-  nextAction: InboxClarificationField;
-}>) {
-  const [targetType, setTargetType] =
-    useState<InboxExistingTargetType>("project");
-  const [selectedTargetId, setSelectedTargetId] = useState("");
-  const [contributionType, setContributionType] = useState<
-    "decision" | "note" | "resource_link" | "task"
-  >("task");
-  const area =
-    activeItem.planningSignals.find((signal) => signal.label === "Area")
-      ?.value ?? "Review";
-  const activeTargets = targetsForType(existingTargets, targetType);
-  const selectedTarget =
-    activeTargets.find((target) => target.id === selectedTargetId) ??
-    activeTargets[0] ??
-    null;
-  const canPersistTask =
-    canCreateTask &&
-    contributionType === "task" &&
-    Boolean(selectedTarget) &&
-    (targetType === "project" || targetType === "goal" || targetType === "skill");
-  const contributionStatus =
-    contributionType === "task" &&
-    Boolean(selectedTarget) &&
-    (targetType === "project" || targetType === "goal" || targetType === "skill")
-      ? "Verbunden"
-      : contributionType === "resource_link"
-        ? "Vorbereitet"
-        : contributionType === "task" &&
-            (targetType === "project" || targetType === "goal" || targetType === "skill")
-          ? "Ziel fehlt"
-        : "Noch nicht verbunden";
-  const targetEmptyCopy =
-    targetType === "skill"
-      ? "Noch keine verlinkbaren eigenen Skills vorhanden. Erstelle einen Skill in Portfolio."
-      : targetType === "project"
-        ? "Noch keine bestehenden Projects vorhanden. Nutze Create New, um ein neues Project anzulegen."
-        : targetType === "goal"
-          ? "Noch keine bestehenden Goals vorhanden. Nutze Create New, um ein neues Goal anzulegen."
-          : "Noch keine bestehenden Resources vorhanden. Resource Link folgt später.";
-
-  return (
-    <section
-      aria-labelledby="add-to-existing-draft-title"
-      className="rounded-[18px] border border-[rgba(91,124,250,.30)] bg-[rgba(91,124,250,.075)] p-3"
-    >
-      <form action={triageInboxItemToTaskFormAction}>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h3
-              className="text-sm font-semibold text-[var(--text-primary)]"
-              id="add-to-existing-draft-title"
-            >
-              Bestehendem Objekt zuordnen
-            </h3>
-            <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
-              Bestehendes Project, Goal oder einen verlinkbaren Skill auswählen
-              und daraus einen Task-Beitrag erstellen. Resource Link bleibt
-              vorbereitet.
-            </p>
-          </div>
-          <Pill
-            active={contributionStatus === "Verbunden"}
-            accent={
-              contributionStatus === "Verbunden"
-                ? "var(--accent-green)"
-                : contributionStatus === "Vorbereitet"
-                  ? "var(--accent-yellow)"
-                  : "var(--text-muted)"
-            }
-          >
-            Beitrag: {contributionStatus}
-          </Pill>
-        </div>
-
-        <div
-          aria-label="Target type"
-          className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4"
-        >
-          {(["project", "goal", "resource", "skill"] as const).map((type) => {
-            const count = targetsForType(existingTargets, type).length;
-            const active = targetType === type;
-
-            return (
-              <button
-                aria-pressed={active}
-                className={cn(
-                  "min-h-16 rounded-[14px] border px-3 py-2 text-left",
-                  active
-                    ? "border-[rgba(91,124,250,.42)] bg-[rgba(91,124,250,.16)] text-[var(--text-primary)]"
-                    : "border-[var(--border-subtle)] bg-[rgba(15,23,36,.48)] text-[var(--text-secondary)]",
-                  focusClasses,
-                )}
-                key={type}
-                onClick={() => {
-                  setTargetType(type);
-                  setSelectedTargetId("");
-                }}
-                type="button"
-              >
-                <span className="block text-xs font-semibold">
-                  {existingTargetTypeLabels[type]}
-                </span>
-                <span className="mt-1 block text-[10px] text-[var(--text-muted)]">
-                  {`${count} DB-Ziel${count === 1 ? "" : "e"}`}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="mt-3 grid gap-2 xl:grid-cols-[minmax(0,1fr)_minmax(260px,360px)]">
-          <label className="block min-w-0">
-            <span className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-              Ziel auswählen
-            </span>
-            <select
-              aria-label="Existing target"
-              className={cn(draftInputClasses, focusClasses)}
-              disabled={activeTargets.length === 0}
-              onChange={(event) => setSelectedTargetId(event.target.value)}
-              value={selectedTarget?.id ?? ""}
-            >
-              {selectedTarget ? null : <option value="">{targetEmptyCopy}</option>}
-              {activeTargets.map((target) => (
-                <option key={target.id} value={target.id}>
-                  {target.title}
-                </option>
-              ))}
-            </select>
-            <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
-              {selectedTarget ? selectedTarget.meta : targetEmptyCopy}
-            </p>
-          </label>
-
-          <div>
-            <p className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-              Beitragstyp
-            </p>
-            <div className="mt-1.5 grid grid-cols-2 gap-1.5">
-              {[
-                ["task", "Task"],
-                ["note", "Note"],
-                ["resource_link", "Resource Link"],
-                ["decision", "Decision"],
-              ].map(([value, label]) => (
-                <button
-                  aria-pressed={contributionType === value}
-                  className={cn(
-                    "min-h-8 rounded-[12px] border px-2 text-[11px] font-semibold",
-                    contributionType === value
-                      ? "border-[rgba(66,184,131,.38)] bg-[rgba(66,184,131,.16)] text-[var(--text-primary)]"
-                      : "border-[var(--border-subtle)] bg-[rgba(18,28,43,.60)] text-[var(--text-secondary)]",
-                    focusClasses,
-                  )}
-                  key={value}
-                  onClick={() =>
-                    setContributionType(
-                      value as "decision" | "note" | "resource_link" | "task",
-                    )
-                  }
-                  type="button"
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {canPersistTask || contributionType === "task" ? (
-          <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-            <input name="inboxItemId" type="hidden" value={activeItem.id} />
-            <input name="outcomeRoute" type="hidden" value="add_to_existing" />
-            {targetType === "project" && selectedTarget ? (
-              <input name="projectId" type="hidden" value={selectedTarget.id} />
-            ) : null}
-            {targetType === "goal" && selectedTarget ? (
-              <input name="goalId" type="hidden" value={selectedTarget.id} />
-            ) : null}
-            {targetType === "skill" && selectedTarget ? (
-              <input name="skillId" type="hidden" value={selectedTarget.id} />
-            ) : null}
-            <DraftTextInput
-              defaultValue={activeItem.title}
-              label="Titel"
-              name="title"
-            />
-            <DraftTextarea
-              defaultValue={activeItem.originalCapture}
-              label="Beschreibung / Kontext"
-              name="description"
-            />
-            <DraftTextInput
-              defaultValue={nextAction.value}
-              label="Nächste Aktion"
-              name="nextAction"
-            />
-            <DraftSelect label="Area" name="areaId">
-              {activeItem.persistedAreaId ? (
-                <option value={activeItem.persistedAreaId}>{area}</option>
-              ) : null}
-              <option value="">
-                {activeItem.persistedAreaId
-                  ? "Keine Area setzen"
-                  : "Nicht gesetzt - nicht gespeichert"}
-              </option>
-            </DraftSelect>
-            <DraftSelect
-              defaultValue={activeItem.priority ?? "P2"}
-              label="Priorität"
-              name="priority"
-            >
-              {taskDraftPriorities.map((priority) => (
-                <option key={priority} value={priority}>
-                  {priority}
-                </option>
-              ))}
-            </DraftSelect>
-            <DraftSelect
-              defaultValue="30"
-              label="Effort / Dauer"
-              name="durationMinutes"
-            >
-              {taskDraftDurations.map((duration) => (
-                <option key={duration} value={duration}>
-                  {duration} min
-                </option>
-              ))}
-            </DraftSelect>
-            <DraftSelect defaultValue="medium" label="Energie" name="energy">
-              {taskDraftEnergies.map((energy) => (
-                <option key={energy} value={energy}>
-                  {energy}
-                </option>
-              ))}
-            </DraftSelect>
-            <button
-              className={cn(
-                "min-h-10 self-end rounded-[12px] border border-[rgba(66,184,131,.42)] bg-[rgba(66,184,131,.22)] px-3 text-xs font-semibold text-[var(--text-primary)]",
-                focusClasses,
-                disabledActionClasses,
-              )}
-              disabled={!canPersistTask}
-              type="submit"
-            >
-              Task-Beitrag erstellen
-            </button>
-          </div>
-        ) : (
-          <div className="mt-3 rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.58)] p-3">
-            <p className="text-xs font-semibold text-[var(--text-primary)]">
-              {contributionType === "resource_link"
-                ? "Resource Link vorbereitet"
-                : "Beitragstyp noch nicht verbunden"}
-            </p>
-            <p className="mt-1 text-[11px] leading-4 text-[var(--text-secondary)]">
-              Diese Auswahl schreibt aktuell keine Daten. Persistenz ist nur
-              für Task-Beiträge zu bestehenden Projects, Goals oder
-              verlinkbaren Skills verbunden.
-            </p>
-          </div>
-        )}
-
-        <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
-          Persistenter Pfad: Task + optionale Project-/Goal-/Skill-Relation
-          über die bestehende Inbox-Triage-RPC. Eine Skill-Relation ist Kontext,
-          keine Evidence und keine neue Entity.
-        </p>
-      </form>
-    </section>
-  );
-}
-
-function DraftSlot({
-  children,
-}: Readonly<{
-  children: ReactNode;
-}>) {
-  return (
-    <section
-      aria-labelledby="draft-slot-title"
-      className="rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(12,20,34,.38)] p-2.5"
-      data-inbox-section="draft-slot"
-    >
-      <p
-        className="px-1 pb-2 text-[10px] font-semibold uppercase text-[var(--text-muted)]"
-        id="draft-slot-title"
-      >
-        Draft
-      </p>
-      {children}
-    </section>
-  );
-}
-
-function EmptyDraftSlot() {
-  return (
-    <InboxEmptyState
-      description="Wähle zuerst eine Outcome Route."
-      title="Noch kein Draft ausgewählt"
-    />
-  );
-}
-
-function InboxSolvedArchiveDraft({
-  activeItem,
-  canArchive,
-}: Readonly<{
-  activeItem: InboxViewModel["activeItem"];
-  canArchive: boolean;
-}>) {
-  const [archiveState, archiveFormAction, archivePending] = useActionState<
-    InboxArchiveActionResult | null,
-    FormData
-  >(archiveInboxItemFormStateAction, null);
-  const archivedCurrentItem =
-    archiveState?.status === "success" &&
-    archiveState.inboxItemId === activeItem.id;
-
-  if (archivedCurrentItem) {
-    return (
-      <section
-        aria-labelledby="inbox-archive-success-title"
-        className="rounded-[18px] border border-[rgba(66,184,131,.34)] bg-[rgba(66,184,131,.10)] p-3"
-      >
-        <h3
-          className="text-sm font-semibold text-[var(--text-primary)]"
-          id="inbox-archive-success-title"
-        >
-          Inbox-Eintrag abgeschlossen
-        </h3>
-        <p
-          className="mt-1 text-xs leading-5 text-[var(--text-secondary)]"
-          role="status"
-        >
-          Dieser Eintrag wurde aus der aktiven Inbox entfernt. Es wurde kein
-          Zielobjekt erstellt.
-        </p>
-      </section>
-    );
-  }
-
-  return (
-    <section
-      aria-labelledby="solved-archive-draft-title"
-      className="rounded-[18px] border border-[rgba(95,200,215,.30)] bg-[rgba(95,200,215,.075)] p-3"
-    >
-      <form action={archiveFormAction}>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h3
-              className="text-sm font-semibold text-[var(--text-primary)]"
-              id="solved-archive-draft-title"
-            >
-              Solved / Archive Draft
-            </h3>
-            <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
-              Kein Zielobjekt nötig. Dieses Capture wird aus der aktiven Inbox
-              entfernt und archiviert.
-            </p>
-          </div>
-          <input name="inboxItemId" type="hidden" value={activeItem.id} />
-          <button
-            className={cn(
-              "min-h-9 rounded-[12px] border border-[rgba(95,200,215,.42)] bg-[rgba(95,200,215,.18)] px-3 text-xs font-semibold text-[var(--text-primary)]",
-              focusClasses,
-              disabledActionClasses,
-            )}
-            disabled={!canArchive || archivePending}
-            type="submit"
-          >
-            {archivePending ? "Archiviert..." : "Als erledigt archivieren"}
-          </button>
-        </div>
-        <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-          <DraftShellReadOnlyField
-            label="Kein Zielobjekt nötig"
-            value="Wird ohne Task, Project, Goal oder Resource abgeschlossen"
-          />
-          <DraftShellReadOnlyField
-            label="Archivstatus"
-            value="Setzt archived_at und Status archived"
-          />
-          <DraftShellReadOnlyField
-            label="Abschlussnotiz"
-            value="Nicht dauerhaft gespeichert"
-          />
-        </div>
-        <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
-          Kein Hard Delete. Die Abschlussnotiz wird aktuell nicht dauerhaft
-          gespeichert.
-        </p>
-        {archiveState?.status === "blocked" || archiveState?.status === "error" ? (
-          <InboxActionMessage
-            message={archiveState.message}
-            status={archiveState.status}
-          />
-        ) : null}
-      </form>
-    </section>
-  );
-}
-
-function InboxResourceDraft({
-  activeItem,
-  canCreateResource,
-  suggestion,
-}: Readonly<{
-  activeItem: InboxViewModel["activeItem"];
-  canCreateResource: boolean;
-  suggestion?: InboxRouteAISuggestion;
-}>) {
-  const [resourceState, resourceFormAction, resourcePending] = useActionState<
-    InboxResourceActionResult | null,
-    FormData
-  >(createResourceFromInboxFormStateAction, null);
-  const createdCurrentItem =
-    resourceState?.status === "success" &&
-    resourceState.inboxItemId === activeItem.id;
-
-  if (createdCurrentItem) {
-    return (
-      <section
-        aria-labelledby="resource-created-title"
-        className="rounded-[18px] border border-[rgba(66,184,131,.34)] bg-[rgba(66,184,131,.10)] p-3"
-      >
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h3
-              className="text-sm font-semibold text-[var(--text-primary)]"
-              id="resource-created-title"
-            >
-              Resource erstellt
-            </h3>
-            <p
-              className="mt-1 text-xs leading-5 text-[var(--text-secondary)]"
-              role="status"
-            >
-              Diese Inbox wurde als Resource gespeichert.
-            </p>
-          </div>
-          <Link
-            className={cn(
-              "inline-flex min-h-8 items-center rounded-[12px] border border-[rgba(66,184,131,.34)] bg-[rgba(66,184,131,.16)] px-3 text-xs font-semibold text-[var(--text-primary)]",
-              focusClasses,
-            )}
-            href="/resources"
-          >
-            Resources öffnen
-          </Link>
-        </div>
-      </section>
-    );
-  }
-
-  return (
-    <section
-      aria-labelledby="resource-draft-title"
-      className="rounded-[18px] border border-[rgba(168,119,255,.30)] bg-[rgba(168,119,255,.075)] p-3"
-    >
-      <form action={resourceFormAction}>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h3
-              className="text-sm font-semibold text-[var(--text-primary)]"
-              id="resource-draft-title"
-            >
-              Resource Draft
-            </h3>
-            <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
-              Wissen, Link, Notiz oder Material als Resource speichern.
-            </p>
-          </div>
-          <input name="inboxItemId" type="hidden" value={activeItem.id} />
-          <Pill accent="var(--accent-green)">Verbunden</Pill>
-          <button
-            className={cn(
-              "min-h-9 rounded-[12px] border border-[rgba(168,119,255,.42)] bg-[rgba(168,119,255,.18)] px-3 text-xs font-semibold text-[var(--text-primary)]",
-              focusClasses,
-              disabledActionClasses,
-            )}
-            disabled={!canCreateResource || resourcePending}
-            type="submit"
-          >
-            {resourcePending ? "Resource wird erstellt..." : "Resource erstellen"}
-          </button>
-        </div>
-        <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-          <DraftTextInput
-            defaultValue={suggestion?.resourceDraft?.title ?? activeItem.title}
-            label="Titel"
-            name="title"
-          />
-          <DraftSelect
-            defaultValue={validResourceType(suggestion?.resourceDraft?.type)}
-            label="Resource Typ"
-            name="type"
-          >
-            {resourceDraftTypes.map((type) => (
-              <option key={type.value} value={type.value}>
-                {type.label}
-              </option>
-            ))}
-          </DraftSelect>
-          <DraftTextarea
-            defaultValue={
-              suggestion?.resourceDraft?.summary ?? activeItem.originalCapture
-            }
-            label="Kurzfassung"
-            name="summary"
-          />
-          <DraftTextarea
-            defaultValue={suggestion?.resourceDraft?.source ?? ""}
-            label="Inhalt / Notiz"
-            name="content"
-          />
-          <DraftTextInput defaultValue="" label="URL optional" name="url" />
-        </div>
-        {resourceState?.status === "blocked" ||
-        resourceState?.status === "error" ? (
-          <InboxActionMessage
-            message={resourceState.message}
-            status={resourceState.status}
-          />
-        ) : null}
-      </form>
-    </section>
-  );
-}
-
-function InboxTaskDraft({
-  activeItem,
-  canCreateTask,
-  nextAction,
-  suggestion,
-}: Readonly<{
-  activeItem: InboxViewModel["activeItem"];
-  canCreateTask: boolean;
-  nextAction: InboxClarificationField;
-  suggestion?: InboxRouteAISuggestion;
-}>) {
-  const area =
-    activeItem.planningSignals.find((signal) => signal.label === "Area")
-      ?.value ?? "Review";
-
-  if (activeItem.triagedTaskId) {
-    return (
-      <section
-        aria-labelledby="task-created-title"
-        className="rounded-[18px] border border-[rgba(66,184,131,.34)] bg-[rgba(66,184,131,.10)] p-3"
-      >
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h3
-              className="text-sm font-semibold text-[var(--text-primary)]"
-              id="task-created-title"
-            >
-              Task erstellt
-            </h3>
-            <p
-              className="mt-1 text-xs leading-5 text-[var(--text-secondary)]"
-              role="status"
-            >
-              Diese Inbox wurde in eine Task umgewandelt. Planung und
-              Terminierung bleiben in Portfolio, Today und Calendar.
-            </p>
-          </div>
-          <Link
-            className={cn(
-              "inline-flex min-h-8 items-center rounded-[12px] border border-[rgba(91,124,250,.34)] bg-[rgba(91,124,250,.16)] px-3 text-xs font-semibold text-[var(--text-primary)]",
-              focusClasses,
-            )}
-            href={activeItem.portfolioHref ?? "/portfolio?view=tasks"}
-          >
-            Portfolio öffnen
-          </Link>
-        </div>
-      </section>
-    );
-  }
-
-  return (
-    <section
-      aria-labelledby="task-draft-title"
-      className="rounded-[18px] border border-[rgba(66,184,131,.30)] bg-[rgba(66,184,131,.075)] p-3"
-    >
-      <form action={triageInboxItemToTaskFormAction}>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h3
-              className="text-sm font-semibold text-[var(--text-primary)]"
-              id="task-draft-title"
-            >
-              Task Draft
-            </h3>
-            <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
-              Review aus der Inbox. Task-Erstellung passiert erst über diese
-              Aktion.
-            </p>
-          </div>
-          <input name="inboxItemId" type="hidden" value={activeItem.id} />
-          <input name="outcomeRoute" type="hidden" value="standalone_task" />
-          <input name="reviewNeeded" type="hidden" value="true" />
-          <button
-            className={cn(
-              "min-h-9 rounded-[12px] border border-[rgba(66,184,131,.42)] bg-[rgba(66,184,131,.22)] px-3 text-xs font-semibold text-[var(--text-primary)]",
-              focusClasses,
-              disabledActionClasses,
-            )}
-            disabled={!canCreateTask}
-            type="submit"
-          >
-            Task erstellen
-          </button>
-        </div>
-        <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-          <DraftTextInput
-            defaultValue={suggestion?.taskDraft?.title ?? activeItem.title}
-            label="Titel"
-            name="title"
-          />
-          <DraftTextarea
-            defaultValue={
-              suggestion?.taskDraft?.description ?? activeItem.originalCapture
-            }
-            label="Beschreibung / Kontext"
-            name="description"
-          />
-          <DraftTextInput
-            defaultValue={suggestion?.taskDraft?.nextAction ?? nextAction.value}
-            label="Nächste Aktion"
-            name="nextAction"
-          />
-          <DraftSelect label="Area" name="areaId">
-            {activeItem.persistedAreaId ? (
-              <option value={activeItem.persistedAreaId}>{area}</option>
-            ) : null}
-            <option value="">
-              {activeItem.persistedAreaId
-                ? "Keine Area setzen"
-                : "Nicht gesetzt - nicht gespeichert"}
-            </option>
-          </DraftSelect>
-          <DraftSelect
-            defaultValue={
-              validTaskPriority(suggestion?.taskDraft?.priority) ??
-              activeItem.priority ??
-              "P2"
-            }
-            label="Priorität"
-            name="priority"
-          >
-            {taskDraftPriorities.map((priority) => (
-              <option key={priority} value={priority}>
-                {priority}
-              </option>
-            ))}
-          </DraftSelect>
-          <DraftSelect
-            defaultValue={
-              validTaskDuration(suggestion?.taskDraft?.durationMinutes) ?? "30"
-            }
-            label="Effort / Dauer"
-            name="durationMinutes"
-          >
-            {taskDraftDurations.map((duration) => (
-              <option key={duration} value={duration}>
-                {duration} min
-              </option>
-            ))}
-          </DraftSelect>
-          <DraftSelect
-            defaultValue={validTaskEnergy(suggestion?.taskDraft?.energy) ?? "medium"}
-            label="Energie"
-            name="energy"
-          >
-            {taskDraftEnergies.map((energy) => (
-              <option key={energy} value={energy}>
-                {energy}
-              </option>
-            ))}
-          </DraftSelect>
-          <label className="block min-w-0">
-            <span className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-              Review nötig
-            </span>
-            <span className="mt-1.5 flex min-h-10 items-center rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(12,20,34,.74)] px-3 text-xs leading-5 text-[var(--text-primary)]">
-              Ja - Task startet im Inbox-Status
-            </span>
-          </label>
-        </div>
-        <label className="mt-3 flex items-center gap-2 text-xs text-[var(--text-secondary)]">
-          <input
-            className={cn("size-4 accent-[var(--accent-green)]", focusClasses)}
-            defaultChecked={suggestion?.taskDraft?.planToday ?? false}
-            name="planToday"
-            type="checkbox"
-          />
-          Heute planen
-        </label>
-        <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
-          Persistiert: Titel, Beschreibung inklusive nächster Aktion, Priorität,
-          Energie, Dauer und optionale Tagesplanung. Area wird nur gespeichert,
-          wenn eine DB-Area vorhanden ist.
-        </p>
-      </form>
-    </section>
-  );
-}
-
-function InboxActiveItemPanel({
-  activeItem,
-  appliedSuggestion,
-  addToExistingEnabled,
-  archiveEnabled,
-  contentState,
-  createNewEnabled,
-  existingTargets,
-  onSelectOutcomeRoute,
-  outcome,
-  selectedOutcomeRoute,
-  taskCreationEnabled,
-  profileId,
-}: Readonly<{
-  activeItem: InboxViewModel["activeItem"];
-  appliedSuggestion?: InboxRouteAISuggestion;
-  addToExistingEnabled: boolean;
-  archiveEnabled: boolean;
-  contentState: ContentStateMeta;
-  createNewEnabled: boolean;
-  existingTargets: InboxViewModel["existingTargets"];
-  onSelectOutcomeRoute: (route: InboxOutcomeRoute) => void;
-  outcome: InboxViewModel["outcome"];
-  selectedOutcomeRoute: InboxOutcomeRoute | null;
-  taskCreationEnabled: boolean;
-  profileId: InboxViewModel["profileId"];
-}>) {
-  const [cleanTitle, description, nextAction, missingInfo] = activeItem.fields;
-  const selectedDraftRoute = activeItem.triagedTaskId
-    ? null
-    : selectedOutcomeRoute;
-  const appliedSuggestionKey = appliedSuggestion
-    ? `${appliedSuggestion.route}:${appliedSuggestion.reason}`
-    : "none";
-  let draftSlot: ReactNode = <EmptyDraftSlot />;
-
-  if (selectedDraftRoute === "standalone_task") {
-    draftSlot = (
-      <InboxTaskDraft
-        activeItem={activeItem}
-        canCreateTask={taskCreationEnabled}
-        nextAction={nextAction}
-        suggestion={appliedSuggestion}
-      />
-    );
-  } else if (selectedDraftRoute === "solved_archive") {
-    draftSlot = (
-      <InboxSolvedArchiveDraft
-        activeItem={activeItem}
-        canArchive={archiveEnabled}
-      />
-    );
-  } else if (selectedDraftRoute === "add_to_existing") {
-    draftSlot = (
-      <InboxAddToExistingDraft
-        activeItem={activeItem}
-        canCreateTask={addToExistingEnabled}
-        existingTargets={existingTargets}
-        nextAction={nextAction}
-      />
-    );
-  } else if (selectedDraftRoute === "knowledge_resource") {
-    draftSlot = (
-      <InboxResourceDraft
-        activeItem={activeItem}
-        canCreateResource={profileId === "manual"}
-        suggestion={appliedSuggestion}
-      />
-    );
-  } else if (selectedDraftRoute === "create_new") {
-    draftSlot = (
-      <InboxCreateNewDraft
-        activeItem={activeItem}
-        canCreateNew={createNewEnabled}
-        nextAction={nextAction}
-        suggestion={appliedSuggestion}
-      />
-    );
-  }
-
-  return (
-    <section
-      aria-labelledby="active-item-title"
-      className={cn(panelClasses, "2xl:flex 2xl:min-h-0 2xl:flex-col")}
-      data-inbox-section="active-item"
-      {...contentStateAttributes(contentState, profileId)}
-    >
-      <div className={panelHeaderClasses}>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-[10px] font-semibold uppercase text-[var(--accent-orange)]">
-              Active item
-            </p>
-            <h2
-              className="mt-0.5 text-lg font-semibold text-[var(--text-primary)]"
-              id="active-item-title"
-            >
-              {activeItem.title}
-            </h2>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Pill active accent="var(--accent-orange)">
-              Stage: {activeItem.stage}
-            </Pill>
-            <Pill active accent="var(--accent-cyan)">
-              Type: {activeItem.type}
-            </Pill>
-          </div>
-        </div>
-      </div>
-
-      {activeItem.hasSelection ? (
-      <div
-        className="space-y-3 p-3 2xl:flex 2xl:min-h-0 2xl:flex-1 2xl:flex-col 2xl:gap-3 2xl:space-y-0 2xl:overflow-y-auto 2xl:pr-2"
-        data-inbox-section="active-item-body"
-      >
-        <section
-          aria-labelledby="original-capture-title"
-          className="rounded-[16px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.52)] p-3 2xl:min-h-[102px]"
-        >
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <h3
-              className="text-[10px] font-semibold uppercase text-[var(--text-muted)]"
-              id="original-capture-title"
-            >
-              Original Capture
-            </h3>
-            <Pill>{activeItem.source}</Pill>
-          </div>
-          <blockquote className="mt-2 border-l-[3px] border-[var(--accent-blue)] pl-3 text-[13px] leading-5 text-[var(--text-primary)]">
-            {`"${activeItem.originalCapture}"`}
-          </blockquote>
-        </section>
-
-        <section
-          aria-labelledby="clarification-fields-title"
-          className="space-y-3 2xl:space-y-3"
-        >
-          <h3 className="sr-only" id="clarification-fields-title">
-            Clarification Fields
-          </h3>
-          <div className="grid gap-3 xl:grid-cols-[minmax(260px,420px)_minmax(0,1fr)]">
-            <FieldSurface
-              className="2xl:min-h-[54px]"
-              field={cleanTitle}
-              rows={1}
-            />
-            <div className="hidden xl:block" />
-          </div>
-          <FieldSurface
-            className="2xl:min-h-[110px]"
-            field={description}
-            rows={2}
-          />
-          <div className="grid gap-3 xl:grid-cols-2">
-            <FieldSurface
-              className="2xl:min-h-[98px]"
-              field={nextAction}
-              rows={2}
-            />
-            <FieldSurface
-              className="2xl:min-h-[98px]"
-              field={missingInfo}
-              rows={2}
-            />
-          </div>
-        </section>
-
-        {activeItem.triagedTaskId ? (
-          <DraftSlot>
-            <InboxTaskDraft
-              activeItem={activeItem}
-              canCreateTask={false}
-              nextAction={nextAction}
-            />
-          </DraftSlot>
-        ) : (
-          <>
-            <InboxOutcomeRoutes
-              description={outcome.description}
-              onSelectRoute={onSelectOutcomeRoute}
-              options={outcome.options}
-              selectedRoute={selectedDraftRoute}
-              title={outcome.title}
-            />
-            <DraftSlot key={`${selectedDraftRoute ?? "empty"}:${appliedSuggestionKey}`}>
-              {draftSlot}
-            </DraftSlot>
-          </>
-        )}
-        <InboxPlanningSignals
-          activeItem={activeItem}
-          selectedRoute={selectedDraftRoute}
-          signals={activeItem.planningSignals}
-        />
-        <div
-          aria-label="Inbox item actions"
-          className="mt-auto flex flex-wrap gap-2 border-t border-[var(--border-subtle)] pt-3"
-        >
-          {["Save progress", "Mark as clarified", "Snooze", "Dismiss"].map(
-            (action, index) => (
-              <button
-                className={cn(
-                  "min-h-8 rounded-[12px] border px-3 text-xs font-semibold",
-                  index === 1
-                    ? "border-[rgba(66,184,131,.34)] bg-[rgba(66,184,131,.18)] text-[var(--text-primary)]"
-                    : "border-[var(--border-subtle)] bg-[rgba(18,28,43,.70)] text-[var(--text-secondary)]",
-                  focusClasses,
-                  disabledActionClasses,
-                )}
-                disabled={!activeItem.actionsEnabled}
-                key={`inbox-action-${index}`}
-                type="button"
-              >
-                {action}
-              </button>
-            ),
-          )}
-        </div>
-      </div>
-      ) : (
-        <div
-          className="space-y-3 p-3 2xl:flex 2xl:min-h-0 2xl:flex-1 2xl:flex-col 2xl:overflow-y-auto 2xl:pr-2"
+          className="min-h-0 space-y-4 overflow-y-auto p-4"
           data-inbox-section="active-item-body"
         >
-          <InboxEmptyState
-            className="2xl:min-h-[180px]"
-            description={activeItem.emptyState.description}
-            title={activeItem.emptyState.title}
-          />
-          <div
-            aria-label="Inbox item actions"
-            className="mt-auto flex flex-wrap gap-2 border-t border-[var(--border-subtle)] pt-3"
+          <details className="rounded-[12px] border border-[var(--border-subtle)] p-3">
+            <summary
+              className={cn(
+                "cursor-pointer text-xs text-[var(--text-muted)]",
+                focus,
+              )}
+            >
+              Original Capture
+            </summary>
+            <blockquote className="mt-2 whitespace-pre-wrap break-words border-l-2 border-[var(--accent-blue)] pl-3 text-sm">
+              {item.originalCapture}
+            </blockquote>
+          </details>
+          {!enabled && (
+            <p role="status" className="text-sm text-[var(--text-muted)]">
+              {viewModel.profileId === "demo"
+                ? "Demo-Referenz · keine Speicherung."
+                : "Speichern erfordert eine angemeldete Manual-Session."}
+            </p>
+          )}
+          <form
+            aria-label="Active Item bearbeiten"
+            ref={formRef}
+            onSubmit={(event) => {
+              event.preventDefault();
+              void save();
+            }}
           >
-            {["Save progress", "Mark as clarified", "Snooze", "Dismiss"].map(
-              (action, index) => (
+            <fieldset
+              disabled={!enabled || pending}
+              className="space-y-3 disabled:opacity-70"
+            >
+              <label className="block text-xs text-[var(--text-secondary)]">
+                Clean Title
+                <input
+                  className={cn(input, "mt-1")}
+                  value={fields.title}
+                  onChange={(event) => change("title", event.target.value)}
+                  minLength={2}
+                  maxLength={500}
+                  required
+                />
+              </label>
+              <label className="block text-xs text-[var(--text-secondary)]">
+                Description / Context
+                <textarea
+                  className={cn(input, "mt-1 resize-y")}
+                  rows={4}
+                  value={fields.body ?? ""}
+                  maxLength={20000}
+                  onChange={(event) => change("body", event.target.value)}
+                />
+              </label>
+              <div className="grid gap-3 md:grid-cols-2">
+                <label className="text-xs text-[var(--text-secondary)]">
+                  Next Action
+                  <textarea
+                    className={cn(input, "mt-1 resize-y")}
+                    rows={3}
+                    maxLength={20000}
+                    value={fields.nextAction ?? ""}
+                    onChange={(event) =>
+                      change("nextAction", event.target.value)
+                    }
+                  />
+                </label>
+                <label className="text-xs text-[var(--text-secondary)]">
+                  Missing Info
+                  <textarea
+                    className={cn(input, "mt-1 resize-y")}
+                    rows={3}
+                    maxLength={20000}
+                    value={fields.missingInfo ?? ""}
+                    onChange={(event) =>
+                      change("missingInfo", event.target.value)
+                    }
+                  />
+                </label>
+              </div>
+              <section
+                aria-labelledby="planning-signals-title"
+                className="border-t border-[var(--border-subtle)] pt-3"
+              >
+                <h3
+                  id="planning-signals-title"
+                  className="mb-3 text-sm font-semibold"
+                >
+                  Planning Signals
+                </h3>
+                <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+                  <label className="text-xs">
+                    Priority
+                    <select
+                      className={cn(input, "mt-1")}
+                      aria-label="Priority"
+                      value={fields.priority}
+                      onChange={(e) =>
+                        change(
+                          "priority",
+                          e.target.value as InboxClarificationInput["priority"],
+                        )
+                      }
+                    >
+                      {["none", "P0", "P1", "P2", "P3"].map((value) => (
+                        <option key={value}>{value}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="text-xs">
+                    Energy
+                    <select
+                      className={cn(input, "mt-1")}
+                      aria-label="Energy"
+                      value={fields.energy ?? ""}
+                      onChange={(e) =>
+                        change(
+                          "energy",
+                          (e.target.value ||
+                            null) as InboxClarificationInput["energy"],
+                        )
+                      }
+                    >
+                      <option value="">Keine Angabe</option>
+                      {["low", "medium", "high"].map((value) => (
+                        <option key={value}>{value}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="text-xs">
+                    Effort / Duration (min)
+                    <input
+                      className={cn(input, "mt-1")}
+                      type="number"
+                      min={1}
+                      max={10080}
+                      value={fields.durationMinutes ?? ""}
+                      onChange={(e) =>
+                        change(
+                          "durationMinutes",
+                          e.target.value ? Number(e.target.value) : null,
+                        )
+                      }
+                    />
+                  </label>
+                  <label className="text-xs">
+                    Area
+                    <select
+                      className={cn(input, "mt-1")}
+                      aria-label="Area"
+                      value={fields.areaId ?? ""}
+                      onChange={(e) => change("areaId", e.target.value || null)}
+                    >
+                      <option value="">Keine Area</option>
+                      {(viewModel.areas ?? []).map((area) => (
+                        <option key={area.id} value={area.id}>
+                          {area.title}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="col-span-2 text-xs">
+                    Deadline hint
+                    <input
+                      className={cn(input, "mt-1")}
+                      type="date"
+                      value={fields.deadlineHint ?? ""}
+                      onChange={(e) =>
+                        change("deadlineHint", e.target.value || null)
+                      }
+                    />
+                  </label>
+                  <label className="flex min-h-9 items-center gap-2 text-xs">
+                    <input
+                      type="checkbox"
+                      checked={fields.reviewNeeded}
+                      onChange={(e) => change("reviewNeeded", e.target.checked)}
+                    />
+                    Review needed
+                  </label>
+                  <label className="flex min-h-9 items-center gap-2 text-xs">
+                    <input
+                      type="checkbox"
+                      checked={fields.todayCandidate}
+                      onChange={(e) =>
+                        change("todayCandidate", e.target.checked)
+                      }
+                    />
+                    Today candidate
+                  </label>
+                </div>
+              </section>
+              <div className="flex flex-wrap items-center gap-3 pt-1">
                 <button
                   className={cn(
-                    "min-h-8 rounded-[12px] border px-3 text-xs font-semibold",
-                    index === 1
-                      ? "border-[rgba(66,184,131,.34)] bg-[rgba(66,184,131,.18)] text-[var(--text-primary)]"
-                      : "border-[var(--border-subtle)] bg-[rgba(18,28,43,.70)] text-[var(--text-secondary)]",
-                    focusClasses,
-                    disabledActionClasses,
+                    button,
+                    "border-[var(--accent-cyan)] bg-[color-mix(in_srgb,var(--accent-cyan)_12%,transparent)]",
                   )}
-                  disabled
-                  key={`inbox-empty-action-${index}`}
-                  type="button"
+                  type="submit"
+                  disabled={!dirty || pending}
                 >
-                  {action}
+                  {pending ? "Speichert …" : "Save"}
                 </button>
-              ),
-            )}
-          </div>
+                <span className="text-xs text-[var(--text-muted)]">
+                  {dirty
+                    ? "Ungespeicherte Änderungen · vor Wechsel oder Routing speichern."
+                    : "Felder und Signale werden gemeinsam gespeichert."}
+                </span>
+              </div>
+            </fieldset>
+          </form>
+          {error && (
+            <p role="alert" className="text-sm text-[var(--accent-red)]">
+              {error}
+            </p>
+          )}
+          {enabled && (
+            <section
+              aria-labelledby="outcome-route-title"
+              className="border-t border-[var(--border-subtle)] pt-3"
+            >
+              <h3 id="outcome-route-title" className="text-sm font-semibold">
+                Outcome Route
+              </h3>
+              <p className="mt-1 text-xs text-[var(--text-muted)]">
+                Wo gehört dieser Gedanke hin?
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {routes
+                  .filter(
+                    (option) =>
+                      option.id !== "existing_skill" ||
+                      viewModel.existingTargets.skills.length > 0,
+                  )
+                  .map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      className={cn(
+                        button,
+                        route === option.id &&
+                          "border-[var(--accent-cyan)] bg-[color-mix(in_srgb,var(--accent-cyan)_12%,transparent)]",
+                      )}
+                      aria-pressed={route === option.id}
+                      disabled={pending}
+                      onClick={() => {
+                        setRoute(option.id);
+                        setTargetId("");
+                      }}
+                    >
+                      {option.title}
+                    </button>
+                  ))}
+              </div>
+              {route.startsWith("existing_") && (
+                <label className="mt-3 block text-xs">
+                  Bestehendes Ziel
+                  <select
+                    className={cn(input, "mt-1")}
+                    aria-label="Bestehendes Ziel"
+                    value={targetId}
+                    onChange={(e) => setTargetId(e.target.value)}
+                    disabled={pending}
+                  >
+                    <option value="">Ziel auswählen</option>
+                    {targets.map((target) => (
+                      <option value={target.id} key={target.id}>
+                        {target.title}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="mt-1 block text-[var(--text-muted)]">
+                    {targets.length
+                      ? "Erstellt einen Task mit diesem Kontext. Detailarbeit folgt am Ziel."
+                      : "Keine aktiven Ziele vorhanden."}
+                  </span>
+                </label>
+              )}
+              {route && (
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <button
+                    className={cn(button, "border-[var(--accent-green)]")}
+                    type="button"
+                    disabled={
+                      dirty ||
+                      pending ||
+                      (route.startsWith("existing_") && !targetId)
+                    }
+                    onClick={complete}
+                  >
+                    Route bestätigen
+                  </button>
+                  <p className="text-xs text-[var(--text-muted)]">
+                    {route === "archive"
+                      ? "Abschließen ohne neues Ziel. Original Capture bleibt erhalten."
+                      : route === "task" || route.startsWith("existing_")
+                        ? "Task: Kontext, Priority, Energy, Dauer, Area, Today und Deadline."
+                        : route === "project"
+                          ? "Project: Kontext, Next Step, Priority, Area und Zieldatum."
+                          : route === "goal"
+                            ? "Goal: Kontext, Area und Zieldatum."
+                            : "Resource: Kontext, Area und Review needed."}
+                  </p>
+                </div>
+              )}
+            </section>
+          )}
+        </div>
+      </section>
+      <aside
+        className="min-h-0 space-y-3 overflow-y-auto"
+        aria-label="Sekundärer Inbox Kontext"
+      >
+        <LocalAssistant itemId={item.id} enabled={enabled} />
+        <section
+          className={cn(panel, "p-4")}
+          aria-labelledby="related-context-title"
+        >
+          <h2 id="related-context-title" className="text-sm font-semibold">
+            Related Context
+          </h2>
+          <p className="mt-1 text-xs text-[var(--text-muted)]">
+            Vorhandene lokale Ziele
+          </p>
+          <ul className="mt-3 space-y-2">
+            {[
+              ...viewModel.existingTargets.projects,
+              ...viewModel.existingTargets.goals,
+              ...viewModel.existingTargets.skills,
+              ...viewModel.existingTargets.resources,
+            ]
+              .slice(0, 5)
+              .map((target) => (
+                <li key={target.id}>
+                  {target.href ? (
+                    <Link
+                      className={cn(
+                        "block rounded-lg p-2 text-sm hover:bg-[var(--surface-2)]",
+                        focus,
+                      )}
+                      href={target.href}
+                    >
+                      <span className="block text-[10px] text-[var(--text-muted)]">
+                        {target.type}
+                      </span>
+                      {target.title}
+                    </Link>
+                  ) : (
+                    <span className="text-sm">{target.title}</span>
+                  )}
+                </li>
+              ))}
+          </ul>
+          {!Object.values(viewModel.existingTargets).some(
+            (targets) => targets.length,
+          ) && (
+            <p className="mt-3 text-sm text-[var(--text-muted)]">
+              Kein lokaler Kontext vorhanden.
+            </p>
+          )}
+        </section>
+      </aside>
+    </>
+  );
+}
+function LocalAssistant({
+  itemId,
+  enabled,
+}: {
+  itemId?: string;
+  enabled: boolean;
+}) {
+  const [state, action, pending] = useActionState(
+    suggestInboxRouteAction,
+    null,
+  );
+  const [dismissed, setDismissed] = useState<typeof state>(null);
+  return (
+    <section className={cn(panel, "p-4")} aria-labelledby="ai-assistant-title">
+      <h2 id="ai-assistant-title" className="text-sm font-semibold">
+        AI Assistant
+      </h2>
+      <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">
+        Optionaler lokaler Vorschlag aus gespeicherten Daten. Keine automatische
+        Übernahme.
+      </p>
+      {enabled && (
+        <form action={action} className="mt-3">
+          <input type="hidden" name="inboxItemId" value={itemId} />
+          <button className={button} disabled={pending}>
+            {pending ? "Prüft …" : "Lokalen Vorschlag anzeigen"}
+          </button>
+        </form>
+      )}
+      {state && state !== dismissed && (
+        <div className="mt-3 space-y-2 text-sm" role="status">
+          {state.suggestion ? (
+            <>
+              <p>
+                {
+                  {
+                    standalone_task: "Standalone Task",
+                    add_to_existing: "Existing Project / Goal",
+                    create_new: "New Project / Goal",
+                    resource: "Resource",
+                    solved_archive: "Solved / Archive",
+                  }[state.suggestion.route]
+                }
+              </p>
+              <p className="text-[var(--text-secondary)]">
+                {state.suggestion.reason}
+              </p>
+              {state.suggestion.taskDraft && (
+                <p className="text-xs text-[var(--text-muted)]">
+                  Vorschlag: {state.suggestion.taskDraft.priority} ·{" "}
+                  {state.suggestion.taskDraft.energy} ·{" "}
+                  {state.suggestion.taskDraft.durationMinutes} min
+                </p>
+              )}
+            </>
+          ) : (
+            <p>{state.message}</p>
+          )}
+          <button
+            className={button}
+            type="button"
+            onClick={() => setDismissed(state)}
+          >
+            Vorschlag schließen
+          </button>
         </div>
       )}
     </section>
   );
 }
-
-function AIAssistantPanel({
-  activeItem,
-  assistant,
-  contentState,
-  onApplySuggestion,
-  profileId,
-}: Readonly<{
-  activeItem: InboxViewModel["activeItem"];
-  assistant: InboxViewModel["aiAssistant"];
-  contentState: ContentStateMeta;
-  onApplySuggestion: (suggestion: InboxRouteAISuggestion) => void;
-  profileId: InboxViewModel["profileId"];
-}>) {
-  const [suggestionState, suggestionFormAction, suggestionPending] =
-    useActionState<InboxAISuggestionActionResult | null, FormData>(
-      suggestInboxRouteAction,
-      null,
-    );
-  const suggestion = suggestionState?.suggestion;
-  const suggestionKey = suggestion
-    ? `${activeItem.id ?? "empty"}:${suggestion.route}:${suggestion.reason}`
-    : "";
-  const [dismissedSuggestionKey, setDismissedSuggestionKey] = useState("");
-  const canSuggest = Boolean(
-    profileId === "manual" && activeItem.hasSelection && activeItem.id,
-  );
-  const showSuggestion = Boolean(
-    suggestion &&
-      suggestionState?.status === "success" &&
-      dismissedSuggestionKey !== suggestionKey,
-  );
-
-  return (
-    <section
-      aria-labelledby="ai-assistant-title"
-      className={panelClasses}
-      data-inbox-section="ai-assistant"
-      {...contentStateAttributes(contentState, profileId)}
-    >
-      <div className={panelHeaderClasses}>
-        <SectionTitle id="ai-assistant-title" label={assistant.title}>
-          <Pill active accent="var(--accent-purple)">
-            {assistant.mode}
-          </Pill>
-        </SectionTitle>
-      </div>
-      <div className="space-y-3 p-4">
-        <p className="text-xs text-[var(--text-secondary)]">
-          {assistant.description}
-        </p>
-        <form
-          action={suggestionFormAction}
-          aria-label="AI Vorschlag erzeugen"
-          className="rounded-[16px] border border-[rgba(168,119,255,.28)] bg-[rgba(168,119,255,.075)] p-3"
-        >
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-xs font-semibold text-[var(--text-primary)]">
-                AI Vorschlag
-              </p>
-              <p className="mt-1 text-[11px] leading-4 text-[var(--text-secondary)]">
-                Deterministischer Mock. Erzeugt nur einen Review-Vorschlag,
-                keine Persistenz.
-              </p>
-            </div>
-            <input name="inboxItemId" type="hidden" value={activeItem.id ?? ""} />
-            <button
-              className={cn(
-                "min-h-9 rounded-[12px] border border-[rgba(168,119,255,.42)] bg-[rgba(168,119,255,.18)] px-3 text-xs font-semibold text-[var(--text-primary)]",
-                focusClasses,
-                disabledActionClasses,
-              )}
-              disabled={!canSuggest || suggestionPending}
-              type="submit"
-            >
-              {suggestionPending ? "Vorschlag läuft..." : "AI Vorschlag erzeugen"}
-            </button>
-          </div>
-          {!canSuggest ? (
-            <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
-              Wähle im Manual-Profil einen echten Inbox-Eintrag aus.
-            </p>
-          ) : null}
-          {suggestionState?.status === "blocked" ||
-          suggestionState?.status === "error" ? (
-            <InboxActionMessage
-              message={suggestionState.message}
-              status={suggestionState.status}
-            />
-          ) : null}
-        </form>
-        {showSuggestion && suggestion ? (
-          <article
-            aria-label="AI Vorschlag Review"
-            className="rounded-[16px] border border-[rgba(168,119,255,.30)] bg-[rgba(15,23,36,.78)] p-3"
-          >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-                  Vorschlag prüfen
-                </p>
-                <h3 className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
-                  Route: {suggestionDisplayRoute(suggestion.route)}
-                </h3>
-              </div>
-              <Pill active accent="var(--accent-purple)">
-                Confidence: {suggestion.confidence}
-              </Pill>
-            </div>
-            <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
-              {suggestion.reason}
-            </p>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              {suggestion.taskDraft?.title ? (
-                <SuggestionBox
-                  suggestion={{
-                    accent: "var(--accent-green)",
-                    label: "Task Title",
-                    value: suggestion.taskDraft.title,
-                  }}
-                />
-              ) : null}
-              {suggestion.taskDraft?.nextAction ? (
-                <SuggestionBox
-                  suggestion={{
-                    accent: "var(--accent-green)",
-                    label: "Next Action",
-                    value: suggestion.taskDraft.nextAction,
-                  }}
-                />
-              ) : null}
-              {suggestion.resourceDraft?.title ? (
-                <SuggestionBox
-                  suggestion={{
-                    accent: "var(--accent-purple)",
-                    label: "Resource Title",
-                    value: suggestion.resourceDraft.title,
-                  }}
-                />
-              ) : null}
-              {suggestion.createNewDraft?.title ? (
-                <SuggestionBox
-                  suggestion={{
-                    accent: "var(--accent-green)",
-                    label:
-                      suggestion.createNewDraft.type === "goal"
-                        ? "Goal Title"
-                        : "Project Title",
-                    value: suggestion.createNewDraft.title,
-                  }}
-                />
-              ) : null}
-            </div>
-            {suggestion.warnings?.length ? (
-              <ul className="mt-3 space-y-1 text-[10px] leading-4 text-[var(--text-muted)]">
-                {suggestion.warnings.map((warning) => (
-                  <li key={warning}>Warnung: {warning}</li>
-                ))}
-              </ul>
-            ) : null}
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button
-                className={cn(
-                  "min-h-8 rounded-[12px] border border-[rgba(66,184,131,.40)] bg-[rgba(66,184,131,.18)] px-3 text-xs font-semibold text-[var(--text-primary)]",
-                  focusClasses,
-                )}
-                onClick={() => onApplySuggestion(suggestion)}
-                type="button"
-              >
-                Vorschlag übernehmen
-              </button>
-              <button
-                className={cn(
-                  "min-h-8 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.70)] px-3 text-xs font-semibold text-[var(--text-secondary)]",
-                  focusClasses,
-                )}
-                onClick={() => setDismissedSuggestionKey(suggestionKey)}
-                type="button"
-              >
-                Verwerfen
-              </button>
-            </div>
-          </article>
-        ) : null}
-        <div className="rounded-[16px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.52)] p-3">
-          <p className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-            Suggested Planning
-          </p>
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            {assistant.planning.map((suggestion, index) => (
-              <SuggestionBox
-                key={`inbox-ai-suggestion-${index}`}
-                suggestion={suggestion}
-              />
-            ))}
-          </div>
-          <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
-            Vorschlagsschicht. Keine automatische Übernahme.
-          </p>
-        </div>
-        <div className="rounded-[16px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.52)] p-3">
-          <p className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-            Suggested Routes
-          </p>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {assistant.outcomes.length > 0 ? (
-              assistant.outcomes.map((outcome, index) => (
-                <Pill
-                  active={index === 0}
-                  accent={
-                    index === 0
-                      ? "var(--accent-blue)"
-                      : index === 1
-                        ? "var(--accent-purple)"
-                        : "var(--accent-orange)"
-                  }
-                  key={outcome}
-                >
-                  {outcome}
-                </Pill>
-              ))
-            ) : (
-              <InboxEmptyState
-                className="w-full py-3"
-                description={assistant.emptyState.description}
-                title={assistant.emptyState.title}
-              />
-            )}
-          </div>
-        </div>
-        <label className="block">
-          <span className="sr-only">Discuss this item with AI</span>
-          <textarea
-            className={cn(
-              "min-h-[72px] w-full resize-none rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-3 py-2 text-xs leading-5 text-[var(--text-secondary)] placeholder:text-[var(--text-muted)]",
-              focusClasses,
-            )}
-            placeholder={assistant.placeholder}
-            readOnly
-          />
-        </label>
-      </div>
-    </section>
-  );
-}
-
-function SuggestionBox({
-  suggestion,
-}: Readonly<{
-  suggestion: InboxPlanningSuggestion;
-}>) {
-  return (
-    <article
-      className="rounded-[12px] border border-[var(--border-subtle)] border-l-[3px] border-l-[var(--accent)] bg-[rgba(15,23,36,.70)] px-3 py-2"
-      style={accentStyle(suggestion.accent)}
-    >
-      <p className="text-[10px] text-[var(--text-muted)]">{suggestion.label}</p>
-      <p className="mt-0.5 text-xs font-semibold text-[var(--text-primary)]">
-        {suggestion.value}
-      </p>
-    </article>
-  );
-}
-
-function DecisionChecklist({
-  checklist,
-  contentState,
-  profileId,
-}: Readonly<{
-  checklist: InboxViewModel["checklist"];
-  contentState: ContentStateMeta;
-  profileId: InboxViewModel["profileId"];
-}>) {
-  return (
-    <section
-      aria-labelledby="decision-checklist-title"
-      className={panelClasses}
-      data-inbox-section="decision-checklist"
-      {...contentStateAttributes(contentState, profileId)}
-    >
-      <div className={panelHeaderClasses}>
-        <SectionTitle id="decision-checklist-title" label={checklist.title}>
-          <Pill active accent="var(--accent-orange)">
-            {checklist.progress}
-          </Pill>
-        </SectionTitle>
-      </div>
-      <div className="p-4">
-        <ul className="space-y-2">
-          {checklist.items.map((item, index) => (
-            <ChecklistItem item={item} key={`inbox-checklist-${index}`} />
-          ))}
-        </ul>
-      </div>
-    </section>
-  );
-}
-
-function ChecklistItem({ item }: Readonly<{ item: InboxChecklistItem }>) {
-  const isDone = item.state === "done";
-  const accent = isDone ? "var(--accent-green)" : "var(--accent-orange)";
-
-  return (
-    <li className="flex items-center justify-between gap-3">
-      <span className="flex min-w-0 items-center gap-2">
-        <Dot accent={accent} className={isDone ? "opacity-90" : "opacity-72"} />
-        <span
-          className={cn(
-            "truncate text-xs font-medium",
-            isDone ? "text-[var(--text-secondary)]" : "text-[var(--text-muted)]",
-          )}
-        >
-          {item.label}
-        </span>
-      </span>
-      <span
-        className={cn(
-          "shrink-0 text-[11px] font-medium",
-          isDone ? "text-[var(--accent-green)]" : "text-[var(--accent-orange)]",
-        )}
-      >
-        {item.state}
-      </span>
-    </li>
-  );
-}
-
-function RelatedContext({
-  contentState,
-  context,
-  profileId,
-}: Readonly<{
-  contentState: ContentStateMeta;
-  context: InboxViewModel["relatedContext"];
-  profileId: InboxViewModel["profileId"];
-}>) {
-  return (
-    <section
-      aria-labelledby="related-context-title"
-      className={cn(panelClasses, "2xl:flex 2xl:min-h-0 2xl:flex-1 2xl:flex-col")}
-      data-inbox-section="related-context"
-      {...contentStateAttributes(contentState, profileId)}
-    >
-      <div className={panelHeaderClasses}>
-        <SectionTitle id="related-context-title" label={context.title}>
-          <Pill active>{context.mode}</Pill>
-        </SectionTitle>
-      </div>
-      <div className="space-y-2 p-4 2xl:flex 2xl:min-h-0 2xl:flex-1 2xl:flex-col">
-        <input
-          aria-label="Search related context"
-          className={cn(
-            "h-9 w-full shrink-0 rounded-[13px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-3 text-xs text-[var(--text-secondary)] placeholder:text-[var(--text-muted)]",
-            focusClasses,
-          )}
-          placeholder={context.placeholder}
-          readOnly
-        />
-        <div className="grid gap-2 2xl:min-h-0 2xl:flex-1 2xl:overflow-y-auto 2xl:pr-1">
-          {context.items.length > 0 ? (
-            context.items.map((item, index) => (
-              <RelatedContextRow
-                actionsEnabled={context.actionsEnabled}
-                item={item}
-                key={`inbox-related-context-${index}`}
-              />
-            ))
-          ) : (
-            <InboxEmptyState
-              description={context.emptyState.description}
-              title={context.emptyState.title}
-            />
-          )}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function RelatedContextRow({
-  actionsEnabled,
-  item,
-}: Readonly<{
-  actionsEnabled: boolean;
-  item: InboxRelatedContextItem;
-}>) {
-  return (
-    <article className="grid min-h-[52px] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-[14px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.54)] px-3 py-2">
-      <div className="flex min-w-0 items-center gap-3">
-        <Dot accent={item.accent} className="shrink-0" />
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <Pill accent={item.accent}>{item.typeArea}</Pill>
-            <p className="min-w-0 truncate text-sm font-semibold text-[var(--text-primary)]">
-              {item.name}
-            </p>
-          </div>
-          <p className="mt-1 truncate text-[10px] text-[var(--text-muted)]">
-            {item.meta}
-          </p>
-        </div>
-      </div>
-      <div className="flex shrink-0 items-center gap-3">
-        <span className="text-[10px] font-medium text-[var(--text-muted)]">
-          {item.score}
-        </span>
-        <button
-          className={cn(
-            "min-h-8 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.76)] px-3 text-xs font-semibold text-[var(--text-secondary)]",
-            focusClasses,
-            disabledActionClasses,
-          )}
-          disabled={!actionsEnabled}
-          type="button"
-        >
-          Use
-        </button>
-      </div>
-    </article>
-  );
-}
-
-function InboxAIAssistantPanel({
-  activeItem,
-  onApplySuggestion,
-  viewModel,
-}: Readonly<{
-  activeItem: InboxViewModel["activeItem"];
-  onApplySuggestion: (suggestion: InboxRouteAISuggestion) => void;
-  viewModel: InboxViewModel;
-}>) {
-  return (
-    <aside
-      className="space-y-4 2xl:flex 2xl:h-full 2xl:min-h-0 2xl:flex-col 2xl:gap-3 2xl:space-y-0"
-      aria-label="Inbox assistant and context"
-    >
-      <AIAssistantPanel
-        activeItem={activeItem}
-        assistant={viewModel.aiAssistant}
-        contentState={viewModel.contentStates.aiAssistant}
-        onApplySuggestion={onApplySuggestion}
-        profileId={viewModel.profileId}
-      />
-      <DecisionChecklist
-        checklist={viewModel.checklist}
-        contentState={viewModel.contentStates.checklist}
-        profileId={viewModel.profileId}
-      />
-      <RelatedContext
-        contentState={viewModel.contentStates.relatedContext}
-        context={viewModel.relatedContext}
-        profileId={viewModel.profileId}
-      />
-    </aside>
-  );
-}
-
 export function InboxPage({
   viewModel,
-}: Readonly<{
-  viewModel: InboxViewModel;
-}>) {
-  const activeItemKey = `${viewModel.activeItem.id ?? "empty"}:${
-    viewModel.activeItem.type
-  }:${viewModel.activeItem.triagedTaskId ?? "open"}`;
-  const [outcomeSelection, setOutcomeSelection] = useState<{
-    key: string;
-    route: InboxOutcomeRoute | null;
-  }>({
-    key: activeItemKey,
-    route: null,
-  });
-  const selectedOutcomeRoute =
-    outcomeSelection.key === activeItemKey
-      ? outcomeSelection.route
-      : null;
-  const [appliedSuggestionState, setAppliedSuggestionState] = useState<{
-    key: string;
-    suggestion: InboxRouteAISuggestion;
-  } | null>(null);
-  const appliedSuggestion =
-    appliedSuggestionState?.key === activeItemKey
-      ? appliedSuggestionState.suggestion
-      : undefined;
-  const setSelectedOutcomeRoute = (route: InboxOutcomeRoute) => {
-    setOutcomeSelection({ key: activeItemKey, route });
-  };
-  const applySuggestion = (suggestion: InboxRouteAISuggestion) => {
-    setOutcomeSelection({
-      key: activeItemKey,
-      route: outcomeRouteFromSuggestion(suggestion.route),
-    });
-    setAppliedSuggestionState({
-      key: activeItemKey,
-      suggestion,
-    });
-  };
-
-  const taskCreationEnabled = Boolean(
-    viewModel.quickCapture.enabled &&
-      viewModel.activeItem.hasSelection &&
-      !viewModel.activeItem.triagedTaskId &&
-      selectedOutcomeRoute === "standalone_task",
+}: Readonly<{ viewModel: InboxViewModel }>) {
+  const router = useRouter();
+  const params = useSearchParams();
+  const [query, setQuery] = useState(params.get("q") ?? "");
+  const [filter, setFilter] = useState(
+    ["raw", "clarify"].includes(params.get("stage") ?? "")
+      ? params.get("stage")!
+      : "all",
   );
-  const addToExistingEnabled = Boolean(
-    viewModel.quickCapture.enabled &&
-      viewModel.activeItem.hasSelection &&
-      !viewModel.activeItem.triagedTaskId &&
-      selectedOutcomeRoute === "add_to_existing",
+  const [dirty, setDirty] = useState(false);
+  const [completed, setCompleted] = useState<InboxWorkspaceResult | null>(null);
+  const items = viewModel.queue.filter(
+    (item) =>
+      (filter === "all" || item.stage === filter) &&
+      `${item.title} ${item.note}`
+        .toLocaleLowerCase()
+        .includes(query.trim().toLocaleLowerCase()),
   );
-  const createNewEnabled = Boolean(
-    viewModel.quickCapture.enabled &&
-      viewModel.activeItem.hasSelection &&
-      !viewModel.activeItem.triagedTaskId &&
-      selectedOutcomeRoute === "create_new",
-  );
-  const archiveEnabled = Boolean(
-    viewModel.quickCapture.enabled &&
-      viewModel.activeItem.hasSelection &&
-      !viewModel.activeItem.triagedTaskId,
-  );
-  const routeSelected = Boolean(selectedOutcomeRoute);
-  const checklist = useMemo(() => {
-    const items = viewModel.checklist.items.map((item) => {
-      if (item.label === "Outcome Route gewählt" && routeSelected) {
-        return { ...item, state: "done" as const };
-      }
-
-      return item;
-    });
-    const doneCount = items.filter((item) => item.state === "done").length;
-
-    return {
-      ...viewModel.checklist,
-      items,
-      progress: `${doneCount} / ${items.length} ready`,
-    };
-  }, [routeSelected, viewModel.checklist]);
-
+  const activeId = viewModel.activeItem.id;
+  const selectedVisible = items.some((item) => item.id === activeId);
+  useEffect(() => {
+    if (dirty || window.location.pathname !== "/inbox") return;
+    const nextId = selectedVisible ? activeId : items[0]?.id;
+    const next = new URLSearchParams();
+    if (nextId) next.set("item", nextId);
+    if (query) next.set("q", query);
+    if (filter !== "all") next.set("stage", filter);
+    const href = `/inbox${next.size ? `?${next}` : ""}`;
+    if (window.location.pathname + window.location.search !== href) {
+      if (nextId && nextId !== activeId)
+        router.replace(href, { scroll: false });
+      else window.history.replaceState(null, "", href);
+    }
+  }, [activeId, dirty, filter, items, query, router, selectedVisible]);
   return (
     <div
-      className="mx-auto flex w-full max-w-[2168px] flex-col gap-3 pb-8 2xl:h-[calc(100dvh-20px)] 2xl:min-h-0 2xl:overflow-hidden 2xl:pb-0"
-      data-inbox-section="page-root"
       id="inbox-page"
-      {...contentStateAttributes(viewModel.contentStates.page, viewModel.profileId)}
+      data-profile-id={viewModel.profileId}
+      className="mx-auto flex w-full max-w-[2400px] flex-col gap-3 pb-5 2xl:h-[calc(100dvh-32px)] 2xl:min-h-0 2xl:pb-0"
     >
-      <InboxPageHeader
-        contentState={viewModel.contentStates.header}
-        kicker={viewModel.kicker}
-        modePills={viewModel.modePills}
-        profileId={viewModel.profileId}
-        purpose={viewModel.purpose}
-        signals={viewModel.signals}
-        title={viewModel.title}
-      />
-
-      <div className="grid gap-3 2xl:min-h-0 2xl:flex-1 2xl:grid-cols-[minmax(360px,560px)_minmax(680px,1fr)_minmax(360px,604px)] 2xl:items-stretch">
-        <InboxQueue
-          contentState={viewModel.contentStates.queue}
-          emptyState={viewModel.queueEmptyState}
-          filters={viewModel.filters}
-          items={viewModel.queue}
-          profileId={viewModel.profileId}
-          quickCapture={viewModel.quickCapture}
-        />
-        <InboxActiveItemPanel
-          activeItem={viewModel.activeItem}
-          appliedSuggestion={appliedSuggestion}
-          addToExistingEnabled={addToExistingEnabled}
-          archiveEnabled={archiveEnabled}
-          contentState={viewModel.contentStates.activeItem}
-          createNewEnabled={createNewEnabled}
-          existingTargets={viewModel.existingTargets}
-          onSelectOutcomeRoute={setSelectedOutcomeRoute}
-          outcome={viewModel.outcome}
-          selectedOutcomeRoute={selectedOutcomeRoute}
-          taskCreationEnabled={taskCreationEnabled}
-          profileId={viewModel.profileId}
-        />
-        <InboxAIAssistantPanel
-          activeItem={viewModel.activeItem}
-          onApplySuggestion={applySuggestion}
-          viewModel={{
-            ...viewModel,
-            checklist,
-          }}
-        />
+      <header className="flex flex-wrap items-end justify-between gap-3 py-2">
+        <div>
+          <p className="text-[10px] uppercase tracking-wider text-[var(--accent-orange)]">
+            Clarify · Route
+          </p>
+          <h1 className="text-2xl font-semibold">Inbox</h1>
+          <p className="mt-1 text-sm text-[var(--text-muted)]">
+            Gedanken bereinigen, zuordnen und weitergehen.
+          </p>
+        </div>
+        <p className="text-sm text-[var(--text-secondary)]">
+          {viewModel.queue.length} offen
+        </p>
+      </header>
+      {completed && (
+        <div
+          className="flex flex-wrap items-center gap-3 text-sm"
+          aria-label="Letztes Routing"
+        >
+          <span>{completed.message}</span>
+          {completed.href && (
+            <Link
+              className={cn(button, "inline-flex items-center")}
+              href={completed.href}
+            >
+              Ziel öffnen
+            </Link>
+          )}
+          <button className={button} onClick={() => setCompleted(null)}>
+            Schließen
+          </button>
+        </div>
+      )}
+      <div className="grid min-h-0 flex-1 gap-3 2xl:grid-cols-[minmax(260px,.75fr)_minmax(620px,1.8fr)_minmax(270px,.7fr)]">
+        <section
+          className={cn(panel, "flex min-h-0 flex-col")}
+          aria-labelledby="inbox-queue-title"
+          data-inbox-section="queue"
+        >
+          <div className="space-y-3 border-b border-[var(--border-subtle)] p-4">
+            <h2 id="inbox-queue-title" className="text-sm font-semibold">
+              Inbox Queue
+            </h2>
+            <label className="block text-xs">
+              Search
+              <input
+                className={cn(input, "mt-1")}
+                type="search"
+                value={query}
+                disabled={dirty}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Titel oder Kontext suchen"
+              />
+            </label>
+            {query && (
+              <button
+                className={button}
+                disabled={dirty}
+                onClick={() => setQuery("")}
+              >
+                Suche leeren
+              </button>
+            )}
+            <div className="flex flex-wrap gap-2" aria-label="Queue filters">
+              {[
+                { id: "all", title: "Open" },
+                { id: "raw", title: "Raw" },
+                { id: "clarify", title: "Clarified" },
+              ].map((stage) => (
+                <button
+                  className={cn(
+                    button,
+                    filter === stage.id && "border-[var(--accent-cyan)]",
+                  )}
+                  aria-pressed={filter === stage.id}
+                  disabled={dirty}
+                  key={stage.id}
+                  onClick={() => setFilter(stage.id)}
+                >
+                  {stage.title}
+                </button>
+              ))}
+            </div>
+          </div>
+          {!items.length && (
+            <p className="p-4 text-sm text-[var(--text-muted)]">
+              {viewModel.queue.length
+                ? "Keine passenden Einträge."
+                : "Inbox ist leer. Alle Gedanken sind zugeordnet."}
+            </p>
+          )}
+          <ul className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
+            {items.map((item) => (
+              <li key={item.id}>
+                <button
+                  className={cn(
+                    "w-full rounded-[14px] border p-3 text-left disabled:cursor-not-allowed",
+                    focus,
+                    item.id === activeId
+                      ? "border-[var(--accent-orange)] bg-[color-mix(in_srgb,var(--accent-orange)_8%,transparent)]"
+                      : "border-[var(--border-subtle)] hover:bg-[var(--surface-2)]",
+                  )}
+                  disabled={dirty}
+                  aria-current={item.id === activeId ? "true" : undefined}
+                  onClick={() => {
+                    const next = new URLSearchParams();
+                    next.set("item", item.id);
+                    if (query) next.set("q", query);
+                    if (filter !== "all") next.set("stage", filter);
+                    router.push(`/inbox?${next}`, { scroll: false });
+                  }}
+                >
+                  <span className="block break-words text-sm font-semibold">
+                    {item.title}
+                  </span>
+                  <span className="mt-1 block line-clamp-2 break-words text-xs text-[var(--text-muted)]">
+                    {item.note}
+                  </span>
+                  <span className="mt-2 block text-[10px] text-[var(--text-secondary)]">
+                    {item.stage === "raw" ? "Raw" : "Clarified"} · {item.type}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+        {selectedVisible && viewModel.activeItem.hasSelection ? (
+          <InboxEditor
+            key={activeId ?? viewModel.activeItem.title}
+            viewModel={viewModel}
+            onDirty={setDirty}
+            onComplete={(result) => {
+              setCompleted(result);
+              router.refresh();
+            }}
+          />
+        ) : (
+          <section
+            className={cn(panel, "p-5 2xl:col-span-2")}
+            aria-label="Active Item leer"
+          >
+            <h2 className="text-lg font-semibold">
+              {items.length ? "Eintrag auswählen" : "Kein offener Eintrag"}
+            </h2>
+            <p className="mt-2 text-sm text-[var(--text-muted)]">
+              {items.length
+                ? "Wähle links einen Gedanken zur Triage."
+                : "Neue Gedanken kommen über Quick Thought oder bestehende Capture-Flows hier an."}
+            </p>
+          </section>
+        )}
       </div>
     </div>
   );

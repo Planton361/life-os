@@ -865,7 +865,8 @@ R2-02 – Inbox Surface Completion (the only Active Work Block).
 Existing control, browser, layout and migration evidence is retained in the
 Capability Registry and focused R2-01 tests.
 
-**R2-02 status:** Active; USER ACCEPTANCE STATUS: PENDING.
+**R2-02 status:** Active; IMPLEMENTATION_PASS recorded in the Capability Registry.
+USER ACCEPTANCE STATUS: PENDING. Advance only after explicit user acceptance.
 
 **Outcome:** Recover the actual user-facing product contract without replacing
 V5 or the established architecture. A surface is complete only after all of

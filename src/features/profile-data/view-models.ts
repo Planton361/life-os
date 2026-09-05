@@ -2104,6 +2104,7 @@ function realInboxToManualInboxItem(item: InboxItem): ManualInboxItem {
   const stage = realInboxStatusToStage(item.status);
 
   return {
+    clarification: item.clarification,
     age: "DB",
     areaId: "review",
     createdAt: item.createdAt,
@@ -2516,7 +2517,7 @@ async function getManualInboxProfileData(): Promise<{
   return {
     data: {
       ...emptyManualProfile(),
-      inboxItems: result.data.map(realInboxToManualInboxItem),
+      inboxItems: result.data.filter(item => item.status === "raw" || item.status === "clarified").map(realInboxToManualInboxItem),
     },
     existingTargets,
   };
@@ -3102,7 +3103,7 @@ async function getManualDashboardReadData(): Promise<{
       ...emptyManualProfile(),
       goals: targets.goals,
       inboxItems: inboxResult.ok
-        ? inboxResult.data.map(realInboxToManualInboxItem)
+        ? inboxResult.data.filter(item => item.status === "raw" || item.status === "clarified").map(realInboxToManualInboxItem)
         : [],
       projects: targets.projects,
       tasks: linkedTasks,
@@ -3301,6 +3302,7 @@ function buildProfileInboxViewModel(
       isManual && active && activeIsTaskCapture && !activeIsTriaged,
     ),
     hasSelection: Boolean(active),
+    clarification: active?.clarification,
     id: active?.id,
     isTaskCapture: activeIsTaskCapture,
     persistedAreaId: active?.sourceAreaId ?? null,
@@ -3317,7 +3319,7 @@ function buildProfileInboxViewModel(
         ? getInboxStageLabel(active.stage)
         : "—",
     type: active ? getInboxCaptureTypeLabel(active.type) : "—",
-    originalCapture: active?.note ?? "",
+    originalCapture: active?.clarification ? [active.clarification.originalTitle, active.clarification.originalBody].filter(Boolean).join("\n\n") : active?.note ?? "",
     source: isManual ? "Manual database" : "Empty profile",
     fields: [
       {
@@ -3330,17 +3332,11 @@ function buildProfileInboxViewModel(
       },
       {
         label: "Next Action",
-        value: active?.next ?? "—",
+        value: active?.clarification?.nextAction ?? "",
       },
       {
         label: "Missing Info",
-        value: activeIsTriaged
-          ? "Task erstellt. Planung und Terminierung passieren außerhalb der Inbox."
-          : activeIsTaskCapture
-            ? "Task Draft prüfen und erst danach erstellen."
-            : active
-              ? "Outcome Route wählen."
-              : "—",
+        value: active?.clarification?.missingInfo ?? "",
       },
     ],
     planningSignals: active
@@ -4509,17 +4505,39 @@ export async function getInboxViewModel(
   const profileId = await getCurrentLifeOsProfileId();
 
   if (profileId === "demo") {
-    return getDemoInboxViewModel();
+    const demo = getDemoInboxViewModel();
+    const selected = demo.queue.find(item => item.id === options.selectedInboxItemId)
+      ?? demo.queue.find(item => item.active) ?? demo.queue[0];
+    if (selected) {
+      demo.activeItem.id = selected.id;
+      if (!selected.active) {
+        demo.activeItem.title = selected.title;
+        demo.activeItem.originalCapture = selected.note;
+        demo.activeItem.fields = [
+          { label: "Clean Title", value: selected.title },
+          { label: "Description / Context", value: selected.note },
+          { label: "Next Action", value: selected.next },
+          { label: "Missing Info", value: "" },
+        ];
+      }
+    }
+    return demo;
   }
 
   if (profileId === "manual") {
     const manualInbox = await getManualInboxProfileData();
 
-    return buildProfileInboxViewModel(manualInbox.data, profileId, {
+    const result = buildProfileInboxViewModel(manualInbox.data, profileId, {
       existingTargets: manualInbox.existingTargets,
       selectedInboxItemId: options.selectedInboxItemId,
       unavailableReason: manualInbox.unavailableReason,
     });
+    const auth = await createAuthenticatedSupabaseServerClient();
+    if (auth.ok) {
+      const areas = await auth.client.from("areas").select("id, name").eq("user_id", auth.user.id).is("archived_at", null);
+      result.areas = (areas.data ?? []).map(area => ({ id: area.id, title: area.name }));
+    }
+    return result;
   }
 
   return buildProfileInboxViewModel(

@@ -15,6 +15,12 @@ export type InboxItemUpdatePatchInput = {
 
 export function mapInboxItemRowToDomain(row: InboxItemRow): InboxItem {
   return {
+    clarification: {
+      originalTitle: row.original_title ?? row.title, originalBody: row.original_body,
+      nextAction: row.next_action, missingInfo: row.missing_info, energy: row.energy,
+      durationMinutes: row.duration_minutes, reviewNeeded: row.review_needed,
+      todayCandidate: row.today_candidate, deadlineHint: row.deadline_hint, updatedAt: row.updated_at,
+    },
     archivedAt: row.archived_at,
     areaId: row.area_id,
     body: row.body,

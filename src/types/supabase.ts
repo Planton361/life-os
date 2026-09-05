@@ -740,12 +740,21 @@ export type Database = {
           captured_at: string
           created_at: string
           created_task_id: string | null
+          deadline_hint: string | null
+          duration_minutes: number | null
+          energy: Database["public"]["Enums"]["task_energy"] | null
           id: string
+          missing_info: string | null
+          next_action: string | null
+          original_body: string | null
+          original_title: string | null
           priority: Database["public"]["Enums"]["task_priority"]
           processed_at: string | null
+          review_needed: boolean
           source: string | null
           status: Database["public"]["Enums"]["inbox_item_status"]
           title: string
+          today_candidate: boolean
           type: Database["public"]["Enums"]["inbox_item_type"]
           updated_at: string
           user_id: string
@@ -757,12 +766,21 @@ export type Database = {
           captured_at?: string
           created_at?: string
           created_task_id?: string | null
+          deadline_hint?: string | null
+          duration_minutes?: number | null
+          energy?: Database["public"]["Enums"]["task_energy"] | null
           id?: string
+          missing_info?: string | null
+          next_action?: string | null
+          original_body?: string | null
+          original_title?: string | null
           priority?: Database["public"]["Enums"]["task_priority"]
           processed_at?: string | null
+          review_needed?: boolean
           source?: string | null
           status?: Database["public"]["Enums"]["inbox_item_status"]
           title: string
+          today_candidate?: boolean
           type?: Database["public"]["Enums"]["inbox_item_type"]
           updated_at?: string
           user_id: string
@@ -774,12 +792,21 @@ export type Database = {
           captured_at?: string
           created_at?: string
           created_task_id?: string | null
+          deadline_hint?: string | null
+          duration_minutes?: number | null
+          energy?: Database["public"]["Enums"]["task_energy"] | null
           id?: string
+          missing_info?: string | null
+          next_action?: string | null
+          original_body?: string | null
+          original_title?: string | null
           priority?: Database["public"]["Enums"]["task_priority"]
           processed_at?: string | null
+          review_needed?: boolean
           source?: string | null
           status?: Database["public"]["Enums"]["inbox_item_status"]
           title?: string
+          today_candidate?: boolean
           type?: Database["public"]["Enums"]["inbox_item_type"]
           updated_at?: string
           user_id?: string
@@ -2669,6 +2696,34 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      // Verified against fresh generated schema; SQL nullable arguments are explicit here.
+      save_inbox_clarification: {
+        Args: {
+          p_inbox_item_id: string
+          p_expected_updated_at: string
+          p_title: string
+          p_body: string | null
+          p_next_action: string | null
+          p_missing_info: string | null
+          p_priority: Database["public"]["Enums"]["task_priority"]
+          p_energy: Database["public"]["Enums"]["task_energy"] | null
+          p_duration_minutes: number | null
+          p_area_id: string | null
+          p_review_needed: boolean
+          p_today_candidate: boolean
+          p_deadline_hint: string | null
+        }
+        Returns: Database["public"]["Tables"]["inbox_items"]["Row"]
+      }
+      route_saved_inbox_item: {
+        Args: {
+          p_inbox_item_id: string
+          p_expected_updated_at: string
+          p_route: string
+          p_target_id?: string | null
+        }
+        Returns: Json
+      }
       increment_habit_for_local_day: {
         Args: { p_habit_id: string }
         Returns: { status: string; log_id: string | null; increment_value: number | null }[]

@@ -122,6 +122,7 @@ export type InboxContentStates = {
 };
 
 export type InboxViewModel = {
+  areas?: { id: string; title: string }[];
   profileId: InboxProfileId;
   contentStates: InboxContentStates;
   title: "Inbox";
@@ -135,6 +136,7 @@ export type InboxViewModel = {
   quickCapture: InboxQuickCaptureState;
   existingTargets: InboxExistingTargets;
   activeItem: {
+    clarification?: import("@/features/real-data/domain/inbox").InboxItem["clarification"];
     canTriageToTask?: boolean;
     hasSelection: boolean;
     id?: string;

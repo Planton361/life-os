@@ -39,6 +39,7 @@ export type LifeOsProfileSummary = {
 };
 
 export type ManualInboxItem = {
+  clarification?: import("@/features/real-data/domain/inbox").InboxItem["clarification"];
   id: string;
   title: string;
   stage: InboxStage;
