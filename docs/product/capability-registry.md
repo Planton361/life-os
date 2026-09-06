@@ -35,8 +35,8 @@ Implementation status and product visibility are separate truths: `CONNECTED` co
 |---|---|---|---|
 | Dashboard | `ACTIVE` | `CONNECTED`: R2-01 implementation evidence plus explicit USER ACCEPTED on 2026-09-06 | maintain accepted Dashboard |
 | Inbox | `ACCEPTED` | `CONNECTED`: R2-02 explicitly USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
-| Today | `ACTIVE` | `CONNECTED`: day-log functionality explicitly accepted by user; no Today changes in Calendar pass | R2-03 remains open for Calendar |
-| Calendar | `ACTIVE` | `CONNECTED_GAP`: temporal planning controls are connected and the desktop workspace is viewport-bounded; user acceptance remains pending | R2-03 real temporal surface |
+| Today | `ACCEPTED` | `CONNECTED`: R2-03 explicitly USER ACCEPTED on 2026-09-06; daily-memory evidence retained | maintain accepted Today |
+| Calendar | `ACCEPTED` | `CONNECTED`: R2-03 explicitly USER ACCEPTED on 2026-09-06; 06:00–00:00 equal-hour and viewport evidence retained | maintain accepted Calendar |
 | Portfolio | `ACTIVE` | `CONNECTED_GAP`: entity backend exists; information architecture and surface acceptance pending | R2-04 separate entity surfaces |
 | Resources | `ACTIVE` | connected knowledge core with relation depth gaps | knowledge base and evidence; K1 follows C3 |
 | Health / Fitness | `ACTIVE` | `CONNECTED_GAP`: core records exist; primary-desktop and role acceptance pending | R2-05 |
@@ -783,6 +783,17 @@ tests and the focused disposable Playwright proof pass; typecheck, lint, build
 and diff check are green. Console/hydration is clean. No backend, schema,
 migration or domain behavior changed. V5 Design-Taste: PASS. R2-03 stays ACTIVE.
 USER ACCEPTANCE STATUS: PENDING.
+
+### R2-03 user acceptance and closure
+
+**R2-03 USER ACCEPTED on 2026-09-06.** The user accepted the complete
+Today / Calendar block. The preceding implementation reports and screenshots
+remain historical evidence; their PENDING statements describe those earlier
+proof stages. Today daily-memory aggregation and Calendar planning, rail modes,
+18 equal hours (06:00–00:00), no desktop body/Timegrid scrolling and midnight
+boundary evidence are retained. Final implementation commit: `095633f`.
+R2-03 is closed. R2-04 – Portfolio IA & Entity Depth is now the only active block
+and its USER ACCEPTANCE STATUS is PENDING.
 
 # 5. Portfolio, Projects, Goals and Skills
 

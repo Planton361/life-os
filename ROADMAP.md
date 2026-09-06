@@ -5,7 +5,7 @@
 **Design truth:** Life OS – Linear Calm Dark Command Center / Dashboard V5
 **Detailed status:** `docs/product/capability-registry.md`
 **Completed sequence:** C1 → C2 → C3 → K1 → H1/H2 → N1 → A1 → Z1 (technical baseline)
-**Active Work Block:** R2-03 – Today / Calendar Role Correction
+**Active Work Block:** R2-04 – Portfolio IA & Entity Depth
 
 ## 1. Product Contract
 
@@ -859,7 +859,7 @@ or backend evidence cannot alone restore a `CONNECTED` surface claim.
 ## 4.12 R2 – Product Reality Recovery & Surface Completion
 
 **Status:** R2-00 completed (contract rebaseline). **Current active slice:**
-R2-03 – Today / Calendar Role Correction (the only Active Work Block).
+R2-04 – Portfolio IA & Entity Depth (the only Active Work Block).
 
 **R2-01 status:** Completed; explicitly USER ACCEPTED on 2026-09-06.
 Existing control, browser, layout and migration evidence is retained in the
@@ -868,8 +868,11 @@ Capability Registry and focused R2-01 tests.
 **R2-02 status:** Completed; explicitly USER ACCEPTED on 2026-09-06.
 Existing implementation, control and browser evidence is retained in the Registry.
 
-**R2-03 status:** Active; Today is functionally accepted by the user and frozen
-for the current Calendar-only pass. Calendar acceptance remains pending.
+**R2-03 status:** Completed; explicitly USER ACCEPTED on 2026-09-06.
+Today and Calendar evidence remains in the Registry and focused tests, including
+the 06:00–00:00 equal-hour, full-viewport Calendar proof.
+
+**R2-04 status:** Active – Portfolio IA & Entity Depth.
 USER ACCEPTANCE STATUS: PENDING.
 
 **Outcome:** Recover the actual user-facing product contract without replacing
@@ -903,9 +906,11 @@ dependency belongs in this slice.
    Calendar owns scheduling, Portfolio owns entity creation/management.
    Calendar Day/Week/Month controls and full-height
    useful planning surface without an empty Bottom Zone.
-4. **R2-04 – Portfolio Information Architecture** — Tasks/Projects/Goals/
+4. **R2-04 – Portfolio IA & Entity Depth** — Tasks/Projects/Goals/
    Skills sidebar sub-navigation and separate entity list, create and detail
-   surfaces; Overview is not primary inline creation.
+   surfaces with shared entity-specific fields, canonical relation management,
+   evidence and honest progress; Overview is not primary inline creation.
+   Resources retain their own create/detail routes and knowledge ownership.
 5. **R2-05 – Health / Fitness / Nutrition Surface Completion** — full
    primary desktop viewport without required Body scroll; Habits statistics,
    history and management ownership; Dashboard quick logging; selectable,
@@ -924,7 +929,7 @@ dependency belongs in this slice.
   for a promised core control.
 - Dashboard’s removed Bottom-Zone features remain removed; they cannot return
   through historical layout references.
-- The R2 order is binding. R2-01 is accepted and closed; R2-02 is accepted and closed; only R2-03 is active
+- The R2 order is binding. R2-01 is accepted and closed; R2-02 and R2-03 are accepted and closed; only R2-04 is active
   until explicit user acceptance changes its status in this roadmap.
 
 ## 5. Completed Major Work
