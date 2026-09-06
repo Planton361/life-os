@@ -160,6 +160,8 @@ Required capabilities:
 
 Calendar owns temporal planning, scheduling and rescheduling. It displays task status but offers no task-completion action; execution belongs to Task Detail or the responsible domain surface, while Today documents execution history and the daily protocol.
 
+Calendar defaults to a dominant Planner Queue rail. A selected block temporarily opens a closable Inspector while retaining the Queue; Close or Escape returns to Queue mode. Desktop Calendar, including notices, stays inside the viewport with internal timegrid and rail scrolling.
+
 Calendar is the temporal planning hub. The default planning question is how the coming week fits together; Day, Week and Month controls support execution and orientation and must change the real projection.
 
 Required capabilities:

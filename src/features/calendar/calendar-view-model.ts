@@ -141,8 +141,8 @@ export function resolveCalendarContentStates({
   };
 }
 
-const COMPACT_DURATION_MINUTES = 72;
-const MICRO_DURATION_MINUTES = 35;
+const COMPACT_DURATION_MINUTES = 60;
+const MICRO_DURATION_MINUTES = 30;
 const LANE_GAP_PERCENT = 3;
 
 function minutesToTopPercent(minutes: number) {

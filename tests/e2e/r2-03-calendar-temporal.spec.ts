@@ -26,7 +26,8 @@ async function browserClient(page: Page) {
 test("R2-03 Calendar proportional time geometry and planning-only controls", async ({
   page,
 }, info) => {
-  test.setTimeout(180000);
+  test.setTimeout(120000);
+  page.setDefaultTimeout(15000);
   await page.setViewportSize({ width: 1920, height: 1080 });
   await signUpTechnicalManualUser(page, "r2-calendar", Date.now());
   const errors: string[] = [];
@@ -50,6 +51,16 @@ test("R2-03 Calendar proportional time geometry and planning-only controls", asy
     )
     .select("id,title");
   expect(records.error).toBeNull();
+  expect(
+    (
+      await api.from("tasks").insert(
+        Array.from({ length: 12 }, (_, i) => ({
+          user_id: user,
+          title: `Backlog ${i + 1}`,
+        })),
+      )
+    ).error,
+  ).toBeNull();
   const thirty = records.data!.find((t) => t.title === "Geometry 30 min")!;
   const base = `/calendar?date=${day}&view=week`;
   await page.goto(base);
@@ -61,6 +72,11 @@ test("R2-03 Calendar proportional time geometry and planning-only controls", asy
     });
   const select = () =>
     block(30).locator("button:not([data-calendar-resize-handle])").click();
+  const rail = page.locator("[data-calendar-rail-mode]");
+  const inspector = page.locator("[data-calendar-inspector]");
+  const planner = page.locator('[data-calendar-section="planning-queue"]');
+  await expect(rail).toHaveAttribute("data-calendar-rail-mode", "queue");
+  await expect(inspector).toHaveCount(0);
   const settings = page.getByRole("region", {
     name: "Time Settings",
     exact: true,
@@ -88,14 +104,59 @@ test("R2-03 Calendar proportional time geometry and planning-only controls", asy
       await page.evaluate(() => document.documentElement.scrollWidth),
     ).toBeLessThanOrEqual(size.width);
     if (size.width > 1000) {
-      expect(
-        await page.evaluate(() => document.documentElement.scrollHeight),
-      ).toBeLessThanOrEqual(size.height + 2);
+      const docBounds = await page.evaluate(() => ({
+        height: document.documentElement.scrollHeight,
+        main: document.querySelector("main")!.getBoundingClientRect().toJSON(),
+        workspace: document
+          .querySelector("#calendar-workspace")!
+          .getBoundingClientRect()
+          .toJSON(),
+      }));
+      expect(docBounds.height, JSON.stringify(docBounds)).toBeLessThanOrEqual(
+        size.height + 2,
+      );
       const grid = (await page.locator(".calendar-timegrid").boundingBox())!;
       expect(grid.y + grid.height).toBeGreaterThan(size.height - 45);
       expect(grid.y + grid.height).toBeLessThanOrEqual(size.height);
     }
+    // Normal mode always starts with the full rail dedicated to the queue.
+    if (await inspector.count())
+      await page
+        .getByRole("button", { name: "Inspector schließen", exact: true })
+        .click();
+    await expect(rail).toHaveAttribute("data-calendar-rail-mode", "queue");
+    await expect(inspector).toHaveCount(0);
+    if (size.width > 1000) {
+      const rb = (await rail.boundingBox())!,
+        qb = (await planner.boundingBox())!;
+      expect(qb.height).toBeGreaterThan(rb.height - 3);
+    }
+    await page.screenshot({
+      path: info.outputPath(`queue-${size.width}.png`),
+      fullPage: true,
+    });
     await select();
+    await expect(rail).toHaveAttribute("data-calendar-rail-mode", "selection");
+    await expect(inspector).toContainText("Geometry 30 min");
+    await expect(inspector).toContainText("08:00–08:30".replace("–", "-"));
+    await expect(planner).toBeVisible();
+    if (size.width > 1000) {
+      const qb = (await planner.boundingBox())!,
+        ib = (await inspector.boundingBox())!;
+      expect(qb.y).toBeGreaterThanOrEqual(ib.y + ib.height);
+      expect(qb.y + qb.height).toBeLessThanOrEqual(size.height);
+      const docBounds = await page.evaluate(() => ({
+        height: document.documentElement.scrollHeight,
+        main: document.querySelector("main")!.getBoundingClientRect().toJSON(),
+        workspace: document
+          .querySelector("#calendar-workspace")!
+          .getBoundingClientRect()
+          .toJSON(),
+      }));
+      expect(docBounds.height, JSON.stringify(docBounds)).toBeLessThanOrEqual(
+        size.height + 2,
+      );
+    }
     await expect(
       page.getByRole("button", { name: /Mark done|Completing/ }),
     ).toHaveCount(0);
@@ -113,8 +174,24 @@ test("R2-03 Calendar proportional time geometry and planning-only controls", asy
       fullPage: true,
     });
   }
+  await page
+    .getByRole("button", { name: "Inspector schließen", exact: true })
+    .click();
+  await expect(inspector).toHaveCount(0);
+  await select();
+  await page.keyboard.press("Escape");
+  await expect(inspector).toHaveCount(0);
+  await page.reload();
+  await expect(rail).toHaveAttribute("data-calendar-rail-mode", "queue");
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto(base);
+  await select();
+  await page
+    .locator("[data-calendar-day]")
+    .first()
+    .getByRole("button", { name: /Select free slot .* at 10:00/ })
+    .click();
+  await expect(rail).toHaveAttribute("data-calendar-rail-mode", "queue");
   await select();
   const assertTime = async (start: string, duration: number) => {
     await expect
@@ -177,15 +254,24 @@ test("R2-03 Calendar proportional time geometry and planning-only controls", asy
       .click();
     await expect(page).toHaveURL(periodUrl);
     if (view === "month") {
-      await page
+      const monthSource = page
         .locator('[data-calendar-section="month-surface"]')
-        .getByRole("link", { name: /Geometry 30 min/ })
-        .click();
-      await expect(page).toHaveURL(new RegExp(thirty.id));
+        .getByRole("link")
+        .first();
+      const sourceHref = await monthSource.getAttribute("href");
+      await monthSource.click();
+      await expect(page).toHaveURL(new RegExp(sourceHref! + "$"));
       await page.goto(periodUrl);
     }
     if (view === "day") {
       await expect(block(30)).toHaveCount(1);
+      await select();
+      await expect(inspector).toBeVisible();
+      await page
+        .getByRole("button", { name: "Inspector schließen", exact: true })
+        .click();
+      await expect(inspector).toHaveCount(0);
+
       expect(
         (await block(30).boundingBox())!.height /
           (await block(60).boundingBox())!.height,

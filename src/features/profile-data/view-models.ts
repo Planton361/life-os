@@ -11,6 +11,8 @@ import {
 import { buildCalendarTemporalSignals } from "@/features/calendar/calendar-temporal-projection";
 import { buildPlannerQueue } from "@/features/calendar/planner-queue";
 import {
+  CALENDAR_DAY_START_MINUTES,
+  CALENDAR_DAY_END_MINUTES,
   calendarFilters,
   calendarHours,
   calendarViewSwitches,
@@ -4579,7 +4581,7 @@ export async function getCalendarViewModel(): Promise<CalendarViewModel> {
 
   if (profileId === "manual") {
     const dashboard = await getManualDashboardReadData();
-    return buildProfileCalendarViewModel(
+    const model = buildProfileCalendarViewModel(
       dashboard.profile,
       profileId,
       await getManualPlannerRelationLabelLookups(
@@ -4588,6 +4590,9 @@ export async function getCalendarViewModel(): Promise<CalendarViewModel> {
       ),
       dashboard.sources,
     );
+    const label = localTimeLabel(new Date(), dashboard.sources.habits?.settings.timezone ?? appTimeZone);
+    const minutes = minutesFromTime(label) ?? 0;
+    return { ...model, currentTime: { label, top: Math.max(0, Math.min(100, (minutes - CALENDAR_DAY_START_MINUTES) / (CALENDAR_DAY_END_MINUTES - CALENDAR_DAY_START_MINUTES) * 100)) } };
   }
 
   const profile = await getProfileDataWithManualTasks(profileId);

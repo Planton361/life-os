@@ -47,6 +47,15 @@ async function dragToDay(
   day: Locator,
   relativeY: number,
 ) {
+  // Explicitly scroll the requested planning time into the bounded grid viewport.
+  if (await day.getAttribute("data-calendar-day")) {
+    const target = (await day.boundingBox())!;
+    const scroll = page.locator(".calendar-grid-scroll");
+    const frame = (await scroll.boundingBox())!;
+    await scroll.evaluate((element, delta) => { element.scrollTop += delta; },
+      target.y + target.height * relativeY - (frame.y + frame.height / 2));
+  }
+  await source.scrollIntoViewIfNeeded();
   const [sourceBounds, targetBounds] = await Promise.all([
     source.boundingBox(),
     day.boundingBox(),
@@ -373,6 +382,7 @@ test("C2-02 uses pointer drag, move and resize through the canonical calendar ac
   );
 
   const resizeHandle = taskBlock.locator("[data-calendar-resize-handle]");
+  await resizeHandle.scrollIntoViewIfNeeded();
   const resizeBounds = await resizeHandle.boundingBox();
   expect(resizeBounds).not.toBeNull();
   await page.mouse.move(

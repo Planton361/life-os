@@ -1,5 +1,5 @@
 import type { CSSProperties, PointerEvent } from "react";
-import { Pill, accentStyle } from "@/components/layout/route-page-primitives";
+import { accentStyle } from "@/components/layout/route-page-primitives";
 import { cn } from "@/lib/cn";
 import { calendarDurationToHeightPercent } from "../calendar-pointer-utils";
 import {
@@ -79,61 +79,32 @@ export function CalendarTimedBlock({
         title={blockLabel(block)}
         type="button"
       >
-        {isRegular ? (
-          <div className="flex h-full min-w-0 flex-col">
-            <div className="flex min-w-0 items-start justify-between gap-1.5">
-              <p className="min-w-0 overflow-hidden text-[10px] font-semibold leading-3 text-[var(--text-primary)] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
-                {block.title}
-              </p>
-              <span
-                aria-hidden="true"
-                className="mt-0.5 size-1.5 shrink-0 rounded-full bg-[var(--accent)]"
-              />
-            </div>
-            <p className="mt-0.5 truncate text-[9px] font-medium leading-3 text-[var(--text-secondary)]">
-              {block.startTime}-{block.endTime} ·{" "}
-              {calendarBlockTypeLabels[block.type]}
-            </p>
-            <p className="mt-0.5 truncate text-[9px] leading-3 text-[var(--text-muted)]">
-              {block.area} · {block.meta ?? block.sourceEntity.label}
-            </p>
-            <div className="mt-auto pt-1">
-              <Pill accent={block.accent} quiet={block.status === "planned"}>
-                {calendarBlockStatusLabels[block.status]}
-              </Pill>
-            </div>
-          </div>
-        ) : null}
-
-        {isCompact ? (
-          <div className="grid h-full min-w-0 content-center gap-0.5">
-            <div className="flex min-w-0 items-center justify-between gap-1.5">
-              <p className="truncate text-[10px] font-semibold leading-3 text-[var(--text-primary)]">
-                {block.title}
-              </p>
-              <span
-                aria-hidden="true"
-                className="size-1.5 shrink-0 rounded-full bg-[var(--accent)]"
-              />
-            </div>
-            <div className="flex min-w-0 items-center justify-between gap-1.5">
-              <p className="min-w-0 truncate text-[9px] font-medium leading-3 text-[var(--text-secondary)]">
-                {block.startTime}-{block.endTime} ·{" "}
-                {calendarBlockTypeLabels[block.type]}
-              </p>
-              <p className="shrink-0 truncate text-[9px] font-semibold leading-3 text-[var(--accent)]">
-                {calendarBlockStatusLabels[block.status]}
-              </p>
-            </div>
-          </div>
-        ) : null}
-
-        {isMicro ? (
+        {isMicro && block.durationMinutes < 30 ? (
           <div className="flex h-full min-w-0 items-center gap-1 text-[9px] leading-none">
             <span className="shrink-0">{block.startTime}</span>
             <span className="truncate font-semibold">{block.title}</span>
           </div>
-        ) : null}
+        ) : (
+          <div className="flex h-full min-w-0 flex-col justify-center gap-0.5">
+            <p className="truncate text-[10px] font-semibold leading-3">
+              {block.title}
+            </p>
+            <p className="truncate text-[9px] leading-3 text-[var(--text-secondary)]">
+              {block.startTime}–{block.endTime}
+            </p>
+            {!isMicro ? (
+              <p className="truncate text-[9px] leading-3 text-[var(--accent)]">
+                {calendarBlockTypeLabels[block.type]} ·{" "}
+                {calendarBlockStatusLabels[block.status]}
+              </p>
+            ) : null}
+            {isRegular ? (
+              <p className="truncate text-[9px] leading-3 text-[var(--text-muted)]">
+                {block.area} · {block.meta ?? block.sourceEntity.label}
+              </p>
+            ) : null}
+          </div>
+        )}
       </button>
       {onResizePointerDown ? (
         <button

@@ -661,6 +661,51 @@ No new model, migration, domain action or provider. Calendar-local CSS only;
 Today, Dashboard, Inbox and Portfolio implementation remain unchanged. Task
 status is displayed, never mutated by Calendar.
 
+### Calendar queue-default rail and viewport pass
+
+R2-03 remains active; Today stays accepted and unchanged. The Calendar right
+rail now derives exactly `queue` or `selection { blockId }` from the current
+block selection. Reload has no selected URL state and starts in Queue mode.
+No history entries are added for transient block selection.
+
+| Control / surface | Expected behavior | Evidence scope |
+|---|---|---|
+| Normal rail | Planner Queue fills available right-rail height; no Inspector | populated queue, four viewports |
+| Block selection | selected block opens complete Inspector context | Week 30-minute block; Day regression |
+| Close × | removes Inspector and expands Queue | real button, Queue mode and bounds asserted |
+| Escape | closes block selection | browser keyboard proof |
+| Free grid | existing slot click deselects the block and returns to Queue | real slot-click proof; no new background interception |
+| Queue selection | existing scheduling form inside Queue mode | schedule after unschedule, reload |
+| Selection rail | Inspector internally bounded; Queue remains below and usable | rail/card bounds, no body extension |
+| Short blocks | 15 min: one compact line; 30 min: title + time; 45–60 min: type/status added; longer: context | canonical duration unchanged; full accessible name and Inspector |
+| Viewport | route-level height includes auth notice; Grid and Queue/Inspector scroll internally | document scrollHeight checked in both modes |
+| Week opening | once-per-week initial positioning at current time, or first scheduled block / 08:00 | no repeated scroll reset during selection |
+| Current time | Manual uses existing profile timezone helper, default app timezone when profile absent | removes inherited Demo 15:42 clock from Manual Calendar |
+
+No schema migration, task lifecycle, recurrence or domain write-model change.
+Calendar-only view-model glue supplies the clock; no Today/Dashboard behavior
+is changed. Current-time position uses the same canonical visible minute range
+as blocks and pointer mapping.
+
+Validation: IMPLEMENTATION_PASS for this scoped pass. 22 Calendar unit tests
+(including duration geometry and Rail Mode), the expanded R2-03 Playwright proof,
+and the current C2 drag/move/resize/conflict-cancel regression pass. Typecheck,
+lint, build and diff check pass. Browser console/hydration is clean. Both
+Normal and Selection modes assert document height within viewport tolerance
+at 3840×2160, 2560×1440 and 1920×1080; Mobile has no horizontal page overflow.
+Twelve real backlog tasks exercise queue scrolling; a 30-minute and 60-minute
+block share the grid. Close, Escape, free-slot deselect, Queue expansion,
+Day selection/close, Month source navigation and every time action survive
+the relevant reload proof. The Month test selects an actually visible marker
+rather than assuming a particular Task is among the three preview links.
+
+Eight full screenshots (Normal/Selection × four viewports) are retained at
+`/tmp/life-os-r2-03-calendar-rail-proof/`. V5 Design-Taste review: PASS;
+dominant normal Queue, temporary bounded Inspector, readable compact blocks,
+unchanged semantic colors and no body expansion. The disposable runner's
+existing migration/lint/advisor guards passed; no DB changes were needed.
+R2-03 remains active. USER ACCEPTANCE STATUS: PENDING.
+
 # 5. Portfolio, Projects, Goals and Skills
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { Pill, accentStyle } from "@/components/layout/route-page-primitives";
 import {
   rescheduleTaskAction,
@@ -842,7 +842,7 @@ function CalendarDaySurface({
             />
           ))}
         </div>
-        <div className="relative min-h-[620px] overflow-hidden rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.32)]">
+        <div className="calendar-day-hours relative min-h-[620px] overflow-hidden rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.32)]">
           {hours.map((hour) => (
             <button
               aria-label={`Select free slot on ${day.fullLabel} at ${hour}`}
@@ -1146,17 +1146,27 @@ export function CalendarPlanningPage({
   const [allDayBlocks, setAllDayBlocks] = useState<
     CalendarAllDayBlockViewModel[]
   >(() => viewModel.allDayBlocks);
-  const [selection, setSelection] = useState<Selection>(() =>
-    viewModel.selectedBlock
-      ? {
-          kind: "block",
-          blockId: viewModel.selectedBlock.id,
-        }
-      : {
+  const [selection, setSelection] = useState<Selection>({
+    kind: "day",
+    dayId: viewModel.days[0]?.id ?? "calendar-day",
+  });
+  const closeSelection = () =>
+    setSelection({
+      kind: "day",
+      dayId: viewModel.days[0]?.id ?? "calendar-day",
+    });
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !event.defaultPrevented) {
+        setSelection({
           kind: "day",
           dayId: viewModel.days[0]?.id ?? "calendar-day",
-        },
-  );
+        });
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [viewModel.days]);
   const [activePointerDrag, setActivePointerDrag] =
     useState<PointerDragState | null>(null);
   const [pointerConflict, setPointerConflict] =
@@ -1661,6 +1671,7 @@ export function CalendarPlanningPage({
             />
           ) : (
             <CalendarRightPanel
+              onClose={closeSelection}
               onDuplicateBlock={duplicateBlock}
               onMoveLater={moveLater}
               onQueuePointerStart={beginQueuePointer}

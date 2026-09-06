@@ -346,7 +346,7 @@ export type CalendarViewModel = {
   schedulableTasks: SchedulableTaskViewModel[];
   rightPanel: CalendarRightPanelViewModel;
   currentTime: {
-    label: "15:42";
+    label: string;
     top: number;
   };
   pageContract: CalendarPageContractViewModel;

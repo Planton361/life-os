@@ -11,6 +11,7 @@ import {
   scheduleTaskForTodayAction,
   unscheduleTaskAction,
 } from "@/features/real-data/actions/task.actions";
+import { resolveCalendarRailMode } from "../calendar-rail-mode";
 import { cn } from "@/lib/cn";
 import {
   calendarBlockSourceLabels,
@@ -396,11 +397,13 @@ function isManualPersistedTaskBlock(
 }
 
 function InspectorHeader({
+  onClose,
   modeLabel,
   selectedLabel,
 }: Readonly<{
   modeLabel: string;
   selectedLabel: string;
+  onClose: () => void;
 }>) {
   return (
     <div className="border-b border-[var(--border-subtle)] bg-[rgba(18,28,43,.54)] px-3 py-3">
@@ -416,7 +419,17 @@ function InspectorHeader({
             Selected: {selectedLabel}
           </h2>
         </div>
-        <Pill accent="var(--accent-cyan)">{modeLabel}</Pill>
+        <div className="flex items-center gap-2">
+          <Pill accent="var(--accent-cyan)">{modeLabel}</Pill>
+          <button
+            type="button"
+            aria-label="Inspector schließen"
+            onClick={onClose}
+            className="size-8 rounded-lg border border-[var(--border-subtle)] text-xl hover:bg-[var(--surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
+          >
+            ×
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -1086,7 +1099,7 @@ function PlanningQueue({
   return (
     <section
       aria-labelledby="calendar-planning-queue-heading"
-      className="rounded-[12px] border border-[rgba(148,163,184,.10)] bg-[rgba(11,17,28,.34)] p-3"
+      className="calendar-planner-queue flex min-h-0 flex-1 flex-col rounded-[12px] border border-[rgba(148,163,184,.10)] bg-[rgba(11,17,28,.34)] p-3"
       data-calendar-section="planning-queue"
       {...contentStateAttributes(contentState, profileId)}
     >
@@ -1099,17 +1112,13 @@ function PlanningQueue({
             Calendar Planner Queue
           </h3>
           <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
-            Offene, noch nicht terminierte Task Occurrences. Auswahl öffnet die
-            kanonische Zeitplanung im Inspector.
+            Offene Aufgaben ohne Zeitblock. Auswählen und zeitlich einordnen.
           </p>
         </div>
         <Pill quiet>{queueCount}</Pill>
       </div>
-      <p className="mt-2 text-[10px] leading-4 text-[var(--text-faint)]">
-        Ranking nutzt Deadline, Priority, Routine-Occurrence und vorhandenen
-        Project-/Goal-Kontext. Jede Task erscheint nur einmal.
-      </p>
-      <div className="mt-2 grid gap-1.5">
+
+      <div className="calendar-queue-items mt-2 grid min-h-0 content-start gap-2 overflow-y-auto">
         {tasks.length === 0 ? (
           <p className="rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.42)] px-3 py-2 text-[11px] text-[var(--text-muted)]">
             Keine offenen Tasks ohne Zeitblock.
@@ -1125,7 +1134,6 @@ function PlanningQueue({
                 : "border-[color-mix(in_srgb,var(--accent)_24%,transparent)] hover:border-[color-mix(in_srgb,var(--accent)_44%,transparent)]",
             )}
             key={task.id}
-            onFocus={() => onSelectTask(task.id)}
             onPointerDown={(event: PointerEvent<HTMLButtonElement>) => {
               if (!pointerEnabled || event.button !== 0) return;
               onQueuePointerStart?.(task, {
@@ -1177,6 +1185,7 @@ function PlanningQueue({
 }
 
 export function CalendarRightPanel({
+  onClose,
   onDuplicateBlock,
   onMoveLater,
   onQueuePointerStart,
@@ -1193,6 +1202,7 @@ export function CalendarRightPanel({
   scheduledTasks,
   tasks,
 }: Readonly<{
+  onClose: () => void;
   onDuplicateBlock: (blockId: string) => void;
   onMoveLater: (blockId: string) => void;
   onQueuePointerStart?: (
@@ -1239,52 +1249,70 @@ export function CalendarRightPanel({
             ? "Projektion"
             : "Kontext";
 
+  const railMode = resolveCalendarRailMode(selectedBlock?.id);
   return (
     <aside
-      aria-labelledby="calendar-right-panel-heading"
-      className="overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.86)] shadow-[0_8px_22px_rgba(0,0,0,.12)] xl:flex xl:min-h-0 xl:flex-col"
+      aria-label="Calendar planning rail"
+      data-calendar-rail-mode={railMode.type}
+      className="calendar-right-rail flex min-h-0 flex-col gap-2"
     >
-      <InspectorHeader modeLabel={modeLabel} selectedLabel={selectedLabel} />
-
-      <div className="grid gap-2 p-2.5 xl:min-h-0 xl:flex-1 xl:content-start xl:overflow-y-auto">
-        <SelectedContext
-          block={selectedBlock}
-          selectedDay={selectedDay}
-          selectedSlot={selectedSlot}
-        />
-
-        {selectedQueueTask && profileId === "manual" ? (
+      {railMode.type === "selection" ? (
+        <section
+          data-calendar-inspector
+          className="calendar-inspector min-h-0 overflow-y-auto rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.86)]"
+        >
+          <InspectorHeader
+            onClose={onClose}
+            modeLabel={modeLabel}
+            selectedLabel={selectedLabel}
+          />
+          <div className="grid gap-2 p-2.5">
+            <SelectedContext
+              block={selectedBlock}
+              selectedDay={selectedDay}
+              selectedSlot={selectedSlot}
+            />
+            <TimeSettings
+              block={selectedBlock}
+              key={selectedBlock?.id}
+              onDuplicateBlock={onDuplicateBlock}
+              onMoveLater={onMoveLater}
+              onSaveTime={onSaveTime}
+              profileId={profileId}
+              scheduledTasks={scheduledTasks}
+              selectedSlot={selectedSlot}
+            />
+            <SourcePanel block={selectedBlock} />
+          </div>
+        </section>
+      ) : null}
+      {selectedQueueTask && profileId === "manual" ? (
+        <div className="calendar-queue-schedule min-h-0 overflow-y-auto">
           <QueueTaskSchedule
             key={selectedQueueTask.id}
             selectedDay={selectedDay}
             task={selectedQueueTask}
             timedBlocks={scheduledTasks}
           />
-        ) : null}
-
-        <TimeSettings
-          block={selectedBlock}
-          key={`${selectedBlock?.id ?? "slot"}-${selectedSlot?.date ?? selectedDay?.date ?? "day"}-${selectedSlot?.startTime ?? ""}`}
-          onDuplicateBlock={onDuplicateBlock}
-          onMoveLater={onMoveLater}
-          onSaveTime={onSaveTime}
-          profileId={profileId}
-          scheduledTasks={scheduledTasks}
-          selectedSlot={selectedSlot}
-        />
-
-        <SourcePanel block={selectedBlock} />
-        <PlanningQueue
-          contentState={planningQueueContentState}
-          onQueuePointerStart={onQueuePointerStart}
-          panel={panel}
-          pointerEnabled={pointerEnabled}
-          profileId={profileId}
-          onSelectTask={onSelectQueueTask}
-          selectedTaskId={selectedQueueTask?.id}
-          tasks={tasks}
-        />
-      </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-3 py-2 text-xs text-[var(--text-secondary)]"
+          >
+            Planung schließen
+          </button>
+        </div>
+      ) : null}
+      <PlanningQueue
+        contentState={planningQueueContentState}
+        onQueuePointerStart={onQueuePointerStart}
+        panel={panel}
+        pointerEnabled={pointerEnabled}
+        profileId={profileId}
+        onSelectTask={onSelectQueueTask}
+        selectedTaskId={selectedQueueTask?.id}
+        tasks={tasks}
+      />
     </aside>
   );
 }

@@ -300,3 +300,27 @@ body:has(#calendar-page) .life-os-command-center { display: none; }
   #calendar-page [data-calendar-section="month-surface"] { min-height: 0; overflow-y: auto; }
   #calendar-page [data-calendar-section="day-surface"] > div:last-child { overflow-y: auto; }
 }
+
+#calendar-page .calendar-planner-queue h3 { font-size: 16px; }
+#calendar-page .calendar-queue-items button { min-height: 72px; }
+#calendar-page .calendar-queue-items button p:first-child { font-size: 13px; }
+@media (min-width: 1280px) {
+  main:has(#calendar-workspace) { height: 100dvh; min-height: 0; overflow: hidden; }
+  #calendar-workspace { height: 100%; min-height: 0; display: flex; flex-direction: column; }
+  #calendar-workspace > div:first-child { flex-shrink: 0; }
+  #calendar-workspace #calendar-page { height: auto; min-height: 0; flex: 1; overflow: hidden; }
+  #calendar-page > header, #calendar-page > section { flex-shrink: 0; }
+  #calendar-page [data-calendar-section="inspector"] { overflow: hidden; }
+  #calendar-page .calendar-right-rail { height: 100%; overflow: hidden; }
+  #calendar-page .calendar-inspector { flex: 0 1 auto; max-height: calc(100% - 200px); }
+  #calendar-page .calendar-queue-schedule { max-height: 60%; flex-shrink: 0; }
+  #calendar-page .calendar-planner-queue { min-height: 192px; overflow: hidden; }
+}
+#calendar-page .calendar-day-hours { min-height: 1224px; }
+#calendar-page .calendar-inspector > div:first-child { position: sticky; top: 0; z-index: 5; background: var(--surface-1); }
+@media (min-width: 1280px) {
+  main:has(#calendar-workspace) { flex: none; max-height: 100dvh; }
+}
+@media (max-width: 1279px) {
+  #calendar-page .calendar-queue-items { max-height: 420px; }
+}

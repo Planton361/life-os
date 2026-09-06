@@ -128,6 +128,39 @@ export function CalendarWeekSurface({
   selectedBlockId?: string;
   viewModel: CalendarViewModel;
 }>) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const hoursRef = useRef<HTMLDivElement>(null);
+  const weekKey = viewModel.days.map((day) => day.date).join("|");
+  const initialScrollRef = useRef("");
+  useEffect(() => {
+    if (
+      initialScrollRef.current === weekKey ||
+      !scrollRef.current ||
+      !hoursRef.current
+    )
+      return;
+    initialScrollRef.current = weekKey;
+    const firstStart = Math.min(
+      ...viewModel.timedBlocks.map((block) => block.startMinutes),
+    );
+    const target = viewModel.days.some((day) => day.isToday)
+      ? viewModel.currentTime.top / 100
+      : ((Number.isFinite(firstStart) ? firstStart : 8 * 60) -
+          CALENDAR_DAY_START_MINUTES) /
+        (CALENDAR_DAY_END_MINUTES - CALENDAR_DAY_START_MINUTES);
+    scrollRef.current.scrollTop = Math.max(
+      0,
+      hoursRef.current.offsetTop -
+        scrollRef.current.offsetTop +
+        target * hoursRef.current.clientHeight -
+        120,
+    );
+  }, [
+    weekKey,
+    viewModel.currentTime.top,
+    viewModel.days,
+    viewModel.timedBlocks,
+  ]);
   const hourRows = calendarHourRows();
   const dayColumnRefs = useRef(new Map<string, HTMLDivElement>());
   const resizeStateRef = useRef<ResizeState | null>(null);
@@ -305,7 +338,10 @@ export function CalendarWeekSurface({
         </div>
       </div>
 
-      <div className="calendar-grid-scroll overflow-auto xl:flex-1">
+      <div
+        ref={scrollRef}
+        className="calendar-grid-scroll overflow-auto xl:flex-1"
+      >
         <div className="calendar-grid-content min-w-[1040px] xl:flex xl:h-full xl:min-h-[660px] xl:flex-col 2xl:min-h-[700px]">
           <div className="grid grid-cols-[56px_repeat(7,minmax(138px,1fr))] border-b border-[var(--border-subtle)]">
             <div className="border-r border-[var(--border-subtle)] bg-[rgba(11,17,28,.34)]" />
@@ -365,7 +401,10 @@ export function CalendarWeekSurface({
             })}
           </div>
 
-          <div className="calendar-hours relative h-[816px] min-h-[640px] xl:h-auto xl:min-h-[680px] xl:flex-1 2xl:min-h-[760px]">
+          <div
+            ref={hoursRef}
+            className="calendar-hours relative h-[816px] min-h-[640px] xl:h-auto xl:min-h-[680px] xl:flex-1 2xl:min-h-[760px]"
+          >
             <div
               className="grid h-full grid-cols-[56px_repeat(7,minmax(138px,1fr))]"
               style={{
