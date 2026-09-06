@@ -192,6 +192,15 @@ Project/Goal creation and Inbox archival occur in the same transaction.
 Task routes to existing Projects/Goals/Skills preserve canonical context links.
 All processed/triaged/archived rows leave the open Inbox projection.
 
+The Inbox surface now submits one `complete_inbox_triage` call containing the
+clarification fields, planning signals and chosen route. This Invoker wrapper
+calls the existing save and route functions in one PostgreSQL transaction,
+passing the freshly saved concurrency token to routing. A route failure rolls
+back the clarification too. Selection alone writes nothing; the original
+functions remain available to existing callers. No table or column is added
+by this final-commit migration.
+
+
 Text context transfers into the target's canonical description/summary;
 Next Action maps to Project `next_step`, otherwise labelled description text.
 Missing Info remains labelled context. Priority transfers to Task/Project;

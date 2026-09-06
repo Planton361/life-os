@@ -45,23 +45,32 @@ async function capture(page: Page, title: string) {
 }
 const editor = (page: Page) =>
   page.getByRole("form", { name: "Active Item bearbeiten" });
-async function save(page: Page) {
+// Set up a pre-existing clarified capture for search/filter and switch regression.
+// This is fixture preparation, not a visible Save control.
+async function seedClarifiedFields(page: Page) {
+  const api = await browserClient(page);
+  const id = new URL(page.url()).searchParams.get("item")!;
+  const values = {
+    body: await editor(page).getByLabel("Description / Context").inputValue(),
+    next_action: await editor(page).getByLabel("Next Action").inputValue(),
+    missing_info: await editor(page).getByLabel("Missing Info").inputValue(),
+  };
+  expect(
+    (
+      await api
+        .from("inbox_items")
+        .update({ ...values, status: "clarified" })
+        .eq("id", id)
+    ).error,
+  ).toBeNull();
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.reload();
+}
+async function route(page: Page, label: string, targetId?: string) {
   for (const close of await page
     .getByRole("button", { name: "Benachrichtigung schließen", exact: true })
     .all())
     await close.click();
-  await editor(page).getByRole("button", { name: "Save", exact: true }).click();
-  await expect(
-    editor(page).getByRole("button", { name: "Save", exact: true }),
-  ).toBeDisabled();
-  await expect(
-    page
-      .getByRole("status")
-      .filter({ hasText: "Inbox-Eintrag gespeichert." })
-      .last(),
-  ).toBeVisible();
-}
-async function route(page: Page, label: string, targetId?: string) {
   const region = page.getByRole("region", {
     name: "Outcome Route",
     exact: true,
@@ -69,13 +78,21 @@ async function route(page: Page, label: string, targetId?: string) {
   await region.getByRole("button", { name: label, exact: true }).click();
   if (targetId)
     await region.getByLabel("Bestehendes Ziel").selectOption(targetId);
-  await region
-    .getByRole("button", { name: "Route bestätigen", exact: true })
+  await page
+    .getByRole("button", { name: "Einordnen & abschließen", exact: true })
     .click();
   await expect(page.getByLabel("Letztes Routing")).toBeVisible();
+  await expect(
+    page
+      .getByRole("status")
+      .filter({
+        hasText: /gespeichert und zugeordnet|Inbox-Eintrag abgeschlossen/,
+      })
+      .last(),
+  ).toBeVisible();
 }
 
-test("R2-02 Quick Thought → central save/signals/reload → canonical Task and detail editing", async ({
+test("R2-02 linear triage → one final commit → canonical Task, reload and detail editing", async ({
   page,
 }, info) => {
   test.setTimeout(180000);
@@ -109,21 +126,6 @@ test("R2-02 Quick Thought → central save/signals/reload → canonical Task and
   await expect(
     page.getByRole("region", { name: "Inbox Queue" }).getByLabel("Search"),
   ).toBeDisabled();
-  await save(page);
-  await page.reload();
-  await expect(page).toHaveURL(new RegExp(`item=${id}`));
-  await expect(editor(page).getByLabel("Clean Title")).toHaveValue(
-    `${original} cleaned`,
-  );
-  await expect(editor(page).getByLabel("Description / Context")).toHaveValue(
-    "Specific context searchable kumquat",
-  );
-  await expect(editor(page).getByLabel("Next Action")).toHaveValue(
-    "Ask the owner for the first step",
-  );
-  await expect(editor(page).getByLabel("Missing Info")).toHaveValue(
-    "Need a source reference",
-  );
   await page.getByText("Original Capture", { exact: true }).click();
   await expect(page.locator("blockquote")).toContainText(original);
   await page.getByText("Original Capture", { exact: true }).click();
@@ -136,20 +138,6 @@ test("R2-02 Quick Thought → central save/signals/reload → canonical Task and
   await editor(page).getByLabel("Deadline hint").fill("2026-10-01");
   await editor(page).getByLabel("Review needed").check();
   await editor(page).getByLabel("Today candidate").check();
-  await save(page);
-  await page.reload();
-  for (const [label, value] of [
-    ["Priority", "P1"],
-    ["Energy", "high"],
-    ["Effort / Duration (min)", "45"],
-    ["Area", area.data!.id],
-    ["Deadline hint", "2026-10-01"],
-  ])
-    await expect(editor(page).getByLabel(label, { exact: true })).toHaveValue(
-      value,
-    );
-  await expect(editor(page).getByLabel("Review needed")).toBeChecked();
-  await expect(editor(page).getByLabel("Today candidate")).toBeChecked();
   const ai = page.getByRole("region", { name: "AI Assistant", exact: true });
   await ai.getByRole("button", { name: "Lokalen Vorschlag anzeigen" }).click();
   await expect(ai.getByRole("status")).toBeVisible();
@@ -158,14 +146,22 @@ test("R2-02 Quick Thought → central save/signals/reload → canonical Task and
   expect(
     (await api.from("inbox_items").select("title").eq("id", id).single()).data!
       .title,
-  ).toBe(`${original} cleaned`);
+  ).toBe(original);
   await page
     .getByRole("region", { name: "Outcome Route", exact: true })
     .getByRole("button", { name: "Standalone Task", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "Route bestätigen", exact: true }),
+    page.getByRole("button", { name: "Einordnen & abschließen", exact: true }),
   ).toBeEnabled();
+  expect(
+    (await api.from("inbox_items").select("status,body").eq("id", id).single())
+      .data,
+  ).toMatchObject({ status: "raw", body: original });
+  await expect(
+    page.getByRole("button", { name: "Standalone Task", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("[data-triage-step]")).toHaveCount(4);
   for (const size of [
     { width: 2560, height: 1440 },
     { width: 3840, height: 2160 },
@@ -183,6 +179,18 @@ test("R2-02 Quick Thought → central save/signals/reload → canonical Task and
     if (size.width > 1000)
       expect(bounds.height).toBeLessThanOrEqual(size.height + 2);
     if (size.width > 1000) {
+      const finalBounds = await page
+        .getByRole("button", { name: "Einordnen & abschließen", exact: true })
+        .boundingBox();
+      expect(finalBounds!.y + finalBounds!.height).toBeLessThanOrEqual(
+        size.height,
+      );
+      const stepOrder = await page
+        .locator("[data-triage-step]")
+        .evaluateAll((steps) =>
+          steps.map((step) => step.getBoundingClientRect().top),
+        );
+      expect(stepOrder).toEqual([...stepOrder].sort((a, b) => a - b));
       const panels = await page
         .locator(
           '[data-inbox-section="queue"], [data-inbox-section="active-item"], aside[aria-label="Sekundärer Inbox Kontext"]',
@@ -223,6 +231,23 @@ test("R2-02 Quick Thought → central save/signals/reload → canonical Task and
     .select("*")
     .eq("source_inbox_item_id", id)
     .single();
+  const persisted = (
+    await api.from("inbox_items").select("*").eq("id", id).single()
+  ).data!;
+  expect(persisted).toMatchObject({
+    title: `${original} cleaned`,
+    body: "Specific context searchable kumquat",
+    next_action: "Ask the owner for the first step",
+    missing_info: "Need a source reference",
+    priority: "P1",
+    energy: "high",
+    duration_minutes: 45,
+    area_id: area.data!.id,
+    deadline_hint: "2026-10-01",
+    review_needed: true,
+    today_candidate: true,
+    original_title: original,
+  });
   expect(target.error).toBeNull();
   expect(target.data).toMatchObject({
     title: `${original} cleaned`,
@@ -274,6 +299,9 @@ test("R2-02 Quick Thought → central save/signals/reload → canonical Task and
   await expect(targetForm.getByLabel("Titel", { exact: true })).toHaveValue(
     `${original} detail work`,
   );
+  expect(
+    (await api.from("inbox_items").select("*").eq("id", id).single()).data,
+  ).toEqual(persisted);
   await page.goto("/inbox");
   await page.reload();
   await expect(
@@ -329,7 +357,6 @@ test("R2-02 all routes, real targets, search/clear/filter/selection and no dupli
     await editor(page)
       .getByLabel("Description / Context")
       .fill(`Context for ${label}`);
-    await save(page);
     const outcome = page.getByRole("region", {
       name: "Outcome Route",
       exact: true,
@@ -395,7 +422,7 @@ test("R2-02 all routes, real targets, search/clear/filter/selection and no dupli
   await editor(page)
     .getByLabel("Description / Context")
     .fill("kumquat only context match");
-  await save(page);
+  await seedClarifiedFields(page);
   const first = new URL(page.url()).searchParams.get("item");
   await capture(page, "Search second unique thought");
   const second = new URL(page.url()).searchParams.get("item");
@@ -431,7 +458,7 @@ test("R2-02 all routes, real targets, search/clear/filter/selection and no dupli
       .getByRole("button")
       .filter({ hasText: "Search first unique thought" }),
   ).toBeDisabled();
-  await save(page);
+  await seedClarifiedFields(page);
   await queue
     .getByRole("button")
     .filter({ hasText: "Search first unique thought" })
@@ -556,12 +583,13 @@ test("R2-02 atomic RPC ownership, stale saves, double routes and immutable origi
   expect(current.original_title).toBe("Original");
   expect(current.original_body).toBe("Original body");
   const routeArgs = {
-    p_inbox_item_id: item.id,
+    ...args,
     p_expected_updated_at: current.updated_at,
     p_route: "project",
+    p_target_id: null,
   };
   expect(
-    (await other.rpc("route_saved_inbox_item", routeArgs)).error,
+    (await other.rpc("complete_inbox_triage", routeArgs)).error,
   ).not.toBeNull();
   const foreignProject = (
     await other
@@ -572,8 +600,9 @@ test("R2-02 atomic RPC ownership, stale saves, double routes and immutable origi
   ).data!;
   expect(
     (
-      await api.rpc("route_saved_inbox_item", {
+      await api.rpc("complete_inbox_triage", {
         ...routeArgs,
+        p_title: "Must roll back",
         p_route: "existing_project",
         p_target_id: foreignProject.id,
       })
@@ -583,9 +612,21 @@ test("R2-02 atomic RPC ownership, stale saves, double routes and immutable origi
     (await api.from("tasks").select("id").eq("source_inbox_item_id", item.id))
       .data,
   ).toEqual([]);
+  expect(
+    (
+      await api
+        .from("inbox_items")
+        .select("title,updated_at")
+        .eq("id", item.id)
+        .single()
+    ).data,
+  ).toEqual({ title: "Cleaned", updated_at: current.updated_at });
+  expect(
+    (await client().rpc("complete_inbox_triage", routeArgs)).error,
+  ).not.toBeNull();
   const attempts = await Promise.all([
-    api.rpc("route_saved_inbox_item", routeArgs),
-    api.rpc("route_saved_inbox_item", routeArgs),
+    api.rpc("complete_inbox_triage", routeArgs),
+    api.rpc("complete_inbox_triage", routeArgs),
   ]);
   expect(attempts.filter((result) => !result.error)).toHaveLength(1);
   expect(
@@ -621,7 +662,7 @@ test("R2-02 auth/empty/demo boundaries and visible stale-save error retain edits
   await expect(
     page
       .locator("#inbox-page")
-      .getByRole("button", { name: "Save", exact: true }),
+      .getByRole("button", { name: "Einordnen & abschließen", exact: true }),
   ).toHaveCount(0);
   await signUpTechnicalManualUser(page, "r2-errors", Date.now());
   await expect(page.getByRole("region", { name: "Inbox Queue" })).toContainText(
@@ -639,7 +680,26 @@ test("R2-02 auth/empty/demo boundaries and visible stale-save error retain edits
         .eq("id", id)
     ).error,
   ).toBeNull();
-  await editor(page).getByRole("button", { name: "Save", exact: true }).click();
+  const finalAction = page.getByRole("button", {
+    name: "Einordnen & abschließen",
+    exact: true,
+  });
+  await expect(finalAction).toBeDisabled();
+  await page
+    .getByRole("button", { name: "Existing Project", exact: true })
+    .click();
+  await expect(finalAction).toBeDisabled();
+  await page
+    .getByRole("button", { name: "Solved / Archive", exact: true })
+    .click();
+  const title = await editor(page).getByLabel("Clean Title").inputValue();
+  await editor(page).getByLabel("Clean Title").fill("x");
+  await expect(finalAction).toBeDisabled();
+  await editor(page).getByLabel("Clean Title").fill(title);
+  await editor(page).getByLabel("Effort / Duration (min)").fill("0");
+  await expect(finalAction).toBeDisabled();
+  await editor(page).getByLabel("Effort / Duration (min)").fill("");
+  await finalAction.click();
   await expect(
     page.locator('[data-inbox-section="active-item"]').getByRole("alert"),
   ).toContainText("inzwischen geändert");
@@ -658,15 +718,18 @@ test("R2-02 auth/empty/demo boundaries and visible stale-save error retain edits
   page.on("dialog", (dialog) => dialog.accept());
   await page.reload();
   await editor(page).getByLabel("Description / Context").fill("");
-  await editor(page).getByLabel("Missing Info").fill("Temporary");
-  await save(page);
   await editor(page).getByLabel("Missing Info").fill("");
-  await save(page);
+  await route(page, "Solved / Archive");
   await page.reload();
-  await expect(editor(page).getByLabel("Description / Context")).toHaveValue(
-    "",
-  );
-  await expect(editor(page).getByLabel("Missing Info")).toHaveValue("");
+  expect(
+    (
+      await api
+        .from("inbox_items")
+        .select("body,missing_info,status")
+        .eq("id", id)
+        .single()
+    ).data,
+  ).toMatchObject({ body: null, missing_info: null, status: "archived" });
   await page.context().addCookies([
     {
       name: "life_os_profile",

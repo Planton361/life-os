@@ -40,3 +40,7 @@ export const inboxRouteSchema = z
   );
 export type InboxClarificationInput = z.infer<typeof inboxClarificationSchema>;
 export type InboxRouteInput = z.infer<typeof inboxRouteSchema>;
+
+export const inboxCompletionSchema =
+  inboxClarificationSchema.and(inboxRouteSchema);
+export type InboxCompletionInput = z.infer<typeof inboxCompletionSchema>;

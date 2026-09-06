@@ -2697,6 +2697,26 @@ export type Database = {
     }
     Functions: {
       // Verified against fresh generated schema; SQL nullable arguments are explicit here.
+      complete_inbox_triage: {
+        Args: {
+          p_route: string
+          p_target_id: string | null
+          p_inbox_item_id: string
+          p_expected_updated_at: string
+          p_title: string
+          p_body: string | null
+          p_next_action: string | null
+          p_missing_info: string | null
+          p_priority: Database["public"]["Enums"]["task_priority"]
+          p_energy: Database["public"]["Enums"]["task_energy"] | null
+          p_duration_minutes: number | null
+          p_area_id: string | null
+          p_review_needed: boolean
+          p_today_candidate: boolean
+          p_deadline_hint: string | null
+        }
+        Returns: Json
+      }
       save_inbox_clarification: {
         Args: {
           p_inbox_item_id: string

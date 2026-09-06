@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   inboxClarificationSchema,
+  inboxCompletionSchema,
   inboxRouteSchema,
 } from "./inbox-workspace.schemas";
 const valid = {
@@ -69,4 +70,26 @@ describe("Inbox workspace boundary", () => {
       }).success,
     ).toBe(false);
   });
+});
+
+it("validates fields and destination together for the final commit", () => {
+  expect(
+    inboxCompletionSchema.safeParse({ ...valid, route: "task", targetId: null })
+      .success,
+  ).toBe(true);
+  expect(
+    inboxCompletionSchema.safeParse({
+      ...valid,
+      route: "existing_project",
+      targetId: null,
+    }).success,
+  ).toBe(false);
+  expect(
+    inboxCompletionSchema.safeParse({
+      ...valid,
+      title: "",
+      route: "archive",
+      targetId: null,
+    }).success,
+  ).toBe(false);
 });

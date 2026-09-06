@@ -181,17 +181,20 @@ user’s confirmation, not an additional automated Target proof.
 |---|---|---|---|
 | Inbox Quick Capture removal | `CONNECTED` | Inbox capture UI removed; Quick Thought → `inbox_items` survives reload in current R2-02 proof | Capture backend retained for existing sources |
 | Inbox search | `CONNECTED` | Real title/context filtering, clear/no-match, filters and URL selection/reload proof | maintain |
-| Active item selection | `CONNECTED` | `item`, `q`, `stage` URL state; dirty/pending queue guard; saved edits survive item switching and reload | maintain |
-| Title/description/next action/missing information | `CONNECTED` | central Save → server Auth/Zod → owned `save_inbox_clarification` RPC; original capture preserved; stale edit conflict leaves inputs intact | maintain |
-| Outcome Route and all triage flows | `CONNECTED` | compact destination-only selection → atomic `route_saved_inbox_item`; Task, existing Project/Goal/Skill, new Project/Goal, Resource, Note, Solved/Archive current proof | no second draft editor |
+| Active item selection | `CONNECTED` | `item`, `q`, `stage` URL state; dirty/pending queue guard; existing persisted edits survive item switching and reload; unsaved inputs block switching | maintain |
+| Title/description/next action/missing information | `CONNECTED` | final completion → server Auth/Zod → owned `complete_inbox_triage` RPC; original capture preserved; stale edit conflict leaves inputs intact | maintain |
+| Outcome Route and all triage flows | `CONNECTED` | destination-only selection (no write) → final atomic `complete_inbox_triage`; Task, existing Project/Goal/Skill, new Project/Goal, Resource, Note, Solved/Archive current proof | no second draft editor |
 | Note route | `CONNECTED` | canonical `resources.type = note`, correct Resources selection after reload | no separate Note entity invented |
 | Skill route | `CONNECTED` | Task context through existing Task↔Skill RPC; shown when owned active Skill targets exist; no Skill Evidence write | maintain |
-| Planning signals | `CONNECTED` | eight persisted Inbox signals; shared Save and target-specific transfer, current reload proof | Recurrence removed as unsupported Inbox input |
+| Planning signals | `CONNECTED` | seven persisted Inbox signals; final completion and target-specific transfer, current reload proof | Recurrence removed as unsupported Inbox input |
 | AI suggestion review | `CONNECTED` | user-triggered local read-only suggestion and dismiss; no provider or automatic field application | external provider remains outside R2-02 |
 | Related context | `CONNECTED` | bounded links to actual owned local targets, each visible link directly browser-tested | no relevance scores, semantic search or expansion |
 | Inbox surface acceptance | `CONNECTED_GAP` | R2-02 IMPLEMENTATION_PASS; isolated authenticated interaction, layout and security evidence below | USER ACCEPTANCE STATUS: PENDING; R2-02 stays active |
 
-## R2-02 implementation evidence — 2026-09-06
+## R2-02 initial implementation evidence — 2026-09-06
+
+Historical evidence for `fa377cf` is retained below. The UX pass recorded after
+this section supersedes its separate Save/route UI and layout assessment.
 
 **IMPLEMENTATION_PASS. USER ACCEPTANCE STATUS: PENDING.** This is an
 implementation result, not user acceptance or closure of the Inbox surface.
@@ -200,7 +203,7 @@ R2-01 remains explicitly accepted and committed as `aea80d0`.
 - `tests/e2e/r2-02-inbox-surface.spec.ts`: four focused tests pass on a fresh
   disposable authenticated Supabase runtime. Full realistic flow: Dashboard
   Quick Thought → select Inbox item → edit all four central fields → Save →
-  reload → set all eight Planning Signals → Save → reload → route to Task →
+  reload → set all seven Planning Signals → Save → reload → route to Task →
   verify canonical Task → open the selected Portfolio Task editor → continue
   title editing → save/reload → original Inbox item absent from the open queue.
 - Every offered route is executed; existing Project/Goal/Skill Task context,
@@ -252,17 +255,81 @@ R2-01 remains explicitly accepted and committed as `aea80d0`.
   The shared open-Inbox read projection excludes processed captures so the
   dependent count does not retain already-routed items.
 
+## R2-02 linear triage UX pass — 2026-09-06
+
+**IMPLEMENTATION_PASS. USER ACCEPTANCE STATUS: PENDING.** R2-02 remains the
+only active ROADMAP block; this is not surface closure and does not activate R2-03.
+
+- One continuous primary workbench presents **01 Klären → 02 Planungshinweise
+  → 03 Ziel wählen → 04 Abschließen**. Cyan, orange, violet and green use V5
+  tokens, text labels and a vertical connector. Original Capture stays collapsed
+  and secondary. The header identifies the item and Raw/Clarified/unsaved state.
+- The intermediate Save and route-confirmation buttons are removed. Route
+  selection only previews a destination. **Einordnen & abschließen** is the
+  sole final write and remains visible in a separate footer on desktop.
+  It is disabled for missing route/target, invalid title/duration or blocked
+  authentication. Local validation and persistent error feedback retain inputs.
+- The new `complete_inbox_triage` Invoker RPC combines the existing clarification
+  and canonical route functions in one transaction. Auth, Zod, owned-open-row
+  checks, RLS, version locking, original-capture preservation and revalidation
+  remain in place. A foreign/unavailable target rolls back the field save too.
+  No new table, column, route type, external provider or entity draft is added.
+- Current `tests/e2e/r2-02-inbox-surface.spec.ts`: **4/4 PASS (34.6s)** in the
+  isolated authenticated runtime. Quick Thought → edit all four fields → set
+  all seven supported signals → select Task → verify source still Raw and
+  unchanged → final action/toast → canonical Task and processed source → target
+  editing/reload → exact source fields survive reload and Open is empty.
+  All other offered routes, real related links, AI show/dismiss, search/clear,
+  filters, selection, empty/demo/auth, validation and stale-error states pass.
+  Pre-existing clarified rows for search/filter/switch tests are API fixtures;
+  they do not imply that a separate UI Save remains available.
+- Security proof additionally exercises anonymous/foreign completion rejection,
+  rollback of changed title on foreign Project routing, stale version conflicts
+  and two concurrent final commits creating exactly one canonical Project.
+- The additive migration `20260906103333_r2_02_complete_inbox_triage.sql` was
+  proven in a fresh disposable database using only Git-index migration blobs.
+  All **44** versions matched. DB lint at warning level and Security Advisors
+  were clean. Only then was the canonical local Target migrated through the
+  guarded `runtime:target:migrate`; it has the same 44 versions and passes both
+  checks. The previous migration chain is unchanged; no remote database used.
+- `git diff --check`, `pnpm typecheck`, `pnpm lint`, **12 focused Inbox Vitest
+  assertions**, focused Playwright and `pnpm build` pass. Core browser console
+  errors/hydration checks are clean. Global toast dismissal is directly tested.
+- Full before/after screenshots were reviewed at **3840×2160, 2560×1440,
+  1920×1080 and 390×844**. Automated bounds prove no horizontal overflow,
+  desktop body scroll, card overlap or out-of-form fields, step order is
+  monotonic, and the final action is inside each desktop viewport. The queue
+  and tertiary context rail fit their contents. The central surface receives
+  most of the width and distributes the steps along its height; native 4K
+  uses a readable 1.5 workbench scale rather than oversized textareas. Shorter
+  desktop heights use compact spacing; expanded content scrolls internally.
+- Artifacts: previous captures are retained outside Git at
+  `/tmp/life-os-r2-02-ux-before/inbox-{3840,2560,1920,390}.png`; current captures
+  and route inventory are attached to the isolated report at
+  `/tmp/life-os-r2-02-runtime-3ig5evyy/playwright-report/index.html`.
+  Tests regenerate current screenshots. No private/auth artifacts are staged.
+- **V5 Design-Taste review — PASS.** Fits V5: matte existing surfaces, one
+  dominant workbench, restrained semantic tints, distinct selected route and
+  subordinate content-sized rails. Earlier failures (flat hierarchy, premature
+  Save, large empty queue, undersized 4K islands and hidden desktop completion)
+  were corrected. No remaining material design violation was found in the
+  inspected views. Mobile retains the existing stacked shell.
+  **Question:** Does a user understand within seconds that this item is clarified,
+  planned, routed and then completed from top to bottom? **YES**: four numbered
+  headings, connected sections, a selected-route preview and one final green
+  action make the sequence explicit. This review does not replace user acceptance.
+
 ### Planning Signal audit
 
 | SIGNAL | CANONICAL FIELD | PERSISTED | TARGET SUPPORT | UI RESULT |
 |---|---|---|---|---|
-| Priority | `inbox_items.priority` | YES | Task `priority`; Project `priority` | central Planning Signals + Save |
-| Energy | `inbox_items.energy` | YES | Task `energy` | central nullable select + Save |
-| Effort / Duration | `inbox_items.duration_minutes` | YES | Task `duration_minutes` | positive minutes; nullable + Save |
-| Area | `inbox_items.area_id` | YES | Task/Project/Goal/Resource `area_id`; owned active Area required | actual local Area select + Save |
-| Review needed | `inbox_items.review_needed` | YES | Resource `review_needed` | checkbox + Save; no implied Task field |
-| Today candidate | `inbox_items.today_candidate` | YES | Task `planned_date`, resolved in profile timezone at routing | checkbox + Save |
-| Deadline hint | `inbox_items.deadline_hint` | YES | Task `due_at` at local end of day; Project/Goal `target_date` | date input + Save |
+| Priority | `inbox_items.priority` | YES | Task `priority`; Project `priority` | central Planning Signals + final completion |
+| Energy | `inbox_items.energy` | YES | Task `energy` | central nullable select + final completion |
+| Effort / Duration | `inbox_items.duration_minutes` | YES | Task `duration_minutes` | positive minutes; nullable + final completion |
+| Area | `inbox_items.area_id` | YES | Task/Project/Goal/Resource `area_id`; owned active Area required | actual local Area select + final completion |
+| Review needed | `inbox_items.review_needed` | YES | Resource `review_needed` | checkbox + final completion; no implied Task field |
+| Today candidate | `inbox_items.today_candidate` | YES | Task `planned_date`, resolved in profile timezone at routing | checkbox + final completion |
+| Deadline hint | `inbox_items.deadline_hint` | YES | Task `due_at` at local end of day; Project/Goal `target_date` | date input + final completion |
 | Recurrence hint | no canonical Inbox field | NO | no supported Inbox→Routine transfer | removed; no fake persisted hint |
 
 Cleaned context transfers only into supported description/summary fields.
@@ -280,18 +347,19 @@ history and are not represented as new target fields.
 | Open / Raw / Clarified | reflect persisted open states | each filter clicked; actual matching rows checked | PASS |
 | Queue item | select current capture | selection, dirty guard, saved item switching and reload checked | PASS |
 | Original Capture | inspect source without mutation | expanded/collapsed; original survives edit and attempted overwrite | PASS |
-| Clean Title | persistent central edit | saved and reloaded cleaned title | PASS |
-| Description / Context | persistent central edit/clear | saved, cleared and reloaded | PASS |
-| Next Action | persistent central edit | saved/reloaded and carried into Task editor | PASS |
-| Missing Info | persistent central edit/clear | saved, cleared, reloaded; routed context retained | PASS |
-| Save | one explicit write with feedback | successful save, dirty reset, reload and visible stale conflict checked | PASS |
-| Priority | persistent selection | P1 saved/reloaded and transferred to Task | PASS |
-| Energy | persistent selection | high saved/reloaded and transferred to Task | PASS |
-| Effort / Duration | persistent minutes | 45 saved/reloaded and transferred to Task | PASS |
-| Area | actual owned selection | local Area saved/reloaded and transferred to Task | PASS |
-| Review needed | persistent boolean | checked/saved/reloaded | PASS |
-| Today candidate | persistent boolean | checked/saved/reloaded and canonical Task planned date verified | PASS |
-| Deadline hint | persistent date | selected/saved/reloaded and canonical Task deadline verified | PASS |
+| Original Capture | reveal immutable source | expanded, original checked, collapsed in core flow | PASS |
+| Clean Title | persistent central edit | completed and reloaded cleaned title | PASS |
+| Description / Context | persistent central edit/clear | completed with cleared fields and reloaded | PASS |
+| Next Action | persistent central edit | completed/reloaded and carried into Task editor | PASS |
+| Missing Info | persistent central edit/clear | completed with cleared fields, reloaded; routed context retained | PASS |
+| Einordnen & abschließen | save fields/signals and route once | one atomic final commit, toast, source/target reload, rollback and stale error checked | PASS |
+| Priority | persistent selection | P1 completed/reloaded and transferred to Task | PASS |
+| Energy | persistent selection | high completed/reloaded and transferred to Task | PASS |
+| Effort / Duration | persistent minutes | 45 completed/reloaded and transferred to Task | PASS |
+| Area | actual owned selection | local Area completed/reloaded and transferred to Task | PASS |
+| Review needed | persistent boolean | checked/completed/reloaded | PASS |
+| Today candidate | persistent boolean | checked/completed/reloaded and canonical Task planned date verified | PASS |
+| Deadline hint | persistent date | selected/completed/reloaded and canonical Task deadline verified | PASS |
 | Standalone Task | canonical Task from saved fields | confirmation, Task values and target editor save/reload checked | PASS |
 | Existing Project | Task with selected Project context | selection, confirmation and actual relation checked | PASS |
 | Existing Goal | Task with selected Goal context | selection, confirmation and actual relation checked | PASS |
@@ -301,9 +369,9 @@ history and are not represented as new target fields.
 | Resource | canonical source Resource | type/source and Resources reload checked | PASS |
 | Note | canonical note Resource | type/source and Resources reload checked | PASS |
 | Solved / Archive | close without target | archival, empty queue and reload checked | PASS |
-| Route confirmation | execute chosen route once | each route confirmed; unsaved changes cannot route | PASS |
+| Route selection | preview destination without writing | selected state shown; source still Raw and unchanged before final action | PASS |
 | Target open / result close | continue at canonical destination / dismiss result | target links and result close clicked | PASS |
-| Global toast close | dismiss existing feedback | close controls clicked before subsequent saves; new success toast checked | PASS |
+| Global toast close | dismiss existing feedback | close controls clicked before subsequent completions; new success toast checked | PASS |
 | Local AI suggestion / dismiss | optional read-only proposal | both clicked; persisted title remains unchanged | PASS |
 | Related Context links | open actual local targets | every displayed link clicked; destination loaded | PASS |
 | Quick Capture / second draft / fake actions | absent from Inbox | removed; capture backend retained | PASS |

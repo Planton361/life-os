@@ -168,3 +168,87 @@ body:has(#inbox-page) .life-os-command-center {
   .dashboard-side-stack:first-child > section[aria-labelledby="meals-today-title"] article { padding: 8px; }
   .dashboard-side-stack:first-child > section[aria-labelledby="meals-today-title"] article > a > div:first-child { height: 64px; }
 }
+
+/* R2-02: one continuous triage surface; secondary rails fit their content. */
+body:has(#inbox-page) { --dashboard-max: 100%; }
+.inbox-workflow-body { display: flex; flex-direction: column; }
+.inbox-step {
+  --step-accent: var(--accent-cyan);
+  position: relative;
+  border-left: 1px solid color-mix(in srgb, var(--step-accent) 35%, var(--border-subtle));
+  padding: 16px 0 20px 24px;
+  margin-left: 14px;
+}
+.inbox-step-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 16px -39px;
+  color: var(--step-accent);
+  font-size: 14px;
+  font-weight: 650;
+}
+.inbox-step-heading > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border: 1px solid color-mix(in srgb, var(--step-accent) 40%, transparent);
+  border-radius: 10px;
+  background: var(--surface-1);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.inbox-step-planning { --step-accent: var(--accent-orange); }
+.inbox-step-route { --step-accent: var(--accent-purple); }
+.inbox-step-finish {
+  --step-accent: var(--accent-green);
+  margin-top: 0;
+  padding-bottom: 8px;
+}
+.inbox-route { --route-accent: var(--accent-blue); border-color: color-mix(in srgb, var(--route-accent) 30%, var(--border-subtle)); }
+.inbox-route[data-route*="project"], .inbox-route[data-route*="goal"] { --route-accent: var(--accent-purple); }
+.inbox-route[data-route="resource"], .inbox-route[data-route="note"] { --route-accent: var(--accent-cyan); }
+.inbox-route[data-route="archive"] { --route-accent: var(--accent-green); }
+.inbox-route-selected {
+  color: var(--text-primary);
+  border-color: var(--route-accent);
+  background: color-mix(in srgb, var(--route-accent) 18%, transparent);
+  box-shadow: inset 0 0 0 1px var(--route-accent);
+}
+.inbox-final-action {
+  border-color: var(--accent-green);
+  background: var(--accent-green);
+  color: var(--bg-app);
+}
+.inbox-final-action:disabled { background: var(--surface-2); color: var(--text-muted); border-color: var(--border-default); }
+@media (min-width: 1536px) {
+  .inbox-workflow-body { padding: 20px 24px; }
+  .inbox-step { padding-top: clamp(12px, 1.3vh, 28px); padding-bottom: clamp(16px, 2vh, 40px); }
+}
+/* Native-size 4K gets a readable workbench scale, not taller form fields. */
+@media (min-width: 3000px) {
+  #inbox-page { zoom: 1.5; height: calc((100dvh - 32px) / 1.5); max-width: 2300px; }
+  .inbox-step { padding-top: 16px; padding-bottom: 24px; }
+}
+.inbox-workflow > .inbox-step-finish { margin-left: 30px; margin-right: 16px; padding: 16px 0 12px 24px; }
+
+@media (min-width: 1536px) {
+  .inbox-workflow-body > form { display: flex; flex: 2; }
+  .inbox-workflow-body > form > fieldset { display: flex; flex-direction: column; flex: 1; }
+  .inbox-step-clarify { flex: 1.4; }
+  .inbox-step-planning { flex: 1; margin-top: 0; }
+  .inbox-step-route { flex: .6; }
+  .inbox-workflow > .inbox-step-finish { margin: 0 24px 16px 38px; padding: 16px 0 4px 24px; }
+}
+@media (min-width: 1536px) and (max-height: 1200px) {
+  .inbox-workflow > header { padding: 12px 16px; }
+  .inbox-workflow-body { padding-top: 12px; padding-bottom: 8px; }
+  .inbox-workflow-body > details { margin-bottom: 4px; }
+  .inbox-step { padding-top: 6px; padding-bottom: 10px; }
+  .inbox-step-heading { margin-bottom: 8px; }
+  .inbox-workflow textarea { height: 56px; }
+  .inbox-workflow > .inbox-step-finish { padding-top: 8px; margin-bottom: 12px; }
+}

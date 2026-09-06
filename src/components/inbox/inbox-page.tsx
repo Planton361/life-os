@@ -13,8 +13,7 @@ import type { InboxViewModel } from "@/features/inbox";
 import { useToast } from "@/components/feedback/toast-provider";
 import { suggestInboxRouteAction } from "@/features/real-data/actions/inbox-ai.actions";
 import {
-  routeSavedInboxItemAction,
-  saveInboxClarificationAction,
+  completeInboxTriageAction,
   type InboxWorkspaceResult,
 } from "@/features/real-data/actions/inbox-workspace.actions";
 import type {
@@ -126,44 +125,36 @@ function InboxEditor({
         : route === "existing_skill"
           ? viewModel.existingTargets.skills
           : [];
-  async function save() {
-    if (!formRef.current?.reportValidity()) return;
-    startTransition(async () => {
-      const result = await saveInboxClarificationAction(fields);
-      notify(result.message, result.status === "success" ? "success" : "error");
-      setError(result.status === "success" ? "" : result.message);
-      if (result.status === "success" && result.updatedAt) {
-        const next = { ...fields, expectedUpdatedAt: result.updatedAt };
-        setFields(next);
-        setSaved(next);
-        onDirty(false);
-      }
-    });
-  }
   function complete() {
-    if (!route || dirty) return;
+    if (!route || !formRef.current?.reportValidity()) return;
     startTransition(async () => {
-      const result = await routeSavedInboxItemAction({
-        inboxItemId: fields.inboxItemId,
-        expectedUpdatedAt: fields.expectedUpdatedAt,
+      const result = await completeInboxTriageAction({
+        ...fields,
         route,
         targetId: targetId || null,
       });
       notify(result.message, result.status === "success" ? "success" : "error");
       setError(result.status === "success" ? "" : result.message);
-      if (result.status === "success") onComplete(result);
+      if (result.status === "success") {
+        setSaved(fields);
+        onDirty(false);
+        onComplete(result);
+      }
     });
   }
   return (
     <>
       <section
         aria-labelledby="active-item-title"
-        className={cn(panel, "flex max-h-full min-h-0 flex-col self-start")}
+        className={cn(
+          panel,
+          "inbox-workflow flex min-h-0 flex-col border-[color-mix(in_srgb,var(--accent-cyan)_24%,var(--border-subtle))]",
+        )}
         data-inbox-section="active-item"
       >
         <header className="border-b border-[var(--border-subtle)] p-4">
-          <p className="text-[10px] font-semibold uppercase text-[var(--accent-orange)]">
-            Active Item
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--accent-cyan)]">
+            Active Item · Triage
           </p>
           <h2
             id="active-item-title"
@@ -171,12 +162,20 @@ function InboxEditor({
           >
             {item.title}
           </h2>
+          <p className="mt-2 text-xs text-[var(--text-muted)]">
+            {dirty
+              ? "Ungespeicherte Änderungen · erst abschließen, dann wechseln."
+              : viewModel.queue.find((entry) => entry.id === item.id)?.stage ===
+                  "raw"
+                ? "Raw · noch nicht eingeordnet"
+                : "Clarified · bereit zur Einordnung"}
+          </p>
         </header>
         <div
-          className="min-h-0 space-y-4 overflow-y-auto p-4"
+          className="inbox-workflow-body min-h-0 flex-1 overflow-y-auto p-4"
           data-inbox-section="active-item-body"
         >
-          <details className="rounded-[12px] border border-[var(--border-subtle)] p-3">
+          <details className="mb-4 text-[var(--text-muted)]">
             <summary
               className={cn(
                 "cursor-pointer text-xs text-[var(--text-muted)]",
@@ -198,72 +197,81 @@ function InboxEditor({
           )}
           <form
             aria-label="Active Item bearbeiten"
+            id="inbox-triage-form"
             ref={formRef}
             onSubmit={(event) => {
               event.preventDefault();
-              void save();
+              complete();
             }}
           >
             <fieldset
               disabled={!enabled || pending}
               className="space-y-3 disabled:opacity-70"
             >
-              <label className="block text-xs text-[var(--text-secondary)]">
-                Clean Title
-                <input
-                  className={cn(input, "mt-1")}
-                  value={fields.title}
-                  onChange={(event) => change("title", event.target.value)}
-                  minLength={2}
-                  maxLength={500}
-                  required
-                />
-              </label>
-              <label className="block text-xs text-[var(--text-secondary)]">
-                Description / Context
-                <textarea
-                  className={cn(input, "mt-1 resize-y")}
-                  rows={4}
-                  value={fields.body ?? ""}
-                  maxLength={20000}
-                  onChange={(event) => change("body", event.target.value)}
-                />
-              </label>
-              <div className="grid gap-3 md:grid-cols-2">
-                <label className="text-xs text-[var(--text-secondary)]">
-                  Next Action
-                  <textarea
-                    className={cn(input, "mt-1 resize-y")}
-                    rows={3}
-                    maxLength={20000}
-                    value={fields.nextAction ?? ""}
-                    onChange={(event) =>
-                      change("nextAction", event.target.value)
-                    }
-                  />
-                </label>
-                <label className="text-xs text-[var(--text-secondary)]">
-                  Missing Info
-                  <textarea
-                    className={cn(input, "mt-1 resize-y")}
-                    rows={3}
-                    maxLength={20000}
-                    value={fields.missingInfo ?? ""}
-                    onChange={(event) =>
-                      change("missingInfo", event.target.value)
-                    }
-                  />
-                </label>
+              <div
+                className="inbox-step inbox-step-clarify"
+                data-triage-step="1"
+              >
+                <h3 className="inbox-step-heading">
+                  <span>01</span> Klären
+                </h3>
+                <div className="space-y-3">
+                  <label className="block text-xs text-[var(--text-secondary)]">
+                    Clean Title
+                    <input
+                      className={cn(input, "mt-1")}
+                      value={fields.title}
+                      onChange={(event) => change("title", event.target.value)}
+                      minLength={2}
+                      maxLength={500}
+                      required
+                    />
+                  </label>
+                  <label className="block text-xs text-[var(--text-secondary)]">
+                    Description / Context
+                    <textarea
+                      className={cn(input, "mt-1 resize-y")}
+                      rows={4}
+                      value={fields.body ?? ""}
+                      maxLength={20000}
+                      onChange={(event) => change("body", event.target.value)}
+                    />
+                  </label>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <label className="text-xs text-[var(--text-secondary)]">
+                      Next Action
+                      <textarea
+                        className={cn(input, "mt-1 resize-y")}
+                        rows={3}
+                        maxLength={20000}
+                        value={fields.nextAction ?? ""}
+                        onChange={(event) =>
+                          change("nextAction", event.target.value)
+                        }
+                      />
+                    </label>
+                    <label className="text-xs text-[var(--text-secondary)]">
+                      Missing Info
+                      <textarea
+                        className={cn(input, "mt-1 resize-y")}
+                        rows={3}
+                        maxLength={20000}
+                        value={fields.missingInfo ?? ""}
+                        onChange={(event) =>
+                          change("missingInfo", event.target.value)
+                        }
+                      />
+                    </label>
+                  </div>
+                </div>
               </div>
               <section
+                data-triage-step="2"
                 aria-labelledby="planning-signals-title"
-                className="border-t border-[var(--border-subtle)] pt-3"
+                className="inbox-step inbox-step-planning"
               >
-                <h3
-                  id="planning-signals-title"
-                  className="mb-3 text-sm font-semibold"
-                >
-                  Planning Signals
+                <h3 id="planning-signals-title" className="inbox-step-heading">
+                  <span>02</span> Planungshinweise
                 </h3>
                 <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
                   <label className="text-xs">
@@ -367,37 +375,16 @@ function InboxEditor({
                   </label>
                 </div>
               </section>
-              <div className="flex flex-wrap items-center gap-3 pt-1">
-                <button
-                  className={cn(
-                    button,
-                    "border-[var(--accent-cyan)] bg-[color-mix(in_srgb,var(--accent-cyan)_12%,transparent)]",
-                  )}
-                  type="submit"
-                  disabled={!dirty || pending}
-                >
-                  {pending ? "Speichert …" : "Save"}
-                </button>
-                <span className="text-xs text-[var(--text-muted)]">
-                  {dirty
-                    ? "Ungespeicherte Änderungen · vor Wechsel oder Routing speichern."
-                    : "Felder und Signale werden gemeinsam gespeichert."}
-                </span>
-              </div>
             </fieldset>
           </form>
-          {error && (
-            <p role="alert" className="text-sm text-[var(--accent-red)]">
-              {error}
-            </p>
-          )}
           {enabled && (
             <section
-              aria-labelledby="outcome-route-title"
-              className="border-t border-[var(--border-subtle)] pt-3"
+              aria-label="Outcome Route"
+              data-triage-step="3"
+              className="inbox-step inbox-step-route"
             >
-              <h3 id="outcome-route-title" className="text-sm font-semibold">
-                Outcome Route
+              <h3 id="outcome-route-title" className="inbox-step-heading">
+                <span>03</span> Ziel wählen
               </h3>
               <p className="mt-1 text-xs text-[var(--text-muted)]">
                 Wo gehört dieser Gedanke hin?
@@ -415,9 +402,10 @@ function InboxEditor({
                       type="button"
                       className={cn(
                         button,
-                        route === option.id &&
-                          "border-[var(--accent-cyan)] bg-[color-mix(in_srgb,var(--accent-cyan)_12%,transparent)]",
+                        "inbox-route",
+                        route === option.id && "inbox-route-selected",
                       )}
+                      data-route={option.id}
                       aria-pressed={route === option.id}
                       disabled={pending}
                       onClick={() => {
@@ -455,18 +443,6 @@ function InboxEditor({
               )}
               {route && (
                 <div className="mt-3 flex flex-wrap items-center gap-3">
-                  <button
-                    className={cn(button, "border-[var(--accent-green)]")}
-                    type="button"
-                    disabled={
-                      dirty ||
-                      pending ||
-                      (route.startsWith("existing_") && !targetId)
-                    }
-                    onClick={complete}
-                  >
-                    Route bestätigen
-                  </button>
                   <p className="text-xs text-[var(--text-muted)]">
                     {route === "archive"
                       ? "Abschließen ohne neues Ziel. Original Capture bleibt erhalten."
@@ -483,9 +459,47 @@ function InboxEditor({
             </section>
           )}
         </div>
+        <footer
+          className="inbox-step inbox-step-finish mx-4 shrink-0 border-t border-t-[var(--border-subtle)]"
+          data-triage-step="4"
+        >
+          <h3 className="inbox-step-heading">
+            <span>04</span> Abschließen
+          </h3>
+          {error && (
+            <p role="alert" className="text-sm text-[var(--accent-red)]">
+              {error}
+            </p>
+          )}
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <p className="max-w-md text-xs text-[var(--text-secondary)]">
+              {route
+                ? `Ausgewählt: ${routes.find((option) => option.id === route)?.title}. Speichert die Einordnung und entfernt den Gedanken aus der offenen Inbox.`
+                : "Wähle ein Ziel, um diesen Gedanken abschließend einzuordnen."}
+            </p>
+            <button
+              className={cn(button, "inbox-final-action min-h-11 px-5 text-sm")}
+              type="submit"
+              form="inbox-triage-form"
+              disabled={
+                !enabled ||
+                pending ||
+                !route ||
+                fields.title.trim().length < 2 ||
+                (route.startsWith("existing_") && !targetId) ||
+                (fields.durationMinutes !== null &&
+                  (!Number.isInteger(fields.durationMinutes) ||
+                    fields.durationMinutes < 1 ||
+                    fields.durationMinutes > 10080))
+              }
+            >
+              {pending ? "Wird eingeordnet …" : "Einordnen & abschließen"}
+            </button>
+          </div>
+        </footer>
       </section>
       <aside
-        className="min-h-0 space-y-3 overflow-y-auto"
+        className="inbox-context min-h-0 space-y-3 self-start overflow-y-auto"
         aria-label="Sekundärer Inbox Kontext"
       >
         <LocalAssistant itemId={item.id} enabled={enabled} />
@@ -650,7 +664,7 @@ export function InboxPage({
     <div
       id="inbox-page"
       data-profile-id={viewModel.profileId}
-      className="mx-auto flex w-full max-w-[2400px] flex-col gap-3 pb-5 2xl:h-[calc(100dvh-32px)] 2xl:min-h-0 2xl:pb-0"
+      className="mx-auto flex w-full max-w-[3200px] flex-col gap-3 pb-5 2xl:h-[calc(100dvh-32px)] 2xl:min-h-0 2xl:pb-0"
     >
       <header className="flex flex-wrap items-end justify-between gap-3 py-2">
         <div>
@@ -685,9 +699,9 @@ export function InboxPage({
           </button>
         </div>
       )}
-      <div className="grid min-h-0 flex-1 gap-3 2xl:grid-cols-[minmax(260px,.75fr)_minmax(620px,1.8fr)_minmax(270px,.7fr)]">
+      <div className="inbox-layout grid min-h-0 flex-1 gap-4 2xl:grid-cols-[minmax(260px,.7fr)_minmax(620px,2.6fr)_minmax(260px,.65fr)]">
         <section
-          className={cn(panel, "flex min-h-0 flex-col")}
+          className={cn(panel, "flex max-h-full min-h-0 flex-col self-start")}
           aria-labelledby="inbox-queue-title"
           data-inbox-section="queue"
         >
@@ -724,7 +738,8 @@ export function InboxPage({
                 <button
                   className={cn(
                     button,
-                    filter === stage.id && "border-[var(--accent-cyan)]",
+                    filter === stage.id &&
+                      "border-[var(--accent-cyan)] bg-[color-mix(in_srgb,var(--accent-cyan)_10%,transparent)]",
                   )}
                   aria-pressed={filter === stage.id}
                   disabled={dirty}
@@ -770,7 +785,14 @@ export function InboxPage({
                   <span className="mt-1 block line-clamp-2 break-words text-xs text-[var(--text-muted)]">
                     {item.note}
                   </span>
-                  <span className="mt-2 block text-[10px] text-[var(--text-secondary)]">
+                  <span
+                    className={cn(
+                      "mt-2 block text-[10px]",
+                      item.stage === "raw"
+                        ? "text-[var(--accent-orange)]"
+                        : "text-[var(--accent-cyan)]",
+                    )}
+                  >
                     {item.stage === "raw" ? "Raw" : "Clarified"} · {item.type}
                   </span>
                 </button>
