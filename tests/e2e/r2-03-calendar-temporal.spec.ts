@@ -52,6 +52,16 @@ async function expectDesktopViewportFit(page: Page, viewportHeight: number) {
     const hoursBounds = hours.getBoundingClientRect();
     const currentTimeBounds = currentTimeLine.getBoundingClientRect();
     const currentTimePercent = Number.parseFloat(currentTimeLine.style.top);
+    const hourLines = Array.from(
+      document.querySelectorAll<HTMLElement>("[data-calendar-hour-line]"),
+    ).map((line) => ({
+      label: line.dataset.calendarHourLine,
+      top: line.getBoundingClientRect().top,
+    }));
+    const hourBoundaries = [
+      ...hourLines.map((line) => line.top),
+      hoursBounds.bottom,
+    ];
 
     return {
       bodyScrollHeight: document.body.scrollHeight,
@@ -63,7 +73,12 @@ async function expectDesktopViewportFit(page: Page, viewportHeight: number) {
       },
       hours: {
         ...rect(".calendar-hours"),
-        hourHeight: hours.clientHeight / 16.5,
+        boundaries: hourBoundaries,
+        gaps: hourBoundaries
+          .slice(1)
+          .map((boundary, index) => boundary - hourBoundaries[index]),
+        hourHeight: hours.clientHeight / 18,
+        labels: hourLines.map((line) => line.label),
       },
       labels: {
         end: {
@@ -75,6 +90,7 @@ async function expectDesktopViewportFit(page: Page, viewportHeight: number) {
           text: startLabel.textContent?.trim(),
         },
       },
+      endBoundaryLine: rect('[data-calendar-time-boundary-line="end"]'),
       main: rect("main"),
       page: rect("#calendar-page"),
       queueItems: {
@@ -120,8 +136,20 @@ async function expectDesktopViewportFit(page: Page, viewportHeight: number) {
   expect(metrics.gridScroll.scrollHeight).toBeLessThanOrEqual(
     metrics.gridScroll.clientHeight + 1,
   );
+  expect(metrics.hours.labels).toEqual(
+    Array.from({ length: 18 }, (_, index) =>
+      `${String(index + 6).padStart(2, "0")}:00`,
+    ),
+  );
+  expect(metrics.hours.boundaries).toHaveLength(19);
+  expect(
+    Math.max(...metrics.hours.gaps) - Math.min(...metrics.hours.gaps),
+  ).toBeLessThanOrEqual(0.1);
+  for (const gap of metrics.hours.gaps) {
+    expect(gap).toBeCloseTo(metrics.hours.hourHeight, 1);
+  }
   expect(metrics.labels.start.text).toBe("06:00");
-  expect(metrics.labels.end.text).toBe("22:30");
+  expect(metrics.labels.end.text).toBe("00:00");
   expect(metrics.labels.start.top).toBeGreaterThanOrEqual(metrics.hours.top);
   expect(metrics.labels.start.bottom).toBeLessThanOrEqual(
     metrics.hours.bottom + 1,
@@ -130,6 +158,7 @@ async function expectDesktopViewportFit(page: Page, viewportHeight: number) {
   expect(metrics.labels.end.bottom).toBeLessThanOrEqual(
     metrics.hours.bottom + 1,
   );
+  expect(metrics.endBoundaryLine.bottom).toBeCloseTo(metrics.hours.bottom, 0);
   expect(metrics.timeLine.actualTop).toBeCloseTo(
     metrics.timeLine.expectedTop,
     0,
@@ -176,6 +205,33 @@ test("R2-03 Calendar proportional time geometry and planning-only controls", asy
   expect(records.error).toBeNull();
   expect(
     (
+      await api.from("tasks").insert([
+        {
+          user_id: user,
+          title: "Late boundary first half",
+          planned_date: "2026-09-08",
+          scheduled_start_at: "2026-09-08T21:00:00Z",
+          duration_minutes: 30,
+        },
+        {
+          user_id: user,
+          title: "Late boundary second half",
+          planned_date: "2026-09-09",
+          scheduled_start_at: "2026-09-09T21:30:00Z",
+          duration_minutes: 30,
+        },
+        {
+          user_id: user,
+          title: "Late boundary full hour",
+          planned_date: "2026-09-10",
+          scheduled_start_at: "2026-09-10T21:00:00Z",
+          duration_minutes: 60,
+        },
+      ])
+    ).error,
+  ).toBeNull();
+  expect(
+    (
       await api.from("tasks").insert(
         Array.from({ length: 12 }, (_, i) => ({
           user_id: user,
@@ -192,6 +248,10 @@ test("R2-03 Calendar proportional time geometry and planning-only controls", asy
       has: page.getByRole("button", {
         name: new RegExp(`^Geometry ${duration} min,`),
       }),
+    });
+  const lateBlock = (title: string) =>
+    page.locator("[data-calendar-timed-block]").filter({
+      has: page.getByRole("button", { name: new RegExp(`^${title},`) }),
     });
   const select = () =>
     block(30).locator("button:not([data-calendar-resize-handle])").click();
@@ -217,12 +277,29 @@ test("R2-03 Calendar proportional time geometry and planning-only controls", asy
         .locator("button:not([data-calendar-resize-handle])")
         .boundingBox())!;
       const column = (await block(duration).locator("..").boundingBox())!;
-      expect(outer.height / column.height).toBeCloseTo(duration / 990, 3);
+      expect(outer.height / column.height).toBeCloseTo(duration / 1080, 3);
       expect(inner.height).toBeCloseTo(outer.height, 0);
     }
     const half = (await block(30).boundingBox())!,
       whole = (await block(60).boundingBox())!;
     expect(half.height / whole.height).toBeCloseTo(0.5, 2);
+    const hours = (await page.locator(".calendar-hours").boundingBox())!;
+    for (const [title, top, height, bottom] of [
+      ["Late boundary first half", 17 / 18, 0.5 / 18, 17.5 / 18],
+      ["Late boundary second half", 17.5 / 18, 0.5 / 18, 1],
+      ["Late boundary full hour", 17 / 18, 1 / 18, 1],
+    ] as const) {
+      const bounds = (await lateBlock(title).boundingBox())!;
+      expect((bounds.y - hours.y) / hours.height).toBeCloseTo(top, 3);
+      expect(bounds.height / hours.height).toBeCloseTo(height, 3);
+      expect((bounds.y + bounds.height - hours.y) / hours.height).toBeCloseTo(
+        bottom,
+        3,
+      );
+      expect(bounds.y + bounds.height).toBeLessThanOrEqual(
+        hours.y + hours.height + 1,
+      );
+    }
     await expect(block(30)).toContainText("08:00–08:30");
     for (const duration of [30, 60]) {
       const bounds = (await block(duration).boundingBox())!;

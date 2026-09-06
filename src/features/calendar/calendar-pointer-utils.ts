@@ -13,7 +13,9 @@ export function timeToCalendarMinutes(time: string) {
 }
 
 export function calendarMinutesToTime(minutes: number) {
-  return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+  const normalizedMinutes = ((minutes % (24 * 60)) + 24 * 60) % (24 * 60);
+
+  return `${String(Math.floor(normalizedMinutes / 60)).padStart(2, "0")}:${String(normalizedMinutes % 60).padStart(2, "0")}`;
 }
 
 export function snapCalendarMinutes(minutes: number) {

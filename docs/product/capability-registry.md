@@ -602,7 +602,7 @@ STATUS is PENDING.
 | Conscious override | `CONNECTED_GAP` | Z1 focused disposable proof requires a separate explicit confirmation before the existing canonical Task-time path runs, including Meal source scheduling | no schedule audit/history and no DB-wide conflict guarantee |
 | Day/Week views | `CONNECTED_GAP` | Manual Week remains the primary planning surface; historical Day navigation proof remains | R2-03: real visible controls, available-height use and current browser proof |
 | Month view | `CONNECTED_GAP` | bounded Month grid projection and historical drill-down proof remain | R2-03: real visible control and current browser proof |
-| Calendar viewport bounds | `CONNECTED_GAP` | R2-03 responsive full-range Week grid shows 06:00–22:30 without body or Timegrid vertical scrolling at all three desktop proof sizes | user acceptance pending |
+| Calendar viewport bounds | `CONNECTED_GAP` | R2-03 responsive Week grid shows 18 equal hour intervals from 06:00 to the 00:00 boundary without body or Timegrid vertical scrolling at all three desktop proof sizes | user acceptance pending |
 | Deadline / Project / Goal date projection | `CONNECTED` | C2-03/C2-04 keep scheduled time distinct from Task deadline, Project deadline and Goal target; open overdue Tasks are read-time marked while completed Tasks are not | canonical Project/Goal milestones remain separately unmodeled |
 | Calendar filters | `NOT_STARTED` | no active Manual filter claim; legacy visual scope controls are not exposed as Calendar planning filters | implement only canonical Project/Goal/Skill/Priority filters when needed |
 | Project/Goal/Skill queue context | `CONNECTED` | C2-01 queue reads existing C1 Project, direct/via Project Goal and Task↔Skill relations without copying Task data | add filters only as a separate read-surface depth |
@@ -627,9 +627,9 @@ Today remains the accepted execution history/daily protocol.
 |---|---|---|
 | Duration geometry | exact canonical minute proportions in persisted layout, overlap lanes and pointer preview | 15/30/45/60/90-minute unit mapping; no percent/CSS minimum-height inflation |
 | Adjacent blocks | consecutive half-hour blocks share full lane without artificial overlap | focused layout regression |
-| Week available height | bounded desktop viewport, expanded time axis, internal grid scrolling | 3840/2560/1920 bounds and 390 overflow guard |
-| Hour guides | actual 06:00–22:30 range, final half-hour row uses half weight | same temporal denominator as blocks/pointer mapping |
-| Short blocks | one-line compact label and full accessible name/tooltip | actual button bounds equal canonical block bounds |
+| Week available height | bounded desktop viewport with the complete responsive 06:00–00:00 axis and no body/Timegrid scrolling | 3840/2560/1920 bounds and 390 overflow guard |
+| Hour guides | actual 06:00–00:00 range, 18 equal full-hour rows plus non-layout half-hour guides | same 1080-minute denominator as blocks/pointer mapping |
+| Short blocks | adaptive title/time density plus full accessible name/tooltip | actual button bounds equal canonical block bounds |
 | Time Settings | Reschedule / Unschedule; earlier / later; duration +15 / -15 | six actions in ordered pairs, persistence and reload proof |
 | Duration display | derived read-only value; Start/End and duration actions update it | no apparently editable no-op duration field |
 | Mark done | removed from Manual, Demo and Empty Calendar paths | no Calendar completion import, form, callback or button; backend untouched |
@@ -746,38 +746,39 @@ unchanged. R2-03 stays ACTIVE. USER ACCEPTANCE STATUS: PENDING.
 
 ### Calendar full-range responsive Timegrid correction
 
-The user rejected the intermediate internal Timegrid scroll. The canonical Week
-range remains linear and unchanged at **06:00–22:30** (990 minutes / 16.5
-hours), but its hour height now derives from the available desktop hours track.
-The fixed 1224 px desktop minimum no longer forces vertical overflow. Mobile
-keeps its existing independent responsive flow.
+The user rejected the intermediate internal Timegrid scroll and then corrected
+the remaining half-hour endpoint. The canonical Week range is now linear at
+**06:00–00:00** (1080 minutes / 18 equal full-hour intervals), with hour height
+derived from the available desktop hours track. The 00:00 label marks the lower
+boundary of 23:00–00:00 and creates no extra row or bottom zone. Mobile keeps
+its existing independent responsive flow.
 
 | Desktop viewport | Grid client / scroll height | Hours height | Hour height | Body / Timegrid scroll | Range bounds |
 |---|---:|---:|---:|---|---|
-| 3840×2160 | 1840 / 1840 px | 1706.5 px | 103.45 px | NO / NO | 06:00 and 22:30 visible |
-| 2560×1440 | 1120 / 1120 px | 986.5 px | 59.82 px | NO / NO | 06:00 and 22:30 visible |
-| 1920×1080 | 760 / 760 px | 626.5 px | 38 px | NO / NO | 06:00 and 22:30 visible |
+| 3840×2160 | 1840 / 1840 px | 1706.5 px | 94.81 px | NO / NO | 06:00, 23:00 and 00:00 visible |
+| 2560×1440 | 1120 / 1120 px | 986.5 px | 54.81 px | NO / NO | 06:00, 23:00 and 00:00 visible |
+| 1920×1080 | 760 / 760 px | 626.5 px | 34.81 px | NO / NO | 06:00, 23:00 and 00:00 visible |
 
-Block positions and heights remain percentages of the same 990-minute range;
+Block positions and heights remain percentages of the same 1080-minute range;
 15/30/45/60/90-minute geometry, pointer placement and current-time position do
-not use viewport pixel constants. At 1920×1080 the browser proof measures the
-30-minute block at 18.98 px and the 60-minute block at 37.97 px. Compact text
-density keeps title and exact start/end time inside the 30-minute bounds. The
-block button is block-level to remove inline baseline overflow, and the existing
-resize grip uses a smaller footprint on micro/compact blocks so it does not
-cover their selection target.
+not use viewport pixel constants. Late-night proof covers 23:00–23:30,
+23:30–00:00 and 23:00–00:00 without crossing the bottom boundary. The Manual
+Calendar projection treats `00:00` as minute 1440 when it closes a late block,
+rather than as the next day's minute zero. Compact text density keeps title and
+exact start/end time inside short blocks.
 
 The focused Playwright proof checks Queue and Selection modes at all three
 desktop sizes. It asserts `html` and `body` height, Timegrid
 `scrollHeight <= clientHeight + 1`, immutable zero vertical `scrollTop`, visible
-06:00/22:30 boundary labels, text bounds, 30:60 ratio, right-rail bounds and the
-Current-Time-Line against its percentage-derived expected position. Screenshots
-show the full range plus 30- and 60-minute blocks together. Existing Inspector,
+06:00/23:00/00:00 labels, all 18 adjacent full-hour gaps within 0.1 px, text
+bounds, 30:60 ratio, right-rail bounds and the Current-Time-Line against its
+percentage-derived expected position. Screenshots show the full range plus
+late-night boundary fixtures and 30- and 60-minute blocks together. Existing Inspector,
 Close/Escape/free-slot deselect, Reschedule, Unschedule, movement/duration ±15,
 source navigation, Queue scheduling, reload and Day/Week/Month regressions pass.
 Mobile 390×844 remains usable without horizontal overflow or overlap.
 
-Validation: IMPLEMENTATION_PASS for this scoped correction. 25 Calendar unit
+Validation: IMPLEMENTATION_PASS for this scoped correction. 37 Calendar unit
 tests and the focused disposable Playwright proof pass; typecheck, lint, build
 and diff check are green. Console/hydration is clean. No backend, schema,
 migration or domain behavior changed. V5 Design-Taste: PASS. R2-03 stays ACTIVE.

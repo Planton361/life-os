@@ -291,6 +291,14 @@ body:has(#calendar-page) .life-os-command-center { display: none; }
 #calendar-page .calendar-hours { height: 1224px; min-height: 1224px; flex: 1 0 1224px; }
 #calendar-page .calendar-grid-content { min-height: 100%; height: auto; display: flex; flex-direction: column; }
 #calendar-page .calendar-grid-scroll { min-height: 0; }
+#calendar-page .calendar-hour-cell::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 50%;
+  border-top: 1px dashed rgba(148, 163, 184, .07);
+  pointer-events: none;
+}
 @media (min-width: 1280px) {
   #calendar-page .calendar-timegrid { height: 100%; min-height: 0; }
   #calendar-page .calendar-grid-content { height: 100%; min-height: 0; }

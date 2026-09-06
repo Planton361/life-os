@@ -1,5 +1,6 @@
 import {
   CALENDAR_DAY_END_MINUTES,
+  CALENDAR_DAY_HOUR_COUNT,
   CALENDAR_DAY_START_MINUTES,
 } from "../calendar-mock-data";
 import {
@@ -30,10 +31,6 @@ function hourToMinutes(hour: string) {
   return hours * 60 + minutes;
 }
 
-function minutesToTime(minutes: number) {
-  return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
-}
-
 function hourTop(hour: string) {
   const range = CALENDAR_DAY_END_MINUTES - CALENDAR_DAY_START_MINUTES;
   const offset = hourToMinutes(hour) - CALENDAR_DAY_START_MINUTES;
@@ -46,10 +43,10 @@ function calendarHourRows() {
 
   for (
     let minutes = CALENDAR_DAY_START_MINUTES;
-    minutes <= CALENDAR_DAY_END_MINUTES;
+    minutes < CALENDAR_DAY_END_MINUTES;
     minutes += 60
   ) {
-    rows.push(minutesToTime(minutes));
+    rows.push(calendarMinutesToTime(minutes));
   }
 
   return rows;
@@ -408,21 +405,20 @@ export function CalendarWeekSurface({
             <div
               className="grid h-full grid-cols-[56px_repeat(7,minmax(138px,1fr))]"
               style={{
-                gridTemplateRows: hourRows
-                  .map(
-                    (hour) =>
-                      `minmax(0, ${Math.min(60, CALENDAR_DAY_END_MINUTES - hourToMinutes(hour))}fr)`,
-                  )
-                  .join(" "),
+                gridTemplateRows: `repeat(${CALENDAR_DAY_HOUR_COUNT}, minmax(0, 1fr))`,
               }}
             >
               {hourRows.map((hour) => (
                 <div className="contents" key={`calendar-week-row-${hour}`}>
-                  <div className="relative border-r border-t border-[rgba(148,163,184,.18)] bg-[rgba(11,17,28,.34)]">
+                  <div
+                    className="calendar-hour-cell relative border-r border-t border-[rgba(148,163,184,.18)] bg-[rgba(11,17,28,.34)]"
+                    data-calendar-hour-line={hour}
+                  >
                     <time
                       className="calendar-hour-label absolute right-2 top-2 text-[9px] font-medium leading-none text-[var(--text-faint)]"
                       data-calendar-time-boundary={
-                        hour === minutesToTime(CALENDAR_DAY_START_MINUTES)
+                        hour ===
+                        calendarMinutesToTime(CALENDAR_DAY_START_MINUTES)
                           ? "start"
                           : undefined
                       }
@@ -435,7 +431,7 @@ export function CalendarWeekSurface({
                     <div
                       aria-hidden="true"
                       className={cn(
-                        "border-r border-t border-[rgba(148,163,184,.16)] last:border-r-0",
+                        "calendar-hour-cell relative border-r border-t border-[rgba(148,163,184,.16)] last:border-r-0",
                         day.isToday
                           ? "bg-[rgba(95,200,215,.06)]"
                           : "bg-[rgba(11,17,28,.08)]",
@@ -447,12 +443,18 @@ export function CalendarWeekSurface({
               ))}
             </div>
 
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] h-px bg-[rgba(148,163,184,.18)]"
+              data-calendar-time-boundary-line="end"
+            />
+
             <time
               className="absolute bottom-px left-0 z-[3] w-[56px] pr-2 text-right text-[9px] font-medium leading-none text-[var(--text-faint)]"
               data-calendar-time-boundary="end"
-              dateTime={minutesToTime(CALENDAR_DAY_END_MINUTES)}
+              dateTime={calendarMinutesToTime(CALENDAR_DAY_END_MINUTES)}
             >
-              {minutesToTime(CALENDAR_DAY_END_MINUTES)}
+              {calendarMinutesToTime(CALENDAR_DAY_END_MINUTES)}
             </time>
 
             <div
@@ -493,7 +495,7 @@ export function CalendarWeekSurface({
                         onClick={() => {
                           const startMinutes = hourToMinutes(hour);
                           const endMinutes = startMinutes + 60;
-                          const endHour = minutesToTime(endMinutes);
+                          const endHour = calendarMinutesToTime(endMinutes);
 
                           onSelectSlot({
                             dayId: day.id,

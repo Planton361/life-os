@@ -3973,7 +3973,11 @@ function taskToCalendarBlock(
 > | null {
   const startMinutes = minutesFromTime(task.startTime);
   const endTime = taskEndTime(task);
-  const endMinutes = minutesFromTime(endTime ?? undefined);
+  const parsedEndMinutes = minutesFromTime(endTime ?? undefined);
+  const endMinutes =
+    endTime === "00:00" && startMinutes !== null && startMinutes > 0
+      ? CALENDAR_DAY_END_MINUTES
+      : parsedEndMinutes;
 
   if (
     !task.date ||

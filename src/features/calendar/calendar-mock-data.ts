@@ -10,7 +10,10 @@ import type {
 } from "./calendar-types";
 
 export const CALENDAR_DAY_START_MINUTES = 6 * 60;
-export const CALENDAR_DAY_END_MINUTES = 22 * 60 + 30;
+export const CALENDAR_DAY_END_MINUTES = 24 * 60;
+export const CALENDAR_DAY_DURATION_MINUTES =
+  CALENDAR_DAY_END_MINUTES - CALENDAR_DAY_START_MINUTES;
+export const CALENDAR_DAY_HOUR_COUNT = CALENDAR_DAY_DURATION_MINUTES / 60;
 
 export const calendarDays = [
   {

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  CALENDAR_DAY_DURATION_MINUTES,
   CALENDAR_DAY_END_MINUTES,
+  CALENDAR_DAY_HOUR_COUNT,
   CALENDAR_DAY_START_MINUTES,
 } from "./calendar-mock-data";
 import {
@@ -18,6 +20,7 @@ describe("calendar pointer slot mapping", () => {
     expect(calendarMinutesToTime(snapCalendarMinutes(9 * 60 + 8))).toBe(
       "09:15",
     );
+    expect(calendarMinutesToTime(CALENDAR_DAY_END_MINUTES)).toBe("00:00");
   });
 
   it("maps a relative week-grid position without depending on a viewport pixel size", () => {
@@ -61,6 +64,38 @@ describe("calendar pointer slot mapping", () => {
 });
 
 describe("canonical duration geometry", () => {
+  it("uses exactly 18 equal hours from 06:00 through the 00:00 boundary", () => {
+    expect(CALENDAR_DAY_START_MINUTES).toBe(6 * 60);
+    expect(CALENDAR_DAY_END_MINUTES).toBe(24 * 60);
+    expect(CALENDAR_DAY_DURATION_MINUTES).toBe(1080);
+    expect(CALENDAR_DAY_HOUR_COUNT).toBe(18);
+  });
+
+  it.each([
+    ["06:00", 6 * 60, 0],
+    ["12:00", 12 * 60, 100 / 3],
+    ["15:00", 15 * 60, 50],
+    ["18:00", 18 * 60, 200 / 3],
+    ["21:00", 21 * 60, 250 / 3],
+    ["23:00", 23 * 60, 850 / 9],
+    ["23:30", 23 * 60 + 30, 875 / 9],
+    ["00:00 boundary", 24 * 60, 100],
+  ])("maps %s to %f percent of the visible day", async (_, minutes, top) => {
+    const { buildCalendarTimedBlocks } =
+      await import("./calendar-view-model");
+    const { timedBlocks } = await import("./calendar-mock-data");
+    const point = buildCalendarTimedBlocks([
+      {
+        ...timedBlocks[0],
+        id: `point-${minutes}`,
+        startMinutes: minutes,
+        endMinutes: minutes,
+      },
+    ])[0];
+
+    expect(point.layout.top).toBeCloseTo(top);
+  });
+
   it.each([15, 30, 45, 60, 90])(
     "maps %i minutes proportionally in persisted layout and pointer preview",
     async (duration) => {
@@ -120,7 +155,41 @@ describe("canonical duration geometry", () => {
       const hourPixels = (hour.layout.height / 100) * availableHeight;
 
       expect(halfHourPixels / hourPixels).toBeCloseTo(0.5);
-      expect(hourPixels).toBeCloseTo(availableHeight / 16.5);
+      expect(hourPixels).toBeCloseTo(
+        availableHeight / CALENDAR_DAY_HOUR_COUNT,
+      );
+    },
+  );
+
+  it.each([
+    ["23:00–23:30", 23 * 60, 23 * 60 + 30, 850 / 9, 25 / 9, 875 / 9],
+    [
+      "23:30–00:00",
+      23 * 60 + 30,
+      24 * 60,
+      875 / 9,
+      25 / 9,
+      100,
+    ],
+    ["23:00–00:00", 23 * 60, 24 * 60, 850 / 9, 50 / 9, 100],
+  ])(
+    "keeps %s inside the final equal hour interval",
+    async (_, startMinutes, endMinutes, top, height, bottom) => {
+      const { buildCalendarTimedBlocks } =
+        await import("./calendar-view-model");
+      const { timedBlocks } = await import("./calendar-mock-data");
+      const block = buildCalendarTimedBlocks([
+        {
+          ...timedBlocks[0],
+          id: `boundary-${startMinutes}-${endMinutes}`,
+          startMinutes,
+          endMinutes,
+        },
+      ])[0];
+
+      expect(block.layout.top).toBeCloseTo(top);
+      expect(block.layout.height).toBeCloseTo(height);
+      expect(block.layout.top + block.layout.height).toBeCloseTo(bottom);
     },
   );
 });
