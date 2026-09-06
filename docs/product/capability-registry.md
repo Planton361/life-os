@@ -35,7 +35,7 @@ Implementation status and product visibility are separate truths: `CONNECTED` co
 |---|---|---|---|
 | Dashboard | `ACTIVE` | `CONNECTED`: R2-01 implementation evidence plus explicit USER ACCEPTED on 2026-09-06 | maintain accepted Dashboard |
 | Inbox | `ACCEPTED` | `CONNECTED`: R2-02 explicitly USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
-| Today | `ACTIVE` | `CONNECTED_GAP`: technical daily paths exist; role correction and current surface acceptance pending | R2-03 daily-log role |
+| Today | `ACTIVE` | `CONNECTED_GAP`: source-first daily log implemented; current user acceptance pending | R2-03 daily-log role |
 | Calendar | `ACTIVE` | `CONNECTED_GAP`: technical scheduling exists; Day/Week/Month controls and viewport acceptance pending | R2-03 real temporal surface |
 | Portfolio | `ACTIVE` | `CONNECTED_GAP`: entity backend exists; information architecture and surface acceptance pending | R2-04 separate entity surfaces |
 | Resources | `ACTIVE` | connected knowledge core with relation depth gaps | knowledge base and evidence; K1 follows C3 |
@@ -88,7 +88,7 @@ C1 Core Work Graph
 | Muscle Map | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Today Agenda day view | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Today Agenda week/month | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
-| Urgent time-block create | `CONNECTED_GAP` | current visible control is an honest non-interactive Prepared state; Inbox creates canonical Tasks while scheduling remains in Today and Calendar | R2-03 must connect it to a canonical flow or remove it; Prepared is not closure without user deferral |
+| Urgent time-block create | `CONNECTED_GAP` | current visible control is an honest non-interactive Prepared state; Inbox creates canonical Tasks while scheduling belongs to Calendar/Portfolio | R2-03 must connect it to a canonical flow or remove it; Prepared is not closure without user deferral |
 | Habit Tracker | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Active Portfolio | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Dashboard control inventory and bounds | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
@@ -180,7 +180,7 @@ user’s confirmation, not an additional automated Target proof.
 **Current status: USER ACCEPTED on 2026-09-06. R2-02 closed.**
 User acceptance follows `6890cb4`; all preceding evidence is retained below as
 history. Historical PENDING/active statements describe their original passes.
-R2-03 is now the sole active block; Today is the next scoped implementation.
+R2-03 is the sole active block; Today implementation evidence follows below. Calendar and user acceptance remain pending.
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
@@ -450,15 +450,88 @@ history and are not represented as new target fields.
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Today daily-log surface | `CONNECTED_GAP` | canonical Task occurrence schedule/lifecycle fields and C3 proof remain | R2-03: Today owns plan-vs-done, completion, review and carry-over |
-| Task planning | `CONNECTED` | canonical Target Runtime keeps source-aware planning: normal Tasks remain direct; Meal-linked plan/reschedule/unschedule use atomic Meal↔Task writes; Review/Workout remain Task-time-only. Z1 Direct-Data-API proof rejects authenticated Meal schedule mutations while C2-04 verifies Calendar/Today/Dashboard after reload | maintain the source-aware boundary |
-| Task complete/reopen | `CONNECTED` | canonical Target Runtime: C3 proves normal Task completion/reopen across Today, Dashboard and Calendar; Z1 Direct-Data-API proof rejects authenticated source-linked lifecycle writes while Meal/Review/Running/Strength complete only through their canonical flows | maintain the source-aware boundary |
-| Recurring instance projection | `CONNECTED_GAP` | explicit idempotent generation, DB uniqueness and historical proof remain | R2-03: occurrences appear only as daily activity; remove recurrence-management responsibility from Today |
-| Carry-over/open loops | `CONNECTED` | canonical Target Runtime C3 proof saves an explicit Daily Review carry-over decision, moves only the selected open Task to the next day and reload-proves Review, Today and Task planning together | maintain atomic exact-set reconciliation and newer-planning protection |
-| Daily Review | `CONNECTED` | canonical user-scoped review record, V5 flow and Dashboard/Today projections | maintain |
-| Weekly Review | `CONNECTED` | canonical user-scoped review record with derived task/project movement | maintain |
-| Next-day preparation | `CONNECTED` | Daily Review focus plus explicit carry-over target date | maintain |
-| Review history | `NOT_STARTED` | none | add detail/history after canonical records |
+| Today daily-log surface | `CONNECTED_GAP` | R2-03 source-first server projection, read-only timeline and supporting day documentation; evidence below | USER ACCEPTANCE PENDING; R2-03 remains active, Calendar pass pending |
+| Task creation/schedule/completion projection | `CONNECTED` | distinct canonical timestamps; Today owns no task mutation; Portfolio/Calendar own planning and domain surfaces own completion | current source state, not an immutable lifecycle history |
+| Recurring instance projection | `CONNECTED` | generated Tasks appear through ordinary canonical task timestamps | recurrence generation and template management removed only from Today |
+| Carry-over/open loops | `CONNECTED` | Daily Review remains canonical; Today reads decisions and explicit original planning snapshots after carry forward | no review or carry-forward mutation on Today |
+| Daily / Weekly Review links | `CONNECTED` | real source navigation; current daily outcome, open loops and completion are supporting documentation | review editing stays on Review surfaces |
+
+## R2-03 Today implementation evidence — 2026-09-06
+
+Today is a day memory log. Calendar plans/schedules; Portfolio creates/manages
+entities. This pass does not close R2-03 or accept Today. R2-02 acceptance remains
+recorded above. Historical C3 Today mutation evidence describes the previous
+surface and is superseded by the current read-only control contract.
+
+### Source-first event audit
+
+| EVENT TYPE | CANONICAL SOURCE | TIMESTAMP | CAN RECONSTRUCT RELIABLY | SOURCE LINK | UI RESULT |
+|---|---|---|---|---|---|
+| Task created | tasks | created_at | YES | Portfolio selected task | TASK CREATED, independent of planning |
+| Scheduled task | tasks | scheduled_start_at | YES for current intended slot; NO for historical scheduling action | Portfolio selected task | TASK SCHEDULED explicitly describes intended start |
+| Task completed | tasks | completed_at | YES while retained in canonical state | Portfolio selected task | TASK COMPLETED |
+| Task reopened | tasks | no distinct action timestamp | NO | — | omitted; updated_at is never inferred |
+| Quick Thought / Inbox capture | inbox_items | created_at | YES for capture; NO for exclusive Quick Thought provenance | Inbox item / Inbox after processing | INBOX CAPTURE with original title |
+| Inbox processed/archive | inbox_items | processed_at | YES when present | created Task or Inbox | INBOX PROCESSED; no invented archive event without timestamp |
+| Mood logged | mood_entries | recorded_at | YES for active record | Health mental | MOOD LOGGED |
+| Habit increment | habit_logs + owned habit name | recorded_at | YES for active positive log | Habits | HABIT LOGGED with real name/value |
+| Habit undone | habit_logs | no unambiguous undo-action timestamp | NO | — | archived log excluded; no invented undo event |
+| Meal completed | meals | completed_at | YES | Meal planner | MEAL COMPLETED |
+| Run / strength completed | running_sessions / strength_sessions | completed_at | YES for active records | Running / Strength | compact domain completion event |
+| Review created / completed | review_records | created_at / completed_at | YES | Daily / Weekly Review | two distinct review events |
+| Every review save | review_records | updated_at ambiguous | NO | Review | omitted |
+| Planned date / carried work | tasks + review_task_decisions | date-only plan + explicit original planning snapshot | YES as day state, not timed event | Portfolio / Review | supporting plan-vs-done and Carry Forward |
+| Sleep / weight date-only records | existing domain records | local date without reliable action time | NO for timed event | — | no fake midnight event |
+| Decisions / artifacts | linked review_task_decisions; no scoped artifact source | canonical review relation | YES for linked decisions; NO for generic artifacts | carried Task | real decisions; compact honest artifact empty state |
+
+Projection reads authenticated, explicitly user-scoped existing tables with RLS.
+Paginated reads avoid silent row truncation. Profile timezone and established
+local-date/time helpers determine exact day membership and chronological instants.
+No event-copy table, schema migration or new write architecture. Health writes now
+invalidate Today; other source actions already did. Current-state projections do
+not claim immutable history after later edits, reopening or archival.
+
+### Surface control inventory
+
+| CONTROL | EXPECTED | ACTUAL | RESULT |
+|---|---|---|---|
+| Activity source links | navigate to canonical source | Inbox, Portfolio, Mood and Habit destinations clicked; review links exercised | PASS |
+| Planned task link | inspect source, no Today planning | Portfolio selected task | PASS |
+| Daily / Weekly Review | open responsible review surface | both links navigate | PASS |
+| Closing Review | open existing Daily Review | review completed there, Today reloaded | PASS |
+| Carry Forward source | open canonical carried task | selected task navigation and persisted decision projection | PASS |
+| Planner / Today-plan / task lifecycle buttons | absent | no form or button in Today content | PASS |
+| Recurrence generator / date range / template controls | absent | removed from Today; backend and responsible surfaces retained | PASS |
+
+Proof: `tests/e2e/r2-03-today-log.spec.ts` exercises fresh local Manual data,
+actual Dashboard capture, Portfolio creation/planning/completion, Calendar
+projection regression, Today reload, chronological events and source navigation.
+Additional proof covers Mood/Habit source records, Daily Review/Carry Forward,
+foreign-user exclusion and Empty/Demo/Auth-blocked boundaries.
+Projection tests cover distinct event semantics, unsupported updated_at inference,
+original capture title, supported domain timestamps, carried planning snapshots,
+Berlin/Los Angeles midnight and both DST transitions.
+
+Visual evidence: four complete screenshots in the disposable Playwright result
+directory at 3840×2160, 2560×1440, 1920×1080 and 390×844. Activity Stream is the
+dominant column; supporting context/review cards remain secondary, without
+Planner residue, horizontal overflow or overlap. Browser console/hydration checks
+are asserted by the focused proof. No Dashboard, Inbox, Calendar or Portfolio
+surface implementation changed.
+
+Validation: IMPLEMENTATION_PASS for this Today-only pass. 11 focused Vitest tests
+and 2 disposable Playwright proofs pass. Typecheck, lint, build and diff check
+pass. The unchanged 44-migration Git candidate chain, DB lint and security
+advisors pass in the fresh isolated runtime; no Target migration or remote DB
+action. Report: `/tmp/life-os-r2-02-runtime-3ig5evyy/playwright-report/index.html`.
+V5 Design-Taste review: PASS for timeline hierarchy, semantic text-supported
+accents, compact rows and viewport bounds. R2-03 stays ACTIVE; user acceptance
+is PENDING.
+
+Remaining limits: no durable reopen/undo/every-save history, no fabricated generic
+artifacts or historical morning snapshot. Opening Context explicitly displays
+current day state. Run/Strength/Meal timestamp mapping has focused unit evidence;
+this pass does not re-prove each domain's separate completion UI.
 
 # 4. Calendar and Scheduling
 

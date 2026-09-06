@@ -1,3 +1,4 @@
+import { readTodayActivity } from "@/features/real-data/supabase/repositories/supabase-today-activity-repository";
 import "server-only";
 
 import { cache } from "react";
@@ -89,7 +90,6 @@ import {
   createSupabaseInboxRepository,
   createSupabaseNutritionRepository,
   createSupabaseProjectRepository,
-  createSupabaseRecurringTaskTemplateRepository,
   createSupabaseReviewRepository,
   createSupabaseScheduleSourceRepository,
   createSupabaseResourceRepository,
@@ -4557,33 +4557,12 @@ export async function getTodayViewModel(): Promise<TodayViewModel> {
   }
 
   if (profileId === "manual") {
-    const dashboard = await getManualDashboardReadData();
-    let recurringTemplates: readonly RecurringTaskTemplate[] = [];
-
-    if (dashboard.sources.authAvailable) {
-      const auth = await createAuthenticatedSupabaseServerClient();
-      if (auth.ok) {
-        const result = await createSupabaseRecurringTaskTemplateRepository(
-          auth.client,
-        ).getRecurringTaskTemplatesByUser(auth.user.id, auth.user.id);
-        if (result.ok) recurringTemplates = result.data;
-      }
-    }
-
-    return buildProfileTodayViewModel(
-      dashboard.profile,
-      profileId,
-      await getManualPlannerRelationLabelLookups(
-        profileId,
-        dashboard.profile.tasks,
-      ),
-      {
-        dailyDecisions: dashboard.sources.dailyDecisions,
-        dailyReview: dashboard.sources.dailyReview,
-        manualDbAvailable: dashboard.sources.authAvailable,
-        recurringTemplates,
-      },
-    );
+    const base = clone(getDemoTodayViewModel());
+    base.profileId = "manual";
+    const auth = await createAuthenticatedSupabaseServerClient();
+    if (!auth.ok) return { ...base, activityUnavailable: true };
+    try { return { ...base, dayLog: await readTodayActivity(auth.client, auth.user.id) }; }
+    catch { return { ...base, activityUnavailable: true }; }
   }
 
   const profile = await getProfileDataWithManualTasks(profileId);

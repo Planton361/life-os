@@ -273,3 +273,13 @@ body:has(#inbox-page) { --dashboard-max: 100%; }
   .inbox-context > section:first-child { flex-shrink: 0; }
   .inbox-context > section:last-child { flex: 1; min-height: 0; overflow-y: auto; }
 }
+
+body:has(#today-page) { --dashboard-max: 100%; }
+body:has(#today-page) .life-os-command-center { display: none; }
+@media (min-width: 3000px) {
+  #today-page { zoom: 1.5; height: calc((100dvh - 32px) / 1.5); max-width: 2300px; }
+}
+@media (min-width: 1536px) {
+  #today-page aside > section { flex-shrink: 0; }
+  #today-page aside > section:last-child { flex: 1; }
+}

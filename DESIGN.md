@@ -123,3 +123,15 @@ Backend-Evidence ist notwendig, aber kein Ersatz dafür.
 Historische Detailquellen dürfen V5-Formensprache und belegte Referenzwerte
 liefern. Ihre frühere WQHD-/Bottom-Zone- oder Time-Progress-Semantik ist keine
 aktive Freigabe, wenn sie diesem Dokument oder `PRODUCT.md` widerspricht.
+
+## Today role correction (R2-03)
+
+Today is daily log / protocol / documentation. The chronological Activity Stream
+is primary (roughly 60–65% desktop width), with local times, compact event rows,
+quiet semantic accents and real source links. Opening Context, Delta Summary,
+Decisions/Artifacts and Closing Review are supporting day records. No planner,
+creation CTA, recurrence generator or edit form belongs in this surface.
+Calendar owns planning/scheduling; Portfolio owns entity creation/management.
+Empty Today says no activity has been recorded, without asking users to create
+work. Current planned times must be distinguishable from recorded actions;
+unknown historical timestamps must never be simulated.

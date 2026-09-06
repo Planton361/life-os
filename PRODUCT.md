@@ -135,13 +135,13 @@ Required capabilities:
 
 ### 5.3 Today and Reviews
 
-Today is the daily log and planned-vs-done analysis surface. It answers what was intended, what is scheduled now, what was completed, what moved and what must be decided before tomorrow. It owns neither routine-template nor recurrence management: concrete recurring occurrences may appear only as daily activity, like any other occurrence.
+Today is the daily log / day memory / documentation surface. It shows what was intended, what actually happened, what was completed or remains open, and the day’s reviews and decisions. It projects source-owned timestamps in the profile’s local timezone; `updated_at` alone is not an action history. Calendar owns planning/scheduling; Portfolio owns entity creation/management. Today contains no creation, planning or recurrence-generation controls. Concrete recurring occurrences may appear as day records.
 
 Required capabilities:
 
 - planned and scheduled work;
 - a clear separation between planned-for-today, time-scheduled and completed work;
-- task completion and reopen;
+- timestamp-backed task creation/completion events and current scheduled work; reopen history only when reliably recorded;
 - concrete recurring occurrences as daily activity, without recurrence-management controls;
 - carry-over and open-loop handling;
 - planned-vs-done summary derived from task occurrences and linked domain records;

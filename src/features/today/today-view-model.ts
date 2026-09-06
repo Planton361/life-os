@@ -165,6 +165,8 @@ export type TodayContractViewModel = {
 };
 
 export type TodayViewModel = {
+  dayLog?: import("./activity-projection").TodayDayLog;
+  activityUnavailable?: boolean;
   profileId: TodayProfileId;
   contentStates: TodayContentStates;
   firstRunNotice?: TodayEmptyState;

@@ -868,8 +868,8 @@ Capability Registry and focused R2-01 tests.
 **R2-02 status:** Completed; explicitly USER ACCEPTED on 2026-09-06.
 Existing implementation, control and browser evidence is retained in the Registry.
 
-**R2-03 status:** Active; current pass is Today only. Calendar implementation
-remains pending. USER ACCEPTANCE STATUS: PENDING.
+**R2-03 status:** Active; Today-only implementation pass is validated. Calendar
+implementation remains pending. USER ACCEPTANCE STATUS: PENDING.
 
 **Outcome:** Recover the actual user-facing product contract without replacing
 V5 or the established architecture. A surface is complete only after all of
@@ -897,8 +897,10 @@ dependency belongs in this slice.
 2. **R2-02 – Inbox Surface Completion** — real search, remove Inbox Quick
    Capture, editable/persistent triage fields, selectable Outcome Route,
    persistent Planning Signals and every triage path.
-3. **R2-03 – Today / Calendar Role Correction** — Today as daily log without
-   recurrence management; Calendar Day/Week/Month controls and full-height
+3. **R2-03 – Today / Calendar Role Correction** — Today as source-first local
+   day log/documentation without creation, planning or recurrence management;
+   Calendar owns scheduling, Portfolio owns entity creation/management.
+   Calendar Day/Week/Month controls and full-height
    useful planning surface without an empty Bottom Zone.
 4. **R2-04 – Portfolio Information Architecture** — Tasks/Projects/Goals/
    Skills sidebar sub-navigation and separate entity list, create and detail

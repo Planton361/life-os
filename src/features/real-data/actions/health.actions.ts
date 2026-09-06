@@ -15,7 +15,7 @@ function moodTarget(formData: FormData) {
   return path === "/dashboard" && ["Morning", "Midday", "Evening"].includes(window) ? `${path}?habitWindow=${window}` : path;
 }
 function feedbackTarget(target: string, state: string) { return `${target}${target.includes("?") ? "&" : "?"}health=${state}`; }
-function revalidateHealth() { revalidatePath("/dashboard"); revalidatePath("/health"); revalidatePath("/health/mental"); }
+function revalidateHealth() { revalidatePath("/today"); revalidatePath("/dashboard"); revalidatePath("/health"); revalidatePath("/health/mental"); }
 async function context(target: string) {
   if ((await getCurrentLifeOsProfileId()) !== "manual") redirect(feedbackTarget(target, "blocked"));
   const auth = await createAuthenticatedSupabaseServerClient();
