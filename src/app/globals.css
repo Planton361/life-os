@@ -293,6 +293,9 @@ body:has(#calendar-page) .life-os-command-center { display: none; }
 #calendar-page .calendar-grid-scroll { min-height: 0; }
 @media (min-width: 1280px) {
   #calendar-page .calendar-timegrid { height: 100%; min-height: 0; }
+  #calendar-page .calendar-grid-content { height: 100%; min-height: 0; }
+  #calendar-page .calendar-hours { height: auto; min-height: 0; flex: 1 1 0%; }
+  #calendar-page .calendar-hour-label { top: 2px; line-height: 8px; }
 }
 @media (min-width: 1280px) {
   #calendar-page [data-calendar-section="month-surface"] { min-height: 0; overflow-y: auto; }
@@ -327,4 +330,29 @@ body:has(#calendar-page) .life-os-command-center { display: none; }
 #calendar-page .calendar-inspector > div:first-child { position: sticky; top: 0; z-index: 5; background: var(--surface-1); }
 @media (max-width: 1279px) {
   #calendar-page .calendar-queue-items { max-height: 420px; }
+}
+@media (min-width: 1280px) and (max-height: 1600px) {
+  #calendar-page .calendar-block-micro-content {
+    height: auto;
+    justify-content: flex-start;
+    gap: 0;
+  }
+  #calendar-page .calendar-block-micro-content > p {
+    font-size: 8px;
+    line-height: 8px;
+  }
+}
+@media (min-width: 1280px) and (max-height: 1200px) {
+  #calendar-page .calendar-block-compact-content > p,
+  #calendar-page .calendar-block-regular-content > p {
+    font-size: 8px;
+    line-height: 8px;
+  }
+  #calendar-page .calendar-block-compact { padding: 2px 6px; }
+  #calendar-page .calendar-block-regular { padding: 3px 7px; }
+  #calendar-page .calendar-block-content {
+    height: auto;
+    justify-content: flex-start;
+    gap: 1px;
+  }
 }

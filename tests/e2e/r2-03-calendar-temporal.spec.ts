@@ -39,6 +39,19 @@ async function expectDesktopViewportFit(page: Page, viewportHeight: number) {
     const queueItems = document.querySelector(
       ".calendar-queue-items",
     ) as HTMLElement;
+    const hours = document.querySelector(".calendar-hours") as HTMLElement;
+    const currentTimeLine = document.querySelector(
+      "[data-calendar-current-time-line]",
+    ) as HTMLElement;
+    const startLabel = document.querySelector(
+      '[data-calendar-time-boundary="start"]',
+    ) as HTMLElement;
+    const endLabel = document.querySelector(
+      '[data-calendar-time-boundary="end"]',
+    ) as HTMLElement;
+    const hoursBounds = hours.getBoundingClientRect();
+    const currentTimeBounds = currentTimeLine.getBoundingClientRect();
+    const currentTimePercent = Number.parseFloat(currentTimeLine.style.top);
 
     return {
       bodyScrollHeight: document.body.scrollHeight,
@@ -48,6 +61,20 @@ async function expectDesktopViewportFit(page: Page, viewportHeight: number) {
         overflowY: getComputedStyle(timegridScroll).overflowY,
         scrollHeight: timegridScroll.scrollHeight,
       },
+      hours: {
+        ...rect(".calendar-hours"),
+        hourHeight: hours.clientHeight / 16.5,
+      },
+      labels: {
+        end: {
+          ...rect('[data-calendar-time-boundary="end"]'),
+          text: endLabel.textContent?.trim(),
+        },
+        start: {
+          ...rect('[data-calendar-time-boundary="start"]'),
+          text: startLabel.textContent?.trim(),
+        },
+      },
       main: rect("main"),
       page: rect("#calendar-page"),
       queueItems: {
@@ -56,6 +83,11 @@ async function expectDesktopViewportFit(page: Page, viewportHeight: number) {
         scrollHeight: queueItems.scrollHeight,
       },
       rail: rect(".calendar-right-rail"),
+      timeLine: {
+        actualTop: currentTimeBounds.top,
+        expectedTop:
+          hoursBounds.top + (currentTimePercent / 100) * hoursBounds.height,
+      },
       timegrid: rect(".calendar-timegrid"),
       viewportHeight: window.innerHeight,
       workspace: rect("#calendar-workspace"),
@@ -85,24 +117,33 @@ async function expectDesktopViewportFit(page: Page, viewportHeight: number) {
   }
   expect(metrics.gridScroll.overflowY).toBe("auto");
   expect(metrics.queueItems.overflowY).toBe("auto");
-  if (viewportHeight <= 1440) {
-    expect(metrics.gridScroll.scrollHeight).toBeGreaterThan(
-      metrics.gridScroll.clientHeight,
-    );
-  }
+  expect(metrics.gridScroll.scrollHeight).toBeLessThanOrEqual(
+    metrics.gridScroll.clientHeight + 1,
+  );
+  expect(metrics.labels.start.text).toBe("06:00");
+  expect(metrics.labels.end.text).toBe("22:30");
+  expect(metrics.labels.start.top).toBeGreaterThanOrEqual(metrics.hours.top);
+  expect(metrics.labels.start.bottom).toBeLessThanOrEqual(
+    metrics.hours.bottom + 1,
+  );
+  expect(metrics.labels.end.top).toBeGreaterThanOrEqual(metrics.hours.top);
+  expect(metrics.labels.end.bottom).toBeLessThanOrEqual(
+    metrics.hours.bottom + 1,
+  );
+  expect(metrics.timeLine.actualTop).toBeCloseTo(
+    metrics.timeLine.expectedTop,
+    0,
+  );
 
-  const internalScroll = await page.evaluate(() => {
+  const timegridScrollPosition = await page.evaluate(() => {
     const element = document.querySelector(
       ".calendar-grid-scroll",
     ) as HTMLElement;
-    const original = element.scrollTop;
+    element.scrollTop = 0;
     element.scrollTop = element.scrollHeight;
-    const reachedBottom =
-      element.scrollTop + element.clientHeight >= element.scrollHeight - 1;
-    element.scrollTop = original;
-    return { reachedBottom, restored: element.scrollTop === original };
+    return element.scrollTop;
   });
-  expect(internalScroll).toEqual({ reachedBottom: true, restored: true });
+  expect(timegridScrollPosition).toBe(0);
 }
 
 test("R2-03 Calendar proportional time geometry and planning-only controls", async ({
@@ -182,6 +223,18 @@ test("R2-03 Calendar proportional time geometry and planning-only controls", asy
     const half = (await block(30).boundingBox())!,
       whole = (await block(60).boundingBox())!;
     expect(half.height / whole.height).toBeCloseTo(0.5, 2);
+    await expect(block(30)).toContainText("08:00–08:30");
+    for (const duration of [30, 60]) {
+      const bounds = (await block(duration).boundingBox())!;
+      const lines = await block(duration).locator("p").all();
+      for (const line of lines) {
+        const lineBounds = (await line.boundingBox())!;
+        expect(lineBounds.y).toBeGreaterThanOrEqual(bounds.y);
+        expect(lineBounds.y + lineBounds.height).toBeLessThanOrEqual(
+          bounds.y + bounds.height + 1,
+        );
+      }
+    }
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth),
     ).toBeLessThanOrEqual(size.width);

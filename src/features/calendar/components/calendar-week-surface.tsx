@@ -420,7 +420,12 @@ export function CalendarWeekSurface({
                 <div className="contents" key={`calendar-week-row-${hour}`}>
                   <div className="relative border-r border-t border-[rgba(148,163,184,.18)] bg-[rgba(11,17,28,.34)]">
                     <time
-                      className="absolute right-2 top-2 text-[9px] font-medium leading-none text-[var(--text-faint)]"
+                      className="calendar-hour-label absolute right-2 top-2 text-[9px] font-medium leading-none text-[var(--text-faint)]"
+                      data-calendar-time-boundary={
+                        hour === minutesToTime(CALENDAR_DAY_START_MINUTES)
+                          ? "start"
+                          : undefined
+                      }
                       dateTime={hour}
                     >
                       {hour}
@@ -441,6 +446,14 @@ export function CalendarWeekSurface({
                 </div>
               ))}
             </div>
+
+            <time
+              className="absolute bottom-px left-0 z-[3] w-[56px] pr-2 text-right text-[9px] font-medium leading-none text-[var(--text-faint)]"
+              data-calendar-time-boundary="end"
+              dateTime={minutesToTime(CALENDAR_DAY_END_MINUTES)}
+            >
+              {minutesToTime(CALENDAR_DAY_END_MINUTES)}
+            </time>
 
             <div
               className="absolute inset-y-0 right-0 grid"
@@ -547,6 +560,7 @@ export function CalendarWeekSurface({
             <div
               aria-hidden="true"
               className="pointer-events-none absolute left-[56px] right-0 z-[2] h-px bg-[rgba(221,107,95,.82)]"
+              data-calendar-current-time-line
               style={{ top: `${viewModel.currentTime.top}%` }}
             >
               <span className="absolute -left-[52px] -top-2 rounded-full border border-[rgba(221,107,95,.26)] bg-[rgba(18,28,43,.94)] px-2 py-0.5 text-[9px] font-semibold text-[var(--accent-red)]">

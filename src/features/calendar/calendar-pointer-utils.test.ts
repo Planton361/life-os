@@ -95,4 +95,32 @@ describe("canonical duration geometry", () => {
     ]);
     expect(blocks.map((b) => b.layout.laneCount)).toEqual([1, 1]);
   });
+
+  it.each([626, 986, 1707])(
+    "preserves minute proportions when the visible day flexes to %i pixels",
+    async (availableHeight) => {
+      const { buildCalendarTimedBlocks } =
+        await import("./calendar-view-model");
+      const { timedBlocks } = await import("./calendar-mock-data");
+      const [halfHour, hour] = buildCalendarTimedBlocks([
+        {
+          ...timedBlocks[0],
+          id: "half-hour",
+          startMinutes: 480,
+          endMinutes: 510,
+        },
+        {
+          ...timedBlocks[0],
+          id: "hour",
+          startMinutes: 600,
+          endMinutes: 660,
+        },
+      ]);
+      const halfHourPixels = (halfHour.layout.height / 100) * availableHeight;
+      const hourPixels = (hour.layout.height / 100) * availableHeight;
+
+      expect(halfHourPixels / hourPixels).toBeCloseTo(0.5);
+      expect(hourPixels).toBeCloseTo(availableHeight / 16.5);
+    },
+  );
 });

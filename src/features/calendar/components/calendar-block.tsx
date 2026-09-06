@@ -67,12 +67,12 @@ export function CalendarTimedBlock({
         aria-label={blockLabel(block)}
         aria-pressed={selected}
         className={cn(
-          "h-full w-full overflow-hidden rounded-[8px] border bg-[color-mix(in_srgb,var(--accent)_12%,rgba(18,28,43,.92))] text-left shadow-[0_6px_14px_rgba(0,0,0,.12)] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
+          "block h-full w-full overflow-hidden rounded-[8px] border bg-[color-mix(in_srgb,var(--accent)_12%,rgba(18,28,43,.92))] text-left shadow-[0_6px_14px_rgba(0,0,0,.12)] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
           selected
             ? "border-[color-mix(in_srgb,var(--accent)_62%,transparent)] ring-1 ring-[color-mix(in_srgb,var(--accent)_42%,transparent)]"
             : "border-[color-mix(in_srgb,var(--accent)_26%,transparent)] hover:border-[color-mix(in_srgb,var(--accent)_42%,transparent)]",
-          isRegular && "px-2.5 py-2",
-          isCompact && "px-2 py-1.5",
+          isRegular && "calendar-block-regular px-2.5 py-2",
+          isCompact && "calendar-block-compact px-2 py-1.5",
           isMicro && "px-1.5 py-0",
         )}
         onClick={() => onSelect?.(block.id)}
@@ -85,7 +85,14 @@ export function CalendarTimedBlock({
             <span className="truncate font-semibold">{block.title}</span>
           </div>
         ) : (
-          <div className="flex h-full min-w-0 flex-col justify-center gap-0.5">
+          <div
+            className={cn(
+              "calendar-block-content flex h-full min-w-0 flex-col justify-center gap-0.5",
+              isMicro && "calendar-block-micro-content",
+              isCompact && "calendar-block-compact-content",
+              isRegular && "calendar-block-regular-content",
+            )}
+          >
             <p className="truncate text-[10px] font-semibold leading-3">
               {block.title}
             </p>
@@ -109,7 +116,10 @@ export function CalendarTimedBlock({
       {onResizePointerDown ? (
         <button
           aria-label="Resize task duration"
-          className="absolute inset-x-2 bottom-0 z-[4] h-3 cursor-ns-resize rounded-b-[6px] border-t border-[color-mix(in_srgb,var(--accent)_46%,transparent)] bg-[color-mix(in_srgb,var(--accent)_20%,transparent)] opacity-0 transition hover:opacity-100 focus:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--focus-ring)]"
+          className={cn(
+            "absolute bottom-0 z-[4] cursor-ns-resize rounded-b-[6px] border-t border-[color-mix(in_srgb,var(--accent)_46%,transparent)] bg-[color-mix(in_srgb,var(--accent)_20%,transparent)] opacity-0 transition hover:opacity-100 focus:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--focus-ring)]",
+            isRegular ? "inset-x-2 h-3" : "inset-x-1 h-1",
+          )}
           data-calendar-resize-handle={block.id}
           onPointerDown={onResizePointerDown}
           title="Resize duration"
