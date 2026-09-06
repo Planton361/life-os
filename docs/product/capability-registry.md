@@ -1082,11 +1082,180 @@ operational follow-up below, not a completed capability or an additional active 
 | Manual/Demo/Empty profile switch | `CONNECTED` | profile mode | maintain |
 | Playwright auth-state capture | `CONNECTED` | local script | maintain |
 | Local startup runbook | `CONNECTED` | ops docs | maintain |
-| Local runtime memory budget | `CONNECTED_GAP` | User reports repeated RAM exhaustion/crashes during local work despite 32 GB RAM; R2-04 recovery observed roughly 19 GiB RAM used, 17 GiB swap used and three local Supabase stacks (one abandoned disposable proof stack). These observations do not establish a root cause. | Explicit follow-up: profile app/dev/build/browser/Docker memory separately, remove orphaned proof runtimes safely, bound proof concurrency and establish a measured one-user local runtime budget. R2-04 recovery uses a temporary production proof with one browser worker, two build workers and a 2 GB Node heap; this is mitigation, not a RAM-fix claim. The task-owned disposable stack was stopped after proof; other stacks were preserved. The normal production build still starts 15 page-data workers, a concrete profiling candidate rather than a proven root cause. No additional Active Work Block is created. |
+| Local runtime memory budget | `CONNECTED_GAP` | Measured build-worker reduction, scoped process cleanup, direct Playwright wrapper, disk-backed test temp files, completed Idle baseline and ten-minute normal navigation; validation evidence below | Artificial rapid-navigation stress can still reach Next's configured heap threshold; system `updatedb` pressure remains outside repository fixes. R2-04 stays ACTIVE/PENDING |
 | Local backup create | `CONNECTED` | ops script | maintain |
 | Restore smoke | `CONNECTED` | Z1 guarded canonical Target backup restores schema, migration history and aggregate canonical-table data into an isolated disposable container; Target preservation is structurally checked before/after | logical local restore-smoke only; no cloud, remote or production restore claim |
 | Private remote | `EXTERNAL_GATE` | intentionally not active | explicit user decision later |
 | Public SaaS | `NOT_STARTED` | not a goal | do not plan by default |
+
+
+## Local runtime memory hardening evidence — 2026-09-07
+
+This is a bounded operational pass, not a new product block. R2-04 remains
+ACTIVE with USER ACCEPTANCE PENDING. No domain UI, schema or migration changes.
+
+- The kernel recorded a real global OOM at 2026-09-06 21:19:35 local time.
+  Two Next processes held about 11.9 GiB combined resident + swapped memory;
+  the killed server belonged to WebStorm's process tree. Swap was effectively
+  exhausted (136 KiB free). This proves pressure, not a domain-data memory leak.
+- At initial observation the user-owned Next process held 3.82 GiB RSS and
+  0.49 GiB swap. The two pre-existing Supabase projects were Target and
+  `life-os-app`, with approximately 600.2 and 509.7 MiB cache-adjusted container
+  usage respectively. Their purposes are distinct; neither was classified as
+  an orphan or stopped. Legacy was present but not running.
+- Linux `/proc/swaps` identifies `/dev/zram0`, not disk swap. A later observed
+  29.4 GiB of logical swap occupied about 9.6 GiB physical RAM. Existing IDE and
+  user-browser working sets remain material background contributors and were
+  observed without signalling them.
+- The old Dev wrapper survives only as its children after parent-directed
+  SIGTERM: the test server remains reachable. The old disposable runner leaves
+  13 owned Node/browser processes and 12 disposable containers after SIGTERM,
+  including a roughly 4.7 GiB RSS Next server. These exact test-owned orphans
+  were then safely stopped; no volume was deleted.
+- Next 16.2.2's installed `cli/next-dev.js` assigns 50% of system memory as V8
+  old-space unless an explicit value exists. On this workstation that permits
+  almost 16 GiB per server. The shared Node budget and process ownership address
+  this multiplier; they do not claim to eliminate all native/compiler allocation.
+- An initial 2048 MiB candidate was rejected: accelerated navigation triggered
+  Next's memory-threshold restart and a navigation timeout. An unbounded Webpack
+  comparison completed ten minutes but still held a large working set; no
+  bundler switch is shipped. The 4096 MiB candidate also restarted once in a
+  607.34 s accelerated run (282 rounds / 3,666 full navigations and reloads).
+  That run proves scoped SIGTERM cleanup, not uninterrupted endurance. A
+  separate equal-duration before/after run uses five-second reading pauses;
+  diagnostic forced GC is excluded from acceptance measurements.
+- Chromium failed after 352.82 s of accelerated navigation with font-data
+  temporary-file `ENOSPC`. `/tmp` is a 16 GiB tmpfs. A subsequent owned Chromium
+  process held 5.6 GiB of open temporary backing files; placing those files in
+  the private on-disk test cache allowed the 607.34 s run to finish. This avoids
+  RAM-backed file pressure; it does not claim to fix Chromium's file growth.
+  Browser closure releases its descriptors. User browser profiles are untouched.
+- Two other host-visible Next servers (PIDs 3513 and 3850) were matched by
+  `docker top` to the existing Target/app Studio containers. These are expected
+  services, not duplicate Life-OS development servers.
+- Controlled build A/B/A/B uses identical source/dependencies, warm compilation
+  cache and default versus `experimental.cpus: 2`. Peak process-tree RSS was
+  2.864/2.863 GiB with 15 workers versus 1.902/1.923 GiB with two; durations were
+  11.09/11.74 s versus 11.46/11.43 s. All 57 routes build correctly. Live process
+  maxima fall from 18 to 5. The supported experimental option is retained.
+
+Measurements sample owned process trees and host memory at 200 ms intervals;
+per-process high-water observations are sampled peaks, not kernel accounting of
+an instantaneous maximum. PSS/swap observations supplement RSS. Local raw data
+and the measurement harness are under `/tmp/life-os-memory-proof`. No environment
+values or authentication state are part of committed evidence. Host-wide swap
+changes are not attributed solely to the measured command because protected user
+processes continue running.
+
+After the user stopped the pre-existing Dev server, four Idle samples over 15
+seconds measured 30.996 GiB total RAM, 11.004–11.067 GiB available,
+19.929–19.991 GiB used and 13.971–13.994 GiB system swap. Life-OS Dev/Next
+processes, owned test browsers and disposable containers were all zero. One
+WebStorm JavaScript-service Node process and four Codex-tooling Node processes
+remained in the repository working directory; none was an application runtime.
+The two host-visible Next processes remained the already classified Supabase
+Studio containers. Target was healthy with 11 containers and 405.564 MiB RAM;
+the separately existing `life-os-app` stack had 11 containers and 475.432 MiB.
+Legacy remained present and stopped. No `updatedb` process was present during
+the Idle samples.
+
+Controlled normal-navigation baseline: 628.60 s, peak owned process-tree RSS
+2.739 GiB, 13 simultaneous processes. Next RSS + process swap medians in
+minutes 3–10 stayed in the 1.533–1.597 GiB band; the first-minute maximum was
+1.678 GiB. The old wrapper still left its server reachable after SIGTERM;
+the external measurement harness cleaned only that explicitly owned group.
+The canonical Target remained running. These no-auth navigation probes cover
+Demo/read/auth-blocked routes; real authenticated writes are separately proven
+in the disposable browser lifecycle test.
+
+Normal-navigation after-run: 627.53 s, 2.802 GiB peak owned RSS, 12 simultaneous
+processes, no Next restart or request failure. Next RSS + swap medians for
+minutes 5–10 were 1.633/1.637/1.660/1.688/1.634/1.635 GiB: observed
+GROWS THEN PLATEAUS, not monotonic growth over the measured window. SIGINT left
+no live owned processes and the server was no longer reachable. A duplicate
+managed dev start was refused with `LIFE_OS_DEV_ALREADY_RUNNING`. No normal-dev
+RAM reduction is claimed: RSS is sensitive to ongoing background swapping.
+
+The first new E2E-abort candidate exposed a surviving pnpm WebServer group
+(five owned Node processes, including 2.1 GiB RSS Next), despite browser and
+Docker cleanup. It was rejected and its verified PID/start-time group stopped.
+Playwright now execs the managed wrapper directly. The repeated real SIGTERM
+proof exited 143 after 79.54 s with zero owned process/browser/container
+orphans; peak Node/browser RSS was 3.337 GiB and separately sampled disposable
+Docker usage peaked at 1,837.528 MiB. No volumes were deleted.
+
+A separate root-owned `updatedb` process (PID 226506, PPID 1) appeared during
+later measurements. One snapshot recorded 2,049,256 KiB RSS plus 8,705,236 KiB
+swap. Zram physical allocation reached 14,800,949,248 bytes. After that foreign
+process ended by itself, available RAM rose from roughly 5 to 11.4 GiB and
+logical swap fell by about 9 GiB. This is strong evidence of additional system
+indexing pressure; it is not a Life-OS code saving and its underlying cause was
+not changed in this repository pass. It is not present in the inspected
+historical OOM excerpt, so no historical attribution to updatedb is claimed.
+
+Measured comparison (GiB, sampled RSS sum of the owned command/browser tree;
+Docker reported separately; swap cells are whole-host start → end observations):
+
+| Scenario | Before RSS peak | After RSS peak | Before host swap | After host swap | Peak processes before → after | Seconds before → after | Result |
+| --- | ---: | ---: | --- | --- | --- | --- | --- |
+| Pristine Idle: no Next/test browser | no valid pre-fix sample | 19.958 system used; 0 app-runtime RSS | no valid pre-fix sample | 13.984 mean | unavailable → 0 app/test processes | 15 s after stabilization | PASS; 11.038 GiB mean available |
+| Dev warmup, first 70 s | 2.739 | 2.802 | 23.547 → 19.994 | 21.031 → 21.764 | 13 → 12 | 70 → 70 | No RAM saving claimed; normal flow works |
+| Repeated navigation, seconds 70–620 | 2.182 | 2.726 | 19.994 → 22.536 | 21.764 → 21.728 | 13 → 12 | 550 → 550 | No restart; RSS + swap settles in observed band |
+| Warm build A/B | 2.864 | 1.901 | 22.781 → 22.661 | 22.617 → 22.648 | 18 → 5 | 11.09 → 11.46 | About 33% lower process RSS peak; repeat A/B confirms |
+| Focused E2E, cold compiler cache | 3.360 | 3.195 | 20.869 → 23.757 | 26.397 → 29.362 | 15 → 15 | 58.16 → 67.25 | Real create/reload and console clean; own cleanup clean |
+| Sequential validation | 2.737 | 2.145 | 29.297 → 30.945 | 21.390 → 20.830 | 19 → 7 | 31.51 → 32.52 | Both pass; after adds 11 runtime tests |
+
+The final focused E2E separately sampled disposable container usage at
+1,834.811 MiB peak versus 1,917.359 MiB before. These are separate sampled
+peaks, not a synchronized process-plus-Docker total. Docker includes migration
+startup. The final main-repository E2E leaves no processes, containers, compiler
+outputs or temporary type-config files; tracked tsconfig and lockfile remain
+unchanged. A rejected abort candidate had regenerated output after cleanup;
+that verified own residue was removed after stopping its exact orphan group.
+ESLint ignores generated E2E output like ordinary `.next`, not application code.
+
+The sequence comparison overlaps the end of updatedb; whole-host swap changes
+cannot be attributed to runtime scripts. Per-step times, available memory,
+swap and process samples are in the raw JSON. The controlled build A/B/A/B,
+which predates that background indexer, is the evidence for worker savings.
+Its 15 page-data workers sampled 114.7–171.3 MiB RSS individually; the two-worker
+comparison sampled 164.2 MiB each. The roughly 1 GiB TypeScript worker belongs
+to a separate build phase and is not counted as a page-data worker.
+
+Final validation: `git diff --check`, `pnpm validate:local` (typecheck, lint,
+11 Node runtime tests, 15 focused Vitest tests and `pnpm build`) PASS. The build
+produces all 57 routes with two workers. Final real Playwright normal and
+SIGTERM-abort flows PASS their intended assertions; abort returns 143 by design.
+`pnpm runtime:target:check` PASS. All measured PID/start-time identities are
+gone; no new kernel OOM was found in the accessible Sept-7 journal. Target and
+app retain their original 11-container groups; final cache-adjusted observations
+were 352.715 and 444.347 MiB. No Target writes/migrations, new migration files,
+volume deletions or foreign-process termination were performed. Existing Git
+migrations ran only inside the required disposable test stacks.
+
+The realistic 627.53-second navigation run completed ten rounds across twelve
+R2 surfaces plus reloads without restart or request failure and plateaued in
+the measured window. The rejected 607.34-second stress case performed 282
+rounds, or 3,666 full navigations/reloads, and alone reached Next's configured
+threshold. It is classified as an artificial stress limit and retained as a
+remaining risk, not evidence of instability under measured normal usage.
+
+Overall runtime-hardening gate: IMPLEMENTATION_PASS. Idle, normal use, build,
+normal/aborted Playwright, sequential validation, Target health and orphan
+cleanup are measured. Product R2-04 acceptance/status is unchanged.
+
+Runtime tests cover success/failure, SIGINT/SIGTERM descendants, duplicate locks,
+loss of invoking parent, canonical identity checks, owned on-disk temp cleanup,
+partial startup and visible cleanup failure with retained recovery workdir.
+The focused Playwright spec is `tests/e2e/runtime-lifecycle.spec.ts`, with real disposable create/reload
+and a deliberately interruptible mode for the external lifecycle probe.
+
+Supported mechanisms were verified against installed Next 16.2.2 types/source,
+[Next's versioned configuration source](https://github.com/vercel/next.js/blob/v16.2.2/packages/next/src/server/config-shared.ts),
+[Node IPC documentation](https://nodejs.org/docs/latest-v22.x/api/net.html#ipc-support),
+[Playwright configuration](https://playwright.dev/docs/api/class-testconfig) and
+the installed Supabase CLI `stop --help`. Locks use Linux abstract Unix sockets,
+which disappear with their owner instead of leaving stale lock files.
 
 ## Update Rule
 

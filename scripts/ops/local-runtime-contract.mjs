@@ -36,9 +36,9 @@ function localHostPorts(ports) {
     .filter((port) => typeof port === "string" && port.length > 0);
 }
 
-export async function inspectLocalSupabaseProject(projectId) {
+export async function inspectLocalSupabaseProject(projectId, runCommand = run) {
   const containerName = dbContainerName(projectId);
-  const result = await run("docker", ["inspect", containerName]);
+  const result = await runCommand("docker", ["inspect", containerName]);
   if (!result.ok) {
     return { exists: false, projectId };
   }
@@ -61,8 +61,8 @@ export async function inspectLocalSupabaseProject(projectId) {
   };
 }
 
-export async function assertCanonicalTargetRuntime() {
-  const target = await inspectLocalSupabaseProject(CANONICAL_TARGET_PROJECT);
+export async function assertCanonicalTargetRuntime(runCommand = run) {
+  const target = await inspectLocalSupabaseProject(CANONICAL_TARGET_PROJECT, runCommand);
   if (!target.exists || !target.running) {
     throw new Error("RUNTIME_GUARD_CANONICAL_TARGET_UNAVAILABLE");
   }

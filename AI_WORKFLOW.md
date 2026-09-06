@@ -191,6 +191,40 @@ Plus the focused block regression scope and Codex review.
 
 Avoid full-suite or unrelated broad-grep runs after every small change.
 
+### Local runtime resource discipline
+
+- Use `pnpm dev` for the canonical Target. Its wrapper owns its Next process
+  group, forwards cancellation, detects loss of the invoking parent and refuses
+  a second managed dev runtime in the same checkout. Existing user processes
+  are never killed to acquire a lock.
+- Development uses an explicit 4096 MiB Node old-space budget instead of
+  Next 16.2.2's automatic half-of-system-RAM setting per dev server. A deliberate
+  `NODE_OPTIONS` old-space override is preserved. This limits V8's old space,
+  not total RSS or native compiler/browser memory. Ten-minute navigation with
+  reading pauses passed; an accelerated thousands-of-reloads stress probe still
+  triggered Next's threshold restart. This budget is not a memory-leak claim.
+- `experimental.cpus: 2` limits supported Next build workers. Revalidate the
+  experimental configuration when upgrading Next; do not use undocumented env
+  switches. Type checking, lint and builds remain enabled.
+- `pnpm test:e2e:isolated <focused-spec>` uses one Playwright worker by default,
+  a checkout-scoped lock shared with validation and unique compiler/type-config
+  outputs. Playwright directly execs the managed wrapper on Linux, so loss of
+  its parent cannot be hidden behind a surviving pnpm intermediary. Successful,
+  failed and interrupted startup all attempt cleanup of that exact project.
+  Browser temporary files use a private directory under the on-disk repository
+  cache rather than RAM-backed `/tmp`. Volumes are retained; never use `--all`
+  or `--no-backup` for cleanup. A failed cleanup is reported and its workdir
+  retained for recovery.
+- Use `pnpm validate:local [focused-vitest-files...]` for sequential typecheck,
+  lint, runtime lifecycle tests, focused Vitest and build. Do not run heavy
+  validations or multiple disposable stacks concurrently across worktrees.
+- SIGINT/SIGTERM and invoking-parent loss are handled. SIGKILL/power loss cannot
+  execute JavaScript cleanup; inspect an interrupted disposable project's
+  identity before any recovery, and never sweep user, Target or legacy processes.
+- Memory evidence must distinguish process RSS/PSS, process swap, host available
+  memory and Docker's cache-adjusted usage. On this Linux host swap is zram:
+  compressed swap occupies RAM and does not disappear just because a test ends.
+
 ### Tier 5 – Surface Acceptance
 
 For Dashboard, Inbox, Today, Calendar, Portfolio, Health, Fitness and

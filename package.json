@@ -5,7 +5,7 @@
   "packageManager": "pnpm@11.3.0",
   "scripts": {
     "dev": "node scripts/ops/run-canonical-target-dev.mjs",
-    "dev:raw": "next dev",
+    "dev:raw": "node scripts/ops/run-local-next-dev.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
@@ -19,7 +19,8 @@
     "backup:local:restore-smoke": "node scripts/ops/restore-local-db-backup-smoke.mjs",
     "test:e2e": "playwright test",
     "test:e2e:isolated": "node scripts/playwright/run-disposable-local-e2e.mjs",
-    "qa:dashboard": "playwright test tests/e2e/dashboard.spec.ts"
+    "qa:dashboard": "playwright test tests/e2e/dashboard.spec.ts",
+    "validate:local": "node scripts/ops/run-local-validation.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
