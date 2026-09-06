@@ -183,7 +183,7 @@ user’s confirmation, not an additional automated Target proof.
 | Inbox search | `CONNECTED` | Real title/context filtering, clear/no-match, filters and URL selection/reload proof | maintain |
 | Active item selection | `CONNECTED` | `item`, `q`, `stage` URL state; dirty/pending queue guard; existing persisted edits survive item switching and reload; unsaved inputs block switching | maintain |
 | Title/description/next action/missing information | `CONNECTED` | final completion → server Auth/Zod → owned `complete_inbox_triage` RPC; original capture preserved; stale edit conflict leaves inputs intact | maintain |
-| Outcome Route and all triage flows | `CONNECTED` | destination-only selection (no write) → final atomic `complete_inbox_triage`; Task, existing Project/Goal/Skill, new Project/Goal, Resource, Note, Solved/Archive current proof | no second draft editor |
+| Outcome Route and all triage flows | `CONNECTED` | compact route cards, destination-only selection (no write) → final atomic `complete_inbox_triage`; Task, existing Project/Goal/Skill, new Project/Goal, Resource, Note, Solved/Archive current proof | no second draft editor |
 | Note route | `CONNECTED` | canonical `resources.type = note`, correct Resources selection after reload | no separate Note entity invented |
 | Skill route | `CONNECTED` | Task context through existing Task↔Skill RPC; shown when owned active Skill targets exist; no Skill Evidence write | maintain |
 | Planning signals | `CONNECTED` | seven persisted Inbox signals; final completion and target-specific transfer, current reload proof | Recurrence removed as unsupported Inbox input |
@@ -318,6 +318,39 @@ only active ROADMAP block; this is not surface closure and does not activate R2-
   planned, routed and then completed from top to bottom? **YES**: four numbered
   headings, connected sections, a selected-route preview and one final green
   action make the sequence explicit. This review does not replace user acceptance.
+
+## R2-02 final density/polish pass — 2026-09-06
+
+**IMPLEMENTATION_PASS. USER ACCEPTANCE STATUS: PENDING.** R2-02 remains active.
+This presentation-only pass preserves the four-step flow and final transaction.
+
+- Destination pills are now equal-height rectangular route cards: four columns
+  on desktop, two at intermediate widths and one at 390px. Each has its existing
+  title and one short, fully visible explanation. Accessible names remain stable;
+  descriptions are associated with `aria-describedby`. V5 destination tints,
+  borders and the stronger selected state distinguish the real canonical routes.
+- The queue has a compact footer showing the actual visible/open counts and
+  filter, plus a short explanation that completed thoughts leave the queue.
+  Search, filters, selection and capture behavior are unchanged.
+- The AI card is explicitly labelled Optional. Related Context explains its
+  empty state using actual local Project/Goal/Skill/Resource availability; no
+  fake matches or new context behavior. Both rails still fit their contents.
+- **V5 Design-Taste: PASS.** Screenshots at 3840×2160, 2560×1440, 1920×1080 and
+  390×844 were visually inspected. Existing column proportions keep the workflow
+  dominant; route cards use Step 3 more purposefully without stretching the
+  side rails. At 1920×1080 both card rows and the final action fit. No overlapping
+  cards, clipped descriptions, horizontal overflow or added desktop body scroll.
+  Mobile retains normal vertical page scrolling and one readable card column.
+- `tests/e2e/r2-02-inbox-surface.spec.ts`: **4/4 PASS (33.8s)** on the isolated
+  authenticated runtime. Current proof adds equal tile-height and untruncated
+  one-line explanation assertions at all four viewports, plus queue count and
+  context-empty-copy checks. All existing routes, final commit, target/reload,
+  search/selection, validation and error regressions remain green. Console and
+  hydration checks are clean. Screenshots are attached to the existing isolated
+  Playwright report; no generated/private artifacts are committed.
+- `git diff --check`, `pnpm typecheck`, `pnpm lint` and `pnpm build` pass.
+  No backend changes or new migration. No Dashboard, Today, Calendar or Portfolio
+  changes. Known unrelated working-tree changes remain untouched.
 
 ### Planning Signal audit
 

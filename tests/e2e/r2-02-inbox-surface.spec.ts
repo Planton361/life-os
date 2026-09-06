@@ -207,6 +207,32 @@ test("R2-02 linear triage → one final commit → canonical Task, reload and de
       for (const panel of panels)
         expect(panel.bottom).toBeLessThanOrEqual(size.height);
     }
+    const tiles = await page.locator(".inbox-route").evaluateAll((cards) =>
+      cards.map((card) => {
+        const box = card.getBoundingClientRect();
+        const info = card.querySelector(".inbox-route-info")!;
+        return {
+          width: box.width,
+          height: box.height,
+          textFits: info.scrollWidth <= info.clientWidth,
+          explanation: info.textContent,
+        };
+      }),
+    );
+    expect(tiles).toHaveLength(8);
+    expect(
+      tiles.every((tile) => tile.textFits && Boolean(tile.explanation)),
+    ).toBe(true);
+    expect(
+      Math.max(...tiles.map((tile) => tile.height)) -
+        Math.min(...tiles.map((tile) => tile.height)),
+    ).toBeLessThanOrEqual(1);
+    await expect(page.getByLabel("Queue Status")).toContainText(
+      "1 von 1 offen",
+    );
+    await expect(
+      page.getByRole("region", { name: "Related Context", exact: true }),
+    ).toContainText("sobald sie vorhanden sind");
     const controlsFit = await editor(page)
       .locator("input,textarea,select")
       .evaluateAll((elements) =>

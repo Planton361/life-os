@@ -28,16 +28,48 @@ const focus =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-cyan)]";
 const button = `min-h-9 rounded-[12px] border border-[var(--border-default)] px-3 text-xs font-semibold text-[var(--text-secondary)] disabled:cursor-not-allowed disabled:opacity-50 ${focus}`;
 const input = `w-full min-w-0 rounded-[12px] border border-[var(--border-default)] bg-[var(--surface-2)] px-3 py-2 text-sm text-[var(--text-primary)] ${focus}`;
-const routes: { id: InboxRouteInput["route"]; title: string }[] = [
-  { id: "task", title: "Standalone Task" },
-  { id: "existing_project", title: "Existing Project" },
-  { id: "existing_goal", title: "Existing Goal" },
-  { id: "existing_skill", title: "Existing Skill" },
-  { id: "project", title: "New Project" },
-  { id: "goal", title: "New Goal" },
-  { id: "resource", title: "Resource" },
-  { id: "note", title: "Note" },
-  { id: "archive", title: "Solved / Archive" },
+const routes: {
+  id: InboxRouteInput["route"];
+  title: string;
+  description: string;
+}[] = [
+  {
+    id: "task",
+    title: "Standalone Task",
+    description: "Konkrete einzelne Aufgabe",
+  },
+  {
+    id: "existing_project",
+    title: "Existing Project",
+    description: "Task zu vorhandenem Projekt",
+  },
+  {
+    id: "existing_goal",
+    title: "Existing Goal",
+    description: "Task zu vorhandenem Ziel",
+  },
+  {
+    id: "existing_skill",
+    title: "Existing Skill",
+    description: "Task mit Skill-Kontext",
+  },
+  {
+    id: "project",
+    title: "New Project",
+    description: "Als neues Projekt weiterführen",
+  },
+  { id: "goal", title: "New Goal", description: "Als neues Ziel weiterführen" },
+  {
+    id: "resource",
+    title: "Resource",
+    description: "Als Wissen oder Material",
+  },
+  { id: "note", title: "Note", description: "Als Notiz behalten" },
+  {
+    id: "archive",
+    title: "Solved / Archive",
+    description: "Erledigt oder nicht weiterverfolgen",
+  },
 ];
 function initialFields(
   item: InboxViewModel["activeItem"],
@@ -386,10 +418,7 @@ function InboxEditor({
               <h3 id="outcome-route-title" className="inbox-step-heading">
                 <span>03</span> Ziel wählen
               </h3>
-              <p className="mt-1 text-xs text-[var(--text-muted)]">
-                Wo gehört dieser Gedanke hin?
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
+              <div className="inbox-route-grid mt-2">
                 {routes
                   .filter(
                     (option) =>
@@ -405,6 +434,8 @@ function InboxEditor({
                         "inbox-route",
                         route === option.id && "inbox-route-selected",
                       )}
+                      aria-label={option.title}
+                      aria-describedby={`route-info-${option.id}`}
                       data-route={option.id}
                       aria-pressed={route === option.id}
                       disabled={pending}
@@ -413,7 +444,15 @@ function InboxEditor({
                         setTargetId("");
                       }}
                     >
-                      {option.title}
+                      <span className="block text-xs font-semibold">
+                        {option.title}
+                      </span>
+                      <span
+                        id={`route-info-${option.id}`}
+                        className="inbox-route-info"
+                      >
+                        {option.description}
+                      </span>
                     </button>
                   ))}
               </div>
@@ -545,8 +584,9 @@ function InboxEditor({
           {!Object.values(viewModel.existingTargets).some(
             (targets) => targets.length,
           ) && (
-            <p className="mt-3 text-sm text-[var(--text-muted)]">
-              Kein lokaler Kontext vorhanden.
+            <p className="mt-3 border-t border-[var(--border-subtle)] pt-3 text-xs leading-5 text-[var(--text-muted)]">
+              Noch kein lokaler Kontext. Projekte, Ziele, Skills und Ressourcen
+              erscheinen hier, sobald sie vorhanden sind.
             </p>
           )}
         </section>
@@ -568,12 +608,17 @@ function LocalAssistant({
   const [dismissed, setDismissed] = useState<typeof state>(null);
   return (
     <section className={cn(panel, "p-4")} aria-labelledby="ai-assistant-title">
-      <h2 id="ai-assistant-title" className="text-sm font-semibold">
-        AI Assistant
-      </h2>
+      <div className="flex items-center justify-between gap-2">
+        <h2 id="ai-assistant-title" className="text-sm font-semibold">
+          AI Assistant
+        </h2>
+        <span className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
+          Optional
+        </span>
+      </div>
       <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">
-        Optionaler lokaler Vorschlag aus gespeicherten Daten. Keine automatische
-        Übernahme.
+        Lokaler Vorschlag aus gespeicherten Daten. Du entscheidest; keine
+        automatische Übernahme.
       </p>
       {enabled && (
         <form action={action} className="mt-3">
@@ -799,6 +844,22 @@ export function InboxPage({
               </li>
             ))}
           </ul>
+          <div
+            className="space-y-1 border-t border-[var(--border-subtle)] px-4 py-3 text-xs"
+            aria-label="Queue Status"
+          >
+            <p className="text-[var(--text-secondary)]">
+              {items.length} von {viewModel.queue.length} offen ·{" "}
+              {filter === "raw"
+                ? "Raw"
+                : filter === "clarify"
+                  ? "Clarified"
+                  : "Alle"}
+            </p>
+            <p className="leading-5 text-[var(--text-muted)]">
+              Abgeschlossene Gedanken verlassen diese Queue.
+            </p>
+          </div>
         </section>
         {selectedVisible && viewModel.activeItem.hasSelection ? (
           <InboxEditor
