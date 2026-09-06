@@ -352,6 +352,38 @@ This presentation-only pass preserves the four-step flow and final transaction.
   No backend changes or new migration. No Dashboard, Today, Calendar or Portfolio
   changes. Known unrelated working-tree changes remain untouched.
 
+## R2-02 route-row and rail-height correction — 2026-09-06
+
+**IMPLEMENTATION_PASS. USER ACCEPTANCE STATUS: PENDING.** R2-02 stays active.
+This explicit user correction supersedes the preceding four-column route grid
+and content-height side-rail layout; their historical evidence remains above.
+
+- All eight standard destinations now form **one horizontal desktop row** at
+  3840×2160, 2560×1440 and 1920×1080. Modules have an equal 88px logical height,
+  rectangular borders, title at the top and concise description at the bottom.
+  Selected-state semantics and V5 tints remain. The content-driven minimum width
+  only wraps cards when necessary; at 390×844 the layout uses two columns.
+  The existing conditional Skill destination and all route behavior are retained.
+- Desktop queue stretches to the workbench bottom. The right rail is a vertical
+  flex column: AI remains compact while its final Related Context card takes
+  the remaining height, with content aligned at the top. No dummy content.
+  Narrower secondary columns preserve the dominant central workflow and provide
+  sufficient width for the single route row even at 1920×1080.
+- **V5 Design-Taste / current visual review: PASS.** All four complete screenshots
+  were inspected. Side rails form continuous columns; cards are evenly aligned,
+  explanations remain untruncated, semantic colors remain intact. No horizontal
+  overflow, card overlaps or desktop body scroll. Mobile uses normal vertical
+  flow rather than stretched rails. Four-step order and final action are unchanged.
+- Focused Inbox Playwright: **4/4 PASS (33.4s)**. New assertions prove all eight
+  desktop card tops align and queue/workbench/final-context-card bottoms differ
+  by at most 1px at each desktop viewport. Equal heights, text fit, mobile guard,
+  final-action visibility, all routes, search, reload and error checks remain
+  green. Core console/hydration checks are clean. Current full screenshots are
+  attached to the existing isolated Playwright report.
+- `git diff --check`, `pnpm typecheck`, `pnpm lint` and `pnpm build` pass.
+  Changes are limited to Inbox presentation, its focused proof and this registry.
+  No backend change, migration, new feature or other-surface modification.
+
 ### Planning Signal audit
 
 | SIGNAL | CANONICAL FIELD | PERSISTED | TARGET SUPPORT | UI RESULT |

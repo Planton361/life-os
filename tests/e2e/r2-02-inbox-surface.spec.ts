@@ -212,6 +212,7 @@ test("R2-02 linear triage → one final commit → canonical Task, reload and de
         const box = card.getBoundingClientRect();
         const info = card.querySelector(".inbox-route-info")!;
         return {
+          top: box.top,
           width: box.width,
           height: box.height,
           textFits: info.scrollWidth <= info.clientWidth,
@@ -220,6 +221,24 @@ test("R2-02 linear triage → one final commit → canonical Task, reload and de
       }),
     );
     expect(tiles).toHaveLength(8);
+    if (size.width > 1000) {
+      expect(
+        Math.max(...tiles.map((tile) => tile.top)) -
+          Math.min(...tiles.map((tile) => tile.top)),
+      ).toBeLessThanOrEqual(1);
+      const railBottoms = await page
+        .locator(
+          '[data-inbox-section="queue"], [data-inbox-section="active-item"], .inbox-context > section:last-child',
+        )
+        .evaluateAll((elements) =>
+          elements.map((element) => element.getBoundingClientRect().bottom),
+        );
+      expect(railBottoms).toHaveLength(3);
+      expect(
+        Math.max(...railBottoms) - Math.min(...railBottoms),
+      ).toBeLessThanOrEqual(1);
+    }
+
     expect(
       tiles.every((tile) => tile.textFits && Boolean(tile.explanation)),
     ).toBe(true);

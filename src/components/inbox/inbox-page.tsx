@@ -36,39 +36,39 @@ const routes: {
   {
     id: "task",
     title: "Standalone Task",
-    description: "Konkrete einzelne Aufgabe",
+    description: "Einzelne Aufgabe",
   },
   {
     id: "existing_project",
     title: "Existing Project",
-    description: "Task zu vorhandenem Projekt",
+    description: "Task zum Projekt",
   },
   {
     id: "existing_goal",
     title: "Existing Goal",
-    description: "Task zu vorhandenem Ziel",
+    description: "Task zum Ziel",
   },
   {
     id: "existing_skill",
     title: "Existing Skill",
-    description: "Task mit Skill-Kontext",
+    description: "Task zum Skill",
   },
   {
     id: "project",
     title: "New Project",
-    description: "Als neues Projekt weiterführen",
+    description: "Neues Projekt",
   },
-  { id: "goal", title: "New Goal", description: "Als neues Ziel weiterführen" },
+  { id: "goal", title: "New Goal", description: "Neues Ziel" },
   {
     id: "resource",
     title: "Resource",
-    description: "Als Wissen oder Material",
+    description: "Wissen / Material",
   },
-  { id: "note", title: "Note", description: "Als Notiz behalten" },
+  { id: "note", title: "Note", description: "Notiz behalten" },
   {
     id: "archive",
     title: "Solved / Archive",
-    description: "Erledigt oder nicht weiterverfolgen",
+    description: "Erledigt / ablegen",
   },
 ];
 function initialFields(
@@ -538,7 +538,7 @@ function InboxEditor({
         </footer>
       </section>
       <aside
-        className="inbox-context min-h-0 space-y-3 self-start overflow-y-auto"
+        className="inbox-context min-h-0 space-y-3 self-start overflow-y-auto 2xl:flex 2xl:flex-col 2xl:self-stretch"
         aria-label="Sekundärer Inbox Kontext"
       >
         <LocalAssistant itemId={item.id} enabled={enabled} />
@@ -744,9 +744,12 @@ export function InboxPage({
           </button>
         </div>
       )}
-      <div className="inbox-layout grid min-h-0 flex-1 gap-4 2xl:grid-cols-[minmax(260px,.7fr)_minmax(620px,2.6fr)_minmax(260px,.65fr)]">
+      <div className="inbox-layout grid min-h-0 flex-1 gap-4 2xl:grid-cols-[minmax(240px,.5fr)_minmax(620px,2.9fr)_minmax(240px,.5fr)]">
         <section
-          className={cn(panel, "flex max-h-full min-h-0 flex-col self-start")}
+          className={cn(
+            panel,
+            "flex max-h-full min-h-0 flex-col self-start 2xl:self-stretch",
+          )}
           aria-labelledby="inbox-queue-title"
           data-inbox-section="queue"
         >
