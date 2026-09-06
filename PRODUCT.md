@@ -137,6 +137,13 @@ Required capabilities:
 
 Today is the daily log / day memory / documentation surface. It shows what was intended, what actually happened, what was completed or remains open, and the day’s reviews and decisions. It projects source-owned timestamps in the profile’s local timezone; `updated_at` alone is not an action history. Calendar owns planning/scheduling; Portfolio owns entity creation/management. Today contains no creation, planning or recurrence-generation controls. Concrete recurring occurrences may appear as day records.
 
+The Activity Stream shows meaningful daily events, not raw mutation history.
+Habits aggregate to one current progress row per habit/local day (last effective
+log time, canonical target/unit); Mood shows only the latest active daily entry.
+Review completion remains meaningful; field edits, autosaves, undo actions and
+technical updates do not become timeline events. Aggregation never changes
+domain records or task summary counts and does not impose an arbitrary event cap.
+
 Required capabilities:
 
 - planned and scheduled work;

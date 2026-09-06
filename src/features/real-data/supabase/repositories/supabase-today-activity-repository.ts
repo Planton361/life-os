@@ -66,7 +66,7 @@ export async function readTodayActivity(
           .from("habit_logs")
           .select("*")
           .eq("user_id", userId)
-          .gte("recorded_at", lower)
+          .eq("local_date", day)
           .order("id"),
       ),
       all(
@@ -141,14 +141,14 @@ export async function readTodayActivity(
     ? await all(
         client
           .from("habits")
-          .select("id,name")
+          .select("id,name,daily_target,unit")
           .eq("user_id", userId)
           .in("id", habitIds)
           .order("id"),
       )
     : [];
-  const habitNames = Object.fromEntries(
-    names.map((habit) => [habit.id, habit.name]),
+  const habitDefinitions = Object.fromEntries(
+    names.map((habit) => [habit.id, habit]),
   );
   return projectTodayActivity(
     {
@@ -156,7 +156,7 @@ export async function readTodayActivity(
       inbox,
       moods,
       habits,
-      habitNames,
+      habitDefinitions,
       meals,
       runs,
       strength,

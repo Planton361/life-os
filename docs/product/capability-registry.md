@@ -533,6 +533,62 @@ artifacts or historical morning snapshot. Opening Context explicitly displays
 current day state. Run/Strength/Meal timestamp mapping has focused unit evidence;
 this pass does not re-prove each domain's separate completion UI.
 
+## R2-03 Today relevance / aggregation pass — 2026-09-06
+
+Today Activity Stream = meaningful daily events, not raw mutation history.
+The existing layout and domain writes remain intact. The following current
+policy supersedes per-log Mood/Habit and REVIEW CREATED display above.
+
+| EVENT TYPE | CANONICAL SOURCE | TIMESTAMP | CURRENT CARDINALITY (before → after) | DISPLAY POLICY | RESULT |
+|---|---|---|---|---|---|
+| TASK CREATED | tasks | created_at | 1/task → unchanged | A. INDIVIDUAL | real creation, independent of plan |
+| TASK SCHEDULED | tasks | scheduled_start_at | 1/current task slot → unchanged | A. INDIVIDUAL | current intended start; no resize/edit history |
+| TASK COMPLETED | tasks | completed_at | 1/task → unchanged | A. INDIVIDUAL | actual retained completion |
+| INBOX CAPTURE | inbox_items | created_at | 1/capture → unchanged | A. INDIVIDUAL | original capture; provenance remains honestly generic |
+| INBOX PROCESSED | inbox_items | processed_at | 1/final triage → unchanged | A. INDIVIDUAL | no clarify/save/selection events |
+| HABIT LOGGED → HABIT | habit_logs + owned habits | latest effective recorded_at, canonical local_date | N logs/habit/day → at most 1/habit/day | B. AGGREGATED | sum active logs; real daily_target/unit; undo changes same stable day row |
+| MOOD LOGGED → MOOD | mood_entries | latest active recorded_at within profile-local day | N entries/day → at most 1/day | C. LATEST-STATE | latest mood replaces earlier display, timestamp/id tie-break |
+| MEAL COMPLETED | meals | completed_at | 1/meal → unchanged | A. INDIVIDUAL | no planner or recipe-edit noise |
+| RUN COMPLETED | running_sessions | completed_at | 1/session → unchanged | A. INDIVIDUAL | no intermediate session edits |
+| STRENGTH COMPLETED | strength_sessions | completed_at | 1/session → unchanged | A. INDIVIDUAL | canonical completion |
+| REVIEW CREATED | review_records | created_at | 1/review → 0 | D. SUPPRESSED | initial persistence is not a separate meaningful completion |
+| REVIEW COMPLETED | review_records | completed_at | 1/review → unchanged | A. INDIVIDUAL | Daily/Weekly completion on the actual local completion day |
+| Metadata, autosave, revalidation, auth, sync, failed/no-op writes | no action-history source | none | 0 → 0 | D. SUPPRESSED | never inferred from updated_at |
+| Habit undo / daily Mood history | existing retained/archived records | no new action inferred | 0 separate action rows | D. SUPPRESSED | affects current aggregate/latest state only |
+| Task reopened | no reliable dedicated timestamp | none | 0 → 0 | D. SUPPRESSED | no reconstruction claim |
+| Sleep / weight | date-based upserted records | sleep_date / measured_on, no precise action time | not projected | D. SUPPRESSED | existing limitation retained; no fake midnight timestamp |
+| Project / Goal / Skill | not part of this existing Today source set | creation timestamps exist; no new reads in this pass | not projected | D. SUPPRESSED | no Portfolio expansion; no metadata events |
+
+Zero effective logs means no Habit row, rather than inventing an undo event.
+Habits without a target show quantity/unit “heute”; completion is never invented.
+The task-based Delta Summary is computed independently of displayed event count.
+No rows are deleted or mutated, no new event table/migration and no hard limit.
+Timestamp ordering plus stable event IDs makes reload deterministic, including
+equal-clock instants and DST. Habit aggregation reads the full canonical local
+day and fetches owned name, target and unit with the existing repository.
+
+Focused proof adds actual Dashboard Habit creation/increments (3/5 → 5/5),
+Undo (4/5), two Mood selections, two individual Quick Thoughts, canonical
+5 retained logs / 4 active logs, Today reload, stable chronology and source links.
+The existing core proof retains Task creation → scheduling → completion and
+Review/Carry Forward. No planning/creation/recurrence control returns to Today.
+Screenshots cover 3840×2160, 2560×1440, 1920×1080 and 390×844.
+
+Validation: IMPLEMENTATION_PASS. 16 focused projection/read-model Vitest tests
+and all 3 Today Playwright proofs pass; typecheck, lint, build and diff check
+pass. Browser console/hydration is clean. Full screenshots were visually
+reviewed at all four sizes: compact semantic rows, no overlap/overflow and
+unchanged V5 hierarchy (Design-Taste PASS). Source links and the unchanged
+Today navigation/control inventory are exercised by the current proof suite.
+No schema or write-model changes; the disposable runner additionally passed
+its existing 44-migration chain, DB lint and advisor guards.
+
+Remaining high-volume sources: genuine independent Captures, Tasks (up to three
+distinct supported states per task), completed Meals and Training sessions.
+These remain visible without arbitrary truncation. This is implementation
+evidence only; R2-03 remains ACTIVE, Calendar is pending and USER ACCEPTANCE
+STATUS is PENDING.
+
 # 4. Calendar and Scheduling
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |

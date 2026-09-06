@@ -6,7 +6,10 @@ import {
 type Row<K extends keyof Database["public"]["Tables"]> =
   Database["public"]["Tables"][K]["Row"];
 export type ActivitySources = {
-  habitNames?: Record<string, string>;
+  habitDefinitions?: Record<
+    string,
+    Pick<Row<"habits">, "name" | "daily_target" | "unit">
+  >;
   tasks: Row<"tasks">[];
   inbox: Row<"inbox_items">[];
   moods: Row<"mood_entries">[];
@@ -113,28 +116,61 @@ export function projectTodayActivity(
       "cyan",
     );
   }
-  for (const mood of sources.moods)
-    if (!mood.archived_at)
-      add(
-        mood.id,
-        mood.recorded_at,
-        "MOOD LOGGED",
-        mood.mood,
-        "Gespeicherter Mood-Eintrag",
-        "/health/mental",
-        "orange",
-      );
-  for (const habit of sources.habits)
-    if (!habit.archived_at && habit.value > 0)
-      add(
-        habit.id,
-        habit.recorded_at,
-        "HABIT LOGGED",
-        `${sources.habitNames?.[habit.habit_id] ?? "Habit"} · +${habit.value}`,
-        "Bestehender aktiver Log-Eintrag",
-        "/health/habits",
-        "green",
-      );
+  const latestMood = sources.moods
+    .filter((mood) => !mood.archived_at && isToday(mood.recorded_at))
+    .sort(
+      (a, b) =>
+        Date.parse(b.recorded_at) - Date.parse(a.recorded_at) ||
+        b.id.localeCompare(a.id),
+    )[0];
+  if (latestMood)
+    add(
+      "mood:" + day,
+      latestMood.recorded_at,
+      "MOOD",
+      latestMood.mood,
+      "Aktueller Tageszustand",
+      "/health/mental",
+      "orange",
+    );
+
+  const habitDays = new Map<string, { value: number; at: string }>();
+  // Canonical local_date is the Habit day attribution; recorded_at supplies its clock.
+  for (const log of [...sources.habits].sort((a, b) =>
+    a.id.localeCompare(b.id),
+  )) {
+    if (log.archived_at || log.value <= 0 || log.local_date !== day) continue;
+    const aggregate = habitDays.get(log.habit_id);
+    habitDays.set(log.habit_id, {
+      value: (aggregate?.value ?? 0) + log.value,
+      at:
+        aggregate && Date.parse(aggregate.at) > Date.parse(log.recorded_at)
+          ? aggregate.at
+          : log.recorded_at,
+    });
+  }
+  const number = (value: number) =>
+    new Intl.NumberFormat("de-DE", { maximumFractionDigits: 6 }).format(value);
+  for (const [id, aggregate] of habitDays) {
+    const habit = sources.habitDefinitions?.[id];
+    const target = habit?.daily_target;
+    const unit = habit?.unit ? " " + habit.unit : "";
+    const progress =
+      target != null
+        ? number(aggregate.value) + "/" + number(target) + unit
+        : number(aggregate.value) + unit + " heute";
+    add(
+      "habit:" + id + ":" + day,
+      aggregate.at,
+      "HABIT",
+      (habit?.name ?? "Habit") + " · " + progress,
+      target != null && aggregate.value >= target
+        ? "Tagesziel erreicht"
+        : "Fortschritt heute",
+      "/health/habits",
+      "green",
+    );
+  }
   for (const meal of sources.meals)
     add(
       meal.id,
@@ -169,15 +205,6 @@ export function projectTodayActivity(
       );
   for (const review of sources.reviews)
     if (!review.archived_at) {
-      add(
-        `${review.id}:created`,
-        review.created_at,
-        "REVIEW CREATED",
-        `${review.kind} Review`,
-        "Review erstmals gespeichert",
-        `/review/${review.kind}`,
-        "orange",
-      );
       add(
         `${review.id}:completed`,
         review.completed_at,

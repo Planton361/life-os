@@ -240,13 +240,13 @@ test("R2-03 local logs, review decisions, ownership and profile boundaries", asy
   ).toBeNull();
   await page.goto("/today");
   await expect(stream(page)).not.toContainText("Foreign must not appear");
-  await expect(
-    stream(page).locator('[data-event-kind="MOOD LOGGED"]'),
-  ).toContainText("calm");
-  await expect(
-    stream(page).locator('[data-event-kind="HABIT LOGGED"]'),
-  ).toContainText("Today proof habit");
-  for (const kind of ["MOOD LOGGED", "HABIT LOGGED"]) {
+  await expect(stream(page).locator('[data-event-kind="MOOD"]')).toContainText(
+    "calm",
+  );
+  await expect(stream(page).locator('[data-event-kind="HABIT"]')).toContainText(
+    "Today proof habit",
+  );
+  for (const kind of ["MOOD", "HABIT"]) {
     await stream(page)
       .locator(`[data-event-kind="${kind}"]`)
       .getByRole("link")
@@ -314,4 +314,168 @@ test("R2-03 local logs, review decisions, ownership and profile boundaries", asy
   await expect(
     page.locator("#today-page form, #today-page button"),
   ).toHaveCount(0);
+});
+
+test("R2-03 meaningful habit/mood day memory survives increments, undo and reload", async ({
+  page,
+}, info) => {
+  test.setTimeout(180000);
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await signUpTechnicalManualUser(page, "r2-memory", Date.now());
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  page.on("console", (m) => {
+    if (m.type() === "error") errors.push(m.text());
+  });
+  await page.goto("/dashboard?habitWindow=Morning");
+  const region = page.locator(".dashboard-habits");
+  await region.getByRole("button", { name: /Add habit/i }).click();
+  const dialog = page.getByRole("dialog"),
+    name = "Dehnen " + Date.now();
+  await dialog.getByLabel("Name", { exact: true }).fill(name);
+  await dialog.getByLabel("Target", { exact: true }).fill("5");
+  await dialog.getByLabel("Increment", { exact: true }).fill("1");
+  await dialog.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  const card = region.getByRole("article").filter({ hasText: name });
+  const increment = card.getByRole("button", {
+    name: name + " erhöhen",
+    exact: true,
+  });
+  for (let n = 1; n <= 3; n++) {
+    await increment.click();
+    await expect(card).toContainText(n + " / 5");
+  }
+  const api = await browserClient(page);
+  const habit = (
+    await api.from("habits").select("id").eq("name", name).single()
+  ).data!;
+  const assertHabit = async (value: number) => {
+    await page.goto("/today");
+    await page.reload();
+    const row = stream(page).locator('[data-event-kind="HABIT"]');
+    await expect(row).toHaveCount(1);
+    await expect(row).toContainText(name + " · " + value + "/5");
+    await expect(row).toContainText(
+      value === 5 ? "Tagesziel erreicht" : "Fortschritt heute",
+    );
+    await expect(stream(page)).not.toContainText("HABIT LOGGED");
+    return row.getAttribute("data-event-at");
+  };
+  await assertHabit(3);
+  await page.goto("/dashboard?habitWindow=Morning");
+  for (let n = 4; n <= 5; n++) {
+    await increment.click();
+    await expect(card).toContainText(n + " / 5");
+  }
+  await assertHabit(5);
+  await page.goto("/dashboard?habitWindow=Morning");
+  await card.getByRole("button", { name: /rückgängig/ }).click();
+  await expect(card).toContainText("4 / 5");
+  await assertHabit(4);
+  const logs = await api
+    .from("habit_logs")
+    .select("id,archived_at")
+    .eq("habit_id", habit.id);
+  expect(logs.error).toBeNull();
+  expect(logs.data).toHaveLength(5);
+  expect(logs.data!.filter((l) => !l.archived_at)).toHaveLength(4);
+  await page.goto("/dashboard");
+  for (const mood of ["Happy", "Focused"]) {
+    await page
+      .locator(".dashboard-mood")
+      .getByRole("button", { name: mood, exact: true })
+      .click();
+    await expect(
+      page
+        .locator(".dashboard-mood")
+        .getByRole("button", { name: mood, exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
+  }
+  const quick = page.locator('[aria-labelledby="quick-thought-title"]');
+  for (const capture of ["Gedanke A " + name, "Gedanke B " + name]) {
+    await quick.getByLabel("Quick Thought", { exact: true }).fill(capture);
+    await quick.getByRole("button", { name: "In Inbox speichern" }).click();
+    await expect(
+      quick.getByLabel("Quick Thought", { exact: true }),
+    ).toHaveValue("");
+  }
+  await page.goto("/today");
+  await page.reload();
+  await expect(stream(page).locator('[data-event-kind="MOOD"]')).toHaveCount(1);
+  await expect(stream(page).locator('[data-event-kind="MOOD"]')).toContainText(
+    /focused/i,
+  );
+  await expect(
+    stream(page).locator('[data-event-kind="INBOX CAPTURE"]'),
+  ).toHaveCount(2);
+  await expect(stream(page).locator('[data-event-kind="HABIT"]')).toHaveCount(
+    1,
+  );
+  const order = await stream(page)
+    .locator("[data-event-at]")
+    .evaluateAll((nodes) =>
+      nodes.map((n) => [
+        n.getAttribute("data-event-kind"),
+        n.getAttribute("data-event-at"),
+        n.textContent,
+      ]),
+    );
+  const times = order.map((row) => Date.parse(row[1]!));
+  expect(times).toEqual([...times].sort((a, b) => a - b));
+  await page.reload();
+  expect(
+    await stream(page)
+      .locator("[data-event-at]")
+      .evaluateAll((nodes) =>
+        nodes.map((n) => [
+          n.getAttribute("data-event-kind"),
+          n.getAttribute("data-event-at"),
+          n.textContent,
+        ]),
+      ),
+  ).toEqual(order);
+  for (const [kind, url] of [
+    ["HABIT", /health\/habits/],
+    ["MOOD", /health\/mental/],
+  ] as const) {
+    await stream(page)
+      .locator(`[data-event-kind="${kind}"]`)
+      .getByRole("link")
+      .click();
+    await expect(page).toHaveURL(url);
+    await page.goto("/today");
+  }
+  for (const size of [
+    { width: 3840, height: 2160 },
+    { width: 2560, height: 1440 },
+    { width: 1920, height: 1080 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(size);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(size.width);
+    await expect(
+      page.locator("#today-page form, #today-page button"),
+    ).toHaveCount(0);
+    await expect(page.locator("#today-page")).not.toContainText(
+      /Heute planen|Wiederkehrende Aufgaben/,
+    );
+    if (size.width > 1000) {
+      const main = (await stream(page).boundingBox())!,
+        rail = (await page
+          .getByRole("complementary", { name: "Tageskontext" })
+          .boundingBox())!;
+      expect(main.x + main.width).toBeLessThanOrEqual(rail.x);
+      expect(
+        await page.evaluate(() => document.documentElement.scrollHeight),
+      ).toBeLessThanOrEqual(size.height + 2);
+    }
+    await page.screenshot({
+      path: info.outputPath(`memory-${size.width}.png`),
+      fullPage: true,
+    });
+  }
+  expect(errors).toEqual([]);
 });

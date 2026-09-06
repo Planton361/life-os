@@ -177,3 +177,143 @@ it("retains a carried task's explicitly captured original day without inventing 
   expect(log.events).toEqual([]);
   expect(log.metrics.find((m) => m.label === "Carried forward")?.value).toBe(1);
 });
+
+const habitLog = (id: string, at: string, patch = {}) =>
+  ({
+    id,
+    habit_id: "stretch",
+    local_date: "2026-09-06",
+    recorded_at: at,
+    value: 1,
+    archived_at: null,
+    ...patch,
+  }) as ActivitySources["habits"][number];
+const today = (sources: ActivitySources) =>
+  projectTodayActivity(
+    sources,
+    "Europe/Berlin",
+    new Date("2026-09-06T14:00:00Z"),
+  );
+it("aggregates active habit logs with target, latest effective time and stable identity after undo", () => {
+  const sources = emptyActivitySources();
+  sources.habitDefinitions = {
+    stretch: { name: "Dehnen", daily_target: 5, unit: null },
+  };
+  sources.habits = Array.from({ length: 5 }, (_, i) =>
+    habitLog(String(i), `2026-09-06T08:0${i}:00Z`),
+  );
+  const metrics = today(sources).metrics;
+  expect(today(sources).events).toMatchObject([
+    {
+      id: "habit:stretch:2026-09-06",
+      kind: "HABIT",
+      title: "Dehnen · 5/5",
+      context: "Tagesziel erreicht",
+      time: "10:04",
+    },
+  ]);
+  sources.habits[4].archived_at = "2026-09-06T09:00:00Z";
+  expect(today(sources).events).toMatchObject([
+    {
+      id: "habit:stretch:2026-09-06",
+      title: "Dehnen · 4/5",
+      context: "Fortschritt heute",
+      time: "10:03",
+    },
+  ]);
+  expect(today(sources).events).toHaveLength(1);
+  expect(today(sources).metrics).toEqual(metrics);
+  sources.habits.forEach((log) => {
+    log.archived_at = "2026-09-06T09:00:00Z";
+  });
+  expect(today(sources).events).toEqual([]);
+});
+it("uses canonical units and optional targets, without rounding to a made-up completion", () => {
+  const sources = emptyActivitySources();
+  sources.habitDefinitions = {
+    stretch: { name: "Meditation", daily_target: null, unit: "min" },
+  };
+  sources.habits = [
+    habitLog("a", "2026-09-06T08:00:00Z", { value: 10 }),
+    habitLog("b", "2026-09-06T09:00:00Z", { value: 10 }),
+  ];
+  expect(today(sources).events[0]).toMatchObject({
+    title: "Meditation · 20 min heute",
+    context: "Fortschritt heute",
+  });
+  sources.habitDefinitions.stretch.daily_target = 30;
+  expect(today(sources).events[0].title).toBe("Meditation · 20/30 min");
+});
+it("selects one latest active local-day mood deterministically and suppresses older/history rows", () => {
+  const sources = emptyActivitySources();
+  sources.moods = [
+    {
+      id: "a",
+      mood: "calm",
+      recorded_at: "2026-09-06T09:00:00Z",
+      archived_at: null,
+    },
+    {
+      id: "b",
+      mood: "focused",
+      recorded_at: "2026-09-06T09:00:00Z",
+      archived_at: null,
+    },
+    {
+      id: "c",
+      mood: "sad",
+      recorded_at: "2026-09-06T10:00:00Z",
+      archived_at: "2026-09-06T11:00:00Z",
+    },
+    {
+      id: "d",
+      mood: "tired",
+      recorded_at: "2026-09-06T22:00:00Z",
+      archived_at: null,
+    },
+  ] as ActivitySources["moods"];
+  const result = today(sources).events;
+  expect(result).toMatchObject([
+    { id: "mood:2026-09-06", kind: "MOOD", title: "focused", time: "11:00" },
+  ]);
+  sources.moods.reverse();
+  expect(today(sources).events).toEqual(result);
+});
+it("keeps local-day habit boundaries and deterministic combined chronology without hard limits", () => {
+  const sources = emptyActivitySources();
+  sources.habits = [
+    habitLog("a", "2026-09-05T22:01:00Z"),
+    habitLog("old", "2026-09-05T21:59:00Z", { local_date: "2026-09-05" }),
+    habitLog("next", "2026-09-06T22:00:00Z", { local_date: "2026-09-07" }),
+  ];
+  sources.tasks = Array.from({ length: 30 }, (_, i) =>
+    task({ id: String(i), created_at: "2026-09-06T07:00:00Z" }),
+  );
+  const result = today(sources).events;
+  expect(result).toHaveLength(31);
+  expect(result[0]).toMatchObject({
+    kind: "HABIT",
+    title: "Habit · 1 heute",
+    time: "00:01",
+  });
+  sources.tasks.reverse();
+  sources.habits.reverse();
+  expect(today(sources).events).toEqual(result);
+});
+it("suppresses review creation and metadata saves, retaining actual completion only", () => {
+  const sources = emptyActivitySources();
+  sources.reviews = [
+    {
+      id: "r",
+      kind: "daily",
+      period_start: "2026-09-06",
+      created_at: "2026-09-06T07:00:00Z",
+      updated_at: "2026-09-06T08:00:00Z",
+      completed_at: "2026-09-06T09:00:00Z",
+      archived_at: null,
+    },
+  ] as ActivitySources["reviews"];
+  expect(today(sources).events.map((e) => e.kind)).toEqual([
+    "REVIEW COMPLETED",
+  ]);
+});
