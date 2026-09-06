@@ -283,3 +283,20 @@ body:has(#today-page) .life-os-command-center { display: none; }
   #today-page aside > section { flex-shrink: 0; }
   #today-page aside > section:last-child { flex: 1; }
 }
+
+/* Calendar owns the available planning viewport; time geometry stays proportional. */
+body:has(#calendar-page) { --dashboard-max: 100%; }
+body:has(#calendar-page) .life-os-command-center { display: none; }
+#calendar-page { max-width: 3400px; }
+#calendar-page .calendar-hours { height: 1224px; min-height: 1224px; flex: 1 0 1224px; }
+#calendar-page .calendar-grid-content { min-height: 100%; height: auto; display: flex; flex-direction: column; }
+#calendar-page .calendar-grid-scroll { min-height: 0; }
+@media (min-width: 1280px) {
+  #calendar-page { height: calc(100dvh - 32px); }
+  #calendar-page .calendar-timegrid { height: 100%; min-height: 0; }
+  #calendar-page [data-calendar-section="inspector"] { overflow-y: auto; }
+}
+@media (min-width: 1280px) {
+  #calendar-page [data-calendar-section="month-surface"] { min-height: 0; overflow-y: auto; }
+  #calendar-page [data-calendar-section="day-surface"] > div:last-child { overflow-y: auto; }
+}

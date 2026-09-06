@@ -243,7 +243,9 @@ function isIsoDate(value: string | null) {
 }
 
 function isCalendarView(value: string | null): value is CalendarView {
-  return value === "day" || value === "week" || value === "month" || value === "year";
+  return (
+    value === "day" || value === "week" || value === "month" || value === "year"
+  );
 }
 
 function calendarDayForDate(date: string, today: string): CalendarDayViewModel {
@@ -548,35 +550,6 @@ function CalendarEmptyPageHeader({
   );
 }
 
-function CalendarSourceContract({
-  viewModel,
-  contentState,
-  profileId,
-}: Readonly<{
-  viewModel: CalendarViewModel;
-  contentState: ContentStateMeta;
-  profileId: CalendarViewModel["profileId"];
-}>) {
-  return (
-    <section
-      aria-label="Calendar source of truth contract"
-      data-calendar-section="calendar-source-contract"
-      {...contentStateAttributes(contentState, profileId)}
-      className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.36)] px-3 py-2"
-    >
-      <div className="flex flex-col gap-2 text-[10px] leading-4 text-[var(--text-muted)] xl:flex-row xl:items-center xl:justify-between">
-        <p>
-          <span className="font-semibold text-[var(--text-secondary)]">
-            Page Type:
-          </span>{" "}
-          {viewModel.pageContract.pageType}
-        </p>
-        <p className="max-w-4xl">{viewModel.pageContract.canonicalSource}</p>
-      </div>
-    </section>
-  );
-}
-
 function EmptyCalendarState({
   title = emptyCalendarStateContent.title,
   description = emptyCalendarStateContent.description,
@@ -670,13 +643,7 @@ function CalendarEmptyRightPanel({
             <Pill quiet>—</Pill>
           </div>
           <div className="mt-3 grid gap-1.5 sm:grid-cols-2">
-            {[
-              "Save time",
-              "Cancel",
-              "Move later",
-              "Duplicate",
-              "Mark done",
-            ].map((label) => (
+            {["Save time", "Cancel", "Move later", "Duplicate"].map((label) => (
               <button
                 className="min-h-8 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] opacity-50"
                 disabled
@@ -965,8 +932,8 @@ function CalendarMonthSurface({
             Month grid
           </h2>
           <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
-            Canonical scheduled work stays distinct from Task deadlines,
-            Project due dates and Goal targets.
+            Canonical scheduled work stays distinct from Task deadlines, Project
+            due dates and Goal targets.
           </p>
         </div>
         <Pill accent="var(--accent-cyan)">{monthLabel(currentDate)}</Pill>
@@ -1014,7 +981,8 @@ function CalendarMonthSurface({
                       selectedBlockId === block.id
                         ? "border-[color-mix(in_srgb,var(--accent)_54%,transparent)]"
                         : "border-[color-mix(in_srgb,var(--accent)_20%,transparent)] hover:border-[color-mix(in_srgb,var(--accent)_38%,transparent)]",
-                      block.isOverdue && "border-[rgba(217,146,79,.42)] text-[var(--accent-orange)]",
+                      block.isOverdue &&
+                        "border-[rgba(217,146,79,.42)] text-[var(--accent-orange)]",
                     )}
                     data-calendar-marker-kind={
                       block.markerKind ?? "scheduled_task"
@@ -1026,7 +994,8 @@ function CalendarMonthSurface({
                     title={block.title}
                   >
                     <span className="sr-only">
-                      {block.markerLabel ?? calendarBlockTypeLabels[block.type]}:
+                      {block.markerLabel ?? calendarBlockTypeLabels[block.type]}
+                      :
                     </span>
                     {block.title}
                   </a>
@@ -1167,9 +1136,7 @@ export function CalendarPlanningPage({
     viewModel.days.find((day) => day.isToday)?.date ||
     viewModel.days[0]?.date ||
     MOCK_TODAY;
-  const initialView = isCalendarView(routeView)
-    ? routeView
-    : "week";
+  const initialView = isCalendarView(routeView) ? routeView : "week";
   const [activeView, setActiveView] = useState<CalendarView>(initialView);
   const [activeScope, setActiveScope] = useState<CalendarScope>("All");
   const [currentDate, setCurrentDate] = useState(initialDate);
@@ -1533,19 +1500,6 @@ export function CalendarPlanningPage({
     }
   }
 
-  function markDone(blockId: string) {
-    setRawTimedBlocks((blocks) =>
-      blocks.map((block) =>
-        block.id === blockId ? { ...block, status: "done" } : block,
-      ),
-    );
-    setAllDayBlocks((blocks) =>
-      blocks.map((block) =>
-        block.id === blockId ? { ...block, status: "done" } : block,
-      ),
-    );
-  }
-
   const selectedBlockId =
     selection.kind === "block" ? selection.blockId : undefined;
   const calendarHasBlocks =
@@ -1558,6 +1512,7 @@ export function CalendarPlanningPage({
 
   return (
     <div
+      id="calendar-page"
       className="mx-auto flex w-full max-w-[2208px] flex-col gap-2 pb-6 xl:h-[calc(100dvh-1.25rem)] xl:min-h-0 xl:pb-0"
       data-calendar-section="page"
       {...contentStateAttributes(
@@ -1688,12 +1643,6 @@ export function CalendarPlanningPage({
             pending={pointerPending}
             result={pointerResult}
           />
-
-          <CalendarSourceContract
-            contentState={viewModel.contentStates.page}
-            profileId={viewModel.profileId}
-            viewModel={viewModel}
-          />
         </div>
         <div
           className="min-w-0 xl:min-h-0"
@@ -1713,7 +1662,6 @@ export function CalendarPlanningPage({
           ) : (
             <CalendarRightPanel
               onDuplicateBlock={duplicateBlock}
-              onMarkDone={markDone}
               onMoveLater={moveLater}
               onQueuePointerStart={beginQueuePointer}
               onSaveTime={saveTime}

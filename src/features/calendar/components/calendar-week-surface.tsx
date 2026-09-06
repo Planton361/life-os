@@ -281,7 +281,7 @@ export function CalendarWeekSurface({
   return (
     <section
       aria-labelledby="calendar-week-surface-heading"
-      className="min-w-0 overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.74)] shadow-[0_8px_22px_rgba(0,0,0,.12)] xl:flex xl:min-h-[720px] xl:flex-col 2xl:min-h-[760px]"
+      className="calendar-timegrid min-w-0 overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.74)] shadow-[0_8px_22px_rgba(0,0,0,.12)] xl:flex xl:min-h-[720px] xl:flex-col 2xl:min-h-[760px]"
     >
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-subtle)] bg-[rgba(14,23,38,.76)] px-3 py-2">
         <div className="min-w-0">
@@ -305,8 +305,8 @@ export function CalendarWeekSurface({
         </div>
       </div>
 
-      <div className="overflow-x-auto xl:flex-1">
-        <div className="min-w-[1040px] xl:flex xl:h-full xl:min-h-[660px] xl:flex-col 2xl:min-h-[700px]">
+      <div className="calendar-grid-scroll overflow-auto xl:flex-1">
+        <div className="calendar-grid-content min-w-[1040px] xl:flex xl:h-full xl:min-h-[660px] xl:flex-col 2xl:min-h-[700px]">
           <div className="grid grid-cols-[56px_repeat(7,minmax(138px,1fr))] border-b border-[var(--border-subtle)]">
             <div className="border-r border-[var(--border-subtle)] bg-[rgba(11,17,28,.34)]" />
             {viewModel.days.map((day) => (
@@ -365,11 +365,16 @@ export function CalendarWeekSurface({
             })}
           </div>
 
-          <div className="relative h-[816px] min-h-[640px] xl:h-auto xl:min-h-[680px] xl:flex-1 2xl:min-h-[760px]">
+          <div className="calendar-hours relative h-[816px] min-h-[640px] xl:h-auto xl:min-h-[680px] xl:flex-1 2xl:min-h-[760px]">
             <div
-              className="grid min-h-full grid-cols-[56px_repeat(7,minmax(138px,1fr))]"
+              className="grid h-full grid-cols-[56px_repeat(7,minmax(138px,1fr))]"
               style={{
-                gridTemplateRows: `repeat(${hourRows.length}, minmax(48px, 1fr))`,
+                gridTemplateRows: hourRows
+                  .map(
+                    (hour) =>
+                      `minmax(0, ${Math.min(60, CALENDAR_DAY_END_MINUTES - hourToMinutes(hour))}fr)`,
+                  )
+                  .join(" "),
               }}
             >
               {hourRows.map((hour) => (
@@ -538,11 +543,6 @@ export function CalendarWeekSurface({
                 </span>
               ))}
             </div>
-            <p className="text-[10px] leading-4 text-[var(--text-faint)]">
-              Color supports scanning only. Every block includes text label,
-              type and status. Persisted scheduling currently comes from task
-              blocks.
-            </p>
           </div>
         </div>
       </div>

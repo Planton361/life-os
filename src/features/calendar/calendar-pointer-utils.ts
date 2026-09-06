@@ -26,7 +26,7 @@ export function snapCalendarMinutes(minutes: number) {
 export function calendarDurationToHeightPercent(durationMinutes: number) {
   const range = CALENDAR_DAY_END_MINUTES - CALENDAR_DAY_START_MINUTES;
 
-  return Math.max(4.6, (durationMinutes / range) * 100);
+  return (Math.max(0, durationMinutes) / range) * 100;
 }
 
 export function calendarSlotFromRelativeOffset({

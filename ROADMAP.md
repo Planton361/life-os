@@ -868,8 +868,9 @@ Capability Registry and focused R2-01 tests.
 **R2-02 status:** Completed; explicitly USER ACCEPTED on 2026-09-06.
 Existing implementation, control and browser evidence is retained in the Registry.
 
-**R2-03 status:** Active; Today-only implementation pass is validated. Calendar
-implementation remains pending. USER ACCEPTANCE STATUS: PENDING.
+**R2-03 status:** Active; Today is functionally accepted by the user and frozen
+for the current Calendar-only pass. Calendar acceptance remains pending.
+USER ACCEPTANCE STATUS: PENDING.
 
 **Outcome:** Recover the actual user-facing product contract without replacing
 V5 or the established architecture. A surface is complete only after all of

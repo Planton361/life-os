@@ -7,7 +7,6 @@ import { useActionState, useState } from "react";
 import type { PointerEvent } from "react";
 import { Pill, accentStyle } from "@/components/layout/route-page-primitives";
 import {
-  completeTaskFormStateAction,
   rescheduleTaskAction,
   scheduleTaskForTodayAction,
   unscheduleTaskAction,
@@ -47,10 +46,6 @@ type QueueSchedulingState = {
   status: "blocked" | "error" | "success";
 };
 
-const initialCompletionState = {
-  message: "",
-  status: "blocked",
-} as const;
 const initialQueueSchedulingState: QueueSchedulingState = {
   message: "",
   status: "blocked",
@@ -167,6 +162,7 @@ function Field({
   name,
   onChange,
   required = false,
+  readOnly = false,
   type = "text",
   value,
 }: Readonly<{
@@ -174,6 +170,7 @@ function Field({
   name?: string;
   onChange: (value: string) => void;
   required?: boolean;
+  readOnly?: boolean;
   type?: "date" | "text" | "time";
   value: string;
 }>) {
@@ -187,6 +184,7 @@ function Field({
         name={name}
         onChange={(event) => onChange(event.target.value)}
         required={required}
+        readOnly={readOnly}
         type={type}
         value={value}
       />
@@ -551,7 +549,6 @@ function SelectedContext({
 function TimeSettings({
   block,
   onDuplicateBlock,
-  onMarkDone,
   onMoveLater,
   onSaveTime,
   profileId,
@@ -560,7 +557,6 @@ function TimeSettings({
 }: Readonly<{
   block?: SelectedBlock;
   onDuplicateBlock: (blockId: string) => void;
-  onMarkDone: (blockId: string) => void;
   onMoveLater: (blockId: string) => void;
   onSaveTime: (
     blockId: string,
@@ -598,10 +594,6 @@ function TimeSettings({
   );
   const isManualNonTaskProjection =
     profileId === "manual" && !isPersistedTaskBlock;
-  const [completionState, completionAction, completionPending] = useActionState(
-    completeTaskFormStateAction,
-    initialCompletionState,
-  );
   const safeDuration =
     duration > 0
       ? duration
@@ -640,16 +632,16 @@ function TimeSettings({
         buildSchedulingCandidate({
           block: timedTaskBlock,
           date,
-          durationMinutes: safeDuration - FIFTEEN_MINUTES,
-          label: "Dauer -15 min",
+          durationMinutes: safeDuration + FIFTEEN_MINUTES,
+          label: "Dauer +15 min",
           scheduledTasks,
           startMinutes,
         }),
         buildSchedulingCandidate({
           block: timedTaskBlock,
           date,
-          durationMinutes: safeDuration + FIFTEEN_MINUTES,
-          label: "Dauer +15 min",
+          durationMinutes: safeDuration - FIFTEEN_MINUTES,
+          label: "Dauer -15 min",
           scheduledTasks,
           startMinutes,
         }),
@@ -686,7 +678,7 @@ function TimeSettings({
           </h3>
           <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
             {isPersistedTaskBlock
-              ? "Schreibt Datum, Uhrzeit und Dauer über bestehende Task-Actions."
+              ? "Datum, Start und Dauer anpassen."
               : isManualNonTaskProjection
                 ? "Für die Manual-Runtime sind nur kanonische Task-Zeitblöcke planbar."
                 : "Vorbereitet / lokal: diese Controls schreiben nicht in die lokale Datenquelle."}
@@ -712,6 +704,7 @@ function TimeSettings({
           />
           <Field
             label="Duration"
+            readOnly
             onChange={() => undefined}
             value={durationLabel(duration)}
           />
@@ -742,6 +735,7 @@ function TimeSettings({
                 variant="primary"
               />
             ) : null}
+            <UnscheduleTaskForm taskId={taskId ?? ""} />
             {adjustmentCandidates.map((candidate) => (
               <RescheduleTaskForm
                 candidate={candidate}
@@ -749,28 +743,6 @@ function TimeSettings({
                 taskId={taskId ?? ""}
               />
             ))}
-            <UnscheduleTaskForm taskId={taskId ?? ""} />
-            <form
-              action={completionAction}
-              aria-label={`${block?.title ?? "Task"} abschließen`}
-            >
-              <input name="taskId" type="hidden" value={taskId ?? ""} />
-              <button
-                className="min-h-8 w-full rounded-full border border-[rgba(66,184,131,.32)] bg-[rgba(66,184,131,.12)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[rgba(66,184,131,.48)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-50"
-                disabled={block?.status === "done" || completionPending}
-                type="submit"
-              >
-                {completionPending ? "Completing …" : "Mark done"}
-              </button>
-            </form>
-            {completionState.message ? (
-              <p
-                className="sm:col-span-2 rounded-[8px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-2 py-1 text-[10px] leading-4 text-[var(--text-secondary)]"
-                role={completionState.status === "success" ? "status" : "alert"}
-              >
-                {completionState.message}
-              </p>
-            ) : null}
           </>
         ) : isManualNonTaskProjection ? null : (
           <>
@@ -808,14 +780,6 @@ function TimeSettings({
               type="button"
             >
               Duplicate
-            </button>
-            <button
-              className="min-h-8 rounded-full border border-[var(--border-subtle)] bg-[rgba(18,28,43,.72)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-default)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-2"
-              disabled={!block || block.status === "done"}
-              onClick={() => block && onMarkDone(block.id)}
-              type="button"
-            >
-              Mark done
             </button>
           </>
         )}
@@ -1214,7 +1178,6 @@ function PlanningQueue({
 
 export function CalendarRightPanel({
   onDuplicateBlock,
-  onMarkDone,
   onMoveLater,
   onQueuePointerStart,
   onSaveTime,
@@ -1231,7 +1194,6 @@ export function CalendarRightPanel({
   tasks,
 }: Readonly<{
   onDuplicateBlock: (blockId: string) => void;
-  onMarkDone: (blockId: string) => void;
   onMoveLater: (blockId: string) => void;
   onQueuePointerStart?: (
     task: SchedulableTaskViewModel,
@@ -1304,7 +1266,6 @@ export function CalendarRightPanel({
           block={selectedBlock}
           key={`${selectedBlock?.id ?? "slot"}-${selectedSlot?.date ?? selectedDay?.date ?? "day"}-${selectedSlot?.startTime ?? ""}`}
           onDuplicateBlock={onDuplicateBlock}
-          onMarkDone={onMarkDone}
           onMoveLater={onMoveLater}
           onSaveTime={onSaveTime}
           profileId={profileId}

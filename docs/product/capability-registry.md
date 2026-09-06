@@ -35,7 +35,7 @@ Implementation status and product visibility are separate truths: `CONNECTED` co
 |---|---|---|---|
 | Dashboard | `ACTIVE` | `CONNECTED`: R2-01 implementation evidence plus explicit USER ACCEPTED on 2026-09-06 | maintain accepted Dashboard |
 | Inbox | `ACCEPTED` | `CONNECTED`: R2-02 explicitly USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
-| Today | `ACTIVE` | `CONNECTED_GAP`: source-first daily log implemented; current user acceptance pending | R2-03 daily-log role |
+| Today | `ACTIVE` | `CONNECTED`: day-log functionality explicitly accepted by user; no Today changes in Calendar pass | R2-03 remains open for Calendar |
 | Calendar | `ACTIVE` | `CONNECTED_GAP`: technical scheduling exists; Day/Week/Month controls and viewport acceptance pending | R2-03 real temporal surface |
 | Portfolio | `ACTIVE` | `CONNECTED_GAP`: entity backend exists; information architecture and surface acceptance pending | R2-04 separate entity surfaces |
 | Resources | `ACTIVE` | connected knowledge core with relation depth gaps | knowledge base and evidence; K1 follows C3 |
@@ -450,7 +450,7 @@ history and are not represented as new target fields.
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Today daily-log surface | `CONNECTED_GAP` | R2-03 source-first server projection, read-only timeline and supporting day documentation; evidence below | USER ACCEPTANCE PENDING; R2-03 remains active, Calendar pass pending |
+| Today daily-log surface | `CONNECTED` | R2-03 source-first server projection and aggregation; user functionally accepts Today | Today unchanged; R2-03 remains active for Calendar acceptance |
 | Task creation/schedule/completion projection | `CONNECTED` | distinct canonical timestamps; Today owns no task mutation; Portfolio/Calendar own planning and domain surfaces own completion | current source state, not an immutable lifecycle history |
 | Recurring instance projection | `CONNECTED` | generated Tasks appear through ordinary canonical task timestamps | recurrence generation and template management removed only from Today |
 | Carry-over/open loops | `CONNECTED` | Daily Review remains canonical; Today reads decisions and explicit original planning snapshots after carry forward | no review or carry-forward mutation on Today |
@@ -602,7 +602,7 @@ STATUS is PENDING.
 | Conscious override | `CONNECTED_GAP` | Z1 focused disposable proof requires a separate explicit confirmation before the existing canonical Task-time path runs, including Meal source scheduling | no schedule audit/history and no DB-wide conflict guarantee |
 | Day/Week views | `CONNECTED_GAP` | Manual Week remains the primary planning surface; historical Day navigation proof remains | R2-03: real visible controls, available-height use and current browser proof |
 | Month view | `CONNECTED_GAP` | bounded Month grid projection and historical drill-down proof remain | R2-03: real visible control and current browser proof |
-| Calendar viewport bounds | `CONNECTED_GAP` | no current full-height/no-empty-Bottom-Zone acceptance | R2-03: use available height without a large empty bottom region |
+| Calendar viewport bounds | `CONNECTED_GAP` | R2-03 proportional full-height Week grid, internal scrolling and four-viewport proof below | user acceptance pending |
 | Deadline / Project / Goal date projection | `CONNECTED` | C2-03/C2-04 keep scheduled time distinct from Task deadline, Project deadline and Goal target; open overdue Tasks are read-time marked while completed Tasks are not | canonical Project/Goal milestones remain separately unmodeled |
 | Calendar filters | `NOT_STARTED` | no active Manual filter claim; legacy visual scope controls are not exposed as Calendar planning filters | implement only canonical Project/Goal/Skill/Priority filters when needed |
 | Project/Goal/Skill queue context | `CONNECTED` | C2-01 queue reads existing C1 Project, direct/via Project Goal and Task↔Skill relations without copying Task data | add filters only as a separate read-surface depth |
@@ -613,6 +613,53 @@ STATUS is PENDING.
 | Free calendar events | `NOT_STARTED` | none | separate model decision |
 | Drag/drop/resize | `CONNECTED` | C2-02 dependency-free pointer layer maps Queue drop, cross-day move and duration resize to existing source-aware schedule/reschedule actions; loaded conflict confirmation, cancel/invalid-drop rollback, reload and Inspector fallback are focused-browser-proven | no keyboard DnD required because the full Inspector scheduling flow remains equivalent; canonical filters remain separate |
 | Schedule history/audit | `NOT_STARTED` | none | later lifecycle/audit model |
+
+## R2-03 Calendar temporal correction — 2026-09-06
+
+Today is functionally accepted by the user and unchanged in this pass. R2-03
+stays ACTIVE; Calendar and overall USER ACCEPTANCE STATUS remain PENDING.
+
+Calendar is planning/scheduling/rescheduling, with status display and source
+navigation. Completion belongs to Task Detail / responsible execution surfaces;
+Today remains the accepted execution history/daily protocol.
+
+| Capability / control | Expected / implementation | Current evidence |
+|---|---|---|
+| Duration geometry | exact canonical minute proportions in persisted layout, overlap lanes and pointer preview | 15/30/45/60/90-minute unit mapping; no percent/CSS minimum-height inflation |
+| Adjacent blocks | consecutive half-hour blocks share full lane without artificial overlap | focused layout regression |
+| Week available height | bounded desktop viewport, expanded time axis, internal grid scrolling | 3840/2560/1920 bounds and 390 overflow guard |
+| Hour guides | actual 06:00–22:30 range, final half-hour row uses half weight | same temporal denominator as blocks/pointer mapping |
+| Short blocks | one-line compact label and full accessible name/tooltip | actual button bounds equal canonical block bounds |
+| Time Settings | Reschedule / Unschedule; earlier / later; duration +15 / -15 | six actions in ordered pairs, persistence and reload proof |
+| Duration display | derived read-only value; Start/End and duration actions update it | no apparently editable no-op duration field |
+| Mark done | removed from Manual, Demo and Empty Calendar paths | no Calendar completion import, form, callback or button; backend untouched |
+| Source | Open task navigates to canonical detail/context | browser navigation |
+| Planner Queue | selection and schedule retained | unschedule → queue → schedule → reload |
+| Day / Month | existing views and navigation retained | view navigation, no completion control; Day proportional geometry |
+| Footer | technical Page Type/source-contract and persistence explanation removed | compact event color legend retained without explanatory footer |
+
+Validation: IMPLEMENTATION_PASS for this Calendar-only pass. 20 Calendar unit
+tests, the dedicated R2-03 browser proof and retained C2 pointer drag/move/resize/
+conflict-cancel proof pass. Direct reschedule, unschedule, ±15 movement, ±15
+duration, queue re-scheduling and reload preserve canonical values. Day/Week/
+Month and next/previous-period navigation plus Month source link pass.
+Typecheck, lint, build and diff check pass. Console/hydration is clean.
+The isolated runner also passed its unchanged 44-migration chain, lint and
+advisor guards; no migration or remote action was needed.
+
+Visual review: A (30 minutes visibly half of 60) YES; B (useful vertical fill)
+YES; C (logical Time Settings pairs) YES; D (planning, no execution action)
+YES. 08:00–08:30 and a 60-minute block appear in the same real-data screenshots
+at 3840×2160, 2560×1440, 1920×1080 and 390×844. Desktop grid bounds remain inside
+the viewport without body scroll; Mobile uses bounded internal horizontal
+timegrid navigation without page overflow. V5 Design-Taste PASS: preserved
+hierarchy, semantic accents and compact short-block labels. Proof:
+`tests/e2e/r2-03-calendar-temporal.spec.ts`; screenshots/report in
+`/tmp/life-os-r2-02-runtime-3ig5evyy/playwright-report/index.html`.
+
+No new model, migration, domain action or provider. Calendar-local CSS only;
+Today, Dashboard, Inbox and Portfolio implementation remain unchanged. Task
+status is displayed, never mutated by Calendar.
 
 # 5. Portfolio, Projects, Goals and Skills
 

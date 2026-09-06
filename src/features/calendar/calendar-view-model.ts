@@ -19,7 +19,7 @@ import type {
   CalendarViewModel,
   CalendarDayViewModel,
 } from "./calendar-types";
-import { resolveContentStateMeta } from "@/features/content-state";
+import { resolveContentStateMeta } from "../content-state";
 
 type RawTimedBlock = Omit<
   CalendarTimedBlockViewModel,
@@ -80,10 +80,7 @@ export function resolveCalendarContentStates({
 
   const gridItemCount = timedBlockCount + allDayBlockCount;
   const pageItemCount =
-    gridItemCount +
-    rightPanelItemCount +
-    planningQueueCount +
-    headerItemCount;
+    gridItemCount + rightPanelItemCount + planningQueueCount + headerItemCount;
 
   return {
     page: resolveContentStateMeta({
@@ -146,8 +143,6 @@ export function resolveCalendarContentStates({
 
 const COMPACT_DURATION_MINUTES = 72;
 const MICRO_DURATION_MINUTES = 35;
-const MICRO_VISUAL_DURATION_MINUTES = 76;
-const COMPACT_VISUAL_DURATION_MINUTES = 100;
 const LANE_GAP_PERCENT = 3;
 
 function minutesToTopPercent(minutes: number) {
@@ -161,21 +156,7 @@ function minutesToHeightPercent(startMinutes: number, endMinutes: number) {
   const range = CALENDAR_DAY_END_MINUTES - CALENDAR_DAY_START_MINUTES;
   const duration = Math.max(0, endMinutes - startMinutes);
 
-  return Math.max(4.6, (duration / range) * 100);
-}
-
-function visualDurationMinutes(block: RawTimedBlock) {
-  const durationMinutes = block.endMinutes - block.startMinutes;
-
-  if (durationMinutes <= MICRO_DURATION_MINUTES) {
-    return MICRO_VISUAL_DURATION_MINUTES;
-  }
-
-  if (durationMinutes <= COMPACT_DURATION_MINUTES) {
-    return COMPACT_VISUAL_DURATION_MINUTES;
-  }
-
-  return durationMinutes;
+  return (duration / range) * 100;
 }
 
 function laneLayout(lane: number, laneCount: number) {
@@ -214,8 +195,7 @@ export function getEventLayout(
 
     cluster.forEach(({ block, lane }) => {
       const horizontal = laneLayout(lane, laneCount);
-      const visualEndMinutes =
-        block.startMinutes + visualDurationMinutes(block);
+      const visualEndMinutes = block.endMinutes;
       const height = minutesToHeightPercent(
         block.startMinutes,
         visualEndMinutes,
@@ -244,7 +224,7 @@ export function getEventLayout(
       commitCluster();
     }
 
-    const visualEnd = block.startMinutes + visualDurationMinutes(block);
+    const visualEnd = block.endMinutes;
     const availableLane = laneVisualEnds.findIndex(
       (laneEnd) => laneEnd <= block.startMinutes,
     );
@@ -318,8 +298,7 @@ export function getCalendarViewModel(): CalendarViewModel {
   const selectedBlock =
     timedBlockViewModels.find(
       (block) => block.id === "task-block-literature-structure",
-    ) ??
-    allDayBlocks[0];
+    ) ?? allDayBlocks[0];
   const rightPanel = {
     selectedDay: "Thu 12 June",
     badge: "Week active",
@@ -469,7 +448,9 @@ export function getCalendarViewModel(): CalendarViewModel {
     hours: calendarHours,
     allDayBlocks,
     timedBlocks: timedBlockViewModels,
-    scheduledTasks: timedBlockViewModels.filter((block) => block.source === "task"),
+    scheduledTasks: timedBlockViewModels.filter(
+      (block) => block.source === "task",
+    ),
     plannerQueueTasks: schedulableTasks,
     selectedBlock,
     schedulableTasks,

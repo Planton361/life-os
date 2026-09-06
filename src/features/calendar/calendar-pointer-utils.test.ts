@@ -59,3 +59,40 @@ describe("calendar pointer slot mapping", () => {
     ).toBe(15);
   });
 });
+
+describe("canonical duration geometry", () => {
+  it.each([15, 30, 45, 60, 90])(
+    "maps %i minutes proportionally in persisted layout and pointer preview",
+    async (duration) => {
+      const { calendarDurationToHeightPercent } =
+        await import("./calendar-pointer-utils");
+      const { buildCalendarTimedBlocks } =
+        await import("./calendar-view-model");
+      const { timedBlocks } = await import("./calendar-mock-data");
+      const source = timedBlocks[0];
+      const block = buildCalendarTimedBlocks([
+        { ...source, startMinutes: 480, endMinutes: 480 + duration },
+      ])[0];
+      const range = CALENDAR_DAY_END_MINUTES - CALENDAR_DAY_START_MINUTES;
+      expect(block.layout.height).toBeCloseTo((duration / range) * 100);
+      expect(block.layout.top).toBeCloseTo(
+        ((480 - CALENDAR_DAY_START_MINUTES) / range) * 100,
+      );
+      expect(calendarDurationToHeightPercent(duration)).toBeCloseTo(
+        block.layout.height,
+      );
+      expect((block.layout.height / 100) * ((range / 60) * 72)).toBeCloseTo(
+        (duration / 60) * 72,
+      );
+    },
+  );
+  it("does not invent overlaps between adjacent half-hour blocks", async () => {
+    const { buildCalendarTimedBlocks } = await import("./calendar-view-model");
+    const { timedBlocks } = await import("./calendar-mock-data");
+    const blocks = buildCalendarTimedBlocks([
+      { ...timedBlocks[0], id: "a", startMinutes: 480, endMinutes: 510 },
+      { ...timedBlocks[0], id: "b", startMinutes: 510, endMinutes: 540 },
+    ]);
+    expect(blocks.map((b) => b.layout.laneCount)).toEqual([1, 1]);
+  });
+});

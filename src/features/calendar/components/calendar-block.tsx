@@ -71,9 +71,9 @@ export function CalendarTimedBlock({
           selected
             ? "border-[color-mix(in_srgb,var(--accent)_62%,transparent)] ring-1 ring-[color-mix(in_srgb,var(--accent)_42%,transparent)]"
             : "border-[color-mix(in_srgb,var(--accent)_26%,transparent)] hover:border-[color-mix(in_srgb,var(--accent)_42%,transparent)]",
-          isRegular && "min-h-[72px] px-2.5 py-2",
-          isCompact && "min-h-[52px] px-2 py-1.5",
-          isMicro && "min-h-[40px] px-2 py-1",
+          isRegular && "px-2.5 py-2",
+          isCompact && "px-2 py-1.5",
+          isMicro && "px-1.5 py-0",
         )}
         onClick={() => onSelect?.(block.id)}
         title={blockLabel(block)}
@@ -129,14 +129,9 @@ export function CalendarTimedBlock({
         ) : null}
 
         {isMicro ? (
-          <div className="grid h-full min-w-0 content-center gap-0.5">
-            <p className="truncate text-[10px] font-semibold leading-3 text-[var(--text-primary)]">
-              {block.title}
-            </p>
-            <p className="truncate text-[9px] font-medium leading-3 text-[var(--text-secondary)]">
-              {block.startTime}-{block.endTime} ·{" "}
-              {calendarBlockStatusLabels[block.status]}
-            </p>
+          <div className="flex h-full min-w-0 items-center gap-1 text-[9px] leading-none">
+            <span className="shrink-0">{block.startTime}</span>
+            <span className="truncate font-semibold">{block.title}</span>
           </div>
         ) : null}
       </button>

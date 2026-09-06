@@ -158,6 +158,8 @@ Required capabilities:
 
 ### 5.4 Calendar and Scheduling
 
+Calendar owns temporal planning, scheduling and rescheduling. It displays task status but offers no task-completion action; execution belongs to Task Detail or the responsible domain surface, while Today documents execution history and the daily protocol.
+
 Calendar is the temporal planning hub. The default planning question is how the coming week fits together; Day, Week and Month controls support execution and orientation and must change the real projection.
 
 Required capabilities:

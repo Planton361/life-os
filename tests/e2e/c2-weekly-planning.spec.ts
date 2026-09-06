@@ -413,6 +413,8 @@ test("C2-02 uses pointer drag, move and resize through the canonical calendar ac
   const conflictingBlock = calendarTaskBlock(page, conflictingTaskTitle);
   await expect(conflictingBlock).toBeVisible();
 
+  // The taller time axis scrolls internally; bring the 17:00 drop target into view.
+  await conflictingBlock.scrollIntoViewIfNeeded();
   await dragToDay(page, taskBlock, crossDay, 2 / 3);
   const conflict = page.locator(
     '[data-calendar-section="pointer-scheduling-status"]',
