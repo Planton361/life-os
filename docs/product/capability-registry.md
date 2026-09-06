@@ -37,7 +37,7 @@ Implementation status and product visibility are separate truths: `CONNECTED` co
 | Inbox | `ACCEPTED` | `CONNECTED`: R2-02 explicitly USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Today | `ACCEPTED` | `CONNECTED`: R2-03 explicitly USER ACCEPTED on 2026-09-06; daily-memory evidence retained | maintain accepted Today |
 | Calendar | `ACCEPTED` | `CONNECTED`: R2-03 explicitly USER ACCEPTED on 2026-09-06; 06:00–00:00 equal-hour and viewport evidence retained | maintain accepted Calendar |
-| Portfolio | `ACTIVE` | `CONNECTED_GAP`: entity backend exists; information architecture and surface acceptance pending | R2-04 separate entity surfaces |
+| Portfolio | `ACTIVE` | `CONNECTED`: R2-04 list/create/detail workbenches and canonical writes browser-proven; USER ACCEPTANCE PENDING | user review of R2-04 |
 | Resources | `ACTIVE` | connected knowledge core with relation depth gaps | knowledge base and evidence; K1 follows C3 |
 | Health / Fitness | `ACTIVE` | `CONNECTED_GAP`: core records exist; primary-desktop and role acceptance pending | R2-05 |
 | Nutrition | `ACTIVE` | `CONNECTED_GAP`: meal backend exists; selectable persistent planner-slot acceptance pending | R2-05 |
@@ -180,7 +180,7 @@ user’s confirmation, not an additional automated Target proof.
 **Current status: USER ACCEPTED on 2026-09-06. R2-02 closed.**
 User acceptance follows `6890cb4`; all preceding evidence is retained below as
 history. Historical PENDING/active statements describe their original passes.
-R2-03 is the sole active block; Today implementation evidence follows below. Calendar and user acceptance remain pending.
+R2-03 was subsequently accepted; R2-04 is now the sole active block. The following evidence retains its historical pass status.
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
@@ -602,7 +602,7 @@ STATUS is PENDING.
 | Conscious override | `CONNECTED_GAP` | Z1 focused disposable proof requires a separate explicit confirmation before the existing canonical Task-time path runs, including Meal source scheduling | no schedule audit/history and no DB-wide conflict guarantee |
 | Day/Week views | `CONNECTED_GAP` | Manual Week remains the primary planning surface; historical Day navigation proof remains | R2-03: real visible controls, available-height use and current browser proof |
 | Month view | `CONNECTED_GAP` | bounded Month grid projection and historical drill-down proof remain | R2-03: real visible control and current browser proof |
-| Calendar viewport bounds | `CONNECTED_GAP` | R2-03 responsive Week grid shows 18 equal hour intervals from 06:00 to the 00:00 boundary without body or Timegrid vertical scrolling at all three desktop proof sizes | user acceptance pending |
+| Calendar viewport bounds | `CONNECTED` | R2-03 responsive Week grid shows 18 equal hour intervals from 06:00 to the 00:00 boundary without body or Timegrid vertical scrolling at all three desktop proof sizes; R2-03 USER ACCEPTED | maintain |
 | Deadline / Project / Goal date projection | `CONNECTED` | C2-03/C2-04 keep scheduled time distinct from Task deadline, Project deadline and Goal target; open overdue Tasks are read-time marked while completed Tasks are not | canonical Project/Goal milestones remain separately unmodeled |
 | Calendar filters | `NOT_STARTED` | no active Manual filter claim; legacy visual scope controls are not exposed as Calendar planning filters | implement only canonical Project/Goal/Skill/Priority filters when needed |
 | Project/Goal/Skill queue context | `CONNECTED` | C2-01 queue reads existing C1 Project, direct/via Project Goal and Task↔Skill relations without copying Task data | add filters only as a separate read-surface depth |
@@ -799,19 +799,20 @@ and its USER ACCEPTANCE STATUS is PENDING.
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Portfolio information architecture | `CONNECTED_GAP` | Task/Project/Goal/Skill entity backend and views remain | R2-04: sidebar subpoints plus separate list/create/detail surfaces; Overview not primary creation |
-| Task create/edit/lifecycle | `CONNECTED_GAP` | K1.1A Portfolio Task Detail, task actions/repository and historical reload proof remain | R2-04: Task list/create/detail surface acceptance |
+| Portfolio information architecture | `CONNECTED` | four canonical management lists, five dedicated create/detail workbenches, overview quick preview; current R2-04 browser proof | R2-04 user acceptance pending |
+| Task create/edit/lifecycle | `CONNECTED` | canonical ID create/edit/reload, complete/reopen/archive and source-owned lifecycle boundary; R2-04 proof | R2-04 user acceptance pending |
 | Task relation to Project/Goal | `CONNECTED` | nullable Task→Project/Goal fields, server-authenticated/Zod/user-scoped alignment checks and C1.1 integrated Target reload proof | maintain explicit user choices; no silent relinking |
 | Task relation to Skill/Resource | `CONNECTED` | owned n:m `task_skill_links` plus Resource relations, idempotent link/unlink, Task detail projection and Skill backlink without creating Evidence; C1.1 integrated proof PASS | maintain endpoint ownership, reload and no-auto-Evidence proofs |
 | Project Goal inheritance in Task context | `CONNECTED` | direct, via-Project, redundant and existing-conflict states are explicit; Task and Project writes reject new contradictions, and C1.1 integrated read models deduplicate matching paths | preserve existing rows; resolve any future reported existing conflicts deliberately |
 | Core work graph backlinks | `CONNECTED` | C1.1 integrated Target proof covers Task/Project/Goal/Skill/Resource navigation, reload, ownership boundaries and deterministic direct, via-Project, Context and Evidence provenance | retain bounded explicit relations; graph visualization stays deferred |
-| Project create/edit/status/archive | `CONNECTED_GAP` | project actions/repository remain | R2-04: Project list/create/detail surface acceptance |
-| Goal create/edit/status/archive | `CONNECTED_GAP` | goal actions/repository remain | R2-04: Goal list/create/detail surface acceptance |
-| Skill create/edit/archive | `CONNECTED_GAP` | skill actions/repository remain | R2-04: Skill list/create/detail surface acceptance |
-| Skill evidence CRUD/source links | `CONNECTED` | skill evidence | maintain |
+| Project create/edit/status/archive | `CONNECTED` | canonical list/create/detail, fields, linked work and archive readback; R2-04 proof | R2-04 user acceptance pending |
+| Goal create/edit/status/archive | `CONNECTED` | canonical list/create/detail, fields, related work and archive readback; R2-04 proof | R2-04 user acceptance pending |
+| Skill create/edit/archive | `CONNECTED` | canonical list/create/detail, evidence and archive readback; R2-04 proof | R2-04 user acceptance pending |
+| Skill evidence CRUD/source links | `CONNECTED` | explicit source-backed evidence create/remove and source navigation; R2-04 reload proof | maintain |
+| Task steps and derived progress | `CONNECTED` | owned ordered task_steps; add/edit/complete/reopen/soft archive; real active-step ratio; R2-04 browser/API proof | independent of Task completion |
 | Project linked tasks | `CONNECTED` | task project relation | add sequencing/roadmap model |
 | Goal linked projects/tasks | `CONNECTED` | goal relations | add outcome/review semantics |
-| Project/Goal resource links | `CONNECTED` | resource relations | add unlink/edit/manage |
+| Project/Goal resource links | `CONNECTED` | same-user Resource link/unlink from both detail directions, reload-proven in R2-04 | R2-04 user acceptance pending |
 | Project/Goal evidence display | `CONNECTED_GAP` | skill evidence read projection | create/manage from workbench later |
 | Project milestones | `NOT_STARTED` | none | model decision and complete vertical slice |
 | Goal milestones/key results | `NOT_STARTED` | none | model decision; avoid fake OKR engine |
@@ -821,11 +822,111 @@ and its USER ACCEPTANCE STATUS is PENDING.
 | Progress engine | `DECISION_REQUIRED` | task-based signals and legacy fields | preserve honest work signals until model exists |
 | Portfolio pins/favorites | `NOT_STARTED` | none | support Dashboard max-four selection |
 
+## R2-04 – Portfolio IA & Entity Depth (2026-09-06)
+
+R2-04 remains the sole Active Work Block. USER ACCEPTANCE STATUS: PENDING.
+The overview retains counts, scoped filters, sort, selection and a quick preview;
+creation and full editing use the existing canonical entity route families.
+Resources retain their own knowledge area. No Today, Calendar, Dashboard or Inbox
+surface changes are part of this slice. Inbox integration uses the existing
+“Ziel öffnen” selection link, then “Details öffnen” to the already persisted ID;
+there is no second create step.
+
+### Route audit
+
+| Entity | Previous list | Previous create | Previous detail | Target / action |
+|---|---|---|---|---|
+| Task | `/tasks` | Portfolio inline | `/tasks/[taskId]` read projection | retain list/detail; add `/tasks/new`, connect edit and relations |
+| Project | `/projects` | Portfolio inline | `/projects/[projectId]` read projection | retain list/detail; add `/projects/new`, connect workbench |
+| Goal | `/goals` | Portfolio inline | `/goals/[goalId]` read projection | retain list/detail; add `/goals/new`, connect workbench |
+| Skill | `/skills` | Portfolio inline | `/skills/[skillId]` read projection | retain list/detail; add `/skills/new`, connect practice/evidence |
+| Resource | `/resources` | library inline | library quick selection | retain knowledge library; add `/resources/new` and `/resources/[resourceId]` |
+
+The shared workbench is a layout and form composition over these five existing
+models, not a universal entity table. Create and edit share field groups. Manual
+reads authenticate and explicitly scope every table to the user. Auth-blocked
+and non-Manual pages contain no apparently usable writes. Loading, error,
+not-found and archived states are explicit. Create links load on demand to avoid
+incomplete prefetched form navigation; ID pages and dependent projections are
+revalidated after writes.
+
+### Relation audit
+
+| Relation | Current storage | Create / remove / readback | Ownership / UI |
+|---|---|---|---|
+| Task → Project | `tasks.project_id` | canonical Task update, nullable unlink | active same-user target, goal alignment; form + Project task list |
+| Task → Goal | `tasks.goal_id` | canonical Task update, nullable unlink | active same-user target, explicit direct/via-Project context |
+| Project → Goal | `projects.goal_id` | canonical Project update, nullable unlink | active same-user target, no contradiction with direct Task goals |
+| Task ↔ Skill | `task_skill_links` | existing idempotent link/unlink, both detail directions | owned endpoints; no automatic evidence |
+| Resource ↔ Task / Project / Goal / Skill | `resource_relations` | existing link/unlink, both detail directions | same-user resource and typed target; context relation |
+| Resource → Resource | `resource_relations` | existing link/unlink and source navigation | same-user target; self-link excluded from choices |
+| Skill → Evidence | `skill_evidence` | explicit add/remove, reload and source link | existing source validation for Task/Project/Goal/Resource/Manual Note |
+| Task → Steps | `task_steps` | create/edit/reorder/complete/reopen/soft archive | auth + Zod + active owned Task lookup + RLS; derived active-step count |
+
+Archived context remains visible rather than silently disappearing from select
+values. New links require active owned targets under the existing canonical
+rules. Resource restore remains available; no unsupported restore lifecycle is
+invented for Task, Project, Goal or Skill.
+
+### Progress truth
+
+- Task steps are the only new model: ordered task-local work, with completion
+  independent of Task completion. Archived steps do not enter the denominator.
+  Empty steps have no percentage. The existing labelled Next Action suffix is
+  preserved, including a deliberately cleared context.
+- Project “Task progress” counts linked active tasks; it is not Project completion.
+- Goal states explicitly that no outcome-based progress is defined. Direct task
+  and project activity is shown separately. No KR/milestone/log model is added.
+- Skill shows real evidence and linked completed work. Portfolio no longer shows
+  generic entity percentages, manufactured confidence or inferred planned
+  practice-session counts. Resources remain knowledge/context.
+
+### Current control inventory
+
+| Control | Expected | Actual proof | Result |
+|---|---|---|---|
+| Portfolio entity views / scope / sort | filter actual overview, stable URL | focused test clicks each rendered href | PASS |
+| Portfolio selected entity / Details | preview, then canonical ID page | list selection and real detail navigation | PASS |
+| Five create links | dedicated form, no inline editor | all links from Portfolio, canonical creates and ID redirects | PASS |
+| Four lists | search/clear, lifecycle, sort, ID navigation | scoped list checks, reload and history | PASS |
+| Create/edit fields | validate, persist, toast, reload | all five types; optional context clearing and Task planning fields | PASS |
+| Relation controls | real link/unlink, source navigation | Task/Project/Goal/Skill/Resource readback chains | PASS |
+| Task steps | real work and derived progress | add, complete, reopen, remove and reload | PASS |
+| Skill evidence | explicit source-backed evidence | create/remove, source navigation and reload | PASS |
+| Lifecycle | archive/read-only history; supported restore | all five archives, Resource restore; Task complete/reopen | PASS |
+| Validation/auth/not-found | no false write, no cross-user read | conflicting Goal, empty input, Empty/auth boundary and foreign Task | PASS |
+
+Implementation evidence: **IMPLEMENTATION_PASS; USER ACCEPTANCE PENDING**.
+`tests/e2e/r2-04-entity-workbench.spec.ts` passes all three focused production-runtime
+proofs with authenticated canonical writes: five complete entity flows, relation
+link/unlink, steps, source-backed evidence, lifecycle, validation/retry, foreign
+ownership rejection, Empty/auth, history and Inbox → existing Task/Project IDs.
+Forty-four complete screenshots cover Portfolio plus five create and five detail
+pages at 3840×2160, 2560×1440, 1920×1080 and 390×844. Bounds assertions exclude
+horizontal overflow and primary/rail overlap. Console/hydration checks pass.
+Screenshots are local artifacts under `/tmp/life-os-r204-evidence`; the committed
+test regenerates them. V5 Design-Taste review: PASS — shared restrained field
+groups, readable main/relations hierarchy, bounded desktop text width, linear
+mobile stacking. Existing global mobile navigation is retained; detail pages
+use normal document scrolling. No artificial progress percentages are shown.
+
+Validation: diff check, typecheck, lint, build and 15 focused Vitest tests pass
+(Task steps/text, Skill schema, Task/Goal alignment). Browser tests run sequentially
+with one worker against a production build to limit recovery-time RAM pressure.
+The fresh Git-tree migration source includes only the required
+`20260906184256_r2_04_task_steps.sql` extension to the existing migration chain.
+Fresh disposable DB/API proof, DB lint and Security Advisors pass. Only after the
+complete isolated proof was the canonical local Target migrated. Its 45 migration
+versions equal Git; Target DB lint and Security Advisors pass. No remote DB.
+Generated types preserve verified RPC nullability overrides and add only the
+fresh-generated `task_steps` shape. RAM exhaustion remains an unresolved separate
+operational follow-up below, not a completed capability or an additional active block.
+
 # 6. Resources and Knowledge
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Resource create/read | `CONNECTED` | canonical Target Runtime K1 proof creates, edits and reloads Resource metadata | maintain |
+| Resource create/read | `CONNECTED` | R2-04 dedicated /resources/new → /resources/[resourceId], canonical create/edit/reload, relations and archive/restore proof | Resources remains the knowledge area; user acceptance pending |
 | Resource inspector | `CONNECTED` | canonical Target Runtime K1 proof opens the selected Resource from Library search and shows real Task/Project/Goal/Skill context | maintain |
 | Resource archive/restore | `CONNECTED` | soft `archived_at` lifecycle: K1 Target proof preserves existing relations/Evidence, removes the Resource from active Library/search, then restores it reload-stably | maintain |
 | Resource relations | `CONNECTED` | Resource inspector link/unlink plus owned Task, Project, Goal and Skill Context links; C1/K1 Target proofs preserve separate Evidence semantics and reload-stable backlinks | relation-type editing remains separate future depth |
@@ -981,6 +1082,7 @@ and its USER ACCEPTANCE STATUS is PENDING.
 | Manual/Demo/Empty profile switch | `CONNECTED` | profile mode | maintain |
 | Playwright auth-state capture | `CONNECTED` | local script | maintain |
 | Local startup runbook | `CONNECTED` | ops docs | maintain |
+| Local runtime memory budget | `CONNECTED_GAP` | User reports repeated RAM exhaustion/crashes during local work despite 32 GB RAM; R2-04 recovery observed roughly 19 GiB RAM used, 17 GiB swap used and three local Supabase stacks (one abandoned disposable proof stack). These observations do not establish a root cause. | Explicit follow-up: profile app/dev/build/browser/Docker memory separately, remove orphaned proof runtimes safely, bound proof concurrency and establish a measured one-user local runtime budget. R2-04 recovery uses a temporary production proof with one browser worker, two build workers and a 2 GB Node heap; this is mitigation, not a RAM-fix claim. The task-owned disposable stack was stopped after proof; other stacks were preserved. The normal production build still starts 15 page-data workers, a concrete profiling candidate rather than a proven root cause. No additional Active Work Block is created. |
 | Local backup create | `CONNECTED` | ops script | maintain |
 | Restore smoke | `CONNECTED` | Z1 guarded canonical Target backup restores schema, migration history and aggregate canonical-table data into an isolated disposable container; Target preservation is structurally checked before/after | logical local restore-smoke only; no cloud, remote or production restore claim |
 | Private remote | `EXTERNAL_GATE` | intentionally not active | explicit user decision later |

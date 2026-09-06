@@ -1,16 +1,8 @@
-import type { Metadata } from "next";
-import { EntityDetailPage } from "@/features/entities";
-
-export const metadata: Metadata = {
-  title: "Goal Detail | Life OS",
-};
-
-export default async function GoalDetailPage({
+import { WorkbenchEditor } from "@/features/entities/workbench/pages";
+export default async function Page({
   params,
-}: Readonly<{
+}: {
   params: Promise<{ goalId: string }>;
-}>) {
-  const { goalId } = await params;
-
-  return <EntityDetailPage id={goalId} kind="goal" />;
+}) {
+  return <WorkbenchEditor kind="goal" id={(await params).goalId} />;
 }

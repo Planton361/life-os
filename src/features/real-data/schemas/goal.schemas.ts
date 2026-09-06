@@ -9,7 +9,9 @@ import {
 
 const requiredIdSchema = requiredTrimmedStringSchema();
 const titleSchema = requiredTrimmedStringSchema(2);
-const nullableOptionalDateTime = z.union([dateTimeStringSchema, z.null()]).optional();
+const nullableOptionalDateTime = z
+  .union([dateTimeStringSchema, z.null()])
+  .optional();
 
 const goalPatchSchema = z.object({
   areaId: optionalTrimmedStringSchema,
@@ -31,6 +33,10 @@ export const createGoalInputSchema = goalPatchSchema.extend({
 export type CreateGoalInput = z.infer<typeof createGoalInputSchema>;
 
 export const updateGoalInputSchema = goalPatchSchema.extend({
+  areaId: z.string().trim().min(1).nullable().optional(),
+  description: z.string().trim().min(1).nullable().optional(),
+  why: z.string().trim().min(1).nullable().optional(),
+
   goalId: requiredIdSchema,
   profileId: requiredIdSchema,
   title: optionalTrimmedStringSchema,

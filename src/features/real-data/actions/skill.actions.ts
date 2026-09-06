@@ -99,7 +99,6 @@ function revalidateSkillRoutes() {
   revalidatePath("/education");
   revalidatePath("/coding");
   revalidatePath("/resources");
-
 }
 
 function skillRedirectUrl(
@@ -262,12 +261,12 @@ export async function updateSkillAction(
 
   const parsed = skillUpdateInputSchema.safeParse({
     areaId: optionalNullableFormStringIfPresent(formData, "areaId"),
-    category: optionalFormStringIfPresent(formData, "category"),
+    category: optionalNullableFormStringIfPresent(formData, "category"),
     level: optionalFormStringIfPresent(formData, "level"),
     name: optionalFormStringIfPresent(formData, "name"),
     skillId: formString(formData, "skillId"),
     status: optionalFormStringIfPresent(formData, "status"),
-    summary: optionalFormStringIfPresent(formData, "summary"),
+    summary: optionalNullableFormStringIfPresent(formData, "summary"),
   });
 
   if (!parsed.success) {
@@ -355,7 +354,9 @@ export async function archiveSkillAction(
   };
 }
 
-export async function archiveSkillFormAction(formData: FormData): Promise<void> {
+export async function archiveSkillFormAction(
+  formData: FormData,
+): Promise<void> {
   const result = await archiveSkillAction(formData);
 
   if (result.status === "success") {

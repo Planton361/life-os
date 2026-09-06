@@ -180,7 +180,11 @@ Required capabilities:
 
 ### 5.5 Portfolio
 
-Portfolio is the management hub for the canonical Task / Project / Goal / Skill spine. Its sidebar exposes Tasks, Projects, Goals and Skills. Each entity has its own list, create and detail surface; Overview is a navigational summary, not the primary inline-creation surface. Resources are related evidence and context, not a fifth Portfolio tab.
+Portfolio provides overview, navigation and cross-entity context for the canonical Task / Project / Goal / Skill spine. The root contains summary counts, filters, active work and a quick inspector whose primary action opens the entity details. Full creation and editing belong on dedicated pages, not in the overview or an inline modal.
+
+Canonical lists are `/tasks`, `/projects`, `/goals` and `/skills`; each has `/new` and one ID-based detail route. Create and edit share each entity’s field groups. A successful direct create opens its persisted ID detail page. Inbox-routed entities already exist and must never pass through another creation step. Resources retain their own `/resources`, `/resources/new` and `/resources/[resourceId]` knowledge area.
+
+Task steps are task-local persisted work, with progress derived from active completed steps. Project task progress reports completed linked tasks separately from project completion. Goals do not display an outcome percentage without a canonical outcome basis. Skills expose explicit evidence and linked practice; links alone never create evidence.
 
 Required capabilities:
 

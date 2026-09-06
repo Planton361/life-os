@@ -40,7 +40,7 @@ export async function updateEducationProjectFormAction(formData: FormData) {
   const projectId = field(formData, "projectId"); const auth = await context(); if (!auth) redirect(destination("blocked", projectId));
   const parsed = updateProjectInputSchema.safeParse({ description: optionalField(formData, "description"), profileId: auth.user.id, projectId, status: field(formData, "status"), title: field(formData, "title"), userId: auth.user.id });
   if (!parsed.success) redirect(destination("project_error", projectId));
-  const result = await createSupabaseEducationRepository(auth.client).updateProject(auth.user.id, projectId, { description: parsed.data.description, status: parsed.data.status ?? "active", title: parsed.data.title ?? "" });
+  const result = await createSupabaseEducationRepository(auth.client).updateProject(auth.user.id, projectId, { description: parsed.data.description ?? undefined, status: parsed.data.status ?? "active", title: parsed.data.title ?? "" });
   if (!result.ok) redirect(destination("project_error", projectId));
   revalidateEducation(); redirect(destination("project_updated", projectId));
 }

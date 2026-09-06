@@ -36,6 +36,14 @@ Source-of-Truth-Regeln:
 
 Ein Task ist eine dauerhafte, ausführbare Verpflichtung mit genau einem Lifecycle. Er beschreibt, **was** getan werden soll; `planned_date` beschreibt eine Tagesabsicht, Scheduling beschreibt **wann** gearbeitet wird. Ein Task kann optional zu einem Project, direkt zu einem Goal, zu mehreren Skills und zu mehreren Resources in Beziehung stehen.
 
+Task-Arbeitsschritte liegen in `task_steps`: `user_id`, `task_id`, Titel,
+Reihenfolge, `completed_at`, `archived_at` und Erstellungs-/Änderungszeitpunkt.
+Sie besitzen keine eigene Terminplanung und keinen parallelen Task-Lifecycle.
+Fortschritt = erledigte aktive Schritte / alle aktiven Schritte; ohne aktive
+Schritte existiert keine Prozentzahl. Entfernen ist Soft Archive. Aktionen
+prüfen den aktiven, gleichbenutzereigenen Parent; RLS schützt Lesen und Writes
+zusätzlich. Ein Schrittabschluss schließt den Task niemals automatisch ab.
+
 ### Project
 
 Ein Project ist ein endliches, mehrschrittiges Ergebnis. Es bündelt Tasks, besitzt aber weder deren Completion noch deren Zeitplanung. Ein Project kann höchstens ein primäres Goal voranbringen. Area ist Kontext, nicht Ownership.

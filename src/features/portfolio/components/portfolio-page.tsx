@@ -18,13 +18,7 @@ import type {
   PortfolioView,
   PortfolioViewModel,
 } from "../types";
-import { createPortfolioTaskFormAction } from "@/features/real-data/actions/task.actions";
-import {
-  createGoalFormAction,
-  createProjectFormAction,
-} from "@/features/real-data/actions/portfolio.actions";
-import { createSkillFormAction } from "@/features/real-data/actions/skill.actions";
-import { PortfolioContextPanel } from "./portfolio-context-panel";
+import Link from "next/link";
 import { PortfolioEntityList } from "./portfolio-entity-list";
 import { PortfolioFilterBar } from "./portfolio-filter-bar";
 import { PortfolioPageHeader } from "./portfolio-page-header";
@@ -37,23 +31,6 @@ const viewTypeMap: Record<PortfolioView, PortfolioEntityType | "all"> = {
   goals: "goal",
   skills: "skill",
 };
-
-const createModeByView: Record<
-  PortfolioView,
-  "goal" | "project" | "select" | "skill" | "task"
-> = {
-  all: "select",
-  goals: "goal",
-  projects: "project",
-  skills: "skill",
-  tasks: "task",
-};
-
-const inputClassName =
-  "min-h-9 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.78)] px-2 text-[12px] normal-case text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-55";
-
-const buttonClassName =
-  "min-h-9 rounded-[9px] border px-3 text-[11px] font-semibold text-[var(--text-primary)] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:border-[var(--border-subtle)] disabled:bg-[rgba(18,28,43,.34)] disabled:text-[var(--text-muted)]";
 
 function matchesView(entity: PortfolioEntity, view: PortfolioView) {
   const entityType = viewTypeMap[view];
@@ -197,39 +174,6 @@ function getViewLabel(viewModel: PortfolioViewModel, view: PortfolioView) {
   );
 }
 
-function targetCreateMessage(value: string | null) {
-  if (value === "task_created") return "Task erstellt.";
-  if (value === "task_archived") return "Task archiviert.";
-  if (value === "task_success") return "Task gespeichert.";
-  if (value === "task_error") return "Task konnte nicht gespeichert werden.";
-  if (value === "task_alignment_conflict") return "Dieses direkte Goal widerspricht dem Goal des ausgewählten Projects. Passe Project oder direktes Goal bewusst an.";
-  if (value === "task_skill_linked") return "Skill mit Task verknüpft.";
-  if (value === "task_skill_unlinked") return "Skill-Verbindung entfernt.";
-  if (value === "task_skill_error") return "Task-Skill-Verbindung konnte nicht gespeichert werden.";
-  if (value === "project_created") return "Project erstellt.";
-  if (value === "project_updated") return "Project aktualisiert.";
-  if (value === "project_alignment_conflict") return "Das Project kann dieses Goal nicht übernehmen, weil verbundene Tasks ein anderes direktes Goal haben. Passe zuerst Project oder direktes Task-Goal bewusst an.";
-  if (value === "project_archived") return "Project archiviert.";
-  if (value === "goal_created") return "Goal erstellt.";
-  if (value === "goal_updated") return "Goal aktualisiert.";
-  if (value === "goal_archived") return "Goal archiviert.";
-  if (value === "skill_created") return "Skill erstellt.";
-  if (value === "skill_updated") return "Skill aktualisiert.";
-  if (value === "skill_archived") return "Skill archiviert.";
-  if (value === "skill_evidence_created") return "Skill Evidence erstellt.";
-  if (value === "skill_evidence_deleted") return "Skill Evidence gelöscht.";
-  if (value === "resource_linked") return "Resource verknüpft.";
-  if (value === "resource_existing") return "Resource war bereits verknüpft.";
-  if (value === "resource_missing_resource") return "Resource nicht gefunden.";
-  if (value === "resource_missing_target") return "Ziel nicht gefunden.";
-  if (value === "resource_unsupported") return "Resource-Ziel nicht freigegeben.";
-  if (value === "resource_error") return "Resource konnte nicht verknüpft werden.";
-  if (value === "blocked") return "Melde dich an, um Portfolio-Items zu erstellen.";
-  if (value === "error") return "Portfolio-Item konnte nicht gespeichert werden.";
-
-  return null;
-}
-
 function contentStateAttributes(
   meta: ContentStateMeta,
   profileId: PortfolioViewModel["profileId"],
@@ -240,336 +184,6 @@ function contentStateAttributes(
     "data-item-count": meta.itemCount.toString(),
     "data-profile-id": profileId,
   };
-}
-
-function CreateStatusPill({
-  statusMessage,
-}: Readonly<{
-  statusMessage: string | null;
-}>) {
-  if (!statusMessage) return null;
-
-  return (
-    <p className="rounded-full border border-[rgba(66,184,131,.26)] bg-[rgba(66,184,131,.10)] px-2.5 py-1 text-[10px] font-semibold text-[var(--text-secondary)]">
-      {statusMessage}
-    </p>
-  );
-}
-
-function TaskCreateForm({
-  disabled,
-  returnView,
-}: Readonly<{
-  disabled: boolean;
-  returnView: PortfolioView;
-}>) {
-  return (
-    <form
-      action={createPortfolioTaskFormAction}
-      aria-label="Task erstellen"
-      className="grid gap-2 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.42)] p-2"
-    >
-      <input name="returnView" type="hidden" value={returnView} />
-      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-        Task-Titel
-        <input
-          className={inputClassName}
-          disabled={disabled}
-          name="title"
-          placeholder="Neuer Task"
-          required
-        />
-      </label>
-      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-        Next Action
-        <input
-          className={inputClassName}
-          disabled={disabled}
-          name="nextAction"
-          placeholder="Nächster konkreter Schritt"
-        />
-      </label>
-      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-        Kontext
-        <input
-          className={inputClassName}
-          disabled={disabled}
-          name="description"
-          placeholder="Optionaler Kontext"
-        />
-      </label>
-      <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
-        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-          Priorität
-          <select className={inputClassName} disabled={disabled} name="priority">
-            <option value="none">None</option>
-            <option value="P0">P0</option>
-            <option value="P1">P1</option>
-            <option value="P2">P2</option>
-            <option value="P3">P3</option>
-          </select>
-        </label>
-        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-          Energie
-          <select className={inputClassName} disabled={disabled} name="energy">
-            <option value="">-</option>
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-          </select>
-        </label>
-        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-          Minuten
-          <input
-            className={inputClassName}
-            disabled={disabled}
-            min="1"
-            name="durationMinutes"
-            placeholder="30"
-            type="number"
-          />
-        </label>
-      </div>
-      <label className="flex min-h-9 items-center gap-2 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.58)] px-2 text-[11px] font-semibold text-[var(--text-secondary)]">
-        <input
-          className="size-4 accent-[rgb(91,124,250)]"
-          disabled={disabled}
-          name="todayCandidate"
-          type="checkbox"
-        />
-        Heute planen
-      </label>
-      <button
-        className={`${buttonClassName} border-[rgba(91,124,250,.34)] bg-[rgba(91,124,250,.14)] hover:border-[rgba(91,124,250,.52)]`}
-        disabled={disabled}
-        type="submit"
-      >
-        Task erstellen
-      </button>
-    </form>
-  );
-}
-
-function ProjectCreateForm({
-  disabled,
-  returnView,
-}: Readonly<{
-  disabled: boolean;
-  returnView: PortfolioView;
-}>) {
-  return (
-    <form
-      action={createProjectFormAction}
-      aria-label="Project erstellen"
-      className="grid gap-2 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.42)] p-2"
-    >
-      <input name="returnView" type="hidden" value={returnView} />
-      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-        Project-Titel
-        <input
-          className={inputClassName}
-          disabled={disabled}
-          name="title"
-          placeholder="Neues Project"
-          required
-        />
-      </label>
-      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-        Beschreibung
-        <input
-          className={inputClassName}
-          disabled={disabled}
-          name="description"
-          placeholder="Optionaler Kontext"
-        />
-      </label>
-      <button
-        className={`${buttonClassName} border-[rgba(91,124,250,.34)] bg-[rgba(91,124,250,.14)] hover:border-[rgba(91,124,250,.52)]`}
-        disabled={disabled}
-        type="submit"
-      >
-        Project erstellen
-      </button>
-    </form>
-  );
-}
-
-function GoalCreateForm({
-  disabled,
-  returnView,
-}: Readonly<{
-  disabled: boolean;
-  returnView: PortfolioView;
-}>) {
-  return (
-    <form
-      action={createGoalFormAction}
-      aria-label="Goal erstellen"
-      className="grid gap-2 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.42)] p-2"
-    >
-      <input name="returnView" type="hidden" value={returnView} />
-      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-        Goal-Titel
-        <input
-          className={inputClassName}
-          disabled={disabled}
-          name="title"
-          placeholder="Neues Goal"
-          required
-        />
-      </label>
-      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-        Beschreibung
-        <input
-          className={inputClassName}
-          disabled={disabled}
-          name="description"
-          placeholder="Optionaler Kontext"
-        />
-      </label>
-      <button
-        className={`${buttonClassName} border-[rgba(66,184,131,.34)] bg-[rgba(66,184,131,.14)] hover:border-[rgba(66,184,131,.52)]`}
-        disabled={disabled}
-        type="submit"
-      >
-        Goal erstellen
-      </button>
-    </form>
-  );
-}
-
-function SkillCreateForm({
-  disabled,
-}: Readonly<{
-  disabled: boolean;
-}>) {
-  return (
-    <form
-      action={createSkillFormAction}
-      aria-label="Skill erstellen"
-      className="grid gap-2 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.42)] p-2"
-    >
-      <input name="status" type="hidden" value="active" />
-      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-        Skill-Name
-        <input
-          className={inputClassName}
-          disabled={disabled}
-          name="name"
-          placeholder="Neuer Skill"
-          required
-        />
-      </label>
-      <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-        Summary
-        <input
-          className={inputClassName}
-          disabled={disabled}
-          name="summary"
-          placeholder="Optionaler Kontext"
-        />
-      </label>
-      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-          Kategorie
-          <input
-            className={inputClassName}
-            disabled={disabled}
-            name="category"
-            placeholder="Learning, Coding..."
-          />
-        </label>
-        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-          Level
-          <input
-            className={inputClassName}
-            disabled={disabled}
-            name="level"
-            placeholder="Beginner, Applied..."
-          />
-        </label>
-      </div>
-      <button
-        className={`${buttonClassName} border-[rgba(95,200,215,.34)] bg-[rgba(95,200,215,.14)] hover:border-[rgba(95,200,215,.52)]`}
-        disabled={disabled}
-        type="submit"
-      >
-        Skill erstellen
-      </button>
-    </form>
-  );
-}
-
-function PortfolioContextualCreatePanel({
-  activeView,
-  profileId,
-  statusMessage,
-}: Readonly<{
-  activeView: PortfolioView;
-  profileId: PortfolioViewModel["profileId"];
-  statusMessage: string | null;
-}>) {
-  const createMode = createModeByView[activeView];
-  const disabled = profileId !== "manual";
-  const heading =
-    createMode === "task"
-      ? "Task erstellen"
-      : createMode === "project"
-        ? "Project erstellen"
-        : createMode === "goal"
-          ? "Goal erstellen"
-          : createMode === "skill"
-            ? "Skill erstellen"
-            : "Typ wählen";
-  const description =
-    createMode === "select"
-      ? "Task, Project oder Goal bewusst auswählen."
-      : disabled
-        ? "Wechsle ins Manual-Profil, um echte Items zu erstellen."
-        : "Speichert im Manual-Profil über Supabase.";
-
-  return (
-    <section
-      aria-labelledby="portfolio-contextual-create-heading"
-      className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.36)] px-3 py-3"
-    >
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0">
-          <h2
-            className="text-[13px] font-semibold text-[var(--text-primary)]"
-            id="portfolio-contextual-create-heading"
-          >
-            {heading}
-          </h2>
-          <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
-            {description}
-          </p>
-        </div>
-        <CreateStatusPill statusMessage={statusMessage} />
-      </div>
-
-      <div className="mt-3 grid gap-2">
-        {createMode === "task" ? (
-          <TaskCreateForm disabled={disabled} returnView={activeView} />
-        ) : null}
-        {createMode === "project" ? (
-          <ProjectCreateForm disabled={disabled} returnView={activeView} />
-        ) : null}
-        {createMode === "goal" ? (
-          <GoalCreateForm disabled={disabled} returnView={activeView} />
-        ) : null}
-        {createMode === "skill" ? <SkillCreateForm disabled={disabled} /> : null}
-        {createMode === "select" ? (
-          <>
-            <TaskCreateForm disabled={disabled} returnView={activeView} />
-            <ProjectCreateForm disabled={disabled} returnView={activeView} />
-            <GoalCreateForm disabled={disabled} returnView={activeView} />
-            <SkillCreateForm disabled={disabled} />
-          </>
-        ) : null}
-      </div>
-    </section>
-  );
 }
 
 export function PortfolioPage({
@@ -589,7 +203,6 @@ export function PortfolioPage({
   const areaFilter = searchParams.get("area");
   const priorityFilter = searchParams.get("priority");
   const reviewFilter = searchParams.get("review");
-  const statusMessage = targetCreateMessage(searchParams.get("targetCreate"));
 
   const baseEntities = useMemo(
     () =>
@@ -631,9 +244,12 @@ export function PortfolioPage({
 
   return (
     <div
-      className="mx-auto flex w-full max-w-[2208px] flex-col gap-2 pb-6 xl:h-[calc(100dvh-1.25rem)] xl:min-h-0 xl:pb-0"
+      className="mx-auto flex w-full max-w-[2208px] flex-col gap-2 pb-6 xl:min-h-0"
       data-portfolio-section="page"
-      {...contentStateAttributes(viewModel.contentStates.page, viewModel.profileId)}
+      {...contentStateAttributes(
+        viewModel.contentStates.page,
+        viewModel.profileId,
+      )}
       id="portfolio-page"
     >
       <PortfolioPageHeader
@@ -699,34 +315,61 @@ export function PortfolioPage({
           profileId={viewModel.profileId}
           selectedEntityId={selectedEntity?.id ?? null}
         />
-        <div className="grid min-w-0 gap-2 xl:min-h-0 xl:grid-rows-[minmax(0,0.38fr)_minmax(0,1fr)_auto] xl:overflow-hidden xl:pr-1">
-          <div className="xl:min-h-0 xl:overflow-y-auto">
-            <PortfolioContextualCreatePanel
-              activeView={activeView}
-              profileId={viewModel.profileId}
-              statusMessage={statusMessage}
-            />
-          </div>
-          <PortfolioContextPanel
-            allEntities={viewModel.entities}
-            contentState={viewModel.contentStates.contextPanel}
-            entity={selectedEntity}
-            profileId={viewModel.profileId}
-            resourceLinkOptions={viewModel.resourceLinkOptions}
-          />
-          <section
-            aria-label="Selected entity state"
-            className="rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.36)] px-3 py-2"
+        <aside
+          aria-label="Selected Entity"
+          className="grid content-start gap-5 rounded-xl border border-[var(--border-subtle)] bg-[rgba(15,23,36,.6)] p-5 xl:overflow-y-auto"
+        >
+          <h2 className="text-lg font-semibold">Selected Entity</h2>
+          {selectedEntity ? (
+            <>
+              <p className="text-sm text-[var(--accent-cyan)]">
+                {selectedEntity.type} · {selectedStatusLabel}
+              </p>
+              <h3 className="text-xl font-semibold">{selectedEntity.title}</h3>
+              <p className="text-sm">{selectedEntity.nextAction}</p>
+              <div className="grid gap-2 text-sm text-[var(--text-muted)]">
+                {selectedEntity.relations.map((r, i) => (
+                  <p key={i}>
+                    {r.label}: {r.value}
+                  </p>
+                ))}
+              </div>
+              <Link
+                className="rounded-lg border border-[var(--border-default)] bg-[rgba(95,200,215,.12)] p-3 text-center"
+                href={`/${selectedEntity.type}s/${selectedEntity.id}`}
+              >
+                Details öffnen
+              </Link>
+            </>
+          ) : (
+            <p>Keine Entity ausgewählt.</p>
+          )}
+          <nav
+            aria-label="Entity erstellen"
+            className="grid gap-2 border-t border-[var(--border-subtle)] pt-4"
           >
-            <p className="text-[10px] leading-4 text-[var(--text-muted)]">
-              Auswahlstatus:{" "}
-              <span className="font-semibold text-[var(--text-secondary)]">
-                {selectedEntity?.title ?? "Keine Entity ausgewählt"}
-              </span>{" "}
-              / {selectedStatusLabel}.
-            </p>
-          </section>
-        </div>
+            {["Task", "Project", "Goal", "Skill", "Resource"].map((label) => (
+              <Link
+                key={label}
+                className="rounded-lg border border-[var(--border-subtle)] px-3 py-2 text-sm"
+                prefetch={false}
+                href={`/${label.toLowerCase()}s/new`}
+              >
+                {label} erstellen
+              </Link>
+            ))}
+          </nav>
+          <nav
+            aria-label="Entity Listen"
+            className="grid grid-cols-2 gap-2 text-sm"
+          >
+            {["Tasks", "Projects", "Goals", "Skills"].map((label) => (
+              <Link key={label} href={`/${label.toLowerCase()}`}>
+                {label} öffnen
+              </Link>
+            ))}
+          </nav>
+        </aside>
       </div>
     </div>
   );

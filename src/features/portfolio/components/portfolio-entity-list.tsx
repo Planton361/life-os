@@ -23,20 +23,12 @@ import type {
   PortfolioViewModel,
 } from "../types";
 
-function progressWidth(progress: number) {
-  return `${Math.max(0, Math.min(100, progress))}%`;
-}
-
 function getTemporalLabel(entity: PortfolioEntity) {
   if (entity.type === "skill") {
     return `Last practice: ${entity.lastTouched}`;
   }
 
   return `Due: ${entity.dueLabel} / Touched: ${entity.lastTouched}`;
-}
-
-function getProgressLabel(entity: PortfolioEntity) {
-  return entity.type === "skill" ? "Practice signal" : "Progress";
 }
 
 function groupEntities(entities: PortfolioEntity[]) {
@@ -116,10 +108,7 @@ function PortfolioRow({
       {entity.type === "skill" ? (
         <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[10px] leading-4 text-[var(--text-muted)]">
           <span>Practice: {skillContext?.practiceStatus ?? status.label}</span>
-          <span>Confidence: {skillContext?.confidence ?? "medium"}</span>
-          <span>
-            Next session: {skillContext?.nextSession ?? entity.nextAction}
-          </span>
+          <span>{skillContext?.linkedTasks?.length ?? 0} verknüpfte Tasks</span>
         </div>
       ) : (
         <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
@@ -127,23 +116,15 @@ function PortfolioRow({
         </p>
       )}
 
-      <div className="mt-2 grid gap-1.5">
-        <div className="flex items-center justify-between gap-3 text-[10px] leading-4">
-          <span className="font-semibold text-[var(--text-muted)]">
-            {getProgressLabel(entity)}
-          </span>
-          <span className="font-semibold text-[var(--text-secondary)]">
-            {entity.progress}%
-          </span>
-        </div>
-        <div className="h-1 overflow-hidden rounded-full bg-[rgba(148,163,184,.14)]">
-          <div
-            aria-hidden="true"
-            className="h-full rounded-full bg-[var(--accent)]"
-            style={{ width: progressWidth(entity.progress) }}
-          />
-        </div>
-      </div>
+      <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
+        {entity.type === "skill"
+          ? `${skillContext?.evidenceRows?.length ?? 0} Evidence-Einträge`
+          : entity.type === "task"
+            ? entity.taskEditValues?.durationMinutes
+              ? `${entity.taskEditValues.durationMinutes} min Aufwand`
+              : "Aufwand nicht gesetzt"
+            : entity.countLabel}
+      </p>
     </Link>
   );
 }

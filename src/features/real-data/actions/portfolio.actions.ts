@@ -45,7 +45,9 @@ function optionalFormString(formData: FormData, key: string) {
 }
 
 function optionalNullableFormString(formData: FormData, key: string) {
-  return formData.has(key) ? optionalFormString(formData, key) ?? null : undefined;
+  return formData.has(key)
+    ? (optionalFormString(formData, key) ?? null)
+    : undefined;
 }
 
 function authBlockedMessage(
@@ -103,7 +105,11 @@ function redirectToProjectActionState(
   redirect(projectActionReturnUrl(state, formData, projectId));
 }
 
-function goalActionReturnUrl(state: string, formData: FormData, goalId?: string) {
+function goalActionReturnUrl(
+  state: string,
+  formData: FormData,
+  goalId?: string,
+) {
   const params = new URLSearchParams({
     targetCreate: state,
     view: "goals",
@@ -133,7 +139,11 @@ function returnViewFromForm(
 ): PortfolioCreateReturnView {
   const returnView = formString(formData, "returnView");
 
-  if (returnView === "all" || returnView === "goals" || returnView === "projects") {
+  if (
+    returnView === "all" ||
+    returnView === "goals" ||
+    returnView === "projects"
+  ) {
     return returnView;
   }
 
@@ -221,6 +231,10 @@ export async function createProjectAction(
   }
 
   const parsed = createProjectInputSchema.safeParse({
+    areaId: optionalFormString(formData, "areaId"),
+    nextStep: optionalFormString(formData, "nextStep"),
+    priority: optionalFormString(formData, "priority"),
+    status: optionalFormString(formData, "status"),
     deadline: optionalFormString(formData, "deadline"),
     description: optionalFormString(formData, "description"),
     goalId,
@@ -294,10 +308,18 @@ export async function updateProjectAction(
   if (!context.ok) return context.result;
 
   const parsed = updateProjectInputSchema.safeParse({
+    areaId: formData.has("areaId")
+      ? (optionalFormString(formData, "areaId") ?? null)
+      : undefined,
+    priority: optionalFormString(formData, "priority"),
     deadline: optionalNullableFormString(formData, "deadline"),
-    description: optionalFormString(formData, "description"),
+    description: formData.has("description")
+      ? (optionalFormString(formData, "description") ?? null)
+      : undefined,
     goalId: optionalNullableFormString(formData, "goalId"),
-    nextStep: optionalFormString(formData, "nextStep"),
+    nextStep: formData.has("nextStep")
+      ? (optionalFormString(formData, "nextStep") ?? null)
+      : undefined,
     profileId: context.auth.user.id,
     projectId: formString(formData, "projectId"),
     status: optionalFormString(formData, "status"),
@@ -427,6 +449,10 @@ export async function createGoalAction(
   }
 
   const parsed = createGoalInputSchema.safeParse({
+    areaId: optionalFormString(formData, "areaId"),
+    horizon: optionalFormString(formData, "horizon"),
+    why: optionalFormString(formData, "why"),
+    status: optionalFormString(formData, "status"),
     description: optionalFormString(formData, "description"),
     profileId: auth.user.id,
     targetDate: optionalFormString(formData, "targetDate"),
@@ -468,9 +494,17 @@ export async function updateGoalAction(
   if (!context.ok) return context.result;
 
   const parsed = updateGoalInputSchema.safeParse({
-    description: optionalFormString(formData, "description"),
-    goalId: formString(formData, "goalId"),
+    areaId: formData.has("areaId")
+      ? (optionalFormString(formData, "areaId") ?? null)
+      : undefined,
     horizon: optionalFormString(formData, "horizon"),
+    why: formData.has("why")
+      ? (optionalFormString(formData, "why") ?? null)
+      : undefined,
+    description: formData.has("description")
+      ? (optionalFormString(formData, "description") ?? null)
+      : undefined,
+    goalId: formString(formData, "goalId"),
     profileId: context.auth.user.id,
     status: optionalFormString(formData, "status"),
     targetDate: optionalNullableFormString(formData, "targetDate"),
@@ -544,7 +578,9 @@ export async function archiveGoalAction(
   };
 }
 
-export async function createProjectFormAction(formData: FormData): Promise<void> {
+export async function createProjectFormAction(
+  formData: FormData,
+): Promise<void> {
   const result = await createProjectAction(formData);
   const returnView = returnViewFromForm(formData, "projects");
 
@@ -576,7 +612,9 @@ export async function createGoalFormAction(formData: FormData): Promise<void> {
   redirectToPortfolioCreateState(result.status, returnView, formData);
 }
 
-export async function updateProjectFormAction(formData: FormData): Promise<void> {
+export async function updateProjectFormAction(
+  formData: FormData,
+): Promise<void> {
   const result = await updateProjectAction(formData);
 
   if (result.status === "success") {
@@ -584,14 +622,17 @@ export async function updateProjectFormAction(formData: FormData): Promise<void>
   }
 
   redirectToProjectActionState(
-    result.status === "error" && result.message.startsWith("Das Project kann dieses Goal")
+    result.status === "error" &&
+      result.message.startsWith("Das Project kann dieses Goal")
       ? "project_alignment_conflict"
       : result.status,
     formData,
   );
 }
 
-export async function archiveProjectFormAction(formData: FormData): Promise<void> {
+export async function archiveProjectFormAction(
+  formData: FormData,
+): Promise<void> {
   const result = await archiveProjectAction(formData);
 
   if (result.status === "success") {

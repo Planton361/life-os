@@ -1,15 +1,8 @@
-import type { Metadata } from "next";
-import { EntityWorkbenchPage } from "@/features/entities";
-import type { WorkbenchSearchParams } from "@/features/entities/types";
-
-export const metadata: Metadata = {
-  title: "Goals | Life OS",
-};
-
-export default async function GoalsPage({
+import { WorkbenchList } from "@/features/entities/workbench/pages";
+export default async function Page({
   searchParams,
-}: Readonly<{
-  searchParams: Promise<WorkbenchSearchParams>;
-}>) {
-  return <EntityWorkbenchPage kind="goal" searchParams={await searchParams} />;
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  return <WorkbenchList kind="goal" searchParams={await searchParams} />;
 }

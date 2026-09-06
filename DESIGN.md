@@ -135,3 +135,20 @@ Calendar owns planning/scheduling; Portfolio owns entity creation/management.
 Empty Today says no activity has been recorded, without asking users to create
 work. Current planned times must be distinguishable from recorded actions;
 unknown historical timestamps must never be simulated.
+
+### Portfolio and Entity Workbenches (R2-04)
+
+Portfolio is overview, navigation and cross-entity context. Keep the existing V5
+summary, filters and active list dominant; the selected entity is a quick preview
+with “Details öffnen”. Creation links lead to dedicated pages, including
+Resources in its own knowledge area. No full inline entity form remains in the
+Portfolio overview.
+
+Entity lists are compact management surfaces. Create and detail share a bounded
+workbench layout and entity-specific fields: identity, context, state/planning,
+relations, real work/evidence and lifecycle. Use clear section headings, existing
+cyan/amber accents, restrained borders and readable input widths. Detail depth
+may scroll vertically; mobile stacks the work and relations linearly. Status and
+progress always have text labels and canonical evidence. Task-step percentages
+refer only to steps; project task counts and skill evidence are not generic
+entity completion percentages.

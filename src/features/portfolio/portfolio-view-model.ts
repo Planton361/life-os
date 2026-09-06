@@ -85,7 +85,7 @@ function countBy(
 function getStats(entities: readonly PortfolioEntity[]): PortfolioStat[] {
   return [
     {
-      label: "Active Tasks",
+      label: "Tasks",
       value: String(countBy(entities, (entity) => entity.type === "task")),
       detail: `${countBy(
         entities,
@@ -94,7 +94,7 @@ function getStats(entities: readonly PortfolioEntity[]): PortfolioStat[] {
       accent: "var(--accent-blue)",
     },
     {
-      label: "Active Projects",
+      label: "Projects",
       value: String(countBy(entities, (entity) => entity.type === "project")),
       detail: `${countBy(
         entities,
@@ -103,7 +103,7 @@ function getStats(entities: readonly PortfolioEntity[]): PortfolioStat[] {
       accent: "var(--accent-orange)",
     },
     {
-      label: "Goals in Motion",
+      label: "Goals",
       value: String(countBy(entities, (entity) => entity.type === "goal")),
       detail: `${countBy(
         entities,
@@ -112,12 +112,9 @@ function getStats(entities: readonly PortfolioEntity[]): PortfolioStat[] {
       accent: "var(--accent-purple)",
     },
     {
-      label: "Skills Practicing",
+      label: "Skills",
       value: String(countBy(entities, (entity) => entity.type === "skill")),
-      detail: `${countBy(
-        entities,
-        (entity) => entity.type === "skill" && entity.dueRank <= 2,
-      )} sessions planned`,
+      detail: `${entities.filter((e) => e.type === "skill").reduce((count, e) => count + (e.skillContext?.evidenceRows?.length ?? 0), 0)} Evidence-Einträge`,
       accent: "var(--accent-cyan)",
     },
     {
@@ -129,7 +126,7 @@ function getStats(entities: readonly PortfolioEntity[]): PortfolioStat[] {
     {
       label: "Needs Review",
       value: String(countBy(entities, (entity) => entity.reviewNeeded)),
-      detail: "weekly note open",
+      detail: "markierte Entities",
       accent: "var(--text-muted)",
     },
   ];

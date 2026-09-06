@@ -100,7 +100,10 @@ function zonedLocalDateTimeToIso(
   return new Date(desiredUtcMs - offsetMs).toISOString();
 }
 
-function durationMinutesFromForm(formData: FormData, mode: "plan" | "schedule") {
+function durationMinutesFromForm(
+  formData: FormData,
+  mode: "plan" | "schedule",
+) {
   const rawDuration = formString(formData, "durationMinutes");
 
   if (!rawDuration) return mode === "schedule" ? 30 : undefined;
@@ -114,9 +117,11 @@ function portfolioTaskDescriptionFromForm(formData: FormData) {
   const description = optionalFormString(formData, "description");
   const nextAction = optionalFormString(formData, "nextAction");
 
-  return [description, nextAction ? `Nächste Aktion: ${nextAction}` : null]
-    .filter(Boolean)
-    .join("\n\n") || undefined;
+  return (
+    [description, nextAction ? `Nächste Aktion: ${nextAction}` : null]
+      .filter(Boolean)
+      .join("\n\n") || undefined
+  );
 }
 
 function portfolioTaskReturnView(formData: FormData) {
@@ -183,7 +188,9 @@ function revalidateTaskSkillProjectionRoutes(taskId: string, skillId: string) {
 }
 
 function optionalNullableFormString(formData: FormData, key: string) {
-  return formData.has(key) ? optionalFormString(formData, key) ?? null : undefined;
+  return formData.has(key)
+    ? (optionalFormString(formData, key) ?? null)
+    : undefined;
 }
 
 export async function updatePortfolioTaskAction(
@@ -195,22 +202,32 @@ export async function updatePortfolioTaskAction(
   const projectId = optionalNullableFormString(formData, "projectId");
   const goalId = optionalNullableFormString(formData, "goalId");
   if (!(await validateProjectScope(context, projectId ?? undefined))) {
-    return { message: "Das Project konnte nicht bestätigt werden.", status: "error" };
+    return {
+      message: "Das Project konnte nicht bestätigt werden.",
+      status: "error",
+    };
   }
   if (!(await validateGoalScope(context, goalId ?? undefined))) {
-    return { message: "Das Goal konnte nicht bestätigt werden.", status: "error" };
+    return {
+      message: "Das Goal konnte nicht bestätigt werden.",
+      status: "error",
+    };
   }
 
   const nextAction = optionalFormString(formData, "nextAction");
   const description = optionalFormString(formData, "description");
-  const combinedDescription = [description, nextAction ? `Nächste Aktion: ${nextAction}` : null]
-    .filter(Boolean).join("\n\n") || null;
+  const combinedDescription =
+    [description, nextAction ? `Nächste Aktion: ${nextAction}` : null]
+      .filter(Boolean)
+      .join("\n\n") || null;
   const dueDate = optionalFormString(formData, "dueAt");
   const parsed = updateTaskInputSchema.safeParse({
     areaId: optionalNullableFormString(formData, "areaId"),
     description: combinedDescription,
     dueAt: dueDate ? `${dueDate}T23:59:59.000Z` : null,
-    durationMinutes: optionalFormString(formData, "durationMinutes") ? formString(formData, "durationMinutes") : null,
+    durationMinutes: optionalFormString(formData, "durationMinutes")
+      ? formString(formData, "durationMinutes")
+      : null,
     energy: optionalNullableFormString(formData, "energy"),
     goalId,
     plannedDate: optionalNullableFormString(formData, "plannedDate"),
@@ -222,8 +239,11 @@ export async function updatePortfolioTaskAction(
     title: formString(formData, "title"),
     userId: context.auth.user.id,
   });
-  if (!parsed.success) return { message: "Prüfe die Task-Felder.", status: "error" };
-  const result = await createSupabaseTaskRepository(context.auth.client).updateTask(parsed.data);
+  if (!parsed.success)
+    return { message: "Prüfe die Task-Felder.", status: "error" };
+  const result = await createSupabaseTaskRepository(
+    context.auth.client,
+  ).updateTask(parsed.data);
   if (!result.ok) {
     return {
       message:
@@ -235,23 +255,34 @@ export async function updatePortfolioTaskAction(
   }
   revalidateTaskProjectionRoutes(result.data.id);
   revalidatePath("/resources");
-  return { message: "Task gespeichert.", status: "success", taskId: result.data.id };
+  return {
+    message: "Task gespeichert.",
+    status: "success",
+    taskId: result.data.id,
+  };
 }
 
-export async function updatePortfolioTaskFormAction(formData: FormData): Promise<void> {
+export async function updatePortfolioTaskFormAction(
+  formData: FormData,
+): Promise<void> {
   const result = await updatePortfolioTaskAction(formData);
   const selected = formString(formData, "taskId");
   const state =
-    result.status === "error" && result.message.startsWith("Dieses direkte Goal")
+    result.status === "error" &&
+    result.message.startsWith("Dieses direkte Goal")
       ? "task_alignment_conflict"
       : `task_${result.status}`;
-  redirect(`/portfolio?view=tasks&selected=${encodeURIComponent(selected)}&targetCreate=${state}`);
+  redirect(
+    `/portfolio?view=tasks&selected=${encodeURIComponent(selected)}&targetCreate=${state}`,
+  );
 }
 
 export async function linkTaskSkillAction(
   formData: FormData,
 ): Promise<TaskSkillActionResult> {
-  const context = await getAuthenticatedManualTaskContext("mit Skills zu verknüpfen");
+  const context = await getAuthenticatedManualTaskContext(
+    "mit Skills zu verknüpfen",
+  );
   if (!context.ok) return context.result;
 
   const parsed = taskSkillLinkInputSchema.safeParse({
@@ -273,7 +304,8 @@ export async function linkTaskSkillAction(
   });
   if (!result.ok) {
     return {
-      message: "Task und Skill konnten im aktuellen User-Scope nicht verknüpft werden.",
+      message:
+        "Task und Skill konnten im aktuellen User-Scope nicht verknüpft werden.",
       status: "error",
     };
   }
@@ -288,7 +320,9 @@ export async function linkTaskSkillAction(
   };
 }
 
-export async function linkTaskSkillFormAction(formData: FormData): Promise<void> {
+export async function linkTaskSkillFormAction(
+  formData: FormData,
+): Promise<void> {
   const result = await linkTaskSkillAction(formData);
   const taskId = formString(formData, "taskId");
   const state =
@@ -306,7 +340,9 @@ export async function linkTaskSkillFormAction(formData: FormData): Promise<void>
 export async function unlinkTaskSkillAction(
   formData: FormData,
 ): Promise<TaskSkillActionResult> {
-  const context = await getAuthenticatedManualTaskContext("von Skills zu lösen");
+  const context = await getAuthenticatedManualTaskContext(
+    "von Skills zu lösen",
+  );
   if (!context.ok) return context.result;
 
   const parsed = taskSkillLinkInputSchema.safeParse({
@@ -451,7 +487,8 @@ export async function scheduleTaskForTodayAction(
 
   if (!context.ok) return context.result;
 
-  const mode = formString(formData, "mode") === "schedule" ? "schedule" : "plan";
+  const mode =
+    formString(formData, "mode") === "schedule" ? "schedule" : "plan";
   const plannedDateInput = formString(formData, "plannedDate");
   const plannedDate = isLocalDate(plannedDateInput)
     ? plannedDateInput
@@ -463,7 +500,8 @@ export async function scheduleTaskForTodayAction(
   const scheduledStartAtInput = formString(formData, "scheduledStartAt");
   const scheduledStartAt =
     mode === "schedule"
-      ? scheduledStartAtInput || zonedLocalDateTimeToIso(plannedDate, scheduledTime)
+      ? scheduledStartAtInput ||
+        zonedLocalDateTimeToIso(plannedDate, scheduledTime)
       : undefined;
   const parsed = scheduleTaskInputSchema.safeParse({
     durationMinutes: durationMinutesFromForm(formData, mode),
@@ -495,7 +533,9 @@ export async function scheduleTaskForTodayAction(
 
   return {
     message:
-      mode === "schedule" ? "Task für heute terminiert." : "Task für heute geplant.",
+      mode === "schedule"
+        ? "Task für heute terminiert."
+        : "Task für heute geplant.",
     status: "success",
     taskId: result.data.id,
   };
@@ -533,11 +573,17 @@ export async function createPortfolioTaskAction(
   }
 
   const parsed = createTaskInputSchema.safeParse({
+    areaId: optionalFormString(formData, "areaId"),
+    dueAt: optionalFormString(formData, "dueAt")
+      ? `${formString(formData, "dueAt")}T23:59:59.000Z`
+      : undefined,
     description: portfolioTaskDescriptionFromForm(formData),
     durationMinutes: durationMinutesFromForm(formData, "plan"),
     energy: optionalFormString(formData, "energy"),
     goalId,
-    plannedDate: todayCandidate ? localDateLabel() : undefined,
+    plannedDate: todayCandidate
+      ? localDateLabel()
+      : optionalFormString(formData, "plannedDate"),
     priority: formString(formData, "priority") || "none",
     projectId,
     profileId: context.auth.user.id,
@@ -587,7 +633,8 @@ export async function createPortfolioTaskFormAction(
   redirect(
     portfolioTaskReturnUrl(
       formData,
-      result.status === "error" && result.message.startsWith("Dieses direkte Goal")
+      result.status === "error" &&
+        result.message.startsWith("Dieses direkte Goal")
         ? "task_alignment_conflict"
         : result.status,
     ),
@@ -602,7 +649,8 @@ export async function completeTaskAction(
   if (!context.ok) return context.result;
 
   const parsed = completeTaskInputSchema.safeParse({
-    completedAt: formString(formData, "completedAt") || new Date().toISOString(),
+    completedAt:
+      formString(formData, "completedAt") || new Date().toISOString(),
     completionNote: formString(formData, "completionNote") || undefined,
     profileId: context.auth.user.id,
     taskId: formString(formData, "taskId"),
@@ -667,9 +715,10 @@ export async function reopenTaskAction(
 
   if (!result.ok) {
     return {
-      message: result.error.code === "conflict"
-        ? "Verknüpfte Tasks werden über ihren zuständigen Domain-Flow wieder geöffnet."
-        : "Der Task konnte in Supabase nicht wieder geöffnet werden.",
+      message:
+        result.error.code === "conflict"
+          ? "Verknüpfte Tasks werden über ihren zuständigen Domain-Flow wieder geöffnet."
+          : "Der Task konnte in Supabase nicht wieder geöffnet werden.",
       status: "error",
     };
   }
@@ -709,9 +758,10 @@ export async function archiveTaskAction(
 
   if (!result.ok) {
     return {
-      message: result.error.code === "conflict"
-        ? "Verknüpfte Tasks werden über ihren zuständigen Domain-Flow archiviert."
-        : "Der Task konnte in Supabase nicht archiviert werden.",
+      message:
+        result.error.code === "conflict"
+          ? "Verknüpfte Tasks werden über ihren zuständigen Domain-Flow archiviert."
+          : "Der Task konnte in Supabase nicht archiviert werden.",
       status: "error",
     };
   }
@@ -810,7 +860,9 @@ export async function rescheduleTaskAction(
   };
 }
 
-export async function completeTaskFormAction(formData: FormData): Promise<void> {
+export async function completeTaskFormAction(
+  formData: FormData,
+): Promise<void> {
   await completeTaskAction(formData);
 }
 

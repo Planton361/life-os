@@ -44,6 +44,8 @@ export const skillCreateInputSchema = skillBaseSchema;
 export type SkillCreateInput = z.infer<typeof skillCreateInputSchema>;
 
 export const skillUpdateInputSchema = skillBaseSchema.partial().extend({
+  summary: z.string().trim().min(1).nullable().optional(),
+  category: z.string().trim().min(1).nullable().optional(),
   skillId: requiredUuidSchema,
 });
 

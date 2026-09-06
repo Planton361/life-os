@@ -10,7 +10,10 @@ import { cn } from "@/lib/cn";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { archiveResourceFormAction, createResourceFormAction, linkResourceToTargetAction, restoreResourceFormAction, unlinkResourceFromTargetAction, updateResourceFormAction } from "@/features/real-data/actions/resource.actions";
+import {
+  linkResourceToTargetAction,
+  unlinkResourceFromTargetAction,
+} from "@/features/real-data/actions/resource.actions";
 import { ConnectedContext } from "@/features/semantic-relations/connected-context";
 import { searchActiveResources } from "../resource-search";
 import {
@@ -34,7 +37,6 @@ import type {
   ResourceRelationType,
   ResourceReviewQueueItem,
   ResourceSummaryStat,
-  ResourceType,
   ResourceViewMode,
   ResourcesViewModel,
 } from "../types";
@@ -355,34 +357,6 @@ function ResourceViewSwitcher({
   );
 }
 
-function SaveResourceCard({
-  captureTypes,
-  profileId,
-  writeEnabled,
-}: Readonly<{
-  captureTypes: ResourceOption<ResourceType>[];
-  profileId: ResourcesViewModel["profileId"];
-  writeEnabled: boolean;
-}>) {
-  const disabled = !writeEnabled;
-  const blockedMessage =
-    profileId === "manual"
-      ? "Melde dich lokal an, um Resources zu speichern."
-      : "Resource Writes sind in Demo und Empty nicht verfügbar.";
-  return (
-    <section aria-label="Save Resource" className="min-w-0 overflow-hidden rounded-[16px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.74)] p-3">
-      <form action={createResourceFormAction} aria-label="Resource erstellen" className="grid gap-2 xl:grid-cols-[minmax(180px,1fr)_minmax(220px,1.4fr)_minmax(180px,1fr)_140px_auto] xl:items-end">
-        <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)]">Titel<input className="min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.62)] px-2 text-[11px] text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]" disabled={disabled} name="title" required /></label>
-        <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)]">Beschreibung / Notiz<input className="min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.62)] px-2 text-[11px] text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]" disabled={disabled} name="body" /></label>
-        <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)]">URL<input className="min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.62)] px-2 text-[11px] text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]" disabled={disabled} name="url" type="url" /></label>
-        <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)]">Typ<select className="min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.62)] px-2 text-[11px] text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]" disabled={disabled} name="type">{captureTypes.map(type => <option key={type.value} value={type.value}>{type.label}</option>)}</select></label>
-        <button className="min-h-8 rounded-full border border-[rgba(95,200,215,.32)] bg-[rgba(95,200,215,.12)] px-4 text-[10px] font-semibold text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] disabled:opacity-50" disabled={disabled} type="submit">Resource speichern</button>
-      </form>
-      {disabled ? <p className="mt-2 text-[10px] text-[var(--text-muted)]" role="status">{blockedMessage}</p> : null}
-    </section>
-  );
-}
-
 function ResourceControls({
   typeOptions,
   filterOptions,
@@ -399,10 +373,7 @@ function ResourceControls({
     >
       <div className="grid gap-2 xl:grid-cols-[minmax(180px,.42fr)_minmax(0,1.05fr)_minmax(0,.95fr)_auto] xl:items-center">
         <form className="flex min-w-0 gap-1" method="get">
-          <label
-            className="sr-only"
-            htmlFor="resource-search"
-          >
+          <label className="sr-only" htmlFor="resource-search">
             Search resources
           </label>
           <input
@@ -413,7 +384,9 @@ function ResourceControls({
             placeholder="Search resources"
             type="search"
           />
-          <button className={controlClass()} type="submit">Suchen</button>
+          <button className={controlClass()} type="submit">
+            Suchen
+          </button>
         </form>
 
         <div className="min-w-0">
@@ -529,8 +502,7 @@ function ResourceLibrary({
                 const status = resourceStatusMeta[resource.status];
                 const review = resourceReviewStateMeta[resource.reviewState];
                 const selected = resource.id === selectedResource?.id;
-                const hiddenOnDesktop =
-                  index >= WIDE_DESKTOP_LIBRARY_LIMIT;
+                const hiddenOnDesktop = index >= WIDE_DESKTOP_LIBRARY_LIMIT;
                 const wideDesktopOnly =
                   index >= DESKTOP_LIBRARY_LIMIT &&
                   index < WIDE_DESKTOP_LIBRARY_LIMIT;
@@ -605,9 +577,7 @@ function ResourceLibrary({
                         <dd className="mt-0.5 truncate">{resource.topic}</dd>
                       </div>
                       <div className="hidden min-w-0 [@media(min-width:2200px)]:block">
-                        <dt className="sr-only">
-                          Last touched
-                        </dt>
+                        <dt className="sr-only">Last touched</dt>
                         <dd className="mt-0.5 truncate">
                           {resource.lastTouched}
                         </dd>
@@ -802,8 +772,30 @@ function ResourceTargetRelationList({
                   <Pill accent="var(--accent-red)">Nicht mehr verfügbar</Pill>
                 ) : null}
               </div>
-              {!relation.targetMissing ? <Link className="mt-1 inline-flex text-[10px] text-[var(--accent-cyan)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]" href={relation.targetType === "resource" ? `/resources?selected=${relation.targetId}` : `/portfolio?view=${relation.targetType}s&selected=${relation.targetId}`}>Kontext öffnen</Link> : null}
-              {profileId === "manual" ? <form action={unlinkResourceFromTargetAction} className="mt-1"><input name="relationId" type="hidden" value={relation.id} /><input name="resourceId" type="hidden" value={resourceId} /><button className="text-[10px] font-semibold text-[var(--accent-red)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]" type="submit">Verknüpfung lösen</button></form> : null}
+              {!relation.targetMissing ? (
+                <Link
+                  className="mt-1 inline-flex text-[10px] text-[var(--accent-cyan)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
+                  href={
+                    relation.targetType === "resource"
+                      ? `/resources?selected=${relation.targetId}`
+                      : `/portfolio?view=${relation.targetType}s&selected=${relation.targetId}`
+                  }
+                >
+                  Kontext öffnen
+                </Link>
+              ) : null}
+              {profileId === "manual" ? (
+                <form action={unlinkResourceFromTargetAction} className="mt-1">
+                  <input name="relationId" type="hidden" value={relation.id} />
+                  <input name="resourceId" type="hidden" value={resourceId} />
+                  <button
+                    className="text-[10px] font-semibold text-[var(--accent-red)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
+                    type="submit"
+                  >
+                    Verknüpfung lösen
+                  </button>
+                </form>
+              ) : null}
             </article>
           ))
         ) : (
@@ -816,38 +808,21 @@ function ResourceTargetRelationList({
   );
 }
 
-function ResourceManagementForm({ resource }: Readonly<{ resource: ResourceItem }>) {
-  const archived = Boolean(resource.archivedAt);
-  return (
-    <section aria-labelledby="resource-management-heading" className="grid gap-2">
-      <h3 className="text-[13px] font-semibold text-[var(--text-primary)]" id="resource-management-heading">Resource bearbeiten</h3>
-      {!archived ? <form action={updateResourceFormAction} aria-label="Resource bearbeiten" className="grid gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.40)] p-2">
-        <input name="resourceId" type="hidden" value={resource.id} />
-        <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)]">Titel<input className="min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.78)] px-2 text-[11px] text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]" defaultValue={resource.title} name="title" required /></label>
-        <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)]">Beschreibung / Notiz<textarea className="min-h-16 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.78)] px-2 py-1 text-[11px] text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]" defaultValue={resource.summary} name="body" /></label>
-        <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)]">URL<input className="min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.78)] px-2 text-[11px] text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]" defaultValue={resource.url} name="url" type="url" /></label>
-        <label className="grid gap-1 text-[10px] font-semibold text-[var(--text-muted)]">Typ<select className="min-h-8 rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.78)] px-2 text-[11px] text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]" defaultValue={resource.type} name="type">{Object.entries(resourceTypeMeta).map(([value, meta]) => <option key={value} value={value}>{meta.label}</option>)}</select></label>
-        <button className="min-h-8 rounded-full border border-[rgba(95,200,215,.34)] bg-[rgba(95,200,215,.12)] text-[10px] font-semibold text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]" type="submit">Änderungen speichern</button>
-      </form> : null}
-      <form action={archived ? restoreResourceFormAction : archiveResourceFormAction} aria-label={archived ? "Resource wiederherstellen" : "Resource archivieren"}><input name="resourceId" type="hidden" value={resource.id} /><button className="min-h-8 rounded-full border border-[var(--border-subtle)] px-3 text-[10px] font-semibold text-[var(--text-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]" type="submit">{archived ? "Resource wiederherstellen" : "Resource archivieren"}</button></form>
-    </section>
-  );
-}
-
 function relationTargetTypesWithCounts(
   targets: readonly ResourceRelationCreateTarget[],
   currentResourceId: string,
 ) {
-  const entries = (Object.keys(relationTargetTypeLabels) as ResourceRelationTargetType[])
-    .map((type) => {
-      const count = targets.filter(
-        (target) =>
-          target.type === type &&
-          !(target.type === "resource" && target.id === currentResourceId),
-      ).length;
+  const entries = (
+    Object.keys(relationTargetTypeLabels) as ResourceRelationTargetType[]
+  ).map((type) => {
+    const count = targets.filter(
+      (target) =>
+        target.type === type &&
+        !(target.type === "resource" && target.id === currentResourceId),
+    ).length;
 
-      return { count, type };
-    });
+    return { count, type };
+  });
 
   return entries;
 }
@@ -863,12 +838,16 @@ function ResourceRelationCreateForm({
 }>) {
   const [targetType, setTargetType] =
     useState<ResourceRelationTargetType>("project");
-  const typeCounts = relationTargetTypesWithCounts(relationTargets, resource.id);
+  const typeCounts = relationTargetTypesWithCounts(
+    relationTargets,
+    resource.id,
+  );
   const fallbackType = typeCounts.find((entry) => entry.count > 0)?.type;
-  const selectedTargetType =
-    typeCounts.some((entry) => entry.type === targetType && entry.count > 0)
-      ? targetType
-      : (fallbackType ?? targetType);
+  const selectedTargetType = typeCounts.some(
+    (entry) => entry.type === targetType && entry.count > 0,
+  )
+    ? targetType
+    : (fallbackType ?? targetType);
   const targets = relationTargets.filter(
     (target) =>
       target.type === selectedTargetType &&
@@ -906,7 +885,9 @@ function ResourceRelationCreateForm({
             id="resource-relation-target-type"
             name="targetType"
             onChange={(event) =>
-              setTargetType(event.currentTarget.value as ResourceRelationTargetType)
+              setTargetType(
+                event.currentTarget.value as ResourceRelationTargetType,
+              )
             }
             value={selectedTargetType}
           >
@@ -944,8 +925,8 @@ function ResourceRelationCreateForm({
         {skillContext ? (
           <div className="rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(7,11,18,.48)] px-2 py-2 text-[10px] leading-4 text-[var(--text-muted)]">
             <input name="relationType" type="hidden" value="context" />
-            Kontext-Verknüpfung: Diese Resource ist für den Skill relevant.
-            Sie erzeugt keine Evidence und verändert keinen Skill-Fortschritt.
+            Kontext-Verknüpfung: Diese Resource ist für den Skill relevant. Sie
+            erzeugt keine Evidence und verändert keinen Skill-Fortschritt.
           </div>
         ) : (
           <label
@@ -1038,7 +1019,9 @@ function ResourceRelationInspector({
   const derivedResources = connections.filter(
     (connection) =>
       connection.direction === "outgoing" &&
-      ["source_for", "feeds_into", "used_in"].includes(connection.relation.type),
+      ["source_for", "feeds_into", "used_in"].includes(
+        connection.relation.type,
+      ),
   );
   const linkedContextGroups = (
     Object.keys(contextKindLabels) as ResourceLinkedContextKind[]
@@ -1083,7 +1066,12 @@ function ResourceRelationInspector({
       </div>
 
       <div className="grid gap-3 p-3 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:p-2">
-        {profileId === "manual" ? <ResourceManagementForm resource={resource} /> : null}
+        <Link
+          className="text-sm text-[var(--accent-cyan)]"
+          href={`/resources/${resource.id}`}
+        >
+          Details öffnen
+        </Link>
         {resource.connectedContext ? (
           <ConnectedContext context={resource.connectedContext} />
         ) : null}
@@ -1111,7 +1099,11 @@ function ResourceRelationInspector({
         </section>
 
         <div className="grid gap-2 xl:grid-cols-2">
-          <DetailBlock expanded label="Short Summary" value={resource.summary} />
+          <DetailBlock
+            expanded
+            label="Short Summary"
+            value={resource.summary}
+          />
           <DetailBlock
             expanded
             label="Key Learning"
@@ -1566,7 +1558,8 @@ function ResourceReviewWorkbench({
               Review Workbench
             </h2>
             <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)] xl:line-clamp-1 xl:leading-3">
-              Process raw resources into reusable knowledge, links or prompt patterns.
+              Process raw resources into reusable knowledge, links or prompt
+              patterns.
             </p>
           </div>
           <Pill accent="var(--accent-orange)">manual approval</Pill>
@@ -1931,7 +1924,9 @@ export function ResourcesPage({
   );
   const selectedResource = useMemo(
     () =>
-      viewModel.resources.find((resource) => resource.id === selectedResourceId) ??
+      viewModel.resources.find(
+        (resource) => resource.id === selectedResourceId,
+      ) ??
       filteredResources[0] ??
       null,
     [filteredResources, selectedResourceId, viewModel.resources],
@@ -1951,11 +1946,21 @@ export function ResourcesPage({
     <div
       className="mx-auto flex min-h-screen w-full max-w-[2208px] flex-col gap-2 pb-8 xl:h-[calc(100dvh-1.25rem)] xl:min-h-0 xl:overflow-hidden xl:pb-0"
       data-resources-section="page"
-      {...contentStateAttributes(viewModel.contentStates.page, viewModel.profileId)}
+      {...contentStateAttributes(
+        viewModel.contentStates.page,
+        viewModel.profileId,
+      )}
       id="resources-page"
     >
       <ResourcesPageHeader viewModel={viewModel} />
-      {resourceState && resourceStateMessages[resourceState] ? <p className="rounded-[10px] border border-[var(--border-subtle)] px-3 py-2 text-[11px] text-[var(--text-secondary)]" role="status">{resourceStateMessages[resourceState]}</p> : null}
+      {resourceState && resourceStateMessages[resourceState] ? (
+        <p
+          className="rounded-[10px] border border-[var(--border-subtle)] px-3 py-2 text-[11px] text-[var(--text-secondary)]"
+          role="status"
+        >
+          {resourceStateMessages[resourceState]}
+        </p>
+      ) : null}
       <ResourceSummaryStrip
         contentState={viewModel.contentStates.summary}
         profileId={viewModel.profileId}
@@ -1966,11 +1971,12 @@ export function ResourcesPage({
         makeHref={makeHref}
         viewOptions={viewOptions}
       />
-      <SaveResourceCard
-        captureTypes={viewModel.captureTypes}
-        profileId={viewModel.profileId}
-        writeEnabled={viewModel.writeEnabled}
-      />
+      <Link
+        className="px-3 py-2 text-sm text-[var(--accent-cyan)]"
+        prefetch={false} href="/resources/new"
+      >
+        Resource erstellen
+      </Link>
       {activeView === "library" ? (
         <ResourceControls
           filterOptions={viewModel.filterOptions}
