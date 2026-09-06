@@ -34,7 +34,7 @@ Implementation status and product visibility are separate truths: `CONNECTED` co
 | Surface / domain | Boundary | Current implementation truth | Visibility truth / next action |
 |---|---|---|---|
 | Dashboard | `ACTIVE` | `CONNECTED`: R2-01 implementation evidence plus explicit USER ACCEPTED on 2026-09-06 | maintain accepted Dashboard |
-| Inbox | `ACTIVE` | `CONNECTED_GAP`: R2-02 implementation and isolated browser proof pass; user acceptance pending | R2-02 stays active until USER ACCEPTED |
+| Inbox | `ACCEPTED` | `CONNECTED`: R2-02 explicitly USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Today | `ACTIVE` | `CONNECTED_GAP`: technical daily paths exist; role correction and current surface acceptance pending | R2-03 daily-log role |
 | Calendar | `ACTIVE` | `CONNECTED_GAP`: technical scheduling exists; Day/Week/Month controls and viewport acceptance pending | R2-03 real temporal surface |
 | Portfolio | `ACTIVE` | `CONNECTED_GAP`: entity backend exists; information architecture and surface acceptance pending | R2-04 separate entity surfaces |
@@ -177,6 +177,11 @@ user’s confirmation, not an additional automated Target proof.
 
 # 2. Inbox
 
+**Current status: USER ACCEPTED on 2026-09-06. R2-02 closed.**
+User acceptance follows `6890cb4`; all preceding evidence is retained below as
+history. Historical PENDING/active statements describe their original passes.
+R2-03 is now the sole active block; Today is the next scoped implementation.
+
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
 | Inbox Quick Capture removal | `CONNECTED` | Inbox capture UI removed; Quick Thought → `inbox_items` survives reload in current R2-02 proof | Capture backend retained for existing sources |
@@ -189,7 +194,7 @@ user’s confirmation, not an additional automated Target proof.
 | Planning signals | `CONNECTED` | seven persisted Inbox signals; final completion and target-specific transfer, current reload proof | Recurrence removed as unsupported Inbox input |
 | AI suggestion review | `CONNECTED` | user-triggered local read-only suggestion and dismiss; no provider or automatic field application | external provider remains outside R2-02 |
 | Related context | `CONNECTED` | bounded links to actual owned local targets, each visible link directly browser-tested | no relevance scores, semantic search or expansion |
-| Inbox surface acceptance | `CONNECTED_GAP` | R2-02 IMPLEMENTATION_PASS; isolated authenticated interaction, layout and security evidence below | USER ACCEPTANCE STATUS: PENDING; R2-02 stays active |
+| Inbox surface acceptance | `CONNECTED` | Explicit USER ACCEPTED on 2026-09-06; retained implementation and browser evidence below | R2-02 closed; R2-03 active |
 
 ## R2-02 initial implementation evidence — 2026-09-06
 

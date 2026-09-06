@@ -5,7 +5,7 @@
 **Design truth:** Life OS – Linear Calm Dark Command Center / Dashboard V5
 **Detailed status:** `docs/product/capability-registry.md`
 **Completed sequence:** C1 → C2 → C3 → K1 → H1/H2 → N1 → A1 → Z1 (technical baseline)
-**Active Work Block:** R2-02 – Inbox Surface Completion
+**Active Work Block:** R2-03 – Today / Calendar Role Correction
 
 ## 1. Product Contract
 
@@ -859,14 +859,17 @@ or backend evidence cannot alone restore a `CONNECTED` surface claim.
 ## 4.12 R2 – Product Reality Recovery & Surface Completion
 
 **Status:** R2-00 completed (contract rebaseline). **Current active slice:**
-R2-02 – Inbox Surface Completion (the only Active Work Block).
+R2-03 – Today / Calendar Role Correction (the only Active Work Block).
 
 **R2-01 status:** Completed; explicitly USER ACCEPTED on 2026-09-06.
 Existing control, browser, layout and migration evidence is retained in the
 Capability Registry and focused R2-01 tests.
 
-**R2-02 status:** Active; IMPLEMENTATION_PASS recorded in the Capability Registry.
-USER ACCEPTANCE STATUS: PENDING. Advance only after explicit user acceptance.
+**R2-02 status:** Completed; explicitly USER ACCEPTED on 2026-09-06.
+Existing implementation, control and browser evidence is retained in the Registry.
+
+**R2-03 status:** Active; current pass is Today only. Calendar implementation
+remains pending. USER ACCEPTANCE STATUS: PENDING.
 
 **Outcome:** Recover the actual user-facing product contract without replacing
 V5 or the established architecture. A surface is complete only after all of
@@ -918,7 +921,7 @@ dependency belongs in this slice.
   for a promised core control.
 - Dashboard’s removed Bottom-Zone features remain removed; they cannot return
   through historical layout references.
-- The R2 order is binding. R2-01 is accepted and closed; only R2-02 is active
+- The R2 order is binding. R2-01 is accepted and closed; R2-02 is accepted and closed; only R2-03 is active
   until explicit user acceptance changes its status in this roadmap.
 
 ## 5. Completed Major Work
