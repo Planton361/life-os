@@ -36,7 +36,7 @@ Implementation status and product visibility are separate truths: `CONNECTED` co
 | Dashboard | `ACTIVE` | `CONNECTED`: R2-01 implementation evidence plus explicit USER ACCEPTED on 2026-09-06 | maintain accepted Dashboard |
 | Inbox | `ACCEPTED` | `CONNECTED`: R2-02 explicitly USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Today | `ACTIVE` | `CONNECTED`: day-log functionality explicitly accepted by user; no Today changes in Calendar pass | R2-03 remains open for Calendar |
-| Calendar | `ACTIVE` | `CONNECTED_GAP`: technical scheduling exists; Day/Week/Month controls and viewport acceptance pending | R2-03 real temporal surface |
+| Calendar | `ACTIVE` | `CONNECTED_GAP`: temporal planning controls are connected and the desktop workspace is viewport-bounded; user acceptance remains pending | R2-03 real temporal surface |
 | Portfolio | `ACTIVE` | `CONNECTED_GAP`: entity backend exists; information architecture and surface acceptance pending | R2-04 separate entity surfaces |
 | Resources | `ACTIVE` | connected knowledge core with relation depth gaps | knowledge base and evidence; K1 follows C3 |
 | Health / Fitness | `ACTIVE` | `CONNECTED_GAP`: core records exist; primary-desktop and role acceptance pending | R2-05 |
@@ -705,6 +705,40 @@ dominant normal Queue, temporary bounded Inspector, readable compact blocks,
 unchanged semantic colors and no body expansion. The disposable runner's
 existing migration/lint/advisor guards passed; no DB changes were needed.
 R2-03 remains active. USER ACCEPTANCE STATUS: PENDING.
+
+### Calendar desktop viewport-fit correction
+
+R2-03 remains active; Today and the accepted Calendar design/behavior are
+unchanged. The remaining Calendar finding was caused by competing height
+contracts: the App Shell used minimum viewport heights while Calendar also
+declared its own calculated viewport height, then masked the resulting
+overflow at several nested levels.
+
+The Calendar route now follows one explicit height chain on desktop. The outer
+shell owns `100dvh`; its frame, content column, main region, route workspace and
+Calendar page pass the available height through with `min-height: 0`. Week grid
+and right rail consume the remaining flex/grid track. The old calculated
+Calendar height and main/page/rail clipping rules are removed. The proportional
+1224 px time model is unchanged and scrolls only inside the existing Timegrid;
+Queue and Inspector retain their existing internal overflow behavior.
+
+Focused Playwright proof asserts both `document.documentElement.scrollHeight`
+and `document.body.scrollHeight` are at most viewport height plus 1 px in Queue
+and Selection modes at **3840×2160, 2560×1440 and 1920×1080**. Main, workspace,
+Calendar page, Timegrid card and right rail all have positive bounds fully
+inside the viewport. The proof scrolls the Timegrid to its real end and restores
+the initial position, checks internal overflow, selects/closes a 30-minute
+block, exercises direct reschedule, unschedule, ±15-minute movement and duration,
+and confirms reload plus Day/Week/Month navigation. Mobile **390×844** retains
+normal page flow without horizontal overflow. Eight viewport screenshots were
+visually reviewed from the isolated proof; no Calendar clipping, overlap or
+design change is present. Console and hydration checks are clean.
+
+Validation: IMPLEMENTATION_PASS for this focused correction. 22 Calendar unit
+tests, the dedicated Calendar Playwright proof, typecheck, lint, build and diff
+check pass. No backend, schema, migration or domain logic changed. V5
+Design-Taste: PASS; the existing planning hierarchy and visual language remain
+unchanged. R2-03 stays ACTIVE. USER ACCEPTANCE STATUS: PENDING.
 
 # 5. Portfolio, Projects, Goals and Skills
 

@@ -1523,7 +1523,7 @@ export function CalendarPlanningPage({
   return (
     <div
       id="calendar-page"
-      className="mx-auto flex w-full max-w-[2208px] flex-col gap-2 pb-6 xl:h-[calc(100dvh-1.25rem)] xl:min-h-0 xl:pb-0"
+      className="mx-auto flex w-full max-w-[2208px] flex-col gap-2 pb-6 xl:min-h-0 xl:flex-1 xl:pb-0"
       data-calendar-section="page"
       {...contentStateAttributes(
         viewModel.contentStates.page,

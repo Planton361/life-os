@@ -23,6 +23,88 @@ async function browserClient(page: Page) {
   return api;
 }
 
+async function expectDesktopViewportFit(page: Page, viewportHeight: number) {
+  const metrics = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const bounds = document.querySelector(selector)!.getBoundingClientRect();
+      return {
+        bottom: bounds.bottom,
+        height: bounds.height,
+        top: bounds.top,
+      };
+    };
+    const timegridScroll = document.querySelector(
+      ".calendar-grid-scroll",
+    ) as HTMLElement;
+    const queueItems = document.querySelector(
+      ".calendar-queue-items",
+    ) as HTMLElement;
+
+    return {
+      bodyScrollHeight: document.body.scrollHeight,
+      documentScrollHeight: document.documentElement.scrollHeight,
+      gridScroll: {
+        clientHeight: timegridScroll.clientHeight,
+        overflowY: getComputedStyle(timegridScroll).overflowY,
+        scrollHeight: timegridScroll.scrollHeight,
+      },
+      main: rect("main"),
+      page: rect("#calendar-page"),
+      queueItems: {
+        clientHeight: queueItems.clientHeight,
+        overflowY: getComputedStyle(queueItems).overflowY,
+        scrollHeight: queueItems.scrollHeight,
+      },
+      rail: rect(".calendar-right-rail"),
+      timegrid: rect(".calendar-timegrid"),
+      viewportHeight: window.innerHeight,
+      workspace: rect("#calendar-workspace"),
+    };
+  });
+
+  expect(metrics.viewportHeight).toBe(viewportHeight);
+  expect(
+    metrics.documentScrollHeight,
+    JSON.stringify(metrics),
+  ).toBeLessThanOrEqual(viewportHeight + 1);
+  expect(metrics.bodyScrollHeight, JSON.stringify(metrics)).toBeLessThanOrEqual(
+    viewportHeight + 1,
+  );
+  for (const bounds of [
+    metrics.main,
+    metrics.workspace,
+    metrics.page,
+    metrics.timegrid,
+    metrics.rail,
+  ]) {
+    expect(bounds.top, JSON.stringify(metrics)).toBeGreaterThanOrEqual(0);
+    expect(bounds.bottom, JSON.stringify(metrics)).toBeLessThanOrEqual(
+      viewportHeight + 1,
+    );
+    expect(bounds.height, JSON.stringify(metrics)).toBeGreaterThan(0);
+  }
+  expect(metrics.gridScroll.overflowY).toBe("auto");
+  expect(metrics.queueItems.overflowY).toBe("auto");
+  if (viewportHeight <= 1440) {
+    expect(metrics.gridScroll.scrollHeight).toBeGreaterThan(
+      metrics.gridScroll.clientHeight,
+    );
+  }
+
+  const internalScroll = await page.evaluate(() => {
+    const element = document.querySelector(
+      ".calendar-grid-scroll",
+    ) as HTMLElement;
+    const original = element.scrollTop;
+    element.scrollTop = element.scrollHeight;
+    const reachedBottom =
+      element.scrollTop + element.clientHeight >= element.scrollHeight - 1;
+    element.scrollTop = original;
+    return { reachedBottom, restored: element.scrollTop === original };
+  });
+  expect(internalScroll).toEqual({ reachedBottom: true, restored: true });
+}
+
 test("R2-03 Calendar proportional time geometry and planning-only controls", async ({
   page,
 }, info) => {
@@ -104,17 +186,7 @@ test("R2-03 Calendar proportional time geometry and planning-only controls", asy
       await page.evaluate(() => document.documentElement.scrollWidth),
     ).toBeLessThanOrEqual(size.width);
     if (size.width > 1000) {
-      const docBounds = await page.evaluate(() => ({
-        height: document.documentElement.scrollHeight,
-        main: document.querySelector("main")!.getBoundingClientRect().toJSON(),
-        workspace: document
-          .querySelector("#calendar-workspace")!
-          .getBoundingClientRect()
-          .toJSON(),
-      }));
-      expect(docBounds.height, JSON.stringify(docBounds)).toBeLessThanOrEqual(
-        size.height + 2,
-      );
+      await expectDesktopViewportFit(page, size.height);
       const grid = (await page.locator(".calendar-timegrid").boundingBox())!;
       expect(grid.y + grid.height).toBeGreaterThan(size.height - 45);
       expect(grid.y + grid.height).toBeLessThanOrEqual(size.height);
@@ -133,7 +205,7 @@ test("R2-03 Calendar proportional time geometry and planning-only controls", asy
     }
     await page.screenshot({
       path: info.outputPath(`queue-${size.width}.png`),
-      fullPage: true,
+      fullPage: size.width <= 1000,
     });
     await select();
     await expect(rail).toHaveAttribute("data-calendar-rail-mode", "selection");
@@ -145,17 +217,7 @@ test("R2-03 Calendar proportional time geometry and planning-only controls", asy
         ib = (await inspector.boundingBox())!;
       expect(qb.y).toBeGreaterThanOrEqual(ib.y + ib.height);
       expect(qb.y + qb.height).toBeLessThanOrEqual(size.height);
-      const docBounds = await page.evaluate(() => ({
-        height: document.documentElement.scrollHeight,
-        main: document.querySelector("main")!.getBoundingClientRect().toJSON(),
-        workspace: document
-          .querySelector("#calendar-workspace")!
-          .getBoundingClientRect()
-          .toJSON(),
-      }));
-      expect(docBounds.height, JSON.stringify(docBounds)).toBeLessThanOrEqual(
-        size.height + 2,
-      );
+      await expectDesktopViewportFit(page, size.height);
     }
     await expect(
       page.getByRole("button", { name: /Mark done|Completing/ }),
@@ -171,7 +233,7 @@ test("R2-03 Calendar proportional time geometry and planning-only controls", asy
     ]);
     await page.screenshot({
       path: info.outputPath(`calendar-${size.width}.png`),
-      fullPage: true,
+      fullPage: size.width <= 1000,
     });
   }
   await page
