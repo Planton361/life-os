@@ -27,7 +27,7 @@
 - Backend, repository or historical reload evidence proves that layer only; it
   does not by itself prove that a visible control currently works.
 
-## Active Product Boundary (R0)
+## Active Product Boundary (Product Consolidation)
 
 Implementation status and product visibility are separate truths: `CONNECTED` code may be deferred and hidden without being deleted or relabeled as unimplemented.
 
@@ -41,27 +41,116 @@ Implementation status and product visibility are separate truths: `CONNECTED` co
 | Resources | `ACCEPTED` | `CONNECTED`: current surface explicitly USER ACCEPTED on 2026-09-07; existing knowledge and R2-04 create/detail evidence retained | maintain accepted surface; separately listed depth gaps remain |
 | Health / Fitness | `ACCEPTED` | `CONNECTED`: Mental Health, Habits, Running and Strength explicitly USER ACCEPTED on 2026-09-07 | maintain accepted behavior; R2-05 continues for Nutrition |
 | Nutrition | `ACTIVE` | `CONNECTED`: logging/tracking, canonical weekly planning, recipe library and derived grocery workspaces; current R2-05 evidence below | Nutrition USER ACCEPTANCE PENDING; R2-05 stays active |
-| Work / Education / Coding | `ACTIVE` | A1 Target browser proof covers canonical Projects, Resources and reload-stable logs; named depth gaps remain below | area projections over the canonical spine; no area-local core copies |
-| Inventory / Wishlist | `ACTIVE` | A1 Target browser proof covers Manual CRUD, purchase decisions and idempotent conversion after reload | Inventory and explicit Wishlist links remain reachable in active Life navigation |
+| Work / Education / Coding | `HIDDEN_RETAINED` / `FOLDED` | A1 canonical Projects, Resources and logs remain; detailed technical statuses below are retained evidence, not suite completion | Areas stay active as context; no independent suite completion |
+| Inventory / Wishlist | `EXTERNALIZED` / `RETAINED` | existing CRUD, purchase decisions and conversion retained; no new completion claim | Spreadsheet is Source of Truth for future use; no active navigation or connector |
+| Journal | `ACTIVE` / `REMAINING_DEPTH` | `CONNECTED_GAP`: dated canonical lifecycle exists; complete surface depth/acceptance remains | R2-07 after Nutrition |
+| Skill Map | `ACTIVE_PLANNED` / `REMAINING_DEPTH` | `UI_ONLY`: only a retained Coding demo/empty Manual shell | R2-08 under Portfolio → Skills; no active graph link yet |
+| Notes | `FOLDED_INTO_RESOURCES` / `RETAINED` | `CONNECTED`: existing canonical `resources` (`note`), no migration | no separate active Notes app |
 | Anti-Rot / Challenges / Shop | `DEFERRED_HIDDEN` | connected feature code/data; direct routes remain intact | C1.1-01 removed Sidebar, Dashboard and normal Daily-Companion entry points |
 | Entertainment | `DEFERRED_HIDDEN` | connected collection code/data; direct routes remain intact | C1.1-01 removed Sidebar, Life overview and obvious active cross-links |
 | AI1 Personal Assistant | `DEFERRED` | not started / external decisions outstanding | do not continue during C1→A1 |
 
-Visibility state after C1.1-01: active navigation exposes Inventory and Wishlist, while Entertainment, Shop and Challenges are absent. Dashboard no longer composes Anti-Rot or Challenge panels. Deferred routes, feature code, migrations and data remain retained and directly addressable.
+Visibility labels are product-boundary classifications, not new implementation
+statuses. Hiding a capability never means it is complete. Existing technical
+statuses/evidence below remain distinguishable from future active scope.
+
+Active navigation: Dashboard, Inbox, Today, Calendar, Portfolio (Tasks/Projects/
+Goals/Skills), Resources; Health & Fitness and Nutrition with existing children;
+Personal → Journal; Settings. Legacy routes remain directly addressable.
 
 ## Active Delivery Sequence
 
-```text
-C1 Core Work Graph
-→ C2 Weekly Planning Calendar
-→ C3 Daily Companion Loop
-→ K1 Knowledge Base
-→ H1/H2 Health and Fitness
-→ N1 Nutrition
-→ A1 Work/Education/Coding/Inventory
-→ Z1 Final Local Product Closure & Hardening
-→ R2 Product Reality Recovery & Surface Completion
-```
+The completed technical sequence C1 → C2 → C3 → K1 → H1/H2 → N1 → A1 → Z1 is
+history. R2-01 through R2-04 and Health/Fitness are explicitly accepted.
+**R2-05 remains the only active block; Nutrition USER ACCEPTANCE PENDING.**
+Then R2-07 Journal → R2-08 Skill Map → R2-06 Full Active Product Acceptance.
+R2-06 retains its original ID; the two new capabilities precede it.
+
+## Product-scope consolidation — 2026-09-07
+
+Central context, not central file ownership. No tables, data, routes or functions
+are deleted; no migration, connector, external API or operational copy is added.
+GitHub owns repositories/code collaboration; Sciebo/filesystem/LaTeX own document
+files; Spreadsheet owns flexible Inventory/Wishlist data. Life OS owns context,
+links, planning, evidence and relations. Coding, Education and Work remain Areas.
+
+| Capability | Product disposition | Actual state / destination |
+|---|---|---|
+| Repositories / GitHub URL | RETAINED / EXTERNAL SOURCE OF TRUTH | canonical Projects with existing URL retained; future references use Resource `link` + URL; no GitHub API/sync |
+| Coding sessions / Agents / Courses | HIDDEN / RETAINED | existing implementation or Prepared gaps unchanged; no suite roadmap obligation |
+| Skill Map | ACTIVE PLANNED / REMAINING DEPTH | `/coding/skill-map` and `area-view-models.ts:getSkillMapViewModel` expose demo data or empty Manual arrays; no clean canonical graph route. Target Portfolio → Skills → Skill Map, R2-08 |
+| Coding Knowledge / prompts | FOLDED INTO RESOURCES | `/coding/knowledge` is a Prepared route skeleton, not a connected Knowledge database; existing Resources own active knowledge/context |
+| Scientific Work | EXTERNAL DOCUMENT SOURCE + LIFE OS CONTEXT | existing Education Projects and links retained; no scientific-document suite |
+| Literature | FOLDED INTO RESOURCES | existing canonical Resources and Project source links; no bibliographic manager |
+| Learning Log | FOLDED INTO JOURNAL / SKILL EVIDENCE | semantic destination only; `education_logs` retained, no history migration or new projection claimed |
+| Work Log | FOLDED INTO JOURNAL / TODAY | semantic destination only; `work_logs` retained, no history migration or new projection claimed |
+| Wiki | FOLDED INTO RESOURCES / EXTERNAL DOCUMENTS | existing Work-Area `note` Resources; no second Wiki |
+| Meetings / decisions / follow-ups | RETAINED | specialized records stay; canonical Tasks remain active in Portfolio/Today/Calendar |
+| Journal | ACTIVE / REMAINING DEPTH | `journal_entries` dated lifecycle exists; reflection/history/frequency and canonical context depth in R2-07. Recurrence stays Task/Calendar-owned |
+| Notes | FOLDED / DEFERRED AS SEPARATE SURFACE | already `resources` type `note`; Quick Thought → Inbox → Note → Resource, no data conversion |
+| Inventory / Wishlist / purchase decisions | EXTERNALIZED / RETAINED | data/functions/routes preserved; no spreadsheet engine, migration or integration |
+| Resources | ACTIVE KNOWLEDGE / REFERENCE | existing `note`, `learning`, `prompt`, `research`, `link`, `source`, `snippet`, `decision`; title/body/URL/source/context/Area and Project/Goal/Task/Resource/Skill relations suffice |
+
+Skill Map contract: real Skill nodes; evidence count/recency, completed Task
+relations, Resource relations and practice context only. Edges must be stored
+Skill–Skill relations or visibly derived from shared Project/Task/Resource.
+No invented percentages/edges; Gap Detection needs an explicit Target/Prerequisite
+model and is outside R2-08. Journal recurrence is not a Journal model feature.
+
+### Cross-link audit
+
+| Source | Classification | Result |
+|---|---|---|
+| `src/config/navigation.ts` suite sections + Life Notes/Inventory/Wishlist | HIDE | no active links; Personal is a static header with Journal; `readyRoutes` remains route availability only |
+| Portfolio Demo source links | FOLD / HIDE | Literature/Wiki → Resources; Learning → Journal; Work Log → Today; scientific/work project context → Portfolio Projects; unimplemented Agents link removed |
+| Calendar Demo meeting source | FOLD | Today daily-memory destination; no Work-suite entry point |
+| Journal Manual header | FOLD | old Life/Notes suite links replaced by Journal/Resources; retained Life/Notes headers keep their internal legacy navigation |
+| Health mental/overview and Dashboard profile Journal links | KEEP | real active `/life/journal` reflection path, unchanged |
+| Coding/Education/Work internal links and their `area-view-models` | RETAIN LEGACY | reachable only through direct legacy routes; no route deletion/redesign |
+| Legacy Life overview, Notes, Inventory and their fixtures | RETAIN LEGACY | internal routes/functions retained; old Life root is absent from active sidebar and Journal |
+| Canonical Area labels/filters and entity/resource relations | KEEP | context remains, canonical entity details remain active |
+
+### Validation evidence
+
+**IMPLEMENTATION_PASS. USER ACCEPTANCE STATUS: PENDING.** R2-05/Nutrition
+retains its existing pending status; no new USER ACCEPTED claim.
+
+- `git diff --check`, `pnpm typecheck`, `pnpm lint`, eight focused Portfolio URL
+  tests and `pnpm build` pass. Heavy checks run sequentially; all 57 generated
+  pages and retained legacy routes build.
+- Five focused Playwright tests in `tests/e2e/active-product-navigation.spec.ts`
+  pass on the isolated production build: every one of the 17 main navigation
+  links and four Portfolio children clicked at 1920×1080, 2560×1440 and 390×844;
+  keyboard flyout/Escape/focus, mobile content skip link, Journal/Resources
+  context links, reload, Demo/Empty and auth-blocked Manual checked.
+- Twelve direct legacy URLs each render HTTP 200 with a visible main heading
+  in Demo and auth-blocked Manual: Coding, Repositories, Skill Map, Knowledge,
+  Education, Literature, Work, Wiki, Life, Notes, Inventory and Wishlist query.
+  Active navigation excludes these routes in every mode; no runtime exceptions.
+- Browser console/pageerror/hydration assertions pass. Navigation has no
+  clipped horizontal bounds, internal scrolling or empty section header at all
+  three sizes; page horizontal overflow is absent. Main navigation is reduced
+  from 33 to 17 links (Portfolio's four flyout links retained).
+- Full-page and sidebar screenshots for all three sizes were visually reviewed.
+  V5 Design-Taste PASS: existing tokens/density/semantic accents remain;
+  Personal is a quiet heading; Settings stays anchored at desktop bottom.
+  Mobile retains the existing stacked shell and content skip link. No material
+  V5 violation or layout fix was needed for this bounded nav change.
+- Validation uses an isolated source copy excluding protected paths and the
+  unrelated user test diff, no env files/auth state/DB/provider. pnpm automatic
+  dependency installation is disabled via `pnpm_config_verify_deps_before_run=false`;
+  dependencies are reused locally. Initial symlink-based build isolation was
+  rejected by Turbopack; a same-filesystem dependency tree passed the unchanged
+  build. No repository dependency/config change was needed.
+- Local proof artifacts and temporary production-server Playwright config are
+  under `/home/anton/.cache/life-os-consolidation-nhj8gkgm/`; screenshots in
+  `test-results/consolidation/`. No artifacts or private/auth data are committed.
+  Production server/browser are stopped after proof. No data migration/deletion.
+
+This is navigation/product-boundary work, not renewed acceptance of all existing
+core controls or proof of retained authenticated writes. Existing Search/Command
+remains a noninteractive Prepared hint; it was not added or accepted here.
+Journal depth, Skill Map and final active acceptance remain the planned work.
 
 # 1. Dashboard
 
@@ -1429,20 +1518,29 @@ is clean. No remote DB
 operation and no migration added. Nutrition and final R2-05 acceptance remain
 outside this delivered pass.
 
-# 11. Coding and Agents
+# 11. Coding and Agents (hidden / retained)
+
+The technical evidence and gaps below describe retained implementations. They do
+not schedule further suite development; active destinations are defined by the
+consolidation disposition table above. Canonical Area/entity context stays active.
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Repository library | `CONNECTED` | A1 Target browser proof creates a Coding-Area canonical Project with manual repository URL, Core backlink and reload | automated repository sync remains external-gated |
-| GitHub link | `CONNECTED` | A1 Target browser proof persists and reloads the optional manual Project repository URL | GitHub API or automatic sync remains a separate external gate |
-| GitHub API | `EXTERNAL_GATE` | none | later read-only decision |
+| Repository library | `CONNECTED` | A1 Target browser proof creates a Coding-Area canonical Project with manual repository URL, Core backlink and reload | RETAINED; GitHub owns repositories; no sync planned |
+| GitHub link | `CONNECTED` | A1 Target browser proof persists and reloads the optional manual Project repository URL | RETAINED; existing URL stays; new links may use Resources |
+| GitHub API | `EXTERNAL_GATE` | none | outside active scope; no API/sync planned by consolidation |
 | Coding project log | `CONNECTED` | A1 Target browser proof creates a user-scoped `coding_sessions` record with canonical Project ownership and reload | automatic time tracking remains out of scope |
 | Course/learning path | `UI_ONLY` | skills/education concepts | connect to skills/evidence |
 | Agent session tracking | `NOT_STARTED` | no canonical `agent_sessions` model; Manual and Empty render an honest non-interactive Prepared state | deferred retained model; do not start AI1/provider work without a separate decision |
 | Prompt library | `UI_ONLY` | page concepts | canonical resources/templates |
-| Coding knowledge map | `UI_ONLY` | skill map shell | relation read model first |
+| Coding Knowledge | `UI_ONLY` | retained `/coding/knowledge` Prepared route skeleton | FOLDED INTO RESOURCES; no separate knowledge suite |
+| Skill Map | `UI_ONLY` | retained Coding demo/empty Manual shell | ACTIVE PLANNED: R2-08 canonical graph under Portfolio → Skills |
 
-# 12. Education
+# 12. Education (suite hidden / context retained)
+
+The technical evidence and gaps below describe retained implementations. They do
+not schedule further suite development; active destinations are defined by the
+consolidation disposition table above. Canonical Area/entity context stays active.
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
@@ -1453,7 +1551,11 @@ outside this delivered pass.
 | Writing best practices/resources | `CONNECTED_GAP` | A1.1B1 scoped Resources plus A1.1B2 Writing Logs with signed word deltas | dedicated prompt/template management remains separate depth |
 | Education dashboard | `CONNECTED_GAP` | Manual Education workspace projects, task/deadline context, atomically linked literature and A1.1B2 Learning/Writing activity | richer scientific metadata remains deferred |
 
-# 13. Work
+# 13. Work (suite hidden / context retained)
+
+The technical evidence and gaps below describe retained implementations. They do
+not schedule further suite development; active destinations are defined by the
+consolidation disposition table above. Canonical Area/entity context stays active.
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
@@ -1469,13 +1571,13 @@ outside this delivered pass.
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Journal | `CONNECTED` | A1.1D1 user-scoped `journal_entries` with date, optional title, body, create/edit/soft archive, chronological active/history views and reload proof | Mood, Health and Daily/Weekly Reviews remain separate canonical domains |
+| Journal | `CONNECTED_GAP` | A1.1D1 user-scoped `journal_entries` with date, optional title, body, create/edit/soft archive, chronological active/history views and reload proof | R2-07 surface completion remains; Mood, Health and Reviews stay separate |
 | Notes | `CONNECTED` | A1.1D1 canonical Life-Area `resources` (`note`) with create/edit/archive/restore, reload-stable active/history views and visible existing Project/Goal/Task relations or honest empty state | relation creation remains on the established Resource surfaces; no parallel Notes platform |
 | Entertainment collection | `CONNECTED` | A1.1D2 canonical user-scoped `entertainment_items`; direct routes and complete lifecycle remain retained | `DEFERRED_HIDDEN` boundary is applied to Sidebar, Life overview and active cross-links by C1.1-01 |
 | Inventory | `CONNECTED` | A1 Target browser proof creates and edits user-scoped `inventory_items`, then reloads the active item | external merchants, guarantees, insurance and accounting remain unimplemented |
 | Wishlist | `CONNECTED` | A1 Target browser proof creates a user-scoped `wishlist_items` record and reloads its acquired lifecycle state | external price tracking, ordering and product APIs remain external gates |
 | Purchase Decisions | `CONNECTED` | A1 Target browser proof creates a historical `purchase_decisions` record, then proves the atomic idempotent Wishlist→Inventory RPC by its single Inventory projection after reload | no payment, merchant integration or automated purchase action |
-| Personal dashboard | `UI_ONLY` | area shell | bind canonical data |
+| Personal dashboard | `UI_ONLY` | retained legacy area shell | HIDDEN; no active suite completion obligation |
 
 # 15. Challenges, Anti-Rot and Shop (`DEFERRED_HIDDEN`)
 

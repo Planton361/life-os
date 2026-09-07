@@ -19,7 +19,9 @@ const showDeferredEntertainmentEntryPoints = false;
 function navigation(active: "life" | "journal" | "notes") {
   return (
     <nav aria-label="Life context" className="flex flex-wrap gap-2">
-      {[["life", "/life", "Life"], ["journal", "/life/journal", "Journal"], ["notes", "/life/notes", "Notes"]].map(([id, href, text]) => (
+      {(active === "journal"
+        ? [["journal", "/life/journal", "Journal"], ["resources", "/resources", "Resources"]]
+        : [["life", "/life", "Life"], ["journal", "/life/journal", "Journal"], ["notes", "/life/notes", "Notes"]]).map(([id, href, text]) => (
         <Link className={cn(secondaryButtonClass, id === active && "border-[rgba(155,124,246,.5)] text-[var(--text-primary)]")} href={href} key={id}>{text}</Link>
       ))}
     </nav>

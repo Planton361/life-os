@@ -31,7 +31,7 @@ Life OS shall:
 - support daily and weekly planning and review;
 - track health, habits, workouts, mood, sleep and weight;
 - support recipes, meal planning, groceries and nutrition estimates;
-- provide workspaces for coding, education, work and private life;
+- preserve Coding, Education and Work as Area/context for Tasks, Projects, Goals, Skills and Resources;
 - derive useful statistics from canonical data instead of duplicating it;
 - keep health, nutrition and fitness records connected to the same planning loop through scheduled task occurrences;
 - remain usable without a public cloud or public registration.
@@ -90,8 +90,10 @@ The active surface contract is:
 | Today | daily log: plan-vs-done, completion, review and carry-over |
 | Calendar | temporal planning and orientation through real Day / Week / Month controls |
 | Portfolio | Task / Project / Goal / Skill information architecture with Portfolio as the sole list surface and dedicated create/detail pages |
-| Resources | knowledge base and evidence |
-| Health / Nutrition / Fitness | domain records linked to executable scheduled task occurrences |
+| Resources | knowledge/reference and evidence |
+| Health / Nutrition / Fitness | personal domain intelligence; records linked to executable scheduled task occurrences |
+| Journal | reflection and time-based personal history |
+| Skill Map | planned skill evidence/context graph under Portfolio → Skills |
 
 Dashboard, Today and Calendar are projections. Portfolio and Resources expose canonical entities. Domain areas own their records but do not invent parallel tasks or calendar events.
 
@@ -198,12 +200,12 @@ Required capabilities:
 
 ### 5.6 Resources and Knowledge
 
-Resources are the canonical knowledge hub.
+Resources are the canonical knowledge/reference hub; specialized tools may retain file ownership.
 
 Required capabilities:
 
 - create and classify resources;
-- links, files or referenced artifacts where supported;
+- URLs, short notes and references to externally owned artifacts using existing fields;
 - relation to tasks, projects, goals, skills and other resources;
 - library, inspector and search;
 - project learnings, best practices and reusable knowledge;
@@ -312,59 +314,77 @@ Meal-planner slots are selectable and their chosen meal/planning state is
 persisted and reload-stable. A visible Dashboard `Planen` control uses that
 same canonical planner flow.
 
-### 5.10 Coding and Agents
+### 5.10 External Sources and Retained Areas
 
-Coding supports software projects, repositories, learning and agent work.
+**Central context, not central file ownership.** Life OS centralizes control,
+planning, context, relations, history, personal evidence and discoverability.
+It is not a universal storage system. Specialized external tools may remain
+Source of Truth; Life OS keeps a reference/URL, short insight or description,
+context and canonical Project / Goal / Task / Skill relations as needed.
+There is no second operative copy of an external system.
 
-Required capabilities:
+| Source of Truth | Responsibility | Life OS responsibility |
+|---|---|---|
+| GitHub | repositories and code collaboration | Resource `link` with repository URL and project context; no repository manager, API or sync |
+| Sciebo / filesystem / LaTeX | actual document files and scientific writing | Projects, Tasks, Goals, Skills, Resource links and short evidence; no file ownership, uploads or connector |
+| Spreadsheet | Inventory, Wishlist and flexible tabular data | optional future external Resource link; no spreadsheet engine or integration |
+| Life OS | context, links, planning, evidence and relations | canonical spine and daily/personal history |
 
-- repositories and coding projects;
-- GitHub links and optional later read-only integration;
-- courses and learning paths;
-- skill and knowledge evidence;
-- coding session notes and outcomes;
-- AI agent sessions, prompts, tasks, review-needed and follow-up-needed states;
-- no autonomous repository mutation outside confirmed Codex workflows.
+Coding, Education and Work retain their Area identities and remain usable in
+canonical entity context and existing filters. Their suites are hidden and
+retained, not completion obligations. Existing repository metadata, coding
+sessions, education logs, work logs, meetings, decisions, Inventory, Wishlist,
+tables, functions and direct routes remain intact. No data migration or deletion
+is implied by a navigation change.
 
-### 5.11 Education
+### 5.11 Resources Consolidation
 
-Education supports scientific work and learning.
+Resources is the central knowledge/reference surface. Coding Knowledge and
+prompts, Literature, Work Wiki, external documents and Notes fold into this
+existing surface. Scientific Work lives in external documents with Life OS
+Project/Task/Resource/Goal/Skill context; it is not a literature or LaTeX app.
+Learning Log belongs conceptually to Journal and/or explicit Skill Evidence;
+Work Log to Journal reflection or Today daily memory, according to semantics.
+Existing specialized logs stay in their canonical tables; folding does not
+claim their history has been migrated or projected into Journal/Today.
 
-Required capabilities:
+Quick Thought → Inbox → Outcome = Note → canonical Resource context.
+Notes already use `resources` with type `note`; their retained route is not a
+second active Notes app. Existing types remain `note`, `learning`, `prompt`,
+`research`, `link`, `source`, `snippet`, `decision`. Use existing title, body,
+URL, source, context, Area and supported relations. Literature/Paper/Website/
+External Document/GitHub Repository are concepts expressed with these existing
+classifications, not new types. No parallel knowledge database or file storage.
 
-- scientific work and thesis projects;
-- literature and source tracking;
-- learning logs;
-- deadlines, next steps and evidence;
-- writing best practices, prompts and useful resources;
-- relation to Projects, Goals, Skills, Tasks and Resources.
+### 5.12 Journal
 
-### 5.12 Work
+Journal is the sole active Personal surface: time-based personal documentation,
+reflection and history, with future personal tracking/BI views from real entries.
+Its final vertical slice may expose today, recent entries, week/month history,
+frequency, tags/context and relations where canonical. Mood and reviews remain
+separate domain records. No gamification or fabricated activity.
 
-Work supports operational memory without overwhelming the user.
+Recurring Task / Calendar → Journal Entry. Recurrence belongs to the established
+task/planning model, never to the Journal model itself. The canonical dated
+`journal_entries` lifecycle remains; full Journal depth and user acceptance are
+future work, not part of this consolidation pass.
 
-Required capabilities:
+### 5.13 Skill Map
 
-- work projects and tasks;
-- work log;
-- personal wiki;
-- results, decisions, deadlines and follow-ups;
-- sensitive-data boundaries;
-- relation to Resources and Skills.
+Skill Map is the last planned independent new capability, semantically under
+Portfolio → Skills → Skill Map. Skills are nodes; only real evidence may supply
+signals: evidence count/recency, completed Task relations, Resource relations
+and practice context. Never invent mastery percentages.
 
-### 5.13 Life
+Edges must be explicitly stored Skill–Skill relations or clearly labeled derived
+connections through shared Project, Task or Resource context. Clusters may later
+follow real relations; no decorative fake links. Gap Detection requires an
+explicit Target/Prerequisite model and is not planned for this slice.
 
-Life contains private context that does not belong to the other operational domains.
-
-Required capabilities:
-
-- journal;
-- notes;
-- inventory and wishlist;
-- purchase evaluation;
-- private projects and resources.
-
-Inventory and Wishlist remain active. Entertainment is retained in code and data but is deferred and hidden from active navigation.
+Audit: `/coding/skill-map` is a retained Coding demo/empty Manual shell, not a
+canonical graph. No clean Portfolio Skill Map route currently exists. Document
+the IA target now; build and prove the complete vertical slice later. Canonical
+Skills and Skill Evidence stay active through Portfolio and Skill Detail.
 
 ### 5.14 Deferred Surfaces
 
@@ -417,7 +437,7 @@ Planned or depth domains:
 
 - direct Task↔Skill context and complete core-graph backlinks;
 - free calendar events and richer Schedule Blocks, subject to C2 model decisions;
-- richer note/wiki, scientific-work and literature semantics only where canonical Resources/Projects are insufficient;
+- Journal surface depth and the evidence-backed Skill Map; no new Notes/Wiki/scientific-work suites;
 - activity events and analytics projections;
 - AI conversations, tool proposals and confirmed tool results.
 
@@ -436,19 +456,24 @@ A capability is complete only when:
 9. the Capability Registry is updated;
 10. no visible control overclaims functionality.
 
-## 8. Priority Order
+## 8. Priority Order and Active Navigation
+
+After Nutrition acceptance: Journal Surface Completion → Skill Map → Full Active
+Product Acceptance. `ROADMAP.md` owns the block IDs and exactly one active block.
+R2-05 remains active with Nutrition acceptance pending; this consolidation does
+not set USER ACCEPTED for any surface.
 
 ```text
-C1 Core Work Graph
-→ C2 Weekly Planning Calendar
-→ C3 Daily Companion Loop
-→ K1 Knowledge Base
-→ H1/H2 Health and Fitness
-→ N1 Nutrition
-→ A1 Work/Education/Coding/Inventory
+PRIMARY: Dashboard · Inbox · Today · Calendar · Portfolio · Resources
+DOMAINS: Health & Fitness · Nutrition
+PERSONAL: Journal
+UTILITY: Settings
 ```
 
-AI1, integrations, Anti-Rot, Challenges, Shop and Entertainment are not part of this active sequence. They are retained and deferred, not deleted.
+Portfolio retains Tasks / Projects / Goals / Skills subnavigation. Coding,
+Education, Work, Notes, Inventory and Wishlist have no active main navigation.
+Anti-Rot, Challenges, Shop, Entertainment, AI1 and optional integrations remain
+outside active completion. Retained routes do not expand the product promise.
 
 ### R2-05 Health & Fitness role clarification
 

@@ -30,7 +30,8 @@ The existing application is the foundation. This roadmap does not restart the pr
 - Resources and Skills: connected with graph/search/management gaps.
 - Nutrition: recipes, ingredients, meals, planner edit and grocery draft are connected with remaining advanced gaps.
 - Mood, Sleep, Weight, Habits, Running and Strength: connected core loops with remaining depth gaps.
-- Coding, Education, Work and Life have connected core workflows with capability-level depth gaps.
+- Coding, Education and Work suites plus Notes, Inventory and Wishlist are hidden/retained or folded/externalized; Areas remain canonical context.
+- After Nutrition, only Journal completion, Skill Map and Full Active Product Acceptance remain.
 - Personal AI Assistant: not started as a production capability.
 - Operation: local-first ready; private remote is optional and not active.
 
@@ -46,17 +47,26 @@ Active navigation contract:
 PRIMARY
 Dashboard · Inbox · Today · Calendar · Portfolio · Resources
 
-ACTIVE AREAS
-Health & Fitness · Nutrition · Coding · Education · Work · Life
+DOMAINS
+Health & Fitness · Nutrition
 
-ACTIVE LIFE DEPTH
-Journal · Notes · Inventory · Wishlist
+PERSONAL
+Journal
 
 UTILITY
 Settings
 ```
 
-Portfolio owns Task / Project / Goal / Skill management. Resources owns knowledge and evidence. Anti-Rot, Challenges, Shop and Entertainment are deferred and must be hidden from active navigation and Dashboard projections while their routes, code and data are retained. The current `src/config/navigation.ts` still exposes Entertainment, Shop and Challenges and does not expose Wishlist directly; this is documented implementation drift, not a completed visibility change.
+Portfolio owns Task / Project / Goal / Skill management. Resources owns knowledge
+and references. This navigation contract incorporates the 2026-09-07 product
+consolidation: Coding, Education, Work, Notes, Inventory and Wishlist leave active
+navigation; routes/code/data remain retained. Anti-Rot, Challenges, Shop and
+Entertainment remain hidden. Areas are preserved. Central context, not central
+file ownership: GitHub owns repositories, Sciebo/filesystem/LaTeX own document
+files and Spreadsheet owns flexible Inventory/Wishlist data. No connectors,
+external API, duplicate operational storage or destructive cleanup.
+
+The following R0 audit is historical evidence, not current navigation status.
 
 ### R0 audit findings
 
@@ -303,7 +313,7 @@ Use scoped regions and unique test data.
 
 ## 4. Permanent Delivery Sequence
 
-This sequence is the complete product plan, not a live status queue. A Codex prompt names the concrete block ID. Current implementation truth comes from the Capability Registry, code, tests and Git.
+This sequence records the completed technical baseline. The remaining active product plan is the binding R2 order in section 4.12, updated by product consolidation; A1 suite depth is no longer a completion obligation. It is not a live status queue. A Codex prompt names the concrete block ID. Current implementation truth comes from the Capability Registry, code, tests and Git.
 
 | Order | Block | Outcome | Main scope | Depends on | Non-goals |
 |---:|---|---|---|---|---|
@@ -313,7 +323,7 @@ This sequence is the complete product plan, not a live status queue. A Codex pro
 | 4 | K1 Knowledge Base | Resources become searchable context and evidence across the core graph | typed relations, backlinks, search, archive and evidence workflows | C1 relation semantics | decorative graph; embeddings without decision |
 | 5 | H1/H2 Health and Fitness | health facts and fitness plans participate in the daily loop through occurrences | health records, habits, running, strength and linked execution | C2/C3 scheduling and daily protocol | diagnosis; Garmin dependency |
 | 6 | N1 Nutrition | meal planning and completion participate in weekly/daily execution | recipes, meals, portions, groceries and occurrence links | C2/C3 scheduling and daily protocol | medical claims; unsupported macro precision |
-| 7 | A1 Work/Education/Coding/Inventory | area views reuse the core spine and Resources for domain context | projections and bounded domain records; Inventory and Wishlist remain active | C1 and K1 conventions | Entertainment; parallel Tasks/Projects/Resources |
+| 7 | A1 Work/Education/Coding/Inventory (retained baseline) | historical area workflows reuse the core spine | code/data retained; suites now hidden/folded/externalized | C1 and K1 conventions | further suite completion; parallel Tasks/Projects/Resources |
 
 ## 4.1 Completed Work Block: SR1 – Local Schema Recovery
 
@@ -929,10 +939,31 @@ dependency belongs in this slice.
    persistent Nutrition meal-planner slots, safe canonical drag/drop and accessible
    moves; tracking/logging Overview, weekly Meal Planner, Recipes library and
    derived Grocery workspace with desktop one-page defaults.
-6. **R2-06 – Full Active Product Acceptance** — complete core-surface
-   control inventory, live click/navigation/write/reload proof, bounds/
-   whitespace/console/hydration checks, screenshots, Design-Taste review and
-   explicit `USER ACCEPTED` final gate.
+6. **R2-07 – Journal Surface Completion** — canonical dated personal entries,
+   reflection/history, today/recent and week/month/frequency views; tags/context
+   and relations only where canonical. Complete Manual lifecycle, feedback,
+   reload, profile separation, responsive browser proof and user acceptance.
+   Recurring Task / Calendar may lead to an entry; no Journal recurrence model,
+   gamification or automatic migration of Education/Work logs. Depends on R2-05.
+7. **R2-08 – Skill Map** — last independent new capability under Portfolio →
+   Skills → Skill Map. Canonical Skill nodes with evidence count/recency,
+   completed Task/Resource relations and practice context; explicit Skill–Skill
+   edges or labeled derived shared Project/Task/Resource connections. Prove
+   ownership, real source navigation, reload, profile boundaries and responsive
+   controls. No fake percentages, decorative edges or Gap Detection; the latter
+   lacks a Target/Prerequisite model. Depends on R2-07 and existing Skills/Evidence.
+8. **R2-06 – Full Active Product Acceptance** — retain this existing ID, now
+   dependent on R2-05, R2-07 and R2-08. Inventory the entire active product from
+   PRODUCT.md; live click/navigation/write/reload proof, bounds/whitespace/
+   console/hydration, screenshots, Design-Taste and explicit `USER ACCEPTED`.
+   Hidden legacy suites are not completion obligations.
+
+R2-06 keeps its historical ID; new IDs R2-07 and R2-08 deliberately execute
+before it. Exactly one block remains active: R2-05. The consolidation pass is
+an authorized product-boundary/navigation change alongside that pending status,
+not a new active feature block or an implicit Nutrition closure. R2-07/R2-08
+are planned; consolidation itself permits IMPLEMENTATION_PASS only, with
+USER ACCEPTANCE STATUS: PENDING.
 
 ### R2 boundary
 
@@ -1031,13 +1062,15 @@ depth; they were deliberately not part of C2 closure.
 - grocery derivation;
 - scheduled Task Occurrence links.
 
-### A1 – Work, Education, Coding and Inventory
+### A1 – Retained Work, Education, Coding and Inventory Baseline
 
-- repositories, coding projects and agent sessions;
-- scientific work, literature and learning logs;
-- work logs and wiki;
-- inventory, wishlist and purchase decisions;
-- no area-local duplicate Tasks, Projects, Skills or Resources.
+- No further independent suites; retain code, routes, tables and historical data.
+- Coding/Education/Work remain Areas for canonical context and filters.
+- Knowledge, Literature, Wiki and Notes fold into Resources.
+- Learning/Work reflection belongs to Journal/Skill Evidence/Today by semantics;
+  existing specialized logs are retained, not silently migrated.
+- Repository/file/spreadsheet ownership stays external per PRODUCT.md.
+- No area-local duplicate Tasks, Projects, Skills or Resources.
 
 ### AI1 – Personal Assistant
 
@@ -1051,7 +1084,7 @@ depth; they were deliberately not part of C2 closure.
 
 ### I1 – Integrations & Analytics
 
-- optional weather, Garmin and GitHub integrations;
+- optional weather and Garmin only through their external gates; GitHub remains a manual Resource URL, with no planned API/sync;
 - activity events;
 - reports and trends;
 - semantic search only after a privacy and permissions decision.
@@ -1146,7 +1179,9 @@ Operations and product completion are tracked separately.
 Deferred until their prerequisite block and explicit gate:
 
 - Anti-Rot, Challenges and Shop (implemented and retained, hidden from active navigation);
-- Entertainment (implemented and retained, hidden; Inventory and Wishlist stay active);
+- Entertainment (implemented and retained, hidden);
+- Coding/Education/Work suites and Notes (hidden/retained, context folded into active canonical surfaces);
+- Inventory/Wishlist (externalized to Spreadsheet responsibility; existing code/data/routes retained);
 - AI1 Personal Assistant; do not continue it before an explicit post-A1 decision;
 - public deployment and public registration;
 - Garmin API;

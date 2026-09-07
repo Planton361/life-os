@@ -213,3 +213,43 @@ editing and ingredient/lifecycle management open within selected context.
 Grocery: generated items and unresolved Meals are two aligned workspace columns.
 Aggregation follows the existing name/unit/note contract, with incompatible units
 kept separate. No invented category taxonomy, stock or check-off controls.
+
+
+## Active Navigation and Surface Hierarchy — Product Consolidation
+
+Leitregel: **Central context, not central file ownership.** Bestehende V5-Tokens,
+Sidebar-Komponenten und Core-Layouts bleiben maßgeblich. Keine neue Layout-Runde.
+
+| Gruppe | Aktive Navigation |
+|---|---|
+| Primary | Dashboard, Inbox, Today, Calendar, Portfolio, Resources |
+| Domains | Health & Fitness mit bestehenden Unterseiten; Ernährung mit Essensplan, Rezepte, Einkauf |
+| Personal | Journal |
+| Utility | Settings |
+
+Portfolio behält Tasks / Projects / Goals / Skills. Personal ist eine ruhige
+Gruppenüberschrift mit Journal als einzigem Ziel; kein Link zur alten Life-Suite.
+Keine leeren Section Header. Coding, Education, Work, Notes, Inventory und
+Wishlist sind aus aktiver Navigation entfernt; ihre direkten Legacy-Routen und
+Daten bleiben erhalten. Area-Farben und Area-Kontextwerte bleiben verwendbar.
+
+Dashboard = control; Inbox = triage; Today = daily memory;
+Calendar = temporal planning; Portfolio = entity context;
+Resources = knowledge/reference; Health/Nutrition = personal domain intelligence;
+Journal = reflection/history; Skill Map = skill evidence/context graph.
+
+Journal wird in diesem Pass nicht redesigned. Wiederkehrendes Journaling kommt
+aus Recurring Task / Calendar, nicht aus Journal-eigener Recurrence. Spätere
+Verläufe/Frequency müssen auf echten Einträgen beruhen; keine Gamification.
+
+Skill Map ist das spätere Ziel Portfolio → Skills → Skill Map. Die aktuelle
+Coding-Demo wird nicht als aktive Graph-Funktion umgehängt. Nodes zeigen reale
+Evidence; Edges sind explizite Skill-Relationen oder sichtbar als derived
+markierte gemeinsame Project/Task/Resource-Beziehungen. Keine Fake-Prozentwerte,
+Fake-Edges oder Gap Detection ohne Target-/Prerequisite-Modell.
+
+Nav-Proof: 1920×1080, 2560×1440 und 390×844, echte Klicks/Tastatur, Reload,
+keine abgeschnittenen Links oder horizontaler Overflow. Der freie Desktop-Raum
+zwischen kurzer Navigation und unten verankerten Settings ist Orientierung,
+kein Anlass für neue Widgets. Bestehende Surface Acceptances bleiben erhalten;
+Nutrition/R2-05 bleibt pending, Konsolidierungs-Acceptance ebenfalls pending.

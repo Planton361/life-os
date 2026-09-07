@@ -179,7 +179,7 @@ export const portfolioEntities: PortfolioEntity[] = [
       },
     ],
     sourceLinks: [
-      { label: "Education / Literature", href: "/education/literature" },
+      { label: "Resources / Literature", href: "/resources" },
       { label: "Project / Masterarbeit", href: "/projects/portfolio-masterarbeit" },
       { label: "Goal / Masterarbeit", href: "/goals/portfolio-masterarbeit-goal" },
     ],
@@ -211,7 +211,7 @@ export const portfolioEntities: PortfolioEntity[] = [
     decisions: [],
     sourceLinks: [
       { label: "Skill / Java", href: "/skills/portfolio-java-hyperskill" },
-      { label: "Education / Learning Log", href: "/education/learning-log" },
+      { label: "Journal", href: "/life/journal" },
     ],
     noteSnippet: "Keep practice small enough to preserve the daily flow.",
   },
@@ -274,8 +274,8 @@ export const portfolioEntities: PortfolioEntity[] = [
     ],
     decisions: [],
     sourceLinks: [
-      { label: "Work / Wiki", href: "/work/wiki" },
-      { label: "Work Log", href: "/work/log" },
+      { label: "Resources / Work context", href: "/resources" },
+      { label: "Today / Work history", href: "/today" },
       { label: "Task / FI notes", href: "/tasks/task-fi-notes" },
     ],
     noteSnippet: "Separate follow-ups from durable wiki notes.",
@@ -370,10 +370,10 @@ export const portfolioEntities: PortfolioEntity[] = [
     ],
     sourceLinks: [
       {
-        label: "Education / Scientific Work",
-        href: "/education/scientific-work",
+        label: "Portfolio / Projects",
+        href: "/portfolio?type=projects",
       },
-      { label: "Education / Literature", href: "/education/literature" },
+      { label: "Resources / Literature", href: "/resources" },
       { label: "Goal / Masterarbeit", href: "/goals/portfolio-masterarbeit-goal" },
     ],
     noteSnippet: "Keep visible, but do not let source triage own the page.",
@@ -403,7 +403,7 @@ export const portfolioEntities: PortfolioEntity[] = [
     decisions: [],
     sourceLinks: [
       { label: "Skill / Java", href: "/skills/portfolio-java-hyperskill" },
-      { label: "Education / Learning Log", href: "/education/learning-log" },
+      { label: "Journal", href: "/life/journal" },
     ],
     noteSnippet: "Evidence should come from practice, not course collecting.",
   },
@@ -437,8 +437,8 @@ export const portfolioEntities: PortfolioEntity[] = [
       },
     ],
     sourceLinks: [
-      { label: "Work / Wiki", href: "/work/wiki" },
-      { label: "Work Log", href: "/work/log" },
+      { label: "Resources / Work context", href: "/resources" },
+      { label: "Today / Work history", href: "/today" },
       { label: "Task / FI notes", href: "/tasks/task-fi-notes" },
     ],
     noteSnippet: "Keep confidential work context quiet and scoped.",
@@ -512,10 +512,10 @@ export const portfolioEntities: PortfolioEntity[] = [
     ],
     sourceLinks: [
       {
-        label: "Education / Scientific Work",
-        href: "/education/scientific-work",
+        label: "Portfolio / Projects",
+        href: "/portfolio?type=projects",
       },
-      { label: "Education / Literature", href: "/education/literature" },
+      { label: "Resources / Literature", href: "/resources" },
       { label: "Project / Masterarbeit", href: "/projects/portfolio-masterarbeit" },
     ],
     noteSnippet: "Decision pressure belongs here, not in the Dashboard.",
@@ -573,7 +573,7 @@ export const portfolioEntities: PortfolioEntity[] = [
     ],
     decisions: [],
     sourceLinks: [
-      { label: "Work", href: "/work" },
+      { label: "Portfolio / Projects", href: "/portfolio?type=projects" },
       { label: "Project / FI notes", href: "/projects/portfolio-finanzinformatik" },
     ],
     noteSnippet: "Keep this low-pressure until weekly review promotes it.",
@@ -644,7 +644,7 @@ export const portfolioEntities: PortfolioEntity[] = [
     ],
     decisions: [],
     sourceLinks: [
-      { label: "Education / Learning Log", href: "/education/learning-log" },
+      { label: "Journal", href: "/life/journal" },
       { label: "Project / Java", href: "/projects/project-java-hyperskill" },
     ],
     noteSnippet:
@@ -686,10 +686,10 @@ export const portfolioEntities: PortfolioEntity[] = [
       },
     ],
     sourceLinks: [
-      { label: "Education / Literature", href: "/education/literature" },
+      { label: "Resources / Literature", href: "/resources" },
       {
-        label: "Education / Scientific Work",
-        href: "/education/scientific-work",
+        label: "Portfolio / Projects",
+        href: "/portfolio?type=projects",
       },
     ],
     noteSnippet: "Writing skill is blocked by decision quality, not effort.",
@@ -730,7 +730,6 @@ export const portfolioEntities: PortfolioEntity[] = [
       },
     ],
     sourceLinks: [
-      { label: "Coding / Agents", href: "/coding/agents" },
       { label: "Resources", href: "/resources" },
     ],
     noteSnippet: "Agent capability stays bounded by root truths and reviews.",

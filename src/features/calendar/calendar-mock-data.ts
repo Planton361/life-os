@@ -268,8 +268,8 @@ export const timedBlocks = [
     area: "Work",
     sourceEntity: {
       type: "meeting",
-      label: "Work",
-      href: "/work/meetings",
+      label: "Today / Work history",
+      href: "/today",
     },
     accent: "var(--accent-green)",
     meta: "Remote sync",

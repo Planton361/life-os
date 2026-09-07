@@ -10,7 +10,7 @@ export type NavigationItem = {
 
 export type NavigationSection = {
   label: string;
-  href: `/${string}`;
+  href?: `/${string}`;
   accent: string;
   items: NavigationItem[];
 };
@@ -21,6 +21,7 @@ export type SidebarNavigation = {
   utility: NavigationItem[];
 };
 
+// Route availability includes retained legacy routes; it is not active navigation.
 export const readyRoutes = [
   "/dashboard",
   "/inbox",
@@ -184,97 +185,12 @@ export const sidebarNavigation: SidebarNavigation = {
       ],
     },
     {
-      label: "Coding",
-      href: "/coding",
-      accent: "var(--accent-blue)",
-      items: [
-        {
-          label: "Repositories",
-          href: "/coding/repositories",
-          status: "ready",
-        },
-        {
-          label: "Agents",
-          href: "/coding/agents",
-          status: "ready",
-        },
-        {
-          label: "Skill Map",
-          href: "/coding/skill-map",
-          status: "ready",
-          description: "Coding skills, dependencies, evidence, roadmap",
-        },
-        {
-          label: "Knowledge",
-          href: "/coding/knowledge",
-          status: "ready",
-          description: "Coding notes, resources, snippets, documentation",
-        },
-      ],
-    },
-    {
-      label: "Life",
-      href: "/life",
+      label: "Personal",
       accent: "var(--accent-purple)",
       items: [
         {
           label: "Journal",
           href: "/life/journal",
-          status: "ready",
-        },
-        {
-          label: "Notes",
-          href: "/life/notes",
-          status: "ready",
-        },
-        {
-          label: "Inventory",
-          href: "/life/inventory",
-          status: "ready",
-        },
-        {
-          label: "Wishlist",
-          href: "/life/inventory?view=wishlist",
-          status: "ready",
-          description: "Wishlist and purchase decisions",
-        },
-      ],
-    },
-    {
-      label: "Education",
-      href: "/education",
-      accent: "var(--accent-blue)",
-      items: [
-        {
-          label: "Scientific Work",
-          href: "/education/scientific-work",
-          status: "ready",
-        },
-        {
-          label: "Literature",
-          href: "/education/literature",
-          status: "ready",
-        },
-        {
-          label: "Learning Log",
-          href: "/education/learning-log",
-          status: "ready",
-        },
-      ],
-    },
-    {
-      label: "Work",
-      href: "/work",
-      accent: "var(--accent-green)",
-      items: [
-        {
-          label: "Work Log",
-          href: "/work/log",
-          status: "ready",
-        },
-        {
-          label: "Wiki",
-          href: "/work/wiki",
           status: "ready",
         },
       ],
