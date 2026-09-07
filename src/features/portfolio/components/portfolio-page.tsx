@@ -7,9 +7,9 @@ import {
   createPortfolioHref,
   normalizePortfolioScopeFilter,
   normalizePortfolioSortMode,
-  normalizePortfolioView,
+  readPortfolioView,
 } from "../portfolio-routing";
-import { portfolioPriorityRank, portfolioStatusMeta } from "../portfolio-style";
+import { portfolioPriorityRank } from "../portfolio-style";
 import type {
   PortfolioEntity,
   PortfolioEntityType,
@@ -18,7 +18,10 @@ import type {
   PortfolioView,
   PortfolioViewModel,
 } from "../types";
-import Link from "next/link";
+import {
+  PortfolioInspector,
+  PortfolioCreateLauncher,
+} from "./portfolio-inspector";
 import { PortfolioEntityList } from "./portfolio-entity-list";
 import { PortfolioFilterBar } from "./portfolio-filter-bar";
 import { PortfolioPageHeader } from "./portfolio-page-header";
@@ -193,9 +196,7 @@ export function PortfolioPage({
 }>) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const activeView = normalizePortfolioView(
-    searchParams.get("type") ?? searchParams.get("view"),
-  );
+  const activeView = readPortfolioView(searchParams);
   const activeFilter = normalizePortfolioScopeFilter(searchParams.get("scope"));
   const sortMode = normalizePortfolioSortMode(searchParams.get("sort"));
   const selectedEntityId = searchParams.get("selected");
@@ -234,17 +235,11 @@ export function PortfolioPage({
   }, [activeFilter, activeView, baseEntities, sortMode]);
 
   const selectedEntity =
-    visibleEntities.find((entity) => entity.id === selectedEntityId) ??
-    visibleEntities[0] ??
-    null;
-
-  const selectedStatusLabel = selectedEntity
-    ? portfolioStatusMeta[selectedEntity.status].label
-    : "keine Auswahl";
+    visibleEntities.find((entity) => entity.id === selectedEntityId) ?? null;
 
   return (
     <div
-      className="mx-auto flex w-full max-w-[2208px] flex-col gap-2 pb-6 xl:min-h-0"
+      className="mx-auto flex w-full flex-col gap-2 pb-3 xl:flex-1 xl:min-h-0 xl:pb-0"
       data-portfolio-section="page"
       {...contentStateAttributes(
         viewModel.contentStates.page,
@@ -283,8 +278,8 @@ export function PortfolioPage({
         getViewHref={(view) =>
           createPortfolioHref(
             {
-              type: null,
-              view: view === "all" ? null : view,
+              type: view === "all" ? null : view,
+              view: null,
               selected: null,
             },
             searchParams,
@@ -298,7 +293,10 @@ export function PortfolioPage({
         visibleCount={visibleEntities.length}
       />
 
-      <div className="grid min-w-0 gap-2 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(0,1fr)_minmax(360px,430px)] 2xl:grid-cols-[minmax(0,1fr)_minmax(420px,520px)]">
+      <div
+        data-portfolio-section="workspace"
+        className="grid min-w-0 gap-3 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(0,1fr)_minmax(360px,430px)] 2xl:grid-cols-[minmax(0,1fr)_minmax(420px,520px)]"
+      >
         <PortfolioEntityList
           activeViewLabel={getViewLabel(viewModel, activeView)}
           contentState={viewModel.contentStates.entityList}
@@ -315,61 +313,13 @@ export function PortfolioPage({
           profileId={viewModel.profileId}
           selectedEntityId={selectedEntity?.id ?? null}
         />
-        <aside
-          aria-label="Selected Entity"
-          className="grid content-start gap-5 rounded-xl border border-[var(--border-subtle)] bg-[rgba(15,23,36,.6)] p-5 xl:overflow-y-auto"
+        <div
+          className="flex min-h-0 min-w-0 flex-col gap-4"
+          data-portfolio-section="right-rail"
         >
-          <h2 className="text-lg font-semibold">Selected Entity</h2>
-          {selectedEntity ? (
-            <>
-              <p className="text-sm text-[var(--accent-cyan)]">
-                {selectedEntity.type} · {selectedStatusLabel}
-              </p>
-              <h3 className="text-xl font-semibold">{selectedEntity.title}</h3>
-              <p className="text-sm">{selectedEntity.nextAction}</p>
-              <div className="grid gap-2 text-sm text-[var(--text-muted)]">
-                {selectedEntity.relations.map((r, i) => (
-                  <p key={i}>
-                    {r.label}: {r.value}
-                  </p>
-                ))}
-              </div>
-              <Link
-                className="rounded-lg border border-[var(--border-default)] bg-[rgba(95,200,215,.12)] p-3 text-center"
-                href={`/${selectedEntity.type}s/${selectedEntity.id}`}
-              >
-                Details öffnen
-              </Link>
-            </>
-          ) : (
-            <p>Keine Entity ausgewählt.</p>
-          )}
-          <nav
-            aria-label="Entity erstellen"
-            className="grid gap-2 border-t border-[var(--border-subtle)] pt-4"
-          >
-            {["Task", "Project", "Goal", "Skill", "Resource"].map((label) => (
-              <Link
-                key={label}
-                className="rounded-lg border border-[var(--border-subtle)] px-3 py-2 text-sm"
-                prefetch={false}
-                href={`/${label.toLowerCase()}s/new`}
-              >
-                {label} erstellen
-              </Link>
-            ))}
-          </nav>
-          <nav
-            aria-label="Entity Listen"
-            className="grid grid-cols-2 gap-2 text-sm"
-          >
-            {["Tasks", "Projects", "Goals", "Skills"].map((label) => (
-              <Link key={label} href={`/${label.toLowerCase()}`}>
-                {label} öffnen
-              </Link>
-            ))}
-          </nav>
-        </aside>
+          <PortfolioCreateLauncher />
+          <PortfolioInspector entity={selectedEntity} />
+        </div>
       </div>
     </div>
   );

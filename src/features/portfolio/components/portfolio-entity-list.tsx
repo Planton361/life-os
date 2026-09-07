@@ -67,6 +67,8 @@ function PortfolioRow({
           ? "border-[color-mix(in_srgb,var(--accent)_46%,transparent)] bg-[color-mix(in_srgb,var(--accent)_10%,rgba(18,28,43,.78))]"
           : "border-[var(--border-subtle)] hover:border-[color-mix(in_srgb,var(--accent)_28%,transparent)] hover:bg-[rgba(18,28,43,.62)]",
       )}
+      data-entity-type={entity.type}
+      scroll={false}
       href={getEntityHref(entity.id)}
       style={accentStyle(typeAccent)}
     >
@@ -238,11 +240,11 @@ export function PortfolioEntityList({
   return (
     <section
       aria-labelledby="active-portfolio-heading"
-      className="overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.82)] shadow-[0_8px_22px_rgba(0,0,0,.12)] xl:min-h-0"
+      className="flex flex-col overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[rgba(15,23,36,.82)] shadow-[0_8px_22px_rgba(0,0,0,.12)] xl:min-h-0"
       data-portfolio-section="entity-list"
       {...contentStateAttributes(contentState, profileId)}
     >
-      <div className="border-b border-[var(--border-subtle)] bg-[rgba(18,28,43,.48)] px-3 py-3">
+      <div className="shrink-0 border-b border-[var(--border-subtle)] bg-[rgba(18,28,43,.48)] px-3 py-3">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
             <h2
@@ -259,7 +261,7 @@ export function PortfolioEntityList({
         </div>
       </div>
 
-      <div className="grid gap-2 p-2.5 xl:max-h-[calc(100dvh-25rem)] xl:overflow-y-auto">
+      <div className="grid content-start gap-2 p-2.5 xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
         {groups.length > 0 ? (
           groups.map((group) => (
             <PortfolioGroupSection

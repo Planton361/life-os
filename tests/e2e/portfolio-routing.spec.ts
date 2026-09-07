@@ -83,12 +83,12 @@ test.describe("Portfolio routing", () => {
       .locator('section[aria-label="Portfolio view, scope and sort controls"]')
       .getByRole("link", { exact: true, name: "Tasks" })
       .click();
-    await expect(page).toHaveURL(/\/portfolio\?.*status=active.*view=tasks/);
+    await expect(page).toHaveURL(/\/portfolio\?.*status=active.*type=tasks/);
 
     const url = new URL(page.url());
     expect(url.pathname).toBe("/portfolio");
     expectSearchParam(url, "status", "active");
-    expectSearchParam(url, "view", "tasks");
+    expectSearchParam(url, "type", "tasks");
 
     const list = page.getByRole("region", { name: "Active Portfolio" });
     await expect(

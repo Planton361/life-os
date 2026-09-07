@@ -609,7 +609,7 @@ function MissingEntity({
       <SectionPanel title="Next step">
         <Link
           className="inline-flex min-h-9 items-center rounded-full border border-[var(--border-subtle)] bg-[rgba(168,183,204,.06)] px-3 text-xs font-semibold text-[var(--text-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-          href={meta.route}
+          href={`/portfolio?type=${kind}s`}
         >
           Back to {meta.plural}
         </Link>
@@ -1090,7 +1090,7 @@ function ProjectDetail({
             </div>
             <Link
               className="mt-4 inline-flex min-h-9 items-center rounded-full border border-[var(--border-subtle)] bg-[rgba(168,183,204,.06)] px-3 text-xs font-semibold text-[var(--text-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-              href="/tasks"
+              href="/portfolio?type=tasks"
             >
               View all tasks
             </Link>

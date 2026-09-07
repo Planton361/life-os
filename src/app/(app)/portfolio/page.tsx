@@ -14,13 +14,13 @@ export default async function PortfolioPage() {
   const viewModel = await getPortfolioViewModel();
 
   return (
-    <>
-      <div className="mx-auto mb-3 w-full max-w-[2208px]">
+    <div className="flex min-h-0 flex-col xl:h-full" id="portfolio-workspace">
+      <div className="w-full shrink-0 [&:not(:empty)]:mb-3">
         <ManualDbAuthNotice />
       </div>
       <Suspense fallback={null}>
         <PortfolioWorkbenchPage viewModel={viewModel} />
       </Suspense>
-    </>
+    </div>
   );
 }

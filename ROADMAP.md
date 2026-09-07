@@ -907,8 +907,9 @@ dependency belongs in this slice.
    Calendar Day/Week/Month controls and full-height
    useful planning surface without an empty Bottom Zone.
 4. **R2-04 – Portfolio IA & Entity Depth** — Tasks/Projects/Goals/
-   Skills sidebar sub-navigation and separate entity list, create and detail
-   surfaces with shared entity-specific fields, canonical relation management,
+   Skills sidebar sub-navigation and one Portfolio list filtered by entity type,
+   plus dedicated create and ID-detail surfaces, shared entity-specific fields,
+   canonical relation management,
    evidence and honest progress; Overview is not primary inline creation.
    Resources retain their own create/detail routes and knowledge ownership.
 5. **R2-05 – Health / Fitness / Nutrition Surface Completion** — full

@@ -620,7 +620,7 @@ test("R2-04 empty/auth boundary, validation conflict and navigation history", as
     .getByRole("navigation", { name: "Breadcrumb" })
     .getByRole("link", { name: "Tasks", exact: true })
     .click();
-  await expect(page).toHaveURL(/\/tasks$/);
+  await expect(page).toHaveURL(/\/portfolio\?type=tasks$/);
   await page.goBack();
   await expect(page).toHaveURL(url);
   await expect(
@@ -630,15 +630,9 @@ test("R2-04 empty/auth boundary, validation conflict and navigation history", as
     }),
   ).toBeVisible();
   await page.goForward();
-  await expect(page).toHaveURL(/\/tasks$/);
-  await page.getByLabel("Suche", { exact: true }).fill("does-not-exist");
-  await page.getByRole("button", { name: "Anwenden" }).click();
-  await expect(
-    page.getByRole("region", { name: "Entity-Liste" }),
-  ).toContainText("Keine passenden Einträge");
-  await page.getByLabel("Suche", { exact: true }).fill("");
-  await page.getByRole("button", { name: "Anwenden" }).click();
-  await expect(
-    page.getByRole("region", { name: "Entity-Liste" }).getByRole("link"),
-  ).toHaveCount(1);
+  await expect(page).toHaveURL(/\/portfolio\?type=tasks$/);
+  const portfolioList = page.getByRole("region", { name: "Active Portfolio", exact: true });
+  await expect(portfolioList.locator('[data-entity-type="task"]')).toHaveCount(1);
+  await page.reload();
+  await expect(portfolioList.locator('[data-entity-type="task"]')).toHaveCount(1);
 });

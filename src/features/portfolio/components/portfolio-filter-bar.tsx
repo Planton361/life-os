@@ -60,9 +60,6 @@ export function PortfolioFilterBar({
           <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-faint)]">
             Entity view
           </p>
-          <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
-            All is the unified active workbench; entity tabs filter this page.
-          </p>
         </div>
         <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-faint)]">
           {visibleCount} of {totalCount} visible
@@ -75,6 +72,7 @@ export function PortfolioFilterBar({
             <div className="flex w-max min-w-full rounded-full border border-[var(--border-subtle)] bg-[rgba(11,17,28,.72)] p-1">
               {views.map((view) => (
                 <Link
+                  scroll={false}
                   aria-current={view.value === activeView ? "page" : undefined}
                   className={segmentedLinkClass(view.value === activeView)}
                   href={getViewHref(view.value)}
@@ -98,6 +96,7 @@ export function PortfolioFilterBar({
               </p>
               {filters.map((filter) => (
                 <Link
+                  scroll={false}
                   aria-current={
                     filter.value === activeFilter ? "true" : undefined
                   }
@@ -119,6 +118,7 @@ export function PortfolioFilterBar({
             </p>
             {sorts.map((sort) => (
               <Link
+                scroll={false}
                 aria-current={sort.value === sortMode ? "true" : undefined}
                 className={chipLinkClass(sort.value === sortMode)}
                 href={getSortHref(sort.value)}

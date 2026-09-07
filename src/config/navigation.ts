@@ -102,25 +102,25 @@ export const sidebarNavigation: SidebarNavigation = {
       children: [
         {
           label: "Tasks",
-          href: "/tasks",
+          href: "/portfolio?type=tasks",
           status: "ready",
           description: "Task workbench",
         },
         {
           label: "Projects",
-          href: "/projects",
+          href: "/portfolio?type=projects",
           status: "ready",
           description: "Project workbench",
         },
         {
           label: "Goals",
-          href: "/goals",
+          href: "/portfolio?type=goals",
           status: "ready",
           description: "Goal workbench",
         },
         {
           label: "Skills",
-          href: "/skills",
+          href: "/portfolio?type=skills",
           status: "ready",
           description: "Skill workbench",
         },

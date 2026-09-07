@@ -85,6 +85,14 @@ export function normalizePortfolioView(value: string | null): PortfolioView {
   return isPortfolioView(value) ? value : "all";
 }
 
+export function readPortfolioView(searchParams: {
+  get(name: string): string | null;
+}): PortfolioView {
+  return normalizePortfolioView(
+    searchParams.get("type") ?? searchParams.get("view"),
+  );
+}
+
 export function normalizePortfolioScopeFilter(
   value: string | null,
 ): PortfolioScopeFilter {

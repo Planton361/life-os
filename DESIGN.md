@@ -144,7 +144,13 @@ with “Details öffnen”. Creation links lead to dedicated pages, including
 Resources in its own knowledge area. No full inline entity form remains in the
 Portfolio overview.
 
-Entity lists are compact management surfaces. Create and detail share a bounded
+Portfolio is the sole compact entity list surface. Sidebar subnavigation and
+Entity View use the same `type` query. A separate compact “Neu erstellen” card
+sits above the independent Selected Entity inspector on desktop; mobile stacks
+list, inspector, then create. The desktop workspace fills the remaining viewport
+with internal list/inspector scrolling and compact rows.
+
+Create and detail share a bounded
 workbench layout and entity-specific fields: identity, context, state/planning,
 relations, real work/evidence and lifecycle. Use clear section headings, existing
 cyan/amber accents, restrained borders and readable input widths. Detail depth

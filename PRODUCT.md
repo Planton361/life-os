@@ -89,7 +89,7 @@ The active surface contract is:
 | Inbox | triage of existing captures into the canonical spine; not a second capture surface |
 | Today | daily log: plan-vs-done, completion, review and carry-over |
 | Calendar | temporal planning and orientation through real Day / Week / Month controls |
-| Portfolio | Task / Project / Goal / Skill information architecture with separate list, create and detail surfaces |
+| Portfolio | Task / Project / Goal / Skill information architecture with Portfolio as the sole list surface and dedicated create/detail pages |
 | Resources | knowledge base and evidence |
 | Health / Nutrition / Fitness | domain records linked to executable scheduled task occurrences |
 
@@ -182,7 +182,7 @@ Required capabilities:
 
 Portfolio provides overview, navigation and cross-entity context for the canonical Task / Project / Goal / Skill spine. The root contains summary counts, filters, active work and a quick inspector whose primary action opens the entity details. Full creation and editing belong on dedicated pages, not in the overview or an inline modal.
 
-Canonical lists are `/tasks`, `/projects`, `/goals` and `/skills`; each has `/new` and one ID-based detail route. Create and edit share each entity’s field groups. A successful direct create opens its persisted ID detail page. Inbox-routed entities already exist and must never pass through another creation step. Resources retain their own `/resources`, `/resources/new` and `/resources/[resourceId]` knowledge area.
+Portfolio is the only active list surface: `/portfolio` and `?type=tasks|projects|goals|skills`. Sidebar subnavigation and Entity View share this URL filter. Legacy list routes remain technical deep links without active navigation. Each type retains its existing `/new` and stable ID detail routes under `/tasks`, `/projects`, `/goals` or `/skills`. Create and edit share each entity’s field groups. A successful direct create opens its persisted ID detail page. Inbox-routed entities already exist and must never pass through another creation step. Resources retain their own `/resources`, `/resources/new` and `/resources/[resourceId]` knowledge area.
 
 Task steps are task-local persisted work, with progress derived from active completed steps. Project task progress reports completed linked tasks separately from project completion. Goals do not display an outcome percentage without a canonical outcome basis. Skills expose explicit evidence and linked practice; links alone never create evidence.
 

@@ -45,7 +45,7 @@ export function EntityWorkbenchShell({
             {kind === "resource" ? "Knowledge" : "Portfolio"}
           </Link>
           <span>/</span>
-          <Link href={entityRoutes[kind]}>{entityLabels[kind]}s</Link>
+          <Link href={kind === "resource" ? "/resources" : `/portfolio?type=${kind}s`}>{entityLabels[kind]}s</Link>
         </nav>
         <h1 className="text-3xl font-semibold">{title}</h1>
       </header>

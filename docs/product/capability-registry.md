@@ -799,7 +799,7 @@ and its USER ACCEPTANCE STATUS is PENDING.
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Portfolio information architecture | `CONNECTED` | four canonical management lists, five dedicated create/detail workbenches, overview quick preview; current R2-04 browser proof | R2-04 user acceptance pending |
+| Portfolio information architecture | `CONNECTED` | one Portfolio list with shared URL entity filters, five dedicated create/detail workbenches and independent quick inspector; R2-04 IA correction proof below | R2-04 user acceptance pending |
 | Task create/edit/lifecycle | `CONNECTED` | canonical ID create/edit/reload, complete/reopen/archive and source-owned lifecycle boundary; R2-04 proof | R2-04 user acceptance pending |
 | Task relation to Project/Goal | `CONNECTED` | nullable Task→Project/Goal fields, server-authenticated/Zod/user-scoped alignment checks and C1.1 integrated Target reload proof | maintain explicit user choices; no silent relinking |
 | Task relation to Skill/Resource | `CONNECTED` | owned n:m `task_skill_links` plus Resource relations, idempotent link/unlink, Task detail projection and Skill backlink without creating Evidence; C1.1 integrated proof PASS | maintain endpoint ownership, reload and no-auto-Evidence proofs |
@@ -822,6 +822,101 @@ and its USER ACCEPTANCE STATUS is PENDING.
 | Progress engine | `DECISION_REQUIRED` | task-based signals and legacy fields | preserve honest work signals until model exists |
 | Portfolio pins/favorites | `NOT_STARTED` | none | support Dashboard max-four selection |
 
+## R2-04 – unified Portfolio list IA and surface correction (2026-09-07)
+
+R2-04 remains ACTIVE. USER ACCEPTANCE STATUS: PENDING. This pass changes IA
+and surface composition only; the historical four-list decision below is
+superseded. Portfolio is the sole active list entry for Task / Project / Goal /
+Skill. `/portfolio?type=tasks|projects|goals|skills` and the root share one URL
+state reader between Sidebar and Entity View. Existing `view` links remain
+compatible. Type/scope transitions clear selection; selection never falls back
+to an unrelated first row. Sort preserves an existing visible selection.
+
+Sidebar children, workbench breadcrumbs and legacy entity return/list CTAs now
+point to Portfolio filters. Redundant right-rail “Tasks/Projects/Goals/Skills
+öffnen” controls are removed. Legacy route implementations remain for technical
+deep links (including historical archive queries), with no entry from Portfolio
+or its Sidebar/create/detail navigation. Route bases for IDs, create paths and
+revalidation remain intact. Resources retain their independent knowledge area.
+
+Create is a compact independent card with five canonical `/new` launchers.
+The inspector uses existing description, next action, planning, relationship
+context (including inherited Goal context), linked Resources and Skill evidence;
+it offers one canonical “Details öffnen” action and no editing/creation inputs.
+Unset task duration is explicit; no fallback duration or generic completion
+percentage is presented as recorded work. Empty selection keeps a calm card.
+
+Desktop uses the available shell width and remaining viewport height. Compact
+rows remain compact within a full-height list; create is auto-height and the
+inspector fills the right rail. Both content areas support internal scrolling.
+Mobile stacks list → inspector → create. The existing Sidebar flyout is clamped
+to the viewport and keyboard-operable. Active route markers wait until client
+hydration to avoid a previous-route server/client mismatch on rapid navigation.
+Entity / Scope / Sort remain distinct object-type / subset / ordering controls.
+
+Current control inventory (individual actions and URLs are also attached as
+`control-inventory` by `tests/e2e/r2-04-portfolio-surface.spec.ts`):
+
+| CONTROL | EXPECTED | ACTUAL | RESULT |
+|---|---|---|---|
+| Portfolio Root | unified list and calm empty inspector | authenticated empty and populated states exercised | PASS |
+| Sidebar Portfolio | `/portfolio` | root opens | PASS |
+| Sidebar Tasks | `?type=tasks` | only Task rows; Tasks tab active after reload | PASS |
+| Sidebar Projects | `?type=projects` | only Project rows; Projects tab active after reload | PASS |
+| Sidebar Goals | `?type=goals` | only Goal rows; Goals tab active after reload | PASS |
+| Sidebar Skills | `?type=skills` | only Skill rows; Skills tab active after reload | PASS |
+| Entity View All | unified list | all four created entity types visible | PASS |
+| Entity View Tasks | task subset | URL and one Task row agree | PASS |
+| Entity View Projects | project subset | URL and one Project row agree | PASS |
+| Entity View Goals | goal subset | URL and one Goal row agree | PASS |
+| Entity View Skills | skill subset | URL and one Skill row agree | PASS |
+| Scope, all 11 choices | independent subset | every scope clicked; active state reload-stable; All resets scope | PASS |
+| Sort, all 3 choices | independent ordering | every sort clicked; active state reload-stable; Priority resets sort | PASS |
+| Entity selection, all 4 types | quick inspector | title/context and selection survive reload | PASS |
+| Details öffnen, all 4 types | stable ID route | actual canonical detail opened | PASS |
+| Create Task | Task create → persisted ID | form submitted, detail reloaded, Portfolio readback | PASS |
+| Create Project | Project create → persisted ID | form submitted, detail reloaded, Portfolio readback | PASS |
+| Create Goal | Goal create → persisted ID | form submitted, detail reloaded, Portfolio readback | PASS |
+| Create Skill | Skill create → persisted ID | form submitted, detail reloaded, Portfolio readback | PASS |
+| Create Resource | canonical Knowledge create → ID | form submitted, detail reloaded | PASS |
+| Create/detail breadcrumbs | corresponding Portfolio filter | all four return links clicked | PASS |
+| Back / Forward | restore entity filter | Tasks ↔ Projects URL, tab and list restored | PASS |
+| Reload | preserve URL filters and selection | each entity and each scope/sort exercised | PASS |
+| Incompatible selection | clear quick inspector | type change removes selected query and shows empty state | PASS |
+| Mobile Sidebar / keyboard | bounded accessible filter navigation | ArrowRight opens menu; Skills click updates Entity View | PASS |
+| Overflowing list | internal scrolling, fixed Body height | real Demo rows scrolled and selected at 1280×720 | PASS |
+| Removed list CTAs | no redundant visible controls | absence asserted at every screenshot state | PASS |
+
+Browser-Proof: PASS. Focused manual proof uses unique UI-created entities in
+an isolated disposable local runtime, including required-field validation,
+canonical detail/reload and Portfolio readback. The existing six Portfolio
+routing / R2-04 workbench tests also pass: create/edit, relations, Task Steps,
+Evidence, lifecycle, ownership, Empty/Auth boundaries and Inbox → existing
+Entity → ID detail. No normal database, action, schema or migration changed.
+
+Visual proof: 16 full-page Portfolio screenshots cover All / Tasks / Projects /
+selected at 3840×2160, 2560×1440, 1920×1080 and 390×844. Desktop measurements
+assert Body height ≤ viewport, surfaces end within 24 px of the bottom, list
+and inspector bottoms align within 2 px, create/inspector gap ≥ 12 px and no
+overlap or horizontal overflow. Mobile order and overflow are asserted. The
+existing workbench regression additionally captured its 44 route screenshots.
+Artifacts stay in ignored `test-results/`; no screenshots or auth state staged.
+
+V5 Design-Taste: PASS. Was passt zu V5: existing surfaces, borders and semantic
+entity colors; dominant compact list, clear inspector and quieter launcher.
+Was verletzt V5: the prior fused rail, duplicate list navigation and uncomposed
+bottom background were corrected. Konkrete Fixes: separate cards and full-height
+workspace, stable empty inspector, no dummy content or enlarged rows.
+Acceptance Decision: implementation only; USER ACCEPTANCE remains PENDING.
+
+Validation: `git diff --check`, `pnpm typecheck`, `pnpm lint`, eight Portfolio
+routing unit tests, focused Portfolio browser proof and `pnpm build` PASS.
+No schema checks are applicable because no backend/schema code changed.
+The initial proof caught a Sidebar hydration race (fixed) and test synchronization
+issues (fixed); the final proof checks console/hydration without suppressions.
+No functional deferral was introduced by this pass. Final user review is still
+required; R2-05 is not started.
+
 ## R2-04 – Portfolio IA & Entity Depth (2026-09-06)
 
 R2-04 remains the sole Active Work Block. USER ACCEPTANCE STATUS: PENDING.
@@ -832,7 +927,7 @@ surface changes are part of this slice. Inbox integration uses the existing
 “Ziel öffnen” selection link, then “Details öffnen” to the already persisted ID;
 there is no second create step.
 
-### Route audit
+### Historical route audit (superseded by the 2026-09-07 IA decision below)
 
 | Entity | Previous list | Previous create | Previous detail | Target / action |
 |---|---|---|---|---|

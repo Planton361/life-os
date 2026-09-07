@@ -7,6 +7,7 @@ import {
   useId,
   useRef,
   useState,
+  useSyncExternalStore,
   type CSSProperties,
   type FocusEvent,
   type KeyboardEvent,
@@ -17,6 +18,7 @@ import {
   type NavigationSection,
 } from "@/config/navigation";
 import { cn } from "@/lib/cn";
+import { readPortfolioView } from "@/features/portfolio/portfolio-routing";
 
 type SidebarStyle = CSSProperties & {
   "--section-accent"?: string;
@@ -85,7 +87,10 @@ function isCurrentPath(
     }
 
     return Array.from(target.searchParams.entries()).every(
-      ([key, value]) => searchParams.get(key) === value,
+      ([key, value]) =>
+        (key === "type" && target.path === "/portfolio"
+          ? readPortfolioView(searchParams)
+          : searchParams.get(key)) === value,
     );
   }
 
@@ -264,7 +269,7 @@ function NavItem({
 
     const rect = trigger.getBoundingClientRect();
     setFlyoutPosition({
-      left: rect.right + 8,
+      left: Math.max(12, Math.min(rect.right + 8, window.innerWidth - 188)),
       top: flyoutTop(rect, children.length),
     });
   }
@@ -353,7 +358,7 @@ function NavItem({
 
       const rect = trigger.getBoundingClientRect();
       setFlyoutPosition({
-        left: rect.right + 8,
+        left: Math.max(12, Math.min(rect.right + 8, window.innerWidth - 188)),
         top: flyoutTop(rect, children.length),
       });
     }
@@ -574,8 +579,20 @@ function NavigationSectionBlock({
   );
 }
 
+// A shared layout can hydrate after navigation. Its initial active marker must
+// not depend on the server's previous route; links remain usable throughout.
+const subscribeToHydration = () => () => {};
+const clientHydrationSnapshot = () => true;
+const serverHydrationSnapshot = () => false;
+
 export function Sidebar() {
-  const pathname = usePathname();
+  const currentPathname = usePathname();
+  const hydrated = useSyncExternalStore(
+    subscribeToHydration,
+    clientHydrationSnapshot,
+    serverHydrationSnapshot,
+  );
+  const pathname = hydrated ? currentPathname : "";
   const searchParams = useSearchParams();
 
   return (
