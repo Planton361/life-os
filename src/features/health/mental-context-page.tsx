@@ -58,7 +58,7 @@ export function MentalContextPage({
             : "Leeres Profil · noch keine persönlichen Einträge."}
         </p>
       )}
-      <div className="grid items-start gap-4 lg:grid-cols-2">
+      <div className="health-workspace mental-workspace grid gap-4 lg:grid-cols-2">
         <HealthSection title="Aktueller Zustand">
           <p className="text-3xl font-semibold text-[var(--accent-purple)]">
             {latest ? moods[latest.mood] : "Noch kein Check-in"}
@@ -106,7 +106,6 @@ export function MentalContextPage({
           </details>
           <HealthFeedback
             state={status}
-
             message={
               status === "saved"
                 ? "Schlafeintrag gespeichert."
@@ -115,7 +114,7 @@ export function MentalContextPage({
           />
         </HealthSection>
         <HealthSection title="Mood im Verlauf">
-          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mental-days grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
             {days.map((date) => {
               const values = entries.filter((e) => e.localDate === date);
               return (
@@ -175,7 +174,7 @@ export function MentalContextPage({
                 }{" "}
                 abgeschlossene Reviews in den letzten 30 Tagen
               </p>
-              <div className="grid gap-2">
+              <div className="mental-reviews grid gap-2">
                 {reflection.reviews.slice(0, 7).map((review) => (
                   <details
                     key={review.id}
@@ -239,42 +238,45 @@ export function MentalContextPage({
             </Link>
           </div>
         </HealthSection>
+        <HealthSection
+          title="Die letzten Tage im Kontext"
+          className="mental-context"
+        >
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-7">
+            {days.map((date) => {
+              const mood = entries.find((e) => e.localDate === date);
+              const night = sleep.find((e) => e.sleepDate === date);
+              const reviews = reflection.reviews.filter(
+                (r) => r.kind === "daily" && r.periodStart === date,
+              );
+              return (
+                <div
+                  key={date}
+                  className="rounded-lg border border-[var(--border-subtle)] p-3 text-xs"
+                >
+                  <p className="mb-2 font-semibold">{date}</p>
+                  <p>Stimmung: {mood ? moods[mood.mood] : "—"}</p>
+                  <p className="mt-1">
+                    Schlaf: {night ? sleepLabel(night.durationMinutes) : "—"}
+                  </p>
+                  <p className="mt-1">
+                    Review:{" "}
+                    {reviews.length
+                      ? reviews[0].status === "completed"
+                        ? "Abgeschlossen"
+                        : "Entwurf"
+                      : "—"}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+          <p className="mt-3 text-xs text-[var(--text-muted)]">
+            Persönliche Aufzeichnungen zur Orientierung. Fehlende Einträge
+            erlauben keine Aussage über deinen Zustand.
+          </p>
+        </HealthSection>
       </div>
-      <HealthSection title="Die letzten Tage im Kontext">
-        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-7">
-          {days.map((date) => {
-            const mood = entries.find((e) => e.localDate === date);
-            const night = sleep.find((e) => e.sleepDate === date);
-            const reviews = reflection.reviews.filter(
-              (r) => r.kind === "daily" && r.periodStart === date,
-            );
-            return (
-              <div
-                key={date}
-                className="rounded-lg border border-[var(--border-subtle)] p-3 text-xs"
-              >
-                <p className="mb-2 font-semibold">{date}</p>
-                <p>Stimmung: {mood ? moods[mood.mood] : "—"}</p>
-                <p className="mt-1">
-                  Schlaf: {night ? sleepLabel(night.durationMinutes) : "—"}
-                </p>
-                <p className="mt-1">
-                  Review:{" "}
-                  {reviews.length
-                    ? reviews[0].status === "completed"
-                      ? "Abgeschlossen"
-                      : "Entwurf"
-                    : "—"}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-        <p className="mt-3 text-xs text-[var(--text-muted)]">
-          Persönliche Aufzeichnungen zur Orientierung. Fehlende Einträge
-          erlauben keine Aussage über deinen Zustand.
-        </p>
-      </HealthSection>
     </main>
   );
 }

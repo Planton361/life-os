@@ -1106,7 +1106,92 @@ operational follow-up below, not a completed capability or an additional active 
 | Strength session/sets | `CONNECTED` | R2-05 current plan/free-session path, exercise selection, real sets, completion rejection without sets, history and muscle projection after reload; existing transactional task sync retained | maintain weighted/unweighted semantics |
 | Muscle map | `CONNECTED` | explicit exercise-muscle relations and log-derived set intensity/weighted volume with textual source labels; H1/H2 Target-Runtime Dashboard reload proof | maintain |
 | Workout schedule source | `CONNECTED` | H1/H2 Target-Runtime proof schedules one canonical Running Plan Item and Strength Plan Task, projects each to Calendar/Today/Dashboard, rejects generic Task completion, then completes only from the real Run or Strength Session with set log | retain no-duplicate and completion-sync regressions |
-| Health / Fitness primary viewport | `CONNECTED` | R2-05: shared detail composition; full screenshots 3840/2560/1920 and 390 guards; original overview arrangement retained | user acceptance pending; existing Weight section follows overview in normal flow |
+| Health / Fitness primary viewport | `CONNECTED` | R2-05 composition pass: viewport-filling desktop defaults, internally scrolling growing lists, explicit depth disclosures; current 3840/2560/1920/390 proof below | R2-05 remains active; USER ACCEPTANCE PENDING |
+
+## R2-05 – One-page Health detail composition (2026-09-07)
+
+Current composition pass for `/health/mental`, `/health/habits`,
+`/health/running`, `/health/strength` only. The user considers the existing
+functions and shared design direction acceptable in principle; this is not
+final surface acceptance. **R2-05 remains active. USER ACCEPTANCE STATUS:
+PENDING. Nutrition is unchanged and has not been started.** Earlier evidence
+below remains historical evidence; the desktop default layout now follows
+this one-page contract.
+
+- Scoped Health CSS uses the Calendar height-chain pattern as a reference:
+  shell `100dvh` → frame/content `100%` → main with `min-height: 0` → flex
+  Health page. Header, navigation and summary retain their natural height;
+  the workspace fills the remainder. Selectors require the Health-detail
+  marker; no Calendar, shared shell, Dashboard or Health overview code changes.
+- Desktop page/grid gaps are 12px; summary cards share a minimum height. Text
+  and forms keep readable maximum widths. Cards occupy their grid areas while
+  content remains top-aligned, including empty messages. There is no body
+  overflow hiding, dummy content or artificial textarea expansion.
+- Mental: balanced 50/50 current/sleep and mood/reflection rows; seven compact
+  Mood dates; a full-width horizontal context row fills the lower area.
+- Habits: 44/56 list/selected analytics, compact management and window context
+  in the bottom row. The list scrolls internally; day/week/month navigation
+  remains visible and 30-day cells are compact. Mobile orders list, selected
+  analytics, management, windows. No creation or slot control was added.
+- Running: 62/38 history/trend and form/plans workspace. The two-column form
+  remains immediately usable. Growing run and plan records scroll within
+  their cards; the history and rail both reach the workspace bottom.
+- Strength: 62/38 sessions/muscles and plans/library workspace. Growing
+  sessions and library records scroll internally; muscles retain explicit
+  mapped-set semantics. Existing creation and management disclosures remain.
+- An explicitly opened edit/history disclosure enters normal-flow depth so
+  its content stays reachable. Closing it restores the default workspace.
+  Mobile uses natural vertical flow with no desktop height constraints.
+
+**Browser proof.** `r2-05-health-composition.spec.ts` covers authenticated Manual
+empty data at 1920×1080, 2560×1440, 3840×2160 and 390×844. It creates 8 Habits,
+12 runs, 12 exercises and 8 sessions through existing UI controls, reloads,
+scrolls the actual lists to their last records and asserts accessibility in
+those regions. `support/health-workspace-proof.ts` measures body size, primary
+bounds, pairwise card overlap and the workspace/card bottom edges. The same
+assertions run on the populated viewport matrix in the existing R2-05
+control/write/reload/projection test. No backend or fixture-only data path was
+introduced for this composition pass.
+
+Desktop results for all four pages: **BODY_SCROLL = NO;
+PRIMARY_CONTENT_VISIBLE = YES; NO_OVERLAP = YES;
+NO_HORIZONTAL_OVERFLOW = YES; NO_UNCOMPOSED_BOTTOM_VOID = YES.**
+Growing lists use internal scroll; expanded editors are the documented depth
+exception. Mobile has no horizontal overflow. The existing Health overview
+navigation, full screenshots and no-overlap proof run unchanged.
+The overview's full-page screenshot heights are unchanged from the before
+evidence: 1489px at 1920, 1666px at 2560, 2386px at 3840 and 5070px on mobile.
+Its existing lower Weight section remains in normal flow; no new overview
+body-scroll regression is introduced. All detail desktop screenshots equal
+their viewport height; Running at 1920 improves from 1181px to 1080px.
+
+Before screenshots from commit `62907b7` are retained locally in ignored
+`node_modules/.cache/r205-composition-before/`. After evidence is in
+`node_modules/.cache/r205-composition-after/layout/`, `full-flow/` and `db/`, including
+Playwright reports; current run output also lives in `test-results/`. No
+screenshots, auth state or generated reports are staged.
+
+Design review: **A YES** deliberate full-viewport use; **B YES** to the criterion
+of no large uncomposed gaps (the question whether such gaps occur: NO);
+**C YES** primary function dominates; **D YES** defaults fit 1920×1080 without
+body scroll; **E YES** shared Life OS V5 language. Existing data semantics,
+actions, repositories, schemas and muscle mappings are unchanged.
+
+Validation uses separate sequential disposable browser runtimes for the large
+layout-pressure proof and the existing full control proof, followed by the
+runtime-hardened typecheck/lint/build gate. A combined preliminary run reached
+the existing Next dev-memory restart threshold; splitting the proofs avoids
+that accumulated runtime pressure without changing runtime configuration.
+No migration or new backend validation requirement arises from this pass.
+Final checks: `git diff --check`, `pnpm typecheck`, `pnpm lint`, 36 focused
+Health/Habit/training tests, 11 runtime-hardening tests and `pnpm build` pass.
+The layout-pressure test, full control/write/reload/projection test and
+Manual/Empty/Auth-blocked/Demo boundary test pass. Browser console warnings,
+errors and hydration checks are clean. The existing fresh-chain DB lint and
+Security Advisor test also passes in a separate disposable runtime; an
+earlier Advisor subprocess exit was resolved by that fresh run. No database
+or runtime configuration changes were needed. This is **IMPLEMENTATION_PASS**
+for the composition pass, not final R2-05 acceptance.
 
 ## R2-05 – Health & Fitness implementation evidence (2026-09-07)
 

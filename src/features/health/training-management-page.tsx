@@ -75,7 +75,6 @@ function Feedback({ state }: { state?: string }) {
   return (
     <HealthFeedback
       state={state}
-
       message={
         state === "saved"
           ? "Trainingsdaten gespeichert."
@@ -203,7 +202,7 @@ export function RunningManagementPage({
         </section>
       ) : (
         <>
-          <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <section className="health-summary grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <article className={card}>
               <p className="text-xs text-[var(--text-muted)]">Letzter Lauf</p>
               <p className="mt-2 text-xl font-semibold">
@@ -245,9 +244,9 @@ export function RunningManagementPage({
               </p>
             </article>
           </section>
-          <div className="grid min-w-0 items-start gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
-            <div className="grid min-w-0 gap-4">
-              <section className={card}>
+          <div className="health-workspace training-workspace grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.62fr)_minmax(0,1fr)]">
+            <div className="health-workspace-column grid min-w-0 gap-4">
+              <section className={`${card} health-run-history`}>
                 <h2 className="text-lg font-semibold">Laufhistorie</h2>
                 <p className="text-xs text-[var(--text-muted)]">
                   Abgeschlossene Läufe mit Dauer und Tempo.
@@ -377,7 +376,10 @@ export function RunningManagementPage({
                   )}
                 </div>
               </section>
-              <section className={card} aria-label="Laufentwicklung">
+              <section
+                className={`${card} health-run-trend`}
+                aria-label="Laufentwicklung"
+              >
                 <h2 className="text-lg font-semibold">
                   Distanz · letzte vier Wochen
                 </h2>
@@ -430,8 +432,11 @@ export function RunningManagementPage({
                 </div>
               </section>
             </div>
-            <div className="grid min-w-0 gap-4">
-              <section className={card} data-testid="running-session-form">
+            <div className="health-workspace-column grid min-w-0 gap-4">
+              <section
+                className={`${card} health-run-form`}
+                data-testid="running-session-form"
+              >
                 <h2 className="text-lg font-semibold">Lauf erfassen</h2>
                 <form
                   action={saveRunningSessionAction}
@@ -492,7 +497,7 @@ export function RunningManagementPage({
                   </button>
                 </form>
               </section>
-              <section className={card}>
+              <section className={`${card} health-running-plans`}>
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h2 className="text-lg font-semibold">Laufpläne</h2>
                   <span className="text-xs text-[var(--text-muted)]">
@@ -891,7 +896,7 @@ export function StrengthManagementPage({
         </section>
       ) : (
         <>
-          <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <section className="health-summary grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <article className={card}>
               <p className="text-xs text-[var(--text-muted)]">
                 Abgeschlossen · 7 Tage
@@ -951,9 +956,9 @@ export function StrengthManagementPage({
               </p>
             </article>
           </section>
-          <div className="grid min-w-0 items-start gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
-            <div className="grid min-w-0 gap-4">
-              <section className={card}>
+          <div className="health-workspace training-workspace grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.62fr)_minmax(0,1fr)]">
+            <div className="health-workspace-column grid min-w-0 gap-4">
+              <section className={`${card} health-strength-history`}>
                 <h2 className="text-lg font-semibold">
                   Trainingshistorie & Sessions
                 </h2>
@@ -1124,7 +1129,7 @@ export function StrengthManagementPage({
                   )}
                 </div>
               </section>
-              <section className={card}>
+              <section className={`${card} health-muscles`}>
                 <h2 className="text-lg font-semibold">Muskelübersicht</h2>
                 <p className="text-xs text-[var(--text-muted)]">
                   Sätze aus laufenden und abgeschlossenen Sessions. Mehrfach
@@ -1158,8 +1163,8 @@ export function StrengthManagementPage({
                 </div>
               </section>
             </div>
-            <div className="grid min-w-0 gap-4">
-              <section className={card}>
+            <div className="health-workspace-column grid min-w-0 gap-4">
+              <section className={`${card} health-strength-plans`}>
                 <h2 className="text-lg font-semibold">Krafttrainingspläne</h2>
                 <details className="mt-3">
                   <summary className="cursor-pointer text-sm font-semibold">
@@ -1451,7 +1456,7 @@ export function StrengthManagementPage({
                   )}
                 </div>
               </section>
-              <section className={card}>
+              <section className={`${card} health-exercise-library`}>
                 <h2 className="text-lg font-semibold">Übungsbibliothek</h2>
                 <details className="mt-3">
                   <summary className="cursor-pointer text-sm font-semibold">

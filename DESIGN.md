@@ -166,7 +166,18 @@ Strength share the V5 header (domain, title, short description), compact factual
 summary, dominant history/workspace and quieter management area. Use existing
 surface/border/radius tokens, consistent compact actions and bounded form fields.
 Mental uses violet, Habits cyan/violet and training coral as restrained accents.
-Empty states are short; actual historical depth may scroll on detail pages.
+Desktop default views are one-page workspaces at 1920×1080, 2560×1440 and
+3840×2160: auto-height header/navigation/summary followed by a workspace that
+fills the remaining main-content height. Use scoped shell height inheritance,
+`min-height: 0`, aligned grid rows and restrained gaps. Cards fill their grid
+area while content stays top-aligned. Growing lists scroll internally; do not
+clip content with overflow hiding or stretch forms to fill space. Opened
+edit/history disclosures may enter normal-flow depth; mobile stacks naturally.
+
+Mental uses balanced pairs plus a full-width context row. Habits uses a 44/56
+tracker/selected-analytics split with compact management/context below. Running
+and Strength use a 62/38 main/rail split; history, trends/muscles, plans and
+library fill the available height. The Health overview is not affected.
 
 Mental shows current/latest mood, sleep, mood history and canonical review
 context without a score or diagnosis. Habits owns selection, aggregated day,

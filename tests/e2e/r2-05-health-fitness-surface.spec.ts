@@ -1,3 +1,4 @@
+import { assertHealthWorkspace } from "./support/health-workspace-proof";
 import { expect, test, type Page, type Locator } from "@playwright/test";
 import { signUpTechnicalManualUser } from "./support/local-manual-auth";
 const routes = [
@@ -584,6 +585,11 @@ test("R2-05 current Health and Fitness controls, writes, projections and viewpor
         })),
       }));
       expect(bounds.width).toBeLessThanOrEqual(bounds.viewport);
+      if (size.width >= 1280 && route !== "/health")
+        await info.attach(`${route}-${size.width}-one-page`, {
+          body: JSON.stringify(await assertHealthWorkspace(page)),
+          contentType: "application/json",
+        });
       if (route === "/health") {
         const geometry = await page.evaluate(() => ({
           bottom: Math.max(

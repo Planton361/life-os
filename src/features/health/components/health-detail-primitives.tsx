@@ -1,9 +1,10 @@
+import "./health-workspace.css";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { PageHeader } from "@/components/layout/route-page-primitives";
 
 export const healthPage =
-  "mx-auto grid w-full max-w-[2800px] min-w-0 gap-4 pb-6";
+  "health-detail-page mx-auto grid w-full min-w-0 gap-4 pb-6";
 export const healthCard =
   "min-w-0 rounded-[var(--panel-radius)] border border-[var(--border-subtle)] bg-[var(--surface-1)] p-4 sm:p-5";
 export const healthInput =
@@ -68,7 +69,7 @@ export function HealthSummary({
   return (
     <section
       aria-label="Zusammenfassung"
-      className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+      className="health-summary grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
     >
       {items.map((item) => (
         <article className={healthCard} key={item.label}>

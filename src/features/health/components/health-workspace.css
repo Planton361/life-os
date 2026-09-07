@@ -1,0 +1,213 @@
+/* Health detail composition only. The overview and other shell routes are untouched. */
+@media (min-width: 1280px) {
+  body:has(.health-detail-page) {
+    --dashboard-max: 100%;
+  }
+  body:has(.health-detail-page) .life-os-shell {
+    height: 100dvh;
+    min-height: 0;
+  }
+  body:has(.health-detail-page) .life-os-shell-frame,
+  body:has(.health-detail-page) .life-os-shell-content {
+    height: 100%;
+    min-height: 0;
+  }
+  #main-content:has(.health-detail-page) {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .health-detail-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    gap: 12px;
+    padding-bottom: 0;
+  }
+  .health-detail-page > header,
+  .health-detail-page > nav,
+  .health-detail-page > .health-summary,
+  .health-detail-page > p {
+    flex-shrink: 0;
+  }
+  .health-detail-page > header {
+    padding-block: 16px;
+  }
+  .health-summary > article {
+    min-height: 106px;
+    padding: 16px;
+  }
+  .health-summary > article > p:nth-child(2) {
+    font-size: 22px;
+    line-height: 28px;
+  }
+  .health-workspace {
+    flex: 1 1 0%;
+    min-height: 0;
+    gap: 12px;
+  }
+  .health-workspace section {
+    min-height: 0;
+  }
+  .health-workspace-column {
+    min-height: 0;
+    gap: 12px;
+  }
+  .health-workspace-column > section,
+  .habits-workspace section {
+    display: flex;
+    flex-direction: column;
+  }
+  .health-workspace section > h2 {
+    flex-shrink: 0;
+  }
+  .health-workspace form {
+    max-width: 800px;
+  }
+  .health-workspace p {
+    max-width: 85ch;
+    overflow-wrap: anywhere;
+  }
+  .health-workspace [data-habits-section="history"],
+  .health-run-history > div,
+  .health-strength-history > div,
+  .health-running-plans > div:last-child,
+  .health-strength-plans > div:last-child,
+  .health-exercise-library > div:last-child {
+    flex: 1 1 0%;
+    min-height: 0;
+    overflow-y: auto;
+    align-content: start;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-default) transparent;
+  }
+
+  .mental-workspace {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto minmax(0, 1fr) minmax(180px, 0.75fr);
+  }
+  .mental-context {
+    grid-column: 1 / -1;
+  }
+  .mental-days {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+  .mental-days > div {
+    padding: 10px;
+  }
+  .mental-reviews {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .mental-context > div {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+
+  .habits-workspace {
+    grid-template-columns: minmax(0, 0.44fr) minmax(0, 0.56fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas: "list analytics" "management windows";
+  }
+  .habit-list {
+    grid-area: list;
+  }
+  .habit-analytics {
+    grid-area: analytics;
+  }
+  .habit-management {
+    grid-area: management;
+  }
+  .habit-windows {
+    grid-area: windows;
+  }
+  .habit-windows > h2,
+  .habit-management > h2 {
+    margin-bottom: 10px;
+  }
+  .habit-windows p {
+    line-height: 20px;
+  }
+  [data-habits-section="selected"] {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+  }
+  [data-habits-section="selected"] > nav,
+  [data-habits-section="selected"] > p {
+    flex-shrink: 0;
+  }
+  [aria-label="Habit Tageswerte"] {
+    min-height: 0;
+    flex: 1;
+    overflow: auto;
+    scrollbar-width: thin;
+  }
+  [data-habit-date] > p:nth-child(2) {
+    margin-top: 4px;
+  }
+
+  .training-workspace {
+    grid-template-columns: minmax(0, 0.62fr) minmax(0, 0.38fr);
+  }
+  [data-health-detail="running"] .health-workspace-column:first-child {
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+  [data-health-detail="running"] .health-workspace-column:last-child {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .health-run-trend > div {
+    max-width: 1200px;
+  }
+  .health-run-form form {
+    gap: 10px;
+  }
+  [data-health-detail="strength"] .health-workspace-column:first-child {
+    grid-template-rows: minmax(0, 1fr) minmax(220px, 0.55fr);
+  }
+  [data-health-detail="strength"] .health-workspace-column:last-child {
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .health-muscles > div {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+  .health-muscles > p {
+    max-width: 900px;
+  }
+  .health-muscles article {
+    padding: 10px;
+  }
+
+  /* A deliberately opened editor/history is depth, not the default overview.
+     Let its contents remain reachable in normal flow; never clip a form. */
+  .health-detail-page:has(details[open]) {
+    height: auto;
+    min-height: 100%;
+  }
+  .health-detail-page:has(details[open]) .health-workspace {
+    flex-basis: auto;
+  }
+  .health-detail-page:has(details[open]) .health-workspace-column {
+    grid-template-rows: auto auto;
+  }
+  .health-detail-page:has(details[open]) .mental-workspace {
+    grid-template-rows: auto auto minmax(180px, 1fr);
+  }
+  .health-detail-page:has(details[open]) .habits-workspace {
+    grid-template-rows: auto auto;
+  }
+  .habit-list > [data-habits-section="history"]:empty {
+    flex: none;
+  }
+  [data-health-detail="habits"] [data-habit-date] {
+    padding: 6px;
+  }
+  [data-health-detail="habits"] [data-habit-date] > p:nth-child(2) {
+    font-size: 12px;
+    line-height: 16px;
+  }
+  [data-health-detail="habits"] [data-habit-date] > p:last-child {
+    font-size: 10px;
+    line-height: 12px;
+  }
+}

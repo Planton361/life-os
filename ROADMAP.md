@@ -920,7 +920,8 @@ dependency belongs in this slice.
    evidence and honest progress; Overview is not primary inline creation.
    Resources retain their own create/detail routes and knowledge ownership.
 5. **R2-05 – Health / Fitness / Nutrition Surface Completion** — full
-   primary desktop overview viewport; real detail history may scroll. Shared
+   primary desktop overview viewport and one-page Health detail defaults; growing
+   detail lists scroll internally and explicit deep interactions may expand. Shared
    Health detail composition, Habits statistics/history/management and
    Dashboard creation/quick logging; selectable,
    persistent Nutrition meal-planner slots.
