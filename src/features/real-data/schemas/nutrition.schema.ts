@@ -145,8 +145,9 @@ export type RecipeIngredientCreateInput = z.infer<
   typeof recipeIngredientCreateInputSchema
 >;
 
-export const recipeIngredientUpdateInputSchema =
-  recipeIngredientBaseSchema.partial().extend({
+export const recipeIngredientUpdateInputSchema = recipeIngredientBaseSchema
+  .partial()
+  .extend({
     ingredientId: requiredUuidSchema,
     recipeId: requiredUuidSchema.optional(),
   });
@@ -181,22 +182,34 @@ export const mealCreateInputSchema = mealBaseSchema.extend({
 
 export type MealCreateInput = z.infer<typeof mealCreateInputSchema>;
 
-export const mealUpdateInputSchema = mealBaseSchema.partial().extend({
-  mealId: requiredUuidSchema,
-  notes: z.preprocess(blankInputToNull, z.string().trim().nullable().optional()),
-  plannedAt: z.preprocess(
-    blankInputToNull,
-    z.string().datetime({ local: true }).nullable().optional(),
-  ),
-  recipeId: z.preprocess(
-    blankInputToNull,
-    z.string().trim().uuid().nullable().optional(),
-  ),
-  servings: optionalServingCountSchema,
-}).refine(
-  (input) => !input.date || !input.plannedAt || input.plannedAt.slice(0, 10) === input.date,
-  { message: "Planned time must use the selected meal date.", path: ["plannedAt"] },
-);
+export const mealUpdateInputSchema = mealBaseSchema
+  .partial()
+  .extend({
+    mealId: requiredUuidSchema,
+    notes: z.preprocess(
+      blankInputToNull,
+      z.string().trim().nullable().optional(),
+    ),
+    plannedAt: z.preprocess(
+      blankInputToNull,
+      z.string().datetime({ local: true }).nullable().optional(),
+    ),
+    recipeId: z.preprocess(
+      blankInputToNull,
+      z.string().trim().uuid().nullable().optional(),
+    ),
+    servings: optionalServingCountSchema,
+  })
+  .refine(
+    (input) =>
+      !input.date ||
+      !input.plannedAt ||
+      input.plannedAt.slice(0, 10) === input.date,
+    {
+      message: "Planned time must use the selected meal date.",
+      path: ["plannedAt"],
+    },
+  );
 
 export type MealUpdateInput = z.infer<typeof mealUpdateInputSchema>;
 
@@ -235,3 +248,38 @@ export const mealDateRangeInputSchema = z
   );
 
 export type MealDateRangeInput = z.infer<typeof mealDateRangeInputSchema>;
+
+const plannerLocalDateSchema = localDateSchema.refine(
+  (value) =>
+    Number.isFinite(Date.parse(`${value}T00:00:00Z`)) &&
+    new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value,
+  "Invalid calendar date",
+);
+const plannerSlotSchema = z.object({
+  date: plannerLocalDateSchema,
+  mealType: z.enum(["breakfast", "lunch", "dinner"]),
+});
+export const nutritionPlanOperationSchema = z.discriminatedUnion("kind", [
+  plannerSlotSchema.extend({
+    kind: z.literal("assign"),
+    id: requiredUuidSchema,
+    recipeId: requiredUuidSchema,
+  }),
+  plannerSlotSchema.extend({
+    kind: z.literal("move"),
+    id: requiredUuidSchema,
+    expectedUpdatedAt: z.string().datetime({ offset: true }),
+  }),
+  z.object({
+    kind: z.literal("remove"),
+    id: requiredUuidSchema,
+    expectedUpdatedAt: z.string().datetime({ offset: true }),
+  }),
+]);
+export const nutritionPlanInputSchema = z
+  .array(nutritionPlanOperationSchema)
+  .min(1)
+  .max(21);
+export type NutritionPlanOperation = z.infer<
+  typeof nutritionPlanOperationSchema
+>;

@@ -40,6 +40,7 @@ export type NutritionDay = {
 };
 
 export type MealEntry = {
+  date?: string;
   id: string;
   meal_type: MealType;
   title: string;
@@ -52,6 +53,7 @@ export type MealEntry = {
     fat: number;
   };
   nutritionEstimateAvailable?: boolean;
+  availableMacros?: readonly ("calories" | "protein" | "carbs" | "fat")[];
   source: MealSource;
 };
 
@@ -127,6 +129,7 @@ export type NutritionOverviewViewModel = {
     grocerySignal: ContentStateMeta;
   };
   actionsEnabled?: boolean;
+  unavailableReason?: string;
   recipeOptions?: readonly {
     id: string;
     title: string;

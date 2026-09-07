@@ -9,14 +9,15 @@ export const metadata: Metadata = {
 
 export default async function MealPlannerPage({
   searchParams,
-}: Readonly<{ searchParams: Promise<{ slot?: string }> }>) {
+}: Readonly<{ searchParams: Promise<{ slot?: string; week?: string; date?: string }> }>) {
   const { MealPlannerView } =
     await import("@/features/nutrition/meal-planner/meal-planner-view");
-  const viewModel = await getMealPlannerViewModel();
+  const viewModel = await getMealPlannerViewModel((await searchParams).week);
   const slot = (await searchParams).slot;
   const mealType = slot === "breakfast" || slot === "lunch" || slot === "dinner" ? slot : null;
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
-  const day = viewModel.week.days.find((candidate) => candidate.date === today) ?? viewModel.week.days[0];
+  const selectedDate = (await searchParams).date ?? today;
+  const day = viewModel.week.days.find((candidate) => candidate.date === selectedDate) ?? viewModel.week.days[0];
 
   return <MealPlannerView initialSelectedSlot={mealType && day ? { date: day.date, mealType } : null} viewModel={viewModel} />;
 }

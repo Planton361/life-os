@@ -184,5 +184,32 @@ context without a score or diagnosis. Habits owns selection, aggregated day,
 week and month history plus secondary editing/archive; Dashboard owns creation
 and quick Mood/Habit interaction. Running and Strength keep their existing
 canonical sessions, plans and Calendar integration. Analytics are derived from
-records and never stored as a second source. User acceptance of R2-05 remains
-pending; Nutrition is outside the current Health/Fitness pass.
+records and never stored as a second source. Health & Fitness is USER ACCEPTED on 2026-09-07; R2-05 remains active for Nutrition, whose user acceptance is pending.
+
+
+### Nutrition workspaces (R2-05)
+
+Nutrition follows the same V5 shell and restrained amber domain accent. At
+1920×1080, 2560×1440 and 3840×2160, default workspaces use the remaining main
+height, with growing lists and explicit inspectors scrolling internally.
+Mobile stacks naturally without horizontal page overflow. Empty states are
+compact and top-aligned inside the composed workspace.
+
+Overview: Today Nutrition / Next Meal, Week Balance / Plan Adherence, then
+Weight / Hydration / Recent Meals. Grocery is a compact status/link. No empty
+priorities card or permanent creation form. Only real period projections may
+be offered as tabs.
+
+Meal Planner: compact target context, dominant selected-meal inspector and
+secondary recipe selection above a seven-day, three-slot weekly matrix that
+fills the remaining height. Slots expose selection, dragging and valid/occupied
+drop states; details and temporal planning stay in the inspector. Recipe
+assignment uses explicit Save Week / Reset; drag and accessible moves persist
+the same Meal directly. Existing multiple Meals in a slot remain visible.
+
+Recipes: browser and selected recipe share the available height. Search,
+filters and sorting operate on persisted definitions. New Recipe opens a dialog;
+editing and ingredient/lifecycle management open within selected context.
+Grocery: generated items and unresolved Meals are two aligned workspace columns.
+Aggregation follows the existing name/unit/note contract, with incompatible units
+kept separate. No invented category taxonomy, stock or check-off controls.

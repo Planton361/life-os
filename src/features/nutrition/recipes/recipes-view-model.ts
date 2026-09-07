@@ -13,6 +13,7 @@ export type RecipesViewModel = {
     selectedRecipe: ContentStateMeta;
   };
   actionsEnabled?: boolean;
+  unavailableReason?: string;
   header: {
     eyebrow: "Life OS / Nutrition / Recipes";
     title: "Recipes";

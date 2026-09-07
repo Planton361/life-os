@@ -1,5 +1,8 @@
 "use server";
 
+import { runningStartInstant } from "../domain/running-time";
+import { scheduleSourceInputSchema } from "../schemas/schedule-source.schema";
+import { nutritionPlanInputSchema } from "../schemas/nutrition.schema";
 import { revalidatePath } from "next/cache";
 import {
   mealCompleteInputSchema,
@@ -13,7 +16,10 @@ import {
   recipeUpdateInputSchema,
   type RecipeIngredient as RealDataRecipeIngredient,
 } from "@/features/real-data";
-import { createSupabaseNutritionRepository, createSupabaseScheduleSourceRepository } from "@/features/real-data/supabase";
+import {
+  createSupabaseNutritionRepository,
+  createSupabaseScheduleSourceRepository,
+} from "@/features/real-data/supabase";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
 import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -96,9 +102,7 @@ function nullableFormNumberIfPresent(formData: FormData, key: string) {
 function tagsFromForm(formData: FormData) {
   const tags = formData
     .getAll("tags")
-    .flatMap((value) =>
-      typeof value === "string" ? value.split(",") : [],
-    )
+    .flatMap((value) => (typeof value === "string" ? value.split(",") : []))
     .map((tag) => tag.trim())
     .filter(Boolean);
 
@@ -106,6 +110,15 @@ function tagsFromForm(formData: FormData) {
 }
 
 function nutritionEstimateFromForm(formData: FormData) {
+  const keys = ["calories", "protein", "carbs", "fat"];
+  if (keys.some((key) => formData.has(`estimate_${key}`))) {
+    const values = keys.map((key) => formString(formData, `estimate_${key}`));
+    if (values.some((v) => v && (!Number.isFinite(Number(v)) || Number(v) < 0)))
+      return "invalid estimate";
+    return Object.fromEntries(
+      keys.flatMap((key, i) => (values[i] ? [[key, Number(values[i])]] : [])),
+    );
+  }
   if (!formData.has("nutritionEstimate")) return undefined;
 
   const raw = formString(formData, "nutritionEstimate");
@@ -119,9 +132,12 @@ function nutritionEstimateFromForm(formData: FormData) {
 }
 
 function revalidateNutritionRoutes() {
+  revalidatePath("/nutrition/grocery");
+  revalidatePath("/calendar");
   revalidatePath("/nutrition");
   revalidatePath("/nutrition/meal-planner");
   revalidatePath("/nutrition/recipes");
+  revalidatePath("/nutrition/recipes/[recipeId]", "page");
   revalidatePath("/dashboard");
   revalidatePath("/today");
 }
@@ -233,7 +249,7 @@ export async function createRecipeAction(
 
   if (!parsed.success) {
     return {
-      message: "Gib gültige Recipe-Daten ein.",
+      message: "Gib gültige Rezeptdaten ein.",
       status: "error",
     };
   }
@@ -255,7 +271,7 @@ export async function createRecipeAction(
   revalidateNutritionRoutes();
 
   return {
-    message: "Recipe erstellt.",
+    message: "Rezept erstellt.",
     recipeId: result.data.id,
     status: "success",
   };
@@ -284,13 +300,13 @@ export async function updateRecipeAction(
     servings: optionalFormNumber(formData, "servings"),
     source: optionalFormStringIfPresent(formData, "source"),
     summary: optionalFormStringIfPresent(formData, "summary"),
-    tags: formData.has("tags") ? tagsFromForm(formData) : undefined,
+    tags: formData.has("tags") ? (tagsFromForm(formData) ?? []) : undefined,
     title: optionalFormStringIfPresent(formData, "title"),
   });
 
   if (!parsed.success) {
     return {
-      message: "Gib gültige Recipe-Daten ein.",
+      message: "Gib gültige Rezeptdaten ein.",
       status: "error",
     };
   }
@@ -312,7 +328,7 @@ export async function updateRecipeAction(
   revalidateNutritionRoutes();
 
   return {
-    message: "Recipe aktualisiert.",
+    message: "Rezept aktualisiert.",
     recipeId: result.data.id,
     status: "success",
   };
@@ -360,7 +376,7 @@ export async function archiveRecipeAction(
   revalidateNutritionRoutes();
 
   return {
-    message: "Recipe archiviert.",
+    message: "Rezept archiviert.",
     recipeId: result.data.id,
     status: "success",
   };
@@ -667,14 +683,19 @@ export async function completeMealAction(
   }
 
   const completedAt = parsed.data.completedAt ?? new Date().toISOString();
-  const linkedResult = await createSupabaseScheduleSourceRepository(context.auth.client).completeLinkedMeal(parsed.data.mealId, completedAt);
-  const result = linkedResult.error || !linkedResult.data
-    ? { ok: false as const }
-    : { data: { id: linkedResult.data.id }, ok: true as const };
+  const linkedResult = await createSupabaseScheduleSourceRepository(
+    context.auth.client,
+  ).completeLinkedMeal(parsed.data.mealId, completedAt);
+  const result =
+    linkedResult.error || !linkedResult.data
+      ? { ok: false as const }
+      : { data: { id: linkedResult.data.id }, ok: true as const };
 
   if (!result.ok) {
     return {
-      message: repositoryFailureMessage(linkedResult.error?.message ?? "complete meal"),
+      message: repositoryFailureMessage(
+        linkedResult.error?.message ?? "complete meal",
+      ),
       status: "error",
     };
   }
@@ -693,4 +714,62 @@ export async function completeMealFormStateAction(
   formData: FormData,
 ): Promise<NutritionActionResult> {
   return completeMealAction(formData);
+}
+
+export async function applyNutritionPlanAction(
+  input: unknown,
+): Promise<NutritionActionResult> {
+  const context = await getAuthenticatedNutritionContext();
+  if (!context.ok) return context.result;
+  const parsed = nutritionPlanInputSchema.safeParse(input);
+  if (!parsed.success)
+    return { status: "error", message: "Die Planänderung ist ungültig." };
+  const { error } = await context.auth.client.rpc("apply_nutrition_plan", {
+    p_operations: parsed.data,
+  });
+  if (error)
+    return {
+      status: "error",
+      message: error.message.includes("occupied slot")
+        ? "Dieser Platz ist bereits belegt. Keine Mahlzeit wurde verändert."
+        : error.message.includes("stale")
+          ? "Der Plan wurde inzwischen geändert. Bitte neu laden."
+          : "Die Planänderung konnte nicht gespeichert werden. Bitte neu laden und erneut versuchen.",
+    };
+  revalidateNutritionRoutes();
+  return { status: "success", message: "Essensplan gespeichert." };
+}
+
+export async function scheduleNutritionMealAction(
+  _previous: NutritionActionResult,
+  form: FormData,
+): Promise<NutritionActionResult> {
+  const context = await getAuthenticatedNutritionContext();
+  if (!context.ok) return context.result;
+  const date = formString(form, "plannedDate");
+  const parsed = scheduleSourceInputSchema.safeParse({
+    sourceType: "meal",
+    sourceId: formString(form, "sourceId"),
+    plannedDate: date,
+    scheduledStartAt: runningStartInstant(
+      date,
+      formString(form, "scheduledTime"),
+    ),
+    durationMinutes: formString(form, "durationMinutes"),
+  });
+  if (!parsed.success)
+    return {
+      status: "error",
+      message: "Bitte ein gültiges Datum, eine Uhrzeit und Dauer angeben.",
+    };
+  const result = await createSupabaseScheduleSourceRepository(
+    context.auth.client,
+  ).schedule(parsed.data);
+  if (result.error)
+    return {
+      status: "error",
+      message: "Die Zeitplanung konnte nicht gespeichert werden.",
+    };
+  revalidateNutritionRoutes();
+  return { status: "success", message: "Mahlzeit im Kalender geplant." };
 }

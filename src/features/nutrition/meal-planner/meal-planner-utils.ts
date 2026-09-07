@@ -22,9 +22,9 @@ export const macroKeys: readonly MacroKey[] = [
 ];
 
 export const mealTypeLabels: Record<MealType, string> = {
-  breakfast: "Breakfast",
-  lunch: "Lunch",
-  dinner: "Dinner",
+  breakfast: "Frühstück",
+  lunch: "Mittagessen",
+  dinner: "Abendessen",
 };
 
 export function getMealTypeMatchScore(recipe: Recipe, mealType: MealType) {
@@ -36,10 +36,10 @@ export function formatMealTypeList(mealTypesForRecipe: readonly MealType[]) {
 }
 
 export const macroLabels: Record<MacroKey, string> = {
-  calories: "Calories",
+  calories: "Energie",
   protein: "Protein",
-  carbs: "Carbs",
-  fat: "Fat",
+  carbs: "Kohlenhydrate",
+  fat: "Fett",
 };
 
 export const macroUnits: Record<MacroKey, "kcal" | "g"> = {

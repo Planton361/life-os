@@ -162,22 +162,22 @@ export const sidebarNavigation: SidebarNavigation = {
       ],
     },
     {
-      label: "Nutrition",
+      label: "Ernährung",
       href: "/nutrition",
       accent: "var(--accent-yellow)",
       items: [
         {
-          label: "Meal Planner",
+          label: "Essensplan",
           href: "/nutrition/meal-planner",
           status: "ready",
         },
         {
-          label: "Recipes",
+          label: "Rezepte",
           href: "/nutrition/recipes",
           status: "ready",
         },
         {
-          label: "Grocery",
+          label: "Einkauf",
           href: "/nutrition/grocery",
           status: "ready",
         },

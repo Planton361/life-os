@@ -277,7 +277,23 @@ the creation and quick-logging surface; deeper management belongs to Habits.
 
 ### 5.9 Nutrition
 
-Nutrition owns recipes, meals, planning and grocery derivation.
+Nutrition owns recipes, meals, planning and grocery derivation. Binding surface roles:
+
+- `/nutrition`: logging, tracking and current nutrition status; a compact meal-log
+  CTA opens the existing creation flow in a dialog, never a permanent full form.
+- `/nutrition/meal-planner`: weekly Breakfast/Lunch/Dinner planning. Accessible
+  day/type controls accompany optional drag/drop of the same canonical Meal.
+  Occupied targets never silently replace another Meal; no implicit swap.
+- `/nutrition/recipes`: reusable meal definitions; the library and selected recipe
+  dominate, with creation opened explicitly and editing in selected context.
+- `/nutrition/grocery`: shopping projection of open Meals and persisted Recipe
+  Ingredients, including unresolved sources; no second shopping database.
+- Dashboard: quick daily view; Calendar: temporal planning only when a Meal has
+  actual time allocation through its canonical source-linked Task.
+
+Overview does not duplicate planning, recipe or grocery management. Weekly counts
+are derived from real Meals; missing targets, hydration records or estimates are
+shown honestly without fake controls. No medical targets or external food API.
 
 Required capabilities:
 
@@ -447,5 +463,6 @@ AI1, integrations, Anti-Rot, Challenges, Shop and Entertainment are not part of 
 
 Calendar remains the temporal planner. Domain records feed Health, Dashboard
 and Today; these projections do not duplicate data. The overview is preserved;
-real history may require scrolling on detail pages. Nutrition remains within
-R2-05's later scope and is unchanged in this Health/Fitness pass.
+real history may require scrolling on detail pages. Health & Fitness (Mental,
+Habits, Running and Strength) is USER ACCEPTED on 2026-09-07. Nutrition is the
+current R2-05 scope; R2-05 remains active and Nutrition acceptance is pending.

@@ -877,8 +877,10 @@ The user accepts Dashboard, Inbox, Today, Calendar, Portfolio and Resources.
 Existing implementation, control, browser and visual evidence is retained.
 
 **R2-05 status:** Active – Health / Fitness / Nutrition Surface Completion.
-Current pass: Health & Fitness only; Nutrition is unchanged and remains later
-within R2-05. USER ACCEPTANCE STATUS: PENDING.
+Health & Fitness = USER ACCEPTED (2026-09-07): Mental Health, Habits, Running
+and Strength are accepted by the user. Nutrition Surface Completion has an
+IMPLEMENTATION_PASS; current control/projection/layout evidence is in the
+Capability Registry. R2-05 stays active; Nutrition USER ACCEPTANCE STATUS: PENDING.
 Health overview retains its design; detail pages own history, context and
 management, with Dashboard retaining quick Mood/Habit logging.
 
@@ -924,7 +926,9 @@ dependency belongs in this slice.
    detail lists scroll internally and explicit deep interactions may expand. Shared
    Health detail composition, Habits statistics/history/management and
    Dashboard creation/quick logging; selectable,
-   persistent Nutrition meal-planner slots.
+   persistent Nutrition meal-planner slots, safe canonical drag/drop and accessible
+   moves; tracking/logging Overview, weekly Meal Planner, Recipes library and
+   derived Grocery workspace with desktop one-page defaults.
 6. **R2-06 – Full Active Product Acceptance** — complete core-surface
    control inventory, live click/navigation/write/reload proof, bounds/
    whitespace/console/hydration checks, screenshots, Design-Taste review and
@@ -939,8 +943,7 @@ dependency belongs in this slice.
   for a promised core control.
 - Dashboard’s removed Bottom-Zone features remain removed; they cannot return
   through historical layout references.
-- The R2 order is binding. R2-01 is accepted and closed; R2-02 and R2-03 are accepted and closed; R2-04 is accepted and closed; only R2-05 is active. Its Health/Fitness pass
-  does not close R2-05 or imply user acceptance.
+- The R2 order is binding. R2-01 is accepted and closed; R2-02 and R2-03 are accepted and closed; R2-04 is accepted and closed; only R2-05 is active. Health/Fitness is USER ACCEPTED; Nutrition remains pending and R2-05 stays active.
 
 ## 5. Completed Major Work
 

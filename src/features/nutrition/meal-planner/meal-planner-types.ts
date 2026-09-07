@@ -71,6 +71,7 @@ export type Recipe = {
   instructions: RecipeInstruction[];
   totals: NutritionMacroTarget;
   nutritionEstimateAvailable?: boolean;
+  availableMacros?: readonly MacroKey[];
   createdAt?: string;
   updatedAt?: string;
   archived?: boolean;
@@ -162,6 +163,8 @@ export type MealPlannerViewModel = {
     recipeSuggestions: ContentStateMeta;
   };
   actionsEnabled?: boolean;
+  unavailableReason?: string;
+  canonicalMeals?: readonly import("@/features/real-data").Meal[];
   mealEditEnabled?: boolean;
   header: {
     eyebrow: "Life OS / Nutrition / Meal Planner";

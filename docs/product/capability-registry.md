@@ -39,8 +39,8 @@ Implementation status and product visibility are separate truths: `CONNECTED` co
 | Calendar | `ACCEPTED` | `CONNECTED`: R2-03 explicitly USER ACCEPTED on 2026-09-06; 06:00–00:00 equal-hour and viewport evidence retained | maintain accepted Calendar |
 | Portfolio | `ACCEPTED` | `CONNECTED`: R2-04 explicitly USER ACCEPTED on 2026-09-07; list/create/detail, canonical write and visual evidence retained | maintain accepted behavior |
 | Resources | `ACCEPTED` | `CONNECTED`: current surface explicitly USER ACCEPTED on 2026-09-07; existing knowledge and R2-04 create/detail evidence retained | maintain accepted surface; separately listed depth gaps remain |
-| Health / Fitness | `ACTIVE` | `CONNECTED`: Health/Fitness implementation and current control proof below; USER ACCEPTANCE PENDING | R2-05 |
-| Nutrition | `ACTIVE` | `CONNECTED_GAP`: meal backend exists; selectable persistent planner-slot acceptance pending | R2-05 |
+| Health / Fitness | `ACCEPTED` | `CONNECTED`: Mental Health, Habits, Running and Strength explicitly USER ACCEPTED on 2026-09-07 | maintain accepted behavior; R2-05 continues for Nutrition |
+| Nutrition | `ACTIVE` | `CONNECTED`: logging/tracking, canonical weekly planning, recipe library and derived grocery workspaces; current R2-05 evidence below | Nutrition USER ACCEPTANCE PENDING; R2-05 stays active |
 | Work / Education / Coding | `ACTIVE` | A1 Target browser proof covers canonical Projects, Resources and reload-stable logs; named depth gaps remain below | area projections over the canonical spine; no area-local core copies |
 | Inventory / Wishlist | `ACTIVE` | A1 Target browser proof covers Manual CRUD, purchase decisions and idempotent conversion after reload | Inventory and explicit Wishlist links remain reachable in active Life navigation |
 | Anti-Rot / Challenges / Shop | `DEFERRED_HIDDEN` | connected feature code/data; direct routes remain intact | C1.1-01 removed Sidebar, Dashboard and normal Daily-Companion entry points |
@@ -832,7 +832,9 @@ as historical evidence; their PENDING/ACTIVE wording describes those passes,
 not current status. No product code changed for this administrative closure.
 
 **R2-05 is the sole Active Work Block. USER ACCEPTANCE STATUS: PENDING.**
-The first pass covers Health & Fitness only. Nutrition remains unchanged and
+Health & Fitness = USER ACCEPTED on 2026-09-07 (Mental, Habits, Running, Strength).
+The current pass covers Nutrition only; R2-05 remains active and Nutrition acceptance is pending.
+Historical first-pass scope: Nutrition remained unchanged and
 is not started in this pass. R2-05 remains active after this pass.
 
 ## R2-04 – unified Portfolio list IA and surface correction (2026-09-07)
@@ -1054,9 +1056,12 @@ operational follow-up below, not a completed capability or an additional active 
 | Recipe ingredients CRUD | `CONNECTED` | recipe_ingredients | maintain |
 | Meal create/edit/reschedule/complete | `CONNECTED` | meals/actions | maintain |
 | Recipe switch | `CONNECTED` | meal update ownership | maintain |
-| Meal Planner week view | `CONNECTED_GAP` | canonical Target N1 proof reloads a recipe-linked Meal in the weekly planner and schedules it only through the source-aware Meal↔Task boundary | R2-05: selectable persistent planner slots and current browser proof |
+| Meal Planner week view / assignment | `CONNECTED` | R2-05: real week reads, 21 selectable slots, recipe filters/sort, draft reset and atomic Save Week using canonical meals | user acceptance pending |
+| Meal Planner move / DnD | `CONNECTED` | same Meal id, date/type persistence, occupied blocking, cancellation, keyboard move, linked-task/DST synchronization and reload proof | no overwrite or implicit swap; existing multi-meal slots remain visible |
+| Nutrition tracking / logging | `CONNECTED` | dialog logging/completion, today known estimates, weekly counts/adherence, recent details, Health weight projection and compact derived grocery signal | no fake period tabs or targets |
+| Hydration logging | `NOT_STARTED` | no persisted N1 hydration entity/action exists; overview truthfully shows unavailable capture and no write control | separate model capability; no session-only Manual water buttons |
 | Grocery Draft | `CONNECTED` | canonical Target N1 proof derives open Meal demand from persisted Recipe Ingredients and Meal/Recipe servings with reload-stable fractional scaling | no persistence/check-off/pantry |
-| Manual nutrition estimate | `CONNECTED_GAP` | optional recipe JSON estimate | provenance only; no real engine |
+| Manual nutrition estimate | `CONNECTED` | optional recipe JSON estimates editable in create/edit; only provided macros are shown, scaled by canonical servings | manually supplied estimate, not a nutrition engine |
 | Meals Today | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Nutrient Balance | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Persistent grocery items | `NOT_STARTED` | none | model later |
@@ -1065,7 +1070,135 @@ operational follow-up below, not a completed capability or an additional active 
 | Unit conversion | `DECISION_REQUIRED` | free-text units | normalization/catalog decision |
 | Portion/serving model | `CONNECTED` | versioned N1 `meals.servings` is validated, user-scoped and reload-proven on the canonical Target; it scales Recipe-serving-based Grocery demand plus recipe-scoped estimates deterministically | no nutrition value is inferred when its Recipe estimate is absent |
 | Macro/calorie engine | `NOT_STARTED` | no reliable nutrition source | external data/model decision |
-| Recipe detail route | `UI_ONLY` | selected panel exists | build only if it adds real depth |
+| Recipe detail route | `CONNECTED` | existing owned `/nutrition/recipes/[recipeId]` selects the canonical library record and allows persisted editing | reuse the library; no second editor |
+
+## R2-05 – Nutrition Surface Completion (2026-09-07)
+
+**Current scope:** Nutrition only. Health & Fitness (Mental Health, Habits,
+Running, Strength) is USER ACCEPTED. Nutrition acceptance and final R2-05
+acceptance remain PENDING. No R2-06, deployment or change to accepted surfaces.
+
+### Pre-change interaction audit
+
+Audited the Manual implementation at `68d1e03`, actions, repositories, migrations
+and browser behavior before replacing the planner interaction layer.
+`MEAL_PLANNER_DRAG_DROP = ABSENT` at baseline; visible planner controls were not
+proof of canonical behavior.
+
+| CONTROL | CURRENT IMPLEMENTATION at baseline | CANONICAL WRITE | RELOAD | RESULT |
+|---|---|---|---|---|
+| Previous / current / next week | session-local week shift over loaded fixtures | none | no selected-week read | gap |
+| Day / Breakfast / Lunch / Dinner | Manual empty slots disabled; recipe-linked rows only | none | existing records only | partial |
+| Recipe assignment | Manual suggestions disabled | none | absent | gap |
+| Meal inspector | existing recipe/portions/note edit | authenticated meal update | existing N1 proof | preserve |
+| Save Week / Reset | Demo/session draft controls | none in Manual | draft not persisted | gap |
+| Suggestions search/filter | local list, no Manual assignment | none | canonical recipes loaded | partial |
+| Grocery signal | real destination / derived open meals | read only | existing N1 projection | preserve |
+| Scheduling/rescheduling | source-aware Meal↔Task repository/RPC | canonical source transaction | existing N1 proof | preserve |
+| Drag / drop | no drag handlers, transfer identity or move action | none | absent | ABSENT |
+
+The N1 model permits multiple Meals for the same day/type. There is no unique
+slot constraint or existing swap contract. The new grid displays every existing
+Meal. New assignments and moves reject occupied targets; they never erase or
+swap an entity. Explicit removal requires a confirmation control and protects
+completed Meals. Existing source-linked Tasks are archived atomically with
+explicit removal of an open Meal.
+
+### Current control inventory
+
+The expected behavior is directly exercised by the focused tests below;
+read-only status text and absent controls are identified explicitly.
+
+| CONTROL | EXPECTED | ACTUAL | RESULT |
+|---|---|---|---|
+| Overview Today / Week / Month | real period projections only | fake tabs removed; today and actual week are simultaneously visible | PASS |
+| Overview planner / grocery links | real owner surfaces | selected weekly planner / generated grocery | PASS |
+| Log Meal / fields / save | compact dialog, canonical log | existing create action; completed-at capture by default; visible success and reload | PASS |
+| Next Meal / Gegessen / Plan öffnen | complete today or navigate to selected slot | canonical completion plus exact day/type context | PASS |
+| Recent Meals / close / Escape | inspect logged entry, restore focus | dialog with known estimates, canonical date, keyboard close | PASS |
+| Weight / Health link | existing Health records / owner navigation | read-only existing weight history; no second weight store | PASS |
+| Hydration | real data or honest absence | no N1 capture model; no fake water increment control | no write claimed |
+| Planner previous / current / next week | server-loaded date range | actual week navigation; dirty draft blocks departure with feedback | PASS |
+| All day/type slots | selectable 7×3 matrix | all 21 slots clicked; multiple existing Meals visible | PASS |
+| Recipe search / filter / sort / assign | real library selection | name/tag/ingredient query, meal-type filter, name/recent/prep sort, selected-slot draft | PASS |
+| Save Week / Reset | atomic assignments / discard without write | one bounded RPC transaction; reset remains local | PASS |
+| Drag / drop | same entity moved and persisted | Monday breakfast → Tuesday lunch, DB id/count and reload | PASS |
+| Occupied / cancelled / invalid drag | no overwrite or accidental mutation | occupied feedback, cancellation/Escape, external drag ignored, server rejection | PASS |
+| Accessible move | keyboard/form alternative | day/type form uses the identical canonical move action | PASS |
+| Inspector edit / schedule / remove / recipe | owned detail controls | title/recipe/portions/notes, real Calendar block, confirmed remove, existing detail route | PASS |
+| Suggestions / grocery empty links | useful next step | library and generated grocery owner navigation | PASS |
+| Recipes search / meal/tag/readiness filters / sort | functional browser | persisted definitions; no inferred recommendations | PASS |
+| New Recipe / close / Escape | explicit creation, focus restoration | native dialog with existing authenticated create | PASS |
+| Recipe title/summary/servings/prep/tags/instructions/macros | persist supplied values only | canonical recipe create/edit; absent estimates remain unknown | PASS |
+| Ingredients add/edit/remove / archive | owned lifecycle, reload | existing ingredient CRUD and recipe archive actions | PASS |
+| Grocery week navigation / planner / library links | canonical source resolution | previous/current/next week and real owner links | PASS |
+| Grocery items / unresolved sources | read-only derived demand | name/unit/note aggregation, serving scaling, explicit missing-recipe/ingredient context | PASS |
+
+### Backend and cross-surface truth
+
+`20260907170000_r2_05_nutrition_planner_operations.sql` adds only the controlled
+`apply_nutrition_plan` RPC. No table, planner copy, category taxonomy, external API
+or new domain fields. Server Actions authenticate and Zod-validate; the RPC
+independently verifies ownership, active recipes, operation bounds, stale source
+versions and occupied targets. Per-user planner serialization plus the existing
+source lock protects coupled writes. Errors roll back the entire week draft.
+Normal clients use authenticated access; existing table RLS/grants remain intact.
+
+Moves preserve Meal identity, recipe, portions and notes. Date-only Meals stay
+date-only. Actual timed Meals retain their local wall time across DST and use the
+established source-linked scheduling boundary to update the same Task. Browser
+and database assertions cover Meal Plan → Overview → Dashboard → Grocery;
+completion/logging → Overview → Dashboard/Today; Recipe Ingredients → planner
+selection and Grocery. Recipe estimates are clearly labeled, partial values stay
+unknown, and completed Meals no longer contribute to grocery demand.
+
+### Composition and design review
+
+Four scopes share V5 tokens, restrained amber accents and German surface labels.
+Overview owns tracking/logging, planner owns weekly planning, recipes owns the
+library, grocery owns derived shopping demand. No permanent Overview/Recipe
+create form. Planner target context is capped; the weekly matrix takes the
+remaining height. Recipe browser/detail and grocery draft/unresolved columns
+fill the workspace. Growing lists scroll internally; mobile stacks normally.
+Empty states stay compact at the top without demo leakage or invented metrics.
+
+Design answers: **A YES** tracking/logging; **B YES** weekly planning;
+**C YES** safe persistent DnD and accessible move; **D YES** recipe library;
+**E YES** derived grocery; **F YES** no unmotivated naked bottom gaps at
+1920×1080; **G YES** shared Life OS V5 composition. This is implementation review,
+not user acceptance.
+
+Proof sources: `tests/e2e/r2-05-nutrition-surface.spec.ts`,
+`tests/e2e/r2-05-nutrition-layout.spec.ts`,
+`tests/e2e/r2-05-nutrition-boundaries.spec.ts`,
+`tests/e2e/n1-nutrition-loop.spec.ts`, and the retained Demo grocery regression.
+The viewport matrix captures all four pages empty/populated at 1920×1080,
+2560×1440, 3840×2160 and 390×844 plus selected-planner and create/log dialog screenshots (42 captures). Bounds tests
+check body overflow, full workspace height, card overlap and modal viewport bounds. Console/hydration
+checks collect actual browser errors and warnings without suppressions.
+
+**Validation / implementation decision: IMPLEMENTATION_PASS.** Focused Nutrition
+unit validation: 4 files / 6 tests green (including the existing assertion suites).
+Focused Playwright: all 9 cases green across the latest scoped runs (3 current
+surface controls/flows, 1 viewport matrix, 2 RPC/security, 1 N1 source-linked
+Calendar loop, 2 retained Demo regressions). Earlier failures were corrected:
+native-dialog focus restoration, Empty Grocery composition, and test synchronization
+for completed ingredient writes/hydration before raw pointer coordinates. No
+console/hydration errors remain in the checked Nutrition flows.
+
+`git diff --check`, `pnpm typecheck`, `pnpm lint`, 11 runtime-hardening tests and
+`pnpm build` pass via sequential `pnpm validate:local`. The complete fresh
+migration chain plus local DB lint/security advisors pass in the disposable
+runtime. The sole pending migration was then applied to canonical local Target
+`life-os-sr104b-target`; Target migration list, DB lint and advisors pass. Effective
+RPC privileges were checked: authenticated execute enabled, anon disabled,
+SECURITY DEFINER with `search_path=pg_catalog`. No remote database action.
+
+Full-surface, selected-inspector and dialog screenshots are retained in the ignored local
+proof cache `node_modules/.cache/nutrition-proof/layout-final/`; tests regenerate
+them with uniquely seeded disposable data. No screenshots, generated types from
+Next, runtime files or unrelated existing work are part of the commit.
+R2-05 USER ACCEPTANCE STATUS: PENDING.
 
 # 8. Mental Health, Mood, Sleep and Weight
 
@@ -1106,9 +1239,14 @@ operational follow-up below, not a completed capability or an additional active 
 | Strength session/sets | `CONNECTED` | R2-05 current plan/free-session path, exercise selection, real sets, completion rejection without sets, history and muscle projection after reload; existing transactional task sync retained | maintain weighted/unweighted semantics |
 | Muscle map | `CONNECTED` | explicit exercise-muscle relations and log-derived set intensity/weighted volume with textual source labels; H1/H2 Target-Runtime Dashboard reload proof | maintain |
 | Workout schedule source | `CONNECTED` | H1/H2 Target-Runtime proof schedules one canonical Running Plan Item and Strength Plan Task, projects each to Calendar/Today/Dashboard, rejects generic Task completion, then completes only from the real Run or Strength Session with set log | retain no-duplicate and completion-sync regressions |
-| Health / Fitness primary viewport | `CONNECTED` | R2-05 composition pass: viewport-filling desktop defaults, internally scrolling growing lists, explicit depth disclosures; current 3840/2560/1920/390 proof below | R2-05 remains active; USER ACCEPTANCE PENDING |
+| Health / Fitness primary viewport | `CONNECTED` | R2-05 composition pass: viewport-filling desktop defaults, internally scrolling growing lists, explicit depth disclosures; current 3840/2560/1920/390 proof below | Health & Fitness USER ACCEPTED on 2026-09-07; R2-05 remains active for Nutrition |
 
 ## R2-05 – One-page Health detail composition (2026-09-07)
+
+**Acceptance update:** Health & Fitness is now USER ACCEPTED (2026-09-07).
+The following pass report is historical implementation evidence. Its then-pending
+Health acceptance and not-started Nutrition statements are superseded by the
+current acceptance and Nutrition sections; R2-05 as a whole remains pending.
 
 Current composition pass for `/health/mental`, `/health/habits`,
 `/health/running`, `/health/strength` only. The user considers the existing
@@ -1194,6 +1332,9 @@ or runtime configuration changes were needed. This is **IMPLEMENTATION_PASS**
 for the composition pass, not final R2-05 acceptance.
 
 ## R2-05 – Health & Fitness implementation evidence (2026-09-07)
+
+Historical pass report; superseded for status by explicit Health & Fitness
+USER ACCEPTED on 2026-09-07 and the current Nutrition work below.
 
 Health & Fitness implementation pass; **R2-05 remains the sole Active Work
 Block. USER ACCEPTANCE STATUS: PENDING.** Nutrition has not been started or

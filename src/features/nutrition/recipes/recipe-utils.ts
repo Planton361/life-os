@@ -39,11 +39,11 @@ export const recipeTagOptions: readonly RecipeTag[] = [
 ];
 
 export const recipeTagLabels: Record<RecipeTag, string> = {
-  "high-protein": "High protein",
-  "low-carb": "Low carb",
-  quick: "Quick",
+  "high-protein": "Proteinreich",
+  "low-carb": "Kohlenhydratarm",
+  quick: "Schnell",
   "meal-prep": "Meal prep",
-  vegetarian: "Vegetarian",
+  vegetarian: "Vegetarisch",
 };
 
 export const ingredientUnitOptions: readonly IngredientUnit[] = [
@@ -55,10 +55,10 @@ export const ingredientUnitOptions: readonly IngredientUnit[] = [
 ];
 
 export const readinessFilterLabels: Record<ReadinessFilter, string> = {
-  all: "All",
-  ready: "Ready",
-  needs_info: "Needs info",
-  draft: "Draft",
+  all: "Alle",
+  ready: "Vollständig",
+  needs_info: "Angaben fehlen",
+  draft: "Entwurf",
 };
 
 export const readinessMeta: Record<
@@ -66,28 +66,28 @@ export const readinessMeta: Record<
   { label: string; helper: string; accent: string }
 > = {
   ready: {
-    label: "Ready for planner",
-    helper: "Complete recipe data",
+    label: "Vollständig",
+    helper: "Rezeptangaben vollständig",
     accent: "var(--accent-green)",
   },
   needs_macros: {
-    label: "Needs macros",
-    helper: "Macro totals or ingredient macros are incomplete",
+    label: "Nährwerte fehlen",
+    helper: "Optionale Nährwertschätzung fehlt",
     accent: "var(--accent-orange)",
   },
   needs_ingredients: {
-    label: "Needs ingredients",
-    helper: "Ingredients are missing",
+    label: "Zutaten fehlen",
+    helper: "Noch keine Zutaten hinterlegt",
     accent: "var(--accent-yellow)",
   },
   needs_instructions: {
-    label: "Needs instructions",
-    helper: "Preparation steps are missing",
+    label: "Zubereitung fehlt",
+    helper: "Zubereitungsschritte fehlen",
     accent: "var(--accent-cyan)",
   },
   draft: {
-    label: "Draft",
-    helper: "Title, meal type or servings are missing",
+    label: "Entwurf",
+    helper: "Titel, Mahlzeit oder Portionen fehlen",
     accent: "var(--accent-purple)",
   },
 };
@@ -189,7 +189,7 @@ export function getRecipeTotalMinutes(recipe: Recipe) {
 }
 
 export function getTagLabel(tag: string) {
-  return recipeTagLabels[tag as RecipeTag] ?? tag.replaceAll("-", " ");
+  return recipeTagLabels[tag as RecipeTag] ?? mealTypeLabels[tag as MealType] ?? tag.replaceAll("-", " ");
 }
 
 export function cloneRecipe(recipe: Recipe): Recipe {
@@ -348,13 +348,13 @@ export function getRecipeReadiness(recipe: Recipe): RecipeReadiness {
       ingredient.carbs < 0 ||
       ingredient.fat < 0,
   );
-  const totals =
-    recipe.ingredients.length > 0
-      ? calculateIngredientTotals(recipe.ingredients)
-      : recipe.totals;
+  const totals = recipe.nutritionEstimateAvailable !== undefined
+    ? recipe.totals
+    : recipe.ingredients.length > 0 ? calculateIngredientTotals(recipe.ingredients) : recipe.totals;
 
   if (
     hasInvalidIngredient ||
+    (recipe.availableMacros !== undefined && recipe.availableMacros.length < 4) ||
     totals.calories <= 0 ||
     totals.protein < 0 ||
     totals.carbs < 0 ||
@@ -474,7 +474,7 @@ export function summarizeRecipes(recipes: readonly Recipe[]): RecipeStats {
     needsIngredients: readinessCounts.needs_ingredients,
     averageTotalMinutes:
       activeRecipes.length > 0 ? Math.round(totalMinutes / activeRecipes.length) : 0,
-    mealTypeCoverage: mealTypeCoverage || "None",
+    mealTypeCoverage: mealTypeCoverage || "Keine Mahlzeitentypen",
   };
 }
 

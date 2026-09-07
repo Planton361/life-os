@@ -97,15 +97,15 @@ export function RecipeDetailPanel({
         bodyClassName="p-3"
         className="min-h-0 xl:h-full"
         stateAttributes={stateAttributes}
-        subtitle="Select a recipe."
-        title="Selected Recipe"
+        subtitle="Wähle ein Rezept."
+        title="Ausgewähltes Rezept"
       >
         <div className="rounded-[14px] border border-dashed border-[var(--border-default)] bg-[rgba(168,183,204,.04)] p-4">
           <p className="text-sm font-semibold text-[var(--text-secondary)]">
             Kein Rezept ausgewählt
           </p>
           <p className="mt-1 text-[11px] leading-5 text-[var(--text-muted)]">
-            Wähle ein Rezept aus der Library oder erstelle später ein neues.
+            Wähle ein Rezept aus der Bibliothek oder erstelle ein neues.
           </p>
         </div>
       </PlannerPanel>
@@ -119,8 +119,8 @@ export function RecipeDetailPanel({
       bodyClassName="flex min-h-0 flex-col gap-3 p-3 xl:overflow-y-auto"
       className="min-h-0 xl:h-full"
       stateAttributes={stateAttributes}
-      subtitle="Planner context."
-      title="Selected Recipe"
+      subtitle="Details und Rezeptpflege"
+      title="Ausgewähltes Rezept"
     >
       <div className="flex min-w-0 gap-2.5">
         <RecipeImage recipe={recipe} variant="compact" />
@@ -129,7 +129,7 @@ export function RecipeDetailPanel({
             {recipe.title}
           </h2>
           <p className="mt-1 line-clamp-2 text-[10px] leading-4 text-[var(--text-muted)]">
-            {recipe.description ?? "No description added."}
+            {recipe.description ?? "Keine Beschreibung hinterlegt."}
           </p>
         </div>
       </div>
@@ -142,7 +142,7 @@ export function RecipeDetailPanel({
             {mealTypeLabels[mealType]}
           </PlannerPill>
         ))}
-        {recipe.tags.map((tag) => (
+        {recipe.tags.filter(tag => !recipe.mealTypes.includes(tag as typeof recipe.mealTypes[number])).map((tag) => (
           <PlannerPill key={tag} quiet>
             {getTagLabel(tag)}
           </PlannerPill>
@@ -150,13 +150,13 @@ export function RecipeDetailPanel({
       </div>
 
       <div className="grid gap-1.5 sm:grid-cols-2">
-        <DetailMetric label="Servings" value={`${recipe.defaultServings}`} />
+        <DetailMetric label="Portionen" value={`${recipe.defaultServings}`} />
         <DetailMetric
-          label="Total"
+          label="Gesamtzeit"
           value={formatRecipeMinutes(getRecipeTotalMinutes(recipe))}
         />
-        <DetailMetric label="Prep" value={formatRecipeMinutes(recipe.prepMinutes)} />
-        <DetailMetric label="Cook" value={formatRecipeMinutes(recipe.cookMinutes)} />
+        <DetailMetric label="Vorbereitung" value={recipe.prepMinutes === undefined ? "—" : formatRecipeMinutes(recipe.prepMinutes)} />
+        <DetailMetric label="Kochzeit" value={recipe.cookMinutes === undefined ? "—" : formatRecipeMinutes(recipe.cookMinutes)} />
       </div>
 
       <section aria-labelledby="recipe-macros-heading" className="grid gap-1.5">
@@ -164,12 +164,12 @@ export function RecipeDetailPanel({
           className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-faint)]"
           id="recipe-macros-heading"
         >
-          Macro totals
+          Nährwertschätzung (gesamtes Rezept)
         </h3>
         <p className="text-[10px] leading-4 text-[var(--text-muted)]">
           {recipe.nutritionEstimateAvailable === false
             ? "Keine manuelle Nährwertschätzung hinterlegt."
-            : "Optionale Recipe-Schätzung; keine berechneten oder gemessenen Werte."}
+            : "Optionale Rezeptschätzung; keine berechneten oder gemessenen Werte."}
         </p>
         <div className="grid grid-cols-2 gap-1.5">
           {(["calories", "protein", "carbs", "fat"] as const).map((macro) => (
@@ -177,7 +177,7 @@ export function RecipeDetailPanel({
               key={macro}
               label={macroLabels[macro]}
               value={
-                recipe.nutritionEstimateAvailable === false
+                recipe.nutritionEstimateAvailable === false || (recipe.availableMacros && !recipe.availableMacros.includes(macro))
                   ? "—"
                   : formatMacro(recipe.totals[macro], macroUnits[macro])
               }
@@ -236,7 +236,7 @@ export function RecipeDetailPanel({
           className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-faint)]"
           id="recipe-instructions-heading"
         >
-          Instructions
+          Zubereitung
         </h3>
         <ol className="grid gap-1.5">
           {recipe.instructions.map((instruction) => (

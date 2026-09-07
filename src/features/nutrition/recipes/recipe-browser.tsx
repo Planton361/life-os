@@ -41,6 +41,8 @@ function FilterButton({
 }
 
 export function RecipeBrowser({
+  sort,
+  onSortChange,
   recipes,
   query,
   mealType,
@@ -54,6 +56,8 @@ export function RecipeBrowser({
   onReadinessChange,
   onSelectRecipe,
 }: Readonly<{
+  sort: string;
+  onSortChange: (sort: string) => void;
   recipes: readonly Recipe[];
   query: string;
   mealType: MealTypeFilter;
@@ -71,25 +75,26 @@ export function RecipeBrowser({
     <PlannerPanel
       badge={
         <span className="inline-flex min-h-6 items-center rounded-full border border-[var(--border-subtle)] bg-[rgba(168,183,204,.05)] px-2 text-[10px] font-semibold text-[var(--text-muted)]">
-          {recipes.length} shown
+          {recipes.length} sichtbar
         </span>
       }
       bodyClassName="flex min-h-0 flex-col gap-3 p-3"
       className="min-h-0 xl:h-full"
       stateAttributes={stateAttributes}
-      subtitle="Search, filter, select."
-      title="Recipe Browser"
+      subtitle="Suchen, filtern und auswählen."
+      title="Rezeptbibliothek"
     >
+      <label className="text-xs">Sortierung<select aria-label="Sortierung" className={inputClass} value={sort} onChange={e=>onSortChange(e.target.value)}><option value="recent">Zuletzt geändert</option><option value="title">Name</option></select></label>
       <div className="shrink-0 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(14,23,38,.48)] p-2">
-        <div className="grid gap-2 xl:grid-cols-[minmax(220px,1fr)_auto_auto] xl:items-end">
+        <div className="grid gap-2 xl:grid-cols-1 xl:items-end">
           <label className="block min-w-0">
             <span className="mb-1 block text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--text-faint)]">
-              Search
+              Suche
             </span>
             <input
               className={cn(inputClass, "xl:min-h-9")}
               onChange={(event) => onQueryChange(event.target.value)}
-              placeholder="Search by name, tag or ingredient"
+              placeholder="Name, Tag oder Zutat suchen"
               type="search"
               value={query}
             />
@@ -97,11 +102,11 @@ export function RecipeBrowser({
 
           <div className="min-w-0">
             <p className="mb-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--text-faint)]">
-              Meal
+              Mahlzeit
             </p>
-            <div className="flex gap-1.5 overflow-x-auto pb-1">
+            <div className="flex flex-wrap gap-1.5 pb-1">
               <FilterButton active={mealType === "all"} onClick={() => onMealTypeChange("all")}>
-                All
+                Alle
               </FilterButton>
               {mealTypes.map((type) => (
                 <FilterButton
@@ -117,9 +122,9 @@ export function RecipeBrowser({
 
           <div className="min-w-0">
             <p className="mb-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--text-faint)]">
-              Readiness
+              Vollständigkeit
             </p>
-            <div className="flex gap-1.5 overflow-x-auto pb-1">
+            <div className="flex flex-wrap gap-1.5 pb-1">
               {(Object.keys(readinessFilterLabels) as ReadinessFilter[]).map((option) => (
                 <FilterButton
                   active={readiness === option}
@@ -135,9 +140,9 @@ export function RecipeBrowser({
 
         <div className="mt-1 min-w-0">
           <p className="sr-only">Tags</p>
-          <div className="flex gap-1.5 overflow-x-auto pb-1">
+          <div className="flex flex-wrap gap-1.5 pb-1">
             <FilterButton active={tag === "all"} onClick={() => onTagChange("all")}>
-              All tags
+              Alle Tags
             </FilterButton>
             {recipeTagOptions.map((option) => (
               <FilterButton
@@ -153,7 +158,7 @@ export function RecipeBrowser({
       </div>
 
       <div
-        aria-label="Recipe results"
+        aria-label="Rezeptliste"
         className="grid min-h-0 gap-2 overflow-y-auto pr-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] lg:grid-cols-2 xl:flex-1"
         role="list"
         tabIndex={0}
@@ -169,12 +174,12 @@ export function RecipeBrowser({
             </div>
           ))
         ) : (
-          <div className="min-h-[320px] rounded-[14px] border border-dashed border-[var(--border-default)] bg-[rgba(168,183,204,.04)] p-6">
+          <div className="self-start rounded-[14px] border border-dashed border-[var(--border-default)] bg-[rgba(168,183,204,.04)] p-6">
             <p className="text-[16px] font-semibold text-[var(--text-primary)]">
               Noch keine Rezepte
             </p>
             <p className="mt-2 max-w-xl text-[12px] leading-5 text-[var(--text-muted)]">
-              Speichere Rezepte, damit Meal Planner und Grocery Signale echte
+              Speichere Rezepte, damit Essensplan und Einkauf echte
               Vorschläge erhalten.
             </p>
           </div>

@@ -2740,6 +2740,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_nutrition_plan: { Args: { p_operations: Json }; Returns: undefined };
       // Verified against fresh generated schema; SQL nullable arguments are explicit here.
       complete_inbox_triage: {
         Args: {

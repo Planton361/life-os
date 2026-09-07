@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ManualMealPlanner } from "./manual-meal-planner";
 import { useMemo, useState } from "react";
 import {
   contentStateDataAttributes,
@@ -178,7 +179,7 @@ function calculateWeekStatus(
   };
 }
 
-export function MealPlannerView({
+function DemoMealPlannerView({
   initialSelectedSlot = null,
   viewModel,
 }: Readonly<{
@@ -579,4 +580,10 @@ export function MealPlannerView({
       </div>
     </div>
   );
+}
+
+export function MealPlannerView(props: Readonly<{initialSelectedSlot?: SelectedMealSlot | null; viewModel: MealPlannerViewModel}>) {
+  return props.viewModel.profileId && props.viewModel.profileId !== "demo"
+    ? <ManualMealPlanner key={props.viewModel.week.weekStartsOn} viewModel={props.viewModel} initialSelectedSlot={props.initialSelectedSlot ?? null} />
+    : <DemoMealPlannerView {...props} />;
 }

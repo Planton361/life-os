@@ -1,6 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/components/feedback/toast-provider";
+import { NutritionDialog } from "./nutrition-dialog";
+import "./nutrition-workspace.css";
 import {
   useEffect,
   useActionState,
@@ -59,11 +63,11 @@ const periods: readonly NutritionPeriod[] = ["today", "week", "month"];
 const nutritionAccent = "var(--accent-orange)";
 
 const mealTypeLabels: Record<MealType, string> = {
-  breakfast: "Breakfast",
-  lunch: "Lunch",
-  dinner: "Dinner",
+  breakfast: "Frühstück",
+  lunch: "Mittagessen",
+  dinner: "Abendessen",
   snack: "Snack",
-  other: "Other",
+  other: "Sonstiges",
 };
 
 const mealSourceLabels: Record<MealSource, string> = {
@@ -98,7 +102,7 @@ const initialNutritionActionState: NutritionActionResult = {
 };
 
 function formatNumber(value: number, maximumFractionDigits = 0) {
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("de-DE", {
     maximumFractionDigits,
   }).format(value);
 }
@@ -308,7 +312,9 @@ function ManualMealCreateForm({
   actionsEnabled,
   date,
   recipeOptions,
+  onSaved,
 }: Readonly<{
+  onSaved?: () => void;
   actionsEnabled: boolean;
   date: string;
   recipeOptions: NutritionOverviewViewModel["recipeOptions"];
@@ -319,11 +325,9 @@ function ManualMealCreateForm({
     initialNutritionActionState,
   );
 
-  useEffect(() => {
-    if (state.status === "success") {
-      window.location.reload();
-    }
-  }, [state.status]);
+  const router = useRouter();
+  const { notify } = useToast();
+  useEffect(() => { if (state.status === "success") { notify("Mahlzeit erfasst."); onSaved?.(); router.refresh(); } }, [state, onSaved, router, notify]);
 
   return (
     <section
@@ -336,29 +340,37 @@ function ManualMealCreateForm({
             className="text-[14px] font-semibold text-[var(--text-primary)]"
             id="manual-meal-create-heading"
           >
-            Meal erstellen
+            Mahlzeit erfassen
           </h2>
           <p className="mt-1 text-[11px] leading-4 text-[var(--text-muted)]">
-            Persistiert im Manual Nutrition Store.
+            Erfasse eine Mahlzeit mit oder ohne Rezept.
           </p>
         </div>
         <NutritionActionMessage message={state.message} status={state.status} />
       </div>
 
-      <form action={formAction} className="mt-3 grid gap-3 lg:grid-cols-6">
+      <form action={(data) => {
+        if (data.get("logged") === "on") {
+          const day = String(data.get("date"));
+          const today = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
+          data.set("completedAt", day === today ? new Date().toISOString() : new Date(`${day}T12:00:00`).toISOString());
+        }
+        formAction(data);
+      }} className="mt-3 grid gap-3 sm:grid-cols-2">
+        <label className="flex items-center gap-2 text-sm sm:col-span-2"><input type="checkbox" name="logged" defaultChecked /> Bereits gegessen</label>
         <input defaultValue={requestId} name="requestId" type="hidden" />
-        <label className="min-w-0 lg:col-span-2">
-          <FieldLabel>Title</FieldLabel>
+        <label className="min-w-0 sm:col-span-2">
+          <FieldLabel>Titel</FieldLabel>
           <input
             className={inputClass}
             disabled={!actionsEnabled || isPending}
             name="title"
-            placeholder="Manual Lunch"
+            placeholder="Mittagessen"
             required
           />
         </label>
         <label className="min-w-0">
-          <FieldLabel>Date</FieldLabel>
+          <FieldLabel>Datum</FieldLabel>
           <input
             className={inputClass}
             defaultValue={date}
@@ -369,11 +381,12 @@ function ManualMealCreateForm({
           />
         </label>
         <label className="min-w-0">
-          <FieldLabel>Type</FieldLabel>
+          <FieldLabel>Mahlzeit</FieldLabel>
           <select
             className={inputClass}
             defaultValue="lunch"
             disabled={!actionsEnabled || isPending}
+            aria-label="Mahlzeit"
             name="mealType"
             required
           >
@@ -385,23 +398,14 @@ function ManualMealCreateForm({
           </select>
         </label>
         <label className="min-w-0">
-          <FieldLabel optional>Planned</FieldLabel>
-          <input
-            className={inputClass}
-            defaultValue={`${date}T12:00`}
-            disabled={!actionsEnabled || isPending}
-            name="plannedAt"
-            type="datetime-local"
-          />
-        </label>
-        <label className="min-w-0">
-          <FieldLabel optional>Recipe</FieldLabel>
+          <FieldLabel optional>Rezept</FieldLabel>
           <select
             className={inputClass}
             disabled={!actionsEnabled || isPending}
+            aria-label="Rezept"
             name="recipeId"
           >
-            <option value="">No recipe</option>
+            <option value="">Ohne Rezept</option>
             {(recipeOptions ?? []).map((recipe) => (
               <option key={recipe.id} value={recipe.id}>
                 {recipe.title}
@@ -422,22 +426,22 @@ function ManualMealCreateForm({
             type="number"
           />
         </label>
-        <label className="min-w-0 lg:col-span-5">
-          <FieldLabel optional>Notes</FieldLabel>
+        <label className="min-w-0 sm:col-span-2">
+          <FieldLabel optional>Notiz</FieldLabel>
           <input
             className={inputClass}
             disabled={!actionsEnabled || isPending}
             name="notes"
-            placeholder="Prep note"
+            placeholder="Optionale Notiz"
           />
         </label>
-        <div className="flex items-end">
+        <div className="flex items-end sm:col-span-2">
           <button
             className={primaryButtonClass}
             disabled={!actionsEnabled || isPending}
             type="submit"
           >
-            Meal erstellen
+            Mahlzeit erfassen
           </button>
         </div>
       </form>
@@ -457,11 +461,9 @@ function CompleteMealForm({
     initialNutritionActionState,
   );
 
-  useEffect(() => {
-    if (state.status === "success") {
-      window.location.reload();
-    }
-  }, [state.status]);
+  const router = useRouter();
+  const { notify } = useToast();
+  useEffect(() => { if (state.status === "success") { notify("Mahlzeit als gegessen erfasst."); router.refresh(); } }, [state, router, notify]);
 
   return (
     <form action={formAction} className="contents">
@@ -1943,7 +1945,7 @@ function Toast({
   );
 }
 
-export function NutritionOverviewPage({
+function DemoNutritionOverviewPage({
   viewModel,
 }: Readonly<{
   viewModel: NutritionOverviewViewModel;
@@ -2209,5 +2211,272 @@ export function NutritionOverviewPage({
       <MealDetailDialog meal={activeMeal} onClose={() => setActiveMeal(null)} />
       <Toast onDismiss={() => setToast(null)} toast={toast} />
     </>
+  );
+}
+
+function ManualNutritionOverview({
+  viewModel: vm,
+}: {
+  viewModel: NutritionOverviewViewModel;
+}) {
+  const [log, setLog] = useState(false);
+  const [detail, setDetail] = useState<MealEntry | null>(null);
+  const logged = recentMeals(vm.meals);
+  const todayMeals = vm.meals.filter((m) => m.date === vm.day.date);
+  const todayLogged = todayMeals.filter((m) => m.consumed_at);
+  const open = plannedOpenMeals(vm.meals).filter((m) => (m.date ?? "") >= vm.day.date);
+  const meal = open[0];
+  const labels = {
+    breakfast: "Frühstück",
+    lunch: "Mittagessen",
+    dinner: "Abendessen",
+    snack: "Snack",
+    other: "Sonstiges",
+  };
+  const estimates = todayLogged.filter((m) => m.nutritionEstimateAvailable);
+  return (
+    <div
+      id="nutrition-page"
+      className="nutrition-workspace-page"
+      data-nutrition-surface="overview"
+    >
+      <header className="nutrition-header">
+        <div>
+          <p className="nutrition-eyebrow">Life OS / Ernährung</p>
+          <h1>Ernährung</h1>
+          <p>
+            Heute · {vm.day.date} · Mahlzeiten, Wochenverlauf und
+            Ernährungsstatus
+          </p>
+        </div>
+        <nav aria-label="Ernährung" className="flex flex-wrap gap-2">
+          <Link className={secondaryButtonClass} href="/nutrition/meal-planner">
+            Essensplan öffnen
+          </Link>
+          <Link className={secondaryButtonClass} href="/nutrition/grocery">
+            Einkauf öffnen · {vm.grocerySignal.missingCount}
+          </Link>
+          <button
+            className={primaryButtonClass}
+            disabled={!vm.actionsEnabled}
+            onClick={() => setLog(true)}
+          >
+            Mahlzeit erfassen
+          </button>
+        </nav>
+      </header>
+      {vm.unavailableReason && <p role="alert">{vm.unavailableReason}</p>}
+      <div className="nutrition-overview-grid">
+        <NutritionPanel
+          title="Ernährung heute"
+          subtitle="Gegessene Mahlzeiten und hinterlegte Rezeptschätzungen"
+          className="nutrition-today"
+        >
+          <p className="text-3xl font-semibold">
+            {todayLogged.length}{" "}
+            <span className="text-base text-[var(--text-muted)]">
+              Mahlzeiten erfasst
+            </span>
+          </p>
+          <div className="mt-5 grid grid-cols-4 gap-3">
+            {[
+              ["Energie", vm.day.calorie_actual, "kcal", "calories"],
+              ["Protein", vm.day.protein_actual, "g", "protein"],
+              ["Kohlenhydrate", vm.day.carbs_actual, "g", "carbs"],
+              ["Fett", vm.day.fat_actual, "g", "fat"],
+            ].map(([label, value, unit, key]) => (
+              <div key={label}>
+                <p className="text-xs text-[var(--text-muted)]">{label}</p>
+                <p className="mt-2 text-xl font-semibold">
+                  {estimates.some((m) =>
+                    m.availableMacros?.includes(
+                      key as "calories" | "protein" | "carbs" | "fat",
+                    ),
+                  )
+                    ? `${formatNumber(Number(value))} ${unit}`
+                    : "—"}
+                </p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-4 text-xs text-[var(--text-muted)]">
+            {estimates.length} von {todayLogged.length} Mahlzeiten mit
+            Nährwertschätzung. Summen können unvollständig sein. Keine Zielwerte
+            hinterlegt.
+          </p>
+        </NutritionPanel>
+        <NutritionPanel
+          title="Nächste Mahlzeit"
+          subtitle="Nächster offener Eintrag"
+          className="nutrition-next"
+        >
+          {meal ? (
+            <>
+              <h3 className="text-lg font-semibold">{meal.title}</h3>
+              <p className="mt-2 text-sm text-[var(--text-muted)]">
+                {meal.date} · {labels[meal.meal_type]}
+              </p>
+              <div className="mt-4 flex gap-2">
+                {meal.date === vm.day.date && (
+                  <CompleteMealForm
+                    key={meal.id}
+                    actionsEnabled={Boolean(vm.actionsEnabled)}
+                    meal={meal}
+                  />
+                )}
+                {["breakfast", "lunch", "dinner"].includes(meal.meal_type) && <Link
+                  className={secondaryButtonClass}
+                  href={`/nutrition/meal-planner?slot=${meal.meal_type}&date=${meal.date}`}
+                >
+                  Plan öffnen
+                </Link>}
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-[var(--text-muted)]">
+              Keine offene Mahlzeit. Plane deine Woche im Essensplan.
+            </p>
+          )}
+        </NutritionPanel>
+        <NutritionPanel
+          title="Wochenbilanz"
+          subtitle={vm.weekBalanceStatement}
+          className="nutrition-balance"
+        >
+          <div className="nutrition-balance-days">
+            {vm.weekBalance.map((d) => (
+              <div key={d.day}>
+                <span>{d.day}</span>
+                <strong>{d.label}</strong>
+                <div className="nutrition-balance-bar">
+                  <i style={{ width: `${d.value * 100}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </NutritionPanel>
+        <NutritionPanel
+          title="Planerfüllung"
+          subtitle="Mahlzeiten dieser Woche"
+          className="nutrition-adherence"
+        >
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              ["Gesamt", vm.adherence.planned],
+              ["Gegessen", vm.adherence.eaten],
+              ["Offen", vm.adherence.open],
+            ].map(([l, v]) => (
+              <div key={l}>
+                <p className="text-xs text-[var(--text-muted)]">{l}</p>
+                <p className="mt-2 text-2xl font-semibold">{v}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-4 text-xs text-[var(--text-muted)]">
+            {vm.adherence.statement}
+          </p>
+        </NutritionPanel>
+        <NutritionPanel
+          title="Gewichtsverlauf"
+          subtitle={vm.weightTrend.periodLabel}
+          className="nutrition-weight"
+        >
+          <p className="text-sm">{vm.weightTrend.statement}</p>
+          {vm.weightTrend.values.length > 1 && (
+            <div className="mt-4 flex flex-wrap gap-3 text-sm">
+              {vm.weightTrend.values.map((v, i) => (
+                <span key={i}>{v} kg</span>
+              ))}
+            </div>
+          )}
+          <Link className="mt-4 inline-block text-sm underline" href="/health">
+            Health öffnen
+          </Link>
+        </NutritionPanel>
+        <NutritionPanel
+          title="Trinkmenge"
+          subtitle="Erfassungsstatus"
+          className="nutrition-water"
+        >
+          <p className="text-2xl">—</p>
+          <p className="mt-3 text-sm text-[var(--text-muted)]">
+            Noch keine Trinkmengenerfassung vorhanden.
+          </p>
+        </NutritionPanel>
+        <NutritionPanel
+          title="Letzte Mahlzeiten"
+          subtitle="Zuletzt gegessene Mahlzeiten"
+          className="nutrition-recent"
+        >
+          {logged.length ? (
+            <ul className="grid gap-2">
+              {logged.map((m) => (
+                <li key={m.id}>
+                  <button
+                    className="flex w-full items-center justify-between gap-2 border-b border-[var(--border-subtle)] py-3 text-left"
+                    onClick={() => setDetail(m)}
+                  >
+                    <strong className="text-sm">{m.title}</strong>
+                    <span className="text-xs text-[var(--text-muted)]">
+                      {labels[m.meal_type]} · {m.date}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-[var(--text-muted)]">
+              Noch keine Mahlzeit erfasst. Nutze „Mahlzeit erfassen“.
+            </p>
+          )}
+        </NutritionPanel>
+      </div>
+      {log && (
+        <NutritionDialog
+          title="Mahlzeit erfassen"
+          onClose={() => setLog(false)}
+        >
+          <ManualMealCreateForm
+            actionsEnabled={Boolean(vm.actionsEnabled)}
+            date={vm.day.date}
+            recipeOptions={vm.recipeOptions}
+            onSaved={() => setLog(false)}
+          />
+        </NutritionDialog>
+      )}
+      {detail && (
+        <NutritionDialog title={detail.title} onClose={() => setDetail(null)}>
+          <div className="p-4">
+            <p>
+              {labels[detail.meal_type]} · {detail.consumed_at?.slice(0, 10)}
+            </p>
+            <p className="mt-3">
+              {detail.nutritionEstimateAvailable
+                ? [
+                    ["calories", detail.calories, "kcal"],
+                    ["protein", detail.macros.protein, "g Protein"],
+                    ["carbs", detail.macros.carbs, "g Kohlenhydrate"],
+                    ["fat", detail.macros.fat, "g Fett"],
+                  ]
+                    .map(
+                      ([key, value, unit]) =>
+                        `${detail.availableMacros?.includes(key as "calories" | "protein" | "carbs" | "fat") ? value : "—"} ${unit}`,
+                    )
+                    .join(" · ")
+                : "Keine Nährwertschätzung hinterlegt."}
+            </p>
+          </div>
+        </NutritionDialog>
+      )}
+    </div>
+  );
+}
+export function NutritionOverviewPage(props: {
+  viewModel: NutritionOverviewViewModel;
+}) {
+  return props.viewModel.profileId && props.viewModel.profileId !== "demo" ? (
+    <ManualNutritionOverview {...props} />
+  ) : (
+    <DemoNutritionOverviewPage {...props} />
   );
 }

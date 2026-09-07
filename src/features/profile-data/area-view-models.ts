@@ -1288,24 +1288,14 @@ function nutritionEstimateNumber(
   return 0;
 }
 
-function hasUsableNutritionEstimate(recipe?: RealDataRecipe) {
-  const estimate = recipe?.nutritionEstimate;
-  if (!estimate) return false;
-
-  return ["calories", "kcal", "energy", "protein", "carbs", "carbohydrates", "fat"].some(
-    (key) => {
-      const value = estimate[key];
-      const numeric =
-        typeof value === "number"
-          ? value
-          : typeof value === "string"
-            ? Number(value)
-            : Number.NaN;
-
-      return Number.isFinite(numeric);
-    },
-  );
+function availableRecipeMacros(recipe?: RealDataRecipe) {
+  const aliases = {calories:["calories","kcal","energy"],protein:["protein"],carbs:["carbs","carbohydrates"],fat:["fat"]};
+  return (Object.keys(aliases) as (keyof typeof aliases)[]).filter(key=>aliases[key].some(alias=>{
+    const value=recipe?.nutritionEstimate?.[alias];
+    return (typeof value === "number" || (typeof value === "string" && value.trim() !== "")) && Number.isFinite(Number(value)) && Number(value)>=0;
+  }));
 }
+function hasUsableNutritionEstimate(recipe?: RealDataRecipe) { return availableRecipeMacros(recipe).length > 0; }
 
 function recipeTotals(recipe?: RealDataRecipe | null) {
   return {
@@ -1404,6 +1394,7 @@ function realRecipeToPlannerRecipe(
     ingredients: ingredients.map(realRecipeIngredientToPlannerIngredient),
     instructions: recipeInstructions(recipe),
     mealTypes: recipeMealTypes(recipe),
+    availableMacros: availableRecipeMacros(recipe),
     nutritionEstimateAvailable: hasUsableNutritionEstimate(recipe),
     prepMinutes: recipe.prepMinutes ?? undefined,
     tags: [...recipe.tags],
@@ -1423,6 +1414,7 @@ function realMealToNutritionEntry(
     meal.completedAt !== null ? undefined : meal.plannedAt ?? `${meal.date}T12:00`;
 
   return {
+    date: meal.date,
     calories: totals.calories,
     consumed_at: meal.completedAt ?? undefined,
     id: meal.id,
@@ -1432,6 +1424,7 @@ function realMealToNutritionEntry(
       protein: totals.protein,
     },
     meal_type: meal.mealType,
+    availableMacros: availableRecipeMacros(recipe),
     nutritionEstimateAvailable:
       hasUsableNutritionEstimate(recipe),
     planned_at: plannedAt,
@@ -1451,12 +1444,11 @@ function buildProfileNutritionOverviewViewModel(
   const meals =
     profileId === "manual"
       ? (nutritionData?.meals ?? [])
-          .filter((meal) => meal.date === today)
           .map((meal) => realMealToNutritionEntry(meal, recipesById))
       : [];
-  const loggedMeals = meals.filter((meal) => meal.consumed_at);
+  const loggedMeals = meals.filter((meal) => meal.consumed_at && meal.date === today);
   const plannedMeals = meals.filter(
-    (meal) => meal.planned_at && !meal.consumed_at,
+    (meal) => meal.planned_at && !meal.consumed_at && meal.date === today,
   );
   const day = loggedMeals.reduce<NutritionDay>(
     (current, meal) => ({
@@ -1472,6 +1464,7 @@ function buildProfileNutritionOverviewViewModel(
   const manualDbAvailable =
     profileId === "manual" && nutritionData?.unavailableReason === undefined;
 
+  viewModel.unavailableReason = nutritionData?.unavailableReason;
   viewModel.profileId = profileId;
   viewModel.actionsEnabled = manualDbAvailable;
   viewModel.recipeOptions = recipes.map((recipe) => ({
@@ -1506,32 +1499,22 @@ function buildProfileNutritionOverviewViewModel(
   viewModel.day = day;
   viewModel.goals = [];
   viewModel.meals = meals;
-  viewModel.weekBalance = [
-    { day: "Mo", label: "leer", value: 0 },
-    { day: "Di", label: "leer", value: 0 },
-    {
-      day: "Mi",
-      label: primaryItemCount > 0 ? "lokal" : "leer",
-      value: primaryItemCount > 0 ? 0.18 : 0,
-    },
-    { day: "Do", label: "leer", value: 0 },
-    { day: "Fr", label: "leer", value: 0 },
-    { day: "Sa", label: "leer", value: 0 },
-    { day: "So", label: "leer", value: 0 },
-  ];
-  viewModel.weekBalanceStatement =
-    primaryItemCount > 0
-      ? "Lokale Mahlzeiten sind sichtbar; Wochenverlauf und Ziele fehlen noch."
-      : "Noch keine Wochenbalance.";
+  const weekStart = formatLocalDate(startOfIsoWeek(new Date()));
+  const weekEnd = formatLocalDate(addDays(startOfIsoWeek(new Date()), 6));
+  const weekMeals = (nutritionData?.meals ?? []).filter(m => m.date >= weekStart && m.date <= weekEnd);
+  viewModel.weekBalance = Array.from({length:7}, (_, index) => {
+    const date = addDays(startOfIsoWeek(new Date()), index);
+    const entries = weekMeals.filter(m => m.date === formatLocalDate(date));
+    const eaten = entries.filter(m=>m.completedAt).length;
+    return {day:weekdayLabel(date),label:`${eaten} / ${entries.length}`,value:entries.length ? eaten/entries.length : 0};
+  });
+  viewModel.weekBalanceStatement = "Gegessen / erfasst pro Tag · aktuelle Woche";
   viewModel.adherence = {
-    eaten: loggedMeals.length,
-    open: plannedMeals.length,
-    planned: primaryItemCount,
+    planned: weekMeals.length,
+    eaten: weekMeals.filter(m=>m.completedAt).length,
+    open: weekMeals.filter(m=>!m.completedAt).length,
     replaced: 0,
-    statement:
-      primaryItemCount > 0
-        ? "Manual Meals werden aus Supabase angezeigt; Zielprofile bleiben noch leer."
-        : "Noch kein Wochenplan gesetzt.",
+    statement: "Enthält geplante und direkt erfasste Mahlzeiten. Kein Zielwert oder Ernährungs-Score.",
   };
   viewModel.priorities = [];
   viewModel.weightTrend = {
@@ -1540,12 +1523,12 @@ function buildProfileNutritionOverviewViewModel(
     statement: "Noch kein Gewichtstrend",
     values: [],
   };
+  const grocery = generateGroceryDraft({ meals: weekMeals, recipes, ingredientsByRecipeId: nutritionData?.recipeIngredientsByRecipeId ?? new Map() });
   viewModel.grocerySignal = {
-    actionLabel: "View grocery list",
-    href: "/nutrition/grocery",
-    ingredients: [],
-    linkedMealsLabel: "0 linked meals",
-    missingCount: 0,
+    actionLabel: "View grocery list", href: "/nutrition/grocery",
+    ingredients: grocery.items.map(i=>i.name),
+    linkedMealsLabel: `${grocery.mealsConsidered} offene Mahlzeiten`,
+    missingCount: grocery.items.length + grocery.unresolvedMeals.length,
   };
   viewModel.contentStates = {
     adherence: resolveContentStateMeta({ capacity: 21, itemCount: primaryItemCount }),
@@ -1608,8 +1591,9 @@ function weekdayLabel(date: Date) {
 function buildManualMealPlanWeek(
   recipes: readonly RealDataRecipe[],
   meals: readonly RealDataMeal[],
+  rangeStart?: string,
 ): MealPlanWeek {
-  const start = startOfIsoWeek(new Date());
+  const start = rangeStart ? new Date(`${rangeStart}T12:00:00`) : startOfIsoWeek(new Date());
   const recipeIds = new Set(recipes.map((recipe) => recipe.id));
 
   return {
@@ -1659,6 +1643,7 @@ function buildManualMealPlanWeek(
 function buildProfileMealPlannerViewModel(
   profileId: Exclude<LifeOsProfileId, "demo">,
   nutritionData?: ManualNutritionData,
+  rangeStart?: string,
 ): ReturnType<typeof getDemoMealPlannerViewModel> {
   const viewModel = clone(getDemoMealPlannerViewModel());
   const recipes =
@@ -1681,6 +1666,8 @@ function buildProfileMealPlannerViewModel(
 
   viewModel.profileId = profileId;
   viewModel.actionsEnabled = false;
+  viewModel.canonicalMeals = nutritionData?.meals ?? [];
+  viewModel.unavailableReason = nutritionData?.unavailableReason;
   viewModel.mealEditEnabled =
     profileId === "manual" && Boolean(nutritionData) && !nutritionData?.unavailableReason;
   viewModel.header = {
@@ -1707,8 +1694,8 @@ function buildProfileMealPlannerViewModel(
   viewModel.recipes = recipes;
   viewModel.week =
     profileId === "manual" && nutritionData
-      ? buildManualMealPlanWeek(nutritionData.recipes, nutritionData.meals)
-      : buildEmptyMealPlanWeek(viewModel.week);
+      ? buildManualMealPlanWeek(nutritionData.recipes, nutritionData.meals, rangeStart)
+      : buildManualMealPlanWeek([], [], rangeStart);
   viewModel.contentStates = {
     inspector: resolveContentStateMeta({ capacity: 1, itemCount: 0 }),
     page: resolveContentStateMeta({ capacity: 21, itemCount: plannedMealCount }),
@@ -1741,6 +1728,7 @@ function buildProfileRecipesViewModel(
         )
       : [];
 
+  viewModel.unavailableReason = nutritionData?.unavailableReason;
   viewModel.profileId = profileId;
   viewModel.actionsEnabled =
     profileId === "manual" && nutritionData?.unavailableReason === undefined;
@@ -2131,13 +2119,27 @@ export async function getNutritionOverviewViewModel(): Promise<
     return getDemoNutritionOverviewViewModel();
   }
 
-  return buildProfileNutritionOverviewViewModel(
-    profileId,
-    profileId === "manual" ? await getManualNutritionData() : undefined,
-  );
+  const start = startOfIsoWeek(new Date());
+  const viewModel = buildProfileNutritionOverviewViewModel(profileId, profileId === "manual" ? await getManualNutritionData({
+    startDate: formatLocalDate(addDays(start, -21)), endDate: formatLocalDate(addDays(start, 6)),
+  }) : undefined);
+  if (profileId === "manual") {
+    const auth = await createAuthenticatedSupabaseServerClient();
+    if (auth.ok) {
+      const health = await createSupabaseHealthRepository(auth.client).getSnapshot(auth.user.id, auth.user.id);
+      const values = [...(health?.weights ?? [])].slice(0,7).reverse();
+      viewModel.weightTrend = {
+        values: values.map(v=>v.weightKg),
+        periodLabel: values.length ? `${values[0].measuredOn} – ${values[values.length-1].measuredOn}` : "Noch keine Gewichtseinträge",
+        statement: values.length ? `Zuletzt ${values[values.length-1].weightKg} kg${values.length > 1 ? ` · Veränderung ${Math.round((values[values.length-1].weightKg-values[0].weightKg)*10)/10} kg` : ""}` : "Gewichtseinträge aus Health erscheinen hier.",
+        axisLabel: "Persistierte Gewichtseinträge",
+      };
+    }
+  }
+  return viewModel;
 }
 
-export async function getMealPlannerViewModel(): Promise<
+export async function getMealPlannerViewModel(rangeStart?: string): Promise<
   ReturnType<typeof getDemoMealPlannerViewModel>
 > {
   const profileId = await getCurrentLifeOsProfileId();
@@ -2146,9 +2148,12 @@ export async function getMealPlannerViewModel(): Promise<
     return getDemoMealPlannerViewModel();
   }
 
+  const start = rangeStart && /^\d{4}-\d{2}-\d{2}$/.test(rangeStart) && Number.isFinite(Date.parse(rangeStart))
+    ? rangeStart : formatLocalDate(startOfIsoWeek(new Date()));
   return buildProfileMealPlannerViewModel(
     profileId,
-    profileId === "manual" ? await getManualNutritionData() : undefined,
+    profileId === "manual" ? await getManualNutritionData({ startDate: start, endDate: formatLocalDate(addDays(new Date(`${start}T12:00:00`), 6)) }) : undefined,
+    start,
   );
 }
 

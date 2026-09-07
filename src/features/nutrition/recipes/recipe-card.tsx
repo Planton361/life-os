@@ -20,7 +20,8 @@ export function RecipeCard({
 }>) {
   const readiness = getRecipeReadiness(recipe);
   const totalMinutes = getRecipeTotalMinutes(recipe);
-  const visibleTags = recipe.tags.slice(0, 3);
+  const displayTags = recipe.tags.filter(tag => !recipe.mealTypes.includes(tag as typeof recipe.mealTypes[number]));
+  const visibleTags = displayTags.slice(0, 3);
 
   return (
     <button
@@ -40,7 +41,7 @@ export function RecipeCard({
           <div className="flex min-w-0 items-start justify-between gap-2">
             <div className="min-w-0">
               <h3 className="line-clamp-1 text-[13px] font-semibold leading-5 text-[var(--text-primary)]">
-                {recipe.title || "Untitled recipe"}
+                {recipe.title || "Rezept ohne Titel"}
               </h3>
               <div className="mt-1 flex flex-wrap gap-1">
                 {recipe.mealTypes.map((mealType) => (
@@ -59,9 +60,9 @@ export function RecipeCard({
                     {getTagLabel(tag)}
                   </span>
                 ))}
-                {recipe.tags.length > visibleTags.length ? (
+                {displayTags.length > visibleTags.length ? (
                   <span className="inline-flex min-h-5 items-center text-[9px] text-[var(--text-faint)]">
-                    +{recipe.tags.length - visibleTags.length}
+                    +{displayTags.length - visibleTags.length}
                   </span>
                 ) : null}
               </div>
@@ -76,13 +77,13 @@ export function RecipeCard({
           <span>Keine Nährwertschätzung</span>
         ) : (
           <>
-            <span>{Math.round(recipe.totals.calories)} kcal</span>
-            <span>{Math.round(recipe.totals.protein)}g protein</span>
-            <span>{Math.round(recipe.totals.carbs)}g carbs</span>
-            <span>{Math.round(recipe.totals.fat)}g fat</span>
+            <span>{!recipe.availableMacros || recipe.availableMacros.includes("calories") ? `${Math.round(recipe.totals.calories)} kcal` : "kcal —"}</span>
+            <span>{!recipe.availableMacros || recipe.availableMacros.includes("protein") ? `${Math.round(recipe.totals.protein)} g Protein` : "Protein —"}</span>
+            <span>{!recipe.availableMacros || recipe.availableMacros.includes("carbs") ? `${Math.round(recipe.totals.carbs)} g Kohlenhydrate` : "Kohlenhydrate —"}</span>
+            <span>{!recipe.availableMacros || recipe.availableMacros.includes("fat") ? `${Math.round(recipe.totals.fat)} g Fett` : "Fett —"}</span>
           </>
         )}
-        <span>{totalMinutes} min total</span>
+        <span>{totalMinutes} min gesamt</span>
       </div>
     </button>
   );

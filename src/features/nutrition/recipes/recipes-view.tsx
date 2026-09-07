@@ -1,6 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/components/feedback/toast-provider";
+import { NutritionDialog } from "../nutrition-dialog";
+import "../nutrition-workspace.css";
 import type { CSSProperties } from "react";
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -432,7 +436,7 @@ function ManualRecipeIngredientManager({
             Zutaten verwalten
           </h3>
           <p className="mt-0.5 text-[11px] leading-4 text-[var(--text-muted)]">
-            Persistierte Zutaten ohne Katalog-, Grocery- oder Makroberechnung.
+            Zutaten bilden die Grundlage für deinen Einkaufsentwurf.
           </p>
         </div>
         <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-faint)]">
@@ -474,6 +478,10 @@ function ManualRecipeIngredientManager({
   );
 }
 
+function RecipeEstimateFields({ recipe }: {recipe?: Recipe}) {
+  return <fieldset className="col-span-full grid gap-2 sm:grid-cols-2"><legend className="text-xs text-[var(--text-muted)]">Optionale Nährwertschätzung für das gesamte Rezept · nur bekannte Werte angeben</legend>{([['calories','Energie (kcal)'],['protein','Protein (g)'],['carbs','Kohlenhydrate (g)'],['fat','Fett (g)']] as const).map(([key,label])=><label key={key} className="text-xs">{label}<input className={manualInputClass} type="number" min="0" step="0.1" name={`estimate_${key}`} defaultValue={recipe?.nutritionEstimateAvailable && (!recipe.availableMacros || recipe.availableMacros.includes(key)) ? recipe.totals[key] : ""}/></label>)}</fieldset>;
+}
+
 function ManualRecipePersistedActions({
   actionsEnabled,
   onIngredientDeleted,
@@ -494,9 +502,14 @@ function ManualRecipePersistedActions({
     initialNutritionActionState,
   );
   const disabled = !actionsEnabled || isUpdating || isArchiving;
+  const router = useRouter();
+  const { notify } = useToast();
+  useEffect(() => { const state = archiveState.status === "success" ? archiveState : updateState;
+    if (state.status === "success") { notify(state.message); router.refresh(); }
+  }, [archiveState, updateState, router, notify]);
 
   return (
-    <div className="grid gap-3">
+    <details className="grid gap-3"><summary className={secondaryButtonClass}>Rezept bearbeiten</summary>
       <form
         action={updateAction}
         aria-labelledby="manual-recipe-edit-heading"
@@ -507,7 +520,7 @@ function ManualRecipePersistedActions({
             className="text-[12px] font-semibold text-[var(--text-primary)]"
             id="manual-recipe-edit-heading"
           >
-            Recipe bearbeiten
+            Rezept bearbeiten
           </h3>
           <RecipeActionMessage
             message={updateState.message}
@@ -519,7 +532,7 @@ function ManualRecipePersistedActions({
 
         <label className="min-w-0">
           <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
-            Title
+            Titel
           </span>
           <input
             className="mt-1 min-h-11 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.62)] px-3 text-[12px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)] disabled:opacity-60"
@@ -532,7 +545,7 @@ function ManualRecipePersistedActions({
 
         <label className="min-w-0">
           <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
-            Summary
+            Kurzbeschreibung
           </span>
           <input
             className="mt-1 min-h-11 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.62)] px-3 text-[12px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)] disabled:opacity-60"
@@ -544,7 +557,7 @@ function ManualRecipePersistedActions({
 
         <label className="min-w-0">
           <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
-            Instructions
+            Zubereitung
           </span>
           <textarea
             className="mt-1 min-h-24 w-full resize-y rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.62)] px-3 py-2 text-[12px] leading-5 text-[var(--text-primary)] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)] disabled:opacity-60"
@@ -557,7 +570,7 @@ function ManualRecipePersistedActions({
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="min-w-0">
             <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
-              Servings
+              Portionen
             </span>
             <input
               className="mt-1 min-h-11 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.62)] px-3 text-[12px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)] disabled:opacity-60"
@@ -571,7 +584,7 @@ function ManualRecipePersistedActions({
 
           <label className="min-w-0">
             <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
-              Prep min
+              Zubereitungszeit (min)
             </span>
             <input
               className="mt-1 min-h-11 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.62)] px-3 text-[12px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)] disabled:opacity-60"
@@ -586,7 +599,7 @@ function ManualRecipePersistedActions({
 
         <label className="min-w-0">
           <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
-            Tags
+            Tags / Mahlzeiten (breakfast, lunch, dinner)
           </span>
           <input
             className="mt-1 min-h-11 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.62)] px-3 text-[12px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)] disabled:opacity-60"
@@ -596,8 +609,9 @@ function ManualRecipePersistedActions({
           />
         </label>
 
+        <RecipeEstimateFields recipe={recipe}/>
         <button className={primaryButtonClass} disabled={disabled} type="submit">
-          Recipe speichern
+          Rezept speichern
         </button>
       </form>
 
@@ -618,7 +632,7 @@ function ManualRecipePersistedActions({
             className="text-[12px] font-semibold text-[var(--text-primary)]"
             id="manual-recipe-archive-heading"
           >
-            Recipe archivieren
+            Rezept archivieren
           </h3>
           <RecipeActionMessage
             message={archiveState.message}
@@ -628,10 +642,10 @@ function ManualRecipePersistedActions({
 
         <input name="recipeId" type="hidden" value={recipe.id} />
         <button className={quietButtonClass} disabled={disabled} type="submit">
-          Recipe archivieren
+          Rezept archivieren
         </button>
       </form>
-    </div>
+    </details>
   );
 }
 
@@ -645,11 +659,9 @@ function ManualRecipeCreateForm({
     initialNutritionActionState,
   );
 
-  useEffect(() => {
-    if (state.status === "success") {
-      window.location.reload();
-    }
-  }, [state.status]);
+  const router = useRouter();
+  const { notify } = useToast();
+  useEffect(() => { if (state.status === "success") { notify("Rezept erstellt."); router.refresh(); } }, [state, router, notify]);
 
   return (
     <section
@@ -662,42 +674,42 @@ function ManualRecipeCreateForm({
             className="text-[13px] font-semibold text-[var(--text-primary)]"
             id="manual-recipe-create-heading"
           >
-            Recipe erstellen
+            Rezept erstellen
           </h2>
           <p className="mt-1 text-[11px] leading-4 text-[var(--text-muted)]">
-            Persistiert im Manual Nutrition Store.
+            Wiederverwendbares Rezept für deinen Essensplan.
           </p>
         </div>
         <RecipeActionMessage message={state.message} status={state.status} />
       </div>
 
-      <form action={formAction} className="mt-3 grid gap-3 lg:grid-cols-6">
-        <label className="min-w-0 lg:col-span-2">
+      <form action={formAction} className="mt-3 grid gap-3 sm:grid-cols-2">
+        <label className="min-w-0">
           <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
-            Title
+            Titel
           </span>
           <input
             className="mt-1 min-h-11 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.62)] px-3 text-[12px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)] disabled:opacity-60"
             disabled={!actionsEnabled || isPending}
             name="title"
-            placeholder="Manual Recipe"
+            placeholder="Rezeptname"
             required
           />
         </label>
-        <label className="min-w-0 lg:col-span-2">
+        <label className="min-w-0">
           <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
-            Summary
+            Kurzbeschreibung
           </span>
           <input
             className="mt-1 min-h-11 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.62)] px-3 text-[12px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)] disabled:opacity-60"
             disabled={!actionsEnabled || isPending}
             name="summary"
-            placeholder="Short prep note"
+            placeholder="Kurze Beschreibung"
           />
         </label>
         <label className="min-w-0">
           <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
-            Servings
+            Portionen
           </span>
           <input
             className="mt-1 min-h-11 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.62)] px-3 text-[12px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)] disabled:opacity-60"
@@ -710,7 +722,7 @@ function ManualRecipeCreateForm({
         </label>
         <label className="min-w-0">
           <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
-            Prep min
+            Zubereitungszeit (min)
           </span>
           <input
             className="mt-1 min-h-11 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.62)] px-3 text-[12px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)] disabled:opacity-60"
@@ -720,9 +732,9 @@ function ManualRecipeCreateForm({
             type="number"
           />
         </label>
-        <label className="min-w-0 lg:col-span-5">
+        <label className="min-w-0 sm:col-span-2">
           <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
-            Tags
+            Tags / Mahlzeiten (breakfast, lunch, dinner)
           </span>
           <input
             className="mt-1 min-h-11 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.62)] px-3 text-[12px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--focus-ring)] disabled:opacity-60"
@@ -731,14 +743,16 @@ function ManualRecipeCreateForm({
             placeholder="lunch, quick"
           />
         </label>
+        <label className="text-xs sm:col-span-2">Zubereitung<textarea className={manualTextareaClass} name="instructions" /></label>
+        <RecipeEstimateFields/>
         <input name="source" type="hidden" value="manual" />
-        <div className="flex items-end">
+        <div className="flex items-end sm:col-span-2">
           <button
             className={primaryButtonClass}
             disabled={!actionsEnabled || isPending}
             type="submit"
           >
-            Recipe erstellen
+            Rezept erstellen
           </button>
         </div>
       </form>
@@ -796,50 +810,50 @@ function RecipeSummary({
             className="text-[13px] font-semibold text-[var(--text-primary)]"
             id="recipe-summary-heading"
           >
-            Planner readiness strip
+            Bibliotheksstatus
           </h2>
         </div>
         <p className="truncate text-[10px] leading-4 text-[var(--text-muted)]">
-          Local state - shared Meal Planner recipe source.
+          Rezepte für Essensplan und Einkauf.
         </p>
       </div>
 
       <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
         <StatTile
-          helper={`${stats.activeRecipes} active`}
-          label="Total recipes"
+          helper={`${stats.activeRecipes} aktiv`}
+          label="Rezepte gesamt"
           value={`${stats.totalRecipes}`}
         />
         <StatTile
           accent="var(--accent-green)"
-          helper="Planner usable"
-          label="Ready"
+          helper="Alle Angaben vorhanden"
+          label="Vollständig"
           value={`${stats.readyForPlanner}`}
         />
         <StatTile
           accent="var(--accent-yellow)"
-          helper="Macro review"
-          label="Needs macros"
+          helper="Optionale Schätzung"
+          label="Nährwerte fehlen"
           value={`${stats.needsMacros}`}
         />
         <StatTile
           accent="var(--accent-cyan)"
-          helper="Missing inputs"
-          label="Needs ingredients"
+          helper="Zutaten ergänzen"
+          label="Zutaten fehlen"
           value={`${stats.needsIngredients}`}
         />
         <StatTile
           accent="var(--accent-orange)"
           helper={stats.mealTypeCoverage}
-          label="Avg total time"
-          value={`${stats.averageTotalMinutes} min`}
+          label="Ø Zubereitungszeit"
+          value={stats.totalRecipes ? `${stats.averageTotalMinutes} min` : "—"}
         />
       </div>
     </section>
   );
 }
 
-export function RecipesView({
+function RecipesWorkbench({
   viewModel,
   initialRecipeId,
 }: Readonly<{
@@ -859,14 +873,16 @@ export function RecipesView({
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(
     () => viewModel.recipes.find((recipe) => !recipe.archived && recipe.id === initialRecipeId)?.id ?? viewModel.recipes.find((recipe) => !recipe.archived)?.id ?? null,
   );
+  const [manualCreateOpen, setManualCreateOpen] = useState(false);
+  const [sort, setSort] = useState("recent");
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [confirmingArchive, setConfirmingArchive] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   const stats = useMemo(() => summarizeRecipes(recipes), [recipes]);
   const filteredRecipes = useMemo(
-    () => filterRecipeList(recipes, query, mealType, tag, readiness),
-    [mealType, query, readiness, recipes, tag],
+    () => filterRecipeList(recipes, query, mealType, tag, readiness).sort((a,b) => sort === "title" ? a.title.localeCompare(b.title,"de-DE") : (b.updatedAt ?? "").localeCompare(a.updatedAt ?? "")),
+    [mealType, query, readiness, recipes, tag, sort],
   );
   const activeRecipes = recipes.filter((recipe) => !recipe.archived);
   const selectedRecipe =
@@ -1008,34 +1024,35 @@ export function RecipesView({
 
   return (
     <div
-      className="mx-auto flex w-full max-w-7xl flex-col gap-3 pb-4 xl:h-[calc(100dvh-88px)] xl:min-h-0 xl:overflow-hidden xl:pb-0"
+      className="nutrition-workspace-page"
       id="recipes-page"
+      data-nutrition-surface="recipes"
       {...stateAttrs(contentStates.page)}
     >
       <header className="shrink-0 overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[var(--surface-1)] shadow-[0_8px_22px_rgba(0,0,0,.12)]">
         <div className="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
-              {viewModel.header.eyebrow}
+              {profileId === "demo" ? viewModel.header.eyebrow : "Life OS / Ernährung / Rezepte"}
             </p>
             <h1 className="mt-1 text-2xl font-semibold tracking-normal text-[var(--text-primary)]">
-              {viewModel.header.title}
+              {profileId !== "demo" ? "Rezepte" : viewModel.header.title}
             </h1>
             <p className="mt-1 max-w-3xl text-xs leading-5 text-[var(--text-secondary)]">
-              {viewModel.header.subline}
+              {profileId !== "demo" ? "Deine Rezeptbibliothek · auswählen, pflegen und im Essensplan verwenden" : viewModel.header.subline}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Link className={secondaryButtonClass} href="/nutrition/meal-planner">
-              Meal Planner
+              Essensplan
             </Link>
             <button
               className={primaryButtonClass}
-              disabled={!actionsEnabled || hasPersistedManualActions}
-              onClick={openNewRecipe}
+              disabled={!actionsEnabled}
+              onClick={() => hasPersistedManualActions ? setManualCreateOpen(true) : openNewRecipe()}
               type="button"
             >
-              New recipe
+              Neues Rezept
             </button>
           </div>
         </div>
@@ -1051,23 +1068,26 @@ export function RecipesView({
               onClick={() => setToast(null)}
               type="button"
             >
-              Dismiss
+              Schließen
             </button>
           </div>
         ) : null}
       </header>
 
-      {hasPersistedManualActions ? (
-        <ManualRecipeCreateForm actionsEnabled={actionsEnabled} />
+      {hasPersistedManualActions && manualCreateOpen ? (
+        <NutritionDialog title="Neues Rezept" onClose={()=>setManualCreateOpen(false)}><ManualRecipeCreateForm actionsEnabled={actionsEnabled} /></NutritionDialog>
       ) : null}
 
+      {viewModel.unavailableReason && <p role="alert">{viewModel.unavailableReason}</p>}
       <RecipeSummary
         stateAttributes={stateAttrs(contentStates.summary)}
         stats={stats}
       />
 
-      <div className="grid min-h-0 gap-3 xl:flex-1 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-stretch xl:overflow-hidden">
+      <div className="nutrition-recipes-grid grid min-h-0 gap-3 xl:flex-1 xl:items-stretch">
         <RecipeBrowser
+          sort={sort}
+          onSortChange={setSort}
           mealType={mealType}
           onMealTypeChange={setMealType}
           onQueryChange={setQuery}
@@ -1120,4 +1140,8 @@ export function RecipesView({
       ) : null}
     </div>
   );
+}
+
+export function RecipesView(props: Readonly<{viewModel: RecipesViewModel; initialRecipeId?: string}>) {
+  return <RecipesWorkbench key={props.viewModel.recipes.map(r=>`${r.id}:${r.updatedAt}:${r.archived}`).join("|")} {...props}/>;
 }
