@@ -460,8 +460,8 @@ A capability is complete only when:
 
 After Nutrition acceptance: Journal Surface Completion → Skill Map → Full Active
 Product Acceptance. `ROADMAP.md` owns the block IDs and exactly one active block.
-R2-05 remains active with Nutrition acceptance pending; this consolidation does
-not set USER ACCEPTED for any surface.
+R2-05 is USER ACCEPTED on 2026-09-07, including Health & Fitness and Nutrition.
+R2-07 Journal is now active with USER ACCEPTANCE STATUS: PENDING.
 
 ```text
 PRIMARY: Dashboard · Inbox · Today · Calendar · Portfolio · Resources
@@ -490,4 +490,4 @@ Calendar remains the temporal planner. Domain records feed Health, Dashboard
 and Today; these projections do not duplicate data. The overview is preserved;
 real history may require scrolling on detail pages. Health & Fitness (Mental,
 Habits, Running and Strength) is USER ACCEPTED on 2026-09-07. Nutrition is the
-current R2-05 scope; R2-05 remains active and Nutrition acceptance is pending.
+also USER ACCEPTED on 2026-09-07; R2-05 is closed and R2-07 Journal is active.

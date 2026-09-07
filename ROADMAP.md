@@ -5,7 +5,7 @@
 **Design truth:** Life OS – Linear Calm Dark Command Center / Dashboard V5
 **Detailed status:** `docs/product/capability-registry.md`
 **Completed sequence:** C1 → C2 → C3 → K1 → H1/H2 → N1 → A1 → Z1 (technical baseline)
-**Active Work Block:** R2-05 – Health / Fitness / Nutrition Surface Completion
+**Active Work Block:** R2-07 – Journal Surface Completion
 
 ## 1. Product Contract
 
@@ -869,7 +869,7 @@ or backend evidence cannot alone restore a `CONNECTED` surface claim.
 ## 4.12 R2 – Product Reality Recovery & Surface Completion
 
 **Status:** R2-00 completed (contract rebaseline). **Current active slice:**
-R2-05 – Health / Fitness / Nutrition Surface Completion (the only Active Work Block).
+R2-07 – Journal Surface Completion (the only Active Work Block).
 
 **R2-01 status:** Completed; explicitly USER ACCEPTED on 2026-09-06.
 Existing control, browser, layout and migration evidence is retained in the
@@ -886,13 +886,13 @@ the 06:00–00:00 equal-hour, full-viewport Calendar proof.
 The user accepts Dashboard, Inbox, Today, Calendar, Portfolio and Resources.
 Existing implementation, control, browser and visual evidence is retained.
 
-**R2-05 status:** Active – Health / Fitness / Nutrition Surface Completion.
-Health & Fitness = USER ACCEPTED (2026-09-07): Mental Health, Habits, Running
-and Strength are accepted by the user. Nutrition Surface Completion has an
-IMPLEMENTATION_PASS; current control/projection/layout evidence is in the
-Capability Registry. R2-05 stays active; Nutrition USER ACCEPTANCE STATUS: PENDING.
-Health overview retains its design; detail pages own history, context and
-management, with Dashboard retaining quick Mood/Habit logging.
+**R2-05 status:** Completed; explicitly USER ACCEPTED on 2026-09-07.
+The user accepts Health & Fitness and Nutrition in full. Existing implementation,
+control, projection, reload and responsive evidence remains in the Capability
+Registry and focused tests. This is administrative closure after user acceptance.
+
+**R2-07 status:** Active – Journal Surface Completion.
+USER ACCEPTANCE STATUS: PENDING. R2-07 stays active until real user acceptance.
 
 **Outcome:** Recover the actual user-facing product contract without replacing
 V5 or the established architecture. A surface is complete only after all of
@@ -959,11 +959,9 @@ dependency belongs in this slice.
    Hidden legacy suites are not completion obligations.
 
 R2-06 keeps its historical ID; new IDs R2-07 and R2-08 deliberately execute
-before it. Exactly one block remains active: R2-05. The consolidation pass is
-an authorized product-boundary/navigation change alongside that pending status,
-not a new active feature block or an implicit Nutrition closure. R2-07/R2-08
-are planned; consolidation itself permits IMPLEMENTATION_PASS only, with
-USER ACCEPTANCE STATUS: PENDING.
+before it. R2-05 is now USER ACCEPTED; R2-07 is the sole active block. R2-08
+and R2-06 remain planned. The preceding consolidation evidence is retained;
+Journal implementation alone cannot set USER ACCEPTED or close R2-07.
 
 ### R2 boundary
 
@@ -974,7 +972,7 @@ USER ACCEPTANCE STATUS: PENDING.
   for a promised core control.
 - Dashboard’s removed Bottom-Zone features remain removed; they cannot return
   through historical layout references.
-- The R2 order is binding. R2-01 is accepted and closed; R2-02 and R2-03 are accepted and closed; R2-04 is accepted and closed; only R2-05 is active. Health/Fitness is USER ACCEPTED; Nutrition remains pending and R2-05 stays active.
+- The R2 order is binding. R2-01 through R2-05 are accepted and closed. Only R2-07 is active, with USER ACCEPTANCE STATUS: PENDING.
 
 ## 5. Completed Major Work
 

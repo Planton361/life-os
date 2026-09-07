@@ -184,7 +184,7 @@ context without a score or diagnosis. Habits owns selection, aggregated day,
 week and month history plus secondary editing/archive; Dashboard owns creation
 and quick Mood/Habit interaction. Running and Strength keep their existing
 canonical sessions, plans and Calendar integration. Analytics are derived from
-records and never stored as a second source. Health & Fitness is USER ACCEPTED on 2026-09-07; R2-05 remains active for Nutrition, whose user acceptance is pending.
+records and never stored as a second source. Health & Fitness is USER ACCEPTED on 2026-09-07; Nutrition is also USER ACCEPTED on 2026-09-07; R2-05 is closed.
 
 
 ### Nutrition workspaces (R2-05)
@@ -252,4 +252,5 @@ Nav-Proof: 1920×1080, 2560×1440 und 390×844, echte Klicks/Tastatur, Reload,
 keine abgeschnittenen Links oder horizontaler Overflow. Der freie Desktop-Raum
 zwischen kurzer Navigation und unten verankerten Settings ist Orientierung,
 kein Anlass für neue Widgets. Bestehende Surface Acceptances bleiben erhalten;
-Nutrition/R2-05 bleibt pending, Konsolidierungs-Acceptance ebenfalls pending.
+Nutrition/R2-05 ist seit 2026-09-07 USER ACCEPTED. R2-07 Journal ist aktiv
+und bleibt bis zur realen User-Abnahme pending.

@@ -39,11 +39,11 @@ Implementation status and product visibility are separate truths: `CONNECTED` co
 | Calendar | `ACCEPTED` | `CONNECTED`: R2-03 explicitly USER ACCEPTED on 2026-09-06; 06:00–00:00 equal-hour and viewport evidence retained | maintain accepted Calendar |
 | Portfolio | `ACCEPTED` | `CONNECTED`: R2-04 explicitly USER ACCEPTED on 2026-09-07; list/create/detail, canonical write and visual evidence retained | maintain accepted behavior |
 | Resources | `ACCEPTED` | `CONNECTED`: current surface explicitly USER ACCEPTED on 2026-09-07; existing knowledge and R2-04 create/detail evidence retained | maintain accepted surface; separately listed depth gaps remain |
-| Health / Fitness | `ACCEPTED` | `CONNECTED`: Mental Health, Habits, Running and Strength explicitly USER ACCEPTED on 2026-09-07 | maintain accepted behavior; R2-05 continues for Nutrition |
-| Nutrition | `ACTIVE` | `CONNECTED`: logging/tracking, canonical weekly planning, recipe library and derived grocery workspaces; current R2-05 evidence below | Nutrition USER ACCEPTANCE PENDING; R2-05 stays active |
+| Health / Fitness | `ACCEPTED` | `CONNECTED`: Mental Health, Habits, Running and Strength explicitly USER ACCEPTED on 2026-09-07 | maintain accepted behavior; R2-05 closed |
+| Nutrition | `ACCEPTED` | `CONNECTED`: logging/tracking, canonical weekly planning, recipes and grocery; explicitly USER ACCEPTED on 2026-09-07 with Health & Fitness | R2-05 closed; preserve evidence and accepted behavior |
 | Work / Education / Coding | `HIDDEN_RETAINED` / `FOLDED` | A1 canonical Projects, Resources and logs remain; detailed technical statuses below are retained evidence, not suite completion | Areas stay active as context; no independent suite completion |
 | Inventory / Wishlist | `EXTERNALIZED` / `RETAINED` | existing CRUD, purchase decisions and conversion retained; no new completion claim | Spreadsheet is Source of Truth for future use; no active navigation or connector |
-| Journal | `ACTIVE` / `REMAINING_DEPTH` | `CONNECTED_GAP`: dated canonical lifecycle exists; complete surface depth/acceptance remains | R2-07 after Nutrition |
+| Journal | `ACTIVE` / `REMAINING_DEPTH` | `CONNECTED_GAP`: dated canonical lifecycle exists; complete surface depth/acceptance remains | R2-07 active; user acceptance pending |
 | Skill Map | `ACTIVE_PLANNED` / `REMAINING_DEPTH` | `UI_ONLY`: only a retained Coding demo/empty Manual shell | R2-08 under Portfolio → Skills; no active graph link yet |
 | Notes | `FOLDED_INTO_RESOURCES` / `RETAINED` | `CONNECTED`: existing canonical `resources` (`note`), no migration | no separate active Notes app |
 | Anti-Rot / Challenges / Shop | `DEFERRED_HIDDEN` | connected feature code/data; direct routes remain intact | C1.1-01 removed Sidebar, Dashboard and normal Daily-Companion entry points |
@@ -62,9 +62,19 @@ Personal → Journal; Settings. Legacy routes remain directly addressable.
 
 The completed technical sequence C1 → C2 → C3 → K1 → H1/H2 → N1 → A1 → Z1 is
 history. R2-01 through R2-04 and Health/Fitness are explicitly accepted.
-**R2-05 remains the only active block; Nutrition USER ACCEPTANCE PENDING.**
-Then R2-07 Journal → R2-08 Skill Map → R2-06 Full Active Product Acceptance.
+**R2-05 USER ACCEPTED on 2026-09-07: Health & Fitness and Nutrition accepted in full.**
+R2-05 is closed; R2-07 Journal is the sole active block (USER ACCEPTANCE PENDING),
+then R2-08 Skill Map → R2-06 Full Active Product Acceptance.
 R2-06 retains its original ID; the two new capabilities precede it.
+
+## R2-05 user acceptance and administrative closure — 2026-09-07
+
+The user explicitly records R2-05 = USER ACCEPTED, including Health & Fitness
+and Nutrition in full. R2-05 is closed. Existing implementation/browser/visual
+proofs below remain historical evidence, including their original pending
+wording; this acceptance supersedes those status snapshots. No domain code or
+data changes in this closure. R2-07 Journal is now the only active block and
+stays active until real user acceptance; implementation cannot accept it.
 
 ## Product-scope consolidation — 2026-09-07
 
