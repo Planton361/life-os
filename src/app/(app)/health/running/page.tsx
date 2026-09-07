@@ -13,10 +13,10 @@ export const metadata: Metadata = {
 };
 
 export default async function RunningPage({ searchParams }: { searchParams: Promise<{ training?: string | string[] }> }) {
-  if ((await getCurrentLifeOsProfileId()) === "manual") {
+  if ((await getCurrentLifeOsProfileId()) !== "demo") {
     const data = await getTrainingPageData();
     const training = (await searchParams).training;
-    return <RunningManagementPage feedback={Array.isArray(training) ? training[0] : training} links={data.scheduleLinks} mode={data.mode === "manual" ? "manual" : "auth-blocked"} snapshot={data.snapshot}/>;
+    return <RunningManagementPage feedback={Array.isArray(training) ? training[0] : training} links={data.scheduleLinks} mode={data.mode === "manual" ? "manual" : data.mode === "empty" ? "empty" : "auth-blocked"} snapshot={data.snapshot}/>;
   }
   const { RunningTrackerPage } =
     await import("@/features/health/running");

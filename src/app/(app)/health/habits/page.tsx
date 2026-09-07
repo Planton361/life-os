@@ -6,10 +6,10 @@ import { HabitTrackingPage } from "@/features/health/habits/components/habit-tra
 
 export const dynamic = "force-dynamic";
 
-export default async function HabitsPage({ searchParams }: Readonly<{ searchParams: Promise<{ habit?: string | string[] }> }>) {
+export default async function HabitsPage({ searchParams }: Readonly<{ searchParams: Promise<{ habit?: string | string[]; selected?: string; period?: string }> }>) {
   if ((await getCurrentLifeOsProfileId()) !== "demo") {
-    const habit = (await searchParams).habit;
-    return <HabitTrackingPage data={await getHabitTrackingPageData()} feedback={Array.isArray(habit) ? habit[0] : habit} />;
+    const {habit, selected, period} = await searchParams;
+    return <HabitTrackingPage selected={selected} period={period} data={await getHabitTrackingPageData()} feedback={Array.isArray(habit) ? habit[0] : habit} />;
   }
   const { HabitsAnalyticsPage } =
     await import("@/features/health/habits/components/habits-analytics-page");

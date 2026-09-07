@@ -20,7 +20,10 @@ function value(formData: FormData, key: string) {
 
 function target(formData: FormData) {
   const requested = value(formData, "returnTo");
-  if (requested !== "/dashboard") return "/health/habits";
+  if (requested !== "/dashboard") {
+    const selected = habitIdInputSchema.safeParse({ habitId: value(formData, "habitId") });
+    return selected.success ? `/health/habits?selected=${selected.data.habitId}` : "/health/habits";
+  }
   const window = value(formData, "dashboardWindow");
   return ["Morning", "Midday", "Evening"].includes(window)
     ? `/dashboard?habitWindow=${window}`

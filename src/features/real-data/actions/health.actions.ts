@@ -14,7 +14,7 @@ function moodTarget(formData: FormData) {
   const window = value(formData, "dashboardWindow");
   return path === "/dashboard" && ["Morning", "Midday", "Evening"].includes(window) ? `${path}?habitWindow=${window}` : path;
 }
-function feedbackTarget(target: string, state: string) { return `${target}${target.includes("?") ? "&" : "?"}health=${state}`; }
+function feedbackTarget(target: string, state: string) { return `${target}${target.includes("?") ? "&" : "?"}health=${state}${target === "/health/mental" ? `&healthUpdate=${Date.now()}` : ""}`; }
 function revalidateHealth() { revalidatePath("/today"); revalidatePath("/dashboard"); revalidatePath("/health"); revalidatePath("/health/mental"); }
 async function context(target: string) {
   if ((await getCurrentLifeOsProfileId()) !== "manual") redirect(feedbackTarget(target, "blocked"));

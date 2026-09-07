@@ -11,7 +11,7 @@ export const runningSessionInputSchema = z.object({ sessionId: uuid.optional(), 
 export const exerciseInputSchema = z.object({ exerciseId: uuid.optional(), name: z.string().trim().min(1).max(120), description: optionalText(1000), equipment: optionalText(120), muscles: z.array(z.enum(muscleGroups)).min(1) });
 export const strengthPlanInputSchema = z.object({ planId: uuid.optional(), name: z.string().trim().min(1).max(120), goal: z.string().trim().min(1).max(500) });
 export const strengthPlanItemInputSchema = z.object({ itemId: uuid.optional(), planId: uuid, exerciseId: uuid, sortOrder: z.coerce.number().int().min(0).max(10000), targetSets: z.coerce.number().int().min(1).max(50), targetReps: z.coerce.number().int().min(1).max(1000), targetWeightKg: optionalPositive });
-export const strengthSessionInputSchema = z.object({ planId: uuid, sessionDate: z.string().date(), notes: optionalText(2000) });
+export const strengthSessionInputSchema = z.object({ planId: z.union([uuid, z.literal("")]).transform(value => value || null), sessionDate: z.string().date(), notes: optionalText(2000) });
 export const strengthSetInputSchema = z.object({ sessionId: uuid, exerciseId: uuid, setOrder: z.coerce.number().int().min(1).max(1000), repetitions: z.coerce.number().int().min(1).max(1000), weightKg: optionalPositive, notes: optionalText(1000) });
 export const trainingIdInputSchema = z.object({ id: uuid });
 

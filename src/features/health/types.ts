@@ -86,7 +86,7 @@ export type HabitsViewModel = {
   badge: string;
   metrics: readonly HealthMetricViewModel[];
   heatmap: {
-    title: "Monthly habit heatmap · June";
+    title: string;
     rows: readonly HabitHeatmapRowViewModel[];
     legend: {
       low: "Less";
@@ -109,7 +109,7 @@ export type StrengthPatternViewModel = {
 };
 
 export type StrengthBalanceViewModel = {
-  label: "Pull" | "Push" | "Core" | "Mobility" | "Recovery" | "Skill work";
+  label: "Pull" | "Push" | "Core" | "Mobility" | "Recovery" | "Skill work" | "Mit Plan" | "Frei";
   count: number;
   accent: HealthAccent;
 };

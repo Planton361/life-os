@@ -1,3 +1,4 @@
+import { runningStartInstant } from "../../domain/running-time";
 import type { TrainingSnapshot } from "../../domain/training";
 import type { ExerciseInput, RunningPlanInput, RunningPlanItemInput, RunningSessionInput, StrengthPlanInput, StrengthPlanItemInput, StrengthSessionInput, StrengthSetInput } from "../../schemas/training.schema";
 import type { RepositoryResult } from "../../repositories/repository-result";
@@ -55,7 +56,8 @@ export function createSupabaseTrainingRepository(client: SupabaseClientLike) {
     async saveRunningSession(userId: string, input: RunningSessionInput) {
       if (input.planItemId && !(await owns("running_plan_items", userId, input.planItemId, true))) return fail("Running unit is outside the current user scope.");
       if (input.sessionId && !(await owns("running_sessions", userId, input.sessionId))) return fail("Running session is outside the current user scope.");
-      const startedAt = input.startTime ? new Date(`${input.sessionDate}T${input.startTime}:00+02:00`).toISOString() : null;
+      const startedAt = input.startTime ? runningStartInstant(input.sessionDate, input.startTime) : null;
+      if (input.startTime && !startedAt) return fail("This local start time does not exist. Choose a time outside the clock change.");
       const result = await client.rpc("save_completed_running_session", { p_session_id: rpcNullable<string>(input.sessionId ?? null), p_plan_item_id: rpcNullable<string>(input.planItemId), p_session_date: input.sessionDate, p_started_at: rpcNullable<string>(startedAt), p_distance_km: input.distanceKm, p_duration_minutes: input.durationMinutes, p_average_heart_rate: rpcNullable<number>(input.averageHeartRate), p_notes: rpcNullable<string>(input.notes), p_completed_at: new Date().toISOString() });
       if (result.error || !result.data) return fail("Running session and scheduled task could not be saved atomically.");
       return { ok: true as const, data: mapRunningSession(result.data) };
@@ -88,7 +90,7 @@ export function createSupabaseTrainingRepository(client: SupabaseClientLike) {
       return result.error || !result.data ? fail("Plan exercise could not be added.") : { ok: true as const, data: mapStrengthPlanItem(result.data) };
     },
     async startStrengthSession(userId: string, input: StrengthSessionInput) {
-      if (!(await owns("strength_plans", userId, input.planId, true))) return fail("Strength plan is outside the current user scope.");
+      if (input.planId && !(await owns("strength_plans", userId, input.planId, true))) return fail("Strength plan is outside the current user scope.");
       const result = await client.from("strength_sessions").insert({ user_id: userId, plan_id: input.planId, session_date: input.sessionDate, notes: input.notes }).select("*").single();
       return result.error || !result.data ? fail("Strength session could not be started.") : { ok: true as const, data: mapStrengthSession(result.data) };
     },

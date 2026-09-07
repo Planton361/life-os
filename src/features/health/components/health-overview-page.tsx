@@ -38,7 +38,7 @@ export function HealthOverviewPage({
 }>) {
   return (
     <div
-      className="mx-auto flex w-full max-w-[2208px] flex-col gap-2 pb-6 min-[1900px]:h-[calc(100dvh-1.25rem)] min-[1900px]:min-h-[1120px] min-[1900px]:pb-0"
+      className="mx-auto flex w-full max-w-[2208px] flex-col gap-2 pb-6 min-[1900px]:min-h-[max(1120px,calc(100dvh-1.25rem))] min-[1900px]:pb-0"
       data-health-section="page"
       {...contentStateDataAttributes(
         viewModel.contentStates.page,

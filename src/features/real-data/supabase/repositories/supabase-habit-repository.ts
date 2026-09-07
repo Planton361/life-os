@@ -146,11 +146,18 @@ export function createSupabaseHabitRepository(client: SupabaseClientLike) {
       profileId: string,
       input: UpdateHabitInput,
     ): Promise<RepositoryResult<Habit>> {
-      if (
-        !scoped(userId, profileId) ||
-        !(await ownedHabit(userId, input.habitId))
-      ) {
-        return failure("Habit was not found in the current user scope.");
+      if (!scoped(userId, profileId)) return failure("Habit scope is invalid.");
+      const existing = await ownedHabit(userId, input.habitId, true);
+      if (!existing) return failure("Habit was not found in the current user scope.");
+      let sortOrder = existing.sortOrder;
+      if (existing.window !== input.window) {
+        const occupied = await client.from("habits").select("sort_order")
+          .eq("user_id", userId).eq("time_window", input.window).is("archived_at", null);
+        if (occupied.error) return failure("Habit slots could not be loaded.");
+        const used = new Set((occupied.data ?? []).map(row => row.sort_order));
+        const available = Array.from({length:8}, (_, i)=>i+1).find(slot=>!used.has(slot));
+        if (!available) return failure("Alle acht Habit-Plätze sind belegt.");
+        sortOrder = used.has(sortOrder) ? available : sortOrder;
       }
       const result = await client
         .from("habits")
@@ -158,7 +165,7 @@ export function createSupabaseHabitRepository(client: SupabaseClientLike) {
           daily_target: input.dailyTarget ?? null,
           default_increment: input.defaultIncrement,
           name: input.name,
-          sort_order: input.sortOrder,
+          sort_order: sortOrder,
           time_window: input.window,
           unit: input.unit,
         })

@@ -1,3 +1,6 @@
+import { projectHealthOverviewFacts } from "@/features/health/health-overview-facts";
+import { shiftDay } from "@/features/health/habits/habit-analytics";
+import { createSupabaseHealthRepository, createSupabaseReviewRepository } from "@/features/real-data/supabase";
 import "server-only";
 
 import { getChallengesViewModel as getDemoChallengesViewModel } from "@/features/challenges";
@@ -541,8 +544,8 @@ function buildProfileHealthOverviewViewModel(
   };
 
   const latestRun = completedRuns[0];
-  const todayTimestamp = new Date(`${localDateInTimeZone(new Date(), "Europe/Berlin")}T12:00:00`).getTime();
-  const runsInDays = (days: number) => completedRuns.filter((session) => todayTimestamp - new Date(`${session.sessionDate}T12:00:00`).getTime() <= days * 86400000);
+  const today = localDateInTimeZone(new Date(), "Europe/Berlin");
+  const runsInDays = (days: number) => completedRuns.filter((session) => session.sessionDate >= shiftDay(today, -(days - 1)) && session.sessionDate <= today);
   const sevenDayRuns = runsInDays(7);
   const thirtyDayRuns = runsInDays(30);
   viewModel.running = {
@@ -2043,7 +2046,13 @@ export async function getHealthOverviewViewModel(): Promise<
     const auth = await createAuthenticatedSupabaseServerClient();
     if (auth.ok) {
       const repository = createSupabaseHabitRepository(auth.client);
-      const training = await createSupabaseTrainingRepository(auth.client).getSnapshot(auth.user.id);
+      const today = localDateInTimeZone(new Date(), "Europe/Berlin");
+      const [training, health, reviews] = await Promise.all([
+        createSupabaseTrainingRepository(auth.client).getSnapshot(auth.user.id),
+        createSupabaseHealthRepository(auth.client).getSnapshot(auth.user.id, auth.user.id),
+        createSupabaseReviewRepository(auth.client).getReviewsInRange(auth.user.id, auth.user.id, shiftDay(today,-29), today),
+      ]);
+      const project = (view: ReturnType<typeof getDemoHealthOverviewViewModel>) => projectHealthOverviewFacts(view, health, reviews.ok ? reviews.data : [], training.ok ? training.data : null, today);
       const settings = await repository.getSettings(auth.user.id, auth.user.id);
       if (settings) {
         const today = localDateInTimeZone(new Date(), settings.timezone);
@@ -2055,19 +2064,19 @@ export async function getHealthOverviewViewModel(): Promise<
           start.toISOString().slice(0, 10),
           today,
         );
-        return buildProfileHealthOverviewViewModel(
+        return project(buildProfileHealthOverviewViewModel(
           profileId,
           await readManualProfile(),
           snapshot.ok ? snapshot.data : null,
           training.ok ? training.data : null,
-        );
+        ));
       }
-      return buildProfileHealthOverviewViewModel(
+      return project(buildProfileHealthOverviewViewModel(
         profileId,
         await readManualProfile(),
         null,
         training.ok ? training.data : null,
-      );
+      ));
     }
   }
 

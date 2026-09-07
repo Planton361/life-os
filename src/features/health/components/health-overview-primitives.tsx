@@ -30,6 +30,7 @@ export function HealthPanel({
   contentState,
   profileId,
   sectionName,
+  titleHref,
 }: Readonly<{
   title: string;
   subtitle: string;
@@ -40,6 +41,7 @@ export function HealthPanel({
   contentState?: ContentStateMeta;
   profileId?: HealthProfileId;
   sectionName?: string;
+  titleHref?: string;
 }>) {
   const id = titleId(title);
 
@@ -63,7 +65,7 @@ export function HealthPanel({
               className="truncate text-[17px] font-semibold leading-5 text-[var(--text-primary)]"
               id={id}
             >
-              {title}
+              {titleHref ? <Link className="rounded outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]" href={titleHref}>{title}</Link> : title}
             </h2>
             <p className="mt-1 text-[10px] leading-4 text-[var(--text-secondary)]">
               {subtitle}
@@ -258,6 +260,6 @@ export function Sparkline({
 
 export function barHeightStyle(value: number): HealthStyle {
   return {
-    "--bar-height": `${Math.max(12, Math.min(100, value * 100))}%`,
+    "--bar-height": `${Math.max(0, Math.min(100, value * 100))}%`,
   };
 }

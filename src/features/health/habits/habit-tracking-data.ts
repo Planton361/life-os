@@ -67,7 +67,7 @@ export async function getHabitTrackingPageData(): Promise<HabitTrackingPageData>
   const snapshot = await repository.getSnapshot(
     auth.user.id,
     auth.user.id,
-    addDays(today, -29),
+    addDays(today, -30),
     today,
   );
   return {

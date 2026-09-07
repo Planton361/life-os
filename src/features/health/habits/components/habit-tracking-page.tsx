@@ -1,36 +1,23 @@
+import { HealthFeedback } from "../../components/health-feedback";
 import Link from "next/link";
 import {
   archiveHabitAction,
-  createHabitAction,
-  incrementHabitAction,
-  undoHabitAction,
   updateHabitAction,
-  updateHabitWindowSettingsAction,
 } from "@/features/real-data/actions/habit.actions";
-import { aggregateHabitDay, habitProgress } from "@/features/real-data";
-import {
-  PageHeader,
-  Pill,
-  RoutePage,
-  SectionPanel,
-} from "@/components/layout/route-page-primitives";
 import type { HabitTrackingPageData } from "../habit-tracking-data";
-
-const fieldClass =
-  "min-h-10 w-full rounded-[9px] border border-[var(--border-default)] bg-[var(--surface-2)] px-3 text-sm text-[var(--text-primary)] outline-none focus-visible:border-[var(--accent-cyan)]";
-const buttonClass =
-  "min-h-10 rounded-[9px] border border-[var(--border-default)] px-3 text-xs font-semibold text-[var(--text-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]";
-
-function addDays(iso: string, days: number) {
-  const date = new Date(`${iso}T00:00:00.000Z`);
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
-}
-
-function number(value: number) {
-  return Number.isInteger(value) ? String(value) : value.toFixed(1);
-}
-
+import { habitDays, habitSummary, shiftDay } from "../habit-analytics";
+import {
+  HealthHeader,
+  HealthSection,
+  HealthSummary,
+  healthPage,
+  healthInput as fieldClass,
+  healthButton as buttonClass,
+  healthMuted,
+} from "../../components/health-detail-primitives";
+const windows = { Morning: "Morgens", Midday: "Mittags", Evening: "Abends" };
+const number = (value: number) =>
+  new Intl.NumberFormat("de-DE", { maximumFractionDigits: 2 }).format(value);
 function HabitFields({
   habit,
 }: Readonly<{
@@ -68,7 +55,7 @@ function HabitFields({
         />
       </label>
       <label className="text-xs font-semibold text-[var(--text-secondary)]">
-        Standard-Increment
+        Schrittweite
         <input
           className={fieldClass}
           defaultValue={habit?.defaultIncrement ?? 1}
@@ -86,23 +73,12 @@ function HabitFields({
           defaultValue={habit?.window ?? "Morning"}
           name="window"
         >
-          <option>Morning</option>
-          <option>Midday</option>
-          <option>Evening</option>
+          <option value="Morning">Morgens</option>
+          <option value="Midday">Mittags</option>
+          <option value="Evening">Abends</option>
         </select>
       </label>
-      <label className="text-xs font-semibold text-[var(--text-secondary)]">
-        Dashboard-Slot 1–8
-        <input
-          className={fieldClass}
-          defaultValue={habit?.sortOrder ?? 1}
-          max="8"
-          min="1"
-          name="sortOrder"
-          required
-          type="number"
-        />
-      </label>
+      <input name="sortOrder" type="hidden" value={habit?.sortOrder ?? 1} />
     </div>
   );
 }
@@ -110,305 +86,310 @@ function HabitFields({
 export function HabitTrackingPage({
   data,
   feedback,
-}: Readonly<{ data: HabitTrackingPageData; feedback?: string }>) {
+  selected,
+  period = "month",
+}: {
+  data: HabitTrackingPageData;
+  feedback?: string;
+  selected?: string;
+  period?: string;
+}) {
   const snapshot = data.snapshot;
-  const activeHabits =
-    snapshot?.habits.filter((habit) => habit.archivedAt === null) ?? [];
-  const archivedHabits =
-    snapshot?.habits.filter((habit) => habit.archivedAt !== null) ?? [];
-  const dates = Array.from({ length: 7 }, (_, index) =>
-    addDays(data.today, index - 6),
-  );
-
+  const habit =
+    snapshot?.habits.find((h) => h.id === selected) ??
+    snapshot?.habits.find((h) => !h.archivedAt) ??
+    snapshot?.habits[0];
+  const count = period === "day" ? 1 : period === "week" ? 7 : 30;
+  const summary = snapshot ? habitSummary(snapshot, data.today) : null;
+  const href = (id: string, view = period) =>
+    `/health/habits?selected=${id}&period=${view}`;
   return (
-    <RoutePage>
-      <PageHeader
-        eyebrow="Health · Habit tracking"
-        summary="Flexible Mengen und ruhige Verlaufssignale aus einzelnen timestamped Logs – ohne Streak-Druck."
-        title="Habits"
+    <main className={healthPage} data-health-detail="habits">
+      <HealthHeader
+        domain="Habits"
+        title="Habit Tracker"
+        summary="Deine Gewohnheiten im Verlauf. Mengen, Tageszeiten und die letzten 30 Tage auf einen Blick."
       />
-      <nav aria-label="Health views" className="flex gap-2">
-        <Link className={buttonClass} href="/health">
-          Health
-        </Link>
-        <Link className={buttonClass} href="/review/daily">
-          Daily Review
-        </Link>
-      </nav>
+      <HealthFeedback
+        state={feedback}
 
-      {feedback ? (
-        <div
-          className="rounded-[10px] border border-[var(--border-default)] bg-[var(--surface-1)] px-4 py-3 text-sm text-[var(--text-secondary)]"
-          role={feedback === "saved" ? "status" : "alert"}
-        >
-          {feedback === "saved"
+        message={
+          feedback === "saved"
             ? "Habit-Daten gespeichert."
-            : feedback === "blocked"
-              ? "Authentifiziertes Manual-Profil erforderlich."
-              : "Habit-Aktion konnte nicht gespeichert werden. Prüfe Slot und Eingaben."}
-        </div>
-      ) : null}
-      {data.blockedReason ? (
-        <div
-          className="rounded-[10px] border border-[rgba(217,146,79,.30)] bg-[rgba(217,146,79,.08)] px-4 py-3 text-sm text-[var(--text-secondary)]"
-          role="alert"
-        >
-          {data.blockedReason}
-        </div>
-      ) : null}
-
-      {snapshot ? (
-        <>
-          <SectionPanel title="Zeitfenster">
-            <form
-              action={updateHabitWindowSettingsAction}
-              className="grid gap-3 sm:grid-cols-3 xl:grid-cols-[1fr_1fr_1fr_auto] xl:items-end"
-              data-habits-section="window-settings"
-            >
-              <label className="text-xs font-semibold text-[var(--text-secondary)]">
-                Morning ab
-                <input
-                  className={fieldClass}
-                  defaultValue={snapshot.settings.morningStartsAt}
-                  name="morningStartsAt"
-                  required
-                  type="time"
-                />
-              </label>
-              <label className="text-xs font-semibold text-[var(--text-secondary)]">
-                Midday ab
-                <input
-                  className={fieldClass}
-                  defaultValue={snapshot.settings.middayStartsAt}
-                  name="middayStartsAt"
-                  required
-                  type="time"
-                />
-              </label>
-              <label className="text-xs font-semibold text-[var(--text-secondary)]">
-                Evening ab
-                <input
-                  className={fieldClass}
-                  defaultValue={snapshot.settings.eveningStartsAt}
-                  name="eveningStartsAt"
-                  required
-                  type="time"
-                />
-              </label>
-              <button className={buttonClass} type="submit">
-                Grenzen speichern
-              </button>
-            </form>
-            <p className="mt-2 text-xs text-[var(--text-muted)]">
-              Evening läuft nach Mitternacht bis zum Morning-Start weiter. Die
-              Grenzen sind geordnet und decken den gesamten lokalen Tag in{" "}
-              {snapshot.settings.timezone} ab.
-            </p>
-          </SectionPanel>
-
-          <SectionPanel title="Habit erstellen">
-            <form
-              action={createHabitAction}
-              className="grid gap-3"
-              data-habits-section="create-form"
-            >
-              <HabitFields />
-              <button
-                className={`${buttonClass} justify-self-end`}
-                type="submit"
-              >
-                Habit erstellen
-              </button>
-            </form>
-          </SectionPanel>
-
-          <SectionPanel title="Heute">
-            <div
-              className="grid gap-3 md:grid-cols-2 xl:grid-cols-3"
-              data-habits-section="today"
-            >
-              {activeHabits.map((habit) => {
-                const logs = snapshot.logs.filter(
-                  (log) =>
-                    log.habitId === habit.id && log.localDate === data.today,
+            : "Habit konnte nicht gespeichert werden. Prüfe die Eingaben und freie Plätze im Zeitfenster."
+        }
+      />
+      {data.blockedReason && <p role="alert">{data.blockedReason}</p>}
+      {summary && (
+        <HealthSummary
+          items={[
+            { label: "Aktive Habits", value: summary.active },
+            {
+              label: "Heute erfüllt",
+              value: `${summary.completed} / ${summary.targeted}`,
+              detail: "Habits mit Tagesziel",
+            },
+            {
+              label: "Aktive Tage · 7 Tage",
+              value: `${summary.weekActiveDays} / 7`,
+              detail: "Tage mit mindestens einem Eintrag",
+            },
+            { label: "Einträge diesen Monat", value: summary.monthLogs },
+          ]}
+        />
+      )}
+      <div className="grid min-w-0 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
+        <div className="grid min-w-0 gap-4">
+          {" "}
+          <HealthSection title="Habits & Verlauf">
+            <div className="grid gap-2" data-habits-section="history">
+              {snapshot?.habits.map((h) => {
+                const days = habitDays(
+                  h,
+                  snapshot.logs,
+                  data.today,
+                  30,
+                  snapshot.settings.timezone,
                 );
-                const current = aggregateHabitDay(logs);
-                const progress = habitProgress(current, habit.dailyTarget);
+                const current = days[29];
+                const last = snapshot.logs
+                  .filter(
+                    (l) =>
+                      l.habitId === h.id &&
+                      !l.archivedAt &&
+                      l.localDate >= shiftDay(data.today, -29),
+                  )
+                  .sort((a, b) => b.recordedAt.localeCompare(a.recordedAt))[0];
                 return (
                   <article
-                    className="rounded-[12px] border border-[var(--border-subtle)] bg-[var(--surface-2)] p-3"
-                    data-habit-id={habit.id}
-                    key={habit.id}
+                    key={h.id}
+                    data-habit-id={h.id}
+                    className={`min-w-0 rounded-lg border p-3 ${habit?.id === h.id ? "border-[var(--accent-cyan)]" : "border-[var(--border-subtle)]"}`}
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <h3 className="text-sm font-semibold text-[var(--text-primary)]">
-                          {habit.name}
-                        </h3>
+                    <Link
+                      className="block rounded outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
+                      href={href(h.id)}
+                      aria-current={habit?.id === h.id ? "true" : undefined}
+                    >
+                      <div className="flex flex-wrap justify-between gap-2">
+                        <h3 className="font-semibold">{h.name}</h3>
+                        <span className="text-xs text-[var(--text-secondary)]">
+                          {h.archivedAt ? "Archiviert" : windows[h.window]}
+                        </span>
+                      </div>
+                      <p className="my-2 text-sm">
+                        Heute: {number(current.value)}
+                        {h.dailyTarget !== null
+                          ? ` / ${number(h.dailyTarget)}`
+                          : ""}{" "}
+                        {h.unit ?? ""} ·{" "}
+                        {h.dailyTarget === null
+                          ? "Ohne Ziel"
+                          : current.completed
+                            ? "Ziel erreicht"
+                            : "Ziel offen"}
+                      </p>
+                      <div aria-label="30-Tage-Muster" className="flex gap-1">
+                        {days.map((d) => (
+                          <span
+                            key={d.date}
+                            title={`${d.date}: ${number(d.value)} ${h.unit ?? ""}`}
+                            className={`h-3 min-w-0 flex-1 rounded-sm ${d.value > 0 ? "bg-[var(--accent-cyan)]" : "bg-[var(--surface-3)]"}`}
+                          />
+                        ))}
+                      </div>
+                      <p className="mt-2 text-xs text-[var(--text-muted)]">
+                        7 Tage:{" "}
+                        {number(
+                          days.slice(-7).reduce((s, d) => s + d.value, 0),
+                        )}{" "}
+                        {h.unit ?? ""} · 30 Tage:{" "}
+                        {number(days.reduce((s, d) => s + d.value, 0))}{" "}
+                        {h.unit ?? ""}
+                      </p>
+                      <p className="mt-1 text-xs text-[var(--text-muted)]">
+                        {last
+                          ? `Zuletzt im Zeitraum: ${last.localDate}`
+                          : "Kein Eintrag in den letzten 30 Tagen"}
+                      </p>
+                    </Link>
+                  </article>
+                );
+              })}
+            </div>
+            {!snapshot?.habits.length && (
+              <p className={healthMuted}>
+                Noch keine Habits. Neue Habits und tägliche Einträge findest du
+                im Dashboard.
+              </p>
+            )}
+          </HealthSection>{" "}
+          {habit && !habit.archivedAt && data.canWrite && (
+            <HealthSection title="Habit verwalten">
+              <details>
+                <summary className="cursor-pointer text-sm font-semibold">
+                  Bearbeiten · {habit.name}
+                </summary>
+                <form
+                  action={updateHabitAction}
+                  className="mt-4 grid gap-3"
+                  data-habits-section="management"
+                >
+                  <input name="habitId" type="hidden" value={habit.id} />
+                  <HabitFields habit={habit} />
+                  <button className={buttonClass}>Habit speichern</button>
+                </form>
+                <form action={archiveHabitAction} className="mt-3">
+                  <input name="habitId" type="hidden" value={habit.id} />
+                  <button className={buttonClass}>Habit archivieren</button>
+                </form>
+              </details>
+            </HealthSection>
+          )}
+          <HealthSection title="Tageszeiten">
+            <div className="grid gap-3 sm:grid-cols-3">
+              {snapshot &&
+                Object.entries(windows).map(([key, label]) => {
+                  const ids = new Set(
+                    snapshot.habits
+                      .filter((h) => h.window === key && !h.archivedAt)
+                      .map((h) => h.id),
+                  );
+                  const days = new Set(
+                    snapshot.logs
+                      .filter(
+                        (l) =>
+                          ids.has(l.habitId) &&
+                          !l.archivedAt &&
+                          l.localDate >= shiftDay(data.today, -29),
+                      )
+                      .map((l) => l.localDate),
+                  );
+                  return (
+                    <div key={key}>
+                      <p className="text-sm font-semibold">{label}</p>
+                      <p className={healthMuted}>
+                        {ids.size} Habits · {days.size} aktive Tage
+                      </p>
+                    </div>
+                  );
+                })}
+            </div>
+            <p className="mt-3 text-xs text-[var(--text-muted)]">
+              Letzte 30 Tage, nach aktueller Habit-Zuordnung. Zeitfenster und
+              schnelle Einträge im Dashboard.
+            </p>
+          </HealthSection>
+        </div>
+        <div className="grid min-w-0 gap-4">
+          <HealthSection
+            title={habit ? `Verlauf · ${habit.name}` : "Ausgewähltes Habit"}
+          >
+            {habit && snapshot ? (
+              <div data-habits-section="selected">
+                <nav
+                  aria-label="Habit Zeitraum"
+                  className="mb-4 flex flex-wrap gap-2"
+                >
+                  {[
+                    ["day", "Tag"],
+                    ["week", "Woche"],
+                    ["month", "Monat"],
+                  ].map(([value, label]) => (
+                    <Link
+                      key={value}
+                      className={buttonClass}
+                      aria-current={
+                        (count === 1
+                          ? "day"
+                          : count === 7
+                            ? "week"
+                            : "month") === value
+                          ? "page"
+                          : undefined
+                      }
+                      href={href(habit.id, value)}
+                    >
+                      {label}
+                    </Link>
+                  ))}
+                </nav>
+                <p className="mb-3 text-sm text-[var(--text-secondary)]">
+                  {windows[habit.window]} ·{" "}
+                  {count === 30
+                    ? "Letzte 30 Tage"
+                    : count === 7
+                      ? "Letzte 7 Tage"
+                      : "Heute"}{" "}
+                  ·{" "}
+                  {habit.dailyTarget === null
+                    ? "Werte ohne Completion"
+                    : `Vergleich mit aktuellem Ziel: ${number(habit.dailyTarget)} ${habit.unit ?? ""}`}
+                </p>
+                <div
+                  className="overflow-x-auto"
+                  tabIndex={0}
+                  aria-label="Habit Tageswerte"
+                >
+                  <div
+                    className={
+                      count === 1
+                        ? "grid max-w-56 gap-2"
+                        : "grid min-w-[560px] grid-cols-7 gap-2"
+                    }
+                  >
+                    {habitDays(
+                      habit,
+                      snapshot.logs,
+                      data.today,
+                      count,
+                      snapshot.settings.timezone,
+                    ).map((d) => (
+                      <div
+                        key={d.date}
+                        className="min-w-0 rounded-lg border border-[var(--border-subtle)] p-2"
+                        data-habit-date={d.date}
+                      >
                         <p className="text-xs text-[var(--text-muted)]">
-                          {habit.window} · Slot {habit.sortOrder}
+                          {d.date.slice(8)}.{d.date.slice(5, 7)}.
+                        </p>
+                        <p className="mt-2 break-words text-sm font-semibold">
+                          {number(d.value)}
+                          {habit.dailyTarget !== null
+                            ? ` / ${number(habit.dailyTarget)}`
+                            : ""}{" "}
+                          {habit.unit ?? ""}
+                        </p>
+                        <p className="mt-1 text-[10px] text-[var(--text-secondary)]">
+                          {!d.eligible && !d.logs
+                            ? "Vor Erstellung"
+                            : habit.dailyTarget === null
+                              ? d.logs
+                                ? "Aktivität"
+                                : "Kein Eintrag"
+                              : d.completed
+                                ? "Zielvergleich erfüllt"
+                                : d.logs
+                                  ? "Aktivität · unter Ziel"
+                                  : "Kein Eintrag"}
                         </p>
                       </div>
-                      <Pill
-                        accent={
-                          progress.percentage !== null &&
-                          progress.percentage >= 100
-                            ? "var(--accent-green)"
-                            : "var(--accent-purple)"
-                        }
-                      >
-                        {progress.percentage === null
-                          ? "Kein Ziel"
-                          : progress.overachieved
-                            ? `${Math.round(progress.percentage)}% · über Ziel`
-                            : `${Math.round(progress.percentage)}%`}
-                      </Pill>
-                    </div>
-                    <p className="mt-3 text-xl font-semibold text-[var(--text-primary)]">
-                      {number(current)}
-                      {habit.unit ? ` ${habit.unit}` : ""}
-                      {habit.dailyTarget !== null
-                        ? ` / ${number(habit.dailyTarget)} ${habit.unit ?? ""}`
-                        : ""}
-                    </p>
-                    <p className="mt-1 text-xs text-[var(--text-muted)]">
-                      {logs.length} Logs · +{number(habit.defaultIncrement)} je
-                      Klick
-                    </p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <form action={incrementHabitAction}>
-                        <input name="habitId" type="hidden" value={habit.id} />
-                        <button className={buttonClass} type="submit">
-                          + {number(habit.defaultIncrement)}{" "}
-                          {habit.unit ?? "Count"}
-                        </button>
-                      </form>
-                      <form action={undoHabitAction}>
-                        <input name="habitId" type="hidden" value={habit.id} />
-                        <button
-                          className={buttonClass}
-                          disabled={logs.length === 0}
-                          type="submit"
-                        >
-                          Letzten Log rückgängig
-                        </button>
-                      </form>
-                    </div>
-                  </article>
-                );
-              })}
-              {activeHabits.length === 0 ? (
-                <p className="text-sm text-[var(--text-muted)]">
-                  Noch keine aktiven Habits. Erstelle den ersten Slot oben.
+                    ))}
+                  </div>
+                </div>
+                <p className="mt-3 text-xs text-[var(--text-muted)]">
+                  Farbe zeigt Aktivität. Frühere Ziele sind nicht gespeichert;
+                  der Zielvergleich verwendet das aktuelle Tagesziel.
                 </p>
-              ) : null}
-            </div>
-          </SectionPanel>
-
-          <SectionPanel title="Tages-, Wochen- und Monatssignale">
-            <div className="space-y-3" data-habits-section="history">
-              {snapshot.habits.map((habit) => {
-                const monthLogs = snapshot.logs.filter(
-                  (log) => log.habitId === habit.id,
-                );
-                const monthValue = aggregateHabitDay(monthLogs);
-                const weekValue = aggregateHabitDay(
-                  monthLogs.filter((log) => dates.includes(log.localDate)),
-                );
-                return (
-                  <article
-                    className="rounded-[12px] border border-[var(--border-subtle)] bg-[var(--surface-2)] p-3"
-                    key={`history-${habit.id}`}
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h3 className="text-sm font-semibold text-[var(--text-primary)]">
-                        {habit.name}
-                      </h3>
-                      <Pill
-                        accent={
-                          habit.archivedAt
-                            ? "var(--text-muted)"
-                            : "var(--accent-cyan)"
-                        }
-                      >
-                        {habit.archivedAt ? "Archiviert" : habit.window}
-                      </Pill>
-                    </div>
-                    <div className="mt-3 grid grid-cols-7 gap-1">
-                      {dates.map((date) => {
-                        const value = aggregateHabitDay(
-                          monthLogs.filter((log) => log.localDate === date),
-                        );
-                        return (
-                          <div
-                            className="rounded-[7px] border border-[var(--border-subtle)] px-1 py-2 text-center"
-                            key={`${habit.id}-${date}`}
-                          >
-                            <p className="text-[9px] text-[var(--text-muted)]">
-                              {date.slice(8)}
-                            </p>
-                            <p className="text-xs font-semibold text-[var(--text-primary)]">
-                              {number(value)}
-                            </p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <p className="mt-2 text-xs text-[var(--text-secondary)]">
-                      7 Tage: {number(weekValue)} {habit.unit ?? ""} · 30 Tage:{" "}
-                      {number(monthValue)} {habit.unit ?? ""} ·{" "}
-                      {monthLogs.length} timestamped Logs
-                    </p>
-                  </article>
-                );
-              })}
-            </div>
-          </SectionPanel>
-
-          <SectionPanel title="Verwalten und anordnen">
-            <div className="space-y-3" data-habits-section="management">
-              {activeHabits.map((habit) => (
-                <article
-                  className="rounded-[12px] border border-[var(--border-subtle)] bg-[var(--surface-2)] p-3"
-                  key={`manage-${habit.id}`}
-                >
-                  <form action={updateHabitAction} className="grid gap-3">
-                    <input name="habitId" type="hidden" value={habit.id} />
-                    <HabitFields habit={habit} />
-                    <button
-                      className={`${buttonClass} justify-self-end`}
-                      type="submit"
-                    >
-                      Habit speichern
-                    </button>
-                  </form>
-                  <form
-                    action={archiveHabitAction}
-                    className="mt-2 flex justify-end"
-                  >
-                    <input name="habitId" type="hidden" value={habit.id} />
-                    <button className={buttonClass} type="submit">
-                      Habit archivieren
-                    </button>
-                  </form>
-                </article>
-              ))}
-              {archivedHabits.length > 0 ? (
-                <p className="text-xs text-[var(--text-muted)]">
-                  {archivedHabits.length} archivierte Habits bleiben oben im
-                  Verlauf sichtbar.
-                </p>
-              ) : null}
-            </div>
-          </SectionPanel>
-        </>
-      ) : (
-        <SectionPanel title="Habit Tracking">
-          <p className="text-sm text-[var(--text-muted)]">
-            Keine Demo-Daten werden in Empty oder Auth-blocked übernommen.
-          </p>
-        </SectionPanel>
-      )}
-    </RoutePage>
+              </div>
+            ) : (
+              <p className={healthMuted}>
+                Wähle ein Habit, um seine Tageswerte zu sehen.
+              </p>
+            )}
+          </HealthSection>
+        </div>
+      </div>
+    </main>
   );
 }

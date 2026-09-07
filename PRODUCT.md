@@ -248,8 +248,7 @@ Required capabilities:
 - daily, weekly and monthly history and visualizations.
 
 The Habits area is the statistics, history and management surface. Dashboard is
-only the quick-logging surface; it must not become a second Habit-management
-page.
+the creation and quick-logging surface; deeper management belongs to Habits.
 
 #### Running
 
@@ -266,7 +265,7 @@ page.
 - training plans;
 - sets, repetitions, load and notes;
 - session logging;
-- muscle map derived from planned and completed exercises;
+- muscle map derived from completed/in-progress set logs and explicit exercise-muscle mappings;
 - routine/schedule integration.
 
 #### Weight
@@ -434,3 +433,19 @@ C1 Core Work Graph
 ```
 
 AI1, integrations, Anti-Rot, Challenges, Shop and Entertainment are not part of this active sequence. They are retained and deferred, not deleted.
+
+### R2-05 Health & Fitness role clarification
+
+- `/health`: existing Health & Fitness overview, context and daily schedule.
+- `/health/mental`: latest state, Mood/Sleep history, reflection and review context;
+  no medical interpretation and no duplicate Dashboard Mood logger.
+- `/health/habits`: Habit tracker, day/week/month values, history and secondary
+  edit/archive. Creation and daily increment/undo remain in Dashboard.
+- `/health/running`: completed runs, derived pace/distance history and plans.
+- `/health/strength`: exercise library with explicit muscle mapping, plans,
+  manual plan/free sessions, set logs, completion and factual muscle load.
+
+Calendar remains the temporal planner. Domain records feed Health, Dashboard
+and Today; these projections do not duplicate data. The overview is preserved;
+real history may require scrolling on detail pages. Nutrition remains within
+R2-05's later scope and is unchanged in this Health/Fitness pass.

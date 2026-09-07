@@ -158,3 +158,20 @@ may scroll vertically; mobile stacks the work and relations linearly. Status and
 progress always have text labels and canonical evidence. Task-step percentages
 refer only to steps; project task counts and skill evidence are not generic
 entity completion percentages.
+
+### Health detail pages (R2-05)
+
+Health overview retains its accepted composition. Mental, Habits, Running and
+Strength share the V5 header (domain, title, short description), compact factual
+summary, dominant history/workspace and quieter management area. Use existing
+surface/border/radius tokens, consistent compact actions and bounded form fields.
+Mental uses violet, Habits cyan/violet and training coral as restrained accents.
+Empty states are short; actual historical depth may scroll on detail pages.
+
+Mental shows current/latest mood, sleep, mood history and canonical review
+context without a score or diagnosis. Habits owns selection, aggregated day,
+week and month history plus secondary editing/archive; Dashboard owns creation
+and quick Mood/Habit interaction. Running and Strength keep their existing
+canonical sessions, plans and Calendar integration. Analytics are derived from
+records and never stored as a second source. User acceptance of R2-05 remains
+pending; Nutrition is outside the current Health/Fitness pass.

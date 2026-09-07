@@ -27,6 +27,7 @@ export function MentalHealthPanel({
       sectionName="mental"
       subtitle={data.subtitle}
       title={data.title}
+      titleHref="/health/mental"
     >
       <div className="grid min-h-0 gap-3 xl:flex xl:flex-1 xl:flex-col min-[1900px]:justify-between min-[1900px]:gap-4">
         <section

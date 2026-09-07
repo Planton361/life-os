@@ -39,7 +39,7 @@ Implementation status and product visibility are separate truths: `CONNECTED` co
 | Calendar | `ACCEPTED` | `CONNECTED`: R2-03 explicitly USER ACCEPTED on 2026-09-06; 06:00–00:00 equal-hour and viewport evidence retained | maintain accepted Calendar |
 | Portfolio | `ACCEPTED` | `CONNECTED`: R2-04 explicitly USER ACCEPTED on 2026-09-07; list/create/detail, canonical write and visual evidence retained | maintain accepted behavior |
 | Resources | `ACCEPTED` | `CONNECTED`: current surface explicitly USER ACCEPTED on 2026-09-07; existing knowledge and R2-04 create/detail evidence retained | maintain accepted surface; separately listed depth gaps remain |
-| Health / Fitness | `ACTIVE` | `CONNECTED_GAP`: core records exist; primary-desktop and role acceptance pending | R2-05 |
+| Health / Fitness | `ACTIVE` | `CONNECTED`: Health/Fitness implementation and current control proof below; USER ACCEPTANCE PENDING | R2-05 |
 | Nutrition | `ACTIVE` | `CONNECTED_GAP`: meal backend exists; selectable persistent planner-slot acceptance pending | R2-05 |
 | Work / Education / Coding | `ACTIVE` | A1 Target browser proof covers canonical Projects, Resources and reload-stable logs; named depth gaps remain below | area projections over the canonical spine; no area-local core copies |
 | Inventory / Wishlist | `ACTIVE` | A1 Target browser proof covers Manual CRUD, purchase decisions and idempotent conversion after reload | Inventory and explicit Wishlist links remain reachable in active Life navigation |
@@ -1078,13 +1078,13 @@ operational follow-up below, not a completed capability or an additional active 
 | Weight entry | `CONNECTED` | date-keyed editable weight_entries and Health history; H1/H2 Target-Runtime reload proof | maintain |
 | Weight goal | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Journal linkage | `UI_ONLY` | journal/nav exists | canonical journal/notes and privacy |
-| Mental Health overview | `CONNECTED_GAP` | canonical Mood history and Sleep entry/history are connected without medical claims | journal linkage and later review associations remain separate |
+| Mental Health overview | `CONNECTED` | R2-05: latest Mood, Sleep entry/history, seven-day context and owned Daily/Weekly Review history; current reload/projection proof | Journal remains owner navigation, no inferred associations |
 
 # 9. Habits
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Habits surface role | `CONNECTED_GAP` | user-scoped canonical habits with create/edit/order/archive UI and RLS remain | R2-05: Habits = statistics/history/management; Dashboard = quick logging |
+| Habits surface role | `CONNECTED` | R2-05: selectable tracker, day/week/month values, compact edit/archive; no Create or slot surface | Dashboard retains creation/increment/undo |
 | Flexible unit/increment | `CONNECTED` | optional unit/target plus positive default increment; no-target state proven | maintain |
 | Morning/Midday/Evening window | `CONNECTED` | ordered profile boundaries, full-day resolution and per-window DB slot constraint | maintain timezone and boundary tests |
 | Dashboard increment click | `CONNECTED` | each click appends an owned timestamped habit_log; H1/H2 Target-Runtime dashboard/history reload proof | maintain |
@@ -1103,10 +1103,105 @@ operational follow-up below, not a completed capability or an additional active 
 | Garmin import | `EXTERNAL_GATE` | none | partner/API decision; manual path remains complete |
 | Exercise library | `CONNECTED` | user-scoped exercises with transactional controlled muscle mappings, edit and soft archive | maintain historical readability |
 | Strength plan | `CONNECTED` | editable strength_plans and ordered strength_plan_items with sets/reps/optional load | maintain ownership and ordering proofs |
-| Strength session/sets | `CONNECTED` | reload-stable strength_sessions and real strength_set_logs with transactional task completion sync; H1/H2 Target proof requires a real set before task completion | maintain weighted/unweighted semantics |
+| Strength session/sets | `CONNECTED` | R2-05 current plan/free-session path, exercise selection, real sets, completion rejection without sets, history and muscle projection after reload; existing transactional task sync retained | maintain weighted/unweighted semantics |
 | Muscle map | `CONNECTED` | explicit exercise-muscle relations and log-derived set intensity/weighted volume with textual source labels; H1/H2 Target-Runtime Dashboard reload proof | maintain |
 | Workout schedule source | `CONNECTED` | H1/H2 Target-Runtime proof schedules one canonical Running Plan Item and Strength Plan Task, projects each to Calendar/Today/Dashboard, rejects generic Task completion, then completes only from the real Run or Strength Session with set log | retain no-duplicate and completion-sync regressions |
-| Health / Fitness primary viewport | `CONNECTED_GAP` | canonical records and flows remain | R2-05: no required Body scroll on primary desktop and current surface proof |
+| Health / Fitness primary viewport | `CONNECTED` | R2-05: shared detail composition; full screenshots 3840/2560/1920 and 390 guards; original overview arrangement retained | user acceptance pending; existing Weight section follows overview in normal flow |
+
+## R2-05 – Health & Fitness implementation evidence (2026-09-07)
+
+Health & Fitness implementation pass; **R2-05 remains the sole Active Work
+Block. USER ACCEPTANCE STATUS: PENDING.** Nutrition has not been started or
+changed in this pass. R2-04 acceptance and all earlier evidence remain intact.
+
+**Product and layout.** The four detail pages share V5 header, compact factual
+summary, history workspace, secondary management, token-based borders/radius
+and compact actions. User-facing copy on these Manual/Empty/Auth-blocked detail
+surfaces is German, retaining established domain names. Mental contains latest
+state, Sleep, Mood history, reflection and recent context; no duplicate Mood
+logger, medical diagnosis or score. Existing Health overview panels, order and
+daily schedule are retained. Canonical Mood/Sleep/reviews and training pattern
+now populate those same panels; Mental heading navigates to its detail page.
+Overview zero-value bars stay zero; its minimum-height container grows when
+necessary so the existing Weight section cannot overlap the bottom panels.
+
+**Metric definitions and limits.**
+
+- Active Habits: non-archived habits. Today completed: active habits with a
+  non-null current daily target whose active local-date log sum meets it; the
+  denominator includes only target-bearing active habits.
+- Active days (7 days): distinct log dates from today minus six through today.
+  Month logs: active log records in the current calendar month, including logs
+  of subsequently archived habits. The query reads 31 days so month-end is
+  complete; the tracker displays the trailing 30 days.
+- Selected Habit day/week/month means 1/7/30 local calendar dates. Values sum
+  non-archived logs for that habit, retain its unit, and separate activity from
+  current-target comparison. Target-less habits never claim completion. Days
+  before creation are marked; historical targets/window versions do not exist.
+  Accordingly no historical completion percentage is shown. Window summaries
+  use current assignment and distinct active dates, never mixed-unit totals.
+- Last logged is explicitly bounded to the displayed 30-day period. Archived
+  habits remain selectable for history. Moving a habit chooses a free Dashboard
+  slot server-side; the client cannot manage placement. The Dashboard Create
+  action remains intact.
+- Running uses active completed sessions. Today/7/30-day windows include today
+  and exclude future dates; four consecutive seven-day distance bars show real
+  distance, session count and duration. Pace is duration/distance, never stored.
+  Manual time uses Europe/Berlin including DST; nonexistent wall times reject.
+- Strength volume is repetitions × weight for weighted sets, with unweighted
+  repetitions separate. Muscle counts/volume use only explicit mappings and
+  sets in active in-progress/completed sessions. A mapped set can count toward
+  multiple muscles; these group values must not be added. No activation or
+  physiological intensity is inferred. Overview history counts completed
+  sessions; plan/free classification uses the canonical nullable plan ID.
+- Mental's day view uses the latest check-in per date from the existing bounded
+  30-entry Mood read. Missing entries imply no health judgment. Sleep retains
+  canonical date/duration/optional self-assessment/note. Overview average uses
+  recorded nights within the last seven dates, with no invented missing nights.
+  Reflection displays actual owned daily/weekly review records over 30 days;
+  Journal is a navigation link, never a guessed association.
+
+**Backend boundary.** Existing actions, authentication, Zod, scoped repositories,
+RLS and transactional RPCs are reused. The existing nullable strength plan FK
+supports free sessions; no schema or migration was needed. Habit selection is
+preserved after mutation. Health writes expose shared inline/toast feedback;
+Mental redirects carry a version for repeated saves. Review writes invalidate
+Mental and Health alongside
+existing projections. No new analytics table, schedule engine, API or provider.
+
+**Control inventory / browser evidence.**
+`tests/e2e/r2-05-health-fitness-surface.spec.ts` directly operates controls and
+attaches `CONTROL / EXPECTED / ACTUAL / RESULT` JSON. Coverage includes:
+
+| Controls | Expected / actual evidence | Result |
+|---|---|---|
+| Mental Mood, history, Sleep form, Review/Journal and shared navigation | Dashboard Mood → current/trend; Sleep save/history; canonical Review expansion; all owner links; reload | PASS |
+| Habit selection, day/week/month, edit/archive | URL selection, log sums/units, occupied-window placement, retained archived history; Create/slot absent | PASS |
+| Dashboard Habit increment/undo | Tracker and Health/Today projections change and survive reload | PASS |
+| Running log/edit/archive, plan/unit CRUD, Calendar scheduling, planned completion | Saved actual runs, derived summary/history, source navigation and dependent projections | PASS |
+| Strength library/multiple mapping, plan/structure CRUD, scheduling, plan/free sessions, sets/complete | Weighted/unweighted sets, visible error without sets, history/map and reload; archives preserve history | PASS |
+| Shared detail/overview links and form disclosures | Real destination or expanded usable form; no dead prepared action | PASS |
+
+Full screenshots cover `/health`, `/health/mental`, `/health/habits`,
+`/health/running`, `/health/strength` at 3840×2160, 2560×1440, 1920×1080 and
+390×844. Mobile also captures expanded forms and Empty/Auth-blocked guards.
+Artifacts remain in ignored `test-results/` and the Playwright report, never
+staged with user/auth data. No horizontal page overflow; real history may
+scroll. Console/hydration checks are part of the flow. The existing global
+mobile sidebar and the overview's Weight section remain unchanged.
+
+V5 Design Review: A same application **YES**; B primary function clear **YES**;
+C compact empty states **YES**; D no oversized forms/empty areas **YES**;
+E Habits is tracker/analytics **YES**. Final acceptance remains the user's.
+
+Validation: 3 focused isolated Playwright tests (flows, local DB, profile
+boundaries); DB lint and security advisors both report no findings. Sequential
+runtime-hardened local gate runs typecheck, lint, process-harness tests, focused
+Habit/Running/Training/Overview unit tests (36 passing tests in seven files),
+11 process-harness tests and production build, all green. `git diff --check`
+is clean. No remote DB
+operation and no migration added. Nutrition and final R2-05 acceptance remain
+outside this delivered pass.
 
 # 11. Coding and Agents
 

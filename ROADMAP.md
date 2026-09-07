@@ -920,8 +920,9 @@ dependency belongs in this slice.
    evidence and honest progress; Overview is not primary inline creation.
    Resources retain their own create/detail routes and knowledge ownership.
 5. **R2-05 – Health / Fitness / Nutrition Surface Completion** — full
-   primary desktop viewport without required Body scroll; Habits statistics,
-   history and management ownership; Dashboard quick logging; selectable,
+   primary desktop overview viewport; real detail history may scroll. Shared
+   Health detail composition, Habits statistics/history/management and
+   Dashboard creation/quick logging; selectable,
    persistent Nutrition meal-planner slots.
 6. **R2-06 – Full Active Product Acceptance** — complete core-surface
    control inventory, live click/navigation/write/reload proof, bounds/
