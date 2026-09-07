@@ -5,7 +5,7 @@
 **Design truth:** Life OS – Linear Calm Dark Command Center / Dashboard V5
 **Detailed status:** `docs/product/capability-registry.md`
 **Completed sequence:** C1 → C2 → C3 → K1 → H1/H2 → N1 → A1 → Z1 (technical baseline)
-**Active Work Block:** R2-04 – Portfolio IA & Entity Depth
+**Active Work Block:** R2-05 – Health / Fitness / Nutrition Surface Completion
 
 ## 1. Product Contract
 
@@ -859,7 +859,7 @@ or backend evidence cannot alone restore a `CONNECTED` surface claim.
 ## 4.12 R2 – Product Reality Recovery & Surface Completion
 
 **Status:** R2-00 completed (contract rebaseline). **Current active slice:**
-R2-04 – Portfolio IA & Entity Depth (the only Active Work Block).
+R2-05 – Health / Fitness / Nutrition Surface Completion (the only Active Work Block).
 
 **R2-01 status:** Completed; explicitly USER ACCEPTED on 2026-09-06.
 Existing control, browser, layout and migration evidence is retained in the
@@ -872,8 +872,15 @@ Existing implementation, control and browser evidence is retained in the Registr
 Today and Calendar evidence remains in the Registry and focused tests, including
 the 06:00–00:00 equal-hour, full-viewport Calendar proof.
 
-**R2-04 status:** Active – Portfolio IA & Entity Depth.
-USER ACCEPTANCE STATUS: PENDING.
+**R2-04 status:** Completed; explicitly USER ACCEPTED on 2026-09-07.
+The user accepts Dashboard, Inbox, Today, Calendar, Portfolio and Resources.
+Existing implementation, control, browser and visual evidence is retained.
+
+**R2-05 status:** Active – Health / Fitness / Nutrition Surface Completion.
+Current pass: Health & Fitness only; Nutrition is unchanged and remains later
+within R2-05. USER ACCEPTANCE STATUS: PENDING.
+Health overview retains its design; detail pages own history, context and
+management, with Dashboard retaining quick Mood/Habit logging.
 
 **Outcome:** Recover the actual user-facing product contract without replacing
 V5 or the established architecture. A surface is complete only after all of
@@ -930,8 +937,8 @@ dependency belongs in this slice.
   for a promised core control.
 - Dashboard’s removed Bottom-Zone features remain removed; they cannot return
   through historical layout references.
-- The R2 order is binding. R2-01 is accepted and closed; R2-02 and R2-03 are accepted and closed; only R2-04 is active
-  until explicit user acceptance changes its status in this roadmap.
+- The R2 order is binding. R2-01 is accepted and closed; R2-02 and R2-03 are accepted and closed; R2-04 is accepted and closed; only R2-05 is active. Its Health/Fitness pass
+  does not close R2-05 or imply user acceptance.
 
 ## 5. Completed Major Work
 

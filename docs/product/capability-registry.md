@@ -37,8 +37,8 @@ Implementation status and product visibility are separate truths: `CONNECTED` co
 | Inbox | `ACCEPTED` | `CONNECTED`: R2-02 explicitly USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Today | `ACCEPTED` | `CONNECTED`: R2-03 explicitly USER ACCEPTED on 2026-09-06; daily-memory evidence retained | maintain accepted Today |
 | Calendar | `ACCEPTED` | `CONNECTED`: R2-03 explicitly USER ACCEPTED on 2026-09-06; 06:00–00:00 equal-hour and viewport evidence retained | maintain accepted Calendar |
-| Portfolio | `ACTIVE` | `CONNECTED`: R2-04 list/create/detail workbenches and canonical writes browser-proven; USER ACCEPTANCE PENDING | user review of R2-04 |
-| Resources | `ACTIVE` | connected knowledge core with relation depth gaps | knowledge base and evidence; K1 follows C3 |
+| Portfolio | `ACCEPTED` | `CONNECTED`: R2-04 explicitly USER ACCEPTED on 2026-09-07; list/create/detail, canonical write and visual evidence retained | maintain accepted behavior |
+| Resources | `ACCEPTED` | `CONNECTED`: current surface explicitly USER ACCEPTED on 2026-09-07; existing knowledge and R2-04 create/detail evidence retained | maintain accepted surface; separately listed depth gaps remain |
 | Health / Fitness | `ACTIVE` | `CONNECTED_GAP`: core records exist; primary-desktop and role acceptance pending | R2-05 |
 | Nutrition | `ACTIVE` | `CONNECTED_GAP`: meal backend exists; selectable persistent planner-slot acceptance pending | R2-05 |
 | Work / Education / Coding | `ACTIVE` | A1 Target browser proof covers canonical Projects, Resources and reload-stable logs; named depth gaps remain below | area projections over the canonical spine; no area-local core copies |
@@ -799,20 +799,20 @@ and its USER ACCEPTANCE STATUS is PENDING.
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Portfolio information architecture | `CONNECTED` | one Portfolio list with shared URL entity filters, five dedicated create/detail workbenches and independent quick inspector; R2-04 IA correction proof below | R2-04 user acceptance pending |
-| Task create/edit/lifecycle | `CONNECTED` | canonical ID create/edit/reload, complete/reopen/archive and source-owned lifecycle boundary; R2-04 proof | R2-04 user acceptance pending |
+| Portfolio information architecture | `CONNECTED` | one Portfolio list with shared URL entity filters, five dedicated create/detail workbenches and independent quick inspector; R2-04 IA correction proof below | accepted 2026-09-07; maintain |
+| Task create/edit/lifecycle | `CONNECTED` | canonical ID create/edit/reload, complete/reopen/archive and source-owned lifecycle boundary; R2-04 proof | accepted 2026-09-07; maintain |
 | Task relation to Project/Goal | `CONNECTED` | nullable Task→Project/Goal fields, server-authenticated/Zod/user-scoped alignment checks and C1.1 integrated Target reload proof | maintain explicit user choices; no silent relinking |
 | Task relation to Skill/Resource | `CONNECTED` | owned n:m `task_skill_links` plus Resource relations, idempotent link/unlink, Task detail projection and Skill backlink without creating Evidence; C1.1 integrated proof PASS | maintain endpoint ownership, reload and no-auto-Evidence proofs |
 | Project Goal inheritance in Task context | `CONNECTED` | direct, via-Project, redundant and existing-conflict states are explicit; Task and Project writes reject new contradictions, and C1.1 integrated read models deduplicate matching paths | preserve existing rows; resolve any future reported existing conflicts deliberately |
 | Core work graph backlinks | `CONNECTED` | C1.1 integrated Target proof covers Task/Project/Goal/Skill/Resource navigation, reload, ownership boundaries and deterministic direct, via-Project, Context and Evidence provenance | retain bounded explicit relations; graph visualization stays deferred |
-| Project create/edit/status/archive | `CONNECTED` | canonical list/create/detail, fields, linked work and archive readback; R2-04 proof | R2-04 user acceptance pending |
-| Goal create/edit/status/archive | `CONNECTED` | canonical list/create/detail, fields, related work and archive readback; R2-04 proof | R2-04 user acceptance pending |
-| Skill create/edit/archive | `CONNECTED` | canonical list/create/detail, evidence and archive readback; R2-04 proof | R2-04 user acceptance pending |
+| Project create/edit/status/archive | `CONNECTED` | canonical list/create/detail, fields, linked work and archive readback; R2-04 proof | accepted 2026-09-07; maintain |
+| Goal create/edit/status/archive | `CONNECTED` | canonical list/create/detail, fields, related work and archive readback; R2-04 proof | accepted 2026-09-07; maintain |
+| Skill create/edit/archive | `CONNECTED` | canonical list/create/detail, evidence and archive readback; R2-04 proof | accepted 2026-09-07; maintain |
 | Skill evidence CRUD/source links | `CONNECTED` | explicit source-backed evidence create/remove and source navigation; R2-04 reload proof | maintain |
 | Task steps and derived progress | `CONNECTED` | owned ordered task_steps; add/edit/complete/reopen/soft archive; real active-step ratio; R2-04 browser/API proof | independent of Task completion |
 | Project linked tasks | `CONNECTED` | task project relation | add sequencing/roadmap model |
 | Goal linked projects/tasks | `CONNECTED` | goal relations | add outcome/review semantics |
-| Project/Goal resource links | `CONNECTED` | same-user Resource link/unlink from both detail directions, reload-proven in R2-04 | R2-04 user acceptance pending |
+| Project/Goal resource links | `CONNECTED` | same-user Resource link/unlink from both detail directions, reload-proven in R2-04 | accepted 2026-09-07; maintain |
 | Project/Goal evidence display | `CONNECTED_GAP` | skill evidence read projection | create/manage from workbench later |
 | Project milestones | `NOT_STARTED` | none | model decision and complete vertical slice |
 | Goal milestones/key results | `NOT_STARTED` | none | model decision; avoid fake OKR engine |
@@ -821,6 +821,19 @@ and its USER ACCEPTANCE STATUS is PENDING.
 | Project/Goal restore/undo | `NOT_STARTED` | archive exists | lifecycle slice |
 | Progress engine | `DECISION_REQUIRED` | task-based signals and legacy fields | preserve honest work signals until model exists |
 | Portfolio pins/favorites | `NOT_STARTED` | none | support Dashboard max-four selection |
+
+## R2-04 – User acceptance and administrative closure (2026-09-07)
+
+**R2-04: USER ACCEPTED. Closed by explicit user decision.** Dashboard,
+Inbox, Today, Calendar, Portfolio and Resources are currently accepted by the
+user. Existing implementation, control inventories, browser/reload proofs,
+visual evidence and runtime-hardening evidence below are retained unchanged
+as historical evidence; their PENDING/ACTIVE wording describes those passes,
+not current status. No product code changed for this administrative closure.
+
+**R2-05 is the sole Active Work Block. USER ACCEPTANCE STATUS: PENDING.**
+The first pass covers Health & Fitness only. Nutrition remains unchanged and
+is not started in this pass. R2-05 remains active after this pass.
 
 ## R2-04 – unified Portfolio list IA and surface correction (2026-09-07)
 
@@ -1021,7 +1034,7 @@ operational follow-up below, not a completed capability or an additional active 
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Resource create/read | `CONNECTED` | R2-04 dedicated /resources/new → /resources/[resourceId], canonical create/edit/reload, relations and archive/restore proof | Resources remains the knowledge area; user acceptance pending |
+| Resource create/read | `CONNECTED` | R2-04 dedicated /resources/new → /resources/[resourceId], canonical create/edit/reload, relations and archive/restore proof | Resources remains the knowledge area; accepted 2026-09-07 |
 | Resource inspector | `CONNECTED` | canonical Target Runtime K1 proof opens the selected Resource from Library search and shows real Task/Project/Goal/Skill context | maintain |
 | Resource archive/restore | `CONNECTED` | soft `archived_at` lifecycle: K1 Target proof preserves existing relations/Evidence, removes the Resource from active Library/search, then restores it reload-stably | maintain |
 | Resource relations | `CONNECTED` | Resource inspector link/unlink plus owned Task, Project, Goal and Skill Context links; C1/K1 Target proofs preserve separate Evidence semantics and reload-stable backlinks | relation-type editing remains separate future depth |
