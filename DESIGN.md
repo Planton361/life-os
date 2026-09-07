@@ -238,7 +238,8 @@ Calendar = temporal planning; Portfolio = entity context;
 Resources = knowledge/reference; Health/Nutrition = personal domain intelligence;
 Journal = reflection/history; Skill Map = skill evidence/context graph.
 
-Journal wird in diesem Pass nicht redesigned. Wiederkehrendes Journaling kommt
+Der Konsolidierungs-Pass hat Journal nicht redesigned. R2-07 folgt dem unten
+beschriebenen Workspace-Vertrag. Wiederkehrendes Journaling kommt
 aus Recurring Task / Calendar, nicht aus Journal-eigener Recurrence. Spätere
 Verläufe/Frequency müssen auf echten Einträgen beruhen; keine Gamification.
 
@@ -254,3 +255,24 @@ zwischen kurzer Navigation und unten verankerten Settings ist Orientierung,
 kein Anlass für neue Widgets. Bestehende Surface Acceptances bleiben erhalten;
 Nutrition/R2-05 ist seit 2026-09-07 USER ACCEPTED. R2-07 Journal ist aktiv
 und bleibt bis zur realen User-Abnahme pending.
+
+## Journal Workspace (R2-07)
+
+Journal = persönliche chronologische Reflexion und Verlauf. Deutsche Labels,
+ruhiger violetter Accent, bestehende matte V5-Surfaces und klare Borders.
+Header mit „Neuer Eintrag“, kompakter Faktenstreifen (Heute, letzte 7 Tage,
+Monat), dann dominanter Verlauf links und ausgewählter Eintrag rechts.
+Desktop ungefähr 57/43; 1920×1080, 2560×1440 und 3840×2160 verwenden die
+verbleibende Viewport-Höhe. Liste und Inhalt scrollen intern. Bei leerem Verlauf
+ohne Auswahl bleiben die Panels kompakt in ihrer Inhaltshöhe statt leer bis zum
+Viewport-Ende zu wachsen. Mobile stapelt linear und darf vertikal scrollen;
+lange Listen/Inhalte sind zusätzlich auf 65dvh begrenzt, damit Auswahl und
+Aktionen erreichbar bleiben. Kein horizontaler Overflow.
+
+Create/Edit/Detail verwenden begrenzte native Dialoge mit Fokus, Escape und
+sichtbaren Beschriftungen. Kein dauerhaftes Create-Formular. Lange Titel bleiben
+in der Liste begrenzt und sind im Detail vollständig lesbar; freier Inhalt
+behält Absätze. Keine erfundenen Tags/Relationen, Scores, Streaks oder Charts.
+Keine Entwickler-/Datenquellen-Copy in der Primärfläche. Recurrence gehört zu
+Task/Calendar; Notes zu Resources, strukturierte Reviews bleiben eigenständig.
+R2-07 bleibt aktiv mit USER ACCEPTANCE STATUS: PENDING.

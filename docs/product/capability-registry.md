@@ -43,7 +43,7 @@ Implementation status and product visibility are separate truths: `CONNECTED` co
 | Nutrition | `ACCEPTED` | `CONNECTED`: logging/tracking, canonical weekly planning, recipes and grocery; explicitly USER ACCEPTED on 2026-09-07 with Health & Fitness | R2-05 closed; preserve evidence and accepted behavior |
 | Work / Education / Coding | `HIDDEN_RETAINED` / `FOLDED` | A1 canonical Projects, Resources and logs remain; detailed technical statuses below are retained evidence, not suite completion | Areas stay active as context; no independent suite completion |
 | Inventory / Wishlist | `EXTERNALIZED` / `RETAINED` | existing CRUD, purchase decisions and conversion retained; no new completion claim | Spreadsheet is Source of Truth for future use; no active navigation or connector |
-| Journal | `ACTIVE` / `REMAINING_DEPTH` | `CONNECTED_GAP`: dated canonical lifecycle exists; complete surface depth/acceptance remains | R2-07 active; user acceptance pending |
+| Journal | `ACTIVE` | `CONNECTED`: R2-07 chronological workspace, canonical create/edit/archive, search/filter, detail and current responsive/reload proof | R2-07 active; user acceptance pending; unsupported context/relations/Today sources documented below |
 | Skill Map | `ACTIVE_PLANNED` / `REMAINING_DEPTH` | `UI_ONLY`: only a retained Coding demo/empty Manual shell | R2-08 under Portfolio → Skills; no active graph link yet |
 | Notes | `FOLDED_INTO_RESOURCES` / `RETAINED` | `CONNECTED`: existing canonical `resources` (`note`), no migration | no separate active Notes app |
 | Anti-Rot / Challenges / Shop | `DEFERRED_HIDDEN` | connected feature code/data; direct routes remain intact | C1.1-01 removed Sidebar, Dashboard and normal Daily-Companion entry points |
@@ -1577,11 +1577,103 @@ consolidation disposition table above. Canonical Area/entity context stays activ
 | Follow-ups | `CONNECTED` | A1.1C2b canonical `tasks` linked by `work_meeting_followups`; Security-Invoker RPC atomically creates the owned Task and Meeting relation, while existing owned Tasks can link/unlink independently | no automatic Task completion or external sync |
 | Work dashboard | `CONNECTED_GAP` | Manual Work workspace reads canonical Projects, Tasks/Deadlines, Resources, Logs, atomically created Wiki, Decisions, Meetings and Meeting Follow-ups | deeper Wiki and Work-dashboard depth remain deferred |
 
+## R2-07 Journal audit and surface implementation — 2026-09-07
+
+R2-07 is the only active block. USER ACCEPTANCE STATUS: PENDING. R2-05 remains
+explicitly accepted and closed. Journal means personal chronological reflection
+and history; Notes belong to Resources, recurrence to Task/Calendar, structured
+Daily/Weekly Reviews to their existing records. No new schema or relation engine.
+
+| Capability | Current data source | Write | Reload / previous UI | Action in R2-07 |
+|---|---|---|---|---|
+| Entries | `journal_entries`, owned by `user_id` | existing create/update | persisted; old permanent form and separate active/archive cards | reuse entity; chronological list + selected reader |
+| Date / timestamps | `entry_date`, `created_at`, `updated_at` | date editable; timestamps server-owned | date/creation order exists | stable date/creation/ID order; edits do not create history events |
+| Title / body | nullable title, required body | existing Zod and repository | create/edit/soft archive connected | German compact dialogs, draft-preserving errors, global toast |
+| Lifecycle | `archived_at` | existing soft archive, no UI restore/hard delete | historical archive read | explicit confirmation; read-only archive filter and deep links |
+| Search / filter | title/body/date/archive | read only | absent in canonical Journal | URL `q`, `period`, `view`; reset; no fake classification |
+| Detail | existing actions return `selected=<id>` | same entity | selection previously unused by canonical UI | stable `selected` + `panel=detail|edit`; full text and edit |
+| Tags / Area / context | no canonical Journal fields; old Demo-only tags are fixtures | unsupported | no canonical reload path | absent controls; no new taxonomy |
+| Project/Goal/Resource/Skill relations | no Journal FK or relation target in existing Core/Resource model | link/unlink unsupported | no readback or target ownership path | documented model gap; do not misuse resource IDs or invent relations |
+| Today | `readTodayActivity` / `ActivitySources` has no Journal source | not applicable | no reliable current Journal event projection | no fake event; existing Today projection unchanged |
+| Review linkage | no Journal/Review FK | unsupported | structured reviews remain independent | no duplicated Review fields or redesigned workflow |
+| Counts | active `entry_date` values | derived only | no complete canonical overview | today, rolling seven calendar days, current month and distinct days; no future/archive count leakage |
+| Read failure / pagination | user-scoped Journal query | no writes on read | old Life workspace also ensured an Area and swallowed read errors | focused paginated Journal reader; explicit load/auth failure instead of false empty state |
+
+Relation audit: Project, Goal, Resource and Skill each have no Journal storage,
+link/unlink/readback/ownership contract. Their absence is deliberately documented,
+not reported as delivered. A future model decision is needed before these controls
+can appear. Today Journal integration likewise remains outside this conditional
+slice; no autosave/edit events are invented. Existing canonical Journal has no
+recurrence, tags, mood/sentiment score or file ownership.
+
+### R2-07 control inventory
+
+| Control | Expected / actual implementation | Proof |
+|---|---|---|
+| Neuer Eintrag (header / zero state) | date/body and optional title dialog; existing canonical create | PASS |
+| Search + Anwenden + Zurücksetzen | title/body filter with real URL/reset state | PASS |
+| Zeitraum / Ansicht | all/today/last 7 days/month; active/archive | PASS |
+| Entry select | stable owned `selected` query; preview updates | PASS |
+| Details öffnen / Schließen / Escape | full reader, deep-link reload, modal focus | PASS |
+| Bearbeiten / Speichern / Abbrechen / Schließen | same entity update; no lost draft on validation/error | PASS |
+| Archivieren / confirmation / cancel | soft archive only; retained text and ID | PASS |
+| Back / Forward / Reload | URL search/filter/selection/panel restored | PASS |
+| Tags/context/relations | no unsupported controls rendered | model gap audited |
+| Demo/Empty Settings / auth-blocked Settings | read-only examples or honest unavailable state | PASS |
+| Load-error retry | refresh the same read; no empty-data claim | PASS |
+
+Current browser evidence: `tests/e2e/r2-07-journal-surface.spec.ts` passes both
+focused flows against a fresh disposable local migration chain with technical
+users. Canonical create/edit/archive and optional title, toast/error feedback,
+reload/deep links, search, all period/archive filters, selection, Back/Forward,
+modal close/cancel/Escape, profile Settings links and read-error retry are proven.
+A second owner cannot read or update the entry, including a tampered form ID.
+Journal reads do not create a Life Area. No browser console/hydration warnings
+or runtime exceptions were observed. Local DB lint and Security Advisors report
+no schema errors or security findings. No new migration or remote action.
+
+Responsive proof captures full empty, editor and populated screenshots at
+1920×1080, 2560×1440, 3840×2160 and 390×844. Desktop has no body overflow or
+panel overlap; populated history and reader fill the remaining viewport with
+internal scrolling. Empty/no-selection panels retain compact content height.
+Mobile is stacked, without horizontal overflow; long lists/readers are bounded
+at 65dvh so detail/actions stay reachable. Large-list proof uses 46 real entries.
+Screenshots/traces remain local generated test artifacts, not committed data.
+
+The combined Journal/navigation run passed all seven tests; after the focused
+layout/Escape refinements the two Journal flows passed again. The five active
+navigation proofs include retained Coding/Education/Work/Inventory routes.
+Journal/Today unit validation: 20 tests passed across two files; title/body search,
+date/month/week boundaries, archive/future exclusions, sort stability and the
+existing Today projection are covered. Today remains unchanged and no fabricated
+Journal event is shown.
+
+V5 Design-Taste review:
+
+- Was passt zu V5: calm matte surfaces, existing tokens/native dialog, restrained
+  purple selection, dominant chronology, real counts and German primary copy.
+- Was verletzt V5: initial oversized empty panels and excessive mobile list
+  length were corrected before the final proof; no remaining material violation.
+- Konkrete Fixes: compact empty panels, bounded mobile scroll, explicit textarea
+  label and Journal-scoped cancel handling until the URL transition commits.
+- Acceptance Decision: PASS for the implementation design; no user acceptance.
+
+Final checks: `git diff --check`, `pnpm typecheck`, and `pnpm build` PASS
+(57 generated pages). `pnpm lint --ignore-pattern 'playwright-report/**'` PASS;
+the generated Playwright HTML/trace bundle is excluded because plain `eslint .`
+otherwise lints its bundled third-party JavaScript. No application source is
+excluded. Required heavy checks ran sequentially in an isolated source copy
+without protected environment files or the unrelated unstaged test changes.
+Completion Gate: PASS for the delivered canonical scope, reported as
+IMPLEMENTATION_PASS. Unsupported model capabilities above are not implemented
+or represented as connected; no user acceptance is inferred.
+R2-07 remains the only active block. USER ACCEPTANCE STATUS: PENDING.
+
 # 14. Life and Personal
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Journal | `CONNECTED_GAP` | A1.1D1 user-scoped `journal_entries` with date, optional title, body, create/edit/soft archive, chronological active/history views and reload proof | R2-07 surface completion remains; Mood, Health and Reviews stay separate |
+| Journal | `CONNECTED` | R2-07 user-scoped `journal_entries`; complete existing lifecycle, German history/reader/dialog workspace, URL search/filter/detail, real counts and current browser/reload proof | USER ACCEPTANCE PENDING; canonical tags/context/relations and Today source absent; Mood, Health and Reviews remain separate |
 | Notes | `CONNECTED` | A1.1D1 canonical Life-Area `resources` (`note`) with create/edit/archive/restore, reload-stable active/history views and visible existing Project/Goal/Task relations or honest empty state | relation creation remains on the established Resource surfaces; no parallel Notes platform |
 | Entertainment collection | `CONNECTED` | A1.1D2 canonical user-scoped `entertainment_items`; direct routes and complete lifecycle remain retained | `DEFERRED_HIDDEN` boundary is applied to Sidebar, Life overview and active cross-links by C1.1-01 |
 | Inventory | `CONNECTED` | A1 Target browser proof creates and edits user-scoped `inventory_items`, then reloads the active item | external merchants, guarantees, insurance and accounting remain unimplemented |

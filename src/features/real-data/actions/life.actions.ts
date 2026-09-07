@@ -1,13 +1,12 @@
 "use server";
 
+import { saveJournalEntryAction, archiveJournalEntryAction } from "./journal.actions";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
   archiveJournalEntryInputSchema,
-  createJournalEntryInputSchema,
   createLifeNoteInputSchema,
   lifeNoteLifecycleInputSchema,
-  updateJournalEntryInputSchema,
   updateLifeNoteInputSchema,
   entertainmentItemInputSchema,
   entertainmentItemLifecycleInputSchema,
@@ -61,42 +60,23 @@ async function context(path: LifeActionPath) {
   return auth;
 }
 
-function journalInput(formData: FormData) {
-  return { body: value(formData, "body"), entryDate: value(formData, "entryDate"), title: value(formData, "title") };
-}
-
 function noteInput(formData: FormData) {
   return { body: value(formData, "body"), title: value(formData, "title") };
 }
 
 export async function createJournalEntryFormAction(formData: FormData) {
-  const auth = await context("/life/journal");
-  const parsed = createJournalEntryInputSchema.safeParse(journalInput(formData));
-  if (!parsed.success) destination("/life/journal", "invalid");
-  const result = await createSupabaseLifeRepository(auth.client).createJournalEntry(auth.user.id, parsed.data);
-  if (!result.ok) destination("/life/journal", "error");
-  revalidateLife();
-  destination("/life/journal", "created", result.data.id);
+  formData.delete("journalEntryId");
+  const result = await saveJournalEntryAction(formData);
+  destination("/life/journal", result.ok ? "created" : "error", result.id);
 }
-
 export async function updateJournalEntryFormAction(formData: FormData) {
-  const auth = await context("/life/journal");
-  const parsed = updateJournalEntryInputSchema.safeParse({ ...journalInput(formData), journalEntryId: value(formData, "journalEntryId") });
-  if (!parsed.success) destination("/life/journal", "invalid");
-  const result = await createSupabaseLifeRepository(auth.client).updateJournalEntry(auth.user.id, parsed.data);
-  if (!result.ok) destination("/life/journal", "error", parsed.data.journalEntryId);
-  revalidateLife();
-  destination("/life/journal", "updated", result.data.id);
+  if (!archiveJournalEntryInputSchema.safeParse({ journalEntryId: value(formData, "journalEntryId") }).success) destination("/life/journal", "invalid");
+  const result = await saveJournalEntryAction(formData);
+  destination("/life/journal", result.ok ? "updated" : "error", result.id);
 }
-
 export async function archiveJournalEntryFormAction(formData: FormData) {
-  const auth = await context("/life/journal");
-  const parsed = archiveJournalEntryInputSchema.safeParse({ journalEntryId: value(formData, "journalEntryId") });
-  if (!parsed.success) destination("/life/journal", "invalid");
-  const result = await createSupabaseLifeRepository(auth.client).archiveJournalEntry(auth.user.id, parsed.data.journalEntryId);
-  if (!result.ok) destination("/life/journal", "error", parsed.data.journalEntryId);
-  revalidateLife();
-  destination("/life/journal", "archived", parsed.data.journalEntryId);
+  const result = await archiveJournalEntryAction(formData);
+  destination("/life/journal", result.ok ? "archived" : "error", result.id);
 }
 
 export async function createLifeNoteFormAction(formData: FormData) {

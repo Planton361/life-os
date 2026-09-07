@@ -28,8 +28,8 @@ The existing application is the foundation. This roadmap does not restart the pr
 - Inbox, Tasks, Today and Calendar task flows: connected with remaining depth gaps.
 - Project/Goal workbenches: connected with remaining depth gaps.
 - Resources and Skills: connected with graph/search/management gaps.
-- Nutrition: recipes, ingredients, meals, planner edit and grocery draft are connected with remaining advanced gaps.
-- Mood, Sleep, Weight, Habits, Running and Strength: connected core loops with remaining depth gaps.
+- Nutrition: recipes, ingredients, meals, weekly planning and grocery are connected; R2-05 fully USER ACCEPTED on 2026-09-07.
+- Health & Fitness: Mood, Sleep, Weight, Habits, Running and Strength are connected; R2-05 fully USER ACCEPTED on 2026-09-07.
 - Coding, Education and Work suites plus Notes, Inventory and Wishlist are hidden/retained or folded/externalized; Areas remain canonical context.
 - After Nutrition, only Journal completion, Skill Map and Full Active Product Acceptance remain.
 - Personal AI Assistant: not started as a production capability.
@@ -893,6 +893,8 @@ Registry and focused tests. This is administrative closure after user acceptance
 
 **R2-07 status:** Active – Journal Surface Completion.
 USER ACCEPTANCE STATUS: PENDING. R2-07 stays active until real user acceptance.
+The canonical chronological workspace implementation and current control/browser
+evidence are recorded in the Capability Registry; implementation is not closure.
 
 **Outcome:** Recover the actual user-facing product contract without replacing
 V5 or the established architecture. A surface is complete only after all of

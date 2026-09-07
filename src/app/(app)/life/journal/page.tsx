@@ -1,16 +1,10 @@
-import { getJournalPageViewModel, getLifeManualWorkspace } from "@/features/profile-data";
+import { getJournalData } from "@/features/profile-data/journal-data";
+import { JournalWorkspace } from "@/features/life/journal/journal-workspace";
 
 export const metadata = {
   title: "Journal | Life OS",
-  description:
-    "Private dated journal entries with active and archived history.",
+  description: "Persönliche Einträge, Reflexion und chronologischer Verlauf.",
 };
-
-export default async function LifeJournalRoute({ searchParams }: Readonly<{ searchParams: Promise<{ state?: string }> }>) {
-  const { JournalManualWorkspace, JournalPage } =
-    await import("@/features/life");
-  const [viewModel, workspace, params] = await Promise.all([getJournalPageViewModel(), getLifeManualWorkspace(), searchParams]);
-
-  if (workspace !== undefined) return <JournalManualWorkspace state={params.state} workspace={workspace} />;
-  return <JournalPage viewModel={viewModel} />;
+export default async function LifeJournalRoute() {
+  return <JournalWorkspace {...await getJournalData()} />;
 }

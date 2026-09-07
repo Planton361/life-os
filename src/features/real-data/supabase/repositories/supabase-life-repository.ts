@@ -12,7 +12,7 @@ import type {
   WishlistItemInput,
   UpdateEntertainmentItemInput,
 } from "../../schemas/life.schemas";
-import type { EntertainmentWorkspace, InventoryWorkspace, LifeNote, LifeNoteRelation, LifeWorkspace } from "../../domain/life";
+import type { EntertainmentWorkspace, InventoryWorkspace, JournalEntry, LifeNote, LifeNoteRelation, LifeWorkspace } from "../../domain/life";
 import type { SupabaseClientLike } from "../database.types";
 import { mapEntertainmentItemRow, mapInventoryItemRow, mapJournalEntryRow, mapPurchaseDecisionRow, mapWishlistItemRow } from "../mappers/life.mapper";
 
@@ -88,6 +88,19 @@ export function createSupabaseLifeRepository(client: SupabaseClientLike) {
       const relations = await noteRelations(userId, resourceRows.map((resource) => resource.id));
       const notes: LifeNote[] = resourceRows.map((resource) => ({ archivedAt: resource.archived_at, body: resource.summary ?? "", createdAt: resource.created_at, id: resource.id, relations: relations.get(resource.id) ?? [], title: resource.title, updatedAt: resource.updated_at }));
       return { areaAvailable: true, journalEntries: (journal.data ?? []).map(mapJournalEntryRow), notes };
+    },
+    // Journal reads do not create a Life Area or load unrelated Notes.
+    async getJournalEntries(userId: string): Promise<JournalEntry[]> {
+      const entries: JournalEntry[] = [];
+      for (let start = 0; ; start += 500) {
+        const result = await client.from("journal_entries").select("*")
+          .eq("user_id", userId).order("entry_date", { ascending: false })
+          .order("created_at", { ascending: false }).order("id", { ascending: false })
+          .range(start, start + 499);
+        if (result.error) throw new Error("Journal unavailable");
+        entries.push(...(result.data ?? []).map(mapJournalEntryRow));
+        if ((result.data?.length ?? 0) < 500) return entries;
+      }
     },
     async createJournalEntry(userId: string, input: CreateJournalEntryInput) {
       const result = await client.from("journal_entries").insert({ body: input.body, entry_date: input.entryDate, title: input.title, user_id: userId }).select("*").single();

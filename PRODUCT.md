@@ -366,8 +366,31 @@ separate domain records. No gamification or fabricated activity.
 
 Recurring Task / Calendar → Journal Entry. Recurrence belongs to the established
 task/planning model, never to the Journal model itself. The canonical dated
-`journal_entries` lifecycle remains; full Journal depth and user acceptance are
-future work, not part of this consolidation pass.
+`journal_entries` lifecycle remains. R2-07 completes the existing chronological
+surface; user acceptance remains pending until explicitly recorded.
+
+`/life/journal` is a German one-page workspace: header/create CTA, factual
+Today/last-seven-days/current-month counts, searchable dated history and a
+selected-entry reader. Default order is entry date, creation timestamp and stable
+ID descending; editing never changes chronology by `updated_at`. Period counts
+exclude archived and future-dated entries; all-history can show future dates.
+Search covers title/body; period and active/archive filters are real URL state.
+
+Creation/editing open compact dialogs. Existing `selected=<id>` query routing
+provides stable selection; `panel=detail|edit` provides deep-linkable full reading
+and editing without another entity model. Date and body remain required; title
+is optional. Archive preserves full read-only history, with explicit confirmation.
+Errors preserve the draft; successful writes use the app toast and reload-stable
+canonical results. Demo is read-only; Empty has no demo leakage; failed/auth-
+blocked reads never appear as a successful empty journal.
+
+Canonical Journal currently has no Tags, Area/context fields, Project/Goal/
+Resource/Skill relations, or Review foreign key. Existing Resource relations do
+not support Journal entries, so those controls are absent and this remains a
+model gap rather than a new polymorphic engine. Today currently has no Journal
+source in its meaningful-event projection; R2-07 does not fabricate one or
+project text edits as activity. Journal is neither Notes/Resources nor a Daily
+Review replacement. Recurrence stays in Task/Calendar.
 
 ### 5.13 Skill Map
 

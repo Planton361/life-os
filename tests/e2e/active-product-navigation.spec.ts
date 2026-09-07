@@ -141,13 +141,9 @@ test.describe("Product scope consolidation navigation", () => {
       await expect(portfolio).toBeFocused();
       await expect(portfolio).toHaveAttribute("aria-expanded", "false");
       await nav.locator('a[href="/life/journal"]').click();
-      const context = page.getByRole("navigation", { name: "Life context" });
-      await context
-        .getByRole("link", { name: "Resources", exact: true })
-        .click();
+      await nav.locator('a[href="/resources"]').click();
       await expect(page).toHaveURL(/\/resources$/);
       await nav.locator('a[href="/life/journal"]').click();
-      await context.getByRole("link", { name: "Journal", exact: true }).click();
       await page.reload();
       await expectNavigation(page);
       await expectNoLegacyEntryPoints(page);
