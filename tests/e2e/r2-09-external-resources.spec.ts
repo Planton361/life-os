@@ -85,14 +85,14 @@ async function apiFor(page: Page) {
 }
 async function assignProjectResource(page: Page, id: string, role: string) {
   const region = page.getByRole("region", {
-    name: "Work Artifacts",
+    name: "Primary Work Artifact",
     exact: true,
   });
-  const details = region
-    .locator("details")
-    .filter({ has: page.getByText("Bestehendes verknüpfen", { exact: true }) });
-  if ((await details.getAttribute("open")) === null)
-    await details.locator("summary").click();
+  const add = region.getByRole("button", {
+    name: "+ Artifact hinzufügen",
+    exact: true,
+  });
+  if ((await add.getAttribute("aria-expanded")) === "false") await add.click();
   const form = region.getByRole("form", {
     name: "Mit Project verknüpfen",
     exact: true,
@@ -168,8 +168,11 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
     );
     await page.goto(`/projects/${project}`);
     await expect(
-      page.getByRole("region", { name: "Work Artifacts", exact: true }),
+      page.getByRole("region", { name: "Primary Work Artifact", exact: true }),
     ).toContainText("Noch kein Arbeitsartefakt verknüpft");
+    await page
+      .getByRole("button", { name: "+ Artifact hinzufügen", exact: true })
+      .click();
     await page
       .getByRole("link", { name: "Neue externe Referenz anlegen" })
       .click();
@@ -213,7 +216,7 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
       name: "Primary Work Artifact",
       exact: true,
     });
-    await expect(primary).toContainText(title);
+    await expect(primary.locator("article")).toContainText(title);
     await expect(
       page
         .getByRole("region", { name: "Resources & References", exact: true })
@@ -228,8 +231,7 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
     );
     await page.goto(`/projects/${project}`);
     await page
-      .getByRole("region", { name: "Resources & References", exact: true })
-      .locator("summary")
+      .getByRole("button", { name: "Beziehungen verwalten", exact: true })
       .click();
     const ref = page.getByRole("form", {
       name: "Reference verknüpfen",
@@ -247,9 +249,11 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
     await expect(
       page.getByRole("region", { name: "Resources & References", exact: true }),
     ).toContainText(`Paper Docs ${key}`);
-    await expect(primary).not.toContainText(`Paper Docs ${key}`);
     await expect(
-      page.getByRole("region", { name: "Beziehungen", exact: true }),
+      primary.locator(`[data-project-resource="${paper}"]`),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("region", { name: "Tasks & Progress", exact: true }),
     ).toContainText(`${key} Arbeit`);
     // Current responsive bounds + full surfaces after hydration, no screenshot DOM mutation.
     for (const [width, height] of [
@@ -260,7 +264,7 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
     ]) {
       await page.setViewportSize({ width, height });
       await expect(
-        page.getByRole("button", { name: "Änderungen speichern", exact: true }),
+        page.getByRole("button", { name: "Bearbeiten", exact: true }),
       ).toBeEnabled();
       expect(
         await page.evaluate(
@@ -333,7 +337,9 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
     // Additional artifact, then explicit promotion through the card's role editor.
     await assignProjectResource(page, paper, "additional_artifact");
     const card = page.locator(`[data-project-resource="${paper}"]`);
-    await card.locator("summary").click();
+    await card
+      .getByRole("button", { name: "Artifact verwalten", exact: true })
+      .click();
     await card
       .getByLabel("Verwendung im Project")
       .selectOption("primary_artifact");
@@ -345,7 +351,7 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
         .last(),
     ).toBeVisible();
     await page.reload();
-    await expect(primary).toContainText(`Paper Docs ${key}`);
+    await expect(primary.locator("article")).toContainText(`Paper Docs ${key}`);
     await expect(
       page.getByRole("region", {
         name: "Additional Work Artifacts",
@@ -362,9 +368,14 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
       ).data,
     ).toHaveLength(1);
     await primary
+      .getByRole("button", { name: "Artifact verwalten", exact: true })
+      .click();
+    await primary
       .getByRole("button", { name: "Verknüpfung entfernen" })
       .click();
-    await expect(primary).not.toContainText(`Paper Docs ${key}`);
+    await expect(
+      primary.locator(`[data-project-resource="${paper}"]`),
+    ).toHaveCount(0);
     await page.reload();
     expect(
       (await api.from("resources").select("id").eq("id", paper)).data,
@@ -386,7 +397,7 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
     await submit(page, "Resource wiederherstellen");
     await page.reload();
     await page.goto(`/projects/${project}`);
-    await expect(primary).toContainText(`Paper Docs ${key}`);
+    await expect(primary.locator("article")).toContainText(`Paper Docs ${key}`);
     await expect(
       page.getByRole("region", {
         name: "Additional Work Artifacts",
@@ -509,12 +520,11 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
   await page.goto(`/projects/${projects[0]}`);
   // Server-action failure remains visible when a selected endpoint is archived after loading.
   const active = page.getByRole("region", {
-    name: "Work Artifacts",
+    name: "Primary Work Artifact",
     exact: true,
   });
   await active
-    .locator("summary")
-    .filter({ hasText: "Bestehendes verknüpfen" })
+    .getByRole("button", { name: "+ Artifact hinzufügen", exact: true })
     .click();
   const f = active.getByRole("form", { name: "Mit Project verknüpfen" });
   await f.getByLabel("Resource", { exact: true }).selectOption(resourceIds[2]);

@@ -76,6 +76,67 @@ wording; this acceptance supersedes those status snapshots. No domain code or
 data changes in this closure. R2-07 Journal became active at this historical closure; R2-09 now precedes
 its remaining user acceptance. Implementation cannot accept Journal.
 
+## R2-09 Project Detail read-first refinement — 2026-09-08
+
+Current Project Detail defaults to understanding and working: identity/current
+state, Next Step, Primary Artifact, Tasks & Progress, Additional Artifacts,
+Goal/Skill context, supporting References and Lifecycle/Management. Desktop uses
+roughly 65% main / 35% rail; mobile follows that semantic document order. This
+replaces the permanent editor/artifact administration layout in the previous
+implementation evidence below. The Artifact/Reference contract remains unchanged.
+
+| Capability | Status | Current control truth |
+|---|---|---|
+| Read-first Project Detail | `CONNECTED` | Values, counts and real detail links; no visible inputs in normal ID deep links |
+| Project editing | `CONNECTED` | “Bearbeiten” reveals the existing complete EntityForm and writes |
+| Artifact management | `CONNECTED` | Per-artifact disclosure for role/removal; Primary also offers explicit replacement selection |
+| Artifact addition | `CONNECTED` | “+ Artifact hinzufügen” reveals existing Resource/role link and external-reference Create navigation |
+| Relations | `CONNECTED` | Task/Goal/Skill/Reference read context; “Beziehungen verwalten” reveals existing Task and Reference controls |
+| Lifecycle | `CONNECTED` | Archive behind “Lifecycle verwalten”; archived Projects remain readable |
+
+Inline disclosures expose `aria-expanded`/`aria-controls`, keyboard activation,
+Escape and Close with focus return. No modal/focus trap. Normal views hide role,
+link/unlink and save controls. The existing explicit Resource-create return
+context still opens addition with the same new Resource selected; Create itself
+and its routes/actions are unchanged. Task progress uses real linked tasks;
+Skills are labelled as context from Tasks/Evidence, not new Project-owned records.
+
+No schema, migration, project_role, Resource/Relation semantics, repository/action,
+Portfolio Overview or other accepted surface changes. No new dependency. Existing
+backend auth/Zod/ownership/RLS/revalidation is reused by all disclosed forms.
+R2-09 remains active; USER ACCEPTANCE STATUS: PENDING.
+
+Current validation: IMPLEMENTATION_PASS. New focused Read-first Project proof
+PASS: zero visible inputs in normal view; readable Next Step and actual task
+counts; external keyboard opening (intercepted locally), Resource Detail navigation;
+Edit → save → close/Escape → reload; direct Primary replacement without copies;
+Artifact addition disclosure; Task link/unlink and Lifecycle disclosure. All
+management controls are exercised as real UI, not only inspected in markup.
+
+Default, Edit, Artifact Management and Relations screenshots/bounds checked at
+1920×1080, 2560×1440, 3840×2160 and 390×844. At 1920 the primary work artifact and
+task region are above the fold; the normal project fits the viewport. Mobile
+follows document order with no horizontal overflow. Design-Taste PASS: restrained
+V5 panels, distinct main/rail priorities, no nested artifact cards or decorative
+controls. Open edit mode may naturally scroll; the permanent editor is gone.
+Keyboard activation, explicit expanded state, Close/Escape focus return and clean
+console/hydration are current browser-proven. Disclosures are enabled after
+hydration, following the existing form-readiness pattern.
+
+Both existing R2-09 Artifact tests and all three R2-04 Workbench tests PASS after
+adapting Project interactions to explicit disclosure controls. Existing create,
+role/ownership/archive semantics and reload proofs remain intact. Screenshot tests
+wait for readiness and preserve the caret instead of mutating pre-hydration input
+styles; no console suppression was introduced.
+
+`git diff --check`, typecheck, lint, ten focused Workbench/Artifact unit tests,
+eleven runtime tests and production build PASS, run sequentially in the isolated
+protected-file-free source copy. No migration or Target DB operation in this pass.
+The owned disposable runtime is stopped; technical screenshots remain ignored in
+`test-results/r209-artifact-proof/test-results/r209-read-final/` (plus the focused
+regression output directories). Unrelated user changes remain untouched.
+R2-09 USER ACCEPTANCE STATUS: PENDING.
+
 ## R2-09 semantic refinement — Project Work Artifacts — 2026-09-08
 
 Current contract: Project is work identity; Work Artifact is the output or work

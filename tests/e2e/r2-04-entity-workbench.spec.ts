@@ -27,6 +27,13 @@ const route = {
   Resource: "resources",
 };
 type Kind = keyof typeof route;
+async function openProjectControl(page: Page, name: string) {
+  if (!/\/projects\/[0-9a-f-]{36}$/.test(page.url())) return;
+  const control = page.getByRole("button", { name, exact: true });
+  await expect(control).toBeEnabled();
+  if (await control.getAttribute("aria-expanded") === "false") await control.click();
+  await expect(control).toHaveAttribute("aria-expanded", "true");
+}
 async function save(page: Page, kind: Kind) {
   const form = page.getByRole("form", {
     name: `${kind} bearbeiten`,
@@ -94,6 +101,7 @@ async function create(
   await expect(page).toHaveURL(new RegExp(`/${route[kind]}/[0-9a-f-]{36}$`));
   const id = page.url().split("/").at(-1)!;
   await page.reload();
+  if (kind === "Project") await openProjectControl(page, "Bearbeiten");
   await expect(
     page.getByRole("heading", { name: title, exact: true }),
   ).toBeVisible();
@@ -131,18 +139,21 @@ async function create(
   await edit.getByLabel("Beschreibung / Kontext").fill(`Updated ${title}`);
   await save(page, kind);
   await page.reload();
+  if (kind === "Project") await openProjectControl(page, "Bearbeiten");
   await expect(edit.getByLabel("Beschreibung / Kontext")).toHaveValue(
     `Updated ${title}`,
   );
   await edit.getByLabel("Beschreibung / Kontext").fill("");
   await save(page, kind);
   await page.reload();
+  if (kind === "Project") await openProjectControl(page, "Bearbeiten");
   await expect(edit.getByLabel("Beschreibung / Kontext")).toHaveValue("");
   if (kind === "Task")
     await expect(edit.getByLabel("Next Action")).toHaveValue("Read source");
   await edit.getByLabel("Beschreibung / Kontext").fill(`Updated ${title}`);
   await save(page, kind);
   await page.reload();
+  if (kind === "Project") await openProjectControl(page, "Bearbeiten");
   return id;
 }
 async function operate(
@@ -150,6 +161,8 @@ async function operate(
   label: string,
   choose?: { label: string; id: string },
 ) {
+  await openProjectControl(page, "Beziehungen verwalten");
+  if (label === "Verknüpfung entfernen") await openProjectControl(page, "Reference verwalten");
   const f = page.getByRole("form", { name: label, exact: true });
   if (choose)
     await f.getByLabel(choose.label, { exact: true }).selectOption(choose.id);
@@ -164,6 +177,7 @@ async function operate(
       .last(),
   ).toBeVisible();
   await page.reload();
+  await openProjectControl(page, "Beziehungen verwalten");
 }
 
 test("R2-04 all canonical creates, detail edits, relations, steps, lists, lifecycle and viewport proof", async ({
@@ -251,10 +265,10 @@ test("R2-04 all canonical creates, detail edits, relations, steps, lists, lifecy
     await page.goto(`/${route[kind]}/${id}`);
     if (kind === "Project") {
       const references = page.getByRole("region", {
-        name: "Resources & References",
+        name: "References verwalten",
         exact: true,
       });
-      await references.locator("summary").click();
+      await openProjectControl(page, "Beziehungen verwalten");
       await operate(page, "Reference verknüpfen", {
         label: "Resource",
         id: resource,
@@ -385,6 +399,8 @@ test("R2-04 all canonical creates, detail edits, relations, steps, lists, lifecy
     ]) {
       await page.goto(path);
       await expect(page.locator("main h1")).toBeVisible();
+      const fieldset = page.locator("main fieldset").first();
+      if (await fieldset.count()) await expect(fieldset).toBeEnabled();
       expect(
         await page.evaluate(() => document.documentElement.scrollWidth),
       ).toBeLessThanOrEqual(size.width + 1);
@@ -403,6 +419,7 @@ test("R2-04 all canonical creates, detail edits, relations, steps, lists, lifecy
       await page.screenshot({
         path: info.outputPath(`${path.replaceAll("/", "-")}-${size.width}.png`),
         fullPage: true,
+        caret: "initial",
       });
     }
   }
@@ -456,6 +473,7 @@ test("R2-04 all canonical creates, detail edits, relations, steps, lists, lifecy
     ["Resource", resource],
   ] as const) {
     await page.goto(`/${route[kind]}/${id}`);
+    if (kind === "Project") await openProjectControl(page, "Lifecycle verwalten");
     await page
       .getByRole("button", { name: `${kind} archivieren`, exact: true })
       .click();
@@ -474,13 +492,11 @@ test("R2-04 all canonical creates, detail edits, relations, steps, lists, lifecy
           .single()
       ).data?.archived_at,
     ).not.toBeNull();
-    await expect(
-      page.getByText("Archiviert · historische Ansicht"),
-    ).toBeVisible();
+    if (kind === "Project") await expect(page.getByRole("region", { name: "Project Information" })).toContainText("Archiviert");
+    else await expect(page.getByText("Archiviert · historische Ansicht")).toBeVisible();
     await page.reload();
-    await expect(
-      page.getByRole("button", { name: "Änderungen speichern" }),
-    ).toBeDisabled();
+    if (kind === "Project") await expect(page.getByRole("button", { name: "Bearbeiten", exact: true })).toHaveCount(0);
+    else await expect(page.getByRole("button", { name: "Änderungen speichern" })).toBeDisabled();
   }
   for (const [kind, id] of [["Task", task], ["Project", project], ["Goal", goal], ["Skill", skill]] as const) {
     await page.goto(`/${route[kind]}`);

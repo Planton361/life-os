@@ -950,7 +950,8 @@ dependency belongs in this slice.
    work identity, context, planning and memory; specialized artifacts stay externally
    owned and use existing Resources/relations. Audit fields; prove Project create,
    link/unlink, external opening, Task/Goal/Skill regression, search and responsive
-   reload. Explicit Project-specific Primary/Additional Work Artifact roles are
+   reload. Project Detail defaults to a read-first workbench with explicit edit/
+   management disclosures. Explicit Project-specific Primary/Additional Work Artifact roles are
    separate from supporting References; a minimal relation-role migration is
    permitted after audit, with isolated proof before local Target application.
    No new global entity, API, sync, secrets or document copy. Depends

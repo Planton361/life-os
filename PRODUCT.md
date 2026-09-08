@@ -228,6 +228,10 @@ statistics as Skills, papers/books/methods as References.
 Work: Kundenprojekt → document/design/spreadsheet/workspace as Primary, ordinary
 Tasks and supporting References. These use existing Areas without domain suites.
 
+Project Detail defaults to a read-first workbench: understandable identity/current
+state, next step, tasks/progress, primary/additional artifacts and supporting context.
+Project editing, artifact roles and relation management appear only after explicit
+user actions. Existing writes remain available in accessible inline disclosures.
 Artifact management belongs to Project Detail. Existing Resource Create stores
 one canonical object, then returns to the Project for explicit role selection.
 Resource Detail shows its uses; Resources Search still finds every such record.

@@ -278,11 +278,19 @@ R2-07 bleibt verbleibende Arbeit mit USER ACCEPTANCE STATUS: PENDING.
 
 ## Project Work Artifacts and References (R2-09)
 
-Project Detail retains its V5 workbench language. Header/current state/Next Step
-lead into a prominent Work Artifacts region: Primary first, Additional/retained
-history second. Tasks/progress and Goal/Skill context remain normal canonical
-work. Resources & References is a separate supporting region before Lifecycle.
-No artifact management belongs to Portfolio Root/Quick Inspector.
+Project Detail is read-first. Default order: identity/current state, Next Step,
+Primary Artifact, Tasks & Progress, Additional Artifacts, Goal/Skill context,
+Resources & References, Lifecycle/Management. Desktop uses roughly 65% main
+(information, next step, tasks, additional artifacts) and 35% rail (primary,
+context, references); mobile follows the semantic document order. No full-width
+artifact administration wall or permanent edit inputs.
+
+“Bearbeiten”, “Artifact verwalten”, “+ Artifact hinzufügen” and “Beziehungen
+verwalten” reveal existing controls inline. Explicit expanded state, keyboard
+operation, Escape/close and focus return are required. Ordinary Project deep
+links open read-only values; the existing explicit Resource-create return context
+may open the add disclosure with the created Resource selected. No Create-flow,
+role, schema or relation-semantic change. Portfolio Overview remains unchanged.
 
 Artifact entries show existing type, title, short description, “Extern öffnen ↗”
 and “Details öffnen”. Role changes are explicit and use bounded existing selects;

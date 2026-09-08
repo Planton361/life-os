@@ -1,4 +1,4 @@
-import { ProjectResources } from "./project-resources";
+import { ProjectReadView } from "./project-read-view";
 import { projectResourceUses, projectRoleLabels } from "./project-artifacts";
 import { ExternalResourceLink } from "@/features/resources/external-resource-link";
 import { taskTextFields } from "./task-text";
@@ -284,6 +284,52 @@ export async function WorkbenchEditor({
         .find((g) => g.id === id)!
         .target_date?.slice(0, 10);
   }
+  if (kind === "project" && id && row)
+    return (
+      <EntityWorkbenchShell kind={kind} title={row.title}>
+        <ProjectReadView
+          data={data}
+          id={id}
+          selectedResource={
+            data.resources.some(
+              (r) => r.id === selectedResource && !r.archived_at,
+            )
+              ? selectedResource
+              : undefined
+          }
+          edit={
+            <EntityForm
+              kind={kind}
+              id={id}
+              values={values}
+              projectContext={contextProject?.id}
+              areas={data.areas
+                .filter((a) => !a.archived_at || a.id === row?.area_id)
+                .map((a) => ({
+                  id: a.id,
+                  title: a.name + (a.archived_at ? " (archiviert)" : ""),
+                }))}
+              projects={available(
+                data,
+                "project",
+                String(values.projectId ?? ""),
+              )}
+              goals={available(data, "goal", String(values.goalId ?? ""))}
+              archived={Boolean(row?.archived_at)}
+              sourceOwned={Boolean(source)}
+            />
+          }
+          relations={
+            <Relations
+              kind={kind}
+              id={id}
+              data={data}
+              archived={Boolean(row.archived_at)}
+            />
+          }
+        />
+      </EntityWorkbenchShell>
+    );
   return (
     <EntityWorkbenchShell
       kind={kind}
@@ -328,25 +374,6 @@ export async function WorkbenchEditor({
             · <Link href="/calendar">Calendar öffnen</Link>
           </p>
         )}
-      {kind === "project" && id && (
-        <>
-          {values.nextStep && (
-            <p className="text-sm">Next Step · {values.nextStep}</p>
-          )}
-          <ProjectResources
-            data={data}
-            projectId={id}
-            section="artifacts"
-            selectedResource={
-              data.resources.some(
-                (r) => r.id === selectedResource && !r.archived_at,
-              )
-                ? selectedResource
-                : undefined
-            }
-          />
-        </>
-      )}
       <div
         className={`grid gap-6 ${id ? "xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)]" : "mx-auto w-full max-w-[1000px]"}`}
       >
@@ -382,13 +409,6 @@ export async function WorkbenchEditor({
               projectContext={contextProject?.id}
             />
             <Progress kind={kind} id={id} data={data} />
-            {kind === "project" && (
-              <ProjectResources
-                data={data}
-                projectId={id}
-                section="references"
-              />
-            )}
             <Block title="Lifecycle">
               {source ? (
                 <>
