@@ -58,3 +58,16 @@ Detailquelle für Dashboard-Datei-Ownership und Safe Refactors:
 - Loading/Error/Empty States einplanen.
 - Charts lazy/import-sparsam.
 - Dashboard-Code folgt Datei-Ownership und Safe-Refactor-Regeln aus `docs/engineering/dashboard-code-structure.md`.
+
+## External Source of Truth Boundary
+
+Life OS owns canonical work identity, planning, context, relations and memory.
+GitHub owns repository artifacts; Sciebo/filesystem owns scientific/Office/PDF/TeX
+files; spreadsheets own flexible tabular artifacts. Existing Resources store
+references and short context, connected to canonical Projects/Tasks/Goals/Skills.
+No second repository/project/task/resource architecture or external content copy.
+A URL is stored data: syntactic parsing only, no fetch, metadata lookup, embedded
+editor, API, OAuth, sync or secrets. Any future synchronization requires its own
+explicit integration/security scope. Create and link remain separate explicit
+writes using existing auth/Zod/ownership/RLS paths, with persisted Resource detail
+as recovery point; no non-atomic combined write or duplicate-on-link-retry flow.

@@ -43,7 +43,7 @@ Implementation status and product visibility are separate truths: `CONNECTED` co
 | Nutrition | `ACCEPTED` | `CONNECTED`: logging/tracking, canonical weekly planning, recipes and grocery; explicitly USER ACCEPTED on 2026-09-07 with Health & Fitness | R2-05 closed; preserve evidence and accepted behavior |
 | Work / Education / Coding | `HIDDEN_RETAINED` / `FOLDED` | A1 canonical Projects, Resources and logs remain; detailed technical statuses below are retained evidence, not suite completion | Areas stay active as context; no independent suite completion |
 | Inventory / Wishlist | `EXTERNALIZED` / `RETAINED` | existing CRUD, purchase decisions and conversion retained; no new completion claim | Spreadsheet is Source of Truth for future use; no active navigation or connector |
-| Journal | `ACTIVE` | `CONNECTED`: R2-07 chronological workspace, canonical create/edit/archive, search/filter, detail and current responsive/reload proof | R2-07 active; user acceptance pending; unsupported context/relations/Today sources documented below |
+| Journal | `ACTIVE` | `CONNECTED`: R2-07 chronological workspace, canonical create/edit/archive, search/filter, detail and current responsive/reload proof | R2-07 resumes after R2-09; user acceptance pending; unsupported context/relations/Today sources documented below |
 | Skill Map | `ACTIVE_PLANNED` / `REMAINING_DEPTH` | `UI_ONLY`: only a retained Coding demo/empty Manual shell | R2-08 under Portfolio → Skills; no active graph link yet |
 | Notes | `FOLDED_INTO_RESOURCES` / `RETAINED` | `CONNECTED`: existing canonical `resources` (`note`), no migration | no separate active Notes app |
 | Anti-Rot / Challenges / Shop | `DEFERRED_HIDDEN` | connected feature code/data; direct routes remain intact | C1.1-01 removed Sidebar, Dashboard and normal Daily-Companion entry points |
@@ -63,8 +63,8 @@ Personal → Journal; Settings. Legacy routes remain directly addressable.
 The completed technical sequence C1 → C2 → C3 → K1 → H1/H2 → N1 → A1 → Z1 is
 history. R2-01 through R2-04 and Health/Fitness are explicitly accepted.
 **R2-05 USER ACCEPTED on 2026-09-07: Health & Fitness and Nutrition accepted in full.**
-R2-05 is closed; R2-07 Journal is the sole active block (USER ACCEPTANCE PENDING),
-then R2-08 Skill Map → R2-06 Full Active Product Acceptance.
+R2-05 is closed; R2-09 External Resource References is the sole active block,
+then R2-07 Journal (USER ACCEPTANCE PENDING) → R2-08 Skill Map → R2-06 Full Active Product Acceptance.
 R2-06 retains its original ID; the two new capabilities precede it.
 
 ## R2-05 user acceptance and administrative closure — 2026-09-07
@@ -73,8 +73,103 @@ The user explicitly records R2-05 = USER ACCEPTED, including Health & Fitness
 and Nutrition in full. R2-05 is closed. Existing implementation/browser/visual
 proofs below remain historical evidence, including their original pending
 wording; this acceptance supersedes those status snapshots. No domain code or
-data changes in this closure. R2-07 Journal is now the only active block and
-stays active until real user acceptance; implementation cannot accept it.
+data changes in this closure. R2-07 Journal became active at this historical closure; R2-09 now precedes
+its remaining user acceptance. Implementation cannot accept Journal.
+
+## R2-09 Product Boundary & External Resource References — 2026-09-08
+
+Life OS is the personal Context/Planning/Memory system. Every meaningful piece
+of work has canonical Life OS identity and context. Coding/Education/Work use
+normal Projects and Tasks with Goals/Skills/planning/status/relations/history;
+GitHub repositories, scientific/Office/PDF/TeX documents and spreadsheets remain
+externally owned artifacts referenced by existing Resources. No external API,
+sync, secrets, remote database, file copy or parallel entity/model.
+
+### Resource model audit
+
+| Field / capability | Exists | Canonical source | Create | Edit | Reload | Sufficient for external artifact |
+|---|---|---|---|---|---|---|
+| Title | YES | `resources.title` | existing EntityForm/action/repository | same detail form | R2-09 create/detail reload PASS | YES |
+| Description | YES | `resources.summary`, Domain `body` | existing body mapping | same mapping | R2-09 reload PASS | YES |
+| Classification | YES | `resources.type`; eight existing types | existing select | existing select | R2-09 reload PASS | YES |
+| URL / reference | YES | `resources.url`; non-web location may use description | existing URL field | existing URL field | R2-09 reload PASS | YES |
+| Lifecycle/archive | YES | `resources.archived_at`, existing status mapping | captured/default | archive/restore | R2-09 archive/restore reload PASS | YES |
+| Task relations | YES | `resource_relations` target `task` | explicit link | unlink/relink | R2-09 reload PASS | YES |
+| Project relations | YES | same, target `project` | explicit link after create | unlink/relink | R2-09 reload PASS | YES |
+| Goal relations | YES | same, target `goal` | explicit link | unlink/relink | R2-09 reload PASS | YES |
+| Skill relations | YES | same, target `skill`, `context` | explicit link, no automatic evidence | unlink/relink | R2-09 reload PASS | YES |
+
+RESOURCE_MODEL_SUFFICIENT = YES. Migration = NONE. Existing auth, Zod,
+same-user active-target checks, explicit user-scoped reads/writes, RLS and
+workbench route/detail revalidation are reused unchanged. Create and link remain
+separate explicit actions: Project → Resource Create → persisted Resource Detail
+with owned active Project preselected → confirm Project link. Invalid/foreign/
+archived Project query values are not offered as context. Retrying a link acts
+on the same Resource ID; no new create request or coupled partial write.
+
+| Capability | Status | Evidence / remaining proof |
+|---|---|---|
+| External reference create/detail and Project metadata | `CONNECTED` | scientific and Coding Project flows, canonical create/edit/reload and metadata/opening PASS |
+| Shared Task/Goal/Skill Resource context | `CONNECTED` | existing canonical relations retained; focused R2-09 regression PASS |
+| Discoverability | `CONNECTED` | existing active Resource search covers title, summary, URL and type; no search engine added |
+| Coding/Education/Work Area context | `CONNECTED` | canonical Areas and entity selectors retained; no suite required |
+| Separate Personal Notes projection | `DECISION_REQUIRED` | later product reconciliation; existing note Resources/data remain intact |
+
+External actions are labelled “Extern öffnen ↗”, with new-tab accessible name,
+keyboard focus and HTTP(S)-only opening. Other reference text stays data.
+No network request is made by URL parsing or rendering. Project Detail exposes
+Resource title/type/description, Resource Detail navigation and external opening.
+Existing accepted cockpit/list/domain surfaces and Journal are unchanged.
+
+### Current control inventory and evidence
+
+| Affected control | Direct proof / result |
+|---|---|
+| Project → Resource/external-reference create | click opens existing `/resources/new?project=<owned-id>`; create produces one persisted ID |
+| Resource title, description, type, URL and Create | populated form submit, success toast, ID deep link and reload PASS |
+| Project context + explicit Project link | owned active Project preselected after create/reload; submit twice remains one canonical relation |
+| Project existing Resource select/link and unlink | unlink → reload absent → select same ID/link → reload present PASS |
+| Resource Detail title link | clicked from Project relation, stable `/resources/<id>` PASS |
+| External opening | HTTP(S) href, clear new-tab accessible name, focus + Enter opens correct URL; browser route intercepted locally, no provider contacted |
+| Task/Goal/Skill relation disclosures/selects/link | same Resource ID linked to all three, each target detail reloaded and read back |
+| Resource Edit | description and URL changed, toast, detail reload and Project projection PASS |
+| Resource archive/restore | history read-only, existing relations retained, restore editable after reload PASS |
+| Link error | Project archived after form load; submit shows error, reload retains the one Resource without creating a copy |
+| Resources search | real search input/button finds edited description; both examples also found through deep-linked query; existing unit tests cover title/URL/type and archive exclusion |
+| Area selectors | Coding/Education/Work options remain; scientific and Coding Projects created through normal canonical Project UI |
+
+Both current Playwright tests in `tests/e2e/r2-09-external-resources.spec.ts`
+pass: the Manual flow plus Demo/Empty/auth-blocked Manual guards on Resource
+Create/Detail and Project Detail, with no misleading forms or external actions.
+Manual proof includes SQL/Data API readback through the authenticated technical user:
+exactly one Resource per example and four target relations per Resource. No
+service-role client, personal Target write, copied document, repository suite,
+new backend mutation or migration. A repeated link reuses the existing relation.
+
+Full screenshots cover Project relations, Resource Create and Resource Detail
+for both examples at 1920×1080, 2560×1440 and 390×844. No horizontal overflow;
+fields, links and relation actions remain within their composed panels. V5
+Design-Taste: PASS — existing matte surfaces, restrained accents and bounded
+forms; secondary metadata supports the work context. Mobile uses the existing
+vertical flow; detail depth may scroll. No dashboard/list/domain redesign.
+
+Validation: typecheck, lint, 19 focused Resource/schema/repository/search/semantic
+relation tests, 11 runtime lifecycle tests and production build (57 generated
+pages) PASS. Build runs in a source copy without protected files and with reused
+local dependencies; its test-only Turbopack root is explicit to isolate it from
+the parent workspace. Original source/runtime configuration is unchanged.
+The initial screenshot caret mutation raced hydration; waiting for enabled
+forms and preserving the caret corrected the harness. Current browser console
+and hydration assertions are clean; no app suppression was added.
+Artifacts: `test-results/r209-proof/test-results/` (ignored, synthetic data).
+Disposable runner stops its own stack and runtime; no auth state/artifacts are
+staged. The unrelated user test diff and `.idea/` remain untouched.
+
+Result: IMPLEMENTATION_PASS for this Resource slice, not renewed acceptance of
+Portfolio/Resources or Journal. R2-09 remains the single active review block;
+next product work is R2-07 Journal/user acceptance, then R2-08, finally R2-06.
+Notes projection remains DECISION_REQUIRED. Journal/Skill Map/Full Acceptance
+are not started or accepted by this slice.
 
 ## Product-scope consolidation — 2026-09-07
 
@@ -86,7 +181,7 @@ links, planning, evidence and relations. Coding, Education and Work remain Areas
 
 | Capability | Product disposition | Actual state / destination |
 |---|---|---|
-| Repositories / GitHub URL | RETAINED / EXTERNAL SOURCE OF TRUTH | canonical Projects with existing URL retained; future references use Resource `link` + URL; no GitHub API/sync |
+| Repositories / GitHub URL | RETAINED / EXTERNAL SOURCE OF TRUTH | canonical Projects with existing URL retained; references use Resource `link` + URL; no GitHub API/sync |
 | Coding sessions / Agents / Courses | HIDDEN / RETAINED | existing implementation or Prepared gaps unchanged; no suite roadmap obligation |
 | Skill Map | ACTIVE PLANNED / REMAINING DEPTH | `/coding/skill-map` and `area-view-models.ts:getSkillMapViewModel` expose demo data or empty Manual arrays; no clean canonical graph route. Target Portfolio → Skills → Skill Map, R2-08 |
 | Coding Knowledge / prompts | FOLDED INTO RESOURCES | `/coding/knowledge` is a Prepared route skeleton, not a connected Knowledge database; existing Resources own active knowledge/context |
@@ -1579,7 +1674,7 @@ consolidation disposition table above. Canonical Area/entity context stays activ
 
 ## R2-07 Journal audit and surface implementation — 2026-09-07
 
-R2-07 is the only active block. USER ACCEPTANCE STATUS: PENDING. R2-05 remains
+Historical R2-07 implementation snapshot; R2-09 now precedes remaining Journal acceptance. USER ACCEPTANCE STATUS: PENDING. R2-05 remains
 explicitly accepted and closed. Journal means personal chronological reflection
 and history; Notes belong to Resources, recurrence to Task/Calendar, structured
 Daily/Weekly Reviews to their existing records. No new schema or relation engine.
@@ -1667,7 +1762,7 @@ without protected environment files or the unrelated unstaged test changes.
 Completion Gate: PASS for the delivered canonical scope, reported as
 IMPLEMENTATION_PASS. Unsupported model capabilities above are not implemented
 or represented as connected; no user acceptance is inferred.
-R2-07 remains the only active block. USER ACCEPTANCE STATUS: PENDING.
+R2-07 remains pending user acceptance and resumes after R2-09.
 
 # 14. Life and Personal
 

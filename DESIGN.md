@@ -253,8 +253,7 @@ Nav-Proof: 1920×1080, 2560×1440 und 390×844, echte Klicks/Tastatur, Reload,
 keine abgeschnittenen Links oder horizontaler Overflow. Der freie Desktop-Raum
 zwischen kurzer Navigation und unten verankerten Settings ist Orientierung,
 kein Anlass für neue Widgets. Bestehende Surface Acceptances bleiben erhalten;
-Nutrition/R2-05 ist seit 2026-09-07 USER ACCEPTED. R2-07 Journal ist aktiv
-und bleibt bis zur realen User-Abnahme pending.
+Nutrition/R2-05 ist seit 2026-09-07 USER ACCEPTED. R2-09 External Resource References ist aktiv; Journal bleibt bis zur realen User-Abnahme pending.
 
 ## Journal Workspace (R2-07)
 
@@ -275,4 +274,14 @@ in der Liste begrenzt und sind im Detail vollständig lesbar; freier Inhalt
 behält Absätze. Keine erfundenen Tags/Relationen, Scores, Streaks oder Charts.
 Keine Entwickler-/Datenquellen-Copy in der Primärfläche. Recurrence gehört zu
 Task/Calendar; Notes zu Resources, strukturierte Reviews bleiben eigenständig.
-R2-07 bleibt aktiv mit USER ACCEPTANCE STATUS: PENDING.
+R2-07 bleibt verbleibende Arbeit mit USER ACCEPTANCE STATUS: PENDING.
+
+## External Resource References (R2-09)
+
+Project Detail bleibt Work Context mit seinen normalen Tasks und Relations.
+Externe Referenzen sind sekundäre Resource-Metadaten: Titel, bestehender Typ,
+kurze Beschreibung und „Extern öffnen ↗“ mit verständlichem Accessible Name,
+Tastaturfokus und Hinweis auf neuen Tab. Resource Detail bleibt separat erreichbar.
+Create verwendet die bestehende Resource-Seite; Project-Kontext kann den expliziten
+Link-Schritt nach Create vorauswählen. Keine Provider-Auswahl, Login-/Sync-Controls,
+Logos oder eingebetteten Spezialeditoren. Bestehende V5-Layouts bleiben erhalten.

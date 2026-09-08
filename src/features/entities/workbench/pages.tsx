@@ -1,3 +1,4 @@
+import { ExternalResourceLink } from "@/features/resources/external-resource-link";
 import { taskTextFields } from "./task-text";
 import { taskStepProgress } from "./task-step-progress";
 import Link from "next/link";
@@ -45,7 +46,13 @@ export function EntityWorkbenchShell({
             {kind === "resource" ? "Knowledge" : "Portfolio"}
           </Link>
           <span>/</span>
-          <Link href={kind === "resource" ? "/resources" : `/portfolio?type=${kind}s`}>{entityLabels[kind]}s</Link>
+          <Link
+            href={
+              kind === "resource" ? "/resources" : `/portfolio?type=${kind}s`
+            }
+          >
+            {entityLabels[kind]}s
+          </Link>
         </nav>
         <h1 className="text-3xl font-semibold">{title}</h1>
       </header>
@@ -193,9 +200,11 @@ export async function WorkbenchList({
 export async function WorkbenchEditor({
   kind,
   id,
+  projectContext,
 }: {
   kind: WorkbenchKind;
   id?: string;
+  projectContext?: string;
 }) {
   if (id && !z.uuid().safeParse(id).success) notFound();
   const data = await readEntityWorkbench();
@@ -205,6 +214,10 @@ export async function WorkbenchEditor({
         {authMessage}
       </EntityWorkbenchShell>
     );
+  const contextProject =
+    kind === "resource" && projectContext
+      ? data.projects.find((p) => p.id === projectContext && !p.archived_at)
+      : undefined;
   const row = id ? collection(data, kind).find((r) => r.id === id) : undefined;
   if (id && !row) notFound();
   const source =
@@ -272,6 +285,19 @@ export async function WorkbenchEditor({
       kind={kind}
       title={row?.title ?? `${entityLabels[kind]} erstellen`}
     >
+      {contextProject && (
+        <p className="text-sm text-[var(--text-muted)]">
+          Project:{" "}
+          <Link href={`/projects/${contextProject.id}`}>
+            {contextProject.title}
+          </Link>
+          {!id &&
+            " · Erst Resource erstellen, dann die Project-Verknüpfung bestätigen."}
+        </p>
+      )}
+      {kind === "resource" && row && "url" in row && (
+        <ExternalResourceLink url={row.url} title={row.title} />
+      )}
       {row && (
         <p className="text-sm text-[var(--text-muted)]">
           {row.archived_at
@@ -307,6 +333,7 @@ export async function WorkbenchEditor({
             kind={kind}
             id={id}
             values={values}
+            projectContext={contextProject?.id}
             areas={data.areas
               .filter((a) => !a.archived_at || a.id === row?.area_id)
               .map((a) => ({
@@ -330,6 +357,7 @@ export async function WorkbenchEditor({
               id={id}
               data={data}
               archived={Boolean(row.archived_at)}
+              projectContext={contextProject?.id}
             />
             <Progress kind={kind} id={id} data={data} />
             <Block title="Lifecycle">
@@ -397,7 +425,9 @@ function Relations({
   id,
   data,
   archived,
+  projectContext,
 }: {
+  projectContext?: string;
   kind: WorkbenchKind;
   id: string;
   data: WorkbenchData;
@@ -468,10 +498,16 @@ function Relations({
         </Link>
       )}
 
+      {kind === "project" && !archived && (
+        <Link className={actionClass} href={`/resources/new?project=${id}`}>
+          Resource / externe Referenz erstellen
+        </Link>
+      )}
       {links.map((r) => (
         <div
           className="grid gap-2 border-b border-[var(--border-subtle)] pb-3"
           key={r.id}
+          data-resource-relation={r.resource_id}
         >
           <Link
             className="text-[var(--accent-cyan)]"
@@ -486,6 +522,30 @@ function Relations({
               : titleFor(data, "resource", r.resource_id)}{" "}
             · {r.relation_type}
           </Link>
+          {kind !== "resource" &&
+            (() => {
+              const resource = data.resources.find(
+                (item) => item.id === r.resource_id,
+              );
+              return resource ? (
+                <>
+                  <p className="text-sm text-[var(--text-muted)]">
+                    {resource.type}
+                    {resource.archived_at ? " · archiviert" : ""}
+                    {resource.url ? " · Externe Referenz" : ""}
+                  </p>
+                  {resource.summary && (
+                    <p className="line-clamp-3 break-words text-sm">
+                      {resource.summary}
+                    </p>
+                  )}
+                  <ExternalResourceLink
+                    url={resource.url}
+                    title={resource.title}
+                  />
+                </>
+              ) : null;
+            })()}
           {!archived && (
             <OperationForm
               operation="resource.unlink"
@@ -498,7 +558,11 @@ function Relations({
       ))}
       {!archived &&
         (kind === "resource" ? (
-          <ResourceTargetForm id={id} targets={targets} />
+          <ResourceTargetForm
+            id={id}
+            targets={targets}
+            projectContext={projectContext}
+          />
         ) : (
           <OperationForm operation="resource.link" label="Resource verknüpfen">
             <Hidden name="targetId" value={id} />
@@ -609,7 +673,9 @@ function Relations({
 function ResourceTargetForm({
   id,
   targets,
+  projectContext,
 }: {
+  projectContext?: string;
   id: string;
   targets: { id: string; title: string; type: WorkbenchKind }[];
 }) {
@@ -617,7 +683,10 @@ function ResourceTargetForm({
     <div className="grid gap-3">
       {(["task", "project", "goal", "skill", "resource"] as const).map(
         (type) => (
-          <details key={type}>
+          <details
+            key={type}
+            open={type === "project" && Boolean(projectContext)}
+          >
             <summary className="cursor-pointer text-sm">
               {entityLabels[type]} verknüpfen
             </summary>
@@ -630,6 +699,7 @@ function ResourceTargetForm({
               <Choice
                 name="targetId"
                 label={entityLabels[type]}
+                value={type === "project" ? projectContext : undefined}
                 options={targets.filter((t) => t.type === type)}
                 required
               />

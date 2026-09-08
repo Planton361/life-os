@@ -60,6 +60,15 @@ Ein Skill ist eine persönliche Fähigkeit, die entwickelt, angewendet oder nach
 
 Eine Resource ist wiederverwendbares Wissen, Kontext oder Evidence. Sie kann viele Tasks, Projects, Goals, Skills oder andere Resources unterstützen. Resources sind nicht ausführbar und besitzen keine Planungs- oder Completion-Semantik.
 
+External artifacts use this same Resource identity, never an ExternalArtifact
+entity. `resources.title`, `summary` (Domain `body` / description), `type`, `url`
+and `archived_at` already represent identity, context, classification, external
+reference and retained lifecycle. Existing `resource_relations` connects one
+Resource ID to multiple owned Task/Project/Goal/Skill contexts. External document
+contents and repository state are not copied. Existing note Resources are retained.
+A filesystem location without a web URL can remain descriptive reference text;
+only HTTP(S) URLs are offered as browser-opening links.
+
 ### Routine Template
 
 Ein Routine Template ist eine versionierte Wiederholungsregel mit Defaults für neue Task Occurrences. Es ist kein Task, kein Calendar Block und wird nie selbst abgeschlossen. Eine Änderung wirkt standardmäßig nur auf zukünftig erzeugte Occurrences; bereits erzeugte Tasks bleiben historische Wahrheit.

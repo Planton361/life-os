@@ -8,7 +8,14 @@
 
 ## 1. Product Promise
 
-Life OS is a personal daily companion for turning intent into a realistic week, executing the current day and learning from what was actually done. Its canonical spine is Task / Project / Goal / Skill / Resource. It is not a Notion clone, a public SaaS product, a passive data archive or a collection of unrelated trackers.
+Life OS is the personal Context, Planning and Memory system: a daily companion for turning intent into a realistic week, executing the current day and learning from what was actually done. Its canonical spine is Task / Project / Goal / Skill / Resource. It is not a Notion clone, a public SaaS product, a passive data archive or a collection of unrelated trackers.
+
+Every meaningful piece of work has a Life OS identity and context.
+Specialized artifacts may live externally, but remain referenced and connected
+inside Life OS. Projects and Tasks remain fully canonical here, including Goals,
+Skills, status/lifecycle, deadline/horizon, next step, real progress, planning,
+relations and personal history/evidence. Coding, Education and Work use normal
+Projects, never domain-specific copies or second task lists.
 
 Core principle:
 
@@ -327,7 +334,7 @@ There is no second operative copy of an external system.
 |---|---|---|
 | GitHub | repositories and code collaboration | Resource `link` with repository URL and project context; no repository manager, API or sync |
 | Sciebo / filesystem / LaTeX | actual document files and scientific writing | Projects, Tasks, Goals, Skills, Resource links and short evidence; no file ownership, uploads or connector |
-| Spreadsheet | Inventory, Wishlist and flexible tabular data | optional future external Resource link; no spreadsheet engine or integration |
+| Spreadsheet | Inventory, Wishlist and flexible tabular data | existing Resource reference and optional Project/context; no spreadsheet engine or integration |
 | Life OS | context, links, planning, evidence and relations | canonical spine and daily/personal history |
 
 Coding, Education and Work retain their Area identities and remain usable in
@@ -350,7 +357,8 @@ claim their history has been migrated or projected into Journal/Today.
 
 Quick Thought → Inbox → Outcome = Note → canonical Resource context.
 Notes already use `resources` with type `note`; their retained route is not a
-second active Notes app. Existing types remain `note`, `learning`, `prompt`,
+second active Notes app. Whether Notes should regain a separate active Personal
+projection remains open for later product reconciliation; no Notes data is removed. Existing types remain `note`, `learning`, `prompt`,
 `research`, `link`, `source`, `snippet`, `decision`. Use existing title, body,
 URL, source, context, Area and supported relations. Literature/Paper/Website/
 External Document/GitHub Repository are concepts expressed with these existing
@@ -481,10 +489,10 @@ A capability is complete only when:
 
 ## 8. Priority Order and Active Navigation
 
-After Nutrition acceptance: Journal Surface Completion → Skill Map → Full Active
+After Nutrition acceptance: External Resource References → Journal Surface Completion → Skill Map → Full Active
 Product Acceptance. `ROADMAP.md` owns the block IDs and exactly one active block.
 R2-05 is USER ACCEPTED on 2026-09-07, including Health & Fitness and Nutrition.
-R2-07 Journal is now active with USER ACCEPTANCE STATUS: PENDING.
+R2-09 External Resource References is active; R2-07 Journal remains pending user acceptance.
 
 ```text
 PRIMARY: Dashboard · Inbox · Today · Calendar · Portfolio · Resources
@@ -513,4 +521,4 @@ Calendar remains the temporal planner. Domain records feed Health, Dashboard
 and Today; these projections do not duplicate data. The overview is preserved;
 real history may require scrolling on detail pages. Health & Fitness (Mental,
 Habits, Running and Strength) is USER ACCEPTED on 2026-09-07. Nutrition is the
-also USER ACCEPTED on 2026-09-07; R2-05 is closed and R2-07 Journal is active.
+also USER ACCEPTED on 2026-09-07; R2-05 is closed; R2-09 precedes remaining Journal acceptance.

@@ -113,9 +113,11 @@ export function EntityForm({
   goals,
   archived = false,
   sourceOwned = false,
+  projectContext,
 }: {
   kind: WorkbenchKind;
   id?: string;
+  projectContext?: string;
   values: FieldValues;
   areas: Option[];
   projects: Option[];
@@ -169,7 +171,10 @@ export function EntityForm({
             return;
           }
           notify(r.message);
-          if (!id && r.id) router.push(`${entityRoutes[kind]}/${r.id}`);
+          if (!id && r.id)
+            router.push(
+              `${entityRoutes[kind]}/${r.id}${projectContext ? `?project=${projectContext}` : ""}`,
+            );
           else router.refresh();
         });
       }}
@@ -200,7 +205,14 @@ export function EntityForm({
           {kind === "goal" &&
             field("why", "Desired Outcome / Warum", "textarea")}
           {kind === "resource" && (
-            <div className="grid gap-4 md:grid-cols-2">
+            <section aria-label="Externe Referenz" className="grid gap-4">
+              <h3 className="text-sm font-semibold">
+                Referenz & Klassifikation
+              </h3>
+              <p className="text-sm text-[var(--text-muted)]">
+                Externe Dokumente, Repositories und andere Quellen bleiben an
+                ihrem Speicherort. Hier hältst du Link und Kontext fest.
+              </p>
               {choice(
                 "type",
                 "Typ",
@@ -216,7 +228,7 @@ export function EntityForm({
                 ]),
               )}
               {field("url", "URL", "url")}
-            </div>
+            </section>
           )}
         </section>
         {kind !== "resource" && (
