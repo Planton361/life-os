@@ -76,6 +76,114 @@ wording; this acceptance supersedes those status snapshots. No domain code or
 data changes in this closure. R2-07 Journal became active at this historical closure; R2-09 now precedes
 its remaining user acceptance. Implementation cannot accept Journal.
 
+## R2-09 semantic refinement — Project Work Artifacts — 2026-09-08
+
+Current contract: Project is work identity; Work Artifact is the output or work
+place; Resources & References support the work. Resource remains the canonical
+object, not a global artifact entity. External ownership/API boundary is unchanged.
+R2-09 remains the sole Active Work Block; USER ACCEPTANCE STATUS: PENDING.
+
+### Model audit and decision
+
+`projects` retains canonical work identity, tasks, goals, skills and lifecycle.
+`resources` already owns title, summary, URL, type and archive state; no new
+resource fields or copies are needed. `resource_relations` already owns the
+user-scoped polymorphic relationship and `relation_type` (source/context/supports/
+evidence/decision/related). Those meanings do not encode work artifacts or a
+unique primary. The Workbench reads the same user-scoped records, not a parallel
+read store. Existing create/remove actions authenticate and validate; RLS and
+same-user checks remain defense in depth.
+
+Pre-change audit: CAN_REPRESENT_WORK_ARTIFACT = NO;
+CAN_REPRESENT_PRIMARY_ARTIFACT = NO;
+CAN_REPRESENT_SUPPORTING_ARTIFACT = NO (additional output);
+CAN_SEPARATE_REFERENCE = YES (existing supporting context).
+
+Option B: `resource_relations.project_role` explicitly persists `reference`,
+`additional_artifact`, `primary_artifact`. No `relation_type` is repurposed.
+Migration `20260908172459` defaults every existing edge to reference; no URL/name/
+type inference or row deletion. Partial unique indexes enforce at most one primary
+per Project and one artifact use per Project/Resource. Invoker RPC locks the owned
+Project for an atomic primary swap, demotes the previous primary to additional,
+reuses an existing edge/Resource, and preserves pre-existing relation types.
+The direct-write trigger checks owned active targets and resources. Non-Project
+relations cannot carry artifact roles. Workbench groups historical multiple typed
+edges by Resource ID, with the explicit artifact role taking precedence.
+
+| Capability | Status | Current behavior |
+|---|---|---|
+| External resource reference | `CONNECTED` | Existing Resource create/detail/search, URL, type, description and lifecycle |
+| Project work artifact | `CONNECTED` | Explicit role on existing relation; high-priority Work Artifacts section |
+| Primary artifact | `CONNECTED` | 0 or 1; transactional switch preserves previous resource as additional |
+| Additional work artifacts | `CONNECTED` | Multiple outputs, separate from supporting references |
+| Supporting references | `CONNECTED` | Existing links stay references; separate Project section |
+| Shared Task/Goal/Skill context | `CONNECTED` | Same Resource ID, unchanged normal relation semantics |
+| Coding/Education/Work | `CONNECTED` | Normal Areas/Projects/Tasks; external artifacts do not require suites |
+
+### Current control inventory
+
+Project: link existing with explicit role; create external reference; open external
+URL/details; change role; remove association. Resource Create returns to the owned
+Project with the new Resource selected, but no role inferred or edge created until
+explicit confirmation. Resource Detail shows the Project use role and supports
+link/removal; Task/Goal/Skill disclosures retain their ordinary semantics. Archived
+resources remain history, not active primary; promotion of another resource can
+demote the archived prior primary. Removing use does not delete any Resource; removal from Resource Detail also works
+when the linked Project has been archived.
+Search remains the canonical Resource search.
+
+### Validation and current evidence
+
+IMPLEMENTATION_PASS, not user acceptance. Two focused R2-09 Playwright tests PASS:
+Coding, scientific and Work projects with explicit primary, separate supporting
+reference, additional artifact, primary replacement, removal, archive/restore,
+Resource Detail Project-link/removal and same Resource across Project/Task/Goal/
+Skill. External links open via keyboard into locally intercepted test pages; no
+provider requests. Six created Resources remain exactly six after all role changes.
+Concurrent primary RPCs both succeed with one final primary; direct duplicate
+primary and cross-user endpoint/role writes are rejected. A stale archived endpoint
+produces visible Server Action feedback. An archived Project's association remains
+removable from Resource Detail. All mutations are reloaded and read back through
+the authenticated technical user. Demo/Empty/auth-blocked Manual guards PASS.
+
+All three existing R2-04 Workbench tests PASS, including canonical create/edit,
+normal relations, progress, lifecycle and deep links. Its Resource-link selector
+now targets the internal href (external opening also has the Resource title), and
+Project reference controls follow the new section. No application behavior was
+suppressed for proof.
+
+Full screenshots of Project, Resource Create and Resource Detail for all three
+examples at 1920×1080, 2560×1440, 3840×2160 and 390×844; horizontal bounds PASS.
+Visual review: matte V5 panels, primary work context before supporting references,
+readable external/details links, no overlaps. Existing mobile document flow and
+bounded desktop workbench remain; no cockpit/domain redesign. Console/hydration
+assertions are clean. Artifacts: `test-results/r209-artifact-proof/test-results/`.
+
+`git diff --check`, typecheck, lint, 29 focused tests across seven Resource/
+relation/workbench/schema suites, 11 runtime tests and production build (57 pages)
+PASS. Heavy checks ran sequentially in a protected-file-free source copy, using
+existing dependencies and an explicit test-only Turbopack root. A copied Git root
+anchors ignored generated files; each browser run uses a fresh compiler directory.
+An initial broad locator and combined dev-server memory restart were resolved in
+the test harness; final separate browser runs pass without suppression.
+
+Fresh isolated Git-only migration chain: 47 versions, exact match. DB lint and
+Security Advisors: no findings. Only after isolated PASS was migration
+`20260908172459` applied to the canonical local Target; Target versions == Git
+(47), Target DB lint/advisors PASS. No remote DB or personal data proof writes.
+Existing records are not inferred/reclassified as artifacts. Generated types update
+only the changed relation/RPC contract, retaining established unrelated nullable
+type corrections. No separate decision/closure file, new global entity or provider.
+
+R2-09 USER ACCEPTANCE STATUS: PENDING. Journal, Notes reconciliation, Skill Map and
+Full Active Product Acceptance remain outside this pass.
+
+### Prior R2-09 baseline evidence (before semantic refinement)
+
+The following records the baseline commit de2ee1a. Its no-migration conclusion
+applied to external references only; the relation-role refinement above supersedes
+its Project-link flow and artifact semantics.
+
 ## R2-09 Product Boundary & External Resource References — 2026-09-08
 
 Life OS is the personal Context/Planning/Memory system. Every meaningful piece

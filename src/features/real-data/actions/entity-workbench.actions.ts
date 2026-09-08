@@ -47,6 +47,7 @@ import {
   type WorkbenchKind,
 } from "@/features/entities/workbench/types";
 
+import { setProjectResourceRole } from "../supabase/repositories/project-artifact-repository";
 import { writeTaskStep } from "../supabase/repositories/task-step-repository";
 
 function refresh() {
@@ -147,7 +148,19 @@ export async function workbenchOperation(
     return { status: "blocked", message: "Bitte im Manual-Profil anmelden." };
   const scope = { userId: auth.user.id, profileId: auth.user.id };
   let result: FormResult = invalid;
-  if (
+  if (operation === "project.resource.role") {
+    if (
+      await setProjectResourceRole(auth.client, {
+        projectId: str(form, "projectId"),
+        resourceId: str(form, "resourceId"),
+        role: str(form, "role"),
+      })
+    )
+      result = {
+        status: "success",
+        message: "Project-Verwendung gespeichert.",
+      };
+  } else if (
     operation === "step.create" ||
     operation === "step.update" ||
     operation === "step.archive"

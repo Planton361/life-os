@@ -205,6 +205,35 @@ Required capabilities:
 - honest progress signals based on real work;
 - roadmap-like ordering for sequential or parallel project work where the model supports it.
 
+### Project work identity, artifacts and supporting references (R2-09)
+
+**Project** is the work identity / undertaking. **Work Artifact** is the thing
+being produced or the primary external place where that Project is worked on.
+**Resource / Reference** is knowledge, a source or supporting context. These are
+product roles, not three parallel global storage entities.
+
+A Project has zero or one explicitly chosen Primary Work Artifact, zero to many
+Additional Work Artifacts and zero to many Resources & References. Artifact use
+is stored on its Project–Resource relation. No type, URL domain, filename or sort
+order implies Primary. A Primary change retains the old Resource as Additional;
+no Resource or Project is copied. Existing links remain References until the user
+chooses otherwise. The same Resource may be Primary for Project A, Reference for
+Project B and normal Context for a Task or Skill.
+
+Coding: Life OS Project → repository as Primary, features/bugs as Tasks,
+TypeScript/Next.js as Skills, Docs/architecture notes as References.
+Science: Bachelorarbeit Project → thesis/LaTeX/Sciebo as Primary, dataset/notebook/
+presentation as Additional, actual work as Tasks, degree as Goal, LaTeX/writing/
+statistics as Skills, papers/books/methods as References.
+Work: Kundenprojekt → document/design/spreadsheet/workspace as Primary, ordinary
+Tasks and supporting References. These use existing Areas without domain suites.
+
+Artifact management belongs to Project Detail. Existing Resource Create stores
+one canonical object, then returns to the Project for explicit role selection.
+Resource Detail shows its uses; Resources Search still finds every such record.
+Archived artifacts remain historical and never appear as active Primary. Archive
+or unlink never deletes the Project. No API, provider selector or embedded editor.
+
 ### 5.6 Resources and Knowledge
 
 Resources are the canonical knowledge/reference hub; specialized tools may retain file ownership.

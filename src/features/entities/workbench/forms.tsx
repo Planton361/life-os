@@ -173,7 +173,9 @@ export function EntityForm({
           notify(r.message);
           if (!id && r.id)
             router.push(
-              `${entityRoutes[kind]}/${r.id}${projectContext ? `?project=${projectContext}` : ""}`,
+              projectContext
+                ? `/projects/${projectContext}?resource=${r.id}`
+                : `${entityRoutes[kind]}/${r.id}`,
             );
           else router.refresh();
         });

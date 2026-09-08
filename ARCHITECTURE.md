@@ -69,5 +69,8 @@ No second repository/project/task/resource architecture or external content copy
 A URL is stored data: syntactic parsing only, no fetch, metadata lookup, embedded
 editor, API, OAuth, sync or secrets. Any future synchronization requires its own
 explicit integration/security scope. Create and link remain separate explicit
-writes using existing auth/Zod/ownership/RLS paths, with persisted Resource detail
-as recovery point; no non-atomic combined write or duplicate-on-link-retry flow.
+writes using auth/Zod/ownership/RLS paths. Project-context creation returns the
+persisted Resource ID to Project Detail for explicit use selection. Work Artifact
+is a relation-specific role, never a provider or global Resource flag. The
+Project-role Invoker RPC serializes Primary replacement atomically; no second
+Resource is created on role changes or retries. External ownership is unchanged.

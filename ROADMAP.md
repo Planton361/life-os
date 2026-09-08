@@ -892,7 +892,8 @@ control, projection, reload and responsive evidence remains in the Capability
 Registry and focused tests. This is administrative closure after user acceptance.
 
 **R2-09 status:** Active – Product Boundary & External Resource References.
-Implementation evidence is recorded in the Capability Registry; next work remains
+USER ACCEPTANCE STATUS: PENDING. R2-09 remains active until explicit user acceptance.
+Implementation evidence is recorded in the Capability Registry; later work remains
 R2-07 Journal with user acceptance pending, then R2-08 and final R2-06.
 
 **R2-07 status:** Remaining – Journal Surface Completion, resumes after R2-09.
@@ -949,7 +950,10 @@ dependency belongs in this slice.
    work identity, context, planning and memory; specialized artifacts stay externally
    owned and use existing Resources/relations. Audit fields; prove Project create,
    link/unlink, external opening, Task/Goal/Skill regression, search and responsive
-   reload. No new entity, migration, API, sync, secrets or document copy. Depends
+   reload. Explicit Project-specific Primary/Additional Work Artifact roles are
+   separate from supporting References; a minimal relation-role migration is
+   permitted after audit, with isolated proof before local Target application.
+   No new global entity, API, sync, secrets or document copy. Depends
    on R2-04/R2-05. Implementation result only; no Journal acceptance.
 7. **R2-07 – Journal Surface Completion** — canonical dated personal entries,
    reflection/history, today/recent and week/month/frequency views; tags/context

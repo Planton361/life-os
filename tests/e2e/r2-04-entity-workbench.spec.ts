@@ -201,7 +201,7 @@ test("R2-04 all canonical creates, detail edits, relations, steps, lists, lifecy
   await expect(
     page
       .getByRole("region", { name: "Beziehungen" })
-      .getByRole("link", { name: new RegExp(`Resource ${stamp}`) }),
+      .locator(`a[href="/resources/${resource}"]`),
   ).toBeVisible();
   await operate(page, "Practice verknüpfen", { label: "Skill", id: skill });
   await expect(
@@ -236,7 +236,7 @@ test("R2-04 all canonical creates, detail edits, relations, steps, lists, lifecy
   await expect(
     page
       .getByRole("region", { name: "Beziehungen" })
-      .getByRole("link", { name: new RegExp(`Resource ${stamp}`) }),
+      .locator(`a[href="/resources/${resource}"]`),
   ).toHaveCount(0);
   await operate(page, "Task abschließen");
   await expect(
@@ -249,14 +249,30 @@ test("R2-04 all canonical creates, detail edits, relations, steps, lists, lifecy
     ["Skill", skill],
   ] as const) {
     await page.goto(`/${route[kind]}/${id}`);
-    await operate(page, "Resource verknüpfen", {
-      label: "Resource",
-      id: resource,
-    });
-    await expect(
-      page.getByRole("region", { name: "Beziehungen" }),
-    ).toContainText(`Resource ${stamp}`);
-    await operate(page, "Resource-Verknüpfung lösen");
+    if (kind === "Project") {
+      const references = page.getByRole("region", {
+        name: "Resources & References",
+        exact: true,
+      });
+      await references.locator("summary").click();
+      await operate(page, "Reference verknüpfen", {
+        label: "Resource",
+        id: resource,
+      });
+      await expect(references.locator("article")).toContainText(
+        `Resource ${stamp}`,
+      );
+      await operate(page, "Verknüpfung entfernen");
+    } else {
+      await operate(page, "Resource verknüpfen", {
+        label: "Resource",
+        id: resource,
+      });
+      await expect(
+        page.getByRole("region", { name: "Beziehungen" }),
+      ).toContainText(`Resource ${stamp}`);
+      await operate(page, "Resource-Verknüpfung lösen");
+    }
   }
   await page.goto(`/skills/${skill}`);
   const evidence = page.getByRole("form", { name: "Evidence hinzufügen" });

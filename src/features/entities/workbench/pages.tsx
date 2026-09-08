@@ -1,3 +1,5 @@
+import { ProjectResources } from "./project-resources";
+import { projectResourceUses, projectRoleLabels } from "./project-artifacts";
 import { ExternalResourceLink } from "@/features/resources/external-resource-link";
 import { taskTextFields } from "./task-text";
 import { taskStepProgress } from "./task-step-progress";
@@ -201,7 +203,9 @@ export async function WorkbenchEditor({
   kind,
   id,
   projectContext,
+  selectedResource,
 }: {
+  selectedResource?: string;
   kind: WorkbenchKind;
   id?: string;
   projectContext?: string;
@@ -291,8 +295,7 @@ export async function WorkbenchEditor({
           <Link href={`/projects/${contextProject.id}`}>
             {contextProject.title}
           </Link>
-          {!id &&
-            " · Erst Resource erstellen, dann die Project-Verknüpfung bestätigen."}
+          {!id && " · Nach dem Erstellen wählst du die Verwendung im Project."}
         </p>
       )}
       {kind === "resource" && row && "url" in row && (
@@ -325,6 +328,25 @@ export async function WorkbenchEditor({
             · <Link href="/calendar">Calendar öffnen</Link>
           </p>
         )}
+      {kind === "project" && id && (
+        <>
+          {values.nextStep && (
+            <p className="text-sm">Next Step · {values.nextStep}</p>
+          )}
+          <ProjectResources
+            data={data}
+            projectId={id}
+            section="artifacts"
+            selectedResource={
+              data.resources.some(
+                (r) => r.id === selectedResource && !r.archived_at,
+              )
+                ? selectedResource
+                : undefined
+            }
+          />
+        </>
+      )}
       <div
         className={`grid gap-6 ${id ? "xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)]" : "mx-auto w-full max-w-[1000px]"}`}
       >
@@ -360,6 +382,13 @@ export async function WorkbenchEditor({
               projectContext={contextProject?.id}
             />
             <Progress kind={kind} id={id} data={data} />
+            {kind === "project" && (
+              <ProjectResources
+                data={data}
+                projectId={id}
+                section="references"
+              />
+            )}
             <Block title="Lifecycle">
               {source ? (
                 <>
@@ -498,65 +527,85 @@ function Relations({
         </Link>
       )}
 
-      {kind === "project" && !archived && (
-        <Link className={actionClass} href={`/resources/new?project=${id}`}>
-          Resource / externe Referenz erstellen
-        </Link>
-      )}
-      {links.map((r) => (
-        <div
-          className="grid gap-2 border-b border-[var(--border-subtle)] pb-3"
-          key={r.id}
-          data-resource-relation={r.resource_id}
-        >
-          <Link
-            className="text-[var(--accent-cyan)]"
-            href={
-              kind === "resource"
-                ? `${entityRoutes[r.target_type as WorkbenchKind]}/${r.target_id}`
-                : `/resources/${r.resource_id}`
-            }
+      {links
+        .filter(() => kind !== "project")
+        .filter(
+          (r) =>
+            kind !== "resource" ||
+            r.target_type !== "project" ||
+            projectResourceUses(data, r.target_id).find(
+              (u) => u.resource.id === id,
+            )?.relation.id === r.id,
+        )
+        .map((r) => (
+          <div
+            className="grid gap-2 border-b border-[var(--border-subtle)] pb-3"
+            key={r.id}
+            data-resource-relation={r.resource_id}
           >
-            {kind === "resource"
-              ? titleFor(data, r.target_type as WorkbenchKind, r.target_id)
-              : titleFor(data, "resource", r.resource_id)}{" "}
-            · {r.relation_type}
-          </Link>
-          {kind !== "resource" &&
-            (() => {
-              const resource = data.resources.find(
-                (item) => item.id === r.resource_id,
-              );
-              return resource ? (
-                <>
-                  <p className="text-sm text-[var(--text-muted)]">
-                    {resource.type}
-                    {resource.archived_at ? " · archiviert" : ""}
-                    {resource.url ? " · Externe Referenz" : ""}
-                  </p>
-                  {resource.summary && (
-                    <p className="line-clamp-3 break-words text-sm">
-                      {resource.summary}
-                    </p>
-                  )}
-                  <ExternalResourceLink
-                    url={resource.url}
-                    title={resource.title}
-                  />
-                </>
-              ) : null;
-            })()}
-          {!archived && (
-            <OperationForm
-              operation="resource.unlink"
-              label="Resource-Verknüpfung lösen"
+            <Link
+              className="text-[var(--accent-cyan)]"
+              href={
+                kind === "resource"
+                  ? `${entityRoutes[r.target_type as WorkbenchKind]}/${r.target_id}`
+                  : `/resources/${r.resource_id}`
+              }
             >
-              <Hidden name="relationId" value={r.id} />
-            </OperationForm>
-          )}
-        </div>
-      ))}
+              {kind === "resource"
+                ? titleFor(data, r.target_type as WorkbenchKind, r.target_id)
+                : titleFor(data, "resource", r.resource_id)}{" "}
+              ·{" "}
+              {kind === "resource" && r.target_type === "project"
+                ? projectRoleLabels[r.project_role]
+                : r.relation_type}
+            </Link>
+            {kind !== "resource" &&
+              (() => {
+                const resource = data.resources.find(
+                  (item) => item.id === r.resource_id,
+                );
+                return resource ? (
+                  <>
+                    <p className="text-sm text-[var(--text-muted)]">
+                      {resource.type}
+                      {resource.archived_at ? " · archiviert" : ""}
+                      {resource.url ? " · Externe Referenz" : ""}
+                    </p>
+                    {resource.summary && (
+                      <p className="line-clamp-3 break-words text-sm">
+                        {resource.summary}
+                      </p>
+                    )}
+                    <ExternalResourceLink
+                      url={resource.url}
+                      title={resource.title}
+                    />
+                  </>
+                ) : null;
+              })()}
+            {!archived && (
+              <OperationForm
+                operation={
+                  kind === "resource" && r.target_type === "project"
+                    ? "project.resource.role"
+                    : "resource.unlink"
+                }
+                label="Resource-Verknüpfung lösen"
+              >
+                <Hidden name="relationId" value={r.id} />
+                {kind === "resource" && r.target_type === "project" && (
+                  <>
+                    <Hidden name="projectId" value={r.target_id} />
+                    <Hidden name="resourceId" value={id} />
+                    <Hidden name="role" value="remove" />
+                  </>
+                )}
+              </OperationForm>
+            )}
+          </div>
+        ))}
       {!archived &&
+        kind !== "project" &&
         (kind === "resource" ? (
           <ResourceTargetForm
             id={id}
@@ -691,18 +740,30 @@ function ResourceTargetForm({
               {entityLabels[type]} verknüpfen
             </summary>
             <OperationForm
-              operation="resource.link"
+              operation={
+                type === "project" ? "project.resource.role" : "resource.link"
+              }
               label={`${entityLabels[type]} verknüpfen`}
             >
               <Hidden name="resourceId" value={id} />
               <Hidden name="targetType" value={type} />
               <Choice
-                name="targetId"
+                name={type === "project" ? "projectId" : "targetId"}
                 label={entityLabels[type]}
                 value={type === "project" ? projectContext : undefined}
                 options={targets.filter((t) => t.type === type)}
                 required
               />
+              {type === "project" && (
+                <Choice
+                  name="role"
+                  label="Verwendung im Project"
+                  required
+                  options={Object.entries(projectRoleLabels).map(
+                    ([id, title]) => ({ id, title }),
+                  )}
+                />
+              )}
             </OperationForm>
           </details>
         ),

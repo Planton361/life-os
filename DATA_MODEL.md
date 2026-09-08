@@ -60,14 +60,36 @@ Ein Skill ist eine persönliche Fähigkeit, die entwickelt, angewendet oder nach
 
 Eine Resource ist wiederverwendbares Wissen, Kontext oder Evidence. Sie kann viele Tasks, Projects, Goals, Skills oder andere Resources unterstützen. Resources sind nicht ausführbar und besitzen keine Planungs- oder Completion-Semantik.
 
-External artifacts use this same Resource identity, never an ExternalArtifact
-entity. `resources.title`, `summary` (Domain `body` / description), `type`, `url`
-and `archived_at` already represent identity, context, classification, external
-reference and retained lifecycle. Existing `resource_relations` connects one
-Resource ID to multiple owned Task/Project/Goal/Skill contexts. External document
-contents and repository state are not copied. Existing note Resources are retained.
-A filesystem location without a web URL can remain descriptive reference text;
-only HTTP(S) URLs are offered as browser-opening links.
+Work Artifact is an explicit Project use of a canonical Resource, not a global
+Resource classification or a new entity. `resources.title`, `summary` (Domain
+`body`), `type`, `url` and `archived_at` remain its identity/reference/lifecycle.
+
+`resource_relations.project_role`: `reference` (default, including every existing
+row), `additional_artifact`, `primary_artifact`. Non-Project targets may only use
+`reference` here; their existing relation_type retains its context semantics.
+`source`, `context`, `supports`, `evidence`, `decision`, `related` keep their
+established meanings. None is reinterpreted as Artifact or Primary. Existing
+Project repository URL metadata is retained and never automatically promoted.
+
+Partial unique indexes enforce at most one Primary per Project and one artifact
+role per Project/Resource pair. Legacy multiple relation_type edges stay intact.
+The Project projection groups by Resource ID: an explicit artifact edge takes
+precedence over supporting edges, so the same Resource is not displayed twice.
+The Invoker RPC `set_project_resource_role` locks the owned Project (active for
+assignment; archived Projects also allow explicit removal),
+checks/locks the owned Resource, reuses an existing edge and atomically demotes
+old Primary to Additional before promotion. Repeating a choice is idempotent.
+Remove explicitly removes the Project/Resource association's edges only; Resource
+and its other contexts remain. Role `reference` demotes an artifact without
+changing its relation_type. Constraints and a trigger guard direct API writes.
+
+Archived Resources retain historical roles but are excluded from active Primary
+presentation. No replacement is inferred. A user may explicitly select a new
+Primary; the archived old Resource remains Additional history. Restore does not
+promote a Resource whose role has since changed. New promotions require active
+owned endpoints. Resource archive does not archive/delete the Project.
+Non-web filesystem locations may remain descriptive reference text; only HTTP(S)
+URLs are offered as browser-opening links. External contents are never copied.
 
 ### Routine Template
 

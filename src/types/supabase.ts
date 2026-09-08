@@ -1389,6 +1389,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          project_role: string
           relation_type: Database["public"]["Enums"]["resource_relation_type"]
           resource_id: string
           target_id: string
@@ -1398,6 +1399,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          project_role?: string
           relation_type?: Database["public"]["Enums"]["resource_relation_type"]
           resource_id: string
           target_id: string
@@ -1407,6 +1409,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          project_role?: string
           relation_type?: Database["public"]["Enums"]["resource_relation_type"]
           resource_id?: string
           target_id?: string
@@ -2740,6 +2743,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      set_project_resource_role: {
+        Args: { p_project_id: string; p_resource_id: string; p_role: string }
+        Returns: string
+      }
       apply_nutrition_plan: { Args: { p_operations: Json }; Returns: undefined };
       // Verified against fresh generated schema; SQL nullable arguments are explicit here.
       complete_inbox_triage: {

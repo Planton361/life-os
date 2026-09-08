@@ -37,19 +37,39 @@ async function create(
   return page.url().split("/").at(-1)!;
 }
 
-test("R2-09 external artifacts keep one Resource across scientific and coding contexts", async ({
-  page,
-  context,
-}, info) => {
-  test.setTimeout(360000);
-  await signUpTechnicalManualUser(page, "r209", Date.now());
-  const errors: string[] = [];
-  page.on("pageerror", (e) => errors.push(e.message));
-  page.on("console", (m) => {
-    if (m.type() === "error" || /hydration/i.test(m.text()))
-      errors.push(m.text());
-  });
-  const cookie = (await context.cookies()).find((c) =>
+async function screenshotSizes(
+  page: Page,
+  output: (name: string) => string,
+  surface: string,
+) {
+  for (const [width, height] of [
+    [1920, 1080],
+    [2560, 1440],
+    [3840, 2160],
+    [390, 844],
+  ]) {
+    await page.setViewportSize({ width, height });
+    await expect(
+      page.getByRole("button", {
+        name: /Änderungen speichern|Resource erstellen/,
+        exact: true,
+      }),
+    ).toBeEnabled();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    await page.screenshot({
+      path: output(`${surface}-${width}.png`),
+      fullPage: true,
+      caret: "initial",
+    });
+  }
+}
+
+async function apiFor(page: Page) {
+  const cookie = (await page.context().cookies()).find((c) =>
     c.name.includes("auth-token"),
   )!;
   const session = JSON.parse(
@@ -61,71 +81,98 @@ test("R2-09 external artifacts keep one Resource across scientific and coding co
     { auth: { persistSession: false, autoRefreshToken: false } },
   );
   await api.auth.setSession(session);
-  const { data: auth } = await api.auth.getUser();
-  const uid = auth.user!.id;
+  return api;
+}
+async function assignProjectResource(page: Page, id: string, role: string) {
+  const region = page.getByRole("region", {
+    name: "Work Artifacts",
+    exact: true,
+  });
+  const details = region
+    .locator("details")
+    .filter({ has: page.getByText("Bestehendes verknüpfen", { exact: true }) });
+  if ((await details.getAttribute("open")) === null)
+    await details.locator("summary").click();
+  const form = region.getByRole("form", {
+    name: "Mit Project verknüpfen",
+    exact: true,
+  });
+  await form.getByLabel("Resource", { exact: true }).selectOption(id);
+  await form.getByLabel("Verwendung im Project").selectOption(role);
+  await form.getByRole("button").click();
+  await expect(
+    page
+      .getByRole("status")
+      .filter({ hasText: "Project-Verwendung gespeichert" })
+      .last(),
+  ).toBeVisible();
+  await page.reload();
+}
+
+test("R2-09 explicit project artifacts, references, primary swap, archive and ownership", async ({
+  page,
+  context,
+  browser,
+}, info) => {
+  test.setTimeout(300000);
+  await signUpTechnicalManualUser(page, "r209roles", Date.now());
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  page.on("console", (m) => {
+    if (m.type() === "error" || /hydration/i.test(m.text()))
+      errors.push(m.text());
+  });
+  const api = await apiFor(page);
+  const uid = (await api.auth.getUser()).data.user!.id;
+  const stamp = Date.now();
   const areas = await api
     .from("areas")
     .insert(
-      ["Coding", "Education", "Work"].map((name) => ({
+      ["coding", "education", "work"].map((key) => ({
         user_id: uid,
-        name,
-        key: name.toLowerCase() as "coding" | "education" | "work",
+        key: key as "coding" | "education" | "work",
+        name: key,
       })),
     )
     .select();
   expect(areas.error).toBeNull();
-  const stamp = Date.now();
   const skill = await create(
     page,
     "Skill",
     "skills",
-    `Scientific Writing ${stamp}`,
+    `LaTeX TypeScript ${stamp}`,
   );
-  const goal = await create(page, "Goal", "goals", `Abschluss ${stamp}`);
-  const records: {
-    resource: string;
-    project: string;
-    task: string;
-    title: string;
-    url: string;
-  }[] = [];
-  for (const [area, title, url] of [
-    [
-      "Education",
-      `Bachelorarbeit Dokument ${stamp}`,
-      "https://example.org/sciebo/thesis.pdf",
-    ],
-    [
-      "Coding",
-      `GitHub Repository ${stamp}`,
-      "https://github.com/example/life-os",
-    ],
+  const goal = await create(page, "Goal", "goals", `Outcome ${stamp}`);
+  const projects: string[] = [];
+  const resourceIds: string[] = [];
+  for (const [key, title] of [
+    ["coding", `GitHub Repository ${stamp}`],
+    ["education", `Thesis ${stamp}`],
+    ["work", `Kundenprojekt Dokument ${stamp}`],
   ]) {
     const project = await create(
       page,
       "Project",
       "projects",
-      `${area} Project ${stamp}`,
-      areas.data!.find((a) => a.name === area)!.id,
+      `${key} Project ${stamp}`,
+      areas.data!.find((a) => a.key === key)!.id,
     );
+    projects.push(project);
     const task = await create(
       page,
       "Task",
       "tasks",
-      `${area} Task ${stamp}`,
+      `${key} Arbeit ${stamp}`,
       undefined,
       project,
     );
     await page.goto(`/projects/${project}`);
     await expect(
-      page.getByRole("region", { name: "Beziehungen" }),
-    ).toContainText(`${area} Task ${stamp}`);
+      page.getByRole("region", { name: "Work Artifacts", exact: true }),
+    ).toContainText("Noch kein Arbeitsartefakt verknüpft");
     await page
-      .getByRole("link", { name: "Resource / externe Referenz erstellen" })
+      .getByRole("link", { name: "Neue externe Referenz anlegen" })
       .click();
-    await expect(page).toHaveURL(
-      new RegExp(`/resources/new\\?project=${project}`),
-    );
     const form = page.getByRole("form", {
       name: "Resource erstellen",
       exact: true,
@@ -133,53 +180,126 @@ test("R2-09 external artifacts keep one Resource across scientific and coding co
     await form.getByLabel("Titel", { exact: true }).fill(title);
     await form
       .getByLabel("Beschreibung / Kontext")
-      .fill(`Reference context ${stamp} ${area}`);
+      .fill(`Arbeitsgegenstand ${key} ${stamp}`);
     await form.getByLabel("Typ", { exact: true }).selectOption("link");
+    const url = `https://example.org/${key}/${stamp}`;
     await form.getByLabel("URL", { exact: true }).fill(url);
+    await screenshotSizes(
+      page,
+      (name) => info.outputPath(name),
+      `create-${key}`,
+    );
+    await submit(page, "Resource erstellen");
+    await expect(page).toHaveURL(
+      new RegExp(`/projects/${project}\\?resource=`),
+    );
+    const resource = new URL(page.url()).searchParams.get("resource")!;
+    resourceIds.push(resource);
+    await expect(
+      page
+        .getByRole("form", { name: "Mit Project verknüpfen" })
+        .getByLabel("Verwendung im Project"),
+    ).toHaveValue("");
+    expect(
+      (
+        await api
+          .from("resource_relations")
+          .select("id")
+          .eq("resource_id", resource)
+      ).data,
+    ).toEqual([]);
+    await assignProjectResource(page, resource, "primary_artifact");
+    const primary = page.getByRole("region", {
+      name: "Primary Work Artifact",
+      exact: true,
+    });
+    await expect(primary).toContainText(title);
+    await expect(
+      page
+        .getByRole("region", { name: "Resources & References", exact: true })
+        .locator(`[data-project-resource="${resource}"]`),
+    ).toHaveCount(0);
+    // New reference via existing canonical Resource UI, then normal Project link.
+    const paper = await create(
+      page,
+      "Resource",
+      "resources",
+      `Paper Docs ${key} ${stamp}`,
+    );
+    await page.goto(`/projects/${project}`);
+    await page
+      .getByRole("region", { name: "Resources & References", exact: true })
+      .locator("summary")
+      .click();
+    const ref = page.getByRole("form", {
+      name: "Reference verknüpfen",
+      exact: true,
+    });
+    await ref.getByLabel("Resource", { exact: true }).selectOption(paper);
+    await ref.getByRole("button").click();
+    await expect(
+      page
+        .getByRole("status")
+        .filter({ hasText: "Project-Verwendung gespeichert" })
+        .last(),
+    ).toBeVisible();
+    await page.reload();
+    await expect(
+      page.getByRole("region", { name: "Resources & References", exact: true }),
+    ).toContainText(`Paper Docs ${key}`);
+    await expect(primary).not.toContainText(`Paper Docs ${key}`);
+    await expect(
+      page.getByRole("region", { name: "Beziehungen", exact: true }),
+    ).toContainText(`${key} Arbeit`);
+    // Current responsive bounds + full surfaces after hydration, no screenshot DOM mutation.
     for (const [width, height] of [
       [1920, 1080],
       [2560, 1440],
+      [3840, 2160],
       [390, 844],
     ]) {
       await page.setViewportSize({ width, height });
+      await expect(
+        page.getByRole("button", { name: "Änderungen speichern", exact: true }),
+      ).toBeEnabled();
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       ).toBe(true);
       await page.screenshot({
-        path: info.outputPath(`create-${area}-${width}.png`),
+        path: info.outputPath(`project-${key}-${width}.png`),
         fullPage: true,
         caret: "initial",
       });
     }
-    await submit(page, "Resource erstellen");
-    await expect(page).toHaveURL(/\/resources\/[0-9a-f-]{36}\?project=/);
-    const resource = new URL(page.url()).pathname.split("/").at(-1)!;
-    await page.reload();
-    const linkForm = page.getByRole("form", {
-      name: "Project verknüpfen",
-      exact: true,
-    });
-    await expect(linkForm.getByLabel("Project", { exact: true })).toHaveValue(
-      project,
+    await context.route(url, (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: "text/html",
+        body: "<title>Local interception</title>",
+      }),
     );
-    await submit(page, "Project verknüpfen");
-    await page.reload();
-    // Repeating the explicit link must remain idempotent.
-    await submit(page, "Project verknüpfen");
-    await page.reload();
+    const external = primary.getByRole("link", { name: /Extern öffnen/ });
+    await external.focus();
+    const popupPromise = context.waitForEvent("page");
+    await external.press("Enter");
+    const popup = await popupPromise;
+    await popup.waitForLoadState();
+    expect(popup.url()).toBe(url);
+    await popup.close();
+    await primary.getByRole("link", { name: "Details öffnen" }).click();
     await expect(
-      page.getByRole("region", { name: "Beziehungen" }),
-    ).toContainText(`${area} Project ${stamp}`);
+      page.getByRole("region", { name: "Beziehungen", exact: true }),
+    ).toContainText("Primary Work Artifact");
     for (const [kind, target] of [
       ["Skill", skill],
-      ["Goal", goal],
       ["Task", task],
+      ["Goal", goal],
     ]) {
       await page
-        .getByText(`${kind} verknüpfen`, { exact: true })
-        .first()
+        .locator("summary")
+        .filter({ hasText: `${kind} verknüpfen` })
         .click();
       const f = page.getByRole("form", {
         name: `${kind} verknüpfen`,
@@ -189,180 +309,245 @@ test("R2-09 external artifacts keep one Resource across scientific and coding co
       await submit(page, `${kind} verknüpfen`);
       await page.reload();
     }
+    await screenshotSizes(
+      page,
+      (name) => info.outputPath(name),
+      `detail-${key}`,
+    );
+    // Same Resource is still normal context from the Task/Skill/Goal side.
     for (const [route, id] of [
       ["tasks", task],
-      ["goals", goal],
       ["skills", skill],
-      ["projects", project],
+      ["goals", goal],
     ]) {
       await page.goto(`/${route}/${id}`);
       await page.reload();
-      const card = page.locator(`[data-resource-relation="${resource}"]`);
-      await expect(card).toContainText(title);
-      await expect(card).toContainText(`Reference context ${stamp} ${area}`);
       await expect(
-        card.getByRole("link", { name: /Extern öffnen/ }),
-      ).toHaveAttribute("href", url);
+        page.locator(`[data-resource-relation="${resource}"]`),
+      ).toContainText(title);
     }
-    records.push({ resource, project, task, title, url });
-    for (const route of [
-      `/projects/${project}`,
-      `/resources/${resource}?project=${project}`,
-    ]) {
-      await page.goto(route);
-      await expect(
-        page.getByRole("button", { name: "Änderungen speichern", exact: true }),
-      ).toBeEnabled();
-      for (const [width, height] of [
-        [1920, 1080],
-        [2560, 1440],
-        [390, 844],
-      ]) {
-        await page.setViewportSize({ width, height });
-        expect(
-          await page.evaluate(
-            () => document.documentElement.scrollWidth <= innerWidth,
-          ),
-        ).toBe(true);
-        await page.screenshot({
-          path: info.outputPath(
-            `${route.startsWith("/projects") ? "project" : "detail"}-${area}-${width}.png`,
-          ),
-          fullPage: true,
-          caret: "initial",
-        });
-      }
-    }
-    // Exercise the external navigation without contacting any external provider.
-    await context.route(url, (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: "text/html",
-        body: "<title>External reference test</title>",
-      }),
-    );
-    const external = page.getByRole("link", { name: /Extern öffnen/ });
-    await external.focus();
-    await expect(external).toBeFocused();
-    const popupPromise = context.waitForEvent("page");
-    await external.press("Enter");
-    const popup = await popupPromise;
-    await popup.waitForLoadState();
-    expect(popup.url()).toBe(url);
-    await popup.close();
+    expect(
+      (await api.from("resources").select("id").eq("title", title)).data,
+    ).toEqual([{ id: resource }]);
     await page.goto(`/projects/${project}`);
-    const card = page.locator(`[data-resource-relation="${resource}"]`);
+    // Additional artifact, then explicit promotion through the card's role editor.
+    await assignProjectResource(page, paper, "additional_artifact");
+    const card = page.locator(`[data-project-resource="${paper}"]`);
+    await card.locator("summary").click();
     await card
-      .getByRole("button", { name: "Resource-Verknüpfung lösen" })
-      .click();
-    await expect(card).toHaveCount(0);
+      .getByLabel("Verwendung im Project")
+      .selectOption("primary_artifact");
+    await card.getByRole("button", { name: "Verwendung speichern" }).click();
+    await expect(
+      page
+        .getByRole("status")
+        .filter({ hasText: "Project-Verwendung gespeichert" })
+        .last(),
+    ).toBeVisible();
     await page.reload();
-    await expect(card).toHaveCount(0);
-    const relink = page.getByRole("form", {
-      name: "Resource verknüpfen",
-      exact: true,
-    });
-    await relink.getByLabel("Resource", { exact: true }).selectOption(resource);
-    await submit(page, "Resource verknüpfen");
-    await page.reload();
-    await expect(card).toBeVisible();
-    await card
-      .getByRole("link", { name: `${title} · context`, exact: true })
+    await expect(primary).toContainText(`Paper Docs ${key}`);
+    await expect(
+      page.getByRole("region", {
+        name: "Additional Work Artifacts",
+        exact: true,
+      }),
+    ).toContainText(title);
+    expect(
+      (
+        await api
+          .from("resource_relations")
+          .select("id")
+          .eq("target_id", project)
+          .eq("project_role", "primary_artifact")
+      ).data,
+    ).toHaveLength(1);
+    await primary
+      .getByRole("button", { name: "Verknüpfung entfernen" })
       .click();
-    await expect(page).toHaveURL(new RegExp(`/resources/${resource}$`));
-    await page.goto(
-      `/resources?q=${encodeURIComponent(`Reference context ${stamp} ${area}`)}`,
-    );
+    await expect(primary).not.toContainText(`Paper Docs ${key}`);
+    await page.reload();
+    expect(
+      (await api.from("resources").select("id").eq("id", paper)).data,
+    ).toHaveLength(1);
+    await assignProjectResource(page, resource, "primary_artifact");
+    await page.goto(`/resources/${resource}`);
+    await submit(page, "Resource archivieren");
+    await page.reload();
+    await page.goto(`/projects/${project}`);
+    await expect(primary).toContainText("Kein aktives primäres");
+    await expect(
+      page.getByRole("region", {
+        name: "Additional Work Artifacts",
+        exact: true,
+      }),
+    ).toContainText("Archiviert");
+    await assignProjectResource(page, paper, "primary_artifact"); // demotes archived previous Primary, keeps its Resource
+    await page.goto(`/resources/${resource}`);
+    await submit(page, "Resource wiederherstellen");
+    await page.reload();
+    await page.goto(`/projects/${project}`);
+    await expect(primary).toContainText(`Paper Docs ${key}`);
+    await expect(
+      page.getByRole("region", {
+        name: "Additional Work Artifacts",
+        exact: true,
+      }),
+    ).toContainText(title);
+    await page.goto("/resources");
+    await page.getByLabel("Search resources", { exact: true }).fill(title);
+    await page.getByRole("button", { name: "Suchen", exact: true }).click();
     await expect(page.locator("main")).toContainText(title);
-    const stored = await api.from("resources").select("id").eq("title", title);
-    expect(stored.data).toEqual([{ id: resource }]);
-    const relations = await api
-      .from("resource_relations")
-      .select("target_type,target_id")
-      .eq("resource_id", resource);
-    expect(relations.data).toHaveLength(4);
   }
-  const first = records[0];
-  await page.goto(`/resources/${first.resource}`);
-  const edit = page.getByRole("form", {
-    name: "Resource bearbeiten",
-    exact: true,
-  });
-  await edit
-    .getByLabel("Beschreibung / Kontext")
-    .fill(`Edited reference ${stamp}`);
-  await edit
-    .getByLabel("URL", { exact: true })
-    .fill("https://example.org/thesis-final.pdf");
-  await submit(page, "Resource bearbeiten");
+  // A Project-specific role never leaks to another Project or changes relation_type.
+  await page.goto(`/projects/${projects[1]}`);
+  await assignProjectResource(page, resourceIds[0], "reference");
+  await expect(
+    page.getByRole("region", { name: "Resources & References", exact: true }),
+  ).toContainText(`GitHub Repository ${stamp}`);
+  await page.goto(`/resources/${resourceIds[0]}`);
+  const projectUse = page
+    .getByRole("region", { name: "Beziehungen", exact: true })
+    .locator("[data-resource-relation]")
+    .filter({ hasText: `education Project ${stamp}` });
+  await projectUse
+    .getByRole("button", { name: "Resource-Verknüpfung lösen" })
+    .click();
+  await expect(projectUse).toHaveCount(0);
   await page.reload();
-  await expect(edit.getByLabel("Beschreibung / Kontext")).toHaveValue(
-    `Edited reference ${stamp}`,
-  );
-  await expect(
-    page.getByRole("link", { name: /Extern öffnen/ }),
-  ).toHaveAttribute("href", "https://example.org/thesis-final.pdf");
-  await page.goto(`/projects/${first.project}`);
-  await expect(
-    page.locator(`[data-resource-relation="${first.resource}"]`),
-  ).toContainText(`Edited reference ${stamp}`);
-  await page.goto("/resources");
   await page
-    .getByLabel("Search resources", { exact: true })
-    .fill(`Edited reference ${stamp}`);
-  await page.getByRole("button", { name: "Suchen", exact: true }).click();
-  await expect(page.locator("main")).toContainText(first.title);
-  await page.goto(`/resources/${first.resource}`);
-  await submit(page, "Resource archivieren");
-  await page.reload();
-  await expect(
-    edit.getByRole("button", { name: "Änderungen speichern" }),
-  ).toBeDisabled();
-  await expect(page.getByRole("region", { name: "Beziehungen" })).toContainText(
-    `Education Project ${stamp}`,
-  );
-  await submit(page, "Resource wiederherstellen");
-  await page.reload();
-  await expect(
-    edit.getByRole("button", { name: "Änderungen speichern" }),
-  ).toBeEnabled();
-  // An unavailable target must visibly fail without discarding or copying the Resource.
-  await page.getByText("Project verknüpfen", { exact: true }).first().click();
-  const failing = page.getByRole("form", {
+    .locator("summary")
+    .filter({ hasText: "Project verknüpfen" })
+    .click();
+  const projectForm = page.getByRole("form", {
     name: "Project verknüpfen",
     exact: true,
   });
-  await failing
+  await projectForm
     .getByLabel("Project", { exact: true })
-    .selectOption(first.project);
+    .selectOption(projects[1]);
+  await projectForm
+    .getByLabel("Verwendung im Project")
+    .selectOption("reference");
+  await submit(page, "Project verknüpfen");
+  await page.reload();
+  await expect(projectUse).toContainText("Reference");
+  // Concurrent primary selections serialize, preserving exactly one winner and both Resource IDs.
+  const set = (id: string) =>
+    api.rpc("set_project_resource_role", {
+      p_project_id: projects[0],
+      p_resource_id: id,
+      p_role: "primary_artifact",
+    });
+  const concurrent = await Promise.all([
+    set(resourceIds[0]),
+    set(resourceIds[1]),
+  ]);
+  expect(concurrent.every((r) => !r.error)).toBe(true);
+  expect(
+    (
+      await api
+        .from("resource_relations")
+        .select("id")
+        .eq("target_id", projects[0])
+        .eq("project_role", "primary_artifact")
+    ).data,
+  ).toHaveLength(1);
+  // New direct primary cannot bypass the DB uniqueness guarantee.
+  const bypass = await api.from("resource_relations").insert({
+    user_id: uid,
+    resource_id: resourceIds[2],
+    target_type: "project",
+    target_id: projects[0],
+    project_role: "primary_artifact",
+  });
+  expect(bypass.error).not.toBeNull();
+  const otherContext = await browser.newContext();
+  const otherPage = await otherContext.newPage();
+  await signUpTechnicalManualUser(otherPage, "r209foreign", Date.now());
+  const other = await apiFor(otherPage);
+  const foreignId = (await other.auth.getUser()).data.user!.id;
+  const foreignProject = await other
+    .from("projects")
+    .insert({ user_id: foreignId, title: `Foreign ${stamp}` })
+    .select()
+    .single();
+  const foreignResource = await other
+    .from("resources")
+    .insert({
+      user_id: foreignId,
+      title: `Foreign resource ${stamp}`,
+      type: "link",
+    })
+    .select()
+    .single();
+  for (const [client, project, resource] of [
+    [other, projects[0], resourceIds[0]],
+    [api, projects[0], foreignResource.data!.id],
+    [api, foreignProject.data!.id, resourceIds[0]],
+  ] as const) {
+    expect(
+      (
+        await client.rpc("set_project_resource_role", {
+          p_project_id: project,
+          p_resource_id: resource,
+          p_role: "primary_artifact",
+        })
+      ).error,
+    ).not.toBeNull();
+  }
+  expect(
+    (
+      await other.from("resource_relations").insert({
+        user_id: foreignId,
+        resource_id: foreignResource.data!.id,
+        target_type: "project",
+        target_id: projects[0],
+        project_role: "additional_artifact",
+      })
+    ).error,
+  ).not.toBeNull();
+  await page.goto(`/projects/${projects[0]}`);
+  // Server-action failure remains visible when a selected endpoint is archived after loading.
+  const active = page.getByRole("region", {
+    name: "Work Artifacts",
+    exact: true,
+  });
+  await active
+    .locator("summary")
+    .filter({ hasText: "Bestehendes verknüpfen" })
+    .click();
+  const f = active.getByRole("form", { name: "Mit Project verknüpfen" });
+  await f.getByLabel("Resource", { exact: true }).selectOption(resourceIds[2]);
+  await f.getByLabel("Verwendung im Project").selectOption("primary_artifact");
+  await api
+    .from("resources")
+    .update({ archived_at: new Date().toISOString() })
+    .eq("id", resourceIds[2]);
+  await f.getByRole("button").click();
+  await expect(f.getByRole("alert")).toContainText("Prüfe die Angaben");
+  // An archived Project stays history; its association can still be removed from Resource Detail.
   await api
     .from("projects")
     .update({ archived_at: new Date().toISOString() })
-    .eq("id", first.project);
-  await failing.getByRole("button").click();
-  await expect(failing.getByRole("alert")).toContainText("Prüfe die Angaben");
+    .eq("id", projects[1]);
+  await page.goto(`/resources/${resourceIds[0]}`);
+  const archivedProjectUse = page
+    .getByRole("region", { name: "Beziehungen", exact: true })
+    .locator("[data-resource-relation]")
+    .filter({ hasText: `education Project ${stamp}` });
+  await archivedProjectUse
+    .getByRole("button", { name: "Resource-Verknüpfung lösen" })
+    .click();
+  await expect(archivedProjectUse).toHaveCount(0);
   await page.reload();
+  await expect(archivedProjectUse).toHaveCount(0);
+  await otherContext.close();
   expect(
-    (await api.from("resources").select("id").eq("title", first.title)).data,
-  ).toEqual([{ id: first.resource }]);
-  await api
-    .from("projects")
-    .update({ archived_at: null })
-    .eq("id", first.project);
-  await page.goto(`/resources/${records[0].resource}?project=invalid`);
-  await expect(
-    page.getByRole("heading", { name: records[0].title, exact: true }),
-  ).toBeVisible();
-  await page.goto("/projects/new");
-  for (const name of ["Coding", "Education", "Work"])
-    await expect(
-      page
-        .getByLabel("Area", { exact: true })
-        .locator("option", { hasText: name }),
-    ).toHaveCount(1);
+    (await api.from("resources").select("id").in("id", resourceIds)).data,
+  ).toHaveLength(3);
+  expect((await api.from("resources").select("id")).data).toHaveLength(6);
   expect(errors).toEqual([]);
 });
-
 test("R2-09 create and project context stay blocked outside authenticated Manual", async ({
   page,
   context,

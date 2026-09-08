@@ -276,12 +276,23 @@ Keine Entwickler-/Datenquellen-Copy in der Primärfläche. Recurrence gehört zu
 Task/Calendar; Notes zu Resources, strukturierte Reviews bleiben eigenständig.
 R2-07 bleibt verbleibende Arbeit mit USER ACCEPTANCE STATUS: PENDING.
 
-## External Resource References (R2-09)
+## Project Work Artifacts and References (R2-09)
 
-Project Detail bleibt Work Context mit seinen normalen Tasks und Relations.
-Externe Referenzen sind sekundäre Resource-Metadaten: Titel, bestehender Typ,
-kurze Beschreibung und „Extern öffnen ↗“ mit verständlichem Accessible Name,
-Tastaturfokus und Hinweis auf neuen Tab. Resource Detail bleibt separat erreichbar.
-Create verwendet die bestehende Resource-Seite; Project-Kontext kann den expliziten
-Link-Schritt nach Create vorauswählen. Keine Provider-Auswahl, Login-/Sync-Controls,
-Logos oder eingebetteten Spezialeditoren. Bestehende V5-Layouts bleiben erhalten.
+Project Detail retains its V5 workbench language. Header/current state/Next Step
+lead into a prominent Work Artifacts region: Primary first, Additional/retained
+history second. Tasks/progress and Goal/Skill context remain normal canonical
+work. Resources & References is a separate supporting region before Lifecycle.
+No artifact management belongs to Portfolio Root/Quick Inspector.
+
+Artifact entries show existing type, title, short description, “Extern öffnen ↗”
+and “Details öffnen”. Role changes are explicit and use bounded existing selects;
+Primary is never inferred. Empty state is compact: “Noch kein Arbeitsartefakt
+verknüpft.” plus existing-link and new-reference actions. References never appear
+in Work Artifacts until explicitly assigned. Archived designations are labelled
+history and never presented as active Primary. Resource Detail displays Project
+use labels alongside ordinary Task/Skill context.
+
+Use existing matte surfaces/tokens, semantic accents, visible keyboard focus and
+new-tab Accessible Names. Mobile stacks with no horizontal overflow. No provider
+logos/selectors, login/sync controls, previews or specialized embedded editors.
+R2-09 remains active with USER ACCEPTANCE STATUS: PENDING.
