@@ -33,7 +33,7 @@ Nicht gilt für: Rechtsberatung.
 
 ## Geplante Work-Graph-/Obsidian-Grenzen
 
-R2-09 bleibt aktiv. Die Planung erlaubt keine Installation von Obsidian oder
+R2-10 ist aktiv; R2-09 ist USER ACCEPTED. Die Graph-Client-Planung erlaubt keine Installation von Obsidian oder
 Community-Plugins, Nutzung eines persönlichen Vaults, Exporte persönlicher Daten,
 Cloud-Synchronisation, Notion-Anbindung, externe APIs oder Remote-DB-Aktionen.
 Dafür braucht es den vorgesehenen expliziten Scope und die jeweilige Freigabe.

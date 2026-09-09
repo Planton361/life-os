@@ -342,7 +342,7 @@ migrations, clients or runtime integrations. Report PLAN_READY for the planning
 outcome only after applicable Completion Gate checks pass; this is not feature
 completion or USER ACCEPTED.
 
-R2-09 remains the sole active block until explicit USER ACCEPTED. Then R2-10
+R2-09 is explicitly USER ACCEPTED on 2026-09-09. R2-10 is the sole active block;
 canonical Dependencies precede R2-11 synthetic feasibility work. R2-11 stops at
 Decision Gate A for explicit user architecture selection; do not infer Option A
 from the presence of detailed R2-12–R2-17 plans. R2-07 is paused for Journal

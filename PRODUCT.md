@@ -549,13 +549,13 @@ A capability is complete only when:
 
 ## 8. Priority Order and Active Navigation
 
-Remaining order: R2-09 acceptance → R2-10 Canonical Work Graph & Task Dependencies
+R2-09 is USER ACCEPTED on 2026-09-09. Remaining order: active R2-10 Canonical Work Graph & Task Dependencies
 → R2-11 Obsidian Feasibility Lab / user Decision Gate A. R2-12–R2-17 are conditional
 on Option A; R2-07 Journal and R2-08 Skill Map are paused for reconciliation after
 that architecture decision. R2-06 is terminal after all selected capabilities and
 explicit reconciliations/deferrals. `ROADMAP.md` owns IDs and one active block.
 R2-05 is USER ACCEPTED on 2026-09-07, including Health & Fitness and Nutrition.
-R2-09 External Resource References is active; R2-07 Journal remains pending user acceptance.
+R2-10 Canonical Work Graph & Task Dependencies is active; R2-07 Journal remains pending user acceptance.
 
 ```text
 PRIMARY: Dashboard · Inbox · Today · Calendar · Portfolio · Resources
@@ -590,7 +590,7 @@ also USER ACCEPTED on 2026-09-07; R2-05 is closed; R2-09 precedes remaining Jour
 ## 9. Work Graph Strategy — Planned Contract (2026-09-09)
 
 R2-09's Project identity, Artifact roles and Milestones remain the implemented
-foundation pending acceptance. The following is future product scope, not a claim
+foundation, USER ACCEPTED on 2026-09-09. The following is future product scope, not a claim
 of connected Dependencies, Graph, Obsidian or Sync. Life OS should explain what
 work matters, why it is blocked, which paths can run in parallel and how to resume
 a Project after a pause.

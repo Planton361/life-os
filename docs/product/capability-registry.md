@@ -63,13 +63,26 @@ Personal → Journal; Settings. Legacy routes remain directly addressable.
 The completed technical sequence C1 → C2 → C3 → K1 → H1/H2 → N1 → A1 → Z1 is
 history. R2-01 through R2-04 and Health/Fitness are explicitly accepted.
 **R2-05 USER ACCEPTED on 2026-09-07: Health & Fitness and Nutrition accepted in full.**
-R2-05 is closed; R2-09 External Resource References is the sole active block,
-then, only after R2-09 USER ACCEPTED: R2-10 Dependencies → R2-11 Feasibility /
+R2-05 and R2-09 are closed and USER ACCEPTED. R2-10 Dependencies is the sole
+active block; only after its user acceptance follows R2-11 Feasibility /
 Decision Gate A. R2-12–R2-17 are a conditional Option A branch, not active work.
 R2-07 Journal remains implemented but paused for reconciliation after R2-11, with
 USER ACCEPTANCE PENDING. R2-08 is PAUSED / SUPERSEDED PENDING R2-11 DECISION.
 R2-06 retains its ID as terminal acceptance after selected branch work and explicit
 Journal/Skill Map reconciliation. No client choice or migration is implied.
+
+## R2-09 user acceptance and R2-10 activation — 2026-09-09
+
+R2-09 = USER ACCEPTED by explicit user decision for the current Project,
+Milestone and Artifact direction. Existing Artifact/Milestone/read-first control,
+canonical database, reload, responsive and design evidence below is retained.
+Historical PENDING/active statements describe those earlier passes and are
+superseded by this acceptance, not rewritten as new proof. No R2-09 redesign,
+new browser run or data mutation belongs to this administrative closure.
+
+R2-10 – Canonical Work Graph & Task Dependencies is now the only Active Work
+Block. R2-10 USER ACCEPTANCE STATUS: PENDING. R2-11 is not started. Journal and
+Skill Map remain paused under the accepted roadmap, with no inferred acceptance.
 
 ## Work Graph / Obsidian planning reconciliation — 2026-09-09
 
@@ -1356,7 +1369,7 @@ and its USER ACCEPTANCE STATUS is PENDING.
 | Goal linked projects/tasks | `CONNECTED` | goal relations | add outcome/review semantics |
 | Project/Goal resource links | `CONNECTED` | same-user Resource link/unlink from both detail directions, reload-proven in R2-04 | accepted 2026-09-07; maintain |
 | Project/Goal evidence display | `CONNECTED_GAP` | skill evidence read projection | create/manage from workbench later |
-| Project milestones | `NOT_STARTED` | none | model decision and complete vertical slice |
+| Project milestones | `CONNECTED` | R2-09 owned milestones, grouping, lifecycle and progress; focused evidence above | USER ACCEPTED 2026-09-09; preserve |
 | Goal milestones/key results | `NOT_STARTED` | none | model decision; avoid fake OKR engine |
 | Project/Goal logs | `NOT_STARTED` | none | add canonical log records |
 | Review cadence | `NOT_STARTED` | none | connect to reviews after D1.2 |

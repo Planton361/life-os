@@ -5,7 +5,7 @@
 **Design truth:** Life OS – Linear Calm Dark Command Center / Dashboard V5
 **Detailed status:** `docs/product/capability-registry.md`
 **Completed sequence:** C1 → C2 → C3 → K1 → H1/H2 → N1 → A1 → Z1 (technical baseline)
-**Active Work Block:** R2-09 – Product Boundary & External Resource References
+**Active Work Block:** R2-10 – Canonical Work Graph & Task Dependencies
 
 ## 1. Product Contract
 
@@ -31,7 +31,7 @@ The existing application is the foundation. This roadmap does not restart the pr
 - Nutrition: recipes, ingredients, meals, weekly planning and grocery are connected; R2-05 fully USER ACCEPTED on 2026-09-07.
 - Health & Fitness: Mood, Sleep, Weight, Habits, Running and Strength are connected; R2-05 fully USER ACCEPTED on 2026-09-07.
 - Coding, Education and Work suites plus Notes, Inventory and Wishlist are hidden/retained or folded/externalized; Areas remain canonical context.
-- R2-09 remains active; canonical Dependencies (R2-10) precede the Obsidian Feasibility Lab (R2-11). Integration stages are conditional; Journal and Skill Map await that decision before final R2-06 acceptance.
+- R2-09 is USER ACCEPTED on 2026-09-09; active canonical Dependencies (R2-10) precede the Obsidian Feasibility Lab (R2-11). Integration stages are conditional; Journal and Skill Map await that decision before final R2-06 acceptance.
 - Personal AI Assistant: not started as a production capability.
 - Operation: local-first ready; private remote is optional and not active.
 
@@ -869,7 +869,7 @@ or backend evidence cannot alone restore a `CONNECTED` surface claim.
 ## 4.12 R2 – Product Reality Recovery & Surface Completion
 
 **Status:** R2-00 completed (contract rebaseline). **Current active slice:**
-R2-09 – Product Boundary & External Resource References (the only Active Work Block).
+R2-10 – Canonical Work Graph & Task Dependencies (the only Active Work Block).
 
 **R2-01 status:** Completed; explicitly USER ACCEPTED on 2026-09-06.
 Existing control, browser, layout and migration evidence is retained in the
@@ -891,11 +891,13 @@ The user accepts Health & Fitness and Nutrition in full. Existing implementation
 control, projection, reload and responsive evidence remains in the Capability
 Registry and focused tests. This is administrative closure after user acceptance.
 
-**R2-09 status:** Active – Product Boundary & External Resource References.
-USER ACCEPTANCE STATUS: PENDING. R2-09 remains active until explicit user acceptance.
-Implementation evidence is recorded in the Capability Registry. Only after R2-09
-USER ACCEPTED may R2-10 activate, followed by R2-11 and its explicit user decision.
-No Dependency, Obsidian or Graph implementation belongs to this planning handoff.
+**R2-09 status:** Completed; explicitly USER ACCEPTED on 2026-09-09.
+The user accepts the current Project/Milestone/Artifact direction and explicitly
+continues the Work Graph roadmap. Existing implementation, control, reload and
+visual evidence is retained in the Capability Registry; no redesign in closure.
+
+**R2-10 status:** Active – Canonical Work Graph & Task Dependencies.
+USER ACCEPTANCE STATUS: PENDING. R2-11 does not start before real R2-10 acceptance.
 
 **R2-07 status:** Paused – Journal Reconciliation, resumes only after the R2-11
 architecture decision and an explicit reconciled scope.
@@ -960,9 +962,9 @@ dependency belongs in this slice.
    active, done), optional same-project Task assignment, explicit ordering and
    task/milestone-derived counts. A minimal audited schema slice is permitted,
    with fresh Git-only/RLS/browser proof before local Target migration. No sprint,
-   team workflow or automatic completion. R2-09 remains active pending acceptance.
+   team workflow or automatic completion. R2-09 is USER ACCEPTED on 2026-09-09.
    No new global entity, API, sync, secrets or document copy. Depends
-   on R2-04/R2-05. Implementation result only; no Journal acceptance.
+   on R2-04/R2-05. Accepted Project scope; no Journal acceptance.
 7. **R2-10 – Canonical Work Graph & Task Dependencies** — same-Project
    Finish-to-Start dependencies, canonical guards and useful Ready/Blocked views.
    Depends on R2-09 USER ACCEPTED; independent of Obsidian.
@@ -990,7 +992,7 @@ dependency belongs in this slice.
     reload, bounds/whitespace, console/hydration, screenshots, Design-Taste and
     explicit USER ACCEPTED. Hidden legacy suites remain outside completion.
 
-R2-01 through R2-05 remain accepted. R2-09 is the sole active block with
+R2-01 through R2-05 and R2-09 remain accepted. R2-10 is the sole active block with
 USER ACCEPTANCE STATUS: PENDING. Pausing R2-07/R2-08 changes future delivery,
 not existing navigation, implementation evidence or data. R2-06 cannot silently
 skip unresolved decisions; exclusions require explicit user deferral.
@@ -1103,7 +1105,7 @@ not a second active roadmap; repository sources supersede its Downloads paths.
   for a promised core control.
 - Dashboard’s removed Bottom-Zone features remain removed; they cannot return
   through historical layout references.
-- The R2 order is binding. R2-01 through R2-05 are accepted and closed. Only R2-09 is active; R2-07 retains USER ACCEPTANCE STATUS: PENDING.
+- The R2 order is binding. R2-01 through R2-05 are accepted and closed. R2-09 is accepted; only R2-10 is active; R2-07 retains USER ACCEPTANCE STATUS: PENDING.
 
 ## 5. Completed Major Work
 
