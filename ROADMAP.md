@@ -912,6 +912,12 @@ Obsidian configuration require USER_INSTALLATION_CONFIRMATION_REQUIRED.
 FEASIBILITY_PASS or BLOCKED is lab evidence, not an architecture decision.
 R2-11 remains active until the user decides; R2-12 is not activated automatically.
 
+**Current user direction:** Option A (Life OS canonical + Obsidian) is
+PROVISIONAL GO; Option B (Obsidian-first) is CURRENT NO-GO; Option C (native
+graph) remains FALLBACK. Final selection awaits the usage pilot. Prioritize
+plugin-free focused Core Canvas; Global Graph is not the Project control view.
+TaskNotes/Canvas Bases are UX references, not accepted core dependencies.
+
 **R2-07 status:** Paused – Journal Reconciliation, resumes only after the R2-11
 architecture decision and an explicit reconciled scope.
 USER ACCEPTANCE STATUS: PENDING. Journal is neither deleted nor accepted.
@@ -1056,8 +1062,19 @@ Life OS; use a small native React-Flow prototype only if necessary within the la
 scope. Verify then-current tool capabilities and plugin trust before lab use.
 Evaluate return-to-Project orientation, current Milestone, next ready work,
 blocker explanation/change, parallelism, Resource/Artifact and Skill context,
-manual upkeep, RAM/CPU/swap, plugin dependency and maintainability. Use a
-multi-day synthetic Project pilot and report comparable task timings and upkeep.
+manual upkeep, RAM/CPU/swap, plugin dependency and maintainability. The current
+pilot scope requires at least three separated sessions with Project/context reset,
+the same questions in Life OS and Obsidian, practical answer timings and subjective
+clarity/mental-load/maintenance ratings. Agent retrieval timings do not establish
+human comprehension or subjective user ratings. Retain the longer-term daily-value
+question rather than treating rapid repeated navigation as a usage pilot.
+
+Within this lab only, prototype generated/user Note separation and a controlled
+Core-Canvas merge: preserve existing node positions, free cards and exploratory
+edges when adding a synthetic Task. Generated dependencies remain typed,
+directed presentation of canonical truth; exploratory edges have no operational
+effect. These bounded synthetic experiments do not start R2-12 or authorize
+product code, personal data, synchronization or write-back.
 
 **Decision Gate A:** stop for an explicit user architecture decision:
 

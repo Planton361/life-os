@@ -83,7 +83,65 @@ DECISION_REQUIRED: compare isolated synthetic variants; no personal Vault/data,
 canonical database writes, productive integration or synchronization. The user
 owns the final architecture decision; R2-12 remains not started.
 
-### R2-11 synthetic lab evidence — 2026-09-09
+### R2-11 focused Core pilot continuation — 2026-09-09
+
+User direction: Option A = **PROVISIONAL GO**, Option B = **CURRENT NO-GO**,
+Option C = **FALLBACK**. Capability status stays `DECISION_REQUIRED`; R2-11 is
+active and R2-12 is not started. Core Markdown/Properties/links/Canvas is the
+primary pilot; TaskNotes/Canvas Bases are references, not core dependencies.
+
+Bounded offline Core merge prototype: **CANVAS MERGE FEASIBLE = YES**. Three
+nodes were moved through the actual Canvas UI. After adding a synthetic Task,
+all existing x/y/width/height values, a UI-created free text card and a seeded
+presentation-only exploratory edge remained exact. Reopening Obsidian showed the
+new Task and preserved content. A separate ownership manifest and stable node IDs
+distinguish generated elements from free presentation; no Canvas Bases, private
+Canvas API or product integration is involved. Duplicate/dangling IDs, ownership
+collisions, removed owned nodes and ambiguous content markers reject. A repeated
+merge is idempotent. Source removals and concurrent editing are intentionally
+outside this additive, app-closed prototype. New nodes enter free overflow space;
+milestone regrouping is still a manual layout decision.
+
+**GENERATED/USER CONTENT SEPARATION = YES** for the tested Note contract. The
+generated section starts with a YAML comment marker inside the opening frontmatter
+and ends with an HTML comment after generated body content. Obsidian still reads
+native Properties. Updating Integration's dependencies, Skill, Resource and
+successor preserves the free user suffix byte-for-byte; actual editor input,
+reopen proof, suffix SHA-256 and CRLF preservation are retained. This is not a
+multi-file atomic projection, file watcher, export or synchronization service.
+
+The unchanged 24-Task comparison dataset is separate from the 25-Task merge
+experiment. Three agent navigation runs per variant reset Project/view context
+and find the same six required answers. Their 1-second Obsidian and 3/3/5-second
+Life-OS retrieval measurements include automation/caching/route effects and are
+**not human comprehension timings or a speedup claim**. CLARITY, MENTAL_LOAD and
+MAINTENANCE user ratings are unfilled. Overall gate remains **BLOCKED** pending
+the three actual usage sessions and subjective evidence; a rapid repeated
+technical lookup does not satisfy that requirement.
+
+Core relation traversal through Project, Milestone, blocker, successor, Skill and
+Resource completed in ten explicit link actions. The 24-Task Workflow map has
+Project and milestone groups; separate Integration Focus and optional Context
+maps avoid mixing every relation. Directed DEP versus non-directed IDEA remains
+presentation-only. The full view is still dense; no 40–50-node extension was needed.
+
+Sequential GPU-backed Core samples: idle RSS/PSS 776.9/488.2 MiB, Canvas
+754.8/464.6 MiB, Local Graph 769.4/478.9 MiB, six processes; CPU 0/0.5/16.4% of
+one core. These are short snapshots, not performance regression or long-term
+maintenance proof. Final Obsidian and Life-OS browser consoles are clean. The
+isolated Life-OS reader was also opened in a visible browser for human use.
+
+Evidence and ready-to-use human pilot instructions:
+`/home/anton/.cache/life-os-r211-lab/pilot/REPORT.md`, `USER_PILOT.md`,
+`human-sessions.csv`, `merge-proof.json` and screenshots. No product code,
+canonical DB/data, personal Vault, plugin dependency or sync implementation
+changed. Recommendation remains provisional Option A with PostgreSQL canonical,
+plugin-free read-only projection first, focused Core maps, and controlled commands
+only in their later authorized scope. Integration complexity: MEDIUM for read-only,
+HIGH with commands/conflict handling. Daily reentry and acceptable maintenance
+remain unproven; final architecture decision belongs to the user.
+
+### R2-11 initial synthetic lab evidence — 2026-09-09 (historical)
 
 Capability status remains `DECISION_REQUIRED`. Overall research gate: **BLOCKED**
 pending the ROADMAP-required multi-day synthetic pilot, comparable human task

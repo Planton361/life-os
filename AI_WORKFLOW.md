@@ -358,7 +358,10 @@ vertical slice and focused proof. Decision blocks produce reviewable evidence an
 explicit decisions; they do not pretend to deliver a production vertical slice.
 
 Prove Dependency Truth, Obsidian Value, Single Truth, Sync Reliability and Daily
-Value at the ROADMAP.md gates. Use a multi-day synthetic pilot before integration
-selection and an explicitly authorized realistic pilot for later product proof.
+Value at the ROADMAP.md gates. Use the current R2-11 synthetic multi-session pilot
+before integration selection and an explicitly authorized realistic pilot for
+later product proof. At least three context-reset comparisons are required;
+automated retrieval is technical evidence, not a substitute for subjective human
+clarity/mental-load ratings or longer-term daily-value evidence.
 Compare resumption/next-action time, blocker clarity, sorting/double upkeep and
 combined RAM/CPU/swap. Stop or reduce integration when daily value fails.
