@@ -139,6 +139,64 @@ and `pnpm build` pass. Final validation uses an isolated checkout with matching
 product sources; disposable runtimes are removed. No migration is necessary.
 R2-11's separate usage/architecture decision remains pending.
 
+### R2-11 renewed comparison after contextual Task Create — 2026-09-09
+
+Capability status remains `DECISION_REQUIRED`; R2-11 is the sole active block.
+The user resumes comparison against `62984064be9fcf20f33ae6ef4cb4e1b91299f796`.
+**FEASIBILITY_PASS** applies to the updated comparison and human-pilot preparation,
+not to the still-missing three human usage sessions or final architecture GO.
+Prior missing usage evidence remains outstanding; R2-12 is not started.
+
+Fresh Life-OS screenshots use current Git components with only an isolated
+synthetic reader and lab-shell override. Header, Milestone and Backlog `+ Task`
+were clicked; the existing create form preserves visible Project/Milestone
+prefill after reload. No Lab Save is simulated: canonical save/return/toast,
+counts, no-duplicate and dependency-regression evidence belongs to `6298406`
+above. Create is no longer a Life-OS disadvantage in the comparison.
+
+Both variants share the same 24 Task IDs/fields, 38 directed Dependencies,
+four Milestones, Goal, three Skills, six References and three Work Artifacts.
+Both show 6 DONE, 7 open READY and 11 open BLOCKED. All generated Task-note
+prefixes and Canvas dependency pairs were checked against the same source;
+the separate T25 merge experiment is excluded. New Project/Task/Skill/Resource
+screenshots and 4K views replace the old visual baseline.
+
+Observed additional value remains in the focused Integration Canvas: multiple
+upstream paths and downstream successors are visible together. Life OS already
+explains individual blockers/successors and current Milestone clearly. Full
+24-Task Canvas remains dense; the Context Canvas mostly rearranges information
+that Life OS already exposes. Reentry speed and superior Skill/Resource
+comprehension are not established. No fabricated timings or subjective ratings.
+The local comparison gallery and six blank human-session rows prepare the same
+nine questions, alternating application order. Actual application launchers
+were checked; screenshots are labelled as screenshots, not an operative mock.
+
+Pure replay of the retained offline merge inputs again preserves all existing
+positions, user cards, exploratory edges and free Note suffix while updating
+generated relations and adding T25. This does not prove removals, renames,
+concurrent editing, atomic multi-file updates or acceptable daily maintenance.
+No Community Plugins are enabled in the usage instance. Option A remains
+PROVISIONAL GO for the pilot only; B CURRENT NO-GO, C FALLBACK. A visible graph
+benefit alone does not decide between an Obsidian client and a native graph.
+
+Browser/navigation/reload, dataset parity, maintenance replay and all 14 gallery
+views pass. Final Life-OS and Obsidian console/hydration are clean. Initial Lab
+fixture-path and screenshot-caret harness issues were corrected and retained
+separately; no product repair was needed. Sequential typecheck/lint pass in the
+existing isolated validation copy, all 594 src files matching current Git.
+No build/DB tests required for this Lab/docs-only continuation. Short GPU RSS
+snapshots: Obsidian idle 686.5 MiB, Canvas 748.4 MiB, settled Local Graph 565.4
+MiB; six processes. Life-OS dev plus browser 2054.9 MiB is not a production
+comparison. GC/cache/timing prevent a performance-winner or regression claim.
+Only owned Lab processes were closed; existing user applications were untouched.
+
+Current decision package, directly comparable fresh images, launchers, parity,
+console and maintenance evidence:
+`/home/anton/.cache/life-os-r211-lab/rebaseline-6298406/REPORT.md`,
+`compare.html`, `USER_PILOT.md`, `human-sessions.csv`. Lab artifacts remain local;
+no product code, canonical data, personal Vault, integration or sync changed.
+Final decision remains USER after concrete additional value and upkeep review.
+
 ### R2-11 focused Core pilot continuation — 2026-09-09 (prior lab evidence)
 
 User direction: Option A = **PROVISIONAL GO**, Option B = **CURRENT NO-GO**,
