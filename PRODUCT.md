@@ -235,7 +235,9 @@ user actions. Existing writes remain available in accessible disclosures.
 Identity and Next Step form the header; real Tasks/Progress dominate the remaining
 workspace. A secondary rail groups Primary Artifact and Context; Additional
 Artifacts and References share a compact second row. Content drives section
-height: fill the information hierarchy, not the viewport. Lifecycle belongs to header overflow, not the normal work flow.
+height: fill the information hierarchy, not the viewport. Header, shared
+Work/Context workbench and Supporting section form three structural surfaces,
+using dividers inside rather than fragmented cards or floating content. Lifecycle belongs to header overflow, not the normal work flow.
 Artifact management belongs to Project Detail. Existing Resource Create stores
 one canonical object, then returns to the Project for explicit role selection.
 Resource Detail shows its uses; Resources Search still finds every such record.

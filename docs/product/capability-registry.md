@@ -78,14 +78,14 @@ its remaining user acceptance. Implementation cannot accept Journal.
 
 ## R2-09 Project Detail composition refinement — 2026-09-09
 
-Current Project Detail is a content-driven workbench: integrated identity/state
-header and compact Next Step, dominant Work/Tasks/Progress beside Primary Artifact
-and Context (roughly 67/33). Additional Artifacts and References share a compact
-second row. Short/empty task lists never stretch to the viewport; long lists have
-a bounded internal scroll area. Background below the composition is intentional.
-Readable section headings, emphasized Primary title and human-readable Resource
-types replace tiny labels and raw role copy. The Artifact/Reference contract is
-unchanged.
+Current Project Detail uses three structural surfaces: Header, shared Main
+Workbench (Work + Primary/Context rail, roughly 67/33), and Supporting Surface
+(Additional Artifacts + References). Matte backgrounds and subtle outer borders
+enclose each whole area; internal vertical/horizontal dividers organize content
+without nested cards. Metadata is grouped below identity. Mobile stacks the
+sections and substitutes horizontal separators. No viewport-height fill, raw
+relation copy or permanent management inputs. Artifact/Reference semantics and
+all existing controls/writes remain unchanged.
 
 | Capability | Status | Current control truth |
 |---|---|---|
@@ -108,12 +108,34 @@ Portfolio Overview or other accepted surface changes. No new dependency. Existin
 backend auth/Zod/ownership/RLS/revalidation is reused by all disclosed forms.
 R2-09 remains active; USER ACCEPTANCE STATUS: PENDING.
 
-Visual composition refinement (2026-09-09): “Fill the information hierarchy, not
+Current structural-surface proof (2026-09-09): focused Project Playwright PASS
+for one Task/Primary, rich (25 Tasks, Primary/Additional/Goal/Skill/Reference), and
+near-empty Projects at 1920×1080, 2560×1440 and 390×844. The test checks shared
+surface backgrounds/borders, rail containment, 2:1 columns, bounded short task
+lists, internal keyboard scroll and complete desktop Supporting Surface.
+Default/management screenshots also cover 3840×2160. Existing Edit/save/reload,
+Primary replacement without copies, Task link/unlink, Reference addition,
+external/detail navigation and disclosure focus return remain green.
+Console/hydration clean. Screenshots remain ignored under
+`test-results/r209-artifact-proof/test-results/r209-structure-final/`.
+
+Design review A–F: YES — clear three-surface structure; Work/Context inside one
+Workbench; ordered Supporting columns; no floating content groups; fewer
+containers than the original card dashboard; professional Project Workbench.
+V5 Design-Taste PASS: matte surfaces, restrained borders and semantic typography.
+No remaining visual violation identified; this assessment is implementation
+evidence, not user acceptance. No schema/migration/backend or other surface edit.
+Current validation PASS: git diff --check, pnpm typecheck, pnpm lint, focused
+Project Playwright, ten Artifact/Workbench unit tests, eleven runtime tests and
+pnpm build, run sequentially in the protected-file-free source copy. The owned
+disposable runtime is stopped. R2-09 remains active; USER ACCEPTANCE: PENDING.
+
+Prior content-height proof (2026-09-09; visual treatment superseded above): “Fill the information hierarchy, not
 the viewport.” Focused proof covers light (one Task/Primary, no References), rich
 (25 Tasks, real 4/25 progress, Goal/Skill, Primary/Additional/Reference), and empty
 Projects. It rejects stretched short/empty Work cards and checks a second content
 row below the main zone. Management remains explicit and preserves existing writes.
-Current visual proof: IMPLEMENTATION_PASS. All three states pass at 1920×1080,
+Prior implementation evidence: IMPLEMENTATION_PASS. All three states pass at 1920×1080,
 2560×1440 and 390×844; default/management screenshots also cover 3840×2160.
 Short/empty Work cards remain below 260px. Desktop composition includes the second
 row inside the viewport; no horizontal overflow. Keyboard scroll, edit/save/reload,
@@ -121,7 +143,8 @@ exclusive header disclosures, Primary replacement without copies, Task link/unli
 Reference addition/reload and external/detail links pass. Console/hydration clean.
 Screenshots: ignored `test-results/r209-artifact-proof/test-results/r209-content-final/`.
 
-Design review A–F: YES for no giant empty card, dominant Work, clear compact
+Prior design assessment, subsequently rejected by the user for floating content:
+A–F had been marked YES for no giant empty card, dominant Work, clear compact
 Primary, readable Context, naturally completed page, no technical relation copy.
 V5 Design-Taste: PASS; existing matte tokens and restrained semantic accents,
 no remaining visual violation requiring a fix. Blank background is intentional.

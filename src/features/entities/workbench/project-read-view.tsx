@@ -53,22 +53,26 @@ export function ProjectReadView({
           <h1 className="min-w-0 break-words text-3xl font-semibold">
             {project.title}
           </h1>
-          <p className="text-sm text-[var(--text-secondary)]">
-            {project.archived_at ? "Archiviert" : project.status} ·{" "}
-            {area?.name ?? "Keine Area"} · {project.priority}
-          </p>
         </div>
         {project.description && (
           <p className="mt-2 max-w-4xl whitespace-pre-wrap break-words text-sm text-[var(--text-secondary)]">
             {project.description}
           </p>
         )}
-        {project.target_date && (
-          <p className="mt-2 text-sm text-[var(--text-muted)]">
-            Deadline{" "}
-            {project.target_date.slice(0, 10).split("-").reverse().join(".")}
-          </p>
-        )}
+        <div
+          aria-label="Project Metadata"
+          className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-[var(--text-secondary)]"
+        >
+          <span>{project.archived_at ? "Archiviert" : project.status}</span>
+          <span>{area?.name ?? "Keine Area"}</span>
+          <span>Priority {project.priority}</span>
+          {project.target_date && (
+            <span>
+              Deadline{" "}
+              {project.target_date.slice(0, 10).split("-").reverse().join(".")}
+            </span>
+          )}
+        </div>
         <ManagementDisclosureGroup className={styles.actions}>
           {!project.archived_at && (
             <>

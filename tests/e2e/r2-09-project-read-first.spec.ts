@@ -433,6 +433,23 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       ).toBe(true);
+      for (const surface of [
+        page.getByLabel("Project Header", { exact: true }),
+        page.locator("[data-project-workspace]"),
+        page.locator("[data-project-secondary]"),
+      ]) {
+        expect(
+          await surface.evaluate((el) => getComputedStyle(el).borderTopWidth),
+        ).toBe("1px");
+        expect(
+          await surface.evaluate((el) => getComputedStyle(el).backgroundColor),
+        ).not.toBe("rgba(0, 0, 0, 0)");
+      }
+      await expect(
+        page
+          .locator("[data-project-workspace]")
+          .getByRole("complementary", { name: "Project Context Rail" }),
+      ).toBeVisible();
       const workBox = (await taskRegion.boundingBox())!;
       if (width >= 1920) {
         const railBox = (await page
@@ -440,7 +457,11 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
           .boundingBox())!;
         expect(workBox.width / railBox.width).toBeGreaterThan(1.8);
         expect(workBox.y + workBox.height).toBeLessThanOrEqual(height);
-        if (state !== "rich") expect(workBox.height).toBeLessThan(260);
+        if (state !== "rich")
+          expect(
+            (await page.locator("[data-project-task-list]").boundingBox())!
+              .height,
+          ).toBeLessThan(180);
         const secondBox = (await page
           .locator("[data-project-secondary]")
           .boundingBox())!;

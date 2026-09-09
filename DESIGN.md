@@ -281,16 +281,22 @@ R2-07 bleibt verbleibende Arbeit mit USER ACCEPTANCE STATUS: PENDING.
 Project Detail is a composed read-first workbench, not a card dashboard. Identity,
 description, state/priority/Area, optional deadline, Edit and lifecycle overflow
 share one header; Next Step is a compact work cue directly below identity.
-“Fill the information hierarchy, not the viewport.” Content drives detail-section
-height. Desktop places dominant Work/Tasks (roughly 67%) beside Primary Artifact
-and Context (33%). Work remains naturally compact with few tasks; a bounded task
-list scrolls internally for many tasks. A second compact two-column row contains
-Additional Artifacts and Resources & References. Sections use typography and
-dividers, without repeated card borders. Empty states never stretch a section;
-quiet page background below the completed composition is intentional.
-Mobile stacks Work, Primary/Context, Additional Artifacts and References.
-Section headings and metadata remain readable; the Primary title receives more
-emphasis. Show the human-readable Resource type, never internal relation/role copy.
+“Structure with surfaces, not card fragmentation.” Project Detail has exactly
+three structural surfaces: Header, shared Main Workbench and Supporting Surface.
+Each uses an elevated matte background, subtle outer border and consistent radius.
+The header groups metadata below identity, retains deadline and separates Next
+Step within the same surface. Main Workbench joins Work (roughly 67%) and the
+Primary/Context rail (33%) with a full-height vertical divider. Task header/rows
+and Primary/Context use horizontal dividers; no nested cards. Supporting Surface
+joins Additional Artifacts and References in two columns with a vertical divider.
+
+“Fill the information hierarchy, not the viewport” still applies: no viewport
+height fill. Main surface height follows actual tasks or rail content; long task
+lists scroll within a bounded maximum. Short/empty lists remain compact inside
+the shared structure. Background begins after Supporting Surface. Mobile stacks
+Header, Work, Primary/Context, Additional Artifacts, References; vertical dividers
+become horizontal separators. Readable headings, emphasized Primary title and
+human-readable Resource types remain; no internal relation/role copy.
 
 “Bearbeiten” opens the existing editor in a bounded header disclosure; “⋯”
 exposes lifecycle actions with the accessible name “Project verwalten”.
