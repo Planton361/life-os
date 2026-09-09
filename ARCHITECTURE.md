@@ -88,7 +88,7 @@ projections retain existing task-derived reads; milestone labels are not spread
 into unrelated planning views. No external integration or alternate task store.
 
 
-## Planned Work Graph / Client Decision Boundary
+## Canonical Work Graph / Future Client Decision Boundary
 
 R2-09 is USER ACCEPTED; R2-10 is active and adds
 canonical Task Dependencies independently of any client, inside existing feature-
@@ -96,6 +96,12 @@ local domain/actions/schemas/repositories and controlled transactional boundarie
 Database enforcement must cover every completion path, including source-linked
 writes; Dashboard/Today/Calendar remain projections over the same records.
 No global state machine, generic graph store or parallel src/server architecture.
+
+The bounded `task_dependencies` table uses composite Task ownership/Project FKs
+and database cycle/lifecycle/source guards. Actual Project row-version updates
+serialize graph writes with completion/reopen. `read_task_dependency_graph` is a
+single user-scoped snapshot; the reusable domain projection derives readiness and
+blocker/successor context. See the [R2-10 decision](docs/architecture/task-dependencies-r2-10.md).
 
 R2-11 compares four architectural choices: A Life OS canonical + Obsidian client;
 B Obsidian-first only as an explicit ownership migration; C bounded native graph;

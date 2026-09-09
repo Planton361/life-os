@@ -587,7 +587,7 @@ Habits, Running and Strength) is USER ACCEPTED on 2026-09-07. Nutrition is the
 also USER ACCEPTED on 2026-09-07; R2-05 is closed; R2-09 precedes remaining Journal acceptance.
 
 
-## 9. Work Graph Strategy — Planned Contract (2026-09-09)
+## 9. Work Graph Strategy — Canonical Dependencies and Future Clients (2026-09-09)
 
 R2-09's Project identity, Artifact roles and Milestones remain the implemented
 foundation, USER ACCEPTED on 2026-09-09. The following is future product scope, not a claim
@@ -608,7 +608,10 @@ completion enforcement. Availability is derived separately from the existing
 Task lifecycle; BLOCKED is not freely editable. Reopen blocks open successors
 again but preserves completed successors with a visible inconsistency. Archived
 or removed predecessors never silently release work. DATA_MODEL.md owns the
-precise model boundary and R2-10 resolves date-waiting policy before implementation.
+precise model boundary. V1 READY/BLOCKED is dependency-only availability; existing
+scheduling/date filters remain separate and no WAITING_FOR_DATE state is introduced.
+The [R2-10 contract](docs/architecture/task-dependencies-r2-10.md) records exact
+completion, concurrency, reopen and archive semantics.
 
 Useful views are Ready Now, Blocked with concrete reasons, active Projects without
 an executable next action, Project Map and Skill Context. Counts may show 3/5

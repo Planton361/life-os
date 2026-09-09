@@ -896,7 +896,11 @@ The user accepts the current Project/Milestone/Artifact direction and explicitly
 continues the Work Graph roadmap. Existing implementation, control, reload and
 visual evidence is retained in the Capability Registry; no redesign in closure.
 
-**R2-10 status:** Active – Canonical Work Graph & Task Dependencies.
+**R2-10 status:** Active – Canonical Work Graph & Task Dependencies;
+IMPLEMENTATION_PASS on 2026-09-09. Same-Project Task dependencies, derived
+availability and database-enforced completion are delivered. Current evidence is
+in the Capability Registry; exact lifecycle semantics are in the
+[Task Dependency decision](docs/architecture/task-dependencies-r2-10.md).
 USER ACCEPTANCE STATUS: PENDING. R2-11 does not start before real R2-10 acceptance.
 
 **R2-07 status:** Paused – Journal Reconciliation, resumes only after the R2-11
@@ -1004,8 +1008,8 @@ and enforced by the same canonical Life OS logic on every write path.
 
 **Scope:** directed Finish-to-Start edges with multiple predecessors/successors,
 same-user and same-Project endpoints, no self-edge, duplicate or cycle. Keep
-Task lifecycle separate from derived availability (READY/BLOCKED and date-waiting
-semantics defined against existing planning fields in this block). Membership,
+Task lifecycle separate from derived availability (READY/BLOCKED; V1 adds no
+date-waiting state and preserves existing planning/date filters). Membership,
 context, evidence and artifact edges never become execution dependencies.
 
 Use Project Workbench and Task Detail to add/remove dependencies, explain blockers

@@ -84,6 +84,68 @@ R2-10 – Canonical Work Graph & Task Dependencies is now the only Active Work
 Block. R2-10 USER ACCEPTANCE STATUS: PENDING. R2-11 is not started. Journal and
 Skill Map remain paused under the accepted roadmap, with no inferred acceptance.
 
+## R2-10 Canonical Task Dependencies — 2026-09-09
+
+Implementation outcome: **IMPLEMENTATION_PASS**. R2-10 remains the sole active
+block; **R2-10 USER ACCEPTANCE STATUS: PENDING**. R2-11 has not started.
+R2-09 remains USER ACCEPTED; its administrative closure is commit `30b5213`.
+This section supersedes the earlier planning-only R2-10 state below.
+
+| Capability | Status | Current truth / evidence |
+|---|---|---|
+| Same-Project Finish-to-Start graph | `CONNECTED` | `task_dependencies` relation; owned composite endpoint FKs, RLS, immutable endpoints; self/duplicate/cycle/foreign/archived-target rejection |
+| Canonical completion enforcement | `CONNECTED` | Task-table guard protects direct writes and canonical RPCs; Meal/Review/Running/Strength source guards reject blocked completion atomically while preserving normal planning |
+| Ready/Blocked read model | `CONNECTED` | Single authenticated graph snapshot, Zod validation, dependency-only availability, Project ready/blocked lists and `hasReadyTask`; Task lifecycle and date/scheduling contract stay separate |
+| Project Workbench dependency context | `CONNECTED` | Existing Milestone composition retained; compact READY/BLOCKED row signals, ready/blocked counts, completed inconsistency signal; task and milestone ratios retained |
+| Task Detail and dependency management | `CONNECTED` | Blocker/successor links, fulfilled predecessor count, explicit add/remove disclosure, owned same-Project candidates, visible success/error and reload proof; paged Task reads retain older blocker links |
+| Reopen/archive/Project integrity | `CONNECTED` | Reopen blocks open direct successors, preserves done successors with visible inconsistency; archive does not satisfy edges; explicit removal recomputes; Project moves/unassignment with edges rejected |
+| Dashboard projection | `CONNECTED` | Current/Up Next excludes dependency-blocked work; real Dashboard completion releases the next Task after reload; Today remains a log and Calendar scheduling remains possible |
+
+Contract/model decision: [R2-10 Task Dependencies](../architecture/task-dependencies-r2-10.md).
+No editable blocked status, universal graph table, new global page, Obsidian,
+export, Canvas, TaskNotes, React Flow, templates or sync was introduced.
+
+Validation, executed sequentially in protected-file-free source copies:
+
+- `git diff --check`, `pnpm typecheck`, `pnpm lint`, `pnpm build`: PASS.
+- 12 focused domain/repository/Dashboard unit tests: PASS, including parallel
+  successors, all prerequisites, reopen/archive, fail-closed reads, scoped writes
+  and Workbench pagination beyond the first API page.
+- `tests/supabase/r2-10-task-dependencies.sql`: PASS on a fresh Git-only disposable
+  49-migration chain. Direct Task/API/RPC and Meal/Review/Running/Strength completion
+  rejection, atomic rollback, release, and blocked Meal planning are proven.
+- `tests/supabase/r2-10-task-dependency-concurrency.mjs`: six PASS cases for cycle,
+  completion and reopen races under READ COMMITTED and REPEATABLE READ.
+- Five existing source SQL suites (Meal, Review, Running, Strength and SR1-03
+  write-boundary): PASS. Disposable DB lint and Security Advisors: no findings.
+- Focused Playwright `r2-10-task-dependencies.spec.ts` plus the existing
+  `r2-09-project-milestones.spec.ts`: **2 PASS**. Real authenticated DB writes,
+  real Server Actions, forged self-option rejection, direct API rejection,
+  multiple/parallel prerequisites, Task/Project links, completion, reopen,
+  edge removal, Dashboard release and reload are covered.
+- Current control inventory: dependency disclosure/add/save/remove, blocker and
+  successor navigation, Task complete/reopen, Dashboard completion; accepted
+  Milestone CRUD/assignment/order/archive controls remain regression-proven.
+- Full Project/Task screenshots at 3840×2160, 1920×1080 and 390×844; horizontal
+  overflow guards and manual V5 bounds/overlap/whitespace review passed. The
+  added panel does not stretch the Task edit card; Project composition is retained.
+  Browser console/hydration: clean. The screenshot harness waits for hydration
+  and uses `caret: initial` to avoid instrumenting unhydrated input attributes.
+- Final browser/build source snapshot: `/home/anton/.cache/life-os-r210-final`.
+  Screenshots: `test-results/r2-10-task-dependencies-Ca-6f671-n-guards-and-honest-history/`
+  beneath that proof directory (`project-3840.png`, `task-3840.png`, corresponding
+  `1920` and `390` files). Generated proof artifacts are not staged.
+- After isolated proof and build, migration `20260909174436` applied only to
+  canonical `life-os-sr104b-target`. Target DB lint/advisors PASS; its complete
+  migration list equals all **49 Git migrations**. `life-os-app` was not changed
+  and no Legacy runtime was started. Disposable proof stacks were stopped.
+
+Remaining gate: real R2-10 user acceptance. Browser proofs use real authenticated
+canonical database behavior in isolated technical accounts; no user-owned Target
+records were edited for proof. Contended graph/domain transactions can require a
+visible retry; there is no hidden partial success. No core-surface acceptance is
+inferred from implementation evidence.
+
 ## Work Graph / Obsidian planning reconciliation — 2026-09-09
 
 PLAN_READY is a planning outcome, not a capability status. ROADMAP.md owns the
@@ -95,7 +157,7 @@ wording as evidence only; this active sequence supersedes it.
 
 | Planned capability / decision | Status | Current truth / next gate |
 |---|---|---|
-| R2-10 Task Dependencies and derived availability | `NOT_STARTED` | Existing Task context, Milestones and counts are not dependency enforcement; implement only after R2-09 USER ACCEPTED |
+| R2-10 Task Dependencies and derived availability | `CONNECTED` | IMPLEMENTATION_PASS; see current R2-10 evidence above. Sole active block; USER ACCEPTANCE PENDING |
 | R2-11 Graph-client architecture / feasibility | `DECISION_REQUIRED` | Synthetic lab and user Decision Gate A outstanding; no Obsidian/native/Notion selection |
 | R2-12 Obsidian projection | `NOT_STARTED` | Conditional Option A; no stable note export/manifest or client-opening capability |
 | R2-13 Project Map / Canvas | `NOT_STARTED` | Conditional Option A; no generated canonical Project Canvas or personal-layout preservation proof |

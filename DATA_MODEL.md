@@ -284,11 +284,14 @@ Outcome field is introduced. Resources, artifact roles and Task Steps retain the
 existing semantics.
 
 
-## Planned Work Graph Semantics — R2-10 onward
+## Canonical Work Graph Semantics — R2-10 onward
 
-Planning contract only: no Dependency table, revision system, sync or template
-schema is introduced by this documentation change. Existing Project Milestones,
-Artifact roles, Task lifecycle and canonical entity IDs remain the baseline.
+R2-10 adds `task_dependencies` with owned same-Project composite Task foreign keys,
+self/duplicate constraints, recursive cycle and completion triggers, RLS and a
+single-snapshot graph read RPC. Exact concurrency/lifecycle decisions and proofs:
+[Task Dependency contract](docs/architecture/task-dependencies-r2-10.md).
+Existing Project Milestones, Artifact roles and Task lifecycle remain the baseline.
+Revision, sync and template schemas are still future scope.
 
 | Relation class | Meaning | Execution effect |
 |---|---|---|
@@ -301,14 +304,15 @@ Artifact roles, Task lifecycle and canonical entity IDs remain the baseline.
 R2-10 V1 permits multiple predecessors/successors only within the same owned
 Project. Reject self-edges, duplicate pairs, cycles, cross-user/cross-Project edges
 and invalid archived endpoints. Preserve this invariant during Project changes
-and unassignment as well as edge creation. Audit the minimal typed relation and
-transaction/concurrency strategy when the block becomes active; no generic global
-edge store or parallel task engine.
+and unassignment as well as edge creation. Existing edges prohibit Project changes;
+explicit removal is required first. Owned Project row-version writes serialize graph
+and Task lifecycle mutations; no generic global edge store or parallel task engine.
 
 Task lifecycle values listed above stay unchanged. READY/BLOCKED are derived
-availability, not editable status fields. WAITING_FOR_DATE is a candidate derived
-state: R2-10 must define its relation to existing planned/scheduled/date fields,
-timezone, eligibility and precedence; a due date is not implicitly a start gate.
+availability, not editable status fields. V1 has no WAITING_FOR_DATE or start-date
+gate: Calendar scheduling stays independent; consumers apply their existing date
+filters to dependency-ready work. Satisfaction requires `done`, nonnull
+`completed_at` and null `archived_at`.
 Only satisfied predecessors release a dependency. Cancellation, archive or removal
 never count as completion by default. Reopening a predecessor blocks open
 successors; completed successors retain history with a visible inconsistency.

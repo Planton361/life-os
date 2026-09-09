@@ -85,6 +85,7 @@ export type EntityMilestone = {
 };
 
 export type LifeTask = {
+  dependencyAvailability?: "READY" | "BLOCKED";
   id: string;
   title: string;
   description: string;

@@ -334,7 +334,7 @@ logos/selectors, login/sync controls, previews or specialized embedded editors.
 R2-09 is USER ACCEPTED on 2026-09-09; preserve this accepted composition.
 
 
-## Work Graph und Graph-Client — geplanter Designvertrag
+## Work Graph und späterer Graph-Client — Designvertrag
 
 R2-09 ist akzeptiert; R2-10 ist aktiv und ergänzt vorhandene Project-/Task-Workbench-
 Regionen um textgestützte Ready-/Blocked-Zustände, konkrete Vorgänger und parallele
@@ -356,3 +356,10 @@ nicht überschreiben. Kanonische Kanten sind als solche erkennbar; eine gezeichn
 Kante erzeugt keine Dependency. R2-17 nutzt echte Evidence/Practice und Goal-
 Outcome-Kontexte; keine Fake-Edges oder Mastery-Scores. Journal bleibt sichtbar,
 seine spätere Text-Ownership ist bis R2-11 offen.
+
+R2-10 ergänzt Project-Task-Zeilen um kurze READY-/BLOCKED-Signale und
+Ready-/Blocked-Counts neben den bestehenden Progress-Zahlen. Blockergründe und
+Nachfolger stehen mit Links im Task Detail; Hinzufügen/Entfernen bleibt hinter
+bewusster Disclosure. Abgeschlossene inkonsistente Tasks behalten ihren Lifecycle
+und erhalten einen ehrlichen Hinweis. Dependencies erklären Arbeit; sie dominieren
+die akzeptierte Milestone-Struktur nicht.

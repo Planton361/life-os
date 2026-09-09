@@ -1,4 +1,8 @@
 "use server";
+import {
+  dependencyErrorMessage,
+  writeTaskDependency,
+} from "../supabase/repositories/task-dependency-repository";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
@@ -198,6 +202,17 @@ export async function workbenchOperation(
     );
     if (ok)
       result = { status: "success", message: "Arbeitsschritt gespeichert." };
+  } else if (
+    operation === "task.dependency.add" ||
+    operation === "task.dependency.remove"
+  ) {
+    result = await writeTaskDependency(auth.client, auth.user.id, {
+      operation: operation === "task.dependency.add" ? "add" : "remove",
+      projectId: str(form, "projectId"),
+      taskId: str(form, "taskId"),
+      predecessorId: str(form, "predecessorId"),
+      dependencyId: str(form, "dependencyId"),
+    });
   } else if (operation === "task.complete")
     result = await completeTaskAction(form);
   else if (operation === "task.reopen") result = await reopenTaskAction(form);
@@ -264,6 +279,11 @@ export async function workbenchOperation(
     );
     if (r.ok)
       result = { status: "success", message: "Task-Beziehung gespeichert." };
+    else if (r.error.message.includes("DEPENDENCY_"))
+      result = {
+        status: "error",
+        message: dependencyErrorMessage(r.error.message),
+      };
   } else if (operation === "project.context") {
     const parsed = updateProjectInputSchema.safeParse({
       ...scope,

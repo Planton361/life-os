@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { dashboardCalendarTimeProgress } from "./dashboard-read-model";
+import type { LifeTask } from "../entities/types";
+import {
+  dashboardTaskSelection,
+  dashboardCalendarTimeProgress,
+} from "./dashboard-read-model";
 
 describe("dashboardCalendarTimeProgress", () => {
   it("derives Month, Week and Day from local calendar time only", () => {
@@ -43,4 +47,26 @@ describe("dashboardCalendarTimeProgress", () => {
     expect(leapMonthEnd[0]?.progress).toBe(100);
     expect(leapMonthEnd[2]?.progress).toBe(100);
   });
+});
+
+it("excludes dependency-blocked tasks from current and Up Next without mutating the input", () => {
+  const tasks = [
+    {
+      id: "blocked",
+      status: "active",
+      priority: "P0",
+      dependencyAvailability: "BLOCKED",
+    },
+    {
+      id: "ready",
+      status: "planned",
+      priority: "P1",
+      dependencyAvailability: "READY",
+    },
+  ] as LifeTask[];
+  expect(dashboardTaskSelection(tasks)).toEqual({
+    current: tasks[1],
+    upNext: [],
+  });
+  expect(tasks).toHaveLength(2);
 });

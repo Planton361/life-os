@@ -352,7 +352,8 @@ async function updateTaskById(
     .select("*")
     .single()) as SupabaseQueryResult<TaskRow>;
 
-  if (result.error) return adapterFailure(operation);
+  if (result.error) return result.error.message.includes("DEPENDENCY_")
+    ? conflictFailure(result.error.message) : adapterFailure(operation);
   if (!result.data) return notFoundFailure("Task");
 
   return {

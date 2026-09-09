@@ -58,7 +58,10 @@ Last-Write-Wins. R2-15 nutzt eine lokale authentifizierte Bridge mit bestehenden
 Auth-/Zod-/Ownership-/RPC-Grenzen; keine Lost Updates, Duplikate oder stillen
 Konflikte. Vollautomatischer Zwei-Wege-Sync braucht einen weiteren expliziten Scope.
 
-R2-10 muss Dependencies auch bei direkten API-/RPC- und gekoppelten Domain-Writes
-server-/datenbankseitig erzwingen, einschließlich konkurrierender Mutationen.
-UI-Sperren allein reichen nicht. Keine Migration oder Security-Implementierung
-ist mit diesem Dokumentationsschritt erfolgt.
+R2-10 erzwingt Dependencies mit Task- und Source-Completion-Triggern auch bei
+direkten API-/RPC- und gekoppelten Domain-Writes. Kein Rollen-Bypass für
+Security-Definer-RPCs; Fehler rollen gekoppelte Writes zurück. Kanten haben
+Owner-RLS und zusammengesetzte Owner-/Project-FKs. Rekursive Zyklusprüfung und
+echte Project-Zeilenversionswrites schützen auch konkurrierende Mutationen.
+Die [R2-10-Entscheidung](docs/architecture/task-dependencies-r2-10.md) definiert
+Guards, Berechtigungen und den isolierten Datenbank-Proof.

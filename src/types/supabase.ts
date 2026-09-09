@@ -2259,6 +2259,48 @@ export type Database = {
           },
         ]
       }
+      task_dependencies: {
+        Row: {
+          created_at: string
+          id: string
+          predecessor_task_id: string
+          project_id: string
+          successor_task_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          predecessor_task_id: string
+          project_id: string
+          successor_task_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          predecessor_task_id?: string
+          project_id?: string
+          successor_task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_dependencies_predecessor"
+            columns: ["user_id", "project_id", "predecessor_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["user_id", "project_id", "id"]
+          },
+          {
+            foreignKeyName: "task_dependencies_successor"
+            columns: ["user_id", "project_id", "successor_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["user_id", "project_id", "id"]
+          },
+        ]
+      }
       task_skill_links: {
         Row: {
           created_at: string
@@ -3038,6 +3080,7 @@ export type Database = {
           status: string
         }[]
       }
+      read_task_dependency_graph: { Args: never; Returns: Json }
       redeem_shop_item: {
         Args: { p_request_key: string; p_shop_item_id: string }
         Returns: string

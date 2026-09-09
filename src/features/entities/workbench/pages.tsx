@@ -1,3 +1,4 @@
+import { TaskDependencies } from "./task-dependencies";
 import { TaskMilestoneContext } from "./project-work";
 import { ProjectReadView } from "./project-read-view";
 import { projectResourceUses, projectRoleLabels } from "./project-artifacts";
@@ -374,7 +375,7 @@ export async function WorkbenchEditor({
           </p>
         )}
       <div
-        className={`grid gap-6 ${id ? "xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)]" : "mx-auto w-full max-w-[1000px]"}`}
+        className={`grid ${kind === "task" ? "items-start" : ""} gap-6 ${id ? "xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)]" : "mx-auto w-full max-w-[1000px]"}`}
       >
         <Block title={id ? "Informationen bearbeiten" : "Bewusst erstellen"}>
           <EntityForm
@@ -401,7 +402,10 @@ export async function WorkbenchEditor({
         {id && row && (
           <aside className="grid content-start gap-5">
             {kind === "task" && (
-              <TaskMilestoneContext data={data} taskId={id} />
+              <>
+                <TaskMilestoneContext data={data} taskId={id} />
+                <TaskDependencies data={data} taskId={id} />
+              </>
             )}
             <Relations
               kind={kind}

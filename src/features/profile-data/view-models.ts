@@ -1,3 +1,5 @@
+import { readTaskDependencyGraph } from "@/features/real-data/supabase/repositories/task-dependency-repository";
+import { taskDependencyContext } from "@/features/real-data/domain/task-dependencies";
 import { readTodayActivity } from "@/features/real-data/supabase/repositories/supabase-today-activity-repository";
 import "server-only";
 
@@ -2546,11 +2548,23 @@ async function getManualTasksFromSupabase(
     };
   }
 
-  return {
-    tasks: result.data
-      .map(realTaskToLifeTask)
-      .filter((task): task is LifeTask => Boolean(task)),
-  };
+  try {
+    const graph = await readTaskDependencyGraph(client);
+    return {
+      tasks: result.data
+        .map(realTaskToLifeTask)
+        .filter((task): task is LifeTask => Boolean(task))
+        .map(task => ({
+          ...task,
+          dependencyAvailability: taskDependencyContext(graph, task.id).availability,
+        })),
+    };
+  } catch {
+    return {
+      tasks: [],
+      unavailableReason: "Task Dependencies konnten nicht geladen werden.",
+    };
+  }
 }
 
 async function getManualTaskProfileData(): Promise<{

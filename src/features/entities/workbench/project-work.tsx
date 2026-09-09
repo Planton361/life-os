@@ -1,3 +1,8 @@
+import {
+  projectDependencySummary,
+  taskDependencyContext,
+  taskIsOpen,
+} from "@/features/real-data/domain/task-dependencies";
 import Link from "next/link";
 import type { WorkbenchData } from "@/features/real-data/supabase/repositories/entity-workbench-read";
 import {
@@ -88,6 +93,10 @@ export function ProjectWork({
     data.milestones,
     data.tasks,
   );
+  const graphSummary = projectDependencySummary(
+    data.dependencyGraph,
+    projectId,
+  );
   const archived = data.milestones.filter(
     (m) => m.project_id === projectId && m.archived_at,
   );
@@ -98,12 +107,18 @@ export function ProjectWork({
     rows.length ? (
       <ul>
         {rows.map((t) => {
+          const dependency = taskDependencyContext(data.dependencyGraph, t.id);
           const text = taskTextFields(t.description);
           return (
             <li key={t.id} className={styles.task}>
               <div className="min-w-0">
                 <p className="text-sm text-[var(--text-secondary)]">
                   {t.status}
+                  {taskIsOpen(t)
+                    ? ` · ${dependency.availability}${dependency.blockers.length ? ` · wartet auf ${dependency.blockers.length}` : ""}`
+                    : dependency.inconsistentCompletion
+                      ? " · Dependency inkonsistent"
+                      : ""}
                 </p>
                 <Link
                   className="mt-1 block break-words font-medium hover:underline"
@@ -156,6 +171,13 @@ export function ProjectWork({
             erledigt
           </p>
         </div>
+        <p className="text-sm text-[var(--text-secondary)]">
+          READY {graphSummary.ready.length} · BLOCKED{" "}
+          {graphSummary.blocked.length}
+          {project.status === "active" && !graphSummary.hasReadyTask
+            ? " · Kein offener Task ist READY"
+            : ""}
+        </p>
         {!project.archived_at && (
           <ManagementDisclosureGroup className={styles.workActions}>
             <ManagementDisclosure

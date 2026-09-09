@@ -1,4 +1,5 @@
 "use server";
+import { dependencyErrorMessage } from "../supabase/repositories/task-dependency-repository";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -175,6 +176,8 @@ function revalidateTaskProjectionRoutes(taskId?: string) {
   revalidatePath("/calendar");
   revalidatePath("/tasks");
   revalidatePath("/projects");
+  revalidatePath("/projects/[projectId]", "page");
+  revalidatePath("/tasks/[taskId]", "page");
   revalidatePath("/goals");
   if (taskId) revalidatePath(`/tasks/${taskId}`);
 }
@@ -247,7 +250,9 @@ export async function updatePortfolioTaskAction(
   if (!result.ok) {
     return {
       message:
-        result.error.code === "conflict"
+        result.error.message.includes("DEPENDENCY_")
+          ? dependencyErrorMessage(result.error.message)
+          : result.error.code === "conflict"
           ? "Dieses direkte Goal widerspricht dem Goal des ausgewählten Projects. Passe Project oder direktes Goal bewusst an."
           : "Der Task konnte nicht gespeichert werden.",
       status: "error",
@@ -605,7 +610,9 @@ export async function createPortfolioTaskAction(
   if (!result.ok) {
     return {
       message:
-        result.error.code === "conflict"
+        result.error.message.includes("DEPENDENCY_")
+          ? dependencyErrorMessage(result.error.message)
+          : result.error.code === "conflict"
           ? "Dieses direkte Goal widerspricht dem Goal des ausgewählten Projects. Passe Project oder direktes Goal bewusst an."
           : "Der Task konnte in Supabase nicht erstellt werden.",
       status: "error",
@@ -670,7 +677,9 @@ export async function completeTaskAction(
 
   if (!result.ok) {
     return {
-      message: result.error.message.includes("review through its review flow")
+      message: result.error.message.includes("DEPENDENCY_")
+        ? dependencyErrorMessage(result.error.message)
+        : result.error.message.includes("review through its review flow")
         ? "Dieser Task gehört zu einem offenen Review. Schließe das Review über seinen Review-Flow ab."
         : result.error.message.includes("running flow")
           ? "Dieser Task gehört zu einer offenen Laufeinheit. Schließe den Lauf über den Running-Flow ab."
@@ -716,7 +725,9 @@ export async function reopenTaskAction(
   if (!result.ok) {
     return {
       message:
-        result.error.code === "conflict"
+        result.error.message.includes("DEPENDENCY_")
+          ? dependencyErrorMessage(result.error.message)
+          : result.error.code === "conflict"
           ? "Verknüpfte Tasks werden über ihren zuständigen Domain-Flow wieder geöffnet."
           : "Der Task konnte in Supabase nicht wieder geöffnet werden.",
       status: "error",
@@ -759,7 +770,9 @@ export async function archiveTaskAction(
   if (!result.ok) {
     return {
       message:
-        result.error.code === "conflict"
+        result.error.message.includes("DEPENDENCY_")
+          ? dependencyErrorMessage(result.error.message)
+          : result.error.code === "conflict"
           ? "Verknüpfte Tasks werden über ihren zuständigen Domain-Flow archiviert."
           : "Der Task konnte in Supabase nicht archiviert werden.",
       status: "error",

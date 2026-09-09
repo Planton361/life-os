@@ -135,7 +135,9 @@ export function dashboardTasksForDate(
 }
 
 export function dashboardTaskSelection(tasks: readonly LifeTask[]) {
-  const ranked = [...tasks].sort(compareDashboardTasks);
+  const ranked = tasks
+    .filter(task => task.dependencyAvailability !== "BLOCKED")
+    .sort(compareDashboardTasks);
 
   return { current: ranked[0] ?? null, upNext: ranked.slice(1, 4) };
 }

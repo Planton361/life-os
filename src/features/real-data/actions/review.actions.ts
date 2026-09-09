@@ -29,6 +29,9 @@ function reviewPath(kind: ReviewKind, state: "blocked" | "error" | "saved") {
 }
 
 function revalidateReviewProjections() {
+  revalidatePath("/portfolio");
+  revalidatePath("/projects/[projectId]", "page");
+  revalidatePath("/tasks/[taskId]", "page");
   revalidatePath("/health/mental");
   revalidatePath("/health");
   revalidatePath("/review/daily");

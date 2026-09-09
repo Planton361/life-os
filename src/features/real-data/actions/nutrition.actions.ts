@@ -1,4 +1,5 @@
 "use server";
+import { dependencyErrorMessage } from "../supabase/repositories/task-dependency-repository";
 
 import { runningStartInstant } from "../domain/running-time";
 import { scheduleSourceInputSchema } from "../schemas/schedule-source.schema";
@@ -132,6 +133,9 @@ function nutritionEstimateFromForm(formData: FormData) {
 }
 
 function revalidateNutritionRoutes() {
+  revalidatePath("/portfolio");
+  revalidatePath("/projects/[projectId]", "page");
+  revalidatePath("/tasks/[taskId]", "page");
   revalidatePath("/nutrition/grocery");
   revalidatePath("/calendar");
   revalidatePath("/nutrition");
@@ -161,6 +165,7 @@ function authBlockedMessage(
 }
 
 function repositoryFailureMessage(message: string) {
+  if (message.includes("DEPENDENCY_")) return dependencyErrorMessage(message);
   if (message.includes("source-aware Calendar")) {
     return "Geplante Meals werden über die Calendar-Steuerung umgeplant oder entterminiert.";
   }

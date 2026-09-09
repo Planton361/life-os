@@ -1,3 +1,7 @@
+import {
+  readTaskDependencyGraph,
+  readWorkbenchTasks,
+} from "./task-dependency-repository";
 import "server-only";
 import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
@@ -22,12 +26,9 @@ export async function readEntityWorkbench() {
     scheduleSources,
     profile,
     milestones,
+    dependencyGraph,
   ] = await Promise.all([
-    client
-      .from("tasks")
-      .select("*")
-      .eq("user_id", uid)
-      .order("created_at", { ascending: false }),
+    readWorkbenchTasks(client, uid),
     client
       .from("projects")
       .select("*")
@@ -74,6 +75,7 @@ export async function readEntityWorkbench() {
       .eq("user_id", uid)
       .order("sort_order")
       .order("id"),
+    readTaskDependencyGraph(client),
   ]);
   if (
     [
@@ -93,6 +95,7 @@ export async function readEntityWorkbench() {
   )
     throw new Error("Entity-Daten konnten nicht geladen werden.");
   return {
+    dependencyGraph,
     milestones: milestones.data ?? [],
     timezone: profile.data?.timezone ?? "Europe/Berlin",
     tasks: tasks.data ?? [],

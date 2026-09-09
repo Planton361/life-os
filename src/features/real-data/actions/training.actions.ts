@@ -11,6 +11,9 @@ const value = (data: FormData, key: string) => { const item = data.get(key); ret
 const target = (data: FormData) => value(data, "returnTo") === "/health/strength" ? "/health/strength" : "/health/running";
 
 function finish(path: string, state: "blocked" | "error" | "saved"): never {
+  revalidatePath("/portfolio");
+  revalidatePath("/projects/[projectId]", "page");
+  revalidatePath("/tasks/[taskId]", "page");
   for (const route of ["/dashboard", "/today", "/calendar", "/health", "/health/running", "/health/strength"]) revalidatePath(route);
   redirect(`${path}?training=${state}&trainingUpdate=${Date.now()}`);
 }
