@@ -83,6 +83,65 @@ DECISION_REQUIRED: compare isolated synthetic variants; no personal Vault/data,
 canonical database writes, productive integration or synchronization. The user
 owns the final architecture decision; R2-12 remains not started.
 
+### R2-11 synthetic lab evidence — 2026-09-09
+
+Capability status remains `DECISION_REQUIRED`. Overall research gate: **BLOCKED**
+pending the ROADMAP-required multi-day synthetic pilot, comparable human task
+timings and user confirmation of reduced daily mental load. This single-session
+technical comparison is not FEASIBILITY_PASS or architecture selection.
+
+Existing Obsidian 1.13.7 ran directly in isolated, network-separated lab profiles
+and synthetic Vaults; no system installation, personal configuration/Vault access,
+canonical writes or productive integration. Vault-local TaskNotes 4.12.5 and
+Canvas Bases 0.1.4 were the only Community Plugins. Optional API/MCP/calendar
+features and update checks were disabled. Public maintenance/release and bundle
+observations are risk-based evidence, not a complete security audit.
+
+The common Research Platform fixture contains 24 Tasks, 38 Dependencies, four
+Milestones, one Goal, three Skills, six Resources and three Work Artifacts.
+All variants start with 6 DONE, 7 open READY and 11 open BLOCKED; 42 shared entity
+IDs match across the Vault projections and isolated current-Life-OS fixture.
+Actual unchanged Workbench/Detail components and the existing dependency domain
+projection were used in a separate Git copy with a synthetic reader. No mock
+write is presented as canonical DB evidence; accepted R2-10 evidence remains above.
+
+Core Notes/Bases/Canvas can present this snapshot without a custom or Community
+Plugin. A focused dependency Canvas explains parallel paths better than the
+mixed global Wikilink graph; full 24-Task and 10/30/75-node views need filtering
+and zoom. TaskNotes improves blocker disclosure, but changing its dependency
+property leaves generated Markdown explanations stale. Core property edits have
+the same snapshot-drift risk. Neither is a Life-OS completion guard.
+
+Layout experiment: replacing generated Core Canvas resets manually moved nodes.
+Canvas Bases' tested Board → Update canvas path also resets a directly moved
+Canvas node despite the preserve-position setting; the added Task, four groups
+and a user text card survive. This is a tested ownership conflict between Board
+and Canvas, not a claim about every possible update mechanism. No fragile merge
+workaround was introduced. Canonical DEP arrows/labels and exploratory IDEA
+connections are visually distinct in the focused Canvas, with no write effect.
+
+Sequential GPU-backed Obsidian snapshots: Core RSS 699–790 MiB / PSS 397–483 MiB;
+plugins RSS 775–862 MiB / PSS 478–564 MiB, six processes each. Graph CPU snapshots
+were 17.4% / 36.8% of one core. Software-rendered preliminary runs were excluded
+from comparison. Life OS dev-plus-browser measurements are not comparable to
+production; falling RSS accompanied increasing swap. No startup or long-term
+RAM winner is claimed. Sampled owned runtime processes are gone.
+
+Final Life-OS read/reload, dependency disclosure keyboard/focus and console/
+hydration checks pass in the isolated reader. Obsidian/plugin screenshots,
+dependency-edit reloads, layout JSON and scale counts are retained. TaskNotes
+logged a VirtualScroller fallback warning. Mobile is only a narrow desktop proxy;
+native Mobile, full accessibility, human reentry timings and multi-day upkeep
+remain unproven. No native graph prototype or Notion account/API/upload was used.
+
+Full decision package, unweighted scorecards, primary-source links, plugin
+inventory, performance raw data, synthetic Vaults and screenshot gallery:
+`/home/anton/.cache/life-os-r211-lab/REPORT.md` and `gallery.html` (local lab
+artifacts, not Git-hosted or a new active product truth). Recommendation: retain
+Life OS canonical and evaluate plugin-free read-only Focus Canvas in the required
+pilot before choosing integration. Final decision remains USER; R2-11 stays the
+only active block and R2-12 is not activated.
+
 ## R2-09 user acceptance and R2-10 activation — 2026-09-09 (historical transition)
 
 R2-09 = USER ACCEPTED by explicit user decision for the current Project,
