@@ -67,6 +67,23 @@ test("Project milestones: CRUD, grouping, ordering, progress, archive and owners
     work.getByRole("region", { name: "Ohne Milestone", exact: true }),
   ).toContainText(tasks[0].title);
   await expect(work).toContainText("Noch keine Milestones.");
+  await expect(
+    work.locator(
+      "input:not([type=hidden]):visible, select:visible, textarea:visible",
+    ),
+  ).toHaveCount(0);
+  const assignmentTrigger = work.getByRole("button", {
+    name: "Tasks zuordnen",
+    exact: true,
+  });
+  await assignmentTrigger.click();
+  await expect(assignmentTrigger).toHaveAttribute("aria-expanded", "true");
+  await work.getByRole("button", { name: "Schließen", exact: true }).click();
+  await expect(assignmentTrigger).toBeFocused();
+  await assignmentTrigger.click();
+  await page.keyboard.press("Escape");
+  await expect(assignmentTrigger).toHaveAttribute("aria-expanded", "false");
+  await expect(assignmentTrigger).toBeFocused();
   for (const title of ["Research", "Implementation"]) {
     await work
       .getByRole("button", { name: "Milestone hinzufügen", exact: true })
@@ -108,10 +125,27 @@ test("Project milestones: CRUD, grouping, ordering, progress, archive and owners
       .selectOption(stageId);
     await form.getByRole("button").click();
     await expect(saved()).toBeVisible();
+    await expect(form).toBeHidden();
+    await expect(assignmentTrigger).toHaveAttribute("aria-expanded", "false");
+    await expect(assignmentTrigger).toBeFocused();
+    const destination = stageId
+      ? group(stages.find((stage) => stage.id === stageId)!.title)
+      : work.getByRole("region", { name: "Ohne Milestone", exact: true });
+    await expect(destination).toContainText(
+      tasks.find((task) => task.id === taskId)!.title,
+    );
     await page.reload();
   }
   await assign(tasks[0].id, stages[0].id);
   await assign(tasks[1].id, stages[1].id);
+  await assign(tasks[2].id, stages[0].id);
+  await assign(tasks[2].id, stages[1].id);
+  await assign(tasks[2].id, "");
+  await expect(
+    work.locator(
+      "input:not([type=hidden]):visible, select:visible, textarea:visible",
+    ),
+  ).toHaveCount(0);
   await expect(group("Research")).toContainText(tasks[0].title);
   await expect(group("Implementation")).toContainText(tasks[1].title);
   await group("Research")
@@ -133,7 +167,7 @@ test("Project milestones: CRUD, grouping, ordering, progress, archive and owners
   await expect(group("Research")).toContainText("1/1 Tasks erledigt");
   await expect(group("Research")).toContainText("Offen"); // never auto-completed
   await page.reload();
-  await expect(work).toContainText("1/3 erledigt");
+  await expect(work).toContainText("1/3 Tasks erledigt");
   await page.goto(`/tasks/${tasks[0].id}`);
   const taskContext = page.getByRole("region", {
     name: "Task Milestone",
@@ -168,6 +202,18 @@ test("Project milestones: CRUD, grouping, ordering, progress, archive and owners
   await expect(work.locator("[data-milestone-id]").first()).toHaveAttribute(
     "data-milestone-id",
     stages[1].id,
+  );
+  await group("Implementation")
+    .getByRole("button", { name: "Milestone verwalten", exact: true })
+    .click();
+  await group("Implementation")
+    .getByRole("button", { name: "Nach unten", exact: true })
+    .click();
+  await expect(saved()).toBeVisible();
+  await page.reload();
+  await expect(work.locator("[data-milestone-id]").first()).toHaveAttribute(
+    "data-milestone-id",
+    stages[0].id,
   );
   async function edit(title: string, status: string) {
     await group(title)
@@ -224,6 +270,21 @@ test("Project milestones: CRUD, grouping, ordering, progress, archive and owners
       fullPage: true,
       caret: "initial",
     });
+    await assignmentTrigger.click();
+    const assignment = work.getByRole("form", {
+      name: "Task-Milestone speichern",
+      exact: true,
+    });
+    await expect(assignment).toBeVisible();
+    const bounds = await assignment.boundingBox();
+    expect(bounds!.x).toBeGreaterThanOrEqual(0);
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width);
+    await page.screenshot({
+      path: info.outputPath(`assignment-${width}.png`),
+      fullPage: true,
+    });
+    await page.keyboard.press("Escape");
+    await expect(assignment).toBeHidden();
   }
   // Owned foreign Project still cannot supply a stage or receive an assigned task.
   const other = (

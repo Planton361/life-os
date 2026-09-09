@@ -19,6 +19,7 @@ import {
   type FieldValues,
   type Option,
 } from "./types";
+import { useCloseManagementDisclosure } from "./management-disclosure";
 const subscribe = () => () => {};
 function useHydrated() {
   return useSyncExternalStore(
@@ -378,13 +379,16 @@ export function OperationForm({
   label,
   children,
   disabled = false,
+  closeOnSuccess = false,
 }: {
   operation: string;
   label: string;
   children?: ReactNode;
   disabled?: boolean;
+  closeOnSuccess?: boolean;
 }) {
   const hydrated = useHydrated();
+  const closeDisclosure = useCloseManagementDisclosure();
   const { notify } = useToast();
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -401,6 +405,7 @@ export function OperationForm({
           const r = await workbenchOperation(operation, form);
           if (r.status === "success") {
             notify(r.message);
+            if (closeOnSuccess) closeDisclosure?.();
             router.refresh();
           } else setError(r.message);
         });

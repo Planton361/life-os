@@ -1,6 +1,9 @@
 import Link from "next/link";
 import type { WorkbenchData } from "@/features/real-data/supabase/repositories/entity-workbench-read";
-import { ManagementDisclosure } from "./management-disclosure";
+import {
+  ManagementDisclosure,
+  ManagementDisclosureGroup,
+} from "./management-disclosure";
 import { Choice, OperationForm, fieldClass } from "./forms";
 import { projectMilestoneGroups } from "./project-milestones";
 import { taskTextFields } from "./task-text";
@@ -141,19 +144,29 @@ export function ProjectWork({
           Work
         </p>
         <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-xl font-semibold">Tasks {summary.taskCount}</h2>
+          <h2 className="text-xl font-semibold">
+            Tasks {summary.taskCount}{" "}
+            <span className="text-base font-normal text-[var(--text-secondary)]">
+              · Milestones {summary.milestoneCount}
+            </span>
+          </h2>
           <p className="text-sm text-[var(--text-secondary)]">
-            {summary.tasksDone}/{summary.taskCount} erledigt ·{" "}
+            {summary.tasksDone}/{summary.taskCount} Tasks erledigt ·{" "}
             {summary.milestonesDone}/{summary.milestoneCount} Milestones
             erledigt
           </p>
         </div>
         {!project.archived_at && (
-          <div className="mt-2 grid gap-2 sm:grid-cols-2">
-            <ManagementDisclosure label="Milestone hinzufügen">
+          <ManagementDisclosureGroup className={styles.workActions}>
+            <ManagementDisclosure
+              label="Milestone hinzufügen"
+              triggerText="+ Milestone"
+              panelClassName={styles.workPanel}
+            >
               <OperationForm
                 operation="project.milestone"
                 label="Milestone erstellen"
+                closeOnSuccess
               >
                 <input type="hidden" name="projectId" value={projectId} />
                 <input type="hidden" name="milestoneOperation" value="save" />
@@ -161,10 +174,14 @@ export function ProjectWork({
               </OperationForm>
             </ManagementDisclosure>
             {tasks.length > 0 && (
-              <ManagementDisclosure label="Tasks zuordnen">
+              <ManagementDisclosure
+                label="Tasks zuordnen"
+                panelClassName={styles.workPanel}
+              >
                 <OperationForm
                   operation="project.milestone"
                   label="Task-Milestone speichern"
+                  closeOnSuccess
                 >
                   <input type="hidden" name="projectId" value={projectId} />
                   <input
@@ -189,7 +206,7 @@ export function ProjectWork({
                 </OperationForm>
               </ManagementDisclosure>
             )}
-          </div>
+          </ManagementDisclosureGroup>
         )}
       </div>
       <div
@@ -208,31 +225,23 @@ export function ProjectWork({
             key={m.id}
             aria-label={`Milestone: ${m.title}`}
             data-milestone-id={m.id}
-            className="border-b border-[var(--border-subtle)] py-4"
+            className={styles.milestone}
           >
-            <div className="flex flex-wrap justify-between gap-2">
+            <div className="min-w-0">
               <h3
                 className={`font-semibold break-words ${m.status === "done" ? "text-[var(--text-muted)]" : m.status === "active" ? "text-[var(--accent-blue)]" : ""}`}
               >
                 {m.title}
               </h3>
-              <p className="text-sm text-[var(--text-secondary)]">
+              <p className="mt-1 text-sm text-[var(--text-secondary)]">
                 {statuses.find((s) => s.id === m.status)?.title}
                 {m.target_date
                   ? ` · ${m.target_date.split("-").reverse().join(".")}`
                   : ""}
               </p>
             </div>
-            {m.description && (
-              <p className="mt-2 whitespace-pre-wrap break-words text-sm text-[var(--text-secondary)]">
-                {m.description}
-              </p>
-            )}
-            <p className="mt-2 text-sm text-[var(--text-muted)]">
-              {done}/{linked.length} Tasks erledigt
-            </p>
             {!project.archived_at && (
-              <ManagementDisclosure label="Milestone verwalten">
+              <ManagementDisclosure label="Milestone verwalten" triggerText="⋯">
                 <OperationForm
                   operation="project.milestone"
                   label="Milestone speichern"
@@ -268,6 +277,14 @@ export function ProjectWork({
                 />
               </ManagementDisclosure>
             )}
+            {m.description && (
+              <p className="mt-2 whitespace-pre-wrap break-words text-sm text-[var(--text-secondary)]">
+                {m.description}
+              </p>
+            )}
+            <p className="mt-2 text-sm text-[var(--text-muted)]">
+              {done}/{linked.length} Tasks erledigt
+            </p>
             {renderTasks(linked)}
           </section>
         ))}
@@ -275,6 +292,9 @@ export function ProjectWork({
           <h3 className="font-semibold">
             Ohne Milestone · {summary.unassigned.length}
           </h3>
+          <p className="mt-1 text-sm text-[var(--text-muted)]">
+            Backlog · noch keiner Etappe zugeordnet
+          </p>
           {renderTasks(summary.unassigned)}
         </section>
         {archived.length > 0 && (

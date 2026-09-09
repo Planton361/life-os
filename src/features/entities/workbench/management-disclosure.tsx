@@ -10,6 +10,11 @@ import {
   type ReactNode,
 } from "react";
 
+const DisclosureClose = createContext<(() => void) | undefined>(undefined);
+export function useCloseManagementDisclosure() {
+  return useContext(DisclosureClose);
+}
+
 const subscribe = () => () => {};
 
 const DisclosureGroup = createContext<{
@@ -88,7 +93,9 @@ export function ManagementDisclosure({
       <div id={id} hidden={!open} className={panelClassName}>
         <div className="grid min-w-0 gap-4 border-t border-[var(--border-subtle)] pt-3">
           <DisclosureGroup.Provider value={null}>
-            {children}
+            <DisclosureClose.Provider value={close}>
+              {children}
+            </DisclosureClose.Provider>
           </DisclosureGroup.Provider>
           <button
             type="button"

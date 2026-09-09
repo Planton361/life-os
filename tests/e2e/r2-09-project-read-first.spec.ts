@@ -129,7 +129,7 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
     page.getByRole("region", { name: "Next Step", exact: true }),
   ).toContainText(project.next_step!);
   await expect(primary).toContainText(resources[0].title);
-  await expect(taskRegion).toContainText("0/1 erledigt");
+  await expect(taskRegion).toContainText("0/1 Tasks erledigt");
   await expect(
     page.getByRole("button", { name: "Verknüpfung entfernen", exact: true }),
   ).toHaveCount(0);
@@ -294,7 +294,7 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
   ).toBeVisible();
   await page.reload();
   await expect(taskRegion).toContainText(tasks[1].title);
-  await expect(taskRegion).toContainText("0/2 erledigt");
+  await expect(taskRegion).toContainText("0/2 Tasks erledigt");
   await manage.click();
   const relation = page
     .getByRole("region", { name: "Beziehungen", exact: true })
@@ -410,7 +410,7 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
       main.locator("input:visible, textarea:visible, select:visible"),
     ).toHaveCount(0);
     if (state === "rich") {
-      await expect(taskRegion).toContainText("4/25 erledigt");
+      await expect(taskRegion).toContainText("4/25 Tasks erledigt");
       await expect(
         page.getByRole("region", { name: "Project Context", exact: true }),
       ).toContainText("TypeScript");

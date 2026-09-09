@@ -76,6 +76,37 @@ wording; this acceptance supersedes those status snapshots. No domain code or
 data changes in this closure. R2-07 Journal became active at this historical closure; R2-09 now precedes
 its remaining user acceptance. Implementation cannot accept Journal.
 
+## R2-09 Project Work — read-first plan UX — 2026-09-09
+
+Status: `CONNECTED`. Work keeps the existing shared Workbench and canonical
+Milestone/Task model. Its compact header shows Task and Milestone counts plus
+separate completed/total counts. “+ Milestone” and “Tasks zuordnen” open mutually
+exclusive, bounded management panels; successful create/assignment closes the
+panel, returns focus to its trigger and refreshes grouping immediately. Errors
+remain visible in the open form. Closing and Escape also return focus.
+
+Stage title, status/date, outcome, progress and compact Task rows remain the
+default plan. The accessible “Milestone verwalten” overflow sits beside the
+stage heading; edit, status/done/reopen, moves and archive remain behind it.
+Open/active stages precede completed stages; “Ohne Milestone” is explicitly
+labelled Backlog and retains its compact empty state. No new cards, data model,
+migration, artifact semantics, Project header or other surface changes.
+
+Current focused Playwright proof covers no stages, two stages, multiple/many
+Tasks, assignment open/close/Escape/focus, assign/reassign/unassign with immediate
+grouping and reload, stage edits, both reorder directions, done/reopen and archive.
+Existing Project edit/artifact/reference/relation regression and Task Detail
+assignment regression pass. Default Work has no visible form fields.
+Screenshots of the plan and assignment panels at 1920×1080, 2560×1440 and 390×844
+are in ignored `test-results/r209-artifact-proof/test-results/r209-project-plan/`.
+No horizontal overflow; console/hydration clean. Design review A–E: YES:
+readable plan, hidden management, clear stages, explicit Backlog, less admin UI.
+Validation PASS: diff check, typecheck, lint, 13 focused unit tests, 11 runtime
+tests, both focused Playwright tests and production build; heavy checks sequential
+in the protected-file-free source copy. Only the isolated proof runtime was used;
+no Target, Legacy or life-os-app database mutation.
+R2-09 remains active; USER ACCEPTANCE STATUS: PENDING.
+
 ## R2-09 Project Milestones + Task Grouping — 2026-09-09
 
 Model audit (canonical persistence): MILESTONE_MODEL_EXISTS = NO;
