@@ -31,7 +31,7 @@ The existing application is the foundation. This roadmap does not restart the pr
 - Nutrition: recipes, ingredients, meals, weekly planning and grocery are connected; R2-05 fully USER ACCEPTED on 2026-09-07.
 - Health & Fitness: Mood, Sleep, Weight, Habits, Running and Strength are connected; R2-05 fully USER ACCEPTED on 2026-09-07.
 - Coding, Education and Work suites plus Notes, Inventory and Wishlist are hidden/retained or folded/externalized; Areas remain canonical context.
-- After Nutrition, External Resource References, Journal completion, Skill Map and Full Active Product Acceptance remain.
+- R2-09 remains active; canonical Dependencies (R2-10) precede the Obsidian Feasibility Lab (R2-11). Integration stages are conditional; Journal and Skill Map await that decision before final R2-06 acceptance.
 - Personal AI Assistant: not started as a production capability.
 - Operation: local-first ready; private remote is optional and not active.
 
@@ -893,10 +893,12 @@ Registry and focused tests. This is administrative closure after user acceptance
 
 **R2-09 status:** Active – Product Boundary & External Resource References.
 USER ACCEPTANCE STATUS: PENDING. R2-09 remains active until explicit user acceptance.
-Implementation evidence is recorded in the Capability Registry; later work remains
-R2-07 Journal with user acceptance pending, then R2-08 and final R2-06.
+Implementation evidence is recorded in the Capability Registry. Only after R2-09
+USER ACCEPTED may R2-10 activate, followed by R2-11 and its explicit user decision.
+No Dependency, Obsidian or Graph implementation belongs to this planning handoff.
 
-**R2-07 status:** Remaining – Journal Surface Completion, resumes after R2-09.
+**R2-07 status:** Paused – Journal Reconciliation, resumes only after the R2-11
+architecture decision and an explicit reconciled scope.
 USER ACCEPTANCE STATUS: PENDING. Journal is neither deleted nor accepted.
 The canonical chronological workspace implementation and current control/browser
 evidence are recorded in the Capability Registry; implementation is not closure.
@@ -961,29 +963,136 @@ dependency belongs in this slice.
    team workflow or automatic completion. R2-09 remains active pending acceptance.
    No new global entity, API, sync, secrets or document copy. Depends
    on R2-04/R2-05. Implementation result only; no Journal acceptance.
-7. **R2-07 – Journal Surface Completion** — canonical dated personal entries,
-   reflection/history, today/recent and week/month/frequency views; tags/context
-   and relations only where canonical. Complete Manual lifecycle, feedback,
-   reload, profile separation, responsive browser proof and user acceptance.
-   Recurring Task / Calendar may lead to an entry; no Journal recurrence model,
-   gamification or automatic migration of Education/Work logs. Depends on R2-09.
-8. **R2-08 – Skill Map** — last independent new capability under Portfolio →
-   Skills → Skill Map. Canonical Skill nodes with evidence count/recency,
-   completed Task/Resource relations and practice context; explicit Skill–Skill
-   edges or labeled derived shared Project/Task/Resource connections. Prove
-   ownership, real source navigation, reload, profile boundaries and responsive
-   controls. No fake percentages, decorative edges or Gap Detection; the latter
-   lacks a Target/Prerequisite model. Depends on R2-07 and existing Skills/Evidence.
-9. **R2-06 – Full Active Product Acceptance** — retain this existing ID, now
-   dependent on R2-05, R2-07 and R2-08. Inventory the entire active product from
-   PRODUCT.md; live click/navigation/write/reload proof, bounds/whitespace/
-   console/hydration, screenshots, Design-Taste and explicit `USER ACCEPTED`.
-   Hidden legacy suites are not completion obligations.
+7. **R2-10 – Canonical Work Graph & Task Dependencies** — same-Project
+   Finish-to-Start dependencies, canonical guards and useful Ready/Blocked views.
+   Depends on R2-09 USER ACCEPTED; independent of Obsidian.
+8. **R2-11 – Obsidian Feasibility Lab** — synthetic comparison and Decision Gate A;
+   depends on accepted R2-10. No automatic continuation into integration.
+9. **Conditional Option A branch: R2-12 → R2-13 → R2-14 → R2-15 → R2-16 → R2-17** —
+   projection, Project Map, security/conflict contract, controlled commands,
+   templates, then Skill/Goal graph. Each block requires its predecessor's scoped
+   acceptance; R2-12 additionally requires explicit Option A selection. These are
+   planned scopes, not implementation or permission to use personal data.
+10. **R2-07 – Journal Reconciliation** — paused until the R2-11 architecture
+    decision; reconcile and schedule its remaining scope explicitly. Preserve the
+    existing chronological workspace and pending acceptance. Decide between full
+    Life OS Journal ownership and Obsidian long-form text with Life OS date,
+    context, relations and tracking. No migration, deletion or ownership change
+    is implied. Recurrence remains Task/Calendar-owned; no fabricated context.
+11. **R2-08 – Skill Map** — PAUSED / SUPERSEDED PENDING R2-11 DECISION. Keep the
+    ID and retained Coding shell. After the decision, explicitly replace its
+    delivery obligation with R2-17 or redefine a bounded native graph capability;
+    do not build both. Canonical Skills/Evidence remain active.
+12. **R2-06 – Full Active Product Acceptance** — terminal block, retaining its ID.
+    Depends on the accepted R2-09/R2-10 outcomes, completed architecture decisions,
+    every selected branch capability and reconciled R2-07/R2-08 obligations.
+    Inventory the entire active contract; prove live controls, navigation/writes,
+    reload, bounds/whitespace, console/hydration, screenshots, Design-Taste and
+    explicit USER ACCEPTED. Hidden legacy suites remain outside completion.
 
-R2-06 keeps its historical ID; new IDs R2-07 and R2-08 deliberately execute
-before it. R2-05 is now USER ACCEPTED; R2-09 is the sole active block. R2-07, R2-08
-and R2-06 remain planned. The preceding consolidation evidence is retained;
-Journal implementation alone cannot set USER ACCEPTED or close R2-07.
+R2-01 through R2-05 remain accepted. R2-09 is the sole active block with
+USER ACCEPTANCE STATUS: PENDING. Pausing R2-07/R2-08 changes future delivery,
+not existing navigation, implementation evidence or data. R2-06 cannot silently
+skip unresolved decisions; exclusions require explicit user deferral.
+
+### R2-10 – Canonical Work Graph & Task Dependencies
+
+**Outcome:** executable next work, blockers and parallel paths are understandable
+and enforced by the same canonical Life OS logic on every write path.
+
+**Scope:** directed Finish-to-Start edges with multiple predecessors/successors,
+same-user and same-Project endpoints, no self-edge, duplicate or cycle. Keep
+Task lifecycle separate from derived availability (READY/BLOCKED and date-waiting
+semantics defined against existing planning fields in this block). Membership,
+context, evidence and artifact edges never become execution dependencies.
+
+Use Project Workbench and Task Detail to add/remove dependencies, explain blockers
+and show Ready/Blocked counts and active Projects without an executable next Task.
+Revalidate dependent Dashboard/Calendar/Today read models where affected, retaining
+Dashboard control, Calendar temporal planning and Today daily-memory roles. No
+Calendar completion CTA or Today planner is introduced.
+
+Server/database guards must prevent blocked completion through every alternate
+Task, direct API/RPC and coupled domain-source path. Concurrency must not admit
+cycles or bypass completion rules. Reopening a predecessor blocks open successors;
+already completed successors remain completed with a visible inconsistency.
+Archived/removed predecessors never silently satisfy a dependency. Project moves,
+unassignment and lifecycle changes must not break same-Project edge integrity.
+Only the minimal audited local model/migration is in scope once R2-10 is active.
+
+**Non-goals:** Obsidian, Canvas, Skill Graph, Templates, Goal dependency engine,
+cross-Project dependencies V1, automatic rescheduling or invented progress scores.
+
+**Acceptance:** serial and parallel paths, multi-predecessor blocking, cycle and
+ownership rejection, completion-bypass and concurrent-write proof, reopen/archive
+behavior, visible feedback and reasons, reload-stable projections, profile
+separation, focused browser/Surface Acceptance and explicit USER ACCEPTED.
+
+### R2-11 – Obsidian Feasibility Lab / Decision Gate A
+
+**Outcome:** the user can decide whether a graph client reduces daily mental load
+and maintenance compared with current Life OS. This is a bounded lab, not a
+production integration. Use only synthetic data: at least one Project, four
+Milestones, 20–30 Tasks with serial/parallel dependencies, one Goal, three Skills,
+six Resources, one Primary and multiple Additional Work Artifacts.
+
+Compare Life OS + Obsidian Core/Canvas, TaskNotes + Canvas Bases, and current
+Life OS; use a small native React-Flow prototype only if necessary within the lab
+scope. Verify then-current tool capabilities and plugin trust before lab use.
+Evaluate return-to-Project orientation, current Milestone, next ready work,
+blocker explanation/change, parallelism, Resource/Artifact and Skill context,
+manual upkeep, RAM/CPU/swap, plugin dependency and maintainability. Use a
+multi-day synthetic Project pilot and report comparable task timings and upkeep.
+
+**Decision Gate A:** stop for an explicit user architecture decision:
+
+- **A:** Life OS canonical + Obsidian projection/command client; existing domain
+  logic stays authoritative, with bridge/auth/conflict/maintenance costs.
+- **B:** Obsidian-first, including TaskNotes/Canvas Bases as candidates; only as
+  an explicitly scoped product migration with one writer/owner per field.
+- **C:** bounded native Life OS graph; no sync layer, but owned graph UX costs.
+- **D:** another stack, including Notion-first only as a deliberate alternative;
+  never a third writer or an implicit exception to local-first/privacy rules.
+
+No demonstrated Obsidian value means stop that integration. Options B/C/D require
+an updated architecture, security and roadmap scope before implementation; the
+Option A sequence below does not automatically apply to them.
+
+### Conditional Option A blocks (planned, not active)
+
+| Block | Outcome and stable scope | Boundary / acceptance |
+|---|---|---|
+| R2-12 – Obsidian Projection Foundation | Regenerable Markdown notes for Project/Milestone/Task/Goal/Skill/Resource; stable IDs, revisions, projection version, canonical Wikilinks, manifest, incremental export, atomic writes and “In Obsidian öffnen” | One-way only; work-state edits remain in Life OS. Preserve Personal content; prove repeat export, rename identity, safe failure/retry and source navigation. No write-back or plugin DB access. |
+| R2-13 – Project Map / Canvas | Generated Project Canvas with Milestone groups, dependency edges, parallel paths, optional Primary Artifact/Resources, stable node IDs and opening from Life OS | Distinguish regenerable views from user-owned layout/Canvas. Prove regeneration preserves personal state; exploratory edges never mutate canonical relations. No write-back. |
+| R2-14 – Obsidian Sync Security & Conflict Contract | Decision record for local pairing/auth, scoped permissions/revocation, endpoint boundary, expected revision, idempotency, conflicts, retries, offline queue/replay, delete semantics, secrets and community-plugin trust | Explicit user acceptance is mandatory before any write-back implementation; no DB credentials in plugin/Vault and no blanket last-write-wins. |
+| R2-15 – Controlled Bidirectional Work Sync | Selected commands only: Task create/edit, dependency add/remove, milestone assignment, complete/reopen through the authenticated local bridge and existing domain boundaries | Prove one truth, canonical guards, no lost updates/duplicates, visible conflicts, safe retries/offline replay and preserved layout. Unrestricted automatic two-way sync remains outside V1 and needs another explicit security/conflict scope. |
+| R2-16 – Project Templates & Automation | Versioned modular Project templates with Milestones, Tasks, Dependencies and supported Resource/Skill/Goal relations; preview, atomic instantiation and idempotency | Save template version; failure leaves no partial Project; retry creates no duplicate; never automatically overwrite running Projects. No autonomous background automation. |
+| R2-17 – Skill / Goal Graph | Chosen client's evidence/practice graph: Skills with Tasks/Projects/Resources; Goals with Projects/Milestones/Tasks and outcome/evidence context | Canonical or labeled derived relations only; real source navigation, ownership, reload and usability proof. No fake mastery percentages, automatic Goal achievement from Task counts or Gap Detection without Target/Prerequisite model. Reconcile R2-08 explicitly. |
+
+### Work Graph product gates
+
+1. **Dependency Truth:** no blocked completion bypasses canonical guards (R2-10).
+2. **Obsidian Value:** user confirms daily value from the pilot (R2-11); otherwise
+   stop integration.
+3. **Single Truth:** every editable field has exactly one canonical owner.
+4. **Sync Reliability:** no silent conflicts, lost updates, duplicates or destroyed
+   personal layouts; prove before accepting R2-15.
+5. **Daily Value:** faster Project resumption and next-action discovery, clearer
+   blockers, less sorting and no disruptive double maintenance. Reduce or discard
+   the integration if the multi-day pilot fails this gate.
+
+Later selected-branch proof spans Capture → Project → Milestone → Task →
+Dependency → Ready/Blocked → Calendar → Dashboard → Completion → successor Ready
+→ Today → Project Map → Resource/Artifact context → Review. A graph is optional
+Deep Work depth; daily flows remain usable without it. Combined Life OS/client/
+bridge load must not recreate critical RAM/swap conditions.
+
+This plan does not authorize installing Obsidian/community plugins, using a
+personal Vault, exporting personal data, cloud sync, Notion/external APIs, remote
+DB access, direct plugin DB writes, Service Role use or deletion of existing
+surfaces. These require their applicable explicit scope/approval; direct DB
+credentials in Obsidian remain prohibited. The handoff is planning provenance,
+not a second active roadmap; repository sources supersede its Downloads paths.
 
 ### R2 boundary
 

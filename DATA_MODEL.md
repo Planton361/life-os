@@ -282,3 +282,68 @@ Tasks and stages; stage completion remains explicit.
 Project Description is available for general context; no separate Project Desired
 Outcome field is introduced. Resources, artifact roles and Task Steps retain their
 existing semantics.
+
+
+## Planned Work Graph Semantics — R2-10 onward
+
+Planning contract only: no Dependency table, revision system, sync or template
+schema is introduced by this documentation change. Existing Project Milestones,
+Artifact roles, Task lifecycle and canonical entity IDs remain the baseline.
+
+| Relation class | Meaning | Execution effect |
+|---|---|---|
+| Membership / containment | Project owns Milestones; a Task optionally belongs to one same-Project stage | No inferred sequence or dependency |
+| Dependency | Directed Task predecessor → successor, Finish-to-Start | Only this relation class creates dependency blocking |
+| Contribution / evidence | Project/Task supports Goal; explicit evidence supports Skill | No automatic Goal achievement or Skill mastery |
+| Context / reference | Existing typed Resource and Task/Skill context | No completion effect or automatic evidence |
+| Work Artifact | Project-specific Primary/Additional Resource role | Existing role semantics; no duplicate artifact entity |
+
+R2-10 V1 permits multiple predecessors/successors only within the same owned
+Project. Reject self-edges, duplicate pairs, cycles, cross-user/cross-Project edges
+and invalid archived endpoints. Preserve this invariant during Project changes
+and unassignment as well as edge creation. Audit the minimal typed relation and
+transaction/concurrency strategy when the block becomes active; no generic global
+edge store or parallel task engine.
+
+Task lifecycle values listed above stay unchanged. READY/BLOCKED are derived
+availability, not editable status fields. WAITING_FOR_DATE is a candidate derived
+state: R2-10 must define its relation to existing planned/scheduled/date fields,
+timezone, eligibility and precedence; a due date is not implicitly a start gate.
+Only satisfied predecessors release a dependency. Cancellation, archive or removal
+never count as completion by default. Reopening a predecessor blocks open
+successors; completed successors retain history with a visible inconsistency.
+Never silently reopen or auto-correct them. Dependency removal is an explicit
+validated command, distinct from deleting/archiving the predecessor.
+
+Every completion boundary, including direct API/RPC and domain-source coupled
+writes, must enforce Dependencies alongside existing domain guards. Reject the
+whole coupled transaction if completion is blocked. Concurrent edge/completion/
+reopen changes must not bypass guards or cycle prevention. Counts and read models
+are derived from canonical records, never a stored overall progress score.
+Milestone status remains explicit; Goal progress uses outcomes/criteria and Skill
+progress explicit evidence/practice, not Task totals.
+
+### Conditional projection and sync identity (R2-12–R2-15, Option A only)
+
+Generated notes use life_os_id, life_os_type (project/milestone/task/goal/skill/
+resource), life_os_revision and projection_version. Filename is not identity;
+Work Artifacts reuse Resource identity. These are planned projection fields, not
+claims of current database revision columns. An export manifest tracks generated
+ownership/version and incremental writes; personal content remains outside it.
+
+Canonical relations have Life OS domain semantics. Exploratory links and Canvas
+layout have none until explicitly promoted through a validated domain command.
+Future sync requires expected revision/optimistic concurrency, idempotency keys,
+visible conflict state, retry, offline queue/replay, delete semantics and projection
+versioning. No blanket last-write-wins; exact field ownership and conflict policy
+are a R2-14 decision before write-back.
+
+R2-16 templates may define Projects, Milestones, Tasks, Dependencies and supported
+Resource/Skill/Goal relations. Preview and instantiation must validate existing
+cardinalities/ownership; creation is atomic/idempotent and records template version.
+Template edits never automatically replace running Projects. R2-17 adds no Goal
+dependency engine or Skill Target/Prerequisite model by implication.
+
+R2-07 Journal ownership reconciliation is pending R2-11. Preserve journal_entries
+and existing note-Resources; neither external long-form ownership nor new Journal
+context/relation fields are implemented or approved here.

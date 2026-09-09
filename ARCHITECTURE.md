@@ -86,3 +86,44 @@ consistency and serialize coupled milestone changes. Existing route revalidation
 covers Project/Task detail and Portfolio, Dashboard, Today and Calendar. These
 projections retain existing task-derived reads; milestone labels are not spread
 into unrelated planning views. No external integration or alternate task store.
+
+
+## Planned Work Graph / Client Decision Boundary
+
+R2-09 remains active; no implementation is authorized by this plan. R2-10 adds
+canonical Task Dependencies independently of any client, inside existing feature-
+local domain/actions/schemas/repositories and controlled transactional boundaries.
+Database enforcement must cover every completion path, including source-linked
+writes; Dashboard/Today/Calendar remain projections over the same records.
+No global state machine, generic graph store or parallel src/server architecture.
+
+R2-11 compares four architectural choices: A Life OS canonical + Obsidian client;
+B Obsidian-first only as an explicit ownership migration; C bounded native graph;
+D another stack, including Notion-first only by conscious local-first/security
+reconciliation. No choice or library installation follows automatically from this
+plan. The lab compares Core/Canvas and TaskNotes/Canvas Bases against current
+Life OS, with a native prototype only if needed. Use synthetic data only.
+
+If A wins, PostgreSQL → Life OS domain logic → regenerable Obsidian projection
+is the first stage (R2-12). Proposed Vault regions are Projects/, Milestones/,
+Tasks/, Goals/, Skills/, Resources/, Generated Views/ and Personal/. Stable IDs,
+revisions, projection version and a manifest govern incremental atomic generation;
+filenames never identify entities. Generated Wikilinks reflect canonical context,
+including Project stages/Goal/Skills/Artifacts and Task blockers/Resources.
+Personal notes/Canvas/layout are never overwritten. Generated Project Canvas is a
+separate regenerable view (R2-13), not an alternate domain model.
+
+After an accepted R2-14 contract, selected R2-15 commands may flow Obsidian → local
+authenticated command bridge → existing Life OS domain actions/RPC boundaries →
+PostgreSQL. No plugin database access. Auth/Zod/ownership/RLS, dependency guards
+and route/read-model revalidation remain mandatory. One-way projection precedes
+controlled commands; unrestricted bidirectional sync requires a further explicit
+security/conflict scope. SECURITY.md owns pairing, permissions and trust requirements;
+DATA_MODEL.md owns stable identity, revisions, conflicts and replay semantics.
+The existing manual HTTP(S) Resource-opening path is not broadened by this plan;
+“In Obsidian öffnen” is a separately validated R2-12 client-opening capability.
+
+Measure combined client/bridge/Life OS resource load and daily maintenance in the
+multi-day pilot; avoid critical RAM/swap conditions. External code/documents/
+spreadsheets retain ownership. Journal long-form placement is unresolved until
+R2-11/R2-07 reconciliation, without changing current journal_entries ownership.

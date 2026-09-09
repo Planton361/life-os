@@ -330,3 +330,35 @@ Commit Hash:
 Nicht gelöst:
 Risiken:
 ```
+
+
+## 14. Work Graph Planning Handoff and Decision Gates
+
+The 2026-09-09 Work Graph/Obsidian handoff has been reconciled into repository
+ROADMAP.md and dependent active contracts. Its Downloads paths and proposed
+examples are provenance, not another active source or implementation authority.
+Planning-only requests update contracts/status truth without starting code,
+migrations, clients or runtime integrations. Report PLAN_READY for the planning
+outcome only after applicable Completion Gate checks pass; this is not feature
+completion or USER ACCEPTED.
+
+R2-09 remains the sole active block until explicit USER ACCEPTED. Then R2-10
+canonical Dependencies precede R2-11 synthetic feasibility work. R2-11 stops at
+Decision Gate A for explicit user architecture selection; do not infer Option A
+from the presence of detailed R2-12–R2-17 plans. R2-07 is paused for Journal
+reconciliation and R2-08 is paused/superseded pending that decision; preserve
+existing implementation/data and pending acceptance. R2-06 remains terminal.
+
+If Option A is selected, projection precedes Canvas, then an accepted R2-14
+security/conflict contract precedes R2-15 commands. The roadmap alone grants no
+installation, personal Vault/export, cloud-sync, external API or remote access.
+No protected path, current Task lifecycle or user acceptance is inferred from
+handoff examples. Every selected implementation block still needs its canonical
+vertical slice and focused proof. Decision blocks produce reviewable evidence and
+explicit decisions; they do not pretend to deliver a production vertical slice.
+
+Prove Dependency Truth, Obsidian Value, Single Truth, Sync Reliability and Daily
+Value at the ROADMAP.md gates. Use a multi-day synthetic pilot before integration
+selection and an explicitly authorized realistic pilot for later product proof.
+Compare resumption/next-action time, blocker clarity, sorting/double upkeep and
+combined RAM/CPU/swap. Stop or reduce integration when daily value fails.

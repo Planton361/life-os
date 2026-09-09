@@ -236,15 +236,16 @@ Daten bleiben erhalten. Area-Farben und Area-Kontextwerte bleiben verwendbar.
 Dashboard = control; Inbox = triage; Today = daily memory;
 Calendar = temporal planning; Portfolio = entity context;
 Resources = knowledge/reference; Health/Nutrition = personal domain intelligence;
-Journal = reflection/history; Skill Map = skill evidence/context graph.
+Journal = reflection/history; Skill/Goal Graph = optional depth after R2-11 decision.
 
-Der Konsolidierungs-Pass hat Journal nicht redesigned. R2-07 folgt dem unten
-beschriebenen Workspace-Vertrag. Wiederkehrendes Journaling kommt
+Der bestehende Journal-Workspace folgt dem unten beschriebenen Vertrag;
+R2-07-Weiterarbeit pausiert bis zur R2-11-Entscheidung. Wiederkehrendes Journaling kommt
 aus Recurring Task / Calendar, nicht aus Journal-eigener Recurrence. Spätere
 Verläufe/Frequency müssen auf echten Einträgen beruhen; keine Gamification.
 
-Skill Map ist das spätere Ziel Portfolio → Skills → Skill Map. Die aktuelle
-Coding-Demo wird nicht als aktive Graph-Funktion umgehängt. Nodes zeigen reale
+R2-08 Skill Map ist bis R2-11 pausiert. Portfolio → Skills → Skill Map bleibt
+ein nativer IA-Kandidat; R2-17 kann ihn nach expliziter Entscheidung ersetzen.
+Die aktuelle Coding-Demo wird nicht als aktive Graph-Funktion umgehängt. Nodes zeigen reale
 Evidence; Edges sind explizite Skill-Relationen oder sichtbar als derived
 markierte gemeinsame Project/Task/Resource-Beziehungen. Keine Fake-Prozentwerte,
 Fake-Edges oder Gap Detection ohne Target-/Prerequisite-Modell.
@@ -274,7 +275,9 @@ in der Liste begrenzt und sind im Detail vollständig lesbar; freier Inhalt
 behält Absätze. Keine erfundenen Tags/Relationen, Scores, Streaks oder Charts.
 Keine Entwickler-/Datenquellen-Copy in der Primärfläche. Recurrence gehört zu
 Task/Calendar; Notes zu Resources, strukturierte Reviews bleiben eigenständig.
-R2-07 bleibt verbleibende Arbeit mit USER ACCEPTANCE STATUS: PENDING.
+R2-07 ist bis zur R2-11-Architekturentscheidung pausiert; USER ACCEPTANCE STATUS:
+PENDING. Dieser Vertrag beschreibt die erhaltene Life-OS-Oberfläche, keine bereits
+beschlossene Verlagerung von Journal-Text nach Obsidian.
 
 ## Project Work Artifacts and References (R2-09)
 
@@ -329,3 +332,27 @@ Use existing matte surfaces/tokens, semantic accents, visible keyboard focus and
 new-tab Accessible Names. Mobile stacks with no horizontal overflow. No provider
 logos/selectors, login/sync controls, previews or specialized embedded editors.
 R2-09 remains active with USER ACCEPTANCE STATUS: PENDING.
+
+
+## Work Graph und Graph-Client — geplanter Designvertrag
+
+R2-09 bleibt aktiv. R2-10 ergänzt später vorhandene Project-/Task-Workbench-
+Regionen um textgestützte Ready-/Blocked-Zustände, konkrete Vorgänger und parallele
+Pfade. Kein Canvas in R2-10, keine neue Dashboard-Komposition. Stage-Reihenfolge,
+Zugehörigkeit, Dependency, Evidence, Reference und Work Artifact müssen visuell
+und sprachlich unterscheidbar bleiben. Echte Counts ersetzen Gesamtprozentwerte.
+
+Ein späterer Graph ist optionaler Deep-Work-Modus. Next Action, Blockierungsgrund
+und Project-Wiederaufnahme sind wichtiger als Graph-Größe oder dekorative Cluster.
+Listen/Detailwege bleiben vollständig per Tastatur bedienbar; Farbe, Position und
+Kanten allein dürfen keine Fachinformation tragen. Bestehende V5-Hierarchie,
+4K-/1920×1080-/Mobile-Guards und Surface Acceptance gelten für Life-OS-Flächen.
+
+Die R2-11-Entscheidung bestimmt den Client; dieser Vertrag bestellt keine native
+Canvas-Library. Bei Option A trennt R2-13 regenerierbares Project Canvas von
+Personal Canvas. Position, Größe, Farbe, Gruppen, Zoom, freie Notizen und
+explorative Kanten sind user-owned Presentation State. Regeneration darf diese
+nicht überschreiben. Kanonische Kanten sind als solche erkennbar; eine gezeichnete
+Kante erzeugt keine Dependency. R2-17 nutzt echte Evidence/Practice und Goal-
+Outcome-Kontexte; keine Fake-Edges oder Mastery-Scores. Journal bleibt sichtbar,
+seine spätere Text-Ownership ist bis R2-11 offen.

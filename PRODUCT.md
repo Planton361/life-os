@@ -8,7 +8,7 @@
 
 ## 1. Product Promise
 
-Life OS is the personal Context, Planning and Memory system: a daily companion for turning intent into a realistic week, executing the current day and learning from what was actually done. Its canonical spine is Task / Project / Goal / Skill / Resource. It is not a Notion clone, a public SaaS product, a passive data archive or a collection of unrelated trackers.
+Life OS is the personal Context, Planning, Execution and Memory system: a daily companion for turning intent into a realistic week, executing the current day and learning from what was actually done. Its canonical spine is Task / Project / Goal / Skill / Resource. It is not a Notion clone, a public SaaS product, a passive data archive or a collection of unrelated trackers.
 
 Every meaningful piece of work has a Life OS identity and context.
 Specialized artifacts may live externally, but remain referenced and connected
@@ -100,7 +100,7 @@ The active surface contract is:
 | Resources | knowledge/reference and evidence |
 | Health / Nutrition / Fitness | personal domain intelligence; records linked to executable scheduled task occurrences |
 | Journal | reflection and time-based personal history |
-| Skill Map | planned skill evidence/context graph under Portfolio → Skills |
+| Skill Map | paused graph decision; R2-08 awaits R2-11, with possible replacement by R2-17 |
 
 Dashboard, Today and Calendar are projections. Portfolio and Resources expose canonical entities. Domain areas own their records but do not invent parallel tasks or calendar events.
 
@@ -419,14 +419,19 @@ classifications, not new types. No parallel knowledge database or file storage.
 
 Journal is the sole active Personal surface: time-based personal documentation,
 reflection and history, with future personal tracking/BI views from real entries.
-Its final vertical slice may expose today, recent entries, week/month history,
-frequency, tags/context and relations where canonical. Mood and reviews remain
+Its existing Life OS workspace exposes today, recent entries and week/month
+history; further scope may include frequency, tags/context and relations where
+canonical. Mood and reviews remain
 separate domain records. No gamification or fabricated activity.
 
 Recurring Task / Calendar → Journal Entry. Recurrence belongs to the established
 task/planning model, never to the Journal model itself. The canonical dated
-`journal_entries` lifecycle remains. R2-07 completes the existing chronological
-surface; user acceptance remains pending until explicitly recorded.
+`journal_entries` lifecycle remains. R2-07 Journal Reconciliation is paused until
+the R2-11 architecture decision.
+The existing chronological surface remains available with user acceptance pending.
+Then decide full Life OS Journal ownership versus long-form text in Obsidian with
+Life OS date/context/relations/tracking. Neither a split nor migration is approved;
+existing model gaps below remain real.
 
 `/life/journal` is a German one-page workspace: header/create CTA, factual
 Today/last-seven-days/current-month counts, searchable dated history and a
@@ -453,8 +458,10 @@ Review replacement. Recurrence stays in Task/Calendar.
 
 ### 5.13 Skill Map
 
-Skill Map is the last planned independent new capability, semantically under
-Portfolio → Skills → Skill Map. Skills are nodes; only real evidence may supply
+R2-08 Skill Map is PAUSED / SUPERSEDED PENDING R2-11 DECISION. The former native
+IA target was Portfolio → Skills → Skill Map; after R2-11 explicitly replace its
+obligation with R2-17 Skill / Goal Graph or redefine a bounded native capability.
+Skills are nodes; only real evidence may supply
 signals: evidence count/recency, completed Task relations, Resource relations
 and practice context. Never invent mastery percentages.
 
@@ -465,7 +472,8 @@ explicit Target/Prerequisite model and is not planned for this slice.
 
 Audit: `/coding/skill-map` is a retained Coding demo/empty Manual shell, not a
 canonical graph. No clean Portfolio Skill Map route currently exists. Document
-the IA target now; build and prove the complete vertical slice later. Canonical
+the retained IA candidate now; do not build a native graph before R2-11 decides
+the client and R2-08 disposition. Canonical
 Skills and Skill Evidence stay active through Portfolio and Skill Detail.
 
 ### 5.14 Deferred Surfaces
@@ -519,7 +527,8 @@ Planned or depth domains:
 
 - direct Task↔Skill context and complete core-graph backlinks;
 - free calendar events and richer Schedule Blocks, subject to C2 model decisions;
-- Journal surface depth and the evidence-backed Skill Map; no new Notes/Wiki/scientific-work suites;
+- canonical Task Dependencies (R2-10); conditional projection, command-sync, template and Skill/Goal graph capabilities after R2-11;
+- Journal reconciliation and Skill Map disposition after R2-11; no new Notes/Wiki/scientific-work suites;
 - activity events and analytics projections;
 - AI conversations, tool proposals and confirmed tool results.
 
@@ -540,8 +549,11 @@ A capability is complete only when:
 
 ## 8. Priority Order and Active Navigation
 
-After Nutrition acceptance: External Resource References → Journal Surface Completion → Skill Map → Full Active
-Product Acceptance. `ROADMAP.md` owns the block IDs and exactly one active block.
+Remaining order: R2-09 acceptance → R2-10 Canonical Work Graph & Task Dependencies
+→ R2-11 Obsidian Feasibility Lab / user Decision Gate A. R2-12–R2-17 are conditional
+on Option A; R2-07 Journal and R2-08 Skill Map are paused for reconciliation after
+that architecture decision. R2-06 is terminal after all selected capabilities and
+explicit reconciliations/deferrals. `ROADMAP.md` owns IDs and one active block.
 R2-05 is USER ACCEPTED on 2026-09-07, including Health & Fitness and Nutrition.
 R2-09 External Resource References is active; R2-07 Journal remains pending user acceptance.
 
@@ -573,3 +585,49 @@ and Today; these projections do not duplicate data. The overview is preserved;
 real history may require scrolling on detail pages. Health & Fitness (Mental,
 Habits, Running and Strength) is USER ACCEPTED on 2026-09-07. Nutrition is the
 also USER ACCEPTED on 2026-09-07; R2-05 is closed; R2-09 precedes remaining Journal acceptance.
+
+
+## 9. Work Graph Strategy — Planned Contract (2026-09-09)
+
+R2-09's Project identity, Artifact roles and Milestones remain the implemented
+foundation pending acceptance. The following is future product scope, not a claim
+of connected Dependencies, Graph, Obsidian or Sync. Life OS should explain what
+work matters, why it is blocked, which paths can run in parallel and how to resume
+a Project after a pause.
+
+Relationship classes stay distinct: membership/containment (Project → Milestone
+→ optional Task assignment), Dependency (Task blocks Task), contribution/evidence
+(Goal support or explicit Skill evidence), context/reference (Resources), and
+Work Artifact (Project-specific Primary/Additional use). Only Dependency edges
+create dependency-based execution locks; membership, stage order and free Canvas
+connections never do. Existing source-domain completion guards still apply.
+
+R2-10 provides same-Project Finish-to-Start dependencies, multiple predecessors
+and successors, cycle/self/duplicate/ownership protection and server/database
+completion enforcement. Availability is derived separately from the existing
+Task lifecycle; BLOCKED is not freely editable. Reopen blocks open successors
+again but preserves completed successors with a visible inconsistency. Archived
+or removed predecessors never silently release work. DATA_MODEL.md owns the
+precise model boundary and R2-10 resolves date-waiting policy before implementation.
+
+Useful views are Ready Now, Blocked with concrete reasons, active Projects without
+an executable next action, Project Map and Skill Context. Counts may show 3/5
+Tasks, 2/5 Milestones, four blocked and six ready Tasks. Counts never automatically
+complete Milestones/Projects/Goals or imply mastery. Goals remain outcome/criteria-
+based; Skills remain evidence/practice-based.
+
+R2-11 compares the current Life OS baseline, Obsidian approaches and a bounded
+native graph candidate. The user chooses architecture after a synthetic multi-day
+pilot; Obsidian-first or Notion-first require explicit product migration, not
+parallel writers. No client choice is made by this plan. Graph is optional depth,
+never required for the daily cockpit. Daily value, upkeep and local resource use
+are acceptance criteria; stop/reduce integration if it adds no practical value.
+
+Only if Option A is selected: Life OS owns operational work state, Obsidian
+provides visual/knowledge views. Start with regenerable one-way projection;
+selected authenticated commands come only after R2-14 security/conflict acceptance.
+Free notes, exploratory edges and personal layout stay user-owned. Later templates
+require preview, versioned atomic/idempotent creation and no automatic changes to
+running Projects. R2-17 shows Skill practice/evidence and Goal outcome context;
+no fake percentages or Gap Detection without a Target/Prerequisite model.
+Existing Note-Resources are preserved; a separate Notes surface stays undecided.

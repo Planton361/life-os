@@ -43,8 +43,8 @@ Implementation status and product visibility are separate truths: `CONNECTED` co
 | Nutrition | `ACCEPTED` | `CONNECTED`: logging/tracking, canonical weekly planning, recipes and grocery; explicitly USER ACCEPTED on 2026-09-07 with Health & Fitness | R2-05 closed; preserve evidence and accepted behavior |
 | Work / Education / Coding | `HIDDEN_RETAINED` / `FOLDED` | A1 canonical Projects, Resources and logs remain; detailed technical statuses below are retained evidence, not suite completion | Areas stay active as context; no independent suite completion |
 | Inventory / Wishlist | `EXTERNALIZED` / `RETAINED` | existing CRUD, purchase decisions and conversion retained; no new completion claim | Spreadsheet is Source of Truth for future use; no active navigation or connector |
-| Journal | `ACTIVE` | `CONNECTED`: R2-07 chronological workspace, canonical create/edit/archive, search/filter, detail and current responsive/reload proof | R2-07 resumes after R2-09; user acceptance pending; unsupported context/relations/Today sources documented below |
-| Skill Map | `ACTIVE_PLANNED` / `REMAINING_DEPTH` | `UI_ONLY`: only a retained Coding demo/empty Manual shell | R2-08 under Portfolio → Skills; no active graph link yet |
+| Journal | `ACTIVE` | `CONNECTED`: R2-07 chronological workspace, canonical create/edit/archive, search/filter, detail and current responsive/reload proof | R2-07 paused until R2-11 architecture decision/reconciliation; user acceptance pending; unsupported context/relations/Today sources documented below |
+| Skill Map | `PAUSED_PENDING_DECISION` | `UI_ONLY`: only a retained Coding demo/empty Manual shell | R2-08 paused/superseded pending R2-11; replace with R2-17 or redefine native scope explicitly; no active graph link |
 | Notes | `FOLDED_INTO_RESOURCES` / `RETAINED` | `CONNECTED`: existing canonical `resources` (`note`), no migration | no separate active Notes app |
 | Anti-Rot / Challenges / Shop | `DEFERRED_HIDDEN` | connected feature code/data; direct routes remain intact | C1.1-01 removed Sidebar, Dashboard and normal Daily-Companion entry points |
 | Entertainment | `DEFERRED_HIDDEN` | connected collection code/data; direct routes remain intact | C1.1-01 removed Sidebar, Life overview and obvious active cross-links |
@@ -64,8 +64,38 @@ The completed technical sequence C1 → C2 → C3 → K1 → H1/H2 → N1 → A1
 history. R2-01 through R2-04 and Health/Fitness are explicitly accepted.
 **R2-05 USER ACCEPTED on 2026-09-07: Health & Fitness and Nutrition accepted in full.**
 R2-05 is closed; R2-09 External Resource References is the sole active block,
-then R2-07 Journal (USER ACCEPTANCE PENDING) → R2-08 Skill Map → R2-06 Full Active Product Acceptance.
-R2-06 retains its original ID; the two new capabilities precede it.
+then, only after R2-09 USER ACCEPTED: R2-10 Dependencies → R2-11 Feasibility /
+Decision Gate A. R2-12–R2-17 are a conditional Option A branch, not active work.
+R2-07 Journal remains implemented but paused for reconciliation after R2-11, with
+USER ACCEPTANCE PENDING. R2-08 is PAUSED / SUPERSEDED PENDING R2-11 DECISION.
+R2-06 retains its ID as terminal acceptance after selected branch work and explicit
+Journal/Skill Map reconciliation. No client choice or migration is implied.
+
+## Work Graph / Obsidian planning reconciliation — 2026-09-09
+
+PLAN_READY is a planning outcome, not a capability status. ROADMAP.md owns the
+sequence, block scopes and five product gates. No implementation, DB action,
+export, installation, integration or new browser acceptance occurred here. Existing
+R2-09 Artifact/Milestone and Journal evidence is retained; current Task lifecycle
+is unchanged. Historical dated entries below retain their original delivery-order
+wording as evidence only; this active sequence supersedes it.
+
+| Planned capability / decision | Status | Current truth / next gate |
+|---|---|---|
+| R2-10 Task Dependencies and derived availability | `NOT_STARTED` | Existing Task context, Milestones and counts are not dependency enforcement; implement only after R2-09 USER ACCEPTED |
+| R2-11 Graph-client architecture / feasibility | `DECISION_REQUIRED` | Synthetic lab and user Decision Gate A outstanding; no Obsidian/native/Notion selection |
+| R2-12 Obsidian projection | `NOT_STARTED` | Conditional Option A; no stable note export/manifest or client-opening capability |
+| R2-13 Project Map / Canvas | `NOT_STARTED` | Conditional Option A; no generated canonical Project Canvas or personal-layout preservation proof |
+| R2-14 Sync security/conflict contract | `DECISION_REQUIRED` | Pairing/auth/permissions, revocation, revisions, conflicts/offline/replay and plugin trust must be accepted before write-back |
+| R2-15 Controlled work commands/sync | `NOT_STARTED` | No bridge/write-back; conditional on Option A and accepted R2-14 |
+| R2-16 Project Templates | `NOT_STARTED` | Future versioned preview and atomic/idempotent instantiation; no running-Project overwrite |
+| R2-17 Skill / Goal Graph | `NOT_STARTED` | Conditional selected-client capability; existing Skills/Evidence are not a graph implementation |
+| R2-07 Journal text ownership reconciliation | `DECISION_REQUIRED` | Existing Journal remains `CONNECTED`, acceptance pending; Life OS versus Obsidian long-form split undecided after R2-11 |
+| R2-08 Skill Map disposition | `DECISION_REQUIRED` | Retained Coding shell remains `UI_ONLY`; replace obligation with R2-17 or redefine native graph only after R2-11 |
+| Separate Notes surface | `DECISION_REQUIRED` | Existing note-Resources remain `CONNECTED`; no new Notes app or migration |
+
+No graph shell, relationship count or planning text upgrades an implementation
+status. R2-09 remains the only active block, USER ACCEPTANCE STATUS: PENDING.
 
 ## R2-05 user acceptance and administrative closure — 2026-09-07
 
@@ -1957,7 +1987,7 @@ consolidation disposition table above. Canonical Area/entity context stays activ
 | Agent session tracking | `NOT_STARTED` | no canonical `agent_sessions` model; Manual and Empty render an honest non-interactive Prepared state | deferred retained model; do not start AI1/provider work without a separate decision |
 | Prompt library | `UI_ONLY` | page concepts | canonical resources/templates |
 | Coding Knowledge | `UI_ONLY` | retained `/coding/knowledge` Prepared route skeleton | FOLDED INTO RESOURCES; no separate knowledge suite |
-| Skill Map | `UI_ONLY` | retained Coding demo/empty Manual shell | ACTIVE PLANNED: R2-08 canonical graph under Portfolio → Skills |
+| Skill Map | `UI_ONLY` | retained Coding demo/empty Manual shell | PAUSED: R2-08 disposition after R2-11; R2-17 replacement or redefined native graph |
 
 # 12. Education (suite hidden / context retained)
 
@@ -2080,7 +2110,8 @@ without protected environment files or the unrelated unstaged test changes.
 Completion Gate: PASS for the delivered canonical scope, reported as
 IMPLEMENTATION_PASS. Unsupported model capabilities above are not implemented
 or represented as connected; no user acceptance is inferred.
-R2-07 remains pending user acceptance and resumes after R2-09.
+R2-07 remains pending user acceptance; its continuation is now paused until
+R2-11 architecture decision and Journal reconciliation.
 
 # 14. Life and Personal
 
