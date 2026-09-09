@@ -278,19 +278,28 @@ R2-07 bleibt verbleibende Arbeit mit USER ACCEPTANCE STATUS: PENDING.
 
 ## Project Work Artifacts and References (R2-09)
 
-Project Detail is read-first. Default order: identity/current state, Next Step,
-Primary Artifact, Tasks & Progress, Additional Artifacts, Goal/Skill context,
-Resources & References, Lifecycle/Management. Desktop uses roughly 65% main
-(information, next step, tasks, additional artifacts) and 35% rail (primary,
-context, references); mobile follows the semantic document order. No full-width
-artifact administration wall or permanent edit inputs.
+Project Detail is a composed read-first workbench, not a card dashboard. Identity,
+description, state/priority/Area, optional deadline, Edit and lifecycle overflow
+share one header; Next Step is a compact work cue directly below identity.
+“Fill the information hierarchy, not the viewport.” Content drives detail-section
+height. Desktop places dominant Work/Tasks (roughly 67%) beside Primary Artifact
+and Context (33%). Work remains naturally compact with few tasks; a bounded task
+list scrolls internally for many tasks. A second compact two-column row contains
+Additional Artifacts and Resources & References. Sections use typography and
+dividers, without repeated card borders. Empty states never stretch a section;
+quiet page background below the completed composition is intentional.
+Mobile stacks Work, Primary/Context, Additional Artifacts and References.
+Section headings and metadata remain readable; the Primary title receives more
+emphasis. Show the human-readable Resource type, never internal relation/role copy.
 
-“Bearbeiten”, “Artifact verwalten”, “+ Artifact hinzufügen” and “Beziehungen
-verwalten” reveal existing controls inline. Explicit expanded state, keyboard
-operation, Escape/close and focus return are required. Ordinary Project deep
-links open read-only values; the existing explicit Resource-create return context
-may open the add disclosure with the created Resource selected. No Create-flow,
-role, schema or relation-semantic change. Portfolio Overview remains unchanged.
+“Bearbeiten” opens the existing editor in a bounded header disclosure; “⋯”
+exposes lifecycle actions with the accessible name “Project verwalten”.
+Artifact and relation controls open inline only on explicit action, with
+expanded state, keyboard operation, Escape/close and focus return. There is no
+management footer. Ordinary Project deep links open readable values; the existing
+explicit Resource-create return context opens artifact addition with the created
+Resource selected. Create flow, roles, schema, relation semantics and Portfolio
+Overview remain unchanged.
 
 Artifact entries show existing type, title, short description, “Extern öffnen ↗”
 and “Details öffnen”. Role changes are explicit and use bounded existing selects;

@@ -76,14 +76,16 @@ wording; this acceptance supersedes those status snapshots. No domain code or
 data changes in this closure. R2-07 Journal became active at this historical closure; R2-09 now precedes
 its remaining user acceptance. Implementation cannot accept Journal.
 
-## R2-09 Project Detail read-first refinement — 2026-09-08
+## R2-09 Project Detail composition refinement — 2026-09-09
 
-Current Project Detail defaults to understanding and working: identity/current
-state, Next Step, Primary Artifact, Tasks & Progress, Additional Artifacts,
-Goal/Skill context, supporting References and Lifecycle/Management. Desktop uses
-roughly 65% main / 35% rail; mobile follows that semantic document order. This
-replaces the permanent editor/artifact administration layout in the previous
-implementation evidence below. The Artifact/Reference contract remains unchanged.
+Current Project Detail is a content-driven workbench: integrated identity/state
+header and compact Next Step, dominant Work/Tasks/Progress beside Primary Artifact
+and Context (roughly 67/33). Additional Artifacts and References share a compact
+second row. Short/empty task lists never stretch to the viewport; long lists have
+a bounded internal scroll area. Background below the composition is intentional.
+Readable section headings, emphasized Primary title and human-readable Resource
+types replace tiny labels and raw role copy. The Artifact/Reference contract is
+unchanged.
 
 | Capability | Status | Current control truth |
 |---|---|---|
@@ -92,21 +94,46 @@ implementation evidence below. The Artifact/Reference contract remains unchanged
 | Artifact management | `CONNECTED` | Per-artifact disclosure for role/removal; Primary also offers explicit replacement selection |
 | Artifact addition | `CONNECTED` | “+ Artifact hinzufügen” reveals existing Resource/role link and external-reference Create navigation |
 | Relations | `CONNECTED` | Task/Goal/Skill/Reference read context; “Beziehungen verwalten” reveals existing Task and Reference controls |
-| Lifecycle | `CONNECTED` | Archive behind “Lifecycle verwalten”; archived Projects remain readable |
+| Lifecycle | `CONNECTED` | Archive behind header “⋯” / “Project verwalten”; archived Projects remain readable |
 
-Inline disclosures expose `aria-expanded`/`aria-controls`, keyboard activation,
+Header editor/overflow and inline rail disclosures expose `aria-expanded`/`aria-controls`, keyboard activation,
 Escape and Close with focus return. No modal/focus trap. Normal views hide role,
 link/unlink and save controls. The existing explicit Resource-create return
 context still opens addition with the same new Resource selected; Create itself
 and its routes/actions are unchanged. Task progress uses real linked tasks;
-Skills are labelled as context from Tasks/Evidence, not new Project-owned records.
+Skills remain context from Tasks/Evidence, not new Project-owned records.
 
 No schema, migration, project_role, Resource/Relation semantics, repository/action,
 Portfolio Overview or other accepted surface changes. No new dependency. Existing
 backend auth/Zod/ownership/RLS/revalidation is reused by all disclosed forms.
 R2-09 remains active; USER ACCEPTANCE STATUS: PENDING.
 
-Current validation: IMPLEMENTATION_PASS. New focused Read-first Project proof
+Visual composition refinement (2026-09-09): “Fill the information hierarchy, not
+the viewport.” Focused proof covers light (one Task/Primary, no References), rich
+(25 Tasks, real 4/25 progress, Goal/Skill, Primary/Additional/Reference), and empty
+Projects. It rejects stretched short/empty Work cards and checks a second content
+row below the main zone. Management remains explicit and preserves existing writes.
+Current visual proof: IMPLEMENTATION_PASS. All three states pass at 1920×1080,
+2560×1440 and 390×844; default/management screenshots also cover 3840×2160.
+Short/empty Work cards remain below 260px. Desktop composition includes the second
+row inside the viewport; no horizontal overflow. Keyboard scroll, edit/save/reload,
+exclusive header disclosures, Primary replacement without copies, Task link/unlink,
+Reference addition/reload and external/detail links pass. Console/hydration clean.
+Screenshots: ignored `test-results/r209-artifact-proof/test-results/r209-content-final/`.
+
+Design review A–F: YES for no giant empty card, dominant Work, clear compact
+Primary, readable Context, naturally completed page, no technical relation copy.
+V5 Design-Taste: PASS; existing matte tokens and restrained semantic accents,
+no remaining visual violation requiring a fix. Blank background is intentional.
+
+Validation PASS: git diff --check, pnpm typecheck, pnpm lint, ten focused
+Artifact/Workbench unit tests, eleven runtime tests and pnpm build, sequential in
+the protected-file-free source copy. The earlier two Artifact regression tests
+also passed; the broad Workbench run was interrupted by task steering and is not
+claimed as current evidence. No schema/migration/Target DB action. R2-09 remains
+active; USER ACCEPTANCE STATUS: PENDING.
+
+Previous read-first validation (2026-09-08): IMPLEMENTATION_PASS. Focused Project proof
 PASS: zero visible inputs in normal view; readable Next Step and actual task
 counts; external keyboard opening (intercepted locally), Resource Detail navigation;
 Edit → save → close/Escape → reload; direct Primary replacement without copies;

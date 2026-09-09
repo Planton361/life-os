@@ -473,7 +473,7 @@ test("R2-04 all canonical creates, detail edits, relations, steps, lists, lifecy
     ["Resource", resource],
   ] as const) {
     await page.goto(`/${route[kind]}/${id}`);
-    if (kind === "Project") await openProjectControl(page, "Lifecycle verwalten");
+    if (kind === "Project") await openProjectControl(page, "Project verwalten");
     await page
       .getByRole("button", { name: `${kind} archivieren`, exact: true })
       .click();
@@ -492,7 +492,7 @@ test("R2-04 all canonical creates, detail edits, relations, steps, lists, lifecy
           .single()
       ).data?.archived_at,
     ).not.toBeNull();
-    if (kind === "Project") await expect(page.getByRole("region", { name: "Project Information" })).toContainText("Archiviert");
+    if (kind === "Project") await expect(page.getByLabel("Project Header", { exact: true })).toContainText("Archiviert");
     else await expect(page.getByText("Archiviert · historische Ansicht")).toBeVisible();
     await page.reload();
     if (kind === "Project") await expect(page.getByRole("button", { name: "Bearbeiten", exact: true })).toHaveCount(0);

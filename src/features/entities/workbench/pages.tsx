@@ -286,49 +286,47 @@ export async function WorkbenchEditor({
   }
   if (kind === "project" && id && row)
     return (
-      <EntityWorkbenchShell kind={kind} title={row.title}>
-        <ProjectReadView
-          data={data}
-          id={id}
-          selectedResource={
-            data.resources.some(
-              (r) => r.id === selectedResource && !r.archived_at,
-            )
-              ? selectedResource
-              : undefined
-          }
-          edit={
-            <EntityForm
-              kind={kind}
-              id={id}
-              values={values}
-              projectContext={contextProject?.id}
-              areas={data.areas
-                .filter((a) => !a.archived_at || a.id === row?.area_id)
-                .map((a) => ({
-                  id: a.id,
-                  title: a.name + (a.archived_at ? " (archiviert)" : ""),
-                }))}
-              projects={available(
-                data,
-                "project",
-                String(values.projectId ?? ""),
-              )}
-              goals={available(data, "goal", String(values.goalId ?? ""))}
-              archived={Boolean(row?.archived_at)}
-              sourceOwned={Boolean(source)}
-            />
-          }
-          relations={
-            <Relations
-              kind={kind}
-              id={id}
-              data={data}
-              archived={Boolean(row.archived_at)}
-            />
-          }
-        />
-      </EntityWorkbenchShell>
+      <ProjectReadView
+        data={data}
+        id={id}
+        selectedResource={
+          data.resources.some(
+            (r) => r.id === selectedResource && !r.archived_at,
+          )
+            ? selectedResource
+            : undefined
+        }
+        edit={
+          <EntityForm
+            kind={kind}
+            id={id}
+            values={values}
+            projectContext={contextProject?.id}
+            areas={data.areas
+              .filter((a) => !a.archived_at || a.id === row?.area_id)
+              .map((a) => ({
+                id: a.id,
+                title: a.name + (a.archived_at ? " (archiviert)" : ""),
+              }))}
+            projects={available(
+              data,
+              "project",
+              String(values.projectId ?? ""),
+            )}
+            goals={available(data, "goal", String(values.goalId ?? ""))}
+            archived={Boolean(row?.archived_at)}
+            sourceOwned={Boolean(source)}
+          />
+        }
+        relations={
+          <Relations
+            kind={kind}
+            id={id}
+            data={data}
+            archived={Boolean(row.archived_at)}
+          />
+        }
+      />
     );
   return (
     <EntityWorkbenchShell

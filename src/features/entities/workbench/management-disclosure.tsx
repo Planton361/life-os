@@ -1,6 +1,8 @@
 "use client";
 
 import {
+  createContext,
+  useContext,
   useId,
   useRef,
   useState,
@@ -10,22 +12,52 @@ import {
 
 const subscribe = () => () => {};
 
+const DisclosureGroup = createContext<{
+  active: string | null;
+  setActive: (id: string | null) => void;
+} | null>(null);
+
+export function ManagementDisclosureGroup({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  const [active, setActive] = useState<string | null>(null);
+  return (
+    <DisclosureGroup.Provider value={{ active, setActive }}>
+      <div className={className}>{children}</div>
+    </DisclosureGroup.Provider>
+  );
+}
+
 export function ManagementDisclosure({
   label,
   children,
   initiallyOpen = false,
+  triggerText,
+  panelClassName,
 }: {
   label: string;
   children: ReactNode;
   initiallyOpen?: boolean;
+  triggerText?: string;
+  panelClassName?: string;
 }) {
   const hydrated = useSyncExternalStore(
     subscribe,
     () => true,
     () => false,
   );
-  const [open, setOpen] = useState(initiallyOpen);
+  const [localOpen, setLocalOpen] = useState(initiallyOpen);
+  const group = useContext(DisclosureGroup);
   const id = useId();
+  const open = group ? group.active === id : localOpen;
+  function setOpen(value: boolean) {
+    if (group) group.setActive(value ? id : null);
+    else setLocalOpen(value);
+  }
   const trigger = useRef<HTMLButtonElement>(null);
   function close() {
     setOpen(false);
@@ -45,16 +77,19 @@ export function ManagementDisclosure({
         ref={trigger}
         type="button"
         disabled={!hydrated}
+        aria-label={triggerText ? label : undefined}
         aria-expanded={open}
         aria-controls={id}
         className="min-h-10 text-left text-sm text-[var(--accent-cyan)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
         onClick={() => setOpen(!open)}
       >
-        {label}
+        {triggerText ?? label}
       </button>
-      <div id={id} hidden={!open}>
+      <div id={id} hidden={!open} className={panelClassName}>
         <div className="grid min-w-0 gap-4 border-t border-[var(--border-subtle)] pt-3">
-          {children}
+          <DisclosureGroup.Provider value={null}>
+            {children}
+          </DisclosureGroup.Provider>
           <button
             type="button"
             className="min-h-10 justify-self-start text-sm underline"

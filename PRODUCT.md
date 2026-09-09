@@ -231,7 +231,11 @@ Tasks and supporting References. These use existing Areas without domain suites.
 Project Detail defaults to a read-first workbench: understandable identity/current
 state, next step, tasks/progress, primary/additional artifacts and supporting context.
 Project editing, artifact roles and relation management appear only after explicit
-user actions. Existing writes remain available in accessible inline disclosures.
+user actions. Existing writes remain available in accessible disclosures.
+Identity and Next Step form the header; real Tasks/Progress dominate the remaining
+workspace. A secondary rail groups Primary Artifact and Context; Additional
+Artifacts and References share a compact second row. Content drives section
+height: fill the information hierarchy, not the viewport. Lifecycle belongs to header overflow, not the normal work flow.
 Artifact management belongs to Project Detail. Existing Resource Create stores
 one canonical object, then returns to the Project for explicit role selection.
 Resource Detail shows its uses; Resources Search still finds every such record.

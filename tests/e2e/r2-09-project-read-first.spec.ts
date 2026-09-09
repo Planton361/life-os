@@ -161,14 +161,11 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
       caret: "initial",
     });
     for (const [label, regionName, suffix] of [
-      ["Bearbeiten", "Project Information", "edit"],
+      ["Bearbeiten", "Project Header", "edit"],
       ["Artifact verwalten", "Primary Work Artifact", "artifact-management"],
-      ["Beziehungen verwalten", "Lifecycle / Management", "relations"],
+      ["Beziehungen verwalten", "Project Context", "relations"],
     ]) {
-      const region = page.getByRole("region", {
-        name: regionName,
-        exact: true,
-      });
+      const region = page.getByLabel(regionName, { exact: true });
       const trigger = region.getByRole("button", { name: label, exact: true });
       await trigger.click();
       await expect(trigger).toHaveAttribute("aria-expanded", "true");
@@ -263,18 +260,23 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
   await expect(primary).toContainText(resources[1].title);
   await expect(additional).toContainText(resources[0].title);
   expect((await api.from("resources").select("id")).data).toHaveLength(3);
-  const add = primary.getByRole("button", {
+  const add = additional.getByRole("button", {
     name: "+ Artifact hinzufügen",
     exact: true,
   });
   await add.click();
   await expect(
-    primary.getByRole("form", { name: "Mit Project verknüpfen", exact: true }),
+    additional.getByRole("form", {
+      name: "Mit Project verknüpfen",
+      exact: true,
+    }),
   ).toBeVisible();
   await expect(
-    primary.getByRole("link", { name: "Neue externe Referenz anlegen" }),
+    additional.getByRole("link", { name: "Neue externe Referenz anlegen" }),
   ).toHaveAttribute("href", `/resources/new?project=${project.id}`);
-  await primary.getByRole("button", { name: "Schließen", exact: true }).click();
+  await additional
+    .getByRole("button", { name: "Schließen", exact: true })
+    .click();
   await expect(add).toBeFocused();
   const manage = page.getByRole("button", {
     name: "Beziehungen verwalten",
@@ -313,12 +315,192 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
   await expect(
     main.locator("input:visible, textarea:visible, select:visible"),
   ).toHaveCount(0);
+  await editTrigger.click();
   await page
-    .getByRole("button", { name: "Lifecycle verwalten", exact: true })
+    .getByRole("button", { name: "Project verwalten", exact: true })
     .click();
+  await expect(editTrigger).toHaveAttribute("aria-expanded", "false");
   await expect(
     page.getByRole("button", { name: "Project archivieren", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Schließen", exact: true }).click();
+
+  // Three composition states use the same canonical models and local user.
+  const light = (
+    await api
+      .from("projects")
+      .insert({
+        user_id: uid,
+        title: "Light Project",
+        next_step: "Ersten Task bearbeiten",
+      })
+      .select()
+      .single()
+  ).data!;
+  const empty = (
+    await api
+      .from("projects")
+      .insert({
+        user_id: uid,
+        title: "Empty Project",
+      })
+      .select()
+      .single()
+  ).data!;
+  expect(
+    (
+      await api.from("tasks").insert({
+        user_id: uid,
+        title: "Ein konkreter Task",
+        project_id: light.id,
+      })
+    ).error,
+  ).toBeNull();
+  expect(
+    (
+      await api.rpc("set_project_resource_role", {
+        p_project_id: light.id,
+        p_resource_id: resources[0].id,
+        p_role: "primary_artifact",
+      })
+    ).error,
+  ).toBeNull();
+  const skill = (
+    await api
+      .from("skills")
+      .insert({
+        user_id: uid,
+        name: "TypeScript",
+      })
+      .select()
+      .single()
+  ).data!;
+  expect(
+    (
+      await api.from("task_skill_links").insert({
+        user_id: uid,
+        task_id: tasks[0].id,
+        skill_id: skill.id,
+      })
+    ).error,
+  ).toBeNull();
+  expect(
+    (
+      await api.from("tasks").insert(
+        Array.from({ length: 24 }, (_, i) => ({
+          user_id: uid,
+          title: `Arbeitsschritt ${i + 1}`,
+          project_id: project.id,
+          status: i < 4 ? ("done" as const) : ("planned" as const),
+        })),
+      )
+    ).error,
+  ).toBeNull();
+  for (const [state, record] of [
+    ["rich", project],
+    ["light", light],
+    ["empty", empty],
+  ] as const) {
+    await page.goto(`/projects/${record.id}`);
+    await expect(editTrigger).toBeEnabled();
+    await expect(
+      page.getByLabel("Project Header", { exact: true }),
+    ).toContainText(record.title);
+    await expect(
+      main.locator("input:visible, textarea:visible, select:visible"),
+    ).toHaveCount(0);
+    if (state === "rich") {
+      await expect(taskRegion).toContainText("4/25 erledigt");
+      await expect(
+        page.getByRole("region", { name: "Project Context", exact: true }),
+      ).toContainText("TypeScript");
+    } else {
+      await expect(
+        page.getByRole("region", {
+          name: "Resources & References",
+          exact: true,
+        }),
+      ).toContainText("Keine References.");
+    }
+    for (const [width, height] of [
+      [1920, 1080],
+      [2560, 1440],
+      [390, 844],
+    ]) {
+      await page.setViewportSize({ width, height });
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+      const workBox = (await taskRegion.boundingBox())!;
+      if (width >= 1920) {
+        const railBox = (await page
+          .getByRole("complementary", { name: "Project Context Rail" })
+          .boundingBox())!;
+        expect(workBox.width / railBox.width).toBeGreaterThan(1.8);
+        expect(workBox.y + workBox.height).toBeLessThanOrEqual(height);
+        if (state !== "rich") expect(workBox.height).toBeLessThan(260);
+        const secondBox = (await page
+          .locator("[data-project-secondary]")
+          .boundingBox())!;
+        expect(secondBox.y).toBeGreaterThanOrEqual(workBox.y + workBox.height);
+        expect(secondBox.y + secondBox.height).toBeLessThan(height);
+        expect(
+          await page.evaluate(
+            () => document.documentElement.scrollHeight <= innerHeight + 2,
+          ),
+        ).toBe(true);
+      }
+      await page.screenshot({
+        path: info.outputPath(`project-${state}-${width}.png`),
+        fullPage: true,
+        caret: "initial",
+      });
+      if (state === "rich") {
+        const list = page.locator("[data-project-task-list]");
+        expect(
+          await list.evaluate((el) => el.scrollHeight > el.clientHeight),
+        ).toBe(true);
+        await list.focus();
+        await list.press("End");
+        await expect
+          .poll(() => list.evaluate((el) => el.scrollTop))
+          .toBeGreaterThan(0);
+        await list.evaluate((el) => {
+          el.scrollTop = 0;
+        });
+      }
+    }
+  }
+  await page.goto(`/projects/${light.id}`);
+  const refs = page.getByRole("region", {
+    name: "Resources & References",
+    exact: true,
+  });
+  await refs
+    .getByRole("button", { name: "+ Reference hinzufügen", exact: true })
+    .click();
+  const refForm = refs.getByRole("form", {
+    name: "Reference verknüpfen",
+    exact: true,
+  });
+  await refForm
+    .getByLabel("Resource", { exact: true })
+    .selectOption(resources[2].id);
+  await refForm.getByRole("button").click();
+  await expect(
+    page
+      .getByRole("status")
+      .filter({ hasText: "Project-Verwendung gespeichert" })
+      .last(),
+  ).toBeVisible();
+  await page.reload();
+  await expect(refs).toContainText(resources[2].title);
+  await refs
+    .getByRole("link", { name: resources[2].title, exact: true })
+    .click();
+  await expect(page).toHaveURL(new RegExp(`/resources/${resources[2].id}$`));
+  expect((await api.from("resources").select("id")).data).toHaveLength(3);
   expect(errors).toEqual([]);
 });

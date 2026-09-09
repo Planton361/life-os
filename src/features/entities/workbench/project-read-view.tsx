@@ -1,12 +1,15 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { WorkbenchData } from "@/features/real-data/supabase/repositories/entity-workbench-read";
-import { ManagementDisclosure } from "./management-disclosure";
+import {
+  ManagementDisclosure,
+  ManagementDisclosureGroup,
+} from "./management-disclosure";
 import { OperationForm } from "./forms";
 import { ProjectResources } from "./project-resources";
 
-const panel =
-  "min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-1)] p-5";
+import styles from "./project-read-view.module.css";
+import { taskTextFields } from "./task-text";
 
 export function ProjectReadView({
   data,
@@ -36,161 +39,217 @@ export function ProjectReadView({
   const skills = data.skills.filter((s) => skillIds.has(s.id));
   const area = data.areas.find((a) => a.id === project.area_id);
   return (
-    <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.85fr)_minmax(0,1fr)]">
-      <section
-        aria-label="Project Information"
-        className={`${panel} xl:col-start-1 xl:row-start-1`}
-      >
-        <h2 className="font-semibold">Project Information</h2>
+    <div data-entity-workbench="project" className={styles.project}>
+      <header aria-label="Project Header" className={styles.header}>
+        <nav
+          aria-label="Breadcrumb"
+          className="mb-3 flex gap-3 text-sm text-[var(--text-muted)]"
+        >
+          <Link href="/portfolio">Portfolio</Link>
+          <span>/</span>
+          <Link href="/portfolio?type=projects">Projects</Link>
+        </nav>
+        <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-2">
+          <h1 className="min-w-0 break-words text-3xl font-semibold">
+            {project.title}
+          </h1>
+          <p className="text-sm text-[var(--text-secondary)]">
+            {project.archived_at ? "Archiviert" : project.status} ·{" "}
+            {area?.name ?? "Keine Area"} · {project.priority}
+          </p>
+        </div>
         {project.description && (
-          <p className="mt-2 whitespace-pre-wrap break-words text-sm text-[var(--text-secondary)]">
+          <p className="mt-2 max-w-4xl whitespace-pre-wrap break-words text-sm text-[var(--text-secondary)]">
             {project.description}
           </p>
         )}
-        <dl className="mt-3 flex flex-wrap gap-x-8 gap-y-2 text-sm">
-          <div>
-            <dt className="text-[var(--text-muted)]">Status</dt>
-            <dd>{project.archived_at ? "Archiviert" : project.status}</dd>
-          </div>
-          <div>
-            <dt className="text-[var(--text-muted)]">Priority</dt>
-            <dd>{project.priority}</dd>
-          </div>
-          <div>
-            <dt className="text-[var(--text-muted)]">Area</dt>
-            <dd>{area?.name ?? "Nicht zugeordnet"}</dd>
-          </div>
-          <div>
-            <dt className="text-[var(--text-muted)]">Deadline</dt>
-            <dd>{project.target_date?.slice(0, 10) ?? "Keine Deadline"}</dd>
-          </div>
-        </dl>
-        {!project.archived_at && (
-          <ManagementDisclosure label="Bearbeiten">{edit}</ManagementDisclosure>
+        {project.target_date && (
+          <p className="mt-2 text-sm text-[var(--text-muted)]">
+            Deadline{" "}
+            {project.target_date.slice(0, 10).split("-").reverse().join(".")}
+          </p>
         )}
-      </section>
-      <section
-        aria-label="Next Step"
-        className={`${panel} xl:col-start-1 xl:row-start-2`}
-      >
-        <h2 className="font-semibold">Next Step</h2>
-        <p className="mt-2 whitespace-pre-wrap break-words text-sm text-[var(--text-secondary)]">
-          {project.next_step || "Noch kein nächster Schritt festgelegt."}
-        </p>
-      </section>
-      <div className={`${panel} xl:col-start-2 xl:row-start-1 xl:row-span-2`}>
+        <ManagementDisclosureGroup className={styles.actions}>
+          {!project.archived_at && (
+            <>
+              <ManagementDisclosure
+                label="Bearbeiten"
+                panelClassName={styles.editPanel}
+              >
+                {edit}
+              </ManagementDisclosure>
+              <ManagementDisclosure
+                label="Project verwalten"
+                triggerText="⋯"
+                panelClassName={styles.menuPanel}
+              >
+                <OperationForm
+                  operation="project.archive"
+                  label="Project archivieren"
+                >
+                  <input type="hidden" name="projectId" value={id} />
+                </OperationForm>
+              </ManagementDisclosure>
+            </>
+          )}
+        </ManagementDisclosureGroup>
+        <section
+          aria-label="Next Step"
+          className="mt-2 border-l-2 border-[var(--accent-blue)] pl-3"
+        >
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--accent-blue)]">
+            Next Step
+          </h2>
+          <p className="mt-1 whitespace-pre-wrap break-words text-sm">
+            {project.next_step || "Noch kein nächster Schritt festgelegt."}
+          </p>
+        </section>
+      </header>
+      <div className={styles.workspace} data-project-workspace>
+        <section aria-label="Tasks & Progress" className={styles.work}>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] px-5 py-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-[var(--accent-blue)]">
+                Work
+              </p>
+              <h2 className="mt-1 text-xl font-semibold">
+                Tasks{" "}
+                <span className="text-base font-normal text-[var(--text-muted)]">
+                  {tasks.length}
+                </span>
+              </h2>
+            </div>
+            <p className="text-sm text-[var(--text-secondary)]">
+              {done}/{tasks.length} erledigt
+            </p>
+          </div>
+          <div
+            className={styles.taskList}
+            data-project-task-list
+            tabIndex={0}
+            aria-label="Project Task List"
+          >
+            {tasks.length ? (
+              <ul>
+                {tasks.map((t) => {
+                  const text = taskTextFields(t.description);
+                  return (
+                    <li key={t.id} className={styles.task}>
+                      <div className="min-w-0">
+                        <p className="text-sm text-[var(--text-secondary)]">
+                          {t.status}
+                        </p>
+                        <Link
+                          className="mt-1 block break-words font-medium hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
+                          href={`/tasks/${t.id}`}
+                        >
+                          {t.title}
+                        </Link>
+                        {text.nextAction && (
+                          <p className="mt-1 line-clamp-2 break-words text-sm text-[var(--text-secondary)]">
+                            {text.nextAction}
+                          </p>
+                        )}
+                        {t.due_at && (
+                          <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                            Deadline{" "}
+                            {t.due_at
+                              .slice(0, 10)
+                              .split("-")
+                              .reverse()
+                              .join(".")}
+                          </p>
+                        )}
+                      </div>
+                      <Link
+                        className="min-h-10 content-center text-sm text-[var(--text-muted)] underline"
+                        aria-label={`${t.title}: Details öffnen`}
+                        href={`/tasks/${t.id}`}
+                      >
+                        Details ↗
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="py-5 text-sm text-[var(--text-muted)]">
+                Noch keine Tasks.
+              </p>
+            )}
+          </div>
+        </section>
+        <aside aria-label="Project Context Rail" className={styles.rail}>
+          <ProjectResources data={data} projectId={id} section="primary" />
+          <section aria-label="Project Context" className="min-w-0">
+            <h2 className="text-base font-semibold text-[var(--text-secondary)]">
+              Context
+            </h2>
+            <dl className="mt-3 grid gap-2 text-sm">
+              <div>
+                <dt className="text-sm text-[var(--text-secondary)]">Goal</dt>
+                <dd className="mt-1">
+                  {goal ? (
+                    <Link
+                      className="break-words text-[var(--accent-purple)] hover:underline"
+                      href={`/goals/${goal.id}`}
+                    >
+                      {goal.title}
+                      {goal.archived_at ? " · Archiviert" : ""}
+                    </Link>
+                  ) : (
+                    "—"
+                  )}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-sm text-[var(--text-secondary)]">
+                  Skills · {skills.length}
+                </dt>
+                <dd
+                  title="Aus Tasks / Evidence"
+                  className="mt-1 flex flex-wrap gap-x-3 gap-y-1"
+                >
+                  {skills.length
+                    ? skills.map((s) => (
+                        <Link
+                          key={s.id}
+                          className="break-words hover:underline"
+                          href={`/skills/${s.id}`}
+                        >
+                          {s.name}
+                        </Link>
+                      ))
+                    : "—"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-sm text-[var(--text-secondary)]">Area</dt>
+                <dd className="mt-1">{area?.name ?? "—"}</dd>
+              </div>
+            </dl>
+            {!project.archived_at && (
+              <ManagementDisclosure label="Beziehungen verwalten">
+                {relations}
+                <ProjectResources
+                  data={data}
+                  projectId={id}
+                  section="reference-management"
+                />
+              </ManagementDisclosure>
+            )}
+          </section>
+        </aside>
+      </div>
+      <div className={styles.secondary} data-project-secondary>
         <ProjectResources
           data={data}
           projectId={id}
-          section="primary"
+          section="additional"
           selectedResource={selectedResource}
         />
-      </div>
-      <section
-        aria-label="Tasks & Progress"
-        className={`${panel} xl:col-start-1 xl:row-start-3`}
-      >
-        <h2 className="font-semibold">
-          Tasks & Progress{" "}
-          <span className="text-sm font-normal text-[var(--text-muted)]">
-            · {done}/{tasks.length} erledigt
-          </span>
-        </h2>
-        {tasks.length ? (
-          <ul className="mt-3 grid max-h-64 gap-2 overflow-y-auto text-sm">
-            {tasks.map((t) => (
-              <li
-                key={t.id}
-                className="flex items-baseline justify-between gap-4"
-              >
-                <Link
-                  className="min-w-0 break-words underline underline-offset-4"
-                  href={`/tasks/${t.id}`}
-                >
-                  {t.title}
-                </Link>
-                <span className="shrink-0 text-[var(--text-muted)]">
-                  {t.status}
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-2 text-sm text-[var(--text-muted)]">
-            Noch keine Tasks zugeordnet.
-          </p>
-        )}
-      </section>
-      <div className={`${panel} xl:col-start-1 xl:row-start-4`}>
-        <ProjectResources data={data} projectId={id} section="additional" />
-      </div>
-      <section
-        aria-label="Project Context"
-        className={`${panel} xl:col-start-2 xl:row-start-3`}
-      >
-        <h2 className="font-semibold">Goals / Skills / Context</h2>
-        <div className="mt-3 grid gap-2 text-sm">
-          <p>
-            Goal ·{" "}
-            {goal ? (
-              <Link className="underline" href={`/goals/${goal.id}`}>
-                {goal.title}
-                {goal.archived_at ? " · Archiviert" : ""}
-              </Link>
-            ) : (
-              "Nicht zugeordnet"
-            )}
-          </p>
-          <p className="text-[var(--text-muted)]">
-            {skills.length} Skills aus Tasks / Evidence
-          </p>
-          {skills.map((s) => (
-            <Link
-              key={s.id}
-              className="break-words underline"
-              href={`/skills/${s.id}`}
-            >
-              {s.name}
-              {s.archived_at ? " · Archiviert" : ""}
-            </Link>
-          ))}
-        </div>
-      </section>
-      <div className={`${panel} xl:col-start-2 xl:row-start-4`}>
         <ProjectResources data={data} projectId={id} section="references" />
       </div>
-      <section
-        aria-label="Lifecycle / Management"
-        className="grid min-w-0 gap-2 border-t border-[var(--border-subtle)] pt-3 xl:col-span-2"
-      >
-        <h2 className="text-sm text-[var(--text-muted)]">
-          Lifecycle / Management
-        </h2>
-        {project.archived_at ? (
-          <p className="text-sm">
-            Archiviert. Historische Beziehungen bleiben erhalten.
-          </p>
-        ) : (
-          <>
-            <ManagementDisclosure label="Beziehungen verwalten">
-              {relations}
-              <ProjectResources
-                data={data}
-                projectId={id}
-                section="reference-management"
-              />
-            </ManagementDisclosure>
-            <ManagementDisclosure label="Lifecycle verwalten">
-              <OperationForm
-                operation="project.archive"
-                label="Project archivieren"
-              >
-                <input type="hidden" name="projectId" value={id} />
-              </OperationForm>
-            </ManagementDisclosure>
-          </>
-        )}
-      </section>
     </div>
   );
 }

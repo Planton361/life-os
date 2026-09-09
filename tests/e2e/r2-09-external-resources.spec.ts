@@ -85,7 +85,7 @@ async function apiFor(page: Page) {
 }
 async function assignProjectResource(page: Page, id: string, role: string) {
   const region = page.getByRole("region", {
-    name: "Primary Work Artifact",
+    name: "Additional Work Artifacts",
     exact: true,
   });
   const add = region.getByRole("button", {
@@ -520,7 +520,7 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
   await page.goto(`/projects/${projects[0]}`);
   // Server-action failure remains visible when a selected endpoint is archived after loading.
   const active = page.getByRole("region", {
-    name: "Primary Work Artifact",
+    name: "Additional Work Artifacts",
     exact: true,
   });
   await active
