@@ -505,6 +505,7 @@ Current or established domains:
 - inbox items;
 - tasks;
 - projects;
+- canonical Task Dependencies with derived READY/BLOCKED (R2-10, USER ACCEPTED);
 - goals;
 - skills and skill evidence;
 - resources and resource relations;
@@ -527,7 +528,7 @@ Planned or depth domains:
 
 - direct Task↔Skill context and complete core-graph backlinks;
 - free calendar events and richer Schedule Blocks, subject to C2 model decisions;
-- canonical Task Dependencies (R2-10); conditional projection, command-sync, template and Skill/Goal graph capabilities after R2-11;
+- conditional projection, command-sync, template and Skill/Goal graph capabilities after R2-11;
 - Journal reconciliation and Skill Map disposition after R2-11; no new Notes/Wiki/scientific-work suites;
 - activity events and analytics projections;
 - AI conversations, tool proposals and confirmed tool results.
@@ -549,13 +550,13 @@ A capability is complete only when:
 
 ## 8. Priority Order and Active Navigation
 
-R2-09 is USER ACCEPTED on 2026-09-09. Remaining order: active R2-10 Canonical Work Graph & Task Dependencies
-→ R2-11 Obsidian Feasibility Lab / user Decision Gate A. R2-12–R2-17 are conditional
+R2-09 and R2-10 are USER ACCEPTED on 2026-09-09. Active: R2-11 Obsidian
+Feasibility Lab / user Decision Gate A. R2-12–R2-17 are conditional
 on Option A; R2-07 Journal and R2-08 Skill Map are paused for reconciliation after
 that architecture decision. R2-06 is terminal after all selected capabilities and
 explicit reconciliations/deferrals. `ROADMAP.md` owns IDs and one active block.
 R2-05 is USER ACCEPTED on 2026-09-07, including Health & Fitness and Nutrition.
-R2-10 Canonical Work Graph & Task Dependencies is active; R2-07 Journal remains pending user acceptance.
+R2-11 is synthetic research only; R2-07 Journal remains pending user acceptance.
 
 ```text
 PRIMARY: Dashboard · Inbox · Today · Calendar · Portfolio · Resources
@@ -590,8 +591,8 @@ also USER ACCEPTED on 2026-09-07; R2-05 is closed; R2-09 precedes remaining Jour
 ## 9. Work Graph Strategy — Canonical Dependencies and Future Clients (2026-09-09)
 
 R2-09's Project identity, Artifact roles and Milestones remain the implemented
-foundation, USER ACCEPTED on 2026-09-09. The following is future product scope, not a claim
-of connected Dependencies, Graph, Obsidian or Sync. Life OS should explain what
+foundation, USER ACCEPTED on 2026-09-09, alongside R2-10 Dependencies.
+Graph clients, Obsidian and Sync remain future scope pending R2-11 user decision. Life OS should explain what
 work matters, why it is blocked, which paths can run in parallel and how to resume
 a Project after a pause.
 

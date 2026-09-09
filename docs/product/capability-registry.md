@@ -63,15 +63,27 @@ Personal → Journal; Settings. Legacy routes remain directly addressable.
 The completed technical sequence C1 → C2 → C3 → K1 → H1/H2 → N1 → A1 → Z1 is
 history. R2-01 through R2-04 and Health/Fitness are explicitly accepted.
 **R2-05 USER ACCEPTED on 2026-09-07: Health & Fitness and Nutrition accepted in full.**
-R2-05 and R2-09 are closed and USER ACCEPTED. R2-10 Dependencies is the sole
-active block; only after its user acceptance follows R2-11 Feasibility /
-Decision Gate A. R2-12–R2-17 are a conditional Option A branch, not active work.
+R2-05, R2-09 and R2-10 are closed and USER ACCEPTED. R2-11 Feasibility /
+Decision Gate A is the sole active research block. R2-12–R2-17 are a conditional Option A branch, not active work.
 R2-07 Journal remains implemented but paused for reconciliation after R2-11, with
 USER ACCEPTANCE PENDING. R2-08 is PAUSED / SUPERSEDED PENDING R2-11 DECISION.
 R2-06 retains its ID as terminal acceptance after selected branch work and explicit
 Journal/Skill Map reconciliation. No client choice or migration is implied.
 
-## R2-09 user acceptance and R2-10 activation — 2026-09-09
+## R2-10 user acceptance and R2-11 activation — 2026-09-09
+
+**R2-10 USER ACCEPTED** by explicit user decision. Implementation commit
+`ec3c62f` and all domain, DB, concurrency, browser/reload, responsive and console
+evidence below remain intact. No R2-10 code, model or behavior is changed.
+Historical PENDING/active statements retain their original proof-stage meaning
+and are superseded for current status by this acceptance.
+
+**R2-11 – Obsidian Feasibility Lab** is the sole Active Work Block.
+DECISION_REQUIRED: compare isolated synthetic variants; no personal Vault/data,
+canonical database writes, productive integration or synchronization. The user
+owns the final architecture decision; R2-12 remains not started.
+
+## R2-09 user acceptance and R2-10 activation — 2026-09-09 (historical transition)
 
 R2-09 = USER ACCEPTED by explicit user decision for the current Project,
 Milestone and Artifact direction. Existing Artifact/Milestone/read-first control,
@@ -157,8 +169,8 @@ wording as evidence only; this active sequence supersedes it.
 
 | Planned capability / decision | Status | Current truth / next gate |
 |---|---|---|
-| R2-10 Task Dependencies and derived availability | `CONNECTED` | IMPLEMENTATION_PASS; see current R2-10 evidence above. Sole active block; USER ACCEPTANCE PENDING |
-| R2-11 Graph-client architecture / feasibility | `DECISION_REQUIRED` | Synthetic lab and user Decision Gate A outstanding; no Obsidian/native/Notion selection |
+| R2-10 Task Dependencies and derived availability | `CONNECTED` | USER ACCEPTED 2026-09-09; implementation/evidence retained, block closed |
+| R2-11 Graph-client architecture / feasibility | `DECISION_REQUIRED` | Active synthetic lab; user Decision Gate A outstanding, no Obsidian/native/Notion selection |
 | R2-12 Obsidian projection | `NOT_STARTED` | Conditional Option A; no stable note export/manifest or client-opening capability |
 | R2-13 Project Map / Canvas | `NOT_STARTED` | Conditional Option A; no generated canonical Project Canvas or personal-layout preservation proof |
 | R2-14 Sync security/conflict contract | `DECISION_REQUIRED` | Pairing/auth/permissions, revocation, revisions, conflicts/offline/replay and plugin trust must be accepted before write-back |

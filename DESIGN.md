@@ -254,7 +254,7 @@ Nav-Proof: 1920×1080, 2560×1440 und 390×844, echte Klicks/Tastatur, Reload,
 keine abgeschnittenen Links oder horizontaler Overflow. Der freie Desktop-Raum
 zwischen kurzer Navigation und unten verankerten Settings ist Orientierung,
 kein Anlass für neue Widgets. Bestehende Surface Acceptances bleiben erhalten;
-Nutrition/R2-05 ist seit 2026-09-07 USER ACCEPTED. R2-09 ist USER ACCEPTED (2026-09-09); R2-10 ist aktiv; Journal bleibt bis zur realen User-Abnahme pending.
+Nutrition/R2-05 ist seit 2026-09-07 USER ACCEPTED. R2-09 und R2-10 sind USER ACCEPTED (2026-09-09); R2-11 ist aktives Lab; Journal bleibt bis zur realen User-Abnahme pending.
 
 ## Journal Workspace (R2-07)
 
@@ -336,8 +336,8 @@ R2-09 is USER ACCEPTED on 2026-09-09; preserve this accepted composition.
 
 ## Work Graph und späterer Graph-Client — Designvertrag
 
-R2-09 ist akzeptiert; R2-10 ist aktiv und ergänzt vorhandene Project-/Task-Workbench-
-Regionen um textgestützte Ready-/Blocked-Zustände, konkrete Vorgänger und parallele
+R2-09 und R2-10 sind akzeptiert; R2-11 bewertet im isolierten Lab die bestehenden Project-/Task-Workbench-
+Regionen mit textgestützten Ready-/Blocked-Zuständen, konkreten Vorgängern und parallelen
 Pfade. Kein Canvas in R2-10, keine neue Dashboard-Komposition. Stage-Reihenfolge,
 Zugehörigkeit, Dependency, Evidence, Reference und Work Artifact müssen visuell
 und sprachlich unterscheidbar bleiben. Echte Counts ersetzen Gesamtprozentwerte.

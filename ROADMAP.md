@@ -5,7 +5,7 @@
 **Design truth:** Life OS – Linear Calm Dark Command Center / Dashboard V5
 **Detailed status:** `docs/product/capability-registry.md`
 **Completed sequence:** C1 → C2 → C3 → K1 → H1/H2 → N1 → A1 → Z1 (technical baseline)
-**Active Work Block:** R2-10 – Canonical Work Graph & Task Dependencies
+**Active Work Block:** R2-11 – Obsidian Feasibility Lab
 
 ## 1. Product Contract
 
@@ -31,7 +31,7 @@ The existing application is the foundation. This roadmap does not restart the pr
 - Nutrition: recipes, ingredients, meals, weekly planning and grocery are connected; R2-05 fully USER ACCEPTED on 2026-09-07.
 - Health & Fitness: Mood, Sleep, Weight, Habits, Running and Strength are connected; R2-05 fully USER ACCEPTED on 2026-09-07.
 - Coding, Education and Work suites plus Notes, Inventory and Wishlist are hidden/retained or folded/externalized; Areas remain canonical context.
-- R2-09 is USER ACCEPTED on 2026-09-09; active canonical Dependencies (R2-10) precede the Obsidian Feasibility Lab (R2-11). Integration stages are conditional; Journal and Skill Map await that decision before final R2-06 acceptance.
+- R2-09 and R2-10 are USER ACCEPTED on 2026-09-09; the Obsidian Feasibility Lab (R2-11) is active. Integration stages are conditional; Journal and Skill Map await that decision before final R2-06 acceptance.
 - Personal AI Assistant: not started as a production capability.
 - Operation: local-first ready; private remote is optional and not active.
 
@@ -869,7 +869,7 @@ or backend evidence cannot alone restore a `CONNECTED` surface claim.
 ## 4.12 R2 – Product Reality Recovery & Surface Completion
 
 **Status:** R2-00 completed (contract rebaseline). **Current active slice:**
-R2-10 – Canonical Work Graph & Task Dependencies (the only Active Work Block).
+R2-11 – Obsidian Feasibility Lab (the only Active Work Block).
 
 **R2-01 status:** Completed; explicitly USER ACCEPTED on 2026-09-06.
 Existing control, browser, layout and migration evidence is retained in the
@@ -896,12 +896,21 @@ The user accepts the current Project/Milestone/Artifact direction and explicitly
 continues the Work Graph roadmap. Existing implementation, control, reload and
 visual evidence is retained in the Capability Registry; no redesign in closure.
 
-**R2-10 status:** Active – Canonical Work Graph & Task Dependencies;
+**R2-10 status:** Completed; explicitly USER ACCEPTED on 2026-09-09.
+Canonical Work Graph & Task Dependencies:
 IMPLEMENTATION_PASS on 2026-09-09. Same-Project Task dependencies, derived
 availability and database-enforced completion are delivered. Current evidence is
 in the Capability Registry; exact lifecycle semantics are in the
 [Task Dependency decision](docs/architecture/task-dependencies-r2-10.md).
-USER ACCEPTANCE STATUS: PENDING. R2-11 does not start before real R2-10 acceptance.
+Implementation commit: `ec3c62f`. Existing evidence is preserved; no functionality
+changes belong to this administrative closure.
+
+**R2-11 status:** Active – synthetic research/comparison only. DECISION_REQUIRED.
+No productive integration, personal data, canonical DB changes or synchronization.
+Use an isolated test Vault/profile; system installation or changes to personal
+Obsidian configuration require USER_INSTALLATION_CONFIRMATION_REQUIRED.
+FEASIBILITY_PASS or BLOCKED is lab evidence, not an architecture decision.
+R2-11 remains active until the user decides; R2-12 is not activated automatically.
 
 **R2-07 status:** Paused – Journal Reconciliation, resumes only after the R2-11
 architecture decision and an explicit reconciled scope.
@@ -996,8 +1005,8 @@ dependency belongs in this slice.
     reload, bounds/whitespace, console/hydration, screenshots, Design-Taste and
     explicit USER ACCEPTED. Hidden legacy suites remain outside completion.
 
-R2-01 through R2-05 and R2-09 remain accepted. R2-10 is the sole active block with
-USER ACCEPTANCE STATUS: PENDING. Pausing R2-07/R2-08 changes future delivery,
+R2-01 through R2-05, R2-09 and R2-10 remain accepted. R2-11 is the sole active
+research block; DECISION_REQUIRED. Pausing R2-07/R2-08 changes future delivery,
 not existing navigation, implementation evidence or data. R2-06 cannot silently
 skip unresolved decisions; exclusions require explicit user deferral.
 
@@ -1109,7 +1118,7 @@ not a second active roadmap; repository sources supersede its Downloads paths.
   for a promised core control.
 - Dashboard’s removed Bottom-Zone features remain removed; they cannot return
   through historical layout references.
-- The R2 order is binding. R2-01 through R2-05 are accepted and closed. R2-09 is accepted; only R2-10 is active; R2-07 retains USER ACCEPTANCE STATUS: PENDING.
+- The R2 order is binding. R2-01 through R2-05 are accepted and closed. R2-09 and R2-10 are accepted; only R2-11 is active; R2-07 retains USER ACCEPTANCE STATUS: PENDING.
 
 ## 5. Completed Major Work
 

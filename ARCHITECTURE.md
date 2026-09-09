@@ -90,7 +90,7 @@ into unrelated planning views. No external integration or alternate task store.
 
 ## Canonical Work Graph / Future Client Decision Boundary
 
-R2-09 is USER ACCEPTED; R2-10 is active and adds
+R2-09 and R2-10 are USER ACCEPTED; R2-11 is the active synthetic lab. R2-10 provides
 canonical Task Dependencies independently of any client, inside existing feature-
 local domain/actions/schemas/repositories and controlled transactional boundaries.
 Database enforcement must cover every completion path, including source-linked

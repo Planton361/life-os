@@ -33,7 +33,12 @@ Nicht gilt für: Rechtsberatung.
 
 ## Geplante Work-Graph-/Obsidian-Grenzen
 
-R2-10 ist aktiv; R2-09 ist USER ACCEPTED. Die Graph-Client-Planung erlaubt keine Installation von Obsidian oder
+R2-09 und R2-10 sind USER ACCEPTED; R2-11 ist das aktive synthetische Lab.
+Der explizite R2-11-Auftrag erlaubt eine vorhandene oder rein temporäre isolierte
+Testinstanz und eine kleine geprüfte Plugin-Auswahl ausschließlich im Test-Vault.
+Systeminstallation, Paketmanager-Änderungen oder Eingriffe in persönliche Obsidian-
+Konfiguration benötigen USER_INSTALLATION_CONFIRMATION_REQUIRED.
+Die Roadmap allein erlaubt weiterhin keine Installation von Obsidian oder
 Community-Plugins, Nutzung eines persönlichen Vaults, Exporte persönlicher Daten,
 Cloud-Synchronisation, Notion-Anbindung, externe APIs oder Remote-DB-Aktionen.
 Dafür braucht es den vorgesehenen expliziten Scope und die jeweilige Freigabe.

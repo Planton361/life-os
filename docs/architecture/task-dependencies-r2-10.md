@@ -1,7 +1,8 @@
 # R2-10 — Canonical Task Dependency decision
 
-Date: 2026-09-09. Active implementation contract; R2-10 user acceptance pending.
-ROADMAP.md remains the priority source. R2-09 is USER ACCEPTED; R2-11 is not active.
+Date: 2026-09-09. Accepted implementation contract; R2-10 USER ACCEPTED by explicit user decision.
+ROADMAP.md remains the priority source. R2-09 is USER ACCEPTED; R2-11 is the active synthetic lab.
+Implementation evidence from `ec3c62f` is retained; administrative closure changes no behavior.
 
 ## Model audit
 
