@@ -247,3 +247,38 @@ Energy/Duration/Today to Task; Area to every supported target; Review needed to
 Resource; Deadline to Task `due_at` (end of day in profile timezone) or
 Project/Goal `target_date`. Unsupported target signals stay in source history,
 with no implied target field. Original capture is never silently discarded.
+
+
+## Project Milestones (R2-09)
+
+Model audit: existing EntityMilestone/Education milestone structures are demo
+fixtures, including manually stored progress and cross-domain links. No canonical
+milestone table, task grouping or task-to-milestone FK existed. They are not reused
+or migrated into personal data. Canonical Projects and Tasks remain unchanged in
+identity.
+
+`project_milestones` owns id, user_id, project_id, title, optional description/
+target_date, status (open/active/done), sort_order, timestamps and soft archive.
+Description is the stage outcome. `tasks.milestone_id` is nullable; all existing
+Tasks remain null. Composite (user_id, project_id, milestone_id) FK and a non-null
+Project check prevent cross-owner/project assignment and null-Project bypass.
+Milestone identity is immutable. Guards reject archived endpoints, even through
+direct API writes. Archival atomically clears task assignments, including archived
+Tasks, while preserving every Task and the stage record. Hard delete is not exposed.
+
+Unassignment is a single owned Task-row update in the repository and remains
+available when its Project is archived; this prevents trapping active Tasks in
+historical Project context. Non-null assignments still require active endpoints.
+
+One nonarchived active stage per Project is enforced by a partial unique index.
+The invoker RPC locks the owned Project, demotes prior active to open only on
+explicit active selection, and performs stage writes/assignment/order/archive.
+Order is unique per Project, deferred inside transactions to permit atomic swaps.
+Completed stages sort after open/active; moves apply within that group. Task order
+is inherited from the existing Project task read model (created_at descending).
+No percentage is stored: stage and Project progress are computed from real active
+Tasks and stages; stage completion remains explicit.
+
+Project Description is available for general context; no separate Project Desired
+Outcome field is introduced. Resources, artifact roles and Task Steps retain their
+existing semantics.

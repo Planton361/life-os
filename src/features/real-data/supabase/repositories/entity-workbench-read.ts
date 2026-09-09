@@ -21,6 +21,7 @@ export async function readEntityWorkbench() {
     steps,
     scheduleSources,
     profile,
+    milestones,
   ] = await Promise.all([
     client
       .from("tasks")
@@ -67,6 +68,12 @@ export async function readEntityWorkbench() {
       .select("task_id,source_type,source_id")
       .eq("user_id", uid),
     client.from("profiles").select("timezone").eq("id", uid).maybeSingle(),
+    client
+      .from("project_milestones")
+      .select("*")
+      .eq("user_id", uid)
+      .order("sort_order")
+      .order("id"),
   ]);
   if (
     [
@@ -81,10 +88,12 @@ export async function readEntityWorkbench() {
       evidence,
       steps,
       scheduleSources,
+      milestones,
     ].some((r) => r.error)
   )
     throw new Error("Entity-Daten konnten nicht geladen werden.");
   return {
+    milestones: milestones.data ?? [],
     timezone: profile.data?.timezone ?? "Europe/Berlin",
     tasks: tasks.data ?? [],
     projects: projects.data ?? [],

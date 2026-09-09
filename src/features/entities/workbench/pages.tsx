@@ -1,3 +1,4 @@
+import { TaskMilestoneContext } from "./project-work";
 import { ProjectReadView } from "./project-read-view";
 import { projectResourceUses, projectRoleLabels } from "./project-artifacts";
 import { ExternalResourceLink } from "@/features/resources/external-resource-link";
@@ -399,6 +400,9 @@ export async function WorkbenchEditor({
         </Block>
         {id && row && (
           <aside className="grid content-start gap-5">
+            {kind === "task" && (
+              <TaskMilestoneContext data={data} taskId={id} />
+            )}
             <Relations
               kind={kind}
               id={id}

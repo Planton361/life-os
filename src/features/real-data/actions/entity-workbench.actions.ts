@@ -47,6 +47,7 @@ import {
   type WorkbenchKind,
 } from "@/features/entities/workbench/types";
 
+import { writeProjectMilestone } from "../supabase/repositories/project-milestone-repository";
 import { setProjectResourceRole } from "../supabase/repositories/project-artifact-repository";
 import { writeTaskStep } from "../supabase/repositories/task-step-repository";
 
@@ -148,7 +149,21 @@ export async function workbenchOperation(
     return { status: "blocked", message: "Bitte im Manual-Profil anmelden." };
   const scope = { userId: auth.user.id, profileId: auth.user.id };
   let result: FormResult = invalid;
-  if (operation === "project.resource.role") {
+  if (operation === "project.milestone") {
+    if (
+      await writeProjectMilestone(auth.client, auth.user.id, {
+        operation: str(form, "milestoneOperation"),
+        projectId: str(form, "projectId"),
+        milestoneId: str(form, "milestoneId"),
+        taskId: str(form, "taskId"),
+        title: str(form, "title"),
+        description: str(form, "description"),
+        status: str(form, "status") || "open",
+        targetDate: str(form, "targetDate"),
+      })
+    )
+      result = { status: "success", message: "Milestone gespeichert." };
+  } else if (operation === "project.resource.role") {
     if (
       await setProjectResourceRole(auth.client, {
         projectId: str(form, "projectId"),

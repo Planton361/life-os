@@ -76,6 +76,74 @@ wording; this acceptance supersedes those status snapshots. No domain code or
 data changes in this closure. R2-07 Journal became active at this historical closure; R2-09 now precedes
 its remaining user acceptance. Implementation cannot accept Journal.
 
+## R2-09 Project Milestones + Task Grouping — 2026-09-09
+
+Model audit (canonical persistence): MILESTONE_MODEL_EXISTS = NO;
+TASK_GROUPING_EXISTS = NO; REUSABLE_MODEL = NO. Older EntityMilestone and Education
+phase/milestone types are Demo fixtures with manual progress and cross-domain
+links, not an owned Project stage model. Existing Projects/Tasks, Workbench reads,
+forms, auth/actions, Task lifecycle and route revalidation are reused.
+
+Schema decision: one project_milestones table and optional tasks.milestone_id.
+Milestones hold title, outcome/description, explicit open/active/done state,
+optional target date, deterministic sort order and existing soft-archive
+timestamps. Existing Tasks remain unassigned, with no inferred stages or copies.
+Composite owner/project FK, null-Project check, immutable milestone identity,
+endpoint guards and RLS protect direct API and invoker RPC writes. A partial
+unique index enforces one active stage; explicit activation opens the former
+active stage. Project locking serializes swaps, order and archival. Order has a
+deferred unique constraint; moves swap positions within unfinished/completed
+groups. No global entity, sprint or team workflow.
+
+| Capability | Status | Current truth |
+|---|---|---|
+| Milestone CRUD | `CONNECTED` | Add and manage disclosures: title, outcome, date, state, completion/reopening, order and archive |
+| Task grouping | `CONNECTED` | Exactly one optional same-Project stage; unassigned Tasks always visible |
+| Task Detail context | `CONNECTED` | Read stage, navigate to Project, change/unassign behind disclosure |
+| Progress | `CONNECTED` | Stage done/total Tasks; Project done/total Tasks and done/total nonarchived stages; no stored percentage or auto-completion |
+| Stage lifecycle | `CONNECTED` | Completed stages secondary; archive preserves history and atomically unassigns all linked Tasks |
+| Ownership | `CONNECTED` | Auth + Zod + invoker RPC + RLS + DB constraints/guards; cross-project/user/null-project/archived-stage rejection |
+
+Project composition retains Header, shared Work/Context, Supporting surfaces.
+Milestones are subsections inside left Work, not top-level cards. Existing task
+order (created_at descending) is retained inside each stage. Project creation,
+artifact roles and Resource relations are unchanged. Task Detail adds only
+milestone context; changing Project while assigned requires unassignment first.
+Clearing an assignment uses an owned single-row Task update and remains possible
+after Project archive; new assignments to archived endpoints remain rejected.
+Portfolio/Project Preview, Dashboard Active Portfolio, Today and Calendar remain
+canonical Task/Project projections; they do not own stage data or duplicate Tasks.
+Existing revalidation refreshes them after writes, without adding milestone labels
+to daily/time planning.
+
+Browser proof: real Research/Implementation creation, outcome/date/title edit,
+Project assignment, Task Detail unassignment, Task completion and derived counts,
+reorder/reload, explicit active replacement and done/reopen, archive/history and
+no Task copies. Direct API/RPC tests reject cross-project and cross-user
+assignments, null-Project bypass and anonymous writes; concurrent activation
+leaves one active milestone. Console/hydration clean. Responsive captures at
+1920×1080, 2560×1440 and 390×844 are ignored under
+`test-results/r209-artifact-proof/test-results/r209-milestones-final/`.
+Existing Project read-first/artifact/relations regression also passes, including
+Projects without Milestones. Final schema has a fresh isolated Git-only chain;
+DB lint and security advisors report no issues. The final fresh chain and local
+Target both match all 48 Git migration versions. Target had the expected 47-version
+baseline; the guarded local migration ran only after isolated PASS. Existing
+Target Tasks remain unassigned and no stages were inferred or created. No remote DB.
+
+Validation: git diff --check, pnpm typecheck, pnpm lint, 13 focused Milestone/
+Artifact/Task-step unit tests, 11 runtime tests, focused Milestone and existing
+Project Workbench Playwright, and pnpm build PASS. Heavy checks ran sequentially
+in the protected-file-free source copy. Generated public types retain the
+pre-existing verified nullable Inbox RPC argument overrides. A stale stage-picker
+write is rejected with visible error; reload retains unassigned state.
+
+Remaining Project Depth: Desired Outcome/Definition of Done (Project Description
+is general context; no new field), Blockers/Risks, Decisions, Activity/Review.
+These are separate future capabilities. Neither Journal nor Skill Map was worked
+on in this slice.
+R2-09 remains the sole active block; USER ACCEPTANCE STATUS: PENDING.
+
 ## R2-09 Project Detail composition refinement — 2026-09-09
 
 Current Project Detail uses three structural surfaces: Header, shared Main

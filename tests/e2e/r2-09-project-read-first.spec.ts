@@ -461,7 +461,7 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
           expect(
             (await page.locator("[data-project-task-list]").boundingBox())!
               .height,
-          ).toBeLessThan(180);
+          ).toBeLessThan(260);
         const secondBox = (await page
           .locator("[data-project-secondary]")
           .boundingBox())!;

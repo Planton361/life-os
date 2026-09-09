@@ -298,6 +298,16 @@ Header, Work, Primary/Context, Additional Artifacts, References; vertical divide
 become horizontal separators. Readable headings, emphasized Primary title and
 human-readable Resource types remain; no internal relation/role copy.
 
+Milestones live inside the left Work section, never as top-level cards. Stage
+headings show explicit state, optional date and actual done/total task counts;
+Task rows retain existing ordering. Open/current stages precede completed stages,
+using persistent order within each group. Unassigned Tasks remain visible under
+“Ohne Milestone”, including Projects predating Milestones. Add/edit/assign/order/
+archive use explicit disclosures and existing forms. Current stage is text-labelled
+“Aktuell”; completed stages are visually secondary. Archived stages are readable
+history in a disclosure. Task Detail has compact milestone context and an optional
+assignment disclosure. Other projections retain their existing focused purpose.
+
 “Bearbeiten” opens the existing editor in a bounded header disclosure; “⋯”
 exposes lifecycle actions with the accessible name “Project verwalten”.
 Artifact and relation controls open inline only on explicit action, with

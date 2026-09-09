@@ -954,6 +954,11 @@ dependency belongs in this slice.
    management disclosures. Explicit Project-specific Primary/Additional Work Artifact roles are
    separate from supporting References; a minimal relation-role migration is
    permitted after audit, with isolated proof before local Target application.
+   Project depth within R2-09 now includes canonical Project Milestones (open,
+   active, done), optional same-project Task assignment, explicit ordering and
+   task/milestone-derived counts. A minimal audited schema slice is permitted,
+   with fresh Git-only/RLS/browser proof before local Target migration. No sprint,
+   team workflow or automatic completion. R2-09 remains active pending acceptance.
    No new global entity, API, sync, secrets or document copy. Depends
    on R2-04/R2-05. Implementation result only; no Journal acceptance.
 7. **R2-07 – Journal Surface Completion** — canonical dated personal entries,

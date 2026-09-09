@@ -1059,6 +1059,56 @@ export type Database = {
         }
         Relationships: []
       }
+      project_milestones: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          description: string | null
+          id: string
+          project_id: string
+          sort_order: number
+          status: string
+          target_date: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          project_id: string
+          sort_order?: number
+          status?: string
+          target_date?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          project_id?: string
+          sort_order?: number
+          status?: string
+          target_date?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_milestones_user_id_project_id_fkey"
+            columns: ["user_id", "project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["user_id", "id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           archived_at: string | null
@@ -2310,6 +2360,7 @@ export type Database = {
           goal_id: string | null
           id: string
           instance_date: string | null
+          milestone_id: string | null
           planned_date: string | null
           priority: Database["public"]["Enums"]["task_priority"]
           project_id: string | null
@@ -2334,6 +2385,7 @@ export type Database = {
           goal_id?: string | null
           id?: string
           instance_date?: string | null
+          milestone_id?: string | null
           planned_date?: string | null
           priority?: Database["public"]["Enums"]["task_priority"]
           project_id?: string | null
@@ -2358,6 +2410,7 @@ export type Database = {
           goal_id?: string | null
           id?: string
           instance_date?: string | null
+          milestone_id?: string | null
           planned_date?: string | null
           priority?: Database["public"]["Enums"]["task_priority"]
           project_id?: string | null
@@ -2396,6 +2449,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "goals"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_milestone_project_owner"
+            columns: ["user_id", "project_id", "milestone_id"]
+            isOneToOne: false
+            referencedRelation: "project_milestones"
+            referencedColumns: ["user_id", "project_id", "id"]
           },
           {
             foreignKeyName: "tasks_project_id_fkey"
@@ -2743,12 +2803,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      set_project_resource_role: {
-        Args: { p_project_id: string; p_resource_id: string; p_role: string }
+      apply_nutrition_plan: { Args: { p_operations: Json }; Returns: undefined }
+      complete_challenge_with_reward: {
+        Args: { p_challenge_id: string }
         Returns: string
       }
-      apply_nutrition_plan: { Args: { p_operations: Json }; Returns: undefined };
-      // Verified against fresh generated schema; SQL nullable arguments are explicit here.
+      // Preserve verified SQL-nullable Inbox arguments omitted by the generator.
       complete_inbox_triage: {
         Args: {
           p_route: string
@@ -2769,41 +2829,6 @@ export type Database = {
         }
         Returns: Json
       }
-      save_inbox_clarification: {
-        Args: {
-          p_inbox_item_id: string
-          p_expected_updated_at: string
-          p_title: string
-          p_body: string | null
-          p_next_action: string | null
-          p_missing_info: string | null
-          p_priority: Database["public"]["Enums"]["task_priority"]
-          p_energy: Database["public"]["Enums"]["task_energy"] | null
-          p_duration_minutes: number | null
-          p_area_id: string | null
-          p_review_needed: boolean
-          p_today_candidate: boolean
-          p_deadline_hint: string | null
-        }
-        Returns: Database["public"]["Tables"]["inbox_items"]["Row"]
-      }
-      route_saved_inbox_item: {
-        Args: {
-          p_inbox_item_id: string
-          p_expected_updated_at: string
-          p_route: string
-          p_target_id?: string | null
-        }
-        Returns: Json
-      }
-      increment_habit_for_local_day: {
-        Args: { p_habit_id: string }
-        Returns: { status: string; log_id: string | null; increment_value: number | null }[]
-      }
-      complete_challenge_with_reward: {
-        Args: { p_challenge_id: string }
-        Returns: string
-      }
       complete_linked_meal: {
         Args: { p_completed_at: string; p_meal_id: string }
         Returns: {
@@ -2815,6 +2840,7 @@ export type Database = {
           notes: string | null
           planned_at: string | null
           recipe_id: string | null
+          servings: number
           title: string
           updated_at: string
           user_id: string
@@ -2842,6 +2868,7 @@ export type Database = {
           goal_id: string | null
           id: string
           instance_date: string | null
+          milestone_id: string | null
           planned_date: string | null
           priority: Database["public"]["Enums"]["task_priority"]
           project_id: string | null
@@ -2910,6 +2937,36 @@ export type Database = {
         Args: { p_wishlist_item_id: string }
         Returns: string
       }
+      create_education_literature_resource: {
+        Args: {
+          p_area_id: string
+          p_project_id: string
+          p_summary?: string
+          p_title: string
+          p_type: Database["public"]["Enums"]["resource_type"]
+          p_url?: string
+        }
+        Returns: {
+          archived_at: string | null
+          area_id: string | null
+          created_at: string
+          id: string
+          review_needed: boolean
+          source: string | null
+          summary: string | null
+          title: string
+          type: Database["public"]["Enums"]["resource_type"]
+          updated_at: string
+          url: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "resources"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       create_resource_from_inbox: {
         Args: {
           p_area_id?: string
@@ -2941,35 +2998,9 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      create_education_literature_resource: {
-        Args: {
-          p_area_id: string
-          p_project_id: string
-          p_summary?: string
-          p_title: string
-          p_type: Database["public"]["Enums"]["resource_type"]
-          p_url?: string
-        }
-        Returns: {
-          archived_at: string | null
-          area_id: string | null
-          created_at: string
-          id: string
-          review_needed: boolean
-          source: string | null
-          summary: string | null
-          title: string
-          type: Database["public"]["Enums"]["resource_type"]
-          updated_at: string
-          url: string | null
-          user_id: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "resources"
-          isOneToOne: true
-          isSetofReturn: false
-        }
+      create_work_meeting_followup: {
+        Args: { p_description?: string; p_meeting_id: string; p_title: string }
+        Returns: string
       }
       create_work_wiki_resource: {
         Args: {
@@ -2999,9 +3030,13 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      create_work_meeting_followup: {
-        Args: { p_description?: string; p_meeting_id: string; p_title: string }
-        Returns: string
+      increment_habit_for_local_day: {
+        Args: { p_habit_id: string }
+        Returns: {
+          increment_value: number
+          log_id: string
+          status: string
+        }[]
       }
       redeem_shop_item: {
         Args: { p_request_key: string; p_shop_item_id: string }
@@ -3012,6 +3047,15 @@ export type Database = {
         Returns: string
       }
       rotate_anti_rot_action: { Args: never; Returns: string }
+      route_saved_inbox_item: {
+        Args: {
+          p_inbox_item_id: string
+          p_expected_updated_at: string
+          p_route: string
+          p_target_id?: string | null
+        }
+        Returns: Json
+      }
       save_completed_running_session: {
         Args: {
           p_average_heart_rate: number
@@ -3111,6 +3155,24 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      save_inbox_clarification: {
+        Args: {
+          p_inbox_item_id: string
+          p_expected_updated_at: string
+          p_title: string
+          p_body: string | null
+          p_next_action: string | null
+          p_missing_info: string | null
+          p_priority: Database["public"]["Enums"]["task_priority"]
+          p_energy: Database["public"]["Enums"]["task_energy"] | null
+          p_duration_minutes: number | null
+          p_area_id: string | null
+          p_review_needed: boolean
+          p_today_candidate: boolean
+          p_deadline_hint: string | null
+        }
+        Returns: Database["public"]["Tables"]["inbox_items"]["Row"]
+      }
       save_review_record: {
         Args: {
           p_blockers: string[]
@@ -3173,6 +3235,7 @@ export type Database = {
           goal_id: string | null
           id: string
           instance_date: string | null
+          milestone_id: string | null
           planned_date: string | null
           priority: Database["public"]["Enums"]["task_priority"]
           project_id: string | null
@@ -3189,6 +3252,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      set_project_resource_role: {
+        Args: { p_project_id: string; p_resource_id: string; p_role: string }
+        Returns: string
       }
       triage_inbox_item_to_task: {
         Args: {
@@ -3220,6 +3287,7 @@ export type Database = {
           goal_id: string | null
           id: string
           instance_date: string | null
+          milestone_id: string | null
           planned_date: string | null
           priority: Database["public"]["Enums"]["task_priority"]
           project_id: string | null
@@ -3257,6 +3325,7 @@ export type Database = {
           goal_id: string | null
           id: string
           instance_date: string | null
+          milestone_id: string | null
           planned_date: string | null
           priority: Database["public"]["Enums"]["task_priority"]
           project_id: string | null
@@ -3273,6 +3342,19 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      write_project_milestone: {
+        Args: {
+          p_description?: string
+          p_milestone_id?: string
+          p_operation: string
+          p_project_id: string
+          p_status?: string
+          p_target_date?: string
+          p_task_id?: string
+          p_title?: string
+        }
+        Returns: string
       }
     }
     Enums: {

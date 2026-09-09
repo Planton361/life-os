@@ -74,3 +74,15 @@ persisted Resource ID to Project Detail for explicit use selection. Work Artifac
 is a relation-specific role, never a provider or global Resource flag. The
 Project-role Invoker RPC serializes Primary replacement atomically; no second
 Resource is created on role changes or retries. External ownership is unchanged.
+
+
+### R2-09 Project milestone boundary
+
+Project Workbench reads owned project_milestones alongside canonical Tasks.
+Existing authenticated Workbench operations validate through the milestone Zod
+schema and an invoker RPC; unassignment uses one authenticated user-scoped Task
+update, also allowing release from archived Project context. DB ownership/FKs/guards enforce Task-to-Project
+consistency and serialize coupled milestone changes. Existing route revalidation
+covers Project/Task detail and Portfolio, Dashboard, Today and Calendar. These
+projections retain existing task-derived reads; milestone labels are not spread
+into unrelated planning views. No external integration or alternate task store.

@@ -228,6 +228,18 @@ statistics as Skills, papers/books/methods as References.
 Work: Kundenprojekt → document/design/spreadsheet/workspace as Primary, ordinary
 Tasks and supporting References. These use existing Areas without domain suites.
 
+Project Milestones are meaningful intermediate outcomes within one Project.
+Tasks are executable work and may belong to exactly one milestone of the same
+Project or remain unassigned. Milestone description answers what must be true
+after that stage. Status is explicitly open, active or done; at most one current
+(active) stage per Project. Choosing a new current stage reopens the previous
+active stage. Task counts never change milestone status automatically.
+Progress shows completed Tasks/total Tasks and completed Milestones/total
+Milestones, not an invented Project completion percentage. Archived stages remain
+history; their Tasks return to the unassigned group atomically. Completed stages
+remain readable and can be reopened. Project Description remains general context;
+a separate Desired Outcome/Definition of Done is a future product decision.
+
 Project Detail defaults to a read-first workbench: understandable identity/current
 state, next step, tasks/progress, primary/additional artifacts and supporting context.
 Project editing, artifact roles and relation management appear only after explicit

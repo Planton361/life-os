@@ -9,7 +9,7 @@ import { OperationForm } from "./forms";
 import { ProjectResources } from "./project-resources";
 
 import styles from "./project-read-view.module.css";
-import { taskTextFields } from "./task-text";
+import { ProjectWork } from "./project-work";
 
 export function ProjectReadView({
   data,
@@ -26,7 +26,6 @@ export function ProjectReadView({
 }) {
   const project = data.projects.find((p) => p.id === id)!;
   const tasks = data.tasks.filter((t) => t.project_id === id && !t.archived_at);
-  const done = tasks.filter((t) => t.status === "done").length;
   const goal = data.goals.find((g) => g.id === project.goal_id);
   const skillIds = new Set([
     ...data.taskSkills
@@ -110,79 +109,7 @@ export function ProjectReadView({
         </section>
       </header>
       <div className={styles.workspace} data-project-workspace>
-        <section aria-label="Tasks & Progress" className={styles.work}>
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] px-5 py-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-[var(--accent-blue)]">
-                Work
-              </p>
-              <h2 className="mt-1 text-xl font-semibold">
-                Tasks{" "}
-                <span className="text-base font-normal text-[var(--text-muted)]">
-                  {tasks.length}
-                </span>
-              </h2>
-            </div>
-            <p className="text-sm text-[var(--text-secondary)]">
-              {done}/{tasks.length} erledigt
-            </p>
-          </div>
-          <div
-            className={styles.taskList}
-            data-project-task-list
-            tabIndex={0}
-            aria-label="Project Task List"
-          >
-            {tasks.length ? (
-              <ul>
-                {tasks.map((t) => {
-                  const text = taskTextFields(t.description);
-                  return (
-                    <li key={t.id} className={styles.task}>
-                      <div className="min-w-0">
-                        <p className="text-sm text-[var(--text-secondary)]">
-                          {t.status}
-                        </p>
-                        <Link
-                          className="mt-1 block break-words font-medium hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
-                          href={`/tasks/${t.id}`}
-                        >
-                          {t.title}
-                        </Link>
-                        {text.nextAction && (
-                          <p className="mt-1 line-clamp-2 break-words text-sm text-[var(--text-secondary)]">
-                            {text.nextAction}
-                          </p>
-                        )}
-                        {t.due_at && (
-                          <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                            Deadline{" "}
-                            {t.due_at
-                              .slice(0, 10)
-                              .split("-")
-                              .reverse()
-                              .join(".")}
-                          </p>
-                        )}
-                      </div>
-                      <Link
-                        className="min-h-10 content-center text-sm text-[var(--text-muted)] underline"
-                        aria-label={`${t.title}: Details öffnen`}
-                        href={`/tasks/${t.id}`}
-                      >
-                        Details ↗
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <p className="py-5 text-sm text-[var(--text-muted)]">
-                Noch keine Tasks.
-              </p>
-            )}
-          </div>
-        </section>
+        <ProjectWork data={data} projectId={id} />
         <aside aria-label="Project Context Rail" className={styles.rail}>
           <ProjectResources data={data} projectId={id} section="primary" />
           <section aria-label="Project Context" className="min-w-0">
