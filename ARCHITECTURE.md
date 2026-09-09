@@ -79,6 +79,10 @@ Resource is created on role changes or retries. External ownership is unchanged.
 ### R2-09 Project milestone boundary
 
 Project Workbench reads owned project_milestones alongside canonical Tasks.
+Project-context Task Create reuses WorkbenchEditor/EntityForm and the existing
+Task action/repository. Optional milestoneId is validated and included in the
+single Task insert; existing composite FK/active-row guards remain authoritative.
+It does not create a Task followed by a separate milestone assignment write.
 Existing authenticated Workbench operations validate through the milestone Zod
 schema and an invoker RPC; unassignment uses one authenticated user-scoped Task
 update, also allowing release from archived Project context. DB ownership/FKs/guards enforce Task-to-Project

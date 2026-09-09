@@ -206,7 +206,9 @@ export async function WorkbenchEditor({
   id,
   projectContext,
   selectedResource,
+  milestoneContext,
 }: {
+  milestoneContext?: string;
   selectedResource?: string;
   kind: WorkbenchKind;
   id?: string;
@@ -221,9 +223,25 @@ export async function WorkbenchEditor({
       </EntityWorkbenchShell>
     );
   const contextProject =
-    kind === "resource" && projectContext
+    (kind === "resource" || (kind === "task" && !id)) && projectContext
       ? data.projects.find((p) => p.id === projectContext && !p.archived_at)
       : undefined;
+  const contextMilestone =
+    kind === "task" && !id && milestoneContext
+      ? data.milestones.find(
+          (m) =>
+            m.id === milestoneContext &&
+            m.project_id === contextProject?.id &&
+            !m.archived_at,
+        )
+      : undefined;
+  if (
+    kind === "task" &&
+    !id &&
+    ((projectContext && !contextProject) ||
+      (milestoneContext && !contextMilestone))
+  )
+    notFound();
   const row = id ? collection(data, kind).find((r) => r.id === id) : undefined;
   if (id && !row) notFound();
   const source =
@@ -251,6 +269,10 @@ export async function WorkbenchEditor({
     type: "note",
     horizon: "someday",
   };
+  if (kind === "task" && !id) {
+    values.projectId = contextProject?.id;
+    values.milestoneId = contextMilestone?.id;
+  }
   if (row) {
     Object.assign(values, row);
     values.areaId = row.area_id;
@@ -341,7 +363,10 @@ export async function WorkbenchEditor({
           <Link href={`/projects/${contextProject.id}`}>
             {contextProject.title}
           </Link>
-          {!id && " · Nach dem Erstellen wählst du die Verwendung im Project."}
+          {!id &&
+            (kind === "resource"
+              ? " · Nach dem Erstellen wählst du die Verwendung im Project."
+              : " · Nach dem Erstellen zurück zum Project.")}
         </p>
       )}
       {kind === "resource" && row && "url" in row && (
@@ -383,6 +408,17 @@ export async function WorkbenchEditor({
             id={id}
             values={values}
             projectContext={contextProject?.id}
+            milestones={
+              kind === "task" && !id
+                ? data.milestones
+                    .filter((m) => !m.archived_at)
+                    .map((m) => ({
+                      id: m.id,
+                      title: m.title,
+                      projectId: m.project_id,
+                    }))
+                : undefined
+            }
             areas={data.areas
               .filter((a) => !a.archived_at || a.id === row?.area_id)
               .map((a) => ({

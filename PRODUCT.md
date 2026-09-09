@@ -244,6 +244,12 @@ Project Detail defaults to a read-first workbench: understandable identity/curre
 state, next step, tasks/progress, primary/additional artifacts and supporting context.
 Project editing, artifact roles and relation management appear only after explicit
 user actions. Existing writes remain available in accessible disclosures.
+The Work header, each unarchived Milestone and the unassigned section can start the
+existing Task Create surface. Project and optional Milestone are visibly prefilled
+from validated server context. Creation stores one canonical Task and returns to
+the Project with a global success toast; a deliberate Project switch returns to
+the selected Project. Standalone Task Create keeps its Task-detail navigation.
+Milestone membership never creates a Dependency.
 Identity and Next Step form the header; real Tasks/Progress dominate the remaining
 workspace. A secondary rail groups Primary Artifact and Context; Additional
 Artifacts and References share a compact second row. Content drives section

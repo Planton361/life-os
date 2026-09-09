@@ -568,6 +568,20 @@ export function createSupabaseTaskRepository(
       );
       if (contextFailure) return contextFailure;
 
+      if (input.milestoneId) {
+        if (!input.projectId) return notFoundFailure("Milestone Project");
+        const milestone = await client
+          .from("project_milestones")
+          .select("id")
+          .eq("user_id", input.userId)
+          .eq("project_id", input.projectId)
+          .eq("id", input.milestoneId)
+          .is("archived_at", null)
+          .maybeSingle();
+        if (milestone.error || !milestone.data)
+          return notFoundFailure("Milestone");
+      }
+
       const alignmentFailure = await validateTaskGoalAlignment(
         client,
         input.userId,

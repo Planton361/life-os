@@ -38,12 +38,16 @@ export function Choice({
   options,
   value,
   required = false,
+  onChange,
+  allowEmpty = true,
 }: {
   name: string;
   label: string;
   options: Option[];
   value?: string;
   required?: boolean;
+  onChange?: (value: string) => void;
+  allowEmpty?: boolean;
 }) {
   const id = useId();
   return (
@@ -52,11 +56,15 @@ export function Choice({
       <select
         id={id}
         className={fieldClass}
-        defaultValue={value ?? ""}
+        defaultValue={onChange ? undefined : (value ?? "")}
+        value={onChange ? (value ?? "") : undefined}
+        onChange={
+          onChange ? (event) => onChange(event.target.value) : undefined
+        }
         name={name}
         required={required}
       >
-        <option value="">Keine Auswahl</option>
+        {allowEmpty && <option value="">Keine Auswahl</option>}
         {options.map((o) => (
           <option key={o.id} value={o.id}>
             {o.title}
@@ -115,10 +123,12 @@ export function EntityForm({
   archived = false,
   sourceOwned = false,
   projectContext,
+  milestones = [],
 }: {
   kind: WorkbenchKind;
   id?: string;
   projectContext?: string;
+  milestones?: (Option & { projectId: string })[];
   values: FieldValues;
   areas: Option[];
   projects: Option[];
@@ -126,6 +136,9 @@ export function EntityForm({
   archived?: boolean;
   sourceOwned?: boolean;
 }) {
+  const [selectedProject, setSelectedProject] = useState(
+    String(values.projectId ?? ""),
+  );
   const hydrated = useHydrated();
   const router = useRouter();
   const { notify } = useToast();
@@ -175,7 +188,9 @@ export function EntityForm({
           if (!id && r.id)
             router.push(
               projectContext
-                ? `/projects/${projectContext}?resource=${r.id}`
+                ? kind === "task"
+                  ? `/projects/${projects.find((p) => p.id === String(form.get("projectId")))?.id ?? projectContext}`
+                  : `/projects/${projectContext}?resource=${r.id}`
                 : `${entityRoutes[kind]}/${r.id}`,
             );
           else router.refresh();
@@ -347,7 +362,35 @@ export function EntityForm({
               03 Beziehungen
             </h2>
             <div className="grid gap-4 md:grid-cols-2">
-              {kind === "task" && choice("projectId", "Project", projects)}
+              {kind === "task" &&
+                (id ? (
+                  choice("projectId", "Project", projects)
+                ) : (
+                  <>
+                    <Choice
+                      name="projectId"
+                      label="Project"
+                      options={projects}
+                      value={selectedProject}
+                      onChange={setSelectedProject}
+                      required={Boolean(projectContext)}
+                      allowEmpty={!projectContext}
+                    />
+                    <Choice
+                      key={selectedProject}
+                      name="milestoneId"
+                      label="Milestone (keine Auswahl = Ohne Milestone)"
+                      value={
+                        selectedProject === values.projectId
+                          ? String(values.milestoneId ?? "")
+                          : ""
+                      }
+                      options={milestones.filter(
+                        (m) => m.projectId === selectedProject,
+                      )}
+                    />
+                  </>
+                ))}
               {choice("goalId", "Direktes Goal", goals)}
             </div>
             <p className="text-sm text-[var(--text-muted)]">

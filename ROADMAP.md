@@ -918,6 +918,12 @@ graph) remains FALLBACK. Final selection awaits the usage pilot. Prioritize
 plugin-free focused Core Canvas; Global Graph is not the Project control view.
 TaskNotes/Canvas Bases are UX references, not accepted core dependencies.
 
+The user has temporarily paused feasibility evaluation for a bounded Core-workflow
+correction: Project Work, each Milestone and Backlog must open the existing Task
+Create surface with validated context and return after creation. This explicit
+exception permits the necessary canonical Task-create/UI fix and focused proof;
+it neither closes R2-11 nor starts Obsidian integration or R2-12.
+
 **R2-07 status:** Paused – Journal Reconciliation, resumes only after the R2-11
 architecture decision and an explicit reconciled scope.
 USER ACCEPTANCE STATUS: PENDING. Journal is neither deleted nor accepted.

@@ -9,7 +9,7 @@ import {
   ManagementDisclosure,
   ManagementDisclosureGroup,
 } from "./management-disclosure";
-import { Choice, OperationForm, fieldClass } from "./forms";
+import { Choice, OperationForm, fieldClass, actionClass } from "./forms";
 import { projectMilestoneGroups } from "./project-milestones";
 import { taskTextFields } from "./task-text";
 import styles from "./project-read-view.module.css";
@@ -103,6 +103,19 @@ export function ProjectWork({
   const tasks = data.tasks.filter(
     (t) => t.project_id === projectId && !t.archived_at,
   );
+  const createTaskLink = (milestoneId?: string, compact = false) => (
+    <Link
+      className={
+        compact
+          ? "inline-flex min-h-10 items-center text-sm text-[var(--text-secondary)] underline"
+          : actionClass
+      }
+      prefetch={false}
+      href={`/tasks/new?${new URLSearchParams({ project: projectId, ...(milestoneId ? { milestone: milestoneId } : {}) })}`}
+    >
+      + Task
+    </Link>
+  );
   const renderTasks = (rows: typeof tasks) =>
     rows.length ? (
       <ul>
@@ -180,6 +193,7 @@ export function ProjectWork({
         </p>
         {!project.archived_at && (
           <ManagementDisclosureGroup className={styles.workActions}>
+            {createTaskLink()}
             <ManagementDisclosure
               label="Milestone hinzufügen"
               triggerText="+ Milestone"
@@ -263,6 +277,11 @@ export function ProjectWork({
               </p>
             </div>
             {!project.archived_at && (
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                {createTaskLink(m.id, true)}
+              </div>
+            )}
+            {!project.archived_at && (
               <ManagementDisclosure label="Milestone verwalten" triggerText="⋯">
                 <OperationForm
                   operation="project.milestone"
@@ -314,6 +333,9 @@ export function ProjectWork({
           <h3 className="font-semibold">
             Ohne Milestone · {summary.unassigned.length}
           </h3>
+          {!project.archived_at && (
+            <div className="mt-2 flex">{createTaskLink(undefined, true)}</div>
+          )}
           <p className="mt-1 text-sm text-[var(--text-muted)]">
             Backlog · noch keiner Etappe zugeordnet
           </p>

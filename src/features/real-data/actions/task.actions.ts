@@ -578,6 +578,7 @@ export async function createPortfolioTaskAction(
   }
 
   const parsed = createTaskInputSchema.safeParse({
+    milestoneId: optionalFormString(formData, "milestoneId"),
     areaId: optionalFormString(formData, "areaId"),
     dueAt: optionalFormString(formData, "dueAt")
       ? `${formString(formData, "dueAt")}T23:59:59.000Z`
@@ -599,7 +600,7 @@ export async function createPortfolioTaskAction(
 
   if (!parsed.success) {
     return {
-      message: "Gib einen gültigen Task-Titel ein.",
+      message: "Prüfe Task-Titel und Milestone-Zuordnung.",
       status: "error",
     };
   }
@@ -612,6 +613,8 @@ export async function createPortfolioTaskAction(
       message:
         result.error.message.includes("DEPENDENCY_")
           ? dependencyErrorMessage(result.error.message)
+          : result.error.message.includes("Milestone")
+          ? "Der Milestone ist nicht mehr verfügbar oder gehört nicht zum gewählten Project."
           : result.error.code === "conflict"
           ? "Dieses direkte Goal widerspricht dem Goal des ausgewählten Projects. Passe Project oder direktes Goal bewusst an."
           : "Der Task konnte in Supabase nicht erstellt werden.",

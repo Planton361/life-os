@@ -62,6 +62,7 @@ export function mapCreateTaskInputToInsert(
   if (input.plannedDate !== undefined) insert.planned_date = input.plannedDate;
   if (input.priority !== undefined) insert.priority = input.priority;
   if (input.projectId !== undefined) insert.project_id = input.projectId;
+  if (input.milestoneId !== undefined) insert.milestone_id = input.milestoneId;
   if (input.scheduledStartAt !== undefined) {
     insert.scheduled_start_at = input.scheduledStartAt;
   }

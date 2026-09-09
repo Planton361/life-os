@@ -83,7 +83,63 @@ DECISION_REQUIRED: compare isolated synthetic variants; no personal Vault/data,
 canonical database writes, productive integration or synchronization. The user
 owns the final architecture decision; R2-12 remains not started.
 
-### R2-11 focused Core pilot continuation — 2026-09-09
+### R2-11 user-authorized Core correction: contextual Task Create — 2026-09-09
+
+Capability: **CONNECTED**. Feasibility evaluation is paused for this bounded
+workflow correction; R2-11 remains the only Active Work Block and its architecture
+status remains `DECISION_REQUIRED`. No Obsidian integration or R2-12 activation.
+
+Project Work header, every unarchived Milestone and Ohne Milestone now expose
+`+ Task`. All navigate to the existing `/tasks/new` WorkbenchEditor/EntityForm,
+using the established internal Project-ID context convention. Server reads validate
+the owned active Project and matching unarchived Milestone before rendering visible
+defaults. Invalid/foreign/archived URL context fails instead of silently falling
+back to global creation. Reload preserves that URL-backed context.
+
+The existing createPortfolioTaskAction, Zod create schema, user-scoped repository
+and mapper persist optional milestoneId in the single canonical Task insert.
+There is no create-then-assign partial-write window, new Create component, new
+storage or migration. Repository ownership and same-Project checks precede the
+insert; existing DB composite FK/active-row guards remain unchanged. No Dependency
+is generated and no Completion/Dependency rule changes.
+
+The existing form keeps all Task fields. Milestone can be changed or cleared;
+choosing another available own Project clears the incompatible stage. The global
+success toast precedes return to the calling Project, or to the deliberately
+selected Project after a switch. Only validated internal ID-derived routes are
+used, never a free return URL. Standalone creation retains Task-detail navigation.
+Existing revalidation refreshes Project counts/progress and dependent projections.
+
+Focused real authenticated disposable Playwright proof covers header, Milestone,
+Backlog and changed-Milestone creation; prefill reload; create/toast/return/reload;
+exactly one DB row and the same Task-detail ID; Project switch; standalone create;
+no automatic dependency; completion and 1/4 progress with READY 3 / BLOCKED 0.
+Forged cross-Project/cross-user milestone submissions and a stage archived after
+opening the form fail visibly with no partial Task. The unchanged R2-10 dependency
+scenario covers parallel readiness, management, completion guards and reopen/history.
+
+New-control inventory: Work-header create link, per-Milestone create link, Backlog
+create link, existing Create submit plus Project/Milestone selectors. All are
+directly exercised. Browser console/hydration is clean. Complete Project captures
+at 3840×2160, 1920×1080 and 390×844 show no new overlap or horizontal overflow;
+the existing bounded Task scroll region and hierarchy are retained. V5 Design-Taste:
+PASS for this correction; compact stage actions, existing tokens and no new layout
+direction. This is not a new closure or acceptance claim for the whole surface.
+
+Evidence: `tests/e2e/project-context-task-create.spec.ts` and unchanged
+`tests/e2e/r2-10-task-dependencies.spec.ts`; local screenshots/results and DB check
+output under `/home/anton/.cache/life-os-project-task-proof/`. Fresh Git migrations,
+DB lint and Security Advisors report no issues. Initial harness failures were an
+out-of-root dependency symlink and invalid fixture defaults; both were corrected.
+The Project selector now reuses the existing explicitly labelled Choice component.
+No canonical Target/legacy runtime mutation or personal-data fixture was required.
+Final correction gate: **PASS**. `git diff --check`, `pnpm typecheck`, `pnpm lint`,
+both focused Playwright scenarios (2 passed, 44.9 s), DB lint, Security Advisors
+and `pnpm build` pass. Final validation uses an isolated checkout with matching
+product sources; disposable runtimes are removed. No migration is necessary.
+R2-11's separate usage/architecture decision remains pending.
+
+### R2-11 focused Core pilot continuation — 2026-09-09 (prior lab evidence)
 
 User direction: Option A = **PROVISIONAL GO**, Option B = **CURRENT NO-GO**,
 Option C = **FALLBACK**. Capability status stays `DECISION_REQUIRED`; R2-11 is

@@ -38,6 +38,7 @@ const taskPatchSchema = z.object({
 });
 
 export const createTaskInputSchema = taskPatchSchema.extend({
+  milestoneId: z.uuid().optional(),
   profileId: requiredIdSchema,
   title: titleSchema,
   userId: requiredIdSchema,
