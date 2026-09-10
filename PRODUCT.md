@@ -663,3 +663,7 @@ context and explicit Work Artifacts. Success announces the started download;
 errors remain visible and allow retry. Open the extracted folder in Obsidian Core;
 no plugin is required. Life OS remains canonical; editing exported state does not
 synchronize it. This is export, with no Canvas, write-back or personal Vault access.
+
+File Explorer and Core Graph must show readable domain names, not UUID filenames.
+Identity remains in Properties/manifest. Rename and collision mapping preserve
+identity; generated README/metadata must not add non-domain graph nodes.

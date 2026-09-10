@@ -375,12 +375,19 @@ Health/Nutrition/Journal/Inbox/Calendar event export or inferred name matching.
 Work Artifacts retain Resource identity and explicit Project-relation roles.
 
 Paths: Projects/, Milestones/, Tasks/, Goals/, Skills/, Resources/ followed by
-canonical UUID.md. Wikilinks target paths with visible title aliases. Properties:
+a safe readable title.md. Canonical identity is life_os_id, never the path.
+Case/NFC collisions receive a deterministic short SHA-256 ID suffix; unique titles
+have no suffix. Wikilinks resolve IDs through this mapping, with aliases only for
+changed/collision display names. Properties:
 life_os_id, life_os_type, life_os_projection_version=1, existing updated_at,
 archived_at and supported canonical state/context fields. The manifest
 .life-os-projection.json records projectionVersion, generatedAt, projectId and
 files {lifeOsId, lifeOsType, path, contentHash}; hashes are SHA-256 of full note
-bytes. Notes have no generation timestamp. Rename changes content, never identity.
+bytes. Notes have no generation timestamp. Rename changes the path and content, never identity. The pure update model matches
+lifeOsType/lifeOsId and records changes {operation, oldPath, newPath} in its manifest.
+It emits one file per retained identity and preserves User bytes across renames,
+including old UUID paths. Removed identities are separately retained; conflicting
+retained paths fail safely. No filesystem update/sync is introduced.
 
 YAML Properties remain at the file start, bounded by YAML comment ownership
 markers. Body uses LIFE_OS_GENERATED_START/END; a separate LIFE_OS_USER_START/END

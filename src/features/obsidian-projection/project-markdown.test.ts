@@ -1,14 +1,11 @@
+import { readablePaths, safeTitle } from "./readable-paths";
+import { updateProjection } from "./projection-update";
 import {
   containsExportCredential,
   sameOriginExportRequest,
 } from "./export-security";
 import { describe, expect, it } from "vitest";
-import {
-  projectMarkdown,
-  notePath,
-  wikiLink,
-  contentHash,
-} from "./project-markdown";
+import { projectMarkdown, wikiLink, contentHash } from "./project-markdown";
 import { projectionFixture, fixtureId as id } from "./projection-fixture";
 import {
   replaceGeneratedState,
@@ -32,13 +29,13 @@ describe("Project Markdown contract", () => {
     expect(note(p, 5).content).toContain("Explicit evidence");
     for (const f of p.files) {
       expect(contentHash(f.content)).toBe(f.contentHash);
-      for (const m of f.content.matchAll(/\[\[([^|]+)\|[^\]]+\]\]/g))
+      for (const m of f.content.matchAll(/\[\[([^|\]]+)(?:\|[^\]]+)?\]\]/g))
         expect(p.files.some((n) => n.path === `${m[1]}.md`)).toBe(true);
     }
     expect(note(p, 2).content).toContain("0 / 2 aktive Tasks erledigt");
     expect(note(p, 8).content).toContain("## Availability\n\nBLOCKED");
   });
-  it("is deterministic under repeat and shuffled source arrays; rename preserves identity/path", () => {
+  it("is deterministic under repeat and shuffled source arrays; rename preserves identity and updates paths", () => {
     const s = projectionFixture(),
       a = projectMarkdown(s, "a");
     const b = projectMarkdown(
@@ -52,10 +49,11 @@ describe("Project Markdown contract", () => {
     expect(a.files).toEqual(b.files);
     s.tasks[0].title = "API Boundary implementieren";
     const renamed = projectMarkdown(s);
-    expect(note(renamed, 3).path).toBe(note(a, 3).path);
+    expect(note(renamed, 3).path).toBe("Tasks/API Boundary implementieren.md");
+    expect(note(renamed, 3).lifeOsId).toBe(note(a, 3).lifeOsId);
     expect(note(renamed, 3).content).toContain("# API Boundary implementieren");
     expect(note(renamed, 8).content).toContain(
-      "|API Boundary implementieren]]",
+      "[[Tasks/API Boundary implementieren]]",
     );
     expect(renamed.files).toHaveLength(a.files.length);
   });
@@ -92,14 +90,19 @@ describe("Project Markdown contract", () => {
     expect(note(p, 3).content).not.toContain("<script>");
     expect(note(p, 3).content).not.toContain("![[evil]]");
     expect(note(p, 8).content).toContain("Ä 🧠");
-    expect(wikiLink("task", id(3), "a|b")).toContain("a&#124;b");
-    expect(() => notePath("task", "../../secret")).toThrow();
+    expect(wikiLink("Tasks/a b.md", "a|b")).toContain("a&#124;b");
+    expect(() =>
+      readablePaths([
+        { type: "task", id: "../../secret", title: "A", folder: "Tasks" },
+      ]),
+    ).toThrow();
     expect(() =>
       replaceGeneratedState(note(p, 3).content, note(p, 3).content),
     ).not.toThrow();
   });
   it("omits signed URL credentials/query/fragment and generates a standard ZIP readable independently", () => {
     const s = projectionFixture();
+    s.tasks[0].title = "Überprüfung 🧠";
     s.resources[0].url =
       "https://user:pass@example.test/repo?token=hidden#secret";
     const p = projectMarkdown(s, "fixed");
@@ -116,6 +119,7 @@ describe("Project Markdown contract", () => {
       ).toString(),
     );
     expect(entries[note(p, 1).path]).toBe(note(p, 1).content);
+    expect(entries["Tasks/Überprüfung 🧠.md"]).toBe(note(p, 3).content);
     expect(zipPackage(p.files)).toEqual(zip);
     expect(() => zipPackage([{ path: "../bad", content: "" }])).toThrow();
     expect(() => zipPackage([p.files[0], p.files[0]])).toThrow();
@@ -208,10 +212,10 @@ it("preserves canonical Artifact roles, labels history and removes absent source
   );
   const p = projectMarkdown(s);
   expect(note(p, 1).content).toContain(
-    `## Additional Work Artifacts\n\n- [[Resources/${id(20)}|Dataset]]`,
+    "## Additional Work Artifacts\n\n- [[Resources/Dataset]]",
   );
   expect(note(p, 1).content).toContain(
-    `## Resources & References\n\n- [[Resources/${id(21)}|Reference]]`,
+    "## Resources & References\n\n- [[Resources/Reference]]",
   );
   s.resources[0].archived_at = "2026-09-10";
   const archived = projectMarkdown(s);
@@ -225,5 +229,84 @@ it("preserves canonical Artifact roles, labels history and removes absent source
   s.relations = s.relations.filter((r) => r.resource_id !== id(20));
   expect(projectMarkdown(s).files.some((f) => f.lifeOsId === id(20))).toBe(
     false,
+  );
+});
+
+it("maps collisions deterministically across case, Unicode, reserved names and generated suffixes", () => {
+  const entities = [
+    "Review",
+    "Review",
+    "review",
+    "CON",
+    "../a:b*?[]#^",
+    "é",
+    "e\u0301",
+  ].map((title, i) => ({
+    type: "task",
+    id: id(i + 1),
+    title,
+    folder: "Tasks",
+  }));
+  const paths = readablePaths(entities);
+  expect(paths).toEqual(readablePaths([...entities].reverse()));
+  expect(paths.get(`task:${id(1)}`)).toBe("Tasks/Review.md");
+  expect(paths.get(`task:${id(2)}`)).toMatch(
+    /^Tasks\/Review--[a-f0-9]{8}\.md$/,
+  );
+  expect(new Set([...paths.values()].map((p) => p.toLowerCase())).size).toBe(7);
+  expect(safeTitle("CON.txt")).toBe("_CON.txt");
+  expect(safeTitle("... ")).toBe("Untitled");
+  expect(Buffer.byteLength(safeTitle("🧠".repeat(100)))).toBeLessThanOrEqual(
+    160,
+  );
+  const suffix = paths.get(`task:${id(2)}`)!.slice(6, -3);
+  const extra = readablePaths([
+    ...entities,
+    { type: "task", id: id(30), title: suffix, folder: "Tasks" },
+  ]);
+  expect(extra.get(`task:${id(30)}`)).toBe(`Tasks/${suffix}.md`);
+  expect(extra.get(`task:${id(2)}`)).not.toBe(`Tasks/${suffix}.md`);
+});
+it("renames by manifest identity with exactly one file and preserved user bytes, including legacy UUID paths", () => {
+  const s = projectionFixture(),
+    a = projectMarkdown(s);
+  const old = note(a, 3);
+  old.path = `Tasks/${id(3)}.md`;
+  old.content = old.content.replace(
+    userStart,
+    userStart + "\r\nUser 🧠 [[Personal]]\r\n",
+  );
+  a.manifest.files.find((f) => f.lifeOsId === old.lifeOsId)!.path = old.path;
+  s.tasks[0].title = "API Boundary implementieren";
+  const next = projectMarkdown(s),
+    updated = updateProjection(a, next);
+  expect(updated.files.filter((f) => f.lifeOsId === id(3))).toHaveLength(1);
+  expect(updated.files.some((f) => f.path === old.path)).toBe(false);
+  expect(
+    note(updated, 3).content.slice(note(updated, 3).content.indexOf(userStart)),
+  ).toBe(old.content.slice(old.content.indexOf(userStart)));
+  expect(
+    updated.manifest.changes.find((f) => f.lifeOsId === id(3)),
+  ).toMatchObject({
+    operation: "RENAME",
+    oldPath: old.path,
+    newPath: "Tasks/API Boundary implementieren.md",
+  });
+  expect(contentHash(note(updated, 3).content)).toBe(
+    note(updated, 3).contentHash,
+  );
+  expect(updated.retainedFiles).toEqual([]);
+  expect(updateProjection(updated, next).files).toEqual(updated.files);
+  const without = {
+    ...next,
+    files: next.files.filter((f) => f.lifeOsId !== id(3)),
+  };
+  const retained = updateProjection(updated, without);
+  expect(retained.retainedFiles[0].content).toContain("User 🧠");
+  expect(updateProjection(retained, without).retainedFiles).toEqual(
+    retained.retainedFiles,
+  );
+  expect(note(updateProjection(retained, next), 3).content).toContain(
+    "User 🧠",
   );
 });

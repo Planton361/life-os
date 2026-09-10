@@ -1,3 +1,4 @@
+import { readablePaths, safeTitle } from "./readable-paths";
 import {
   projectResourceUses,
   projectRoleLabels,
@@ -24,13 +25,6 @@ const folders: Record<NoteType, string> = {
   skill: "Skills",
   resource: "Resources",
 };
-export function notePath(type: NoteType, id: string) {
-  if (
-    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
-  )
-    throw new Error("Invalid entity identity.");
-  return `${folders[type]}/${id.toLowerCase()}.md`;
-}
 export const contentHash = (content: string) =>
   createHash("sha256").update(content).digest("hex");
 // Canonical prose is text, never an additional source of graph edges or embeds.
@@ -41,8 +35,9 @@ export function markdownText(value: string | null | undefined) {
     .replace(/>/g, "&gt;")
     .replace(/[\\`*_[\]{}()#+.!|^~-]/g, (c) => `&#${c.codePointAt(0)};`);
 }
-export function wikiLink(type: NoteType, id: string, title: string) {
-  return `[[${notePath(type, id).slice(0, -3)}|${markdownText(title.replace(/[\r\n]+/g, " "))}]]`;
+export function wikiLink(path: string, title: string) {
+  const target = path.slice(0, -3);
+  return `[[${target}${target.split("/").at(-1) === title ? "" : `|${markdownText(title.replace(/[\r\n]+/g, " "))}`}]]`;
 }
 const sorted = <T extends { id: string }>(items: T[]) =>
   [...new Map(items.map((i) => [i.id, i])).values()].sort((a, b) =>
@@ -91,9 +86,14 @@ export function projectMarkdown(
   ] as const)
     for (const row of rows) register(type, row.id, row.title);
   for (const s of skills) register("skill", s.id, s.name);
+  const paths = readablePaths(
+    [...entities.values()].map((e) => ({ ...e, folder: folders[e.type] })),
+  );
   const link = (type: string, id: string | null) => {
     const entity = entities.get(`${type}:${id}`);
-    return entity ? wikiLink(entity.type, entity.id, entity.title) : null;
+    return entity
+      ? wikiLink(paths.get(`${entity.type}:${entity.id}`)!, entity.title)
+      : null;
   };
   const list = (values: (string | null)[]) =>
     [...new Set(values.filter((v): v is string => Boolean(v)))]
@@ -174,7 +174,7 @@ export function projectMarkdown(
     files.push({
       lifeOsId: row.id,
       lifeOsType: type,
-      path: notePath(type, row.id),
+      path: paths.get(`${type}:${row.id}`)!,
       content,
       contentHash: contentHash(content),
     });
@@ -394,5 +394,9 @@ export function projectMarkdown(
       contentHash,
     })),
   };
-  return { files, manifest, folder: `Life-OS-Project-${project.id}` };
+  return {
+    files,
+    manifest,
+    folder: `Life-OS-Project-${safeTitle(project.title)}`,
+  };
 }

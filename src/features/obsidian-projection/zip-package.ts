@@ -10,7 +10,7 @@ export function zipPackage(
   let offset = 0;
   for (const file of files) {
     if (
-      !/^[A-Za-z0-9_./-]+$/.test(file.path) ||
+      /[\p{Cc}<>:"\\|?*]/u.test(file.path) ||
       file.path.startsWith("/") ||
       file.path.split("/").some((p) => p === ".." || !p) ||
       paths.has(file.path)

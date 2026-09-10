@@ -383,3 +383,7 @@ using current text, focus and spacing tokens. Pending state disables duplicate
 clicks; the app-wide toast announces success or persistent error. Project Detail
 retains its accepted three surfaces, read-first work and responsive hierarchy.
 No Sync, Project Map, new card, provider selector or layout redesign is introduced.
+
+Obsidian projection navigation uses readable title filenames and Core Graph labels.
+UUID filenames fail the human navigation contract. Collision suffixes appear only
+when necessary; ordinary links need no alias. README must not pollute the graph.

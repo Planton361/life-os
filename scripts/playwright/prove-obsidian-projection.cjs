@@ -65,7 +65,34 @@
         .locator(".workspace-leaf.mod-active .markdown-reading-view")
         .waitFor();
     }
+    for (const file of manifest.files) {
+      assert.ok(!/[a-f0-9]{8}-[a-f0-9-]{27}/i.test(file.path));
+      assert.notEqual(file.path, "README.md");
+    }
+    for (const folder of [
+      "Projects",
+      "Milestones",
+      "Tasks",
+      "Goals",
+      "Skills",
+      "Resources",
+    ]) {
+      const item = page.locator(`.nav-folder-title[data-path="${folder}"]`);
+      const parent = item.locator("..");
+      if ((await parent.getAttribute("class"))?.includes("is-collapsed"))
+        await item.click();
+    }
+    for (const file of manifest.files) {
+      const item = page.locator(`.nav-file-title[data-path="${file.path}"]`);
+      assert.ok(await item.isVisible());
+      assert.equal(
+        (await item.innerText()).trim(),
+        file.path.split("/").at(-1).replace(/\.md$/, ""),
+      );
+    }
+    await page.locator(`.nav-file-title[data-path="${project.path}"]`).click();
     await open(project.path);
+    await page.screenshot({ path: "/tmp/proof/file-explorer.png" });
     const traversal = [];
     async function clickLink(path) {
       const links = page.locator(
@@ -85,8 +112,12 @@
       traversal.push(path);
     }
     const milestone = manifest.files.find((f) => f.lifeOsType === "milestone");
-    const blocked = "Tasks/a0000000-0000-4000-8000-000000000008.md";
-    const blocker = "Tasks/a0000000-0000-4000-8000-000000000003.md";
+    const blocked = manifest.files.find((f) =>
+      f.lifeOsId.endsWith("000000000008"),
+    ).path;
+    const blocker = manifest.files.find((f) =>
+      f.lifeOsId.endsWith("000000000003"),
+    ).path;
     await clickLink(milestone.path);
     await clickLink(blocked);
     await clickLink(blocker);
@@ -97,9 +128,7 @@
     await open(project.path);
     const metadata = await page.evaluate(() => {
       const app = globalThis.app;
-      const files = app.vault
-        .getMarkdownFiles()
-        .filter((f) => f.path !== "README.md");
+      const files = app.vault.getMarkdownFiles();
       return files.map((f) => ({
         path: f.path,
         properties: app.metadataCache.getFileCache(f)?.frontmatter,
@@ -146,10 +175,29 @@
       .waitFor();
     await page.waitForTimeout(1000);
     await page.screenshot({ path: "/tmp/proof/local-graph.png" });
+    await command("Graph view: Open graph view");
+    await page
+      .locator(".workspace-leaf-content[data-type='graph'] canvas")
+      .last()
+      .waitFor();
+    await page.waitForTimeout(1500);
+    await page.screenshot({ path: "/tmp/proof/global-graph.png" });
     assert.deepEqual(errors, []);
     fs.writeFileSync(
       "/tmp/proof/result.json",
-      JSON.stringify({ result: "PASS", traversal, metadata, errors }, null, 2),
+      JSON.stringify(
+        {
+          result: "PASS",
+          humanReadableFilenames: true,
+          uuidGraphNoise: false,
+          readmeGraphNoise: false,
+          traversal,
+          metadata,
+          errors,
+        },
+        null,
+        2,
+      ),
     );
     console.log("OBSIDIAN_CORE_SMOKE_PASS");
   } finally {

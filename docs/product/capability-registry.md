@@ -70,7 +70,64 @@ Obsidian as Visual / Knowledge / Graph client. Obsidian-first is NO-GO for now;
 native Graph is fallback. R2-13 is not started. R2-07/08 reconciliation remains
 separately scoped; no Journal acceptance or migration is implied.
 
-## R2-12 Obsidian Projection Foundation — 2026-09-10
+## R2-12 readable navigation correction — 2026-09-10
+
+The real user finding rejects UUID filenames as human navigation. It supersedes
+only the original path/README UX contract below; R2-12 remains the sole active
+block, USER ACCEPTANCE PENDING, and R2-13 is not started.
+
+Canonical identity remains life_os_id / lifeOsId and lifeOsType in Properties,
+manifest and projection mapping. File paths are readable generated presentation:
+Projects/Life OS.md, Milestones/Implementation.md, Tasks/API bauen.md,
+Goals/Working system.md, Skills/TypeScript.md, Resources/Repository.md.
+The ZIP and extracted folder also use the sanitized Project title. No DB/ID,
+Dependency-model, plugin, Canvas, sync or personal-Vault change.
+
+Paths are allocated once by canonical identity. Unique titles have no suffix;
+within a folder, case/NFC-normalized collisions are ordered by ID and the first
+keeps the plain name. Others get --<8-character SHA-256-of-ID> (extended if needed).
+All natural names are reserved before suffix allocation, so a title resembling
+another file's suffix cannot collide. Windows reserved names, invalid characters,
+control/format characters, trailing dots/spaces and link-special characters are
+sanitized, and title segments are bounded to 160 UTF-8 bytes. Links use the ID→path
+mapping with no title matching; aliases appear only for sanitized/collision names.
+
+The pure updateProjection model joins previous/current files by type and ID,
+records CREATE/UPDATE/RENAME with oldPath/newPath in its resulting manifest,
+and preserves User bytes while replacing generated content. One renamed identity
+produces exactly one output file, including upgrade from old UUID paths. Removed
+identities are separately retained for later policy; collisions with retained
+files reject. This is tested in memory; export still creates a fresh snapshot,
+never reads/renames files in a personal Vault. Extracting over an existing Vault
+is not an update mechanism. No free User content is rewritten.
+
+README is no longer generated. The JSON manifest creates no Markdown graph node.
+New native evidence in `/tmp/life-os-r212-readable/`: file-explorer.png,
+project-note.png, backlinks.png, local-graph.png, global-graph.png and result.json.
+Existing installed Obsidian, fresh synthetic Vault, Core plugins only, network
+namespace disabled. Seven domain notes / 31 resolved links / six clicked relation
+destinations. File Explorer labels were asserted through real UI; screenshots of
+both graphs were visually reviewed: all six domain types have readable labels,
+no UUID or README node. Backlinks retain readable paths. Console is clean.
+
+Human-readable filenames: YES. Human-readable graph labels: YES.
+UUID graph noise: NO. README graph noise: NO. Links resolve: YES.
+
+Capability: **CONNECTED**. Correction gate: **IMPLEMENTATION_PASS**, acceptance
+still pending. Sequential final validation passed: diff check, typecheck, full lint
+(plus focused lint after the final preservation test), 19 focused Projection /
+Repository / shared-model tests, real export browser scenario including readable
+ZIP name and renamed-file absence, native Core smoke, and production build.
+Tests include Unicode ZIP interoperability, collisions/shuffled order, legacy-path
+rename and User bytes surviving repeated removal/reappearance in the pure model.
+The browser also reran existing auth/profile/retry/security and disposable DB
+lint/advisors checks, with no issues. Successful browser and native console are
+clean; the intentional HTTP 422 rejection remains separately expected.
+Browser evidence: `test-results/r212-readable-evidence/`. Validation remains in the
+source-identical ignored copy without personal environment files. No migration,
+new dependency, background writer or R2-13 work. Foreign changes remain untouched.
+
+## R2-12 original implementation evidence — superseded path UX
 
 Capability: **CONNECTED**. R2-12 remains the sole Active Work Block;
 **R2-12 USER ACCEPTANCE STATUS: PENDING**. Decision A remains binding;

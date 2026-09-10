@@ -98,9 +98,7 @@ test("Project → authenticated Obsidian ZIP: graph, rename, dependencies, owner
       response.ok() ? "ZIP response" : await response.text(),
     ).toBe(200);
     const file = await pending;
-    expect(file.suggestedFilename()).toBe(
-      `Life-OS-Project-${s.project.id}.zip`,
-    );
+    expect(file.suggestedFilename()).toBe("Life-OS-Project-Life OS.zip");
     const path = info.outputPath(name + ".zip");
     await file.saveAs(path);
     await expect(
@@ -118,16 +116,16 @@ test("Project → authenticated Obsidian ZIP: graph, rename, dependencies, owner
     ) as Record<string, string>;
   }
   const first = await download("project-before");
-  const root = `Life-OS-Project-${s.project.id}/`;
+  const root = "Life-OS-Project-Life OS/";
   const manifest = JSON.parse(first[root + ".life-os-projection.json"]);
   expect(manifest.files).toHaveLength(7);
-  const taskPath = root + `Tasks/${s.tasks[0].id}.md`;
-  const blockedPath = root + `Tasks/${s.tasks[1].id}.md`;
+  let taskPath = root + "Tasks/API bauen.md";
+  const blockedPath = root + "Tasks/Integration.md";
   expect(first[blockedPath]).toContain("## Availability\n\nBLOCKED");
   for (const value of Object.values(first)) {
     expect(value).not.toContain(uid);
     expect(value).not.toContain("access_token");
-    for (const m of value.matchAll(/\[\[([^|]+)\|[^\]]+\]\]/g))
+    for (const m of value.matchAll(/\[\[([^|\]]+)(?:\|[^\]]+)?\]\]/g))
       expect(first[root + m[1] + ".md"]).toBeDefined();
   }
   await page.reload();
@@ -143,9 +141,22 @@ test("Project → authenticated Obsidian ZIP: graph, rename, dependencies, owner
     .throwOnError();
   await page.reload();
   const renamed = await download("project-renamed");
+  expect(renamed[taskPath]).toBeUndefined();
+  taskPath = root + "Tasks/API Boundary implementieren.md";
   expect(renamed[taskPath]).toContain("# API Boundary implementieren");
-  expect(Object.keys(renamed)).toEqual(Object.keys(first));
-  expect(renamed[blockedPath]).toContain("|API Boundary implementieren]]");
+  expect(Object.keys(renamed)).toHaveLength(Object.keys(first).length);
+  expect(Object.keys(first).some((p) => p.endsWith("README.md"))).toBe(false);
+  const renamedManifest = JSON.parse(
+    renamed[root + ".life-os-projection.json"],
+  );
+  expect(
+    renamedManifest.files.find(
+      (f: { lifeOsId: string }) => f.lifeOsId === s.tasks[0].id,
+    ).path,
+  ).toBe("Tasks/API Boundary implementieren.md");
+  expect(renamed[blockedPath]).toContain(
+    "[[Tasks/API Boundary implementieren]]",
+  );
   await api
     .from("task_dependencies")
     .delete()
@@ -279,7 +290,7 @@ test("Project → authenticated Obsidian ZIP: graph, rename, dependencies, owner
     .throwOnError();
   await page.reload();
   const removed = await download("project-source-removed");
-  expect(removed[root + `Resources/${s.resources[0].id}.md`]).toBeUndefined();
+  expect(removed[root + "Resources/Repository.md"]).toBeUndefined();
   expect(Object.keys(removed)).toHaveLength(Object.keys(first).length - 1);
   await api
     .from("projects")
@@ -289,7 +300,7 @@ test("Project → authenticated Obsidian ZIP: graph, rename, dependencies, owner
     .throwOnError();
   await page.reload();
   const archivedProject = await download("project-history");
-  expect(archivedProject[root + `Projects/${s.project.id}.md`]).toContain(
+  expect(archivedProject[root + "Projects/Life OS.md"]).toContain(
     "Archiviert · historische Daten",
   );
   // Authenticated repository performance, fixed query count grows only by bounded pages.

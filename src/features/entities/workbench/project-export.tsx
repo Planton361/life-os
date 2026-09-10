@@ -30,7 +30,12 @@ export function ProjectExport({ projectId }: { projectId: string }) {
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = `Life-OS-Project-${projectId}.zip`;
+      const encodedName = response.headers
+        .get("Content-Disposition")
+        ?.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+      anchor.download = encodedName
+        ? decodeURIComponent(encodedName)
+        : "Life-OS-Project.zip";
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();

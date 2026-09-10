@@ -99,7 +99,9 @@ userinfo, query and fragment are omitted to avoid exporting signed credentials.
 Common pasted credential patterns fail the export visibly; this is defense in
 depth, not a universal secret-classification guarantee for arbitrary free prose.
 Canonical prose is escaped to avoid injected Wikilinks, embeds, HTML or boundary
-markers. Stable UUID paths and ZIP path validation prevent traversal/collisions.
+markers. Generated readable paths sanitize Windows/Linux-invalid characters, reserved
+names, controls and link syntax, bound UTF-8 filename size, and resolve case/NFC
+collisions deterministically. ZIP validates paths independently; no path is identity.
 
 No personal Vault is read or written; exports/** remains protected and unused.
 No plugin, installation, file watcher, local bridge, token, import, write-back,

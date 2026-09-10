@@ -171,3 +171,9 @@ per read, 10,000 files and 16 MiB package payload. Exceeding limits fails visibl
 R2-12 supersedes the earlier incremental-write/client-opening proposal: delivery
 is a user-triggered download, not an Obsidian URI or server Vault writer. Canvas
 belongs to R2-13. Merge preservation is a pure tested function with no import path.
+
+Readable-path correction: canonical IDs map to sanitized title paths before rendering.
+All links use that ID mapping; filenames are presentation. The pure projection
+update matches identities, emits RENAME old/new paths and preserves user content,
+without a filesystem caller. README is no longer generated; only domain Markdown
+notes and the JSON manifest enter the package.
