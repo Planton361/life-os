@@ -7,6 +7,18 @@ Quelle der Wahrheit: Diese Datei.
 Gilt für: Auth, RLS, Validierung, Secrets, Agenten/MCP.  
 Nicht gilt für: Rechtsberatung.
 
+## Current architecture decision — R2-11 USER ACCEPTED (2026-09-10)
+
+The user selected **Decision A**: Life OS / PostgreSQL remains canonical
+operational truth. Obsidian is the Visual / Knowledge / Graph client.
+Obsidian-first is NO-GO for now; native Graph remains fallback. R2-11 is closed;
+R2-12 – Obsidian Projection Foundation is the sole Active Work Block, with
+USER ACCEPTANCE PENDING. R2-13 is not started. Prior provisional/conditional
+R2-11 wording below records the earlier planning/lab context and does not
+reopen this decision. Existing Lab evidence and its limitations remain intact;
+no Lab artifact becomes Product Runtime. Journal/Skill Map reconciliation is
+separate; neither data ownership nor user acceptance is inferred for Journal.
+
 ## Regeln
 
 - Keine selbstgebaute Passwortlogik im MVP.
@@ -70,3 +82,26 @@ Owner-RLS und zusammengesetzte Owner-/Project-FKs. Rekursive Zyklusprüfung und
 echte Project-Zeilenversionswrites schützen auch konkurrierende Mutationen.
 Die [R2-10-Entscheidung](docs/architecture/task-dependencies-r2-10.md) definiert
 Guards, Berechtigungen und den isolierten Datenbank-Proof.
+
+## R2-12 authenticated export
+
+The user explicitly authorizes Product Code for exporting exactly one selected
+owned Project. Automated proof uses disposable synthetic records only. The same-origin
+POST requires the Manual profile, existing server-verified getUser authentication
+and Zod UUID validation; every repository query explicitly filters user_id and
+retains RLS. No client-supplied owner, privileged role, remote provider fetch or
+Obsidian DB access. Foreign/missing Projects fail without revealing their contents.
+Response headers are private/no-store and nosniff. Errors do not expose DB details.
+
+Only work-context fields enter the projection: no User/Auth/Profile, session,
+password, DB credential or provider configuration. Resource URLs are data; URL
+userinfo, query and fragment are omitted to avoid exporting signed credentials.
+Common pasted credential patterns fail the export visibly; this is defense in
+depth, not a universal secret-classification guarantee for arbitrary free prose.
+Canonical prose is escaped to avoid injected Wikilinks, embeds, HTML or boundary
+markers. Stable UUID paths and ZIP path validation prevent traversal/collisions.
+
+No personal Vault is read or written; exports/** remains protected and unused.
+No plugin, installation, file watcher, local bridge, token, import, write-back,
+conflict resolution or destructive sync exists. Open each downloaded snapshot in
+its own extracted folder; never overwrite personal notes with an extracted package.

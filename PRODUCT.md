@@ -6,6 +6,18 @@
 **Primary usage:** browser-based command center on a 4K second monitor
 **Design truth:** `DESIGN.md` / Life OS – Linear Calm Dark Command Center / Dashboard V5
 
+## Current architecture decision — R2-11 USER ACCEPTED (2026-09-10)
+
+The user selected **Decision A**: Life OS / PostgreSQL remains canonical
+operational truth. Obsidian is the Visual / Knowledge / Graph client.
+Obsidian-first is NO-GO for now; native Graph remains fallback. R2-11 is closed;
+R2-12 – Obsidian Projection Foundation is the sole Active Work Block, with
+USER ACCEPTANCE PENDING. R2-13 is not started. Prior provisional/conditional
+R2-11 wording below records the earlier planning/lab context and does not
+reopen this decision. Existing Lab evidence and its limitations remain intact;
+no Lab artifact becomes Product Runtime. Journal/Skill Map reconciliation is
+separate; neither data ownership nor user acceptance is inferred for Journal.
+
 ## 1. Product Promise
 
 Life OS is the personal Context, Planning, Execution and Memory system: a daily companion for turning intent into a realistic week, executing the current day and learning from what was actually done. Its canonical spine is Task / Project / Goal / Skill / Resource. It is not a Notion clone, a public SaaS product, a passive data archive or a collection of unrelated trackers.
@@ -641,3 +653,13 @@ require preview, versioned atomic/idempotent creation and no automatic changes t
 running Projects. R2-17 shows Skill practice/evidence and Goal outcome context;
 no fake percentages or Gap Detection without a Target/Prerequisite model.
 Existing Note-Resources are preserved; a separate Notes surface stays undecided.
+
+### R2-12 Project export
+
+Project Detail offers the secondary action **Für Obsidian exportieren** in
+Manual mode after authentication. It downloads one Project's Markdown graph and
+manifest as a ZIP, including Milestones, Tasks, Dependencies, Goal/Skill/Resource
+context and explicit Work Artifacts. Success announces the started download;
+errors remain visible and allow retry. Open the extracted folder in Obsidian Core;
+no plugin is required. Life OS remains canonical; editing exported state does not
+synchronize it. This is export, with no Canvas, write-back or personal Vault access.

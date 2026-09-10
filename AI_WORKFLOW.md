@@ -4,6 +4,18 @@
 **Scope:** repository work with Codex, ChatGPT and optional tooling
 **Canonical work rules:** `AGENTS.md`
 
+## Current architecture decision — R2-11 USER ACCEPTED (2026-09-10)
+
+The user selected **Decision A**: Life OS / PostgreSQL remains canonical
+operational truth. Obsidian is the Visual / Knowledge / Graph client.
+Obsidian-first is NO-GO for now; native Graph remains fallback. R2-11 is closed;
+R2-12 – Obsidian Projection Foundation is the sole Active Work Block, with
+USER ACCEPTANCE PENDING. R2-13 is not started. Prior provisional/conditional
+R2-11 wording below records the earlier planning/lab context and does not
+reopen this decision. Existing Lab evidence and its limitations remain intact;
+no Lab artifact becomes Product Runtime. Journal/Skill Map reconciliation is
+separate; neither data ownership nor user acceptance is inferred for Journal.
+
 ## 1. Purpose
 
 AI tools accelerate Life OS delivery. They do not replace product truth, security boundaries or user review.

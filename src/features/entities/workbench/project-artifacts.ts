@@ -5,10 +5,13 @@ export const projectRoleLabels: Record<string, string> = {
   reference: "Reference",
 };
 
-export function projectResourceUses(
-  data: Pick<WorkbenchData, "relations" | "resources">,
-  projectId: string,
-) {
+export function projectResourceUses<
+  R extends Pick<WorkbenchData["resources"][number], "id">,
+  L extends Pick<
+    WorkbenchData["relations"][number],
+    "target_type" | "target_id" | "resource_id" | "project_role"
+  >,
+>(data: { relations: L[]; resources: R[] }, projectId: string) {
   const links = data.relations.filter(
     (r) => r.target_type === "project" && r.target_id === projectId,
   );

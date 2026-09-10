@@ -7,6 +7,18 @@ Quelle der Wahrheit: Diese Datei.
 Gilt für: Tabellen, Entities, Relations, Statuswerte.
 Nicht gilt für: reine UI-Widgets.
 
+## Current architecture decision — R2-11 USER ACCEPTED (2026-09-10)
+
+The user selected **Decision A**: Life OS / PostgreSQL remains canonical
+operational truth. Obsidian is the Visual / Knowledge / Graph client.
+Obsidian-first is NO-GO for now; native Graph remains fallback. R2-11 is closed;
+R2-12 – Obsidian Projection Foundation is the sole Active Work Block, with
+USER ACCEPTANCE PENDING. R2-13 is not started. Prior provisional/conditional
+R2-11 wording below records the earlier planning/lab context and does not
+reopen this decision. Existing Lab evidence and its limitations remain intact;
+no Lab artifact becomes Product Runtime. Journal/Skill Map reconciliation is
+separate; neither data ownership nor user acceptance is inferred for Journal.
+
 ## Grundsatz
 
 ```text
@@ -351,3 +363,29 @@ dependency engine or Skill Target/Prerequisite model by implication.
 R2-07 Journal ownership reconciliation is pending R2-11. Preserve journal_entries
 and existing note-Resources; neither external long-form ownership nor new Journal
 context/relation fields are implemented or approved here.
+
+## R2-12 projection metadata (implemented contract)
+
+No Obsidian entity, migration or revision column. Life OS PostgreSQL remains the
+only operational model. Exactly one selected Project includes its Milestones and
+Tasks (including explicitly labelled archive history), internal Dependencies,
+direct Project/Task Goals, Task/Skill and scoped explicit Skill Evidence, and
+Resources linked to those Project/Task/Goal/Skill IDs. No recursive global graph,
+Health/Nutrition/Journal/Inbox/Calendar event export or inferred name matching.
+Work Artifacts retain Resource identity and explicit Project-relation roles.
+
+Paths: Projects/, Milestones/, Tasks/, Goals/, Skills/, Resources/ followed by
+canonical UUID.md. Wikilinks target paths with visible title aliases. Properties:
+life_os_id, life_os_type, life_os_projection_version=1, existing updated_at,
+archived_at and supported canonical state/context fields. The manifest
+.life-os-projection.json records projectionVersion, generatedAt, projectId and
+files {lifeOsId, lifeOsType, path, contentHash}; hashes are SHA-256 of full note
+bytes. Notes have no generation timestamp. Rename changes content, never identity.
+
+YAML Properties remain at the file start, bounded by YAML comment ownership
+markers. Body uses LIFE_OS_GENERATED_START/END; a separate LIFE_OS_USER_START/END
+region starts empty. Pure replacement preserves all bytes after generated content,
+rejects ambiguous markers/unowned Properties/identity changes and has no runtime
+filesystem caller. A future sync phase must decide tombstone/delete/archive policy;
+source removal never grants permission to delete personal files. Export snapshots
+contain current retained source records only; no automatic Goal or Skill scores.

@@ -70,6 +70,104 @@ Obsidian as Visual / Knowledge / Graph client. Obsidian-first is NO-GO for now;
 native Graph is fallback. R2-13 is not started. R2-07/08 reconciliation remains
 separately scoped; no Journal acceptance or migration is implied.
 
+## R2-12 Obsidian Projection Foundation — 2026-09-10
+
+Capability: **CONNECTED**. R2-12 remains the sole Active Work Block;
+**R2-12 USER ACCEPTANCE STATUS: PENDING**. Decision A remains binding;
+R2-13 is not started. R2-11 administrative closure commit: `46c9334`.
+
+Project Detail's secondary **Für Obsidian exportieren** button produces one
+user-triggered local ZIP download. Existing Manual profile and server getUser,
+Zod UUID input, explicit user_id queries and RLS protect the read. No client owner,
+Service Role, DB credential, new auth system, personal Vault path, background
+export, external fetch, plugin, migration, revision column or canonical write.
+No revalidation is needed for this read-only capability. Demo/Empty/Auth-blocked
+have no export control; direct endpoint calls enforce the same boundary.
+
+The bounded Project repository follows canonical Project/Milestone/Task/Goal,
+Task–Skill, scoped Skill Evidence and Resource relations. Archive history is
+labelled; archived predecessors remain unsatisfied. Existing R2-10 dependency
+context, Milestone progress and Artifact-role projection are reused; the latter's
+input type is narrowed generically without changing its behavior. No Health,
+Nutrition, Journal, Inbox or Calendar records are exported. Resource credentials,
+query parameters and fragments are removed from URL references; no URL is fetched.
+A field allowlist excludes auth/provider/system payloads, and common pasted secret
+patterns reject. Arbitrary prose cannot be universally classified as secret-free.
+
+Package: `Life-OS-Project-<uuid>/`, six typed UUID-path folders, Markdown notes,
+`.life-os-projection.json` and a short README. Properties use life_os_id,
+life_os_type, life_os_projection_version=1, existing updated_at and supported
+canonical values. Manifest hashes are SHA-256 of full note bytes; generatedAt
+exists only in the manifest. Canonical ID Wikilinks carry readable title aliases.
+One Resource remains one file even across Artifact/Task/Skill contexts. No title
+matching, inferred dependencies, automatic completion or invented mastery score.
+
+Generated Properties/body and User body have explicit ownership markers. The
+pure replacement function preserves user content byte-for-byte (including CRLF
+and Unicode), updates generated dependencies, and rejects ambiguous markers,
+unowned Properties and identity mismatch. It has no runtime filesystem/import
+caller. Removed sources disappear from subsequent packages; archived retained
+sources remain labelled history. Neither case deletes personal files. Incremental
+sync's tombstone/delete policy is deliberately undecided until the sync phase.
+
+Current proof:
+
+- Focused Unit/Repository tests cover paths, aliases, Properties, hashes,
+  determinism/shuffled inputs, deduplication, rename, dependency removal/archive,
+  preservation/rejection, escaping/Unicode, all Artifact roles, ZIP interoperability,
+  ownership, limits and Origin/credential regression.
+- `tests/e2e/r2-12-project-export.spec.ts`: real authenticated disposable DB →
+  Project button/keyboard → ZIP download; repeat/reload; title rename with same
+  path/file count; dependency removal; archived Task/Project; source unlink;
+  foreign owner, anonymous, Demo/Empty, malformed ID and foreign Origin rejection;
+  visible credential error and successful retry. Export does not mutate source.
+- Existing Project create/edit/lifecycle, relations/artifacts and Milestone controls
+  passed their four focused regression scenarios; the new control is inventoried
+  above. The combined run timed out late in the long Milestone scenario; its
+  isolated repeat passed in 29 seconds without changing the existing test.
+- Required synthetic load: 100 Tasks / 20 Milestones / 100 Dependencies /
+  30 Resources, authenticated reader **16.1 ms** in the final observed local run.
+  Unit rendering/ZIP takes about 14 ms and stays below 2 MiB. These are focused
+  warm local observations, not universal latency or host-memory claims. Queries
+  use 250-row pages/100-ID batches, 2,000-row filtered-query limits, 8 MiB source
+  per read, and 16 MiB note/package-payload limits. No entity-by-entity N+1 reads.
+- Two bounded source reads must agree; concurrent changes return visible retry.
+  This detects changes without claiming database snapshot isolation. ZIP is fully
+  built before delivery; oversized/read failures produce no partial file output.
+- Existing installed Obsidian, isolated synthetic download Vault, no Community
+  Plugins and network namespace disabled: **Core smoke PASS**, seven Notes,
+  31/31 resolved Wikilinks, six directly clicked relation destinations, native
+  Properties, Backlinks and Local Graph. No Canvas generation or installation.
+  `scripts/playwright/prove-obsidian-projection.cjs` records the real UI proof.
+- Full Project screenshots at 3840×2160, 1920×1080 and 390×844 were reviewed:
+  accepted three surfaces and content-driven height remain; export is secondary,
+  mobile action wrap is usable, no new overlap/overflow. V5 Design-Taste PASS:
+  existing matte surfaces/tokens and read-first hierarchy, no decorative additions.
+- Successful browser/export and Obsidian console/hydration are clean. The intentional
+  HTTP 422 credential-rejection check separately permits only that expected failed
+  response log. Node FORCE_COLOR/NO_COLOR notices are test-runner output, not browser
+  console findings. Disposable DB lint/advisors: no issues.
+
+Evidence stays local: `test-results/r212-evidence/export/` and `export-report/`;
+Obsidian screenshots and `result.json` under `/tmp/life-os-r212-obsidian/`.
+Both clients/test stacks close after proof; Target, Legacy and personal Vaults
+are untouched. Initial fixture/Origin/hydration-readiness harness findings were
+corrected, then the complete export proof passed. Core Graph naturally displays
+UUID filenames; Notes and Wikilink aliases provide readable titles. Rich spatial
+labels/layout belong to the separately gated R2-13, which remains unstarted.
+
+Final validation: `git diff --check`, `pnpm typecheck`, `pnpm lint`, 17 focused
+Unit/Repository/shared-read-model tests, the final export integration/browser
+scenario, four existing Project-control regression scenarios, native Core smoke,
+disposable DB lint/advisors and `pnpm build` passed. Heavy checks ran sequentially.
+Validation used an ignored source-identical implementation/proof copy under
+`test-results/r212-proof/app` without personal environment files; only its
+Turbopack root was set to resolve the existing node_modules symlink. No dependency
+or production configuration change was made. The build includes the authenticated
+dynamic export route. Implementation gate: **IMPLEMENTATION_PASS**; this is not
+user acceptance or final Project/Portfolio surface closure. **R2-12 remains active
+and USER ACCEPTANCE PENDING.**
+
 ## R2-11 administrative closure — 2026-09-10
 
 Explicit user decision: **R2-11 USER ACCEPTED; DECISION A**. This supersedes
@@ -411,8 +509,8 @@ wording as evidence only; this active sequence supersedes it.
 | Planned capability / decision | Status | Current truth / next gate |
 |---|---|---|
 | R2-10 Task Dependencies and derived availability | `CONNECTED` | USER ACCEPTED 2026-09-09; implementation/evidence retained, block closed |
-| R2-11 Graph-client architecture / feasibility | `DECISION_REQUIRED` | Active synthetic lab; user Decision Gate A outstanding, no Obsidian/native/Notion selection |
-| R2-12 Obsidian projection | `NOT_STARTED` | Conditional Option A; no stable note export/manifest or client-opening capability |
+| R2-11 Graph-client architecture / feasibility | `CONNECTED` | Decision A USER ACCEPTED 2026-09-10; Lab evidence retained, no Lab Runtime adoption |
+| R2-12 Obsidian projection | `CONNECTED` | Authenticated single-Project ZIP/Markdown/manifest and Core proof above; active, USER ACCEPTANCE PENDING |
 | R2-13 Project Map / Canvas | `NOT_STARTED` | Conditional Option A; no generated canonical Project Canvas or personal-layout preservation proof |
 | R2-14 Sync security/conflict contract | `DECISION_REQUIRED` | Pairing/auth/permissions, revocation, revisions, conflicts/offline/replay and plugin trust must be accepted before write-back |
 | R2-15 Controlled work commands/sync | `NOT_STARTED` | No bridge/write-back; conditional on Option A and accepted R2-14 |

@@ -7,6 +7,18 @@ Quelle der Wahrheit: Diese Datei + `docs/design/*`.
 Gilt für: UI, Dashboard, Komponenten, visuelle Reviews.  
 Nicht gilt für: alte V1–V4-Dashboardvarianten.
 
+## Current architecture decision — R2-11 USER ACCEPTED (2026-09-10)
+
+The user selected **Decision A**: Life OS / PostgreSQL remains canonical
+operational truth. Obsidian is the Visual / Knowledge / Graph client.
+Obsidian-first is NO-GO for now; native Graph remains fallback. R2-11 is closed;
+R2-12 – Obsidian Projection Foundation is the sole Active Work Block, with
+USER ACCEPTANCE PENDING. R2-13 is not started. Prior provisional/conditional
+R2-11 wording below records the earlier planning/lab context and does not
+reopen this decision. Existing Lab evidence and its limitations remain intact;
+no Lab artifact becomes Product Runtime. Journal/Skill Map reconciliation is
+separate; neither data ownership nor user acceptance is inferred for Journal.
+
 ## Kurzfassung
 
 Aktive Richtung ist **Life OS – Linear Calm Dark Command Center**. Das Dashboard ist ein dunkles, ruhiges, präzises Command Center. Es wirkt hochwertig durch Hierarchie, Dichtekontrolle, matte Flächen, präzise Borders, semantische Farbe und reduzierte Mikrotexte.
@@ -363,3 +375,11 @@ Nachfolger stehen mit Links im Task Detail; Hinzufügen/Entfernen bleibt hinter
 bewusster Disclosure. Abgeschlossene inkonsistente Tasks behalten ihren Lifecycle
 und erhalten einen ehrlichen Hinweis. Dependencies erklären Arbeit; sie dominieren
 die akzeptierte Milestone-Struktur nicht.
+
+### R2-12 secondary Project export action
+
+“Für Obsidian exportieren” sits quietly beside existing Project header actions,
+using current text, focus and spacing tokens. Pending state disables duplicate
+clicks; the app-wide toast announces success or persistent error. Project Detail
+retains its accepted three surfaces, read-first work and responsive hierarchy.
+No Sync, Project Map, new card, provider selector or layout redesign is introduced.

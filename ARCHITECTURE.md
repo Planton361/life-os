@@ -7,6 +7,18 @@ Quelle der Wahrheit: Diese Datei; Details in `docs/engineering/*`.
 Gilt für: Repo-Struktur, Komponenten, Datenzugriff.  
 Nicht gilt für: Produkt- oder Designdetails.
 
+## Current architecture decision — R2-11 USER ACCEPTED (2026-09-10)
+
+The user selected **Decision A**: Life OS / PostgreSQL remains canonical
+operational truth. Obsidian is the Visual / Knowledge / Graph client.
+Obsidian-first is NO-GO for now; native Graph remains fallback. R2-11 is closed;
+R2-12 – Obsidian Projection Foundation is the sole Active Work Block, with
+USER ACCEPTANCE PENDING. R2-13 is not started. Prior provisional/conditional
+R2-11 wording below records the earlier planning/lab context and does not
+reopen this decision. Existing Lab evidence and its limitations remain intact;
+no Lab artifact becomes Product Runtime. Journal/Skill Map reconciliation is
+separate; neither data ownership nor user acceptance is inferred for Journal.
+
 ## Stack
 
 - Next.js App Router
@@ -137,3 +149,25 @@ Measure combined client/bridge/Life OS resource load and daily maintenance in th
 multi-day pilot; avoid critical RAM/swap conditions. External code/documents/
 spreadsheets retain ownership. Journal long-form placement is unresolved until
 R2-11/R2-07 reconciliation, without changing current journal_entries ownership.
+
+## R2-12 Project projection boundary
+
+`Project Detail → POST /api/projects/[projectId]/obsidian → existing Manual
+profile + server getUser → project-projection-read repository → projectMarkdown
+→ bounded ZIP response`. No new auth system or privileged client. The repository
+selects allowlisted fields, scopes every read by authenticated user ID and follows
+only the selected Project's canonical relations. It does not reuse the global
+Workbench collection reader or the all-User graph RPC. The existing R2-10 domain
+function derives dependency context from Project-filtered canonical rows.
+
+Two bounded reads must agree before rendering; concurrent changes produce a retry
+response. This detects changed snapshots, not a new transactional snapshot-isolation
+claim. The package is assembled before a successful response; no partial filesystem
+writes, Vault access, background process or revalidation is needed for this read.
+No new library: a bounded ZIP32 STORE writer packages Markdown and manifest in memory.
+Limits are 2,000 rows per filtered query, 250-row pages, 100-ID batches, 8 MiB source
+per read, 10,000 files and 16 MiB package payload. Exceeding limits fails visibly.
+
+R2-12 supersedes the earlier incremental-write/client-opening proposal: delivery
+is a user-triggered download, not an Obsidian URI or server Vault writer. Canvas
+belongs to R2-13. Merge preservation is a pure tested function with no import path.

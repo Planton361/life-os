@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ProjectExport } from "./project-export";
 import type { ReactNode } from "react";
 import type { WorkbenchData } from "@/features/real-data/supabase/repositories/entity-workbench-read";
 import {
@@ -73,6 +74,7 @@ export function ProjectReadView({
           )}
         </div>
         <ManagementDisclosureGroup className={styles.actions}>
+          <ProjectExport projectId={id} />
           {!project.archived_at && (
             <>
               <ManagementDisclosure
