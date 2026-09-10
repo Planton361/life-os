@@ -5,7 +5,7 @@
 **Design truth:** Life OS – Linear Calm Dark Command Center / Dashboard V5
 **Detailed status:** `docs/product/capability-registry.md`
 **Completed sequence:** C1 → C2 → C3 → K1 → H1/H2 → N1 → A1 → Z1 (technical baseline)
-**Active Work Block:** R2-11 – Obsidian Feasibility Lab
+**Active Work Block:** R2-12 – Obsidian Projection Foundation
 
 ## 1. Product Contract
 
@@ -31,7 +31,7 @@ The existing application is the foundation. This roadmap does not restart the pr
 - Nutrition: recipes, ingredients, meals, weekly planning and grocery are connected; R2-05 fully USER ACCEPTED on 2026-09-07.
 - Health & Fitness: Mood, Sleep, Weight, Habits, Running and Strength are connected; R2-05 fully USER ACCEPTED on 2026-09-07.
 - Coding, Education and Work suites plus Notes, Inventory and Wishlist are hidden/retained or folded/externalized; Areas remain canonical context.
-- R2-09 and R2-10 are USER ACCEPTED on 2026-09-09; the Obsidian Feasibility Lab (R2-11) is active. Integration stages are conditional; Journal and Skill Map await that decision before final R2-06 acceptance.
+- R2-09 and R2-10 are USER ACCEPTED on 2026-09-09; R2-11 is USER ACCEPTED with Decision A; R2-12 Projection Foundation is active. Later stages remain gated; Journal and Skill Map await that decision before final R2-06 acceptance.
 - Personal AI Assistant: not started as a production capability.
 - Operation: local-first ready; private remote is optional and not active.
 
@@ -869,7 +869,7 @@ or backend evidence cannot alone restore a `CONNECTED` surface claim.
 ## 4.12 R2 – Product Reality Recovery & Surface Completion
 
 **Status:** R2-00 completed (contract rebaseline). **Current active slice:**
-R2-11 – Obsidian Feasibility Lab (the only Active Work Block).
+R2-12 – Obsidian Projection Foundation (the only Active Work Block).
 
 **R2-01 status:** Completed; explicitly USER ACCEPTED on 2026-09-06.
 Existing control, browser, layout and migration evidence is retained in the
@@ -905,27 +905,25 @@ in the Capability Registry; exact lifecycle semantics are in the
 Implementation commit: `ec3c62f`. Existing evidence is preserved; no functionality
 changes belong to this administrative closure.
 
-**R2-11 status:** Active – synthetic research/comparison only. DECISION_REQUIRED.
-No productive integration, personal data, canonical DB changes or synchronization.
-Use an isolated test Vault/profile; system installation or changes to personal
-Obsidian configuration require USER_INSTALLATION_CONFIRMATION_REQUIRED.
-FEASIBILITY_PASS or BLOCKED is lab evidence, not an architecture decision.
-R2-11 remains active until the user decides; R2-12 is not activated automatically.
+**R2-11 status:** Closed; explicitly USER ACCEPTED on 2026-09-10.
+**Decision A:** Life OS / PostgreSQL remains canonical operational truth;
+Obsidian is the Visual / Knowledge / Graph client. Obsidian-first is NO-GO
+for now; native Graph remains fallback. Retained synthetic Lab evidence is
+historical evidence, never Product Runtime. The explicit user decision closes
+the gate; it does not fabricate missing human pilot measurements.
 
-**Current user direction:** Option A (Life OS canonical + Obsidian) is
-PROVISIONAL GO; Option B (Obsidian-first) is CURRENT NO-GO; Option C (native
-graph) remains FALLBACK. Final selection awaits the usage pilot. Prioritize
-plugin-free focused Core Canvas; Global Graph is not the Project control view.
-TaskNotes/Canvas Bases are UX references, not accepted core dependencies.
+**R2-12 status:** Active; USER ACCEPTANCE PENDING. Implement only the selected
+Project's authenticated user-triggered Markdown/manifest download package.
+R2-13 is not started and cannot become active before separate acceptance.
 
 The bounded Project-context Task Create correction is delivered in `6298406`.
-Feasibility evaluation resumes against that improved Life-OS baseline: Project
+The historical feasibility evaluation used that improved Life-OS baseline: Project
 Work, Milestone and Backlog creation reuse the canonical form and validated
 context. Compare identical synthetic data, emphasizing dependency paths,
 parallelism, reentry and Skill/Resource understanding rather than Create UX.
 Prepare the human comparison without treating technical navigation as user
 acceptance. Obsidian requires a clear additional understanding benefit and
-acceptable maintenance; the correction neither closes R2-11 nor starts R2-12.
+acceptable maintenance; the correction itself neither closed R2-11 nor started R2-12.
 
 **R2-07 status:** Paused – Journal Reconciliation, resumes only after the R2-11
 architecture decision and an explicit reconciled scope.
@@ -1020,8 +1018,8 @@ dependency belongs in this slice.
     reload, bounds/whitespace, console/hydration, screenshots, Design-Taste and
     explicit USER ACCEPTED. Hidden legacy suites remain outside completion.
 
-R2-01 through R2-05, R2-09 and R2-10 remain accepted. R2-11 is the sole active
-research block; DECISION_REQUIRED. Pausing R2-07/R2-08 changes future delivery,
+R2-01 through R2-05, R2-09 and R2-10 remain accepted. R2-11 is USER ACCEPTED; Decision A is selected. R2-12 is the sole active
+implementation block; USER ACCEPTANCE PENDING. Pausing R2-07/R2-08 changes future delivery,
 not existing navigation, implementation evidence or data. R2-06 cannot silently
 skip unresolved decisions; exclusions require explicit user deferral.
 
@@ -1099,11 +1097,11 @@ No demonstrated Obsidian value means stop that integration. Options B/C/D requir
 an updated architecture, security and roadmap scope before implementation; the
 Option A sequence below does not automatically apply to them.
 
-### Conditional Option A blocks (planned, not active)
+### Selected Option A branch (R2-12 active; later blocks gated)
 
 | Block | Outcome and stable scope | Boundary / acceptance |
 |---|---|---|
-| R2-12 – Obsidian Projection Foundation | Regenerable Markdown notes for Project/Milestone/Task/Goal/Skill/Resource; stable IDs, revisions, projection version, canonical Wikilinks, manifest, incremental export, atomic writes and “In Obsidian öffnen” | One-way only; work-state edits remain in Life OS. Preserve Personal content; prove repeat export, rename identity, safe failure/retry and source navigation. No write-back or plugin DB access. |
+| R2-12 – Obsidian Projection Foundation | User-triggered “Für Obsidian exportieren” from one Project Detail; authenticated bounded canonical graph → stable ID-based Markdown paths, Properties, Wikilinks, generated/user sections, content hashes and manifest → local ZIP download | No server Vault path/access, installation, external fetch, migration/revision field, write-back, plugin, watcher or Canvas. Prove deterministic repeat export, rename/dependency/archive truth, deduplication, merge preservation, ownership, performance, download and isolated synthetic Core smoke. Source removals never authorize deleting personal files. Remains active until USER ACCEPTED. |
 | R2-13 – Project Map / Canvas | Generated Project Canvas with Milestone groups, dependency edges, parallel paths, optional Primary Artifact/Resources, stable node IDs and opening from Life OS | Distinguish regenerable views from user-owned layout/Canvas. Prove regeneration preserves personal state; exploratory edges never mutate canonical relations. No write-back. |
 | R2-14 – Obsidian Sync Security & Conflict Contract | Decision record for local pairing/auth, scoped permissions/revocation, endpoint boundary, expected revision, idempotency, conflicts, retries, offline queue/replay, delete semantics, secrets and community-plugin trust | Explicit user acceptance is mandatory before any write-back implementation; no DB credentials in plugin/Vault and no blanket last-write-wins. |
 | R2-15 – Controlled Bidirectional Work Sync | Selected commands only: Task create/edit, dependency add/remove, milestone assignment, complete/reopen through the authenticated local bridge and existing domain boundaries | Prove one truth, canonical guards, no lost updates/duplicates, visible conflicts, safe retries/offline replay and preserved layout. Unrestricted automatic two-way sync remains outside V1 and needs another explicit security/conflict scope. |
@@ -1144,7 +1142,7 @@ not a second active roadmap; repository sources supersede its Downloads paths.
   for a promised core control.
 - Dashboard’s removed Bottom-Zone features remain removed; they cannot return
   through historical layout references.
-- The R2 order is binding. R2-01 through R2-05 are accepted and closed. R2-09 and R2-10 are accepted; only R2-11 is active; R2-07 retains USER ACCEPTANCE STATUS: PENDING.
+- The R2 order is binding. R2-01 through R2-05 are accepted and closed. R2-09 and R2-10 are accepted; only R2-12 is active; R2-07 retains USER ACCEPTANCE STATUS: PENDING.
 
 ## 5. Completed Major Work
 

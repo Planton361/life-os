@@ -63,12 +63,22 @@ Personal → Journal; Settings. Legacy routes remain directly addressable.
 The completed technical sequence C1 → C2 → C3 → K1 → H1/H2 → N1 → A1 → Z1 is
 history. R2-01 through R2-04 and Health/Fitness are explicitly accepted.
 **R2-05 USER ACCEPTED on 2026-09-07: Health & Fitness and Nutrition accepted in full.**
-R2-05, R2-09 and R2-10 are closed and USER ACCEPTED. R2-11 Feasibility /
-Decision Gate A is the sole active research block. R2-12–R2-17 are a conditional Option A branch, not active work.
-R2-07 Journal remains implemented but paused for reconciliation after R2-11, with
-USER ACCEPTANCE PENDING. R2-08 is PAUSED / SUPERSEDED PENDING R2-11 DECISION.
-R2-06 retains its ID as terminal acceptance after selected branch work and explicit
-Journal/Skill Map reconciliation. No client choice or migration is implied.
+R2-05, R2-09, R2-10 and R2-11 are closed and USER ACCEPTED.
+**R2-12 – Obsidian Projection Foundation** is the sole Active Work Block.
+Decision A selects Life OS / PostgreSQL as canonical operational truth and
+Obsidian as Visual / Knowledge / Graph client. Obsidian-first is NO-GO for now;
+native Graph is fallback. R2-13 is not started. R2-07/08 reconciliation remains
+separately scoped; no Journal acceptance or migration is implied.
+
+## R2-11 administrative closure — 2026-09-10
+
+Explicit user decision: **R2-11 USER ACCEPTED; DECISION A**. This supersedes
+historical provisional/pending statements below. All Lab comparison, Core merge,
+limitations and local evidence remain preserved; missing human pilot metrics are
+not retroactively claimed. No Lab artifact is adopted into Product Runtime.
+R2-12 is authorized as one selected Project's authenticated, user-triggered
+Markdown/manifest download, with no personal Vault access or background export.
+R2-12 capability: `NOT_STARTED` at this transition; USER ACCEPTANCE PENDING.
 
 ## R2-10 user acceptance and R2-11 activation — 2026-09-09
 
