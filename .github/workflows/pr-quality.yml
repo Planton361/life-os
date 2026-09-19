@@ -4,9 +4,11 @@ on:
   pull_request:
     branches:
       - r1-4-content-state-system
+      - main
   push:
     branches:
       - r1-4-content-state-system
+      - main
 
 permissions:
   contents: read

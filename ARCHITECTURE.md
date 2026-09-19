@@ -13,7 +13,7 @@ Decision A is binding: Life OS / PostgreSQL remains canonical operational truth.
 
 Generated projection and Canvas structures are derived presentation/read models, never an alternate domain store. Any future command/write-back path requires an accepted security/conflict contract and must enter through existing Life OS auth, Zod, ownership, repository/RPC and RLS boundaries.
 
-Product sequence and operative work status are read from `ROADMAP.md` and GitHub Project #3/Issues; this architecture file does not mirror Active Work Block state.
+Product sequence and operative work status are read from `ROADMAP.md` and GitHub Project #3/Issues; this architecture file does not mirror operative Issue/Project work status.
 
 ## Stack
 

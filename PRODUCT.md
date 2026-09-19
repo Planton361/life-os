@@ -12,7 +12,7 @@
 
 Projection output is derived from canonical Life OS data. Free notes, exploratory Canvas edges and personal layout are presentation state, not a second domain model. Any future write-back requires its own accepted security/conflict contract and must execute through existing Life OS auth, validation, ownership and domain boundaries.
 
-Current delivery sequence and product context belong to `ROADMAP.md`; operative work status belongs to GitHub Project #3 and approved Issues. This product contract does not mirror Active Work Block or Issue status. Journal and Skill Map reconciliation remain separate product scopes.
+Current delivery sequence and product context belong to `ROADMAP.md`; operative work status belongs to GitHub Project #3 and approved Issues. This product contract does not mirror operative Issue/Project work status. Journal and Skill Map reconciliation remain separate product scopes.
 
 ## 1. Product Promise
 

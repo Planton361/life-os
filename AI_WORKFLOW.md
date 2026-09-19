@@ -33,6 +33,10 @@ The Life OS GitHub Project (`https://github.com/users/Planton361/projects/3`) is
 
 Before a status-dependent action, read the current Issue/PR revision and evidence. Historical roadmaps, QA logs and closure documents are evidence, not active priority sources.
 
+### Model Routing
+
+Before starting, inspect which models and reasoning profiles are available in the actual Codex runtime. One model/profile per Work Contract is the default. Narrow read-only exploration or mechanical work may use a lighter available profile; substantive delivery, difficult diagnosis, architecture/decision or high-risk review require a sufficiently capable available profile. Do not switch models at every intermediate step. Escalate at a safe checkpoint when capability is insufficient. Model selection never changes scope, rights or acceptance. Concrete model IDs belong in runtime/launcher configuration, not in Issues or product contracts.
+
 ## 3. Work Types and Standard Loop
 
 Supported work types are `DISCOVER`, `RESEARCH`, `DECIDE/DESIGN`, `EXPERIMENT`, `DELIVER`, `EVALUATE` and read-only `REVIEW`. They are work modes, not mandatory phases for every change.

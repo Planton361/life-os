@@ -27,3 +27,6 @@ private/
 # Disposable E2E compiler output; runner removes only its own directory.
 /.next-e2e-*/
 /.next-e2e-*.tsconfig.json
+
+# Local IDE metadata
+.idea/

@@ -5,9 +5,9 @@
 **Design truth:** Life OS – Linear Calm Dark Command Center / Dashboard V5
 **Detailed status:** `docs/product/capability-registry.md`
 **Completed sequence:** C1 → C2 → C3 → K1 → H1/H2 → N1 → A1 → Z1 (technical baseline)
-**Active Work Block:** R2-13 – Project Map / Canvas
+**Current Product Context:** Product Reorientation
 
-**Workflow boundary:** This field identifies current product-scope context only. The Life OS GitHub Project and approved Issues own operative order and work status; this roadmap does not mirror normal Issue/Project transitions.
+**Product Reorientation:** There is currently no approved delivery sequence. Concrete work starts only from confirmed GitHub Issues and Project items. Issue #3 / R2-13 is preserved pre-reorientation work, not approved next delivery. The next product direction must first be clarified through DISCOVER / RESEARCH / DECIDE-DESIGN. This roadmap may explicitly have no delivery block; it does not mirror normal Issue/Project transitions.
 
 ## 1. Product Contract
 
@@ -33,7 +33,8 @@ The existing application is the foundation. This roadmap does not restart the pr
 - Nutrition: recipes, ingredients, meals, weekly planning and grocery are connected; R2-05 fully USER ACCEPTED on 2026-09-07.
 - Health & Fitness: Mood, Sleep, Weight, Habits, Running and Strength are connected; R2-05 fully USER ACCEPTED on 2026-09-07.
 - Coding, Education and Work suites plus Notes, Inventory and Wishlist are hidden/retained or folded/externalized; Areas remain canonical context.
-- R2-09 and R2-10 are USER ACCEPTED on 2026-09-09; R2-11 is USER ACCEPTED with Decision A; R2-12 is USER ACCEPTED; R2-13 Project Map / Canvas is active. Later stages remain gated; Journal and Skill Map await explicit reconciliation before final R2-06 acceptance.
+- R2-09 and R2-10 are USER ACCEPTED on 2026-09-09; R2-11 is USER ACCEPTED with Decision A; R2-12 is USER ACCEPTED. R2-13 has no committed capability on the integration branch; earlier local R2-13 work is separately preserved and not approved. R2-14–R2-17 are historical product ideas from the pre-reorientation Option A planning, not current operative or binding future work. Journal and Skill Map await explicit reconciliation before final R2-06 acceptance.
+- Product Reorientation is the current product context; no delivery successor is currently approved.
 - Personal AI Assistant: not started as a production capability.
 - Operation: local-first ready; private remote is optional and not active.
 
@@ -313,9 +314,14 @@ Use scoped regions and unique test data.
 - Local-date and ISO-week identity must remain stable across timezone boundaries.
 - Dashboard and Today can drift if they do not share the same review read model.
 
-## 4. Permanent Delivery Sequence
+## 4. Permanent Product Plan & Historical Delivery Sequence
 
-This sequence records the completed technical baseline. The remaining active product plan is the binding R2 order in section 4.12, updated by product consolidation; A1 suite depth is no longer a completion obligation. It is not a live status queue. A Codex prompt names the concrete block ID. Current implementation truth comes from the Capability Registry, code, tests and Git.
+This section records the completed technical baseline and retained product
+planning. It does not define a currently approved active delivery order; Product
+Reorientation is the current context and no delivery successor is approved. A1
+suite depth is no longer a completion obligation. This is not a live status
+queue. Concrete work starts only from a confirmed GitHub Issue; current
+implementation truth comes from the Capability Registry, code, tests and Git.
 
 | Order | Block | Outcome | Main scope | Depends on | Non-goals |
 |---:|---|---|---|---|---|
@@ -669,8 +675,9 @@ Capture or open Task
 
 ## 4.3 Completed Work Block: C2 – Weekly Planning Calendar
 
-**Status:** C2-01 through C2-04 completed. The next explicit Active Work Block
-is **C3 – Daily Companion Loop**.
+**Historical status:** C2-01 through C2-04 completed. At the time, the next
+planned scope was **C3 – Daily Companion Loop**; this historical note does not
+define the current product context or an approved delivery block.
 
 **Outcome:** Calendar remains a temporal projection of canonical executable
 Tasks. Week View is the primary planning surface; it does not create a second
@@ -870,8 +877,8 @@ or backend evidence cannot alone restore a `CONNECTED` surface claim.
 
 ## 4.12 R2 – Product Reality Recovery & Surface Completion
 
-**Status:** R2-00 completed (contract rebaseline). **Current active slice:**
-R2-13 – Project Map / Canvas (the only Active Work Block).
+**Status:** R2-00 completed (contract rebaseline). **Current Product Context:**
+Product Reorientation. No delivery slice is currently approved.
 
 **R2-01 status:** Completed; explicitly USER ACCEPTED on 2026-09-06.
 Existing control, browser, layout and migration evidence is retained in the
@@ -894,9 +901,10 @@ control, projection, reload and responsive evidence remains in the Capability
 Registry and focused tests. This is administrative closure after user acceptance.
 
 **R2-09 status:** Completed; explicitly USER ACCEPTED on 2026-09-09.
-The user accepts the current Project/Milestone/Artifact direction and explicitly
-continues the Work Graph roadmap. Existing implementation, control, reload and
-visual evidence is retained in the Capability Registry; no redesign in closure.
+The user accepts the current Project/Milestone/Artifact direction and the
+historical Work Graph planning direction. Existing implementation, control,
+reload and visual evidence is retained in the Capability Registry; no redesign
+in closure and no future delivery approval is implied.
 
 **R2-10 status:** Completed; explicitly USER ACCEPTED on 2026-09-09.
 Canonical Work Graph & Task Dependencies:
@@ -917,10 +925,12 @@ the gate; it does not fabricate missing human pilot measurements.
 **R2-12 status:** Closed; explicitly USER ACCEPTED on 2026-09-10.
 Readable projection implementation `e821a23` and existing evidence are retained.
 
-**R2-13 status:** Active; USER ACCEPTANCE PENDING. Extend the selected Project
-export with one plugin-free Canvas: canonical dependency workflow, ordered
-Milestone groups, Backlog and secondary context. Preserve user layout/cards/edges
-through an explicit presentation-only update; no sync, watcher or write-back.
+**R2-13 status:** Preserved pre-reorientation planning and implementation context;
+no committed capability exists on the integration branch and no delivery is
+approved. The historical scope is a selected Project export with one plugin-free
+Canvas: canonical dependency workflow, ordered Milestone groups, Backlog and
+secondary context. Preserve user layout/cards/edges through an explicit
+presentation-only update; no sync, watcher or write-back.
 
 The bounded Project-context Task Create correction is delivered in `6298406`.
 The historical feasibility evaluation used that improved Life-OS baseline: Project
@@ -951,7 +961,11 @@ and mark historical dashboard/content-state references as non-authoritative
 where they conflict. No product code, layout implementation, migration or
 dependency belongs in this slice.
 
-### Binding R2 delivery order
+### Historical R2 delivery order — pre-reorientation
+
+The following order is retained as historical product planning. It is not a
+current binding delivery sequence; Product Reorientation must establish any
+future successor through a new accepted direction and GitHub work contract.
 
 1. **R2-01 – Global Feedback + Dashboard Surface Completion** — app-wide
    success toast; Dashboard control inventory and real interaction proof;
@@ -1001,11 +1015,12 @@ dependency belongs in this slice.
    Depends on R2-09 USER ACCEPTED; independent of Obsidian.
 8. **R2-11 – Obsidian Feasibility Lab** — synthetic comparison and Decision Gate A;
    depends on accepted R2-10. No automatic continuation into integration.
-9. **Conditional Option A branch: R2-12 → R2-13 → R2-14 → R2-15 → R2-16 → R2-17** —
+9. **Historical Option A delivery sequence — pre-reorientation (preserved, not approved future work): R2-12 → R2-13 → R2-14 → R2-15 → R2-16 → R2-17** —
    projection, Project Map, security/conflict contract, controlled commands,
-   templates, then Skill/Goal graph. Each block requires its predecessor's scoped
-   acceptance; R2-12 additionally requires explicit Option A selection. These are
-   planned scopes, not implementation or permission to use personal data.
+   templates, then Skill/Goal graph. These historical ideas retain their original
+   scope and acceptance notes, but no block is current or authorized. Any future
+   use requires a newly accepted product direction and work contract; this history
+   is not implementation permission or permission to use personal data.
 10. **R2-07 – Journal Reconciliation** — paused pending an explicit reconciled scope; Decision A is already selected. Reconcile and schedule its remaining scope explicitly. Preserve the
     existing chronological workspace and pending acceptance. Decide between full
     Life OS Journal ownership and Obsidian long-form text with Life OS date,
@@ -1021,7 +1036,7 @@ dependency belongs in this slice.
     reload, bounds/whitespace, console/hydration, screenshots, Design-Taste and
     explicit USER ACCEPTED. Hidden legacy suites remain outside completion.
 
-R2-01 through R2-05, R2-09 and R2-10 remain accepted. R2-11 is USER ACCEPTED; Decision A is selected. R2-12 is USER ACCEPTED; R2-13 is the current product context and its product acceptance remains pending. Operative task status lives in GitHub Project #3 and Issue #3. Pausing R2-07/R2-08 changes future delivery,
+R2-01 through R2-05, R2-09 and R2-10 remain accepted. R2-11 is USER ACCEPTED; Decision A is selected. R2-12 is USER ACCEPTED. R2-13 has no committed capability on the integration branch; earlier local work is separately preserved and not approved. R2-14–R2-17 are historical pre-reorientation ideas, not current operative or binding future work. Product Reorientation is the current product context and no delivery successor is approved. Operative task status lives in GitHub Project #3 and Issue #3. Pausing R2-07/R2-08 changes future delivery,
 not existing navigation, implementation evidence or data. R2-06 cannot silently
 skip unresolved decisions; exclusions require explicit user deferral.
 
@@ -1097,9 +1112,12 @@ product code, personal data, synchronization or write-back.
 
 No demonstrated Obsidian value means stop that integration. Options B/C/D require
 an updated architecture, security and roadmap scope before implementation; the
-Option A sequence below does not automatically apply to them.
+historical Option A sequence below does not automatically apply to them.
 
-### Selected Option A branch (R2-13 current product context; later blocks gated)
+### Historical Option A planning branch — pre-reorientation (preserved, not approved future work)
+
+The following table is retained as historical product planning only. It does not
+define an approved successor, current delivery order or automatic continuation.
 
 | Block | Outcome and stable scope | Boundary / acceptance |
 |---|---|---|
@@ -1144,7 +1162,7 @@ not a second active roadmap; repository sources supersede its Downloads paths.
   for a promised core control.
 - Dashboard’s removed Bottom-Zone features remain removed; they cannot return
   through historical layout references.
-- The R2 order is binding. R2-01 through R2-05 are accepted and closed. R2-09 and R2-10 are accepted; R2-13 is the current product context; R2-07 retains USER ACCEPTANCE STATUS: PENDING.
+- The historical R2 order is preserved as planning evidence, not as a current binding delivery sequence. R2-01 through R2-05 are accepted and closed; R2-09 and R2-10 are accepted. Product Reorientation is the current product context; R2-07 retains USER ACCEPTANCE STATUS: PENDING.
 
 ## 5. Completed Major Work
 
@@ -1171,7 +1189,8 @@ Historical details remain in QA, closure and archived roadmap documents.
 
 ## 6. Program Scope by Domain
 
-These headings describe stable domain scope, not delivery order. The binding order is the sequence in section 4.
+These headings describe stable domain scope, not delivery order. The sequence in
+section 4 is historical planning evidence, not a current binding order.
 
 ### C1 – Core Work Graph
 
@@ -1366,11 +1385,11 @@ Deferred does not mean removed. It means the prerequisite model, privacy or inte
 
 ## 11. Roadmap Maintenance Rule
 
-This file owns the permanent product-completion plan and one explicit Active Work Block as current product context. It is neither the operative queue nor an implementation log.
+This file owns the permanent product-completion plan, accepted dependencies and current product context. The current context may explicitly be Product Reorientation and may have no approved delivery block. It is neither the operative queue nor an implementation log.
 
 - Normal feature work updates code/tests, the Capability Registry when capability truth changed, and its GitHub Issue/PR/Project status.
 - Change the permanent plan only when its sequence, block outcome, dependency or material functional scope changes.
-- Update the explicit Active Work Block only when the current product context advances or is deliberately changed; do not mirror normal Issue status transitions here.
+- Update current product context when it advances or is deliberately changed. An approved delivery block is optional and follows an accepted product direction; do not mirror normal Issue status transitions here.
 - Keep detailed proof output in tests or, when genuinely necessary, focused QA/decision documents.
 
 ## 12. Final Closure Target

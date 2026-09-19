@@ -34,9 +34,9 @@ Legacy research, historical roadmaps and closure files must not override the act
 
 For normal operation:
 
-- the approved GitHub Issue is the concrete work contract;
+- the approved GitHub Issue is the concrete work contract; only an approved GitHub Issue authorizes concrete work;
 - the Life OS GitHub Project (`https://github.com/users/Planton361/projects/3`) owns operative queue, status, priority and work type;
-- `ROADMAP.md` owns product sequence, dependencies and stable block scope; its Active Work Block is product context, not a second task-status system;
+- `ROADMAP.md` owns product sequence, dependencies, stable scope information and current product context. The current context may be Product Reorientation; no delivery block is required and it is not a second task-status system;
 - the Capability Registry owns capability implementation truth, not issue status;
 - the PR plus CI/review owns the proposed revision and technical evidence;
 - ChatGPT CONTROL coordinates from those references; chat history is not project truth.
@@ -268,7 +268,7 @@ Create a dedicated document only when one of these applies:
 
 Roadmap history and QA documents are evidence, not active prioritization sources.
 
-`ROADMAP.md` changes when the product plan, permanent order, dependency, material functional scope or current product context changes. Do not mirror normal Issue/Project status transitions into its Active Work Block and do not turn the roadmap into a proof log.
+`ROADMAP.md` changes when the product plan, permanent order, dependency, material functional scope or current product context changes. Its current context may explicitly be Product Reorientation; an approved delivery block is optional and follows accepted product direction. Do not mirror normal Issue/Project status transitions into `ROADMAP.md` and do not turn the roadmap into a proof log.
 
 ## 13. Protected Paths
 
