@@ -7,17 +7,11 @@ Quelle der Wahrheit: Diese Datei.
 Gilt für: Tabellen, Entities, Relations, Statuswerte.
 Nicht gilt für: reine UI-Widgets.
 
-## Current architecture decision — R2-11 USER ACCEPTED (2026-09-10)
+## Durable work-graph / client data decision
 
-The user selected **Decision A**: Life OS / PostgreSQL remains canonical
-operational truth. Obsidian is the Visual / Knowledge / Graph client.
-Obsidian-first is NO-GO for now; native Graph remains fallback. R2-11 is closed;
-R2-12 – Obsidian Projection Foundation is the sole Active Work Block, with
-USER ACCEPTANCE PENDING. R2-13 is not started. Prior provisional/conditional
-R2-11 wording below records the earlier planning/lab context and does not
-reopen this decision. Existing Lab evidence and its limitations remain intact;
-no Lab artifact becomes Product Runtime. Journal/Skill Map reconciliation is
-separate; neither data ownership nor user acceptance is inferred for Journal.
+Decision A is binding: Life OS / PostgreSQL remains the canonical operational model. Obsidian is a projection/client; generated paths, notes, Canvas nodes and layout are not canonical entity identity and do not create a second domain store.
+
+Future write-back requires its own accepted security/conflict contract and explicit command semantics. Current work status and delivery sequence are not data-model truth; read them from GitHub Project #3/Issues and `ROADMAP.md`.
 
 ## Grundsatz
 
@@ -339,7 +333,7 @@ are derived from canonical records, never a stored overall progress score.
 Milestone status remains explicit; Goal progress uses outcomes/criteria and Skill
 progress explicit evidence/practice, not Task totals.
 
-### Conditional projection and sync identity (R2-12–R2-15, Option A only)
+### Projection and potential sync identity (Decision A; R2-12–R2-15)
 
 Generated notes use life_os_id, life_os_type (project/milestone/task/goal/skill/
 resource), life_os_revision and projection_version. Filename is not identity;
@@ -360,9 +354,7 @@ cardinalities/ownership; creation is atomic/idempotent and records template vers
 Template edits never automatically replace running Projects. R2-17 adds no Goal
 dependency engine or Skill Target/Prerequisite model by implication.
 
-R2-07 Journal ownership reconciliation is pending R2-11. Preserve journal_entries
-and existing note-Resources; neither external long-form ownership nor new Journal
-context/relation fields are implemented or approved here.
+R2-07 Journal ownership reconciliation remains separately unresolved under selected Decision A. Preserve `journal_entries` and existing note-Resources; neither external long-form ownership nor new Journal context/relation fields are implemented or approved here.
 
 ## R2-12 projection metadata (implemented contract)
 

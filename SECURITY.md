@@ -7,17 +7,13 @@ Quelle der Wahrheit: Diese Datei.
 Gilt für: Auth, RLS, Validierung, Secrets, Agenten/MCP.  
 Nicht gilt für: Rechtsberatung.
 
-## Current architecture decision — R2-11 USER ACCEPTED (2026-09-10)
+## Durable work-graph / client security decision
 
-The user selected **Decision A**: Life OS / PostgreSQL remains canonical
-operational truth. Obsidian is the Visual / Knowledge / Graph client.
-Obsidian-first is NO-GO for now; native Graph remains fallback. R2-11 is closed;
-R2-12 – Obsidian Projection Foundation is the sole Active Work Block, with
-USER ACCEPTANCE PENDING. R2-13 is not started. Prior provisional/conditional
-R2-11 wording below records the earlier planning/lab context and does not
-reopen this decision. Existing Lab evidence and its limitations remain intact;
-no Lab artifact becomes Product Runtime. Journal/Skill Map reconciliation is
-separate; neither data ownership nor user acceptance is inferred for Journal.
+Decision A is binding: Life OS / PostgreSQL remains canonical. Obsidian is a projection/client and receives no direct database credentials or privileged access. Free Vault/Canvas content is untrusted presentation/user input unless explicitly promoted through a validated Life OS command.
+
+Any write-back requires a separately accepted security/conflict contract covering pairing, authentication, revocation, permissions, origin/endpoint scope, credential storage, plugin trust, field ownership, expected revision, idempotency, conflicts, retry, offline replay and delete semantics.
+
+Current work status is not a security fact; read it from GitHub Project #3/Issues and `ROADMAP.md`.
 
 ## Regeln
 
@@ -45,22 +41,19 @@ separate; neither data ownership nor user acceptance is inferred for Journal.
 
 ## Geplante Work-Graph-/Obsidian-Grenzen
 
-R2-09 und R2-10 sind USER ACCEPTED; R2-11 ist das aktive synthetische Lab.
-Der explizite R2-11-Auftrag erlaubt eine vorhandene oder rein temporäre isolierte
-Testinstanz und eine kleine geprüfte Plugin-Auswahl ausschließlich im Test-Vault.
+R2-11 ist historische synthetische Entscheidungsevidenz. Die damalige Evaluation erlaubte nur eine vorhandene oder rein temporäre isolierte Testinstanz und eine kleine geprüfte Plugin-Auswahl ausschließlich im Test-Vault.
 Systeminstallation, Paketmanager-Änderungen oder Eingriffe in persönliche Obsidian-
 Konfiguration benötigen USER_INSTALLATION_CONFIRMATION_REQUIRED.
 Die Roadmap allein erlaubt weiterhin keine Installation von Obsidian oder
 Community-Plugins, Nutzung eines persönlichen Vaults, Exporte persönlicher Daten,
 Cloud-Synchronisation, Notion-Anbindung, externe APIs oder Remote-DB-Aktionen.
 Dafür braucht es den vorgesehenen expliziten Scope und die jeweilige Freigabe.
-R2-11 verwendet ausschließlich synthetische Daten; Plugin-Fähigkeiten und
-Vertrauensmodell werden vor Verwendung im Lab geprüft. Lokale Plugin-Ausführung
+Die historische R2-11-Evaluation verwendete ausschließlich synthetische Daten; Plugin-Fähigkeiten und Vertrauensmodell wurden nur für diesen isolierten Lab-Scope geprüft. Lokale Plugin-Ausführung
 ist keine automatische Vertrauensfreigabe für persönliche Inhalte.
 
 Keine Service-Role-Keys, DB-Passwörter oder andere Secrets in Plugins, Obsidian
-oder Vault-Dateien. Kein direkter PostgreSQL-/Data-API-Writer aus Obsidian. Bei
-Option A bleibt Life OS kanonisch; freie Notizen/Canvas-Kanten sind unvertrauens-
+oder Vault-Dateien. Kein direkter PostgreSQL-/Data-API-Writer aus Obsidian. Unter
+Decision A bleibt Life OS kanonisch; freie Notizen/Canvas-Kanten sind unvertrauens-
 würdiger Input und werden nur nach expliziter Auswahl durch validierte Commands
 zu Fachrelationen. Persönliche Inhalte und Layout dürfen nicht überschrieben
 werden; Export-/Dateipfade müssen auf die ausdrücklich gewählte Projektionsregion

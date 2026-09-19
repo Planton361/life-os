@@ -4,17 +4,6 @@
 **Scope:** repository work with Codex, ChatGPT and optional tooling
 **Canonical work rules:** `AGENTS.md`
 
-## Current architecture decision — R2-11 USER ACCEPTED (2026-09-10)
-
-The user selected **Decision A**: Life OS / PostgreSQL remains canonical
-operational truth. Obsidian is the Visual / Knowledge / Graph client.
-Obsidian-first is NO-GO for now; native Graph remains fallback. R2-11 is closed;
-R2-12 – Obsidian Projection Foundation is USER ACCEPTED. R2-13 – Project Map / Canvas is the sole Active Work Block, with USER ACCEPTANCE PENDING. Prior provisional/conditional
-R2-11 wording below records the earlier planning/lab context and does not
-reopen this decision. Existing Lab evidence and its limitations remain intact;
-no Lab artifact becomes Product Runtime. Journal/Skill Map reconciliation is
-separate; neither data ownership nor user acceptance is inferred for Journal.
-
 ## 1. Purpose
 
 AI tools accelerate Life OS delivery. They do not replace product truth, security boundaries or user review.
@@ -324,7 +313,7 @@ Before committing, Codex reviews:
 - Are console/hydration, bounds, overlap, whitespace and complete screenshots reviewed?
 - Is `USER ACCEPTED` present when this is final core-surface/product closure?
 - Was the Capability Registry updated?
-- Is the diff limited to the active block scope?
+- Is the diff limited to the approved Issue scope?
 
 ## 13. Handoff
 
@@ -341,39 +330,3 @@ Next action:
 ```
 
 Do not reproduce a session transcript. Research/Evaluation without repository changes reports the accepted evidence/result instead of inventing a commit or PR.
-
-
-## 14. Work Graph Planning Handoff and Decision Gates
-
-The 2026-09-09 Work Graph/Obsidian handoff has been reconciled into repository
-ROADMAP.md and dependent active contracts. Its Downloads paths and proposed
-examples are provenance, not another active source or implementation authority.
-Planning-only requests update contracts/status truth without starting code,
-migrations, clients or runtime integrations. Report PLAN_READY for the planning
-outcome only after applicable Completion Gate checks pass; this is not feature
-completion or USER ACCEPTED.
-
-R2-09 and R2-10 are USER ACCEPTED. R2-11 is USER ACCEPTED with Decision A:
-Life OS/PostgreSQL remains canonical and Obsidian is a projection/client. R2-12
-is USER ACCEPTED. R2-13 Project Map / Canvas is the sole active product block
-with USER ACCEPTANCE PENDING; R2-14 and later blocks remain gated. R2-07 remains
-paused for Journal reconciliation and R2-08 remains paused/superseded; preserve
-existing implementation/data and pending acceptance. R2-06 remains terminal.
-
-Decision A is already selected. The accepted R2-12 projection precedes the
-current R2-13 Canvas work; an accepted R2-14 security/conflict contract must
-still precede R2-15 commands. The roadmap alone grants no installation, personal
-Vault path/access, cloud-sync, external API or remote access. No protected path,
-Task lifecycle change or user acceptance is inferred from handoff examples.
-Every selected implementation block still needs its canonical Vertical Slice and
-focused proof. Decision blocks produce reviewable evidence and explicit
-decisions; they do not pretend to deliver a production Vertical Slice.
-
-Prove Dependency Truth, Obsidian Value, Single Truth, Sync Reliability and Daily
-Value at the ROADMAP.md gates. The R2-11 synthetic multi-session pilot is
-historical decision evidence; any later product-value claim still requires the
-explicitly authorized realistic proof defined by its active block. At least three context-reset comparisons are required;
-automated retrieval is technical evidence, not a substitute for subjective human
-clarity/mental-load ratings or longer-term daily-value evidence.
-Compare resumption/next-action time, blocker clarity, sorting/double upkeep and
-combined RAM/CPU/swap. Stop or reduce integration when daily value fails.
