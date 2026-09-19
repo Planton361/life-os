@@ -358,25 +358,26 @@ migrations, clients or runtime integrations. Report PLAN_READY for the planning
 outcome only after applicable Completion Gate checks pass; this is not feature
 completion or USER ACCEPTED.
 
-R2-09 and R2-10 are explicitly USER ACCEPTED on 2026-09-09. R2-11 is the sole
-active block for synthetic feasibility work; canonical Dependencies stay unchanged. R2-11 stops at
-Decision Gate A for explicit user architecture selection; do not infer Option A
-from the presence of detailed R2-12–R2-17 plans. R2-07 is paused for Journal
-reconciliation and R2-08 is paused/superseded pending that decision; preserve
+R2-09 and R2-10 are USER ACCEPTED. R2-11 is USER ACCEPTED with Decision A:
+Life OS/PostgreSQL remains canonical and Obsidian is a projection/client. R2-12
+is USER ACCEPTED. R2-13 Project Map / Canvas is the sole active product block
+with USER ACCEPTANCE PENDING; R2-14 and later blocks remain gated. R2-07 remains
+paused for Journal reconciliation and R2-08 remains paused/superseded; preserve
 existing implementation/data and pending acceptance. R2-06 remains terminal.
 
-If Option A is selected, projection precedes Canvas, then an accepted R2-14
-security/conflict contract precedes R2-15 commands. The roadmap alone grants no
-installation, personal Vault/export, cloud-sync, external API or remote access.
-No protected path, current Task lifecycle or user acceptance is inferred from
-handoff examples. Every selected implementation block still needs its canonical
-vertical slice and focused proof. Decision blocks produce reviewable evidence and
-explicit decisions; they do not pretend to deliver a production vertical slice.
+Decision A is already selected. The accepted R2-12 projection precedes the
+current R2-13 Canvas work; an accepted R2-14 security/conflict contract must
+still precede R2-15 commands. The roadmap alone grants no installation, personal
+Vault path/access, cloud-sync, external API or remote access. No protected path,
+Task lifecycle change or user acceptance is inferred from handoff examples.
+Every selected implementation block still needs its canonical Vertical Slice and
+focused proof. Decision blocks produce reviewable evidence and explicit
+decisions; they do not pretend to deliver a production Vertical Slice.
 
 Prove Dependency Truth, Obsidian Value, Single Truth, Sync Reliability and Daily
-Value at the ROADMAP.md gates. Use the current R2-11 synthetic multi-session pilot
-before integration selection and an explicitly authorized realistic pilot for
-later product proof. At least three context-reset comparisons are required;
+Value at the ROADMAP.md gates. The R2-11 synthetic multi-session pilot is
+historical decision evidence; any later product-value claim still requires the
+explicitly authorized realistic proof defined by its active block. At least three context-reset comparisons are required;
 automated retrieval is technical evidence, not a substitute for subjective human
 clarity/mental-load ratings or longer-term daily-value evidence.
 Compare resumption/next-action time, blocker clarity, sorting/double upkeep and

@@ -12,8 +12,8 @@ assignees: ""
 
 ## Akzeptanz / Erkenntnisziel
 
-- [ ] 
-- [ ] 
+- [ ]
+- [ ]
 
 ## Scope und Nichtziele
 
