@@ -10,7 +10,7 @@ mutations inside the Life OS security and data boundary.
 
 ## Sources
 
-Read the relevant sources before changing backend code:
+Read the approved GitHub Issue and the relevant sources before changing backend code:
 
 - `AGENTS.md`
 - `ARCHITECTURE.md`
@@ -18,7 +18,6 @@ Read the relevant sources before changing backend code:
 - `SECURITY.md`
 - `ACCESSIBILITY.md`, if UI states are touched
 - `AI_WORKFLOW.md`
-- `docs/ai-workflow/life-os-agent-workflow-v2.md`
 - feature-specific action, schema, repository, and UI files
 
 ## Required Boundary

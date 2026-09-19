@@ -22,28 +22,43 @@ Read active sources in this order:
 1. `AGENTS.md` – repository work rules;
 2. `PRODUCT.md` – complete product contract;
 3. `DESIGN.md` – V5 design truth;
-4. `ROADMAP.md` – permanent product-completion sequence, stable block scope and exactly one explicit Active Work Block;
-5. `docs/product/capability-registry.md` – dynamic truth for actual capability status;
+4. `ROADMAP.md` – permanent product plan, stable block scope, dependencies and current product context; it is not the operative work queue;
+5. `docs/product/capability-registry.md` – dynamic truth for actual capability status and evidence; it is not issue/work status;
 6. `ARCHITECTURE.md`, `DATA_MODEL.md`, `SECURITY.md`, `ACCESSIBILITY.md` – technical boundaries;
 7. `AI_WORKFLOW.md` and project Skills – delivery method;
 8. QA, closure and historical roadmap files – evidence/history only.
 
 Legacy research, historical roadmaps and closure files must not override the active sources above.
 
+## 2.1 Operational Source of Truth
+
+After the workflow cutover accepted through GitHub Issue #1:
+
+- the approved GitHub Issue is the concrete work contract;
+- the Life OS GitHub Project owns operative queue, status, priority and work type;
+- `ROADMAP.md` owns product sequence, dependencies and stable block scope; its Active Work Block is product context, not a second task-status system;
+- the Capability Registry owns capability implementation truth, not issue status;
+- the PR plus CI/review owns the proposed revision and technical evidence;
+- ChatGPT CONTROL coordinates from those references; chat history is not project truth.
+
+A delegated Issue references the relevant Roadmap block when product work is involved. Research or evaluation may close with an accepted persisted result and no artificial code change. R2-13 remains the current product context during this migration and is not implemented by Issue #1.
+
 ## 3. Work Mode
 
-For substantial tasks:
+For substantial delegated work:
 
-1. take the concrete block ID from the user/Codex prompt, or resolve the explicit Active Work Block in `ROADMAP.md` when none is supplied;
-2. read that block's stable scope and current status in `ROADMAP.md`;
-3. inspect the Capability Registry, relevant code, tests and Git history;
-4. summarize the current implementation and gaps;
+1. read the approved GitHub Issue and identify its work type, acceptance, boundaries and required decision authority;
+2. confirm repository, target branch, base revision and unexpected local changes before any write;
+3. read the referenced `ROADMAP.md` block when product scope is involved, plus relevant Capability Registry entries and active contracts;
+4. inspect only the code, tests, history and evidence needed for that result;
 5. output a short execution plan;
-6. implement a complete Vertical Slice;
-7. run focused validation and review the diff;
-8. update the Capability Registry;
+6. complete the coherent result for the Issue: research, design/decision, experiment, delivery, evaluation or review;
+7. run focused validation proportional to the work type and review the actual diff/evidence;
+8. update the Capability Registry only when capability truth changed; update Issue/Project status separately;
 9. run the Surface Acceptance Gate when a core surface is touched or closed;
-10. commit only when the Completion Gate passes.
+10. commit/push only intended files on the Issue branch and update the same PR when Delivery is in scope.
+
+Normal Delivery uses one writer on a `codex/<issue>-<slug>` branch and one PR. Do not work directly on the integration branch. Research/Evaluation without repository changes does not need a fake branch or PR. Repairs stay in the same Issue/branch/session unless the work contract materially changes.
 
 Prefer one coherent, visible capability over many small layer-only blocks.
 
@@ -242,7 +257,7 @@ Do not claim an entire surface as complete when visible capabilities remain UI-o
 
 Normal feature work should not create multiple scope/closure documents.
 
-Do not create separate Epic, scope-lock or closure files for normal work. The prompt selects the block ID, `ROADMAP.md` supplies its stable scope and the Capability Registry records current status.
+Do not create separate Epic, scope-lock or closure files for normal work. The approved Issue supplies the concrete work contract, `ROADMAP.md` supplies stable product scope/dependencies where applicable, and the Capability Registry records capability truth. GitHub Project status is the operative work status.
 
 Create a dedicated document only when one of these applies:
 
@@ -296,7 +311,7 @@ Do not delete or move files without explicit confirmation.
 
 Before calling a block complete, confirm:
 
-- product outcome is met;
+- the approved Issue outcome or work-type-specific result is met;
 - visible controls work or are honestly deferred;
 - backend/auth/validation/ownership are correct;
 - dependent read models are updated;

@@ -11,12 +11,11 @@ installation.
 
 ## Sources
 
-Read the relevant sources:
+Read the approved GitHub Issue and the relevant sources:
 
 - `AGENTS.md`
 - `ACCESSIBILITY.md`
 - `AI_WORKFLOW.md`
-- `docs/ai-workflow/life-os-agent-workflow-v2.md`
 - route, page, component, action, and repository files for the flow
 
 ## Proof Workflow

@@ -2828,4 +2828,4 @@ which disappear with their owner instead of leaving stale lock files.
 
 ## Update Rule
 
-The user/Codex prompt selects a `ROADMAP.md` block ID. Update this registry after each completed material capability so it remains the sole dynamic documentation source for implementation status.
+Update this registry after each material capability change so it remains the source for capability implementation truth and evidence. After workflow cutover, the approved GitHub Issue selects the concrete work and the GitHub Project owns operative status/priority; do not duplicate that work status in this registry. Product Issues reference the applicable `ROADMAP.md` block when relevant.

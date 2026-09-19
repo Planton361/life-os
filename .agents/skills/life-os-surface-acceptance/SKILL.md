@@ -7,12 +7,11 @@ description: Prove a Life OS core surface is genuinely usable before closure, in
 
 Use for implementation, correction or closure of Dashboard, Inbox, Today,
 Calendar, Portfolio, Health, Fitness or Nutrition. It does not authorize
-product changes outside the selected ROADMAP block.
+product changes outside the approved Issue and its referenced ROADMAP block.
 
 ## Required Contract
 
-Read `PRODUCT.md`, `DESIGN.md`, the selected `ROADMAP.md` block and relevant
-Registry entries before judging the surface. Those active contracts override
+Read the approved GitHub Issue, `PRODUCT.md`, `DESIGN.md`, its referenced `ROADMAP.md` block and relevant Registry entries before judging the surface. Those active contracts override
 historical layout-lock and content-state references.
 
 ## Acceptance Procedure
