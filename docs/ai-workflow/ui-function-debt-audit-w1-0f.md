@@ -1,9 +1,9 @@
 # Life OS UI / Function Debt Audit W1.0F
 
 Stand: 2026-07-07
-Status: Active
+Status: HISTORICAL
 Zweck: Final-Completion-orientierter Audit der bestehenden Life-OS-UI gegen Agent Workflow v2.
-Quelle der Wahrheit: `AGENTS.md`, Root-Dokumente, `docs/ai-workflow/life-os-agent-workflow-v2.md`, `docs/product/mvp-core-status.md`, `docs/product/mvp-core-release-readiness.md`, aktuelle Code- und E2E-Pruefung.
+Historischer Quellenstand: `AGENTS.md`, damalige Root-Dokumente, `docs/ai-workflow/life-os-agent-workflow-v2.md`, `docs/product/mvp-core-status.md`, `docs/product/mvp-core-release-readiness.md`, damalige Code- und E2E-Pruefung. Diese Datei ist keine aktuelle Source of Truth.
 
 ## 1. Zweck
 

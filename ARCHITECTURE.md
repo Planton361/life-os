@@ -7,17 +7,13 @@ Quelle der Wahrheit: Diese Datei; Details in `docs/engineering/*`.
 Gilt für: Repo-Struktur, Komponenten, Datenzugriff.  
 Nicht gilt für: Produkt- oder Designdetails.
 
-## Current architecture decision — R2-11 USER ACCEPTED (2026-09-10)
+## Durable work-graph / client architecture decision
 
-The user selected **Decision A**: Life OS / PostgreSQL remains canonical
-operational truth. Obsidian is the Visual / Knowledge / Graph client.
-Obsidian-first is NO-GO for now; native Graph remains fallback. R2-11 is closed;
-R2-12 – Obsidian Projection Foundation is the sole Active Work Block, with
-USER ACCEPTANCE PENDING. R2-13 is not started. Prior provisional/conditional
-R2-11 wording below records the earlier planning/lab context and does not
-reopen this decision. Existing Lab evidence and its limitations remain intact;
-no Lab artifact becomes Product Runtime. Journal/Skill Map reconciliation is
-separate; neither data ownership nor user acceptance is inferred for Journal.
+Decision A is binding: Life OS / PostgreSQL remains canonical operational truth. Obsidian is a Visual / Knowledge / Graph projection/client; Obsidian-first is not the current architecture and native graph remains fallback.
+
+Generated projection and Canvas structures are derived presentation/read models, never an alternate domain store. Any future command/write-back path requires an accepted security/conflict contract and must enter through existing Life OS auth, Zod, ownership, repository/RPC and RLS boundaries.
+
+Product sequence and operative work status are read from `ROADMAP.md` and GitHub Project #3/Issues; this architecture file does not mirror Active Work Block state.
 
 ## Stack
 
@@ -106,8 +102,7 @@ into unrelated planning views. No external integration or alternate task store.
 
 ## Canonical Work Graph / Future Client Decision Boundary
 
-R2-09 and R2-10 are USER ACCEPTED; R2-11 is the active synthetic lab. R2-10 provides
-canonical Task Dependencies independently of any client, inside existing feature-
+Decision A is the durable client boundary. R2-10 provides canonical Task Dependencies independently of any client, inside existing feature-
 local domain/actions/schemas/repositories and controlled transactional boundaries.
 Database enforcement must cover every completion path, including source-linked
 writes; Dashboard/Today/Calendar remain projections over the same records.
@@ -119,14 +114,9 @@ serialize graph writes with completion/reopen. `read_task_dependency_graph` is a
 single user-scoped snapshot; the reusable domain projection derives readiness and
 blocker/successor context. See the [R2-10 decision](docs/architecture/task-dependencies-r2-10.md).
 
-R2-11 compares four architectural choices: A Life OS canonical + Obsidian client;
-B Obsidian-first only as an explicit ownership migration; C bounded native graph;
-D another stack, including Notion-first only by conscious local-first/security
-reconciliation. No choice or library installation follows automatically from this
-plan. The lab compares Core/Canvas and TaskNotes/Canvas Bases against current
-Life OS, with a native prototype only if needed. Use synthetic data only.
+R2-11 is historical decision evidence. It compared A Life OS canonical + Obsidian client, B Obsidian-first ownership migration, C bounded native graph and D another stack. Decision A was selected; the lab never became Product Runtime and does not grant installation, personal-data or provider permissions.
 
-If A wins, PostgreSQL → Life OS domain logic → regenerable Obsidian projection
+Under selected Decision A, PostgreSQL → Life OS domain logic → regenerable Obsidian projection
 is the first stage (R2-12). Proposed Vault regions are Projects/, Milestones/,
 Tasks/, Goals/, Skills/, Resources/, Generated Views/ and Personal/. Stable IDs,
 revisions, projection version and a manifest govern incremental atomic generation;
@@ -147,8 +137,7 @@ The existing manual HTTP(S) Resource-opening path is not broadened by this plan;
 
 Measure combined client/bridge/Life OS resource load and daily maintenance in the
 multi-day pilot; avoid critical RAM/swap conditions. External code/documents/
-spreadsheets retain ownership. Journal long-form placement is unresolved until
-R2-11/R2-07 reconciliation, without changing current journal_entries ownership.
+spreadsheets retain ownership. Journal long-form placement remains unresolved in the separate R2-07 reconciliation, without changing current `journal_entries` ownership.
 
 ## R2-12 Project projection boundary
 

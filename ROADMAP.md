@@ -7,7 +7,7 @@
 **Completed sequence:** C1 → C2 → C3 → K1 → H1/H2 → N1 → A1 → Z1 (technical baseline)
 **Active Work Block:** R2-13 – Project Map / Canvas
 
-**Workflow boundary:** After the GitHub workflow cutover, this field identifies the current product-scope context only. The Life OS GitHub Project and approved Issues own operative order and work status. R2-13 remains preserved as product context and is not executed by workflow-migration Issue #1.
+**Workflow boundary:** This field identifies current product-scope context only. The Life OS GitHub Project and approved Issues own operative order and work status; this roadmap does not mirror normal Issue/Project transitions.
 
 ## 1. Product Contract
 
@@ -929,10 +929,9 @@ context. Compare identical synthetic data, emphasizing dependency paths,
 parallelism, reentry and Skill/Resource understanding rather than Create UX.
 Prepare the human comparison without treating technical navigation as user
 acceptance. Obsidian requires a clear additional understanding benefit and
-acceptable maintenance; the correction itself neither closed R2-11 nor started R2-12.
+acceptable maintenance. That historical comparison predates the later explicit R2-11/R2-12 acceptance decisions and remains evidence only.
 
-**R2-07 status:** Paused – Journal Reconciliation, resumes only after the R2-11
-architecture decision and an explicit reconciled scope.
+**R2-07 status:** Paused – Journal Reconciliation; resumes only under an explicit reconciled scope. Decision A is already selected and does not itself resume Journal work.
 USER ACCEPTANCE STATUS: PENDING. Journal is neither deleted nor accepted.
 The canonical chronological workspace implementation and current control/browser
 evidence are recorded in the Capability Registry; implementation is not closure.
@@ -1007,15 +1006,13 @@ dependency belongs in this slice.
    templates, then Skill/Goal graph. Each block requires its predecessor's scoped
    acceptance; R2-12 additionally requires explicit Option A selection. These are
    planned scopes, not implementation or permission to use personal data.
-10. **R2-07 – Journal Reconciliation** — paused until the R2-11 architecture
-    decision; reconcile and schedule its remaining scope explicitly. Preserve the
+10. **R2-07 – Journal Reconciliation** — paused pending an explicit reconciled scope; Decision A is already selected. Reconcile and schedule its remaining scope explicitly. Preserve the
     existing chronological workspace and pending acceptance. Decide between full
     Life OS Journal ownership and Obsidian long-form text with Life OS date,
     context, relations and tracking. No migration, deletion or ownership change
     is implied. Recurrence remains Task/Calendar-owned; no fabricated context.
-11. **R2-08 – Skill Map** — PAUSED / SUPERSEDED PENDING R2-11 DECISION. Keep the
-    ID and retained Coding shell. After the decision, explicitly replace its
-    delivery obligation with R2-17 or redefine a bounded native graph capability;
+11. **R2-08 – Skill Map** — PAUSED / SUPERSEDED under selected Decision A. Keep the
+    ID and retained Coding shell. Explicitly reconcile its delivery obligation with R2-17 rather than building a competing graph;
     do not build both. Canonical Skills/Evidence remain active.
 12. **R2-06 – Full Active Product Acceptance** — terminal block, retaining its ID.
     Depends on the accepted R2-09/R2-10 outcomes, completed architecture decisions,
@@ -1024,8 +1021,7 @@ dependency belongs in this slice.
     reload, bounds/whitespace, console/hydration, screenshots, Design-Taste and
     explicit USER ACCEPTED. Hidden legacy suites remain outside completion.
 
-R2-01 through R2-05, R2-09 and R2-10 remain accepted. R2-11 is USER ACCEPTED; Decision A is selected. R2-12 is USER ACCEPTED; R2-13 is the sole active
-implementation block; USER ACCEPTANCE PENDING. Pausing R2-07/R2-08 changes future delivery,
+R2-01 through R2-05, R2-09 and R2-10 remain accepted. R2-11 is USER ACCEPTED; Decision A is selected. R2-12 is USER ACCEPTED; R2-13 is the current product context and its product acceptance remains pending. Operative task status lives in GitHub Project #3 and Issue #3. Pausing R2-07/R2-08 changes future delivery,
 not existing navigation, implementation evidence or data. R2-06 cannot silently
 skip unresolved decisions; exclusions require explicit user deferral.
 
@@ -1103,12 +1099,12 @@ No demonstrated Obsidian value means stop that integration. Options B/C/D requir
 an updated architecture, security and roadmap scope before implementation; the
 Option A sequence below does not automatically apply to them.
 
-### Selected Option A branch (R2-13 active; later blocks gated)
+### Selected Option A branch (R2-13 current product context; later blocks gated)
 
 | Block | Outcome and stable scope | Boundary / acceptance |
 |---|---|---|
-| R2-12 – Obsidian Projection Foundation | User-triggered “Für Obsidian exportieren” from one Project Detail; authenticated bounded canonical graph → stable life_os_id identity with collision-safe readable Markdown paths, rename/user-content mapping, Properties, Wikilinks, generated/user sections, content hashes and manifest → local ZIP download | No server Vault path/access, installation, external fetch, migration/revision field, write-back, plugin, watcher or Canvas. Prove deterministic repeat export, rename/dependency/archive truth, deduplication, merge preservation, ownership, performance, download and isolated synthetic Core smoke. Source removals never authorize deleting personal files. Remains active until USER ACCEPTED. |
-| R2-13 – Project Map / Canvas | Generated Project Canvas with Milestone groups, dependency edges, parallel paths, optional Primary Artifact/Resources, stable node IDs and inclusion in the existing Life OS export package | Work flow first: READY/BLOCKED/DONE compact nodes, sort_order groups, Backlog, directed dependencies with serial/parallel paths; context separate. Prove a readable 24-Task Canvas and three manually moved nodes, free card, exploratory edge, new node and updated canonical state survive an explicit Canvas/manifest presentation merge. No sync, bridge, watcher, plugin or write-back. Remains active until USER ACCEPTED. |
+| R2-12 – Obsidian Projection Foundation | User-triggered “Für Obsidian exportieren” from one Project Detail; authenticated bounded canonical graph → stable life_os_id identity with collision-safe readable Markdown paths, rename/user-content mapping, Properties, Wikilinks, generated/user sections, content hashes and manifest → local ZIP download | No server Vault path/access, installation, external fetch, migration/revision field, write-back, plugin, watcher or Canvas. Deterministic repeat export, rename/dependency/archive truth, deduplication, merge preservation, ownership, performance, download and isolated synthetic Core smoke remain the accepted evidence boundary. USER ACCEPTED 2026-09-10. |
+| R2-13 – Project Map / Canvas | Generated Project Canvas with Milestone groups, dependency edges, parallel paths, optional Primary Artifact/Resources, stable node IDs and inclusion in the existing Life OS export package | Work flow first: READY/BLOCKED/DONE compact nodes, sort_order groups, Backlog, directed dependencies with serial/parallel paths; context separate. Prove a readable 24-Task Canvas and three manually moved nodes, free card, exploratory edge, new node and updated canonical state survive an explicit Canvas/manifest presentation merge. No sync, bridge, watcher, plugin or write-back. Product acceptance remains pending; operative status is tracked in Project #3 / Issue #3. |
 | R2-14 – Obsidian Sync Security & Conflict Contract | Decision record for local pairing/auth, scoped permissions/revocation, endpoint boundary, expected revision, idempotency, conflicts, retries, offline queue/replay, delete semantics, secrets and community-plugin trust | Explicit user acceptance is mandatory before any write-back implementation; no DB credentials in plugin/Vault and no blanket last-write-wins. |
 | R2-15 – Controlled Bidirectional Work Sync | Selected commands only: Task create/edit, dependency add/remove, milestone assignment, complete/reopen through the authenticated local bridge and existing domain boundaries | Prove one truth, canonical guards, no lost updates/duplicates, visible conflicts, safe retries/offline replay and preserved layout. Unrestricted automatic two-way sync remains outside V1 and needs another explicit security/conflict scope. |
 | R2-16 – Project Templates & Automation | Versioned modular Project templates with Milestones, Tasks, Dependencies and supported Resource/Skill/Goal relations; preview, atomic instantiation and idempotency | Save template version; failure leaves no partial Project; retry creates no duplicate; never automatically overwrite running Projects. No autonomous background automation. |
@@ -1148,7 +1144,7 @@ not a second active roadmap; repository sources supersede its Downloads paths.
   for a promised core control.
 - Dashboard’s removed Bottom-Zone features remain removed; they cannot return
   through historical layout references.
-- The R2 order is binding. R2-01 through R2-05 are accepted and closed. R2-09 and R2-10 are accepted; only R2-13 is active; R2-07 retains USER ACCEPTANCE STATUS: PENDING.
+- The R2 order is binding. R2-01 through R2-05 are accepted and closed. R2-09 and R2-10 are accepted; R2-13 is the current product context; R2-07 retains USER ACCEPTANCE STATUS: PENDING.
 
 ## 5. Completed Major Work
 

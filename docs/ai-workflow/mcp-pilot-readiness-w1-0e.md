@@ -1,9 +1,9 @@
 # MCP Pilot Readiness W1.0E
 
 Stand: 2026-07-07
-Status: Active
+Status: HISTORICAL
 Zweck: Lokale MCP-Pilotentscheidung fuer Life OS vorbereiten.
-Quelle der Wahrheit: `AI_WORKFLOW.md`, `SECURITY.md`, `docs/ai-workflow/life-os-agent-workflow-v2.md`, `docs/ai-workflow/mcp-tools.md`.
+Historischer Quellenstand: `AI_WORKFLOW.md`, `SECURITY.md`, `docs/ai-workflow/life-os-agent-workflow-v2.md`, `docs/ai-workflow/mcp-tools.md`. Aktuelle Tool-/Security-Grenzen kommen aus `AI_WORKFLOW.md`, `SECURITY.md` und dem genehmigten Issue.
 Gilt fuer: MCP-Readiness, lokale Tool-Kontexte, Browser-Proof, Runtime-Diagnose.
 Nicht gilt fuer: MCP-Installation, User-Home-Konfiguration, Produktfeatures, `src/`, Migrationen oder Remote-DB-Aktionen.
 

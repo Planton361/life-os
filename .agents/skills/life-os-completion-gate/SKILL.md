@@ -28,7 +28,7 @@ Check every applicable item:
 Use exactly one decision:
 
 - `PASS`: scope is complete and validated.
-- `PASS_WITH_DEFERRED`: requested scope is complete, but explicitly listed future work remains outside this block.
+- `PASS_WITH_DEFERRED`: requested scope is complete, but explicitly listed future work remains outside this Issue.
 - `BLOCKED`: required scope cannot be completed without user input, missing access, broken environment, or a failed required validation.
 
 ## Report Requirements

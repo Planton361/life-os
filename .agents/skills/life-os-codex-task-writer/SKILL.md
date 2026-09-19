@@ -5,7 +5,7 @@ description: Turn an approved Life OS GitHub Issue or bounded question into a co
 
 # Life OS Codex Task Writer
 
-Use this skill to produce a directly executable Codex prompt. The GitHub Issue is the concrete delegated contract after workflow cutover; repository sources provide product, architecture and safety context.
+Use this skill to produce a directly executable Codex prompt. The approved GitHub Issue is the concrete delegated contract; repository sources provide product, architecture and safety context.
 
 ## Sources
 

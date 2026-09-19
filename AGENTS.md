@@ -26,13 +26,13 @@ Read active sources in this order:
 5. `docs/product/capability-registry.md` – dynamic truth for actual capability status and evidence; it is not issue/work status;
 6. `ARCHITECTURE.md`, `DATA_MODEL.md`, `SECURITY.md`, `ACCESSIBILITY.md` – technical boundaries;
 7. `AI_WORKFLOW.md` and project Skills – delivery method;
-8. QA, closure and historical roadmap files – evidence/history only.
+8. QA, closure, adoption, audit and historical workflow/roadmap files – evidence/history only.
 
 Legacy research, historical roadmaps and closure files must not override the active sources above.
 
 ## 2.1 Operational Source of Truth
 
-After the workflow cutover accepted through GitHub Issue #1:
+For normal operation:
 
 - the approved GitHub Issue is the concrete work contract;
 - the Life OS GitHub Project (`https://github.com/users/Planton361/projects/3`) owns operative queue, status, priority and work type;
@@ -41,7 +41,7 @@ After the workflow cutover accepted through GitHub Issue #1:
 - the PR plus CI/review owns the proposed revision and technical evidence;
 - ChatGPT CONTROL coordinates from those references; chat history is not project truth.
 
-A delegated Issue references the relevant Roadmap block when product work is involved. Research or evaluation may close with an accepted persisted result and no artificial code change. R2-13 remains the current product context during this migration and is not implemented by Issue #1.
+A delegated Issue references the relevant Roadmap block when product work is involved. Research or evaluation may close with an accepted persisted result and no artificial code change. Current product context is read from `ROADMAP.md`; operative task status is read from the GitHub Project and approved Issue.
 
 ## 3. Work Mode
 
@@ -235,7 +235,7 @@ Do not run broad unrelated greps for every small change. Run the focused regress
 
 ## 11. Capability Registry
 
-After normal material feature work, update:
+When material feature work changes capability truth, update:
 
 ```text
 docs/product/capability-registry.md

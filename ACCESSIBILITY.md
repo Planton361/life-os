@@ -43,8 +43,8 @@ sind nicht nur durch Farbe oder Position unterscheidbar. Dependency-Verwaltung
 muss ohne Drag/Drop und Graph-Canvas per Tastatur/Formular vollständig bedienbar
 bleiben; Fehler und Konflikte sind zugänglich, Fokus bleibt nachvollziehbar.
 
-Ein nach R2-11 gewählter Graph ist optionale Tiefe. Gleichwertige Listen-/Detail-
+Der unter Decision A gewählte Graph-/Client-Pfad ist optionale Tiefe. Gleichwertige Listen-/Detail-
 wege erhalten Daily Flows, Quellenzugriff und Blocker-Erklärung auch ohne räumliche
-Graph-Bedienung. Neue Client-Öffnungsaktionen benennen ihr Ziel. R2-11 bewertet
+Graph-Bedienung. Neue Client-Öffnungsaktionen benennen ihr Ziel. Die historische R2-11-Evaluation berücksichtigte
 auch diese Bedienbarkeit; spätere Life-OS-Flächen behalten 4K-, Desktop- und
 Mobile-Guards. Dies ist ein geplanter Vertrag, keine aktuelle Graph-Abnahme.

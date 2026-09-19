@@ -43,8 +43,8 @@ Implementation status and product visibility are separate truths: `CONNECTED` co
 | Nutrition | `ACCEPTED` | `CONNECTED`: logging/tracking, canonical weekly planning, recipes and grocery; explicitly USER ACCEPTED on 2026-09-07 with Health & Fitness | R2-05 closed; preserve evidence and accepted behavior |
 | Work / Education / Coding | `HIDDEN_RETAINED` / `FOLDED` | A1 canonical Projects, Resources and logs remain; detailed technical statuses below are retained evidence, not suite completion | Areas stay active as context; no independent suite completion |
 | Inventory / Wishlist | `EXTERNALIZED` / `RETAINED` | existing CRUD, purchase decisions and conversion retained; no new completion claim | Spreadsheet is Source of Truth for future use; no active navigation or connector |
-| Journal | `ACTIVE` | `CONNECTED`: R2-07 chronological workspace, canonical create/edit/archive, search/filter, detail and current responsive/reload proof | R2-07 paused until R2-11 architecture decision/reconciliation; user acceptance pending; unsupported context/relations/Today sources documented below |
-| Skill Map | `PAUSED_PENDING_DECISION` | `UI_ONLY`: only a retained Coding demo/empty Manual shell | R2-08 paused/superseded pending R2-11; replace with R2-17 or redefine native scope explicitly; no active graph link |
+| Journal | `ACTIVE` | `CONNECTED`: R2-07 chronological workspace, canonical create/edit/archive, search/filter, detail and current responsive/reload proof | separate Journal ownership/reconciliation remains unresolved under Decision A; user acceptance pending; unsupported context/relations/Today sources documented below |
+| Skill Map | `PAUSED_PENDING_DECISION` | `UI_ONLY`: only a retained Coding demo/empty Manual shell | under Decision A, reconcile R2-08 with R2-17 rather than creating a competing graph; no active graph link |
 | Notes | `FOLDED_INTO_RESOURCES` / `RETAINED` | `CONNECTED`: existing canonical `resources` (`note`), no migration | no separate active Notes app |
 | Anti-Rot / Challenges / Shop | `DEFERRED_HIDDEN` | connected feature code/data; direct routes remain intact | C1.1-01 removed Sidebar, Dashboard and normal Daily-Companion entry points |
 | Entertainment | `DEFERRED_HIDDEN` | connected collection code/data; direct routes remain intact | C1.1-01 removed Sidebar, Life overview and obvious active cross-links |
@@ -58,28 +58,28 @@ Active navigation: Dashboard, Inbox, Today, Calendar, Portfolio (Tasks/Projects/
 Goals/Skills), Resources; Health & Fitness and Nutrition with existing children;
 Personal → Journal; Settings. Legacy routes remain directly addressable.
 
-## Active Delivery Sequence
+## Current Capability Context
 
 The completed technical sequence C1 → C2 → C3 → K1 → H1/H2 → N1 → A1 → Z1 is
 history. R2-01 through R2-04 and Health/Fitness are explicitly accepted.
 **R2-05 USER ACCEPTED on 2026-09-07: Health & Fitness and Nutrition accepted in full.**
 R2-05, R2-09, R2-10, R2-11 and R2-12 are closed and USER ACCEPTED.
-**R2-13 – Project Map / Canvas** is the sole Active Work Block.
+R2-13 currently has no committed capability implementation on the integration branch; its operative work contract/status is tracked separately in GitHub Issue #3 and Project #3.
 Decision A selects Life OS / PostgreSQL as canonical operational truth and
 Obsidian as Visual / Knowledge / Graph client. Obsidian-first is NO-GO for now;
-native Graph is fallback. R2-13 is active; USER ACCEPTANCE PENDING. R2-07/08 reconciliation remains
+native Graph is fallback. R2-13 product acceptance remains pending; this registry does not track operative Issue/Project status. R2-07/08 reconciliation remains
 separately scoped; no Journal acceptance or migration is implied.
 
-## R2-12 acceptance and R2-13 activation — 2026-09-10
+## R2-12 acceptance and R2-13 capability context — 2026-09-10
 
 Explicit user decision: **R2-12 USER ACCEPTED**. Implementation `e821a23`,
 readable paths, Core Graph/Explorer and preservation evidence are retained.
 This administrative closure supersedes historical PENDING statements below.
-**R2-13 – Project Map / Canvas** is the sole active block, acceptance PENDING.
+No committed R2-13 capability evidence is recorded on the integration branch; product acceptance is pending and operative work status lives in GitHub.
 Life OS/PostgreSQL remains canonical; Canvas is presentation state. No Lab
 artifact is promoted to Product Runtime. R2-14 and later work remain gated.
 
-## R2-12 readable navigation correction — 2026-09-10
+## R2-12 readable navigation correction — 2026-09-10 (historical pre-acceptance evidence)
 
 The real user finding rejects UUID filenames as human navigation. It supersedes
 only the original path/README UX contract below; R2-12 remains the sole active
@@ -563,21 +563,19 @@ records were edited for proof. Contended graph/domain transactions can require a
 visible retry; there is no hidden partial success. No core-surface acceptance is
 inferred from implementation evidence.
 
-## Work Graph / Obsidian planning reconciliation — 2026-09-09
+## Work Graph / Obsidian capability matrix
 
-PLAN_READY is a planning outcome, not a capability status. ROADMAP.md owns the
-sequence, block scopes and five product gates. No implementation, DB action,
-export, installation, integration or new browser acceptance occurred here. Existing
-R2-09 Artifact/Milestone and Journal evidence is retained; current Task lifecycle
-is unchanged. Historical dated entries below retain their original delivery-order
-wording as evidence only; this active sequence supersedes it.
+This table records current committed capability/decision truth only. `ROADMAP.md`
+owns product sequence/context; GitHub Project #3 and approved Issues own operative
+status, priority and work type. Historical dated entries below retain their original
+delivery-order wording as evidence only and do not define the current queue.
 
 | Planned capability / decision | Status | Current truth / next gate |
 |---|---|---|
 | R2-10 Task Dependencies and derived availability | `CONNECTED` | USER ACCEPTED 2026-09-09; implementation/evidence retained, block closed |
 | R2-11 Graph-client architecture / feasibility | `CONNECTED` | Decision A USER ACCEPTED 2026-09-10; Lab evidence retained, no Lab Runtime adoption |
-| R2-12 Obsidian projection | `CONNECTED` | Authenticated single-Project ZIP/Markdown/manifest and Core proof above; active, USER ACCEPTANCE PENDING |
-| R2-13 Project Map / Canvas | `NOT_STARTED` | Conditional Option A; no generated canonical Project Canvas or personal-layout preservation proof |
+| R2-12 Obsidian projection | `CONNECTED` | Authenticated single-Project ZIP/Markdown/manifest and Core proof retained; USER ACCEPTED 2026-09-10, block closed |
+| R2-13 Project Map / Canvas | `NOT_STARTED` | No committed generated canonical Project Canvas or personal-layout preservation proof on the integration branch; local/unmerged work is not capability truth |
 | R2-14 Sync security/conflict contract | `DECISION_REQUIRED` | Pairing/auth/permissions, revocation, revisions, conflicts/offline/replay and plugin trust must be accepted before write-back |
 | R2-15 Controlled work commands/sync | `NOT_STARTED` | No bridge/write-back; conditional on Option A and accepted R2-14 |
 | R2-16 Project Templates | `NOT_STARTED` | Future versioned preview and atomic/idempotent instantiation; no running-Project overwrite |
@@ -586,8 +584,7 @@ wording as evidence only; this active sequence supersedes it.
 | R2-08 Skill Map disposition | `DECISION_REQUIRED` | Retained Coding shell remains `UI_ONLY`; replace obligation with R2-17 or redefine native graph only after R2-11 |
 | Separate Notes surface | `DECISION_REQUIRED` | Existing note-Resources remain `CONNECTED`; no new Notes app or migration |
 
-No graph shell, relationship count or planning text upgrades an implementation
-status. R2-09 remains the only active block, USER ACCEPTANCE STATUS: PENDING.
+No graph shell, relationship count, planning text or GitHub work status upgrades an implementation status. Historical active-block wording in older dated entries is evidence only.
 
 ## R2-05 user acceptance and administrative closure — 2026-09-07
 
