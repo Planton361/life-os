@@ -1,10 +1,10 @@
 # Tools and Repos
 
-Stand: 2026-06-17  
-Status: ACTIVE — supporting reference, non-canonical  
-Zweck: AI-/Agenten-Tooling einordnen.  
-Canonical authority: `AI_WORKFLOW.md` and the approved GitHub Issue. This file is a supporting research/tool catalog only.  
-Gilt für: Tool-Auswahl und Recherche.  
+Stand: 2026-06-17
+Status: ACTIVE — supporting reference, non-canonical
+Zweck: AI-/Agenten-Tooling einordnen.
+Canonical authority: `AI_WORKFLOW.md` and the approved GitHub Issue. This file is a supporting research/tool catalog only.
+Gilt für: Tool-Auswahl und Recherche.
 Nicht gilt für: automatische Installation oder verbindliche Nutzung.
 
 ## Bewertungslogik
