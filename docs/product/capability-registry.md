@@ -64,7 +64,8 @@ The completed technical sequence C1 → C2 → C3 → K1 → H1/H2 → N1 → A1
 history. R2-01 through R2-04 and Health/Fitness are explicitly accepted.
 **R2-05 USER ACCEPTED on 2026-09-07: Health & Fitness and Nutrition accepted in full.**
 R2-05, R2-09, R2-10, R2-11 and R2-12 are closed and USER ACCEPTED.
-R2-13 currently has no committed capability implementation on the integration branch; its operative work contract/status is tracked separately in GitHub Issue #3 and Project #3.
+R2-13 currently has no committed capability implementation on the integration branch; preserved local Rescue work is not capability evidence; its operative work contract/status is tracked separately in GitHub Issue #3 and Project #3.
+Product Reorientation is in progress; no delivery successor is currently approved.
 Decision A selects Life OS / PostgreSQL as canonical operational truth and
 Obsidian as Visual / Knowledge / Graph client. Obsidian-first is NO-GO for now;
 native Graph is fallback. R2-13 product acceptance remains pending; this registry does not track operative Issue/Project status. R2-07/08 reconciliation remains
