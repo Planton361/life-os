@@ -1,9 +1,9 @@
 # Final Product Completion Roadmap
 
 Stand: 2026-07-07
-Status: Active
+Status: HISTORICAL
 Zweck: Final-Completion-Roadmap fuer Life OS nach W1.0F UI / Function Debt Audit.
-Quelle der Wahrheit: `PRODUCT.md`, `DESIGN.md`, `ROADMAP.md`, `AI_WORKFLOW.md`, `docs/ai-workflow/life-os-agent-workflow-v2.md`, `docs/ai-workflow/ui-function-debt-audit-w1-0f.md`.
+Historischer Quellenstand: `PRODUCT.md`, `DESIGN.md`, `ROADMAP.md`, `AI_WORKFLOW.md`, `docs/ai-workflow/life-os-agent-workflow-v2.md`, `docs/ai-workflow/ui-function-debt-audit-w1-0f.md`. Aktuelle Produktsequenz kommt ausschliesslich aus Root-`ROADMAP.md`.
 Gilt fuer: finale Produktreihenfolge, Surface-Zielzustaende, Proof-Strategie und naechste Vertical Slices.
 Nicht gilt fuer: Produktfeatures, `src/`, Migrationen, RLS-/Policy-Aenderungen, MCP-Installation oder Remote-DB-Aktionen.
 

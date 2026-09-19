@@ -1,9 +1,9 @@
 # MCP Tools
 
 Stand: 2026-07-07
-Status: Active
+Status: ACTIVE — supporting reference, non-canonical
 Zweck: MCP-Nutzung sicher und zweckgebunden einordnen.  
-Quelle der Wahrheit: `AI_WORKFLOW.md` und `SECURITY.md`.  
+Canonical authority: `AI_WORKFLOW.md`, `SECURITY.md` and the approved GitHub Issue. This file is a supporting tool reference only.  
 Gilt für: Figma, Browser, Docs, Repo-Kontext, externe Toolzugriffe.  
 Nicht gilt für: automatische MCP-Installation.
 

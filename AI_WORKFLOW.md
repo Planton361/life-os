@@ -19,7 +19,7 @@ The workflow optimizes for:
 
 ## 2. Active Context
 
-After the workflow cutover, every delegated task starts from:
+Every delegated task starts from:
 
 ```text
 Approved GitHub Issue URL/number
@@ -260,6 +260,14 @@ Maintain distinct authorities:
 - decision records = only lasting model/security/privacy/integration decisions.
 
 Normal work does not create separate Epic, scope-lock, proof-hardening or closure files. Change `ROADMAP.md` only when the permanent plan, dependency, material block scope or current product context changes; do not use it as the daily work-status queue.
+
+### Workflow artifact classes
+
+Use these classes to prevent a second workflow authority:
+
+- **ACTIVE:** `AGENTS.md`, this file and project-local `.agents/skills/**`. `.github/copilot-instructions.md` and `.github/instructions/**` are active only as non-canonical tool adapters. `docs/ai-workflow/codex-dashboard-workflow.md`, `mcp-tools.md` and `tools-and-repos.md` are supporting references only and cannot define work status or authorization.
+- **HISTORICAL:** `docs/ai-workflow/life-os-agent-workflow-v2.md`, `ADOPTION_REPORT.md`, W1 readiness/audit artifacts, `docs/product/final-product-completion-roadmap.md` and optional historical role drafts. They are evidence only and must not be loaded as normal task authority.
+- **REMOVE:** the superseded standalone prompting/review/skill catalogs and the old `.github/prompts/**` / duplicate `.github/skills/**` paths. Git history remains the archive.
 
 ## 10. MCP and External Tools
 

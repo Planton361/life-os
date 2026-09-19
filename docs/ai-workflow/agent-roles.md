@@ -1,9 +1,9 @@
 # Agent Roles
 
 Stand: 2026-06-17  
-Status: Draft  
+Status: HISTORICAL / OPTIONAL  
 Zweck: mögliche Agentenrollen für spätere Toolchains.  
-Quelle der Wahrheit: `AI_WORKFLOW.md`.  
+Canonical authority: `AI_WORKFLOW.md`. These role sketches are historical/optional and are not active required agents.  
 Gilt für: optionale `.github/agents` oder Subagent-Setups.  
 Nicht gilt für: aktive Pflichtrollen im MVP.
 

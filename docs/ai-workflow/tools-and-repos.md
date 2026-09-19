@@ -1,9 +1,9 @@
 # Tools and Repos
 
 Stand: 2026-06-17  
-Status: Active  
+Status: ACTIVE — supporting reference, non-canonical  
 Zweck: AI-/Agenten-Tooling einordnen.  
-Quelle der Wahrheit: `AI_WORKFLOW.md`.  
+Canonical authority: `AI_WORKFLOW.md` and the approved GitHub Issue. This file is a supporting research/tool catalog only.  
 Gilt für: Tool-Auswahl und Recherche.  
 Nicht gilt für: automatische Installation oder verbindliche Nutzung.
 

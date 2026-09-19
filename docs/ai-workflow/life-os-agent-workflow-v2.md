@@ -1,11 +1,13 @@
 # Life OS Agent Workflow V2
 
 Stand: 2026-07-07
-Status: Historical supporting reference
-Zweck: Historische Detailreferenz fuer vollstaendige Life-OS-Featurearbeit mit UI, Backend und Browser-Proof.
+Status: HISTORICAL
+Zweck: Historischer Snapshot der frueheren vollstaendigen Life-OS-Featurearbeit mit UI, Backend und Browser-Proof.
 Quelle der Wahrheit: die in `AGENTS.md` definierte Reihenfolge; `AGENTS.md` und `AI_WORKFLOW.md` bleiben die kanonischen Codex-Workflow-Regeln.
 Gilt nur als ergänzende Referenz für Codex-, Claude-, Cursor-, Copilot- und andere Agentenarbeiten. Bei Konflikt gilt die kanonische Quelle.
-Nicht gilt fuer: Produktstrategie im Detail, automatische Toolinstallation, MCP-Aktivierung oder Remote-DB-Aktionen.
+Nicht gilt fuer: aktuelle Arbeitsfreigabe, operative Prioritaet, normalen Task-Kontext, Produktstrategie im Detail, automatische Toolinstallation, MCP-Aktivierung oder Remote-DB-Aktionen.
+
+Post-Cutover-Hinweis: Pfade und Statusbegriffe weiter unten dokumentieren den damaligen W1-Zustand. Einige damalige Prompt-/Skill-Katalogpfade wurden spaeter entfernt. Fuer normale Arbeit nur `AGENTS.md`, `AI_WORKFLOW.md`, das genehmigte GitHub Issue und passende `.agents/skills/**` laden.
 
 ## 1. Zweck
 

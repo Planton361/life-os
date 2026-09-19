@@ -1,9 +1,9 @@
 # Codex Dashboard Workflow
 
 Stand: 2026-06-18
-Status: Active
+Status: ACTIVE — supporting reference, non-canonical
 Zweck: Sicherer Codex-Ablauf fuer Dashboard-Arbeiten nach akzeptiertem V5-Stand.
-Quelle der Wahrheit: `AGENTS.md`, `AI_WORKFLOW.md`, `DESIGN.md`, `docs/design/dashboard-layout-lock.md`, `docs/engineering/dashboard-code-structure.md`.
+Canonical authority: approved GitHub Issue, `AGENTS.md`, `AI_WORKFLOW.md` and `DESIGN.md`. Dashboard detail references remain `docs/design/dashboard-layout-lock.md` and `docs/engineering/dashboard-code-structure.md`; this file does not define operative status or authorization.
 Gilt fuer: Codex-, Copilot-, Claude- und andere Agentenarbeiten am Dashboard.
 Nicht gilt fuer: autonome Produktentscheidungen, Toolinstallationen oder neue Designrichtungen.
 
