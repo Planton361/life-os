@@ -3,11 +3,9 @@ name: PR Quality
 on:
   pull_request:
     branches:
-      - r1-4-content-state-system
       - main
   push:
     branches:
-      - r1-4-content-state-system
       - main
 
 permissions:
@@ -47,7 +45,17 @@ jobs:
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             git diff --check "${{ github.event.pull_request.base.sha }}...HEAD"
           else
-            git diff --check "${{ github.event.before }}...HEAD"
+            before="${{ github.event.before }}"
+
+            if [[ "$before" =~ ^0+$ ]]; then
+              if git rev-parse HEAD^1 >/dev/null 2>&1; then
+                git diff --check HEAD^1...HEAD
+              else
+                git diff-tree --check --root -r HEAD
+              fi
+            else
+              git diff --check "$before...HEAD"
+            fi
           fi
 
       - name: Typecheck
