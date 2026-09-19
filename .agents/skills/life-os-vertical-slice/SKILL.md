@@ -11,7 +11,7 @@ flow.
 
 ## Sources
 
-Read the smallest relevant source set:
+Read the approved GitHub Issue first, then the smallest relevant source set:
 
 - `AGENTS.md`
 - `PRODUCT.md`
@@ -21,8 +21,6 @@ Read the smallest relevant source set:
 - `SECURITY.md`, if auth, data, mutations, AI, or MCP are touched
 - `ACCESSIBILITY.md`, if UI is touched
 - `AI_WORKFLOW.md`
-- `docs/ai-workflow/life-os-agent-workflow-v2.md`
-- `docs/ai-workflow/skills.md`
 - feature-specific files
 
 ## Workflow

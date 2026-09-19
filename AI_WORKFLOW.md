@@ -9,8 +9,7 @@
 The user selected **Decision A**: Life OS / PostgreSQL remains canonical
 operational truth. Obsidian is the Visual / Knowledge / Graph client.
 Obsidian-first is NO-GO for now; native Graph remains fallback. R2-11 is closed;
-R2-12 – Obsidian Projection Foundation is the sole Active Work Block, with
-USER ACCEPTANCE PENDING. R2-13 is not started. Prior provisional/conditional
+R2-12 – Obsidian Projection Foundation is USER ACCEPTED. R2-13 – Project Map / Canvas is the sole Active Work Block, with USER ACCEPTANCE PENDING. Prior provisional/conditional
 R2-11 wording below records the earlier planning/lab context and does not
 reopen this decision. Existing Lab evidence and its limitations remain intact;
 no Lab artifact becomes Product Runtime. Journal/Skill Map reconciliation is
@@ -31,40 +30,36 @@ The workflow optimizes for:
 
 ## 2. Active Context
 
-Every implementation task starts from:
+After the workflow cutover, every delegated task starts from:
 
 ```text
-Block ID from the user/Codex prompt, or the explicit Active Work Block in `ROADMAP.md`
+Approved GitHub Issue URL/number
 AGENTS.md
-PRODUCT.md
-DESIGN.md
-ROADMAP.md
-docs/product/capability-registry.md
+Referenced ROADMAP.md block when product scope is involved
+Relevant docs/product/capability-registry.md entries
+Only the Fach-/architecture/security/design sources needed for the Issue
 ```
 
-Read architecture, data, security and accessibility files only as needed for the active scope.
+The Life OS GitHub Project (`https://github.com/users/Planton361/projects/3`) is the operative queue and status source. `ROADMAP.md` remains the permanent product plan and block-scope source; the Capability Registry remains capability truth. Neither duplicates GitHub work status.
 
-Historical roadmaps, QA logs and closure documents are evidence. They are not active priority sources.
+Before a status-dependent action, read the current Issue/PR revision and evidence. Historical roadmaps, QA logs and closure documents are evidence, not active priority sources.
 
-## 3. Delivery Loop
+## 3. Work Types and Standard Loop
+
+Supported work types are `DISCOVER`, `RESEARCH`, `DECIDE/DESIGN`, `EXPERIMENT`, `DELIVER`, `EVALUATE` and read-only `REVIEW`. They are work modes, not mandatory phases for every change.
 
 ```text
-Block ID from the Codex prompt, or the explicit Active Work Block in `ROADMAP.md`
-→ read ROADMAP scope
-→ audit Capability Registry and code
+approved Issue
+→ read only relevant active sources and current revision
 → short plan
-→ complete Vertical Slice
-→ dependent projections
-→ focused validation
-→ Surface Acceptance when a core surface is touched
-→ update Capability Registry
-→ review
-→ commit
+→ investigate / decide / experiment / deliver / evaluate / review
+→ focused evidence and repair inside the same work contract
+→ update capability truth only when it changed
+→ PR/CI/review when repository changes exist
+→ accepted result / M0 integration gate
 ```
 
-A normal feature should be delivered in one coherent block when possible.
-
-Separate model/security decisions only when the risk justifies it.
+A normal feature is delivered as one coherent Vertical Slice when possible. Research or evaluation may legitimately finish without code. Separate model/security decisions only when the risk justifies it.
 
 ## 4. Prompt Standard
 
@@ -73,23 +68,28 @@ Prompts should be short because stable rules already live in the repository.
 Use this structure:
 
 ```text
-Goal:
-[visible user outcome]
+Issue:
+[approved GitHub Issue URL/number]
 
-Roadmap Block:
-[explicit block ID, or resolve the Active Work Block from ROADMAP.md]
+Goal:
+[observable result or answer]
+
+Work Type:
+[DISCOVER | RESEARCH | DECIDE/DESIGN | EXPERIMENT | DELIVER | EVALUATE | REVIEW]
+
+Roadmap Context:
+[referenced block if relevant; otherwise not applicable]
 
 Use Skills:
 - [only the smallest matching set of active project-local skills]
 
 Read:
 - AGENTS.md
-- ROADMAP.md
-- docs/product/capability-registry.md
-- code, tests and Git history relevant to the named block
+- the Issue
+- only relevant active contracts, code, tests, Git history and evidence
 
 Scope:
-[capabilities and cross-domain reactions]
+[allowed changes/actions and explicit non-goals]
 
 Constraints:
 - preserve V5
@@ -98,11 +98,11 @@ Constraints:
 - no remote database
 
 Done when:
-- UI, backend, database and projections are connected
-- reload/browser proof is green
-- Capability Registry is updated
-- review is complete
-- commit exists
+- the Issue's work-type-specific result and acceptance/evidence are satisfied
+- required validation for the actual scope is current
+- Capability Registry is updated only if capability truth changed
+- repository changes, if any, are on the Issue branch/PR
+- review is complete and no out-of-scope work was introduced
 ```
 
 Do not paste the complete security, staging and design rules into every prompt.
@@ -141,14 +141,16 @@ Do not paste the complete security, staging and design rules into every prompt.
 
 ## 6. Codex Session Pattern
 
-At the start of a new block:
+At the start of a new work contract:
 
-1. open the repository root;
-2. use a fresh Codex session;
-3. ask Codex to read active sources;
+1. open the correct repository/worktree and verify the Issue, branch, upstream and base revision;
+2. use a fresh Codex session for a new Issue or materially changed contract;
+3. read `AGENTS.md`, the Issue and only the relevant active sources;
 4. ask for a short plan;
-5. allow workspace writes with on-request approvals;
+5. allow only the actions granted by that Issue;
 6. keep one main writing agent.
+
+Normal repairs and review fixes for the same Issue continue in the same implementation session and PR. A new work contract gets a new session.
 
 Suggested CLI mode:
 
@@ -259,14 +261,16 @@ closure occurs only after the user explicitly records `USER ACCEPTED`.
 
 ## 9. Documentation Strategy
 
-Maintain as canonical delivery sources:
+Maintain distinct authorities:
 
-- `ROADMAP.md` for the permanent plan, sequence, stable block scope and exactly one explicit Active Work Block;
-- `docs/product/capability-registry.md` as the dynamic actual-status source;
-- decision records for real model/security decisions;
-- QA documents only for complex proof cases.
+- GitHub Issue = concrete question/result, acceptance, scope and authorization;
+- GitHub Project (`https://github.com/users/Planton361/projects/3`) = operative order/status/priority/work type;
+- `ROADMAP.md` = permanent product plan, dependencies, stable block scope and current product context;
+- `docs/product/capability-registry.md` = capability implementation truth and evidence;
+- PR/CI = proposed repository revision and technical checks;
+- decision records = only lasting model/security/privacy/integration decisions.
 
-Normal work does not create separate Epic, scope-lock, proof-hardening or closure files. Change `ROADMAP.md` when the permanent plan, order, dependency or material scope changes, or to transition its single Active Work Block without rewriting the permanent plan.
+Normal work does not create separate Epic, scope-lock, proof-hardening or closure files. Change `ROADMAP.md` only when the permanent plan, dependency, material block scope or current product context changes; do not use it as the daily work-status queue.
 
 ## 10. MCP and External Tools
 
@@ -324,24 +328,19 @@ Before committing, Codex reviews:
 
 ## 13. Handoff
 
-At the end of a substantial block, report:
+At the end of substantial delegated work, return only the concise state needed by CONTROL and link to persisted evidence:
 
 ```text
-Erstellt:
-Geändert:
-Nicht geändert:
-Validierung:
-Capability Outcome:
-Backend/Data:
-UI/Projection:
-Browser Proof:
-Capability Registry:
-Deferred:
-Commit:
-Commit Hash:
-Nicht gelöst:
-Risiken:
+Status: READY_FOR_REVIEW | PARTIAL | BLOCKED | DECISION_REQUIRED
+Result:
+References:
+Revision:
+Checks/Evidence:
+Open:
+Next action:
 ```
+
+Do not reproduce a session transcript. Research/Evaluation without repository changes reports the accepted evidence/result instead of inventing a commit or PR.
 
 
 ## 14. Work Graph Planning Handoff and Decision Gates
@@ -354,25 +353,26 @@ migrations, clients or runtime integrations. Report PLAN_READY for the planning
 outcome only after applicable Completion Gate checks pass; this is not feature
 completion or USER ACCEPTED.
 
-R2-09 and R2-10 are explicitly USER ACCEPTED on 2026-09-09. R2-11 is the sole
-active block for synthetic feasibility work; canonical Dependencies stay unchanged. R2-11 stops at
-Decision Gate A for explicit user architecture selection; do not infer Option A
-from the presence of detailed R2-12–R2-17 plans. R2-07 is paused for Journal
-reconciliation and R2-08 is paused/superseded pending that decision; preserve
+R2-09 and R2-10 are USER ACCEPTED. R2-11 is USER ACCEPTED with Decision A:
+Life OS/PostgreSQL remains canonical and Obsidian is a projection/client. R2-12
+is USER ACCEPTED. R2-13 Project Map / Canvas is the sole active product block
+with USER ACCEPTANCE PENDING; R2-14 and later blocks remain gated. R2-07 remains
+paused for Journal reconciliation and R2-08 remains paused/superseded; preserve
 existing implementation/data and pending acceptance. R2-06 remains terminal.
 
-If Option A is selected, projection precedes Canvas, then an accepted R2-14
-security/conflict contract precedes R2-15 commands. The roadmap alone grants no
-installation, personal Vault/export, cloud-sync, external API or remote access.
-No protected path, current Task lifecycle or user acceptance is inferred from
-handoff examples. Every selected implementation block still needs its canonical
-vertical slice and focused proof. Decision blocks produce reviewable evidence and
-explicit decisions; they do not pretend to deliver a production vertical slice.
+Decision A is already selected. The accepted R2-12 projection precedes the
+current R2-13 Canvas work; an accepted R2-14 security/conflict contract must
+still precede R2-15 commands. The roadmap alone grants no installation, personal
+Vault path/access, cloud-sync, external API or remote access. No protected path,
+Task lifecycle change or user acceptance is inferred from handoff examples.
+Every selected implementation block still needs its canonical Vertical Slice and
+focused proof. Decision blocks produce reviewable evidence and explicit
+decisions; they do not pretend to deliver a production Vertical Slice.
 
 Prove Dependency Truth, Obsidian Value, Single Truth, Sync Reliability and Daily
-Value at the ROADMAP.md gates. Use the current R2-11 synthetic multi-session pilot
-before integration selection and an explicitly authorized realistic pilot for
-later product proof. At least three context-reset comparisons are required;
+Value at the ROADMAP.md gates. The R2-11 synthetic multi-session pilot is
+historical decision evidence; any later product-value claim still requires the
+explicitly authorized realistic proof defined by its active block. At least three context-reset comparisons are required;
 automated retrieval is technical evidence, not a substitute for subjective human
 clarity/mental-load ratings or longer-term daily-value evidence.
 Compare resumption/next-action time, blocker clarity, sorting/double upkeep and

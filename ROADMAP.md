@@ -7,6 +7,8 @@
 **Completed sequence:** C1 → C2 → C3 → K1 → H1/H2 → N1 → A1 → Z1 (technical baseline)
 **Active Work Block:** R2-13 – Project Map / Canvas
 
+**Workflow boundary:** After the GitHub workflow cutover, this field identifies the current product-scope context only. The Life OS GitHub Project and approved Issues own operative order and work status. R2-13 remains preserved as product context and is not executed by workflow-migration Issue #1.
+
 ## 1. Product Contract
 
 ```text
@@ -1315,8 +1317,8 @@ A data layer without its required user flow is not a completed feature.
 
 ## 8. Delivery Rules
 
-- The user/Codex prompt selects one block ID from the permanent sequence.
-- Audit the Capability Registry, code, tests and Git before deciding the concrete gap inside that block.
+- After workflow cutover, the approved GitHub Issue selects the concrete work. Product Issues reference the applicable block ID from this permanent sequence.
+- Audit the Capability Registry, code, tests and Git before deciding the concrete gap inside that Issue/block.
 - Prefer larger complete Vertical Slices over many docs-only micro-blocks.
 - Do not create separate Epic, scope-lock or closure files for normal work. Decision records are reserved for material data, security, privacy or external-integration decisions.
 - Stable rules belong in `AGENTS.md` and Skills, not repeated in every prompt.
@@ -1368,12 +1370,11 @@ Deferred does not mean removed. It means the prerequisite model, privacy or inte
 
 ## 11. Roadmap Maintenance Rule
 
-This file owns the permanent product-completion plan and exactly one explicit
-Active Work Block. It is not an implementation log.
+This file owns the permanent product-completion plan and one explicit Active Work Block as current product context. It is neither the operative queue nor an implementation log.
 
-- Normal feature work updates `docs/product/capability-registry.md`, code, tests and Git history.
+- Normal feature work updates code/tests, the Capability Registry when capability truth changed, and its GitHub Issue/PR/Project status.
 - Change the permanent plan only when its sequence, block outcome, dependency or material functional scope changes.
-- Update the explicit Active Work Block when a normal block changes status; retain completed slices as concise status evidence and advance only to the next planned bounded slice.
+- Update the explicit Active Work Block only when the current product context advances or is deliberately changed; do not mirror normal Issue status transitions here.
 - Keep detailed proof output in tests or, when genuinely necessary, focused QA/decision documents.
 
 ## 12. Final Closure Target

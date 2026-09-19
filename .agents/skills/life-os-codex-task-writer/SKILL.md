@@ -1,111 +1,103 @@
 ---
 name: life-os-codex-task-writer
-description: Active Life OS task-writing skill. Use when Codex needs to turn vague product, design, documentation, agent-workflow, backend, browser-proof, review, or implementation intent into small, scoped, testable Codex tasks with explicit Use Skills mappings, files to read/change/not change, V5 design constraints, security/accessibility requirements, acceptance criteria, validation, staging, and reporting obligations.
+description: Turn an approved Life OS GitHub Issue or bounded question into a concise Codex work contract for research, decision/design, experiment, delivery, evaluation or review without duplicating repository rules.
 ---
 
 # Life OS Codex Task Writer
 
-Use this skill to convert vague intent into safe, reviewable Codex work. The output is a task prompt or implementation brief, not an implementation.
+Use this skill to produce a directly executable Codex prompt. The GitHub Issue is the concrete delegated contract after workflow cutover; repository sources provide product, architecture and safety context.
 
 ## Sources
 
-Use the smallest relevant source set:
+Always read:
+- `AGENTS.md`;
+- the approved GitHub Issue.
 
-- Always start from `AGENTS.md`, `PRODUCT.md`, `DESIGN.md`, `ROADMAP.md`, and `AI_WORKFLOW.md` when scope is broad.
-- For UI/dashboard tasks, include `docs/design/dashboard-v5.md`, `docs/design/design-tokens.md`, `docs/design/component-system.md`, and `docs/design/visualization-rules.md`.
-- For product/routes, include `docs/product/pages-and-routes.md`, `docs/product/ux-flows.md`, and `docs/product/feature-spec.md`.
-- For agent/prompt/tooling tasks, include `docs/ai-workflow/prompting-rules.md`, `docs/ai-workflow/review-workflow.md`, and `docs/ai-workflow/tools-and-repos.md`.
-- For security, auth, data, or AI-generated content, include `SECURITY.md`, `DATA_MODEL.md`, and `ACCESSIBILITY.md` as relevant.
-- For Agent Workflow v2 tasks, include `docs/ai-workflow/life-os-agent-workflow-v2.md`, `docs/ai-workflow/skills.md`, and the relevant `.agents/skills/*/SKILL.md` files.
+Then load only what the Issue needs:
+- referenced `ROADMAP.md` block and Capability Registry entries for product work;
+- `PRODUCT.md` / `DESIGN.md` for product/UI scope;
+- `ARCHITECTURE.md`, `DATA_MODEL.md`, `SECURITY.md`, `ACCESSIBILITY.md` when those boundaries are affected;
+- relevant project-local `.agents/skills/*/SKILL.md`;
+- relevant code, tests, history and evidence.
+
+Historical workflow documents are evidence only and are not required context for normal tasks.
+
+## Work Types
+
+Use exactly the work type appropriate to the Issue:
+- `DISCOVER`: clarify need, value, non-goals and uncertainty;
+- `RESEARCH`: answer a bounded question from sources/code;
+- `DECIDE/DESIGN`: compare viable options and persist an accepted decision when authorized;
+- `EXPERIMENT`: run a bounded, reproducible test with explicit budget/stop conditions;
+- `DELIVER`: implement one coherent observable result;
+- `EVALUATE`: interpret actual evidence and limits;
+- `REVIEW`: read-only focused review of a concrete revision.
+
+Do not force every task through every work type.
 
 ## Hard Rules
 
-- Split large intent into small, reviewable tasks.
-- Require Plan Mode before large, cross-file, security-sensitive, data-model, or design-system changes.
-- Do not delete files without explicit confirmation.
-- Do not introduce a new design direction.
-- Do not override V5 or `DESIGN.md`.
-- Do not install external tools automatically.
-- Do not touch secrets, `.env`, production data, or private user data.
-- Prefer improving existing files/components over duplicating them.
-- Include a `Use Skills` section in every produced Codex task.
-- Match skill combinations to the task type instead of listing every skill by default.
-- Include validation commands or explain why validation is not applicable.
+- Prefer one coherent outcome over layer-only or docs-only microtasks.
+- Do not expand the approved Issue scope.
+- Do not delete/move files, touch protected paths, use remote DB/deployment/providers or broaden permissions without explicit authorization.
+- Preserve V5 and the established feature-local architecture.
+- One writer per branch; normal Delivery uses `codex/<issue>-<slug>`.
+- Research/Evaluation with no repository changes does not need an artificial branch/PR.
+- Same Issue repairs stay in the same session/branch/PR.
+- Include only the smallest useful skill set and validation.
 
 ## Skill Mapping
 
-Select the smallest useful combination:
-
 ```text
-UI Feature:
+UI / cross-domain Delivery:
 - life-os-vertical-slice
 - life-os-design-taste
 - life-os-browser-proof
+- life-os-surface-acceptance when a core surface is touched/closed
 - life-os-completion-gate
 
-Backend/Data Feature:
+Backend/Data Delivery:
 - life-os-backend-action-slice
-- life-os-completion-gate
-- life-os-browser-proof, if UI is affected
-
-UI Review:
-- life-os-design-taste
+- life-os-browser-proof if user behavior is affected
 - life-os-completion-gate
 
-Bugfix:
+Review:
 - life-os-completion-gate
-- life-os-browser-proof, if behavior is affected
+- life-os-design-taste only for UI review
 
-Docs/Workflow:
+Research / Decision / Experiment / Evaluation:
+- only a project skill that materially helps; otherwise no artificial skill requirement
+
+Docs / Workflow:
 - life-os-completion-gate
 ```
 
-## Standard Task Structure
-
-Every produced Codex task must include these sections, even when a section says `Nicht relevant`:
+## Prompt Shape
 
 ```text
+Issue:
+Work Type:
 Goal:
+Roadmap Context:
 Use Skills:
-Context:
-Files to Read:
-Files to Change:
-Files Not to Change:
-Hard Boundaries:
-Vertical Slice Scope:
-Done When:
+Read:
+Scope / Non-goals:
+Authorization:
+Acceptance / Evidence:
 Validation:
-Staging:
-Report Format:
+Return:
 ```
 
-For non-feature work, keep `Vertical Slice Scope:` and write `Nicht relevant`
-with a short reason.
-
-## Writing Method
-
-1. Restate the real goal in one sentence.
-2. Identify the smallest safe file scope.
-3. Name explicit non-goals and forbidden files.
-4. Add V5 and Life OS design constraints when any UI is involved.
-5. Add data/security/accessibility constraints when user data, auth, server work, or generated content is involved.
-6. Add the matching `Use Skills` block from Skill Mapping.
-7. Convert fuzzy success into observable acceptance criteria.
-8. Add exact validation commands where useful.
-9. Add staging boundaries for generated, private, auth, env, and out-of-scope files.
-10. Require the standard report format.
-
-## Berichtspflicht
-
-Every task must require this final report format:
+The return is concise:
 
 ```text
-Erstellt:
-Geändert:
-Nicht geändert:
-Validierung:
-Offene Punkte:
-Risiken:
+Status: READY_FOR_REVIEW | PARTIAL | BLOCKED | DECISION_REQUIRED
+Result:
+References:
+Revision:
+Checks/Evidence:
+Open:
+Next action:
 ```
 
-The report must mention skipped checks and residual risk. It must not claim app behavior, security, or design compliance that was not validated.
+Do not request or reproduce a long session history.

@@ -1,0 +1,55 @@
+name: PR Quality
+
+on:
+  pull_request:
+    branches:
+      - r1-4-content-state-system
+  push:
+    branches:
+      - r1-4-content-state-system
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "22"
+
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.3.0 --activate
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Diff check
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git diff --check "${{ github.event.pull_request.base.sha }}...HEAD"
+          else
+            git diff --check "${{ github.event.before }}...HEAD"
+          fi
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
