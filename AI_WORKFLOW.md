@@ -40,7 +40,7 @@ Relevant docs/product/capability-registry.md entries
 Only the Fach-/architecture/security/design sources needed for the Issue
 ```
 
-The Life OS GitHub Project is the operative queue and status source. `ROADMAP.md` remains the permanent product plan and block-scope source; the Capability Registry remains capability truth. Neither duplicates GitHub work status.
+The Life OS GitHub Project (`https://github.com/users/Planton361/projects/3`) is the operative queue and status source. `ROADMAP.md` remains the permanent product plan and block-scope source; the Capability Registry remains capability truth. Neither duplicates GitHub work status.
 
 Before a status-dependent action, read the current Issue/PR revision and evidence. Historical roadmaps, QA logs and closure documents are evidence, not active priority sources.
 
@@ -98,11 +98,11 @@ Constraints:
 - no remote database
 
 Done when:
-- UI, backend, database and projections are connected
-- reload/browser proof is green
-- Capability Registry is updated
-- review is complete
-- commit exists
+- the Issue's work-type-specific result and acceptance/evidence are satisfied
+- required validation for the actual scope is current
+- Capability Registry is updated only if capability truth changed
+- repository changes, if any, are on the Issue branch/PR
+- review is complete and no out-of-scope work was introduced
 ```
 
 Do not paste the complete security, staging and design rules into every prompt.
@@ -264,7 +264,7 @@ closure occurs only after the user explicitly records `USER ACCEPTED`.
 Maintain distinct authorities:
 
 - GitHub Issue = concrete question/result, acceptance, scope and authorization;
-- GitHub Project = operative order/status/priority/work type;
+- GitHub Project (`https://github.com/users/Planton361/projects/3`) = operative order/status/priority/work type;
 - `ROADMAP.md` = permanent product plan, dependencies, stable block scope and current product context;
 - `docs/product/capability-registry.md` = capability implementation truth and evidence;
 - PR/CI = proposed repository revision and technical checks;
@@ -328,24 +328,19 @@ Before committing, Codex reviews:
 
 ## 13. Handoff
 
-At the end of a substantial block, report:
+At the end of substantial delegated work, return only the concise state needed by CONTROL and link to persisted evidence:
 
 ```text
-Erstellt:
-Geändert:
-Nicht geändert:
-Validierung:
-Capability Outcome:
-Backend/Data:
-UI/Projection:
-Browser Proof:
-Capability Registry:
-Deferred:
-Commit:
-Commit Hash:
-Nicht gelöst:
-Risiken:
+Status: READY_FOR_REVIEW | PARTIAL | BLOCKED | DECISION_REQUIRED
+Result:
+References:
+Revision:
+Checks/Evidence:
+Open:
+Next action:
 ```
+
+Do not reproduce a session transcript. Research/Evaluation without repository changes reports the accepted evidence/result instead of inventing a commit or PR.
 
 
 ## 14. Work Graph Planning Handoff and Decision Gates

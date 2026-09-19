@@ -35,7 +35,7 @@ Legacy research, historical roadmaps and closure files must not override the act
 After the workflow cutover accepted through GitHub Issue #1:
 
 - the approved GitHub Issue is the concrete work contract;
-- the Life OS GitHub Project owns operative queue, status, priority and work type;
+- the Life OS GitHub Project (`https://github.com/users/Planton361/projects/3`) owns operative queue, status, priority and work type;
 - `ROADMAP.md` owns product sequence, dependencies and stable block scope; its Active Work Block is product context, not a second task-status system;
 - the Capability Registry owns capability implementation truth, not issue status;
 - the PR plus CI/review owns the proposed revision and technical evidence;
@@ -128,7 +128,7 @@ no remote reset
 no production mutation
 ```
 
-Local migrations are allowed only when required by the prompt-selected `ROADMAP.md` block.
+Local migrations are allowed only when required by the approved Issue and, for product work, its referenced `ROADMAP.md` block.
 
 ## 7. Cross-Domain Consistency
 
@@ -231,7 +231,7 @@ Run focused Playwright tests that:
 - prove the result remains;
 - avoid global text search as the sole proof.
 
-Do not run broad unrelated greps for every small change. Run the focused regression scope for the prompt-selected block and a broader smoke at major block closure.
+Do not run broad unrelated greps for every small change. Run the focused regression scope for the approved Issue and its referenced block when applicable, plus a broader smoke at major block closure.
 
 ## 11. Capability Registry
 
@@ -268,7 +268,7 @@ Create a dedicated document only when one of these applies:
 
 Roadmap history and QA documents are evidence, not active prioritization sources.
 
-`ROADMAP.md` changes when the product plan, permanent order, dependency or material functional scope changes. Its one explicit Active Work Block may also be updated for normal status transitions; do not rewrite the permanent plan or turn the roadmap into a proof log.
+`ROADMAP.md` changes when the product plan, permanent order, dependency, material functional scope or current product context changes. Do not mirror normal Issue/Project status transitions into its Active Work Block and do not turn the roadmap into a proof log.
 
 ## 13. Protected Paths
 
@@ -309,7 +309,7 @@ Do not delete or move files without explicit confirmation.
 
 ## 15. Completion Gate
 
-Before calling a block complete, confirm:
+Before calling delegated work complete, confirm:
 
 - the approved Issue outcome or work-type-specific result is met;
 - visible controls work or are honestly deferred;
@@ -325,7 +325,7 @@ Before calling a block complete, confirm:
 - `USER ACCEPTED` exists for final core-surface/product closure;
 - required checks are green;
 - Capability Registry is updated;
-- the diff contains only the active scope;
+- the diff contains only the approved Issue scope;
 - a coherent commit was created.
 
 Output one of:
@@ -340,19 +340,14 @@ BLOCKED
 
 ## 16. Standard Report
 
+Keep handoff concise and reference the persisted Issue/PR evidence instead of repeating session history:
+
 ```text
-Erstellt:
-Geändert:
-Nicht geändert:
-Validierung:
-Capability Outcome:
-Backend/Data:
-UI/Projection:
-Browser Proof:
-Capability Registry:
-Deferred:
-Commit:
-Commit Hash:
-Nicht gelöst:
-Risiken:
+Status: READY_FOR_REVIEW | PARTIAL | BLOCKED | DECISION_REQUIRED
+Result:
+References:
+Revision:
+Checks/Evidence:
+Open:
+Next action:
 ```
