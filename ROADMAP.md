@@ -5,16 +5,107 @@
 **Design truth:** Life OS – Linear Calm Dark Command Center / Dashboard V5
 **Detailed status:** `docs/product/capability-registry.md`
 **Completed sequence:** C1 → C2 → C3 → K1 → H1/H2 → N1 → A1 → Z1 (technical baseline)
-**Current Product Context:** Product Reorientation — Target Model Accepted / Product Plan Pending
+**Current Product Context:** Product Reorientation — Accepted Product Plan PP1 → PP4
 
 **Product Reorientation:** Product Target v0.4 and the Target Model Decision
-Package are accepted, so a new product plan may now be derived. There is still
-no approved delivery sequence. Concrete work starts only from confirmed GitHub
-Issues and Project items. Issue #3 / R2-13 is preserved pre-reorientation work,
-not approved next delivery. Any plan must first be created through
-DISCOVER / RESEARCH / DECIDE-DESIGN and accepted separately. This roadmap may
-explicitly have no delivery block; it does not mirror normal Issue/Project
-transitions.
+Package are accepted, and the accepted Product Plan is persisted below as the
+ordered PP1 → PP4 sequence. Concrete work still starts only from confirmed
+GitHub Issues and Project items. Issue #3 / R2-13 remains preserved
+pre-reorientation work, not approved next delivery. The accepted plan does not
+itself authorize a product `DELIVER` contract; each implementation slice still
+requires its own explicit work contract and acceptance gate. This roadmap does
+not mirror normal Issue/Project transitions.
+
+## Accepted Product Plan (PP1 → PP4)
+
+The accepted Product Plan turns the target model into one ordered path toward
+the primary Project-to-Day outcome. The sequence is permanent product scope;
+GitHub Project #3 remains the operative queue for issue status, priority and
+work type. Operationalization does not change capability truth or authorize a
+product implementation by itself.
+
+### PP1 — Goal Outcome Planning
+
+**Outcome:** Goal becomes a usable planning object with domain-specific Goal
+Milestones and explicit Outcome Criteria / Measures. Goal Achievement remains
+explicit and is never derived from Task Completion; no artificial generic Goal
+percentage is introduced.
+
+**Direct dependency:** Accepted Product Target v0.4 and the accepted Target
+Model Decision Package. PP1 establishes the Goal planning semantics required by
+the later blocks.
+
+**Acceptance boundary:** A later, separately accepted Goal Outcome contract
+must define the domain and UX behavior before schema, migration or UI delivery
+starts. This block does not authorize that implementation.
+
+### PP2 — Skill Development Planning
+
+**Outcome:** Skill becomes a usable development plan with domain-specific Skill
+Milestones, Evidence / Practice / Recency, Targets and explicit Prerequisites /
+Related Relations. No inferred graph edges or mastery percentages are used.
+
+**Direct dependency:** PP1's accepted higher-order planning semantics, plus the
+existing canonical Skill and Resource / Evidence boundaries.
+
+**Acceptance boundary:** A later contract must define the Skill development
+model and its evidence semantics before delivery. Skill-Map visualization and
+automatic mastery inference remain outside this plan block.
+
+### PP3 — Higher-Order Context in Weekly Planning
+
+**Outcome:** Existing Planner Queue and Calendar remain user-controlled while
+Project / Goal / Skill / Milestone context makes selection more explainable.
+Task Dependencies remain the hard execution gate. There is no autonomous
+Task selection or automatic weekly planning.
+
+**Direct dependency:** PP1 and PP2 provide the higher-order semantics; the
+existing user-controlled Planner Queue, Calendar and dependency model remain
+the execution boundary.
+
+**Acceptance boundary:** A later planning-context contract must prove
+explainable context and preserve user choice, dependency readiness and current
+projection behavior. It does not authorize autonomous planning.
+
+### PP4 — Project-to-Day Loop Closure
+
+**Outcome:** Close the connected flow:
+
+```text
+Project / Goal / Skill context → executable Task → dependency-ready selection
+→ weekly/day planning → execution/completion → Today + Review
+→ higher-order outcome/evidence/progress context
+```
+
+Existing accepted Dashboard, Inbox, Today, Calendar and Portfolio flows are
+integrated rather than rebuilt. PP4 is the completion gate for the primary
+Project-to-Day objective and uses the accepted Project-to-Day Completion
+Definition from Issue #13.
+
+**Direct dependency:** PP3, the accepted canonical Task / Project / Goal /
+Skill / Milestone semantics, and the existing daily planning, execution and
+review projections.
+
+**Regression constraint:** Existing accepted Health / Fitness / Nutrition
+Daily-Loop capabilities must not regress. Habits, today's Meals / Calories,
+Training and Weight projections must remain functional through Project-to-Day
+Closure. This creates no new Health / Fitness / Nutrition feature scope.
+
+**Acceptance boundary:** A later PP4 contract must prove the end-to-end loop,
+dependent projections and reload stability while preserving the regression
+constraint. It does not authorize new Health / Fitness / Nutrition features.
+
+### Plan-wide boundaries
+
+- The order is `PP1 → PP2 → PP3 → PP4`; later blocks do not bypass earlier
+  semantic or acceptance gates.
+- Issue #3 / R2-13 is `RESHAPE/REUSE PRESERVED WORK + DEFER`; it remains
+  blocked/preserved and is not reactivated by this plan.
+- Graph / Canvas, Skill-Map visualization, Gap Detection, Templates,
+  Journal-depth work, Obsidian write-back / sync, AI and hidden legacy suites
+  remain deferred, optional or externally gated as already accepted.
+- Historical R2 sequences remain evidence only and are not the operative queue
+  or an automatic successor to PP1 → PP4.
 
 ## 1. Product Contract
 
@@ -41,7 +132,9 @@ The existing application is the foundation. This roadmap does not restart the pr
 - Health & Fitness: Mood, Sleep, Weight, Habits, Running and Strength are connected; R2-05 fully USER ACCEPTED on 2026-09-07.
 - Coding, Education and Work suites plus Notes, Inventory and Wishlist are hidden/retained or folded/externalized; Areas remain canonical context.
 - R2-09 and R2-10 are USER ACCEPTED on 2026-09-09; R2-11 is USER ACCEPTED with Decision A; R2-12 is USER ACCEPTED. R2-13 has no committed capability on the integration branch; earlier local R2-13 work is separately preserved and not approved. R2-14–R2-17 are historical product ideas from the pre-reorientation Option A planning, not current operative or binding future work. The accepted target keeps Journal Life-OS-owned and defines Skill Graph semantics, while their implementation/depth gaps remain separate.
-- Product Reorientation has an accepted target model but no approved delivery successor or sequence.
+- The accepted Product Plan is PP1 → PP4; product implementation remains
+  individually authorized by explicit GitHub work contracts, and this roadmap
+  does not create a product `DELIVER` contract.
 - Personal AI Assistant: not started as a production capability.
 - Operation: local-first ready; private remote is optional and not active.
 
@@ -321,14 +414,14 @@ Use scoped regions and unique test data.
 - Local-date and ISO-week identity must remain stable across timezone boundaries.
 - Dashboard and Today can drift if they do not share the same review read model.
 
-## 4. Permanent Product Plan & Historical Delivery Sequence
+## 4. Historical Product Plan & Delivery Sequence
 
-This section records the completed technical baseline and retained product
-planning. It does not define a currently approved active delivery order; Product
-Reorientation is the current context and no delivery successor is approved. A1
-suite depth is no longer a completion obligation. This is not a live status
-queue. Concrete work starts only from a confirmed GitHub Issue; current
-implementation truth comes from the Capability Registry, code, tests and Git.
+This section records the completed technical baseline and retained historical
+product planning. It does not define the current PP1 → PP4 order; Product
+Reorientation superseded it with the accepted Product Plan above. A1 suite
+depth is no longer a completion obligation. This is not a live status queue.
+Concrete work starts only from a confirmed GitHub Issue; current implementation
+truth comes from the Capability Registry, code, tests and Git.
 
 | Order | Block | Outcome | Main scope | Depends on | Non-goals |
 |---:|---|---|---|---|---|
@@ -884,9 +977,10 @@ or backend evidence cannot alone restore a `CONNECTED` surface claim.
 
 ## 4.12 R2 – Product Reality Recovery & Surface Completion
 
-**Status:** R2-00 completed (contract rebaseline). **Current Product Context:**
-Product Reorientation — Target Model Accepted / Product Plan Pending. No
-delivery slice is currently approved.
+**Status:** R2-00 completed (contract rebaseline). **Product Context at this
+historical R2 boundary:** Product Reorientation — Target Model Accepted; the
+accepted PP1 → PP4 Product Plan now supersedes the historical R2 delivery
+sequence. No new R2 delivery slice is implied.
 
 **R2-01 status:** Completed; explicitly USER ACCEPTED on 2026-09-06.
 Existing control, browser, layout and migration evidence is retained in the
@@ -973,9 +1067,10 @@ dependency belongs in this slice.
 
 ### Historical R2 delivery order — pre-reorientation
 
-The following order is retained as historical product planning. It is not a
-current binding delivery sequence; Product Reorientation must establish any
-future successor through a new accepted direction and GitHub work contract.
+The following order is retained as historical product planning. It is not the
+current PP1 → PP4 delivery sequence; Product Reorientation superseded it with
+the accepted Product Plan above. Historical R2 work still requires a confirmed
+GitHub work contract if it is ever reconsidered.
 
 1. **R2-01 – Global Feedback + Dashboard Surface Completion** — app-wide
    success toast; Dashboard control inventory and real interaction proof;
@@ -1052,8 +1147,9 @@ knowledge-content ownership. R2-12 is USER ACCEPTED. R2-13 has no committed
 capability on the integration branch; earlier local work is separately preserved
 and not approved. R2-14–R2-17 are historical pre-reorientation ideas, not
 current operative or binding future work. Product Reorientation is the current
-product context and no delivery successor is approved. Operative task status
-lives in GitHub Project #3 and Issue #3. Pausing R2-07/R2-08 changes future delivery,
+product context and the accepted PP1 → PP4 Product Plan is the current product
+sequence. Operative task status lives in GitHub Project #3 and approved Issues.
+Pausing R2-07/R2-08 changes future delivery,
 not existing navigation, implementation evidence or data. R2-06 cannot silently
 skip unresolved decisions; exclusions require explicit user deferral.
 
@@ -1179,7 +1275,10 @@ not a second active roadmap; repository sources supersede its Downloads paths.
   for a promised core control.
 - Dashboard’s removed Bottom-Zone features remain removed; they cannot return
   through historical layout references.
-- The historical R2 order is preserved as planning evidence, not as a current binding delivery sequence. R2-01 through R2-05 are accepted and closed; R2-09 and R2-10 are accepted. Product Reorientation is the current product context; R2-07 retains USER ACCEPTANCE STATUS: PENDING.
+- The historical R2 order is preserved as planning evidence, not as the current
+  PP1 → PP4 sequence. R2-01 through R2-05 are accepted and closed; R2-09 and
+  R2-10 are accepted. Product Reorientation and the accepted Product Plan are
+  the current product context; R2-07 retains USER ACCEPTANCE STATUS: PENDING.
 
 ## 5. Completed Major Work
 
@@ -1403,11 +1502,11 @@ Deferred does not mean removed. It means the prerequisite model, privacy or inte
 ## 11. Roadmap Maintenance Rule
 
 This file owns the permanent product-completion plan, accepted dependencies and
-current product context. The current context may explicitly be Product
-Reorientation — Target Model Accepted / Product Plan Pending and may have no
-approved delivery block. An accepted target model permits deriving a new plan;
-it does not itself create a delivery sequence. This file is neither the
-operative queue nor an implementation log.
+current product context. The current context is the accepted PP1 → PP4 Product
+Plan; this file is neither the operative queue nor an implementation log. The
+accepted plan does not itself authorize a product `DELIVER` contract, and an
+approved delivery block remains subject to its explicit GitHub work contract
+and acceptance gate.
 
 - Normal feature work updates code/tests, the Capability Registry when capability truth changed, and its GitHub Issue/PR/Project status.
 - Change the permanent plan only when its sequence, block outcome, dependency or material functional scope changes.
