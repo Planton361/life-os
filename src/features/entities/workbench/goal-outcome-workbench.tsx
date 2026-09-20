@@ -319,7 +319,7 @@ export function GoalOutcomeWorkbench({
                 ]}
                 required
               />
-              <SupportSelect
+              <Choice
                 label="Milestone (optional)"
                 name="goalMilestoneId"
                 options={milestoneOptions(outcome)}

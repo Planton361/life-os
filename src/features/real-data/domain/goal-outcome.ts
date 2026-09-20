@@ -151,6 +151,10 @@ export function buildGoalOutcomeSummary(
   ).length;
   const blockers: string[] = [];
 
+  if (outcome.goalStatus !== "active") {
+    blockers.push("Nur aktive Goals können erreicht werden. Goal zuerst aktivieren.");
+  }
+
   if (activeCriteria.length === 0) blockers.push("Mindestens ein aktives Kriterium definieren.");
   if (activeCriteria.some(
     (criterion) => criterionEvaluationState(criterion, criterion.latestEvaluation) !== "met",

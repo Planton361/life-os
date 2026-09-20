@@ -67,6 +67,8 @@ function failure(
 function dbFailure(operation: string, error?: { message?: string | null }): OutcomeFailure {
   const message = error?.message ?? "";
   const known: Record<string, string> = {
+    GOAL_ACHIEVEMENT_REQUIRES_ACTIVE:
+      "Nur aktive Goals können erreicht werden. Goal zuerst aktivieren.",
     GOAL_ACHIEVEMENT_NO_ACTIVE_CRITERIA:
       "Mindestens ein aktives Kriterium ist erforderlich.",
     GOAL_ACHIEVEMENT_CRITERIA_NOT_MET:
@@ -569,9 +571,9 @@ export async function removeGoalTaskSupport(client: SupabaseClientLike, input: G
 export async function achieveGoal(client: SupabaseClientLike, input: GoalAchieveInput): Promise<RepositoryResult<{ id: string }>> {
   const scoped = scopeFailure(input);
   if (scoped) return scoped;
-  const result = (await client.from("goals").update({ status: "achieved", achievement_note: input.note ?? null }).eq("user_id", input.userId).eq("id", input.goalId).is("archived_at", null).select("id").maybeSingle()) as SupabaseQueryResult<{ id: string }>;
+  const result = (await client.from("goals").update({ status: "achieved", achievement_note: input.note ?? null }).eq("user_id", input.userId).eq("id", input.goalId).eq("status", "active").is("archived_at", null).select("id").maybeSingle()) as SupabaseQueryResult<{ id: string }>;
   if (result.error) return dbFailure("achieve Goal", result.error);
-  if (!result.data) return notFound("Goal");
+  if (!result.data) return failure("conflict", "Kein aktives Goal im aktuellen Benutzerkontext. Goal zuerst aktivieren und neu laden.");
   return { ok: true, data: result.data };
 }
 

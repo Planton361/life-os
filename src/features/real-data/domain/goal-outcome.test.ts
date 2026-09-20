@@ -28,6 +28,22 @@ function criterion(
 }
 
 describe("Goal outcome semantics", () => {
+  it.each(["draft", "paused", "active"] as const)("gates a ready %s Goal by lifecycle", (goalStatus) => {
+    const readyCriterion = criterion({
+      criterionType: "boolean",
+      latestEvaluation: {
+        id: "evaluation", userId: "user-1", criterionId: "criterion-1",
+        deferred: false, booleanValue: true, numericValue: null, unit: null,
+        evaluatedAt: "2026-09-21T00:00:00Z", createdAt: "2026-09-21T00:00:00Z", note: null,
+      },
+    });
+    const summary = buildGoalOutcomeSummary({
+      goalId: "goal-1", goalStatus, achievedAt: null, criteria: [readyCriterion], milestones: [],
+    });
+    expect(summary.metCriteriaCount).toBe(1);
+    expect(summary.readyToAchieve).toBe(goalStatus === "active");
+    if (goalStatus !== "active") expect(summary.blockers).toContain("Nur aktive Goals können erreicht werden. Goal zuerst aktivieren.");
+  });
   it("evaluates numeric directions without converting units or percentages", () => {
     expect(
       criterionEvaluationState(criterion({ direction: "at_least", target: 0 }), {

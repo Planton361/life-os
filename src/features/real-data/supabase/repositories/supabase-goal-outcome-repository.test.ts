@@ -88,6 +88,11 @@ describe("Goal outcome repository boundaries", () => {
         message: "Alle aktiven Kriterien müssen erfüllt sein.",
       },
     });
+    expect(query.eq).toHaveBeenCalledWith("status", "active");
+    expect(query.eq).toHaveBeenCalledWith("user_id", userId);
+    maybeSingle.mockResolvedValueOnce({ data: null, error: null } as never);
+    const stale = await achieveGoal({ from: () => query } as never, { goalId, profileId: userId, userId });
+    expect(stale).toMatchObject({ ok: false, error: { code: "conflict" } });
   });
 
   it("resolves a project Goal for an inherited-only Task before support insert", async () => {

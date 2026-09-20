@@ -139,6 +139,33 @@ begin
   update public.goal_milestones
      set status = 'archived', archived_at = now()
    where id = '91000000-0000-4000-8000-000000000021';
+
+  -- Ready Goal-level criterion and achieved milestone do not bypass lifecycle.
+  update public.goal_milestones set status = 'achieved'
+   where id = '91000000-0000-4000-8000-000000000020';
+  update public.goals set status = 'draft'
+   where id = '91000000-0000-4000-8000-000000000010';
+  perform pg_temp.reject(
+    $achievement$update public.goals set status = 'achieved' where id = '91000000-0000-4000-8000-000000000010'$achievement$,
+    'GOAL_ACHIEVEMENT_REQUIRES_ACTIVE'
+  );
+  update public.goals set status = 'paused'
+   where id = '91000000-0000-4000-8000-000000000010';
+  perform pg_temp.reject(
+    $achievement$update public.goals set status = 'achieved' where id = '91000000-0000-4000-8000-000000000010'$achievement$,
+    'GOAL_ACHIEVEMENT_REQUIRES_ACTIVE'
+  );
+  perform pg_temp.reject(
+    format('insert into public.goals(user_id,title,status) values(%L,%L,%L)', u, 'Invalid achieved insert', 'achieved'),
+    'GOAL_ACHIEVEMENT_REQUIRES_ACTIVE'
+  );
+  update public.goals set status = 'active'
+   where id = '91000000-0000-4000-8000-000000000010';
+  update public.goals set status = 'achieved'
+   where id = '91000000-0000-4000-8000-000000000010';
+  if not exists (select 1 from public.goals where id = '91000000-0000-4000-8000-000000000010' and status = 'achieved' and achieved_at is not null) then
+    raise exception 'Active achievement did not persist';
+  end if;
 end
 $$;
 

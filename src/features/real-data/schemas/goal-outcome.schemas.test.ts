@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   goalCriterionEvaluationInputSchema,
   goalOutcomeCriterionCreateInputSchema,
+  goalProjectSupportInputSchema,
+  goalTaskSupportInputSchema,
 } from "./goal-outcome.schemas";
 
 const scope = {
@@ -11,6 +13,18 @@ const scope = {
 };
 
 describe("Goal outcome schemas", () => {
+  it("allows Goal-level criteria but requires a milestone for support links", () => {
+    const parsed = goalOutcomeCriterionCreateInputSchema.parse({
+      ...scope, title: "Goal-level", criterionType: "boolean", goalMilestoneId: "",
+    });
+    expect(parsed.goalMilestoneId).toBeNull();
+    expect(goalProjectSupportInputSchema.safeParse({
+      ...scope, projectId: scope.goalId, goalMilestoneId: "",
+    }).success).toBe(false);
+    expect(goalTaskSupportInputSchema.safeParse({
+      ...scope, taskId: scope.goalId, goalMilestoneId: "",
+    }).success).toBe(false);
+  });
   it("requires the typed numeric shape and accepts zero/negative finite targets", () => {
     expect(
       goalOutcomeCriterionCreateInputSchema.safeParse({
