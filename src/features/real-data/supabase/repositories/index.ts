@@ -1,4 +1,5 @@
 export * from "./supabase-goal-repository";
+export * from "./supabase-goal-outcome-repository";
 export * from "./supabase-coding-repository";
 export * from "./supabase-education-repository";
 export * from "./supabase-work-repository";

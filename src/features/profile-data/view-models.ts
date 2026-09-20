@@ -103,6 +103,7 @@ import {
   createSupabaseHabitRepository,
   createSupabaseTrainingRepository,
 } from "@/features/real-data/supabase";
+import { getGoalOutcomeSummaries } from "@/features/real-data/supabase/repositories/supabase-goal-outcome-repository";
 import {
   createManualHabit,
   createManualGoal,
@@ -667,6 +668,7 @@ function relation(label: string, value?: string) {
 }
 
 type PortfolioRelationLabelLookups = {
+  goalOutcomeSummaries: ReadonlyMap<string, import("@/features/real-data/domain/goal-outcome").GoalOutcomeSummary>;
   goalTitles: ReadonlyMap<string, string>;
   projectTitles: ReadonlyMap<string, string>;
   resourceLinkOptions: readonly PortfolioResourceLinkOption[];
@@ -884,6 +886,7 @@ function portfolioRelationLabelLookups(
   },
 ): PortfolioRelationLabelLookups {
   const baseLookups: PortfolioRelationLabelLookups = {
+    goalOutcomeSummaries: new Map(),
     goalTitles:
       supplemental?.goalTitles ??
       new Map(collection.goals.map((goal) => [goal.id, goal.title])),
@@ -1138,6 +1141,7 @@ function goalToPortfolioEntity(
   index: number,
   lookups: PortfolioRelationLabelLookups,
 ): PortfolioEntity {
+  const goalOutcome = lookups.goalOutcomeSummaries.get(goal.id);
   return {
     id: goal.id,
     type: "goal",
@@ -1146,7 +1150,13 @@ function goalToPortfolioEntity(
     area: goal.areaId,
     status: goalPortfolioStatus(goal),
     priority: "P1",
-    focusLevel: goal.progress >= 50 ? "medium" : "high",
+    focusLevel: goalOutcome
+      ? goalOutcome.readyToAchieve
+        ? "medium"
+        : "high"
+      : goal.progress >= 50
+        ? "medium"
+        : "high",
     nextAction: goal.nextStep,
     dueLabel: goal.targetDate ?? goal.horizon,
     dueRank: goal.targetDate
@@ -1154,16 +1164,28 @@ function goalToPortfolioEntity(
       : goal.horizon === "week" || goal.horizon === "month"
         ? 1
         : 2,
-    progress: boundedProgress(goal.progress),
-    countLabel: `${goal.linkedProjectIds.length} projects`,
+    progress: goalOutcome ? 0 : boundedProgress(goal.progress),
+    countLabel: goalOutcome
+      ? `${goalOutcome.metCriteriaCount} / ${goalOutcome.activeCriteriaCount} Kriterien · ${goalOutcome.achievedMilestoneCount} / ${goalOutcome.activeMilestoneCount} Milestones`
+      : `${goal.linkedProjectIds.length} projects`,
+    goalOutcome,
     lastTouched: "today",
     recentRank: index + 1,
     reviewNeeded: goal.reviewNotes.length > 0,
     blocked: false,
-    relations: [
-      { label: "Measure", value: goal.measure },
-      { label: "Target", value: goal.targetValue },
-    ],
+    relations: goalOutcome
+      ? [
+          {
+            label: "Outcome",
+            value: goalOutcome.readyToAchieve
+              ? "bereit zur expliziten Erreichung"
+              : goalOutcome.blockers.join(" · "),
+          },
+        ]
+      : [
+          { label: "Measure", value: goal.measure },
+          { label: "Target", value: goal.targetValue },
+        ],
     decisions: [],
     sourceLinks: [{ label: "Goal", href: `/goals/${goal.id}` }],
     noteSnippet: goal.why,
@@ -2806,6 +2828,7 @@ async function getManualPortfolioRelationLabelLookups(
     labels: ReadonlyMap<string, string>;
     targets: readonly PortfolioSkillSourceTarget[];
   },
+  goalOutcomeSummaries: ReadonlyMap<string, import("@/features/real-data/domain/goal-outcome").GoalOutcomeSummary> = new Map(),
 ): Promise<PortfolioRelationLabelLookups> {
   const projectIds = uniqueDefined(tasks.map((task) => task.projectId));
   const projectResult = projectIds.length > 0
@@ -2842,6 +2865,7 @@ async function getManualPortfolioRelationLabelLookups(
     taskSkillLinks,
   );
   const baseLookups: PortfolioRelationLabelLookups = {
+    goalOutcomeSummaries,
     goalTitles: goalResult.error
       ? new Map()
       : titleMapFromRows(goalResult.data ?? []),
@@ -2903,6 +2927,14 @@ async function getManualPortfolioEntityCollection(): Promise<{
       getManualSkillsFromSupabase(auth.client, auth.user.id),
     ],
   );
+  const goalOutcomeResult = await getGoalOutcomeSummaries(
+    auth.client,
+    auth.user.id,
+    manualTargets.goals.map((goal) => goal.id),
+  );
+  const goalOutcomeSummaries = goalOutcomeResult.ok
+    ? new Map(goalOutcomeResult.data.map((summary) => [summary.goalId, summary]))
+    : new Map();
   const skillIdsByTaskId = new Map<string, string[]>();
 
   for (const link of manualSkills.taskSkillLinks) {
@@ -2942,6 +2974,7 @@ async function getManualPortfolioEntityCollection(): Promise<{
       collection.skills,
       manualSkills.taskSkillLinks,
       skillSourceTargets,
+      goalOutcomeSummaries,
     ),
   };
 }

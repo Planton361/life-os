@@ -82,8 +82,9 @@ This is target context, not implementation truth and not a delivery sequence.
 - Project, Goal and Skill remain separate categories sharing the planning shape
   Higher-order entity → domain milestones → Tasks → progress; no universal
   polymorphic Milestone table is approved.
-- Project Milestones remain current. Goal Milestones/Outcome Criteria and Skill
-  Milestones/Evidence/Targets/Prerequisites are future domain-specific scope.
+- Project Milestones and Goal Milestones/Outcome Criteria are current domain-
+  specific capabilities. Skill Milestones/Evidence/Targets/Prerequisites remain
+  future scope.
   Only Task Dependencies create V1 execution READY/BLOCKED; no Milestone
   dependency engine is implied.
 - Project progress is real Task/Milestone state and lifecycle; Goal achievement
@@ -1896,7 +1897,7 @@ and its USER ACCEPTANCE STATUS is PENDING.
 | Project/Goal resource links | `CONNECTED` | same-user Resource link/unlink from both detail directions, reload-proven in R2-04 | accepted 2026-09-07; maintain |
 | Project/Goal evidence display | `CONNECTED_GAP` | skill evidence read projection | create/manage from workbench later |
 | Project milestones | `CONNECTED` | R2-09 owned milestones, grouping, lifecycle and progress; focused evidence above | USER ACCEPTED 2026-09-09; preserve |
-| Goal milestones/key results | `NOT_STARTED` | none | model decision; avoid fake OKR engine |
+| Goal outcome planning | `CONNECTED` | PP1 #19 delivery: typed Goal Milestones with planned/active/achieved/archived lifecycle including planned/active/reopen transitions, Boolean/numeric Outcome Criteria with optional milestone scope and append-only met/not_met/unverified/deferred evaluation history, active-only achievement/reopen gate, direct/inherited Project/Task support context with required milestone selection, auth/ownership/RLS and focused Manual/Empty/Demo browser proof with 4K/1920/mobile captures; `tests/e2e/pp1-goal-outcome.spec.ts` proves Goal-level criterion creation/evaluation and draft/paused blockers through reload; DB boundary proof in `tests/supabase/pp1-goal-outcome-repairs.sql` | user acceptance of the PP1 slice; preserve legacy progress fields and no generic percentage |
 | Project/Goal logs | `NOT_STARTED` | none | add canonical log records |
 | Review cadence | `NOT_STARTED` | none | connect to reviews after D1.2 |
 | Project/Goal restore/undo | `NOT_STARTED` | archive exists | lifecycle slice |

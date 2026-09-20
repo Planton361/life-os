@@ -121,11 +121,13 @@ function PortfolioRow({
       <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
         {entity.type === "skill"
           ? `${skillContext?.evidenceRows?.length ?? 0} Evidence-Einträge`
-          : entity.type === "task"
-            ? entity.taskEditValues?.durationMinutes
-              ? `${entity.taskEditValues.durationMinutes} min Aufwand`
-              : "Aufwand nicht gesetzt"
-            : entity.countLabel}
+            : entity.type === "task"
+              ? entity.taskEditValues?.durationMinutes
+                ? `${entity.taskEditValues.durationMinutes} min Aufwand`
+                : "Aufwand nicht gesetzt"
+            : entity.goalOutcome
+              ? `Outcome · ${entity.countLabel}`
+              : entity.countLabel}
       </p>
     </Link>
   );

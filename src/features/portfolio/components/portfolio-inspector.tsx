@@ -134,6 +134,27 @@ export function PortfolioInspector({
               </div>
             )}
           </dl>
+          {entity.type === "goal" && entity.goalOutcome && (
+            <section
+              aria-label="Goal Outcome"
+              className="grid gap-2 border-t border-[var(--border-subtle)] pt-4"
+            >
+              <h4 className="text-xs font-semibold text-[var(--text-muted)]">
+                Goal Outcome
+              </h4>
+              <p className="text-sm">
+                {entity.goalOutcome.metCriteriaCount} /{" "}
+                {entity.goalOutcome.activeCriteriaCount} Kriterien erfüllt ·{" "}
+                {entity.goalOutcome.achievedMilestoneCount} /{" "}
+                {entity.goalOutcome.activeMilestoneCount} Milestones erreicht
+              </p>
+              <p className="text-sm text-[var(--text-secondary)]">
+                {entity.goalOutcome.readyToAchieve
+                  ? "Bereit für die explizite Erreichung."
+                  : entity.goalOutcome.blockers.join(" ")}
+              </p>
+            </section>
+          )}
           {relations.length > 0 && (
             <section aria-label="Beziehungen">
               <h4 className="mb-2 text-xs font-semibold text-[var(--text-muted)]">
