@@ -415,22 +415,25 @@ manual browser proof is needed. Local Supabase data remains device-specific.
 
 ### 9.4 Linux/macOS development-script audit
 
-Audit result from Linux inspection on 2026-09-20. No macOS execution is
-claimed here.
+Audit result from Linux inspection and actual macOS execution on 2026-09-20.
+The MacBook checkpoint ran on `darwin/arm64`: workstation doctor `PASS` with
+`handoff-safe=true`; workstation doctor tests (9/9), managed-process tests
+(12/12), typecheck, lint and `git diff --check` all passed. Fresh-session
+reconstruction and the Darwin runtime-lock fallback also passed. No Docker or
+Supabase runtime was started for this readiness check.
 
 | Assumption | Classification | Consequence |
 | --- | --- | --- |
-| Node `.mjs`, `node:path`, `node:fs`, `node:child_process`, pnpm scripts | portable | Expected on Linux and macOS; Linux-only execution evidence only |
-| `scripts/ops/runtime-lock.mjs` uses a Linux abstract Unix socket and a deterministic macOS loopback fallback | portable bounded repair | Kernel-owned lock lifetime is preserved; the macOS path still needs actual host execution before a macOS PASS |
-| `scripts/ops/managed-process.mjs` uses POSIX process groups and signals | expected macOS-compatible but not executed | Verify with an actual macOS runtime; no macOS PASS is claimed |
+| Node `.mjs`, `node:path`, `node:fs`, `node:child_process`, pnpm scripts | portable | Focused workflow checks passed on Linux and macOS |
+| `scripts/ops/runtime-lock.mjs` uses a Linux abstract Unix socket and a deterministic macOS loopback fallback | portable bounded repair | Kernel-owned lock lifetime is preserved; the Darwin fallback passed on the actual MacBook |
+| `scripts/ops/managed-process.mjs` uses POSIX process groups and signals | portable | Managed-process and disposable-fixture tests passed on the actual MacBook |
 | Docker CLI, local Supabase CLI and localhost Playwright paths | expected macOS-compatible but not executed | Docker Desktop/Supabase setup remains a user-gated macOS check |
 | `.github/workflows/*` Bash steps | Linux-only by design | CI runner concern, not a workstation handoff path |
 | `.env.local`, `.local/**`, auth state, Docker volumes and generated outputs | machine-local by design | Never synchronized or printed |
 
-The Linux doctor/readiness path is the executed evidence for this Issue. The
-MacBook readiness and the Linux → MacBook → Linux roundtrip remain explicit
-user-assisted acceptance gates; this runbook must not label them `PASS` from a
-Linux-only session.
+The Linux doctor/readiness path and the MacBook checkpoint are executed
+evidence for this Issue. The final Linux receiving-side verification remains
+the outstanding user-assisted step in the Linux → MacBook → Linux roundtrip.
 
 ## 10. Local Data / Backup Transition
 
