@@ -84,6 +84,20 @@ test("runtime lock rejects duplicates and releases without a stale file", async 
     await acquireRuntimeLock("test")
   )();
 });
+
+test("runtime lock uses a kernel-owned macOS-compatible fallback", async () => {
+  const kind = `macos-fallback-${process.pid}`;
+  const release = await acquireRuntimeLock(kind, process.cwd(), { platform: "darwin" });
+  try {
+    await assert.rejects(
+      acquireRuntimeLock(kind, process.cwd(), { platform: "darwin" }),
+      /ALREADY_RUNNING/,
+    );
+  } finally {
+    await release();
+  }
+});
+
 test("partial disposable start failure still stops only its own project", async () => {
   const root = await mkdtemp(join(tmpdir(), "life-os-runner-test-"));
   const marker = join(root, "stopped");

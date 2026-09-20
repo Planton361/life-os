@@ -153,6 +153,41 @@ codex --sandbox workspace-write --ask-for-approval on-request
 
 Model selection remains a local Codex configuration concern and must not be hard-coded into repository instructions.
 
+### Cross-device handoff and workstation readiness
+
+GitHub is the only shared project-state authority between Linux and macOS. The
+durable handoff unit is one approved Issue plus one shared remote
+`codex/<issue>-<slug>` branch. One workstation writes that branch at a time.
+
+The writer must commit intended WIP, push it, and stop with a clean worktree and
+an unambiguous revision before switching devices. The receiving workstation
+must verify the repository identity, fetch/prune, use the same Issue branch and
+fast-forward only. Stop on dirt, divergence, wrong origin/upstream, conflicts,
+missing remote branch or unknown revision state. `main` may be inspected
+read-only but is never a write target. A new Issue or materially changed
+contract gets a fresh Codex session; same-Issue repair may resume.
+
+Run the read-only repository doctor before and after a handoff:
+
+```bash
+pnpm workstation:doctor
+pnpm --silent workstation:doctor -- --json
+```
+
+The doctor probes versions and repository state, and may perform safe remote
+read checks, but never fetches, pulls, pushes, commits, switches, resets,
+cleans, stashes, installs, logs in, changes authentication, starts or stops
+Docker/Supabase, or migrates a database. If remote freshness is not provable,
+it reports `WARN`/`unknown` and `handoff-safe=false`.
+
+Shared bootstrap state is limited to repository/GitHub state: source, Issues,
+branches/commits, PR/CI evidence, active workflow rules and Skills,
+`package.json` plus the lockfile, migrations/schema, and non-secret setup
+instructions. IDE sessions, Codex history, `node_modules`, caches, Docker and
+local Supabase state, Playwright auth state, `.env.local`, credentials and
+generated artifacts remain machine-local. IDE setup is optional convenience;
+the workflow remains terminal/repository centered.
+
 ## 7. Subagents
 
 Use one main agent by default. Do not automatically create subagents.

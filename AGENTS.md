@@ -62,6 +62,30 @@ Normal Delivery uses one writer on a `codex/<issue>-<slug>` branch and one PR. D
 
 Prefer one coherent, visible capability over many small layer-only blocks.
 
+### 3.1 Cross-device handoff
+
+GitHub is the only cross-device project-state authority. For one active Delivery
+Issue, use one shared remote Issue branch, normally
+`codex/<issue>-<slug>`, with one workstation as the active writer at a time.
+
+Before handoff, commit all intended WIP and push that same branch. A valid
+checkpoint has a clean worktree, an unambiguous `HEAD`, the approved `origin`,
+the same-named upstream, and local `HEAD` matching the pushed remote branch.
+A checkpoint commit is WIP evidence, not completion or merge evidence.
+
+On the receiving workstation, fetch/prune the approved `origin`, inspect the
+same branch, and fast-forward only. Stop on dirt, divergence, wrong
+origin/upstream, a missing remote branch, conflicts, or ambiguous revision
+identity. Read-only inspection on `main` is allowed; writes on `main` remain
+forbidden. Use `pnpm workstation:doctor` for the read-only readiness and
+handoff check; it never fetches, pushes, installs, starts runtimes, or mutates
+authentication.
+
+A new Issue or materially changed contract starts a fresh Codex session. A
+same-Issue repair may resume on the existing branch/PR. IDE state, old chat
+history, local Codex history, caches, local databases, and local secrets are
+never required for continuation.
+
 ## 4. Vertical Slice Rule
 
 A complete capability normally includes:
@@ -205,6 +229,15 @@ Use the smallest meaningful validation for the change.
 git diff --check
 pnpm typecheck
 pnpm lint
+```
+
+For workstation doctor changes, also run the focused deterministic test and
+both human/JSON CLI smoke forms:
+
+```bash
+pnpm test:workstation:doctor
+pnpm workstation:doctor
+pnpm --silent workstation:doctor -- --json
 ```
 
 ### When build/runtime or a major block closes

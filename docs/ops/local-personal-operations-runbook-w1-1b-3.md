@@ -325,30 +325,112 @@ Regeln:
 
 ## 9. Device Switch / MacBook Wechsel
 
-Wechsel auf ein anderes Geraet:
+GitHub is the only cross-device project-state authority. A device switch moves
+the approved Issue and its shared remote Issue branch, not a chat, IDE session,
+local database or secret.
+
+### 9.1 Durable/shared versus machine-local state
+
+| Durable/shared through GitHub | Machine-local and never synchronized by this workflow |
+| --- | --- |
+| Repository source and history | IDE window/session/settings unless deliberately shared |
+| Issues and GitHub Project status | Codex session history and old chats |
+| Issue branches and commits | `node_modules`, package caches and Next/build caches |
+| PR/CI evidence | Docker state and local Supabase data |
+| `AGENTS.md`, `AI_WORKFLOW.md` and project Skills | Playwright auth state |
+| `package.json` and `pnpm-lock.yaml` | `.env.local`, credentials, tokens and secrets |
+| Migrations/schema | Generated reports, screenshots and other artifacts |
+| Non-secret bootstrap instructions | Personal data and local runtime state |
+
+IDE setup is optional convenience. The continuation path is terminal and
+repository centered. GitHub does not synchronize Life OS personal data between
+workstations.
+
+### 9.2 Writer checkpoint
+
+Only one workstation writes the active Issue branch at a time. Before leaving
+the writer workstation:
+
+1. Confirm the approved `origin`, Issue branch and clean starting state. Stop on
+   unexpected dirt or an unexpected upstream.
+2. Commit all intended WIP explicitly; a checkpoint commit is not completion or
+   merge evidence.
+3. Push the same branch and verify the exact revision identity:
+
+   ```bash
+   git push -u origin codex/<issue>-<slug>
+   git rev-parse HEAD
+   git status --short
+   ```
+
+4. Run the read-only doctor and inspect both human and JSON output:
+
+   ```bash
+   pnpm workstation:doctor
+   pnpm --silent workstation:doctor -- --json
+   ```
+
+5. Stop with a clean worktree and `handoff-safe=true`. Do not leave intended WIP only in the IDE,
+   Codex session or local database.
+
+The doctor is read-only. It never fetches, pulls, pushes, commits,
+checkout/switches, resets, cleans, stashes, installs, logs in, changes
+authentication, starts/stops Docker or Supabase, or migrates a database. If it
+cannot prove remote freshness, it reports `WARN`/`unknown` and
+`handoff-safe=false`.
+
+### 9.3 Receiving workstation
+
+Start a fresh Codex session for a new Issue or materially changed contract.
+Same-Issue repair may resume on the existing branch/PR. On a clean checkout,
+use the following guarded sequence:
 
 ```bash
-git pull
+git remote get-url origin
+git status --short
+git fetch --prune origin
+git switch --track -c codex/<issue>-<slug> origin/codex/<issue>-<slug>
+git merge --ff-only origin/codex/<issue>-<slug>
+pnpm workstation:doctor
 pnpm install
-pnpm runtime:target:check
-pnpm dev
-pnpm auth:playwright:capture
 ```
 
-Danach die zwei Browser-Proof-Greps aus Abschnitt 8 sequenziell ausfuehren,
-falls lokale DB-Write-Proofs gebraucht werden.
+If the local Issue branch already exists, switch to it only after confirming a
+clean worktree, then run the `git merge --ff-only` step. Stop rather than
+guessing when the origin/upstream is wrong, the remote branch is missing, the
+worktree is dirty, revisions diverge, or conflicts occur. Never use a blind
+`git pull` for the handoff. Direct writes on `main` remain forbidden; read-only
+inspection on `main` is allowed.
 
-Wichtig:
+After the doctor passes, use the existing canonical local runtime only:
 
-- Git bringt Code, Migrationen und Doku.
-- Git bringt keine lokalen Daten.
-- Git bringt keine `.env.local`.
-- Git bringt keinen Playwright Auth-State.
-- Git bringt keine lokalen Supabase Runtime-Artefakte.
-- `.env.local` wird auf dem neuen Geraet manuell und geheim gesetzt.
-- Auth-State wird auf dem neuen Geraet neu gecaptured.
-- Lokale Supabase Daten sind geraeteabhaengig, bis W1.1B.4 einen konkreten
-  lokalen Backup-/Restore-Drill beschreibt.
+```bash
+pnpm runtime:target:check
+pnpm dev
+```
+
+Prepare `.env.local` independently and secretly on the receiving workstation;
+do not copy it through GitHub. Capture Playwright auth state locally again if a
+manual browser proof is needed. Local Supabase data remains device-specific.
+
+### 9.4 Linux/macOS development-script audit
+
+Audit result from Linux inspection on 2026-09-20. No macOS execution is
+claimed here.
+
+| Assumption | Classification | Consequence |
+| --- | --- | --- |
+| Node `.mjs`, `node:path`, `node:fs`, `node:child_process`, pnpm scripts | portable | Expected on Linux and macOS; Linux-only execution evidence only |
+| `scripts/ops/runtime-lock.mjs` uses a Linux abstract Unix socket and a deterministic macOS loopback fallback | portable bounded repair | Kernel-owned lock lifetime is preserved; the macOS path still needs actual host execution before a macOS PASS |
+| `scripts/ops/managed-process.mjs` uses POSIX process groups and signals | expected macOS-compatible but not executed | Verify with an actual macOS runtime; no macOS PASS is claimed |
+| Docker CLI, local Supabase CLI and localhost Playwright paths | expected macOS-compatible but not executed | Docker Desktop/Supabase setup remains a user-gated macOS check |
+| `.github/workflows/*` Bash steps | Linux-only by design | CI runner concern, not a workstation handoff path |
+| `.env.local`, `.local/**`, auth state, Docker volumes and generated outputs | machine-local by design | Never synchronized or printed |
+
+The Linux doctor/readiness path is the executed evidence for this Issue. The
+MacBook readiness and the Linux → MacBook → Linux roundtrip remain explicit
+user-assisted acceptance gates; this runbook must not label them `PASS` from a
+Linux-only session.
 
 ## 10. Local Data / Backup Transition
 
