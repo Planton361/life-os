@@ -1,13 +1,27 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { mkdtemp, readFile, writeFile, mkdir, rm } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile, mkdir, rm, realpath } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { createProcessScope } from "./managed-process.mjs";
 import { acquireRuntimeLock } from "./runtime-lock.mjs";
 
 const moduleUrl = new URL("./managed-process.mjs", import.meta.url).href;
+function shellQuote(value) {
+  return `'${value.replaceAll("'", "'\"'\"'")}'`;
+}
+function nodeCommandFixture(source) {
+  return `#!/bin/sh
+':' //; exec ${shellQuote(process.execPath)} "$0" "$@"
+${source}
+`;
+}
+async function writeFakePnpm(root, source) {
+  await writeFile(join(root, "pnpm"), nodeCommandFixture(source), {
+    mode: 0o700,
+  });
+}
 function gone(pid) {
   try {
     process.kill(pid, 0);
@@ -84,16 +98,28 @@ test("runtime lock rejects duplicates and releases without a stale file", async 
     await acquireRuntimeLock("test")
   )();
 });
+
+test("runtime lock uses a kernel-owned macOS-compatible fallback", async () => {
+  const kind = `macos-fallback-${process.pid}`;
+  const release = await acquireRuntimeLock(kind, process.cwd(), { platform: "darwin" });
+  try {
+    await assert.rejects(
+      acquireRuntimeLock(kind, process.cwd(), { platform: "darwin" }),
+      /ALREADY_RUNNING/,
+    );
+  } finally {
+    await release();
+  }
+});
+
 test("partial disposable start failure still stops only its own project", async () => {
   const root = await mkdtemp(join(tmpdir(), "life-os-runner-test-"));
   const marker = join(root, "stopped");
   await mkdir(join(root, "supabase"));
   await writeFile(join(root, "supabase/config.toml"), 'project_id = "test"\n');
-  const bin = join(root, "pnpm");
-  await writeFile(
-    bin,
-    `#!${process.execPath}\nconst a=process.argv.slice(2);if(a.includes('start'))process.exit(1);if(a.includes('stop')){require('node:fs').writeFileSync(${JSON.stringify(marker)},JSON.stringify(a));process.exit(0);}process.exit(2);`,
-    { mode: 0o700 },
+  await writeFakePnpm(
+    root,
+    `const a=process.argv.slice(2);if(a.includes('start'))process.exit(1);if(a.includes('stop')){require('node:fs').writeFileSync(${JSON.stringify(marker)},JSON.stringify(a));process.exit(0);}process.exit(2);`,
   );
   const scope = createProcessScope();
   try {
@@ -185,10 +211,9 @@ test("disposable browser temp files stay in the owned cache and disappear after 
   const marker = join(root, "browser-temp");
   await mkdir(join(root, "supabase"));
   await writeFile(join(root, "supabase/config.toml"), 'project_id = "test"\n');
-  await writeFile(
-    join(root, "pnpm"),
-    `#!${process.execPath}\nconst a=process.argv.slice(2);if(a.includes('status'))console.log('API_URL="http://127.0.0.1:54321"\\nANON_KEY="public-test-value"');if(a.includes('playwright'))require('node:fs').writeFileSync(${JSON.stringify(marker)},process.env.TMPDIR);`,
-    { mode: 0o700 },
+  await writeFakePnpm(
+    root,
+    `const a=process.argv.slice(2);if(a.includes('status'))console.log('API_URL="http://127.0.0.1:54321"\\nANON_KEY="public-test-value"');if(a.includes('playwright'))require('node:fs').writeFileSync(${JSON.stringify(marker)},process.env.TMPDIR);`,
   );
   const scope = createProcessScope();
   try {
@@ -207,7 +232,7 @@ test("disposable browser temp files stay in the owned cache and disappear after 
     const location = await readFile(marker, "utf8");
     assert.ok(
       location.startsWith(
-        join(root, "node_modules/.cache/life-os-runtime/e2e-"),
+        join(await realpath(root), "node_modules/.cache/life-os-runtime/e2e-"),
       ),
     );
     await assert.rejects(readFile(join(location, "supabase/config.toml")), {
@@ -224,10 +249,9 @@ test("failed disposable cleanup stays visible and retains its owned recovery wor
   const marker = join(root, "recovery-path");
   await mkdir(join(root, "supabase"));
   await writeFile(join(root, "supabase/config.toml"), 'project_id = "test"\n');
-  await writeFile(
-    join(root, "pnpm"),
-    `#!${process.execPath}\nconst a=process.argv.slice(2);if(a.includes('stop'))require('node:fs').writeFileSync(${JSON.stringify(marker)},a[a.indexOf('--workdir')+1]);process.exit(1);`,
-    { mode: 0o700 },
+  await writeFakePnpm(
+    root,
+    `const a=process.argv.slice(2);if(a.includes('stop'))require('node:fs').writeFileSync(${JSON.stringify(marker)},a[a.indexOf('--workdir')+1]);process.exit(1);`,
   );
   const scope = createProcessScope();
   try {
