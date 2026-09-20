@@ -7,9 +7,21 @@ Quelle der Wahrheit: Diese Datei + `docs/design/*`.
 Gilt für: UI, Dashboard, Komponenten, visuelle Reviews.  
 Nicht gilt für: alte V1–V4-Dashboardvarianten.
 
-## Durable work-graph / client design decision
+## Durable work-graph / knowledge ownership design
 
-Decision A is binding: Life OS / PostgreSQL remains canonical; Obsidian is the Visual / Knowledge / Graph client/projection path, with native graph as fallback. Generated graph/Canvas content is a derived view. Personal layout, free notes and exploratory edges remain user-owned presentation state.
+Product Target v0.4 is accepted: Life OS / PostgreSQL owns operational context
+and planning truth, including Projects, Goals, Skills, Milestones, Tasks,
+Dependencies and Relations. `Resource` owns Life-OS reference / Work-Artifact
+identity; Obsidian owns long-form Knowledge Content and Notes. A bound note uses
+`life_os_id` as stable identity and a vault-relative path only as a locator.
+Rename/move does not change identity. No watcher, sync, write-back or personal
+Vault access is implied by this design contract.
+
+Project, Goal and Skill remain separate categories. They share a calm
+Higher-order entity → domain milestones → Tasks → progress interaction pattern,
+but their Milestone, Outcome, Evidence and Target semantics remain distinct.
+Only Task Dependencies communicate execution READY/BLOCKED state. Any future
+AI control is read-only unless a separately accepted command contract exists.
 
 Current product sequencing and operative status are not design truth; read them from `ROADMAP.md` and GitHub Project #3/Issues. This file owns durable visual/interaction constraints only.
 
@@ -239,21 +251,26 @@ Keine leeren Section Header. Coding, Education, Work, Notes, Inventory und
 Wishlist sind aus aktiver Navigation entfernt; ihre direkten Legacy-Routen und
 Daten bleiben erhalten. Area-Farben und Area-Kontextwerte bleiben verwendbar.
 
-Dashboard = control; Inbox = triage; Today = daily memory;
-Calendar = temporal planning; Portfolio = entity context;
-Resources = knowledge/reference; Health/Nutrition = personal domain intelligence;
-Journal = reflection/history; Skill/Goal Graph = optional depth under selected Decision A and its separately gated scope.
+Dashboard = Day Control; Inbox = triage; Today = day history;
+Calendar = planning; Portfolio = higher-order work context;
+Resources = Life-OS reference/artifact context; Health/Nutrition = personal
+domain intelligence; Journal = Life-OS reflection/history; Obsidian = Knowledge
+Content; Skill/Goal Graph = optional depth on real target-model semantics.
 
 Der bestehende Journal-Workspace folgt dem unten beschriebenen Vertrag;
-R2-07-Weiterarbeit bleibt bis zu einem explizit reconcilierten Journal-Scope pausiert. Wiederkehrendes Journaling kommt
+Journal bleibt vollständig Life-OS-owned. R2-07-Weiterarbeit bleibt für
+fehlende Relations-/Today-Tiefe pausiert. Wiederkehrendes Journaling kommt
 aus Recurring Task / Calendar, nicht aus Journal-eigener Recurrence. Spätere
 Verläufe/Frequency müssen auf echten Einträgen beruhen; keine Gamification.
 
-R2-08 Skill Map bleibt unter Decision A pausiert. Portfolio → Skills → Skill Map ist
+R2-08 Skill Map bleibt für die spätere Target-Model-Umsetzung pausiert. Portfolio → Skills → Skill Map ist
 ein retained IA-Kandidat; R2-17 soll ihn nach expliziter Reconciliation ersetzen statt einen zweiten Graph zu erzeugen.
 Die aktuelle Coding-Demo wird nicht als aktive Graph-Funktion umgehängt. Nodes zeigen reale
-Evidence; Edges sind explizite Skill-Relationen oder sichtbar als derived
-markierte gemeinsame Project/Task/Resource-Beziehungen. Keine Fake-Prozentwerte,
+Evidence; V1 speichert nur explizite Skill-Relationen. Gemeinsame
+Project/Task/Resource-Kontexte dürfen höchstens als klar markierte Hinweise,
+nicht als Graph-Edges, erscheinen; V1 speichert nur
+`prerequisite`- und `related`-Skill-Edges, keine impliziten gemeinsamen
+Kontextkanten. Keine Fake-Prozentwerte,
 Fake-Edges oder Gap Detection ohne Target-/Prerequisite-Modell.
 
 Nav-Proof: 1920×1080, 2560×1440 und 390×844, echte Klicks/Tastatur, Reload,
@@ -281,8 +298,10 @@ in der Liste begrenzt und sind im Detail vollständig lesbar; freier Inhalt
 behält Absätze. Keine erfundenen Tags/Relationen, Scores, Streaks oder Charts.
 Keine Entwickler-/Datenquellen-Copy in der Primärfläche. Recurrence gehört zu
 Task/Calendar; Notes zu Resources, strukturierte Reviews bleiben eigenständig.
-R2-07 bleibt bis zu einem explizit reconcilierten Journal-Scope pausiert; USER ACCEPTANCE STATUS: PENDING. Dieser Vertrag beschreibt die erhaltene Life-OS-Oberfläche, keine bereits
-beschlossene Verlagerung von Journal-Text nach Obsidian.
+R2-07 bleibt für fehlende Relations-/Today-Tiefe und die abschließende User
+Acceptance pausiert; Journal-Ownership ist im akzeptierten Target Life-OS-owned.
+Dieser Vertrag beschreibt die erhaltene Life-OS-Oberfläche; eine Verlagerung von
+Journal-Text nach Obsidian ist nicht vorgesehen.
 
 ## Project Work Artifacts and References (R2-09)
 
@@ -353,13 +372,15 @@ Listen/Detailwege bleiben vollständig per Tastatur bedienbar; Farbe, Position u
 Kanten allein dürfen keine Fachinformation tragen. Bestehende V5-Hierarchie,
 4K-/1920×1080-/Mobile-Guards und Surface Acceptance gelten für Life-OS-Flächen.
 
-Decision A bestimmt den Client; dieser Vertrag bestellt keine native
-Canvas-Library. Unter Decision A trennt der Project-Canvas-Vertrag regenerierbares Project Canvas von
+Der akzeptierte Target-Model-Vertrag bestellt keine native Canvas-Library.
+Der Project-Canvas-Vertrag trennt regenerierbares Project Canvas von
 Personal Canvas. Position, Größe, Farbe, Gruppen, Zoom, freie Notizen und
 explorative Kanten sind user-owned Presentation State. Regeneration darf diese
 nicht überschreiben. Kanonische Kanten sind als solche erkennbar; eine gezeichnete
 Kante erzeugt keine Dependency. R2-17 nutzt echte Evidence/Practice und Goal-
-Outcome-Kontexte; keine Fake-Edges oder Mastery-Scores. Journal bleibt sichtbar; seine spätere Text-Ownership bleibt Gegenstand der separaten Journal-Reconciliation.
+Outcome-Kontexte; keine Fake-Edges oder Mastery-Scores. Journal bleibt sichtbar
+und Life-OS-owned; seine fehlende Relations-/Today-Tiefe bleibt ein späteres
+Modellthema.
 
 R2-10 ergänzt Project-Task-Zeilen um kurze READY-/BLOCKED-Signale und
 Ready-/Blocked-Counts neben den bestehenden Progress-Zahlen. Blockergründe und

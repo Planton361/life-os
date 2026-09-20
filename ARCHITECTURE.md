@@ -7,9 +7,15 @@ Quelle der Wahrheit: Diese Datei; Details in `docs/engineering/*`.
 Gilt für: Repo-Struktur, Komponenten, Datenzugriff.  
 Nicht gilt für: Produkt- oder Designdetails.
 
-## Durable work-graph / client architecture decision
+## Durable work-graph / knowledge ownership architecture
 
-Decision A is binding: Life OS / PostgreSQL remains canonical operational truth. Obsidian is a Visual / Knowledge / Graph projection/client; Obsidian-first is not the current architecture and native graph remains fallback.
+Product Target v0.4 is accepted. Life OS / PostgreSQL owns canonical
+operational context truth: Projects, Goals, Skills, Milestones, Tasks,
+Dependencies, Planning and Relations. `Resource` remains the Life-OS reference
+and Work-Artifact identity; Obsidian owns long-form Knowledge Content and Notes.
+Vault-relative paths are locators, not portable identity. A bound note uses
+stable `life_os_id`; rename/move does not change identity. No watcher, sync,
+write-back or personal Vault access follows from this decision.
 
 Generated projection and Canvas structures are derived presentation/read models, never an alternate domain store. Any future command/write-back path requires an accepted security/conflict contract and must enter through existing Life OS auth, Zod, ownership, repository/RPC and RLS boundaries.
 
@@ -73,6 +79,10 @@ Life OS owns canonical work identity, planning, context, relations and memory.
 GitHub owns repository artifacts; Sciebo/filesystem owns scientific/Office/PDF/TeX
 files; spreadsheets own flexible tabular artifacts. Existing Resources store
 references and short context, connected to canonical Projects/Tasks/Goals/Skills.
+Obsidian owns long-form Knowledge Content and Notes, while Life OS retains the
+Resource identity, operational context and canonical relations. Existing
+`type=note` Resources remain valid references; no automatic association or
+migration is implied. Journal remains fully Life-OS-owned.
 No second repository/project/task/resource architecture or external content copy.
 A URL is stored data: syntactic parsing only, no fetch, metadata lookup, embedded
 editor, API, OAuth, sync or secrets. Any future synchronization requires its own
@@ -83,6 +93,27 @@ is a relation-specific role, never a provider or global Resource flag. The
 Project-role Invoker RPC serializes Primary replacement atomically; no second
 Resource is created on role changes or retries. External ownership is unchanged.
 
+
+### Accepted target model boundary
+
+Project, Goal and Skill remain separate domain categories. They share service
+and UX principles around Higher-order entity → domain milestones → Tasks →
+progress, but do not use one universal polymorphic Milestone table. Goal
+Milestones/Outcome Criteria and Skill Milestones/Evidence/Targets/Prerequisites
+remain domain-specific target structures. Only Task-to-Task Dependencies create
+V1 execution READY/BLOCKED state; no Milestone dependency engine is introduced.
+
+### Server-side AI read boundary
+
+The first accepted AI target is a read-only Morning Briefing. It receives only a
+server-side, user-scoped structured projection: current Tasks, Schedule,
+deadlines, Project/Goal/Skill metadata, Milestones, dependency/blocker reasons
+and suitable non-sensitive Resource metadata. Journal content, full Obsidian
+content and system-restricted data are excluded by default; Health/Fitness/
+Nutrition and work-restricted data require explicit privacy opt-in. The model
+has no direct database access and cannot write, reprioritize, change plans or
+act autonomously. Credentials stay server-side; provider privacy/retention and
+no-default prompt/response persistence are gates before a provider is chosen.
 
 ### R2-09 Project milestone boundary
 
@@ -102,7 +133,7 @@ into unrelated planning views. No external integration or alternate task store.
 
 ## Canonical Work Graph / Future Client Decision Boundary
 
-Decision A is the durable client boundary. R2-10 provides canonical Task Dependencies independently of any client, inside existing feature-
+The accepted target model is the durable ownership boundary. R2-10 provides canonical Task Dependencies independently of any client, inside existing feature-
 local domain/actions/schemas/repositories and controlled transactional boundaries.
 Database enforcement must cover every completion path, including source-linked
 writes; Dashboard/Today/Calendar remain projections over the same records.
@@ -114,30 +145,33 @@ serialize graph writes with completion/reopen. `read_task_dependency_graph` is a
 single user-scoped snapshot; the reusable domain projection derives readiness and
 blocker/successor context. See the [R2-10 decision](docs/architecture/task-dependencies-r2-10.md).
 
-R2-11 is historical decision evidence. It compared A Life OS canonical + Obsidian client, B Obsidian-first ownership migration, C bounded native graph and D another stack. Decision A was selected; the lab never became Product Runtime and does not grant installation, personal-data or provider permissions.
+R2-11 is historical decision evidence. It compared A Life OS canonical + Obsidian client, B Obsidian-first ownership migration, C bounded native graph and D another stack. The accepted Target Model now clarifies operational Life-OS ownership with Obsidian content ownership; the lab never became Product Runtime and does not grant installation, personal-data or provider permissions.
 
-Under selected Decision A, PostgreSQL → Life OS domain logic → regenerable Obsidian projection
-is the first stage (R2-12). Proposed Vault regions are Projects/, Milestones/,
-Tasks/, Goals/, Skills/, Resources/, Generated Views/ and Personal/. Stable IDs,
-revisions, projection version and a manifest govern incremental atomic generation;
-filenames never identify entities. Generated Wikilinks reflect canonical context,
-including Project stages/Goal/Skills/Artifacts and Task blockers/Resources.
-Personal notes/Canvas/layout are never overwritten. Generated Project Canvas is a
-separate regenerable view (R2-13), not an alternate domain model.
+R2-12 is retained here as implemented/historical capability evidence: an
+authenticated, user-triggered single-Project export with stable identity,
+readable paths and a manifest. Its projection details remain useful architecture
+evidence, but R2-12 does not define future delivery order and does not
+authorize R2-13 or any later delivery.
 
-After an accepted R2-14 contract, selected R2-15 commands may flow Obsidian → local
-authenticated command bridge → existing Life OS domain actions/RPC boundaries →
-PostgreSQL. No plugin database access. Auth/Zod/ownership/RLS, dependency guards
-and route/read-model revalidation remain mandatory. One-way projection precedes
-controlled commands; unrestricted bidirectional sync requires a further explicit
-security/conflict scope. SECURITY.md owns pairing, permissions and trust requirements;
-DATA_MODEL.md owns stable identity, revisions, conflicts and replay semantics.
-The existing manual HTTP(S) Resource-opening path is not broadened by this plan;
-“In Obsidian öffnen” is a separately validated R2-12 client-opening capability.
+Any future Obsidian command or write-back capability requires, independently and
+before implementation:
+
+- a separately accepted Security/Conflict Contract; and
+- a separately accepted Command/Ownership Scope defining allowed commands,
+  field ownership, authentication, validation, conflicts and revalidation.
+
+Such a capability must enter through the existing Life OS auth, Zod,
+ownership, repository/RPC and RLS boundaries. No plugin database access is
+allowed. The labels R2-14 and R2-15 refer only to preserved historical planning
+evidence here; they do not establish a current order or delivery commitment.
+The existing manual HTTP(S) Resource-opening path is not broadened by this
+contract; “In Obsidian öffnen” remains a separately validated R2-12 capability.
 
 Measure combined client/bridge/Life OS resource load and daily maintenance in the
 multi-day pilot; avoid critical RAM/swap conditions. External code/documents/
-spreadsheets retain ownership. Journal long-form placement remains unresolved in the separate R2-07 reconciliation, without changing current `journal_entries` ownership.
+spreadsheets retain ownership. Journal remains fully Life-OS-owned; missing
+Journal relations/Today projection are separate implementation-depth gaps and
+do not transfer content ownership to Obsidian.
 
 ## R2-12 Project projection boundary
 

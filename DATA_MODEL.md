@@ -7,9 +7,22 @@ Quelle der Wahrheit: Diese Datei.
 Gilt für: Tabellen, Entities, Relations, Statuswerte.
 Nicht gilt für: reine UI-Widgets.
 
-## Durable work-graph / client data decision
+## Durable work-graph / knowledge ownership data decision
 
-Decision A is binding: Life OS / PostgreSQL remains the canonical operational model. Obsidian is a projection/client; generated paths, notes, Canvas nodes and layout are not canonical entity identity and do not create a second domain store.
+Product Target v0.4 is accepted. Life OS / PostgreSQL remains canonical for
+operational context: Projects, Goals, Skills, Milestones, Tasks, Dependencies,
+Planning and Relations. `Resource` remains the canonical Life-OS reference /
+Work-Artifact identity. Obsidian owns long-form Knowledge Content and Notes.
+For a bound Note, `life_os_id` is stable identity and a vault-relative path is
+only a locator; rename/move never changes identity. No watcher, sync,
+write-back or personal Vault access is implied.
+
+Project, Goal and Skill remain separate categories. Their shared planning
+shape is Higher-order entity → domain milestones → Tasks → progress, but their
+Milestone, Outcome, Evidence and Target semantics stay domain-specific. Only
+Task-to-Task Dependencies create V1 execution READY/BLOCKED state. The
+following target model is accepted but is not a claim that its future structures
+already exist in the current schema.
 
 Future write-back requires its own accepted security/conflict contract and explicit command semantics. Current work status and delivery sequence are not data-model truth; read them from GitHub Project #3/Issues and `ROADMAP.md`.
 
@@ -56,7 +69,7 @@ Ein Project ist ein endliches, mehrschrittiges Ergebnis. Es bündelt Tasks, besi
 
 ### Goal
 
-Ein Goal ist ein gewünschtes Ergebnis mit Horizont und optionalem Zieltermin. Es wird durch Projects, direkte Tasks, Skill-Evidence und Resources unterstützt. Goal-Fortschritt darf nur aus expliziten Measures oder nachvollziehbarer kanonischer Arbeit abgeleitet werden; keine dekorative Prozentzahl.
+Ein Goal ist ein gewünschtes Ergebnis mit Horizont und optionalem Zieltermin. Es wird durch Projects, direkte Tasks, Skill-Evidence und Resources unterstützt. Kanonische Zielerreichung benötigt explizite Outcome Criteria/Measures; Task-Completion ist unterstützender Kontext und kein automatischer Achievement-Nachweis. Ohne belastbare Kriterien gibt es keine künstliche Prozentzahl.
 
 ### Skill
 
@@ -290,6 +303,63 @@ Outcome field is introduced. Resources, artifact roles and Task Steps retain the
 existing semantics.
 
 
+## Accepted Product Target v0.4 — target model (not implemented)
+
+This section records the accepted target contract. The **Current** model above
+and the implemented R2 sections remain the implementation truth; the target
+structures below require later contracts, schema work and evidence before they
+can be treated as connected.
+
+### Planning categories and progress
+
+| Category | Current | Accepted target |
+|---|---|---|
+| Project | Project + Project Milestones + Tasks; milestone and task state are real | retain Project Milestones; derive current state from lifecycle, Task/Milestone state and current stage; no canonical stored overall percentage |
+| Goal | Goal lifecycle, links and optional legacy progress field | add domain-specific Goal Milestones and explicit Outcome Criteria/Measures; boolean or numeric criteria require a defined unit, target and direction; achievement remains explicit and is not inferred from Task completion |
+| Skill | Skill lifecycle, free level text and Skill Evidence | add domain-specific Skill Milestones, Evidence, Practice, Recency, Targets and Prerequisites; no mastery percentage without an accepted rubric |
+
+All three categories use the planning shape Higher-order entity → domain
+milestones → Tasks → progress without a universal polymorphic Milestone table.
+Only Tasks possess Completion. Only Task Dependencies create V1 execution
+READY/BLOCKED; Milestone membership/order is not a dependency engine. Historical
+`projects.progress`, `goals.progress` and free Skill levels are retained for
+compatibility but are not promoted as new canonical target truth.
+
+### Accepted Skill Graph semantics
+
+Future explicit Skill-to-Skill relations are limited in V1 to `prerequisite`
+(directed, same-user, acyclic) and `related` (symmetric). Shared Task, Project
+or Resource context never creates an edge. The Current Graph is existing Skills,
+explicit edges and Evidence; the Target Graph is an explicitly user-selected
+target with explicit Prerequisites. External roadmaps are initially
+Resource/Reference material without automatic import. Gap Detection requires
+reliable Target/Prerequisite/Evidence semantics.
+
+### Resource ↔ Obsidian binding
+
+Resource remains the Life-OS reference/artifact identity and keeps operational
+relations to Projects, Goals, Skills and Tasks. Obsidian owns long-form content.
+A future binding may include a logical vault identifier plus `life_os_id`; the
+vault-relative path is a locator, never identity, and absolute personal paths
+are not portable domain data. Rename/move does not change identity. Without an
+explicit refresh, rebind or later sync contract, Life OS does not learn locator
+changes. Missing or colliding IDs never match by filename/path. Existing
+`type=note` Resources are preserved without automatic migration, deletion or
+association. This contract authorizes no watcher, sync or write-back.
+
+### Journal and AI read model
+
+Journal remains fully Life-OS-owned personal/mental daily reflection, separate
+from Knowledge Content and planning. Existing `journal_entries` stay canonical;
+no Journal-to-Obsidian migration is implied. A future read-only Morning Briefing
+is a read model, not new domain truth: its server-side user-scoped projection
+may include current Tasks, Schedule, deadlines, Project/Goal/Skill metadata,
+Milestones, dependency/blocker reasons and suitable non-sensitive Resource
+metadata. Journal content, full Obsidian content and system-restricted data are
+excluded by default; Health/Fitness/Nutrition and work-restricted data require
+explicit opt-in. No direct model DB access, write, plan change or autonomous
+action; provider and retention remain a later gate.
+
 ## Canonical Work Graph Semantics — R2-10 onward
 
 R2-10 adds `task_dependencies` with owned same-Project composite Task foreign keys,
@@ -333,10 +403,11 @@ are derived from canonical records, never a stored overall progress score.
 Milestone status remains explicit; Goal progress uses outcomes/criteria and Skill
 progress explicit evidence/practice, not Task totals.
 
-### Projection and potential sync identity (Decision A; R2-12–R2-15)
+### Projection identity and future sync gate (accepted target; R2-12–R2-15)
 
 Generated notes use life_os_id, life_os_type (project/milestone/task/goal/skill/
-resource), life_os_revision and projection_version. Filename is not identity;
+resource), life_os_revision and projection_version where the projection contract
+supports them. Filename/path is not identity;
 Work Artifacts reuse Resource identity. These are planned projection fields, not
 claims of current database revision columns. An export manifest tracks generated
 ownership/version and incremental writes; personal content remains outside it.
@@ -354,12 +425,16 @@ cardinalities/ownership; creation is atomic/idempotent and records template vers
 Template edits never automatically replace running Projects. R2-17 adds no Goal
 dependency engine or Skill Target/Prerequisite model by implication.
 
-R2-07 Journal ownership reconciliation remains separately unresolved under selected Decision A. Preserve `journal_entries` and existing note-Resources; neither external long-form ownership nor new Journal context/relation fields are implemented or approved here.
+Journal ownership is resolved by the accepted target: preserve `journal_entries`
+as the Life-OS source of truth. Existing note-Resources remain intact; neither
+external Journal ownership nor new Journal context/relation fields are
+implemented here. Missing Journal relations/Today projection remain model gaps.
 
 ## R2-12 projection metadata (implemented contract)
 
 No Obsidian entity, migration or revision column. Life OS PostgreSQL remains the
-only operational model. Exactly one selected Project includes its Milestones and
+only operational model for operational context and Resource identity; Obsidian
+content remains outside this database contract. Exactly one selected Project includes its Milestones and
 Tasks (including explicitly labelled archive history), internal Dependencies,
 direct Project/Task Goals, Task/Skill and scoped explicit Skill Evidence, and
 Resources linked to those Project/Task/Goal/Skill IDs. No recursive global graph,
