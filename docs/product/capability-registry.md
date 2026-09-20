@@ -632,7 +632,7 @@ delivery-order wording as evidence only and do not define the current queue.
 | R2-17 Skill / Goal Graph | `NOT_STARTED` | Accepted target semantics; existing Skills/Evidence are not a graph implementation |
 | R2-07 Journal text ownership reconciliation | `CONNECTED_GAP` | Journal ownership is accepted as Life-OS-owned; relations/Today depth and final user acceptance remain |
 | R2-08 Skill Map disposition | `DECISION_REQUIRED` | Retained Coding shell remains `UI_ONLY`; implement only after a new product plan uses the accepted graph semantics |
-| Separate Notes surface | `DECISION_REQUIRED` | Existing note-Resources remain `CONNECTED`; Obsidian owns future long-form content; no new Notes app or migration |
+| Separate Notes surface | `NOT_STARTED` | No separate active Notes surface is implemented or part of the accepted target; existing note-Resources remain `CONNECTED` as Resource/Reference data. A future separate Notes app would require a new product decision, not resolve a current gate |
 
 No graph shell, relationship count, planning text or GitHub work status upgrades an implementation status. Historical active-block wording in older dated entries is evidence only.
 

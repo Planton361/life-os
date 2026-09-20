@@ -147,24 +147,25 @@ blocker/successor context. See the [R2-10 decision](docs/architecture/task-depen
 
 R2-11 is historical decision evidence. It compared A Life OS canonical + Obsidian client, B Obsidian-first ownership migration, C bounded native graph and D another stack. The accepted Target Model now clarifies operational Life-OS ownership with Obsidian content ownership; the lab never became Product Runtime and does not grant installation, personal-data or provider permissions.
 
-Under the accepted target, PostgreSQL → Life OS domain logic → regenerable Obsidian projection
-is the first stage (R2-12). Proposed Vault regions are Projects/, Milestones/,
-Tasks/, Goals/, Skills/, Resources/, Generated Views/ and Personal/. Stable IDs,
-revisions, projection version and a manifest govern incremental atomic generation;
-filenames never identify entities. Generated Wikilinks reflect canonical context,
-including Project stages/Goal/Skills/Artifacts and Task blockers/Resources.
-Personal notes/Canvas/layout are never overwritten. Generated Project Canvas is a
-separate regenerable view (R2-13), not an alternate domain model.
+R2-12 is retained here as implemented/historical capability evidence: an
+authenticated, user-triggered single-Project export with stable identity,
+readable paths and a manifest. Its projection details remain useful architecture
+evidence, but R2-12 does not define future delivery order and does not
+authorize R2-13 or any later delivery.
 
-After an accepted R2-14 contract, selected R2-15 commands may flow Obsidian → local
-authenticated command bridge → existing Life OS domain actions/RPC boundaries →
-PostgreSQL. No plugin database access. Auth/Zod/ownership/RLS, dependency guards
-and route/read-model revalidation remain mandatory. One-way projection precedes
-controlled commands; unrestricted bidirectional sync requires a further explicit
-security/conflict scope. SECURITY.md owns pairing, permissions and trust requirements;
-DATA_MODEL.md owns stable identity, revisions, conflicts and replay semantics.
-The existing manual HTTP(S) Resource-opening path is not broadened by this plan;
-“In Obsidian öffnen” is a separately validated R2-12 client-opening capability.
+Any future Obsidian command or write-back capability requires, independently and
+before implementation:
+
+- a separately accepted Security/Conflict Contract; and
+- a separately accepted Command/Ownership Scope defining allowed commands,
+  field ownership, authentication, validation, conflicts and revalidation.
+
+Such a capability must enter through the existing Life OS auth, Zod,
+ownership, repository/RPC and RLS boundaries. No plugin database access is
+allowed. The labels R2-14 and R2-15 refer only to preserved historical planning
+evidence here; they do not establish a current order or delivery commitment.
+The existing manual HTTP(S) Resource-opening path is not broadened by this
+contract; “In Obsidian öffnen” remains a separately validated R2-12 capability.
 
 Measure combined client/bridge/Life OS resource load and daily maintenance in the
 multi-day pilot; avoid critical RAM/swap conditions. External code/documents/

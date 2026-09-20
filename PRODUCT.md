@@ -71,8 +71,10 @@ The following are not current product goals:
 - autonomous weekly planning or task selection;
 - AI writes, reprioritization or plan changes without a separately accepted
   command contract;
-- AI delivery before the structured, privacy-gated read-only Morning Briefing
-  boundary is accepted.
+- provider selection or AI delivery before accepted Privacy, Retention and
+  server-side Credential gates for the read-only Morning Briefing;
+- any AI capability beyond that briefing requires a separate Command Contract;
+  no Writes, Reprioritization or Plan Changes follow from this target.
 
 ## 4. Product Architecture Principles
 
@@ -677,14 +679,18 @@ R2-11 is retained as historical decision evidence: it compared the Life OS basel
 are acceptance criteria; stop/reduce integration if it adds no practical value.
 
 Under the accepted target: Life OS owns operational work state and Resource
-identity, while Obsidian owns long-form knowledge content. Start with
-regenerable one-way projection;
-selected authenticated commands come only after R2-14 security/conflict acceptance.
+identity, while Obsidian owns long-form knowledge content. Existing R2-12
+export is implemented/historical capability evidence and does not define future
+delivery order. Any future command or write-back capability requires separately
+accepted Security/Conflict and Command/Ownership scopes; no R2-14/R2-15 sequence
+is implied.
 Free notes, exploratory edges and personal layout stay user-owned. Later templates
 require preview, versioned atomic/idempotent creation and no automatic changes to
 running Projects. R2-17 shows Skill practice/evidence and Goal outcome context;
 no fake percentages or Gap Detection without a Target/Prerequisite model.
-Existing Note-Resources are preserved; a separate Notes surface stays undecided.
+Existing Note-Resources are preserved; there is no separate active Life-OS Notes
+surface. A future return to a separate Notes app would be a new product
+decision, not an open gate in this target.
 
 ### R2-12 Project export
 
