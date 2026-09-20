@@ -431,9 +431,29 @@ Supabase runtime was started for this readiness check.
 | `.github/workflows/*` Bash steps | Linux-only by design | CI runner concern, not a workstation handoff path |
 | `.env.local`, `.local/**`, auth state, Docker volumes and generated outputs | machine-local by design | Never synchronized or printed |
 
-The Linux doctor/readiness path and the MacBook checkpoint are executed
-evidence for this Issue. The final Linux receiving-side verification remains
-the outstanding user-assisted step in the Linux → MacBook → Linux roundtrip.
+Accepted Linux → MacBook → Linux evidence for this Issue:
+
+- Linux sender readiness: PASS.
+- Actual macOS execution: PASS on `darwin/arm64`.
+- MacBook checkpoint revision: `c712c636c84f678d7869e3e6085af40c8a9d2025`.
+- MacBook doctor: PASS / `handoff-safe=true`.
+- MacBook workstation-doctor tests at that checkpoint: 9/9 PASS.
+- MacBook managed-process tests: 12/12 PASS.
+- MacBook typecheck, lint and `git diff --check`: PASS.
+- Fresh MacBook reconstruction: PASS.
+- Darwin runtime-lock behavior: PASS.
+- Mac → GitHub → Linux receiving-side fast-forward: PASS.
+- Fresh Linux reconstruction: PASS.
+- Final Linux doctor: PASS / `handoff-safe=true`.
+- Final Linux workstation-doctor tests after read-only hardening: 10/10 PASS.
+- Final Linux managed-process tests: 12/12 PASS.
+- GitHub clean-checkout PR Quality on the final revision: Diff check,
+  Typecheck and Lint PASS.
+
+The later `GIT_OPTIONAL_LOCKS=0` doctor hardening was verified on Linux and by
+clean-checkout CI at the final repair revision. The MacBook evidence above
+remains evidence for the earlier checkpoint revision; the final repair
+revision was not rerun on macOS.
 
 ## 10. Local Data / Backup Transition
 
