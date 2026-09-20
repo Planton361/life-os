@@ -122,18 +122,32 @@ test("PP1 goal outcome planning is a complete Manual vertical slice", async ({
   await expect(outcome).not.toContainText(/\d+%/);
 
   const booleanEvaluation = booleanCriterion.locator('form[aria-label="Bewertung speichern"]');
-  await booleanEvaluation.getByLabel("Wert").selectOption("false");
+  await booleanEvaluation.getByLabel("Bewertungsstatus").selectOption("value");
+  await booleanEvaluation.getByLabel("Wert", { exact: true }).selectOption("false");
   await booleanEvaluation.getByRole("button", { name: "Bewertung speichern" }).click();
   await expect(page.getByText("Kriterium bewertet.", { exact: true })).toBeVisible();
   await page.reload();
   await expect(booleanCriterion).toContainText("nicht erfüllt");
   await expect(outcome.getByRole("button", { name: "Goal explizit erreichen" })).toBeDisabled();
 
-  await booleanCriterion.locator('form[aria-label="Bewertung speichern"]').getByLabel("Wert").selectOption("true");
-  await booleanCriterion.locator('form[aria-label="Bewertung speichern"]').getByRole("button", { name: "Bewertung speichern" }).click();
+  const deferredEvaluation = booleanCriterion.locator('form[aria-label="Bewertung speichern"]');
+  await deferredEvaluation.getByLabel("Bewertungsstatus").selectOption("deferred");
+  await deferredEvaluation.getByRole("button", { name: "Bewertung speichern" }).click();
   await expect(page.getByText("Kriterium bewertet.", { exact: true })).toBeVisible();
-  await numericCriterion.locator('form[aria-label="Bewertung speichern"]').getByLabel("Aktueller Wert").fill("-1");
-  await numericCriterion.locator('form[aria-label="Bewertung speichern"]').getByRole("button", { name: "Bewertung speichern" }).click();
+  await page.reload();
+  await expect(booleanCriterion).toContainText("deferred");
+  await expect(outcome).toContainText("Deferred: 1");
+  await expect(outcome.getByRole("button", { name: "Goal explizit erreichen" })).toBeDisabled();
+
+  const metBooleanEvaluation = booleanCriterion.locator('form[aria-label="Bewertung speichern"]');
+  await metBooleanEvaluation.getByLabel("Bewertungsstatus").selectOption("value");
+  await metBooleanEvaluation.getByLabel("Wert", { exact: true }).selectOption("true");
+  await metBooleanEvaluation.getByRole("button", { name: "Bewertung speichern" }).click();
+  await expect(page.getByText("Kriterium bewertet.", { exact: true })).toBeVisible();
+  const numericEvaluation = numericCriterion.locator('form[aria-label="Bewertung speichern"]');
+  await numericEvaluation.getByLabel("Bewertungsstatus").selectOption("value");
+  await numericEvaluation.getByLabel("Aktueller Wert").fill("-1");
+  await numericEvaluation.getByRole("button", { name: "Bewertung speichern" }).click();
   await expect(page.getByText("Kriterium bewertet.", { exact: true })).toBeVisible();
 
   const firstMilestone = outcome.locator("[data-goal-milestone-id]").filter({ hasText: milestoneOneTitle });
@@ -142,6 +156,10 @@ test("PP1 goal outcome planning is a complete Manual vertical slice", async ({
   await expect(page.getByText("Milestone-Status gespeichert.", { exact: true })).toBeVisible();
   await page.reload();
   await expect(firstMilestone).toContainText("achieved");
+  await secondMilestone.getByRole("button", { name: "Aktivieren" }).click();
+  await expect(page.getByText("Milestone-Status gespeichert.", { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(secondMilestone).toContainText("active");
   await secondMilestone.getByRole("button", { name: "Erreicht" }).click();
   await expect(page.getByText("Milestone-Status gespeichert.", { exact: true })).toBeVisible();
   await page.reload();
@@ -161,9 +179,13 @@ test("PP1 goal outcome planning is a complete Manual vertical slice", async ({
   const taskId = await createTask(page, taskTitle);
   await page.goto(`/tasks/${taskId}`);
   const taskForm = page.locator('form[aria-label="Task bearbeiten"]');
-  await taskForm.getByLabel("Direktes Goal").selectOption({ label: goalTitle });
+  await taskForm.getByLabel("Project").selectOption({ label: projectTitle });
+  await taskForm.getByLabel("Direktes Goal").selectOption("");
   await taskForm.getByRole("button", { name: "Änderungen speichern" }).click();
   await expect(page.getByText("Task gespeichert.", { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(taskForm.getByLabel("Project")).toHaveValue(projectId);
+  await expect(taskForm.getByLabel("Direktes Goal")).toHaveValue("");
 
   await page.goto(`/goals/${goalId}`);
   const projectSupportForm = outcome.locator('form[aria-label="Project verknüpfen"]');
@@ -186,13 +208,29 @@ test("PP1 goal outcome planning is a complete Manual vertical slice", async ({
   await page.reload();
   await expect(outcome).toContainText("Goal Outcome Workbench · achieved");
   await expect(outcome.getByRole("button", { name: "Goal wieder öffnen" })).toBeVisible();
-  await expect(booleanCriterion).toContainText("Verlauf anzeigen (2)");
+  await expect(booleanCriterion).toContainText("Verlauf anzeigen (3)");
 
   await outcome.getByRole("button", { name: "Goal wieder öffnen" }).click();
   await expect(page.getByText("Goal wieder geöffnet.", { exact: true })).toBeVisible();
   await page.reload();
   await expect(outcome).toContainText("Goal Outcome Workbench · active");
-  await expect(booleanCriterion).toContainText("Verlauf anzeigen (2)");
+  await expect(booleanCriterion).toContainText("Verlauf anzeigen (3)");
+
+  await secondMilestone.getByRole("button", { name: "Wieder aktivieren" }).click();
+  await expect(page.getByText("Milestone-Status gespeichert.", { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(secondMilestone).toContainText("active");
+  await secondMilestone.getByRole("button", { name: "Planen" }).click();
+  await expect(page.getByText("Milestone-Status gespeichert.", { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(secondMilestone).toContainText("planned");
+  await secondMilestone.getByRole("button", { name: "Aktivieren" }).click();
+  await expect(page.getByText("Milestone-Status gespeichert.", { exact: true })).toBeVisible();
+  await page.reload();
+  await secondMilestone.getByRole("button", { name: "Erreicht" }).click();
+  await expect(page.getByText("Milestone-Status gespeichert.", { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(secondMilestone).toContainText("achieved");
 
   await secondMilestone.getByRole("button", { name: "Milestone archivieren" }).click();
   await expect(page.getByText("Milestone archiviert.", { exact: true })).toBeVisible();

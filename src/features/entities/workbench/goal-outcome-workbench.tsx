@@ -34,6 +34,7 @@ function Panel({ title, children }: { title: string; children: ReactNode }) {
 function statusLabel(status: string) {
   if (status === "met") return "erfüllt";
   if (status === "not_met") return "nicht erfüllt";
+  if (status === "deferred") return "deferred";
   return "unbewertet";
 }
 
@@ -91,11 +92,13 @@ function CriterionRow({
       </div>
       {criterion.latestEvaluation && (
         <p className="text-sm text-[var(--text-secondary)]">
-          Letzte Bewertung: {criterion.criterionType === "boolean"
-            ? criterion.latestEvaluation.booleanValue
-              ? "true"
-              : "false"
-            : `${criterion.latestEvaluation.numericValue} ${criterion.latestEvaluation.unit}`}
+          Letzte Bewertung: {criterion.latestEvaluation.deferred
+            ? "deferred · keine Entscheidung"
+            : criterion.criterionType === "boolean"
+              ? criterion.latestEvaluation.booleanValue
+                ? "true"
+                : "false"
+              : `${criterion.latestEvaluation.numericValue} ${criterion.latestEvaluation.unit}`}
           {criterion.latestEvaluation.note
             ? ` · ${criterion.latestEvaluation.note}`
             : ""}
@@ -105,6 +108,15 @@ function CriterionRow({
         <Hidden name="goalId" value={goalId} />
         <Hidden name="criterionId" value={criterion.id} />
         <Hidden name="criterionType" value={criterion.criterionType} />
+        <Choice
+          name="evaluationState"
+          label="Bewertungsstatus"
+          options={[
+            { id: "value", title: "Wert bewerten" },
+            { id: "deferred", title: "deferred · später bewerten" },
+          ]}
+          required
+        />
         {criterion.criterionType === "boolean" ? (
           <Choice
             name="booleanValue"
@@ -113,7 +125,6 @@ function CriterionRow({
               { id: "true", title: "true · erfüllt" },
               { id: "false", title: "false · nicht erfüllt" },
             ]}
-            required
           />
         ) : (
           <>
@@ -124,7 +135,6 @@ function CriterionRow({
                 name="numericValue"
                 type="number"
                 step="any"
-                required
               />
             </label>
             <input type="hidden" name="unit" value={criterion.unit ?? ""} />
@@ -137,6 +147,10 @@ function CriterionRow({
           Notiz (optional)
           <input className={fieldClass} name="note" />
         </label>
+        <p className="text-xs text-[var(--text-muted)]">
+          Bei deferred bleiben Wert und Einheit leer; die Bewertung bleibt als
+          explizite spätere Entscheidung im Verlauf.
+        </p>
       </OperationForm>
       {criterion.evaluations.length > 0 && (
         <details className="text-sm">
@@ -147,11 +161,13 @@ function CriterionRow({
             {criterion.evaluations.map((evaluation) => (
               <li key={evaluation.id}>
                 {new Date(evaluation.evaluatedAt).toLocaleString("de-DE")} ·{" "}
-                {criterion.criterionType === "boolean"
-                  ? evaluation.booleanValue
-                    ? "true"
-                    : "false"
-                  : `${evaluation.numericValue} ${evaluation.unit}`}
+                {evaluation.deferred
+                  ? "deferred · keine Entscheidung"
+                  : criterion.criterionType === "boolean"
+                    ? evaluation.booleanValue
+                      ? "true"
+                      : "false"
+                    : `${evaluation.numericValue} ${evaluation.unit}`}
                 {evaluation.note ? ` · ${evaluation.note}` : ""}
               </li>
             ))}
@@ -230,6 +246,7 @@ export function GoalOutcomeWorkbench({
             <div className="grid gap-4">
               <div className="grid gap-2 text-sm text-[var(--text-secondary)] md:grid-cols-3">
                 <p>Criteria: {outcome.summary.metCriteriaCount} / {outcome.summary.activeCriteriaCount} erfüllt</p>
+                <p>Deferred: {outcome.summary.deferredCriteriaCount}</p>
                 <p>Milestones: {outcome.summary.achievedMilestoneCount} / {outcome.summary.activeMilestoneCount} erreicht</p>
                 <p>Readiness: {allActiveCriteriaMet ? "bereit" : "blockiert"}</p>
               </div>
@@ -337,8 +354,8 @@ export function GoalOutcomeWorkbench({
         <Panel title="Milestones">
           <p className="text-sm text-[var(--text-muted)]">
             Milestones sind Goal-spezifisch. Mehrere aktive Milestones sind
-            möglich; die Reihenfolge ist reine Darstellung und erzeugt keine
-            Abhängigkeit.
+            möglich; der Lifecycle ist planned ↔ active → achieved ↔ active.
+            Die Reihenfolge ist reine Darstellung und erzeugt keine Abhängigkeit.
           </p>
           <div className="grid gap-5">
             {outcome.milestones.map((milestone, index) => (
@@ -358,12 +375,17 @@ export function GoalOutcomeWorkbench({
                   </div>
                   {!milestone.archivedAt && (
                     <div className="flex flex-wrap gap-2 text-xs">
-                      <OperationForm operation="milestone.status" label="Aktivieren" disabled={milestone.status === "active" || milestone.status === "achieved"}>
+                      <OperationForm operation="milestone.status" label={milestone.status === "achieved" ? "Wieder aktivieren" : "Aktivieren"} disabled={milestone.status === "active"}>
                         <Hidden name="goalId" value={goalId} />
                         <Hidden name="milestoneId" value={milestone.id} />
                         <Hidden name="status" value="active" />
                       </OperationForm>
-                      <OperationForm operation="milestone.status" label="Erreicht" disabled={milestone.status === "achieved"}>
+                      <OperationForm operation="milestone.status" label="Planen" disabled={milestone.status !== "active"}>
+                        <Hidden name="goalId" value={goalId} />
+                        <Hidden name="milestoneId" value={milestone.id} />
+                        <Hidden name="status" value="planned" />
+                      </OperationForm>
+                      <OperationForm operation="milestone.status" label="Erreicht" disabled={milestone.status !== "active"}>
                         <Hidden name="goalId" value={goalId} />
                         <Hidden name="milestoneId" value={milestone.id} />
                         <Hidden name="status" value="achieved" />

@@ -76,6 +76,8 @@ function dbFailure(operation: string, error?: { message?: string | null }): Outc
     GOAL_ACHIEVEMENT_GOAL_ARCHIVED: "Ein archiviertes Goal kann nicht erreicht werden.",
     GOAL_ARCHIVED: "Ein archiviertes Goal kann nicht verändert werden.",
     GOAL_CRITERION_ARCHIVED: "Ein archiviertes Kriterium kann nicht bewertet werden.",
+    GOAL_DEFERRED_EVALUATION_SHAPE:
+      "Deferred-Bewertungen dürfen keinen Wert oder keine Einheit enthalten.",
     GOAL_NUMERIC_EVALUATION_UNIT: "Die Einheit der Bewertung muss exakt zum Kriterium passen.",
     GOAL_BOOLEAN_EVALUATION_SHAPE: "Boolean-Kriterien akzeptieren nur true oder false.",
     GOAL_PROJECT_SUPPORT_TARGET_INVALID:
@@ -87,6 +89,8 @@ function dbFailure(operation: string, error?: { message?: string | null }): Outc
     GOAL_TASK_SUPPORT_GOAL_MISMATCH:
       "Der Task gehört nicht zu diesem Goal.",
     GOAL_MILESTONE_ARCHIVED: "Ein archivierter Milestone kann nicht verknüpft werden.",
+    GOAL_MILESTONE_STATUS_TRANSITION_INVALID:
+      "Dieser Milestone-Statuswechsel ist im akzeptierten Lifecycle nicht erlaubt.",
   };
   const knownMessage = Object.entries(known).find(([key]) => message.includes(key))?.[1];
   if (knownMessage) return failure("conflict", knownMessage);
@@ -122,6 +126,7 @@ function mapEvaluation(row: GoalCriterionEvaluationRow): GoalCriterionEvaluation
     id: row.id,
     userId: row.user_id,
     criterionId: row.criterion_id,
+    deferred: row.is_deferred,
     booleanValue: row.boolean_value,
     numericValue: row.numeric_value,
     unit: row.unit,
@@ -379,7 +384,15 @@ export async function setGoalMilestoneStatus(client: SupabaseClientLike, input: 
   const current = await activeMilestone(client, input.userId, input.goalId, input.milestoneId);
   if (current.error) return dbFailure("load Goal milestone", current.error);
   if (!current.data) return notFound("Goal milestone");
-  if (current.data.status === "achieved" && input.status !== "achieved") return failure("conflict", "Ein erreichter Milestone kann nicht zurückgestuft werden.");
+  if (current.data.status === "archived") return failure("conflict", "Ein archivierter Milestone kann nicht verändert werden.");
+  const allowedTransitions: Record<"planned" | "active" | "achieved", readonly string[]> = {
+    planned: ["planned", "active"],
+    active: ["active", "planned", "achieved"],
+    achieved: ["achieved", "active"],
+  };
+  if (!allowedTransitions[current.data.status].includes(input.status)) {
+    return failure("conflict", "Dieser Milestone-Statuswechsel ist im akzeptierten Lifecycle nicht erlaubt.");
+  }
   const result = (await client.from("goal_milestones").update({ status: input.status }).eq("user_id", input.userId).eq("goal_id", input.goalId).eq("id", input.milestoneId).is("archived_at", null).select("*").single()) as SupabaseQueryResult<GoalMilestoneRow>;
   if (result.error) return dbFailure("update Goal milestone status", result.error);
   if (!result.data) return notFound("Goal milestone");
@@ -474,13 +487,14 @@ export async function appendGoalCriterionEvaluation(client: SupabaseClientLike, 
   if (criterion.error) return dbFailure("load Goal criterion", criterion.error);
   if (!criterion.data) return notFound("Goal criterion");
   if (criterion.data.criterion_type !== input.criterionType) return failure("conflict", "Der Kriterientyp hat sich geändert; bitte neu laden.");
-  if (input.criterionType === "numeric" && input.unit?.trim() !== criterion.data.unit) return failure("conflict", "Die Einheit der Bewertung muss exakt zum Kriterium passen.");
+  if (input.evaluationState === "value" && input.criterionType === "numeric" && input.unit?.trim() !== criterion.data.unit) return failure("conflict", "Die Einheit der Bewertung muss exakt zum Kriterium passen.");
   const result = (await client.from("goal_criterion_evaluations").insert({
     user_id: input.userId,
     criterion_id: input.criterionId,
-    boolean_value: input.criterionType === "boolean" ? input.booleanValue ?? null : null,
-    numeric_value: input.criterionType === "numeric" ? input.numericValue ?? null : null,
-    unit: input.criterionType === "numeric" ? input.unit ?? null : null,
+    is_deferred: input.evaluationState === "deferred",
+    boolean_value: input.evaluationState === "value" && input.criterionType === "boolean" ? input.booleanValue ?? null : null,
+    numeric_value: input.evaluationState === "value" && input.criterionType === "numeric" ? input.numericValue ?? null : null,
+    unit: input.evaluationState === "value" && input.criterionType === "numeric" ? input.unit ?? null : null,
     note: input.note ?? null,
   }).select("*").single()) as SupabaseQueryResult<GoalCriterionEvaluationRow>;
   if (result.error) return dbFailure("save Goal criterion evaluation", result.error);
@@ -574,5 +588,6 @@ export function criterionStateLabel(criterion: GoalOutcomeCriterion) {
   const state = criterionEvaluationState(criterion, criterion.latestEvaluation);
   if (state === "met") return "erfüllt";
   if (state === "not_met") return "nicht erfüllt";
+  if (state === "deferred") return "deferred";
   return "unbewertet";
 }

@@ -130,11 +130,27 @@ export const goalCriterionEvaluationInputSchema = profileScope.extend({
   goalId: id,
   criterionId: id,
   criterionType: z.enum(goalCriterionTypes),
+  evaluationState: z.enum(["value", "deferred"]).default("value"),
   booleanValue: z.boolean().optional(),
   numericValue: optionalFiniteNumber,
   unit: optionalText,
   note: optionalText,
 }).superRefine((value, context) => {
+  if (value.evaluationState === "deferred") {
+    if (
+      value.booleanValue !== undefined
+      || value.numericValue !== undefined
+      || value.unit !== undefined
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["evaluationState"],
+        message: "Deferred evaluations cannot define a value or unit.",
+      });
+    }
+    return;
+  }
+
   if (value.criterionType === "boolean") {
     if (value.booleanValue === undefined || value.numericValue !== undefined || value.unit !== undefined) {
       context.addIssue({ code: "custom", path: ["booleanValue"], message: "Boolean evaluation needs exactly one boolean value." });

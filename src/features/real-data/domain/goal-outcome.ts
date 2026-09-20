@@ -13,7 +13,11 @@ export type GoalCriterionType = (typeof goalCriterionTypes)[number];
 export const goalCriterionDirections = ["at_least", "at_most", "exact"] as const;
 export type GoalCriterionDirection = (typeof goalCriterionDirections)[number];
 
-export type GoalCriterionEvaluationState = "met" | "not_met" | "unverified";
+export type GoalCriterionEvaluationState =
+  | "met"
+  | "not_met"
+  | "unverified"
+  | "deferred";
 
 export type GoalMilestone = {
   id: string;
@@ -33,6 +37,7 @@ export type GoalCriterionEvaluation = {
   id: string;
   userId: string;
   criterionId: string;
+  deferred: boolean;
   booleanValue: boolean | null;
   numericValue: number | null;
   unit: string | null;
@@ -72,6 +77,7 @@ export type GoalOutcomeSummary = {
   activeCriteriaCount: number;
   metCriteriaCount: number;
   unverifiedCriteriaCount: number;
+  deferredCriteriaCount: number;
   activeMilestoneCount: number;
   achievedMilestoneCount: number;
   readyToAchieve: boolean;
@@ -104,10 +110,11 @@ export function criterionEvaluationState(
   >,
   evaluation: Pick<
     GoalCriterionEvaluation,
-    "booleanValue" | "numericValue"
+    "booleanValue" | "numericValue" | "deferred"
   > | null | undefined,
 ): GoalCriterionEvaluationState {
   if (!evaluation) return "unverified";
+  if (evaluation.deferred) return "deferred";
 
   if (criterion.criterionType === "boolean") {
     return evaluation.booleanValue === true ? "met" : "not_met";
@@ -139,6 +146,9 @@ export function buildGoalOutcomeSummary(
   const unverifiedCriteriaCount = activeCriteria.filter(
     (criterion) => criterionEvaluationState(criterion, criterion.latestEvaluation) === "unverified",
   ).length;
+  const deferredCriteriaCount = activeCriteria.filter(
+    (criterion) => criterionEvaluationState(criterion, criterion.latestEvaluation) === "deferred",
+  ).length;
   const blockers: string[] = [];
 
   if (activeCriteria.length === 0) blockers.push("Mindestens ein aktives Kriterium definieren.");
@@ -146,6 +156,9 @@ export function buildGoalOutcomeSummary(
     (criterion) => criterionEvaluationState(criterion, criterion.latestEvaluation) !== "met",
   )) {
     blockers.push(`${metCriteriaCount} von ${activeCriteria.length} Kriterien erfüllt.`);
+  }
+  if (deferredCriteriaCount > 0) {
+    blockers.push(`${deferredCriteriaCount} Kriterium/Kriterien deferred.`);
   }
   const unfinishedMilestones = activeMilestones.filter(
     (milestone) => milestone.status !== "achieved",
@@ -159,6 +172,7 @@ export function buildGoalOutcomeSummary(
     activeCriteriaCount: activeCriteria.length,
     metCriteriaCount,
     unverifiedCriteriaCount,
+    deferredCriteriaCount,
     activeMilestoneCount: activeMilestones.length,
     achievedMilestoneCount: activeMilestones.length - unfinishedMilestones.length,
     readyToAchieve: blockers.length === 0,

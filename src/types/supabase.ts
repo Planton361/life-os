@@ -567,6 +567,7 @@ export type Database = {
           criterion_id: string
           evaluated_at: string
           id: string
+          is_deferred: boolean
           note: string | null
           numeric_value: number | null
           unit: string | null
@@ -578,6 +579,7 @@ export type Database = {
           criterion_id: string
           evaluated_at?: string
           id?: string
+          is_deferred?: boolean
           note?: string | null
           numeric_value?: number | null
           unit?: string | null
@@ -589,6 +591,7 @@ export type Database = {
           criterion_id?: string
           evaluated_at?: string
           id?: string
+          is_deferred?: boolean
           note?: string | null
           numeric_value?: number | null
           unit?: string | null

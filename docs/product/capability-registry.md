@@ -1897,7 +1897,7 @@ and its USER ACCEPTANCE STATUS is PENDING.
 | Project/Goal resource links | `CONNECTED` | same-user Resource link/unlink from both detail directions, reload-proven in R2-04 | accepted 2026-09-07; maintain |
 | Project/Goal evidence display | `CONNECTED_GAP` | skill evidence read projection | create/manage from workbench later |
 | Project milestones | `CONNECTED` | R2-09 owned milestones, grouping, lifecycle and progress; focused evidence above | USER ACCEPTED 2026-09-09; preserve |
-| Goal outcome planning | `CONNECTED` | PP1 #19 delivery: typed Goal Milestones with planned/active/achieved/archived lifecycle, Boolean/numeric Outcome Criteria, append-only evaluation history, explicit achieve/reopen gate, Project/Task support context, auth/ownership/RLS and focused Manual/Empty/Demo browser proof with 4K/1920/mobile captures | user acceptance of the PP1 slice; preserve legacy progress fields and no generic percentage |
+| Goal outcome planning | `CONNECTED` | PP1 #19 delivery: typed Goal Milestones with planned/active/achieved/archived lifecycle including planned/active/reopen transitions, Boolean/numeric Outcome Criteria with append-only met/not_met/unverified/deferred evaluation history, explicit achieve/reopen gate, direct/inherited Project/Task support context, auth/ownership/RLS and focused Manual/Empty/Demo browser proof with 4K/1920/mobile captures; repair boundary proof in `tests/supabase/pp1-goal-outcome-repairs.sql` | user acceptance of the PP1 slice; preserve legacy progress fields and no generic percentage |
 | Project/Goal logs | `NOT_STARTED` | none | add canonical log records |
 | Review cadence | `NOT_STARTED` | none | connect to reviews after D1.2 |
 | Project/Goal restore/undo | `NOT_STARTED` | archive exists | lifecycle slice |

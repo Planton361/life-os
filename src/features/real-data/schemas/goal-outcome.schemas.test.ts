@@ -74,4 +74,25 @@ describe("Goal outcome schemas", () => {
       }).success,
     ).toBe(false);
   });
+
+  it("accepts deferred as an explicit no-decision evaluation without a value", () => {
+    expect(
+      goalCriterionEvaluationInputSchema.safeParse({
+        ...scope,
+        criterionId: "00000000-0000-4000-8000-000000000003",
+        criterionType: "boolean",
+        evaluationState: "deferred",
+        note: "Revisit next review",
+      }).success,
+    ).toBe(true);
+    expect(
+      goalCriterionEvaluationInputSchema.safeParse({
+        ...scope,
+        criterionId: "00000000-0000-4000-8000-000000000003",
+        criterionType: "boolean",
+        evaluationState: "deferred",
+        booleanValue: true,
+      }).success,
+    ).toBe(false);
+  });
 });

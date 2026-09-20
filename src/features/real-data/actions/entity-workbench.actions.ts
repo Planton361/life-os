@@ -209,14 +209,23 @@ async function runGoalOutcomeOperation(
   }
   if (operation === "criterion.evaluate") {
     const criterionType = str(form, "criterionType");
+    const evaluationState = str(form, "evaluationState") || "value";
+    const booleanValue = str(form, "booleanValue");
     const parsed = goalCriterionEvaluationInputSchema.safeParse({
       ...scope,
       goalId: str(form, "goalId"),
       criterionId: str(form, "criterionId"),
       criterionType,
-      booleanValue: criterionType === "boolean" ? str(form, "booleanValue") === "true" : undefined,
-      numericValue: str(form, "numericValue"),
-      unit: str(form, "unit"),
+      evaluationState,
+      booleanValue: evaluationState === "value" && criterionType === "boolean"
+        ? booleanValue === "true"
+          ? true
+          : booleanValue === "false"
+            ? false
+            : undefined
+        : undefined,
+      numericValue: evaluationState === "value" ? str(form, "numericValue") : undefined,
+      unit: evaluationState === "value" ? str(form, "unit") : undefined,
       note: str(form, "note"),
     });
     return parsed.success

@@ -31,18 +31,21 @@ describe("Goal outcome semantics", () => {
   it("evaluates numeric directions without converting units or percentages", () => {
     expect(
       criterionEvaluationState(criterion({ direction: "at_least", target: 0 }), {
+        deferred: false,
         booleanValue: null,
         numericValue: 0,
       }),
     ).toBe("met");
     expect(
       criterionEvaluationState(criterion({ direction: "at_most", target: -2 }), {
+        deferred: false,
         booleanValue: null,
         numericValue: -2.5,
       }),
     ).toBe("met");
     expect(
       criterionEvaluationState(criterion({ direction: "exact", target: 1.25 }), {
+        deferred: false,
         booleanValue: null,
         numericValue: 1.25,
       }),
@@ -58,6 +61,7 @@ describe("Goal outcome semantics", () => {
     });
     expect(
       criterionEvaluationState(booleanCriterion, {
+        deferred: false,
         booleanValue: false,
         numericValue: null,
       }),
@@ -76,6 +80,7 @@ describe("Goal outcome semantics", () => {
             id: "evaluation-1",
             userId: "user-1",
             criterionId: "criterion-1",
+            deferred: false,
             booleanValue: true,
             numericValue: null,
             unit: null,
@@ -109,5 +114,38 @@ describe("Goal outcome semantics", () => {
     expect(summary.readyToAchieve).toBe(true);
     expect(summary.activeCriteriaCount).toBe(1);
     expect(summary.achievedMilestoneCount).toBe(1);
+  });
+
+  it("keeps an explicit deferred evaluation visible but not met", () => {
+    const booleanCriterion = criterion({
+      criterionType: "boolean",
+      direction: null,
+      target: null,
+      unit: null,
+      latestEvaluation: {
+        id: "evaluation-deferred",
+        userId: "user-1",
+        criterionId: "criterion-1",
+        deferred: true,
+        booleanValue: null,
+        numericValue: null,
+        unit: null,
+        evaluatedAt: "2026-09-20T00:00:00.000Z",
+        note: "Later",
+        createdAt: "2026-09-20T00:00:00.000Z",
+      },
+    });
+
+    expect(criterionEvaluationState(booleanCriterion, booleanCriterion.latestEvaluation)).toBe("deferred");
+    const summary = buildGoalOutcomeSummary({
+      goalId: "goal-1",
+      goalStatus: "active",
+      achievedAt: null,
+      criteria: [booleanCriterion],
+      milestones: [],
+    });
+    expect(summary.deferredCriteriaCount).toBe(1);
+    expect(summary.readyToAchieve).toBe(false);
+    expect(summary.blockers).toContain("1 Kriterium/Kriterien deferred.");
   });
 });
