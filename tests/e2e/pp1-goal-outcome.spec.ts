@@ -140,6 +140,8 @@ test("PP1 goal outcome planning is a complete Manual vertical slice", async ({
   const secondMilestone = outcome.locator("[data-goal-milestone-id]").filter({ hasText: milestoneTwoTitle });
   await firstMilestone.getByRole("button", { name: "Erreicht" }).click();
   await expect(page.getByText("Milestone-Status gespeichert.", { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(firstMilestone).toContainText("achieved");
   await secondMilestone.getByRole("button", { name: "Erreicht" }).click();
   await expect(page.getByText("Milestone-Status gespeichert.", { exact: true })).toBeVisible();
   await page.reload();
@@ -202,6 +204,75 @@ test("PP1 goal outcome planning is a complete Manual vertical slice", async ({
   await expect(page.getByRole("complementary", { name: "Selected Entity" })).toContainText("Goal Outcome");
   await page.reload();
   await expect(page.getByRole("complementary", { name: "Selected Entity" })).toContainText("Goal Outcome");
+
+  const portfolioUrl = `/portfolio?view=goals&selected=${goalId}`;
+  const controls = page.getByRole("region", {
+    name: "Portfolio view, scope and sort controls",
+  });
+  for (const [label, type] of [
+    ["All", null],
+    ["Tasks", "tasks"],
+    ["Projects", "projects"],
+    ["Goals", "goals"],
+    ["Skills", "skills"],
+  ] as const) {
+    const links = controls.getByRole("link", { name: label, exact: true });
+    const link = label === "All" ? links.first() : links;
+    await link.click();
+    if (type) await expect(page).toHaveURL(new RegExp(`type=${type}`));
+    else await expect(page).not.toHaveURL(/type=/);
+  }
+  await page.goto(portfolioUrl);
+
+  for (const [label, scope] of [
+    ["All", null],
+    ["Due this week", "due_this_week"],
+    ["In progress", "in_progress"],
+    ["Blocked", "blocked"],
+    ["Needs decision", "needs_decision"],
+    ["Review open", "review_open"],
+    ["High focus", "high_focus"],
+    ["Area: Education", "area_education"],
+    ["Area: Work", "area_work"],
+    ["Area: Coding", "area_coding"],
+    ["Area: Health", "area_health"],
+  ] as const) {
+    const links = controls.getByRole("link", { name: label, exact: true });
+    const link = label === "All" ? links.nth(1) : links;
+    await link.click();
+    if (scope) await expect(page).toHaveURL(new RegExp(`scope=${scope}`));
+    else await expect(page).not.toHaveURL(/scope=/);
+  }
+  await page.goto(portfolioUrl);
+
+  for (const [label, sort] of [
+    ["Priority", null],
+    ["Deadline", "deadline"],
+    ["Recently touched", "recent"],
+  ] as const) {
+    await controls.getByRole("link", { name: label, exact: true }).click();
+    if (sort) await expect(page).toHaveURL(new RegExp(`sort=${sort}`));
+    else await expect(page).not.toHaveURL(/sort=/);
+  }
+  await page.goto(portfolioUrl);
+
+  await page.locator('a[data-entity-type="goal"]').filter({ hasText: goalTitle }).click();
+  await expect(page).toHaveURL(new RegExp(`selected=${goalId}`));
+  await page.getByRole("complementary", { name: "Selected Entity" }).getByRole("link", { name: "Details öffnen" }).click();
+  await expect(page).toHaveURL(new RegExp(`/goals/${goalId}$`));
+
+  for (const [label, path] of [
+    ["Task", "/tasks/new"],
+    ["Project", "/projects/new"],
+    ["Goal", "/goals/new"],
+    ["Skill", "/skills/new"],
+    ["Resource", "/resources/new"],
+  ] as const) {
+    await page.goto(portfolioUrl);
+    await page.getByRole("navigation", { name: "Entity erstellen" }).getByRole("link", { name: `${label} erstellen`, exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`${path.replaceAll("/", "\\/")}$`));
+  }
+  await page.goto(portfolioUrl);
 
   await page.setViewportSize({ width: 3840, height: 2160 });
   await page.screenshot({ path: test.info().outputPath("portfolio-4k.png"), fullPage: true });
