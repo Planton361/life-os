@@ -38,7 +38,11 @@ export function runCommand(
     try {
       child = spawn(command, args, {
         cwd,
-        env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },
+        env: {
+          ...process.env,
+          GIT_TERMINAL_PROMPT: "0",
+          GIT_OPTIONAL_LOCKS: "0",
+        },
         stdio: ["ignore", "pipe", "pipe"],
       });
     } catch (error) {

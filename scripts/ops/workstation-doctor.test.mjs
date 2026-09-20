@@ -4,6 +4,7 @@ import {
   collectDoctor,
   renderHuman,
   renderJson,
+  runCommand,
   sanitizeRemoteIdentity,
 } from "./workstation-doctor.mjs";
 
@@ -121,6 +122,19 @@ function assertNoMutatingCommands(calls) {
     if (command === "pnpm") assert.ok(!["install", "add", "remove", "update"].includes(args[0]));
   }
 }
+
+test("real doctor command runner disables optional Git locks", async () => {
+  const result = await runCommand(process.execPath, [
+    "-e",
+    "process.stdout.write(JSON.stringify({optionalLocks:process.env.GIT_OPTIONAL_LOCKS,terminalPrompt:process.env.GIT_TERMINAL_PROMPT}))",
+  ]);
+
+  assert.equal(result.ok, true, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    optionalLocks: "0",
+    terminalPrompt: "0",
+  });
+});
 
 test("reports a synchronized clean Issue branch as handoff-safe", async () => {
   const { calls, report } = await doctorFor();
