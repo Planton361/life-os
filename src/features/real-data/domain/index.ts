@@ -6,6 +6,7 @@ export * from "./task";
 export * from "./task-goal-alignment";
 export * from "./project";
 export * from "./goal";
+export * from "./goal-outcome";
 export * from "./daily-log";
 export * from "./resource";
 export * from "./recurring-task-template";

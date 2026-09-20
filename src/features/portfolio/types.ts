@@ -5,6 +5,7 @@ import type {
   GoalStatus,
   ProjectStatus,
 } from "@/features/entities/types";
+import type { GoalOutcomeSummary } from "@/features/real-data/domain/goal-outcome";
 
 export type PortfolioProfileId = "demo" | "empty" | "manual";
 
@@ -282,6 +283,7 @@ export type PortfolioEntity = {
   energy?: string;
   progress: number;
   countLabel: string;
+  goalOutcome?: GoalOutcomeSummary;
   lastTouched: string;
   recentRank: number;
   reviewNeeded: boolean;

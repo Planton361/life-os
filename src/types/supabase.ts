@@ -560,9 +560,188 @@ export type Database = {
         }
         Relationships: []
       }
+      goal_criterion_evaluations: {
+        Row: {
+          boolean_value: boolean | null
+          created_at: string
+          criterion_id: string
+          evaluated_at: string
+          id: string
+          note: string | null
+          numeric_value: number | null
+          unit: string | null
+          user_id: string
+        }
+        Insert: {
+          boolean_value?: boolean | null
+          created_at?: string
+          criterion_id: string
+          evaluated_at?: string
+          id?: string
+          note?: string | null
+          numeric_value?: number | null
+          unit?: string | null
+          user_id: string
+        }
+        Update: {
+          boolean_value?: boolean | null
+          created_at?: string
+          criterion_id?: string
+          evaluated_at?: string
+          id?: string
+          note?: string | null
+          numeric_value?: number | null
+          unit?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      goal_milestone_project_support: {
+        Row: {
+          created_at: string
+          goal_id: string
+          goal_milestone_id: string
+          id: string
+          project_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          goal_id: string
+          goal_milestone_id: string
+          id?: string
+          project_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          goal_id?: string
+          goal_milestone_id?: string
+          id?: string
+          project_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      goal_milestone_task_support: {
+        Row: {
+          created_at: string
+          goal_id: string
+          goal_milestone_id: string
+          id: string
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          goal_id: string
+          goal_milestone_id: string
+          id?: string
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          goal_id?: string
+          goal_milestone_id?: string
+          id?: string
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      goal_milestones: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          description: string | null
+          goal_id: string
+          id: string
+          sort_order: number
+          status: Database["public"]["Enums"]["goal_milestone_status"]
+          target_date: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          description?: string | null
+          goal_id: string
+          id?: string
+          sort_order?: number
+          status?: Database["public"]["Enums"]["goal_milestone_status"]
+          target_date?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          description?: string | null
+          goal_id?: string
+          id?: string
+          sort_order?: number
+          status?: Database["public"]["Enums"]["goal_milestone_status"]
+          target_date?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      goal_outcome_criteria: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          criterion_type: Database["public"]["Enums"]["goal_criterion_type"]
+          direction: Database["public"]["Enums"]["goal_criterion_direction"] | null
+          goal_id: string
+          goal_milestone_id: string | null
+          id: string
+          target: number | null
+          title: string
+          unit: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          criterion_type?: Database["public"]["Enums"]["goal_criterion_type"]
+          direction?: Database["public"]["Enums"]["goal_criterion_direction"] | null
+          goal_id: string
+          goal_milestone_id?: string | null
+          id?: string
+          target?: number | null
+          title: string
+          unit?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          criterion_type?: Database["public"]["Enums"]["goal_criterion_type"]
+          direction?: Database["public"]["Enums"]["goal_criterion_direction"] | null
+          goal_id?: string
+          goal_milestone_id?: string | null
+          id?: string
+          target?: number | null
+          title?: string
+          unit?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       goals: {
         Row: {
           archived_at: string | null
+          achieved_at: string | null
+          achievement_note: string | null
           area_id: string | null
           created_at: string
           description: string | null
@@ -580,6 +759,8 @@ export type Database = {
         }
         Insert: {
           archived_at?: string | null
+          achieved_at?: string | null
+          achievement_note?: string | null
           area_id?: string | null
           created_at?: string
           description?: string | null
@@ -597,6 +778,8 @@ export type Database = {
         }
         Update: {
           archived_at?: string | null
+          achieved_at?: string | null
+          achievement_note?: string | null
           area_id?: string | null
           created_at?: string
           description?: string | null
@@ -3428,6 +3611,9 @@ export type Database = {
         | "skipped"
         | "note"
       education_log_type: "learning" | "writing"
+      goal_criterion_direction: "at_least" | "at_most" | "exact"
+      goal_criterion_type: "boolean" | "numeric"
+      goal_milestone_status: "planned" | "active" | "achieved" | "archived"
       goal_status: "draft" | "active" | "paused" | "achieved" | "archived"
       inbox_item_status:
         | "raw"
@@ -3645,6 +3831,9 @@ export const Constants = {
         "note",
       ],
       education_log_type: ["learning", "writing"],
+      goal_criterion_direction: ["at_least", "at_most", "exact"],
+      goal_criterion_type: ["boolean", "numeric"],
+      goal_milestone_status: ["planned", "active", "achieved", "archived"],
       goal_status: ["draft", "active", "paused", "achieved", "archived"],
       inbox_item_status: [
         "raw",

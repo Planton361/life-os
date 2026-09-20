@@ -35,6 +35,20 @@ import {
   createSupabaseResourceRepository,
   createSupabaseTaskRepository,
   createSupabaseProjectRepository,
+  achieveGoal,
+  addGoalProjectSupport,
+  addGoalTaskSupport,
+  appendGoalCriterionEvaluation,
+  archiveGoalCriterion,
+  archiveGoalMilestone,
+  createGoalCriterion,
+  createGoalMilestone,
+  removeGoalProjectSupport,
+  removeGoalTaskSupport,
+  reopenGoal,
+  reorderGoalMilestone,
+  setGoalMilestoneStatus,
+  updateGoalMilestone,
 } from "../supabase";
 import {
   createResourceInputSchema,
@@ -43,6 +57,20 @@ import {
   linkResourceInputSchema,
   updateTaskInputSchema,
   updateProjectInputSchema,
+  goalAchieveInputSchema,
+  goalCriterionEvaluationInputSchema,
+  goalMilestoneArchiveInputSchema,
+  goalMilestoneCreateInputSchema,
+  goalMilestoneReorderInputSchema,
+  goalMilestoneStatusInputSchema,
+  goalMilestoneUpdateInputSchema,
+  goalOutcomeCriterionArchiveInputSchema,
+  goalOutcomeCriterionCreateInputSchema,
+  goalOutcomeOperationSchema,
+  goalProjectSupportInputSchema,
+  goalReopenInputSchema,
+  goalSupportRemoveInputSchema,
+  goalTaskSupportInputSchema,
 } from "../schemas";
 import {
   workbenchKinds,
@@ -77,6 +105,176 @@ const invalid: FormResult = {
   status: "error",
   message: "Prüfe die Angaben und Beziehungen.",
 };
+
+function outcomeResult(result: { ok: boolean; error?: { message: string } }, message: string): FormResult {
+  return result.ok
+    ? { status: "success", message }
+    : { status: "error", message: result.error?.message ?? "Die Goal-Änderung konnte nicht gespeichert werden." };
+}
+
+async function runGoalOutcomeOperation(
+  auth: NonNullable<Awaited<ReturnType<typeof createAuthenticatedSupabaseServerClient>> & { ok: true }>,
+  operation: string,
+  form: FormData,
+): Promise<FormResult> {
+  const userId = auth.user.id;
+  const scope = { userId, profileId: userId };
+  const parsedOperation = goalOutcomeOperationSchema.safeParse(operation);
+  if (!parsedOperation.success) return invalid;
+
+  if (operation === "milestone.create") {
+    const parsed = goalMilestoneCreateInputSchema.safeParse({
+      ...scope,
+      goalId: str(form, "goalId"),
+      title: str(form, "title"),
+      description: str(form, "description"),
+      targetDate: str(form, "targetDate"),
+      status: str(form, "status") || "planned",
+      sortOrder: str(form, "sortOrder") || "0",
+    });
+    return parsed.success
+      ? outcomeResult(await createGoalMilestone(auth.client, parsed.data), "Milestone erstellt.")
+      : invalid;
+  }
+  if (operation === "milestone.update") {
+    const parsed = goalMilestoneUpdateInputSchema.safeParse({
+      ...scope,
+      goalId: str(form, "goalId"),
+      milestoneId: str(form, "milestoneId"),
+      title: str(form, "title"),
+      description: str(form, "description"),
+      targetDate: str(form, "targetDate"),
+    });
+    return parsed.success
+      ? outcomeResult(await updateGoalMilestone(auth.client, parsed.data), "Milestone gespeichert.")
+      : invalid;
+  }
+  if (operation === "milestone.status") {
+    const parsed = goalMilestoneStatusInputSchema.safeParse({
+      ...scope,
+      goalId: str(form, "goalId"),
+      milestoneId: str(form, "milestoneId"),
+      status: str(form, "status"),
+    });
+    return parsed.success
+      ? outcomeResult(await setGoalMilestoneStatus(auth.client, parsed.data), "Milestone-Status gespeichert.")
+      : invalid;
+  }
+  if (operation === "milestone.archive") {
+    const parsed = goalMilestoneArchiveInputSchema.safeParse({
+      ...scope,
+      goalId: str(form, "goalId"),
+      milestoneId: str(form, "milestoneId"),
+    });
+    return parsed.success
+      ? outcomeResult(await archiveGoalMilestone(auth.client, parsed.data), "Milestone archiviert.")
+      : invalid;
+  }
+  if (operation === "milestone.reorder") {
+    const parsed = goalMilestoneReorderInputSchema.safeParse({
+      ...scope,
+      goalId: str(form, "goalId"),
+      milestoneId: str(form, "milestoneId"),
+      direction: str(form, "direction"),
+    });
+    return parsed.success
+      ? outcomeResult(await reorderGoalMilestone(auth.client, parsed.data), "Milestone-Reihenfolge gespeichert.")
+      : invalid;
+  }
+  if (operation === "criterion.create") {
+    const criterionType = str(form, "criterionType");
+    const parsed = goalOutcomeCriterionCreateInputSchema.safeParse({
+      ...scope,
+      goalId: str(form, "goalId"),
+      goalMilestoneId: str(form, "goalMilestoneId"),
+      title: str(form, "title"),
+      criterionType,
+      unit: str(form, "unit"),
+      target: str(form, "target"),
+      direction: str(form, "direction") || undefined,
+    });
+    return parsed.success
+      ? outcomeResult(await createGoalCriterion(auth.client, parsed.data), "Kriterium erstellt.")
+      : invalid;
+  }
+  if (operation === "criterion.archive") {
+    const parsed = goalOutcomeCriterionArchiveInputSchema.safeParse({
+      ...scope,
+      goalId: str(form, "goalId"),
+      criterionId: str(form, "criterionId"),
+    });
+    return parsed.success
+      ? outcomeResult(await archiveGoalCriterion(auth.client, parsed.data), "Kriterium archiviert.")
+      : invalid;
+  }
+  if (operation === "criterion.evaluate") {
+    const criterionType = str(form, "criterionType");
+    const parsed = goalCriterionEvaluationInputSchema.safeParse({
+      ...scope,
+      goalId: str(form, "goalId"),
+      criterionId: str(form, "criterionId"),
+      criterionType,
+      booleanValue: criterionType === "boolean" ? str(form, "booleanValue") === "true" : undefined,
+      numericValue: str(form, "numericValue"),
+      unit: str(form, "unit"),
+      note: str(form, "note"),
+    });
+    return parsed.success
+      ? outcomeResult(await appendGoalCriterionEvaluation(auth.client, parsed.data), "Kriterium bewertet.")
+      : invalid;
+  }
+  if (operation === "support.project.add") {
+    const parsed = goalProjectSupportInputSchema.safeParse({
+      ...scope,
+      goalId: str(form, "goalId"),
+      goalMilestoneId: str(form, "goalMilestoneId"),
+      projectId: str(form, "projectId"),
+    });
+    return parsed.success
+      ? outcomeResult(await addGoalProjectSupport(auth.client, parsed.data), "Project als Support-Kontext verknüpft.")
+      : invalid;
+  }
+  if (operation === "support.task.add") {
+    const parsed = goalTaskSupportInputSchema.safeParse({
+      ...scope,
+      goalId: str(form, "goalId"),
+      goalMilestoneId: str(form, "goalMilestoneId"),
+      taskId: str(form, "taskId"),
+    });
+    return parsed.success
+      ? outcomeResult(await addGoalTaskSupport(auth.client, parsed.data), "Task als Support-Kontext verknüpft.")
+      : invalid;
+  }
+  if (operation === "support.project.remove" || operation === "support.task.remove") {
+    const parsed = goalSupportRemoveInputSchema.safeParse({
+      ...scope,
+      goalId: str(form, "goalId"),
+      supportId: str(form, "supportId"),
+    });
+    if (!parsed.success) return invalid;
+    const result = operation === "support.project.remove"
+      ? await removeGoalProjectSupport(auth.client, parsed.data)
+      : await removeGoalTaskSupport(auth.client, parsed.data);
+    return outcomeResult(result, "Support-Kontext gelöst.");
+  }
+  if (operation === "achieve") {
+    const parsed = goalAchieveInputSchema.safeParse({
+      ...scope,
+      goalId: str(form, "goalId"),
+      note: str(form, "note"),
+    });
+    return parsed.success
+      ? outcomeResult(await achieveGoal(auth.client, parsed.data), "Goal erreicht.")
+      : invalid;
+  }
+  const parsed = goalReopenInputSchema.safeParse({
+    ...scope,
+    goalId: str(form, "goalId"),
+  });
+  return parsed.success
+    ? outcomeResult(await reopenGoal(auth.client, parsed.data), "Goal wieder geöffnet.")
+    : invalid;
+}
 async function context() {
   if ((await getCurrentLifeOsProfileId()) !== "manual") return null;
   const auth = await createAuthenticatedSupabaseServerClient();
@@ -153,7 +351,9 @@ export async function workbenchOperation(
     return { status: "blocked", message: "Bitte im Manual-Profil anmelden." };
   const scope = { userId: auth.user.id, profileId: auth.user.id };
   let result: FormResult = invalid;
-  if (operation === "project.milestone") {
+  if (goalOutcomeOperationSchema.safeParse(operation).success) {
+    result = await runGoalOutcomeOperation(auth, operation, form);
+  } else if (operation === "project.milestone") {
     if (
       await writeProjectMilestone(auth.client, auth.user.id, {
         operation: str(form, "milestoneOperation"),

@@ -333,10 +333,17 @@ export function EntityForm({
               )}
               {kind === "goal" && (
                 <>
-                  {choice(
-                    "status",
-                    "Status",
-                    opts(["draft", "active", "paused", "achieved"]),
+                  {values.status === "achieved" ? (
+                    <p className="text-sm">
+                      Status: achieved · über den expliziten Outcome-Flow
+                      wieder öffnen.
+                    </p>
+                  ) : (
+                    choice(
+                      "status",
+                      "Status",
+                      opts(["draft", "active", "paused"]),
+                    )
                   )}
                   {choice(
                     "horizon",
@@ -423,12 +430,14 @@ export function OperationForm({
   children,
   disabled = false,
   closeOnSuccess = false,
+  confirmMessage,
 }: {
   operation: string;
   label: string;
   children?: ReactNode;
   disabled?: boolean;
   closeOnSuccess?: boolean;
+  confirmMessage?: string;
 }) {
   const hydrated = useHydrated();
   const closeDisclosure = useCloseManagementDisclosure();
@@ -442,6 +451,7 @@ export function OperationForm({
       className="grid gap-3"
       onSubmit={(event) => {
         event.preventDefault();
+        if (confirmMessage && !window.confirm(confirmMessage)) return;
         const form = new FormData(event.currentTarget);
         start(async () => {
           setError("");

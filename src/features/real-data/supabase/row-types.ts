@@ -20,6 +20,20 @@ export type GoalRow = TableRow<"goals">;
 export type GoalInsert = TableInsert<"goals">;
 export type GoalUpdate = TableUpdate<"goals">;
 
+export type GoalMilestoneRow = TableRow<"goal_milestones">;
+export type GoalMilestoneInsert = TableInsert<"goal_milestones">;
+export type GoalMilestoneUpdate = TableUpdate<"goal_milestones">;
+
+export type GoalOutcomeCriterionRow = TableRow<"goal_outcome_criteria">;
+export type GoalOutcomeCriterionInsert = TableInsert<"goal_outcome_criteria">;
+export type GoalOutcomeCriterionUpdate = TableUpdate<"goal_outcome_criteria">;
+
+export type GoalCriterionEvaluationRow = TableRow<"goal_criterion_evaluations">;
+export type GoalCriterionEvaluationInsert = TableInsert<"goal_criterion_evaluations">;
+
+export type GoalMilestoneProjectSupportRow = TableRow<"goal_milestone_project_support">;
+export type GoalMilestoneTaskSupportRow = TableRow<"goal_milestone_task_support">;
+
 export type ProjectRow = TableRow<"projects">;
 export type ProjectInsert = TableInsert<"projects">;
 export type ProjectUpdate = TableUpdate<"projects">;

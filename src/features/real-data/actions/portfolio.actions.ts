@@ -519,6 +519,13 @@ export async function updateGoalAction(
     };
   }
 
+  if (parsed.data.status === "achieved") {
+    return {
+      message: "Goals werden ausschließlich über den expliziten Outcome-Flow erreicht.",
+      status: "error",
+    };
+  }
+
   const repository = createSupabaseGoalRepository(context.auth.client);
   const result = await repository.updateGoal(parsed.data);
 

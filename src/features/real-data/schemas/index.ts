@@ -3,6 +3,7 @@ export * from "./inbox.schemas";
 export * from "./task.schemas";
 export * from "./project.schemas";
 export * from "./goal.schemas";
+export * from "./goal-outcome.schemas";
 export * from "./daily-log.schemas";
 export * from "./resource.schemas";
 export * from "./recurring-task-template.schema";

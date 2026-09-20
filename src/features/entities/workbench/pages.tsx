@@ -12,6 +12,8 @@ import {
   readEntityWorkbench,
   type WorkbenchData,
 } from "@/features/real-data/supabase/repositories/entity-workbench-read";
+import { getGoalOutcome } from "@/features/real-data/supabase/repositories/supabase-goal-outcome-repository";
+import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
 import {
   EntityForm,
   OperationForm,
@@ -26,6 +28,7 @@ import {
   type FieldValues,
 } from "./types";
 import type { ReactNode } from "react";
+import { GoalOutcomeWorkbench } from "./goal-outcome-workbench";
 
 export function EntityWorkbenchShell({
   kind,
@@ -307,6 +310,44 @@ export async function WorkbenchEditor({
       values.targetDate = data.goals
         .find((g) => g.id === id)!
         .target_date?.slice(0, 10);
+  }
+  if (kind === "goal" && id && row) {
+    const auth = await createAuthenticatedSupabaseServerClient();
+    if (!auth.ok) {
+      return (
+        <EntityWorkbenchShell kind="goal" title={row.title}>
+          {authMessage}
+        </EntityWorkbenchShell>
+      );
+    }
+    const outcome = await getGoalOutcome(auth.client, auth.user.id, id);
+    if (!outcome.ok) {
+      if (outcome.error.code === "not_found") notFound();
+      throw new Error(outcome.error.message);
+    }
+    return (
+      <GoalOutcomeWorkbench
+        data={data}
+        goalId={id}
+        outcome={outcome.data}
+        edit={
+          <EntityForm
+            kind="goal"
+            id={id}
+            values={values}
+            areas={data.areas
+              .filter((a) => !a.archived_at || a.id === row.area_id)
+              .map((a) => ({
+                id: a.id,
+                title: a.name + (a.archived_at ? " (archiviert)" : ""),
+              }))}
+            projects={available(data, "project", "")}
+            goals={available(data, "goal", id)}
+            archived={Boolean(row.archived_at)}
+          />
+        }
+      />
+    );
   }
   if (kind === "project" && id && row)
     return (
