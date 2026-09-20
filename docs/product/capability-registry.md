@@ -43,12 +43,12 @@ Implementation status and product visibility are separate truths: `CONNECTED` co
 | Nutrition | `ACCEPTED` | `CONNECTED`: logging/tracking, canonical weekly planning, recipes and grocery; explicitly USER ACCEPTED on 2026-09-07 with Health & Fitness | R2-05 closed; preserve evidence and accepted behavior |
 | Work / Education / Coding | `HIDDEN_RETAINED` / `FOLDED` | A1 canonical Projects, Resources and logs remain; detailed technical statuses below are retained evidence, not suite completion | Areas stay active as context; no independent suite completion |
 | Inventory / Wishlist | `EXTERNALIZED` / `RETAINED` | existing CRUD, purchase decisions and conversion retained; no new completion claim | Spreadsheet is Source of Truth for future use; no active navigation or connector |
-| Journal | `ACTIVE` | `CONNECTED`: R2-07 chronological workspace, canonical create/edit/archive, search/filter, detail and current responsive/reload proof | separate Journal ownership/reconciliation remains unresolved under Decision A; user acceptance pending; unsupported context/relations/Today sources documented below |
-| Skill Map | `PAUSED_PENDING_DECISION` | `UI_ONLY`: only a retained Coding demo/empty Manual shell | under Decision A, reconcile R2-08 with R2-17 rather than creating a competing graph; no active graph link |
-| Notes | `FOLDED_INTO_RESOURCES` / `RETAINED` | `CONNECTED`: existing canonical `resources` (`note`), no migration | no separate active Notes app |
+| Journal | `ACTIVE` | `CONNECTED`: R2-07 chronological workspace, canonical create/edit/archive, search/filter, detail and current responsive/reload proof | Journal remains fully Life-OS-owned; user acceptance and unsupported context/relations/Today sources remain separate depth gates |
+| Skill Map | `PAUSED_PENDING_DECISION` | `UI_ONLY`: only a retained Coding demo/empty Manual shell | accepted target semantics are captured for later R2-17 reconciliation; no active graph link or implementation claim |
+| Notes | `FOLDED_INTO_RESOURCES` / `RETAINED` | `CONNECTED`: existing canonical `resources` (`note`), no migration | existing note Resources remain Life-OS references; future long-form content is Obsidian-owned; no automatic association or separate active Notes app |
 | Anti-Rot / Challenges / Shop | `DEFERRED_HIDDEN` | connected feature code/data; direct routes remain intact | C1.1-01 removed Sidebar, Dashboard and normal Daily-Companion entry points |
 | Entertainment | `DEFERRED_HIDDEN` | connected collection code/data; direct routes remain intact | C1.1-01 removed Sidebar, Life overview and obvious active cross-links |
-| AI1 Personal Assistant | `DEFERRED` | not started / external decisions outstanding | do not continue during C1→A1 |
+| AI1 Personal Assistant | `DEFERRED` | not started; read-only Morning Briefing is the accepted first target | provider privacy/retention and structured read-boundary gate remain; no implementation claim |
 
 Visibility labels are product-boundary classifications, not new implementation
 statuses. Hiding a capability never means it is complete. Existing technical
@@ -65,11 +65,60 @@ history. R2-01 through R2-04 and Health/Fitness are explicitly accepted.
 **R2-05 USER ACCEPTED on 2026-09-07: Health & Fitness and Nutrition accepted in full.**
 R2-05, R2-09, R2-10, R2-11 and R2-12 are closed and USER ACCEPTED.
 R2-13 currently has no committed capability implementation on the integration branch; preserved local Rescue work is not capability evidence; its operative work contract/status is tracked separately in GitHub Issue #3 and Project #3.
-Product Reorientation is in progress; no delivery successor is currently approved.
-Decision A selects Life OS / PostgreSQL as canonical operational truth and
-Obsidian as Visual / Knowledge / Graph client. Obsidian-first is NO-GO for now;
-native Graph is fallback. R2-13 product acceptance remains pending; this registry does not track operative Issue/Project status. R2-07/08 reconciliation remains
-separately scoped; no Journal acceptance or migration is implied.
+Product Target v0.4 and the Target Model Decision Package are accepted, but no
+new product plan or delivery successor is approved. Life OS / PostgreSQL remains
+canonical for operational context and Resource identity; Obsidian owns
+long-form Knowledge Content and Notes. Journal remains fully Life-OS-owned.
+R2-13 product acceptance remains pending; preserved Rescue work is not
+capability evidence; this registry does not track operative Issue/Project
+status. Skill Graph semantics are accepted as target context, while Skill Map
+implementation remains paused. No implementation status is upgraded by these
+decisions.
+
+## Accepted Product Target / Target Model Context — 2026-09-20
+
+This is target context, not implementation truth and not a delivery sequence.
+
+- Project, Goal and Skill remain separate categories sharing the planning shape
+  Higher-order entity → domain milestones → Tasks → progress; no universal
+  polymorphic Milestone table is approved.
+- Project Milestones remain current. Goal Milestones/Outcome Criteria and Skill
+  Milestones/Evidence/Targets/Prerequisites are future domain-specific scope.
+  Only Task Dependencies create V1 execution READY/BLOCKED; no Milestone
+  dependency engine is implied.
+- Project progress is real Task/Milestone state and lifecycle; Goal achievement
+  is explicit Outcome Criteria/Measures; Skill progress is Evidence/Practice/
+  Recency/Target context. No artificial percentages or mastery values are
+  promoted to capability truth.
+- Resource remains Life-OS reference/Work-Artifact identity; Obsidian owns
+  long-form Knowledge Content. `life_os_id` is stable identity and vault paths
+  are locators. Existing note Resources are preserved without auto-association.
+- Journal remains Life-OS-owned. The first AI target is a read-only,
+  server-side, user-scoped Morning Briefing with an allowlisted projection;
+  Journal/full Obsidian content are excluded by default and provider/privacy
+  gates remain open.
+- Weekly Planning remains user-decided; the Planner Queue is a deterministic
+  decision aid, not autonomous selection.
+
+### Accepted target disposition (not implementation status)
+
+| Capability | Target disposition | Target meaning |
+|---|---|---|
+| Dashboard | `RETAIN` | preserve Day Control and canonical projections |
+| Inbox | `RETAIN` | preserve triage into the canonical spine |
+| Today | `RETAIN` | preserve day history and review loop |
+| Calendar | `RETAIN` | preserve user-controlled temporal planning |
+| Portfolio | `RETAIN` | preserve higher-order Project/Goal/Skill context |
+| Resources | `RETAIN` | preserve Life-OS reference/artifact identity |
+| Health/Fitness | `RETAIN` | preserve connected personal domain loop |
+| Nutrition | `RETAIN` | preserve connected planning/logging loop |
+| Journal | `RETAIN` | preserve Life-OS-owned reflection |
+| Skill Map | `RECONSIDER` | implement only against accepted Skill Graph semantics |
+| Notes | `SIMPLIFY` | keep Life-OS note Resources; Obsidian owns long-form content |
+| AI | `RECONSIDER` | first target is read-only Morning Briefing; provider gate remains |
+| Anti-Rot / Challenges / Shop | `HIDE` | retain code/data but keep outside active cockpit |
+| Entertainment | `HIDE` | retain code/data but keep outside active cockpit |
+| Work / Education / Coding | `SIMPLIFY` | use canonical context rather than independent suites |
 
 ## R2-12 acceptance and R2-13 capability context — 2026-09-10
 
@@ -574,16 +623,16 @@ delivery-order wording as evidence only and do not define the current queue.
 | Planned capability / decision | Status | Current truth / next gate |
 |---|---|---|
 | R2-10 Task Dependencies and derived availability | `CONNECTED` | USER ACCEPTED 2026-09-09; implementation/evidence retained, block closed |
-| R2-11 Graph-client architecture / feasibility | `CONNECTED` | Decision A USER ACCEPTED 2026-09-10; Lab evidence retained, no Lab Runtime adoption |
+| R2-11 Graph-client architecture / feasibility | `CONNECTED` | Target ownership accepted 2026-09-10; Lab evidence retained, no Lab Runtime adoption |
 | R2-12 Obsidian projection | `CONNECTED` | Authenticated single-Project ZIP/Markdown/manifest and Core proof retained; USER ACCEPTED 2026-09-10, block closed |
 | R2-13 Project Map / Canvas | `NOT_STARTED` | No committed generated canonical Project Canvas or personal-layout preservation proof on the integration branch; local/unmerged work is not capability truth |
 | R2-14 Sync security/conflict contract | `DECISION_REQUIRED` | Pairing/auth/permissions, revocation, revisions, conflicts/offline/replay and plugin trust must be accepted before write-back |
-| R2-15 Controlled work commands/sync | `NOT_STARTED` | No bridge/write-back; conditional on Option A and accepted R2-14 |
+| R2-15 Controlled work commands/sync | `NOT_STARTED` | No bridge/write-back; requires a future accepted product plan and R2-14 security/conflict contract |
 | R2-16 Project Templates | `NOT_STARTED` | Future versioned preview and atomic/idempotent instantiation; no running-Project overwrite |
-| R2-17 Skill / Goal Graph | `NOT_STARTED` | Conditional selected-client capability; existing Skills/Evidence are not a graph implementation |
-| R2-07 Journal text ownership reconciliation | `DECISION_REQUIRED` | Existing Journal remains `CONNECTED`, acceptance pending; Life OS versus Obsidian long-form split undecided after R2-11 |
-| R2-08 Skill Map disposition | `DECISION_REQUIRED` | Retained Coding shell remains `UI_ONLY`; replace obligation with R2-17 or redefine native graph only after R2-11 |
-| Separate Notes surface | `DECISION_REQUIRED` | Existing note-Resources remain `CONNECTED`; no new Notes app or migration |
+| R2-17 Skill / Goal Graph | `NOT_STARTED` | Accepted target semantics; existing Skills/Evidence are not a graph implementation |
+| R2-07 Journal text ownership reconciliation | `CONNECTED_GAP` | Journal ownership is accepted as Life-OS-owned; relations/Today depth and final user acceptance remain |
+| R2-08 Skill Map disposition | `DECISION_REQUIRED` | Retained Coding shell remains `UI_ONLY`; implement only after a new product plan uses the accepted graph semantics |
+| Separate Notes surface | `DECISION_REQUIRED` | Existing note-Resources remain `CONNECTED`; Obsidian owns future long-form content; no new Notes app or migration |
 
 No graph shell, relationship count, planning text or GitHub work status upgrades an implementation status. Historical active-block wording in older dated entries is evidence only.
 
@@ -2600,14 +2649,15 @@ without protected environment files or the unrelated unstaged test changes.
 Completion Gate: PASS for the delivered canonical scope, reported as
 IMPLEMENTATION_PASS. Unsupported model capabilities above are not implemented
 or represented as connected; no user acceptance is inferred.
-R2-07 remains pending user acceptance; its continuation is now paused until
-R2-11 architecture decision and Journal reconciliation.
+Historical R2-07 evidence retains its original pending wording; the current
+target resolves Journal ownership as Life-OS-owned. User acceptance and the
+remaining relation/Today depth are still open implementation gates.
 
 # 14. Life and Personal
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Journal | `CONNECTED` | R2-07 user-scoped `journal_entries`; complete existing lifecycle, German history/reader/dialog workspace, URL search/filter/detail, real counts and current browser/reload proof | USER ACCEPTANCE PENDING; canonical tags/context/relations and Today source absent; Mood, Health and Reviews remain separate |
+| Journal | `CONNECTED` | R2-07 user-scoped `journal_entries`; complete existing lifecycle, German history/reader/dialog workspace, URL search/filter/detail, real counts and current browser/reload proof | Life-OS ownership accepted; user acceptance, canonical tags/context/relations and Today source remain separate depth gates; Mood, Health and Reviews remain separate |
 | Notes | `CONNECTED` | A1.1D1 canonical Life-Area `resources` (`note`) with create/edit/archive/restore, reload-stable active/history views and visible existing Project/Goal/Task relations or honest empty state | relation creation remains on the established Resource surfaces; no parallel Notes platform |
 | Entertainment collection | `CONNECTED` | A1.1D2 canonical user-scoped `entertainment_items`; direct routes and complete lifecycle remain retained | `DEFERRED_HIDDEN` boundary is applied to Sidebar, Life overview and active cross-links by C1.1-01 |
 | Inventory | `CONNECTED` | A1 Target browser proof creates and edits user-scoped `inventory_items`, then reloads the active item | external merchants, guarantees, insurance and accounting remain unimplemented |

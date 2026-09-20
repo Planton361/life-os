@@ -6,24 +6,28 @@
 **Primary usage:** browser-based command center on a 4K second monitor
 **Design truth:** `DESIGN.md` / Life OS – Linear Calm Dark Command Center / Dashboard V5
 
-## Durable work-graph / client decision
+## Durable work-graph / knowledge ownership decision
 
-**Decision A is binding:** Life OS / PostgreSQL remains canonical operational truth. Obsidian is a Visual / Knowledge / Graph client and projection surface; Obsidian-first is not the current ownership model and the native graph remains fallback.
+**Product Target v0.4 is accepted.** Life OS / PostgreSQL remains canonical operational truth for operational context, Projects, Goals, Skills, Milestones, Tasks, Dependencies, Planning and their Relations. `Resource` remains the canonical Life OS reference / Work Artifact identity. Obsidian owns long-form Knowledge Content and Notes.
 
-Projection output is derived from canonical Life OS data. Free notes, exploratory Canvas edges and personal layout are presentation state, not a second domain model. Any future write-back requires its own accepted security/conflict contract and must execute through existing Life OS auth, validation, ownership and domain boundaries.
+Obsidian is therefore a knowledge-content owner and client boundary, not an operational work store. Existing Life OS exports remain one-way projections. A bound Obsidian Note uses `life_os_id` as its stable identity; a vault-relative path is only a locator. Rename, move, missing metadata or collisions never authorize implicit path-based matching. No watcher, sync, write-back or personal Vault access is implied by this contract.
 
-Current delivery sequence and product context belong to `ROADMAP.md`; operative work status belongs to GitHub Project #3 and approved Issues. This product contract does not mirror operative Issue/Project work status. Journal and Skill Map reconciliation remain separate product scopes.
+Free notes, exploratory Canvas edges and personal layout remain outside the Life OS operational model. Any future promotion or write-back requires its own accepted security/conflict contract and must execute through existing Life OS auth, validation, ownership and domain boundaries.
+
+Current delivery sequence and product context belong to `ROADMAP.md`; operative work status belongs to GitHub Project #3 and approved Issues. This product contract does not mirror operative Issue/Project work status. Journal remains fully Life-OS-owned and separate from Knowledge Notes. Skill Map remains a target/reconciliation surface, not a delivered graph.
 
 ## 1. Product Promise
 
-Life OS is the personal Context, Planning, Execution and Memory system: a daily companion for turning intent into a realistic week, executing the current day and learning from what was actually done. Its canonical spine is Task / Project / Goal / Skill / Resource. It is not a Notion clone, a public SaaS product, a passive data archive or a collection of unrelated trackers.
+Life OS is the personal Project-to-Day Context, Planning, Execution and Memory system: a daily companion for turning intent into a realistic week, executing the current day and learning from what was actually done. Its canonical spine is Task / Project / Goal / Skill / Resource. It is not a Notion clone, a public SaaS product, a passive data archive or a collection of unrelated trackers.
 
 Every meaningful piece of work has a Life OS identity and context.
-Specialized artifacts may live externally, but remain referenced and connected
-inside Life OS. Projects and Tasks remain fully canonical here, including Goals,
-Skills, status/lifecycle, deadline/horizon, next step, real progress, planning,
-relations and personal history/evidence. Coding, Education and Work use normal
-Projects, never domain-specific copies or second task lists.
+Specialized artifacts and long-form Knowledge Content may live externally, but
+remain referenced and connected inside Life OS. Projects and Tasks remain fully
+canonical here, including Goals, Skills, status/lifecycle, deadline/horizon,
+next step, planning, relations and personal history/evidence. Progress is
+domain-specific and evidence-based; historical percentage fields are not a new
+truth. Coding, Education and Work use normal Projects, never domain-specific
+copies or second task lists.
 
 Core principle:
 
@@ -64,7 +68,11 @@ The following are not current product goals:
 - medical diagnosis, treatment or nutrition advice;
 - a native mobile app before the browser product is complete;
 - decorative analytics, fake precision or gamification without functional value;
-- AI-assistant delivery before the daily-companion core is stable.
+- autonomous weekly planning or task selection;
+- AI writes, reprioritization or plan changes without a separately accepted
+  command contract;
+- AI delivery before the structured, privacy-gated read-only Morning Briefing
+  boundary is accepted.
 
 ## 4. Product Architecture Principles
 
@@ -108,7 +116,7 @@ The active surface contract is:
 | Resources | knowledge/reference and evidence |
 | Health / Nutrition / Fitness | personal domain intelligence; records linked to executable scheduled task occurrences |
 | Journal | reflection and time-based personal history |
-| Skill Map | retained/paused graph surface; under selected Decision A its disposition must be reconciled with R2-17 rather than creating a competing graph |
+| Skill Map | retained/paused graph surface; its implementation follows a future plan using the accepted R2-17 graph semantics rather than creating a competing graph |
 
 Dashboard, Today and Calendar are projections. Portfolio and Resources expose canonical entities. Domain areas own their records but do not invent parallel tasks or calendar events.
 
@@ -181,6 +189,15 @@ Calendar defaults to a dominant Planner Queue rail. A selected block temporarily
 
 Calendar is the temporal planning hub. The default planning question is how the coming week fits together; Day, Week and Month controls support execution and orientation and must change the real projection.
 
+Weekly Planning remains user-decided. The Planner Queue is a deterministic
+decision aid, not an autonomous scheduler or selector. Eligibility is limited
+to the user's active Tasks that are not completed, cancelled or archived, have
+executable/READY Task Dependencies and are not already appropriately planned.
+Ranking may use Priority, Deadline, Recurrence, Project Next Work, Goal context
+and Planning Date. Display context may include blocker reason, Milestone,
+Project, Goal, Skill and Schedule Source. Eligibility is a hard boundary;
+ranking is advisory; display context is explanatory.
+
 Required capabilities:
 
 - week view as the primary planning surface, with real day and month views;
@@ -201,7 +218,15 @@ Portfolio provides overview, navigation and cross-entity context for the canonic
 
 Portfolio is the only active list surface: `/portfolio` and `?type=tasks|projects|goals|skills`. Sidebar subnavigation and Entity View share this URL filter. Legacy list routes remain technical deep links without active navigation. Each type retains its existing `/new` and stable ID detail routes under `/tasks`, `/projects`, `/goals` or `/skills`. Create and edit share each entity’s field groups. A successful direct create opens its persisted ID detail page. Inbox-routed entities already exist and must never pass through another creation step. Resources retain their own `/resources`, `/resources/new` and `/resources/[resourceId]` knowledge area.
 
-Task steps are task-local persisted work, with progress derived from active completed steps. Project task progress reports completed linked tasks separately from project completion. Goals do not display an outcome percentage without a canonical outcome basis. Skills expose explicit evidence and linked practice; links alone never create evidence.
+Task steps are task-local persisted work, with completion owned by Tasks. The
+shared product planning shape is Higher-order entity → domain milestones →
+Tasks → evidence-based progress, but Project, Goal and Skill remain separate
+categories. Project task/milestone state, Goal outcome criteria and Skill
+evidence/practice/target context are different semantics; no universal
+polymorphic Milestone entity is introduced. Only Task-to-Task Dependencies
+create V1 execution READY/BLOCKED state. Goals do not display an outcome
+percentage without a canonical outcome basis, and Skills expose explicit
+evidence and linked practice; links alone never create evidence.
 
 Required capabilities:
 
@@ -248,6 +273,12 @@ history; their Tasks return to the unassigned group atomically. Completed stages
 remain readable and can be reopened. Project Description remains general context;
 a separate Desired Outcome/Definition of Done is a future product decision.
 
+The accepted Target Model extends this planning shape with domain-specific Goal
+Milestones plus Outcome Criteria and domain-specific Skill Milestones plus
+Evidence, Targets and Prerequisites. These are accepted target-model
+contracts, not currently implemented tables. No Milestone dependency engine is
+implied; execution blocking remains a Task Dependency concern.
+
 Project Detail defaults to a read-first workbench: understandable identity/current
 state, next step, tasks/progress, primary/additional artifacts and supporting context.
 Project editing, artifact roles and relation management appear only after explicit
@@ -272,7 +303,12 @@ or unlink never deletes the Project. No API, provider selector or embedded edito
 
 ### 5.6 Resources and Knowledge
 
-Resources are the canonical knowledge/reference hub; specialized tools may retain file ownership.
+Resources remain the canonical Life-OS reference and Work-Artifact identity
+hub. Obsidian owns long-form Knowledge Content and Notes. Life OS retains the
+Resource identity, short operational context, external locator, privacy/review
+metadata and all canonical Project/Goal/Skill/Task relations. A vault-relative
+path is a locator only; `life_os_id` is the stable identity for an explicitly
+bound Obsidian Note. No watcher, sync or write-back is implied.
 
 Required capabilities:
 
@@ -290,9 +326,10 @@ The binding definitions and cardinalities live in `DATA_MODEL.md`. Product short
 
 - **Task:** durable actionable commitment; it may be planned, scheduled and completed, but is not itself a time slot.
 - **Project:** finite multi-action outcome that organizes Tasks and may advance one Goal.
-- **Goal:** desired outcome with a horizon; it gives direction without duplicating Project or Task state.
+- **Goal:** desired outcome with a horizon; it gives direction without duplicating Project or Task state. Achievement requires explicit Outcome Criteria/Measures; Task completion is supporting context, not automatic Goal achievement.
 - **Skill:** capability being developed, practiced or demonstrated; progress is evidence-backed, not inferred from labels alone.
 - **Resource:** reusable knowledge or evidence related to work; it is not an executable action.
+- **Planning model:** Project Milestones, future Goal Milestones with Outcome Criteria and future Skill Milestones with Evidence/Targets/Prerequisites share service and UX principles without becoming one polymorphic table.
 - **Routine Template:** recurrence definition that creates explicit executable Task Occurrences.
 - **Task Occurrence:** the concrete executable instance considered by Today and Calendar.
 - **Schedule Block:** a time allocation for an occurrence; it does not own completion or domain facts.
@@ -399,8 +436,9 @@ There is no second operative copy of an external system.
 |---|---|---|
 | GitHub | repositories and code collaboration | Resource `link` with repository URL and project context; no repository manager, API or sync |
 | Sciebo / filesystem / LaTeX | actual document files and scientific writing | Projects, Tasks, Goals, Skills, Resource links and short evidence; no file ownership, uploads or connector |
+| Obsidian | long-form Knowledge Content and Notes | stable Resource identity, operational context and explicit Project/Goal/Skill/Task relations; no watcher, sync or write-back |
 | Spreadsheet | Inventory, Wishlist and flexible tabular data | existing Resource reference and optional Project/context; no spreadsheet engine or integration |
-| Life OS | context, links, planning, evidence and relations | canonical spine and daily/personal history |
+| Life OS | operational context, links, planning, evidence, relations and Journal | canonical operational spine, Resource identity and personal history |
 
 Coding, Education and Work retain their Area identities and remain usable in
 canonical entity context and existing filters. Their suites are hidden and
@@ -421,9 +459,11 @@ Existing specialized logs stay in their canonical tables; folding does not
 claim their history has been migrated or projected into Journal/Today.
 
 Quick Thought → Inbox → Outcome = Note → canonical Resource context.
-Notes already use `resources` with type `note`; their retained route is not a
-second active Notes app. Whether Notes should regain a separate active Personal
-projection remains open for later product reconciliation; no Notes data is removed. Existing types remain `note`, `learning`, `prompt`,
+Existing `resources` with type `note` remain Life-OS references and are not
+automatically migrated, deleted or associated with Obsidian content. Future
+long-form Knowledge Content belongs in Obsidian; any explicit association or
+migration requires its own contract. The retained route is not a second active
+Notes app and no Notes data is removed. Existing types remain `note`, `learning`, `prompt`,
 `research`, `link`, `source`, `snippet`, `decision`. Use existing title, body,
 URL, source, context, Area and supported relations. Literature/Paper/Website/
 External Document/GitHub Repository are concepts expressed with these existing
@@ -433,6 +473,8 @@ classifications, not new types. No parallel knowledge database or file storage.
 
 Journal is the sole active Personal surface: time-based personal documentation,
 reflection and history, with future personal tracking/BI views from real entries.
+Journal is fully Life-OS-owned. It is not general Knowledge Content, an
+Obsidian surface or a second planning system.
 Its existing Life OS workspace exposes today, recent entries and week/month
 history; further scope may include frequency, tags/context and relations where
 canonical. Mood and reviews remain
@@ -440,11 +482,10 @@ separate domain records. No gamification or fabricated activity.
 
 Recurring Task / Calendar → Journal Entry. Recurrence belongs to the established
 task/planning model, never to the Journal model itself. The canonical dated
-`journal_entries` lifecycle remains. R2-07 Journal Reconciliation remains a separate unresolved product scope under selected Decision A.
-The existing chronological surface remains available with user acceptance pending.
-That reconciliation decides full Life OS Journal ownership versus long-form text in Obsidian with
-Life OS date/context/relations/tracking. Neither a split nor migration is approved;
-existing model gaps below remain real.
+`journal_entries` lifecycle remains. The historical R2-07 ownership question is
+resolved by the accepted target: Journal stays in Life OS; the existing
+chronological surface remains available with user acceptance and model-depth
+gaps still tracked separately. No Journal-to-Obsidian migration is approved.
 
 `/life/journal` is a German one-page workspace: header/create CTA, factual
 Today/last-seven-days/current-month counts, searchable dated history and a
@@ -471,17 +512,19 @@ Review replacement. Recurrence stays in Task/Calendar.
 
 ### 5.13 Skill Map
 
-R2-08 Skill Map is retained/paused under selected Decision A. The former native
-IA target was Portfolio → Skills → Skill Map; its delivery obligation must be
-reconciled with R2-17 Skill / Goal Graph rather than creating a second graph.
-Skills are nodes; only real evidence may supply
-signals: evidence count/recency, completed Task relations, Resource relations
-and practice context. Never invent mastery percentages.
+R2-08 Skill Map is retained/paused and must be reconciled with R2-17 Skill /
+Goal Graph rather than creating a second graph. Skills are nodes; only real
+evidence may supply signals: evidence count/recency, completed Task relations,
+Resource relations and practice context. Never invent mastery percentages.
 
-Edges must be explicitly stored Skill–Skill relations or clearly labeled derived
-connections through shared Project, Task or Resource context. Clusters may later
-follow real relations; no decorative fake links. Gap Detection requires an
-explicit Target/Prerequisite model and is not planned for this slice.
+V1 Skill Graph relations are explicit `prerequisite` and `related` edges.
+`prerequisite` is directed, same-user and acyclic; `related` is a symmetric
+fachliche relationship. Do not infer edges from a shared Task, Project or
+Resource. The Current Graph is existing Skills plus explicit edges and
+Evidence; the Target Graph is an explicitly user-selected target with explicit
+Prerequisites. External roadmaps begin as Resource/Reference material, not
+automatic imports. Gap Detection requires this target/prerequisite/evidence
+semantics and is not implemented.
 
 Audit: `/coding/skill-map` is a retained Coding demo/empty Manual shell, not a
 canonical graph. No clean Portfolio Skill Map route currently exists. Document
@@ -494,20 +537,21 @@ Anti-Rot, Challenges, Shop and Entertainment are outside the active daily-compan
 
 ### 5.15 Personal AI Assistant
 
-The assistant is deferred. Do not continue AI1 during C1–A1. A future assistant remains informative first and action-capable only through reviewed tools.
+The assistant is deferred. The first productive AI capability is a read-only
+Morning Briefing built from a server-side, user-scoped structured projection.
+Its standard allowlist is current Tasks, Schedule/appointments, deadlines,
+Project/Goal/Skill metadata, Milestones, dependency/blocker reasons and
+appropriate non-sensitive operational Resource metadata. Journal content,
+full Obsidian content and system-restricted data are excluded by default;
+Health/Fitness/Nutrition and work-restricted data require explicit privacy
+opt-in. There is no direct model-to-database access, write, reprioritization,
+plan change or autonomous action. Credentials remain server-side; provider
+privacy/retention compliance and the absence of durable Life-OS prompt/response
+storage are gates before delivery, and no provider is selected by this
+contract.
 
-Required capabilities:
-
-- morning briefing;
-- evening review;
-- answer questions from structured Life OS data;
-- search Resources and context;
-- propose actions;
-- selected write tools such as create task, schedule task, log mood, complete meal and append review note;
-- explicit confirmation before every write;
-- server-only DeepSeek API credentials;
-- provider/model configuration that is not coupled to domain logic;
-- no direct database access for the LLM.
+Later conversational, proposal and confirmed-write capabilities require separate
+contracts. They must not be inferred from the read-only Morning Briefing target.
 
 ## 6. Canonical Data Domains
 
@@ -540,8 +584,8 @@ Planned or depth domains:
 
 - direct Task↔Skill context and complete core-graph backlinks;
 - free calendar events and richer Schedule Blocks, subject to C2 model decisions;
-- selected Decision A projection/client capabilities; command-sync, templates and Skill/Goal graph remain gated by their own Roadmap contracts;
-- Journal reconciliation and Skill Map disposition remain separately scoped under Decision A; no new Notes/Wiki/scientific-work suites;
+- selected Obsidian projection capabilities; command-sync, templates and Skill/Goal graph remain gated by their own future contracts;
+- Journal relation/Today depth and Skill Map implementation remain separately scoped; no new Notes/Wiki/scientific-work suites;
 - activity events and analytics projections;
 - AI conversations, tool proposals and confirmed tool results.
 
@@ -598,7 +642,10 @@ also USER ACCEPTED on 2026-09-07; R2-05 is closed; R2-09 precedes remaining Jour
 
 R2-09's Project identity, Artifact roles and Milestones remain the implemented
 foundation, USER ACCEPTED on 2026-09-09, alongside R2-10 Dependencies.
-Decision A is selected: Life OS remains canonical and Obsidian is the projection/client path. Controlled write-back and later sync remain separately gated. Life OS should explain what
+The accepted target separates ownership: Life OS remains canonical for
+operational context and planning, while Obsidian owns long-form Knowledge
+Content and Notes. Controlled write-back and later sync remain separately
+gated. Life OS should explain what
 work matters, why it is blocked, which paths can run in parallel and how to resume
 a Project after a pause.
 
@@ -626,11 +673,12 @@ Tasks, 2/5 Milestones, four blocked and six ready Tasks. Counts never automatica
 complete Milestones/Projects/Goals or imply mastery. Goals remain outcome/criteria-
 based; Skills remain evidence/practice-based.
 
-R2-11 is retained as historical decision evidence: it compared the Life OS baseline, Obsidian approaches and a bounded native graph candidate, after which Decision A was selected. Obsidian-first or Notion-first would require an explicit future ownership migration, never parallel writers. Graph remains optional depth, never required for the daily cockpit. Daily value, upkeep and local resource use
+R2-11 is retained as historical decision evidence: it compared the Life OS baseline, Obsidian approaches and a bounded native graph candidate. The accepted target now separates Life-OS operational truth from Obsidian knowledge-content ownership; no parallel operational writers are introduced. Graph remains optional depth, never required for the daily cockpit. Daily value, upkeep and local resource use
 are acceptance criteria; stop/reduce integration if it adds no practical value.
 
-Under selected Decision A: Life OS owns operational work state, Obsidian
-provides visual/knowledge views. Start with regenerable one-way projection;
+Under the accepted target: Life OS owns operational work state and Resource
+identity, while Obsidian owns long-form knowledge content. Start with
+regenerable one-way projection;
 selected authenticated commands come only after R2-14 security/conflict acceptance.
 Free notes, exploratory edges and personal layout stay user-owned. Later templates
 require preview, versioned atomic/idempotent creation and no automatic changes to

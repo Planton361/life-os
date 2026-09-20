@@ -7,13 +7,38 @@ Quelle der Wahrheit: Diese Datei.
 Gilt für: Auth, RLS, Validierung, Secrets, Agenten/MCP.  
 Nicht gilt für: Rechtsberatung.
 
-## Durable work-graph / client security decision
+## Durable work-graph / knowledge ownership security decision
 
-Decision A is binding: Life OS / PostgreSQL remains canonical. Obsidian is a projection/client and receives no direct database credentials or privileged access. Free Vault/Canvas content is untrusted presentation/user input unless explicitly promoted through a validated Life OS command.
+Product Target v0.4 is accepted: Life OS / PostgreSQL owns operational truth
+and Resource/reference identity; Obsidian owns long-form Knowledge Content and
+Notes. Obsidian receives no direct database credentials or privileged access.
+Free Vault/Canvas content is untrusted input and cannot become an operational
+relation without a separately accepted, validated Life OS command contract.
 
 Any write-back requires a separately accepted security/conflict contract covering pairing, authentication, revocation, permissions, origin/endpoint scope, credential storage, plugin trust, field ownership, expected revision, idempotency, conflicts, retry, offline replay and delete semantics.
 
 Current work status is not a security fact; read it from GitHub Project #3/Issues and `ROADMAP.md`.
+
+## Accepted target-model security boundaries
+
+- Obsidian content ownership is not database or Vault write permission. A
+  vault-relative path is a locator only; `life_os_id` is stable identity. Absolute
+  personal Vault paths are not portable domain identity, and missing/colliding
+  IDs never authorize filename/path matching.
+- Existing `type=note` Resources remain intact. No automatic association,
+  migration, watcher, sync or write-back is authorized by this target.
+- New Skill Graph relations must be same-user and explicit. `prerequisite` is
+  directed and acyclic; `related` is symmetric. Shared Tasks, Projects or
+  Resources never create implicit edges.
+- AI is server-side only and receives an allowlisted, user-scoped structured
+  projection for the read-only Morning Briefing. Journal content, full
+  Obsidian content and system-restricted data are excluded by default.
+  Health/Fitness/Nutrition and work-restricted data require explicit privacy
+  opt-in. No direct DB credentials, model writes, reprioritization, plan change
+  or autonomous action is allowed.
+- Provider selection is a later gate: credentials stay server-side, provider
+  privacy/retention must be accepted, and Life OS does not durably store prompts
+  or responses by default.
 
 ## Regeln
 
@@ -52,8 +77,8 @@ Die historische R2-11-Evaluation verwendete ausschließlich synthetische Daten; 
 ist keine automatische Vertrauensfreigabe für persönliche Inhalte.
 
 Keine Service-Role-Keys, DB-Passwörter oder andere Secrets in Plugins, Obsidian
-oder Vault-Dateien. Kein direkter PostgreSQL-/Data-API-Writer aus Obsidian. Unter
-Decision A bleibt Life OS kanonisch; freie Notizen/Canvas-Kanten sind unvertrauens-
+oder Vault-Dateien. Kein direkter PostgreSQL-/Data-API-Writer aus Obsidian. Life
+OS bleibt für operative Wahrheit kanonisch; freie Notizen/Canvas-Kanten sind unvertrauens-
 würdiger Input und werden nur nach expliziter Auswahl durch validierte Commands
 zu Fachrelationen. Persönliche Inhalte und Layout dürfen nicht überschrieben
 werden; Export-/Dateipfade müssen auf die ausdrücklich gewählte Projektionsregion

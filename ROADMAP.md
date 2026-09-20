@@ -5,9 +5,16 @@
 **Design truth:** Life OS – Linear Calm Dark Command Center / Dashboard V5
 **Detailed status:** `docs/product/capability-registry.md`
 **Completed sequence:** C1 → C2 → C3 → K1 → H1/H2 → N1 → A1 → Z1 (technical baseline)
-**Current Product Context:** Product Reorientation
+**Current Product Context:** Product Reorientation — Target Model Accepted / Product Plan Pending
 
-**Product Reorientation:** There is currently no approved delivery sequence. Concrete work starts only from confirmed GitHub Issues and Project items. Issue #3 / R2-13 is preserved pre-reorientation work, not approved next delivery. The next product direction must first be clarified through DISCOVER / RESEARCH / DECIDE-DESIGN. This roadmap may explicitly have no delivery block; it does not mirror normal Issue/Project transitions.
+**Product Reorientation:** Product Target v0.4 and the Target Model Decision
+Package are accepted, so a new product plan may now be derived. There is still
+no approved delivery sequence. Concrete work starts only from confirmed GitHub
+Issues and Project items. Issue #3 / R2-13 is preserved pre-reorientation work,
+not approved next delivery. Any plan must first be created through
+DISCOVER / RESEARCH / DECIDE-DESIGN and accepted separately. This roadmap may
+explicitly have no delivery block; it does not mirror normal Issue/Project
+transitions.
 
 ## 1. Product Contract
 
@@ -33,8 +40,8 @@ The existing application is the foundation. This roadmap does not restart the pr
 - Nutrition: recipes, ingredients, meals, weekly planning and grocery are connected; R2-05 fully USER ACCEPTED on 2026-09-07.
 - Health & Fitness: Mood, Sleep, Weight, Habits, Running and Strength are connected; R2-05 fully USER ACCEPTED on 2026-09-07.
 - Coding, Education and Work suites plus Notes, Inventory and Wishlist are hidden/retained or folded/externalized; Areas remain canonical context.
-- R2-09 and R2-10 are USER ACCEPTED on 2026-09-09; R2-11 is USER ACCEPTED with Decision A; R2-12 is USER ACCEPTED. R2-13 has no committed capability on the integration branch; earlier local R2-13 work is separately preserved and not approved. R2-14–R2-17 are historical product ideas from the pre-reorientation Option A planning, not current operative or binding future work. Journal and Skill Map await explicit reconciliation before final R2-06 acceptance.
-- Product Reorientation is the current product context; no delivery successor is currently approved.
+- R2-09 and R2-10 are USER ACCEPTED on 2026-09-09; R2-11 is USER ACCEPTED with Decision A; R2-12 is USER ACCEPTED. R2-13 has no committed capability on the integration branch; earlier local R2-13 work is separately preserved and not approved. R2-14–R2-17 are historical product ideas from the pre-reorientation Option A planning, not current operative or binding future work. The accepted target keeps Journal Life-OS-owned and defines Skill Graph semantics, while their implementation/depth gaps remain separate.
+- Product Reorientation has an accepted target model but no approved delivery successor or sequence.
 - Personal AI Assistant: not started as a production capability.
 - Operation: local-first ready; private remote is optional and not active.
 
@@ -878,7 +885,8 @@ or backend evidence cannot alone restore a `CONNECTED` surface claim.
 ## 4.12 R2 – Product Reality Recovery & Surface Completion
 
 **Status:** R2-00 completed (contract rebaseline). **Current Product Context:**
-Product Reorientation. No delivery slice is currently approved.
+Product Reorientation — Target Model Accepted / Product Plan Pending. No
+delivery slice is currently approved.
 
 **R2-01 status:** Completed; explicitly USER ACCEPTED on 2026-09-06.
 Existing control, browser, layout and migration evidence is retained in the
@@ -916,11 +924,11 @@ Implementation commit: `ec3c62f`. Existing evidence is preserved; no functionali
 changes belong to this administrative closure.
 
 **R2-11 status:** Closed; explicitly USER ACCEPTED on 2026-09-10.
-**Decision A:** Life OS / PostgreSQL remains canonical operational truth;
-Obsidian is the Visual / Knowledge / Graph client. Obsidian-first is NO-GO
-for now; native Graph remains fallback. Retained synthetic Lab evidence is
-historical evidence, never Product Runtime. The explicit user decision closes
-the gate; it does not fabricate missing human pilot measurements.
+**Accepted target ownership:** Life OS / PostgreSQL remains canonical for
+operational context and Resource identity; Obsidian owns long-form Knowledge
+Content and Notes. Retained synthetic Lab evidence is historical evidence,
+never Product Runtime. The explicit user decision closes the gate; it does not
+fabricate missing human pilot measurements.
 
 **R2-12 status:** Closed; explicitly USER ACCEPTED on 2026-09-10.
 Readable projection implementation `e821a23` and existing evidence are retained.
@@ -941,8 +949,10 @@ Prepare the human comparison without treating technical navigation as user
 acceptance. Obsidian requires a clear additional understanding benefit and
 acceptable maintenance. That historical comparison predates the later explicit R2-11/R2-12 acceptance decisions and remains evidence only.
 
-**R2-07 status:** Paused – Journal Reconciliation; resumes only under an explicit reconciled scope. Decision A is already selected and does not itself resume Journal work.
-USER ACCEPTANCE STATUS: PENDING. Journal is neither deleted nor accepted.
+**R2-07 status:** Journal ownership is resolved in the accepted target: Journal
+remains fully Life-OS-owned. The chronological workspace and current
+control/browser evidence remain implementation evidence; missing relations,
+Today projection and final user acceptance are separate depth gates.
 The canonical chronological workspace implementation and current control/browser
 evidence are recorded in the Capability Registry; implementation is not closure.
 
@@ -1036,7 +1046,14 @@ future successor through a new accepted direction and GitHub work contract.
     reload, bounds/whitespace, console/hydration, screenshots, Design-Taste and
     explicit USER ACCEPTED. Hidden legacy suites remain outside completion.
 
-R2-01 through R2-05, R2-09 and R2-10 remain accepted. R2-11 is USER ACCEPTED; Decision A is selected. R2-12 is USER ACCEPTED. R2-13 has no committed capability on the integration branch; earlier local work is separately preserved and not approved. R2-14–R2-17 are historical pre-reorientation ideas, not current operative or binding future work. Product Reorientation is the current product context and no delivery successor is approved. Operative task status lives in GitHub Project #3 and Issue #3. Pausing R2-07/R2-08 changes future delivery,
+R2-01 through R2-05, R2-09 and R2-10 remain accepted. R2-11 is USER ACCEPTED;
+the accepted target separates Life-OS operational truth from Obsidian
+knowledge-content ownership. R2-12 is USER ACCEPTED. R2-13 has no committed
+capability on the integration branch; earlier local work is separately preserved
+and not approved. R2-14–R2-17 are historical pre-reorientation ideas, not
+current operative or binding future work. Product Reorientation is the current
+product context and no delivery successor is approved. Operative task status
+lives in GitHub Project #3 and Issue #3. Pausing R2-07/R2-08 changes future delivery,
 not existing navigation, implementation evidence or data. R2-06 cannot silently
 skip unresolved decisions; exclusions require explicit user deferral.
 
@@ -1263,13 +1280,13 @@ depth; they were deliberately not part of C2 closure.
 
 ### AI1 – Personal Assistant
 
-- deferred; do not continue during the active C1→A1 sequence;
-- Morning Briefing;
-- Evening Review;
-- structured read tools;
-- confirmed write tools;
-- DeepSeek provider boundary;
-- no direct LLM database access.
+- target context accepted, but implementation remains deferred;
+- first capability target: server-side, user-scoped read-only Morning Briefing;
+- standard read allowlist and privacy exclusions are defined in the active
+  contracts; no direct LLM database access;
+- provider privacy/retention and credentials remain a gate before delivery;
+- Evening Review, structured proposals and confirmed write tools require later
+  contracts and do not create a current delivery sequence.
 
 ### I1 – Integrations & Analytics
 
@@ -1385,7 +1402,12 @@ Deferred does not mean removed. It means the prerequisite model, privacy or inte
 
 ## 11. Roadmap Maintenance Rule
 
-This file owns the permanent product-completion plan, accepted dependencies and current product context. The current context may explicitly be Product Reorientation and may have no approved delivery block. It is neither the operative queue nor an implementation log.
+This file owns the permanent product-completion plan, accepted dependencies and
+current product context. The current context may explicitly be Product
+Reorientation — Target Model Accepted / Product Plan Pending and may have no
+approved delivery block. An accepted target model permits deriving a new plan;
+it does not itself create a delivery sequence. This file is neither the
+operative queue nor an implementation log.
 
 - Normal feature work updates code/tests, the Capability Registry when capability truth changed, and its GitHub Issue/PR/Project status.
 - Change the permanent plan only when its sequence, block outcome, dependency or material functional scope changes.
