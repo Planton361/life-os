@@ -151,7 +151,7 @@ function outcomeResult(
         status: "error",
         message:
           result.error?.message ??
-          "Die Goal-Änderung konnte nicht gespeichert werden.",
+          "Die Ziel-Änderung konnte nicht gespeichert werden.",
       };
 }
 
@@ -419,7 +419,7 @@ async function runGoalOutcomeOperation(
     return parsed.success
       ? outcomeResult(
           await addGoalProjectSupport(auth.client, parsed.data),
-          "Project als Support-Kontext verknüpft.",
+          "Projekt als unterstützender Kontext verknüpft.",
         )
       : invalid;
   }
@@ -433,7 +433,7 @@ async function runGoalOutcomeOperation(
     return parsed.success
       ? outcomeResult(
           await addGoalTaskSupport(auth.client, parsed.data),
-          "Task als Support-Kontext verknüpft.",
+          "Aufgabe als unterstützender Kontext verknüpft.",
         )
       : invalid;
   }
@@ -482,7 +482,7 @@ async function runGoalOutcomeOperation(
     return parsed.success
       ? outcomeResult(
           await amendGoalAchievementEvent(auth.client, parsed.data),
-          "Goal-Verlauf ergänzt.",
+          "Ziel-Verlauf ergänzt.",
         )
       : invalid;
   }
@@ -499,7 +499,7 @@ async function runGoalOutcomeOperation(
     return parsed.success
       ? outcomeResult(
           await addGoalAchievementEvidence(auth.client, parsed.data),
-          "Goal-Beleg gespeichert.",
+          "Ziel-Beleg gespeichert.",
         )
       : invalid;
   }
@@ -718,7 +718,12 @@ export async function workbenchOperation(
       parsed.data,
     );
     if (r.ok)
-      result = { status: "success", message: "Task-Beziehung gespeichert." };
+      result = {
+        status: "success",
+        message: form.has("goalId")
+          ? "Aufgaben-Beziehung gespeichert."
+          : "Task-Beziehung gespeichert.",
+      };
     else if (r.error.message.includes("DEPENDENCY_"))
       result = {
         status: "error",
@@ -735,7 +740,12 @@ export async function workbenchOperation(
       parsed.data,
     );
     if (r.ok)
-      result = { status: "success", message: "Project-Beziehung gespeichert." };
+      result = {
+        status: "success",
+        message: form.has("goalId")
+          ? "Projekt-Beziehung gespeichert."
+          : "Project-Beziehung gespeichert.",
+      };
   }
   if (result.status === "success") refresh();
   return result;

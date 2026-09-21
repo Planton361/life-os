@@ -7,9 +7,7 @@ function outcome(page: Page) {
   return page.locator('[data-goal-outcome="workbench"]');
 }
 
-async function createSessionClient(
-  context: BrowserContext,
-) {
+async function createSessionClient(context: BrowserContext) {
   const cookie = (await context.cookies()).find((item) =>
     item.name.includes("auth-token"),
   );
@@ -24,7 +22,8 @@ async function createSessionClient(
   );
   await api.auth.setSession(session);
   const user = await api.auth.getUser();
-  if (user.error || !user.data.user) throw new Error("Authenticated API user missing");
+  if (user.error || !user.data.user)
+    throw new Error("Authenticated API user missing");
   return { api, userId: user.data.user.id };
 }
 
@@ -34,7 +33,7 @@ test("Goal capture stays lightweight, optional, draft-first, and reload-stable",
   const stamp = Date.now();
   await signUpTechnicalManualUser(page, "pp1-goal-capture", stamp);
   await page.goto("/goals/new");
-  const titleOnly = page.locator('form[aria-label="Goal erstellen"]');
+  const titleOnly = page.locator('form[aria-label="Ziel erstellen"]');
   await expect(titleOnly.getByLabel("Titel", { exact: true })).toBeVisible();
   await expect(
     titleOnly.getByLabel("Was möchtest du erreichen?", { exact: true }),
@@ -45,15 +44,25 @@ test("Goal capture stays lightweight, optional, draft-first, and reload-stable",
     exact: true,
   });
   await expect(optional).toHaveAttribute("aria-expanded", "false");
-  await titleOnly.getByLabel("Titel", { exact: true }).fill(`Title-only ${stamp}`);
-  await titleOnly.getByRole("button", { name: "Goal erstellen" }).click();
-  await expect(page.getByText("Goal erstellt.", { exact: true })).toBeVisible();
-  await expect(outcome(page)).toContainText("Stand: Entwurf");
+  await titleOnly
+    .getByLabel("Titel", { exact: true })
+    .fill(`Title-only ${stamp}`);
+  await titleOnly.getByRole("button", { name: "Ziel erstellen" }).click();
+  await expect(page.getByText("Ziel erstellt.", { exact: true })).toBeVisible();
+  await expect(outcome(page).locator("[data-goal-status]")).toHaveText(
+    "Entwurf",
+  );
   await page.reload();
   await expect(
     page.getByRole("heading", { name: `Title-only ${stamp}`, exact: true }),
   ).toBeVisible();
-  await expect(outcome(page)).toContainText("Stand: Entwurf");
+  await expect(outcome(page).locator("[data-goal-status]")).toHaveText(
+    "Entwurf",
+  );
+  await page.goto("/goals");
+  await expect(
+    page.getByRole("heading", { name: "Ziele · 1", exact: true }),
+  ).toBeVisible();
 });
 
 test("Goal optional narrative and metadata persist after reload", async ({
@@ -62,7 +71,7 @@ test("Goal optional narrative and metadata persist after reload", async ({
   const stamp = Date.now();
   await signUpTechnicalManualUser(page, "pp1-goal-optional", stamp);
   await page.goto("/goals/new");
-  const form = page.locator('form[aria-label="Goal erstellen"]');
+  const form = page.locator('form[aria-label="Ziel erstellen"]');
   await form.getByLabel("Titel", { exact: true }).fill(`Optional ${stamp}`);
   await form
     .getByLabel("Was möchtest du erreichen?", { exact: true })
@@ -77,13 +86,19 @@ test("Goal optional narrative and metadata persist after reload", async ({
     .fill(`A meaningful reason ${stamp}`);
   await form.getByLabel("Horizont", { exact: true }).selectOption("quarter");
   await form.getByLabel("Zieldatum", { exact: true }).fill("2027-01-02");
-  await form.getByRole("button", { name: "Goal erstellen" }).click();
-  await expect(page.getByText("Goal erstellt.", { exact: true })).toBeVisible();
-  await expect(outcome(page)).toContainText("Stand: Entwurf");
+  await form.getByRole("button", { name: "Ziel erstellen" }).click();
+  await expect(page.getByText("Ziel erstellt.", { exact: true })).toBeVisible();
+  await expect(outcome(page).locator("[data-goal-status]")).toHaveText(
+    "Entwurf",
+  );
   await page.reload();
   await expect(outcome(page)).toContainText(`A concrete outcome ${stamp}`);
-  await expect(outcome(page)).toContainText(`Warum: A meaningful reason ${stamp}`);
-  await expect(outcome(page)).toContainText("Horizont: quarter · Zieltermin 2027-01-02");
+  await expect(outcome(page)).toContainText(
+    `Warum: A meaningful reason ${stamp}`,
+  );
+  await expect(outcome(page)).toContainText("Quartal");
+  await expect(outcome(page)).toContainText("Zieltermin");
+  await expect(outcome(page)).toContainText("2027");
 });
 
 test("Goal next step follows canonical readiness and releases after predecessor completion", async ({
@@ -164,7 +179,9 @@ test("Goal next step follows canonical readiness and releases after predecessor 
   await dependencies
     .getByRole("button", { name: "Dependency speichern", exact: true })
     .click();
-  await expect(page.getByText("Dependency gespeichert.", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Dependency gespeichert.", { exact: true }),
+  ).toBeVisible();
 
   await page.goto(`/goals/${goal!.id}`);
   const goalOutcome = outcome(page);
@@ -187,8 +204,12 @@ test("Goal next step follows canonical readiness and releases after predecessor 
   );
 
   await page.goto(`/tasks/${predecessor.id}`);
-  await page.getByRole("button", { name: "Task abschließen", exact: true }).click();
-  await expect(page.getByText("Task abgeschlossen.", { exact: true })).toBeVisible();
+  await page
+    .getByRole("button", { name: "Task abschließen", exact: true })
+    .click();
+  await expect(
+    page.getByText("Task abgeschlossen.", { exact: true }),
+  ).toBeVisible();
   await page.reload();
   await expect(
     page.getByRole("button", { name: "Task wieder öffnen", exact: true }),

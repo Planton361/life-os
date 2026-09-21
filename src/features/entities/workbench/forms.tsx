@@ -117,6 +117,28 @@ function Field({
 const opts = (values: readonly string[]) =>
   values.map((id) => ({ id, title: id }));
 
+const goalStatusOptions = [
+  { id: "draft", title: "Entwurf" },
+  { id: "active", title: "Aktiv" },
+  { id: "paused", title: "Pausiert" },
+];
+
+const goalHorizonOptions = [
+  { id: "week", title: "Woche" },
+  { id: "month", title: "Monat" },
+  { id: "quarter", title: "Quartal" },
+  { id: "year", title: "Jahr" },
+  { id: "someday", title: "Irgendwann" },
+];
+
+function visibleEntityLabel(kind: WorkbenchKind, goalMilestoneContext = false) {
+  if (kind === "goal" || (goalMilestoneContext && kind === "project")) {
+    return kind === "goal" ? "Ziel" : "Projekt";
+  }
+  if (goalMilestoneContext && kind === "task") return "Aufgabe";
+  return entityLabels[kind];
+}
+
 export function GoalCaptureForm({ areas }: { areas: Option[] }) {
   const hydrated = useHydrated();
   const router = useRouter();
@@ -126,7 +148,7 @@ export function GoalCaptureForm({ areas }: { areas: Option[] }) {
   const values: FieldValues = {};
   return (
     <form
-      aria-label="Goal erstellen"
+      aria-label="Ziel erstellen"
       className="grid gap-6"
       onSubmit={(event) => {
         event.preventDefault();
@@ -146,7 +168,7 @@ export function GoalCaptureForm({ areas }: { areas: Option[] }) {
     >
       <fieldset disabled={!hydrated || pending} className="grid gap-6">
         <section className="grid gap-4">
-          <h2 className="text-lg text-[var(--accent-cyan)]">Goal festhalten</h2>
+          <h2 className="text-lg text-[var(--accent-cyan)]">Ziel festhalten</h2>
           <Field name="title" label="Titel" values={values} required />
           <Field
             name="description"
@@ -155,7 +177,7 @@ export function GoalCaptureForm({ areas }: { areas: Option[] }) {
             type="textarea"
           />
           <p className="text-sm text-[var(--text-muted)]">
-            Neue Goals starten als Entwurf. Details kannst du später ergänzen.
+            Neue Ziele starten als Entwurf. Details kannst du später ergänzen.
           </p>
         </section>
         <ManagementDisclosure label="Weitere Angaben (optional)">
@@ -170,14 +192,19 @@ export function GoalCaptureForm({ areas }: { areas: Option[] }) {
             <Choice
               name="horizon"
               label="Horizont"
-              options={opts(["week", "month", "quarter", "year", "someday"])}
+              options={goalHorizonOptions}
             />
-            <Field name="targetDate" label="Zieldatum" values={values} type="date" />
+            <Field
+              name="targetDate"
+              label="Zieldatum"
+              values={values}
+              type="date"
+            />
           </div>
         </ManagementDisclosure>
         <div className="border-t border-[var(--border-subtle)] pt-5">
           <button className={actionClass} type="submit">
-            {pending ? "Speichern …" : "Goal erstellen"}
+            {pending ? "Speichern …" : "Ziel erstellen"}
           </button>
         </div>
       </fieldset>
@@ -229,6 +256,10 @@ export function EntityForm({
   const closeDisclosure = useCloseManagementDisclosure();
   const [pending, start] = useTransition();
   const [error, setError] = useState("");
+  const formEntityLabel = visibleEntityLabel(
+    kind,
+    Boolean(goalMilestoneContext),
+  );
   const field = (
     name: string,
     label: string,
@@ -257,7 +288,7 @@ export function EntityForm({
   );
   return (
     <form
-      aria-label={`${entityLabels[kind]} ${id ? "bearbeiten" : "erstellen"}`}
+      aria-label={`${formEntityLabel} ${id ? "bearbeiten" : "erstellen"}`}
       className="grid gap-6"
       onSubmit={(event) => {
         event.preventDefault();
@@ -424,22 +455,14 @@ export function EntityForm({
                 <>
                   {values.status === "achieved" ? (
                     <p className="text-sm">
-                      Status: achieved · über den expliziten Outcome-Flow wieder
-                      öffnen.
+                      Status: Erreicht · über „Wieder öffnen“ im Ergebnisbereich
+                      wieder öffnen.
                     </p>
                   ) : (
-                    choice(
-                      "status",
-                      "Status",
-                      opts(["draft", "active", "paused"]),
-                    )
+                    choice("status", "Status", goalStatusOptions)
                   )}
-                  {choice(
-                    "horizon",
-                    "Horizon",
-                    opts(["week", "month", "quarter", "year", "someday"]),
-                  )}
-                  {field("targetDate", "Target Date", "date")}
+                  {choice("horizon", "Horizont", goalHorizonOptions)}
+                  {field("targetDate", "Zieldatum", "date")}
                 </>
               )}
               {kind === "skill" && (
@@ -463,7 +486,7 @@ export function EntityForm({
                   choice("projectId", "Project", projects)
                 ) : goalMilestoneContext ? (
                   <p className="text-sm text-[var(--text-muted)]">
-                    Direkter Task am Goal; kein Project-Kontext.
+                    Direkte Aufgabe am Ziel; kein Projekt-Kontext.
                   </p>
                 ) : (
                   <>
@@ -493,7 +516,7 @@ export function EntityForm({
                 ))}
               {goalMilestoneContext ? (
                 <div className="grid gap-2 text-sm">
-                  <span>Goal / Etappe</span>
+                  <span>Ziel / Etappe</span>
                   <p className="text-[var(--text-secondary)]">
                     {goalMilestoneContext.goalTitle} ·{" "}
                     {goalMilestoneContext.milestoneTitle}
@@ -525,7 +548,7 @@ export function EntityForm({
               ? "Speichern …"
               : id
                 ? "Änderungen speichern"
-                : `${entityLabels[kind]} erstellen`}
+                : `${formEntityLabel} erstellen`}
           </button>
         </div>
       </fieldset>

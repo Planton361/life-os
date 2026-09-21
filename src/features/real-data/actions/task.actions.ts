@@ -611,7 +611,7 @@ export async function createPortfolioTaskAction(
     const goalMilestoneId = optionalFormString(formData, "goalMilestoneId");
     if (!goalId || projectId || !goalMilestoneId || !z.uuid().safeParse(goalId).success || !z.uuid().safeParse(goalMilestoneId).success) {
       return {
-        message: "Eine Etappen-Task benötigt genau ein aktives Goal und keine Project-Zuordnung.",
+        message: "Eine Etappen-Aufgabe benötigt genau ein aktives Ziel und keine Projekt-Zuordnung.",
         status: "error",
       };
     }
@@ -637,7 +637,7 @@ export async function createPortfolioTaskAction(
     }
     revalidateTaskProjectionRoutes(contextual.data.id);
     return {
-      message: "Task aus der Etappe erstellt.",
+      message: "Aufgabe aus der Etappe erstellt.",
       status: "success",
       taskId: contextual.data.id,
     };
