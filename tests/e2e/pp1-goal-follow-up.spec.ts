@@ -59,6 +59,10 @@ test("Goal capture stays lightweight, optional, draft-first, and reload-stable",
   await expect(outcome(page).locator("[data-goal-status]")).toHaveText(
     "Entwurf",
   );
+  await page.goto("/goals");
+  await expect(
+    page.getByRole("heading", { name: "Ziele · 1", exact: true }),
+  ).toBeVisible();
 });
 
 test("Goal optional narrative and metadata persist after reload", async ({

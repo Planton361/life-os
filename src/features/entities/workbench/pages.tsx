@@ -123,7 +123,7 @@ export async function WorkbenchList({
     return (
       <EntityWorkbenchShell
         kind={kind}
-        title={`${kind === "goal" ? "Ziel" : entityLabels[kind]}s`}
+        title={kind === "goal" ? "Ziele" : `${entityLabels[kind]}s`}
       >
         {authMessage}
       </EntityWorkbenchShell>
@@ -147,7 +147,11 @@ export async function WorkbenchList({
   return (
     <EntityWorkbenchShell
       kind={kind}
-      title={`${kind === "goal" ? "Ziel" : entityLabels[kind]}s · ${rows.length}`}
+      title={
+        kind === "goal"
+          ? `Ziele · ${rows.length}`
+          : `${entityLabels[kind]}s · ${rows.length}`
+      }
     >
       <div>
         <Link
