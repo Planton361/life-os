@@ -8,13 +8,15 @@ async function createGoal(page: Page, title: string) {
   await form.getByRole("button", { name: "Goal erstellen" }).click();
   await expect(page.getByText("Goal erstellt.", { exact: true })).toBeVisible();
   await expect(page).toHaveURL(/\/goals\/[0-9a-f-]{36}$/i);
-  await expect(page.locator('[data-goal-outcome="workbench"]')).toContainText(
-    "Stand: Entwurf",
-  );
+  await expect(
+    page.locator('[data-goal-outcome="workbench"] [data-goal-status]'),
+  ).toHaveText("Entwurf");
   const edit = await openGoalEdit(page);
   await edit.getByLabel("Status", { exact: true }).selectOption("active");
   await edit.getByRole("button", { name: "Änderungen speichern" }).click();
-  await expect(page.getByText("Goal aktualisiert.", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Goal aktualisiert.", { exact: true }),
+  ).toBeVisible();
   const goalId = page.url().match(/\/goals\/([^/?#]+)/)?.[1];
   expect(goalId).toBeTruthy();
   return goalId!;
@@ -46,6 +48,10 @@ async function createTask(page: Page, title: string) {
   return taskId!;
 }
 
+function outcome(page: Page) {
+  return page.locator('[data-goal-outcome="workbench"]');
+}
+
 async function openDisclosureForm(
   page: Page,
   triggerLabel: string,
@@ -54,10 +60,24 @@ async function openDisclosureForm(
   const outcome = page.locator('[data-goal-outcome="workbench"]');
   const form = outcome.locator(`form[aria-label="${formLabel}"]`);
   if (!(await form.isVisible())) {
-    const trigger = outcome.getByRole("button", {
-      name: triggerLabel,
-      exact: true,
-    });
+    if (triggerLabel === "Unterstützende Arbeit verwalten") {
+      const options = outcome.getByRole("button", {
+        name: "Weitere Optionen",
+        exact: true,
+      });
+      if ((await options.getAttribute("aria-expanded")) !== "true") {
+        await options.click();
+      }
+    }
+    const trigger =
+      triggerLabel === "Ziel wieder öffnen"
+        ? outcome
+            .locator("button[aria-expanded]")
+            .filter({ hasText: "Wieder öffnen" })
+        : outcome.getByRole("button", {
+            name: triggerLabel,
+            exact: true,
+          });
     await expect(trigger).toHaveAttribute("aria-expanded", "false");
     await trigger.click();
     await expect(trigger).toHaveAttribute("aria-expanded", "true");
@@ -71,35 +91,40 @@ async function openMilestoneCreate(page: Page) {
 }
 
 async function openCriterionCreate(page: Page) {
-  return openDisclosureForm(
-    page,
-    "Erfolgskriterium hinzufügen",
-    "Erfolgskriterium erstellen",
+  const workbench = outcome(page);
+  const form = workbench.locator(
+    'form[aria-label="Erfolgskriterium erstellen"]',
   );
+  if (!(await form.isVisible())) {
+    const trigger = workbench.getByRole("button", {
+      name: /^(Erfolg definieren|Erfolgskriterium hinzufügen)$/,
+    });
+    await expect(trigger).toHaveAttribute("aria-expanded", "false");
+    await trigger.click();
+    await expect(trigger).toHaveAttribute("aria-expanded", "true");
+  }
+  await expect(form).toBeVisible();
+  return form;
 }
 
 async function openGoalReview(page: Page) {
-  return openDisclosureForm(
-    page,
-    "Review verwalten",
-    "Ziel explizit erreichen",
-  );
+  return openDisclosureForm(page, "Ergebnis prüfen", "Ergebnis bestätigen");
 }
 
 async function expectGoalReviewDisabled(page: Page) {
   const form = await openGoalReview(page);
   await expect(
-    form.getByRole("button", { name: "Ziel explizit erreichen" }),
+    form.getByRole("button", { name: "Ergebnis bestätigen" }),
   ).toBeDisabled();
   const trigger = page
     .locator('[data-goal-outcome="workbench"]')
-    .getByRole("button", { name: "Review verwalten", exact: true });
+    .getByRole("button", { name: "Ergebnis prüfen", exact: true });
   await trigger.click();
   await expect(trigger).toHaveAttribute("aria-expanded", "false");
 }
 
 async function openGoalEdit(page: Page) {
-  return openDisclosureForm(page, "Ziel bearbeiten", "Goal bearbeiten");
+  return openDisclosureForm(page, "Bearbeiten", "Goal bearbeiten");
 }
 
 async function openMilestoneManagement(page: Page, card: Locator) {
@@ -152,15 +177,15 @@ test("PP1 goal outcome planning is a complete Manual vertical slice", async ({
   await expect(outcome).toContainText("Nächster Schritt");
   await expect(outcome).toContainText("Weg zum Ziel");
   await expect(outcome).toContainText("Erfolg erkennen");
-  await expect(outcome).toContainText("Review-Bereitschaft: offen");
+  await expect(outcome).toContainText("Erfolg definieren");
+  await expect(outcome).not.toContainText("Goal Review");
+  await expect(outcome).not.toContainText("0 von 0");
   await expect(
     outcome.locator('form[aria-label="Etappe erstellen"]'),
   ).toBeHidden();
   await expect(
     outcome.locator('form[aria-label="Erfolgskriterium erstellen"]'),
   ).toBeHidden();
-  await expectGoalReviewDisabled(page);
-
   let milestoneForm = await openMilestoneCreate(page);
   await milestoneForm.getByLabel("Titel").fill(milestoneOneTitle);
   await milestoneForm.getByLabel("Startstatus").selectOption("active");
@@ -319,7 +344,7 @@ test("PP1 goal outcome planning is a complete Manual vertical slice", async ({
     page.getByText("Etappenstatus gespeichert.", { exact: true }),
   ).toBeVisible();
   await page.reload();
-  await expect(outcome).toContainText("Review-Bereitschaft: bereit");
+  await expect(outcome).toContainText("Ergebnis bereit");
 
   const projectTitle = `PP1 support project ${stamp}`;
   const projectId = await createProject(page, projectTitle);
@@ -353,7 +378,7 @@ test("PP1 goal outcome planning is a complete Manual vertical slice", async ({
   await page.goto(`/goals/${goalId}`);
   await openDisclosureForm(
     page,
-    "Support-Kontext verwalten",
+    "Unterstützende Arbeit verwalten",
     "Project verknüpfen",
   );
   const projectSupportForm = outcome.locator(
@@ -373,7 +398,7 @@ test("PP1 goal outcome planning is a complete Manual vertical slice", async ({
   ).toBeVisible();
   await openDisclosureForm(
     page,
-    "Support-Kontext verwalten",
+    "Unterstützende Arbeit verwalten",
     "Task verknüpfen",
   );
   const taskSupportForm = outcome.locator('form[aria-label="Task verknüpfen"]');
@@ -393,26 +418,27 @@ test("PP1 goal outcome planning is a complete Manual vertical slice", async ({
 
   const achieve = await openGoalReview(page);
   page.once("dialog", (dialog) => dialog.accept());
-  await achieve
-    .getByRole("button", { name: "Ziel explizit erreichen" })
-    .click();
+  await achieve.getByRole("button", { name: "Ergebnis bestätigen" }).click();
   await expect(page.getByText("Ziel erreicht.", { exact: true })).toBeVisible();
   await page.reload();
   await expect(outcome).toContainText("Erreichtes Ergebnis");
   await expect(
-    outcome.getByRole("button", { name: "Outcome verwalten" }),
+    outcome.getByRole("button", { name: "Ziel wieder öffnen" }),
   ).toBeVisible();
   await expect(booleanCriterion).toContainText(
     "Frühere Entscheidungen anzeigen (3)",
   );
 
-  await openDisclosureForm(page, "Outcome verwalten", "Ziel wieder öffnen");
-  await outcome.getByRole("button", { name: "Ziel wieder öffnen" }).click();
+  await openDisclosureForm(page, "Ziel wieder öffnen", "Ziel wieder öffnen");
+  await outcome
+    .locator('form[aria-label="Ziel wieder öffnen"]')
+    .getByRole("button", { name: "Ziel wieder öffnen" })
+    .click();
   await expect(
     page.getByText("Ziel wieder geöffnet.", { exact: true }),
   ).toBeVisible();
   await page.reload();
-  await expect(outcome).toContainText("Stand: aktiv");
+  await expect(outcome.locator("[data-goal-status]")).toHaveText("aktiv");
   await expect(booleanCriterion).toContainText(
     "Frühere Entscheidungen anzeigen (3)",
   );
@@ -616,27 +642,23 @@ test("Goal-level criterion persists without a milestone and only active Goals ca
     ).toBeVisible();
     await page.reload();
     await expect(outcome).toContainText(
-      status === "active"
-        ? "Review-Bereitschaft: bereit"
-        : "Review-Bereitschaft: offen",
+      status === "active" ? "Ergebnis bereit" : "Ergebnis noch offen",
     );
     await expect(criterion).toContainText("Ja · erfüllt");
     if (status !== "active") {
-      await expect(outcome.getByLabel("Achievement-Blocker")).toContainText(
-        "Nur aktive Goals können erreicht werden",
+      await expect(outcome.getByLabel("Was noch fehlt")).toContainText(
+        "Aktiviere das Ziel zuerst",
       );
       await expectGoalReviewDisabled(page);
     }
   }
-  await expect(outcome).toContainText("Review-Bereitschaft: bereit");
+  await expect(outcome).toContainText("Ergebnis bereit");
   const achieve = await openGoalReview(page);
   await expect(
-    achieve.getByRole("button", { name: "Ziel explizit erreichen" }),
+    achieve.getByRole("button", { name: "Ergebnis bestätigen" }),
   ).toBeEnabled();
   page.once("dialog", (dialog) => dialog.accept());
-  await achieve
-    .getByRole("button", { name: "Ziel explizit erreichen" })
-    .click();
+  await achieve.getByRole("button", { name: "Ergebnis bestätigen" }).click();
   await expect(page.getByText("Ziel erreicht.", { exact: true })).toBeVisible();
   await page.reload();
   await expect(outcome).toContainText("Erreichtes Ergebnis");

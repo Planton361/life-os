@@ -7,9 +7,7 @@ function outcome(page: Page) {
   return page.locator('[data-goal-outcome="workbench"]');
 }
 
-async function createSessionClient(
-  context: BrowserContext,
-) {
+async function createSessionClient(context: BrowserContext) {
   const cookie = (await context.cookies()).find((item) =>
     item.name.includes("auth-token"),
   );
@@ -24,7 +22,8 @@ async function createSessionClient(
   );
   await api.auth.setSession(session);
   const user = await api.auth.getUser();
-  if (user.error || !user.data.user) throw new Error("Authenticated API user missing");
+  if (user.error || !user.data.user)
+    throw new Error("Authenticated API user missing");
   return { api, userId: user.data.user.id };
 }
 
@@ -45,15 +44,21 @@ test("Goal capture stays lightweight, optional, draft-first, and reload-stable",
     exact: true,
   });
   await expect(optional).toHaveAttribute("aria-expanded", "false");
-  await titleOnly.getByLabel("Titel", { exact: true }).fill(`Title-only ${stamp}`);
+  await titleOnly
+    .getByLabel("Titel", { exact: true })
+    .fill(`Title-only ${stamp}`);
   await titleOnly.getByRole("button", { name: "Goal erstellen" }).click();
   await expect(page.getByText("Goal erstellt.", { exact: true })).toBeVisible();
-  await expect(outcome(page)).toContainText("Stand: Entwurf");
+  await expect(outcome(page).locator("[data-goal-status]")).toHaveText(
+    "Entwurf",
+  );
   await page.reload();
   await expect(
     page.getByRole("heading", { name: `Title-only ${stamp}`, exact: true }),
   ).toBeVisible();
-  await expect(outcome(page)).toContainText("Stand: Entwurf");
+  await expect(outcome(page).locator("[data-goal-status]")).toHaveText(
+    "Entwurf",
+  );
 });
 
 test("Goal optional narrative and metadata persist after reload", async ({
@@ -79,11 +84,17 @@ test("Goal optional narrative and metadata persist after reload", async ({
   await form.getByLabel("Zieldatum", { exact: true }).fill("2027-01-02");
   await form.getByRole("button", { name: "Goal erstellen" }).click();
   await expect(page.getByText("Goal erstellt.", { exact: true })).toBeVisible();
-  await expect(outcome(page)).toContainText("Stand: Entwurf");
+  await expect(outcome(page).locator("[data-goal-status]")).toHaveText(
+    "Entwurf",
+  );
   await page.reload();
   await expect(outcome(page)).toContainText(`A concrete outcome ${stamp}`);
-  await expect(outcome(page)).toContainText(`Warum: A meaningful reason ${stamp}`);
-  await expect(outcome(page)).toContainText("Horizont: quarter · Zieltermin 2027-01-02");
+  await expect(outcome(page)).toContainText(
+    `Warum: A meaningful reason ${stamp}`,
+  );
+  await expect(outcome(page)).toContainText("Quartal");
+  await expect(outcome(page)).toContainText("Zieltermin");
+  await expect(outcome(page)).toContainText("2027");
 });
 
 test("Goal next step follows canonical readiness and releases after predecessor completion", async ({
@@ -164,7 +175,9 @@ test("Goal next step follows canonical readiness and releases after predecessor 
   await dependencies
     .getByRole("button", { name: "Dependency speichern", exact: true })
     .click();
-  await expect(page.getByText("Dependency gespeichert.", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Dependency gespeichert.", { exact: true }),
+  ).toBeVisible();
 
   await page.goto(`/goals/${goal!.id}`);
   const goalOutcome = outcome(page);
@@ -187,8 +200,12 @@ test("Goal next step follows canonical readiness and releases after predecessor 
   );
 
   await page.goto(`/tasks/${predecessor.id}`);
-  await page.getByRole("button", { name: "Task abschließen", exact: true }).click();
-  await expect(page.getByText("Task abgeschlossen.", { exact: true })).toBeVisible();
+  await page
+    .getByRole("button", { name: "Task abschließen", exact: true })
+    .click();
+  await expect(
+    page.getByText("Task abgeschlossen.", { exact: true }),
+  ).toBeVisible();
   await page.reload();
   await expect(
     page.getByRole("button", { name: "Task wieder öffnen", exact: true }),
