@@ -33,7 +33,7 @@ test("Goal capture stays lightweight, optional, draft-first, and reload-stable",
   const stamp = Date.now();
   await signUpTechnicalManualUser(page, "pp1-goal-capture", stamp);
   await page.goto("/goals/new");
-  const titleOnly = page.locator('form[aria-label="Goal erstellen"]');
+  const titleOnly = page.locator('form[aria-label="Ziel erstellen"]');
   await expect(titleOnly.getByLabel("Titel", { exact: true })).toBeVisible();
   await expect(
     titleOnly.getByLabel("Was möchtest du erreichen?", { exact: true }),
@@ -47,8 +47,8 @@ test("Goal capture stays lightweight, optional, draft-first, and reload-stable",
   await titleOnly
     .getByLabel("Titel", { exact: true })
     .fill(`Title-only ${stamp}`);
-  await titleOnly.getByRole("button", { name: "Goal erstellen" }).click();
-  await expect(page.getByText("Goal erstellt.", { exact: true })).toBeVisible();
+  await titleOnly.getByRole("button", { name: "Ziel erstellen" }).click();
+  await expect(page.getByText("Ziel erstellt.", { exact: true })).toBeVisible();
   await expect(outcome(page).locator("[data-goal-status]")).toHaveText(
     "Entwurf",
   );
@@ -67,7 +67,7 @@ test("Goal optional narrative and metadata persist after reload", async ({
   const stamp = Date.now();
   await signUpTechnicalManualUser(page, "pp1-goal-optional", stamp);
   await page.goto("/goals/new");
-  const form = page.locator('form[aria-label="Goal erstellen"]');
+  const form = page.locator('form[aria-label="Ziel erstellen"]');
   await form.getByLabel("Titel", { exact: true }).fill(`Optional ${stamp}`);
   await form
     .getByLabel("Was möchtest du erreichen?", { exact: true })
@@ -82,8 +82,8 @@ test("Goal optional narrative and metadata persist after reload", async ({
     .fill(`A meaningful reason ${stamp}`);
   await form.getByLabel("Horizont", { exact: true }).selectOption("quarter");
   await form.getByLabel("Zieldatum", { exact: true }).fill("2027-01-02");
-  await form.getByRole("button", { name: "Goal erstellen" }).click();
-  await expect(page.getByText("Goal erstellt.", { exact: true })).toBeVisible();
+  await form.getByRole("button", { name: "Ziel erstellen" }).click();
+  await expect(page.getByText("Ziel erstellt.", { exact: true })).toBeVisible();
   await expect(outcome(page).locator("[data-goal-status]")).toHaveText(
     "Entwurf",
   );

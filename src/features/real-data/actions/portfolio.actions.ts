@@ -228,7 +228,7 @@ export async function createProjectAction(
 
   if (!(await validateGoalScope(auth.client, auth.user.id, goalId))) {
     return {
-      message: "Das Goal konnte nicht als Project-Kontext bestätigt werden.",
+      message: "Das Ziel konnte nicht als Projekt-Kontext bestätigt werden.",
       status: "error",
     };
   }
@@ -256,7 +256,7 @@ export async function createProjectAction(
   if (goalMilestoneId) {
     if (!goalId || !z.uuid().safeParse(goalId).success || !z.uuid().safeParse(goalMilestoneId).success) {
       return {
-        message: "Goal und Etappe müssen für den Kontext eindeutig sein.",
+        message: "Ziel und Etappe müssen für den Kontext eindeutig sein.",
         status: "error",
       };
     }
@@ -281,7 +281,7 @@ export async function createProjectAction(
     }
     revalidatePortfolioTargetRoutes();
     return {
-      message: "Project aus der Etappe erstellt.",
+      message: "Projekt aus der Etappe erstellt.",
       projectId: contextual.data.id,
       status: "success",
     };
@@ -440,7 +440,7 @@ async function getAuthenticatedManualGoalContext(actionLabel: string) {
     return {
       ok: false as const,
       result: {
-        message: `Wechsle ins Manual-Profil, um Goals zu ${actionLabel}.`,
+        message: `Wechsle ins Manual-Profil, um Ziele zu ${actionLabel}.`,
         status: "blocked" as const,
       },
     };
@@ -471,7 +471,7 @@ export async function createGoalAction(
 
   if (profileId !== "manual") {
     return {
-      message: "Wechsle ins Manual-Profil, um Goals zu erstellen.",
+      message: "Wechsle ins Manual-Profil, um Ziele zu erstellen.",
       status: "blocked",
     };
   }
@@ -501,7 +501,7 @@ export async function createGoalAction(
 
   if (!parsed.success) {
     return {
-      message: "Gib einen gültigen Goal-Titel ein.",
+      message: "Gib einen gültigen Ziel-Titel ein.",
       status: "error",
     };
   }
@@ -511,7 +511,7 @@ export async function createGoalAction(
 
   if (!result.ok) {
     return {
-      message: "Das Goal konnte nicht gespeichert werden.",
+      message: "Das Ziel konnte nicht gespeichert werden.",
       status: "error",
     };
   }
@@ -520,7 +520,7 @@ export async function createGoalAction(
 
   return {
     goalId: result.data.id,
-    message: "Goal erstellt.",
+    message: "Ziel erstellt.",
     status: "success",
   };
 }
@@ -553,14 +553,14 @@ export async function updateGoalAction(
 
   if (!parsed.success) {
     return {
-      message: "Das Goal konnte nicht aktualisiert werden.",
+      message: "Das Ziel konnte nicht aktualisiert werden.",
       status: "error",
     };
   }
 
   if (parsed.data.status === "achieved") {
     return {
-      message: "Goals werden ausschließlich über den expliziten Outcome-Flow erreicht.",
+      message: "Ziele werden ausschließlich über den expliziten Ergebnis-Flow erreicht.",
       status: "error",
     };
   }
@@ -570,7 +570,7 @@ export async function updateGoalAction(
 
   if (!result.ok) {
     return {
-      message: "Das Goal konnte nicht in Supabase aktualisiert werden.",
+      message: "Das Ziel konnte nicht in Supabase aktualisiert werden.",
       status: "error",
     };
   }
@@ -579,7 +579,7 @@ export async function updateGoalAction(
 
   return {
     goalId: result.data.id,
-    message: "Goal aktualisiert.",
+    message: "Ziel aktualisiert.",
     status: "success",
   };
 }
@@ -600,7 +600,7 @@ export async function archiveGoalAction(
 
   if (!parsed.success) {
     return {
-      message: "Das Goal konnte nicht archiviert werden.",
+      message: "Das Ziel konnte nicht archiviert werden.",
       status: "error",
     };
   }
@@ -610,7 +610,7 @@ export async function archiveGoalAction(
 
   if (!result.ok) {
     return {
-      message: "Das Goal konnte nicht in Supabase archiviert werden.",
+      message: "Das Ziel konnte nicht in Supabase archiviert werden.",
       status: "error",
     };
   }
@@ -619,7 +619,7 @@ export async function archiveGoalAction(
 
   return {
     goalId: result.data.id,
-    message: "Goal archiviert.",
+    message: "Ziel archiviert.",
     status: "success",
   };
 }

@@ -40,6 +40,7 @@ export function EntityWorkbenchShell({
   title: string;
   children: ReactNode;
 }) {
+  const visibleEntityLabel = kind === "goal" ? "Ziel" : entityLabels[kind];
   return (
     <div
       data-entity-workbench={kind}
@@ -59,7 +60,7 @@ export function EntityWorkbenchShell({
               kind === "resource" ? "/resources" : `/portfolio?type=${kind}s`
             }
           >
-            {entityLabels[kind]}s
+            {kind === "goal" ? "Ziele" : `${visibleEntityLabel}s`}
           </Link>
         </nav>
         <h1 className="text-3xl font-semibold">{title}</h1>
@@ -120,7 +121,10 @@ export async function WorkbenchList({
   const data = await readEntityWorkbench();
   if (!data)
     return (
-      <EntityWorkbenchShell kind={kind} title={`${entityLabels[kind]}s`}>
+      <EntityWorkbenchShell
+        kind={kind}
+        title={`${kind === "goal" ? "Ziel" : entityLabels[kind]}s`}
+      >
         {authMessage}
       </EntityWorkbenchShell>
     );
@@ -143,7 +147,7 @@ export async function WorkbenchList({
   return (
     <EntityWorkbenchShell
       kind={kind}
-      title={`${entityLabels[kind]}s · ${rows.length}`}
+      title={`${kind === "goal" ? "Ziel" : entityLabels[kind]}s · ${rows.length}`}
     >
       <div>
         <Link
@@ -151,7 +155,9 @@ export async function WorkbenchList({
           prefetch={false}
           href={`${entityRoutes[kind]}/new`}
         >
-          {entityLabels[kind]} erstellen
+          {kind === "goal"
+            ? "Ziel erstellen"
+            : `${entityLabels[kind]} erstellen`}
         </Link>
       </div>
       <form className="grid gap-3 md:grid-cols-[1fr_200px_200px_auto]">
@@ -226,7 +232,10 @@ export async function WorkbenchEditor({
   const data = await readEntityWorkbench();
   if (!data)
     return (
-      <EntityWorkbenchShell kind={kind} title={entityLabels[kind]}>
+      <EntityWorkbenchShell
+        kind={kind}
+        title={kind === "goal" ? "Ziel" : entityLabels[kind]}
+      >
         {authMessage}
       </EntityWorkbenchShell>
     );
@@ -243,6 +252,14 @@ export async function WorkbenchEditor({
             !m.archived_at,
         )
       : undefined;
+  const visibleEditorLabel =
+    goalMilestoneContext && kind === "project"
+      ? "Projekt"
+      : goalMilestoneContext && kind === "task"
+        ? "Aufgabe"
+        : kind === "goal"
+          ? "Ziel"
+          : entityLabels[kind];
   const contextGoal =
     (kind === "project" || kind === "task") && !id && goalContext
       ? data.goals.find((goal) => goal.id === goalContext && !goal.archived_at)
@@ -431,7 +448,7 @@ export async function WorkbenchEditor({
     );
   if (kind === "goal" && !id)
     return (
-      <EntityWorkbenchShell kind="goal" title="Goal erstellen">
+      <EntityWorkbenchShell kind="goal" title="Ziel erstellen">
         <GoalCaptureForm
           areas={data.areas
             .filter((area) => !area.archived_at)
@@ -442,7 +459,7 @@ export async function WorkbenchEditor({
   return (
     <EntityWorkbenchShell
       kind={kind}
-      title={row?.title ?? `${entityLabels[kind]} erstellen`}
+      title={row?.title ?? `${visibleEditorLabel} erstellen`}
     >
       {contextProject && (
         <p className="text-sm text-[var(--text-muted)]">
@@ -458,7 +475,8 @@ export async function WorkbenchEditor({
       )}
       {contextGoal && contextGoalMilestone && (
         <p className="text-sm text-[var(--text-muted)]">
-          Goal-Kontext: <Link href={`/goals/${contextGoal.id}`}>{contextGoal.title}</Link>
+          Ziel-Kontext:{" "}
+          <Link href={`/goals/${contextGoal.id}`}>{contextGoal.title}</Link>
           {" · "}
           Etappe: {contextGoalMilestone.title}
         </p>
@@ -602,7 +620,7 @@ export async function WorkbenchEditor({
                   )}
                   <OperationForm
                     operation={`${kind}.archive`}
-                    label={`${entityLabels[kind]} archivieren`}
+                    label={`${kind === "goal" ? "Ziel" : entityLabels[kind]} archivieren`}
                   >
                     <Hidden name={`${kind}Id`} value={id} />
                   </OperationForm>
@@ -658,6 +676,8 @@ function Relations({
     );
   const projects =
     kind === "goal" ? data.projects.filter((p) => p.goal_id === id) : [];
+  const taskContextLabel = kind === "goal" ? "Aufgabe" : "Task";
+  const projectContextLabel = kind === "goal" ? "Projekt" : "Project";
   const ownTask =
     kind === "task" ? data.tasks.find((t) => t.id === id) : undefined;
   const ownProject =
@@ -832,7 +852,7 @@ function Relations({
           {!archived && (
             <OperationForm
               operation="task.context"
-              label="Task-Zuordnung lösen"
+              label={`${taskContextLabel}-Zuordnung lösen`}
             >
               <Hidden name="taskId" value={t.id} />
               <Hidden
@@ -844,14 +864,17 @@ function Relations({
         </div>
       ))}
       {!archived && (kind === "project" || kind === "goal") && (
-        <OperationForm operation="task.context" label="Task zuordnen">
+        <OperationForm
+          operation="task.context"
+          label={`${taskContextLabel} zuordnen`}
+        >
           <Hidden
             name={kind === "project" ? "projectId" : "goalId"}
             value={id}
           />
           <Choice
             name="taskId"
-            label="Task"
+            label={taskContextLabel}
             options={available(data, "task")}
             required
           />
@@ -863,7 +886,7 @@ function Relations({
           {!archived && (
             <OperationForm
               operation="project.context"
-              label="Project-Zuordnung lösen"
+              label={`${projectContextLabel}-Zuordnung lösen`}
             >
               <Hidden name="projectId" value={p.id} />
               <Hidden name="goalId" value="" />
@@ -872,11 +895,14 @@ function Relations({
         </div>
       ))}
       {!archived && kind === "goal" && (
-        <OperationForm operation="project.context" label="Project zuordnen">
+        <OperationForm
+          operation="project.context"
+          label={`${projectContextLabel} zuordnen`}
+        >
           <Hidden name="goalId" value={id} />
           <Choice
             name="projectId"
-            label="Project"
+            label={projectContextLabel}
             options={available(data, "project")}
             required
           />
@@ -978,8 +1004,8 @@ function Progress({
         <>
           <p>Kein Outcome-basierter Fortschritt definiert.</p>
           <p>
-            {tasks.length} direkte Tasks ·{" "}
-            {data.projects.filter((p) => p.goal_id === id).length} Projects
+            {tasks.length} direkte Aufgaben ·{" "}
+            {data.projects.filter((p) => p.goal_id === id).length} Projekte
           </p>
         </>
       )}

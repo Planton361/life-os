@@ -174,14 +174,14 @@ function sourceOptions(
   const options: { id: string; title: string }[] = [];
   if (allowed.includes("task")) {
     for (const task of outcome.tasks.filter((item) => !item.archivedAt)) {
-      options.push({ id: `task:${task.id}`, title: `Task · ${task.title}` });
+      options.push({ id: `task:${task.id}`, title: `Aufgabe · ${task.title}` });
     }
   }
   if (allowed.includes("project")) {
     for (const project of outcome.projects.filter((item) => !item.archivedAt)) {
       options.push({
         id: `project:${project.id}`,
-        title: `Project · ${project.title}`,
+        title: `Projekt · ${project.title}`,
       });
     }
   }
@@ -191,7 +191,7 @@ function sourceOptions(
     )) {
       options.push({
         id: `project_milestone:${milestone.id}`,
-        title: `Project-Milestone · ${milestone.title}`,
+        title: `Projekt-Meilenstein · ${milestone.title}`,
       });
     }
   }
@@ -229,10 +229,10 @@ function sourceOptions(
 }
 
 function evidenceSourceTypeLabel(sourceType: GoalEvidenceSourceType) {
-  if (sourceType === "project_milestone") return "Project-Milestone";
+  if (sourceType === "project_milestone") return "Projekt-Meilenstein";
   if (sourceType === "review_record") return "Review";
   if (sourceType === "goal_criterion_evaluation") return "Kriterium";
-  return sourceType === "task" ? "Task" : "Project";
+  return sourceType === "task" ? "Aufgabe" : "Projekt";
 }
 
 function InitialEvidenceFields({
@@ -411,7 +411,7 @@ function CriterionRow({
             {criterionDescription(criterion)}
             {criterion.goalMilestoneId
               ? ` · ${milestoneTitles.get(criterion.goalMilestoneId) ?? "Etappe"}`
-              : " · Goal-weit"}
+              : " · Zielweit"}
           </p>
         </div>
         <span className="rounded-full border border-[var(--border-default)] px-2 py-1 text-xs">
@@ -890,7 +890,7 @@ function MilestoneCard({
                   className="text-[var(--accent-cyan)]"
                   href={`/projects/${link.targetId}`}
                 >
-                  Project ·{" "}
+                  Projekt ·{" "}
                   {projectById.get(link.targetId)?.title ?? link.targetTitle}
                 </Link>
               </li>
@@ -901,7 +901,7 @@ function MilestoneCard({
                   className="text-[var(--accent-cyan)]"
                   href={`/tasks/${link.targetId}`}
                 >
-                  Task ·{" "}
+                  Aufgabe ·{" "}
                   {taskById.get(link.targetId)?.title ?? link.targetTitle}
                 </Link>
               </li>
@@ -909,7 +909,7 @@ function MilestoneCard({
           </ul>
         ) : (
           <p className="text-[var(--text-muted)]">
-            Noch kein Project- oder Task-Kontext.
+            Noch kein Projekt- oder Aufgaben-Kontext.
           </p>
         )}
       </div>
@@ -919,13 +919,13 @@ function MilestoneCard({
             className="text-sm text-[var(--accent-cyan)]"
             href={`/projects/new?goal=${goalId}&goalMilestone=${milestone.id}`}
           >
-            Project aus Etappe erstellen
+            Projekt aus Etappe erstellen
           </Link>
           <Link
             className="text-sm text-[var(--accent-cyan)]"
             href={`/tasks/new?goal=${goalId}&goalMilestone=${milestone.id}`}
           >
-            Task aus Etappe erstellen
+            Aufgabe aus Etappe erstellen
           </Link>
         </div>
       )}
@@ -948,7 +948,7 @@ function HistoryManagement({
     <ManagementDisclosure label="Verlaufseintrag verwalten">
       <OperationForm
         operation="goal.amend"
-        label="Goal-Verlauf ergänzen"
+        label="Ziel-Verlauf ergänzen"
         closeOnSuccess
       >
         <Hidden name="goalId" value={goalId} />
@@ -957,7 +957,7 @@ function HistoryManagement({
       {event.resultingStatus === "achieved" && (
         <OperationForm
           operation="goal.evidence"
-          label="Goal-Belegverlauf ändern"
+          label="Ziel-Belegverlauf ändern"
           closeOnSuccess
         >
           <Hidden name="goalId" value={goalId} />
@@ -1251,14 +1251,14 @@ export function GoalOutcomeWorkbench({
               href: outcome.nextStep.href ?? `/tasks/${outcome.nextStep.id}`,
               label:
                 outcome.nextStep.state === "blocked"
-                  ? "Blockierten Task öffnen"
-                  : "Task öffnen",
+                  ? "Blockierte Aufgabe öffnen"
+                  : "Aufgabe öffnen",
             }
           : outcome.nextStep.kind === "project"
             ? {
                 href:
                   outcome.nextStep.href ?? `/projects/${outcome.nextStep.id}`,
-                label: "Project öffnen",
+                label: "Projekt öffnen",
               }
             : activeCriteria.length === 0
               ? { href: "#erfolg-erkennen", label: "Erfolg festlegen" }
@@ -1418,13 +1418,13 @@ export function GoalOutcomeWorkbench({
                     className="text-sm text-[var(--accent-cyan)]"
                     href={`/tasks/new?goal=${goalId}`}
                   >
-                    Task aus Ziel erstellen
+                    Aufgabe aus Ziel erstellen
                   </Link>
                   <Link
                     className="text-sm text-[var(--accent-cyan)]"
                     href={`/projects/new?goal=${goalId}`}
                   >
-                    Project aus Ziel erstellen
+                    Projekt aus Ziel erstellen
                   </Link>
                 </div>
               </div>
@@ -1759,9 +1759,9 @@ export function GoalOutcomeWorkbench({
 
           <Panel id="verlauf-belege" title="Verlauf & Belege">
             <p className="text-sm text-[var(--text-muted)]">
-              Der Verlauf zeigt die jüngsten Goal-, Etappen- und
-              Kriterienentscheidungen. Task- und Project-Abschlüsse bleiben in
-              ihren eigenen Verläufen.
+              Der Verlauf zeigt die jüngsten Ziel-, Etappen- und
+              Kriterienentscheidungen. Aufgaben- und Projektabschlüsse bleiben
+              in ihren eigenen Verläufen.
             </p>
             {recentGoalHistory.length === 0 &&
             recentMilestoneHistory.length === 0 &&
@@ -1815,7 +1815,7 @@ export function GoalOutcomeWorkbench({
                 <div className="grid gap-4">
                   <ManagementDisclosure label="Unterstützende Arbeit verwalten">
                     <p className="text-sm text-[var(--text-muted)]">
-                      Verknüpfte Projects und Tasks machen sichtbar, wodurch
+                      Verknüpfte Projekte und Aufgaben machen sichtbar, wodurch
                       eine Etappe vorankommt. Sie erfüllen kein Erfolgskriterium
                       automatisch.
                     </p>
@@ -1853,7 +1853,7 @@ export function GoalOutcomeWorkbench({
                       eligibleProjects.length > 0 && (
                         <OperationForm
                           operation="support.project.add"
-                          label="Project verknüpfen"
+                          label="Projekt verknüpfen"
                           closeOnSuccess
                         >
                           <Hidden name="goalId" value={goalId} />
@@ -1864,7 +1864,7 @@ export function GoalOutcomeWorkbench({
                             required
                           />
                           <Choice
-                            label="Project"
+                            label="Projekt"
                             name="projectId"
                             options={eligibleProjects}
                             required
@@ -1875,7 +1875,7 @@ export function GoalOutcomeWorkbench({
                       eligibleTasks.length > 0 && (
                         <OperationForm
                           operation="support.task.add"
-                          label="Task verknüpfen"
+                          label="Aufgabe verknüpfen"
                           closeOnSuccess
                         >
                           <Hidden name="goalId" value={goalId} />
@@ -1886,7 +1886,7 @@ export function GoalOutcomeWorkbench({
                             required
                           />
                           <Choice
-                            label="Task"
+                            label="Aufgabe"
                             name="taskId"
                             options={eligibleTasks}
                             required
@@ -1896,7 +1896,7 @@ export function GoalOutcomeWorkbench({
                     {eligibleProjects.length === 0 &&
                       eligibleTasks.length === 0 && (
                         <p className="text-sm text-[var(--text-muted)]">
-                          Keine passenden aktiven Project-/Task-Kontexte
+                          Keine passenden aktiven Projekt- oder Aufgabenkontexte
                           verfügbar.
                         </p>
                       )}

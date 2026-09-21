@@ -3,10 +3,10 @@ import { signUpTechnicalManualUser } from "./support/local-manual-auth";
 
 async function createGoal(page: Page, title: string) {
   await page.goto("/goals/new");
-  const form = page.locator('form[aria-label="Goal erstellen"]');
+  const form = page.locator('form[aria-label="Ziel erstellen"]');
   await form.getByLabel("Titel").fill(title);
-  await form.getByRole("button", { name: "Goal erstellen" }).click();
-  await expect(page.getByText("Goal erstellt.", { exact: true })).toBeVisible();
+  await form.getByRole("button", { name: "Ziel erstellen" }).click();
+  await expect(page.getByText("Ziel erstellt.", { exact: true })).toBeVisible();
   await expect(page).toHaveURL(/\/goals\/[0-9a-f-]{36}$/i);
   await expect(
     page.locator('[data-goal-outcome="workbench"] [data-goal-status]'),
@@ -15,7 +15,7 @@ async function createGoal(page: Page, title: string) {
   await edit.getByLabel("Status", { exact: true }).selectOption("active");
   await edit.getByRole("button", { name: "Änderungen speichern" }).click();
   await expect(
-    page.getByText("Goal aktualisiert.", { exact: true }),
+    page.getByText("Ziel aktualisiert.", { exact: true }),
   ).toBeVisible();
   const goalId = page.url().match(/\/goals\/([^/?#]+)/)?.[1];
   expect(goalId).toBeTruthy();
@@ -124,7 +124,7 @@ async function expectGoalReviewDisabled(page: Page) {
 }
 
 async function openGoalEdit(page: Page) {
-  return openDisclosureForm(page, "Bearbeiten", "Goal bearbeiten");
+  return openDisclosureForm(page, "Bearbeiten", "Ziel bearbeiten");
 }
 
 async function openMilestoneManagement(page: Page, card: Locator) {
@@ -379,38 +379,46 @@ test("PP1 goal outcome planning is a complete Manual vertical slice", async ({
   await openDisclosureForm(
     page,
     "Unterstützende Arbeit verwalten",
-    "Project verknüpfen",
+    "Projekt verknüpfen",
   );
   const projectSupportForm = outcome.locator(
-    'form[aria-label="Project verknüpfen"]',
+    'form[aria-label="Projekt verknüpfen"]',
   );
   await projectSupportForm
     .getByLabel("Etappe")
     .selectOption({ label: milestoneOneTitle });
   await projectSupportForm
-    .getByLabel("Project")
+    .getByLabel("Projekt")
     .selectOption({ label: projectTitle });
   await projectSupportForm
-    .getByRole("button", { name: "Project verknüpfen" })
+    .getByRole("button", { name: "Projekt verknüpfen" })
     .click();
   await expect(
-    page.getByText("Project als Support-Kontext verknüpft.", { exact: true }),
+    page.getByText("Projekt als unterstützender Kontext verknüpft.", {
+      exact: true,
+    }),
   ).toBeVisible();
   await openDisclosureForm(
     page,
     "Unterstützende Arbeit verwalten",
-    "Task verknüpfen",
+    "Aufgabe verknüpfen",
   );
-  const taskSupportForm = outcome.locator('form[aria-label="Task verknüpfen"]');
+  const taskSupportForm = outcome.locator(
+    'form[aria-label="Aufgabe verknüpfen"]',
+  );
   await taskSupportForm
     .getByLabel("Etappe")
     .selectOption({ label: milestoneOneTitle });
-  await taskSupportForm.getByLabel("Task").selectOption({ label: taskTitle });
   await taskSupportForm
-    .getByRole("button", { name: "Task verknüpfen" })
+    .getByLabel("Aufgabe")
+    .selectOption({ label: taskTitle });
+  await taskSupportForm
+    .getByRole("button", { name: "Aufgabe verknüpfen" })
     .click();
   await expect(
-    page.getByText("Task als Support-Kontext verknüpft.", { exact: true }),
+    page.getByText("Aufgabe als unterstützender Kontext verknüpft.", {
+      exact: true,
+    }),
   ).toBeVisible();
   await page.reload();
   await expect(outcome).toContainText(projectTitle);
@@ -620,7 +628,7 @@ test("Goal-level criterion persists without a milestone and only active Goals ca
   const criterion = outcome
     .locator("[data-goal-criterion-id]")
     .filter({ hasText: `Goal-level ${stamp}` });
-  await expect(criterion).toContainText("Goal-weit");
+  await expect(criterion).toContainText("Zielweit");
   await openCriterionManagement(criterion);
   const evaluation = criterion.locator(
     'form[aria-label="Bewertung speichern"]',
@@ -638,7 +646,7 @@ test("Goal-level criterion persists without a milestone and only active Goals ca
     await edit.getByLabel("Status", { exact: true }).selectOption(status);
     await edit.getByRole("button", { name: "Änderungen speichern" }).click();
     await expect(
-      page.getByText("Goal aktualisiert.", { exact: true }),
+      page.getByText("Ziel aktualisiert.", { exact: true }),
     ).toBeVisible();
     await page.reload();
     await expect(outcome).toContainText(
@@ -662,7 +670,7 @@ test("Goal-level criterion persists without a milestone and only active Goals ca
   await expect(page.getByText("Ziel erreicht.", { exact: true })).toBeVisible();
   await page.reload();
   await expect(outcome).toContainText("Erreichtes Ergebnis");
-  await expect(criterion).toContainText("Goal-weit");
+  await expect(criterion).toContainText("Zielweit");
 });
 
 test("PP1 keeps Demo, Empty and auth-blocked Goal routes honest", async ({
@@ -687,7 +695,7 @@ test("PP1 keeps Demo, Empty and auth-blocked Goal routes honest", async ({
         exact: false,
       }),
     ).toBeVisible();
-    await expect(page.locator('form[aria-label="Goal erstellen"]')).toHaveCount(
+    await expect(page.locator('form[aria-label="Ziel erstellen"]')).toHaveCount(
       0,
     );
   }

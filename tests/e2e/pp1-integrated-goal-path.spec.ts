@@ -8,7 +8,7 @@ async function createGoal(
   why: string,
 ) {
   await page.goto("/goals/new");
-  const form = page.locator('form[aria-label="Goal erstellen"]');
+  const form = page.locator('form[aria-label="Ziel erstellen"]');
   await form.getByLabel("Titel").fill(title);
   await form
     .getByLabel("Was möchtest du erreichen?", { exact: true })
@@ -22,17 +22,17 @@ async function createGoal(
   await expect(optional).toHaveAttribute("aria-expanded", "true");
   await form.getByLabel("Warum / welcher Nutzen?", { exact: true }).fill(why);
   await form.getByLabel("Horizont", { exact: true }).selectOption("quarter");
-  await form.getByRole("button", { name: "Goal erstellen" }).click();
-  await expect(page.getByText("Goal erstellt.", { exact: true })).toBeVisible();
+  await form.getByRole("button", { name: "Ziel erstellen" }).click();
+  await expect(page.getByText("Ziel erstellt.", { exact: true })).toBeVisible();
   await expect(page).toHaveURL(/\/goals\/[0-9a-f-]{36}$/i);
   await expect(outcome(page).locator("[data-goal-status]")).toHaveText(
     "Entwurf",
   );
-  const edit = await openDetailsForm(page, "Bearbeiten", "Goal bearbeiten");
+  const edit = await openDetailsForm(page, "Bearbeiten", "Ziel bearbeiten");
   await edit.getByLabel("Status", { exact: true }).selectOption("active");
   await edit.getByRole("button", { name: "Änderungen speichern" }).click();
   await expect(
-    page.getByText("Goal aktualisiert.", { exact: true }),
+    page.getByText("Ziel aktualisiert.", { exact: true }),
   ).toBeVisible();
   return page.url().match(/\/goals\/([^/?#]+)/)?.[1] ?? "";
 }
@@ -222,22 +222,22 @@ async function createContextEntity(
   await page.goto(
     `/${kind === "project" ? "projects" : "tasks"}/new?goal=${goalId}&goalMilestone=${milestoneId}`,
   );
-  await expect(page.getByText("Goal-Kontext:", { exact: false })).toBeVisible();
+  await expect(page.getByText("Ziel-Kontext:", { exact: false })).toBeVisible();
   await expect(page.getByText("Etappe:", { exact: false })).toBeVisible();
   const form = page.locator(
-    `form[aria-label="${kind === "project" ? "Project" : "Task"} erstellen"]`,
+    `form[aria-label="${kind === "project" ? "Projekt" : "Aufgabe"} erstellen"]`,
   );
   await form.getByLabel("Titel", { exact: true }).fill(title);
   await form
     .getByRole("button", {
-      name: kind === "project" ? "Project erstellen" : "Task erstellen",
+      name: kind === "project" ? "Projekt erstellen" : "Aufgabe erstellen",
     })
     .click();
   await expect(
     page.getByText(
       kind === "project"
-        ? "Project aus der Etappe erstellt."
-        : "Task aus der Etappe erstellt.",
+        ? "Projekt aus der Etappe erstellt."
+        : "Aufgabe aus der Etappe erstellt.",
       { exact: true },
     ),
   ).toBeVisible();
@@ -286,6 +286,11 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
   await expect(outcome(page)).toContainText(`Warum: ${goalWhy}`);
   await expect(outcome(page)).toContainText("Nächster Schritt");
   await expect(outcome(page)).toContainText("Erfolg festlegen");
+  await expect(outcome(page)).toContainText("Projekt aus Ziel erstellen");
+  await expect(outcome(page)).toContainText("Aufgabe aus Ziel erstellen");
+  await expect(outcome(page)).not.toContainText(
+    /\b(?:Goal|Goals|Task|Project|Project-Milestone)\b/,
+  );
   await expect(outcome(page)).not.toContainText("Goal Review");
   await expect(outcome(page)).not.toContainText("0 von 0");
   await expect(outcome(page)).not.toContainText("Weitere Verwaltung");
@@ -352,17 +357,17 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
   await expect(
     outcome(page)
       .locator("#naechster-schritt")
-      .getByRole("link", { name: "Task öffnen" }),
+      .getByRole("link", { name: "Aufgabe öffnen" }),
   ).toHaveAttribute("href", /\/tasks\/[0-9a-f-]{36}$/i);
 
   const projectHref = await sourceHref(
     milestoneCard(page, milestoneTitle),
-    "Project",
+    "Projekt",
     projectTitle,
   );
   const taskHref = await sourceHref(
     milestoneCard(page, milestoneTitle),
-    "Task",
+    "Aufgabe",
     taskTitle,
   );
   expect(projectHref).toMatch(/^\/projects\/[0-9a-f-]{36}$/i);
@@ -454,7 +459,7 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
   );
   await criterionEvidence
     .getByLabel("Neue zulässige Quelle")
-    .selectOption({ label: `Project · ${projectTitle}` });
+    .selectOption({ label: `Projekt · ${projectTitle}` });
   await criterionEvidence.getByLabel("Belegänderung").selectOption("attached");
   await criterionEvidence
     .getByRole("button", { name: "Belegverlauf ändern" })
@@ -471,10 +476,10 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
   await criterionReplace.getByLabel("Belegänderung").selectOption("replaced");
   await criterionReplace
     .getByLabel("Neue zulässige Quelle")
-    .selectOption({ label: `Project · ${replacementProjectTitle}` });
+    .selectOption({ label: `Projekt · ${replacementProjectTitle}` });
   await selectOptionContaining(
     criterionReplace.getByLabel("Bisherige Referenz für Ersatz / Zurücknehmen"),
-    `Project · ${projectTitle}`,
+    `Projekt · ${projectTitle}`,
   );
   await criterionReplace
     .getByLabel("Grund für die Änderung")
@@ -496,7 +501,7 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
     criterionWithdraw.getByLabel(
       "Bisherige Referenz für Ersatz / Zurücknehmen",
     ),
-    `Project · ${replacementProjectTitle}`,
+    `Projekt · ${replacementProjectTitle}`,
   );
   await criterionWithdraw
     .getByLabel("Grund für die Änderung")
@@ -528,7 +533,7 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
   );
   await milestoneEvidence
     .getByLabel("Neue zulässige Quelle")
-    .selectOption({ label: `Task · ${taskTitle}` });
+    .selectOption({ label: `Aufgabe · ${taskTitle}` });
   await milestoneEvidence.getByLabel("Belegänderung").selectOption("attached");
   await milestoneEvidence
     .getByRole("button", { name: "Etappen-Belegverlauf ändern" })
@@ -568,7 +573,7 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
     preservedMilestoneEvidence
       .getByLabel("Bisherige Referenz für Ersatz / Zurücknehmen")
       .locator("option")
-      .filter({ hasText: `Task · ${taskTitle}` }),
+      .filter({ hasText: `Aufgabe · ${taskTitle}` }),
   ).toHaveCount(1);
   await expect(milestoneCard(page, milestoneTitle)).toContainText(
     "1 aktive Belege im aktuellen Ergebnis.",
@@ -582,10 +587,10 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
   await milestoneReplace.getByLabel("Belegänderung").selectOption("replaced");
   await milestoneReplace
     .getByLabel("Neue zulässige Quelle")
-    .selectOption({ label: `Project · ${replacementProjectTitle}` });
+    .selectOption({ label: `Projekt · ${replacementProjectTitle}` });
   await selectOptionContaining(
     milestoneReplace.getByLabel("Bisherige Referenz für Ersatz / Zurücknehmen"),
-    `Task · ${taskTitle}`,
+    `Aufgabe · ${taskTitle}`,
   );
   await milestoneReplace
     .getByLabel("Grund für die Änderung")
@@ -607,7 +612,7 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
     milestoneWithdraw.getByLabel(
       "Bisherige Referenz für Ersatz / Zurücknehmen",
     ),
-    `Project · ${replacementProjectTitle}`,
+    `Projekt · ${replacementProjectTitle}`,
   );
   await milestoneWithdraw
     .getByLabel("Grund für die Änderung")
@@ -629,7 +634,7 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
     .selectOption("supplemented");
   await milestoneSupplement
     .getByLabel("Neue zulässige Quelle")
-    .selectOption({ label: `Task · ${taskTitle}` });
+    .selectOption({ label: `Aufgabe · ${taskTitle}` });
   await milestoneSupplement
     .getByLabel("Grund für die Änderung")
     .fill("Retrospektiv dokumentierter Etappenbeleg.");
@@ -677,7 +682,7 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
   );
   await episodeBEvidence
     .getByLabel("Neue zulässige Quelle")
-    .selectOption({ label: `Project · ${replacementProjectTitle}` });
+    .selectOption({ label: `Projekt · ${replacementProjectTitle}` });
   await episodeBEvidence.getByLabel("Belegänderung").selectOption("attached");
   await episodeBEvidence
     .getByRole("button", { name: "Etappen-Belegverlauf ändern" })
@@ -750,7 +755,7 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
     .fill(`Review outcome ${stamp}`);
   await achieve
     .getByLabel("Entscheidungsbeleg (optional)")
-    .selectOption({ label: `Project · ${projectTitle}` });
+    .selectOption({ label: `Projekt · ${projectTitle}` });
   page.once("dialog", (dialog) => dialog.accept());
   await achieve.getByRole("button", { name: "Ergebnis bestätigen" }).click();
   await expect(page.getByText("Ziel erreicht.", { exact: true })).toBeVisible();
@@ -761,7 +766,7 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
     outcome(page).locator('form[aria-label="Ergebnis bestätigen"]'),
   ).toBeHidden();
   await expect(
-    outcome(page).locator('form[aria-label="Goal-Belegverlauf ändern"]'),
+    outcome(page).locator('form[aria-label="Ziel-Belegverlauf ändern"]'),
   ).toBeHidden();
   await expect(outcome(page)).toContainText(
     "Grundlage: 1 Erfolgskriterien · 1 Etappen · 1 Belege",
@@ -784,7 +789,7 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
     .first();
   await openManagement(achievedHistory, "Verlaufseintrag verwalten");
   const goalAmend = achievedHistory.locator(
-    'form[aria-label="Goal-Verlauf ergänzen"]',
+    'form[aria-label="Ziel-Verlauf ergänzen"]',
   );
   await goalAmend
     .getByLabel("Korrigierter Zeitpunkt (optional)")
@@ -797,10 +802,10 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
     .fill("Historische Erfolgsnotiz präzisiert.");
   await goalAmend.getByLabel("Als retrospektive Ergänzung markieren").check();
   await goalAmend
-    .getByRole("button", { name: "Goal-Verlauf ergänzen" })
+    .getByRole("button", { name: "Ziel-Verlauf ergänzen" })
     .click();
   await expect(
-    page.getByText("Goal-Verlauf ergänzt.", { exact: true }),
+    page.getByText("Ziel-Verlauf ergänzt.", { exact: true }),
   ).toBeVisible();
   await page.reload();
   const amendedHistory = history
@@ -827,7 +832,7 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
     .first();
   await openManagement(secondAmendedHistory, "Verlaufseintrag verwalten");
   const secondGoalAmend = secondAmendedHistory.locator(
-    'form[aria-label="Goal-Verlauf ergänzen"]',
+    'form[aria-label="Ziel-Verlauf ergänzen"]',
   );
   await secondGoalAmend
     .getByLabel("Korrigierter Zeitpunkt (optional)")
@@ -839,10 +844,10 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
     .getByLabel("Begründung")
     .fill("Zweite historische Präzisierung.");
   await secondGoalAmend
-    .getByRole("button", { name: "Goal-Verlauf ergänzen" })
+    .getByRole("button", { name: "Ziel-Verlauf ergänzen" })
     .click();
   await expect(
-    page.getByText("Goal-Verlauf ergänzt.", { exact: true }),
+    page.getByText("Ziel-Verlauf ergänzt.", { exact: true }),
   ).toBeVisible();
   await page.reload();
   const latestAmendedHistory = history
@@ -859,17 +864,17 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
 
   await openManagement(latestAmendedHistory, "Verlaufseintrag verwalten");
   const goalEvidence = latestAmendedHistory.locator(
-    'form[aria-label="Goal-Belegverlauf ändern"]',
+    'form[aria-label="Ziel-Belegverlauf ändern"]',
   );
   await goalEvidence.getByLabel("Belegänderung").selectOption("attached");
   await goalEvidence
     .getByLabel("Neue zulässige Quelle")
-    .selectOption({ label: `Project · ${projectTitle}` });
+    .selectOption({ label: `Projekt · ${projectTitle}` });
   await goalEvidence
-    .getByRole("button", { name: "Goal-Belegverlauf ändern" })
+    .getByRole("button", { name: "Ziel-Belegverlauf ändern" })
     .click();
   await expect(
-    page.getByText("Goal-Beleg gespeichert.", { exact: true }),
+    page.getByText("Ziel-Beleg gespeichert.", { exact: true }),
   ).toBeVisible();
 
   await page.reload();
@@ -879,24 +884,24 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
     .first();
   await openManagement(amendedHistoryAfterAttach, "Verlaufseintrag verwalten");
   const goalReplace = amendedHistoryAfterAttach.locator(
-    'form[aria-label="Goal-Belegverlauf ändern"]',
+    'form[aria-label="Ziel-Belegverlauf ändern"]',
   );
   await goalReplace.getByLabel("Belegänderung").selectOption("replaced");
   await goalReplace
     .getByLabel("Neue zulässige Quelle")
-    .selectOption({ label: `Project · ${replacementProjectTitle}` });
+    .selectOption({ label: `Projekt · ${replacementProjectTitle}` });
   await selectOptionContaining(
     goalReplace.getByLabel("Bisherige Referenz für Ersatz / Zurücknehmen"),
-    `Project · ${projectTitle}`,
+    `Projekt · ${projectTitle}`,
   );
   await goalReplace
     .getByLabel("Grund für die Änderung")
-    .fill("Goal-Beleg durch neue Quelle ersetzt.");
+    .fill("Ziel-Beleg durch neue Quelle ersetzt.");
   await goalReplace
-    .getByRole("button", { name: "Goal-Belegverlauf ändern" })
+    .getByRole("button", { name: "Ziel-Belegverlauf ändern" })
     .click();
   await expect(
-    page.getByText("Goal-Beleg gespeichert.", { exact: true }),
+    page.getByText("Ziel-Beleg gespeichert.", { exact: true }),
   ).toBeVisible();
 
   await page.reload();
@@ -906,21 +911,21 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
     .first();
   await openManagement(amendedHistoryAfterReplace, "Verlaufseintrag verwalten");
   const goalWithdraw = amendedHistoryAfterReplace.locator(
-    'form[aria-label="Goal-Belegverlauf ändern"]',
+    'form[aria-label="Ziel-Belegverlauf ändern"]',
   );
   await goalWithdraw.getByLabel("Belegänderung").selectOption("withdrawn");
   await selectOptionContaining(
     goalWithdraw.getByLabel("Bisherige Referenz für Ersatz / Zurücknehmen"),
-    `Project · ${replacementProjectTitle}`,
+    `Projekt · ${replacementProjectTitle}`,
   );
   await goalWithdraw
     .getByLabel("Grund für die Änderung")
-    .fill("Goal-Beleg zurückgenommen.");
+    .fill("Ziel-Beleg zurückgenommen.");
   await goalWithdraw
-    .getByRole("button", { name: "Goal-Belegverlauf ändern" })
+    .getByRole("button", { name: "Ziel-Belegverlauf ändern" })
     .click();
   await expect(
-    page.getByText("Goal-Beleg gespeichert.", { exact: true }),
+    page.getByText("Ziel-Beleg gespeichert.", { exact: true }),
   ).toBeVisible();
 
   await page.reload();
@@ -933,23 +938,23 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
     "Verlaufseintrag verwalten",
   );
   const goalSupplement = amendedHistoryAfterWithdraw.locator(
-    'form[aria-label="Goal-Belegverlauf ändern"]',
+    'form[aria-label="Ziel-Belegverlauf ändern"]',
   );
   await goalSupplement.getByLabel("Belegänderung").selectOption("supplemented");
   await goalSupplement
     .getByLabel("Neue zulässige Quelle")
-    .selectOption({ label: `Task · ${taskTitle}` });
+    .selectOption({ label: `Aufgabe · ${taskTitle}` });
   await goalSupplement
     .getByLabel("Grund für die Änderung")
-    .fill("Retrospektiv ergänzter Goal-Beleg.");
+    .fill("Retrospektiv ergänzter Ziel-Beleg.");
   await goalSupplement
     .getByLabel("Als retrospektive Ergänzung markieren")
     .check();
   await goalSupplement
-    .getByRole("button", { name: "Goal-Belegverlauf ändern" })
+    .getByRole("button", { name: "Ziel-Belegverlauf ändern" })
     .click();
   await expect(
-    page.getByText("Goal-Beleg gespeichert.", { exact: true }),
+    page.getByText("Ziel-Beleg gespeichert.", { exact: true }),
   ).toBeVisible();
   await page.reload();
   await expect(history).toContainText("retrospektiv ergänzt");
@@ -976,7 +981,7 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
   await episodeBReview.getByLabel("Erfolgsnotiz (optional)").fill(episodeBNote);
   await episodeBReview
     .getByLabel("Entscheidungsbeleg (optional)")
-    .selectOption({ label: `Project · ${replacementProjectTitle}` });
+    .selectOption({ label: `Projekt · ${replacementProjectTitle}` });
   page.once("dialog", (dialog) => dialog.accept());
   await episodeBReview
     .getByRole("button", { name: "Ergebnis bestätigen" })
@@ -1007,7 +1012,7 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
     .first();
   await openManagement(closedEpisodeA, "Verlaufseintrag verwalten");
   const closedEpisodeAAmend = closedEpisodeA.locator(
-    'form[aria-label="Goal-Verlauf ergänzen"]',
+    'form[aria-label="Ziel-Verlauf ergänzen"]',
   );
   await closedEpisodeAAmend
     .getByLabel("Korrigierter Zeitpunkt (optional)")
@@ -1019,10 +1024,10 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
     .getByLabel("Begründung")
     .fill("Alte Episode bleibt als Historie korrigierbar.");
   await closedEpisodeAAmend
-    .getByRole("button", { name: "Goal-Verlauf ergänzen" })
+    .getByRole("button", { name: "Ziel-Verlauf ergänzen" })
     .click();
   await expect(
-    page.getByText("Goal-Verlauf ergänzt.", { exact: true }),
+    page.getByText("Ziel-Verlauf ergänzt.", { exact: true }),
   ).toBeVisible();
   await page.reload();
   await expect(outcome(page)).toContainText(episodeBNote);
