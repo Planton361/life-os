@@ -5,10 +5,16 @@ async function createGoal(page: Page, title: string) {
   await page.goto("/goals/new");
   const form = page.locator('form[aria-label="Goal erstellen"]');
   await form.getByLabel("Titel").fill(title);
-  await form.getByLabel("Status", { exact: true }).selectOption("active");
   await form.getByRole("button", { name: "Goal erstellen" }).click();
   await expect(page.getByText("Goal erstellt.", { exact: true })).toBeVisible();
   await expect(page).toHaveURL(/\/goals\/[0-9a-f-]{36}$/i);
+  await expect(page.locator('[data-goal-outcome="workbench"]')).toContainText(
+    "Stand: Entwurf",
+  );
+  const edit = await openGoalEdit(page);
+  await edit.getByLabel("Status", { exact: true }).selectOption("active");
+  await edit.getByRole("button", { name: "Änderungen speichern" }).click();
+  await expect(page.getByText("Goal aktualisiert.", { exact: true })).toBeVisible();
   const goalId = page.url().match(/\/goals\/([^/?#]+)/)?.[1];
   expect(goalId).toBeTruthy();
   return goalId!;

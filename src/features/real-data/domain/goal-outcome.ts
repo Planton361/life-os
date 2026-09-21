@@ -1,3 +1,8 @@
+import {
+  taskDependencyContext,
+  type TaskDependencyGraph,
+} from "./task-dependencies";
+
 export const goalMilestoneStatuses = [
   "planned",
   "active",
@@ -208,11 +213,13 @@ export type GoalPathProjectContext = {
 };
 
 export type GoalNextStepCue = {
+  state: "ready" | "blocked" | "planning";
   kind: "task" | "project" | "goal";
   id: string | null;
   title: string;
   href: string | null;
   reason: string;
+  blockers: readonly { id: string | null; title: string }[];
 };
 
 export type GoalOutcomeSummary = {
@@ -251,6 +258,69 @@ export type GoalOutcome = {
   achievementHistory: readonly GoalAchievementEvent[];
   summary: GoalOutcomeSummary;
 };
+
+export function latestGoalAchievementEvent(
+  events: readonly GoalAchievementEvent[],
+): GoalAchievementEvent | null {
+  return (
+    [...events]
+      .sort(
+        (left, right) =>
+          right.recordedAt.localeCompare(left.recordedAt) ||
+          right.id.localeCompare(left.id),
+      )
+      .find(
+        (event) =>
+          (event.eventType === "achieved" || event.eventType === "amended") &&
+          event.resultingStatus === "achieved",
+      ) ?? null
+  );
+}
+
+function evidenceSort(left: GoalEvidenceReference, right: GoalEvidenceReference) {
+  return (
+    right.recordedAt.localeCompare(left.recordedAt) ||
+    right.id.localeCompare(left.id)
+  );
+}
+
+/**
+ * Projects a linear evidence ledger without relying on timestamp ordering to
+ * decide which correction won. A valid chain has one leaf per reference group;
+ * the successor relation remains authoritative even when recorded_at ties.
+ */
+export function projectGoalEvidenceReferences(
+  references: readonly GoalEvidenceReference[],
+) {
+  const history = [...references].sort(evidenceSort);
+  const supersededIds = new Set(
+    history
+      .map((reference) => reference.supersedesReferenceId)
+      .filter((id): id is string => Boolean(id)),
+  );
+  const active = history
+    .filter((reference) => !supersededIds.has(reference.id))
+    .filter((reference) => reference.action !== "withdrawn")
+    .sort(evidenceSort);
+  return { active, history };
+}
+
+/** Resolve the immutable basis owner for an achieved event amendment chain. */
+export function resolveGoalAchievementBasisEventId(
+  eventId: string,
+  events: readonly Pick<GoalAchievementEvent, "id" | "correctsEventId">[],
+) {
+  const byId = new Map(events.map((event) => [event.id, event]));
+  const seen = new Set<string>();
+  let currentId = eventId;
+  while (!seen.has(currentId)) {
+    seen.add(currentId);
+    const parentId = byId.get(currentId)?.correctsEventId;
+    if (!parentId || !byId.has(parentId)) break;
+    currentId = parentId;
+  }
+  return currentId;
+}
 
 function numericValue(value: number | null | undefined) {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
@@ -292,13 +362,7 @@ export function criterionEvaluationState(
   return current === target ? "met" : "not_met";
 }
 
-const readyTaskStatuses = new Set([
-  "inbox",
-  "planned",
-  "active",
-  "waiting",
-  "someday",
-]);
+const executableTaskStatuses = new Set(["planned", "active"]);
 
 function taskSortScore(task: GoalPathTaskContext) {
   const statusScore =
@@ -312,15 +376,25 @@ export function deriveGoalNextStep(input: {
   goalStatus: GoalOutcomeSummary["status"];
   tasks: readonly GoalPathTaskContext[];
   projects: readonly GoalPathProjectContext[];
+  dependencyGraph?: TaskDependencyGraph;
 }): GoalNextStepCue {
-  const activeTasks = input.tasks
-    .filter((task) => !task.archivedAt && readyTaskStatuses.has(task.status))
+  const dependencyGraph = input.dependencyGraph ?? { tasks: [], dependencies: [] };
+  const candidateTasks = input.tasks
+    .filter(
+      (task) =>
+        !task.archivedAt && executableTaskStatuses.has(task.status),
+    )
     .sort((left, right) =>
       taskSortScore(left).localeCompare(taskSortScore(right)),
     );
-  const task = activeTasks[0];
+  const readyTasks = candidateTasks.filter(
+    (task) =>
+      taskDependencyContext(dependencyGraph, task.id).availability === "READY",
+  );
+  const task = readyTasks[0];
   if (task) {
     return {
+      state: "ready",
       kind: "task",
       id: task.id,
       title: task.title,
@@ -329,6 +403,33 @@ export function deriveGoalNextStep(input: {
         task.status === "active"
           ? "Bereits aktiver nächster Task."
           : "Bereits geplanter nächster Task.",
+      blockers: [],
+    };
+  }
+
+  const blockedTask = candidateTasks.find(
+    (candidate) =>
+      taskDependencyContext(dependencyGraph, candidate.id).availability ===
+      "BLOCKED",
+  );
+  if (blockedTask) {
+    const blockers = taskDependencyContext(
+      dependencyGraph,
+      blockedTask.id,
+    ).blockers.map(({ task: predecessor }) => ({
+      id: predecessor?.id ?? null,
+      title: predecessor?.title ?? "Unbekannter Vorgänger",
+    }));
+    return {
+      state: "blocked",
+      kind: "task",
+      id: blockedTask.id,
+      title: blockedTask.title,
+      href: `/tasks/${blockedTask.id}`,
+      reason: blockers.length
+        ? `Blockiert durch: ${blockers.map((blocker) => blocker.title).join(", ")}.`
+        : "Blockiert durch einen nicht verfügbaren Vorgänger.",
+      blockers,
     };
   }
 
@@ -346,17 +447,20 @@ export function deriveGoalNextStep(input: {
     )[0];
   if (project) {
     return {
+      state: "planning",
       kind: "project",
       id: project.id,
       title: project.nextStep?.trim() || project.title,
       href: `/projects/${project.id}`,
       reason: project.nextStep?.trim()
         ? "Next Step aus dem kanonischen Project-Kontext."
-        : "Project-Kontext als nächster sichtbarer Schritt.",
+        : "Project-Kontext als nächster sichtbarer Planungsschritt; noch nicht ausführbar.",
+      blockers: [],
     };
   }
 
   return {
+    state: "planning",
     kind: "goal",
     id: input.goalId,
     title:
@@ -367,7 +471,10 @@ export function deriveGoalNextStep(input: {
     reason:
       input.goalStatus === "achieved"
         ? "Goal ist erreicht; der Verlauf bleibt die führende Orientierung."
-        : "Noch kein kanonischer Task- oder Project-Schritt vorhanden.",
+        : candidateTasks.length === 0
+          ? "Kein ausführbarer Task vorhanden; einen nächsten Schritt bewusst planen."
+          : "Noch kein kanonischer Task- oder Project-Schritt vorhanden.",
+    blockers: [],
   };
 }
 

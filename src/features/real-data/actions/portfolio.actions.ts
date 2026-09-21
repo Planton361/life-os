@@ -489,7 +489,9 @@ export async function createGoalAction(
     areaId: optionalFormString(formData, "areaId"),
     horizon: optionalFormString(formData, "horizon"),
     why: optionalFormString(formData, "why"),
-    status: optionalFormString(formData, "status"),
+    // Goal creation is intentionally lightweight: lifecycle is managed after
+    // capture and every newly persisted Goal starts as a draft.
+    status: "draft",
     description: optionalFormString(formData, "description"),
     profileId: auth.user.id,
     targetDate: optionalFormString(formData, "targetDate"),

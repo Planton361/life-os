@@ -85,6 +85,41 @@ describe("Goal outcome repository boundaries", () => {
     expect(stale).toMatchObject({ ok: false, error: { code: "conflict" } });
   });
 
+  it("blocks criterion revisions for an achieved Goal before RPC execution", async () => {
+    const rpc = vi.fn();
+    const from = vi.fn((table: string) => {
+      const chain = {
+        select: vi.fn(() => chain),
+        eq: vi.fn(() => chain),
+        is: vi.fn(() => chain),
+        maybeSingle: vi.fn(async () =>
+          table === "goals"
+            ? { data: { id: goalId, status: "achieved", archived_at: null }, error: null }
+            : { data: null, error: null },
+        ),
+      } as unknown as MockQuery;
+      return chain;
+    });
+
+    const result = await appendGoalCriterionEvaluation(
+      { from, rpc } as never,
+      {
+        criterionId: "77777777-7777-4777-8777-777777777777",
+        criterionType: "boolean",
+        evaluationState: "value",
+        goalId,
+        profileId: userId,
+        userId,
+      },
+    );
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: { code: "conflict", message: "Ein erreichtes Goal kann nicht verändert werden." },
+    });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
   it("resolves a project Goal for an inherited-only Task before support insert", async () => {
     const projectId = "33333333-3333-4333-8333-333333333333";
     const milestoneId = "44444444-4444-4444-8444-444444444444";

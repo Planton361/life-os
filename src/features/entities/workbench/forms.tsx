@@ -19,7 +19,10 @@ import {
   type FieldValues,
   type Option,
 } from "./types";
-import { useCloseManagementDisclosure } from "./management-disclosure";
+import {
+  ManagementDisclosure,
+  useCloseManagementDisclosure,
+} from "./management-disclosure";
 const subscribe = () => () => {};
 function useHydrated() {
   return useSyncExternalStore(
@@ -113,6 +116,80 @@ function Field({
 }
 const opts = (values: readonly string[]) =>
   values.map((id) => ({ id, title: id }));
+
+export function GoalCaptureForm({ areas }: { areas: Option[] }) {
+  const hydrated = useHydrated();
+  const router = useRouter();
+  const { notify } = useToast();
+  const [pending, start] = useTransition();
+  const [error, setError] = useState("");
+  const values: FieldValues = {};
+  return (
+    <form
+      aria-label="Goal erstellen"
+      className="grid gap-6"
+      onSubmit={(event) => {
+        event.preventDefault();
+        const form = new FormData(event.currentTarget);
+        form.set("commandId", crypto.randomUUID());
+        start(async () => {
+          setError("");
+          const result = await saveWorkbenchEntity("goal", null, form);
+          if (result.status !== "success") {
+            setError(result.message);
+            return;
+          }
+          notify(result.message);
+          if (result.id) router.push(`/goals/${result.id}`);
+        });
+      }}
+    >
+      <fieldset disabled={!hydrated || pending} className="grid gap-6">
+        <section className="grid gap-4">
+          <h2 className="text-lg text-[var(--accent-cyan)]">Goal festhalten</h2>
+          <Field name="title" label="Titel" values={values} required />
+          <Field
+            name="description"
+            label="Was möchtest du erreichen?"
+            values={values}
+            type="textarea"
+          />
+          <p className="text-sm text-[var(--text-muted)]">
+            Neue Goals starten als Entwurf. Details kannst du später ergänzen.
+          </p>
+        </section>
+        <ManagementDisclosure label="Weitere Angaben (optional)">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field
+              name="why"
+              label="Warum / welcher Nutzen?"
+              values={values}
+              type="textarea"
+            />
+            <Choice name="areaId" label="Area" options={areas} />
+            <Choice
+              name="horizon"
+              label="Horizont"
+              options={opts(["week", "month", "quarter", "year", "someday"])}
+            />
+            <Field name="targetDate" label="Zieldatum" values={values} type="date" />
+          </div>
+        </ManagementDisclosure>
+        <div className="border-t border-[var(--border-subtle)] pt-5">
+          <button className={actionClass} type="submit">
+            {pending ? "Speichern …" : "Goal erstellen"}
+          </button>
+        </div>
+      </fieldset>
+      {error && (
+        <p role="alert" className="text-sm text-[var(--accent-red)]">
+          {error}
+        </p>
+      )}
+    </form>
+  );
+}
+
 export function EntityForm({
   kind,
   id,

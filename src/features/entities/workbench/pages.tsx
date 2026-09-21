@@ -16,6 +16,7 @@ import { getGoalOutcome } from "@/features/real-data/supabase/repositories/supab
 import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
 import {
   EntityForm,
+  GoalCaptureForm,
   OperationForm,
   Choice,
   actionClass,
@@ -349,7 +350,12 @@ export async function WorkbenchEditor({
         </EntityWorkbenchShell>
       );
     }
-    const outcome = await getGoalOutcome(auth.client, auth.user.id, id);
+    const outcome = await getGoalOutcome(
+      auth.client,
+      auth.user.id,
+      id,
+      data.dependencyGraph,
+    );
     if (!outcome.ok) {
       if (outcome.error.code === "not_found") notFound();
       throw new Error(outcome.error.message);
@@ -422,6 +428,16 @@ export async function WorkbenchEditor({
           />
         }
       />
+    );
+  if (kind === "goal" && !id)
+    return (
+      <EntityWorkbenchShell kind="goal" title="Goal erstellen">
+        <GoalCaptureForm
+          areas={data.areas
+            .filter((area) => !area.archived_at)
+            .map((area) => ({ id: area.id, title: area.name }))}
+        />
+      </EntityWorkbenchShell>
     );
   return (
     <EntityWorkbenchShell

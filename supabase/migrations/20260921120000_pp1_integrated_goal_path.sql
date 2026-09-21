@@ -285,6 +285,20 @@ create index goal_milestone_achievement_evidence_lookup_idx
 create index goal_achievement_evidence_lookup_idx
   on public.goal_achievement_evidence (user_id, achievement_event_id, reference_group_id, recorded_at desc, id desc);
 
+-- Evidence correction chains are linear. The row-level command checks below
+-- provide the bounded error for normal writes; these unique indexes also close
+-- the concurrent-writer race where two successors could otherwise pass the
+-- read-before-insert check together.
+create unique index goal_criterion_evidence_one_successor_idx
+  on public.goal_criterion_evaluation_evidence (user_id, supersedes_reference_id)
+  where supersedes_reference_id is not null;
+create unique index goal_milestone_evidence_one_successor_idx
+  on public.goal_milestone_achievement_evidence (user_id, supersedes_reference_id)
+  where supersedes_reference_id is not null;
+create unique index goal_evidence_one_successor_idx
+  on public.goal_achievement_evidence (user_id, supersedes_reference_id)
+  where supersedes_reference_id is not null;
+
 -- Preserve the current achieved state that existed before Slice 1 without
 -- inventing the old transition time or decision-time identity. These rows are
 -- durable legacy markers; current Goal/Etappe rows remain the current identity.
@@ -718,13 +732,16 @@ begin
     v_result := jsonb_build_object('event_id', v_event_id, 'episode_id', v_event.episode_id, 'milestone_id', v_milestone_id);
 
   elsif p_command_kind in ('criterion.evaluate', 'criterion.correct', 'criterion.retract') then
-    select c.* into v_criterion
+    select c.*, g.status as goal_status into v_criterion
       from public.goal_outcome_criteria c
       join public.goals g on g.user_id = c.user_id and g.id = c.goal_id
      where c.user_id = v_user_id and c.goal_id = v_goal_id and c.id = v_criterion_id and c.archived_at is null and g.archived_at is null
      for update of c, g;
     if not found then raise exception 'GOAL_CRITERION_NOT_FOUND' using errcode = 'P0002'; end if;
     if v_criterion.goal_id <> v_goal_id then raise exception 'GOAL_CRITERION_GOAL_MISMATCH' using errcode = 'P0001'; end if;
+    if v_criterion.goal_status = 'achieved' then
+      raise exception 'GOAL_CRITERION_ACHIEVED_REQUIRES_REOPEN' using errcode = 'P0001';
+    end if;
     select e.id into v_latest_evaluation_id
       from public.goal_criterion_evaluations e
      where e.user_id = v_user_id and e.criterion_id = v_criterion_id
@@ -780,6 +797,13 @@ begin
          where r.user_id = v_user_id and r.id = v_supersedes_reference_id and r.evaluation_id = v_evaluation.id
          for update;
         if not found then raise exception 'GOAL_EVIDENCE_REFERENCE_NOT_FOUND' using errcode = 'P0002'; end if;
+        if exists (
+          select 1 from public.goal_criterion_evaluation_evidence successor
+           where successor.user_id = v_user_id
+             and successor.supersedes_reference_id = v_prior_ref.id
+        ) then
+          raise exception 'GOAL_EVIDENCE_REFERENCE_ALREADY_SUPERSEDED' using errcode = 'P0001';
+        end if;
         v_reference_group_id := v_prior_ref.reference_group_id;
         if length(btrim(coalesce(v_ref->>'reason', ''))) = 0 then raise exception 'GOAL_EVIDENCE_REASON_REQUIRED' using errcode = 'P0001'; end if;
         if v_action = 'withdrawn' then
@@ -797,16 +821,20 @@ begin
         if length(btrim(coalesce(v_ref->>'reason', ''))) = 0 and v_action = 'supplemented' then raise exception 'GOAL_EVIDENCE_REASON_REQUIRED' using errcode = 'P0001'; end if;
         select title, context into v_source_title, v_source_context from public.goal_source_snapshot(v_user_id, v_source_type, v_source_id);
       end if;
-      insert into public.goal_criterion_evaluation_evidence (
-        user_id, evaluation_id, reference_group_id, reference_action, source_type, source_id,
-        source_title_snapshot, source_context_snapshot, supersedes_reference_id, reason,
-        retrospective, occurred_at
-      ) values (
-        v_user_id, v_evaluation.id,
-        v_reference_group_id, v_action, v_source_type, v_source_id,
-        v_source_title, v_source_context, case when v_action in ('replaced', 'withdrawn') then v_supersedes_reference_id else null end,
-        nullif(v_ref->>'reason', ''), v_retrospective, v_occurred_at
-      );
+      begin
+        insert into public.goal_criterion_evaluation_evidence (
+          user_id, evaluation_id, reference_group_id, reference_action, source_type, source_id,
+          source_title_snapshot, source_context_snapshot, supersedes_reference_id, reason,
+          retrospective, occurred_at
+        ) values (
+          v_user_id, v_evaluation.id,
+          v_reference_group_id, v_action, v_source_type, v_source_id,
+          v_source_title, v_source_context, case when v_action in ('replaced', 'withdrawn') then v_supersedes_reference_id else null end,
+          nullif(v_ref->>'reason', ''), v_retrospective, v_occurred_at
+        );
+      exception when unique_violation then
+        raise exception 'GOAL_EVIDENCE_REFERENCE_ALREADY_SUPERSEDED' using errcode = 'P0001';
+      end;
       v_count := v_count + 1;
     end loop;
     v_result := jsonb_build_object('evaluation_id', v_evaluation.id, 'references_changed', v_count);
@@ -858,12 +886,19 @@ begin
       if v_action in ('replaced', 'withdrawn') then
         if v_supersedes_reference_id is null then raise exception 'GOAL_EVIDENCE_REFERENCE_REQUIRED' using errcode = 'P0001'; end if;
         select * into v_prior_ref
-          from public.goal_milestone_achievement_evidence r
+         from public.goal_milestone_achievement_evidence r
          where r.user_id = v_user_id
          and r.id = v_supersedes_reference_id
            and r.achievement_event_id = v_event_id
          for update;
         if not found then raise exception 'GOAL_EVIDENCE_REFERENCE_NOT_FOUND' using errcode = 'P0002'; end if;
+        if exists (
+          select 1 from public.goal_milestone_achievement_evidence successor
+           where successor.user_id = v_user_id
+             and successor.supersedes_reference_id = v_prior_ref.id
+        ) then
+          raise exception 'GOAL_EVIDENCE_REFERENCE_ALREADY_SUPERSEDED' using errcode = 'P0001';
+        end if;
         v_reference_group_id := v_prior_ref.reference_group_id;
         if length(btrim(coalesce(v_ref->>'reason', ''))) = 0 then raise exception 'GOAL_EVIDENCE_REASON_REQUIRED' using errcode = 'P0001'; end if;
         if v_action = 'withdrawn' then
@@ -881,16 +916,20 @@ begin
         if length(btrim(coalesce(v_ref->>'reason', ''))) = 0 and v_action = 'supplemented' then raise exception 'GOAL_EVIDENCE_REASON_REQUIRED' using errcode = 'P0001'; end if;
         select title, context into v_source_title, v_source_context from public.goal_source_snapshot(v_user_id, v_source_type, v_source_id);
       end if;
-      insert into public.goal_milestone_achievement_evidence (
-        user_id, achievement_event_id, episode_id, reference_group_id, reference_action, source_type, source_id,
-        source_title_snapshot, source_context_snapshot, supersedes_reference_id, reason,
-        retrospective, occurred_at
-      ) values (
-        v_user_id, v_event_id, v_episode_id, v_reference_group_id, v_action, v_source_type, v_source_id,
-        v_source_title, v_source_context,
-        case when v_action in ('replaced', 'withdrawn') then v_supersedes_reference_id else null end,
-        nullif(v_ref->>'reason', ''), v_retrospective, v_occurred_at
-      );
+      begin
+        insert into public.goal_milestone_achievement_evidence (
+          user_id, achievement_event_id, episode_id, reference_group_id, reference_action, source_type, source_id,
+          source_title_snapshot, source_context_snapshot, supersedes_reference_id, reason,
+          retrospective, occurred_at
+        ) values (
+          v_user_id, v_event_id, v_episode_id, v_reference_group_id, v_action, v_source_type, v_source_id,
+          v_source_title, v_source_context,
+          case when v_action in ('replaced', 'withdrawn') then v_supersedes_reference_id else null end,
+          nullif(v_ref->>'reason', ''), v_retrospective, v_occurred_at
+        );
+      exception when unique_violation then
+        raise exception 'GOAL_EVIDENCE_REFERENCE_ALREADY_SUPERSEDED' using errcode = 'P0001';
+      end;
       v_count := v_count + 1;
     end loop;
     v_result := jsonb_build_object('event_id', v_event_id, 'episode_id', v_episode_id, 'references_changed', v_count);
@@ -948,12 +987,19 @@ begin
       if v_action in ('replaced', 'withdrawn') then
         if v_supersedes_reference_id is null then raise exception 'GOAL_EVIDENCE_REFERENCE_REQUIRED' using errcode = 'P0001'; end if;
         select * into v_prior_ref
-          from public.goal_achievement_evidence r
+         from public.goal_achievement_evidence r
          where r.user_id = v_user_id
            and r.id = v_supersedes_reference_id
            and r.achievement_event_id = v_event.id
          for update;
         if not found then raise exception 'GOAL_EVIDENCE_REFERENCE_NOT_FOUND' using errcode = 'P0002'; end if;
+        if exists (
+          select 1 from public.goal_achievement_evidence successor
+           where successor.user_id = v_user_id
+             and successor.supersedes_reference_id = v_prior_ref.id
+        ) then
+          raise exception 'GOAL_EVIDENCE_REFERENCE_ALREADY_SUPERSEDED' using errcode = 'P0001';
+        end if;
         v_reference_group_id := v_prior_ref.reference_group_id;
         if length(btrim(coalesce(v_ref->>'reason', ''))) = 0 then raise exception 'GOAL_EVIDENCE_REASON_REQUIRED' using errcode = 'P0001'; end if;
         if v_action = 'withdrawn' then
@@ -971,16 +1017,20 @@ begin
         if length(btrim(coalesce(v_ref->>'reason', ''))) = 0 and v_action = 'supplemented' then raise exception 'GOAL_EVIDENCE_REASON_REQUIRED' using errcode = 'P0001'; end if;
         select title, context into v_source_title, v_source_context from public.goal_source_snapshot(v_user_id, v_source_type, v_source_id);
       end if;
-      insert into public.goal_achievement_evidence (
-        user_id, achievement_event_id, reference_group_id, reference_action, source_type, source_id,
-        source_title_snapshot, source_context_snapshot, supersedes_reference_id, reason,
-        retrospective, occurred_at
-      ) values (
-        v_user_id, v_event.id, v_reference_group_id, v_action,
-        v_source_type, v_source_id, v_source_title, v_source_context,
-        case when v_action in ('replaced', 'withdrawn') then v_supersedes_reference_id else null end,
-        nullif(v_ref->>'reason', ''), v_retrospective, v_occurred_at
-      );
+      begin
+        insert into public.goal_achievement_evidence (
+          user_id, achievement_event_id, reference_group_id, reference_action, source_type, source_id,
+          source_title_snapshot, source_context_snapshot, supersedes_reference_id, reason,
+          retrospective, occurred_at
+        ) values (
+          v_user_id, v_event.id, v_reference_group_id, v_action,
+          v_source_type, v_source_id, v_source_title, v_source_context,
+          case when v_action in ('replaced', 'withdrawn') then v_supersedes_reference_id else null end,
+          nullif(v_ref->>'reason', ''), v_retrospective, v_occurred_at
+        );
+      exception when unique_violation then
+        raise exception 'GOAL_EVIDENCE_REFERENCE_ALREADY_SUPERSEDED' using errcode = 'P0001';
+      end;
       v_count := v_count + 1;
     end loop;
     v_result := jsonb_build_object('event_id', v_event.id, 'references_changed', v_count);

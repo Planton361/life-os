@@ -157,6 +157,19 @@ declare
   v_retrospective boolean;
   v_description text;
 begin
+  select count(*) into v_count
+    from pg_indexes
+   where schemaname = 'public'
+     and indexname in (
+       'goal_criterion_evidence_one_successor_idx',
+       'goal_milestone_evidence_one_successor_idx',
+       'goal_evidence_one_successor_idx'
+     )
+     and indexdef like 'CREATE UNIQUE INDEX%';
+  if v_count <> 3 then
+    raise exception 'Evidence successor indexes are not all unique';
+  end if;
+
   -- Re-run the migration backfill against a state that represents the old
   -- world. The old evaluation is explicitly legacy, never retrospective.
   execute 'set local role postgres';
@@ -277,6 +290,27 @@ begin
        and reason = 'New active source is more precise.'
   ) then raise exception 'Criterion replacement did not retain exact superseded reference'; end if;
 
+  perform pg_temp.reject(
+    format(
+      'select public.execute_goal_command(%L,%L,%L,%L::jsonb)',
+      'criterion.evidence',
+      '93000000-0000-0000-8000-000000000105',
+      'ledger-criterion-second-replace',
+      jsonb_build_object(
+        'goal_id', '93000000-0000-4000-8000-000000000010',
+        'evaluation_id', v_evaluation_id,
+        'action', 'replaced',
+        'references', jsonb_build_array(jsonb_build_object(
+          'source_type', 'project',
+          'source_id', '93000000-0000-4000-8000-000000000041',
+          'supersedes_reference_id', v_criterion_reference_id,
+          'reason', 'Second successor must be rejected.'
+        ))
+      )::text
+    ),
+    'GOAL_EVIDENCE_REFERENCE_ALREADY_SUPERSEDED'
+  );
+
   perform public.execute_goal_command(
     'criterion.evidence',
     '93000000-0000-0000-8000-000000000103',
@@ -298,12 +332,32 @@ begin
        and supersedes_reference_id = v_criterion_replacement_id
        and reason = 'Source withdrawn from this decision.'
   ) then raise exception 'Criterion withdrawal did not preserve reason and superseded reference'; end if;
-  select count(*) into v_count from (
-    select distinct on (reference_group_id) reference_action
-      from public.goal_criterion_evaluation_evidence
-     where evaluation_id = v_evaluation_id
-     order by reference_group_id, recorded_at desc, id desc
-  ) latest where reference_action <> 'withdrawn';
+  perform pg_temp.reject(
+    format(
+      'select public.execute_goal_command(%L,%L,%L,%L::jsonb)',
+      'criterion.evidence',
+      '93000000-0000-0000-8000-000000000106',
+      'ledger-criterion-second-withdraw',
+      jsonb_build_object(
+        'goal_id', '93000000-0000-4000-8000-000000000010',
+        'evaluation_id', v_evaluation_id,
+        'action', 'withdrawn',
+        'references', jsonb_build_array(jsonb_build_object(
+          'supersedes_reference_id', v_criterion_reference_id,
+          'reason', 'Second successor must be rejected.'
+        ))
+      )::text
+    ),
+    'GOAL_EVIDENCE_REFERENCE_ALREADY_SUPERSEDED'
+  );
+  select count(*) into v_count
+    from public.goal_criterion_evaluation_evidence leaf
+   where leaf.evaluation_id = v_evaluation_id
+     and not exists (
+       select 1 from public.goal_criterion_evaluation_evidence successor
+        where successor.supersedes_reference_id = leaf.id
+     )
+     and leaf.reference_action <> 'withdrawn';
   if v_count <> 0 then raise exception 'Withdrawn criterion evidence remains active'; end if;
 
   perform public.execute_goal_command(
@@ -329,6 +383,15 @@ begin
        and retrospective
        and reason = 'Retrospective decision supplement.'
   ) then raise exception 'Criterion retrospective supplement was not represented'; end if;
+  select count(*) into v_count
+    from public.goal_criterion_evaluation_evidence leaf
+   where leaf.evaluation_id = v_evaluation_id
+     and not exists (
+       select 1 from public.goal_criterion_evaluation_evidence successor
+        where successor.supersedes_reference_id = leaf.id
+     )
+     and leaf.reference_action <> 'withdrawn';
+  if v_count <> 1 then raise exception 'Criterion evidence projection has a non-deterministic active leaf'; end if;
 
   -- Etappe history and its exact event-scoped ledger.
   v_result := public.execute_goal_command(
@@ -379,6 +442,27 @@ begin
       ))
     )
   );
+  perform pg_temp.reject(
+    format(
+      'select public.execute_goal_command(%L,%L,%L,%L::jsonb)',
+      'milestone.evidence',
+      '93000000-0000-0000-8000-000000000116',
+      'ledger-milestone-second-replace',
+      jsonb_build_object(
+        'goal_id', '93000000-0000-4000-8000-000000000010',
+        'milestone_id', '93000000-0000-4000-8000-000000000020',
+        'achievement_event_id', v_milestone_event_id,
+        'action', 'replaced',
+        'references', jsonb_build_array(jsonb_build_object(
+          'source_type', 'project',
+          'source_id', '93000000-0000-4000-8000-000000000041',
+          'supersedes_reference_id', v_milestone_reference_id,
+          'reason', 'Second successor must be rejected.'
+        ))
+      )::text
+    ),
+    'GOAL_EVIDENCE_REFERENCE_ALREADY_SUPERSEDED'
+  );
   select id into v_milestone_replacement_id
    from public.goal_milestone_achievement_evidence
    where achievement_event_id = v_milestone_event_id
@@ -398,6 +482,25 @@ begin
         'reason', 'Etappe source withdrawn.'
       ))
     )
+  );
+  perform pg_temp.reject(
+    format(
+      'select public.execute_goal_command(%L,%L,%L,%L::jsonb)',
+      'milestone.evidence',
+      '93000000-0000-0000-8000-000000000117',
+      'ledger-milestone-second-withdraw',
+      jsonb_build_object(
+        'goal_id', '93000000-0000-4000-8000-000000000010',
+        'milestone_id', '93000000-0000-4000-8000-000000000020',
+        'achievement_event_id', v_milestone_event_id,
+        'action', 'withdrawn',
+        'references', jsonb_build_array(jsonb_build_object(
+          'supersedes_reference_id', v_milestone_reference_id,
+          'reason', 'Second successor must be rejected.'
+        ))
+      )::text
+    ),
+    'GOAL_EVIDENCE_REFERENCE_ALREADY_SUPERSEDED'
   );
   perform public.execute_goal_command(
     'milestone.evidence',
@@ -422,6 +525,15 @@ begin
        and reference_action = 'supplemented'
        and retrospective
   ) then raise exception 'Etappe retrospective supplement was not represented'; end if;
+  select count(*) into v_count
+    from public.goal_milestone_achievement_evidence leaf
+   where leaf.achievement_event_id = v_milestone_event_id
+     and not exists (
+       select 1 from public.goal_milestone_achievement_evidence successor
+        where successor.supersedes_reference_id = leaf.id
+     )
+     and leaf.reference_action <> 'withdrawn';
+  if v_count <> 1 then raise exception 'Etappe evidence projection has a non-deterministic active leaf'; end if;
 
   v_result := public.execute_goal_command(
     'milestone.amend',
@@ -464,6 +576,82 @@ begin
     )
   );
   v_goal_event_id := (v_result->>'event_id')::uuid;
+  -- The achieved Goal is now authoritative for criterion decisions. Direct
+  -- authenticated RPC calls must reject all three revision forms until reopen.
+  perform pg_temp.reject(
+    format(
+      'select public.execute_goal_command(%L,%L,%L,%L::jsonb)',
+      'criterion.evaluate',
+      '93000000-0000-0000-8000-000000000126',
+      'ledger-achieved-criterion-evaluate',
+      jsonb_build_object(
+        'goal_id', '93000000-0000-4000-8000-000000000010',
+        'criterion_id', '93000000-0000-4000-8000-000000000030',
+        'boolean_value', false,
+        'deferred', false,
+        'expected_latest_evaluation_id', v_evaluation_id
+      )::text
+    ),
+    'GOAL_CRITERION_ACHIEVED_REQUIRES_REOPEN'
+  );
+  perform pg_temp.reject(
+    format(
+      'select public.execute_goal_command(%L,%L,%L,%L::jsonb)',
+      'criterion.correct',
+      '93000000-0000-0000-8000-000000000127',
+      'ledger-achieved-criterion-correct',
+      jsonb_build_object(
+        'goal_id', '93000000-0000-4000-8000-000000000010',
+        'criterion_id', '93000000-0000-4000-8000-000000000030',
+        'boolean_value', true,
+        'deferred', false,
+        'correction_reason', 'Reopen is required.',
+        'expected_latest_evaluation_id', v_evaluation_id
+      )::text
+    ),
+    'GOAL_CRITERION_ACHIEVED_REQUIRES_REOPEN'
+  );
+  perform pg_temp.reject(
+    format(
+      'select public.execute_goal_command(%L,%L,%L,%L::jsonb)',
+      'criterion.retract',
+      '93000000-0000-0000-8000-000000000128',
+      'ledger-achieved-criterion-retract',
+      jsonb_build_object(
+        'goal_id', '93000000-0000-4000-8000-000000000010',
+        'criterion_id', '93000000-0000-4000-8000-000000000030',
+        'correction_reason', 'Reopen is required.',
+        'expected_latest_evaluation_id', v_evaluation_id
+      )::text
+    ),
+    'GOAL_CRITERION_ACHIEVED_REQUIRES_REOPEN'
+  );
+  perform public.execute_goal_command(
+    'goal.reopen',
+    '93000000-0000-0000-8000-000000000129',
+    'ledger-goal-reopen-for-criterion',
+    jsonb_build_object(
+      'goal_id', '93000000-0000-4000-8000-000000000010',
+      'occurred_at', '2026-09-21T01:03:15Z'
+    )
+  );
+  v_result := public.execute_goal_command(
+    'criterion.correct',
+    '93000000-0000-0000-8000-00000000012a',
+    'ledger-reopened-criterion-correct',
+    jsonb_build_object(
+      'goal_id', '93000000-0000-4000-8000-000000000010',
+      'criterion_id', '93000000-0000-4000-8000-000000000030',
+      'boolean_value', true,
+      'deferred', false,
+      'correction_reason', 'Corrected after explicit reopen.',
+      'expected_latest_evaluation_id', v_evaluation_id
+    )
+  );
+  if (v_result->>'evaluation_id') is null then
+    raise exception 'Criterion correction did not succeed after Goal reopen';
+  end if;
+  v_evaluation_id := (v_result->>'evaluation_id')::uuid;
   if exists (
     select 1 from information_schema.columns
      where table_schema = 'public'
@@ -494,6 +682,54 @@ begin
        and goal_title_snapshot = 'Slice-1 ledger Goal'
        and achievement_note = 'Amended exact Goal outcome.'
   ) then raise exception 'Goal amendment did not preserve bounded history'; end if;
+
+  v_result := public.execute_goal_command(
+    'goal.amend',
+    '93000000-0000-0000-8000-00000000012b',
+    'ledger-goal-amend-twice',
+    jsonb_build_object(
+      'goal_id', '93000000-0000-4000-8000-000000000010',
+      'event_id', v_goal_amendment_id,
+      'occurred_at', '2026-09-21T01:03:30Z',
+      'achievement_note', 'Final exact Goal outcome.',
+      'correction_reason', 'Second Goal history correction proof.',
+      'retrospective', false
+    )
+  );
+  v_goal_amendment_id := (v_result->>'event_id')::uuid;
+  if not exists (
+    select 1 from public.goal_achievement_events current_event
+     join public.goal_achievement_events prior_event
+       on prior_event.id = current_event.corrects_event_id
+    where current_event.id = v_goal_amendment_id
+      and current_event.corrects_event_id = prior_event.id
+      and current_event.achievement_note = 'Final exact Goal outcome.'
+      and current_event.occurred_at = '2026-09-21T01:03:30Z'
+      and current_event.correction_reason = 'Second Goal history correction proof.'
+      and prior_event.corrects_event_id = v_goal_event_id
+  ) then raise exception 'Second Goal amendment did not form a linear correction chain'; end if;
+  select count(*) into v_count
+    from public.goal_achievement_criterion_basis
+   where achievement_event_id = v_goal_event_id;
+  if v_count <> 1 then raise exception 'Original Goal criterion basis was not retained'; end if;
+  select count(*) into v_count
+    from public.goal_achievement_milestone_basis
+   where achievement_event_id = v_goal_event_id;
+  if v_count <> 1 then raise exception 'Original Goal Etappe basis was not retained'; end if;
+  select count(*) into v_count
+    from public.goal_achievement_criterion_basis
+   where achievement_event_id in (
+     (select corrects_event_id from public.goal_achievement_events where id = v_goal_amendment_id),
+     v_goal_amendment_id
+   );
+  if v_count <> 0 then raise exception 'Goal amendments duplicated immutable criterion basis'; end if;
+  select count(*) into v_count
+    from public.goal_achievement_milestone_basis
+   where achievement_event_id in (
+     (select corrects_event_id from public.goal_achievement_events where id = v_goal_amendment_id),
+     v_goal_amendment_id
+   );
+  if v_count <> 0 then raise exception 'Goal amendments duplicated immutable Etappe basis'; end if;
 
   perform public.execute_goal_command(
     'goal.evidence',
@@ -535,6 +771,26 @@ begin
    where achievement_event_id = v_goal_amendment_id
      and reference_action = 'replaced'
    order by recorded_at desc, id desc limit 1;
+  perform pg_temp.reject(
+    format(
+      'select public.execute_goal_command(%L,%L,%L,%L::jsonb)',
+      'goal.evidence',
+      '93000000-0000-0000-8000-00000000012c',
+      'ledger-goal-second-replace',
+      jsonb_build_object(
+        'goal_id', '93000000-0000-4000-8000-000000000010',
+        'achievement_event_id', v_goal_amendment_id,
+        'action', 'replaced',
+        'references', jsonb_build_array(jsonb_build_object(
+          'source_type', 'project',
+          'source_id', '93000000-0000-4000-8000-000000000041',
+          'supersedes_reference_id', v_goal_reference_id,
+          'reason', 'Second successor must be rejected.'
+        ))
+      )::text
+    ),
+    'GOAL_EVIDENCE_REFERENCE_ALREADY_SUPERSEDED'
+  );
   perform public.execute_goal_command(
     'goal.evidence',
     '93000000-0000-0000-8000-000000000124',
@@ -548,6 +804,24 @@ begin
         'reason', 'Goal source withdrawn.'
       ))
     )
+  );
+  perform pg_temp.reject(
+    format(
+      'select public.execute_goal_command(%L,%L,%L,%L::jsonb)',
+      'goal.evidence',
+      '93000000-0000-0000-8000-00000000012d',
+      'ledger-goal-second-withdraw',
+      jsonb_build_object(
+        'goal_id', '93000000-0000-4000-8000-000000000010',
+        'achievement_event_id', v_goal_amendment_id,
+        'action', 'withdrawn',
+        'references', jsonb_build_array(jsonb_build_object(
+          'supersedes_reference_id', v_goal_reference_id,
+          'reason', 'Second successor must be rejected.'
+        ))
+      )::text
+    ),
+    'GOAL_EVIDENCE_REFERENCE_ALREADY_SUPERSEDED'
   );
   perform public.execute_goal_command(
     'goal.evidence',
@@ -571,6 +845,15 @@ begin
        and reference_action = 'supplemented'
        and retrospective
   ) then raise exception 'Goal retrospective supplement was not represented'; end if;
+  select count(*) into v_count
+    from public.goal_achievement_evidence leaf
+   where leaf.achievement_event_id = v_goal_amendment_id
+     and not exists (
+       select 1 from public.goal_achievement_evidence successor
+        where successor.supersedes_reference_id = leaf.id
+     )
+     and leaf.reference_action <> 'withdrawn';
+  if v_count <> 1 then raise exception 'Goal evidence projection has a non-deterministic active leaf'; end if;
 
   perform pg_temp.reject(
     format('update public.goal_achievement_events set achievement_note = %L where id = %L', 'mutated', v_goal_event_id),

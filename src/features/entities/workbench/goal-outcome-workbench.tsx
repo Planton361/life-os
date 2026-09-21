@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import {
   criterionEvaluationState,
+  latestGoalAchievementEvent,
   type GoalAchievementEvent,
   type GoalEvidenceReference,
   type GoalEvidenceSourceType,
@@ -972,7 +973,7 @@ function HistoryEntry({
           {event.correctionReason ?? "nicht angegeben"}
         </p>
       )}
-      {event.eventType === "achieved" && (
+      {event.resultingStatus === "achieved" && (
         <>
           <p className="text-sm">
             {event.criterionBasis.length} Kriterien-Basen ·{" "}
@@ -1143,11 +1144,11 @@ export function GoalOutcomeWorkbench({
     .map((task) => ({ id: task.id, title: task.title }));
   const recentGoalHistory = outcome.achievementHistory.slice(0, 4);
   const recentMilestoneHistory = outcome.milestoneHistory.slice(0, 4);
-  const latestAchievement = outcome.achievementHistory.find(
-    (event) =>
-      (event.eventType === "achieved" || event.eventType === "amended") &&
-      event.resultingStatus === "achieved",
+  const latestAchievement = latestGoalAchievementEvent(
+    outcome.achievementHistory,
   );
+  const effectiveAchievementAt =
+    latestAchievement?.occurredAt ?? outcome.achievedAt;
   return (
     <EntityWorkbenchShell kind="goal" title={outcome.goalTitle}>
       <div
@@ -1166,8 +1167,8 @@ export function GoalOutcomeWorkbench({
             <div className="grid gap-2">
               <p className="text-base font-semibold text-[var(--accent-cyan)]">
                 Ergebnis akzeptiert
-                {outcome.achievedAt
-                  ? ` am ${outcome.achievedAt.slice(0, 10)}`
+                {effectiveAchievementAt
+                  ? ` am ${effectiveAchievementAt.slice(0, 10)}`
                   : ""}
                 .
               </p>
@@ -1232,10 +1233,41 @@ export function GoalOutcomeWorkbench({
 
         <Panel id="naechster-schritt" title="Nächster Schritt">
           <div className="grid gap-2">
+            <p
+              className="text-sm font-semibold text-[var(--accent-orange)]"
+              data-goal-next-step-state={outcome.nextStep.state}
+            >
+              {outcome.nextStep.state === "blocked"
+                ? "Blockiert"
+                : outcome.nextStep.state === "ready"
+                  ? "Bereit"
+                  : "Planung"}
+            </p>
             <p className="text-base font-semibold">{outcome.nextStep.title}</p>
             <p className="text-sm text-[var(--text-muted)]">
               {outcome.nextStep.reason}
             </p>
+            {outcome.nextStep.blockers.length > 0 && (
+              <div className="grid gap-1 text-sm text-[var(--accent-orange)]">
+                <span>Blockiert durch:</span>
+                <ul className="grid gap-1">
+                  {outcome.nextStep.blockers.map((blocker) => (
+                    <li key={blocker.id ?? blocker.title}>
+                      {blocker.id ? (
+                        <Link
+                          className="underline underline-offset-4"
+                          href={`/tasks/${blocker.id}`}
+                        >
+                          {blocker.title}
+                        </Link>
+                      ) : (
+                        blocker.title
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {outcome.nextStep.href && (
               <Link
                 className="text-sm text-[var(--accent-cyan)]"
@@ -1450,14 +1482,16 @@ export function GoalOutcomeWorkbench({
               <div className="grid gap-3">
                 <p className="text-base font-semibold text-[var(--accent-cyan)]">
                   Zielergebnis erreicht
-                  {outcome.achievedAt
-                    ? ` am ${outcome.achievedAt.slice(0, 10)}`
+                  {effectiveAchievementAt
+                    ? ` am ${effectiveAchievementAt.slice(0, 10)}`
                     : ""}
                   .
                 </p>
-                {outcome.achievementNote && (
+                {(latestAchievement?.achievementNote ??
+                  outcome.achievementNote) && (
                   <p className="text-sm text-[var(--text-secondary)]">
-                    {outcome.achievementNote}
+                    {latestAchievement?.achievementNote ??
+                      outcome.achievementNote}
                   </p>
                 )}
                 <p className="text-sm text-[var(--text-secondary)]">

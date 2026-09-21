@@ -15,7 +15,10 @@ import {
   buildGoalOutcomeSummary,
   criterionEvaluationState,
   deriveGoalNextStep,
+  projectGoalEvidenceReferences,
+  resolveGoalAchievementBasisEventId,
 } from "../../domain/goal-outcome";
+import type { TaskDependencyGraph } from "../../domain/task-dependencies";
 import type {
   GoalAchieveInput,
   GoalAchievementAmendInput,
@@ -125,6 +128,8 @@ function dbFailure(
     GOAL_ARCHIVED: "Ein archiviertes Goal kann nicht verändert werden.",
     GOAL_CRITERION_ARCHIVED:
       "Ein archiviertes Kriterium kann nicht bewertet werden.",
+    GOAL_CRITERION_ACHIEVED_REQUIRES_REOPEN:
+      "Öffne das Ziel zuerst wieder, bevor du das Kriterium änderst.",
     GOAL_DEFERRED_EVALUATION_SHAPE:
       "Deferred-Bewertungen dürfen keinen Wert oder keine Einheit enthalten.",
     GOAL_NUMERIC_EVALUATION_UNIT:
@@ -165,6 +170,8 @@ function dbFailure(
       "Eine bestehende Belegreferenz muss ausgewählt werden.",
     GOAL_EVIDENCE_REFERENCE_NOT_FOUND:
       "Die zu ändernde Belegreferenz wurde nicht gefunden.",
+    GOAL_EVIDENCE_REFERENCE_ALREADY_SUPERSEDED:
+      "Diese Belegreferenz wurde bereits korrigiert; verwende die letzte Referenz der Kette.",
     GOAL_EVIDENCE_REASON_REQUIRED:
       "Für Ersetzen, Zurücknehmen oder retrospektives Ergänzen ist ein Grund erforderlich.",
     GOAL_EVIDENCE_SOURCE_REQUIRED:
@@ -289,27 +296,7 @@ function evidenceProjection(
     | GoalAchievementEvidenceRow
   )[],
 ) {
-  const history = rows
-    .map(mapEvidence)
-    .sort(
-      (left, right) =>
-        right.recordedAt.localeCompare(left.recordedAt) ||
-        right.id.localeCompare(left.id),
-    );
-  const latestByGroup = new Map<string, GoalEvidenceReference>();
-  for (const reference of history) {
-    if (!latestByGroup.has(reference.referenceGroupId)) {
-      latestByGroup.set(reference.referenceGroupId, reference);
-    }
-  }
-  const active = [...latestByGroup.values()]
-    .filter((reference) => reference.action !== "withdrawn")
-    .sort(
-      (left, right) =>
-        right.recordedAt.localeCompare(left.recordedAt) ||
-        right.id.localeCompare(left.id),
-    );
-  return { active, history };
+  return projectGoalEvidenceReferences(rows.map(mapEvidence));
 }
 
 function mapMilestoneEvent(
@@ -604,6 +591,7 @@ export async function getGoalOutcome(
   client: SupabaseClientLike,
   userId: string,
   goalId: string,
+  dependencyGraph?: TaskDependencyGraph,
 ): Promise<RepositoryResult<GoalOutcome>> {
   const [
     goalResult,
@@ -836,11 +824,19 @@ export async function getGoalOutcome(
       milestoneEvidenceByEvent.get(row.id)?.history ?? [],
     ),
   );
+  const basisEventId = (eventId: string) =>
+    resolveGoalAchievementBasisEventId(
+      eventId,
+      achievementEventRows.map((event) => ({
+        id: event.id,
+        correctsEventId: event.corrects_event_id,
+      })),
+    );
   const achievementHistory = achievementEventRows.map((row) =>
     mapGoalAchievementEvent(
       row,
       criterionBasisRows
-        .filter((basis) => basis.achievement_event_id === row.id)
+        .filter((basis) => basis.achievement_event_id === basisEventId(row.id))
         .map((basis) => ({
           criterionId: basis.criterion_id,
           evaluationId: basis.evaluation_id,
@@ -855,7 +851,7 @@ export async function getGoalOutcome(
           legacyState: asRecord(basis.legacy_state),
         })),
       milestoneBasisRows
-        .filter((basis) => basis.achievement_event_id === row.id)
+        .filter((basis) => basis.achievement_event_id === basisEventId(row.id))
         .map((basis) => ({
           milestoneId: basis.milestone_id,
           achievementEpisodeId: basis.achievement_episode_id,
@@ -923,6 +919,7 @@ export async function getGoalOutcome(
       nextStep: deriveGoalNextStep({
         goalId,
         goalStatus: goalResult.data.status,
+        dependencyGraph,
         tasks: taskRows
           .filter(
             (row) =>

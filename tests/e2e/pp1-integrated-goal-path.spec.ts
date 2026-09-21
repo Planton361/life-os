@@ -10,13 +10,24 @@ async function createGoal(
   await page.goto("/goals/new");
   const form = page.locator('form[aria-label="Goal erstellen"]');
   await form.getByLabel("Titel").fill(title);
-  await form.getByLabel("Beschreibung / Kontext").fill(description);
-  await form.getByLabel("Desired Outcome / Warum").fill(why);
-  await form.getByLabel("Status", { exact: true }).selectOption("active");
-  await form.getByLabel("Horizon", { exact: true }).selectOption("quarter");
+  await form.getByLabel("Was möchtest du erreichen?", { exact: true }).fill(description);
+  const optional = form.getByRole("button", {
+    name: "Weitere Angaben (optional)",
+    exact: true,
+  });
+  await expect(optional).toHaveAttribute("aria-expanded", "false");
+  await optional.click();
+  await expect(optional).toHaveAttribute("aria-expanded", "true");
+  await form.getByLabel("Warum / welcher Nutzen?", { exact: true }).fill(why);
+  await form.getByLabel("Horizont", { exact: true }).selectOption("quarter");
   await form.getByRole("button", { name: "Goal erstellen" }).click();
   await expect(page.getByText("Goal erstellt.", { exact: true })).toBeVisible();
   await expect(page).toHaveURL(/\/goals\/[0-9a-f-]{36}$/i);
+  await expect(outcome(page)).toContainText("Stand: Entwurf");
+  const edit = await openDetailsForm(page, "Ziel bearbeiten", "Goal bearbeiten");
+  await edit.getByLabel("Status", { exact: true }).selectOption("active");
+  await edit.getByRole("button", { name: "Änderungen speichern" }).click();
+  await expect(page.getByText("Goal aktualisiert.", { exact: true })).toBeVisible();
   return page.url().match(/\/goals\/([^/?#]+)/)?.[1] ?? "";
 }
 
@@ -551,6 +562,9 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
     'form[aria-label="Goal-Verlauf ergänzen"]',
   );
   await goalAmend
+    .getByLabel("Korrigierter Zeitpunkt (optional)")
+    .fill("2026-09-20T09:30");
+  await goalAmend
     .getByLabel("Korrigierte Erfolgsnotiz")
     .fill(`Retrospektiv bestätigtes Ergebnis ${stamp}`);
   await goalAmend
@@ -572,8 +586,51 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
   await expect(amendedHistory).toContainText(
     "Historische Erfolgsnotiz präzisiert.",
   );
-  await openManagement(amendedHistory, "Goal-Verlauf verwalten");
-  const goalEvidence = amendedHistory.locator(
+  await expect(amendedHistory).toContainText(`Kriterium-Basis: ${criterionTitle}`);
+  await expect(amendedHistory).toContainText(`Etappen-Basis: ${milestoneTitle}`);
+  await expect(outcome(page)).toContainText("Ergebnis akzeptiert am 2026-09-20");
+  await expect(outcome(page).locator("#goal-review")).toContainText(
+    "Zielergebnis erreicht am 2026-09-20",
+  );
+
+  const secondAmendedHistory = history
+    .locator("article")
+    .filter({ hasText: "Ziel Verlauf ergänzt" })
+    .first();
+  await openManagement(secondAmendedHistory, "Goal-Verlauf verwalten");
+  const secondGoalAmend = secondAmendedHistory.locator(
+    'form[aria-label="Goal-Verlauf ergänzen"]',
+  );
+  await secondGoalAmend
+    .getByLabel("Korrigierter Zeitpunkt (optional)")
+    .fill("2026-09-20T10:30");
+  await secondGoalAmend
+    .getByLabel("Korrigierte Erfolgsnotiz")
+    .fill(`Zweifach bestätigtes Ergebnis ${stamp}`);
+  await secondGoalAmend
+    .getByLabel("Begründung")
+    .fill("Zweite historische Präzisierung.");
+  await secondGoalAmend
+    .getByRole("button", { name: "Goal-Verlauf ergänzen" })
+    .click();
+  await expect(
+    page.getByText("Goal-Verlauf ergänzt.", { exact: true }),
+  ).toBeVisible();
+  await page.reload();
+  const latestAmendedHistory = history
+    .locator("article")
+    .filter({ hasText: "Ziel Verlauf ergänzt" })
+    .first();
+  await expect(latestAmendedHistory).toContainText(
+    `Kriterium-Basis: ${criterionTitle}`,
+  );
+  await expect(latestAmendedHistory).toContainText(
+    `Etappen-Basis: ${milestoneTitle}`,
+  );
+  await expect(outcome(page)).toContainText("Ergebnis akzeptiert am 2026-09-20");
+
+  await openManagement(latestAmendedHistory, "Goal-Verlauf verwalten");
+  const goalEvidence = latestAmendedHistory.locator(
     'form[aria-label="Goal-Belegverlauf ändern"]',
   );
   await goalEvidence.getByLabel("Belegänderung").selectOption("attached");
