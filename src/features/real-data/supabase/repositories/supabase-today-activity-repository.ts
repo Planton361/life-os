@@ -33,77 +33,107 @@ export async function readTodayActivity(
       if ((result.data?.length ?? 0) < 1000) return rows;
     }
   }
-  const [tasks, inbox, moods, habits, meals, runs, strength, reviews] =
-    await Promise.all([
-      all(
-        client
-          .from("tasks")
-          .select("*")
-          .eq("user_id", userId)
-          .or(
-            `created_at.gte.${lower},completed_at.gte.${lower},planned_date.eq.${day},scheduled_start_at.gte.${lower}`,
-          )
-          .order("id"),
-      ),
-      all(
-        client
-          .from("inbox_items")
-          .select("*")
-          .eq("user_id", userId)
-          .or(`created_at.gte.${lower},processed_at.gte.${lower}`)
-          .order("id"),
-      ),
-      all(
-        client
-          .from("mood_entries")
-          .select("*")
-          .eq("user_id", userId)
-          .gte("recorded_at", lower)
-          .order("id"),
-      ),
-      all(
-        client
-          .from("habit_logs")
-          .select("*")
-          .eq("user_id", userId)
-          .eq("local_date", day)
-          .order("id"),
-      ),
-      all(
-        client
-          .from("meals")
-          .select("*")
-          .eq("user_id", userId)
-          .gte("completed_at", lower)
-          .order("id"),
-      ),
-      all(
-        client
-          .from("running_sessions")
-          .select("*")
-          .eq("user_id", userId)
-          .gte("completed_at", lower)
-          .order("id"),
-      ),
-      all(
-        client
-          .from("strength_sessions")
-          .select("*")
-          .eq("user_id", userId)
-          .gte("completed_at", lower)
-          .order("id"),
-      ),
-      all(
-        client
-          .from("review_records")
-          .select("*")
-          .eq("user_id", userId)
-          .or(
-            `created_at.gte.${lower},completed_at.gte.${lower},period_start.eq.${day}`,
-          )
-          .order("id"),
-      ),
-    ]);
+  const [
+    tasks,
+    inbox,
+    moods,
+    habits,
+    meals,
+    runs,
+    strength,
+    reviews,
+    goalAchievementEvents,
+    milestoneAchievementEvents,
+  ] = await Promise.all([
+    all(
+      client
+        .from("tasks")
+        .select("*")
+        .eq("user_id", userId)
+        .or(
+          `created_at.gte.${lower},completed_at.gte.${lower},planned_date.eq.${day},scheduled_start_at.gte.${lower}`,
+        )
+        .order("id"),
+    ),
+    all(
+      client
+        .from("inbox_items")
+        .select("*")
+        .eq("user_id", userId)
+        .or(`created_at.gte.${lower},processed_at.gte.${lower}`)
+        .order("id"),
+    ),
+    all(
+      client
+        .from("mood_entries")
+        .select("*")
+        .eq("user_id", userId)
+        .gte("recorded_at", lower)
+        .order("id"),
+    ),
+    all(
+      client
+        .from("habit_logs")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("local_date", day)
+        .order("id"),
+    ),
+    all(
+      client
+        .from("meals")
+        .select("*")
+        .eq("user_id", userId)
+        .gte("completed_at", lower)
+        .order("id"),
+    ),
+    all(
+      client
+        .from("running_sessions")
+        .select("*")
+        .eq("user_id", userId)
+        .gte("completed_at", lower)
+        .order("id"),
+    ),
+    all(
+      client
+        .from("strength_sessions")
+        .select("*")
+        .eq("user_id", userId)
+        .gte("completed_at", lower)
+        .order("id"),
+    ),
+    all(
+      client
+        .from("review_records")
+        .select("*")
+        .eq("user_id", userId)
+        .or(
+          `created_at.gte.${lower},completed_at.gte.${lower},period_start.eq.${day}`,
+        )
+        .order("id"),
+    ),
+    all(
+      client
+        .from("goal_achievement_events")
+        .select(
+          "id,goal_id,event_type,occurred_at,recorded_at,goal_title_snapshot",
+        )
+        .eq("user_id", userId)
+        .or(`recorded_at.gte.${lower},occurred_at.gte.${lower}`)
+        .order("recorded_at"),
+    ),
+    all(
+      client
+        .from("goal_milestone_achievement_events")
+        .select(
+          "id,goal_id,event_type,occurred_at,recorded_at,goal_title_snapshot",
+        )
+        .eq("user_id", userId)
+        .or(`recorded_at.gte.${lower},occurred_at.gte.${lower}`)
+        .order("recorded_at"),
+    ),
+  ]);
   const currentReviewIds = reviews
     .filter(
       (review) =>
@@ -122,6 +152,26 @@ export async function readTodayActivity(
           .order("id"),
       )
     : [];
+  const goalIds = [
+    ...new Set(
+      [...goalAchievementEvents, ...milestoneAchievementEvents].map(
+        (event) => event.goal_id,
+      ),
+    ),
+  ];
+  const currentGoalRows = goalIds.length
+    ? await all(
+        client
+          .from("goals")
+          .select("id,title")
+          .eq("user_id", userId)
+          .in("id", goalIds)
+          .order("id"),
+      )
+    : [];
+  const currentGoalTitles = new Map(
+    currentGoalRows.map((goal) => [goal.id, goal.title]),
+  );
   const missingTaskIds = [
     ...new Set(decisions.map((decision) => decision.task_id)),
   ].filter((id) => !tasks.some((task) => task.id === id));
@@ -162,6 +212,44 @@ export async function readTodayActivity(
       strength,
       reviews,
       decisions,
+      goalEvents: [
+        ...goalAchievementEvents
+          .filter(
+            (event) =>
+              event.event_type === "achieved" ||
+              event.event_type === "reopened",
+          )
+          .map((event) => ({
+            id: event.id,
+            goalId: event.goal_id,
+            goalTitle: event.goal_title_snapshot,
+            currentGoalTitle: currentGoalTitles.get(event.goal_id) ?? null,
+            eventType:
+              event.event_type === "achieved"
+                ? ("goal_achieved" as const)
+                : ("goal_reopened" as const),
+            occurredAt: event.occurred_at,
+            recordedAt: event.recorded_at,
+          })),
+        ...milestoneAchievementEvents
+          .filter(
+            (event) =>
+              event.event_type === "achieved" ||
+              event.event_type === "reopened",
+          )
+          .map((event) => ({
+            id: event.id,
+            goalId: event.goal_id,
+            goalTitle: event.goal_title_snapshot,
+            currentGoalTitle: currentGoalTitles.get(event.goal_id) ?? null,
+            eventType:
+              event.event_type === "achieved"
+                ? ("milestone_achieved" as const)
+                : ("milestone_reopened" as const),
+            occurredAt: event.occurred_at,
+            recordedAt: event.recorded_at,
+          })),
+      ],
     },
     timezone,
     now,

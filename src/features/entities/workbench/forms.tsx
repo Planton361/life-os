@@ -19,7 +19,10 @@ import {
   type FieldValues,
   type Option,
 } from "./types";
-import { useCloseManagementDisclosure } from "./management-disclosure";
+import {
+  ManagementDisclosure,
+  useCloseManagementDisclosure,
+} from "./management-disclosure";
 const subscribe = () => () => {};
 function useHydrated() {
   return useSyncExternalStore(
@@ -113,6 +116,80 @@ function Field({
 }
 const opts = (values: readonly string[]) =>
   values.map((id) => ({ id, title: id }));
+
+export function GoalCaptureForm({ areas }: { areas: Option[] }) {
+  const hydrated = useHydrated();
+  const router = useRouter();
+  const { notify } = useToast();
+  const [pending, start] = useTransition();
+  const [error, setError] = useState("");
+  const values: FieldValues = {};
+  return (
+    <form
+      aria-label="Goal erstellen"
+      className="grid gap-6"
+      onSubmit={(event) => {
+        event.preventDefault();
+        const form = new FormData(event.currentTarget);
+        form.set("commandId", crypto.randomUUID());
+        start(async () => {
+          setError("");
+          const result = await saveWorkbenchEntity("goal", null, form);
+          if (result.status !== "success") {
+            setError(result.message);
+            return;
+          }
+          notify(result.message);
+          if (result.id) router.push(`/goals/${result.id}`);
+        });
+      }}
+    >
+      <fieldset disabled={!hydrated || pending} className="grid gap-6">
+        <section className="grid gap-4">
+          <h2 className="text-lg text-[var(--accent-cyan)]">Goal festhalten</h2>
+          <Field name="title" label="Titel" values={values} required />
+          <Field
+            name="description"
+            label="Was möchtest du erreichen?"
+            values={values}
+            type="textarea"
+          />
+          <p className="text-sm text-[var(--text-muted)]">
+            Neue Goals starten als Entwurf. Details kannst du später ergänzen.
+          </p>
+        </section>
+        <ManagementDisclosure label="Weitere Angaben (optional)">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field
+              name="why"
+              label="Warum / welcher Nutzen?"
+              values={values}
+              type="textarea"
+            />
+            <Choice name="areaId" label="Area" options={areas} />
+            <Choice
+              name="horizon"
+              label="Horizont"
+              options={opts(["week", "month", "quarter", "year", "someday"])}
+            />
+            <Field name="targetDate" label="Zieldatum" values={values} type="date" />
+          </div>
+        </ManagementDisclosure>
+        <div className="border-t border-[var(--border-subtle)] pt-5">
+          <button className={actionClass} type="submit">
+            {pending ? "Speichern …" : "Goal erstellen"}
+          </button>
+        </div>
+      </fieldset>
+      {error && (
+        <p role="alert" className="text-sm text-[var(--accent-red)]">
+          {error}
+        </p>
+      )}
+    </form>
+  );
+}
+
 export function EntityForm({
   kind,
   id,
@@ -123,11 +200,18 @@ export function EntityForm({
   archived = false,
   sourceOwned = false,
   projectContext,
+  goalMilestoneContext,
   milestones = [],
 }: {
   kind: WorkbenchKind;
   id?: string;
   projectContext?: string;
+  goalMilestoneContext?: {
+    goalId: string;
+    milestoneId: string;
+    goalTitle: string;
+    milestoneTitle: string;
+  };
   milestones?: (Option & { projectId: string })[];
   values: FieldValues;
   areas: Option[];
@@ -142,6 +226,7 @@ export function EntityForm({
   const hydrated = useHydrated();
   const router = useRouter();
   const { notify } = useToast();
+  const closeDisclosure = useCloseManagementDisclosure();
   const [pending, start] = useTransition();
   const [error, setError] = useState("");
   const field = (
@@ -177,6 +262,7 @@ export function EntityForm({
       onSubmit={(event) => {
         event.preventDefault();
         const form = new FormData(event.currentTarget);
+        if (!form.get("commandId")) form.set("commandId", crypto.randomUUID());
         start(async () => {
           setError("");
           const r = await saveWorkbenchEntity(kind, id ?? null, form);
@@ -185,13 +271,16 @@ export function EntityForm({
             return;
           }
           notify(r.message);
+          closeDisclosure?.();
           if (!id && r.id)
             router.push(
-              projectContext
-                ? kind === "task"
-                  ? `/projects/${projects.find((p) => p.id === String(form.get("projectId")))?.id ?? projectContext}`
-                  : `/projects/${projectContext}?resource=${r.id}`
-                : `${entityRoutes[kind]}/${r.id}`,
+              goalMilestoneContext
+                ? `/goals/${goalMilestoneContext.goalId}?created=${kind}&goalMilestone=${goalMilestoneContext.milestoneId}`
+                : projectContext
+                  ? kind === "task"
+                    ? `/projects/${projects.find((p) => p.id === String(form.get("projectId")))?.id ?? projectContext}`
+                    : `/projects/${projectContext}?resource=${r.id}`
+                  : `${entityRoutes[kind]}/${r.id}`,
             );
           else router.refresh();
         });
@@ -335,8 +424,8 @@ export function EntityForm({
                 <>
                   {values.status === "achieved" ? (
                     <p className="text-sm">
-                      Status: achieved · über den expliziten Outcome-Flow
-                      wieder öffnen.
+                      Status: achieved · über den expliziten Outcome-Flow wieder
+                      öffnen.
                     </p>
                   ) : (
                     choice(
@@ -372,6 +461,10 @@ export function EntityForm({
               {kind === "task" &&
                 (id ? (
                   choice("projectId", "Project", projects)
+                ) : goalMilestoneContext ? (
+                  <p className="text-sm text-[var(--text-muted)]">
+                    Direkter Task am Goal; kein Project-Kontext.
+                  </p>
                 ) : (
                   <>
                     <Choice
@@ -398,7 +491,27 @@ export function EntityForm({
                     />
                   </>
                 ))}
-              {choice("goalId", "Direktes Goal", goals)}
+              {goalMilestoneContext ? (
+                <div className="grid gap-2 text-sm">
+                  <span>Goal / Etappe</span>
+                  <p className="text-[var(--text-secondary)]">
+                    {goalMilestoneContext.goalTitle} ·{" "}
+                    {goalMilestoneContext.milestoneTitle}
+                  </p>
+                  <input
+                    type="hidden"
+                    name="goalId"
+                    value={goalMilestoneContext.goalId}
+                  />
+                  <input
+                    type="hidden"
+                    name="goalMilestoneId"
+                    value={goalMilestoneContext.milestoneId}
+                  />
+                </div>
+              ) : (
+                choice("goalId", "Direktes Goal", goals)
+              )}
             </div>
             <p className="text-sm text-[var(--text-muted)]">
               Weitere Ressourcen und Practice-Beziehungen verwaltest du an der
@@ -453,6 +566,7 @@ export function OperationForm({
         event.preventDefault();
         if (confirmMessage && !window.confirm(confirmMessage)) return;
         const form = new FormData(event.currentTarget);
+        if (!form.get("commandId")) form.set("commandId", crypto.randomUUID());
         start(async () => {
           setError("");
           const r = await workbenchOperation(operation, form);

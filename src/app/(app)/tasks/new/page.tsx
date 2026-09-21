@@ -5,6 +5,8 @@ export default async function Page({
   searchParams: Promise<{
     project?: string | string[];
     milestone?: string | string[];
+    goal?: string | string[];
+    goalMilestone?: string | string[];
   }>;
 }) {
   const query = await searchParams;
@@ -16,6 +18,10 @@ export default async function Page({
       }
       milestoneContext={
         typeof query.milestone === "string" ? query.milestone : undefined
+      }
+      goalContext={typeof query.goal === "string" ? query.goal : undefined}
+      goalMilestoneContext={
+        typeof query.goalMilestone === "string" ? query.goalMilestone : undefined
       }
     />
   );

@@ -34,7 +34,9 @@ export function mapCreateGoalInputToInsert(
   if (input.description !== undefined) insert.description = input.description;
   if (input.horizon !== undefined) insert.horizon = input.horizon;
   if (input.measure !== undefined) insert.measure = input.measure;
-  if (input.status !== undefined) insert.status = input.status;
+  // A new Goal is always captured as a draft. Lifecycle changes belong to the
+  // existing Goal management flow after the initial capture.
+  insert.status = "draft";
   if (input.targetDate !== undefined) insert.target_date = input.targetDate;
   if (input.targetValue !== undefined) insert.target_value = input.targetValue;
   if (input.why !== undefined) insert.why = input.why;

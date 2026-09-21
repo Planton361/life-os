@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import {
   createGoalInputSchema,
   createProjectInputSchema,
@@ -9,6 +10,7 @@ import {
   updateProjectInputSchema,
 } from "@/features/real-data";
 import {
+  createGoalContextProject,
   createSupabaseGoalRepository,
   createSupabaseProjectRepository,
 } from "@/features/real-data/supabase";
@@ -222,6 +224,7 @@ export async function createProjectAction(
   }
 
   const goalId = optionalFormString(formData, "goalId");
+  const goalMilestoneId = optionalFormString(formData, "goalMilestoneId");
 
   if (!(await validateGoalScope(auth.client, auth.user.id, goalId))) {
     return {
@@ -247,6 +250,40 @@ export async function createProjectAction(
     return {
       message: "Gib einen gültigen Project-Titel ein.",
       status: "error",
+    };
+  }
+
+  if (goalMilestoneId) {
+    if (!goalId || !z.uuid().safeParse(goalId).success || !z.uuid().safeParse(goalMilestoneId).success) {
+      return {
+        message: "Goal und Etappe müssen für den Kontext eindeutig sein.",
+        status: "error",
+      };
+    }
+    const contextual = await createGoalContextProject(auth.client, {
+      areaId: parsed.data.areaId,
+      commandId: optionalFormString(formData, "commandId"),
+      description: parsed.data.description,
+      goalId,
+      milestoneId: goalMilestoneId,
+      nextStep: parsed.data.nextStep,
+      priority: parsed.data.priority,
+      status: parsed.data.status,
+      targetDate: parsed.data.deadline ?? undefined,
+      title: parsed.data.title,
+      userId: auth.user.id,
+    });
+    if (!contextual.ok) {
+      return {
+        message: contextual.error.message,
+        status: "error",
+      };
+    }
+    revalidatePortfolioTargetRoutes();
+    return {
+      message: "Project aus der Etappe erstellt.",
+      projectId: contextual.data.id,
+      status: "success",
     };
   }
 
@@ -452,7 +489,9 @@ export async function createGoalAction(
     areaId: optionalFormString(formData, "areaId"),
     horizon: optionalFormString(formData, "horizon"),
     why: optionalFormString(formData, "why"),
-    status: optionalFormString(formData, "status"),
+    // Goal creation is intentionally lightweight: lifecycle is managed after
+    // capture and every newly persisted Goal starts as a draft.
+    status: "draft",
     description: optionalFormString(formData, "description"),
     profileId: auth.user.id,
     targetDate: optionalFormString(formData, "targetDate"),

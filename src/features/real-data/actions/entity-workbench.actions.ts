@@ -36,9 +36,15 @@ import {
   createSupabaseTaskRepository,
   createSupabaseProjectRepository,
   achieveGoal,
+  addGoalAchievementEvidence,
+  addGoalCriterionEvidence,
+  addGoalMilestoneEvidence,
   addGoalProjectSupport,
   addGoalTaskSupport,
   appendGoalCriterionEvaluation,
+  appendGoalCriterionRevision,
+  amendGoalAchievementEvent,
+  amendGoalMilestoneAchievementEvent,
   archiveGoalCriterion,
   archiveGoalMilestone,
   createGoalCriterion,
@@ -58,11 +64,16 @@ import {
   updateTaskInputSchema,
   updateProjectInputSchema,
   goalAchieveInputSchema,
+  goalAchievementAmendInputSchema,
+  goalAchievementEvidenceInputSchema,
   goalCriterionEvaluationInputSchema,
+  goalCriterionEvidenceInputSchema,
   goalMilestoneArchiveInputSchema,
   goalMilestoneCreateInputSchema,
   goalMilestoneReorderInputSchema,
   goalMilestoneStatusInputSchema,
+  goalMilestoneEvidenceInputSchema,
+  goalMilestoneAmendInputSchema,
   goalMilestoneUpdateInputSchema,
   goalOutcomeCriterionArchiveInputSchema,
   goalOutcomeCriterionCreateInputSchema,
@@ -101,19 +112,55 @@ function refresh() {
 function str(form: FormData, name: string) {
   return String(form.get(name) ?? "").trim();
 }
+
+function commandFields(form: FormData) {
+  return {
+    commandId: str(form, "commandId") || undefined,
+    expectedUpdatedAt: str(form, "expectedUpdatedAt") || undefined,
+  };
+}
+
+function oneEvidenceReference(form: FormData) {
+  const sourceReference = str(form, "sourceReference");
+  const [sourceTypeFromReference, sourceIdFromReference] =
+    sourceReference.split(":");
+  const sourceType = str(form, "sourceType") || sourceTypeFromReference || "";
+  const sourceId = str(form, "sourceId") || sourceIdFromReference || "";
+  const supersedesReferenceId = str(form, "supersedesReferenceId") || undefined;
+  if (!sourceType && !sourceId && !supersedesReferenceId) return [];
+  return [
+    {
+      ...(sourceType && sourceId ? { sourceType, sourceId } : {}),
+      supersedesReferenceId,
+      reason: str(form, "referenceReason") || undefined,
+    },
+  ];
+}
 const invalid: FormResult = {
   status: "error",
   message: "Prüfe die Angaben und Beziehungen.",
 };
 
-function outcomeResult(result: { ok: boolean; error?: { message: string } }, message: string): FormResult {
+function outcomeResult(
+  result: { ok: boolean; error?: { message: string } },
+  message: string,
+): FormResult {
   return result.ok
     ? { status: "success", message }
-    : { status: "error", message: result.error?.message ?? "Die Goal-Änderung konnte nicht gespeichert werden." };
+    : {
+        status: "error",
+        message:
+          result.error?.message ??
+          "Die Goal-Änderung konnte nicht gespeichert werden.",
+      };
 }
 
 async function runGoalOutcomeOperation(
-  auth: NonNullable<Awaited<ReturnType<typeof createAuthenticatedSupabaseServerClient>> & { ok: true }>,
+  auth: NonNullable<
+    Awaited<ReturnType<typeof createAuthenticatedSupabaseServerClient>> & {
+      ok: true;
+    }
+  >,
   operation: string,
   form: FormData,
 ): Promise<FormResult> {
@@ -133,7 +180,10 @@ async function runGoalOutcomeOperation(
       sortOrder: str(form, "sortOrder") || "0",
     });
     return parsed.success
-      ? outcomeResult(await createGoalMilestone(auth.client, parsed.data), "Milestone erstellt.")
+      ? outcomeResult(
+          await createGoalMilestone(auth.client, parsed.data),
+          "Etappe erstellt.",
+        )
       : invalid;
   }
   if (operation === "milestone.update") {
@@ -146,7 +196,10 @@ async function runGoalOutcomeOperation(
       targetDate: str(form, "targetDate"),
     });
     return parsed.success
-      ? outcomeResult(await updateGoalMilestone(auth.client, parsed.data), "Milestone gespeichert.")
+      ? outcomeResult(
+          await updateGoalMilestone(auth.client, parsed.data),
+          "Etappe gespeichert.",
+        )
       : invalid;
   }
   if (operation === "milestone.status") {
@@ -155,9 +208,13 @@ async function runGoalOutcomeOperation(
       goalId: str(form, "goalId"),
       milestoneId: str(form, "milestoneId"),
       status: str(form, "status"),
+      ...commandFields(form),
     });
     return parsed.success
-      ? outcomeResult(await setGoalMilestoneStatus(auth.client, parsed.data), "Milestone-Status gespeichert.")
+      ? outcomeResult(
+          await setGoalMilestoneStatus(auth.client, parsed.data),
+          "Etappenstatus gespeichert.",
+        )
       : invalid;
   }
   if (operation === "milestone.archive") {
@@ -167,7 +224,10 @@ async function runGoalOutcomeOperation(
       milestoneId: str(form, "milestoneId"),
     });
     return parsed.success
-      ? outcomeResult(await archiveGoalMilestone(auth.client, parsed.data), "Milestone archiviert.")
+      ? outcomeResult(
+          await archiveGoalMilestone(auth.client, parsed.data),
+          "Etappe archiviert.",
+        )
       : invalid;
   }
   if (operation === "milestone.reorder") {
@@ -178,7 +238,10 @@ async function runGoalOutcomeOperation(
       direction: str(form, "direction"),
     });
     return parsed.success
-      ? outcomeResult(await reorderGoalMilestone(auth.client, parsed.data), "Milestone-Reihenfolge gespeichert.")
+      ? outcomeResult(
+          await reorderGoalMilestone(auth.client, parsed.data),
+          "Etappenreihenfolge gespeichert.",
+        )
       : invalid;
   }
   if (operation === "criterion.create") {
@@ -194,7 +257,10 @@ async function runGoalOutcomeOperation(
       direction: str(form, "direction") || undefined,
     });
     return parsed.success
-      ? outcomeResult(await createGoalCriterion(auth.client, parsed.data), "Kriterium erstellt.")
+      ? outcomeResult(
+          await createGoalCriterion(auth.client, parsed.data),
+          "Kriterium erstellt.",
+        )
       : invalid;
   }
   if (operation === "criterion.archive") {
@@ -204,7 +270,10 @@ async function runGoalOutcomeOperation(
       criterionId: str(form, "criterionId"),
     });
     return parsed.success
-      ? outcomeResult(await archiveGoalCriterion(auth.client, parsed.data), "Kriterium archiviert.")
+      ? outcomeResult(
+          await archiveGoalCriterion(auth.client, parsed.data),
+          "Kriterium archiviert.",
+        )
       : invalid;
   }
   if (operation === "criterion.evaluate") {
@@ -217,19 +286,127 @@ async function runGoalOutcomeOperation(
       criterionId: str(form, "criterionId"),
       criterionType,
       evaluationState,
-      booleanValue: evaluationState === "value" && criterionType === "boolean"
-        ? booleanValue === "true"
-          ? true
-          : booleanValue === "false"
-            ? false
-            : undefined
-        : undefined,
-      numericValue: evaluationState === "value" ? str(form, "numericValue") : undefined,
+      booleanValue:
+        evaluationState === "value" && criterionType === "boolean"
+          ? booleanValue === "true"
+            ? true
+            : booleanValue === "false"
+              ? false
+              : undefined
+          : undefined,
+      numericValue:
+        evaluationState === "value" ? str(form, "numericValue") : undefined,
       unit: evaluationState === "value" ? str(form, "unit") : undefined,
       note: str(form, "note"),
+      expectedLatestEvaluationId:
+        str(form, "expectedLatestEvaluationId") || undefined,
+      ...commandFields(form),
     });
     return parsed.success
-      ? outcomeResult(await appendGoalCriterionEvaluation(auth.client, parsed.data), "Kriterium bewertet.")
+      ? outcomeResult(
+          await appendGoalCriterionEvaluation(auth.client, parsed.data),
+          "Kriterium bewertet.",
+        )
+      : invalid;
+  }
+  if (operation === "criterion.correct" || operation === "criterion.retract") {
+    const criterionType = str(form, "criterionType");
+    const evaluationState =
+      operation === "criterion.retract"
+        ? "deferred"
+        : str(form, "evaluationState") || "value";
+    const booleanValue = str(form, "booleanValue");
+    const parsed = goalCriterionEvaluationInputSchema.safeParse({
+      ...scope,
+      goalId: str(form, "goalId"),
+      criterionId: str(form, "criterionId"),
+      criterionType,
+      evaluationState,
+      booleanValue:
+        evaluationState === "value" && criterionType === "boolean"
+          ? booleanValue === "true"
+            ? true
+            : booleanValue === "false"
+              ? false
+              : undefined
+          : undefined,
+      numericValue:
+        evaluationState === "value" ? str(form, "numericValue") : undefined,
+      unit: evaluationState === "value" ? str(form, "unit") : undefined,
+      note: str(form, "note"),
+      expectedLatestEvaluationId:
+        str(form, "expectedLatestEvaluationId") || undefined,
+      correctionReason: str(form, "correctionReason"),
+      retrospective: form.get("retrospective") === "on",
+      ...commandFields(form),
+    });
+    return parsed.success
+      ? outcomeResult(
+          await appendGoalCriterionRevision(
+            auth.client,
+            parsed.data,
+            operation === "criterion.correct"
+              ? "criterion.correct"
+              : "criterion.retract",
+          ),
+          operation === "criterion.correct"
+            ? "Kriterium korrigiert."
+            : "Bewertung zurückgenommen.",
+        )
+      : invalid;
+  }
+  if (operation === "criterion.evidence") {
+    const parsed = goalCriterionEvidenceInputSchema.safeParse({
+      ...scope,
+      goalId: str(form, "goalId"),
+      evaluationId: str(form, "evaluationId"),
+      action: str(form, "evidenceAction") || "attached",
+      references: oneEvidenceReference(form),
+      retrospective: form.get("retrospective") === "on",
+      ...commandFields(form),
+    });
+    return parsed.success
+      ? outcomeResult(
+          await addGoalCriterionEvidence(auth.client, parsed.data),
+          "Beleg an Bewertung angehängt.",
+        )
+      : invalid;
+  }
+  if (operation === "milestone.evidence") {
+    const parsed = goalMilestoneEvidenceInputSchema.safeParse({
+      ...scope,
+      goalId: str(form, "goalId"),
+      milestoneId: str(form, "milestoneId"),
+      achievementEventId: str(form, "achievementEventId") || undefined,
+      action: str(form, "evidenceAction") || "attached",
+      references: oneEvidenceReference(form),
+      retrospective: form.get("retrospective") === "on",
+      ...commandFields(form),
+    });
+    return parsed.success
+      ? outcomeResult(
+          await addGoalMilestoneEvidence(auth.client, parsed.data),
+          "Etappen-Beleg gespeichert.",
+        )
+      : invalid;
+  }
+  if (operation === "milestone.amend") {
+    const parsed = goalMilestoneAmendInputSchema.safeParse({
+      ...scope,
+      goalId: str(form, "goalId"),
+      milestoneId: str(form, "milestoneId"),
+      eventId: str(form, "eventId"),
+      occurredAt: str(form, "occurredAt"),
+      note: str(form, "note"),
+      correctionReason: str(form, "correctionReason"),
+      retrospective: form.get("retrospective") === "on",
+      ...commandFields(form),
+    });
+    return parsed.success
+      ? outcomeResult(
+          await amendGoalMilestoneAchievementEvent(auth.client, parsed.data),
+          "Etappen-Verlauf ergänzt.",
+        )
       : invalid;
   }
   if (operation === "support.project.add") {
@@ -240,7 +417,10 @@ async function runGoalOutcomeOperation(
       projectId: str(form, "projectId"),
     });
     return parsed.success
-      ? outcomeResult(await addGoalProjectSupport(auth.client, parsed.data), "Project als Support-Kontext verknüpft.")
+      ? outcomeResult(
+          await addGoalProjectSupport(auth.client, parsed.data),
+          "Project als Support-Kontext verknüpft.",
+        )
       : invalid;
   }
   if (operation === "support.task.add") {
@@ -251,19 +431,26 @@ async function runGoalOutcomeOperation(
       taskId: str(form, "taskId"),
     });
     return parsed.success
-      ? outcomeResult(await addGoalTaskSupport(auth.client, parsed.data), "Task als Support-Kontext verknüpft.")
+      ? outcomeResult(
+          await addGoalTaskSupport(auth.client, parsed.data),
+          "Task als Support-Kontext verknüpft.",
+        )
       : invalid;
   }
-  if (operation === "support.project.remove" || operation === "support.task.remove") {
+  if (
+    operation === "support.project.remove" ||
+    operation === "support.task.remove"
+  ) {
     const parsed = goalSupportRemoveInputSchema.safeParse({
       ...scope,
       goalId: str(form, "goalId"),
       supportId: str(form, "supportId"),
     });
     if (!parsed.success) return invalid;
-    const result = operation === "support.project.remove"
-      ? await removeGoalProjectSupport(auth.client, parsed.data)
-      : await removeGoalTaskSupport(auth.client, parsed.data);
+    const result =
+      operation === "support.project.remove"
+        ? await removeGoalProjectSupport(auth.client, parsed.data)
+        : await removeGoalTaskSupport(auth.client, parsed.data);
     return outcomeResult(result, "Support-Kontext gelöst.");
   }
   if (operation === "achieve") {
@@ -271,17 +458,61 @@ async function runGoalOutcomeOperation(
       ...scope,
       goalId: str(form, "goalId"),
       note: str(form, "note"),
+      references: oneEvidenceReference(form),
+      ...commandFields(form),
     });
     return parsed.success
-      ? outcomeResult(await achieveGoal(auth.client, parsed.data), "Goal erreicht.")
+      ? outcomeResult(
+          await achieveGoal(auth.client, parsed.data),
+          "Ziel erreicht.",
+        )
+      : invalid;
+  }
+  if (operation === "goal.amend") {
+    const parsed = goalAchievementAmendInputSchema.safeParse({
+      ...scope,
+      goalId: str(form, "goalId"),
+      eventId: str(form, "eventId"),
+      occurredAt: str(form, "occurredAt"),
+      achievementNote: str(form, "achievementNote"),
+      correctionReason: str(form, "correctionReason"),
+      retrospective: form.get("retrospective") === "on",
+      ...commandFields(form),
+    });
+    return parsed.success
+      ? outcomeResult(
+          await amendGoalAchievementEvent(auth.client, parsed.data),
+          "Goal-Verlauf ergänzt.",
+        )
+      : invalid;
+  }
+  if (operation === "goal.evidence") {
+    const parsed = goalAchievementEvidenceInputSchema.safeParse({
+      ...scope,
+      goalId: str(form, "goalId"),
+      achievementEventId: str(form, "achievementEventId"),
+      action: str(form, "evidenceAction") || "attached",
+      references: oneEvidenceReference(form),
+      retrospective: form.get("retrospective") === "on",
+      ...commandFields(form),
+    });
+    return parsed.success
+      ? outcomeResult(
+          await addGoalAchievementEvidence(auth.client, parsed.data),
+          "Goal-Beleg gespeichert.",
+        )
       : invalid;
   }
   const parsed = goalReopenInputSchema.safeParse({
     ...scope,
     goalId: str(form, "goalId"),
+    ...commandFields(form),
   });
   return parsed.success
-    ? outcomeResult(await reopenGoal(auth.client, parsed.data), "Goal wieder geöffnet.")
+    ? outcomeResult(
+        await reopenGoal(auth.client, parsed.data),
+        "Ziel wieder geöffnet.",
+      )
     : invalid;
 }
 async function context() {

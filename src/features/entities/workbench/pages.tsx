@@ -16,6 +16,7 @@ import { getGoalOutcome } from "@/features/real-data/supabase/repositories/supab
 import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
 import {
   EntityForm,
+  GoalCaptureForm,
   OperationForm,
   Choice,
   actionClass,
@@ -210,8 +211,12 @@ export async function WorkbenchEditor({
   projectContext,
   selectedResource,
   milestoneContext,
+  goalContext,
+  goalMilestoneContext,
 }: {
   milestoneContext?: string;
+  goalContext?: string;
+  goalMilestoneContext?: string;
   selectedResource?: string;
   kind: WorkbenchKind;
   id?: string;
@@ -238,11 +243,32 @@ export async function WorkbenchEditor({
             !m.archived_at,
         )
       : undefined;
+  const contextGoal =
+    (kind === "project" || kind === "task") && !id && goalContext
+      ? data.goals.find((goal) => goal.id === goalContext && !goal.archived_at)
+      : undefined;
+  const contextGoalMilestone =
+    (kind === "project" || kind === "task") && !id && goalMilestoneContext
+      ? data.goalMilestones.find(
+          (milestone) =>
+            milestone.id === goalMilestoneContext &&
+            milestone.goal_id === contextGoal?.id &&
+            !milestone.archived_at &&
+            milestone.status !== "archived",
+        )
+      : undefined;
   if (
     kind === "task" &&
     !id &&
     ((projectContext && !contextProject) ||
       (milestoneContext && !contextMilestone))
+  )
+    notFound();
+  if (
+    (kind === "project" || kind === "task") &&
+    !id &&
+    ((goalContext && !contextGoal) ||
+      (goalMilestoneContext && !contextGoalMilestone))
   )
     notFound();
   const row = id ? collection(data, kind).find((r) => r.id === id) : undefined;
@@ -275,6 +301,10 @@ export async function WorkbenchEditor({
   if (kind === "task" && !id) {
     values.projectId = contextProject?.id;
     values.milestoneId = contextMilestone?.id;
+  }
+  if ((kind === "project" || kind === "task") && !id && contextGoal) {
+    values.goalId = contextGoal.id;
+    values.goalMilestoneId = contextGoalMilestone?.id;
   }
   if (row) {
     Object.assign(values, row);
@@ -320,7 +350,12 @@ export async function WorkbenchEditor({
         </EntityWorkbenchShell>
       );
     }
-    const outcome = await getGoalOutcome(auth.client, auth.user.id, id);
+    const outcome = await getGoalOutcome(
+      auth.client,
+      auth.user.id,
+      id,
+      data.dependencyGraph,
+    );
     if (!outcome.ok) {
       if (outcome.error.code === "not_found") notFound();
       throw new Error(outcome.error.message);
@@ -343,6 +378,7 @@ export async function WorkbenchEditor({
               }))}
             projects={available(data, "project", "")}
             goals={available(data, "goal", id)}
+            goalMilestoneContext={undefined}
             archived={Boolean(row.archived_at)}
           />
         }
@@ -393,6 +429,16 @@ export async function WorkbenchEditor({
         }
       />
     );
+  if (kind === "goal" && !id)
+    return (
+      <EntityWorkbenchShell kind="goal" title="Goal erstellen">
+        <GoalCaptureForm
+          areas={data.areas
+            .filter((area) => !area.archived_at)
+            .map((area) => ({ id: area.id, title: area.name }))}
+        />
+      </EntityWorkbenchShell>
+    );
   return (
     <EntityWorkbenchShell
       kind={kind}
@@ -408,6 +454,13 @@ export async function WorkbenchEditor({
             (kind === "resource"
               ? " · Nach dem Erstellen wählst du die Verwendung im Project."
               : " · Nach dem Erstellen zurück zum Project.")}
+        </p>
+      )}
+      {contextGoal && contextGoalMilestone && (
+        <p className="text-sm text-[var(--text-muted)]">
+          Goal-Kontext: <Link href={`/goals/${contextGoal.id}`}>{contextGoal.title}</Link>
+          {" · "}
+          Etappe: {contextGoalMilestone.title}
         </p>
       )}
       {kind === "resource" && row && "url" in row && (
@@ -449,6 +502,16 @@ export async function WorkbenchEditor({
             id={id}
             values={values}
             projectContext={contextProject?.id}
+            goalMilestoneContext={
+              contextGoal && contextGoalMilestone
+                ? {
+                    goalId: contextGoal.id,
+                    milestoneId: contextGoalMilestone.id,
+                    goalTitle: contextGoal.title,
+                    milestoneTitle: contextGoalMilestone.title,
+                  }
+                : undefined
+            }
             milestones={
               kind === "task" && !id
                 ? data.milestones

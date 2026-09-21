@@ -291,6 +291,8 @@ export type DashboardPortfolioItem = {
   area: DashboardArea;
   kind: PortfolioItemKind;
   href?: DashboardHref;
+  /** Outcome-aware cards use honest text instead of an invented percentage. */
+  progressLabel?: string;
 };
 
 export type DashboardActivePortfolio = {

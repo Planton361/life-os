@@ -3,8 +3,7 @@ import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import type { User } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
-import type { Database } from "@/types/supabase";
-import type { SupabaseClientLike } from "@/features/real-data/supabase";
+import type { Database, SupabaseClientLike } from "@/features/real-data/supabase";
 
 type SupabaseServerConfig =
   | {

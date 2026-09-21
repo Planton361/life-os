@@ -17,6 +17,31 @@ const task = (patch: Partial<ActivitySources["tasks"][number]>) =>
     ...patch,
   }) as ActivitySources["tasks"][number];
 describe("Today source-first day projection", () => {
+  it("keeps an unknown historical Goal identity separate from the current identity", () => {
+    const sources = emptyActivitySources();
+    sources.goalEvents = [
+      {
+        id: "reopened",
+        goalId: "goal-1",
+        goalTitle: null,
+        currentGoalTitle: "Current goal identity",
+        eventType: "goal_reopened",
+        occurredAt: null,
+        recordedAt: "2026-09-06T08:00:00Z",
+      },
+    ];
+    const event = projectTodayActivity(
+      sources,
+      "Europe/Berlin",
+      new Date("2026-09-06T12:00:00Z"),
+    ).events[0];
+    expect(event).toMatchObject({
+      kind: "GOAL REOPENED",
+      title: "Ziel",
+      context: "Goal-Verlauf · aktuelle Zielidentität: Current goal identity",
+    });
+  });
+
   it("separates created, scheduled and completed, sorts instants and does not infer updates", () => {
     const sources = emptyActivitySources();
     sources.tasks = [
