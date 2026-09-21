@@ -24,7 +24,8 @@ export type ActivitySources = {
 export type GoalActivityEvent = {
   id: string;
   goalId: string;
-  goalTitle: string;
+  goalTitle: string | null;
+  currentGoalTitle?: string | null;
   eventType:
     | "goal_achieved"
     | "goal_reopened"
@@ -237,10 +238,14 @@ export function projectTodayActivity(
       event.id,
       event.occurredAt ?? event.recordedAt,
       `${goalLabel} ${eventLabel}`,
-      event.goalTitle,
-      event.occurredAt
-        ? "Goal-Verlauf · bewusste Entscheidung"
-        : "Goal-Verlauf · Zeitpunkt unbekannt, aufgezeichnet jetzt",
+      event.goalTitle ?? "Ziel",
+      event.goalTitle
+        ? event.occurredAt
+          ? "Goal-Verlauf · bewusste Entscheidung"
+          : "Goal-Verlauf · Zeitpunkt unbekannt, aufgezeichnet jetzt"
+        : event.currentGoalTitle
+          ? `Goal-Verlauf · aktuelle Zielidentität: ${event.currentGoalTitle}`
+          : "Goal-Verlauf · historische Identität unbekannt",
       `/goals/${event.goalId}`,
       eventLabel === "ACHIEVED" ? "green" : "orange",
     );

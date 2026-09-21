@@ -61,7 +61,7 @@ update public.goal_criterion_evaluations
          'legacy_state', true,
          'reason', 'Evaluation predates Slice-1 immutable Goal history.'
        ),
-       retrospective = true
+       retrospective = false
  where legacy_state is null;
 
 create index if not exists goal_criterion_evaluations_effective_latest_idx
@@ -110,7 +110,13 @@ create table public.goal_milestone_achievement_events (
   foreign key (user_id, goal_id)
     references public.goals(user_id, id) on delete cascade,
   foreign key (user_id, goal_id, goal_milestone_id)
-    references public.goal_milestones(user_id, goal_id, id) on delete cascade
+    references public.goal_milestones(user_id, goal_id, id) on delete cascade,
+  foreign key (user_id, corrects_event_id)
+    references public.goal_milestone_achievement_events(user_id, id) on delete restrict,
+  check (
+    (event_type = 'amended' and corrects_event_id is not null and length(btrim(coalesce(correction_reason, ''))) > 0)
+    or (event_type <> 'amended' and corrects_event_id is null and correction_reason is null)
+  )
 );
 
 create index goal_milestone_achievement_events_order_idx
@@ -131,8 +137,6 @@ create table public.goal_achievement_events (
   occurred_at timestamptz,
   recorded_at timestamptz not null default now(),
   goal_title_snapshot text,
-  goal_description_snapshot text,
-  goal_why_snapshot text,
   prior_status public.goal_status,
   resulting_status public.goal_status,
   achievement_note text,
@@ -144,7 +148,13 @@ create table public.goal_achievement_events (
   created_at timestamptz not null default now(),
   unique (user_id, id),
   foreign key (user_id, goal_id)
-    references public.goals(user_id, id) on delete cascade
+    references public.goals(user_id, id) on delete cascade,
+  foreign key (user_id, corrects_event_id)
+    references public.goal_achievement_events(user_id, id) on delete restrict,
+  check (
+    (event_type = 'amended' and corrects_event_id is not null and length(btrim(coalesce(correction_reason, ''))) > 0)
+    or (event_type <> 'amended' and corrects_event_id is null and correction_reason is null)
+  )
 );
 
 create index goal_achievement_events_order_idx
@@ -197,18 +207,24 @@ create table public.goal_criterion_evaluation_evidence (
   user_id uuid not null references auth.users(id) on delete cascade,
   evaluation_id uuid not null,
   reference_group_id uuid not null default gen_random_uuid(),
-  reference_action text not null check (reference_action in ('attached', 'replaced', 'withdrawn')),
+  reference_action text not null check (reference_action in ('attached', 'replaced', 'withdrawn', 'supplemented')),
   source_type text not null check (source_type in ('task', 'project', 'project_milestone', 'resource', 'review_record')),
   source_id uuid not null,
   source_title_snapshot text,
   source_context_snapshot jsonb,
   supersedes_reference_id uuid,
   reason text,
+  retrospective boolean not null default false,
   occurred_at timestamptz,
   recorded_at timestamptz not null default now(),
   created_at timestamptz not null default now(),
   foreign key (user_id, evaluation_id)
-    references public.goal_criterion_evaluations(user_id, id) on delete cascade
+    references public.goal_criterion_evaluations(user_id, id) on delete cascade,
+  check (
+    (reference_action in ('replaced', 'withdrawn') and supersedes_reference_id is not null and length(btrim(coalesce(reason, ''))) > 0)
+    or (reference_action in ('attached', 'supplemented') and supersedes_reference_id is null)
+  ),
+  check ((reference_action = 'supplemented') = retrospective)
 );
 
 create table public.goal_milestone_achievement_evidence (
@@ -217,18 +233,24 @@ create table public.goal_milestone_achievement_evidence (
   achievement_event_id uuid not null,
   episode_id uuid not null,
   reference_group_id uuid not null default gen_random_uuid(),
-  reference_action text not null check (reference_action in ('attached', 'replaced', 'withdrawn')),
+  reference_action text not null check (reference_action in ('attached', 'replaced', 'withdrawn', 'supplemented')),
   source_type text not null check (source_type in ('goal_criterion_evaluation', 'project', 'project_milestone', 'task', 'resource', 'review_record')),
   source_id uuid not null,
   source_title_snapshot text,
   source_context_snapshot jsonb,
   supersedes_reference_id uuid,
   reason text,
+  retrospective boolean not null default false,
   occurred_at timestamptz,
   recorded_at timestamptz not null default now(),
   created_at timestamptz not null default now(),
   foreign key (user_id, achievement_event_id)
-    references public.goal_milestone_achievement_events(user_id, id) on delete cascade
+    references public.goal_milestone_achievement_events(user_id, id) on delete cascade,
+  check (
+    (reference_action in ('replaced', 'withdrawn') and supersedes_reference_id is not null and length(btrim(coalesce(reason, ''))) > 0)
+    or (reference_action in ('attached', 'supplemented') and supersedes_reference_id is null)
+  ),
+  check ((reference_action = 'supplemented') = retrospective)
 );
 
 create table public.goal_achievement_evidence (
@@ -236,18 +258,24 @@ create table public.goal_achievement_evidence (
   user_id uuid not null references auth.users(id) on delete cascade,
   achievement_event_id uuid not null,
   reference_group_id uuid not null default gen_random_uuid(),
-  reference_action text not null check (reference_action in ('attached', 'replaced', 'withdrawn')),
+  reference_action text not null check (reference_action in ('attached', 'replaced', 'withdrawn', 'supplemented')),
   source_type text not null check (source_type in ('project', 'project_milestone', 'task', 'resource', 'review_record')),
   source_id uuid not null,
   source_title_snapshot text,
   source_context_snapshot jsonb,
   supersedes_reference_id uuid,
   reason text,
+  retrospective boolean not null default false,
   occurred_at timestamptz,
   recorded_at timestamptz not null default now(),
   created_at timestamptz not null default now(),
   foreign key (user_id, achievement_event_id)
-    references public.goal_achievement_events(user_id, id) on delete cascade
+    references public.goal_achievement_events(user_id, id) on delete cascade,
+  check (
+    (reference_action in ('replaced', 'withdrawn') and supersedes_reference_id is not null and length(btrim(coalesce(reason, ''))) > 0)
+    or (reference_action in ('attached', 'supplemented') and supersedes_reference_id is null)
+  ),
+  check ((reference_action = 'supplemented') = retrospective)
 );
 
 create index goal_criterion_evaluation_evidence_lookup_idx
@@ -256,6 +284,109 @@ create index goal_milestone_achievement_evidence_lookup_idx
   on public.goal_milestone_achievement_evidence (user_id, achievement_event_id, reference_group_id, recorded_at desc, id desc);
 create index goal_achievement_evidence_lookup_idx
   on public.goal_achievement_evidence (user_id, achievement_event_id, reference_group_id, recorded_at desc, id desc);
+
+-- Preserve the current achieved state that existed before Slice 1 without
+-- inventing the old transition time or decision-time identity. These rows are
+-- durable legacy markers; current Goal/Etappe rows remain the current identity.
+create or replace function public.backfill_goal_legacy_history()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update public.goal_criterion_evaluations
+     set legacy_state = jsonb_build_object(
+           'legacy_state', true,
+           'reason', 'Evaluation predates Slice-1 immutable Goal history.'
+         ),
+         retrospective = false
+   where legacy_state is null;
+
+  insert into public.goal_milestone_achievement_events (
+    user_id,
+    goal_id,
+    goal_milestone_id,
+    episode_id,
+    event_type,
+    occurred_at,
+    goal_title_snapshot,
+    goal_milestone_title_snapshot,
+    goal_milestone_description_snapshot,
+    prior_status,
+    resulting_status,
+    note,
+    legacy_state,
+    retrospective
+  )
+  select
+    m.user_id,
+    m.goal_id,
+    m.id,
+    gen_random_uuid(),
+    'achieved',
+    null,
+    null,
+    null,
+    null,
+    null,
+    'achieved',
+    null,
+    jsonb_build_object(
+      'legacy_state', true,
+      'reason', 'Etappe war vor Slice 1 bereits erreicht; Übergangszeitpunkt und Entscheidungskontext sind nicht rekonstruierbar.'
+    ),
+    false
+  from public.goal_milestones m
+  where m.status = 'achieved'
+    and not exists (
+      select 1
+        from public.goal_milestone_achievement_events e
+       where e.user_id = m.user_id
+         and e.goal_milestone_id = m.id
+    );
+
+  insert into public.goal_achievement_events (
+    user_id,
+    goal_id,
+    episode_id,
+    event_type,
+    occurred_at,
+    goal_title_snapshot,
+    prior_status,
+    resulting_status,
+    achievement_note,
+    legacy_state,
+    retrospective
+  )
+  select
+    g.user_id,
+    g.id,
+    gen_random_uuid(),
+    'achieved',
+    g.achieved_at,
+    null,
+    null,
+    'achieved',
+    g.achievement_note,
+    jsonb_build_object(
+      'legacy_state', true,
+      'reason', 'Goal war vor Slice 1 bereits erreicht; Übergangszeitpunkt ist nur über achieved_at bekannt, Entscheidungsbasis und damalige Identität sind nicht rekonstruierbar.'
+    ),
+    false
+  from public.goals g
+  where g.status = 'achieved'
+    and not exists (
+      select 1
+        from public.goal_achievement_events e
+       where e.user_id = g.user_id
+         and e.goal_id = g.id
+    );
+end;
+$$;
+
+revoke all on function public.backfill_goal_legacy_history() from public, anon, authenticated;
+select public.backfill_goal_legacy_history();
 
 alter table public.goal_command_receipts enable row level security;
 alter table public.goal_milestone_achievement_events enable row level security;
@@ -470,10 +601,14 @@ declare
   v_milestone record;
   v_criterion record;
   v_evaluation record;
+  v_event record;
   v_basis record;
   v_source_type text;
   v_source_id uuid;
   v_action text;
+  v_retrospective boolean;
+  v_supersedes_reference_id uuid;
+  v_reference_group_id uuid;
   v_revision_kind text;
   v_count integer := 0;
 begin
@@ -545,12 +680,42 @@ begin
         prior_status, resulting_status, note, command_id
       ) values (
         v_user_id, v_goal_id, v_milestone_id, v_episode_id, 'reopened', v_occurred_at,
-        v_milestone.goal_title, v_milestone.title, v_milestone.description,
+        null, null, null,
         v_milestone.status, 'active', nullif(p_payload->>'note', ''), p_command_id
       ) returning id into v_event_id;
       update public.goal_milestones set status = 'active' where user_id = v_user_id and id = v_milestone_id;
       v_result := jsonb_build_object('event_id', v_event_id, 'episode_id', v_episode_id, 'milestone_id', v_milestone_id);
     end if;
+
+  elsif p_command_kind = 'milestone.amend' then
+    select e.*
+      into v_event
+      from public.goal_milestone_achievement_events e
+     where e.user_id = v_user_id
+       and e.id = nullif(p_payload->>'event_id', '')::uuid
+       and e.goal_id = v_goal_id
+       and e.goal_milestone_id = v_milestone_id
+       and e.event_type in ('achieved', 'reopened', 'amended')
+     for update;
+    if not found then raise exception 'GOAL_MILESTONE_EVENT_NOT_FOUND' using errcode = 'P0002'; end if;
+    if length(btrim(coalesce(p_payload->>'correction_reason', ''))) = 0 then
+      raise exception 'GOAL_EVENT_CORRECTION_REASON_REQUIRED' using errcode = 'P0001';
+    end if;
+    insert into public.goal_milestone_achievement_events (
+      user_id, goal_id, goal_milestone_id, episode_id, event_type, occurred_at,
+      goal_title_snapshot, goal_milestone_title_snapshot, goal_milestone_description_snapshot,
+      prior_status, resulting_status, note, legacy_state, corrects_event_id,
+      correction_reason, retrospective, command_id
+    ) values (
+      v_user_id, v_event.goal_id, v_event.goal_milestone_id, v_event.episode_id, 'amended',
+      coalesce(nullif(p_payload->>'occurred_at', '')::timestamptz, v_event.occurred_at),
+      v_event.goal_title_snapshot, v_event.goal_milestone_title_snapshot,
+      v_event.goal_milestone_description_snapshot, v_event.prior_status,
+      v_event.resulting_status, coalesce(nullif(p_payload->>'note', ''), v_event.note),
+      v_event.legacy_state, v_event.id, p_payload->>'correction_reason',
+      coalesce((p_payload->>'retrospective')::boolean, false), p_command_id
+    ) returning id into v_event_id;
+    v_result := jsonb_build_object('event_id', v_event_id, 'episode_id', v_event.episode_id, 'milestone_id', v_milestone_id);
 
   elsif p_command_kind in ('criterion.evaluate', 'criterion.correct', 'criterion.retract') then
     select c.* into v_criterion
@@ -597,70 +762,228 @@ begin
      where e.user_id = v_user_id and e.id = nullif(p_payload->>'evaluation_id', '')::uuid and c.goal_id = v_goal_id;
     if not found then raise exception 'GOAL_EVALUATION_NOT_FOUND' using errcode = 'P0002'; end if;
     v_action := coalesce(p_payload->>'action', 'attached');
-    if v_action not in ('attached', 'replaced', 'withdrawn') then raise exception 'GOAL_EVIDENCE_ACTION_INVALID' using errcode = 'P0001'; end if;
+    v_retrospective := coalesce((p_payload->>'retrospective')::boolean, false);
+    if v_action not in ('attached', 'replaced', 'withdrawn', 'supplemented') then raise exception 'GOAL_EVIDENCE_ACTION_INVALID' using errcode = 'P0001'; end if;
+    if (v_action = 'supplemented') <> v_retrospective then raise exception 'GOAL_RETROSPECTIVE_SUPPLEMENT_REQUIRED' using errcode = 'P0001'; end if;
     for v_ref in select * from jsonb_array_elements(coalesce(p_payload->'references', '[]'::jsonb)) loop
-      v_source_type := v_ref->>'source_type';
-      v_source_id := (v_ref->>'source_id')::uuid;
-      select * into v_prior_ref
-        from public.goal_criterion_evaluation_evidence r
-       where r.user_id = v_user_id and r.id = nullif(v_ref->>'supersedes_reference_id', '')::uuid and r.evaluation_id = v_evaluation.id
-       for update;
-      if v_action in ('replaced', 'withdrawn') and not found then raise exception 'GOAL_EVIDENCE_REFERENCE_NOT_FOUND' using errcode = 'P0002'; end if;
+      v_source_type := nullif(v_ref->>'source_type', '');
+      v_source_id := nullif(v_ref->>'source_id', '')::uuid;
+      v_supersedes_reference_id := nullif(v_ref->>'supersedes_reference_id', '')::uuid;
+      v_source_title := null;
+      v_source_context := null;
+      v_prior_ref := null;
+      v_reference_group_id := gen_random_uuid();
       if v_action in ('replaced', 'withdrawn') then
-        v_source_type := v_prior_ref.source_type;
-        v_source_id := v_prior_ref.source_id;
-        v_source_title := v_prior_ref.source_title_snapshot;
-        v_source_context := v_prior_ref.source_context_snapshot;
+        if v_supersedes_reference_id is null then raise exception 'GOAL_EVIDENCE_REFERENCE_REQUIRED' using errcode = 'P0001'; end if;
+        select * into v_prior_ref
+          from public.goal_criterion_evaluation_evidence r
+         where r.user_id = v_user_id and r.id = v_supersedes_reference_id and r.evaluation_id = v_evaluation.id
+         for update;
+        if not found then raise exception 'GOAL_EVIDENCE_REFERENCE_NOT_FOUND' using errcode = 'P0002'; end if;
+        v_reference_group_id := v_prior_ref.reference_group_id;
+        if length(btrim(coalesce(v_ref->>'reason', ''))) = 0 then raise exception 'GOAL_EVIDENCE_REASON_REQUIRED' using errcode = 'P0001'; end if;
+        if v_action = 'withdrawn' then
+          v_source_type := v_prior_ref.source_type;
+          v_source_id := v_prior_ref.source_id;
+          v_source_title := v_prior_ref.source_title_snapshot;
+          v_source_context := v_prior_ref.source_context_snapshot;
+        else
+          if v_source_type is null or v_source_id is null then raise exception 'GOAL_EVIDENCE_SOURCE_REQUIRED' using errcode = 'P0001'; end if;
+          if v_source_type = v_prior_ref.source_type and v_source_id = v_prior_ref.source_id then raise exception 'GOAL_EVIDENCE_REPLACEMENT_SAME_SOURCE' using errcode = 'P0001'; end if;
+          select title, context into v_source_title, v_source_context from public.goal_source_snapshot(v_user_id, v_source_type, v_source_id);
+        end if;
       else
+        if v_source_type is null or v_source_id is null then raise exception 'GOAL_EVIDENCE_SOURCE_REQUIRED' using errcode = 'P0001'; end if;
+        if length(btrim(coalesce(v_ref->>'reason', ''))) = 0 and v_action = 'supplemented' then raise exception 'GOAL_EVIDENCE_REASON_REQUIRED' using errcode = 'P0001'; end if;
         select title, context into v_source_title, v_source_context from public.goal_source_snapshot(v_user_id, v_source_type, v_source_id);
       end if;
       insert into public.goal_criterion_evaluation_evidence (
         user_id, evaluation_id, reference_group_id, reference_action, source_type, source_id,
         source_title_snapshot, source_context_snapshot, supersedes_reference_id, reason,
-        occurred_at
+        retrospective, occurred_at
       ) values (
         v_user_id, v_evaluation.id,
-        coalesce(v_prior_ref.reference_group_id, gen_random_uuid()), v_action, v_source_type, v_source_id,
-        v_source_title, v_source_context, nullif(v_ref->>'supersedes_reference_id', '')::uuid,
-        nullif(v_ref->>'reason', ''), v_occurred_at
+        v_reference_group_id, v_action, v_source_type, v_source_id,
+        v_source_title, v_source_context, case when v_action in ('replaced', 'withdrawn') then v_supersedes_reference_id else null end,
+        nullif(v_ref->>'reason', ''), v_retrospective, v_occurred_at
       );
       v_count := v_count + 1;
     end loop;
     v_result := jsonb_build_object('evaluation_id', v_evaluation.id, 'references_changed', v_count);
 
   elsif p_command_kind = 'milestone.evidence' then
-    select e.id, e.episode_id
-      into v_event_id, v_episode_id
-      from public.goal_milestone_achievement_events e
-     where e.user_id = v_user_id
-       and e.goal_id = v_goal_id
-       and e.goal_milestone_id = v_milestone_id
-       and e.event_type = 'achieved'
-       and not exists (
-         select 1
-           from public.goal_milestone_achievement_events r
-          where r.user_id = e.user_id
-            and r.goal_milestone_id = e.goal_milestone_id
-            and r.episode_id = e.episode_id
-            and r.event_type = 'reopened'
-       )
-     order by e.occurred_at desc nulls last, e.recorded_at desc, e.id desc
-     limit 1;
+    v_action := coalesce(p_payload->>'action', 'attached');
+    v_retrospective := coalesce((p_payload->>'retrospective')::boolean, false);
+    if v_action not in ('attached', 'replaced', 'withdrawn', 'supplemented') then raise exception 'GOAL_EVIDENCE_ACTION_INVALID' using errcode = 'P0001'; end if;
+    if (v_action = 'supplemented') <> v_retrospective then raise exception 'GOAL_RETROSPECTIVE_SUPPLEMENT_REQUIRED' using errcode = 'P0001'; end if;
+    if nullif(p_payload->>'achievement_event_id', '') is not null then
+      select e.id, e.episode_id
+        into v_event_id, v_episode_id
+        from public.goal_milestone_achievement_events e
+       where e.user_id = v_user_id
+         and e.id = (p_payload->>'achievement_event_id')::uuid
+         and e.goal_id = v_goal_id
+         and e.goal_milestone_id = v_milestone_id
+         and e.event_type in ('achieved', 'amended')
+         and e.resulting_status = 'achieved'
+       for update;
+    else
+      select e.id, e.episode_id
+        into v_event_id, v_episode_id
+        from public.goal_milestone_achievement_events e
+       where e.user_id = v_user_id
+         and e.goal_id = v_goal_id
+         and e.goal_milestone_id = v_milestone_id
+         and e.event_type = 'achieved'
+         and not exists (
+           select 1
+             from public.goal_milestone_achievement_events r
+            where r.user_id = e.user_id
+              and r.goal_milestone_id = e.goal_milestone_id
+              and r.episode_id = e.episode_id
+              and r.event_type = 'reopened'
+         )
+       order by e.occurred_at desc nulls last, e.recorded_at desc, e.id desc
+       limit 1;
+    end if;
     if v_event_id is null then raise exception 'GOAL_MILESTONE_OPEN_EPISODE_NOT_FOUND' using errcode = 'P0001'; end if;
     for v_ref in select * from jsonb_array_elements(coalesce(p_payload->'references', '[]'::jsonb)) loop
-      v_source_type := v_ref->>'source_type';
-      v_source_id := (v_ref->>'source_id')::uuid;
-      select title, context into v_source_title, v_source_context from public.goal_source_snapshot(v_user_id, v_source_type, v_source_id);
+      v_source_type := nullif(v_ref->>'source_type', '');
+      v_source_id := nullif(v_ref->>'source_id', '')::uuid;
+      v_supersedes_reference_id := nullif(v_ref->>'supersedes_reference_id', '')::uuid;
+      v_source_title := null;
+      v_source_context := null;
+      v_prior_ref := null;
+      v_reference_group_id := gen_random_uuid();
+      if v_action in ('replaced', 'withdrawn') then
+        if v_supersedes_reference_id is null then raise exception 'GOAL_EVIDENCE_REFERENCE_REQUIRED' using errcode = 'P0001'; end if;
+        select * into v_prior_ref
+          from public.goal_milestone_achievement_evidence r
+         where r.user_id = v_user_id
+         and r.id = v_supersedes_reference_id
+           and r.achievement_event_id = v_event_id
+         for update;
+        if not found then raise exception 'GOAL_EVIDENCE_REFERENCE_NOT_FOUND' using errcode = 'P0002'; end if;
+        v_reference_group_id := v_prior_ref.reference_group_id;
+        if length(btrim(coalesce(v_ref->>'reason', ''))) = 0 then raise exception 'GOAL_EVIDENCE_REASON_REQUIRED' using errcode = 'P0001'; end if;
+        if v_action = 'withdrawn' then
+          v_source_type := v_prior_ref.source_type;
+          v_source_id := v_prior_ref.source_id;
+          v_source_title := v_prior_ref.source_title_snapshot;
+          v_source_context := v_prior_ref.source_context_snapshot;
+        else
+          if v_source_type is null or v_source_id is null then raise exception 'GOAL_EVIDENCE_SOURCE_REQUIRED' using errcode = 'P0001'; end if;
+          if v_source_type = v_prior_ref.source_type and v_source_id = v_prior_ref.source_id then raise exception 'GOAL_EVIDENCE_REPLACEMENT_SAME_SOURCE' using errcode = 'P0001'; end if;
+          select title, context into v_source_title, v_source_context from public.goal_source_snapshot(v_user_id, v_source_type, v_source_id);
+        end if;
+      else
+        if v_source_type is null or v_source_id is null then raise exception 'GOAL_EVIDENCE_SOURCE_REQUIRED' using errcode = 'P0001'; end if;
+        if length(btrim(coalesce(v_ref->>'reason', ''))) = 0 and v_action = 'supplemented' then raise exception 'GOAL_EVIDENCE_REASON_REQUIRED' using errcode = 'P0001'; end if;
+        select title, context into v_source_title, v_source_context from public.goal_source_snapshot(v_user_id, v_source_type, v_source_id);
+      end if;
       insert into public.goal_milestone_achievement_evidence (
-        user_id, achievement_event_id, episode_id, reference_action, source_type, source_id,
-        source_title_snapshot, source_context_snapshot, reason, occurred_at
+        user_id, achievement_event_id, episode_id, reference_group_id, reference_action, source_type, source_id,
+        source_title_snapshot, source_context_snapshot, supersedes_reference_id, reason,
+        retrospective, occurred_at
       ) values (
-        v_user_id, v_event_id, v_episode_id, 'attached', v_source_type, v_source_id,
-        v_source_title, v_source_context, nullif(v_ref->>'reason', ''), v_occurred_at
+        v_user_id, v_event_id, v_episode_id, v_reference_group_id, v_action, v_source_type, v_source_id,
+        v_source_title, v_source_context,
+        case when v_action in ('replaced', 'withdrawn') then v_supersedes_reference_id else null end,
+        nullif(v_ref->>'reason', ''), v_retrospective, v_occurred_at
       );
       v_count := v_count + 1;
     end loop;
     v_result := jsonb_build_object('event_id', v_event_id, 'episode_id', v_episode_id, 'references_changed', v_count);
+
+  elsif p_command_kind = 'goal.amend' then
+    select e.*
+      into v_event
+      from public.goal_achievement_events e
+     where e.user_id = v_user_id
+       and e.id = nullif(p_payload->>'event_id', '')::uuid
+       and e.goal_id = v_goal_id
+       and e.event_type in ('achieved', 'reopened', 'amended')
+     for update;
+    if not found then raise exception 'GOAL_EVENT_NOT_FOUND' using errcode = 'P0002'; end if;
+    if length(btrim(coalesce(p_payload->>'correction_reason', ''))) = 0 then
+      raise exception 'GOAL_EVENT_CORRECTION_REASON_REQUIRED' using errcode = 'P0001';
+    end if;
+    insert into public.goal_achievement_events (
+      user_id, goal_id, episode_id, event_type, occurred_at, goal_title_snapshot,
+      prior_status, resulting_status, achievement_note, legacy_state, corrects_event_id,
+      correction_reason, retrospective, command_id
+    ) values (
+      v_user_id, v_event.goal_id, v_event.episode_id, 'amended',
+      coalesce(nullif(p_payload->>'occurred_at', '')::timestamptz, v_event.occurred_at),
+      v_event.goal_title_snapshot, v_event.prior_status, v_event.resulting_status,
+      coalesce(nullif(p_payload->>'achievement_note', ''), v_event.achievement_note),
+      v_event.legacy_state, v_event.id, p_payload->>'correction_reason',
+      coalesce((p_payload->>'retrospective')::boolean, false), p_command_id
+    ) returning id into v_event_id;
+    v_result := jsonb_build_object('event_id', v_event_id, 'episode_id', v_event.episode_id, 'goal_id', v_goal_id);
+
+  elsif p_command_kind = 'goal.evidence' then
+    select e.*
+      into v_event
+      from public.goal_achievement_events e
+     where e.user_id = v_user_id
+       and e.id = nullif(p_payload->>'achievement_event_id', '')::uuid
+       and e.goal_id = v_goal_id
+       and e.event_type in ('achieved', 'amended')
+       and e.resulting_status = 'achieved'
+     for update;
+    if not found then raise exception 'GOAL_EVENT_NOT_FOUND' using errcode = 'P0002'; end if;
+    v_action := coalesce(p_payload->>'action', 'attached');
+    v_retrospective := coalesce((p_payload->>'retrospective')::boolean, false);
+    if v_action not in ('attached', 'replaced', 'withdrawn', 'supplemented') then raise exception 'GOAL_EVIDENCE_ACTION_INVALID' using errcode = 'P0001'; end if;
+    if (v_action = 'supplemented') <> v_retrospective then raise exception 'GOAL_RETROSPECTIVE_SUPPLEMENT_REQUIRED' using errcode = 'P0001'; end if;
+    for v_ref in select * from jsonb_array_elements(coalesce(p_payload->'references', '[]'::jsonb)) loop
+      v_source_type := nullif(v_ref->>'source_type', '');
+      v_source_id := nullif(v_ref->>'source_id', '')::uuid;
+      v_supersedes_reference_id := nullif(v_ref->>'supersedes_reference_id', '')::uuid;
+      v_source_title := null;
+      v_source_context := null;
+      v_prior_ref := null;
+      v_reference_group_id := gen_random_uuid();
+      if v_action in ('replaced', 'withdrawn') then
+        if v_supersedes_reference_id is null then raise exception 'GOAL_EVIDENCE_REFERENCE_REQUIRED' using errcode = 'P0001'; end if;
+        select * into v_prior_ref
+          from public.goal_achievement_evidence r
+         where r.user_id = v_user_id
+           and r.id = v_supersedes_reference_id
+           and r.achievement_event_id = v_event.id
+         for update;
+        if not found then raise exception 'GOAL_EVIDENCE_REFERENCE_NOT_FOUND' using errcode = 'P0002'; end if;
+        v_reference_group_id := v_prior_ref.reference_group_id;
+        if length(btrim(coalesce(v_ref->>'reason', ''))) = 0 then raise exception 'GOAL_EVIDENCE_REASON_REQUIRED' using errcode = 'P0001'; end if;
+        if v_action = 'withdrawn' then
+          v_source_type := v_prior_ref.source_type;
+          v_source_id := v_prior_ref.source_id;
+          v_source_title := v_prior_ref.source_title_snapshot;
+          v_source_context := v_prior_ref.source_context_snapshot;
+        else
+          if v_source_type is null or v_source_id is null then raise exception 'GOAL_EVIDENCE_SOURCE_REQUIRED' using errcode = 'P0001'; end if;
+          if v_source_type = v_prior_ref.source_type and v_source_id = v_prior_ref.source_id then raise exception 'GOAL_EVIDENCE_REPLACEMENT_SAME_SOURCE' using errcode = 'P0001'; end if;
+          select title, context into v_source_title, v_source_context from public.goal_source_snapshot(v_user_id, v_source_type, v_source_id);
+        end if;
+      else
+        if v_source_type is null or v_source_id is null then raise exception 'GOAL_EVIDENCE_SOURCE_REQUIRED' using errcode = 'P0001'; end if;
+        if length(btrim(coalesce(v_ref->>'reason', ''))) = 0 and v_action = 'supplemented' then raise exception 'GOAL_EVIDENCE_REASON_REQUIRED' using errcode = 'P0001'; end if;
+        select title, context into v_source_title, v_source_context from public.goal_source_snapshot(v_user_id, v_source_type, v_source_id);
+      end if;
+      insert into public.goal_achievement_evidence (
+        user_id, achievement_event_id, reference_group_id, reference_action, source_type, source_id,
+        source_title_snapshot, source_context_snapshot, supersedes_reference_id, reason,
+        retrospective, occurred_at
+      ) values (
+        v_user_id, v_event.id, v_reference_group_id, v_action,
+        v_source_type, v_source_id, v_source_title, v_source_context,
+        case when v_action in ('replaced', 'withdrawn') then v_supersedes_reference_id else null end,
+        nullif(v_ref->>'reason', ''), v_retrospective, v_occurred_at
+      );
+      v_count := v_count + 1;
+    end loop;
+    v_result := jsonb_build_object('event_id', v_event.id, 'references_changed', v_count);
 
   elsif p_command_kind in ('goal.achieve', 'goal.reopen') then
     select g.* into v_goal
@@ -683,16 +1006,16 @@ begin
        order by e.occurred_at desc nulls last, e.recorded_at desc, e.id desc
        limit 1;
       if v_episode_id is null then
-        v_episode_id := gen_random_uuid();
+        raise exception 'GOAL_OPEN_EPISODE_NOT_FOUND' using errcode = 'P0001';
       end if;
       insert into public.goal_achievement_events (
         user_id, goal_id, episode_id, event_type, occurred_at, goal_title_snapshot,
-        goal_description_snapshot, goal_why_snapshot, prior_status, resulting_status,
+        prior_status, resulting_status,
         achievement_note, legacy_state, command_id
       ) values (
-        v_user_id, v_goal_id, v_episode_id, 'reopened', v_occurred_at, v_goal.title,
-        v_goal.description, v_goal.why, v_goal.status, 'active', v_goal.achievement_note,
-        case when not exists (select 1 from public.goal_achievement_events where user_id = v_user_id and goal_id = v_goal_id) then jsonb_build_object('legacy_state', true, 'reason', 'Current achieved state predates Slice-1 history.') else null end,
+        v_user_id, v_goal_id, v_episode_id, 'reopened', v_occurred_at, null,
+        v_goal.status, 'active', v_goal.achievement_note,
+        null,
         p_command_id
       ) returning id into v_event_id;
       update public.goals set status = 'active', achieved_at = null, achievement_note = null where user_id = v_user_id and id = v_goal_id;
@@ -715,11 +1038,11 @@ begin
       v_episode_id := gen_random_uuid();
       insert into public.goal_achievement_events (
         user_id, goal_id, episode_id, event_type, occurred_at, goal_title_snapshot,
-        goal_description_snapshot, goal_why_snapshot, prior_status, resulting_status,
+        prior_status, resulting_status,
         achievement_note, command_id
       ) values (
         v_user_id, v_goal_id, v_episode_id, 'achieved', v_occurred_at, v_goal.title,
-        v_goal.description, v_goal.why, v_goal.status, 'achieved', nullif(p_payload->>'note', ''), p_command_id
+        v_goal.status, 'achieved', nullif(p_payload->>'note', ''), p_command_id
       ) returning id into v_event_id;
       for v_basis in
         select c.id, c.title, c.criterion_type, c.goal_milestone_id, c.unit, c.target, c.direction, e.id as evaluation_id, e.evaluated_at, e.is_deferred, e.is_retracted, e.boolean_value, e.numeric_value

@@ -24,10 +24,14 @@ type GoalPathCriterionEvaluationRow = {
   goal_id_snapshot: string | null;
   goal_milestone_id_snapshot: string | null;
   criterion_title_snapshot: string | null;
-  criterion_type_snapshot: GeneratedDatabase["public"]["Enums"]["goal_criterion_type"] | null;
+  criterion_type_snapshot:
+    | GeneratedDatabase["public"]["Enums"]["goal_criterion_type"]
+    | null;
   unit_snapshot: string | null;
   target_snapshot: number | null;
-  direction_snapshot: GeneratedDatabase["public"]["Enums"]["goal_criterion_direction"] | null;
+  direction_snapshot:
+    | GeneratedDatabase["public"]["Enums"]["goal_criterion_direction"]
+    | null;
   revision_kind: string;
   supersedes_evaluation_id: string | null;
   correction_reason: string | null;
@@ -36,10 +40,11 @@ type GoalPathCriterionEvaluationRow = {
   retrospective: boolean;
 };
 
-type GoalPathCriterionEvaluationInsert = Partial<GoalPathCriterionEvaluationRow> & {
-  user_id: string;
-  criterion_id: string;
-};
+type GoalPathCriterionEvaluationInsert =
+  Partial<GoalPathCriterionEvaluationRow> & {
+    user_id: string;
+    criterion_id: string;
+  };
 
 type GoalPathTables = Omit<
   GeneratedDatabase["public"]["Tables"],
@@ -79,8 +84,12 @@ type GoalPathTables = Omit<
     goal_title_snapshot: string | null;
     goal_milestone_title_snapshot: string | null;
     goal_milestone_description_snapshot: string | null;
-    prior_status: GeneratedDatabase["public"]["Enums"]["goal_milestone_status"] | null;
-    resulting_status: GeneratedDatabase["public"]["Enums"]["goal_milestone_status"] | null;
+    prior_status:
+      | GeneratedDatabase["public"]["Enums"]["goal_milestone_status"]
+      | null;
+    resulting_status:
+      | GeneratedDatabase["public"]["Enums"]["goal_milestone_status"]
+      | null;
     note: string | null;
     legacy_state: Json | null;
     corrects_event_id: string | null;
@@ -98,10 +107,10 @@ type GoalPathTables = Omit<
     occurred_at: string | null;
     recorded_at: string;
     goal_title_snapshot: string | null;
-    goal_description_snapshot: string | null;
-    goal_why_snapshot: string | null;
     prior_status: GeneratedDatabase["public"]["Enums"]["goal_status"] | null;
-    resulting_status: GeneratedDatabase["public"]["Enums"]["goal_status"] | null;
+    resulting_status:
+      | GeneratedDatabase["public"]["Enums"]["goal_status"]
+      | null;
     achievement_note: string | null;
     legacy_state: Json | null;
     corrects_event_id: string | null;
@@ -117,11 +126,15 @@ type GoalPathTables = Omit<
     criterion_id: string;
     evaluation_id: string | null;
     criterion_title_snapshot: string | null;
-    criterion_type_snapshot: GeneratedDatabase["public"]["Enums"]["goal_criterion_type"] | null;
+    criterion_type_snapshot:
+      | GeneratedDatabase["public"]["Enums"]["goal_criterion_type"]
+      | null;
     goal_milestone_id_snapshot: string | null;
     unit_snapshot: string | null;
     target_snapshot: number | null;
-    direction_snapshot: GeneratedDatabase["public"]["Enums"]["goal_criterion_direction"] | null;
+    direction_snapshot:
+      | GeneratedDatabase["public"]["Enums"]["goal_criterion_direction"]
+      | null;
     evaluation_state_snapshot: string | null;
     evaluation_occurred_at: string | null;
     legacy_state: Json | null;
@@ -134,7 +147,9 @@ type GoalPathTables = Omit<
     milestone_id: string;
     achievement_episode_id: string | null;
     milestone_title_snapshot: string | null;
-    resulting_status_snapshot: GeneratedDatabase["public"]["Enums"]["goal_milestone_status"] | null;
+    resulting_status_snapshot:
+      | GeneratedDatabase["public"]["Enums"]["goal_milestone_status"]
+      | null;
     legacy_state: Json | null;
     created_at: string;
   }>;
@@ -150,6 +165,7 @@ type GoalPathTables = Omit<
     source_context_snapshot: Json | null;
     supersedes_reference_id: string | null;
     reason: string | null;
+    retrospective: boolean;
     occurred_at: string | null;
     recorded_at: string;
     created_at: string;
@@ -167,6 +183,7 @@ type GoalPathTables = Omit<
     source_context_snapshot: Json | null;
     supersedes_reference_id: string | null;
     reason: string | null;
+    retrospective: boolean;
     occurred_at: string | null;
     recorded_at: string;
     created_at: string;
@@ -183,6 +200,7 @@ type GoalPathTables = Omit<
     source_context_snapshot: Json | null;
     supersedes_reference_id: string | null;
     reason: string | null;
+    retrospective: boolean;
     occurred_at: string | null;
     recorded_at: string;
     created_at: string;

@@ -149,6 +149,7 @@ export function EntityForm({
   const hydrated = useHydrated();
   const router = useRouter();
   const { notify } = useToast();
+  const closeDisclosure = useCloseManagementDisclosure();
   const [pending, start] = useTransition();
   const [error, setError] = useState("");
   const field = (
@@ -193,15 +194,16 @@ export function EntityForm({
             return;
           }
           notify(r.message);
+          closeDisclosure?.();
           if (!id && r.id)
             router.push(
               goalMilestoneContext
                 ? `/goals/${goalMilestoneContext.goalId}?created=${kind}&goalMilestone=${goalMilestoneContext.milestoneId}`
                 : projectContext
-                ? kind === "task"
-                  ? `/projects/${projects.find((p) => p.id === String(form.get("projectId")))?.id ?? projectContext}`
-                  : `/projects/${projectContext}?resource=${r.id}`
-                : `${entityRoutes[kind]}/${r.id}`,
+                  ? kind === "task"
+                    ? `/projects/${projects.find((p) => p.id === String(form.get("projectId")))?.id ?? projectContext}`
+                    : `/projects/${projectContext}?resource=${r.id}`
+                  : `${entityRoutes[kind]}/${r.id}`,
             );
           else router.refresh();
         });
@@ -345,8 +347,8 @@ export function EntityForm({
                 <>
                   {values.status === "achieved" ? (
                     <p className="text-sm">
-                      Status: achieved · über den expliziten Outcome-Flow
-                      wieder öffnen.
+                      Status: achieved · über den expliziten Outcome-Flow wieder
+                      öffnen.
                     </p>
                   ) : (
                     choice(
@@ -416,10 +418,19 @@ export function EntityForm({
                 <div className="grid gap-2 text-sm">
                   <span>Goal / Etappe</span>
                   <p className="text-[var(--text-secondary)]">
-                    {goalMilestoneContext.goalTitle} · {goalMilestoneContext.milestoneTitle}
+                    {goalMilestoneContext.goalTitle} ·{" "}
+                    {goalMilestoneContext.milestoneTitle}
                   </p>
-                  <input type="hidden" name="goalId" value={goalMilestoneContext.goalId} />
-                  <input type="hidden" name="goalMilestoneId" value={goalMilestoneContext.milestoneId} />
+                  <input
+                    type="hidden"
+                    name="goalId"
+                    value={goalMilestoneContext.goalId}
+                  />
+                  <input
+                    type="hidden"
+                    name="goalMilestoneId"
+                    value={goalMilestoneContext.milestoneId}
+                  />
                 </div>
               ) : (
                 choice("goalId", "Direktes Goal", goals)

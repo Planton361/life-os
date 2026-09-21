@@ -10,7 +10,11 @@ export type GoalMilestoneStatus = (typeof goalMilestoneStatuses)[number];
 export const goalCriterionTypes = ["boolean", "numeric"] as const;
 export type GoalCriterionType = (typeof goalCriterionTypes)[number];
 
-export const goalCriterionDirections = ["at_least", "at_most", "exact"] as const;
+export const goalCriterionDirections = [
+  "at_least",
+  "at_most",
+  "exact",
+] as const;
 export type GoalCriterionDirection = (typeof goalCriterionDirections)[number];
 
 export type GoalCriterionEvaluationState =
@@ -59,6 +63,7 @@ export type GoalCriterionEvaluation = {
   retrospective?: boolean;
   legacyState?: Record<string, unknown> | null;
   evidence?: readonly GoalEvidenceReference[];
+  evidenceHistory?: readonly GoalEvidenceReference[];
 };
 
 export type GoalOutcomeCriterion = {
@@ -98,13 +103,14 @@ export type GoalEvidenceSourceType =
 export type GoalEvidenceReference = {
   id: string;
   referenceGroupId: string;
-  action: "attached" | "replaced" | "withdrawn";
+  action: "attached" | "replaced" | "withdrawn" | "supplemented";
   sourceType: GoalEvidenceSourceType;
   sourceId: string;
   sourceTitle: string;
   sourceContext: Record<string, unknown> | null;
   supersedesReferenceId: string | null;
   reason: string | null;
+  retrospective: boolean;
   occurredAt: string | null;
   recordedAt: string;
 };
@@ -129,6 +135,7 @@ export type GoalMilestoneAchievementEvent = {
   retrospective: boolean;
   commandId: string | null;
   evidence: readonly GoalEvidenceReference[];
+  evidenceHistory: readonly GoalEvidenceReference[];
 };
 
 export type GoalAchievementCriterionBasis = {
@@ -161,10 +168,14 @@ export type GoalAchievementEvent = {
   occurredAt: string | null;
   recordedAt: string;
   goalTitleSnapshot: string | null;
-  goalDescriptionSnapshot: string | null;
-  goalWhySnapshot: string | null;
   priorStatus: "draft" | "active" | "paused" | "achieved" | "archived" | null;
-  resultingStatus: "draft" | "active" | "paused" | "achieved" | "archived" | null;
+  resultingStatus:
+    | "draft"
+    | "active"
+    | "paused"
+    | "achieved"
+    | "archived"
+    | null;
   achievementNote: string | null;
   legacyState: Record<string, unknown> | null;
   correctsEventId: string | null;
@@ -174,6 +185,7 @@ export type GoalAchievementEvent = {
   criterionBasis: readonly GoalAchievementCriterionBasis[];
   milestoneBasis: readonly GoalAchievementMilestoneBasis[];
   evidence: readonly GoalEvidenceReference[];
+  evidenceHistory: readonly GoalEvidenceReference[];
 };
 
 export type GoalPathTaskContext = {
@@ -249,10 +261,13 @@ export function criterionEvaluationState(
     GoalOutcomeCriterion,
     "criterionType" | "target" | "direction"
   >,
-  evaluation: Pick<
-    GoalCriterionEvaluation,
-    "booleanValue" | "numericValue" | "deferred"
-  > | null | undefined,
+  evaluation:
+    | Pick<
+        GoalCriterionEvaluation,
+        "booleanValue" | "numericValue" | "deferred"
+      >
+    | null
+    | undefined,
 ): GoalCriterionEvaluationState {
   if (!evaluation) return "unverified";
   if ("retracted" in evaluation && evaluation.retracted) return "unverified";
@@ -277,10 +292,17 @@ export function criterionEvaluationState(
   return current === target ? "met" : "not_met";
 }
 
-const readyTaskStatuses = new Set(["inbox", "planned", "active", "waiting", "someday"]);
+const readyTaskStatuses = new Set([
+  "inbox",
+  "planned",
+  "active",
+  "waiting",
+  "someday",
+]);
 
 function taskSortScore(task: GoalPathTaskContext) {
-  const statusScore = task.status === "active" ? 0 : task.status === "planned" ? 1 : 2;
+  const statusScore =
+    task.status === "active" ? 0 : task.status === "planned" ? 1 : 2;
   const date = task.dueAt ?? task.plannedDate ?? "9999-12-31";
   return `${statusScore}:${date}:${task.title.toLocaleLowerCase()}:${task.id}`;
 }
@@ -293,7 +315,9 @@ export function deriveGoalNextStep(input: {
 }): GoalNextStepCue {
   const activeTasks = input.tasks
     .filter((task) => !task.archivedAt && readyTaskStatuses.has(task.status))
-    .sort((left, right) => taskSortScore(left).localeCompare(taskSortScore(right)));
+    .sort((left, right) =>
+      taskSortScore(left).localeCompare(taskSortScore(right)),
+    );
   const task = activeTasks[0];
   if (task) {
     return {
@@ -301,57 +325,98 @@ export function deriveGoalNextStep(input: {
       id: task.id,
       title: task.title,
       href: `/tasks/${task.id}`,
-      reason: task.status === "active" ? "Bereits aktiver nächster Task." : "Bereits geplanter nächster Task." ,
+      reason:
+        task.status === "active"
+          ? "Bereits aktiver nächster Task."
+          : "Bereits geplanter nächster Task.",
     };
   }
 
   const project = input.projects
-    .filter((candidate) => !candidate.archivedAt && candidate.status !== "completed" && candidate.status !== "archived")
-    .sort((left, right) => `${left.status}:${left.targetDate ?? "9999-12-31"}:${left.title}`.localeCompare(`${right.status}:${right.targetDate ?? "9999-12-31"}:${right.title}`))[0];
+    .filter(
+      (candidate) =>
+        !candidate.archivedAt &&
+        candidate.status !== "completed" &&
+        candidate.status !== "archived",
+    )
+    .sort((left, right) =>
+      `${left.status}:${left.targetDate ?? "9999-12-31"}:${left.title}`.localeCompare(
+        `${right.status}:${right.targetDate ?? "9999-12-31"}:${right.title}`,
+      ),
+    )[0];
   if (project) {
     return {
       kind: "project",
       id: project.id,
       title: project.nextStep?.trim() || project.title,
       href: `/projects/${project.id}`,
-      reason: project.nextStep?.trim() ? "Next Step aus dem kanonischen Project-Kontext." : "Project-Kontext als nächster sichtbarer Schritt.",
+      reason: project.nextStep?.trim()
+        ? "Next Step aus dem kanonischen Project-Kontext."
+        : "Project-Kontext als nächster sichtbarer Schritt.",
     };
   }
 
   return {
     kind: "goal",
     id: input.goalId,
-    title: input.goalStatus === "achieved" ? "Outcome und Verlauf prüfen." : "Einen nächsten Task oder ein Project aus diesem Goal anlegen.",
+    title:
+      input.goalStatus === "achieved"
+        ? "Outcome und Verlauf prüfen."
+        : "Einen nächsten Task oder ein Project aus diesem Goal anlegen.",
     href: `/goals/${input.goalId}#weg-zum-ziel`,
-    reason: input.goalStatus === "achieved" ? "Goal ist erreicht; der Verlauf bleibt die führende Orientierung." : "Noch kein kanonischer Task- oder Project-Schritt vorhanden.",
+    reason:
+      input.goalStatus === "achieved"
+        ? "Goal ist erreicht; der Verlauf bleibt die führende Orientierung."
+        : "Noch kein kanonischer Task- oder Project-Schritt vorhanden.",
   };
 }
 
 export function buildGoalOutcomeSummary(
-  outcome: Pick<GoalOutcome, "goalId" | "goalStatus" | "achievedAt" | "milestones" | "criteria">,
+  outcome: Pick<
+    GoalOutcome,
+    "goalId" | "goalStatus" | "achievedAt" | "milestones" | "criteria"
+  >,
 ): GoalOutcomeSummary {
-  const activeCriteria = outcome.criteria.filter((criterion) => !criterion.archivedAt);
-  const activeMilestones = outcome.milestones.filter((milestone) => !milestone.archivedAt);
+  const activeCriteria = outcome.criteria.filter(
+    (criterion) => !criterion.archivedAt,
+  );
+  const activeMilestones = outcome.milestones.filter(
+    (milestone) => !milestone.archivedAt,
+  );
   const metCriteriaCount = activeCriteria.filter(
-    (criterion) => criterionEvaluationState(criterion, criterion.latestEvaluation) === "met",
+    (criterion) =>
+      criterionEvaluationState(criterion, criterion.latestEvaluation) === "met",
   ).length;
   const unverifiedCriteriaCount = activeCriteria.filter(
-    (criterion) => criterionEvaluationState(criterion, criterion.latestEvaluation) === "unverified",
+    (criterion) =>
+      criterionEvaluationState(criterion, criterion.latestEvaluation) ===
+      "unverified",
   ).length;
   const deferredCriteriaCount = activeCriteria.filter(
-    (criterion) => criterionEvaluationState(criterion, criterion.latestEvaluation) === "deferred",
+    (criterion) =>
+      criterionEvaluationState(criterion, criterion.latestEvaluation) ===
+      "deferred",
   ).length;
   const blockers: string[] = [];
 
   if (outcome.goalStatus !== "active") {
-    blockers.push("Nur aktive Goals können erreicht werden. Goal zuerst aktivieren.");
+    blockers.push(
+      "Nur aktive Goals können erreicht werden. Goal zuerst aktivieren.",
+    );
   }
 
-  if (activeCriteria.length === 0) blockers.push("Mindestens ein aktives Kriterium definieren.");
-  if (activeCriteria.some(
-    (criterion) => criterionEvaluationState(criterion, criterion.latestEvaluation) !== "met",
-  )) {
-    blockers.push(`${metCriteriaCount} von ${activeCriteria.length} Kriterien erfüllt.`);
+  if (activeCriteria.length === 0)
+    blockers.push("Mindestens ein aktives Kriterium definieren.");
+  if (
+    activeCriteria.some(
+      (criterion) =>
+        criterionEvaluationState(criterion, criterion.latestEvaluation) !==
+        "met",
+    )
+  ) {
+    blockers.push(
+      `${metCriteriaCount} von ${activeCriteria.length} Kriterien erfüllt.`,
+    );
   }
   if (deferredCriteriaCount > 0) {
     blockers.push(`${deferredCriteriaCount} Kriterium/Kriterien deferred.`);
@@ -360,7 +425,9 @@ export function buildGoalOutcomeSummary(
     (milestone) => milestone.status !== "achieved",
   );
   if (unfinishedMilestones.length > 0) {
-    blockers.push(`${unfinishedMilestones.length} Milestone(s) noch nicht erreicht.`);
+    blockers.push(
+      `${unfinishedMilestones.length} Etappe(n) noch nicht erreicht.`,
+    );
   }
 
   return {
@@ -370,7 +437,8 @@ export function buildGoalOutcomeSummary(
     unverifiedCriteriaCount,
     deferredCriteriaCount,
     activeMilestoneCount: activeMilestones.length,
-    achievedMilestoneCount: activeMilestones.length - unfinishedMilestones.length,
+    achievedMilestoneCount:
+      activeMilestones.length - unfinishedMilestones.length,
     readyToAchieve: blockers.length === 0,
     blockers,
     status: outcome.goalStatus,
