@@ -123,11 +123,18 @@ export function EntityForm({
   archived = false,
   sourceOwned = false,
   projectContext,
+  goalMilestoneContext,
   milestones = [],
 }: {
   kind: WorkbenchKind;
   id?: string;
   projectContext?: string;
+  goalMilestoneContext?: {
+    goalId: string;
+    milestoneId: string;
+    goalTitle: string;
+    milestoneTitle: string;
+  };
   milestones?: (Option & { projectId: string })[];
   values: FieldValues;
   areas: Option[];
@@ -177,6 +184,7 @@ export function EntityForm({
       onSubmit={(event) => {
         event.preventDefault();
         const form = new FormData(event.currentTarget);
+        if (!form.get("commandId")) form.set("commandId", crypto.randomUUID());
         start(async () => {
           setError("");
           const r = await saveWorkbenchEntity(kind, id ?? null, form);
@@ -187,7 +195,9 @@ export function EntityForm({
           notify(r.message);
           if (!id && r.id)
             router.push(
-              projectContext
+              goalMilestoneContext
+                ? `/goals/${goalMilestoneContext.goalId}?created=${kind}&goalMilestone=${goalMilestoneContext.milestoneId}`
+                : projectContext
                 ? kind === "task"
                   ? `/projects/${projects.find((p) => p.id === String(form.get("projectId")))?.id ?? projectContext}`
                   : `/projects/${projectContext}?resource=${r.id}`
@@ -372,6 +382,10 @@ export function EntityForm({
               {kind === "task" &&
                 (id ? (
                   choice("projectId", "Project", projects)
+                ) : goalMilestoneContext ? (
+                  <p className="text-sm text-[var(--text-muted)]">
+                    Direkter Task am Goal; kein Project-Kontext.
+                  </p>
                 ) : (
                   <>
                     <Choice
@@ -398,7 +412,18 @@ export function EntityForm({
                     />
                   </>
                 ))}
-              {choice("goalId", "Direktes Goal", goals)}
+              {goalMilestoneContext ? (
+                <div className="grid gap-2 text-sm">
+                  <span>Goal / Etappe</span>
+                  <p className="text-[var(--text-secondary)]">
+                    {goalMilestoneContext.goalTitle} · {goalMilestoneContext.milestoneTitle}
+                  </p>
+                  <input type="hidden" name="goalId" value={goalMilestoneContext.goalId} />
+                  <input type="hidden" name="goalMilestoneId" value={goalMilestoneContext.milestoneId} />
+                </div>
+              ) : (
+                choice("goalId", "Direktes Goal", goals)
+              )}
             </div>
             <p className="text-sm text-[var(--text-muted)]">
               Weitere Ressourcen und Practice-Beziehungen verwaltest du an der
@@ -453,6 +478,7 @@ export function OperationForm({
         event.preventDefault();
         if (confirmMessage && !window.confirm(confirmMessage)) return;
         const form = new FormData(event.currentTarget);
+        if (!form.get("commandId")) form.set("commandId", crypto.randomUUID());
         start(async () => {
           setError("");
           const r = await workbenchOperation(operation, form);

@@ -22,10 +22,12 @@ export async function readEntityWorkbench() {
     taskSkills,
     relations,
     evidence,
+    reviewRecords,
     steps,
     scheduleSources,
     profile,
     milestones,
+    goalMilestones,
     dependencyGraph,
   ] = await Promise.all([
     readWorkbenchTasks(client, uid),
@@ -58,6 +60,11 @@ export async function readEntityWorkbench() {
       .eq("user_id", uid)
       .order("evidence_date", { ascending: false }),
     client
+      .from("review_records")
+      .select("*")
+      .eq("user_id", uid)
+      .order("created_at", { ascending: false }),
+    client
       .from("task_steps")
       .select("*")
       .eq("user_id", uid)
@@ -75,6 +82,12 @@ export async function readEntityWorkbench() {
       .eq("user_id", uid)
       .order("sort_order")
       .order("id"),
+    client
+      .from("goal_milestones")
+      .select("*")
+      .eq("user_id", uid)
+      .order("sort_order")
+      .order("id"),
     readTaskDependencyGraph(client),
   ]);
   if (
@@ -88,14 +101,17 @@ export async function readEntityWorkbench() {
       taskSkills,
       relations,
       evidence,
+      reviewRecords,
       steps,
       scheduleSources,
       milestones,
+      goalMilestones,
     ].some((r) => r.error)
   )
     throw new Error("Entity-Daten konnten nicht geladen werden.");
   return {
     dependencyGraph,
+    goalMilestones: goalMilestones.data ?? [],
     milestones: milestones.data ?? [],
     timezone: profile.data?.timezone ?? "Europe/Berlin",
     tasks: tasks.data ?? [],
@@ -107,6 +123,7 @@ export async function readEntityWorkbench() {
     taskSkills: taskSkills.data ?? [],
     relations: relations.data ?? [],
     evidence: evidence.data ?? [],
+    reviewRecords: reviewRecords.data ?? [],
     steps: steps.data ?? [],
     scheduleSources: scheduleSources.data ?? [],
   };

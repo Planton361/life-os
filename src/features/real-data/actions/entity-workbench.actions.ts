@@ -36,9 +36,12 @@ import {
   createSupabaseTaskRepository,
   createSupabaseProjectRepository,
   achieveGoal,
+  addGoalCriterionEvidence,
+  addGoalMilestoneEvidence,
   addGoalProjectSupport,
   addGoalTaskSupport,
   appendGoalCriterionEvaluation,
+  appendGoalCriterionRevision,
   archiveGoalCriterion,
   archiveGoalMilestone,
   createGoalCriterion,
@@ -59,10 +62,12 @@ import {
   updateProjectInputSchema,
   goalAchieveInputSchema,
   goalCriterionEvaluationInputSchema,
+  goalCriterionEvidenceInputSchema,
   goalMilestoneArchiveInputSchema,
   goalMilestoneCreateInputSchema,
   goalMilestoneReorderInputSchema,
   goalMilestoneStatusInputSchema,
+  goalMilestoneEvidenceInputSchema,
   goalMilestoneUpdateInputSchema,
   goalOutcomeCriterionArchiveInputSchema,
   goalOutcomeCriterionCreateInputSchema,
@@ -100,6 +105,27 @@ function refresh() {
 }
 function str(form: FormData, name: string) {
   return String(form.get(name) ?? "").trim();
+}
+
+function commandFields(form: FormData) {
+  return {
+    commandId: str(form, "commandId") || undefined,
+    expectedUpdatedAt: str(form, "expectedUpdatedAt") || undefined,
+  };
+}
+
+function oneEvidenceReference(form: FormData) {
+  const sourceReference = str(form, "sourceReference");
+  const [sourceTypeFromReference, sourceIdFromReference] = sourceReference.split(":");
+  const sourceType = str(form, "sourceType") || sourceTypeFromReference || "";
+  const sourceId = str(form, "sourceId") || sourceIdFromReference || "";
+  if (!sourceType || !sourceId) return [];
+  return [{
+    sourceType,
+    sourceId,
+    supersedesReferenceId: str(form, "supersedesReferenceId") || undefined,
+    reason: str(form, "referenceReason") || undefined,
+  }];
 }
 const invalid: FormResult = {
   status: "error",
@@ -155,6 +181,7 @@ async function runGoalOutcomeOperation(
       goalId: str(form, "goalId"),
       milestoneId: str(form, "milestoneId"),
       status: str(form, "status"),
+      ...commandFields(form),
     });
     return parsed.success
       ? outcomeResult(await setGoalMilestoneStatus(auth.client, parsed.data), "Milestone-Status gespeichert.")
@@ -227,9 +254,72 @@ async function runGoalOutcomeOperation(
       numericValue: evaluationState === "value" ? str(form, "numericValue") : undefined,
       unit: evaluationState === "value" ? str(form, "unit") : undefined,
       note: str(form, "note"),
+      expectedLatestEvaluationId: str(form, "expectedLatestEvaluationId") || undefined,
+      ...commandFields(form),
     });
     return parsed.success
       ? outcomeResult(await appendGoalCriterionEvaluation(auth.client, parsed.data), "Kriterium bewertet.")
+      : invalid;
+  }
+  if (operation === "criterion.correct" || operation === "criterion.retract") {
+    const criterionType = str(form, "criterionType");
+    const evaluationState = operation === "criterion.retract" ? "deferred" : (str(form, "evaluationState") || "value");
+    const booleanValue = str(form, "booleanValue");
+    const parsed = goalCriterionEvaluationInputSchema.safeParse({
+      ...scope,
+      goalId: str(form, "goalId"),
+      criterionId: str(form, "criterionId"),
+      criterionType,
+      evaluationState,
+      booleanValue: evaluationState === "value" && criterionType === "boolean"
+        ? booleanValue === "true"
+          ? true
+          : booleanValue === "false"
+            ? false
+            : undefined
+        : undefined,
+      numericValue: evaluationState === "value" ? str(form, "numericValue") : undefined,
+      unit: evaluationState === "value" ? str(form, "unit") : undefined,
+      note: str(form, "note"),
+      expectedLatestEvaluationId: str(form, "expectedLatestEvaluationId") || undefined,
+      correctionReason: str(form, "correctionReason"),
+      retrospective: form.get("retrospective") === "on",
+      ...commandFields(form),
+    });
+    return parsed.success
+      ? outcomeResult(
+          await appendGoalCriterionRevision(
+            auth.client,
+            parsed.data,
+            operation === "criterion.correct" ? "criterion.correct" : "criterion.retract",
+          ),
+          operation === "criterion.correct" ? "Kriterium korrigiert." : "Bewertung zurückgenommen.",
+        )
+      : invalid;
+  }
+  if (operation === "criterion.evidence") {
+    const parsed = goalCriterionEvidenceInputSchema.safeParse({
+      ...scope,
+      goalId: str(form, "goalId"),
+      evaluationId: str(form, "evaluationId"),
+      action: str(form, "evidenceAction") || "attached",
+      references: oneEvidenceReference(form),
+      ...commandFields(form),
+    });
+    return parsed.success
+      ? outcomeResult(await addGoalCriterionEvidence(auth.client, parsed.data), "Beleg an Bewertung angehängt.")
+      : invalid;
+  }
+  if (operation === "milestone.evidence") {
+    const parsed = goalMilestoneEvidenceInputSchema.safeParse({
+      ...scope,
+      goalId: str(form, "goalId"),
+      milestoneId: str(form, "milestoneId"),
+      references: oneEvidenceReference(form),
+      ...commandFields(form),
+    });
+    return parsed.success
+      ? outcomeResult(await addGoalMilestoneEvidence(auth.client, parsed.data), "Beleg an Etappe angehängt.")
       : invalid;
   }
   if (operation === "support.project.add") {
@@ -271,6 +361,8 @@ async function runGoalOutcomeOperation(
       ...scope,
       goalId: str(form, "goalId"),
       note: str(form, "note"),
+      references: oneEvidenceReference(form),
+      ...commandFields(form),
     });
     return parsed.success
       ? outcomeResult(await achieveGoal(auth.client, parsed.data), "Goal erreicht.")
@@ -279,6 +371,7 @@ async function runGoalOutcomeOperation(
   const parsed = goalReopenInputSchema.safeParse({
     ...scope,
     goalId: str(form, "goalId"),
+    ...commandFields(form),
   });
   return parsed.success
     ? outcomeResult(await reopenGoal(auth.client, parsed.data), "Goal wieder geöffnet.")

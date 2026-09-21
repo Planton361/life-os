@@ -19,6 +19,19 @@ export type ActivitySources = {
   strength: Row<"strength_sessions">[];
   reviews: Row<"review_records">[];
   decisions: Row<"review_task_decisions">[];
+  goalEvents?: GoalActivityEvent[];
+};
+export type GoalActivityEvent = {
+  id: string;
+  goalId: string;
+  goalTitle: string;
+  eventType:
+    | "goal_achieved"
+    | "goal_reopened"
+    | "milestone_achieved"
+    | "milestone_reopened";
+  occurredAt: string | null;
+  recordedAt: string;
 };
 export type DayEvent = {
   id: string;
@@ -215,6 +228,23 @@ export function projectTodayActivity(
         "orange",
       );
     }
+  for (const event of sources.goalEvents ?? []) {
+    const goalLabel = event.eventType.startsWith("goal") ? "GOAL" : "ETAPPE";
+    const eventLabel = event.eventType.endsWith("achieved")
+      ? "ACHIEVED"
+      : "REOPENED";
+    add(
+      event.id,
+      event.occurredAt ?? event.recordedAt,
+      `${goalLabel} ${eventLabel}`,
+      event.goalTitle,
+      event.occurredAt
+        ? "Goal-Verlauf · bewusste Entscheidung"
+        : "Goal-Verlauf · Zeitpunkt unbekannt, aufgezeichnet jetzt",
+      `/goals/${event.goalId}`,
+      eventLabel === "ACHIEVED" ? "green" : "orange",
+    );
+  }
   events.sort(
     (a, b) => Date.parse(a.at) - Date.parse(b.at) || a.id.localeCompare(b.id),
   );
@@ -288,4 +318,5 @@ export const emptyActivitySources = (): ActivitySources => ({
   strength: [],
   reviews: [],
   decisions: [],
+  goalEvents: [],
 });

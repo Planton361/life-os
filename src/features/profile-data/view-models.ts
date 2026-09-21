@@ -104,6 +104,7 @@ import {
   createSupabaseTrainingRepository,
 } from "@/features/real-data/supabase";
 import { getGoalOutcomeSummaries } from "@/features/real-data/supabase/repositories/supabase-goal-outcome-repository";
+import type { GoalOutcomeSummary } from "@/features/real-data/domain/goal-outcome";
 import {
   createManualHabit,
   createManualGoal,
@@ -393,14 +394,33 @@ function projectToPortfolioItem(project: LifeProject): DashboardPortfolioItem {
   };
 }
 
-function goalToPortfolioItem(goal: LifeGoal): DashboardPortfolioItem {
+function goalToPortfolioItem(
+  goal: LifeGoal,
+  outcome?: GoalOutcomeSummary,
+): DashboardPortfolioItem {
+  const achieved = outcome?.status === "achieved";
   return {
     id: goal.id,
     title: goal.title,
     label: areaLabel(goal.areaId),
-    next: goal.nextStep,
-    meta: goal.horizon,
-    progress: boundedProgress(goal.progress),
+    next: outcome
+      ? achieved
+        ? "Outcome erreicht · Verlauf prüfen."
+        : outcome.readyToAchieve
+          ? "Goal Review · explizite Erreichung prüfen."
+          : outcome.blockers[0] ?? "Nächsten Goal-Schritt klären."
+      : goal.nextStep,
+    meta: outcome
+      ? `${outcome.metCriteriaCount}/${outcome.activeCriteriaCount} Kriterien · ${outcome.achievedMilestoneCount}/${outcome.activeMilestoneCount} Etappen`
+      : goal.horizon,
+    progress: outcome ? 0 : boundedProgress(goal.progress),
+    progressLabel: outcome
+      ? achieved
+        ? "Erreicht · Verlauf verfügbar"
+        : outcome.readyToAchieve
+          ? "Bereit zur Review"
+          : "Outcome-Basis offen"
+      : undefined,
     accent: areaAccent(goal.areaId),
     area: goal.areaId as DashboardArea,
     kind: "goal",
@@ -443,6 +463,7 @@ type DashboardReadSources = {
   habits: HabitSnapshot | null;
   training: TrainingSnapshot | null;
   scheduleLinks: readonly { source_id: string; source_type: "meal" | "review" | "running_plan_item" | "strength_plan"; task_id: string }[];
+  goalOutcomeSummaries: ReadonlyMap<string, GoalOutcomeSummary>;
 };
 
 const emptyDashboardReadSources: DashboardReadSources = {
@@ -463,6 +484,7 @@ const emptyDashboardReadSources: DashboardReadSources = {
   habits: null,
   training: null,
   scheduleLinks: [],
+  goalOutcomeSummaries: new Map(),
 };
 
 const dashboardCapacity = {
@@ -1665,7 +1687,9 @@ function buildProfileDashboardViewModel(
   const activeHabitCount = dashboardHabits[activeHabitWindow].length;
   const portfolioItems = [
     ...profile.projects.map(projectToPortfolioItem),
-    ...profile.goals.map(goalToPortfolioItem),
+    ...profile.goals.map((goal) =>
+      goalToPortfolioItem(goal, sources.goalOutcomeSummaries.get(goal.id)),
+    ),
     ...sources.skills.map(skillToPortfolioItem),
   ];
   const activePortfolioView =
@@ -3146,6 +3170,14 @@ async function getManualDashboardReadData(): Promise<{
     },
     { calories: 0, carbs: 0, completedMealCount: 0, fat: 0, protein: 0 },
   );
+  const goalOutcomeResult = await getGoalOutcomeSummaries(
+    auth.client,
+    userId,
+    targets.goals.map((goal) => goal.id),
+  );
+  const goalOutcomeSummaries = goalOutcomeResult.ok
+    ? new Map(goalOutcomeResult.data.map((summary) => [summary.goalId, summary]))
+    : new Map<string, GoalOutcomeSummary>();
 
   return {
     profile: {
@@ -3169,6 +3201,7 @@ async function getManualDashboardReadData(): Promise<{
       habits: habitSnapshot.ok ? habitSnapshot.data : null,
       scheduleLinks,
       training: trainingSnapshot.ok ? trainingSnapshot.data : null,
+      goalOutcomeSummaries,
     },
   };
 }

@@ -72,6 +72,8 @@ declare
   u uuid := auth.uid();
   inherited_support_count integer;
   evaluation_count integer;
+  first_evaluation_id uuid;
+  evaluation_result jsonb;
 begin
   insert into public.goal_milestone_task_support (
     user_id, goal_id, goal_milestone_id, task_id
@@ -98,19 +100,35 @@ begin
     'GOAL_TASK_SUPPORT_GOAL_CONFLICT'
   );
 
-  insert into public.goal_criterion_evaluations (
-    user_id, criterion_id, is_deferred, evaluated_at, note
-  ) values (
-    u, '91000000-0000-4000-8000-000000000050', true, '2026-09-21T00:00:01Z', 'Later review'
+  evaluation_result := public.execute_goal_command(
+    'criterion.evaluate',
+    '91000000-0000-4000-8000-000000000100',
+    'repair-deferred',
+    jsonb_build_object(
+      'goal_id', '91000000-0000-4000-8000-000000000010',
+      'criterion_id', '91000000-0000-4000-8000-000000000050',
+      'deferred', true,
+      'occurred_at', '2026-09-21T00:00:01Z',
+      'note', 'Later review'
+    )
   );
+  first_evaluation_id := (evaluation_result->>'evaluation_id')::uuid;
   if public.goal_outcome_criterion_is_met(u, '91000000-0000-4000-8000-000000000050') then
     raise exception 'Deferred evaluation satisfied achievement';
   end if;
 
-  insert into public.goal_criterion_evaluations (
-    user_id, criterion_id, boolean_value, evaluated_at
-  ) values (
-    u, '91000000-0000-4000-8000-000000000050', true, '2026-09-21T00:00:02Z'
+  perform public.execute_goal_command(
+    'criterion.evaluate',
+    '91000000-0000-4000-8000-000000000101',
+    'repair-met',
+    jsonb_build_object(
+      'goal_id', '91000000-0000-4000-8000-000000000010',
+      'criterion_id', '91000000-0000-4000-8000-000000000050',
+      'expected_latest_evaluation_id', first_evaluation_id,
+      'boolean_value', true,
+      'deferred', false,
+      'occurred_at', '2026-09-21T00:00:02Z'
+    )
   );
   select count(*) into evaluation_count
     from public.goal_criterion_evaluations

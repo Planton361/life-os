@@ -1,5 +1,6 @@
 "use server";
 import { dependencyErrorMessage } from "../supabase/repositories/task-dependency-repository";
+import { z } from "zod";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -15,6 +16,7 @@ import {
   updateTaskInputSchema,
 } from "@/features/real-data";
 import {
+  createGoalContextTask,
   createSupabaseSkillRepository,
   createSupabaseTaskRepository,
 } from "@/features/real-data/supabase";
@@ -602,6 +604,42 @@ export async function createPortfolioTaskAction(
     return {
       message: "Prüfe Task-Titel und Milestone-Zuordnung.",
       status: "error",
+    };
+  }
+
+  if (formData.has("goalMilestoneId")) {
+    const goalMilestoneId = optionalFormString(formData, "goalMilestoneId");
+    if (!goalId || projectId || !goalMilestoneId || !z.uuid().safeParse(goalId).success || !z.uuid().safeParse(goalMilestoneId).success) {
+      return {
+        message: "Eine Etappen-Task benötigt genau ein aktives Goal und keine Project-Zuordnung.",
+        status: "error",
+      };
+    }
+    const contextual = await createGoalContextTask(context.auth.client, {
+      areaId: parsed.data.areaId,
+      commandId: optionalFormString(formData, "commandId"),
+      description: parsed.data.description,
+      dueAt: parsed.data.dueAt,
+      durationMinutes: parsed.data.durationMinutes,
+      energy: parsed.data.energy,
+      goalId,
+      milestoneId: goalMilestoneId,
+      plannedDate: parsed.data.plannedDate,
+      priority: parsed.data.priority,
+      title: parsed.data.title,
+      userId: context.auth.user.id,
+    });
+    if (!contextual.ok) {
+      return {
+        message: contextual.error.message,
+        status: "error",
+      };
+    }
+    revalidateTaskProjectionRoutes(contextual.data.id);
+    return {
+      message: "Task aus der Etappe erstellt.",
+      status: "success",
+      taskId: contextual.data.id,
     };
   }
 

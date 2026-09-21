@@ -184,15 +184,10 @@ export function ActivePortfolio({
                     {project.meta}
                   </p>
                   <p className="text-[10px] font-medium text-[var(--text-secondary)]">
-                    {project.progress}%
+                    {project.progressLabel ?? `${project.progress}%`}
                   </p>
                 </div>
-                <div className="mt-2">
-                  <ProgressBar
-                    accent={project.accent}
-                    progress={project.progress}
-                  />
-                </div>
+                {!project.progressLabel && <div className="mt-2"><ProgressBar accent={project.accent} progress={project.progress} /></div>}
               </Link>
           ))}
           {Array.from({ length: 4 - activeViewCount }, (_, index) => (

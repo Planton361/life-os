@@ -1,5 +1,11 @@
+import { createHash, randomUUID } from "node:crypto";
 import type {
+  GoalAchievementCriterionBasis,
+  GoalAchievementEvent,
+  GoalAchievementMilestoneBasis,
   GoalCriterionEvaluation,
+  GoalEvidenceReference,
+  GoalMilestoneAchievementEvent,
   GoalMilestone,
   GoalOutcome,
   GoalOutcomeCriterion,
@@ -8,10 +14,12 @@ import type {
 import {
   buildGoalOutcomeSummary,
   criterionEvaluationState,
+  deriveGoalNextStep,
 } from "../../domain/goal-outcome";
 import type {
   GoalAchieveInput,
   GoalCriterionEvaluationInput,
+  GoalCriterionEvidenceInput,
   GoalMilestoneArchiveInput,
   GoalMilestoneCreateInput,
   GoalMilestoneReorderInput,
@@ -21,6 +29,7 @@ import type {
   GoalOutcomeCriterionCreateInput,
   GoalProjectSupportInput,
   GoalReopenInput,
+  GoalMilestoneEvidenceInput,
   GoalSupportRemoveInput,
   GoalTaskSupportInput,
 } from "../../schemas/goal-outcome.schemas";
@@ -40,19 +49,49 @@ import type {
   GoalMilestoneProjectSupportRow,
   GoalMilestoneTaskSupportRow,
   GoalRow,
+  GoalAchievementCriterionBasisRow,
+  GoalAchievementEventRow,
+  GoalAchievementMilestoneBasisRow,
+  GoalAchievementEvidenceRow,
+  GoalCriterionEvaluationEvidenceRow,
+  GoalMilestoneAchievementEventRow,
+  GoalMilestoneAchievementEvidenceRow,
 } from "../row-types";
 
 type GoalSummaryRow = Pick<
   GoalRow,
-  "id" | "title" | "status" | "achieved_at" | "achievement_note" | "archived_at"
+  | "id"
+  | "title"
+  | "description"
+  | "why"
+  | "horizon"
+  | "target_date"
+  | "status"
+  | "achieved_at"
+  | "achievement_note"
+  | "updated_at"
+  | "archived_at"
 >;
 type ProjectTitleRow = Pick<
   TableRow<"projects">,
-  "id" | "title" | "goal_id" | "archived_at"
+  | "id"
+  | "title"
+  | "goal_id"
+  | "status"
+  | "next_step"
+  | "target_date"
+  | "archived_at"
 >;
 type TaskTitleRow = Pick<
   TableRow<"tasks">,
-  "id" | "title" | "goal_id" | "project_id" | "archived_at"
+  | "id"
+  | "title"
+  | "goal_id"
+  | "project_id"
+  | "status"
+  | "planned_date"
+  | "due_at"
+  | "archived_at"
 >;
 
 type OutcomeFailure = RepositoryResult<never>;
@@ -93,6 +132,22 @@ function dbFailure(operation: string, error?: { message?: string | null }): Outc
     GOAL_MILESTONE_ARCHIVED: "Ein archivierter Milestone kann nicht verknüpft werden.",
     GOAL_MILESTONE_STATUS_TRANSITION_INVALID:
       "Dieser Milestone-Statuswechsel ist im akzeptierten Lifecycle nicht erlaubt.",
+    GOAL_STALE_STATE:
+      "Der Stand hat sich geändert. Lade das Goal neu und wiederhole die Entscheidung.",
+    GOAL_COMMAND_FINGERPRINT_MISMATCH:
+      "Diese Entscheidung wurde bereits mit einem anderen Inhalt verwendet.",
+    GOAL_MILESTONE_ACHIEVE_REQUIRES_ACTIVE:
+      "Eine Etappe muss aktiv sein, bevor sie erreicht werden kann.",
+    GOAL_MILESTONE_OPEN_EPISODE_NOT_FOUND:
+      "Für diese Etappe wurde keine offene Erreichungsepisode gefunden.",
+    GOAL_REOPEN_REQUIRES_ACHIEVED:
+      "Nur ein erreichtes Goal kann wieder geöffnet werden.",
+    GOAL_EVIDENCE_SOURCE_INVALID:
+      "Die Belegquelle ist nicht mehr aktiv oder gehört nicht zum aktuellen Benutzer.",
+    GOAL_EVIDENCE_SOURCE_TYPE_INVALID:
+      "Dieser Belegtyp ist für diese Entscheidung nicht erlaubt.",
+    GOAL_CONTEXT_AREA_INVALID:
+      "Die Area gehört nicht zum aktuellen Benutzerkontext.",
   };
   const knownMessage = Object.entries(known).find(([key]) => message.includes(key))?.[1];
   if (knownMessage) return failure("conflict", knownMessage);
@@ -133,9 +188,223 @@ function mapEvaluation(row: GoalCriterionEvaluationRow): GoalCriterionEvaluation
     numericValue: row.numeric_value,
     unit: row.unit,
     evaluatedAt: row.evaluated_at,
+    recordedAt: row.recorded_at,
     note: row.note,
     createdAt: row.created_at,
+    goalIdSnapshot: row.goal_id_snapshot,
+    goalMilestoneIdSnapshot: row.goal_milestone_id_snapshot,
+    criterionTitleSnapshot: row.criterion_title_snapshot,
+    criterionTypeSnapshot: row.criterion_type_snapshot,
+    unitSnapshot: row.unit_snapshot,
+    targetSnapshot: row.target_snapshot,
+    directionSnapshot: row.direction_snapshot,
+    revisionKind: row.revision_kind as GoalCriterionEvaluation["revisionKind"],
+    supersedesEvaluationId: row.supersedes_evaluation_id,
+    correctionReason: row.correction_reason,
+    retracted: row.is_retracted,
+    retrospective: row.retrospective,
+    legacyState: asRecord(row.legacy_state),
+    evidence: [],
   };
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function sourceType(value: string): GoalEvidenceReference["sourceType"] {
+  return value as GoalEvidenceReference["sourceType"];
+}
+
+function mapEvidence(
+  row:
+    | GoalCriterionEvaluationEvidenceRow
+    | GoalMilestoneAchievementEvidenceRow
+    | GoalAchievementEvidenceRow,
+): GoalEvidenceReference {
+  return {
+    id: row.id,
+    referenceGroupId: row.reference_group_id,
+    action: row.reference_action as GoalEvidenceReference["action"],
+    sourceType: sourceType(row.source_type),
+    sourceId: row.source_id,
+    sourceTitle: row.source_title_snapshot ?? "Unbenannte Quelle",
+    sourceContext: asRecord(row.source_context_snapshot),
+    supersedesReferenceId: row.supersedes_reference_id,
+    reason: row.reason,
+    occurredAt: row.occurred_at,
+    recordedAt: row.recorded_at,
+  };
+}
+
+function mapMilestoneEvent(
+  row: GoalMilestoneAchievementEventRow,
+  evidence: readonly GoalEvidenceReference[],
+): GoalMilestoneAchievementEvent {
+  return {
+    id: row.id,
+    goalId: row.goal_id,
+    milestoneId: row.goal_milestone_id,
+    episodeId: row.episode_id,
+    eventType: row.event_type as GoalMilestoneAchievementEvent["eventType"],
+    occurredAt: row.occurred_at,
+    recordedAt: row.recorded_at,
+    goalTitleSnapshot: row.goal_title_snapshot,
+    milestoneTitleSnapshot: row.goal_milestone_title_snapshot,
+    milestoneDescriptionSnapshot: row.goal_milestone_description_snapshot,
+    priorStatus: row.prior_status,
+    resultingStatus: row.resulting_status,
+    note: row.note,
+    legacyState: asRecord(row.legacy_state),
+    correctsEventId: row.corrects_event_id,
+    correctionReason: row.correction_reason,
+    retrospective: row.retrospective,
+    commandId: row.command_id,
+    evidence,
+  };
+}
+
+function mapGoalAchievementEvent(
+  row: GoalAchievementEventRow,
+  criterionBasis: readonly GoalAchievementCriterionBasis[],
+  milestoneBasis: readonly GoalAchievementMilestoneBasis[],
+  evidence: readonly GoalEvidenceReference[],
+): GoalAchievementEvent {
+  return {
+    id: row.id,
+    goalId: row.goal_id,
+    episodeId: row.episode_id,
+    eventType: row.event_type as GoalAchievementEvent["eventType"],
+    occurredAt: row.occurred_at,
+    recordedAt: row.recorded_at,
+    goalTitleSnapshot: row.goal_title_snapshot,
+    goalDescriptionSnapshot: row.goal_description_snapshot,
+    goalWhySnapshot: row.goal_why_snapshot,
+    priorStatus: row.prior_status,
+    resultingStatus: row.resulting_status,
+    achievementNote: row.achievement_note,
+    legacyState: asRecord(row.legacy_state),
+    correctsEventId: row.corrects_event_id,
+    correctionReason: row.correction_reason,
+    retrospective: row.retrospective,
+    commandId: row.command_id,
+    criterionBasis,
+    milestoneBasis,
+    evidence,
+  };
+}
+
+function fingerprint(commandKind: string, payload: Record<string, unknown>) {
+  return createHash("sha256")
+    .update(JSON.stringify({ commandKind, payload }))
+    .digest("hex");
+}
+
+type GoalCommandResult = Record<string, unknown>;
+
+export type GoalContextProjectInput = {
+  userId: string;
+  goalId: string;
+  milestoneId: string;
+  title: string;
+  description?: string;
+  status?: string;
+  priority?: string;
+  nextStep?: string;
+  targetDate?: string;
+  areaId?: string;
+  commandId?: string;
+};
+
+export type GoalContextTaskInput = {
+  userId: string;
+  goalId: string;
+  milestoneId: string;
+  title: string;
+  description?: string;
+  priority?: string;
+  energy?: string;
+  plannedDate?: string;
+  dueAt?: string;
+  durationMinutes?: number;
+  areaId?: string;
+  commandId?: string;
+};
+
+async function executeGoalCommand(
+  client: SupabaseClientLike,
+  commandKind: string,
+  payload: Record<string, unknown>,
+  commandId?: string,
+): Promise<RepositoryResult<GoalCommandResult>> {
+  const id = commandId ?? randomUUID();
+  const result = (await client.rpc("execute_goal_command", {
+    p_command_kind: commandKind,
+    p_command_id: id,
+    p_request_fingerprint: fingerprint(commandKind, payload),
+    p_payload: payload as unknown as import("@/types/supabase").Json,
+  })) as SupabaseQueryResult<GoalCommandResult>;
+  if (result.error) return dbFailure(`execute ${commandKind}`, result.error);
+  return { ok: true, data: result.data ?? {} };
+}
+
+export async function createGoalContextProject(
+  client: SupabaseClientLike,
+  input: GoalContextProjectInput,
+): Promise<RepositoryResult<{ id: string }>> {
+  const scoped = scopeFailure(input);
+  if (scoped) return scoped;
+  const command = await executeGoalCommand(
+    client,
+    "project.context.create",
+    {
+      user_id: input.userId,
+      goal_id: input.goalId,
+      milestone_id: input.milestoneId,
+      title: input.title,
+      description: input.description ?? null,
+      status: input.status ?? "idea",
+      priority: input.priority ?? "P2",
+      next_step: input.nextStep ?? null,
+      target_date: input.targetDate ?? null,
+      area_id: input.areaId ?? null,
+    },
+    input.commandId,
+  );
+  if (!command.ok) return command;
+  const id = typeof command.data.project_id === "string" ? command.data.project_id : null;
+  return id ? { ok: true, data: { id } } : dbFailure("read created Goal Project");
+}
+
+export async function createGoalContextTask(
+  client: SupabaseClientLike,
+  input: GoalContextTaskInput,
+): Promise<RepositoryResult<{ id: string }>> {
+  const scoped = scopeFailure(input);
+  if (scoped) return scoped;
+  const command = await executeGoalCommand(
+    client,
+    "task.context.create",
+    {
+      user_id: input.userId,
+      goal_id: input.goalId,
+      milestone_id: input.milestoneId,
+      title: input.title,
+      description: input.description ?? null,
+      priority: input.priority ?? "P2",
+      energy: input.energy ?? null,
+      planned_date: input.plannedDate ?? null,
+      due_at: input.dueAt ?? null,
+      duration_minutes: input.durationMinutes ?? null,
+      area_id: input.areaId ?? null,
+    },
+    input.commandId,
+  );
+  if (!command.ok) return command;
+  const id = typeof command.data.task_id === "string" ? command.data.task_id : null;
+  return id ? { ok: true, data: { id } } : dbFailure("read created Goal Task");
 }
 
 function mapCriterion(
@@ -147,6 +416,7 @@ function mapCriterion(
     .sort(
       (left, right) =>
         right.evaluatedAt.localeCompare(left.evaluatedAt) ||
+        (right.recordedAt ?? "").localeCompare(left.recordedAt ?? "") ||
         right.createdAt.localeCompare(left.createdAt) ||
         right.id.localeCompare(left.id),
     );
@@ -196,8 +466,8 @@ function mapTaskSupport(
   };
 }
 
-function scopeFailure(input: { userId: string; profileId: string }) {
-  return input.userId === input.profileId ? null : forbidden();
+function scopeFailure(input: { userId: string; profileId?: string }) {
+  return !input.profileId || input.userId === input.profileId ? null : forbidden();
 }
 
 async function ownedGoal(
@@ -252,28 +522,201 @@ export async function getGoalOutcome(
   userId: string,
   goalId: string,
 ): Promise<RepositoryResult<GoalOutcome>> {
-  const [goalResult, milestoneResult, criterionResult, evaluationResult, projectSupportResult, taskSupportResult, projectsResult, tasksResult] = await Promise.all([
-    ownedGoal(client, userId, goalId, true),
+  const [
+    goalResult,
+    milestoneResult,
+    criterionResult,
+    evaluationResult,
+    projectSupportResult,
+    taskSupportResult,
+    projectsResult,
+    tasksResult,
+    milestoneEventsResult,
+    achievementEventsResult,
+    criterionBasisResult,
+    milestoneBasisResult,
+    criterionEvidenceResult,
+    milestoneEvidenceResult,
+    achievementEvidenceResult,
+  ] = await Promise.all([
+    client
+      .from("goals")
+      .select("id,title,description,why,horizon,target_date,status,achieved_at,achievement_note,updated_at,archived_at")
+      .eq("user_id", userId)
+      .eq("id", goalId)
+      .maybeSingle() as unknown as Promise<SupabaseQueryResult<GoalSummaryRow>>,
     client.from("goal_milestones").select("*").eq("user_id", userId).eq("goal_id", goalId).order("sort_order").order("created_at").order("id"),
     client.from("goal_outcome_criteria").select("*").eq("user_id", userId).eq("goal_id", goalId).order("created_at").order("id"),
-    client.from("goal_criterion_evaluations").select("*").eq("user_id", userId).order("evaluated_at", { ascending: false }).order("created_at", { ascending: false }).order("id", { ascending: false }),
+    client.from("goal_criterion_evaluations").select("*").eq("user_id", userId).order("evaluated_at", { ascending: false }).order("recorded_at", { ascending: false }).order("created_at", { ascending: false }).order("id", { ascending: false }),
     client.from("goal_milestone_project_support").select("*").eq("user_id", userId).eq("goal_id", goalId),
     client.from("goal_milestone_task_support").select("*").eq("user_id", userId).eq("goal_id", goalId),
-    client.from("projects").select("id,title,goal_id,archived_at").eq("user_id", userId).eq("goal_id", goalId),
-    client.from("tasks").select("id,title,goal_id,project_id,archived_at").eq("user_id", userId).is("archived_at", null),
+    client.from("projects").select("id,title,goal_id,status,next_step,target_date,archived_at").eq("user_id", userId).eq("goal_id", goalId),
+    client.from("tasks").select("id,title,goal_id,project_id,status,planned_date,due_at,archived_at").eq("user_id", userId),
+    client.from("goal_milestone_achievement_events").select("*").eq("user_id", userId).eq("goal_id", goalId).order("occurred_at", { ascending: false }).order("recorded_at", { ascending: false }).order("id", { ascending: false }),
+    client.from("goal_achievement_events").select("*").eq("user_id", userId).eq("goal_id", goalId).order("occurred_at", { ascending: false }).order("recorded_at", { ascending: false }).order("id", { ascending: false }),
+    client.from("goal_achievement_criterion_basis").select("*").eq("user_id", userId),
+    client.from("goal_achievement_milestone_basis").select("*").eq("user_id", userId),
+    client.from("goal_criterion_evaluation_evidence").select("*").eq("user_id", userId),
+    client.from("goal_milestone_achievement_evidence").select("*").eq("user_id", userId),
+    client.from("goal_achievement_evidence").select("*").eq("user_id", userId),
   ]);
 
   if (goalResult.error) return dbFailure("load Goal outcome", goalResult.error);
   if (!goalResult.data) return notFound("Goal");
-  if ([milestoneResult, criterionResult, evaluationResult, projectSupportResult, taskSupportResult, projectsResult, tasksResult].some((result) => result.error)) {
+  if ([
+    milestoneResult,
+    criterionResult,
+    evaluationResult,
+    projectSupportResult,
+    taskSupportResult,
+    projectsResult,
+    tasksResult,
+    milestoneEventsResult,
+    achievementEventsResult,
+    criterionBasisResult,
+    milestoneBasisResult,
+    criterionEvidenceResult,
+    milestoneEvidenceResult,
+    achievementEvidenceResult,
+  ].some((result) => result.error)) {
     return dbFailure("load Goal outcome");
   }
 
   const milestones = (milestoneResult.data ?? []) as GoalMilestoneRow[];
   const evaluations = ((evaluationResult.data ?? []) as GoalCriterionEvaluationRow[]).map(mapEvaluation);
-  const criteria = ((criterionResult.data ?? []) as GoalOutcomeCriterionRow[]).map((row) => mapCriterion(row, evaluations));
   const projectTitles = new Map(((projectsResult.data ?? []) as ProjectTitleRow[]).map((row) => [row.id, row.title]));
   const taskTitles = new Map(((tasksResult.data ?? []) as TaskTitleRow[]).map((row) => [row.id, row.title]));
+  const projectRows = (projectsResult.data ?? []) as ProjectTitleRow[];
+  const taskRows = (tasksResult.data ?? []) as TaskTitleRow[];
+  const projectIds = new Set(projectRows.map((row) => row.id));
+  const milestoneEventRows = (milestoneEventsResult.data ?? []) as GoalMilestoneAchievementEventRow[];
+  const achievementEventRows = (achievementEventsResult.data ?? []) as GoalAchievementEventRow[];
+  const criterionBasisRows = (criterionBasisResult.data ?? []) as GoalAchievementCriterionBasisRow[];
+  const milestoneBasisRows = (milestoneBasisResult.data ?? []) as GoalAchievementMilestoneBasisRow[];
+  const criterionEvidenceRows = (criterionEvidenceResult.data ?? []) as GoalCriterionEvaluationEvidenceRow[];
+  const milestoneEvidenceRows = (milestoneEvidenceResult.data ?? []) as GoalMilestoneAchievementEvidenceRow[];
+  const achievementEvidenceRows = (achievementEvidenceResult.data ?? []) as GoalAchievementEvidenceRow[];
+  const evaluationEvidenceByEvaluation = new Map<string, GoalEvidenceReference[]>();
+  for (const row of criterionEvidenceRows) {
+    const current = evaluationEvidenceByEvaluation.get(row.evaluation_id) ?? [];
+    current.push(mapEvidence(row));
+    evaluationEvidenceByEvaluation.set(row.evaluation_id, current);
+  }
+  const milestoneEvidenceByEvent = new Map<string, GoalEvidenceReference[]>();
+  for (const row of milestoneEvidenceRows) {
+    const current = milestoneEvidenceByEvent.get(row.achievement_event_id) ?? [];
+    current.push(mapEvidence(row));
+    milestoneEvidenceByEvent.set(row.achievement_event_id, current);
+  }
+  const achievementEvidenceByEvent = new Map<string, GoalEvidenceReference[]>();
+  for (const row of achievementEvidenceRows) {
+    const current = achievementEvidenceByEvent.get(row.achievement_event_id) ?? [];
+    current.push(mapEvidence(row));
+    achievementEvidenceByEvent.set(row.achievement_event_id, current);
+  }
+  const criteria = ((criterionResult.data ?? []) as GoalOutcomeCriterionRow[]).map((row) => {
+    const mapped = mapCriterion(row, evaluations);
+    const withEvidence = mapped.evaluations.map((evaluation) => ({
+      ...evaluation,
+      evidence: evaluationEvidenceByEvaluation.get(evaluation.id) ?? [],
+    }));
+    return {
+      ...mapped,
+      evaluations: withEvidence,
+      latestEvaluation: withEvidence[0] ?? null,
+    };
+  });
+  const milestoneHistory = milestoneEventRows.map((row) =>
+    mapMilestoneEvent(row, milestoneEvidenceByEvent.get(row.id) ?? []),
+  );
+  for (const milestone of milestones) {
+    if (
+      milestone.status === "achieved" &&
+      !milestoneHistory.some((event) => event.milestoneId === milestone.id)
+    ) {
+      milestoneHistory.push({
+        id: `legacy-milestone-${milestone.id}`,
+        goalId,
+        milestoneId: milestone.id,
+        episodeId: `legacy-milestone-${milestone.id}`,
+        eventType: "achieved",
+        occurredAt: milestone.updated_at,
+        recordedAt: milestone.updated_at,
+        goalTitleSnapshot: goalResult.data.title,
+        milestoneTitleSnapshot: milestone.title,
+        milestoneDescriptionSnapshot: milestone.description,
+        priorStatus: null,
+        resultingStatus: "achieved",
+        note: null,
+        legacyState: {
+          legacy_state: true,
+          reason: "Etappe war beim Start von Slice 1 bereits erreicht; der ursprüngliche Übergang ist nicht rekonstruierbar.",
+        },
+        correctsEventId: null,
+        correctionReason: null,
+        retrospective: false,
+        commandId: null,
+        evidence: [],
+      });
+    }
+  }
+  const achievementHistory = achievementEventRows.map((row) =>
+    mapGoalAchievementEvent(
+      row,
+      criterionBasisRows
+        .filter((basis) => basis.achievement_event_id === row.id)
+        .map((basis) => ({
+          criterionId: basis.criterion_id,
+          evaluationId: basis.evaluation_id,
+          criterionTitleSnapshot: basis.criterion_title_snapshot,
+          criterionTypeSnapshot: basis.criterion_type_snapshot,
+          goalMilestoneIdSnapshot: basis.goal_milestone_id_snapshot,
+          unitSnapshot: basis.unit_snapshot,
+          targetSnapshot: basis.target_snapshot,
+          directionSnapshot: basis.direction_snapshot,
+          evaluationStateSnapshot: basis.evaluation_state_snapshot,
+          evaluationOccurredAt: basis.evaluation_occurred_at,
+          legacyState: asRecord(basis.legacy_state),
+        })),
+      milestoneBasisRows
+        .filter((basis) => basis.achievement_event_id === row.id)
+        .map((basis) => ({
+          milestoneId: basis.milestone_id,
+          achievementEpisodeId: basis.achievement_episode_id,
+          milestoneTitleSnapshot: basis.milestone_title_snapshot,
+          resultingStatusSnapshot: basis.resulting_status_snapshot,
+          legacyState: asRecord(basis.legacy_state),
+        })),
+      achievementEvidenceByEvent.get(row.id) ?? [],
+    ),
+  );
+  if (goalResult.data.status === "achieved" && achievementHistory.length === 0) {
+    achievementHistory.push({
+      id: `legacy-goal-${goalId}`,
+      goalId,
+      episodeId: `legacy-goal-${goalId}`,
+      eventType: "achieved",
+      occurredAt: goalResult.data.achieved_at,
+      recordedAt: goalResult.data.updated_at,
+      goalTitleSnapshot: goalResult.data.title,
+      goalDescriptionSnapshot: goalResult.data.description,
+      goalWhySnapshot: goalResult.data.why,
+      priorStatus: null,
+      resultingStatus: "achieved",
+      achievementNote: goalResult.data.achievement_note,
+      legacyState: {
+        legacy_state: true,
+        reason: "Goal war beim Start von Slice 1 bereits erreicht; die ursprüngliche Entscheidungsbasis ist nicht rekonstruierbar.",
+      },
+      correctsEventId: null,
+      correctionReason: null,
+      retrospective: false,
+      commandId: null,
+      criterionBasis: [],
+      milestoneBasis: [],
+      evidence: [],
+    });
+  }
   const outcomeBase = {
     goalId,
     goalStatus: goalResult.data.status,
@@ -288,6 +731,11 @@ export async function getGoalOutcome(
     data: {
       goalId,
       goalTitle: goalResult.data.title,
+      goalDescription: goalResult.data.description,
+      goalWhy: goalResult.data.why,
+      goalHorizon: goalResult.data.horizon,
+      targetDate: goalResult.data.target_date,
+      updatedAt: goalResult.data.updated_at,
       goalStatus: goalResult.data.status,
       achievedAt: goalResult.data.achieved_at,
       achievementNote: goalResult.data.achievement_note,
@@ -295,6 +743,50 @@ export async function getGoalOutcome(
       criteria,
       projectSupport: ((projectSupportResult.data ?? []) as GoalMilestoneProjectSupportRow[]).map((row) => mapProjectSupport(row, projectTitles)),
       taskSupport: ((taskSupportResult.data ?? []) as GoalMilestoneTaskSupportRow[]).map((row) => mapTaskSupport(row, taskTitles)),
+      projects: projectRows.map((row) => ({
+        id: row.id,
+        title: row.title,
+        status: row.status,
+        nextStep: row.next_step,
+        targetDate: row.target_date,
+        archivedAt: row.archived_at,
+      })),
+      tasks: taskRows
+        .filter((row) => row.goal_id === goalId || (row.project_id !== null && projectIds.has(row.project_id)))
+        .map((row) => ({
+          id: row.id,
+          title: row.title,
+          status: row.status,
+          projectId: row.project_id,
+          plannedDate: row.planned_date,
+          dueAt: row.due_at,
+          archivedAt: row.archived_at,
+        })),
+      nextStep: deriveGoalNextStep({
+        goalId,
+        goalStatus: goalResult.data.status,
+        tasks: taskRows
+          .filter((row) => row.goal_id === goalId || (row.project_id !== null && projectIds.has(row.project_id)))
+          .map((row) => ({
+            id: row.id,
+            title: row.title,
+            status: row.status,
+            projectId: row.project_id,
+            plannedDate: row.planned_date,
+            dueAt: row.due_at,
+            archivedAt: row.archived_at,
+          })),
+        projects: projectRows.map((row) => ({
+          id: row.id,
+          title: row.title,
+          status: row.status,
+          nextStep: row.next_step,
+          targetDate: row.target_date,
+          archivedAt: row.archived_at,
+        })),
+      }),
+      milestoneHistory,
+      achievementHistory,
       summary,
     },
   };
@@ -387,6 +879,23 @@ export async function setGoalMilestoneStatus(client: SupabaseClientLike, input: 
   if (current.error) return dbFailure("load Goal milestone", current.error);
   if (!current.data) return notFound("Goal milestone");
   if (current.data.status === "archived") return failure("conflict", "Ein archivierter Milestone kann nicht verändert werden.");
+  if (input.status === "achieved" || (input.status === "active" && current.data.status === "achieved")) {
+    const command = await executeGoalCommand(
+      client,
+      input.status === "achieved" ? "milestone.achieve" : "milestone.reopen",
+      {
+        goal_id: input.goalId,
+        milestone_id: input.milestoneId,
+        expected_updated_at: input.expectedUpdatedAt ?? current.data.updated_at,
+      },
+      input.commandId,
+    );
+    if (!command.ok) return command;
+    const refreshed = await activeMilestone(client, input.userId, input.goalId, input.milestoneId);
+    if (refreshed.error) return dbFailure("reload Goal milestone", refreshed.error);
+    if (!refreshed.data) return notFound("Goal milestone");
+    return { ok: true, data: mapMilestone(refreshed.data) };
+  }
   const allowedTransitions: Record<"planned" | "active" | "achieved", readonly string[]> = {
     planned: ["planned", "active"],
     active: ["active", "planned", "achieved"],
@@ -479,6 +988,14 @@ export async function archiveGoalCriterion(client: SupabaseClientLike, input: Go
 }
 
 export async function appendGoalCriterionEvaluation(client: SupabaseClientLike, input: GoalCriterionEvaluationInput): Promise<RepositoryResult<GoalCriterionEvaluation>> {
+  return appendGoalCriterionRevision(client, input, "criterion.evaluate");
+}
+
+export async function appendGoalCriterionRevision(
+  client: SupabaseClientLike,
+  input: GoalCriterionEvaluationInput,
+  commandKind: "criterion.evaluate" | "criterion.correct" | "criterion.retract",
+): Promise<RepositoryResult<GoalCriterionEvaluation>> {
   const scoped = scopeFailure(input);
   if (scoped) return scoped;
   const goal = await ownedGoal(client, input.userId, input.goalId);
@@ -490,18 +1007,96 @@ export async function appendGoalCriterionEvaluation(client: SupabaseClientLike, 
   if (!criterion.data) return notFound("Goal criterion");
   if (criterion.data.criterion_type !== input.criterionType) return failure("conflict", "Der Kriterientyp hat sich geändert; bitte neu laden.");
   if (input.evaluationState === "value" && input.criterionType === "numeric" && input.unit?.trim() !== criterion.data.unit) return failure("conflict", "Die Einheit der Bewertung muss exakt zum Kriterium passen.");
-  const result = (await client.from("goal_criterion_evaluations").insert({
-    user_id: input.userId,
-    criterion_id: input.criterionId,
-    is_deferred: input.evaluationState === "deferred",
-    boolean_value: input.evaluationState === "value" && input.criterionType === "boolean" ? input.booleanValue ?? null : null,
-    numeric_value: input.evaluationState === "value" && input.criterionType === "numeric" ? input.numericValue ?? null : null,
-    unit: input.evaluationState === "value" && input.criterionType === "numeric" ? input.unit ?? null : null,
-    note: input.note ?? null,
-  }).select("*").single()) as SupabaseQueryResult<GoalCriterionEvaluationRow>;
-  if (result.error) return dbFailure("save Goal criterion evaluation", result.error);
+  const command = await executeGoalCommand(
+    client,
+    commandKind,
+    {
+      goal_id: input.goalId,
+      criterion_id: input.criterionId,
+      expected_latest_evaluation_id: input.expectedLatestEvaluationId ?? null,
+      deferred: commandKind === "criterion.retract" ? false : input.evaluationState === "deferred",
+      boolean_value: commandKind === "criterion.retract" ? null : input.booleanValue ?? null,
+      numeric_value: commandKind === "criterion.retract" ? null : input.numericValue ?? null,
+      unit: commandKind === "criterion.retract" ? null : input.unit ?? null,
+      note: input.note ?? null,
+      correction_reason: input.correctionReason ?? null,
+      retrospective: input.retrospective ?? false,
+    },
+    input.commandId,
+  );
+  if (!command.ok) return command;
+  const evaluationId = typeof command.data.evaluation_id === "string" ? command.data.evaluation_id : null;
+  if (!evaluationId) return dbFailure("read saved Goal criterion evaluation");
+  const result = (await client.from("goal_criterion_evaluations").select("*").eq("user_id", input.userId).eq("id", evaluationId).maybeSingle()) as SupabaseQueryResult<GoalCriterionEvaluationRow>;
+  if (result.error) return dbFailure("read saved Goal criterion evaluation", result.error);
   if (!result.data) return notFound("Goal criterion evaluation");
   return { ok: true, data: mapEvaluation(result.data) };
+}
+
+export async function addGoalCriterionEvidence(
+  client: SupabaseClientLike,
+  input: GoalCriterionEvidenceInput,
+): Promise<RepositoryResult<{ referencesChanged: number }>> {
+  const scoped = scopeFailure(input);
+  if (scoped) return scoped;
+  const command = await executeGoalCommand(
+    client,
+    "criterion.evidence",
+    {
+      goal_id: input.goalId,
+      evaluation_id: input.evaluationId,
+      action: input.action,
+      references: (input.references ?? []).map((reference) => ({
+        source_type: reference.sourceType,
+        source_id: reference.sourceId,
+        supersedes_reference_id: reference.supersedesReferenceId ?? null,
+        reason: reference.reason ?? null,
+      })),
+    },
+    input.commandId,
+  );
+  if (!command.ok) return command;
+  return {
+    ok: true,
+    data: {
+      referencesChanged:
+        typeof command.data.references_changed === "number"
+          ? command.data.references_changed
+          : input.references.length,
+    },
+  };
+}
+
+export async function addGoalMilestoneEvidence(
+  client: SupabaseClientLike,
+  input: GoalMilestoneEvidenceInput,
+): Promise<RepositoryResult<{ referencesChanged: number }>> {
+  const scoped = scopeFailure(input);
+  if (scoped) return scoped;
+  const command = await executeGoalCommand(
+    client,
+    "milestone.evidence",
+    {
+      goal_id: input.goalId,
+      milestone_id: input.milestoneId,
+      references: (input.references ?? []).map((reference) => ({
+        source_type: reference.sourceType,
+        source_id: reference.sourceId,
+        reason: reference.reason ?? null,
+      })),
+    },
+    input.commandId,
+  );
+  if (!command.ok) return command;
+  return {
+    ok: true,
+    data: {
+      referencesChanged:
+        typeof command.data.references_changed === "number"
+          ? command.data.references_changed
+          : input.references.length,
+    },
+  };
 }
 
 export async function addGoalProjectSupport(client: SupabaseClientLike, input: GoalProjectSupportInput): Promise<RepositoryResult<{ id: string }>> {
@@ -571,19 +1166,41 @@ export async function removeGoalTaskSupport(client: SupabaseClientLike, input: G
 export async function achieveGoal(client: SupabaseClientLike, input: GoalAchieveInput): Promise<RepositoryResult<{ id: string }>> {
   const scoped = scopeFailure(input);
   if (scoped) return scoped;
-  const result = (await client.from("goals").update({ status: "achieved", achievement_note: input.note ?? null }).eq("user_id", input.userId).eq("id", input.goalId).eq("status", "active").is("archived_at", null).select("id").maybeSingle()) as SupabaseQueryResult<{ id: string }>;
-  if (result.error) return dbFailure("achieve Goal", result.error);
-  if (!result.data) return failure("conflict", "Kein aktives Goal im aktuellen Benutzerkontext. Goal zuerst aktivieren und neu laden.");
-  return { ok: true, data: result.data };
+  const command = await executeGoalCommand(
+    client,
+    "goal.achieve",
+    {
+      goal_id: input.goalId,
+      expected_updated_at: input.expectedUpdatedAt ?? null,
+      note: input.note ?? null,
+      references: (input.references ?? []).map((reference) => ({
+        source_type: reference.sourceType,
+        source_id: reference.sourceId,
+        reason: reference.reason ?? null,
+      })),
+    },
+    input.commandId,
+  );
+  if (!command.ok) return command;
+  const id = typeof command.data.goal_id === "string" ? command.data.goal_id : input.goalId;
+  return { ok: true, data: { id } };
 }
 
 export async function reopenGoal(client: SupabaseClientLike, input: GoalReopenInput): Promise<RepositoryResult<{ id: string }>> {
   const scoped = scopeFailure(input);
   if (scoped) return scoped;
-  const result = (await client.from("goals").update({ status: "active", achieved_at: null, achievement_note: null }).eq("user_id", input.userId).eq("id", input.goalId).eq("status", "achieved").is("archived_at", null).select("id").maybeSingle()) as SupabaseQueryResult<{ id: string }>;
-  if (result.error) return dbFailure("reopen Goal", result.error);
-  if (!result.data) return notFound("erreichtes Goal");
-  return { ok: true, data: result.data };
+  const command = await executeGoalCommand(
+    client,
+    "goal.reopen",
+    {
+      goal_id: input.goalId,
+      expected_updated_at: input.expectedUpdatedAt ?? null,
+    },
+    input.commandId,
+  );
+  if (!command.ok) return command;
+  const id = typeof command.data.goal_id === "string" ? command.data.goal_id : input.goalId;
+  return { ok: true, data: { id } };
 }
 
 export function criterionStateLabel(criterion: GoalOutcomeCriterion) {

@@ -4,6 +4,7 @@ import {
 } from "../domain/goal-outcome";
 import {
   localDateSchema,
+  dateTimeStringSchema,
   requiredTrimmedStringSchema,
   z,
 } from "./schema-contract";
@@ -51,6 +52,10 @@ const optionalFiniteNumber = z.preprocess(
   },
   z.number().finite().optional(),
 );
+const commandMetadata = {
+  commandId: id.optional(),
+  expectedUpdatedAt: dateTimeStringSchema.optional(),
+};
 
 export const goalMilestoneCreateInputSchema = profileScope.extend({
   goalId: id,
@@ -73,6 +78,7 @@ export const goalMilestoneStatusInputSchema = profileScope.extend({
   goalId: id,
   milestoneId: id,
   status: z.enum(["planned", "active", "achieved"]),
+  ...commandMetadata,
 });
 
 export const goalMilestoneArchiveInputSchema = profileScope.extend({
@@ -135,6 +141,10 @@ export const goalCriterionEvaluationInputSchema = profileScope.extend({
   numericValue: optionalFiniteNumber,
   unit: optionalText,
   note: optionalText,
+  expectedLatestEvaluationId: optionalNullableId,
+  correctionReason: optionalText,
+  retrospective: z.boolean().optional(),
+  ...commandMetadata,
 }).superRefine((value, context) => {
   if (value.evaluationState === "deferred") {
     if (
@@ -186,10 +196,41 @@ export const goalSupportRemoveInputSchema = profileScope.extend({
 export const goalAchieveInputSchema = profileScope.extend({
   goalId: id,
   note: optionalText,
+  references: z.array(z.object({
+    sourceType: z.enum(["project", "project_milestone", "task", "resource", "review_record"]),
+    sourceId: id,
+    reason: optionalText,
+  })).max(20).optional(),
+  ...commandMetadata,
 });
 
 export const goalReopenInputSchema = profileScope.extend({
   goalId: id,
+  ...commandMetadata,
+});
+
+export const goalCriterionEvidenceInputSchema = profileScope.extend({
+  goalId: id,
+  evaluationId: id,
+  action: z.enum(["attached", "replaced", "withdrawn"]).default("attached"),
+  references: z.array(z.object({
+    sourceType: z.enum(["task", "project", "project_milestone", "resource", "review_record"]),
+    sourceId: id,
+    supersedesReferenceId: id.optional(),
+    reason: optionalText,
+  })).min(1).max(20),
+  ...commandMetadata,
+});
+
+export const goalMilestoneEvidenceInputSchema = profileScope.extend({
+  goalId: id,
+  milestoneId: id,
+  references: z.array(z.object({
+    sourceType: z.enum(["goal_criterion_evaluation", "project", "project_milestone", "task", "resource", "review_record"]),
+    sourceId: id,
+    reason: optionalText,
+  })).min(1).max(20),
+  ...commandMetadata,
 });
 
 export const goalOutcomeOperationSchema = z.enum([
@@ -201,12 +242,16 @@ export const goalOutcomeOperationSchema = z.enum([
   "criterion.create",
   "criterion.archive",
   "criterion.evaluate",
+  "criterion.correct",
+  "criterion.retract",
+  "criterion.evidence",
   "support.project.add",
   "support.project.remove",
   "support.task.add",
   "support.task.remove",
   "achieve",
   "reopen",
+  "milestone.evidence",
 ]);
 
 export type GoalMilestoneCreateInput = z.infer<typeof goalMilestoneCreateInputSchema>;
@@ -217,6 +262,8 @@ export type GoalMilestoneReorderInput = z.infer<typeof goalMilestoneReorderInput
 export type GoalOutcomeCriterionCreateInput = z.infer<typeof goalOutcomeCriterionCreateInputSchema>;
 export type GoalOutcomeCriterionArchiveInput = z.infer<typeof goalOutcomeCriterionArchiveInputSchema>;
 export type GoalCriterionEvaluationInput = z.infer<typeof goalCriterionEvaluationInputSchema>;
+export type GoalCriterionEvidenceInput = z.infer<typeof goalCriterionEvidenceInputSchema>;
+export type GoalMilestoneEvidenceInput = z.infer<typeof goalMilestoneEvidenceInputSchema>;
 export type GoalProjectSupportInput = z.infer<typeof goalProjectSupportInputSchema>;
 export type GoalTaskSupportInput = z.infer<typeof goalTaskSupportInputSchema>;
 export type GoalSupportRemoveInput = z.infer<typeof goalSupportRemoveInputSchema>;

@@ -60,24 +60,13 @@ describe("Goal outcome repository boundaries", () => {
   });
 
   it("translates the database achievement gate into a visible conflict", async () => {
-    const maybeSingle = vi.fn().mockResolvedValue({
+    const rpc = vi.fn().mockResolvedValue({
       data: null,
       error: { message: "GOAL_ACHIEVEMENT_CRITERIA_NOT_MET" },
     });
-    const query = {
-      eq: vi.fn(),
-      is: vi.fn(),
-      maybeSingle,
-      select: vi.fn(),
-      update: vi.fn(),
-    };
-    query.eq.mockReturnValue(query);
-    query.is.mockReturnValue(query);
-    query.select.mockReturnValue(query);
-    query.update.mockReturnValue(query);
 
     const result = await achieveGoal(
-      { from: () => query } as never,
+      { rpc } as never,
       { goalId, note: "Ready", profileId: userId, userId },
     );
 
@@ -88,10 +77,11 @@ describe("Goal outcome repository boundaries", () => {
         message: "Alle aktiven Kriterien müssen erfüllt sein.",
       },
     });
-    expect(query.eq).toHaveBeenCalledWith("status", "active");
-    expect(query.eq).toHaveBeenCalledWith("user_id", userId);
-    maybeSingle.mockResolvedValueOnce({ data: null, error: null } as never);
-    const stale = await achieveGoal({ from: () => query } as never, { goalId, profileId: userId, userId });
+    rpc.mockResolvedValueOnce({
+      data: null,
+      error: { message: "GOAL_STALE_STATE" },
+    });
+    const stale = await achieveGoal({ rpc } as never, { goalId, profileId: userId, userId });
     expect(stale).toMatchObject({ ok: false, error: { code: "conflict" } });
   });
 
@@ -143,42 +133,56 @@ describe("Goal outcome repository boundaries", () => {
 
   it("writes deferred evaluations as append-only no-decision rows", async () => {
     const criterionId = "77777777-7777-4777-8777-777777777777";
-    let inserted: Record<string, unknown> | undefined;
+    const evaluationId = "88888888-8888-4888-8888-888888888888";
+    const rpc = vi.fn().mockResolvedValue({
+      data: { evaluation_id: evaluationId },
+      error: null,
+    });
     const from = vi.fn((table: string) => {
       const chain = {
         select: vi.fn(() => chain),
         eq: vi.fn(() => chain),
         is: vi.fn(() => chain),
-        insert: vi.fn((payload: Record<string, unknown>) => {
-          inserted = payload;
-          return chain;
-        }),
         maybeSingle: vi.fn(async () => {
           if (table === "goals") return { data: { id: goalId, status: "active", archived_at: null }, error: null };
           if (table === "goal_outcome_criteria") return { data: { id: criterionId, criterion_type: "boolean", unit: null, archived_at: null }, error: null };
+          if (table === "goal_criterion_evaluations") return {
+            data: {
+              id: evaluationId,
+              user_id: userId,
+              criterion_id: criterionId,
+              is_deferred: true,
+              boolean_value: null,
+              numeric_value: null,
+              unit: null,
+              evaluated_at: "2026-09-21T00:00:00.000Z",
+              recorded_at: "2026-09-21T00:00:00.000Z",
+              note: "Later",
+              created_at: "2026-09-21T00:00:00.000Z",
+              goal_id_snapshot: goalId,
+              goal_milestone_id_snapshot: null,
+              criterion_title_snapshot: "Criterion",
+              criterion_type_snapshot: "boolean",
+              unit_snapshot: null,
+              target_snapshot: null,
+              direction_snapshot: null,
+              revision_kind: "evaluation",
+              supersedes_evaluation_id: null,
+              correction_reason: null,
+              is_retracted: false,
+              legacy_state: null,
+              retrospective: false,
+            },
+            error: null,
+          };
           return { data: null, error: null };
         }),
-        single: vi.fn(async () => ({
-          data: {
-            id: "88888888-8888-4888-8888-888888888888",
-            user_id: userId,
-            criterion_id: criterionId,
-            is_deferred: true,
-            boolean_value: null,
-            numeric_value: null,
-            unit: null,
-            evaluated_at: "2026-09-21T00:00:00.000Z",
-            note: "Later",
-            created_at: "2026-09-21T00:00:00.000Z",
-          },
-          error: null,
-        })),
       } as unknown as MockQuery;
       return chain;
     });
 
     const result = await appendGoalCriterionEvaluation(
-      { from } as never,
+      { from, rpc } as never,
       {
         criterionId,
         criterionType: "boolean",
@@ -191,16 +195,18 @@ describe("Goal outcome repository boundaries", () => {
     );
 
     expect(result).toMatchObject({ ok: true, data: { deferred: true, booleanValue: null, numericValue: null } });
-    expect(inserted).toMatchObject({
-      is_deferred: true,
-      boolean_value: null,
-      numeric_value: null,
-      unit: null,
-    });
+    expect(rpc).toHaveBeenCalledWith("execute_goal_command", expect.objectContaining({
+      p_command_kind: "criterion.evaluate",
+      p_payload: expect.objectContaining({ deferred: true }),
+    }));
   });
 
   it("rejects a planned-to-achieved shortcut before persistence", async () => {
     const update = vi.fn();
+    const rpc = vi.fn().mockResolvedValue({
+      data: null,
+      error: { message: "GOAL_MILESTONE_ACHIEVE_REQUIRES_ACTIVE" },
+    });
     const from = vi.fn((table: string) => {
       const chain = {
         select: vi.fn(() => chain),
@@ -220,7 +226,7 @@ describe("Goal outcome repository boundaries", () => {
     });
 
     const result = await setGoalMilestoneStatus(
-      { from } as never,
+      { from, rpc } as never,
       {
         goalId,
         milestoneId: "99999999-9999-4999-8999-999999999999",

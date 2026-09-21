@@ -30,6 +30,14 @@ export type GoalOutcomeCriterionUpdate = TableUpdate<"goal_outcome_criteria">;
 
 export type GoalCriterionEvaluationRow = TableRow<"goal_criterion_evaluations">;
 export type GoalCriterionEvaluationInsert = TableInsert<"goal_criterion_evaluations">;
+export type GoalCommandReceiptRow = TableRow<"goal_command_receipts">;
+export type GoalMilestoneAchievementEventRow = TableRow<"goal_milestone_achievement_events">;
+export type GoalAchievementEventRow = TableRow<"goal_achievement_events">;
+export type GoalAchievementCriterionBasisRow = TableRow<"goal_achievement_criterion_basis">;
+export type GoalAchievementMilestoneBasisRow = TableRow<"goal_achievement_milestone_basis">;
+export type GoalCriterionEvaluationEvidenceRow = TableRow<"goal_criterion_evaluation_evidence">;
+export type GoalMilestoneAchievementEvidenceRow = TableRow<"goal_milestone_achievement_evidence">;
+export type GoalAchievementEvidenceRow = TableRow<"goal_achievement_evidence">;
 
 export type GoalMilestoneProjectSupportRow = TableRow<"goal_milestone_project_support">;
 export type GoalMilestoneTaskSupportRow = TableRow<"goal_milestone_task_support">;

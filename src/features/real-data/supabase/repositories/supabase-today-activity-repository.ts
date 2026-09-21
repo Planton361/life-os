@@ -33,7 +33,18 @@ export async function readTodayActivity(
       if ((result.data?.length ?? 0) < 1000) return rows;
     }
   }
-  const [tasks, inbox, moods, habits, meals, runs, strength, reviews] =
+  const [
+    tasks,
+    inbox,
+    moods,
+    habits,
+    meals,
+    runs,
+    strength,
+    reviews,
+    goalAchievementEvents,
+    milestoneAchievementEvents,
+  ] =
     await Promise.all([
       all(
         client
@@ -103,6 +114,22 @@ export async function readTodayActivity(
           )
           .order("id"),
       ),
+      all(
+        client
+          .from("goal_achievement_events")
+          .select("id,goal_id,event_type,occurred_at,recorded_at,goal_title_snapshot")
+          .eq("user_id", userId)
+          .or(`recorded_at.gte.${lower},occurred_at.gte.${lower}`)
+          .order("recorded_at"),
+      ),
+      all(
+        client
+          .from("goal_milestone_achievement_events")
+          .select("id,goal_id,event_type,occurred_at,recorded_at,goal_title_snapshot")
+          .eq("user_id", userId)
+          .or(`recorded_at.gte.${lower},occurred_at.gte.${lower}`)
+          .order("recorded_at"),
+      ),
     ]);
   const currentReviewIds = reviews
     .filter(
@@ -162,6 +189,28 @@ export async function readTodayActivity(
       strength,
       reviews,
       decisions,
+      goalEvents: [
+        ...goalAchievementEvents
+          .filter((event) => event.event_type === "achieved" || event.event_type === "reopened")
+          .map((event) => ({
+            id: event.id,
+            goalId: event.goal_id,
+            goalTitle: event.goal_title_snapshot ?? "Goal",
+            eventType: event.event_type === "achieved" ? "goal_achieved" as const : "goal_reopened" as const,
+            occurredAt: event.occurred_at,
+            recordedAt: event.recorded_at,
+          })),
+        ...milestoneAchievementEvents
+          .filter((event) => event.event_type === "achieved" || event.event_type === "reopened")
+          .map((event) => ({
+            id: event.id,
+            goalId: event.goal_id,
+            goalTitle: event.goal_title_snapshot ?? "Goal",
+            eventType: event.event_type === "achieved" ? "milestone_achieved" as const : "milestone_reopened" as const,
+            occurredAt: event.occurred_at,
+            recordedAt: event.recorded_at,
+          })),
+      ],
     },
     timezone,
     now,

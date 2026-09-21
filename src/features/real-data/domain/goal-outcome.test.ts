@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildGoalOutcomeSummary,
   criterionEvaluationState,
+  deriveGoalNextStep,
   type GoalOutcomeCriterion,
 } from "./goal-outcome";
 
@@ -163,5 +164,40 @@ describe("Goal outcome semantics", () => {
     expect(summary.deferredCriteriaCount).toBe(1);
     expect(summary.readyToAchieve).toBe(false);
     expect(summary.blockers).toContain("1 Kriterium/Kriterien deferred.");
+  });
+
+  it("treats a retracted revision as open and chooses the canonical next step", () => {
+    const booleanCriterion = criterion({
+      criterionType: "boolean",
+      direction: null,
+      target: null,
+      unit: null,
+      latestEvaluation: {
+        id: "evaluation-retracted",
+        userId: "user-1",
+        criterionId: "criterion-1",
+        deferred: false,
+        booleanValue: null,
+        numericValue: null,
+        unit: null,
+        evaluatedAt: "2026-09-21T00:00:00Z",
+        createdAt: "2026-09-21T00:00:00Z",
+        note: null,
+        retracted: true,
+        revisionKind: "retraction",
+      },
+    });
+    expect(criterionEvaluationState(booleanCriterion, booleanCriterion.latestEvaluation)).toBe("unverified");
+
+    expect(
+      deriveGoalNextStep({
+        goalId: "goal-1",
+        goalStatus: "active",
+        tasks: [
+          { id: "planned", title: "Planned task", status: "planned", projectId: null, plannedDate: "2026-09-25", dueAt: null, archivedAt: null },
+        ],
+        projects: [],
+      }),
+    ).toMatchObject({ kind: "task", id: "planned", href: "/tasks/planned" });
   });
 });
