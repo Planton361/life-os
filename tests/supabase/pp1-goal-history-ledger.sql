@@ -145,9 +145,16 @@ declare
   v_milestone_reference_id uuid;
   v_milestone_replacement_id uuid;
   v_goal_event_id uuid;
+  v_goal_event_b_id uuid;
+  v_goal_b_amendment_id uuid;
+  v_goal_old_episode_event_id uuid;
   v_goal_amendment_id uuid;
   v_goal_reference_id uuid;
   v_goal_replacement_id uuid;
+  v_milestone_old_episode_event_id uuid;
+  v_current_event_id uuid;
+  v_current_episode_id uuid;
+  v_current_effective_event_id uuid;
   v_legacy_goal_episode_id uuid;
   v_legacy_milestone_episode_id uuid;
   v_count integer;
@@ -854,6 +861,346 @@ begin
      )
      and leaf.reference_action <> 'withdrawn';
   if v_count <> 1 then raise exception 'Goal evidence projection has a non-deterministic active leaf'; end if;
+
+  -- Current Etappe episode proof: reopen Episode A, achieve Episode B,
+  -- amend only its time/note, correct its evidence ledger, and then amend
+  -- the closed Episode A. The current projection must remain Episode B.
+  v_milestone_old_episode_event_id := v_milestone_amendment_id;
+  perform public.execute_goal_command(
+    'milestone.reopen',
+    '93000000-0000-0000-8000-000000000132',
+    'ledger-milestone-reopen-episode-a',
+    jsonb_build_object(
+      'goal_id', '93000000-0000-4000-8000-000000000010',
+      'milestone_id', '93000000-0000-4000-8000-000000000020',
+      'occurred_at', '2026-09-21T01:03:40Z'
+    )
+  );
+  v_result := public.execute_goal_command(
+    'milestone.achieve',
+    '93000000-0000-0000-8000-000000000133',
+    'ledger-milestone-achieve-episode-b',
+    jsonb_build_object(
+      'goal_id', '93000000-0000-4000-8000-000000000010',
+      'milestone_id', '93000000-0000-4000-8000-000000000020',
+      'note', 'Current Etappe Episode B.',
+      'occurred_at', '2026-09-21T01:03:45Z'
+    )
+  );
+  v_milestone_event_id := (v_result->>'event_id')::uuid;
+  perform public.execute_goal_command(
+    'milestone.evidence',
+    '93000000-0000-0000-8000-000000000134',
+    'ledger-milestone-episode-b-attach',
+    jsonb_build_object(
+      'goal_id', '93000000-0000-4000-8000-000000000010',
+      'milestone_id', '93000000-0000-4000-8000-000000000020',
+      'achievement_event_id', v_milestone_event_id,
+      'action', 'attached',
+      'references', jsonb_build_array(jsonb_build_object(
+        'source_type', 'project',
+        'source_id', '93000000-0000-4000-8000-000000000041'
+      ))
+    )
+  );
+  select id into v_milestone_reference_id
+    from public.goal_milestone_achievement_evidence
+   where achievement_event_id = v_milestone_event_id
+     and reference_action = 'attached'
+   order by recorded_at desc, id desc limit 1;
+  v_result := public.execute_goal_command(
+    'milestone.amend',
+    '93000000-0000-0000-8000-000000000135',
+    'ledger-milestone-episode-b-amend',
+    jsonb_build_object(
+      'goal_id', '93000000-0000-4000-8000-000000000010',
+      'milestone_id', '93000000-0000-4000-8000-000000000020',
+      'event_id', v_milestone_event_id,
+      'occurred_at', '2026-09-20T07:45:00Z',
+      'note', 'Current Etappe Episode B corrected.',
+      'correction_reason', 'Corrected Etappe time without changing evidence.'
+    )
+  );
+  v_milestone_amendment_id := (v_result->>'event_id')::uuid;
+  if not exists (
+    select 1 from public.goal_milestone_achievement_evidence
+     where achievement_event_id = v_milestone_event_id
+       and reference_action = 'attached'
+  ) then raise exception 'Etappe root evidence was not retained after amendment'; end if;
+  perform public.execute_goal_command(
+    'milestone.evidence',
+    '93000000-0000-0000-8000-000000000136',
+    'ledger-milestone-episode-b-replace',
+    jsonb_build_object(
+      'goal_id', '93000000-0000-4000-8000-000000000010',
+      'milestone_id', '93000000-0000-4000-8000-000000000020',
+      'achievement_event_id', v_milestone_amendment_id,
+      'action', 'replaced',
+      'references', jsonb_build_array(jsonb_build_object(
+        'source_type', 'project',
+        'source_id', '93000000-0000-4000-8000-000000000040',
+        'supersedes_reference_id', v_milestone_reference_id,
+        'reason', 'Current Etappe source was replaced.'
+      ))
+    )
+  );
+  select id into v_milestone_replacement_id
+    from public.goal_milestone_achievement_evidence
+   where achievement_event_id = v_milestone_amendment_id
+     and reference_action = 'replaced'
+   order by recorded_at desc, id desc limit 1;
+  perform public.execute_goal_command(
+    'milestone.evidence',
+    '93000000-0000-0000-8000-000000000137',
+    'ledger-milestone-episode-b-withdraw',
+    jsonb_build_object(
+      'goal_id', '93000000-0000-4000-8000-000000000010',
+      'milestone_id', '93000000-0000-4000-8000-000000000020',
+      'achievement_event_id', v_milestone_amendment_id,
+      'action', 'withdrawn',
+      'references', jsonb_build_array(jsonb_build_object(
+        'supersedes_reference_id', v_milestone_replacement_id,
+        'reason', 'Current Etappe source withdrawn.'
+      ))
+    )
+  );
+  perform public.execute_goal_command(
+    'milestone.evidence',
+    '93000000-0000-0000-8000-000000000138',
+    'ledger-milestone-episode-b-supplement',
+    jsonb_build_object(
+      'goal_id', '93000000-0000-4000-8000-000000000010',
+      'milestone_id', '93000000-0000-4000-8000-000000000020',
+      'achievement_event_id', v_milestone_amendment_id,
+      'action', 'supplemented',
+      'retrospective', true,
+      'references', jsonb_build_array(jsonb_build_object(
+        'source_type', 'task',
+        'source_id', '93000000-0000-4000-8000-000000000050',
+        'reason', 'Current Etappe retrospective supplement.'
+      ))
+    )
+  );
+  perform public.execute_goal_command(
+    'milestone.amend',
+    '93000000-0000-0000-8000-000000000139',
+    'ledger-milestone-old-episode-amend-after-b',
+    jsonb_build_object(
+      'goal_id', '93000000-0000-4000-8000-000000000010',
+      'milestone_id', '93000000-0000-4000-8000-000000000020',
+      'event_id', v_milestone_old_episode_event_id,
+      'occurred_at', '2026-09-19T06:30:00Z',
+      'note', 'Closed Etappe Episode A corrected.',
+      'correction_reason', 'Closed episode remains historical.'
+    )
+  );
+  select e.episode_id into v_current_episode_id
+    from public.goal_milestone_achievement_events e
+   where e.goal_milestone_id = '93000000-0000-4000-8000-000000000020'
+     and e.event_type = 'achieved'
+     and e.resulting_status = 'achieved'
+     and not exists (
+       select 1 from public.goal_milestone_achievement_events r
+        where r.goal_milestone_id = e.goal_milestone_id
+          and r.episode_id = e.episode_id
+          and r.event_type = 'reopened'
+     )
+   order by e.occurred_at desc nulls last, e.recorded_at desc, e.id desc limit 1;
+  select e.id into v_current_effective_event_id
+    from public.goal_milestone_achievement_events e
+   where e.goal_milestone_id = '93000000-0000-4000-8000-000000000020'
+     and e.episode_id = v_current_episode_id
+     and e.event_type in ('achieved', 'amended')
+     and e.resulting_status = 'achieved'
+     and not exists (
+       select 1 from public.goal_milestone_achievement_events successor
+        where successor.corrects_event_id = e.id
+     )
+   order by e.recorded_at desc, e.id desc limit 1;
+  if v_current_effective_event_id <> v_milestone_amendment_id then
+    raise exception 'Current Etappe projection jumped to a closed episode';
+  end if;
+  select count(*) into v_count
+    from public.goal_milestone_achievement_evidence leaf
+   where leaf.episode_id = v_current_episode_id
+     and not exists (
+       select 1 from public.goal_milestone_achievement_evidence successor
+        where successor.supersedes_reference_id = leaf.id
+     )
+     and leaf.reference_action <> 'withdrawn';
+  if v_count <> 1 then raise exception 'Current Etappe evidence was not preserved deterministically'; end if;
+  if not exists (
+    select 1 from public.goal_milestone_achievement_evidence
+     where episode_id = v_current_episode_id
+       and source_id = '93000000-0000-4000-8000-000000000050'
+       and reference_action = 'supplemented'
+       and retrospective
+  ) then raise exception 'Current Etappe supplement did not remain effective'; end if;
+
+  -- Current Goal episode proof mirrors the Etappe scenario. The effective
+  -- amendment must retain Episode B's exact basis and active evidence even
+  -- after a late correction to the closed Episode A.
+  v_goal_old_episode_event_id := v_goal_amendment_id;
+  v_result := public.execute_goal_command(
+    'goal.achieve',
+    '93000000-0000-0000-8000-00000000013a',
+    'ledger-goal-achieve-episode-b',
+    jsonb_build_object(
+      'goal_id', '93000000-0000-4000-8000-000000000010',
+      'note', 'Current Goal Episode B.',
+      'occurred_at', '2026-09-21T01:04:00Z',
+      'references', jsonb_build_array(jsonb_build_object(
+        'source_type', 'project',
+        'source_id', '93000000-0000-4000-8000-000000000041'
+      ))
+    )
+  );
+  v_goal_event_b_id := (v_result->>'event_id')::uuid;
+  select count(*) into v_count
+    from public.goal_achievement_criterion_basis
+   where achievement_event_id = v_goal_event_b_id;
+  if v_count <> 1 then raise exception 'Episode B Goal criterion basis was not recorded'; end if;
+  select count(*) into v_count
+    from public.goal_achievement_milestone_basis
+   where achievement_event_id = v_goal_event_b_id;
+  if v_count <> 1 then raise exception 'Episode B Goal Etappe basis was not recorded'; end if;
+  select id into v_goal_reference_id
+    from public.goal_achievement_evidence
+   where achievement_event_id = v_goal_event_b_id
+     and reference_action = 'attached'
+   order by recorded_at desc, id desc limit 1;
+  v_result := public.execute_goal_command(
+    'goal.amend',
+    '93000000-0000-0000-8000-00000000013b',
+    'ledger-goal-episode-b-amend',
+    jsonb_build_object(
+      'goal_id', '93000000-0000-4000-8000-000000000010',
+      'event_id', v_goal_event_b_id,
+      'occurred_at', '2026-09-20T07:00:00Z',
+      'achievement_note', 'Current Goal Episode B corrected.',
+      'correction_reason', 'Corrected Goal time without changing evidence.'
+    )
+  );
+  v_goal_b_amendment_id := (v_result->>'event_id')::uuid;
+  if not exists (
+    select 1 from public.goal_achievement_evidence
+     where achievement_event_id = v_goal_event_b_id
+       and reference_action = 'attached'
+  ) then raise exception 'Goal root evidence was not retained after amendment'; end if;
+  perform public.execute_goal_command(
+    'goal.evidence',
+    '93000000-0000-0000-8000-00000000013c',
+    'ledger-goal-episode-b-replace',
+    jsonb_build_object(
+      'goal_id', '93000000-0000-4000-8000-000000000010',
+      'achievement_event_id', v_goal_b_amendment_id,
+      'action', 'replaced',
+      'references', jsonb_build_array(jsonb_build_object(
+        'source_type', 'project',
+        'source_id', '93000000-0000-4000-8000-000000000040',
+        'supersedes_reference_id', v_goal_reference_id,
+        'reason', 'Current Goal source was replaced.'
+      ))
+    )
+  );
+  select id into v_goal_replacement_id
+    from public.goal_achievement_evidence
+   where achievement_event_id = v_goal_b_amendment_id
+     and reference_action = 'replaced'
+   order by recorded_at desc, id desc limit 1;
+  perform public.execute_goal_command(
+    'goal.evidence',
+    '93000000-0000-0000-8000-00000000013d',
+    'ledger-goal-episode-b-withdraw',
+    jsonb_build_object(
+      'goal_id', '93000000-0000-4000-8000-000000000010',
+      'achievement_event_id', v_goal_b_amendment_id,
+      'action', 'withdrawn',
+      'references', jsonb_build_array(jsonb_build_object(
+        'supersedes_reference_id', v_goal_replacement_id,
+        'reason', 'Current Goal source withdrawn.'
+      ))
+    )
+  );
+  perform public.execute_goal_command(
+    'goal.evidence',
+    '93000000-0000-0000-8000-00000000013e',
+    'ledger-goal-episode-b-supplement',
+    jsonb_build_object(
+      'goal_id', '93000000-0000-4000-8000-000000000010',
+      'achievement_event_id', v_goal_b_amendment_id,
+      'action', 'supplemented',
+      'retrospective', true,
+      'references', jsonb_build_array(jsonb_build_object(
+        'source_type', 'task',
+        'source_id', '93000000-0000-4000-8000-000000000050',
+        'reason', 'Current Goal retrospective supplement.'
+      ))
+    )
+  );
+  perform public.execute_goal_command(
+    'goal.amend',
+    '93000000-0000-0000-8000-00000000013f',
+    'ledger-goal-old-episode-amend-after-b',
+    jsonb_build_object(
+      'goal_id', '93000000-0000-4000-8000-000000000010',
+      'event_id', v_goal_old_episode_event_id,
+      'occurred_at', '2026-09-19T06:00:00Z',
+      'achievement_note', 'Closed Goal Episode A corrected.',
+      'correction_reason', 'Closed episode remains historical.'
+    )
+  );
+  select g.status::text into v_title
+    from public.goals g
+   where g.id = '93000000-0000-4000-8000-000000000010';
+  if v_title <> 'achieved' then raise exception 'Goal current status was changed by an old episode amendment'; end if;
+  select e.episode_id into v_current_episode_id
+    from public.goal_achievement_events e
+   where e.goal_id = '93000000-0000-4000-8000-000000000010'
+     and e.event_type = 'achieved'
+     and e.resulting_status = 'achieved'
+     and not exists (
+       select 1 from public.goal_achievement_events r
+        where r.goal_id = e.goal_id
+          and r.episode_id = e.episode_id
+          and r.event_type = 'reopened'
+     )
+   order by e.occurred_at desc nulls last, e.recorded_at desc, e.id desc limit 1;
+  select e.id into v_current_effective_event_id
+    from public.goal_achievement_events e
+   where e.goal_id = '93000000-0000-4000-8000-000000000010'
+     and e.episode_id = v_current_episode_id
+     and e.event_type in ('achieved', 'amended')
+     and e.resulting_status = 'achieved'
+     and not exists (
+       select 1 from public.goal_achievement_events successor
+        where successor.corrects_event_id = e.id
+     )
+   order by e.recorded_at desc, e.id desc limit 1;
+  select format('%s/%s/%s', e.episode_id, e.event_type, e.corrects_event_id)
+    into v_title
+    from public.goal_achievement_events e
+   where e.id = v_current_effective_event_id;
+  if v_current_effective_event_id <> v_goal_b_amendment_id then
+    raise exception 'Current Goal projection jumped to a closed episode (expected % in episode %, actual % in episode %)',
+      v_goal_b_amendment_id, v_current_episode_id, v_current_effective_event_id, v_title;
+  end if;
+  select count(*) into v_count
+    from public.goal_achievement_evidence leaf
+   where leaf.achievement_event_id in (v_goal_event_b_id, v_goal_b_amendment_id)
+     and not exists (
+       select 1 from public.goal_achievement_evidence successor
+        where successor.supersedes_reference_id = leaf.id
+     )
+     and leaf.reference_action <> 'withdrawn';
+  if v_count <> 1 then raise exception 'Current Goal evidence was not preserved deterministically'; end if;
+  if not exists (
+    select 1 from public.goal_achievement_evidence
+     where achievement_event_id = v_goal_b_amendment_id
+       and source_id = '93000000-0000-4000-8000-000000000050'
+       and reference_action = 'supplemented'
+       and retrospective
+  ) then raise exception 'Current Goal supplement did not remain effective'; end if;
 
   perform pg_temp.reject(
     format('update public.goal_achievement_events set achievement_note = %L where id = %L', 'mutated', v_goal_event_id),

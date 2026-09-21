@@ -259,22 +259,153 @@ export type GoalOutcome = {
   summary: GoalOutcomeSummary;
 };
 
+type AchievementEpisodeEvent = {
+  id: string;
+  episodeId: string;
+  eventType: "achieved" | "reopened" | "amended";
+  occurredAt: string | null;
+  resultingStatus: string | null;
+  recordedAt: string;
+  correctsEventId: string | null;
+};
+
+function recordedOrder(
+  left: Pick<AchievementEpisodeEvent, "recordedAt" | "id">,
+  right: Pick<AchievementEpisodeEvent, "recordedAt" | "id">,
+) {
+  return (
+    right.recordedAt.localeCompare(left.recordedAt) ||
+    right.id.localeCompare(left.id)
+  );
+}
+
+function lifecycleOrder(
+  left: Pick<AchievementEpisodeEvent, "occurredAt" | "recordedAt" | "id">,
+  right: Pick<AchievementEpisodeEvent, "occurredAt" | "recordedAt" | "id">,
+) {
+  if (left.occurredAt && right.occurredAt) {
+    return (
+      right.occurredAt.localeCompare(left.occurredAt) ||
+      recordedOrder(left, right)
+    );
+  }
+  if (left.occurredAt) return -1;
+  if (right.occurredAt) return 1;
+  return recordedOrder(left, right);
+}
+
+function latestEffectiveEpisodeEvent<T extends AchievementEpisodeEvent>(
+  events: readonly T[],
+  episodeId: string,
+) {
+  const candidates = events.filter(
+    (event) =>
+      event.episodeId === episodeId &&
+      (event.eventType === "achieved" || event.eventType === "amended") &&
+      event.resultingStatus === "achieved",
+  );
+  const correctedEventIds = new Set(
+    candidates
+      .map((event) => event.correctsEventId)
+      .filter((id): id is string => Boolean(id)),
+  );
+  return (
+    candidates
+      .filter((event) => !correctedEventIds.has(event.id))
+      .sort(recordedOrder)[0] ?? candidates.sort(recordedOrder)[0] ?? null
+  );
+}
+
+/**
+ * Finds the episode that still represents the current achieved state.
+ *
+ * A reopen closes an episode permanently. Later amendments are historical
+ * assertions about that episode and must not reopen it, even when their
+ * recorded_at value is newer than the next episode's achievement.
+ */
+export function currentOpenAchievementEpisodeId(
+  events: readonly AchievementEpisodeEvent[],
+  currentStatus: string,
+): string | null {
+  if (currentStatus !== "achieved") return null;
+
+  const episodes = new Map<string, AchievementEpisodeEvent[]>();
+  for (const event of events) {
+    const episode = episodes.get(event.episodeId) ?? [];
+    episode.push(event);
+    episodes.set(event.episodeId, episode);
+  }
+
+  return (
+    [...episodes.entries()]
+      .filter(([, episode]) => !episode.some((event) => event.eventType === "reopened"))
+      .map(([episodeId, episode]) => ({
+        episodeId,
+        achievement: episode
+          .filter(
+            (event) =>
+              event.eventType === "achieved" &&
+              event.resultingStatus === "achieved",
+          )
+          .sort(lifecycleOrder)[0],
+      }))
+      .filter(
+        (candidate): candidate is {
+          episodeId: string;
+          achievement: AchievementEpisodeEvent;
+        } => Boolean(candidate.achievement),
+      )
+      .sort((left, right) => lifecycleOrder(left.achievement, right.achievement))
+      .at(0)?.episodeId ?? null
+  );
+}
+
+export function latestGoalAchievementEventInEpisode(
+  events: readonly GoalAchievementEvent[],
+  episodeId: string,
+): GoalAchievementEvent | null {
+  return latestEffectiveEpisodeEvent(events, episodeId);
+}
+
+export function currentGoalAchievementEvent(
+  events: readonly GoalAchievementEvent[],
+  goalStatus: GoalOutcomeSummary["status"],
+): GoalAchievementEvent | null {
+  const episodeId = currentOpenAchievementEpisodeId(events, goalStatus);
+  return episodeId
+    ? latestGoalAchievementEventInEpisode(events, episodeId)
+    : null;
+}
+
+export function latestGoalMilestoneAchievementEventInEpisode(
+  events: readonly GoalMilestoneAchievementEvent[],
+  episodeId: string,
+): GoalMilestoneAchievementEvent | null {
+  return latestEffectiveEpisodeEvent(events, episodeId);
+}
+
+export function currentGoalMilestoneAchievementEvent(
+  milestoneId: string,
+  milestoneStatus: GoalMilestoneStatus,
+  events: readonly GoalMilestoneAchievementEvent[],
+): GoalMilestoneAchievementEvent | null {
+  const milestoneEvents = events.filter(
+    (event) => event.milestoneId === milestoneId,
+  );
+  const episodeId = currentOpenAchievementEpisodeId(
+    milestoneEvents,
+    milestoneStatus,
+  );
+  return episodeId
+    ? latestGoalMilestoneAchievementEventInEpisode(milestoneEvents, episodeId)
+    : null;
+}
+
 export function latestGoalAchievementEvent(
   events: readonly GoalAchievementEvent[],
+  goalStatus: GoalOutcomeSummary["status"] = "achieved",
 ): GoalAchievementEvent | null {
-  return (
-    [...events]
-      .sort(
-        (left, right) =>
-          right.recordedAt.localeCompare(left.recordedAt) ||
-          right.id.localeCompare(left.id),
-      )
-      .find(
-        (event) =>
-          (event.eventType === "achieved" || event.eventType === "amended") &&
-          event.resultingStatus === "achieved",
-      ) ?? null
-  );
+  return currentGoalAchievementEvent(events, goalStatus);
 }
 
 function evidenceSort(left: GoalEvidenceReference, right: GoalEvidenceReference) {
@@ -305,11 +436,9 @@ export function projectGoalEvidenceReferences(
   return { active, history };
 }
 
-/** Resolve the immutable basis owner for an achieved event amendment chain. */
-export function resolveGoalAchievementBasisEventId(
-  eventId: string,
-  events: readonly Pick<GoalAchievementEvent, "id" | "correctsEventId">[],
-) {
+export function resolveAchievementCorrectionRootEventId<
+  T extends Pick<GoalAchievementEvent, "id" | "correctsEventId">,
+>(eventId: string, events: readonly T[]) {
   const byId = new Map(events.map((event) => [event.id, event]));
   const seen = new Set<string>();
   let currentId = eventId;
@@ -320,6 +449,31 @@ export function resolveGoalAchievementBasisEventId(
     currentId = parentId;
   }
   return currentId;
+}
+
+export function correctionChainEventIds<
+  T extends Pick<GoalAchievementEvent, "id" | "correctsEventId"> & {
+    episodeId: string;
+  },
+>(eventId: string, events: readonly T[]) {
+  const target = events.find((event) => event.id === eventId);
+  if (!target) return [] as string[];
+  const rootId = resolveAchievementCorrectionRootEventId(eventId, events);
+  return events
+    .filter(
+      (event) =>
+        event.episodeId === target.episodeId &&
+        resolveAchievementCorrectionRootEventId(event.id, events) === rootId,
+    )
+    .map((event) => event.id);
+}
+
+/** Resolve the immutable basis owner for an achieved event amendment chain. */
+export function resolveGoalAchievementBasisEventId(
+  eventId: string,
+  events: readonly Pick<GoalAchievementEvent, "id" | "correctsEventId">[],
+) {
+  return resolveAchievementCorrectionRootEventId(eventId, events);
 }
 
 function numericValue(value: number | null | undefined) {

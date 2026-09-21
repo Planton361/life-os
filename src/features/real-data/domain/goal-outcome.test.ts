@@ -2,11 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   buildGoalOutcomeSummary,
   criterionEvaluationState,
+  currentGoalAchievementEvent,
+  currentGoalMilestoneAchievementEvent,
   deriveGoalNextStep,
   latestGoalAchievementEvent,
   projectGoalEvidenceReferences,
   resolveGoalAchievementBasisEventId,
   type GoalAchievementEvent,
+  type GoalMilestoneAchievementEvent,
   type GoalOutcomeCriterion,
   type GoalEvidenceReference,
 } from "./goal-outcome";
@@ -371,5 +374,130 @@ describe("Goal outcome semantics", () => {
     });
 
     expect(latestGoalAchievementEvent([original, amendment])).toBe(amendment);
+  });
+
+  it("keeps the current Goal receipt on the open episode when an older episode is amended", () => {
+    const makeEvent = (
+      overrides: Partial<GoalAchievementEvent>,
+    ): GoalAchievementEvent => ({
+      id: "event",
+      goalId: "goal-1",
+      episodeId: "episode-a",
+      eventType: "achieved",
+      occurredAt: "2026-09-21T10:00:00.000Z",
+      recordedAt: "2026-09-21T10:00:01.000Z",
+      goalTitleSnapshot: "Goal",
+      priorStatus: "active",
+      resultingStatus: "achieved",
+      achievementNote: "Original",
+      legacyState: null,
+      correctsEventId: null,
+      correctionReason: null,
+      retrospective: false,
+      commandId: null,
+      criterionBasis: [],
+      milestoneBasis: [],
+      evidence: [],
+      evidenceHistory: [],
+      ...overrides,
+    });
+    const episodeA = makeEvent({
+      id: "episode-a-achieved",
+      episodeId: "episode-a",
+      recordedAt: "2026-09-21T10:00:01.000Z",
+      achievementNote: "Episode A",
+    });
+    const reopenedA = makeEvent({
+      id: "episode-a-reopened",
+      episodeId: "episode-a",
+      eventType: "reopened",
+      resultingStatus: "active",
+      recordedAt: "2026-09-21T10:01:00.000Z",
+    });
+    const episodeB = makeEvent({
+      id: "episode-b-achieved",
+      episodeId: "episode-b",
+      recordedAt: "2026-09-21T10:02:00.000Z",
+      achievementNote: "Episode B",
+    });
+    const amendedA = makeEvent({
+      id: "episode-a-amended",
+      episodeId: "episode-a",
+      eventType: "amended",
+      recordedAt: "2026-09-21T10:03:00.000Z",
+      occurredAt: "2026-09-20T08:00:00.000Z",
+      achievementNote: "Amended Episode A",
+      correctsEventId: episodeA.id,
+    });
+
+    expect(
+      currentGoalAchievementEvent(
+        [amendedA, episodeB, reopenedA, episodeA],
+        "achieved",
+      ),
+    ).toBe(episodeB);
+  });
+
+  it("selects the latest effective Etappe assertion inside its current open episode", () => {
+    const event = (
+      overrides: Partial<GoalMilestoneAchievementEvent>,
+    ): GoalMilestoneAchievementEvent => ({
+      id: "milestone-event",
+      goalId: "goal-1",
+      milestoneId: "milestone-1",
+      episodeId: "episode-a",
+      eventType: "achieved",
+      occurredAt: "2026-09-21T10:00:00.000Z",
+      recordedAt: "2026-09-21T10:00:01.000Z",
+      goalTitleSnapshot: "Goal",
+      milestoneTitleSnapshot: "Etappe",
+      milestoneDescriptionSnapshot: null,
+      priorStatus: "active",
+      resultingStatus: "achieved",
+      note: "Original",
+      legacyState: null,
+      correctsEventId: null,
+      correctionReason: null,
+      retrospective: false,
+      commandId: null,
+      evidence: [],
+      evidenceHistory: [],
+      ...overrides,
+    });
+    const episodeA = event({
+      id: "milestone-a-achieved",
+      episodeId: "episode-a",
+      recordedAt: "2026-09-21T10:00:01.000Z",
+    });
+    const reopenedA = event({
+      id: "milestone-a-reopened",
+      episodeId: "episode-a",
+      eventType: "reopened",
+      resultingStatus: "active",
+      recordedAt: "2026-09-21T10:01:00.000Z",
+    });
+    const episodeB = event({
+      id: "milestone-b-achieved",
+      episodeId: "episode-b",
+      recordedAt: "2026-09-21T10:02:00.000Z",
+      note: "Episode B",
+    });
+    const amendedA = event({
+      id: "milestone-a-amended",
+      episodeId: "episode-a",
+      eventType: "amended",
+      recordedAt: "2026-09-21T10:03:00.000Z",
+      occurredAt: "2026-09-20T08:00:00.000Z",
+      note: "Amended Episode A",
+      correctsEventId: episodeA.id,
+    });
+
+    expect(
+      currentGoalMilestoneAchievementEvent(
+        "milestone-1",
+        "achieved",
+        [amendedA, episodeB, reopenedA, episodeA],
+      ),
+    ).toBe(episodeB);
   });
 });

@@ -13,8 +13,11 @@ import type {
 } from "../../domain/goal-outcome";
 import {
   buildGoalOutcomeSummary,
+  correctionChainEventIds,
   criterionEvaluationState,
   deriveGoalNextStep,
+  latestGoalAchievementEventInEpisode,
+  latestGoalMilestoneAchievementEventInEpisode,
   projectGoalEvidenceReferences,
   resolveGoalAchievementBasisEventId,
 } from "../../domain/goal-outcome";
@@ -297,6 +300,55 @@ function evidenceProjection(
   )[],
 ) {
   return projectGoalEvidenceReferences(rows.map(mapEvidence));
+}
+
+function effectiveEvidenceProjection<
+  T extends {
+    id: string;
+    episode_id: string;
+    corrects_event_id: string | null;
+  },
+  E extends GoalMilestoneAchievementEvidenceRow | GoalAchievementEvidenceRow,
+>(
+  eventId: string,
+  eventRows: readonly T[],
+  evidenceRows: readonly E[],
+) {
+  const chainEventIds = new Set(
+    correctionChainEventIds(
+      eventId,
+      eventRows.map((row) => ({
+        id: row.id,
+        episodeId: row.episode_id,
+        correctsEventId: row.corrects_event_id,
+      })),
+    ),
+  );
+  return evidenceProjection(
+    evidenceRows.filter((row) => chainEventIds.has(row.achievement_event_id)),
+  );
+}
+
+export function projectEffectiveGoalAchievementEvidence(
+  eventId: string,
+  eventRows: readonly Pick<
+    GoalAchievementEventRow,
+    "id" | "episode_id" | "corrects_event_id"
+  >[],
+  evidenceRows: readonly GoalAchievementEvidenceRow[],
+) {
+  return effectiveEvidenceProjection(eventId, eventRows, evidenceRows);
+}
+
+export function projectEffectiveMilestoneAchievementEvidence(
+  eventId: string,
+  eventRows: readonly Pick<
+    GoalMilestoneAchievementEventRow,
+    "id" | "episode_id" | "corrects_event_id"
+  >[],
+  evidenceRows: readonly GoalMilestoneAchievementEvidenceRow[],
+) {
+  return effectiveEvidenceProjection(eventId, eventRows, evidenceRows);
 }
 
 function mapMilestoneEvent(
@@ -817,13 +869,36 @@ export async function getGoalOutcome(
       latestEvaluation: withEvidence[0] ?? null,
     };
   });
-  const milestoneHistory = milestoneEventRows.map((row) =>
+  const milestoneHistoryLocal = milestoneEventRows.map((row) =>
     mapMilestoneEvent(
       row,
       milestoneEvidenceByEvent.get(row.id)?.active ?? [],
       milestoneEvidenceByEvent.get(row.id)?.history ?? [],
     ),
   );
+  const effectiveMilestoneEventIds = new Set(
+    [...new Set(milestoneHistoryLocal.map((event) => event.episodeId))]
+      .map((episodeId) =>
+        latestGoalMilestoneAchievementEventInEpisode(
+          milestoneHistoryLocal,
+          episodeId,
+        )?.id,
+      )
+      .filter((id): id is string => Boolean(id)),
+  );
+  const milestoneHistory = milestoneHistoryLocal.map((event) => {
+    if (!effectiveMilestoneEventIds.has(event.id)) return event;
+    const effectiveEvidence = projectEffectiveMilestoneAchievementEvidence(
+      event.id,
+      milestoneEventRows,
+      milestoneEvidenceRows,
+    );
+    return {
+      ...event,
+      evidence: effectiveEvidence.active,
+      evidenceHistory: effectiveEvidence.history,
+    };
+  });
   const basisEventId = (eventId: string) =>
     resolveGoalAchievementBasisEventId(
       eventId,
@@ -832,7 +907,7 @@ export async function getGoalOutcome(
         correctsEventId: event.corrects_event_id,
       })),
     );
-  const achievementHistory = achievementEventRows.map((row) =>
+  const achievementHistoryLocal = achievementEventRows.map((row) =>
     mapGoalAchievementEvent(
       row,
       criterionBasisRows
@@ -863,6 +938,29 @@ export async function getGoalOutcome(
       achievementEvidenceByEvent.get(row.id)?.history ?? [],
     ),
   );
+  const effectiveAchievementEventIds = new Set(
+    [...new Set(achievementHistoryLocal.map((event) => event.episodeId))]
+      .map((episodeId) =>
+        latestGoalAchievementEventInEpisode(
+          achievementHistoryLocal,
+          episodeId,
+        )?.id,
+      )
+      .filter((id): id is string => Boolean(id)),
+  );
+  const achievementHistory = achievementHistoryLocal.map((event) => {
+    if (!effectiveAchievementEventIds.has(event.id)) return event;
+    const effectiveEvidence = projectEffectiveGoalAchievementEvidence(
+      event.id,
+      achievementEventRows,
+      achievementEvidenceRows,
+    );
+    return {
+      ...event,
+      evidence: effectiveEvidence.active,
+      evidenceHistory: effectiveEvidence.history,
+    };
+  });
   const outcomeBase = {
     goalId,
     goalStatus: goalResult.data.status,

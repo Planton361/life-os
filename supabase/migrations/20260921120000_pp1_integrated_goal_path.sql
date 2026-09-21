@@ -889,7 +889,7 @@ begin
          from public.goal_milestone_achievement_evidence r
          where r.user_id = v_user_id
          and r.id = v_supersedes_reference_id
-           and r.achievement_event_id = v_event_id
+           and r.episode_id = v_episode_id
          for update;
         if not found then raise exception 'GOAL_EVIDENCE_REFERENCE_NOT_FOUND' using errcode = 'P0002'; end if;
         if exists (
@@ -990,7 +990,14 @@ begin
          from public.goal_achievement_evidence r
          where r.user_id = v_user_id
            and r.id = v_supersedes_reference_id
-           and r.achievement_event_id = v_event.id
+           and exists (
+             select 1
+               from public.goal_achievement_events chain_event
+              where chain_event.user_id = v_user_id
+                and chain_event.id = r.achievement_event_id
+                and chain_event.goal_id = v_goal_id
+                and chain_event.episode_id = v_event.episode_id
+           )
          for update;
         if not found then raise exception 'GOAL_EVIDENCE_REFERENCE_NOT_FOUND' using errcode = 'P0002'; end if;
         if exists (

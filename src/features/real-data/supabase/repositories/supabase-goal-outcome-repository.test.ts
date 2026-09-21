@@ -4,8 +4,14 @@ import {
   achieveGoal,
   appendGoalCriterionEvaluation,
   createGoalMilestone,
+  projectEffectiveGoalAchievementEvidence,
+  projectEffectiveMilestoneAchievementEvidence,
   setGoalMilestoneStatus,
 } from "./supabase-goal-outcome-repository";
+import type {
+  GoalAchievementEvidenceRow,
+  GoalMilestoneAchievementEvidenceRow,
+} from "../row-types";
 
 const userId = "11111111-1111-4111-8111-111111111111";
 const goalId = "22222222-2222-4222-8222-222222222222";
@@ -21,6 +27,141 @@ type MockQuery = {
 };
 
 describe("Goal outcome repository boundaries", () => {
+  it("projects Goal amendment evidence from the full correction chain without changing event-local rows", () => {
+    const eventRows = [
+      { id: "goal-a", episode_id: "episode-a", corrects_event_id: null },
+      { id: "goal-b", episode_id: "episode-b", corrects_event_id: null },
+      { id: "goal-b-amendment", episode_id: "episode-b", corrects_event_id: "goal-b" },
+    ];
+    const evidence = (
+      overrides: Record<string, unknown>,
+    ) =>
+      ({
+        id: "reference",
+        reference_group_id: "group",
+        reference_action: "attached",
+        source_type: "project",
+        source_id: "source-a",
+        source_title_snapshot: "Source A",
+        source_context_snapshot: null,
+        supersedes_reference_id: null,
+        reason: null,
+        retrospective: false,
+        occurred_at: null,
+        recorded_at: "2026-09-21T10:00:00.000Z",
+        achievement_event_id: "goal-b",
+        user_id: userId,
+        ...overrides,
+      }) as unknown as GoalAchievementEvidenceRow;
+
+    const root = evidence({ id: "goal-reference-root" });
+    const replacement = evidence({
+      id: "goal-reference-replacement",
+      reference_action: "replaced",
+      source_id: "source-b",
+      source_title_snapshot: "Source B",
+      supersedes_reference_id: root.id,
+      reason: "Newer source",
+      achievement_event_id: "goal-b-amendment",
+      recorded_at: "2026-09-21T10:01:00.000Z",
+    });
+    const withdrawn = evidence({
+      id: "goal-reference-withdrawn",
+      reference_action: "withdrawn",
+      supersedes_reference_id: replacement.id,
+      reason: "No longer accepted",
+      achievement_event_id: "goal-b-amendment",
+      recorded_at: "2026-09-21T10:02:00.000Z",
+    });
+    const oldEpisode = evidence({
+      id: "goal-reference-old-episode",
+      source_id: "source-old",
+      source_title_snapshot: "Old episode",
+      achievement_event_id: "goal-a",
+    });
+
+    const projection = projectEffectiveGoalAchievementEvidence(
+      "goal-b-amendment",
+      eventRows,
+      [root, replacement, withdrawn, oldEpisode],
+    );
+    expect(projection.history.map((reference) => reference.id)).toEqual([
+      withdrawn.id,
+      replacement.id,
+      root.id,
+    ]);
+    expect(projection.active).toEqual([]);
+    expect(
+      projectEffectiveGoalAchievementEvidence("goal-b", eventRows, [root, oldEpisode])
+        .active.map((reference) => reference.id),
+    ).toEqual([root.id]);
+  });
+
+  it("keeps Etappe evidence active through a note/time amendment and isolates episodes", () => {
+    const eventRows = [
+      { id: "milestone-a", episode_id: "episode-a", corrects_event_id: null },
+      { id: "milestone-b", episode_id: "episode-b", corrects_event_id: null },
+      { id: "milestone-b-amendment", episode_id: "episode-b", corrects_event_id: "milestone-b" },
+    ];
+    const evidence = (
+      overrides: Record<string, unknown>,
+    ) =>
+      ({
+        id: "reference",
+        reference_group_id: "group",
+        reference_action: "attached",
+        source_type: "project",
+        source_id: "source-b",
+        source_title_snapshot: "Source B",
+        source_context_snapshot: null,
+        supersedes_reference_id: null,
+        reason: null,
+        retrospective: false,
+        occurred_at: null,
+        recorded_at: "2026-09-21T10:00:00.000Z",
+        achievement_event_id: "milestone-b",
+        episode_id: "episode-b",
+        user_id: userId,
+        ...overrides,
+      }) as unknown as GoalMilestoneAchievementEvidenceRow;
+    const root = evidence({ id: "milestone-reference-root" });
+    const supplement = evidence({
+      id: "milestone-reference-supplement",
+      reference_group_id: "supplement-group",
+      reference_action: "supplemented",
+      source_id: "source-supplement",
+      source_title_snapshot: "Supplement",
+      reason: "Retrospective context",
+      retrospective: true,
+      achievement_event_id: "milestone-b-amendment",
+      recorded_at: "2026-09-21T10:01:00.000Z",
+    });
+    const oldEpisode = evidence({
+      id: "milestone-reference-old-episode",
+      source_id: "source-old",
+      source_title_snapshot: "Old episode",
+      achievement_event_id: "milestone-a",
+      episode_id: "episode-a",
+    });
+
+    const projection = projectEffectiveMilestoneAchievementEvidence(
+      "milestone-b-amendment",
+      eventRows,
+      [root, supplement, oldEpisode],
+    );
+    expect(projection.active.map((reference) => reference.id)).toEqual([
+      supplement.id,
+      root.id,
+    ]);
+    expect(
+      projectEffectiveMilestoneAchievementEvidence(
+        "milestone-b-amendment",
+        eventRows,
+        [root, oldEpisode],
+      ).active.map((reference) => reference.id),
+    ).toEqual([root.id]);
+  });
+
   it("rejects a non-owned Goal before milestone persistence", async () => {
     const tables: string[] = [];
     const filters: Array<[string, unknown]> = [];

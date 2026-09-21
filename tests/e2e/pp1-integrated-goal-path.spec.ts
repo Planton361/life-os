@@ -202,6 +202,7 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
   expect(goalId).toMatch(/^[0-9a-f-]{36}$/i);
 
   await page.goto(`/goals/${goalId}`);
+  const history = outcome(page).locator("#verlauf-belege");
   await expect(outcome(page)).toContainText(goalDescription);
   await expect(outcome(page)).toContainText(`Warum: ${goalWhy}`);
   await expect(outcome(page)).toContainText("Nächster Schritt");
@@ -417,7 +418,11 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
 
   const currentCard = milestoneCard(page, milestoneTitle);
   await openMilestoneManagement(currentCard);
-  await currentCard.getByRole("button", { name: "Erreicht" }).click();
+  const episodeAAchieve = currentCard.locator('form[aria-label="Erreicht"]');
+  await episodeAAchieve
+    .getByLabel("Notiz (optional)")
+    .fill(`Etappe Episode A ${stamp}`);
+  await episodeAAchieve.getByRole("button", { name: "Erreicht" }).click();
   await expect(
     page.getByText("Etappenstatus gespeichert.", { exact: true }),
   ).toBeVisible();
@@ -437,6 +442,43 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
   await expect(
     page.getByText("Etappen-Beleg gespeichert.", { exact: true }),
   ).toBeVisible();
+
+  await page.reload();
+  await openMilestoneManagement(milestoneCard(page, milestoneTitle));
+  const milestoneAmend = milestoneCard(page, milestoneTitle).locator(
+    'form[aria-label="Etappen-Verlauf ergänzen"]',
+  );
+  await milestoneAmend
+    .getByLabel("Korrigierter Zeitpunkt (optional)")
+    .fill("2026-09-20T08:15");
+  await milestoneAmend
+    .getByLabel("Korrigierte Verlaufsnotiz")
+    .fill(`Etappe zeitlich präzisiert ${stamp}`);
+  await milestoneAmend
+    .getByLabel("Begründung")
+    .fill("Etappenzeitpunkt nach dem Review präzisiert.");
+  await milestoneAmend
+    .getByRole("button", { name: "Etappen-Verlauf ergänzen" })
+    .click();
+  await expect(
+    page.getByText("Etappen-Verlauf ergänzt.", { exact: true }),
+  ).toBeVisible();
+
+  await page.reload();
+  await openMilestoneManagement(milestoneCard(page, milestoneTitle));
+  const preservedMilestoneEvidence = milestoneCard(
+    page,
+    milestoneTitle,
+  ).locator('form[aria-label="Etappen-Belegverlauf ändern"]');
+  await expect(
+    preservedMilestoneEvidence
+      .getByLabel("Bisherige Referenz für Ersatz / Zurücknehmen")
+      .locator("option")
+      .filter({ hasText: `Task · ${taskTitle}` }),
+  ).toHaveCount(1);
+  await expect(milestoneCard(page, milestoneTitle)).toContainText(
+    "1 aktive Belege im aktuellen Ergebnis.",
+  );
 
   await page.reload();
   await openMilestoneManagement(milestoneCard(page, milestoneTitle));
@@ -511,6 +553,98 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
     "retrospektiv ergänzt",
   );
 
+  await page.reload();
+  await openMilestoneManagement(milestoneCard(page, milestoneTitle));
+  await milestoneCard(page, milestoneTitle)
+    .getByRole("button", { name: "Wieder aktivieren" })
+    .click();
+  await expect(
+    page.getByText("Etappenstatus gespeichert.", { exact: true }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(milestoneCard(page, milestoneTitle)).toContainText("aktiv");
+
+  await openMilestoneManagement(milestoneCard(page, milestoneTitle));
+  const episodeBAchieve = milestoneCard(page, milestoneTitle).locator(
+    'form[aria-label="Erreicht"]',
+  );
+  await episodeBAchieve
+    .getByLabel("Notiz (optional)")
+    .fill(`Etappe Episode B ${stamp}`);
+  await episodeBAchieve.getByRole("button", { name: "Erreicht" }).click();
+  await expect(
+    page.getByText("Etappenstatus gespeichert.", { exact: true }),
+  ).toBeVisible();
+  await page.reload();
+
+  await openMilestoneManagement(milestoneCard(page, milestoneTitle));
+  const episodeBEvidence = milestoneCard(page, milestoneTitle).locator(
+    'form[aria-label="Etappen-Belegverlauf ändern"]',
+  );
+  await episodeBEvidence
+    .getByLabel("Neue zulässige Quelle")
+    .selectOption({ label: `Project · ${replacementProjectTitle}` });
+  await episodeBEvidence.getByLabel("Belegänderung").selectOption("attached");
+  await episodeBEvidence
+    .getByRole("button", { name: "Etappen-Belegverlauf ändern" })
+    .click();
+  await expect(
+    page.getByText("Etappen-Beleg gespeichert.", { exact: true }),
+  ).toBeVisible();
+
+  await page.reload();
+  await openMilestoneManagement(milestoneCard(page, milestoneTitle));
+  const episodeBAmend = milestoneCard(page, milestoneTitle).locator(
+    'form[aria-label="Etappen-Verlauf ergänzen"]',
+  );
+  await episodeBAmend
+    .getByLabel("Korrigierter Zeitpunkt (optional)")
+    .fill("2026-09-20T07:45");
+  await episodeBAmend
+    .getByLabel("Korrigierte Verlaufsnotiz")
+    .fill(`Etappe Episode B korrigiert ${stamp}`);
+  await episodeBAmend
+    .getByLabel("Begründung")
+    .fill("Aktuelle Etappenfolge zeitlich präzisiert.");
+  await episodeBAmend
+    .getByRole("button", { name: "Etappen-Verlauf ergänzen" })
+    .click();
+  await expect(
+    page.getByText("Etappen-Verlauf ergänzt.", { exact: true }),
+  ).toBeVisible();
+
+  await page.reload();
+  const episodeAHistory = history
+    .locator("article")
+    .filter({ hasText: `Etappe zeitlich präzisiert ${stamp}` })
+    .first();
+  await openManagement(episodeAHistory, "Etappen-Verlauf verwalten");
+  const closedMilestoneEpisodeAAmend = episodeAHistory.locator(
+    'form[aria-label="Etappen-Verlauf ergänzen"]',
+  );
+  await closedMilestoneEpisodeAAmend
+    .getByLabel("Korrigierter Zeitpunkt (optional)")
+    .fill("2026-09-19T06:30");
+  await closedMilestoneEpisodeAAmend
+    .getByLabel("Korrigierte Verlaufsnotiz")
+    .fill(`Geschlossene Etappe Episode A korrigiert ${stamp}`);
+  await closedMilestoneEpisodeAAmend
+    .getByLabel("Begründung")
+    .fill("Geschlossene Etappe bleibt historische Folge.");
+  await closedMilestoneEpisodeAAmend
+    .getByRole("button", { name: "Etappen-Verlauf ergänzen" })
+    .click();
+  await expect(
+    page.getByText("Etappen-Verlauf ergänzt.", { exact: true }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(milestoneCard(page, milestoneTitle)).toContainText(
+    "1 aktive Belege im aktuellen Ergebnis.",
+  );
+  await expect(history).toContainText(
+    `Belegverlauf: ${replacementProjectTitle}`,
+  );
+
   const review = outcome(page).locator("#goal-review");
   await expect(review).toContainText("Review-Bereitschaft: bereit");
   await expect(
@@ -540,7 +674,6 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
   await expect(outcome(page)).toContainText(
     "1 Kriterien · 1 Etappen · 1 aktive Belege",
   );
-  const history = outcome(page).locator("#verlauf-belege");
   await expect(history).toContainText(`Kriterium-Basis: ${criterionTitle}`);
   await expect(history).toContainText(`Belegverlauf: ${projectTitle}`);
   await expect(history).toContainText(
@@ -588,6 +721,8 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
   );
   await expect(amendedHistory).toContainText(`Kriterium-Basis: ${criterionTitle}`);
   await expect(amendedHistory).toContainText(`Etappen-Basis: ${milestoneTitle}`);
+  await expect(amendedHistory).toContainText("1 aktive Belege");
+  await expect(amendedHistory).toContainText(`Belegverlauf: ${projectTitle}`);
   await expect(outcome(page)).toContainText("Ergebnis akzeptiert am 2026-09-20");
   await expect(outcome(page).locator("#goal-review")).toContainText(
     "Zielergebnis erreicht am 2026-09-20",
@@ -739,21 +874,101 @@ test("Slice 1 integrated Goal path remains truthful across Manual surfaces", asy
   await expect(outcome(page)).toContainText("Ziel wieder geöffnet");
   await expect(outcome(page)).toContainText("Ziel erreicht");
 
+  const episodeBNote = `Episode B outcome ${stamp}`;
+  const episodeBReview = await openGoalReview(page);
+  await episodeBReview.getByLabel("Erfolgsnotiz (optional)").fill(episodeBNote);
+  await episodeBReview
+    .getByLabel("Entscheidungsbeleg (optional)")
+    .selectOption({ label: `Project · ${replacementProjectTitle}` });
+  page.once("dialog", (dialog) => dialog.accept());
+  await episodeBReview
+    .getByRole("button", { name: "Ziel explizit erreichen" })
+    .click();
+  await expect(page.getByText("Ziel erreicht.", { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(outcome(page)).toContainText(episodeBNote);
+  await expect(outcome(page)).toContainText("1 Kriterien · 1 Etappen · 1 aktive Belege");
+  const episodeBHistory = history
+    .locator("article")
+    .filter({ hasText: episodeBNote })
+    .first();
+  await expect(episodeBHistory).toContainText(
+    `Kriterium-Basis: ${criterionTitle}`,
+  );
+  await expect(episodeBHistory).toContainText(
+    `Etappen-Basis: ${milestoneTitle}`,
+  );
+  await expect(episodeBHistory).toContainText(
+    `Belegverlauf: ${replacementProjectTitle}`,
+  );
+
+  const closedEpisodeA = history
+    .locator("article")
+    .filter({ hasText: `Zweifach bestätigtes Ergebnis ${stamp}` })
+    .first();
+  await openManagement(closedEpisodeA, "Goal-Verlauf verwalten");
+  const closedEpisodeAAmend = closedEpisodeA.locator(
+    'form[aria-label="Goal-Verlauf ergänzen"]',
+  );
+  await closedEpisodeAAmend
+    .getByLabel("Korrigierter Zeitpunkt (optional)")
+    .fill("2026-09-19T07:15");
+  await closedEpisodeAAmend
+    .getByLabel("Korrigierte Erfolgsnotiz")
+    .fill(`Geschlossene Episode A korrigiert ${stamp}`);
+  await closedEpisodeAAmend
+    .getByLabel("Begründung")
+    .fill("Alte Episode bleibt als Historie korrigierbar.");
+  await closedEpisodeAAmend
+    .getByRole("button", { name: "Goal-Verlauf ergänzen" })
+    .click();
+  await expect(
+    page.getByText("Goal-Verlauf ergänzt.", { exact: true }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(outcome(page)).toContainText(episodeBNote);
+  await expect(outcome(page)).toContainText("Ergebnis akzeptiert");
+  await expect(outcome(page)).toContainText("1 Kriterien · 1 Etappen · 1 aktive Belege");
+  await expect(
+    history.locator("article").filter({ hasText: episodeBNote }).first(),
+  ).toContainText(`Belegverlauf: ${replacementProjectTitle}`);
+
+  await openManagement(outcome(page).locator("#goal-review"), "Outcome verwalten");
+  await outcome(page)
+    .locator("#goal-review")
+    .getByRole("button", { name: "Ziel wieder öffnen" })
+    .click();
+  await expect(
+    page.getByText("Ziel wieder geöffnet.", { exact: true }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(outcome(page)).toContainText("Stand: aktiv");
+
   await page.goto("/today");
   const stream = page.getByRole("region", { name: "Activity Stream" });
   await expect(
-    stream.locator('[data-event-kind="GOAL ACHIEVED"]'),
+    stream.locator('[data-event-kind="GOAL ACHIEVED"]').filter({
+      hasText: goalTitle,
+    }).first(),
   ).toContainText(goalTitle);
   await expect(
-    stream.locator('[data-event-kind="GOAL REOPENED"]'),
+    stream.locator('[data-event-kind="GOAL REOPENED"]').filter({
+      hasText: goalTitle,
+    }).first(),
   ).toContainText(goalTitle);
   await expect(
-    stream.locator('[data-event-kind="ETAPPE ACHIEVED"]'),
+    stream.locator('[data-event-kind="ETAPPE ACHIEVED"]').filter({
+      hasText: goalTitle,
+    }).first(),
   ).toContainText(goalTitle);
   await expect(
-    stream.locator('[data-event-kind="GOAL ACHIEVED"]').getByRole("link", {
+    stream
+      .locator('[data-event-kind="GOAL ACHIEVED"]')
+      .filter({ hasText: goalTitle })
+      .first()
+      .getByRole("link", {
       name: "Quelle öffnen",
-    }),
+      }),
   ).toHaveAttribute("href", `/goals/${goalId}`);
 
   await page.goto(`/portfolio?view=goals&selected=${goalId}`);

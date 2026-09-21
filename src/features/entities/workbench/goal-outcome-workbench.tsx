@@ -2,7 +2,8 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import {
   criterionEvaluationState,
-  latestGoalAchievementEvent,
+  currentGoalAchievementEvent,
+  currentGoalMilestoneAchievementEvent,
   type GoalAchievementEvent,
   type GoalEvidenceReference,
   type GoalEvidenceSourceType,
@@ -304,30 +305,6 @@ function legacyLabel(event: {
   }
   if (event.retrospective) labels.push("Retrospektiv ergänzt");
   return labels.length > 0 ? labels.join(" · ") : null;
-}
-
-function isOpenMilestoneEpisode(
-  event: GoalMilestoneAchievementEvent,
-  history: readonly GoalMilestoneAchievementEvent[],
-) {
-  if (event.resultingStatus !== "achieved") return false;
-  return !history.some(
-    (candidate) =>
-      candidate.episodeId === event.episodeId &&
-      candidate.eventType === "reopened" &&
-      candidate.recordedAt >= event.recordedAt,
-  );
-}
-
-function currentMilestoneEvent(
-  milestoneId: string,
-  history: readonly GoalMilestoneAchievementEvent[],
-) {
-  return history.find(
-    (event) =>
-      event.milestoneId === milestoneId &&
-      isOpenMilestoneEpisode(event, history),
-  );
 }
 
 function CriterionRow({
@@ -639,7 +616,11 @@ function MilestoneCard({
   const taskLinks = outcome.taskSupport.filter(
     (link) => link.goalMilestoneId === milestone.id,
   );
-  const event = currentMilestoneEvent(milestone.id, outcome.milestoneHistory);
+  const event = currentGoalMilestoneAchievementEvent(
+    milestone.id,
+    milestone.status,
+    outcome.milestoneHistory,
+  );
   const isArchived = Boolean(milestone.archivedAt);
   return (
     <article
@@ -816,6 +797,11 @@ function MilestoneCard({
       {milestone.description && (
         <p className="text-sm text-[var(--text-secondary)]">
           {milestone.description}
+        </p>
+      )}
+      {event?.resultingStatus === "achieved" && (
+        <p className="text-sm text-[var(--text-muted)]">
+          {event.evidence.length} aktive Belege im aktuellen Ergebnis.
         </p>
       )}
       <div className="grid gap-2 text-sm">
@@ -1144,8 +1130,9 @@ export function GoalOutcomeWorkbench({
     .map((task) => ({ id: task.id, title: task.title }));
   const recentGoalHistory = outcome.achievementHistory.slice(0, 4);
   const recentMilestoneHistory = outcome.milestoneHistory.slice(0, 4);
-  const latestAchievement = latestGoalAchievementEvent(
+  const latestAchievement = currentGoalAchievementEvent(
     outcome.achievementHistory,
+    outcome.goalStatus,
   );
   const effectiveAchievementAt =
     latestAchievement?.occurredAt ?? outcome.achievedAt;
