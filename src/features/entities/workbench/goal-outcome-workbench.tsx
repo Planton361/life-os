@@ -235,6 +235,23 @@ function evidenceSourceTypeLabel(sourceType: GoalEvidenceSourceType) {
   return sourceType === "task" ? "Aufgabe" : "Projekt";
 }
 
+function goalNextStepReasonLabel(reason: string) {
+  switch (reason) {
+    case "Bereits aktiver nächster Task.":
+      return "Die nächste Aufgabe ist bereits aktiv.";
+    case "Bereits geplanter nächster Task.":
+      return "Die nächste Aufgabe ist bereits geplant.";
+    case "Einen nächsten Task oder ein Project aus diesem Goal anlegen.":
+      return "Eine nächste Aufgabe oder ein Projekt zu diesem Ziel anlegen.";
+    case "Kein ausführbarer Task vorhanden; einen nächsten Schritt bewusst planen.":
+      return "Keine ausführbare Aufgabe vorhanden; einen nächsten Schritt bewusst planen.";
+    case "Noch kein kanonischer Task- oder Project-Schritt vorhanden.":
+      return "Noch kein gültiger Aufgaben- oder Projektschritt vorhanden.";
+    default:
+      return reason;
+  }
+}
+
 function InitialEvidenceFields({
   data,
   outcome,
@@ -1350,12 +1367,12 @@ export function GoalOutcomeWorkbench({
       : outcome.summary.readyToAchieve && activeCriteria.length > 0
         ? "Alle kanonischen Kriterien und Etappen sind erfüllt. Erst deine ausdrückliche Entscheidung schließt das Ziel ab."
         : outcome.nextStep.kind !== "goal"
-          ? outcome.nextStep.reason
+          ? goalNextStepReasonLabel(outcome.nextStep.reason)
           : activeCriteria.length === 0
             ? "Eine klare Erfolgsidee hilft dir später bei der bewussten Entscheidung."
             : activeMilestones.length === 0
               ? "Etappen machen den Weg sichtbar, ohne eine feste Reihenfolge zu erzwingen."
-              : outcome.nextStep.reason;
+              : goalNextStepReasonLabel(outcome.nextStep.reason);
   const nextStepAction =
     outcome.goalStatus === "achieved"
       ? { href: goalAreaHref(goalId, "verlauf"), label: "Verlauf ansehen" }
@@ -2154,7 +2171,7 @@ export function GoalOutcomeWorkbench({
                                       ? `Unterstützt Etappe „${milestoneTitles.get(support.goalMilestoneId) ?? "Etappe"}“`
                                       : "Direkt dem Ziel zugeordnet"}
                                     {cue
-                                      ? ` · ${cue.state === "blocked" ? "Durch Task-Voraussetzung blockiert" : cue.state === "ready" ? "Bereit" : "Planung"}`
+                                      ? ` · ${cue.state === "blocked" ? "Durch Aufgaben-Voraussetzung blockiert" : cue.state === "ready" ? "Bereit" : "Planung"}`
                                       : ""}
                                   </p>
                                   {cue?.blockers.length ? (

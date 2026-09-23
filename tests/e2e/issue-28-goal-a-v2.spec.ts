@@ -307,6 +307,15 @@ test("Issue 28 A-v2 Goal states and progression remain real and reload-stable", 
   await expect(
     workbench(page).locator("[data-goal-selected-work]"),
   ).toContainText(secondTask);
+  await expect
+    .poll(async () =>
+      (
+        await workbench(page)
+          .locator("#naechster-schritt, [data-goal-planning-surface]")
+          .allInnerTexts()
+      ).join("\n"),
+    )
+    .not.toMatch(/\bTask\b/);
   await area(page, "Überblick");
   await expect(
     workbench(page)
