@@ -35,10 +35,12 @@ export function EntityWorkbenchShell({
   kind,
   title,
   children,
+  headingInContent = false,
 }: {
   kind: WorkbenchKind;
   title: string;
   children: ReactNode;
+  headingInContent?: boolean;
 }) {
   const visibleEntityLabel = kind === "goal" ? "Ziel" : entityLabels[kind];
   return (
@@ -63,7 +65,9 @@ export function EntityWorkbenchShell({
             {kind === "goal" ? "Ziele" : `${visibleEntityLabel}s`}
           </Link>
         </nav>
-        <h1 className="text-3xl font-semibold">{title}</h1>
+        {!headingInContent && (
+          <h1 className="text-3xl font-semibold">{title}</h1>
+        )}
       </header>
       {children}
     </div>
@@ -223,10 +227,14 @@ export async function WorkbenchEditor({
   milestoneContext,
   goalContext,
   goalMilestoneContext,
+  goalArea,
+  goalStage,
 }: {
   milestoneContext?: string;
   goalContext?: string;
   goalMilestoneContext?: string;
+  goalArea?: string;
+  goalStage?: string;
   selectedResource?: string;
   kind: WorkbenchKind;
   id?: string;
@@ -386,6 +394,8 @@ export async function WorkbenchEditor({
         data={data}
         goalId={id}
         outcome={outcome.data}
+        area={goalArea}
+        selectedStage={goalStage}
         edit={
           <EntityForm
             kind="goal"

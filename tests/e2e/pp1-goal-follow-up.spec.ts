@@ -186,7 +186,7 @@ test("Goal next step follows canonical readiness and releases after predecessor 
   await page.goto(`/goals/${goal!.id}`);
   const goalOutcome = outcome(page);
   const nextStep = goalOutcome.getByRole("region", {
-    name: "Nächster Schritt",
+    name: "Aktueller Schritt",
     exact: true,
   });
   await expect(nextStep.locator("[data-goal-next-step-state]")).toHaveAttribute(

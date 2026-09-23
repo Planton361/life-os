@@ -1904,6 +1904,8 @@ and its USER ACCEPTANCE STATUS is PENDING.
 | Progress engine | `DECISION_REQUIRED` | task-based signals and legacy fields | preserve honest work signals until model exists |
 | Portfolio pins/favorites | `NOT_STARTED` | none | support Dashboard max-four selection |
 
+Issue #28 updates the connected Goal detail presentation to accepted Prototype A v2: stable Überblick / Arbeit / Erfolg / Verlauf areas, a numbered Goal-Etappen progression with explicit Project/direct-Task contributions, selected work context, canonical review-ready cue and outcome-first achieved/reopened views. `tests/e2e/issue-28-goal-a-v2.spec.ts` is the focused Manual browser/reload and 3840×2160 / 1920×1080 / 390×844 surface proof; the existing readiness regression in `tests/e2e/pp1-goal-follow-up.spec.ts` covers Task-only READY/BLOCKED. Status remains `CONNECTED_GAP` because Slice 2 completion episodes and Skill Evidence revisions are not part of #28.
+
 ## R2-04 – User acceptance and administrative closure (2026-09-07)
 
 **R2-04: USER ACCEPTED. Closed by explicit user decision.** Dashboard,
