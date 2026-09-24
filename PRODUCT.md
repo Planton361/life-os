@@ -1,7 +1,7 @@
 # Life OS – Product Contract
 
 **Status:** Active
-**Product mode:** personal-only, local-first
+**Product mode:** personal-only; hosted single-owner target; current runtime local-first until cutover
 **Primary user:** Anton
 **Primary usage:** browser-based command center on a 4K second monitor
 **Design truth:** `DESIGN.md` / Life OS – Linear Calm Dark Command Center / Dashboard V5
@@ -84,7 +84,7 @@ Life OS shall:
 - preserve Coding, Education and Work as Area/context for Tasks, Projects, Goals, Skills and Resources;
 - derive useful statistics from canonical data instead of duplicating it;
 - keep health, nutrition and fitness records connected to the same planning loop through scheduled task occurrences;
-- remain usable without a public cloud or public registration.
+- remain usable without public SaaS, collaboration or public registration; hosted operation stays private and single-owner.
 
 ## 3. Non-Goals
 
