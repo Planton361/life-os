@@ -1,7 +1,7 @@
 # Life OS Roadmap
 
 **Status:** Active
-**Product mode:** personal-only, local-first
+**Product mode:** personal-only; hosted single-owner target; current runtime local-first until cutover
 **Design truth:** Life OS – Linear Calm Dark Command Center / Dashboard V5
 **Detailed status:** `docs/product/capability-registry.md`
 **Completed sequence:** C1 → C2 → C3 → K1 → H1/H2 → N1 → A1 → Z1 (technical baseline)
