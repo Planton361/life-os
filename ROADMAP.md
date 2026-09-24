@@ -5,24 +5,38 @@
 **Design truth:** Life OS – Linear Calm Dark Command Center / Dashboard V5
 **Detailed status:** `docs/product/capability-registry.md`
 **Completed sequence:** C1 → C2 → C3 → K1 → H1/H2 → N1 → A1 → Z1 (technical baseline)
-**Current Product Context:** Product Reorientation — Accepted Product Plan PP1 → PP4
+**Current Product Context:** Product Reorientation — Accepted #34 Target Plan
 
-**Product Reorientation:** Product Target v0.4 and the Target Model Decision
-Package are accepted, and the accepted Product Plan is persisted below as the
-ordered PP1 → PP4 sequence. Concrete work still starts only from confirmed
+**Product Reorientation:** Product Target v0.4, the Target Model Decision Package,
+and the Issue #34 hosted-single-owner/core-entity target are accepted. The durable
+product sequence is persisted below. Concrete work still starts only from confirmed
 GitHub Issues and Project items. Issue #3 / R2-13 remains preserved
 pre-reorientation work, not approved next delivery. The accepted plan does not
 itself authorize a product `DELIVER` contract; each implementation slice still
 requires its own explicit work contract and acceptance gate. This roadmap does
 not mirror normal Issue/Project transitions.
 
-## Accepted Product Plan (PP1 → PP4)
+## Accepted Product Plan — #34 sequence
 
 The accepted Product Plan turns the target model into one ordered path toward
-the primary Project-to-Day outcome. The sequence is permanent product scope;
-GitHub Project #3 remains the operative queue for issue status, priority and
-work type. Operationalization does not change capability truth or authorize a
-product implementation by itself.
+the primary Project-to-Day outcome while separating runtime proof from product
+migration. The sequence is permanent product scope; GitHub Project #3 remains
+the operative queue for issue status, priority and work type. Operationalization
+does not change capability truth or authorize a product implementation by itself.
+
+Accepted order:
+
+1. a separately authorized synthetic whole-app runtime/security/recovery experiment;
+2. complete the existing PP1 product-acceptance gate;
+3. Core Task / Project Interaction;
+4. PP2 Skill Development Planning;
+5. PP3 Higher-Order Context in Weekly Planning;
+6. PP4 Project-to-Day Loop Closure;
+7. Hosted Runtime Cutover only after whole-app/runtime/security/data gates and a
+   separate migration authorization.
+
+The runtime experiment is architecture evidence, not a migration or cutover. It
+may proceed before the UX sequence so later architecture work is evidence-based.
 
 ### PP1 — Goal Outcome Planning
 
@@ -38,6 +52,23 @@ the later blocks.
 **Acceptance boundary:** A later, separately accepted Goal Outcome contract
 must define the domain and UX behavior before schema, migration or UI delivery
 starts. This block does not authorize that implementation.
+
+### Core Task / Project Interaction
+
+**Outcome:** Task capture becomes title-first and progressively disclosed; Task
+Detail becomes read-first. Project Detail keeps the accepted read-first workbench
+and makes purpose/outcome, status, deadline, milestones, Tasks, blockers,
+progress signals, current milestone, Resources/artifacts and one next executable
+action understandable without a management-form wall.
+
+**Direct dependency:** Existing PP1 Goal semantics and the accepted #34 shared
+entity grammar. Goal A-v2 remains binding. Only explicit Task Dependencies create
+READY/BLOCKED; Project Milestones remain Project-owned and do not create execution
+blocking.
+
+**Acceptance boundary:** A separately authorized delivery contract must define the
+bounded Task/Project UX slice and prove the real Manual flow. No generic progress
+engine, new universal Milestone model or runtime migration is implied.
 
 ### PP2 — Skill Development Planning
 
@@ -97,8 +128,9 @@ constraint. It does not authorize new Health / Fitness / Nutrition features.
 
 ### Plan-wide boundaries
 
-- The order is `PP1 → PP2 → PP3 → PP4`; later blocks do not bypass earlier
-  semantic or acceptance gates.
+- The product order after the separate runtime experiment is `PP1 acceptance →
+  Core Task / Project Interaction → PP2 → PP3 → PP4`; later blocks do not bypass
+  earlier semantic or acceptance gates.
 - Issue #3 / R2-13 is `RESHAPE/REUSE PRESERVED WORK + DEFER`; it remains
   blocked/preserved and is not reactivated by this plan.
 - Graph / Canvas, Skill-Map visualization, Gap Detection, Templates,
