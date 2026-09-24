@@ -1,7 +1,7 @@
 # Life OS – Product Contract
 
 **Status:** Active
-**Product mode:** personal-only, local-first
+**Product mode:** personal-only; hosted single-owner target; current runtime local-first until cutover
 **Primary user:** Anton
 **Primary usage:** browser-based command center on a 4K second monitor
 **Design truth:** `DESIGN.md` / Life OS – Linear Calm Dark Command Center / Dashboard V5
@@ -15,6 +15,37 @@ Obsidian is therefore a knowledge-content owner and client boundary, not an oper
 Free notes, exploratory Canvas edges and personal layout remain outside the Life OS operational model. Any future promotion or write-back requires its own accepted security/conflict contract and must execute through existing Life OS auth, validation, ownership and domain boundaries.
 
 Current delivery sequence and product context belong to `ROADMAP.md`; operative work status belongs to GitHub Project #3 and approved Issues. This product contract does not mirror operative Issue/Project work status. Journal remains fully Life-OS-owned and separate from Knowledge Notes. Skill Map remains a target/reconciliation surface, not a delivered graph.
+
+## Accepted #34 operating and core-entity target
+
+Issue #34 is USER ACCEPTED. The target normal operating model is a private,
+single-owner hosted Life OS with one cloud-persistent canonical dataset reachable
+from Mac and Linux browsers. Normal use must not require local Docker, a local
+Supabase runtime, an IDE or a second operative datastore. The current
+Supabase/PostgreSQL stack remains the implementation baseline until a separately
+authorized and proven cutover; SQLite is only the preferred candidate for the
+next production-like whole-app proof, with PGlite retained as fallback evidence.
+
+Hosted access must still authenticate the single owner server-side before reads
+or writes. Zod validation, ownership/relation checks, transactional invariants,
+soft-archive semantics, visible errors and canonical-data discipline remain
+required. The exact hosted authentication method, remote access boundary,
+persistent storage, backup/restore contract and final database choice require
+later explicit security/runtime decisions.
+
+Task, Project, Goal and Skill share one interaction grammar: lightweight capture,
+read-first orientation, progressive disclosure for editing/relationship
+management, and one contextually valid next action. Their domain semantics remain
+separate. Goal Milestones/Outcome Criteria, Project Milestones and future Skill
+Milestones/Evidence/Targets/Prerequisites are not flattened into a universal
+model. Only explicit Task-to-Task Dependencies create execution READY/BLOCKED.
+Accepted Goal A-v2 and the Project read-first workbench remain binding.
+
+Calendar, Today, Dashboard and Portfolio are projections over the same canonical
+Task/scheduling truth, not parallel planning stores. Obsidian remains the owner of
+long-form Knowledge Content; Life OS retains operational IDs, status, planning,
+dependencies and relation semantics. Any future Obsidian graph projection is
+one-way/non-authoritative unless a separate command/security contract is accepted.
 
 ## 1. Product Promise
 
@@ -53,7 +84,7 @@ Life OS shall:
 - preserve Coding, Education and Work as Area/context for Tasks, Projects, Goals, Skills and Resources;
 - derive useful statistics from canonical data instead of duplicating it;
 - keep health, nutrition and fitness records connected to the same planning loop through scheduled task occurrences;
-- remain usable without a public cloud or public registration.
+- remain usable without public SaaS, collaboration or public registration; hosted operation stays private and single-owner.
 
 ## 3. Non-Goals
 
