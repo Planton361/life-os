@@ -16,6 +16,37 @@ Free notes, exploratory Canvas edges and personal layout remain outside the Life
 
 Current delivery sequence and product context belong to `ROADMAP.md`; operative work status belongs to GitHub Project #3 and approved Issues. This product contract does not mirror operative Issue/Project work status. Journal remains fully Life-OS-owned and separate from Knowledge Notes. Skill Map remains a target/reconciliation surface, not a delivered graph.
 
+## Accepted #34 operating and core-entity target
+
+Issue #34 is USER ACCEPTED. The target normal operating model is a private,
+single-owner hosted Life OS with one cloud-persistent canonical dataset reachable
+from Mac and Linux browsers. Normal use must not require local Docker, a local
+Supabase runtime, an IDE or a second operative datastore. The current
+Supabase/PostgreSQL stack remains the implementation baseline until a separately
+authorized and proven cutover; SQLite is only the preferred candidate for the
+next production-like whole-app proof, with PGlite retained as fallback evidence.
+
+Hosted access must still authenticate the single owner server-side before reads
+or writes. Zod validation, ownership/relation checks, transactional invariants,
+soft-archive semantics, visible errors and canonical-data discipline remain
+required. The exact hosted authentication method, remote access boundary,
+persistent storage, backup/restore contract and final database choice require
+later explicit security/runtime decisions.
+
+Task, Project, Goal and Skill share one interaction grammar: lightweight capture,
+read-first orientation, progressive disclosure for editing/relationship
+management, and one contextually valid next action. Their domain semantics remain
+separate. Goal Milestones/Outcome Criteria, Project Milestones and future Skill
+Milestones/Evidence/Targets/Prerequisites are not flattened into a universal
+model. Only explicit Task-to-Task Dependencies create execution READY/BLOCKED.
+Accepted Goal A-v2 and the Project read-first workbench remain binding.
+
+Calendar, Today, Dashboard and Portfolio are projections over the same canonical
+Task/scheduling truth, not parallel planning stores. Obsidian remains the owner of
+long-form Knowledge Content; Life OS retains operational IDs, status, planning,
+dependencies and relation semantics. Any future Obsidian graph projection is
+one-way/non-authoritative unless a separate command/security contract is accepted.
+
 ## 1. Product Promise
 
 Life OS is the personal Project-to-Day Context, Planning, Execution and Memory system: a daily companion for turning intent into a realistic week, executing the current day and learning from what was actually done. Its canonical spine is Task / Project / Goal / Skill / Resource. It is not a Notion clone, a public SaaS product, a passive data archive or a collection of unrelated trackers.
