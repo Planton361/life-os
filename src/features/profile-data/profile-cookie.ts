@@ -3,6 +3,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import type { LifeOsProfileId, LifeOsProfileSummary } from "./types";
 import { lifeOsProfileIds } from "./types";
+import { isSqliteProofRuntime } from "../../../experiments/issue-37/proof-gate";
 
 export const LIFE_OS_PROFILE_COOKIE = "life_os_profile";
 
@@ -44,6 +45,7 @@ export function getLifeOsProfileSummary(id: LifeOsProfileId) {
 }
 
 export async function getCurrentLifeOsProfileId(): Promise<LifeOsProfileId> {
+  if (isSqliteProofRuntime()) return "manual";
   const cookieStore = await cookies();
 
   return parseLifeOsProfileId(

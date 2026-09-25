@@ -33,6 +33,7 @@ import type {
   MealType,
 } from "@/features/dashboard";
 import type { InboxCaptureType } from "@/features/inbox";
+import { isSqliteProofRuntime } from "../../../experiments/issue-37/proof-gate";
 
 const manualProfilePath = path.join(
   process.cwd(),
@@ -293,6 +294,7 @@ async function ensureManualProfileDir() {
 }
 
 export async function readManualProfile(): Promise<ManualProfileData> {
+  if (isSqliteProofRuntime()) return { ...defaultManualProfile };
   try {
     const content = await readFile(manualProfilePath, "utf8");
     const parsed = JSON.parse(content) as Partial<ManualProfileData>;
@@ -313,6 +315,7 @@ export async function readManualProfile(): Promise<ManualProfileData> {
 }
 
 export async function writeManualProfile(profile: ManualProfileData) {
+  if (isSqliteProofRuntime()) throw new Error("Manual profile file disabled in SQLite proof");
   await ensureManualProfileDir();
   await writeFile(
     manualProfilePath,
@@ -322,6 +325,7 @@ export async function writeManualProfile(profile: ManualProfileData) {
 }
 
 export async function resetManualProfile() {
+  if (isSqliteProofRuntime()) throw new Error("Manual profile reset disabled in SQLite proof");
   await rm(manualProfilePath, { force: true });
 }
 

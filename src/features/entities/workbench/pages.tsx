@@ -14,6 +14,7 @@ import {
 } from "@/features/real-data/supabase/repositories/entity-workbench-read";
 import { getGoalOutcome } from "@/features/real-data/supabase/repositories/supabase-goal-outcome-repository";
 import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { isSqliteProofRuntime } from "../../../../experiments/issue-37/proof-gate";
 import {
   EntityForm,
   GoalCaptureForm,
@@ -371,20 +372,26 @@ export async function WorkbenchEditor({
         .target_date?.slice(0, 10);
   }
   if (kind === "goal" && id && row) {
-    const auth = await createAuthenticatedSupabaseServerClient();
-    if (!auth.ok) {
+    const outcome = isSqliteProofRuntime()
+      ? await (async () => {
+          const { getProofOwnerId, readProofGoalOutcome, readProofSnapshot } = await import("../../../../experiments/issue-37/sqlite-proof-runtime");
+          const ownerId = await getProofOwnerId();
+          if (!ownerId) return null;
+          const projection = readProofGoalOutcome(ownerId, id, readProofSnapshot(ownerId));
+          return projection ? { ok: true as const, data: projection } : null;
+        })()
+      : await (async () => {
+          const auth = await createAuthenticatedSupabaseServerClient();
+          if (!auth.ok) return null;
+          return getGoalOutcome(auth.client, auth.user.id, id, data.dependencyGraph);
+        })();
+    if (!outcome) {
       return (
         <EntityWorkbenchShell kind="goal" title={row.title}>
           {authMessage}
         </EntityWorkbenchShell>
       );
     }
-    const outcome = await getGoalOutcome(
-      auth.client,
-      auth.user.id,
-      id,
-      data.dependencyGraph,
-    );
     if (!outcome.ok) {
       if (outcome.error.code === "not_found") notFound();
       throw new Error(outcome.error.message);
