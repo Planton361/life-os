@@ -40,18 +40,22 @@ may proceed before the UX sequence so later architecture work is evidence-based.
 
 ### PP1 — Goal Outcome Planning
 
-**Outcome:** Goal becomes a usable planning object with domain-specific Goal
-Milestones and explicit Outcome Criteria / Measures. Goal Achievement remains
-explicit and is never derived from Task Completion; no artificial generic Goal
+**Outcome:** Goal becomes one guided completion Journey with domain-specific Goal
+Milestones and explicit Outcome Criteria / Definition of Done. The Journey has
+exactly one Current Goal Milestone at a time; parallel work stays below it in
+Projects/Tasks. Goal Achievement and Milestone completion remain explicit and are
+never derived automatically from Task Completion; no artificial generic Goal
 percentage is introduced.
 
 **Direct dependency:** Accepted Product Target v0.4 and the accepted Target
 Model Decision Package. PP1 establishes the Goal planning semantics required by
 the later blocks.
 
-**Acceptance boundary:** A later, separately accepted Goal Outcome contract
-must define the domain and UX behavior before schema, migration or UI delivery
-starts. This block does not authorize that implementation.
+**Acceptance boundary:** Issue #39 USER ACCEPTED the Goal Journey target after the
+real-product A-v2 rejection. A separate DELIVER contract must implement the
+single-Current-Milestone Journey, read/work-first Goal Detail, explicit planning
+mode and Milestone/Goal review behavior. This roadmap does not authorize that
+implementation by itself.
 
 ### Core Task / Project Interaction
 
@@ -62,7 +66,8 @@ progress signals, current milestone, Resources/artifacts and one next executable
 action understandable without a management-form wall.
 
 **Direct dependency:** Existing PP1 Goal semantics and the accepted #34 shared
-entity grammar. Goal A-v2 remains binding. Only explicit Task Dependencies create
+entity grammar. The USER ACCEPTED #39 Goal Journey target is binding; A-v2 is
+retained only as implementation/history evidence where #39 supersedes it. Only explicit Task Dependencies create
 READY/BLOCKED; Project Milestones remain Project-owned and do not create execution
 blocking.
 
