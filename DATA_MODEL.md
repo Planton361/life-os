@@ -71,6 +71,21 @@ Ein Project ist ein endliches, mehrschrittiges Ergebnis. Es bündelt Tasks, besi
 
 Ein Goal ist ein gewünschtes Ergebnis mit Horizont und optionalem Zieltermin. Es wird durch Projects, direkte Tasks, Skill-Evidence und Resources unterstützt. Kanonische Zielerreichung benötigt explizite Outcome Criteria/Measures; Task-Completion ist unterstützender Kontext und kein automatischer Achievement-Nachweis. Ohne belastbare Kriterien gibt es keine künstliche Prozentzahl.
 
+Der USER ACCEPTED #39 Target ordnet Goal-Planung als eine einzige Journey:
+Outcome Criteria / Definition of Done sind der finale Akzeptanzvertrag; Goal
+Milestones sind geordnete Zwischenresultate; Tasks sind die ausführbare Arbeit.
+In der primären unarchivierten Goal Journey gibt es genau einen Current/active
+Milestone. Future und completed Milestones bleiben geordnet sichtbar, erzeugen
+aber keine Execution Dependency. Parallelität liegt innerhalb des Current
+Milestone über Projects/Tasks; nur Task Dependencies erzeugen READY/BLOCKED.
+
+Task Completion setzt weder Milestone- noch Goal-Status automatisch. Vollständig
+erledigte geplante Arbeit kann einen Milestone review-ready machen; das
+Zwischenergebnis wird explizit bestätigt. Nach dem finalen Milestone wird das Goal
+explizit gegen seine Outcome Criteria geprüft. Diese Target-Semantik ist eine
+bindende Produkt-/Datenmodellentscheidung; ihre DB-/Command-Enforcement-Details
+sind erst mit dem separaten Delivery-Contract implementiert.
+
 ### Skill
 
 Ein Skill ist eine persönliche Fähigkeit, die entwickelt, angewendet oder nachgewiesen wird. Tasks können mehrere Skills üben oder anwenden. Skill-Fortschritt entsteht aus expliziter Evidence; die bloße Task-Verknüpfung ist Kontext und kein automatischer Kompetenznachweis.

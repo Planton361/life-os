@@ -100,8 +100,13 @@ Project, Goal and Skill remain separate domain categories. They share service
 and UX principles around Higher-order entity → domain milestones → Tasks →
 progress, but do not use one universal polymorphic Milestone table. Goal
 Milestones/Outcome Criteria and Skill Milestones/Evidence/Targets/Prerequisites
-remain domain-specific target structures. Only Task-to-Task Dependencies create
-V1 execution READY/BLOCKED state; no Milestone dependency engine is introduced.
+remain domain-specific target structures. The USER ACCEPTED #39 Goal target
+organizes Goal planning as one ordered Journey with exactly one Current
+unarchived Goal Milestone in the primary journey at a time. Parallel work stays
+below that Milestone through Projects/Tasks. This Current-Milestone rule is Goal
+planning/lifecycle structure, not execution dependency. Only Task-to-Task
+Dependencies create V1 execution READY/BLOCKED state; no Milestone dependency
+engine is introduced.
 
 ### Server-side AI read boundary
 
