@@ -27,7 +27,7 @@ The focused browser harness exercised `/dashboard`, `/today`, `/calendar`, `/por
 
 ## Resource measurements
 
-Host: macOS Darwin 27.0.0, arm64, 48 GiB RAM; Node 22.22.2. The 601.4-second run measures the actual production server and a dedicated browser process tree after seven-route warmup. It completed 119 full navigations. Server RSS includes the embedded database. Browser RSS is a best-effort sum of Chromium's dedicated process tree; macOS RSS sums can double-count shared mappings. Build/test processes are excluded. Native SQLite SQL latencies are measured after the app is stopped and are identified separately from HTTP/UI timings.
+Host: macOS Darwin 27.0.0, arm64, 48 GiB RAM; Node 22.22.2. The fresh fixture began with four Goals, four Projects, 80 Tasks, one Dependency and one source link. The 601.4-second run measures the actual production server and a dedicated browser process tree after seven-route warmup. It completed 119 full navigations. Server RSS includes the embedded database. Browser RSS is a best-effort sum of Chromium's dedicated process tree; macOS RSS sums can double-count shared mappings. Build/test processes are excluded. Twenty UI Task creates followed the navigation window; 30 native SQLite inserts followed after the app was stopped. Native SQL latencies are identified separately from HTTP/UI timings. The DB/WAL/SHM footprint before close is after the UI writes; the clean-close footprint also includes the 30 native inserts.
 
 | Metric | Measured | Target |
 | --- | ---: | ---: |
