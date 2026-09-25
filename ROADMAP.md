@@ -5,10 +5,10 @@
 **Design truth:** Life OS – Linear Calm Dark Command Center / Dashboard V5
 **Detailed status:** `docs/product/capability-registry.md`
 **Completed sequence:** C1 → C2 → C3 → K1 → H1/H2 → N1 → A1 → Z1 (technical baseline)
-**Current Product Context:** Product Reorientation — Accepted #34 Target Plan
+**Current Product Context:** Product Reorientation — Accepted #34 operating target + #39 Goal Journey
 
 **Product Reorientation:** Product Target v0.4, the Target Model Decision Package,
-and the Issue #34 hosted-single-owner/core-entity target are accepted. The durable
+the Issue #34 hosted-single-owner/core-entity target, and the Issue #39 Goal Journey target are accepted. The durable
 product sequence is persisted below. Concrete work still starts only from confirmed
 GitHub Issues and Project items. Issue #3 / R2-13 remains preserved
 pre-reorientation work, not approved next delivery. The accepted plan does not
@@ -169,7 +169,7 @@ The existing application is the foundation. This roadmap does not restart the pr
 - Health & Fitness: Mood, Sleep, Weight, Habits, Running and Strength are connected; R2-05 fully USER ACCEPTED on 2026-09-07.
 - Coding, Education and Work suites plus Notes, Inventory and Wishlist are hidden/retained or folded/externalized; Areas remain canonical context.
 - R2-09 and R2-10 are USER ACCEPTED on 2026-09-09; R2-11 is USER ACCEPTED with Decision A; R2-12 is USER ACCEPTED. R2-13 has no committed capability on the integration branch; earlier local R2-13 work is separately preserved and not approved. R2-14–R2-17 are historical product ideas from the pre-reorientation Option A planning, not current operative or binding future work. The accepted target keeps Journal Life-OS-owned and defines Skill Graph semantics, while their implementation/depth gaps remain separate.
-- The accepted Product Plan is PP1 → PP4; product implementation remains
+- The accepted Product Plan is the #34 sequence with the #39 Goal Journey target inside PP1; product implementation remains
   individually authorized by explicit GitHub work contracts, and this roadmap
   does not create a product `DELIVER` contract.
 - Personal AI Assistant: not started as a production capability.
