@@ -39,13 +39,71 @@ management, and one contextually valid next action. Their domain semantics remai
 separate. Goal Milestones/Outcome Criteria, Project Milestones and future Skill
 Milestones/Evidence/Targets/Prerequisites are not flattened into a universal
 model. Only explicit Task-to-Task Dependencies create execution READY/BLOCKED.
-Accepted Goal A-v2 and the Project read-first workbench remain binding.
+Accepted Goal Journey #39 and the Project read-first workbench remain binding. The earlier Goal A-v2 composition is retained as implementation evidence but is superseded as the Goal interaction target.
 
 Calendar, Today, Dashboard and Portfolio are projections over the same canonical
 Task/scheduling truth, not parallel planning stores. Obsidian remains the owner of
 long-form Knowledge Content; Life OS retains operational IDs, status, planning,
 dependencies and relation semantics. Any future Obsidian graph projection is
 one-way/non-authoritative unless a separate command/security contract is accepted.
+
+## Accepted #39 Goal Journey target
+
+Issue #39 is USER ACCEPTED and supersedes the prior Goal A-v2 information
+architecture where they conflict.
+
+Goal is the highest-order outcome. Goal Detail presents one guided completion
+journey rather than parallel progress systems:
+
+```text
+Goal identity / intended outcome / why
+→ Definition of Done as the final acceptance contract
+→ ordered Goal Milestone Journey
+→ exactly one Current Milestone
+→ executable Tasks for that Current Milestone
+→ Milestone Review
+→ next Milestone
+→ Goal Review against Definition of Done
+→ explicit achievement or continued planning
+```
+
+Goal Outcome Criteria / Definition of Done describe when the Goal may be accepted
+as achieved; they are not an independent work lane. Goal Milestones are meaningful
+intermediate outcomes. The primary Goal Journey has exactly one current unarchived
+Milestone at a time. Parallel work is represented below that Milestone through
+Projects and Tasks. Milestone order is planning/journey order and never creates
+Task READY/BLOCKED; only explicit Task Dependencies do that.
+
+Tasks remain the only executable/schedulable Goal work units and therefore the
+only Goal work units that flow into Calendar and Today. Projects are optional work
+context/containers and never become an additional Goal completion lane. Completing
+all planned Tasks never automatically completes a Goal Milestone; it makes the
+intermediate outcome ready for explicit user review. Completing all Milestones
+never automatically achieves the Goal; the final Goal Review evaluates the
+Definition of Done and requires explicit confirmation.
+
+Goal Detail is read/work-first by default. It uses a calm identity header, one
+dominant `JETZT` focus surface, then a main workbench with the Current Milestone
+and short-term Tasks as the dominant region and the long-term Journey as a quieter
+rail. The former equal-weight `Überblick / Arbeit / Erfolg / Verlauf` primary-tab
+composition is superseded as the Goal target.
+
+Structural management is a separate explicit `Planung bearbeiten` mode. Normal
+work mode orients and executes; planning mode reveals in-place structural actions
+for Definition of Done, Milestones, Task association/creation and optional Project
+context, and exits through `Fertig`. Goal identity editing and lifecycle/admin
+actions remain separate from planning structure.
+
+Control hierarchy is binding for Goal Detail: one filled primary action for the
+current Goal decision; secondary buttons only for immediate alternatives;
+navigation as text links; structural create/edit controls mainly in planning mode;
+lifecycle/admin in overflow; passive status badges must not look interactive.
+
+Long-term vs short-term planning is intentional: future Milestones stay thin until
+they become Current; concrete Tasks are planned primarily for the Current
+Milestone. In product language: long term = Milestone Journey, short term = Tasks
+of the Current Milestone, now = one READY Task, one blocker, or one planning/review
+decision.
 
 ## 1. Product Promise
 
