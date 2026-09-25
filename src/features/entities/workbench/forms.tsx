@@ -238,6 +238,7 @@ export function EntityForm({
     milestoneId: string;
     goalTitle: string;
     milestoneTitle: string;
+    projects: Option[];
   };
   milestones?: (Option & { projectId: string })[];
   values: FieldValues;
@@ -485,9 +486,13 @@ export function EntityForm({
                 (id ? (
                   choice("projectId", "Project", projects)
                 ) : goalMilestoneContext ? (
-                  <p className="text-sm text-[var(--text-muted)]">
-                    Direkte Aufgabe am Ziel; kein Projekt-Kontext.
-                  </p>
+                  <Choice
+                    name="projectId"
+                    label="Project-Kontext (optional)"
+                    options={goalMilestoneContext.projects}
+                    value={selectedProject}
+                    onChange={setSelectedProject}
+                  />
                 ) : (
                   <>
                     <Choice
@@ -567,6 +572,7 @@ export function OperationForm({
   disabled = false,
   closeOnSuccess = false,
   confirmMessage,
+  submitClassName = actionClass,
 }: {
   operation: string;
   label: string;
@@ -574,6 +580,7 @@ export function OperationForm({
   disabled?: boolean;
   closeOnSuccess?: boolean;
   confirmMessage?: string;
+  submitClassName?: string;
 }) {
   const hydrated = useHydrated();
   const closeDisclosure = useCloseManagementDisclosure();
@@ -606,7 +613,7 @@ export function OperationForm({
         className="grid gap-3"
       >
         {children}
-        <button className={actionClass} type="submit">
+        <button className={submitClassName} type="submit">
           {pending ? "Speichern …" : label}
         </button>
       </fieldset>

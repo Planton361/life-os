@@ -259,6 +259,26 @@ export type GoalOutcome = {
   summary: GoalOutcomeSummary;
 };
 
+export type GoalJourneyAction =
+  | "achieved"
+  | "archived"
+  | "define_outcome"
+  | "create_first_milestone"
+  | "select_current_milestone"
+  | "resolve_blocker"
+  | "open_ready_task"
+  | "create_next_task"
+  | "review_milestone"
+  | "review_goal";
+
+export type GoalJourneyGuidance = {
+  action: GoalJourneyAction;
+  title: string;
+  reason: string;
+  task: GoalPathTaskContext | null;
+  blockers: readonly { id: string | null; title: string }[];
+};
+
 type AchievementEpisodeEvent = {
   id: string;
   episodeId: string;
@@ -312,7 +332,9 @@ function latestEffectiveEpisodeEvent<T extends AchievementEpisodeEvent>(
   return (
     candidates
       .filter((event) => !correctedEventIds.has(event.id))
-      .sort(recordedOrder)[0] ?? candidates.sort(recordedOrder)[0] ?? null
+      .sort(recordedOrder)[0] ??
+    candidates.sort(recordedOrder)[0] ??
+    null
   );
 }
 
@@ -338,7 +360,10 @@ export function currentOpenAchievementEpisodeId(
 
   return (
     [...episodes.entries()]
-      .filter(([, episode]) => !episode.some((event) => event.eventType === "reopened"))
+      .filter(
+        ([, episode]) =>
+          !episode.some((event) => event.eventType === "reopened"),
+      )
       .map(([episodeId, episode]) => ({
         episodeId,
         achievement: episode
@@ -350,12 +375,16 @@ export function currentOpenAchievementEpisodeId(
           .sort(lifecycleOrder)[0],
       }))
       .filter(
-        (candidate): candidate is {
+        (
+          candidate,
+        ): candidate is {
           episodeId: string;
           achievement: AchievementEpisodeEvent;
         } => Boolean(candidate.achievement),
       )
-      .sort((left, right) => lifecycleOrder(left.achievement, right.achievement))
+      .sort((left, right) =>
+        lifecycleOrder(left.achievement, right.achievement),
+      )
       .at(0)?.episodeId ?? null
   );
 }
@@ -408,7 +437,10 @@ export function latestGoalAchievementEvent(
   return currentGoalAchievementEvent(events, goalStatus);
 }
 
-function evidenceSort(left: GoalEvidenceReference, right: GoalEvidenceReference) {
+function evidenceSort(
+  left: GoalEvidenceReference,
+  right: GoalEvidenceReference,
+) {
   return (
     right.recordedAt.localeCompare(left.recordedAt) ||
     right.id.localeCompare(left.id)
@@ -532,11 +564,13 @@ export function deriveGoalNextStep(input: {
   projects: readonly GoalPathProjectContext[];
   dependencyGraph?: TaskDependencyGraph;
 }): GoalNextStepCue {
-  const dependencyGraph = input.dependencyGraph ?? { tasks: [], dependencies: [] };
+  const dependencyGraph = input.dependencyGraph ?? {
+    tasks: [],
+    dependencies: [],
+  };
   const candidateTasks = input.tasks
     .filter(
-      (task) =>
-        !task.archivedAt && executableTaskStatuses.has(task.status),
+      (task) => !task.archivedAt && executableTaskStatuses.has(task.status),
     )
     .sort((left, right) =>
       taskSortScore(left).localeCompare(taskSortScore(right)),
@@ -704,5 +738,170 @@ export function buildGoalOutcomeSummary(
     blockers,
     status: outcome.goalStatus,
     achievedAt: outcome.achievedAt,
+  };
+}
+
+/**
+ * Selects the one user-facing Goal action from canonical Goal, Milestone,
+ * support and Task Dependency state. Milestone order never affects readiness.
+ */
+export function deriveGoalJourneyGuidance(
+  outcome: GoalOutcome,
+  dependencyGraph: TaskDependencyGraph,
+): GoalJourneyGuidance {
+  const activeMilestones = outcome.milestones.filter(
+    (milestone) => !milestone.archivedAt && milestone.status !== "archived",
+  );
+  const unfinishedMilestones = activeMilestones.filter(
+    (milestone) => milestone.status !== "achieved",
+  );
+  const currentMilestone = activeMilestones.find(
+    (milestone) => milestone.status === "active",
+  );
+  const noTask: GoalPathTaskContext | null = null;
+
+  if (outcome.goalStatus === "achieved") {
+    return {
+      action: "achieved",
+      title: "Erreichtes Ergebnis",
+      reason:
+        "Das Ergebnis bleibt zusammen mit seiner damaligen Grundlage und dem Verlauf nachvollziehbar.",
+      task: noTask,
+      blockers: [],
+    };
+  }
+  if (outcome.goalStatus === "archived") {
+    return {
+      action: "archived",
+      title: "Archiviertes Ziel",
+      reason:
+        "Dieses Ziel ist schreibgeschützt. Die frühere Journey und ihre Entscheidungen bleiben nachvollziehbar.",
+      task: noTask,
+      blockers: [],
+    };
+  }
+
+  const activeCriteria = outcome.criteria.filter(
+    (criterion) => !criterion.archivedAt,
+  );
+  if (activeCriteria.length === 0) {
+    return {
+      action: "define_outcome",
+      title: "Definition of Done festlegen",
+      reason:
+        "Lege fest, woran du später erkennst, dass das gewünschte Ergebnis erreicht ist.",
+      task: noTask,
+      blockers: [],
+    };
+  }
+
+  if (activeMilestones.length === 0) {
+    return {
+      action: "create_first_milestone",
+      title: "Die erste Etappe planen",
+      reason:
+        "Die Definition of Done steht. Forme jetzt den Weg in ein überprüfbares Zwischenresultat.",
+      task: noTask,
+      blockers: [],
+    };
+  }
+
+  if (!currentMilestone && unfinishedMilestones.length > 0) {
+    return {
+      action: "select_current_milestone",
+      title: "Eine aktuelle Etappe festlegen",
+      reason:
+        "Es gibt noch offene Etappen, aber keine aktuelle. Wähle bewusst, woran du jetzt arbeitest.",
+      task: noTask,
+      blockers: [],
+    };
+  }
+
+  if (!currentMilestone) {
+    return {
+      action: "review_goal",
+      title: "Das Ergebnis gegen die Definition of Done prüfen",
+      reason: outcome.summary.readyToAchieve
+        ? "Alle Etappen sind bestätigt. Prüfe jetzt das finale Ergebnis und entscheide ausdrücklich über die Zielerreichung."
+        : `Alle Etappen sind bestätigt. Für das finale Review fehlt noch: ${outcome.summary.blockers.join(" ")}`,
+      task: noTask,
+      blockers: [],
+    };
+  }
+
+  const supportedTaskIds = new Set(
+    outcome.taskSupport
+      .filter((link) => link.goalMilestoneId === currentMilestone.id)
+      .map((link) => link.targetId),
+  );
+  const currentTasks = outcome.tasks.filter(
+    (task) => supportedTaskIds.has(task.id) && !task.archivedAt,
+  );
+  const candidateTasks = currentTasks
+    .filter((task) => executableTaskStatuses.has(task.status))
+    .sort((left, right) =>
+      taskSortScore(left).localeCompare(taskSortScore(right)),
+    );
+  const blocked = candidateTasks.find(
+    (task) =>
+      taskDependencyContext(dependencyGraph, task.id).availability ===
+      "BLOCKED",
+  );
+  if (blocked) {
+    const blockers = taskDependencyContext(
+      dependencyGraph,
+      blocked.id,
+    ).blockers.map(({ task }) => ({
+      id: task?.id ?? null,
+      title: task?.title ?? "Unbekannter Vorgänger",
+    }));
+    return {
+      action: "resolve_blocker",
+      title: blocked.title,
+      reason: blockers.length
+        ? `Diese Aufgabe wartet auf ${blockers.map((item) => `„${item.title}“`).join(", ")}.`
+        : "Diese Aufgabe wartet auf eine offene Aufgaben-Voraussetzung.",
+      task: blocked,
+      blockers,
+    };
+  }
+
+  const ready = candidateTasks.find(
+    (task) =>
+      taskDependencyContext(dependencyGraph, task.id).availability === "READY",
+  );
+  if (ready) {
+    return {
+      action: "open_ready_task",
+      title: ready.title,
+      reason:
+        "Diese Aufgabe gehört zur aktuellen Etappe und hat keine offene Aufgaben-Voraussetzung.",
+      task: ready,
+      blockers: [],
+    };
+  }
+
+  if (
+    currentTasks.length > 0 &&
+    currentTasks.every((task) => ["done", "completed"].includes(task.status))
+  ) {
+    return {
+      action: "review_milestone",
+      title: currentMilestone.title,
+      reason: `Die geplanten Aufgaben dieser Etappe sind abgeschlossen. Prüfe das Zwischenresultat „${currentMilestone.title}“ und bestätige es ausdrücklich.`,
+      task: noTask,
+      blockers: [],
+    };
+  }
+
+  return {
+    action: "create_next_task",
+    title: currentMilestone.title,
+    reason:
+      currentTasks.length === 0
+        ? "Der aktuellen Etappe ist noch keine Aufgabe zugeordnet. Plane einen konkreten nächsten Schritt."
+        : "Für die aktuelle Etappe gibt es keine startbare Aufgabe. Plane einen konkreten nächsten Schritt oder prüfe die Aufgaben-Voraussetzungen.",
+    task: noTask,
+    blockers: [],
   };
 }

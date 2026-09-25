@@ -217,6 +217,35 @@ type GoalPathFunctions = {
     };
     Returns: Json;
   };
+  set_goal_current_milestone: {
+    Args: {
+      p_goal_id: string;
+      p_milestone_id: string;
+      p_expected_updated_at?: string | null;
+      p_command_id?: string | null;
+      p_request_fingerprint?: string | null;
+    };
+    Returns: Json;
+  };
+  review_goal_milestone: {
+    Args: {
+      p_goal_id: string;
+      p_milestone_id: string;
+      p_command_id: string;
+      p_request_fingerprint: string;
+      p_expected_updated_at?: string | null;
+      p_note?: string | null;
+    };
+    Returns: Json;
+  };
+  create_goal_milestone_task: {
+    Args: {
+      p_command_id: string;
+      p_request_fingerprint: string;
+      p_payload?: Json;
+    };
+    Returns: Json;
+  };
   goal_source_snapshot: {
     Args: { p_user_id: string; p_source_type: string; p_source_id: string };
     Returns: { title: string; context: Json }[];

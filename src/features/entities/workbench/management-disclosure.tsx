@@ -42,12 +42,14 @@ export function ManagementDisclosure({
   children,
   initiallyOpen = false,
   triggerText,
+  closeText = "Schließen",
   panelClassName,
 }: {
   label: string;
   children: ReactNode;
   initiallyOpen?: boolean;
   triggerText?: string;
+  closeText?: string;
   panelClassName?: string;
 }) {
   const hydrated = useSyncExternalStore(
@@ -102,7 +104,7 @@ export function ManagementDisclosure({
             className="min-h-10 justify-self-start text-sm underline"
             onClick={close}
           >
-            Schließen
+            {closeText}
           </button>
         </div>
       </div>
