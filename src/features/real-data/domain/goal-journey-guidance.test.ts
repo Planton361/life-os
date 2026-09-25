@@ -2,12 +2,16 @@ import { describe, expect, it } from "vitest";
 import {
   buildGoalOutcomeSummary,
   deriveGoalJourneyGuidance,
+  orderCurrentGoalMilestoneTasks,
   type GoalMilestone,
   type GoalOutcome,
   type GoalOutcomeCriterion,
   type GoalPathTaskContext,
 } from "./goal-outcome";
-import type { TaskDependencyGraph } from "./task-dependencies";
+import {
+  taskDependencyContext,
+  type TaskDependencyGraph,
+} from "./task-dependencies";
 
 const criterion: GoalOutcomeCriterion = {
   id: "criterion-1",
@@ -190,6 +194,45 @@ describe("Goal Journey guidance", () => {
       task: { id: "ready" },
       blockers: [],
     });
+  });
+
+  it("keeps READY work first and blocked work visible when both coexist", () => {
+    const ready = task("ready");
+    const blocked = task("blocked");
+    const predecessor = task("predecessor", "waiting");
+    const dependencies = [
+      {
+        id: "dependency-1",
+        predecessor_task_id: "predecessor",
+        successor_task_id: "blocked",
+      },
+    ];
+    const dependencyGraph = graph([blocked, ready, predecessor], dependencies);
+    const guidance = deriveGoalJourneyGuidance(
+      goal({
+        milestones: [milestone("current", "active")],
+        tasks: [blocked, ready],
+        taskSupport: [support("blocked"), support("ready")],
+      }),
+      dependencyGraph,
+    );
+    const ordered = orderCurrentGoalMilestoneTasks(
+      [blocked, ready],
+      dependencyGraph,
+      guidance.task?.id,
+    );
+
+    expect(guidance).toMatchObject({
+      action: "open_ready_task",
+      task: { id: "ready" },
+      blockers: [],
+    });
+    expect(ordered.map((item) => item.id)).toEqual(["ready", "blocked"]);
+    expect(
+      taskDependencyContext(dependencyGraph, ordered[1]!.id).blockers.map(
+        ({ task: blockedBy }) => blockedBy?.title,
+      ),
+    ).toEqual(["Task predecessor"]);
   });
 
   it("uses only real Task Dependencies for blocker guidance", () => {

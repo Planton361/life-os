@@ -261,6 +261,8 @@ export function EntityForm({
     kind,
     Boolean(goalMilestoneContext),
   );
+  const goalMilestoneTaskCapture =
+    kind === "task" && !id && Boolean(goalMilestoneContext);
   const field = (
     name: string,
     label: string,
@@ -290,6 +292,9 @@ export function EntityForm({
   return (
     <form
       aria-label={`${formEntityLabel} ${id ? "bearbeiten" : "erstellen"}`}
+      data-goal-milestone-task-capture={
+        goalMilestoneTaskCapture ? "title-first" : undefined
+      }
       className="grid gap-6"
       onSubmit={(event) => {
         event.preventDefault();
@@ -322,230 +327,306 @@ export function EntityForm({
         disabled={!hydrated || pending || archived}
         className="grid gap-6"
       >
-        <section className="grid gap-4">
-          <h2 className="text-lg text-[var(--accent-cyan)]">01 Grundlagen</h2>
-          {field(
-            kind === "skill" ? "name" : "title",
-            kind === "skill" ? "Name" : "Titel",
-            "text",
-            true,
-          )}
-          {field(
-            kind === "skill"
-              ? "summary"
-              : kind === "resource"
-                ? "body"
-                : "description",
-            "Beschreibung / Kontext",
-            "textarea",
-          )}
-          {kind === "task" && field("nextAction", "Next Action")}
-          {kind === "project" && field("nextStep", "Next Step")}
-          {kind === "goal" &&
-            field("why", "Desired Outcome / Warum", "textarea")}
-          {kind === "resource" && (
-            <section aria-label="Externe Referenz" className="grid gap-4">
-              <h3 className="text-sm font-semibold">
-                Referenz & Klassifikation
-              </h3>
+        {goalMilestoneTaskCapture && goalMilestoneContext ? (
+          <>
+            <section
+              className="grid gap-4"
+              aria-label="Aufgabe für die aktuelle Etappe"
+              data-goal-milestone-task-default
+            >
+              <h2 className="text-lg text-[var(--accent-cyan)]">
+                Aufgabe zur aktuellen Etappe
+              </h2>
+              {field("title", "Titel", "text", true)}
+              <div
+                className="grid gap-1 text-sm"
+                data-goal-milestone-task-context
+              >
+                <span className="font-semibold">Ziel / aktuelle Etappe</span>
+                <p className="text-[var(--text-secondary)]">
+                  {goalMilestoneContext.goalTitle} ·{" "}
+                  {goalMilestoneContext.milestoneTitle}
+                </p>
+                <input
+                  type="hidden"
+                  name="goalId"
+                  value={goalMilestoneContext.goalId}
+                />
+                <input
+                  type="hidden"
+                  name="goalMilestoneId"
+                  value={goalMilestoneContext.milestoneId}
+                />
+              </div>
+              <Choice
+                name="projectId"
+                label="Project-Kontext (optional)"
+                options={goalMilestoneContext.projects}
+                value={selectedProject}
+                onChange={setSelectedProject}
+              />
               <p className="text-sm text-[var(--text-muted)]">
-                Externe Dokumente, Repositories und andere Quellen bleiben an
-                ihrem Speicherort. Hier hältst du Link und Kontext fest.
+                Neue Aufgaben starten geplant. Du kannst sie nach dem Anlegen
+                weiter ausarbeiten.
               </p>
-              {choice(
-                "type",
-                "Typ",
-                opts([
-                  "note",
-                  "learning",
-                  "prompt",
-                  "research",
-                  "link",
-                  "source",
-                  "snippet",
-                  "decision",
-                ]),
-              )}
-              {field("url", "URL", "url")}
             </section>
-          )}
-        </section>
-        {kind !== "resource" && (
-          <section className="grid gap-4 border-t border-[var(--border-subtle)] pt-5">
-            <h2 className="text-lg text-[var(--accent-orange)]">
-              02 Zustand & Planung
-            </h2>
-            <div className="grid gap-4 md:grid-cols-2">
-              {kind === "task" && (
-                <>
-                  {id ? (
-                    sourceOwned || values.status === "done" ? (
-                      <p>
-                        Status: {values.status}
+            <ManagementDisclosure label="Weitere Angaben (optional)">
+              <section className="grid gap-4 md:grid-cols-2">
+                {field("description", "Beschreibung / Kontext", "textarea")}
+                {field("nextAction", "Next Action")}
+                {choice(
+                  "priority",
+                  "Priority",
+                  opts(["P0", "P1", "P2", "P3", "none"]),
+                )}
+                {choice("energy", "Energy", opts(["low", "medium", "high"]))}
+                {field("durationMinutes", "Duration (min)", "number")}
+                {field("dueAt", "Deadline", "date")}
+                {field("plannedDate", "Geplantes Datum", "date")}
+                {choice("areaId", "Area", areas)}
+              </section>
+            </ManagementDisclosure>
+          </>
+        ) : (
+          <>
+            <section className="grid gap-4">
+              <h2 className="text-lg text-[var(--accent-cyan)]">
+                01 Grundlagen
+              </h2>
+              {field(
+                kind === "skill" ? "name" : "title",
+                kind === "skill" ? "Name" : "Titel",
+                "text",
+                true,
+              )}
+              {field(
+                kind === "skill"
+                  ? "summary"
+                  : kind === "resource"
+                    ? "body"
+                    : "description",
+                "Beschreibung / Kontext",
+                "textarea",
+              )}
+              {kind === "task" && field("nextAction", "Next Action")}
+              {kind === "project" && field("nextStep", "Next Step")}
+              {kind === "goal" &&
+                field("why", "Desired Outcome / Warum", "textarea")}
+              {kind === "resource" && (
+                <section aria-label="Externe Referenz" className="grid gap-4">
+                  <h3 className="text-sm font-semibold">
+                    Referenz & Klassifikation
+                  </h3>
+                  <p className="text-sm text-[var(--text-muted)]">
+                    Externe Dokumente, Repositories und andere Quellen bleiben
+                    an ihrem Speicherort. Hier hältst du Link und Kontext fest.
+                  </p>
+                  {choice(
+                    "type",
+                    "Typ",
+                    opts([
+                      "note",
+                      "learning",
+                      "prompt",
+                      "research",
+                      "link",
+                      "source",
+                      "snippet",
+                      "decision",
+                    ]),
+                  )}
+                  {field("url", "URL", "url")}
+                </section>
+              )}
+            </section>
+            {kind !== "resource" && (
+              <section className="grid gap-4 border-t border-[var(--border-subtle)] pt-5">
+                <h2 className="text-lg text-[var(--accent-orange)]">
+                  02 Zustand & Planung
+                </h2>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {kind === "task" && (
+                    <>
+                      {id ? (
+                        sourceOwned || values.status === "done" ? (
+                          <p>
+                            Status: {values.status}
+                            <input
+                              type="hidden"
+                              name="status"
+                              value={String(values.status)}
+                            />
+                          </p>
+                        ) : (
+                          choice(
+                            "status",
+                            "Status",
+                            opts([
+                              "inbox",
+                              "planned",
+                              "active",
+                              "waiting",
+                              "canceled",
+                              "someday",
+                            ]),
+                          )
+                        )
+                      ) : (
+                        <p className="text-sm text-[var(--text-muted)]">
+                          Neue Tasks starten als planned.
+                        </p>
+                      )}
+                      {choice(
+                        "priority",
+                        "Priority",
+                        opts(["P0", "P1", "P2", "P3", "none"]),
+                      )}
+                      {choice(
+                        "energy",
+                        "Energy",
+                        opts(["low", "medium", "high"]),
+                      )}
+                      {sourceOwned ? (
                         <input
                           type="hidden"
-                          name="status"
-                          value={String(values.status)}
+                          name="durationMinutes"
+                          value={values.durationMinutes ?? ""}
                         />
-                      </p>
-                    ) : (
-                      choice(
+                      ) : (
+                        field("durationMinutes", "Duration (min)", "number")
+                      )}
+                      {field("dueAt", "Deadline", "date")}
+                      {sourceOwned ? (
+                        <p>
+                          Planung über die verantwortliche Quelle
+                          <input
+                            type="hidden"
+                            name="plannedDate"
+                            value={values.plannedDate ?? ""}
+                          />
+                        </p>
+                      ) : (
+                        field("plannedDate", "Geplantes Datum", "date")
+                      )}
+                    </>
+                  )}
+                  {kind === "project" && (
+                    <>
+                      {choice(
                         "status",
                         "Status",
                         opts([
-                          "inbox",
-                          "planned",
+                          "idea",
                           "active",
-                          "waiting",
-                          "canceled",
-                          "someday",
+                          "paused",
+                          "blocked",
+                          "completed",
                         ]),
-                      )
-                    )
-                  ) : (
-                    <p className="text-sm text-[var(--text-muted)]">
-                      Neue Tasks starten als planned.
-                    </p>
+                      )}
+                      {choice(
+                        "priority",
+                        "Priority",
+                        opts(["P0", "P1", "P2", "P3", "none"]),
+                      )}
+                      {field("deadline", "Deadline", "date")}
+                    </>
                   )}
-                  {choice(
-                    "priority",
-                    "Priority",
-                    opts(["P0", "P1", "P2", "P3", "none"]),
+                  {kind === "goal" && (
+                    <>
+                      {values.status === "achieved" ? (
+                        <p className="text-sm">
+                          Status: Erreicht · über „Wieder öffnen“ im
+                          Ergebnisbereich wieder öffnen.
+                        </p>
+                      ) : (
+                        choice("status", "Status", goalStatusOptions)
+                      )}
+                      {choice("horizon", "Horizont", goalHorizonOptions)}
+                      {field("targetDate", "Zieldatum", "date")}
+                    </>
                   )}
-                  {choice("energy", "Energy", opts(["low", "medium", "high"]))}
-                  {sourceOwned ? (
-                    <input
-                      type="hidden"
-                      name="durationMinutes"
-                      value={values.durationMinutes ?? ""}
-                    />
-                  ) : (
-                    field("durationMinutes", "Duration (min)", "number")
+                  {kind === "skill" && (
+                    <>
+                      {choice("status", "Status", opts(["active", "paused"]))}
+                      {field("category", "Kategorie")}
+                    </>
                   )}
-                  {field("dueAt", "Deadline", "date")}
-                  {sourceOwned ? (
-                    <p>
-                      Planung über die verantwortliche Quelle
+                  {choice("areaId", "Area", areas)}
+                </div>
+              </section>
+            )}
+            {(kind === "task" || kind === "project") && (
+              <section className="grid gap-4 border-t border-[var(--border-subtle)] pt-5">
+                <h2 className="text-lg text-[var(--accent-purple)]">
+                  03 Beziehungen
+                </h2>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {kind === "task" &&
+                    (id ? (
+                      choice("projectId", "Project", projects)
+                    ) : goalMilestoneContext ? (
+                      <Choice
+                        name="projectId"
+                        label="Project-Kontext (optional)"
+                        options={goalMilestoneContext.projects}
+                        value={selectedProject}
+                        onChange={setSelectedProject}
+                      />
+                    ) : (
+                      <>
+                        <Choice
+                          name="projectId"
+                          label="Project"
+                          options={projects}
+                          value={selectedProject}
+                          onChange={setSelectedProject}
+                          required={Boolean(projectContext)}
+                          allowEmpty={!projectContext}
+                        />
+                        <Choice
+                          key={selectedProject}
+                          name="milestoneId"
+                          label="Milestone (keine Auswahl = Ohne Milestone)"
+                          value={
+                            selectedProject === values.projectId
+                              ? String(values.milestoneId ?? "")
+                              : ""
+                          }
+                          options={milestones.filter(
+                            (m) => m.projectId === selectedProject,
+                          )}
+                        />
+                      </>
+                    ))}
+                  {goalMilestoneContext ? (
+                    <div className="grid gap-2 text-sm">
+                      <span>Ziel / Etappe</span>
+                      <p className="text-[var(--text-secondary)]">
+                        {goalMilestoneContext.goalTitle} ·{" "}
+                        {goalMilestoneContext.milestoneTitle}
+                      </p>
                       <input
                         type="hidden"
-                        name="plannedDate"
-                        value={values.plannedDate ?? ""}
+                        name="goalId"
+                        value={goalMilestoneContext.goalId}
                       />
-                    </p>
+                      <input
+                        type="hidden"
+                        name="goalMilestoneId"
+                        value={goalMilestoneContext.milestoneId}
+                      />
+                    </div>
                   ) : (
-                    field("plannedDate", "Geplantes Datum", "date")
+                    choice("goalId", "Direktes Goal", goals)
                   )}
-                </>
-              )}
-              {kind === "project" && (
-                <>
-                  {choice(
-                    "status",
-                    "Status",
-                    opts(["idea", "active", "paused", "blocked", "completed"]),
-                  )}
-                  {choice(
-                    "priority",
-                    "Priority",
-                    opts(["P0", "P1", "P2", "P3", "none"]),
-                  )}
-                  {field("deadline", "Deadline", "date")}
-                </>
-              )}
-              {kind === "goal" && (
-                <>
-                  {values.status === "achieved" ? (
-                    <p className="text-sm">
-                      Status: Erreicht · über „Wieder öffnen“ im Ergebnisbereich
-                      wieder öffnen.
-                    </p>
-                  ) : (
-                    choice("status", "Status", goalStatusOptions)
-                  )}
-                  {choice("horizon", "Horizont", goalHorizonOptions)}
-                  {field("targetDate", "Zieldatum", "date")}
-                </>
-              )}
-              {kind === "skill" && (
-                <>
-                  {choice("status", "Status", opts(["active", "paused"]))}
-                  {field("category", "Kategorie")}
-                </>
-              )}
-              {choice("areaId", "Area", areas)}
-            </div>
-          </section>
-        )}
-        {(kind === "task" || kind === "project") && (
-          <section className="grid gap-4 border-t border-[var(--border-subtle)] pt-5">
-            <h2 className="text-lg text-[var(--accent-purple)]">
-              03 Beziehungen
-            </h2>
-            <div className="grid gap-4 md:grid-cols-2">
-              {kind === "task" &&
-                (id ? (
-                  choice("projectId", "Project", projects)
-                ) : goalMilestoneContext ? (
-                  <Choice
-                    name="projectId"
-                    label="Project-Kontext (optional)"
-                    options={goalMilestoneContext.projects}
-                    value={selectedProject}
-                    onChange={setSelectedProject}
-                  />
-                ) : (
-                  <>
-                    <Choice
-                      name="projectId"
-                      label="Project"
-                      options={projects}
-                      value={selectedProject}
-                      onChange={setSelectedProject}
-                      required={Boolean(projectContext)}
-                      allowEmpty={!projectContext}
-                    />
-                    <Choice
-                      key={selectedProject}
-                      name="milestoneId"
-                      label="Milestone (keine Auswahl = Ohne Milestone)"
-                      value={
-                        selectedProject === values.projectId
-                          ? String(values.milestoneId ?? "")
-                          : ""
-                      }
-                      options={milestones.filter(
-                        (m) => m.projectId === selectedProject,
-                      )}
-                    />
-                  </>
-                ))}
-              {goalMilestoneContext ? (
-                <div className="grid gap-2 text-sm">
-                  <span>Ziel / Etappe</span>
-                  <p className="text-[var(--text-secondary)]">
-                    {goalMilestoneContext.goalTitle} ·{" "}
-                    {goalMilestoneContext.milestoneTitle}
-                  </p>
-                  <input
-                    type="hidden"
-                    name="goalId"
-                    value={goalMilestoneContext.goalId}
-                  />
-                  <input
-                    type="hidden"
-                    name="goalMilestoneId"
-                    value={goalMilestoneContext.milestoneId}
-                  />
                 </div>
-              ) : (
-                choice("goalId", "Direktes Goal", goals)
-              )}
-            </div>
-            <p className="text-sm text-[var(--text-muted)]">
-              Weitere Ressourcen und Practice-Beziehungen verwaltest du an der
-              gespeicherten Entity.
-            </p>
-          </section>
+                <p className="text-sm text-[var(--text-muted)]">
+                  Weitere Ressourcen und Practice-Beziehungen verwaltest du an
+                  der gespeicherten Entity.
+                </p>
+              </section>
+            )}
+          </>
         )}
         <div className="border-t border-[var(--border-subtle)] pt-5">
           <button className={actionClass} type="submit">

@@ -46,7 +46,8 @@ async function activateMilestone(page: Page, title: string) {
   expect(href).toBeTruthy();
   await page.goto(href!);
   const card = root
-    .locator(`[data-goal-planning-surface] [data-goal-milestone-id]`)
+    .getByRole("region", { name: "Langfristige Goal Journey" })
+    .locator("[data-goal-progression] li[data-goal-milestone-id]")
     .filter({ hasText: title });
   await expect(card).toBeVisible();
   await card.getByRole("button", { name: "Etappe bearbeiten" }).click();
@@ -73,10 +74,66 @@ async function createAndCompleteCurrentTask(
   await expect(root.locator("[data-goal-current-workbench]")).toContainText(
     milestoneTitle,
   );
+  if ((await root.getAttribute("data-goal-planning-mode")) === "read") {
+    await root
+      .getByRole("button", { name: "Planung bearbeiten", exact: true })
+      .click();
+  }
+  await expect(
+    root.locator(
+      "[data-goal-current-workbench] [data-goal-current-planning-controls]",
+    ),
+  ).toBeVisible();
   await root
-    .getByRole("link", { name: "Aufgabe zur Etappe hinzufügen", exact: true })
+    .locator("[data-goal-current-workbench]")
+    .getByRole("link", {
+      name: "Aufgabe zur Etappe hinzufügen",
+      exact: true,
+    })
     .click();
   const form = page.locator('form[aria-label="Aufgabe erstellen"]');
+  const contextualMilestoneId = await form
+    .locator('input[name="goalMilestoneId"]')
+    .inputValue();
+  expect(contextualMilestoneId).toMatch(/^[0-9a-f-]{36}$/i);
+  await expect(form).toHaveAttribute(
+    "data-goal-milestone-task-capture",
+    "title-first",
+  );
+  await expect(
+    form.locator("[data-goal-milestone-task-default]"),
+  ).toBeVisible();
+  await expect(
+    form.locator("[data-goal-milestone-task-context]"),
+  ).toContainText(milestoneTitle);
+  await expect(form.locator('input[name="goalId"]')).toHaveValue(goalId);
+  await expect(form.locator('input[name="goalMilestoneId"]')).toHaveValue(
+    contextualMilestoneId!,
+  );
+  await expect(form.getByLabel("Project-Kontext (optional)")).toBeVisible();
+  const optionalDetails = form.getByRole("button", {
+    name: "Weitere Angaben (optional)",
+    exact: true,
+  });
+  await expect(optionalDetails).toHaveAttribute("aria-expanded", "false");
+  for (const label of [
+    "Beschreibung / Kontext",
+    "Next Action",
+    "Priority",
+    "Energy",
+    "Duration (min)",
+    "Deadline",
+    "Geplantes Datum",
+  ]) {
+    await expect(form.getByLabel(label, { exact: true })).toBeHidden();
+  }
+  await optionalDetails.click();
+  await expect(optionalDetails).toHaveAttribute("aria-expanded", "true");
+  await expect(
+    form.getByLabel("Beschreibung / Kontext", { exact: true }),
+  ).toBeVisible();
+  await optionalDetails.click();
+  await expect(optionalDetails).toHaveAttribute("aria-expanded", "false");
   const title = form.getByLabel("Titel", { exact: true });
   await expect(title).toBeVisible();
   await expect(title).toBeEmpty();
@@ -226,6 +283,12 @@ test("Issue 41 Goal Journey is current-first, explicit and reload-stable", async
   await expect(root).toHaveAttribute("data-goal-read-first", "true");
   await expect(root.locator("[data-goal-now]")).toBeVisible();
   await expect(root.locator("[data-goal-journey-layout]")).toBeVisible();
+  await expect(root.locator("[data-goal-journey-layout]")).toHaveCount(1);
+  await expect(root.locator("[data-goal-current-workbench]")).toHaveCount(1);
+  await expect(root.locator("[data-goal-journey]")).toHaveCount(1);
+  await expect(
+    root.locator('[data-goal-planning-controls="journey"]'),
+  ).toBeHidden();
   await expect(root.locator("[data-goal-areas]")).toHaveCount(0);
   await expect(root.locator("[data-goal-journey-action]")).toHaveAttribute(
     "data-goal-journey-action",
@@ -246,15 +309,27 @@ test("Issue 41 Goal Journey is current-first, explicit and reload-stable", async
   await expect(root.locator("[data-goal-status]")).toHaveText("aktiv");
 
   const planToggle = root.getByRole("button", {
-    name: "Planung bearbeiten",
-    exact: true,
+    name: /^(Planung bearbeiten|Fertig)$/,
   });
   await planToggle.focus();
   await page.keyboard.press("Enter");
   await expect(planToggle).toHaveAttribute("aria-expanded", "true");
-  await expect(root.locator("[data-goal-planning-surface]")).toBeVisible();
+  await expect(root).toHaveAttribute("data-goal-planning-mode", "editing");
+  await expect(root.locator("[data-goal-journey-layout]")).toHaveCount(1);
+  await expect(root.locator("[data-goal-current-workbench]")).toHaveCount(1);
+  await expect(root.locator("[data-goal-journey]")).toHaveCount(1);
+  await expect(
+    root.locator('[data-goal-planning-controls="journey"]'),
+  ).toBeVisible();
+  await expect(
+    root.locator('[data-goal-planning-controls="definition-of-done"]'),
+  ).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(planToggle).toHaveAttribute("aria-expanded", "false");
+  await expect(root).toHaveAttribute("data-goal-planning-mode", "read");
+  await expect(
+    root.locator('[data-goal-planning-controls="journey"]'),
+  ).toBeHidden();
   await expect(planToggle).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(planToggle).toHaveAttribute("aria-expanded", "true");
@@ -311,6 +386,11 @@ test("Issue 41 Goal Journey is current-first, explicit and reload-stable", async
   await expect(root.locator("[data-goal-current-workbench]")).toContainText(
     firstMilestone,
   );
+  await expect(
+    root.locator(
+      "[data-goal-current-workbench] [data-goal-current-planning-controls]",
+    ),
+  ).toBeVisible();
   await expect(
     root
       .getByRole("region", { name: "Langfristige Goal Journey" })

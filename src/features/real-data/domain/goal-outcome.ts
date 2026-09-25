@@ -549,12 +549,58 @@ export function criterionEvaluationState(
 }
 
 const executableTaskStatuses = new Set(["planned", "active"]);
+const terminalTaskStatuses = new Set([
+  "done",
+  "completed",
+  "canceled",
+  "archived",
+]);
 
 function taskSortScore(task: GoalPathTaskContext) {
   const statusScore =
     task.status === "active" ? 0 : task.status === "planned" ? 1 : 2;
   const date = task.dueAt ?? task.plannedDate ?? "9999-12-31";
-  return `${statusScore}:${date}:${task.title.toLocaleLowerCase()}:${task.id}`;
+  return `${statusScore}:${date}:${task.title.toLowerCase()}:${task.id}`;
+}
+
+function compareTaskSortScore(
+  left: GoalPathTaskContext,
+  right: GoalPathTaskContext,
+) {
+  const leftScore = taskSortScore(left);
+  const rightScore = taskSortScore(right);
+  return leftScore < rightScore ? -1 : leftScore > rightScore ? 1 : 0;
+}
+
+export function orderCurrentGoalMilestoneTasks(
+  tasks: readonly GoalPathTaskContext[],
+  dependencyGraph: TaskDependencyGraph,
+  preferredTaskId?: string,
+) {
+  const tier = (task: GoalPathTaskContext) => {
+    const isExecutable = executableTaskStatuses.has(task.status);
+    const isCompleted = terminalTaskStatuses.has(task.status);
+    const isBlocked =
+      taskDependencyContext(dependencyGraph, task.id).availability ===
+      "BLOCKED";
+    if (
+      isExecutable &&
+      !isBlocked &&
+      preferredTaskId !== undefined &&
+      task.id === preferredTaskId
+    ) {
+      return 0;
+    }
+    if (isExecutable && !isBlocked) return 1;
+    if (isCompleted) return 4;
+    if (isBlocked) return 3;
+    return 2;
+  };
+
+  return [...tasks].sort(
+    (left, right) =>
+      tier(left) - tier(right) || compareTaskSortScore(left, right),
+  );
 }
 
 export function deriveGoalNextStep(input: {
@@ -572,9 +618,7 @@ export function deriveGoalNextStep(input: {
     .filter(
       (task) => !task.archivedAt && executableTaskStatuses.has(task.status),
     )
-    .sort((left, right) =>
-      taskSortScore(left).localeCompare(taskSortScore(right)),
-    );
+    .sort(compareTaskSortScore);
   const readyTasks = candidateTasks.filter(
     (task) =>
       taskDependencyContext(dependencyGraph, task.id).availability === "READY",
@@ -839,9 +883,22 @@ export function deriveGoalJourneyGuidance(
   );
   const candidateTasks = currentTasks
     .filter((task) => executableTaskStatuses.has(task.status))
-    .sort((left, right) =>
-      taskSortScore(left).localeCompare(taskSortScore(right)),
-    );
+    .sort(compareTaskSortScore);
+  const ready = candidateTasks.find(
+    (task) =>
+      taskDependencyContext(dependencyGraph, task.id).availability === "READY",
+  );
+  if (ready) {
+    return {
+      action: "open_ready_task",
+      title: ready.title,
+      reason:
+        "Diese Aufgabe gehört zur aktuellen Etappe und hat keine offene Aufgaben-Voraussetzung.",
+      task: ready,
+      blockers: [],
+    };
+  }
+
   const blocked = candidateTasks.find(
     (task) =>
       taskDependencyContext(dependencyGraph, task.id).availability ===
@@ -863,21 +920,6 @@ export function deriveGoalJourneyGuidance(
         : "Diese Aufgabe wartet auf eine offene Aufgaben-Voraussetzung.",
       task: blocked,
       blockers,
-    };
-  }
-
-  const ready = candidateTasks.find(
-    (task) =>
-      taskDependencyContext(dependencyGraph, task.id).availability === "READY",
-  );
-  if (ready) {
-    return {
-      action: "open_ready_task",
-      title: ready.title,
-      reason:
-        "Diese Aufgabe gehört zur aktuellen Etappe und hat keine offene Aufgaben-Voraussetzung.",
-      task: ready,
-      blockers: [],
     };
   }
 
