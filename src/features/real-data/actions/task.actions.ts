@@ -22,6 +22,7 @@ import {
 } from "@/features/real-data/supabase";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
 import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { isSqliteProofRuntime } from "../../../../experiments/issue-37/proof-gate";
 
 export type TaskScheduleActionResult = {
   message: string;
@@ -246,9 +247,9 @@ export async function updatePortfolioTaskAction(
   });
   if (!parsed.success)
     return { message: "Prüfe die Task-Felder.", status: "error" };
-  const result = await createSupabaseTaskRepository(
-    context.auth.client,
-  ).updateTask(parsed.data);
+  const result = isSqliteProofRuntime()
+    ? (await import("../../../../experiments/issue-37/sqlite-proof-runtime")).updateProofTask(context.auth.user.id, parsed.data)
+    : await createSupabaseTaskRepository(context.auth.client).updateTask(parsed.data);
   if (!result.ok) {
     return {
       message:
@@ -458,6 +459,7 @@ async function validateProjectScope(
   projectId: string | undefined,
 ) {
   if (!projectId || !context.ok) return true;
+  if (isSqliteProofRuntime()) return (await import("../../../../experiments/issue-37/sqlite-proof-runtime")).proofContextExists(context.auth.user.id, "project", projectId);
 
   const result = await context.auth.client
     .from("projects")
@@ -475,6 +477,7 @@ async function validateGoalScope(
   goalId: string | undefined,
 ) {
   if (!goalId || !context.ok) return true;
+  if (isSqliteProofRuntime()) return (await import("../../../../experiments/issue-37/sqlite-proof-runtime")).proofContextExists(context.auth.user.id, "goal", goalId);
 
   const result = await context.auth.client
     .from("goals")
@@ -608,6 +611,10 @@ export async function createPortfolioTaskAction(
   }
 
   if (formData.has("goalMilestoneId")) {
+    if (isSqliteProofRuntime()) return {
+      message: "Goal-Milestone-Kommandos sind nicht Teil des UI-Proofs.",
+      status: "error",
+    };
     const goalMilestoneId = optionalFormString(formData, "goalMilestoneId");
     if (!goalId || projectId || !goalMilestoneId || !z.uuid().safeParse(goalId).success || !z.uuid().safeParse(goalMilestoneId).success) {
       return {
@@ -643,8 +650,9 @@ export async function createPortfolioTaskAction(
     };
   }
 
-  const repository = createSupabaseTaskRepository(context.auth.client);
-  const result = await repository.createTask(parsed.data);
+  const result = isSqliteProofRuntime()
+    ? (await import("../../../../experiments/issue-37/sqlite-proof-runtime")).createProofTask(context.auth.user.id, parsed.data)
+    : await createSupabaseTaskRepository(context.auth.client).createTask(parsed.data);
 
   if (!result.ok) {
     return {
@@ -712,9 +720,9 @@ export async function completeTaskAction(
     };
   }
 
-  const result = await createSupabaseTaskRepository(
-    context.auth.client,
-  ).completeTask(parsed.data);
+  const result = isSqliteProofRuntime()
+    ? (await import("../../../../experiments/issue-37/sqlite-proof-runtime")).setProofTaskCompleted(context.auth.user.id, parsed.data.taskId, parsed.data.completedAt ?? new Date().toISOString())
+    : await createSupabaseTaskRepository(context.auth.client).completeTask(parsed.data);
 
   if (!result.ok) {
     return {
@@ -760,8 +768,9 @@ export async function reopenTaskAction(
     };
   }
 
-  const repository = createSupabaseTaskRepository(context.auth.client);
-  const result = await repository.reopenTask(parsed.data);
+  const result = isSqliteProofRuntime()
+    ? (await import("../../../../experiments/issue-37/sqlite-proof-runtime")).setProofTaskCompleted(context.auth.user.id, parsed.data.taskId, null)
+    : await createSupabaseTaskRepository(context.auth.client).reopenTask(parsed.data);
 
   if (!result.ok) {
     return {
