@@ -248,14 +248,17 @@ export async function updatePortfolioTaskAction(
   if (!parsed.success)
     return { message: "Prüfe die Task-Felder.", status: "error" };
   const result = isSqliteProofRuntime()
-    ? (await import("../../../../experiments/issue-37/sqlite-proof-runtime")).updateProofTask(context.auth.user.id, parsed.data)
-    : await createSupabaseTaskRepository(context.auth.client).updateTask(parsed.data);
+    ? (
+        await import("../../../../experiments/issue-37/sqlite-proof-runtime")
+      ).updateProofTask(context.auth.user.id, parsed.data)
+    : await createSupabaseTaskRepository(context.auth.client).updateTask(
+        parsed.data,
+      );
   if (!result.ok) {
     return {
-      message:
-        result.error.message.includes("DEPENDENCY_")
-          ? dependencyErrorMessage(result.error.message)
-          : result.error.code === "conflict"
+      message: result.error.message.includes("DEPENDENCY_")
+        ? dependencyErrorMessage(result.error.message)
+        : result.error.code === "conflict"
           ? "Dieses direkte Goal widerspricht dem Goal des ausgewählten Projects. Passe Project oder direktes Goal bewusst an."
           : "Der Task konnte nicht gespeichert werden.",
       status: "error",
@@ -459,7 +462,10 @@ async function validateProjectScope(
   projectId: string | undefined,
 ) {
   if (!projectId || !context.ok) return true;
-  if (isSqliteProofRuntime()) return (await import("../../../../experiments/issue-37/sqlite-proof-runtime")).proofContextExists(context.auth.user.id, "project", projectId);
+  if (isSqliteProofRuntime())
+    return (
+      await import("../../../../experiments/issue-37/sqlite-proof-runtime")
+    ).proofContextExists(context.auth.user.id, "project", projectId);
 
   const result = await context.auth.client
     .from("projects")
@@ -477,7 +483,10 @@ async function validateGoalScope(
   goalId: string | undefined,
 ) {
   if (!goalId || !context.ok) return true;
-  if (isSqliteProofRuntime()) return (await import("../../../../experiments/issue-37/sqlite-proof-runtime")).proofContextExists(context.auth.user.id, "goal", goalId);
+  if (isSqliteProofRuntime())
+    return (
+      await import("../../../../experiments/issue-37/sqlite-proof-runtime")
+    ).proofContextExists(context.auth.user.id, "goal", goalId);
 
   const result = await context.auth.client
     .from("goals")
@@ -611,14 +620,21 @@ export async function createPortfolioTaskAction(
   }
 
   if (formData.has("goalMilestoneId")) {
-    if (isSqliteProofRuntime()) return {
-      message: "Goal-Milestone-Kommandos sind nicht Teil des UI-Proofs.",
-      status: "error",
-    };
-    const goalMilestoneId = optionalFormString(formData, "goalMilestoneId");
-    if (!goalId || projectId || !goalMilestoneId || !z.uuid().safeParse(goalId).success || !z.uuid().safeParse(goalMilestoneId).success) {
+    if (isSqliteProofRuntime())
       return {
-        message: "Eine Etappen-Aufgabe benötigt genau ein aktives Ziel und keine Projekt-Zuordnung.",
+        message: "Goal-Milestone-Kommandos sind nicht Teil des UI-Proofs.",
+        status: "error",
+      };
+    const goalMilestoneId = optionalFormString(formData, "goalMilestoneId");
+    if (
+      !goalId ||
+      !goalMilestoneId ||
+      !z.uuid().safeParse(goalId).success ||
+      !z.uuid().safeParse(goalMilestoneId).success
+    ) {
+      return {
+        message:
+          "Eine Etappen-Aufgabe benötigt ein gültiges Ziel und eine aktuelle Etappe.",
         status: "error",
       };
     }
@@ -631,6 +647,7 @@ export async function createPortfolioTaskAction(
       energy: parsed.data.energy,
       goalId,
       milestoneId: goalMilestoneId,
+      projectId: parsed.data.projectId,
       plannedDate: parsed.data.plannedDate,
       priority: parsed.data.priority,
       title: parsed.data.title,
@@ -651,19 +668,22 @@ export async function createPortfolioTaskAction(
   }
 
   const result = isSqliteProofRuntime()
-    ? (await import("../../../../experiments/issue-37/sqlite-proof-runtime")).createProofTask(context.auth.user.id, parsed.data)
-    : await createSupabaseTaskRepository(context.auth.client).createTask(parsed.data);
+    ? (
+        await import("../../../../experiments/issue-37/sqlite-proof-runtime")
+      ).createProofTask(context.auth.user.id, parsed.data)
+    : await createSupabaseTaskRepository(context.auth.client).createTask(
+        parsed.data,
+      );
 
   if (!result.ok) {
     return {
-      message:
-        result.error.message.includes("DEPENDENCY_")
-          ? dependencyErrorMessage(result.error.message)
-          : result.error.message.includes("Milestone")
+      message: result.error.message.includes("DEPENDENCY_")
+        ? dependencyErrorMessage(result.error.message)
+        : result.error.message.includes("Milestone")
           ? "Der Milestone ist nicht mehr verfügbar oder gehört nicht zum gewählten Project."
           : result.error.code === "conflict"
-          ? "Dieses direkte Goal widerspricht dem Goal des ausgewählten Projects. Passe Project oder direktes Goal bewusst an."
-          : "Der Task konnte in Supabase nicht erstellt werden.",
+            ? "Dieses direkte Goal widerspricht dem Goal des ausgewählten Projects. Passe Project oder direktes Goal bewusst an."
+            : "Der Task konnte in Supabase nicht erstellt werden.",
       status: "error",
     };
   }
@@ -721,20 +741,28 @@ export async function completeTaskAction(
   }
 
   const result = isSqliteProofRuntime()
-    ? (await import("../../../../experiments/issue-37/sqlite-proof-runtime")).setProofTaskCompleted(context.auth.user.id, parsed.data.taskId, parsed.data.completedAt ?? new Date().toISOString())
-    : await createSupabaseTaskRepository(context.auth.client).completeTask(parsed.data);
+    ? (
+        await import("../../../../experiments/issue-37/sqlite-proof-runtime")
+      ).setProofTaskCompleted(
+        context.auth.user.id,
+        parsed.data.taskId,
+        parsed.data.completedAt ?? new Date().toISOString(),
+      )
+    : await createSupabaseTaskRepository(context.auth.client).completeTask(
+        parsed.data,
+      );
 
   if (!result.ok) {
     return {
       message: result.error.message.includes("DEPENDENCY_")
         ? dependencyErrorMessage(result.error.message)
         : result.error.message.includes("review through its review flow")
-        ? "Dieser Task gehört zu einem offenen Review. Schließe das Review über seinen Review-Flow ab."
-        : result.error.message.includes("running flow")
-          ? "Dieser Task gehört zu einer offenen Laufeinheit. Schließe den Lauf über den Running-Flow ab."
-          : result.error.message.includes("strength flow")
-            ? "Dieser Task gehört zu einer offenen Krafttrainingseinheit. Schließe das Training über den Strength-Flow ab."
-            : "Der Task konnte in Supabase nicht abgeschlossen werden.",
+          ? "Dieser Task gehört zu einem offenen Review. Schließe das Review über seinen Review-Flow ab."
+          : result.error.message.includes("running flow")
+            ? "Dieser Task gehört zu einer offenen Laufeinheit. Schließe den Lauf über den Running-Flow ab."
+            : result.error.message.includes("strength flow")
+              ? "Dieser Task gehört zu einer offenen Krafttrainingseinheit. Schließe das Training über den Strength-Flow ab."
+              : "Der Task konnte in Supabase nicht abgeschlossen werden.",
       status: "error",
     };
   }
@@ -769,15 +797,18 @@ export async function reopenTaskAction(
   }
 
   const result = isSqliteProofRuntime()
-    ? (await import("../../../../experiments/issue-37/sqlite-proof-runtime")).setProofTaskCompleted(context.auth.user.id, parsed.data.taskId, null)
-    : await createSupabaseTaskRepository(context.auth.client).reopenTask(parsed.data);
+    ? (
+        await import("../../../../experiments/issue-37/sqlite-proof-runtime")
+      ).setProofTaskCompleted(context.auth.user.id, parsed.data.taskId, null)
+    : await createSupabaseTaskRepository(context.auth.client).reopenTask(
+        parsed.data,
+      );
 
   if (!result.ok) {
     return {
-      message:
-        result.error.message.includes("DEPENDENCY_")
-          ? dependencyErrorMessage(result.error.message)
-          : result.error.code === "conflict"
+      message: result.error.message.includes("DEPENDENCY_")
+        ? dependencyErrorMessage(result.error.message)
+        : result.error.code === "conflict"
           ? "Verknüpfte Tasks werden über ihren zuständigen Domain-Flow wieder geöffnet."
           : "Der Task konnte in Supabase nicht wieder geöffnet werden.",
       status: "error",
@@ -819,10 +850,9 @@ export async function archiveTaskAction(
 
   if (!result.ok) {
     return {
-      message:
-        result.error.message.includes("DEPENDENCY_")
-          ? dependencyErrorMessage(result.error.message)
-          : result.error.code === "conflict"
+      message: result.error.message.includes("DEPENDENCY_")
+        ? dependencyErrorMessage(result.error.message)
+        : result.error.code === "conflict"
           ? "Verknüpfte Tasks werden über ihren zuständigen Domain-Flow archiviert."
           : "Der Task konnte in Supabase nicht archiviert werden.",
       status: "error",

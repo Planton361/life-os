@@ -284,7 +284,7 @@ export async function WorkbenchEditor({
             milestone.id === goalMilestoneContext &&
             milestone.goal_id === contextGoal?.id &&
             !milestone.archived_at &&
-            milestone.status !== "archived",
+            milestone.status === "active",
         )
       : undefined;
   if (
@@ -374,16 +374,26 @@ export async function WorkbenchEditor({
   if (kind === "goal" && id && row) {
     const outcome = isSqliteProofRuntime()
       ? await (async () => {
-          const { getProofOwnerId, readProofGoalOutcome, readProofSnapshot } = await import("../../../../experiments/issue-37/sqlite-proof-runtime");
+          const { getProofOwnerId, readProofGoalOutcome, readProofSnapshot } =
+            await import("../../../../experiments/issue-37/sqlite-proof-runtime");
           const ownerId = await getProofOwnerId();
           if (!ownerId) return null;
-          const projection = readProofGoalOutcome(ownerId, id, readProofSnapshot(ownerId));
+          const projection = readProofGoalOutcome(
+            ownerId,
+            id,
+            readProofSnapshot(ownerId),
+          );
           return projection ? { ok: true as const, data: projection } : null;
         })()
       : await (async () => {
           const auth = await createAuthenticatedSupabaseServerClient();
           if (!auth.ok) return null;
-          return getGoalOutcome(auth.client, auth.user.id, id, data.dependencyGraph);
+          return getGoalOutcome(
+            auth.client,
+            auth.user.id,
+            id,
+            data.dependencyGraph,
+          );
         })();
     if (!outcome) {
       return (
@@ -548,6 +558,16 @@ export async function WorkbenchEditor({
                     milestoneId: contextGoalMilestone.id,
                     goalTitle: contextGoal.title,
                     milestoneTitle: contextGoalMilestone.title,
+                    projects: data.projects
+                      .filter(
+                        (project) =>
+                          project.goal_id === contextGoal.id &&
+                          !project.archived_at,
+                      )
+                      .map((project) => ({
+                        id: project.id,
+                        title: project.title,
+                      })),
                   }
                 : undefined
             }

@@ -309,11 +309,7 @@ function effectiveEvidenceProjection<
     corrects_event_id: string | null;
   },
   E extends GoalMilestoneAchievementEvidenceRow | GoalAchievementEvidenceRow,
->(
-  eventId: string,
-  eventRows: readonly T[],
-  evidenceRows: readonly E[],
-) {
+>(eventId: string, eventRows: readonly T[], evidenceRows: readonly E[]) {
   const chainEventIds = new Set(
     correctionChainEventIds(
       eventId,
@@ -436,6 +432,7 @@ export type GoalContextTaskInput = {
   userId: string;
   goalId: string;
   milestoneId: string;
+  projectId?: string;
   title: string;
   description?: string;
   priority?: string;
@@ -503,27 +500,30 @@ export async function createGoalContextTask(
 ): Promise<RepositoryResult<{ id: string }>> {
   const scoped = scopeFailure(input);
   if (scoped) return scoped;
-  const command = await executeGoalCommand(
-    client,
-    "task.context.create",
-    {
-      user_id: input.userId,
-      goal_id: input.goalId,
-      milestone_id: input.milestoneId,
-      title: input.title,
-      description: input.description ?? null,
-      priority: input.priority ?? "P2",
-      energy: input.energy ?? null,
-      planned_date: input.plannedDate ?? null,
-      due_at: input.dueAt ?? null,
-      duration_minutes: input.durationMinutes ?? null,
-      area_id: input.areaId ?? null,
-    },
-    input.commandId,
-  );
-  if (!command.ok) return command;
+  const payload = {
+    user_id: input.userId,
+    goal_id: input.goalId,
+    milestone_id: input.milestoneId,
+    project_id: input.projectId ?? null,
+    title: input.title,
+    description: input.description ?? null,
+    priority: input.priority ?? "P2",
+    energy: input.energy ?? null,
+    planned_date: input.plannedDate ?? null,
+    due_at: input.dueAt ?? null,
+    duration_minutes: input.durationMinutes ?? null,
+    area_id: input.areaId ?? null,
+  };
+  const commandId = input.commandId ?? randomUUID();
+  const command = (await client.rpc("create_goal_milestone_task", {
+    p_command_id: commandId,
+    p_request_fingerprint: fingerprint("task.context.create", payload),
+    p_payload: payload as unknown as import("@/types/supabase").Json,
+  })) as SupabaseQueryResult<GoalCommandResult>;
+  if (command.error)
+    return dbFailure("create Goal milestone Task", command.error);
   const id =
-    typeof command.data.task_id === "string" ? command.data.task_id : null;
+    typeof command.data?.task_id === "string" ? command.data.task_id : null;
   return id ? { ok: true, data: { id } } : dbFailure("read created Goal Task");
 }
 
@@ -878,11 +878,12 @@ export async function getGoalOutcome(
   );
   const effectiveMilestoneEventIds = new Set(
     [...new Set(milestoneHistoryLocal.map((event) => event.episodeId))]
-      .map((episodeId) =>
-        latestGoalMilestoneAchievementEventInEpisode(
-          milestoneHistoryLocal,
-          episodeId,
-        )?.id,
+      .map(
+        (episodeId) =>
+          latestGoalMilestoneAchievementEventInEpisode(
+            milestoneHistoryLocal,
+            episodeId,
+          )?.id,
       )
       .filter((id): id is string => Boolean(id)),
   );
@@ -940,11 +941,12 @@ export async function getGoalOutcome(
   );
   const effectiveAchievementEventIds = new Set(
     [...new Set(achievementHistoryLocal.map((event) => event.episodeId))]
-      .map((episodeId) =>
-        latestGoalAchievementEventInEpisode(
-          achievementHistoryLocal,
-          episodeId,
-        )?.id,
+      .map(
+        (episodeId) =>
+          latestGoalAchievementEventInEpisode(
+            achievementHistoryLocal,
+            episodeId,
+          )?.id,
       )
       .filter((id): id is string => Boolean(id)),
   );
@@ -1198,21 +1200,65 @@ export async function setGoalMilestoneStatus(
       "conflict",
       "Ein archivierter Milestone kann nicht verändert werden.",
     );
-  if (
-    input.status === "achieved" ||
-    (input.status === "active" && current.data.status === "achieved")
-  ) {
-    const command = await executeGoalCommand(
+  if (input.status === "active") {
+    const expectedUpdatedAt =
+      input.expectedUpdatedAt ?? current.data.updated_at;
+    const isReopen = current.data.status === "achieved";
+    const reopenPayload = {
+      goal_id: input.goalId,
+      milestone_id: input.milestoneId,
+      expected_updated_at: expectedUpdatedAt,
+    };
+    const currentResult = await client.rpc("set_goal_current_milestone", {
+      p_goal_id: input.goalId,
+      p_milestone_id: input.milestoneId,
+      p_expected_updated_at: expectedUpdatedAt,
+      ...(isReopen
+        ? {
+            p_command_id: input.commandId ?? randomUUID(),
+            p_request_fingerprint: fingerprint(
+              "milestone.reopen",
+              reopenPayload,
+            ),
+          }
+        : {}),
+    });
+    if (currentResult.error)
+      return dbFailure("set Goal Current milestone", currentResult.error);
+    const refreshed = await activeMilestone(
       client,
-      input.status === "achieved" ? "milestone.achieve" : "milestone.reopen",
-      {
-        goal_id: input.goalId,
-        milestone_id: input.milestoneId,
-        expected_updated_at: input.expectedUpdatedAt ?? current.data.updated_at,
-      },
-      input.commandId,
+      input.userId,
+      input.goalId,
+      input.milestoneId,
     );
-    if (!command.ok) return command;
+    if (refreshed.error)
+      return dbFailure("reload Goal milestone", refreshed.error);
+    if (!refreshed.data) return notFound("Goal milestone");
+    return { ok: true, data: mapMilestone(refreshed.data) };
+  }
+
+  if (input.status === "achieved") {
+    const expectedUpdatedAt =
+      input.expectedUpdatedAt ?? current.data.updated_at;
+    const achievementPayload = {
+      goal_id: input.goalId,
+      milestone_id: input.milestoneId,
+      expected_updated_at: expectedUpdatedAt,
+      note: input.note ?? null,
+    };
+    const reviewResult = await client.rpc("review_goal_milestone", {
+      p_goal_id: input.goalId,
+      p_milestone_id: input.milestoneId,
+      p_command_id: input.commandId ?? randomUUID(),
+      p_request_fingerprint: fingerprint(
+        "milestone.achieve",
+        achievementPayload,
+      ),
+      p_expected_updated_at: expectedUpdatedAt,
+      p_note: input.note ?? null,
+    });
+    if (reviewResult.error)
+      return dbFailure("review Goal milestone", reviewResult.error);
     const refreshed = await activeMilestone(
       client,
       input.userId,

@@ -51,7 +51,7 @@ export const goalMilestoneCreateInputSchema = profileScope.extend({
   title: requiredTrimmedStringSchema(1),
   description: optionalText,
   targetDate: optionalDate,
-  status: z.enum(["planned", "active"]),
+  status: z.literal("planned"),
   sortOrder: z.coerce.number().int().nonnegative().default(0),
 });
 
@@ -67,6 +67,7 @@ export const goalMilestoneStatusInputSchema = profileScope.extend({
   goalId: id,
   milestoneId: id,
   status: z.enum(["planned", "active", "achieved"]),
+  note: optionalText,
   ...commandMetadata,
 });
 

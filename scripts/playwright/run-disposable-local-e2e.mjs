@@ -157,6 +157,7 @@ async function main() {
       ...developmentEnv(),
       TMPDIR: root,
       LIFE_OS_E2E_DIST_DIR: distDir,
+      LIFE_OS_E2E_PROJECT_ID: projectId,
       LIFE_OS_E2E_RUNTIME: "DISPOSABLE",
       NEXT_PUBLIC_SUPABASE_ANON_KEY: values.ANON_KEY ?? publishableKey,
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: publishableKey,

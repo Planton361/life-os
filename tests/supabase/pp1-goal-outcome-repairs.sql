@@ -146,10 +146,32 @@ begin
    where id = '91000000-0000-4000-8000-000000000020';
   update public.goal_milestones set status = 'active'
    where id = '91000000-0000-4000-8000-000000000020';
-  update public.goal_milestones set status = 'achieved'
-   where id = '91000000-0000-4000-8000-000000000020';
-  update public.goal_milestones set status = 'active'
-   where id = '91000000-0000-4000-8000-000000000020';
+  perform pg_temp.reject(
+    $transition$update public.goal_milestones set status = 'achieved' where id = '91000000-0000-4000-8000-000000000020'$transition$,
+    'GOAL_MILESTONE_REVIEW_REQUIRED'
+  );
+  perform public.execute_goal_command(
+    'milestone.achieve',
+    '91000000-0000-4000-8000-000000000102',
+    'repair-milestone-achieve',
+    jsonb_build_object(
+      'goal_id', '91000000-0000-4000-8000-000000000010',
+      'milestone_id', '91000000-0000-4000-8000-000000000020'
+    )
+  );
+  perform pg_temp.reject(
+    $transition$update public.goal_milestones set status = 'active' where id = '91000000-0000-4000-8000-000000000020'$transition$,
+    'GOAL_MILESTONE_REVIEW_REQUIRED'
+  );
+  perform public.execute_goal_command(
+    'milestone.reopen',
+    '91000000-0000-4000-8000-000000000103',
+    'repair-milestone-reopen',
+    jsonb_build_object(
+      'goal_id', '91000000-0000-4000-8000-000000000010',
+      'milestone_id', '91000000-0000-4000-8000-000000000020'
+    )
+  );
   perform pg_temp.reject(
     $transition$update public.goal_milestones set status = 'achieved' where id = '91000000-0000-4000-8000-000000000021'$transition$,
     'GOAL_MILESTONE_STATUS_TRANSITION_INVALID'
@@ -159,8 +181,15 @@ begin
    where id = '91000000-0000-4000-8000-000000000021';
 
   -- Ready Goal-level criterion and achieved milestone do not bypass lifecycle.
-  update public.goal_milestones set status = 'achieved'
-   where id = '91000000-0000-4000-8000-000000000020';
+  perform public.execute_goal_command(
+    'milestone.achieve',
+    '91000000-0000-4000-8000-000000000104',
+    'repair-milestone-achieve-before-goal-review',
+    jsonb_build_object(
+      'goal_id', '91000000-0000-4000-8000-000000000010',
+      'milestone_id', '91000000-0000-4000-8000-000000000020'
+    )
+  );
   update public.goals set status = 'draft'
    where id = '91000000-0000-4000-8000-000000000010';
   perform pg_temp.reject(

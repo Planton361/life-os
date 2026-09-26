@@ -208,6 +208,7 @@ async function runGoalOutcomeOperation(
       goalId: str(form, "goalId"),
       milestoneId: str(form, "milestoneId"),
       status: str(form, "status"),
+      note: str(form, "note"),
       ...commandFields(form),
     });
     return parsed.success

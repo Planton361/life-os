@@ -54,7 +54,7 @@ insert into public.goal_milestones (
     '92000000-0000-4000-8000-000000000010',
     'PP1 second Etappe',
     'Second bounded step.',
-    'active',
+    'planned',
     1
   );
 
@@ -303,6 +303,18 @@ begin
       'occurred_at', '2026-09-21T00:06:00Z'
     )
   );
+  select count(*) into v_count
+    from public.goal_milestones
+   where goal_id = '92000000-0000-4000-8000-000000000010'
+     and archived_at is null
+     and status = 'active';
+  if v_count <> 1 or not exists (
+    select 1 from public.goal_milestones
+     where id = '92000000-0000-4000-8000-000000000021'
+       and status = 'active'
+  ) then
+    raise exception 'Explicit milestone review did not atomically advance the ordered journey';
+  end if;
   perform public.execute_goal_command(
     'milestone.evidence',
     '92000000-0000-4000-8000-000000000121',
