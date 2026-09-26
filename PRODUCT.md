@@ -39,7 +39,7 @@ management, and one contextually valid next action. Their domain semantics remai
 separate. Goal Milestones/Outcome Criteria, Project Milestones and future Skill
 Milestones/Evidence/Targets/Prerequisites are not flattened into a universal
 model. Only explicit Task-to-Task Dependencies create execution READY/BLOCKED.
-Accepted Goal Journey #39 and the Project read-first workbench remain binding. The earlier Goal A-v2 composition is retained as implementation evidence but is superseded as the Goal interaction target.
+Accepted Goal semantics from #39 plus the simplified Goal surface target from #44 are binding. The earlier A-v2 and separate-JETZT compositions are retained only as implementation/history evidence where #44 supersedes them.
 
 Calendar, Today, Dashboard and Portfolio are projections over the same canonical
 Task/scheduling truth, not parallel planning stores. Obsidian remains the owner of
@@ -47,13 +47,12 @@ long-form Knowledge Content; Life OS retains operational IDs, status, planning,
 dependencies and relation semantics. Any future Obsidian graph projection is
 one-way/non-authoritative unless a separate command/security contract is accepted.
 
-## Accepted #39 Goal Journey target
+## Accepted Goal target — #39 semantics + #44 simplified surface
 
-Issue #39 is USER ACCEPTED and supersedes the prior Goal A-v2 information
-architecture where they conflict.
+Issue #39 established the Goal Journey semantics. Issue #44 is USER ACCEPTED and
+materially simplifies the Goal Detail composition where they conflict.
 
-Goal is the highest-order outcome. Goal Detail presents one guided completion
-journey rather than parallel progress systems:
+The durable Goal completion model remains:
 
 ```text
 Goal identity / intended outcome / why
@@ -61,10 +60,10 @@ Goal identity / intended outcome / why
 → ordered Goal Milestone Journey
 → exactly one Current Milestone
 → executable Tasks for that Current Milestone
-→ Milestone Review
+→ explicit Milestone Review
 → next Milestone
-→ Goal Review against Definition of Done
-→ explicit achievement or continued planning
+→ explicit Goal Review against Definition of Done
+→ achievement or continued planning
 ```
 
 Goal Outcome Criteria / Definition of Done describe when the Goal may be accepted
@@ -78,32 +77,103 @@ Tasks remain the only executable/schedulable Goal work units and therefore the
 only Goal work units that flow into Calendar and Today. Projects are optional work
 context/containers and never become an additional Goal completion lane. Completing
 all planned Tasks never automatically completes a Goal Milestone; it makes the
-intermediate outcome ready for explicit user review. Completing all Milestones
+intermediate result ready for explicit user review. Completing all Milestones
 never automatically achieves the Goal; the final Goal Review evaluates the
 Definition of Done and requires explicit confirmation.
 
-Goal Detail is read/work-first by default. It uses a calm identity header, one
-dominant `JETZT` focus surface, then a main workbench with the Current Milestone
-and short-term Tasks as the dominant region and the long-term Journey as a quieter
-rail. The former equal-weight `Überblick / Arbeit / Erfolg / Verlauf` primary-tab
-composition is superseded as the Goal target.
+### Simplified Goal Detail composition (#44)
 
-Structural management is a separate explicit `Planung bearbeiten` mode. Normal
-work mode orients and executes; planning mode reveals in-place structural actions
-for Definition of Done, Milestones, Task association/creation and optional Project
-context, and exits through `Fertig`. Goal identity editing and lifecycle/admin
-actions remain separate from planning structure.
+Goal Detail is read/work-first and must not require the user to understand the
+internal Goal model before acting.
 
-Control hierarchy is binding for Goal Detail: one filled primary action for the
-current Goal decision; secondary buttons only for immediate alternatives;
-navigation as text links; structural create/edit controls mainly in planning mode;
-lifecycle/admin in overflow; passive status badges must not look interactive.
+The default surface has three levels only:
 
-Long-term vs short-term planning is intentional: future Milestones stay thin until
-they become Current; concrete Tasks are planned primarily for the Current
-Milestone. In product language: long term = Milestone Journey, short term = Tasks
-of the Current Milestone, now = one READY Task, one blocker, or one planning/review
-decision.
+1. a calm Goal identity header;
+2. **one current-work surface** that combines Current Milestone context and the
+   one current guidance action/decision;
+3. a quiet roadmap of completed/current/future intermediate results ending in
+   Goal Review.
+
+There is no separate large `JETZT` card followed by a second Current-Milestone
+workbench. Guidance remains derived from canonical state, but its visible output
+is integrated into the current-work surface.
+
+The current-work surface answers together:
+- where am I now;
+- what intermediate result am I trying to make true;
+- what do I do next.
+
+Primary user language may prefer `Zwischenziel` / `Zwischenresultat` over the
+internal `Goal Milestone` term when that makes the outcome condition clearer.
+
+The roadmap is orientation only. It shows completed, current and future
+intermediate results plus the final `Ziel prüfen` gate. It does not repeat Tasks,
+criterion counts, Task counts or generic progress summaries. For a Goal with only
+one intermediate result, the roadmap may collapse to a compact
+`Danach → Ziel prüfen` cue.
+
+The Definition of Done remains canonical truth but ordinary execution does not
+require the user to learn that term. Preferred user questions are:
+- planning: `Wann ist das Ziel erreicht?`;
+- final review: `Ist dein Ziel erreicht?`;
+- criteria: `Erreicht, wenn …`.
+
+Planning remains separate from execution, but becomes more guided and progressive.
+The canonical planning sequence is:
+
+```text
+Was willst du erreichen?
+→ Woran erkennst du, dass es geschafft ist?
+→ Was soll als Nächstes wahr sein?
+→ Was kannst du konkret als Nächstes tun?
+```
+
+This interaction sequence maps to existing Goal identity, Outcome Criteria,
+Current Goal Milestone and Task structures. It is not a new persisted Goal state
+machine.
+
+Normal work mode orients and executes. Planning mode changes Goal acceptance
+criteria, intermediate results, Task association/creation and optional Project
+context without becoming a wall of all management controls.
+
+Completion remains explicit:
+- Task completion does not complete a Milestone;
+- after planned work, the user confirms whether the intermediate result is
+  actually achieved or adds more work;
+- after the final intermediate result, the user reviews the Goal against its
+  canonical success criteria and explicitly achieves or continues planning.
+
+### Visual target
+
+The current-work surface uses the existing V5 navy surface hierarchy rather than
+the rejected black JETZT treatment. Use existing tokens:
+- `--bg-app` for app/background;
+- `--surface-1` for ordinary surfaces;
+- `--surface-2` or bounded `--surface-3` for current-work emphasis;
+- `--accent-cyan` only as semantic Current/primary-action accent.
+
+No new palette, neon treatment, strong gradient or full cyan frame is introduced.
+Emphasis comes from tone, hierarchy and one primary action.
+
+The following #39 composition details are superseded:
+- separate dominant `JETZT` surface;
+- separate Current-Milestone workbench immediately below it;
+- required 68/32 Current Work / Journey desktop composition;
+- mobile stack `JETZT → Current Milestone → Tasks → Journey`.
+
+The following #39/#41 semantics remain binding:
+- one dominant next decision/action;
+- exactly one Current Milestone;
+- explicit planning mode;
+- progressive planning;
+- quiet success criteria during execution;
+- explicit Milestone/Goal reviews;
+- Tasks as execution layer;
+- Journey/roadmap as long-term orientation only;
+- READY/BLOCKED only from Task Dependencies;
+- append-only PP1 history/evidence;
+- no generic Goal percentage and no automatic achievement.
+
 
 ## 1. Product Promise
 
