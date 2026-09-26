@@ -46,10 +46,64 @@ select set_config('request.jwt.claim.role', 'authenticated', true);
 do $$
 declare
   v_current_count integer;
+  v_event_count integer;
   v_result jsonb;
   v_task_id uuid;
   v_project_id uuid := '94100000-0000-4000-8000-000000000030';
 begin
+  if current_user <> 'authenticated' then
+    raise exception 'Raw-write proof must execute as authenticated';
+  end if;
+
+  -- Authenticated metadata edits and reordering remain available.
+  update public.goal_milestones
+     set title = 'First milestone (edited)', description = 'Metadata remains editable.'
+   where id = '94100000-0000-4000-8000-000000000020';
+  update public.goal_milestones
+     set sort_order = 2
+   where id = '94100000-0000-4000-8000-000000000021';
+  if not exists (
+    select 1 from public.goal_milestones
+     where id = '94100000-0000-4000-8000-000000000020'
+       and title = 'First milestone (edited)'
+       and description = 'Metadata remains editable.'
+  ) or not exists (
+    select 1 from public.goal_milestones
+     where id = '94100000-0000-4000-8000-000000000021'
+       and sort_order = 2
+  ) then
+    raise exception 'Authenticated Goal Milestone metadata or order update was rejected';
+  end if;
+  update public.goal_milestones set sort_order = 1
+   where id = '94100000-0000-4000-8000-000000000021';
+
+  -- Raw completion cannot bypass the canonical review/history command.
+  perform pg_temp.reject(
+    $reject$update public.goal_milestones set status = 'achieved' where id = '94100000-0000-4000-8000-000000000020'$reject$,
+    'GOAL_MILESTONE_REVIEW_REQUIRED'
+  );
+  select count(*) into v_current_count
+    from public.goal_milestones
+   where user_id = auth.uid()
+     and goal_id = '94100000-0000-4000-8000-000000000010'
+     and archived_at is null
+     and status = 'active';
+  select count(*) into v_event_count
+    from public.goal_milestone_achievement_events
+   where user_id = auth.uid()
+     and goal_milestone_id = '94100000-0000-4000-8000-000000000020';
+  if v_current_count <> 1 or v_event_count <> 0 or not exists (
+    select 1 from public.goal_milestones
+     where id = '94100000-0000-4000-8000-000000000020'
+       and status = 'active'
+  ) or not exists (
+    select 1 from public.goal_milestones
+     where id = '94100000-0000-4000-8000-000000000021'
+       and status = 'planned'
+  ) then
+    raise exception 'Rejected raw achievement changed status, history, or Current selection';
+  end if;
+
   -- A second active insert is serialized through the Goal lock and demotes the old Current.
   insert into public.goal_milestones (
     id, user_id, goal_id, title, status, sort_order
@@ -117,9 +171,38 @@ begin
   if not exists (
     select 1 from public.goal_milestone_achievement_events
      where id = (v_result->>'event_id')::uuid
+       and event_type = 'achieved'
        and note = 'Reviewed the intermediate result.'
   ) then
     raise exception 'Milestone review note was not preserved in the append-only event';
+  end if;
+  select count(*) into v_event_count
+    from public.goal_milestone_achievement_events
+   where user_id = auth.uid()
+     and goal_milestone_id = '94100000-0000-4000-8000-000000000021';
+  if v_event_count <> 1 or not exists (
+    select 1 from public.goal_milestone_achievement_events
+     where goal_milestone_id = '94100000-0000-4000-8000-000000000021'
+       and event_type = 'achieved'
+  ) then
+    raise exception 'Canonical review must write exactly one achievement event';
+  end if;
+  select count(*) into v_current_count
+    from public.goal_milestones
+   where user_id = auth.uid()
+     and goal_id = '94100000-0000-4000-8000-000000000010'
+     and archived_at is null
+     and status = 'active';
+  if v_current_count <> 1 or not exists (
+    select 1 from public.goal_milestones
+     where id = '94100000-0000-4000-8000-000000000021'
+       and status = 'achieved'
+  ) or not exists (
+    select 1 from public.goal_milestones
+     where id = '94100000-0000-4000-8000-000000000020'
+       and status = 'active'
+  ) then
+    raise exception 'Canonical review did not achieve once and advance to exactly the next Current';
   end if;
   if not exists (
     select 1 from public.goals
@@ -128,6 +211,37 @@ begin
        and achieved_at is null
   ) then
     raise exception 'Milestone review must not automatically achieve the Goal';
+  end if;
+
+  -- Raw reopen cannot change Current state or append a false reopen event.
+  perform pg_temp.reject(
+    $reject$update public.goal_milestones set status = 'active' where id = '94100000-0000-4000-8000-000000000021'$reject$,
+    'GOAL_MILESTONE_REVIEW_REQUIRED'
+  );
+  select count(*) into v_current_count
+    from public.goal_milestones
+   where user_id = auth.uid()
+     and goal_id = '94100000-0000-4000-8000-000000000010'
+     and archived_at is null
+     and status = 'active';
+  select count(*) into v_event_count
+    from public.goal_milestone_achievement_events
+   where user_id = auth.uid()
+     and goal_milestone_id = '94100000-0000-4000-8000-000000000021';
+  if v_current_count <> 1 or v_event_count <> 1 or not exists (
+    select 1 from public.goal_milestones
+     where id = '94100000-0000-4000-8000-000000000021'
+       and status = 'achieved'
+  ) or not exists (
+    select 1 from public.goal_milestones
+     where id = '94100000-0000-4000-8000-000000000020'
+       and status = 'active'
+  ) or exists (
+    select 1 from public.goal_milestone_achievement_events
+     where goal_milestone_id = '94100000-0000-4000-8000-000000000021'
+       and event_type = 'reopened'
+  ) then
+    raise exception 'Rejected raw reopen changed status, history, or Current selection';
   end if;
 
   -- Reopening is an explicit history event and switches Current atomically.
@@ -157,6 +271,21 @@ begin
        and event_type = 'reopened'
   ) then
     raise exception 'Reopening must append an event';
+  end if;
+  select count(*) into v_event_count
+    from public.goal_milestone_achievement_events
+   where user_id = auth.uid()
+     and goal_milestone_id = '94100000-0000-4000-8000-000000000021';
+  if v_event_count <> 2 or (
+    select count(*) from public.goal_milestone_achievement_events
+     where goal_milestone_id = '94100000-0000-4000-8000-000000000021'
+       and event_type = 'achieved'
+  ) <> 1 or (
+    select count(*) from public.goal_milestone_achievement_events
+     where goal_milestone_id = '94100000-0000-4000-8000-000000000021'
+       and event_type = 'reopened'
+  ) <> 1 then
+    raise exception 'Canonical reopen history must contain exactly one achievement and one reopen';
   end if;
 
   insert into public.projects (id, user_id, goal_id, title, status, priority)

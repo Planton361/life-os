@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 import { signUpTechnicalManualUser } from "./support/local-manual-auth";
@@ -250,6 +251,84 @@ test("Issue 41 Goal Journey is current-first, explicit and reload-stable", async
 
   const projectId = process.env.LIFE_OS_E2E_PROJECT_ID;
   expect(projectId).toMatch(/^life-os-z1-e2e-/);
+  const dbContainer = `supabase_db_${projectId}`;
+  const disposableWorkdir = process.env.TMPDIR;
+  if (!disposableWorkdir)
+    throw new Error("Disposable Supabase workdir is required for DB checks");
+  execFileSync(
+    "pnpm",
+    [
+      "exec",
+      "supabase",
+      "db",
+      "lint",
+      "--local",
+      "--level",
+      "warning",
+      "--workdir",
+      disposableWorkdir,
+    ],
+    { encoding: "utf8", timeout: 120_000 },
+  );
+  execFileSync(
+    "pnpm",
+    [
+      "exec",
+      "supabase",
+      "db",
+      "advisors",
+      "--local",
+      "--type",
+      "security",
+      "--level",
+      "warn",
+      "--fail-on",
+      "none",
+      "--workdir",
+      disposableWorkdir,
+    ],
+    { encoding: "utf8", timeout: 120_000 },
+  );
+  const runSqlProof = (file: string, expected: string) => {
+    const proof = execFileSync(
+      "docker",
+      [
+        "exec",
+        "-i",
+        dbContainer,
+        "psql",
+        "-X",
+        "-qAt",
+        "-U",
+        "postgres",
+        "-d",
+        "postgres",
+        "-v",
+        "ON_ERROR_STOP=1",
+      ],
+      {
+        encoding: "utf8",
+        input: readFileSync(
+          resolve(process.cwd(), "tests/supabase", file),
+          "utf8",
+        ),
+        timeout: 60_000,
+      },
+    );
+    expect(proof).toContain(expected);
+  };
+  runSqlProof(
+    "pp1-goal-current-milestone.sql",
+    "PASS PP1_GOAL_CURRENT_MILESTONE_DB",
+  );
+  runSqlProof(
+    "pp1-goal-history-ledger.sql",
+    "PP1_GOAL_HISTORY_LEDGER_DB_PASS",
+  );
+  runSqlProof(
+    "pp1-goal-outcome-repairs.sql",
+    "PP1_GOAL_OUTCOME_REPAIRS_DB_PASS",
+  );
   const concurrencyProof = execFileSync(
     process.execPath,
     [
@@ -257,7 +336,7 @@ test("Issue 41 Goal Journey is current-first, explicit and reload-stable", async
         process.cwd(),
         "tests/supabase/pp1-goal-current-milestone-concurrency.mjs",
       ),
-      `supabase_db_${projectId}`,
+      dbContainer,
     ],
     { encoding: "utf8", timeout: 45_000 },
   );
