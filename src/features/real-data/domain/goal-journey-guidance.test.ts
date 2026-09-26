@@ -257,6 +257,7 @@ describe("Goal Journey guidance", () => {
     );
     expect(guidance).toMatchObject({
       action: "resolve_blocker",
+      title: "Voraussetzung klären",
       task: { id: "blocked" },
       blockers: [{ id: "predecessor", title: "Task predecessor" }],
     });
@@ -272,6 +273,7 @@ describe("Goal Journey guidance", () => {
       graph([unassigned]),
     );
     expect(guidance.action).toBe("create_next_task");
+    expect(guidance.title).toBe("Nächste Aufgabe planen");
     expect(guidance.reason).toContain("noch keine Aufgabe zugeordnet");
   });
 
@@ -287,6 +289,7 @@ describe("Goal Journey guidance", () => {
     );
     expect(guidance).toMatchObject({
       action: "review_milestone",
+      title: "Zwischenresultat prüfen",
       task: null,
     });
   });

@@ -24,7 +24,7 @@ async function createMilestone(page: Page, title: string) {
     page.getByText("Etappe erstellt.", { exact: true }).first(),
   ).toBeVisible();
   const row = root
-    .getByRole("region", { name: "Langfristige Goal Journey" })
+    .getByRole("region", { name: "Weg zum Ergebnis" })
     .locator("[data-goal-progression] li")
     .filter({ hasText: title });
   await expect(row).toHaveAttribute("data-goal-stage-status", "planned");
@@ -38,7 +38,7 @@ async function createMilestone(page: Page, title: string) {
 async function activateMilestone(page: Page, title: string) {
   const root = workbench(page);
   const row = root
-    .getByRole("region", { name: "Langfristige Goal Journey" })
+    .getByRole("region", { name: "Weg zum Ergebnis" })
     .locator("[data-goal-progression] li")
     .filter({ hasText: title });
   const href = await row
@@ -47,7 +47,7 @@ async function activateMilestone(page: Page, title: string) {
   expect(href).toBeTruthy();
   await page.goto(href!);
   const card = root
-    .getByRole("region", { name: "Langfristige Goal Journey" })
+    .getByRole("region", { name: "Weg zum Ergebnis" })
     .locator("[data-goal-progression] li[data-goal-milestone-id]")
     .filter({ hasText: title });
   await expect(card).toBeVisible();
@@ -59,7 +59,7 @@ async function activateMilestone(page: Page, title: string) {
   ).toBeVisible();
   await expect(
     root
-      .getByRole("region", { name: "Langfristige Goal Journey" })
+      .getByRole("region", { name: "Weg zum Ergebnis" })
       .locator("[data-goal-progression] li")
       .filter({ hasText: title }),
   ).toHaveAttribute("data-goal-stage-status", "active");
@@ -171,7 +171,7 @@ async function createAndCompleteCurrentTask(
   );
   await expect(
     refreshed
-      .getByRole("region", { name: "Langfristige Goal Journey" })
+      .getByRole("region", { name: "Weg zum Ergebnis" })
       .locator("[data-goal-progression] li")
       .filter({ hasText: milestoneTitle }),
   ).toHaveAttribute("data-goal-stage-status", "active");
@@ -321,10 +321,7 @@ test("Issue 41 Goal Journey is current-first, explicit and reload-stable", async
     "pp1-goal-current-milestone.sql",
     "PASS PP1_GOAL_CURRENT_MILESTONE_DB",
   );
-  runSqlProof(
-    "pp1-goal-history-ledger.sql",
-    "PP1_GOAL_HISTORY_LEDGER_DB_PASS",
-  );
+  runSqlProof("pp1-goal-history-ledger.sql", "PP1_GOAL_HISTORY_LEDGER_DB_PASS");
   runSqlProof(
     "pp1-goal-outcome-repairs.sql",
     "PP1_GOAL_OUTCOME_REPAIRS_DB_PASS",
@@ -437,27 +434,12 @@ test("Issue 41 Goal Journey is current-first, explicit and reload-stable", async
     .locator("[data-goal-criterion-id]")
     .filter({ hasText: outcomeTitle });
   await expect(criterion).toBeVisible();
-  await criterion.getByRole("button", { name: "Kriterium verwalten" }).click();
-  const evaluation = criterion.locator(
-    'form[aria-label="Bewertung speichern"]',
-  );
-  await evaluation
-    .getByLabel("Bewertungsstatus", { exact: true })
-    .selectOption("value");
-  await evaluation.getByLabel("Wert", { exact: true }).selectOption("true");
-  await evaluation.getByRole("button", { name: "Bewertung speichern" }).click();
-  await expect(
-    page.getByText("Kriterium bewertet.", { exact: true }).first(),
-  ).toBeVisible();
-  await expect(criterion).toContainText("erfüllt");
-
   const firstMilestone = `Woche planen ${stamp}`;
   const secondMilestone = `Erkenntnisse sichern ${stamp}`;
   await createMilestone(page, firstMilestone);
-  await createMilestone(page, secondMilestone);
   await expect(
     root
-      .getByRole("region", { name: "Langfristige Goal Journey" })
+      .getByRole("region", { name: "Weg zum Ergebnis" })
       .locator("[data-goal-progression] li[data-goal-stage-status='active']"),
   ).toHaveCount(0);
   await activateMilestone(page, firstMilestone);
@@ -472,9 +454,95 @@ test("Issue 41 Goal Journey is current-first, explicit and reload-stable", async
   ).toBeVisible();
   await expect(
     root
-      .getByRole("region", { name: "Langfristige Goal Journey" })
+      .getByRole("region", { name: "Weg zum Ergebnis" })
       .locator("[data-goal-progression] li[data-goal-stage-status='active']"),
   ).toHaveCount(1);
+
+  // Reproduce the acceptance shape: one active milestone, an unevaluated
+  // criterion, no milestone tasks, and direct Goal work outside that lane.
+  execFileSync(
+    "docker",
+    [
+      "exec",
+      "-i",
+      dbContainer,
+      "psql",
+      "-X",
+      "-q",
+      "-U",
+      "postgres",
+      "-d",
+      "postgres",
+      "-v",
+      "ON_ERROR_STOP=1",
+    ],
+    {
+      input: `insert into public.tasks (user_id, goal_id, title)
+      select user_id, id, 'Spätere Idee für das Ziel' from public.goals
+      where id = '${goalId}';`,
+    },
+  );
+  await page.goto(`/goals/${goalId}`);
+  await page.reload();
+  const now = root.locator("[data-goal-now]");
+  await expect(
+    now.getByRole("heading", { name: "Nächste Aufgabe planen" }),
+  ).toBeVisible();
+  await expect(now).toContainText(firstMilestone);
+  const current = root.locator("[data-goal-current-workbench]");
+  await expect(current).toContainText("Aktueller Meilenstein");
+  await expect(current).toContainText("Noch keine Aufgaben.");
+  await expect(current).not.toContainText(
+    "Dieser Etappe ist noch keine Aufgabe zugeordnet",
+  );
+  const endGate = root.locator("[data-goal-definition-of-done]");
+  await expect(
+    endGate.getByRole("heading", { name: "Goal Review / Definition of Done" }),
+  ).toBeVisible();
+  await expect(endGate.getByText(outcomeTitle, { exact: true })).toBeHidden();
+  await expect(
+    root.getByText(
+      /finale Kriterien|Ergebnis noch offen|Etappen ausdrücklich bestätigt/,
+    ),
+  ).toHaveCount(0);
+  await expect(
+    root.getByText("Direkt dem Ziel zugeordnete Aufgaben", { exact: true }),
+  ).toBeHidden();
+  await expect(
+    root.getByText(/CURRENT-MILESTONE-WORKBENCH|^Current$|^Journey$/i),
+  ).toHaveCount(0);
+  await screenshots(page, {
+    outputPath: (...parts) => testInfo.outputPath("manual-empty", ...parts),
+  });
+  await planToggle.focus();
+  await page.keyboard.press("Enter");
+  await expect(
+    root.getByText("Direkt dem Ziel zugeordnete Aufgaben", { exact: true }),
+  ).toBeVisible();
+  await root
+    .getByText("Direkt dem Ziel zugeordnete Aufgaben", { exact: true })
+    .click();
+  await expect(
+    current.getByRole("link", { name: "Spätere Idee für das Ziel" }),
+  ).toBeVisible();
+  await expect(criterion).toBeVisible();
+  await criterion.getByRole("button", { name: "Kriterium verwalten" }).click();
+  const evaluation = criterion.locator(
+    'form[aria-label="Bewertung speichern"]',
+  );
+  await evaluation
+    .getByLabel("Bewertungsstatus", { exact: true })
+    .selectOption("value");
+  await evaluation.getByLabel("Wert", { exact: true }).selectOption("true");
+  await evaluation.getByRole("button", { name: "Bewertung speichern" }).click();
+  await expect(
+    page.getByText("Kriterium bewertet.", { exact: true }).first(),
+  ).toBeVisible();
+  await expect(criterion).toContainText("erfüllt");
+
+  await createMilestone(page, secondMilestone);
+  await page.keyboard.press("Escape");
+  await expect(planToggle).toBeFocused();
 
   const firstTaskTitle = `Wochenrahmen festlegen ${stamp}`;
   root = await createAndCompleteCurrentTask(
@@ -491,12 +559,12 @@ test("Issue 41 Goal Journey is current-first, explicit and reload-stable", async
   );
   await expect(
     root
-      .getByRole("region", { name: "Langfristige Goal Journey" })
+      .getByRole("region", { name: "Weg zum Ergebnis" })
       .locator("[data-goal-progression] li[data-goal-stage-status='active']"),
   ).toHaveCount(1);
   await expect(
     root
-      .getByRole("region", { name: "Langfristige Goal Journey" })
+      .getByRole("region", { name: "Weg zum Ergebnis" })
       .locator("[data-goal-progression] li")
       .filter({ hasText: firstMilestone }),
   ).toHaveAttribute("data-goal-stage-status", "achieved");
