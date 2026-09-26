@@ -303,69 +303,116 @@ Acceptance pausiert; Journal-Ownership ist im akzeptierten Target Life-OS-owned.
 Dieser Vertrag beschreibt die erhaltene Life-OS-Oberfläche; eine Verlagerung von
 Journal-Text nach Obsidian ist nicht vorgesehen.
 
-## Goal Journey Workbench (#39)
+## Simplified Goal Workbench (#44)
 
-The USER ACCEPTED Goal target is a guided Journey, not an equal-weight dashboard
-of work, criteria and stages. This section supersedes the prior A-v2 Goal
-composition where they conflict.
+Issue #44 is USER ACCEPTED and supersedes the #39 Goal Detail composition where
+they conflict. The #39/#41 domain semantics remain binding.
 
-Goal Detail has no equal-weight primary tabs for `Überblick / Arbeit / Erfolg /
-Verlauf`. The default surface is read/work-first:
+Goal Detail is one guided work surface, not a stack of separate conceptual cards.
+The default read/work-first composition is:
 
-1. a calm Goal identity header;
-2. one dominant `JETZT` focus surface with normally exactly one filled primary
-   action;
-3. a main workbench, approximately 68/32 on desktop:
-   - left: Current Milestone, next Task/blocker and short-term work;
-   - right: long-term Goal Journey;
-4. quiet supporting context / Resources / History below.
+1. calm Goal identity header;
+2. one **Current Work** surface;
+3. one quiet roadmap / `Dein Weg`;
+4. supporting depth/history only when needed.
 
-The Goal header shows only durable orientation: title, intended outcome, why,
-horizon/target date, lifecycle and a compact Definition-of-Done summary. It does
-not show competing Task/Milestone/Criterion progress dashboards.
+### Current Work
 
-`JETZT` is the single guidance surface. Depending on canonical state it may ask
-the user to clarify Definition of Done, create the first Milestone, create the
-next executable Task, open a READY Task, resolve a blocker, review the Current
-Milestone, review the Goal outcome, or show an achieved result with Reopen
-secondary. The reason for the current action is stated in user language.
+The separate large `JETZT` card and separate Current-Milestone workbench are
+removed from the target. They become one current-work surface.
 
-The left workbench displays only the Current Milestone as the active working
-surface. It shows the Milestone's intended intermediate outcome, then Tasks grouped
-by relevance: next READY Task first, other planned work second, real BLOCKED work
-with readable blocker reason, completed work secondary. Project membership is
-inline context on Tasks or a compact contributing-context line; Projects never
-form a third Goal progress column.
+That surface must answer:
+- where the user is;
+- what intermediate result should become true;
+- what the next action/decision is.
 
-The right Journey rail is orientation only. Completed Milestones are subdued,
-exactly one Current Milestone is emphasized, future Milestones are lightweight,
-and the final Goal Review / Definition of Done is the end gate. Future Milestones
-show title, intended intermediate outcome and optional target date; their future
-Task lists are not expanded by default.
+It contains the Current intermediate result, the one dominant next action
+(READY Task, blocker, planning decision or review decision), and other current
+Tasks only as secondary depth.
 
-Normal work mode hides structural management. `Planung bearbeiten` enters an
-explicit in-place planning mode using the same spatial composition and reveals
-structural actions such as `+ Meilenstein`, `+ Aufgabe`, Project context and
-Definition-of-Done editing. `Fertig` exits the mode. Goal identity edit and
-lifecycle/admin remain separate actions; Goal Detail never becomes one universal
-management form.
+Use user language. Prefer `Aktuell`, `Zwischenziel` or
+`Zwischenresultat` where clearer than internal Milestone terminology. The user
+must not need to know the persisted Goal model to understand what to do.
 
-Creation is contextual: a Milestone is created from the Journey; a Task is created
-from the Current Milestone using title-first capture with Goal/Current Milestone
-prefilled; a Project is optional context rather than a Journey node. Deep Task
-editing remains on Task Detail and time scheduling remains owned by Calendar.
+The current-work surface uses V5 navy hierarchy:
+- ordinary page/surfaces remain `--bg-app` / `--surface-1`;
+- current work uses `--surface-2` or bounded `--surface-3`;
+- cyan is limited to Current state, focus and the one primary action.
 
-Milestone completion and Goal achievement are review decisions, not status-field
-editing. When planned Tasks are done, `JETZT` asks whether the intermediate
-outcome is actually achieved. If confirmed, the next Milestone becomes Current.
-After the final Milestone, Goal Review foregrounds the Definition of Done. If the
-criteria are not actually met, the user continues planning rather than receiving
-automatic achievement.
+Do not use the rejected near-black JETZT panel treatment, a strong gradient, a
+full cyan frame or a new color system.
 
-Desktop uses the 68/32 Current Work / Journey composition. Mobile stacks Goal →
-JETZT → Current Milestone → Tasks → Journey → supporting context/history. No
-horizontal overflow. Keyboard, focus return, visible focus, semantic headings and
-non-color-only READY/BLOCKED/status cues remain binding.
+### Quiet roadmap
+
+`Dein Weg` is a roadmap, not a second Task board.
+
+Ordinary work mode shows only:
+- completed intermediate results, subdued;
+- exactly one current intermediate result;
+- future intermediate results, quiet;
+- the final `Ziel prüfen` gate.
+
+Tasks never repeat in the roadmap. Criterion counts, Task counts and generic
+progress summaries stay out of it.
+
+If only one intermediate result exists, the roadmap may collapse to a compact
+`Danach → Ziel prüfen` cue instead of reserving a large card.
+
+### Goal success / Definition of Done
+
+Definition of Done remains canonical but should be expressed contextually in
+ordinary user language.
+
+Planning uses:
+- `Wann ist das Ziel erreicht?`
+- `Erreicht, wenn …`
+
+Final review uses:
+- `Ist dein Ziel erreicht?`
+
+Detailed criteria are editing/review depth, not an always-visible execution lane.
+
+### Guided planning
+
+Planning is progressive and question-led rather than a management wall:
+
+```text
+Was willst du erreichen?
+→ Woran erkennst du, dass es geschafft ist?
+→ Was soll als Nächstes wahr sein?
+→ Was kannst du konkret als Nächstes tun?
+```
+
+The questions map to existing Goal identity, Outcome Criteria, Goal Milestone and
+Task data. They do not create a new persisted workflow state.
+
+Normal mode remains orient/execute. Planning mode remains explicit and focused:
+change success criteria, intermediate results, current selection, Tasks and
+optional Project context. Deep management stays progressively disclosed.
+
+### Review behavior
+
+Task completion never completes an intermediate result automatically.
+
+When planned work is done, the current-work surface asks whether the intermediate
+result is actually achieved. The user either adds/adjusts work or confirms it.
+
+After the final intermediate result, the current-work surface becomes Goal Review,
+foregrounds the canonical success criteria and asks whether the Goal is actually
+achieved. The user explicitly achieves or continues planning.
+
+### Responsive composition
+
+Desktop no longer requires a 68/32 Current Work / Journey split. Use the width
+that best preserves hierarchy and readability; a full-width Current Work surface
+followed by a compact roadmap is the default.
+
+Mobile stacks:
+`Goal identity → Current Work → Roadmap → supporting depth/history`.
+
+No horizontal overflow. Visible focus, keyboard operation, focus return,
+semantic headings and non-color-only READY/BLOCKED/status cues remain binding.
+
 
 ## Project Work Artifacts and References (R2-09)
 
