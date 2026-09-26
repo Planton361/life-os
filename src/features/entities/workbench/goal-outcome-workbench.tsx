@@ -1413,8 +1413,6 @@ export function GoalOutcomeWorkbench({
   const areaName = data.areas.find(
     (area) => area.id === goalRow?.area_id && !area.archived_at,
   )?.name;
-  const hasSuccessDefinition =
-    activeCriteria.length > 0 || activeMilestones.length > 0;
   const hasSupportingWork =
     outcome.projects.some((project) => !project.archivedAt) ||
     outcome.tasks.some((task) => !task.archivedAt);
@@ -1723,7 +1721,7 @@ export function GoalOutcomeWorkbench({
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
-                    Current-Milestone-Workbench
+                    Aktueller Meilenstein
                   </p>
                   <h2 className="mt-1 break-words text-xl font-semibold">
                     {currentMilestone?.title ?? "Keine aktuelle Etappe"}
@@ -1736,7 +1734,7 @@ export function GoalOutcomeWorkbench({
                 </div>
                 {currentMilestone && (
                   <span className="rounded-full border border-[var(--accent-cyan)] px-3 py-1 text-xs font-semibold text-[var(--accent-cyan)]">
-                    Current
+                    Aktuell
                   </span>
                 )}
               </div>
@@ -1925,14 +1923,12 @@ export function GoalOutcomeWorkbench({
                   })}
                 </ul>
               ) : currentMilestone ? (
-                <p className="rounded-lg border border-dashed border-[var(--border-default)] p-4 text-sm text-[var(--text-muted)]">
-                  Dieser Etappe ist noch keine Aufgabe zugeordnet. Der nächste
-                  ausführbare Schritt wird erst als Aufgabe angelegt.
+                <p className="text-sm text-[var(--text-muted)]">
+                  Noch keine Aufgaben.
                 </p>
               ) : (
-                <p className="rounded-lg border border-dashed border-[var(--border-default)] p-4 text-sm text-[var(--text-muted)]">
-                  Lege in der Planung eine aktuelle Etappe fest. Aufgaben
-                  bleiben die ausführbaren und schedulbaren Arbeitseinheiten.
+                <p className="text-sm text-[var(--text-muted)]">
+                  Noch kein Meilenstein ausgewählt.
                 </p>
               )}
 
@@ -1996,47 +1992,49 @@ export function GoalOutcomeWorkbench({
                     (link) => link.targetId === task.id,
                   ),
               ) && (
-                <details className="border-t border-[var(--border-subtle)] pt-3">
-                  <summary className="min-h-10 cursor-pointer py-2 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]">
-                    Direkt dem Ziel zugeordnete Aufgaben
-                  </summary>
-                  <p className="mb-2 text-sm text-[var(--text-muted)]">
-                    Diese Aufgaben gehören nicht zur aktuellen Etappe und
-                    bestimmen JETZT nicht.
-                  </p>
-                  <ul className="grid gap-2">
-                    {outcome.tasks
-                      .filter(
-                        (task) =>
-                          !task.archivedAt &&
-                          !task.projectId &&
-                          !outcome.taskSupport.some(
-                            (link) => link.targetId === task.id,
-                          ),
-                      )
-                      .map((task) => (
-                        <li key={task.id}>
-                          <Link
-                            href={`/tasks/${task.id}`}
-                            className="text-sm text-[var(--accent-cyan)] underline underline-offset-4"
-                          >
-                            {task.title}
-                          </Link>
-                        </li>
-                      ))}
-                  </ul>
-                </details>
+                <GoalPlanningOnly marker="unassigned-tasks">
+                  <details className="border-t border-[var(--border-subtle)] pt-3">
+                    <summary className="min-h-10 cursor-pointer py-2 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]">
+                      Direkt dem Ziel zugeordnete Aufgaben
+                    </summary>
+                    <p className="mb-2 text-sm text-[var(--text-muted)]">
+                      Diese Aufgaben gehören nicht zur aktuellen Etappe und
+                      bestimmen JETZT nicht.
+                    </p>
+                    <ul className="grid gap-2">
+                      {outcome.tasks
+                        .filter(
+                          (task) =>
+                            !task.archivedAt &&
+                            !task.projectId &&
+                            !outcome.taskSupport.some(
+                              (link) => link.targetId === task.id,
+                            ),
+                        )
+                        .map((task) => (
+                          <li key={task.id}>
+                            <Link
+                              href={`/tasks/${task.id}`}
+                              className="text-sm text-[var(--accent-cyan)] underline underline-offset-4"
+                            >
+                              {task.title}
+                            </Link>
+                          </li>
+                        ))}
+                    </ul>
+                  </details>
+                </GoalPlanningOnly>
               )}
             </section>
 
             <section
-              aria-label="Langfristige Goal Journey"
+              aria-label="Weg zum Ergebnis"
               className="grid min-w-0 content-start gap-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-1)] p-5 md:p-6"
               data-goal-journey
             >
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
-                  Journey
+                  Dein Weg
                 </p>
                 <h2 className="mt-1 text-xl font-semibold">
                   Der Weg zum Ergebnis
@@ -2104,31 +2102,15 @@ export function GoalOutcomeWorkbench({
                 aria-label="Definition of Done"
                 data-goal-definition-of-done
               >
-                <div className="grid gap-1">
-                  <h3 className="font-semibold">Definition of Done</h3>
-                  <p>
-                    {activeCriteria.length} finale Kriterien ·{" "}
-                    {outcome.summary.metCriteriaCount} erfüllt
-                  </p>
-                  {hasSuccessDefinition && (
-                    <p
-                      className="text-[var(--text-muted)]"
-                      data-goal-result-state={
-                        outcome.summary.readyToAchieve ? "ready" : "open"
-                      }
-                    >
-                      {outcome.summary.readyToAchieve
-                        ? "Ergebnis bereit"
-                        : "Ergebnis noch offen"}
-                    </p>
-                  )}
-                </div>
+                <h3 className="font-semibold">
+                  Goal Review / Definition of Done
+                </h3>
                 <GoalPlanningOnly
                   when="closed"
                   marker="definition-of-done-read"
                 >
-                  {activeCriteria.length > 0 ? (
-                    <ul className="grid gap-1 text-[var(--text-secondary)]">
+                  {journeyGuidance.action === "review_goal" ? (
+                    <ul className="grid gap-1">
                       {activeCriteria.map((criterion) => (
                         <li key={criterion.id}>
                           {criterion.title} ·{" "}
@@ -2143,7 +2125,7 @@ export function GoalOutcomeWorkbench({
                     </ul>
                   ) : (
                     <p className="text-[var(--text-muted)]">
-                      Noch keine Erfolgskriterien festgelegt.
+                      Zum Abschluss das Ergebnis prüfen und bewusst bestätigen.
                     </p>
                   )}
                 </GoalPlanningOnly>
@@ -2252,11 +2234,6 @@ export function GoalOutcomeWorkbench({
                 </GoalPlanningOnly>
               </section>
               <div className="grid gap-2 border-t border-[var(--border-subtle)] pt-4 text-sm text-[var(--text-secondary)]">
-                <p>
-                  {outcome.summary.achievedMilestoneCount} von{" "}
-                  {outcome.summary.activeMilestoneCount} Etappen ausdrücklich
-                  bestätigt
-                </p>
                 <Link
                   href={goalAreaHref(goalId, "verlauf")}
                   className="w-fit text-sm text-[var(--accent-cyan)] underline underline-offset-4"

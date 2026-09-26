@@ -819,7 +819,7 @@ export function deriveGoalJourneyGuidance(
       action: "archived",
       title: "Archiviertes Ziel",
       reason:
-        "Dieses Ziel ist schreibgeschützt. Die frühere Journey und ihre Entscheidungen bleiben nachvollziehbar.",
+        "Dieses Ziel ist schreibgeschützt. Der frühere Weg und seine Entscheidungen bleiben nachvollziehbar.",
       task: noTask,
       blockers: [],
     };
@@ -891,7 +891,7 @@ export function deriveGoalJourneyGuidance(
   if (ready) {
     return {
       action: "open_ready_task",
-      title: ready.title,
+      title: `Aufgabe angehen: ${ready.title}`,
       reason:
         "Diese Aufgabe gehört zur aktuellen Etappe und hat keine offene Aufgaben-Voraussetzung.",
       task: ready,
@@ -914,9 +914,9 @@ export function deriveGoalJourneyGuidance(
     }));
     return {
       action: "resolve_blocker",
-      title: blocked.title,
+      title: "Voraussetzung klären",
       reason: blockers.length
-        ? `Diese Aufgabe wartet auf ${blockers.map((item) => `„${item.title}“`).join(", ")}.`
+        ? `„${blocked.title}“ wartet auf ${blockers.map((item) => `„${item.title}“`).join(", ")}.`
         : "Diese Aufgabe wartet auf eine offene Aufgaben-Voraussetzung.",
       task: blocked,
       blockers,
@@ -929,7 +929,7 @@ export function deriveGoalJourneyGuidance(
   ) {
     return {
       action: "review_milestone",
-      title: currentMilestone.title,
+      title: "Zwischenresultat prüfen",
       reason: `Die geplanten Aufgaben dieser Etappe sind abgeschlossen. Prüfe das Zwischenresultat „${currentMilestone.title}“ und bestätige es ausdrücklich.`,
       task: noTask,
       blockers: [],
@@ -938,11 +938,11 @@ export function deriveGoalJourneyGuidance(
 
   return {
     action: "create_next_task",
-    title: currentMilestone.title,
+    title: "Nächste Aufgabe planen",
     reason:
       currentTasks.length === 0
-        ? "Der aktuellen Etappe ist noch keine Aufgabe zugeordnet. Plane einen konkreten nächsten Schritt."
-        : "Für die aktuelle Etappe gibt es keine startbare Aufgabe. Plane einen konkreten nächsten Schritt oder prüfe die Aufgaben-Voraussetzungen.",
+        ? `Für „${currentMilestone.title}“ ist noch keine Aufgabe zugeordnet. Plane einen konkreten nächsten Schritt.`
+        : `Für „${currentMilestone.title}“ gibt es keine startbare Aufgabe. Plane einen konkreten nächsten Schritt oder prüfe die Aufgaben-Voraussetzungen.`,
     task: noTask,
     blockers: [],
   };
