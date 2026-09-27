@@ -5,10 +5,10 @@
 **Design truth:** Life OS – Linear Calm Dark Command Center / Dashboard V5
 **Detailed status:** `docs/product/capability-registry.md`
 **Completed sequence:** C1 → C2 → C3 → K1 → H1/H2 → N1 → A1 → Z1 (technical baseline)
-**Current Product Context:** Product Reorientation — Accepted #34 operating target + #39 Goal Journey
+**Current Product Context:** Product Reorientation — Accepted #34 operating target + #39/#41 Goal semantics + #48 hybrid workbench
 
 **Product Reorientation:** Product Target v0.4, the Target Model Decision Package,
-the Issue #34 hosted-single-owner/core-entity target, and the Issue #39 Goal Journey target are accepted. The durable
+the Issue #34 hosted-single-owner/core-entity target, and the Issue #39 Goal semantics with the #48 hybrid workbench target are accepted. The durable
 product sequence is persisted below. Concrete work still starts only from confirmed
 GitHub Issues and Project items. Issue #3 / R2-13 remains preserved
 pre-reorientation work, not approved next delivery. The accepted plan does not
@@ -43,9 +43,10 @@ may proceed before the UX sequence so later architecture work is evidence-based.
 **Outcome:** Goal becomes one guided completion Journey with domain-specific Goal
 Milestones and explicit Outcome Criteria / Definition of Done. The Journey has
 exactly one Current Goal Milestone at a time; parallel work stays below it in
-Projects/Tasks. The USER ACCEPTED #44 surface presents this through one unified
-Current Work surface plus a quiet roadmap and guided planning, rather than separate
-JETZT and Current-Milestone cards. Goal Achievement and Milestone completion remain
+Projects/Tasks. The USER ACCEPTED #48 surface uses a calm Goal Identity header,
+dominant left Current Work with one next action, and a right rail containing
+the roadmap plus quiet Goal Review preview. The selected READY Task appears once;
+question-led planning stays progressive. Goal Achievement and Milestone completion remain
 explicit and are never derived automatically from Task Completion; no artificial
 generic Goal percentage is introduced.
 
@@ -53,12 +54,12 @@ generic Goal percentage is introduced.
 Model Decision Package. PP1 establishes the Goal planning semantics required by
 the later blocks.
 
-**Acceptance boundary:** Issue #39 established the Goal Journey semantics and
-Issue #44 USER ACCEPTED the simplified Goal surface after repeated real-product
-Manual rejection. A separate DELIVER contract must implement the #44 unified
-Current Work surface, quiet roadmap, guided planning and navy V5 emphasis while
-preserving the #39/#41 single-Current and explicit review semantics. This roadmap
-does not authorize that implementation by itself.
+**Acceptance boundary:** #48 USER ACCEPTED the hybrid composition after the
+#46 real Manual check rejected excessive visual reduction. #48 supersedes the
+#44/#46 flat composition, while preserving #39/#41 single-Current, Task dependency,
+explicit review and history semantics. A separately approved DELIVER Issue owns
+implementation. PP1 remains NOT USER ACCEPTED until implementation, merge and
+explicit real-user acceptance; this roadmap does not authorize delivery itself.
 
 ### Core Task / Project Interaction
 
@@ -69,8 +70,8 @@ progress signals, current milestone, Resources/artifacts and one next executable
 action understandable without a management-form wall.
 
 **Direct dependency:** Existing PP1 Goal semantics and the accepted #34 shared
-entity grammar. The USER ACCEPTED #39 Goal semantics and #44 simplified Goal surface target are
-binding; A-v2 and the separate-JETZT composition are retained only as
+entity grammar. The #39/#41 Goal semantics and USER ACCEPTED #48 hybrid surface target are
+binding; A-v2, separate-JETZT and #44/#46 flat composition remain
 implementation/history evidence where superseded. Only explicit Task Dependencies create
 READY/BLOCKED; Project Milestones remain Project-owned and do not create execution
 blocking.
@@ -173,7 +174,7 @@ The existing application is the foundation. This roadmap does not restart the pr
 - Health & Fitness: Mood, Sleep, Weight, Habits, Running and Strength are connected; R2-05 fully USER ACCEPTED on 2026-09-07.
 - Coding, Education and Work suites plus Notes, Inventory and Wishlist are hidden/retained or folded/externalized; Areas remain canonical context.
 - R2-09 and R2-10 are USER ACCEPTED on 2026-09-09; R2-11 is USER ACCEPTED with Decision A; R2-12 is USER ACCEPTED. R2-13 has no committed capability on the integration branch; earlier local R2-13 work is separately preserved and not approved. R2-14–R2-17 are historical product ideas from the pre-reorientation Option A planning, not current operative or binding future work. The accepted target keeps Journal Life-OS-owned and defines Skill Graph semantics, while their implementation/depth gaps remain separate.
-- The accepted Product Plan is the #34 sequence with the #39 Goal Journey target inside PP1; product implementation remains
+- The accepted Product Plan is the #34 sequence with the #39/#41 Goal semantics and #48 hybrid composition inside PP1; product implementation remains
   individually authorized by explicit GitHub work contracts, and this roadmap
   does not create a product `DELIVER` contract.
 - Personal AI Assistant: not started as a production capability.

@@ -39,7 +39,7 @@ management, and one contextually valid next action. Their domain semantics remai
 separate. Goal Milestones/Outcome Criteria, Project Milestones and future Skill
 Milestones/Evidence/Targets/Prerequisites are not flattened into a universal
 model. Only explicit Task-to-Task Dependencies create execution READY/BLOCKED.
-Accepted Goal semantics from #39 plus the simplified Goal surface target from #44 are binding. The earlier A-v2 and separate-JETZT compositions are retained only as implementation/history evidence where #44 supersedes them.
+Accepted Goal semantics from #39/#41 and the USER ACCEPTED hybrid Goal surface from #48 are binding. Earlier A-v2, separate-JETZT and #44/#46 flat compositions remain implementation/history evidence where #48 supersedes them.
 
 Calendar, Today, Dashboard and Portfolio are projections over the same canonical
 Task/scheduling truth, not parallel planning stores. Obsidian remains the owner of
@@ -47,10 +47,10 @@ long-form Knowledge Content; Life OS retains operational IDs, status, planning,
 dependencies and relation semantics. Any future Obsidian graph projection is
 one-way/non-authoritative unless a separate command/security contract is accepted.
 
-## Accepted Goal target — #39 semantics + #44 simplified surface
+## Accepted Goal target — #39/#41 semantics + #48 hybrid workbench
 
-Issue #39 established the Goal Journey semantics. Issue #44 is USER ACCEPTED and
-materially simplifies the Goal Detail composition where they conflict.
+Issue #48 USER ACCEPTED the hybrid Goal composition. It supersedes the visible
+#44/#46 composition where they conflict; #39/#41 domain semantics remain binding.
 
 The durable Goal completion model remains:
 
@@ -81,36 +81,40 @@ intermediate result ready for explicit user review. Completing all Milestones
 never automatically achieves the Goal; the final Goal Review evaluates the
 Definition of Done and requires explicit confirmation.
 
-### Simplified Goal Detail composition (#44)
+### Hybrid Goal Detail composition (#48)
 
-Goal Detail is read/work-first and must not require the user to understand the
-internal Goal model before acting.
+Goal Detail is read/work-first. A calm full-width Goal Identity header shows
+status, title, short intended outcome, why, horizon, target date and
+`Planung bearbeiten`, using existing canonical data only.
 
-The default surface has three levels only:
+Below it, desktop uses one composed workbench:
 
-1. a calm Goal identity header;
-2. **one current-work surface** that combines Current Milestone context and the
-   one current guidance action/decision;
-3. a quiet roadmap of completed/current/future intermediate results ending in
-   Goal Review.
+- dominant left region, **Aktuelle Arbeit** (roughly 58–64%): current intermediate
+  outcome, one canonical guidance decision/action, other current work as secondary
+  depth;
+- quieter right rail (roughly 36–42%): **Dein Weg zum Ergebnis**, followed by a
+  **Ziel prüfen** preview.
 
-There is no separate large `JETZT` card followed by a second Current-Milestone
-workbench. Guidance remains derived from canonical state, but its visible output
-is integrated into the current-work surface.
+The selected READY Task appears once, with `Aufgabe öffnen`. Exclude it from
+peer rows in secondary current work. Other current Tasks retain real dependency
+reasons; READY stays dominant over BLOCKED, and completed work is subdued.
+A blocker, planning question or explicit review replaces the next Task when
+canonical guidance requires it. There is no separate competing JETZT region.
 
-The current-work surface answers together:
-- where am I now;
-- what intermediate result am I trying to make true;
-- what do I do next.
+The roadmap shows completed/current/future intermediate results and the final
+`Ziel prüfen` gate. Short outcome descriptions and target dates may support
+orientation. It never displays Task titles, Task/criterion counts, READY/BLOCKED
+summaries or generic percentages. Even with one intermediate result it remains
+an intentional, compact roadmap region in the right rail.
 
-Primary user language may prefer `Zwischenziel` / `Zwischenresultat` over the
-internal `Goal Milestone` term when that makes the outcome condition clearer.
+The lower review preview explains explicit Goal Review without a competing CTA
+or progress system. Actual criteria become prominent at final review, in the
+active current decision, or in progressive planning; never in two equally
+weighted regions simultaneously. Projects remain optional, quiet context.
 
-The roadmap is orientation only. It shows completed, current and future
-intermediate results plus the final `Ziel prüfen` gate. It does not repeat Tasks,
-criterion counts, Task counts or generic progress summaries. For a Goal with only
-one intermediate result, the roadmap may collapse to a compact
-`Danach → Ziel prüfen` cue.
+Use `Zwischenziel` / `Zwischenresultat` as primary user language.
+Mobile stacks Goal Identity → Aktuelle Arbeit → Dein Weg zum Ergebnis →
+Ziel prüfen → secondary depth (`Verlauf ansehen` / `Weitere Optionen`).
 
 The Definition of Done remains canonical truth but ordinary execution does not
 require the user to learn that term. Preferred user questions are:
@@ -152,13 +156,16 @@ the rejected black JETZT treatment. Use existing tokens:
 - `--surface-2` or bounded `--surface-3` for current-work emphasis;
 - `--accent-cyan` only as semantic Current/primary-action accent.
 
-No new palette, neon treatment, strong gradient or full cyan frame is introduced.
+No hero/background image, illustrative scene, quote, new palette, neon, gradient,
+glow or full cyan frame is introduced.
 Emphasis comes from tone, hierarchy and one primary action.
 
-The following #39 composition details are superseded:
+The following historical composition details are superseded by #48:
 - separate dominant `JETZT` surface;
 - separate Current-Milestone workbench immediately below it;
-- required 68/32 Current Work / Journey desktop composition;
+- required 68/32 split and the #44/#46 full-width stacked Current Work default;
+- reducing a single-result roadmap to a trivial inline cue;
+- repeating the guidance-selected Task as an equivalent peer row;
 - mobile stack `JETZT → Current Milestone → Tasks → Journey`.
 
 The following #39/#41 semantics remain binding:
