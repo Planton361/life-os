@@ -203,6 +203,7 @@ async function completeTask(page: Page, taskId: string) {
 async function captureViewports(
   page: Page,
   testInfo: { outputPath: (...parts: string[]) => string },
+  scenario = "multiple-results",
 ) {
   const root = workbench(page);
   for (const viewport of [
@@ -222,7 +223,7 @@ async function captureViewports(
     await expectHybridGoalLayout(page);
     await page.screenshot({
       path: testInfo.outputPath(
-        `issue-49-goal-${viewport.width}x${viewport.height}.png`,
+        `issue-49-density-${scenario}-${viewport.width}x${viewport.height}.png`,
       ),
       fullPage: true,
     });
@@ -349,6 +350,11 @@ test("Issue 49 hybrid Goal workbench retains the Issue 46 Manual dependency flow
   await expect(root.locator("[data-goal-journey]")).toContainText(
     "Ziel prüfen",
   );
+  await root.getByRole("button", { name: "Fertig", exact: true }).click();
+  await captureViewports(page, testInfo, "single-result");
+  await root
+    .getByRole("button", { name: "Planung bearbeiten", exact: true })
+    .click();
   await createIntermediateResult(page, futureTitle);
   await createIntermediateResult(page, laterTitle);
   root = workbench(page);

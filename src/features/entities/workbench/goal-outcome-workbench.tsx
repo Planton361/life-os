@@ -407,7 +407,7 @@ function MilestoneProgression({
       {milestones.map((milestone, index) => (
         <li
           key={milestone.id}
-          className="relative grid min-w-0 gap-2 pb-6"
+          className="relative grid min-w-0 gap-1 pb-4"
           data-goal-stage-status={milestone.status}
           data-goal-milestone-id={milestone.id}
         >
@@ -432,7 +432,7 @@ function MilestoneProgression({
             </Link>
           </div>
           {milestone.description && (
-            <p className="line-clamp-2 text-sm leading-6 text-[var(--text-muted)]">
+            <p className="line-clamp-2 text-sm leading-5 text-[var(--text-muted)]">
               {milestone.description}
             </p>
           )}
@@ -1452,10 +1452,10 @@ export function GoalOutcomeWorkbench({
         initiallyOpen={
           canManage && ["planung", "arbeit", "erfolg"].includes(area ?? "")
         }
-        className="grid min-w-0 content-start gap-5"
+        className="grid min-w-0 content-start gap-4"
       >
         <header
-          className="grid min-w-0 gap-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-1)] p-5 md:p-7"
+          className="grid min-w-0 gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-1)] p-4"
           data-goal-default-surface
         >
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -1476,65 +1476,69 @@ export function GoalOutcomeWorkbench({
               </div>
             )}
           </div>
-          <h1 className="max-w-5xl break-words text-3xl font-semibold tracking-tight">
-            {outcome.goalTitle}
-          </h1>
-          {outcome.goalStatus === "achieved" && (
-            <div className="grid gap-2">
-              <p className="text-base font-semibold text-[var(--accent-cyan)]">
-                Ergebnis bestätigt
-                {effectiveAchievementAt
-                  ? ` am ${goalDateLabel(effectiveAchievementAt)}`
-                  : ""}
-                .
-              </p>
-              {(latestAchievement?.achievementNote ??
-                outcome.achievementNote) && (
-                <p className="max-w-4xl whitespace-pre-wrap text-base text-[var(--text-secondary)]">
-                  {latestAchievement?.achievementNote ??
-                    outcome.achievementNote}
-                </p>
+          <div className="grid min-w-0 items-start gap-3 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-6">
+            <div className="grid min-w-0 gap-2">
+              <h1 className="break-words text-2xl font-semibold tracking-tight">
+                {outcome.goalTitle}
+              </h1>
+              {outcome.goalStatus === "achieved" && (
+                <div className="grid gap-2">
+                  <p className="text-base font-semibold text-[var(--accent-cyan)]">
+                    Ergebnis bestätigt
+                    {effectiveAchievementAt
+                      ? ` am ${goalDateLabel(effectiveAchievementAt)}`
+                      : ""}
+                    .
+                  </p>
+                  {(latestAchievement?.achievementNote ??
+                    outcome.achievementNote) && (
+                    <p className="max-w-4xl whitespace-pre-wrap text-base text-[var(--text-secondary)]">
+                      {latestAchievement?.achievementNote ??
+                        outcome.achievementNote}
+                    </p>
+                  )}
+                </div>
+              )}
+              {outcome.goalStatus !== "achieved" && (
+                <div className="grid gap-2">
+                  <p className="max-w-4xl whitespace-pre-wrap text-base text-[var(--text-secondary)] line-clamp-2">
+                    {outcome.goalDescription ||
+                      "Noch keine Beschreibung. Das Ziel bleibt bewusst leichtgewichtig."}
+                  </p>
+                  {outcome.goalWhy && (
+                    <p className="max-w-4xl whitespace-pre-wrap text-sm text-[var(--text-secondary)]">
+                      <span className="font-semibold">Warum:</span>{" "}
+                      {outcome.goalWhy}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
-          )}
-          {outcome.goalStatus !== "achieved" && (
-            <div className="grid gap-2">
-              <p className="max-w-4xl whitespace-pre-wrap text-base text-[var(--text-secondary)] line-clamp-2">
-                {outcome.goalDescription ||
-                  "Noch keine Beschreibung. Das Ziel bleibt bewusst leichtgewichtig."}
-              </p>
-              {outcome.goalWhy && (
-                <p className="max-w-4xl whitespace-pre-wrap text-sm text-[var(--text-secondary)]">
-                  <span className="font-semibold">Warum:</span>{" "}
-                  {outcome.goalWhy}
-                </p>
+            <dl className="flex flex-wrap gap-x-6 gap-y-2 border-t border-[var(--border-subtle)] pt-3 text-sm text-[var(--text-muted)] lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-[var(--text-faint)]">
+                  Horizont
+                </dt>
+                <dd>{goalHorizonLabel(outcome.goalHorizon)}</dd>
+              </div>
+              {outcome.targetDate && (
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-[var(--text-faint)]">
+                    Zieltermin
+                  </dt>
+                  <dd>{goalDateLabel(outcome.targetDate)}</dd>
+                </div>
               )}
-            </div>
-          )}
-          <dl className="flex flex-wrap gap-x-8 gap-y-2 text-sm text-[var(--text-muted)]">
-            <div>
-              <dt className="text-xs uppercase tracking-wide text-[var(--text-faint)]">
-                Horizont
-              </dt>
-              <dd>{goalHorizonLabel(outcome.goalHorizon)}</dd>
-            </div>
-            {outcome.targetDate && (
-              <div>
-                <dt className="text-xs uppercase tracking-wide text-[var(--text-faint)]">
-                  Zieltermin
-                </dt>
-                <dd>{goalDateLabel(outcome.targetDate)}</dd>
-              </div>
-            )}
-            {areaName && (
-              <div>
-                <dt className="text-xs uppercase tracking-wide text-[var(--text-faint)]">
-                  Area
-                </dt>
-                <dd>{areaName}</dd>
-              </div>
-            )}
-          </dl>
+              {areaName && (
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-[var(--text-faint)]">
+                    Area
+                  </dt>
+                  <dd>{areaName}</dd>
+                </div>
+              )}
+            </dl>
+          </div>
           {archived && (
             <p role="status" className="text-sm text-[var(--text-secondary)]">
               Dieses archivierte Ziel ist schreibgeschützt. Verlauf und Belege
@@ -1557,7 +1561,7 @@ export function GoalOutcomeWorkbench({
         )}
 
         <div
-          className="grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]"
+          className="grid min-w-0 items-start gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]"
           data-goal-journey-layout
         >
           <section
@@ -1565,29 +1569,29 @@ export function GoalOutcomeWorkbench({
             aria-label="Aktuelle Arbeit"
             data-goal-now
             data-goal-current-workbench
-            className="grid min-w-0 content-start gap-5 rounded-xl border border-[var(--border-default)] bg-[var(--surface-2)] p-5 md:p-7"
+            className="grid min-w-0 content-start gap-3 rounded-xl border border-[var(--border-default)] bg-[var(--surface-2)] p-4"
           >
-            <header className="grid gap-2 border-b border-[var(--border-subtle)] pb-5">
+            <header className="grid gap-1 border-b border-[var(--border-subtle)] pb-3">
               <h2 className="text-xl font-semibold">Aktuelle Arbeit</h2>
               <p className="text-sm text-[var(--text-muted)]">
                 Dein nächster Schritt zum angestrebten Ergebnis.
               </p>
             </header>
-            <div className="grid min-w-0 gap-2" data-goal-current-result>
+            <div
+              className="grid min-w-0 gap-1 border-b border-[var(--border-subtle)] pb-3"
+              data-goal-current-result
+            >
               <p className="text-xs font-semibold uppercase tracking-wide text-[var(--accent-cyan)]">
-                Aktuell
+                Aktuell · Zwischenziel
               </p>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-sm text-[var(--text-muted)]">
-                    Zwischenziel
-                  </p>
-                  <h3 className="mt-1 break-words text-xl font-semibold">
+                  <h3 className="break-words text-lg font-semibold">
                     {currentMilestone?.title ??
                       "Noch kein aktuelles Zwischenziel"}
                   </h3>
                   {currentMilestone?.description && (
-                    <p className="mt-2 max-w-[70ch] whitespace-pre-wrap text-sm leading-6 text-[var(--text-secondary)]">
+                    <p className="mt-1 max-w-[70ch] whitespace-pre-wrap text-sm leading-5 text-[var(--text-secondary)]">
                       {currentMilestone.description}
                     </p>
                   )}
@@ -1595,7 +1599,7 @@ export function GoalOutcomeWorkbench({
               </div>
             </div>
             <div
-              className="grid min-w-0 gap-4 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-3)] p-4 md:p-5"
+              className="grid min-w-0 content-start gap-3 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-3)] p-3"
               data-goal-next-action
               data-goal-current-task={selectedTask?.id}
               data-goal-current-task-state={selectedTask ? "ready" : undefined}
@@ -1605,11 +1609,11 @@ export function GoalOutcomeWorkbench({
                 <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
                   Als Nächstes
                 </p>
-                <h3 className="max-w-4xl break-words text-2xl font-semibold tracking-tight">
+                <h3 className="max-w-4xl break-words text-xl font-semibold tracking-tight">
                   {guidanceTitle}
                 </h3>
                 <p
-                  className="max-w-4xl text-sm leading-6 text-[var(--text-secondary)] md:text-base"
+                  className="max-w-4xl text-sm leading-5 text-[var(--text-secondary)]"
                   data-goal-journey-action={journeyGuidance.action}
                   data-goal-next-step-state={
                     journeyGuidance.action === "resolve_blocker"
@@ -1965,7 +1969,7 @@ export function GoalOutcomeWorkbench({
                     return (
                       <li
                         key={task.id}
-                        className={`grid gap-1 border-t border-[var(--border-subtle)] py-3 first:border-t-0 ${taskCompleted ? "opacity-60" : ""}`}
+                        className={`grid gap-1 border-t border-[var(--border-subtle)] py-2 ${taskCompleted ? "opacity-60" : ""}`}
                         data-goal-current-task={task.id}
                         data-task-availability={dependency.availability.toLowerCase()}
                         data-goal-current-task-state={
@@ -1977,12 +1981,12 @@ export function GoalOutcomeWorkbench({
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <Link
                             href={`/tasks/${task.id}`}
-                            className="break-words font-semibold text-[var(--text-secondary)] underline-offset-4 hover:underline focus-visible:underline"
+                            className="break-words text-sm font-semibold text-[var(--text-secondary)] underline-offset-4 hover:underline focus-visible:underline"
                           >
                             {task.title}
                           </Link>
                           <span
-                            className={`rounded-md border px-2 py-1 text-xs ${dependency.availability === "BLOCKED" ? "border-[var(--accent-orange)] text-[var(--accent-orange)]" : "border-[var(--border-default)] text-[var(--text-secondary)]"}`}
+                            className={`text-xs ${dependency.availability === "BLOCKED" ? "text-[var(--accent-orange)]" : "text-[var(--text-muted)]"}`}
                           >
                             {taskCompleted
                               ? "Abgeschlossen"
@@ -2155,12 +2159,12 @@ export function GoalOutcomeWorkbench({
           </section>
 
           <div
-            className="grid min-w-0 content-start gap-5"
+            className="grid min-w-0 content-start gap-4"
             data-goal-context-rail
           >
             <section
               aria-label="Dein Weg zum Ergebnis"
-              className="grid min-w-0 content-start gap-5 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-1)] p-5 md:p-6"
+              className="grid min-w-0 content-start gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-1)] p-4"
               data-goal-journey
             >
               <h2 className="text-lg font-semibold text-[var(--text-secondary)]">
@@ -2229,12 +2233,12 @@ export function GoalOutcomeWorkbench({
             <section
               aria-label="Ziel prüfen"
               data-goal-review-preview
-              className="grid min-w-0 gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-1)] p-5 md:p-6"
+              className="grid min-w-0 content-start gap-1 border-t border-[var(--border-subtle)] px-4 py-3"
             >
-              <h2 className="text-lg font-semibold text-[var(--text-secondary)]">
+              <h2 className="text-sm font-semibold text-[var(--text-secondary)]">
                 Ziel prüfen
               </h2>
-              <p className="text-sm leading-6 text-[var(--text-muted)]">
+              <p className="text-sm leading-5 text-[var(--text-muted)]">
                 {outcome.goalStatus === "achieved"
                   ? "Du hast das Ergebnis bewusst bestätigt. Deine Entscheidung bleibt im Verlauf erhalten."
                   : journeyGuidance.action === "review_goal"
