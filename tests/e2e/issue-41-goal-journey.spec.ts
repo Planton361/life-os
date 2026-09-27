@@ -10,21 +10,22 @@ const workbench = (page: Page) =>
 async function createMilestone(page: Page, title: string) {
   const root = workbench(page);
   const trigger = root.getByRole("button", {
-    name: "Etappe hinzufügen",
+    name: "Was soll als Nächstes wahr sein?",
     exact: true,
   });
-  await trigger.click();
-  const form = root.locator('form[aria-label="Etappe erstellen"]');
+  if ((await trigger.getAttribute("aria-expanded")) !== "true")
+    await trigger.click();
+  const form = root.locator('form[aria-label="Zwischenziel erstellen"]');
   await form.getByLabel("Titel", { exact: true }).fill(title);
   await form
     .getByLabel("Beschreibung", { exact: true })
     .fill(`Das Zwischenresultat ${title} ist konkret überprüfbar.`);
-  await form.getByRole("button", { name: "Etappe erstellen" }).click();
+  await form.getByRole("button", { name: "Zwischenziel erstellen" }).click();
   await expect(
     page.getByText("Etappe erstellt.", { exact: true }).first(),
   ).toBeVisible();
   const row = root
-    .getByRole("region", { name: "Weg zum Ergebnis" })
+    .getByRole("region", { name: "Dein Weg" })
     .locator("[data-goal-progression] li")
     .filter({ hasText: title });
   await expect(row).toHaveAttribute("data-goal-stage-status", "planned");
@@ -38,7 +39,7 @@ async function createMilestone(page: Page, title: string) {
 async function activateMilestone(page: Page, title: string) {
   const root = workbench(page);
   const row = root
-    .getByRole("region", { name: "Weg zum Ergebnis" })
+    .getByRole("region", { name: "Dein Weg" })
     .locator("[data-goal-progression] li")
     .filter({ hasText: title });
   const href = await row
@@ -47,19 +48,23 @@ async function activateMilestone(page: Page, title: string) {
   expect(href).toBeTruthy();
   await page.goto(href!);
   const card = root
-    .getByRole("region", { name: "Weg zum Ergebnis" })
+    .getByRole("region", { name: "Dein Weg" })
     .locator("[data-goal-progression] li[data-goal-milestone-id]")
     .filter({ hasText: title });
   await expect(card).toBeVisible();
-  await card.getByRole("button", { name: "Etappe bearbeiten" }).click();
-  const activate = card.locator('form[aria-label="Aktivieren"]');
-  await activate.getByRole("button", { name: "Aktivieren" }).click();
+  await card.getByRole("button", { name: "Zwischenziel verwalten" }).click();
+  const activate = card.locator(
+    'form[aria-label="Als aktuelles Zwischenziel festlegen"]',
+  );
+  await activate
+    .getByRole("button", { name: "Als aktuelles Zwischenziel festlegen" })
+    .click();
   await expect(
     page.getByText("Etappenstatus gespeichert.", { exact: true }).first(),
   ).toBeVisible();
   await expect(
     root
-      .getByRole("region", { name: "Weg zum Ergebnis" })
+      .getByRole("region", { name: "Dein Weg" })
       .locator("[data-goal-progression] li")
       .filter({ hasText: title }),
   ).toHaveAttribute("data-goal-stage-status", "active");
@@ -88,7 +93,7 @@ async function createAndCompleteCurrentTask(
   await root
     .locator("[data-goal-current-workbench]")
     .getByRole("link", {
-      name: "Aufgabe zur Etappe hinzufügen",
+      name: "Nächste Aufgabe planen",
       exact: true,
     })
     .click();
@@ -165,13 +170,16 @@ async function createAndCompleteCurrentTask(
   await expect(
     refreshed.locator("[data-goal-current-workbench]"),
   ).toContainText(taskTitle);
+  await expect(refreshed.locator("[data-goal-progression]")).not.toContainText(
+    taskTitle,
+  );
   await expect(refreshed.locator("[data-goal-journey-action]")).toHaveAttribute(
     "data-goal-journey-action",
     "review_milestone",
   );
   await expect(
     refreshed
-      .getByRole("region", { name: "Weg zum Ergebnis" })
+      .getByRole("region", { name: "Dein Weg" })
       .locator("[data-goal-progression] li")
       .filter({ hasText: milestoneTitle }),
   ).toHaveAttribute("data-goal-stage-status", "active");
@@ -182,7 +190,7 @@ async function reviewCurrentMilestone(page: Page, goalId: string) {
   const root = workbench(page);
   page.once("dialog", (dialog) => dialog.accept());
   await root
-    .getByRole("button", { name: "Meilenstein erreicht", exact: true })
+    .getByRole("button", { name: "Zwischenziel erreicht", exact: true })
     .click();
   await expect(
     page.getByText("Etappenstatus gespeichert.", { exact: true }).first(),
@@ -204,6 +212,9 @@ async function screenshots(
   ]) {
     await page.setViewportSize(viewport);
     await expect(root.locator("[data-goal-now]")).toBeVisible();
+    await expect(
+      root.getByRole("region", { name: "Aktuelle Arbeit" }),
+    ).toHaveCount(1);
     const dimensions = await page.evaluate(() => ({
       client: document.documentElement.clientWidth,
       scroll: document.documentElement.scrollWidth,
@@ -218,14 +229,17 @@ async function screenshots(
         .evaluate((layout) => {
           const current = layout.querySelector("[data-goal-current-workbench]");
           const journey = layout.querySelector("[data-goal-journey]");
+          const currentRect = current?.getBoundingClientRect();
+          const journeyRect = journey?.getBoundingClientRect();
           return {
-            current: current?.getBoundingClientRect().width ?? 0,
-            journey: journey?.getBoundingClientRect().width ?? 0,
+            current: currentRect?.width ?? 0,
+            currentBottom: currentRect?.bottom ?? 0,
+            journey: journeyRect?.width ?? 0,
+            journeyTop: journeyRect?.top ?? 0,
           };
         });
-      const ratio = widths.current / (widths.current + widths.journey);
-      expect(ratio).toBeGreaterThan(0.64);
-      expect(ratio).toBeLessThan(0.72);
+      expect(Math.abs(widths.current - widths.journey)).toBeLessThan(2);
+      expect(widths.journeyTop).toBeGreaterThan(widths.currentBottom);
     }
     await page.screenshot({
       path: testInfo.outputPath(
@@ -361,7 +375,14 @@ test("Issue 41 Goal Journey is current-first, explicit and reload-stable", async
   await expect(root.locator("[data-goal-journey-layout]")).toBeVisible();
   await expect(root.locator("[data-goal-journey-layout]")).toHaveCount(1);
   await expect(root.locator("[data-goal-current-workbench]")).toHaveCount(1);
+  await expect(root.locator("[data-goal-now]")).toHaveCount(1);
   await expect(root.locator("[data-goal-journey]")).toHaveCount(1);
+  await expect(root.locator("[data-goal-current-workbench]")).toHaveClass(
+    /bg-\[var\(--surface-2\)\]/,
+  );
+  await expect(root.locator("[data-goal-current-workbench]")).not.toContainText(
+    /\bJETZT\b/,
+  );
   await expect(
     root.locator('[data-goal-planning-controls="journey"]'),
   ).toBeHidden();
@@ -370,9 +391,20 @@ test("Issue 41 Goal Journey is current-first, explicit and reload-stable", async
     "data-goal-journey-action",
     "define_outcome",
   );
+  await expect(
+    root.locator("[data-goal-now]").getByRole("heading", {
+      name: "Woran erkennst du, dass es geschafft ist?",
+      exact: true,
+    }),
+  ).toBeVisible();
 
+  const planToggle = root.getByRole("button", {
+    name: /^(Planung bearbeiten|Fertig)$/,
+  });
+  await planToggle.click();
+  await expect(root).toHaveAttribute("data-goal-planning-mode", "editing");
   const goalEditTrigger = root.getByRole("button", {
-    name: "Bearbeiten",
+    name: "Was willst du erreichen?",
     exact: true,
   });
   await goalEditTrigger.click();
@@ -384,9 +416,6 @@ test("Issue 41 Goal Journey is current-first, explicit and reload-stable", async
   root = workbench(page);
   await expect(root.locator("[data-goal-status]")).toHaveText("aktiv");
 
-  const planToggle = root.getByRole("button", {
-    name: /^(Planung bearbeiten|Fertig)$/,
-  });
   await planToggle.focus();
   await page.keyboard.press("Enter");
   await expect(planToggle).toHaveAttribute("aria-expanded", "true");
@@ -416,7 +445,14 @@ test("Issue 41 Goal Journey is current-first, explicit and reload-stable", async
   await expect(planToggle).toHaveAttribute("aria-expanded", "true");
 
   const outcomeTitle = `Ergebnis verlässlich geplant ${stamp}`;
-  await root.getByRole("button", { name: "Erfolg definieren" }).click();
+  const criterionPlanning = root.getByRole("button", {
+    name: "Woran erkennst du, dass es geschafft ist?",
+  });
+  if ((await criterionPlanning.getAttribute("aria-expanded")) !== "true")
+    await criterionPlanning.click();
+  await root
+    .getByRole("button", { name: "Erfolgskriterium festlegen", exact: true })
+    .click();
   const criterionCreate = root.locator(
     'form[aria-label="Erfolgskriterium erstellen"]',
   );
@@ -439,7 +475,7 @@ test("Issue 41 Goal Journey is current-first, explicit and reload-stable", async
   await createMilestone(page, firstMilestone);
   await expect(
     root
-      .getByRole("region", { name: "Weg zum Ergebnis" })
+      .getByRole("region", { name: "Dein Weg" })
       .locator("[data-goal-progression] li[data-goal-stage-status='active']"),
   ).toHaveCount(0);
   await activateMilestone(page, firstMilestone);
@@ -447,6 +483,15 @@ test("Issue 41 Goal Journey is current-first, explicit and reload-stable", async
   await expect(root.locator("[data-goal-current-workbench]")).toContainText(
     firstMilestone,
   );
+  await expect(root.locator("[data-goal-journey]")).not.toHaveClass(
+    /rounded-xl/,
+  );
+  await expect(
+    root.locator("[data-goal-now]").getByRole("heading", {
+      name: "Was kannst du konkret als Nächstes tun?",
+      exact: true,
+    }),
+  ).toBeVisible();
   await expect(
     root.locator(
       "[data-goal-current-workbench] [data-goal-current-planning-controls]",
@@ -454,7 +499,7 @@ test("Issue 41 Goal Journey is current-first, explicit and reload-stable", async
   ).toBeVisible();
   await expect(
     root
-      .getByRole("region", { name: "Weg zum Ergebnis" })
+      .getByRole("region", { name: "Dein Weg" })
       .locator("[data-goal-progression] li[data-goal-stage-status='active']"),
   ).toHaveCount(1);
 
@@ -486,19 +531,22 @@ test("Issue 41 Goal Journey is current-first, explicit and reload-stable", async
   await page.reload();
   const now = root.locator("[data-goal-now]");
   await expect(
-    now.getByRole("heading", { name: "Nächste Aufgabe planen" }),
+    now.getByRole("heading", {
+      name: "Was kannst du konkret als Nächstes tun?",
+    }),
+  ).toBeVisible();
+  await expect(
+    now.getByRole("link", { name: "Nächste Aufgabe planen" }),
   ).toBeVisible();
   await expect(now).toContainText(firstMilestone);
   const current = root.locator("[data-goal-current-workbench]");
-  await expect(current).toContainText("Aktueller Meilenstein");
+  await expect(current).toContainText("Zwischenziel");
   await expect(current).toContainText("Noch keine Aufgaben.");
   await expect(current).not.toContainText(
     "Dieser Etappe ist noch keine Aufgabe zugeordnet",
   );
   const endGate = root.locator("[data-goal-definition-of-done]");
-  await expect(
-    endGate.getByRole("heading", { name: "Goal Review / Definition of Done" }),
-  ).toBeVisible();
+  await expect(endGate).toBeHidden();
   await expect(endGate.getByText(outcomeTitle, { exact: true })).toBeHidden();
   await expect(
     root.getByText(
@@ -525,6 +573,18 @@ test("Issue 41 Goal Journey is current-first, explicit and reload-stable", async
   await expect(
     current.getByRole("link", { name: "Spätere Idee für das Ziel" }),
   ).toBeVisible();
+  const successPlanning = root.getByRole("button", {
+    name: "Woran erkennst du, dass es geschafft ist?",
+  });
+  if ((await successPlanning.getAttribute("aria-expanded")) !== "true") {
+    await successPlanning.focus();
+    await page.keyboard.press("Enter");
+    await expect(successPlanning).toHaveAttribute("aria-expanded", "true");
+    await page.keyboard.press("Escape");
+    await expect(successPlanning).toHaveAttribute("aria-expanded", "false");
+    await expect(successPlanning).toBeFocused();
+    await page.keyboard.press("Enter");
+  }
   await expect(criterion).toBeVisible();
   await criterion.getByRole("button", { name: "Kriterium verwalten" }).click();
   const evaluation = criterion.locator(
@@ -559,12 +619,12 @@ test("Issue 41 Goal Journey is current-first, explicit and reload-stable", async
   );
   await expect(
     root
-      .getByRole("region", { name: "Weg zum Ergebnis" })
+      .getByRole("region", { name: "Dein Weg" })
       .locator("[data-goal-progression] li[data-goal-stage-status='active']"),
   ).toHaveCount(1);
   await expect(
     root
-      .getByRole("region", { name: "Weg zum Ergebnis" })
+      .getByRole("region", { name: "Dein Weg" })
       .locator("[data-goal-progression] li")
       .filter({ hasText: firstMilestone }),
   ).toHaveAttribute("data-goal-stage-status", "achieved");
@@ -578,15 +638,24 @@ test("Issue 41 Goal Journey is current-first, explicit and reload-stable", async
   );
   root = await reviewCurrentMilestone(page, goalId!);
   await expect(root.locator("[data-goal-current-workbench]")).toContainText(
-    "Keine aktuelle Etappe",
+    "Noch kein aktuelles Zwischenziel",
   );
   await expect(root.locator("[data-goal-journey-action]")).toHaveAttribute(
     "data-goal-journey-action",
     "review_goal",
   );
   await expect(
+    root.locator("[data-goal-now]").getByRole("heading", {
+      name: "Ist dein Ziel erreicht?",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    root.locator("[data-goal-final-criteria]").getByRole("heading"),
+  ).toHaveText("Erreicht, wenn …");
+  await expect(
     root.getByRole("button", {
-      name: "Ziel als erreicht bestätigen",
+      name: "Ziel erreicht bestätigen",
       exact: true,
     }),
   ).toBeVisible();
@@ -594,7 +663,7 @@ test("Issue 41 Goal Journey is current-first, explicit and reload-stable", async
   page.once("dialog", (dialog) => dialog.accept());
   await root
     .getByRole("button", {
-      name: "Ziel als erreicht bestätigen",
+      name: "Ziel erreicht bestätigen",
       exact: true,
     })
     .click();
@@ -608,5 +677,22 @@ test("Issue 41 Goal Journey is current-first, explicit and reload-stable", async
   await expect(root.locator("[data-goal-now]")).toContainText(
     "Erreichtes Ergebnis",
   );
+  expect(errors).toEqual([]);
+
+  page.once("dialog", (dialog) => dialog.accept());
+  await root
+    .getByRole("button", { name: "Ziel wieder öffnen", exact: true })
+    .click();
+  await expect(
+    page.getByText("Ziel wieder geöffnet.", { exact: true }).first(),
+  ).toBeVisible();
+  await expect(root.locator("[data-goal-status]")).toHaveText("aktiv");
+  await page.reload();
+  root = workbench(page);
+  await expect(root.locator("[data-goal-status]")).toHaveText("aktiv");
+  await expect(root.locator("[data-goal-current-workbench]")).toHaveCount(1);
+  await expect(
+    root.getByRole("region", { name: "Aktuelle Arbeit" }),
+  ).toHaveCount(1);
   expect(errors).toEqual([]);
 });
