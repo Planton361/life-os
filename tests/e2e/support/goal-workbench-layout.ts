@@ -22,6 +22,7 @@ export async function expectHybridGoalLayout(page: Page) {
         left: bounds.left,
         right: bounds.right,
         width: bounds.width,
+        height: bounds.height,
       };
     };
     const controls = [
@@ -30,6 +31,25 @@ export async function expectHybridGoalLayout(page: Page) {
       .filter((node) => node.getClientRects().length > 0)
       .map((node) => node.getBoundingClientRect());
     return {
+      // Catch stretched cards even when the macro grid still has the right ratio.
+      trailingSpace: [
+        "[data-goal-default-surface]",
+        "[data-goal-current-workbench]",
+        "[data-goal-next-action]",
+        "[data-goal-journey]",
+        "[data-goal-review-preview]",
+      ].map((selector) => {
+        const region = element.querySelector(selector)!;
+        const children = [...region.children].filter(
+          (child) => child.getClientRects().length > 0,
+        );
+        return (
+          region.getBoundingClientRect().bottom -
+          Math.max(
+            ...children.map((child) => child.getBoundingClientRect().bottom),
+          )
+        );
+      }),
       identity: rect("[data-goal-default-surface]"),
       current: rect("[data-goal-current-workbench]"),
       journey: rect("[data-goal-journey]"),
@@ -47,6 +67,8 @@ export async function expectHybridGoalLayout(page: Page) {
         .length,
     };
   });
+  for (const blankSpace of geometry.trailingSpace)
+    expect(blankSpace).toBeLessThanOrEqual(20);
   expect(geometry.scroll).toBeLessThanOrEqual(geometry.viewport);
   expect(geometry.clippedControls).toBe(0);
   expect(geometry.backgroundImages).toBe(0);
