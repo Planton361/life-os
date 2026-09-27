@@ -303,78 +303,57 @@ Acceptance pausiert; Journal-Ownership ist im akzeptierten Target Life-OS-owned.
 Dieser Vertrag beschreibt die erhaltene Life-OS-Oberfläche; eine Verlagerung von
 Journal-Text nach Obsidian ist nicht vorgesehen.
 
-## Simplified Goal Workbench (#44)
+## Hybrid Goal Workbench (#48)
 
-Issue #44 is USER ACCEPTED and supersedes the #39 Goal Detail composition where
-they conflict. The #39/#41 domain semantics remain binding.
+Issue #48's accepted target (comment 5860230666) supersedes the visible #44/#46
+composition. The #39/#41 domain, dependency and explicit-review semantics remain
+binding. #44/#46 remain evidence for user language and progressive planning.
 
-Goal Detail is one guided work surface, not a stack of separate conceptual cards.
-The default read/work-first composition is:
+### Goal Identity
 
-1. calm Goal identity header;
-2. one **Current Work** surface;
-3. one quiet roadmap / `Dein Weg`;
-4. supporting depth/history only when needed.
+A full-width calm header shows Goal/status, title, short outcome, why, horizon,
+target date and `Planung bearbeiten`. Use canonical data only. No hero/background
+image, illustration, quote or invented motivational content.
 
-### Current Work
+### Desktop composition
 
-The separate large `JETZT` card and separate Current-Milestone workbench are
-removed from the target. They become one current-work surface.
+Below the header, use a real two-column workbench: dominant left work region
+(roughly 58–64%), quieter right context rail (roughly 36–42%). Align their tops;
+let each region fit its content without stretched empty cards.
 
-That surface must answer:
-- where the user is;
-- what intermediate result should become true;
-- what the next action/decision is.
+Left: **Aktuelle Arbeit** with a short orientation sentence, `AKTUELL` / current
+Zwischenziel and its intended outcome, then `ALS NÄCHSTES` with the one canonical
+guidance action. The selected READY Task appears once with `Aufgabe öffnen`.
+Exclude it from equivalent secondary Task rows while retaining its planning
+association controls. Other current work is secondary; BLOCKED has readable real
+Task-dependency reasons and completed work is subdued. Optional Project context
+remains quiet. No separate JETZT panel.
 
-It contains the Current intermediate result, the one dominant next action
-(READY Task, blocker, planning decision or review decision), and other current
-Tasks only as secondary depth.
+Right upper: **Dein Weg zum Ergebnis**. Use a restrained vertical roadmap with
+completed/current/future intermediate outcomes and final `Ziel prüfen`. Optional
+short outcome/date context is allowed. No Task titles, Task/criterion counts,
+READY/BLOCKED summaries or generic percentages. With one intermediate result,
+keep an intentional compact card rather than a trivial inline fragment.
 
-Use user language. Prefer `Aktuell`, `Zwischenziel` or
-`Zwischenresultat` where clearer than internal Milestone terminology. The user
-must not need to know the persisted Goal model to understand what to do.
+Right lower: **Ziel prüfen**. During execution this is a quiet preview explaining
+explicit final review, with no competing primary CTA, counts or live success
+progress. At final review the active current decision asks `Ist dein Ziel erreicht?` and shows canonical criteria under `Erreicht, wenn …`. Do not duplicate
+criteria across equal-weight regions. Reopen stays secondary after achievement.
 
-The current-work surface uses V5 navy hierarchy:
-- ordinary page/surfaces remain `--bg-app` / `--surface-1`;
-- current work uses `--surface-2` or bounded `--surface-3`;
-- cyan is limited to Current state, focus and the one primary action.
+Secondary depth uses restrained `Verlauf ansehen` and `Weitere Optionen` links.
 
-Do not use the rejected near-black JETZT panel treatment, a strong gradient, a
-full cyan frame or a new color system.
+### V5 tone and hierarchy
 
-### Quiet roadmap
+Use `--bg-app` for the application, `--surface-1` for identity/context,
+`--surface-2` for Current Work and bounded `--surface-3` for its next action.
+Use restrained borders/dividers and existing spacing. Cyan is semantic for
+Current/focus/the primary CTA. Do not use a black JETZT panel, new palette,
+gradient, neon, glow or full cyan frame. Status always has text, not color alone.
 
-`Dein Weg` is a roadmap, not a second Task board.
+### Planning and review
 
-Ordinary work mode shows only:
-- completed intermediate results, subdued;
-- exactly one current intermediate result;
-- future intermediate results, quiet;
-- the final `Ziel prüfen` gate.
-
-Tasks never repeat in the roadmap. Criterion counts, Task counts and generic
-progress summaries stay out of it.
-
-If only one intermediate result exists, the roadmap may collapse to a compact
-`Danach → Ziel prüfen` cue instead of reserving a large card.
-
-### Goal success / Definition of Done
-
-Definition of Done remains canonical but should be expressed contextually in
-ordinary user language.
-
-Planning uses:
-- `Wann ist das Ziel erreicht?`
-- `Erreicht, wenn …`
-
-Final review uses:
-- `Ist dein Ziel erreicht?`
-
-Detailed criteria are editing/review depth, not an always-visible execution lane.
-
-### Guided planning
-
-Planning is progressive and question-led rather than a management wall:
+Retain one explicit `Planung bearbeiten` / `Fertig` mode with progressive
+questions:
 
 ```text
 Was willst du erreichen?
@@ -383,35 +362,24 @@ Was willst du erreichen?
 → Was kannst du konkret als Nächstes tun?
 ```
 
-The questions map to existing Goal identity, Outcome Criteria, Goal Milestone and
-Task data. They do not create a new persisted workflow state.
+Reuse existing Goal identity, Outcome Criteria, Milestone and Task writes.
+Management remains disclosed by question; no persisted wizard state or second
+planning surface. Criteria are editing/review depth, not an execution progress lane.
 
-Normal mode remains orient/execute. Planning mode remains explicit and focused:
-change success criteria, intermediate results, current selection, Tasks and
-optional Project context. Deep management stays progressively disclosed.
+Task completion never completes a Milestone or Goal. Intermediate-result review
+explicitly confirms achievement or adds work. Final Goal Review explicitly
+achieves the Goal against canonical criteria or continues planning. Preserve
+exactly one Current, Task-only READY/BLOCKED and append-only history/evidence.
 
-### Review behavior
+### Responsive and accessibility
 
-Task completion never completes an intermediate result automatically.
+Narrow/mobile order:
+`Goal identity → Aktuelle Arbeit → Dein Weg zum Ergebnis → Ziel prüfen → secondary depth`.
 
-When planned work is done, the current-work surface asks whether the intermediate
-result is actually achieved. The user either adds/adjusts work or confirms it.
-
-After the final intermediate result, the current-work surface becomes Goal Review,
-foregrounds the canonical success criteria and asks whether the Goal is actually
-achieved. The user explicitly achieves or continues planning.
-
-### Responsive composition
-
-Desktop no longer requires a 68/32 Current Work / Journey split. Use the width
-that best preserves hierarchy and readability; a full-width Current Work surface
-followed by a compact roadmap is the default.
-
-Mobile stacks:
-`Goal identity → Current Work → Roadmap → supporting depth/history`.
-
-No horizontal overflow. Visible focus, keyboard operation, focus return,
-semantic headings and non-color-only READY/BLOCKED/status cues remain binding.
+At 3840×2160 and 1920×1080, preserve the desktop split; at 390×844, stack without
+horizontal overflow or clipped controls. Keep one obvious primary action, logical
+headings/regions, visible keyboard focus, disclosure/dialog operation and focus
+return after closing planning or a disclosure.
 
 
 ## Project Work Artifacts and References (R2-09)

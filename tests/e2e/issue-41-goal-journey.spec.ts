@@ -1,3 +1,4 @@
+import { expectHybridGoalLayout } from "./support/goal-workbench-layout";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -25,7 +26,7 @@ async function createMilestone(page: Page, title: string) {
     page.getByText("Etappe erstellt.", { exact: true }).first(),
   ).toBeVisible();
   const row = root
-    .getByRole("region", { name: "Dein Weg" })
+    .getByRole("region", { name: "Dein Weg zum Ergebnis" })
     .locator("[data-goal-progression] li")
     .filter({ hasText: title });
   await expect(row).toHaveAttribute("data-goal-stage-status", "planned");
@@ -39,7 +40,7 @@ async function createMilestone(page: Page, title: string) {
 async function activateMilestone(page: Page, title: string) {
   const root = workbench(page);
   const row = root
-    .getByRole("region", { name: "Dein Weg" })
+    .getByRole("region", { name: "Dein Weg zum Ergebnis" })
     .locator("[data-goal-progression] li")
     .filter({ hasText: title });
   const href = await row
@@ -48,7 +49,7 @@ async function activateMilestone(page: Page, title: string) {
   expect(href).toBeTruthy();
   await page.goto(href!);
   const card = root
-    .getByRole("region", { name: "Dein Weg" })
+    .getByRole("region", { name: "Dein Weg zum Ergebnis" })
     .locator("[data-goal-progression] li[data-goal-milestone-id]")
     .filter({ hasText: title });
   await expect(card).toBeVisible();
@@ -64,7 +65,7 @@ async function activateMilestone(page: Page, title: string) {
   ).toBeVisible();
   await expect(
     root
-      .getByRole("region", { name: "Dein Weg" })
+      .getByRole("region", { name: "Dein Weg zum Ergebnis" })
       .locator("[data-goal-progression] li")
       .filter({ hasText: title }),
   ).toHaveAttribute("data-goal-stage-status", "active");
@@ -179,7 +180,7 @@ async function createAndCompleteCurrentTask(
   );
   await expect(
     refreshed
-      .getByRole("region", { name: "Dein Weg" })
+      .getByRole("region", { name: "Dein Weg zum Ergebnis" })
       .locator("[data-goal-progression] li")
       .filter({ hasText: milestoneTitle }),
   ).toHaveAttribute("data-goal-stage-status", "active");
@@ -223,24 +224,7 @@ async function screenshots(
       dimensions.scroll,
       `${viewport.width} CSS px viewport horizontal overflow`,
     ).toBeLessThanOrEqual(dimensions.client);
-    if (viewport.width >= 1920) {
-      const widths = await root
-        .locator("[data-goal-journey-layout]")
-        .evaluate((layout) => {
-          const current = layout.querySelector("[data-goal-current-workbench]");
-          const journey = layout.querySelector("[data-goal-journey]");
-          const currentRect = current?.getBoundingClientRect();
-          const journeyRect = journey?.getBoundingClientRect();
-          return {
-            current: currentRect?.width ?? 0,
-            currentBottom: currentRect?.bottom ?? 0,
-            journey: journeyRect?.width ?? 0,
-            journeyTop: journeyRect?.top ?? 0,
-          };
-        });
-      expect(Math.abs(widths.current - widths.journey)).toBeLessThan(2);
-      expect(widths.journeyTop).toBeGreaterThan(widths.currentBottom);
-    }
+    await expectHybridGoalLayout(page);
     await page.screenshot({
       path: testInfo.outputPath(
         `goal-journey-current-${viewport.width}x${viewport.height}.png`,
@@ -475,7 +459,7 @@ test("Issue 41 Goal Journey is current-first, explicit and reload-stable", async
   await createMilestone(page, firstMilestone);
   await expect(
     root
-      .getByRole("region", { name: "Dein Weg" })
+      .getByRole("region", { name: "Dein Weg zum Ergebnis" })
       .locator("[data-goal-progression] li[data-goal-stage-status='active']"),
   ).toHaveCount(0);
   await activateMilestone(page, firstMilestone);
@@ -483,9 +467,7 @@ test("Issue 41 Goal Journey is current-first, explicit and reload-stable", async
   await expect(root.locator("[data-goal-current-workbench]")).toContainText(
     firstMilestone,
   );
-  await expect(root.locator("[data-goal-journey]")).not.toHaveClass(
-    /rounded-xl/,
-  );
+  await expect(root.locator("[data-goal-journey]")).toHaveClass(/rounded-xl/);
   await expect(
     root.locator("[data-goal-now]").getByRole("heading", {
       name: "Was kannst du konkret als Nächstes tun?",
@@ -499,7 +481,7 @@ test("Issue 41 Goal Journey is current-first, explicit and reload-stable", async
   ).toBeVisible();
   await expect(
     root
-      .getByRole("region", { name: "Dein Weg" })
+      .getByRole("region", { name: "Dein Weg zum Ergebnis" })
       .locator("[data-goal-progression] li[data-goal-stage-status='active']"),
   ).toHaveCount(1);
 
@@ -619,12 +601,12 @@ test("Issue 41 Goal Journey is current-first, explicit and reload-stable", async
   );
   await expect(
     root
-      .getByRole("region", { name: "Dein Weg" })
+      .getByRole("region", { name: "Dein Weg zum Ergebnis" })
       .locator("[data-goal-progression] li[data-goal-stage-status='active']"),
   ).toHaveCount(1);
   await expect(
     root
-      .getByRole("region", { name: "Dein Weg" })
+      .getByRole("region", { name: "Dein Weg zum Ergebnis" })
       .locator("[data-goal-progression] li")
       .filter({ hasText: firstMilestone }),
   ).toHaveAttribute("data-goal-stage-status", "achieved");

@@ -1,3 +1,4 @@
+import { expectHybridGoalLayout } from "./support/goal-workbench-layout";
 import { createClient } from "@supabase/supabase-js";
 import { expect, test, type BrowserContext, type Page } from "@playwright/test";
 import type { Database } from "@/types/supabase";
@@ -218,27 +219,10 @@ async function captureViewports(
       scroll: document.documentElement.scrollWidth,
     }));
     expect(bounds.scroll).toBeLessThanOrEqual(bounds.client);
-    if (viewport.width >= 1920) {
-      const order = await root
-        .locator("[data-goal-journey-layout]")
-        .evaluate((layout) => {
-          const current = layout.querySelector("[data-goal-current-workbench]");
-          const roadmap = layout.querySelector("[data-goal-journey]");
-          const currentRect = current?.getBoundingClientRect();
-          const roadmapRect = roadmap?.getBoundingClientRect();
-          return {
-            currentWidth: currentRect?.width ?? 0,
-            currentBottom: currentRect?.bottom ?? 0,
-            roadmapWidth: roadmapRect?.width ?? 0,
-            roadmapTop: roadmapRect?.top ?? 0,
-          };
-        });
-      expect(Math.abs(order.currentWidth - order.roadmapWidth)).toBeLessThan(2);
-      expect(order.roadmapTop).toBeGreaterThan(order.currentBottom);
-    }
+    await expectHybridGoalLayout(page);
     await page.screenshot({
       path: testInfo.outputPath(
-        `issue-46-goal-${viewport.width}x${viewport.height}.png`,
+        `issue-49-goal-${viewport.width}x${viewport.height}.png`,
       ),
       fullPage: true,
     });
@@ -246,7 +230,7 @@ async function captureViewports(
   await page.setViewportSize({ width: 1920, height: 1080 });
 }
 
-test("Issue 46 Manual Goal surface keeps current work singular and dependency-led", async ({
+test("Issue 49 hybrid Goal workbench retains the Issue 46 Manual dependency flow", async ({
   page,
   context,
 }, testInfo) => {
@@ -347,17 +331,23 @@ test("Issue 46 Manual Goal surface keeps current work singular and dependency-le
     page.getByText("Kriterium erstellt.", { exact: true }),
   ).toBeVisible();
 
+  await expect(root.locator("[data-goal-journey-action]")).toHaveAttribute(
+    "data-goal-journey-action",
+    "create_first_milestone",
+  );
   const currentTitle = `PP1 Arbeitsablauf in Manual geprüft ${stamp}`;
   const futureTitle = `Fehlende Übergaben schließen ${stamp}`;
   const laterTitle = `Dokumentation und Wiederherstellung prüfen ${stamp}`;
   const currentId = await createIntermediateResult(page, currentTitle);
+  await expect(root.locator("[data-goal-journey-action]")).toHaveAttribute(
+    "data-goal-journey-action",
+    "select_current_milestone",
+  );
   await activateIntermediateResult(page, currentTitle);
   root = workbench(page);
-  await expect(root.locator("[data-goal-journey]")).not.toHaveClass(
-    /rounded-xl/,
-  );
+  await expect(root.locator("[data-goal-journey]")).toHaveClass(/rounded-xl/);
   await expect(root.locator("[data-goal-journey]")).toContainText(
-    "Danach → Ziel prüfen",
+    "Ziel prüfen",
   );
   await createIntermediateResult(page, futureTitle);
   await createIntermediateResult(page, laterTitle);
@@ -462,6 +452,34 @@ test("Issue 46 Manual Goal surface keeps current work singular and dependency-le
   ).toBeVisible();
   await expect(progression).not.toContainText(readyTitle);
   await expect(progression).not.toContainText(blockedTitle);
+  await expect(root.getByText(readyTitle, { exact: true })).toHaveCount(1);
+  await expect(root.locator("[data-goal-next-action]")).toContainText(
+    readyTitle,
+  );
+  await expect(
+    root.getByRole("region", {
+      name: "Weitere Arbeit am Zwischenziel",
+      exact: true,
+    }),
+  ).not.toContainText(readyTitle);
+  const preview = root.getByRole("region", {
+    name: "Ziel prüfen",
+    exact: true,
+  });
+  await expect(preview.getByText(criterionTitle, { exact: true })).toBeHidden();
+  await expect(preview.locator("a:visible, button:visible")).toHaveCount(0);
+  const primaryAction = root.getByRole("link", {
+    name: "Aufgabe öffnen",
+    exact: true,
+  });
+  await primaryAction.focus();
+  await expect(primaryAction).toBeFocused();
+  await expect(primaryAction).toHaveCSS("outline-style", "solid");
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(new RegExp(`/tasks/${readyTask.taskId}`));
+  await page.goto(`/goals/${goalId}`);
+  await page.reload();
+  await expect(root.getByText(readyTitle, { exact: true })).toHaveCount(1);
   await captureViewports(page, testInfo);
 
   await completeTask(page, readyTask.taskId);
