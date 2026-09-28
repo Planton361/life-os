@@ -231,6 +231,40 @@ async function captureViewports(
   await page.setViewportSize({ width: 1920, height: 1080 });
 }
 
+async function expectHistoryPanelInViewport(page: Page) {
+  const historyPanel = page.getByRole("region", {
+    name: "Verlauf & Belege",
+    exact: true,
+  });
+  await expect(historyPanel).toBeVisible();
+  const bounds = await historyPanel.boundingBox();
+  const viewport = page.viewportSize();
+  if (!bounds || !viewport)
+    throw new Error("Goal history panel or browser viewport is unavailable");
+
+  expect(bounds.x).toBeGreaterThanOrEqual(0);
+  expect(bounds.y).toBeGreaterThanOrEqual(0);
+  expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width);
+  expect(bounds.y + bounds.height).toBeLessThanOrEqual(viewport.height);
+
+  const documentBounds = await page.evaluate(() => ({
+    client: document.documentElement.clientWidth,
+    scroll: document.documentElement.scrollWidth,
+  }));
+  expect(documentBounds.scroll).toBeLessThanOrEqual(documentBounds.client);
+}
+
+async function expectHistoryUrl(page: Page, goalId: string) {
+  await expect(page).toHaveURL(
+    new RegExp(`/goals/${goalId}\\?area=verlauf#verlauf-belege$`),
+  );
+  const currentUrl = new URL(page.url());
+  expect(currentUrl.pathname).toBe(`/goals/${goalId}`);
+  expect(currentUrl.searchParams.get("area")).toBe("verlauf");
+  expect(currentUrl.hash).toBe("#verlauf-belege");
+  await expectHistoryPanelInViewport(page);
+}
+
 test("Issue 53 viewport-aware Goal workbench preserves the authenticated Manual flow", async ({
   page,
   context,
@@ -394,6 +428,28 @@ test("Issue 53 viewport-aware Goal workbench preserves the authenticated Manual 
   ).toHaveCount(1);
   await expect(root.getByText(readyTitle, { exact: true })).toHaveCount(1);
   await captureViewports(page, testInfo, "sparse-one-ready");
+
+  const historyLink = root.getByRole("link", {
+    name: "Verlauf ansehen",
+    exact: true,
+  });
+  await expect(historyLink).toBeVisible();
+  await historyLink.click();
+  await expectHistoryUrl(page, goalId!);
+
+  await page.reload();
+  await expectHistoryUrl(page, goalId!);
+
+  await page.goto(`/goals/${goalId}`);
+  root = workbench(page);
+  const keyboardHistoryLink = root.getByRole("link", {
+    name: "Verlauf ansehen",
+    exact: true,
+  });
+  await keyboardHistoryLink.focus();
+  await expect(keyboardHistoryLink).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expectHistoryUrl(page, goalId!);
 
   await root
     .getByRole("button", { name: "Planung bearbeiten", exact: true })

@@ -2349,7 +2349,7 @@ export function GoalOutcomeWorkbench({
             className="col-span-full flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-[var(--border-subtle)] pt-3"
           >
             <Link
-              href={goalAreaHref(goalId, "verlauf")}
+              href={`${goalAreaHref(goalId, "verlauf")}#verlauf-belege`}
               className="w-fit text-sm text-[var(--text-muted)] underline underline-offset-4 hover:text-[var(--text-secondary)]"
             >
               Verlauf ansehen
