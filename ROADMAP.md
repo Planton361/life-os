@@ -66,8 +66,10 @@ the later blocks.
 Variant A as its viewport-aware refinement. #48 supersedes the #44/#46 flat
 composition, while preserving #39/#41 single-Current, Task dependency, explicit
 review and history semantics. A separately approved DELIVER Issue owns
-implementation. PP1 remains NOT USER ACCEPTED until implementation, merge and
-explicit real-user acceptance; this roadmap does not authorize delivery itself.
+implementation. PP1 is USER ACCEPTED as of 2026-09-28 after implementation, merge and the
+explicit real-user Goal recheck on main `d54f70f9882ef21844073734831a2db17e69b332`.
+This closes the PP1 product-acceptance gate. This roadmap still does not authorize
+the next work item by itself; operative selection remains in GitHub Project #3.
 
 ### Core Task / Project Interaction
 
