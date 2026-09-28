@@ -27,6 +27,10 @@ export const taskSatisfiesDependency = (task: DependencyTask) =>
   task.archived_at === null;
 export const taskIsOpen = (task: DependencyTask) =>
   !task.archived_at && !["done", "canceled", "archived"].includes(task.status);
+// Lifecycle remains separate from dependency readiness. Only planned and
+// active Tasks are candidates for the next executable work in a Project.
+export const taskHasExecutableLifecycle = (task: DependencyTask) =>
+  task.status === "planned" || task.status === "active";
 
 export function taskDependencyContext(
   graph: TaskDependencyGraph,

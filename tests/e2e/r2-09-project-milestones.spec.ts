@@ -152,8 +152,14 @@ test("Project milestones: CRUD, grouping, ordering, progress, archive and owners
     .getByRole("link", { name: tasks[0].title, exact: true })
     .click();
   await expect(
-    page.getByRole("region", { name: "Task Milestone", exact: true }),
+    page.getByRole("region", {
+      name: "Project und Goal Kontext",
+      exact: true,
+    }),
   ).toContainText("Research");
+  await page
+    .getByRole("button", { name: "Lifecycle verwalten", exact: true })
+    .click();
   await page
     .getByRole("button", { name: "Task abschließen", exact: true })
     .click();
@@ -170,23 +176,27 @@ test("Project milestones: CRUD, grouping, ordering, progress, archive and owners
   await expect(work).toContainText("1/3 Tasks erledigt");
   await page.goto(`/tasks/${tasks[0].id}`);
   const taskContext = page.getByRole("region", {
-    name: "Task Milestone",
+    name: "Project und Goal Kontext",
     exact: true,
   });
-  await taskContext
+  const taskManagement = page.getByRole("region", {
+    name: "Task bearbeiten, verwalten und Lifecycle",
+    exact: true,
+  });
+  await taskManagement
     .getByRole("button", { name: "Milestone-Zuordnung ändern", exact: true })
     .click();
-  await taskContext
+  await taskManagement
     .getByLabel("Milestone (keine Auswahl = Ohne Milestone)")
     .selectOption("");
-  await taskContext
+  await taskManagement
     .getByRole("button", { name: "Task-Milestone speichern", exact: true })
     .click();
   await expect(saved()).toBeVisible();
   await page.reload();
   await expect(taskContext).toContainText("Ohne Milestone");
   await taskContext
-    .getByRole("link", { name: "Project Workbench öffnen" })
+    .getByRole("link", { name: projects[0].title, exact: true })
     .click();
   await expect(
     work.getByRole("region", { name: "Ohne Milestone", exact: true }),
@@ -483,10 +493,10 @@ test("Project milestones: CRUD, grouping, ordering, progress, archive and owners
     .update({ archived_at: new Date().toISOString() })
     .eq("id", projects[1].id);
   await page.goto(`/tasks/${oldTask.id}`);
-  await taskContext
+  await taskManagement
     .getByRole("button", { name: "Milestone-Zuordnung ändern", exact: true })
     .click();
-  await taskContext
+  await taskManagement
     .getByRole("button", { name: "Task-Milestone speichern", exact: true })
     .click();
   await expect(saved()).toBeVisible();
@@ -506,10 +516,10 @@ test("Project milestones: CRUD, grouping, ordering, progress, archive and owners
   ).toBeNull();
   // A stage archived after opening the picker fails visibly, without assigning.
   await page.goto(`/tasks/${tasks[2].id}`);
-  await taskContext
+  await taskManagement
     .getByRole("button", { name: "Milestone-Zuordnung ändern", exact: true })
     .click();
-  await taskContext
+  await taskManagement
     .getByLabel("Milestone (keine Auswahl = Ohne Milestone)")
     .selectOption(stages[0].id);
   expect(
@@ -520,10 +530,10 @@ test("Project milestones: CRUD, grouping, ordering, progress, archive and owners
         .eq("id", stages[0].id)
     ).error,
   ).toBeNull();
-  await taskContext
+  await taskManagement
     .getByRole("button", { name: "Task-Milestone speichern", exact: true })
     .click();
-  await expect(taskContext.getByRole("alert")).toContainText(
+  await expect(taskManagement.getByRole("alert")).toContainText(
     "Prüfe die Angaben",
   );
   await page.reload();

@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { WorkbenchData } from "@/features/real-data/supabase/repositories/entity-workbench-read";
 import {
   dependencyCandidates,
+  taskSatisfiesDependency,
   taskDependencyContext,
 } from "@/features/real-data/domain/task-dependencies";
 import { ManagementDisclosure } from "./management-disclosure";
@@ -30,7 +31,7 @@ export function TaskDependencies({
     >
       <h2 className="text-lg font-semibold">Dependencies</h2>
       <p>
-        Availability: <strong>{context.availability}</strong>
+        Dependency Readiness: <strong>{context.availability}</strong>
       </p>
       {context.inconsistentCompletion && (
         <p className="text-[var(--accent-orange)]">
@@ -41,29 +42,34 @@ export function TaskDependencies({
       {!task.project_id && (
         <p>Dependencies sind innerhalb eines Projects möglich.</p>
       )}
-      <h3 className="font-semibold">Blockiert durch</h3>
-      {context.blockers.length ? (
+      <h3 className="font-semibold">Vorgänger</h3>
+      {context.predecessors.length ? (
         <ul className="grid gap-2">
-          {context.blockers.map(({ edgeId, task: blocker }) => (
+          {context.predecessors.map(({ edgeId, task: predecessor }) => (
             <li key={edgeId}>
-              {blocker ? (
+              {predecessor ? (
                 <Link
                   className="break-words underline"
-                  href={`/tasks/${blocker.id}`}
+                  href={`/tasks/${predecessor.id}`}
                 >
-                  {blocker.title}
-                  {blocker.archived_at || blocker.status === "archived"
+                  {predecessor.title}
+                  {predecessor.archived_at || predecessor.status === "archived"
                     ? " (archiviert)"
                     : ""}
                 </Link>
               ) : (
                 "Vorgänger nicht verfügbar"
               )}
+              <span className="ml-2 text-[var(--text-secondary)]">
+                {predecessor && taskSatisfiesDependency(predecessor)
+                  ? "erfüllt"
+                  : "BLOCKED"}
+              </span>
             </li>
           ))}
         </ul>
       ) : (
-        <p>Keine unerfüllten Vorgänger.</p>
+        <p>Keine Vorgänger.</p>
       )}
       <h3 className="font-semibold">Ermöglicht</h3>
       {context.successors.length ? (
@@ -86,12 +92,6 @@ export function TaskDependencies({
         </ul>
       ) : (
         <p>Keine Nachfolger.</p>
-      )}
-      {context.predecessors.length > context.blockers.length && (
-        <p>
-          {context.predecessors.length - context.blockers.length} Vorgänger
-          erfüllt.
-        </p>
       )}
       {(task.project_id || context.predecessors.length > 0) && (
         <ManagementDisclosure label="Dependencies verwalten">

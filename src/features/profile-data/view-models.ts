@@ -2227,6 +2227,7 @@ function realTaskToLifeTask(task: RealDataTask): LifeTask | null {
     calendarBlockIds: [],
     createdAt: task.createdAt,
     date: task.plannedDate ?? scheduledDate,
+    scheduledDate,
     description: (task.description ?? "").split("\n\nNächste Aktion:")[0],
     durationMinutes: task.durationMinutes ?? undefined,
     energy: task.energy ?? undefined,
@@ -4114,9 +4115,10 @@ function taskToCalendarBlock(
     endTime === "00:00" && startMinutes !== null && startMinutes > 0
       ? CALENDAR_DAY_END_MINUTES
       : parsedEndMinutes;
+  const scheduledDate = task.scheduledDate ?? task.date;
 
   if (
-    !task.date ||
+    !scheduledDate ||
     !task.startTime ||
     startMinutes === null ||
     endMinutes === null
@@ -4126,8 +4128,8 @@ function taskToCalendarBlock(
 
   return {
     id: `task-block-${task.id}`,
-    dayId: dayIdFromDate(task.date),
-    date: task.date,
+    dayId: dayIdFromDate(scheduledDate),
+    date: scheduledDate,
     title: task.title,
     type: task.scheduleSource?.type === "meal" ? "meal" : task.scheduleSource?.type === "review" ? "review" : isWorkoutScheduleSource(task) ? "workout" : "task_block",
     status:
@@ -4311,7 +4313,9 @@ function buildProfileCalendarViewModel(
       id: task.id,
       isRecurringOccurrence: task.isGenerated,
       plannedDate: task.date,
-      scheduledDate: task.date && task.startTime ? task.date : undefined,
+      scheduledDate: task.startTime
+        ? task.scheduledDate ?? task.date
+        : undefined,
       status: task.status,
       title: task.title,
     })),

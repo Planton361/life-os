@@ -126,7 +126,7 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
     main.locator("input:visible, textarea:visible, select:visible"),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("region", { name: "Next Step", exact: true }),
+    page.getByRole("region", { name: "Project-Fokus", exact: true }),
   ).toContainText(project.next_step!);
   await expect(primary).toContainText(resources[0].title);
   await expect(taskRegion).toContainText("0/1 Tasks erledigt");
@@ -210,7 +210,7 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
   });
   await expect(edit.getByLabel("Titel", { exact: true })).toBeFocused();
   await edit
-    .getByLabel("Next Step", { exact: true })
+    .getByLabel("Project-Fokus", { exact: true })
     .fill("Nächsten konkreten Task bearbeiten");
   await edit
     .getByRole("button", { name: "Änderungen speichern", exact: true })
@@ -221,14 +221,11 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
       .filter({ hasText: /gespeichert|aktualisiert/ })
       .last(),
   ).toBeVisible();
-  await expect(edit.getByLabel("Next Step", { exact: true })).toBeEnabled();
-  await edit.getByLabel("Next Step", { exact: true }).focus();
-  await edit.getByLabel("Next Step", { exact: true }).press("Escape");
-  await expect(editTrigger).toBeFocused();
   await expect(editTrigger).toHaveAttribute("aria-expanded", "false");
+  await expect(editTrigger).toBeFocused();
   await page.reload();
   await expect(
-    page.getByRole("region", { name: "Next Step", exact: true }),
+    page.getByRole("region", { name: "Project-Fokus", exact: true }),
   ).toContainText("Nächsten konkreten Task bearbeiten");
   await expect(
     main.locator("input:visible, textarea:visible, select:visible"),

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   dependencyCandidates,
   projectDependencySummary,
+  taskHasExecutableLifecycle,
   taskDependencyContext,
   type TaskDependencyGraph,
 } from "./task-dependencies";
@@ -71,6 +72,17 @@ describe("canonical Finish-to-Start availability", () => {
     expect(taskDependencyContext(g, "B").availability).toBe("BLOCKED");
     g.tasks = g.tasks.filter((t) => t.id !== "A");
     expect(taskDependencyContext(g, "B").availability).toBe("BLOCKED");
+  });
+  it("keeps waiting lifecycle separate from dependency readiness and executable work", () => {
+    const g = graph();
+    const waiting = g.tasks.find((item) => item.id === "A")!;
+    waiting.status = "waiting";
+
+    expect(taskDependencyContext(g, "A").availability).toBe("READY");
+    expect(taskHasExecutableLifecycle(waiting)).toBe(false);
+    expect(
+      taskHasExecutableLifecycle(g.tasks.find((item) => item.id === "B")!),
+    ).toBe(true);
   });
   it("offers same-project, nonduplicate, nonself, acyclic disclosure candidates", () => {
     const g = graph();

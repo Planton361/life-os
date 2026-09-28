@@ -81,6 +81,13 @@ test("Canonical task graph: management, parallel readiness, completion guards an
   );
   const region = () =>
     page.getByRole("region", { name: "Task Dependencies", exact: true });
+  const lifecycle = () =>
+    page.getByRole("button", { name: "Lifecycle verwalten", exact: true });
+  const openLifecycle = async () => {
+    const trigger = lifecycle();
+    if ((await trigger.getAttribute("aria-expanded")) !== "true")
+      await trigger.click();
+  };
   const visit = async (name: string) => {
     await page.goto(`/tasks/${tasks[name].id}`);
     await expect(region()).toBeVisible();
@@ -126,6 +133,7 @@ test("Canonical task graph: management, parallel readiness, completion guards an
   await visit("Integration");
   await expect(region()).toContainText(tasks.API.title);
   await expect(region()).toContainText(tasks.UI.title);
+  await openLifecycle();
   await page
     .getByRole("button", { name: "Task abschließen", exact: true })
     .click();
@@ -175,20 +183,37 @@ test("Canonical task graph: management, parallel readiness, completion guards an
     name: "Tasks & Progress",
     exact: true,
   });
-  await expect(work).toContainText("READY 1 · BLOCKED 5");
+  await expect(work).toContainText("Dependency READY 1 · Dependency BLOCKED 5");
   await expect(
     work.getByRole("region", { name: "Milestone: Build", exact: true }),
-  ).toContainText("BLOCKED · wartet auf 2");
+  ).toContainText("Dependency-Readiness BLOCKED");
+  await expect(
+    work.getByRole("region", { name: "Milestone: Build", exact: true }),
+  ).toContainText(tasks.Design.title);
   await expect(work.locator("select:visible")).toHaveCount(0);
   const complete = async (name: string) => {
     await visit(name);
+    await openLifecycle();
     await page
       .getByRole("button", { name: "Task abschließen", exact: true })
       .click();
     await expect(
+      page
+        .getByRole("status")
+        .filter({ hasText: /Task abgeschlossen\./ })
+        .last(),
+    ).toBeVisible();
+    await expect(
+      page
+        .getByRole("region", { name: "Task Identity", exact: true })
+        .getByText("Lifecycle: Completed", { exact: true }),
+    ).toBeVisible();
+    await openLifecycle();
+    await expect(
       page.getByRole("button", { name: "Task wieder öffnen", exact: true }),
     ).toBeVisible();
     await page.reload();
+    await openLifecycle();
     await expect(
       page.getByRole("button", { name: "Task wieder öffnen", exact: true }),
     ).toBeVisible();
@@ -209,23 +234,24 @@ test("Canonical task graph: management, parallel readiness, completion guards an
   await page.reload();
   await expect(dailyControl).toContainText(tasks.Design.title);
   await visit("Design");
-  await expect(region()).toContainText("Availability: READY");
+  await expect(region()).toContainText("Dependency Readiness: READY");
   await complete("Design");
   for (const name of ["API", "UI"]) {
     await visit(name);
-    await expect(region()).toContainText("Availability: READY");
+    await expect(region()).toContainText("Dependency Readiness: READY");
   }
   await complete("API");
   await visit("Integration");
-  await expect(region()).toContainText("Availability: BLOCKED");
+  await expect(region()).toContainText("Dependency Readiness: BLOCKED");
   await expect(
     region().getByRole("link", { name: tasks.UI.title, exact: true }),
   ).toBeVisible();
   await complete("UI");
   await visit("Integration");
-  await expect(region()).toContainText("Availability: READY");
+  await expect(region()).toContainText("Dependency Readiness: READY");
   await complete("Integration");
   await visit("API");
+  await openLifecycle();
   await page
     .getByRole("button", { name: "Task wieder öffnen", exact: true })
     .click();
@@ -234,10 +260,12 @@ test("Canonical task graph: management, parallel readiness, completion guards an
   ).toBeVisible();
   await visit("Integration");
   await expect(region()).toContainText("Dependency inkonsistent");
+  await openLifecycle();
   await expect(
     page.getByRole("button", { name: "Task wieder öffnen", exact: true }),
   ).toBeVisible();
   await visit("Design");
+  await openLifecycle();
   await page
     .getByRole("button", { name: "Task wieder öffnen", exact: true })
     .click();
@@ -245,7 +273,7 @@ test("Canonical task graph: management, parallel readiness, completion guards an
     page.getByRole("button", { name: "Task abschließen", exact: true }),
   ).toBeVisible();
   await visit("API");
-  await expect(region()).toContainText("Availability: BLOCKED");
+  await expect(region()).toContainText("Dependency Readiness: BLOCKED");
   await manage();
   await region()
     .getByRole("button", {
@@ -257,7 +285,7 @@ test("Canonical task graph: management, parallel readiness, completion guards an
     page.getByRole("status").filter({ hasText: "Dependency entfernt." }).last(),
   ).toBeVisible();
   await page.reload();
-  await expect(region()).toContainText("Availability: READY");
+  await expect(region()).toContainText("Dependency Readiness: READY");
   // Every dependency navigation is real; compact signal stays subordinate to stages.
   await region()
     .getByRole("link", { name: tasks.Integration.title, exact: true })

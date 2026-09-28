@@ -47,6 +47,7 @@ test("canonical Task create from Project, Milestone and Backlog preserves contex
       .insert(
         ["Research", "Build"].map((title, sort_order) => ({
           sort_order,
+          status: sort_order === 0 ? ("active" as const) : ("open" as const),
           user_id: uid,
           project_id: project.id,
           title,
@@ -72,7 +73,10 @@ test("canonical Task create from Project, Milestone and Backlog preserves contex
     await page.goto(`/projects/${project.id}`);
     const trigger =
       mode === "project"
-        ? work.getByRole("link", { name: "+ Task", exact: true }).first()
+        ? work.getByRole("link", {
+            name: "Erste Task anlegen",
+            exact: true,
+          })
         : mode === "unassigned"
           ? backlog.getByRole("link", { name: "+ Task", exact: true })
           : stage(stages[0].id).getByRole("link", {
@@ -81,27 +85,38 @@ test("canonical Task create from Project, Milestone and Backlog preserves contex
             });
     await trigger.click();
     await expect(page).toHaveURL(/\/tasks\/new\?project=/);
-    await expect(form.getByLabel("Project", { exact: true })).toHaveValue(
-      project.id,
-    );
-    const preset = ["milestone", "change-stage"].includes(mode)
+    const preset = ["project", "milestone", "change-stage"].includes(mode)
       ? stages[0].id
       : "";
+    await expect(form.getByLabel("Titel", { exact: true })).toBeVisible();
     await expect(
-      form.getByLabel("Milestone (keine Auswahl = Ohne Milestone)"),
-    ).toHaveValue(preset);
+      form
+        .locator("[data-task-capture-context]")
+        .getByRole("link", { name: project.title, exact: true }),
+    ).toBeVisible();
+    const optionalDetails = form.getByRole("button", {
+      name: "Weitere Angaben (optional)",
+      exact: true,
+    });
+    await expect(optionalDetails).toHaveAttribute("aria-expanded", "false");
+    await expect(form.getByLabel("Project", { exact: true })).toBeHidden();
     await page.reload();
-    await expect(form.getByLabel("Project", { exact: true })).toHaveValue(
-      project.id,
-    );
     await expect(
-      form.getByLabel("Milestone (keine Auswahl = Ohne Milestone)"),
-    ).toHaveValue(preset);
+      form
+        .locator("[data-task-capture-context]")
+        .getByRole("link", { name: project.title, exact: true }),
+    ).toBeVisible();
+    await expect(optionalDetails).toHaveAttribute("aria-expanded", "false");
+    await optionalDetails.click();
+    const projectSelect = form.getByLabel("Project", { exact: true });
+    const milestoneSelect = form.getByLabel("Project Milestone", {
+      exact: true,
+    });
+    await expect(projectSelect).toHaveValue(project.id);
+    await expect(milestoneSelect).toHaveValue(preset);
     const destination = mode === "change-stage" ? stages[1].id : preset;
     if (mode === "change-stage")
-      await form
-        .getByLabel("Milestone (keine Auswahl = Ohne Milestone)")
-        .selectOption(destination);
+      await milestoneSelect.selectOption(destination);
     const title = `${mode} task ${stamp}`;
     await form.getByLabel("Titel", { exact: true }).fill(title);
     await submit();
@@ -134,7 +149,10 @@ test("canonical Task create from Project, Milestone and Backlog preserves contex
     await region.getByRole("link", { name: title, exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`/tasks/${rows[0].id}$`));
     await expect(
-      page.getByRole("region", { name: "Task Milestone", exact: true }),
+      page.getByRole("region", {
+        name: "Project und Goal Kontext",
+        exact: true,
+      }),
     ).toContainText(
       destination
         ? stages.find((s) => s.id === destination)!.title
@@ -146,6 +164,9 @@ test("canonical Task create from Project, Milestone and Backlog preserves contex
   ).toEqual([]);
   await page.goto(`/tasks/${created[0]}`);
   await page
+    .getByRole("button", { name: "Lifecycle verwalten", exact: true })
+    .click();
+  await page
     .getByRole("button", { name: "Task abschließen", exact: true })
     .click();
   await expect(
@@ -156,7 +177,7 @@ test("canonical Task create from Project, Milestone and Backlog preserves contex
   ).toBeVisible();
   await page.goto(`/projects/${project.id}`);
   await expect(work).toContainText("1/4 Tasks erledigt");
-  await expect(work).toContainText("READY 3 · BLOCKED 0");
+  await expect(work).toContainText("Dependency READY 3 · Dependency BLOCKED 0");
   for (const [width, height] of [
     [3840, 2160],
     [1920, 1080],
@@ -179,11 +200,18 @@ test("canonical Task create from Project, Milestone and Backlog preserves contex
   await stage(stages[0].id)
     .getByRole("link", { name: "+ Task", exact: true })
     .click();
+  const switchDetails = form.getByRole("button", {
+    name: "Weitere Angaben (optional)",
+    exact: true,
+  });
+  await switchDetails.click();
+  await expect(switchDetails).toHaveAttribute("aria-expanded", "true");
+  await expect(form.getByLabel("Project", { exact: true })).toBeVisible();
   await form
     .getByLabel("Project", { exact: true })
     .selectOption(projects[1].id);
   await expect(
-    form.getByLabel("Milestone (keine Auswahl = Ohne Milestone)"),
+    form.getByLabel("Project Milestone", { exact: true }),
   ).toHaveValue("");
   await form.getByLabel("Titel", { exact: true }).fill(`switch ${stamp}`);
   await submit();
@@ -244,9 +272,15 @@ test("canonical Task create from Project, Milestone and Backlog preserves contex
   ).data!;
   for (const target of [otherStage.id, foreignStage.id]) {
     await page.goto(`/tasks/new?project=${project.id}`);
+    const forgedDetails = form.getByRole("button", {
+      name: "Weitere Angaben (optional)",
+      exact: true,
+    });
+    await forgedDetails.click();
+    await expect(forgedDetails).toHaveAttribute("aria-expanded", "true");
     await form.getByLabel("Titel", { exact: true }).fill(`forged ${target}`);
     const select = form.getByLabel(
-      "Milestone (keine Auswahl = Ohne Milestone)",
+      "Project Milestone",
     );
     await select.evaluate((el, id) => {
       const option = document.createElement("option");

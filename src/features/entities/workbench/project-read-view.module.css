@@ -1,7 +1,7 @@
 .project {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1rem;
   min-width: 0;
   padding: 0.5rem 0.5rem 1rem;
 }
@@ -13,7 +13,7 @@
   border-radius: 0.75rem;
 }
 .header {
-  padding: 1.25rem;
+  padding: 1rem;
   flex: none;
   min-width: 0;
 }
@@ -91,6 +91,7 @@
 }
 @media (min-width: 1280px) {
   .project {
+    gap: 0.875rem;
     padding: 0.5rem 1.5rem 0;
   }
   .workspace {
