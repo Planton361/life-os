@@ -47,6 +47,73 @@ long-form Knowledge Content; Life OS retains operational IDs, status, planning,
 dependencies and relation semantics. Any future Obsidian graph projection is
 one-way/non-authoritative unless a separate command/security contract is accepted.
 
+## Accepted Core Task / Project interaction target — #56
+
+Issue #56 USER ACCEPTED the bounded Core Task / Project interaction target on
+2026-09-28. It refines Task Detail and the Project-to-Day handoff without replacing
+the accepted Project R2-09 structure or changing domain semantics.
+
+### Task Detail
+
+Task Detail uses the accepted **layered read-first Variant B**:
+
+- identity and lifecycle establish what the Task is;
+- exactly one contextually valid `Dein nächster Schritt` guidance surface appears
+  before deeper detail;
+- Project, Project Milestone and Goal are compact context, not competing actions;
+- purpose/work content precedes deeper relationship management;
+- explicit Task Dependencies remain the only source of execution READY/BLOCKED;
+- planned day, scheduled time block and deadline remain distinct concepts;
+- Edit, relationship management and lifecycle actions remain discoverable but
+  secondary through progressive disclosure;
+- mobile preserves the same read order.
+
+The rejected split/workbench Task alternative is not part of the target. Guidance
+is a UI projection over canonical Task state; it is not a persisted workflow
+engine or new Task status model.
+
+### Project refinement
+
+Project Detail keeps the USER ACCEPTED R2-09 workbench and receives only bounded
+guidance refinements:
+
+- stored **Project-Fokus** remains Project-owned orientation and is distinct from
+  derived executable Task guidance;
+- one unambiguous READY Task may be surfaced as the next executable work;
+- multiple READY Tasks preserve user choice instead of being auto-selected;
+- BLOCKED work names its concrete predecessor/blocker rather than exposing only a
+  count;
+- all-blocked work guides toward blocker context without automatically changing
+  Project lifecycle;
+- an empty Project prioritizes title-first `Erste Task anlegen`, with known
+  Project/current Project-Milestone context prefilled where canonical.
+
+Milestone grouping, real counts, Resources/Work Artifacts, References, Goal
+context, edit and lifecycle placement remain owned by the accepted R2-09 contract.
+Project Milestones never become execution dependencies.
+
+### Project → Task → Day
+
+The accepted interaction boundary is:
+
+```text
+Project → Task → dependency readiness → Calendar scheduling
+→ execution/completion → Project/Goal context
+```
+
+Project owns higher-order orientation and Project Milestones. Task owns executable
+work context. Calendar owns confirmation/editing of time blocks. Today remains the
+day projection. Stable canonical Task/Project/Goal links provide return context
+independent of browser history.
+
+A Task-aware Calendar navigation state such as
+`task=<id>&date=<day>&view=day` (or equivalent) is UI navigation state only. It
+does not create another scheduling store or redesign Calendar/Today.
+
+No new DB/schema/RPC/security/runtime decision, Task status model, progress engine,
+universal Milestone model, autonomous Task selection or automatic completion is
+part of #56.
+
 ## Accepted Goal target — #39/#41 semantics + #48 hybrid workbench
 
 Issue #48 USER ACCEPTED the hybrid Goal composition. It supersedes the visible

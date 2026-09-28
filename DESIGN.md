@@ -446,6 +446,77 @@ logos/selectors, login/sync controls, previews or specialized embedded editors.
 R2-09 is USER ACCEPTED on 2026-09-09; preserve this accepted composition.
 
 
+## Accepted Task read-first & Project-to-Day interaction — #56
+
+Issue #56 USER ACCEPTED the Task / Project interaction target on 2026-09-28.
+
+### Task Detail — layered read-first Variant B
+
+Task Detail is not a split workbench. It uses a layered reading order:
+
+1. Task identity, lifecycle and restrained priority/status context;
+2. one dominant `Dein nächster Schritt` guidance surface;
+3. one compact context line/region for Project, Project Milestone and Goal;
+4. purpose/description, Arbeitsnotiz/Vorgehen and Arbeitsschritte;
+5. Dependency and planning depth;
+6. secondary Edit / Manage / Lifecycle controls.
+
+READY/BLOCKED is visually and semantically separate from Task lifecycle. Concrete
+predecessors remain readable and navigable. A completed predecessor may explain
+why the current Task is READY without becoming a competing primary action.
+
+Planning presents `planned_date` as day intent, scheduled start/duration as the
+Calendar time block and deadline separately. When a scheduled Task is the current
+guidance, the primary action opens that Calendar context. When a READY Task lacks
+a confirmed time block, guidance may offer Calendar planning. The user still
+chooses/edits time in Calendar.
+
+Mobile keeps the same semantic order in one column. The primary guidance remains
+early in the viewport; context and management never require horizontal scrolling.
+
+### Bounded Project refinement over R2-09
+
+The R2-09 three-surface structure and information hierarchy remain binding.
+#56 changes guidance, not Project composition:
+
+- label the stored Project-owned Next Step as `Project-Fokus` where needed to
+  distinguish it from executable Task guidance;
+- an exactly-one READY Task may be emphasized as the next executable Task;
+- multiple READY Tasks remain a user choice with no inferred winner;
+- BLOCKED rows name/link the concrete predecessor when available;
+- an all-blocked Project guides into blocker context without mutating Project
+  status;
+- an empty Project uses title-first `Erste Task anlegen` as the primary work
+  entry, while Milestone management stays secondary.
+
+Existing Milestone ordering/grouping, task and milestone counts, Work Artifacts,
+References, Goal context, edit and lifecycle controls remain in their accepted
+R2-09 locations.
+
+### Project → Task → Day interaction
+
+Use the existing canonical loop:
+
+```text
+Project
+→ identify current work
+→ open or capture Task
+→ resolve explicit Task Dependency when needed
+→ plan/confirm time in Calendar
+→ execute and explicitly complete Task
+→ return through canonical Project/Goal context
+```
+
+Task-aware Calendar query/navigation state may preserve the selected Task and day
+across navigation/reload, but it is presentation/navigation state only. Calendar
+continues to own the time block; Today remains the day projection. No Calendar or
+Today redesign is implied.
+
+No new persisted workflow state, universal Milestone model, Project-Milestone
+dependency semantics, generic progress engine or automatic completion is allowed
+by this contract.
+
+
 ## Work Graph und späterer Graph-Client — Designvertrag
 
 Die historische R2-11-Evaluation verglich die bestehenden Project-/Task-Workbench-
