@@ -223,7 +223,7 @@ async function captureViewports(
     await expectHybridGoalLayout(page);
     await page.screenshot({
       path: testInfo.outputPath(
-        `issue-49-density-${scenario}-${viewport.width}x${viewport.height}.png`,
+        `issue-53-viewport-${scenario}-${viewport.width}x${viewport.height}.png`,
       ),
       fullPage: true,
     });
@@ -231,7 +231,7 @@ async function captureViewports(
   await page.setViewportSize({ width: 1920, height: 1080 });
 }
 
-test("Issue 49 hybrid Goal workbench retains the Issue 46 Manual dependency flow", async ({
+test("Issue 53 viewport-aware Goal workbench preserves the authenticated Manual flow", async ({
   page,
   context,
 }, testInfo) => {
@@ -351,25 +351,6 @@ test("Issue 49 hybrid Goal workbench retains the Issue 46 Manual dependency flow
     "Ziel prüfen",
   );
   await root.getByRole("button", { name: "Fertig", exact: true }).click();
-  await captureViewports(page, testInfo, "single-result");
-  await root
-    .getByRole("button", { name: "Planung bearbeiten", exact: true })
-    .click();
-  await createIntermediateResult(page, futureTitle);
-  await createIntermediateResult(page, laterTitle);
-  root = workbench(page);
-  const progression = root.locator("[data-goal-progression]");
-  await expect(progression.locator("li[data-goal-milestone-id]")).toHaveCount(
-    3,
-  );
-  await expect(
-    progression.locator("li[data-goal-stage-status='active']"),
-  ).toHaveCount(1);
-  await expect(
-    progression.locator("li[data-goal-stage-status='planned']"),
-  ).toHaveCount(2);
-  await expect(progression).not.toContainText(/Task|Aufgabe|READY|BLOCKED|%/i);
-
   const projectTitle = `Manual Goal delivery project ${stamp}`;
   await createContextProject(page, goalId!, currentId, projectTitle);
   root = workbench(page);
@@ -379,22 +360,6 @@ test("Issue 49 hybrid Goal workbench retains the Issue 46 Manual dependency flow
   await expect(projectLink).toBeVisible();
   const projectId = (await projectLink.getAttribute("href"))?.split("/").pop();
   expect(projectId).toMatch(/^[0-9a-f-]{36}$/i);
-
-  const blockerTitle = `Ungeklärte Voraussetzung beheben ${stamp}`;
-  const blockerInsert = await api
-    .from("tasks")
-    .insert({
-      user_id: userId,
-      goal_id: goalId,
-      project_id: projectId,
-      title: blockerTitle,
-      status: "planned",
-      priority: "P1",
-    })
-    .select("id")
-    .single();
-  expect(blockerInsert.error).toBeNull();
-  const blockerId = blockerInsert.data!.id;
 
   const readyTitle = `Manual Flow im Alltag pruefen ${stamp}`;
   const readyTask = await createCurrentTask(
@@ -420,6 +385,49 @@ test("Issue 49 hybrid Goal workbench retains the Issue 46 Manual dependency flow
       exact: true,
     }),
   ).toBeVisible();
+  await expect(root.locator("[data-goal-current-task]")).toHaveCount(1);
+  await expect(
+    root.locator("[data-goal-progression] li[data-goal-milestone-id]"),
+  ).toHaveCount(1);
+  await expect(
+    root.locator("[data-goal-progression] li[data-goal-stage-status='active']"),
+  ).toHaveCount(1);
+  await expect(root.getByText(readyTitle, { exact: true })).toHaveCount(1);
+  await captureViewports(page, testInfo, "sparse-one-ready");
+
+  await root
+    .getByRole("button", { name: "Planung bearbeiten", exact: true })
+    .click();
+  await createIntermediateResult(page, futureTitle);
+  await createIntermediateResult(page, laterTitle);
+  root = workbench(page);
+  const progression = root.locator("[data-goal-progression]");
+  await expect(progression.locator("li[data-goal-milestone-id]")).toHaveCount(
+    3,
+  );
+  await expect(
+    progression.locator("li[data-goal-stage-status='active']"),
+  ).toHaveCount(1);
+  await expect(
+    progression.locator("li[data-goal-stage-status='planned']"),
+  ).toHaveCount(2);
+  await expect(progression).not.toContainText(/Task|Aufgabe|READY|BLOCKED|%/i);
+
+  const blockerTitle = `Ungeklärte Voraussetzung beheben ${stamp}`;
+  const blockerInsert = await api
+    .from("tasks")
+    .insert({
+      user_id: userId,
+      goal_id: goalId,
+      project_id: projectId,
+      title: blockerTitle,
+      status: "planned",
+      priority: "P1",
+    })
+    .select("id")
+    .single();
+  expect(blockerInsert.error).toBeNull();
+  const blockerId = blockerInsert.data!.id;
 
   const blockedTitle = `Datenabgleich erst nach Voraussetzung prüfen ${stamp}`;
   const blockedTask = await createCurrentTask(
@@ -486,7 +494,7 @@ test("Issue 49 hybrid Goal workbench retains the Issue 46 Manual dependency flow
   await page.goto(`/goals/${goalId}`);
   await page.reload();
   await expect(root.getByText(readyTitle, { exact: true })).toHaveCount(1);
-  await captureViewports(page, testInfo);
+  await captureViewports(page, testInfo, "multi-milestone-ready-and-blocked");
 
   await completeTask(page, readyTask.taskId);
   await page.goto(`/goals/${goalId}`);

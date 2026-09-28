@@ -318,8 +318,16 @@ image, illustration, quote or invented motivational content.
 ### Desktop composition
 
 Below the header, use a real two-column workbench: dominant left work region
-(roughly 58–64%), quieter right context rail (roughly 36–42%). Align their tops;
-let each region fit its content without stretched empty cards.
+(roughly 58–64%), quieter right context rail (roughly 36–42%). Keep both
+top-aligned inside one shared desktop workbench frame. The frame has a bounded
+minimum height derived from the available viewport below the shell and Goal
+identity; it grows with real content, stays in normal document flow and never
+clips or adds an internal scroll area just to fill height. Anchor the secondary
+footer actions to the lower edge of this shared frame in sparse states.
+
+Stretch the shared frame, not its modules: Current Work, the next action, the
+roadmap and Goal Review preview remain content-sized. Keep the roadmap top-led;
+do not add artificial distance between its current and final review points.
 
 Left: **Aktuelle Arbeit** with a short orientation sentence, `AKTUELL` / current
 Zwischenziel and its intended outcome, then `ALS NÄCHSTES` with the one canonical
@@ -376,10 +384,11 @@ exactly one Current, Task-only READY/BLOCKED and append-only history/evidence.
 Narrow/mobile order:
 `Goal identity → Aktuelle Arbeit → Dein Weg zum Ergebnis → Ziel prüfen → secondary depth`.
 
-At 3840×2160 and 1920×1080, preserve the desktop split; at 390×844, stack without
-horizontal overflow or clipped controls. Keep one obvious primary action, logical
-headings/regions, visible keyboard focus, disclosure/dialog operation and focus
-return after closing planning or a disclosure.
+At 3840×2160 and 1920×1080, preserve the desktop split and use the bounded shared
+frame; at 390×844, disable its minimum and stack naturally without artificial
+stretching, horizontal overflow or clipped controls. Keep one obvious primary
+action, logical headings/regions, visible keyboard focus, disclosure/dialog
+operation and focus return after closing planning or a disclosure.
 
 
 ## Project Work Artifacts and References (R2-09)

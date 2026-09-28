@@ -13,6 +13,12 @@ export async function expectHybridGoalLayout(page: Page) {
   ).toHaveCount(1);
   await expect(root.locator("img, blockquote")).toHaveCount(0);
   const geometry = await root.evaluate((element) => {
+    const frame = element.querySelector<HTMLElement>(
+      "[data-goal-workbench-frame]",
+    )!;
+    const footer = element.querySelector<HTMLElement>(
+      "[data-goal-workbench-footer]",
+    )!;
     const rect = (selector: string) => {
       const node = element.querySelector(selector)!;
       const bounds = node.getBoundingClientRect();
@@ -24,6 +30,13 @@ export async function expectHybridGoalLayout(page: Page) {
         width: bounds.width,
         height: bounds.height,
       };
+    };
+    const frameBounds = frame.getBoundingClientRect();
+    const footerBounds = footer.getBoundingClientRect();
+    const compositionBounds = element.getBoundingClientRect();
+    const minHeight = (node: Element) => {
+      const value = Number.parseFloat(getComputedStyle(node).minHeight);
+      return Number.isFinite(value) ? value : 0;
     };
     const controls = [
       ...element.querySelectorAll("a, button, input, select, textarea"),
@@ -54,7 +67,23 @@ export async function expectHybridGoalLayout(page: Page) {
       current: rect("[data-goal-current-workbench]"),
       journey: rect("[data-goal-journey]"),
       review: rect("[data-goal-review-preview]"),
+      frame: {
+        top: frameBounds.top,
+        bottom: frameBounds.bottom,
+        height: frameBounds.height,
+        minHeight: minHeight(frame),
+      },
+      composition: {
+        top: compositionBounds.top,
+        height: compositionBounds.height,
+        minHeight: minHeight(element),
+      },
+      footer: {
+        top: footerBounds.top,
+        bottom: footerBounds.bottom,
+      },
       viewport: document.documentElement.clientWidth,
+      viewportHeight: window.innerHeight,
       scroll: document.documentElement.scrollWidth,
       clippedControls: controls.filter(
         (bounds) =>
@@ -74,6 +103,39 @@ export async function expectHybridGoalLayout(page: Page) {
   expect(geometry.backgroundImages).toBe(0);
   expect(geometry.current.top).toBeGreaterThan(geometry.identity.bottom);
   expect(geometry.review.top).toBeGreaterThan(geometry.journey.bottom);
+  if (geometry.viewport >= 1024) {
+    const expectedCompositionMinimum = Math.max(
+      576,
+      Math.min(2016, geometry.viewportHeight - 144),
+    );
+    expect(geometry.composition.minHeight).toBeGreaterThanOrEqual(
+      expectedCompositionMinimum - 1,
+    );
+    expect(geometry.composition.height).toBeGreaterThanOrEqual(
+      expectedCompositionMinimum - 1,
+    );
+    const expectedFrameMinimum =
+      expectedCompositionMinimum -
+      (geometry.frame.top - geometry.composition.top);
+    expect(geometry.frame.height).toBeGreaterThanOrEqual(
+      expectedFrameMinimum - 1,
+    );
+    expect(
+      geometry.frame.bottom - geometry.footer.bottom,
+    ).toBeGreaterThanOrEqual(0);
+    expect(geometry.frame.bottom - geometry.footer.bottom).toBeLessThanOrEqual(
+      24,
+    );
+  } else {
+    expect(geometry.frame.minHeight).toBe(0);
+    expect(geometry.composition.minHeight).toBe(0);
+    expect(
+      geometry.frame.bottom - geometry.footer.bottom,
+    ).toBeGreaterThanOrEqual(0);
+    expect(geometry.frame.bottom - geometry.footer.bottom).toBeLessThanOrEqual(
+      4,
+    );
+  }
   if (geometry.viewport >= 1920) {
     const ratio =
       geometry.current.width /

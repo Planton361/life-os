@@ -1452,7 +1452,7 @@ export function GoalOutcomeWorkbench({
         initiallyOpen={
           canManage && ["planung", "arbeit", "erfolg"].includes(area ?? "")
         }
-        className="grid min-w-0 content-start gap-4"
+        className="grid min-w-0 content-start gap-4 lg:flex lg:min-h-[clamp(36rem,calc(100dvh_-_9rem),126rem)] lg:flex-col"
       >
         <header
           className="grid min-w-0 gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-1)] p-4"
@@ -1561,8 +1561,9 @@ export function GoalOutcomeWorkbench({
         )}
 
         <div
-          className="grid min-w-0 items-start gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]"
+          className="grid min-w-0 items-start gap-4 lg:flex-1 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:grid-rows-[minmax(0,1fr)_auto] lg:rounded-xl lg:border lg:border-[var(--border-subtle)] lg:bg-[var(--surface-1)] lg:p-4"
           data-goal-journey-layout
+          data-goal-workbench-frame
         >
           <section
             id="goal-current-work"
@@ -1811,12 +1812,6 @@ export function GoalOutcomeWorkbench({
                 )}
               {journeyGuidance.action === "achieved" && (
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                  <Link
-                    className="min-h-10 w-fit py-2 text-sm text-[var(--text-secondary)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
-                    href={goalAreaHref(goalId, "verlauf")}
-                  >
-                    Verlauf ansehen
-                  </Link>
                   <OperationForm
                     operation="reopen"
                     label="Ziel wieder öffnen"
@@ -2349,15 +2344,37 @@ export function GoalOutcomeWorkbench({
               </GoalPlanningOnly>
             </section>
           </div>
-        </div>
-
-        <div className="-mt-2">
-          <Link
-            href={goalAreaHref(goalId, "verlauf")}
-            className="w-fit text-sm text-[var(--text-muted)] underline underline-offset-4 hover:text-[var(--text-secondary)]"
+          <footer
+            data-goal-workbench-footer
+            className="col-span-full flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-[var(--border-subtle)] pt-3"
           >
-            Verlauf ansehen
-          </Link>
+            <Link
+              href={goalAreaHref(goalId, "verlauf")}
+              className="w-fit text-sm text-[var(--text-muted)] underline underline-offset-4 hover:text-[var(--text-secondary)]"
+            >
+              Verlauf ansehen
+            </Link>
+            {canManage && (
+              <div
+                aria-label="Zielverwaltung"
+                className="flex flex-wrap items-center gap-x-4 gap-y-2"
+              >
+                <ManagementDisclosure label="Weitere Optionen">
+                  <div className="grid gap-4">
+                    <ManagementDisclosure label="Ziel archivieren">
+                      <OperationForm
+                        operation="goal.archive"
+                        label="Ziel archivieren"
+                        closeOnSuccess
+                      >
+                        <Hidden name="goalId" value={goalId} />
+                      </OperationForm>
+                    </ManagementDisclosure>
+                  </div>
+                </ManagementDisclosure>
+              </div>
+            )}
+          </footer>
         </div>
 
         {selectedArea === "verlauf" && (
@@ -2467,27 +2484,6 @@ export function GoalOutcomeWorkbench({
               </section>
             )}
           </Panel>
-        )}
-
-        {canManage && (
-          <div
-            aria-label="Zielverwaltung"
-            className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[var(--border-subtle)] pt-2"
-          >
-            <ManagementDisclosure label="Weitere Optionen">
-              <div className="grid gap-4">
-                <ManagementDisclosure label="Ziel archivieren">
-                  <OperationForm
-                    operation="goal.archive"
-                    label="Ziel archivieren"
-                    closeOnSuccess
-                  >
-                    <Hidden name="goalId" value={goalId} />
-                  </OperationForm>
-                </ManagementDisclosure>
-              </div>
-            </ManagementDisclosure>
-          </div>
         )}
       </GoalPlanningMode>
     </EntityWorkbenchShell>

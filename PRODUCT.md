@@ -116,6 +116,18 @@ Use `Zwischenziel` / `Zwischenresultat` as primary user language.
 Mobile stacks Goal Identity → Aktuelle Arbeit → Dein Weg zum Ergebnis →
 Ziel prüfen → secondary depth (`Verlauf ansehen` / `Weitere Optionen`).
 
+#### Viewport Workbench refinement — #52 Variant A
+
+On desktop, the two columns and their secondary actions sit inside one shared
+workbench frame with a bounded minimum height derived from the remaining
+viewport after the Goal identity and application shell. The frame is only a
+minimum: normal document flow grows with real content, without clipping or an
+internal scroll area added to fill height. Current Work, roadmap and review
+modules stay content-sized; the Journey remains top-led rather than stretching
+to create distance. In sparse states, `Verlauf ansehen` and `Weitere Optionen`
+sit at the lower edge of the shared frame. At narrow/mobile widths the desktop
+minimum is removed and the existing content-driven stack remains natural.
+
 The Definition of Done remains canonical truth but ordinary execution does not
 require the user to learn that term. Preferred user questions are:
 - planning: `Wann ist das Ziel erreicht?`;

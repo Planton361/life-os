@@ -50,14 +50,22 @@ question-led planning stays progressive. Goal Achievement and Milestone completi
 explicit and are never derived automatically from Task Completion; no artificial
 generic Goal percentage is introduced.
 
+The USER ACCEPTED #52 Variant A refines only the desktop composition: Current
+Work and the context rail share a bounded viewport-derived workbench frame,
+while inner modules and the Journey remain content-sized and secondary actions
+anchor at the frame's lower edge. The minimum is disabled on mobile/narrow
+layouts and real content grows through normal page flow. Goal domain, dependency
+and review semantics are unchanged.
+
 **Direct dependency:** Accepted Product Target v0.4 and the accepted Target
 Model Decision Package. PP1 establishes the Goal planning semantics required by
 the later blocks.
 
 **Acceptance boundary:** #48 USER ACCEPTED the hybrid composition after the
-#46 real Manual check rejected excessive visual reduction. #48 supersedes the
-#44/#46 flat composition, while preserving #39/#41 single-Current, Task dependency,
-explicit review and history semantics. A separately approved DELIVER Issue owns
+#46 real Manual check rejected excessive visual reduction; #52 USER ACCEPTED
+Variant A as its viewport-aware refinement. #48 supersedes the #44/#46 flat
+composition, while preserving #39/#41 single-Current, Task dependency, explicit
+review and history semantics. A separately approved DELIVER Issue owns
 implementation. PP1 remains NOT USER ACCEPTED until implementation, merge and
 explicit real-user acceptance; this roadmap does not authorize delivery itself.
 
