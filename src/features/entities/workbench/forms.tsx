@@ -629,7 +629,7 @@ export function EntityForm({
                   )}
                   {kind === "project" && (
                     <>
-                      {choice(
+                      {id ? <p className="text-sm text-[var(--text-secondary)]">Status: {values.status} · unter Project verwalten ändern</p> : choice(
                         "status",
                         "Status",
                         opts([
@@ -637,7 +637,6 @@ export function EntityForm({
                           "active",
                           "paused",
                           "blocked",
-                          "completed",
                         ]),
                       )}
                       {choice(

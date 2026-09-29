@@ -67,7 +67,7 @@ zusätzlich. Ein Schrittabschluss schließt den Task niemals automatisch ab.
 
 Ein Project ist ein endliches, mehrschrittiges Ergebnis. Es bündelt Tasks, besitzt aber weder deren Completion noch deren Zeitplanung. Ein Project kann höchstens ein primäres Goal voranbringen. Area ist Kontext, nicht Ownership.
 
-**Project P-DATA target — #67 USER ACCEPTED 2026-09-29, not implemented:**
+**Project P-DATA — #67 USER ACCEPTED 2026-09-29, implemented by #69:**
 `projects.desired_result` is the one current, Project-owned finite result;
 Description remains context. Project-owned Completion Criteria define the
 acceptance of that result, with no live `met` state. Project commands maintain
@@ -84,7 +84,21 @@ new Review. Legacy completed Projects have no fabricated Review or Criteria
 history. Optional evidence in the first slice consists of selected, owned
 Resource references only. Project Review/History remains Project-specific,
 separate from Goal Review; no generic Goal/Project review engine is accepted.
-These are accepted data semantics, not existing tables, columns or a migration.
+Issue #69 implements these semantics with Project-specific tables and an
+authenticated command boundary.
+
+Review History stores a dated `work_observed_at` observation and exact open/done/
+canceled unarchived Task counts plus open/done unarchived Project-Milestone
+counts. The core context fingerprint compares complete relevant work sets;
+there is no durable Task/Milestone individual snapshot table. Reviews persist
+revision-before/after, cycle, Project/Goal context, explicit result acceptance,
+Criterion/archive basis and decision acknowledgements. Continue and typed
+Amendments advance the contract revision; R2-10 serialization-only `updated_at`
+writes do not. Receipts retain server-normalized payloads and SHA-256 identity.
+Selected Resource relations have separate context tokens, optional Criterion
+association and notes; safe locator snapshots contain no userinfo/query/fragment.
+Immutable clarification, evidence withdrawal and mistaken-review Amendments are
+bounded; marking the current positive Review mistaken atomically Reopens it.
 
 ### Goal
 
@@ -332,18 +346,17 @@ is inherited from the existing Project task read model (created_at descending).
 No percentage is stored: stage and Project progress are computed from real active
 Tasks and stages; stage completion remains explicit.
 
-In the implemented R2-09 schema, Project Description is general context and no
-separate Project Desired Outcome field exists yet. #67 accepts a future
-`desired_result` and Project Completion Criteria; no migration has implemented
-them. Resources, artifact roles and Task Steps retain their existing semantics.
+Project Description remains general context. Issue #69 adds Project
+`desired_result`, Completion Criteria and immutable Review/History while
+Resources, artifact roles and Task Steps retain their existing semantics.
 
 
-## Accepted Product Target v0.4 — target model (not implemented)
+## Accepted Product Target v0.4 — target model (partially implemented)
 
 This section records the accepted target contract. The **Current** model above
-and the implemented R2 sections remain the implementation truth; the target
-structures below require later contracts, schema work and evidence before they
-can be treated as connected.
+and the implemented R2 sections remain the implementation truth. Project Depth
+is delivered by Issue #69; other target structures require later contracts,
+schema work and evidence before they can be treated as connected.
 
 ### Planning categories and progress
 

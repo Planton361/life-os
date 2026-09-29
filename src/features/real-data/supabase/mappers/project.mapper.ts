@@ -51,13 +51,6 @@ export function mapUpdateProjectInputToPatch(
   if (input.goalId !== undefined) patch.goal_id = input.goalId;
   if (input.nextStep !== undefined) patch.next_step = input.nextStep;
   if (input.priority !== undefined) patch.priority = input.priority;
-  if (input.status !== undefined) {
-    patch.status = input.status;
-
-    if (input.status === "archived") {
-      patch.archived_at = new Date().toISOString();
-    }
-  }
   if (input.title !== undefined) patch.title = input.title;
 
   return patch;

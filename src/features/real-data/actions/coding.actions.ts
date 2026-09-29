@@ -38,6 +38,11 @@ function revalidateCoding(projectId?: string) {
   revalidatePath("/coding");
   revalidatePath("/portfolio");
   revalidatePath("/projects");
+  revalidatePath("/dashboard");
+  revalidatePath("/today");
+  revalidatePath("/calendar");
+  revalidatePath("/goals");
+  revalidatePath("/goals/[goalId]", "page");
   if (projectId) revalidatePath(`/projects/${projectId}`);
 }
 

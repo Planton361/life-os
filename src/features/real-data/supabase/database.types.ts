@@ -46,6 +46,82 @@ type GoalPathCriterionEvaluationInsert =
     criterion_id: string;
   };
 
+type ProjectDepthProject = GeneratedDatabase["public"]["Tables"]["projects"];
+type ProjectDepthTable<TRow> = {
+  Row: TRow;
+  Insert: Partial<TRow>;
+  Update: Partial<TRow>;
+  Relationships: [];
+};
+type ProjectDepthTables = {
+  projects: {
+    Row: ProjectDepthProject["Row"] & {
+      desired_result: string | null;
+      completion_revision: number;
+      completion_cycle: number;
+    };
+    Insert: ProjectDepthProject["Insert"] & {
+      desired_result?: string | null;
+      completion_revision?: number;
+      completion_cycle?: number;
+    };
+    Update: ProjectDepthProject["Update"] & {
+      desired_result?: string | null;
+      completion_revision?: number;
+      completion_cycle?: number;
+    };
+    Relationships: ProjectDepthProject["Relationships"];
+  };
+  project_completion_criteria: ProjectDepthTable<{
+    id: string; user_id: string; project_id: string; text: string;
+    sort_order: number; created_at: string; updated_at: string;
+    archived_at: string | null; archive_reason: string | null;
+    archived_cycle: number | null; archived_revision: number | null;
+  }>;
+  project_reviews: ProjectDepthTable<{
+    id: string; user_id: string; project_id: string; completion_cycle: number;
+    revision_before: number; revision_after: number; snapshot_version: number;
+    project_title_snapshot: string; desired_result_snapshot: string | null;
+    goal_id_snapshot: string | null; goal_title_snapshot: string | null;
+    decision: "completed" | "continue"; prior_status: string; resulting_status: string;
+    result_accepted: boolean; rationale: string; work_observed_at: string;
+    open_task_count: number; done_task_count: number; canceled_task_count: number;
+    open_milestone_count: number; done_milestone_count: number;
+    open_work_acknowledged: boolean; open_work_disposition: string | null;
+    archived_criteria_acknowledged: boolean; context_fingerprint: string;
+    reviewed_at: string; command_id: string;
+  }>;
+  project_review_criteria: ProjectDepthTable<{
+    user_id: string; project_id: string; review_id: string; criterion_id: string;
+    text_snapshot: string; sort_order_snapshot: number; was_archived: boolean;
+    decision: "satisfied" | "not_satisfied" | "not_assessed" | "excluded";
+    rationale: string | null; archive_reason_snapshot: string | null;
+    archived_cycle_snapshot: number | null; archived_revision_snapshot: number | null;
+  }>;
+  project_review_resources: ProjectDepthTable<{
+    id: string; user_id: string; project_id: string; review_id: string;
+    criterion_id: string | null; resource_id: string; relation_id_snapshot: string;
+    title_snapshot: string; resource_type_snapshot: string; safe_url_snapshot: string | null;
+    relation_type_snapshot: string; project_role_snapshot: string; note: string | null;
+  }>;
+  project_lifecycle_events: ProjectDepthTable<{
+    id: string; user_id: string; project_id: string; command_id: string;
+    event_kind: "reopened" | "archived"; recorded_at: string; revision_after: number;
+    cycle_before: number; cycle_after: number; project_title_snapshot: string;
+    prior_status: string; resulting_status: string; prior_completion_kind: "review" | "legacy_without_review" | null;
+    prior_review_id: string | null; reason: string | null; mistaken_completion: boolean;
+  }>;
+  project_review_amendments: ProjectDepthTable<{
+    id: string; user_id: string; project_id: string; review_id: string; command_id: string;
+    revision_after: number; kind: "clarification" | "evidence_withdrawn" | "marked_mistaken";
+    review_resource_id: string | null; reason: string; recorded_at: string;
+  }>;
+  project_command_receipts: ProjectDepthTable<{
+    user_id: string; project_id: string; command_id: string; command_kind: string;
+    request_payload: Json; request_fingerprint: string; result_payload: Json; created_at: string;
+  }>;
+};
+
 type GoalPathTables = Omit<
   GeneratedDatabase["public"]["Tables"],
   | "goal_criterion_evaluations"
@@ -57,6 +133,7 @@ type GoalPathTables = Omit<
   | "goal_criterion_evaluation_evidence"
   | "goal_milestone_achievement_evidence"
   | "goal_achievement_evidence"
+  | "projects"
 > & {
   goal_criterion_evaluations: GoalPathTable<
     GoalPathCriterionEvaluationRow,
@@ -205,9 +282,25 @@ type GoalPathTables = Omit<
     recorded_at: string;
     created_at: string;
   }>;
-};
+} & ProjectDepthTables;
 
 type GoalPathFunctions = {
+  project_depth_history: { Args: { p_project_id: string; p_before_revision?: string }; Returns: Json };
+  project_review_context: {
+    Args: { p_project_id: string };
+    Returns: Json;
+  };
+  project_depth_command: {
+    Args: {
+      p_project_id: string;
+      p_command_id: string;
+      p_operation: string;
+      p_expected_revision: string | number;
+      p_expected_cycle: string | number;
+      p_payload: Json;
+    };
+    Returns: Json;
+  };
   execute_goal_command: {
     Args: {
       p_command_kind: string;

@@ -11,6 +11,8 @@ import { ProjectResources } from "./project-resources";
 
 import styles from "./project-read-view.module.css";
 import { ProjectWork } from "./project-work";
+import { ProjectDepthHistory, ProjectDepthResult, ProjectDepthReview, ProjectDepthStatus } from "./project-depth";
+import type { ProjectDepthRead } from "@/features/real-data/supabase/repositories/project-depth-repository";
 
 export function ProjectReadView({
   data,
@@ -18,12 +20,14 @@ export function ProjectReadView({
   edit,
   relations,
   selectedResource,
+  depth,
 }: {
   data: WorkbenchData;
   id: string;
   edit: ReactNode;
   relations: ReactNode;
   selectedResource?: string;
+  depth?: ProjectDepthRead;
 }) {
   const project = data.projects.find((p) => p.id === id)!;
   const tasks = data.tasks.filter((t) => t.project_id === id && !t.archived_at);
@@ -93,11 +97,15 @@ export function ProjectReadView({
                   label="Project archivieren"
                 >
                   <input type="hidden" name="projectId" value={id} />
+                  <input type="hidden" name="expectedRevision" value={depth?.context.completion_revision ?? 0} />
+                  <input type="hidden" name="expectedCycle" value={depth?.context.completion_cycle ?? 0} />
                 </OperationForm>
+                {depth && <ProjectDepthStatus depth={depth} />}
               </ManagementDisclosure>
             </>
           )}
         </ManagementDisclosureGroup>
+        {depth && <ProjectDepthResult depth={depth} />}
         <section
           aria-label="Project-Fokus"
           data-project-focus
@@ -114,6 +122,7 @@ export function ProjectReadView({
       <div className={styles.workspace} data-project-workspace>
         <ProjectWork data={data} projectId={id} />
         <aside aria-label="Project Context Rail" className={styles.rail}>
+          {depth && <ProjectDepthReview depth={depth} />}
           <ProjectResources data={data} projectId={id} section="primary" />
           <section aria-label="Project Context" className="min-w-0">
             <h2 className="text-base font-semibold text-[var(--text-secondary)]">
@@ -184,6 +193,7 @@ export function ProjectReadView({
         />
         <ProjectResources data={data} projectId={id} section="references" />
       </div>
+      {depth && <ProjectDepthHistory depth={depth} />}
     </div>
   );
 }

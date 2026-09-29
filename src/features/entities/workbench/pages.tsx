@@ -14,6 +14,7 @@ import {
   type WorkbenchData,
 } from "@/features/real-data/supabase/repositories/entity-workbench-read";
 import { getGoalOutcome } from "@/features/real-data/supabase/repositories/supabase-goal-outcome-repository";
+import { readProjectDepth } from "@/features/real-data/supabase/repositories/project-depth-repository";
 import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
 import { isSqliteProofRuntime } from "../../../../experiments/issue-37/proof-gate";
 import {
@@ -227,6 +228,7 @@ export async function WorkbenchEditor({
   id,
   projectContext,
   selectedResource,
+  historyBefore,
   milestoneContext,
   goalContext,
   goalMilestoneContext,
@@ -241,6 +243,7 @@ export async function WorkbenchEditor({
   goalStage?: string;
   editTask?: boolean;
   selectedResource?: string;
+  historyBefore?: string;
   kind: WorkbenchKind;
   id?: string;
   projectContext?: string;
@@ -441,11 +444,17 @@ export async function WorkbenchEditor({
       />
     );
   }
-  if (kind === "project" && id && row)
+  if (kind === "project" && id && row) {
+    const depth = isSqliteProofRuntime() ? undefined : await (async () => {
+      const auth = await createAuthenticatedSupabaseServerClient();
+      if (!auth.ok) return undefined;
+      return readProjectDepth(auth.client, auth.user.id, id, historyBefore && /^(0|[1-9][0-9]{0,18})$/.test(historyBefore) && BigInt(historyBefore) <= BigInt("9223372036854775807") ? historyBefore : undefined);
+    })();
     return (
       <ProjectReadView
         data={data}
         id={id}
+        depth={depth}
         selectedResource={
           data.resources.some(
             (r) => r.id === selectedResource && !r.archived_at,
@@ -485,6 +494,7 @@ export async function WorkbenchEditor({
         }
       />
     );
+  }
   if (kind === "task" && id && row) {
     const task = data.tasks.find((item) => item.id === id)!;
     const taskEdit = (

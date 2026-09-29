@@ -4,6 +4,7 @@ import type {
   CodingSessionInput,
 } from "../../schemas/coding.schemas";
 import type { SupabaseClientLike } from "../database.types";
+import { setProjectNonterminalStatus } from "./project-depth-repository";
 
 export type CodingProjectRecord = {
   description: string | null;
@@ -111,7 +112,10 @@ export function createSupabaseCodingRepository(client: SupabaseClientLike) {
 
     async updateProject(userId: string, projectId: string, input: CodingProjectInput) {
       if (!(await ownedCodingProject(userId, projectId))) return failure("Coding project not found.");
-      const result = await client.from("projects").update({ description: input.description ?? null, repository_url: input.repositoryUrl ?? null, status: input.status, title: input.title }).eq("user_id", userId).eq("id", projectId).select("*").single();
+      if (!["idea", "active", "paused", "blocked", "completed"].includes(input.status)) return failure("Project completion requires Review.");
+      const status = await setProjectNonterminalStatus(client, userId, projectId, input.status);
+      if (!status.ok) return failure(status.message);
+      const result = await client.from("projects").update({ description: input.description ?? null, repository_url: input.repositoryUrl ?? null, title: input.title }).eq("user_id", userId).eq("id", projectId).select("*").single();
       return result.error ? failure("Project could not be updated.") : { data: result.data, ok: true as const };
     },
 

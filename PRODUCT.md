@@ -184,8 +184,8 @@ active criterion must be satisfied. Removing one from scope requires an explicit
 Criterion Archive with a reason and a fresh Review read. Project Archive is not
 successful completion. Reopen preserves prior Reviews and starts a new cycle;
 legacy completed Projects retain no invented Review or Criteria history. This
-accepted data contract is not an implemented schema, migration or capability;
-Project Depth Delivery requires a separate bounded authorization.
+accepted data contract is implemented by Issue #69's bounded Project Depth
+slice; final product acceptance remains a separate post-merge user check.
 
 ### Skill Development Planning / PP2
 
@@ -238,8 +238,8 @@ Project Depth
 → PP4
 ```
 
-Project P-DATA (#67) is USER ACCEPTED; Project Depth Delivery still requires a
-separate bounded contract. Before Skill PP2 Delivery, the required Skill
+Project P-DATA (#67) is USER ACCEPTED and delivered through Issue #69. Before
+Skill PP2 Delivery, the required Skill
 persistence/read contracts must be accepted: **S-PLAN**, **S-EVIDENCE**,
 **READS**, and **S-RELATION** only when explicit prerequisite/related relations
 are included in that slice.
@@ -651,9 +651,8 @@ Progress shows completed Tasks/total Tasks and completed Milestones/total
 Milestones, not an invented Project completion percentage. Archived stages remain
 history; their Tasks return to the unassigned group atomically. Completed stages
 remain readable and can be reopened. In the implemented R2-09 workbench,
-Project Description remains general context; #67 accepts a separate Project
-`desired_result` and Completion Criteria as a future delivery target, not as
-currently implemented fields.
+Project Description remains general context; Issue #69 adds a separate
+Project `desired_result`, Completion Criteria and Project Review/History.
 
 The accepted Target Model extends this planning shape with domain-specific Goal
 Milestones plus Outcome Criteria and domain-specific Skill Milestones plus
