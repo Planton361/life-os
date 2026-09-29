@@ -163,6 +163,8 @@ test("Project Depth: result, criteria, explicit reviews, reopen and immutable hi
   await expect(history).toContainText(`Evidence ${stamp}`);
   await review.getByRole("link", { name: "Abschluss-Review ansehen" }).click();
   await expect(page).toHaveURL(/#project-review-/);
+  await history.getByRole("link", { name: "Aktuelle History" }).click();
+  await expect(page).toHaveURL(new RegExp(`/projects/${project.id}$`));
   await history.getByText("Ergänzung hinzufügen").first().click();
   await history.getByRole("textbox", { name: "Korrektur oder Kontext" }).first().fill("Later clarification without changing the original review");
   await history.getByRole("button", { name: "Ergänzung speichern" }).first().click();
@@ -243,6 +245,7 @@ test("Project Depth: result, criteria, explicit reviews, reopen and immutable hi
   const secondReview = history.locator("details").filter({ has: page.locator("summary").filter({ hasText: "Abgeschlossen · Zyklus 2" }) }).first();
   await secondReview.getByText("Ergänzung hinzufügen", { exact: true }).click();
   await secondReview.getByLabel("Art der Ergänzung").selectOption("marked_mistaken");
+  await expect(secondReview.getByText("Dieser aktuelle Abschluss wird dadurch wieder geöffnet.", { exact: true })).toBeVisible();
   await secondReview.getByLabel("Korrektur oder Kontext").fill("Acceptance was recorded prematurely");
   await secondReview.getByRole("button", { name: "Ergänzung speichern" }).click();
   await page.reload();
@@ -376,4 +379,100 @@ test("Project Depth: legacy completion, Empty, Demo and Auth-blocked stay truthf
   await expect(blockedPage.getByRole("status")).toContainText("lokale Anmeldung");
   await expect(blockedPage.getByRole("button", { name: "Abschluss prüfen" })).toHaveCount(0);
   await blocked.close();
+});
+
+
+test("Project Depth: mistaken copy respects lifecycle and completion navigation survives pagination", async ({ page, context }, info) => {
+  test.setTimeout(180000);
+  const stamp = Date.now();
+  await signUpTechnicalManualUser(page, "project-depth-surface", stamp);
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("console", (message) => { if (message.type() === "error" || /hydration/i.test(message.text())) errors.push(message.text()); });
+  const cookie = (await context.cookies()).find((item) => item.name.includes("auth-token"))!;
+  const session = JSON.parse(Buffer.from(cookie.value.replace(/^base64-/, ""), "base64url").toString());
+  const api = createClient<Database>(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { auth: { persistSession: false, autoRefreshToken: false } });
+  await api.auth.setSession(session);
+  const userId = (await api.auth.getUser()).data.user!.id;
+  const created = await api.from("projects").insert({ user_id: userId, title: `Surface repair ${stamp}`, status: "active", desired_result: `Canonical result ${stamp}` }).select().single();
+  expect(created.error).toBeNull();
+  const projectId = created.data!.id;
+  const read = async () => {
+    const response = await api.rpc("project_review_context", { p_project_id: projectId });
+    expect(response.error).toBeNull();
+    return response.data as { completion_revision: string; completion_cycle: string; status: string; fingerprint: string; current_completion_review_id: string | null; criteria: { id: string }[] };
+  };
+  const command = async (operation: string, payload: Record<string, unknown>) => {
+    const state = await read();
+    const response = await api.rpc("project_depth_command", { p_project_id: projectId, p_command_id: crypto.randomUUID(), p_operation: operation, p_expected_revision: state.completion_revision, p_expected_cycle: state.completion_cycle, p_payload: payload as Database["public"]["Functions"]["project_depth_command"]["Args"]["p_payload"] });
+    expect(response.error).toBeNull();
+  };
+  await command("criterion.create", { text: `Accepted criterion ${stamp}`, sort_order: 0 });
+  const submit = async (decision: "continue" | "completed", rationale: string) => {
+    const state = await read();
+    await command("review.submit", { fingerprint: state.fingerprint, decision, rationale, result_accepted: decision === "completed", criteria: state.criteria.map((c) => ({ id: c.id, assessment: decision === "completed" ? "satisfied" : "not_assessed" })), archived_ids: [], archived_criteria_acknowledged: false, evidence: [], open_work_acknowledged: false, open_work_disposition: null });
+    const row = await api.from("project_reviews").select("id").eq("project_id", projectId).eq("rationale", rationale).single();
+    expect(row.error).toBeNull();
+    return row.data!.id;
+  };
+  const continued = await submit("continue", "Continue context identity");
+  const historical = await submit("completed", "Historical completion identity");
+  await command("project.reopen", {});
+  const current = await submit("completed", "Current completion identity");
+  const before = await read();
+  await page.goto(`/projects/${projectId}`);
+  const history = page.getByRole("region", { name: "Project Abschlussverlauf" });
+  const mark = async (id: string, reopens: boolean) => {
+    const row = history.locator(`#project-review-${id}`);
+    if (await row.getAttribute("open") === null) await row.locator("summary").first().click();
+    await row.getByText("Ergänzung hinzufügen", { exact: true }).click();
+    const kind = row.getByLabel("Art der Ergänzung");
+    await expect(kind.locator('option[value="marked_mistaken"]')).toHaveText("Review als irrtümlich markieren");
+    await kind.selectOption("marked_mistaken");
+    await expect(row.getByText(reopens ? "Dieser aktuelle Abschluss wird dadurch wieder geöffnet." : "Die Kennzeichnung ergänzt die History und ändert den aktuellen Project-Status nicht.", { exact: true })).toBeVisible();
+    if (!reopens) await expect(row.getByText("Dieser aktuelle Abschluss wird dadurch wieder geöffnet.", { exact: true })).toHaveCount(0);
+    await row.getByLabel("Korrektur oder Kontext").fill(`Mistaken annotation ${id}`);
+    await row.getByRole("button", { name: "Ergänzung speichern" }).click();
+    await expect(row.getByRole("status")).toContainText("gespeichert");
+    await page.reload();
+  };
+  await mark(historical, false);
+  expect((await read()).status).toBe("completed");
+  expect((await read()).completion_cycle).toBe(before.completion_cycle);
+  expect((await read()).current_completion_review_id).toBe(current);
+  await mark(continued, false);
+  expect((await read()).status).toBe("completed");
+  expect((await read()).completion_cycle).toBe(before.completion_cycle);
+  expect((await read()).current_completion_review_id).toBe(current);
+  for (let i = 0; i < 51; i++) await command("review.amend", { review_id: current, kind: "clarification", reason: `Later context ${i}` });
+  await page.goto(`/projects/${projectId}`);
+  await expect(history.locator(`#project-review-${current}`)).toHaveCount(0);
+  await page.getByRole("link", { name: "Abschluss-Review ansehen" }).click();
+  await expect(page).toHaveURL(new RegExp(`historyBefore=.*#project-review-${current}$`));
+  const selected = history.locator(`#project-review-${current}`);
+  await expect(selected).toBeVisible();
+  await expect(selected.getByText(`Canonical result ${stamp}`, { exact: false })).toBeVisible();
+  await expect(selected.getByText("Current completion identity", { exact: false })).toBeVisible();
+  await expect(selected.locator("summary").first()).toContainText("Abgeschlossen · Zyklus 2");
+  await expect(selected).toHaveCount(1);
+  for (const viewport of [{ width: 3840, height: 2160 }, { width: 1920, height: 1080 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport);
+    await page.screenshot({ path: info.outputPath(`completion-navigation-${viewport.width}x${viewport.height}.png`), fullPage: true });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  }
+  await history.getByRole("link", { name: "Aktuelle History" }).click();
+  await history.getByRole("link", { name: "Ältere History" }).click();
+  await expect(history.locator(`#project-review-${current}`)).toHaveCount(1);
+  await expect(history.locator(`#project-review-${historical}`)).toHaveCount(1);
+  await history.getByRole("link", { name: "Aktuelle History" }).click();
+  await expect(history).toContainText("Later context 50");
+  await expect(history.locator(`#project-review-${current}`)).toHaveCount(0);
+  await page.getByRole("link", { name: "Abschluss-Review ansehen" }).click();
+  await mark(current, true);
+  const after = await read();
+  expect(after.status).toBe("active");
+  expect(BigInt(after.completion_cycle)).toBe(BigInt(before.completion_cycle) + BigInt(1));
+  expect(after.current_completion_review_id).toBeNull();
+  await expect(page.getByRole("link", { name: "Abschluss-Review ansehen" })).toHaveCount(0);
+  expect(errors).toEqual([]);
 });

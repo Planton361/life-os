@@ -37,6 +37,7 @@ export type ProjectDepthRead = {
   amendments: (Omit<TableRow<"project_review_amendments">, "revision_after"> & { revision_after: string })[];
   historyItems: { id: string; kind: "review" | "lifecycle" | "amendment"; revision: string }[];
   nextRevision: string | null;
+  completionReviewHistoryBefore: string | null;
 };
 
 export async function readProjectDepth(
@@ -55,6 +56,17 @@ export async function readProjectDepth(
     resources: ProjectDepthRead["resourceSnapshots"]; lifecycle: ProjectDepthRead["lifecycle"];
     amendments: ProjectDepthRead["amendments"]; items: ProjectDepthRead["historyItems"]; next_revision: string | null;
   };
+  const current = context.data as unknown as ProjectReviewContext;
+  let completionReviewHistoryBefore: string | null = null;
+  if (current.status === "completed" && current.current_completion_review_id) {
+    // Cast in PostgreSQL so a bigint revision never rounds in JSON/JavaScript.
+    const completion = await client.from("project_reviews").select("revision_after::text")
+      .eq("user_id", userId).eq("project_id", projectId)
+      .eq("id", current.current_completion_review_id).eq("decision", "completed")
+      .filter("completion_cycle", "eq", current.completion_cycle).single();
+    if (completion.error || !completion.data) throw new Error("Abschluss-Review konnte nicht geladen werden.");
+    completionReviewHistoryBefore = (BigInt(completion.data.revision_after) + BigInt(1)).toString();
+  }
   const snapshotResourceIds = [...new Set(detail.resources.map((row) => row.resource_id))];
   const [available, relations] = snapshotResourceIds.length ? await Promise.all([
     client.from("resources").select("id,title,archived_at").eq("user_id", userId).in("id", snapshotResourceIds),
@@ -72,6 +84,7 @@ export async function readProjectDepth(
     amendments: detail.amendments,
     historyItems: detail.items,
     nextRevision: detail.next_revision,
+    completionReviewHistoryBefore,
   };
 }
 

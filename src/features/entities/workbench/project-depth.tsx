@@ -147,7 +147,7 @@ export function ProjectDepthReview({ depth }: { depth: Depth }) {
       {!completed && <button ref={trigger} type="button" aria-expanded={open} aria-controls="project-review-panel" className="min-h-10 text-[var(--accent-cyan)] underline" onClick={() => setOpen(!open)}>Abschluss prüfen</button>}
     </div>
     {completed ? <>
-      {completionReviewId && <Link className="justify-self-start text-[var(--accent-cyan)] underline" href={`/projects/${context.project_id}#project-review-${completionReviewId}`}>Abschluss-Review ansehen</Link>}
+      {completionReviewId && <Link className="justify-self-start text-[var(--accent-cyan)] underline" href={`/projects/${context.project_id}?historyBefore=${depth.completionReviewHistoryBefore}#project-review-${completionReviewId}`}>Abschluss-Review ansehen</Link>}
       <CommandForm depth={depth} operation="project.reopen" label="Project wieder öffnen" payload={() => ({})}>
         <p>Ein neuer Zyklus beginnt. Bisherige Reviews bleiben erhalten.</p>
       </CommandForm>
@@ -229,6 +229,25 @@ export function ProjectDepthStatus({ depth }: { depth: Depth }) {
   </details>;
 }
 
+function ReviewAmendment({ depth, review, resources }: {
+  depth: Depth;
+  review: Depth["reviews"][number];
+  resources: Depth["resourceSnapshots"];
+}) {
+  const [kind, setKind] = useState("clarification");
+  const reopens = depth.context.status === "completed" && review.decision === "completed"
+    && review.completion_cycle === depth.context.completion_cycle
+    && review.id === depth.context.current_completion_review_id;
+  return <details><summary className="min-h-10 cursor-pointer content-center text-[var(--accent-cyan)] underline">Ergänzung hinzufügen</summary>
+    <CommandForm depth={depth} operation="review.amend" label="Ergänzung speichern" payload={(form) => ({ review_id: review.id, kind: String(form.get("kind")), review_resource_id: String(form.get("reviewResourceId") ?? "") || null, reason: String(form.get("note") ?? "").trim() })}>
+      <label className="grid gap-1">Art der Ergänzung<select name="kind" value={kind} onChange={(event) => setKind(event.target.value)} aria-describedby={`amendment-help-${review.id}`} className={fieldClass}><option value="clarification">Klarstellung</option><option value="marked_mistaken">Review als irrtümlich markieren</option><option value="evidence_withdrawn">Beleg zurückziehen</option></select></label>
+      <p id={`amendment-help-${review.id}`}>{kind === "marked_mistaken" ? (reopens ? "Dieser aktuelle Abschluss wird dadurch wieder geöffnet." : "Die Kennzeichnung ergänzt die History und ändert den aktuellen Project-Status nicht.") : "Ergänzungen erhalten den ursprünglichen Review unverändert."}</p>
+      <label className="grid gap-1">Beleg (nur bei Rückzug)<select name="reviewResourceId" className={fieldClass}><option value="">Kein Beleg</option>{resources.map((s) => <option key={s.id} value={s.id}>{s.title_snapshot}{s.criterion_id ? " · Kriterium" : " · Review"}</option>)}</select></label>
+      <label className="grid gap-1">Korrektur oder Kontext<textarea name="note" required maxLength={4000} className={fieldClass} /></label>
+    </CommandForm>
+  </details>;
+}
+
 export function ProjectDepthHistory({ depth }: { depth: Depth }) {
   const { context } = depth;
   const completedReview = depth.reviews.find((r) => r.decision === "completed" && String(r.completion_cycle) === context.completion_cycle);
@@ -268,13 +287,7 @@ export function ProjectDepthHistory({ depth }: { depth: Depth }) {
             return <li key={s.id}>{s.title_snapshot}{withdrawn ? " · Beleg zurückgezogen" : ""}{current?.title !== s.title_snapshot && current ? " · aktuell umbenannt" : ""}{current?.archived ? " · aktuell archiviert" : ""}{current && !current.relationIds.includes(s.relation_id_snapshot) ? " · nicht mehr verknüpft" : ""} · {s.resource_type_snapshot} · {s.project_role_snapshot}{s.criterion_id ? ` · Kriterium: ${criteria.find((c) => c.criterion_id === s.criterion_id)?.text_snapshot}` : " · gesamter Review"}{s.note ? ` · ${s.note}` : ""}{s.safe_url_snapshot ? ` · ${s.safe_url_snapshot}` : ""}{available ? <Link className="ml-2 text-[var(--accent-cyan)] underline" href={`/resources?selected=${s.resource_id}`}>Aktuelle Resource öffnen</Link> : <span className="ml-2">Aktuelle Resource nicht verfügbar</span>}</li>;
           })}</ul></div>}
           {amendments.length > 0 && <div><h3 className="font-medium">Ergänzungen</h3><ul>{amendments.map((a) => <li key={a.id}>{new Date(a.recorded_at).toLocaleString("de-DE")} · {amendmentLabel[a.kind]} · {a.reason}</li>)}</ul></div>}
-          {<details><summary className="min-h-10 cursor-pointer content-center text-[var(--accent-cyan)] underline">Ergänzung hinzufügen</summary>
-            <CommandForm depth={depth} operation="review.amend" label="Ergänzung speichern" payload={(form) => ({ review_id: r.id, kind: String(form.get("kind")), review_resource_id: String(form.get("reviewResourceId") ?? "") || null, reason: String(form.get("note") ?? "").trim() })}>
-              <label className="grid gap-1">Art der Ergänzung<select name="kind" defaultValue="clarification" className={fieldClass}><option value="clarification">Klarstellung</option><option value="marked_mistaken">Review irrtümlich (aktueller Abschluss wird wieder geöffnet)</option><option value="evidence_withdrawn">Beleg zurückziehen</option></select></label>
-              <label className="grid gap-1">Beleg (nur bei Rückzug)<select name="reviewResourceId" className={fieldClass}><option value="">Kein Beleg</option>{resources.map((s) => <option key={s.id} value={s.id}>{s.title_snapshot}{s.criterion_id ? " · Kriterium" : " · Review"}</option>)}</select></label>
-              <label className="grid gap-1">Korrektur oder Kontext<textarea name="note" required maxLength={4000} className={fieldClass} /></label>
-            </CommandForm>
-          </details>}
+          <ReviewAmendment depth={depth} review={r} resources={resources} />
         </div>
       </details>;
     })}</div>
