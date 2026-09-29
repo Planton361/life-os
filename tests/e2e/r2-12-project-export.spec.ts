@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
-import type { Database } from "@/types/supabase";
+import type { Database } from "@/features/real-data/supabase/database.types";
 import { signUpTechnicalManualUser } from "./support/local-manual-auth";
 import { projectionFixture } from "@/features/obsidian-projection/projection-fixture";
 import { readProjectProjection } from "@/features/real-data/supabase/repositories/project-projection-read";
@@ -292,12 +292,17 @@ test("Project → authenticated Obsidian ZIP: graph, rename, dependencies, owner
   const removed = await download("project-source-removed");
   expect(removed[root + "Resources/Repository.md"]).toBeUndefined();
   expect(Object.keys(removed)).toHaveLength(Object.keys(first).length - 1);
-  await api
-    .from("projects")
-    .update({ archived_at: new Date().toISOString() })
-    .eq("user_id", uid)
-    .eq("id", s.project.id)
-    .throwOnError();
+  const archiveContext = (await api.rpc("project_review_context", {
+    p_project_id: s.project.id,
+  }).throwOnError()).data as { completion_revision: number; completion_cycle: number };
+  await api.rpc("project_depth_command", {
+    p_project_id: s.project.id,
+    p_command_id: crypto.randomUUID(),
+    p_operation: "project.archive",
+    p_expected_revision: archiveContext.completion_revision,
+    p_expected_cycle: archiveContext.completion_cycle,
+    p_payload: {},
+  }).throwOnError();
   await page.reload();
   const archivedProject = await download("project-history");
   expect(archivedProject[root + "Projects/Life OS.md"]).toContain(

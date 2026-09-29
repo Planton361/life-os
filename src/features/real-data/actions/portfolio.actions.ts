@@ -17,6 +17,7 @@ import {
 import type { SupabaseClientLike } from "@/features/real-data/supabase";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
 import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { projectDepthAction } from "./project-depth.actions";
 
 export type PortfolioTargetCreateActionResult = {
   goalId?: string;
@@ -396,41 +397,19 @@ export async function updateProjectAction(
 export async function archiveProjectAction(
   formData: FormData,
 ): Promise<PortfolioProjectEditActionResult> {
-  const context = await getAuthenticatedManualProjectContext("archivieren");
-
-  if (!context.ok) return context.result;
-
-  const parsed = updateProjectInputSchema.safeParse({
-    profileId: context.auth.user.id,
-    projectId: formString(formData, "projectId"),
-    status: "archived",
-    userId: context.auth.user.id,
+  const projectId = formString(formData, "projectId");
+  if (!formData.has("expectedRevision") || !formData.has("expectedCycle")) {
+    return { status: "error", message: "Project wurde möglicherweise geändert. Detailseite bewusst neu laden und erneut prüfen." };
+  }
+  const result = await projectDepthAction({
+    projectId,
+    commandId: formString(formData, "commandId") || crypto.randomUUID(),
+    operation: "project.archive",
+    expectedRevision: Number(formString(formData, "expectedRevision")),
+    expectedCycle: Number(formString(formData, "expectedCycle")),
+    payload: {},
   });
-
-  if (!parsed.success) {
-    return {
-      message: "Das Project konnte nicht archiviert werden.",
-      status: "error",
-    };
-  }
-
-  const repository = createSupabaseProjectRepository(context.auth.client);
-  const result = await repository.updateProject(parsed.data);
-
-  if (!result.ok) {
-    return {
-      message: "Das Project konnte nicht in Supabase archiviert werden.",
-      status: "error",
-    };
-  }
-
-  revalidatePortfolioTargetRoutes();
-
-  return {
-    message: "Project archiviert.",
-    projectId: result.data.id,
-    status: "success",
-  };
+  return { ...result, projectId: result.status === "success" ? projectId : undefined };
 }
 
 async function getAuthenticatedManualGoalContext(actionLabel: string) {

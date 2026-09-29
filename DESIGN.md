@@ -544,7 +544,7 @@ Evidence/Recency → application/prerequisites → Resources.
 - No direct Project↔Skill relation is introduced; provenance is derived from
   Tasks/`task_skill_links` and explicit Evidence.
 - #67 P-DATA is USER ACCEPTED for Project result, criteria, review and history;
-  no UI may imply these capabilities are implemented before separate Delivery.
+  Issue #69 implements these capabilities in the existing Project Detail.
 - No UI may imply accepted storage for Skill Target/Milestone/prerequisite
   history until the corresponding later S-* contract is explicitly accepted.
 

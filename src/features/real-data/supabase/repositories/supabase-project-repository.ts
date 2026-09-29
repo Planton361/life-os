@@ -274,6 +274,9 @@ export function createSupabaseProjectRepository(
       );
       if (alignmentFailure) return alignmentFailure;
 
+      if (input.status !== undefined) {
+        return conflictFailure("Project status uses the Project lifecycle command.");
+      }
       return updateProjectById(
         client,
         input.userId,

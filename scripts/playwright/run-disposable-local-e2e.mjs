@@ -98,11 +98,11 @@ async function main() {
       join(process.cwd(), "supabase", "config.toml"),
       "utf8",
     );
-    await writeFile(
-      join(supabaseDir, "config.toml"),
-      configForDisposableStack(config, projectId, ports, appPort),
-      "utf8",
-    );
+    const configured = configForDisposableStack(config, projectId, ports, appPort);
+    const startupConfig = configured
+      .replace(/(\[db\.migrations\][\s\S]*?\benabled\s*=\s*)true/, "$1false")
+      .replace(/(\[db\.seed\][\s\S]*?\benabled\s*=\s*)true/, "$1false");
+    await writeFile(join(supabaseDir, "config.toml"), startupConfig, "utf8");
     await symlink(
       resolve(process.cwd(), "supabase", "migrations"),
       join(supabaseDir, "migrations"),
@@ -124,18 +124,47 @@ async function main() {
       "--workdir",
       root,
     ]);
-    if (!start.ok) throw new Error(disposableStartFailureClass(start.stderr));
+    if (!start.ok) {
+      const detail = (start.stderr ?? "").split("\n")
+        .filter((line) => /error|failed|cannot|denied|unavailable|invalid/i.test(line))
+        .slice(-2)
+        .map((line) => line.replace(/postgres(?:ql)?:\/\/\S+/gi, "[database-url]")
+          .replace(/(?:password|token|key)\s*[:=]\s*\S+/gi, "[credential]"))
+        .join(" | ");
+      throw new Error(`${disposableStartFailureClass(start.stderr)}${detail ? `: ${detail}` : ""}`);
+    }
+    // auth is owned by supabase_admin in the local stack. The Project Depth
+    // command role needs explicit auth.USAGE before the postgres migration
+    // runner can create its non-privileged SECURITY DEFINER entry points.
     await assertSuccessful(
-      await run("pnpm", [
-        "exec",
-        "supabase",
-        "migration",
-        "up",
-        "--local",
-        "--workdir",
-        root,
+      await run("docker", [
+        "exec", `supabase_db_${projectId}`, "psql", "-U", "supabase_admin",
+        "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-c",
+        `do $$begin if not exists (select 1 from pg_roles where rolname='life_os_project_command') then create role life_os_project_command nologin nobypassrls; end if; end$$; grant usage on schema auth to life_os_project_command; grant execute on function auth.uid() to life_os_project_command; grant usage, create on schema public to postgres; grant usage, create on schema public to life_os_project_command; grant life_os_project_command to postgres;`,
       ]),
-      "Disposable migration apply",
+      "Disposable Project command-role grants",
+    );
+    await writeFile(join(supabaseDir, "config.toml"), configured, "utf8");
+    const migration = await run("pnpm", [
+      "exec", "supabase", "migration", "up", "--local", "--workdir", root,
+    ]);
+    if (!migration.ok) {
+      const detail = (migration.stderr ?? "").split("\n")
+        .filter((line) => /error|failed|cannot|denied|invalid|permission/i.test(line))
+        .slice(-3)
+        .map((line) => line.replace(/postgres(?:ql)?:\/\/\S+/gi, "[database-url]")
+          .replace(/(?:password|token|key)\s*[:=]\s*\S+/gi, "[credential]"))
+        .join(" | ");
+      const phase = (migration.stdout ?? "").split("\n")
+        .filter((line) => /applying migration|seeding|migration/i.test(line))
+        .slice(-2).join(" | ");
+      throw new Error(`Disposable migration apply failed${phase ? ` (${phase})` : ""}${detail ? `: ${detail}` : ""}`);
+    }
+    await assertSuccessful(
+      await run("docker", ["exec", `supabase_db_${projectId}`, "psql", "-U", "supabase_admin",
+        "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-c",
+        "revoke create on schema public from life_os_project_command, postgres; revoke life_os_project_command from postgres;" ]),
+      "Disposable Project command-role final grants",
     );
     const status = await run("pnpm", [
       "exec",

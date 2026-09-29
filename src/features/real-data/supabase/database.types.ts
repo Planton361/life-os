@@ -46,6 +46,81 @@ type GoalPathCriterionEvaluationInsert =
     criterion_id: string;
   };
 
+type ProjectDepthProject = GeneratedDatabase["public"]["Tables"]["projects"];
+type ProjectDepthTable<TRow> = {
+  Row: TRow;
+  Insert: Partial<TRow>;
+  Update: Partial<TRow>;
+  Relationships: [];
+};
+type ProjectDepthTables = {
+  projects: {
+    Row: ProjectDepthProject["Row"] & {
+      desired_result: string | null;
+      completion_revision: number;
+      completion_cycle: number;
+    };
+    Insert: ProjectDepthProject["Insert"] & {
+      desired_result?: string | null;
+      completion_revision?: number;
+      completion_cycle?: number;
+    };
+    Update: ProjectDepthProject["Update"] & {
+      desired_result?: string | null;
+      completion_revision?: number;
+      completion_cycle?: number;
+    };
+    Relationships: ProjectDepthProject["Relationships"];
+  };
+  project_completion_criteria: ProjectDepthTable<{
+    id: string; user_id: string; project_id: string; text: string;
+    sort_order: number; created_at: string; updated_at: string;
+    archived_at: string | null; archive_reason: string | null;
+    archived_cycle: number | null; archived_revision: number | null;
+  }>;
+  project_reviews: ProjectDepthTable<{
+    id: string; user_id: string; project_id: string; completion_cycle: number;
+    completion_revision: number; decision: "completed" | "continue";
+    prior_status: string; resulting_status: string; desired_result_snapshot: string | null;
+    rationale: string; open_work_acknowledged: boolean;
+    open_work_disposition: string | null; context_fingerprint: string;
+    reviewed_at: string; command_id: string;
+  }>;
+  project_review_criteria: ProjectDepthTable<{
+    id: string; user_id: string; project_id: string; review_id: string;
+    criterion_id: string; text_snapshot: string; sort_order_snapshot: number;
+    assessment: "satisfied" | "not_satisfied" | "not_assessed" | "excluded";
+    note: string | null; archive_reason_snapshot: string | null;
+  }>;
+  project_review_resources: ProjectDepthTable<{
+    id: string; user_id: string; project_id: string; review_id: string;
+    resource_id: string; relation_id: string; title_snapshot: string;
+    type_snapshot: string; safe_url_snapshot: string | null;
+    relation_type_snapshot: string; project_role_snapshot: string;
+  }>;
+  project_review_work: ProjectDepthTable<{
+    id: string; user_id: string; project_id: string; review_id: string;
+    work_type: "task" | "milestone"; work_id: string; title_snapshot: string;
+    status_snapshot: string; archived_at_snapshot: string | null;
+    updated_at_snapshot: string;
+  }>;
+  project_lifecycle_events: ProjectDepthTable<{
+    id: string; user_id: string; project_id: string;
+    event_type: "reopened" | "archived"; prior_status: string;
+    resulting_status: string; completion_cycle: number;
+    completion_revision: number; occurred_at: string; command_id: string;
+  }>;
+  project_review_amendments: ProjectDepthTable<{
+    id: string; user_id: string; project_id: string; review_id: string;
+    note: string; created_at: string; command_id: string;
+  }>;
+  project_command_receipts: ProjectDepthTable<{
+    id: string; user_id: string; project_id: string; command_id: string;
+    operation: string; request_fingerprint: string; result_payload: Json;
+    created_at: string;
+  }>;
+};
+
 type GoalPathTables = Omit<
   GeneratedDatabase["public"]["Tables"],
   | "goal_criterion_evaluations"
@@ -57,6 +132,7 @@ type GoalPathTables = Omit<
   | "goal_criterion_evaluation_evidence"
   | "goal_milestone_achievement_evidence"
   | "goal_achievement_evidence"
+  | "projects"
 > & {
   goal_criterion_evaluations: GoalPathTable<
     GoalPathCriterionEvaluationRow,
@@ -205,9 +281,24 @@ type GoalPathTables = Omit<
     recorded_at: string;
     created_at: string;
   }>;
-};
+} & ProjectDepthTables;
 
 type GoalPathFunctions = {
+  project_review_context: {
+    Args: { p_project_id: string };
+    Returns: Json;
+  };
+  project_depth_command: {
+    Args: {
+      p_project_id: string;
+      p_command_id: string;
+      p_operation: string;
+      p_expected_revision: number;
+      p_expected_cycle: number;
+      p_payload: Json;
+    };
+    Returns: Json;
+  };
   execute_goal_command: {
     Args: {
       p_command_kind: string;

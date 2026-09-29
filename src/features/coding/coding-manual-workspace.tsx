@@ -19,7 +19,7 @@ import {
   quietButtonClass,
 } from "./components/coding-overview-primitives";
 
-const statuses = ["idea", "active", "paused", "blocked", "completed", "archived"];
+const statuses = ["idea", "active", "paused", "blocked"];
 const actionMessages: Record<string, { message: string; tone: "error" | "success" }> = {
   auth_blocked: { message: "Anmeldung erforderlich. Coding-Writes sind blockiert.", tone: "error" },
   project_created: { message: "Coding-Projekt erstellt.", tone: "success" },
@@ -76,7 +76,7 @@ export function CodingManualWorkspace({ viewModel }: Readonly<{ viewModel: Codin
               <input name="projectId" type="hidden" value={selected.id} />
               <LabeledField label="Titel"><input className={inputClass} defaultValue={selected.title} name="title" required /></LabeledField>
               <LabeledField label="Beschreibung"><textarea className={inputClass} defaultValue={selected.description ?? ""} name="description" /></LabeledField>
-              <LabeledField label="Status"><select className={inputClass} defaultValue={selected.status} name="status">{statuses.map((status) => <option key={status} value={status}>{status}</option>)}</select></LabeledField>
+              <LabeledField label="Status"><select className={inputClass} defaultValue={selected.status} name="status">{statuses.map((status) => <option key={status} value={status}>{status}</option>)}{selected.status === "completed" && <option value="completed">completed</option>}</select></LabeledField>
               <LabeledField label="Repository-URL"><input className={inputClass} defaultValue={selected.repositoryUrl ?? ""} name="repositoryUrl" type="url" /></LabeledField>
               <button className={primaryButtonClass} type="submit">Project speichern</button>
             </form>

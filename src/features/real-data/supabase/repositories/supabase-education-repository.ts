@@ -5,6 +5,7 @@ import { mapEducationLogRow } from "../mappers/education-log.mapper";
 import { mapResourceRowToDomain } from "../mappers/resource.mapper";
 import type { ResourceRow } from "../row-types";
 import { sortEducationLogs, type EducationLog } from "../../../education/education-log";
+import { setProjectNonterminalStatus } from "./project-depth-repository";
 
 export type EducationWorkspace = {
   projects: Array<{
@@ -84,7 +85,10 @@ export function createSupabaseEducationRepository(client: SupabaseClientLike) {
     },
     async updateProject(userId: string, projectId: string, input: { description?: string; status: string; title: string }) {
       if (!(await ownedProject(userId, projectId))) return failure("Education project unavailable.");
-      const result = await client.from("projects").update({ description: input.description ?? null, status: input.status as "active", title: input.title }).eq("user_id", userId).eq("id", projectId).select("id").single();
+      if (!["idea", "active", "paused", "blocked", "completed"].includes(input.status)) return failure("Project completion requires Review.");
+      const status = await setProjectNonterminalStatus(client, userId, projectId, input.status);
+      if (!status.ok) return failure(status.message);
+      const result = await client.from("projects").update({ description: input.description ?? null, title: input.title }).eq("user_id", userId).eq("id", projectId).select("id").single();
       return result.error ? failure("Project update failed.") : { data: result.data, ok: true as const };
     },
     async getWorkspace(userId: string): Promise<EducationWorkspace> {

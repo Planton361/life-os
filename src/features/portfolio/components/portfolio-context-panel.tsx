@@ -586,21 +586,7 @@ function ProjectEditForm({
             name="nextStep"
           />
         </label>
-        <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
-          Status
-          <select
-            className={formInputClassName}
-            defaultValue={values?.status ?? "active"}
-            disabled={disabled}
-            name="status"
-          >
-            <option value="idea">idea</option>
-            <option value="active">active</option>
-            <option value="paused">paused</option>
-            <option value="blocked">blocked</option>
-            <option value="completed">completed</option>
-          </select>
-        </label>
+        <p className="self-end text-[10px] text-[var(--text-muted)]">Status: {values?.status ?? "active"} · <Link className="underline" href={`/projects/${project.id}`}>im Project ändern</Link></p>
         <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">
           Deadline
           <input

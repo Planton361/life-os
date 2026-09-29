@@ -65,8 +65,8 @@ history. R2-01 through R2-04 and Health/Fitness are explicitly accepted.
 **R2-05 USER ACCEPTED on 2026-09-07: Health & Fitness and Nutrition accepted in full.**
 R2-05, R2-09, R2-10, R2-11 and R2-12 are closed and USER ACCEPTED.
 R2-13 currently has no committed capability implementation on the integration branch; preserved local Rescue work is not capability evidence; its operative work contract/status is tracked separately in GitHub Issue #3 and Project #3.
-Product Target v0.4 and the Target Model Decision Package are accepted, but no
-new product plan or delivery successor is approved. Life OS / PostgreSQL remains
+Product Target v0.4 and the Target Model Decision Package are accepted; Issue #69
+is the bounded Project Depth delivery. Life OS / PostgreSQL remains
 canonical for operational context and Resource identity; Obsidian owns
 long-form Knowledge Content and Notes. Journal remains fully Life-OS-owned.
 R2-13 product acceptance remains pending; preserved Rescue work is not
@@ -1888,6 +1888,7 @@ and its USER ACCEPTANCE STATUS is PENDING.
 | Project Goal inheritance in Task context | `CONNECTED` | direct, via-Project, redundant and existing-conflict states are explicit; Task and Project writes reject new contradictions, and C1.1 integrated read models deduplicate matching paths | preserve existing rows; resolve any future reported existing conflicts deliberately |
 | Core work graph backlinks | `CONNECTED` | C1.1 integrated Target proof covers Task/Project/Goal/Skill/Resource navigation, reload, ownership boundaries and deterministic direct, via-Project, Context and Evidence provenance | retain bounded explicit relations; graph visualization stays deferred |
 | Project create/edit/status/archive | `CONNECTED` | canonical list/create/detail, fields, linked work and archive readback; R2-04 proof | accepted 2026-09-07; maintain |
+| Project desired result, Completion Criteria and Review History | `CONNECTED` | Issue #69 Project-owned result and Criteria commands, explicit `continue` / `completed` Review, Resource snapshots, immutable prior cycles, amendments, Reopen and Archive use the dedicated RLS command role. `tests/supabase/project-depth.sql`, `tests/supabase/project-depth-concurrency.mjs` and `tests/e2e/project-depth.spec.ts` prove owner scope, direct Data API denial, two-session conflicts, reload, Legacy, Demo/Empty/Auth-blocked and 3840×2160 / 1920×1080 / 390×844 Project Detail. | PR review and post-merge user acceptance remain separate from capability truth |
 | Goal create/edit/status/archive | `CONNECTED` | canonical list/create/detail, fields, related work and archive readback; R2-04 proof | accepted 2026-09-07; maintain |
 | Skill create/edit/archive | `CONNECTED` | canonical list/create/detail, evidence and archive readback; R2-04 proof | accepted 2026-09-07; maintain |
 | Skill evidence CRUD/source links | `CONNECTED` | explicit source-backed evidence create/remove and source navigation; R2-04 reload proof | maintain |

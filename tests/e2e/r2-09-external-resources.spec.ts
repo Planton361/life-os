@@ -22,17 +22,21 @@ async function create(
   project?: string,
 ) {
   await page.goto(`/${route}/new`);
+  const formName = kind === "Goal" ? "Ziel erstellen" : `${kind} erstellen`;
   const form = page.getByRole("form", {
-    name: `${kind} erstellen`,
+    name: formName,
     exact: true,
   });
   await form
     .getByLabel(kind === "Skill" ? "Name" : "Titel", { exact: true })
     .fill(title);
   if (area) await form.getByLabel("Area", { exact: true }).selectOption(area);
-  if (project)
+  if (project) {
+    if (kind === "Task")
+      await form.getByRole("button", { name: "Weitere Angaben (optional)" }).click();
     await form.getByLabel("Project", { exact: true }).selectOption(project);
-  await submit(page, `${kind} erstellen`);
+  }
+  await submit(page, formName);
   await expect(page).toHaveURL(new RegExp(`/${route}/[0-9a-f-]{36}$`));
   return page.url().split("/").at(-1)!;
 }
@@ -115,6 +119,7 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
   browser,
 }, info) => {
   test.setTimeout(300000);
+  page.setDefaultTimeout(15000);
   await signUpTechnicalManualUser(page, "r209roles", Date.now());
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
@@ -322,7 +327,6 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
     for (const [route, id] of [
       ["tasks", task],
       ["skills", skill],
-      ["goals", goal],
     ]) {
       await page.goto(`/${route}/${id}`);
       await page.reload();
@@ -330,6 +334,12 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
         page.locator(`[data-resource-relation="${resource}"]`),
       ).toContainText(title);
     }
+    await page.goto(`/resources/${resource}`);
+    await expect(
+      page.getByRole("region", { name: "Beziehungen", exact: true })
+        .locator(`[data-resource-relation="${resource}"]`)
+        .filter({ hasText: `Outcome ${stamp}` }),
+    ).toBeVisible();
     expect(
       (await api.from("resources").select("id").eq("title", title)).data,
     ).toEqual([{ id: resource }]);

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
-import type { Database } from "@/types/supabase";
+import type { Database } from "@/features/real-data/supabase/database.types";
 import { signUpTechnicalManualUser } from "./support/local-manual-auth";
 
 test("Project milestones: CRUD, grouping, ordering, progress, archive and ownership", async ({
@@ -8,6 +8,7 @@ test("Project milestones: CRUD, grouping, ordering, progress, archive and owners
   context,
 }, info) => {
   test.setTimeout(180000);
+  page.setDefaultTimeout(15000);
   const stamp = Date.now();
   await signUpTechnicalManualUser(page, "r209milestone", stamp);
   const errors: string[] = [];
@@ -176,20 +177,17 @@ test("Project milestones: CRUD, grouping, ordering, progress, archive and owners
   await expect(work).toContainText("1/3 Tasks erledigt");
   await page.goto(`/tasks/${tasks[0].id}`);
   const taskContext = page.locator("[data-task-context]");
-  const taskManagement = page.getByRole("region", {
-    name: "Zurück zum Zusammenhang",
-    exact: true,
-  });
-  await taskManagement
+  const taskManagement = page;
+  await page
     .getByRole("button", { name: "Mehr verwalten", exact: true })
     .click();
-  await taskManagement
+  await page
     .getByRole("button", { name: "Milestone-Zuordnung ändern", exact: true })
     .click();
-  await taskManagement
+  await page
     .getByLabel("Milestone (keine Auswahl = Ohne Milestone)")
     .selectOption("");
-  await taskManagement
+  await page
     .getByRole("button", { name: "Task-Milestone speichern", exact: true })
     .click();
   await expect(saved()).toBeVisible();
@@ -489,10 +487,17 @@ test("Project milestones: CRUD, grouping, ordering, progress, archive and owners
       .select()
       .single()
   ).data!;
-  await api
-    .from("projects")
-    .update({ archived_at: new Date().toISOString() })
-    .eq("id", projects[1].id);
+  const archiveContext = (await api.rpc("project_review_context", {
+    p_project_id: projects[1].id,
+  }).throwOnError()).data as { completion_revision: number; completion_cycle: number };
+  await api.rpc("project_depth_command", {
+    p_project_id: projects[1].id,
+    p_command_id: crypto.randomUUID(),
+    p_operation: "project.archive",
+    p_expected_revision: archiveContext.completion_revision,
+    p_expected_cycle: archiveContext.completion_cycle,
+    p_payload: {},
+  }).throwOnError();
   await page.goto(`/tasks/${oldTask.id}`);
   await taskManagement
     .getByRole("button", { name: "Mehr verwalten", exact: true })
@@ -541,7 +546,7 @@ test("Project milestones: CRUD, grouping, ordering, progress, archive and owners
   await taskManagement
     .getByRole("button", { name: "Task-Milestone speichern", exact: true })
     .click();
-  await expect(taskManagement.getByRole("alert")).toContainText(
+  await expect(taskManagement.getByRole("alert").filter({ hasText: "Prüfe die Angaben" })).toContainText(
     "Prüfe die Angaben",
   );
   await page.reload();

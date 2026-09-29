@@ -22,7 +22,7 @@ function field(formData: FormData, key: string) { const value = formData.get(key
 function optionalField(formData: FormData, key: string) { return field(formData, key) || undefined; }
 function destination(state: string, projectId?: string, resourceId?: string) { const params = new URLSearchParams({ educationAction: state }); if (projectId) params.set("selected", projectId); if (resourceId) params.set("resource", resourceId); return `/education?${params}`; }
 async function context() { if ((await getCurrentLifeOsProfileId()) !== "manual") return null; const auth = await createAuthenticatedSupabaseServerClient(); return auth.ok ? auth : null; }
-function revalidateEducation() { revalidatePath("/education"); revalidatePath("/portfolio"); revalidatePath("/projects"); revalidatePath("/tasks"); revalidatePath("/resources"); }
+function revalidateEducation(projectId?: string) { revalidatePath("/education"); revalidatePath("/portfolio"); revalidatePath("/projects"); revalidatePath("/tasks"); revalidatePath("/resources"); revalidatePath("/dashboard"); revalidatePath("/today"); revalidatePath("/calendar"); revalidatePath("/goals"); revalidatePath("/goals/[goalId]", "page"); if (projectId) revalidatePath(`/projects/${projectId}`); }
 function logInput(formData: FormData) { return { durationMinutes: field(formData, "durationMinutes"), focus: field(formData, "focus"), logDate: field(formData, "logDate"), logType: field(formData, "logType"), notes: optionalField(formData, "notes"), outcome: field(formData, "outcome"), projectId: field(formData, "projectId"), startTime: optionalField(formData, "startTime"), unitsCompleted: field(formData, "unitsCompleted"), wordCountDelta: field(formData, "wordCountDelta") }; }
 
 export async function createEducationProjectFormAction(formData: FormData) {
@@ -42,7 +42,7 @@ export async function updateEducationProjectFormAction(formData: FormData) {
   if (!parsed.success) redirect(destination("project_error", projectId));
   const result = await createSupabaseEducationRepository(auth.client).updateProject(auth.user.id, projectId, { description: parsed.data.description ?? undefined, status: parsed.data.status ?? "active", title: parsed.data.title ?? "" });
   if (!result.ok) redirect(destination("project_error", projectId));
-  revalidateEducation(); redirect(destination("project_updated", projectId));
+  revalidateEducation(projectId); redirect(destination("project_updated", projectId));
 }
 
 export async function createEducationLiteratureFormAction(formData: FormData) {
