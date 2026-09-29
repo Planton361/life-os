@@ -72,6 +72,25 @@ The rejected split/workbench Task alternative is not part of the target. Guidanc
 is a UI projection over canonical Task state; it is not a persisted workflow
 engine or new Task status model.
 
+#### USER ACCEPTED #60 visible-composition refinement
+
+Real post-merge review of #58 rejected the Task page because the accepted semantic
+order still felt visually dispersed across open app background. Issue #60 USER
+ACCEPTED the corrected composition:
+
+- Task identity remains compact and unboxed;
+- `Dein nächster Schritt` remains the single dominant guidance surface;
+- Project / current Project Milestone / Goal remains a compact linked context strip;
+- `Worum geht es?`, `Arbeitsnotiz` and `Arbeitsschritte` share one coherent
+  primary **Work** surface;
+- `Voraussetzung`, `Planung`, `Zurück zum Zusammenhang` and quiet secondary
+  management share one coherent **Supporting Depth** surface with internal dividers;
+- desktop uses the available content width intentionally without a card wall;
+- mobile preserves the same read-first order and stacks the shared surfaces naturally.
+
+This remains layered read-first Variant B. It is not the rejected Variant A split
+workbench.
+
 ### Project refinement
 
 Project Detail keeps the USER ACCEPTED R2-09 workbench and receives only bounded
@@ -106,9 +125,18 @@ work context. Calendar owns confirmation/editing of time blocks. Today remains t
 day projection. Stable canonical Task/Project/Goal links provide return context
 independent of browser history.
 
-A Task-aware Calendar navigation state such as
-`task=<id>&date=<day>&view=day` (or equivalent) is UI navigation state only. It
-does not create another scheduling store or redesign Calendar/Today.
+A Task-aware Calendar navigation state is UI navigation state only and does not
+create another scheduling store or redesign Calendar/Today. Issue #60 USER
+ACCEPTED **Week view for both planning and replanning**:
+
+- READY unscheduled Task opens the week containing its intended day with the Task
+  selected and the existing scheduling inspector visible;
+- an already scheduled Task opens the week containing its current time block with
+  that Task/block selected for review or replanning;
+- route state carries Task + date + `view=week`, and reload restores the same
+  Task/date/week selection;
+- merely opening the route never writes a time block; Calendar remains the owner
+  of explicit time-block confirmation/editing.
 
 No new DB/schema/RPC/security/runtime decision, Task status model, progress engine,
 universal Milestone model, autonomous Task selection or automatic completion is

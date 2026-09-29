@@ -474,6 +474,27 @@ chooses/edits time in Calendar.
 Mobile keeps the same semantic order in one column. The primary guidance remains
 early in the viewport; context and management never require horizontal scrolling.
 
+#### USER ACCEPTED #60 surface grouping
+
+Real post-merge review of #58 rejected the visible Task composition as too
+dispersed even though the Variant B semantic order was present. Issue #60 USER
+ACCEPTED a bounded surface correction without returning to Variant A:
+
+1. compact unboxed Task identity;
+2. one dominant `Dein nächster Schritt` surface;
+3. one compact linked context strip;
+4. one shared primary **Work** surface containing `Worum geht es?`,
+   `Arbeitsnotiz` and `Arbeitsschritte`;
+5. one shared secondary **Supporting Depth** surface containing
+   `Voraussetzung`, `Planung`, `Zurück zum Zusammenhang` and quiet secondary
+   management.
+
+On desktop the three supporting topics may use internally divided columns inside
+that one shared surface. On mobile they stack inside the same shared surface with
+quiet internal separators. Supporting topics must not float as independent regions
+on application background. This is still layered read-first Variant B, not a
+parallel split workbench.
+
 ### Bounded Project refinement over R2-09
 
 The R2-09 three-surface structure and information hierarchy remain binding.
@@ -507,10 +528,22 @@ Project
 → return through canonical Project/Goal context
 ```
 
-Task-aware Calendar query/navigation state may preserve the selected Task and day
-across navigation/reload, but it is presentation/navigation state only. Calendar
-continues to own the time block; Today remains the day projection. No Calendar or
-Today redesign is implied.
+Task-aware Calendar query/navigation state preserves the selected Task and day
+across navigation/reload, but it is presentation/navigation state only. Issue #60
+USER ACCEPTED **Week view for both planning and replanning**:
+
+- READY unscheduled work opens the week containing the intended day, with the Task
+  selected and the existing scheduling inspector visible;
+- scheduled work opens the week containing its existing block, with the Task/block
+  selected for review or replanning;
+- navigation uses Task + date + `view=week` (or an equivalent compatible state)
+  and reload restores the same week and selection;
+- the user may deliberately switch views after arrival, but there is no automatic
+  Day-view exception.
+
+Calendar continues to own explicit time-block confirmation/editing; merely opening
+the handoff route never writes scheduling state. Today remains the day projection.
+No Calendar or Today redesign is implied.
 
 No new persisted workflow state, universal Milestone model, Project-Milestone
 dependency semantics, generic progress engine or automatic completion is allowed
