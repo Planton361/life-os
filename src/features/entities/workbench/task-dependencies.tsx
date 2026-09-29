@@ -24,25 +24,34 @@ export function TaskDependencies({
     project && !project.archived_at && project.status !== "archived"
       ? dependencyCandidates(data.dependencyGraph, taskId)
       : [];
+  const fulfilledPredecessors = context.predecessors.filter(
+    ({ task: predecessor }) =>
+      predecessor && taskSatisfiesDependency(predecessor),
+  ).length;
+  const openPredecessors = context.predecessors.length - fulfilledPredecessors;
   return (
     <section
-      aria-label="Task Dependencies"
-      className="grid gap-3 rounded-xl border border-[var(--border-subtle)] p-5 text-sm"
+      aria-label="Vorgänger und Nachfolger"
+      className="grid min-w-0 gap-3 text-sm"
     >
-      <h2 className="text-lg font-semibold">Dependencies</h2>
-      <p>
-        Dependency Readiness: <strong>{context.availability}</strong>
-      </p>
       {context.inconsistentCompletion && (
-        <p className="text-[var(--accent-orange)]">
-          Dependency inkonsistent: Dieser Task bleibt abgeschlossen; mindestens
-          ein Vorgänger ist wieder offen oder archiviert.
+        <p className="text-[var(--accent-orange)]" role="status">
+          Der Task bleibt abgeschlossen; mindestens ein Vorgänger ist inzwischen
+          wieder offen oder archiviert.
         </p>
       )}
-      {!task.project_id && (
-        <p>Dependencies sind innerhalb eines Projects möglich.</p>
+      {context.predecessors.length > 0 ? (
+        <p className="text-[var(--text-secondary)]">
+          {context.predecessors.length} Vorgänger ·{" "}
+          {openPredecessors === 0
+            ? "erfüllt"
+            : openPredecessors + " offen"}
+        </p>
+      ) : (
+        <p className="text-[var(--text-secondary)]">
+          Keine offenen Voraussetzungen.
+        </p>
       )}
-      <h3 className="font-semibold">Vorgänger</h3>
       {context.predecessors.length ? (
         <ul className="grid gap-2">
           {context.predecessors.map(({ edgeId, task: predecessor }) => (
@@ -62,44 +71,49 @@ export function TaskDependencies({
               )}
               <span className="ml-2 text-[var(--text-secondary)]">
                 {predecessor && taskSatisfiesDependency(predecessor)
-                  ? "erfüllt"
-                  : "BLOCKED"}
+                  ? "Erfüllt"
+                  : "Offen · blockiert"}
               </span>
             </li>
           ))}
         </ul>
-      ) : (
-        <p>Keine Vorgänger.</p>
+      ) : null}
+      {!task.project_id && (
+        <p className="text-[var(--text-muted)]">
+          Ordne den Task einem Project zu, um Vorgänger zu verknüpfen.
+        </p>
       )}
-      <h3 className="font-semibold">Ermöglicht</h3>
       {context.successors.length ? (
-        <ul className="grid gap-2">
-          {context.successors.map(({ edgeId, task: successor }) => (
-            <li key={edgeId}>
-              {successor ? (
-                <Link
-                  className="break-words underline"
-                  href={`/tasks/${successor.id}`}
-                >
-                  {successor.title}
-                  {successor.archived_at ? " (archiviert)" : ""}
-                </Link>
-              ) : (
-                "Nachfolger nicht verfügbar"
-              )}
-            </li>
-          ))}
-        </ul>
+        <div className="grid gap-2">
+          <h3 className="font-semibold">Wird Voraussetzung für</h3>
+          <ul className="grid gap-2">
+            {context.successors.map(({ edgeId, task: successor }) => (
+              <li key={edgeId}>
+                {successor ? (
+                  <Link
+                    className="break-words underline"
+                    href={`/tasks/${successor.id}`}
+                  >
+                    {successor.title}
+                    {successor.archived_at ? " (archiviert)" : ""}
+                  </Link>
+                ) : (
+                  "Nachfolgender Task nicht verfügbar"
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
       ) : (
-        <p>Keine Nachfolger.</p>
+        <p className="text-[var(--text-muted)]">Keine nachfolgenden Tasks.</p>
       )}
       {(task.project_id || context.predecessors.length > 0) && (
-        <ManagementDisclosure label="Dependencies verwalten">
+        <ManagementDisclosure label="Vorgänger verwalten">
           {candidates.length > 0 ? (
-            <ManagementDisclosure label="Dependency hinzufügen">
+            <ManagementDisclosure label="Vorgänger hinzufügen">
               <OperationForm
                 operation="task.dependency.add"
-                label="Dependency speichern"
+                label="Vorgänger speichern"
                 closeOnSuccess
               >
                 <input type="hidden" name="taskId" value={taskId} />
@@ -120,7 +134,7 @@ export function TaskDependencies({
               </OperationForm>
             </ManagementDisclosure>
           ) : (
-            <p>Keine zulässigen neuen Vorgänger in diesem Project.</p>
+            <p>Keine weiteren zulässigen Vorgänger in diesem Project.</p>
           )}
           {context.predecessors.map(({ edgeId, task: predecessor }) => (
             <div
@@ -137,7 +151,7 @@ export function TaskDependencies({
               )}
               <OperationForm
                 operation="task.dependency.remove"
-                label={`Dependency entfernen: ${predecessor?.title ?? "Vorgänger"}`}
+                label={`Vorgänger entfernen: ${predecessor?.title ?? "Vorgänger"}`}
               >
                 <input type="hidden" name="taskId" value={taskId} />
                 <input type="hidden" name="dependencyId" value={edgeId} />

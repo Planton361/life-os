@@ -148,23 +148,23 @@ test("canonical Task create from Project, Milestone and Backlog preserves contex
     created.push(rows[0].id);
     await region.getByRole("link", { name: title, exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`/tasks/${rows[0].id}$`));
-    await expect(
-      page.getByRole("region", {
-        name: "Project und Goal Kontext",
-        exact: true,
-      }),
-    ).toContainText(
-      destination
-        ? stages.find((s) => s.id === destination)!.title
-        : "Ohne Milestone",
-    );
+    const taskContext = page.locator("[data-task-context]");
+    await expect(taskContext).toContainText(project.title);
+    if (destination)
+      await expect(taskContext).toContainText(
+        stages.find((s) => s.id === destination)!.title,
+      );
+    else await expect(taskContext).not.toContainText("Milestone");
   }
   expect(
     (await api.from("task_dependencies").select("id").eq("user_id", uid)).data,
   ).toEqual([]);
   await page.goto(`/tasks/${created[0]}`);
   await page
-    .getByRole("button", { name: "Lifecycle verwalten", exact: true })
+    .getByRole("button", { name: "Mehr verwalten", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Status verwalten", exact: true })
     .click();
   await page
     .getByRole("button", { name: "Task abschließen", exact: true })

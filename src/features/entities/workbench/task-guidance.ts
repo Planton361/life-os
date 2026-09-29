@@ -33,7 +33,7 @@ export function taskGuidance(input: TaskGuidanceInput): TaskGuidance {
   if (input.blockerCount > 0) {
     return {
       action: "anchor",
-      body: "Die konkreten Vorgänger und ihr Zustand stehen bei den Abhängigkeiten.",
+      body: "Die offenen und erfüllten Vorgänger findest du bei der Voraussetzung.",
       href: "#task-dependencies",
       label: "Blocker prüfen",
     };
@@ -51,7 +51,7 @@ export function taskGuidance(input: TaskGuidanceInput): TaskGuidance {
   if (status === "active") {
     return {
       action: "anchor",
-      body: "Beschreibung, Arbeitsnotiz und Arbeitsschritte stehen im Arbeitsinhalt.",
+      body: "Arbeitsnotiz und Arbeitsschritte zeigen, wo du weitermachen kannst.",
       href: "#task-work-content",
       label: "Arbeit fortsetzen",
     };
@@ -60,7 +60,7 @@ export function taskGuidance(input: TaskGuidanceInput): TaskGuidance {
   if (status === "waiting") {
     return {
       action: "link",
-      body: "Der Lifecycle-Status Wartend ist getrennt von Dependency-Readiness.",
+      body: "Der Task wartet, auch wenn seine Voraussetzungen erfüllt sein können.",
       href: `/tasks/${taskId}?edit=1`,
       label: "Warte-Status einordnen",
     };

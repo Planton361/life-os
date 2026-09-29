@@ -36,6 +36,23 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
   const tomorrowDate = new Date(`${today}T12:00:00Z`);
   tomorrowDate.setUTCDate(tomorrowDate.getUTCDate() + 1);
   const tomorrow = tomorrowDate.toISOString().slice(0, 10);
+  const berlinInstant = (date: string, time: string) => {
+    const initial = new Date(date + "T" + time + ":00Z");
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/Berlin",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    }).formatToParts(initial);
+    const part = (type: string) =>
+      parts.find((item) => item.type === type)?.value ?? "0";
+    const observedMinutes = Number(part("hour")) * 60 + Number(part("minute"));
+    const requestedMinutes =
+      Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5));
+    return new Date(
+      initial.getTime() + (requestedMinutes - observedMinutes) * 60_000,
+    ).toISOString();
+  };
 
   const createProject = async (
     title: string,
@@ -216,10 +233,7 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
   const guidance = (label: string) =>
     page.getByRole("region", { name: label, exact: true });
   const taskContext = () =>
-    page.getByRole("region", {
-      name: "Project und Goal Kontext",
-      exact: true,
-    });
+    page.locator("[data-task-context]");
   const visitProject = async (projectId: string) => {
     await page.goto(`/projects/${projectId}`);
     await expect(guidance("Project Task guidance")).toBeVisible();
@@ -329,27 +343,43 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
     page.getByRole("heading", { name: createdTitle, exact: true }),
   ).toBeVisible();
   await expect(page.locator('[data-task-detail-variant="B"]')).toBeVisible();
-  await expect(
-    page.getByText("Lifecycle: Planned", { exact: true }),
-  ).toBeVisible();
-  await expect(
-    page
-      .getByRole("region", { name: "Task Identity", exact: true })
-      .getByText("Dependency Readiness: READY", { exact: true }),
-  ).toBeVisible();
+  const identity = page.locator('[data-task-order="identity"]');
+  await expect(identity).toContainText("Geplant");
+  await expect(identity).toContainText("Bereit");
+  await expect(identity).toContainText("Ohne Priorität");
+  await expect(identity).toContainText("Erstellt am");
+  await expect(identity.locator('[data-task-readiness="READY"]')).toHaveCount(1);
   await expect(taskContext()).toContainText(emptyProject.title);
   await expect(taskContext()).toContainText(activeMilestone.title);
   await expect(taskContext()).toContainText(goal.title);
   await expect(
     taskContext().getByRole("link", { name: goal.title, exact: true }),
   ).toHaveAttribute("href", `/goals/${goal.id}`);
-  const planning = page.getByRole("region", {
-    name: "Task Planning",
-    exact: true,
-  });
-  await expect(planning).toContainText("Tagesabsicht");
-  await expect(planning).toContainText("Time Block");
+  const planning = page.locator('[data-task-order="planning"]');
+  await expect(planning).toContainText("Geplant");
+  await expect(planning).toContainText("Termin");
   await expect(planning).toContainText("Deadline");
+  for (const heading of [
+    "Worum geht es?",
+    "Arbeitsnotiz",
+    "Arbeitsschritte",
+    "Voraussetzung",
+    "Planung",
+    "Zurück zum Zusammenhang",
+  ])
+    await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
+  await expect(page.locator("[data-task-guidance]")).toHaveCount(1);
+  for (const rejected of [
+    "Project / Goal Context",
+    "Dependency + Planning Depth",
+    "Purpose / Beschreibung / Arbeitsinhalt",
+  ])
+    await expect(
+      page.getByRole("heading", { name: rejected, exact: true }),
+    ).toHaveCount(0);
+  await expect(
+    page.getByText(/Lifecycle:|Dependency Readiness:/),
+  ).toHaveCount(0);
   const taskGuidance = guidance("Dein nächster Schritt");
   await expect(taskGuidance).toHaveAttribute(
     "data-task-guidance",
@@ -419,7 +449,7 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
   await page.getByRole("link", { name: "Open task", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/tasks/${createdTask.id}$`));
   const taskEditTrigger = page.getByRole("button", {
-    name: "Task bearbeiten",
+    name: "Bearbeiten",
     exact: true,
   });
   await taskEditTrigger.click();
@@ -499,10 +529,13 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
   );
   await page.reload();
   const lifecycleTrigger = page.getByRole("button", {
-    name: "Lifecycle verwalten",
+    name: "Mehr verwalten",
     exact: true,
   });
   await lifecycleTrigger.click();
+  await page
+    .getByRole("button", { name: "Status verwalten", exact: true })
+    .click();
   await page
     .getByRole("button", { name: "Task abschließen", exact: true })
     .click();
@@ -530,9 +563,9 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
   );
 
   await page.goto(`/tasks/${inboxTask.id}`);
-  await expect(
-    page.getByText("Lifecycle: Inbox", { exact: true }),
-  ).toBeVisible();
+  const inboxIdentity = page.locator('[data-task-order="identity"]');
+  await expect(inboxIdentity).toContainText("Inbox");
+  await expect(inboxIdentity.locator('[data-task-readiness="READY"]')).toHaveCount(1);
   const inboxGuidance = guidance("Dein nächster Schritt");
   await expect(inboxGuidance).toHaveAttribute(
     "data-task-guidance",
@@ -543,7 +576,7 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
     .click();
   await expect(page).toHaveURL(new RegExp(`/tasks/${inboxTask.id}\\?edit=1$`));
   const editTrigger = page.getByRole("button", {
-    name: "Task bearbeiten",
+    name: "Bearbeiten",
     exact: true,
   });
   await expect(editTrigger).toHaveAttribute("aria-expanded", "true");
@@ -560,20 +593,18 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
   await expect(editTrigger).toHaveAttribute("aria-expanded", "false");
 
   await page.goto(`/tasks/${multiBlockedTask.id}`);
+  const multiBlockedIdentity = page.locator('[data-task-order="identity"]');
+  await expect(multiBlockedIdentity).toContainText("Geplant");
+  await expect(multiBlockedIdentity).toContainText("Blockiert");
   await expect(
-    page.getByText("Lifecycle: Planned", { exact: true }),
-  ).toBeVisible();
-  await expect(
-    page
-      .getByRole("region", { name: "Task Identity", exact: true })
-      .getByText("Dependency Readiness: BLOCKED", { exact: true }),
-  ).toBeVisible();
+    multiBlockedIdentity.locator('[data-task-readiness="BLOCKED"]'),
+  ).toHaveCount(1);
   await expect(guidance("Dein nächster Schritt")).toHaveAttribute(
     "data-task-guidance",
     "Blocker prüfen",
   );
   const dependencies = page.getByRole("region", {
-    name: "Task Dependencies",
+    name: "Voraussetzung",
     exact: true,
   });
   await expect(
@@ -588,46 +619,42 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
       exact: true,
     }),
   ).toBeVisible();
-  await expect(dependencies).toContainText("erfüllt");
-  await expect(dependencies).toContainText("BLOCKED");
+  await expect(dependencies).toContainText("Erfüllt");
+  await expect(dependencies).toContainText("Offen · blockiert");
 
   await page.goto(`/tasks/${waitingAllBlocked.id}`);
-  const waitingIdentity = page.getByRole("region", {
-    name: "Task Identity",
-    exact: true,
-  });
-  await expect(waitingIdentity).toContainText("Lifecycle: Wartend");
-  await expect(waitingIdentity).toContainText("Dependency Readiness: READY");
+  const waitingIdentity = page.locator('[data-task-order="identity"]');
+  await expect(waitingIdentity).toContainText("Wartend");
+  await expect(waitingIdentity).toContainText("Bereit");
+  await expect(waitingIdentity.locator('[data-task-readiness="READY"]')).toHaveCount(1);
   await expect(guidance("Dein nächster Schritt")).toHaveAttribute(
     "data-task-guidance",
     "Warte-Status einordnen",
   );
 
   await page.goto(`/tasks/${allBlockedOne.id}`);
-  const singleBlockedIdentity = page.getByRole("region", {
-    name: "Task Identity",
-    exact: true,
-  });
-  await expect(singleBlockedIdentity).toContainText("Lifecycle: Planned");
-  await expect(singleBlockedIdentity).toContainText(
-    "Dependency Readiness: BLOCKED",
-  );
+  const singleBlockedIdentity = page.locator('[data-task-order="identity"]');
+  await expect(singleBlockedIdentity).toContainText("Geplant");
+  await expect(singleBlockedIdentity).toContainText("Blockiert");
+  await expect(
+    singleBlockedIdentity.locator('[data-task-readiness="BLOCKED"]'),
+  ).toHaveCount(1);
   await expect(
     page
-      .getByRole("region", { name: "Task Dependencies", exact: true })
+      .getByRole("region", { name: "Voraussetzung", exact: true })
       .getByRole("link", { name: waitingAllBlocked.title, exact: true }),
   ).toBeVisible();
 
   await page.goto(`/tasks/${activeTask.id}`);
-  await expect(
-    page.getByText("Lifecycle: Active / In Progress", { exact: true }),
-  ).toBeVisible();
+  await expect(page.locator('[data-task-order="identity"]')).toContainText(
+    "In Arbeit",
+  );
   await expect(guidance("Dein nächster Schritt")).toHaveAttribute(
     "data-task-guidance",
     "Arbeit fortsetzen",
   );
   await expect(
-    page.getByRole("region", { name: "Task Planning", exact: true }),
+    page.locator('[data-task-order="planning"]'),
   ).toContainText(
     new Intl.DateTimeFormat("de-DE", {
       dateStyle: "medium",
@@ -635,7 +662,7 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
     }).format(new Date(`${today}T12:00:00Z`)),
   );
   await expect(
-    page.getByRole("region", { name: "Task Planning", exact: true }),
+    page.locator('[data-task-order="planning"]'),
   ).toContainText(
     new Intl.DateTimeFormat("de-DE", {
       dateStyle: "medium",
@@ -746,7 +773,7 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
   ).toBeVisible();
   await page.goto(`/tasks/${noMilestoneTask.id}`);
   const editTriggerForKeyboard = page.getByRole("button", {
-    name: "Task bearbeiten",
+    name: "Bearbeiten",
     exact: true,
   });
   await editTriggerForKeyboard.focus();
@@ -761,6 +788,140 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
   await page.keyboard.press("Escape");
   await expect(editTriggerForKeyboard).toBeFocused();
 
+  const visualGoal = (
+    await api
+      .from("goals")
+      .insert({
+        user_id: userId,
+        title: "Eine realistische Woche mit Life OS planen",
+      })
+      .select()
+      .single()
+      .throwOnError()
+  ).data;
+  const visualProject = await createProject("Daily Planning Loop", {
+    goal_id: visualGoal.id,
+    status: "active",
+  });
+  const visualMilestone = (
+    await api
+      .from("project_milestones")
+      .insert({
+        user_id: userId,
+        project_id: visualProject.id,
+        title: "Task → Day Handoff",
+        status: "active",
+        sort_order: 0,
+      })
+      .select()
+      .single()
+      .throwOnError()
+  ).data;
+  const visualPredecessor = await createTask("Feste Termine zusammentragen", {
+    project_id: visualProject.id,
+    milestone_id: visualMilestone.id,
+    status: "done",
+    completed_at: new Date().toISOString(),
+    priority: "P2",
+  });
+  const visualTaskTitle = "Wöchentliche Planung scharfstellen";
+  const visualTaskDescription =
+    "Eine realistische Woche mit Life OS planen: feste Termine, Fokuszeit und Erholung berücksichtigen.\n\nNächste Aktion: Vorhandene Termine und verfügbare Fokusfenster für die kommende Woche zusammentragen.";
+  const visualTask = await createTask(visualTaskTitle, {
+    project_id: visualProject.id,
+    milestone_id: visualMilestone.id,
+    goal_id: visualGoal.id,
+    status: "planned",
+    priority: "P1",
+    planned_date: today,
+    scheduled_start_at: berlinInstant(today, "09:30"),
+    duration_minutes: 45,
+    due_at: tomorrow + "T12:00:00.000Z",
+    description: visualTaskDescription,
+  });
+  expect(
+    (
+      await api.from("task_dependencies").insert({
+        user_id: userId,
+        project_id: visualProject.id,
+        predecessor_task_id: visualPredecessor.id,
+        successor_task_id: visualTask.id,
+      })
+    ).error,
+  ).toBeNull();
+  expect(
+    (
+      await api.from("task_steps").insert([
+        {
+          user_id: userId,
+          task_id: visualTask.id,
+          title: "Feste Termine und Verpflichtungen zusammentragen",
+          position: 0,
+          completed_at: new Date().toISOString(),
+        },
+        {
+          user_id: userId,
+          task_id: visualTask.id,
+          title: "Fokusfenster und Erholung einplanen",
+          position: 1,
+        },
+      ])
+    ).error,
+  ).toBeNull();
+
+  const visualDate = today;
+  await page.goto("/tasks/" + visualTask.id);
+  const visualIdentity = page.locator('[data-task-order="identity"]');
+  const visualGuidance = guidance("Dein nächster Schritt");
+  const visualContext = taskContext();
+  const visualWork = page.locator('[data-task-order="work"]');
+  const visualPrerequisite = page.locator(
+    '[data-task-order="prerequisite"]',
+  );
+  const visualPlanning = page.locator('[data-task-order="planning"]');
+  await expect(visualIdentity).toContainText("Geplant");
+  await expect(visualIdentity).toContainText("Bereit");
+  await expect(visualIdentity).toContainText("P1");
+  await expect(visualContext).toContainText(visualProject.title);
+  await expect(visualContext).toContainText(visualMilestone.title);
+  await expect(visualContext).toContainText(visualGoal.title);
+  await expect(visualWork).toContainText(visualTaskDescription.split("\n\n")[0]);
+  await expect(visualWork).toContainText(
+    "Vorhandene Termine und verfügbare Fokusfenster",
+  );
+  await expect(visualWork).toContainText("1 von 2 erledigt");
+  const visualSteps = visualWork.getByRole("list").getByRole("listitem");
+  await expect(visualSteps.nth(0)).toContainText(
+    "Feste Termine und Verpflichtungen zusammentragen",
+  );
+  await expect(visualSteps.nth(0)).toContainText("Erledigt");
+  await expect(visualSteps.nth(1)).toContainText(
+    "Fokusfenster und Erholung einplanen",
+  );
+  await expect(visualSteps.nth(1)).toContainText("Offen");
+  await expect(
+    visualWork.getByRole("button", { name: "Schritt speichern", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    visualWork.getByRole("button", {
+      name: "Arbeitsschritte verwalten",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(visualPrerequisite).toContainText("1 Vorgänger · erfüllt");
+  await expect(
+    visualPrerequisite.getByRole("link", {
+      name: visualPredecessor.title,
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(visualPlanning).toContainText("09:30–10:15");
+  await expect(visualPlanning).toContainText("45 Minuten · Europe/Berlin");
+  await expect(visualGuidance).toHaveAttribute(
+    "data-task-guidance",
+    "Geplanten Termin öffnen",
+  );
+
   for (const [width, height] of [
     [3840, 2160],
     [1920, 1080],
@@ -768,11 +929,11 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
   ]) {
     await page.setViewportSize({ width, height });
     for (const [surface, url] of [
-      ["task", `/tasks/${createdTask.id}`],
-      ["project", `/projects/${emptyProject.id}`],
+      ["task", `/tasks/${visualTask.id}`],
+      ["project", `/projects/${visualProject.id}`],
       [
         "calendar",
-        `/calendar?task=${createdTask.id}&date=${calendarUrl.searchParams.get("date")}&view=day`,
+        `/calendar?task=${visualTask.id}&date=${visualDate}&view=day`,
       ],
     ]) {
       await page.goto(url);
@@ -781,7 +942,7 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
           ? page.locator('[data-task-detail-variant="B"]')
           : surface === "project"
             ? page.getByRole("heading", {
-                name: emptyProject.title,
+                name: visualProject.title,
                 exact: true,
               })
             : page.getByRole("heading", { name: "Calendar", exact: true });
@@ -795,20 +956,36 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
         await expect(
           page.locator('[data-task-detail-variant="B"]'),
         ).toBeVisible();
+        await expect(page.locator("[data-task-guidance]")).toHaveCount(1);
         const orderedSections = await page
-          .locator(
-            '[data-task-detail-variant="B"] > header, [data-task-detail-variant="B"] > section',
-          )
+          .locator('[data-task-order]')
           .evaluateAll((elements) =>
             elements.map((element) => {
               const rect = element.getBoundingClientRect();
-              return { bottom: rect.bottom, top: rect.top };
+              return {
+                bottom: rect.bottom,
+                order: element.getAttribute("data-task-order"),
+                top: rect.top,
+                width: rect.width,
+              };
             }),
           );
-        for (let index = 1; index < orderedSections.length; index += 1)
-          expect(orderedSections[index].top).toBeGreaterThanOrEqual(
-            orderedSections[index - 1].bottom,
-          );
+        expect(orderedSections.map((item) => item.order)).toEqual([
+          "identity",
+          "guidance",
+          "context",
+          "work",
+          "prerequisite",
+          "planning",
+          "return",
+        ]);
+        if (width === 390)
+          for (let index = 1; index < orderedSections.length; index += 1)
+            expect(orderedSections[index].top).toBeGreaterThanOrEqual(
+              orderedSections[index - 1].bottom,
+            );
+        if (width >= 1920)
+          expect(orderedSections[0].width).toBeGreaterThan(1280);
       }
       const path = info.outputPath(`issue-58-${surface}-${width}.png`);
       await page.screenshot({ path, fullPage: true, caret: "initial" });

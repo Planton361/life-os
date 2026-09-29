@@ -162,7 +162,10 @@ async function createAndCompleteCurrentTask(
   expect(taskId).toMatch(/^[0-9a-f-]{36}$/i);
   await page.goto(`/tasks/${taskId}`);
   await page
-    .getByRole("button", { name: "Lifecycle verwalten", exact: true })
+    .getByRole("button", { name: "Mehr verwalten", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Status verwalten", exact: true })
     .click();
   const complete = page.locator('form[aria-label="Task abschließen"]');
   await expect(complete).toBeVisible();
