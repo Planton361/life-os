@@ -94,11 +94,14 @@ target: layered read-first Variant B is retained, while Work becomes one shared
 primary surface and Voraussetzung / Planung / Zurück zum Zusammenhang plus quiet
 management share one Supporting Depth surface; Task handoff uses Calendar Week
 view for both planning and replanning with Task + date + `view=week` reload-stable
-navigation state. Calendar remains the time-block owner and the route creates no
-scheduling state by itself. A separately authorized DELIVER contract must
-implement and prove this corrected slice with real Manual, reload/responsive and
-dependency evidence. No generic progress engine, universal Milestone model,
-runtime migration or automatic Task selection/completion is implied.
+navigation state. Issue #62 delivered that correction and is USER ACCEPTED as of
+2026-09-29 after the real merged Task/Calendar recheck on
+`eb1f34cd6ed4d554a099439189efc6f916215f17`. Calendar remains the time-block
+owner and the route creates no scheduling state by itself. This closes the
+**Core Task / Project Interaction product-acceptance gate**. No generic progress
+engine, universal Milestone model, runtime migration or automatic Task
+selection/completion is implied. The roadmap does not authorize the next work item
+by itself; operative selection remains in GitHub Project #3.
 
 ### PP2 — Skill Development Planning
 
