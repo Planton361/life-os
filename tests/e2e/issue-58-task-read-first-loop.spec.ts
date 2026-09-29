@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/supabase";
 import { signUpTechnicalManualUser } from "./support/local-manual-auth";
 
-test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", async ({
+test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar Week loop", async ({
   page,
   context,
 }, info) => {
@@ -232,8 +232,7 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
 
   const guidance = (label: string) =>
     page.getByRole("region", { name: label, exact: true });
-  const taskContext = () =>
-    page.locator("[data-task-context]");
+  const taskContext = () => page.locator("[data-task-context]");
   const visitProject = async (projectId: string) => {
     await page.goto(`/projects/${projectId}`);
     await expect(guidance("Project Task guidance")).toBeVisible();
@@ -334,6 +333,51 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
     milestone_id: activeMilestone.id,
     status: "planned",
   });
+  const createdPredecessor = await createTask(
+    `Completed prerequisite ${stamp}`,
+    {
+      project_id: emptyProject.id,
+      milestone_id: activeMilestone.id,
+      status: "done",
+      completed_at: new Date().toISOString(),
+    },
+  );
+  await api
+    .from("tasks")
+    .update({
+      due_at: `${tomorrow}T12:00:00.000Z`,
+      description:
+        "Eine realistische Woche mit Life OS planen: feste Termine, Fokuszeit und Erholung berücksichtigen.\n\nNächste Aktion: Vorhandene Termine und verfügbare Fokusfenster für die kommende Woche zusammentragen.",
+    })
+    .eq("id", createdTask.id)
+    .throwOnError();
+  await api
+    .from("task_dependencies")
+    .insert({
+      user_id: userId,
+      project_id: emptyProject.id,
+      predecessor_task_id: createdPredecessor.id,
+      successor_task_id: createdTask.id,
+    })
+    .throwOnError();
+  await api
+    .from("task_steps")
+    .insert([
+      {
+        user_id: userId,
+        task_id: createdTask.id,
+        title: "Feste Termine und Verpflichtungen zusammentragen",
+        position: 0,
+        completed_at: new Date().toISOString(),
+      },
+      {
+        user_id: userId,
+        task_id: createdTask.id,
+        title: "Fokusfenster und Erholung einplanen",
+        position: 1,
+      },
+    ])
+    .throwOnError();
 
   await guidance("Project Task guidance")
     .getByRole("link", { name: createdTitle, exact: true })
@@ -348,17 +392,61 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
   await expect(identity).toContainText("Bereit");
   await expect(identity).toContainText("Ohne Priorität");
   await expect(identity).toContainText("Erstellt am");
-  await expect(identity.locator('[data-task-readiness="READY"]')).toHaveCount(1);
+  await expect(identity.locator('[data-task-readiness="READY"]')).toHaveCount(
+    1,
+  );
   await expect(taskContext()).toContainText(emptyProject.title);
   await expect(taskContext()).toContainText(activeMilestone.title);
   await expect(taskContext()).toContainText(goal.title);
   await expect(
     taskContext().getByRole("link", { name: goal.title, exact: true }),
   ).toHaveAttribute("href", `/goals/${goal.id}`);
+  const workSurface = page.locator('[data-task-order="work"]');
+  const supportingDepth = page.locator("[data-task-supporting-depth]");
+  await expect(workSurface).toHaveCount(1);
+  await expect(
+    workSurface.locator('[aria-label="Arbeitsnotiz"]'),
+  ).toContainText("Fokusfenster für die kommende Woche");
+  await expect(workSurface.getByRole("list").getByRole("listitem")).toHaveCount(
+    2,
+  );
+  await expect(supportingDepth).toHaveCount(1);
+  await expect(
+    supportingDepth.locator('[data-task-order="prerequisite"]'),
+  ).toContainText("1 Vorgänger · erfüllt");
+  await expect(
+    supportingDepth.locator('[data-task-order="prerequisite"]'),
+  ).toContainText(createdPredecessor.title);
+  await expect(
+    supportingDepth.locator('[data-task-order="planning"]'),
+  ).toBeVisible();
+  await expect(
+    supportingDepth.locator('[data-task-order="return"]'),
+  ).toBeVisible();
+  await expect(
+    supportingDepth.getByRole("button", { name: "Bearbeiten", exact: true }),
+  ).toBeVisible();
+  const supportStyle = await supportingDepth.evaluate((element) => {
+    const style = window.getComputedStyle(element);
+    return {
+      background: style.backgroundColor,
+      border: style.borderTopWidth,
+      radius: style.borderTopLeftRadius,
+    };
+  });
+  expect(supportStyle.background).not.toBe("rgba(0, 0, 0, 0)");
+  expect(supportStyle.border).toBe("1px");
+  expect(Number.parseFloat(supportStyle.radius)).toBeGreaterThan(0);
   const planning = page.locator('[data-task-order="planning"]');
   await expect(planning).toContainText("Geplant");
   await expect(planning).toContainText("Termin");
   await expect(planning).toContainText("Deadline");
+  await expect(planning).toContainText(
+    new Intl.DateTimeFormat("de-DE", {
+      dateStyle: "medium",
+      timeZone: "Europe/Berlin",
+    }).format(new Date(`${tomorrow}T12:00:00.000Z`)),
+  );
   for (const heading of [
     "Worum geht es?",
     "Arbeitsnotiz",
@@ -367,7 +455,9 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
     "Planung",
     "Zurück zum Zusammenhang",
   ])
-    await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: heading, exact: true }),
+    ).toBeVisible();
   await expect(page.locator("[data-task-guidance]")).toHaveCount(1);
   for (const rejected of [
     "Project / Goal Context",
@@ -377,9 +467,9 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
     await expect(
       page.getByRole("heading", { name: rejected, exact: true }),
     ).toHaveCount(0);
-  await expect(
-    page.getByText(/Lifecycle:|Dependency Readiness:/),
-  ).toHaveCount(0);
+  await expect(page.getByText(/Lifecycle:|Dependency Readiness:/)).toHaveCount(
+    0,
+  );
   const taskGuidance = guidance("Dein nächster Schritt");
   await expect(taskGuidance).toHaveAttribute(
     "data-task-guidance",
@@ -394,16 +484,39 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
   expect(calendarUrl.pathname).toBe("/calendar");
   expect(calendarUrl.searchParams.get("task")).toBe(createdTask.id);
   expect(calendarUrl.searchParams.get("date")).toBeTruthy();
-  expect(calendarUrl.searchParams.get("view")).toBe("day");
+  expect(calendarUrl.searchParams.get("view")).toBe("week");
+  const weekView = page.getByRole("button", { name: "Week", exact: true });
+  const targetDayColumn = page.locator(
+    `[data-calendar-date="${plannedTimeBlockDate}"]`,
+  );
+  const calendarInspector = page.locator("[data-calendar-inspector]");
+  await expect(weekView).toHaveAttribute("aria-pressed", "true");
+  await expect(targetDayColumn).toHaveAttribute(
+    "data-calendar-current-date",
+    "true",
+  );
   const queueSchedule = page.locator(
     '[data-calendar-section="queue-schedule"]',
   );
+  await expect(queueSchedule).toBeVisible();
   await expect(queueSchedule).toContainText(createdTitle);
   await expect(queueSchedule.getByLabel("Weekday")).toHaveValue(
     calendarUrl.searchParams.get("date")!,
   );
+  const beforeConfirmation = await api
+    .from("tasks")
+    .select("scheduled_start_at")
+    .eq("id", createdTask.id)
+    .single()
+    .throwOnError();
+  expect(beforeConfirmation.data.scheduled_start_at).toBeNull();
   await page.reload();
   await expect(queueSchedule).toContainText(createdTitle);
+  await expect(weekView).toHaveAttribute("aria-pressed", "true");
+  await expect(targetDayColumn).toHaveAttribute(
+    "data-calendar-current-date",
+    "true",
+  );
   const scheduledTime = "10:30";
   await queueSchedule.getByLabel("Start time").fill(scheduledTime);
   await queueSchedule.getByLabel("Duration").selectOption("30");
@@ -434,15 +547,22 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
   await expect(
     page.locator('[data-calendar-section="queue-schedule"]'),
   ).toHaveCount(0);
-  const timedBlock = page
-    .locator('[data-calendar-section="day-surface"]')
-    .getByRole("button", { name: new RegExp(createdTitle) });
+  const scheduledWeekBlock = targetDayColumn.getByRole("button", {
+    name: new RegExp(createdTitle),
+  });
   await page.reload();
   await expect(page).toHaveURL(
-    new RegExp(`task=${createdTask.id}.*date=${plannedTimeBlockDate}.*view=day`),
+    new RegExp(
+      `task=${createdTask.id}.*date=${plannedTimeBlockDate}.*view=week`,
+    ),
   );
-  await expect(timedBlock).toBeVisible();
-  await expect(page).toHaveURL(new RegExp(`task=${createdTask.id}`));
+  await expect(weekView).toHaveAttribute("aria-pressed", "true");
+  await expect(targetDayColumn).toBeVisible();
+  await expect(scheduledWeekBlock).toBeVisible();
+  await expect(scheduledWeekBlock).toHaveAttribute("aria-pressed", "true");
+  await expect(calendarInspector).toBeVisible();
+  await expect(calendarInspector).toContainText(createdTitle);
+  await expect(calendarInspector).toContainText(plannedTimeBlockDate);
   await expect(
     page.getByRole("link", { name: "Open task", exact: true }),
   ).toBeVisible();
@@ -479,43 +599,111 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
       timeZone: "Europe/Berlin",
     }).format(new Date(`${plannedTimeBlockDate}T10:30:00`)),
   );
-  const scheduledGuidanceLink = guidance(
-    "Dein nächster Schritt",
-  ).getByRole("link", {
-    name: "Geplanten Termin öffnen",
+  const planningCalendarLink = planning.getByRole("link", {
+    name: "Termin im Kalender öffnen",
     exact: true,
   });
+  await expect(planningCalendarLink).toHaveAttribute(
+    "href",
+    new RegExp(
+      `/calendar\\?task=${createdTask.id}&date=${plannedTimeBlockDate}&view=week`,
+    ),
+  );
+  await planningCalendarLink.click();
+  await expect(page).toHaveURL(
+    new RegExp(
+      `task=${createdTask.id}.*date=${plannedTimeBlockDate}.*view=week`,
+    ),
+  );
+  await expect(weekView).toHaveAttribute("aria-pressed", "true");
+  await expect(scheduledWeekBlock).toBeVisible();
+  await expect(scheduledWeekBlock).toHaveAttribute("aria-pressed", "true");
+  await expect(calendarInspector).toBeVisible();
+  await page.reload();
+  await expect(scheduledWeekBlock).toBeVisible();
+  await expect(scheduledWeekBlock).toHaveAttribute("aria-pressed", "true");
+  await expect(calendarInspector).toBeVisible();
+  await page.getByRole("link", { name: "Open task", exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/tasks/${createdTask.id}$`));
+
+  const scheduledGuidanceLink = guidance("Dein nächster Schritt").getByRole(
+    "link",
+    {
+      name: "Geplanten Termin öffnen",
+      exact: true,
+    },
+  );
   await expect(scheduledGuidanceLink).toHaveAttribute(
     "href",
-    new RegExp(`/calendar\\?task=${createdTask.id}&date=${plannedTimeBlockDate}&view=day`),
+    new RegExp(
+      `/calendar\\?task=${createdTask.id}&date=${plannedTimeBlockDate}&view=week`,
+    ),
   );
   await scheduledGuidanceLink.click();
+  await expect(page).toHaveURL(
+    new RegExp(
+      `task=${createdTask.id}.*date=${plannedTimeBlockDate}.*view=week`,
+    ),
+  );
+  await expect(weekView).toHaveAttribute("aria-pressed", "true");
+  await expect(scheduledWeekBlock).toBeVisible();
+  await expect(scheduledWeekBlock).toHaveAttribute("aria-pressed", "true");
+  await expect(calendarInspector).toBeVisible();
+  await page.reload();
+  await expect(scheduledWeekBlock).toBeVisible();
+  await expect(scheduledWeekBlock).toHaveAttribute("aria-pressed", "true");
+  await expect(calendarInspector).toBeVisible();
+
+  const dayView = page.getByRole("button", { name: "Day", exact: true });
+  await dayView.click();
+  await expect(dayView).toHaveAttribute("aria-pressed", "true");
+  await expect(page).toHaveURL(
+    new RegExp(
+      `task=${createdTask.id}.*date=${plannedTimeBlockDate}.*view=day`,
+    ),
+  );
   const scheduledDayBlock = page
     .locator('[data-calendar-section="day-surface"]')
     .getByRole("button", { name: new RegExp(createdTitle) });
   await expect(scheduledDayBlock).toBeVisible();
+  await expect(scheduledDayBlock).toHaveAttribute("aria-pressed", "true");
   await page.reload();
+  await expect(dayView).toHaveAttribute("aria-pressed", "true");
+  await expect(page).toHaveURL(
+    new RegExp(
+      `task=${createdTask.id}.*date=${plannedTimeBlockDate}.*view=day`,
+    ),
+  );
   await expect(scheduledDayBlock).toBeVisible();
+  await expect(calendarInspector).toBeVisible();
   await page
     .getByRole("button", { name: "Inspector schließen", exact: true })
     .click();
   await expect(scheduledDayBlock).toBeFocused();
   await expect(page).not.toHaveURL(/(?:\?|&)task=/);
   await page.goto(
-    `/calendar?task=${createdTask.id}&date=${plannedTimeBlockDate}&view=day`,
+    "/calendar?task=" +
+      createdTask.id +
+      "&date=" +
+      plannedTimeBlockDate +
+      "&view=week",
   );
-  await page
-    .locator('[data-calendar-section="day-surface"]')
+  await targetDayColumn
     .getByRole("button", { name: /Select free slot .* at 08:00/ })
     .click();
   await expect(page).not.toHaveURL(/(?:\?|&)task=/);
   await page.reload();
   await expect(page).not.toHaveURL(/(?:\?|&)task=/);
+  await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto(
-    `/calendar?task=${createdTask.id}&date=${plannedTimeBlockDate}&view=day`,
+    "/calendar?task=" +
+      createdTask.id +
+      "&date=" +
+      plannedTimeBlockDate +
+      "&view=week",
   );
-  await expect(scheduledDayBlock).toBeVisible();
-  await scheduledDayBlock.click();
+  await expect(scheduledWeekBlock).toBeVisible();
+  await scheduledWeekBlock.click();
   await page.getByRole("link", { name: "Open task", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/tasks/${createdTask.id}$`));
   await expect(
@@ -525,7 +713,7 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
     }),
   ).toHaveAttribute(
     "href",
-    new RegExp(`/calendar\\?task=${createdTask.id}&date=.*&view=day`),
+    new RegExp(`/calendar\\?task=${createdTask.id}&date=.*&view=week`),
   );
   await page.reload();
   const lifecycleTrigger = page.getByRole("button", {
@@ -556,7 +744,7 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
   );
   await expect(
     page.getByRole("region", { name: "Tasks & Progress", exact: true }),
-  ).toContainText("1/1 Tasks erledigt");
+  ).toContainText("2/2 Tasks erledigt");
   await page.reload();
   await expect(guidance("Project Task guidance")).toContainText(
     "Keine ausführbaren Tasks",
@@ -565,7 +753,9 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
   await page.goto(`/tasks/${inboxTask.id}`);
   const inboxIdentity = page.locator('[data-task-order="identity"]');
   await expect(inboxIdentity).toContainText("Inbox");
-  await expect(inboxIdentity.locator('[data-task-readiness="READY"]')).toHaveCount(1);
+  await expect(
+    inboxIdentity.locator('[data-task-readiness="READY"]'),
+  ).toHaveCount(1);
   const inboxGuidance = guidance("Dein nächster Schritt");
   await expect(inboxGuidance).toHaveAttribute(
     "data-task-guidance",
@@ -626,7 +816,9 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
   const waitingIdentity = page.locator('[data-task-order="identity"]');
   await expect(waitingIdentity).toContainText("Wartend");
   await expect(waitingIdentity).toContainText("Bereit");
-  await expect(waitingIdentity.locator('[data-task-readiness="READY"]')).toHaveCount(1);
+  await expect(
+    waitingIdentity.locator('[data-task-readiness="READY"]'),
+  ).toHaveCount(1);
   await expect(guidance("Dein nächster Schritt")).toHaveAttribute(
     "data-task-guidance",
     "Warte-Status einordnen",
@@ -653,17 +845,13 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
     "data-task-guidance",
     "Arbeit fortsetzen",
   );
-  await expect(
-    page.locator('[data-task-order="planning"]'),
-  ).toContainText(
+  await expect(page.locator('[data-task-order="planning"]')).toContainText(
     new Intl.DateTimeFormat("de-DE", {
       dateStyle: "medium",
       timeZone: "UTC",
     }).format(new Date(`${today}T12:00:00Z`)),
   );
-  await expect(
-    page.locator('[data-task-order="planning"]'),
-  ).toContainText(
+  await expect(page.locator('[data-task-order="planning"]')).toContainText(
     new Intl.DateTimeFormat("de-DE", {
       dateStyle: "medium",
       timeZone: "UTC",
@@ -875,9 +1063,7 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
   const visualGuidance = guidance("Dein nächster Schritt");
   const visualContext = taskContext();
   const visualWork = page.locator('[data-task-order="work"]');
-  const visualPrerequisite = page.locator(
-    '[data-task-order="prerequisite"]',
-  );
+  const visualPrerequisite = page.locator('[data-task-order="prerequisite"]');
   const visualPlanning = page.locator('[data-task-order="planning"]');
   await expect(visualIdentity).toContainText("Geplant");
   await expect(visualIdentity).toContainText("Bereit");
@@ -885,7 +1071,9 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
   await expect(visualContext).toContainText(visualProject.title);
   await expect(visualContext).toContainText(visualMilestone.title);
   await expect(visualContext).toContainText(visualGoal.title);
-  await expect(visualWork).toContainText(visualTaskDescription.split("\n\n")[0]);
+  await expect(visualWork).toContainText(
+    visualTaskDescription.split("\n\n")[0],
+  );
   await expect(visualWork).toContainText(
     "Vorhandene Termine und verfügbare Fokusfenster",
   );
@@ -933,7 +1121,7 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
       ["project", `/projects/${visualProject.id}`],
       [
         "calendar",
-        `/calendar?task=${visualTask.id}&date=${visualDate}&view=day`,
+        `/calendar?task=${visualTask.id}&date=${visualDate}&view=week`,
       ],
     ]) {
       await page.goto(url);
@@ -957,8 +1145,48 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
           page.locator('[data-task-detail-variant="B"]'),
         ).toBeVisible();
         await expect(page.locator("[data-task-guidance]")).toHaveCount(1);
+        const workSurface = page.locator('[data-task-order="work"]');
+        const supportingDepth = page.locator("[data-task-supporting-depth]");
+        await expect(workSurface).toHaveCount(1);
+        await expect(supportingDepth).toHaveCount(1);
+        for (const order of ["prerequisite", "planning", "return"]) {
+          await expect(
+            supportingDepth.locator('[data-task-order="' + order + '"]'),
+          ).toHaveCount(1);
+        }
+        const supportStyle = await supportingDepth.evaluate((element) => {
+          const style = window.getComputedStyle(element);
+          return {
+            background: style.backgroundColor,
+            border: style.borderTopWidth,
+            radius: style.borderTopLeftRadius,
+          };
+        });
+        expect(supportStyle.background).not.toBe("rgba(0, 0, 0, 0)");
+        expect(supportStyle.border).toBe("1px");
+        expect(Number.parseFloat(supportStyle.radius)).toBeGreaterThan(0);
+        const supportingTopicsShareSurface = await supportingDepth
+          .locator(
+            '[data-task-order="prerequisite"], [data-task-order="planning"], [data-task-order="return"]',
+          )
+          .evaluateAll((elements) =>
+            elements.every((element) => {
+              const style = window.getComputedStyle(element);
+              return (
+                style.backgroundColor === "rgba(0, 0, 0, 0)" &&
+                element.closest("[data-task-supporting-depth]") !== null
+              );
+            }),
+          );
+        expect(supportingTopicsShareSurface).toBe(true);
+        await expect(
+          supportingDepth.getByRole("button", {
+            name: "Bearbeiten",
+            exact: true,
+          }),
+        ).toBeVisible();
         const orderedSections = await page
-          .locator('[data-task-order]')
+          .locator("[data-task-order]")
           .evaluateAll((elements) =>
             elements.map((element) => {
               const rect = element.getBoundingClientRect();
@@ -996,26 +1224,49 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
           }),
         ).toBeInViewport();
       }
-      const path = info.outputPath(`issue-58-${surface}-${width}.png`);
+      if (surface === "calendar") {
+        const calendarWeekToggle = page.getByRole("button", {
+          name: "Week",
+          exact: true,
+        });
+        const selectedDayColumn = page.locator(
+          '[data-calendar-date="' + visualDate + '"]',
+        );
+        const selectedVisualTask = selectedDayColumn.getByRole("button", {
+          name: new RegExp(visualTaskTitle),
+        });
+        await expect(calendarWeekToggle).toHaveAttribute(
+          "aria-pressed",
+          "true",
+        );
+        await expect(selectedDayColumn).toHaveAttribute(
+          "data-calendar-current-date",
+          "true",
+        );
+        await expect(selectedVisualTask).toHaveAttribute(
+          "aria-pressed",
+          "true",
+        );
+        await expect(page.locator("[data-calendar-inspector]")).toBeVisible();
+      }
+      const path = info.outputPath(`issue-62-${surface}-${width}.png`);
       await page.screenshot({
         path,
         fullPage: surface !== "task",
         caret: "initial",
       });
-      await info.attach(`issue-58-${surface}-${width}`, {
+      await info.attach(`issue-62-${surface}-${width}`, {
         path,
         contentType: "image/png",
       });
       if (surface === "task") {
-        const fullPagePath = info.outputPath(
-          `issue-58-task-${width}-full.png`,
-        );
+        const fullPagePath = info.outputPath(`issue-62-task-${width}-full.png`);
         await page.screenshot({
           path: fullPagePath,
           fullPage: true,
           caret: "initial",
         });
-        await info.attach(`issue-58-task-${width}-full`, {
+        await info.attach(`issue-62-task-${width}-full`, {
           path: fullPagePath,
           contentType: "image/png",
         });

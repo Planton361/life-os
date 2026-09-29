@@ -316,153 +316,165 @@ export function TaskReadView({
       </section>
 
       <div
+        role="group"
+        aria-label="Unterstützende Details"
         data-task-supporting-depth
-        className="grid min-w-0 gap-6 border-t border-[var(--border-subtle)] pt-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1fr)] xl:gap-0"
+        className="grid min-w-0 gap-5 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-1)] p-5 md:p-7"
       >
-        <section
-          id="task-dependencies"
-          aria-labelledby="task-prerequisite-heading"
-          aria-label="Voraussetzung"
-          data-task-order="prerequisite"
-          className="grid min-w-0 content-start gap-3 xl:pr-6"
-        >
-          <h2 id="task-prerequisite-heading" className="text-lg font-semibold">
-            Voraussetzung
-          </h2>
-          {dependencies}
-        </section>
+        <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1fr)] xl:gap-0">
+          <section
+            id="task-dependencies"
+            aria-labelledby="task-prerequisite-heading"
+            aria-label="Voraussetzung"
+            data-task-order="prerequisite"
+            className="grid min-w-0 content-start gap-3 xl:pr-6"
+          >
+            <h2
+              id="task-prerequisite-heading"
+              className="text-lg font-semibold"
+            >
+              Voraussetzung
+            </h2>
+            {dependencies}
+          </section>
 
-        <section
-          aria-labelledby="task-planning-heading"
-          aria-label="Planung"
-          data-task-order="planning"
-          className="grid min-w-0 content-start gap-4 border-t border-[var(--border-subtle)] pt-5 xl:ml-6 xl:border-l xl:border-t-0 xl:pl-6 xl:pt-0"
-        >
-          <h2 id="task-planning-heading" className="text-lg font-semibold">
-            Planung
-          </h2>
-          <dl className="grid min-w-0 gap-4">
-            <div className="grid gap-1">
-              <dt className="text-sm text-[var(--text-muted)]">Geplant</dt>
-              <dd className="text-sm">
-                {task.planned_date
-                  ? localDay(task.planned_date)
-                  : "Kein Tag geplant"}
-              </dd>
-              <dd className="text-xs text-[var(--text-muted)]">Tagesabsicht</dd>
-            </div>
-            <div className="grid gap-1">
-              <dt className="text-sm text-[var(--text-muted)]">Termin</dt>
-              <dd className="text-sm">
-                {task.scheduled_start_at
-                  ? localDate(task.scheduled_start_at, data.timezone) +
-                    " · " +
-                    localTimeRange(
-                      task.scheduled_start_at,
-                      task.duration_minutes,
-                      data.timezone,
-                    )
-                  : "Kein Termin bestätigt"}
-              </dd>
-              <dd className="text-xs text-[var(--text-muted)]">
-                {task.scheduled_start_at
-                  ? (task.duration_minutes
-                      ? durationLabel(task.duration_minutes) + " · "
-                      : "") + data.timezone
-                  : "Der Kalender verwaltet bestätigte Termine."}
-              </dd>
-              {task.scheduled_start_at && scheduledDate && (
-                <dd>
-                  <Link
-                    className="inline-flex min-h-10 items-center text-sm text-[var(--accent-cyan)] underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
-                    href={
-                      "/calendar?" +
-                      new URLSearchParams({
-                        task: task.id,
-                        date: scheduledDate,
-                        view: "day",
-                      }).toString()
-                    }
-                  >
-                    Termin im Kalender öffnen
-                  </Link>
+          <section
+            aria-labelledby="task-planning-heading"
+            aria-label="Planung"
+            data-task-order="planning"
+            className="grid min-w-0 content-start gap-4 border-t border-[var(--border-subtle)] pt-5 xl:ml-6 xl:border-l xl:border-t-0 xl:pl-6 xl:pt-0"
+          >
+            <h2 id="task-planning-heading" className="text-lg font-semibold">
+              Planung
+            </h2>
+            <dl className="grid min-w-0 gap-4">
+              <div className="grid gap-1">
+                <dt className="text-sm text-[var(--text-muted)]">Geplant</dt>
+                <dd className="text-sm">
+                  {task.planned_date
+                    ? localDay(task.planned_date)
+                    : "Kein Tag geplant"}
                 </dd>
-              )}
-            </div>
-            <div className="grid gap-1">
-              <dt className="text-sm text-[var(--text-muted)]">Deadline</dt>
-              <dd className="text-sm">
-                {task.due_at
-                  ? localDate(task.due_at, data.timezone)
-                  : "Keine Deadline"}
-              </dd>
-            </div>
-          </dl>
-        </section>
+                <dd className="text-xs text-[var(--text-muted)]">
+                  Tagesabsicht
+                </dd>
+              </div>
+              <div className="grid gap-1">
+                <dt className="text-sm text-[var(--text-muted)]">Termin</dt>
+                <dd className="text-sm">
+                  {task.scheduled_start_at
+                    ? localDate(task.scheduled_start_at, data.timezone) +
+                      " · " +
+                      localTimeRange(
+                        task.scheduled_start_at,
+                        task.duration_minutes,
+                        data.timezone,
+                      )
+                    : "Kein Termin bestätigt"}
+                </dd>
+                <dd className="text-xs text-[var(--text-muted)]">
+                  {task.scheduled_start_at
+                    ? (task.duration_minutes
+                        ? durationLabel(task.duration_minutes) + " · "
+                        : "") + data.timezone
+                    : "Der Kalender verwaltet bestätigte Termine."}
+                </dd>
+                {task.scheduled_start_at && scheduledDate && (
+                  <dd>
+                    <Link
+                      className="inline-flex min-h-10 items-center text-sm text-[var(--accent-cyan)] underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
+                      href={
+                        "/calendar?" +
+                        new URLSearchParams({
+                          task: task.id,
+                          date: scheduledDate,
+                          view: "week",
+                        }).toString()
+                      }
+                    >
+                      Termin im Kalender öffnen
+                    </Link>
+                  </dd>
+                )}
+              </div>
+              <div className="grid gap-1">
+                <dt className="text-sm text-[var(--text-muted)]">Deadline</dt>
+                <dd className="text-sm">
+                  {task.due_at
+                    ? localDate(task.due_at, data.timezone)
+                    : "Keine Deadline"}
+                </dd>
+              </div>
+            </dl>
+          </section>
 
-        <section
-          aria-labelledby="task-return-heading"
-          aria-label="Zurück zum Zusammenhang"
-          data-task-order="return"
-          className="grid min-w-0 content-start gap-4 border-t border-[var(--border-subtle)] pt-5 xl:ml-6 xl:border-l xl:border-t-0 xl:pl-6 xl:pt-0"
-        >
-          <h2 id="task-return-heading" className="text-lg font-semibold">
-            Zurück zum Zusammenhang
-          </h2>
-          {(project || directGoal || inheritedGoal) && (
-            <nav aria-label="Project- und Ziellinks" className="grid gap-2 text-sm">
-              {project && (
-                <Link
-                  className="break-words text-[var(--accent-cyan)] underline underline-offset-2"
-                  href={"/projects/" + project.id}
-                >
-                  Project öffnen: {project.title}
-                </Link>
-              )}
-              {directGoal && (
-                <Link
-                  className="break-words text-[var(--accent-purple)] underline underline-offset-2"
-                  href={"/goals/" + directGoal.id}
-                >
-                  Ziel öffnen: {directGoal.title}
-                </Link>
-              )}
-              {inheritedGoal && (!directGoal || conflictingGoals) && (
-                <Link
-                  className="break-words text-[var(--accent-purple)] underline underline-offset-2"
-                  href={"/goals/" + inheritedGoal.id}
-                >
-                  Ziel öffnen: {inheritedGoal.title}
-                </Link>
-              )}
-            </nav>
-          )}
-          <ManagementDisclosureGroup className="grid gap-3 border-t border-[var(--border-subtle)] pt-3">
-            {!task.archived_at && (
-              <ManagementDisclosure
-                label="Bearbeiten"
-                initiallyOpen={editInitiallyOpen}
-                focusFirstOnOpen={editInitiallyOpen}
-                clearSearchParamOnClose="edit"
+          <section
+            aria-labelledby="task-return-heading"
+            aria-label="Zurück zum Zusammenhang"
+            data-task-order="return"
+            className="grid min-w-0 content-start gap-4 border-t border-[var(--border-subtle)] pt-5 xl:ml-6 xl:border-l xl:border-t-0 xl:pl-6 xl:pt-0"
+          >
+            <h2 id="task-return-heading" className="text-lg font-semibold">
+              Zurück zum Zusammenhang
+            </h2>
+            {(project || directGoal || inheritedGoal) && (
+              <nav
+                aria-label="Project- und Ziellinks"
+                className="grid gap-2 text-sm"
               >
-                {edit}
-              </ManagementDisclosure>
+                {project && (
+                  <Link
+                    className="break-words text-[var(--accent-cyan)] underline underline-offset-2"
+                    href={"/projects/" + project.id}
+                  >
+                    Project öffnen: {project.title}
+                  </Link>
+                )}
+                {directGoal && (
+                  <Link
+                    className="break-words text-[var(--accent-purple)] underline underline-offset-2"
+                    href={"/goals/" + directGoal.id}
+                  >
+                    Ziel öffnen: {directGoal.title}
+                  </Link>
+                )}
+                {inheritedGoal && (!directGoal || conflictingGoals) && (
+                  <Link
+                    className="break-words text-[var(--accent-purple)] underline underline-offset-2"
+                    href={"/goals/" + inheritedGoal.id}
+                  >
+                    Ziel öffnen: {inheritedGoal.title}
+                  </Link>
+                )}
+              </nav>
             )}
-            {!task.archived_at && (
-              <ManagementDisclosure label="Mehr verwalten">
-                <ManagementDisclosureGroup className="grid gap-3">
-                  {milestoneManagement}
-                  <ManagementDisclosure label="Weitere Beziehungen verwalten">
-                    {relations}
-                  </ManagementDisclosure>
-                  <ManagementDisclosure label="Status verwalten">
-                    {lifecycle}
-                  </ManagementDisclosure>
-                </ManagementDisclosureGroup>
-              </ManagementDisclosure>
-            )}
-          </ManagementDisclosureGroup>
-        </section>
+          </section>
+        </div>
+        <ManagementDisclosureGroup className="grid gap-3 border-t border-[var(--border-subtle)] pt-3">
+          {!task.archived_at && (
+            <ManagementDisclosure
+              label="Bearbeiten"
+              initiallyOpen={editInitiallyOpen}
+              focusFirstOnOpen={editInitiallyOpen}
+              clearSearchParamOnClose="edit"
+            >
+              {edit}
+            </ManagementDisclosure>
+          )}
+          {!task.archived_at && (
+            <ManagementDisclosure label="Mehr verwalten">
+              <ManagementDisclosureGroup className="grid gap-3">
+                {milestoneManagement}
+                <ManagementDisclosure label="Weitere Beziehungen verwalten">
+                  {relations}
+                </ManagementDisclosure>
+                <ManagementDisclosure label="Status verwalten">
+                  {lifecycle}
+                </ManagementDisclosure>
+              </ManagementDisclosureGroup>
+            </ManagementDisclosure>
+          )}
+        </ManagementDisclosureGroup>
       </div>
     </div>
   );

@@ -98,6 +98,7 @@ export function CalendarWeekSurface({
   onSelectSlot,
   onResizeTask,
   pointerEnabled = false,
+  currentDate,
   selectedBlockId,
   viewModel,
 }: Readonly<{
@@ -122,6 +123,7 @@ export function CalendarWeekSurface({
     durationMinutes: number,
   ) => void;
   pointerEnabled?: boolean;
+  currentDate: string;
   selectedBlockId?: string;
   viewModel: CalendarViewModel;
 }>) {
@@ -347,7 +349,13 @@ export function CalendarWeekSurface({
                 className={cn(
                   "border-r border-[var(--border-subtle)] px-2 py-2 text-center last:border-r-0",
                   day.isToday && "bg-[rgba(95,200,215,.06)]",
+                  day.date === currentDate &&
+                    !day.isToday &&
+                    "bg-[rgba(95,200,215,.09)]",
                 )}
+                data-calendar-current-date={
+                  day.date === currentDate ? "true" : undefined
+                }
                 key={day.id}
               >
                 <p className="text-[10px] font-semibold text-[var(--text-secondary)]">
@@ -356,6 +364,10 @@ export function CalendarWeekSurface({
                 {day.isToday ? (
                   <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-[var(--accent-cyan)]">
                     Today
+                  </p>
+                ) : day.date === currentDate ? (
+                  <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-[var(--accent-cyan)]">
+                    Ausgewählter Tag
                   </p>
                 ) : (
                   <p className="mt-1 text-[9px] text-[var(--text-faint)]">
@@ -380,7 +392,13 @@ export function CalendarWeekSurface({
                   className={cn(
                     "min-h-[50px] border-r border-[var(--border-subtle)] p-1.5 last:border-r-0",
                     day.isToday && "bg-[rgba(95,200,215,.055)]",
+                    day.date === currentDate &&
+                      !day.isToday &&
+                      "bg-[rgba(95,200,215,.055)]",
                   )}
+                  data-calendar-current-date={
+                    day.date === currentDate ? "true" : undefined
+                  }
                   key={day.id}
                 >
                   <div className="grid gap-1">
@@ -475,7 +493,13 @@ export function CalendarWeekSurface({
                     className={cn(
                       "relative overflow-hidden",
                       activeDrag && "bg-[rgba(95,200,215,.035)]",
+                      day.date === currentDate &&
+                        !day.isToday &&
+                        "bg-[rgba(95,200,215,.025)]",
                     )}
+                    data-calendar-current-date={
+                      day.date === currentDate ? "true" : undefined
+                    }
                     data-calendar-day={day.id}
                     data-calendar-date={day.date}
                     key={day.id}
