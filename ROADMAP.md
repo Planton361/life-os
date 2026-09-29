@@ -29,10 +29,11 @@ Accepted order:
 1. a separately authorized synthetic whole-app runtime/security/recovery experiment;
 2. complete the existing PP1 product-acceptance gate;
 3. Core Task / Project Interaction;
-4. PP2 Skill Development Planning;
-5. PP3 Higher-Order Context in Weekly Planning;
-6. PP4 Project-to-Day Loop Closure;
-7. Hosted Runtime Cutover only after whole-app/runtime/security/data gates and a
+4. Project Depth;
+5. PP2 Skill Development Planning;
+6. PP3 Higher-Order Context in Weekly Planning;
+7. PP4 Project-to-Day Loop Closure;
+8. Hosted Runtime Cutover only after whole-app/runtime/security/data gates and a
    separate migration authorization.
 
 The runtime experiment is architecture evidence, not a migration or cutover. It
@@ -103,6 +104,32 @@ engine, universal Milestone model, runtime migration or automatic Task
 selection/completion is implied. The roadmap does not authorize the next work item
 by itself; operative selection remains in GitHub Project #3.
 
+### Project Depth
+
+**Outcome:** Project remains the USER ACCEPTED R2-09 workbench but becomes a
+complete finite-work context: it states the desired Project result, can carry
+optional Project-owned completion criteria, preserves one clear executable-work
+guidance path, and supports an explicit Project Review before successful
+completion. Project completion remains independent from Goal achievement and never
+derives from Task or Project Milestone completion.
+
+The USER ACCEPTED #65 visual target keeps the R2-09 three-surface composition,
+adds result/criteria to the header, keeps Project-Fokus separate from executable
+Task guidance, adds a quiet completion-review preview in context, improves the
+empty Project around one `Erste Task anlegen` action, and shows Skill provenance
+through existing Task/Evidence paths rather than a direct Project↔Skill relation.
+
+**Direct dependency:** USER ACCEPTED R2-09 Project composition, USER ACCEPTED
+Core Task / Project Interaction, existing Project Milestones, Work Artifacts,
+Resources and Task dependency semantics.
+
+**Acceptance boundary:** Issue #65 USER ACCEPTED the Project Depth product target
+and sequence on 2026-09-29. The next required contract is **P-DATA**, which must
+explicitly decide Project result/completion-criteria/review/history persistence,
+atomic completion/reopen, legacy treatment, ownership, concurrency and
+idempotency before any Project Depth DELIVER issue is authorized. #65 does not
+itself authorize schema or product delivery.
+
 ### PP2 — Skill Development Planning
 
 **Outcome:** Skill becomes a usable development plan with domain-specific Skill
@@ -112,9 +139,18 @@ Related Relations. No inferred graph edges or mastery percentages are used.
 **Direct dependency:** PP1's accepted higher-order planning semantics, plus the
 existing canonical Skill and Resource / Evidence boundaries.
 
-**Acceptance boundary:** A later contract must define the Skill development
-model and its evidence semantics before delivery. Skill-Map visualization and
-automatic mastery inference remain outside this plan block.
+**Acceptance boundary:** Issue #65 USER ACCEPTED the PP2 product target on
+2026-09-29: 0..1 current Development Target, optional Skill-owned
+Milestones/Lernschritte, Task-linked Practice/Application, explicit dated Evidence,
+read-only Recency, Resources as reference context and explicit prerequisite/related
+relations without Task READY/BLOCKED effects. No mastery percentage, inferred graph
+or automatic advancement is allowed.
+
+Before PP2 Delivery, explicit persistence/read contracts must be accepted:
+**S-PLAN** for Target/Milestones, **S-EVIDENCE** for review/evidence history,
+**READS** for Practice/Recency projections, and **S-RELATION** only if explicit
+prerequisite/related relations are included in that delivery slice. Skill-Map
+visualization and automatic mastery inference remain outside PP2.
 
 ### PP3 — Higher-Order Context in Weekly Planning
 
@@ -162,8 +198,8 @@ constraint. It does not authorize new Health / Fitness / Nutrition features.
 ### Plan-wide boundaries
 
 - The product order after the separate runtime experiment is `PP1 acceptance →
-  Core Task / Project Interaction → PP2 → PP3 → PP4`; later blocks do not bypass
-  earlier semantic or acceptance gates.
+  Core Task / Project Interaction → Project Depth → PP2 → PP3 → PP4`; later
+  blocks do not bypass earlier semantic, data-contract or acceptance gates.
 - Issue #3 / R2-13 is `RESHAPE/REUSE PRESERVED WORK + DEFER`; it remains
   blocked/preserved and is not reactivated by this plan.
 - Graph / Canvas, Skill-Map visualization, Gap Detection, Templates,
