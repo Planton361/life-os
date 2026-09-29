@@ -67,6 +67,25 @@ zusätzlich. Ein Schrittabschluss schließt den Task niemals automatisch ab.
 
 Ein Project ist ein endliches, mehrschrittiges Ergebnis. Es bündelt Tasks, besitzt aber weder deren Completion noch deren Zeitplanung. Ein Project kann höchstens ein primäres Goal voranbringen. Area ist Kontext, nicht Ownership.
 
+**Project P-DATA target — #67 USER ACCEPTED 2026-09-29, not implemented:**
+`projects.desired_result` is the one current, Project-owned finite result;
+Description remains context. Project-owned Completion Criteria define the
+acceptance of that result, with no live `met` state. Project commands maintain
+`completion_revision` and `completion_cycle`; explicit Criterion Archive records
+a required reason and server-set `archived_cycle`/`archived_revision`. The current
+Review set contains all active Criteria and only Criteria archived in the current
+cycle. Earlier-cycle archives remain in immutable History.
+
+Project completion requires an explicit immutable Project Review: a desired
+result, at least one active Criterion and every active Criterion assessed
+`satisfied`. Task or Project-Milestone completion never completes the Project.
+Reopen preserves old Reviews and starts a new cycle; a later completion needs a
+new Review. Legacy completed Projects have no fabricated Review or Criteria
+history. Optional evidence in the first slice consists of selected, owned
+Resource references only. Project Review/History remains Project-specific,
+separate from Goal Review; no generic Goal/Project review engine is accepted.
+These are accepted data semantics, not existing tables, columns or a migration.
+
 ### Goal
 
 Ein Goal ist ein gewünschtes Ergebnis mit Horizont und optionalem Zieltermin. Es wird durch Projects, direkte Tasks, Skill-Evidence und Resources unterstützt. Kanonische Zielerreichung benötigt explizite Outcome Criteria/Measures; Task-Completion ist unterstützender Kontext und kein automatischer Achievement-Nachweis. Ohne belastbare Kriterien gibt es keine künstliche Prozentzahl.
@@ -313,9 +332,10 @@ is inherited from the existing Project task read model (created_at descending).
 No percentage is stored: stage and Project progress are computed from real active
 Tasks and stages; stage completion remains explicit.
 
-Project Description is available for general context; no separate Project Desired
-Outcome field is introduced. Resources, artifact roles and Task Steps retain their
-existing semantics.
+In the implemented R2-09 schema, Project Description is general context and no
+separate Project Desired Outcome field exists yet. #67 accepts a future
+`desired_result` and Project Completion Criteria; no migration has implemented
+them. Resources, artifact roles and Task Steps retain their existing semantics.
 
 
 ## Accepted Product Target v0.4 — target model (not implemented)
@@ -329,13 +349,14 @@ can be treated as connected.
 
 | Category | Current | Accepted target |
 |---|---|---|
-| Project | Project + Project Milestones + Tasks; milestone and task state are real | retain Project Milestones; derive current state from lifecycle, Task/Milestone state and current stage; no canonical stored overall percentage |
+| Project | Project + Project Milestones + Tasks; milestone and task state are real | retain Project Milestones; add Project-owned desired result, criteria and explicit review/history; derive current work state without a canonical stored overall percentage |
 | Goal | Goal lifecycle, links and optional legacy progress field | add domain-specific Goal Milestones and explicit Outcome Criteria/Measures; boolean or numeric criteria require a defined unit, target and direction; achievement remains explicit and is not inferred from Task completion |
 | Skill | Skill lifecycle, free level text and Skill Evidence | add domain-specific Skill Milestones, Evidence, Practice, Recency, Targets and Prerequisites; no mastery percentage without an accepted rubric |
 
 All three categories use the planning shape Higher-order entity → domain
 milestones → Tasks → progress without a universal polymorphic Milestone table.
-Only Tasks possess Completion. Only Task Dependencies create V1 execution
+Tasks own executable work completion; Project and Goal completion remain their
+separate, explicit domain decisions. Only Task Dependencies create V1 execution
 READY/BLOCKED; Milestone membership/order is not a dependency engine. Historical
 `projects.progress`, `goals.progress` and free Skill levels are retained for
 compatibility but are not promoted as new canonical target truth.

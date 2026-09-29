@@ -459,7 +459,9 @@ The USER ACCEPTED R2-09 macro structure remains binding:
 2. shared Work + context surface on desktop;
 3. Supporting surface for additional artifacts and references.
 
-The refinement enriches that structure rather than replacing it.
+The refinement enriches that structure rather than replacing it. The #67
+USER ACCEPTED data contract deepens this workbench with the result and criteria;
+it does not introduce a second Project surface.
 
 Header:
 - title/status/priority/Area/deadline and existing actions remain;
@@ -476,13 +478,19 @@ Work/context:
 - the right context rail keeps Primary Work Artifact, Goal/Area and derived Skill
   provenance;
 - a quiet `Ergebnis im Blick` / `Abschluss prüfen` preview may expose the
-  explicit Project Review without creating a second work lane.
+  explicit, calm Project Review without creating a second work lane;
+- criterion scope removal is a visible Archive with a reason followed by a fresh
+  Review read, never a hidden exclusion inside the Review;
+- successful Project completion does not automatically change Tasks or Project
+  Milestones.
 
 Supporting:
 - Additional Work Artifacts and Resources/References remain the lower supporting
   surface;
 - decisions/open questions use existing Resource/reference semantics rather than a
-  new log stack.
+  new log stack;
+- immutable Review history and Reopen remain secondary, separate from current
+  Project work.
 
 Empty Project:
 - exactly one dominant `Erste Task anlegen` action;
@@ -535,9 +543,10 @@ Evidence/Recency → application/prerequisites → Resources.
 - Skill review never changes Task READY/BLOCKED or Goal achievement.
 - No direct Project↔Skill relation is introduced; provenance is derived from
   Tasks/`task_skill_links` and explicit Evidence.
-- No UI may imply accepted storage for Project review or Skill Target/Milestone/
-  prerequisite history until the corresponding later P-DATA / S-* contract is
-  explicitly accepted.
+- #67 P-DATA is USER ACCEPTED for Project result, criteria, review and history;
+  no UI may imply these capabilities are implemented before separate Delivery.
+- No UI may imply accepted storage for Skill Target/Milestone/prerequisite
+  history until the corresponding later S-* contract is explicitly accepted.
 
 ## Accepted Task read-first & Project-to-Day interaction — #56
 

@@ -124,11 +124,12 @@ Core Task / Project Interaction, existing Project Milestones, Work Artifacts,
 Resources and Task dependency semantics.
 
 **Acceptance boundary:** Issue #65 USER ACCEPTED the Project Depth product target
-and sequence on 2026-09-29. The next required contract is **P-DATA**, which must
-explicitly decide Project result/completion-criteria/review/history persistence,
-atomic completion/reopen, legacy treatment, ownership, concurrency and
-idempotency before any Project Depth DELIVER issue is authorized. #65 does not
-itself authorize schema or product delivery.
+and sequence on 2026-09-29; Issue #67 P-DATA USER ACCEPTED its Project-specific
+data/security contract on 2026-09-29. After this canonical persistence,
+P-DATA is no longer an open design blocker. A bounded Project Depth DELIVER
+contract may be authorized separately; this ROADMAP does not authorize schema,
+migration or product delivery. GitHub Project #3 remains the operative queue.
+The order remains Project Depth → Skill PP2 → PP3 → PP4.
 
 ### PP2 — Skill Development Planning
 

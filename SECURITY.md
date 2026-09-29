@@ -40,6 +40,35 @@ Current work status is not a security fact; read it from GitHub Project #3/Issue
   privacy/retention must be accepted, and Life OS does not durably store prompts
   or responses by default.
 
+## Project completion command boundary — #67 accepted target, not implemented
+
+Project result, Criteria, Review, lifecycle and History writes require
+server-authenticated identity and explicit same-user ownership checks. Every new
+user-specific table requires RLS. The exposed Project command RPCs themselves
+are `SECURITY DEFINER` entry points owned by a dedicated `NOLOGIN NOBYPASSRLS`
+Command Role that is neither superuser nor owner of the protected domain or
+History tables. RLS remains effective for that role; `auth.uid()` supplies the
+request user's identity. Use an empty or trusted fixed `search_path`, fully
+qualified objects, and only minimal explicit schema/table/column grants,
+including `USAGE` on `auth` for `auth.uid()`. Revoke `PUBLIC`/`anon`
+EXECUTE; grant `authenticated` EXECUTE only on approved entry points. Private helpers are callable only by the Command Role. No Service Role,
+`BYPASSRLS` or table-owner bypass substitutes for this boundary.
+
+All new command-owned Write-Surfaces must revoke inherited/default direct
+`authenticated` `INSERT`, `UPDATE` and `DELETE` rights, including the current
+planning table `project_completion_criteria` as well as Ledger, History and
+Receipt tables. Criterion Create/Edit/Reorder/Archive occur only through the
+authorized Project commands so Project locking, revision/cycle accounting,
+server-set archive tokens, completed/archive write guards and same-user checks
+cannot be bypassed. Owner-scoped `SELECT` remains available where the read
+contract requires it. The later migration must inspect effective privileges
+after revocation; local default privileges must not reopen direct writes.
+
+An authorized local synthetic proof confirmed this Command-Role/RLS topology is
+executable and cleaned up its proof objects. Actual Project commands, migration
+grants, signed authentication, concurrency and regression remain separate
+DELIVER proof obligations. #67 authorizes no schema change or implementation.
+
 ## Regeln
 
 - Keine selbstgebaute Passwortlogik im MVP.

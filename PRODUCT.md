@@ -176,10 +176,16 @@ Project Skill context is derived from existing canonical paths:
 Project → Tasks → `task_skill_links` and explicit `skill_evidence` provenance.
 No direct Project↔Skill intent relation is part of this target.
 
-The Project target requires a later explicit **P-DATA** contract for result,
-criteria, review/history, atomic completion/reopen, legacy treatment,
-concurrency/idempotency and ownership. #65 accepts the product semantics, not a
-schema design.
+Issue #67 P-DATA was USER ACCEPTED on 2026-09-29. The Project-owned
+`desired_result` and Completion Criteria define the current finite result; there
+is no live criterion `met` state. Successful completion requires an explicit,
+immutable Project Review of the result and at least one active criterion; every
+active criterion must be satisfied. Removing one from scope requires an explicit
+Criterion Archive with a reason and a fresh Review read. Project Archive is not
+successful completion. Reopen preserves prior Reviews and starts a new cycle;
+legacy completed Projects retain no invented Review or Criteria history. This
+accepted data contract is not an implemented schema, migration or capability;
+Project Depth Delivery requires a separate bounded authorization.
 
 ### Skill Development Planning / PP2
 
@@ -232,13 +238,14 @@ Project Depth
 → PP4
 ```
 
-Before Project Delivery, **P-DATA** must be accepted. Before Skill PP2 Delivery,
-the required Skill persistence/read contracts must be accepted:
-**S-PLAN**, **S-EVIDENCE**, **READS**, and **S-RELATION** only when explicit
-prerequisite/related relations are included in that slice.
+Project P-DATA (#67) is USER ACCEPTED; Project Depth Delivery still requires a
+separate bounded contract. Before Skill PP2 Delivery, the required Skill
+persistence/read contracts must be accepted: **S-PLAN**, **S-EVIDENCE**,
+**READS**, and **S-RELATION** only when explicit prerequisite/related relations
+are included in that slice.
 
-Acceptance of #65 does not authorize those persistence contracts, schema changes
-or Delivery by itself.
+Acceptance of #65/#67 does not authorize Skill persistence contracts, schema
+changes or Delivery by itself.
 
 ## Accepted Goal target — #39/#41 semantics + #48 hybrid workbench
 
@@ -643,8 +650,10 @@ active stage. Task counts never change milestone status automatically.
 Progress shows completed Tasks/total Tasks and completed Milestones/total
 Milestones, not an invented Project completion percentage. Archived stages remain
 history; their Tasks return to the unassigned group atomically. Completed stages
-remain readable and can be reopened. Project Description remains general context;
-a separate Desired Outcome/Definition of Done is a future product decision.
+remain readable and can be reopened. In the implemented R2-09 workbench,
+Project Description remains general context; #67 accepts a separate Project
+`desired_result` and Completion Criteria as a future delivery target, not as
+currently implemented fields.
 
 The accepted Target Model extends this planning shape with domain-specific Goal
 Milestones plus Outcome Criteria and domain-specific Skill Milestones plus
