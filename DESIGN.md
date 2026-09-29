@@ -446,6 +446,99 @@ logos/selectors, login/sync controls, previews or specialized embedded editors.
 R2-09 is USER ACCEPTED on 2026-09-09; preserve this accepted composition.
 
 
+## Accepted Project Depth & Skill Development composition — #65
+
+Issue #65 USER ACCEPTED the Project Depth and Skill PP2 visual/product target on
+2026-09-29.
+
+### Project Depth composition
+
+The USER ACCEPTED R2-09 macro structure remains binding:
+
+1. Project identity/header;
+2. shared Work + context surface on desktop;
+3. Supporting surface for additional artifacts and references.
+
+The refinement enriches that structure rather than replacing it.
+
+Header:
+- title/status/priority/Area/deadline and existing actions remain;
+- Description stays background context;
+- **Gewünschtes Ergebnis** and optional `Fertig, wenn …` sit in the header as
+  Project-owned result/acceptance depth;
+- Project-Fokus remains visually separate from both result and executable Task
+  guidance.
+
+Work/context:
+- Project Milestones and Tasks remain the dominant work region;
+- existing one-READY / multiple-READY / all-BLOCKED / empty guidance stays
+  canonical;
+- the right context rail keeps Primary Work Artifact, Goal/Area and derived Skill
+  provenance;
+- a quiet `Ergebnis im Blick` / `Abschluss prüfen` preview may expose the
+  explicit Project Review without creating a second work lane.
+
+Supporting:
+- Additional Work Artifacts and Resources/References remain the lower supporting
+  surface;
+- decisions/open questions use existing Resource/reference semantics rather than a
+  new log stack.
+
+Empty Project:
+- exactly one dominant `Erste Task anlegen` action;
+- result/milestones/relations remain optional secondary depth;
+- avoid repeated `0/0` and empty-management chrome.
+
+Mobile preserves the order:
+Project identity → result/criteria → Project-Fokus → Work → context →
+Supporting. No viewport-fill requirement or horizontal scroll.
+
+### Skill Development composition
+
+Skill Detail uses the same calm V5 interaction grammar but remains
+domain-specific.
+
+Header:
+- Skill identity/status/Area/why;
+- one visible **Aktueller Entwicklungsfokus** when present;
+- no mastery ring, score or global completion claim.
+
+Primary development surface:
+- `Practice & Lernschritte`;
+- exactly one contextually useful next action;
+- current Skill Milestone/Lernschritt when present;
+- explicit linked Practice Tasks with their real lifecycle and dependency
+  readiness;
+- reviewed/historical learning steps remain secondary readable depth.
+
+Evidence/recency rail:
+- explicit Evidence with date, observation and provenance;
+- separate read signals for latest linked completed Task and latest Evidence;
+- Development history remains review/history depth, not an analytics dashboard.
+
+Supporting:
+- `Anwendung & Grundlagen` shows derived Project/Goal context through canonical
+  Task/Evidence paths and explicit prerequisite/related Skill orientation;
+- `Lernmaterial & References` shows ordinary Resource context;
+- Resource context and Evidence remain visibly distinct.
+
+Empty Skill:
+- one dominant `Entwicklungsfokus festlegen` action;
+- Practice/Evidence/Resources stay optional and do not create an empty dashboard.
+
+Mobile stacks identity → current target → next action → Practice/Lernschritte →
+Evidence/Recency → application/prerequisites → Resources.
+
+### Interaction and persistence boundaries
+
+- Project completion review never substitutes Goal Review.
+- Skill review never changes Task READY/BLOCKED or Goal achievement.
+- No direct Project↔Skill relation is introduced; provenance is derived from
+  Tasks/`task_skill_links` and explicit Evidence.
+- No UI may imply accepted storage for Project review or Skill Target/Milestone/
+  prerequisite history until the corresponding later P-DATA / S-* contract is
+  explicitly accepted.
+
 ## Accepted Task read-first & Project-to-Day interaction — #56
 
 Issue #56 USER ACCEPTED the Task / Project interaction target on 2026-09-28.

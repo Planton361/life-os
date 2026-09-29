@@ -142,6 +142,104 @@ No new DB/schema/RPC/security/runtime decision, Task status model, progress engi
 universal Milestone model, autonomous Task selection or automatic completion is
 part of #56.
 
+## Accepted Project Depth & Skill Development target — #65
+
+Issue #65 USER ACCEPTED the next higher-order planning target and sequence on
+2026-09-29.
+
+### Project Depth
+
+Project remains a finite, multi-step work result and keeps the USER ACCEPTED
+R2-09 three-surface structure. The accepted depth target adds an explicit
+Project-owned result and an explicit completion contract without turning Project
+into Goal:
+
+- **Description** remains background/scope context;
+- **Gewünschtes Ergebnis** describes the finite work product or state this Project
+  is expected to produce;
+- optional **Completion Criteria / `Fertig, wenn …`** are Project-owned
+  acceptance statements for that result;
+- Project Completion is confirmed through an explicit Project Review that remains
+  distinct from Goal Outcome Criteria / Goal Review;
+- Task completion, Project Milestone completion and Task counts never
+  automatically satisfy Project criteria or complete the Project;
+- Project-Fokus remains stored Project-owned orientation and is distinct from
+  executable Task guidance;
+- Project Milestones remain Project-owned orientation and never create Task
+  READY/BLOCKED;
+- empty Project keeps one dominant `Erste Task anlegen` entry and avoids noisy
+  zero-state counters;
+- Primary/Additional Work Artifacts, Resources/References, Goal/Area context and
+  existing lifecycle/edit placement remain R2-09-owned.
+
+Project Skill context is derived from existing canonical paths:
+Project → Tasks → `task_skill_links` and explicit `skill_evidence` provenance.
+No direct Project↔Skill intent relation is part of this target.
+
+The Project target requires a later explicit **P-DATA** contract for result,
+criteria, review/history, atomic completion/reopen, legacy treatment,
+concurrency/idempotency and ownership. #65 accepts the product semantics, not a
+schema design.
+
+### Skill Development Planning / PP2
+
+Skill remains a long-lived capability rather than a finite Project or Goal.
+The accepted PP2 target is:
+
+- Skill identity keeps name, summary/why, status/archive and optional Area context;
+- each Skill has **0..1 current Development Target**; historical Targets may remain
+  readable after explicit review/retirement;
+- a Target may contain optional, ordered **Skill-owned Milestones / Lernschritte**
+  with at most one current step;
+- Skill Milestone order/current status is planning orientation only and never
+  creates Task READY/BLOCKED;
+- Task↔Skill remains explicit n:m **Practice/Application context** through the
+  existing canonical relation;
+- Practice remains a read projection over linked Tasks/completion, not a synthetic
+  practice-event store;
+- `skill_evidence` remains the explicit dated Evidence primitive with provenance;
+- Task completion, Resource links and Skill relations never create Evidence
+  automatically;
+- Recency is a read-only signal from real Task/Evidence dates and never implies
+  decay, mastery or a score;
+- explicit prerequisite/related Skill relations are user-authored orientation
+  only; they never block Tasks or create autonomous planning;
+- Resources remain learning/reference context and become Evidence only through an
+  explicit Evidence action;
+- Skill itself is never globally `completed` or `mastered`; Targets and
+  Milestones are explicitly reviewed.
+
+No mastery percentage, inferred graph, universal Milestone model or generic
+progress engine is accepted.
+
+### Domain ownership and sequence
+
+The accepted ownership split is:
+
+```text
+Project = finite work result
+Skill   = long-lived capability with bounded Development Targets
+Goal    = higher-order desired outcome
+Task    = executable / schedulable work
+```
+
+The accepted product sequence is:
+
+```text
+Project Depth
+→ Skill Development Planning (PP2)
+→ PP3
+→ PP4
+```
+
+Before Project Delivery, **P-DATA** must be accepted. Before Skill PP2 Delivery,
+the required Skill persistence/read contracts must be accepted:
+**S-PLAN**, **S-EVIDENCE**, **READS**, and **S-RELATION** only when explicit
+prerequisite/related relations are included in that slice.
+
+Acceptance of #65 does not authorize those persistence contracts, schema changes
+or Delivery by itself.
+
 ## Accepted Goal target — #39/#41 semantics + #48 hybrid workbench
 
 Issue #48 USER ACCEPTED the hybrid Goal composition. It supersedes the visible
