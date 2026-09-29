@@ -87,15 +87,18 @@ READY/BLOCKED; Project Milestones remain Project-owned and do not create executi
 blocking.
 
 **Acceptance boundary:** Issue #56 USER ACCEPTED the bounded Task / Project
-interaction target on 2026-09-28: layered read-first Task Detail Variant B,
-bounded guidance refinements over the accepted R2-09 Project workbench, and the
-Project → Task → dependency readiness → Calendar scheduling → completion →
-Project/Goal context loop. Calendar remains the time-block owner and Task-aware
-query/navigation state is not a new scheduling store. A separately authorized
-DELIVER contract must implement and prove this slice with real Manual,
-reload/responsive and dependency evidence. No generic progress engine, universal
-Milestone model, runtime migration or automatic Task selection/completion is
-implied.
+interaction target on 2026-09-28. Real post-merge review of #58 then rejected two
+visible outcomes: the Task page still felt dispersed across open background and
+the Task→Calendar handoff opened Day view. Issue #60 USER ACCEPTED the corrected
+target: layered read-first Variant B is retained, while Work becomes one shared
+primary surface and Voraussetzung / Planung / Zurück zum Zusammenhang plus quiet
+management share one Supporting Depth surface; Task handoff uses Calendar Week
+view for both planning and replanning with Task + date + `view=week` reload-stable
+navigation state. Calendar remains the time-block owner and the route creates no
+scheduling state by itself. A separately authorized DELIVER contract must
+implement and prove this corrected slice with real Manual, reload/responsive and
+dependency evidence. No generic progress engine, universal Milestone model,
+runtime migration or automatic Task selection/completion is implied.
 
 ### PP2 — Skill Development Planning
 
