@@ -40,34 +40,47 @@ Current work status is not a security fact; read it from GitHub Project #3/Issue
   privacy/retention must be accepted, and Life OS does not durably store prompts
   or responses by default.
 
-## Project completion command boundary — #67 accepted target, not implemented
+## Project completion command boundary — #67 accepted, implemented by #69 / PR #70
 
-Project result, Criteria, Review, lifecycle and History writes require
-server-authenticated identity and explicit same-user ownership checks. Every new
-user-specific table requires RLS. The exposed Project command RPCs themselves
-are `SECURITY DEFINER` entry points owned by a dedicated `NOLOGIN NOBYPASSRLS`
-Command Role that is neither superuser nor owner of the protected domain or
-History tables. RLS remains effective for that role; `auth.uid()` supplies the
-request user's identity. Use an empty or trusted fixed `search_path`, fully
-qualified objects, and only minimal explicit schema/table/column grants,
-including `USAGE` on `auth` for `auth.uid()`. Revoke `PUBLIC`/`anon`
-EXECUTE; grant `authenticated` EXECUTE only on approved entry points. Private helpers are callable only by the Command Role. No Service Role,
-`BYPASSRLS` or table-owner bypass substitutes for this boundary.
+#67 accepted the Project completion design/security contract; #69 authorized
+its implementation, delivered in [PR #70](https://github.com/Planton361/life-os/pull/70).
+Project result, Criteria, Review, lifecycle and History writes run through the
+implemented server-authenticated Command Boundary with explicit same-user
+ownership checks. RLS is enabled on the user-specific tables. The exposed
+Project command RPCs are `SECURITY DEFINER` write entry points owned by the
+dedicated `life_os_project_command` role (`NOLOGIN NOBYPASSRLS`), which is neither
+superuser nor owner of the protected domain or History tables. RLS remains
+effective for that role; `auth.uid()` supplies the request user's identity.
+The RPCs use an empty fixed `search_path`, schema-qualified objects and minimal
+explicit schema/table/column grants, including `USAGE` on `auth` for `auth.uid()`.
+`PUBLIC`/`anon` EXECUTE is revoked; `authenticated` EXECUTE is granted only on
+approved entry points. Private helpers are callable only by the Command Role.
+No Service Role, `BYPASSRLS` or table-owner shortcut substitutes for this boundary.
 
-All new command-owned Write-Surfaces must revoke inherited/default direct
-`authenticated` `INSERT`, `UPDATE` and `DELETE` rights, including the current
-planning table `project_completion_criteria` as well as Ledger, History and
-Receipt tables. Criterion Create/Edit/Reorder/Archive occur only through the
-authorized Project commands so Project locking, revision/cycle accounting,
-server-set archive tokens, completed/archive write guards and same-user checks
-cannot be bypassed. Owner-scoped `SELECT` remains available where the read
-contract requires it. The later migration must inspect effective privileges
-after revocation; local default privileges must not reopen direct writes.
+Direct `authenticated` `INSERT`, `UPDATE` and `DELETE` are denied on all
+command-owned Write-Surfaces: `project_completion_criteria`, Reviews, Review
+snapshots, Lifecycle events, Amendments and Receipts. Criterion
+Create/Edit/Reorder/Archive occur only through the authorized Project commands
+so Project locking, revision/cycle accounting, server-set archive tokens,
+completed/archive write guards and same-user checks cannot be bypassed.
+Owner-scoped `SELECT` remains available where the read contract requires it;
+Receipts are not directly readable by `authenticated`. Effective grants were
+checked after migration in Delivery, including inherited/default privileges;
+local default privileges must not reopen direct writes.
 
-An authorized local synthetic proof confirmed this Command-Role/RLS topology is
-executable and cleaned up its proof objects. Actual Project commands, migration
-grants, signed authentication, concurrency and regression remain separate
-DELIVER proof obligations. #67 authorizes no schema change or implementation.
+#69 delivered the actual Project commands and migration grants with evidence:
+[SQL/security proof](tests/supabase/project-depth.sql) checks role attributes,
+function ownership/search_path, effective grants, two synthetic owners and
+Cross-User-DENY; [P-DATA v4 proof](tests/supabase/project-depth-v4.sql) covers
+normalized idempotency and immutable History;
+[two-session concurrency proof](tests/supabase/project-depth-concurrency.mjs)
+covers competing commands; [Project E2E](tests/e2e/project-depth.spec.ts) verifies
+the signed authenticated request flow and direct Data API write denial.
+PR #70 also records the delivered R2-09/R2-10/R2-12 regression evidence.
+
+The technical Security implementation is delivered and evidenced. Final
+Project Depth USER ACCEPTANCE of the complete Product Surface remains a
+separate pending gate; technical implementation evidence does not establish it.
 
 ## Regeln
 
