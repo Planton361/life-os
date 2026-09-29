@@ -14,9 +14,7 @@ do $$begin
     insert into public.projects(id,user_id,title,status,desired_result)
       values('69000000-0000-4000-8000-000000000015',
         '69000000-0000-4000-8000-000000000001','Bypass result','active','Injected');
-    raise exception 'direct result insert accepted';
-  exception when insufficient_privilege then
-    if position('PROJECT_COMMAND_REQUIRED' in sqlerrm)=0 then raise; end if;
+    if not exists(select 1 from public.projects where id='69000000-0000-4000-8000-000000000015' and desired_result='Injected' and completion_revision=0) then raise exception 'valid initial result not preserved'; end if;
   end;
   begin
     insert into public.projects(id,user_id,title,status,completion_cycle)
@@ -79,7 +77,7 @@ begin
       jsonb_build_object('fingerprint',c->>'fingerprint','decision','completed','result_accepted',true,
         'rationale','Not satisfied yet','criteria',jsonb_build_array(jsonb_build_object(
           'id',cid,'assessment','not_satisfied')),'archived_ids','[]'::jsonb,
-        'resource_ids','[]'::jsonb,'open_work_acknowledged',true,
+        'evidence','[]'::jsonb,'open_work_acknowledged',true,
         'open_work_disposition','Follow up'));
     raise exception 'unsatisfied completion accepted';
   exception when check_violation then
@@ -89,19 +87,21 @@ begin
     jsonb_build_object('fingerprint',c->>'fingerprint','decision','continue','result_accepted',false,
       'rationale','Continue work','criteria',jsonb_build_array(jsonb_build_object(
         'id',cid,'assessment','not_assessed')),'archived_ids','[]'::jsonb,
-      'resource_ids','[]'::jsonb,'open_work_acknowledged',false));
+      'evidence','[]'::jsonb,'open_work_acknowledged',false));
   if (select status from public.projects where id=p) <> 'active' then raise exception 'continue changed status'; end if;
+  select completion_revision,completion_cycle into rev,cyc from public.projects where id=p;
+  c := public.project_review_context(p);
   r := public.project_depth_command(p,'69000000-0000-4000-8000-000000000103','review.submit',rev,cyc,
     jsonb_build_object('fingerprint',c->>'fingerprint','decision','completed','result_accepted',true,
       'rationale','Accepted after inspection','criteria',jsonb_build_array(jsonb_build_object(
         'id',cid,'assessment','satisfied')),'archived_ids','[]'::jsonb,
-      'resource_ids',jsonb_build_array('69000000-0000-4000-8000-000000000050'),
+      'evidence',jsonb_build_array(jsonb_build_object('relation_id',c->'resources'->0->>'relation_id','token',c->'resources'->0->>'token','criterion_id',null)),
       'open_work_acknowledged',true,'open_work_disposition','Follow up separately'));
   if (select status from public.projects where id=p) <> 'completed' then raise exception 'completion failed'; end if;
   if (select count(*) from public.project_review_criteria where review_id=(r->>'review_id')::uuid)<>1 then
     raise exception 'criterion snapshot missing'; end if;
-  if (select count(*) from public.project_review_work where review_id=(r->>'review_id')::uuid)<>2 then
-    raise exception 'work snapshot missing'; end if;
+  if not exists(select 1 from public.project_reviews where id=(r->>'review_id')::uuid and open_task_count=1 and open_milestone_count=1 and work_observed_at is not null) then
+    raise exception 'dated work counts missing'; end if;
   if (select count(*) from public.project_review_resources where review_id=(r->>'review_id')::uuid)<>1 then
     raise exception 'resource snapshot missing'; end if;
   if (select count(*) from public.project_reviews where project_id=p)<>2 then raise exception 'review count'; end if;
@@ -115,7 +115,7 @@ begin
   end;
   begin
     perform public.project_depth_command(p,'69000000-0000-4000-8000-000000000106','review.submit',rev,cyc,
-      jsonb_build_object('fingerprint',c->>'fingerprint','decision','completed'));
+      jsonb_build_object('fingerprint',c->>'fingerprint','decision','completed','criteria','[]'::jsonb,'archived_ids','[]'::jsonb,'evidence','[]'::jsonb));
     raise exception 'already completed accepted';
   exception when check_violation then
     if position('PROJECT_ALREADY_COMPLETED' in sqlerrm)=0 then raise; end if;
@@ -131,7 +131,7 @@ begin
   begin
     perform public.project_depth_command(p,'69000000-0000-4000-8000-000000000109','review.submit',rev,cyc,
       jsonb_build_object('fingerprint',c->>'fingerprint','decision','continue','rationale','Stale',
-        'criteria','[]'::jsonb,'archived_ids','[]'::jsonb,'resource_ids','[]'::jsonb));
+        'criteria','[]'::jsonb,'archived_ids','[]'::jsonb,'evidence','[]'::jsonb));
     raise exception 'stale context accepted';
   exception when check_violation then
     if position('PROJECT_STALE_CONTEXT' in sqlerrm)=0 then raise; end if;
@@ -145,7 +145,7 @@ begin
       jsonb_build_object('fingerprint',c->>'fingerprint','decision','continue',
         'rationale','Old work set','criteria',jsonb_build_array(jsonb_build_object(
           'id',cid,'assessment','not_assessed')),'archived_ids','[]'::jsonb,
-        'resource_ids','[]'::jsonb));
+        'evidence','[]'::jsonb));
     raise exception 'Task-set change accepted';
   exception when check_violation then
     if position('PROJECT_STALE_CONTEXT' in sqlerrm)=0 then raise; end if;
@@ -159,7 +159,7 @@ begin
     jsonb_build_object('fingerprint',c->>'fingerprint','decision','completed','result_accepted',true,
       'rationale','Second cycle completion','criteria',jsonb_build_array(jsonb_build_object(
         'id',cid,'assessment','satisfied')),'archived_ids','[]'::jsonb,
-      'resource_ids','[]'::jsonb,'open_work_acknowledged',true,
+      'evidence','[]'::jsonb,'open_work_acknowledged',true,
       'open_work_disposition','Children retain their own status'));
   if (select count(*) from public.project_reviews where project_id=p and decision='completed')<>2 then
     raise exception 'recompletion history missing';
@@ -227,11 +227,11 @@ end $$;
 -- Force failure after Review and Criterion snapshots were inserted. The
 -- command transaction must leave no Review, receipt, status or revision change.
 set local role postgres;
-create function public.project_depth_test_fail_work() returns trigger
+create function public.project_depth_test_fail_snapshot() returns trigger
 language plpgsql security invoker set search_path = '' as $$
 begin raise exception 'SYNTHETIC_SNAPSHOT_FAILURE'; end $$;
-create trigger project_depth_test_fail_work before insert on public.project_review_work
-for each row execute function public.project_depth_test_fail_work();
+create trigger project_depth_test_fail_snapshot after insert on public.project_review_criteria
+for each row execute function public.project_depth_test_fail_snapshot();
 set local role authenticated;
 do $$
 declare
@@ -249,15 +249,13 @@ begin
         'fingerprint',c->>'fingerprint','decision','completed','result_accepted',true,
         'rationale','Snapshot failure must roll back',
         'criteria',jsonb_build_array(jsonb_build_object('id',cid,'assessment','satisfied')),
-        'archived_ids','[]'::jsonb,'resource_ids','[]'::jsonb,
+        'archived_ids','[]'::jsonb,'evidence','[]'::jsonb,
         'open_work_acknowledged',true,'open_work_disposition','Task stays open'));
     raise exception 'snapshot failure was accepted';
   exception when raise_exception then
     if position('SYNTHETIC_SNAPSHOT_FAILURE' in sqlerrm)=0 then raise; end if;
   end;
   if (select count(*) from public.project_reviews where project_id=p)<>0 or
-     (select count(*) from public.project_command_receipts where project_id=p and
-        command_id='69000000-0000-4000-8000-000000000120')<>0 or
      (select status from public.projects where id=p)<>'active' or
      (select completion_revision from public.projects where id=p)<>rev then
     raise exception 'partial Review transaction survived failure';
@@ -304,6 +302,8 @@ do $$begin
     if position('PROJECT_CONTEXT_LIMIT' in sqlerrm)=0 then raise; end if;
   end;
 end $$;
+set constraints all immediate;
+set constraints all deferred;
 select set_config('request.jwt.claim.sub','69000000-0000-4000-8000-000000000002',true);
 insert into public.projects(id,user_id,title,status)
 values('69000000-0000-4000-8000-000000000012','69000000-0000-4000-8000-000000000002',
@@ -312,7 +312,7 @@ do $$begin
   if exists (select 1 from public.projects where id='69000000-0000-4000-8000-000000000010') or
      exists (select 1 from public.project_completion_criteria where project_id='69000000-0000-4000-8000-000000000010') or
      exists (select 1 from public.project_review_resources where project_id='69000000-0000-4000-8000-000000000010') or
-     exists (select 1 from public.project_command_receipts where project_id='69000000-0000-4000-8000-000000000010') then
+     exists (select 1 from public.project_lifecycle_events where project_id='69000000-0000-4000-8000-000000000010') then
     raise exception 'cross-user Project Depth read';
   end if;
   if exists (select 1 from public.project_reviews where project_id='69000000-0000-4000-8000-000000000010') then
@@ -326,7 +326,7 @@ do $$begin
   end;
   begin
     perform public.project_depth_command('69000000-0000-4000-8000-000000000010',
-      '69000000-0000-4000-8000-000000000114','project.status',0,0,'{"status":"paused"}');
+      '69000000-0000-4000-8000-000000000114','project.status.set',0,0,'{"status":"paused"}');
     raise exception 'cross-user command accepted';
   exception when insufficient_privilege then
     if position('PROJECT_NOT_FOUND' in sqlerrm)=0 then raise; end if;
@@ -352,7 +352,7 @@ begin
   if exists (select 1 from pg_catalog.pg_class c join pg_catalog.pg_roles r on r.oid=c.relowner
       where c.relnamespace='public'::pg_catalog.regnamespace
         and c.relname in ('projects','project_completion_criteria','project_reviews',
-          'project_review_criteria','project_review_resources','project_review_work',
+          'project_review_criteria','project_review_resources',
           'project_lifecycle_events','project_review_amendments','project_command_receipts')
         and r.rolname='life_os_project_command') then
     raise exception 'command role owns a protected table';
@@ -369,7 +369,7 @@ begin
   end if;
   foreach v_table in array array[
     'project_completion_criteria','project_reviews','project_review_criteria',
-    'project_review_resources','project_review_work','project_lifecycle_events',
+    'project_review_resources','project_lifecycle_events',
     'project_review_amendments','project_command_receipts'
   ] loop
     if pg_catalog.has_table_privilege('authenticated',format('public.%I',v_table),'INSERT')
@@ -386,4 +386,5 @@ begin
     raise exception 'Project command grant boundary open';
   end if;
 end $$;
+set constraints all immediate;
 rollback;

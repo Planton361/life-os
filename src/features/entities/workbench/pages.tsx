@@ -228,6 +228,7 @@ export async function WorkbenchEditor({
   id,
   projectContext,
   selectedResource,
+  historyBefore,
   milestoneContext,
   goalContext,
   goalMilestoneContext,
@@ -242,6 +243,7 @@ export async function WorkbenchEditor({
   goalStage?: string;
   editTask?: boolean;
   selectedResource?: string;
+  historyBefore?: string;
   kind: WorkbenchKind;
   id?: string;
   projectContext?: string;
@@ -446,7 +448,7 @@ export async function WorkbenchEditor({
     const depth = isSqliteProofRuntime() ? undefined : await (async () => {
       const auth = await createAuthenticatedSupabaseServerClient();
       if (!auth.ok) return undefined;
-      return readProjectDepth(auth.client, auth.user.id, id);
+      return readProjectDepth(auth.client, auth.user.id, id, historyBefore && /^(0|[1-9][0-9]{0,18})$/.test(historyBefore) && BigInt(historyBefore) <= BigInt("9223372036854775807") ? historyBefore : undefined);
     })();
     return (
       <ProjectReadView

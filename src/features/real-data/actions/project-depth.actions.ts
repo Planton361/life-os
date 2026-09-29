@@ -14,7 +14,7 @@ export async function projectDepthAction(input: unknown): Promise<FormResult> {
   const auth = await createAuthenticatedSupabaseServerClient();
   if (!auth.ok) return { status: "blocked", message: "Bitte im Manual-Profil anmelden." };
   const parsed = projectDepthCommandSchema.safeParse(input);
-  if (!parsed.success) return { status: "error", message: "Prüfe die Project-Angaben." };
+  if (!parsed.success) return { status: "error", message: parsed.error.issues[0]?.message ?? "Prüfe die Project-Angaben." };
   const bytes = Buffer.byteLength(JSON.stringify(parsed.data.payload), "utf8");
   if (bytes > 1048576) return { status: "error", message: "Die Review-Eingabe ist zu groß." };
   const result = await writeProjectDepth(auth.client, {

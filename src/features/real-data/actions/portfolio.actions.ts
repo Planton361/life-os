@@ -405,8 +405,8 @@ export async function archiveProjectAction(
     projectId,
     commandId: formString(formData, "commandId") || crypto.randomUUID(),
     operation: "project.archive",
-    expectedRevision: Number(formString(formData, "expectedRevision")),
-    expectedCycle: Number(formString(formData, "expectedCycle")),
+    expectedRevision: formString(formData, "expectedRevision"),
+    expectedCycle: formString(formData, "expectedCycle"),
     payload: {},
   });
   return { ...result, projectId: result.status === "success" ? projectId : undefined };

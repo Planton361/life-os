@@ -87,6 +87,19 @@ separate from Goal Review; no generic Goal/Project review engine is accepted.
 Issue #69 implements these semantics with Project-specific tables and an
 authenticated command boundary.
 
+Review History stores a dated `work_observed_at` observation and exact open/done/
+canceled unarchived Task counts plus open/done unarchived Project-Milestone
+counts. The core context fingerprint compares complete relevant work sets;
+there is no durable Task/Milestone individual snapshot table. Reviews persist
+revision-before/after, cycle, Project/Goal context, explicit result acceptance,
+Criterion/archive basis and decision acknowledgements. Continue and typed
+Amendments advance the contract revision; R2-10 serialization-only `updated_at`
+writes do not. Receipts retain server-normalized payloads and SHA-256 identity.
+Selected Resource relations have separate context tokens, optional Criterion
+association and notes; safe locator snapshots contain no userinfo/query/fragment.
+Immutable clarification, evidence withdrawal and mistaken-review Amendments are
+bounded; marking the current positive Review mistaken atomically Reopens it.
+
 ### Goal
 
 Ein Goal ist ein gewünschtes Ergebnis mit Horizont und optionalem Zieltermin. Es wird durch Projects, direkte Tasks, Skill-Evidence und Resources unterstützt. Kanonische Zielerreichung benötigt explizite Outcome Criteria/Measures; Task-Completion ist unterstützender Kontext und kein automatischer Achievement-Nachweis. Ohne belastbare Kriterien gibt es keine künstliche Prozentzahl.
