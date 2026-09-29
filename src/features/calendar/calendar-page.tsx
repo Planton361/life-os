@@ -1658,6 +1658,7 @@ export function CalendarPlanningPage({
             >
               <CalendarWeekSurface
                 activeDrag={activePointerDrag ?? undefined}
+                currentDate={currentDate}
                 onBlockPointerStart={beginBlockPointer}
                 onDropTask={dropPointerTask}
                 onPointerDragEnd={endPointerDrag}

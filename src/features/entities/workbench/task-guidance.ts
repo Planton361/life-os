@@ -70,7 +70,7 @@ export function taskGuidance(input: TaskGuidanceInput): TaskGuidance {
     const params = new URLSearchParams({
       task: taskId,
       date: input.scheduledDate,
-      view: "day",
+      view: "week",
     });
     return {
       action: "link",
@@ -84,7 +84,7 @@ export function taskGuidance(input: TaskGuidanceInput): TaskGuidance {
     const params = new URLSearchParams({
       task: taskId,
       date: input.plannedDate || input.today,
-      view: "day",
+      view: "week",
     });
     return {
       action: "link",

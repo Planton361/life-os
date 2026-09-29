@@ -41,25 +41,25 @@ describe("task guidance", () => {
     });
   });
 
-  it("opens an existing scheduled Task on its Calendar day", () => {
+  it("opens an existing scheduled Task in Calendar Week view", () => {
     expect(
       taskGuidance({ ...base, scheduledDate: "2026-10-03" }),
     ).toMatchObject({
-      href: `/calendar?task=${taskId}&date=2026-10-03&view=day`,
+      href: `/calendar?task=${taskId}&date=2026-10-03&view=week`,
       label: "Geplanten Termin öffnen",
     });
   });
 
-  it("plans a READY unscheduled Task on its planned day", () => {
+  it("plans a READY unscheduled Task in Calendar Week view on its planned day", () => {
     expect(taskGuidance({ ...base, plannedDate: "2026-10-01" })).toMatchObject({
-      href: `/calendar?task=${taskId}&date=2026-10-01&view=day`,
+      href: `/calendar?task=${taskId}&date=2026-10-01&view=week`,
       label: "Im Calendar planen",
     });
   });
 
   it("uses today when a READY Task has no planned day", () => {
     expect(taskGuidance(base).href).toBe(
-      `/calendar?task=${taskId}&date=2026-09-28&view=day`,
+      `/calendar?task=${taskId}&date=2026-09-28&view=week`,
     );
   });
 
