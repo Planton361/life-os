@@ -94,6 +94,7 @@ export type LifeTask = {
   createdAt?: string;
   updatedAt?: string;
   date?: string;
+  scheduledDate?: string;
   dueAt?: string;
   canonicalAreaId?: string;
   startTime?: string;

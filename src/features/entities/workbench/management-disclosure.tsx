@@ -3,12 +3,14 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useId,
   useRef,
   useState,
   useSyncExternalStore,
   type ReactNode,
 } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 const DisclosureClose = createContext<(() => void) | undefined>(undefined);
 export function useCloseManagementDisclosure() {
@@ -44,6 +46,8 @@ export function ManagementDisclosure({
   triggerText,
   closeText = "Schließen",
   panelClassName,
+  focusFirstOnOpen = false,
+  clearSearchParamOnClose,
 }: {
   label: string;
   children: ReactNode;
@@ -51,6 +55,8 @@ export function ManagementDisclosure({
   triggerText?: string;
   closeText?: string;
   panelClassName?: string;
+  focusFirstOnOpen?: boolean;
+  clearSearchParamOnClose?: string;
 }) {
   const hydrated = useSyncExternalStore(
     subscribe,
@@ -61,15 +67,40 @@ export function ManagementDisclosure({
   const group = useContext(DisclosureGroup);
   const id = useId();
   const open = group ? group.active === id : localOpen;
+  const setGroupActive = group?.setActive;
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   function setOpen(value: boolean) {
     if (group) group.setActive(value ? id : null);
     else setLocalOpen(value);
   }
   const trigger = useRef<HTMLButtonElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (initiallyOpen && setGroupActive) setGroupActive(id);
+  }, [id, initiallyOpen, setGroupActive]);
   function close() {
     setOpen(false);
+    if (clearSearchParamOnClose && searchParams.has(clearSearchParamOnClose)) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete(clearSearchParamOnClose);
+      const query = params.toString();
+      router.replace(query ? `${pathname}?${query}` : pathname);
+    }
     trigger.current?.focus();
   }
+  useEffect(() => {
+    if (!open || !focusFirstOnOpen) return;
+    const frame = window.requestAnimationFrame(() => {
+      panel.current
+        ?.querySelector<HTMLElement>(
+          'input:not([type="hidden"]):not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        )
+        ?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [focusFirstOnOpen, open]);
   return (
     <div
       className="min-w-0"
@@ -92,7 +123,7 @@ export function ManagementDisclosure({
       >
         {triggerText ?? label}
       </button>
-      <div id={id} hidden={!open} className={panelClassName}>
+      <div ref={panel} id={id} hidden={!open} className={panelClassName}>
         <div className="grid min-w-0 gap-4 border-t border-[var(--border-subtle)] pt-3">
           <DisclosureGroup.Provider value={null}>
             <DisclosureClose.Provider value={close}>

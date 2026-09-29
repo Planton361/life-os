@@ -221,27 +221,30 @@ test("R2-04 all canonical creates, detail edits, relations, steps, lists, lifecy
   await expect(
     page.getByRole("link", { name: `Skill ${stamp} · Practice` }),
   ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Arbeitsschritte verwalten", exact: true })
+    .click();
   const add = page.getByRole("form", { name: "Schritt hinzufügen" });
   await add.getByLabel("Neuer Arbeitsschritt").fill("Read source material");
   await operate(page, "Schritt hinzufügen");
   await expect(
     page.getByRole("region", { name: "Arbeitsschritte" }),
-  ).toContainText("0 / 1 Schritte erledigt · 0 %");
+  ).toContainText("0 von 1 erledigt");
   const step = page.getByRole("form", { name: "Schritt speichern" });
   await step.getByLabel("Erledigt", { exact: true }).check();
   await operate(page, "Schritt speichern");
   await expect(
     page.getByRole("region", { name: "Arbeitsschritte" }),
-  ).toContainText("1 / 1 Schritte erledigt · 100 %");
+  ).toContainText("1 von 1 erledigt");
   await step.getByLabel("Erledigt", { exact: true }).uncheck();
   await operate(page, "Schritt speichern");
   await expect(
     page.getByRole("region", { name: "Arbeitsschritte" }),
-  ).toContainText("0 / 1");
+  ).toContainText("0 von 1 erledigt");
   await operate(page, "Schritt entfernen");
   await expect(
     page.getByRole("region", { name: "Arbeitsschritte" }),
-  ).toContainText("0 / 0");
+  ).toContainText("0 von 0 erledigt");
   await operate(page, "Practice-Verknüpfung lösen");
   await expect(
     page.getByRole("link", { name: `Skill ${stamp} · Practice` }),

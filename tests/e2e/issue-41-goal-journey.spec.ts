@@ -117,7 +117,7 @@ async function createAndCompleteCurrentTask(
   await expect(form.locator('input[name="goalMilestoneId"]')).toHaveValue(
     contextualMilestoneId!,
   );
-  await expect(form.getByLabel("Project-Kontext (optional)")).toBeVisible();
+  await expect(form.getByLabel("Project-Kontext (optional)")).toBeHidden();
   const optionalDetails = form.getByRole("button", {
     name: "Weitere Angaben (optional)",
     exact: true,
@@ -137,8 +137,9 @@ async function createAndCompleteCurrentTask(
   await optionalDetails.click();
   await expect(optionalDetails).toHaveAttribute("aria-expanded", "true");
   await expect(
-    form.getByLabel("Beschreibung / Kontext", { exact: true }),
+    form.getByLabel("Beschreibung / Purpose", { exact: true }),
   ).toBeVisible();
+  await expect(form.getByLabel("Project-Kontext (optional)")).toBeVisible();
   await optionalDetails.click();
   await expect(optionalDetails).toHaveAttribute("aria-expanded", "false");
   const title = form.getByLabel("Titel", { exact: true });
@@ -160,7 +161,14 @@ async function createAndCompleteCurrentTask(
   const taskId = await taskRow.getAttribute("data-goal-current-task");
   expect(taskId).toMatch(/^[0-9a-f-]{36}$/i);
   await page.goto(`/tasks/${taskId}`);
+  await page
+    .getByRole("button", { name: "Mehr verwalten", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Status verwalten", exact: true })
+    .click();
   const complete = page.locator('form[aria-label="Task abschließen"]');
+  await expect(complete).toBeVisible();
   await complete.getByRole("button", { name: "Task abschließen" }).click();
   await expect(
     page.getByText("Task abgeschlossen.", { exact: true }).first(),

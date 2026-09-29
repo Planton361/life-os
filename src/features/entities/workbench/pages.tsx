@@ -1,10 +1,11 @@
 import { TaskDependencies } from "./task-dependencies";
-import { TaskMilestoneContext } from "./project-work";
+import { TaskMilestoneContext, TaskMilestoneManagement } from "./project-work";
 import { ProjectReadView } from "./project-read-view";
 import { projectResourceUses, projectRoleLabels } from "./project-artifacts";
 import { ExternalResourceLink } from "@/features/resources/external-resource-link";
 import { taskTextFields } from "./task-text";
 import { taskStepProgress } from "./task-step-progress";
+import { ManagementDisclosure } from "./management-disclosure";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
@@ -31,6 +32,7 @@ import {
 } from "./types";
 import type { ReactNode } from "react";
 import { GoalOutcomeWorkbench } from "./goal-outcome-workbench";
+import { TaskReadView } from "./task-read-view";
 
 export function EntityWorkbenchShell({
   kind,
@@ -230,12 +232,14 @@ export async function WorkbenchEditor({
   goalMilestoneContext,
   goalArea,
   goalStage,
+  editTask = false,
 }: {
   milestoneContext?: string;
   goalContext?: string;
   goalMilestoneContext?: string;
   goalArea?: string;
   goalStage?: string;
+  editTask?: boolean;
   selectedResource?: string;
   kind: WorkbenchKind;
   id?: string;
@@ -298,7 +302,11 @@ export async function WorkbenchEditor({
     (kind === "project" || kind === "task") &&
     !id &&
     ((goalContext && !contextGoal) ||
-      (goalMilestoneContext && !contextGoalMilestone))
+      (goalMilestoneContext && !contextGoalMilestone) ||
+      (kind === "task" &&
+        contextProject?.goal_id &&
+        contextGoal &&
+        contextProject.goal_id !== contextGoal.id))
   )
     notFound();
   const row = id ? collection(data, kind).find((r) => r.id === id) : undefined;
@@ -477,6 +485,82 @@ export async function WorkbenchEditor({
         }
       />
     );
+  if (kind === "task" && id && row) {
+    const task = data.tasks.find((item) => item.id === id)!;
+    const taskEdit = (
+      <EntityForm
+        kind="task"
+        id={id}
+        values={values}
+        areas={data.areas
+          .filter((area) => !area.archived_at || area.id === task.area_id)
+          .map((area) => ({
+            id: area.id,
+            title: area.name + (area.archived_at ? " (archiviert)" : ""),
+          }))}
+        projects={available(data, "project", String(values.projectId ?? ""))}
+        goals={available(data, "goal", String(values.goalId ?? ""))}
+        archived={Boolean(task.archived_at)}
+        sourceOwned={Boolean(source)}
+      />
+    );
+    const taskRelations = (
+      <Relations
+        kind="task"
+        id={id}
+        data={data}
+        archived={Boolean(task.archived_at)}
+      />
+    );
+    const taskLifecycle = (
+      <Block title="Status">
+        {source ? (
+          <>
+            <p>Planung und Status gehören zur verknüpften Quelle.</p>
+            <Link className="text-[var(--accent-cyan)]" href={sourceHref}>
+              Quelle öffnen
+            </Link>
+          </>
+        ) : task.archived_at ? (
+          <p>Archiviert. Historische Beziehungen bleiben erhalten.</p>
+        ) : (
+          <>
+            <OperationForm
+              operation={
+                task.status === "done" ? "task.reopen" : "task.complete"
+              }
+              label={
+                task.status === "done"
+                  ? "Task wieder öffnen"
+                  : "Task abschließen"
+              }
+            >
+              <Hidden name="taskId" value={id} />
+            </OperationForm>
+            <OperationForm operation="task.archive" label="Task archivieren">
+              <Hidden name="taskId" value={id} />
+            </OperationForm>
+          </>
+        )}
+      </Block>
+    );
+
+    return (
+      <TaskReadView
+        data={data}
+        taskId={id}
+        edit={taskEdit}
+        dependencies={<TaskDependencies data={data} taskId={id} />}
+        milestoneManagement={
+          <TaskMilestoneManagement data={data} taskId={id} />
+        }
+        relations={taskRelations}
+        steps={<TaskSteps id={id} data={data} />}
+        lifecycle={taskLifecycle}
+        editInitiallyOpen={editTask}
+      />
+    );
+  }
   if (kind === "goal" && !id)
     return (
       <EntityWorkbenchShell kind="goal" title="Ziel erstellen">
@@ -492,7 +576,7 @@ export async function WorkbenchEditor({
       kind={kind}
       title={row?.title ?? `${visibleEditorLabel} erstellen`}
     >
-      {contextProject && (
+      {contextProject && !(kind === "task" && !id) && (
         <p className="text-sm text-[var(--text-muted)]">
           Project:{" "}
           <Link href={`/projects/${contextProject.id}`}>
@@ -504,7 +588,7 @@ export async function WorkbenchEditor({
               : " · Nach dem Erstellen zurück zum Project.")}
         </p>
       )}
-      {contextGoal && contextGoalMilestone && (
+      {contextGoal && contextGoalMilestone && !(kind === "task" && !id) && (
         <p className="text-sm text-[var(--text-muted)]">
           Ziel-Kontext:{" "}
           <Link href={`/goals/${contextGoal.id}`}>{contextGoal.title}</Link>
@@ -551,6 +635,7 @@ export async function WorkbenchEditor({
             id={id}
             values={values}
             projectContext={contextProject?.id}
+            goalContext={contextGoal?.id}
             goalMilestoneContext={
               contextGoal && contextGoalMilestone
                 ? {
@@ -582,6 +667,15 @@ export async function WorkbenchEditor({
                     }))
                 : undefined
             }
+            projectGoalIds={Object.fromEntries(
+              data.projects.map((project) => [project.id, project.goal_id]),
+            )}
+            projectGoalTitles={Object.fromEntries(
+              data.goals.map((goal) => [
+                goal.id,
+                `${goal.title}${goal.archived_at ? " · Archiviert" : ""}`,
+              ]),
+            )}
             areas={data.areas
               .filter((a) => !a.archived_at || a.id === row?.area_id)
               .map((a) => ({
@@ -1139,82 +1233,108 @@ function TaskSteps({ id, data }: { id: string; data: WorkbenchData }) {
   const progress = taskStepProgress(steps);
   const archived = Boolean(data.tasks.find((t) => t.id === id)?.archived_at);
   return (
-    <section aria-label="Arbeitsschritte" className="grid gap-4">
-      <p>
-        {progress.completed} / {progress.total} Schritte erledigt
-        {progress.percent !== null ? ` · ${progress.percent} %` : ""}
-      </p>
+    <section
+      aria-labelledby="task-steps-heading"
+      className="grid min-w-0 gap-4"
+    >
+      <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <h4 id="task-steps-heading" className="font-semibold">
+          Arbeitsschritte
+        </h4>
+        <p className="text-sm text-[var(--text-secondary)]">
+          {progress.completed} von {progress.total} erledigt
+        </p>
+      </div>
       {!steps.length && (
         <p className="text-sm text-[var(--text-muted)]">
           Noch keine Arbeitsschritte definiert.
         </p>
       )}
-      {steps.map((step) => (
-        <div
-          key={step.id}
-          className="grid gap-2 border-t border-[var(--border-subtle)] pt-3"
-        >
-          <OperationForm
-            operation="step.update"
-            label="Schritt speichern"
-            disabled={archived}
-          >
-            <Hidden name="taskId" value={id} />
-            <Hidden name="stepId" value={step.id} />
-            <label>
-              Schritt
-              <input
-                name="title"
-                className={fieldClass}
-                defaultValue={step.title}
-                required
-                maxLength={500}
-              />
-            </label>
-            <label>
-              Reihenfolge
-              <input
-                type="number"
-                min="0"
-                name="position"
-                className={fieldClass}
-                defaultValue={step.position}
-              />
-            </label>
-            <label className="flex gap-2">
-              <input
-                type="checkbox"
-                name="completed"
-                defaultChecked={Boolean(step.completed_at)}
-              />
-              Erledigt
-            </label>
-          </OperationForm>
-          {!archived && (
-            <OperationForm operation="step.archive" label="Schritt entfernen">
-              <Hidden name="taskId" value={id} />
-              <Hidden name="stepId" value={step.id} />
-            </OperationForm>
-          )}
-        </div>
-      ))}
+      {steps.length > 0 && (
+        <ol className="grid min-w-0 gap-2">
+          {steps.map((step) => (
+            <li
+              key={step.id}
+              className="grid min-w-0 gap-x-3 gap-y-1 border-t border-[var(--border-subtle)] pt-2 sm:grid-cols-[7rem_minmax(0,1fr)]"
+            >
+              <span className="text-xs text-[var(--text-muted)]">
+                {step.completed_at ? "Erledigt" : "Offen"}
+              </span>
+              <span className="break-words text-sm">{step.title}</span>
+            </li>
+          ))}
+        </ol>
+      )}
       {!archived && (
-        <OperationForm operation="step.create" label="Schritt hinzufügen">
-          <Hidden name="taskId" value={id} />
-          <Hidden
-            name="position"
-            value={String((steps.at(-1)?.position ?? -1) + 1)}
-          />
-          <label>
-            Neuer Arbeitsschritt
-            <input
-              name="title"
-              className={fieldClass}
-              required
-              maxLength={500}
-            />
-          </label>
-        </OperationForm>
+        <ManagementDisclosure label="Arbeitsschritte verwalten">
+          <div className="grid min-w-0 gap-4">
+            {steps.map((step) => (
+              <div
+                key={step.id}
+                className="grid min-w-0 gap-2 border-t border-[var(--border-subtle)] pt-3"
+              >
+                <OperationForm
+                  operation="step.update"
+                  label="Schritt speichern"
+                >
+                  <Hidden name="taskId" value={id} />
+                  <Hidden name="stepId" value={step.id} />
+                  <label>
+                    Schritt
+                    <input
+                      name="title"
+                      className={fieldClass}
+                      defaultValue={step.title}
+                      required
+                      maxLength={500}
+                    />
+                  </label>
+                  <label>
+                    Reihenfolge
+                    <input
+                      type="number"
+                      min="0"
+                      name="position"
+                      className={fieldClass}
+                      defaultValue={step.position}
+                    />
+                  </label>
+                  <label className="flex gap-2">
+                    <input
+                      type="checkbox"
+                      name="completed"
+                      defaultChecked={Boolean(step.completed_at)}
+                    />
+                    Erledigt
+                  </label>
+                </OperationForm>
+                <OperationForm
+                  operation="step.archive"
+                  label="Schritt entfernen"
+                >
+                  <Hidden name="taskId" value={id} />
+                  <Hidden name="stepId" value={step.id} />
+                </OperationForm>
+              </div>
+            ))}
+            <OperationForm operation="step.create" label="Schritt hinzufügen">
+              <Hidden name="taskId" value={id} />
+              <Hidden
+                name="position"
+                value={String((steps.at(-1)?.position ?? -1) + 1)}
+              />
+              <label>
+                Neuer Arbeitsschritt
+                <input
+                  name="title"
+                  className={fieldClass}
+                  required
+                  maxLength={500}
+                />
+              </label>
+            </OperationForm>
+          </div>
+        </ManagementDisclosure>
       )}
     </section>
   );

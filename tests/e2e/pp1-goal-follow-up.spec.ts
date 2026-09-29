@@ -164,20 +164,20 @@ test("Goal next step follows canonical readiness and releases after predecessor 
 
   await page.goto(`/tasks/${successor.id}`);
   const dependencies = page.getByRole("region", {
-    name: "Task Dependencies",
+    name: "Voraussetzung",
     exact: true,
   });
   await dependencies
-    .getByRole("button", { name: "Dependencies verwalten", exact: true })
+    .getByRole("button", { name: "Vorgänger verwalten", exact: true })
     .click();
   await dependencies
-    .getByRole("button", { name: "Dependency hinzufügen", exact: true })
+    .getByRole("button", { name: "Vorgänger hinzufügen", exact: true })
     .click();
   await dependencies
     .getByLabel("Vorgänger", { exact: true })
     .selectOption(predecessor.id);
   await dependencies
-    .getByRole("button", { name: "Dependency speichern", exact: true })
+    .getByRole("button", { name: "Vorgänger speichern", exact: true })
     .click();
   await expect(
     page.getByText("Dependency gespeichert.", { exact: true }),

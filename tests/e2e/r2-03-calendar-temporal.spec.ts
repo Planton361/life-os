@@ -370,9 +370,16 @@ test("R2-03 Calendar proportional time geometry and planning-only controls", asy
     .getByRole("button", { name: "Inspector schließen", exact: true })
     .click();
   await expect(inspector).toHaveCount(0);
+  await expect(
+    block(30).getByRole("button", { name: /^Geometry 30 min,/ }),
+  ).toBeFocused();
   await select();
   await page.keyboard.press("Escape");
   await expect(inspector).toHaveCount(0);
+  await expect(
+    block(30).getByRole("button", { name: /^Geometry 30 min,/ }),
+  ).toBeFocused();
+  await expect(page).not.toHaveURL(/(?:\?|&)task=/);
   await page.reload();
   await expect(rail).toHaveAttribute("data-calendar-rail-mode", "queue");
   await page.setViewportSize({ width: 1920, height: 1080 });
@@ -470,6 +477,15 @@ test("R2-03 Calendar proportional time geometry and planning-only controls", asy
       ).toBeCloseTo(0.5, 2);
     }
   }
+  await page.goto(base);
+  await page.getByRole("button", { name: "Today", exact: true }).click();
+  const today = new Date().toISOString().slice(0, 10);
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get("date"))
+    .toBe(today);
+  await expect(
+    page.locator(`[data-calendar-date="${today}"]`),
+  ).toBeVisible();
   await page.goto(base);
   await select();
   await settings

@@ -1127,6 +1127,7 @@ function PlanningQueue({
         {tasks.map((task) => (
           <button
             aria-pressed={selectedTaskId === task.id}
+            id={`calendar-focus-queue-${task.id}`}
             className={cn(
               "rounded-[10px] border bg-[rgba(18,28,43,.44)] p-2 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
               selectedTaskId === task.id

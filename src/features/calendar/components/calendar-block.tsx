@@ -66,6 +66,7 @@ export function CalendarTimedBlock({
       <button
         aria-label={blockLabel(block)}
         aria-pressed={selected}
+        id={`calendar-focus-block-${block.id}`}
         className={cn(
           "block h-full w-full overflow-hidden rounded-[8px] border bg-[color-mix(in_srgb,var(--accent)_12%,rgba(18,28,43,.92))] text-left shadow-[0_6px_14px_rgba(0,0,0,.12)] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
           selected
@@ -143,6 +144,7 @@ export function CalendarAllDayBlock({
     <button
       aria-label={`${block.markerLabel ?? calendarBlockTypeLabels[block.type]}: ${block.title}, ${block.timeLabel ?? "all day"}, ${calendarBlockStatusLabels[block.status]}, source ${block.sourceEntity.label}, area ${block.area}`}
       aria-pressed={selected}
+      id={`calendar-focus-block-${block.id}`}
       onClick={() => onSelect?.(block.id)}
       title={`${block.title}, ${calendarBlockStatusLabels[block.status]}, ${block.sourceEntity.label}`}
       className={cn(

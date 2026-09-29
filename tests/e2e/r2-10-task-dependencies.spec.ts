@@ -80,27 +80,40 @@ test("Canonical task graph: management, parallel readiness, completion guards an
     rows!.map((row) => [row.title.split(" ")[0], row]),
   );
   const region = () =>
-    page.getByRole("region", { name: "Task Dependencies", exact: true });
+    page.getByRole("region", { name: "Voraussetzung", exact: true });
+  const lifecycle = () =>
+    page.getByRole("button", { name: "Mehr verwalten", exact: true });
+  const openLifecycle = async () => {
+    const trigger = lifecycle();
+    if ((await trigger.getAttribute("aria-expanded")) !== "true")
+      await trigger.click();
+    const status = page.getByRole("button", {
+      name: "Status verwalten",
+      exact: true,
+    });
+    if ((await status.getAttribute("aria-expanded")) !== "true")
+      await status.click();
+  };
   const visit = async (name: string) => {
     await page.goto(`/tasks/${tasks[name].id}`);
     await expect(region()).toBeVisible();
   };
   const manage = async () => {
     await region()
-      .getByRole("button", { name: "Dependencies verwalten", exact: true })
+      .getByRole("button", { name: "Vorgänger verwalten", exact: true })
       .click();
   };
   const add = async (before: string, after: string) => {
     await visit(after);
     await manage();
     await region()
-      .getByRole("button", { name: "Dependency hinzufügen", exact: true })
+      .getByRole("button", { name: "Vorgänger hinzufügen", exact: true })
       .click();
     await region()
       .getByLabel("Vorgänger", { exact: true })
       .selectOption(tasks[before].id);
     await region()
-      .getByRole("button", { name: "Dependency speichern", exact: true })
+      .getByRole("button", { name: "Vorgänger speichern", exact: true })
       .click();
     await expect(
       page
@@ -109,7 +122,7 @@ test("Canonical task graph: management, parallel readiness, completion guards an
         .last(),
     ).toBeVisible();
     await page.reload();
-    await expect(region()).toContainText("BLOCKED");
+    await expect(region()).toContainText("offen");
     await expect(
       region().getByRole("link", { name: tasks[before].title, exact: true }),
     ).toBeVisible();
@@ -126,6 +139,7 @@ test("Canonical task graph: management, parallel readiness, completion guards an
   await visit("Integration");
   await expect(region()).toContainText(tasks.API.title);
   await expect(region()).toContainText(tasks.UI.title);
+  await openLifecycle();
   await page
     .getByRole("button", { name: "Task abschließen", exact: true })
     .click();
@@ -153,7 +167,7 @@ test("Canonical task graph: management, parallel readiness, completion guards an
   // Forge a self option through the actual form: the Action must reject it.
   await manage();
   await region()
-    .getByRole("button", { name: "Dependency hinzufügen", exact: true })
+    .getByRole("button", { name: "Vorgänger hinzufügen", exact: true })
     .click();
   await region()
     .getByLabel("Vorgänger", { exact: true })
@@ -167,7 +181,7 @@ test("Canonical task graph: management, parallel readiness, completion guards an
     .getByLabel("Vorgänger", { exact: true })
     .selectOption(tasks.Integration.id);
   await region()
-    .getByRole("button", { name: "Dependency speichern", exact: true })
+    .getByRole("button", { name: "Vorgänger speichern", exact: true })
     .click();
   await expect(region().getByRole("alert")).toContainText("Self Dependency");
   await page.goto(`/projects/${p}`);
@@ -175,20 +189,35 @@ test("Canonical task graph: management, parallel readiness, completion guards an
     name: "Tasks & Progress",
     exact: true,
   });
-  await expect(work).toContainText("READY 1 · BLOCKED 5");
+  await expect(work).toContainText("Dependency READY 1 · Dependency BLOCKED 5");
   await expect(
     work.getByRole("region", { name: "Milestone: Build", exact: true }),
-  ).toContainText("BLOCKED · wartet auf 2");
+  ).toContainText("Dependency-Readiness BLOCKED");
+  await expect(
+    work.getByRole("region", { name: "Milestone: Build", exact: true }),
+  ).toContainText(tasks.Design.title);
   await expect(work.locator("select:visible")).toHaveCount(0);
   const complete = async (name: string) => {
     await visit(name);
+    await openLifecycle();
     await page
       .getByRole("button", { name: "Task abschließen", exact: true })
       .click();
     await expect(
+      page
+        .getByRole("status")
+        .filter({ hasText: /Task abgeschlossen\./ })
+        .last(),
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-task-lifecycle="done"]'),
+    ).toContainText("Abgeschlossen");
+    await openLifecycle();
+    await expect(
       page.getByRole("button", { name: "Task wieder öffnen", exact: true }),
     ).toBeVisible();
     await page.reload();
+    await openLifecycle();
     await expect(
       page.getByRole("button", { name: "Task wieder öffnen", exact: true }),
     ).toBeVisible();
@@ -209,23 +238,24 @@ test("Canonical task graph: management, parallel readiness, completion guards an
   await page.reload();
   await expect(dailyControl).toContainText(tasks.Design.title);
   await visit("Design");
-  await expect(region()).toContainText("Availability: READY");
+  await expect(region()).toContainText("1 Vorgänger · erfüllt");
   await complete("Design");
   for (const name of ["API", "UI"]) {
     await visit(name);
-    await expect(region()).toContainText("Availability: READY");
+    await expect(region()).toContainText("1 Vorgänger · erfüllt");
   }
   await complete("API");
   await visit("Integration");
-  await expect(region()).toContainText("Availability: BLOCKED");
+  await expect(region()).toContainText("2 Vorgänger · 1 offen");
   await expect(
     region().getByRole("link", { name: tasks.UI.title, exact: true }),
   ).toBeVisible();
   await complete("UI");
   await visit("Integration");
-  await expect(region()).toContainText("Availability: READY");
+  await expect(region()).toContainText("2 Vorgänger · erfüllt");
   await complete("Integration");
   await visit("API");
+  await openLifecycle();
   await page
     .getByRole("button", { name: "Task wieder öffnen", exact: true })
     .click();
@@ -233,11 +263,15 @@ test("Canonical task graph: management, parallel readiness, completion guards an
     page.getByRole("button", { name: "Task abschließen", exact: true }),
   ).toBeVisible();
   await visit("Integration");
-  await expect(region()).toContainText("Dependency inkonsistent");
+  await expect(region()).toContainText(
+    "Der Task bleibt abgeschlossen; mindestens ein Vorgänger ist inzwischen wieder offen oder archiviert.",
+  );
+  await openLifecycle();
   await expect(
     page.getByRole("button", { name: "Task wieder öffnen", exact: true }),
   ).toBeVisible();
   await visit("Design");
+  await openLifecycle();
   await page
     .getByRole("button", { name: "Task wieder öffnen", exact: true })
     .click();
@@ -245,11 +279,11 @@ test("Canonical task graph: management, parallel readiness, completion guards an
     page.getByRole("button", { name: "Task abschließen", exact: true }),
   ).toBeVisible();
   await visit("API");
-  await expect(region()).toContainText("Availability: BLOCKED");
+  await expect(region()).toContainText("1 Vorgänger · 1 offen");
   await manage();
   await region()
     .getByRole("button", {
-      name: `Dependency entfernen: ${tasks.Design.title}`,
+      name: `Vorgänger entfernen: ${tasks.Design.title}`,
       exact: true,
     })
     .click();
@@ -257,7 +291,7 @@ test("Canonical task graph: management, parallel readiness, completion guards an
     page.getByRole("status").filter({ hasText: "Dependency entfernt." }).last(),
   ).toBeVisible();
   await page.reload();
-  await expect(region()).toContainText("Availability: READY");
+  await expect(region()).toContainText("Keine offenen Voraussetzungen.");
   // Every dependency navigation is real; compact signal stays subordinate to stages.
   await region()
     .getByRole("link", { name: tasks.Integration.title, exact: true })
@@ -293,7 +327,7 @@ test("Canonical task graph: management, parallel readiness, completion guards an
           name:
             surface === "project"
               ? "Milestone hinzufügen"
-              : "Dependencies verwalten",
+              : "Vorgänger verwalten",
           exact: true,
         }),
       ).toBeEnabled();

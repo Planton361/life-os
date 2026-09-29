@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { Pill, accentStyle } from "@/components/layout/route-page-primitives";
 import {
   rescheduleTaskAction,
@@ -1137,6 +1144,23 @@ export function CalendarPlanningPage({
     viewModel.days[0]?.date ||
     MOCK_TODAY;
   const initialView = isCalendarView(routeView) ? routeView : "week";
+  const routeTaskId = searchParams.get("task");
+  const routeTaskBlock = routeTaskId
+    ? viewModel.timedBlocks.find((block) => block.taskId === routeTaskId)
+    : undefined;
+  const routeTaskAllDayBlock = routeTaskId
+    ? viewModel.allDayBlocks.find((block) => block.taskId === routeTaskId)
+    : undefined;
+  const routeQueueTask = routeTaskId
+    ? viewModel.schedulableTasks.find((task) => task.id === routeTaskId)
+    : undefined;
+  const initialSelection: Selection = routeTaskBlock
+    ? { kind: "block", blockId: routeTaskBlock.id }
+    : routeQueueTask
+      ? { kind: "queue", taskId: routeQueueTask.id }
+      : routeTaskAllDayBlock
+        ? { kind: "block", blockId: routeTaskAllDayBlock.id }
+        : { kind: "day", dayId: `day-${initialDate}` };
   const [activeView, setActiveView] = useState<CalendarView>(initialView);
   const [activeScope, setActiveScope] = useState<CalendarScope>("All");
   const [currentDate, setCurrentDate] = useState(initialDate);
@@ -1146,27 +1170,46 @@ export function CalendarPlanningPage({
   const [allDayBlocks, setAllDayBlocks] = useState<
     CalendarAllDayBlockViewModel[]
   >(() => viewModel.allDayBlocks);
-  const [selection, setSelection] = useState<Selection>({
-    kind: "day",
-    dayId: viewModel.days[0]?.id ?? "calendar-day",
-  });
-  const closeSelection = () =>
-    setSelection({
-      kind: "day",
-      dayId: viewModel.days[0]?.id ?? "calendar-day",
+  const [selection, setSelection] = useState<Selection>(initialSelection);
+  const selectionFocusRef = useRef<HTMLElement | null>(null);
+  function rememberSelectionFocus() {
+    const active = document.activeElement;
+    selectionFocusRef.current =
+      active instanceof HTMLElement && active !== document.body ? active : null;
+  }
+  const closeSelection = useCallback(() => {
+    setSelection({ kind: "day", dayId: `day-${currentDate}` });
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("task");
+    params.set("date", currentDate);
+    params.set("view", activeView);
+    window.history.replaceState(null, "", `/calendar?${params.toString()}`);
+    const focused = selectionFocusRef.current;
+    selectionFocusRef.current = null;
+    const fallbackId =
+      selection.kind === "block"
+        ? `calendar-focus-block-${selection.blockId}`
+        : selection.kind === "queue"
+          ? `calendar-focus-queue-${selection.taskId}`
+          : null;
+    window.requestAnimationFrame(() => {
+      const target = focused?.isConnected
+        ? focused
+        : fallbackId
+          ? document.getElementById(fallbackId)
+          : null;
+      target?.focus();
     });
+  }, [activeView, currentDate, searchParams, selection]);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape" && !event.defaultPrevented) {
-        setSelection({
-          kind: "day",
-          dayId: viewModel.days[0]?.id ?? "calendar-day",
-        });
+        closeSelection();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [viewModel.days]);
+  }, [closeSelection]);
   const [activePointerDrag, setActivePointerDrag] =
     useState<PointerDragState | null>(null);
   const [pointerConflict, setPointerConflict] =
@@ -1281,17 +1324,25 @@ export function CalendarPlanningPage({
     schedulableTasks: viewModel.schedulableTasks,
   };
 
-  function updateCalendarRoute(next: { date: string; view: CalendarView }) {
+  function updateCalendarRoute(next: {
+    date: string;
+    view: CalendarView;
+    taskId?: string | null;
+  }) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("date", next.date);
     params.set("view", next.view);
-    router.replace(`/calendar?${params.toString()}`);
+    if (next.taskId !== undefined) {
+      if (next.taskId) params.set("task", next.taskId);
+      else params.delete("task");
+    }
+    window.history.replaceState(null, "", `/calendar?${params.toString()}`);
   }
 
   function setCalendarDate(nextDate: string, nextView = activeView) {
     setCurrentDate(nextDate);
     setSelection({ kind: "day", dayId: `day-${nextDate}` });
-    updateCalendarRoute({ date: nextDate, view: nextView });
+    updateCalendarRoute({ date: nextDate, view: nextView, taskId: null });
   }
 
   function setCalendarView(nextView: CalendarView) {
@@ -1314,7 +1365,34 @@ export function CalendarPlanningPage({
   }
 
   function selectBlock(blockId: string) {
+    rememberSelectionFocus();
     setSelection({ kind: "block", blockId });
+    const block = [...timedBlocks, ...allDayBlocks].find(
+      (item) => item.id === blockId,
+    );
+    const date = block?.date ?? (block ? dateByDayId.get(block.dayId) : null);
+    if (block?.taskId && date) {
+      setCurrentDate(date);
+      updateCalendarRoute({ date, view: activeView, taskId: block.taskId });
+    } else {
+      updateCalendarRoute({
+        date: date ?? currentDate,
+        view: activeView,
+        taskId: null,
+      });
+    }
+  }
+
+  function selectQueueTask(taskId: string) {
+    rememberSelectionFocus();
+    setSelection({ kind: "queue", taskId });
+    updateCalendarRoute({ date: currentDate, view: activeView, taskId });
+  }
+
+  function selectSlot(slot: CalendarSelectedTimeSlotViewModel) {
+    rememberSelectionFocus();
+    setSelection({ kind: "slot", slot });
+    updateCalendarRoute({ date: currentDate, view: activeView, taskId: null });
   }
 
   function runPointerScheduling(proposal: PointerSchedulingProposal) {
@@ -1353,7 +1431,7 @@ export function CalendarPlanningPage({
     pointer: { clientX: number; clientY: number; pointerId: number },
   ) {
     setPointerResult(null);
-    setSelection({ kind: "queue", taskId: task.id });
+    selectQueueTask(task.id);
     setActivePointerDrag({
       durationMinutes: task.durationMinutes,
       kind: "queue",
@@ -1370,7 +1448,7 @@ export function CalendarPlanningPage({
   ) {
     if (!block.taskId) return;
     setPointerResult(null);
-    setSelection({ kind: "block", blockId: block.id });
+    selectBlock(block.id);
     setActivePointerDrag({
       durationMinutes: block.durationMinutes,
       kind: "block",
@@ -1584,7 +1662,7 @@ export function CalendarPlanningPage({
                 onDropTask={dropPointerTask}
                 onPointerDragEnd={endPointerDrag}
                 onSelectBlock={selectBlock}
-                onSelectSlot={(slot) => setSelection({ kind: "slot", slot })}
+                onSelectSlot={selectSlot}
                 onResizeTask={resizePointerTask}
                 pointerEnabled={
                   viewModel.profileId === "manual" && !pointerPending
@@ -1608,7 +1686,7 @@ export function CalendarPlanningPage({
               day={activeDay}
               hours={viewModel.hours}
               onSelectBlock={selectBlock}
-              onSelectSlot={(slot) => setSelection({ kind: "slot", slot })}
+              onSelectSlot={selectSlot}
               selectedBlockId={selectedBlockId}
               timedBlocks={filteredTimedBlocks}
             />
@@ -1634,6 +1712,7 @@ export function CalendarPlanningPage({
               currentDate={currentDate}
               onSelectBlock={selectBlock}
               onSelectMonth={(month) => {
+                rememberSelectionFocus();
                 const year = parseIsoDate(currentDate).getUTCFullYear();
                 const nextDate = `${year}-${String(month + 1).padStart(2, "0")}-01`;
                 setCalendarDate(nextDate, "month");
@@ -1686,9 +1765,7 @@ export function CalendarPlanningPage({
               selectedDay={selectedDay}
               selectedQueueTask={selectedQueueTask}
               selectedSlot={selectedSlot}
-              onSelectQueueTask={(taskId) =>
-                setSelection({ kind: "queue", taskId })
-              }
+              onSelectQueueTask={selectQueueTask}
               scheduledTasks={timedBlocks}
               tasks={viewModel.schedulableTasks}
             />

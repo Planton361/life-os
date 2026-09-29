@@ -6,6 +6,7 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/feedback/toast-provider";
 import {
@@ -227,7 +228,10 @@ export function EntityForm({
   archived = false,
   sourceOwned = false,
   projectContext,
+  goalContext,
   goalMilestoneContext,
+  projectGoalIds,
+  projectGoalTitles,
   milestones = [],
 }: {
   kind: WorkbenchKind;
@@ -247,9 +251,15 @@ export function EntityForm({
   goals: Option[];
   archived?: boolean;
   sourceOwned?: boolean;
+  goalContext?: string;
+  projectGoalIds?: Record<string, string | null>;
+  projectGoalTitles?: Record<string, string>;
 }) {
   const [selectedProject, setSelectedProject] = useState(
     String(values.projectId ?? ""),
+  );
+  const [selectedGoal, setSelectedGoal] = useState(
+    String(values.goalId ?? goalContext ?? ""),
   );
   const hydrated = useHydrated();
   const router = useRouter();
@@ -261,8 +271,26 @@ export function EntityForm({
     kind,
     Boolean(goalMilestoneContext),
   );
-  const goalMilestoneTaskCapture =
-    kind === "task" && !id && Boolean(goalMilestoneContext);
+  const taskCapture = kind === "task" && !id;
+  const goalMilestoneTaskCapture = taskCapture && Boolean(goalMilestoneContext);
+  const captureProjectId = selectedProject;
+  const captureMilestoneId =
+    selectedProject === values.projectId
+      ? String(values.milestoneId ?? "")
+      : "";
+  const captureGoalId =
+    selectedGoal || projectGoalIds?.[captureProjectId] || "";
+  const captureProject = projects.find(
+    (project) => project.id === captureProjectId,
+  );
+  const captureMilestone = milestones.find(
+    (milestone) =>
+      milestone.id === captureMilestoneId &&
+      milestone.projectId === captureProjectId,
+  );
+  const captureGoalTitle =
+    goals.find((goal) => goal.id === captureGoalId)?.title ??
+    projectGoalTitles?.[captureGoalId];
   const field = (
     name: string,
     label: string,
@@ -295,6 +323,7 @@ export function EntityForm({
       data-goal-milestone-task-capture={
         goalMilestoneTaskCapture ? "title-first" : undefined
       }
+      data-task-capture-title-first={taskCapture ? "true" : undefined}
       className="grid gap-6"
       onSubmit={(event) => {
         event.preventDefault();
@@ -317,7 +346,9 @@ export function EntityForm({
                   ? kind === "task"
                     ? `/projects/${projects.find((p) => p.id === String(form.get("projectId")))?.id ?? projectContext}`
                     : `/projects/${projectContext}?resource=${r.id}`
-                  : `${entityRoutes[kind]}/${r.id}`,
+                  : goalContext
+                    ? `/goals/${goalContext}?created=${kind}`
+                    : `${entityRoutes[kind]}/${r.id}`,
             );
           else router.refresh();
         });
@@ -327,53 +358,77 @@ export function EntityForm({
         disabled={!hydrated || pending || archived}
         className="grid gap-6"
       >
-        {goalMilestoneTaskCapture && goalMilestoneContext ? (
+        {taskCapture ? (
           <>
             <section
               className="grid gap-4"
-              aria-label="Aufgabe für die aktuelle Etappe"
-              data-goal-milestone-task-default
+              aria-label="Task zuerst erfassen"
+              data-task-capture-default
+              data-goal-milestone-task-default={
+                goalMilestoneTaskCapture ? "true" : undefined
+              }
             >
               <h2 className="text-lg text-[var(--accent-cyan)]">
-                Aufgabe zur aktuellen Etappe
+                Task zuerst festhalten
               </h2>
               {field("title", "Titel", "text", true)}
-              <div
-                className="grid gap-1 text-sm"
-                data-goal-milestone-task-context
-              >
-                <span className="font-semibold">Ziel / aktuelle Etappe</span>
-                <p className="text-[var(--text-secondary)]">
-                  {goalMilestoneContext.goalTitle} ·{" "}
-                  {goalMilestoneContext.milestoneTitle}
-                </p>
-                <input
-                  type="hidden"
-                  name="goalId"
-                  value={goalMilestoneContext.goalId}
-                />
-                <input
-                  type="hidden"
-                  name="goalMilestoneId"
-                  value={goalMilestoneContext.milestoneId}
-                />
-              </div>
-              <Choice
-                name="projectId"
-                label="Project-Kontext (optional)"
-                options={goalMilestoneContext.projects}
-                value={selectedProject}
-                onChange={setSelectedProject}
-              />
+              {(goalMilestoneContext || captureProject || captureGoalTitle) && (
+                <div
+                  className="grid gap-1 text-sm"
+                  data-task-capture-context
+                  data-goal-milestone-task-context={
+                    goalMilestoneTaskCapture ? "true" : undefined
+                  }
+                >
+                  <span className="font-semibold">Bekannter Kontext</span>
+                  {goalMilestoneContext ? (
+                    <p className="text-[var(--text-secondary)]">
+                      <Link
+                        className="underline underline-offset-2"
+                        href={`/goals/${goalMilestoneContext.goalId}`}
+                      >
+                        {goalMilestoneContext.goalTitle}
+                      </Link>
+                      {" · "}
+                      {goalMilestoneContext.milestoneTitle}
+                    </p>
+                  ) : (
+                    <p className="text-[var(--text-secondary)]">
+                      {captureProject && (
+                        <>
+                          <Link
+                            className="underline underline-offset-2"
+                            href={`/projects/${captureProject.id}`}
+                          >
+                            {captureProject.title}
+                          </Link>
+                          {captureMilestone
+                            ? ` · ${captureMilestone.title}`
+                            : ""}
+                        </>
+                      )}
+                      {captureProject && captureGoalTitle ? " · " : ""}
+                      {captureGoalTitle && (
+                        <Link
+                          className="underline underline-offset-2"
+                          href={`/goals/${captureGoalId}`}
+                        >
+                          {captureGoalTitle}
+                        </Link>
+                      )}
+                    </p>
+                  )}
+                </div>
+              )}
               <p className="text-sm text-[var(--text-muted)]">
-                Neue Aufgaben starten geplant. Du kannst sie nach dem Anlegen
-                weiter ausarbeiten.
+                Neue Tasks starten geplant. Details kannst du nach dem Erfassen
+                ergänzen.
               </p>
             </section>
             <ManagementDisclosure label="Weitere Angaben (optional)">
               <section className="grid gap-4 md:grid-cols-2">
-                {field("description", "Beschreibung / Kontext", "textarea")}
-                {field("nextAction", "Next Action")}
+                {field("description", "Beschreibung / Purpose", "textarea")}
+                {field("nextAction", "Arbeitsnotiz / nächste Aktion")}
                 {choice(
                   "priority",
                   "Priority",
@@ -384,6 +439,68 @@ export function EntityForm({
                 {field("dueAt", "Deadline", "date")}
                 {field("plannedDate", "Geplantes Datum", "date")}
                 {choice("areaId", "Area", areas)}
+                {goalMilestoneContext ? (
+                  <>
+                    <Choice
+                      name="projectId"
+                      label="Project-Kontext (optional)"
+                      options={goalMilestoneContext.projects}
+                      value={selectedProject}
+                      onChange={setSelectedProject}
+                    />
+                    <input
+                      type="hidden"
+                      name="goalId"
+                      value={goalMilestoneContext.goalId}
+                    />
+                    <input
+                      type="hidden"
+                      name="goalMilestoneId"
+                      value={goalMilestoneContext.milestoneId}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <Choice
+                      name="projectId"
+                      label="Project"
+                      options={projects}
+                      value={selectedProject}
+                      onChange={(projectId) => {
+                        setSelectedProject(projectId);
+                        setSelectedGoal("");
+                      }}
+                      required={Boolean(projectContext)}
+                      allowEmpty={!projectContext}
+                    />
+                    <Choice
+                      key={selectedProject}
+                      name="milestoneId"
+                      label="Project Milestone"
+                      value={
+                        selectedProject === values.projectId
+                          ? String(values.milestoneId ?? "")
+                          : ""
+                      }
+                      options={milestones
+                        .filter(
+                          (milestone) =>
+                            milestone.projectId === selectedProject,
+                        )
+                        .map(({ id: milestoneId, title }) => ({
+                          id: milestoneId,
+                          title,
+                        }))}
+                    />
+                    <Choice
+                      name="goalId"
+                      label="Goal-Kontext"
+                      options={goals}
+                      value={selectedGoal}
+                      onChange={setSelectedGoal}
+                    />
+                  </>
+                )}
               </section>
             </ManagementDisclosure>
           </>
@@ -409,7 +526,7 @@ export function EntityForm({
                 "textarea",
               )}
               {kind === "task" && field("nextAction", "Next Action")}
-              {kind === "project" && field("nextStep", "Next Step")}
+              {kind === "project" && field("nextStep", "Project-Fokus")}
               {kind === "goal" &&
                 field("why", "Desired Outcome / Warum", "textarea")}
               {kind === "resource" && (

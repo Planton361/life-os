@@ -99,11 +99,12 @@ export function ProjectReadView({
           )}
         </ManagementDisclosureGroup>
         <section
-          aria-label="Next Step"
+          aria-label="Project-Fokus"
+          data-project-focus
           className="mt-2 border-l-2 border-[var(--accent-blue)] pl-3"
         >
           <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--accent-blue)]">
-            Next Step
+            Project-Fokus
           </h2>
           <p className="mt-1 whitespace-pre-wrap break-words text-sm">
             {project.next_step || "Noch kein nächster Schritt festgelegt."}
