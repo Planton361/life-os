@@ -987,12 +987,39 @@ test("Issue 58 Task read-first, Project guidance and task-aware Calendar loop", 
         if (width >= 1920)
           expect(orderedSections[0].width).toBeGreaterThan(1280);
       }
+      if (surface === "task" && width === 390) {
+        await page.getByRole("link", { name: "Inhalt", exact: true }).click();
+        await expect(
+          page.getByRole("link", {
+            name: "Geplanten Termin öffnen",
+            exact: true,
+          }),
+        ).toBeInViewport();
+      }
       const path = info.outputPath(`issue-58-${surface}-${width}.png`);
-      await page.screenshot({ path, fullPage: true, caret: "initial" });
+      await page.screenshot({
+        path,
+        fullPage: surface !== "task",
+        caret: "initial",
+      });
       await info.attach(`issue-58-${surface}-${width}`, {
         path,
         contentType: "image/png",
       });
+      if (surface === "task") {
+        const fullPagePath = info.outputPath(
+          `issue-58-task-${width}-full.png`,
+        );
+        await page.screenshot({
+          path: fullPagePath,
+          fullPage: true,
+          caret: "initial",
+        });
+        await info.attach(`issue-58-task-${width}-full`, {
+          path: fullPagePath,
+          contentType: "image/png",
+        });
+      }
     }
   }
   expect(errors).toEqual([]);
