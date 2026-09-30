@@ -79,11 +79,16 @@ test("Project → authenticated Obsidian ZIP: graph, rename, dependencies, owner
     name: "Für Obsidian exportieren",
     exact: true,
   });
+  const projectManagement = projectHeader.getByRole("button", {
+    name: "Project verwalten",
+    exact: true,
+  });
   await page.goto(`/projects/${s.project.id}`);
   await expect(
     projectHeader.getByRole("heading", { name: "Life OS", exact: true }),
   ).toBeVisible();
   async function download(name: string) {
+    if (!(await exportButton.isVisible())) await projectManagement.click();
     await expect(exportButton).toBeEnabled();
     const pending = page.waitForEvent("download", { timeout: 20000 });
     const responsePending = page.waitForResponse(
@@ -292,17 +297,23 @@ test("Project → authenticated Obsidian ZIP: graph, rename, dependencies, owner
   const removed = await download("project-source-removed");
   expect(removed[root + "Resources/Repository.md"]).toBeUndefined();
   expect(Object.keys(removed)).toHaveLength(Object.keys(first).length - 1);
-  const archiveContext = (await api.rpc("project_review_context", {
-    p_project_id: s.project.id,
-  }).throwOnError()).data as { completion_revision: number; completion_cycle: number };
-  await api.rpc("project_depth_command", {
-    p_project_id: s.project.id,
-    p_command_id: crypto.randomUUID(),
-    p_operation: "project.archive",
-    p_expected_revision: archiveContext.completion_revision,
-    p_expected_cycle: archiveContext.completion_cycle,
-    p_payload: {},
-  }).throwOnError();
+  const archiveContext = (
+    await api
+      .rpc("project_review_context", {
+        p_project_id: s.project.id,
+      })
+      .throwOnError()
+  ).data as { completion_revision: number; completion_cycle: number };
+  await api
+    .rpc("project_depth_command", {
+      p_project_id: s.project.id,
+      p_command_id: crypto.randomUUID(),
+      p_operation: "project.archive",
+      p_expected_revision: archiveContext.completion_revision,
+      p_expected_cycle: archiveContext.completion_cycle,
+      p_payload: {},
+    })
+    .throwOnError();
   await page.reload();
   const archivedProject = await download("project-history");
   expect(archivedProject[root + "Projects/Life OS.md"]).toContain(

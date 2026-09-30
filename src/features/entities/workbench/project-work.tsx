@@ -7,8 +7,8 @@ import {
 import Link from "next/link";
 import type { WorkbenchData } from "@/features/real-data/supabase/repositories/entity-workbench-read";
 import {
+  ManagementDialog,
   ManagementDisclosure,
-  ManagementDisclosureGroup,
 } from "./management-disclosure";
 import { Choice, OperationForm, fieldClass, actionClass } from "./forms";
 import { projectMilestoneGroups } from "./project-milestones";
@@ -75,7 +75,7 @@ function StageOperation({
   label: string;
 }) {
   return (
-    <OperationForm operation="project.milestone" label={label}>
+    <OperationForm operation="project.milestone" label={label} closeOnSuccess>
       <input type="hidden" name="projectId" value={projectId} />
       <input type="hidden" name="milestoneId" value={stageId} />
       <input type="hidden" name="milestoneOperation" value={operation} />
@@ -117,17 +117,9 @@ export function ProjectWork({
     blockedCount: graphSummary.blocked.filter(taskHasExecutableLifecycle)
       .length,
   });
-  const createTaskLink = (
-    milestoneId?: string,
-    compact = false,
-    label = "+ Task",
-  ) => (
+  const createTaskLink = (milestoneId?: string, label = "+ Task") => (
     <Link
-      className={
-        compact
-          ? "inline-flex min-h-10 items-center text-sm text-[var(--text-secondary)] underline"
-          : actionClass
-      }
+      className={actionClass}
       prefetch={false}
       href={`/tasks/new?${new URLSearchParams({ project: projectId, ...(milestoneId ? { milestone: milestoneId } : {}) })}`}
     >
@@ -211,28 +203,42 @@ export function ProjectWork({
           Work
         </p>
         <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-xl font-semibold">
-            Tasks {summary.taskCount}{" "}
-            <span className="text-base font-normal text-[var(--text-secondary)]">
-              · Milestones {summary.milestoneCount}
-            </span>
-          </h2>
-          <p className="text-sm text-[var(--text-secondary)]">
-            {summary.tasksDone}/{summary.taskCount} Tasks erledigt ·{" "}
-            {summary.milestonesDone}/{summary.milestoneCount} Milestones
-            erledigt
-          </p>
+          <h2 className="text-xl font-semibold">Tasks & Milestones</h2>
+          {(summary.taskCount > 0 || summary.milestoneCount > 0) && (
+            <p className="text-sm text-[var(--text-secondary)]">
+              {summary.taskCount > 0 && (
+                <>
+                  {summary.taskCount} Tasks · {summary.tasksDone} erledigt
+                </>
+              )}
+              {summary.taskCount > 0 && summary.milestoneCount > 0 && " · "}
+              {summary.milestoneCount > 0 && (
+                <>
+                  {summary.milestoneCount} Milestones · {summary.milestonesDone}{" "}
+                  erledigt
+                </>
+              )}
+            </p>
+          )}
         </div>
         <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-          <p className="text-sm text-[var(--text-secondary)]">
-            Dependency READY {graphSummary.ready.length} · Dependency BLOCKED{" "}
-            {graphSummary.blocked.length}
-            {summary.taskCount > 0 &&
-            project.status === "active" &&
-            !graphSummary.hasReadyTask
-              ? " · Kein offener Task ist READY"
-              : ""}
-          </p>
+          {(graphSummary.ready.length > 0 ||
+            graphSummary.blocked.length > 0) && (
+            <p className="text-sm text-[var(--text-secondary)]">
+              {graphSummary.ready.length > 0 &&
+                `Dependency READY ${graphSummary.ready.length}`}
+              {graphSummary.ready.length > 0 &&
+                graphSummary.blocked.length > 0 &&
+                " · "}
+              {graphSummary.blocked.length > 0 &&
+                `Dependency BLOCKED ${graphSummary.blocked.length}`}
+              {summary.taskCount > 0 &&
+              project.status === "active" &&
+              !graphSummary.hasReadyTask
+                ? " · Kein offener Task ist READY"
+                : ""}
+            </p>
+          )}
           <section
             aria-label="Project Task guidance"
             className="min-w-0 border-l-2 border-[var(--accent-cyan)] pl-3"
@@ -244,20 +250,13 @@ export function ProjectWork({
               </p>
             ) : guidance.kind === "empty" ? (
               <>
-                <h3 className="inline text-sm font-semibold">
-                  Erste Task anlegen
-                </h3>{" "}
                 <p className="inline text-sm text-[var(--text-secondary)]">
-                  Project-Kontext
+                  Beginne mit einer Task. Project-Kontext
                   {currentMilestone ? ` · ${currentMilestone.title}` : ""} wird
                   vorbefüllt.
                 </p>
                 <span className="ml-2 inline-flex">
-                  {createTaskLink(
-                    currentMilestone?.id,
-                    false,
-                    "Erste Task anlegen",
-                  )}
+                  {createTaskLink(currentMilestone?.id, "Erste Task anlegen")}
                 </span>
               </>
             ) : guidance.kind === "single-ready" ? (
@@ -324,64 +323,64 @@ export function ProjectWork({
           </section>
         </div>
         {!project.archived_at && (
-          <ManagementDisclosureGroup className={styles.workActions}>
-            {summary.taskCount > 0 && createTaskLink()}
-            <ManagementDisclosure
-              label="Milestone hinzufügen"
-              triggerText="+ Milestone"
-              panelClassName={styles.workPanel}
+          <div className={styles.workActions}>
+            {summary.taskCount > 0 &&
+              createTaskLink(currentMilestone?.id, "+ Task")}
+            <ManagementDialog
+              label="Weitere Work-Optionen"
+              triggerText="Weitere Work-Optionen"
             >
-              <OperationForm
-                operation="project.milestone"
-                label="Milestone erstellen"
-                closeOnSuccess
-              >
-                <input type="hidden" name="projectId" value={projectId} />
-                <input type="hidden" name="milestoneOperation" value="save" />
-                <StageFields />
-              </OperationForm>
-            </ManagementDisclosure>
-            {tasks.length > 0 && (
-              <ManagementDisclosure
-                label="Tasks zuordnen"
-                panelClassName={styles.workPanel}
-              >
+              <section className="grid gap-3">
+                <h3 className="font-semibold">Milestone hinzufügen</h3>
                 <OperationForm
                   operation="project.milestone"
-                  label="Task-Milestone speichern"
+                  label="Milestone erstellen"
                   closeOnSuccess
                 >
                   <input type="hidden" name="projectId" value={projectId} />
-                  <input
-                    type="hidden"
-                    name="milestoneOperation"
-                    value="assign"
-                  />
-                  <Choice
-                    name="taskId"
-                    label="Task"
-                    required
-                    options={tasks.map((t) => ({ id: t.id, title: t.title }))}
-                  />
-                  <Choice
-                    name="milestoneId"
-                    label="Milestone (keine Auswahl = Ohne Milestone)"
-                    options={summary.groups.map((g) => ({
-                      id: g.milestone.id,
-                      title: g.milestone.title,
-                    }))}
-                  />
+                  <input type="hidden" name="milestoneOperation" value="save" />
+                  <StageFields />
                 </OperationForm>
-              </ManagementDisclosure>
-            )}
-          </ManagementDisclosureGroup>
+              </section>
+              {tasks.length > 0 && (
+                <section className="grid gap-3 border-t border-[var(--border-subtle)] pt-4">
+                  <h3 className="font-semibold">Tasks zuordnen</h3>
+                  <OperationForm
+                    operation="project.milestone"
+                    label="Task-Milestone speichern"
+                    closeOnSuccess
+                  >
+                    <input type="hidden" name="projectId" value={projectId} />
+                    <input
+                      type="hidden"
+                      name="milestoneOperation"
+                      value="assign"
+                    />
+                    <Choice
+                      name="taskId"
+                      label="Task"
+                      required
+                      options={tasks.map((t) => ({ id: t.id, title: t.title }))}
+                    />
+                    <Choice
+                      name="milestoneId"
+                      label="Milestone (keine Auswahl = Ohne Milestone)"
+                      options={summary.groups.map((g) => ({
+                        id: g.milestone.id,
+                        title: g.milestone.title,
+                      }))}
+                    />
+                  </OperationForm>
+                </section>
+              )}
+            </ManagementDialog>
+          </div>
         )}
       </div>
       <div
         className={styles.taskList}
         data-project-task-list
         id="project-task-list"
-        tabIndex={0}
         aria-label="Project Task List"
       >
         {!summary.groups.length && (
@@ -410,16 +409,12 @@ export function ProjectWork({
                   : ""}
               </p>
             </div>
-            {!project.archived_at && summary.taskCount > 0 && (
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                {createTaskLink(m.id, true)}
-              </div>
-            )}
             {!project.archived_at && (
-              <ManagementDisclosure label="Milestone verwalten" triggerText="⋯">
+              <ManagementDialog label="Milestone verwalten">
                 <OperationForm
                   operation="project.milestone"
                   label="Milestone speichern"
+                  closeOnSuccess
                 >
                   <input type="hidden" name="projectId" value={projectId} />
                   <input type="hidden" name="milestoneId" value={m.id} />
@@ -450,33 +445,35 @@ export function ProjectWork({
                   operation="archive"
                   label="Milestone archivieren"
                 />
-              </ManagementDisclosure>
+              </ManagementDialog>
             )}
             {m.description && (
               <p className="mt-2 whitespace-pre-wrap break-words text-sm text-[var(--text-secondary)]">
                 {m.description}
               </p>
             )}
-            <p className="mt-2 text-sm text-[var(--text-muted)]">
-              {done}/{linked.length} Tasks erledigt
-            </p>
+            {linked.length > 0 && (
+              <p className="mt-2 text-sm text-[var(--text-muted)]">
+                {done}/{linked.length} Tasks erledigt
+              </p>
+            )}
             {renderTasks(linked)}
           </section>
         ))}
         <section aria-label="Ohne Milestone" className="py-4">
-          <h3 className="font-semibold">
-            Ohne Milestone · {summary.unassigned.length}
-          </h3>
-          {!project.archived_at && summary.taskCount > 0 && (
-            <div className="mt-2 flex">{createTaskLink(undefined, true)}</div>
+          {(summary.unassigned.length > 0 ||
+            (!summary.groups.length && summary.taskCount > 0)) && (
+            <>
+              <h3 className="font-semibold">Ohne Milestone</h3>
+              <p className="mt-1 text-sm text-[var(--text-muted)]">
+                Backlog · noch keiner Etappe zugeordnet
+              </p>
+              {renderTasks(summary.unassigned)}
+            </>
           )}
-          <p className="mt-1 text-sm text-[var(--text-muted)]">
-            Backlog · noch keiner Etappe zugeordnet
-          </p>
-          {renderTasks(summary.unassigned)}
         </section>
         {archived.length > 0 && (
-          <ManagementDisclosure
+          <ManagementDialog
             label={`Archivierte Milestones · ${archived.length}`}
           >
             {archived.map((m) => (
@@ -487,7 +484,7 @@ export function ProjectWork({
                 </p>
               </div>
             ))}
-          </ManagementDisclosure>
+          </ManagementDialog>
         )}
       </div>
     </section>
@@ -539,6 +536,7 @@ export function TaskMilestoneManagement({
       <OperationForm
         operation="project.milestone"
         label="Task-Milestone speichern"
+        closeOnSuccess
       >
         <input type="hidden" name="projectId" value={project.id} />
         <input type="hidden" name="taskId" value={task.id} />

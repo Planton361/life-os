@@ -3,15 +3,21 @@ import { ProjectExport } from "./project-export";
 import type { ReactNode } from "react";
 import type { WorkbenchData } from "@/features/real-data/supabase/repositories/entity-workbench-read";
 import {
+  ManagementDialog,
   ManagementDisclosure,
-  ManagementDisclosureGroup,
 } from "./management-disclosure";
 import { OperationForm } from "./forms";
 import { ProjectResources } from "./project-resources";
+import { projectResourceUses } from "./project-artifacts";
 
 import styles from "./project-read-view.module.css";
 import { ProjectWork } from "./project-work";
-import { ProjectDepthHistory, ProjectDepthResult, ProjectDepthReview, ProjectDepthStatus } from "./project-depth";
+import {
+  ProjectDepthHistory,
+  ProjectDepthResult,
+  ProjectDepthReview,
+  ProjectDepthStatus,
+} from "./project-depth";
 import type { ProjectDepthRead } from "@/features/real-data/supabase/repositories/project-depth-repository";
 
 export function ProjectReadView({
@@ -42,6 +48,10 @@ export function ProjectReadView({
   ]);
   const skills = data.skills.filter((s) => skillIds.has(s.id));
   const area = data.areas.find((a) => a.id === project.area_id);
+  const resourceUses = projectResourceUses(data, id);
+  const hasSupportingResources = resourceUses.some(
+    (use) => use.role !== "primary_artifact" || use.resource.archived_at,
+  );
   return (
     <div data-entity-workbench="project" className={styles.project}>
       <header aria-label="Project Header" className={styles.header}>
@@ -68,8 +78,10 @@ export function ProjectReadView({
           className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-[var(--text-secondary)]"
         >
           <span>{project.archived_at ? "Archiviert" : project.status}</span>
-          <span>{area?.name ?? "Keine Area"}</span>
-          <span>Priority {project.priority}</span>
+          {area && <span>{area.name}</span>}
+          {project.priority && project.priority !== "none" && (
+            <span>Priority {project.priority}</span>
+          )}
           {project.target_date && (
             <span>
               Deadline{" "}
@@ -77,122 +89,141 @@ export function ProjectReadView({
             </span>
           )}
         </div>
-        <ManagementDisclosureGroup className={styles.actions}>
-          <ProjectExport projectId={id} />
-          {!project.archived_at && (
-            <>
-              <ManagementDisclosure
-                label="Bearbeiten"
-                panelClassName={styles.editPanel}
-              >
-                {edit}
-              </ManagementDisclosure>
-              <ManagementDisclosure
-                label="Project verwalten"
-                triggerText="⋯"
-                panelClassName={styles.menuPanel}
-              >
-                <OperationForm
-                  operation="project.archive"
-                  label="Project archivieren"
-                >
-                  <input type="hidden" name="projectId" value={id} />
-                  <input type="hidden" name="expectedRevision" value={depth?.context.completion_revision ?? 0} />
-                  <input type="hidden" name="expectedCycle" value={depth?.context.completion_cycle ?? 0} />
-                </OperationForm>
-                {depth && <ProjectDepthStatus depth={depth} />}
-              </ManagementDisclosure>
-            </>
-          )}
-        </ManagementDisclosureGroup>
         {depth && <ProjectDepthResult depth={depth} />}
-        <section
-          aria-label="Project-Fokus"
-          data-project-focus
-          className="mt-2 border-l-2 border-[var(--accent-blue)] pl-3"
-        >
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--accent-blue)]">
-            Project-Fokus
-          </h2>
-          <p className="mt-1 whitespace-pre-wrap break-words text-sm">
-            {project.next_step || "Noch kein nächster Schritt festgelegt."}
-          </p>
-        </section>
+        {project.next_step && (
+          <section
+            aria-label="Project-Fokus"
+            data-project-focus
+            className="mt-3 border-l-2 border-[var(--accent-blue)] pl-3"
+          >
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--accent-blue)]">
+              Project-Fokus
+            </h2>
+            <p className="mt-1 whitespace-pre-wrap break-words text-sm">
+              {project.next_step}
+            </p>
+          </section>
+        )}
+        {!project.archived_at && (
+          <div className={`${styles.actions} mt-3`}>
+            <ManagementDialog label="Project verwalten">
+              <section className="grid gap-3">
+                <ManagementDisclosure label="Bearbeiten">
+                  {edit}
+                </ManagementDisclosure>
+              </section>
+              <div className="border-t border-[var(--border-subtle)] pt-3">
+                <ProjectExport projectId={id} />
+              </div>
+              {depth && <ProjectDepthStatus depth={depth} />}
+              <OperationForm
+                operation="project.archive"
+                label="Project archivieren"
+                closeOnSuccess
+              >
+                <input type="hidden" name="projectId" value={id} />
+                <input
+                  type="hidden"
+                  name="expectedRevision"
+                  value={depth?.context.completion_revision ?? 0}
+                />
+                <input
+                  type="hidden"
+                  name="expectedCycle"
+                  value={depth?.context.completion_cycle ?? 0}
+                />
+              </OperationForm>
+            </ManagementDialog>
+          </div>
+        )}
       </header>
       <div className={styles.workspace} data-project-workspace>
         <ProjectWork data={data} projectId={id} />
         <aside aria-label="Project Context Rail" className={styles.rail}>
-          {depth && <ProjectDepthReview depth={depth} />}
           <ProjectResources data={data} projectId={id} section="primary" />
           <section aria-label="Project Context" className="min-w-0">
-            <h2 className="text-base font-semibold text-[var(--text-secondary)]">
-              Context
-            </h2>
-            <dl className="mt-3 grid gap-2 text-sm">
-              <div>
-                <dt className="text-sm text-[var(--text-secondary)]">Goal</dt>
-                <dd className="mt-1">
-                  {goal ? (
-                    <Link
-                      className="break-words text-[var(--accent-purple)] hover:underline"
-                      href={`/goals/${goal.id}`}
-                    >
-                      {goal.title}
-                      {goal.archived_at ? " · Archiviert" : ""}
-                    </Link>
-                  ) : (
-                    "—"
-                  )}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-sm text-[var(--text-secondary)]">
-                  Skills · {skills.length}
-                </dt>
-                <dd
-                  title="Aus Tasks / Evidence"
-                  className="mt-1 flex flex-wrap gap-x-3 gap-y-1"
-                >
-                  {skills.length
-                    ? skills.map((s) => (
+            {(goal || skills.length > 0 || area) && (
+              <>
+                <h2 className="text-base font-semibold text-[var(--text-secondary)]">
+                  Context
+                </h2>
+                <dl className="mt-3 grid gap-2 text-sm">
+                  {goal && (
+                    <div>
+                      <dt className="text-sm text-[var(--text-secondary)]">
+                        Goal
+                      </dt>
+                      <dd className="mt-1">
                         <Link
-                          key={s.id}
-                          className="break-words hover:underline"
-                          href={`/skills/${s.id}`}
+                          className="break-words text-[var(--accent-purple)] hover:underline"
+                          href={`/goals/${goal.id}`}
                         >
-                          {s.name}
+                          {goal.title}
+                          {goal.archived_at ? " · Archiviert" : ""}
                         </Link>
-                      ))
-                    : "—"}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-sm text-[var(--text-secondary)]">Area</dt>
-                <dd className="mt-1">{area?.name ?? "—"}</dd>
-              </div>
-            </dl>
+                      </dd>
+                    </div>
+                  )}
+                  {skills.length > 0 && (
+                    <div>
+                      <dt className="text-sm text-[var(--text-secondary)]">
+                        Skill-Kontext
+                      </dt>
+                      <dd
+                        title="Aus Tasks / Evidence"
+                        className="mt-1 flex flex-wrap gap-x-3 gap-y-1"
+                      >
+                        {skills.map((s) => (
+                          <Link
+                            key={s.id}
+                            className="break-words hover:underline"
+                            href={`/skills/${s.id}`}
+                          >
+                            {s.name}
+                          </Link>
+                        ))}
+                      </dd>
+                    </div>
+                  )}
+                  {area && (
+                    <div>
+                      <dt className="text-sm text-[var(--text-secondary)]">
+                        Area
+                      </dt>
+                      <dd className="mt-1">{area.name}</dd>
+                    </div>
+                  )}
+                </dl>
+              </>
+            )}
             {!project.archived_at && (
-              <ManagementDisclosure label="Beziehungen verwalten">
+              <ManagementDialog
+                label="Beziehungen verwalten"
+                initiallyOpen={Boolean(selectedResource)}
+              >
                 {relations}
                 <ProjectResources
                   data={data}
                   projectId={id}
                   section="reference-management"
                 />
-              </ManagementDisclosure>
+              </ManagementDialog>
             )}
           </section>
         </aside>
       </div>
-      <div className={styles.secondary} data-project-secondary>
-        <ProjectResources
-          data={data}
-          projectId={id}
-          section="additional"
-          selectedResource={selectedResource}
-        />
-        <ProjectResources data={data} projectId={id} section="references" />
-      </div>
+      {hasSupportingResources && (
+        <div className={styles.secondary} data-project-secondary>
+          <ProjectResources
+            data={data}
+            projectId={id}
+            section="additional"
+            selectedResource={selectedResource}
+          />
+          <ProjectResources data={data} projectId={id} section="references" />
+        </div>
+      )}
+      {depth && <ProjectDepthReview depth={depth} />}
       {depth && <ProjectDepthHistory depth={depth} />}
     </div>
   );

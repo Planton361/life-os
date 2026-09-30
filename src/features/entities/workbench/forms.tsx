@@ -273,6 +273,13 @@ export function EntityForm({
   );
   const taskCapture = kind === "task" && !id;
   const goalMilestoneTaskCapture = taskCapture && Boolean(goalMilestoneContext);
+  const taskCancelHref = goalMilestoneContext
+    ? `/goals/${goalMilestoneContext.goalId}?goalMilestone=${goalMilestoneContext.milestoneId}`
+    : projectContext
+      ? `/projects/${projectContext}`
+      : goalContext
+        ? `/goals/${goalContext}`
+        : "/tasks";
   const captureProjectId = selectedProject;
   const captureMilestoneId =
     selectedProject === values.projectId
@@ -344,7 +351,9 @@ export function EntityForm({
                 ? `/goals/${goalMilestoneContext.goalId}?created=${kind}&goalMilestone=${goalMilestoneContext.milestoneId}`
                 : projectContext
                   ? kind === "task"
-                    ? `/projects/${projects.find((p) => p.id === String(form.get("projectId")))?.id ?? projectContext}`
+                    ? String(form.get("projectId") ?? "").trim()
+                      ? `/projects/${String(form.get("projectId")).trim()}`
+                      : `/tasks/${r.id}`
                     : `/projects/${projectContext}?resource=${r.id}`
                   : goalContext
                     ? `/goals/${goalContext}?created=${kind}`
@@ -470,8 +479,7 @@ export function EntityForm({
                         setSelectedProject(projectId);
                         setSelectedGoal("");
                       }}
-                      required={Boolean(projectContext)}
-                      allowEmpty={!projectContext}
+                      allowEmpty
                     />
                     <Choice
                       key={selectedProject}
@@ -629,15 +637,17 @@ export function EntityForm({
                   )}
                   {kind === "project" && (
                     <>
-                      {id ? <p className="text-sm text-[var(--text-secondary)]">Status: {values.status} · unter Project verwalten ändern</p> : choice(
-                        "status",
-                        "Status",
-                        opts([
-                          "idea",
-                          "active",
-                          "paused",
-                          "blocked",
-                        ]),
+                      {id ? (
+                        <p className="text-sm text-[var(--text-secondary)]">
+                          Status: {values.status} · unter Project verwalten
+                          ändern
+                        </p>
+                      ) : (
+                        choice(
+                          "status",
+                          "Status",
+                          opts(["idea", "active", "paused", "blocked"]),
+                        )
                       )}
                       {choice(
                         "priority",
@@ -744,7 +754,7 @@ export function EntityForm({
             )}
           </>
         )}
-        <div className="border-t border-[var(--border-subtle)] pt-5">
+        <div className="flex flex-wrap items-center gap-3 border-t border-[var(--border-subtle)] pt-5">
           <button className={actionClass} type="submit">
             {pending
               ? "Speichern …"
@@ -752,6 +762,14 @@ export function EntityForm({
                 ? "Änderungen speichern"
                 : `${formEntityLabel} erstellen`}
           </button>
+          {taskCapture && (
+            <Link
+              href={taskCancelHref}
+              className="min-h-10 content-center px-2 text-sm text-[var(--text-secondary)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
+            >
+              Abbrechen
+            </Link>
+          )}
         </div>
       </fieldset>
       {error && (

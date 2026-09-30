@@ -77,18 +77,17 @@ test("canonical Task create from Project, Milestone and Backlog preserves contex
             name: "Erste Task anlegen",
             exact: true,
           })
-        : mode === "unassigned"
-          ? backlog.getByRole("link", { name: "+ Task", exact: true })
-          : stage(stages[0].id).getByRole("link", {
-              name: "+ Task",
-              exact: true,
-            });
+        : work.getByRole("link", { name: "+ Task", exact: true });
     await trigger.click();
     await expect(page).toHaveURL(/\/tasks\/new\?project=/);
+    await expect(form).toHaveAttribute("data-task-capture-title-first", "true");
     const preset = ["project", "milestone", "change-stage"].includes(mode)
       ? stages[0].id
       : "";
     await expect(form.getByLabel("Titel", { exact: true })).toBeVisible();
+    await expect(
+      form.getByRole("link", { name: "Abbrechen", exact: true }),
+    ).toHaveAttribute("href", `/projects/${project.id}`);
     await expect(
       form
         .locator("[data-task-capture-context]")
@@ -117,6 +116,7 @@ test("canonical Task create from Project, Milestone and Backlog preserves contex
     const destination = mode === "change-stage" ? stages[1].id : preset;
     if (mode === "change-stage")
       await milestoneSelect.selectOption(destination);
+    if (mode === "unassigned") await milestoneSelect.selectOption("");
     const title = `${mode} task ${stamp}`;
     await form.getByLabel("Titel", { exact: true }).fill(title);
     await submit();
@@ -176,8 +176,9 @@ test("canonical Task create from Project, Milestone and Backlog preserves contex
       .last(),
   ).toBeVisible();
   await page.goto(`/projects/${project.id}`);
-  await expect(work).toContainText("1/4 Tasks erledigt");
-  await expect(work).toContainText("Dependency READY 3 · Dependency BLOCKED 0");
+  await expect(work).toContainText("4 Tasks · 1 erledigt");
+  await expect(work).toContainText("Dependency READY 3");
+  await expect(work).not.toContainText("Dependency BLOCKED 0");
   for (const [width, height] of [
     [3840, 2160],
     [1920, 1080],
@@ -196,10 +197,22 @@ test("canonical Task create from Project, Milestone and Backlog preserves contex
     });
   }
   await page.setViewportSize({ width: 1920, height: 1080 });
+  // Cancel returns to the originating Project even after changing the selected Project.
+  await work.getByRole("link", { name: "+ Task", exact: true }).click();
+  const cancelDetails = form.getByRole("button", {
+    name: "Weitere Angaben (optional)",
+    exact: true,
+  });
+  await cancelDetails.click();
+  const cancelProject = form.getByLabel("Project", { exact: true });
+  await expect(cancelProject.locator('option[value=""]')).toHaveCount(1);
+  await cancelProject.selectOption("");
+  await expect(cancelProject).toHaveValue("");
+  await cancelProject.selectOption(projects[1].id);
+  await form.getByRole("link", { name: "Abbrechen", exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/projects/${project.id}$`));
   // A compatible Project switch clears the old stage and returns to the new owner.
-  await stage(stages[0].id)
-    .getByRole("link", { name: "+ Task", exact: true })
-    .click();
+  await work.getByRole("link", { name: "+ Task", exact: true }).click();
   const switchDetails = form.getByRole("button", {
     name: "Weitere Angaben (optional)",
     exact: true,
@@ -219,6 +232,16 @@ test("canonical Task create from Project, Milestone and Backlog preserves contex
   await expect(backlog).toContainText(`switch ${stamp}`);
   // Existing global creation still goes to the canonical Task detail.
   await page.goto("/tasks/new");
+  await expect(form).toHaveAttribute("data-task-capture-title-first", "true");
+  await expect(
+    form.getByRole("button", {
+      name: "Weitere Angaben (optional)",
+      exact: true,
+    }),
+  ).toHaveAttribute("aria-expanded", "false");
+  await expect(
+    form.getByRole("link", { name: "Abbrechen", exact: true }),
+  ).toHaveAttribute("href", "/tasks");
   await form.getByLabel("Titel", { exact: true }).fill(`global ${stamp}`);
   await submit();
   await expect(page).toHaveURL(/\/tasks\/[0-9a-f-]{36}$/);
@@ -279,9 +302,7 @@ test("canonical Task create from Project, Milestone and Backlog preserves contex
     await forgedDetails.click();
     await expect(forgedDetails).toHaveAttribute("aria-expanded", "true");
     await form.getByLabel("Titel", { exact: true }).fill(`forged ${target}`);
-    const select = form.getByLabel(
-      "Project Milestone",
-    );
+    const select = form.getByLabel("Project Milestone");
     await select.evaluate((el, id) => {
       const option = document.createElement("option");
       option.value = id;

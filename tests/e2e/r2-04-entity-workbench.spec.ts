@@ -29,9 +29,18 @@ const route = {
 type Kind = keyof typeof route;
 async function openProjectControl(page: Page, name: string) {
   if (!/\/projects\/[0-9a-f-]{36}$/.test(page.url())) return;
+  if (name === "Bearbeiten") {
+    const manager = page.getByRole("button", {
+      name: "Project verwalten",
+      exact: true,
+    });
+    if ((await manager.getAttribute("aria-expanded")) === "false")
+      await manager.click();
+  }
   const control = page.getByRole("button", { name, exact: true });
   await expect(control).toBeEnabled();
-  if (await control.getAttribute("aria-expanded") === "false") await control.click();
+  if ((await control.getAttribute("aria-expanded")) === "false")
+    await control.click();
   await expect(control).toHaveAttribute("aria-expanded", "true");
 }
 async function save(page: Page, kind: Kind) {
@@ -162,7 +171,8 @@ async function operate(
   choose?: { label: string; id: string },
 ) {
   await openProjectControl(page, "Beziehungen verwalten");
-  if (label === "Verknüpfung entfernen") await openProjectControl(page, "Reference verwalten");
+  if (label === "Verknüpfung entfernen")
+    await openProjectControl(page, "Reference verwalten");
   const f = page.getByRole("form", { name: label, exact: true });
   if (choose)
     await f.getByLabel(choose.label, { exact: true }).selectOption(choose.id);
@@ -408,12 +418,21 @@ test("R2-04 all canonical creates, detail edits, relations, steps, lists, lifecy
         await page.evaluate(() => document.documentElement.scrollWidth),
       ).toBeLessThanOrEqual(size.width + 1);
       const geometry = await page.evaluate(() => {
-        const primary = document.querySelector('[aria-label="Informationen bearbeiten"]') ?? document.querySelector('[aria-labelledby="active-portfolio-heading"]');
-        const rail = document.querySelector('[data-entity-workbench] aside') ?? document.querySelector('[aria-label="Selected Entity"]');
+        const primary =
+          document.querySelector('[aria-label="Informationen bearbeiten"]') ??
+          document.querySelector(
+            '[aria-labelledby="active-portfolio-heading"]',
+          );
+        const rail =
+          document.querySelector("[data-entity-workbench] aside") ??
+          document.querySelector('[aria-label="Selected Entity"]');
         if (!primary || !rail) return null;
         const a = primary.getBoundingClientRect();
         const b = rail.getBoundingClientRect();
-        return { separated: a.right <= b.left + 1 || a.bottom <= b.top + 1, railRight: b.right };
+        return {
+          separated: a.right <= b.left + 1 || a.bottom <= b.top + 1,
+          railRight: b.right,
+        };
       });
       if (geometry) {
         expect(geometry.separated).toBe(true);
@@ -430,7 +449,11 @@ test("R2-04 all canonical creates, detail edits, relations, steps, lists, lifecy
   await page.goto(`/skills/${skill}`);
   await operate(page, "Evidence entfernen");
   await page.reload();
-  await expect(page.getByRole("region", { name: "Practice & Evidence" }).getByText("Applied practice", { exact: true })).toHaveCount(0);
+  await expect(
+    page
+      .getByRole("region", { name: "Practice & Evidence" })
+      .getByText("Applied practice", { exact: true }),
+  ).toHaveCount(0);
   const api = await browserClient(page);
   const own = (await api.auth.getUser()).data.user!.id;
   const outsider = createClient<Database>(
@@ -495,20 +518,47 @@ test("R2-04 all canonical creates, detail edits, relations, steps, lists, lifecy
           .single()
       ).data?.archived_at,
     ).not.toBeNull();
-    if (kind === "Project") await expect(page.getByLabel("Project Header", { exact: true })).toContainText("Archiviert");
-    else await expect(page.getByText("Archiviert · historische Ansicht")).toBeVisible();
+    if (kind === "Project")
+      await expect(
+        page.getByLabel("Project Header", { exact: true }),
+      ).toContainText("Archiviert");
+    else
+      await expect(
+        page.getByText("Archiviert · historische Ansicht"),
+      ).toBeVisible();
     await page.reload();
-    if (kind === "Project") await expect(page.getByRole("button", { name: "Bearbeiten", exact: true })).toHaveCount(0);
-    else await expect(page.getByRole("button", { name: "Änderungen speichern" })).toBeDisabled();
+    if (kind === "Project")
+      await expect(
+        page.getByRole("button", { name: "Project verwalten", exact: true }),
+      ).toHaveCount(0);
+    else
+      await expect(
+        page.getByRole("button", { name: "Änderungen speichern" }),
+      ).toBeDisabled();
   }
-  for (const [kind, id] of [["Task", task], ["Project", project], ["Goal", goal], ["Skill", skill]] as const) {
+  for (const [kind, id] of [
+    ["Task", task],
+    ["Project", project],
+    ["Goal", goal],
+    ["Skill", skill],
+  ] as const) {
     await page.goto(`/${route[kind]}`);
-    await page.getByRole("combobox", { name: "Lifecycle" }).selectOption("archived");
-    await page.getByRole("combobox", { name: "Sortierung" }).selectOption("title");
+    await page
+      .getByRole("combobox", { name: "Lifecycle" })
+      .selectOption("archived");
+    await page
+      .getByRole("combobox", { name: "Sortierung" })
+      .selectOption("title");
     await page.getByRole("button", { name: "Anwenden" }).click();
-    await expect(page.getByRole("region", { name: "Entity-Liste" }).locator(`a[href="/${route[kind]}/${id}"]`)).toBeVisible();
+    await expect(
+      page
+        .getByRole("region", { name: "Entity-Liste" })
+        .locator(`a[href="/${route[kind]}/${id}"]`),
+    ).toBeVisible();
     await page.reload();
-    await expect(page.getByRole("combobox", { name: "Lifecycle" })).toHaveValue("archived");
+    await expect(page.getByRole("combobox", { name: "Lifecycle" })).toHaveValue(
+      "archived",
+    );
   }
   await page.goto(`/resources/${resource}`);
   await page.getByRole("button", { name: "Resource wiederherstellen" }).click();
@@ -590,17 +640,15 @@ test("R2-04 empty/auth boundary, validation conflict and navigation history", as
 }) => {
   test.setTimeout(120000);
   page.setDefaultTimeout(15000);
-  await page
-    .context()
-    .addCookies([
-      {
-        name: "life_os_profile",
-        value: "empty",
-        url: process.env.PLAYWRIGHT_HOST
-          ? `http://${process.env.PLAYWRIGHT_HOST}:${process.env.PLAYWRIGHT_PORT}`
-          : "http://127.0.0.1:3000",
-      },
-    ]);
+  await page.context().addCookies([
+    {
+      name: "life_os_profile",
+      value: "empty",
+      url: process.env.PLAYWRIGHT_HOST
+        ? `http://${process.env.PLAYWRIGHT_HOST}:${process.env.PLAYWRIGHT_PORT}`
+        : "http://127.0.0.1:3000",
+    },
+  ]);
   await page.goto("/tasks/new");
   await expect(
     page.getByRole("button", { name: "Task erstellen", exact: true }),
@@ -666,8 +714,15 @@ test("R2-04 empty/auth boundary, validation conflict and navigation history", as
   ).toBeVisible();
   await page.goForward();
   await expect(page).toHaveURL(/\/portfolio\?type=tasks$/);
-  const portfolioList = page.getByRole("region", { name: "Active Portfolio", exact: true });
-  await expect(portfolioList.locator('[data-entity-type="task"]')).toHaveCount(1);
+  const portfolioList = page.getByRole("region", {
+    name: "Active Portfolio",
+    exact: true,
+  });
+  await expect(portfolioList.locator('[data-entity-type="task"]')).toHaveCount(
+    1,
+  );
   await page.reload();
-  await expect(portfolioList.locator('[data-entity-type="task"]')).toHaveCount(1);
+  await expect(portfolioList.locator('[data-entity-type="task"]')).toHaveCount(
+    1,
+  );
 });

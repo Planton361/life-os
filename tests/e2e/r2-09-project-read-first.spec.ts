@@ -117,11 +117,14 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
     name: "Tasks & Progress",
     exact: true,
   });
-  const editTrigger = page.getByRole("button", {
-    name: "Bearbeiten",
+  const projectManagement = page.getByRole("button", {
+    name: "Project verwalten",
     exact: true,
   });
-  await expect(editTrigger).toBeEnabled();
+  await expect(projectManagement).toBeEnabled();
+  await expect(
+    page.getByRole("button", { name: "Bearbeiten", exact: true }),
+  ).toHaveCount(0);
   await expect(
     main.locator("input:visible, textarea:visible, select:visible"),
   ).toHaveCount(0);
@@ -156,32 +159,66 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
       ).toBeLessThan(height);
     }
     await page.screenshot({
-      path: info.outputPath(`project-read-${width}.png`),
+      path: info.outputPath("project-read-" + width + ".png"),
       fullPage: true,
       caret: "initial",
     });
-    for (const [label, regionName, suffix] of [
-      ["Bearbeiten", "Project Header", "edit"],
-      ["Artifact verwalten", "Primary Work Artifact", "artifact-management"],
-      ["Beziehungen verwalten", "Project Context", "relations"],
+    await projectManagement.click();
+    const manageDialog = page.getByRole("dialog", {
+      name: "Project verwalten",
+      exact: true,
+    });
+    await expect(manageDialog).toBeVisible();
+    const editTrigger = manageDialog.getByRole("button", {
+      name: "Bearbeiten",
+      exact: true,
+    });
+    await editTrigger.click();
+    await expect(editTrigger).toHaveAttribute("aria-expanded", "true");
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    await page.screenshot({
+      path: info.outputPath("project-edit-management-" + width + ".png"),
+      fullPage: true,
+      caret: "initial",
+    });
+    await manageDialog
+      .getByRole("button", { name: "Schließen", exact: true })
+      .last()
+      .click();
+    await expect(editTrigger).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(manageDialog).toBeHidden();
+    await expect(projectManagement).toHaveAttribute("aria-expanded", "false");
+    await expect(projectManagement).toBeFocused();
+    for (const [regionName, label, suffix] of [
+      ["Primary Work Artifact", "Artifact verwalten", "artifact"],
+      ["Project Context", "Beziehungen verwalten", "relations"],
     ]) {
       const region = page.getByLabel(regionName, { exact: true });
       const trigger = region.getByRole("button", { name: label, exact: true });
       await trigger.click();
       await expect(trigger).toHaveAttribute("aria-expanded", "true");
+      const dialog = page.getByRole("dialog", { name: label, exact: true });
+      await expect(dialog).toBeVisible();
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       ).toBe(true);
       await page.screenshot({
-        path: info.outputPath(`project-${suffix}-${width}.png`),
+        path: info.outputPath(
+          "project-" + suffix + "-management-" + width + ".png",
+        ),
         fullPage: true,
         caret: "initial",
       });
-      await region
-        .getByRole("button", { name: "Schließen", exact: true })
-        .click();
+      await page.keyboard.press("Escape");
+      await expect(dialog).toBeHidden();
+      await expect(trigger).toHaveAttribute("aria-expanded", "false");
       await expect(trigger).toBeFocused();
     }
   }
@@ -200,6 +237,15 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
     .click();
   await expect(page).toHaveURL(new RegExp(`/resources/${resources[0].id}$`));
   await page.goto(`/projects/${project.id}`);
+  await projectManagement.click();
+  const manageDialog = page.getByRole("dialog", {
+    name: "Project verwalten",
+    exact: true,
+  });
+  const editTrigger = manageDialog.getByRole("button", {
+    name: "Bearbeiten",
+    exact: true,
+  });
   await editTrigger.focus();
   await editTrigger.press("Enter");
   await expect(editTrigger).toHaveAttribute("aria-expanded", "true");
@@ -257,24 +303,31 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
   await expect(primary).toContainText(resources[1].title);
   await expect(additional).toContainText(resources[0].title);
   expect((await api.from("resources").select("id")).data).toHaveLength(3);
-  const add = additional.getByRole("button", {
-    name: "+ Artifact hinzufügen",
+  const manageRelations = page.getByRole("button", {
+    name: "Beziehungen verwalten",
     exact: true,
   });
-  await add.click();
+  await manageRelations.click();
+  const relationsDialog = page.getByRole("dialog", {
+    name: "Beziehungen verwalten",
+    exact: true,
+  });
   await expect(
-    additional.getByRole("form", {
-      name: "Mit Project verknüpfen",
+    relationsDialog.getByRole("form", {
+      name: "Arbeitsartefakt verknüpfen",
       exact: true,
     }),
   ).toBeVisible();
   await expect(
-    additional.getByRole("link", { name: "Neue externe Referenz anlegen" }),
+    relationsDialog.getByRole("link", {
+      name: "Neue externe Referenz anlegen",
+    }),
   ).toHaveAttribute("href", `/resources/new?project=${project.id}`);
-  await additional
+  await relationsDialog
     .getByRole("button", { name: "Schließen", exact: true })
+    .first()
     .click();
-  await expect(add).toBeFocused();
+  await expect(manageRelations).toBeFocused();
   const manage = page.getByRole("button", {
     name: "Beziehungen verwalten",
     exact: true,
@@ -312,15 +365,18 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
   await expect(
     main.locator("input:visible, textarea:visible, select:visible"),
   ).toHaveCount(0);
-  await editTrigger.click();
-  await page
-    .getByRole("button", { name: "Project verwalten", exact: true })
-    .click();
+  await projectManagement.click();
   await expect(editTrigger).toHaveAttribute("aria-expanded", "false");
   await expect(
-    page.getByRole("button", { name: "Project archivieren", exact: true }),
+    manageDialog.getByRole("button", {
+      name: "Project archivieren",
+      exact: true,
+    }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Schließen", exact: true }).click();
+  await manageDialog
+    .getByRole("button", { name: "Schließen", exact: true })
+    .first()
+    .click();
 
   // Three composition states use the same canonical models and local user.
   const light = (
@@ -399,7 +455,9 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
     ["empty", empty],
   ] as const) {
     await page.goto(`/projects/${record.id}`);
-    await expect(editTrigger).toBeEnabled();
+    await expect(
+      page.getByRole("button", { name: "Project verwalten", exact: true }),
+    ).toBeEnabled();
     await expect(
       page.getByLabel("Project Header", { exact: true }),
     ).toContainText(record.title);
@@ -414,27 +472,56 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
     } else {
       await expect(
         page.getByRole("region", {
+          name: "Additional Work Artifacts",
+          exact: true,
+        }),
+      ).toHaveCount(0);
+      await expect(
+        page.getByRole("region", {
           name: "Resources & References",
           exact: true,
         }),
-      ).toContainText("Keine References.");
+      ).toHaveCount(0);
+    }
+    if (state === "empty") {
+      await expect(
+        taskRegion.getByRole("link", {
+          name: "Erste Task anlegen",
+          exact: true,
+        }),
+      ).toBeVisible();
+      await expect(
+        taskRegion.getByRole("link", { name: "+ Task", exact: true }),
+      ).toHaveCount(0);
+      await expect(
+        taskRegion.getByRole("button", {
+          name: "Weitere Work-Optionen",
+          exact: true,
+        }),
+      ).toBeVisible();
+      await expect(taskRegion).not.toContainText(
+        /0 Tasks|0 Milestones|READY 0|BLOCKED 0/,
+      );
     }
     for (const [width, height] of [
       [1920, 1080],
       [2560, 1440],
       [390, 844],
     ]) {
+      await page.evaluate(() => window.scrollTo(0, 0));
       await page.setViewportSize({ width, height });
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       ).toBe(true);
-      for (const surface of [
+      const surfaceLocators = [
         page.getByLabel("Project Header", { exact: true }),
         page.locator("[data-project-workspace]"),
-        page.locator("[data-project-secondary]"),
-      ]) {
+      ];
+      const secondary = page.locator("[data-project-secondary]");
+      if ((await secondary.count()) > 0) surfaceLocators.push(secondary);
+      for (const surface of surfaceLocators) {
         expect(
           await surface.evaluate((el) => getComputedStyle(el).borderTopWidth),
         ).toBe("1px");
@@ -453,22 +540,17 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
           .getByRole("complementary", { name: "Project Context Rail" })
           .boundingBox())!;
         expect(workBox.width / railBox.width).toBeGreaterThan(1.8);
-        expect(workBox.y + workBox.height).toBeLessThanOrEqual(height);
         if (state !== "rich")
           expect(
             (await page.locator("[data-project-task-list]").boundingBox())!
               .height,
           ).toBeLessThan(260);
-        const secondBox = (await page
-          .locator("[data-project-secondary]")
-          .boundingBox())!;
-        expect(secondBox.y).toBeGreaterThanOrEqual(workBox.y + workBox.height);
-        expect(secondBox.y + secondBox.height).toBeLessThan(height);
-        expect(
-          await page.evaluate(
-            () => document.documentElement.scrollHeight <= innerHeight + 2,
-          ),
-        ).toBe(true);
+        if ((await secondary.count()) > 0) {
+          const secondBox = (await secondary.boundingBox())!;
+          expect(secondBox.y).toBeGreaterThanOrEqual(
+            workBox.y + workBox.height,
+          );
+        }
       }
       await page.screenshot({
         path: info.outputPath(`project-${state}-${width}.png`),
@@ -478,28 +560,34 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
       if (state === "rich") {
         const list = page.locator("[data-project-task-list]");
         expect(
-          await list.evaluate((el) => el.scrollHeight > el.clientHeight),
+          await list.evaluate(
+            (el) =>
+              el.scrollHeight <= el.clientHeight + 1 &&
+              getComputedStyle(el).overflowY !== "auto" &&
+              getComputedStyle(el).overflowY !== "scroll" &&
+              el.tabIndex === -1,
+          ),
         ).toBe(true);
-        await list.focus();
-        await list.press("End");
+        await page.evaluate(() =>
+          window.scrollTo(0, document.body.scrollHeight),
+        );
         await expect
-          .poll(() => list.evaluate((el) => el.scrollTop))
+          .poll(() => page.evaluate(() => window.scrollY))
           .toBeGreaterThan(0);
-        await list.evaluate((el) => {
-          el.scrollTop = 0;
-        });
       }
     }
   }
   await page.goto(`/projects/${light.id}`);
-  const refs = page.getByRole("region", {
-    name: "Resources & References",
+  const lightRelations = page.getByRole("button", {
+    name: "Beziehungen verwalten",
     exact: true,
   });
-  await refs
-    .getByRole("button", { name: "+ Reference hinzufügen", exact: true })
-    .click();
-  const refForm = refs.getByRole("form", {
+  await lightRelations.click();
+  const lightRelationsDialog = page.getByRole("dialog", {
+    name: "Beziehungen verwalten",
+    exact: true,
+  });
+  const refForm = lightRelationsDialog.getByRole("form", {
     name: "Reference verknüpfen",
     exact: true,
   });
@@ -514,8 +602,13 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
       .last(),
   ).toBeVisible();
   await page.reload();
-  await expect(refs).toContainText(resources[2].title);
-  await refs
+  await expect(
+    page.getByRole("region", {
+      name: "Resources & References",
+      exact: true,
+    }),
+  ).toContainText(resources[2].title);
+  await page
     .getByRole("link", { name: resources[2].title, exact: true })
     .click();
   await expect(page).toHaveURL(new RegExp(`/resources/${resources[2].id}$`));
