@@ -142,3 +142,109 @@ export function ManagementDisclosure({
     </div>
   );
 }
+
+export function ManagementDialog({
+  label,
+  children,
+  triggerText,
+  closeText = "Schließen",
+  panelClassName = "",
+  focusFirstOnOpen = true,
+  initiallyOpen = false,
+}: {
+  label: string;
+  children: ReactNode;
+  triggerText?: string;
+  closeText?: string;
+  panelClassName?: string;
+  focusFirstOnOpen?: boolean;
+  initiallyOpen?: boolean;
+}) {
+  const hydrated = useSyncExternalStore(
+    subscribe,
+    () => true,
+    () => false,
+  );
+  const [open, setOpen] = useState(initiallyOpen);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const dialog = useRef<HTMLDialogElement>(null);
+  const dialogId = useId();
+  const headingId = useId();
+
+  useEffect(() => {
+    const element = dialog.current;
+    if (!element) return;
+    if (open && !element.open) {
+      element.showModal();
+      if (focusFirstOnOpen) {
+        const frame = window.requestAnimationFrame(() => {
+          element
+            .querySelector<HTMLElement>(
+              'input:not([type="hidden"]):not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+            )
+            ?.focus();
+        });
+        return () => window.cancelAnimationFrame(frame);
+      }
+    } else if (!open && element.open) {
+      element.close();
+    }
+  }, [focusFirstOnOpen, open]);
+
+  function close() {
+    setOpen(false);
+    trigger.current?.focus();
+  }
+
+  return (
+    <>
+      <button
+        ref={trigger}
+        type="button"
+        disabled={!hydrated}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-controls={dialogId}
+        className="min-h-10 text-left text-sm text-[var(--accent-cyan)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
+        onClick={() => setOpen(true)}
+      >
+        {triggerText ?? label}
+      </button>
+      <dialog
+        ref={dialog}
+        id={dialogId}
+        aria-labelledby={headingId}
+        className={`w-[min(48rem,calc(100vw-2rem))] max-h-[min(84dvh,56rem)] overflow-y-auto rounded-xl border border-[var(--border-default)] bg-[var(--surface-1)] p-0 text-[var(--text-primary)] shadow-2xl backdrop:bg-black/60 ${panelClassName}`}
+        onCancel={(event) => {
+          event.preventDefault();
+          close();
+        }}
+        onClose={() => {
+          setOpen(false);
+          trigger.current?.focus();
+        }}
+      >
+        <div className="grid gap-5 p-5 sm:p-6">
+          <div className="flex items-start justify-between gap-4 border-b border-[var(--border-subtle)] pb-3">
+            <h2 id={headingId} className="text-lg font-semibold">
+              {label}
+            </h2>
+            <button
+              type="button"
+              aria-label={closeText}
+              className="min-h-10 shrink-0 text-sm text-[var(--text-secondary)] underline"
+              onClick={close}
+            >
+              {closeText}
+            </button>
+          </div>
+          <DisclosureClose.Provider value={close}>
+            <DisclosureGroup.Provider value={null}>
+              {children}
+            </DisclosureGroup.Provider>
+          </DisclosureClose.Provider>
+        </div>
+      </dialog>
+    </>
+  );
+}

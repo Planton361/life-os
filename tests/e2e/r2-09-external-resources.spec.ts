@@ -33,7 +33,9 @@ async function create(
   if (area) await form.getByLabel("Area", { exact: true }).selectOption(area);
   if (project) {
     if (kind === "Task")
-      await form.getByRole("button", { name: "Weitere Angaben (optional)" }).click();
+      await form
+        .getByRole("button", { name: "Weitere Angaben (optional)" })
+        .click();
     await form.getByLabel("Project", { exact: true }).selectOption(project);
   }
   await submit(page, formName);
@@ -88,21 +90,33 @@ async function apiFor(page: Page) {
   return api;
 }
 async function assignProjectResource(page: Page, id: string, role: string) {
-  const region = page.getByRole("region", {
-    name: "Additional Work Artifacts",
+  const trigger = page.getByRole("button", {
+    name: "Beziehungen verwalten",
     exact: true,
   });
-  const add = region.getByRole("button", {
-    name: "+ Artifact hinzufügen",
+  if ((await trigger.getAttribute("aria-expanded")) === "false")
+    await trigger.click();
+  const dialog = page.getByRole("dialog", {
+    name: "Beziehungen verwalten",
     exact: true,
   });
-  if ((await add.getAttribute("aria-expanded")) === "false") await add.click();
-  const form = region.getByRole("form", {
-    name: "Mit Project verknüpfen",
-    exact: true,
-  });
-  await form.getByLabel("Resource", { exact: true }).selectOption(id);
-  await form.getByLabel("Verwendung im Project").selectOption(role);
+  const form =
+    role === "reference"
+      ? dialog.getByRole("form", {
+          name: "Reference verknüpfen",
+          exact: true,
+        })
+      : dialog.getByRole("form", {
+          name: "Arbeitsartefakt verknüpfen",
+          exact: true,
+        });
+  await form
+    .getByLabel(role === "reference" ? "Resource" : "Arbeitsartefakt", {
+      exact: true,
+    })
+    .selectOption(id);
+  if (role !== "reference")
+    await form.getByLabel("Verwendung", { exact: true }).selectOption(role);
   await form.getByRole("button").click();
   await expect(
     page
@@ -111,6 +125,22 @@ async function assignProjectResource(page: Page, id: string, role: string) {
       .last(),
   ).toBeVisible();
   await page.reload();
+}
+
+async function openSupportingContent(page: Page) {
+  const summary = page.getByRole("region", {
+    name: "Weitere Inhalte",
+    exact: true,
+  });
+  await summary
+    .getByRole("button", { name: /Weitere Inhalte ansehen/ })
+    .click();
+  const dialog = page.getByRole("dialog", {
+    name: "Weitere Inhalte",
+    exact: true,
+  });
+  await expect(dialog).toBeVisible();
+  return dialog;
 }
 
 test("R2-09 explicit project artifacts, references, primary swap, archive and ownership", async ({
@@ -174,11 +204,12 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
     await page.goto(`/projects/${project}`);
     await expect(
       page.getByRole("region", { name: "Primary Work Artifact", exact: true }),
-    ).toContainText("Noch kein Arbeitsartefakt verknüpft");
+    ).toHaveCount(0);
     await page
-      .getByRole("button", { name: "+ Artifact hinzufügen", exact: true })
+      .getByRole("button", { name: "Beziehungen verwalten", exact: true })
       .click();
     await page
+      .getByRole("dialog", { name: "Beziehungen verwalten", exact: true })
       .getByRole("link", { name: "Neue externe Referenz anlegen" })
       .click();
     const form = page.getByRole("form", {
@@ -203,11 +234,18 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
     );
     const resource = new URL(page.url()).searchParams.get("resource")!;
     resourceIds.push(resource);
+    const projectResourceDialog = page.getByRole("dialog", {
+      name: "Beziehungen verwalten",
+      exact: true,
+    });
     await expect(
-      page
-        .getByRole("form", { name: "Mit Project verknüpfen" })
-        .getByLabel("Verwendung im Project"),
-    ).toHaveValue("");
+      projectResourceDialog
+        .getByRole("form", {
+          name: "Arbeitsartefakt verknüpfen",
+          exact: true,
+        })
+        .getByLabel("Arbeitsartefakt", { exact: true }),
+    ).toHaveValue(resource);
     expect(
       (
         await api
@@ -223,9 +261,7 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
     });
     await expect(primary.locator("article")).toContainText(title);
     await expect(
-      page
-        .getByRole("region", { name: "Resources & References", exact: true })
-        .locator(`[data-project-resource="${resource}"]`),
+      page.getByRole("region", { name: "Weitere Inhalte", exact: true }),
     ).toHaveCount(0);
     // New reference via existing canonical Resource UI, then normal Project link.
     const paper = await create(
@@ -252,7 +288,14 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
     ).toBeVisible();
     await page.reload();
     await expect(
-      page.getByRole("region", { name: "Resources & References", exact: true }),
+      page.getByRole("region", { name: "Weitere Inhalte", exact: true }),
+    ).toContainText(`Paper Docs ${key}`);
+    const referenceDialog = await openSupportingContent(page);
+    await expect(
+      referenceDialog.getByRole("region", {
+        name: "References verwalten",
+        exact: true,
+      }),
     ).toContainText(`Paper Docs ${key}`);
     await expect(
       primary.locator(`[data-project-resource="${paper}"]`),
@@ -260,6 +303,12 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
     await expect(
       page.getByRole("region", { name: "Tasks & Progress", exact: true }),
     ).toContainText(`${key} Arbeit`);
+    await page.keyboard.press("Escape");
+    await expect(
+      page
+        .getByRole("region", { name: "Weitere Inhalte", exact: true })
+        .getByRole("button", { name: /Weitere Inhalte ansehen/ }),
+    ).toBeFocused();
     // Current responsive bounds + full surfaces after hydration, no screenshot DOM mutation.
     for (const [width, height] of [
       [1920, 1080],
@@ -269,7 +318,7 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
     ]) {
       await page.setViewportSize({ width, height });
       await expect(
-        page.getByRole("button", { name: "Bearbeiten", exact: true }),
+        page.getByRole("button", { name: "Project verwalten", exact: true }),
       ).toBeEnabled();
       expect(
         await page.evaluate(
@@ -336,7 +385,8 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
     }
     await page.goto(`/resources/${resource}`);
     await expect(
-      page.getByRole("region", { name: "Beziehungen", exact: true })
+      page
+        .getByRole("region", { name: "Beziehungen", exact: true })
         .locator(`[data-resource-relation="${resource}"]`)
         .filter({ hasText: `Outcome ${stamp}` }),
     ).toBeVisible();
@@ -346,7 +396,10 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
     await page.goto(`/projects/${project}`);
     // Additional artifact, then explicit promotion through the card's role editor.
     await assignProjectResource(page, paper, "additional_artifact");
-    const card = page.locator(`[data-project-resource="${paper}"]`);
+    let supportingDialog = await openSupportingContent(page);
+    const card = supportingDialog.locator(
+      `[data-project-resource="${paper}"]`,
+    );
     await card
       .getByRole("button", { name: "Artifact verwalten", exact: true })
       .click();
@@ -362,12 +415,19 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
     ).toBeVisible();
     await page.reload();
     await expect(primary.locator("article")).toContainText(`Paper Docs ${key}`);
+    supportingDialog = await openSupportingContent(page);
     await expect(
-      page.getByRole("region", {
+      supportingDialog.getByRole("region", {
         name: "Additional Work Artifacts",
         exact: true,
       }),
     ).toContainText(title);
+    await page.keyboard.press("Escape");
+    await expect(
+      page
+        .getByRole("region", { name: "Weitere Inhalte", exact: true })
+        .getByRole("button", { name: /Weitere Inhalte ansehen/ }),
+    ).toBeFocused();
     expect(
       (
         await api
@@ -395,25 +455,34 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
     await submit(page, "Resource archivieren");
     await page.reload();
     await page.goto(`/projects/${project}`);
-    await expect(primary).toContainText("Kein aktives primäres");
+    await expect(primary).toHaveCount(0);
+    supportingDialog = await openSupportingContent(page);
     await expect(
-      page.getByRole("region", {
+      supportingDialog.getByRole("region", {
         name: "Additional Work Artifacts",
         exact: true,
       }),
     ).toContainText("Archiviert");
+    await page.keyboard.press("Escape");
+    await expect(
+      page
+        .getByRole("region", { name: "Weitere Inhalte", exact: true })
+        .getByRole("button", { name: /Weitere Inhalte ansehen/ }),
+    ).toBeFocused();
     await assignProjectResource(page, paper, "primary_artifact"); // demotes archived previous Primary, keeps its Resource
     await page.goto(`/resources/${resource}`);
     await submit(page, "Resource wiederherstellen");
     await page.reload();
     await page.goto(`/projects/${project}`);
     await expect(primary.locator("article")).toContainText(`Paper Docs ${key}`);
+    supportingDialog = await openSupportingContent(page);
     await expect(
-      page.getByRole("region", {
+      supportingDialog.getByRole("region", {
         name: "Additional Work Artifacts",
         exact: true,
       }),
     ).toContainText(title);
+    await page.keyboard.press("Escape");
     await page.goto("/resources");
     await page.getByLabel("Search resources", { exact: true }).fill(title);
     await page.getByRole("button", { name: "Suchen", exact: true }).click();
@@ -423,7 +492,14 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
   await page.goto(`/projects/${projects[1]}`);
   await assignProjectResource(page, resourceIds[0], "reference");
   await expect(
-    page.getByRole("region", { name: "Resources & References", exact: true }),
+    page.getByRole("region", { name: "Weitere Inhalte", exact: true }),
+  ).toContainText(`GitHub Repository ${stamp}`);
+  const supportingDialog = await openSupportingContent(page);
+  await expect(
+    supportingDialog.getByRole("region", {
+      name: "References verwalten",
+      exact: true,
+    }),
   ).toContainText(`GitHub Repository ${stamp}`);
   await page.goto(`/resources/${resourceIds[0]}`);
   const projectUse = page
@@ -529,16 +605,25 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
   ).not.toBeNull();
   await page.goto(`/projects/${projects[0]}`);
   // Server-action failure remains visible when a selected endpoint is archived after loading.
-  const active = page.getByRole("region", {
-    name: "Additional Work Artifacts",
+  const relationshipTrigger = page.getByRole("button", {
+    name: "Beziehungen verwalten",
     exact: true,
   });
-  await active
-    .getByRole("button", { name: "+ Artifact hinzufügen", exact: true })
-    .click();
-  const f = active.getByRole("form", { name: "Mit Project verknüpfen" });
-  await f.getByLabel("Resource", { exact: true }).selectOption(resourceIds[2]);
-  await f.getByLabel("Verwendung im Project").selectOption("primary_artifact");
+  await relationshipTrigger.click();
+  const relationshipDialog = page.getByRole("dialog", {
+    name: "Beziehungen verwalten",
+    exact: true,
+  });
+  const f = relationshipDialog.getByRole("form", {
+    name: "Arbeitsartefakt verknüpfen",
+    exact: true,
+  });
+  await f
+    .getByLabel("Arbeitsartefakt", { exact: true })
+    .selectOption(resourceIds[2]);
+  await f
+    .getByLabel("Verwendung", { exact: true })
+    .selectOption("primary_artifact");
   await api
     .from("resources")
     .update({ archived_at: new Date().toISOString() })

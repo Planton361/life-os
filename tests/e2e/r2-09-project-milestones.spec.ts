@@ -74,11 +74,14 @@ test("Project milestones: CRUD, grouping, ordering, progress, archive and owners
     ),
   ).toHaveCount(0);
   const assignmentTrigger = work.getByRole("button", {
-    name: "Tasks zuordnen",
+    name: "Weitere Work-Optionen",
     exact: true,
   });
   await assignmentTrigger.click();
   await expect(assignmentTrigger).toHaveAttribute("aria-expanded", "true");
+  await expect(
+    work.getByRole("dialog", { name: "Weitere Work-Optionen" }),
+  ).toBeVisible();
   await work.getByRole("button", { name: "Schließen", exact: true }).click();
   await expect(assignmentTrigger).toBeFocused();
   await assignmentTrigger.click();
@@ -86,9 +89,7 @@ test("Project milestones: CRUD, grouping, ordering, progress, archive and owners
   await expect(assignmentTrigger).toHaveAttribute("aria-expanded", "false");
   await expect(assignmentTrigger).toBeFocused();
   for (const title of ["Research", "Implementation"]) {
-    await work
-      .getByRole("button", { name: "Milestone hinzufügen", exact: true })
-      .click();
+    await assignmentTrigger.click();
     const form = work.getByRole("form", {
       name: "Milestone erstellen",
       exact: true,
@@ -113,9 +114,7 @@ test("Project milestones: CRUD, grouping, ordering, progress, archive and owners
       .order("sort_order")
   ).data!;
   async function assign(taskId: string, stageId: string) {
-    await work
-      .getByRole("button", { name: "Tasks zuordnen", exact: true })
-      .click();
+    await assignmentTrigger.click();
     const form = work.getByRole("form", {
       name: "Task-Milestone speichern",
       exact: true,
@@ -152,9 +151,7 @@ test("Project milestones: CRUD, grouping, ordering, progress, archive and owners
   await group("Research")
     .getByRole("link", { name: tasks[0].title, exact: true })
     .click();
-  await expect(
-    page.locator("[data-task-context]"),
-  ).toContainText("Research");
+  await expect(page.locator("[data-task-context]")).toContainText("Research");
   await page
     .getByRole("button", { name: "Mehr verwalten", exact: true })
     .click();
@@ -174,7 +171,7 @@ test("Project milestones: CRUD, grouping, ordering, progress, archive and owners
   await expect(group("Research")).toContainText("1/1 Tasks erledigt");
   await expect(group("Research")).toContainText("Offen"); // never auto-completed
   await page.reload();
-  await expect(work).toContainText("1/3 Tasks erledigt");
+  await expect(work).toContainText("3 Tasks · 1 erledigt");
   await page.goto(`/tasks/${tasks[0].id}`);
   const taskContext = page.locator("[data-task-context]");
   const taskManagement = page;
@@ -242,7 +239,7 @@ test("Project milestones: CRUD, grouping, ordering, progress, archive and owners
   await expect(group("Implementation")).toContainText("Offen");
   await expect(group("Research")).toContainText("Aktuell");
   await edit("Research", "done");
-  await expect(work).toContainText("1/2 Milestones erledigt");
+  await expect(work).toContainText("2 Milestones · 1 erledigt");
   await expect(work.locator("[data-milestone-id]").last()).toHaveAttribute(
     "data-milestone-id",
     stages[0].id,
@@ -487,17 +484,23 @@ test("Project milestones: CRUD, grouping, ordering, progress, archive and owners
       .select()
       .single()
   ).data!;
-  const archiveContext = (await api.rpc("project_review_context", {
-    p_project_id: projects[1].id,
-  }).throwOnError()).data as { completion_revision: number; completion_cycle: number };
-  await api.rpc("project_depth_command", {
-    p_project_id: projects[1].id,
-    p_command_id: crypto.randomUUID(),
-    p_operation: "project.archive",
-    p_expected_revision: archiveContext.completion_revision,
-    p_expected_cycle: archiveContext.completion_cycle,
-    p_payload: {},
-  }).throwOnError();
+  const archiveContext = (
+    await api
+      .rpc("project_review_context", {
+        p_project_id: projects[1].id,
+      })
+      .throwOnError()
+  ).data as { completion_revision: number; completion_cycle: number };
+  await api
+    .rpc("project_depth_command", {
+      p_project_id: projects[1].id,
+      p_command_id: crypto.randomUUID(),
+      p_operation: "project.archive",
+      p_expected_revision: archiveContext.completion_revision,
+      p_expected_cycle: archiveContext.completion_cycle,
+      p_payload: {},
+    })
+    .throwOnError();
   await page.goto(`/tasks/${oldTask.id}`);
   await taskManagement
     .getByRole("button", { name: "Mehr verwalten", exact: true })
@@ -546,9 +549,9 @@ test("Project milestones: CRUD, grouping, ordering, progress, archive and owners
   await taskManagement
     .getByRole("button", { name: "Task-Milestone speichern", exact: true })
     .click();
-  await expect(taskManagement.getByRole("alert").filter({ hasText: "Prüfe die Angaben" })).toContainText(
-    "Prüfe die Angaben",
-  );
+  await expect(
+    taskManagement.getByRole("alert").filter({ hasText: "Prüfe die Angaben" }),
+  ).toContainText("Prüfe die Angaben");
   await page.reload();
   await expect(taskContext).toContainText(projects[0].title);
   await expect(taskContext).not.toContainText("Etappe");

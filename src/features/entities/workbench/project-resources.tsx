@@ -1,5 +1,8 @@
 import Link from "next/link";
-import { ManagementDisclosure } from "./management-disclosure";
+import {
+  ManagementDialog,
+  ManagementDisclosure,
+} from "./management-disclosure";
 import type { WorkbenchData } from "@/features/real-data/supabase/repositories/entity-workbench-read";
 import { ExternalResourceLink } from "@/features/resources/external-resource-link";
 import { Choice, OperationForm, actionClass } from "./forms";
@@ -28,7 +31,11 @@ export function ProjectResourceRoleForm({
   label?: string;
 }) {
   return (
-    <OperationForm operation="project.resource.role" label={label}>
+    <OperationForm
+      operation="project.resource.role"
+      label={label}
+      closeOnSuccess
+    >
       <input type="hidden" name="projectId" value={projectId} />
       <input type="hidden" name="resourceId" value={resourceId} />
       <Choice
@@ -68,93 +75,117 @@ export function ProjectResources({
   );
   const additional = artifacts.filter((u) => u !== primary);
   const references = uses.filter((u) => u.role === "reference");
-  const render = (use: (typeof uses)[number], manage = false) => (
-    <article
-      key={use.resource.id}
-      data-project-resource={use.resource.id}
-      className="grid min-w-0 gap-1"
-    >
-      <p className="text-sm text-[var(--text-secondary)]">
-        {resourceTypeLabels[use.resource.type] ?? use.resource.type}
-
-        {use.resource.archived_at ? " · Archiviert" : ""}
-      </p>
-      <h3
-        className={
-          use === primary
-            ? "break-words text-xl font-semibold"
-            : "break-words font-semibold"
-        }
-      >
-        {use.resource.title}
-      </h3>
-      {use === primary && use.resource.summary && (
-        <p className="line-clamp-3 break-words text-sm text-[var(--text-secondary)]">
-          {use.resource.summary}
-        </p>
-      )}
-      <div className="flex flex-wrap items-center gap-4">
-        <ExternalResourceLink
-          url={use.resource.url}
-          title={use.resource.title}
-        />
-        <Link
-          className="min-h-10 content-center text-sm underline"
-          href={`/resources/${use.resource.id}`}
-        >
-          Details öffnen
-        </Link>
-      </div>
-      {!project.archived_at && (use.role !== "reference" || manage) && (
-        <ManagementDisclosure
-          label={
-            use.role === "reference"
-              ? "Reference verwalten"
-              : "Artifact verwalten"
-          }
-        >
-          {!use.resource.archived_at && (
-            <ProjectResourceRoleForm
-              projectId={projectId}
-              resourceId={use.resource.id}
-              role={use.role}
-            />
-          )}
-          {use === primary && (
-            <OperationForm
-              operation="project.resource.role"
-              label="Primary ändern"
-            >
-              <input type="hidden" name="projectId" value={projectId} />
-              <input type="hidden" name="role" value="primary_artifact" />
-              <Choice
-                name="resourceId"
-                label="Neues primäres Arbeitsartefakt"
-                required
-                options={data.resources
-                  .filter((r) => !r.archived_at)
-                  .map((r) => ({ id: r.id, title: r.title }))}
-              />
-            </OperationForm>
-          )}
+  const render = (use: (typeof uses)[number], manage = false) => {
+    const management = (
+      <>
+        {!use.resource.archived_at && (
+          <ProjectResourceRoleForm
+            projectId={projectId}
+            resourceId={use.resource.id}
+            role={use.role}
+          />
+        )}
+        {use === primary && (
           <OperationForm
             operation="project.resource.role"
-            label="Verknüpfung entfernen"
+            label="Primary ändern"
+            closeOnSuccess
           >
             <input type="hidden" name="projectId" value={projectId} />
-            <input type="hidden" name="resourceId" value={use.resource.id} />
-            <input type="hidden" name="role" value="remove" />
+            <input type="hidden" name="role" value="primary_artifact" />
+            <Choice
+              name="resourceId"
+              label="Neues primäres Arbeitsartefakt"
+              required
+              options={data.resources
+                .filter((r) => !r.archived_at)
+                .map((r) => ({ id: r.id, title: r.title }))}
+            />
           </OperationForm>
-        </ManagementDisclosure>
-      )}
-    </article>
-  );
+        )}
+        <OperationForm
+          operation="project.resource.role"
+          label="Verknüpfung entfernen"
+          closeOnSuccess
+        >
+          <input type="hidden" name="projectId" value={projectId} />
+          <input type="hidden" name="resourceId" value={use.resource.id} />
+          <input type="hidden" name="role" value="remove" />
+        </OperationForm>
+      </>
+    );
+    return (
+      <article
+        key={use.resource.id}
+        data-project-resource={use.resource.id}
+        className="grid min-w-0 gap-1"
+      >
+        <p className="text-sm text-[var(--text-secondary)]">
+          {resourceTypeLabels[use.resource.type] ?? use.resource.type}
+
+          {use.resource.archived_at ? " · Archiviert" : ""}
+        </p>
+        <h3
+          className={
+            use === primary
+              ? "break-words text-xl font-semibold"
+              : "break-words font-semibold"
+          }
+        >
+          {use.resource.title}
+        </h3>
+        {use === primary && use.resource.summary && (
+          <p className="line-clamp-3 break-words text-sm text-[var(--text-secondary)]">
+            {use.resource.summary}
+          </p>
+        )}
+        <div className="flex flex-wrap items-center gap-4">
+          <ExternalResourceLink
+            url={use.resource.url}
+            title={use.resource.title}
+          />
+          <Link
+            className="min-h-10 content-center text-sm underline"
+            href={`/resources/${use.resource.id}`}
+          >
+            Details öffnen
+          </Link>
+        </div>
+        {!project.archived_at &&
+          (use.role !== "reference" || manage) &&
+          (manage ? (
+            <ManagementDisclosure
+              label={
+                use.role === "reference"
+                  ? "Reference verwalten"
+                  : "Artifact verwalten"
+              }
+            >
+              {management}
+            </ManagementDisclosure>
+          ) : (
+            <ManagementDialog
+              label={
+                use.role === "reference"
+                  ? "Reference verwalten"
+                  : "Artifact verwalten"
+              }
+            >
+              {management}
+            </ManagementDialog>
+          ))}
+      </article>
+    );
+  };
   const titles = {
     primary: "Primary Work Artifact",
     additional: "Additional Work Artifacts",
     references: "Resources & References",
     "reference-management": "References verwalten",
   };
+  if (section === "primary" && !primary) return null;
+  if (section === "additional" && additional.length === 0) return null;
+  if (section === "references" && references.length === 0) return null;
   return (
     <section
       aria-label={titles[section]}
@@ -164,84 +195,24 @@ export function ProjectResources({
         className={`text-base font-semibold ${section === "primary" ? "text-[var(--accent-cyan)]" : "text-[var(--text-muted)]"}`}
       >
         {titles[section]}
-        {section === "references" || section === "additional" ? (
+        {(section === "references" || section === "additional") &&
+        (section === "references" ? references.length : additional.length) >
+          0 ? (
           <span className="text-sm font-normal text-[var(--text-muted)]">
             {" "}
             · {section === "references" ? references.length : additional.length}
           </span>
         ) : null}
       </h2>
-      {section === "primary" && (
-        <>
-          {primary ? (
-            render(primary)
-          ) : (
-            <p className="text-sm text-[var(--text-muted)]">
-              {artifacts.length
-                ? "Kein aktives primäres Arbeitsartefakt."
-                : "Noch kein Arbeitsartefakt verknüpft."}
-            </p>
-          )}
-        </>
-      )}
+      {section === "primary" && (primary ? render(primary) : null)}
       {section === "additional" &&
         (additional.length ? (
-          <div className="grid max-h-52 gap-3 overflow-y-auto">
-            {additional.map((u) => render(u))}
-          </div>
-        ) : (
-          <p className="text-sm text-[var(--text-muted)]">
-            Keine weiteren Arbeitsartefakte.
-          </p>
-        ))}
-      {section === "additional" && !project.archived_at && (
-        <ManagementDisclosure
-          label="+ Artifact hinzufügen"
-          initiallyOpen={Boolean(selectedResource)}
-        >
-          <OperationForm
-            operation="project.resource.role"
-            label="Mit Project verknüpfen"
-          >
-            <input type="hidden" name="projectId" value={projectId} />
-            <Choice
-              name="resourceId"
-              label="Resource"
-              value={selectedResource}
-              required
-              options={data.resources
-                .filter((r) => !r.archived_at)
-                .map((r) => ({ id: r.id, title: r.title }))}
-            />
-            <Choice
-              name="role"
-              label="Verwendung im Project"
-              required
-              options={[
-                {
-                  id: "primary_artifact",
-                  title: "Als primäres Arbeitsartefakt verwenden",
-                },
-                {
-                  id: "additional_artifact",
-                  title: "Weiteres Arbeitsartefakt",
-                },
-                { id: "reference", title: "Resource / Reference" },
-              ]}
-            />
-          </OperationForm>
-          <Link
-            className={actionClass}
-            href={`/resources/new?project=${projectId}`}
-          >
-            Neue externe Referenz anlegen
-          </Link>
-        </ManagementDisclosure>
-      )}
+          <div className="grid gap-3">{additional.map((u) => render(u))}</div>
+        ) : null)}
       {(section === "references" || section === "reference-management") && (
         <>
           {references.length ? (
-            <div className="grid max-h-52 gap-3 overflow-y-auto">
+            <div className="grid gap-3">
               {references.map((u) =>
                 section === "reference-management" ? (
                   render(u, true)
@@ -276,43 +247,142 @@ export function ProjectResources({
               Keine References.
             </p>
           )}
-          {section === "reference-management" && !project.archived_at && (
-            <OperationForm
-              operation="project.resource.role"
-              label="Reference verknüpfen"
-            >
-              <input type="hidden" name="projectId" value={projectId} />
-              <input type="hidden" name="role" value="reference" />
-              <Choice
-                name="resourceId"
-                label="Resource"
-                required
-                options={data.resources
-                  .filter((r) => !r.archived_at)
-                  .map((r) => ({ id: r.id, title: r.title }))}
-              />
-            </OperationForm>
-          )}
-          {section === "references" && !project.archived_at && (
-            <ManagementDisclosure label="+ Reference hinzufügen">
-              <OperationForm
-                operation="project.resource.role"
-                label="Reference verknüpfen"
-              >
-                <input type="hidden" name="projectId" value={projectId} />
-                <input type="hidden" name="role" value="reference" />
-                <Choice
-                  name="resourceId"
-                  label="Resource"
-                  required
-                  options={data.resources
-                    .filter((r) => !r.archived_at)
-                    .map((r) => ({ id: r.id, title: r.title }))}
-                />
-              </OperationForm>
-            </ManagementDisclosure>
-          )}
         </>
+      )}
+      {section === "reference-management" && !project.archived_at && (
+        <div className="grid gap-4 border-t border-[var(--border-subtle)] pt-4">
+          <OperationForm
+            operation="project.resource.role"
+            label="Arbeitsartefakt verknüpfen"
+            closeOnSuccess
+          >
+            <input type="hidden" name="projectId" value={projectId} />
+            <Choice
+              name="resourceId"
+              label="Arbeitsartefakt"
+              value={selectedResource}
+              required
+              options={data.resources
+                .filter((r) => !r.archived_at)
+                .map((r) => ({ id: r.id, title: r.title }))}
+            />
+            <Choice
+              name="role"
+              label="Verwendung"
+              required
+              options={[
+                { id: "primary_artifact", title: "Primäres Arbeitsartefakt" },
+                {
+                  id: "additional_artifact",
+                  title: "Weiteres Arbeitsartefakt",
+                },
+              ]}
+            />
+          </OperationForm>
+          <OperationForm
+            operation="project.resource.role"
+            label="Reference verknüpfen"
+            closeOnSuccess
+          >
+            <input type="hidden" name="projectId" value={projectId} />
+            <input type="hidden" name="role" value="reference" />
+            <Choice
+              name="resourceId"
+              label="Resource"
+              required
+              options={data.resources
+                .filter((r) => !r.archived_at)
+                .map((r) => ({ id: r.id, title: r.title }))}
+            />
+          </OperationForm>
+          <Link
+            className={actionClass}
+            href={`/resources/new?project=${projectId}`}
+          >
+            Neue externe Referenz anlegen
+          </Link>
+        </div>
+      )}
+    </section>
+  );
+}
+
+export function ProjectSupportingSummary({
+  data,
+  projectId,
+  selectedResource,
+}: {
+  data: WorkbenchData;
+  projectId: string;
+  selectedResource?: string;
+}) {
+  const project = data.projects.find((p) => p.id === projectId)!;
+  const uses = projectResourceUses(data, projectId);
+  const artifacts = uses.filter((use) => use.role !== "reference");
+  const primary = artifacts.find(
+    (use) => use.role === "primary_artifact" && !use.resource.archived_at,
+  );
+  const additional = artifacts.filter((use) => use !== primary);
+  const references = uses.filter((use) => use.role === "reference");
+  const supporting = [...additional, ...references];
+  if (supporting.length === 0) return null;
+
+  const summary = [
+    additional.length > 0
+      ? `${additional.length} weitere${additional.length === 1 ? "s" : ""} Arbeitsartefakt${additional.length === 1 ? "" : "e"}`
+      : "",
+    references.length > 0
+      ? `${references.length} Resource${references.length === 1 ? "" : "s"} / Reference${references.length === 1 ? "" : "s"}`
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const firstAdditional = additional[0]?.resource.title;
+  const firstReference = references[0]?.resource.title;
+
+  return (
+    <section
+      aria-label="Weitere Inhalte"
+      className="grid min-w-0 gap-1"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+        <h2 className="text-base font-semibold text-[var(--text-muted)]">
+          Weitere Inhalte
+        </h2>
+        <ManagementDialog
+          label="Weitere Inhalte"
+          triggerText={
+            project.archived_at
+              ? "Weitere Inhalte ansehen"
+              : "Weitere Inhalte ansehen und verwalten"
+          }
+        >
+          {additional.length > 0 && (
+            <ProjectResources
+              data={data}
+              projectId={projectId}
+              section="additional"
+              selectedResource={selectedResource}
+            />
+          )}
+          <ProjectResources
+            data={data}
+            projectId={projectId}
+            section="reference-management"
+            selectedResource={selectedResource}
+          />
+        </ManagementDialog>
+      </div>
+      <p className="text-sm text-[var(--text-secondary)]">{summary}</p>
+      {(firstAdditional || firstReference) && (
+        <p className="break-words text-sm text-[var(--text-muted)]">
+          {[
+            firstAdditional && `Arbeitsartefakt: ${firstAdditional}`,
+            firstReference && `Reference: ${firstReference}`,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        </p>
       )}
     </section>
   );
