@@ -394,39 +394,43 @@ operation and focus return after closing planning or a disclosure.
 ## Project Work Artifacts and References (R2-09)
 
 Project Detail is a composed read-first workbench, not a card dashboard. Identity,
-description, state/priority/Area, optional deadline, Edit and lifecycle overflow
-share one header; Next Step is a compact work cue directly below identity.
+description, state/priority/Area and optional deadline share one header; secondary
+management is grouped behind overflow. The #72 target places compact result/Criteria
+after identity, then Project-Fokus as a subordinate orientation cue before Work.
 “Structure with surfaces, not card fragmentation.” Project Detail has exactly
 three structural surfaces: Header, shared Main Workbench and Supporting Surface.
 Each uses an elevated matte background, subtle outer border and consistent radius.
-The header groups metadata below identity, retains deadline and separates Next
-Step within the same surface. Main Workbench joins Work (roughly 67%) and the
+The header groups present metadata below identity and retains deadline. Main
+Workbench joins Work (roughly 67%) and the
 Primary/Context rail (33%) with a full-height vertical divider. Task header/rows
 and Primary/Context use horizontal dividers; no nested cards. Supporting Surface
-joins Additional Artifacts and References in two columns with a vertical divider.
+keeps Additional Artifacts and References as one compact secondary summary under
+#72, without two equal-weight empty boxes.
 
 “Fill the information hierarchy, not the viewport” still applies: no viewport
-height fill. Main surface height follows actual tasks or rail content; long task
-lists scroll within a bounded maximum. Short/empty lists remain compact inside
-the shared structure. Background begins after Supporting Surface. Mobile stacks
-Header, Work, Primary/Context, Additional Artifacts, References; vertical dividers
-become horizontal separators. Readable headings, emphasized Primary title and
+height fill. Main surface height follows actual tasks or rail content; primary
+Project content has no internal-scroll trap. Short/empty lists remain compact
+inside the shared structure. Background begins after Supporting Surface. Mobile
+follows the #72 semantic reading order with compact context/support rather than
+stacking every desktop box; vertical dividers become horizontal separators.
+Readable headings, emphasized Primary title when present and
 human-readable Resource types remain; no internal relation/role copy.
 
 Milestones live inside the left Work section, never as top-level cards. Stage
-headings show explicit state, optional date and actual done/total task counts;
+headings show explicit state, optional date and quiet actual task counts only when
+useful for orientation; count semantics remain unchanged.
 Task rows retain existing ordering. Open/current stages precede completed stages,
 using persistent order within each group. Unassigned Tasks remain visible under
 “Ohne Milestone”, including Projects predating Milestones. Add/edit/assign/order/
-archive use explicit disclosures and existing forms. Current stage is text-labelled
+archive use bounded secondary dialogs under #72. Current stage is text-labelled
 “Aktuell”; completed stages are visually secondary. Archived stages are readable
 history in a disclosure. Task Detail has compact milestone context and an optional
 assignment disclosure. Other projections retain their existing focused purpose.
 
-“Bearbeiten” opens the existing editor in a bounded header disclosure; “⋯”
-exposes lifecycle actions with the accessible name “Project verwalten”.
-Artifact and relation controls open inline only on explicit action, with
-expanded state, keyboard operation, Escape/close and focus return. There is no
+“⋯” exposes secondary management/lifecycle actions with the accessible name
+“Project verwalten”. Existing edit, Artifact and relation operations use the #72
+bounded interaction/canonical route matrix, with keyboard operation, Escape/close
+and focus return rather than major inline expansions. There is no
 management footer. Ordinary Project deep links open readable values; the existing
 explicit Resource-create return context opens artifact addition with the created
 Resource selected. Create flow, roles, schema, relation semantics and Portfolio
@@ -434,8 +438,8 @@ Overview remain unchanged.
 
 Artifact entries show existing type, title, short description, “Extern öffnen ↗”
 and “Details öffnen”. Role changes are explicit and use bounded existing selects;
-Primary is never inferred. Empty state is compact: “Noch kein Arbeitsartefakt
-verknüpft.” plus existing-link and new-reference actions. References never appear
+Primary is never inferred. Empty context collapses under #72, with one quiet
+secondary setup/management entry rather than competing add actions. References never appear
 in Work Artifacts until explicitly assigned. Archived designations are labelled
 history and never presented as active Primary. Resource Detail displays Project
 use labels alongside ordinary Task/Skill context.
@@ -443,7 +447,9 @@ use labels alongside ordinary Task/Skill context.
 Use existing matte surfaces/tokens, semantic accents, visible keyboard focus and
 new-tab Accessible Names. Mobile stacks with no horizontal overflow. No provider
 logos/selectors, login/sync controls, previews or specialized embedded editors.
-R2-09 is USER ACCEPTED on 2026-09-09; preserve this accepted composition.
+R2-09 is USER ACCEPTED on 2026-09-09; preserve its macro structure and semantics.
+The USER ACCEPTED #72 target below refines presentation and secondary interactions;
+it is not implementation evidence for the current surface.
 
 
 ## Accepted Project Depth & Skill Development composition — #65
@@ -464,7 +470,7 @@ USER ACCEPTED data contract deepens this workbench with the result and criteria;
 it does not introduce a second Project surface.
 
 Header:
-- title/status/priority/Area/deadline and existing actions remain;
+- title/status and present priority/Area/deadline remain; actions follow #72 hierarchy;
 - Description stays background context;
 - **Gewünschtes Ergebnis** and optional `Fertig, wenn …` sit in the header as
   Project-owned result/acceptance depth;
@@ -477,8 +483,8 @@ Work/context:
   canonical;
 - the right context rail keeps Primary Work Artifact, Goal/Area and derived Skill
   provenance;
-- a quiet `Ergebnis im Blick` / `Abschluss prüfen` preview may expose the
-  explicit, calm Project Review without creating a second work lane;
+- only quiet `Abschluss prüfen` opens the focused Project Review under #72,
+  without a permanent preview lane competing with Work;
 - criterion scope removal is a visible Archive with a reason followed by a fresh
   Review read, never a hidden exclusion inside the Review;
 - successful Project completion does not automatically change Tasks or Project
@@ -499,7 +505,173 @@ Empty Project:
 
 Mobile preserves the order:
 Project identity → result/criteria → Project-Fokus → Work → context →
-Supporting. No viewport-fill requirement or horizontal scroll.
+Supporting → Review/History actions. No viewport-fill requirement, horizontal
+scroll or primary-content internal-scroll trap. #72 specifies compact mobile
+summaries instead of mechanically stacking desktop management blocks.
+
+### Accepted Project Detail Redesign interaction target — #72
+
+The [decision package](https://github.com/Planton361/life-os/issues/72#issuecomment-5910226294)
+was [USER ACCEPTED](https://github.com/Planton361/life-os/issues/72#issuecomment-5912775840)
+on 2026-09-30. This is the replacement Product/UX target for the failed #69
+surface acceptance, not acceptance of that implementation. PRODUCT owns the
+read-first mental model, state/action hierarchy and normal `/tasks/new` reuse.
+The R2-09 identity → shared Work/context → Supporting macro model stays intact;
+management must not dominate reading or execution.
+
+Desktop reading order is identity → desired result → Project-Fokus → next
+executable work → Tasks/Milestones → compact context → supporting depth →
+Review/History depth. Identity has title/status, restrained present metadata and
+one overflow entry; export stays a secondary utility. The result is unboxed or
+lightly bounded directly below identity. Project-Fokus is a compact subordinate
+line/block, distinct from result and Task guidance. Work remains visually dominant
+over result management, context, supporting content, Review and History.
+
+`Gewünschtes Ergebnis` is readable at a glance; `Fertig, wenn …` shows up to three
+read-only acceptance statements, then `N weitere` read-only expansion. No
+checkbox/progress interpretation or per-Criterion Manage controls. One quiet
+result/Criteria entry opens management. Empty result/Criteria collapse to a compact
+setup action; result without Criteria keeps quiet `Kriterien ergänzen`.
+
+Work has heading, one executable guidance region and Task/Milestone structure.
+One READY links the Task; multiple READY preserves user choice; all BLOCKED shows
+blocker context and access to the affected list; empty Work has only dominant
+`Erste Task anlegen`. Do not simultaneously emphasize total/done Task and Milestone
+fractions, READY/BLOCKED counts and multiple add/manage links. Canonical counts
+remain available where they inform orientation; no Progress Model change.
+Milestone rows keep title, restrained status/date, Tasks and one quiet overflow.
+One Work `Task hinzufügen` uses normal `/tasks/new` with optional Milestone context;
+an optional Milestone-local `+` may remain only if quiet and free of repeated
+button chrome. Milestone management and assignment stay secondary.
+
+Desktop context may use one compact rail for present Goal, Area, derived Skills
+and Primary Artifact, with one quiet management entry. Omit absent rows unless
+absence is itself decision-relevant. Supporting uses one `Weitere Inhalte`
+summary: compact populated counts/first relevant items and an explicit secondary
+view/manage entry. Empty supporting is quiet text/summary, not two large boxes.
+Existing Artifact roles and canonical Resource navigation remain unchanged.
+
+#### Bounded interaction matrix
+
+| Operation | Accepted placement and trigger |
+|---|---|
+| Result + Criterion create/edit/reorder/archive | One bounded dialog from quiet result/Criteria entry; result, list and management together, not one modal per Criterion |
+| Project metadata/status | Existing edit/manage interaction behind one secondary entry; no expanding inline status block |
+| Milestone create/edit/reorder/archive | Bounded dialog from Work; never push Task content down through inline form expansion |
+| Task assignment to Milestone | Same Work-management dialog or focused secondary dialog; no permanent form |
+| Relations/context | Bounded dialog or existing canonical management route; read surface displays current compact context |
+| Resource/Artifact add/manage | Existing canonical route/dialog where available; quiet entry from read summary, no duplicate custom editor |
+| Project Review | Dedicated focused desktop dialog; full-screen/near-full-screen dialog on mobile |
+| Immutable History | Explicit secondary History dialog/drawer on desktop; full-screen secondary view/dialog on mobile, retaining canonical pagination |
+
+Result/Criteria dialog: approximately 640–760px maximum width on desktop and
+80–85dvh maximum height; internal scroll is for management content only. Mobile
+uses near-full-width bounded dialog/sheet with safe scrolling below viewport
+height. Save executes the explicit operation; Cancel writes nothing; Escape
+cancels non-destructive interaction and returns focus. Criterion Archive requires
+its explicit reason in the same dialog and clearly signals irreversible meaning.
+Secondary edits must not materially reshape the Project reading surface.
+
+#### Review and History presentation
+
+Normal active Project shows only quiet `Abschluss prüfen`, near the result/context
+boundary or end of Work. Opening Review temporarily focuses that interaction;
+the background Project remains context. Dialog order:
+
+1. desired result snapshot;
+2. continue / complete decision;
+3. Criteria assessment;
+4. current-cycle archived scope acknowledgement when applicable;
+5. open Task/Milestone context and required acknowledgement/disposition;
+6. optional Resource evidence;
+7. rationale;
+8. Save / Cancel.
+
+All P-DATA preconditions remain unchanged. Preview/Cancel writes nothing;
+stale/conflict/error keeps the draft visible and requires conscious reload and
+reconfirmation. Escape returns focus to `Abschluss prüfen`. Successful Save
+closes Review and refreshes Project; `continue` returns to the normal current
+work surface without permanently expanding History.
+
+Completed Project shows compact `Abgeschlossen`, canonical Review date and short
+rationale/result summary. `Abschluss-Review ansehen` has moderate informational
+emphasis and opens secondary History directly at the canonical current completion
+Review, even beyond the first pagination window. `Verlauf ansehen` opens newest
+History. Reviews, lifecycle events, amendments and Resource snapshots remain
+immutable and paginated; full History is not permanently rendered on the main
+page. Amendments start inside History. Reopen is explicit and secondary in the
+completed summary. After Reopen, current work dominates and prior completion is
+secondary History. Legacy completed shows `Abgeschlossen ohne gespeicherten
+Review`, with Reopen and no fabricated Review/date. Archived is read-only with
+History/context navigation and no write CTA hierarchy.
+
+#### Responsive and accessible interaction
+
+- Required viewports: 3840×2160, 1920×1080 and 390×844. Content drives height;
+  no viewport fill, horizontal overflow, clipping/overlap or primary-content
+  internal-scroll trap.
+- Mobile order: identity → desired result + Criteria summary → Project-Fokus →
+  next executable work → Tasks/Milestones → context summary → supporting depth →
+  Review/History actions. No side rail or mechanical desktop-management stacking;
+  one primary CTA at a time. Long secondary content may scroll inside its bounded
+  dialog, never inside the primary Project work region.
+- Reuse established accessible dialog primitives, labelled title and description
+  (`aria-describedby` when present). Move focus into dialogs, trap it while modal,
+  support keyboard operation and Escape for non-destructive interactions, provide
+  explicit Cancel and return focus to the originating control on close.
+- Keep visible field labels, visible focus, logical headings and named Work
+  region. Status/readiness is readable without color; overflow has an explicit
+  accessible name. No hover-only controls.
+- Announce success/pending/errors through visible text and status/alert semantics;
+  pending disables duplicate submit. Validation/error/stale state retains entered
+  data. Destructive confirmation remains explicit where required by existing
+  lifecycle/Archive rules.
+- Keep matte V5 navy, existing tokens/components and restrained semantic accents;
+  no neon/gradient/glow, fake percent or progress ring.
+
+#### Patterns to remove in the bounded DELIVER repair
+
+- Inline expanding Result Editor and Criterion create/edit management.
+- Per-Criterion `Kriterium verwalten` in normal read mode.
+- Inline expanding Status Manager.
+- Permanent large Review lane and permanently fully rendered immutable History.
+- Large equal-weight empty Additional Artifact / Resource-Reference blocks with
+  aggressive independent add links.
+- Unnecessary repeated zero counts and simultaneous redundant Work counts.
+- Equal-weight `+ Task`, `+ Milestone`, `Tasks zuordnen` clusters.
+- Aggressive repeated per-Milestone Task-add controls.
+- Project-specific title-first Task-create composition.
+
+#### Browser-observable acceptance for the later DELIVER repair
+
+1. Empty Project has exactly one dominant `Erste Task anlegen`; result/Criteria
+   setup is compact and management never expands the main layout. No per-Criterion
+   Manage control appears in read mode, including read-only `N weitere` expansion.
+2. Project-origin `/tasks/new` has the same normal composition as global create,
+   with only context prefilled; Save returns to the actual owning Project and
+   correct Milestone/backlog, Cancel writes nothing and returns to origin.
+3. One READY / multiple READY / all BLOCKED each has one clear, user-controlled
+   guidance/action hierarchy. With Milestones, structure stays inside dominant
+   Work; add/manage controls and counts remain subordinate.
+4. Present context/support stays compact; absent values collapse without repeated
+   large empty blocks, dashes or zero chrome at every required viewport.
+5. Review opens as the focused accessible interaction; Preview/Cancel writes
+   nothing. Success returns to the normal view; stale preserves the draft and
+   requires conscious refresh/reconfirmation. Prove continue and complete states.
+6. Completed has compact summary. `Abschluss-Review ansehen` directly opens the
+   canonical completion Review beyond the first History page. Full immutable
+   History is secondary and paginated; amendments are reached inside it.
+7. Reopen preserves prior History and restores current work as primary. Legacy
+   completed has truthful no-Review copy; archived remains read-only. Cover mobile
+   versions of these core states without desktop-management stacking.
+8. Directly exercise affected controls and prove success/error feedback and
+   reload-stable writes; verify focus-in, keyboard, Escape, focus return, labels
+   and announcements. Inspect console/hydration, full-surface screenshots, bounds
+   and whitespace at all required viewports; no overflow or primary scroll trap.
+9. Preserve existing P-DATA, Review/History/revision/cycle, Security/RLS/command,
+   Task Dependencies, Project Milestones, Goal/Skill/Project↔Skill boundaries,
+   Progress Model and R2-09/R2-10/R2-12 invariants. R2-13 and Skill PP2/PP3/PP4
+   remain outside this repair; final surface acceptance still requires USER ACCEPTED.
 
 ### Skill Development composition
 
@@ -609,12 +781,13 @@ The R2-09 three-surface structure and information hierarchy remain binding.
 - BLOCKED rows name/link the concrete predecessor when available;
 - an all-blocked Project guides into blocker context without mutating Project
   status;
-- an empty Project uses title-first `Erste Task anlegen` as the primary work
-  entry, while Milestone management stays secondary.
+- an empty Project uses `Erste Task anlegen` as the primary work entry through
+  the normal `/tasks/new` composition accepted in #72; Milestone management stays
+  secondary.
 
 Existing Milestone ordering/grouping, task and milestone counts, Work Artifacts,
-References, Goal context, edit and lifecycle controls remain in their accepted
-R2-09 locations.
+References and Goal context retain their semantics. #72 refines read hierarchy,
+count emphasis and secondary edit/lifecycle placement over R2-09.
 
 ### Project → Task → Day interaction
 
@@ -685,7 +858,7 @@ die akzeptierte Milestone-Struktur nicht.
 
 ### R2-12 secondary Project export action
 
-“Für Obsidian exportieren” sits quietly beside existing Project header actions,
+“Für Obsidian exportieren” remains a quiet secondary header utility under #72,
 using current text, focus and spacing tokens. Pending state disables duplicate
 clicks; the app-wide toast announces success or persistent error. Project Detail
 retains its accepted three surfaces, read-first work and responsive hierarchy.
