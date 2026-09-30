@@ -117,9 +117,17 @@ export function ProjectWork({
     blockedCount: graphSummary.blocked.filter(taskHasExecutableLifecycle)
       .length,
   });
-  const createTaskLink = (milestoneId?: string, label = "+ Task") => (
+  const createTaskLink = (
+    milestoneId?: string,
+    label = "+ Task",
+    quiet = false,
+  ) => (
     <Link
-      className={actionClass}
+      className={
+        quiet
+          ? "min-h-10 text-left text-sm text-[var(--accent-cyan)]! underline! underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
+          : actionClass
+      }
       prefetch={false}
       href={`/tasks/new?${new URLSearchParams({ project: projectId, ...(milestoneId ? { milestone: milestoneId } : {}) })}`}
     >
@@ -325,7 +333,7 @@ export function ProjectWork({
         {!project.archived_at && (
           <div className={styles.workActions}>
             {summary.taskCount > 0 &&
-              createTaskLink(currentMilestone?.id, "+ Task")}
+              createTaskLink(currentMilestone?.id, "+ Task", true)}
             <ManagementDialog
               label="Weitere Work-Optionen"
               triggerText="Weitere Work-Optionen"

@@ -117,6 +117,10 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
     name: "Tasks & Progress",
     exact: true,
   });
+  const addTaskLink = taskRegion.getByRole("link", {
+    name: "+ Task",
+    exact: true,
+  });
   const projectManagement = page.getByRole("button", {
     name: "Project verwalten",
     exact: true,
@@ -137,6 +141,30 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
   ).toContainText(project.next_step!);
   await expect(primary).toContainText(resources[0].title);
   await expect(taskRegion).toContainText("1 Tasks · 0 erledigt");
+  await expect(addTaskLink).toBeVisible();
+  const addTaskAppearance = await addTaskLink.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      backgroundColor: style.backgroundColor,
+      color: style.color,
+      fontWeight: style.fontWeight,
+      textDecorationLine: style.textDecorationLine,
+    };
+  });
+  const workOptionsAppearance = await taskRegion
+    .getByRole("button", { name: "Weitere Work-Optionen", exact: true })
+    .evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        color: style.color,
+        fontWeight: style.fontWeight,
+        textDecorationLine: style.textDecorationLine,
+      };
+    });
+  expect(addTaskAppearance.color).toBe(workOptionsAppearance.color);
+  expect(addTaskAppearance.backgroundColor).toBe("rgba(0, 0, 0, 0)");
+  expect(addTaskAppearance.fontWeight).toBe("400");
+  expect(addTaskAppearance.textDecorationLine).toBe("underline");
   await expect(
     page.getByRole("button", { name: "Verknüpfung entfernen", exact: true }),
   ).toHaveCount(0);
@@ -146,6 +174,9 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
     [390, 844],
   ]) {
     await page.setViewportSize({ width, height });
+    await page.evaluate(() => {
+      (document.activeElement as HTMLElement | null)?.blur();
+    });
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
