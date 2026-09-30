@@ -113,11 +113,9 @@ guidance path, and supports an explicit Project Review before successful
 completion. Project completion remains independent from Goal achievement and never
 derives from Task or Project Milestone completion.
 
-The USER ACCEPTED #65 visual target keeps the R2-09 three-surface composition,
-adds result/criteria to the header, keeps Project-Fokus separate from executable
-Task guidance, adds a quiet completion-review preview in context, improves the
-empty Project around one `Erste Task anlegen` action, and shows Skill provenance
-through existing Task/Evidence paths rather than a direct Project↔Skill relation.
+The USER ACCEPTED #72 redesign target refines #65's presentation while preserving
+the R2-09 macro model and accepted domain semantics. PRODUCT and DESIGN own the
+replacement Product/UX target; this is target acceptance, not surface closure.
 
 **Direct dependency:** USER ACCEPTED R2-09 Project composition, USER ACCEPTED
 Core Task / Project Interaction, existing Project Milestones, Work Artifacts,
@@ -125,11 +123,17 @@ Resources and Task dependency semantics.
 
 **Acceptance boundary:** Issue #65 USER ACCEPTED the Project Depth product target
 and sequence on 2026-09-29; Issue #67 P-DATA USER ACCEPTED its Project-specific
-data/security contract on 2026-09-29. After this canonical persistence,
-P-DATA is no longer an open design blocker. A bounded Project Depth DELIVER
-contract may be authorized separately; this ROADMAP does not authorize schema,
-migration or product delivery. GitHub Project #3 remains the operative queue.
-The order remains Project Depth → Skill PP2 → PP3 → PP4.
+data/security contract on 2026-09-29; #69 delivered that technical implementation.
+The current #69 Product Surface failed real post-merge USER ACCEPTANCE and remains
+not accepted. The replacement [#72 target is USER ACCEPTED](https://github.com/Planton361/life-os/issues/72#issuecomment-5912775840)
+on 2026-09-30; target acceptance does not close the #69 Product-Surface gate.
+A separately authorized bounded redesign DELIVER repair remains required after
+canonical target persistence is merged and verified, followed by another real
+USER ACCEPTANCE check. P-DATA and its security semantics remain unchanged.
+Project Depth acceptance remains ahead of Skill PP2 → PP3 → PP4; those blocks may
+not bypass the open #69 gate. #3 / R2-13 remains Blocked/preserved.
+This ROADMAP does not authorize schema, migration or product delivery; GitHub
+Project #3 remains the operative queue.
 
 ### PP2 — Skill Development Planning
 

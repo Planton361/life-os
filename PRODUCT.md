@@ -104,11 +104,13 @@ guidance refinements:
   count;
 - all-blocked work guides toward blocker context without automatically changing
   Project lifecycle;
-- an empty Project prioritizes title-first `Erste Task anlegen`, with known
-  Project/current Project-Milestone context prefilled where canonical.
+- an empty Project prioritizes `Erste Task anlegen`, with known
+  Project/current Project-Milestone context prefilled in the same normal
+  `/tasks/new` composition as global Task creation, as accepted in #72.
 
 Milestone grouping, real counts, Resources/Work Artifacts, References, Goal
-context, edit and lifecycle placement remain owned by the accepted R2-09 contract.
+context and lifecycle semantics remain owned by the accepted R2-09 contract;
+#72 refines their read hierarchy and secondary management placement.
 Project Milestones never become execution dependencies.
 
 ### Project → Task → Day
@@ -169,8 +171,8 @@ into Goal:
   READY/BLOCKED;
 - empty Project keeps one dominant `Erste Task anlegen` entry and avoids noisy
   zero-state counters;
-- Primary/Additional Work Artifacts, Resources/References, Goal/Area context and
-  existing lifecycle/edit placement remain R2-09-owned.
+- Primary/Additional Work Artifacts, Resources/References and Goal/Area context
+  remain R2-09-owned; #72 refines their presentation and management placement.
 
 Project Skill context is derived from existing canonical paths:
 Project → Tasks → `task_skill_links` and explicit `skill_evidence` provenance.
@@ -185,7 +187,121 @@ Criterion Archive with a reason and a fresh Review read. Project Archive is not
 successful completion. Reopen preserves prior Reviews and starts a new cycle;
 legacy completed Projects retain no invented Review or Criteria history. This
 accepted data contract is implemented by Issue #69's bounded Project Depth
-slice; final product acceptance remains a separate post-merge user check.
+slice. Its current Product Surface failed the post-merge user check and remains
+not USER ACCEPTED; #72 accepts the replacement UX target below, not that surface.
+
+### Accepted Project Detail Redesign target — #72
+
+The [#72 decision package](https://github.com/Planton361/life-os/issues/72#issuecomment-5910226294)
+is [USER ACCEPTED](https://github.com/Planton361/life-os/issues/72#issuecomment-5912775840)
+on 2026-09-30. Project Detail is a calm, read-first work context, not a management
+dashboard. Management must not dominate reading or execution. This target refines
+R2-09/#56/#65 presentation without replacing the existing workbench architecture.
+It is a target for a separately authorized bounded DELIVER repair, not a claim of
+implementation or acceptance of the current #69 surface.
+
+Canonical desktop reading order:
+
+```text
+Project identity → desired result → Project-Fokus → next executable work
+→ Tasks/Milestones → compact context → supporting depth → Review/History depth
+```
+
+Mobile follows the same semantic order: result includes the criteria summary;
+context is a compact linear summary without a side rail. It must not mechanically
+stack all desktop management blocks. Tasks / Project Milestones remain the
+dominant Work region. Project-Fokus is subordinate orientation, separate from
+both desired result and executable Task guidance.
+
+Exactly one obvious primary action is emphasized per state:
+
+| State | Primary action / guidance |
+|---|---|
+| Empty Project | `Erste Task anlegen`; result, Milestone and context setup are secondary |
+| One READY Task | Open the READY Task, with its next action when available |
+| Multiple READY Tasks | Choose from the Work list; no inferred recommendation |
+| All executable work BLOCKED | Inspect blocker context / affected Tasks; no lifecycle mutation |
+| Completed | `Abschluss-Review ansehen` as the moderately emphasized informational action |
+| Archived | Read-only Project and History/context navigation; no primary write CTA |
+
+Result and Criteria:
+
+- `Gewünschtes Ergebnis` and `Fertig, wenn …` are compact read-only text directly
+  below identity. Description remains background/scope, not a second result.
+- Show all Criteria when there are at most three; otherwise first three plus
+  `N weitere` read-only disclosure. Criteria are acceptance statements, never
+  live checkboxes or progress.
+- One quiet result/Criteria management entry opens the bounded dialog specified
+  in DESIGN. No permanent inline create/edit form or per-Criterion Manage link.
+- Result without Criteria retains a quiet `Kriterien ergänzen`; when both are
+  absent, use one compact secondary setup action, not a large empty block.
+
+Project-origin Task creation:
+
+- Use the same normal `/tasks/new` field hierarchy and visual composition as
+  global creation. Project context changes values, never the Task-create surface.
+- `project=<projectId>`, optional `milestone=<milestoneId>` and allowed inherited
+  Goal context are prefills through the existing canonical query contract.
+  Milestone is prefilled from that Milestone or accepted current-Milestone context.
+- Keep normal editable fields and existing ownership/conflict/Milestone
+  validation. Project changes clear incompatible Milestone context under existing
+  rules; no new relation or validation semantics.
+- Save returns to the actual selected owning Project, refreshes the correct
+  Milestone/backlog and identifies success through focus/status feedback. Cancel
+  returns to the originating Project without writes. Global creation keeps its
+  existing Task-detail destination. No duplicate Project-specific title-first form.
+
+Secondary management:
+
+- Identity shows restrained present metadata and one overflow entry; edit,
+  status, relations and `Für Obsidian exportieren` remain secondary.
+- Result/Criteria, Milestone create/edit/reorder/archive and Task assignment use
+  bounded dialogs; metadata/status use the existing secondary edit/manage
+  interaction; relations and Artifact/Resource management use bounded interaction
+  or an existing canonical route as specified in DESIGN. They must not expand
+  major inline blocks or materially reshape the main reading surface.
+- Work has one guidance region, existing current/other Milestones and linked
+  Tasks. Counts stay quiet and only appear when decision-relevant. Milestone
+  management is secondary; repeated Task-add button chrome is removed.
+
+Context/support:
+
+- Goal, Area, derived Skills and Primary Artifact remain compact when present.
+  Missing values collapse rather than repeated `—` / `0` rows or empty cards.
+- Additional Artifacts and Resources/References share one secondary summary;
+  populated context may show compact counts/first relevant items. Empty supporting
+  data collapses to a quiet row, never two large equal-weight management blocks.
+- Derived Skill provenance, Artifact roles, Resource identity and explicit role
+  selection remain unchanged; no direct Project↔Skill relation.
+
+Review/History:
+
+- Normal active view has only quiet `Abschluss prüfen`. Review itself is a
+  focused desktop dialog and full-screen/near-full-screen mobile dialog, not a
+  permanent competing Work lane.
+- Review keeps the accepted result, continue/complete decision, Criteria
+  assessment, current-cycle archived scope acknowledgement, open-work context,
+  optional Resource evidence and rationale. Opening/Preview/Cancel writes nothing;
+  stale/conflict/error preserves the draft and requires conscious reload/reconfirmation.
+  Successful Save closes the dialog and refreshes the Project. A saved `continue`
+  returns to normal current work without permanent History expansion.
+- Completed Projects show a compact completion summary with Review date and
+  short rationale/result summary. `Abschluss-Review ansehen` opens the canonical
+  current completion Review directly, including beyond the newest History page.
+- `Verlauf ansehen` opens newest immutable History as explicit secondary depth
+  using existing pagination. Amendments start inside History; full immutable
+  History is never permanently expanded in the main page flow.
+- Reopen remains explicit and secondary. A reopened Project prioritizes current
+  work; prior completion is reachable through History. Legacy completed Projects
+  say `Abgeschlossen ohne gespeicherten Review`, with no invented Review/date.
+  Archived Projects retain read-only context and History without write CTAs.
+
+DESIGN owns the accepted dialog matrix, responsive/accessibility rules, explicit
+removals and browser-observable Delivery acceptance at 3840×2160, 1920×1080 and
+390×844. P-DATA, Review/History persistence, revision/cycle, Security/RLS/command
+boundary, Task Dependencies, Project Milestone semantics, Goal/Skill boundaries,
+Project↔Skill, Progress Model, R2-13 and Skill PP2/PP3/PP4 remain unchanged.
+#69 remains the open Project-Depth Product-Surface gate before Skill PP2/PP3/PP4.
 
 ### Skill Development Planning / PP2
 
@@ -663,16 +779,18 @@ implied; execution blocking remains a Task Dependency concern.
 Project Detail defaults to a read-first workbench: understandable identity/current
 state, next step, tasks/progress, primary/additional artifacts and supporting context.
 Project editing, artifact roles and relation management appear only after explicit
-user actions. Existing writes remain available in accessible disclosures.
-The Work header, each unarchived Milestone and the unassigned section can start the
-existing Task Create surface. Project and optional Milestone are visibly prefilled
+user actions through the bounded secondary interactions accepted in #72.
+One Work Task-add entry starts the same normal `/tasks/new` composition as global
+creation; optional Milestone-local entries remain quiet rather than repeated button
+chrome. Project and optional Milestone are visibly prefilled
 from validated server context. Creation stores one canonical Task and returns to
 the Project with a global success toast; a deliberate Project switch returns to
 the selected Project. Standalone Task Create keeps its Task-detail navigation.
 Milestone membership never creates a Dependency.
-Identity and Next Step form the header; real Tasks/Progress dominate the remaining
-workspace. A secondary rail groups Primary Artifact and Context; Additional
-Artifacts and References share a compact second row. Content drives section
+Identity, compact result/Criteria and Project-Fokus lead into Work; real Tasks and
+Milestones dominate, with counts only where useful for orientation. The #72
+secondary rail groups present Primary Artifact and Context; Additional
+Artifacts and References share a compact supporting summary. Content drives section
 height: fill the information hierarchy, not the viewport. Header, shared
 Work/Context workbench and Supporting section form three structural surfaces,
 using dividers inside rather than fragmented cards or floating content. Lifecycle belongs to header overflow, not the normal work flow.
