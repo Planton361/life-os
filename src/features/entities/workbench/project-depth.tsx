@@ -382,6 +382,21 @@ export function ProjectDepthReview({ depth }: { depth: Depth }) {
   const completionReview = completionReviewId
     ? depth.reviews.find((review) => review.id === completionReviewId)
     : null;
+  const shortReviewText = (value: string | null | undefined, limit: number) => {
+    const text = value?.replace(/\s+/g, " ").trim();
+    if (!text) return "";
+    return text.length > limit
+      ? `${text.slice(0, limit - 1).trimEnd()}…`
+      : text;
+  };
+  const completionSummary = completionReview
+    ? [
+        shortReviewText(completionReview.desired_result_snapshot, 96),
+        shortReviewText(completionReview.rationale, 96),
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : "";
   useEffect(() => {
     const element = dialog.current;
     if (!element) return;
@@ -415,12 +430,20 @@ export function ProjectDepthReview({ depth }: { depth: Depth }) {
             <div className="min-w-0">
               <h2 className="text-base font-semibold">Project abgeschlossen</h2>
               <p className="text-sm text-[var(--text-secondary)]">
-                Zyklus {context.completion_cycle}
+                Zyklus {(BigInt(context.completion_cycle) + BigInt(1)).toString()}
                 {completionReview?.reviewed_at
-                  ? ` · ${new Date(completionReview.reviewed_at).toLocaleDateString("de-DE")}`
+                  ? ` · Review am ${new Date(completionReview.reviewed_at).toLocaleDateString("de-DE")}`
                   : ""}
                 {!completionReviewId ? " · Ohne gespeicherten Review" : ""}
               </p>
+              {completionSummary && (
+                <p
+                  data-completion-summary
+                  className="mt-1 max-w-3xl break-words text-sm text-[var(--text-secondary)]"
+                >
+                  {completionSummary}
+                </p>
+              )}
             </div>
             {completionReviewId && (
               <Link
@@ -430,28 +453,28 @@ export function ProjectDepthReview({ depth }: { depth: Depth }) {
                 Abschluss-Review ansehen
               </Link>
             )}
-          </div>
-          <ManagementDialog
-            label="Project-Abschluss verwalten"
-            triggerText="Lifecycle verwalten"
-          >
-            <CommandForm
-              depth={depth}
-              operation="project.reopen"
-              label="Project wieder öffnen"
-              payload={() => ({})}
-              onResult={(result) => {
-                setMessage(result.message);
-                setMessageRole(
-                  result.status === "success" ? "status" : "alert",
-                );
-              }}
+            <ManagementDialog
+              label="Wiederöffnung bestätigen"
+              triggerText="Project wieder öffnen"
             >
-              <p>
-                Ein neuer Zyklus beginnt. Bisherige Reviews bleiben erhalten.
-              </p>
-            </CommandForm>
-          </ManagementDialog>
+              <CommandForm
+                depth={depth}
+                operation="project.reopen"
+                label="Project wieder öffnen"
+                payload={() => ({})}
+                onResult={(result) => {
+                  setMessage(result.message);
+                  setMessageRole(
+                    result.status === "success" ? "status" : "alert",
+                  );
+                }}
+              >
+                <p>
+                  Ein neuer Zyklus beginnt. Bisherige Reviews bleiben erhalten.
+                </p>
+              </CommandForm>
+            </ManagementDialog>
+          </div>
         </>
       ) : (
         <>

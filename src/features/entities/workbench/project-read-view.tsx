@@ -7,7 +7,10 @@ import {
   ManagementDisclosure,
 } from "./management-disclosure";
 import { OperationForm } from "./forms";
-import { ProjectResources } from "./project-resources";
+import {
+  ProjectResources,
+  ProjectSupportingSummary,
+} from "./project-resources";
 import { projectResourceUses } from "./project-artifacts";
 
 import styles from "./project-read-view.module.css";
@@ -136,6 +139,11 @@ export function ProjectReadView({
             </ManagementDialog>
           </div>
         )}
+        {project.archived_at && (
+          <div className={`${styles.actions} mt-3`}>
+            <ProjectExport projectId={id} />
+          </div>
+        )}
       </header>
       <div className={styles.workspace} data-project-workspace>
         <ProjectWork data={data} projectId={id} />
@@ -206,6 +214,7 @@ export function ProjectReadView({
                   data={data}
                   projectId={id}
                   section="reference-management"
+                  selectedResource={selectedResource}
                 />
               </ManagementDialog>
             )}
@@ -214,13 +223,11 @@ export function ProjectReadView({
       </div>
       {hasSupportingResources && (
         <div className={styles.secondary} data-project-secondary>
-          <ProjectResources
+          <ProjectSupportingSummary
             data={data}
             projectId={id}
-            section="additional"
             selectedResource={selectedResource}
           />
-          <ProjectResources data={data} projectId={id} section="references" />
         </div>
       )}
       {depth && <ProjectDepthReview depth={depth} />}

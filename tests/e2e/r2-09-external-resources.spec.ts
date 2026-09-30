@@ -127,6 +127,22 @@ async function assignProjectResource(page: Page, id: string, role: string) {
   await page.reload();
 }
 
+async function openSupportingContent(page: Page) {
+  const summary = page.getByRole("region", {
+    name: "Weitere Inhalte",
+    exact: true,
+  });
+  await summary
+    .getByRole("button", { name: /Weitere Inhalte ansehen/ })
+    .click();
+  const dialog = page.getByRole("dialog", {
+    name: "Weitere Inhalte",
+    exact: true,
+  });
+  await expect(dialog).toBeVisible();
+  return dialog;
+}
+
 test("R2-09 explicit project artifacts, references, primary swap, archive and ownership", async ({
   page,
   context,
@@ -245,9 +261,7 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
     });
     await expect(primary.locator("article")).toContainText(title);
     await expect(
-      page
-        .getByRole("region", { name: "Resources & References", exact: true })
-        .locator(`[data-project-resource="${resource}"]`),
+      page.getByRole("region", { name: "Weitere Inhalte", exact: true }),
     ).toHaveCount(0);
     // New reference via existing canonical Resource UI, then normal Project link.
     const paper = await create(
@@ -274,7 +288,14 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
     ).toBeVisible();
     await page.reload();
     await expect(
-      page.getByRole("region", { name: "Resources & References", exact: true }),
+      page.getByRole("region", { name: "Weitere Inhalte", exact: true }),
+    ).toContainText(`Paper Docs ${key}`);
+    const referenceDialog = await openSupportingContent(page);
+    await expect(
+      referenceDialog.getByRole("region", {
+        name: "References verwalten",
+        exact: true,
+      }),
     ).toContainText(`Paper Docs ${key}`);
     await expect(
       primary.locator(`[data-project-resource="${paper}"]`),
@@ -282,6 +303,12 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
     await expect(
       page.getByRole("region", { name: "Tasks & Progress", exact: true }),
     ).toContainText(`${key} Arbeit`);
+    await page.keyboard.press("Escape");
+    await expect(
+      page
+        .getByRole("region", { name: "Weitere Inhalte", exact: true })
+        .getByRole("button", { name: /Weitere Inhalte ansehen/ }),
+    ).toBeFocused();
     // Current responsive bounds + full surfaces after hydration, no screenshot DOM mutation.
     for (const [width, height] of [
       [1920, 1080],
@@ -369,7 +396,10 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
     await page.goto(`/projects/${project}`);
     // Additional artifact, then explicit promotion through the card's role editor.
     await assignProjectResource(page, paper, "additional_artifact");
-    const card = page.locator(`[data-project-resource="${paper}"]`);
+    let supportingDialog = await openSupportingContent(page);
+    const card = supportingDialog.locator(
+      `[data-project-resource="${paper}"]`,
+    );
     await card
       .getByRole("button", { name: "Artifact verwalten", exact: true })
       .click();
@@ -385,12 +415,19 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
     ).toBeVisible();
     await page.reload();
     await expect(primary.locator("article")).toContainText(`Paper Docs ${key}`);
+    supportingDialog = await openSupportingContent(page);
     await expect(
-      page.getByRole("region", {
+      supportingDialog.getByRole("region", {
         name: "Additional Work Artifacts",
         exact: true,
       }),
     ).toContainText(title);
+    await page.keyboard.press("Escape");
+    await expect(
+      page
+        .getByRole("region", { name: "Weitere Inhalte", exact: true })
+        .getByRole("button", { name: /Weitere Inhalte ansehen/ }),
+    ).toBeFocused();
     expect(
       (
         await api
@@ -419,24 +456,33 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
     await page.reload();
     await page.goto(`/projects/${project}`);
     await expect(primary).toHaveCount(0);
+    supportingDialog = await openSupportingContent(page);
     await expect(
-      page.getByRole("region", {
+      supportingDialog.getByRole("region", {
         name: "Additional Work Artifacts",
         exact: true,
       }),
     ).toContainText("Archiviert");
+    await page.keyboard.press("Escape");
+    await expect(
+      page
+        .getByRole("region", { name: "Weitere Inhalte", exact: true })
+        .getByRole("button", { name: /Weitere Inhalte ansehen/ }),
+    ).toBeFocused();
     await assignProjectResource(page, paper, "primary_artifact"); // demotes archived previous Primary, keeps its Resource
     await page.goto(`/resources/${resource}`);
     await submit(page, "Resource wiederherstellen");
     await page.reload();
     await page.goto(`/projects/${project}`);
     await expect(primary.locator("article")).toContainText(`Paper Docs ${key}`);
+    supportingDialog = await openSupportingContent(page);
     await expect(
-      page.getByRole("region", {
+      supportingDialog.getByRole("region", {
         name: "Additional Work Artifacts",
         exact: true,
       }),
     ).toContainText(title);
+    await page.keyboard.press("Escape");
     await page.goto("/resources");
     await page.getByLabel("Search resources", { exact: true }).fill(title);
     await page.getByRole("button", { name: "Suchen", exact: true }).click();
@@ -446,7 +492,14 @@ test("R2-09 explicit project artifacts, references, primary swap, archive and ow
   await page.goto(`/projects/${projects[1]}`);
   await assignProjectResource(page, resourceIds[0], "reference");
   await expect(
-    page.getByRole("region", { name: "Resources & References", exact: true }),
+    page.getByRole("region", { name: "Weitere Inhalte", exact: true }),
+  ).toContainText(`GitHub Repository ${stamp}`);
+  const supportingDialog = await openSupportingContent(page);
+  await expect(
+    supportingDialog.getByRole("region", {
+      name: "References verwalten",
+      exact: true,
+    }),
   ).toContainText(`GitHub Repository ${stamp}`);
   await page.goto(`/resources/${resourceIds[0]}`);
   const projectUse = page

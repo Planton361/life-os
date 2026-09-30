@@ -121,17 +121,37 @@ test("Project Depth: result, criteria, explicit reviews, reopen and immutable hi
     name: "Project Abschlussverlauf",
   });
   const openHistory = async () => {
-    if (!(await historyDialog.isVisible())) {
+    const hash = new URL(page.url()).hash.slice(1);
+    if (hash === "project-history" || hash.startsWith("project-review-")) {
+      await expect(historyDialog).toBeVisible();
+    } else if (!(await historyDialog.isVisible())) {
       await page
         .getByRole("button", { name: "Abschlussverlauf ansehen", exact: true })
         .click();
     }
     await expect(history).toBeVisible();
   };
+  const closeHistory = async () => {
+    const hash = new URL(page.url()).hash.slice(1);
+    if (hash === "project-history" || hash.startsWith("project-review-")) {
+      await expect(historyDialog).toBeVisible();
+    }
+    if (await historyDialog.isVisible()) {
+      await page.keyboard.press("Escape");
+      await expect(historyDialog).toBeHidden();
+      await expect(
+        page.getByRole("button", {
+          name: "Abschlussverlauf ansehen",
+          exact: true,
+        }),
+      ).toBeFocused();
+    }
+  };
   const resultDialog = page.getByRole("dialog", {
     name: "Ergebnis und Kriterien verwalten",
   });
   const openResultManager = async () => {
+    await closeHistory();
     if (!(await resultDialog.isVisible())) {
       const trigger = result
         .getByRole("button", { name: /Ergebnis und Kriterien/ })
@@ -309,8 +329,14 @@ test("Project Depth: result, criteria, explicit reviews, reopen and immutable hi
         .from("project_command_receipts")
         .delete()
         .eq("project_id", project.id)
-    ).error,
+  ).error,
   ).not.toBeNull();
+
+  await page.keyboard.press("Escape");
+  await expect(historyDialog).toBeHidden();
+  await expect(
+    page.getByRole("button", { name: "Abschlussverlauf ansehen", exact: true }),
+  ).toBeFocused();
 
   await openResultManager();
   const acceptedCriterionGroup = resultDialog.getByRole("group", {
@@ -352,7 +378,7 @@ test("Project Depth: result, criteria, explicit reviews, reopen and immutable hi
   ).toContainText("Continue saved in the other tab");
   await secondPage.close();
   await staleDraft.getByRole("button", { name: "Review speichern" }).click();
-  await expect(staleDraft.getByRole("status")).toContainText(
+  await expect(staleDraft.getByRole("alert")).toContainText(
     "bewusst neu laden",
     { timeout: 60000 },
   );
@@ -390,6 +416,26 @@ test("Project Depth: result, criteria, explicit reviews, reopen and immutable hi
   await completion.getByRole("button", { name: "Review speichern" }).click();
   await expect(page.getByLabel("Project Metadata")).toContainText("completed");
   await page.reload();
+  const completedReview = (
+    await api
+      .from("project_reviews")
+      .select("reviewed_at")
+      .eq("project_id", project.id)
+      .eq("decision", "completed")
+      .order("reviewed_at", { ascending: false })
+      .limit(1)
+      .single()
+  ).data!;
+  await expect(review).toContainText("Zyklus 1");
+  await expect(review).toContainText(
+    `Review am ${new Date(completedReview.reviewed_at).toLocaleDateString("de-DE")}`,
+  );
+  await expect(review.locator("[data-completion-summary]")).toContainText(
+    "Result and criterion accepted",
+  );
+  await expect(
+    review.getByRole("button", { name: "Project wieder öffnen", exact: true }),
+  ).toBeVisible();
   await openHistory();
   await expect(history).toContainText("Result and criterion accepted");
   await expect(history).toContainText(`Evidence ${stamp}`);
@@ -474,11 +520,37 @@ test("Project Depth: result, criteria, explicit reviews, reopen and immutable hi
     ).data?.status,
   ).toBe("open");
 
+  await closeHistory();
+  await review
+    .getByRole("button", { name: "Project wieder öffnen", exact: true })
+    .click();
+  const reopenTrigger = review.getByRole("button", {
+    name: "Project wieder öffnen",
+    exact: true,
+  });
+  let reopenDialog = page.getByRole("dialog", {
+    name: "Wiederöffnung bestätigen",
+  });
+  await expect(reopenDialog).toBeVisible();
   await page.keyboard.press("Escape");
-  await review.getByRole("button", { name: "Lifecycle verwalten" }).click();
-  await page.getByRole("button", { name: "Project wieder öffnen" }).click();
+  await expect(reopenTrigger).toBeFocused();
+  await expect(page.getByLabel("Project Metadata")).toContainText("completed");
+  await reopenTrigger.click();
+  reopenDialog = page.getByRole("dialog", {
+    name: "Wiederöffnung bestätigen",
+  });
+  await reopenDialog
+    .getByRole("button", { name: "Project wieder öffnen", exact: true })
+    .click();
+  await expect(
+    page
+      .getByRole("status")
+      .filter({ hasText: "Project-Änderung gespeichert." })
+      .last(),
+  ).toBeVisible();
   await expect(page.getByLabel("Project Metadata")).toContainText("active");
   await page.reload();
+  await closeHistory();
   await review.getByRole("button", { name: "Abschluss prüfen" }).click();
   const amendmentDraft = review.getByRole("form", { name: "Project Review" });
   await amendmentDraft
@@ -515,7 +587,7 @@ test("Project Depth: result, criteria, explicit reviews, reopen and immutable hi
   await amendmentDraft
     .getByRole("button", { name: "Review speichern" })
     .click();
-  await expect(amendmentDraft.getByRole("status")).toContainText(
+  await expect(amendmentDraft.getByRole("alert")).toContainText(
     "bewusst neu laden",
   );
   await expect(
@@ -558,6 +630,7 @@ test("Project Depth: result, criteria, explicit reviews, reopen and immutable hi
     .fill("Explicitly removed from this cycle");
   await removed.getByRole("button", { name: "Kriterium archivieren" }).click();
   await page.reload();
+  await closeHistory();
   await review.getByRole("button", { name: "Abschluss prüfen" }).click();
   const second = review.getByRole("form", { name: "Project Review" });
   await second.getByLabel("Entscheidung").selectOption("completed");
@@ -620,7 +693,7 @@ test("Project Depth: result, criteria, explicit reviews, reopen and immutable hi
   await openHistory();
   await expect(page.getByLabel("Project Metadata")).toContainText("active");
   await expect(history).toContainText("Review irrtümlich");
-  await page.keyboard.press("Escape");
+  await closeHistory();
   await review.getByRole("button", { name: "Abschluss prüfen" }).click();
   const third = review.getByRole("form", { name: "Project Review" });
   await third.getByLabel("Entscheidung").selectOption("completed");
@@ -829,8 +902,16 @@ test("Project Depth: legacy completion, Empty, Demo and Auth-blocked stay truthf
       .data,
   ).toEqual([]);
   await page.keyboard.press("Escape");
-  await page.getByRole("button", { name: "Lifecycle verwalten" }).click();
-  await page.getByRole("button", { name: "Project wieder öffnen" }).click();
+  await page
+    .getByRole("button", { name: "Project wieder öffnen", exact: true })
+    .click();
+  const reopenDialog = page.getByRole("dialog", {
+    name: "Wiederöffnung bestätigen",
+  });
+  await expect(reopenDialog).toBeVisible();
+  await reopenDialog
+    .getByRole("button", { name: "Project wieder öffnen", exact: true })
+    .click();
   await page.reload();
   await expect(page.getByLabel("Project Metadata")).toContainText("active");
   await page

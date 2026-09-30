@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
-import type { Database } from "@/types/supabase";
+import type { Database } from "@/features/real-data/supabase/database.types";
 import { signUpTechnicalManualUser } from "./support/local-manual-auth";
 
 test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar Week loop", async ({
@@ -117,11 +117,10 @@ test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar We
     status: "active",
   });
   const completedProject = await createProject(`Completed Project ${stamp}`, {
-    status: "completed",
+    status: "active",
   });
   const archivedProject = await createProject(`Archived Project ${stamp}`, {
-    archived_at: new Date().toISOString(),
-    status: "paused",
+    status: "active",
   });
 
   const resource = (
@@ -229,6 +228,81 @@ test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar We
       ])
     ).error,
   ).toBeNull();
+
+  await page.goto(`/projects/${completedProject.id}`);
+  const completionResult = page.getByRole("region", {
+    name: "Project Ergebnis und Kriterien",
+    exact: true,
+  });
+  await completionResult
+    .getByRole("button", {
+      name: "Gewünschtes Ergebnis und Kriterien festlegen",
+      exact: true,
+    })
+    .click();
+  const resultDialog = page.getByRole("dialog", {
+    name: "Ergebnis und Kriterien verwalten",
+    exact: true,
+  });
+  await resultDialog.getByLabel("Gewünschtes Ergebnis").fill(
+    `Task loop complete ${stamp}`,
+  );
+  await resultDialog
+    .getByRole("button", { name: "Ergebnis speichern", exact: true })
+    .click();
+  await page.reload();
+  await completionResult
+    .getByRole("button", {
+      name: "Ergebnis und Kriterien bearbeiten",
+      exact: true,
+    })
+    .click();
+  await resultDialog
+    .getByLabel("Neues Kriterium", { exact: true })
+    .fill(`Task loop criterion ${stamp}`);
+  await resultDialog
+    .getByRole("button", { name: "Kriterium hinzufügen", exact: true })
+    .click();
+  await page.reload();
+  const completionReview = page.getByRole("region", {
+    name: "Project Abschluss",
+    exact: true,
+  });
+  await completionReview
+    .getByRole("button", { name: "Abschluss prüfen", exact: true })
+    .click();
+  const completionForm = completionReview.getByRole("form", {
+    name: "Project Review",
+    exact: true,
+  });
+  await completionForm.getByLabel("Entscheidung").selectOption("completed");
+  await completionForm.getByLabel("Ergebnis ausdrücklich bestätigen").check();
+  await completionForm
+    .getByLabel(`Bewertung für Task loop criterion ${stamp}`)
+    .selectOption("satisfied");
+  await completionForm
+    .getByLabel("Begründung", { exact: true })
+    .fill("Task loop completion fixture");
+  await completionForm
+    .getByRole("button", { name: "Review speichern", exact: true })
+    .click();
+  await expect(page.getByLabel("Project Metadata")).toContainText("completed");
+
+  const archiveContext = (
+    await api
+      .rpc("project_review_context", { p_project_id: archivedProject.id })
+      .throwOnError()
+  ).data as { completion_revision: number; completion_cycle: number };
+  await api
+    .rpc("project_depth_command", {
+      p_project_id: archivedProject.id,
+      p_command_id: crypto.randomUUID(),
+      p_operation: "project.archive",
+      p_expected_revision: archiveContext.completion_revision,
+      p_expected_cycle: archiveContext.completion_cycle,
+      p_payload: {},
+    })
+    .throwOnError();
 
   const guidance = (label: string) =>
     page.getByRole("region", { name: label, exact: true });

@@ -306,3 +306,84 @@ export function ProjectResources({
     </section>
   );
 }
+
+export function ProjectSupportingSummary({
+  data,
+  projectId,
+  selectedResource,
+}: {
+  data: WorkbenchData;
+  projectId: string;
+  selectedResource?: string;
+}) {
+  const project = data.projects.find((p) => p.id === projectId)!;
+  const uses = projectResourceUses(data, projectId);
+  const artifacts = uses.filter((use) => use.role !== "reference");
+  const primary = artifacts.find(
+    (use) => use.role === "primary_artifact" && !use.resource.archived_at,
+  );
+  const additional = artifacts.filter((use) => use !== primary);
+  const references = uses.filter((use) => use.role === "reference");
+  const supporting = [...additional, ...references];
+  if (supporting.length === 0) return null;
+
+  const summary = [
+    additional.length > 0
+      ? `${additional.length} weitere${additional.length === 1 ? "s" : ""} Arbeitsartefakt${additional.length === 1 ? "" : "e"}`
+      : "",
+    references.length > 0
+      ? `${references.length} Resource${references.length === 1 ? "" : "s"} / Reference${references.length === 1 ? "" : "s"}`
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const firstAdditional = additional[0]?.resource.title;
+  const firstReference = references[0]?.resource.title;
+
+  return (
+    <section
+      aria-label="Weitere Inhalte"
+      className="grid min-w-0 gap-1"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+        <h2 className="text-base font-semibold text-[var(--text-muted)]">
+          Weitere Inhalte
+        </h2>
+        <ManagementDialog
+          label="Weitere Inhalte"
+          triggerText={
+            project.archived_at
+              ? "Weitere Inhalte ansehen"
+              : "Weitere Inhalte ansehen und verwalten"
+          }
+        >
+          {additional.length > 0 && (
+            <ProjectResources
+              data={data}
+              projectId={projectId}
+              section="additional"
+              selectedResource={selectedResource}
+            />
+          )}
+          <ProjectResources
+            data={data}
+            projectId={projectId}
+            section="reference-management"
+            selectedResource={selectedResource}
+          />
+        </ManagementDialog>
+      </div>
+      <p className="text-sm text-[var(--text-secondary)]">{summary}</p>
+      {(firstAdditional || firstReference) && (
+        <p className="break-words text-sm text-[var(--text-muted)]">
+          {[
+            firstAdditional && `Arbeitsartefakt: ${firstAdditional}`,
+            firstReference && `Reference: ${firstReference}`,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        </p>
+      )}
+    </section>
+  );
+}

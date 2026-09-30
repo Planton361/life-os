@@ -239,7 +239,7 @@ test("Project milestones: CRUD, grouping, ordering, progress, archive and owners
   await expect(group("Implementation")).toContainText("Offen");
   await expect(group("Research")).toContainText("Aktuell");
   await edit("Research", "done");
-  await expect(work).toContainText("1/2 Milestones erledigt");
+  await expect(work).toContainText("2 Milestones · 1 erledigt");
   await expect(work.locator("[data-milestone-id]").last()).toHaveAttribute(
     "data-milestone-id",
     stages[0].id,

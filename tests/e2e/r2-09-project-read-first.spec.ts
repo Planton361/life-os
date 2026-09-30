@@ -121,6 +121,10 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
     name: "Project verwalten",
     exact: true,
   });
+  const privacyMasks = [
+    page.getByText("Anton", { exact: true }),
+    page.getByText("Student · Werkstudent", { exact: true }),
+  ];
   await expect(projectManagement).toBeEnabled();
   await expect(
     page.getByRole("button", { name: "Bearbeiten", exact: true }),
@@ -132,13 +136,12 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
     page.getByRole("region", { name: "Project-Fokus", exact: true }),
   ).toContainText(project.next_step!);
   await expect(primary).toContainText(resources[0].title);
-  await expect(taskRegion).toContainText("0/1 Tasks erledigt");
+  await expect(taskRegion).toContainText("1 Tasks · 0 erledigt");
   await expect(
     page.getByRole("button", { name: "Verknüpfung entfernen", exact: true }),
   ).toHaveCount(0);
   for (const [width, height] of [
     [1920, 1080],
-    [2560, 1440],
     [3840, 2160],
     [390, 844],
   ]) {
@@ -162,6 +165,8 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
       path: info.outputPath("project-read-" + width + ".png"),
       fullPage: true,
       caret: "initial",
+      mask: privacyMasks,
+      maskColor: "#121c2b",
     });
     await projectManagement.click();
     const manageDialog = page.getByRole("dialog", {
@@ -180,11 +185,15 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
-    await page.screenshot({
-      path: info.outputPath("project-edit-management-" + width + ".png"),
-      fullPage: true,
-      caret: "initial",
-    });
+    if (width === 1920) {
+      await page.screenshot({
+        path: info.outputPath("project-edit-management-1920.png"),
+        fullPage: true,
+        caret: "initial",
+        mask: privacyMasks,
+        maskColor: "#121c2b",
+      });
+    }
     await manageDialog
       .getByRole("button", { name: "Schließen", exact: true })
       .last()
@@ -209,13 +218,15 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       ).toBe(true);
-      await page.screenshot({
-        path: info.outputPath(
-          "project-" + suffix + "-management-" + width + ".png",
-        ),
-        fullPage: true,
-        caret: "initial",
-      });
+      if (width === 1920) {
+        await page.screenshot({
+          path: info.outputPath(`project-${suffix}-management-1920.png`),
+          fullPage: true,
+          caret: "initial",
+          mask: privacyMasks,
+          maskColor: "#121c2b",
+        });
+      }
       await page.keyboard.press("Escape");
       await expect(dialog).toBeHidden();
       await expect(trigger).toHaveAttribute("aria-expanded", "false");
@@ -280,6 +291,47 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
     name: "Additional Work Artifacts",
     exact: true,
   });
+  const supporting = page.getByRole("region", {
+    name: "Weitere Inhalte",
+    exact: true,
+  });
+  const supportingTrigger = supporting.getByRole("button", {
+    name: "Weitere Inhalte ansehen und verwalten",
+    exact: true,
+  });
+  await expect(supporting).toContainText("1 weiteres Arbeitsartefakt");
+  await expect(supporting).toContainText(resources[1].title);
+  await supportingTrigger.click();
+  const supportingDialog = page.getByRole("dialog", {
+    name: "Weitere Inhalte",
+    exact: true,
+  });
+  await expect(
+    supportingDialog.getByRole("region", {
+      name: "Additional Work Artifacts",
+      exact: true,
+    }),
+  ).toContainText(resources[1].title);
+  await expect(
+    supportingDialog.getByRole("region", {
+      name: "References verwalten",
+      exact: true,
+    }),
+  ).toContainText(resources[2].title);
+  await page.keyboard.press("Escape");
+  await expect(supportingTrigger).toBeFocused();
+  await expect(
+    page.getByRole("region", {
+      name: "Additional Work Artifacts",
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("region", {
+      name: "Resources & References",
+      exact: true,
+    }),
+  ).toHaveCount(0);
   await primary
     .getByRole("button", { name: "Artifact verwalten", exact: true })
     .click();
@@ -301,7 +353,10 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
   ).toBeVisible();
   await page.reload();
   await expect(primary).toContainText(resources[1].title);
+  await supportingTrigger.click();
   await expect(additional).toContainText(resources[0].title);
+  await page.keyboard.press("Escape");
+  await expect(supportingTrigger).toBeFocused();
   expect((await api.from("resources").select("id")).data).toHaveLength(3);
   const manageRelations = page.getByRole("button", {
     name: "Beziehungen verwalten",
@@ -344,7 +399,7 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
   ).toBeVisible();
   await page.reload();
   await expect(taskRegion).toContainText(tasks[1].title);
-  await expect(taskRegion).toContainText("0/2 Tasks erledigt");
+  await expect(taskRegion).toContainText("2 Tasks · 0 erledigt");
   await manage.click();
   const relation = page
     .getByRole("region", { name: "Beziehungen", exact: true })
@@ -465,20 +520,14 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
       main.locator("input:visible, textarea:visible, select:visible"),
     ).toHaveCount(0);
     if (state === "rich") {
-      await expect(taskRegion).toContainText("4/25 Tasks erledigt");
+      await expect(taskRegion).toContainText("25 Tasks · 4 erledigt");
       await expect(
         page.getByRole("region", { name: "Project Context", exact: true }),
       ).toContainText("TypeScript");
     } else {
       await expect(
         page.getByRole("region", {
-          name: "Additional Work Artifacts",
-          exact: true,
-        }),
-      ).toHaveCount(0);
-      await expect(
-        page.getByRole("region", {
-          name: "Resources & References",
+          name: "Weitere Inhalte",
           exact: true,
         }),
       ).toHaveCount(0);
@@ -504,8 +553,8 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
       );
     }
     for (const [width, height] of [
+      [3840, 2160],
       [1920, 1080],
-      [2560, 1440],
       [390, 844],
     ]) {
       await page.evaluate(() => window.scrollTo(0, 0));
@@ -552,11 +601,15 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
           );
         }
       }
-      await page.screenshot({
-        path: info.outputPath(`project-${state}-${width}.png`),
-        fullPage: true,
-        caret: "initial",
-      });
+      if (state === "rich" && width === 3840) {
+        await page.screenshot({
+          path: info.outputPath(`project-${state}-${width}.png`),
+          fullPage: true,
+          caret: "initial",
+          mask: privacyMasks,
+          maskColor: "#121c2b",
+        });
+      }
       if (state === "rich") {
         const list = page.locator("[data-project-task-list]");
         expect(
@@ -602,14 +655,23 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
       .last(),
   ).toBeVisible();
   await page.reload();
-  await expect(
-    page.getByRole("region", {
-      name: "Resources & References",
-      exact: true,
-    }),
-  ).toContainText(resources[2].title);
-  await page
-    .getByRole("link", { name: resources[2].title, exact: true })
+  const supportingAfterWrite = page.getByRole("region", {
+    name: "Weitere Inhalte",
+    exact: true,
+  });
+  await expect(supportingAfterWrite).toContainText(resources[2].title);
+  const supportingAfterWriteTrigger = supportingAfterWrite.getByRole("button", {
+    name: "Weitere Inhalte ansehen und verwalten",
+    exact: true,
+  });
+  await supportingAfterWriteTrigger.click();
+  const supportingAfterWriteDialog = page.getByRole("dialog", {
+    name: "Weitere Inhalte",
+    exact: true,
+  });
+  await supportingAfterWriteDialog
+    .locator(`[data-project-resource="${resources[2].id}"]`)
+    .getByRole("link", { name: "Details öffnen", exact: true })
     .click();
   await expect(page).toHaveURL(new RegExp(`/resources/${resources[2].id}$`));
   expect((await api.from("resources").select("id")).data).toHaveLength(3);

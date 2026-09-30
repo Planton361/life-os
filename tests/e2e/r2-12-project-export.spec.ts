@@ -273,6 +273,7 @@ test("Project → authenticated Obsidian ZIP: graph, rename, dependencies, owner
     .eq("user_id", uid)
     .eq("id", s.project.id)
     .throwOnError();
+  await projectManagement.click();
   await exportButton.click();
   await expect(
     page.getByRole("alert").filter({ hasText: "Zugangsdaten" }),

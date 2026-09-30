@@ -336,6 +336,11 @@ export function EntityForm({
         event.preventDefault();
         const form = new FormData(event.currentTarget);
         if (!form.get("commandId")) form.set("commandId", crypto.randomUUID());
+        const selectedProjectId = String(form.get("projectId") ?? "").trim();
+        if (taskCapture && projectContext && !selectedProjectId) {
+          setError("Bitte wähle ein Project aus.");
+          return;
+        }
         start(async () => {
           setError("");
           const r = await saveWorkbenchEntity(kind, id ?? null, form);
@@ -351,9 +356,7 @@ export function EntityForm({
                 ? `/goals/${goalMilestoneContext.goalId}?created=${kind}&goalMilestone=${goalMilestoneContext.milestoneId}`
                 : projectContext
                   ? kind === "task"
-                    ? String(form.get("projectId") ?? "").trim()
-                      ? `/projects/${String(form.get("projectId")).trim()}`
-                      : `/tasks/${r.id}`
+                    ? `/projects/${selectedProjectId || projectContext}`
                     : `/projects/${projectContext}?resource=${r.id}`
                   : goalContext
                     ? `/goals/${goalContext}?created=${kind}`
@@ -479,7 +482,8 @@ export function EntityForm({
                         setSelectedProject(projectId);
                         setSelectedGoal("");
                       }}
-                      allowEmpty
+                      required={Boolean(projectContext)}
+                      allowEmpty={!projectContext}
                     />
                     <Choice
                       key={selectedProject}
