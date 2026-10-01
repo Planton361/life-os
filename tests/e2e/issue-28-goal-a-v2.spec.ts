@@ -1,3 +1,7 @@
+import {
+  expectTaskCaptureParity,
+  standaloneTaskCapture,
+} from "./support/task-create-parity";
 import { expect, test, type Page } from "@playwright/test";
 import { signUpTechnicalManualUser } from "./support/local-manual-auth";
 
@@ -235,14 +239,18 @@ test("Issue 28 A-v2 Goal states and progression remain real and reload-stable", 
     workbench(page).locator("[data-goal-selected-work]"),
   ).toContainText(projectTitle);
 
+  const taskBaseline = await standaloneTaskCapture(page);
   const taskTitle = `Wochenplan mit echten Terminen prüfen ${stamp}`;
   await workbench(page)
     .locator("[data-goal-selected-work]")
     .getByRole("link", { name: "Aufgabe hinzufügen" })
     .click();
-  const taskForm = page.locator('form[aria-label="Aufgabe erstellen"]');
+  const taskForm = page.locator('form[aria-label="Task erstellen"]');
+  await expectTaskCaptureParity(page, taskBaseline);
+  await page.reload();
+  await expectTaskCaptureParity(page, taskBaseline);
   await taskForm.getByLabel("Titel", { exact: true }).fill(taskTitle);
-  await taskForm.getByRole("button", { name: "Aufgabe erstellen" }).click();
+  await taskForm.getByRole("button", { name: "Task erstellen" }).click();
   await expect(
     workbench(page).locator("[data-goal-selected-work]"),
   ).toContainText(taskTitle);
@@ -296,13 +304,16 @@ test("Issue 28 A-v2 Goal states and progression remain real and reload-stable", 
     .locator("[data-goal-selected-work]")
     .getByRole("link", { name: "Aufgabe hinzufügen" })
     .click();
+  await expectTaskCaptureParity(page, taskBaseline);
+  await page.reload();
+  await expectTaskCaptureParity(page, taskBaseline);
   await page
-    .locator('form[aria-label="Aufgabe erstellen"]')
+    .locator('form[aria-label="Task erstellen"]')
     .getByLabel("Titel", { exact: true })
     .fill(secondTask);
   await page
-    .locator('form[aria-label="Aufgabe erstellen"]')
-    .getByRole("button", { name: "Aufgabe erstellen" })
+    .locator('form[aria-label="Task erstellen"]')
+    .getByRole("button", { name: "Task erstellen" })
     .click();
   await expect(
     workbench(page).locator("[data-goal-selected-work]"),

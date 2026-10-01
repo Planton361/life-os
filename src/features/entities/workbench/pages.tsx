@@ -275,11 +275,9 @@ export async function WorkbenchEditor({
   const visibleEditorLabel =
     goalMilestoneContext && kind === "project"
       ? "Projekt"
-      : goalMilestoneContext && kind === "task"
-        ? "Aufgabe"
-        : kind === "goal"
-          ? "Ziel"
-          : entityLabels[kind];
+      : kind === "goal"
+        ? "Ziel"
+        : entityLabels[kind];
   const contextGoal =
     (kind === "project" || kind === "task") && !id && goalContext
       ? data.goals.find((goal) => goal.id === goalContext && !goal.archived_at)
@@ -677,15 +675,6 @@ export async function WorkbenchEditor({
                     }))
                 : undefined
             }
-            projectGoalIds={Object.fromEntries(
-              data.projects.map((project) => [project.id, project.goal_id]),
-            )}
-            projectGoalTitles={Object.fromEntries(
-              data.goals.map((goal) => [
-                goal.id,
-                `${goal.title}${goal.archived_at ? " · Archiviert" : ""}`,
-              ]),
-            )}
             areas={data.areas
               .filter((a) => !a.archived_at || a.id === row?.area_id)
               .map((a) => ({

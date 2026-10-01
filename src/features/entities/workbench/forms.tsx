@@ -136,7 +136,6 @@ function visibleEntityLabel(kind: WorkbenchKind, goalMilestoneContext = false) {
   if (kind === "goal" || (goalMilestoneContext && kind === "project")) {
     return kind === "goal" ? "Ziel" : "Projekt";
   }
-  if (goalMilestoneContext && kind === "task") return "Aufgabe";
   return entityLabels[kind];
 }
 
@@ -230,8 +229,6 @@ export function EntityForm({
   projectContext,
   goalContext,
   goalMilestoneContext,
-  projectGoalIds,
-  projectGoalTitles,
   milestones = [],
 }: {
   kind: WorkbenchKind;
@@ -252,8 +249,6 @@ export function EntityForm({
   archived?: boolean;
   sourceOwned?: boolean;
   goalContext?: string;
-  projectGoalIds?: Record<string, string | null>;
-  projectGoalTitles?: Record<string, string>;
 }) {
   const [selectedProject, setSelectedProject] = useState(
     String(values.projectId ?? ""),
@@ -280,24 +275,6 @@ export function EntityForm({
       : goalContext
         ? `/goals/${goalContext}`
         : "/tasks";
-  const captureProjectId = selectedProject;
-  const captureMilestoneId =
-    selectedProject === values.projectId
-      ? String(values.milestoneId ?? "")
-      : "";
-  const captureGoalId =
-    selectedGoal || projectGoalIds?.[captureProjectId] || "";
-  const captureProject = projects.find(
-    (project) => project.id === captureProjectId,
-  );
-  const captureMilestone = milestones.find(
-    (milestone) =>
-      milestone.id === captureMilestoneId &&
-      milestone.projectId === captureProjectId,
-  );
-  const captureGoalTitle =
-    goals.find((goal) => goal.id === captureGoalId)?.title ??
-    projectGoalTitles?.[captureGoalId];
   const field = (
     name: string,
     label: string,
@@ -384,54 +361,6 @@ export function EntityForm({
                 Task zuerst festhalten
               </h2>
               {field("title", "Titel", "text", true)}
-              {(goalMilestoneContext || captureProject || captureGoalTitle) && (
-                <div
-                  className="grid gap-1 text-sm"
-                  data-task-capture-context
-                  data-goal-milestone-task-context={
-                    goalMilestoneTaskCapture ? "true" : undefined
-                  }
-                >
-                  <span className="font-semibold">Bekannter Kontext</span>
-                  {goalMilestoneContext ? (
-                    <p className="text-[var(--text-secondary)]">
-                      <Link
-                        className="underline underline-offset-2"
-                        href={`/goals/${goalMilestoneContext.goalId}`}
-                      >
-                        {goalMilestoneContext.goalTitle}
-                      </Link>
-                      {" · "}
-                      {goalMilestoneContext.milestoneTitle}
-                    </p>
-                  ) : (
-                    <p className="text-[var(--text-secondary)]">
-                      {captureProject && (
-                        <>
-                          <Link
-                            className="underline underline-offset-2"
-                            href={`/projects/${captureProject.id}`}
-                          >
-                            {captureProject.title}
-                          </Link>
-                          {captureMilestone
-                            ? ` · ${captureMilestone.title}`
-                            : ""}
-                        </>
-                      )}
-                      {captureProject && captureGoalTitle ? " · " : ""}
-                      {captureGoalTitle && (
-                        <Link
-                          className="underline underline-offset-2"
-                          href={`/goals/${captureGoalId}`}
-                        >
-                          {captureGoalTitle}
-                        </Link>
-                      )}
-                    </p>
-                  )}
-                </div>
-              )}
               <p className="text-sm text-[var(--text-muted)]">
                 Neue Tasks starten geplant. Details kannst du nach dem Erfassen
                 ergänzen.

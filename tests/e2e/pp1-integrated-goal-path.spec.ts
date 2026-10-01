@@ -1,3 +1,7 @@
+import {
+  expectTaskCaptureParity,
+  standaloneTaskCapture,
+} from "./support/task-create-parity";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { signUpTechnicalManualUser } from "./support/local-manual-auth";
 
@@ -219,18 +223,30 @@ async function createContextEntity(
   milestoneId: string,
   title: string,
 ) {
+  const baseline = kind === "task" ? await standaloneTaskCapture(page) : null;
   await page.goto(
     `/${kind === "project" ? "projects" : "tasks"}/new?goal=${goalId}&goalMilestone=${milestoneId}`,
   );
-  await expect(page.getByText("Ziel-Kontext:", { exact: false })).toBeVisible();
-  await expect(page.getByText("Etappe:", { exact: false })).toBeVisible();
+  if (baseline) {
+    await expectTaskCaptureParity(page, baseline);
+    await page.reload();
+    await expectTaskCaptureParity(page, baseline);
+    const taskForm = page.locator('form[aria-label="Task erstellen"]');
+    await expect(taskForm.locator('input[name="goalId"]')).toHaveValue(goalId);
+    await expect(taskForm.locator('input[name="goalMilestoneId"]')).toHaveValue(
+      milestoneId,
+    );
+  } else {
+    await expect(page.getByText("Ziel-Kontext:", { exact: false })).toBeVisible();
+    await expect(page.getByText("Etappe:", { exact: false })).toBeVisible();
+  }
   const form = page.locator(
-    `form[aria-label="${kind === "project" ? "Projekt" : "Aufgabe"} erstellen"]`,
+    `form[aria-label="${kind === "project" ? "Projekt" : "Task"} erstellen"]`,
   );
   await form.getByLabel("Titel", { exact: true }).fill(title);
   await form
     .getByRole("button", {
-      name: kind === "project" ? "Projekt erstellen" : "Aufgabe erstellen",
+      name: kind === "project" ? "Projekt erstellen" : "Task erstellen",
     })
     .click();
   await expect(

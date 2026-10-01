@@ -1,3 +1,7 @@
+import {
+  expectTaskCaptureParity,
+  standaloneTaskCapture,
+} from "./support/task-create-parity";
 import { expect, test } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/supabase";
@@ -81,6 +85,7 @@ test("canonical Task create from Project, Milestone and Backlog preserves contex
   const form = page.getByRole("form", { name: "Task erstellen", exact: true });
   const submit = () =>
     form.getByRole("button", { name: "Task erstellen", exact: true }).click();
+  const baseline = await standaloneTaskCapture(page);
   const created: string[] = [];
   for (const mode of [
     "project",
@@ -108,11 +113,7 @@ test("canonical Task create from Project, Milestone and Backlog preserves contex
     await expect(
       form.getByRole("link", { name: "Abbrechen", exact: true }),
     ).toHaveAttribute("href", `/projects/${project.id}`);
-    await expect(
-      form
-        .locator("[data-task-capture-context]")
-        .getByRole("link", { name: project.title, exact: true }),
-    ).toBeVisible();
+    await expectTaskCaptureParity(page, baseline);
     const optionalDetails = form.getByRole("button", {
       name: "Weitere Angaben (optional)",
       exact: true,
@@ -120,11 +121,7 @@ test("canonical Task create from Project, Milestone and Backlog preserves contex
     await expect(optionalDetails).toHaveAttribute("aria-expanded", "false");
     await expect(form.getByLabel("Project", { exact: true })).toBeHidden();
     await page.reload();
-    await expect(
-      form
-        .locator("[data-task-capture-context]")
-        .getByRole("link", { name: project.title, exact: true }),
-    ).toBeVisible();
+    await expectTaskCaptureParity(page, baseline);
     await expect(optionalDetails).toHaveAttribute("aria-expanded", "false");
     await optionalDetails.click();
     const projectSelect = form.getByLabel("Project", { exact: true });
@@ -149,11 +146,8 @@ test("canonical Task create from Project, Milestone and Backlog preserves contex
       await expect(
         milestoneSelect.locator(`option[value="${stages[0].id}"]`),
       ).toHaveCount(0);
-      await expect(
-        form
-          .locator("[data-task-capture-context]")
-          .getByRole("link", { name: targetProject.title, exact: true }),
-      ).toBeVisible();
+      await expect(projectSelect).toHaveValue(targetProject.id);
+      await expect(form.locator("[data-task-capture-context]")).toHaveCount(0);
       destination = alternativeStages[0].id;
       await milestoneSelect.selectOption(destination);
     }
@@ -163,9 +157,7 @@ test("canonical Task create from Project, Milestone and Backlog preserves contex
     const title = `${mode} task ${stamp}`;
     await form.getByLabel("Titel", { exact: true }).fill(title);
     await submit();
-    await expect(page).toHaveURL(
-      new RegExp(`/projects/${targetProject.id}$`),
-    );
+    await expect(page).toHaveURL(new RegExp(`/projects/${targetProject.id}$`));
     await expect(
       page.getByRole("status").filter({ hasText: "Task erstellt." }).last(),
     ).toBeVisible();
