@@ -55,6 +55,28 @@ export function ProjectReadView({
   const hasSupportingResources = resourceUses.some(
     (use) => use.role !== "primary_artifact" || use.resource.archived_at,
   );
+  const hasContext = Boolean(
+    goal ||
+    area ||
+    skills.length ||
+    resourceUses.some(
+      (use) => use.role === "primary_artifact" && !use.resource.archived_at,
+    ),
+  );
+  const relationshipManagement = !project.archived_at && (
+    <ManagementDialog
+      label="Beziehungen verwalten"
+      initiallyOpen={Boolean(selectedResource)}
+    >
+      {relations}
+      <ProjectResources
+        data={data}
+        projectId={id}
+        section="reference-management"
+        selectedResource={selectedResource}
+      />
+    </ManagementDialog>
+  );
   return (
     <div data-entity-workbench="project" className={styles.project}>
       <header aria-label="Project Header" className={styles.header}>
@@ -109,6 +131,7 @@ export function ProjectReadView({
         )}
         {!project.archived_at && (
           <div className={`${styles.actions} mt-3`}>
+            {!hasContext && relationshipManagement}
             <ManagementDialog label="Project verwalten">
               <section className="grid gap-3">
                 <ManagementDisclosure label="Bearbeiten">
@@ -145,81 +168,73 @@ export function ProjectReadView({
           </div>
         )}
       </header>
-      <div className={styles.workspace} data-project-workspace>
+      <div
+        className={`${styles.workspace} ${hasContext ? styles.withContext : ""}`}
+        data-project-workspace
+      >
         <ProjectWork data={data} projectId={id} />
-        <aside aria-label="Project Context Rail" className={styles.rail}>
-          <ProjectResources data={data} projectId={id} section="primary" />
-          <section aria-label="Project Context" className="min-w-0">
-            {(goal || skills.length > 0 || area) && (
-              <>
-                <h2 className="text-base font-semibold text-[var(--text-secondary)]">
-                  Context
-                </h2>
-                <dl className="mt-3 grid gap-2 text-sm">
-                  {goal && (
-                    <div>
-                      <dt className="text-sm text-[var(--text-secondary)]">
-                        Goal
-                      </dt>
-                      <dd className="mt-1">
-                        <Link
-                          className="break-words text-[var(--accent-purple)] hover:underline"
-                          href={`/goals/${goal.id}`}
-                        >
-                          {goal.title}
-                          {goal.archived_at ? " · Archiviert" : ""}
-                        </Link>
-                      </dd>
-                    </div>
-                  )}
-                  {skills.length > 0 && (
-                    <div>
-                      <dt className="text-sm text-[var(--text-secondary)]">
-                        Skill-Kontext
-                      </dt>
-                      <dd
-                        title="Aus Tasks / Evidence"
-                        className="mt-1 flex flex-wrap gap-x-3 gap-y-1"
-                      >
-                        {skills.map((s) => (
+        {hasContext && (
+          <aside aria-label="Project Context Rail" className={styles.rail}>
+            <ProjectResources data={data} projectId={id} section="primary" />
+            <section aria-label="Project Context" className="min-w-0">
+              {(goal || skills.length > 0 || area) && (
+                <>
+                  <h2 className="text-base font-semibold text-[var(--text-secondary)]">
+                    Context
+                  </h2>
+                  <dl className="mt-3 grid gap-2 text-sm">
+                    {goal && (
+                      <div>
+                        <dt className="text-sm text-[var(--text-secondary)]">
+                          Goal
+                        </dt>
+                        <dd className="mt-1">
                           <Link
-                            key={s.id}
-                            className="break-words hover:underline"
-                            href={`/skills/${s.id}`}
+                            className="break-words text-[var(--accent-purple)] hover:underline"
+                            href={`/goals/${goal.id}`}
                           >
-                            {s.name}
+                            {goal.title}
+                            {goal.archived_at ? " · Archiviert" : ""}
                           </Link>
-                        ))}
-                      </dd>
-                    </div>
-                  )}
-                  {area && (
-                    <div>
-                      <dt className="text-sm text-[var(--text-secondary)]">
-                        Area
-                      </dt>
-                      <dd className="mt-1">{area.name}</dd>
-                    </div>
-                  )}
-                </dl>
-              </>
-            )}
-            {!project.archived_at && (
-              <ManagementDialog
-                label="Beziehungen verwalten"
-                initiallyOpen={Boolean(selectedResource)}
-              >
-                {relations}
-                <ProjectResources
-                  data={data}
-                  projectId={id}
-                  section="reference-management"
-                  selectedResource={selectedResource}
-                />
-              </ManagementDialog>
-            )}
-          </section>
-        </aside>
+                        </dd>
+                      </div>
+                    )}
+                    {skills.length > 0 && (
+                      <div>
+                        <dt className="text-sm text-[var(--text-secondary)]">
+                          Skill-Kontext
+                        </dt>
+                        <dd
+                          title="Aus Tasks / Evidence"
+                          className="mt-1 flex flex-wrap gap-x-3 gap-y-1"
+                        >
+                          {skills.map((s) => (
+                            <Link
+                              key={s.id}
+                              className="break-words hover:underline"
+                              href={`/skills/${s.id}`}
+                            >
+                              {s.name}
+                            </Link>
+                          ))}
+                        </dd>
+                      </div>
+                    )}
+                    {area && (
+                      <div>
+                        <dt className="text-sm text-[var(--text-secondary)]">
+                          Area
+                        </dt>
+                        <dd className="mt-1">{area.name}</dd>
+                      </div>
+                    )}
+                  </dl>
+                </>
+              )}
+              {relationshipManagement}
+            </section>
+          </aside>
+        )}
       </div>
       {hasSupportingResources && (
         <div className={styles.secondary} data-project-secondary>

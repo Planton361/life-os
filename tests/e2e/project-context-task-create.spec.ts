@@ -230,7 +230,10 @@ test("canonical Task create from Project, Milestone and Backlog preserves contex
   ).toBeVisible();
   await page.goto(`/projects/${project.id}`);
   await expect(work).toContainText("4 Tasks · 1 erledigt");
-  await expect(work).toContainText("Dependency READY 3");
+  await expect(work).toContainText("3 Tasks sind READY");
+  await expect(
+    work.getByRole("button", { name: "Erledigt", exact: true }),
+  ).toHaveCount(3);
   await expect(work).not.toContainText("Dependency BLOCKED 0");
   for (const [width, height] of [
     [3840, 2160],

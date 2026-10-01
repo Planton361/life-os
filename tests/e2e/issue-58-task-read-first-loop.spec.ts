@@ -1036,7 +1036,7 @@ test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar We
   await editTriggerForKeyboard.focus();
   await editTriggerForKeyboard.press("Enter");
   await expect(editTriggerForKeyboard).toHaveAttribute("aria-expanded", "true");
-  await editTriggerForKeyboard.press("Tab");
+  await expect(page.getByRole("dialog", { name: "Task bearbeiten", exact: true })).toBeVisible();
   await expect(
     page
       .getByRole("form", { name: "Task bearbeiten", exact: true })

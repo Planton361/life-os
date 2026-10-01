@@ -7,6 +7,7 @@ import {
   ManagementDisclosureGroup,
 } from "./management-disclosure";
 import { taskGuidance } from "./task-guidance";
+import { TaskEditDialog } from "./task-edit-dialog";
 import { taskTextFields } from "./task-text";
 
 const taskStatusLabels: Record<string, string> = {
@@ -68,7 +69,6 @@ function durationLabel(duration: number) {
 export function TaskReadView({
   data,
   taskId,
-  edit,
   dependencies,
   milestoneManagement,
   relations,
@@ -78,7 +78,6 @@ export function TaskReadView({
 }: {
   data: WorkbenchData;
   taskId: string;
-  edit: ReactNode;
   dependencies: ReactNode;
   milestoneManagement: ReactNode;
   relations: ReactNode;
@@ -451,16 +450,11 @@ export function TaskReadView({
           </section>
         </div>
         <ManagementDisclosureGroup className="grid gap-3 border-t border-[var(--border-subtle)] pt-3">
-          {!task.archived_at && (
-            <ManagementDisclosure
-              label="Bearbeiten"
-              initiallyOpen={editInitiallyOpen}
-              focusFirstOnOpen={editInitiallyOpen}
-              clearSearchParamOnClose="edit"
-            >
-              {edit}
-            </ManagementDisclosure>
-          )}
+          <TaskEditDialog
+            data={data}
+            taskId={taskId}
+            initiallyOpen={editInitiallyOpen}
+          />
           {!task.archived_at && (
             <ManagementDisclosure label="Mehr verwalten">
               <ManagementDisclosureGroup className="grid gap-3">

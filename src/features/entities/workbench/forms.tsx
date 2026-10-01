@@ -226,6 +226,7 @@ export function EntityForm({
   goals,
   archived = false,
   sourceOwned = false,
+  taskEditDialog = false,
   projectContext,
   goalContext,
   goalMilestoneContext,
@@ -248,6 +249,7 @@ export function EntityForm({
   goals: Option[];
   archived?: boolean;
   sourceOwned?: boolean;
+  taskEditDialog?: boolean;
   goalContext?: string;
 }) {
   const [selectedProject, setSelectedProject] = useState(
@@ -506,7 +508,9 @@ export function EntityForm({
                   {kind === "task" && (
                     <>
                       {id ? (
-                        sourceOwned || values.status === "done" ? (
+                        sourceOwned ||
+                        taskEditDialog ||
+                        values.status === "done" ? (
                           <p>
                             Status: {values.status}
                             <input

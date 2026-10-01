@@ -151,6 +151,8 @@ export function ManagementDialog({
   panelClassName = "",
   focusFirstOnOpen = true,
   initiallyOpen = false,
+  clearSearchParamOnClose,
+  resetOnClose = false,
 }: {
   label: string;
   children: ReactNode;
@@ -159,6 +161,8 @@ export function ManagementDialog({
   panelClassName?: string;
   focusFirstOnOpen?: boolean;
   initiallyOpen?: boolean;
+  clearSearchParamOnClose?: string;
+  resetOnClose?: boolean;
 }) {
   const hydrated = useSyncExternalStore(
     subscribe,
@@ -170,6 +174,9 @@ export function ManagementDialog({
   const dialog = useRef<HTMLDialogElement>(null);
   const dialogId = useId();
   const headingId = useId();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     const element = dialog.current;
@@ -178,11 +185,14 @@ export function ManagementDialog({
       element.showModal();
       if (focusFirstOnOpen) {
         const frame = window.requestAnimationFrame(() => {
-          element
-            .querySelector<HTMLElement>(
-              'input:not([type="hidden"]):not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])',
-            )
-            ?.focus();
+          const first =
+            element.querySelector<HTMLElement>(
+              'input:not([type="hidden"]):not([disabled]), textarea:not([disabled]), select:not([disabled])',
+            ) ??
+            element.querySelector<HTMLElement>(
+              'button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+            );
+          first?.focus();
         });
         return () => window.cancelAnimationFrame(frame);
       }
@@ -193,6 +203,15 @@ export function ManagementDialog({
 
   function close() {
     setOpen(false);
+    dialog.current?.close();
+    if (clearSearchParamOnClose && searchParams.has(clearSearchParamOnClose)) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete(clearSearchParamOnClose);
+      const query = params.toString();
+      router.replace(query ? `${pathname}?${query}` : pathname, {
+        scroll: false,
+      });
+    }
     trigger.current?.focus();
   }
 
@@ -215,6 +234,23 @@ export function ManagementDialog({
         id={dialogId}
         aria-labelledby={headingId}
         className={`w-[min(48rem,calc(100vw-2rem))] max-h-[min(84dvh,56rem)] overflow-y-auto rounded-xl border border-[var(--border-default)] bg-[var(--surface-1)] p-0 text-[var(--text-primary)] shadow-2xl backdrop:bg-black/60 ${panelClassName}`}
+        onKeyDown={(event) => {
+          if (event.key !== "Tab") return;
+          const items = Array.from(
+            event.currentTarget.querySelectorAll<HTMLElement>(
+              'button:not(:disabled), input:not([type="hidden"]):not(:disabled), textarea:not(:disabled), select:not(:disabled), a[href], [tabindex="0"]',
+            ),
+          ).filter((element) => element.getClientRects().length > 0);
+          const first = items[0];
+          const last = items[items.length - 1];
+          if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last?.focus();
+          } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first?.focus();
+          }
+        }}
         onCancel={(event) => {
           event.preventDefault();
           close();
@@ -240,7 +276,7 @@ export function ManagementDialog({
           </div>
           <DisclosureClose.Provider value={close}>
             <DisclosureGroup.Provider value={null}>
-              {children}
+              {(!resetOnClose || open) && children}
             </DisclosureGroup.Provider>
           </DisclosureClose.Provider>
         </div>
