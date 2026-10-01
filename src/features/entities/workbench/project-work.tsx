@@ -126,7 +126,7 @@ export function ProjectWork({
     <Link
       className={
         quiet
-          ? "min-h-10 text-left text-sm text-[var(--accent-cyan)]! underline! underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
+          ? "min-h-10 content-center text-left text-sm text-[var(--accent-cyan)]! underline! underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
           : actionClass
       }
       prefetch={false}
@@ -257,20 +257,9 @@ export function ProjectWork({
     );
   return (
     <section aria-label="Tasks & Progress" className={styles.work}>
-      <div className="border-b border-[var(--border-subtle)] px-5 py-3">
-        <p className="text-xs font-semibold uppercase tracking-wider text-[var(--accent-blue)]">
-          Work
-        </p>
-        <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-xl font-semibold">Tasks & Milestones</h2>
-          {summary.taskCount > 0 && (
-            <p className="text-sm text-[var(--text-muted)]">
-              {summary.taskCount} Tasks
-              {summary.tasksDone > 0 ? ` · ${summary.tasksDone} erledigt` : ""}
-            </p>
-          )}
-        </div>
-        <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+      <div className={styles.workHeader}>
+        <h2 className="text-xl font-semibold">Work</h2>
+        <div className={styles.guidance}>
           {guidance.kind !== "single-ready" && (
             <section
               aria-label="Project Task guidance"
@@ -407,11 +396,6 @@ export function ProjectWork({
         id="project-task-list"
         aria-label="Project Task List"
       >
-        {!summary.groups.length && (
-          <p className="py-3 text-sm text-[var(--text-muted)]">
-            Noch keine Milestones.
-          </p>
-        )}
         {summary.groups.map(({ milestone: m, tasks: linked, done }) => (
           <section
             key={m.id}
@@ -489,14 +473,17 @@ export function ProjectWork({
             {linked.length > 0 && renderTasks(linked)}
           </section>
         ))}
-        {summary.unassigned.length > 0 && (
-          <section aria-label="Ohne Milestone" className="py-3">
-            <h3 className="text-sm font-medium text-[var(--text-secondary)]">
-              Ohne Milestone
-            </h3>
-            {renderTasks(summary.unassigned)}
-          </section>
-        )}
+        {summary.unassigned.length > 0 &&
+          (summary.groups.length ? (
+            <section aria-label="Ohne Milestone" className="py-3">
+              <h3 className="text-sm font-medium text-[var(--text-secondary)]">
+                Ohne Milestone
+              </h3>
+              {renderTasks(summary.unassigned)}
+            </section>
+          ) : (
+            renderTasks(summary.unassigned)
+          ))}
         {archived.length > 0 && (
           <ManagementDialog
             label={`Archivierte Milestones · ${archived.length}`}

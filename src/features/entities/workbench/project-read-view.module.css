@@ -25,7 +25,7 @@
 }
 .workspace {
   display: grid;
-  align-items: start;
+  align-items: stretch;
   min-height: 0;
   min-width: 0;
 }
@@ -34,6 +34,7 @@
   flex-direction: column;
   min-height: 0;
   min-width: 0;
+  container-type: inline-size;
 }
 .taskList {
   min-height: 0;
@@ -41,8 +42,8 @@
   padding: 0 1.25rem;
 }
 .task {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  display: flex;
+  flex-wrap: wrap;
   align-items: start;
   gap: 1rem;
   padding: 1rem 0;
@@ -80,9 +81,6 @@
   .withContext {
     grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
   }
-  .rail {
-    border-left: 1px solid var(--border-subtle);
-  }
 }
 .secondary {
   display: block;
@@ -101,7 +99,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.25rem 1rem;
-  margin-top: 0.5rem;
+  justify-content: flex-end;
 }
 .milestone {
   display: grid;
@@ -132,13 +130,13 @@
 }
 .taskActions {
   display: flex;
-  flex-wrap: wrap;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 0.25rem 1rem;
 }
 @media (max-width: 760px) {
   .task {
-    grid-template-columns: minmax(0, 1fr);
     gap: 0.5rem;
   }
 }
@@ -155,4 +153,93 @@
 }
 .emptyMilestone > div:first-child p {
   margin-top: 0;
+}
+
+.frame {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1.5rem;
+}
+.identity h1 {
+  flex: 1 1 20rem;
+}
+.workHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.guidance {
+  grid-column: 1 / -1;
+}
+.guidance:empty {
+  display: none;
+}
+.workActions {
+  grid-column: 2;
+  grid-row: 1;
+}
+.task > section {
+  flex: 1 1 24rem;
+}
+.taskActions > * {
+  flex: none;
+}
+.taskActions {
+  gap: 0.5rem 1.25rem;
+}
+@media (min-width: 1280px) {
+  .frame {
+    min-height: clamp(36rem, calc(100dvh - 2rem), 160rem);
+  }
+  .workspace {
+    flex: 1 0 auto;
+  }
+  .rail {
+    align-self: start;
+  }
+  .withContext {
+    position: relative;
+  }
+  .withContext::after {
+    content: "";
+    position: absolute;
+    left: calc(100% * 2 / 3);
+    top: 0;
+    bottom: 0;
+    border-left: 1px solid var(--border-subtle);
+    pointer-events: none;
+  }
+  .rail {
+    border-left: 0;
+  }
+}
+@container (max-width: 48rem) {
+  .task > section {
+    flex-basis: 100%;
+  }
+}
+@media (max-width: 760px) {
+  .workHeader {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .workActions {
+    grid-column: 1;
+    grid-row: 2;
+    justify-content: flex-start;
+  }
+  .task > section {
+    flex-basis: 100%;
+  }
 }

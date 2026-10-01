@@ -66,8 +66,11 @@ test("Project milestones: CRUD, grouping, ordering, progress, archive and owners
   await page.goto(`/projects/${p.id}`);
   await expect(
     work.getByRole("region", { name: "Ohne Milestone", exact: true }),
-  ).toContainText(tasks[0].title);
-  await expect(work).toContainText("Noch keine Milestones.");
+  ).toHaveCount(0);
+  await expect(
+    work.locator(`[data-project-task="${tasks[0].id}"]`),
+  ).toBeVisible();
+  await expect(work).not.toContainText("Noch keine Milestones.");
   await expect(
     work.locator(
       "input:not([type=hidden]):visible, select:visible, textarea:visible",
@@ -94,6 +97,7 @@ test("Project milestones: CRUD, grouping, ordering, progress, archive and owners
       name: "Milestone erstellen",
       exact: true,
     });
+    await expect(form.getByLabel("Titel", { exact: true })).toBeFocused();
     await form.getByLabel("Titel", { exact: true }).fill(title);
     await form
       .getByLabel("Outcome / Beschreibung")
@@ -103,6 +107,7 @@ test("Project milestones: CRUD, grouping, ordering, progress, archive and owners
       .getByRole("button", { name: "Milestone erstellen", exact: true })
       .click();
     await expect(saved()).toBeVisible();
+    await expect(group(title)).toBeVisible();
     await page.reload();
     await expect(group(title)).toBeVisible();
   }
@@ -171,7 +176,10 @@ test("Project milestones: CRUD, grouping, ordering, progress, archive and owners
   await expect(group("Research")).toContainText("1/1 Tasks erledigt");
   await expect(group("Research")).toContainText("Offen"); // never auto-completed
   await page.reload();
-  await expect(work).toContainText("3 Tasks · 1 erledigt");
+  await expect(
+    work.locator(`[data-project-task="${tasks[0].id}"]`),
+  ).toContainText("done");
+  await expect(group("Research")).toContainText("1/1 Tasks erledigt");
   await page.goto(`/tasks/${tasks[0].id}`);
   const taskContext = page.locator("[data-task-context]");
   const taskManagement = page;

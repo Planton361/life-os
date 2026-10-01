@@ -752,13 +752,14 @@ Workbench (Work + Primary/Context rail, roughly 67/33), and Supporting Surface
 (Additional Artifacts + References). Matte backgrounds and subtle outer borders
 enclose each whole area; internal vertical/horizontal dividers organize content
 without nested cards. Metadata is grouped below identity. Mobile stacks the
-sections and substitutes horizontal separators. No viewport-height fill, raw
-relation copy or permanent management inputs. Artifact/Reference semantics and
+sections and substitutes horizontal separators. #88 refines desktop with a bounded
+viewport-derived minimum-height frame; inner modules stay content-sized and mobile
+resets the minimum. No raw relation copy or permanent management inputs. Artifact/Reference semantics and
 all existing controls/writes remain unchanged.
 
 | Capability | Status | Current control truth |
 |---|---|---|
-| Read-first Project Detail | `CONNECTED` | Values, counts and real detail links; no visible inputs in normal ID deep links |
+| Read-first Project Detail | `CONNECTED` | #88 implements the USER ACCEPTED #87 viewport-aware frame: compact orientation/management, flexible Work, direct Tasks without Milestone chrome when no real Milestones exist, stable `Erledigt · Bearbeiten · Details` cluster, collapsed absent Context and content-sized present Context/Supporting/Review; History remains outside the frame. `tests/e2e/issue-88-project-viewport-workbench.spec.ts` asserts sparse 1920×1080 / 3840×2160 canvas geometry, one Task with/without Context, content-sized rows and Review, action spacing/grouping, 33-Task document growth, mobile 390×844, no overflow/internal-scroll trap and completion/continue/History/reopen reload. Existing #85, Milestone and Dependency proofs retain real controls/writes/guards. Synthetic screenshots: `docs/qa/project-viewport-workbench/`. #69 remains OPEN and requires real USER ACCEPTANCE; PP2/PP3/PP4 and R2-13 remain gated. |
 | Project editing | `CONNECTED` | “Bearbeiten” reveals the existing complete EntityForm and writes |
 | Artifact management | `CONNECTED` | Per-artifact disclosure for role/removal; Primary also offers explicit replacement selection |
 | Artifact addition | `CONNECTED` | “+ Artifact hinzufügen” reveals existing Resource/role link and external-reference Create navigation |
