@@ -106,7 +106,8 @@ guidance refinements:
   Project lifecycle;
 - an empty Project prioritizes `Erste Task anlegen`, with known
   Project/current Project-Milestone context prefilled in the same normal
-  `/tasks/new` composition as global Task creation, as accepted in #72.
+  `/tasks/new` composition as global Task creation, as corrected and USER ACCEPTED
+  in #77.
 
 Milestone grouping, real counts, Resources/Work Artifacts, References, Goal
 context and lifecycle semantics remain owned by the accepted R2-09 contract;
@@ -197,8 +198,10 @@ is [USER ACCEPTED](https://github.com/Planton361/life-os/issues/72#issuecomment-
 on 2026-09-30. Project Detail is a calm, read-first work context, not a management
 dashboard. Management must not dominate reading or execution. This target refines
 R2-09/#56/#65 presentation without replacing the existing workbench architecture.
-It is a target for a separately authorized bounded DELIVER repair, not a claim of
-implementation or acceptance of the current #69 surface.
+The Task-create portion is corrected by the [#77 canonical target](https://github.com/Planton361/life-os/issues/77#issuecomment-5922104190),
+[USER ACCEPTED](https://github.com/Planton361/life-os/issues/77#issuecomment-5922117427)
+on 2026-10-01. All unrelated #72 decisions remain binding. Target acceptance does
+not claim that the #77 correction is implemented or accept the current #69 surface.
 
 Canonical desktop reading order:
 
@@ -238,18 +241,34 @@ Result and Criteria:
 
 Project-origin Task creation:
 
-- Use the same normal `/tasks/new` field hierarchy and visual composition as
-  global creation. Project context changes values, never the Task-create surface.
+- The existing global `/tasks/new` surface is the canonical normal Task-create
+  UX. Keep `Task erstellen`, `Bewusst erstellen`, `Task zuerst festhalten`,
+  Title-first capture, `Weitere Angaben (optional)`, and the existing field
+  hierarchy, labels and visual composition.
+- `Erste Task anlegen`, non-empty `+ Task` and Milestone-local Task add use that
+  exact same page and composition. Project/Milestone/Goal origin may change only
+  validated prefills, origin metadata, Save destination and Cancel destination.
+  No Project-specific heading, field order, disclosure state or separate
+  Task-create component is allowed.
+- Project, Project Milestone and Goal context belong in the existing canonical
+  fields under `Weitere Angaben (optional)`. No extra Project-origin context
+  summary, chip, link or capture block appears in the top Title-first area.
+  No Project-specific visual/capture composition beyond canonical Title-first
+  `/tasks/new` is allowed; no second Portfolio Task-create UI is introduced.
 - `project=<projectId>`, optional `milestone=<milestoneId>` and allowed inherited
   Goal context are prefills through the existing canonical query contract.
   Milestone is prefilled from that Milestone or accepted current-Milestone context.
-- Keep normal editable fields and existing ownership/conflict/Milestone
-  validation. Project changes clear incompatible Milestone context under existing
-  rules; no new relation or validation semantics.
-- Save returns to the actual selected owning Project, refreshes the correct
-  Milestone/backlog and identifies success through focus/status feedback. Cancel
-  returns to the originating Project without writes. Global creation keeps its
-  existing Task-detail destination. No duplicate Project-specific title-first form.
+- Project-origin Project remains required/non-empty; deliberate switching to
+  another valid owned active Project remains allowed. Project switch clears an
+  incompatible Milestone and shows only Milestones for the selected Project.
+  Milestone remains editable; backlog/no-Milestone remains valid. Existing Goal
+  inheritance/conflict and ownership validation remain unchanged.
+- Save returns to the actually selected owning Project, refreshes the correct
+  Milestone/backlog and identifies success through focus/status feedback.
+  Project-origin Cancel returns to the originating Project without writes, even
+  after context edits. Standalone Save keeps the existing Task Detail destination;
+  standalone Cancel and Goal-origin Save/Cancel keep their existing destinations.
+  One canonical Task is persisted through the existing persistence boundary.
 
 Secondary management:
 
@@ -782,10 +801,11 @@ Project editing, artifact roles and relation management appear only after explic
 user actions through the bounded secondary interactions accepted in #72.
 One Work Task-add entry starts the same normal `/tasks/new` composition as global
 creation; optional Milestone-local entries remain quiet rather than repeated button
-chrome. Project and optional Milestone are visibly prefilled
-from validated server context. Creation stores one canonical Task and returns to
-the Project with a global success toast; a deliberate Project switch returns to
-the selected Project. Standalone Task Create keeps its Task-detail navigation.
+chrome. Project and optional Milestone are prefilled from validated server context
+in the existing canonical fields under `Weitere Angaben (optional)`, as corrected
+in #77; no extra origin-specific top context/capture block is allowed. Creation
+stores one canonical Task and returns to the Project with a global success toast;
+a deliberate Project switch returns to the selected Project. Standalone Task Create keeps its Task-detail navigation.
 Milestone membership never creates a Dependency.
 Identity, compact result/Criteria and Project-Fokus lead into Work; real Tasks and
 Milestones dominate, with counts only where useful for orientation. The #72

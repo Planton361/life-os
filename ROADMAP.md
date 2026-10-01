@@ -124,14 +124,21 @@ Resources and Task dependency semantics.
 **Acceptance boundary:** Issue #65 USER ACCEPTED the Project Depth product target
 and sequence on 2026-09-29; Issue #67 P-DATA USER ACCEPTED its Project-specific
 data/security contract on 2026-09-29; #69 delivered that technical implementation.
-The current #69 Product Surface failed real post-merge USER ACCEPTANCE and remains
-not accepted. The replacement [#72 target is USER ACCEPTED](https://github.com/Planton361/life-os/issues/72#issuecomment-5912775840)
-on 2026-09-30; target acceptance does not close the #69 Product-Surface gate.
-A separately authorized bounded redesign DELIVER repair remains required after
-canonical target persistence is merged and verified, followed by another real
-USER ACCEPTANCE check. P-DATA and its security semantics remain unchanged.
-Project Depth acceptance remains ahead of Skill PP2 → PP3 → PP4; those blocks may
-not bypass the open #69 gate. #3 / R2-13 remains Blocked/preserved.
+The replacement [#72 target was USER ACCEPTED](https://github.com/Planton361/life-os/issues/72#issuecomment-5912775840)
+on 2026-09-30 and canonically persisted. #74 / PR #75 redesign implementation is
+merged and technically verified. Subsequent real #69 USER ACCEPTANCE still failed
+on the canonical Task-create mismatch: Project-origin adds top context/capture
+presentation that diverges from standalone `/tasks/new`.
+The [#77 corrected target](https://github.com/Planton361/life-os/issues/77#issuecomment-5922104190)
+is [USER ACCEPTED](https://github.com/Planton361/life-os/issues/77#issuecomment-5922117427)
+on 2026-10-01: retain the existing canonical Title-first `/tasks/new` composition,
+with origin changing only validated prefills, metadata and Save/Cancel destinations.
+#69 remains open and its Product Surface is not USER ACCEPTED. Canonical persistence
+of #77 must be merged and verified before one separately authorized bounded repair,
+followed by another real USER ACCEPTANCE check. P-DATA, Security and domain
+semantics remain unchanged. Project Depth acceptance still gates Skill PP2 → PP3 →
+PP4; those blocks remain unauthorized and may not bypass the open #69 gate.
+#3 / R2-13 remains Blocked/preserved.
 This ROADMAP does not authorize schema, migration or product delivery; GitHub
 Project #3 remains the operative queue.
 

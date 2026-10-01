@@ -516,6 +516,24 @@ was [USER ACCEPTED](https://github.com/Planton361/life-os/issues/72#issuecomment
 on 2026-09-30. This is the replacement Product/UX target for the failed #69
 surface acceptance, not acceptance of that implementation. PRODUCT owns the
 read-first mental model, state/action hierarchy and normal `/tasks/new` reuse.
+The [#77 corrected Task-create target](https://github.com/Planton361/life-os/issues/77#issuecomment-5922104190)
+was [USER ACCEPTED](https://github.com/Planton361/life-os/issues/77#issuecomment-5922117427)
+on 2026-10-01 and corrects only the Task-create part of #72. All unrelated #72
+hierarchy, management, Review/History and V5 decisions remain binding.
+
+The existing global `/tasks/new` is the canonical normal Task-create UX. Keep
+`Task erstellen`, `Bewusst erstellen`, `Task zuerst festhalten`, Title-first
+capture, `Weitere Angaben (optional)`, and the existing field hierarchy, labels
+and visual composition. Project/Milestone/Goal origin changes only validated
+prefills, origin metadata and Save/Cancel destinations. Project, Project Milestone
+and Goal remain in the existing fields under `Weitere Angaben (optional)`.
+No Project-specific heading, field order, disclosure state, separate Task-create
+component or extra top context summary/chip/link/capture block is allowed.
+Title-first capture itself remains accepted. PRODUCT retains the required owning
+Project, valid Project switching, incompatible Milestone clearing, backlog,
+Goal inheritance/conflict and Save/Cancel semantics. The #77 correction is an
+accepted target, not a claim of implementation or final surface acceptance.
+
 The R2-09 identity → shared Work/context → Supporting macro model stays intact;
 management must not dominate reading or execution.
 
@@ -640,16 +658,24 @@ History/context navigation and no write CTA hierarchy.
 - Unnecessary repeated zero counts and simultaneous redundant Work counts.
 - Equal-weight `+ Task`, `+ Milestone`, `Tasks zuordnen` clusters.
 - Aggressive repeated per-Milestone Task-add controls.
-- Project-specific title-first Task-create composition.
+- Project-origin-only visual/capture divergence from standalone `/tasks/new`,
+  including extra origin-specific top context/capture presentation; canonical
+  Title-first capture remains accepted.
 
 #### Browser-observable acceptance for the later DELIVER repair
 
 1. Empty Project has exactly one dominant `Erste Task anlegen`; result/Criteria
    setup is compact and management never expands the main layout. No per-Criterion
    Manage control appears in read mode, including read-only `N weitere` expansion.
-2. Project-origin `/tasks/new` has the same normal composition as global create,
-   with only context prefilled; Save returns to the actual owning Project and
-   correct Milestone/backlog, Cancel writes nothing and returns to origin.
+2. Standalone and Project-origin `/tasks/new` have the same headings, page
+   structure, labels, field order and disclosure behavior. Only validated prefills,
+   origin metadata and Save/Cancel destinations differ. Project/Milestone/Goal
+   remain in the canonical optional-details fields; no extra Project-specific top
+   context/capture block appears. Project stays required/non-empty for Project-origin;
+   valid owned active Project switching clears incompatible Milestone, while
+   backlog/no-Milestone remains valid. Save returns to the actually selected owning
+   Project and correct Milestone/backlog; Cancel writes nothing and returns to the
+   originating Project even after edits. Standalone Save still opens Task Detail.
 3. One READY / multiple READY / all BLOCKED each has one clear, user-controlled
    guidance/action hierarchy. With Milestones, structure stays inside dominant
    Work; add/manage controls and counts remain subordinate.
@@ -782,8 +808,8 @@ The R2-09 three-surface structure and information hierarchy remain binding.
 - an all-blocked Project guides into blocker context without mutating Project
   status;
 - an empty Project uses `Erste Task anlegen` as the primary work entry through
-  the normal `/tasks/new` composition accepted in #72; Milestone management stays
-  secondary.
+  the canonical Title-first `/tasks/new` composition corrected in #77; Milestone
+  management stays secondary.
 
 Existing Milestone ordering/grouping, task and milestone counts, Work Artifacts,
 References and Goal context retain their semantics. #72 refines read hierarchy,
