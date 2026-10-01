@@ -416,6 +416,11 @@ export function ProjectWork({
                   ? ` · ${m.target_date.split("-").reverse().join(".")}`
                   : ""}
               </p>
+              {done > 0 && (
+                <span className="text-sm text-[var(--text-muted)]">
+                  {done}/{linked.length} Tasks erledigt
+                </span>
+              )}
               {!linked.length && (
                 <span className="text-sm text-[var(--text-muted)]">
                   Noch keine Tasks.
@@ -465,18 +470,13 @@ export function ProjectWork({
                 {m.description}
               </p>
             )}
-            {done > 0 && (
-              <p className="mt-2 text-sm text-[var(--text-muted)]">
-                {done}/{linked.length} Tasks erledigt
-              </p>
-            )}
             {linked.length > 0 && renderTasks(linked)}
           </section>
         ))}
         {summary.unassigned.length > 0 &&
           (summary.groups.length ? (
-            <section aria-label="Ohne Milestone" className="py-3">
-              <h3 className="text-sm font-medium text-[var(--text-secondary)]">
+            <section aria-label="Ohne Milestone" className={styles.ungrouped}>
+              <h3 className="text-sm font-medium text-[var(--text-muted)]">
                 Ohne Milestone
               </h3>
               {renderTasks(summary.unassigned)}
