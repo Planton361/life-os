@@ -131,7 +131,9 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
   ];
   await expect(projectManagement).toBeEnabled();
   await expect(
-    page.getByRole("button", { name: "Bearbeiten", exact: true }),
+    page
+      .getByLabel("Project Header", { exact: true })
+      .getByRole("button", { name: "Bearbeiten", exact: true }),
   ).toHaveCount(0);
   await expect(
     main.locator("input:visible, textarea:visible, select:visible"),
@@ -140,7 +142,7 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
     page.getByRole("region", { name: "Project-Fokus", exact: true }),
   ).toContainText(project.next_step!);
   await expect(primary).toContainText(resources[0].title);
-  await expect(taskRegion).toContainText("1 Tasks · 0 erledigt");
+  await expect(taskRegion.locator("[data-project-task]")).toHaveCount(1);
   await expect(addTaskLink).toBeVisible();
   const addTaskAppearance = await addTaskLink.evaluate((element) => {
     const style = getComputedStyle(element);
@@ -152,7 +154,7 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
     };
   });
   const workOptionsAppearance = await taskRegion
-    .getByRole("button", { name: "Weitere Work-Optionen", exact: true })
+    .getByRole("button", { name: "Meilenstein +", exact: true })
     .evaluate((element) => {
       const style = getComputedStyle(element);
       return {
@@ -236,7 +238,7 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
     await expect(projectManagement).toBeFocused();
     for (const [regionName, label, suffix] of [
       ["Primary Work Artifact", "Artifact verwalten", "artifact"],
-      ["Project Context", "Beziehungen verwalten", "relations"],
+      ["Project Header", "Beziehungen verwalten", "relations"],
     ]) {
       const region = page.getByLabel(regionName, { exact: true });
       const trigger = region.getByRole("button", { name: label, exact: true });
@@ -430,7 +432,7 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
   ).toBeVisible();
   await page.reload();
   await expect(taskRegion).toContainText(tasks[1].title);
-  await expect(taskRegion).toContainText("2 Tasks · 0 erledigt");
+  await expect(taskRegion.locator("[data-project-task]")).toHaveCount(2);
   await manage.click();
   const relation = page
     .getByRole("region", { name: "Beziehungen", exact: true })
@@ -551,7 +553,7 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
       main.locator("input:visible, textarea:visible, select:visible"),
     ).toHaveCount(0);
     if (state === "rich") {
-      await expect(taskRegion).toContainText("25 Tasks · 4 erledigt");
+      await expect(taskRegion.locator("[data-project-task]")).toHaveCount(25);
       await expect(
         page.getByRole("region", { name: "Project Context", exact: true }),
       ).toContainText("TypeScript");
@@ -575,7 +577,7 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
       ).toHaveCount(0);
       await expect(
         taskRegion.getByRole("button", {
-          name: "Weitere Work-Optionen",
+          name: "Meilenstein +",
           exact: true,
         }),
       ).toBeVisible();
@@ -609,13 +611,13 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
           await surface.evaluate((el) => getComputedStyle(el).backgroundColor),
         ).not.toBe("rgba(0, 0, 0, 0)");
       }
-      await expect(
-        page
-          .locator("[data-project-workspace]")
-          .getByRole("complementary", { name: "Project Context Rail" }),
-      ).toBeVisible();
+      const rail = page
+        .locator("[data-project-workspace]")
+        .getByRole("complementary", { name: "Project Context Rail" });
+      if (state === "empty") await expect(rail).toHaveCount(0);
+      else await expect(rail).toBeVisible();
       const workBox = (await taskRegion.boundingBox())!;
-      if (width >= 1920) {
+      if (width >= 1920 && state !== "empty") {
         const railBox = (await page
           .getByRole("complementary", { name: "Project Context Rail" })
           .boundingBox())!;

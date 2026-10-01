@@ -381,7 +381,7 @@ space belongs inside the shared workbench; long content grows the document with
 no primary internal-scroll trap. History stays secondary depth outside the frame.
 Mobile resets the minimum and stacks naturally.
 
-Normal Work has one heading, quiet `+ Task` and `Weitere Work-Optionen`. Without
+Normal Work has one heading, quiet `+ Task` and `Meilenstein +`. Without
 real Milestones, Tasks render directly: no generic Task count, `Tasks & Milestones`,
 `Noch keine Milestones.` or `Ohne Milestone` grouping. Real Milestones retain
 compact groups and may give unassigned Tasks one grouping label. Exactly-one READY

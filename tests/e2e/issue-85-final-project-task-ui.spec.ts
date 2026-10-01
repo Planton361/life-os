@@ -543,7 +543,7 @@ test("#85 Project Work states, lifecycle guards and shared accessible Task edit"
   ).toBeVisible();
   await page.keyboard.press("Escape");
   await work()
-    .getByRole("button", { name: "Weitere Work-Optionen", exact: true })
+    .getByRole("button", { name: "Meilenstein +", exact: true })
     .click();
   await expect(
     page.getByRole("dialog", { name: "Weitere Work-Optionen", exact: true }),

@@ -18,6 +18,7 @@ import { ProjectWork } from "./project-work";
 import {
   ProjectDepthHistory,
   ProjectDepthResult,
+  ProjectDepthResultManagement,
   ProjectDepthReview,
   ProjectDepthStatus,
 } from "./project-depth";
@@ -95,6 +96,7 @@ export function ProjectReadView({
             </h1>
             {!project.archived_at && (
               <div className={styles.actions}>
+                {depth && <ProjectDepthResultManagement depth={depth} />}
                 {relationshipManagement}
                 <ManagementDialog label="Project verwalten">
                   <section className="grid gap-3">

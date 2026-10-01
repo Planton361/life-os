@@ -817,7 +817,7 @@ Long content grows the page; Review is never fixed/sticky. At 390×844 the frame
 is naturally content-sized, with Work then Context, Supporting, Review and History.
 
 Use one Work heading and a compact toolbar with quiet `+ Task` and
-`Weitere Work-Optionen`. Remove Task-count/readiness strips. Without real
+`Meilenstein +`. Remove Task-count/readiness strips. Without real
 Milestones omit `Tasks & Milestones`, `Noch keine Milestones.` and `Ohne Milestone`;
 render the real Tasks directly. Exactly-one READY marks the row once; multiple
 READY/all BLOCKED use one decision guidance line. Real Milestone groups stay

@@ -136,219 +136,221 @@ function CommandForm({
 
 export function ProjectDepthResult({ depth }: { depth: Depth }) {
   const { context } = depth;
-  const [feedback, setFeedback] = useState("");
-  const [feedbackRole, setFeedbackRole] = useState<"status" | "alert">(
-    "status",
-  );
-  const editable = !context.archived_at && context.status !== "completed";
   const active = context.criteria.filter((c) => !c.archived_at);
-  const archived = context.criteria.filter((c) => c.archived_at);
   const preview = active.slice(0, 3);
   const additional = active.slice(3);
-  const hasReadContent = Boolean(context.desired_result || active.length > 0);
-  const reportResult = (result: CommandResult) => {
-    setFeedback(result.message);
-    setFeedbackRole(result.status === "success" ? "status" : "alert");
-  };
+  if (!context.desired_result && !active.length) return null;
   return (
     <section
       aria-label="Project Ergebnis und Kriterien"
       className="mt-3 min-w-0 border-t border-[var(--border-subtle)] pt-3 text-sm"
       data-project-result-read-mode
     >
-      {hasReadContent && (
-        <div className="grid max-w-5xl gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(16rem,1fr)]">
-          {context.desired_result && (
-            <div className="min-w-0">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--accent-purple)]">
-                Gewünschtes Ergebnis
-              </h2>
-              <p className="mt-1 whitespace-pre-wrap break-words">
-                {context.desired_result}
-              </p>
-            </div>
-          )}
-          {preview.length > 0 && (
-            <div className="min-w-0">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--accent-purple)]">
-                Fertig, wenn …
-              </h2>
-              <ol className="mt-1 grid gap-1">
-                {preview.map((criterion) => (
-                  <li key={criterion.id} className="break-words">
-                    {criterion.text}
-                  </li>
-                ))}
-              </ol>
-              {additional.length > 0 && (
-                <details className="mt-1">
-                  <summary className="min-h-10 cursor-pointer content-center text-[var(--text-secondary)] underline">
-                    {additional.length} weitere
-                  </summary>
-                  <ol start={4} className="grid gap-1 pb-2">
-                    {additional.map((criterion) => (
-                      <li key={criterion.id} className="break-words">
-                        {criterion.text}
-                      </li>
-                    ))}
-                  </ol>
-                </details>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-      {editable && (
-        <div className={hasReadContent ? "mt-2" : ""}>
-          <ManagementDialog
-            label="Ergebnis und Kriterien verwalten"
-            triggerText={
-              hasReadContent
-                ? "Ergebnis und Kriterien bearbeiten"
-                : "Gewünschtes Ergebnis und Kriterien festlegen"
-            }
-          >
-            <div className="grid gap-6">
-              {feedback && <p role={feedbackRole}>{feedback}</p>}
+      <div className="grid max-w-5xl gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(16rem,1fr)]">
+        {context.desired_result && (
+          <div className="min-w-0">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--accent-purple)]">
+              Gewünschtes Ergebnis
+            </h2>
+            <p className="mt-1 whitespace-pre-wrap break-words">
+              {context.desired_result}
+            </p>
+          </div>
+        )}
+        {preview.length > 0 && (
+          <div className="min-w-0">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--accent-purple)]">
+              Fertig, wenn …
+            </h2>
+            <ol className="mt-1 grid gap-1">
+              {preview.map((criterion) => (
+                <li key={criterion.id} className="break-words">
+                  {criterion.text}
+                </li>
+              ))}
+            </ol>
+            {additional.length > 0 && (
+              <details className="mt-1">
+                <summary className="min-h-10 cursor-pointer content-center text-[var(--text-secondary)] underline">
+                  {additional.length} weitere
+                </summary>
+                <ol start={4} className="grid gap-1 pb-2">
+                  {additional.map((criterion) => (
+                    <li key={criterion.id} className="break-words">
+                      {criterion.text}
+                    </li>
+                  ))}
+                </ol>
+              </details>
+            )}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+export function ProjectDepthResultManagement({ depth }: { depth: Depth }) {
+  const { context } = depth;
+  const [feedback, setFeedback] = useState("");
+  const [feedbackRole, setFeedbackRole] = useState<"status" | "alert">(
+    "status",
+  );
+  const active = context.criteria.filter((c) => !c.archived_at);
+  const archived = context.criteria.filter((c) => c.archived_at);
+  const hasReadContent = Boolean(context.desired_result || active.length > 0);
+  const reportResult = (result: CommandResult) => {
+    setFeedback(result.message);
+    setFeedbackRole(result.status === "success" ? "status" : "alert");
+  };
+  if (context.archived_at || context.status === "completed") return null;
+  return (
+    <ManagementDialog
+      label="Ergebnis und Kriterien verwalten"
+      triggerText={
+        hasReadContent
+          ? "Ergebnis und Kriterien bearbeiten"
+          : "Gewünschtes Ergebnis und Kriterien festlegen"
+      }
+    >
+      <div className="grid gap-6 text-sm">
+        {feedback && <p role={feedbackRole}>{feedback}</p>}
+        <CommandForm
+          depth={depth}
+          operation="result.set"
+          label="Ergebnis speichern"
+          onResult={reportResult}
+          payload={(form) => ({
+            desired_result:
+              String(form.get("desiredResult") ?? "").trim() || null,
+          })}
+        >
+          <label className="grid gap-1">
+            Gewünschtes Ergebnis
+            <textarea
+              name="desiredResult"
+              maxLength={8000}
+              rows={3}
+              defaultValue={context.desired_result ?? ""}
+              className={fieldClass}
+            />
+          </label>
+        </CommandForm>
+        <section className="grid gap-4 border-t border-[var(--border-subtle)] pt-4">
+          <h3 className="font-semibold">Fertig, wenn …</h3>
+          {active.map((criterion) => (
+            <div
+              key={criterion.id}
+              role="group"
+              aria-label={`Kriterium: ${criterion.text}`}
+              className="grid gap-3 border-b border-[var(--border-subtle)] pb-4"
+            >
               <CommandForm
                 depth={depth}
-                operation="result.set"
-                label="Ergebnis speichern"
+                operation="criterion.edit"
+                label="Kriterium speichern"
                 onResult={reportResult}
                 payload={(form) => ({
-                  desired_result:
-                    String(form.get("desiredResult") ?? "").trim() || null,
+                  criterion_id: criterion.id,
+                  text: String(form.get("text") ?? "").trim(),
                 })}
               >
                 <label className="grid gap-1">
-                  Gewünschtes Ergebnis
+                  Kriterium bearbeiten
                   <textarea
-                    name="desiredResult"
-                    maxLength={8000}
-                    rows={3}
-                    defaultValue={context.desired_result ?? ""}
+                    name="text"
+                    required
+                    maxLength={2000}
+                    defaultValue={criterion.text}
                     className={fieldClass}
                   />
                 </label>
               </CommandForm>
-              <section className="grid gap-4 border-t border-[var(--border-subtle)] pt-4">
-                <h3 className="font-semibold">Fertig, wenn …</h3>
-                {active.map((criterion) => (
-                  <div
-                    key={criterion.id}
-                    role="group"
-                    aria-label={`Kriterium: ${criterion.text}`}
-                    className="grid gap-3 border-b border-[var(--border-subtle)] pb-4"
-                  >
-                    <CommandForm
-                      depth={depth}
-                      operation="criterion.edit"
-                      label="Kriterium speichern"
-                      onResult={reportResult}
-                      payload={(form) => ({
-                        criterion_id: criterion.id,
-                        text: String(form.get("text") ?? "").trim(),
-                      })}
-                    >
-                      <label className="grid gap-1">
-                        Kriterium bearbeiten
-                        <textarea
-                          name="text"
-                          required
-                          maxLength={2000}
-                          defaultValue={criterion.text}
-                          className={fieldClass}
-                        />
-                      </label>
-                    </CommandForm>
-                    <CommandForm
-                      depth={depth}
-                      operation="criterion.reorder"
-                      label="Reihenfolge speichern"
-                      onResult={reportResult}
-                      payload={(form) => ({
-                        criterion_id: criterion.id,
-                        sort_order: String(form.get("sortOrder")),
-                      })}
-                    >
-                      <label className="grid gap-1">
-                        Position
-                        <input
-                          name="sortOrder"
-                          type="number"
-                          min={0}
-                          step={1}
-                          required
-                          defaultValue={criterion.sort_order}
-                          className={fieldClass}
-                        />
-                      </label>
-                    </CommandForm>
-                    <CommandForm
-                      depth={depth}
-                      operation="criterion.archive"
-                      label="Kriterium archivieren"
-                      onResult={reportResult}
-                      payload={(form) => ({
-                        criterion_id: criterion.id,
-                        reason: String(form.get("reason") ?? "").trim(),
-                      })}
-                    >
-                      <label className="grid gap-1">
-                        Grund für Scope-Entfernung
-                        <textarea
-                          name="reason"
-                          required
-                          maxLength={4000}
-                          className={fieldClass}
-                        />
-                      </label>
-                    </CommandForm>
-                  </div>
-                ))}
-                <CommandForm
-                  depth={depth}
-                  operation="criterion.create"
-                  label="Kriterium hinzufügen"
-                  onResult={reportResult}
-                  payload={(form) => ({
-                    text: String(form.get("text") ?? "").trim(),
-                    sort_order: active.length,
-                  })}
-                >
-                  <label className="grid gap-1">
-                    Neues Kriterium
-                    <textarea
-                      name="text"
-                      required
-                      maxLength={2000}
-                      className={fieldClass}
-                    />
-                  </label>
-                </CommandForm>
-                {archived.length > 0 && (
-                  <details>
-                    <summary className="min-h-10 cursor-pointer content-center text-[var(--text-secondary)] underline">
-                      In diesem Zyklus archiviert · {archived.length}
-                    </summary>
-                    <ul className="grid gap-2 py-2 pl-3">
-                      {archived.map((criterion) => (
-                        <li key={criterion.id}>
-                          <span className="line-through">{criterion.text}</span>
-                          <span className="block text-[var(--text-muted)]">
-                            Grund: {criterion.archive_reason}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </details>
-                )}
-              </section>
+              <CommandForm
+                depth={depth}
+                operation="criterion.reorder"
+                label="Reihenfolge speichern"
+                onResult={reportResult}
+                payload={(form) => ({
+                  criterion_id: criterion.id,
+                  sort_order: String(form.get("sortOrder")),
+                })}
+              >
+                <label className="grid gap-1">
+                  Position
+                  <input
+                    name="sortOrder"
+                    type="number"
+                    min={0}
+                    step={1}
+                    required
+                    defaultValue={criterion.sort_order}
+                    className={fieldClass}
+                  />
+                </label>
+              </CommandForm>
+              <CommandForm
+                depth={depth}
+                operation="criterion.archive"
+                label="Kriterium archivieren"
+                onResult={reportResult}
+                payload={(form) => ({
+                  criterion_id: criterion.id,
+                  reason: String(form.get("reason") ?? "").trim(),
+                })}
+              >
+                <label className="grid gap-1">
+                  Grund für Scope-Entfernung
+                  <textarea
+                    name="reason"
+                    required
+                    maxLength={4000}
+                    className={fieldClass}
+                  />
+                </label>
+              </CommandForm>
             </div>
-          </ManagementDialog>
-        </div>
-      )}
-    </section>
+          ))}
+          <CommandForm
+            depth={depth}
+            operation="criterion.create"
+            label="Kriterium hinzufügen"
+            onResult={reportResult}
+            payload={(form) => ({
+              text: String(form.get("text") ?? "").trim(),
+              sort_order: active.length,
+            })}
+          >
+            <label className="grid gap-1">
+              Neues Kriterium
+              <textarea
+                name="text"
+                required
+                maxLength={2000}
+                className={fieldClass}
+              />
+            </label>
+          </CommandForm>
+          {archived.length > 0 && (
+            <details>
+              <summary className="min-h-10 cursor-pointer content-center text-[var(--text-secondary)] underline">
+                In diesem Zyklus archiviert · {archived.length}
+              </summary>
+              <ul className="grid gap-2 py-2 pl-3">
+                {archived.map((criterion) => (
+                  <li key={criterion.id}>
+                    <span className="line-through">{criterion.text}</span>
+                    <span className="block text-[var(--text-muted)]">
+                      Grund: {criterion.archive_reason}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+        </section>
+      </div>
+    </ManagementDialog>
   );
 }
 

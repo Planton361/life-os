@@ -341,7 +341,7 @@ export function ProjectWork({
               createTaskLink(currentMilestone?.id, "+ Task", true)}
             <ManagementDialog
               label="Weitere Work-Optionen"
-              triggerText="Weitere Work-Optionen"
+              triggerText="Meilenstein +"
             >
               <section className="grid gap-3">
                 <h3 className="font-semibold">Milestone hinzufügen</h3>
@@ -405,8 +405,9 @@ export function ProjectWork({
             className={`${styles.milestone} ${!linked.length ? styles.emptyMilestone : ""}`}
           >
             <div className="min-w-0">
+              <span className={styles.groupLabel}>Meilenstein</span>
               <h3
-                className={`text-sm font-medium break-words ${m.status === "done" ? "text-[var(--text-muted)]" : m.status === "active" ? "text-[var(--accent-blue)]" : ""}`}
+                className={`text-sm font-semibold break-words ${m.status === "done" ? "text-[var(--text-muted)]" : m.status === "active" ? "text-[var(--accent-blue)]" : ""}`}
               >
                 {m.title}
               </h3>
@@ -476,9 +477,7 @@ export function ProjectWork({
         {summary.unassigned.length > 0 &&
           (summary.groups.length ? (
             <section aria-label="Ohne Milestone" className={styles.ungrouped}>
-              <h3 className="text-sm font-medium text-[var(--text-muted)]">
-                Ohne Milestone
-              </h3>
+              <h3 className={styles.groupLabel}>Ohne Milestone</h3>
               {renderTasks(summary.unassigned)}
             </section>
           ) : (
