@@ -354,3 +354,191 @@ test("#88 compact completion Review, History depth and reopen survive reload", a
   ).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test("#88 Milestone integration keeps compact heads, contained Tasks and right-side actions", async ({
+  page,
+}, info) => {
+  test.setTimeout(180000);
+  const { api, uid, stamp } = await fixture(page, "issue88milestonevisual");
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  page.on("console", (m) => {
+    if (m.type() === "error" || /hydration/i.test(m.text()))
+      errors.push(m.text());
+  });
+  const project = (
+    await api
+      .from("projects")
+      .insert({
+        user_id: uid,
+        title: `Milestone Work ${stamp}`,
+        status: "active",
+      })
+      .select()
+      .single()
+      .throwOnError()
+  ).data!;
+  const makeMilestone = async (
+    title: string,
+    status: "active" | "open" = "open",
+  ) => {
+    await api
+      .rpc("write_project_milestone", {
+        p_project_id: project.id,
+        p_operation: "save",
+        p_title: title,
+        p_status: status,
+        p_target_date: "2026-10-20",
+      })
+      .throwOnError();
+    return (
+      await api
+        .from("project_milestones")
+        .select()
+        .eq("project_id", project.id)
+        .eq("title", title)
+        .single()
+        .throwOnError()
+    ).data!;
+  };
+  const current = await makeMilestone(`Current ${stamp}`, "active");
+  const tasks = (
+    await api
+      .from("tasks")
+      .insert([
+        {
+          user_id: uid,
+          project_id: project.id,
+          milestone_id: current.id,
+          title: `Assigned ${stamp}`,
+          status: "planned",
+        },
+        {
+          user_id: uid,
+          project_id: project.id,
+          milestone_id: current.id,
+          title: `Delivered ${stamp}`,
+          status: "done",
+        },
+        {
+          user_id: uid,
+          project_id: project.id,
+          title: `Unassigned ${stamp}`,
+          status: "planned",
+        },
+      ])
+      .select()
+      .throwOnError()
+  ).data!;
+  const assigned = tasks.find((t) => t.status === "planned" && t.milestone_id)!;
+  const work = page.getByRole("region", {
+    name: "Tasks & Progress",
+    exact: true,
+  });
+  const group = work.locator(`[data-milestone-id="${current.id}"]`);
+  const unassigned = work.getByRole("region", {
+    name: "Ohne Milestone",
+    exact: true,
+  });
+  const capture = async (name: string) => {
+    for (const viewport of [
+      { width: 1920, height: 1080 },
+      { width: 390, height: 844 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await expect(group).toBeVisible();
+      await expect(unassigned).toContainText(`Unassigned ${stamp}`);
+      await noOverflow(page);
+      const head = group.locator(":scope > div").first();
+      await expect(head).toContainText("Aktuell");
+      await expect(head).toContainText("20.10.2026");
+      await expect(head).toContainText("1/2 Tasks erledigt");
+      const row = group.locator(`[data-project-task="${assigned.id}"]`);
+      await expect(row).toBeVisible();
+      const list = group.locator(":scope > ul");
+      expect(
+        await group.evaluate((el) => getComputedStyle(el).backgroundColor),
+      ).toBe("rgba(0, 0, 0, 0)");
+      expect(
+        await list.evaluate((el) => getComputedStyle(el).borderRadius),
+      ).toBe("0px");
+      if (viewport.width === 1920) {
+        const hb = (await head.boundingBox())!;
+        const manage = (await group
+          .getByRole("button", { name: "Milestone verwalten", exact: true })
+          .boundingBox())!;
+        const lb = (await list.boundingBox())!;
+        const gb = (await group.boundingBox())!;
+        expect(hb.height).toBeLessThan(32);
+        expect(Math.abs(manage.y - hb.y)).toBeLessThan(20);
+        expect(
+          lb.y - Math.max(hb.y + hb.height, manage.y + manage.height),
+        ).toBeLessThanOrEqual(8);
+        expect(
+          Math.abs(manage.x + manage.width - gb.x - gb.width),
+        ).toBeLessThan(3);
+        const cluster = (await row
+          .locator('[aria-label^="Aktionen:"]')
+          .boundingBox())!;
+        expect(
+          Math.abs(cluster.x + cluster.width - gb.x - gb.width),
+        ).toBeLessThan(3);
+        const heading = (await work
+          .getByRole("heading", { name: "Work", exact: true })
+          .boundingBox())!;
+        for (const control of [
+          work.getByRole("link", { name: "+ Task", exact: true }),
+          work.getByRole("button", {
+            name: "Weitere Work-Optionen",
+            exact: true,
+          }),
+        ]) {
+          const b = (await control.boundingBox())!;
+          expect(b.x).toBeGreaterThan(heading.x + heading.width);
+          expect(Math.abs(b.y - heading.y)).toBeLessThan(16);
+        }
+      }
+      await screenshot(page, info, `${name}-${viewport.width}`);
+    }
+  };
+  await page.goto(`/projects/${project.id}`);
+  await capture("milestone-current-unassigned");
+  const next = await makeMilestone(`Next ${stamp}`);
+  const empty = await makeMilestone(`Empty ${stamp}`);
+  await api
+    .from("tasks")
+    .insert({
+      user_id: uid,
+      project_id: project.id,
+      milestone_id: next.id,
+      title: `Next work ${stamp}`,
+      status: "planned",
+    })
+    .throwOnError();
+  await page.reload();
+  await expect(work.locator("[data-milestone-id]")).toHaveCount(3);
+  const emptyGroup = work.locator(`[data-milestone-id="${empty.id}"]`);
+  await expect(emptyGroup).toContainText("Noch keine Tasks.");
+  expect((await emptyGroup.boundingBox())!.height).toBeLessThan(150);
+  await capture("milestone-multiple-empty");
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await group
+    .getByRole("button", { name: "Milestone verwalten", exact: true })
+    .click();
+  await expect(
+    group.getByRole("dialog", { name: "Milestone verwalten", exact: true }),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(
+    group.getByRole("button", { name: "Milestone verwalten", exact: true }),
+  ).toBeFocused();
+  await group
+    .locator(`[data-project-task="${assigned.id}"]`)
+    .getByRole("button", { name: "Bearbeiten", exact: true })
+    .click();
+  await expect(
+    page.getByRole("dialog", { name: "Task bearbeiten", exact: true }),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+  expect(errors).toEqual([]);
+});
