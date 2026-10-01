@@ -1,3 +1,7 @@
+import {
+  expectTaskCaptureParity,
+  standaloneTaskCapture,
+} from "./support/task-create-parity";
 import { expectHybridGoalLayout } from "./support/goal-workbench-layout";
 import { createClient } from "@supabase/supabase-js";
 import { expect, test, type BrowserContext, type Page } from "@playwright/test";
@@ -104,6 +108,7 @@ async function createCurrentTask(
   projectId: string,
   fromPlanning = false,
 ) {
+  const baseline = await standaloneTaskCapture(page);
   const root = workbench(page);
   if (fromPlanning) {
     if ((await root.getAttribute("data-goal-planning-mode")) === "read") {
@@ -131,25 +136,29 @@ async function createCurrentTask(
       .click();
   }
 
-  const form = page.locator('form[aria-label="Aufgabe erstellen"]');
+  const form = page.locator('form[aria-label="Task erstellen"]');
   await expect(form).toHaveAttribute(
     "data-goal-milestone-task-capture",
     "title-first",
   );
+  await expectTaskCaptureParity(page, baseline);
+  await page.reload();
+  await expectTaskCaptureParity(page, baseline);
   const titleField = form.getByLabel("Titel", { exact: true });
   await titleField.fill(title);
-  await form
-    .getByLabel("Project-Kontext (optional)", { exact: true })
-    .selectOption(projectId);
   const optional = form.getByRole("button", {
     name: "Weitere Angaben (optional)",
     exact: true,
   });
   await expect(optional).toHaveAttribute("aria-expanded", "false");
   await expect(
-    form.getByLabel("Beschreibung / Kontext", { exact: true }),
+    form.getByLabel("Beschreibung / Purpose", { exact: true }),
   ).toBeHidden();
-  await form.getByRole("button", { name: "Aufgabe erstellen" }).click();
+  await optional.click();
+  await form
+    .getByLabel("Project-Kontext (optional)", { exact: true })
+    .selectOption(projectId);
+  await form.getByRole("button", { name: "Task erstellen" }).click();
   await expect(
     page.getByText("Aufgabe aus der Etappe erstellt.", { exact: true }),
   ).toBeVisible();
