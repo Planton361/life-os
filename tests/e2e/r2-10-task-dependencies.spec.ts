@@ -189,7 +189,16 @@ test("Canonical task graph: management, parallel readiness, completion guards an
     name: "Tasks & Progress",
     exact: true,
   });
-  await expect(work).toContainText("Dependency READY 1 · Dependency BLOCKED 5");
+  await expect(work).not.toContainText("Dependency READY 1");
+  await expect(work.locator('[data-primary-task="true"]')).toHaveCount(1);
+  await expect(
+    work.getByRole("button", { name: "Erledigt", exact: true }),
+  ).toHaveCount(1);
+  await expect(
+    work
+      .locator("[data-project-task]")
+      .filter({ hasText: "Dependency-Readiness BLOCKED" }),
+  ).toHaveCount(5);
   await expect(
     work.getByRole("region", { name: "Milestone: Build", exact: true }),
   ).toContainText("Dependency-Readiness BLOCKED");
@@ -209,9 +218,9 @@ test("Canonical task graph: management, parallel readiness, completion guards an
         .filter({ hasText: /Task abgeschlossen\./ })
         .last(),
     ).toBeVisible();
-    await expect(
-      page.locator('[data-task-lifecycle="done"]'),
-    ).toContainText("Abgeschlossen");
+    await expect(page.locator('[data-task-lifecycle="done"]')).toContainText(
+      "Abgeschlossen",
+    );
     await openLifecycle();
     await expect(
       page.getByRole("button", { name: "Task wieder öffnen", exact: true }),
@@ -322,11 +331,23 @@ test("Canonical task graph: management, parallel readiness, completion guards an
           () => document.documentElement.scrollWidth <= window.innerWidth + 1,
         ),
       ).toBe(true);
+      if (surface === "project") {
+        await page
+          .getByRole("button", { name: "Weitere Work-Optionen", exact: true })
+          .click();
+        await expect(
+          page.getByRole("button", {
+            name: "Milestone erstellen",
+            exact: true,
+          }),
+        ).toBeEnabled();
+        await page.keyboard.press("Escape");
+      }
       await expect(
         page.getByRole("button", {
           name:
             surface === "project"
-              ? "Milestone hinzufügen"
+              ? "Weitere Work-Optionen"
               : "Vorgänger verwalten",
           exact: true,
         }),

@@ -13,6 +13,7 @@ import {
 import { Choice, OperationForm, fieldClass, actionClass } from "./forms";
 import { projectMilestoneGroups } from "./project-milestones";
 import { projectTaskGuidance } from "./project-guidance";
+import { TaskEditDialog } from "./task-edit-dialog";
 import { taskTextFields } from "./task-text";
 import styles from "./project-read-view.module.css";
 type Stage = WorkbenchData["milestones"][number];
@@ -141,8 +142,35 @@ export function ProjectWork({
           const dependency = taskDependencyContext(data.dependencyGraph, t.id);
           const text = taskTextFields(t.description);
           return (
-            <li key={t.id} className={styles.task}>
-              <div className="min-w-0">
+            <li
+              key={t.id}
+              data-project-task={t.id}
+              data-primary-task={
+                guidance.kind === "single-ready" && guidance.taskId === t.id
+                  ? "true"
+                  : undefined
+              }
+              className={`${styles.task} ${guidance.kind === "single-ready" && guidance.taskId === t.id ? styles.primaryTask : ""}`}
+            >
+              <section
+                className="min-w-0"
+                aria-label={
+                  guidance.kind === "single-ready" && guidance.taskId === t.id
+                    ? "Project Task guidance"
+                    : undefined
+                }
+                data-project-task-guidance={
+                  guidance.kind === "single-ready" && guidance.taskId === t.id
+                    ? "single-ready"
+                    : undefined
+                }
+              >
+                {guidance.kind === "single-ready" &&
+                  guidance.taskId === t.id && (
+                    <p className="mb-2 text-xs text-[var(--text-secondary)]">
+                      Nächste ausführbare Task
+                    </p>
+                  )}
                 <p className="text-sm text-[var(--text-secondary)]">
                   {t.status}
                   {taskIsOpen(t)
@@ -189,14 +217,37 @@ export function ProjectWork({
                     {t.due_at.slice(0, 10).split("-").reverse().join(".")}
                   </p>
                 )}
-              </div>
-              <Link
-                className="min-h-10 content-center text-sm text-[var(--text-muted)] underline"
-                aria-label={`${t.title}: Details öffnen`}
-                href={`/tasks/${t.id}`}
+              </section>
+              <div
+                className={styles.taskActions}
+                aria-label={`Aktionen: ${t.title}`}
               >
-                Details ↗
-              </Link>
+                {!project.archived_at &&
+                  !t.archived_at &&
+                  taskHasExecutableLifecycle(t) &&
+                  dependency.availability === "READY" &&
+                  !data.scheduleSources.some(
+                    (source) => source.task_id === t.id,
+                  ) && (
+                    <OperationForm
+                      operation="task.complete"
+                      label="Erledigt"
+                      submitClassName={actionClass}
+                    >
+                      <input type="hidden" name="taskId" value={t.id} />
+                    </OperationForm>
+                  )}
+                {!project.archived_at && (
+                  <TaskEditDialog data={data} taskId={t.id} />
+                )}
+                <Link
+                  className="min-h-10 content-center text-sm text-[var(--text-muted)] underline"
+                  aria-label={`${t.title}: Details öffnen`}
+                  href={`/tasks/${t.id}`}
+                >
+                  Details
+                </Link>
+              </div>
             </li>
           );
         })}
@@ -212,123 +263,88 @@ export function ProjectWork({
         </p>
         <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-xl font-semibold">Tasks & Milestones</h2>
-          {(summary.taskCount > 0 || summary.milestoneCount > 0) && (
-            <p className="text-sm text-[var(--text-secondary)]">
-              {summary.taskCount > 0 && (
-                <>
-                  {summary.taskCount} Tasks · {summary.tasksDone} erledigt
-                </>
-              )}
-              {summary.taskCount > 0 && summary.milestoneCount > 0 && " · "}
-              {summary.milestoneCount > 0 && (
-                <>
-                  {summary.milestoneCount} Milestones · {summary.milestonesDone}{" "}
-                  erledigt
-                </>
-              )}
+          {summary.taskCount > 0 && (
+            <p className="text-sm text-[var(--text-muted)]">
+              {summary.taskCount} Tasks
+              {summary.tasksDone > 0 ? ` · ${summary.tasksDone} erledigt` : ""}
             </p>
           )}
         </div>
         <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-          {(graphSummary.ready.length > 0 ||
-            graphSummary.blocked.length > 0) && (
-            <p className="text-sm text-[var(--text-secondary)]">
-              {graphSummary.ready.length > 0 &&
-                `Dependency READY ${graphSummary.ready.length}`}
-              {graphSummary.ready.length > 0 &&
-                graphSummary.blocked.length > 0 &&
-                " · "}
-              {graphSummary.blocked.length > 0 &&
-                `Dependency BLOCKED ${graphSummary.blocked.length}`}
-              {summary.taskCount > 0 &&
-              project.status === "active" &&
-              !graphSummary.hasReadyTask
-                ? " · Kein offener Task ist READY"
-                : ""}
-            </p>
-          )}
-          <section
-            aria-label="Project Task guidance"
-            className="min-w-0 border-l-2 border-[var(--accent-cyan)] pl-3"
-            data-project-task-guidance={guidance.kind}
-          >
-            {guidance.kind === "archived" ? (
-              <p className="text-sm text-[var(--text-secondary)]">
-                Archivierter Project-Kontext · Tasks bleiben als Verlauf lesbar.
-              </p>
-            ) : guidance.kind === "empty" ? (
-              <>
-                <p className="inline text-sm text-[var(--text-secondary)]">
-                  Beginne mit einer Task. Project-Kontext
-                  {currentMilestone ? ` · ${currentMilestone.title}` : ""} wird
-                  vorbefüllt.
+          {guidance.kind !== "single-ready" && (
+            <section
+              aria-label="Project Task guidance"
+              className="min-w-0 border-l-2 border-[var(--accent-cyan)] pl-3"
+              data-project-task-guidance={guidance.kind}
+            >
+              {guidance.kind === "archived" ? (
+                <p className="text-sm text-[var(--text-secondary)]">
+                  Archivierter Project-Kontext · Tasks bleiben als Verlauf
+                  lesbar.
                 </p>
-                <span className="ml-2 inline-flex">
-                  {createTaskLink(currentMilestone?.id, "Erste Task anlegen")}
-                </span>
-              </>
-            ) : guidance.kind === "single-ready" ? (
-              <>
-                <h3 className="inline text-sm font-semibold">
-                  Nächste ausführbare Task:
-                </h3>{" "}
-                <Link
-                  className="inline break-words font-medium text-[var(--accent-cyan)] underline underline-offset-2"
-                  href={`/tasks/${guidance.taskId}`}
-                >
-                  {tasks.find((task) => task.id === guidance.taskId)?.title ??
-                    "Task öffnen"}
-                </Link>
-              </>
-            ) : guidance.kind === "multiple-ready" ? (
-              <>
-                <h3 className="inline text-sm font-semibold">
-                  {guidance.count} Tasks sind READY.
-                </h3>{" "}
-                <p className="inline text-sm text-[var(--text-secondary)]">
-                  Wähle selbst, womit du weitermachst.
-                </p>{" "}
-                <a
-                  className="ml-1 inline-flex min-h-8 items-center text-sm text-[var(--accent-cyan)] underline underline-offset-2"
-                  href="#project-task-list"
-                >
-                  Task-Auswahl öffnen
-                </a>
-              </>
-            ) : guidance.kind === "all-blocked" ? (
-              <>
-                <h3 className="inline text-sm font-semibold">
-                  Alle ausführbaren Tasks sind BLOCKED
-                </h3>{" "}
-                <p className="inline text-sm text-[var(--text-secondary)]">
-                  Prüfe die benannten Vorgänger bei den Tasks. Der
-                  Project-Status bleibt unverändert.
-                </p>{" "}
-                <a
-                  className="ml-1 inline-flex min-h-8 items-center text-sm text-[var(--accent-cyan)] underline underline-offset-2"
-                  href="#project-task-list"
-                >
-                  Blocker-Kontext öffnen
-                </a>
-              </>
-            ) : (
-              <>
-                <h3 className="inline text-sm font-semibold">
-                  Keine ausführbaren Tasks
-                </h3>{" "}
-                <p className="inline text-sm text-[var(--text-secondary)]">
-                  Abgeschlossene und derzeit nicht ausführbare Arbeit bleibt im
-                  Project-Verlauf.
-                </p>{" "}
-                <a
-                  className="ml-1 inline-flex min-h-8 items-center text-sm text-[var(--accent-cyan)] underline underline-offset-2"
-                  href="#project-task-list"
-                >
-                  Task-Verlauf öffnen
-                </a>
-              </>
-            )}
-          </section>
+              ) : guidance.kind === "empty" ? (
+                <>
+                  <p className="inline text-sm text-[var(--text-secondary)]">
+                    Beginne mit einer Task. Project-Kontext
+                    {currentMilestone
+                      ? ` · ${currentMilestone.title}`
+                      : ""}{" "}
+                    wird vorbefüllt.
+                  </p>
+                  <span className="ml-2 inline-flex">
+                    {createTaskLink(currentMilestone?.id, "Erste Task anlegen")}
+                  </span>
+                </>
+              ) : guidance.kind === "multiple-ready" ? (
+                <>
+                  <h3 className="inline text-sm font-semibold">
+                    {guidance.count} Tasks sind READY.
+                  </h3>{" "}
+                  <p className="inline text-sm text-[var(--text-secondary)]">
+                    Wähle selbst, womit du weitermachst.
+                  </p>{" "}
+                  <a
+                    className="ml-1 inline-flex min-h-8 items-center text-sm text-[var(--accent-cyan)] underline underline-offset-2"
+                    href="#project-task-list"
+                  >
+                    Task-Auswahl öffnen
+                  </a>
+                </>
+              ) : guidance.kind === "all-blocked" ? (
+                <>
+                  <h3 className="inline text-sm font-semibold">
+                    Alle ausführbaren Tasks sind BLOCKED
+                  </h3>{" "}
+                  <p className="inline text-sm text-[var(--text-secondary)]">
+                    Prüfe die benannten Vorgänger bei den Tasks. Der
+                    Project-Status bleibt unverändert.
+                  </p>{" "}
+                  <a
+                    className="ml-1 inline-flex min-h-8 items-center text-sm text-[var(--accent-cyan)] underline underline-offset-2"
+                    href="#project-task-list"
+                  >
+                    Blocker-Kontext öffnen
+                  </a>
+                </>
+              ) : (
+                <>
+                  <h3 className="inline text-sm font-semibold">
+                    Keine ausführbaren Tasks
+                  </h3>{" "}
+                  <p className="inline text-sm text-[var(--text-secondary)]">
+                    Abgeschlossene und derzeit nicht ausführbare Arbeit bleibt
+                    im Project-Verlauf.
+                  </p>{" "}
+                  <a
+                    className="ml-1 inline-flex min-h-8 items-center text-sm text-[var(--accent-cyan)] underline underline-offset-2"
+                    href="#project-task-list"
+                  >
+                    Task-Verlauf öffnen
+                  </a>
+                </>
+              )}
+            </section>
+          )}
         </div>
         {!project.archived_at && (
           <div className={styles.workActions}>
@@ -402,11 +418,11 @@ export function ProjectWork({
             aria-label={`Milestone: ${m.title}`}
             data-milestone-id={m.id}
             id={`project-milestone-${m.id}`}
-            className={styles.milestone}
+            className={`${styles.milestone} ${!linked.length ? styles.emptyMilestone : ""}`}
           >
             <div className="min-w-0">
               <h3
-                className={`font-semibold break-words ${m.status === "done" ? "text-[var(--text-muted)]" : m.status === "active" ? "text-[var(--accent-blue)]" : ""}`}
+                className={`text-sm font-medium break-words ${m.status === "done" ? "text-[var(--text-muted)]" : m.status === "active" ? "text-[var(--accent-blue)]" : ""}`}
               >
                 {m.title}
               </h3>
@@ -416,6 +432,11 @@ export function ProjectWork({
                   ? ` · ${m.target_date.split("-").reverse().join(".")}`
                   : ""}
               </p>
+              {!linked.length && (
+                <span className="text-sm text-[var(--text-muted)]">
+                  Noch keine Tasks.
+                </span>
+              )}
             </div>
             {!project.archived_at && (
               <ManagementDialog label="Milestone verwalten">
@@ -460,26 +481,22 @@ export function ProjectWork({
                 {m.description}
               </p>
             )}
-            {linked.length > 0 && (
+            {done > 0 && (
               <p className="mt-2 text-sm text-[var(--text-muted)]">
                 {done}/{linked.length} Tasks erledigt
               </p>
             )}
-            {renderTasks(linked)}
+            {linked.length > 0 && renderTasks(linked)}
           </section>
         ))}
-        <section aria-label="Ohne Milestone" className="py-4">
-          {(summary.unassigned.length > 0 ||
-            (!summary.groups.length && summary.taskCount > 0)) && (
-            <>
-              <h3 className="font-semibold">Ohne Milestone</h3>
-              <p className="mt-1 text-sm text-[var(--text-muted)]">
-                Backlog · noch keiner Etappe zugeordnet
-              </p>
-              {renderTasks(summary.unassigned)}
-            </>
-          )}
-        </section>
+        {summary.unassigned.length > 0 && (
+          <section aria-label="Ohne Milestone" className="py-3">
+            <h3 className="text-sm font-medium text-[var(--text-secondary)]">
+              Ohne Milestone
+            </h3>
+            {renderTasks(summary.unassigned)}
+          </section>
+        )}
         {archived.length > 0 && (
           <ManagementDialog
             label={`Archivierte Milestones · ${archived.length}`}

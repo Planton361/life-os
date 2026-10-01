@@ -3,7 +3,7 @@ import { TaskMilestoneContext, TaskMilestoneManagement } from "./project-work";
 import { ProjectReadView } from "./project-read-view";
 import { projectResourceUses, projectRoleLabels } from "./project-artifacts";
 import { ExternalResourceLink } from "@/features/resources/external-resource-link";
-import { taskTextFields } from "./task-text";
+import { taskEditValues } from "./task-edit-dialog";
 import { taskStepProgress } from "./task-step-progress";
 import { ManagementDisclosure } from "./management-disclosure";
 import Link from "next/link";
@@ -356,16 +356,7 @@ export async function WorkbenchEditor({
     if ("name" in row) values.name = row.name;
     if (kind === "task") {
       const t = data.tasks.find((t) => t.id === id)!;
-      const text = taskTextFields(t.description);
-      Object.assign(values, {
-        description: text.description,
-        nextAction: text.nextAction,
-        projectId: t.project_id,
-        goalId: t.goal_id,
-        durationMinutes: t.duration_minutes,
-        plannedDate: t.planned_date,
-        dueAt: t.due_at?.slice(0, 10),
-      });
+      Object.assign(values, taskEditValues(t));
     }
     if (kind === "project") {
       const p = data.projects.find((p) => p.id === id)!;
@@ -495,23 +486,6 @@ export async function WorkbenchEditor({
   }
   if (kind === "task" && id && row) {
     const task = data.tasks.find((item) => item.id === id)!;
-    const taskEdit = (
-      <EntityForm
-        kind="task"
-        id={id}
-        values={values}
-        areas={data.areas
-          .filter((area) => !area.archived_at || area.id === task.area_id)
-          .map((area) => ({
-            id: area.id,
-            title: area.name + (area.archived_at ? " (archiviert)" : ""),
-          }))}
-        projects={available(data, "project", String(values.projectId ?? ""))}
-        goals={available(data, "goal", String(values.goalId ?? ""))}
-        archived={Boolean(task.archived_at)}
-        sourceOwned={Boolean(source)}
-      />
-    );
     const taskRelations = (
       <Relations
         kind="task"
@@ -557,7 +531,6 @@ export async function WorkbenchEditor({
       <TaskReadView
         data={data}
         taskId={id}
-        edit={taskEdit}
         dependencies={<TaskDependencies data={data} taskId={id} />}
         milestoneManagement={
           <TaskMilestoneManagement data={data} taskId={id} />
@@ -635,7 +608,7 @@ export async function WorkbenchEditor({
           </p>
         )}
       <div
-        className={`grid ${kind === "task" ? "items-start" : ""} gap-6 ${id ? "xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)]" : "mx-auto w-full max-w-[1000px]"}`}
+        className={`grid ${kind === "task" ? "items-start" : ""} gap-6 ${id ? "xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)]" : kind === "task" ? "mx-auto w-full max-w-[1400px]" : "mx-auto w-full max-w-[1000px]"}`}
       >
         <Block title={id ? "Informationen bearbeiten" : "Bewusst erstellen"}>
           <EntityForm
