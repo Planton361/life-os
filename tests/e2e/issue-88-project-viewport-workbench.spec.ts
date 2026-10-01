@@ -621,3 +621,213 @@ test("#88 Milestone integration keeps compact heads, contained Tasks and right-s
   await page.keyboard.press("Escape");
   expect(errors).toEqual([]);
 });
+
+test("#88 responsive action groups stay right-aligned with visible control spacing", async ({
+  page,
+}, info) => {
+  test.setTimeout(180000);
+  const { api, uid, stamp } = await fixture(page, "issue88actions");
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  page.on("console", (m) => {
+    if (m.type() === "error" || /hydration/i.test(m.text()))
+      errors.push(m.text());
+  });
+  const goal = (
+    await api
+      .from("goals")
+      .insert({ user_id: uid, title: `Action context ${stamp}` })
+      .select()
+      .single()
+      .throwOnError()
+  ).data!;
+  const project = (
+    await api
+      .from("projects")
+      .insert({
+        user_id: uid,
+        title: `Project Detail responsive action alignment ${stamp}`,
+        status: "active",
+        desired_result:
+          "Stable right-side management and readable Task actions",
+        goal_id: goal.id,
+      })
+      .select()
+      .single()
+      .throwOnError()
+  ).data!;
+  const tasks = (
+    await api
+      .from("tasks")
+      .insert([
+        {
+          user_id: uid,
+          project_id: project.id,
+          title: `Open action row ${stamp}`,
+          status: "planned",
+        },
+        {
+          user_id: uid,
+          project_id: project.id,
+          title: `Completed action row ${stamp}`,
+          status: "done",
+        },
+      ])
+      .select()
+      .throwOnError()
+  ).data!;
+  const header = page.getByLabel("Project Header", { exact: true });
+  const work = page.getByRole("region", {
+    name: "Tasks & Progress",
+    exact: true,
+  });
+  const headerActions = header
+    .getByRole("button", {
+      name: "Ergebnis und Kriterien bearbeiten",
+      exact: true,
+    })
+    .locator("..");
+  const workActions = work
+    .getByRole("button", { name: "Meilenstein +", exact: true })
+    .locator("..");
+  const measurements: unknown[] = [];
+  const controls = async (group: ReturnType<Page["locator"]>) => {
+    const boxes = [];
+    for (const control of await group
+      .locator("button:visible, a:visible")
+      .all()) {
+      const box = (await control.boundingBox())!;
+      boxes.push({ ...box, label: await control.innerText() });
+    }
+    return boxes;
+  };
+  const rightEdge = async (surface: ReturnType<Page["locator"]>) =>
+    surface.evaluate((el) => {
+      const b = el.getBoundingClientRect();
+      const css = getComputedStyle(el);
+      return (
+        b.right -
+        parseFloat(css.borderRightWidth) -
+        parseFloat(css.paddingRight)
+      );
+    });
+  const inspect = async (name: string) => {
+    for (const viewport of [
+      { width: 1536, height: 1008 },
+      { width: 1280, height: 1008 },
+      { width: 1920, height: 1080 },
+      { width: 760, height: 1008 },
+      { width: 390, height: 844 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await page.mouse.move(viewport.width - 2, 2);
+      await expect(headerActions).toBeVisible();
+      await noOverflow(page);
+      const hb = (await headerActions.boundingBox())!;
+      const wb = (await workActions.boundingBox())!;
+      const hRight = await rightEdge(header);
+      const wRight = await rightEdge(workActions.locator(".."));
+      expect(Math.abs(hb.x + hb.width - hRight)).toBeLessThan(2);
+      expect(Math.abs(wb.x + wb.width - wRight)).toBeLessThan(2);
+      const title = (await header
+        .getByRole("heading", { level: 1 })
+        .boundingBox())!;
+      if (viewport.width === 1280)
+        expect(hb.y).toBeGreaterThanOrEqual(title.y + title.height);
+      if (viewport.width <= 760) {
+        const heading = (await work
+          .getByRole("heading", { name: "Work", exact: true })
+          .boundingBox())!;
+        expect(wb.y).toBeGreaterThanOrEqual(heading.y + heading.height);
+      }
+      const groups = [headerActions, workActions];
+      for (const task of tasks) {
+        const row = work.locator(`[data-project-task="${task.id}"]`);
+        const cluster = row.locator('[aria-label^="Aktionen:"]');
+        const cb = (await cluster.boundingBox())!;
+        expect(Math.abs(cb.x + cb.width - (await rightEdge(row)))).toBeLessThan(
+          2,
+        );
+        const visible = await controls(cluster);
+        expect(visible.map((b) => b.label)).toEqual(
+          task.status === "done"
+            ? ["Bearbeiten", "Details"]
+            : ["Erledigt", "Bearbeiten", "Details"],
+        );
+        expect(
+          Math.max(...visible.map((b) => b.y)) -
+            Math.min(...visible.map((b) => b.y)),
+        ).toBeLessThan(3);
+        groups.push(cluster);
+      }
+      const groupMeasurements = [];
+      for (const group of groups) {
+        const visible = await controls(group);
+        const gaps = [];
+        for (let i = 1; i < visible.length; i++) {
+          const prev = visible[i - 1],
+            next = visible[i];
+          if (Math.abs(prev.y - next.y) < 3) {
+            const gap = next.x - prev.x - prev.width;
+            expect(
+              gap,
+              `${prev.label} → ${next.label} at ${viewport.width}`,
+            ).toBeGreaterThanOrEqual(12);
+            gaps.push(gap);
+          }
+        }
+        expect(
+          Math.abs(
+            Math.max(...visible.map((b) => b.x + b.width)) -
+              (await group.boundingBox())!.x -
+              (await group.boundingBox())!.width,
+          ),
+        ).toBeLessThan(2);
+        groupMeasurements.push({ controls: visible, gaps });
+      }
+      measurements.push({
+        state: name,
+        viewport,
+        headerRight: hRight,
+        workRight: wRight,
+        groups: groupMeasurements,
+      });
+      await screenshot(
+        page,
+        info,
+        `action-alignment-${name}-${viewport.width}`,
+      );
+    }
+  };
+  await page.goto(`/projects/${project.id}`);
+  await inspect("initial");
+  const open = tasks.find((t) => t.status === "planned")!;
+  const row = work.locator(`[data-project-task="${open.id}"]`);
+  await row.getByRole("button", { name: "Bearbeiten", exact: true }).click();
+  const edit = page.getByRole("dialog", {
+    name: "Task bearbeiten",
+    exact: true,
+  });
+  await expect(edit).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(
+    row.getByRole("button", { name: "Bearbeiten", exact: true }),
+  ).toBeFocused();
+  await row.getByRole("button", { name: "Erledigt", exact: true }).click();
+  await expect(
+    page.getByRole("status").filter({ hasText: "Task abgeschlossen" }).last(),
+  ).toBeVisible();
+  await expect(row.locator(":scope > section")).toContainText("done");
+  await expect(
+    row.getByRole("button", { name: "Erledigt", exact: true }),
+  ).toHaveCount(0);
+  await page.reload();
+  await expect(row.locator(":scope > section")).toContainText("done");
+  tasks.find((t) => t.id === open.id)!.status = "done";
+  await inspect("completed-reload");
+  await info.attach("action-geometry", {
+    body: JSON.stringify(measurements, null, 2),
+    contentType: "application/json",
+  });
+  expect(errors).toEqual([]);
+});
