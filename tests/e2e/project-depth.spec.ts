@@ -153,7 +153,8 @@ test("Project Depth: result, criteria, explicit reviews, reopen and immutable hi
   const openResultManager = async () => {
     await closeHistory();
     if (!(await resultDialog.isVisible())) {
-      const trigger = result
+      const trigger = page
+        .getByLabel("Project Header", { exact: true })
         .getByRole("button", { name: /Ergebnis und Kriterien/ })
         .first();
       await trigger.click();
@@ -161,9 +162,12 @@ test("Project Depth: result, criteria, explicit reviews, reopen and immutable hi
     await expect(resultDialog).toBeVisible();
   };
   await expect(page.getByRole("heading", { name: projectTitle })).toBeVisible();
-  await expect(result).toContainText(
-    "Gewünschtes Ergebnis und Kriterien festlegen",
-  );
+  await expect(
+    page.getByRole("button", {
+      name: "Gewünschtes Ergebnis und Kriterien festlegen",
+      exact: true,
+    }),
+  ).toBeVisible();
   await expect(
     page
       .getByRole("region", { name: "Tasks & Progress" })
@@ -182,13 +186,18 @@ test("Project Depth: result, criteria, explicit reviews, reopen and immutable hi
   await page.getByRole("button", { name: "Status speichern" }).click();
   await page.reload();
   await expect(page.getByLabel("Project Metadata")).toContainText("active");
-  await result
+  await page
+    .getByLabel("Project Header", { exact: true })
     .getByRole("button", {
       name: "Gewünschtes Ergebnis und Kriterien festlegen",
     })
     .click();
-  await result.getByLabel("Gewünschtes Ergebnis").fill(`Deliverable ${stamp}`);
-  await result.getByRole("button", { name: "Ergebnis speichern" }).click();
+  await resultDialog
+    .getByLabel("Gewünschtes Ergebnis")
+    .fill(`Deliverable ${stamp}`);
+  await resultDialog
+    .getByRole("button", { name: "Ergebnis speichern" })
+    .click();
   await expect(result).toContainText(`Deliverable ${stamp}`);
   await page.reload();
   await expect(result).toContainText(`Deliverable ${stamp}`);

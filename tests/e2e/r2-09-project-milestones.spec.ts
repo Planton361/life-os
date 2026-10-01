@@ -77,7 +77,7 @@ test("Project milestones: CRUD, grouping, ordering, progress, archive and owners
     ),
   ).toHaveCount(0);
   const assignmentTrigger = work.getByRole("button", {
-    name: "Weitere Work-Optionen",
+    name: "Meilenstein +",
     exact: true,
   });
   await assignmentTrigger.click();

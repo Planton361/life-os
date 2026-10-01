@@ -373,6 +373,7 @@ test("#88 Milestone integration keeps compact heads, contained Tasks and right-s
         user_id: uid,
         title: `Milestone Work ${stamp}`,
         status: "active",
+        desired_result: `Visible result ${stamp}`,
       })
       .select()
       .single()
@@ -450,12 +451,39 @@ test("#88 Milestone integration keeps compact heads, contained Tasks and right-s
       await expect(unassigned).toContainText(`Unassigned ${stamp}`);
       await noOverflow(page);
       const head = group.locator(":scope > div").first();
+      await expect(head).toContainText("Meilenstein");
       await expect(head).toContainText("Aktuell");
       await expect(head).toContainText("20.10.2026");
       await expect(head).toContainText("1/2 Tasks erledigt");
       const row = group.locator(`[data-project-task="${assigned.id}"]`);
       await expect(row).toBeVisible();
       const list = group.locator(":scope > ul");
+      const unassignedRow = unassigned.locator("[data-project-task]").first();
+      const rowGrammar = (el: Element) => {
+        const css = getComputedStyle(el);
+        return [
+          css.display,
+          css.paddingTop,
+          css.paddingBottom,
+          css.gap,
+          css.borderBottomWidth,
+        ];
+      };
+      expect(await row.evaluate(rowGrammar)).toEqual(
+        await unassignedRow.evaluate(rowGrammar),
+      );
+      const resultRead = page.getByRole("region", {
+        name: "Project Ergebnis und Kriterien",
+      });
+      await expect(resultRead).toContainText(`Visible result ${stamp}`);
+      await expect(resultRead).toContainText(`Visible criterion ${stamp}`);
+      await expect(resultRead.getByRole("button")).toHaveCount(0);
+      const header = page.getByLabel("Project Header", { exact: true });
+      const resultAction = header.getByRole("button", {
+        name: "Ergebnis und Kriterien bearbeiten",
+        exact: true,
+      });
+      await expect(resultAction).toBeVisible();
       expect(
         await group.evaluate((el) => getComputedStyle(el).backgroundColor),
       ).toBe("rgba(0, 0, 0, 0)");
@@ -470,6 +498,30 @@ test("#88 Milestone integration keeps compact heads, contained Tasks and right-s
         const lb = (await list.boundingBox())!;
         const gb = (await group.boundingBox())!;
         expect(hb.height).toBeLessThan(32);
+        const actionGroup = resultAction.locator("..");
+        const actionBounds = (await actionGroup.boundingBox())!;
+        const headerBounds = (await header.boundingBox())!;
+        expect(
+          Math.abs(
+            actionBounds.x +
+              actionBounds.width -
+              headerBounds.x -
+              headerBounds.width +
+              16,
+          ),
+        ).toBeLessThan(3);
+        await expect(
+          actionGroup.getByRole("button", {
+            name: "Beziehungen verwalten",
+            exact: true,
+          }),
+        ).toBeVisible();
+        await expect(
+          actionGroup.getByRole("button", {
+            name: "Project verwalten",
+            exact: true,
+          }),
+        ).toBeVisible();
         expect(Math.abs(manage.y - hb.y)).toBeLessThan(20);
         expect(
           lb.y - Math.max(hb.y + hb.height, manage.y + manage.height),
@@ -489,7 +541,7 @@ test("#88 Milestone integration keeps compact heads, contained Tasks and right-s
         for (const control of [
           work.getByRole("link", { name: "+ Task", exact: true }),
           work.getByRole("button", {
-            name: "Weitere Work-Optionen",
+            name: "Meilenstein +",
             exact: true,
           }),
         ]) {
@@ -502,7 +554,34 @@ test("#88 Milestone integration keeps compact heads, contained Tasks and right-s
     }
   };
   await page.goto(`/projects/${project.id}`);
-  await capture("milestone-current-unassigned");
+  await page
+    .getByLabel("Project Header", { exact: true })
+    .getByRole("button", {
+      name: "Ergebnis und Kriterien bearbeiten",
+      exact: true,
+    })
+    .click();
+  const resultManager = page.getByRole("dialog", {
+    name: "Ergebnis und Kriterien verwalten",
+    exact: true,
+  });
+  await expect(resultManager.getByLabel("Gewünschtes Ergebnis")).toBeFocused();
+  await resultManager
+    .getByLabel("Neues Kriterium")
+    .fill(`Visible criterion ${stamp}`);
+  await resultManager
+    .getByRole("button", { name: "Kriterium hinzufügen", exact: true })
+    .click();
+  await expect(resultManager.getByRole("status")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(
+    page.getByRole("button", {
+      name: "Ergebnis und Kriterien bearbeiten",
+      exact: true,
+    }),
+  ).toBeFocused();
+  await page.reload();
+  await capture("readability-current-unassigned");
   const next = await makeMilestone(`Next ${stamp}`);
   const empty = await makeMilestone(`Empty ${stamp}`);
   await api
@@ -520,7 +599,7 @@ test("#88 Milestone integration keeps compact heads, contained Tasks and right-s
   const emptyGroup = work.locator(`[data-milestone-id="${empty.id}"]`);
   await expect(emptyGroup).toContainText("Noch keine Tasks.");
   expect((await emptyGroup.boundingBox())!.height).toBeLessThan(150);
-  await capture("milestone-multiple-empty");
+  await capture("readability-multiple-empty");
   await page.setViewportSize({ width: 1920, height: 1080 });
   await group
     .getByRole("button", { name: "Milestone verwalten", exact: true })
