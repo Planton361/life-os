@@ -194,12 +194,19 @@ test("Project Depth: result, criteria, explicit reviews, reopen and immutable hi
   await expect(result).toContainText(`Deliverable ${stamp}`);
 
   await openResultManager();
+  await expect(
+    resultDialog.getByRole("textbox", {
+      name: "Gewünschtes Ergebnis",
+      exact: true,
+    }),
+  ).toBeFocused();
   await resultDialog
     .getByLabel("Neues Kriterium")
     .fill(`Accepted criterion ${stamp}`);
   await resultDialog
     .getByRole("button", { name: "Kriterium hinzufügen" })
     .click();
+  await expect(result).toContainText(`Accepted criterion ${stamp}`);
   await page.reload();
   await expect(result).toContainText(`Accepted criterion ${stamp}`);
   const criterion = await api
@@ -329,7 +336,7 @@ test("Project Depth: result, criteria, explicit reviews, reopen and immutable hi
         .from("project_command_receipts")
         .delete()
         .eq("project_id", project.id)
-  ).error,
+    ).error,
   ).not.toBeNull();
 
   await page.keyboard.press("Escape");

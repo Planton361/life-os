@@ -12,6 +12,11 @@ const viewports = [
   { width: 390, height: 844 },
 ];
 async function screenshot(page: Page, info: TestInfo, name: string) {
+  if (name.startsWith("project-")) {
+    await expect(
+      page.getByRole("region", { name: "Tasks & Progress", exact: true }),
+    ).toBeVisible();
+  }
   const path = info.outputPath(`${name}.png`);
   const modalOpen = await page.locator("dialog:modal").count();
   await page.screenshot({

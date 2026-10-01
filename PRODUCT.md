@@ -370,6 +370,29 @@ on dismissal; the background is non-interactive. Mobile remains usable without
 horizontal overflow. Content may use bounded internal scrolling when needed,
 while title and actions remain usable.
 
+### Accepted viewport-aware Project composition — #87
+
+The [#87 target](https://github.com/Planton361/life-os/issues/87#issuecomment-5938450667)
+is [USER ACCEPTED](https://github.com/Planton361/life-os/issues/87#issuecomment-5938627502).
+It refines Project presentation only; #88 implements it in one focused PR.
+Desktop Project Detail uses a bounded viewport-derived minimum height: compact
+orientation, flexible primary Work, content-sized Supporting and Review. Sparse
+space belongs inside the shared workbench; long content grows the document with
+no primary internal-scroll trap. History stays secondary depth outside the frame.
+Mobile resets the minimum and stacks naturally.
+
+Normal Work has one heading, quiet `+ Task` and `Weitere Work-Optionen`. Without
+real Milestones, Tasks render directly: no generic Task count, `Tasks & Milestones`,
+`Noch keine Milestones.` or `Ohne Milestone` grouping. Real Milestones retain
+compact groups and may give unassigned Tasks one grouping label. Exactly-one READY
+is marked once on its real row; multiple READY/all BLOCKED have one guidance line
+and real blocker context. The ordered `Erledigt · Bearbeiten · Details` group stays
+together on desktop and moves below content as a unit when space is insufficient.
+Absent Context collapses; meaningful Context keeps approximately 2:1 Work/Context
+with top-led, content-sized contents. Review/History and all Project/Task domain,
+persistence, security, dependency and creation/edit semantics are unchanged.
+This target does not close #69 or authorize PP2/PP3/PP4 or R2-13.
+
 ### Skill Development Planning / PP2
 
 Skill remains a long-lived capability rather than a finite Project or Goal.
@@ -858,8 +881,10 @@ Milestone membership never creates a Dependency.
 Identity, compact result/Criteria and Project-Fokus lead into Work; real Tasks and
 Milestones dominate, with counts only where useful for orientation. The #72
 secondary rail groups present Primary Artifact and Context; Additional
-Artifacts and References share a compact supporting summary. Content drives section
-height: fill the information hierarchy, not the viewport. Header, shared
+Artifacts and References share a compact supporting summary. Under #87, desktop
+uses a bounded viewport-derived minimum-height frame; Work expands while inner
+modules remain content-sized. Longer content grows normally; mobile resets the
+minimum. Header, shared
 Work/Context workbench and Supporting section form three structural surfaces,
 using dividers inside rather than fragmented cards or floating content. Lifecycle belongs to header overflow, not the normal work flow.
 Artifact management belongs to Project Detail. Existing Resource Create stores

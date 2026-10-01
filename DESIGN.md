@@ -407,10 +407,12 @@ and Primary/Context use horizontal dividers; no nested cards. Supporting Surface
 keeps Additional Artifacts and References as one compact secondary summary under
 #72, without two equal-weight empty boxes.
 
-“Fill the information hierarchy, not the viewport” still applies: no viewport
-height fill. Main surface height follows actual tasks or rail content; primary
-Project content has no internal-scroll trap. Short/empty lists remain compact
-inside the shared structure. Background begins after Supporting Surface. Mobile
+The USER ACCEPTED #87 target stretches the shared desktop composition through a
+bounded viewport-derived minimum height. Header, inner Task/Result/Context modules,
+Supporting and Review stay content-sized; Work receives remaining useful height.
+Sparse space stays inside the shared Workbench. Real content grows the document
+normally without a fixed height or primary internal-scroll trap. History is
+secondary depth after the main frame. Mobile
 follows the #72 semantic reading order with compact context/support rather than
 stacking every desktop box; vertical dividers become horizontal separators.
 Readable headings, emphasized Primary title when present and
@@ -420,8 +422,9 @@ Milestones live inside the left Work section, never as top-level cards. Stage
 headings show explicit state, optional date and quiet actual task counts only when
 useful for orientation; count semantics remain unchanged.
 Task rows retain existing ordering. Open/current stages precede completed stages,
-using persistent order within each group. Unassigned Tasks remain visible under
-“Ohne Milestone”, including Projects predating Milestones. Add/edit/assign/order/
+using persistent order within each group. With real Milestones, unassigned Tasks
+remain visible under one compact “Ohne Milestone” group. Without real Milestones,
+Tasks render directly without group/empty-Milestone chrome. Add/edit/assign/order/
 archive use bounded secondary dialogs under #72. Current stage is text-labelled
 “Aktuell”; completed stages are visually secondary. Archived stages are readable
 history in a disclosure. Task Detail has compact milestone context and an optional
@@ -681,9 +684,11 @@ History/context navigation and no write CTA hierarchy.
 
 #### Responsive and accessible interaction
 
-- Required viewports: 3840×2160, 1920×1080 and 390×844. Content drives height;
-  no viewport fill, horizontal overflow, clipping/overlap or primary-content
-  internal-scroll trap.
+- Required viewports: 3840×2160, 1920×1080 and 390×844. Under #87, desktop uses
+  a bounded viewport-derived minimum-height frame, never fixed height. Work
+  stretches while orientation, Supporting and Review remain compact. Content
+  exceeding the minimum grows normally. Mobile resets viewport fill. No horizontal
+  overflow, clipping/overlap or primary-content internal-scroll trap.
 - Mobile order: identity → desired result + Criteria summary → Project-Fokus →
   next executable work → Tasks/Milestones → context summary → supporting depth →
   Review/History actions. No side rail or mechanical desktop-management stacking;
@@ -801,6 +806,30 @@ Evidence/Recency → application/prerequisites → Resources.
   Issue #69 implements these capabilities in the existing Project Detail.
 - No UI may imply accepted storage for Skill Target/Milestone/prerequisite
   history until the corresponding later S-* contract is explicitly accepted.
+
+## Accepted viewport-aware Project workbench — #87
+
+[#87 is USER ACCEPTED](https://github.com/Planton361/life-os/issues/87#issuecomment-5938627502).
+Stretch the shared composition, not inner action cards. At 1920×1080 and
+3840×2160, compact orientation and secondary management precede a flexible Work
+surface; Supporting and Review remain content-sized, History outside the frame.
+Long content grows the page; Review is never fixed/sticky. At 390×844 the frame
+is naturally content-sized, with Work then Context, Supporting, Review and History.
+
+Use one Work heading and a compact toolbar with quiet `+ Task` and
+`Weitere Work-Optionen`. Remove Task-count/readiness strips. Without real
+Milestones omit `Tasks & Milestones`, `Noch keine Milestones.` and `Ohne Milestone`;
+render the real Tasks directly. Exactly-one READY marks the row once; multiple
+READY/all BLOCKED use one decision guidance line. Real Milestone groups stay
+compact. Missing Context omits the rail; meaningful Context keeps approximately
+2:1 Work/Context with top-led, content-sized inner contents.
+
+Task content sits left and the stable `Erledigt · Bearbeiten · Details` group
+right on desktop. Keep explicit spacing and alignment; when width is insufficient,
+move the whole cluster below content before wrapping individual actions. Keep
+canonical completion eligibility, the shared edit modal and Details navigation.
+V5 matte surfaces/tokens and all domain/persistence/security boundaries remain.
+#69 still requires real USER ACCEPTANCE; this target is not surface closure.
 
 ## Accepted Task read-first & Project-to-Day interaction — #56
 
