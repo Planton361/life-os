@@ -1,3 +1,7 @@
+import {
+  expectTaskCaptureParity,
+  standaloneTaskCapture,
+} from "./support/task-create-parity";
 import { expectHybridGoalLayout } from "./support/goal-workbench-layout";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -77,6 +81,7 @@ async function createAndCompleteCurrentTask(
   milestoneTitle: string,
   taskTitle: string,
 ) {
+  const baseline = await standaloneTaskCapture(page);
   const root = workbench(page);
   await expect(root.locator("[data-goal-current-workbench]")).toContainText(
     milestoneTitle,
@@ -98,7 +103,7 @@ async function createAndCompleteCurrentTask(
       exact: true,
     })
     .click();
-  const form = page.locator('form[aria-label="Aufgabe erstellen"]');
+  const form = page.locator('form[aria-label="Task erstellen"]');
   const contextualMilestoneId = await form
     .locator('input[name="goalMilestoneId"]')
     .inputValue();
@@ -110,9 +115,9 @@ async function createAndCompleteCurrentTask(
   await expect(
     form.locator("[data-goal-milestone-task-default]"),
   ).toBeVisible();
-  await expect(
-    form.locator("[data-goal-milestone-task-context]"),
-  ).toContainText(milestoneTitle);
+  await expectTaskCaptureParity(page, baseline);
+  await page.reload();
+  await expectTaskCaptureParity(page, baseline);
   await expect(form.locator('input[name="goalId"]')).toHaveValue(goalId);
   await expect(form.locator('input[name="goalMilestoneId"]')).toHaveValue(
     contextualMilestoneId!,
@@ -124,8 +129,8 @@ async function createAndCompleteCurrentTask(
   });
   await expect(optionalDetails).toHaveAttribute("aria-expanded", "false");
   for (const label of [
-    "Beschreibung / Kontext",
-    "Next Action",
+    "Beschreibung / Purpose",
+    "Arbeitsnotiz / nächste Aktion",
     "Priority",
     "Energy",
     "Duration (min)",
@@ -147,7 +152,7 @@ async function createAndCompleteCurrentTask(
   await expect(title).toBeEmpty();
   await title.fill(taskTitle);
   await expect(form.locator('input[name="title"]')).toBeVisible();
-  await form.getByRole("button", { name: "Aufgabe erstellen" }).click();
+  await form.getByRole("button", { name: "Task erstellen" }).click();
   await expect(
     page.getByText("Aufgabe aus der Etappe erstellt.", { exact: true }).first(),
   ).toBeVisible();

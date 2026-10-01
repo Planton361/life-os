@@ -1,3 +1,7 @@
+import {
+  expectTaskCaptureParity,
+  standaloneTaskCapture,
+} from "./support/task-create-parity";
 import { expect, test } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/features/real-data/supabase/database.types";
@@ -312,6 +316,7 @@ test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar We
     await expect(guidance("Project Task guidance")).toBeVisible();
   };
 
+  const baseline = await standaloneTaskCapture(page);
   await visitProject(emptyProject.id);
   await expect(guidance("Project Task guidance")).toHaveAttribute(
     "data-project-task-guidance",
@@ -339,17 +344,7 @@ test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar We
     "true",
   );
   await expect(capture.getByLabel("Titel", { exact: true })).toBeVisible();
-  const captureContext = capture.locator("[data-task-capture-context]");
-  await expect(
-    captureContext.getByRole("link", {
-      name: emptyProject.title,
-      exact: true,
-    }),
-  ).toBeVisible();
-  await expect(captureContext).toContainText(activeMilestone.title);
-  await expect(
-    captureContext.getByRole("link", { name: goal.title, exact: true }),
-  ).toHaveAttribute("href", `/goals/${goal.id}`);
+  await expectTaskCaptureParity(page, baseline);
   const optional = capture.getByRole("button", {
     name: "Weitere Angaben (optional)",
     exact: true,
@@ -357,16 +352,7 @@ test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar We
   await expect(optional).toHaveAttribute("aria-expanded", "false");
   await expect(capture.getByLabel("Project", { exact: true })).toBeHidden();
   await page.reload();
-  await expect(
-    captureContext.getByRole("link", {
-      name: emptyProject.title,
-      exact: true,
-    }),
-  ).toBeVisible();
-  await expect(captureContext).toContainText(activeMilestone.title);
-  await expect(
-    captureContext.getByRole("link", { name: goal.title, exact: true }),
-  ).toHaveAttribute("href", `/goals/${goal.id}`);
+  await expectTaskCaptureParity(page, baseline);
   await optional.click();
   await expect(capture.getByLabel("Project", { exact: true })).toHaveValue(
     emptyProject.id,
@@ -374,6 +360,15 @@ test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar We
   await expect(
     capture.getByLabel("Project Milestone", { exact: true }),
   ).toHaveValue(activeMilestone.id);
+  // Project Goal is inherited through Project, not copied into direct Goal.
+  await expect(capture.getByLabel("Goal-Kontext", { exact: true })).toHaveValue(
+    "",
+  );
+  await expect(
+    capture
+      .getByLabel("Goal-Kontext", { exact: true })
+      .locator(`option[value="${goal.id}"]`),
+  ).toHaveText(goal.title);
   await capture.getByLabel("Geplantes Datum", { exact: true }).fill(today);
   const createdTitle = `First real Task ${stamp}`;
   await capture.getByLabel("Titel", { exact: true }).fill(createdTitle);
