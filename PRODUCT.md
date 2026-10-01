@@ -201,7 +201,8 @@ R2-09/#56/#65 presentation without replacing the existing workbench architecture
 The Task-create portion is corrected by the [#77 canonical target](https://github.com/Planton361/life-os/issues/77#issuecomment-5922104190),
 [USER ACCEPTED](https://github.com/Planton361/life-os/issues/77#issuecomment-5922117427)
 on 2026-10-01. All unrelated #72 decisions remain binding. Target acceptance does
-not claim that the #77 correction is implemented or accept the current #69 surface.
+not itself claim implementation or accept the current #69 surface. #80 / PR #81
+implemented the #77 origin-parity correction; #82 refines the accepted target below.
 
 Canonical desktop reading order:
 
@@ -221,7 +222,7 @@ Exactly one obvious primary action is emphasized per state:
 | State | Primary action / guidance |
 |---|---|
 | Empty Project | `Erste Task anlegen`; result, Milestone and context setup are secondary |
-| One READY Task | Open the READY Task, with its next action when available |
+| One READY Task | The actual READY Task row is primary, with `Erledigt` where its existing lifecycle permits |
 | Multiple READY Tasks | Choose from the Work list; no inferred recommendation |
 | All executable work BLOCKED | Inspect blocker context / affected Tasks; no lifecycle mutation |
 | Completed | `Abschluss-Review ansehen` as the moderately emphasized informational action |
@@ -244,7 +245,8 @@ Project-origin Task creation:
 - The existing global `/tasks/new` surface is the canonical normal Task-create
   UX. Keep `Task erstellen`, `Bewusst erstellen`, `Task zuerst festhalten`,
   Title-first capture, `Weitere Angaben (optional)`, and the existing field
-  hierarchy, labels and visual composition.
+  hierarchy, labels and inner visual composition. DESIGN owns the #82 bounded
+  responsive outer-width refinement.
 - `Erste Task anlegen`, non-empty `+ Task` and Milestone-local Task add use that
   exact same page and composition. Project/Milestone/Goal origin may change only
   validated prefills, origin metadata, Save destination and Cancel destination.
@@ -279,14 +281,22 @@ Secondary management:
   interaction; relations and Artifact/Resource management use bounded interaction
   or an existing canonical route as specified in DESIGN. They must not expand
   major inline blocks or materially reshape the main reading surface.
-- Work has one guidance region, existing current/other Milestones and linked
-  Tasks. Counts stay quiet and only appear when decision-relevant. Milestone
-  management is secondary; repeated Task-add button chrome is removed.
+- Work uses the actual Task row as the executable work object. Exactly-one READY
+  appears once, without duplicate title guidance plus a list row. Multiple READY
+  Tasks remain user choice; all-blocked work retains concrete blocker context.
+  One quiet Work summary may remain; redundant counts, readiness and guidance
+  signals are quiet or removed, including zero-completion fragments without
+  decision value. Milestone/Backlog are compact structural grouping, not competing
+  cards. Milestone management and `+ Task` stay secondary; repeated Task-add
+  button chrome is removed.
 
 Context/support:
 
 - Goal, Area, derived Skills and Primary Artifact remain compact when present.
   Missing values collapse rather than repeated `—` / `0` rows or empty cards.
+  Without meaningful context, the entire Context rail collapses and Work receives
+  its width. `Beziehungen verwalten` alone does not reserve a column; it moves to
+  quiet secondary management.
 - Additional Artifacts and Resources/References share one secondary summary;
   populated context may show compact counts/first relevant items. Empty supporting
   data collapses to a quiet row, never two large equal-weight management blocks.
@@ -321,6 +331,44 @@ removals and browser-observable Delivery acceptance at 3840×2160, 1920×1080 an
 boundary, Task Dependencies, Project Milestone semantics, Goal/Skill boundaries,
 Project↔Skill, Progress Model, R2-13 and Skill PP2/PP3/PP4 remain unchanged.
 #69 remains the open Project-Depth Product-Surface gate before Skill PP2/PP3/PP4.
+
+### Accepted final Project / Task interaction refinement — #82
+
+The [revised #82 target is USER ACCEPTED](https://github.com/Planton361/life-os/issues/82#issuecomment-5934881871)
+on 2026-10-01. This is accepted Product/UX truth, **not yet implemented** on the
+current baseline. Canonical persistence precedes a separately authorized bounded
+UI Delivery and another real #69 acceptance check. Review remains secondary below
+Work; no Project Review, Task Dependency or Project Milestone semantics change.
+
+Task interactions have distinct roles:
+
+| Interaction | Canonical target |
+|---|---|
+| Create | Dedicated canonical `/tasks/new` page with unchanged Title-first fields, prefills, validation and Save/Cancel semantics |
+| Complete | Dedicated visible lifecycle action where permitted; Project Task row label `Erledigt` |
+| Edit | `Bearbeiten` opens the same focused Task edit modal from Project Detail and Task Detail |
+| Details | `Details` navigates to Task Detail for depth |
+
+`Erledigt` reuses the existing `task.complete` boundary, revalidates Project Work
+and gives visible success/error feedback without partial success on failure.
+Completion is not part of Edit. No new Task state or lifecycle semantics are
+introduced; existing Dependency guards, source-owned and archive restrictions
+remain binding. Completed Tasks do not expose `Erledigt`; existing Reopen remains
+secondary. Task completion never auto-completes Project or Project Milestone.
+
+The `Task bearbeiten` modal reuses the existing canonical Task edit form/action
+boundary and editable field hierarchy, with no Project-specific editor and no
+lifecycle controls mixed into Edit. Normal editing on Project Detail and Task
+Detail does not expand an inline form or reshape the page. A retained direct edit
+URL resolves into the same modal interaction rather than a second edit mode.
+
+Successful Save closes the modal, revalidates affected surfaces and shows feedback.
+Validation/server errors remain visible without silently closing; entered values
+are preserved where the existing form contract supports it. Cancel, close and
+Escape write nothing. Focus is trapped while open and returns to the edit trigger
+on dismissal; the background is non-interactive. Mobile remains usable without
+horizontal overflow. Content may use bounded internal scrolling when needed,
+while title and actions remain usable.
 
 ### Skill Development Planning / PP2
 

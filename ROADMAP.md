@@ -133,11 +133,22 @@ The [#77 corrected target](https://github.com/Planton361/life-os/issues/77#issue
 is [USER ACCEPTED](https://github.com/Planton361/life-os/issues/77#issuecomment-5922117427)
 on 2026-10-01: retain the existing canonical Title-first `/tasks/new` composition,
 with origin changing only validated prefills, metadata and Save/Cancel destinations.
-#69 remains open and its Product Surface is not USER ACCEPTED. Canonical persistence
-of #77 must be merged and verified before one separately authorized bounded repair,
-followed by another real USER ACCEPTANCE check. P-DATA, Security and domain
-semantics remain unchanged. Project Depth acceptance still gates Skill PP2 → PP3 →
-PP4; those blocks remain unauthorized and may not bypass the open #69 gate.
+#77 was canonically persisted through #78 / PR #79. #80 / PR #81 implemented the
+Task-create origin-parity correction and was post-merge verified on
+`main 1f61f9d7e337896e6e369d7adf787c2b47a5a6ca`. The subsequent real
+[#69 acceptance still failed](https://github.com/Planton361/life-os/issues/69#issuecomment-5934133039)
+on Project Detail density and canonical `/tasks/new` width; the revised target
+also addresses the broader Task interaction UX. The
+[revised #82 target is USER ACCEPTED](https://github.com/Planton361/life-os/issues/82#issuecomment-5934881871):
+one executable READY row, quieter Work/context hierarchy, distinct completion,
+shared modal editing and depth navigation, and bounded readability-driven Create
+width. #82 adds no schema, domain or Security semantics and is not yet implemented.
+Its canonical persistence must be merged and verified before one final separately
+authorized bounded UI Delivery, followed by another real #69 acceptance check.
+#69 remains OPEN and its Product Surface is not USER ACCEPTED. P-DATA, Security
+and domain semantics remain unchanged. Project Depth acceptance still gates
+Skill PP2 → PP3 → PP4; those blocks remain unauthorized and may not bypass the
+open #69 gate.
 #3 / R2-13 remains Blocked/preserved.
 This ROADMAP does not authorize schema, migration or product delivery; GitHub
 Project #3 remains the operative queue.
