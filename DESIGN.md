@@ -524,7 +524,8 @@ hierarchy, management, Review/History and V5 decisions remain binding.
 The existing global `/tasks/new` is the canonical normal Task-create UX. Keep
 `Task erstellen`, `Bewusst erstellen`, `Task zuerst festhalten`, Title-first
 capture, `Weitere Angaben (optional)`, and the existing field hierarchy, labels
-and visual composition. Project/Milestone/Goal origin changes only validated
+and inner visual composition. The accepted #82 refinement below changes only the
+responsive outer width. Project/Milestone/Goal origin changes only validated
 prefills, origin metadata and Save/Cancel destinations. Project, Project Milestone
 and Goal remain in the existing fields under `Weitere Angaben (optional)`.
 No Project-specific heading, field order, disclosure state, separate Task-create
@@ -532,7 +533,8 @@ component or extra top context summary/chip/link/capture block is allowed.
 Title-first capture itself remains accepted. PRODUCT retains the required owning
 Project, valid Project switching, incompatible Milestone clearing, backlog,
 Goal inheritance/conflict and Save/Cancel semantics. The #77 correction is an
-accepted target, not a claim of implementation or final surface acceptance.
+accepted target; #80 / PR #81 implemented its origin parity. That implementation
+does not establish final #69 surface acceptance or deliver the #82 refinement.
 
 The R2-09 identity → shared Work/context → Supporting macro model stays intact;
 management must not dominate reading or execution.
@@ -551,12 +553,16 @@ checkbox/progress interpretation or per-Criterion Manage controls. One quiet
 result/Criteria entry opens management. Empty result/Criteria collapse to a compact
 setup action; result without Criteria keeps quiet `Kriterien ergänzen`.
 
-Work has heading, one executable guidance region and Task/Milestone structure.
-One READY links the Task; multiple READY preserves user choice; all BLOCKED shows
+Work has heading and Task/Milestone structure. Exactly-one READY appears once as
+the visually primary actual Task row, without duplicate title guidance above it.
+Multiple READY preserves user choice; all BLOCKED shows
 blocker context and access to the affected list; empty Work has only dominant
 `Erste Task anlegen`. Do not simultaneously emphasize total/done Task and Milestone
-fractions, READY/BLOCKED counts and multiple add/manage links. Canonical counts
-remain available where they inform orientation; no Progress Model change.
+fractions, READY/BLOCKED counts and multiple add/manage links. No redundant metric
+strip of Task/Milestone/READY/zero-completion signals; one quiet summary may remain
+where decision-relevant. Task title/actions dominate technical metadata. Empty
+Milestone is one quiet line; Backlog heading appears only when backlog Tasks exist.
+No Progress Model change.
 Milestone rows keep title, restrained status/date, Tasks and one quiet overflow.
 One Work `Task hinzufügen` uses normal `/tasks/new` with optional Milestone context;
 an optional Milestone-local `+` may remain only if quiet and free of repeated
@@ -569,6 +575,55 @@ summary: compact populated counts/first relevant items and an explicit secondary
 view/manage entry. Empty supporting is quiet text/summary, not two large boxes.
 Existing Artifact roles and canonical Resource navigation remain unchanged.
 
+Without meaningful Goal/Area/derived Skill/Artifact or other accepted context,
+collapse the entire Context rail and give Work the released width. A lone
+`Beziehungen verwalten` link moves to quiet secondary management rather than
+reserving an empty column. Present context uses one compact subordinate rail
+without large empty vertical space.
+
+#### USER ACCEPTED #82 Task interaction and create-width refinement
+
+The [revised #82 target is USER ACCEPTED](https://github.com/Planton361/life-os/issues/82#issuecomment-5934881871)
+on 2026-10-01 and **not yet implemented** on the current baseline. These density,
+interaction and outer-width refinements preserve V5, accepted inner Task-create
+composition and existing domain/security semantics. Review remains quiet and
+separated below Work; no Review redesign is introduced.
+
+For an eligible active Project Task row, `Erledigt` is the execution action,
+`Bearbeiten` is secondary modal edit, and `Details` is tertiary depth navigation.
+Task title stays visually strongest. This specifies hierarchy, not literal button
+styling. Existing lifecycle restrictions determine action availability; completion
+is never embedded inside Edit. On mobile, actions wrap/stack without overflow.
+
+Project Detail and Task Detail share one focused, bounded `Task bearbeiten`
+dialog using the canonical editable fields/hierarchy. No normal inline or
+page-expanding edit and no bespoke Project Task editor. Move focus inside and trap
+it, keep background non-interactive, provide explicit close/cancel and Escape,
+write nothing on dismissal, and return focus to the trigger. Save success closes,
+revalidates and shows feedback; server/validation errors remain visible and
+preserve input where supported. Bounded internal scrolling may handle tall
+content while title/actions stay usable. Mobile uses safe margins and has no
+horizontal overflow.
+
+Canonical `/tasks/new` keeps its Title-first headings, labels, field ordering,
+disclosure behavior, prefills, validation and Save/Cancel semantics. Its outer
+width follows available viewport/aspect ratio and readable vertical focus, not a
+fixed viewport percentage:
+
+- ordinary desktop is materially wider than baseline `main 1f61f9d7`, with an
+  approximate maximum content width of 1280–1440px;
+- near a 1440px viewport, use normal approximately 32–48px page gutters where
+  available;
+- at 1920px, remain centered and bounded, wider than baseline but not fullscreen;
+- ultrawide caps instead of stretching indefinitely; portrait/tall layouts
+  preserve vertical reading focus;
+- optional details remain two columns while each field is comfortably readable;
+- mobile stays single-column with approximately 16px safe gutters, unchanged
+  field order and no horizontal overflow.
+
+Exact CSS primitives remain an implementation detail. Create stays a dedicated
+page; Task Detail stays depth navigation and its Edit entry opens the same modal.
+
 #### Bounded interaction matrix
 
 | Operation | Accepted placement and trigger |
@@ -577,6 +632,7 @@ Existing Artifact roles and canonical Resource navigation remain unchanged.
 | Project metadata/status | Existing edit/manage interaction behind one secondary entry; no expanding inline status block |
 | Milestone create/edit/reorder/archive | Bounded dialog from Work; never push Task content down through inline form expansion |
 | Task assignment to Milestone | Same Work-management dialog or focused secondary dialog; no permanent form |
+| Task edit from Project Detail or Task Detail | Same canonical focused `Task bearbeiten` modal; lifecycle controls stay separate |
 | Relations/context | Bounded dialog or existing canonical management route; read surface displays current compact context |
 | Resource/Artifact add/manage | Existing canonical route/dialog where available; quiet entry from read summary, no duplicate custom editor |
 | Project Review | Dedicated focused desktop dialog; full-screen/near-full-screen dialog on mobile |
