@@ -83,6 +83,7 @@ export async function readEntityWorkbench() {
     client
       .from("skill_evidence")
       .select("*")
+      .is("withdrawn_at", null)
       .eq("user_id", uid)
       .order("evidence_date", { ascending: false }),
     client

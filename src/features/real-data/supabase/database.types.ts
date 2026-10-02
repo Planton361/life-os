@@ -1,3 +1,4 @@
+import type { SkillDevelopmentRead } from "../domain/skill-development";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Json } from "@/types/supabase";
 import type { Database as GeneratedDatabase } from "@/types/supabase";
@@ -134,7 +135,28 @@ type GoalPathTables = Omit<
   | "goal_milestone_achievement_evidence"
   | "goal_achievement_evidence"
   | "projects"
+  | "skills"
+  | "skill_evidence"
 > & {
+  skills: {
+    Row: GeneratedDatabase["public"]["Tables"]["skills"]["Row"] & {
+      development_revision: number;
+    };
+    Insert: GeneratedDatabase["public"]["Tables"]["skills"]["Insert"];
+    Update: GeneratedDatabase["public"]["Tables"]["skills"]["Update"];
+    Relationships: [];
+  };
+  skill_evidence: {
+    Row: GeneratedDatabase["public"]["Tables"]["skill_evidence"]["Row"] & {
+      revision: number;
+      withdrawn_at: string | null;
+      source_snapshot: Json | null;
+      provenance_state: string;
+    };
+    Insert: GeneratedDatabase["public"]["Tables"]["skill_evidence"]["Insert"];
+    Update: GeneratedDatabase["public"]["Tables"]["skill_evidence"]["Update"];
+    Relationships: [];
+  };
   goal_criterion_evaluations: GoalPathTable<
     GoalPathCriterionEvaluationRow,
     GoalPathCriterionEvaluationInsert,
@@ -348,7 +370,23 @@ type GoalPathFunctions = {
 export type Database = Omit<GeneratedDatabase, "public"> & {
   public: Omit<GeneratedDatabase["public"], "Tables" | "Functions"> & {
     Tables: GoalPathTables;
-    Functions: GeneratedDatabase["public"]["Functions"] & GoalPathFunctions;
+    Functions: GeneratedDatabase["public"]["Functions"] &
+      GoalPathFunctions & {
+        skill_development_command: {
+          Args: {
+            p_skill_id: string | null;
+            p_command_id: string;
+            p_operation: string;
+            p_expected_revision: number | null;
+            p_payload: Json;
+          };
+          Returns: Json;
+        };
+        skill_development_read: {
+          Args: { p_skill_id: string };
+          Returns: SkillDevelopmentRead;
+        };
+      };
   };
 };
 

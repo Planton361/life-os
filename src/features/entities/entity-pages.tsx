@@ -402,13 +402,13 @@ function EntityCard({
           />
         ) : null}
       </div>
-      <div className="mt-4">
+      {kind !== "skill" && <div className="mt-4">
         <ProgressBar
           accent={meta.accent}
-          label={kind === "skill" ? "Practice progress" : "Progress"}
+          label="Progress"
           progress={progress}
         />
-      </div>
+      </div>}
     </Link>
   );
 }
@@ -452,13 +452,13 @@ function PreviewPanel({
         <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
           {item.description}
         </p>
-        <div className="mt-4">
+        {kind !== "skill" && <div className="mt-4">
           <ProgressBar
             accent={meta.accent}
-            label={kind === "skill" ? "Practice progress" : "Progress"}
+            label="Progress"
             progress={"progress" in item ? item.progress : 0}
           />
-        </div>
+        </div>}
         <Link
           className="mt-4 inline-flex min-h-9 items-center rounded-full border border-[color-mix(in_srgb,var(--accent)_34%,transparent)] bg-[color-mix(in_srgb,var(--accent)_12%,transparent)] px-3 text-xs font-semibold text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
           href={href}
@@ -1250,13 +1250,7 @@ function SkillDetail({
               <MetaField label="Last practiced" value={skill.lastPracticedAt} />
               <MetaField label="Frequency" value={skill.practiceFrequency} />
             </dl>
-            <div className="mt-4">
-              <ProgressBar
-                accent="var(--accent-cyan)"
-                label="Practice progress"
-                progress={skill.progress}
-              />
-            </div>
+
           </SectionPanel>
           <SectionPanel subtitle="Competency path without gamification." title="Learning Path">
             <div className="grid gap-2">

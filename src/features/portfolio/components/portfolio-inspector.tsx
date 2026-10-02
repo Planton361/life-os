@@ -90,14 +90,16 @@ export function PortfolioInspector({
             </div>
           )}
           <dl className="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <dt className="text-xs text-[var(--text-muted)]">
-                Priorität / Focus
-              </dt>
-              <dd className="mt-1">
-                {entity.priority} · {entity.focusLevel}
-              </dd>
-            </div>
+            {entity.type !== "skill" && (
+              <div>
+                <dt className="text-xs text-[var(--text-muted)]">
+                  Priorität / Focus
+                </dt>
+                <dd className="mt-1">
+                  {entity.priority} · {entity.focusLevel}
+                </dd>
+              </div>
+            )}
             <div>
               <dt className="text-xs text-[var(--text-muted)]">
                 {entity.type === "skill" ? "Letzte Praxis" : "Deadline"}

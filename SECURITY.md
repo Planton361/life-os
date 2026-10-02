@@ -78,9 +78,7 @@ covers competing commands; [Project E2E](tests/e2e/project-depth.spec.ts) verifi
 the signed authenticated request flow and direct Data API write denial.
 PR #70 also records the delivered R2-09/R2-10/R2-12 regression evidence.
 
-The technical Security implementation is delivered and evidenced. Final
-Project Depth USER ACCEPTANCE of the complete Product Surface remains a
-separate pending gate; technical implementation evidence does not establish it.
+The Project Depth Product Surface is USER ACCEPTED: [#69 final acceptance](https://github.com/Planton361/life-os/issues/69#issuecomment-5942502151). This accepted gate authorizes the later PP2 sequence; it does not authorize unrelated integrations.
 
 ## Regeln
 
@@ -167,3 +165,44 @@ No personal Vault is read or written; exports/** remains protected and unused.
 No plugin, installation, file watcher, local bridge, token, import, write-back,
 conflict resolution or destructive sync exists. Open each downloaded snapshot in
 its own extracted folder; never overwrite personal notes with an extracted package.
+
+## PP2 Skill command boundary — USER ACCEPTED #93, delivery #94
+
+Skill Create/Edit/Archive, Target/Lernschritt lifecycle, Reviews/Amendments and
+Evidence Create/Correct/Withdraw/Restore use `skill_development_command` through
+server authentication and Zod. `user_id` is derived from `auth.uid()`, never
+accepted from the client. The dedicated `life_os_skill_command` role is
+`NOLOGIN NOBYPASSRLS`, not superuser or a domain/History table owner. Fixed empty
+`search_path`, qualified objects and explicit minimal grants keep RLS effective.
+Source tables are read-only; Area UPDATE privilege exists solely for ownership
+row locking, with no Area UPDATE policy for the command role.
+
+Direct authenticated INSERT/UPDATE/DELETE are revoked on `skills`, Evidence and
+all PP2 planning/History/receipt tables, including effective default privileges.
+Owner SELECT is allowed for domain/History reads; receipt reads and private helper
+access are denied. PUBLIC/anon cannot execute either Skill RPC. History guards
+reject UPDATE and domain DELETE even for maintenance clients while allowing the
+explicit account-purge cascade. Same-user composite FKs bind complete nested
+owner/Skill/Target identities, including terminal Review and Evidence-version
+pointers; individually valid foreign ids cannot be combined.
+
+The owner/command advisory transaction lock and receipt check precede aggregate
+locking. An identical normalized retry returns the original result; reusing a key
+for a different request conflicts. Every existing-Skill command locks the owned
+Skill `FOR UPDATE`, verifies the caller-held expected development revision and
+atomically commits domain writes, one revision increment and receipt. No adapter
+may fetch a newer revision to overwrite the caller's stale expectation.
+`skill.create` has no nonexistent expected revision: it validates/locks owned Area
+when present, generates the Skill id at revision 0 and commits its receipt in the
+same transaction. Compatibility Actions use this same boundary; old repository
+mutation methods without command headers fail closed rather than bypass it.
+
+Polymorphic Evidence source capture/correction validates same-user active sources
+in the database, builds an allowlisted snapshot and never trusts client snapshots.
+Withdraw/Restore retain the original source snapshot/date; unavailable sources do
+not authorize owner transfer or reconstructed provenance. No Service Role or
+remote database is used by these application flows.
+
+Focused proof: `tests/supabase/pp2-skill-development.sql`,
+`pp2-skill-concurrency.mjs`, `pp2-legacy-before.sql`,
+`tests/e2e/pp2-skill-database.spec.ts` and the PP2 Skill browser specs.

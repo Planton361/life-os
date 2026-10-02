@@ -1,546 +1,110 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import {
-  skillArchiveInputSchema,
-  skillCreateInputSchema,
-  skillEvidenceCreateInputSchema,
-  skillEvidenceDeleteInputSchema,
-  skillEvidenceUpdateInputSchema,
-  skillUpdateInputSchema,
-} from "@/features/real-data";
-import { createSupabaseSkillRepository } from "@/features/real-data/supabase";
-import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { skillDevelopmentCommand } from "./skill-development.actions";
+import type { SkillCommandOperation } from "../schemas/skill-development.schema";
 
 export type SkillActionResult = {
   evidenceId?: string;
-  message: string;
   skillId?: string;
+  message: string;
   status: "blocked" | "error" | "success";
 };
 
-function formString(formData: FormData, key: string) {
-  const value = formData.get(key);
-  return typeof value === "string" ? value.trim() : "";
-}
-
-function optionalFormString(formData: FormData, key: string) {
-  return formString(formData, key) || undefined;
-}
-
-function optionalFormStringIfPresent(formData: FormData, key: string) {
-  if (!formData.has(key)) return undefined;
-
-  return optionalFormString(formData, key);
-}
-
-function optionalNullableFormString(formData: FormData, key: string) {
-  const value = formString(formData, key);
-  return value.length > 0 ? value : null;
-}
-
-function optionalNullableFormStringIfPresent(formData: FormData, key: string) {
-  if (!formData.has(key)) return undefined;
-
-  return optionalNullableFormString(formData, key);
-}
-
-function optionalFormNumber(formData: FormData, key: string) {
-  if (!formData.has(key)) return undefined;
-
-  const raw = formString(formData, key);
-  if (!raw) return undefined;
-
-  const value = Number(raw);
-
-  return Number.isFinite(value) ? value : undefined;
-}
-
-function evidenceSourceIdFromForm(formData: FormData) {
-  const sourceReference = formString(formData, "sourceReference");
-
-  if (sourceReference) {
-    const [sourceType, sourceId = ""] = sourceReference.split(":", 2);
-
-    if (sourceType === "manual_note") return null;
-
-    return sourceId || undefined;
-  }
-
-  if (evidenceSourceTypeFromForm(formData) === "manual_note") return null;
-
-  return optionalNullableFormString(formData, "sourceId");
-}
-
-function evidenceSourceIdFromFormIfPresent(formData: FormData) {
-  if (formData.has("sourceReference")) {
-    return evidenceSourceIdFromForm(formData);
-  }
-
-  if (evidenceSourceTypeFromForm(formData) === "manual_note") return null;
-
-  return optionalNullableFormStringIfPresent(formData, "sourceId");
-}
-
-function evidenceSourceTypeFromForm(formData: FormData) {
-  const sourceReference = formString(formData, "sourceReference");
-
-  if (sourceReference) {
-    return sourceReference.split(":", 1)[0];
-  }
-
-  return formString(formData, "sourceType");
-}
-
-function revalidateSkillRoutes() {
-  revalidatePath("/portfolio");
-  revalidatePath("/education");
-  revalidatePath("/coding");
-  revalidatePath("/resources");
-}
-
-function skillRedirectUrl(
-  targetCreate:
-    | "blocked"
-    | "error"
-    | "skill_archived"
-    | "skill_created"
-    | "skill_evidence_created"
-    | "skill_evidence_deleted"
-    | "skill_updated",
-  skillId?: string,
-) {
-  const params = new URLSearchParams({
-    targetCreate,
-    view: "skills",
-  });
-
-  if (skillId) {
-    params.set("selected", skillId);
-  }
-
-  return `/portfolio?${params.toString()}`;
-}
-
-function authBlockedMessage(
-  error: "auth_error" | "invalid_session" | "missing_env" | "unauthenticated",
-) {
-  if (error === "missing_env") {
-    return "Supabase ist lokal noch nicht konfiguriert.";
-  }
-
-  if (error === "invalid_session") {
-    return "Die Supabase Session ist ungültig. Setze sie in den Settings zurück und melde dich neu an.";
-  }
-
-  if (error === "auth_error") {
-    return "Supabase Auth konnte die Session nicht prüfen. Setze sie in den Settings zurück.";
-  }
-
-  return "Melde dich an, um Skill-Daten zu speichern.";
-}
-
-function repositoryFailureMessage(message: string) {
-  if (message.includes("Area")) {
-    return "Der Area-Kontext konnte nicht bestätigt werden.";
-  }
-
-  if (message.includes("Skill evidence source")) {
-    return "Die Evidence-Quelle wurde im aktuellen User-Scope nicht gefunden.";
-  }
-
-  if (message.includes("Skill evidence")) {
-    return "Die Skill Evidence wurde im aktuellen User-Scope nicht gefunden.";
-  }
-
-  if (message.includes("Skill")) {
-    return "Die Skill wurde im aktuellen User-Scope nicht gefunden.";
-  }
-
-  if (message.includes("source")) {
-    return "Die Evidence-Quelle ist für diesen Typ nicht gültig.";
-  }
-
-  return "Skill-Daten konnten nicht gespeichert werden.";
-}
-
-async function getAuthenticatedSkillContext() {
-  const profileId = await getCurrentLifeOsProfileId();
-
-  if (profileId !== "manual") {
-    return {
-      ok: false as const,
-      result: {
-        message: "Wechsle ins Manual-Profil, um Skill-Daten zu speichern.",
-        status: "blocked" as const,
-      },
-    };
-  }
-
-  const auth = await createAuthenticatedSupabaseServerClient();
-
-  if (!auth.ok) {
-    return {
-      ok: false as const,
-      result: {
-        message: authBlockedMessage(auth.error),
-        status: "blocked" as const,
-      },
-    };
-  }
-
-  return {
-    auth,
-    ok: true as const,
-  };
-}
-
-export async function createSkillAction(
-  formData: FormData,
+// Compatibility exports require the same caller-held revision and idempotency key.
+// They never fetch a newer revision or fall back to direct table writes.
+async function command(
+  form: FormData,
+  operation: SkillCommandOperation,
 ): Promise<SkillActionResult> {
-  const context = await getAuthenticatedSkillContext();
-
-  if (!context.ok) return context.result;
-
-  const parsed = skillCreateInputSchema.safeParse({
-    areaId: optionalNullableFormString(formData, "areaId"),
-    category: optionalFormString(formData, "category"),
-    level: optionalFormString(formData, "level"),
-    name: formString(formData, "name"),
-    status: optionalFormString(formData, "status"),
-    summary: optionalFormString(formData, "summary"),
-  });
-
-  if (!parsed.success) {
-    return {
-      message: "Gib gültige Skill-Daten ein.",
-      status: "error",
-    };
+  const value = (key: string) => String(form.get(key) ?? "").trim();
+  const payload: Record<string, unknown> = {};
+  const fields: Record<string, string> = {
+    name: "name",
+    summary: "summary",
+    category: "category",
+    level: "level",
+    status: "status",
+    areaId: "area_id",
+    title: "title",
+    note: "note",
+    evidenceDate: "evidence_date",
+    evidenceId: "evidence_id",
+    reason: "reason",
+  };
+  for (const [input, output] of Object.entries(fields))
+    if (form.has(input)) payload[output] = value(input) || null;
+  if (operation === "evidence.create" || operation === "evidence.correct") {
+    const [sourceType, sourceId] = value("sourceReference").split(":");
+    payload.source_type = sourceType || value("sourceType");
+    payload.source_id =
+      payload.source_type === "manual_note"
+        ? null
+        : sourceId || value("sourceId") || null;
+    if (form.has("weight"))
+      payload.weight = value("weight") ? Number(value("weight")) : null;
   }
-
-  const repository = createSupabaseSkillRepository(context.auth.client);
-  const result = await repository.createSkill({
-    ...parsed.data,
-    userId: context.auth.user.id,
+  const result = await skillDevelopmentCommand({
+    operation,
+    commandId: value("commandId"),
+    skillId: operation === "skill.create" ? null : value("skillId"),
+    expectedRevision:
+      operation === "skill.create"
+        ? null
+        : form.has("expectedDevelopmentRevision")
+          ? Number(value("expectedDevelopmentRevision"))
+          : null,
+    payload,
   });
-
-  if (!result.ok) {
-    return {
-      message: repositoryFailureMessage(result.error.message),
-      status: "error",
-    };
-  }
-
-  revalidateSkillRoutes();
-
   return {
-    message: "Skill erstellt.",
-    skillId: result.data.id,
-    status: "success",
+    status: result.status,
+    message: result.message,
+    ...(result.status === "success"
+      ? {
+          skillId: result.result.skill_id,
+          evidenceId: result.result.evidence_id,
+        }
+      : {}),
   };
 }
-
-export async function createSkillFormAction(formData: FormData): Promise<void> {
-  const result = await createSkillAction(formData);
-
-  if (result.status === "success") {
-    redirect(skillRedirectUrl("skill_created", result.skillId));
-  }
-
-  redirect(skillRedirectUrl(result.status === "blocked" ? "blocked" : "error"));
+export async function createSkillAction(f: FormData) {
+  return command(f, "skill.create");
 }
-
-export async function updateSkillAction(
-  formData: FormData,
-): Promise<SkillActionResult> {
-  const context = await getAuthenticatedSkillContext();
-
-  if (!context.ok) return context.result;
-
-  const parsed = skillUpdateInputSchema.safeParse({
-    areaId: optionalNullableFormStringIfPresent(formData, "areaId"),
-    category: optionalNullableFormStringIfPresent(formData, "category"),
-    level: optionalFormStringIfPresent(formData, "level"),
-    name: optionalFormStringIfPresent(formData, "name"),
-    skillId: formString(formData, "skillId"),
-    status: optionalFormStringIfPresent(formData, "status"),
-    summary: optionalNullableFormStringIfPresent(formData, "summary"),
-  });
-
-  if (!parsed.success) {
-    return {
-      message: "Gib gültige Skill-Daten ein.",
-      status: "error",
-    };
-  }
-
-  const repository = createSupabaseSkillRepository(context.auth.client);
-  const result = await repository.updateSkill({
-    ...parsed.data,
-    userId: context.auth.user.id,
-  });
-
-  if (!result.ok) {
-    return {
-      message: repositoryFailureMessage(result.error.message),
-      status: "error",
-    };
-  }
-
-  revalidateSkillRoutes();
-
-  return {
-    message: "Skill aktualisiert.",
-    skillId: result.data.id,
-    status: "success",
-  };
+export async function updateSkillAction(f: FormData) {
+  return command(f, "skill.edit");
 }
-
-export async function updateSkillFormAction(formData: FormData): Promise<void> {
-  const result = await updateSkillAction(formData);
-  const skillId = result.skillId ?? formString(formData, "skillId");
-
-  if (result.status === "success") {
-    redirect(skillRedirectUrl("skill_updated", skillId));
-  }
-
+export async function archiveSkillAction(f: FormData) {
+  return command(f, "skill.archive");
+}
+export async function createSkillEvidenceAction(f: FormData) {
+  return command(f, "evidence.create");
+}
+export async function updateSkillEvidenceAction(f: FormData) {
+  return command(f, "evidence.correct");
+}
+// Historical API name: this is now explicit withdrawal, with a required reason.
+export async function deleteSkillEvidenceAction(f: FormData) {
+  return command(f, "evidence.withdraw");
+}
+async function navigate(result: SkillActionResult) {
   redirect(
-    skillRedirectUrl(
-      result.status === "blocked" ? "blocked" : "error",
-      skillId,
-    ),
+    result.status === "success" && result.skillId
+      ? `/skills/${result.skillId}`
+      : `/portfolio?view=skills&targetCreate=${result.status}`,
   );
 }
-
-export async function archiveSkillAction(
-  formData: FormData,
-): Promise<SkillActionResult> {
-  const context = await getAuthenticatedSkillContext();
-
-  if (!context.ok) return context.result;
-
-  const parsed = skillArchiveInputSchema.safeParse({
-    skillId: formString(formData, "skillId"),
-  });
-
-  if (!parsed.success) {
-    return {
-      message: "Die Skill konnte nicht validiert werden.",
-      status: "error",
-    };
-  }
-
-  const repository = createSupabaseSkillRepository(context.auth.client);
-  const result = await repository.archiveSkill({
-    ...parsed.data,
-    userId: context.auth.user.id,
-  });
-
-  if (!result.ok) {
-    return {
-      message: repositoryFailureMessage(result.error.message),
-      status: "error",
-    };
-  }
-
-  revalidateSkillRoutes();
-
-  return {
-    message: "Skill archiviert.",
-    skillId: result.data.id,
-    status: "success",
-  };
+export async function createSkillFormAction(f: FormData) {
+  return navigate(await createSkillAction(f));
 }
-
-export async function archiveSkillFormAction(
-  formData: FormData,
-): Promise<void> {
-  const result = await archiveSkillAction(formData);
-
-  if (result.status === "success") {
-    redirect(skillRedirectUrl("skill_archived"));
-  }
-
-  redirect(
-    skillRedirectUrl(
-      result.status === "blocked" ? "blocked" : "error",
-      formString(formData, "skillId"),
-    ),
-  );
+export async function updateSkillFormAction(f: FormData) {
+  return navigate(await updateSkillAction(f));
 }
-
-export async function createSkillEvidenceAction(
-  formData: FormData,
-): Promise<SkillActionResult> {
-  const context = await getAuthenticatedSkillContext();
-
-  if (!context.ok) return context.result;
-
-  const parsed = skillEvidenceCreateInputSchema.safeParse({
-    evidenceDate: formString(formData, "evidenceDate"),
-    note: optionalFormString(formData, "note"),
-    skillId: formString(formData, "skillId"),
-    sourceId: evidenceSourceIdFromForm(formData),
-    sourceType: evidenceSourceTypeFromForm(formData),
-    title: formString(formData, "title"),
-    weight: optionalFormNumber(formData, "weight"),
-  });
-
-  if (!parsed.success) {
-    return {
-      message: "Gib gültige Skill-Evidence-Daten ein.",
-      status: "error",
-    };
-  }
-
-  const repository = createSupabaseSkillRepository(context.auth.client);
-  const result = await repository.createSkillEvidence({
-    ...parsed.data,
-    userId: context.auth.user.id,
-  });
-
-  if (!result.ok) {
-    return {
-      message: repositoryFailureMessage(result.error.message),
-      status: "error",
-    };
-  }
-
-  revalidateSkillRoutes();
-
-  return {
-    evidenceId: result.data.id,
-    message: "Skill Evidence erstellt.",
-    skillId: result.data.skillId,
-    status: "success",
-  };
+export async function archiveSkillFormAction(f: FormData) {
+  return navigate(await archiveSkillAction(f));
 }
-
-export async function createSkillEvidenceFormAction(
-  formData: FormData,
-): Promise<void> {
-  const result = await createSkillEvidenceAction(formData);
-  const skillId = result.skillId ?? formString(formData, "skillId");
-
-  if (result.status === "success") {
-    redirect(skillRedirectUrl("skill_evidence_created", skillId));
-  }
-
-  redirect(
-    skillRedirectUrl(
-      result.status === "blocked" ? "blocked" : "error",
-      skillId,
-    ),
-  );
+export async function createSkillEvidenceFormAction(f: FormData) {
+  return navigate(await createSkillEvidenceAction(f));
 }
-
-export async function updateSkillEvidenceAction(
-  formData: FormData,
-): Promise<SkillActionResult> {
-  const context = await getAuthenticatedSkillContext();
-
-  if (!context.ok) return context.result;
-
-  const parsed = skillEvidenceUpdateInputSchema.safeParse({
-    evidenceDate: optionalFormStringIfPresent(formData, "evidenceDate"),
-    evidenceId: formString(formData, "evidenceId"),
-    note: optionalFormStringIfPresent(formData, "note"),
-    skillId: optionalFormStringIfPresent(formData, "skillId"),
-    sourceId: evidenceSourceIdFromFormIfPresent(formData),
-    sourceType: formData.has("sourceReference")
-      ? evidenceSourceTypeFromForm(formData)
-      : optionalFormStringIfPresent(formData, "sourceType"),
-    title: optionalFormStringIfPresent(formData, "title"),
-    weight: optionalFormNumber(formData, "weight"),
-  });
-
-  if (!parsed.success) {
-    return {
-      message: "Gib gültige Skill-Evidence-Daten ein.",
-      status: "error",
-    };
-  }
-
-  const repository = createSupabaseSkillRepository(context.auth.client);
-  const result = await repository.updateSkillEvidence({
-    ...parsed.data,
-    userId: context.auth.user.id,
-  });
-
-  if (!result.ok) {
-    return {
-      message: repositoryFailureMessage(result.error.message),
-      status: "error",
-    };
-  }
-
-  revalidateSkillRoutes();
-
-  return {
-    evidenceId: result.data.id,
-    message: "Skill Evidence aktualisiert.",
-    skillId: result.data.skillId,
-    status: "success",
-  };
-}
-
-export async function deleteSkillEvidenceAction(
-  formData: FormData,
-): Promise<SkillActionResult> {
-  const context = await getAuthenticatedSkillContext();
-
-  if (!context.ok) return context.result;
-
-  const parsed = skillEvidenceDeleteInputSchema.safeParse({
-    evidenceId: formString(formData, "evidenceId"),
-  });
-
-  if (!parsed.success) {
-    return {
-      message: "Die Skill Evidence konnte nicht validiert werden.",
-      status: "error",
-    };
-  }
-
-  const repository = createSupabaseSkillRepository(context.auth.client);
-  const result = await repository.deleteSkillEvidence({
-    ...parsed.data,
-    userId: context.auth.user.id,
-  });
-
-  if (!result.ok) {
-    return {
-      message: repositoryFailureMessage(result.error.message),
-      status: "error",
-    };
-  }
-
-  revalidateSkillRoutes();
-
-  return {
-    evidenceId: result.data.id,
-    message: "Skill Evidence gelöscht.",
-    skillId: result.data.skillId,
-    status: "success",
-  };
-}
-
-export async function deleteSkillEvidenceFormAction(
-  formData: FormData,
-): Promise<void> {
-  const result = await deleteSkillEvidenceAction(formData);
-  const skillId = result.skillId ?? formString(formData, "skillId");
-
-  if (result.status === "success") {
-    redirect(skillRedirectUrl("skill_evidence_deleted", skillId));
-  }
-
-  redirect(
-    skillRedirectUrl(
-      result.status === "blocked" ? "blocked" : "error",
-      skillId,
-    ),
-  );
+export async function deleteSkillEvidenceFormAction(f: FormData) {
+  return navigate(await deleteSkillEvidenceAction(f));
 }

@@ -121,7 +121,7 @@ sind erst mit dem separaten Delivery-Contract implementiert.
 
 ### Skill
 
-Ein Skill ist eine persönliche Fähigkeit, die entwickelt, angewendet oder nachgewiesen wird. Tasks können mehrere Skills üben oder anwenden. Skill-Fortschritt entsteht aus expliziter Evidence; die bloße Task-Verknüpfung ist Kontext und kein automatischer Kompetenznachweis.
+Ein Skill ist eine persönliche Fähigkeit, die entwickelt, angewendet oder nachgewiesen wird. Tasks können mehrere Skills üben oder anwenden. Development Targets und explizite Reviews beschreiben Entwicklung; Evidence bleibt ein datierter Nachweis, ohne Mastery-/Fortschrittswert. Die bloße Task-Verknüpfung ist Practice/Application-Kontext und kein automatischer Kompetenznachweis.
 
 ### Resource
 
@@ -364,7 +364,7 @@ schema work and evidence before they can be treated as connected.
 |---|---|---|
 | Project | Project + Project Milestones + Tasks; milestone and task state are real | retain Project Milestones; add Project-owned desired result, criteria and explicit review/history; derive current work state without a canonical stored overall percentage |
 | Goal | Goal lifecycle, links and optional legacy progress field | add domain-specific Goal Milestones and explicit Outcome Criteria/Measures; boolean or numeric criteria require a defined unit, target and direction; achievement remains explicit and is not inferred from Task completion |
-| Skill | Skill lifecycle, free level text and Skill Evidence | add domain-specific Skill Milestones, Evidence, Practice, Recency, Targets and Prerequisites; no mastery percentage without an accepted rubric |
+| Skill | PP2 Skill lifecycle, Current Development Target, ordered Skill Lernschritte, Reviews and versioned Evidence; current Practice and separate Recency | S-RELATION/prerequisites deferred; no mastery/confidence/progress/decay inference |
 
 All three categories use the planning shape Higher-order entity → domain
 milestones → Tasks → progress without a universal polymorphic Milestone table.
@@ -512,3 +512,69 @@ rejects ambiguous markers/unowned Properties/identity changes and has no runtime
 filesystem caller. A future sync phase must decide tombstone/delete/archive policy;
 source removal never grants permission to delete personal files. Export snapshots
 contain current retained source records only; no automatic Goal or Skill scores.
+
+## PP2 Skill Development Planning — accepted #93, delivery #94
+
+`skills` retains `active | paused | archived`, optional Area and free level text;
+`development_revision bigint >= 0` is aggregate concurrency metadata, not a score.
+A Skill is never globally completed or mastered. Manual Skill progress/confidence
+and Evidence-as-Practice derivations are removed.
+
+| Canonical table | Owned identity / fields | Lifecycle and cardinality |
+| --- | --- | --- |
+| `skill_development_targets` | UUID, `user_id`, `skill_id`, title, optional description, cycle (starts 1), timestamps, archive marker, terminal Review pointer | Skill → many Targets; `planned | current | completed | retired`; partial unique index permits 0..1 unarchived Current per Skill |
+| `skill_milestones` | UUID, owner/Skill/Target, title, description, integer `sort_order`, cycle, archive marker, terminal Review pointer | Target → optional ordered Lernschritte; `planned | current | completed`; at most one Current under the Current Target |
+| `skill_development_reviews` | UUID, owner/Skill/Target, optional Milestone, subject cycle, decision, required note, aggregate revision, server time, versioned subject and ordered active-Milestone snapshots | Explicit `continue | completed | retired` (retired only for Targets); immutable, with selected Evidence-version joins |
+| `skill_development_review_evidence` | owner/Skill/Target/Review, Evidence id + exact revision | Explicit selection; correction/withdrawal never rewrites an earlier Review |
+| `skill_development_review_amendments` | UUID, owner/Skill/Target/Review, kind, required note, server time | Append-only `clarification | withdrawal | mistaken` |
+| `skill_evidence` | Existing UUID/date/source/title/note/optional legacy weight; current `revision`, withdrawal marker, server source snapshot, provenance state | Canonical explicit current Evidence identity; no domain delete or owner/Skill reassignment |
+| `skill_evidence_revisions` | owner/Skill/Evidence/revision; complete immutable Evidence values, reason, operation, server recorded time | `baseline | create | correct | withdraw | restore`; correction/withdraw/restore require a reason |
+| `skill_command_receipts` | owner/command UUID, Skill, operation, normalized request, result, server time | One retained receipt per owner/command key; no direct client read |
+
+Referenceable keys are `skills(user_id,id)`, Targets `(user_id,skill_id,id)`,
+Milestones `(user_id,skill_id,target_id,id)`, Reviews
+`(user_id,skill_id,target_id,id)` and `(user_id,skill_id,target_id,milestone_id,id)`,
+Evidence `(user_id,skill_id,id)`, Evidence revisions
+`(user_id,skill_id,evidence_id,revision)`. Nested child FKs carry those complete
+parent tuples. Target terminal pointers bind `(user_id,skill_id,id,terminal_review_id)`
+to the Target Review tuple; Milestone pointers bind the additional Milestone id.
+Evidence head and revision have reciprocal deferred composite FKs. Owner/Skill/
+Target identities cannot be updated. The account cascade remains possible;
+ordinary domain deletion cannot destroy History.
+
+Create starts planned; choosing Current explicitly demotes the previous Current
+and its Current Lernschritt. Target archive/completion/retirement demotes its
+Current Lernschritt atomically. Archive preserves terminal status/pointer/cycle;
+restore selects no Current and appends restored Lernschritte to active ordering.
+Full-set reorder is atomic and unique active positions are deferred until commit.
+Review completion/retirement requires explicit acknowledgement of remaining open
+Lernschritte. Reopen clears the terminal pointer, advances the subject cycle and
+returns to planned. Withdrawal/mistaken of the currently referenced terminal
+Review invokes that same Reopen atomically; historic amendments change no current
+subject. Skill archive demotes Current planning; restore returns the Skill paused.
+
+Evidence is always explicitly entered. Source capture/correction validates an
+active same-user Task, Project, Goal or Resource, or a manual note with null source
+id. The source tuple is stable identity; its server snapshot contains only type,
+id, title/status/update time, Task completion time when relevant, capture time and
+snapshot version. There is intentionally no polymorphic source FK. Later missing/
+archived sources remain readable as unavailable, preserving the snapshot.
+Correction creates a complete new version; wrong-Skill Evidence must be withdrawn
+and explicitly recreated. Withdrawal excludes current Evidence/Recency; restore
+creates another version without resetting the Evidence date. Legacy rows retain
+ids, original values and timestamps and gain exactly one cutover baseline with
+`legacy_unverified` provenance and no invented source snapshot or prior history.
+
+`skill_development_read` reads one owner-scoped MVCC snapshot. Practice is the
+current `task_skill_links` join to canonical Tasks: archived Tasks are excluded,
+open/done/canceled remain distinct, and later linkage is identified separately.
+Recency exposes independent latest valid linked done-Task `completed_at <= as_of`
+and non-withdrawn `evidence_date <=` profile-local today. Missing completion dates
+stay unknown; future legacy dates are displayed but excluded from Recency. Reopen,
+unlink and archive change this current projection; no past episode is recreated.
+Empty states have no synthetic values or Demo fallback; read errors remain errors.
+
+The first slice is S-PLAN + S-EVIDENCE + READS. S-RELATION is deferred. There is no
+Task→Target/Milestone or direct Project↔Skill FK, inferred graph, mastery/confidence/
+progress/decay model, automatic Evidence/advancement or Task READY/BLOCKED effect.
+Implementation: `supabase/migrations/20261002191215_pp2_skill_development.sql`.

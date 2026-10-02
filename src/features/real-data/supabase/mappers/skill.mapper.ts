@@ -68,7 +68,7 @@ export function mapSkillRowToDomain(row: SkillRow): Skill {
 }
 
 export function mapSkillEvidenceRowToDomain(
-  row: SkillEvidenceRow,
+  row: Omit<SkillEvidenceRow,"source_snapshot">,
 ): SkillEvidence {
   return {
     archivedAt: null,

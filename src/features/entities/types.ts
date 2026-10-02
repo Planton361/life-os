@@ -172,6 +172,7 @@ export type SkillPathStage = {
 };
 
 export type LifeSkill = {
+  currentDevelopmentTarget?: { id: string; title: string } | null;
   id: string;
   title: string;
   description: string;

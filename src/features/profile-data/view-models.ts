@@ -1,3 +1,5 @@
+import { mapSkillRowToDomain, mapSkillEvidenceRowToDomain } from "@/features/real-data/supabase/mappers/skill.mapper";
+import { skillPracticeReads } from "@/features/real-data/domain/skill-development";
 import { readTaskDependencyGraph } from "@/features/real-data/supabase/repositories/task-dependency-repository";
 import { taskDependencyContext } from "@/features/real-data/domain/task-dependencies";
 import { isSqliteProofRuntime } from "../../../experiments/issue-37/proof-gate";
@@ -466,7 +468,8 @@ function skillToPortfolioItem(skill: LifeSkill): DashboardPortfolioItem {
     label: areaLabel(skill.areaId),
     next: skill.nextPractice,
     meta: skill.status,
-    progress: boundedProgress(skill.progress),
+    progress: 0,
+    progressLabel: skill.practiceFrequency || "Keine Praxisdaten",
     accent: areaAccent(skill.areaId),
     area: skill.areaId as DashboardArea,
     kind: "skill",
@@ -1268,11 +1271,11 @@ function skillToPortfolioEntity(
     area: skill.areaId,
     status: skill.status === "paused" ? "planned" : "practicing",
     priority: "P2",
-    focusLevel: skill.progress >= 65 ? "medium" : "low",
+    focusLevel: "low",
     nextAction: skill.nextPractice,
     dueLabel: skill.practiceFrequency,
     dueRank: skill.practiceFrequency ? 2 : 3,
-    progress: boundedProgress(skill.progress),
+    progress: 0,
     countLabel:
       skill.evidence.length > 0
         ? `${skill.evidence.length} evidence`
@@ -1282,19 +1285,19 @@ function skillToPortfolioEntity(
     reviewNeeded: false,
     blocked: false,
     relations: [
-      { label: "Current", value: skill.currentLevel },
-      { label: "Target", value: skill.targetLevel },
+      { label: "Niveau (freier Text)", value: skill.currentLevel },
+      { label: "Kategorie", value: skill.targetLevel },
+      ...(skill.currentDevelopmentTarget ? [{label: "Development Target", value: skill.currentDevelopmentTarget.title}] : []),
     ],
     decisions: [],
     sourceLinks: [{ label: "Skill", href: `/skills/${skill.id}` }],
     noteSnippet: skill.description,
     skillContext: {
       practiceStatus: skill.status,
-      confidence:
-        skill.progress >= 70 ? "high" : skill.progress >= 35 ? "medium" : "low",
+      confidence: null,
       editValues: {
         category:
-          skill.targetLevel === "Evidence ausbauen"
+          ["Evidence ausbauen","Nicht gesetzt"].includes(skill.targetLevel)
             ? undefined
             : skill.targetLevel,
         level:
@@ -2369,7 +2372,6 @@ function realSkillToLifeSkill(
   skill: RealDataSkill,
   evidence: readonly RealDataSkillEvidence[],
 ): LifeSkill {
-  const latestEvidence = evidence[0];
   const evidenceCount = evidence.length;
 
   return {
@@ -2391,7 +2393,7 @@ function realSkillToLifeSkill(
         }) as LifeSkill["evidence"][number],
     ),
     id: skill.id,
-    lastPracticedAt: latestEvidence?.evidenceDate ?? "not practiced",
+    lastPracticedAt: "Kein gültiger Completion-Zeitpunkt",
     learningPath: [],
     linkedGoalIds: [],
     linkedProjectIds: [],
@@ -2405,9 +2407,9 @@ function realSkillToLifeSkill(
       evidenceCount > 0
         ? `${evidenceCount} evidence records`
         : "No evidence yet",
-    progress: Math.min(100, evidenceCount * 20),
+    progress: 0,
     status: skillStatusToLifeStatus(skill.status),
-    targetLevel: skill.category ?? "Evidence ausbauen",
+    targetLevel: skill.category ?? "Nicht gesetzt",
     title: skill.name,
   };
 }
@@ -2781,31 +2783,38 @@ async function getManualSkillsFromSupabase(
   taskSkillLinks: RealDataTaskSkillLink[];
 }> {
   const repository = createSupabaseSkillRepository(client);
-  const [skillResult, evidenceResult, taskSkillLinkResult] = await Promise.all([
-    repository.getActiveSkillsByUser(userId),
-    repository.getSkillEvidenceByUser(userId),
-    repository.getTaskSkillLinksByUser(userId),
-  ]);
+  const [skillResult,taskSkillLinkResult]=await Promise.all([repository.getActiveSkillsByUser(userId),repository.getTaskSkillLinksByUser(userId)]);
+  if(!skillResult.ok||!taskSkillLinkResult.ok)throw new Error("Skill-Daten konnten nicht geladen werden.");
 
-  if (!skillResult.ok || !evidenceResult.ok) {
-    return {
-      skills: [],
-      taskSkillLinks: [],
-    };
-  }
-
-  const evidenceBySkillId = new Map<string, RealDataSkillEvidence[]>();
-
-  for (const evidence of evidenceResult.data) {
-    const rows = evidenceBySkillId.get(evidence.skillId) ?? [];
-    rows.push(evidence);
-    evidenceBySkillId.set(evidence.skillId, rows);
-  }
-
+  const projectedSkills = await Promise.all(
+    skillResult.data.map(async (skill) => {
+      const read = await client.rpc("skill_development_read", {
+        p_skill_id: skill.id,
+      });
+      if (read.error || !read.data)
+        throw new Error("Skill-Daten konnten nicht geladen werden.");
+      if(read.data.skill.archived_at||read.data.skill.status==="archived")return null;
+      const recency = skillPracticeReads(
+        read.data.practice,
+        read.data.evidence,
+        read.data.as_of,
+        read.data.timezone,
+      );
+      const projected=realSkillToLifeSkill(mapSkillRowToDomain(read.data.skill),recency.currentEvidence.map(mapSkillEvidenceRowToDomain));
+      const target=read.data.targets.find(t=>t.status==="current"&&!t.archived_at);
+      return {
+        ...projected,
+        currentDevelopmentTarget: target?{id:target.id,title:target.title}:null,
+        lastPracticedAt:
+          recency.latestLinkedTaskCompletionAt ??
+          "Kein gültiger Completion-Zeitpunkt",
+        nextPractice: target?`Fokus: ${target.title}`:"Entwicklungsfokus festlegen",
+        practiceFrequency: `${recency.completed.length} verknüpfte abgeschlossene Tasks`,
+      };
+    }),
+  );
   return {
-    skills: skillResult.data.map((skill) =>
-      realSkillToLifeSkill(skill, evidenceBySkillId.get(skill.id) ?? []),
-    ),
+    skills: projectedSkills.filter((skill):skill is NonNullable<typeof skill>=>skill!==null),
     taskSkillLinks: taskSkillLinkResult.ok ? [...taskSkillLinkResult.data] : [],
   };
 }

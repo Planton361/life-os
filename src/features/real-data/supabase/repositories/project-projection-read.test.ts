@@ -32,6 +32,10 @@ function fakeClient() {
           call.filters.push([key, value]);
           return q;
         },
+        is: (key: string, value: unknown) => {
+          call.filters.push([key, value]);
+          return q;
+        },
         in: (key: string, value: unknown) => {
           call.filters.push([key, value]);
           return q;
@@ -40,7 +44,7 @@ function fakeClient() {
         range: async (start: number, end: number) => {
           const rows = data[table].filter((row) =>
             call.filters.every(([key, v]) =>
-              Array.isArray(v) ? v.includes(row[key]) : row[key] === v,
+              Array.isArray(v) ? v.includes(row[key]) : (row[key] ?? null) === v,
             ),
           );
           return {

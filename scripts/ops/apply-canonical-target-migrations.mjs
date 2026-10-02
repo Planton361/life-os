@@ -33,8 +33,8 @@ async function main() {
   const revokeTemporaryGrants = async () => assertSuccessful(
     await run("docker", ["exec", target.containerName, "psql", "-U", "supabase_admin",
       "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-c",
-      "revoke create on schema public from life_os_project_command, postgres; revoke life_os_project_command from postgres;" ]),
-    "Canonical Target Project command-role final grants",
+      "revoke create on schema public from life_os_project_command, postgres; revoke life_os_project_command from postgres; revoke create on schema public from life_os_skill_command; revoke life_os_skill_command from postgres;" ]),
+    "Canonical Target command-role final grants",
   );
   let temporaryGrantsApplied = false;
 
@@ -43,9 +43,9 @@ async function main() {
       await run("docker", [
         "exec", target.containerName, "psql", "-U", "supabase_admin",
         "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-c",
-        `do $$begin if not exists (select 1 from pg_roles where rolname='life_os_project_command') then create role life_os_project_command nologin nobypassrls; end if; end$$; grant usage on schema auth, extensions to life_os_project_command; grant execute on function extensions.digest(bytea,text) to life_os_project_command; grant execute on function auth.uid() to life_os_project_command; grant usage, create on schema public to postgres; grant usage, create on schema public to life_os_project_command; grant life_os_project_command to postgres;`,
+        `do $$begin if not exists (select 1 from pg_roles where rolname='life_os_project_command') then create role life_os_project_command nologin nobypassrls; end if; end$$; grant usage on schema auth, extensions to life_os_project_command; grant execute on function extensions.digest(bytea,text) to life_os_project_command; grant execute on function auth.uid() to life_os_project_command; grant usage, create on schema public to postgres; grant usage, create on schema public to life_os_project_command; grant life_os_project_command to postgres; do $$begin if not exists(select 1 from pg_roles where rolname='life_os_skill_command') then create role life_os_skill_command nologin nobypassrls;end if;end$$; grant usage on schema auth to life_os_skill_command; grant execute on function auth.uid() to life_os_skill_command; grant usage,create on schema public to life_os_skill_command; grant life_os_skill_command to postgres;`,
       ]),
-      "Canonical Target Project command-role grants",
+      "Canonical Target command-role grants",
     );
     temporaryGrantsApplied = true;
     await assertSuccessful(

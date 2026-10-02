@@ -62,6 +62,7 @@ export async function readProjectProjection(
         .eq("user_id", userId);
       for (const [field, value] of Object.entries(filters))
         q = Array.isArray(value) ? q.in(field, value) : q.eq(field, value);
+      if (table === "skill_evidence") q = q.is("withdrawn_at", null);
       const result = await q.order("id").range(start, start + pageSize - 1);
       if (result.error || result.count === null)
         throw new ProjectionReadError(
