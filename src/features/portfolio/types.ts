@@ -178,7 +178,7 @@ export type PortfolioSkillEditValues = {
 
 export type PortfolioSkillContext = {
   practiceStatus: string;
-  confidence: "low" | "medium" | "high";
+  confidence: "low" | "medium" | "high" | null;
   nextSession: string;
   evidence: string;
   editValues?: PortfolioSkillEditValues;

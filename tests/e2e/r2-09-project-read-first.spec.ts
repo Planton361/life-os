@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
-import type { Database } from "@/types/supabase";
+import type { Database } from "@/features/real-data/supabase/database.types";
 import { signUpTechnicalManualUser } from "./support/local-manual-auth";
 
 test("R2-09 read-first Project: disclosure, edit, artifacts, relations and responsive proof", async ({
@@ -506,22 +506,24 @@ test("R2-09 read-first Project: disclosure, edit, artifacts, relations and respo
       })
     ).error,
   ).toBeNull();
-  const skill = (
+  const createdSkill = (
     await api
-      .from("skills")
-      .insert({
-        user_id: uid,
-        name: "TypeScript",
+      .rpc("skill_development_command", {
+        p_skill_id: null,
+        p_command_id: crypto.randomUUID(),
+        p_operation: "skill.create",
+        p_expected_revision: null,
+        p_payload: { name: "TypeScript" },
       })
-      .select()
-      .single()
-  ).data!;
+      .throwOnError()
+  ).data as { skill_id: string; development_revision: number };
+  expect(createdSkill.development_revision).toBe(0);
   expect(
     (
       await api.from("task_skill_links").insert({
         user_id: uid,
         task_id: tasks[0].id,
-        skill_id: skill.id,
+        skill_id: createdSkill.skill_id,
       })
     ).error,
   ).toBeNull();

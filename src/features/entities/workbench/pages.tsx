@@ -1,3 +1,4 @@
+import { SkillWorkbench, SkillCapture } from "./skill-workbench";
 import { TaskDependencies } from "./task-dependencies";
 import { TaskMilestoneContext, TaskMilestoneManagement } from "./project-work";
 import { ProjectReadView } from "./project-read-view";
@@ -370,6 +371,30 @@ export async function WorkbenchEditor({
       values.targetDate = data.goals
         .find((g) => g.id === id)!
         .target_date?.slice(0, 10);
+  }
+  if (kind === "skill") {
+    if (!id)
+      return (
+        <EntityWorkbenchShell kind="skill" title="Skill erstellen">
+          <div className="mx-auto w-full max-w-[800px]">
+            <SkillCapture areas={data.areas.filter((a) => !a.archived_at)} />
+          </div>
+        </EntityWorkbenchShell>
+      );
+    const auth = await createAuthenticatedSupabaseServerClient();
+    if (!auth.ok)
+      return (
+        <EntityWorkbenchShell kind="skill" title={row?.title ?? "Skill"}>
+          {authMessage}
+        </EntityWorkbenchShell>
+      );
+    const projection = await auth.client.rpc("skill_development_read", {
+      p_skill_id: id,
+    });
+    if (projection.error)
+      throw new Error("Skill-Daten konnten nicht geladen werden.");
+    if (!projection.data) notFound();
+    return <SkillWorkbench read={projection.data} data={data} />;
   }
   if (kind === "goal" && id && row) {
     const outcome = isSqliteProofRuntime()

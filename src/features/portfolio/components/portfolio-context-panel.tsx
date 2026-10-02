@@ -2090,6 +2090,26 @@ export function PortfolioContextPanel({
     );
   }
 
+  if (entity.type === "skill" && profileId === "manual")
+    return (
+      <aside
+        aria-label="Skill-Kontext"
+        className="grid content-start gap-4 p-4"
+      >
+        <h2 className="text-xl font-semibold" id="selected-entity-heading">
+          {entity.title}
+        </h2>
+        <p>{entity.description}</p>
+        <p className="text-sm">
+          {entity.countLabel} · {entity.lastTouched}
+        </p>
+        <ActionLink href={`/skills/${entity.id}`}>Skill öffnen</ActionLink>
+        <p className="text-sm text-[var(--text-muted)]">
+          Entwicklungsfokus, Practice, Evidence und History liegen im
+          Skill-Workbench.
+        </p>
+      </aside>
+    );
   const typeAccent = portfolioTypeAccent[entity.type];
   const area = portfolioAreaMeta[entity.area];
   const status = portfolioStatusMeta[entity.status];
@@ -2239,7 +2259,7 @@ export function PortfolioContextPanel({
               <FieldCard
                 accent="var(--accent-cyan)"
                 label="Confidence"
-                value={entity.skillContext.confidence}
+                value={entity.skillContext.confidence ?? "Nicht bewertet"}
               />
               <FieldCard
                 accent="var(--accent-orange)"

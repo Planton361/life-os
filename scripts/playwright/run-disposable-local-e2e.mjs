@@ -4,7 +4,8 @@ import {
   mkdtemp,
   readFile,
   rm,
-  symlink,
+  cp,
+  copyFile,
   writeFile,
 } from "node:fs/promises";
 import { join, resolve } from "node:path";
@@ -98,15 +99,25 @@ async function main() {
       join(process.cwd(), "supabase", "config.toml"),
       "utf8",
     );
-    const configured = configForDisposableStack(config, projectId, ports, appPort);
+    const configured = configForDisposableStack(
+      config,
+      projectId,
+      ports,
+      appPort,
+    );
     const startupConfig = configured
       .replace(/(\[db\.migrations\][\s\S]*?\benabled\s*=\s*)true/, "$1false")
       .replace(/(\[db\.seed\][\s\S]*?\benabled\s*=\s*)true/, "$1false");
     await writeFile(join(supabaseDir, "config.toml"), startupConfig, "utf8");
-    await symlink(
+    const upgradeProof = process.env.LIFE_OS_PP2_UPGRADE_PROOF === "1";
+    const pp2Migration = "20261002191215_pp2_skill_development.sql";
+    await cp(
       resolve(process.cwd(), "supabase", "migrations"),
       join(supabaseDir, "migrations"),
-      "dir",
+      {
+        recursive: true,
+        filter: (source) => !upgradeProof || !source.endsWith(pp2Migration),
+      },
     );
 
     // Next adds its generated-type paths to the selected tsconfig. Give this
@@ -125,45 +136,127 @@ async function main() {
       root,
     ]);
     if (!start.ok) {
-      const detail = (start.stderr ?? "").split("\n")
-        .filter((line) => /error|failed|cannot|denied|unavailable|invalid/i.test(line))
+      const detail = (start.stderr ?? "")
+        .split("\n")
+        .filter((line) =>
+          /error|failed|cannot|denied|unavailable|invalid/i.test(line),
+        )
         .slice(-2)
-        .map((line) => line.replace(/postgres(?:ql)?:\/\/\S+/gi, "[database-url]")
-          .replace(/(?:password|token|key)\s*[:=]\s*\S+/gi, "[credential]"))
+        .map((line) =>
+          line
+            .replace(/postgres(?:ql)?:\/\/\S+/gi, "[database-url]")
+            .replace(/(?:password|token|key)\s*[:=]\s*\S+/gi, "[credential]"),
+        )
         .join(" | ");
-      throw new Error(`${disposableStartFailureClass(start.stderr)}${detail ? `: ${detail}` : ""}`);
+      throw new Error(
+        `${disposableStartFailureClass(start.stderr)}${detail ? `: ${detail}` : ""}`,
+      );
     }
     // auth is owned by supabase_admin in the local stack. The Project Depth
     // command role needs explicit auth.USAGE before the postgres migration
     // runner can create its non-privileged SECURITY DEFINER entry points.
     await assertSuccessful(
       await run("docker", [
-        "exec", `supabase_db_${projectId}`, "psql", "-U", "supabase_admin",
-        "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-c",
-        `do $$begin if not exists (select 1 from pg_roles where rolname='life_os_project_command') then create role life_os_project_command nologin nobypassrls; end if; end$$; grant usage on schema auth, extensions to life_os_project_command; grant execute on function extensions.digest(bytea,text) to life_os_project_command; grant execute on function auth.uid() to life_os_project_command; grant usage, create on schema public to postgres; grant usage, create on schema public to life_os_project_command; grant life_os_project_command to postgres;`,
+        "exec",
+        `supabase_db_${projectId}`,
+        "psql",
+        "-U",
+        "supabase_admin",
+        "-d",
+        "postgres",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-c",
+        `do $$begin if not exists (select 1 from pg_roles where rolname='life_os_project_command') then create role life_os_project_command nologin nobypassrls; end if; end$$; grant usage on schema auth, extensions to life_os_project_command; grant execute on function extensions.digest(bytea,text) to life_os_project_command; grant execute on function auth.uid() to life_os_project_command; grant usage, create on schema public to postgres; grant usage, create on schema public to life_os_project_command; grant life_os_project_command to postgres; do $$begin if not exists(select 1 from pg_roles where rolname='life_os_skill_command') then create role life_os_skill_command nologin nobypassrls;end if;end$$; grant usage on schema auth to life_os_skill_command; grant execute on function auth.uid() to life_os_skill_command; grant usage,create on schema public to life_os_skill_command; grant life_os_skill_command to postgres;`,
       ]),
       "Disposable Project command-role grants",
     );
     await writeFile(join(supabaseDir, "config.toml"), configured, "utf8");
     const migration = await run("pnpm", [
-      "exec", "supabase", "migration", "up", "--local", "--workdir", root,
+      "exec",
+      "supabase",
+      "migration",
+      "up",
+      "--local",
+      "--workdir",
+      root,
     ]);
     if (!migration.ok) {
-      const detail = (migration.stderr ?? "").split("\n")
-        .filter((line) => /error|failed|cannot|denied|invalid|permission/i.test(line))
+      const detail = (migration.stderr ?? "")
+        .split("\n")
+        .filter((line) =>
+          /error|failed|cannot|denied|invalid|permission/i.test(line),
+        )
         .slice(-3)
-        .map((line) => line.replace(/postgres(?:ql)?:\/\/\S+/gi, "[database-url]")
-          .replace(/(?:password|token|key)\s*[:=]\s*\S+/gi, "[credential]"))
+        .map((line) =>
+          line
+            .replace(/postgres(?:ql)?:\/\/\S+/gi, "[database-url]")
+            .replace(/(?:password|token|key)\s*[:=]\s*\S+/gi, "[credential]"),
+        )
         .join(" | ");
-      const phase = (migration.stdout ?? "").split("\n")
+      const phase = (migration.stdout ?? "")
+        .split("\n")
         .filter((line) => /applying migration|seeding|migration/i.test(line))
-        .slice(-2).join(" | ");
-      throw new Error(`Disposable migration apply failed${phase ? ` (${phase})` : ""}${detail ? `: ${detail}` : ""}`);
+        .slice(-2)
+        .join(" | ");
+      throw new Error(
+        `Disposable migration apply failed${phase ? ` (${phase})` : ""}${detail ? `: ${detail}` : ""}`,
+      );
+    }
+    if (upgradeProof) {
+      await assertSuccessful(
+        await run("docker", [
+          "exec",
+          `supabase_db_${projectId}`,
+          "psql",
+          "-U",
+          "postgres",
+          "-d",
+          "postgres",
+          "-v",
+          "ON_ERROR_STOP=1",
+          "-c",
+          await readFile("tests/supabase/pp2-legacy-before.sql", "utf8"),
+        ]),
+        "PP2 pre-cutover fixture",
+      );
+      await copyFile(
+        join(process.cwd(), "supabase", "migrations", pp2Migration),
+        join(supabaseDir, "migrations", pp2Migration),
+      );
+      const upgrade = await run("pnpm", [
+        "exec",
+        "supabase",
+        "migration",
+        "up",
+        "--local",
+        "--workdir",
+        root,
+      ]);
+      if (!upgrade.ok)
+        throw new Error(
+          `PP2 legacy upgrade failed: ${(upgrade.stderr ?? "")
+            .split("\n")
+            .filter((l) => /ERROR|DETAIL|CONTEXT|Applying migration/.test(l))
+            .slice(-6)
+            .join(" | ")
+            .replace(/postgres(?:ql)?:\/\/\S+/gi, "[database-url]")}`,
+        );
     }
     await assertSuccessful(
-      await run("docker", ["exec", `supabase_db_${projectId}`, "psql", "-U", "supabase_admin",
-        "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-c",
-        "revoke create on schema public from life_os_project_command, postgres; revoke life_os_project_command from postgres;" ]),
+      await run("docker", [
+        "exec",
+        `supabase_db_${projectId}`,
+        "psql",
+        "-U",
+        "supabase_admin",
+        "-d",
+        "postgres",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-c",
+        "revoke create on schema public from life_os_project_command, postgres; revoke life_os_project_command from postgres; revoke create on schema public from life_os_skill_command; revoke life_os_skill_command from postgres;",
+      ]),
       "Disposable Project command-role final grants",
     );
     const status = await run("pnpm", [
@@ -187,6 +280,7 @@ async function main() {
       TMPDIR: root,
       LIFE_OS_E2E_DIST_DIR: distDir,
       LIFE_OS_E2E_PROJECT_ID: projectId,
+      LIFE_OS_E2E_WORKDIR: root,
       LIFE_OS_E2E_RUNTIME: "DISPOSABLE",
       NEXT_PUBLIC_SUPABASE_ANON_KEY: values.ANON_KEY ?? publishableKey,
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: publishableKey,

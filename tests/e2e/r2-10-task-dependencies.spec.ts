@@ -333,7 +333,7 @@ test("Canonical task graph: management, parallel readiness, completion guards an
       ).toBe(true);
       if (surface === "project") {
         await page
-          .getByRole("button", { name: "Weitere Work-Optionen", exact: true })
+          .getByRole("button", { name: "Meilenstein +", exact: true })
           .click();
         await expect(
           page.getByRole("button", {
@@ -347,7 +347,7 @@ test("Canonical task graph: management, parallel readiness, completion guards an
         page.getByRole("button", {
           name:
             surface === "project"
-              ? "Weitere Work-Optionen"
+              ? "Meilenstein +"
               : "Vorgänger verwalten",
           exact: true,
         }),

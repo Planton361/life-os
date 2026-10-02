@@ -32,10 +32,41 @@ test("Project → authenticated Obsidian ZIP: graph, rename, dependencies, owner
     .from("goals")
     .insert(s.goals.map((g) => ({ ...g, user_id: uid })))
     .throwOnError();
-  await api
-    .from("skills")
-    .insert(s.skills.map((g) => ({ ...g, user_id: uid })))
-    .throwOnError();
+  // Create through PP2; server-generated identities replace all dependent fixture ids.
+  const skillCommands = new Map<
+    string,
+    { skill_id: string; development_revision: number }
+  >();
+  for (const skill of s.skills) {
+    const created = (
+      await api
+        .rpc("skill_development_command", {
+          p_skill_id: null,
+          p_command_id: crypto.randomUUID(),
+          p_operation: "skill.create",
+          p_expected_revision: null,
+          p_payload: {
+            name: skill.name,
+            summary: skill.summary,
+            category: skill.category,
+            status: skill.status,
+            area_id: skill.area_id,
+          },
+        })
+        .throwOnError()
+    ).data as { skill_id: string; development_revision: number };
+    expect(created.development_revision).toBe(0);
+    skillCommands.set(skill.id, created);
+  }
+  s.taskSkills = s.taskSkills.map((link) => ({
+    ...link,
+    skill_id: skillCommands.get(link.skill_id)!.skill_id,
+  }));
+  s.relations = s.relations.map((link) =>
+    link.target_type === "skill"
+      ? { ...link, target_id: skillCommands.get(link.target_id)!.skill_id }
+      : link,
+  );
   await api
     .from("resources")
     .insert(s.resources.map((g) => ({ ...g, user_id: uid })))
@@ -64,10 +95,36 @@ test("Project → authenticated Obsidian ZIP: graph, rename, dependencies, owner
     .from("resource_relations")
     .insert(s.relations.map((g) => ({ ...g, user_id: uid })))
     .throwOnError();
-  await api
-    .from("skill_evidence")
-    .insert(s.evidence.map((g) => ({ ...g, user_id: uid })))
-    .throwOnError();
+  for (const evidence of s.evidence) {
+    const aggregate = skillCommands.get(evidence.skill_id)!;
+    const captured = (
+      await api
+        .rpc("skill_development_command", {
+          p_skill_id: aggregate.skill_id,
+          p_command_id: crypto.randomUUID(),
+          p_operation: "evidence.create",
+          p_expected_revision: aggregate.development_revision,
+          p_payload: {
+            source_type: evidence.source_type,
+            source_id: evidence.source_id,
+            title: evidence.title,
+            note: evidence.note,
+            evidence_date: evidence.evidence_date,
+          },
+        })
+        .throwOnError()
+    ).data as {
+      skill_id: string;
+      evidence_id: string;
+      development_revision: number;
+    };
+    expect(captured.skill_id).toBe(aggregate.skill_id);
+    expect(captured.development_revision).toBe(
+      aggregate.development_revision + 1,
+    );
+    skillCommands.set(evidence.skill_id, captured);
+    evidence.id = captured.evidence_id;
+  }
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => {

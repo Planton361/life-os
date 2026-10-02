@@ -1,0 +1,4 @@
+-- Only the disposable upgrade-proof database, before the PP2 migration.
+insert into auth.users(id,aud,role,email,raw_app_meta_data,raw_user_meta_data)values('94000000-0000-4000-8000-000000000099','authenticated','authenticated','pp2-legacy@example.test','{}','{}');
+insert into public.skills(id,user_id,name,created_at,updated_at)values('94000000-0000-4000-8000-000000000098','94000000-0000-4000-8000-000000000099','Legacy Skill','2025-01-01','2025-02-01');
+insert into public.skill_evidence(id,user_id,skill_id,title,note,evidence_date,weight,source_type,source_id,created_at,updated_at)values('94000000-0000-4000-8000-000000000097','94000000-0000-4000-8000-000000000099','94000000-0000-4000-8000-000000000098','Original evidence','Original note','2025-01-15',3,'task','94000000-0000-4000-8000-000000000096','2025-01-16','2025-02-01');
