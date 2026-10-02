@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { expect, test, type Page } from "@playwright/test";
-import type { Database } from "@/types/supabase";
+import type { Database } from "@/features/real-data/supabase/database.types";
 import { signUpTechnicalManualUser } from "./support/local-manual-auth";
 
 function client() {
@@ -367,18 +367,28 @@ test("R2-02 all routes, real targets, search/clear/filter/selection and no dupli
     table: "projects" | "goals" | "skills",
     title: string,
   ) => {
-    const result =
-      table === "skills"
-        ? await api
-            .from("skills")
-            .insert({ user_id: user, name: title })
-            .select("id")
-            .single()
-        : await api
-            .from(table)
-            .insert({ user_id: user, title })
-            .select("id")
-            .single();
+    if (table === "skills") {
+      const result = await api
+        .rpc("skill_development_command", {
+          p_skill_id: null,
+          p_command_id: crypto.randomUUID(),
+          p_operation: "skill.create",
+          p_expected_revision: null,
+          p_payload: { name: title },
+        })
+        .throwOnError();
+      const created = result.data as {
+        skill_id: string;
+        development_revision: number;
+      };
+      expect(created.development_revision).toBe(0);
+      return created.skill_id;
+    }
+    const result = await api
+      .from(table)
+      .insert({ user_id: user, title })
+      .select("id")
+      .single();
     expect(result.error).toBeNull();
     return result.data!.id;
   };
