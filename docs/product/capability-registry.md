@@ -1707,7 +1707,7 @@ explicit support relations explain planning without selecting or ranking work.
 
 | Affected control / boundary | Current evidence |
 |---|---|
-| Every fixture Queue row; scheduling selection; Planung schließen | Actual clicks in `tests/e2e/issue-97-weekly-context.spec.ts`; READY membership implicit; compact orientation remains inside row bounds |
+| Every fixture Queue row; scheduling selection; Planung schließen | Actual clicks in `tests/e2e/issue-97-weekly-context.spec.ts`; READY membership implicit; compact orientation remains inside row bounds; absent Deadline/Recurrence/Source metadata and genuine empty orientation render no row; context-read failure shows `Kontext derzeit nicht verfügbar` (`planner-queue-row-details.test.ts`, three rendering regressions) |
 | Project, both Goal paths, both Skills and real predecessor links | Each navigated to the canonical owned detail; direct/via/redundant/conflict and Task/Project Goal-Etappe support asserted in the shared Zusammenhang region |
 | Task → Week, URL selection, queue/scheduled/deep-linked Inspector, close/Escape | Real Task Detail handoff with task/date/view=week, reload, Enter selection and Escape focus return; ineligible deep links expose read-only execution context without entering the Queue |
 | Queue Schedule; Inspector Reschedule/Unschedule, earlier/later, duration ±15; source link | Authenticated existing actions, visible feedback, persisted readback/reload, Today/Dashboard projections; `r2-03-calendar-temporal.spec.ts` inventories/clicks these controls |

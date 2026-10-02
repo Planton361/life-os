@@ -241,6 +241,7 @@ export type PlannerQueueSkillContext = {
 };
 
 export type PlannerQueueItem = {
+  contextUnavailable?: boolean;
   orientation?: string;
   accent?: string;
   area: string;

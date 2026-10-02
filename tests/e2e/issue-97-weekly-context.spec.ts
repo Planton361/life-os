@@ -327,6 +327,10 @@ test("PP3 canonical context, READY queue, two owners, no-write reads, Week hando
       .getByRole("button", { name: new RegExp(mixed.title) })
       .locator("[data-queue-orientation]"),
   ).toContainText("+4");
+  await expect(queue).not.toContainText("No deadline");
+  const plainRow = queue.getByRole("button", { name: new RegExp(plain.title) });
+  await expect(plainRow.locator("[data-queue-orientation]")).toHaveCount(0);
+  await expect(plainRow.locator("[data-queue-planning-metadata]")).toHaveCount(0);
   await expect(relation).toContainText("Abweichende Goal-Pfade");
   for (const text of [
     project.title,

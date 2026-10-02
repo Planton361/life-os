@@ -2,10 +2,8 @@
 
 import { useToast } from "@/components/feedback/toast-provider";
 import { WeeklyTaskContextPanel } from "./weekly-task-context";
-import {
-  weeklyOrientation,
-  type WeeklyTaskContext,
-} from "../weekly-task-context";
+import type { WeeklyTaskContext } from "../weekly-task-context";
+import { PlannerQueueRowDetails } from "./planner-queue-row-details";
 import type { ContentStateMeta } from "@/features/content-state";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -1183,36 +1181,10 @@ function PlanningQueue({
                   {task.rankingReason} · {task.priority} ·{" "}
                   {durationLabel(task.durationMinutes)}
                 </p>
-                <p className="truncate text-[10px] leading-4 text-[var(--text-muted)]">
-                  {task.dueDate ? `Deadline ${task.dueDate}` : "No deadline"}
-                  {task.isRecurringOccurrence ? " · Recurring" : ""}
-                  {sourceTypeLabel(task.scheduleSourceType)
-                    ? ` · ${sourceTypeLabel(task.scheduleSourceType)}`
-                    : ""}
-                </p>
-                <p
-                  data-queue-orientation
-                  className="truncate text-[10px] leading-4 text-[var(--text-muted)]"
-                >
-                  {task.orientation ??
-                    weeklyOrientation({
-                      project: task.project
-                        ? { ...task.project, result: null }
-                        : undefined,
-                      goals: task.goal
-                        ? [
-                            {
-                              ...task.goal,
-                              description: null,
-                              why: null,
-                              support: [],
-                              path: "direct",
-                            },
-                          ]
-                        : [],
-                      skills: [...task.skills],
-                    })}
-                </p>
+                <PlannerQueueRowDetails
+                  task={task}
+                  sourceLabel={sourceTypeLabel(task.scheduleSourceType)}
+                />
               </div>
             </div>
           </button>

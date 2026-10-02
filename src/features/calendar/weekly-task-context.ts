@@ -184,10 +184,18 @@ export function enrichPlannerQueue(
   return queue.map((item) => {
     const context = contexts[item.id];
     if (!context || context.unavailable)
-      return { ...item, project: undefined, goal: undefined, skills: [] };
+      return {
+        ...item,
+        contextUnavailable: true,
+        orientation: undefined,
+        project: undefined,
+        goal: undefined,
+        skills: [],
+      };
     const goal = context.goals[0];
     return {
       ...item,
+      contextUnavailable: false,
       orientation: weeklyOrientation(context),
       project: context.project,
       goal: goal
