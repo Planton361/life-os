@@ -155,6 +155,7 @@ export function buildPlannerQueue(input: PlannerQueueInput): PlannerQueueItem[] 
   return input.tasks
     .filter(isOpenTask)
     .filter((task) => !task.startTime)
+    .filter((task) => task.dependencyAvailability === "READY")
     .map((task) => {
       const project = task.projectId ? projectById.get(task.projectId) : undefined;
       const ranking = rankingForTask(task, project, input);

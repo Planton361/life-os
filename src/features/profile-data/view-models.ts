@@ -1,3 +1,5 @@
+import { readWeeklyPlanningContext } from "@/features/real-data/supabase/repositories/weekly-planning-read";
+import { enrichPlannerQueue, type WeeklyTaskContext } from "@/features/calendar/weekly-task-context";
 import { mapSkillRowToDomain, mapSkillEvidenceRowToDomain } from "@/features/real-data/supabase/mappers/skill.mapper";
 import { skillPracticeReads } from "@/features/real-data/domain/skill-development";
 import { readTaskDependencyGraph } from "@/features/real-data/supabase/repositories/task-dependency-repository";
@@ -2610,6 +2612,7 @@ async function getManualInboxProfileData(): Promise<{
 async function getManualTasksFromSupabase(
   client: SupabaseClientLike,
   userId: string,
+  skipDependencies = false,
 ): Promise<{
   tasks: LifeTask[];
   unavailableReason?: string;
@@ -2625,6 +2628,16 @@ async function getManualTasksFromSupabase(
     return {
       tasks: [],
       unavailableReason: "Tasks konnten nicht aus Supabase geladen werden.",
+    };
+  }
+
+  // Calendar reads its dependency graph together with weekly context. Preserve
+  // temporal Tasks on a graph failure so the Inspector can report it honestly.
+  if (skipDependencies) {
+    return {
+      tasks: result.data
+        .map(realTaskToLifeTask)
+        .filter((task): task is LifeTask => Boolean(task)),
     };
   }
 
@@ -3130,7 +3143,7 @@ function realMealToDashboardSlot(
   };
 }
 
-async function getManualDashboardReadData(): Promise<{
+async function getManualDashboardReadData(calendarRead = false): Promise<{
   profile: ManualProfileData;
   sources: DashboardReadSources;
 }> {
@@ -3170,7 +3183,7 @@ async function getManualDashboardReadData(): Promise<{
     scheduleLinkResult,
     trainingSnapshot,
   ] = await Promise.all([
-    getManualTasksFromSupabase(auth.client, userId),
+    getManualTasksFromSupabase(auth.client, userId, calendarRead),
     createSupabaseInboxRepository(auth.client).getInboxItemsByUser(
       userId,
       userId,
@@ -4751,15 +4764,57 @@ export async function getCalendarViewModel(): Promise<CalendarViewModel> {
   }
 
   if (profileId === "manual") {
-    const dashboard = await getManualDashboardReadData();
+    const dashboard = await getManualDashboardReadData(true);
+    const auth = await createAuthenticatedSupabaseServerClient();
+    const weekly = auth.ok
+      ? await readWeeklyPlanningContext(auth.client, auth.user.id).catch(() => ({
+          contexts: {},
+          dependencyUnavailable: true,
+        }))
+      : { contexts: {}, dependencyUnavailable: false };
+    const contexts: Record<string, WeeklyTaskContext> = { ...weekly.contexts };
+    // Preserve visible temporal Tasks if the context read itself fails. Their
+    // execution is unknown, never inferred from scheduling or domain context.
+    for (const task of dashboard.profile.tasks) {
+      contexts[task.id] ??= {
+        id: task.id,
+        title: task.title,
+        execution: "unknown",
+        blockers: [],
+        unavailable: true,
+        goalConflict: false,
+        goals: [],
+        skills: [],
+      };
+    }
+    const calendarProfile = {
+      ...dashboard.profile,
+      tasks: dashboard.profile.tasks.map((task) => ({
+        ...task,
+        dependencyAvailability:
+          contexts[task.id]?.execution === "READY"
+            ? "READY" as const
+            : contexts[task.id]?.execution === "BLOCKED"
+              ? "BLOCKED" as const
+              : undefined,
+      })),
+    };
     const model = buildProfileCalendarViewModel(
-      dashboard.profile,
+      calendarProfile,
       profileId,
       isSqliteProofRuntime()
         ? undefined
         : await getManualPlannerRelationLabelLookups(profileId, dashboard.profile.tasks),
       dashboard.sources,
     );
+    model.taskContexts = contexts;
+    model.dependencyUnavailable = weekly.dependencyUnavailable ||
+      Object.values(contexts).some((c) => c.execution === "unknown");
+    model.planningUnavailableReason = !auth.ok
+      ? "Manual benötigt eine authentifizierte Supabase-Session."
+      : undefined;
+    model.schedulableTasks = enrichPlannerQueue(model.schedulableTasks, contexts);
+    model.plannerQueueTasks = model.schedulableTasks;
     const label = localTimeLabel(new Date(), dashboard.sources.habits?.settings.timezone ?? appTimeZone);
     const minutes = minutesFromTime(label) ?? 0;
     return { ...model, currentTime: { label, top: Math.max(0, Math.min(100, (minutes - CALENDAR_DAY_START_MINUTES) / (CALENDAR_DAY_END_MINUTES - CALENDAR_DAY_START_MINUTES) * 100)) } };

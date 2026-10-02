@@ -85,6 +85,7 @@ export function CalendarPageHeader({
               .filter((view) => view.label !== "Year")
               .map((view, index) => (
               <button
+                data-calendar-view={view.label.toLowerCase()}
                 aria-pressed={view.active ? "true" : "false"}
                 className={cn(
                   "min-h-6 flex-1 rounded-full px-3 text-[10px] font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",

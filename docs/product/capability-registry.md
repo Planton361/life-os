@@ -1676,7 +1676,7 @@ STATUS is PENDING.
 
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
-| Planner Queue | `CONNECTED` | C2-01 server read model contains exactly open, unscheduled canonical Task Occurrences, ranked once by overdue/deadline/recurring/Project/direct-Goal/backlog signals with compact context and reason; C2-04 retains this deterministic path through keyboard scheduling and reload | canonical filters remain a later read-surface depth |
+| Planner Queue | `CONNECTED` | Issue #97 applies canonical READY-only Dependency eligibility after existing lifecycle/unscheduled filters, before the unchanged overdue/deadline/recurring/Project/direct-Goal/backlog ranking, tie-breakers and limit. Missing/failed truth fails closed with visible feedback. Enrichment maps the resulting Queue and changes zero memberships/positions; focused unit/read-model and authenticated browser proofs below. | maintain; filters remain separate depth |
 | Schedule task | `CONNECTED` | Week Queue/Inspector runs the authenticated, source-aware Task schedule action; C2-04 confirms keyboard execution, Calendar/Today/Dashboard projection and reload. Issue #62 opens an unscheduled Task in the Week Planner Queue with reload-stable `task=<id>&date=<day>&view=week`; explicit confirmation creates the Time Block, Calendar remains its owner, and the real merged Task→Week handoff was USER ACCEPTED on 2026-09-29 (`tests/e2e/issue-58-task-read-first-loop.spec.ts`) | maintain |
 | Move earlier/later | `CONNECTED` | Inspector move controls and C2-02 cross-day pointer movement call the canonical reschedule action and survive reload | maintain |
 | Duration change | `CONNECTED` | Inspector duration controls and the C2-02 bottom resize handle use the same canonical duration update and survive reload | maintain |
@@ -1688,7 +1688,7 @@ STATUS is PENDING.
 | Calendar viewport bounds | `CONNECTED` | R2-03 responsive Week grid shows 18 equal hour intervals from 06:00 to the 00:00 boundary without body or Timegrid vertical scrolling at all three desktop proof sizes; R2-03 USER ACCEPTED. Current Manual control inventory in `tests/e2e/r2-03-calendar-temporal.spec.ts` exercises Day/Week/Month, Today, period navigation, Task selection, free-slot selection, Inspector close/Escape, every Time Settings control, Task navigation, Queue scheduling and unscheduling, plus 3840×2160, 1920×1080 and 390×844 bounds and console checks | maintain |
 | Deadline / Project / Goal date projection | `CONNECTED` | C2-03/C2-04 keep scheduled time distinct from Task deadline, Project deadline and Goal target; open overdue Tasks are read-time marked while completed Tasks are not | canonical Project/Goal milestones remain separately unmodeled |
 | Calendar filters | `NOT_STARTED` | no active Manual filter claim; legacy visual scope controls are not exposed as Calendar planning filters | implement only canonical Project/Goal/Skill/Priority filters when needed |
-| Project/Goal/Skill queue context | `CONNECTED` | C2-01 queue reads existing C1 Project, direct/via Project Goal and Task↔Skill relations without copying Task data | add filters only as a separate read-surface depth |
+| Project/Goal/Skill queue context | `CONNECTED` | Issue #97 adds one compact Project → Goal → explicit Skill orientation plus +N, and a shared Week Inspector Zusammenhang: Project result, assigned/current Etappen, explicit Goal paths/support/current focus, all task_skill_links Skills and optional Current Development Target. Same-user active canonical reads, no writes or inferred Task→Target / Project↔Skill relation. | maintain explicit orientation; final Calendar USER ACCEPTANCE remains separate |
 | Recurring/routine scheduling | `CONNECTED` | user-scoped template list/create/edit/pause/reactivate, explicit date/range generation and authenticated reload proof; no background writes | maintain |
 | Meal schedule source | `CONNECTED` | canonical Target Runtime keeps the source-aware Meal↔Task schedule/completion boundary; Z1 Direct-Data-API proof atomically rejects authenticated direct schedule/reschedule/unschedule writes while canonical RPCs remain reload-stable | maintain the atomic source boundary |
 | Workout schedule source | `CONNECTED` | canonical Target Runtime keeps Task-only scheduling and canonical Running/Strength completion evidence; Z1 Direct-Data-API proof rejects authenticated lifecycle bypasses, while C2-02/C2-04 retain the Calendar reload proofs | retain no-duplicate and completion-sync regressions |
@@ -1696,6 +1696,50 @@ STATUS is PENDING.
 | Free calendar events | `NOT_STARTED` | none | separate model decision |
 | Drag/drop/resize | `CONNECTED` | C2-02 dependency-free pointer layer maps Queue drop, cross-day move and duration resize to existing source-aware schedule/reschedule actions; loaded conflict confirmation, cancel/invalid-drop rollback, reload and Inspector fallback are focused-browser-proven | no keyboard DnD required because the full Inspector scheduling flow remains equivalent; canonical filters remain separate |
 | Schedule history/audit | `NOT_STARTED` | none | later lifecycle/audit model |
+
+## PP3 higher-order weekly context — Issue #97
+
+The accepted [#96 target and amendment](https://github.com/Planton361/life-os/issues/96)
+are implemented by [#97](https://github.com/Planton361/life-os/issues/97).
+Calendar retains Time Block ownership and the accepted #60/#62 Week handoff.
+Dependencies alone determine execution readiness; current domain focuses and
+explicit support relations explain planning without selecting or ranking work.
+
+| Affected control / boundary | Current evidence |
+|---|---|
+| Every fixture Queue row; scheduling selection; Planung schließen | Actual clicks in `tests/e2e/issue-97-weekly-context.spec.ts`; READY membership implicit; compact orientation remains inside row bounds |
+| Project, both Goal paths, both Skills and real predecessor links | Each navigated to the canonical owned detail; direct/via/redundant/conflict and Task/Project Goal-Etappe support asserted in the shared Zusammenhang region |
+| Task → Week, URL selection, queue/scheduled/deep-linked Inspector, close/Escape | Real Task Detail handoff with task/date/view=week, reload, Enter selection and Escape focus return; ineligible deep links expose read-only execution context without entering the Queue |
+| Queue Schedule; Inspector Reschedule/Unschedule, earlier/later, duration ±15; source link | Authenticated existing actions, visible feedback, persisted readback/reload, Today/Dashboard projections; `r2-03-calendar-temporal.spec.ts` inventories/clicks these controls |
+| Day/Week/Month, Today, previous/next period, free-slot selection, Inspector close | Current direct interaction and responsive bounds proof in the retained R2-03 test |
+| Loaded conflict Confirm/Cancel, pointer move/resize, source-owned Meal scheduling | `z1-calendar-conflict-gate.spec.ts` retains canonical mutations and cancellation/reload; fixtures updated to accepted Task capture/authenticated Meal fixtures, the 18-hour axis and local-date / Today event scope |
+| READY/BLOCKED/unknown, READY-subset ranking/ties, enrichment identity | `planner-queue.test.ts`, `weekly-task-context.test.ts`, `weekly-planning-read.test.ts`; missing graph/task and failed reads fail closed; unavailable execution/context/target is distinct from Empty |
+| Two owners / no writes / multiple Skills with 0 or 1 Current Target | Real local authenticated RLS reads plus unchanged canonical-table snapshots/Skill revision; repository tests also prove owner-filtered pagination and read-only RPC usage |
+
+V5 review: Was passt zu V5: dominant temporal grid, quiet existing tokens and
+explicit orientation/execution labels. Was verletzt V5: no remaining material
+violation in the affected slice. Konkrete Fixes: content-sized Queue rows keep
+the orientation line inside their bounds; long text wraps in the bounded rail.
+Acceptance Decision: `PASS` for implementation/design review.
+
+Synthetic full-surface captures: `docs/qa/weekly-planning-context/`, at
+3840×2160, 1920×1080 and 390×844, including long unbroken titles/results and
+scheduled context. V5 Design-Taste PASS: temporal grid remains dominant; one
+quiet shared context region uses existing tokens/dividers; explicit execution
+text stays separate; rows have no Milestone/Target prose or repeated READY
+chrome. Desktop rails remain bounded and scrollable, mobile retains document
+flow without page overflow; no new overlap or unjustified whitespace. Focus,
+Escape, console and hydration guards are asserted by the browser proof.
+
+Focused validation: 46 unit/read-model tests; both PP3 browser cases, retained
+R2-03 Calendar controls and Z1 Task/Meal conflict regression pass. Diff check,
+typecheck, lint and production build pass.
+
+No migration, new RPC/grants, Security/Dependency/ranking semantics, PP4,
+R2-13, S-RELATION or remote DB work. Local DB lint exits successfully with
+18 existing Project Depth warnings (volatility and text→uuid[] cast); local
+security advisors report no issues. This is PP3 implementation evidence for
+review, not final Calendar/product USER ACCEPTANCE or closure.
 
 ## R2-03 Calendar temporal correction — 2026-09-06
 

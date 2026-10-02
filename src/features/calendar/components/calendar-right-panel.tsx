@@ -1,5 +1,11 @@
 "use client";
 
+import { useToast } from "@/components/feedback/toast-provider";
+import { WeeklyTaskContextPanel } from "./weekly-task-context";
+import {
+  weeklyOrientation,
+  type WeeklyTaskContext,
+} from "../weekly-task-context";
 import type { ContentStateMeta } from "@/features/content-state";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -203,13 +209,17 @@ function RescheduleTaskForm({
   variant?: "primary" | "secondary";
 }>) {
   const router = useRouter();
+  const { notify } = useToast();
   const [overrideSignature, setOverrideSignature] = useState<string | null>(
     null,
   );
   const [state, formAction, pending] = useActionState(
     async (_previous: QueueSchedulingState, formData: FormData) => {
       const result = await rescheduleTaskAction(formData);
-      if (result.status === "success") router.refresh();
+      if (result.status === "success") {
+        notify(result.message);
+        router.refresh();
+      }
       return result;
     },
     initialQueueSchedulingState,
@@ -333,10 +343,14 @@ function RescheduleTaskForm({
 
 function UnscheduleTaskForm({ taskId }: Readonly<{ taskId: string }>) {
   const router = useRouter();
+  const { notify } = useToast();
   const [state, formAction, pending] = useActionState(
     async (_previous: QueueSchedulingState, formData: FormData) => {
       const result = await unscheduleTaskAction(formData);
-      if (result.status === "success") router.refresh();
+      if (result.status === "success") {
+        notify(result.message);
+        router.refresh();
+      }
       return result;
     },
     initialQueueSchedulingState,
@@ -459,7 +473,7 @@ function SelectedContext({
           Selected context
         </p>
         <h3
-          className="mt-1 text-[15px] font-semibold leading-5 text-[var(--text-primary)]"
+          className="mt-1 text-[15px] font-semibold leading-5 text-[var(--text-primary)] [overflow-wrap:anywhere]"
           id="calendar-selected-context-heading"
         >
           {block.title}
@@ -523,7 +537,7 @@ function SelectedContext({
           Empty slot
         </p>
         <h3
-          className="mt-1 text-[15px] font-semibold leading-5 text-[var(--text-primary)]"
+          className="mt-1 text-[15px] font-semibold leading-5 text-[var(--text-primary)] [overflow-wrap:anywhere]"
           id="calendar-slot-context-heading"
         >
           {selectedSlot.dayLabel} · {selectedSlot.startTime}-
@@ -546,7 +560,7 @@ function SelectedContext({
         Day context
       </p>
       <h3
-        className="mt-1 text-[15px] font-semibold leading-5 text-[var(--text-primary)]"
+        className="mt-1 text-[15px] font-semibold leading-5 text-[var(--text-primary)] [overflow-wrap:anywhere]"
         id="calendar-day-context-heading"
       >
         {selectedDay?.fullLabel ?? "No specific day selected"}
@@ -871,6 +885,7 @@ function QueueTaskSchedule({
   timedBlocks: readonly CalendarTimedBlockViewModel[];
 }>) {
   const router = useRouter();
+  const { notify } = useToast();
   const [plannedDate, setPlannedDate] = useState(
     task.plannedDate ?? selectedDay?.date ?? "",
   );
@@ -882,7 +897,10 @@ function QueueTaskSchedule({
   const [state, formAction, pending] = useActionState(
     async (_previous: QueueSchedulingState, formData: FormData) => {
       const result = await scheduleTaskForTodayAction(formData);
-      if (result.status === "success") router.refresh();
+      if (result.status === "success") {
+        notify(result.message);
+        router.refresh();
+      }
       return result;
     },
     initialQueueSchedulingState,
@@ -933,16 +951,6 @@ function QueueTaskSchedule({
       </div>
 
       <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] text-[var(--text-muted)]">
-        {task.project ? <span>Project · {task.project.title}</span> : null}
-        {task.goal ? (
-          <span>
-            Goal · {task.goal.title} ·{" "}
-            {task.goal.alignment === "via_project" ? "via Project" : "Direct"}
-          </span>
-        ) : null}
-        {task.skills.slice(0, 2).map((skill) => (
-          <span key={skill.id}>Skill · {skill.title}</span>
-        ))}
         {task.isRecurringOccurrence ? <span>Recurring occurrence</span> : null}
         {sourceLabel ? <span>{sourceLabel}</span> : null}
       </div>
@@ -1072,6 +1080,8 @@ function QueueTaskSchedule({
 }
 
 function PlanningQueue({
+  dependencyUnavailable,
+  planningUnavailableReason,
   contentState,
   onQueuePointerStart,
   panel,
@@ -1081,6 +1091,8 @@ function PlanningQueue({
   selectedTaskId,
   tasks,
 }: Readonly<{
+  dependencyUnavailable?: boolean;
+  planningUnavailableReason?: string;
   contentState: ContentStateMeta;
   onQueuePointerStart?: (
     task: SchedulableTaskViewModel,
@@ -1119,9 +1131,20 @@ function PlanningQueue({
       </div>
 
       <div className="calendar-queue-items mt-2 grid min-h-0 content-start gap-2 overflow-y-auto">
-        {tasks.length === 0 ? (
+        {dependencyUnavailable || planningUnavailableReason ? (
+          <p
+            role="alert"
+            className="p-2 text-[11px] text-[var(--text-secondary)]"
+          >
+            {planningUnavailableReason ??
+              "Ausführbarkeit derzeit nicht verfügbar"}
+          </p>
+        ) : null}
+        {tasks.length === 0 &&
+        !dependencyUnavailable &&
+        !planningUnavailableReason ? (
           <p className="rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(18,28,43,.42)] px-3 py-2 text-[11px] text-[var(--text-muted)]">
-            Keine offenen Tasks ohne Zeitblock.
+            Keine ausführbaren Tasks ohne Zeitblock.
           </p>
         ) : null}
         {tasks.map((task) => (
@@ -1129,7 +1152,7 @@ function PlanningQueue({
             aria-pressed={selectedTaskId === task.id}
             id={`calendar-focus-queue-${task.id}`}
             className={cn(
-              "rounded-[10px] border bg-[rgba(18,28,43,.44)] p-2 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
+              "h-fit min-w-0 rounded-[10px] border bg-[rgba(18,28,43,.44)] p-2 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
               selectedTaskId === task.id
                 ? "border-[color-mix(in_srgb,var(--accent)_60%,transparent)] ring-1 ring-[color-mix(in_srgb,var(--accent)_30%,transparent)]"
                 : "border-[color-mix(in_srgb,var(--accent)_24%,transparent)] hover:border-[color-mix(in_srgb,var(--accent)_44%,transparent)]",
@@ -1162,19 +1185,33 @@ function PlanningQueue({
                 </p>
                 <p className="truncate text-[10px] leading-4 text-[var(--text-muted)]">
                   {task.dueDate ? `Deadline ${task.dueDate}` : "No deadline"}
-                  {task.project ? ` · Project ${task.project.title}` : ""}
-                </p>
-                <p className="truncate text-[10px] leading-4 text-[var(--text-faint)]">
-                  {task.goal
-                    ? `Goal ${task.goal.title} · ${task.goal.alignment === "via_project" ? "via Project" : "Direct"}`
-                    : ""}
-                  {task.skills.length > 0
-                    ? ` · Skill ${task.skills[0]?.title}`
-                    : ""}
                   {task.isRecurringOccurrence ? " · Recurring" : ""}
                   {sourceTypeLabel(task.scheduleSourceType)
                     ? ` · ${sourceTypeLabel(task.scheduleSourceType)}`
                     : ""}
+                </p>
+                <p
+                  data-queue-orientation
+                  className="truncate text-[10px] leading-4 text-[var(--text-muted)]"
+                >
+                  {task.orientation ??
+                    weeklyOrientation({
+                      project: task.project
+                        ? { ...task.project, result: null }
+                        : undefined,
+                      goals: task.goal
+                        ? [
+                            {
+                              ...task.goal,
+                              description: null,
+                              why: null,
+                              support: [],
+                              path: "direct",
+                            },
+                          ]
+                        : [],
+                      skills: [...task.skills],
+                    })}
                 </p>
               </div>
             </div>
@@ -1186,6 +1223,9 @@ function PlanningQueue({
 }
 
 export function CalendarRightPanel({
+  selectedTaskContext,
+  dependencyUnavailable,
+  planningUnavailableReason,
   onClose,
   onDuplicateBlock,
   onMoveLater,
@@ -1203,6 +1243,9 @@ export function CalendarRightPanel({
   scheduledTasks,
   tasks,
 }: Readonly<{
+  selectedTaskContext?: WeeklyTaskContext;
+  dependencyUnavailable?: boolean;
+  planningUnavailableReason?: string;
   onClose: () => void;
   onDuplicateBlock: (blockId: string) => void;
   onMoveLater: (blockId: string) => void;
@@ -1273,6 +1316,9 @@ export function CalendarRightPanel({
               selectedDay={selectedDay}
               selectedSlot={selectedSlot}
             />
+            {selectedTaskContext ? (
+              <WeeklyTaskContextPanel context={selectedTaskContext} />
+            ) : null}
             <TimeSettings
               block={selectedBlock}
               key={selectedBlock?.id}
@@ -1287,6 +1333,21 @@ export function CalendarRightPanel({
           </div>
         </section>
       ) : null}
+      {!selectedBlock && selectedTaskContext && !selectedQueueTask ? (
+        <div className="calendar-queue-schedule min-h-0 overflow-y-auto p-2">
+          <h3 className="mb-2 text-sm font-semibold [overflow-wrap:anywhere]">
+            {selectedTaskContext.title}
+          </h3>
+          <WeeklyTaskContextPanel context={selectedTaskContext} />
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-h-8 px-3 py-2 text-xs focus-visible:outline"
+          >
+            Inspector schließen
+          </button>
+        </div>
+      ) : null}
       {selectedQueueTask && profileId === "manual" ? (
         <div className="calendar-queue-schedule min-h-0 overflow-y-auto">
           <QueueTaskSchedule
@@ -1295,6 +1356,9 @@ export function CalendarRightPanel({
             task={selectedQueueTask}
             timedBlocks={scheduledTasks}
           />
+          {selectedTaskContext ? (
+            <WeeklyTaskContextPanel context={selectedTaskContext} />
+          ) : null}
           <button
             type="button"
             onClick={onClose}
@@ -1305,6 +1369,8 @@ export function CalendarRightPanel({
         </div>
       ) : null}
       <PlanningQueue
+        dependencyUnavailable={dependencyUnavailable}
+        planningUnavailableReason={planningUnavailableReason}
         contentState={planningQueueContentState}
         onQueuePointerStart={onQueuePointerStart}
         panel={panel}
