@@ -43,6 +43,48 @@ async function proof(page: Page, info: TestInfo, name: string) {
     [390, 844],
   ]) {
     await page.setViewportSize({ width, height });
+    const skill = page.locator("[data-skill-development]");
+    if (await skill.count()) {
+      await expect(skill.locator("[data-skill-information] form")).toHaveCount(
+        0,
+      );
+      const workbench = skill.locator("[data-skill-workbench]");
+      const orientation = workbench.locator("[data-skill-information]").first();
+      expect(
+        await workbench
+          .locator(
+            "a:visible, button:visible, summary:visible, input:visible, select:visible, textarea:visible",
+          )
+          .first()
+          .evaluate((el) => Boolean(el.closest("[data-skill-primary]"))),
+      ).toBe(true);
+
+      const actions = skill.getByRole("complementary", {
+        name: "Skillaktionen",
+        exact: true,
+      });
+      const left = (await orientation.boundingBox())!;
+      const right = (await actions.boundingBox())!;
+      if (width >= 1280) {
+        expect(right.x).toBeGreaterThanOrEqual(left.x + left.width);
+        expect(Math.abs(right.y - left.y)).toBeLessThan(2);
+      } else {
+        expect(right.y).toBeGreaterThanOrEqual(left.y + left.height);
+      }
+      for (const row of await skill
+        .locator("[data-skill-columns]:visible")
+        .all()) {
+        const info = await row
+          .locator(":scope > [data-skill-information]")
+          .boundingBox();
+        const action = await row
+          .locator(":scope > [data-skill-actions]")
+          .boundingBox();
+        if (info && action && width >= 1280)
+          expect(action.x).toBeGreaterThanOrEqual(info.x + info.width);
+      }
+    }
+
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
@@ -293,18 +335,29 @@ test("#102 real state matrix, bounded rich workbench, Portfolio, lifecycle and s
   await command("target.current", { target_id: target });
   await page.reload();
   await expect(primary.getByRole("link")).toHaveText("Übungsaufgabe anlegen");
+  const actions = work.getByRole("complementary", {
+    name: "Skillaktionen",
+    exact: true,
+  });
   const path = work.getByRole("region", { name: "Lernweg", exact: true });
   await expect(path).toContainText("Noch keine Lernschritte");
-  await expect(path.getByRole("form")).not.toBeVisible();
-  const addSummary = path
+  await expect(
+    actions.getByRole("form", { name: "Lernschritt hinzufügen", exact: true }),
+  ).not.toBeVisible();
+  const addSummary = actions
     .locator("summary")
     .filter({ hasText: /^Lernschritt hinzufügen$/ });
   await addSummary.focus();
   await addSummary.press("Enter");
-  await path.getByLabel("Titel", { exact: true }).focus();
+  await actions
+    .getByRole("form", { name: "Lernschritt hinzufügen", exact: true })
+    .getByLabel("Titel", { exact: true })
+    .focus();
   await page.keyboard.press("Escape");
   await expect(addSummary).toBeFocused();
-  await expect(path.getByRole("form")).not.toBeVisible();
+  await expect(
+    actions.getByRole("form", { name: "Lernschritt hinzufügen", exact: true }),
+  ).not.toBeVisible();
   await proof(page, info, "learning-empty");
   r = await command("milestone.create", {
     target_id: target,
@@ -344,10 +397,18 @@ test("#102 real state matrix, bounded rich workbench, Portfolio, lifecycle and s
   await expect(primary.locator("summary")).toHaveText("Aufgabe auswählen");
   await primary.locator("summary").click();
   const readinessBefore = await primary.getByRole("article").allTextContents();
-  await expect(primary.getByRole("article").first()).toContainText(
-    "Ausführbar",
-  );
-  await expect(primary.getByRole("article").nth(1)).toContainText("Blockiert");
+  await expect(
+    primary.getByRole("article", {
+      name: `Übung ${tasks[0].title}`,
+      exact: true,
+    }),
+  ).toContainText("Ausführbar");
+  await expect(
+    primary.getByRole("article", {
+      name: `Übung ${tasks[1].title}`,
+      exact: true,
+    }),
+  ).toContainText("Blockiert");
 
   await command("review.submit", {
     target_id: target,
@@ -377,7 +438,14 @@ test("#102 real state matrix, bounded rich workbench, Portfolio, lifecycle and s
     await primary.evaluate((el) =>
       Boolean(
         el.compareDocumentPosition(
-          el.parentElement!.querySelector('[aria-label="Lernweg"]')!,
+          Array.from(
+            el
+              .closest('[aria-label="Skillaktionen"]')!
+              .querySelectorAll("summary"),
+          ).find(
+            (summary) =>
+              summary.textContent?.trim() === "Lernschritte verwalten",
+          )!,
         ) & Node.DOCUMENT_POSITION_FOLLOWING,
       ),
     ),

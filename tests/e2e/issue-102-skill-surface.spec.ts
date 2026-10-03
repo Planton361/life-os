@@ -125,6 +125,12 @@ test("#102 dependency outage fails closed in real Skill and Portfolio; Portfolio
       errors.push(m.text());
   });
   const main = page.locator("main");
+  // App Router can initially stream the loading surface after page.goto.
+  // Inventory the actual Portfolio controls once they are rendered.
+  await expect
+    .poll(() => main.locator("a:visible").count())
+    .toBeGreaterThan(20);
+
   const controls = await main.locator("a:visible").evaluateAll((elements) =>
     elements
       .map((e) => ({

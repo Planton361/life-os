@@ -19,6 +19,47 @@ const statusLabel = {
   completed: "Abgeschlossen",
   retired: "Beendet",
 };
+type SkillPresentation = "split" | "information" | "actions";
+function SkillColumns({
+  information,
+  actions,
+  presentation = "split",
+}: {
+  information: ReactNode;
+  actions?: ReactNode;
+  presentation?: SkillPresentation;
+}) {
+  if (presentation === "information")
+    return (
+      <div data-skill-information className="grid min-w-0 gap-2">
+        {information}
+      </div>
+    );
+  if (presentation === "actions")
+    return (
+      <div data-skill-actions className="grid min-w-0 gap-3">
+        {actions}
+      </div>
+    );
+  return (
+    <div
+      data-skill-columns
+      className="grid min-w-0 items-start gap-4 xl:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)]"
+    >
+      <div data-skill-information className="grid min-w-0 content-start gap-2">
+        {information}
+      </div>
+      {actions && (
+        <div
+          data-skill-actions
+          className="grid min-w-0 content-start gap-3 xl:border-l xl:border-[var(--border-subtle)] xl:pl-5"
+        >
+          {actions}
+        </div>
+      )}
+    </div>
+  );
+}
 function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section
@@ -270,87 +311,112 @@ export function SkillWorkbench({
     m: SkillMilestone,
     index: number,
     active: SkillMilestone[],
+    presentation: SkillPresentation = "split",
   ) => {
     const terminal = ["completed", "retired"].includes(t.status);
     return (
       <article
         key={m.id}
-        aria-label={`Lernschritt ${m.title}`}
+        aria-label={`${presentation === "actions" ? "Aktionen für Lernschritt" : "Lernschritt"} ${m.title}`}
         className={`grid min-w-0 gap-2 rounded-lg border p-3 ${m.status === "current" ? "border-[var(--accent-cyan)] bg-[var(--surface-2)]" : "border-[var(--border-subtle)] text-[var(--text-secondary)]"}`}
       >
-        <h4 className="break-words font-medium">
-          {m.title} ·{" "}
-          <span className="text-sm text-[var(--text-muted)]">
-            {statusLabel[m.status]}
-          </span>
-        </h4>
-        {m.description && (
-          <p className="whitespace-pre-wrap break-words text-sm">
-            {m.description}
-          </p>
+        {presentation === "actions" && (
+          <h4 className="break-words font-medium">{m.title}</h4>
         )}
-        {!archived && !t.archived_at && !terminal && (
-          <details>
-            <summary className="cursor-pointer py-2 text-sm">
-              Lernschritt verwalten
-            </summary>
-            <div className="grid gap-3">
-              {m.status !== "completed" ? (
-                <>
-                  <SkillCommandForm
-                    {...formProps}
-                    operation="milestone.edit"
-                    label="Lernschritt speichern"
-                    payload={{ target_id: t.id, milestone_id: m.id }}
-                  >
-                    <Text name="title" label="Titel" value={m.title} required />
-                    <Text
-                      name="description"
-                      label="Beschreibung"
-                      value={m.description}
-                      large
-                    />
-                  </SkillCommandForm>
-                  {t.status === "current" && m.status !== "current" && (
+        <SkillColumns
+          presentation={presentation}
+          information={
+            <>
+              <h4 className="break-words font-medium">
+                {m.title} ·{" "}
+                <span className="text-sm text-[var(--text-muted)]">
+                  {statusLabel[m.status]}
+                </span>
+              </h4>
+              {m.description && (
+                <p className="whitespace-pre-wrap break-words text-sm">
+                  {m.description}
+                </p>
+              )}
+            </>
+          }
+          actions={
+            <>
+              {!archived && !t.archived_at && !terminal && (
+                <details>
+                  <summary className="cursor-pointer py-2 text-sm">
+                    Lernschritt verwalten
+                  </summary>
+                  <div className="grid gap-3">
+                    {m.status !== "completed" ? (
+                      <>
+                        <SkillCommandForm
+                          {...formProps}
+                          operation="milestone.edit"
+                          label="Lernschritt speichern"
+                          payload={{ target_id: t.id, milestone_id: m.id }}
+                        >
+                          <Text
+                            name="title"
+                            label="Titel"
+                            value={m.title}
+                            required
+                          />
+                          <Text
+                            name="description"
+                            label="Beschreibung"
+                            value={m.description}
+                            large
+                          />
+                        </SkillCommandForm>
+                        {t.status === "current" && m.status !== "current" && (
+                          <SkillCommandForm
+                            {...formProps}
+                            operation="milestone.current"
+                            label="Als aktuellen Lernschritt wählen"
+                            payload={{ target_id: t.id, milestone_id: m.id }}
+                          />
+                        )}
+                        {reviewForm(t, m)}
+                      </>
+                    ) : (
+                      <SkillCommandForm
+                        {...formProps}
+                        operation="milestone.reopen"
+                        label="Lernschritt wieder öffnen"
+                        payload={{ target_id: t.id, milestone_id: m.id }}
+                      />
+                    )}
+                    {index > 0 && (
+                      <SkillCommandForm
+                        {...formProps}
+                        operation="milestone.reorder"
+                        label="Nach oben"
+                        payload={{
+                          target_id: t.id,
+                          ids: active
+                            .map((x) => x.id)
+                            .toSpliced(
+                              index - 1,
+                              2,
+                              m.id,
+                              active[index - 1].id,
+                            ),
+                        }}
+                      />
+                    )}
                     <SkillCommandForm
                       {...formProps}
-                      operation="milestone.current"
-                      label="Als aktuellen Lernschritt wählen"
+                      operation="milestone.archive"
+                      label="Lernschritt archivieren"
                       payload={{ target_id: t.id, milestone_id: m.id }}
                     />
-                  )}
-                  {reviewForm(t, m)}
-                </>
-              ) : (
-                <SkillCommandForm
-                  {...formProps}
-                  operation="milestone.reopen"
-                  label="Lernschritt wieder öffnen"
-                  payload={{ target_id: t.id, milestone_id: m.id }}
-                />
+                  </div>
+                </details>
               )}
-              {index > 0 && (
-                <SkillCommandForm
-                  {...formProps}
-                  operation="milestone.reorder"
-                  label="Nach oben"
-                  payload={{
-                    target_id: t.id,
-                    ids: active
-                      .map((x) => x.id)
-                      .toSpliced(index - 1, 2, m.id, active[index - 1].id),
-                  }}
-                />
-              )}
-              <SkillCommandForm
-                {...formProps}
-                operation="milestone.archive"
-                label="Lernschritt archivieren"
-                payload={{ target_id: t.id, milestone_id: m.id }}
-              />
-            </div>
-          </details>
-        )}
+            </>
+          }
+        />
       </article>
     );
   };
@@ -364,101 +430,115 @@ export function SkillWorkbench({
         data-target={t.id}
         className="grid min-w-0 gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-1)] p-4"
       >
-        <header>
-          <h3 className="break-words font-semibold">{t.title}</h3>
-          <p className="text-sm text-[var(--text-muted)]">
-            {t.archived_at ? "Archiviert" : statusLabel[t.status]}
-          </p>
-        </header>
-        {t.description && (
-          <p className="whitespace-pre-wrap break-words text-sm">
-            {t.description}
-          </p>
-        )}
-        {!archived && !t.archived_at && !terminal && t.status !== "current" && (
-          <SkillCommandForm
-            {...formProps}
-            operation="target.current"
-            payload={{ target_id: t.id }}
-            label="Als aktuellen Fokus wählen"
-          />
-        )}
-        {t.id !== current?.id &&
-          active.map((m, index) => stepRow(t, m, index, active))}
-        {!archived && !t.archived_at && !terminal && (
-          <>
-            {t.id !== current?.id && addStep(t)}
-            {reviewForm(t)}
-          </>
-        )}
-        {!archived && (
-          <details>
-            <summary className="cursor-pointer py-2 text-sm">
-              Entwicklungsfokus verwalten
-            </summary>
-            <div className="grid gap-3">
-              {t.archived_at ? (
-                <SkillCommandForm
-                  {...formProps}
-                  operation="target.restore"
-                  label="Fokus wiederherstellen"
-                  payload={{ target_id: t.id }}
-                />
-              ) : (
-                <>
-                  {!terminal && (
-                    <SkillCommandForm
-                      {...formProps}
-                      operation="target.edit"
-                      label="Fokus speichern"
-                      payload={{ target_id: t.id }}
-                    >
-                      <Text
-                        name="title"
-                        label="Titel"
-                        value={t.title}
-                        required
-                      />
-                      <Text
-                        name="description"
-                        label="Beschreibung"
-                        value={t.description}
-                        large
-                      />
-                    </SkillCommandForm>
-                  )}
-                  {terminal && (
-                    <SkillCommandForm
-                      {...formProps}
-                      operation="target.reopen"
-                      label="Fokus wieder öffnen"
-                      payload={{ target_id: t.id }}
-                    />
-                  )}
+        <SkillColumns
+          information={
+            <>
+              <header>
+                <h3 className="break-words font-semibold">{t.title}</h3>
+                <p className="text-sm text-[var(--text-muted)]">
+                  {t.archived_at ? "Archiviert" : statusLabel[t.status]}
+                </p>
+              </header>
+              {t.description && (
+                <p className="whitespace-pre-wrap break-words text-sm">
+                  {t.description}
+                </p>
+              )}
+            </>
+          }
+          actions={
+            <>
+              {!archived &&
+                !t.archived_at &&
+                !terminal &&
+                t.status !== "current" && (
                   <SkillCommandForm
                     {...formProps}
-                    operation="target.archive"
-                    label="Fokus archivieren"
+                    operation="target.current"
                     payload={{ target_id: t.id }}
+                    label="Als aktuellen Fokus wählen"
                   />
+                )}
+
+              {!archived && !t.archived_at && !terminal && (
+                <>
+                  {t.id !== current?.id && addStep(t)}
+                  {reviewForm(t)}
                 </>
               )}
-              {!t.archived_at &&
-                !terminal &&
-                milestones
-                  .filter((m) => m.archived_at)
-                  .map((m) => (
-                    <SkillCommandForm
-                      key={m.id}
-                      {...formProps}
-                      operation="milestone.restore"
-                      label={`Lernschritt wiederherstellen: ${m.title}`}
-                      payload={{ target_id: t.id, milestone_id: m.id }}
-                    />
-                  ))}
-            </div>
-          </details>
-        )}
+              {!archived && (
+                <details>
+                  <summary className="cursor-pointer py-2 text-sm">
+                    Entwicklungsfokus verwalten
+                  </summary>
+                  <div className="grid gap-3">
+                    {t.archived_at ? (
+                      <SkillCommandForm
+                        {...formProps}
+                        operation="target.restore"
+                        label="Fokus wiederherstellen"
+                        payload={{ target_id: t.id }}
+                      />
+                    ) : (
+                      <>
+                        {!terminal && (
+                          <SkillCommandForm
+                            {...formProps}
+                            operation="target.edit"
+                            label="Fokus speichern"
+                            payload={{ target_id: t.id }}
+                          >
+                            <Text
+                              name="title"
+                              label="Titel"
+                              value={t.title}
+                              required
+                            />
+                            <Text
+                              name="description"
+                              label="Beschreibung"
+                              value={t.description}
+                              large
+                            />
+                          </SkillCommandForm>
+                        )}
+                        {terminal && (
+                          <SkillCommandForm
+                            {...formProps}
+                            operation="target.reopen"
+                            label="Fokus wieder öffnen"
+                            payload={{ target_id: t.id }}
+                          />
+                        )}
+                        <SkillCommandForm
+                          {...formProps}
+                          operation="target.archive"
+                          label="Fokus archivieren"
+                          payload={{ target_id: t.id }}
+                        />
+                      </>
+                    )}
+                    {!t.archived_at &&
+                      !terminal &&
+                      milestones
+                        .filter((m) => m.archived_at)
+                        .map((m) => (
+                          <SkillCommandForm
+                            key={m.id}
+                            {...formProps}
+                            operation="milestone.restore"
+                            label={`Lernschritt wiederherstellen: ${m.title}`}
+                            payload={{ target_id: t.id, milestone_id: m.id }}
+                          />
+                        ))}
+                  </div>
+                </details>
+              )}
+            </>
+          }
+        />
+        {t.id !== current?.id &&
+          active.map((m, index) => stepRow(t, m, index, active))}
       </article>
     );
   }
@@ -556,92 +636,114 @@ export function SkillWorkbench({
       );
     });
   }
-  function observations(entries: DevelopmentEvidence[]) {
+  function observations(
+    entries: DevelopmentEvidence[],
+    presentation: SkillPresentation = "split",
+  ) {
     return (
       <>
         {entries.map((e) => (
           <article
             key={e.id}
-            aria-label={`Beobachtung ${e.title}`}
+            aria-label={`${presentation === "actions" ? "Aktionen für Beobachtung" : "Beobachtung"} ${e.title}`}
             className="grid gap-2 border-t border-[var(--border-subtle)] pt-3"
           >
-            <h3 className="break-words font-medium">{e.title}</h3>
-            <p className="text-sm">
-              {e.evidence_date} · Version {e.revision}
-              {e.evidence_date > reads.today
-                ? " · Datum liegt in der Zukunft; keine aktuelle Datierung"
-                : ""}
-            </p>
-            <p className="line-clamp-3 max-w-[70ch] whitespace-pre-wrap break-words text-sm">
-              {e.note}
-            </p>
-            {e.note && e.note.length > 240 && (
-              <details>
-                <summary className="cursor-pointer py-2 text-sm text-[var(--accent-cyan)]">
-                  Beobachtung vollständig lesen
-                </summary>
-                <p className="max-w-[70ch] whitespace-pre-wrap break-words text-sm">
-                  {e.note}
-                </p>
-              </details>
+            {presentation === "actions" && (
+              <h3 className="break-words font-medium">{e.title}</h3>
             )}
-            <p className="text-xs text-[var(--text-muted)]">
-              {e.provenance_state === "legacy_unverified"
-                ? "Quelle damals nicht verifiziert"
-                : "Ausdrücklich festgehalten"}
-            </p>
-            {typeof e.source_snapshot?.title === "string" && (
-              <p className="text-xs text-[var(--text-muted)]">
-                Erfasste Quelle: {e.source_snapshot.title}
-              </p>
-            )}
-            {e.source_id ? (
-              sources.some(
-                (x) => x.id === `${e.source_type}:${e.source_id}`,
-              ) ? (
-                <Link
-                  className="text-sm underline"
-                  href={`/${e.source_type === "resource" ? "resources" : e.source_type + "s"}/${e.source_id}`}
-                >
-                  Quelle öffnen
-                </Link>
-              ) : (
-                <p className="text-sm">Quelle nicht verfügbar.</p>
-              )
-            ) : (
-              <p className="text-sm">Eigene Beobachtung</p>
-            )}
-            {!archived && (
-              <details>
-                <summary className="cursor-pointer py-2 text-sm">
-                  Beobachtung korrigieren / zurückziehen
-                </summary>
-                <div className="grid gap-3">
-                  <SkillCommandForm
-                    {...formProps}
-                    operation="evidence.correct"
-                    label="Korrektur speichern"
-                    payload={{ evidence_id: e.id, weight: e.weight }}
-                  >
-                    {evidenceFields(e)}
-                    <Text
-                      name="reason"
-                      label="Korrekturbegründung"
-                      required
-                      large
-                    />
-                  </SkillCommandForm>
-                  <SkillCommandForm
-                    {...formProps}
-                    operation="evidence.withdraw"
-                    label="Beobachtung zurückziehen"
-                    payload={{ evidence_id: e.id }}
-                  >
-                    <Text name="reason" label="Begründung" required large />
-                  </SkillCommandForm>
-                </div>
-              </details>
-            )}
+            <SkillColumns
+              presentation={presentation}
+              information={
+                <>
+                  <h3 className="break-words font-medium">{e.title}</h3>
+                  <p className="text-sm">
+                    {e.evidence_date} · Version {e.revision}
+                    {e.evidence_date > reads.today
+                      ? " · Datum liegt in der Zukunft; keine aktuelle Datierung"
+                      : ""}
+                  </p>
+                  <p className="line-clamp-3 max-w-[70ch] whitespace-pre-wrap break-words text-sm">
+                    {e.note}
+                  </p>
+                  {e.note && e.note.length > 240 && (
+                    <details>
+                      <summary className="cursor-pointer py-2 text-sm text-[var(--accent-cyan)]">
+                        Beobachtung vollständig lesen
+                      </summary>
+                      <p className="max-w-[70ch] whitespace-pre-wrap break-words text-sm">
+                        {e.note}
+                      </p>
+                    </details>
+                  )}
+                  <p className="text-xs text-[var(--text-muted)]">
+                    {e.provenance_state === "legacy_unverified"
+                      ? "Quelle damals nicht verifiziert"
+                      : "Ausdrücklich festgehalten"}
+                  </p>
+                  {typeof e.source_snapshot?.title === "string" && (
+                    <p className="text-xs text-[var(--text-muted)]">
+                      Erfasste Quelle: {e.source_snapshot.title}
+                    </p>
+                  )}
+                  {e.source_id ? (
+                    sources.some(
+                      (x) => x.id === `${e.source_type}:${e.source_id}`,
+                    ) ? (
+                      <Link
+                        className="text-sm underline"
+                        href={`/${e.source_type === "resource" ? "resources" : e.source_type + "s"}/${e.source_id}`}
+                      >
+                        Quelle öffnen
+                      </Link>
+                    ) : (
+                      <p className="text-sm">Quelle nicht verfügbar.</p>
+                    )
+                  ) : (
+                    <p className="text-sm">Eigene Beobachtung</p>
+                  )}
+                </>
+              }
+              actions={
+                <>
+                  {!archived && (
+                    <details>
+                      <summary className="cursor-pointer py-2 text-sm">
+                        Beobachtung korrigieren / zurückziehen
+                      </summary>
+                      <div className="grid gap-3">
+                        <SkillCommandForm
+                          {...formProps}
+                          operation="evidence.correct"
+                          label="Korrektur speichern"
+                          payload={{ evidence_id: e.id, weight: e.weight }}
+                        >
+                          {evidenceFields(e)}
+                          <Text
+                            name="reason"
+                            label="Korrekturbegründung"
+                            required
+                            large
+                          />
+                        </SkillCommandForm>
+                        <SkillCommandForm
+                          {...formProps}
+                          operation="evidence.withdraw"
+                          label="Beobachtung zurückziehen"
+                          payload={{ evidence_id: e.id }}
+                        >
+                          <Text
+                            name="reason"
+                            label="Begründung"
+                            required
+                            large
+                          />
+                        </SkillCommandForm>
+                      </div>
+                    </details>
+                  )}
+                </>
+              }
+            />
           </article>
         ))}
       </>
@@ -698,147 +800,77 @@ export function SkillWorkbench({
         <section
           aria-label="Entwicklungswerkbank"
           data-skill-workbench
-          className={`grid min-w-0 items-start rounded-xl border border-[var(--border-default)] bg-[var(--surface-1)] ${primary.empty ? "" : "xl:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)]"}`}
+          className="grid min-w-0 items-start gap-5 rounded-xl border border-[var(--border-default)] bg-[var(--surface-1)] p-4 md:p-5 xl:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)]"
         >
-          <div className="grid min-w-0 content-start gap-5 p-4 md:p-5">
-            <section
-              aria-label="Aktuelle Entwicklung"
-              className="grid min-w-0 gap-3"
-            >
-              <h2 className="text-lg font-semibold">Aktuelle Entwicklung</h2>
-              {primary.empty ? (
-                <p className="text-[var(--text-secondary)]">
-                  Was möchtest du als Nächstes besser können?
-                </p>
-              ) : current ? (
-                <div className="max-w-[85ch]">
-                  <p className="text-xs text-[var(--text-muted)]">
-                    Aktueller Entwicklungsfokus
-                  </p>
-                  <h3 className="mt-1 break-words text-xl font-semibold">
-                    {current.title}
-                  </h3>
-                  {current.description && (
-                    <p className="mt-2 whitespace-pre-wrap break-words text-sm text-[var(--text-secondary)]">
-                      {current.description}
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <p className="text-sm text-[var(--text-muted)]">
-                  Kein Entwicklungsfokus festgelegt.
-                </p>
-              )}
-              {primary.kind === "unavailable" && (
-                <p role="status" className="text-sm text-[var(--text-muted)]">
-                  Ausführbarkeit derzeit nicht verfügbar
-                </p>
-              )}
-              <div data-skill-primary>
-                {archived ? (
-                  <SkillCommandForm
-                    {...formProps}
-                    operation="skill.restore"
-                    label="Skill wiederherstellen"
-                  />
-                ) : s.status === "paused" ? (
-                  <SkillCommandForm
-                    {...formProps}
-                    operation="skill.edit"
-                    payload={{
-                      name: s.name,
-                      summary: s.summary,
-                      area_id: s.area_id,
-                      status: "active",
-                    }}
-                    label="Entwicklung fortsetzen"
-                  />
-                ) : primary.kind === "focus" ? (
-                  focusCreate
-                ) : primary.kind === "planned" ? (
-                  <details>
-                    <summary className={actionClass}>Fokus wählen</summary>
-                    {read.targets
-                      .filter((t) => !t.archived_at && t.status === "planned")
-                      .map((t) => (
-                        <SkillCommandForm
-                          key={t.id}
-                          {...formProps}
-                          operation="target.current"
-                          payload={{ target_id: t.id }}
-                          label={`Fokus wählen: ${t.title}`}
-                        />
-                      ))}
-                  </details>
-                ) : primary.taskId ? (
-                  <Link
-                    className={`inline-block ${actionClass}`}
-                    href={`/tasks/${primary.taskId}`}
-                  >
-                    {primary.label}
-                  </Link>
-                ) : primary.kind === "create" ? (
-                  <Link
-                    className={`inline-block ${actionClass}`}
-                    href={`/tasks/new?skill=${s.id}`}
-                  >
-                    {primary.label}
-                  </Link>
-                ) : (
-                  <details>
-                    <summary className={`w-fit cursor-pointer ${actionClass}`}>
-                      {primary.label}
-                    </summary>
-                    <div className="mt-3 grid min-w-0">
-                      {practiceRows(reads.open)}
-                    </div>
-                  </details>
-                )}
-              </div>
-              {current && (
-                <section
-                  aria-label="Lernweg"
-                  className="grid min-w-0 gap-3 border-t border-[var(--border-subtle)] pt-4"
+          <aside
+            aria-label="Skillaktionen"
+            data-skill-actions
+            className="order-2 grid min-w-0 content-start gap-3 border-t border-[var(--border-subtle)] pt-4 xl:col-start-2 xl:row-start-1 xl:border-t-0 xl:border-l xl:pl-5 xl:pt-0"
+          >
+            <h2 className="text-lg font-semibold">Aktionen</h2>
+            <div data-skill-primary>
+              {archived ? (
+                <SkillCommandForm
+                  {...formProps}
+                  operation="skill.restore"
+                  label="Skill wiederherstellen"
+                />
+              ) : s.status === "paused" ? (
+                <SkillCommandForm
+                  {...formProps}
+                  operation="skill.edit"
+                  payload={{
+                    name: s.name,
+                    summary: s.summary,
+                    area_id: s.area_id,
+                    status: "active",
+                  }}
+                  label="Entwicklung fortsetzen"
+                />
+              ) : primary.kind === "focus" ? (
+                focusCreate
+              ) : primary.kind === "planned" ? (
+                <details>
+                  <summary className={actionClass}>Fokus wählen</summary>
+                  {read.targets
+                    .filter((t) => !t.archived_at && t.status === "planned")
+                    .map((t) => (
+                      <SkillCommandForm
+                        key={t.id}
+                        {...formProps}
+                        operation="target.current"
+                        payload={{ target_id: t.id }}
+                        label={`Fokus wählen: ${t.title}`}
+                      />
+                    ))}
+                </details>
+              ) : primary.taskId ? (
+                <Link
+                  className={`inline-block ${actionClass}`}
+                  href={`/tasks/${primary.taskId}`}
                 >
-                  <h3 className="font-semibold">Lernweg</h3>
-                  {activeSteps(current).length ? (
-                    <ol className="grid min-w-0 gap-2">
-                      {activeSteps(current).map((m, index, active) => (
-                        <li key={m.id}>{stepRow(current, m, index, active)}</li>
-                      ))}
-                    </ol>
-                  ) : (
-                    <p className="text-sm text-[var(--text-muted)]">
-                      Noch keine Lernschritte
-                    </p>
-                  )}
-                  {!archived && addStep(current)}
-                </section>
+                  {primary.label}
+                </Link>
+              ) : primary.kind === "create" ? (
+                <Link
+                  className={`inline-block ${actionClass}`}
+                  href={`/tasks/new?skill=${s.id}`}
+                >
+                  {primary.label}
+                </Link>
+              ) : (
+                <details>
+                  <summary className={`w-fit cursor-pointer ${actionClass}`}>
+                    {primary.label}
+                  </summary>
+                  <div className="mt-3 grid min-w-0">
+                    {practiceRows(reads.open)}
+                  </div>
+                </details>
               )}
-            </section>
-            {reads.open.length > 0 && (
-              <section
-                aria-label="Üben & Anwenden"
-                className="grid min-w-0 gap-2"
-              >
-                <h2 className="text-base font-semibold">Üben & Anwenden</h2>
-                <p className="text-sm text-[var(--text-muted)]">
-                  {reads.open.length} offene verknüpfte Aufgaben. Ein Abschluss
-                  erzeugt keine Beobachtung.
-                </p>
-                {practiceRows(reads.open.slice(0, 4))}
-                {reads.open.length > 4 && (
-                  <details>
-                    <summary className="cursor-pointer py-2 text-sm text-[var(--accent-cyan)]">
-                      Alle {reads.open.length} Aufgaben ansehen
-                    </summary>
-                    {practiceRows(reads.open.slice(4))}
-                  </details>
-                )}
-              </section>
-            )}
+            </div>
             {!archived && (
-              <div className="flex min-w-0 flex-wrap items-start gap-x-6 gap-y-2 border-t border-[var(--border-subtle)] pt-3">
+              <div className="grid min-w-0 gap-2 border-t border-[var(--border-subtle)] pt-3">
                 {primary.kind !== "focus" && focusCreate}
                 {primary.kind !== "create" &&
                   !primary.empty &&
@@ -858,72 +890,269 @@ export function SkillWorkbench({
                 </Link>
                 {createEvidence}
               </div>
+            )}{" "}
+            {current && !archived && (
+              <div className="grid gap-2">
+                {addStep(current)}
+                {activeSteps(current).length > 0 && (
+                  <details>
+                    <summary className="cursor-pointer py-2 text-sm">
+                      Lernschritte verwalten
+                    </summary>
+                    <div className="grid gap-3 pt-3">
+                      {activeSteps(current).map((m, index, active) =>
+                        stepRow(current, m, index, active, "actions"),
+                      )}
+                    </div>
+                  </details>
+                )}
+              </div>
+            )}
+            {!archived && orderedEvidence.length > 0 && (
+              <details>
+                <summary className="cursor-pointer py-2 text-sm">
+                  Beobachtungen verwalten
+                </summary>
+                {observations(orderedEvidence, "actions")}
+              </details>
+            )}
+            <div id="skill-management" className="scroll-mt-6">
+              {" "}
+              <details>
+                <summary className="cursor-pointer py-2 font-medium">
+                  Skill verwalten
+                </summary>
+                <div className="grid gap-4 pt-3">
+                  {archived ? (
+                    <p className="text-sm">
+                      Wiederherstellen setzt den Skill pausiert. Fokus und
+                      Lernschritt werden anschließend ausdrücklich gewählt.
+                    </p>
+                  ) : (
+                    <>
+                      <SkillCommandForm
+                        {...formProps}
+                        operation="skill.edit"
+                        label="Skill speichern"
+                      >
+                        <Text
+                          name="name"
+                          label="Name"
+                          value={s.name}
+                          required
+                        />
+                        <Text
+                          name="summary"
+                          label="Warum mir diese Fähigkeit wichtig ist"
+                          value={s.summary}
+                          large
+                        />
+                        <label>
+                          Status
+                          <select
+                            className={fieldClass}
+                            aria-label="Status"
+                            name="status"
+                            defaultValue={s.status}
+                          >
+                            <option value="active">Aktiv</option>
+                            <option value="paused">Pausiert</option>
+                          </select>
+                        </label>
+                        <label>
+                          Area
+                          <select
+                            className={fieldClass}
+                            aria-label="Area"
+                            name="area_id"
+                            defaultValue={s.area_id ?? ""}
+                          >
+                            <option value="">Keine Area</option>
+                            {data.areas
+                              .filter((a) => !a.archived_at)
+                              .map((a) => (
+                                <option key={a.id} value={a.id}>
+                                  {a.name}
+                                </option>
+                              ))}
+                          </select>
+                        </label>
+                      </SkillCommandForm>
+                      <SkillCommandForm
+                        {...formProps}
+                        operation="skill.archive"
+                        label="Skill archivieren"
+                      />
+                    </>
+                  )}
+                </div>
+              </details>
+            </div>
+          </aside>
+          <div className="contents xl:col-start-1 xl:row-start-1 xl:grid xl:min-w-0 xl:content-start xl:gap-5">
+            <section aria-label="Aktuelle Entwicklung" className="contents">
+              <div
+                data-skill-information
+                className="order-1 grid min-w-0 gap-3"
+              >
+                <h2 className="text-lg font-semibold">Aktuelle Entwicklung</h2>
+                {primary.empty ? (
+                  <p className="text-[var(--text-secondary)]">
+                    Was möchtest du als Nächstes besser können?
+                  </p>
+                ) : current ? (
+                  <div className="max-w-[85ch]">
+                    <p className="text-xs text-[var(--text-muted)]">
+                      Aktueller Entwicklungsfokus
+                    </p>
+                    <h3 className="mt-1 break-words text-xl font-semibold">
+                      {current.title}
+                    </h3>
+                    {current.description && (
+                      <p className="mt-2 whitespace-pre-wrap break-words text-sm text-[var(--text-secondary)]">
+                        {current.description}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-[var(--text-muted)]">
+                    Kein Entwicklungsfokus festgelegt.
+                  </p>
+                )}
+                {primary.kind === "unavailable" && (
+                  <p role="status" className="text-sm text-[var(--text-muted)]">
+                    Ausführbarkeit derzeit nicht verfügbar
+                  </p>
+                )}
+              </div>
+
+              {current && (
+                <section
+                  aria-label="Lernweg"
+                  className="order-3 grid min-w-0 gap-3 border-t border-[var(--border-subtle)] pt-4"
+                >
+                  <h3 className="font-semibold">Lernweg</h3>
+                  {activeSteps(current).length ? (
+                    <ol className="grid min-w-0 gap-2">
+                      {activeSteps(current).map((m, index, active) => (
+                        <li key={m.id}>
+                          {stepRow(current, m, index, active, "information")}
+                        </li>
+                      ))}
+                    </ol>
+                  ) : (
+                    <p className="text-sm text-[var(--text-muted)]">
+                      Noch keine Lernschritte
+                    </p>
+                  )}
+                </section>
+              )}
+            </section>
+            {reads.open.length > 0 && (
+              <section
+                aria-label="Üben & Anwenden"
+                className="order-4 grid min-w-0 gap-2"
+              >
+                <SkillColumns
+                  presentation="information"
+                  information={
+                    <>
+                      <h2 className="text-base font-semibold">
+                        Üben & Anwenden
+                      </h2>
+                      <p className="text-sm text-[var(--text-muted)]">
+                        {reads.open.length} offene verknüpfte Aufgaben. Ein
+                        Abschluss erzeugt keine Beobachtung.
+                      </p>
+                      {practiceRows(reads.open.slice(0, 4))}
+                      {reads.open.length > 4 && (
+                        <details>
+                          <summary className="cursor-pointer py-2 text-sm text-[var(--accent-cyan)]">
+                            Alle {reads.open.length} Aufgaben ansehen
+                          </summary>
+                          {practiceRows(reads.open.slice(4))}
+                        </details>
+                      )}
+                    </>
+                  }
+                />
+              </section>
+            )}
+            {!primary.empty && (
+              <aside
+                aria-label="Beobachtungen"
+                className="order-5 grid min-w-0 content-start gap-4 border-t border-[var(--border-subtle)] pt-5"
+              >
+                <SkillColumns
+                  presentation="information"
+                  information={
+                    <>
+                      <h2 className="text-lg font-semibold">Beobachtungen</h2>{" "}
+                      <dl className="grid gap-2 text-sm">
+                        <div>
+                          <dt className="text-[var(--text-muted)]">
+                            Zuletzt geübt
+                          </dt>
+                          <dd>
+                            {reads.latestLinkedTaskCompletionAt
+                              ? new Date(
+                                  reads.latestLinkedTaskCompletionAt,
+                                ).toLocaleDateString("de-DE", {
+                                  timeZone: read.timezone,
+                                })
+                              : "Noch kein datierter Aufgabenabschluss"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-[var(--text-muted)]">
+                            Letzte Beobachtung
+                          </dt>
+                          <dd>
+                            {reads.latestEvidenceDate ??
+                              "Noch keine datierte Beobachtung"}
+                          </dd>
+                        </div>
+                      </dl>
+                      {latestReview && (
+                        <div className="grid gap-1 text-sm">
+                          <p className="text-[var(--text-muted)]">
+                            Letzte Überprüfung ·{" "}
+                            {latestReview.reviewed_at.slice(0, 10)}
+                          </p>
+                          <p className="break-words">
+                            {latestReview.subject_snapshot.title}
+                          </p>
+                          <p className="line-clamp-3 max-w-[70ch] whitespace-pre-wrap break-words text-[var(--text-secondary)]">
+                            {latestReview.note}
+                          </p>
+                          <Link
+                            href="#skill-history"
+                            className="text-[var(--accent-cyan)] underline"
+                          >
+                            Entscheidung im Verlauf ansehen
+                          </Link>
+                        </div>
+                      )}
+                      {!orderedEvidence.length && (
+                        <p className="text-sm text-[var(--text-muted)]">
+                          Noch keine Beobachtung festgehalten.
+                        </p>
+                      )}
+                    </>
+                  }
+                />
+                {observations(orderedEvidence.slice(0, 2), "information")}
+                {orderedEvidence.length > 2 && (
+                  <details>
+                    <summary className="cursor-pointer py-2 text-sm text-[var(--accent-cyan)]">
+                      Alle {orderedEvidence.length} Beobachtungen ansehen
+                    </summary>
+                    {observations(orderedEvidence.slice(2), "information")}
+                  </details>
+                )}
+              </aside>
             )}
           </div>
-          {!primary.empty && (
-            <aside
-              aria-label="Beobachtungen"
-              className="grid min-w-0 content-start gap-4 border-t border-[var(--border-subtle)] p-4 md:p-5 xl:border-t-0 xl:border-l"
-            >
-              <h2 className="text-lg font-semibold">Beobachtungen</h2>{" "}
-              <dl className="grid gap-2 text-sm">
-                <div>
-                  <dt className="text-[var(--text-muted)]">Zuletzt geübt</dt>
-                  <dd>
-                    {reads.latestLinkedTaskCompletionAt
-                      ? new Date(
-                          reads.latestLinkedTaskCompletionAt,
-                        ).toLocaleDateString("de-DE", {
-                          timeZone: read.timezone,
-                        })
-                      : "Noch kein datierter Aufgabenabschluss"}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-[var(--text-muted)]">
-                    Letzte Beobachtung
-                  </dt>
-                  <dd>
-                    {reads.latestEvidenceDate ??
-                      "Noch keine datierte Beobachtung"}
-                  </dd>
-                </div>
-              </dl>
-              {latestReview && (
-                <div className="grid gap-1 text-sm">
-                  <p className="text-[var(--text-muted)]">
-                    Letzte Überprüfung · {latestReview.reviewed_at.slice(0, 10)}
-                  </p>
-                  <p className="break-words">
-                    {latestReview.subject_snapshot.title}
-                  </p>
-                  <p className="line-clamp-3 max-w-[70ch] whitespace-pre-wrap break-words text-[var(--text-secondary)]">
-                    {latestReview.note}
-                  </p>
-                  <Link
-                    href="#skill-history"
-                    className="text-[var(--accent-cyan)] underline"
-                  >
-                    Entscheidung im Verlauf ansehen
-                  </Link>
-                </div>
-              )}
-              {!orderedEvidence.length && (
-                <p className="text-sm text-[var(--text-muted)]">
-                  Noch keine Beobachtung festgehalten.
-                </p>
-              )}
-              {observations(orderedEvidence.slice(0, 2))}
-              {orderedEvidence.length > 2 && (
-                <details>
-                  <summary className="cursor-pointer py-2 text-sm text-[var(--accent-cyan)]">
-                    Alle {orderedEvidence.length} Beobachtungen ansehen
-                  </summary>
-                  {observations(orderedEvidence.slice(2))}
-                </details>
-              )}
-            </aside>
-          )}
         </section>
         <section
           aria-label="Vertiefung"
@@ -944,78 +1173,102 @@ export function SkillWorkbench({
                   );
                   return resource ? (
                     <div key={r.id} className="grid gap-2">
-                      <Link
-                        className="break-words text-sm underline"
-                        href={`/resources/${resource.id}`}
-                      >
-                        {resource.title} · Context
-                        {resource.archived_at ? " · Archiviert" : ""}
-                      </Link>
-                      {!archived && (
-                        <details>
-                          <summary className="cursor-pointer py-2 text-sm">
-                            Quelle verwalten
-                          </summary>
-                          <OperationForm
-                            operation="resource.unlink"
-                            label={`Quelle lösen: ${resource.title}`}
-                          >
-                            <input
-                              type="hidden"
-                              name="relationId"
-                              value={r.id}
-                            />
-                          </OperationForm>
-                        </details>
-                      )}
+                      <SkillColumns
+                        information={
+                          <>
+                            <Link
+                              className="break-words text-sm underline"
+                              href={`/resources/${resource.id}`}
+                            >
+                              {resource.title} · Context
+                              {resource.archived_at ? " · Archiviert" : ""}
+                            </Link>
+                          </>
+                        }
+                        actions={
+                          <>
+                            {!archived && (
+                              <details>
+                                <summary className="cursor-pointer py-2 text-sm">
+                                  Quelle verwalten
+                                </summary>
+                                <OperationForm
+                                  operation="resource.unlink"
+                                  label={`Quelle lösen: ${resource.title}`}
+                                >
+                                  <input
+                                    type="hidden"
+                                    name="relationId"
+                                    value={r.id}
+                                  />
+                                </OperationForm>
+                              </details>
+                            )}
+                          </>
+                        }
+                      />
                     </div>
                   ) : null;
                 })}
-              <p className="text-sm text-[var(--text-muted)]">
-                Material unterstützt das Lernen. Beobachtungen hältst du
-                ausdrücklich fest.
-              </p>
-              {!archived && (
-                <details>
-                  <summary className="cursor-pointer py-2 text-sm">
-                    Quelle verknüpfen
-                  </summary>
-                  <OperationForm
-                    operation="resource.link"
-                    label="Quelle mit Skill verknüpfen"
-                  >
-                    <input type="hidden" name="targetType" value="skill" />
-                    <input type="hidden" name="targetId" value={s.id} />
-                    <label>
-                      Resource
-                      <select
-                        className={fieldClass}
-                        aria-label="Resource"
-                        name="resourceId"
-                        required
-                      >
-                        <option value="">Resource wählen</option>
-                        {data.resources
-                          .filter(
-                            (r) =>
-                              !r.archived_at &&
-                              !data.relations.some(
-                                (l) =>
-                                  l.target_type === "skill" &&
-                                  l.target_id === s.id &&
-                                  l.resource_id === r.id,
-                              ),
-                          )
-                          .map((r) => (
-                            <option key={r.id} value={r.id}>
-                              {r.title}
-                            </option>
-                          ))}
-                      </select>
-                    </label>
-                  </OperationForm>
-                </details>
-              )}
+              <SkillColumns
+                information={
+                  <>
+                    <p className="text-sm text-[var(--text-muted)]">
+                      Material unterstützt das Lernen. Beobachtungen hältst du
+                      ausdrücklich fest.
+                    </p>
+                  </>
+                }
+                actions={
+                  <>
+                    {!archived && (
+                      <details>
+                        <summary className="cursor-pointer py-2 text-sm">
+                          Quelle verknüpfen
+                        </summary>
+                        <OperationForm
+                          operation="resource.link"
+                          label="Quelle mit Skill verknüpfen"
+                        >
+                          <input
+                            type="hidden"
+                            name="targetType"
+                            value="skill"
+                          />
+                          <input type="hidden" name="targetId" value={s.id} />
+                          <label>
+                            Resource
+                            <select
+                              className={fieldClass}
+                              aria-label="Resource"
+                              name="resourceId"
+                              required
+                            >
+                              <option value="">Resource wählen</option>
+                              {data.resources
+                                .filter(
+                                  (r) =>
+                                    !r.archived_at &&
+                                    !data.relations.some(
+                                      (l) =>
+                                        l.target_type === "skill" &&
+                                        l.target_id === s.id &&
+                                        l.resource_id === r.id,
+                                    ),
+                                )
+                                .map((r) => (
+                                  <option key={r.id} value={r.id}>
+                                    {r.title}
+                                  </option>
+                                ))}
+                            </select>
+                          </label>
+                        </OperationForm>
+                      </details>
+                    )}
+                  </>
+                }
+              />
             </Panel>
           </details>
           <div id="skill-history" className="scroll-mt-6">
@@ -1026,130 +1279,161 @@ export function SkillWorkbench({
               </summary>
               <div className="grid gap-4 pt-3">
                 {read.targets.map(targetBlock)}
-                {!archived && (
-                  <SkillCommandForm
-                    {...formProps}
-                    operation="target.create"
-                    label="Weiteren Fokus geplant speichern"
-                  >
-                    <Text name="title" label="Titel" required />
-                    <Text
-                      name="description"
-                      label="Gewünschte Fähigkeit / Fokus"
-                      large
-                    />
-                  </SkillCommandForm>
-                )}
+                <SkillColumns
+                  information={null}
+                  actions={
+                    <>
+                      {!archived && (
+                        <SkillCommandForm
+                          {...formProps}
+                          operation="target.create"
+                          label="Weiteren Fokus geplant speichern"
+                        >
+                          <Text name="title" label="Titel" required />
+                          <Text
+                            name="description"
+                            label="Gewünschte Fähigkeit / Fokus"
+                            large
+                          />
+                        </SkillCommandForm>
+                      )}
+                    </>
+                  }
+                />
                 {read.reviews.map((r) => (
                   <article
                     key={r.id}
                     aria-label={`Überprüfung ${r.subject_snapshot.title}`}
                     className="grid gap-2 border-t border-[var(--border-subtle)] py-3"
                   >
-                    <h3 className="font-medium">
-                      {r.subject_snapshot.title} ·{" "}
-                      {r.decision === "completed"
-                        ? "Abgeschlossen"
-                        : r.decision === "retired"
-                          ? "Beendet"
-                          : "Weiterentwickeln"}
-                    </h3>
-                    <p className="text-sm">
-                      {r.reviewed_at.slice(0, 10)} · Bearbeitung {r.cycle}
-                    </p>
-                    <p className="whitespace-pre-wrap break-words text-sm">
-                      {r.note}
-                    </p>
-                    <details>
-                      <summary className="cursor-pointer py-2 text-sm">
-                        Damals festgehaltenen Stand anzeigen
-                      </summary>
-                      <div className="grid gap-2 text-sm">
-                        <p className="whitespace-pre-wrap break-words">
-                          {r.subject_snapshot.description}
-                        </p>
-                        <p>Lernschritte bei der Überprüfung:</p>
-                        {r.milestones_snapshot.length ? (
-                          <ol>
-                            {r.milestones_snapshot.map((m) => (
-                              <li key={m.id}>
-                                {m.title} · {statusLabel[m.status]}
-                                {m.description && (
-                                  <p className="whitespace-pre-wrap break-words text-[var(--text-muted)]">
-                                    {m.description}
-                                  </p>
-                                )}
-                              </li>
-                            ))}
-                          </ol>
-                        ) : (
-                          <p>Keine aktiven Lernschritte bei der Überprüfung.</p>
-                        )}
-                      </div>
-                    </details>
-                    <p className="text-sm">
-                      {
-                        read.review_evidence.filter((x) => x.review_id === r.id)
-                          .length
-                      }{" "}
-                      ausgewählte Beobachtungsversionen
-                    </p>
-                    {read.review_evidence
-                      .filter((x) => x.review_id === r.id)
-                      .map((x) => {
-                        const v = read.revisions.find(
-                          (v) =>
-                            v.evidence_id === x.evidence_id &&
-                            v.revision === x.evidence_revision,
-                        );
-                        return (
-                          <p className="text-sm" key={x.evidence_id}>
-                            {v?.title ?? "Beobachtung nicht verfügbar"} ·{" "}
-                            {v?.evidence_date} · Version {x.evidence_revision}
+                    <SkillColumns
+                      information={
+                        <>
+                          <h3 className="font-medium">
+                            {r.subject_snapshot.title} ·{" "}
+                            {r.decision === "completed"
+                              ? "Abgeschlossen"
+                              : r.decision === "retired"
+                                ? "Beendet"
+                                : "Weiterentwickeln"}
+                          </h3>
+                          <p className="text-sm">
+                            {r.reviewed_at.slice(0, 10)} · Bearbeitung {r.cycle}
                           </p>
-                        );
-                      })}
-                    {read.amendments
-                      .filter((a) => a.review_id === r.id)
-                      .map((a) => (
-                        <p className="text-sm" key={a.id}>
-                          {a.kind === "clarification"
-                            ? "Ergänzung"
-                            : a.kind === "withdrawal"
-                              ? "Zurückgezogen"
-                              : "Irrtümlich"}{" "}
-                          · {a.note}
-                        </p>
-                      ))}
-                    <details>
-                      <summary className="cursor-pointer py-2 text-sm">
-                        Entscheidung ergänzen / korrigieren
-                      </summary>
-                      <SkillCommandForm
-                        {...formProps}
-                        operation="review.amend"
-                        label="Ergänzung speichern"
-                        payload={{ review_id: r.id }}
-                      >
-                        <label>
-                          Art
-                          <select
-                            aria-label="Art"
-                            name="kind"
-                            className={fieldClass}
-                          >
-                            <option value="clarification">Ergänzung</option>
-                            <option value="withdrawal">Zurückziehen</option>
-                            <option value="mistaken">Irrtümlich</option>
-                          </select>
-                        </label>
-                        <Text name="note" label="Begründung" required large />
-                        <p className="text-sm">
-                          Ein aktuell referenzierter Abschluss wird dabei
-                          atomisch wieder geöffnet.
-                        </p>
-                      </SkillCommandForm>
-                    </details>
+                          <p className="whitespace-pre-wrap break-words text-sm">
+                            {r.note}
+                          </p>
+                          <details>
+                            <summary className="cursor-pointer py-2 text-sm">
+                              Damals festgehaltenen Stand anzeigen
+                            </summary>
+                            <div className="grid gap-2 text-sm">
+                              <p className="whitespace-pre-wrap break-words">
+                                {r.subject_snapshot.description}
+                              </p>
+                              <p>Lernschritte bei der Überprüfung:</p>
+                              {r.milestones_snapshot.length ? (
+                                <ol>
+                                  {r.milestones_snapshot.map((m) => (
+                                    <li key={m.id}>
+                                      {m.title} · {statusLabel[m.status]}
+                                      {m.description && (
+                                        <p className="whitespace-pre-wrap break-words text-[var(--text-muted)]">
+                                          {m.description}
+                                        </p>
+                                      )}
+                                    </li>
+                                  ))}
+                                </ol>
+                              ) : (
+                                <p>
+                                  Keine aktiven Lernschritte bei der
+                                  Überprüfung.
+                                </p>
+                              )}
+                            </div>
+                          </details>
+                          <p className="text-sm">
+                            {
+                              read.review_evidence.filter(
+                                (x) => x.review_id === r.id,
+                              ).length
+                            }{" "}
+                            ausgewählte Beobachtungsversionen
+                          </p>
+                          {read.review_evidence
+                            .filter((x) => x.review_id === r.id)
+                            .map((x) => {
+                              const v = read.revisions.find(
+                                (v) =>
+                                  v.evidence_id === x.evidence_id &&
+                                  v.revision === x.evidence_revision,
+                              );
+                              return (
+                                <p className="text-sm" key={x.evidence_id}>
+                                  {v?.title ?? "Beobachtung nicht verfügbar"} ·{" "}
+                                  {v?.evidence_date} · Version{" "}
+                                  {x.evidence_revision}
+                                </p>
+                              );
+                            })}
+                          {read.amendments
+                            .filter((a) => a.review_id === r.id)
+                            .map((a) => (
+                              <p className="text-sm" key={a.id}>
+                                {a.kind === "clarification"
+                                  ? "Ergänzung"
+                                  : a.kind === "withdrawal"
+                                    ? "Zurückgezogen"
+                                    : "Irrtümlich"}{" "}
+                                · {a.note}
+                              </p>
+                            ))}
+                        </>
+                      }
+                      actions={
+                        <>
+                          <details>
+                            <summary className="cursor-pointer py-2 text-sm">
+                              Entscheidung ergänzen / korrigieren
+                            </summary>
+                            <SkillCommandForm
+                              {...formProps}
+                              operation="review.amend"
+                              label="Ergänzung speichern"
+                              payload={{ review_id: r.id }}
+                            >
+                              <label>
+                                Art
+                                <select
+                                  aria-label="Art"
+                                  name="kind"
+                                  className={fieldClass}
+                                >
+                                  <option value="clarification">
+                                    Ergänzung
+                                  </option>
+                                  <option value="withdrawal">
+                                    Zurückziehen
+                                  </option>
+                                  <option value="mistaken">Irrtümlich</option>
+                                </select>
+                              </label>
+                              <Text
+                                name="note"
+                                label="Begründung"
+                                required
+                                large
+                              />
+                              <p className="text-sm">
+                                Ein aktuell referenzierter Abschluss wird dabei
+                                atomisch wieder geöffnet.
+                              </p>
+                            </SkillCommandForm>
+                          </details>
+                        </>
+                      }
+                    />
                   </article>
                 ))}
               </div>
@@ -1158,9 +1442,9 @@ export function SkillWorkbench({
           <div id="skill-connections" className="scroll-mt-6">
             <details>
               <summary className="cursor-pointer py-2 font-medium">
-                Verbindungen verwalten
+                Verknüpfte Aufgaben
               </summary>{" "}
-              <Panel title="Verbindungen verwalten">
+              <Panel title="Verknüpfte Aufgaben">
                 <p className="text-sm text-[var(--text-muted)]">
                   Aktuelle Aufgabenverbindungen; Aufgaben bleiben der
                   Arbeitsort.
@@ -1173,117 +1457,144 @@ export function SkillWorkbench({
                       key={t.id}
                       className="grid gap-1 border-t border-[var(--border-subtle)] pt-3"
                     >
-                      <Link
-                        className="break-words font-medium"
-                        href={`/tasks/${t.id}`}
-                      >
-                        {t.title}
-                      </Link>
-                      <p className="text-sm">
-                        {t.status === "done"
-                          ? `Abgeschlossen · ${t.completed_at ? new Date(t.completed_at).toLocaleDateString("de-DE", { timeZone: read.timezone }) : "Datum unbekannt"}`
-                          : t.status === "canceled"
-                            ? "Abgebrochen"
-                            : t.status}
-                        {t.completed_at && t.linked_at > t.completed_at
-                          ? " · Nachträglich verknüpft"
-                          : ""}
-                      </p>
-                      {t.project_id &&
-                        data.projects.some((p) => p.id === t.project_id) && (
-                          <Link
-                            className="text-sm text-[var(--text-muted)]"
-                            href={`/projects/${t.project_id}`}
-                          >
-                            Project ·{" "}
-                            {
-                              data.projects.find((p) => p.id === t.project_id)!
-                                .title
-                            }
-                          </Link>
-                        )}
-                      {t.goal_id &&
-                        data.goals.some((g) => g.id === t.goal_id) && (
-                          <Link
-                            className="text-sm text-[var(--text-muted)]"
-                            href={`/goals/${t.goal_id}`}
-                          >
-                            Goal ·{" "}
-                            {data.goals.find((g) => g.id === t.goal_id)!.title}
-                          </Link>
-                        )}
-                      {!["done", "canceled"].includes(t.status) && (
-                        <p className="text-sm">
-                          {
-                            skillTaskReadiness(
-                              data.dependencyGraph,
-                              t.id,
-                              data.dependencyUnavailable === true,
-                            ).label
-                          }
-                        </p>
-                      )}
-                      {!archived && (
-                        <OperationForm
-                          operation="skill.unlink"
-                          label={`Verbindung entfernen: ${t.title}`}
-                        >
-                          <input type="hidden" name="skillId" value={s.id} />
-                          <input
-                            type="hidden"
-                            aria-label="Task"
-                            name="taskId"
-                            value={t.id}
-                          />
-                        </OperationForm>
-                      )}
+                      <SkillColumns
+                        information={
+                          <>
+                            <Link
+                              className="break-words font-medium"
+                              href={`/tasks/${t.id}`}
+                            >
+                              {t.title}
+                            </Link>
+                            <p className="text-sm">
+                              {t.status === "done"
+                                ? `Abgeschlossen · ${t.completed_at ? new Date(t.completed_at).toLocaleDateString("de-DE", { timeZone: read.timezone }) : "Datum unbekannt"}`
+                                : t.status === "canceled"
+                                  ? "Abgebrochen"
+                                  : t.status}
+                              {t.completed_at && t.linked_at > t.completed_at
+                                ? " · Nachträglich verknüpft"
+                                : ""}
+                            </p>
+                            {t.project_id &&
+                              data.projects.some(
+                                (p) => p.id === t.project_id,
+                              ) && (
+                                <Link
+                                  className="text-sm text-[var(--text-muted)]"
+                                  href={`/projects/${t.project_id}`}
+                                >
+                                  Project ·{" "}
+                                  {
+                                    data.projects.find(
+                                      (p) => p.id === t.project_id,
+                                    )!.title
+                                  }
+                                </Link>
+                              )}
+                            {t.goal_id &&
+                              data.goals.some((g) => g.id === t.goal_id) && (
+                                <Link
+                                  className="text-sm text-[var(--text-muted)]"
+                                  href={`/goals/${t.goal_id}`}
+                                >
+                                  Goal ·{" "}
+                                  {
+                                    data.goals.find((g) => g.id === t.goal_id)!
+                                      .title
+                                  }
+                                </Link>
+                              )}
+                            {!["done", "canceled"].includes(t.status) && (
+                              <p className="text-sm">
+                                {
+                                  skillTaskReadiness(
+                                    data.dependencyGraph,
+                                    t.id,
+                                    data.dependencyUnavailable === true,
+                                  ).label
+                                }
+                              </p>
+                            )}
+                          </>
+                        }
+                        actions={
+                          <>
+                            {!archived && (
+                              <OperationForm
+                                operation="skill.unlink"
+                                label={`Verbindung entfernen: ${t.title}`}
+                              >
+                                <input
+                                  type="hidden"
+                                  name="skillId"
+                                  value={s.id}
+                                />
+                                <input
+                                  type="hidden"
+                                  aria-label="Task"
+                                  name="taskId"
+                                  value={t.id}
+                                />
+                              </OperationForm>
+                            )}
+                          </>
+                        }
+                      />
                     </article>
                   ))
                 )}
-                {!archived && !current && (
-                  <Link
-                    className="text-sm underline"
-                    href={`/tasks/new?skill=${s.id}`}
-                  >
-                    Task anlegen
-                  </Link>
-                )}
-                {!archived && (
-                  <details>
-                    <summary className="cursor-pointer py-2 text-sm">
-                      Aufgabe verknüpfen
-                    </summary>
-                    <OperationForm
-                      operation="skill.link"
-                      label="Aufgabe mit Skill verknüpfen"
-                    >
-                      <input type="hidden" name="skillId" value={s.id} />
-                      <label>
-                        Task
-                        <select
-                          className={fieldClass}
-                          aria-label="Task"
-                          name="taskId"
-                          required
+                <SkillColumns
+                  information={null}
+                  actions={
+                    <>
+                      {!archived && !current && (
+                        <Link
+                          className="text-sm underline"
+                          href={`/tasks/new?skill=${s.id}`}
                         >
-                          <option value="">Task wählen</option>
-                          {data.tasks
-                            .filter(
-                              (t) =>
-                                !t.archived_at &&
-                                t.status !== "archived" &&
-                                !read.practice.some((x) => x.id === t.id),
-                            )
-                            .map((t) => (
-                              <option key={t.id} value={t.id}>
-                                {t.title}
-                              </option>
-                            ))}
-                        </select>
-                      </label>
-                    </OperationForm>
-                  </details>
-                )}
+                          Task anlegen
+                        </Link>
+                      )}
+                      {!archived && (
+                        <details>
+                          <summary className="cursor-pointer py-2 text-sm">
+                            Aufgabe verknüpfen
+                          </summary>
+                          <OperationForm
+                            operation="skill.link"
+                            label="Aufgabe mit Skill verknüpfen"
+                          >
+                            <input type="hidden" name="skillId" value={s.id} />
+                            <label>
+                              Task
+                              <select
+                                className={fieldClass}
+                                aria-label="Task"
+                                name="taskId"
+                                required
+                              >
+                                <option value="">Task wählen</option>
+                                {data.tasks
+                                  .filter(
+                                    (t) =>
+                                      !t.archived_at &&
+                                      t.status !== "archived" &&
+                                      !read.practice.some((x) => x.id === t.id),
+                                  )
+                                  .map((t) => (
+                                    <option key={t.id} value={t.id}>
+                                      {t.title}
+                                    </option>
+                                  ))}
+                              </select>
+                            </label>
+                          </OperationForm>
+                        </details>
+                      )}
+                    </>
+                  }
+                />
               </Panel>
             </details>
           </div>
@@ -1315,90 +1626,34 @@ export function SkillWorkbench({
                   {v.reason && <p className="text-sm">{v.reason}</p>}
                 </article>
               ))}
-              {!archived &&
-                read.evidence
-                  .filter((e) => e.withdrawn_at)
-                  .map((e) => (
-                    <SkillCommandForm
-                      key={e.id}
-                      {...formProps}
-                      operation="evidence.restore"
-                      label={`Beobachtung wiederherstellen: ${e.title}`}
-                      payload={{ evidence_id: e.id }}
-                    >
-                      <Text name="reason" label="Begründung" required large />
-                    </SkillCommandForm>
-                  ))}
+              <SkillColumns
+                information={null}
+                actions={
+                  <>
+                    {!archived &&
+                      read.evidence
+                        .filter((e) => e.withdrawn_at)
+                        .map((e) => (
+                          <SkillCommandForm
+                            key={e.id}
+                            {...formProps}
+                            operation="evidence.restore"
+                            label={`Beobachtung wiederherstellen: ${e.title}`}
+                            payload={{ evidence_id: e.id }}
+                          >
+                            <Text
+                              name="reason"
+                              label="Begründung"
+                              required
+                              large
+                            />
+                          </SkillCommandForm>
+                        ))}
+                  </>
+                }
+              />
             </div>
           </details>
-
-          <div id="skill-management" className="scroll-mt-6">
-            {" "}
-            <details>
-              <summary className="cursor-pointer py-2 font-medium">
-                Skill verwalten
-              </summary>
-              <div className="grid gap-4 pt-3">
-                {archived ? (
-                  <p className="text-sm">
-                    Wiederherstellen setzt den Skill pausiert. Fokus und
-                    Lernschritt werden anschließend ausdrücklich gewählt.
-                  </p>
-                ) : (
-                  <>
-                    <SkillCommandForm
-                      {...formProps}
-                      operation="skill.edit"
-                      label="Skill speichern"
-                    >
-                      <Text name="name" label="Name" value={s.name} required />
-                      <Text
-                        name="summary"
-                        label="Warum mir diese Fähigkeit wichtig ist"
-                        value={s.summary}
-                        large
-                      />
-                      <label>
-                        Status
-                        <select
-                          className={fieldClass}
-                          aria-label="Status"
-                          name="status"
-                          defaultValue={s.status}
-                        >
-                          <option value="active">Aktiv</option>
-                          <option value="paused">Pausiert</option>
-                        </select>
-                      </label>
-                      <label>
-                        Area
-                        <select
-                          className={fieldClass}
-                          aria-label="Area"
-                          name="area_id"
-                          defaultValue={s.area_id ?? ""}
-                        >
-                          <option value="">Keine Area</option>
-                          {data.areas
-                            .filter((a) => !a.archived_at)
-                            .map((a) => (
-                              <option key={a.id} value={a.id}>
-                                {a.name}
-                              </option>
-                            ))}
-                        </select>
-                      </label>
-                    </SkillCommandForm>
-                    <SkillCommandForm
-                      {...formProps}
-                      operation="skill.archive"
-                      label="Skill archivieren"
-                    />
-                  </>
-                )}
-              </div>
-            </details>
-          </div>
         </section>
       </div>
     </SkillDisclosureBoundary>
