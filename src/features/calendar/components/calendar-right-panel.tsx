@@ -3,7 +3,10 @@
 import { useToast } from "@/components/feedback/toast-provider";
 import { WeeklyTaskContextPanel } from "./weekly-task-context";
 import type { WeeklyTaskContext } from "../weekly-task-context";
-import { PlannerQueueRowDetails } from "./planner-queue-row-details";
+import {
+  PlannerQueueRowDetails,
+  PlannerQueueSummary,
+} from "./planner-queue-row-details";
 import type { ContentStateMeta } from "@/features/content-state";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -941,8 +944,10 @@ function QueueTaskSchedule({
             {task.title}
           </h3>
           <p className="mt-1 text-[10px] leading-4 text-[var(--text-muted)]">
-            {task.rankingReason} · {task.priority} ·{" "}
-            {durationLabel(task.durationMinutes)}
+            <PlannerQueueSummary
+              task={task}
+              duration={durationLabel(task.durationMinutes)}
+            />
           </p>
         </div>
         <Pill accent={task.accent ?? "var(--accent-blue)"}>Schedule</Pill>
@@ -1178,8 +1183,10 @@ function PlanningQueue({
                   {task.title}
                 </p>
                 <p className="truncate text-[10px] leading-4 text-[var(--text-muted)]">
-                  {task.rankingReason} · {task.priority} ·{" "}
-                  {durationLabel(task.durationMinutes)}
+                  <PlannerQueueSummary
+                    task={task}
+                    duration={durationLabel(task.durationMinutes)}
+                  />
                 </p>
                 <PlannerQueueRowDetails
                   task={task}

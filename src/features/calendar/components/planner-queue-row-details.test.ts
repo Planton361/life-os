@@ -6,7 +6,10 @@ import {
   enrichPlannerQueue,
   type WeeklyTaskContext,
 } from "../weekly-task-context";
-import { PlannerQueueRowDetails } from "./planner-queue-row-details";
+import {
+  PlannerQueueRowDetails,
+  PlannerQueueSummary,
+} from "./planner-queue-row-details";
 
 const task: PlannerQueueItem = {
   id: "ready",
@@ -28,6 +31,22 @@ const context: WeeklyTaskContext = {
   goals: [],
   skills: [],
 };
+it.each(["none", "P0", "P1", "P2", "P3"] as const)(
+  "renders Queue summary with priority=%s without placeholder separators",
+  (priority) => {
+    const markup = renderToStaticMarkup(
+      createElement(PlannerQueueSummary, {
+        task: { ...task, rankingReason: "Project next work", priority },
+        duration: "30 min",
+      }),
+    );
+    expect(markup).toBe(
+      priority === "none"
+        ? "Project next work · 30 min"
+        : `Project next work · ${priority} · 30 min`,
+    );
+  },
+);
 function render(
   source: WeeklyTaskContext,
   overrides: Partial<PlannerQueueItem> = {},
