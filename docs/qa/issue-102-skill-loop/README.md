@@ -7,9 +7,53 @@ Target: [#101 v1.2](https://github.com/Planton361/life-os/issues/101#issuecommen
 All data and screenshots are synthetic authenticated Manual fixtures in the
 repository's disposable local runtime. No remote database or deployment.
 
-## Recovery / completion gate
+## Current terminology repair / gate
 
-**READY_FOR_REVIEW / completion gate PASS for the authorized recovery.**
+**READY_FOR_REVIEW / completion gate PASS for the authorized repair.**
+[CONTROL review 5402653891](https://github.com/Planton361/life-os/pull/103#pullrequestreview-5402653891)
+authorizes the same-#102 ordinary-language and Skill regression repair.
+The summary now says `24 Beobachtungen`, with its original counting semantics:
+no mastery, progress or ability interpretation. Canonical Skill expectations use
+accepted capture language, read-only identity readback, the real `Portfolio / Skills`
+breadcrumb and `Skill öffnen`.
+
+Current evidence:
+
+- `r2-04-portfolio-surface.spec.ts`: **2/2 passed**, including all five entity
+  Create/detail/reload paths, selected inspector readback, every view/scope/sort,
+  navigation/history and 3840/2560/1920/390 layout plus real workspace overflow.
+- Initial attempts stopped before Skill at stale Task capture/readback/navigation.
+  The user explicitly authorized minimal Task/Goal selector updates. Task opens
+  optional details and uses current field labels; reload opens the real edit dialog
+  and still checks the exact persisted value. Its current `/tasks` breadcrumb is
+  checked with the same Task ID, then real Portfolio/Tasks controls retain the
+  original filtered-list assertion. Goal form/button/description/breadcrumb names
+  match current capture. Project/Resource expectations are unchanged; no assertion
+  is skipped or weakened and no Task/Goal product code changed.
+- `issue-102-skill-loop.spec.ts` and `issue-102-skill-surface.spec.ts`: **3 distinct
+  cases passed** across the combined run and focused matrix rerun. This includes
+  actual Skill capture/reload, owned-Area lifecycle, Portfolio controls, dependency
+  outage, Task-origin recovery and all three viewports. The combined matrix first
+  lost focus after viewport captures; polling the actual focus action until active
+  preserves keyboard Enter/Escape/form assertions, and the rerun passes.
+- Rich Summary has a scoped `24 Beobachtungen` assertion and the Portfolio region
+  rejects `Evidence-Einträge`. Six refreshed rich/no-target Portfolio screenshots
+  confirm ordinary-language wording at 3840×2160, 1920×1080 and 390×844.
+  Console/hydration and bounds checks pass.
+- Browser-Proof **PASS**; V5 wording/composition **PASS**. No new Area/security
+  change. Final USER ACCEPTED remains pending; no product closure is claimed.
+- Final diff-check/typecheck/lint/build and exact-head required `quality` are
+  referenced in PR #103. Existing branch, same PR, no merge or remote DB.
+
+```sh
+pnpm test:e2e:isolated tests/e2e/r2-04-portfolio-surface.spec.ts
+pnpm test:e2e:isolated tests/e2e/issue-102-skill-loop.spec.ts tests/e2e/issue-102-skill-surface.spec.ts
+pnpm test:e2e:isolated tests/e2e/issue-102-skill-loop.spec.ts --grep 'real state matrix'
+```
+
+## Prior Area recovery / evidence
+
+**Area recovery PASS on prior head `82221c0a707fc295a71fbc5e29328d55ffd25f85`.**
 Merged main `88d44e7417c8dcd4a8c78b696ff44a7f95d63fe8` into the existing #102
 branch after [#104](https://github.com/Planton361/life-os/issues/104) / [#105](https://github.com/Planton361/life-os/pull/105).
 Authorization: [CONTROL recovery](https://github.com/Planton361/life-os/issues/102#issuecomment-5973164755)
@@ -95,7 +139,8 @@ Missing real #102 USER ACCEPTED prevents final product closure.
 
 ## Screenshots
 
-48 current full-page screenshots from the recovery runs; all three viewports per state.
+48 full-page screenshots from the Area recovery runs; all three viewports per state.
+The six rich/no-target Portfolio captures below were refreshed after the terminology repair.
 
 - empty: [3840](issue-102-empty-3840.png), [1920](issue-102-empty-1920.png), [390](issue-102-empty-390.png)
 - no-target: [3840](issue-102-no-target-3840.png), [1920](issue-102-no-target-1920.png), [390](issue-102-no-target-390.png)

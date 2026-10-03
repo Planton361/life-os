@@ -81,22 +81,22 @@
   },
   {
     "name": "Priority",
-    "href": "/portfolio?view=skills&selected=fea46d7a-9fd3-4ac3-ac77-427a0c299a40",
+    "href": "/portfolio?view=skills&selected=f24b99b9-dac2-4109-a7a4-3dfdf2904fcb",
     "result": "PASS"
   },
   {
     "name": "Deadline",
-    "href": "/portfolio?view=skills&selected=fea46d7a-9fd3-4ac3-ac77-427a0c299a40&sort=deadline",
+    "href": "/portfolio?view=skills&selected=f24b99b9-dac2-4109-a7a4-3dfdf2904fcb&sort=deadline",
     "result": "PASS"
   },
   {
     "name": "Recently touched",
-    "href": "/portfolio?view=skills&selected=fea46d7a-9fd3-4ac3-ac77-427a0c299a40&sort=recent",
+    "href": "/portfolio?view=skills&selected=f24b99b9-dac2-4109-a7a4-3dfdf2904fcb&sort=recent",
     "result": "PASS"
   },
   {
     "name": "Alltag ohne EntwicklungsfokusSkill/Ohne Area/practicingrecently touchedFokus: Ohne Entwicklungsfokus1 offene Aufgaben · 0 abgeschlossen · 1 ausführbar · 0 blockiertZuletzt geübt: Noch kein datierter AufgabenabschlussLetzte Beobachtung: Noch keine datierte Beobachtung",
-    "href": "/portfolio?view=skills&selected=fea46d7a-9fd3-4ac3-ac77-427a0c299a40",
+    "href": "/portfolio?view=skills&selected=f24b99b9-dac2-4109-a7a4-3dfdf2904fcb",
     "result": "PASS"
   },
   {
@@ -126,7 +126,7 @@
   },
   {
     "name": "Skill öffnen",
-    "href": "/skills/fea46d7a-9fd3-4ac3-ac77-427a0c299a40",
+    "href": "/skills/f24b99b9-dac2-4109-a7a4-3dfdf2904fcb",
     "result": "PASS"
   }
 ]

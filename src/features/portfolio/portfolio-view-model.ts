@@ -114,7 +114,7 @@ function getStats(entities: readonly PortfolioEntity[]): PortfolioStat[] {
     {
       label: "Skills",
       value: String(countBy(entities, (entity) => entity.type === "skill")),
-      detail: `${entities.filter((e) => e.type === "skill").reduce((count, e) => count + (e.skillContext?.evidenceRows?.length ?? 0), 0)} Evidence-Einträge`,
+      detail: `${entities.filter((e) => e.type === "skill").reduce((count, e) => count + (e.skillContext?.evidenceRows?.length ?? 0), 0)} Beobachtungen`,
       accent: "var(--accent-cyan)",
     },
     {

@@ -171,8 +171,14 @@ test("#102 real state matrix, bounded rich workbench, Portfolio, lifecycle and s
     work.getByRole("complementary", { name: "Beobachtungen" }),
   ).toHaveCount(0);
   await proof(page, info, "empty");
-  await primary.locator("summary").focus();
-  await expect(primary.locator("summary")).toBeFocused();
+  await expect
+    .poll(async () => {
+      await primary.locator("summary").focus();
+      return primary
+        .locator("summary")
+        .evaluate((el) => el === document.activeElement);
+    })
+    .toBe(true);
   await primary.locator("summary").press("Enter");
   await expect(primary.getByRole("form")).toBeVisible();
   await primary.getByLabel("Was möchtest du besser können?").focus();
@@ -394,6 +400,12 @@ test("#102 real state matrix, bounded rich workbench, Portfolio, lifecycle and s
   );
   await expect(inspector).toContainText("15 ausführbar · 2 blockiert");
   await expect(inspector).toContainText("Area: Zusammenarbeit");
+  await expect(
+    page.getByRole("region", { name: "Portfolio summary" }),
+  ).toContainText("24 Beobachtungen");
+  await expect(page.locator("#portfolio-page")).not.toContainText(
+    "Evidence-Einträge",
+  );
   await expect(inspector.getByText("Next Action", { exact: true })).toHaveCount(
     0,
   );
