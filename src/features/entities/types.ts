@@ -117,7 +117,10 @@ export type LifeTask = {
   evidence: readonly EntityEvidence[];
   calendarBlockIds?: readonly string[];
   inboxItemIds?: readonly string[];
-  scheduleSource?: { id: string; type: "meal" | "review" | "running_plan_item" | "strength_plan" };
+  scheduleSource?: {
+    id: string;
+    type: "meal" | "review" | "running_plan_item" | "strength_plan";
+  };
 };
 
 export type LifeProject = {
@@ -172,6 +175,9 @@ export type SkillPathStage = {
 };
 
 export type LifeSkill = {
+  areaLabel?: string;
+  practiceSummary?: string;
+  latestObservationDate?: string | null;
   currentDevelopmentTarget?: { id: string; title: string } | null;
   id: string;
   title: string;

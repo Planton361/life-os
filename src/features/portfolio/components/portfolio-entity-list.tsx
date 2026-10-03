@@ -25,7 +25,7 @@ import type {
 
 function getTemporalLabel(entity: PortfolioEntity) {
   if (entity.type === "skill") {
-    return `Last practice: ${entity.lastTouched}`;
+    return `Zuletzt geübt: ${entity.lastTouched}`;
   }
 
   return `Due: ${entity.dueLabel} / Touched: ${entity.lastTouched}`;
@@ -90,7 +90,9 @@ function PortfolioRow({
               className="text-[var(--accent)]"
               style={accentStyle(area.accent)}
             >
-              {area.label}
+              {entity.type === "skill"
+                ? (skillContext?.areaLabel ?? area.label)
+                : area.label}
             </span>
             <span aria-hidden="true">/</span>
             <span>{status.label}</span>
@@ -103,14 +105,20 @@ function PortfolioRow({
       </div>
 
       <p className="mt-2 line-clamp-2 text-[11px] leading-4 text-[var(--text-secondary)]">
-        <span className="font-semibold text-[var(--text-muted)]">Next:</span>{" "}
-        {entity.nextAction}
+        <span className="font-semibold text-[var(--text-muted)]">
+          {entity.type === "skill" ? "Fokus:" : "Next:"}
+        </span>{" "}
+        {entity.type === "skill"
+          ? (entity.skillContext?.focus ?? "Ohne Entwicklungsfokus")
+          : entity.nextAction}
       </p>
 
       {entity.type === "skill" ? (
         <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[10px] leading-4 text-[var(--text-muted)]">
-          <span>Practice: {skillContext?.practiceStatus ?? status.label}</span>
-          <span>{skillContext?.linkedTasks?.length ?? 0} verknüpfte Tasks</span>
+          <span>
+            {skillContext?.practiceSummary ?? "Übungsdaten nicht verfügbar"}
+          </span>
+          <span>{getTemporalLabel(entity)}</span>
         </div>
       ) : (
         <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
@@ -120,11 +128,11 @@ function PortfolioRow({
 
       <p className="mt-2 text-[10px] leading-4 text-[var(--text-muted)]">
         {entity.type === "skill"
-          ? `${skillContext?.evidenceRows?.length ?? 0} Evidence-Einträge`
-            : entity.type === "task"
-              ? entity.taskEditValues?.durationMinutes
-                ? `${entity.taskEditValues.durationMinutes} min Aufwand`
-                : "Aufwand nicht gesetzt"
+          ? `Letzte Beobachtung: ${skillContext?.latestObservationDate ?? "Noch keine datierte Beobachtung"}${skillContext?.evidenceRows?.[0] ? ` · ${skillContext.evidenceRows[0].title}` : ""}`
+          : entity.type === "task"
+            ? entity.taskEditValues?.durationMinutes
+              ? `${entity.taskEditValues.durationMinutes} min Aufwand`
+              : "Aufwand nicht gesetzt"
             : entity.goalOutcome
               ? `Outcome · ${entity.countLabel}`
               : entity.countLabel}

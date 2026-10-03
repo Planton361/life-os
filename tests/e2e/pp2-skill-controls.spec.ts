@@ -76,19 +76,22 @@ test("PP2 remaining controls: ordering, milestone lifecycle, target retirement/r
     .single();
   expect(resource.error).toBeNull();
   await page.reload();
-  const focus = work.getByRole("region", {
-    name: "Aktueller Entwicklungsfokus",
+  const focus = work.getByRole("region", { name: "Aktuelle Entwicklung" });
+  await disclosure(focus, "Entwicklungsfokus festlegen");
+  let f = focus.getByRole("form", {
+    name: "Entwicklungsfokus geplant speichern",
   });
-  let f = focus.getByRole("form", { name: "Development Target erstellen" });
-  await f.getByLabel("Titel", { exact: true }).fill("Target A");
-  await save(f, "Development Target erstellen");
-  const other = await disclosure(work, "Weitere Targets & Verlauf");
+  await f
+    .getByLabel("Was möchtest du besser können?", { exact: true })
+    .fill("Target A");
+  await save(f, "Entwicklungsfokus geplant speichern");
+  const other = await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
   let target = other.locator("[data-target]").first();
   await save(
     target.getByRole("form", { name: "Als aktuellen Fokus wählen" }),
     "Als aktuellen Fokus wählen",
   );
-  target = focus.locator("[data-target]");
+  target = other.locator("[data-target]").first();
   for (const name of ["First step", "Second step"]) {
     const d = await disclosure(target, "Lernschritt hinzufügen");
     f = d.getByRole("form", { name: "Lernschritt hinzufügen", exact: true });
@@ -99,6 +102,9 @@ test("PP2 remaining controls: ordering, milestone lifecycle, target retirement/r
   let manage = await disclosure(step, "Lernschritt verwalten");
   await save(manage.getByRole("form", { name: "Nach oben" }), "Nach oben");
   await page.reload();
+  await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
+  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Lernmaterial & Quellen");
   await expect(target.locator("h4")).toHaveText([
     "Second step · Geplant",
     "First step · Geplant",
@@ -114,13 +120,18 @@ test("PP2 remaining controls: ordering, milestone lifecycle, target retirement/r
     manage.getByRole("form", { name: "Als aktuellen Lernschritt wählen" }),
     "Als aktuellen Lernschritt wählen",
   );
-  const review = await disclosure(manage, "Lernschritt reviewen");
-  f = review.getByRole("form", { name: "Lernschritt Review" });
+  const review = await disclosure(manage, "Lernschritt überprüfen");
+  f = review.getByRole("form", { name: "Lernschritt überprüfen" });
   await f.getByLabel("Entscheidung").selectOption("completed");
   await f.getByLabel("Begründung").fill("Reviewed step");
-  await f.getByRole("button", { name: "Review prüfen", exact: true }).click();
-  await save(f, "Review speichern");
+  await f
+    .getByRole("button", { name: "Überprüfung prüfen", exact: true })
+    .click();
+  await save(f, "Überprüfung speichern");
   await page.reload();
+  await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
+  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Lernmaterial & Quellen");
   manage = await disclosure(step, "Lernschritt verwalten");
   await save(
     manage.getByRole("form", { name: "Lernschritt wieder öffnen" }),
@@ -131,95 +142,126 @@ test("PP2 remaining controls: ordering, milestone lifecycle, target retirement/r
     "Lernschritt archivieren",
   );
   await page.reload();
+  await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
+  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Lernmaterial & Quellen");
   await expect(
     target.getByRole("article", { name: "Lernschritt Second step" }),
   ).toHaveCount(0);
-  let tm = await disclosure(target, "Target verwalten");
+  let tm = await disclosure(target, "Entwicklungsfokus verwalten");
   await save(
     tm.getByRole("form", { name: "Lernschritt wiederherstellen: Second step" }),
     "Lernschritt wiederherstellen: Second step",
   );
   await page.reload();
+  await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
+  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Lernmaterial & Quellen");
   await expect(target.locator("h4")).toHaveText([
     "First step · Geplant",
     "Second step · Geplant",
   ]);
-  tm = await disclosure(target, "Target verwalten");
-  f = tm.getByRole("form", { name: "Target speichern" });
+  tm = await disclosure(target, "Entwicklungsfokus verwalten");
+  f = tm.getByRole("form", { name: "Fokus speichern" });
   await f.getByLabel("Beschreibung", { exact: true }).fill("Edited target");
-  await save(f, "Target speichern");
+  await save(f, "Fokus speichern");
   await save(
-    tm.getByRole("form", { name: "Target archivieren" }),
-    "Target archivieren",
+    tm.getByRole("form", { name: "Fokus archivieren" }),
+    "Fokus archivieren",
   );
   await page.reload();
-  await disclosure(work, "Weitere Targets & Verlauf");
+  await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
+  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Lernmaterial & Quellen");
+  await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
   target = work.locator("[data-target]").first();
-  tm = await disclosure(target, "Target verwalten");
+  tm = await disclosure(target, "Entwicklungsfokus verwalten");
   await save(
-    tm.getByRole("form", { name: "Target wiederherstellen" }),
-    "Target wiederherstellen",
+    tm.getByRole("form", { name: "Fokus wiederherstellen" }),
+    "Fokus wiederherstellen",
   );
   await save(
     target.getByRole("form", { name: "Als aktuellen Fokus wählen" }),
     "Als aktuellen Fokus wählen",
   );
-  target = focus.locator("[data-target]");
-  let tr = await disclosure(target, "Target reviewen");
-  f = tr.getByRole("form", { name: "Target Review" });
+  target = other.locator("[data-target]").first();
+  let tr = await disclosure(target, "Entwicklungsfokus überprüfen");
+  f = tr.getByRole("form", { name: "Entwicklungsfokus überprüfen" });
   await f.getByLabel("Entscheidung").selectOption("retired");
   await f.getByLabel("Begründung", { exact: true }).fill("Cancel preview");
   await f.getByLabel("Noch offene Lernschritte bewusst bestätigen").check();
-  await f.getByRole("button", { name: "Review prüfen", exact: true }).click();
+  await f
+    .getByRole("button", { name: "Überprüfung prüfen", exact: true })
+    .click();
   await f.getByRole("button", { name: "Abbrechen", exact: true }).click();
   await expect(tr.locator("summary").first()).toBeFocused();
   await page.reload();
+  await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
+  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Lernmaterial & Quellen");
   await expect(target.getByText("Aktuell", { exact: true })).toBeVisible();
-  tr = await disclosure(target, "Target reviewen");
-  f = tr.getByRole("form", { name: "Target Review" });
+  tr = await disclosure(target, "Entwicklungsfokus überprüfen");
+  f = tr.getByRole("form", { name: "Entwicklungsfokus überprüfen" });
   await f.getByLabel("Entscheidung").selectOption("continue");
   await f
     .getByLabel("Begründung", { exact: true })
     .fill("Continue without automatic advancement");
-  await f.getByRole("button", { name: "Review prüfen", exact: true }).click();
-  await save(f, "Review speichern");
+  await f
+    .getByRole("button", { name: "Überprüfung prüfen", exact: true })
+    .click();
+  await save(f, "Überprüfung speichern");
   await page.reload();
+  await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
+  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Lernmaterial & Quellen");
   await expect(target.getByText("Aktuell", { exact: true })).toBeVisible();
-  tr = await disclosure(target, "Target reviewen");
-  f = tr.getByRole("form", { name: "Target Review" });
+  tr = await disclosure(target, "Entwicklungsfokus überprüfen");
+  f = tr.getByRole("form", { name: "Entwicklungsfokus überprüfen" });
   await f.getByLabel("Entscheidung").selectOption("retired");
   await f.getByLabel("Begründung", { exact: true }).fill("Retire deliberately");
   await f.getByLabel("Noch offene Lernschritte bewusst bestätigen").check();
-  await f.getByRole("button", { name: "Review prüfen", exact: true }).click();
-  await save(f, "Review speichern");
+  await f
+    .getByRole("button", { name: "Überprüfung prüfen", exact: true })
+    .click();
+  await save(f, "Überprüfung speichern");
   await page.reload();
-  await disclosure(work, "Weitere Targets & Verlauf");
+  await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
+  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Lernmaterial & Quellen");
+  await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
   target = work.locator("[data-target]").first();
-  tm = await disclosure(target, "Target verwalten");
+  tm = await disclosure(target, "Entwicklungsfokus verwalten");
   await save(
-    tm.getByRole("form", { name: "Target wieder öffnen" }),
-    "Target wieder öffnen",
+    tm.getByRole("form", { name: "Fokus wieder öffnen" }),
+    "Fokus wieder öffnen",
   );
   await page.reload();
+  await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
+  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Lernmaterial & Quellen");
   await expect(
-    focus.getByText("Kein aktueller Entwicklungsfokus.", { exact: true }),
+    focus.getByText("Kein Entwicklungsfokus festgelegt.", { exact: true }),
   ).toBeVisible();
   // Existing Task links affect current Practice, never synthesize Evidence.
-  const practice = work.getByRole("region", { name: "Practice & Anwendung" });
-  let d = await disclosure(practice, "Task verknüpfen");
-  f = d.getByRole("form", { name: "Task mit Skill verknüpfen" });
+  await disclosure(work, "Verbindungen verwalten");
+  const practice = work.getByRole("region", { name: "Verbindungen verwalten" });
+  let d = await disclosure(practice, "Aufgabe verknüpfen");
+  f = d.getByRole("form", { name: "Aufgabe mit Skill verknüpfen" });
   await f.getByLabel("Task", { exact: true }).selectOption(task.data!.id);
-  await save(f, "Task mit Skill verknüpfen", "Skill mit Task verknüpft.");
+  await save(f, "Aufgabe mit Skill verknüpfen", "Skill mit Task verknüpft.");
   await page.reload();
+  await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
+  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Lernmaterial & Quellen");
   await expect(
     practice.getByRole("link", { name: "Canonical practice", exact: true }),
   ).toBeVisible();
-  const recency = work.getByRole("region", { name: "Evidence & Recency" });
+  const recency = work.getByRole("complementary", { name: "Beobachtungen" });
   await expect(recency.getByRole("definition").first()).toContainText(
     "15.9.2026",
   );
   await expect(
-    recency.getByText("Keine aktuelle Skill Evidence.", { exact: true }),
+    recency.getByText("Noch keine Beobachtung festgehalten.", { exact: true }),
   ).toBeVisible();
   await save(
     practice.getByRole("form", {
@@ -229,30 +271,40 @@ test("PP2 remaining controls: ordering, milestone lifecycle, target retirement/r
     "Skill-Verbindung entfernt.",
   );
   await page.reload();
+  await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
+  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Lernmaterial & Quellen");
   await expect(
     practice.getByRole("link", { name: "Canonical practice", exact: true }),
   ).toHaveCount(0);
   await expect(recency.getByRole("definition").first()).toHaveText(
-    "Kein gültiger Completion-Zeitpunkt",
+    "Noch kein datierter Aufgabenabschluss",
   );
-  d = await disclosure(practice, "Task verknüpfen");
-  f = d.getByRole("form", { name: "Task mit Skill verknüpfen" });
+  d = await disclosure(practice, "Aufgabe verknüpfen");
+  f = d.getByRole("form", { name: "Aufgabe mit Skill verknüpfen" });
   await f.getByLabel("Task", { exact: true }).selectOption(task.data!.id);
-  await save(f, "Task mit Skill verknüpfen", "Skill mit Task verknüpft.");
+  await save(f, "Aufgabe mit Skill verknüpfen", "Skill mit Task verknüpft.");
   await page.reload();
-  d = await disclosure(recency, "Evidence hinzufügen");
-  f = d.getByRole("form", { name: "Evidence hinzufügen", exact: true });
+  await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
+  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Lernmaterial & Quellen");
+  d = await disclosure(work, "Beobachtung festhalten");
+  f = d.getByRole("form", { name: "Beobachtung festhalten", exact: true });
   await f.getByLabel("Titel", { exact: true }).fill("Task sourced observation");
   await f.getByLabel("Datum", { exact: true }).fill("2026-09-14");
-  await f.getByLabel("Evidence-Quelle").selectOption(`task:${task.data!.id}`);
-  await save(f, "Evidence hinzufügen");
+  await f.getByLabel("Quelle").selectOption(`task:${task.data!.id}`);
+  await save(f, "Beobachtung festhalten");
   await page.reload();
+  await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
+  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Lernmaterial & Quellen");
   const e = recency.getByRole("article", {
-    name: "Evidence Task sourced observation",
+    name: "Beobachtung Task sourced observation",
   });
   await e.getByRole("link", { name: "Quelle öffnen" }).click();
   await expect(page).toHaveURL(new RegExp(`/tasks/${task.data!.id}$`));
   await page.goto(url);
+  await disclosure(work, "Lernmaterial & Quellen");
   expect(
     (
       await api
@@ -262,8 +314,11 @@ test("PP2 remaining controls: ordering, milestone lifecycle, target retirement/r
     ).error,
   ).toBeNull();
   await page.reload();
+  await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
+  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Lernmaterial & Quellen");
   await expect(recency.getByRole("definition").first()).toHaveText(
-    "Kein gültiger Completion-Zeitpunkt",
+    "Noch kein datierter Aufgabenabschluss",
   );
   expect(
     (
@@ -274,6 +329,9 @@ test("PP2 remaining controls: ordering, milestone lifecycle, target retirement/r
     ).error,
   ).toBeNull();
   await page.reload();
+  await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
+  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Lernmaterial & Quellen");
   await expect(
     practice.getByRole("link", { name: "Canonical practice", exact: true }),
   ).toHaveCount(0);
@@ -282,24 +340,31 @@ test("PP2 remaining controls: ordering, milestone lifecycle, target retirement/r
   ).toBeVisible();
   await expect(recency.getByRole("definition").nth(1)).toHaveText("2026-09-14");
   // References preserve their existing relation identity and do not create Evidence.
-  const refs = work.getByRole("region", { name: "Lernmaterial & References" });
-  d = await disclosure(refs, "Reference verknüpfen");
-  f = d.getByRole("form", { name: "Reference mit Skill verknüpfen" });
+  const refs = work.getByRole("region", { name: "Lernmaterial & Quellen" });
+  d = await disclosure(refs, "Quelle verknüpfen");
+  f = d.getByRole("form", { name: "Quelle mit Skill verknüpfen" });
   await f
     .getByLabel("Resource", { exact: true })
     .selectOption(resource.data!.id);
-  await save(f, "Reference mit Skill verknüpfen", "Resource verknüpft.");
+  await save(f, "Quelle mit Skill verknüpfen", "Resource verknüpft.");
   await page.reload();
+  await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
+  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Lernmaterial & Quellen");
   await refs.getByRole("link", { name: "Scoped reference · Context" }).click();
   await expect(page).toHaveURL(new RegExp(`/resources/${resource.data!.id}$`));
   await page.goto(url);
-  d = await disclosure(refs, "Reference verwalten");
+  await disclosure(work, "Lernmaterial & Quellen");
+  d = await disclosure(refs, "Quelle verwalten");
   await save(
-    d.getByRole("form", { name: "Reference lösen: Scoped reference" }),
-    "Reference lösen: Scoped reference",
+    d.getByRole("form", { name: "Quelle lösen: Scoped reference" }),
+    "Quelle lösen: Scoped reference",
     "Verknüpfung gelöst.",
   );
   await page.reload();
+  await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
+  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Lernmaterial & Quellen");
   await expect(
     refs.getByRole("link", { name: "Scoped reference · Context" }),
   ).toHaveCount(0);

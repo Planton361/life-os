@@ -46,39 +46,98 @@ test("R2-04 unified Portfolio controls, create/detail reload, history and compos
       .getByRole("link", { name: `${kind} erstellen`, exact: true })
       .click();
     await expect(page).toHaveURL(new RegExp(`/${kind.toLowerCase()}s/new$`));
+    const createLabel =
+      kind === "Goal" ? "Ziel erstellen" : `${kind} erstellen`;
     const form = page.getByRole("form", {
-      name: `${kind} erstellen`,
+      name: createLabel,
       exact: true,
     });
-    await form
-      .getByRole("button", { name: `${kind} erstellen`, exact: true })
-      .click();
+    await form.getByRole("button", { name: createLabel, exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`/${kind.toLowerCase()}s/new$`));
     await form
       .getByLabel(kind === "Skill" ? "Name" : "Titel", { exact: true })
       .fill(`${kind} IA ${stamp}`);
-    await form.getByLabel("Beschreibung / Kontext").fill(`Context ${kind} IA`);
     if (kind === "Task")
-      await form.getByLabel("Next Action").fill("Inspect the canonical work");
+      await form
+        .getByRole("button", {
+          name: "Weitere Angaben (optional)",
+          exact: true,
+        })
+        .click();
     await form
-      .getByRole("button", { name: `${kind} erstellen`, exact: true })
-      .click();
+      .getByLabel(
+        kind === "Skill"
+          ? "Warum mir diese Fähigkeit wichtig ist"
+          : kind === "Task"
+            ? "Beschreibung / Purpose"
+            : kind === "Goal"
+              ? "Was möchtest du erreichen?"
+              : "Beschreibung / Kontext",
+      )
+      .fill(`Context ${kind} IA`);
+    if (kind === "Task")
+      await form
+        .getByLabel("Arbeitsnotiz / nächste Aktion")
+        .fill("Inspect the canonical work");
+    await form.getByRole("button", { name: createLabel, exact: true }).click();
     await expect(page).toHaveURL(
       new RegExp(`/${kind.toLowerCase()}s/[0-9a-f-]{36}$`),
     );
     ids[kind] = page.url().split("/").pop()!;
     await page.reload();
-    await expect(page.getByLabel("Beschreibung / Kontext")).toHaveValue(
-      `Context ${kind} IA`,
-    );
+    if (kind === "Skill") {
+      await expect(page.locator('[aria-label="Skillidentität"]')).toContainText(
+        `Context ${kind} IA`,
+      );
+    } else if (kind === "Task") {
+      await page
+        .getByRole("button", { name: "Bearbeiten", exact: true })
+        .click();
+      const edit = page.getByRole("dialog", {
+        name: "Task bearbeiten",
+        exact: true,
+      });
+      await expect(edit.getByLabel("Beschreibung / Kontext")).toHaveValue(
+        `Context ${kind} IA`,
+      );
+      await edit
+        .getByRole("button", { name: "Abbrechen", exact: true })
+        .click();
+    } else {
+      await expect(page.getByLabel("Beschreibung / Kontext")).toHaveValue(
+        `Context ${kind} IA`,
+      );
+    }
     record(`Create ${kind}`, "Create → ID detail → reload-stable fields");
     if (kind !== "Resource") {
-      await page
-        .getByRole("navigation", { name: "Breadcrumb" })
-        .getByRole("link", { name: `${kind}s`, exact: true })
-        .click();
+      if (kind === "Skill") {
+        await page
+          .locator('[aria-label="Skillidentität"]')
+          .getByRole("link", { name: "Portfolio / Skills", exact: true })
+          .click();
+      } else {
+        await page
+          .getByRole("navigation", { name: "Breadcrumb" })
+          .getByRole("link", {
+            name: kind === "Goal" ? "Ziele" : `${kind}s`,
+            exact: true,
+          })
+          .click();
+      }
+      if (kind === "Task") {
+        await expect(page).toHaveURL(/\/tasks$/);
+        await expect(
+          page
+            .getByRole("region", { name: "Entity-Liste", exact: true })
+            .getByRole("link", { name: new RegExp(`${kind} IA ${stamp}`) }),
+        ).toHaveAttribute("href", `/tasks/${ids.Task}`);
+        await nav.getByRole("link", { name: "Portfolio", exact: true }).click();
+        await filters.getByRole("link", { name: "Tasks", exact: true }).click();
+      }
       await expect(page).toHaveURL(
-        new RegExp(`/portfolio\\?type=${kind.toLowerCase()}s$`),
+        new RegExp(
+          `/portfolio\\?${kind === "Skill" ? "view" : "type"}=${kind.toLowerCase()}s$`,
+        ),
       );
       await expect(
         list.getByRole("link", { name: new RegExp(`${kind} IA ${stamp}`) }),
@@ -128,12 +187,28 @@ test("R2-04 unified Portfolio controls, create/detail reload, history and compos
     await expect(inspector).toContainText(`Context ${kind} IA`);
     if (kind === "Task")
       await expect(inspector).toContainText("Aufwand nicht gesetzt");
-    if (kind === "Skill")
-      await expect(inspector).toContainText("0 Evidence-Einträge");
+    if (kind === "Skill") {
+      await expect(
+        page.getByRole("region", { name: "Portfolio summary" }),
+      ).toContainText("0 Beobachtungen");
+      await expect(inspector).toContainText("Noch keine datierte Beobachtung");
+      await expect(
+        inspector.getByText("Aktueller Stand", { exact: true }),
+      ).toHaveCount(0);
+      await expect(inspector).not.toContainText("Evidence-Einträge");
+    }
     record(`${kind} selection`, "Reload-stable quick inspector");
-    await inspector.getByRole("link", { name: "Details öffnen" }).click();
+    await inspector
+      .getByRole("link", {
+        name: kind === "Skill" ? "Skill öffnen" : "Details öffnen",
+        exact: true,
+      })
+      .click();
     await expect(page).toHaveURL(new RegExp(`/${type}/${ids[kind]}$`));
-    record(`Details öffnen ${kind}`, "Canonical ID detail");
+    record(
+      kind === "Skill" ? "Skill öffnen" : `Details öffnen ${kind}`,
+      "Canonical ID detail",
+    );
     await page.goBack();
     const other = kind === "Project" ? "Tasks" : "Projects";
     await filters.getByRole("link", { name: other, exact: true }).click();

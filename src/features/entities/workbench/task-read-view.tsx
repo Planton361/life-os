@@ -51,7 +51,11 @@ function todayInTimezone(timezone: string) {
   return taskLocalDate(new Date().toISOString(), timezone);
 }
 
-function localTimeRange(value: string, duration: number | null, timezone: string) {
+function localTimeRange(
+  value: string,
+  duration: number | null,
+  timezone: string,
+) {
   const formatter = new Intl.DateTimeFormat("de-DE", {
     timeStyle: "short",
     timeZone: timezone,
@@ -75,6 +79,7 @@ export function TaskReadView({
   steps,
   lifecycle,
   editInitiallyOpen = false,
+  skillRecovery,
 }: {
   data: WorkbenchData;
   taskId: string;
@@ -84,6 +89,7 @@ export function TaskReadView({
   steps: ReactNode;
   lifecycle: ReactNode;
   editInitiallyOpen?: boolean;
+  skillRecovery?: ReactNode;
 }) {
   const task = data.tasks.find((item) => item.id === taskId)!;
   const project = data.projects.find((item) => item.id === task.project_id);
@@ -132,6 +138,7 @@ export function TaskReadView({
       data-task-detail-variant="B"
       className="grid w-full min-w-0 gap-6 px-2 pb-10 md:px-6"
     >
+      {skillRecovery}
       <header
         aria-label="Aufgabenidentität"
         data-task-order="identity"
@@ -292,7 +299,10 @@ export function TaskReadView({
           </div>
         </div>
         <div className="grid min-w-0 gap-6 border-t border-[var(--border-subtle)] pt-5 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-8">
-          <section aria-label="Arbeitsnotiz" className="grid min-w-0 content-start gap-3">
+          <section
+            aria-label="Arbeitsnotiz"
+            className="grid min-w-0 content-start gap-3"
+          >
             <h3 className="font-semibold">Arbeitsnotiz</h3>
             {text.nextAction ? (
               <p className="whitespace-pre-wrap break-words border-l border-[var(--border-default)] pl-3 text-sm leading-6 text-[var(--text-secondary)]">

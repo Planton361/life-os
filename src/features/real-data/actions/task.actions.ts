@@ -182,11 +182,17 @@ function revalidateTaskProjectionRoutes(taskId?: string) {
   revalidatePath("/projects/[projectId]", "page");
   revalidatePath("/tasks/[taskId]", "page");
   revalidatePath("/goals");
+  revalidatePath("/skills");
+  revalidatePath("/skills/[skillId]", "page");
   if (taskId) revalidatePath(`/tasks/${taskId}`);
 }
 
 function revalidateTaskSkillProjectionRoutes(taskId: string, skillId: string) {
   revalidatePath("/portfolio");
+  revalidatePath("/dashboard");
+  revalidatePath("/today");
+  revalidatePath("/calendar");
+  revalidatePath("/projects/[projectId]", "page");
   revalidatePath("/tasks");
   revalidatePath(`/tasks/${taskId}`);
   revalidatePath("/skills");

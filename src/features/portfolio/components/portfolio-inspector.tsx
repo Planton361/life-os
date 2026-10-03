@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   portfolioStatusMeta,
+  portfolioAreaMeta,
   portfolioTypeLabels,
   portfolioTypeAccent,
 } from "../portfolio-style";
@@ -75,13 +76,41 @@ export function PortfolioInspector({
               {portfolioStatusMeta[entity.status].label}
             </p>
             <h3 className="mt-2 text-xl font-semibold">{entity.title}</h3>
+            {entity.type === "skill" && (
+              <p className="mt-1 text-sm text-[var(--text-muted)]">
+                Area:{" "}
+                {entity.skillContext?.areaLabel ??
+                  portfolioAreaMeta[entity.area].label}
+              </p>
+            )}
             {entity.description && (
               <p className="mt-3 line-clamp-4 text-sm leading-6 text-[var(--text-secondary)]">
                 {entity.description}
               </p>
             )}
           </div>
-          {entity.nextAction && (
+          {entity.type === "skill" && (
+            <section
+              aria-label="Skill-Entwicklung"
+              className="grid gap-2 text-sm"
+            >
+              <p>
+                {entity.skillContext?.focus
+                  ? `Fokus: ${entity.skillContext.focus}`
+                  : "Ohne Entwicklungsfokus"}
+              </p>
+              <p>
+                {entity.skillContext?.practiceSummary ??
+                  "Übungsdaten nicht verfügbar"}
+              </p>
+              <p>
+                Letzte Beobachtung:{" "}
+                {entity.skillContext?.latestObservationDate ??
+                  "Noch keine datierte Beobachtung"}
+              </p>
+            </section>
+          )}
+          {entity.type !== "skill" && entity.nextAction && (
             <div>
               <h4 className="text-xs font-semibold text-[var(--text-muted)]">
                 Next Action
@@ -102,7 +131,7 @@ export function PortfolioInspector({
             )}
             <div>
               <dt className="text-xs text-[var(--text-muted)]">
-                {entity.type === "skill" ? "Letzte Praxis" : "Deadline"}
+                {entity.type === "skill" ? "Zuletzt geübt" : "Deadline"}
               </dt>
               <dd className="mt-1">
                 {entity.type === "skill"
@@ -112,18 +141,16 @@ export function PortfolioInspector({
                     : entity.dueLabel}
               </dd>
             </div>
-            {entity.countLabel && entity.type !== "task" && (
-              <div className="col-span-2">
-                <dt className="text-xs text-[var(--text-muted)]">
-                  Aktueller Stand
-                </dt>
-                <dd className="mt-1">
-                  {entity.type === "skill"
-                    ? `${entity.skillContext?.evidenceRows?.length ?? 0} Evidence-Einträge`
-                    : entity.countLabel}
-                </dd>
-              </div>
-            )}
+            {entity.countLabel &&
+              entity.type !== "task" &&
+              entity.type !== "skill" && (
+                <div className="col-span-2">
+                  <dt className="text-xs text-[var(--text-muted)]">
+                    Aktueller Stand
+                  </dt>
+                  <dd className="mt-1">{entity.countLabel}</dd>
+                </div>
+              )}
             {entity.taskLifecycle && (
               <div className="col-span-2">
                 <dt className="text-xs text-[var(--text-muted)]">Planung</dt>
@@ -194,9 +221,9 @@ export function PortfolioInspector({
             </section>
           )}
           {!!entity.skillContext?.linkedTasks?.length && (
-            <section aria-label="Practice Tasks">
+            <section aria-label="Verknüpfte Aufgaben">
               <h4 className="text-xs font-semibold text-[var(--text-muted)]">
-                Practice Tasks
+                Verknüpfte Aufgaben
               </h4>
               <ul className="mt-2 grid gap-2 text-sm">
                 {entity.skillContext.linkedTasks.slice(0, 3).map((task) => (
@@ -206,13 +233,13 @@ export function PortfolioInspector({
             </section>
           )}
           {!!entity.skillContext?.evidenceRows?.length && (
-            <section aria-label="Evidence">
+            <section aria-label="Beobachtungen">
               <h4 className="text-xs font-semibold text-[var(--text-muted)]">
-                Evidence
+                Jüngste Beobachtung
               </h4>
               <ul className="mt-2 grid gap-2 text-sm">
                 {entity.skillContext.evidenceRows
-                  .slice(0, 3)
+                  .slice(0, 1)
                   .map((row, index) => (
                     <li key={row.id ?? index}>
                       {row.title}
@@ -228,7 +255,7 @@ export function PortfolioInspector({
             className={`${linkClass} bg-[rgba(95,200,215,.08)] text-center`}
             href={`/${entity.type}s/${entity.id}`}
           >
-            Details öffnen
+            {entity.type === "skill" ? "Skill öffnen" : "Details öffnen"}
           </Link>
         </div>
       ) : (

@@ -3,6 +3,7 @@ export default async function Page({
   searchParams,
 }: {
   searchParams: Promise<{
+    skill?: string | string[];
     project?: string | string[];
     milestone?: string | string[];
     goal?: string | string[];
@@ -13,6 +14,13 @@ export default async function Page({
   return (
     <WorkbenchEditor
       kind="task"
+      skillContext={
+        query.skill === undefined
+          ? undefined
+          : typeof query.skill === "string"
+            ? query.skill
+            : "invalid"
+      }
       projectContext={
         typeof query.project === "string" ? query.project : undefined
       }
@@ -21,7 +29,9 @@ export default async function Page({
       }
       goalContext={typeof query.goal === "string" ? query.goal : undefined}
       goalMilestoneContext={
-        typeof query.goalMilestone === "string" ? query.goalMilestone : undefined
+        typeof query.goalMilestone === "string"
+          ? query.goalMilestone
+          : undefined
       }
     />
   );
