@@ -245,9 +245,118 @@ export function SkillWorkbench({
       </details>
     );
   }
+  const activeSteps = (t: DevelopmentTarget) =>
+    read.milestones
+      .filter((m) => m.target_id === t.id && !m.archived_at)
+      .sort((a, b) => a.sort_order - b.sort_order || a.id.localeCompare(b.id));
+  const addStep = (t: DevelopmentTarget) => (
+    <details>
+      <summary className="cursor-pointer py-2 text-sm">
+        Lernschritt hinzufügen
+      </summary>
+      <SkillCommandForm
+        {...formProps}
+        operation="milestone.create"
+        label="Lernschritt hinzufügen"
+        payload={{ target_id: t.id }}
+      >
+        <Text name="title" label="Titel" required />
+        <Text name="description" label="Beschreibung" large />
+      </SkillCommandForm>
+    </details>
+  );
+  const stepRow = (
+    t: DevelopmentTarget,
+    m: SkillMilestone,
+    index: number,
+    active: SkillMilestone[],
+  ) => {
+    const terminal = ["completed", "retired"].includes(t.status);
+    return (
+      <article
+        key={m.id}
+        aria-label={`Lernschritt ${m.title}`}
+        className={`grid min-w-0 gap-2 rounded-lg border p-3 ${m.status === "current" ? "border-[var(--accent-cyan)] bg-[var(--surface-2)]" : "border-[var(--border-subtle)] text-[var(--text-secondary)]"}`}
+      >
+        <h4 className="break-words font-medium">
+          {m.title} ·{" "}
+          <span className="text-sm text-[var(--text-muted)]">
+            {statusLabel[m.status]}
+          </span>
+        </h4>
+        {m.description && (
+          <p className="whitespace-pre-wrap break-words text-sm">
+            {m.description}
+          </p>
+        )}
+        {!archived && !t.archived_at && !terminal && (
+          <details>
+            <summary className="cursor-pointer py-2 text-sm">
+              Lernschritt verwalten
+            </summary>
+            <div className="grid gap-3">
+              {m.status !== "completed" ? (
+                <>
+                  <SkillCommandForm
+                    {...formProps}
+                    operation="milestone.edit"
+                    label="Lernschritt speichern"
+                    payload={{ target_id: t.id, milestone_id: m.id }}
+                  >
+                    <Text name="title" label="Titel" value={m.title} required />
+                    <Text
+                      name="description"
+                      label="Beschreibung"
+                      value={m.description}
+                      large
+                    />
+                  </SkillCommandForm>
+                  {t.status === "current" && m.status !== "current" && (
+                    <SkillCommandForm
+                      {...formProps}
+                      operation="milestone.current"
+                      label="Als aktuellen Lernschritt wählen"
+                      payload={{ target_id: t.id, milestone_id: m.id }}
+                    />
+                  )}
+                  {reviewForm(t, m)}
+                </>
+              ) : (
+                <SkillCommandForm
+                  {...formProps}
+                  operation="milestone.reopen"
+                  label="Lernschritt wieder öffnen"
+                  payload={{ target_id: t.id, milestone_id: m.id }}
+                />
+              )}
+              {index > 0 && (
+                <SkillCommandForm
+                  {...formProps}
+                  operation="milestone.reorder"
+                  label="Nach oben"
+                  payload={{
+                    target_id: t.id,
+                    ids: active
+                      .map((x) => x.id)
+                      .toSpliced(index - 1, 2, m.id, active[index - 1].id),
+                  }}
+                />
+              )}
+              <SkillCommandForm
+                {...formProps}
+                operation="milestone.archive"
+                label="Lernschritt archivieren"
+                payload={{ target_id: t.id, milestone_id: m.id }}
+              />
+            </div>
+          </details>
+        )}
+      </article>
+    );
+  };
   function targetBlock(t: DevelopmentTarget) {
     const milestones = read.milestones.filter((m) => m.target_id === t.id);
-    const active = milestones.filter((m) => !m.archived_at);
+    const active = activeSteps(t);
     const terminal = ["completed", "retired"].includes(t.status);
     return (
       <article
@@ -274,108 +383,11 @@ export function SkillWorkbench({
             label="Als aktuellen Fokus wählen"
           />
         )}
-        {active.map((m, index) => (
-          <article
-            key={m.id}
-            aria-label={`Lernschritt ${m.title}`}
-            className="grid gap-2 border-t border-[var(--border-subtle)] pt-3"
-          >
-            <h4 className="break-words font-medium">
-              {m.title} ·{" "}
-              <span className="text-sm text-[var(--text-muted)]">
-                {statusLabel[m.status]}
-              </span>
-            </h4>
-            {m.description && (
-              <p className="whitespace-pre-wrap break-words text-sm">
-                {m.description}
-              </p>
-            )}
-            {!archived && !t.archived_at && !terminal && (
-              <details>
-                <summary className="cursor-pointer py-2 text-sm">
-                  Lernschritt verwalten
-                </summary>
-                <div className="grid gap-3">
-                  {m.status !== "completed" ? (
-                    <>
-                      <SkillCommandForm
-                        {...formProps}
-                        operation="milestone.edit"
-                        label="Lernschritt speichern"
-                        payload={{ target_id: t.id, milestone_id: m.id }}
-                      >
-                        <Text
-                          name="title"
-                          label="Titel"
-                          value={m.title}
-                          required
-                        />
-                        <Text
-                          name="description"
-                          label="Beschreibung"
-                          value={m.description}
-                          large
-                        />
-                      </SkillCommandForm>
-                      {t.status === "current" && m.status !== "current" && (
-                        <SkillCommandForm
-                          {...formProps}
-                          operation="milestone.current"
-                          label="Als aktuellen Lernschritt wählen"
-                          payload={{ target_id: t.id, milestone_id: m.id }}
-                        />
-                      )}
-                      {reviewForm(t, m)}
-                    </>
-                  ) : (
-                    <SkillCommandForm
-                      {...formProps}
-                      operation="milestone.reopen"
-                      label="Lernschritt wieder öffnen"
-                      payload={{ target_id: t.id, milestone_id: m.id }}
-                    />
-                  )}
-                  {index > 0 && (
-                    <SkillCommandForm
-                      {...formProps}
-                      operation="milestone.reorder"
-                      label="Nach oben"
-                      payload={{
-                        target_id: t.id,
-                        ids: active
-                          .map((x) => x.id)
-                          .toSpliced(index - 1, 2, m.id, active[index - 1].id),
-                      }}
-                    />
-                  )}
-                  <SkillCommandForm
-                    {...formProps}
-                    operation="milestone.archive"
-                    label="Lernschritt archivieren"
-                    payload={{ target_id: t.id, milestone_id: m.id }}
-                  />
-                </div>
-              </details>
-            )}
-          </article>
-        ))}
+        {t.id !== current?.id &&
+          active.map((m, index) => stepRow(t, m, index, active))}
         {!archived && !t.archived_at && !terminal && (
           <>
-            <details>
-              <summary className="cursor-pointer py-2 text-sm">
-                Lernschritt hinzufügen
-              </summary>
-              <SkillCommandForm
-                {...formProps}
-                operation="milestone.create"
-                label="Lernschritt hinzufügen"
-                payload={{ target_id: t.id }}
-              >
-                <Text name="title" label="Titel" required />
-                <Text name="description" label="Beschreibung" large />
-              </SkillCommandForm>
-            </details>
+            {t.id !== current?.id && addStep(t)}
             {reviewForm(t)}
           </>
         )}
@@ -472,12 +484,6 @@ export function SkillWorkbench({
       (r) => r.target_type === "skill" && r.target_id === s.id,
     ),
   );
-  const step =
-    current &&
-    read.milestones.find(
-      (m) =>
-        m.target_id === current.id && m.status === "current" && !m.archived_at,
-    );
   const orderedEvidence = [...reads.currentEvidence].sort(
     (a, b) =>
       b.evidence_date.localeCompare(a.evidence_date) ||
@@ -723,19 +729,6 @@ export function SkillWorkbench({
                   Kein Entwicklungsfokus festgelegt.
                 </p>
               )}
-              {step && (
-                <div>
-                  <p className="text-xs text-[var(--text-muted)]">
-                    Aktueller Lernschritt
-                  </p>
-                  <h3 className="break-words font-medium">{step.title}</h3>
-                  {step.description && (
-                    <p className="max-w-[85ch] whitespace-pre-wrap break-words text-sm text-[var(--text-secondary)]">
-                      {step.description}
-                    </p>
-                  )}
-                </div>
-              )}
               {primary.kind === "unavailable" && (
                 <p role="status" className="text-sm text-[var(--text-muted)]">
                   Ausführbarkeit derzeit nicht verfügbar
@@ -802,6 +795,26 @@ export function SkillWorkbench({
                   </details>
                 )}
               </div>
+              {current && (
+                <section
+                  aria-label="Lernweg"
+                  className="grid min-w-0 gap-3 border-t border-[var(--border-subtle)] pt-4"
+                >
+                  <h3 className="font-semibold">Lernweg</h3>
+                  {activeSteps(current).length ? (
+                    <ol className="grid min-w-0 gap-2">
+                      {activeSteps(current).map((m, index, active) => (
+                        <li key={m.id}>{stepRow(current, m, index, active)}</li>
+                      ))}
+                    </ol>
+                  ) : (
+                    <p className="text-sm text-[var(--text-muted)]">
+                      Noch keine Lernschritte
+                    </p>
+                  )}
+                  {!archived && addStep(current)}
+                </section>
+              )}
             </section>
             {reads.open.length > 0 && (
               <section

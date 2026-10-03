@@ -87,6 +87,7 @@ test("PP2 Skill workbench: explicit planning, reviews, evidence history, reload 
     .getByLabel("Was ist dir dabei wichtig?")
     .fill("Eigene überprüfbare Queries schreiben");
   await save(create, "Entwicklungsfokus geplant speichern");
+  const path = work.getByRole("region", { name: "Lernweg", exact: true });
   const other = work
     .locator("details")
     .filter({
@@ -108,14 +109,14 @@ test("PP2 Skill workbench: explicit planning, reviews, evidence history, reload 
       exact: true,
     }),
   ).toBeVisible();
-  const add = await openDetails(target, "Lernschritt hinzufügen");
+  const add = await openDetails(path, "Lernschritt hinzufügen");
   const mf = add.getByRole("form", {
     name: "Lernschritt hinzufügen",
     exact: true,
   });
   await mf.getByLabel("Titel", { exact: true }).fill("Write a scoped query");
   await save(mf, "Lernschritt hinzufügen");
-  const step = target.getByRole("article", {
+  const step = path.getByRole("article", {
     name: "Lernschritt Write a scoped query",
   });
   const manage = await openDetails(step, "Lernschritt verwalten");
