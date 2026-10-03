@@ -5,7 +5,6 @@ import {
   type TestInfo,
   type Locator,
 } from "@playwright/test";
-import { execFileSync } from "node:child_process";
 import { createClient } from "@supabase/supabase-js";
 import { signUpTechnicalManualUser } from "./support/local-manual-auth";
 
@@ -123,30 +122,43 @@ test("#102 real state matrix, bounded rich workbench, Portfolio, lifecycle and s
       .single()
       .throwOnError()
   ).data!;
-  await command("skill.create", {
-    name: "Gespräche klar führen",
-    summary:
-      "Anforderungen präzise klären und konkrete nächste Schritte vereinbaren.",
+  const secondArea = (
+    await api
+      .from("areas")
+      .insert({ user_id: uid, name: "Kommunikation", key: "coding" })
+      .select()
+      .single()
+      .throwOnError()
+  ).data!;
+  await page.goto("/skills/new");
+  const create = page.getByRole("form", {
+    name: "Skill erstellen",
+    exact: true,
   });
-  expect(process.env.LIFE_OS_E2E_RUNTIME).toBe("DISPOSABLE");
-  const setLegacyArea = (areaId: string | null) => {
-    expect(id).toMatch(/^[0-9a-f-]{36}$/);
-    if (areaId) expect(areaId).toMatch(/^[0-9a-f-]{36}$/);
-    execFileSync("docker", [
-      "exec",
-      `supabase_db_${process.env.LIFE_OS_E2E_PROJECT_ID}`,
-      "psql",
-      "-X",
-      "-U",
-      "postgres",
-      "-d",
-      "postgres",
-      "-v",
-      "ON_ERROR_STOP=1",
-      "-c",
-      `update public.skills set area_id=${areaId ? "'" + areaId + "'" : "null"} where id='${id}';`,
-    ]);
-  };
+  await create
+    .getByLabel("Name", { exact: true })
+    .fill("Gespräche klar führen");
+  await create
+    .getByLabel("Warum mir diese Fähigkeit wichtig ist")
+    .fill(
+      "Anforderungen präzise klären und konkrete nächste Schritte vereinbaren.",
+    );
+  await create.getByLabel("Area", { exact: true }).selectOption(area.id);
+  await create
+    .getByRole("button", { name: "Skill erstellen", exact: true })
+    .click();
+  await expect(page.locator("[data-skill-development] h1")).toHaveText(
+    "Gespräche klar führen",
+  );
+  id = page.url().split("/").at(-1)!;
+  await page.reload();
+  await expect(
+    page.locator("[data-skill-development] header").first(),
+  ).toContainText("Zusammenarbeit");
+  expect(
+    (await api.rpc("skill_development_read", { p_skill_id: id })).data.skill
+      .area_id,
+  ).toBe(area.id);
   const url = () => `/skills/${id}`;
   const work = page.locator("[data-skill-development]");
   const primary = work.locator("[data-skill-primary]");
@@ -160,7 +172,8 @@ test("#102 real state matrix, bounded rich workbench, Portfolio, lifecycle and s
   ).toHaveCount(0);
   await proof(page, info, "empty");
   await primary.locator("summary").focus();
-  await page.keyboard.press("Enter");
+  await expect(primary.locator("summary")).toBeFocused();
+  await primary.locator("summary").press("Enter");
   await expect(primary.getByRole("form")).toBeVisible();
   await primary.getByLabel("Was möchtest du besser können?").focus();
   await page.keyboard.press("Escape");
@@ -372,9 +385,6 @@ test("#102 real state matrix, bounded rich workbench, Portfolio, lifecycle and s
   await expect(
     work.getByRole("article", { name: "Überprüfung Früherer Fokus" }).first(),
   ).toContainText("Der damalige Stand bleibt unverändert.");
-  // Existing canonical Area rows can predate PP2. Seed only the disposable
-  // fixture; the app keeps the accepted command/RLS model unchanged.
-  setLegacyArea(area.id);
   await page.goto(`/portfolio?view=skills&selected=${id}`);
   const inspector = page.getByRole("complementary", {
     name: "Selected Entity",
@@ -393,7 +403,6 @@ test("#102 real state matrix, bounded rich workbench, Portfolio, lifecycle and s
   await proof(page, info, "portfolio-rich");
   await inspector.getByRole("link", { name: "Skill öffnen" }).click();
   await expect(page).toHaveURL(new RegExp(`/skills/${id}$`));
-  setLegacyArea(null);
   await page.reload();
   await work
     .getByRole("link", { name: "Skill verwalten", exact: true })
@@ -406,18 +415,24 @@ test("#102 real state matrix, bounded rich workbench, Portfolio, lifecycle and s
     name: "Skill speichern",
     exact: true,
   });
-  await management.getByLabel("Area", { exact: true }).selectOption(area.id);
+  await management
+    .getByLabel("Area", { exact: true })
+    .selectOption(secondArea.id);
   await management
     .getByRole("button", { name: "Skill speichern", exact: true })
     .click();
   await expect(management.getByRole("status")).toContainText(
-    "Die Änderung konnte nicht gespeichert werden.",
+    "Skill gespeichert.",
   );
   expect(
     (await api.rpc("skill_development_read", { p_skill_id: id })).data.skill
       .area_id,
-  ).toBeNull();
+  ).toBe(secondArea.id);
+  revision = (await api.rpc("skill_development_read", { p_skill_id: id })).data
+    .skill.development_revision;
   await page.reload();
+  await expect(work.locator("header").first()).toContainText("Kommunikation");
+  await proof(page, info, "area-switch");
   await command("skill.edit", {
     name: "Gespräche klar führen",
     summary: "Klarheit im Alltag",
@@ -430,8 +445,13 @@ test("#102 real state matrix, bounded rich workbench, Portfolio, lifecycle and s
   await proof(page, info, "paused");
   await primary.getByRole("button", { name: "Entwicklung fortsetzen" }).click();
   await expect(work.locator("header").first()).toContainText("Aktiv");
+  await page.reload();
+  await expect(work.locator("header").first()).toContainText("Kommunikation");
+  await expect(work.locator("header").first()).toContainText("Aktiv");
+  await proof(page, info, "area-resumed");
   r = (await api.rpc("skill_development_read", { p_skill_id: id })).data;
   revision = r.skill.development_revision;
+  expect(r.skill.area_id).toBe(secondArea.id);
   expect(
     r.targets.find((t: { status: string }) => t.status === "current").id,
   ).toBe(target);

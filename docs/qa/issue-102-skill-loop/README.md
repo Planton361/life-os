@@ -7,26 +7,36 @@ Target: [#101 v1.2](https://github.com/Planton361/life-os/issues/101#issuecommen
 All data and screenshots are synthetic authenticated Manual fixtures in the
 repository's disposable local runtime. No remote database or deployment.
 
-## Current limitation / closure
+## Recovery / completion gate
 
-**PARTIAL / completion gate BLOCKED:** the proposed Skill loop, Task-origin and
-Portfolio work is implemented and validated, but full #102 control acceptance is
-blocked by an existing PP2 Area-command defect. Creating, editing or resuming a Skill with
-an owned active Area returns `SKILL_AREA_UNAVAILABLE`. The unchanged
-`skill_development_command` in `20261002191215_pp2_skill_development.sql` uses
-`FOR SHARE` for Areas (lines 185/198), with a SELECT policy and UPDATE grant for
-`life_os_skill_command` but no UPDATE policy. PostgreSQL applies UPDATE policies to `SELECT FOR SHARE`
-([official CREATE POLICY reference](https://www.postgresql.org/docs/15/sql-createpolicy.html)). The local browser reproduces the
-visible failure and proves no mutation. The proposed revision changes no
-migration, RPC, grant or RLS policy; #102 expressly excludes that repair.
+**READY_FOR_REVIEW / completion gate PASS for the authorized recovery.**
+Merged main `88d44e7417c8dcd4a8c78b696ff44a7f95d63fe8` into the existing #102
+branch after [#104](https://github.com/Planton361/life-os/issues/104) / [#105](https://github.com/Planton361/life-os/pull/105).
+Authorization: [CONTROL recovery](https://github.com/Planton361/life-os/issues/102#issuecomment-5973164755)
+and [PR recovery review](https://github.com/Planton361/life-os/pull/103#pullrequestreview-5402593312).
+The Capability Registry retains #104's current lifecycle truth and #102's loop,
+Portfolio and Task-origin truth. No historical migration or #102 application code
+was changed during recovery.
 
-The existing canonical Area read is independently proved with a disposable
-legacy-row fixture: Portfolio shows the real owned Area name; null Area shows
-`Ohne Area`. Fixture SQL changes only the disposable row, then clears it before
-lifecycle commands. It is not an application write path or security bypass.
+The real browser now creates a Skill with its owned active Area, switches to a
+second owned active Area and resumes paused → active while retaining that Area.
+Each path reloads and checks both the visible header and canonical RPC readback.
+The previous `SKILL_AREA_UNAVAILABLE` blocker is resolved. The matrix no longer
+uses direct SQL to attach a legacy Area fixture.
 
-No final #102 USER ACCEPTED or product/core-surface closure is claimed. A bounded
-CONTROL decision on the existing Area command is required before full closure.
+`pnpm runtime:target:migrate` applied only the new forward migration
+`20261003152858_pp2_skill_area_lock.sql` to canonical local Target
+`life-os-sr104b-target`; migration readback, local lint and security advisors passed.
+A rolled-back synthetic transaction on that Target additionally proved actual
+Skill create/switch/resume/edit, own `FOR SHARE`, direct Area UPDATE denial and
+foreign/archived/nonexistent/invalid Area denial without leakage. Browser proof
+uses the isolated disposable runtime, not personal canonical rows.
+
+The unchanged #104 regression also passes on this branch: upgrade plus fresh
+stack, ACL/policy snapshots, RLS active, NOLOGIN/NOBYPASSRLS, no new client write
+authority and two real sessions proving update/archive wait until lock release.
+No remote database or PR merge. Final #102 USER ACCEPTED remains open; this is
+implementation evidence ready for CONTROL review, not final product closure.
 
 ## Focused evidence
 
@@ -38,6 +48,7 @@ CONTROL decision on the existing Area command is required before full closure.
 | `pp2-skill-controls.spec.ts` | retained focus/step create/edit/current/reorder/reopen/archive/restore, resource/task linking and navigation, explicit Evidence/correction/withdraw/restore, invalid-date/source-unavailable feedback, review/version snapshot/amendment, cancellation and stale revision |
 | `pp2-skill-development.spec.ts` | retained planning/review/history and Task projection reload, Manual/Demo/Empty/Auth-blocked separation, Dashboard canonical Practice without percentage |
 | `issue-80-task-create-origin-parity.spec.ts` | existing generic/Goal/Project/Calendar Task capture and cancel parity |
+| `pp2-skill-area-lock.spec.ts` | exact forward policy; SQL owner/noLeak/UPDATE-denial/unchanged ACL proof; two-session update/archive lock; real CLI upgrade; Data API and owned-Area browser lifecycle |
 | `pp2-skill-database.spec.ts` | unchanged PP2 upgrade, owner RLS/noLeak, direct-write denial, immutable history/FKs, idempotency and concurrent revision/current locks; local database lint/advisors |
 | `skill-guidance.test.ts` + `skill-development.test.ts` | 11 unit cases: priority/matrix, mixed tasks without selection, blocked and missing graph fail-closed, lifecycle precedence, explicit independent Evidence/Practice recency |
 
@@ -51,7 +62,7 @@ create Evidence. Current dependency state is not inferred from Skill state.
 
 | Surface | Controls directly exercised | Result |
 |---|---|---|
-| Skill identity/primary | breadcrumbs/Task links, Skill management and review-depth links; focus capture and cancel; open/select/blocked/unavailable practice disclosures and blocker navigation; paused resume; archived restore | PASS; owned Area save fails visibly as the existing limitation above |
+| Skill identity/primary | breadcrumbs/Task links, Skill management and review-depth links; focus capture and cancel; open/select/blocked/unavailable practice disclosures and blocker navigation; paused resume; archived restore | PASS; actual owned-Area Create, switch and Resume survive reload |
 | Skill work/depth | all-task/all-observation/full-note disclosures; explicit observation create/correct/withdraw/restore; review preview/commit/amend; all retained focus/step/resource/task management commands and cancellation | PASS with reload, visible success/error and revision checks |
 | Task origin/recovery | explicit-title one Save, opt-out, cancel, retained Task navigation, same-ID link-only retry, ambiguous-result task-list navigation and blocked resubmit | PASS; no duplicate Create or automatic Evidence |
 | Portfolio | every initially visible main link; every view/scope/sort chip at desktop/mobile; entity selection/Skill detail; canonical create links | PASS; see [exact navigation inventory](portfolio-visible-control-inventory.json) |
@@ -79,15 +90,20 @@ appearance; full-note disclosure preserves long text; explicit depth-link
 handling opens the destination and restores keyboard focus.
 
 Acceptance Decision: **PASS for V5 composition / implementation evidence**.
-The Area control defect and missing real #102 USER ACCEPTED prevent full closure.
+Browser-Proof: **PASS**. Surface Acceptance: **IMPLEMENTATION PASS**.
+Missing real #102 USER ACCEPTED prevents final product closure.
 
 ## Screenshots
+
+48 current full-page screenshots from the recovery runs; all three viewports per state.
 
 - empty: [3840](issue-102-empty-3840.png), [1920](issue-102-empty-1920.png), [390](issue-102-empty-390.png)
 - no-target: [3840](issue-102-no-target-3840.png), [1920](issue-102-no-target-1920.png), [390](issue-102-no-target-390.png)
 - focus-without-step: [3840](issue-102-focus-without-step-3840.png), [1920](issue-102-focus-without-step-1920.png), [390](issue-102-focus-without-step-390.png)
 - focus-step-one-practice: [3840](issue-102-focus-step-one-practice-3840.png), [1920](issue-102-focus-step-one-practice-1920.png), [390](issue-102-focus-step-one-practice-390.png)
 - rich: [3840](issue-102-rich-3840.png), [1920](issue-102-rich-1920.png), [390](issue-102-rich-390.png)
+- area-switch: [3840](issue-102-area-switch-3840.png), [1920](issue-102-area-switch-1920.png), [390](issue-102-area-switch-390.png)
+- area-resumed: [3840](issue-102-area-resumed-3840.png), [1920](issue-102-area-resumed-1920.png), [390](issue-102-area-resumed-390.png)
 - paused: [3840](issue-102-paused-3840.png), [1920](issue-102-paused-1920.png), [390](issue-102-paused-390.png)
 - archived: [3840](issue-102-archived-3840.png), [1920](issue-102-archived-1920.png), [390](issue-102-archived-390.png)
 - dependency-unavailable: [3840](issue-102-dependency-unavailable-3840.png), [1920](issue-102-dependency-unavailable-1920.png), [390](issue-102-dependency-unavailable-390.png)
@@ -100,9 +116,19 @@ The Area control defect and missing real #102 USER ACCEPTED prevent full closure
 
 ## Validation summary
 
-- Combined focused browser regression: 8/8 passed. The expanded final matrix/Task-origin: 2/2 passed; final surface outage/Area/control proof passed separately.
-- Unchanged PP2 database suite: 2/2 passed, including local DB lint/security advisors. Existing Project Depth lint warnings remain; no Skill warning or security-advisor issue.
-- Guidance/recency unit tests: 11/11 passed.
-- `git diff --check`, `pnpm typecheck`, `pnpm lint`, `pnpm build`: passed.
-- Required final-head GitHub `quality` run and revision are referenced in the PR; this document does not substitute an older green CI head.
-- Final product acceptance and a bounded repair decision for the existing Area command remain open.
+- 14 distinct focused Playwright cases passed across the commands below; 11/11 guidance/recency unit cases passed.
+- Initial combined regression: 8/10 passed. Matrix stopped at keyboard activation before form visibility; the focused test now explicitly asserts focus and presses Enter on that control, then passes. Remaining-controls stopped when Next restarted at its existing memory threshold; a fresh focused run passes. No runtime memory limit was increased.
+- Matrix rerun exited successfully and removed its disposable runtime, but its process watchdog emitted a teardown `kill EPERM` warning. This is a local runner limitation, not a browser console/hydration error; no runtime repair is claimed.
+- PP2 database suite and exact Area security suite pass; local lint retains existing Project Depth warnings, no Skill warning; security advisors report no issue.
+- `git diff --check`, `pnpm typecheck`, `pnpm lint`, `pnpm build`: final results and exact-head required `quality` are referenced in PR #103.
+- Final product USER ACCEPTED remains open.
+
+Recovery commands (first group followed by focused reruns of its two failures):
+
+```sh
+pnpm test:e2e:isolated tests/e2e/issue-102-skill-loop.spec.ts tests/e2e/issue-102-skill-surface.spec.ts tests/e2e/pp2-skill-controls.spec.ts tests/e2e/pp2-skill-development.spec.ts tests/e2e/pp2-skill-database.spec.ts tests/e2e/issue-80-task-create-origin-parity.spec.ts
+pnpm test:e2e:isolated tests/e2e/issue-102-skill-loop.spec.ts --grep 'real state matrix'
+pnpm test:e2e:isolated tests/e2e/pp2-skill-controls.spec.ts tests/e2e/pp2-skill-area-lock.spec.ts
+pnpm exec vitest run src/features/entities/workbench/skill-guidance.test.ts src/features/real-data/domain/skill-development.test.ts
+pnpm runtime:target:migrate
+```
