@@ -1,12 +1,16 @@
 "use client";
+import { fieldClass, actionClass } from "./form-styles";
+export { fieldClass, actionClass } from "./form-styles";
 import {
   useId,
+  useRef,
   useState,
   useTransition,
   useSyncExternalStore,
   type ReactNode,
 } from "react";
 import Link from "next/link";
+import { linkTaskSkillAction } from "@/features/real-data/actions/task.actions";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/feedback/toast-provider";
 import {
@@ -32,10 +36,6 @@ function useHydrated() {
     () => false,
   );
 }
-export const fieldClass =
-  "min-h-10 w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-1)] px-3 py-2 text-sm outline-none focus:border-[var(--focus-ring)]";
-export const actionClass =
-  "min-h-10 rounded-lg border border-[var(--border-default)] bg-[rgba(95,200,215,.12)] px-4 py-2 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] disabled:opacity-50";
 export function Choice({
   name,
   label,
@@ -228,6 +228,7 @@ export function EntityForm({
   sourceOwned = false,
   taskEditDialog = false,
   projectContext,
+  skillOrigin,
   goalContext,
   goalMilestoneContext,
   milestones = [],
@@ -235,6 +236,7 @@ export function EntityForm({
   kind: WorkbenchKind;
   id?: string;
   projectContext?: string;
+  skillOrigin?: { id: string; name: string };
   goalMilestoneContext?: {
     goalId: string;
     milestoneId: string;
@@ -264,19 +266,24 @@ export function EntityForm({
   const closeDisclosure = useCloseManagementDisclosure();
   const [pending, start] = useTransition();
   const [error, setError] = useState("");
+  const [withoutSkill, setWithoutSkill] = useState(false);
+  const [unclearCreate, setUnclearCreate] = useState(false);
+  const submitting = useRef(false);
   const formEntityLabel = visibleEntityLabel(
     kind,
     Boolean(goalMilestoneContext),
   );
   const taskCapture = kind === "task" && !id;
   const goalMilestoneTaskCapture = taskCapture && Boolean(goalMilestoneContext);
-  const taskCancelHref = goalMilestoneContext
-    ? `/goals/${goalMilestoneContext.goalId}?goalMilestone=${goalMilestoneContext.milestoneId}`
-    : projectContext
-      ? `/projects/${projectContext}`
-      : goalContext
-        ? `/goals/${goalContext}`
-        : "/tasks";
+  const taskCancelHref = skillOrigin
+    ? `/skills/${skillOrigin.id}`
+    : goalMilestoneContext
+      ? `/goals/${goalMilestoneContext.goalId}?goalMilestone=${goalMilestoneContext.milestoneId}`
+      : projectContext
+        ? `/projects/${projectContext}`
+        : goalContext
+          ? `/goals/${goalContext}`
+          : "/tasks";
   const field = (
     name: string,
     label: string,
@@ -313,6 +320,7 @@ export function EntityForm({
       className="grid gap-6"
       onSubmit={(event) => {
         event.preventDefault();
+        if (submitting.current || unclearCreate) return;
         const form = new FormData(event.currentTarget);
         if (!form.get("commandId")) form.set("commandId", crypto.randomUUID());
         const selectedProjectId = String(form.get("projectId") ?? "").trim();
@@ -320,13 +328,54 @@ export function EntityForm({
           setError("Bitte wähle ein Project aus.");
           return;
         }
+        submitting.current = true;
         start(async () => {
           setError("");
-          const r = await saveWorkbenchEntity(kind, id ?? null, form);
+          let r;
+          try {
+            r = await saveWorkbenchEntity(kind, id ?? null, form);
+          } catch {
+            submitting.current = false;
+            if (taskCapture && skillOrigin) {
+              setUnclearCreate(true);
+              setError("Speicherergebnis unklar — Aufgaben prüfen");
+            } else
+              setError(
+                "Speichern fehlgeschlagen. Bitte prüfe den gespeicherten Stand.",
+              );
+            return;
+          }
+
           if (r.status !== "success") {
+            submitting.current = false;
             setError(r.message);
             return;
           }
+          if (taskCapture && skillOrigin) {
+            if (!r.id) {
+              setUnclearCreate(true);
+              setError("Speicherergebnis unklar — Aufgaben prüfen");
+              submitting.current = false;
+              return;
+            }
+            // Preserve the known ID before any link attempt. Reload verifies the
+            // actual relation, including after an ambiguous link response.
+            const href = `/tasks/${r.id}${withoutSkill ? "" : `?skill=${skillOrigin.id}`}`;
+            window.history.replaceState(window.history.state, "", href);
+            if (!withoutSkill) {
+              const link = new FormData();
+              link.set("taskId", r.id);
+              link.set("skillId", skillOrigin.id);
+              try {
+                await linkTaskSkillAction(link);
+              } catch {
+                /* canonical readback owns recovery */
+              }
+            } else notify("Aufgabe erstellt.");
+            window.location.assign(href);
+            return;
+          }
+          submitting.current = false;
           notify(r.message);
           closeDisclosure?.();
           if (!id && r.id)
@@ -346,7 +395,7 @@ export function EntityForm({
       }}
     >
       <fieldset
-        disabled={!hydrated || pending || archived}
+        disabled={!hydrated || pending || archived || unclearCreate}
         className="grid gap-6"
       >
         {taskCapture ? (
@@ -363,6 +412,23 @@ export function EntityForm({
                 Task zuerst festhalten
               </h2>
               {field("title", "Titel", "text", true)}
+              {skillOrigin && (
+                <div className="grid min-w-0 gap-2">
+                  <p className="break-words text-sm">
+                    Für Skill: {skillOrigin.name}
+                  </p>
+                  <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                    <input
+                      type="checkbox"
+                      checked={withoutSkill}
+                      onChange={(event) =>
+                        setWithoutSkill(event.target.checked)
+                      }
+                    />
+                    Ohne Skill-Verbindung erstellen
+                  </label>
+                </div>
+              )}
               <p className="text-sm text-[var(--text-muted)]">
                 Neue Tasks starten geplant. Details kannst du nach dem Erfassen
                 ergänzen.
@@ -697,11 +763,19 @@ export function EntityForm({
               ? "Speichern …"
               : id
                 ? "Änderungen speichern"
-                : `${formEntityLabel} erstellen`}
+                : skillOrigin
+                  ? withoutSkill
+                    ? "Aufgabe erstellen"
+                    : "Übungsaufgabe erstellen"
+                  : `${formEntityLabel} erstellen`}
           </button>
           {taskCapture && (
             <Link
               href={taskCancelHref}
+              aria-disabled={skillOrigin && pending ? true : undefined}
+              onClick={(event) => {
+                if (skillOrigin && pending) event.preventDefault();
+              }}
               className="min-h-10 content-center px-2 text-sm text-[var(--text-secondary)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
             >
               Abbrechen
@@ -709,6 +783,11 @@ export function EntityForm({
           )}
         </div>
       </fieldset>
+      {unclearCreate && (
+        <Link href="/tasks" className={actionClass}>
+          Aufgaben prüfen
+        </Link>
+      )}
       {error && (
         <p role="alert" className="text-sm text-[var(--accent-red)]">
           {error}

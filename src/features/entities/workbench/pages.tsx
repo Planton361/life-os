@@ -1,3 +1,4 @@
+import { SkillTaskRecovery } from "./skill-task-recovery";
 import { SkillWorkbench, SkillCapture } from "./skill-workbench";
 import { TaskDependencies } from "./task-dependencies";
 import { TaskMilestoneContext, TaskMilestoneManagement } from "./project-work";
@@ -127,7 +128,7 @@ export async function WorkbenchList({
   kind: WorkbenchKind;
   searchParams?: Record<string, string | string[] | undefined>;
 }) {
-  const data = await readEntityWorkbench();
+  const data = await readEntityWorkbench(kind === "skill");
   if (!data)
     return (
       <EntityWorkbenchShell
@@ -236,6 +237,7 @@ export async function WorkbenchEditor({
   goalArea,
   goalStage,
   editTask = false,
+  skillContext,
 }: {
   milestoneContext?: string;
   goalContext?: string;
@@ -243,6 +245,7 @@ export async function WorkbenchEditor({
   goalArea?: string;
   goalStage?: string;
   editTask?: boolean;
+  skillContext?: string;
   selectedResource?: string;
   historyBefore?: string;
   kind: WorkbenchKind;
@@ -250,7 +253,7 @@ export async function WorkbenchEditor({
   projectContext?: string;
 }) {
   if (id && !z.uuid().safeParse(id).success) notFound();
-  const data = await readEntityWorkbench();
+  const data = await readEntityWorkbench(kind === "skill");
   if (!data)
     return (
       <EntityWorkbenchShell
@@ -258,6 +261,41 @@ export async function WorkbenchEditor({
         title={kind === "goal" ? "Ziel" : entityLabels[kind]}
       >
         {authMessage}
+      </EntityWorkbenchShell>
+    );
+  const contextSkill =
+    kind === "task" && skillContext && z.uuid().safeParse(skillContext).success
+      ? data.skills.find(
+          (s) =>
+            s.id === skillContext && !s.archived_at && s.status !== "archived",
+        )
+      : undefined;
+  if (kind === "task" && skillContext !== undefined && !contextSkill)
+    return (
+      <EntityWorkbenchShell
+        kind="task"
+        title="Skill-Verbindung nicht verfügbar"
+      >
+        <p role="alert">
+          Der Skill ist ungültig, archiviert oder in diesem Konto nicht
+          verfügbar.
+        </p>
+        {id && data.tasks.some((t) => t.id === id) && (
+          <p role="status">
+            Aufgabe erstellt. Verbindung zum Skill nicht hergestellt.
+          </p>
+        )}
+        <Link
+          href={
+            id && data.tasks.some((t) => t.id === id)
+              ? `/tasks/${id}`
+              : "/tasks"
+          }
+        >
+          {id && data.tasks.some((t) => t.id === id)
+            ? "Gespeicherte Aufgabe öffnen"
+            : "Aufgaben prüfen"}
+        </Link>
       </EntityWorkbenchShell>
     );
   const contextProject =
@@ -459,11 +497,22 @@ export async function WorkbenchEditor({
     );
   }
   if (kind === "project" && id && row) {
-    const depth = isSqliteProofRuntime() ? undefined : await (async () => {
-      const auth = await createAuthenticatedSupabaseServerClient();
-      if (!auth.ok) return undefined;
-      return readProjectDepth(auth.client, auth.user.id, id, historyBefore && /^(0|[1-9][0-9]{0,18})$/.test(historyBefore) && BigInt(historyBefore) <= BigInt("9223372036854775807") ? historyBefore : undefined);
-    })();
+    const depth = isSqliteProofRuntime()
+      ? undefined
+      : await (async () => {
+          const auth = await createAuthenticatedSupabaseServerClient();
+          if (!auth.ok) return undefined;
+          return readProjectDepth(
+            auth.client,
+            auth.user.id,
+            id,
+            historyBefore &&
+              /^(0|[1-9][0-9]{0,18})$/.test(historyBefore) &&
+              BigInt(historyBefore) <= BigInt("9223372036854775807")
+              ? historyBefore
+              : undefined,
+          );
+        })();
     return (
       <ProjectReadView
         data={data}
@@ -563,6 +612,20 @@ export async function WorkbenchEditor({
         relations={taskRelations}
         steps={<TaskSteps id={id} data={data} />}
         lifecycle={taskLifecycle}
+        skillRecovery={
+          contextSkill ? (
+            <SkillTaskRecovery
+              taskId={id}
+              skill={contextSkill}
+              linked={data.taskSkills.some(
+                (l) => l.task_id === id && l.skill_id === contextSkill.id,
+              )}
+              taskArchived={Boolean(
+                task.archived_at || task.status === "archived",
+              )}
+            />
+          ) : undefined
+        }
         editInitiallyOpen={editTask}
       />
     );
@@ -639,6 +702,11 @@ export async function WorkbenchEditor({
           <EntityForm
             kind={kind}
             id={id}
+            skillOrigin={
+              contextSkill
+                ? { id: contextSkill.id, name: contextSkill.name }
+                : undefined
+            }
             values={values}
             projectContext={contextProject?.id}
             goalContext={contextGoal?.id}

@@ -1,3 +1,4 @@
+import { skillTaskReadiness } from "@/features/entities/workbench/skill-guidance";
 import { readWeeklyPlanningContext } from "@/features/real-data/supabase/repositories/weekly-planning-read";
 import { enrichPlannerQueue, type WeeklyTaskContext } from "@/features/calendar/weekly-task-context";
 import { mapSkillRowToDomain, mapSkillEvidenceRowToDomain } from "@/features/real-data/supabase/mappers/skill.mapper";
@@ -1274,14 +1275,11 @@ function skillToPortfolioEntity(
     status: skill.status === "paused" ? "planned" : "practicing",
     priority: "P2",
     focusLevel: "low",
-    nextAction: skill.nextPractice,
+    nextAction: "",
     dueLabel: skill.practiceFrequency,
     dueRank: skill.practiceFrequency ? 2 : 3,
     progress: 0,
-    countLabel:
-      skill.evidence.length > 0
-        ? `${skill.evidence.length} evidence`
-        : `${skill.learningPath.length} steps`,
+    countLabel: skill.practiceSummary ?? "Übungsdaten nicht verfügbar",
     lastTouched: skill.lastPracticedAt || "not practiced",
     recentRank: index + 1,
     reviewNeeded: false,
@@ -1289,19 +1287,26 @@ function skillToPortfolioEntity(
     relations: [
       { label: "Niveau (freier Text)", value: skill.currentLevel },
       { label: "Kategorie", value: skill.targetLevel },
-      ...(skill.currentDevelopmentTarget ? [{label: "Development Target", value: skill.currentDevelopmentTarget.title}] : []),
+      ...(skill.currentDevelopmentTarget
+        ? [{ label: "Fokus", value: skill.currentDevelopmentTarget.title }]
+        : []),
     ],
     decisions: [],
     sourceLinks: [{ label: "Skill", href: `/skills/${skill.id}` }],
     noteSnippet: skill.description,
     skillContext: {
+      areaLabel: skill.areaLabel,
+      focus: skill.currentDevelopmentTarget?.title ?? null,
+      practiceSummary: skill.practiceSummary,
+      latestObservationDate: skill.latestObservationDate,
       practiceStatus: skill.status,
       confidence: null,
       editValues: {
-        category:
-          ["Evidence ausbauen","Nicht gesetzt"].includes(skill.targetLevel)
-            ? undefined
-            : skill.targetLevel,
+        category: ["Evidence ausbauen", "Nicht gesetzt"].includes(
+          skill.targetLevel,
+        )
+          ? undefined
+          : skill.targetLevel,
         level:
           skill.currentLevel === "Nicht gesetzt"
             ? undefined
@@ -2796,9 +2801,19 @@ async function getManualSkillsFromSupabase(
   taskSkillLinks: RealDataTaskSkillLink[];
 }> {
   const repository = createSupabaseSkillRepository(client);
-  const [skillResult,taskSkillLinkResult]=await Promise.all([repository.getActiveSkillsByUser(userId),repository.getTaskSkillLinksByUser(userId)]);
-  if(!skillResult.ok||!taskSkillLinkResult.ok)throw new Error("Skill-Daten konnten nicht geladen werden.");
+  const [skillResult, taskSkillLinkResult, areaResult] = await Promise.all([
+    repository.getActiveSkillsByUser(userId),
+    repository.getTaskSkillLinksByUser(userId),
+    client
+      .from("areas")
+      .select("id, name")
+      .eq("user_id", userId)
+      .is("archived_at", null),
+  ]);
+  if (!skillResult.ok || !taskSkillLinkResult.ok || areaResult.error)
+    throw new Error("Skill-Daten konnten nicht geladen werden.");
 
+  const graph = await readTaskDependencyGraph(client).catch(() => null);
   const projectedSkills = await Promise.all(
     skillResult.data.map(async (skill) => {
       const read = await client.rpc("skill_development_read", {
@@ -2806,28 +2821,59 @@ async function getManualSkillsFromSupabase(
       });
       if (read.error || !read.data)
         throw new Error("Skill-Daten konnten nicht geladen werden.");
-      if(read.data.skill.archived_at||read.data.skill.status==="archived")return null;
+      if (read.data.skill.archived_at || read.data.skill.status === "archived")
+        return null;
       const recency = skillPracticeReads(
         read.data.practice,
         read.data.evidence,
         read.data.as_of,
         read.data.timezone,
       );
-      const projected=realSkillToLifeSkill(mapSkillRowToDomain(read.data.skill),recency.currentEvidence.map(mapSkillEvidenceRowToDomain));
-      const target=read.data.targets.find(t=>t.status==="current"&&!t.archived_at);
+      const projected = realSkillToLifeSkill(
+        mapSkillRowToDomain(read.data.skill),
+        recency.currentEvidence.map(mapSkillEvidenceRowToDomain),
+      );
+      const readiness = recency.open.map((t) =>
+        graph ? skillTaskReadiness(graph, t.id) : null,
+      );
+      const unavailable = readiness.some(
+        (r) => !r || r.availability === "UNAVAILABLE",
+      );
+      const readyCount = readiness.filter((r) => r?.availability === "READY").length;
+      const blockedCount = readiness.filter((r) => r?.availability === "BLOCKED").length;
+      const readinessLabel = !recency.open.length
+        ? ""
+        : unavailable
+          ? " · Ausführbarkeit derzeit nicht verfügbar"
+          : ` · ${readyCount} ausführbar · ${blockedCount} blockiert`;
+      const practiceSummary = `${recency.open.length} offene Aufgaben · ${recency.completed.length} abgeschlossen${readinessLabel}`;
+      const target = read.data.targets.find(
+        (t) => t.status === "current" && !t.archived_at,
+      );
       return {
         ...projected,
-        currentDevelopmentTarget: target?{id:target.id,title:target.title}:null,
+        areaLabel: read.data.skill.area_id
+          ? (areaResult.data?.find(
+              (area) => area.id === read.data.skill.area_id,
+            )?.name ?? "Area nicht verfügbar")
+          : "Ohne Area",
+        practiceSummary,
+        latestObservationDate: recency.latestEvidenceDate,
+        currentDevelopmentTarget: target
+          ? { id: target.id, title: target.title }
+          : null,
         lastPracticedAt:
           recency.latestLinkedTaskCompletionAt ??
-          "Kein gültiger Completion-Zeitpunkt",
-        nextPractice: target?`Fokus: ${target.title}`:"Entwicklungsfokus festlegen",
+          "Noch kein datierter Aufgabenabschluss",
+        nextPractice: "Skill öffnen",
         practiceFrequency: `${recency.completed.length} verknüpfte abgeschlossene Tasks`,
       };
     }),
   );
   return {
-    skills: projectedSkills.filter((skill):skill is NonNullable<typeof skill>=>skill!==null),
+    skills: projectedSkills.filter(
+      (skill): skill is NonNullable<typeof skill> => skill !== null,
+    ),
     taskSkillLinks: taskSkillLinkResult.ok ? [...taskSkillLinkResult.data] : [],
   };
 }

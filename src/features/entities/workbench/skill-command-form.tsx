@@ -117,10 +117,10 @@ export function SkillCommandForm({
         </fieldset>
       ) : (
         <section
-          aria-label="Review-Vorschau"
+          aria-label="Überprüfungsvorschau"
           className="grid gap-2 rounded-lg border border-[var(--border-subtle)] p-3"
         >
-          <h4 className="font-semibold">Review prüfen</h4>
+          <h4 className="font-semibold">Überprüfung prüfen</h4>
           {preview}
           <ul>
             {prepared.evidenceLabels.map((title, index) => (
@@ -140,10 +140,12 @@ export function SkillCommandForm({
           </p>
           <p>
             {(prepared.payload.evidence as unknown[]).length} ausdrücklich
-            ausgewählte Evidence-Versionen. Ohne Auswahl wird ohne Evidence
-            reviewed.
+            ausgewählte Beobachtungsversionen. Ohne Auswahl wird ohne
+            Beobachtung überprüft.
           </p>
-          <p>Dieser Review verändert keine Tasks oder Goal-Erreichung.</p>
+          <p>
+            Diese Überprüfung verändert keine Aufgaben oder Ziel-Erreichung.
+          </p>
         </section>
       )}
       <div className="flex flex-wrap gap-2">
@@ -151,9 +153,9 @@ export function SkillCommandForm({
           {pending
             ? "Speichern …"
             : prepared
-              ? "Review speichern"
+              ? "Überprüfung speichern"
               : operation === "review.submit"
-                ? "Review prüfen"
+                ? "Überprüfung prüfen"
                 : label}
         </button>
         {children && (
