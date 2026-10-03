@@ -1,16 +1,18 @@
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/features/real-data/supabase/database.types";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { signUpTechnicalManualUser } from "./support/local-manual-auth";
 
 function todayIso() {
-  return new Date().toISOString().slice(0, 10);
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin" }).format(new Date());
 }
 
 async function createTask(page: Page, title: string) {
-  await page.goto("/portfolio?view=tasks");
+  await page.goto("/tasks/new");
   const form = page.locator('form[aria-label="Task erstellen"]');
-  await form.getByLabel("Task-Titel").fill(title);
+  await form.getByLabel("Titel", { exact: true }).fill(title);
   await form.getByRole("button", { name: "Task erstellen" }).click();
-  await expect(page.getByText("Task erstellt.", { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/tasks\/[0-9a-f-]+$/);
 }
 
 function calendarTaskBlock(page: Page, title: string) {
@@ -78,6 +80,7 @@ test("Z1 uses one visible conflict gate for inspector, pointer resize and Meal s
   page,
 }) => {
   test.setTimeout(180_000);
+  expect(process.env.LIFE_OS_E2E_RUNTIME).toBe("DISPOSABLE");
   await page.setViewportSize({ width: 1920, height: 1080 });
 
   const stamp = Date.now();
@@ -118,8 +121,8 @@ test("Z1 uses one visible conflict gate for inspector, pointer resize and Meal s
 
   await page.goto("/today");
   const todayActivity = page.locator('[data-today-section="activity-stream"]');
-  await expect(todayActivity.getByText(blocker, { exact: true })).toBeVisible();
-  await expect(todayActivity.getByText(candidate, { exact: true })).toHaveCount(0);
+  await expect(todayActivity.locator('[data-event-kind="TASK SCHEDULED"]').getByText(blocker, { exact: true })).toBeVisible();
+  await expect(todayActivity.locator('[data-event-kind="TASK SCHEDULED"]').getByText(candidate, { exact: true })).toHaveCount(0);
 
   await page.goto("/dashboard");
   const agenda = page.locator('section[aria-labelledby="today-agenda-title"]');
@@ -170,7 +173,7 @@ test("Z1 uses one visible conflict gate for inspector, pointer resize and Meal s
   const movableBefore = await calendarTaskButton(movableBlock).getAttribute(
     "aria-label",
   );
-  await dragToDay(page, movableBlock, day, 3 / 16);
+  await dragToDay(page, movableBlock, day, 3 / 18);
   await expect(pointerConflict(page)).toContainText("Sichtbarer Konflikt");
   await pointerConflict(page).getByRole("button", { name: "Abbrechen" }).click();
   await page.reload();
@@ -207,33 +210,25 @@ test("Z1 uses one visible conflict gate for inspector, pointer resize and Meal s
     resizeBefore ?? "",
   );
 
-  await page.goto("/nutrition/recipes");
-  const recipeForm = page
-    .getByRole("heading", { name: "Recipe erstellen" })
-    .locator("xpath=ancestor::section[1]");
-  await recipeForm.getByLabel("Title").fill(recipe);
-  await recipeForm.getByRole("button", { name: "Recipe erstellen" }).click();
-  await expect(page.getByText(recipe, { exact: true }).first()).toBeVisible();
-
-  await page.goto("/nutrition");
-  const mealForm = page
-    .getByRole("heading", { name: "Meal erstellen" })
-    .locator("xpath=ancestor::section[1]");
-  await mealForm.getByLabel("Title").fill(meal);
-  await mealForm.getByLabel("Date").fill(date);
-  await mealForm.getByLabel("Type").selectOption("lunch");
-  await mealForm.getByLabel("Planned").fill(`${date}T12:30`);
-  await mealForm.getByLabel("Recipe").selectOption({ label: recipe });
-  await mealForm.getByRole("button", { name: "Meal erstellen" }).click();
-  await expect(page.getByText(meal, { exact: true }).first()).toBeVisible();
+  // Fixture capture uses the existing authenticated Data API; scheduling below
+  // remains the real source-owned Meal control in the disposable local stack.
+  const cookie = (await page.context().cookies()).find((c) => c.name.includes("auth-token"))!;
+  const session = JSON.parse(Buffer.from(cookie.value.replace(/^base64-/, ""), "base64url").toString());
+  const api = createClient<Database>(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  await api.auth.setSession(session);
+  const userId = (await api.auth.getUser()).data.user!.id;
+  const recipeRow = (await api.from("recipes").insert({ title: recipe, user_id: userId }).select().single().throwOnError()).data!;
+  await api.from("meals").insert({ title: meal, user_id: userId, date, meal_type: "lunch", recipe_id: recipeRow.id }).select().single().throwOnError();
 
   await page.goto("/nutrition/meal-planner");
-  const mealSlot = page.getByRole("button").filter({ hasText: recipe }).first();
+  const mealSlot = page.locator("button[data-meal-id]").filter({ hasText: meal });
   await mealSlot.click();
-  await page
-    .locator(`form[aria-label="${meal} als Zeitblock planen"]`)
-    .getByRole("button", { name: "Im Calendar planen" })
-    .click();
+  await page.getByText("Bearbeiten / Zeitplanung", { exact: true }).click();
+  const mealSchedule = page.locator(`form[aria-label="${meal} als Zeitblock planen"]`);
+  await mealSchedule.getByLabel("Blockzeit").fill("12:30");
+  await mealSchedule.getByRole("button", { name: "Im Kalender planen" }).click();
 
   await page.goto("/calendar");
   const mealBlock = calendarTaskBlock(page, meal);
@@ -243,7 +238,7 @@ test("Z1 uses one visible conflict gate for inspector, pointer resize and Meal s
     page,
     mealBlock,
     page.locator(`[data-calendar-section="week-grid"] [data-calendar-date="${date}"]`),
-    3 / 16,
+    3 / 18,
   );
   await expect(pointerConflict(page)).toContainText("Sichtbarer Konflikt");
   await pointerConflict(page)

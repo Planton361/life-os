@@ -1,3 +1,4 @@
+import type { WeeklyTaskContext } from "./weekly-task-context";
 import type { ContentStateMeta } from "@/features/content-state";
 
 export type CalendarSourceEntityType =
@@ -240,6 +241,8 @@ export type PlannerQueueSkillContext = {
 };
 
 export type PlannerQueueItem = {
+  contextUnavailable?: boolean;
+  orientation?: string;
   accent?: string;
   area: string;
   createdAt?: string;
@@ -254,7 +257,11 @@ export type PlannerQueueItem = {
   project?: { id: string; title: string };
   rankingGroup: PlannerQueueRankGroup;
   rankingReason: string;
-  scheduleSourceType?: "meal" | "review" | "running_plan_item" | "strength_plan";
+  scheduleSourceType?:
+    | "meal"
+    | "review"
+    | "running_plan_item"
+    | "strength_plan";
   skills: readonly PlannerQueueSkillContext[];
 };
 
@@ -305,6 +312,9 @@ export type CalendarPageContractViewModel = {
 };
 
 export type CalendarViewModel = {
+  taskContexts?: Record<string, WeeklyTaskContext>;
+  dependencyUnavailable?: boolean;
+  planningUnavailableReason?: string;
   profileId: CalendarProfileId;
   contentStates: {
     page: ContentStateMeta;

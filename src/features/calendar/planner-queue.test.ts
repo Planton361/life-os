@@ -45,6 +45,7 @@ const project = (id: string, goalId?: string): LifeProject => ({
 });
 
 const task = (id: string, overrides: Partial<LifeTask> = {}): LifeTask => ({
+  dependencyAvailability: "READY",
   areaId: "work",
   description: "",
   evidence: [],
@@ -74,6 +75,67 @@ function queue(tasks: readonly LifeTask[]) {
 }
 
 describe("canonical planner queue", () => {
+  it("fails closed for BLOCKED and unknown truth before ranking and the existing limit", () => {
+    const candidates = Array.from({ length: 110 }, (_, i) =>
+      task(`ready-${String(i).padStart(3, "0")}`),
+    );
+    const items = queue([
+      task("blocked-overdue", {
+        dependencyAvailability: "BLOCKED",
+        dueAt: "2026-01-01",
+      }),
+      task("unknown-overdue", {
+        dependencyAvailability: undefined,
+        dueAt: "2026-01-01",
+      }),
+      ...candidates,
+    ]).slice(0, 100);
+    expect(items.map((i) => i.id)).toEqual(
+      candidates.slice(0, 100).map((t) => t.id),
+    );
+  });
+
+  it("preserves group, deadline, priority, planning date, creation and ID tie-breaks for the READY subset", () => {
+    const ready = [
+      task("goal", { goalId: "goal-a" }),
+      task("project", { projectId: "project-a" }),
+      task("recurring", { isGenerated: true, instanceDate: "2026-09-02" }),
+      task("due-later", { dueAt: "2026-09-04", priority: "P0" }),
+      task("due-sooner", { dueAt: "2026-09-03", priority: "P3" }),
+      task("overdue-later", { dueAt: "2026-09-01", priority: "P0" }),
+      task("overdue-sooner", { dueAt: "2026-08-30", priority: "P3" }),
+      task("priority", { priority: "P0" }),
+      task("date", { date: "2026-09-02" }),
+      task("created", { createdAt: "2026-01-01" }),
+      task("b", { createdAt: "2026-01-02" }),
+      task("a", { createdAt: "2026-01-02" }),
+    ];
+    const expected = [
+      "overdue-sooner",
+      "overdue-later",
+      "due-sooner",
+      "due-later",
+      "recurring",
+      "project",
+      "goal",
+      "priority",
+      "date",
+      "created",
+      "a",
+      "b",
+    ];
+    expect(queue(ready).map((i) => i.id)).toEqual(expected);
+    expect(
+      queue([
+        ...ready,
+        ...ready.map((t) => ({
+          ...t,
+          id: `blocked-${t.id}`,
+          dependencyAvailability: "BLOCKED" as const,
+        })),
+      ]).map((i) => i.id),
+    ).toEqual(expected);
+  });
   it("ranks each open, unscheduled occurrence exactly once with an explainable group", () => {
     const items = queue([
       task("backlog"),
@@ -126,7 +188,9 @@ describe("canonical planner queue", () => {
   it("keeps every established source-linked task as a canonical queue task", () => {
     const items = queue([
       task("meal", { scheduleSource: { id: "meal-source", type: "meal" } }),
-      task("review", { scheduleSource: { id: "review-source", type: "review" } }),
+      task("review", {
+        scheduleSource: { id: "review-source", type: "review" },
+      }),
       task("running", {
         scheduleSource: { id: "running-source", type: "running_plan_item" },
       }),

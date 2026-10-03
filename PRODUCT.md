@@ -784,6 +784,17 @@ and Planning Date. Display context may include blocker reason, Milestone,
 Project, Goal, Skill and Schedule Source. Eligibility is a hard boundary;
 ranking is advisory; display context is explanatory.
 
+PP3 applies canonical READY eligibility before the unchanged Queue ranking and
+limit. Missing or failed dependency truth fails closed and is visibly unavailable.
+Orientation enrichment then changes zero Queue memberships or positions. Rows
+show one compact Project → Goal → first explicit Skill title and additional
+context as `+N`. The Week Inspector groups Project result, assigned versus current
+Project Etappe, direct/via/redundant/conflicting Goal paths, explicit Goal-Etappe
+support and all explicitly linked Skills with optional Current Development Target
+in one `Zusammenhang` section. Current focuses never imply Task assignment;
+Milestones and Skill Targets remain orientation only. Scheduled/deep-linked Tasks
+retain truthful execution state and predecessor navigation outside Queue eligibility.
+
 Required capabilities:
 
 - week view as the primary planning surface, with real day and month views;

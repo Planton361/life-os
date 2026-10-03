@@ -1154,13 +1154,18 @@ export function CalendarPlanningPage({
   const routeQueueTask = routeTaskId
     ? viewModel.schedulableTasks.find((task) => task.id === routeTaskId)
     : undefined;
+  const routeContext = routeTaskId
+    ? viewModel.taskContexts?.[routeTaskId]
+    : undefined;
   const initialSelection: Selection = routeTaskBlock
     ? { kind: "block", blockId: routeTaskBlock.id }
     : routeQueueTask
       ? { kind: "queue", taskId: routeQueueTask.id }
       : routeTaskAllDayBlock
         ? { kind: "block", blockId: routeTaskAllDayBlock.id }
-        : { kind: "day", dayId: `day-${initialDate}` };
+        : routeContext
+          ? { kind: "queue", taskId: routeContext.id }
+          : { kind: "day", dayId: `day-${initialDate}` };
   const [activeView, setActiveView] = useState<CalendarView>(initialView);
   const [activeScope, setActiveScope] = useState<CalendarScope>("All");
   const [currentDate, setCurrentDate] = useState(initialDate);
@@ -1198,7 +1203,12 @@ export function CalendarPlanningPage({
         : fallbackId
           ? document.getElementById(fallbackId)
           : null;
-      target?.focus();
+      (
+        target ??
+        document.querySelector<HTMLButtonElement>(
+          '#calendar-page button[data-calendar-view][aria-pressed="true"]',
+        )
+      )?.focus();
     });
   }, [activeView, currentDate, searchParams, selection]);
   useEffect(() => {
@@ -1275,6 +1285,13 @@ export function CalendarPlanningPage({
     selection.kind === "queue"
       ? viewModel.schedulableTasks.find((task) => task.id === selection.taskId)
       : undefined;
+  const selectedContextTaskId =
+    selectedQueueTask?.id ??
+    selectedBlock?.taskId ??
+    (selectedBlock?.sourceEntity.type === "task"
+      ? selectedBlock.sourceEntity.href?.split("/").at(-1)
+      : undefined) ??
+    (selection.kind === "queue" ? selection.taskId : undefined);
   const selectedDay =
     selection.kind === "day"
       ? calendarDays.find((day) => day.id === selection.dayId)
@@ -1757,6 +1774,13 @@ export function CalendarPlanningPage({
               onQueuePointerStart={beginQueuePointer}
               onSaveTime={saveTime}
               panel={viewModel.rightPanel}
+              selectedTaskContext={
+                selectedContextTaskId
+                  ? viewModel.taskContexts?.[selectedContextTaskId]
+                  : undefined
+              }
+              dependencyUnavailable={viewModel.dependencyUnavailable}
+              planningUnavailableReason={viewModel.planningUnavailableReason}
               planningQueueContentState={viewModel.contentStates.planningQueue}
               pointerEnabled={
                 viewModel.profileId === "manual" && !pointerPending

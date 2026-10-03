@@ -927,6 +927,16 @@ USER ACCEPTED **Week view for both planning and replanning**:
 - the user may deliberately switch views after arrival, but there is no automatic
   Day-view exception.
 
+The PP3 Queue row keeps title, existing ranking reason/planning metadata and
+one quiet orientation title (Project → Goal → first explicitly linked Skill,
+with `+N` for additional contexts). READY is implicit in Queue membership.
+The Week Inspector uses one shared `Zusammenhang` surface with internal dividers
+for Project, Goal paths and explicit Skills; long results/Etappen/Targets belong
+there, never on the Queue row. Execution truth stays separate and text-supported,
+with real predecessor links and a visible unavailable state on dependency read
+failure. Assigned Etappen, support relations and current domain focuses are
+explicitly labeled. The existing bounded rail and mobile document flow remain.
+
 Calendar continues to own explicit time-block confirmation/editing; merely opening
 the handoff route never writes scheduling state. Today remains the day projection.
 No Calendar or Today redesign is implied.
