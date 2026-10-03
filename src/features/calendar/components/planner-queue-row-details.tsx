@@ -1,6 +1,24 @@
 import type { PlannerQueueItem } from "../calendar-types";
 import { weeklyOrientation } from "../weekly-task-context";
 
+export function PlannerQueueSummary({
+  task,
+  duration,
+}: {
+  task: PlannerQueueItem;
+  duration: string;
+}) {
+  return [
+    task.rankingReason,
+    ["P0", "P1", "P2", "P3"].includes(task.priority)
+      ? task.priority
+      : undefined,
+    duration,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
 /** Queue-only display; eligibility, ordering and Inspector context stay separate. */
 export function PlannerQueueRowDetails({
   task,

@@ -116,8 +116,14 @@ test("PP3 canonical context, READY queue, two owners, no-write reads, Week hando
     goal_id: direct.id,
     milestone_id: assigned.id,
     planned_date: today,
+    priority: "none",
+    duration_minutes: 30,
   });
-  const via = await task(`Via ${stamp}`, { project_id: project.id });
+  const via = await task(`Via ${stamp}`, {
+    project_id: project.id,
+    priority: "P1",
+    duration_minutes: 30,
+  });
   const same = await task(`Redundant ${stamp}`, {
     project_id: project.id,
     goal_id: inherited.id,
@@ -328,6 +334,15 @@ test("PP3 canonical context, READY queue, two owners, no-write reads, Week hando
       .locator("[data-queue-orientation]"),
   ).toContainText("+4");
   await expect(queue).not.toContainText("No deadline");
+  const noPriorityRow = queue.getByRole("button", {
+    name: new RegExp(mixed.title),
+  });
+  const priorityRow = queue.getByRole("button", {
+    name: new RegExp(via.title),
+  });
+  await expect(noPriorityRow).toContainText("Project next work · 30 min");
+  await expect(noPriorityRow).not.toContainText("none");
+  await expect(priorityRow).toContainText("Project next work · P1 · 30 min");
   const plainRow = queue.getByRole("button", { name: new RegExp(plain.title) });
   await expect(plainRow.locator("[data-queue-orientation]")).toHaveCount(0);
   await expect(plainRow.locator("[data-queue-planning-metadata]")).toHaveCount(0);
@@ -348,9 +363,13 @@ test("PP3 canonical context, READY queue, two owners, no-write reads, Week hando
   await expect(relation.locator("[data-weekly-skill]")).toHaveCount(2);
   const schedule = page.locator('[data-calendar-section="queue-schedule"]');
   await expect(schedule).toBeVisible();
+  await expect(schedule).toContainText("Project next work · 30 min");
+  await expect(schedule).not.toContainText("none");
   await page.reload();
   await expect(page).toHaveURL(route);
   await expect(selected).toBeVisible();
+  await expect(noPriorityRow).toContainText("Project next work · 30 min");
+  await expect(priorityRow).toContainText("Project next work · P1 · 30 min");
   expect(await snapshot()).toBe(before);
   const skillRead = await api.rpc("skill_development_read", { p_skill_id: s1 });
   expect(skillRead.data!.skill.development_revision).toBe(2);
@@ -437,6 +456,8 @@ test("PP3 canonical context, READY queue, two owners, no-write reads, Week hando
     await expect(
       page.locator(`[data-weekly-task-context="${t.id}"]`),
     ).toBeVisible();
+    if (t.id === via.id)
+      await expect(schedule).toContainText("Project next work · P1 · 30 min");
     await page
       .getByRole("button", { name: "Planung schließen", exact: true })
       .click();

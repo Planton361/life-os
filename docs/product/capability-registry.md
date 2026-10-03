@@ -1735,6 +1735,18 @@ Focused validation: 46 unit/read-model tests; both PP3 browser cases, retained
 R2-03 Calendar controls and Z1 Task/Meal conflict regression pass. Diff check,
 typecheck, lint and production build pass.
 
+Same-#97 Priority display repair: Queue rows and the selected Queue Task show
+Priority only for P0–P3; `none` is omitted while ranking reason and the existing
+duration label remain. Eight rendering regressions cover none/P0/P1/P2/P3 plus
+real/empty/unavailable context; the focused Queue/context suite passes 19 tests.
+The authenticated `PP3 canonical context` browser case passes with exact
+`Project next work · 30 min` / `Project next work · P1 · 30 min` assertions,
+selection and reload, retained READY/context/scheduling/Today/Dashboard proof,
+all three viewports and clean console/hydration. Full-surface captures are
+regenerated under ignored test-results; V5 review PASS, with unchanged tokens,
+hierarchy and bounds. The first disposable startup timed out; the retry passed
+and cleaned up its runtime. No eligibility, ranking, dependency or write changes.
+
 No migration, new RPC/grants, Security/Dependency/ranking semantics, PP4,
 R2-13, S-RELATION or remote DB work. Local DB lint exits successfully with
 18 existing Project Depth warnings (volatility and text→uuid[] cast); local
