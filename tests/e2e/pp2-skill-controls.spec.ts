@@ -15,6 +15,13 @@ async function save(
   name: string,
   message = "Skill gespeichert.",
 ) {
+  if (
+    await form.evaluate((el) => Boolean(el.closest("[data-skill-development]")))
+  ) {
+    expect(
+      await form.evaluate((el) => Boolean(el.closest("[data-skill-actions]"))),
+    ).toBe(true);
+  }
   const notices = form.page().getByLabel("Benachrichtigungen");
   for (const b of await notices
     .getByRole("button", { name: "Benachrichtigung schließen" })
@@ -76,9 +83,16 @@ test("PP2 remaining controls: ordering, milestone lifecycle, target retirement/r
     .single();
   expect(resource.error).toBeNull();
   await page.reload();
-  const focus = work.getByRole("region", { name: "Aktuelle Entwicklung" });
-  await disclosure(focus, "Entwicklungsfokus festlegen");
-  let f = focus.getByRole("form", {
+  const focus = work.getByRole("region", {
+    name: "Aktuelle Entwicklung",
+    exact: true,
+  });
+  const actions = work.getByRole("complementary", {
+    name: "Skillaktionen",
+    exact: true,
+  });
+  await disclosure(actions, "Entwicklungsfokus festlegen");
+  let f = actions.getByRole("form", {
     name: "Entwicklungsfokus geplant speichern",
   });
   await f
@@ -94,30 +108,41 @@ test("PP2 remaining controls: ordering, milestone lifecycle, target retirement/r
   );
   target = other.locator("[data-target]").first();
   for (const name of ["First step", "Second step"]) {
-    const d = await disclosure(path, "Lernschritt hinzufügen");
+    const d = await disclosure(
+      work.getByRole("complementary", { name: "Skillaktionen" }),
+      "Lernschritt hinzufügen",
+    );
     f = d.getByRole("form", { name: "Lernschritt hinzufügen", exact: true });
     await f.getByLabel("Titel", { exact: true }).fill(name);
     await save(f, "Lernschritt hinzufügen");
   }
-  let step = path.getByRole("article", { name: "Lernschritt Second step" });
+  const stepActions = await disclosure(work, "Lernschritte verwalten");
+  let step = stepActions.getByRole("article", {
+    name: "Aktionen für Lernschritt Second step",
+  });
   let manage = await disclosure(step, "Lernschritt verwalten");
   await save(manage.getByRole("form", { name: "Nach oben" }), "Nach oben");
   await page.reload();
   await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
-  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Verknüpfte Aufgaben");
   await disclosure(work, "Lernmaterial & Quellen");
   await expect(path.locator("h4")).toHaveText([
     "Second step · Geplant",
     "First step · Geplant",
   ]);
-  step = path.getByRole("article", { name: "Lernschritt Second step" });
+  step = stepActions.getByRole("article", {
+    name: "Aktionen für Lernschritt Second step",
+  });
+  await disclosure(work, "Lernschritte verwalten");
   manage = await disclosure(step, "Lernschritt verwalten");
   f = manage.getByRole("form", { name: "Lernschritt speichern" });
   await f
     .getByLabel("Beschreibung", { exact: true })
     .fill("Explicit learning step");
   await save(f, "Lernschritt speichern");
-  await expect(step).toContainText("Explicit learning step");
+  await expect(
+    path.getByRole("article", { name: "Lernschritt Second step", exact: true }),
+  ).toContainText("Explicit learning step");
   await save(
     manage.getByRole("form", { name: "Als aktuellen Lernschritt wählen" }),
     "Als aktuellen Lernschritt wählen",
@@ -126,13 +151,23 @@ test("PP2 remaining controls: ordering, milestone lifecycle, target retirement/r
     name: "Lernschritt First step",
     exact: true,
   });
-  const firstManage = await disclosure(first, "Lernschritt verwalten");
+  const firstManage = await disclosure(
+    stepActions.getByRole("article", {
+      name: "Aktionen für Lernschritt First step",
+      exact: true,
+    }),
+    "Lernschritt verwalten",
+  );
   await save(
     firstManage.getByRole("form", { name: "Als aktuellen Lernschritt wählen" }),
     "Als aktuellen Lernschritt wählen",
   );
   await expect(first.getByRole("heading")).toContainText("Aktuell");
-  await expect(step.getByRole("heading")).toContainText("Geplant");
+  await expect(
+    path
+      .getByRole("article", { name: "Lernschritt Second step", exact: true })
+      .getByRole("heading"),
+  ).toContainText("Geplant");
   await save(
     manage.getByRole("form", { name: "Als aktuellen Lernschritt wählen" }),
     "Als aktuellen Lernschritt wählen",
@@ -147,8 +182,9 @@ test("PP2 remaining controls: ordering, milestone lifecycle, target retirement/r
   await save(f, "Überprüfung speichern");
   await page.reload();
   await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
-  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Verknüpfte Aufgaben");
   await disclosure(work, "Lernmaterial & Quellen");
+  await disclosure(work, "Lernschritte verwalten");
   manage = await disclosure(step, "Lernschritt verwalten");
   await save(
     manage.getByRole("form", { name: "Lernschritt wieder öffnen" }),
@@ -160,7 +196,7 @@ test("PP2 remaining controls: ordering, milestone lifecycle, target retirement/r
   );
   await page.reload();
   await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
-  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Verknüpfte Aufgaben");
   await disclosure(work, "Lernmaterial & Quellen");
   await expect(
     path.getByRole("article", { name: "Lernschritt Second step" }),
@@ -172,7 +208,7 @@ test("PP2 remaining controls: ordering, milestone lifecycle, target retirement/r
   );
   await page.reload();
   await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
-  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Verknüpfte Aufgaben");
   await disclosure(work, "Lernmaterial & Quellen");
   await expect(path.locator("h4")).toHaveText([
     "First step · Geplant",
@@ -188,7 +224,7 @@ test("PP2 remaining controls: ordering, milestone lifecycle, target retirement/r
   );
   await page.reload();
   await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
-  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Verknüpfte Aufgaben");
   await disclosure(work, "Lernmaterial & Quellen");
   await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
   target = work.locator("[data-target]").first();
@@ -214,7 +250,7 @@ test("PP2 remaining controls: ordering, milestone lifecycle, target retirement/r
   await expect(tr.locator("summary").first()).toBeFocused();
   await page.reload();
   await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
-  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Verknüpfte Aufgaben");
   await disclosure(work, "Lernmaterial & Quellen");
   await expect(target.getByText("Aktuell", { exact: true })).toBeVisible();
   tr = await disclosure(target, "Entwicklungsfokus überprüfen");
@@ -229,7 +265,7 @@ test("PP2 remaining controls: ordering, milestone lifecycle, target retirement/r
   await save(f, "Überprüfung speichern");
   await page.reload();
   await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
-  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Verknüpfte Aufgaben");
   await disclosure(work, "Lernmaterial & Quellen");
   await expect(target.getByText("Aktuell", { exact: true })).toBeVisible();
   tr = await disclosure(target, "Entwicklungsfokus überprüfen");
@@ -243,7 +279,7 @@ test("PP2 remaining controls: ordering, milestone lifecycle, target retirement/r
   await save(f, "Überprüfung speichern");
   await page.reload();
   await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
-  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Verknüpfte Aufgaben");
   await disclosure(work, "Lernmaterial & Quellen");
   await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
   target = work.locator("[data-target]").first();
@@ -254,21 +290,21 @@ test("PP2 remaining controls: ordering, milestone lifecycle, target retirement/r
   );
   await page.reload();
   await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
-  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Verknüpfte Aufgaben");
   await disclosure(work, "Lernmaterial & Quellen");
   await expect(
     focus.getByText("Kein Entwicklungsfokus festgelegt.", { exact: true }),
   ).toBeVisible();
   // Existing Task links affect current Practice, never synthesize Evidence.
-  await disclosure(work, "Verbindungen verwalten");
-  const practice = work.getByRole("region", { name: "Verbindungen verwalten" });
+  await disclosure(work, "Verknüpfte Aufgaben");
+  const practice = work.getByRole("region", { name: "Verknüpfte Aufgaben" });
   let d = await disclosure(practice, "Aufgabe verknüpfen");
   f = d.getByRole("form", { name: "Aufgabe mit Skill verknüpfen" });
   await f.getByLabel("Task", { exact: true }).selectOption(task.data!.id);
   await save(f, "Aufgabe mit Skill verknüpfen", "Skill mit Task verknüpft.");
   await page.reload();
   await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
-  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Verknüpfte Aufgaben");
   await disclosure(work, "Lernmaterial & Quellen");
   await expect(
     practice.getByRole("link", { name: "Canonical practice", exact: true }),
@@ -289,7 +325,7 @@ test("PP2 remaining controls: ordering, milestone lifecycle, target retirement/r
   );
   await page.reload();
   await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
-  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Verknüpfte Aufgaben");
   await disclosure(work, "Lernmaterial & Quellen");
   await expect(
     practice.getByRole("link", { name: "Canonical practice", exact: true }),
@@ -303,7 +339,7 @@ test("PP2 remaining controls: ordering, milestone lifecycle, target retirement/r
   await save(f, "Aufgabe mit Skill verknüpfen", "Skill mit Task verknüpft.");
   await page.reload();
   await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
-  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Verknüpfte Aufgaben");
   await disclosure(work, "Lernmaterial & Quellen");
   d = await disclosure(work, "Beobachtung festhalten");
   f = d.getByRole("form", { name: "Beobachtung festhalten", exact: true });
@@ -313,7 +349,7 @@ test("PP2 remaining controls: ordering, milestone lifecycle, target retirement/r
   await save(f, "Beobachtung festhalten");
   await page.reload();
   await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
-  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Verknüpfte Aufgaben");
   await disclosure(work, "Lernmaterial & Quellen");
   const e = recency.getByRole("article", {
     name: "Beobachtung Task sourced observation",
@@ -332,7 +368,7 @@ test("PP2 remaining controls: ordering, milestone lifecycle, target retirement/r
   ).toBeNull();
   await page.reload();
   await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
-  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Verknüpfte Aufgaben");
   await disclosure(work, "Lernmaterial & Quellen");
   await expect(recency.getByRole("definition").first()).toHaveText(
     "Noch kein datierter Aufgabenabschluss",
@@ -347,7 +383,7 @@ test("PP2 remaining controls: ordering, milestone lifecycle, target retirement/r
   ).toBeNull();
   await page.reload();
   await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
-  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Verknüpfte Aufgaben");
   await disclosure(work, "Lernmaterial & Quellen");
   await expect(
     practice.getByRole("link", { name: "Canonical practice", exact: true }),
@@ -366,7 +402,7 @@ test("PP2 remaining controls: ordering, milestone lifecycle, target retirement/r
   await save(f, "Quelle mit Skill verknüpfen", "Resource verknüpft.");
   await page.reload();
   await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
-  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Verknüpfte Aufgaben");
   await disclosure(work, "Lernmaterial & Quellen");
   await refs.getByRole("link", { name: "Scoped reference · Context" }).click();
   await expect(page).toHaveURL(new RegExp(`/resources/${resource.data!.id}$`));
@@ -380,7 +416,7 @@ test("PP2 remaining controls: ordering, milestone lifecycle, target retirement/r
   );
   await page.reload();
   await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
-  await disclosure(work, "Verbindungen verwalten");
+  await disclosure(work, "Verknüpfte Aufgaben");
   await disclosure(work, "Lernmaterial & Quellen");
   await expect(
     refs.getByRole("link", { name: "Scoped reference · Context" }),

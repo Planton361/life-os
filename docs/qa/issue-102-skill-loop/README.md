@@ -1,5 +1,100 @@
 # Issue #102 — current browser evidence
 
+## Skill composition repair — 2026-10-04
+
+Same-#102 post-merge user acceptance repair, based on main
+`3cd8c13cdbe6a377ab592e397900ef072b28a0b3` (merged #106).
+Branch: `codex/102-skill-detail-composition`. This section supersedes the older
+Skill composition evidence below; final real-user acceptance remains pending.
+
+The Skill workbench keeps its shared V5 identity, bounded 64/36 outer surface,
+supporting depth and history. Orientation and information now form the left
+column: Current focus, visible ordered learning path, canonical linked Practice,
+observations, provenance and separate recency. The right `Aktionen` column holds
+the existing state-dependent Primary, capture and on-demand management. Learning
+step and observation correction forms open there. Supporting focus/review,
+Resource and Task-link rows use the same information-left/action-right split.
+`Verknüpfte Aufgaben` names the readable supporting Task projection.
+
+Desktop columns size their contents independently: opening a right-side form does
+not stretch the gaps between left-side modules. On mobile the same content stacks
+as orientation → actions → learning path → Practice → observations; the Primary is
+the first focusable workbench control. Native disclosures keep Enter/Escape and
+focus-return behavior. Task/source navigation and read-only expansion stay with
+their information. Normal read mode contains no open forms.
+
+### Before / after visual review
+
+The baseline was browser-proven on untouched main before implementation. The
+comparison uses equivalent synthetic local Manual fixtures, not private data.
+
+- Before: step management was interleaved with the learning path; capture actions
+  followed Practice; observation correction appeared inside observation content.
+- After: the learning path is an uninterrupted read view, observation information
+  stays in the left reading column, and write/edit controls share the right action
+  location. Earlier/terminal focuses remain in supporting depth.
+- Shared V5 family remains: existing surface/border/color tokens, 64/36 grammar,
+  content-sized modules, ordinary state labels and one dominant state Primary.
+  Goal/Project code, Portfolio and Shell composition are unchanged.
+- Bounds review: full-surface screenshots at 3840×2160, 1920×1080 and 390×844;
+  no overlap, clipped controls or horizontal overflow. Right rail is content-sized,
+  with no sticky/stretch/fill behavior. Real-user judgment of visual calm is pending.
+
+| State | Before | After |
+| --- | --- | --- |
+| Empty | [3840](issue-102-composition-before-empty-3840.png) · [1920](issue-102-composition-before-empty-1920.png) · [390](issue-102-composition-before-empty-390.png) | [3840](issue-102-composition-after-empty-3840.png) · [1920](issue-102-composition-after-empty-1920.png) · [390](issue-102-composition-after-empty-390.png) |
+| No target | [3840](issue-102-composition-before-no-target-3840.png) · [1920](issue-102-composition-before-no-target-1920.png) · [390](issue-102-composition-before-no-target-390.png) | [3840](issue-102-composition-after-no-target-3840.png) · [1920](issue-102-composition-after-no-target-1920.png) · [390](issue-102-composition-after-no-target-390.png) |
+| Active with focus / steps / Practice | [3840](issue-102-composition-before-active-3840.png) · [1920](issue-102-composition-before-active-1920.png) · [390](issue-102-composition-before-active-390.png) | [3840](issue-102-composition-after-active-3840.png) · [1920](issue-102-composition-after-active-1920.png) · [390](issue-102-composition-after-active-390.png) |
+| Rich | [3840](issue-102-composition-before-rich-3840.png) · [1920](issue-102-composition-before-rich-1920.png) · [390](issue-102-composition-before-rich-390.png) | [3840](issue-102-composition-after-rich-3840.png) · [1920](issue-102-composition-after-rich-1920.png) · [390](issue-102-composition-after-rich-390.png) |
+
+Opened right-side capture plus supporting focus depth:
+[3840](issue-102-composition-depth-3840.png) ·
+[1920](issue-102-composition-depth-1920.png) ·
+[390](issue-102-composition-depth-390.png).
+
+### Controls / regression evidence
+
+| Scope | Proof |
+| --- | --- |
+| Primary and normal composition | Empty/no-target/active/rich/paused/archived and READY/BLOCKED/unavailable matrix; Primary is first focusable; desktop actions lie right of information, mobile actions follow orientation; information containers have no command forms |
+| Learning path | Ordered completed/current/planned remain visible; direct add and explicit Current switch in the action rail; edit/reorder/review/reopen/archive/restore with visible feedback and canonical reload readback; Task readiness unchanged |
+| Observations and reviews | Explicit capture, correction/withdraw/restore, separate recency, pinned snapshots and amendments retained; commands remain in action containers; Enter/Escape/focus return proven at all three viewports with an open capture form |
+| Supporting depth | Real focus management, Resource link/unlink/source navigation and Task link/unlink; readable context left, existing commands right |
+| Task origin / boundaries | One-save/opt-out/link-only recovery/ambiguous Create/two-owner guards; Manual/Demo/Empty/Auth-blocked; dependency outage fail-closed; console/hydration clean |
+
+The focused regression changes preserve assertions: relocated controls are scoped
+to their action regions, while readback remains in information regions. Readiness
+is asserted by concrete Task identity rather than assuming an ordering among
+same-time fixtures. The existing Portfolio inventory waits for rendered controls
+before taking its snapshot, retaining every navigation assertion and threshold.
+
+Browser-Proof: **PASS** for all seven distinct regressions. The long combined
+Dev run passed six tests but recycled its server at the memory threshold during
+the final workbench test. That test was rerun on a fresh disposable runtime and
+passed with its original strict empty-console assertion; no errors were filtered.
+For repeatable validation, run the longer workbench lifecycle on a fresh runtime.
+
+Validation commands:
+
+```sh
+pnpm test:e2e:isolated tests/e2e/issue-102-skill-loop.spec.ts tests/e2e/issue-102-skill-surface.spec.ts tests/e2e/pp2-skill-controls.spec.ts tests/e2e/pp2-skill-development.spec.ts --grep 'real state matrix|canonical Task origin|dependency outage|remaining controls|Manual/Demo|Dashboard Skill'
+pnpm test:e2e:isolated tests/e2e/pp2-skill-development.spec.ts --grep 'PP2 Skill workbench'
+git diff --check
+pnpm typecheck
+pnpm lint
+pnpm build
+```
+
+Local checks: `git diff --check`, `pnpm typecheck`, `pnpm lint` and `pnpm build` **PASS**.
+V5 Design-Taste: **PASS**. Completion gate for this bounded repair: **PASS**;
+final real-user acceptance remains separate.
+
+No model, migration, RPC, grant, readiness, Evidence or Review semantic changes.
+All existing commands and payloads are retained. No Goal/Project product changes,
+broad Portfolio/Shell redesign, remote database or merge action. The focused PR
+records its final revision and required exact-head `quality` run.
+
+
 ## Post-merge acceptance repair — visible Lernweg (2026-10-04)
 
 Authorization: [#102 USER ACCEPTANCE finding 5973828224](https://github.com/Planton361/life-os/issues/102#issuecomment-5973828224).

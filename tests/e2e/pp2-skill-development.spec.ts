@@ -10,6 +10,13 @@ async function openDetails(region: Locator, summary: string) {
   return d;
 }
 async function save(form: Locator, label: string) {
+  if (
+    await form.evaluate((el) => Boolean(el.closest("[data-skill-development]")))
+  ) {
+    expect(
+      await form.evaluate((el) => Boolean(el.closest("[data-skill-actions]"))),
+    ).toBe(true);
+  }
   const notices = form.page().getByLabel("Benachrichtigungen");
   for (const close of await notices
     .getByRole("button", { name: "Benachrichtigung schließen" })
@@ -63,23 +70,32 @@ test("PP2 Skill workbench: explicit planning, reviews, evidence history, reload 
   await expect(
     work.getByRole("complementary", { name: "Beobachtungen" }),
   ).toHaveCount(0);
-  const focus = work.getByRole("region", { name: "Aktuelle Entwicklung" });
-  const create = focus.getByRole("form", {
+  const focus = work.getByRole("region", {
+    name: "Aktuelle Entwicklung",
+    exact: true,
+  });
+  const actions = work.getByRole("complementary", {
+    name: "Skillaktionen",
+    exact: true,
+  });
+  const create = actions.getByRole("form", {
     name: "Entwicklungsfokus geplant speichern",
   });
-  await openDetails(focus, "Entwicklungsfokus festlegen");
+  await openDetails(actions, "Entwicklungsfokus festlegen");
   await create
     .getByLabel("Was möchtest du besser können?", { exact: true })
     .fill("Cancelled focus");
   await create.getByRole("button", { name: "Abbrechen", exact: true }).click();
   await expect(
-    focus.locator("summary").filter({ hasText: "Entwicklungsfokus festlegen" }),
+    actions
+      .locator("summary")
+      .filter({ hasText: "Entwicklungsfokus festlegen" }),
   ).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(create).toBeVisible();
   await page.reload();
   await expect(focus.locator("[data-target]")).toHaveCount(0);
-  await openDetails(focus, "Entwicklungsfokus festlegen");
+  await openDetails(actions, "Entwicklungsfokus festlegen");
   await create
     .getByLabel("Was möchtest du besser können?", { exact: true })
     .fill("Reliable SQL ownership");
@@ -109,15 +125,19 @@ test("PP2 Skill workbench: explicit planning, reviews, evidence history, reload 
       exact: true,
     }),
   ).toBeVisible();
-  const add = await openDetails(path, "Lernschritt hinzufügen");
+  const add = await openDetails(
+    work.getByRole("complementary", { name: "Skillaktionen" }),
+    "Lernschritt hinzufügen",
+  );
   const mf = add.getByRole("form", {
     name: "Lernschritt hinzufügen",
     exact: true,
   });
   await mf.getByLabel("Titel", { exact: true }).fill("Write a scoped query");
   await save(mf, "Lernschritt hinzufügen");
-  const step = path.getByRole("article", {
-    name: "Lernschritt Write a scoped query",
+  const stepActions = await openDetails(work, "Lernschritte verwalten");
+  const step = stepActions.getByRole("article", {
+    name: "Aktionen für Lernschritt Write a scoped query",
   });
   const manage = await openDetails(step, "Lernschritt verwalten");
   await save(
@@ -126,7 +146,14 @@ test("PP2 Skill workbench: explicit planning, reviews, evidence history, reload 
   );
   await page.reload();
   await openDetails(work, "Entwicklungsfokusse & Überprüfungen");
-  await expect(step.getByRole("heading")).toContainText("Aktuell");
+  await expect(
+    path
+      .getByRole("article", {
+        name: "Lernschritt Write a scoped query",
+        exact: true,
+      })
+      .getByRole("heading"),
+  ).toContainText("Aktuell");
   await work
     .getByRole("link", { name: "Übungsaufgabe anlegen", exact: true })
     .click();
@@ -165,6 +192,15 @@ test("PP2 Skill workbench: explicit planning, reviews, evidence history, reload 
   ]) {
     await page.setViewportSize({ width, height });
     await expect(work).toBeVisible();
+    await expect(work.locator("[data-skill-information] form")).toHaveCount(0);
+    await openDetails(work, "Beobachtung festhalten");
+    await ef.getByLabel("Titel", { exact: true }).focus();
+    await page.keyboard.press("Escape");
+    await expect(addEvidence.locator("summary").first()).toBeFocused();
+    await expect(ef).not.toBeVisible();
+    await addEvidence.locator("summary").first().press("Enter");
+    await expect(ef).toBeVisible();
+
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
@@ -208,8 +244,9 @@ test("PP2 Skill workbench: explicit planning, reviews, evidence history, reload 
   await expect(
     target.getByRole("heading").filter({ hasText: "Write a scoped query" }),
   ).toContainText("Geplant");
-  let e = recency.getByRole("article", {
-    name: "Beobachtung Owned query observed",
+  const observationActions = await openDetails(work, "Beobachtungen verwalten");
+  let e = observationActions.getByRole("article", {
+    name: "Aktionen für Beobachtung Owned query observed",
   });
   const edit = await openDetails(e, "Beobachtung korrigieren / zurückziehen");
   ef = edit.getByRole("form", { name: "Korrektur speichern" });
@@ -253,8 +290,9 @@ test("PP2 Skill workbench: explicit planning, reviews, evidence history, reload 
       .getByText("Geplant", { exact: true })
       .first(),
   ).toBeVisible();
-  e = recency.getByRole("article", {
-    name: "Beobachtung Corrected observation",
+  await openDetails(work, "Beobachtungen verwalten");
+  e = observationActions.getByRole("article", {
+    name: "Aktionen für Beobachtung Corrected observation",
   });
   const withdraw = await openDetails(
     e,
