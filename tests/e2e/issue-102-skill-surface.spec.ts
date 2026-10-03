@@ -168,6 +168,16 @@ test("#102 dependency outage fails closed in real Skill and Portfolio; Portfolio
     await expect(
       page.getByRole("complementary", { name: "Selected Entity" }),
     ).toContainText("Area: Ohne Area");
+    const inspector = page.getByRole("complementary", {
+      name: "Selected Entity",
+    });
+    await expect(
+      inspector.getByRole("region", {
+        name: "Verknüpfte Aufgaben",
+        exact: true,
+      }),
+    ).toContainText("Reale Übungsaufgabe");
+    await expect(inspector).not.toContainText("Practice Tasks");
     await page.screenshot({
       path: info.outputPath(`issue-102-portfolio-no-target-${width}.png`),
       fullPage: true,

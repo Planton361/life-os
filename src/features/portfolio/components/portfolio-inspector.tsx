@@ -221,9 +221,9 @@ export function PortfolioInspector({
             </section>
           )}
           {!!entity.skillContext?.linkedTasks?.length && (
-            <section aria-label="Practice Tasks">
+            <section aria-label="Verknüpfte Aufgaben">
               <h4 className="text-xs font-semibold text-[var(--text-muted)]">
-                Practice Tasks
+                Verknüpfte Aufgaben
               </h4>
               <ul className="mt-2 grid gap-2 text-sm">
                 {entity.skillContext.linkedTasks.slice(0, 3).map((task) => (

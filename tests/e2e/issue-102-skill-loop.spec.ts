@@ -401,6 +401,12 @@ test("#102 real state matrix, bounded rich workbench, Portfolio, lifecycle and s
   await expect(inspector).toContainText("15 ausführbar · 2 blockiert");
   await expect(inspector).toContainText("Area: Zusammenarbeit");
   await expect(
+    inspector
+      .getByRole("region", { name: "Verknüpfte Aufgaben", exact: true })
+      .getByRole("heading", { name: "Verknüpfte Aufgaben", exact: true }),
+  ).toBeVisible();
+  await expect(inspector).not.toContainText("Practice Tasks");
+  await expect(
     page.getByRole("region", { name: "Portfolio summary" }),
   ).toContainText("24 Beobachtungen");
   await expect(page.locator("#portfolio-page")).not.toContainText(

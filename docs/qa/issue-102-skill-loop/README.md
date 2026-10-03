@@ -7,7 +7,34 @@ Target: [#101 v1.2](https://github.com/Planton361/life-os/issues/101#issuecommen
 All data and screenshots are synthetic authenticated Manual fixtures in the
 repository's disposable local runtime. No remote database or deployment.
 
-## Current terminology repair / gate
+## Final Skill inspector wording / gate
+
+**READY_FOR_REVIEW / completion gate PASS for this bounded wording repair.**
+[CONTROL review 5402820275](https://github.com/Planton361/life-os/pull/103#pullrequestreview-5402820275)
+is resolved: the Skill-linked-task section heading and aria-label are now
+`Verknüpfte Aufgaben`. This is the only product change in this repair.
+
+- Canonical `r2-04-portfolio-surface.spec.ts`: **2/2 passed** again, unchanged.
+- Directly affected #102 matrix and Portfolio surface regression: **2/2 passed**
+  in one fresh disposable run. The Rich inspector verifies the exact section and
+  heading; the no-target fixture verifies its real linked Task in that section at
+  all three viewports. Both reject `Practice Tasks` in the inspector.
+- Six rich/no-target Portfolio screenshots are renewed at 3840×2160, 1920×1080
+  and 390×844 and visually checked: `Verknüpfte Aufgaben`, no `Practice Tasks`.
+  Console/hydration and bounds checks pass. Browser-Proof **PASS**, V5 **PASS**.
+- `git diff --check`, `pnpm typecheck`, `pnpm lint` and final-head `quality`
+  results are referenced in PR #103. Build and DB tests were not repeated for this
+  pure heading/aria-label change; previous evidence remains below.
+- No control inventory change is needed: this heading is not a control and the
+  existing navigation inventory still matches. No broader localization or other
+  entity-flow changes. Final USER ACCEPTED remains pending; no merge.
+
+```sh
+pnpm test:e2e:isolated tests/e2e/r2-04-portfolio-surface.spec.ts
+pnpm test:e2e:isolated tests/e2e/issue-102-skill-loop.spec.ts tests/e2e/issue-102-skill-surface.spec.ts --grep 'real state matrix|dependency outage'
+```
+
+## Prior terminology repair / evidence
 
 **READY_FOR_REVIEW / completion gate PASS for the authorized repair.**
 [CONTROL review 5402653891](https://github.com/Planton361/life-os/pull/103#pullrequestreview-5402653891)
@@ -140,7 +167,7 @@ Missing real #102 USER ACCEPTED prevents final product closure.
 ## Screenshots
 
 48 full-page screenshots from the Area recovery runs; all three viewports per state.
-The six rich/no-target Portfolio captures below were refreshed after the terminology repair.
+The six rich/no-target Portfolio captures below were refreshed after the final Skill inspector wording repair.
 
 - empty: [3840](issue-102-empty-3840.png), [1920](issue-102-empty-1920.png), [390](issue-102-empty-390.png)
 - no-target: [3840](issue-102-no-target-3840.png), [1920](issue-102-no-target-1920.png), [390](issue-102-no-target-390.png)
