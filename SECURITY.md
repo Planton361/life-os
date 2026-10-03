@@ -175,7 +175,10 @@ accepted from the client. The dedicated `life_os_skill_command` role is
 `NOLOGIN NOBYPASSRLS`, not superuser or a domain/History table owner. Fixed empty
 `search_path`, qualified objects and explicit minimal grants keep RLS effective.
 Source tables are read-only; Area UPDATE privilege exists solely for ownership
-row locking, with no Area UPDATE policy for the command role.
+row locking. The #104 forward repair adds `skill_command_area_lock`: owner-scoped
+UPDATE `USING` permits the existing `SELECT FOR SHARE`, while `WITH CHECK (false)`
+denies actual Area updates by the command role. Existing SELECT policy, client
+grants and Area policies are unchanged; the command still checks active ownership.
 
 Direct authenticated INSERT/UPDATE/DELETE are revoked on `skills`, Evidence and
 all PP2 planning/History/receipt tables, including effective default privileges.
