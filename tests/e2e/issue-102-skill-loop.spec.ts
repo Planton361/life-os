@@ -293,20 +293,104 @@ test("#102 real state matrix, bounded rich workbench, Portfolio, lifecycle and s
   await command("target.current", { target_id: target });
   await page.reload();
   await expect(primary.getByRole("link")).toHaveText("Übungsaufgabe anlegen");
-  await expect(
-    work
-      .getByRole("region", { name: "Aktuelle Entwicklung" })
-      .getByText("Aktueller Lernschritt"),
-  ).toHaveCount(0);
-  await proof(page, info, "focus-without-step");
+  const path = work.getByRole("region", { name: "Lernweg", exact: true });
+  await expect(path).toContainText("Noch keine Lernschritte");
+  await expect(path.getByRole("form")).not.toBeVisible();
+  const addSummary = path
+    .locator("summary")
+    .filter({ hasText: /^Lernschritt hinzufügen$/ });
+  await addSummary.focus();
+  await addSummary.press("Enter");
+  await path.getByLabel("Titel", { exact: true }).focus();
+  await page.keyboard.press("Escape");
+  await expect(addSummary).toBeFocused();
+  await expect(path.getByRole("form")).not.toBeVisible();
+  await proof(page, info, "learning-empty");
+  r = await command("milestone.create", {
+    target_id: target,
+    title: "Grundlagen erarbeiten",
+    description: "Gespräche vorbereiten und aufmerksam zuhören.",
+  });
+  const completedStep = r.milestones.find(
+    (m: { title: string }) => m.title === "Grundlagen erarbeiten",
+  ).id;
   r = await command("milestone.create", {
     target_id: target,
     title: "Rückfragen bündeln",
   });
+  const currentStep = r.milestones.find(
+    (m: { title: string }) => m.title === "Rückfragen bündeln",
+  ).id;
+  await command("milestone.create", {
+    target_id: target,
+    title: "Vereinbarungen nachhalten",
+  });
+  await page.reload();
+  await expect(path.locator("h4")).toHaveText([
+    "Grundlagen erarbeiten · Geplant",
+    "Rückfragen bündeln · Geplant",
+    "Vereinbarungen nachhalten · Geplant",
+  ]);
+  await proof(page, info, "learning-planned");
+  await api
+    .from("task_skill_links")
+    .insert(
+      tasks
+        .slice(0, 2)
+        .map((t) => ({ user_id: uid, skill_id: id, task_id: t.id })),
+    )
+    .throwOnError();
+  await page.reload();
+  await expect(primary.locator("summary")).toHaveText("Aufgabe auswählen");
+  await primary.locator("summary").click();
+  const readinessBefore = await primary.getByRole("article").allTextContents();
+  await expect(primary.getByRole("article").first()).toContainText(
+    "Ausführbar",
+  );
+  await expect(primary.getByRole("article").nth(1)).toContainText("Blockiert");
+
+  await command("review.submit", {
+    target_id: target,
+    milestone_id: completedStep,
+    decision: "completed",
+    note: "Grundlagen ausdrücklich überprüft",
+    open_milestones_acknowledged: false,
+    evidence: [],
+  });
   await command("milestone.current", {
     target_id: target,
-    milestone_id: r.milestones[0].id,
+    milestone_id: currentStep,
   });
+  await page.reload();
+  await expect(path.locator("h4")).toHaveText([
+    "Grundlagen erarbeiten · Abgeschlossen",
+    "Rückfragen bündeln · Aktuell",
+    "Vereinbarungen nachhalten · Geplant",
+  ]);
+  await expect(
+    work.getByRole("article", {
+      name: "Lernschritt Rückfragen bündeln",
+      exact: true,
+    }),
+  ).toHaveCount(1);
+  expect(
+    await primary.evaluate((el) =>
+      Boolean(
+        el.compareDocumentPosition(
+          el.parentElement!.querySelector('[aria-label="Lernweg"]')!,
+        ) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ),
+    ),
+  ).toBe(true);
+  await expect(primary.locator("summary")).toHaveText("Aufgabe auswählen");
+  await primary.locator("summary").click();
+  await expect(primary.getByRole("article")).toHaveCount(2);
+  expect(await primary.getByRole("article").allTextContents()).toEqual(
+    readinessBefore,
+  );
+  await primary.locator("summary").click();
+  await proof(page, info, "learning-mixed");
+  await api.from("task_skill_links").delete().eq("skill_id", id).throwOnError();
   await api
     .from("task_skill_links")
     .insert({ user_id: uid, skill_id: id, task_id: tasks[0].id })
@@ -336,6 +420,10 @@ test("#102 real state matrix, bounded rich workbench, Portfolio, lifecycle and s
   const prior = r.targets.find(
     (t: { title: string }) => t.title === "Früherer Fokus",
   ).id;
+  await command("milestone.create", {
+    target_id: prior,
+    title: "Frühere Etappe",
+  });
   await command("review.submit", {
     target_id: prior,
     milestone_id: null,
@@ -370,6 +458,21 @@ test("#102 real state matrix, bounded rich workbench, Portfolio, lifecycle and s
   await expect(observations).toContainText("Zuletzt geübt");
   await expect(observations).toContainText("30.9.2026");
   await expect(observations).toContainText("2026-09-24");
+  await expect(path).not.toContainText("Frühere Etappe");
+  const depth = await open(work, "Entwicklungsfokusse & Überprüfungen");
+  await expect(
+    depth.getByRole("article", {
+      name: "Lernschritt Frühere Etappe",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    depth.getByRole("article", {
+      name: "Lernschritt Rückfragen bündeln",
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  await depth.locator("summary").first().click();
   await proof(page, info, "rich");
   await open(observations, "Beobachtung vollständig lesen");
   await expect(observations.locator("details[open]").first()).toContainText(

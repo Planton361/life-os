@@ -85,6 +85,7 @@ test("PP2 remaining controls: ordering, milestone lifecycle, target retirement/r
     .getByLabel("Was möchtest du besser können?", { exact: true })
     .fill("Target A");
   await save(f, "Entwicklungsfokus geplant speichern");
+  const path = work.getByRole("region", { name: "Lernweg", exact: true });
   const other = await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
   let target = other.locator("[data-target]").first();
   await save(
@@ -93,29 +94,45 @@ test("PP2 remaining controls: ordering, milestone lifecycle, target retirement/r
   );
   target = other.locator("[data-target]").first();
   for (const name of ["First step", "Second step"]) {
-    const d = await disclosure(target, "Lernschritt hinzufügen");
+    const d = await disclosure(path, "Lernschritt hinzufügen");
     f = d.getByRole("form", { name: "Lernschritt hinzufügen", exact: true });
     await f.getByLabel("Titel", { exact: true }).fill(name);
     await save(f, "Lernschritt hinzufügen");
   }
-  let step = target.getByRole("article", { name: "Lernschritt Second step" });
+  let step = path.getByRole("article", { name: "Lernschritt Second step" });
   let manage = await disclosure(step, "Lernschritt verwalten");
   await save(manage.getByRole("form", { name: "Nach oben" }), "Nach oben");
   await page.reload();
   await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
   await disclosure(work, "Verbindungen verwalten");
   await disclosure(work, "Lernmaterial & Quellen");
-  await expect(target.locator("h4")).toHaveText([
+  await expect(path.locator("h4")).toHaveText([
     "Second step · Geplant",
     "First step · Geplant",
   ]);
-  step = target.getByRole("article", { name: "Lernschritt Second step" });
+  step = path.getByRole("article", { name: "Lernschritt Second step" });
   manage = await disclosure(step, "Lernschritt verwalten");
   f = manage.getByRole("form", { name: "Lernschritt speichern" });
   await f
     .getByLabel("Beschreibung", { exact: true })
     .fill("Explicit learning step");
   await save(f, "Lernschritt speichern");
+  await expect(step).toContainText("Explicit learning step");
+  await save(
+    manage.getByRole("form", { name: "Als aktuellen Lernschritt wählen" }),
+    "Als aktuellen Lernschritt wählen",
+  );
+  const first = path.getByRole("article", {
+    name: "Lernschritt First step",
+    exact: true,
+  });
+  const firstManage = await disclosure(first, "Lernschritt verwalten");
+  await save(
+    firstManage.getByRole("form", { name: "Als aktuellen Lernschritt wählen" }),
+    "Als aktuellen Lernschritt wählen",
+  );
+  await expect(first.getByRole("heading")).toContainText("Aktuell");
+  await expect(step.getByRole("heading")).toContainText("Geplant");
   await save(
     manage.getByRole("form", { name: "Als aktuellen Lernschritt wählen" }),
     "Als aktuellen Lernschritt wählen",
@@ -146,7 +163,7 @@ test("PP2 remaining controls: ordering, milestone lifecycle, target retirement/r
   await disclosure(work, "Verbindungen verwalten");
   await disclosure(work, "Lernmaterial & Quellen");
   await expect(
-    target.getByRole("article", { name: "Lernschritt Second step" }),
+    path.getByRole("article", { name: "Lernschritt Second step" }),
   ).toHaveCount(0);
   let tm = await disclosure(target, "Entwicklungsfokus verwalten");
   await save(
@@ -157,7 +174,7 @@ test("PP2 remaining controls: ordering, milestone lifecycle, target retirement/r
   await disclosure(work, "Entwicklungsfokusse & Überprüfungen");
   await disclosure(work, "Verbindungen verwalten");
   await disclosure(work, "Lernmaterial & Quellen");
-  await expect(target.locator("h4")).toHaveText([
+  await expect(path.locator("h4")).toHaveText([
     "First step · Geplant",
     "Second step · Geplant",
   ]);

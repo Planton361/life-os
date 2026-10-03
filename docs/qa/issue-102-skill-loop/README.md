@@ -1,5 +1,63 @@
 # Issue #102 — current browser evidence
 
+## Post-merge acceptance repair — visible Lernweg (2026-10-04)
+
+Authorization: [#102 USER ACCEPTANCE finding 5973828224](https://github.com/Planton361/life-os/issues/102#issuecomment-5973828224).
+Based on merged main `63b8cbbe6a83ed703992521b2145773d5717d818`, on
+`codex/102-skill-learning-path`. This section supersedes the previous Current-only
+step presentation; older screenshots below remain historical evidence.
+
+The normal `Aktuelle Entwicklung` now presents every active step of the Current
+focus in canonical `sort_order`, with title, optional description and explicit
+Abgeschlossen / Aktuell / Geplant state. Current has the strongest border and
+surface emphasis. The existing Task/Skill-state Primary precedes the learning
+path. No step is auto-selected, auto-completed or advanced.
+
+Control inventory and current proof:
+
+| Control / state | Evidence |
+| --- | --- |
+| Current focus, no steps | Visible `Noch keine Lernschritte`; on-demand `Lernschritt hinzufügen`; Enter opens, Escape closes and restores summary focus |
+| Planned-only / mixed steps | Exact ordered heading assertions; completed/current/planned remain visible without opening management/history; one instance of each Current step |
+| Add / select Current / edit / reorder | Real existing commands from the workbench; visible success feedback, explicit Current switch and demotion; description readback and canonical order after reload |
+| Review / reopen / archive / restore | Existing preview/commit semantics; archived step disappears from path; restore remains secondary in focus management and returns the step in canonical order after reload |
+| Earlier / terminal focus | Earlier step visible in supporting depth, absent from Current path; Current steps absent from focus-depth rows |
+| Practice | READY and BLOCKED article text identical before/after step review and Current selection; Primary precedes path; existing state matrix remains Task/Skill-state based |
+| Boundaries / layout | Empty/no-target/active/rich/paused/archived, Manual/Demo/Auth-blocked; 3840×2160, 1920×1080 and 390×844; no horizontal overflow or clipped controls; console/hydration clean |
+
+V5 visual review: calm ordered rows, Current emphasized without percentages or
+ability claims, management closed by default, no overlaps at desktop/4K/mobile.
+Existing shell and 64/36 workbench composition retained. Screenshots contain only
+synthetic local Manual test data.
+
+| Lernweg state | 4K | Desktop | Mobile |
+| --- | --- | --- | --- |
+| Empty | [3840](issue-102-learning-empty-3840.png) | [1920](issue-102-learning-empty-1920.png) | [390](issue-102-learning-empty-390.png) |
+| Planned | [3840](issue-102-learning-planned-3840.png) | [1920](issue-102-learning-planned-1920.png) | [390](issue-102-learning-planned-390.png) |
+| Mixed | [3840](issue-102-learning-mixed-3840.png) | [1920](issue-102-learning-mixed-1920.png) | [390](issue-102-learning-mixed-390.png) |
+
+Local results: **7/7 focused browser/DB tests**, **7/7 domain tests**,
+`git diff --check`, typecheck, lint and production build **PASS**.
+Completion gate for this bounded repair: **PASS**; real-user acceptance is separate.
+
+Validation commands for this revision:
+
+```sh
+pnpm test:e2e:isolated tests/e2e/pp2-skill-controls.spec.ts tests/e2e/pp2-skill-development.spec.ts tests/e2e/pp2-skill-database.spec.ts tests/e2e/issue-102-skill-loop.spec.ts --grep 'remaining controls|real state matrix|PP2'
+pnpm exec vitest run src/features/real-data/domain/skill-development.test.ts
+git diff --check
+pnpm typecheck
+pnpm lint
+pnpm build
+```
+
+No data model, RPC, grant, security or Task-readiness changes. All writes use the
+existing authenticated revision-checked Skill commands. No remote database or
+merge action. Final real-user #102 acceptance remains pending; this repair is
+implementation and review evidence only. The new PR records the exact-head
+`quality` run for its final revision.
+
+
 Contract: [#102](https://github.com/Planton361/life-os/issues/102), authorized in
 [CONTROL comment 5969517164](https://github.com/Planton361/life-os/issues/102#issuecomment-5969517164).
 Target: [#101 v1.2](https://github.com/Planton361/life-os/issues/101#issuecomment-5968483362),
