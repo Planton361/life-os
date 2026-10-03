@@ -8,17 +8,23 @@ import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cooki
 import { isSqliteProofRuntime } from "../../../../../experiments/issue-37/proof-gate";
 import type { TableRow } from "../database.types";
 
-export async function readEntityWorkbench() {
+export async function readEntityWorkbench(
+  allowUnavailableDependencies = false,
+) {
   if ((await getCurrentLifeOsProfileId()) !== "manual") return null;
   if (isSqliteProofRuntime()) {
-    const { getProofOwnerId, readProofSnapshot } = await import("../../../../../experiments/issue-37/sqlite-proof-runtime");
+    const { getProofOwnerId, readProofSnapshot } =
+      await import("../../../../../experiments/issue-37/sqlite-proof-runtime");
     const ownerId = await getProofOwnerId();
     if (!ownerId) return null;
     const snapshot = readProofSnapshot(ownerId);
     return {
       dependencyGraph: snapshot.dependencyGraph,
-      goalMilestones: snapshot.goalMilestones as unknown as TableRow<"goal_milestones">[],
-      milestones: snapshot.milestones as unknown as TableRow<"project_milestones">[],
+      dependencyUnavailable: false,
+      goalMilestones:
+        snapshot.goalMilestones as unknown as TableRow<"goal_milestones">[],
+      milestones:
+        snapshot.milestones as unknown as TableRow<"project_milestones">[],
       timezone: "Europe/Berlin",
       tasks: snapshot.tasks,
       projects: snapshot.projects,
@@ -31,7 +37,8 @@ export async function readEntityWorkbench() {
       evidence: [] as TableRow<"skill_evidence">[],
       reviewRecords: [] as TableRow<"review_records">[],
       steps: [] as TableRow<"task_steps">[],
-      scheduleSources: snapshot.scheduleSources as unknown as TableRow<"schedule_source_links">[],
+      scheduleSources:
+        snapshot.scheduleSources as unknown as TableRow<"schedule_source_links">[],
     };
   }
   const auth = await createAuthenticatedSupabaseServerClient();
@@ -115,7 +122,12 @@ export async function readEntityWorkbench() {
       .eq("user_id", uid)
       .order("sort_order")
       .order("id"),
-    readTaskDependencyGraph(client),
+    readTaskDependencyGraph(client)
+      .then((graph) => ({ graph, unavailable: false }))
+      .catch((error) => {
+        if (!allowUnavailableDependencies) throw error;
+        return { graph: { tasks: [], dependencies: [] }, unavailable: true };
+      }),
   ]);
   if (
     [
@@ -137,7 +149,8 @@ export async function readEntityWorkbench() {
   )
     throw new Error("Entity-Daten konnten nicht geladen werden.");
   return {
-    dependencyGraph,
+    dependencyGraph: dependencyGraph.graph,
+    dependencyUnavailable: dependencyGraph.unavailable,
     goalMilestones: goalMilestones.data ?? [],
     milestones: milestones.data ?? [],
     timezone: profile.data?.timezone ?? "Europe/Berlin",

@@ -1,0 +1,132 @@
+[
+  {
+    "name": "All",
+    "href": "/portfolio",
+    "result": "PASS"
+  },
+  {
+    "name": "Tasks",
+    "href": "/portfolio?type=tasks",
+    "result": "PASS"
+  },
+  {
+    "name": "Projects",
+    "href": "/portfolio?type=projects",
+    "result": "PASS"
+  },
+  {
+    "name": "Goals",
+    "href": "/portfolio?type=goals",
+    "result": "PASS"
+  },
+  {
+    "name": "Skills",
+    "href": "/portfolio?type=skills",
+    "result": "PASS"
+  },
+  {
+    "name": "All",
+    "href": "/portfolio?view=skills",
+    "result": "PASS"
+  },
+  {
+    "name": "Due this week",
+    "href": "/portfolio?view=skills&scope=due_this_week",
+    "result": "PASS"
+  },
+  {
+    "name": "In progress",
+    "href": "/portfolio?view=skills&scope=in_progress",
+    "result": "PASS"
+  },
+  {
+    "name": "Blocked",
+    "href": "/portfolio?view=skills&scope=blocked",
+    "result": "PASS"
+  },
+  {
+    "name": "Needs decision",
+    "href": "/portfolio?view=skills&scope=needs_decision",
+    "result": "PASS"
+  },
+  {
+    "name": "Review open",
+    "href": "/portfolio?view=skills&scope=review_open",
+    "result": "PASS"
+  },
+  {
+    "name": "High focus",
+    "href": "/portfolio?view=skills&scope=high_focus",
+    "result": "PASS"
+  },
+  {
+    "name": "Area: Education",
+    "href": "/portfolio?view=skills&scope=area_education",
+    "result": "PASS"
+  },
+  {
+    "name": "Area: Work",
+    "href": "/portfolio?view=skills&scope=area_work",
+    "result": "PASS"
+  },
+  {
+    "name": "Area: Coding",
+    "href": "/portfolio?view=skills&scope=area_coding",
+    "result": "PASS"
+  },
+  {
+    "name": "Area: Health",
+    "href": "/portfolio?view=skills&scope=area_health",
+    "result": "PASS"
+  },
+  {
+    "name": "Priority",
+    "href": "/portfolio?view=skills&selected=caa80635-e9e9-427e-9ced-bf993da3cec6",
+    "result": "PASS"
+  },
+  {
+    "name": "Deadline",
+    "href": "/portfolio?view=skills&selected=caa80635-e9e9-427e-9ced-bf993da3cec6&sort=deadline",
+    "result": "PASS"
+  },
+  {
+    "name": "Recently touched",
+    "href": "/portfolio?view=skills&selected=caa80635-e9e9-427e-9ced-bf993da3cec6&sort=recent",
+    "result": "PASS"
+  },
+  {
+    "name": "Alltag ohne EntwicklungsfokusSkill/Ohne Area/practicingrecently touchedFokus: Ohne Entwicklungsfokus1 offene Aufgaben · 0 abgeschlossen · 1 ausführbar · 0 blockiertZuletzt geübt: Noch kein datierter AufgabenabschlussLetzte Beobachtung: Noch keine datierte Beobachtung",
+    "href": "/portfolio?view=skills&selected=caa80635-e9e9-427e-9ced-bf993da3cec6",
+    "result": "PASS"
+  },
+  {
+    "name": "+Task",
+    "href": "/tasks/new",
+    "result": "PASS"
+  },
+  {
+    "name": "+Project",
+    "href": "/projects/new",
+    "result": "PASS"
+  },
+  {
+    "name": "+Goal",
+    "href": "/goals/new",
+    "result": "PASS"
+  },
+  {
+    "name": "+Skill",
+    "href": "/skills/new",
+    "result": "PASS"
+  },
+  {
+    "name": "+Resource",
+    "href": "/resources/new",
+    "result": "PASS"
+  },
+  {
+    "name": "Skill öffnen",
+    "href": "/skills/caa80635-e9e9-427e-9ced-bf993da3cec6",
+    "result": "PASS"
+  }
+]

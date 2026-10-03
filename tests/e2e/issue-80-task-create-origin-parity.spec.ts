@@ -147,6 +147,7 @@ test("Issue 80 standalone and contextual Task capture have responsive visual par
       await page.screenshot({
         path: capturePath,
         fullPage: true,
+        caret: "initial",
         style: "nextjs-portal { display: none !important; }",
       });
       await info.attach(`${origin}-${viewport.width}`, {

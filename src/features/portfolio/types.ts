@@ -177,6 +177,10 @@ export type PortfolioSkillEditValues = {
 };
 
 export type PortfolioSkillContext = {
+  areaLabel?: string;
+  focus?: string | null;
+  practiceSummary?: string;
+  latestObservationDate?: string | null;
   practiceStatus: string;
   confidence: "low" | "medium" | "high" | null;
   nextSession: string;
