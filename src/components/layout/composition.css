@@ -1,0 +1,457 @@
+/* #109 Variant A: viewport selects shell chrome; content width selects layout.
+   Height grants spare-space composition independently. DPR is never consulted. */
+.life-os-shell {
+  --canvas-gutter: 16px;
+  --composition-fill: 0;
+}
+.life-os-shell-frame {
+  display: flex;
+  flex-direction: column;
+  min-height: clamp(0px, 100dvh, calc(2160px + 2 * var(--canvas-gutter)));
+  width: 100%;
+}
+.life-os-main {
+  display: flex;
+  flex-direction: column;
+  padding: var(--canvas-gutter);
+}
+.life-os-canvas {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  container: life-os-canvas / inline-size;
+  min-width: 0;
+}
+.life-os-sidebar {
+  min-width: 0;
+  flex-shrink: 0;
+  padding: 8px;
+  border-bottom: 1px solid var(--border-default);
+}
+.life-os-navigation-content {
+  display: none;
+  min-height: 0;
+}
+.life-os-sidebar[data-navigation-open="true"] .life-os-navigation-content {
+  display: flex;
+  flex-direction: column;
+}
+.life-os-menu-toggle {
+  display: block;
+  min-height: 44px;
+}
+.life-os-skip-link {
+  display: inline-flex;
+}
+.life-os-sidebar[aria-hidden="true"] {
+  min-height: 87px;
+}
+.composition-flow {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.composition-frame,
+[data-project-frame] {
+  min-height: 0;
+  flex-grow: var(--composition-fill);
+  overflow-wrap: anywhere;
+}
+/* 280 sidebar + 880 usable canvas + 2×24 gutters. No device breakpoints. */
+@media (min-width: 1208px) {
+  .life-os-shell {
+    --canvas-gutter: 24px;
+  }
+  .life-os-shell-frame {
+    display: grid;
+    grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  }
+  .life-os-main {
+    width: 100%;
+    max-width: 2560px;
+    margin-inline: auto;
+  }
+  .life-os-sidebar {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: min(100dvh, calc(2160px + 2 * var(--canvas-gutter)));
+    border-bottom: 0;
+    border-right: 1px solid var(--border-default);
+  }
+  .life-os-sidebar-inner {
+    height: 100%;
+  }
+  .life-os-navigation-content {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    overflow: auto;
+  }
+  .life-os-sidebar[data-navigation-open] .life-os-navigation-content {
+    display: flex;
+  }
+  .life-os-menu-toggle,
+  .life-os-skip-link {
+    display: none;
+  }
+}
+@media (max-width: 1207px) {
+  /* An expanded navigation is actual document content, not an overlay budget. */
+  .life-os-shell-frame:has(.life-os-sidebar[data-navigation-open="true"]) {
+    height: auto;
+  }
+  .life-os-navigation-content nav :is(a, button) {
+    min-height: 44px;
+    font-size: 12px;
+  }
+}
+/* Actual flex/grid flow supplies remaining height: no route/header subtraction.
+   The shell minimum is bounded; real content has no height/max-height cap. */
+@media (min-height: 720px) {
+  @container life-os-canvas (min-width: 880px) {
+    .life-os-canvas > :has(.composition-frame, [data-project-frame]),
+    .life-os-canvas > .composition-frame,
+    .composition-flow,
+    .composition-frame,
+    [data-project-frame] {
+      --composition-fill: 1;
+      flex-grow: 1;
+    }
+    .life-os-canvas > :has(.composition-frame, [data-project-frame]) {
+      display: flex;
+      flex-direction: column;
+    }
+    /* Existing bounded temporal/log/portfolio workspaces are explicit opt-ins.
+       Their internal scrolling is retained; primary Dashboard/Detail is flow. */
+    .bounded-workspace {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      min-height: 0;
+    }
+    #calendar-page > :is(header, section),
+    .bounded-workspace > :is(header, section),
+    #calendar-workspace > :first-child {
+      flex-shrink: 0;
+    }
+    #calendar-workspace #calendar-page {
+      flex: 1;
+      min-height: 0;
+    }
+    .calendar-workspace-grid,
+    [data-portfolio-section="workspace"] {
+      flex: 1;
+      min-height: 0;
+    }
+    #calendar-page
+      :is(
+        .calendar-timegrid,
+        .calendar-grid-content,
+        .calendar-hours,
+        .calendar-right-rail
+      ) {
+      min-height: 0;
+    }
+    #calendar-page .calendar-right-rail {
+      height: 100%;
+    }
+    #calendar-page .calendar-inspector {
+      flex: 0 1 auto;
+      max-height: calc(100% - 200px);
+    }
+    #calendar-page .calendar-queue-schedule {
+      max-height: 60%;
+      flex-shrink: 0;
+    }
+    #calendar-page .calendar-planner-queue {
+      min-height: 192px;
+    }
+    #today-page .today-workspace > aside {
+      overflow-y: auto;
+    }
+    [data-portfolio-section="entity-list"] {
+      min-height: 0;
+    }
+    [data-portfolio-section="entity-list"] > div:last-child {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+    }
+  }
+}
+/* 912 = 880 canvas + compact-shell gutters; desktop chrome also retains C≥880.
+   Only explicit bounded surfaces receive a height, never Dashboard or Details. */
+@media (min-height: 720px) and (min-width: 912px) {
+  .life-os-shell-frame:has(.bounded-workspace) {
+    height: min(100dvh, calc(2160px + 2 * var(--canvas-gutter)));
+    min-height: 0;
+  }
+  :is(.life-os-shell-content, .life-os-main, .life-os-canvas):has(
+    .bounded-workspace
+  ) {
+    min-height: 0;
+  }
+}
+.dashboard-composition {
+  display: grid;
+  gap: var(--grid-gap);
+  min-width: 0;
+  align-items: start;
+}
+.life-os-command-center,
+.dashboard-main-grid {
+  display: contents;
+}
+.dashboard-side-stack {
+  display: grid;
+  align-content: start;
+  gap: var(--grid-gap);
+}
+.dashboard-composition
+  :is(
+    .dashboard-side-stack,
+    .dashboard-agenda,
+    .dashboard-signals,
+    .dashboard-stats,
+    .dashboard-quick,
+    .dashboard-daily
+  ) {
+  min-width: 0;
+}
+.dashboard-daily {
+  container: daily-control / inline-size;
+}
+.dashboard-daily-heading {
+  grid-column: 1 / -1;
+}
+.dashboard-metrics > * {
+  height: auto;
+}
+.dashboard-signals {
+  height: auto;
+}
+.habit-slots {
+  grid-auto-rows: auto;
+}
+.habit-slots > article {
+  min-height: 100px;
+}
+/* Module internals fit locally; canvas width cannot guarantee a rail will fit. */
+@container daily-control (min-width: 560px) {
+  .daily-control-body {
+    grid-template-columns: minmax(236px, 0.9fr) minmax(0, 1fr);
+  }
+}
+.dashboard-stats {
+  container: dashboard-stats / inline-size;
+}
+@container dashboard-stats (min-width: 400px) {
+  .dashboard-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.dashboard-agenda {
+  container: agenda / inline-size;
+}
+@container agenda (min-width: 650px) {
+  .agenda-event-content {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 0.8fr);
+    align-items: center;
+  }
+}
+.dashboard-health {
+  container: dashboard-health / inline-size;
+  min-width: 0;
+}
+@container dashboard-health (min-width: 460px) {
+  .dashboard-health-grid {
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  }
+}
+/* Split: command band, Agenda + P1, then the supporting P2 group. */
+@container life-os-canvas (min-width: 880px) {
+  .dashboard-composition {
+    position: relative;
+    isolation: isolate;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+  }
+  .dashboard-daily {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .dashboard-quick {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .dashboard-stats {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .dashboard-signals {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .dashboard-agenda {
+    grid-column: 1;
+    grid-row: 3;
+  }
+  .dashboard-priority {
+    grid-column: 2;
+    grid-row: 3;
+  }
+  .dashboard-supporting {
+    grid-column: 1 / -1;
+    grid-row: 4;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  /* These backgrounds enclose the shared frames. Cards retain intrinsic size. */
+  .dashboard-composition::before,
+  .dashboard-composition::after {
+    content: "";
+    grid-column: 1 / -1;
+    align-self: stretch;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--panel-radius);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .dashboard-composition::before {
+    grid-row: 3 / 5;
+    background: var(--surface-1);
+  }
+  .dashboard-composition::after {
+    grid-row: 1 / 3;
+    background: color-mix(
+      in srgb,
+      var(--accent-blue) 4%,
+      rgba(12, 20, 34, 0.94)
+    );
+  }
+  .dashboard-composition
+    :is(
+      .dashboard-daily,
+      .dashboard-quick,
+      .dashboard-stats,
+      .dashboard-signals,
+      .dashboard-priority,
+      .dashboard-supporting,
+      .dashboard-agenda
+    ) {
+    position: relative;
+    z-index: 1;
+  }
+  .goal-workbench {
+    flex: 1 0 auto;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    background: var(--surface-1);
+    padding: 16px;
+  }
+  .goal-identity-content {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    gap: 24px;
+  }
+  .goal-identity-meta {
+    border-top: 0;
+    border-left: 1px solid var(--border-subtle);
+    padding: 0 0 0 20px;
+  }
+  .skill-workbench,
+  .skill-columns:has(> [data-skill-actions]) {
+    grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr);
+  }
+  .skill-action-rail {
+    grid-column: 2;
+    grid-row: 1;
+    border-top: 0;
+    border-left: 1px solid var(--border-subtle);
+    padding: 0 0 0 20px;
+  }
+  .skill-information-group {
+    display: grid;
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+    align-content: start;
+    gap: 20px;
+  }
+  .skill-secondary-actions {
+    border-left: 1px solid var(--border-subtle);
+    padding-left: 20px;
+  }
+  .today-workspace {
+    grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  }
+  .calendar-workspace-grid,
+  [data-portfolio-section="workspace"] {
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 0.55fr);
+  }
+}
+/* Wide: the accepted command order; P2 / Agenda / P1 shared workbench below. */
+@container life-os-canvas (min-width: 1440px) {
+  .dashboard-composition {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .dashboard-stats {
+    grid-column: 1 / 4;
+    grid-row: 1;
+  }
+  .dashboard-quick {
+    grid-column: 4 / 6;
+    grid-row: 1;
+  }
+  .dashboard-daily {
+    grid-column: 6 / 10;
+    grid-row: 1;
+  }
+  .dashboard-signals {
+    grid-column: 10 / 13;
+    grid-row: 1;
+  }
+  .dashboard-supporting {
+    grid-column: 1 / 4;
+    grid-row: 2;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dashboard-agenda {
+    grid-column: 4 / 9;
+    grid-row: 2;
+  }
+  .dashboard-priority {
+    grid-column: 9 / 13;
+    grid-row: 2;
+  }
+  .dashboard-composition::before {
+    grid-row: 2;
+  }
+  .dashboard-composition::after {
+    grid-row: 1;
+  }
+  .dashboard-composition
+    :is(.dashboard-supporting, .dashboard-agenda, .dashboard-priority) {
+    margin: 12px;
+  }
+}
+/* Surface adapters: preserve flows and temporal geometry, normalize the canvas. */
+#today-page,
+#calendar-page,
+#portfolio-page {
+  max-width: none;
+  height: auto;
+  min-height: 0;
+}
+#today-page {
+  padding-bottom: 0;
+}
+@container life-os-canvas (width < 880px) {
+  .today-workspace,
+  .calendar-workspace-grid,
+  [data-portfolio-section="workspace"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

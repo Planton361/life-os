@@ -87,7 +87,7 @@ export function WeightLossGoal({
   profileId: DashboardProfileId;
 }>) {
   const className = cn(
-    "h-[188px] overflow-hidden rounded-[var(--panel-radius)] border border-[var(--border-subtle)] bg-[#0f1724] p-5 shadow-[0_8px_22px_rgba(0,0,0,.12)] 2xl:h-[184px] 2xl:px-[28px] 2xl:py-[22px]",
+    "rounded-[var(--panel-radius)] border border-[var(--border-subtle)] bg-[#0f1724] p-5 shadow-[0_8px_22px_rgba(0,0,0,.12)] 2xl:px-[28px] 2xl:py-[22px]",
     data.href && `block ${DASHBOARD_LINK_FOCUS_CLASSES}`,
   );
   const content = (
@@ -148,7 +148,7 @@ export function NutrientBalance({
   profileId: DashboardProfileId;
 }>) {
   const className = cn(
-    "h-[188px] overflow-hidden rounded-[var(--panel-radius)] border border-[var(--border-subtle)] bg-[#0f1724] p-5 shadow-[0_8px_22px_rgba(0,0,0,.12)] 2xl:h-[184px] 2xl:p-[18px]",
+    "rounded-[var(--panel-radius)] border border-[var(--border-subtle)] bg-[#0f1724] p-5 shadow-[0_8px_22px_rgba(0,0,0,.12)] 2xl:p-[18px]",
     data.href && `block ${DASHBOARD_LINK_FOCUS_CLASSES}`,
   );
   const content = (
@@ -222,7 +222,7 @@ export function MealsToday({
   return (
     <>
       <Panel
-        className="border-[rgba(217,146,79,.22)] bg-[color-mix(in_srgb,var(--accent-orange)_5%,#0f1724)] 2xl:h-[384px]"
+        className="border-[rgba(217,146,79,.22)] bg-[color-mix(in_srgb,var(--accent-orange)_5%,#0f1724)]"
         stateAttrs={contentStateAttrs(data.contentState, profileId)}
         title={data.title}
         titleHref={data.href}
@@ -336,14 +336,14 @@ export function RunningTracker({
 
   return (
     <Panel
-      className="border-[var(--border-subtle)] bg-[#0f1724] 2xl:h-[226px]"
+      className="border-[var(--border-subtle)] bg-[#0f1724]"
       headerAccessory={modeSwitch}
       stateAttrs={contentStateAttrs(data.contentState, profileId)}
       subtitle={data.subtitle}
       title={data.title}
       titleHref={data.href}
     >
-      <div className="p-3 2xl:flex 2xl:h-[152px] 2xl:flex-col 2xl:justify-between 2xl:p-2.5">
+      <div className="p-3 2xl:flex 2xl:flex-col 2xl:justify-between 2xl:p-2.5">
         {activeMode === "Running" ? (
           <>
             <div className="grid gap-3 sm:grid-cols-3 2xl:gap-2">

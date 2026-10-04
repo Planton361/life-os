@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { ToastProvider } from "@/components/feedback/toast-provider";
 import "./globals.css";
+import "@/components/layout/composition.css";
 
 export const metadata: Metadata = {
   title: "Life OS",

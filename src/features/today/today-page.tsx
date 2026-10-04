@@ -66,7 +66,7 @@ export function TodayMemoryLogPage({
     <div
       id="today-page"
       data-profile-id={viewModel.profileId}
-      className="mx-auto flex w-full max-w-[3200px] flex-col gap-4 pb-4 2xl:h-[calc(100dvh-32px)] 2xl:min-h-0 2xl:pb-0"
+      className="bounded-workspace mx-auto flex w-full flex-col gap-4 pb-4"
     >
       <header className="flex flex-wrap items-end justify-between gap-3 py-2">
         <div>
@@ -83,7 +83,7 @@ export function TodayMemoryLogPage({
           {viewModel.profileId === "demo" ? " · Demo-Referenz" : ""}
         </p>
       </header>
-      <div className="grid min-h-0 flex-1 gap-4 2xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
+      <div className="today-workspace grid min-h-0 flex-1 gap-4">
         <section
           aria-label="Activity Stream"
           data-today-section="activity-stream"

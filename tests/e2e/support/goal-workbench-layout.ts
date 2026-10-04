@@ -33,7 +33,8 @@ export async function expectHybridGoalLayout(page: Page) {
     };
     const frameBounds = frame.getBoundingClientRect();
     const footerBounds = footer.getBoundingClientRect();
-    const compositionBounds = element.getBoundingClientRect();
+    const composition = element.closest(".entity-composition") ?? element;
+    const compositionBounds = composition.getBoundingClientRect();
     const minHeight = (node: Element) => {
       const value = Number.parseFloat(getComputedStyle(node).minHeight);
       return Number.isFinite(value) ? value : 0;
@@ -76,12 +77,20 @@ export async function expectHybridGoalLayout(page: Page) {
       composition: {
         top: compositionBounds.top,
         height: compositionBounds.height,
-        minHeight: minHeight(element),
+        minHeight: minHeight(composition),
       },
       footer: {
         top: footerBounds.top,
         bottom: footerBounds.bottom,
       },
+      canvas: document.querySelector(".life-os-canvas")!.getBoundingClientRect()
+        .width,
+      gutter: Number.parseFloat(
+        getComputedStyle(document.querySelector(".life-os-main")!).paddingTop,
+      ),
+      shellHeader: document
+        .querySelector(".life-os-sidebar")!
+        .getBoundingClientRect().height,
       viewport: document.documentElement.clientWidth,
       viewportHeight: window.innerHeight,
       scroll: document.documentElement.scrollWidth,
@@ -103,13 +112,15 @@ export async function expectHybridGoalLayout(page: Page) {
   expect(geometry.backgroundImages).toBe(0);
   expect(geometry.current.top).toBeGreaterThan(geometry.identity.bottom);
   expect(geometry.review.top).toBeGreaterThan(geometry.journey.bottom);
-  if (geometry.viewport >= 1024) {
+  if (geometry.canvas >= 880 && geometry.viewportHeight >= 720) {
     const expectedCompositionMinimum = Math.max(
-      576,
-      Math.min(2016, geometry.viewportHeight - 144),
-    );
-    expect(geometry.composition.minHeight).toBeGreaterThanOrEqual(
-      expectedCompositionMinimum - 1,
+      0,
+      Math.min(
+        2160,
+        geometry.viewportHeight -
+          (geometry.viewport < 1208 ? geometry.shellHeader : 0) -
+          2 * geometry.gutter,
+      ),
     );
     expect(geometry.composition.height).toBeGreaterThanOrEqual(
       expectedCompositionMinimum - 1,
@@ -136,7 +147,7 @@ export async function expectHybridGoalLayout(page: Page) {
       4,
     );
   }
-  if (geometry.viewport >= 1920) {
+  if (geometry.canvas >= 880) {
     const ratio =
       geometry.current.width /
       (geometry.current.width + geometry.journey.width);

@@ -150,7 +150,7 @@ export function ActivePortfolio({
               <Link
                 aria-label={`Open portfolio item: ${project.title}`}
                 className={cn(
-                  "min-w-0 block rounded-[13px] border p-3 2xl:min-h-[130px] 2xl:p-2.5",
+                  "min-w-0 block rounded-[13px] border p-3 2xl:p-2.5",
                   DASHBOARD_LINK_FOCUS_CLASSES,
                 )}
                 href={project.href ?? data.href ?? "/portfolio?status=active"}
@@ -191,7 +191,7 @@ export function ActivePortfolio({
               </Link>
           ))}
           {Array.from({ length: 4 - activeViewCount }, (_, index) => (
-            <Link href={`/portfolio?view=${kindForPortfolioView(activeView)}s#portfolio-contextual-create-heading`} aria-label={`${kindForPortfolioView(activeView)} erstellen`} key={`empty-${index}`} data-portfolio-placeholder className="grid min-h-[130px] place-items-center rounded-[13px] border border-dashed border-[var(--border-subtle)] p-3 text-center text-[10px] text-[var(--text-muted)]">
+            <Link href={`/portfolio?view=${kindForPortfolioView(activeView)}s#portfolio-contextual-create-heading`} aria-label={`${kindForPortfolioView(activeView)} erstellen`} key={`empty-${index}`} data-portfolio-placeholder className="grid min-h-[64px] place-items-center rounded-[13px] border border-dashed border-[var(--border-subtle)] p-3 text-center text-[10px] text-[var(--text-muted)]">
               + {kindForPortfolioView(activeView) === "project" ? "Projekt" : kindForPortfolioView(activeView) === "goal" ? "Ziel" : "Skill"} erstellen
             </Link>
           ))}

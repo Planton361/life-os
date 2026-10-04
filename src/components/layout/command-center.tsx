@@ -1,13 +1,11 @@
 "use client";
 
 import { dashboardMoodOptions } from "@/features/dashboard/mood-options";
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useActionState, useEffect, useRef, useState } from "react";
-import {
-  captureDashboardQuickThoughtAction,
-} from "@/features/profile-data/actions";
+import { captureDashboardQuickThoughtAction } from "@/features/profile-data/actions";
 import { saveMoodAction } from "@/features/real-data/actions/health.actions";
 import { completeTaskFormStateAction } from "@/features/real-data/actions/task.actions";
 import { initialDashboardActionState } from "@/features/profile-data/dashboard-action-state";
@@ -192,7 +190,7 @@ function QuickThought({
   return (
     <section
       aria-labelledby="quick-thought-title"
-      className="flex h-[265px] flex-col rounded-[var(--panel-radius)] border border-[rgba(91,124,250,.30)] bg-[color-mix(in_srgb,var(--accent-blue)_8%,rgba(15,26,43,.92))] p-3 shadow-[0_8px_22px_rgba(0,0,0,.12)]"
+      className="dashboard-quick flex flex-col rounded-[var(--panel-radius)] border border-[rgba(91,124,250,.30)] bg-[color-mix(in_srgb,var(--accent-blue)_8%,rgba(15,26,43,.92))] p-3 shadow-[0_8px_22px_rgba(0,0,0,.12)]"
       {...contentStateAttrs(data.contentState, profileId)}
     >
       <div className="flex items-center justify-between">
@@ -208,7 +206,7 @@ function QuickThought({
       </div>
       <form
         action={formAction}
-        className="mt-2 flex flex-1 flex-col rounded-[18px] border border-[rgba(91,124,250,.30)] bg-[color-mix(in_srgb,var(--accent-cyan)_5%,rgba(15,26,43,.92))] p-3"
+        className="mt-2 flex flex-col rounded-[18px] border border-[rgba(91,124,250,.30)] bg-[color-mix(in_srgb,var(--accent-cyan)_5%,rgba(15,26,43,.92))] p-3"
         ref={formRef}
       >
         <label className="sr-only" htmlFor="quick-thought-content">
@@ -216,7 +214,7 @@ function QuickThought({
         </label>
         <textarea
           className={cn(
-            "min-h-0 flex-1 resize-none border-l-4 border-[rgba(91,124,250,.90)] bg-transparent pl-3 text-[11px] leading-5 text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)]",
+            "min-h-16 resize-y border-l-4 border-[rgba(91,124,250,.90)] bg-transparent pl-3 text-[11px] leading-5 text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)]",
             DASHBOARD_LINK_FOCUS_CLASSES,
           )}
           id="quick-thought-content"
@@ -241,8 +239,8 @@ function QuickThought({
             className={cn(
               "mt-2 text-[9px] font-semibold leading-4",
               state.status === "blocked"
-                  ? "text-[var(--accent-orange)]"
-                  : "text-[var(--text-muted)]",
+                ? "text-[var(--accent-orange)]"
+                : "text-[var(--text-muted)]",
             )}
             role="alert"
           >
@@ -281,7 +279,10 @@ function DailyControlCurrentTask({
   const router = useRouter();
   useEffect(() => {
     if (!completionState.message) return;
-    notify(completionState.message, completionState.status === "success" ? "success" : "error");
+    notify(
+      completionState.message,
+      completionState.status === "success" ? "success" : "error",
+    );
     if (completionState.status === "success") router.refresh();
   }, [completionState, notify, router]);
   const canComplete =
@@ -290,7 +291,7 @@ function DailyControlCurrentTask({
     task.taskLifecycle.status !== "done" &&
     task.taskLifecycle.status !== "blocked";
   const className = cn(
-    "h-[204px] rounded-[18px] border border-[rgba(91,124,250,.34)] bg-[linear-gradient(180deg,rgba(24,42,70,.98),rgba(16,29,49,.98))] p-3 shadow-[inset_0_0_0_1px_rgba(91,124,250,.10)]",
+    "min-w-0 rounded-[18px] border border-[rgba(91,124,250,.34)] bg-[linear-gradient(180deg,rgba(24,42,70,.98),rgba(16,29,49,.98))] p-3 shadow-[inset_0_0_0_1px_rgba(91,124,250,.10)]",
     task.href && !canComplete && `block ${DASHBOARD_LINK_FOCUS_CLASSES}`,
   );
   const content = (
@@ -425,7 +426,7 @@ function DailyControlQueue({
   return (
     <section
       aria-label={data.queueTitle}
-      className="h-[204px] min-w-0 rounded-[13px] px-1"
+      className="min-w-0 rounded-[13px] px-1"
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-baseline gap-3">
@@ -468,10 +469,10 @@ function DailyControl({
   return (
     <section
       aria-labelledby="daily-control-title"
-      className="grid min-h-[265px] gap-3 overflow-hidden rounded-[var(--panel-radius)] border border-[rgba(91,124,250,.38)] bg-[color-mix(in_srgb,var(--accent-blue)_8%,#15243a)] p-3 shadow-[0_16px_40px_rgba(0,0,0,.24)] lg:h-[265px] lg:grid-cols-[236px_minmax(0,1fr)]"
+      className="dashboard-daily grid gap-3 rounded-[var(--panel-radius)] border border-[rgba(91,124,250,.38)] bg-[color-mix(in_srgb,var(--accent-blue)_8%,#15243a)] p-3 shadow-[0_16px_40px_rgba(0,0,0,.24)]"
       {...contentStateAttrs(data.contentState, profileId)}
     >
-      <div className="lg:col-span-2">
+      <div className="dashboard-daily-heading">
         <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
           <h2
             className="text-sm font-semibold text-[var(--text-primary)]"
@@ -485,8 +486,13 @@ function DailyControl({
         </div>
       </div>
 
-      <DailyControlCurrentTask profileId={profileId} task={data.currentTask} />
-      <DailyControlQueue data={data} />
+      <div className="daily-control-body grid min-w-0 gap-3">
+        <DailyControlCurrentTask
+          profileId={profileId}
+          task={data.currentTask}
+        />
+        <DailyControlQueue data={data} />
+      </div>
     </section>
   );
 }
@@ -590,12 +596,13 @@ function MoodBoard({
   const activeMoodTone = moodToneFor(activeMood);
   const moodAccent = activeMoodTone.accent;
 
-  const sourceAvailable = profileId === "manual" && data.moodCheck.options.length > 0;
+  const sourceAvailable =
+    profileId === "manual" && data.moodCheck.options.length > 0;
 
   return (
     <section
       aria-labelledby="mood-title"
-      className="dashboard-mood relative isolate h-full rounded-[var(--panel-radius)] border border-[color-mix(in_srgb,var(--accent)_20%,transparent)] bg-[color-mix(in_srgb,var(--accent)_8%,#0d1625)] p-2.5 shadow-[0_10px_26px_rgba(0,0,0,.14)]"
+      className="dashboard-mood relative isolate rounded-[var(--panel-radius)] border border-[color-mix(in_srgb,var(--accent)_20%,transparent)] bg-[color-mix(in_srgb,var(--accent)_8%,#0d1625)] p-2.5 shadow-[0_10px_26px_rgba(0,0,0,.14)]"
       style={accentStyle(moodAccent)}
       {...contentStateAttrs(
         {
@@ -606,8 +613,8 @@ function MoodBoard({
         profileId,
       )}
     >
-      <div className="relative z-10 grid h-full gap-2 sm:grid-cols-[85px_minmax(0,1fr)] sm:items-center">
-        <div className="flex h-full flex-col justify-center">
+      <div className="relative z-10 grid gap-2 sm:grid-cols-[85px_minmax(0,1fr)] sm:items-center">
+        <div className="flex flex-col justify-center">
           <p className="text-[10px] font-semibold uppercase text-[color-mix(in_srgb,var(--accent)_86%,var(--text-secondary))]">
             {data.moodCheck.eyebrow}
           </p>
@@ -632,7 +639,7 @@ function MoodBoard({
             </Link>
           ) : null}
         </div>
-        <div className="flex h-full flex-col justify-between">
+        <div className="flex flex-col justify-between">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <span
@@ -667,9 +674,16 @@ function MoodBoard({
             />
           </div>
           {sourceAvailable ? (
-            <form action={saveMoodAction} className="mt-1.5 grid grid-cols-3 gap-1 [&>button]:min-w-0">
+            <form
+              action={saveMoodAction}
+              className="mt-1.5 grid grid-cols-3 gap-1 [&>button]:min-w-0"
+            >
               <input type="hidden" name="returnTo" value="/dashboard" />
-              <input type="hidden" name="dashboardWindow" value={searchParams.get("habitWindow") ?? ""} />
+              <input
+                type="hidden"
+                name="dashboardWindow"
+                value={searchParams.get("habitWindow") ?? ""}
+              />
               {dashboardMoodOptions.map((mood) => {
                 const moodTone = moodToneFor(mood);
 
@@ -697,7 +711,9 @@ function MoodBoard({
             </form>
           ) : (
             <div className="mt-1.5 rounded-[10px] border border-[var(--border-subtle)] bg-[rgba(168,183,204,.04)] px-2 py-1.5 text-[9px] font-semibold leading-4 text-[var(--text-muted)]">
-              {profileId === "manual" ? "Sign in to use Manual mood writes." : "Mood writes are unavailable in this profile."}
+              {profileId === "manual"
+                ? "Sign in to use Manual mood writes."
+                : "Mood writes are unavailable in this profile."}
             </div>
           )}
         </div>
@@ -708,50 +724,44 @@ function MoodBoard({
 
 export function CommandCenter({
   data,
+  agenda = null,
 }: Readonly<{
   data: DashboardCommandCenterViewModel;
+  agenda?: ReactNode;
 }>) {
   return (
     <header
-      className="life-os-command-center px-3 pt-3"
+      className="life-os-command-center"
       {...contentStateAttrs(data.commandCenter.contentState, data.profileId)}
     >
-      <div className="rounded-[var(--panel-radius)] border border-[rgba(95,200,215,.14)] bg-[color-mix(in_srgb,var(--accent-blue)_4%,rgba(12,20,34,.94))] p-3 shadow-[0_10px_26px_rgba(0,0,0,.14)]">
-        <div className="grid gap-3 min-[1800px]:h-[var(--top-zone-height)] min-[1800px]:grid-cols-[minmax(0,1.15fr)_220px_minmax(0,1.35fr)_minmax(340px,1fr)] min-[1800px]:items-start min-[1800px]:overflow-hidden min-[2400px]:grid-cols-[minmax(0,1.1fr)_278px_minmax(0,1.4fr)_minmax(0,1.1fr)] min-[2400px]:gap-[9px]">
-          <section
-            aria-label="Command Center Stats"
-            className="p-1 2xl:h-[265px] 2xl:overflow-hidden"
-          >
-            <p className="text-3xl font-semibold text-[var(--text-secondary)]">
-              {data.commandCenter.greeting}
-            </p>
-            <p className="mt-2 text-xs font-medium text-[var(--text-secondary)]">
-              {data.commandCenter.dateLabel} · {data.commandCenter.dayTypeLabel}
-            </p>
-            <div className="mt-5 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3 2xl:h-[181px] 2xl:grid-rows-[88px_81px] 2xl:gap-y-3">
-              {data.commandCenter.metrics.map((metric, index) => (
-                <MetricCard
-                  compact={index >= 3}
-                  key={`command-center-metric-${index}`}
-                  profileId={data.profileId}
-                  {...metric}
-                />
-              ))}
-            </div>
-          </section>
-
-          <QuickThought data={data.quickCapture} profileId={data.profileId} />
-          <DailyControl data={data.dailyControl} profileId={data.profileId} />
-
-          <div className="dashboard-signals grid min-h-[265px] grid-rows-[110px_minmax(0,1fr)] gap-3">
-            <TimeProgress
-              data={data.commandCenter}
-              profileId={data.profileId}
-            />
-            <MoodBoard data={data.commandCenter} profileId={data.profileId} />
-          </div>
-        </div>
+      <DailyControl data={data.dailyControl} profileId={data.profileId} />
+      {agenda}
+      <QuickThought data={data.quickCapture} profileId={data.profileId} />
+      <div className="dashboard-signals grid content-start gap-3">
+        <TimeProgress data={data.commandCenter} profileId={data.profileId} />
+        <MoodBoard data={data.commandCenter} profileId={data.profileId} />
       </div>
+      <section
+        aria-label="Command Center Stats"
+        className="dashboard-stats min-w-0 p-3"
+      >
+        <p className="text-3xl font-semibold text-[var(--text-secondary)]">
+          {data.commandCenter.greeting}
+        </p>
+        <p className="mt-2 text-xs font-medium text-[var(--text-secondary)]">
+          {data.commandCenter.dateLabel} · {data.commandCenter.dayTypeLabel}
+        </p>
+        <div className="dashboard-metrics mt-4 grid grid-cols-2 gap-2.5">
+          {data.commandCenter.metrics.map((metric, index) => (
+            <MetricCard
+              compact={index >= 3}
+              key={`command-center-metric-${index}`}
+              profileId={data.profileId}
+              {...metric}
+            />
+          ))}
+        </div>
+      </section>
     </header>
   );
 }

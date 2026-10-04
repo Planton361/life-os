@@ -22,7 +22,6 @@
   --accent-cyan:#5fc8d7;
   --accent-yellow:#d8b45a;
   --sidebar-width:280px;
-  --top-zone-height:265px;
   --dashboard-max:2560px;
   --grid-gap:12px;
   --card-radius:16px;
@@ -80,93 +79,6 @@ select {
 
 body:has(#inbox-page) .life-os-command-center {
   display: none;
-}
-
-/* R2-01: dashboard-only viewport composition, with bounded inner grids. */
-.dashboard-main-grid > *, .dashboard-side-stack > * { min-width: 0; }
-.dashboard-mood { min-height: 143px; }
-.dashboard-mood > div > div:last-child { min-width: 0; }
-.dashboard-mood [aria-label$="mood indicator"] { flex-shrink: 0; }
-.dashboard-signals { height: auto; }
-@media (min-width: 1800px) {
-  body:has(.dashboard-main-grid) { --dashboard-max: 100%; }
-  .dashboard-main-grid { height: calc(100dvh - 324px); }
-  .dashboard-side-stack { display: flex; flex-direction: column; gap: var(--grid-gap); min-height: 0; }
-  .dashboard-side-stack > * { margin: 0; flex-shrink: 0; }
-  .dashboard-side-stack > section:last-child { flex: 1; min-height: 0; height: auto; }
-  .dashboard-side-stack > section > div:first-child { padding: 12px 16px; }
-  .dashboard-side-stack > section[aria-labelledby="meals-today-title"] { height: auto; }
-  .dashboard-side-stack > section[aria-labelledby="meals-today-title"] > div:last-child { padding: 10px; }
-  .dashboard-side-stack > section[aria-labelledby="meals-today-title"] article { min-height: 78px; }
-  .dashboard-agenda .agenda-body { flex: 1; height: auto; padding-bottom: 12px; }
-  .dashboard-portfolio { display: flex; flex-direction: column; }
-  .dashboard-portfolio > div:last-child { display: flex; flex: 1; min-height: 0; flex-direction: column; padding: 12px; }
-  .portfolio-slots { flex: 1; min-height: 0; }
-  .portfolio-slots > * { min-height: 0; overflow: hidden; }
-  .dashboard-habits > div:last-child { padding: 12px; }
-  .dashboard-signals { height: 265px; }
-  .dashboard-mood { padding: 8px; }
-  .dashboard-mood h2 { margin-top: 0; }
-  .dashboard-mood p { line-height: 1.2; }
-  .dashboard-mood [class*="text-lg"] { font-size: 14px; }
-}
-@media (min-width: 1800px) {
-  .dashboard-side-stack > div:first-child > a { height: 184px; padding: 14px; }
-  .dashboard-side-stack > div:first-child > a h2 { font-size: 15px; white-space: nowrap; }
-  .dashboard-side-stack > section[aria-labelledby="meals-today-title"] article > a { grid-template-columns: 48px minmax(0, 1fr); gap: 8px; }
-  .dashboard-side-stack > section[aria-labelledby="meals-today-title"] article > a > div:first-child { width: 48px; height: 54px; }
-  .dashboard-side-stack > section[aria-labelledby="meals-today-title"] article { padding: 8px; }
-  .dashboard-side-stack > section[aria-labelledby="meals-today-title"] article span { padding: 2px 6px; font-size: 9px; }
-  .dashboard-side-stack > section[aria-labelledby="running-tracker-title"] > div:last-child { height: auto; }
-}
-@media (min-width: 1800px) {
-  .dashboard-side-stack:first-child > section[aria-labelledby="meals-today-title"] { display: flex; flex: 1; min-height: 0; flex-direction: column; }
-  .dashboard-side-stack:first-child > section[aria-labelledby="meals-today-title"] > div:last-child { display: grid; flex: 1; min-height: 0; grid-auto-rows: 1fr; gap: 8px; }
-  .dashboard-side-stack:first-child > section[aria-labelledby="meals-today-title"] article { margin: 0; min-height: 0; align-items: center; }
-  .dashboard-side-stack:first-child > section[aria-labelledby="running-tracker-title"] { flex: 0 0 242px; }
-  .dashboard-side-stack > section[aria-labelledby="running-tracker-title"] > div:first-child > div { flex-wrap: nowrap; }
-  .dashboard-side-stack > section[aria-labelledby="running-tracker-title"] > div:first-child > div > div:last-child { max-width: 45%; }
-  .dashboard-side-stack > section[aria-labelledby="running-tracker-title"] h2 { font-size: 16px; }
-  .dashboard-side-stack > section[aria-labelledby="running-tracker-title"] article p { overflow-wrap: anywhere; }
-  .dashboard-side-stack > section[aria-labelledby="running-tracker-title"] article .text-base { font-size: 14px; }
-  .dashboard-side-stack > section[aria-labelledby="running-tracker-title"] > div:last-child { gap: 8px; }
-  .dashboard-agenda [aria-label^="Open agenda item:"] { min-height: 42px; padding-top: 6px; padding-bottom: 6px; }
-}
-.dashboard-mood form { font-size: 9px; }
-.habit-slots { grid-auto-rows: 132px; }
-.habit-slots > article { padding-bottom: 38px; }
-@media (min-width: 1800px) {
-  .dashboard-side-stack:first-child > section[aria-labelledby="meals-today-title"] article > a > div:last-child { padding: 0; }
-  .dashboard-side-stack:first-child > section[aria-labelledby="meals-today-title"] article p { margin-top: 3px; }
-  .dashboard-side-stack:first-child > section[aria-labelledby="meals-today-title"] article > a > div:last-child > div:last-child { margin-top: 3px; }
-}
-/* Confirmed R2-01 acceptance adjustments. */
-.habit-slots { grid-auto-rows: 100px; }
-.habit-slots > article { padding: 0; }
-.habit-increment { font-size: 11px; }
-.dashboard-agenda-period { height: 650px; }
-@media (min-width: 1800px) {
-  .dashboard-agenda-period { height: auto; }
-  .dashboard-side-stack:first-child > section[aria-labelledby="meals-today-title"] article > a { grid-template-columns: minmax(72px, 28%) minmax(0, 1fr); gap: 16px; }
-  .dashboard-side-stack:first-child > section[aria-labelledby="meals-today-title"] article > a > div:first-child { width: 100%; height: 100%; min-height: 72px; }
-  .dashboard-side-stack:first-child > section[aria-labelledby="meals-today-title"] article > a:last-child { align-self: center; }
-  .dashboard-side-stack:first-child > section[aria-labelledby="meals-today-title"] article h3 { font-size: 14px; }
-  .dashboard-side-stack:first-child > section[aria-labelledby="meals-today-title"] article { padding: 10px; }
-}
-@media (min-width: 1800px) {
-  .dashboard-side-stack > div:first-child > a { height: 170px; }
-  .dashboard-side-stack:first-child > section[aria-labelledby="running-tracker-title"] { flex-basis: 220px; }
-  .dashboard-side-stack:first-child > section[aria-labelledby="meals-today-title"] article > a > div:first-child { min-height: 64px; height: clamp(64px, 7vh, 120px); }
-}
-@media (min-width: 1800px) {
-  .dashboard-side-stack:first-child > section[aria-labelledby="meals-today-title"] article > a > div:last-child > div:first-child { flex-wrap: nowrap; gap: 4px; }
-  .dashboard-side-stack:first-child > section[aria-labelledby="meals-today-title"] article > a > div:last-child > div:first-child span { padding: 2px 3px; font-size: 8px; white-space: nowrap; }
-  .dashboard-side-stack:first-child > section[aria-labelledby="meals-today-title"] article > a > div:last-child > div:last-child { gap: 4px 8px; }
-  .dashboard-side-stack:first-child > section[aria-labelledby="meals-today-title"] article > a > div:last-child > div:last-child span { padding: 0; }
-}
-@media (min-width: 1800px) and (max-height: 1200px) {
-  .dashboard-side-stack:first-child > section[aria-labelledby="meals-today-title"] article { padding: 8px; }
-  .dashboard-side-stack:first-child > section[aria-labelledby="meals-today-title"] article > a > div:first-child { height: 64px; }
 }
 
 /* R2-02: one continuous triage surface; secondary rails fit their content. */
@@ -274,16 +186,6 @@ body:has(#inbox-page) { --dashboard-max: 100%; }
   .inbox-context > section:last-child { flex: 1; min-height: 0; overflow-y: auto; }
 }
 
-body:has(#today-page) { --dashboard-max: 100%; }
-body:has(#today-page) .life-os-command-center { display: none; }
-@media (min-width: 3000px) {
-  #today-page { zoom: 1.5; height: calc((100dvh - 32px) / 1.5); max-width: 2300px; }
-}
-@media (min-width: 1536px) {
-  #today-page aside > section { flex-shrink: 0; }
-  #today-page aside > section:last-child { flex: 1; }
-}
-
 /* Calendar owns the available planning viewport; time geometry stays proportional. */
 body:has(#calendar-page) { --dashboard-max: 100%; }
 body:has(#calendar-page) .life-os-command-center { display: none; }
@@ -313,27 +215,6 @@ body:has(#calendar-page) .life-os-command-center { display: none; }
 #calendar-page .calendar-planner-queue h3 { font-size: 16px; }
 #calendar-page .calendar-queue-items button { min-height: 72px; }
 #calendar-page .calendar-queue-items button p:first-child { font-size: 13px; }
-@media (min-width: 1280px) {
-  body:has(#calendar-workspace) .life-os-shell {
-    height: 100dvh;
-    min-height: 0;
-  }
-  body:has(#calendar-workspace) .life-os-shell-frame,
-  body:has(#calendar-workspace) .life-os-shell-content {
-    height: 100%;
-    min-height: 0;
-  }
-  main:has(#calendar-workspace) { min-height: 0; }
-  #calendar-workspace { height: 100%; min-height: 0; display: flex; flex-direction: column; }
-  #calendar-workspace > div:first-child { flex-shrink: 0; }
-  #calendar-workspace #calendar-page { height: auto; min-height: 0; flex: 1 1 0%; }
-  #calendar-page > header, #calendar-page > section { flex-shrink: 0; }
-  #calendar-page [data-calendar-section="inspector"] { min-height: 0; }
-  #calendar-page .calendar-right-rail { height: 100%; min-height: 0; }
-  #calendar-page .calendar-inspector { flex: 0 1 auto; max-height: calc(100% - 200px); }
-  #calendar-page .calendar-queue-schedule { max-height: 60%; flex-shrink: 0; }
-  #calendar-page .calendar-planner-queue { min-height: 192px; }
-}
 #calendar-page .calendar-day-hours { min-height: 1224px; }
 #calendar-page .calendar-inspector > div:first-child { position: sticky; top: 0; z-index: 5; background: var(--surface-1); }
 @media (max-width: 1279px) {
@@ -363,14 +244,4 @@ body:has(#calendar-page) .life-os-command-center { display: none; }
     justify-content: flex-start;
     gap: 1px;
   }
-}
-
-/* Portfolio owns the remaining viewport; its list and inspector scroll independently. */
-body:has(#portfolio-page) { --dashboard-max: 100%; }
-@media (min-width: 1280px) {
-  body:has(#portfolio-page) .life-os-shell { height: 100dvh; min-height: 0; }
-  body:has(#portfolio-page) .life-os-shell-frame,
-  body:has(#portfolio-page) .life-os-shell-content { height: 100%; min-height: 0; }
-  main:has(#portfolio-page) { min-height: 0; }
-  #portfolio-page > header, #portfolio-page > section { flex-shrink: 0; }
 }
