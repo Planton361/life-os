@@ -199,6 +199,7 @@ for (const viewport of viewports) {
       }
       await assertControlsFit(page);
       const path = info.outputPath(`${profile}-${viewport.name}.png`);
+      await page.evaluate(() => window.scrollTo(0, 0));
       await page.screenshot({
         path,
         fullPage: true,
@@ -320,6 +321,7 @@ for (const viewport of viewports) {
       ).toBeLessThanOrEqual(1);
       await expect(page.locator(".life-os-command-center")).toHaveCount(0);
       const path = info.outputPath(`${route}-${viewport.name}.png`);
+      await page.evaluate(() => window.scrollTo(0, 0));
       await page.screenshot({
         path,
         fullPage: true,

@@ -123,6 +123,7 @@ test.describe("#110 existing authenticated Manual test profile", () => {
           await page.keyboard.press("Escape");
         }
         const path = info.outputPath(`${name}-${viewport.name}.png`);
+        await page.evaluate(() => window.scrollTo(0, 0));
         await page.screenshot({
           path,
           fullPage: true,

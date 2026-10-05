@@ -158,6 +158,7 @@ for (const viewport of [
       await page.goto(`/${route}`, { waitUntil: "domcontentloaded" });
       await assertBounds(page);
       const path = info.outputPath(`manual-${route}-${viewport.width}.png`);
+      await page.evaluate(() => window.scrollTo(0, 0));
       await page.screenshot({
         path,
         fullPage: true,

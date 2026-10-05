@@ -188,6 +188,7 @@ test("#110 synthetic Project no-context/context/33-task matrix and real controls
         await expect(p.getByRole("dialog")).toBeHidden();
       }
       const path = info.outputPath(`project-${state}-${v.name}.png`);
+      await p.evaluate(() => window.scrollTo(0, 0));
       await p.screenshot({
         path,
         fullPage: true,
@@ -351,6 +352,7 @@ test("#110 synthetic Project no-context/context/33-task matrix and real controls
     await page.setViewportSize(v);
     await bounds(page);
     const path = info.outputPath(`technical-dashboard-${v.name}.png`);
+    await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({
       path,
       fullPage: true,
