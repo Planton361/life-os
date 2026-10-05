@@ -87,7 +87,7 @@ export function WeightLossGoal({
   profileId: DashboardProfileId;
 }>) {
   const className = cn(
-    "rounded-[var(--panel-radius)] border border-[var(--border-subtle)] bg-[#0f1724] p-5 shadow-[0_8px_22px_rgba(0,0,0,.12)] 2xl:px-[28px] 2xl:py-[22px]",
+    "dashboard-weight rounded-[var(--panel-radius)] border border-[var(--border-subtle)] bg-[#0f1724] p-5 shadow-[0_8px_22px_rgba(0,0,0,.12)] 2xl:px-[28px] 2xl:py-[22px]",
     data.href && `block ${DASHBOARD_LINK_FOCUS_CLASSES}`,
   );
   const content = (
@@ -148,7 +148,7 @@ export function NutrientBalance({
   profileId: DashboardProfileId;
 }>) {
   const className = cn(
-    "rounded-[var(--panel-radius)] border border-[var(--border-subtle)] bg-[#0f1724] p-5 shadow-[0_8px_22px_rgba(0,0,0,.12)] 2xl:p-[18px]",
+    "dashboard-nutrients rounded-[var(--panel-radius)] border border-[var(--border-subtle)] bg-[#0f1724] p-5 shadow-[0_8px_22px_rgba(0,0,0,.12)] 2xl:p-[18px]",
     data.href && `block ${DASHBOARD_LINK_FOCUS_CLASSES}`,
   );
   const content = (
@@ -222,12 +222,17 @@ export function MealsToday({
   return (
     <>
       <Panel
-        className="border-[rgba(217,146,79,.22)] bg-[color-mix(in_srgb,var(--accent-orange)_5%,#0f1724)]"
+        className="dashboard-meals border-[rgba(217,146,79,.22)] bg-[color-mix(in_srgb,var(--accent-orange)_5%,#0f1724)]"
         stateAttrs={contentStateAttrs(data.contentState, profileId)}
         title={data.title}
         titleHref={data.href}
       >
-        <div className="space-y-3 p-4 2xl:space-y-2 2xl:p-3">
+        <div
+          tabIndex={0}
+          role="region"
+          aria-label="Meal slots"
+          className="dashboard-meal-list space-y-3 p-4 2xl:space-y-2 2xl:p-3"
+        >
           {data.items.map((meal) => {
               const isPast = hasMealPassed(meal.time, data.currentTimeLabel);
               const unplanned = meal.state === "unplanned";
@@ -336,7 +341,7 @@ export function RunningTracker({
 
   return (
     <Panel
-      className="border-[var(--border-subtle)] bg-[#0f1724]"
+      className="dashboard-running border-[var(--border-subtle)] bg-[#0f1724]"
       headerAccessory={modeSwitch}
       stateAttrs={contentStateAttrs(data.contentState, profileId)}
       subtitle={data.subtitle}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import type { CalendarViewModel } from "@/features/calendar/calendar-types";
 import {
   dashboardAgendaDays,
@@ -228,6 +228,21 @@ export function TodayAgenda({
   profileId: DashboardProfileId;
 }>) {
   const [activeView, setActiveView] = useState<DashboardAgendaView>("Day");
+  const agendaBody = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const body = agendaBody.current;
+    if (!body || getComputedStyle(body).overflowY !== "auto") return;
+    const current = body.querySelector<HTMLElement>("[data-agenda-current]");
+    if (current) {
+      body.scrollTop = Math.max(
+        0,
+        current.getBoundingClientRect().top -
+          body.getBoundingClientRect().top +
+          body.scrollTop -
+          24,
+      );
+    }
+  }, [activeView, data.currentTimePositionPercent]);
   const today =
     calendar.days.find((day) => day.isToday)?.date ??
     calendar.days[0]?.date ??
@@ -267,7 +282,13 @@ export function TodayAgenda({
         </div>
       </div>
       {activeView === "Day" ? (
-        <div className="agenda-body grid grid-cols-[48px_minmax(0,1fr)] gap-x-3 p-3">
+        <div
+          ref={agendaBody}
+          tabIndex={0}
+          role="region"
+          aria-label="Agenda time content"
+          className="agenda-body grid grid-cols-[48px_minmax(0,1fr)] gap-x-3 p-3"
+        >
           {data.hours.map((hour, index) => {
             const hourEvents = events.filter(
               (event) => agendaHourIndex(event, data.hours) === index,
@@ -287,6 +308,7 @@ export function TodayAgenda({
                   )}
                 </div>
                 <div
+                  data-agenda-current={isCurrent ? "true" : undefined}
                   data-agenda-hour-lines
                   className={cn(
                     "min-w-0 space-y-2 border-t py-2",
@@ -312,6 +334,9 @@ export function TodayAgenda({
       ) : (
         <div
           className={`dashboard-agenda-period min-h-0 flex-1 overflow-auto p-3 ${activeView === "Month" ? "grid grid-cols-7 grid-rows-6 gap-1" : "grid grid-cols-1 auto-rows-fr gap-2"}`}
+          tabIndex={0}
+          role="region"
+          aria-label="Agenda period content"
           data-agenda-view={activeView}
         >
           {dashboardAgendaDays(today, activeView).map((day) => {

@@ -71,6 +71,7 @@ async function assertControlsFit(page: Page) {
         )
           return [];
         const problems: string[] = [];
+        let scrollBody = false;
         for (
           let parent = node.parentElement;
           parent && parent.id !== "main-content";
@@ -78,12 +79,19 @@ async function assertControlsFit(page: Page) {
         ) {
           const style = getComputedStyle(parent);
           const p = parent.getBoundingClientRect();
+          // #112 permits bounded list bodies; their offscreen items remain reachable.
+          if (
+            ["auto", "scroll"].includes(style.overflowY) &&
+            parent.scrollHeight > parent.clientHeight
+          )
+            scrollBody = true;
           if (
             ["hidden", "clip"].includes(style.overflowX) &&
             (b.left < p.left - 1 || b.right > p.right + 1)
           )
             problems.push("x");
           if (
+            !scrollBody &&
             ["hidden", "clip"].includes(style.overflowY) &&
             (b.top < p.top - 1 || b.bottom > p.bottom + 1)
           )
@@ -134,7 +142,10 @@ for (const viewport of viewports) {
       const layout = await geometry(page);
       expect(layout.overflow).toBeLessThanOrEqual(1);
       expect(layout.overlaps).toEqual([]);
-      if (viewport.height < 720 || layout.canvas < 880)
+      if (
+        (viewport.height < 720 && layout.canvas < 1440) ||
+        layout.canvas < 880
+      )
         expect(layout.fill).toBe("0");
       else {
         expect(layout.fill).toBe("1");
@@ -249,7 +260,8 @@ test("#110 container thresholds and independent height permission", async ({
   }
   for (const height of [719, 720]) {
     await page.setViewportSize({ width: 2560, height });
-    expect((await geometry(page)).fill === "0").toBe(height < 720);
+    // #112 Wide Dashboard supersedes short-height Flow; Details retain it.
+    expect((await geometry(page)).fill).toBe("1");
   }
   await page.setViewportSize({ width: 2560, height: 5000 });
   const extreme = await geometry(page);

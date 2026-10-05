@@ -27,16 +27,29 @@
 - Backend, repository or historical reload evidence proves that layer only; it
   does not by itself prove that a visible control currently works.
 
-## Cross-viewport composition — #109 / #110 proposed revision
+## Cross-viewport composition — #109 / #110 foundation, #112 Dashboard correction
 
-`CONNECTED` implementation evidence on PR #111, preserving the existing domain
+`CONNECTED` implementation evidence on merged PR #111, preserving the existing domain
 capabilities and their individual gaps. USER ACCEPTED #109 Variant A defines the
 shared canvas contract: C<880 Linear, C880–1439 Split, C>=1440 Wide where useful;
-H<720 document flow; DPR never selects composition. Shared frames absorb bounded
+H<720 document flow outside Wide Dashboard; DPR never selects composition. Shared frames absorb bounded
 remaining height, inner cards stay intrinsic, absent Context collapses and long
-content grows. This does not declare a new product/surface closure or merge.
+content grows on Detail pages. The USER ACCEPTED corrected Dashboard target
+(#110 comment 6000725969 / #112) replaces Wide Dashboard document growth with
+an explicit one-glance cockpit. C>=1440 retains every major zone in the initial
+viewport, including H589/H639, with bounded temporal/list bodies and unchanged
+Manual/Demo/Empty/Auth-blocked semantics. This is scoped implementation evidence,
+not final USER ACCEPTED of #112 or product closure.
 
 Current focused browser evidence:
+- `issue-112-dashboard-cockpit.spec.ts`: Empty/Demo six-viewport DPR matrix,
+  all 12 zones in the initial Wide viewport, document/body height, overlaps,
+  clipping, keyboard/wheel scrolling, real view switches, reload and DPR equality.
+- `issue-112-dashboard-manual.spec.ts`: read-only existing Manual profile control
+  inventory/navigation at 1920/4K and six real viewport/DPR contexts; separate
+  technical owner via UI, sparse/populated contexts, current Task navigation and
+  completion eligibility, capture/Inbox reload, six Mood saves/reload and Habit
+  create/error/increment/undo/reload. No ordinary-profile fixture writes.
 - `issue-110-cross-viewport-composition.spec.ts`: sparse Empty and populated Demo
   Dashboard, real six-viewport/DPR matrix, container/height thresholds, 4K guard,
   bounded-fill ceiling, unclipped controls, non-overlapping regions, navigation

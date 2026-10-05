@@ -231,7 +231,12 @@ export function HabitTrackers({
       )}
     >
       <div className="p-3" data-dashboard-section="habit-tracker">
-        <div className="habit-slots grid grid-cols-2 gap-3 min-[1800px]:grid-cols-4">
+        <div
+          tabIndex={0}
+          role="region"
+          aria-label="Habit slots"
+          className="habit-slots grid grid-cols-2 gap-3 min-[1800px]:grid-cols-4"
+        >
           {habits.map((habit) => (
             <article
               key={habit.id}

@@ -1,0 +1,570 @@
+/* #112: an explicit Dashboard-only bounded workspace. The width sum is shell
+   chrome (280) + Wide canvas (1440) + gutters (48), never a device/DPR rule. */
+@media (min-width: 1768px) {
+  .life-os-shell-frame:has(.dashboard-surface) {
+    height: 100dvh;
+    min-height: 0;
+  }
+  :is(.life-os-shell-content, .life-os-main, .life-os-canvas):has(
+    .dashboard-surface
+  ) {
+    min-height: 0;
+  }
+}
+@container life-os-canvas (min-width: 1440px) {
+  .life-os-canvas > :has(.dashboard-surface),
+  .dashboard-surface {
+    max-height: 2160px;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .dashboard-composition {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    --composition-fill: 1;
+    flex: 1;
+    min-height: 0;
+  }
+  .dashboard-composition :is(.dashboard-supporting, .dashboard-priority) {
+    min-height: 0;
+  }
+  .dashboard-composition::before {
+    grid-row: 2 / 4;
+  }
+  .dashboard-composition
+    :is(.dashboard-supporting, .dashboard-priority, .dashboard-agenda) {
+    margin: 0;
+    max-height: 100%;
+  }
+  .dashboard-agenda {
+    grid-column: 1 / 7;
+    grid-row: 2;
+  }
+  .dashboard-composition .dashboard-priority {
+    grid-column: 7 / 13;
+    grid-row: 2;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .dashboard-composition .dashboard-supporting {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    grid-template-columns: 3fr 5fr 4fr;
+    grid-template-rows: auto;
+    align-items: start;
+  }
+  .dashboard-health-grid {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+  .daily-control-body {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .dashboard-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .dashboard-meal-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .dashboard-meal-list > article + article {
+    margin-top: 0;
+  }
+  .dashboard-meal-list > article {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dashboard-meal-list > article > a:first-child > div:first-child {
+    display: none;
+  }
+  .dashboard-agenda {
+    align-self: stretch;
+    min-height: 0;
+  }
+  .dashboard-agenda > :first-child {
+    flex-shrink: 0;
+  }
+  .agenda-body {
+    /* The day timeline uses spare frame height; event cards stay intrinsic. */
+    flex: 1;
+    grid-auto-rows: minmax(min-content, 1fr);
+    display: grid;
+    min-height: 0;
+    overflow-y: auto;
+    align-content: start;
+  }
+  .dashboard-composition
+    :is(.dashboard-habits, .dashboard-portfolio, .dashboard-meals) {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    max-height: 100%;
+  }
+  .dashboard-composition
+    :is(.dashboard-habits, .dashboard-portfolio, .dashboard-meals)
+    > :first-child {
+    flex-shrink: 0;
+  }
+  .dashboard-habits > [data-dashboard-section] {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .habit-slots,
+  .portfolio-slots,
+  .dashboard-meal-list {
+    min-height: 0;
+    overflow-y: auto;
+    align-content: start;
+  }
+  .dashboard-portfolio-body {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .dashboard-portfolio-body > :first-child {
+    flex-shrink: 0;
+  }
+  /* Compact V5 spacing rather than scaling typography or the whole canvas. */
+  .dashboard-composition :is(.dashboard-weight, .dashboard-nutrients) {
+    padding: 12px;
+  }
+  .dashboard-composition
+    :is(
+      .dashboard-habits,
+      .dashboard-portfolio,
+      .dashboard-meals,
+      .dashboard-running,
+      .dashboard-agenda
+    )
+    > :first-child {
+    padding: 10px 12px;
+  }
+  .dashboard-composition
+    :is(
+      .dashboard-habits,
+      .dashboard-portfolio,
+      .dashboard-meals,
+      .dashboard-running,
+      .dashboard-agenda
+    )
+    h2 {
+    font-size: 18px;
+    line-height: 24px;
+  }
+  .dashboard-weight > p:first-of-type {
+    margin-top: 8px;
+  }
+  .dashboard-composition .dashboard-meal-list {
+    padding: 8px;
+  }
+  .dashboard-meal-list > article {
+    min-height: 0;
+    padding: 8px;
+  }
+  .dashboard-meal-list > article > a:first-child {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+  .dashboard-portfolio-body {
+    padding: 10px;
+  }
+  .dashboard-portfolio-body > :first-child {
+    margin-bottom: 8px;
+    padding: 8px;
+  }
+  .portfolio-slots {
+    gap: 8px;
+    grid-auto-rows: auto;
+  }
+  .portfolio-slots > a {
+    padding: 8px;
+  }
+  .habit-slots {
+    gap: 8px;
+  }
+  .habit-slots > * {
+    min-height: 80px;
+  }
+  .dashboard-priority > * {
+    align-self: start;
+  }
+  .daily-control-queue > div:first-child {
+    flex-wrap: wrap;
+  }
+  .daily-control-queue > div:first-child > div {
+    flex-wrap: wrap;
+    gap: 4px 8px;
+  }
+  .daily-control-current > div:first-child > span,
+  .daily-control-queue > div:first-child > span,
+  .portfolio-slots > a > div:first-child > span {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+}
+/* Wide-Short retains the same macro hierarchy with compact, readable V5
+   spacing. Only temporal/list bodies scroll; primary headers stay visible. */
+@media (max-height: 899px) {
+  @container life-os-canvas (min-width: 1440px) {
+    .dashboard-composition {
+      gap: 8px;
+    }
+    .dashboard-priority {
+      gap: 8px;
+    }
+    .dashboard-supporting {
+      gap: 8px;
+    }
+    .dashboard-health-grid {
+      gap: 8px;
+    }
+    .dashboard-signals {
+      grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+      gap: 8px;
+    }
+    .dashboard-time > div {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .dashboard-time > div > :last-child:not(:first-child) {
+      display: none;
+    } /* optional weather decoration */
+    .dashboard-time,
+    .dashboard-mood {
+      padding: 8px;
+    }
+    .dashboard-time .time-progress-row {
+      grid-template-columns: 1fr auto;
+      gap: 4px;
+    }
+    .dashboard-time .time-progress-row > div {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
+    .dashboard-mood > div {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 4px;
+    }
+    .dashboard-mood h2 {
+      margin: 0;
+      font-size: 14px;
+    }
+    .dashboard-mood > div > :first-child > p:last-of-type {
+      grid-column: 1 / -1;
+      margin: 0;
+    }
+    .dashboard-mood > div > :first-child > a {
+      grid-column: 1 / -1;
+      margin-top: 2px;
+    }
+    .dashboard-mood form button {
+      min-height: 28px;
+      font-size: 11px;
+    }
+    .dashboard-stats {
+      padding: 8px;
+    }
+    .dashboard-stats > p:first-child {
+      font-size: 20px;
+      line-height: 24px;
+    }
+    .dashboard-stats > p:nth-child(2) {
+      margin-top: 4px;
+    }
+    .dashboard-metrics {
+      margin-top: 8px;
+      gap: 6px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .dashboard-metrics > * {
+      padding: 6px;
+    }
+    .dashboard-metrics > * > :first-child > div {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 2px 4px;
+      width: 100%;
+    }
+    .dashboard-metrics > * > :first-child p:last-child {
+      margin: 0;
+      font-size: 17px;
+    }
+    .dashboard-metrics > * > :first-child > span {
+      display: none;
+    } /* status text and progress stay */
+    .dashboard-quick,
+    .dashboard-daily {
+      padding: 8px;
+    }
+    .dashboard-quick form {
+      margin-top: 6px;
+      padding: 8px;
+    }
+    .dashboard-quick textarea {
+      resize: none;
+    }
+    .dashboard-quick button {
+      min-height: 32px;
+    }
+    .dashboard-daily {
+      gap: 6px;
+    }
+    .daily-control-body {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 8px;
+    }
+    .daily-control-current {
+      padding: 8px;
+    }
+    .daily-control-current > p {
+      margin-top: 6px;
+    }
+    .daily-control-current > p:first-of-type {
+      font-size: 18px;
+    }
+    .daily-control-current > div:last-child {
+      margin-top: 6px;
+    }
+    .daily-control-current :is(button, a) {
+      min-height: 32px;
+    }
+    .daily-control-queue h3 {
+      font-size: 13px;
+    }
+    .daily-control-queue > div:first-child {
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .daily-control-queue > div:last-child > * {
+      min-height: 36px;
+    }
+    .dashboard-composition
+      :is(
+        .dashboard-habits,
+        .dashboard-portfolio,
+        .dashboard-meals,
+        .dashboard-running,
+        .dashboard-agenda
+      )
+      > :first-child {
+      padding: 6px 8px;
+    }
+    .dashboard-composition
+      :is(
+        .dashboard-habits,
+        .dashboard-portfolio,
+        .dashboard-meals,
+        .dashboard-running,
+        .dashboard-agenda
+      )
+      > :first-child
+      > div {
+      gap: 4px;
+    }
+    .dashboard-composition
+      :is(
+        .dashboard-habits,
+        .dashboard-portfolio,
+        .dashboard-meals,
+        .dashboard-running,
+        .dashboard-agenda
+      )
+      h2 {
+      font-size: 14px;
+      line-height: 20px;
+    }
+    .dashboard-composition button {
+      min-height: 28px;
+      font-size: 11px;
+      line-height: 16px;
+    }
+    .dashboard-habits > [data-dashboard-section] {
+      padding: 6px;
+    }
+    .habit-slots {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 4px;
+    }
+    .habit-slots > * {
+      min-height: 56px;
+    }
+    .habit-increment {
+      padding: 6px;
+    }
+    .habit-increment > span:last-child {
+      margin-top: 6px;
+    }
+    .dashboard-portfolio-body {
+      padding: 6px;
+    }
+    .dashboard-portfolio-body > :first-child {
+      padding: 4px;
+      margin-bottom: 4px;
+    }
+    .dashboard-portfolio-body > :first-child > div {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 4px;
+    }
+    .dashboard-portfolio-body > :first-child p {
+      margin: 0;
+    }
+    .dashboard-portfolio-body button {
+      padding: 4px;
+    }
+    .portfolio-slots > a {
+      padding: 6px;
+    }
+    .portfolio-slots > a > p {
+      margin-top: 4px;
+    }
+    .portfolio-slots > a > div {
+      margin-top: 4px;
+    }
+    .dashboard-composition :is(.dashboard-weight, .dashboard-nutrients) {
+      padding: 8px;
+    }
+    .dashboard-composition :is(.dashboard-weight, .dashboard-nutrients) h2 {
+      font-size: 14px;
+      line-height: 20px;
+    }
+    .dashboard-weight > p:first-of-type {
+      font-size: 24px;
+    }
+    .dashboard-weight > div {
+      margin-top: 6px;
+    }
+    .dashboard-nutrients > div {
+      margin-top: 6px;
+    }
+    .dashboard-nutrients > div > div + div {
+      margin-top: 4px;
+    }
+    .dashboard-nutrients > div > div > div:last-child {
+      margin-top: 4px;
+    }
+    .dashboard-meal-list {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+    }
+    .dashboard-meal-list > article + article {
+      margin-top: 0;
+    }
+    .dashboard-meal-list > article {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 4px;
+    }
+    .dashboard-meal-list > article > a:first-child {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .dashboard-meal-list > article > a:first-child > div:first-child {
+      display: none;
+    } /* no meal photography exists */
+    .dashboard-meal-list > article > a:first-child > div:last-child > div {
+      gap: 4px;
+    }
+    .dashboard-meal-list > article > a:last-child {
+      padding: 4px 8px;
+      min-height: 32px;
+    }
+    .dashboard-meal-list span {
+      padding: 2px 4px;
+    }
+    .dashboard-running > div:last-child {
+      display: grid;
+      gap: 6px;
+      padding: 8px;
+    }
+    .dashboard-running > div:last-child > article {
+      margin: 0;
+    }
+    .dashboard-running > div:last-child > div {
+      gap: 4px;
+    }
+    .dashboard-running > div:last-child > div > article {
+      padding: 6px;
+      min-height: 0;
+    }
+    .dashboard-running > div:last-child > article {
+      padding: 6px;
+    }
+    .dashboard-running > div:last-child > a {
+      grid-column: 1 / -1;
+    }
+    .dashboard-composition .dashboard-meals {
+      max-height: 160px;
+    }
+    .dashboard-composition .dashboard-supporting {
+      align-items: start;
+    }
+    .dashboard-running > div:last-child {
+      grid-template-columns: 3fr 2fr;
+    }
+    .dashboard-composition
+      .dashboard-portfolio
+      .dashboard-portfolio-body
+      .portfolio-view-intro {
+      display: none;
+    }
+    .dashboard-portfolio > :first-child p {
+      display: none;
+    } /* redundant subtitle; identity/counters remain */
+    .dashboard-portfolio-body > :first-child {
+      padding: 0;
+      border: 0;
+    }
+    .dashboard-running > :first-child p {
+      display: none;
+    } /* sync context remains in the body */
+    .dashboard-running > div:last-child > a {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 8px;
+      padding: 6px;
+    }
+    .dashboard-running > div:last-child > a > div:first-child {
+      grid-column: 1 / -1;
+    }
+    .dashboard-running > div:last-child > a > :last-child {
+      grid-column: 1 / -1;
+    }
+    .dashboard-running > div:last-child > a > :is(div, p) {
+      margin-top: 0;
+    }
+    .dashboard-signals {
+      align-items: start;
+    }
+    .dashboard-time {
+      height: auto;
+    }
+    .dashboard-mood > div > :first-child {
+      display: flex;
+      flex-direction: row;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px 8px;
+    }
+    .dashboard-mood > div > :first-child > a {
+      margin: 0;
+    }
+    .dashboard-stats {
+      display: flex;
+      flex-wrap: wrap;
+      align-content: start;
+      align-items: baseline;
+      column-gap: 12px;
+    }
+    .dashboard-stats > p:nth-child(2) {
+      margin: 0;
+      font-size: 11px;
+      line-height: 14px;
+    }
+    .dashboard-metrics {
+      flex-basis: 100%;
+    }
+  }
+}

@@ -113,10 +113,10 @@ export function ActivePortfolio({
       titleClassName="text-xl"
       titleHref={data.href}
     >
-      <div className="p-4 2xl:px-[22px] 2xl:pb-2 2xl:pt-3">
+      <div className="dashboard-portfolio-body p-4 2xl:px-[22px] 2xl:pb-2 2xl:pt-3">
         <div className="mb-3 rounded-[13px] border border-[rgba(91,124,250,.18)] bg-[color-mix(in_srgb,var(--accent-blue)_5%,#0b1422)] p-3 2xl:mb-3">
           <div className="grid gap-3 2xl:grid-cols-[132px_minmax(0,1fr)] 2xl:items-center">
-            <div>
+            <div className="portfolio-view-intro">
               <p className="text-[13px] font-semibold text-[var(--text-primary)]">
                 {data.viewTitle}
               </p>
@@ -145,7 +145,12 @@ export function ActivePortfolio({
             </div>
           </div>
         </div>
-        <div className="portfolio-slots grid grid-cols-2 auto-rows-fr gap-3">
+        <div
+          tabIndex={0}
+          role="region"
+          aria-label="Active Portfolio items"
+          className="portfolio-slots grid grid-cols-2 auto-rows-fr gap-3"
+        >
           {visibleProjects.map((project) => (
               <Link
                 aria-label={`Open portfolio item: ${project.title}`}
