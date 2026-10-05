@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { ToastProvider } from "@/components/feedback/toast-provider";
 import "./globals.css";
 import "@/components/layout/composition.css";
+import "@/components/dashboard/dashboard-cockpit.css";
 
 export const metadata: Metadata = {
   title: "Life OS",

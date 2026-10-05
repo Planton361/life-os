@@ -291,7 +291,7 @@ function DailyControlCurrentTask({
     task.taskLifecycle.status !== "done" &&
     task.taskLifecycle.status !== "blocked";
   const className = cn(
-    "min-w-0 rounded-[18px] border border-[rgba(91,124,250,.34)] bg-[linear-gradient(180deg,rgba(24,42,70,.98),rgba(16,29,49,.98))] p-3 shadow-[inset_0_0_0_1px_rgba(91,124,250,.10)]",
+    "daily-control-current min-w-0 rounded-[18px] border border-[rgba(91,124,250,.34)] bg-[linear-gradient(180deg,rgba(24,42,70,.98),rgba(16,29,49,.98))] p-3 shadow-[inset_0_0_0_1px_rgba(91,124,250,.10)]",
     task.href && !canComplete && `block ${DASHBOARD_LINK_FOCUS_CLASSES}`,
   );
   const content = (
@@ -426,7 +426,7 @@ function DailyControlQueue({
   return (
     <section
       aria-label={data.queueTitle}
-      className="min-w-0 rounded-[13px] px-1"
+      className="daily-control-queue min-w-0 rounded-[13px] px-1"
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-baseline gap-3">
@@ -512,7 +512,7 @@ function TimeProgress({
     profileId,
   );
   const className = cn(
-    "h-full overflow-hidden rounded-[var(--panel-radius)] border border-[rgba(95,200,215,.10)] bg-[color-mix(in_srgb,var(--accent-blue)_5%,#0d1625)] p-3 shadow-[0_10px_26px_rgba(0,0,0,.14)]",
+    "dashboard-time h-full overflow-hidden rounded-[var(--panel-radius)] border border-[rgba(95,200,215,.10)] bg-[color-mix(in_srgb,var(--accent-blue)_5%,#0d1625)] p-3 shadow-[0_10px_26px_rgba(0,0,0,.14)]",
     data.timeProgressHref && `block ${DASHBOARD_LINK_FOCUS_CLASSES}`,
   );
   const content = (
@@ -527,7 +527,7 @@ function TimeProgress({
         <div className="mt-2 space-y-1.5">
           {data.timeProgress.map((row) => (
             <div
-              className="grid grid-cols-[72px_minmax(0,1fr)_32px] items-center gap-2"
+              className="time-progress-row grid grid-cols-[72px_minmax(0,1fr)_32px] items-center gap-2"
               key={row.label}
             >
               <p className="text-[10px] font-medium uppercase text-[var(--text-muted)]">

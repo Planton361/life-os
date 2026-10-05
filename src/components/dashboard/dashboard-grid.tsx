@@ -25,7 +25,7 @@ export async function DashboardGrid() {
   return (
     <section
       aria-label="Dashboard-Zonen"
-      className="composition-flow min-w-0 gap-[var(--grid-gap)]"
+      className="dashboard-surface composition-flow min-w-0 gap-[var(--grid-gap)]"
     >
       <DashboardFeedbackBridge />
       <ManualDbAuthNotice />
