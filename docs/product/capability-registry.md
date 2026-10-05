@@ -27,6 +27,44 @@
 - Backend, repository or historical reload evidence proves that layer only; it
   does not by itself prove that a visible control currently works.
 
+## Cross-viewport composition — #109 / #110 proposed revision
+
+`CONNECTED` implementation evidence on PR #111, preserving the existing domain
+capabilities and their individual gaps. USER ACCEPTED #109 Variant A defines the
+shared canvas contract: C<880 Linear, C880–1439 Split, C>=1440 Wide where useful;
+H<720 document flow; DPR never selects composition. Shared frames absorb bounded
+remaining height, inner cards stay intrinsic, absent Context collapses and long
+content grows. This does not declare a new product/surface closure or merge.
+
+Current focused browser evidence:
+- `issue-110-cross-viewport-composition.spec.ts`: sparse Empty and populated Demo
+  Dashboard, real six-viewport/DPR matrix, container/height thresholds, 4K guard,
+  bounded-fill ceiling, unclipped controls, non-overlapping regions, navigation
+  expansion, Auth-blocked honesty and Today/Calendar/Portfolio shell smokes.
+- `issue-110-project-composition.spec.ts`: one isolated technical Manual owner,
+  Project without Context, Goal-related Context, 33 Tasks, all six viewports;
+  direct Task/header controls, dialog fit, unsaved draft across resizing, real
+  completion/reload and normal long-document growth. Additional Quick Thought,
+  six Mood choices, Habit create/error/increment/undo and reload use only this
+  technical owner through the real UI, as explicitly authorized.
+- `issue-110-manual-composition.spec.ts`: existing-profile read-only Goal and
+  current-focus/Lernweg Skill, all six viewports; planning/disclosure/management
+  controls, reload, shared frame fit and console/hydration checks.
+- `issue-110-surface-controls.spec.ts`: direct visible Manual Dashboard links,
+  counters, Portfolio views/items/create entry points, Agenda/Habit/Running tabs,
+  Add Habit open/cancel, Today review links, Calendar period/view/free-slot/queue
+  selection and Portfolio filters/sorts/selection/create navigation at 1920x1080
+  and 3840x2160. Ordinary user data is never mutated. Full-surface screenshots,
+  bounds review and V5 review are linked from PR #111.
+
+Composition acceptance is scoped to the touched layout and visible Manual
+states. An additional Demo navigation audit found symbolic Daily Control Task
+IDs rejected by the unchanged UUID-only detail handler already present on main.
+Demo macro-layout evidence does not claim connected Demo Task-detail navigation;
+that existing domain gap is outside #110's no-feature-change boundary. Goal,
+Project and Skill accepted domain grammar remains #52 / #87 / #102. Final
+revision review and USER ACCEPTED of #110 remain separate from this evidence.
+
 ## Active Product Boundary (Product Consolidation)
 
 Implementation status and product visibility are separate truths: `CONNECTED` code may be deferred and hidden without being deleted or relabeled as unimplemented.

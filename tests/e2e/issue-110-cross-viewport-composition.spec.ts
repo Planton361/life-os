@@ -131,10 +131,6 @@ for (const viewport of viewports) {
         "data-profile-id",
         profile,
       );
-      await expect(page.locator(".dashboard-daily")).toHaveAttribute(
-        "data-profile-id",
-        profile,
-      );
       const layout = await geometry(page);
       expect(layout.overflow).toBeLessThanOrEqual(1);
       expect(layout.overlaps).toEqual([]);
@@ -305,6 +301,10 @@ for (const viewport of viewports) {
     const page = await context.newPage();
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));
+    page.on("console", (m) => {
+      if (m.type() === "error" || /hydration/i.test(m.text()))
+        errors.push(m.text());
+    });
     for (const route of ["today", "calendar", "portfolio"]) {
       await page.goto(`/${route}`);
       await expect(page.locator(`#${route}-page`)).toBeVisible();

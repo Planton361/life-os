@@ -73,6 +73,9 @@ export async function expectHybridGoalLayout(page: Page) {
         bottom: frameBounds.bottom,
         height: frameBounds.height,
         minHeight: minHeight(frame),
+        bottomInset:
+          parseFloat(getComputedStyle(frame).paddingBottom) +
+          parseFloat(getComputedStyle(frame).borderBottomWidth),
       },
       composition: {
         top: compositionBounds.top,
@@ -144,7 +147,7 @@ export async function expectHybridGoalLayout(page: Page) {
       geometry.frame.bottom - geometry.footer.bottom,
     ).toBeGreaterThanOrEqual(0);
     expect(geometry.frame.bottom - geometry.footer.bottom).toBeLessThanOrEqual(
-      4,
+      geometry.frame.bottomInset + 1,
     );
   }
   if (geometry.canvas >= 880) {
