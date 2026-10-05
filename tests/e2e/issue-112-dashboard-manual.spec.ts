@@ -72,6 +72,18 @@ async function matrix(page: Page, info: TestInfo, state: string) {
     const proof = await context.newPage(),
       errors = consoleProof(proof);
     await proof.goto("/dashboard");
+    if (state === "technical-populated") {
+      await proof
+        .locator(".dashboard-habits")
+        .getByRole("button", { name: "Morning", exact: true })
+        .click();
+      await expect(proof).toHaveURL(/habitWindow=Morning/);
+      await expect(
+        proof
+          .locator(".dashboard-habits")
+          .getByRole("button", { name: /^#112 Habit .* erhöhen$/ }),
+      ).toBeVisible();
+    }
     await expect(proof.locator(".dashboard-daily")).toHaveAttribute(
       "data-profile-id",
       "manual",
