@@ -52,7 +52,11 @@ export function EntityWorkbenchShell({
   return (
     <div
       data-entity-workbench={kind}
-      className="mx-auto grid w-full max-w-[1600px] gap-6 px-2 pb-10 md:px-6"
+      className={
+        kind === "goal" && headingInContent
+          ? "entity-composition composition-frame flex w-full min-w-0 flex-col gap-4"
+          : "mx-auto grid w-full max-w-[1600px] gap-6 px-2 pb-10 md:px-6"
+      }
     >
       <header className="grid gap-3 border-b border-[var(--border-subtle)] pb-5">
         <nav

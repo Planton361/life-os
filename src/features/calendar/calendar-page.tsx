@@ -1662,7 +1662,7 @@ export function CalendarPlanningPage({
         viewModel={viewModel}
       />
 
-      <div className="grid min-w-0 gap-2 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(0,1fr)_minmax(400px,440px)] 2xl:grid-cols-[minmax(0,1fr)_minmax(440px,520px)]">
+      <div className="calendar-workspace-grid grid min-w-0 gap-2">
         <div className="grid min-w-0 gap-2 xl:min-h-0 xl:grid-rows-[minmax(0,1fr)_auto]">
           {activeView === "week" ? (
             <div

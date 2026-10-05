@@ -1452,7 +1452,7 @@ export function GoalOutcomeWorkbench({
         initiallyOpen={
           canManage && ["planung", "arbeit", "erfolg"].includes(area ?? "")
         }
-        className="grid min-w-0 content-start gap-4 lg:flex lg:min-h-[clamp(36rem,calc(100dvh_-_9rem),126rem)] lg:flex-col"
+        className="goal-composition flex min-w-0 flex-1 flex-col gap-4"
       >
         <header
           className="grid min-w-0 gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-1)] p-4"
@@ -1476,7 +1476,7 @@ export function GoalOutcomeWorkbench({
               </div>
             )}
           </div>
-          <div className="grid min-w-0 items-start gap-3 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-6">
+          <div className="goal-identity-content grid min-w-0 items-start gap-3">
             <div className="grid min-w-0 gap-2">
               <h1 className="break-words text-2xl font-semibold tracking-tight">
                 {outcome.goalTitle}
@@ -1514,7 +1514,7 @@ export function GoalOutcomeWorkbench({
                 </div>
               )}
             </div>
-            <dl className="flex flex-wrap gap-x-6 gap-y-2 border-t border-[var(--border-subtle)] pt-3 text-sm text-[var(--text-muted)] lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
+            <dl className="goal-identity-meta flex flex-wrap gap-x-6 gap-y-2 border-t border-[var(--border-subtle)] pt-3 text-sm text-[var(--text-muted)]">
               <div>
                 <dt className="text-xs uppercase tracking-wide text-[var(--text-faint)]">
                   Horizont
@@ -1561,7 +1561,7 @@ export function GoalOutcomeWorkbench({
         )}
 
         <div
-          className="grid min-w-0 items-start gap-4 lg:flex-1 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:grid-rows-[minmax(0,1fr)_auto] lg:rounded-xl lg:border lg:border-[var(--border-subtle)] lg:bg-[var(--surface-1)] lg:p-4"
+          className="goal-workbench grid min-w-0 items-start gap-4"
           data-goal-journey-layout
           data-goal-workbench-frame
         >

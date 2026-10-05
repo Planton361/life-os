@@ -14,7 +14,7 @@ export default async function PortfolioPage() {
   const viewModel = await getPortfolioViewModel();
 
   return (
-    <div className="flex min-h-0 flex-col xl:h-full" id="portfolio-workspace">
+    <div className="bounded-workspace flex min-h-0 flex-col" id="portfolio-workspace">
       <div className="w-full shrink-0 [&:not(:empty)]:mb-3">
         <ManualDbAuthNotice />
       </div>

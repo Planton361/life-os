@@ -1,6 +1,6 @@
 # DESIGN.md
 
-Stand: 2026-06-17  
+Stand: 2026-10-04
 Status: Active  
 Zweck: Operative Designquelle für Life OS.  
 Quelle der Wahrheit: Diese Datei + `docs/design/*`.  
@@ -76,6 +76,19 @@ Dashboard Overhaul V5 – Subtle Color Identity Polish
 - Cards haben klare Aufgabe, Header, Datenhierarchie und begrenzte Mikrotexte.
 - Hohe Informationsdichte ist erlaubt, aber nur mit P0–P3-Hierarchie.
 
+## Gemeinsame Cross-Viewport-Komposition
+
+Binding target: [#109 Variant A / USER ACCEPTED](https://github.com/Planton361/life-os/issues/109#issuecomment-5979108379).
+Die bestehende V5-App bleibt Grundlage; Domain- und Interaktionssemantik ändern sich nicht.
+
+- **C = nutzbare Containerbreite:** unter 880 CSS px Linear; 880–1439 Split, wo sinnvoll; ab 1440 Wide mit drei fachlich sinnvollen Regionen. Lokale Module und Rails prüfen zusätzlich ihren eigenen Platz. Viewportbreite entscheidet Shell/Navigation, Containerbreite die Surface-Komposition; DPR niemals das Layout.
+- **H = CSS-Viewporthöhe:** unter 720 px normaler Dokumentfluss ohne künstliches Fill. Ab 720 darf ein gemeinsamer Frame freie Resthöhe aufnehmen, wenn C mindestens 880 ist. Shell-/Header-Flow liefert die tatsächliche Restfläche; keine route-spezifischen Höhenabzüge. Das künstliche Mindestziel bleibt auf höchstens 2160 px nutzbare Canvas-Höhe begrenzt; echter Inhalt hat keine Obergrenze.
+- **Frames statt gestreckter Cards:** Orientierung, Command und Supporting/Review bleiben content-sized; nur der gemeinsame Work-Rahmen nimmt Restfläche auf. Innere Cards, Task-Zeilen und Journey bleiben oben geführt. Fehlender Context kollabiert; Rails stacken, wenn sie nicht passen. Lange Inhalte wachsen mit dem Dokument.
+- **Dashboard A:** auto-height Command Band, darunter der gemeinsame Workbench-Frame. Wide: Stats / Quick / Daily / Signals, dann P2 / Agenda / P1. Split: Daily + Quick, Stats + Signals, Agenda + P1, dann P2. Linear: Daily → Agenda → Quick → Signals → Stats → Habits/Portfolio → Health/Nutrition. Sparse und populated verwenden dieselbe Makrohierarchie.
+- **Details:** Project [#87](https://github.com/Planton361/life-os/issues/87#issuecomment-5938627502), Goal [#52](https://github.com/Planton361/life-os/issues/52#issuecomment-5867990501) und Skill [#102](https://github.com/Planton361/life-os/issues/102#issuecomment-5974677264) behalten ihre fachliche Grammatik und Verhältnisse. Gemeinsame C/H-/Rail-Fit-Regeln ändern keine READY/BLOCKED-, Lernweg-, Review- oder Task-Semantik.
+- **Bestehende bounded Workspaces:** Today, Calendar und Portfolio behalten ihr explizites Scroll-Workspace-Opt-in bei ausreichend C/H. Short und Linear lösen dieses Opt-in in normalen Dokumentfluss auf. Calendar-Zeitgeometrie und alle Produktflows bleiben erhalten.
+- **Shell:** kompakte Navigation, wenn Sidebar + Split-Canvas + Gutters nicht passen; Desktop-Sidebar bei 280 + 880 + 2×24 px. Symmetrische Canvas-Gutters und begrenzte maximale Lesebreite bei großer/4K-Fläche, ohne CSS-Zoom oder Geräte-Breakpoints.
+
 ## App-weiter Feedback-Standard
 
 Jede erfolgreiche oder fehlgeschlagene sichtbare Mutation gibt verständliches,
@@ -103,9 +116,10 @@ diesen Control ausdrücklich deferred.
   Bottom-Zone-Features dürfen keinen großen Restbereich hinterlassen.
 - **Full-viewport cockpit:** Der primäre Desktop-Cockpit-View nutzt die
   tatsächlich verfügbare CSS-Viewport-Höhe des 4K-Arbeitsplatzes sinnvoll.
-  Primäre Desktop-Flows dürfen keinen erforderlichen Body-Scroll erzeugen;
-  interne, klar begrenzte Scrollregionen sind erlaubt. Health/Fitness folgt
-  diesem Vertrag ebenfalls.
+  Dashboard und Detail-Workbench wachsen bei echtem Inhalt normal über ihr
+  begrenztes Mindestziel hinaus. Interne Scrollregionen benötigen ein explizites
+  Surface-Opt-in, etwa Calendar/Portfolio oder die bestehenden Health/Fitness-
+  Workspaces; sie sind kein allgemeiner Ersatz für Dokumentwachstum.
 - **Viewport guards:** Zusätzlich zum primären 4K-CSS-Viewport müssen
   `1920×1080` und Mobile ohne horizontalen Overflow, abgeschnittene Controls,
   unbedienbare Touch-/Tastaturwege oder verdecktes Feedback funktionieren.

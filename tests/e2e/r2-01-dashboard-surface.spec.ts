@@ -7,12 +7,12 @@ async function assertBounds(page: Page, desktop: boolean) {
       () => document.documentElement.scrollWidth - innerWidth,
     ),
   ).toBeLessThanOrEqual(1);
-  if (desktop)
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollHeight - innerHeight,
-      ),
-    ).toBeLessThanOrEqual(1);
+  if (desktop) {
+    // #109 permits document growth; only the shared frame absorbs free height.
+    expect(await page.locator(".dashboard-composition").evaluate((el) =>
+      Number(getComputedStyle(el).getPropertyValue("--composition-fill")),
+    )).toBeGreaterThan(0);
+  }
   const problems = await page
     .locator(".dashboard-main-grid")
     .evaluate((grid) => {
@@ -126,7 +126,7 @@ for (const viewport of [
       await expect(page.locator(".portfolio-slots > *")).toHaveCount(4);
       await assertBounds(page, viewport.width >= 1800);
     }
-    await expect(page.locator("[data-agenda-hour-lines] > div")).toHaveCount(
+    await expect(page.locator("[data-agenda-hour-lines]")).toHaveCount(
       19,
     );
     await page.screenshot({

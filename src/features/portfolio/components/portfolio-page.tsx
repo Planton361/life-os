@@ -239,7 +239,7 @@ export function PortfolioPage({
 
   return (
     <div
-      className="mx-auto flex w-full flex-col gap-2 pb-3 xl:flex-1 xl:min-h-0 xl:pb-0"
+      className="bounded-workspace mx-auto flex w-full flex-col gap-2 pb-3"
       data-portfolio-section="page"
       {...contentStateAttributes(
         viewModel.contentStates.page,

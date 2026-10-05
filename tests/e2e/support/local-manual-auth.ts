@@ -8,8 +8,20 @@ export async function signUpTechnicalManualUser(
   page: Page,
   prefix: string,
   stamp: number,
+  options?: { issue110ExistingLocalRuntime: true },
 ) {
-  if (process.env.LIFE_OS_E2E_RUNTIME !== "DISPOSABLE") {
+  // CONTROL #110 comment 5994346065: one explicitly scoped synthetic owner
+  // on the already-running local app; this never starts an E2E runtime.
+  const issue110Local =
+    options?.issue110ExistingLocalRuntime === true &&
+    prefix === "issue110composition" &&
+    host === "localhost" &&
+    port === "3000" &&
+    process.env.LIFE_OS_110_SYNTHETIC_PROJECT_PROOF === "1" &&
+    /^http:\/\/(localhost|127\.0\.0\.1):\d+\/?$/.test(
+      process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+    );
+  if (process.env.LIFE_OS_E2E_RUNTIME !== "DISPOSABLE" && !issue110Local) {
     throw new Error(
       "Technical Playwright sign-up requires the disposable local E2E runtime. Use pnpm test:e2e:isolated <focused-spec>.",
     );

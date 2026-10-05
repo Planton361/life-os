@@ -470,7 +470,7 @@ function NavItem({
         {isFlyoutOpen && flyoutPosition ? (
           <div
             aria-label={`${item.label} Unterseiten`}
-            className="fixed z-50 w-44 rounded-[12px] border border-[rgba(148,163,184,.16)] bg-[color-mix(in_srgb,var(--surface-2)_92%,#070b13)] py-1 shadow-[0_14px_34px_rgba(0,0,0,.24)]"
+            className="fixed z-50 w-44 overflow-y-auto rounded-[12px] border border-[rgba(148,163,184,.16)] bg-[color-mix(in_srgb,var(--surface-2)_92%,#070b13)] py-1 shadow-[0_14px_34px_rgba(0,0,0,.24)]"
             id={flyoutId}
             onMouseEnter={clearCloseTimer}
             ref={flyoutRef}
@@ -478,6 +478,7 @@ function NavItem({
               ...itemStyle(accent),
               left: flyoutPosition.left,
               top: flyoutPosition.top,
+              maxHeight: `calc(100dvh - ${flyoutPosition.top}px - 12px)`,
             }}
           >
             <div className="space-y-0.5">
@@ -594,6 +595,8 @@ const clientHydrationSnapshot = () => true;
 const serverHydrationSnapshot = () => false;
 
 export function Sidebar() {
+  const [navigationOpen, setNavigationOpen] = useState(false);
+  const navigationId = useId();
   const currentPathname = usePathname();
   const hydrated = useSyncExternalStore(
     subscribeToHydration,
@@ -604,9 +607,9 @@ export function Sidebar() {
   const searchParams = useSearchParams();
 
   return (
-    <aside className="border-b border-[var(--border-default)] bg-[var(--bg-app)] p-2 lg:h-dvh lg:min-h-0 lg:overflow-hidden lg:border-b-0 lg:border-r">
-      <div className="flex h-full min-h-0 flex-col rounded-[20px] border border-[rgba(91,124,250,.16)] bg-[color-mix(in_srgb,var(--accent-blue)_4%,#070b13)] px-3 py-3 shadow-[0_8px_22px_rgba(0,0,0,0.12)] lg:h-[calc(100dvh-16px)] 2xl:max-h-[1424px]">
-        <div className="flex items-center gap-3">
+    <aside className="life-os-sidebar" data-navigation-open={navigationOpen}>
+      <div className="life-os-sidebar-inner flex min-h-0 flex-col rounded-[20px] border border-[rgba(91,124,250,.16)] bg-[color-mix(in_srgb,var(--accent-blue)_4%,#070b13)] px-3 py-3 shadow-[0_8px_22px_rgba(0,0,0,0.12)]">
+        <div className="life-os-sidebar-heading flex items-center gap-3">
           <div
             aria-hidden="true"
             className="grid size-9 place-items-center rounded-[10px] border border-[rgba(95,200,215,.22)] bg-[color-mix(in_srgb,var(--surface-2)_86%,var(--accent-blue))]"
@@ -625,75 +628,93 @@ export function Sidebar() {
               V5 / Linear Calm
             </p>
           </div>
-        </div>
-
-        <a
-          className="mt-3 inline-flex rounded-lg border border-[var(--border-default)] px-3 py-2 text-xs font-medium text-[var(--text-secondary)] transition hover:border-[var(--accent-cyan)] lg:hidden"
-          href="#main-content"
-        >
-          Inhalt
-        </a>
-
-        <div className="mt-3 flex items-center gap-2.5 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(168,183,204,.04)] px-2.5 py-2">
-          <div className="grid size-8 shrink-0 place-items-center rounded-full bg-[color-mix(in_srgb,var(--accent-blue)_84%,var(--accent-cyan))] text-xs font-semibold text-[var(--text-primary)]">
-            A
-          </div>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-[var(--text-secondary)]">
-              Anton
-            </p>
-            <p className="mt-0.5 truncate text-[10px] font-medium text-[var(--text-muted)]">
-              Student · Werkstudent
-            </p>
-          </div>
+          <button
+            type="button"
+            className="life-os-menu-toggle ml-auto rounded-lg border border-[var(--border-default)] px-3 py-2 text-xs"
+            aria-controls={navigationId}
+            aria-expanded={navigationOpen}
+            onClick={() => setNavigationOpen((open) => !open)}
+          >
+            Menü
+          </button>
         </div>
 
         <div
-          className="mt-4 flex min-h-[29px] items-center justify-between rounded-[11px] border border-[rgba(95,200,215,.18)] bg-[color-mix(in_srgb,var(--accent-cyan)_4%,#0c1422)] px-3 text-[10px] font-medium text-[var(--text-secondary)]"
-          data-prepared-command-search
+          className="life-os-navigation-content"
+          id={navigationId}
+          onClick={(event) => {
+            if ((event.target as HTMLElement).closest("a[href]"))
+              setNavigationOpen(false);
+          }}
         >
-          <span>Search / Command</span>
-          <span className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
-            Prepared
-          </span>
+          <a
+            className="life-os-skip-link mt-3 inline-flex rounded-lg border border-[var(--border-default)] px-3 py-2 text-xs font-medium text-[var(--text-secondary)] transition hover:border-[var(--accent-cyan)] lg:hidden"
+            href="#main-content"
+          >
+            Inhalt
+          </a>
+
+          <div className="mt-3 flex items-center gap-2.5 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(168,183,204,.04)] px-2.5 py-2">
+            <div className="grid size-8 shrink-0 place-items-center rounded-full bg-[color-mix(in_srgb,var(--accent-blue)_84%,var(--accent-cyan))] text-xs font-semibold text-[var(--text-primary)]">
+              A
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-[var(--text-secondary)]">
+                Anton
+              </p>
+              <p className="mt-0.5 truncate text-[10px] font-medium text-[var(--text-muted)]">
+                Student · Werkstudent
+              </p>
+            </div>
+          </div>
+
+          <div
+            className="mt-4 flex min-h-[29px] items-center justify-between rounded-[11px] border border-[rgba(95,200,215,.18)] bg-[color-mix(in_srgb,var(--accent-cyan)_4%,#0c1422)] px-3 text-[10px] font-medium text-[var(--text-secondary)]"
+            data-prepared-command-search
+          >
+            <span>Search / Command</span>
+            <span className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+              Prepared
+            </span>
+          </div>
+
+          <nav
+            aria-label="Hauptnavigation"
+            className="mt-4 flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pr-1"
+          >
+            <div className="space-y-0.5">
+              {sidebarNavigation.primary.map((item) => (
+                <NavItem
+                  item={item}
+                  key={item.href}
+                  pathname={pathname}
+                  searchParams={searchParams}
+                />
+              ))}
+            </div>
+
+            {sidebarNavigation.sections.map((section) => (
+              <NavigationSectionBlock
+                key={section.label}
+                pathname={pathname}
+                searchParams={searchParams}
+                section={section}
+              />
+            ))}
+
+            <div className="mt-auto space-y-0.5 border-t border-[var(--border-subtle)] pt-2">
+              {sidebarNavigation.utility.map((item) => (
+                <NavItem
+                  accent="var(--text-muted)"
+                  item={item}
+                  key={item.href}
+                  pathname={pathname}
+                  searchParams={searchParams}
+                />
+              ))}
+            </div>
+          </nav>
         </div>
-
-        <nav
-          aria-label="Hauptnavigation"
-          className="mt-4 flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pr-1"
-        >
-          <div className="space-y-0.5">
-            {sidebarNavigation.primary.map((item) => (
-              <NavItem
-                item={item}
-                key={item.href}
-                pathname={pathname}
-                searchParams={searchParams}
-              />
-            ))}
-          </div>
-
-          {sidebarNavigation.sections.map((section) => (
-            <NavigationSectionBlock
-              key={section.label}
-              pathname={pathname}
-              searchParams={searchParams}
-              section={section}
-            />
-          ))}
-
-          <div className="mt-auto space-y-0.5 border-t border-[var(--border-subtle)] pt-2">
-            {sidebarNavigation.utility.map((item) => (
-              <NavItem
-                accent="var(--text-muted)"
-                item={item}
-                key={item.href}
-                pathname={pathname}
-                searchParams={searchParams}
-              />
-            ))}
-          </div>
-        </nav>
       </div>
     </aside>
   );

@@ -3,7 +3,7 @@
   flex-direction: column;
   gap: 1rem;
   min-width: 0;
-  padding: 0.5rem 0.5rem 1rem;
+  padding: 0 0 1rem;
 }
 .header,
 .workspace,
@@ -73,10 +73,10 @@
   border-top: 1px solid var(--border-subtle);
   padding-top: 0.75rem;
 }
-@media (min-width: 1280px) {
+@container life-os-canvas (min-width: 880px) {
   .project {
     gap: 0.5rem;
-    padding: 0.5rem 1.5rem 0;
+    padding: 0;
   }
   .header {
     padding-block: 0.75rem;
@@ -91,7 +91,7 @@
 .secondary > * {
   padding: 0.875rem 1.25rem;
 }
-@media (max-width: 1279px) {
+@container life-os-canvas (width < 880px) {
   .rail {
     border-top: 1px solid var(--border-subtle);
   }
@@ -117,7 +117,7 @@
 .milestone > dialog {
   grid-column: 1 / -1;
 }
-@media (max-width: 520px) {
+@container (max-width: 520px) {
   .milestone {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -139,7 +139,7 @@
   margin-inline-start: auto;
   justify-content: flex-end;
 }
-@media (max-width: 760px) {
+@container (max-width: 760px) {
   .task {
     gap: 0.5rem;
   }
@@ -205,9 +205,9 @@
 .taskActions > :is(form, button, a):not(:first-child) {
   margin-inline-start: 1rem;
 }
-@media (min-width: 1280px) {
+@container life-os-canvas (min-width: 880px) {
   .frame {
-    min-height: clamp(36rem, calc(100dvh - 2rem), 160rem);
+    min-height: 0;
   }
   .workspace {
     flex: 1 0 auto;
@@ -236,7 +236,7 @@
     flex-basis: 100%;
   }
 }
-@media (max-width: 760px) {
+@container (max-width: 760px) {
   .workHeader {
     grid-template-columns: minmax(0, 1fr);
   }

@@ -23,8 +23,8 @@ export default async function CalendarPage() {
     .join("|");
 
   return (
-    <div id="calendar-workspace">
-      <div className="mx-auto mb-3 w-full max-w-[2208px]">
+    <div id="calendar-workspace" className="bounded-workspace">
+      <div className="w-full shrink-0 [&:not(:empty)]:mb-3">
         <ManualDbAuthNotice />
       </div>
       <CalendarPlanningPage key={calendarProjectionKey} viewModel={viewModel} />

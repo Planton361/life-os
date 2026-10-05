@@ -44,7 +44,7 @@ function SkillColumns({
   return (
     <div
       data-skill-columns
-      className="grid min-w-0 items-start gap-4 xl:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)]"
+      className="skill-columns grid min-w-0 items-start gap-4"
     >
       <div data-skill-information className="grid min-w-0 content-start gap-2">
         {information}
@@ -52,7 +52,7 @@ function SkillColumns({
       {actions && (
         <div
           data-skill-actions
-          className="grid min-w-0 content-start gap-3 xl:border-l xl:border-[var(--border-subtle)] xl:pl-5"
+          className="skill-secondary-actions grid min-w-0 content-start gap-3"
         >
           {actions}
         </div>
@@ -753,8 +753,9 @@ export function SkillWorkbench({
     <SkillDisclosureBoundary>
       <div
         data-skill-development
-        className="grid w-full min-w-0 content-start gap-4 px-2 pb-10 md:px-6"
+        className="composition-flow w-full min-w-0 gap-4 pb-10"
       >
+        <div className="skill-composition composition-frame flex min-w-0 flex-col gap-4">
         <header
           aria-label="Skillidentität"
           className="grid min-w-0 gap-3 rounded-xl border border-[var(--border-default)] bg-[var(--surface-1)] p-4"
@@ -800,12 +801,12 @@ export function SkillWorkbench({
         <section
           aria-label="Entwicklungswerkbank"
           data-skill-workbench
-          className="grid min-w-0 items-start gap-5 rounded-xl border border-[var(--border-default)] bg-[var(--surface-1)] p-4 md:p-5 xl:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)]"
+          className="skill-workbench grid min-w-0 flex-1 items-start gap-5 rounded-xl border border-[var(--border-default)] bg-[var(--surface-1)] p-4"
         >
           <aside
             aria-label="Skillaktionen"
             data-skill-actions
-            className="order-2 grid min-w-0 content-start gap-3 border-t border-[var(--border-subtle)] pt-4 xl:col-start-2 xl:row-start-1 xl:border-t-0 xl:border-l xl:pl-5 xl:pt-0"
+            className="skill-action-rail order-2 grid min-w-0 content-start gap-3 border-t border-[var(--border-subtle)] pt-4"
           >
             <h2 className="text-lg font-semibold">Aktionen</h2>
             <div data-skill-primary>
@@ -989,7 +990,7 @@ export function SkillWorkbench({
               </details>
             </div>
           </aside>
-          <div className="contents xl:col-start-1 xl:row-start-1 xl:grid xl:min-w-0 xl:content-start xl:gap-5">
+          <div className="skill-information-group contents">
             <section aria-label="Aktuelle Entwicklung" className="contents">
               <div
                 data-skill-information
@@ -1154,6 +1155,7 @@ export function SkillWorkbench({
             )}
           </div>
         </section>
+        </div>
         <section
           aria-label="Vertiefung"
           className="grid min-w-0 gap-4 rounded-xl border border-[var(--border-default)] bg-[var(--surface-1)] p-4 md:p-5"
