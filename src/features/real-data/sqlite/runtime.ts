@@ -10,10 +10,12 @@ import { privateDatabasePath, reserveFreshDatabase } from "./file-boundary";
 import { compareDecimals, decimal, numeric, uuid, timestamp, localDate } from "./codecs";
 import { canonicalTableNames } from "./canonical-catalog";
 import { acquireWriterLease } from "./writer-lease";
+import { safeProjectUrl, trimProjectText } from "./project-canonical";
+import { projectCommitSnapshot, validateProjectCommit, advanceProjectMetadata } from "./project-invariants";
 import { goalCommitSnapshot, validateGoalCommit } from "./goal-invariants";
 
 export const runtimeVersions = Object.freeze({ node: "24.21.0", driver: "13.0.3", sqlite: "3.53.4" });
-export const schemaVersion = 3;
+export const schemaVersion = 4;
 type Metadata = { schema_version: number; dataset_kind: string; owner_id: string; compatibility_ready: number; writer_pid: number | null; writer_host: string | null };
 type GlobalRuntime = typeof globalThis & { __lifeOsSqliteRuntime?: { path: string; store: SqliteRuntime } };
 
@@ -40,6 +42,9 @@ function nextTimestamp(old: string, now: string) {
 }
 
 export function registerCodecs(db: Database.Database) {
+  db.function("project_safe_url", { deterministic: true }, value => safeProjectUrl(value === null ? null : String(value)));
+  db.function("project_hash_valid", { deterministic: true }, value => /^[a-f0-9]{64}$/.test(String(value)) ? 1 : 0);
+  db.function("project_text_valid", { deterministic: true }, (value, limit) => value !== null && !String(value).includes("\u0000") && String(value).isWellFormed() && trimProjectText(String(value)) === value && [...String(value)].length >= 1 && [...String(value)].length <= Number(limit) ? 1 : 0);
   db.function("life_uuid", () => randomUUID());
   let lastTimestamp = "1970-01-01T00:00:00.000000Z";
   db.function("life_now", () => {
@@ -145,10 +150,15 @@ export class SqliteRuntime {
 
   command<T>(context: OwnerContext, kind: string, body: (db: Database.Database, ownerId: string) => T): T {
     if (this.#draining) throw new Error("SQLITE_RUNTIME_DRAINING");
+    if (kind === "project.metadata") throw new Error("PROJECT_REVISION_SERVER_OWNED");
     if (!/^[a-z][a-z_.]+$/.test(kind)) throw new Error("COMMAND_KIND_INVALID");
     return this.#scope(context, kind, () => this.#db.transaction(() => {
       const before = goalCommitSnapshot(this.#db, this.#owner);
+      const projectBefore = projectCommitSnapshot(this.#db, this.#owner);
       const result = this.#sync(body(this.#db, this.#owner));
+      advanceProjectMetadata(this.#db, this.#owner, projectBefore, () => { this.#command = "project.metadata"; });
+      this.#command = kind;
+      validateProjectCommit(this.#db, this.#owner, projectBefore);
       validateGoalCommit(this.#db, this.#owner, before);
       return result;
     }).immediate());

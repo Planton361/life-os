@@ -7,8 +7,9 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 import { inspectSyntheticDatabase, restoreSyntheticBackup } from "../recovery";
 import { initializeSyntheticDatabase } from "../synthetic-database";
-import { SqliteRuntime, configureConnection } from "../runtime";
+import { SqliteRuntime, configureConnection, schemaVersion } from "../runtime";
 import { issueOwnerContext, type OwnerContext } from "../owner-context";
+import { projectDepthCommand, readSqliteProjectDepth } from "./project-depth-repository";
 import { goalOwnedTables } from "../goal-schema";
 import {
   goalCommandFingerprint,
@@ -116,7 +117,7 @@ describe("native Goal Outcome / Journey / History / Receipts", () => {
             )
             .get(),
         ),
-      ).toEqual({ schema_version: BigInt(3), compatibility_ready: BigInt(0) });
+      ).toEqual({ schema_version: BigInt(schemaVersion), compatibility_ready: BigInt(0) });
     } finally {
       f.store.close();
     }
@@ -1048,13 +1049,8 @@ describe("native Goal Outcome / Journey / History / Receipts", () => {
           )
           .get(owner, ge.event_id),
       ) as { id: string };
-      f.store.command(f.context, "project.archive", (db) =>
-        db
-          .prepare(
-            "UPDATE projects SET archived_at=life_now() WHERE user_id=? AND id=?",
-          )
-          .run(owner, source),
-      );
+      const project = readSqliteProjectDepth(f.store, f.context, String(source)).context;
+      projectDepthCommand(f.store, f.context, {projectId:source,commandId:randomUUID(),operation:"project.archive",expectedRevision:project.completion_revision,expectedCycle:project.completion_cycle,payload:{}});
       await f.command("goal.evidence", {
         achievement_event_id: ge.event_id,
         action: "withdrawn",

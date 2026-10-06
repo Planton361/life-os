@@ -11,6 +11,8 @@ import { sourceSchema, sourceOwnedTables } from "./source-schema";
 import { sourceGuards, sourceDependencyGuards } from "./source-guards";
 import { habitSchema, habitOwnedTables } from "./habit-schema";
 import { healthSchema, healthOwnedTables } from "./health-schema";
+import { projectSchema, projectOwnedTables } from "./project-schema";
+import { projectGuards } from "./project-guards";
 import { goalSchema, goalOwnedTables } from "./goal-schema";
 import { goalGuards, goalHistoryScopeGuards } from "./goal-guards";
 
@@ -40,9 +42,11 @@ export function initializeSyntheticDatabase(path: string, ownerId: string) {
       db.exec(habitSchema);
       db.exec(healthSchema);
       db.exec(goalSchema);
+      db.exec(projectSchema);
+      db.exec(projectGuards);
       db.exec(goalGuards + goalHistoryScopeGuards);
       db.exec(sourceGuards + sourceDependencyGuards());
-      db.exec(ownerGuards([...coreOwnedTables, ...sourceOwnedTables, ...habitOwnedTables, ...healthOwnedTables, ...goalOwnedTables]));
+      db.exec(ownerGuards([...coreOwnedTables, ...sourceOwnedTables, ...habitOwnedTables, ...healthOwnedTables, ...goalOwnedTables, ...projectOwnedTables]));
       db.prepare("INSERT INTO runtime_metadata(singleton,schema_version,dataset_kind,owner_id) VALUES(1,?,'synthetic',?)").run(schemaVersion, ownerId);
       const now = timestamp(new Date().toISOString());
       db.prepare("INSERT INTO profiles(id,display_name,timezone,created_at,updated_at) VALUES(?,'Synthetic owner','Europe/Berlin',?,?)").run(ownerId, now, now);

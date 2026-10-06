@@ -145,6 +145,7 @@ describe("SQLite runtime foundation", () => {
   });
   it("rejects unscoped native writes even outside the repository", () => {
     const { path } = fixture(); const db = new Database(path);
+    configureConnection(db); db.function("life_command", () => null);
     db.function("life_owner", () => null);
     try {
       expect(() => project(db, ownerA, randomUUID())).toThrow("OWNER_DENIED");
