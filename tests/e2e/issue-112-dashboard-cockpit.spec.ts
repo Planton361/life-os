@@ -30,10 +30,53 @@ for (const v of cockpitViewports)
         "data-profile-id",
         profile,
       );
-      await expect(
-        page.locator('.life-os-sidebar a[aria-current="page"]').first(),
-      ).toBeAttached();
+      // Compact navigation mounts its links only after opening the menu.
+      // Exercise a real control to wait for hydration at every canvas width.
+      await page
+        .locator(".dashboard-agenda")
+        .getByRole("button", {
+          name: "Day",
+          exact: true,
+        })
+        .click();
       const geometry = await assertCockpit(page);
+      if (geometry.canvas < 880) {
+        const daily = (await page.locator(".dashboard-daily").boundingBox())!;
+        const quick = (await page.locator(".dashboard-quick").boundingBox())!;
+        const agenda = (await page.locator(".dashboard-agenda").boundingBox())!;
+        expect(quick.y - daily.y - daily.height).toBeGreaterThanOrEqual(8);
+        expect(quick.y - daily.y - daily.height).toBeLessThanOrEqual(16);
+        expect(agenda.y - quick.y - quick.height).toBeLessThanOrEqual(16);
+        const current = (await page
+          .locator(".daily-control-current")
+          .boundingBox())!;
+        const queue = (await page
+          .locator(".daily-control-queue")
+          .boundingBox())!;
+        expect(queue.y - current.y - current.height).toBeGreaterThanOrEqual(8);
+        expect(
+          daily.y + daily.height - queue.y - queue.height,
+        ).toBeLessThanOrEqual(16);
+        expect(agenda.height).toBeLessThanOrEqual(520);
+        await page
+          .locator(".dashboard-quick")
+          .getByRole("textbox", {
+            name: "Quick Thought",
+            exact: true,
+          })
+          .fill(`#112 ${profile} flow guard`);
+        await page
+          .locator(".dashboard-quick")
+          .getByRole("button", {
+            name: "In Inbox speichern",
+            exact: true,
+          })
+          .click();
+        await expect(
+          page.locator(".dashboard-quick").getByRole("alert"),
+        ).toBeVisible();
+        await assertCockpit(page);
+      }
       for (const group of [
         { selector: ".dashboard-agenda", names: ["Week", "Month", "Day"] },
         {
@@ -55,6 +98,17 @@ for (const v of cockpitViewports)
           await assertCockpit(page);
         }
       await scrollProof(page);
+      if (geometry.canvas < 880) {
+        const timeline = page.getByRole("region", {
+          name: "Agenda time content",
+        });
+        await timeline.scrollIntoViewIfNeeded();
+        await timeline.focus();
+        await page.keyboard.press("End");
+        await expect(
+          timeline.getByText("24:00", { exact: true }),
+        ).toBeInViewport();
+      }
       await page.reload();
       await assertCockpit(page);
       await page.evaluate(() => scrollTo(0, 0));

@@ -1199,6 +1199,31 @@ Journal depth, Skill Map and final active acceptance remain the planned work.
 
 # 1. Dashboard
 
+## #112 Mac composition repair — implementation evidence (2026-10-06)
+
+The [authorized same-Issue repair](https://github.com/Planton361/life-os/issues/112#issuecomment-6006545599)
+keeps Linear Dashboard in document flow: Daily → Quick → Agenda. Below 880px
+canvas width, Current Task and Up Next stack at intrinsic heights. The full
+Agenda axis/period remains keyboard/mouse accessible in one bounded body
+(`clamp(192px, 60dvh, 360px)`), with header and view controls outside that body.
+At Mac 769×413 / DPR 2, Empty Agenda drops from 765.5px to 324.8px; Demo from
+1073px to 324.8px. Daily/Quick have a 12px flow gap, without equalized heights.
+
+`tests/e2e/issue-112-dashboard-cockpit.spec.ts` proves Empty/Demo at Mac,
+Gigabyte, ASUS, 1920, 4K and Mobile, including switches, reload, keyboard/mouse
+scroll, reachable 24:00, blocked non-Manual capture feedback, bounds and clean
+console/hydration. Wide targets retain every major zone without body scroll.
+Full-surface screenshots and pre-repair Mac references are in
+`docs/qa/issue-112-mac-composition/`. V5 review: P0/P1 hierarchy, existing tokens,
+readable controls and content-led Command pass; no scaling or hidden zones.
+
+This evidence uses an isolated production source copy without protected env or
+auth files; the existing user dev server remains untouched. The current Manual
+control inventory and authenticated mutation/reload tests are **not re-proven**:
+no authorized technical login/session is available in this run. Capability
+statuses below are unchanged. Mac USER ACCEPTANCE and final surface closure
+remain open; Empty/Demo proof does not substitute for Manual persistence proof.
+
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
 | SR1-04 personal Target runtime | `CONNECTED` | personal transfer, candidate-volume preservation, same-user reauthorization, authenticated read/write proof and persistent default-runtime Target switch passed | maintain Target as canonical local runtime; Source is `LEGACY_FALLBACK_READ_ONLY` |

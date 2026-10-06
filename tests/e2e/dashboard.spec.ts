@@ -196,7 +196,11 @@ test.describe("Dashboard D1.1 read-model truth", () => {
     ).toContainText("Unknown");
 
     const dashboard = page.getByRole("region", { name: "Dashboard-Zonen" });
-    await expect(dashboard.getByText("Keine Habit-Daten")).toBeVisible();
+    const habitSlots = dashboard.getByRole("region", { name: "Habit slots" });
+    await expect(
+      habitSlots.getByText("Freier Habit-Platz", { exact: true }),
+    ).toHaveCount(8);
+    await expect(habitSlots.getByRole("button")).toHaveCount(0);
     await expect(
       page.getByText(/Mood writes are unavailable in this profile/),
     ).toBeVisible();
