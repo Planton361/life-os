@@ -864,3 +864,215 @@ it("reuses current Practice/Recency projections and public stale result without 
     f.store.close();
   }
 });
+it("foreign-owner Area/source/Target/Milestone/Review/Evidence rows cannot be linked by Owner A", async () => {
+  const f = fixture(),
+    foreignOwner = randomUUID(),
+    foreignContext = issueOwnerContext(foreignOwner),
+    area = randomUUID(),
+    task = randomUUID();
+  f.store.close();
+  const { requireOwnerContext } = await import("../owner-context");
+  const { executeSkillInTransaction, parseNativeSkillCommand } =
+    await import("../commands/skill-commands");
+  const db = new Database(f.path);
+  configureConnection(db);
+  let marker: string | null = null;
+  db.function("life_owner", () => requireOwnerContext(foreignContext));
+  db.function("life_command", () => marker);
+  let foreignSkill = "",
+    revision = 0,
+    target = "",
+    milestone = "",
+    evidence = "",
+    review = "";
+  try {
+    db.transaction(() => {
+      db.prepare(
+        "INSERT INTO profiles(id,display_name,created_at,updated_at) VALUES(?,'Synthetic Owner B',?,?)",
+      ).run(foreignOwner, now, now);
+      db.prepare(
+        "INSERT INTO areas(id,user_id,key,name,created_at,updated_at) VALUES(?,?,'coding','Foreign Area',?,?)",
+      ).run(area, foreignOwner, now, now);
+      db.prepare(
+        "INSERT INTO tasks(id,user_id,title,created_at,updated_at) VALUES(?,?,'Foreign Source',?,?)",
+      ).run(task, foreignOwner, now, now);
+      const cmd = (operation: string, payload: unknown) => {
+        marker = `skill.${operation}`;
+        const c = parseNativeSkillCommand({
+          operation,
+          payload,
+          commandId: randomUUID(),
+          skillId: foreignSkill || null,
+          expectedRevision: foreignSkill ? String(revision) : null,
+        });
+        const result = executeSkillInTransaction(db, foreignOwner, c) as Record<
+          string,
+          string
+        >;
+        if (foreignSkill) revision++;
+        return result;
+      };
+      foreignSkill = cmd("skill.create", {
+        name: "Foreign Skill",
+        area_id: area,
+      }).skill_id;
+      target = cmd("target.create", { title: "Foreign Target" }).target_id;
+      milestone = cmd("milestone.create", {
+        target_id: target,
+        title: "Foreign Step",
+      }).milestone_id;
+      evidence = cmd("evidence.create", {
+        title: "Foreign Evidence",
+        evidence_date: "2026-09-01",
+        source_type: "task",
+        source_id: task,
+      }).evidence_id;
+      review = cmd("review.submit", {
+        target_id: target,
+        decision: "continue",
+        note: "Foreign Review",
+        open_milestones_acknowledged: false,
+        evidence: [{ id: evidence, revision: 1 }],
+      }).review_id;
+    }).immediate();
+  } finally {
+    db.close();
+  }
+  const store = new SqliteRuntime(f.path, { syntheticProof: true });
+  try {
+    const cmd = (operation: string, payload: unknown) =>
+      skillDevelopmentCommand(store, f.context, {
+        operation,
+        payload,
+        skillId: f.sid,
+        commandId: randomUUID(),
+        expectedRevision: readSqliteSkillDevelopment(store, f.context, f.sid)!
+          .skill.development_revision,
+      });
+    const ownTarget = String(
+        cmd("target.create", { title: "Owned Target" }).target_id,
+      ),
+      before = readSqliteSkillDevelopment(store, f.context, f.sid)!;
+    expect(() => cmd("skill.edit", { name: "Denied", area_id: area })).toThrow(
+      "SKILL_AREA_UNAVAILABLE",
+    );
+    expect(() =>
+      cmd("evidence.create", {
+        title: "Denied",
+        evidence_date: "2026-09-01",
+        source_type: "task",
+        source_id: task,
+      }),
+    ).toThrow("SKILL_SOURCE_UNAVAILABLE");
+    expect(() => cmd("target.current", { target_id: target })).toThrow(
+      "SKILL_TARGET_NOT_FOUND",
+    );
+    expect(() =>
+      cmd("milestone.edit", {
+        target_id: ownTarget,
+        milestone_id: milestone,
+        title: "Denied",
+      }),
+    ).toThrow("SKILL_MILESTONE_NOT_FOUND");
+    expect(() =>
+      cmd("review.amend", {
+        review_id: review,
+        kind: "clarification",
+        note: "Denied",
+      }),
+    ).toThrow("SKILL_REVIEW_NOT_FOUND");
+    expect(() =>
+      cmd("evidence.withdraw", { evidence_id: evidence, reason: "Denied" }),
+    ).toThrow("SKILL_EVIDENCE_NOT_FOUND");
+    expect(() =>
+      cmd("review.submit", {
+        target_id: ownTarget,
+        decision: "completed",
+        note: "Denied",
+        open_milestones_acknowledged: true,
+        evidence: [{ id: evidence, revision: 1 }],
+      }),
+    ).toThrow("SKILL_EVIDENCE_STALE");
+    expect(
+      readSqliteSkillDevelopment(store, f.context, foreignSkill),
+    ).toBeNull();
+    const after = readSqliteSkillDevelopment(store, f.context, f.sid)!;
+    expect({ ...after, as_of: before.as_of }).toEqual(before);
+  } finally {
+    store.close();
+  }
+});
+it("ports SQL partial edits and status-only Area resume without changing omitted definitions", () => {
+  const f = fixture();
+  try {
+    const area = randomUUID();
+    f.store.command(f.context, "area.create", (db) =>
+      db
+        .prepare(
+          "INSERT INTO areas(id,user_id,key,name,created_at,updated_at) VALUES(?,?,'coding','Area',?,?)",
+        )
+        .run(area, owner, now, now),
+    );
+    f.command("skill.edit", { area_id: area, status: "paused" });
+    f.command("skill.edit", { status: "active" });
+    f.command("skill.edit", { summary: "Existing active Area retained" });
+    expect(f.read().skill).toMatchObject({
+      name: "Skill",
+      area_id: area,
+      status: "active",
+      summary: "Existing active Area retained",
+    });
+    const t = f.target(),
+      m = f.milestone(t);
+    f.command("target.edit", { target_id: t, description: "Target context" });
+    f.command("milestone.edit", {
+      target_id: t,
+      milestone_id: m,
+      description: "Step context",
+    });
+    expect(f.read().targets[0]).toMatchObject({
+      title: "Target",
+      description: "Target context",
+    });
+    expect(f.read().milestones[0]).toMatchObject({
+      title: "Step",
+      description: "Step context",
+    });
+    f.store.command(f.context, "area.archive", (db) =>
+      db
+        .prepare("UPDATE areas SET archived_at=? WHERE user_id=? AND id=?")
+        .run(now, owner, area),
+    );
+    const before = f.read();
+    expect(() => f.command("skill.edit", { status: "active" })).toThrow(
+      "SKILL_AREA_UNAVAILABLE",
+    );
+    const after = f.read();
+    expect({ ...after, as_of: before.as_of }).toEqual(before);
+  } finally {
+    f.store.close();
+  }
+});
+it("retains PostgreSQL UUID lookup semantics while receipt payload identity remains text-sensitive", () => {
+  const f = fixture();
+  try {
+    const t = f.target(),
+      m = f.milestone(t),
+      e = f.evidence();
+    f.command("target.current", { target_id: t.toUpperCase() });
+    f.command("milestone.current", {
+      target_id: t.toUpperCase(),
+      milestone_id: m.toUpperCase(),
+    });
+    f.command("milestone.reorder", {
+      target_id: t.toUpperCase(),
+      ids: [m.toUpperCase()],
+    });
+    const r = f.review(t.toUpperCase(), m.toUpperCase(), "completed", [
+      { id: e.toUpperCase(), revision: 1 },
+    ]);
+    expect(f.read().milestones[0].terminal_review_id).toBe(r);
+  } finally {
+    f.store.close();
+  }
+});

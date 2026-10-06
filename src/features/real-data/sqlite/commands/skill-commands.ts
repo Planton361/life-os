@@ -48,11 +48,35 @@ export function parseNativeSkillCommand(input: unknown): SkillCommand {
   if (revision !== null && revision < BigInt(0))
     return fail("SKILL_COMMAND_INVALID");
   // Reuse payload Zod contracts without routing the canonical aggregate token through Number.
+  // The SQL command accepts partial edit payloads (including status-only Area
+  // resume). Validate supplied fields with the existing form schema, then omit
+  // its required display title when the caller did not supply one.
+  const optionalTitle =
+    raw.operation === "skill.edit"
+      ? "name"
+      : ["target.edit", "milestone.edit"].includes(String(raw.operation))
+        ? "title"
+        : null;
+  const payload =
+    raw.payload &&
+    typeof raw.payload === "object" &&
+    !Array.isArray(raw.payload)
+      ? (raw.payload as Record<string, unknown>)
+      : null;
+  const omittedTitle =
+    optionalTitle && payload && !(optionalTitle in payload)
+      ? optionalTitle
+      : null;
   const parsed = parseZodSkillCommand({
     ...raw,
+    payload: omittedTitle
+      ? { ...payload, [omittedTitle]: "Validation only" }
+      : raw.payload,
     expectedRevision: revision === null ? null : 0,
   });
   if (!parsed.success) return fail("SKILL_COMMAND_INVALID");
+  if (omittedTitle)
+    delete (parsed.data.payload as Record<string, unknown>)[omittedTitle];
   if (
     raw.operation === "review.submit" &&
     (
@@ -153,7 +177,11 @@ export function executeSkillInTransaction(
   }
   const op = c.operation,
     str = (k: string) =>
-      q[k] === null || q[k] === undefined ? null : String(q[k]),
+      q[k] === null || q[k] === undefined
+        ? null
+        : k.endsWith("_id")
+          ? uuid(String(q[k]))
+          : String(q[k]),
     now = String(skillOne(db, "SELECT life_now() AS now")!.now);
   const areaAvailable = (area: string | null) => {
     if (
@@ -295,7 +323,7 @@ export function executeSkillInTransaction(
   }
   if (op === "target.edit")
     update("skill_development_targets", tid!, {
-      title: str("title")!,
+      title: str("title") ?? String(t!.title),
       ...("description" in q
         ? { description: str("description") || null }
         : {}),
@@ -384,7 +412,7 @@ export function executeSkillInTransaction(
   }
   if (op === "milestone.edit")
     update("skill_milestones", mid!, {
-      title: str("title")!,
+      title: str("title") ?? String(m!.title),
       ...("description" in q
         ? { description: str("description") || null }
         : {}),
@@ -396,7 +424,7 @@ export function executeSkillInTransaction(
     update("skill_milestones", mid!, { status: "current", updated_at: now });
   }
   if (op === "milestone.reorder") {
-    const ids = q.ids as string[],
+    const ids = (q.ids as string[]).map(uuid),
       active = skillRows(
         db,
         "SELECT id,sort_order FROM skill_milestones WHERE user_id=? AND target_id=? AND archived_at IS NULL",
@@ -497,7 +525,7 @@ export function executeSkillInTransaction(
         "SELECT * FROM skill_evidence WHERE user_id=? AND skill_id=? AND id=? AND withdrawn_at IS NULL AND revision=?",
         owner,
         sid,
-        item.id,
+        uuid(item.id),
         BigInt(item.revision),
       );
       if (!e) return fail("SKILL_EVIDENCE_STALE");
@@ -659,10 +687,20 @@ export function executeSkillInTransaction(
   return skillCommandResult(stored);
 }
 
-function skillCommandResult(stored: string) {
+export type NativeSkillCommandResult = {
+  skill_id: string;
+  operation: SkillCommandOperation;
+  command_id: string;
+  development_revision: string;
+  target_id?: string;
+  milestone_id?: string;
+  evidence_id?: string;
+  review_id?: string;
+};
+function skillCommandResult(stored: string): NativeSkillCommandResult {
   const result = parseProjectJson(stored) as Record<string, Canonical>;
   return {
     ...result,
     development_revision: String(result.development_revision),
-  };
+  } as NativeSkillCommandResult;
 }
