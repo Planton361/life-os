@@ -2,6 +2,7 @@ import {
   taskDependencyContext,
   type TaskDependencyGraph,
 } from "./task-dependencies";
+import { compareDecimals } from "../sqlite/codecs";
 
 export const goalMilestoneStatuses = [
   "planned",
@@ -49,6 +50,7 @@ export type GoalCriterionEvaluation = {
   deferred: boolean;
   booleanValue: boolean | null;
   numericValue: number | null;
+  numericValueExact?: string | null;
   unit: string | null;
   evaluatedAt: string;
   recordedAt?: string;
@@ -60,6 +62,7 @@ export type GoalCriterionEvaluation = {
   criterionTypeSnapshot?: GoalCriterionType | null;
   unitSnapshot?: string | null;
   targetSnapshot?: number | null;
+  targetSnapshotExact?: string | null;
   directionSnapshot?: GoalCriterionDirection | null;
   revisionKind?: "evaluation" | "correction" | "retraction";
   supersedesEvaluationId?: string | null;
@@ -80,6 +83,7 @@ export type GoalOutcomeCriterion = {
   criterionType: GoalCriterionType;
   unit: string | null;
   target: number | null;
+  targetExact?: string | null;
   direction: GoalCriterionDirection | null;
   createdAt: string;
   updatedAt: string;
@@ -151,6 +155,7 @@ export type GoalAchievementCriterionBasis = {
   goalMilestoneIdSnapshot: string | null;
   unitSnapshot: string | null;
   targetSnapshot: number | null;
+  targetSnapshotExact?: string | null;
   directionSnapshot: GoalCriterionDirection | null;
   evaluationStateSnapshot: string | null;
   evaluationOccurredAt: string | null;
@@ -515,12 +520,12 @@ function numericValue(value: number | null | undefined) {
 export function criterionEvaluationState(
   criterion: Pick<
     GoalOutcomeCriterion,
-    "criterionType" | "target" | "direction"
+    "criterionType" | "target" | "direction" | "targetExact"
   >,
   evaluation:
     | Pick<
         GoalCriterionEvaluation,
-        "booleanValue" | "numericValue" | "deferred"
+        "booleanValue" | "numericValue" | "deferred" | "numericValueExact"
       >
     | null
     | undefined,
@@ -531,6 +536,11 @@ export function criterionEvaluationState(
 
   if (criterion.criterionType === "boolean") {
     return evaluation.booleanValue === true ? "met" : "not_met";
+  }
+
+  if (criterion.targetExact != null && evaluation.numericValueExact != null && criterion.direction) {
+    const comparison = compareDecimals(evaluation.numericValueExact, criterion.targetExact);
+    return (criterion.direction === "at_least" ? comparison >= 0 : criterion.direction === "at_most" ? comparison <= 0 : comparison === 0) ? "met" : "not_met";
   }
 
   const current = numericValue(evaluation.numericValue);

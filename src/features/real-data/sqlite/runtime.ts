@@ -7,12 +7,13 @@ import { randomUUID } from "node:crypto";
 import { isAbsolute, resolve } from "node:path";
 import { requireOwnerContext, type OwnerContext } from "./owner-context";
 import { privateDatabasePath, reserveFreshDatabase } from "./file-boundary";
-import { compareDecimals, decimal, numeric } from "./codecs";
+import { compareDecimals, decimal, numeric, uuid, timestamp, localDate } from "./codecs";
 import { canonicalTableNames } from "./canonical-catalog";
 import { acquireWriterLease } from "./writer-lease";
+import { goalCommitSnapshot, validateGoalCommit } from "./goal-invariants";
 
 export const runtimeVersions = Object.freeze({ node: "24.21.0", driver: "13.0.3", sqlite: "3.53.4" });
-export const schemaVersion = 2;
+export const schemaVersion = 3;
 type Metadata = { schema_version: number; dataset_kind: string; owner_id: string; compatibility_ready: number; writer_pid: number | null; writer_host: string | null };
 type GlobalRuntime = typeof globalThis & { __lifeOsSqliteRuntime?: { path: string; store: SqliteRuntime } };
 
@@ -31,7 +32,26 @@ function canonicalPath(path: string) {
   return path;
 }
 
+function nextTimestamp(old: string, now: string) {
+  const prior = timestamp(old), current = timestamp(now);
+  if (current > prior) return current;
+  const micros = BigInt(Date.parse(prior.slice(0, 23) + "Z")) * BigInt(1000) + BigInt(prior.slice(23, 26)) + BigInt(1);
+  return new Date(Number(micros / BigInt(1000))).toISOString().slice(0, 23) + String(micros % BigInt(1000)).padStart(3, "0") + "Z";
+}
+
 export function registerCodecs(db: Database.Database) {
+  db.function("life_uuid", () => randomUUID());
+  let lastTimestamp = "1970-01-01T00:00:00.000000Z";
+  db.function("life_now", () => {
+    lastTimestamp = nextTimestamp(lastTimestamp, timestamp(new Date().toISOString()));
+    return lastTimestamp;
+  });
+  db.function("next_timestamp", { deterministic: true }, (old, now) => nextTimestamp(String(old), String(now)));
+  db.function("decimal_finite", { deterministic: true }, value => {
+    try { return /^(?:NaN|-?Infinity)$/.test(decimal(String(value))) ? 0 : 1; } catch { return 0; }
+  });
+  for (const [name, codec] of [["codec_uuid_valid", uuid], ["codec_timestamp_valid", timestamp], ["codec_date_valid", localDate]] as const)
+    db.function(name, { deterministic: true }, value => { try { return codec(String(value)) === String(value) ? 1 : 0; } catch { return 0; } });
   db.function("decimal_compare", { deterministic: true }, (left, right) => {
     if (left === null || right === null) return null;
     return compareDecimals(String(left), String(right));
@@ -126,7 +146,12 @@ export class SqliteRuntime {
   command<T>(context: OwnerContext, kind: string, body: (db: Database.Database, ownerId: string) => T): T {
     if (this.#draining) throw new Error("SQLITE_RUNTIME_DRAINING");
     if (!/^[a-z][a-z_.]+$/.test(kind)) throw new Error("COMMAND_KIND_INVALID");
-    return this.#scope(context, kind, () => this.#db.transaction(() => this.#sync(body(this.#db, this.#owner))).immediate());
+    return this.#scope(context, kind, () => this.#db.transaction(() => {
+      const before = goalCommitSnapshot(this.#db, this.#owner);
+      const result = this.#sync(body(this.#db, this.#owner));
+      validateGoalCommit(this.#db, this.#owner, before);
+      return result;
+    }).immediate());
   }
 
   #sync<T>(value: T): T {
