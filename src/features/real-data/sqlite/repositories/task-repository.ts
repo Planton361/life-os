@@ -48,7 +48,7 @@ function rowDomain(row: TaskRow): Task {
 function load(db: Database.Database, owner: string, id: string): TaskRow {
   const row = db.prepare("SELECT * FROM tasks WHERE user_id=? AND id=? AND archived_at IS NULL").get(owner, uuid(id)) as TaskRow | undefined;
   if (!row) throw new Error("TASK_NOT_FOUND");
-  return row;
+  return typeof row.duration_minutes === "bigint" ? { ...row, duration_minutes: safeNumber(row.duration_minutes) } : row;
 }
 function link(db: Database.Database, owner: string, taskId: string): Link | undefined {
   return db.prepare("SELECT source_type,source_id,task_id FROM schedule_source_links WHERE user_id=? AND task_id=?").get(owner, taskId) as Link | undefined;

@@ -18,7 +18,7 @@ import { validateSkillCommit, skillCommitSnapshot, validateSkillBoundary } from 
 
 export const runtimeVersions = Object.freeze({ node: "24.21.0", driver: "13.0.3", sqlite: "3.53.4" });
 
-export const schemaVersion = 6;
+export const schemaVersion = 7;
 type Metadata = { schema_version: number; dataset_kind: string; owner_id: string; compatibility_ready: number; writer_pid: number | null; writer_host: string | null };
 type GlobalRuntime = typeof globalThis & { __lifeOsSqliteRuntime?: { path: string; store: SqliteRuntime } };
 

@@ -9,9 +9,10 @@ CREATE TRIGGER linked_source_owner BEFORE INSERT ON schedule_source_links BEGIN
 END;
 CREATE TRIGGER source_task_completion BEFORE UPDATE OF status ON tasks WHEN NEW.status='done' AND OLD.status<>'done' BEGIN
  SELECT CASE WHEN EXISTS(SELECT 1 FROM schedule_source_links l WHERE l.user_id=NEW.user_id AND l.task_id=NEW.id AND (
+  (l.source_type='meal' AND NOT EXISTS(SELECT 1 FROM meals WHERE user_id=NEW.user_id AND id=l.source_id AND completed_at IS NOT NULL)) OR
   (l.source_type='review' AND NOT EXISTS(SELECT 1 FROM review_records WHERE user_id=NEW.user_id AND id=l.source_id AND archived_at IS NULL AND status='completed')) OR
-  (l.source_type='running_plan_item' AND NOT EXISTS(SELECT 1 FROM running_sessions WHERE user_id=NEW.user_id AND plan_item_id=l.source_id AND status='completed' AND archived_at IS NULL)) OR
-  (l.source_type='strength_plan' AND NOT EXISTS(SELECT 1 FROM strength_sessions s WHERE s.user_id=NEW.user_id AND s.plan_id=l.source_id AND s.status='completed' AND s.archived_at IS NULL AND EXISTS(SELECT 1 FROM strength_set_logs WHERE user_id=NEW.user_id AND session_id=s.id)))
+  (l.source_type='running_plan_item' AND NOT EXISTS(SELECT 1 FROM running_sessions WHERE user_id=NEW.user_id AND plan_item_id=l.source_id AND status='completed' AND completed_at IS NOT NULL AND archived_at IS NULL)) OR
+  (l.source_type='strength_plan' AND NOT EXISTS(SELECT 1 FROM strength_sessions s WHERE s.user_id=NEW.user_id AND s.plan_id=l.source_id AND s.status='completed' AND s.completed_at IS NOT NULL AND s.archived_at IS NULL AND EXISTS(SELECT 1 FROM strength_set_logs WHERE user_id=NEW.user_id AND session_id=s.id)))
  )) THEN RAISE(ABORT,'SOURCE_DOMAIN_COMPLETION_REQUIRED') END;
 END;
 `;

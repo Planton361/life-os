@@ -4,13 +4,14 @@ import {
   readFileSync,
   realpathSync,
   writeFileSync,
+  existsSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import ts from "typescript";
 
-// Execute the actual feature source in disposable Node proof workers, without
-// shipping a test route or disabling the server-only fence in product code.
+// Transpile real runtime commands and their runtime imports into disposable Node
+// workers. Type-only imports disappear; server-only is stubbed only in proof code.
 export function compileRuntime() {
   const directory = mkdtempSync(
     join(realpathSync(tmpdir()), "life-os-116-compiled-"),
@@ -18,65 +19,53 @@ export function compileRuntime() {
   writeFileSync(join(directory, "package.json"), '{"type":"commonjs"}', {
     mode: 0o600,
   });
-  const projectPackage = JSON.stringify(join(process.cwd(), "package.json"));
-  const prefix = `const originalRequire = require; const projectRequire = require("node:module").createRequire(${projectPackage}); require = name => name === "server-only" ? {} : name === "../../schemas/project-depth.schemas" ? originalRequire(${JSON.stringify(join(directory, "project-depth.schemas.js"))}) : name === "../../schemas/skill-development.schema" ? originalRequire(${JSON.stringify(join(directory, "skill-development.schema.js"))}) : name === "../../schemas/inbox-workspace.schemas" ? originalRequire(${JSON.stringify(join(directory, "inbox-workspace.schemas.js"))}) : name.startsWith(".") ? originalRequire(name) : projectRequire(name);\n`;
-  for (const file of [
-    "runtime",
-    "writer-lease",
-    "owner-context",
-    "file-boundary",
-    "canonical-catalog",
-    "codecs",
-    "synthetic-database",
-    "core-schema",
-    "task-step-schema",
-    "commands/inbox-commands",
-    "inbox-workspace.schemas",
-    "source-schema",
-    "source-guards",
-    "habit-schema",
-    "health-schema",
-    "goal-schema",
-    "goal-guards",
-    "goal-invariants",
-    "commands/goal-commands",
-    "project-canonical",
-    "project-schema",
-    "project-guards",
-    "project-invariants",
-    "repositories/project-depth-read",
-    "commands/project-depth-commands",
-    "project-depth.schemas",
-    "skill-schema",
-    "skill-guards",
-    "skill-invariants",
-    "commands/skill-commands",
-    "skill-development.schema",
-  ]) {
-    const source = readFileSync(
-      file === "inbox-workspace.schemas"
-        ? "src/features/real-data/schemas/inbox-workspace.schemas.ts"
-        : file === "skill-development.schema"
-        ? "src/features/real-data/schemas/skill-development.schema.ts"
-        : file === "project-depth.schemas"
-          ? "src/features/real-data/schemas/project-depth.schemas.ts"
-          : join("src/features/real-data/sqlite", `${file}.ts`),
-      "utf8",
-    );
-    const output = ts.transpileModule(source, {
+  const root = resolve("src/features/real-data/sqlite"),
+    seen = new Set();
+  const outputPath = (source) =>
+    source.startsWith(`${root}/`)
+      ? join(directory, relative(root, source).replace(/\.ts$/, ".js"))
+      : join(
+          directory,
+          "dependencies",
+          relative(process.cwd(), source).replace(/\.ts$/, ".js"),
+        );
+  function compile(source) {
+    if (seen.has(source)) return outputPath(source);
+    seen.add(source);
+    const output = ts.transpileModule(readFileSync(source, "utf8"), {
       compilerOptions: {
         module: ts.ModuleKind.CommonJS,
         target: ts.ScriptTarget.ES2022,
         esModuleInterop: true,
       },
     }).outputText;
-    mkdirSync(dirname(join(directory, `${file}.js`)), {
-      recursive: true,
-      mode: 0o700,
-    });
-    writeFileSync(join(directory, `${file}.js`), prefix + output, {
-      mode: 0o600,
-    });
+    const imports = {};
+    for (const match of output.matchAll(/require\(["']([^"']+)["']\)/g)) {
+      const name = match[1];
+      if (!name.startsWith(".")) continue;
+      const base = resolve(dirname(source), name),
+        dependency = [`${base}.ts`, join(base, "index.ts")].find(existsSync);
+      if (!dependency || !dependency.startsWith(`${resolve("src")}/`))
+        throw new Error(`Unsupported proof import: ${name}`);
+      imports[name] = compile(dependency);
+    }
+    const prefix = `const originalRequire = require; const projectRequire = require("node:module").createRequire(${JSON.stringify(join(process.cwd(), "package.json"))}); const proofImports = ${JSON.stringify(imports)}; require = name => name === "server-only" ? {} : proofImports[name] ? originalRequire(proofImports[name]) : projectRequire(name);\n`;
+    const target = outputPath(source);
+    mkdirSync(dirname(target), { recursive: true, mode: 0o700 });
+    writeFileSync(target, prefix + output, { mode: 0o600 });
+    return target;
   }
+  for (const file of [
+    "runtime",
+    "synthetic-database",
+    "commands/inbox-commands",
+    "commands/goal-commands",
+    "commands/project-depth-commands",
+    "commands/skill-commands",
+    "commands/source-commands",
+    "commands/resource-commands",
+    "commands/review-commands",
+  ])
+    compile(join(root, `${file}.ts`));
   return directory;
 }

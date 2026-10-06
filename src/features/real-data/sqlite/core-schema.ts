@@ -188,8 +188,8 @@ CREATE TRIGGER schedule_link_delete_command BEFORE DELETE ON schedule_source_lin
  BEGIN SELECT RAISE(ABORT,'SOURCE_COMMAND_REQUIRED'); END;
 CREATE TRIGGER source_task_sensitive_update BEFORE UPDATE ON tasks
  WHEN EXISTS(SELECT 1 FROM schedule_source_links WHERE user_id=OLD.user_id AND task_id=OLD.id)
- AND (NEW.status IS NOT OLD.status OR NEW.completed_at IS NOT OLD.completed_at OR NEW.archived_at IS NOT OLD.archived_at OR NEW.planned_date IS NOT OLD.planned_date OR NEW.scheduled_start_at IS NOT OLD.scheduled_start_at OR NEW.duration_minutes IS NOT OLD.duration_minutes)
- AND (life_command() IS NULL OR life_command() NOT IN ('source.schedule','source.unschedule','source.complete','source.reopen','source.archive','review.save'))
+ AND (NEW.status IS NOT OLD.status OR NEW.completed_at IS NOT OLD.completed_at OR NEW.archived_at IS NOT OLD.archived_at OR (EXISTS(SELECT 1 FROM schedule_source_links WHERE user_id=OLD.user_id AND task_id=OLD.id AND source_type='meal') AND (NEW.planned_date IS NOT OLD.planned_date OR NEW.scheduled_start_at IS NOT OLD.scheduled_start_at OR NEW.duration_minutes IS NOT OLD.duration_minutes)))
+ AND (life_command() IS NULL OR life_command() NOT IN ('source.schedule','source.unschedule','source.complete','review.save'))
  BEGIN SELECT RAISE(ABORT,'SOURCE_COMMAND_REQUIRED'); END;
 CREATE TRIGGER dependency_guard BEFORE INSERT ON task_dependencies BEGIN
  SELECT CASE WHEN NOT EXISTS(SELECT 1 FROM projects WHERE id=NEW.project_id AND user_id=NEW.user_id AND archived_at IS NULL AND status<>'archived') THEN RAISE(ABORT,'DEPENDENCY_PROJECT') END;

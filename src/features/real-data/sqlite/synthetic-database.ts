@@ -18,6 +18,7 @@ import { goalGuards, goalHistoryScopeGuards } from "./goal-guards";
 
 import { skillSchema, skillOwnedTables } from "./skill-schema";
 import { skillGuards } from "./skill-guards";
+import { resourceGuards } from "./resource-guards";
 import { taskStepSchema } from "./task-step-schema";
 
 function reserveSyntheticTarget(path: string) {
@@ -50,6 +51,7 @@ export function initializeSyntheticDatabase(path: string, ownerId: string) {
       db.exec(skillSchema);
       db.exec(taskStepSchema);
       db.exec(skillGuards);
+      db.exec(resourceGuards());
       db.exec(projectGuards);
       db.exec(goalGuards + goalHistoryScopeGuards);
       db.exec(sourceGuards + sourceDependencyGuards());
