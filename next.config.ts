@@ -14,6 +14,7 @@ const disposableDistDir =
     : undefined;
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["better-sqlite3"],
   // Next 16.2.2 supports this worker budget; recheck on framework upgrades.
   experimental: { cpus: 2 },
   ...(disposableDistDir

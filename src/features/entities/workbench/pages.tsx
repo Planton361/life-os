@@ -18,7 +18,7 @@ import {
 import { getGoalOutcome } from "@/features/real-data/supabase/repositories/supabase-goal-outcome-repository";
 import { readProjectDepth } from "@/features/real-data/supabase/repositories/project-depth-repository";
 import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
-import { isSqliteProofRuntime } from "../../../../experiments/issue-37/proof-gate";
+
 import {
   EntityForm,
   GoalCaptureForm,
@@ -439,29 +439,16 @@ export async function WorkbenchEditor({
     return <SkillWorkbench read={projection.data} data={data} />;
   }
   if (kind === "goal" && id && row) {
-    const outcome = isSqliteProofRuntime()
-      ? await (async () => {
-          const { getProofOwnerId, readProofGoalOutcome, readProofSnapshot } =
-            await import("../../../../experiments/issue-37/sqlite-proof-runtime");
-          const ownerId = await getProofOwnerId();
-          if (!ownerId) return null;
-          const projection = readProofGoalOutcome(
-            ownerId,
-            id,
-            readProofSnapshot(ownerId),
-          );
-          return projection ? { ok: true as const, data: projection } : null;
-        })()
-      : await (async () => {
-          const auth = await createAuthenticatedSupabaseServerClient();
-          if (!auth.ok) return null;
-          return getGoalOutcome(
-            auth.client,
-            auth.user.id,
-            id,
-            data.dependencyGraph,
-          );
-        })();
+    const outcome = await (async () => {
+      const auth = await createAuthenticatedSupabaseServerClient();
+      if (!auth.ok) return null;
+      return getGoalOutcome(
+        auth.client,
+        auth.user.id,
+        id,
+        data.dependencyGraph,
+      );
+    })();
     if (!outcome) {
       return (
         <EntityWorkbenchShell kind="goal" title={row.title}>
@@ -501,22 +488,20 @@ export async function WorkbenchEditor({
     );
   }
   if (kind === "project" && id && row) {
-    const depth = isSqliteProofRuntime()
-      ? undefined
-      : await (async () => {
-          const auth = await createAuthenticatedSupabaseServerClient();
-          if (!auth.ok) return undefined;
-          return readProjectDepth(
-            auth.client,
-            auth.user.id,
-            id,
-            historyBefore &&
-              /^(0|[1-9][0-9]{0,18})$/.test(historyBefore) &&
-              BigInt(historyBefore) <= BigInt("9223372036854775807")
-              ? historyBefore
-              : undefined,
-          );
-        })();
+    const depth = await (async () => {
+      const auth = await createAuthenticatedSupabaseServerClient();
+      if (!auth.ok) return undefined;
+      return readProjectDepth(
+        auth.client,
+        auth.user.id,
+        id,
+        historyBefore &&
+          /^(0|[1-9][0-9]{0,18})$/.test(historyBefore) &&
+          BigInt(historyBefore) <= BigInt("9223372036854775807")
+          ? historyBefore
+          : undefined,
+      );
+    })();
     return (
       <ProjectReadView
         data={data}

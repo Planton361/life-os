@@ -5,12 +5,8 @@ import { mapSkillRowToDomain, mapSkillEvidenceRowToDomain } from "@/features/rea
 import { skillPracticeReads } from "@/features/real-data/domain/skill-development";
 import { readTaskDependencyGraph } from "@/features/real-data/supabase/repositories/task-dependency-repository";
 import { taskDependencyContext } from "@/features/real-data/domain/task-dependencies";
-import { isSqliteProofRuntime } from "../../../experiments/issue-37/proof-gate";
-import { mapTaskRowToDomain } from "@/features/real-data/supabase/mappers/task.mapper";
-import { mapProjectRowToDomain } from "@/features/real-data/supabase/mappers/project.mapper";
-import { mapGoalRowToDomain } from "@/features/real-data/supabase/mappers/goal.mapper";
+
 import { readTodayActivity } from "@/features/real-data/supabase/repositories/supabase-today-activity-repository";
-import { emptyActivitySources, projectTodayActivity } from "@/features/today/activity-projection";
 import "server-only";
 
 import { cache } from "react";
@@ -214,31 +210,7 @@ function emptyManualProfile(): ManualProfileData {
   };
 }
 
-async function getProofManualData(): Promise<{
-  profile: ManualProfileData;
-  authAvailable: boolean;
-}> {
-  const { getProofOwnerId, readProofSnapshot } = await import("../../../experiments/issue-37/sqlite-proof-runtime");
-  const ownerId = await getProofOwnerId();
-  if (!ownerId) return { profile: emptyManualProfile(), authAvailable: false };
-  const snapshot = readProofSnapshot(ownerId);
-  const tasks = snapshot.tasks
-    .map((row) => realTaskToLifeTask(mapTaskRowToDomain(row)))
-    .filter((task): task is LifeTask => Boolean(task))
-    .map((task) => ({
-      ...task,
-      dependencyAvailability: taskDependencyContext(snapshot.dependencyGraph, task.id).availability,
-    }));
-  return {
-    authAvailable: true,
-    profile: {
-      ...emptyManualProfile(),
-      tasks,
-      projects: snapshot.projects.map((row) => realProjectToLifeProject(mapProjectRowToDomain(row))),
-      goals: snapshot.goals.map((row) => realGoalToLifeGoal(mapGoalRowToDomain(row))),
-    },
-  };
-}
+
 
 function emptyInboxExistingTargets(): InboxExistingTargets {
   return {
@@ -2669,13 +2641,7 @@ async function getManualTaskProfileData(): Promise<{
   tasks: LifeTask[];
   unavailableReason?: string;
 }> {
-  if (isSqliteProofRuntime()) {
-    const proof = await getProofManualData();
-    return {
-      tasks: proof.profile.tasks,
-      unavailableReason: proof.authAvailable ? undefined : "Proof-Owner nicht authentifiziert.",
-    };
-  }
+
   const auth = await createAuthenticatedSupabaseServerClient();
 
   if (!auth.ok) {
@@ -3032,17 +2998,7 @@ async function getManualPortfolioEntityCollection(): Promise<{
   collection: EntityCollection;
   relationLookups?: PortfolioRelationLabelLookups;
 }> {
-  if (isSqliteProofRuntime()) {
-    const proof = await getProofManualData();
-    const collection: EntityCollection = {
-      tasks: proof.profile.tasks,
-      projects: proof.profile.projects,
-      goals: proof.profile.goals,
-      skills: [],
-      milestones: [],
-    };
-    return { collection, relationLookups: portfolioRelationLabelLookups(collection) };
-  }
+
   const auth = await createAuthenticatedSupabaseServerClient();
 
   if (!auth.ok) {
@@ -3193,13 +3149,7 @@ async function getManualDashboardReadData(calendarRead = false): Promise<{
   profile: ManualProfileData;
   sources: DashboardReadSources;
 }> {
-  if (isSqliteProofRuntime()) {
-    const proof = await getProofManualData();
-    return {
-      profile: proof.profile,
-      sources: { ...emptyDashboardReadSources, authAvailable: proof.authAvailable },
-    };
-  }
+
   const auth = await createAuthenticatedSupabaseServerClient();
   if (!auth.ok) {
     return {
@@ -4771,24 +4721,7 @@ export async function getTodayViewModel(): Promise<TodayViewModel> {
   }
 
   if (profileId === "manual") {
-    if (isSqliteProofRuntime()) {
-      const proof = await getProofManualData();
-      const base = buildProfileTodayViewModel(proof.profile, "manual", undefined, {
-        manualDbAvailable: proof.authAvailable,
-      });
-      if (!proof.authAvailable) return { ...base, activityUnavailable: true };
-      const { getProofOwnerId, readProofSnapshot } = await import("../../../experiments/issue-37/sqlite-proof-runtime");
-      const ownerId = await getProofOwnerId();
-      if (!ownerId) return { ...base, activityUnavailable: true };
-      const snapshot = readProofSnapshot(ownerId);
-      return {
-        ...base,
-        dayLog: projectTodayActivity(
-          { ...emptyActivitySources(), tasks: snapshot.tasks },
-          "Europe/Berlin",
-        ),
-      };
-    }
+
     const base = clone(getDemoTodayViewModel());
     base.profileId = "manual";
     const auth = await createAuthenticatedSupabaseServerClient();
@@ -4848,9 +4781,7 @@ export async function getCalendarViewModel(): Promise<CalendarViewModel> {
     const model = buildProfileCalendarViewModel(
       calendarProfile,
       profileId,
-      isSqliteProofRuntime()
-        ? undefined
-        : await getManualPlannerRelationLabelLookups(profileId, dashboard.profile.tasks),
+      await getManualPlannerRelationLabelLookups(profileId, dashboard.profile.tasks),
       dashboard.sources,
     );
     model.taskContexts = contexts;

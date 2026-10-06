@@ -16,7 +16,7 @@ itself authorize a product `DELIVER` contract; each implementation slice still
 requires its own explicit work contract and acceptance gate. This roadmap does
 not mirror normal Issue/Project transitions.
 
-## Accepted Product Plan — #34 sequence
+## Accepted Product Plan — #34 sequence, runtime ordering refined by #115
 
 The accepted Product Plan turns the target model into one ordered path toward
 the primary Project-to-Day outcome while separating runtime proof from product
@@ -32,9 +32,17 @@ Accepted order:
 4. Project Depth;
 5. PP2 Skill Development Planning;
 6. PP3 Higher-Order Context in Weekly Planning;
-7. PP4 Project-to-Day Loop Closure;
-8. Hosted Runtime Cutover only after whole-app/runtime/security/data gates and a
-   separate migration authorization.
+7. Hosted Runtime Cutover, prioritized before PP4 by USER ACCEPTED #115 on
+   2026-10-06, only after the separately authorized runtime/security/data gates;
+8. PP4 Project-to-Day Loop Closure.
+
+The accepted runtime sequence is: production SQLite runtime and complete
+synthetic compatibility → separately authorized migration/dry-run/verification
+tooling → separately authorized hosted cutover and user acceptance. #116 is the
+first Delivery contract. It permits synthetic/disposable databases only; it does
+not authorize personal-data access, migration, provider setup, deployment or
+cutover. Supabase/PostgreSQL remains the operative personal datastore until those
+later gates pass. No dual write is part of the accepted target.
 
 The runtime experiment is architecture evidence, not a migration or cutover. It
 may proceed before the UX sequence so later architecture work is evidence-based.
@@ -221,7 +229,9 @@ constraint. It does not authorize new Health / Fitness / Nutrition features.
 ### Plan-wide boundaries
 
 - The product order after the separate runtime experiment is `PP1 acceptance →
-  Core Task / Project Interaction → Project Depth → PP2 → PP3 → PP4`; later
+  Core Task / Project Interaction → Project Depth → PP2 → PP3 → Hosted Runtime
+  Cutover → PP4`, with the USER ACCEPTED #115 runtime sequence now prioritized
+  before PP4; later
   blocks do not bypass earlier semantic, data-contract or acceptance gates.
 - Issue #3 / R2-13 is `RESHAPE/REUSE PRESERVED WORK + DEFER`; it remains
   blocked/preserved and is not reactivated by this plan.
