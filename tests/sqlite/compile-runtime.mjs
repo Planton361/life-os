@@ -19,7 +19,7 @@ export function compileRuntime() {
     mode: 0o600,
   });
   const projectPackage = JSON.stringify(join(process.cwd(), "package.json"));
-  const prefix = `const originalRequire = require; const projectRequire = require("node:module").createRequire(${projectPackage}); require = name => name === "server-only" ? {} : name === "../../schemas/project-depth.schemas" ? originalRequire(${JSON.stringify(join(directory, "project-depth.schemas.js"))}) : name.startsWith(".") ? originalRequire(name) : projectRequire(name);\n`;
+  const prefix = `const originalRequire = require; const projectRequire = require("node:module").createRequire(${projectPackage}); require = name => name === "server-only" ? {} : name === "../../schemas/project-depth.schemas" ? originalRequire(${JSON.stringify(join(directory, "project-depth.schemas.js"))}) : name === "../../schemas/skill-development.schema" ? originalRequire(${JSON.stringify(join(directory, "skill-development.schema.js"))}) : name.startsWith(".") ? originalRequire(name) : projectRequire(name);\n`;
   for (const file of [
     "runtime",
     "writer-lease",
@@ -44,11 +44,18 @@ export function compileRuntime() {
     "repositories/project-depth-read",
     "commands/project-depth-commands",
     "project-depth.schemas",
+    "skill-schema",
+    "skill-guards",
+    "skill-invariants",
+    "commands/skill-commands",
+    "skill-development.schema",
   ]) {
     const source = readFileSync(
-      file === "project-depth.schemas"
-        ? "src/features/real-data/schemas/project-depth.schemas.ts"
-        : join("src/features/real-data/sqlite", `${file}.ts`),
+      file === "skill-development.schema"
+        ? "src/features/real-data/schemas/skill-development.schema.ts"
+        : file === "project-depth.schemas"
+          ? "src/features/real-data/schemas/project-depth.schemas.ts"
+          : join("src/features/real-data/sqlite", `${file}.ts`),
       "utf8",
     );
     const output = ts.transpileModule(source, {

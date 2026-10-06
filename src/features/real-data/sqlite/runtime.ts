@@ -14,8 +14,11 @@ import { safeProjectUrl, trimProjectText } from "./project-canonical";
 import { projectCommitSnapshot, validateProjectCommit, advanceProjectMetadata } from "./project-invariants";
 import { goalCommitSnapshot, validateGoalCommit } from "./goal-invariants";
 
+import { validateSkillCommit, skillCommitSnapshot, validateSkillBoundary } from "./skill-invariants";
+
 export const runtimeVersions = Object.freeze({ node: "24.21.0", driver: "13.0.3", sqlite: "3.53.4" });
-export const schemaVersion = 4;
+
+export const schemaVersion = 5;
 type Metadata = { schema_version: number; dataset_kind: string; owner_id: string; compatibility_ready: number; writer_pid: number | null; writer_host: string | null };
 type GlobalRuntime = typeof globalThis & { __lifeOsSqliteRuntime?: { path: string; store: SqliteRuntime } };
 
@@ -153,6 +156,7 @@ export class SqliteRuntime {
     if (kind === "project.metadata") throw new Error("PROJECT_REVISION_SERVER_OWNED");
     if (!/^[a-z][a-z_.]+$/.test(kind)) throw new Error("COMMAND_KIND_INVALID");
     return this.#scope(context, kind, () => this.#db.transaction(() => {
+      const skillBefore = skillCommitSnapshot(this.#db, this.#owner);
       const before = goalCommitSnapshot(this.#db, this.#owner);
       const projectBefore = projectCommitSnapshot(this.#db, this.#owner);
       const result = this.#sync(body(this.#db, this.#owner));
@@ -160,6 +164,8 @@ export class SqliteRuntime {
       this.#command = kind;
       validateProjectCommit(this.#db, this.#owner, projectBefore);
       validateGoalCommit(this.#db, this.#owner, before);
+      validateSkillCommit(this.#db, this.#owner);
+      validateSkillBoundary(this.#db, this.#owner, skillBefore);
       return result;
     }).immediate());
   }
