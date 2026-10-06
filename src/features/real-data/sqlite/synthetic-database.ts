@@ -18,6 +18,7 @@ import { goalGuards, goalHistoryScopeGuards } from "./goal-guards";
 
 import { skillSchema, skillOwnedTables } from "./skill-schema";
 import { skillGuards } from "./skill-guards";
+import { taskStepSchema } from "./task-step-schema";
 
 function reserveSyntheticTarget(path: string) {
   // The caller first creates a fresh mkdtemp directory. No canonical/profile
@@ -47,11 +48,12 @@ export function initializeSyntheticDatabase(path: string, ownerId: string) {
       db.exec(goalSchema);
       db.exec(projectSchema);
       db.exec(skillSchema);
+      db.exec(taskStepSchema);
       db.exec(skillGuards);
       db.exec(projectGuards);
       db.exec(goalGuards + goalHistoryScopeGuards);
       db.exec(sourceGuards + sourceDependencyGuards());
-      db.exec(ownerGuards([...coreOwnedTables, ...sourceOwnedTables, ...habitOwnedTables, ...healthOwnedTables, ...goalOwnedTables, ...projectOwnedTables, ...skillOwnedTables]));
+      db.exec(ownerGuards([...coreOwnedTables, ...sourceOwnedTables, ...habitOwnedTables, ...healthOwnedTables, ...goalOwnedTables, ...projectOwnedTables, ...skillOwnedTables, "task_steps"]));
       db.prepare("INSERT INTO runtime_metadata(singleton,schema_version,dataset_kind,owner_id) VALUES(1,?,'synthetic',?)").run(schemaVersion, ownerId);
       const now = timestamp(new Date().toISOString());
       db.prepare("INSERT INTO profiles(id,display_name,timezone,created_at,updated_at) VALUES(?,'Synthetic owner','Europe/Berlin',?,?)").run(ownerId, now, now);

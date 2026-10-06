@@ -36,7 +36,7 @@ export const skillGuards = skillOwnedTables
   .map((table) => {
     if (table === "task_skill_links")
       return `
- CREATE TRIGGER skill_link_active BEFORE INSERT ON task_skill_links WHEN life_command() IS NOT 'skill.link' OR NOT EXISTS(SELECT 1 FROM tasks WHERE user_id=NEW.user_id AND id=NEW.task_id AND archived_at IS NULL AND status<>'archived') OR NOT EXISTS(SELECT 1 FROM skills WHERE user_id=NEW.user_id AND id=NEW.skill_id AND archived_at IS NULL AND status<>'archived') BEGIN SELECT RAISE(ABORT,'SKILL_LINK_UNAVAILABLE');END;
+ CREATE TRIGGER skill_link_active BEFORE INSERT ON task_skill_links WHEN (life_command() IS NULL OR life_command() NOT IN ('skill.link','inbox.complete','inbox.route')) OR NOT EXISTS(SELECT 1 FROM tasks WHERE user_id=NEW.user_id AND id=NEW.task_id AND archived_at IS NULL AND status<>'archived') OR NOT EXISTS(SELECT 1 FROM skills WHERE user_id=NEW.user_id AND id=NEW.skill_id AND archived_at IS NULL AND status<>'archived') BEGIN SELECT RAISE(ABORT,'SKILL_LINK_UNAVAILABLE');END;
  CREATE TRIGGER skill_link_immutable BEFORE UPDATE ON task_skill_links BEGIN SELECT RAISE(ABORT,'SKILL_IDENTITY_IMMUTABLE');END;
  CREATE TRIGGER skill_link_unlink BEFORE DELETE ON task_skill_links WHEN life_command() IS NOT 'skill.unlink' BEGIN SELECT RAISE(ABORT,'SKILL_COMMAND_REQUIRED');END;`;
     return (

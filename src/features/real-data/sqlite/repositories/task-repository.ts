@@ -14,6 +14,14 @@ import {
 import { requireOwnerContext, type OwnerContext } from "../owner-context";
 import { SqliteRuntime } from "../runtime";
 import { safeNumber, timestamp, localDate, uuid } from "../codecs";
+import { createTaskInputSchema, updateTaskInputSchema } from "../../schemas/task.schemas";
+import { localDateSchema, z } from "../../schemas/schema-contract";
+
+const generatedInputSchema = updateTaskInputSchema.pick({ userId: true, profileId: true, description: true, areaId: true, projectId: true, goalId: true, energy: true, durationMinutes: true }).extend({
+  templateId: z.uuid(), instanceDate: localDateSchema,
+  title: createTaskInputSchema.shape.title,
+  priority: createTaskInputSchema.shape.priority.nullable(),
+});
 
 type Link = { source_type: "meal" | "review" | "running_plan_item" | "strength_plan"; source_id: string; task_id: string };
 export type SourceTaskCommands = {
@@ -114,12 +122,17 @@ export function createSqliteTaskRepository(store: SqliteRuntime, context: OwnerC
   return {
     async createTask(input) { return command(input, "task.create", (db, owner) => rowDomain(insert(db, owner, mapCreateTaskInputToInsert(input, owner)))); },
     async createGeneratedTaskInstance(input) { return command(input, "task.generate", (db, owner) => {
-      const existing = db.prepare("SELECT * FROM tasks WHERE user_id=? AND generated_from_template_id=? AND instance_date=?").get(owner, uuid(input.templateId), localDate(input.instanceDate)) as TaskRow | undefined;
-      if (existing) return { existing: true, task: rowDomain(existing) };
+      const parsed = generatedInputSchema.safeParse(input);
+      if (!parsed.success) throw new Error("TASK_GENERATION_INVALID");
+      input = parsed.data;
       const data: TaskInsert = { user_id: owner, title: input.title, generated_from_template_id: input.templateId, instance_date: input.instanceDate, planned_date: input.instanceDate };
       for (const [field, column] of [["areaId", "area_id"], ["projectId", "project_id"], ["goalId", "goal_id"], ["description", "description"], ["durationMinutes", "duration_minutes"], ["energy", "energy"], ["priority", "priority"]] as const) {
         const value = input[field]; if (value != null) Object.assign(data, { [column]: value });
       }
+      validateContext(db, owner, data);
+      validateAlignment(db, owner, data);
+      const existing = db.prepare("SELECT * FROM tasks WHERE user_id=? AND generated_from_template_id=? AND instance_date=?").get(owner, uuid(input.templateId), localDate(input.instanceDate)) as TaskRow | undefined;
+      if (existing) return { existing: true, task: rowDomain(existing) };
       return { existing: false, task: rowDomain(insert(db, owner, data)) };
     }); },
     async archiveTask(input) { return patchUnlinked(input, "task.archive", mapArchiveTaskInputToPatch(input)); },

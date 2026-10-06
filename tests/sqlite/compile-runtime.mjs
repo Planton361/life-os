@@ -19,7 +19,7 @@ export function compileRuntime() {
     mode: 0o600,
   });
   const projectPackage = JSON.stringify(join(process.cwd(), "package.json"));
-  const prefix = `const originalRequire = require; const projectRequire = require("node:module").createRequire(${projectPackage}); require = name => name === "server-only" ? {} : name === "../../schemas/project-depth.schemas" ? originalRequire(${JSON.stringify(join(directory, "project-depth.schemas.js"))}) : name === "../../schemas/skill-development.schema" ? originalRequire(${JSON.stringify(join(directory, "skill-development.schema.js"))}) : name.startsWith(".") ? originalRequire(name) : projectRequire(name);\n`;
+  const prefix = `const originalRequire = require; const projectRequire = require("node:module").createRequire(${projectPackage}); require = name => name === "server-only" ? {} : name === "../../schemas/project-depth.schemas" ? originalRequire(${JSON.stringify(join(directory, "project-depth.schemas.js"))}) : name === "../../schemas/skill-development.schema" ? originalRequire(${JSON.stringify(join(directory, "skill-development.schema.js"))}) : name === "../../schemas/inbox-workspace.schemas" ? originalRequire(${JSON.stringify(join(directory, "inbox-workspace.schemas.js"))}) : name.startsWith(".") ? originalRequire(name) : projectRequire(name);\n`;
   for (const file of [
     "runtime",
     "writer-lease",
@@ -29,6 +29,9 @@ export function compileRuntime() {
     "codecs",
     "synthetic-database",
     "core-schema",
+    "task-step-schema",
+    "commands/inbox-commands",
+    "inbox-workspace.schemas",
     "source-schema",
     "source-guards",
     "habit-schema",
@@ -51,7 +54,9 @@ export function compileRuntime() {
     "skill-development.schema",
   ]) {
     const source = readFileSync(
-      file === "skill-development.schema"
+      file === "inbox-workspace.schemas"
+        ? "src/features/real-data/schemas/inbox-workspace.schemas.ts"
+        : file === "skill-development.schema"
         ? "src/features/real-data/schemas/skill-development.schema.ts"
         : file === "project-depth.schemas"
           ? "src/features/real-data/schemas/project-depth.schemas.ts"

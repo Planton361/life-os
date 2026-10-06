@@ -66,11 +66,25 @@ CREATE TABLE inbox_items (
   status TEXT NOT NULL DEFAULT 'raw' CHECK(status IN ('raw','clarified','triaged','processed','archived')),
   priority TEXT NOT NULL DEFAULT 'P2' CHECK(priority IN ('P0','P1','P2','P3','none')),
   title TEXT NOT NULL CHECK(length(trim(title))>0), body TEXT, source TEXT,
+  original_title TEXT, original_body TEXT, next_action TEXT, missing_info TEXT,
+  energy TEXT CHECK(energy IN ('low','medium','high')),
+  duration_minutes INTEGER CHECK(duration_minutes BETWEEN 1 AND 2147483647),
+  review_needed INTEGER NOT NULL DEFAULT 0 CHECK(review_needed IN (0,1)),
+  today_candidate INTEGER NOT NULL DEFAULT 0 CHECK(today_candidate IN (0,1)),
+  deadline_hint TEXT CHECK(deadline_hint IS NULL OR codec_date_valid(deadline_hint)),
   captured_at TEXT NOT NULL, processed_at TEXT, created_task_id TEXT,
   created_at TEXT NOT NULL, updated_at TEXT NOT NULL, archived_at TEXT,
   UNIQUE(user_id,id), FOREIGN KEY(user_id,area_id) REFERENCES areas(user_id,id),
   FOREIGN KEY(user_id,created_task_id) REFERENCES tasks(user_id,id) DEFERRABLE INITIALLY DEFERRED
 ) STRICT;
+CREATE TRIGGER inbox_original_capture_insert BEFORE INSERT ON inbox_items
+ WHEN NEW.original_title IS NOT NULL OR NEW.original_body IS NOT NULL BEGIN SELECT RAISE(ABORT,'INBOX_ORIGINAL_SERVER_OWNED'); END;
+CREATE TRIGGER inbox_original_capture AFTER INSERT ON inbox_items BEGIN
+ UPDATE inbox_items SET original_title=NEW.title,original_body=NEW.body WHERE user_id=NEW.user_id AND id=NEW.id;
+END;
+CREATE TRIGGER inbox_original_immutable BEFORE UPDATE ON inbox_items
+ WHEN OLD.original_title IS NOT NULL AND (NEW.original_title IS NOT OLD.original_title OR NEW.original_body IS NOT OLD.original_body)
+ BEGIN SELECT RAISE(ABORT,'INBOX_ORIGINAL_IMMUTABLE'); END;
 CREATE TABLE recurring_task_templates (
   id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES profiles(id), area_id TEXT, project_id TEXT, goal_id TEXT,
   title TEXT NOT NULL CHECK(length(trim(title))>0), description TEXT, next_action TEXT,
