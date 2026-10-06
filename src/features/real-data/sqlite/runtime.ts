@@ -16,9 +16,11 @@ import { goalCommitSnapshot, validateGoalCommit } from "./goal-invariants";
 
 import { validateSkillCommit, skillCommitSnapshot, validateSkillBoundary } from "./skill-invariants";
 
+import { validateRewardCommit } from "./reward-invariants";
+
 export const runtimeVersions = Object.freeze({ node: "24.21.0", driver: "13.0.3", sqlite: "3.53.4" });
 
-export const schemaVersion = 8;
+export const schemaVersion = 9;
 type Metadata = { schema_version: number; dataset_kind: string; owner_id: string; compatibility_ready: number; writer_pid: number | null; writer_host: string | null };
 type GlobalRuntime = typeof globalThis & { __lifeOsSqliteRuntime?: { path: string; store: SqliteRuntime } };
 
@@ -166,6 +168,7 @@ export class SqliteRuntime {
       validateGoalCommit(this.#db, this.#owner, before);
       validateSkillCommit(this.#db, this.#owner);
       validateSkillBoundary(this.#db, this.#owner, skillBefore);
+      validateRewardCommit(this.#db, this.#owner);
       return result;
     }).immediate());
   }

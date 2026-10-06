@@ -103,7 +103,7 @@ it("delivers all canonical tables, initial revision and receipt replay before la
     ) as { name: string }[];
     expect(
       canonicalTableNames.filter((name) => tables.some((t) => t.name === name)),
-    ).toHaveLength(65);
+    ).toHaveLength(83);
     for (const table of skillOwnedTables)
       expect(tables.some((t) => t.name === table)).toBe(true);
     const request = f.input("skill.edit", { name: "  Renamed  ", summary: "" }),

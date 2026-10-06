@@ -52,10 +52,8 @@ it("preserves populated Steps, Recurrence and Inbox projections through restart,
     expect(createSqliteTaskStepRepository(restarted, context).read(task)[0].completed_at).not.toBeNull();
     expect(before.counts).toMatchObject({ tasks: 2, task_steps: 1, recurring_task_templates: 1, inbox_items: 4, resources: 1, projects: 1, goals: 1 });
     const actual = Object.keys(before.counts).filter(name => canonicalTableNames.includes(name as typeof canonicalTableNames[number]));
-    expect(actual).toHaveLength(65);
-    expect(canonicalTableNames.filter(name => !actual.includes(name))).toEqual([
-      "anti_rot_actions", "anti_rot_events", "challenge_progress_logs", "challenges", "coding_sessions", "education_logs", "entertainment_items", "inventory_items", "journal_entries", "purchase_decisions", "reward_ledger_entries", "shop_items", "shop_redemptions", "wishlist_items", "work_decisions", "work_logs", "work_meeting_followups", "work_meetings",
-    ]);
+    expect(actual).toHaveLength(83);
+    expect(canonicalTableNames.filter(name => !actual.includes(name))).toEqual([]);
     expect(restarted.read(context, db => db.prepare("SELECT compatibility_ready FROM runtime_metadata").get())).toEqual({ compatibility_ready: BigInt(0) });
     const backup = join(directory, "online.db"), restored = join(directory, "restore.db");
     await restarted.backup(backup);
