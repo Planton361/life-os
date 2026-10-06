@@ -19,6 +19,7 @@ import { goalGuards, goalHistoryScopeGuards } from "./goal-guards";
 import { skillSchema, skillOwnedTables } from "./skill-schema";
 import { skillGuards } from "./skill-guards";
 import { resourceGuards } from "./resource-guards";
+import { nutritionTrainingGuards } from "./nutrition-training-guards";
 import { taskStepSchema } from "./task-step-schema";
 
 function reserveSyntheticTarget(path: string) {
@@ -55,6 +56,7 @@ export function initializeSyntheticDatabase(path: string, ownerId: string) {
       db.exec(projectGuards);
       db.exec(goalGuards + goalHistoryScopeGuards);
       db.exec(sourceGuards + sourceDependencyGuards());
+      db.exec(nutritionTrainingGuards());
       db.exec(ownerGuards([...coreOwnedTables, ...sourceOwnedTables, ...habitOwnedTables, ...healthOwnedTables, ...goalOwnedTables, ...projectOwnedTables, ...skillOwnedTables, "task_steps"]));
       db.prepare("INSERT INTO runtime_metadata(singleton,schema_version,dataset_kind,owner_id) VALUES(1,?,'synthetic',?)").run(schemaVersion, ownerId);
       const now = timestamp(new Date().toISOString());

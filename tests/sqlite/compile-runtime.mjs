@@ -65,6 +65,8 @@ export function compileRuntime() {
     "commands/source-commands",
     "commands/resource-commands",
     "commands/review-commands",
+    "commands/nutrition-commands",
+    "commands/training-commands",
   ])
     compile(join(root, `${file}.ts`));
   return directory;
