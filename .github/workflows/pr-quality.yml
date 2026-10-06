@@ -66,3 +66,8 @@ jobs:
 
       - name: Native SQLite foundation (Linux x64)
         run: pnpm exec vitest run src/features/real-data/sqlite
+
+      - name: Production Next build and native shutdown proof (Linux x64)
+        run: |
+          pnpm build
+          node tests/sqlite/framework-shutdown-proof.mjs

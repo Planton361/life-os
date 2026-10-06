@@ -31,7 +31,7 @@
 
 | Capability | Status | Current implementation evidence | Missing capability |
 |---|---|---|---|
-| SQLite runtime foundation | `MODEL_ONLY` | Node 24.21.0, better-sqlite3 13.0.3 / SQLite 3.53.4; private file boundary, owner contexts, writer lease, WAL/FULL/FK/busy timeout and synchronous transactions in `src/features/real-data/sqlite`; native synthetic invariant tests | Complete canonical schema, all native commands/repositories and application authentication/read/write integration; `compatibility_ready=0` prevents activation of the incomplete runtime |
+| SQLite runtime foundation | `MODEL_ONLY` | Node 24.21.0 with Node 24 typings, better-sqlite3 13.0.3 / SQLite 3.53.4; private file boundary, owner contexts, WAL/FULL/FK/busy timeout and synchronous transactions in `src/features/real-data/sqlite`; kernel-held exclusive writer lock with stale-PID/SIGKILL recovery; Next-owned SIGTERM/SIGINT request drain followed by DB checkpoint/close, proven in `tests/sqlite/framework-shutdown-proof.mjs` | Complete canonical schema, all native commands/repositories and application authentication/read/write integration; `compatibility_ready=0` prevents activation of the incomplete runtime |
 | SQLite Task / Review / Habit / Health backend ports | `MODEL_ONLY` | Native repositories and focused synthetic tests preserve tested planning/completion, carry reconciliation, exact target increments, health upserts and stable IDs | Server Action / Server Component integration and production SQLite browser/reload proof; this does not change the connected Supabase capability claims below |
 | SQLite canonical compatibility | `MODEL_ONLY` | `canonical-catalog.ts` inventories all 83 current tables; 34 have initial SQLite DDL, including core, source, Habit and Health groups | Remaining tables plus complete Goal, Project Depth, Skill, history, receipt, reward/shop and retained-domain invariants; initial DDL is not full compatibility acceptance |
 | SQLite recovery foundation | `MODEL_ONLY` | Independent-process native SIGKILL rollback/restart, Online Backup API and isolated synthetic restore compare schema (including indices/triggers), counts, IDs and row hashes | Complete production application restart/projection proof with all domain histories and receipts |
@@ -41,6 +41,16 @@ Supabase/PostgreSQL remains the operative personal datastore. Active product
 imports of the #37 experiment are removed, but no production SQLite activation,
 personal migration, hosted deployment or cutover is established. The
 `PRODUCTION_SQLITE_RUNTIME_READY_FOR_MIGRATION_TOOLING` marker is not established.
+
+The writer uses a persistent private `.writer-lease.db` sidecar solely for a
+rollback-mode SQLite OS lock, held until the canonical connection closes. It
+contains no domain data and must never be unlinked while writers may run. Local
+filesystem locking is required; a foreign-host identity fails closed. Schema
+version 2 adds the diagnostic writer token. SIGTERM/SIGINT deny new commands;
+Next retains responsibility for draining requests and terminating the process.
+The reusable database library does not terminate the process. These repair
+proofs exercise a disposable handler on the real Next server, not integrated
+product UI writes or complete application compatibility.
 
 ## Cross-viewport composition — #109 / #110 foundation, #112 Dashboard correction
 

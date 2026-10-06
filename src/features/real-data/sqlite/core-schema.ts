@@ -7,7 +7,7 @@ CREATE TABLE runtime_metadata (
   dataset_kind TEXT NOT NULL CHECK(dataset_kind IN ('synthetic','canonical')),
   owner_id TEXT NOT NULL,
   compatibility_ready INTEGER NOT NULL DEFAULT 0 CHECK(compatibility_ready IN (0,1)),
-  writer_pid INTEGER, writer_host TEXT
+  writer_pid INTEGER, writer_host TEXT, writer_token TEXT
 ) STRICT;
 CREATE TABLE profiles (
   id TEXT PRIMARY KEY, display_name TEXT, timezone TEXT NOT NULL DEFAULT 'Europe/Berlin',

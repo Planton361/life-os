@@ -47,7 +47,7 @@ export async function restoreSyntheticBackup(source: string, destination: string
     configureConnection(restored);
     // The new path has no app writer. A copied live source PID must never act
     // as a lease on an independently verified restore candidate.
-    restored.prepare("UPDATE runtime_metadata SET writer_pid=NULL,writer_host=NULL WHERE singleton=1").run();
+    restored.prepare("UPDATE runtime_metadata SET writer_pid=NULL,writer_host=NULL,writer_token=NULL WHERE singleton=1").run();
     restored.pragma("wal_checkpoint(TRUNCATE)");
   } finally { restored.close(); }
   const after = inspectSyntheticDatabase(destination);

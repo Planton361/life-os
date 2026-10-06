@@ -3,14 +3,16 @@ import Database from "better-sqlite3";
 import driverPackage from "better-sqlite3/package.json";
 import { lstatSync, realpathSync } from "node:fs";
 import { hostname } from "node:os";
+import { randomUUID } from "node:crypto";
 import { isAbsolute, resolve } from "node:path";
 import { requireOwnerContext, type OwnerContext } from "./owner-context";
 import { privateDatabasePath, reserveFreshDatabase } from "./file-boundary";
 import { compareDecimals, decimal, numeric } from "./codecs";
 import { canonicalTableNames } from "./canonical-catalog";
+import { acquireWriterLease } from "./writer-lease";
 
 export const runtimeVersions = Object.freeze({ node: "24.21.0", driver: "13.0.3", sqlite: "3.53.4" });
-export const schemaVersion = 1;
+export const schemaVersion = 2;
 type Metadata = { schema_version: number; dataset_kind: string; owner_id: string; compatibility_ready: number; writer_pid: number | null; writer_host: string | null };
 type GlobalRuntime = typeof globalThis & { __lifeOsSqliteRuntime?: { path: string; store: SqliteRuntime } };
 
@@ -23,7 +25,8 @@ function canonicalPath(path: string) {
   privateDatabasePath(path);
   if (!isAbsolute(path) || resolve(path) !== path) throw new Error("SQLITE_PATH_INVALID");
   const stat = lstatSync(path);
-  if (!stat.isFile() || stat.isSymbolicLink() || realpathSync(path) !== path || (stat.mode & 0o077) !== 0)
+  if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1 || realpathSync(path) !== path || (stat.mode & 0o077) !== 0 ||
+      (process.getuid && stat.uid !== process.getuid()))
     throw new Error("SQLITE_FILE_BOUNDARY_INVALID");
   return path;
 }
@@ -67,10 +70,16 @@ export class SqliteRuntime {
   #command: string | null = null;
   #closed = false;
   #backupPending = false;
+  #draining = false;
+  #writerToken = randomUUID();
+  #releaseWriter: () => void;
 
   constructor(path: string, options: { syntheticProof?: boolean } = {}) {
     verifyNodeAndDriver();
-    this.#db = new Database(canonicalPath(path), { fileMustExist: true, timeout: 5000 });
+    canonicalPath(path);
+    this.#releaseWriter = acquireWriterLease(path);
+    try { this.#db = new Database(path, { fileMustExist: true, timeout: 5000 }); }
+    catch (error) { this.#releaseWriter(); throw error; }
     this.#db.function("life_owner", () => this.#currentOwner);
     this.#db.function("life_command", () => this.#command);
     try {
@@ -90,20 +99,16 @@ export class SqliteRuntime {
         throw new Error("SQLITE_INTEGRITY_FAILED");
       this.#owner = meta.owner_id;
       this.#acquireWriter();
-    } catch (error) { this.#db.close(); throw error; }
+    } catch (error) { this.#db.close(); this.#releaseWriter(); throw error; }
   }
 
   #acquireWriter() {
     this.#db.transaction(() => {
       const row = this.#db.prepare("SELECT writer_pid,writer_host FROM runtime_metadata WHERE singleton=1").get() as Metadata;
-      if (row.writer_pid !== null) {
-        if (row.writer_host !== hostname()) throw new Error("SQLITE_WRITER_HOST_MISMATCH");
-        let alive = true;
-        try { process.kill(Number(row.writer_pid), 0); }
-        catch (error) { if ((error as NodeJS.ErrnoException).code === "ESRCH") alive = false; }
-        if (alive) throw new Error("SQLITE_WRITER_ALREADY_RUNNING");
-      }
-      this.#db.prepare("UPDATE runtime_metadata SET writer_pid=?,writer_host=? WHERE singleton=1").run(process.pid, hostname());
+      if (row.writer_host !== null && row.writer_host !== hostname()) throw new Error("SQLITE_WRITER_HOST_MISMATCH");
+      // The already-held OS lock proves that no cooperating writer is alive.
+      // A reused PID must never prevent recovery or impersonate the lease owner.
+      this.#db.prepare("UPDATE runtime_metadata SET writer_pid=?,writer_host=?,writer_token=? WHERE singleton=1").run(process.pid, hostname(), this.#writerToken);
     }).immediate();
   }
 
@@ -119,6 +124,7 @@ export class SqliteRuntime {
   }
 
   command<T>(context: OwnerContext, kind: string, body: (db: Database.Database, ownerId: string) => T): T {
+    if (this.#draining) throw new Error("SQLITE_RUNTIME_DRAINING");
     if (!/^[a-z][a-z_.]+$/.test(kind)) throw new Error("COMMAND_KIND_INVALID");
     return this.#scope(context, kind, () => this.#db.transaction(() => this.#sync(body(this.#db, this.#owner))).immediate());
   }
@@ -139,7 +145,7 @@ export class SqliteRuntime {
   }
 
   async backup(destination: string) {
-    if (this.#closed || this.#db.inTransaction || this.#backupPending) throw new Error("SQLITE_BACKUP_UNAVAILABLE");
+    if (this.#closed || this.#draining || this.#db.inTransaction || this.#backupPending) throw new Error("SQLITE_BACKUP_UNAVAILABLE");
     reserveFreshDatabase(destination);
     // Never copy a live database while WAL is active, or overwrite an existing
     // backup/canonical file. A failed backup leaves an invalid private target;
@@ -149,13 +155,35 @@ export class SqliteRuntime {
     finally { this.#backupPending = false; }
   }
 
+  stopWrites() { this.#draining = true; }
+
   close() {
     if (this.#closed) return;
     if (this.#backupPending) throw new Error("SQLITE_BACKUP_IN_PROGRESS");
-    this.#db.prepare("UPDATE runtime_metadata SET writer_pid=NULL,writer_host=NULL WHERE singleton=1 AND writer_pid=? AND writer_host=?").run(process.pid, hostname());
+    if (this.#db.inTransaction) throw new Error("SQLITE_COMMAND_IN_PROGRESS");
+    this.stopWrites();
+    this.#db.prepare("UPDATE runtime_metadata SET writer_pid=NULL,writer_host=NULL,writer_token=NULL WHERE singleton=1 AND writer_token=?").run(this.#writerToken);
     this.#db.pragma("wal_checkpoint(TRUNCATE)");
     this.#db.close(); this.#closed = true;
+    this.#releaseWriter();
   }
+}
+
+// Next owns HTTP draining and process termination. Signals only close the write
+// admission gate; synchronous commands have finished before JS handles a signal.
+// Next's exit occurs after server.close()/nextServer.close(), including after tasks.
+// The synchronous exit hook then checkpoints/closes the DB and releases its lock.
+export function bindFrameworkShutdown(store: SqliteRuntime): () => void {
+  const drain = () => store.stopWrites();
+  const close = () => store.close();
+  process.prependOnceListener("SIGTERM", drain);
+  process.prependOnceListener("SIGINT", drain);
+  process.once("exit", close);
+  return () => {
+    process.removeListener("SIGTERM", drain);
+    process.removeListener("SIGINT", drain);
+    process.removeListener("exit", close);
+  };
 }
 
 export function applicationRuntime(path: string): SqliteRuntime {
@@ -166,7 +194,6 @@ export function applicationRuntime(path: string): SqliteRuntime {
   }
   const store = new SqliteRuntime(path);
   global.__lifeOsSqliteRuntime = { path, store };
-  process.once("SIGTERM", () => { store.close(); process.exit(0); });
-  process.once("SIGINT", () => { store.close(); process.exit(0); });
+  bindFrameworkShutdown(store);
   return store;
 }

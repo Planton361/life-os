@@ -1,17 +1,24 @@
-import Database from "better-sqlite3";
+import { createRequire } from "node:module";
+import { compileRuntime } from "./compile-runtime.mjs";
 import { realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname } from "node:path";
+import { dirname, join } from "node:path";
 const [path, owner, committed, uncommitted] = process.argv.slice(2);
 if (!realpathSync(dirname(path)).startsWith(`${realpathSync(tmpdir())}/life-os-116-`)) throw new Error("SYNTHETIC_PATH_REQUIRED");
-const db = new Database(path, { fileMustExist: true });
-db.pragma("foreign_keys=ON"); db.pragma("journal_mode=WAL"); db.pragma("synchronous=FULL");
-db.function("life_owner", () => owner); db.function("life_command", () => "task.create");
-const insert = db.prepare("INSERT INTO tasks(id,user_id,title,created_at,updated_at) VALUES(?,?,?, ?,?)");
+const require = createRequire(import.meta.url), compiled = compileRuntime();
+const { SqliteRuntime } = require(join(compiled, "runtime.js"));
+const { issueOwnerContext } = require(join(compiled, "owner-context.js"));
+const store = new SqliteRuntime(path, { syntheticProof: true }), context = issueOwnerContext(owner);
 const now = "2026-10-06T10:00:00.123456Z";
-db.transaction(() => insert.run(committed, owner, "Committed before crash", now, now)).immediate();
-db.exec("BEGIN IMMEDIATE");
-insert.run(uncommitted, owner, "Must not survive SIGKILL", now, now);
-process.stdout.write("UNCOMMITTED\n");
-// No commit is reachable. The proof parent kills this process at the barrier.
-process.stdin.resume();
+const insert = (id, title) => store.command(context, "task.create", db => {
+  db.prepare("INSERT INTO tasks(id,user_id,title,created_at,updated_at) VALUES(?,?,?,?,?)").run(id, owner, title, now, now);
+});
+insert(committed, "Committed before crash");
+store.command(context, "task.create", db => {
+  db.prepare("INSERT INTO tasks(id,user_id,title,created_at,updated_at) VALUES(?,?,?,?,?)").run(uncommitted, owner, "Must not survive SIGKILL", now, now);
+  process.stdout.write("UNCOMMITTED\n");
+  // Hold the actual runtime command and kernel writer lease at a controlled
+  // barrier. No commit is reachable, including if the proof parent fails.
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 20_000);
+  throw new Error("CRASH_PROOF_PARENT_DID_NOT_KILL");
+});

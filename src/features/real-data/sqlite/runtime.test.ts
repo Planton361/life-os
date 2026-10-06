@@ -1,5 +1,6 @@
-import { mkdtempSync, chmodSync, realpathSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { mkdtempSync, chmodSync, realpathSync, linkSync, symlinkSync } from "node:fs";
+import { tmpdir, hostname } from "node:os";
+import { spawn } from "node:child_process";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import Database from "better-sqlite3";
@@ -26,6 +27,56 @@ function task(db: Database.Database, owner: string, id: string, projectId: strin
 }
 
 describe("SQLite runtime foundation", () => {
+  it("recovers a stale identity even when its PID has been reused by a live process", () => {
+    const { path } = fixture();
+    const db = new Database(path);
+    db.prepare("UPDATE runtime_metadata SET writer_pid=?,writer_host=?,writer_token=?").run(process.pid, hostname(), randomUUID());
+    db.close();
+    const store = new SqliteRuntime(path, { syntheticProof: true });
+    store.close();
+  });
+  it("fails closed on a foreign host identity and releases the failed startup lock", () => {
+    const { path } = fixture();
+    const db = new Database(path);
+    db.prepare("UPDATE runtime_metadata SET writer_pid=1,writer_host='foreign-synthetic-host',writer_token=?").run(randomUUID());
+    expect(() => new SqliteRuntime(path, { syntheticProof: true })).toThrow("SQLITE_WRITER_HOST_MISMATCH");
+    db.prepare("UPDATE runtime_metadata SET writer_pid=NULL,writer_host=NULL,writer_token=NULL").run();
+    db.close();
+    const store = new SqliteRuntime(path, { syntheticProof: true }); store.close();
+  });
+  it("denies a second live process and recovers its kernel lease after SIGKILL", async () => {
+    const { path } = fixture();
+    const child = spawn(process.execPath, ["tests/sqlite/lease-writer.mjs", path], { stdio: ["pipe", "pipe", "pipe"] });
+    let output = "", errors = "";
+    const exited = new Promise<void>((resolve, reject) => { child.once("error", reject); child.once("exit", () => resolve()); });
+    try {
+      await new Promise<void>((resolve, reject) => {
+        child.stdout.on("data", chunk => { output += chunk; if (output.includes("READY")) resolve(); });
+        child.stderr.on("data", chunk => { errors += chunk; });
+        child.once("error", reject);
+        child.once("exit", () => { if (!output.includes("READY")) reject(new Error(errors)); });
+      });
+      expect(() => new SqliteRuntime(path, { syntheticProof: true })).toThrow("SQLITE_WRITER_ALREADY_RUNNING");
+      child.kill("SIGKILL"); await exited;
+      const store = new SqliteRuntime(path, { syntheticProof: true }); store.close();
+      const db = new Database(path);
+      expect(db.prepare("SELECT writer_pid,writer_host,writer_token FROM runtime_metadata").get()).toEqual({ writer_pid: null, writer_host: null, writer_token: null });
+      db.close();
+    } finally { if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL"); await exited; }
+  }, 15_000);
+  it("stops new writes during drain, retains reads, and checkpoints only outside commands", () => {
+    const { path, context } = fixture(); const store = new SqliteRuntime(path, { syntheticProof: true });
+    const id = randomUUID();
+    store.command(context, "project.create", (db, owner) => {
+      project(db, owner, id);
+      expect(() => store.close()).toThrow("SQLITE_COMMAND_IN_PROGRESS");
+    });
+    store.stopWrites();
+    expect(() => store.command(context, "project.create", () => 1)).toThrow("SQLITE_RUNTIME_DRAINING");
+    expect(store.read(context, db => db.prepare("SELECT id FROM projects").get())).toEqual({ id });
+    store.close();
+    const restarted = new SqliteRuntime(path, { syntheticProof: true }); restarted.close();
+  });
   it("allows one app writer and safely releases its lease for restart", () => {
     const { path } = fixture();
     const first = new SqliteRuntime(path, { syntheticProof: true });
@@ -34,12 +85,36 @@ describe("SQLite runtime foundation", () => {
     const restarted = new SqliteRuntime(path, { syntheticProof: true });
     restarted.close();
   });
+  it("retains its OS lock after another connection in the same process fails to acquire", async () => {
+    const { path } = fixture();
+    const store = new SqliteRuntime(path, { syntheticProof: true });
+    try {
+      expect(() => new SqliteRuntime(path, { syntheticProof: true })).toThrow("SQLITE_WRITER_ALREADY_RUNNING");
+      const child = spawn(process.execPath, ["tests/sqlite/lease-writer.mjs", path], { stdio: ["pipe", "pipe", "pipe"] });
+      let errors = "";
+      child.stderr.on("data", chunk => { errors += chunk; });
+      const timer = setTimeout(() => child.kill("SIGKILL"), 5000);
+      try {
+        const code = await new Promise<number | null>((resolve, reject) => { child.once("error", reject); child.once("exit", resolve); });
+        expect(code).toBe(1);
+        expect(errors).toContain("SQLITE_WRITER_ALREADY_RUNNING");
+      } finally { clearTimeout(timer); if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL"); }
+    } finally { store.close(); }
+  });
   it("fails closed on missing DB, incomplete compatibility and public file permissions", () => {
     const { path, directory } = fixture();
     expect(() => new SqliteRuntime(join(directory, "missing.db"))).toThrow();
     expect(() => new SqliteRuntime(path)).toThrow("SQLITE_COMPATIBILITY_NOT_READY");
     chmodSync(path, 0o644);
     expect(() => new SqliteRuntime(path, { syntheticProof: true })).toThrow("SQLITE_FILE_BOUNDARY_INVALID");
+  });
+  it("denies alternate inode aliases and a substituted lease symlink", () => {
+    const aliasFixture = fixture();
+    linkSync(aliasFixture.path, join(aliasFixture.directory, "alias.db"));
+    expect(() => new SqliteRuntime(aliasFixture.path, { syntheticProof: true })).toThrow("SQLITE_FILE_BOUNDARY_INVALID");
+    const { path, directory } = fixture();
+    symlinkSync(path, join(directory, "synthetic.db.writer-lease.db"));
+    expect(() => new SqliteRuntime(path, { syntheticProof: true })).toThrow("SQLITE_LEASE_FILE_BOUNDARY_INVALID");
   });
   it("proves effective pragmas and opaque Owner A / B / unauthenticated boundaries", () => {
     const { path, context } = fixture();

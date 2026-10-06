@@ -1,0 +1,12 @@
+import { createRequire } from "node:module";
+import { realpathSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { tmpdir } from "node:os";
+import { compileRuntime } from "./compile-runtime.mjs";
+const [path] = process.argv.slice(2);
+if (!realpathSync(dirname(path)).startsWith(`${realpathSync(tmpdir())}/life-os-116-`)) throw new Error("SYNTHETIC_PATH_REQUIRED");
+const require = createRequire(import.meta.url);
+const { SqliteRuntime } = require(join(compileRuntime(), "runtime.js"));
+const store = new SqliteRuntime(path, { syntheticProof: true });
+process.stdout.write("READY\n");
+process.stdin.once("data", () => { store.close(); process.stdout.write("RELEASED\n"); });

@@ -12,6 +12,12 @@ if (process.versions.node !== "24.21.0") {
   process.exit(1);
 }
 const require = createRequire(import.meta.url);
+// The supported production shutdown path belongs to Next; bypassing its signal
+// handlers would leave request draining and the runtime exit boundary unproven.
+if (process.env.NEXT_MANUAL_SIG_HANDLE) {
+  process.stderr.write("PRODUCTION_MANUAL_SIGNAL_HANDLER_DENIED\n");
+  process.exit(1);
+}
 const cli = require.resolve("next/dist/bin/next");
 process.argv = [process.execPath, cli, "start", ...process.argv.slice(2)];
 await import(cli);
