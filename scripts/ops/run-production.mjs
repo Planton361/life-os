@@ -19,5 +19,15 @@ if (process.env.NEXT_MANUAL_SIG_HANDLE) {
   process.exit(1);
 }
 const cli = require.resolve("next/dist/bin/next");
-process.argv = [process.execPath, cli, "start", ...process.argv.slice(2)];
+if (process.env.LIFE_OS_APPLICATION_RUNTIME === "sqlite-hosted") {
+  if (process.argv.slice(2).length) {
+    process.stderr.write("HOSTED_LISTENER_OVERRIDE_DENIED\n");
+    process.exit(1);
+  }
+  // Hosted topology has exactly one loopback listener; CLI/PORT/HOSTNAME cannot
+  // widen its network boundary. Instrumentation opens the normal runtime gate.
+  process.argv = [process.execPath, cli, "start", "-H", "127.0.0.1", "-p", "3000"];
+} else {
+  process.argv = [process.execPath, cli, "start", ...process.argv.slice(2)];
+}
 await import(cli);

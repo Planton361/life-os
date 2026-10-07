@@ -98,7 +98,31 @@ forwarded host and cross-site provenance before issuing write-capable context.
 Blocked authentication issues no owner context. Synthetic mode never uses
 Supabase Auth or the legacy personal JSON profile. Presentation projections omit
 internal owner/profile identity; native handles and DB paths stay server-only.
-`authenticateGatewayRequest` remains the future hosted seam, unconfigured.
+Hosted `sqlite-hosted` uses `authenticateGatewayRequest` for every owner-scoped
+read and write. Its server-only configuration is `LIFE_OS_HOSTED_SQLITE_PATH`,
+`LIFE_OS_HOSTED_ORIGIN` (the accepted HTTPS `*.ts.net` origin) and
+`LIFE_OS_HOSTED_OWNER_LOGIN`. Owner UUID comes from verified canonical metadata,
+never a request field. Startup verifies the production dataset and then opens
+`applicationRuntime(path)` without a test bypass. Synthetic configuration cannot
+be mixed into hosted mode. Supabase remains the absent-selector default.
+
+`pnpm sqlite:production:bootstrap` initializes only a nonexistent private absolute
+`.db` target under an existing owner-only directory. Operator-only inputs are
+`LIFE_OS_BOOTSTRAP_OWNER_ID`, `LIFE_OS_BOOTSTRAP_DISPLAY_NAME` and
+`LIFE_OS_BOOTSTRAP_TIMEZONE`; they create exactly one profile. The command needs
+the pinned Node and installed repository dependencies, including TypeScript for
+loading the shared server modules under real `react-server` conditions. It uses
+the same 83-table schema composition as synthetic tests, but creates `canonical`
+metadata. Native connection policy, exact catalog, integrity/FK and aggregate
+preflight must pass before transactional readiness promotion. Failed initialization
+leaves an unready target; existing files are never overwritten or promoted.
+
+With the hosted selector, `pnpm start` fixes Next to `127.0.0.1:3000` and refuses
+listener CLI overrides. `pnpm test:sqlite:hosted` proves fresh canonical bootstrap,
+gateway admission, real Server Action writes and process-restart persistence
+without Supabase/Postgres/Docker. This is local production-shape evidence only;
+private gateway provisioning, durable hosted storage, backup and deployment
+acceptance remain later #118 slices.
 
 The disposable production runner is `pnpm test:sqlite:application`; resource
 measurement is `pnpm test:sqlite:resources`. Both build the real Next application

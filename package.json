@@ -27,7 +27,9 @@
     "qa:dashboard": "playwright test tests/e2e/dashboard.spec.ts",
     "validate:local": "node scripts/ops/run-local-validation.mjs",
     "test:sqlite:application": "node tests/sqlite/application-acceptance.mjs",
-    "test:sqlite:resources": "node tests/sqlite/application-acceptance.mjs --resources"
+    "test:sqlite:resources": "node tests/sqlite/application-acceptance.mjs --resources",
+    "sqlite:production:bootstrap": "node --conditions=react-server scripts/ops/bootstrap-production-sqlite.mjs",
+    "test:sqlite:hosted": "node --conditions=react-server tests/sqlite/hosted-application-smoke.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",

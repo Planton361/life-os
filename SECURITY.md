@@ -231,11 +231,39 @@ SQLite browser writes obtain a context only after centralized Origin/Host/
 forwarded-host/cross-site checks against the configured loopback origin. Read
 contexts deny mutation methods. Zod, explicit same-owner queries/relationships
 and native transactional/DB guards remain required. No dual writes, personal
-migration, provider headers, Tailscale configuration or hosted deployment follows
-from this implementation. Future gateway authentication remains a separate gate.
+migration, Tailscale configuration or hosted deployment follows from the
+synthetic implementation.
 
 The production proof instruments browser requests and server-side fetches to
 reject Supabase API egress, denies protected personal-profile filesystem access,
 and checks HTML/RSC/browser state/static JS for internal owner material, native
 handles/modules and DB paths. Fixtures, backup/restore and cleanup are restricted
 to state created by the disposable runner. Failure evidence is retained privately.
+
+## Fresh canonical hosted seam (#118 Slice 1)
+
+Supabase remains the default. The explicit server-only `sqlite-hosted` selector
+accepts only a ready canonical dataset, the configured private HTTPS Tailscale
+origin and one expected `Tailscale-User-Login`. The application derives the owner
+UUID from verified DB metadata. Host and optional forwarded Host must match that
+origin even for reads. Missing, wrong or comma-ambiguous identities fail closed;
+request cookies, form/query fields and browser owner/profile values cannot select
+another owner. Writes additionally retain Origin/Host/cross-site checks. Password
+and Supabase authentication actions are unavailable in hosted mode. Legacy
+personal JSON is never read or written as a hosted fallback.
+
+The operator bootstrap reserves a new target exclusively (0600 in a 0700,
+current-user directory), rejects symlink/public/nonprivate paths and shares the
+canonical schema without synthetic authentication or readiness bypass. Exactly
+one owner profile is initialized from validated operator input. Metadata schema,
+pinned runtime versions, WAL/FULL/FK/busy timeout, exact 83-table catalog,
+integrity/FKs and aggregate checks precede readiness. Any bootstrap error leaves
+the created target unready; an existing malformed/partial target is refused.
+
+The production launcher fixes hosted Next to loopback `127.0.0.1:3000`.
+The future Tailscale Serve gateway must strip caller-supplied identity headers
+and supply its authenticated login. Direct localhost requests can imitate gateway
+headers, so trusted local process access remains part of the accepted boundary.
+Local header-based proof is not deployed gateway authentication acceptance.
+No provider provisioning, public exposure, data import or hosted cutover is
+performed by this slice.

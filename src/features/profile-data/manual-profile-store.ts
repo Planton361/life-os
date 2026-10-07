@@ -297,9 +297,8 @@ async function ensureManualProfileDir() {
 
 export async function readManualProfile(): Promise<ManualProfileData> {
   assertNoRetiredProofConfiguration();
-  // Legacy personal JSON is never a fallback or input to synthetic acceptance.
-  // Canonical application repositories supply the synthetic Manual data.
-  if (applicationRuntimeConfiguration().backend === "sqlite-synthetic")
+  // SQLite Manual data comes only from canonical repositories, never legacy JSON.
+  if (applicationRuntimeConfiguration().backend !== "supabase")
     return structuredClone(defaultManualProfile);
 
   try {
@@ -323,7 +322,7 @@ export async function readManualProfile(): Promise<ManualProfileData> {
 
 export async function writeManualProfile(profile: ManualProfileData) {
   assertNoRetiredProofConfiguration();
-  if (applicationRuntimeConfiguration().backend === "sqlite-synthetic")
+  if (applicationRuntimeConfiguration().backend !== "supabase")
     throw new Error("SYNTHETIC_PERSONAL_PROFILE_WRITE_DENIED");
 
   await ensureManualProfileDir();
@@ -336,7 +335,7 @@ export async function writeManualProfile(profile: ManualProfileData) {
 
 export async function resetManualProfile() {
   assertNoRetiredProofConfiguration();
-  if (applicationRuntimeConfiguration().backend === "sqlite-synthetic")
+  if (applicationRuntimeConfiguration().backend !== "supabase")
     throw new Error("SYNTHETIC_PERSONAL_PROFILE_WRITE_DENIED");
 
   await rm(manualProfilePath, { force: true });
