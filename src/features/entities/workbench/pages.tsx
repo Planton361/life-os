@@ -1,3 +1,5 @@
+import { presentationRead } from "@/features/real-data/runtime/presentation-read";
+import { getGoalOutcome, readProjectDepth } from "@/features/real-data/runtime/facade";
 import { SkillTaskRecovery } from "./skill-task-recovery";
 import { SkillWorkbench, SkillCapture } from "./skill-workbench";
 import { TaskDependencies } from "./task-dependencies";
@@ -14,10 +16,10 @@ import { z } from "zod";
 import {
   readEntityWorkbench,
   type WorkbenchData,
-} from "@/features/real-data/supabase/repositories/entity-workbench-read";
-import { getGoalOutcome } from "@/features/real-data/supabase/repositories/supabase-goal-outcome-repository";
-import { readProjectDepth } from "@/features/real-data/supabase/repositories/project-depth-repository";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+} from "@/features/real-data/runtime/entity-workbench-read";
+
+
+import { createAuthenticatedApplicationContext } from "@/features/real-data/runtime/application-context";
 
 import {
   EntityForm,
@@ -423,27 +425,25 @@ export async function WorkbenchEditor({
           </div>
         </EntityWorkbenchShell>
       );
-    const auth = await createAuthenticatedSupabaseServerClient();
+    const auth = await createAuthenticatedApplicationContext();
     if (!auth.ok)
       return (
         <EntityWorkbenchShell kind="skill" title={row?.title ?? "Skill"}>
           {authMessage}
         </EntityWorkbenchShell>
       );
-    const projection = await auth.client.rpc("skill_development_read", {
-      p_skill_id: id,
-    });
+    const projection = await auth.data.reads.skillDevelopment(id);
     if (projection.error)
       throw new Error("Skill-Daten konnten nicht geladen werden.");
     if (!projection.data) notFound();
-    return <SkillWorkbench read={projection.data} data={data} />;
+    return <SkillWorkbench read={presentationRead(projection.data)} data={data} />;
   }
   if (kind === "goal" && id && row) {
     const outcome = await (async () => {
-      const auth = await createAuthenticatedSupabaseServerClient();
+      const auth = await createAuthenticatedApplicationContext();
       if (!auth.ok) return null;
       return getGoalOutcome(
-        auth.client,
+        auth.data,
         auth.user.id,
         id,
         data.dependencyGraph,
@@ -489,10 +489,10 @@ export async function WorkbenchEditor({
   }
   if (kind === "project" && id && row) {
     const depth = await (async () => {
-      const auth = await createAuthenticatedSupabaseServerClient();
+      const auth = await createAuthenticatedApplicationContext();
       if (!auth.ok) return undefined;
       return readProjectDepth(
-        auth.client,
+        auth.data,
         auth.user.id,
         id,
         historyBefore &&

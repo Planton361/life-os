@@ -1,4 +1,5 @@
 "use server";
+import { createGoalContextTask, getSkillRepository, getTaskRepository } from "../runtime/facade";
 import { dependencyErrorMessage } from "../supabase/repositories/task-dependency-repository";
 import { z } from "zod";
 
@@ -15,13 +16,9 @@ import {
   unscheduleTaskInputSchema,
   updateTaskInputSchema,
 } from "@/features/real-data";
-import {
-  createGoalContextTask,
-  createSupabaseSkillRepository,
-  createSupabaseTaskRepository,
-} from "@/features/real-data/supabase";
+
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { createAuthenticatedApplicationContext } from "@/features/real-data/runtime/application-context";
 
 
 export type TaskScheduleActionResult = {
@@ -253,7 +250,7 @@ export async function updatePortfolioTaskAction(
   });
   if (!parsed.success)
     return { message: "Prüfe die Task-Felder.", status: "error" };
-  const result = await createSupabaseTaskRepository(context.auth.client).updateTask(
+  const result = await getTaskRepository(context.auth.data).updateTask(
     parsed.data,
   );
   if (!result.ok) {
@@ -309,8 +306,8 @@ export async function linkTaskSkillAction(
     };
   }
 
-  const result = await createSupabaseSkillRepository(
-    context.auth.client,
+  const result = await getSkillRepository(
+    context.auth.data,
   ).linkTaskSkill({
     ...parsed.data,
     userId: context.auth.user.id,
@@ -369,8 +366,8 @@ export async function unlinkTaskSkillAction(
     };
   }
 
-  const result = await createSupabaseSkillRepository(
-    context.auth.client,
+  const result = await getSkillRepository(
+    context.auth.data,
   ).unlinkTaskSkill({
     ...parsed.data,
     userId: context.auth.user.id,
@@ -441,7 +438,7 @@ async function getAuthenticatedManualTaskContext(actionLabel: string) {
     };
   }
 
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext("write");
 
   if (!auth.ok) {
     return {
@@ -466,15 +463,7 @@ async function validateProjectScope(
   if (!projectId || !context.ok) return true;
 
 
-  const result = await context.auth.client
-    .from("projects")
-    .select("id")
-    .eq("user_id", context.auth.user.id)
-    .eq("id", projectId)
-    .is("archived_at", null)
-    .maybeSingle();
-
-  return !result.error && Boolean(result.data);
+  return context.auth.data.scopes.ownsActiveProject(context.auth.user.id, projectId);
 }
 
 async function validateGoalScope(
@@ -484,15 +473,7 @@ async function validateGoalScope(
   if (!goalId || !context.ok) return true;
 
 
-  const result = await context.auth.client
-    .from("goals")
-    .select("id")
-    .eq("user_id", context.auth.user.id)
-    .eq("id", goalId)
-    .is("archived_at", null)
-    .maybeSingle();
-
-  return !result.error && Boolean(result.data);
+  return context.auth.data.scopes.ownsActiveGoal(context.auth.user.id, goalId);
 }
 
 export async function scheduleTaskForTodayAction(
@@ -534,7 +515,7 @@ export async function scheduleTaskForTodayAction(
     };
   }
 
-  const repository = createSupabaseTaskRepository(context.auth.client);
+  const repository = getTaskRepository(context.auth.data);
   const result = await repository.scheduleTask(parsed.data);
 
   if (!result.ok) {
@@ -630,7 +611,7 @@ export async function createPortfolioTaskAction(
         status: "error",
       };
     }
-    const contextual = await createGoalContextTask(context.auth.client, {
+    const contextual = await createGoalContextTask(context.auth.data, {
       areaId: parsed.data.areaId,
       commandId: optionalFormString(formData, "commandId"),
       description: parsed.data.description,
@@ -659,7 +640,7 @@ export async function createPortfolioTaskAction(
     };
   }
 
-  const result = await createSupabaseTaskRepository(context.auth.client).createTask(
+  const result = await getTaskRepository(context.auth.data).createTask(
     parsed.data,
   );
 
@@ -728,7 +709,7 @@ export async function completeTaskAction(
     };
   }
 
-  const result = await createSupabaseTaskRepository(context.auth.client).completeTask(
+  const result = await getTaskRepository(context.auth.data).completeTask(
     parsed.data,
   );
 
@@ -736,11 +717,11 @@ export async function completeTaskAction(
     return {
       message: result.error.message.includes("DEPENDENCY_")
         ? dependencyErrorMessage(result.error.message)
-        : result.error.message.includes("review through its review flow")
+        : (result.error.message.includes("review through its review flow") || result.error.message.includes("SOURCE_REVIEW_FLOW_REQUIRED"))
           ? "Dieser Task gehört zu einem offenen Review. Schließe das Review über seinen Review-Flow ab."
-          : result.error.message.includes("running flow")
+          : (result.error.message.includes("running flow") || result.error.message.includes("SOURCE_RUNNING_FLOW_REQUIRED"))
             ? "Dieser Task gehört zu einer offenen Laufeinheit. Schließe den Lauf über den Running-Flow ab."
-            : result.error.message.includes("strength flow")
+            : (result.error.message.includes("strength flow") || result.error.message.includes("SOURCE_STRENGTH_FLOW_REQUIRED"))
               ? "Dieser Task gehört zu einer offenen Krafttrainingseinheit. Schließe das Training über den Strength-Flow ab."
               : "Der Task konnte in Supabase nicht abgeschlossen werden.",
       status: "error",
@@ -776,7 +757,7 @@ export async function reopenTaskAction(
     };
   }
 
-  const result = await createSupabaseTaskRepository(context.auth.client).reopenTask(
+  const result = await getTaskRepository(context.auth.data).reopenTask(
     parsed.data,
   );
 
@@ -821,7 +802,7 @@ export async function archiveTaskAction(
     };
   }
 
-  const repository = createSupabaseTaskRepository(context.auth.client);
+  const repository = getTaskRepository(context.auth.data);
   const result = await repository.archiveTask(parsed.data);
 
   if (!result.ok) {
@@ -864,7 +845,7 @@ export async function unscheduleTaskAction(
     };
   }
 
-  const repository = createSupabaseTaskRepository(context.auth.client);
+  const repository = getTaskRepository(context.auth.data);
   const result = await repository.unscheduleTask(parsed.data);
 
   if (!result.ok) {
@@ -910,7 +891,7 @@ export async function rescheduleTaskAction(
     };
   }
 
-  const repository = createSupabaseTaskRepository(context.auth.client);
+  const repository = getTaskRepository(context.auth.data);
   const result = await repository.rescheduleTask(parsed.data);
 
   if (!result.ok) {

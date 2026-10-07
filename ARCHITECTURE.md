@@ -28,7 +28,8 @@ Product sequence and operative work status are read from `ROADMAP.md` and GitHub
 - TypeScript
 - Tailwind CSS
 - shadcn/ui als Basis
-- Supabase Auth + Postgres + RLS
+- Supabase Auth + Postgres + RLS (operative personal/default path)
+- Native SQLite / better-sqlite3 (explicit synthetic application acceptance)
 - Zod
 - React Hook Form
 - Recharts sparsam
@@ -72,6 +73,38 @@ Detailquelle für Dashboard-Datei-Ownership und Safe Refactors:
 - Loading/Error/Empty States einplanen.
 - Charts lazy/import-sparsam.
 - Dashboard-Code folgt Datei-Ownership und Safe-Refactor-Regeln aus `docs/engineering/dashboard-code-structure.md`.
+
+## Feature-local application composition (#116)
+
+Normal Manual reads and Server Actions obtain an authenticated context from
+`src/features/real-data/runtime/application-context.ts`. Repository, command and
+canonical read-service selection lives here and in its Supabase/native SQLite
+adapters; pages and Client Components do not select a backend or emulate a
+Supabase client. Existing domain mappers/projections and Action validation,
+feedback, redirects and revalidation remain shared. Read contexts reject write
+methods; writes require a separately admitted context.
+
+The absent/default selector keeps Supabase/PostgreSQL. Server-only
+`LIFE_OS_APPLICATION_RUNTIME=sqlite-synthetic` requires an absolute private
+`LIFE_OS_SYNTHETIC_SQLITE_PATH`, loopback `LIFE_OS_SYNTHETIC_ORIGIN` and explicit
+`LIFE_OS_SYNTHETIC_AUTH=issue|blocked`. Startup validates synthetic metadata,
+current schema/runtime/catalog/integrity and readiness before calling the normal
+`applicationRuntime(path)`. No application request uses `syntheticProof: true`.
+
+Synthetic authentication derives the single owner from verified metadata and
+issues opaque OwnerContext on the server. The profile-mode cookie chooses
+Manual/Demo/Empty presentation only. Write admission checks Origin, Host,
+forwarded host and cross-site provenance before issuing write-capable context.
+Blocked authentication issues no owner context. Synthetic mode never uses
+Supabase Auth or the legacy personal JSON profile. Presentation projections omit
+internal owner/profile identity; native handles and DB paths stay server-only.
+`authenticateGatewayRequest` remains the future hosted seam, unconfigured.
+
+The disposable production runner is `pnpm test:sqlite:application`; resource
+measurement is `pnpm test:sqlite:resources`. Both build the real Next application
+and use fresh native-command fixtures explicitly sealed for application access.
+They do not start Docker/Supabase/Postgres or use technical-user signup helpers.
+The required Linux quality job executes the integrated production smoke too.
 
 ## External Source of Truth Boundary
 

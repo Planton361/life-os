@@ -66,7 +66,8 @@ function validateContext(db: Database.Database, owner: string, context: TaskInse
   }
   if (context.milestone_id && (!context.project_id || !db.prepare("SELECT id FROM project_milestones WHERE user_id=? AND id=? AND project_id=? AND archived_at IS NULL").get(owner, context.milestone_id, context.project_id))) throw new Error("TASK_MILESTONE_NOT_FOUND");
 }
-function insert(db: Database.Database, owner: string, data: TaskInsert): TaskRow {
+export function createTaskInTransaction(db: Database.Database, owner: string, data: TaskInsert): TaskRow {
+  if (!db.inTransaction) throw new Error("ATOMIC_TRANSACTION_REQUIRED");
   validateContext(db, owner, data);
   validateAlignment(db, owner, data);
   const entries = Object.entries(data).filter(([key, value]) => key !== "user_id" && value !== undefined);
@@ -120,7 +121,7 @@ export function createSqliteTaskRepository(store: SqliteRuntime, context: OwnerC
     return rowDomain(update(db, owner, input.taskId, patch));
   });
   return {
-    async createTask(input) { return command(input, "task.create", (db, owner) => rowDomain(insert(db, owner, mapCreateTaskInputToInsert(input, owner)))); },
+    async createTask(input) { return command(input, "task.create", (db, owner) => rowDomain(createTaskInTransaction(db, owner, mapCreateTaskInputToInsert(input, owner)))); },
     async createGeneratedTaskInstance(input) { return command(input, "task.generate", (db, owner) => {
       const parsed = generatedInputSchema.safeParse(input);
       if (!parsed.success) throw new Error("TASK_GENERATION_INVALID");
@@ -133,7 +134,7 @@ export function createSqliteTaskRepository(store: SqliteRuntime, context: OwnerC
       validateAlignment(db, owner, data);
       const existing = db.prepare("SELECT * FROM tasks WHERE user_id=? AND generated_from_template_id=? AND instance_date=?").get(owner, uuid(input.templateId), localDate(input.instanceDate)) as TaskRow | undefined;
       if (existing) return { existing: true, task: rowDomain(existing) };
-      return { existing: false, task: rowDomain(insert(db, owner, data)) };
+      return { existing: false, task: rowDomain(createTaskInTransaction(db, owner, data)) };
     }); },
     async archiveTask(input) { return patchUnlinked(input, "task.archive", mapArchiveTaskInputToPatch(input)); },
     async carryTaskForward(input) { return patchUnlinked(input, "task.carry", mapCarryTaskForwardInputToPatch(input)); },

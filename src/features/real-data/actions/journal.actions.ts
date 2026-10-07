@@ -1,14 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getLifeRepository } from "@/features/real-data/runtime/facade";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { createAuthenticatedApplicationContext } from "@/features/real-data/runtime/application-context";
 import {
   archiveJournalEntryInputSchema,
   createJournalEntryInputSchema,
   updateJournalEntryInputSchema,
 } from "../schemas/life.schemas";
-import { createSupabaseLifeRepository } from "../supabase/repositories/supabase-life-repository";
+
 import type { JournalActionResult } from "@/features/life/journal/journal-model";
 
 const value = (data: FormData, key: string) =>
@@ -19,7 +20,7 @@ function refreshJournal() {
 }
 async function authContext() {
   if ((await getCurrentLifeOsProfileId()) !== "manual") return null;
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext("write");
   return auth.ok ? auth : null;
 }
 export async function saveJournalEntryAction(
@@ -44,7 +45,7 @@ export async function saveJournalEntryAction(
       message: "Bitte prüfe Datum, Inhalt und Titel (höchstens 200 Zeichen).",
     };
   try {
-    const repository = createSupabaseLifeRepository(auth.client);
+    const repository = getLifeRepository(auth.data);
     const result = id
       ? await repository.updateJournalEntry(auth.user.id, {
           ...parsed.data,
@@ -84,8 +85,8 @@ export async function archiveJournalEntryAction(
   if (!parsed.success)
     return { ok: false, message: "Dieser Eintrag ist nicht verfügbar." };
   try {
-    const result = await createSupabaseLifeRepository(
-      auth.client,
+    const result = await getLifeRepository(
+      auth.data,
     ).archiveJournalEntry(auth.user.id, parsed.data.journalEntryId);
     if (!result.ok)
       return {

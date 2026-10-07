@@ -1,10 +1,11 @@
 "use server";
 
 import { createMockInboxAISuggestion } from "@/features/inbox/ai/mock-inbox-ai-suggestion-provider";
+import { getInboxRepository } from "@/features/real-data/runtime/facade";
 import type { InboxAISuggestionActionResult } from "@/features/inbox/ai/inbox-ai-suggestion.types";
-import { createSupabaseInboxRepository } from "@/features/real-data/supabase";
+
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { createAuthenticatedApplicationContext } from "@/features/real-data/runtime/application-context";
 
 function formString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -43,7 +44,7 @@ export async function suggestInboxRouteAction(
     };
   }
 
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext("write");
 
   if (!auth.ok) {
     return {
@@ -61,7 +62,7 @@ export async function suggestInboxRouteAction(
     };
   }
 
-  const repository = createSupabaseInboxRepository(auth.client);
+  const repository = getInboxRepository(auth.data);
   const inboxItems = await repository.getInboxItemsByUser(
     auth.user.id,
     auth.user.id,

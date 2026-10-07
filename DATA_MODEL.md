@@ -595,8 +595,15 @@ issued OwnerContext and current Zod contracts. The populated all-domain fixture
 compares native projections and every canonical table count/hash through restart,
 online backup and isolated restore, including immutable receipts/history.
 
-This is backend/data compatibility evidence only. Normal product routing,
-authentication, Server Component/Action integration, revalidation, browser,
-resource-budget and packaging acceptance remain in #116. `compatibility_ready=0`.
+Normal Server Components and Server Actions now share backend-neutral
+application composition. The native adapters reuse canonical domain projections
+and validate exact numeric conversion at existing presentation DTO boundaries.
+Fresh synthetic initialization remains `compatibility_ready=0`. The deliberate
+`sealSyntheticApplicationDatabase` utility accepts only disposable private #116
+synthetic files after exact schema/runtime/driver/SQLite/catalog, integrity/FK
+and native aggregate self-checks. Only then may it seal readiness to 1; the
+application requires that gate through its normal `applicationRuntime` path.
+This sealer is not personal migration tooling. Final application acceptance,
+resource-budget and exact-head target packaging evidence belong to #116/PR #117.
 PostgreSQL remains the operative personal datastore; no personal migration or
 runtime cutover is established.

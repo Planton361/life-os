@@ -2,9 +2,8 @@ import "server-only";
 
 import type { HabitSnapshot } from "@/features/real-data";
 import { localDateInTimeZone } from "@/features/real-data";
-import { createSupabaseHabitRepository } from "@/features/real-data/supabase";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { createAuthenticatedApplicationContext } from "@/features/real-data/runtime/application-context";
 
 export type HabitTrackingPageData = {
   profileId: "empty" | "manual";
@@ -31,7 +30,7 @@ export async function getHabitTrackingPageData(): Promise<HabitTrackingPageData>
     };
   }
 
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext();
   if (!auth.ok) {
     return {
       blockedReason:
@@ -43,7 +42,7 @@ export async function getHabitTrackingPageData(): Promise<HabitTrackingPageData>
     };
   }
 
-  const repository = createSupabaseHabitRepository(auth.client);
+  const repository = auth.repositories.habits;
   if (!(await repository.ensureProfile(auth.user.id, auth.user.id))) {
     return {
       blockedReason: "Das lokale Profil konnte nicht vorbereitet werden.",

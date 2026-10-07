@@ -3,7 +3,7 @@ import {
   ManagementDialog,
   ManagementDisclosure,
 } from "./management-disclosure";
-import type { WorkbenchData } from "@/features/real-data/supabase/repositories/entity-workbench-read";
+import type { WorkbenchData } from "@/features/real-data/runtime/entity-workbench-read";
 import { ExternalResourceLink } from "@/features/resources/external-resource-link";
 import { Choice, OperationForm, actionClass } from "./forms";
 import { projectResourceUses } from "./project-artifacts";

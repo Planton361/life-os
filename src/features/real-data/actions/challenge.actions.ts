@@ -1,13 +1,14 @@
 "use server";
 import { revalidatePath } from "next/cache";
+import { getChallengeRepository } from "@/features/real-data/runtime/facade";
 import { redirect } from "next/navigation";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { createAuthenticatedApplicationContext } from "@/features/real-data/runtime/application-context";
 import { challengeIdSchema, challengeInputSchema, challengeProgressIdSchema, challengeProgressInputSchema, updateChallengeInputSchema, updateChallengeProgressInputSchema } from "../schemas/challenge.schemas";
-import { createSupabaseChallengeRepository } from "../supabase/repositories/supabase-challenge-repository";
+
 function value(data: FormData, key: string) { const item = data.get(key); return typeof item === "string" ? item.trim() : ""; }
 function finish(state: string): never { revalidatePath("/challenges"); revalidatePath("/dashboard"); redirect(`/challenges?state=${encodeURIComponent(state)}`); }
-async function context() { if (await getCurrentLifeOsProfileId() !== "manual") finish("auth_blocked"); const auth = await createAuthenticatedSupabaseServerClient(); if (!auth.ok) finish("auth_blocked"); return { repository: createSupabaseChallengeRepository(auth.client), userId: auth.user.id }; }
+async function context() { if (await getCurrentLifeOsProfileId() !== "manual") finish("auth_blocked"); const auth = await createAuthenticatedApplicationContext("write"); if (!auth.ok) finish("auth_blocked"); return { repository: getChallengeRepository(auth.data), userId: auth.user.id }; }
 function challengeInput(data: FormData) { return { description: value(data, "description"), endDate: value(data, "endDate"), periodType: value(data, "periodType"), rewardCoins: value(data, "rewardCoins"), startDate: value(data, "startDate"), targetValue: value(data, "targetValue"), title: value(data, "title"), unit: value(data, "unit") }; }
 function progressInput(data: FormData) { return { challengeId: value(data, "challengeId"), increment: value(data, "increment"), note: value(data, "note") }; }
 export async function createChallengeAction(data: FormData) { const parsed = challengeInputSchema.safeParse(challengeInput(data)); if (!parsed.success) finish("invalid"); const { repository, userId } = await context(); finish((await repository.createChallenge(userId, parsed.data)).ok ? "created" : "error"); }

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ProjectExport } from "./project-export";
 import type { ReactNode } from "react";
-import type { WorkbenchData } from "@/features/real-data/supabase/repositories/entity-workbench-read";
+import type { WorkbenchData } from "@/features/real-data/runtime/entity-workbench-read";
 import {
   ManagementDialog,
   ManagementDisclosure,

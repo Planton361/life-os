@@ -1,14 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getInboxWorkspaceRepository } from "@/features/real-data/runtime/facade";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { createAuthenticatedApplicationContext } from "@/features/real-data/runtime/application-context";
 import {
   inboxClarificationSchema,
   inboxCompletionSchema,
   inboxRouteSchema,
 } from "../schemas/inbox-workspace.schemas";
-import { createInboxWorkspaceRepository } from "../supabase/repositories/supabase-inbox-workspace-repository";
+
 
 export type InboxWorkspaceResult = {
   status: "success" | "error" | "blocked";
@@ -18,7 +19,7 @@ export type InboxWorkspaceResult = {
 };
 async function context() {
   if ((await getCurrentLifeOsProfileId()) !== "manual") return null;
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext("write");
   return auth.ok ? auth : null;
 }
 function failure(code?: string): InboxWorkspaceResult {
@@ -62,8 +63,8 @@ export async function saveInboxClarificationAction(
       message:
         "Prüfe Titel, Datum und Planning Signals. Titel: 2–500 Zeichen; Dauer: 1–10080 Minuten.",
     };
-  const result = await createInboxWorkspaceRepository(
-    auth.client,
+  const result = await getInboxWorkspaceRepository(
+    auth.data,
     auth.user.id,
   ).save(parsed.data);
   if (result.error || !result.data) return failure(result.error?.code);
@@ -91,8 +92,8 @@ export async function routeSavedInboxItemAction(
       message:
         "Wähle eine gültige Route und gegebenenfalls ein bestehendes Ziel.",
     };
-  const result = await createInboxWorkspaceRepository(
-    auth.client,
+  const result = await getInboxWorkspaceRepository(
+    auth.data,
     auth.user.id,
   ).route(parsed.data);
   if (result.error || !result.data) return failure(result.error?.code);
@@ -135,8 +136,8 @@ export async function completeInboxTriageAction(
       message:
         "Prüfe Titel, Planning Signals, Route und gegebenenfalls das bestehende Ziel.",
     };
-  const result = await createInboxWorkspaceRepository(
-    auth.client,
+  const result = await getInboxWorkspaceRepository(
+    auth.data,
     auth.user.id,
   ).complete(parsed.data);
   if (result.error || !result.data) return failure(result.error?.code);

@@ -2,13 +2,12 @@ import {
   containsExportCredential,
   sameOriginExportRequest,
 } from "@/features/obsidian-projection/export-security";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { createAuthenticatedApplicationContext } from "@/features/real-data/runtime/application-context";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
 import {
-  readProjectProjection,
   projectExportInput,
   ProjectionReadError,
-} from "@/features/real-data/supabase/repositories/project-projection-read";
+} from "@/features/real-data/runtime/project-export-projection";
 import {
   contentHash,
   projectMarkdown,
@@ -29,24 +28,16 @@ export async function POST(
     return error("Export nur direkt aus Life OS möglich.", 403);
   if ((await getCurrentLifeOsProfileId()) !== "manual")
     return error("Der Export benötigt das Manual-Profil.", 403);
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext("write");
   if (!auth.ok)
     return error("Bitte lokal anmelden und erneut exportieren.", 401);
   const input = projectExportInput.safeParse(await context.params);
   if (!input.success) return error("Ungültiges Project.", 400);
   try {
-    const source = await readProjectProjection(
-      auth.client,
-      auth.user.id,
-      input.data,
-    );
+    const source = await auth.data.reads.projectProjection(input.data);
     // No transaction/migration is introduced for export. Detect changes across two
     // bounded reads; inconsistent snapshots fail visibly instead of shipping stale edges.
-    const verification = await readProjectProjection(
-      auth.client,
-      auth.user.id,
-      input.data,
-    );
+    const verification = await auth.data.reads.projectProjection(input.data);
     if (
       contentHash(JSON.stringify(source)) !==
       contentHash(JSON.stringify(verification))

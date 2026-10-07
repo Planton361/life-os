@@ -12,7 +12,7 @@ import ts from "typescript";
 
 // Transpile real runtime commands and their runtime imports into disposable Node
 // workers. Type-only imports disappear; server-only is stubbed only in proof code.
-export function compileRuntime() {
+export function compileRuntime(sourceEntries = []) {
   const directory = mkdtempSync(
     join(realpathSync(tmpdir()), "life-os-116-compiled-"),
   );
@@ -42,8 +42,8 @@ export function compileRuntime() {
     const imports = {};
     for (const match of output.matchAll(/require\(["']([^"']+)["']\)/g)) {
       const name = match[1];
-      if (!name.startsWith(".")) continue;
-      const base = resolve(dirname(source), name),
+      if (!name.startsWith(".") && !name.startsWith("@/")) continue;
+      const base = name.startsWith("@/") ? resolve("src", name.slice(2)) : resolve(dirname(source), name),
         dependency = [`${base}.ts`, join(base, "index.ts")].find(existsSync);
       if (!dependency || !dependency.startsWith(`${resolve("src")}/`))
         throw new Error(`Unsupported proof import: ${name}`);
@@ -58,6 +58,8 @@ export function compileRuntime() {
   for (const file of [
     "runtime",
     "synthetic-database",
+    "synthetic-readiness",
+    "recovery",
     "commands/inbox-commands",
     "commands/goal-commands",
     "commands/project-depth-commands",
@@ -71,5 +73,6 @@ export function compileRuntime() {
     "commands/reward-commands",
   ])
     compile(join(root, `${file}.ts`));
+  for (const source of sourceEntries) compile(resolve(source));
   return directory;
 }

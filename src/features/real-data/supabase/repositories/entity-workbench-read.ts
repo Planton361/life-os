@@ -3,19 +3,15 @@ import {
   readWorkbenchTasks,
 } from "./task-dependency-repository";
 import "server-only";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
-import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
+import type { SupabaseClientLike } from "../database.types";
 
 
-export async function readEntityWorkbench(
+
+export async function readAuthenticatedEntityWorkbench(
+  client: SupabaseClientLike,
+  uid: string,
   allowUnavailableDependencies = false,
 ) {
-  if ((await getCurrentLifeOsProfileId()) !== "manual") return null;
-
-  const auth = await createAuthenticatedSupabaseServerClient();
-  if (!auth.ok) return null;
-  const client = auth.client;
-  const uid = auth.user.id;
   const [
     tasks,
     projects,
@@ -140,5 +136,5 @@ export async function readEntityWorkbench(
   };
 }
 export type WorkbenchData = NonNullable<
-  Awaited<ReturnType<typeof readEntityWorkbench>>
+  Awaited<ReturnType<typeof readAuthenticatedEntityWorkbench>>
 >;

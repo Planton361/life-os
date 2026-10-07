@@ -1,7 +1,8 @@
 import "server-only";
+import { getLifeRepository } from "@/features/real-data/runtime/facade";
 import { getCurrentLifeOsProfileId } from "./profile-cookie";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
-import { createSupabaseLifeRepository } from "@/features/real-data/supabase/repositories/supabase-life-repository";
+import { createAuthenticatedApplicationContext } from "@/features/real-data/runtime/application-context";
+
 import { localDateInTimeZone } from "@/features/real-data/domain/habit";
 import type { JournalEntry } from "@/features/real-data/domain/life";
 import type { JournalMode } from "@/features/life/journal/journal-model";
@@ -30,24 +31,19 @@ export async function getJournalData(): Promise<{
       })),
     };
   }
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext();
   if (!auth.ok) return { entries: [], today, mode: "auth-blocked" };
   try {
     const [entries, timezone] = await Promise.all([
-      createSupabaseLifeRepository(auth.client).getJournalEntries(auth.user.id),
-      auth.client
-        .from("profiles")
-        .select("timezone")
-        .eq("id", auth.user.id)
-        .maybeSingle(),
+      getLifeRepository(auth.data).getJournalEntries(auth.user.id),
+      auth.data.reads.profileTimezone(),
     ]);
-    if (timezone.error) throw new Error("Profile unavailable");
     return {
       entries,
       mode: "manual",
       today: localDateInTimeZone(
         new Date(),
-        timezone.data?.timezone ?? "Europe/Berlin",
+        timezone,
       ),
     };
   } catch {

@@ -34,6 +34,7 @@ import type {
 } from "@/features/dashboard";
 import type { InboxCaptureType } from "@/features/inbox";
 import { assertNoRetiredProofConfiguration } from "../real-data/sqlite/runtime-configuration";
+import { applicationRuntimeConfiguration } from "../real-data/runtime/configuration";
 
 
 const manualProfilePath = path.join(
@@ -296,6 +297,10 @@ async function ensureManualProfileDir() {
 
 export async function readManualProfile(): Promise<ManualProfileData> {
   assertNoRetiredProofConfiguration();
+  // Legacy personal JSON is never a fallback or input to synthetic acceptance.
+  // Canonical application repositories supply the synthetic Manual data.
+  if (applicationRuntimeConfiguration().backend === "sqlite-synthetic")
+    return structuredClone(defaultManualProfile);
 
   try {
     const content = await readFile(manualProfilePath, "utf8");
@@ -318,6 +323,8 @@ export async function readManualProfile(): Promise<ManualProfileData> {
 
 export async function writeManualProfile(profile: ManualProfileData) {
   assertNoRetiredProofConfiguration();
+  if (applicationRuntimeConfiguration().backend === "sqlite-synthetic")
+    throw new Error("SYNTHETIC_PERSONAL_PROFILE_WRITE_DENIED");
 
   await ensureManualProfileDir();
   await writeFile(
@@ -329,6 +336,8 @@ export async function writeManualProfile(profile: ManualProfileData) {
 
 export async function resetManualProfile() {
   assertNoRetiredProofConfiguration();
+  if (applicationRuntimeConfiguration().backend === "sqlite-synthetic")
+    throw new Error("SYNTHETIC_PERSONAL_PROFILE_WRITE_DENIED");
 
   await rm(manualProfilePath, { force: true });
 }

@@ -4,9 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { dashboardLocalDate, dashboardTimeZone } from "@/features/dashboard/dashboard-read-model";
 import { moodEntryInputSchema, sleepEntryInputSchema, weightEntryInputSchema, weightGoalInputSchema } from "../schemas";
-import { createSupabaseHealthRepository } from "../supabase";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { createAuthenticatedApplicationContext } from "@/features/real-data/runtime/application-context";
 
 function value(formData: FormData, key: string) { const item = formData.get(key); return typeof item === "string" ? item.trim() : ""; }
 function moodTarget(formData: FormData) {
@@ -18,9 +17,9 @@ function feedbackTarget(target: string, state: string) { return `${target}${targ
 function revalidateHealth() { revalidatePath("/today"); revalidatePath("/dashboard"); revalidatePath("/health"); revalidatePath("/health/mental"); }
 async function context(target: string) {
   if ((await getCurrentLifeOsProfileId()) !== "manual") redirect(feedbackTarget(target, "blocked"));
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext("write");
   if (!auth.ok) redirect(feedbackTarget(target, "blocked"));
-  return { repository: createSupabaseHealthRepository(auth.client), userId: auth.user.id };
+  return { repository: auth.repositories.health, userId: auth.user.id };
 }
 function finish(target: string, state: "saved" | "error"): never { revalidateHealth(); redirect(feedbackTarget(target, state)); }
 
