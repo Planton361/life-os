@@ -141,6 +141,9 @@ export async function additionalWriteFlows({
       await metadata
         .getByRole("button", { name: "Änderungen speichern", exact: true })
         .click();
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+        "SQLite browser Project edited",
+      );
       await page.reload();
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(
         "SQLite browser Project edited",
@@ -197,6 +200,7 @@ export async function additionalWriteFlows({
       await result
         .getByRole("button", { name: "Ergebnis speichern", exact: true })
         .click();
+      await expect(result.getByRole("status")).toContainText("Project-Änderung gespeichert.");
       await page.reload();
       await page
         .getByRole("button", {
@@ -210,6 +214,7 @@ export async function additionalWriteFlows({
       await result
         .getByRole("button", { name: "Kriterium hinzufügen", exact: true })
         .click();
+      await expect(result.getByRole("status")).toContainText("Project-Änderung gespeichert.");
       await page.reload();
       await expect(
         page.getByRole("region", {
