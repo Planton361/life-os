@@ -234,13 +234,22 @@ export async function boundaryAndRecoveryProof({
       await page.goto(getApp().origin + route);
       await expect(page.locator(".life-os-canvas")).toBeVisible();
       await page.waitForLoadState("networkidle");
+      if (route === "/dashboard") {
+        for (const selector of [
+          '[data-dashboard-section="habit-tracker"]',
+          '[aria-label="Active Portfolio items"]',
+          '[aria-label="Meal slots"]',
+          '[aria-labelledby="mood-title"]',
+          '.daily-control-current',
+        ]) await expect(page.locator(selector)).toHaveCount(1);
+      }
       result.push({
         route,
         text:
           route === "/dashboard"
             ? await page
                 .locator(
-                  'a[aria-label^="Open agenda item:"], [data-dashboard-section="habit-tracker"], [aria-label="Active Portfolio items"], [aria-label="Meal slots"], [aria-labelledby="mood-board-title"], .daily-control-current',
+                  'a[aria-label^="Open agenda item:"], [data-dashboard-section="habit-tracker"], [aria-label="Active Portfolio items"], [aria-label="Meal slots"], [aria-labelledby="mood-title"], .daily-control-current',
                 )
                 .allInnerTexts()
             : await page.locator("#main-content").innerText(),

@@ -491,7 +491,7 @@ export async function WorkbenchEditor({
     const depth = await (async () => {
       const auth = await createAuthenticatedApplicationContext();
       if (!auth.ok) return undefined;
-      return readProjectDepth(
+      return presentationRead(await readProjectDepth(
         auth.data,
         auth.user.id,
         id,
@@ -500,7 +500,7 @@ export async function WorkbenchEditor({
           BigInt(historyBefore) <= BigInt("9223372036854775807")
           ? historyBefore
           : undefined,
-      );
+      ));
     })();
     return (
       <ProjectReadView

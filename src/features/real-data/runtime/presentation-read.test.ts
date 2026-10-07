@@ -5,10 +5,12 @@ describe("application presentation boundary", () => {
     const input = {
       id: "entity",
       user_id: "owner",
+      userId: "owner",
+      profileId: "owner",
       history: [
         {
           profile_id: "owner",
-          snapshot: { user_id: "owner", title: "Evidence" },
+          snapshot: { user_id: "owner", profileId: "owner", title: "Evidence" },
         },
       ],
     };

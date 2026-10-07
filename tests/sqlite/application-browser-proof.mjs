@@ -27,6 +27,7 @@ let browserTask;
 const errors = [];
 const network = [];
 const evidence = [];
+const payloadChecks = new Set();
 function observeBrowser() {
   page.setDefaultTimeout(10000);
   page.on("pageerror", (e) => errors.push(e.message));
@@ -37,6 +38,16 @@ function observeBrowser() {
   context.on("request", (r) => {
     if (/supabase|\/rest\/v1\/|\/auth\/v1\//i.test(r.url()))
       network.push(r.url());
+  });
+  context.on("response", (response) => {
+    if (new URL(response.url()).origin !== app.origin ||
+        !/text\/(?:html|x-component)/.test(response.headers()["content-type"] ?? "")) return;
+    const check = response.text().then((body) => {
+      if (body.includes(fixture.ownerId) || body.includes(fixture.path) || body.includes("OwnerContext"))
+        errors.push(`Private runtime material in HTML/RSC: ${new URL(response.url()).pathname}`);
+    }).catch(() => { /* Aborted navigation/prefetch has no consumed client payload. */ });
+    payloadChecks.add(check);
+    void check.finally(() => payloadChecks.delete(check));
   });
 }
 observeBrowser();
@@ -65,6 +76,11 @@ async function fields(form, values) {
 async function step(name, body) {
   try {
     await body();
+    await Promise.all([...payloadChecks]);
+    const html = await page.content();
+    assert.equal(html.includes(fixture.path), false, `${name}: DB path exposed`);
+    assert.equal(html.includes(fixture.ownerId), false, `${name}: owner authentication identity exposed`);
+    assert.equal(html.includes("OwnerContext"), false, `${name}: owner context exposed`);
     assert.equal(/SQLITE_PROOF_.*_DENIED/.test(app.output()), false);
     assert.deepEqual(errors, [], `${name} console/page errors`);
     assert.deepEqual(network, [], `${name} Supabase network`);
@@ -103,6 +119,9 @@ try {
       "/health/habits",
       "/health/mental",
       "/nutrition",
+      "/nutrition/meal-planner",
+      "/nutrition/recipes",
+      `/nutrition/recipes/${fixture.ids.recipe}`,
       "/health/running",
       "/health/strength",
       "/life/journal",

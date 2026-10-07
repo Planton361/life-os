@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { applyNutritionPlanAction } from "@/features/real-data/actions/nutrition.actions";
 import type { NutritionPlanOperation } from "@/features/real-data/schemas/nutrition.schema";
-import type { Meal } from "@/features/real-data";
 import { ManualMealEditForm } from "./manual-meal-edit-form";
 import {
   inputClass,
@@ -15,6 +14,7 @@ import {
 } from "./meal-planner-primitives";
 import type {
   MealPlannerViewModel,
+  CanonicalPlannedMeal,
   SelectedMealSlot,
 } from "./meal-planner-types";
 import { cn } from "@/lib/cn";
@@ -89,7 +89,7 @@ export function ManualMealPlanner({
       }
     });
   }
-  function move(source: Meal, target: SelectedMealSlot) {
+  function move(source: CanonicalPlannedMeal, target: SelectedMealSlot) {
     if (draft.length) {
       feedback(
         "Zuerst die Woche speichern oder Änderungen zurücksetzen.",

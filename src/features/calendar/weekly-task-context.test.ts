@@ -146,6 +146,16 @@ function graph(): TaskDependencyGraph {
   };
 }
 describe("weekly orientation context", () => {
+  it("projects stage summaries without canonical owner or internal row fields", () => {
+    const contexts = buildWeeklyTaskContexts("a", sources(), graph());
+    for (const context of Object.values(contexts)) {
+      const stages = [context.project?.assigned, context.project?.current,
+        ...context.goals.flatMap(goal => [goal.current, ...goal.support.map(support => support.stage)]),
+        ...context.skills.map(skill => skill.currentTarget)].filter(Boolean);
+      for (const stage of stages)
+        expect(Object.keys(stage!).sort()).toEqual(["description", "id", "title"]);
+    }
+  });
   it("keeps direct/via/redundant/conflicting goal paths explicit", () => {
     const c = buildWeeklyTaskContexts("a", sources(), graph());
     expect(c.direct.goals.map((g) => g.path)).toEqual(["direct"]);

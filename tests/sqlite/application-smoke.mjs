@@ -25,6 +25,7 @@ async function read(route) {
   assert.equal(response.status, 200, route);
   const html = await response.text();
   assert.ok(!html.includes(fixture.path), "DB path leaked");
+  assert.ok(!html.includes(fixture.ownerId), "owner authentication identity leaked");
   assert.ok(!html.includes('"digest"'), `${route}: RSC error`);
   return html;
 }
@@ -40,6 +41,8 @@ try {
     `/goals/${fixture.ids.goal}`,
     `/skills/${fixture.ids.skill}`,
     "/nutrition",
+    "/nutrition/meal-planner",
+    `/nutrition/recipes/${fixture.ids.recipe}`,
     "/health/running",
     "/shop",
   ])

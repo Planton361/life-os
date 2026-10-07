@@ -1,6 +1,7 @@
 import { projectHealthOverviewFacts } from "@/features/health/health-overview-facts";
 import { getHealthRepository, getReviewRepository, getChallengeRepository, getAntiRotRepository, getNutritionRepository, getHabitRepository, getCodingRepository, getEducationRepository, getWorkRepository, getWorkKnowledgeRepository, getWorkMeetingRepository, getResourceRepository, getTrainingRepository, getLifeRepository, getShopRepository } from "@/features/real-data/runtime/facade";
 import type { ApplicationData } from "@/features/real-data/runtime/application-context";
+import { presentationRead } from "@/features/real-data/runtime/presentation-read";
 import { shiftDay } from "@/features/health/habits/habit-analytics";
 
 import "server-only";
@@ -1656,7 +1657,7 @@ function buildProfileMealPlannerViewModel(
 
   viewModel.profileId = profileId;
   viewModel.actionsEnabled = false;
-  viewModel.canonicalMeals = nutritionData?.meals ?? [];
+  viewModel.canonicalMeals = presentationRead(nutritionData?.meals ?? []);
   viewModel.unavailableReason = nutritionData?.unavailableReason;
   viewModel.mealEditEnabled =
     profileId === "manual" && Boolean(nutritionData) && !nutritionData?.unavailableReason;
