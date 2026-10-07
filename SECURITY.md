@@ -209,3 +209,33 @@ remote database is used by these application flows.
 Focused proof: `tests/supabase/pp2-skill-development.sql`,
 `pp2-skill-concurrency.mjs`, `pp2-legacy-before.sql`,
 `tests/e2e/pp2-skill-database.spec.ts` and the PP2 Skill browser specs.
+
+## Synthetic SQLite application boundary (#116)
+
+Supabase/PostgreSQL remains the operative personal datastore. The explicit
+server-only synthetic selector cannot accept a personal SQLite file: it requires
+a current-owner private, regular, non-symlink/non-hardlink file in a disposable
+`life-os-116-*` directory immediately under the real system temporary root,
+synthetic metadata, schema 9, the pinned Node/driver/SQLite versions, exactly
+83 canonical tables plus operational metadata, integrity/FKs and readiness 1.
+Fresh initialization stays readiness 0; synthetic sealing executes backend
+aggregate self-checks transactionally before promotion.
+
+Only verified runtime metadata determines the authenticated owner. Form fields,
+URL parameters and cookies cannot mint OwnerContext or choose another owner.
+The profile cookie is presentation state. Explicit server-side blocked mode
+returns before owner issuance or owner-scoped canonical access. There is no
+password database, browser authentication switch or synthetic Supabase Auth call.
+
+SQLite browser writes obtain a context only after centralized Origin/Host/
+forwarded-host/cross-site checks against the configured loopback origin. Read
+contexts deny mutation methods. Zod, explicit same-owner queries/relationships
+and native transactional/DB guards remain required. No dual writes, personal
+migration, provider headers, Tailscale configuration or hosted deployment follows
+from this implementation. Future gateway authentication remains a separate gate.
+
+The production proof instruments browser requests and server-side fetches to
+reject Supabase API egress, denies protected personal-profile filesystem access,
+and checks HTML/RSC/browser state/static JS for internal owner material, native
+handles/modules and DB paths. Fixtures, backup/restore and cleanup are restricted
+to state created by the disposable runner. Failure evidence is retained privately.

@@ -1,7 +1,8 @@
+import { applicationRuntimeConfiguration } from "./runtime/configuration";
 import Link from "next/link";
 import { resetSupabaseSessionAction } from "@/features/auth/actions";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { createAuthenticatedApplicationContext } from "./runtime/application-context";
 
 const noticeClass =
   "rounded-[14px] border border-[rgba(216,180,90,.24)] bg-[rgba(216,180,90,.07)] px-3 py-3 text-[11px] leading-5 text-[var(--text-secondary)]";
@@ -31,13 +32,16 @@ export async function getManualDbAuthNotice() {
     return null;
   }
 
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext();
 
   if (auth.ok) {
     return null;
   }
 
+  if (applicationRuntimeConfiguration().backend === "sqlite-synthetic") return { body: "Die serverseitige Anmeldung für den synthetischen Lauf ist deaktiviert. Manual-Daten und Änderungen sind gesperrt.", canResetSession: false, canSignIn: false, title: "Manual-Daten gesperrt" };
+
   return {
+    canSignIn: true,
     body: noticeBody(auth.error),
     canResetSession:
       auth.error === "invalid_session" || auth.error === "auth_error",
@@ -58,7 +62,7 @@ export async function ManualDbAuthNotice() {
         <div className="min-w-0">
           <p className="font-semibold text-[var(--text-primary)]">{notice.title}</p>
           <p className="mt-1 text-[var(--text-muted)]">
-            {notice.body} Melde dich an, um lokale DB-backed Tasks zu laden.
+            {notice.body} {notice.canSignIn ? "Melde dich an, um lokale DB-backed Tasks zu laden." : null}
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap gap-2">
@@ -70,9 +74,9 @@ export async function ManualDbAuthNotice() {
               </button>
             </form>
           ) : null}
-          <Link className={actionClass} href="/settings#supabase-session">
+          {notice.canSignIn ? <Link className={actionClass} href="/settings#supabase-session">
             Supabase anmelden
-          </Link>
+          </Link> : null}
         </div>
       </div>
     </aside>

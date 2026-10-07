@@ -7,6 +7,11 @@ import type { DevelopmentTarget } from "../real-data/domain/skill-development";
 import type { PlannerQueueItem } from "./calendar-types";
 
 type Stage = { id: string; title: string; description: string | null };
+function stageSummary(stage: Stage | undefined): Stage | undefined {
+  return stage
+    ? { id: stage.id, title: stage.title, description: stage.description }
+    : undefined;
+}
 type GoalContext = {
   id: string;
   title: string;
@@ -92,13 +97,13 @@ export function buildWeeklyTaskContexts(
               id: project.id,
               title: project.title,
               result: project.desired_result,
-              assigned: projectStages.find(
+              assigned: stageSummary(projectStages.find(
                 (m) =>
                   m.project_id === project.id && m.id === task.milestone_id,
-              ),
-              current: projectStages.find(
+              )),
+              current: stageSummary(projectStages.find(
                 (m) => m.project_id === project.id && m.status === "active",
-              ),
+              )),
             }
           : undefined,
         goals: [direct, inherited]
@@ -118,9 +123,9 @@ export function buildWeeklyTaskContexts(
                   ? "redundant"
                   : "direct"
                 : "via_project",
-            current: goalStages.find(
+            current: stageSummary(goalStages.find(
               (m) => m.goal_id === goal.id && m.status === "active",
-            ),
+            )),
             support: [
               ...owned(sources.taskSupport)
                 .filter((s) => s.task_id === task.id && s.goal_id === goal.id)
@@ -140,7 +145,7 @@ export function buildWeeklyTaskContexts(
               const stage = goalStages.find(
                 (m) => m.id === s.id && m.goal_id === goal.id,
               );
-              return stage ? [{ stage, path: s.path }] : [];
+              return stage ? [{ stage: stageSummary(stage)!, path: s.path }] : [];
             }),
           })),
         goalConflict: Boolean(
@@ -160,9 +165,9 @@ export function buildWeeklyTaskContexts(
                   {
                     id: skill.id,
                     title: skill.name,
-                    currentTarget: active(sources.targets).find(
+                    currentTarget: stageSummary(active(sources.targets).find(
                       (t) => t.skill_id === skill.id && t.status === "current",
-                    ),
+                    )),
                     targetUnavailable: sources.targetUnavailable.includes(
                       skill.id,
                     ),

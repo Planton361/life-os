@@ -9,9 +9,8 @@ import {
   localDateInTimeZone,
   updateHabitInputSchema,
 } from "@/features/real-data";
-import { createSupabaseHabitRepository } from "@/features/real-data/supabase";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { createAuthenticatedApplicationContext } from "@/features/real-data/runtime/application-context";
 
 function value(formData: FormData, key: string) {
   const item = formData.get(key);
@@ -46,9 +45,9 @@ function finish(path: string, state: "blocked" | "error" | "saved", quietDashboa
 
 async function context(path: string) {
   if ((await getCurrentLifeOsProfileId()) !== "manual") finish(path, "blocked");
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext("write");
   if (!auth.ok) finish(path, "blocked");
-  const repository = createSupabaseHabitRepository(auth.client);
+  const repository = auth.repositories.habits;
   if (!(await repository.ensureProfile(auth.user.id, auth.user.id)))
     finish(path, "error");
   return { repository, userId: auth.user.id };

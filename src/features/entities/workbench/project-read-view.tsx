@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ProjectExport } from "./project-export";
 import type { ReactNode } from "react";
-import type { WorkbenchData } from "@/features/real-data/supabase/repositories/entity-workbench-read";
+import type { WorkbenchData } from "@/features/real-data/runtime/entity-workbench-read";
 import {
   ManagementDialog,
   ManagementDisclosure,
@@ -23,6 +23,7 @@ import {
   ProjectDepthStatus,
 } from "./project-depth";
 import type { ProjectDepthRead } from "@/features/real-data/supabase/repositories/project-depth-repository";
+import type { PresentationRead } from "@/features/real-data/runtime/presentation-read";
 
 export function ProjectReadView({
   data,
@@ -37,7 +38,7 @@ export function ProjectReadView({
   edit: ReactNode;
   relations: ReactNode;
   selectedResource?: string;
-  depth?: ProjectDepthRead;
+  depth?: PresentationRead<ProjectDepthRead>;
 }) {
   const project = data.projects.find((p) => p.id === id)!;
   const tasks = data.tasks.filter((t) => t.project_id === id && !t.archived_at);

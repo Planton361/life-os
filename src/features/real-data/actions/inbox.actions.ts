@@ -1,20 +1,17 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getInboxRepository, getInboxResourceTransaction, getInboxTriageTransaction } from "@/features/real-data/runtime/facade";
 import {
   archiveInboxItemInputSchema,
   captureInboxItemInputSchema,
   createResourceInputSchema,
   triageInboxItemToTaskInputSchema,
 } from "@/features/real-data";
-import {
-  createSupabaseInboxRepository,
-  createSupabaseInboxResourceTransaction,
-  createSupabaseInboxTriageTransaction,
-} from "@/features/real-data/supabase";
+
 import { routeSavedInboxItemAction } from "./inbox-workspace.actions";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { createAuthenticatedApplicationContext } from "@/features/real-data/runtime/application-context";
 
 export type InboxCaptureActionResult = {
   inboxItemId?: string;
@@ -148,7 +145,7 @@ export async function captureInboxItemAction(
     };
   }
 
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext("write");
 
   if (!auth.ok) {
     return {
@@ -177,7 +174,7 @@ export async function captureInboxItemAction(
     };
   }
 
-  const repository = createSupabaseInboxRepository(auth.client);
+  const repository = getInboxRepository(auth.data);
   const result = await repository.createInboxItem(parsed.data);
 
   if (!result.ok) {
@@ -216,7 +213,7 @@ export async function triageInboxItemToTaskAction(
     };
   }
 
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext("write");
 
   if (!auth.ok) {
     return {
@@ -249,7 +246,7 @@ export async function triageInboxItemToTaskAction(
     };
   }
 
-  const triageTransaction = createSupabaseInboxTriageTransaction(auth.client);
+  const triageTransaction = getInboxTriageTransaction(auth.data);
   const result = await triageTransaction(parsed.data);
 
   if (!result.ok) {
@@ -289,7 +286,7 @@ export async function archiveInboxItemAction(
     };
   }
 
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext("write");
 
   if (!auth.ok) {
     return {
@@ -311,7 +308,7 @@ export async function archiveInboxItemAction(
     };
   }
 
-  const repository = createSupabaseInboxRepository(auth.client);
+  const repository = getInboxRepository(auth.data);
   const result = await repository.archiveInboxItem(parsed.data);
 
   if (!result.ok) {
@@ -357,7 +354,7 @@ export async function createResourceFromInboxAction(
     };
   }
 
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext("write");
 
   if (!auth.ok) {
     return {
@@ -388,8 +385,8 @@ export async function createResourceFromInboxAction(
     };
   }
 
-  const resourceTransaction = createSupabaseInboxResourceTransaction(
-    auth.client,
+  const resourceTransaction = getInboxResourceTransaction(
+    auth.data,
   );
   const resourceResult = await resourceTransaction({
     ...parsed.data,
@@ -452,7 +449,7 @@ async function routeExistingSavedCapture(
   formData: FormData,
   route: "project" | "goal",
 ): Promise<InboxCreateNewActionResult> {
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext("write");
   if (!auth.ok)
     return {
       status: "blocked",
@@ -465,8 +462,8 @@ async function routeExistingSavedCapture(
   });
   if (!parsed.success)
     return { status: "error", message: "Ungültiger Inbox-Eintrag." };
-  const items = await createSupabaseInboxRepository(
-    auth.client,
+  const items = await getInboxRepository(
+    auth.data,
   ).getInboxItemsByUser(auth.user.id, auth.user.id);
   const item = items.ok
     ? items.data.find((item) => item.id === parsed.data.inboxItemId)

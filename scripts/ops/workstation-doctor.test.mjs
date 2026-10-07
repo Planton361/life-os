@@ -97,6 +97,7 @@ async function doctorFor(overrides = {}) {
     supabasePresent: true,
     supabaseCommand: "supabase",
     supabaseVersion: "2.107.0",
+    nodeVersion: "24.21.0",
     ...overrides.options,
   });
   return { ...fake, report };
@@ -122,6 +123,14 @@ function assertNoMutatingCommands(calls) {
     if (command === "pnpm") assert.ok(!["install", "add", "remove", "update"].includes(args[0]));
   }
 }
+
+test("rejects a different Node release before a native-runtime handoff", async () => {
+  for (const nodeVersion of ["22.22.2", "24.20.0", "25.0.0"]) {
+    const { report, calls } = await doctorFor({ options: { nodeVersion } });
+    assert.equal(report.checks.node.status, "FAIL");
+    assertNoMutatingCommands(calls);
+  }
+});
 
 test("real doctor command runner disables optional Git locks", async () => {
   const result = await runCommand(process.execPath, [

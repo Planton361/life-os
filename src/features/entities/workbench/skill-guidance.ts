@@ -1,3 +1,4 @@
+import type { PresentationRead } from "@/features/real-data/runtime/presentation-read";
 import {
   taskDependencyContext,
   type TaskDependencyGraph,
@@ -26,7 +27,7 @@ export function skillTaskReadiness(
 }
 
 export function skillWorkAction(
-  read: SkillDevelopmentRead,
+  read: PresentationRead<SkillDevelopmentRead>,
   graph: TaskDependencyGraph,
   unavailable = false,
   hasMaterial = false,

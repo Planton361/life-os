@@ -1,11 +1,9 @@
 "use server";
-import {
-  dependencyErrorMessage,
-  writeTaskDependency,
-} from "../supabase/repositories/task-dependency-repository";
+import { writeTaskDependency, getResourceRepository, getTaskRepository, getProjectRepository, achieveGoal, addGoalAchievementEvidence, addGoalCriterionEvidence, addGoalMilestoneEvidence, addGoalProjectSupport, addGoalTaskSupport, appendGoalCriterionEvaluation, appendGoalCriterionRevision, amendGoalAchievementEvent, amendGoalMilestoneAchievementEvent, archiveGoalCriterion, archiveGoalMilestone, createGoalCriterion, createGoalMilestone, removeGoalProjectSupport, removeGoalTaskSupport, reopenGoal, reorderGoalMilestone, setGoalMilestoneStatus, updateGoalMilestone, writeProjectMilestone, setProjectResourceRole, writeTaskStep } from "../runtime/facade";
+import { dependencyErrorMessage } from "../supabase/repositories/task-dependency-repository";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { createAuthenticatedApplicationContext } from "@/features/real-data/runtime/application-context";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
 import {
   createPortfolioTaskAction,
@@ -31,31 +29,7 @@ import {
   createSkillEvidenceAction,
   deleteSkillEvidenceAction,
 } from "./skill.actions";
-import {
-  createSupabaseResourceRepository,
-  createSupabaseTaskRepository,
-  createSupabaseProjectRepository,
-  achieveGoal,
-  addGoalAchievementEvidence,
-  addGoalCriterionEvidence,
-  addGoalMilestoneEvidence,
-  addGoalProjectSupport,
-  addGoalTaskSupport,
-  appendGoalCriterionEvaluation,
-  appendGoalCriterionRevision,
-  amendGoalAchievementEvent,
-  amendGoalMilestoneAchievementEvent,
-  archiveGoalCriterion,
-  archiveGoalMilestone,
-  createGoalCriterion,
-  createGoalMilestone,
-  removeGoalProjectSupport,
-  removeGoalTaskSupport,
-  reopenGoal,
-  reorderGoalMilestone,
-  setGoalMilestoneStatus,
-  updateGoalMilestone,
-} from "../supabase";
+
 import {
   createResourceInputSchema,
   updateResourceInputSchema,
@@ -90,9 +64,9 @@ import {
   type WorkbenchKind,
 } from "@/features/entities/workbench/types";
 
-import { writeProjectMilestone } from "../supabase/repositories/project-milestone-repository";
-import { setProjectResourceRole } from "../supabase/repositories/project-artifact-repository";
-import { writeTaskStep } from "../supabase/repositories/task-step-repository";
+
+
+
 
 function refresh() {
   for (const path of [
@@ -157,7 +131,7 @@ function outcomeResult(
 
 async function runGoalOutcomeOperation(
   auth: NonNullable<
-    Awaited<ReturnType<typeof createAuthenticatedSupabaseServerClient>> & {
+    Awaited<ReturnType<typeof createAuthenticatedApplicationContext>> & {
       ok: true;
     }
   >,
@@ -181,7 +155,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await createGoalMilestone(auth.client, parsed.data),
+          await createGoalMilestone(auth.data, parsed.data),
           "Etappe erstellt.",
         )
       : invalid;
@@ -197,7 +171,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await updateGoalMilestone(auth.client, parsed.data),
+          await updateGoalMilestone(auth.data, parsed.data),
           "Etappe gespeichert.",
         )
       : invalid;
@@ -213,7 +187,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await setGoalMilestoneStatus(auth.client, parsed.data),
+          await setGoalMilestoneStatus(auth.data, parsed.data),
           "Etappenstatus gespeichert.",
         )
       : invalid;
@@ -226,7 +200,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await archiveGoalMilestone(auth.client, parsed.data),
+          await archiveGoalMilestone(auth.data, parsed.data),
           "Etappe archiviert.",
         )
       : invalid;
@@ -240,7 +214,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await reorderGoalMilestone(auth.client, parsed.data),
+          await reorderGoalMilestone(auth.data, parsed.data),
           "Etappenreihenfolge gespeichert.",
         )
       : invalid;
@@ -259,7 +233,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await createGoalCriterion(auth.client, parsed.data),
+          await createGoalCriterion(auth.data, parsed.data),
           "Kriterium erstellt.",
         )
       : invalid;
@@ -272,7 +246,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await archiveGoalCriterion(auth.client, parsed.data),
+          await archiveGoalCriterion(auth.data, parsed.data),
           "Kriterium archiviert.",
         )
       : invalid;
@@ -305,7 +279,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await appendGoalCriterionEvaluation(auth.client, parsed.data),
+          await appendGoalCriterionEvaluation(auth.data, parsed.data),
           "Kriterium bewertet.",
         )
       : invalid;
@@ -344,7 +318,7 @@ async function runGoalOutcomeOperation(
     return parsed.success
       ? outcomeResult(
           await appendGoalCriterionRevision(
-            auth.client,
+            auth.data,
             parsed.data,
             operation === "criterion.correct"
               ? "criterion.correct"
@@ -368,7 +342,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await addGoalCriterionEvidence(auth.client, parsed.data),
+          await addGoalCriterionEvidence(auth.data, parsed.data),
           "Beleg an Bewertung angehängt.",
         )
       : invalid;
@@ -386,7 +360,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await addGoalMilestoneEvidence(auth.client, parsed.data),
+          await addGoalMilestoneEvidence(auth.data, parsed.data),
           "Etappen-Beleg gespeichert.",
         )
       : invalid;
@@ -405,7 +379,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await amendGoalMilestoneAchievementEvent(auth.client, parsed.data),
+          await amendGoalMilestoneAchievementEvent(auth.data, parsed.data),
           "Etappen-Verlauf ergänzt.",
         )
       : invalid;
@@ -419,7 +393,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await addGoalProjectSupport(auth.client, parsed.data),
+          await addGoalProjectSupport(auth.data, parsed.data),
           "Projekt als unterstützender Kontext verknüpft.",
         )
       : invalid;
@@ -433,7 +407,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await addGoalTaskSupport(auth.client, parsed.data),
+          await addGoalTaskSupport(auth.data, parsed.data),
           "Aufgabe als unterstützender Kontext verknüpft.",
         )
       : invalid;
@@ -450,8 +424,8 @@ async function runGoalOutcomeOperation(
     if (!parsed.success) return invalid;
     const result =
       operation === "support.project.remove"
-        ? await removeGoalProjectSupport(auth.client, parsed.data)
-        : await removeGoalTaskSupport(auth.client, parsed.data);
+        ? await removeGoalProjectSupport(auth.data, parsed.data)
+        : await removeGoalTaskSupport(auth.data, parsed.data);
     return outcomeResult(result, "Support-Kontext gelöst.");
   }
   if (operation === "achieve") {
@@ -464,7 +438,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await achieveGoal(auth.client, parsed.data),
+          await achieveGoal(auth.data, parsed.data),
           "Ziel erreicht.",
         )
       : invalid;
@@ -482,7 +456,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await amendGoalAchievementEvent(auth.client, parsed.data),
+          await amendGoalAchievementEvent(auth.data, parsed.data),
           "Ziel-Verlauf ergänzt.",
         )
       : invalid;
@@ -499,7 +473,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await addGoalAchievementEvidence(auth.client, parsed.data),
+          await addGoalAchievementEvidence(auth.data, parsed.data),
           "Ziel-Beleg gespeichert.",
         )
       : invalid;
@@ -511,14 +485,14 @@ async function runGoalOutcomeOperation(
   });
   return parsed.success
     ? outcomeResult(
-        await reopenGoal(auth.client, parsed.data),
+        await reopenGoal(auth.data, parsed.data),
         "Ziel wieder geöffnet.",
       )
     : invalid;
 }
 async function context() {
   if ((await getCurrentLifeOsProfileId()) !== "manual") return null;
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext("write");
   return auth.ok ? auth : null;
 }
 export async function saveWorkbenchEntity(
@@ -562,7 +536,7 @@ export async function saveWorkbenchEntity(
       url: str(form, "url") || null,
       resourceId: id,
     };
-    const repo = createSupabaseResourceRepository(auth.client);
+    const repo = getResourceRepository(auth.data);
     if (input.url && !z.url().safeParse(input.url).success) return invalid;
     if (id) {
       const parsed = updateResourceInputSchema.safeParse(input);
@@ -596,7 +570,7 @@ export async function workbenchOperation(
     result = await runGoalOutcomeOperation(auth, operation, form);
   } else if (operation === "project.milestone") {
     if (
-      await writeProjectMilestone(auth.client, auth.user.id, {
+      await writeProjectMilestone(auth.data, auth.user.id, {
         operation: str(form, "milestoneOperation"),
         projectId: str(form, "projectId"),
         milestoneId: str(form, "milestoneId"),
@@ -610,7 +584,7 @@ export async function workbenchOperation(
       result = { status: "success", message: "Milestone gespeichert." };
   } else if (operation === "project.resource.role") {
     if (
-      await setProjectResourceRole(auth.client, {
+      await setProjectResourceRole(auth.data, {
         projectId: str(form, "projectId"),
         resourceId: str(form, "resourceId"),
         role: str(form, "role"),
@@ -626,7 +600,7 @@ export async function workbenchOperation(
     operation === "step.archive"
   ) {
     const ok = await writeTaskStep(
-      auth.client,
+      auth.data,
       auth.user.id,
       operation === "step.create"
         ? "create"
@@ -647,7 +621,7 @@ export async function workbenchOperation(
     operation === "task.dependency.add" ||
     operation === "task.dependency.remove"
   ) {
-    result = await writeTaskDependency(auth.client, auth.user.id, {
+    result = await writeTaskDependency(auth.data, auth.user.id, {
       operation: operation === "task.dependency.add" ? "add" : "remove",
       projectId: str(form, "projectId"),
       taskId: str(form, "taskId"),
@@ -679,7 +653,7 @@ export async function workbenchOperation(
       resourceId: str(form, "resourceId"),
     });
     if (!parsed.success) return invalid;
-    const repo = createSupabaseResourceRepository(auth.client);
+    const repo = getResourceRepository(auth.data);
     const r = await (operation === "resource.archive"
       ? repo.archiveResource(parsed.data)
       : repo.restoreResource(parsed.data));
@@ -694,15 +668,15 @@ export async function workbenchOperation(
       relationType: "context",
     });
     if (!parsed.success) return invalid;
-    const r = await createSupabaseResourceRepository(auth.client).linkResource(
+    const r = await getResourceRepository(auth.data).linkResource(
       parsed.data,
     );
     if (r.ok) result = { status: "success", message: "Resource verknüpft." };
   } else if (operation === "resource.unlink") {
     const parsed = z.uuid().safeParse(str(form, "relationId"));
     if (!parsed.success) return invalid;
-    const r = await createSupabaseResourceRepository(
-      auth.client,
+    const r = await getResourceRepository(
+      auth.data,
     ).unlinkResource(auth.user.id, auth.user.id, parsed.data);
     if (r.ok) result = { status: "success", message: "Verknüpfung gelöst." };
   } else if (operation === "task.context") {
@@ -715,7 +689,7 @@ export async function workbenchOperation(
       ...(form.has("goalId") ? { goalId: str(form, "goalId") || null } : {}),
     });
     if (!parsed.success) return invalid;
-    const r = await createSupabaseTaskRepository(auth.client).updateTask(
+    const r = await getTaskRepository(auth.data).updateTask(
       parsed.data,
     );
     if (r.ok)
@@ -737,7 +711,7 @@ export async function workbenchOperation(
       goalId: str(form, "goalId") || null,
     });
     if (!parsed.success) return invalid;
-    const r = await createSupabaseProjectRepository(auth.client).updateProject(
+    const r = await getProjectRepository(auth.data).updateProject(
       parsed.data,
     );
     if (r.ok)

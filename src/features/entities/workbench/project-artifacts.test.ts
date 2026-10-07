@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { projectResourceUses } from "./project-artifacts";
 import { projectArtifactInputSchema } from "../../real-data/schemas/project-artifact.schemas";
-import type { WorkbenchData } from "@/features/real-data/supabase/repositories/entity-workbench-read";
+import type { WorkbenchData } from "@/features/real-data/runtime/entity-workbench-read";
 
 describe("Project artifact semantics", () => {
   const data = {

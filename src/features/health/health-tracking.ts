@@ -1,16 +1,15 @@
 import "server-only";
 import type { HealthSnapshot } from "@/features/real-data";
-import { createSupabaseHealthRepository } from "@/features/real-data/supabase";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { createAuthenticatedApplicationContext } from "@/features/real-data/runtime/application-context";
 
 export type HealthTrackingData = { profileId: "demo" | "empty" | "manual"; authAvailable: boolean; snapshot: HealthSnapshot | null };
 export async function getHealthTrackingData(): Promise<HealthTrackingData> {
   const profileId = await getCurrentLifeOsProfileId();
   if (profileId !== "manual") return { profileId, authAvailable: false, snapshot: null };
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext();
   if (!auth.ok) return { profileId, authAvailable: false, snapshot: null };
-  return { profileId, authAvailable: true, snapshot: await createSupabaseHealthRepository(auth.client).getSnapshot(auth.user.id, auth.user.id) };
+  return { profileId, authAvailable: true, snapshot: await auth.repositories.health.getSnapshot(auth.user.id, auth.user.id) };
 }
 
 export function sleepLabel(minutes: number) { return `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, "0")}m`; }

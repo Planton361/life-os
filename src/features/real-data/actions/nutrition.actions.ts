@@ -1,5 +1,6 @@
 "use server";
 import { dependencyErrorMessage } from "../supabase/repositories/task-dependency-repository";
+import { getNutritionRepository, getScheduleSourceRepository } from "@/features/real-data/runtime/facade";
 
 import { runningStartInstant } from "../domain/running-time";
 import { scheduleSourceInputSchema } from "../schemas/schedule-source.schema";
@@ -17,12 +18,9 @@ import {
   recipeUpdateInputSchema,
   type RecipeIngredient as RealDataRecipeIngredient,
 } from "@/features/real-data";
-import {
-  createSupabaseNutritionRepository,
-  createSupabaseScheduleSourceRepository,
-} from "@/features/real-data/supabase";
+
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { createAuthenticatedApplicationContext } from "@/features/real-data/runtime/application-context";
 
 export type NutritionActionResult = {
   ingredient?: NutritionIngredientActionPayload;
@@ -201,7 +199,7 @@ async function getAuthenticatedNutritionContext() {
     };
   }
 
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext("write");
 
   if (!auth.ok) {
     return {
@@ -259,7 +257,7 @@ export async function createRecipeAction(
     };
   }
 
-  const repository = createSupabaseNutritionRepository(context.auth.client);
+  const repository = getNutritionRepository(context.auth.data);
   const result = await repository.createRecipe({
     ...parsed.data,
     profileId: context.auth.user.id,
@@ -316,7 +314,7 @@ export async function updateRecipeAction(
     };
   }
 
-  const repository = createSupabaseNutritionRepository(context.auth.client);
+  const repository = getNutritionRepository(context.auth.data);
   const result = await repository.updateRecipe({
     ...parsed.data,
     profileId: context.auth.user.id,
@@ -364,7 +362,7 @@ export async function archiveRecipeAction(
     };
   }
 
-  const repository = createSupabaseNutritionRepository(context.auth.client);
+  const repository = getNutritionRepository(context.auth.data);
   const result = await repository.archiveRecipe({
     ...parsed.data,
     profileId: context.auth.user.id,
@@ -417,7 +415,7 @@ export async function createRecipeIngredientAction(
     };
   }
 
-  const repository = createSupabaseNutritionRepository(context.auth.client);
+  const repository = getNutritionRepository(context.auth.data);
   const result = await repository.createRecipeIngredient({
     ...parsed.data,
     profileId: context.auth.user.id,
@@ -473,7 +471,7 @@ export async function updateRecipeIngredientAction(
     };
   }
 
-  const repository = createSupabaseNutritionRepository(context.auth.client);
+  const repository = getNutritionRepository(context.auth.data);
   const result = await repository.updateRecipeIngredient({
     ...parsed.data,
     profileId: context.auth.user.id,
@@ -524,7 +522,7 @@ export async function deleteRecipeIngredientAction(
     };
   }
 
-  const repository = createSupabaseNutritionRepository(context.auth.client);
+  const repository = getNutritionRepository(context.auth.data);
   const result = await repository.deleteRecipeIngredient({
     ...parsed.data,
     profileId: context.auth.user.id,
@@ -582,7 +580,7 @@ export async function createMealAction(
     };
   }
 
-  const repository = createSupabaseNutritionRepository(context.auth.client);
+  const repository = getNutritionRepository(context.auth.data);
   const result = await repository.createMeal({
     ...parsed.data,
     profileId: context.auth.user.id,
@@ -638,7 +636,7 @@ export async function updateMealAction(
     };
   }
 
-  const repository = createSupabaseNutritionRepository(context.auth.client);
+  const repository = getNutritionRepository(context.auth.data);
   const result = await repository.updateMeal({
     ...parsed.data,
     profileId: context.auth.user.id,
@@ -688,8 +686,8 @@ export async function completeMealAction(
   }
 
   const completedAt = parsed.data.completedAt ?? new Date().toISOString();
-  const linkedResult = await createSupabaseScheduleSourceRepository(
-    context.auth.client,
+  const linkedResult = await getScheduleSourceRepository(
+    context.auth.data,
   ).completeLinkedMeal(parsed.data.mealId, completedAt);
   const result =
     linkedResult.error || !linkedResult.data
@@ -729,9 +727,7 @@ export async function applyNutritionPlanAction(
   const parsed = nutritionPlanInputSchema.safeParse(input);
   if (!parsed.success)
     return { status: "error", message: "Die Planänderung ist ungültig." };
-  const { error } = await context.auth.client.rpc("apply_nutrition_plan", {
-    p_operations: parsed.data,
-  });
+  const { error } = await context.auth.data.useCases.applyNutritionPlan(parsed.data);
   if (error)
     return {
       status: "error",
@@ -767,8 +763,8 @@ export async function scheduleNutritionMealAction(
       status: "error",
       message: "Bitte ein gültiges Datum, eine Uhrzeit und Dauer angeben.",
     };
-  const result = await createSupabaseScheduleSourceRepository(
-    context.auth.client,
+  const result = await getScheduleSourceRepository(
+    context.auth.data,
   ).schedule(parsed.data);
   if (result.error)
     return {

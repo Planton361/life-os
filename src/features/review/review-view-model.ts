@@ -1,12 +1,7 @@
 import "server-only";
 
 import type { ReviewKind, ReviewRecord } from "@/features/real-data";
-import {
-  createSupabaseProjectRepository,
-  createSupabaseReviewRepository,
-  createSupabaseTaskRepository,
-} from "@/features/real-data/supabase";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { createAuthenticatedApplicationContext } from "@/features/real-data/runtime/application-context";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
 import { reviewToday, reviewWeek } from "./review-period";
 
@@ -56,7 +51,7 @@ export async function getReviewPageViewModel(
 
   if (profileId !== "manual") return base;
 
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext();
   if (!auth.ok) {
     return {
       ...base,
@@ -66,15 +61,15 @@ export async function getReviewPageViewModel(
   }
 
   const userId = auth.user.id;
-  const reviewRepository = createSupabaseReviewRepository(auth.client);
+  const reviewRepository = auth.repositories.reviews;
   const [reviewResult, taskResult, projectResult] = await Promise.all([
     reviewRepository.getReviewByPeriod(userId, userId, kind, base.periodStart),
-    createSupabaseTaskRepository(auth.client).getTasksByUser({
+    auth.repositories.tasks.getTasksByUser({
       profileId: userId,
       sortBy: "planned",
       userId,
     }),
-    createSupabaseProjectRepository(auth.client).getProjectsByUser(
+    auth.repositories.projects.getProjectsByUser(
       userId,
       userId,
     ),

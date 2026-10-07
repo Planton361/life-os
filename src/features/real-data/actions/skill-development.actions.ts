@@ -1,16 +1,15 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { createAuthenticatedApplicationContext } from "@/features/real-data/runtime/application-context";
 import { parseSkillCommand } from "../schemas/skill-development.schema";
-import type { Json } from "@/types/supabase";
 export async function skillDevelopmentCommand(input: unknown) {
   if ((await getCurrentLifeOsProfileId()) !== "manual")
     return {
       status: "blocked" as const,
       message: "Wechsle ins Manual-Profil.",
     };
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext("write");
   if (!auth.ok)
     return {
       status: "blocked" as const,
@@ -22,13 +21,7 @@ export async function skillDevelopmentCommand(input: unknown) {
       status: "error" as const,
       message: "Bitte prüfe die Skill-Eingaben.",
     };
-  const { data, error } = await auth.client.rpc("skill_development_command", {
-    p_skill_id: parsed.data.skillId,
-    p_command_id: parsed.data.commandId,
-    p_operation: parsed.data.operation,
-    p_expected_revision: parsed.data.expectedRevision,
-    p_payload: parsed.data.payload as Json,
-  });
+  const { data, error } = await auth.data.useCases.skillDevelopmentCommand(parsed.data);
   if (error)
     return {
       status: "error" as const,

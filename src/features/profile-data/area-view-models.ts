@@ -1,11 +1,14 @@
 import { projectHealthOverviewFacts } from "@/features/health/health-overview-facts";
+import { getHealthRepository, getReviewRepository, getChallengeRepository, getAntiRotRepository, getNutritionRepository, getHabitRepository, getCodingRepository, getEducationRepository, getWorkRepository, getWorkKnowledgeRepository, getWorkMeetingRepository, getResourceRepository, getTrainingRepository, getLifeRepository, getShopRepository } from "@/features/real-data/runtime/facade";
+import type { ApplicationData } from "@/features/real-data/runtime/application-context";
+import { presentationRead } from "@/features/real-data/runtime/presentation-read";
 import { shiftDay } from "@/features/health/habits/habit-analytics";
-import { createSupabaseHealthRepository, createSupabaseReviewRepository } from "@/features/real-data/supabase";
+
 import "server-only";
 
 import { getChallengesViewModel as getDemoChallengesViewModel } from "@/features/challenges";
-import { createSupabaseChallengeRepository } from "@/features/real-data/supabase/repositories/supabase-challenge-repository";
-import { createSupabaseAntiRotRepository } from "@/features/real-data/supabase/repositories/supabase-anti-rot-repository";
+
+
 import { getCodingOverviewViewModel as getDemoCodingOverviewViewModel } from "@/features/coding";
 import { getAgentHubViewModel as getDemoAgentHubViewModel } from "@/features/coding/agents";
 import { getRepositoriesViewModel as getDemoRepositoriesViewModel } from "@/features/coding/repositories";
@@ -67,19 +70,7 @@ import {
 } from "@/features/resources/resource-relations-read-model";
 import { buildSemanticConnectedContext } from "@/features/semantic-relations/read-model";
 import { resolveContentStateMeta } from "@/features/content-state";
-import {
-  createSupabaseNutritionRepository,
-  createSupabaseHabitRepository,
-  createSupabaseCodingRepository,
-  createSupabaseEducationRepository,
-  createSupabaseWorkRepository,
-  createSupabaseWorkKnowledgeRepository,
-  createSupabaseWorkMeetingRepository,
-  createSupabaseResourceRepository,
-  createSupabaseTrainingRepository,
-  createSupabaseLifeRepository,
-  type SupabaseClientLike,
-} from "@/features/real-data/supabase";
+
 import type {
   HabitSnapshot,
   TrainingSnapshot,
@@ -91,7 +82,7 @@ import type {
 import { localDateInTimeZone } from "@/features/real-data";
 import { formatPace, muscleLoad, strengthVolume } from "@/features/real-data";
 import { getShopViewModel as getDemoShopViewModel } from "@/features/shop";
-import { createSupabaseShopRepository } from "@/features/real-data/supabase/repositories/supabase-shop-repository";
+
 import {
   getWorkLogViewModel as getDemoWorkLogViewModel,
   getWorkOverviewViewModel as getDemoWorkOverviewViewModel,
@@ -115,7 +106,7 @@ import {
   buildWorkWikiContentStates,
 } from "@/features/work/work-content-states";
 import { readManualProfile } from "./manual-profile-store";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { createAuthenticatedApplicationContext } from "@/features/real-data/runtime/application-context";
 import { getCurrentLifeOsProfileId } from "./profile-cookie";
 import type { LifeOsProfileId, ManualHabit, ManualProfileData } from "./types";
 import type { MealEntry, NutritionDay } from "@/features/nutrition";
@@ -1177,7 +1168,7 @@ async function getManualNutritionData(range?: {
   endDate: string;
   startDate: string;
 }): Promise<ManualNutritionData> {
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext();
 
   if (!auth.ok) {
     return {
@@ -1188,7 +1179,7 @@ async function getManualNutritionData(range?: {
     };
   }
 
-  const repository = createSupabaseNutritionRepository(auth.client);
+  const repository = getNutritionRepository(auth.data);
   const today = new Date();
   const startDate = range?.startDate ?? formatLocalDate(startOfIsoWeek(today));
   const endDate = range?.endDate ?? formatLocalDate(addDays(startOfIsoWeek(today), 30));
@@ -1666,7 +1657,7 @@ function buildProfileMealPlannerViewModel(
 
   viewModel.profileId = profileId;
   viewModel.actionsEnabled = false;
-  viewModel.canonicalMeals = nutritionData?.meals ?? [];
+  viewModel.canonicalMeals = presentationRead(nutritionData?.meals ?? []);
   viewModel.unavailableReason = nutritionData?.unavailableReason;
   viewModel.mealEditEnabled =
     profileId === "manual" && Boolean(nutritionData) && !nutritionData?.unavailableReason;
@@ -2031,14 +2022,14 @@ export async function getHealthOverviewViewModel(): Promise<
   }
 
   if (profileId === "manual") {
-    const auth = await createAuthenticatedSupabaseServerClient();
+    const auth = await createAuthenticatedApplicationContext();
     if (auth.ok) {
-      const repository = createSupabaseHabitRepository(auth.client);
+      const repository = getHabitRepository(auth.data);
       const today = localDateInTimeZone(new Date(), "Europe/Berlin");
       const [training, health, reviews] = await Promise.all([
-        createSupabaseTrainingRepository(auth.client).getSnapshot(auth.user.id),
-        createSupabaseHealthRepository(auth.client).getSnapshot(auth.user.id, auth.user.id),
-        createSupabaseReviewRepository(auth.client).getReviewsInRange(auth.user.id, auth.user.id, shiftDay(today,-29), today),
+        getTrainingRepository(auth.data).getSnapshot(auth.user.id),
+        getHealthRepository(auth.data).getSnapshot(auth.user.id, auth.user.id),
+        getReviewRepository(auth.data).getReviewsInRange(auth.user.id, auth.user.id, shiftDay(today,-29), today),
       ]);
       const project = (view: ReturnType<typeof getDemoHealthOverviewViewModel>) => projectHealthOverviewFacts(view, health, reviews.ok ? reviews.data : [], training.ok ? training.data : null, today);
       const settings = await repository.getSettings(auth.user.id, auth.user.id);
@@ -2124,9 +2115,9 @@ export async function getNutritionOverviewViewModel(): Promise<
     startDate: formatLocalDate(addDays(start, -21)), endDate: formatLocalDate(addDays(start, 6)),
   }) : undefined);
   if (profileId === "manual") {
-    const auth = await createAuthenticatedSupabaseServerClient();
+    const auth = await createAuthenticatedApplicationContext();
     if (auth.ok) {
-      const health = await createSupabaseHealthRepository(auth.client).getSnapshot(auth.user.id, auth.user.id);
+      const health = await getHealthRepository(auth.data).getSnapshot(auth.user.id, auth.user.id);
       const values = [...(health?.weights ?? [])].slice(0,7).reverse();
       viewModel.weightTrend = {
         values: values.map(v=>v.weightKg),
@@ -2208,10 +2199,10 @@ export async function getCodingOverviewViewModel(): Promise<
 
   const auth =
     profileId === "manual"
-      ? await createAuthenticatedSupabaseServerClient()
+      ? await createAuthenticatedApplicationContext()
       : null;
   const workspace = auth?.ok
-    ? await createSupabaseCodingRepository(auth.client).getWorkspace(auth.user.id)
+    ? await getCodingRepository(auth.data).getWorkspace(auth.user.id)
     : null;
 
   return {
@@ -2564,23 +2555,23 @@ export async function getLifeOverviewViewModel(): Promise<
 
 export async function getLifeManualWorkspace() {
   if (await getCurrentLifeOsProfileId() !== "manual") return undefined;
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext();
   if (!auth.ok) return null;
-  return createSupabaseLifeRepository(auth.client).getWorkspace(auth.user.id);
+  return getLifeRepository(auth.data).getWorkspace(auth.user.id);
 }
 
 export async function getLifeEntertainmentWorkspace() {
   if (await getCurrentLifeOsProfileId() !== "manual") return undefined;
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext();
   if (!auth.ok) return null;
-  return createSupabaseLifeRepository(auth.client).getEntertainmentWorkspace(auth.user.id);
+  return getLifeRepository(auth.data).getEntertainmentWorkspace(auth.user.id);
 }
 
 export async function getLifeInventoryWorkspace() {
   if (await getCurrentLifeOsProfileId() !== "manual") return undefined;
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext();
   if (!auth.ok) return null;
-  return createSupabaseLifeRepository(auth.client).getInventoryWorkspace(auth.user.id);
+  return getLifeRepository(auth.data).getInventoryWorkspace(auth.user.id);
 }
 
 export async function getJournalPageViewModel(): Promise<
@@ -2942,9 +2933,9 @@ export async function getEducationOverviewViewModel(): Promise<EducationOverview
 
   const viewModel = buildProfileEducationOverviewViewModel(profileId);
   if (profileId !== "manual") return viewModel;
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext();
   const workspace = auth.ok
-    ? await createSupabaseEducationRepository(auth.client).getWorkspace(auth.user.id)
+    ? await getEducationRepository(auth.data).getWorkspace(auth.user.id)
     : { projects: [], resources: [] };
   return {
     ...viewModel,
@@ -2985,9 +2976,10 @@ export async function getWorkOverviewViewModel(): Promise<WorkOverviewViewModel>
   }
 
   const viewModel = buildProfileWorkOverviewViewModel(profileId, await readManualProfile());
-  const auth = await createAuthenticatedSupabaseServerClient();
+  if (profileId !== "manual") return viewModel;
+  const auth = await createAuthenticatedApplicationContext();
   if (!auth.ok) return { ...viewModel, manualWorkspace: { authAvailable: false, projects: [], wiki: [], decisions: [], meetings: [] } };
-  const [workspace, knowledge, meetings] = await Promise.all([createSupabaseWorkRepository(auth.client).getWorkspace(auth.user.id), createSupabaseWorkKnowledgeRepository(auth.client).getKnowledge(auth.user.id), createSupabaseWorkMeetingRepository(auth.client).getMeetings(auth.user.id)]);
+  const [workspace, knowledge, meetings] = await Promise.all([getWorkRepository(auth.data).getWorkspace(auth.user.id), getWorkKnowledgeRepository(auth.data).getKnowledge(auth.user.id), getWorkMeetingRepository(auth.data).getMeetings(auth.user.id)]);
   return { ...viewModel, manualWorkspace: { authAvailable: true, projects: workspace.projects, ...knowledge, meetings } };
 }
 
@@ -3067,14 +3059,14 @@ function manualResourceReviewQueueItem(
   };
 }
 
-async function getManualResourcesFromSupabase(
-  client: SupabaseClientLike,
+async function getManualResources(
+  client: ApplicationData,
   userId: string,
 ): Promise<{
   relationTargets: ResourceRelationCreateTarget[];
   resources: ResourceItem[];
 }> {
-  const repository = createSupabaseResourceRepository(client);
+  const repository = getResourceRepository(client);
   const [resourceResult, relationResult, relationTargets] = await Promise.all([
     repository.getResourcesByUser(userId, userId, true),
     repository.getResourceRelationsByUser(userId, userId),
@@ -3198,12 +3190,12 @@ export async function getResourcesViewModel(): Promise<
   let relationTargets: ResourceRelationCreateTarget[] = [];
 
   if (profileId === "manual") {
-    const auth = await createAuthenticatedSupabaseServerClient();
+    const auth = await createAuthenticatedApplicationContext();
 
     if (auth.ok) {
       writeEnabled = true;
-      const manualResourceData = await getManualResourcesFromSupabase(
-        auth.client,
+      const manualResourceData = await getManualResources(
+        auth.data,
         auth.user.id,
       );
       manualResources = manualResourceData.resources;
@@ -3279,9 +3271,9 @@ export async function getShopViewModel(): Promise<
 
 export async function getShopWorkspace() {
   if (await getCurrentLifeOsProfileId() !== "manual") return undefined;
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext();
   if (!auth.ok) return null;
-  return createSupabaseShopRepository(auth.client).getWorkspace(auth.user.id);
+  return getShopRepository(auth.data).getWorkspace(auth.user.id);
 }
 
 export async function getChallengesViewModel(): Promise<
@@ -3310,14 +3302,14 @@ export async function getChallengesViewModel(): Promise<
 
 export async function getChallengesWorkspace() {
   if (await getCurrentLifeOsProfileId() !== "manual") return undefined;
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext();
   if (!auth.ok) return null;
-  return createSupabaseChallengeRepository(auth.client).getWorkspace(auth.user.id);
+  return getChallengeRepository(auth.data).getWorkspace(auth.user.id);
 }
 
 export async function getAntiRotWorkspace() {
   if (await getCurrentLifeOsProfileId() !== "manual") return undefined;
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext();
   if (!auth.ok) return null;
-  return createSupabaseAntiRotRepository(auth.client).getWorkspace(auth.user.id);
+  return getAntiRotRepository(auth.data).getWorkspace(auth.user.id);
 }

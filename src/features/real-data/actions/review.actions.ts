@@ -3,9 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { saveReviewInputSchema, type ReviewKind } from "@/features/real-data";
-import { createSupabaseReviewRepository } from "@/features/real-data/supabase";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { createAuthenticatedApplicationContext } from "@/features/real-data/runtime/application-context";
 import {
   reviewTimeZone,
   reviewToday,
@@ -50,7 +49,7 @@ async function saveReview(
   const profileId = await getCurrentLifeOsProfileId();
   if (profileId !== "manual") redirect(reviewPath(kind, "blocked"));
 
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext("write");
   if (!auth.ok) redirect(reviewPath(kind, "blocked"));
 
   const today = reviewToday();
@@ -77,7 +76,7 @@ async function saveReview(
 
   if (!parsed.success) redirect(reviewPath(kind, "error"));
 
-  const result = await createSupabaseReviewRepository(auth.client).saveReview({
+  const result = await auth.repositories.reviews.saveReview({
     ...parsed.data,
     profileId: auth.user.id,
     userId: auth.user.id,

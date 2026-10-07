@@ -23,8 +23,11 @@ single-owner hosted Life OS with one cloud-persistent canonical dataset reachabl
 from Mac and Linux browsers. Normal use must not require local Docker, a local
 Supabase runtime, an IDE or a second operative datastore. The current
 Supabase/PostgreSQL stack remains the implementation baseline until a separately
-authorized and proven cutover; SQLite is only the preferred candidate for the
-next production-like whole-app proof, with PGlite retained as fallback evidence.
+authorized and proven cutover. The native SQLite implementation now supports an
+explicit, synthetic-only production application runtime for #116 acceptance.
+This implementation does not switch the personal datastore, migrate personal
+data, deploy a provider or establish hosted authentication. PGlite remains
+historical fallback evidence.
 
 Hosted access must still authenticate the single owner server-side before reads
 or writes. Zod validation, ownership/relation checks, transactional invariants,

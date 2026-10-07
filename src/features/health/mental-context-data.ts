@@ -1,7 +1,6 @@
 import "server-only";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { createAuthenticatedApplicationContext } from "@/features/real-data/runtime/application-context";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
-import { createSupabaseReviewRepository } from "@/features/real-data/supabase/repositories/supabase-review-repository";
 import { dashboardLocalDate } from "@/features/dashboard/dashboard-read-model";
 import { shiftDay } from "./habits/habit-analytics";
 import type { ReviewRecord } from "@/features/real-data/domain/review";
@@ -11,11 +10,9 @@ export async function getMentalReflectionContext(): Promise<{
 }> {
   if ((await getCurrentLifeOsProfileId()) !== "manual")
     return { reviews: [], available: false };
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext();
   if (!auth.ok) return { reviews: [], available: false };
   const today = dashboardLocalDate();
-  const result = await createSupabaseReviewRepository(
-    auth.client,
-  ).getReviewsInRange(auth.user.id, auth.user.id, shiftDay(today, -29), today);
+  const result = await auth.repositories.reviews.getReviewsInRange(auth.user.id, auth.user.id, shiftDay(today, -29), today);
   return { reviews: result.ok ? result.data : [], available: result.ok };
 }

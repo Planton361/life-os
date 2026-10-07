@@ -1,3 +1,5 @@
+import { presentationRead } from "@/features/real-data/runtime/presentation-read";
+import { getGoalOutcome, readProjectDepth } from "@/features/real-data/runtime/facade";
 import { SkillTaskRecovery } from "./skill-task-recovery";
 import { SkillWorkbench, SkillCapture } from "./skill-workbench";
 import { TaskDependencies } from "./task-dependencies";
@@ -14,11 +16,11 @@ import { z } from "zod";
 import {
   readEntityWorkbench,
   type WorkbenchData,
-} from "@/features/real-data/supabase/repositories/entity-workbench-read";
-import { getGoalOutcome } from "@/features/real-data/supabase/repositories/supabase-goal-outcome-repository";
-import { readProjectDepth } from "@/features/real-data/supabase/repositories/project-depth-repository";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
-import { isSqliteProofRuntime } from "../../../../experiments/issue-37/proof-gate";
+} from "@/features/real-data/runtime/entity-workbench-read";
+
+
+import { createAuthenticatedApplicationContext } from "@/features/real-data/runtime/application-context";
+
 import {
   EntityForm,
   GoalCaptureForm,
@@ -423,45 +425,30 @@ export async function WorkbenchEditor({
           </div>
         </EntityWorkbenchShell>
       );
-    const auth = await createAuthenticatedSupabaseServerClient();
+    const auth = await createAuthenticatedApplicationContext();
     if (!auth.ok)
       return (
         <EntityWorkbenchShell kind="skill" title={row?.title ?? "Skill"}>
           {authMessage}
         </EntityWorkbenchShell>
       );
-    const projection = await auth.client.rpc("skill_development_read", {
-      p_skill_id: id,
-    });
+    const projection = await auth.data.reads.skillDevelopment(id);
     if (projection.error)
       throw new Error("Skill-Daten konnten nicht geladen werden.");
     if (!projection.data) notFound();
-    return <SkillWorkbench read={projection.data} data={data} />;
+    return <SkillWorkbench read={presentationRead(projection.data)} data={data} />;
   }
   if (kind === "goal" && id && row) {
-    const outcome = isSqliteProofRuntime()
-      ? await (async () => {
-          const { getProofOwnerId, readProofGoalOutcome, readProofSnapshot } =
-            await import("../../../../experiments/issue-37/sqlite-proof-runtime");
-          const ownerId = await getProofOwnerId();
-          if (!ownerId) return null;
-          const projection = readProofGoalOutcome(
-            ownerId,
-            id,
-            readProofSnapshot(ownerId),
-          );
-          return projection ? { ok: true as const, data: projection } : null;
-        })()
-      : await (async () => {
-          const auth = await createAuthenticatedSupabaseServerClient();
-          if (!auth.ok) return null;
-          return getGoalOutcome(
-            auth.client,
-            auth.user.id,
-            id,
-            data.dependencyGraph,
-          );
-        })();
+    const outcome = await (async () => {
+      const auth = await createAuthenticatedApplicationContext();
+      if (!auth.ok) return null;
+      return getGoalOutcome(
+        auth.data,
+        auth.user.id,
+        id,
+        data.dependencyGraph,
+      );
+    })();
     if (!outcome) {
       return (
         <EntityWorkbenchShell kind="goal" title={row.title}>
@@ -501,22 +488,20 @@ export async function WorkbenchEditor({
     );
   }
   if (kind === "project" && id && row) {
-    const depth = isSqliteProofRuntime()
-      ? undefined
-      : await (async () => {
-          const auth = await createAuthenticatedSupabaseServerClient();
-          if (!auth.ok) return undefined;
-          return readProjectDepth(
-            auth.client,
-            auth.user.id,
-            id,
-            historyBefore &&
-              /^(0|[1-9][0-9]{0,18})$/.test(historyBefore) &&
-              BigInt(historyBefore) <= BigInt("9223372036854775807")
-              ? historyBefore
-              : undefined,
-          );
-        })();
+    const depth = await (async () => {
+      const auth = await createAuthenticatedApplicationContext();
+      if (!auth.ok) return undefined;
+      return presentationRead(await readProjectDepth(
+        auth.data,
+        auth.user.id,
+        id,
+        historyBefore &&
+          /^(0|[1-9][0-9]{0,18})$/.test(historyBefore) &&
+          BigInt(historyBefore) <= BigInt("9223372036854775807")
+          ? historyBefore
+          : undefined,
+      ));
+    })();
     return (
       <ProjectReadView
         data={data}

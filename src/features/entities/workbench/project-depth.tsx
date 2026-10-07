@@ -11,10 +11,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { projectDepthAction } from "@/features/real-data/actions/project-depth.actions";
 import type { ProjectDepthRead } from "@/features/real-data/supabase/repositories/project-depth-repository";
+import type { PresentationRead } from "@/features/real-data/runtime/presentation-read";
 import { actionClass, fieldClass } from "./forms";
 import { ManagementDialog } from "./management-disclosure";
 
-type Depth = ProjectDepthRead;
+type Depth = PresentationRead<ProjectDepthRead>;
 type Command = Parameters<typeof projectDepthAction>[0];
 type CommandResult = Awaited<ReturnType<typeof projectDepthAction>>;
 const amendmentLabel: Record<string, string> = {

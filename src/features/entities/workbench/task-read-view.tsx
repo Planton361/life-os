@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { taskDependencyContext } from "@/features/real-data/domain/task-dependencies";
-import type { WorkbenchData } from "@/features/real-data/supabase/repositories/entity-workbench-read";
+import type { WorkbenchData } from "@/features/real-data/runtime/entity-workbench-read";
 import {
   ManagementDisclosure,
   ManagementDisclosureGroup,

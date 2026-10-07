@@ -1,4 +1,5 @@
 "use server";
+import { createGoalContextProject, getGoalRepository, getProjectRepository } from "../runtime/facade";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -9,14 +10,10 @@ import {
   updateGoalInputSchema,
   updateProjectInputSchema,
 } from "@/features/real-data";
-import {
-  createGoalContextProject,
-  createSupabaseGoalRepository,
-  createSupabaseProjectRepository,
-} from "@/features/real-data/supabase";
-import type { SupabaseClientLike } from "@/features/real-data/supabase";
+
+import type { ApplicationData } from "../runtime/application-context";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { createAuthenticatedApplicationContext } from "@/features/real-data/runtime/application-context";
 import { projectDepthAction } from "./project-depth.actions";
 
 export type PortfolioTargetCreateActionResult = {
@@ -186,21 +183,13 @@ function redirectToPortfolioCreateState(
 }
 
 async function validateGoalScope(
-  client: SupabaseClientLike,
+  client: ApplicationData,
   userId: string,
   goalId: string | undefined,
 ) {
   if (!goalId) return true;
 
-  const result = await client
-    .from("goals")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("id", goalId)
-    .is("archived_at", null)
-    .maybeSingle();
-
-  return !result.error && Boolean(result.data);
+  return client.scopes.ownsActiveGoal(userId, goalId);
 }
 
 export async function createProjectAction(
@@ -215,7 +204,7 @@ export async function createProjectAction(
     };
   }
 
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext("write");
 
   if (!auth.ok) {
     return {
@@ -227,7 +216,7 @@ export async function createProjectAction(
   const goalId = optionalFormString(formData, "goalId");
   const goalMilestoneId = optionalFormString(formData, "goalMilestoneId");
 
-  if (!(await validateGoalScope(auth.client, auth.user.id, goalId))) {
+  if (!(await validateGoalScope(auth.data, auth.user.id, goalId))) {
     return {
       message: "Das Ziel konnte nicht als Projekt-Kontext bestätigt werden.",
       status: "error",
@@ -261,7 +250,7 @@ export async function createProjectAction(
         status: "error",
       };
     }
-    const contextual = await createGoalContextProject(auth.client, {
+    const contextual = await createGoalContextProject(auth.data, {
       areaId: parsed.data.areaId,
       commandId: optionalFormString(formData, "commandId"),
       description: parsed.data.description,
@@ -288,7 +277,7 @@ export async function createProjectAction(
     };
   }
 
-  const repository = createSupabaseProjectRepository(auth.client);
+  const repository = getProjectRepository(auth.data);
   const result = await repository.createProject(parsed.data);
 
   if (!result.ok) {
@@ -320,7 +309,7 @@ async function getAuthenticatedManualProjectContext(actionLabel: string) {
     };
   }
 
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext("write");
 
   if (!auth.ok) {
     return {
@@ -372,7 +361,7 @@ export async function updateProjectAction(
     };
   }
 
-  const repository = createSupabaseProjectRepository(context.auth.client);
+  const repository = getProjectRepository(context.auth.data);
   const result = await repository.updateProject(parsed.data);
 
   if (!result.ok) {
@@ -425,7 +414,7 @@ async function getAuthenticatedManualGoalContext(actionLabel: string) {
     };
   }
 
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext("write");
 
   if (!auth.ok) {
     return {
@@ -455,7 +444,7 @@ export async function createGoalAction(
     };
   }
 
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext("write");
 
   if (!auth.ok) {
     return {
@@ -485,7 +474,7 @@ export async function createGoalAction(
     };
   }
 
-  const repository = createSupabaseGoalRepository(auth.client);
+  const repository = getGoalRepository(auth.data);
   const result = await repository.createGoal(parsed.data);
 
   if (!result.ok) {
@@ -544,7 +533,7 @@ export async function updateGoalAction(
     };
   }
 
-  const repository = createSupabaseGoalRepository(context.auth.client);
+  const repository = getGoalRepository(context.auth.data);
   const result = await repository.updateGoal(parsed.data);
 
   if (!result.ok) {
@@ -584,7 +573,7 @@ export async function archiveGoalAction(
     };
   }
 
-  const repository = createSupabaseGoalRepository(context.auth.client);
+  const repository = getGoalRepository(context.auth.data);
   const result = await repository.updateGoal(parsed.data);
 
   if (!result.ok) {

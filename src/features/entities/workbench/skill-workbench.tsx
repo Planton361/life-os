@@ -1,3 +1,4 @@
+import type { PresentationRead } from "@/features/real-data/runtime/presentation-read";
 import Link from "next/link";
 import { SkillDisclosureBoundary } from "./skill-disclosure-boundary";
 import { skillWorkAction, skillTaskReadiness } from "./skill-guidance";
@@ -5,14 +6,18 @@ import { actionClass, fieldClass } from "./form-styles";
 import type { ReactNode } from "react";
 import {
   skillPracticeReads,
-  type SkillDevelopmentRead,
-  type DevelopmentEvidence,
-  type DevelopmentTarget,
-  type SkillMilestone,
+  type SkillDevelopmentRead as RawSkillDevelopmentRead,
+  type DevelopmentEvidence as RawDevelopmentEvidence,
+  type DevelopmentTarget as RawDevelopmentTarget,
+  type SkillMilestone as RawSkillMilestone,
 } from "@/features/real-data/domain/skill-development";
-import type { WorkbenchData } from "@/features/real-data/supabase/repositories/entity-workbench-read";
+import type { WorkbenchData } from "@/features/real-data/runtime/entity-workbench-read";
 import { SkillCommandForm } from "./skill-command-form";
 import { OperationForm } from "./forms";
+type SkillDevelopmentRead = PresentationRead<RawSkillDevelopmentRead>;
+type DevelopmentEvidence = PresentationRead<RawDevelopmentEvidence>;
+type DevelopmentTarget = PresentationRead<RawDevelopmentTarget>;
+type SkillMilestone = PresentationRead<RawSkillMilestone>;
 const statusLabel = {
   planned: "Geplant",
   current: "Aktuell",
