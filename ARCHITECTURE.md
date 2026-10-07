@@ -9,10 +9,12 @@ Nicht gilt für: Produkt- oder Designdetails.
 
 ## Durable work-graph / knowledge ownership architecture
 
-Product Target v0.4 is accepted. Life OS / PostgreSQL owns canonical
+Product Target v0.4 is accepted. Life OS owns canonical
 operational context truth: Projects, Goals, Skills, Milestones, Tasks,
 Dependencies, Planning and Relations. `Resource` remains the Life-OS reference
 and Work-Artifact identity; Obsidian owns long-form Knowledge Content and Notes.
+The selected Supabase or SQLite runtime supplies one canonical datastore;
+selecting SQLite does not imply migration, synchronization or a second writer.
 Vault-relative paths are locators, not portable identity. A bound note uses
 stable `life_os_id`; rename/move does not change identity. No watcher, sync,
 write-back or personal Vault access follows from this decision.
@@ -28,8 +30,8 @@ Product sequence and operative work status are read from `ROADMAP.md` and GitHub
 - TypeScript
 - Tailwind CSS
 - shadcn/ui als Basis
-- Supabase Auth + Postgres + RLS (operative personal/default path)
-- Native SQLite / better-sqlite3 (explicit synthetic application acceptance)
+- Supabase Auth + Postgres + RLS (preserved absent-selector default)
+- Native SQLite / better-sqlite3 (opt-in local production and separate synthetic proof)
 - Zod
 - React Hook Form
 - Recharts sparsam
@@ -98,7 +100,8 @@ forwarded host and cross-site provenance before issuing write-capable context.
 Blocked authentication issues no owner context. Synthetic mode never uses
 Supabase Auth or the legacy personal JSON profile. Presentation projections omit
 internal owner/profile identity; native handles and DB paths stay server-only.
-Hosted `sqlite-hosted` uses `authenticateGatewayRequest` for every owner-scoped
+The production selector `sqlite-hosted`, also used locally under #120, uses
+`authenticateGatewayRequest` for every owner-scoped
 read and write. Its server-only configuration is `LIFE_OS_HOSTED_SQLITE_PATH`,
 `LIFE_OS_HOSTED_ORIGIN` (the accepted HTTPS `*.ts.net` origin) and
 `LIFE_OS_HOSTED_OWNER_LOGIN`. Owner UUID comes from verified canonical metadata,
@@ -120,17 +123,21 @@ leaves an unready target; existing files are never overwritten or promoted.
 With the hosted selector, `pnpm start` fixes Next to `127.0.0.1:3000` and refuses
 listener CLI overrides. `pnpm test:sqlite:hosted` proves fresh canonical bootstrap,
 gateway admission, real Server Action writes and process-restart persistence
-without Supabase/Postgres/Docker. This is local production-shape evidence only;
-private gateway provisioning, durable hosted storage, backup and deployment
-acceptance remain later #118 slices.
+without Supabase/Postgres/Docker. This smoke simulates gateway headers; the
+accepted real Mac Tailscale/reload/restart evaluation and redirect repair are
+recorded in #118. Under WP0 #120, local integration is the bounded result.
+Hosted VPS/storage, B2/restic, deployment and cutover are indefinitely deferred
+and their acceptance remains unmet. No existing installation or DB is changed
+by integration; the Mac is not designated a permanent server. The separate
+source-preserving local backup/isolated-restore Freeze-Gate remains open.
 
 For hosted startup only, instrumentation replaces Next 16.2.2's internal
 Server Action redirect origin with the validated HTTPS gateway origin after DB
 preflight. Redirect RSC reads therefore re-enter Tailscale Serve instead of
 receiving a loopback Host from Next's internal fetch. Host, forwarded Host,
 identity and browser-write checks stay unchanged. This pinned Next internal
-hook must be rechecked on framework upgrades; Supabase and synthetic origins
-remain unchanged.
+hook (`__NEXT_PRIVATE_ORIGIN`) must be rechecked on framework upgrades;
+Supabase and synthetic origins remain unchanged.
 
 The disposable production runner is `pnpm test:sqlite:application`; resource
 measurement is `pnpm test:sqlite:resources`. Both build the real Next application
