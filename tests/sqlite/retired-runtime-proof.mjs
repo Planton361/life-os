@@ -2,7 +2,12 @@
 // and only the retired crash endpoint is requested. Requires a current build.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { createServer } from "node:net";
+
+const appPaths = JSON.parse(readFileSync(".next/server/app-paths-manifest.json", "utf8"));
+assert.ok(!Object.hasOwn(appPaths, "/api/issue-37/crash/route"), "Retired crash route must be absent from the production route manifest");
+process.stdout.write("PASS retired crash route is absent from the production route manifest\n");
 
 async function port() {
   const server = createServer();

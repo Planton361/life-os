@@ -71,5 +71,6 @@ jobs:
       - name: Production Next build and native shutdown proof (Linux x64)
         run: |
           pnpm build
+          node tests/sqlite/retired-runtime-proof.mjs
           node tests/sqlite/framework-shutdown-proof.mjs
           node tests/sqlite/application-smoke.mjs
