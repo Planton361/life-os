@@ -124,6 +124,14 @@ without Supabase/Postgres/Docker. This is local production-shape evidence only;
 private gateway provisioning, durable hosted storage, backup and deployment
 acceptance remain later #118 slices.
 
+For hosted startup only, instrumentation replaces Next 16.2.2's internal
+Server Action redirect origin with the validated HTTPS gateway origin after DB
+preflight. Redirect RSC reads therefore re-enter Tailscale Serve instead of
+receiving a loopback Host from Next's internal fetch. Host, forwarded Host,
+identity and browser-write checks stay unchanged. This pinned Next internal
+hook must be rechecked on framework upgrades; Supabase and synthetic origins
+remain unchanged.
+
 The disposable production runner is `pnpm test:sqlite:application`; resource
 measurement is `pnpm test:sqlite:resources`. Both build the real Next application
 and use fresh native-command fixtures explicitly sealed for application access.
