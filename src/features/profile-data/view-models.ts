@@ -4809,7 +4809,7 @@ export async function getLifeOsDataSource(): Promise<LifeOsDataSource> {
     },
     async createInboxItem(input: CreateInboxItemInput) {
       assertManualProfile();
-      const auth = await createAuthenticatedApplicationContext();
+      const auth = await createAuthenticatedApplicationContext("write");
 
       if (!auth.ok) {
         throw new Error("Authenticated application owner is required.");

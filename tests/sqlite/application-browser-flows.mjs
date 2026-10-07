@@ -46,7 +46,7 @@ export async function additionalWriteFlows({
         ["15 min früher", "09:45"],
         ["15 min später", "10:00"],
         ["Dauer +15 min", "45 min"],
-        ["Dauer −15 min", "30 min"],
+        ["Dauer -15 min", "30 min"],
       ]) {
         await inspector.getByRole("button", { name, exact: true }).click();
         await expect(inspector).toContainText(expected);
