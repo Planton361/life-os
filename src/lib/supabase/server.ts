@@ -4,7 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 import type { User } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import type { Database, SupabaseClientLike } from "@/features/real-data/supabase";
-import { isSqliteProofRuntime } from "../../../experiments/issue-37/proof-gate";
+import { assertNoRetiredProofConfiguration } from "@/features/real-data/sqlite/runtime-configuration";
 
 type SupabaseServerConfig =
   | {
@@ -106,19 +106,7 @@ export function getSupabaseServerAuthError(error: unknown): SupabaseServerAuthEr
 }
 
 export async function createAuthenticatedSupabaseServerClient(): Promise<AuthenticatedSupabaseServerClient> {
-  if (isSqliteProofRuntime()) {
-    const { getProofOwnerId } = await import("../../../experiments/issue-37/sqlite-proof-runtime");
-    const ownerId = await getProofOwnerId();
-    if (!ownerId) return { error: "unauthenticated", ok: false };
-    // Every supported proof read/write takes the validated owner explicitly.
-    // Unsupported Supabase operations fail closed in the experiment runtime.
-    const unavailable = () => { throw new Error("Unsupported SQLite proof operation"); };
-    return {
-      client: { from: unavailable, rpc: unavailable } as unknown as SupabaseClientLike,
-      ok: true,
-      user: { id: ownerId } as User,
-    };
-  }
+  assertNoRetiredProofConfiguration();
   const supabase = await createSupabaseServerClient();
 
   if (!supabase.ok) {

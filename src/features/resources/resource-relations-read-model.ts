@@ -1,12 +1,10 @@
+import { getSkillRepository } from "@/features/real-data/runtime/facade";
 import "server-only";
 
 import type { ResourceRelation as RealDataResourceRelation } from "@/features/real-data";
-import type {
-  SupabaseClientLike,
-  SupabaseQueryResult,
-  TableRow,
-} from "@/features/real-data/supabase";
-import { createSupabaseSkillRepository } from "@/features/real-data/supabase";
+import type { SupabaseQueryResult, TableRow } from "@/features/real-data/supabase";
+import type { ApplicationData } from "@/features/real-data/runtime/application-context";
+
 import type {
   ResourceDataRelationType,
   ResourceRelationCreateTarget,
@@ -44,7 +42,7 @@ export type ResolvedResourceRelationTarget = {
 };
 
 export type ResolveResourceRelationTargetsInput = {
-  client: SupabaseClientLike;
+  client: ApplicationData;
   relations: readonly RealDataResourceRelation[];
   userId: string;
 };
@@ -88,18 +86,13 @@ function createTargetMap(
 }
 
 async function readProjectTargets(
-  client: SupabaseClientLike,
+  client: ApplicationData,
   userId: string,
   ids: readonly string[],
 ) {
   if (ids.length === 0) return [];
 
-  const result = (await client
-    .from("projects")
-    .select("id,title,status,progress,updated_at")
-    .eq("user_id", userId)
-    .is("archived_at", null)
-    .in("id", ids)) as SupabaseQueryResult<readonly ProjectTargetRow[]>;
+  const result = (await client.reads.catalog.projects({activeOnly: true, ids: ids})) as SupabaseQueryResult<readonly ProjectTargetRow[]>;
 
   if (result.error) return [];
 
@@ -116,18 +109,13 @@ async function readProjectTargets(
 }
 
 async function readGoalTargets(
-  client: SupabaseClientLike,
+  client: ApplicationData,
   userId: string,
   ids: readonly string[],
 ) {
   if (ids.length === 0) return [];
 
-  const result = (await client
-    .from("goals")
-    .select("id,title,status,progress,updated_at")
-    .eq("user_id", userId)
-    .is("archived_at", null)
-    .in("id", ids)) as SupabaseQueryResult<readonly GoalTargetRow[]>;
+  const result = (await client.reads.catalog.goals({activeOnly: true, ids: ids})) as SupabaseQueryResult<readonly GoalTargetRow[]>;
 
   if (result.error) return [];
 
@@ -144,18 +132,13 @@ async function readGoalTargets(
 }
 
 async function readTaskTargets(
-  client: SupabaseClientLike,
+  client: ApplicationData,
   userId: string,
   ids: readonly string[],
 ) {
   if (ids.length === 0) return [];
 
-  const result = (await client
-    .from("tasks")
-    .select("id,title,status,priority,updated_at")
-    .eq("user_id", userId)
-    .is("archived_at", null)
-    .in("id", ids)) as SupabaseQueryResult<readonly TaskTargetRow[]>;
+  const result = (await client.reads.catalog.tasks({activeOnly: true, ids: ids})) as SupabaseQueryResult<readonly TaskTargetRow[]>;
 
   if (result.error) return [];
 
@@ -172,18 +155,13 @@ async function readTaskTargets(
 }
 
 async function readResourceTargets(
-  client: SupabaseClientLike,
+  client: ApplicationData,
   userId: string,
   ids: readonly string[],
 ) {
   if (ids.length === 0) return [];
 
-  const result = (await client
-    .from("resources")
-    .select("id,title,type,source,review_needed,updated_at")
-    .eq("user_id", userId)
-    .is("archived_at", null)
-    .in("id", ids)) as SupabaseQueryResult<readonly ResourceTargetRow[]>;
+  const result = (await client.reads.catalog.resources({activeOnly: true, ids: ids})) as SupabaseQueryResult<readonly ResourceTargetRow[]>;
 
   if (result.error) return [];
 
@@ -200,13 +178,13 @@ async function readResourceTargets(
 }
 
 async function readSkillTargets(
-  client: SupabaseClientLike,
+  client: ApplicationData,
   userId: string,
   ids: readonly string[],
 ) {
   if (ids.length === 0) return [];
 
-  const result = await createSupabaseSkillRepository(client).getActiveSkillsByUser(
+  const result = await getSkillRepository(client).getActiveSkillsByUser(
     userId,
   );
   if (!result.ok) return [];
@@ -232,10 +210,10 @@ async function readSkillTargets(
 }
 
 async function getSkillRelationCreateTargets(
-  client: SupabaseClientLike,
+  client: ApplicationData,
   userId: string,
 ): Promise<ResourceRelationCreateTarget[]> {
-  const result = await createSupabaseSkillRepository(client).getActiveSkillsByUser(
+  const result = await getSkillRepository(client).getActiveSkillsByUser(
     userId,
   );
   if (!result.ok) return [];
@@ -293,45 +271,21 @@ export function resourceRelationToViewModel(
 }
 
 export async function getResourceRelationCreateTargets(
-  client: SupabaseClientLike,
+  client: ApplicationData,
   userId: string,
 ): Promise<ResourceRelationCreateTarget[]> {
   const [projectResult, goalResult, taskResult, resourceResult, skillTargets] =
     await Promise.all([
-      client
-        .from("projects")
-        .select("id,title,status,progress,updated_at")
-        .eq("user_id", userId)
-        .is("archived_at", null)
-        .order("updated_at", { ascending: false })
-        .limit(50) as unknown as Promise<
+      client.reads.catalog.projects({activeOnly: true, limit: 50}) as unknown as Promise<
         SupabaseQueryResult<readonly ProjectTargetRow[]>
       >,
-      client
-        .from("goals")
-        .select("id,title,status,progress,updated_at")
-        .eq("user_id", userId)
-        .is("archived_at", null)
-        .order("updated_at", { ascending: false })
-        .limit(50) as unknown as Promise<
+      client.reads.catalog.goals({activeOnly: true, limit: 50}) as unknown as Promise<
         SupabaseQueryResult<readonly GoalTargetRow[]>
       >,
-      client
-        .from("tasks")
-        .select("id,title,status,priority,updated_at")
-        .eq("user_id", userId)
-        .is("archived_at", null)
-        .order("updated_at", { ascending: false })
-        .limit(50) as unknown as Promise<
+      client.reads.catalog.tasks({activeOnly: true, limit: 50}) as unknown as Promise<
         SupabaseQueryResult<readonly TaskTargetRow[]>
       >,
-      client
-        .from("resources")
-        .select("id,title,type,source,review_needed,updated_at")
-        .eq("user_id", userId)
-        .is("archived_at", null)
-        .order("updated_at", { ascending: false })
-        .limit(50) as unknown as Promise<
+      client.reads.catalog.resources({activeOnly: true, limit: 50}) as unknown as Promise<
         SupabaseQueryResult<readonly ResourceTargetRow[]>
       >,
       getSkillRelationCreateTargets(client, userId),

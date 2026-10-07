@@ -3,9 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { exerciseInputSchema, runningPlanInputSchema, runningPlanItemInputSchema, runningSessionInputSchema, strengthPlanInputSchema, strengthPlanItemInputSchema, strengthSessionInputSchema, strengthSetInputSchema, trainingIdInputSchema } from "../schemas/training.schema";
-import { createSupabaseTrainingRepository } from "../supabase/repositories/supabase-training-repository";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { createAuthenticatedApplicationContext } from "@/features/real-data/runtime/application-context";
 
 const value = (data: FormData, key: string) => { const item = data.get(key); return typeof item === "string" ? item.trim() : ""; };
 const target = (data: FormData) => value(data, "returnTo") === "/health/strength" ? "/health/strength" : "/health/running";
@@ -20,9 +19,9 @@ function finish(path: string, state: "blocked" | "error" | "saved"): never {
 
 async function context(path: string) {
   if ((await getCurrentLifeOsProfileId()) !== "manual") finish(path, "blocked");
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext("write");
   if (!auth.ok) finish(path, "blocked");
-  return { repository: createSupabaseTrainingRepository(auth.client), userId: auth.user.id };
+  return { repository: auth.repositories.training, userId: auth.user.id };
 }
 
 export async function saveRunningPlanAction(data: FormData) {

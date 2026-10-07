@@ -1,3 +1,4 @@
+import { applicationRuntimeConfiguration } from "@/features/real-data/runtime/configuration";
 import type { CSSProperties } from "react";
 import { resetSupabaseSessionAction, signOutAction } from "./actions";
 import { SupabaseAuthForm } from "./supabase-auth-form";
@@ -33,6 +34,12 @@ function statusDescription(
 }
 
 export async function SupabaseAuthPanel() {
+  const configuration = applicationRuntimeConfiguration();
+  if (configuration.backend === "sqlite-synthetic") return <section className={panelClass} id="supabase-session" aria-label="Synthetische Anmeldung"><div className="p-4"><h2 className="text-[18px] font-semibold">Synthetischer Anwendungslauf</h2><p className="mt-2 text-xs text-[var(--text-muted)]">{configuration.issueAuthentication ? "Serverseitige Test-Anmeldung aktiv." : "Serverseitige Test-Anmeldung deaktiviert."} Dieser Lauf enthält ausschließlich synthetische Daten. Die persönliche Supabase Session wird hier nicht verwendet.</p></div></section>;
+  if (configuration.backend === "sqlite-hosted") {
+    const auth = await (await import("@/features/real-data/runtime/application-context")).createAuthenticatedApplicationContext();
+    return <section className={panelClass} id="supabase-session" aria-label="Private Anmeldung"><div className="p-4"><h2 className="text-[18px] font-semibold">Private Anmeldung</h2><p className="mt-2 text-xs text-[var(--text-muted)]">{auth.ok ? "Gateway-Anmeldung aktiv." : "Gateway-Anmeldung fehlt oder ist ungültig. Manual-Daten und Änderungen sind gesperrt."}</p></div></section>;
+  }
   const auth = await createAuthenticatedSupabaseServerClient();
   const user = auth.ok ? auth.user : null;
   const canUseAuth = auth.ok || auth.error !== "missing_env";

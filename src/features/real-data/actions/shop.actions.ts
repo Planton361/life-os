@@ -1,15 +1,16 @@
 "use server";
 import { revalidatePath } from "next/cache";
+import { getShopRepository } from "@/features/real-data/runtime/facade";
 import { redirect } from "next/navigation";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { createAuthenticatedApplicationContext } from "@/features/real-data/runtime/application-context";
 import {
   redeemShopItemSchema,
   shopItemIdSchema,
   shopItemInputSchema,
   updateShopItemInputSchema,
 } from "../schemas/shop.schemas";
-import { createSupabaseShopRepository } from "../supabase/repositories/supabase-shop-repository";
+
 function value(data: FormData, key: string) {
   const item = data.get(key);
   return typeof item === "string" ? item.trim() : "";
@@ -21,10 +22,10 @@ function finish(state: string): never {
 }
 async function context() {
   if ((await getCurrentLifeOsProfileId()) !== "manual") finish("auth_blocked");
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext("write");
   if (!auth.ok) finish("auth_blocked");
   return {
-    repository: createSupabaseShopRepository(auth.client),
+    repository: getShopRepository(auth.data),
     userId: auth.user.id,
   };
 }

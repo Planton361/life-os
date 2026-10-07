@@ -1,4 +1,4 @@
-import type { WorkbenchData } from "@/features/real-data/supabase/repositories/entity-workbench-read";
+import type { WorkbenchData } from "@/features/real-data/runtime/entity-workbench-read";
 export const projectRoleLabels: Record<string, string> = {
   primary_artifact: "Primary Work Artifact",
   additional_artifact: "Additional Work Artifact",

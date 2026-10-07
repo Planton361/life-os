@@ -2,12 +2,15 @@
   "name": "life-os-app",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "24.21.0"
+  },
   "packageManager": "pnpm@11.3.0",
   "scripts": {
     "dev": "node scripts/ops/run-canonical-target-dev.mjs",
     "dev:raw": "node scripts/ops/run-local-next-dev.mjs",
     "build": "next build",
-    "start": "next start",
+    "start": "node scripts/ops/run-production.mjs",
     "lint": "eslint .",
     "typegen": "next typegen",
     "typecheck": "next typegen && tsc --noEmit --incremental false",
@@ -22,20 +25,27 @@
     "test:e2e": "playwright test",
     "test:e2e:isolated": "node scripts/playwright/run-disposable-local-e2e.mjs",
     "qa:dashboard": "playwright test tests/e2e/dashboard.spec.ts",
-    "validate:local": "node scripts/ops/run-local-validation.mjs"
+    "validate:local": "node scripts/ops/run-local-validation.mjs",
+    "test:sqlite:application": "node tests/sqlite/application-acceptance.mjs",
+    "test:sqlite:resources": "node tests/sqlite/application-acceptance.mjs --resources",
+    "sqlite:production:bootstrap": "node --conditions=react-server scripts/ops/bootstrap-production-sqlite.mjs",
+    "test:sqlite:hosted": "node --conditions=react-server tests/sqlite/hosted-application-smoke.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.2",
+    "better-sqlite3": "13.0.3",
     "next": "16.2.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "server-only": "0.0.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.0",
     "@tailwindcss/postcss": "^4.0.0",
-    "@types/node": "^22.0.0",
+    "@types/better-sqlite3": "7.6.13",
+    "@types/node": "24.19.1",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "eslint": "^9.0.0",

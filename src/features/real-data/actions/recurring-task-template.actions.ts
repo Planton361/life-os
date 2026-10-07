@@ -9,9 +9,8 @@ import {
   updateRecurringTaskTemplateActionInputSchema,
   updateRecurringTaskTemplateInputSchema,
 } from "@/features/real-data";
-import { createSupabaseRecurringTaskTemplateRepository } from "@/features/real-data/supabase";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { createAuthenticatedApplicationContext } from "@/features/real-data/runtime/application-context";
 
 export type RecurringTaskTemplateActionResult = {
   message: string;
@@ -156,7 +155,7 @@ async function getAuthenticatedRecurringTemplateContext() {
     };
   }
 
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext("write");
 
   if (!auth.ok) {
     return {
@@ -220,9 +219,7 @@ export async function createRecurringTaskTemplateAction(
     };
   }
 
-  const repository = createSupabaseRecurringTaskTemplateRepository(
-    context.auth.client,
-  );
+  const repository = context.auth.repositories.recurrence;
   const result = await repository.createRecurringTaskTemplate(parsed.data);
 
   if (!result.ok) {
@@ -315,9 +312,7 @@ export async function updateRecurringTaskTemplateAction(
     };
   }
 
-  const repository = createSupabaseRecurringTaskTemplateRepository(
-    context.auth.client,
-  );
+  const repository = context.auth.repositories.recurrence;
   const result = await repository.updateRecurringTaskTemplate(parsed.data);
 
   if (!result.ok) {
@@ -363,9 +358,7 @@ export async function deactivateRecurringTaskTemplateAction(
     };
   }
 
-  const repository = createSupabaseRecurringTaskTemplateRepository(
-    context.auth.client,
-  );
+  const repository = context.auth.repositories.recurrence;
   const result = await repository.deactivateRecurringTaskTemplate(parsed.data);
 
   if (!result.ok) {

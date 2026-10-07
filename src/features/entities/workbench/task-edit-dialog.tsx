@@ -1,4 +1,4 @@
-import type { WorkbenchData } from "@/features/real-data/supabase/repositories/entity-workbench-read";
+import type { WorkbenchData } from "@/features/real-data/runtime/entity-workbench-read";
 import { EntityForm } from "./forms";
 import { ManagementDialog } from "./management-disclosure";
 import { taskTextFields } from "./task-text";

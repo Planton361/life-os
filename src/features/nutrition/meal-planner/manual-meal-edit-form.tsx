@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/feedback/toast-provider";
 import {
@@ -28,25 +28,28 @@ export function ManualMealEditForm({
   meal: PlannedMeal;
   recipes: readonly Recipe[];
 }>) {
-  const [state, formAction, isPending] = useActionState(
-    updateMealFormStateAction,
-    initialState,
-  );
-  const [scheduleState, scheduleAction, scheduling] = useActionState(
-    scheduleNutritionMealAction,
-    initialState,
-  );
   const router = useRouter();
   const { notify } = useToast();
-  const headingRef = useRef<HTMLHeadingElement>(null);
-
-  useEffect(() => {
-    const result = scheduleState.status === "success" ? scheduleState : state;
+  async function reportResult(result: NutritionActionResult) {
     if (result.status === "success") {
+      // Revalidation changes the parent meal key. Publish feedback before that
+      // remount, rather than relying on an effect on the discarded form.
       notify(result.message);
       router.refresh();
     }
-  }, [state, scheduleState, router, notify]);
+    return result;
+  }
+  const [state, formAction, isPending] = useActionState(
+    async (previous: NutritionActionResult, form: FormData) =>
+      reportResult(await updateMealFormStateAction(previous, form)),
+    initialState,
+  );
+  const [scheduleState, scheduleAction, scheduling] = useActionState(
+    async (previous: NutritionActionResult, form: FormData) =>
+      reportResult(await scheduleNutritionMealAction(previous, form)),
+    initialState,
+  );
+  const headingRef = useRef<HTMLHeadingElement>(null);
 
   return (
     <section

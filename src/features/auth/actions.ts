@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { applicationRuntimeConfiguration } from "@/features/real-data/runtime/configuration";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { SupabaseAuthActionState } from "./supabase-auth-state";
 
@@ -71,6 +72,7 @@ export async function signInWithPasswordAction(
   _previousState: SupabaseAuthActionState,
   formData: FormData,
 ): Promise<SupabaseAuthActionState> {
+  if (applicationRuntimeConfiguration().backend !== "supabase") return authErrorState("Die Anmeldung wird ausschließlich serverseitig konfiguriert.");
   const parsed = authSchema.safeParse({
     email: formData.get("email"),
     next: formData.get("next"),
@@ -104,6 +106,7 @@ export async function signUpWithPasswordAction(
   _previousState: SupabaseAuthActionState,
   formData: FormData,
 ): Promise<SupabaseAuthActionState> {
+  if (applicationRuntimeConfiguration().backend !== "supabase") return authErrorState("Die Anmeldung wird ausschließlich serverseitig konfiguriert.");
   const parsed = authSchema.safeParse({
     email: formData.get("email"),
     next: formData.get("next"),
@@ -143,6 +146,7 @@ export async function signUpWithPasswordAction(
 }
 
 export async function signOutAction(formData: FormData): Promise<void> {
+  if (applicationRuntimeConfiguration().backend !== "supabase") redirect("/settings");
   const parsed = signOutSchema.safeParse({
     next: formData.get("next"),
   });
@@ -159,6 +163,7 @@ export async function signOutAction(formData: FormData): Promise<void> {
 }
 
 export async function resetSupabaseSessionAction(formData: FormData): Promise<void> {
+  if (applicationRuntimeConfiguration().backend !== "supabase") redirect("/settings");
   const parsed = signOutSchema.safeParse({
     next: formData.get("next"),
   });

@@ -95,9 +95,9 @@ export type SkillDevelopmentRead = {
   }[];
   practice: PracticeTask[];
 };
-export function skillPracticeReads(
+export function skillPracticeReads<E extends Pick<DevelopmentEvidence, "id" | "withdrawn_at" | "evidence_date">>(
   tasks: PracticeTask[],
-  evidence: DevelopmentEvidence[],
+  evidence: E[],
   asOf: string,
   timezone: string,
 ) {

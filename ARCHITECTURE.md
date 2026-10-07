@@ -9,10 +9,12 @@ Nicht gilt für: Produkt- oder Designdetails.
 
 ## Durable work-graph / knowledge ownership architecture
 
-Product Target v0.4 is accepted. Life OS / PostgreSQL owns canonical
+Product Target v0.4 is accepted. Life OS owns canonical
 operational context truth: Projects, Goals, Skills, Milestones, Tasks,
 Dependencies, Planning and Relations. `Resource` remains the Life-OS reference
 and Work-Artifact identity; Obsidian owns long-form Knowledge Content and Notes.
+The selected Supabase or SQLite runtime supplies one canonical datastore;
+selecting SQLite does not imply migration, synchronization or a second writer.
 Vault-relative paths are locators, not portable identity. A bound note uses
 stable `life_os_id`; rename/move does not change identity. No watcher, sync,
 write-back or personal Vault access follows from this decision.
@@ -28,7 +30,8 @@ Product sequence and operative work status are read from `ROADMAP.md` and GitHub
 - TypeScript
 - Tailwind CSS
 - shadcn/ui als Basis
-- Supabase Auth + Postgres + RLS
+- Supabase Auth + Postgres + RLS (preserved absent-selector default)
+- Native SQLite / better-sqlite3 (opt-in local production and separate synthetic proof)
 - Zod
 - React Hook Form
 - Recharts sparsam
@@ -72,6 +75,75 @@ Detailquelle für Dashboard-Datei-Ownership und Safe Refactors:
 - Loading/Error/Empty States einplanen.
 - Charts lazy/import-sparsam.
 - Dashboard-Code folgt Datei-Ownership und Safe-Refactor-Regeln aus `docs/engineering/dashboard-code-structure.md`.
+
+## Feature-local application composition (#116)
+
+Normal Manual reads and Server Actions obtain an authenticated context from
+`src/features/real-data/runtime/application-context.ts`. Repository, command and
+canonical read-service selection lives here and in its Supabase/native SQLite
+adapters; pages and Client Components do not select a backend or emulate a
+Supabase client. Existing domain mappers/projections and Action validation,
+feedback, redirects and revalidation remain shared. Read contexts reject write
+methods; writes require a separately admitted context.
+
+The absent/default selector keeps Supabase/PostgreSQL. Server-only
+`LIFE_OS_APPLICATION_RUNTIME=sqlite-synthetic` requires an absolute private
+`LIFE_OS_SYNTHETIC_SQLITE_PATH`, loopback `LIFE_OS_SYNTHETIC_ORIGIN` and explicit
+`LIFE_OS_SYNTHETIC_AUTH=issue|blocked`. Startup validates synthetic metadata,
+current schema/runtime/catalog/integrity and readiness before calling the normal
+`applicationRuntime(path)`. No application request uses `syntheticProof: true`.
+
+Synthetic authentication derives the single owner from verified metadata and
+issues opaque OwnerContext on the server. The profile-mode cookie chooses
+Manual/Demo/Empty presentation only. Write admission checks Origin, Host,
+forwarded host and cross-site provenance before issuing write-capable context.
+Blocked authentication issues no owner context. Synthetic mode never uses
+Supabase Auth or the legacy personal JSON profile. Presentation projections omit
+internal owner/profile identity; native handles and DB paths stay server-only.
+The production selector `sqlite-hosted`, also used locally under #120, uses
+`authenticateGatewayRequest` for every owner-scoped
+read and write. Its server-only configuration is `LIFE_OS_HOSTED_SQLITE_PATH`,
+`LIFE_OS_HOSTED_ORIGIN` (the accepted HTTPS `*.ts.net` origin) and
+`LIFE_OS_HOSTED_OWNER_LOGIN`. Owner UUID comes from verified canonical metadata,
+never a request field. Startup verifies the production dataset and then opens
+`applicationRuntime(path)` without a test bypass. Synthetic configuration cannot
+be mixed into hosted mode. Supabase remains the absent-selector default.
+
+`pnpm sqlite:production:bootstrap` initializes only a nonexistent private absolute
+`.db` target under an existing owner-only directory. Operator-only inputs are
+`LIFE_OS_BOOTSTRAP_OWNER_ID`, `LIFE_OS_BOOTSTRAP_DISPLAY_NAME` and
+`LIFE_OS_BOOTSTRAP_TIMEZONE`; they create exactly one profile. The command needs
+the pinned Node and installed repository dependencies, including TypeScript for
+loading the shared server modules under real `react-server` conditions. It uses
+the same 83-table schema composition as synthetic tests, but creates `canonical`
+metadata. Native connection policy, exact catalog, integrity/FK and aggregate
+preflight must pass before transactional readiness promotion. Failed initialization
+leaves an unready target; existing files are never overwritten or promoted.
+
+With the hosted selector, `pnpm start` fixes Next to `127.0.0.1:3000` and refuses
+listener CLI overrides. `pnpm test:sqlite:hosted` proves fresh canonical bootstrap,
+gateway admission, real Server Action writes and process-restart persistence
+without Supabase/Postgres/Docker. This smoke simulates gateway headers; the
+accepted real Mac Tailscale/reload/restart evaluation and redirect repair are
+recorded in #118. Under WP0 #120, local integration is the bounded result.
+Hosted VPS/storage, B2/restic, deployment and cutover are indefinitely deferred
+and their acceptance remains unmet. No existing installation or DB is changed
+by integration; the Mac is not designated a permanent server. The separate
+source-preserving local backup/isolated-restore Freeze-Gate remains open.
+
+For hosted startup only, instrumentation replaces Next 16.2.2's internal
+Server Action redirect origin with the validated HTTPS gateway origin after DB
+preflight. Redirect RSC reads therefore re-enter Tailscale Serve instead of
+receiving a loopback Host from Next's internal fetch. Host, forwarded Host,
+identity and browser-write checks stay unchanged. This pinned Next internal
+hook (`__NEXT_PRIVATE_ORIGIN`) must be rechecked on framework upgrades;
+Supabase and synthetic origins remain unchanged.
+
+The disposable production runner is `pnpm test:sqlite:application`; resource
+measurement is `pnpm test:sqlite:resources`. Both build the real Next application
+and use fresh native-command fixtures explicitly sealed for application access.
+They do not start Docker/Supabase/Postgres or use technical-user signup helpers.
+The required Linux quality job executes the integrated production smoke too.
 
 ## External Source of Truth Boundary
 

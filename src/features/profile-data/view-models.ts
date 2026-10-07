@@ -1,16 +1,13 @@
+import { readWeeklyPlanningContext, readTaskDependencyGraph, readTodayActivity, getGoalRepository, getInboxRepository, getNutritionRepository, getProjectRepository, getReviewRepository, getScheduleSourceRepository, getResourceRepository, getSkillRepository, getTaskRepository, getHealthRepository, getHabitRepository, getTrainingRepository, getGoalOutcomeSummaries } from "@/features/real-data/runtime/facade";
 import { skillTaskReadiness } from "@/features/entities/workbench/skill-guidance";
-import { readWeeklyPlanningContext } from "@/features/real-data/supabase/repositories/weekly-planning-read";
+
 import { enrichPlannerQueue, type WeeklyTaskContext } from "@/features/calendar/weekly-task-context";
 import { mapSkillRowToDomain, mapSkillEvidenceRowToDomain } from "@/features/real-data/supabase/mappers/skill.mapper";
 import { skillPracticeReads } from "@/features/real-data/domain/skill-development";
-import { readTaskDependencyGraph } from "@/features/real-data/supabase/repositories/task-dependency-repository";
+
 import { taskDependencyContext } from "@/features/real-data/domain/task-dependencies";
-import { isSqliteProofRuntime } from "../../../experiments/issue-37/proof-gate";
-import { mapTaskRowToDomain } from "@/features/real-data/supabase/mappers/task.mapper";
-import { mapProjectRowToDomain } from "@/features/real-data/supabase/mappers/project.mapper";
-import { mapGoalRowToDomain } from "@/features/real-data/supabase/mappers/goal.mapper";
-import { readTodayActivity } from "@/features/real-data/supabase/repositories/supabase-today-activity-repository";
-import { emptyActivitySources, projectTodayActivity } from "@/features/today/activity-projection";
+
+
 import "server-only";
 
 import { cache } from "react";
@@ -99,21 +96,8 @@ import {
   type TaskSkillLink as RealDataTaskSkillLink,
   type Task as RealDataTask,
 } from "@/features/real-data";
-import {
-  createSupabaseGoalRepository,
-  createSupabaseInboxRepository,
-  createSupabaseNutritionRepository,
-  createSupabaseProjectRepository,
-  createSupabaseReviewRepository,
-  createSupabaseScheduleSourceRepository,
-  createSupabaseResourceRepository,
-  createSupabaseSkillRepository,
-  createSupabaseTaskRepository,
-  createSupabaseHealthRepository,
-  createSupabaseHabitRepository,
-  createSupabaseTrainingRepository,
-} from "@/features/real-data/supabase";
-import { getGoalOutcomeSummaries } from "@/features/real-data/supabase/repositories/supabase-goal-outcome-repository";
+
+
 import type { GoalOutcomeSummary } from "@/features/real-data/domain/goal-outcome";
 import {
   createManualHabit,
@@ -137,11 +121,8 @@ import {
   InboxStage,
   InboxViewModel,
 } from "@/features/inbox";
-import type {
-  SupabaseClientLike,
-  SupabaseQueryResult,
-  TableRow,
-} from "@/features/real-data/supabase";
+import type { SupabaseQueryResult, TableRow } from "@/features/real-data/supabase";
+import type { ApplicationData } from "@/features/real-data/runtime/application-context";
 import {
   getMentalHealthViewModel as getDemoMentalHealthViewModel,
   type MentalHealthPageViewModel,
@@ -160,7 +141,7 @@ import type {
   TodayReviewSignalViewModel,
   TodayViewModel,
 } from "@/features/today";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { createAuthenticatedApplicationContext } from "@/features/real-data/runtime/application-context";
 import { reviewWeek } from "@/features/review/review-period";
 import {
   getCurrentLifeOsProfileId,
@@ -214,31 +195,7 @@ function emptyManualProfile(): ManualProfileData {
   };
 }
 
-async function getProofManualData(): Promise<{
-  profile: ManualProfileData;
-  authAvailable: boolean;
-}> {
-  const { getProofOwnerId, readProofSnapshot } = await import("../../../experiments/issue-37/sqlite-proof-runtime");
-  const ownerId = await getProofOwnerId();
-  if (!ownerId) return { profile: emptyManualProfile(), authAvailable: false };
-  const snapshot = readProofSnapshot(ownerId);
-  const tasks = snapshot.tasks
-    .map((row) => realTaskToLifeTask(mapTaskRowToDomain(row)))
-    .filter((task): task is LifeTask => Boolean(task))
-    .map((task) => ({
-      ...task,
-      dependencyAvailability: taskDependencyContext(snapshot.dependencyGraph, task.id).availability,
-    }));
-  return {
-    authAvailable: true,
-    profile: {
-      ...emptyManualProfile(),
-      tasks,
-      projects: snapshot.projects.map((row) => realProjectToLifeProject(mapProjectRowToDomain(row))),
-      goals: snapshot.goals.map((row) => realGoalToLifeGoal(mapGoalRowToDomain(row))),
-    },
-  };
-}
+
 
 function emptyInboxExistingTargets(): InboxExistingTargets {
   return {
@@ -2246,7 +2203,7 @@ function realTaskToLifeTask(task: RealDataTask): LifeTask | null {
           {
             detail: "Created from Inbox triage.",
             href: `/inbox`,
-            sourceLabel: "Supabase",
+            sourceLabel: "Manual",
             title: "Source Inbox Item",
           },
         ]
@@ -2261,22 +2218,22 @@ function realTaskToLifeTask(task: RealDataTask): LifeTask | null {
       task.description?.split("Nächste Aktion:")[1]?.trim() ?? task.description ??
       (task.sourceInboxItemId
         ? "Review the task created from Inbox triage."
-        : "Review the Supabase task."),
+        : "Review the task."),
     priority: task.priority,
     projectId: task.projectId ?? undefined,
-    resultNote: task.completedAt ? "Completed in Supabase." : undefined,
+    resultNote: task.completedAt ? "Task completed." : undefined,
     reviewNeeded: status === "inbox",
     source: task.generatedFromTemplateId
       ? "Wiederkehrende Vorlage"
       : task.sourceInboxItemId
-        ? "Supabase inbox triage"
-        : "Supabase task",
+        ? "Inbox triage"
+        : "Manual task",
     startTime: scheduledStartTime,
     status,
     timeline: [
       {
         dateLabel: "DB",
-        detail: "Loaded from Supabase tasks.",
+        detail: "Loaded from Manual tasks.",
         label: "Read model",
       },
     ],
@@ -2291,7 +2248,7 @@ function realProjectToLifeProject(project: RealDataProject): LifeProject {
     activity: [
       {
         dateLabel: "DB",
-        detail: "Loaded from Supabase projects.",
+        detail: "Loaded from canonical projects.",
         label: "Read model",
       },
     ],
@@ -2514,43 +2471,19 @@ function skillTargetFromRow(row: SkillTargetRow): InboxExistingTarget {
 }
 
 async function getManualInboxExistingTargets(
-  client: SupabaseClientLike,
+  client: ApplicationData,
   userId: string,
 ): Promise<InboxExistingTargets> {
+  void userId;
   const [projectResult, goalResult, resourceResult, skillResult] = await Promise.all([
     (async () =>
-      (await client
-        .from("projects")
-        .select("id,title,status,priority,updated_at")
-        .eq("user_id", userId)
-        .is("archived_at", null)
-        .order("updated_at", { ascending: false })
-        .limit(12)) as SupabaseQueryResult<readonly ProjectTargetRow[]>)(),
+      (await client.reads.catalog.projects({activeOnly: true, limit: 12})) as SupabaseQueryResult<readonly ProjectTargetRow[]>)(),
     (async () =>
-      (await client
-        .from("goals")
-        .select("id,title,status,horizon,updated_at")
-        .eq("user_id", userId)
-        .is("archived_at", null)
-        .order("updated_at", { ascending: false })
-        .limit(12)) as SupabaseQueryResult<readonly GoalTargetRow[]>)(),
+      (await client.reads.catalog.goals({activeOnly: true, limit: 12})) as SupabaseQueryResult<readonly GoalTargetRow[]>)(),
     (async () =>
-      (await client
-        .from("resources")
-        .select("id,title,type,review_needed,updated_at")
-        .eq("user_id", userId)
-        .is("archived_at", null)
-        .order("updated_at", { ascending: false })
-        .limit(12)) as SupabaseQueryResult<readonly ResourceTargetRow[]>)(),
+      (await client.reads.catalog.resources({activeOnly: true, limit: 12})) as SupabaseQueryResult<readonly ResourceTargetRow[]>)(),
     (async () =>
-      (await client
-        .from("skills")
-        .select("id,name,status,category,updated_at")
-        .eq("user_id", userId)
-        .is("archived_at", null)
-        .neq("status", "archived")
-        .order("updated_at", { ascending: false })
-        .limit(12)) as SupabaseQueryResult<readonly SkillTargetRow[]>)(),
+      (await client.reads.catalog.skills({activeOnly: true, limit: 12})) as SupabaseQueryResult<readonly SkillTargetRow[]>)(),
   ]);
 
   return {
@@ -2572,7 +2505,7 @@ async function getManualInboxProfileData(): Promise<{
   existingTargets: InboxExistingTargets;
   unavailableReason?: string;
 }> {
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext();
 
   if (!auth.ok) {
     return {
@@ -2585,7 +2518,7 @@ async function getManualInboxProfileData(): Promise<{
     };
   }
 
-  const repository = createSupabaseInboxRepository(auth.client);
+  const repository = getInboxRepository(auth.data);
   const result = await repository.getInboxItemsByUser(
     auth.user.id,
     auth.user.id,
@@ -2596,12 +2529,12 @@ async function getManualInboxProfileData(): Promise<{
       data: emptyManualProfile(),
       existingTargets: emptyInboxExistingTargets(),
       unavailableReason:
-        "Inbox Items konnten nicht aus Supabase geladen werden.",
+        "Inbox Items konnten nicht geladen werden.",
     };
   }
 
   const existingTargets = await getManualInboxExistingTargets(
-    auth.client,
+    auth.data,
     auth.user.id,
   );
 
@@ -2614,15 +2547,15 @@ async function getManualInboxProfileData(): Promise<{
   };
 }
 
-async function getManualTasksFromSupabase(
-  client: SupabaseClientLike,
+async function getManualTasksFromApplication(
+  client: ApplicationData,
   userId: string,
   skipDependencies = false,
 ): Promise<{
   tasks: LifeTask[];
   unavailableReason?: string;
 }> {
-  const repository = createSupabaseTaskRepository(client);
+  const repository = getTaskRepository(client);
   const result = await repository.getTasksByUser({
     profileId: userId,
     sortBy: "created",
@@ -2632,7 +2565,7 @@ async function getManualTasksFromSupabase(
   if (!result.ok) {
     return {
       tasks: [],
-      unavailableReason: "Tasks konnten nicht aus Supabase geladen werden.",
+      unavailableReason: "Tasks konnten nicht geladen werden.",
     };
   }
 
@@ -2669,14 +2602,8 @@ async function getManualTaskProfileData(): Promise<{
   tasks: LifeTask[];
   unavailableReason?: string;
 }> {
-  if (isSqliteProofRuntime()) {
-    const proof = await getProofManualData();
-    return {
-      tasks: proof.profile.tasks,
-      unavailableReason: proof.authAvailable ? undefined : "Proof-Owner nicht authentifiziert.",
-    };
-  }
-  const auth = await createAuthenticatedSupabaseServerClient();
+
+  const auth = await createAuthenticatedApplicationContext();
 
   if (!auth.ok) {
     return {
@@ -2688,7 +2615,7 @@ async function getManualTaskProfileData(): Promise<{
     };
   }
 
-  return getManualTasksFromSupabase(auth.client, auth.user.id);
+  return getManualTasksFromApplication(auth.data, auth.user.id);
 }
 
 function uniqueDefined(values: readonly (string | undefined)[]) {
@@ -2708,14 +2635,14 @@ function portfolioResourceSourceLabel(resource: RealDataResource) {
 }
 
 async function getManualPortfolioResourceLinks(
-  client: SupabaseClientLike,
+  client: ApplicationData,
   userId: string,
 ): Promise<{
   linksByTarget: ReadonlyMap<string, readonly PortfolioLinkedResource[]>;
   options: readonly PortfolioResourceLinkOption[];
   optionsById: ReadonlyMap<string, PortfolioResourceLinkOption>;
 }> {
-  const repository = createSupabaseResourceRepository(client);
+  const repository = getResourceRepository(client);
   const [resourceResult, relationResult] = await Promise.all([
     repository.getResourcesByUser(userId, userId, true),
     repository.getResourceRelationsByUser(userId, userId),
@@ -2773,16 +2700,16 @@ async function getManualPortfolioResourceLinks(
   };
 }
 
-async function getManualProjectGoalTargetsFromSupabase(
-  client: SupabaseClientLike,
+async function getManualProjectGoalTargetsFromApplication(
+  client: ApplicationData,
   userId: string,
 ): Promise<{
   goals: LifeGoal[];
   projects: LifeProject[];
 }> {
   const [projectResult, goalResult] = await Promise.all([
-    createSupabaseProjectRepository(client).getProjectsByUser(userId, userId),
-    createSupabaseGoalRepository(client).getGoalsByUser(userId, userId),
+    getProjectRepository(client).getProjectsByUser(userId, userId),
+    getGoalRepository(client).getGoalsByUser(userId, userId),
   ]);
 
   return {
@@ -2793,22 +2720,18 @@ async function getManualProjectGoalTargetsFromSupabase(
   };
 }
 
-async function getManualSkillsFromSupabase(
-  client: SupabaseClientLike,
+async function getManualSkillsFromApplication(
+  client: ApplicationData,
   userId: string,
 ): Promise<{
   skills: LifeSkill[];
   taskSkillLinks: RealDataTaskSkillLink[];
 }> {
-  const repository = createSupabaseSkillRepository(client);
+  const repository = getSkillRepository(client);
   const [skillResult, taskSkillLinkResult, areaResult] = await Promise.all([
     repository.getActiveSkillsByUser(userId),
     repository.getTaskSkillLinksByUser(userId),
-    client
-      .from("areas")
-      .select("id, name")
-      .eq("user_id", userId)
-      .is("archived_at", null),
+    client.reads.catalog.areas({activeOnly: true}),
   ]);
   if (!skillResult.ok || !taskSkillLinkResult.ok || areaResult.error)
     throw new Error("Skill-Daten konnten nicht geladen werden.");
@@ -2816,9 +2739,7 @@ async function getManualSkillsFromSupabase(
   const graph = await readTaskDependencyGraph(client).catch(() => null);
   const projectedSkills = await Promise.all(
     skillResult.data.map(async (skill) => {
-      const read = await client.rpc("skill_development_read", {
-        p_skill_id: skill.id,
-      });
+      const read = await client.reads.skillDevelopment(skill.id);
       if (read.error || !read.data)
         throw new Error("Skill-Daten konnten nicht geladen werden.");
       if (read.data.skill.archived_at || read.data.skill.status === "archived")
@@ -2847,6 +2768,7 @@ async function getManualSkillsFromSupabase(
           ? " · Ausführbarkeit derzeit nicht verfügbar"
           : ` · ${readyCount} ausführbar · ${blockedCount} blockiert`;
       const practiceSummary = `${recency.open.length} offene Aufgaben · ${recency.completed.length} abgeschlossen${readinessLabel}`;
+      const skillAreaId = read.data.skill.area_id;
       const target = read.data.targets.find(
         (t) => t.status === "current" && !t.archived_at,
       );
@@ -2854,7 +2776,7 @@ async function getManualSkillsFromSupabase(
         ...projected,
         areaLabel: read.data.skill.area_id
           ? (areaResult.data?.find(
-              (area) => area.id === read.data.skill.area_id,
+              (area) => area.id === skillAreaId,
             )?.name ?? "Area nicht verfügbar")
           : "Ohne Area",
         practiceSummary,
@@ -2893,7 +2815,7 @@ function skillSourceTarget(
 }
 
 async function getManualSkillSourceTargets(
-  client: SupabaseClientLike,
+  client: ApplicationData,
   userId: string,
   input: {
     goals: readonly LifeGoal[];
@@ -2904,7 +2826,7 @@ async function getManualSkillSourceTargets(
   labels: ReadonlyMap<string, string>;
   targets: readonly PortfolioSkillSourceTarget[];
 }> {
-  const resourceResult = await createSupabaseResourceRepository(
+  const resourceResult = await getResourceRepository(
     client,
   ).getResourcesByUser(userId, userId);
 
@@ -2950,7 +2872,7 @@ async function getManualSkillSourceTargets(
 }
 
 async function getManualPortfolioRelationLabelLookups(
-  client: SupabaseClientLike,
+  client: ApplicationData,
   userId: string,
   tasks: readonly LifeTask[],
   skills: readonly LifeSkill[] = [],
@@ -2963,12 +2885,7 @@ async function getManualPortfolioRelationLabelLookups(
 ): Promise<PortfolioRelationLabelLookups> {
   const projectIds = uniqueDefined(tasks.map((task) => task.projectId));
   const projectResult = projectIds.length > 0
-    ? ((await client
-        .from("projects")
-        .select("id,title")
-        .eq("user_id", userId)
-        .is("archived_at", null)
-        .in("id", projectIds)) as SupabaseQueryResult<
+    ? ((await client.reads.catalog.projects({activeOnly: true, ids: projectIds})) as SupabaseQueryResult<
         readonly PortfolioRelationTargetRow[]
       >)
     : ({
@@ -2977,12 +2894,7 @@ async function getManualPortfolioRelationLabelLookups(
       } as SupabaseQueryResult<readonly PortfolioRelationTargetRow[]>);
   const goalIds = uniqueDefined(tasks.map((task) => task.goalId));
   const goalResult = goalIds.length > 0
-    ? ((await client
-        .from("goals")
-        .select("id,title")
-        .eq("user_id", userId)
-        .is("archived_at", null)
-        .in("id", goalIds)) as SupabaseQueryResult<
+    ? ((await client.reads.catalog.goals({activeOnly: true, ids: goalIds})) as SupabaseQueryResult<
         readonly PortfolioRelationGoalRow[]
       >)
     : ({
@@ -3032,18 +2944,8 @@ async function getManualPortfolioEntityCollection(): Promise<{
   collection: EntityCollection;
   relationLookups?: PortfolioRelationLabelLookups;
 }> {
-  if (isSqliteProofRuntime()) {
-    const proof = await getProofManualData();
-    const collection: EntityCollection = {
-      tasks: proof.profile.tasks,
-      projects: proof.profile.projects,
-      goals: proof.profile.goals,
-      skills: [],
-      milestones: [],
-    };
-    return { collection, relationLookups: portfolioRelationLabelLookups(collection) };
-  }
-  const auth = await createAuthenticatedSupabaseServerClient();
+
+  const auth = await createAuthenticatedApplicationContext();
 
   if (!auth.ok) {
     const profile = await readManualProfile();
@@ -3064,13 +2966,13 @@ async function getManualPortfolioEntityCollection(): Promise<{
   const [profile, manualTasks, manualTargets, manualSkills] = await Promise.all(
     [
       readManualProfile(),
-      getManualTasksFromSupabase(auth.client, auth.user.id),
-      getManualProjectGoalTargetsFromSupabase(auth.client, auth.user.id),
-      getManualSkillsFromSupabase(auth.client, auth.user.id),
+      getManualTasksFromApplication(auth.data, auth.user.id),
+      getManualProjectGoalTargetsFromApplication(auth.data, auth.user.id),
+      getManualSkillsFromApplication(auth.data, auth.user.id),
     ],
   );
   const goalOutcomeResult = await getGoalOutcomeSummaries(
-    auth.client,
+    auth.data,
     auth.user.id,
     manualTargets.goals.map((goal) => goal.id),
   );
@@ -3098,7 +3000,7 @@ async function getManualPortfolioEntityCollection(): Promise<{
     milestones: [],
   };
   const skillSourceTargets = await getManualSkillSourceTargets(
-    auth.client,
+    auth.data,
     auth.user.id,
     {
       goals: manualTargets.goals,
@@ -3110,7 +3012,7 @@ async function getManualPortfolioEntityCollection(): Promise<{
   return {
     collection,
     relationLookups: await getManualPortfolioRelationLabelLookups(
-      auth.client,
+      auth.data,
       auth.user.id,
       collection.tasks,
       collection.skills,
@@ -3193,14 +3095,8 @@ async function getManualDashboardReadData(calendarRead = false): Promise<{
   profile: ManualProfileData;
   sources: DashboardReadSources;
 }> {
-  if (isSqliteProofRuntime()) {
-    const proof = await getProofManualData();
-    return {
-      profile: proof.profile,
-      sources: { ...emptyDashboardReadSources, authAvailable: proof.authAvailable },
-    };
-  }
-  const auth = await createAuthenticatedSupabaseServerClient();
+
+  const auth = await createAuthenticatedApplicationContext();
   if (!auth.ok) {
     return {
       profile: emptyManualProfile(),
@@ -3209,12 +3105,12 @@ async function getManualDashboardReadData(calendarRead = false): Promise<{
   }
 
   const userId = auth.user.id;
-  const nutritionRepository = createSupabaseNutritionRepository(auth.client);
+  const nutritionRepository = getNutritionRepository(auth.data);
   const week = reviewWeek(dashboardLocalDate());
-  const reviewRepository = createSupabaseReviewRepository(auth.client);
-  const healthRepository = createSupabaseHealthRepository(auth.client);
-  const habitRepository = createSupabaseHabitRepository(auth.client);
-  const trainingRepository = createSupabaseTrainingRepository(auth.client);
+  const reviewRepository = getReviewRepository(auth.data);
+  const healthRepository = getHealthRepository(auth.data);
+  const habitRepository = getHabitRepository(auth.data);
+  const trainingRepository = getTrainingRepository(auth.data);
   const [
     taskResult,
     inboxResult,
@@ -3229,13 +3125,13 @@ async function getManualDashboardReadData(calendarRead = false): Promise<{
     scheduleLinkResult,
     trainingSnapshot,
   ] = await Promise.all([
-    getManualTasksFromSupabase(auth.client, userId, calendarRead),
-    createSupabaseInboxRepository(auth.client).getInboxItemsByUser(
+    getManualTasksFromApplication(auth.data, userId, calendarRead),
+    getInboxRepository(auth.data).getInboxItemsByUser(
       userId,
       userId,
     ),
-    getManualProjectGoalTargetsFromSupabase(auth.client, userId),
-    getManualSkillsFromSupabase(auth.client, userId),
+    getManualProjectGoalTargetsFromApplication(auth.data, userId),
+    getManualSkillsFromApplication(auth.data, userId),
     nutritionRepository.getMealsByUserAndDateRange({
       endDate: dashboardLocalDate(),
       profileId: userId,
@@ -3252,7 +3148,7 @@ async function getManualDashboardReadData(calendarRead = false): Promise<{
     reviewRepository.getReviewByPeriod(userId, userId, "weekly", week.start),
     healthRepository.getSnapshot(userId, userId),
     habitRepository.getSnapshot(userId, userId, dashboardLocalDate(), dashboardLocalDate()),
-    createSupabaseScheduleSourceRepository(auth.client).getLinks(userId),
+    getScheduleSourceRepository(auth.data).getLinks(userId),
     trainingRepository.getSnapshot(userId),
   ]);
   const scheduleLinks = scheduleLinkResult.error ? [] : (scheduleLinkResult.data ?? []);
@@ -3296,7 +3192,7 @@ async function getManualDashboardReadData(calendarRead = false): Promise<{
     { calories: 0, carbs: 0, completedMealCount: 0, fat: 0, protein: 0 },
   );
   const goalOutcomeResult = await getGoalOutcomeSummaries(
-    auth.client,
+    auth.data,
     userId,
     targets.goals.map((goal) => goal.id),
   );
@@ -3337,14 +3233,14 @@ async function getManualPlannerRelationLabelLookups(
 ) {
   if (profileId !== "manual" || tasks.length === 0) return undefined;
 
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext();
 
   if (!auth.ok) return undefined;
 
-  const skills = await getManualSkillsFromSupabase(auth.client, auth.user.id);
+  const skills = await getManualSkillsFromApplication(auth.data, auth.user.id);
 
   return getManualPortfolioRelationLabelLookups(
-    auth.client,
+    auth.data,
     auth.user.id,
     tasks,
     skills.skills,
@@ -3445,9 +3341,9 @@ function buildProfileInboxViewModel(
     : inboxEmptyPlanningSuggestions();
   const quickCaptureDescription =
     isManual && !options.unavailableReason
-      ? "Speichert neue Inbox-Einträge in Supabase."
+      ? "Speichert neue Inbox-Einträge."
       : options.unavailableReason
-        ? "Manual Inbox ist auf Supabase umgestellt, aber aktuell nicht verfügbar."
+        ? "Manual Inbox ist aktuell nicht verfügbar."
         : "Quick Capture bleibt sichtbar; Speichern ist dem Manual-Profil vorbehalten.";
 
   viewModel.profileId = profileId;
@@ -4746,9 +4642,9 @@ export async function getInboxViewModel(
       selectedInboxItemId: options.selectedInboxItemId,
       unavailableReason: manualInbox.unavailableReason,
     });
-    const auth = await createAuthenticatedSupabaseServerClient();
+    const auth = await createAuthenticatedApplicationContext();
     if (auth.ok) {
-      const areas = await auth.client.from("areas").select("id, name").eq("user_id", auth.user.id).is("archived_at", null);
+      const areas = await auth.data.reads.catalog.areas({activeOnly: true});
       result.areas = (areas.data ?? []).map(area => ({ id: area.id, title: area.name }));
     }
     return result;
@@ -4771,29 +4667,12 @@ export async function getTodayViewModel(): Promise<TodayViewModel> {
   }
 
   if (profileId === "manual") {
-    if (isSqliteProofRuntime()) {
-      const proof = await getProofManualData();
-      const base = buildProfileTodayViewModel(proof.profile, "manual", undefined, {
-        manualDbAvailable: proof.authAvailable,
-      });
-      if (!proof.authAvailable) return { ...base, activityUnavailable: true };
-      const { getProofOwnerId, readProofSnapshot } = await import("../../../experiments/issue-37/sqlite-proof-runtime");
-      const ownerId = await getProofOwnerId();
-      if (!ownerId) return { ...base, activityUnavailable: true };
-      const snapshot = readProofSnapshot(ownerId);
-      return {
-        ...base,
-        dayLog: projectTodayActivity(
-          { ...emptyActivitySources(), tasks: snapshot.tasks },
-          "Europe/Berlin",
-        ),
-      };
-    }
+
     const base = clone(getDemoTodayViewModel());
     base.profileId = "manual";
-    const auth = await createAuthenticatedSupabaseServerClient();
+    const auth = await createAuthenticatedApplicationContext();
     if (!auth.ok) return { ...base, activityUnavailable: true };
-    try { return { ...base, dayLog: await readTodayActivity(auth.client, auth.user.id) }; }
+    try { return { ...base, dayLog: await readTodayActivity(auth.data, auth.user.id) }; }
     catch { return { ...base, activityUnavailable: true }; }
   }
 
@@ -4811,9 +4690,9 @@ export async function getCalendarViewModel(): Promise<CalendarViewModel> {
 
   if (profileId === "manual") {
     const dashboard = await getManualDashboardReadData(true);
-    const auth = await createAuthenticatedSupabaseServerClient();
+    const auth = await createAuthenticatedApplicationContext();
     const weekly = auth.ok
-      ? await readWeeklyPlanningContext(auth.client, auth.user.id).catch(() => ({
+      ? await readWeeklyPlanningContext(auth.data, auth.user.id).catch(() => ({
           contexts: {},
           dependencyUnavailable: true,
         }))
@@ -4848,16 +4727,14 @@ export async function getCalendarViewModel(): Promise<CalendarViewModel> {
     const model = buildProfileCalendarViewModel(
       calendarProfile,
       profileId,
-      isSqliteProofRuntime()
-        ? undefined
-        : await getManualPlannerRelationLabelLookups(profileId, dashboard.profile.tasks),
+      await getManualPlannerRelationLabelLookups(profileId, dashboard.profile.tasks),
       dashboard.sources,
     );
     model.taskContexts = contexts;
     model.dependencyUnavailable = weekly.dependencyUnavailable ||
       Object.values(contexts).some((c) => c.execution === "unknown");
     model.planningUnavailableReason = !auth.ok
-      ? "Manual benötigt eine authentifizierte Supabase-Session."
+      ? "Manual benötigt eine bestätigte Anmeldung."
       : undefined;
     model.schedulableTasks = enrichPlannerQueue(model.schedulableTasks, contexts);
     model.plannerQueueTasks = model.schedulableTasks;
@@ -4932,10 +4809,10 @@ export async function getLifeOsDataSource(): Promise<LifeOsDataSource> {
     },
     async createInboxItem(input: CreateInboxItemInput) {
       assertManualProfile();
-      const auth = await createAuthenticatedSupabaseServerClient();
+      const auth = await createAuthenticatedApplicationContext("write");
 
       if (!auth.ok) {
-        throw new Error("Authenticated Supabase user is required.");
+        throw new Error("Authenticated application owner is required.");
       }
 
       const parsed = captureInboxItemInputSchema.safeParse({
@@ -4951,7 +4828,7 @@ export async function getLifeOsDataSource(): Promise<LifeOsDataSource> {
         throw new Error("Valid inbox input is required.");
       }
 
-      const repository = createSupabaseInboxRepository(auth.client);
+      const repository = getInboxRepository(auth.data);
       const result = await repository.createInboxItem(parsed.data);
 
       if (!result.ok) {

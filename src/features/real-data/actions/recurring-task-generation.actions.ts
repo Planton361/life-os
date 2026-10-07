@@ -11,12 +11,8 @@ import {
   generateRecurringTaskInstancesForDateActionInputSchema,
   generateRecurringTaskInstancesForRangeActionInputSchema,
 } from "@/features/real-data";
-import {
-  createSupabaseRecurringTaskTemplateRepository,
-  createSupabaseTaskRepository,
-} from "@/features/real-data/supabase";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { createAuthenticatedApplicationContext } from "@/features/real-data/runtime/application-context";
 
 export type RecurringTaskGenerationActionResult = {
   existingCount: number;
@@ -84,7 +80,7 @@ async function getAuthenticatedGenerationContext() {
     };
   }
 
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext("write");
 
   if (!auth.ok) {
     return {
@@ -141,10 +137,8 @@ export async function generateRecurringTaskInstancesForDateAction(
       userId: context.auth.user.id,
     },
     {
-      recurringTaskTemplates: createSupabaseRecurringTaskTemplateRepository(
-        context.auth.client,
-      ),
-      tasks: createSupabaseTaskRepository(context.auth.client),
+      recurringTaskTemplates: context.auth.repositories.recurrence,
+      tasks: context.auth.repositories.tasks,
     },
   );
 
@@ -193,10 +187,8 @@ export async function generateRecurringTaskInstancesForRangeAction(
       userId: context.auth.user.id,
     },
     {
-      recurringTaskTemplates: createSupabaseRecurringTaskTemplateRepository(
-        context.auth.client,
-      ),
-      tasks: createSupabaseTaskRepository(context.auth.client),
+      recurringTaskTemplates: context.auth.repositories.recurrence,
+      tasks: context.auth.repositories.tasks,
     },
   );
 

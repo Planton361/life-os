@@ -153,6 +153,8 @@ export type NutritionAccent =
   | "var(--accent-cyan)"
   | "var(--accent-yellow)";
 
+export type CanonicalPlannedMeal = Omit<import("@/features/real-data").Meal, "userId" | "profileId">;
+
 export type MealPlannerViewModel = {
   profileId?: LifeOsProfileId;
   contentStates?: {
@@ -164,7 +166,7 @@ export type MealPlannerViewModel = {
   };
   actionsEnabled?: boolean;
   unavailableReason?: string;
-  canonicalMeals?: readonly import("@/features/real-data").Meal[];
+  canonicalMeals?: readonly CanonicalPlannedMeal[];
   mealEditEnabled?: boolean;
   header: {
     eyebrow: "Life OS / Nutrition / Meal Planner";

@@ -9,13 +9,20 @@ Nicht gilt für: reine UI-Widgets.
 
 ## Durable work-graph / knowledge ownership data decision
 
-Product Target v0.4 is accepted. Life OS / PostgreSQL remains canonical for
+Product Target v0.4 is accepted. Life OS remains canonical for
 operational context: Projects, Goals, Skills, Milestones, Tasks, Dependencies,
 Planning and Relations. `Resource` remains the canonical Life-OS reference /
 Work-Artifact identity. Obsidian owns long-form Knowledge Content and Notes.
 For a bound Note, `life_os_id` is stable identity and a vault-relative path is
 only a locator; rename/move never changes identity. No watcher, sync,
 write-back or personal Vault access is implied.
+
+Supabase/PostgreSQL remains the default runtime. The opt-in local production
+SQLite path (#120) implements the same 83 canonical tables and domain contracts
+with native owner/constraint/transaction guards. This changes no domain model,
+migrates no data and creates no dual write; each runtime uses its own selected
+canonical datastore. Hosted cutover and the local backup/restore Freeze-Gate
+remain unfulfilled.
 
 Project, Goal and Skill remain separate categories. Their shared planning
 shape is Higher-order entity → domain milestones → Tasks → progress, but their
@@ -578,3 +585,33 @@ The first slice is S-PLAN + S-EVIDENCE + READS. S-RELATION is deferred. There is
 Task→Target/Milestone or direct Project↔Skill FK, inferred graph, mastery/confidence/
 progress/decay model, automatic Evidence/advancement or Task READY/BLOCKED effect.
 Implementation: `supabase/migrations/20261002191215_pp2_skill_development.sql`.
+
+## Native SQLite canonical data and application runtime (#116)
+
+Fresh synthetic schema version 9 represents all 83 current canonical business
+tables, plus operational `runtime_metadata`. `canonicalTableNames` is checked
+against actual SQLite tables. Retained/reward numeric fields persist canonical
+exact decimal text; PostgreSQL integer widths and UUID/date/timestamp contracts
+remain validated. No Journal/Notes, Work/Coding Task, Calendar or balance store
+is duplicated.
+
+Coupled knowledge Resources, Meeting follow-ups, Wishlist conversion, Anti-Rot
+history, Challenge reward and Shop redemption use the native writer transaction.
+Owner tuple/history triggers and pre-COMMIT reward aggregate validation supplement
+issued OwnerContext and current Zod contracts. The populated all-domain fixture
+compares native projections and every canonical table count/hash through restart,
+online backup and isolated restore, including immutable receipts/history.
+
+Normal Server Components and Server Actions now share backend-neutral
+application composition. The native adapters reuse canonical domain projections
+and validate exact numeric conversion at existing presentation DTO boundaries.
+Fresh synthetic initialization remains `compatibility_ready=0`. The deliberate
+`sealSyntheticApplicationDatabase` utility accepts only disposable private #116
+synthetic files after exact schema/runtime/driver/SQLite/catalog, integrity/FK
+and native aggregate self-checks. Only then may it seal readiness to 1; the
+application requires that gate through its normal `applicationRuntime` path.
+This sealer is not personal migration tooling. Complete synthetic application,
+resource-budget and Linux/macOS packaging acceptance is recorded in #116/PR #117
+and the Capability Registry.
+PostgreSQL remains the operative personal datastore; no personal migration or
+runtime cutover is established.

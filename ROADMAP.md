@@ -1,11 +1,11 @@
 # Life OS Roadmap
 
 **Status:** Active
-**Product mode:** personal-only; hosted single-owner target; current runtime local-first until cutover
+**Product mode:** personal-only; local prototype finalization; hosted single-owner target deferred
 **Design truth:** Life OS – Linear Calm Dark Command Center / Dashboard V5
 **Detailed status:** `docs/product/capability-registry.md`
 **Completed sequence:** C1 → C2 → C3 → K1 → H1/H2 → N1 → A1 → Z1 (technical baseline)
-**Current Product Context:** Product Reorientation — Accepted #34 operating target + #39/#41 Goal semantics + #48 hybrid workbench
+**Current Product Context:** Local Prototype Finalization — USER ACCEPTED WP0 B2/H1/L1/F1 (#120)
 
 **Product Reorientation:** Product Target v0.4, the Target Model Decision Package,
 the Issue #34 hosted-single-owner/core-entity target, and the Issue #39 Goal semantics with the #48 hybrid workbench target are accepted. The durable
@@ -16,7 +16,7 @@ itself authorize a product `DELIVER` contract; each implementation slice still
 requires its own explicit work contract and acceptance gate. This roadmap does
 not mirror normal Issue/Project transitions.
 
-## Accepted Product Plan — #34 sequence
+## Accepted Product Plan — #34 sequence, refined by #115 and WP0 #120
 
 The accepted Product Plan turns the target model into one ordered path toward
 the primary Project-to-Day outcome while separating runtime proof from product
@@ -32,9 +32,29 @@ Accepted order:
 4. Project Depth;
 5. PP2 Skill Development Planning;
 6. PP3 Higher-Order Context in Weekly Planning;
-7. PP4 Project-to-Day Loop Closure;
-8. Hosted Runtime Cutover only after whole-app/runtime/security/data gates and a
-   separate migration authorization.
+7. Local Production SQLite Baseline under WP0 B2, replacing the hosted-cutover
+   prerequisite for current prototype finalization; hosted work is deferred by H1;
+8. PP4 Project-to-Day Loop Closure.
+
+The current runtime sequence is: accepted #116 production SQLite runtime and
+synthetic compatibility → #120 integration of the locally evaluated production
+bootstrap/Tailscale path → separately scoped local backup/restore proof before
+prototype FREEZE. The #118 data decision removes PostgreSQL migration/dry-run:
+the old dataset is disposable test data. No import or dual write is planned.
+SQLite remains opt-in; integration neither changes the Supabase default nor
+switches an existing installation or modifies its database.
+
+WP0 H1 indefinitely defers #118 hosted VPS/storage, B2/restic backup, deployment
+and cutover; full hosted acceptance remains unmet. The Mac is not a permanent
+server. L1 keeps the bounded #114 Mac Dashboard repair/current Manual acceptance
+and subsequent #112/#110 closure separate. F1 prioritizes reliable local human
+workflows; AI delivery is optional. These are product boundaries, not a second
+Issue/Project queue or authorization for further delivery.
+
+The local Freeze-Gate remains open: consistent online backup on private local
+storage, unchanged source, isolated restore, 83/83 catalog plus integrity/FK
+checks and normal local application startup with preserved representative
+data/projections. Existing synthetic recovery proofs do not close this gate.
 
 The runtime experiment is architecture evidence, not a migration or cutover. It
 may proceed before the UX sequence so later architecture work is evidence-based.
@@ -221,7 +241,9 @@ constraint. It does not authorize new Health / Fitness / Nutrition features.
 ### Plan-wide boundaries
 
 - The product order after the separate runtime experiment is `PP1 acceptance →
-  Core Task / Project Interaction → Project Depth → PP2 → PP3 → PP4`; later
+  Core Task / Project Interaction → Project Depth → PP2 → PP3 → Local Production
+  SQLite Baseline → PP4`, with WP0 #120 superseding the #115 hosted prerequisite
+  for current local finalization; later
   blocks do not bypass earlier semantic, data-contract or acceptance gates.
 - Issue #3 / R2-13 is `RESHAPE/REUSE PRESERVED WORK + DEFER`; it remains
   blocked/preserved and is not reactivated by this plan.

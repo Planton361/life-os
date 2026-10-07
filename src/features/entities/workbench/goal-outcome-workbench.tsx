@@ -15,7 +15,7 @@ import {
   type GoalOutcome,
   type GoalOutcomeCriterion,
 } from "@/features/real-data/domain/goal-outcome";
-import type { WorkbenchData } from "@/features/real-data/supabase/repositories/entity-workbench-read";
+import type { WorkbenchData } from "@/features/real-data/runtime/entity-workbench-read";
 import { EntityWorkbenchShell } from "./pages";
 import { Choice, fieldClass, OperationForm } from "./forms";
 import { taskDependencyContext } from "@/features/real-data/domain/task-dependencies";

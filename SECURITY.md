@@ -209,3 +209,75 @@ remote database is used by these application flows.
 Focused proof: `tests/supabase/pp2-skill-development.sql`,
 `pp2-skill-concurrency.mjs`, `pp2-legacy-before.sql`,
 `tests/e2e/pp2-skill-database.spec.ts` and the PP2 Skill browser specs.
+
+## Synthetic SQLite application boundary (#116)
+
+Supabase/PostgreSQL remains the absent-selector default. The explicit
+server-only synthetic selector cannot accept a personal SQLite file: it requires
+a current-owner private, regular, non-symlink/non-hardlink file in a disposable
+`life-os-116-*` directory immediately under the real system temporary root,
+synthetic metadata, schema 9, the pinned Node/driver/SQLite versions, exactly
+83 canonical tables plus operational metadata, integrity/FKs and readiness 1.
+Fresh initialization stays readiness 0; synthetic sealing executes backend
+aggregate self-checks transactionally before promotion.
+
+Only verified runtime metadata determines the authenticated owner. Form fields,
+URL parameters and cookies cannot mint OwnerContext or choose another owner.
+The profile cookie is presentation state. Explicit server-side blocked mode
+returns before owner issuance or owner-scoped canonical access. There is no
+password database, browser authentication switch or synthetic Supabase Auth call.
+
+SQLite browser writes obtain a context only after centralized Origin/Host/
+forwarded-host/cross-site checks against the configured loopback origin. Read
+contexts deny mutation methods. Zod, explicit same-owner queries/relationships
+and native transactional/DB guards remain required. No dual writes, personal
+migration, Tailscale configuration or hosted deployment follows from the
+synthetic implementation.
+
+The production proof instruments browser requests and server-side fetches to
+reject Supabase API egress, denies protected personal-profile filesystem access,
+and checks HTML/RSC/browser state/static JS for internal owner material, native
+handles/modules and DB paths. Fixtures, backup/restore and cleanup are restricted
+to state created by the disposable runner. Failure evidence is retained privately.
+
+## Local canonical production boundary (#118 implementation / #120 integration)
+
+Supabase remains the default. The explicit server-only `sqlite-hosted` selector
+accepts only a ready canonical dataset, the configured private HTTPS Tailscale
+origin and one expected `Tailscale-User-Login`. The application derives the owner
+UUID from verified DB metadata. Host and optional forwarded Host must match that
+origin even for reads. Missing, wrong or comma-ambiguous identities fail closed;
+request cookies, form/query fields and browser owner/profile values cannot select
+another owner. Writes additionally retain Origin/Host/cross-site checks. Password
+and Supabase authentication actions are unavailable in hosted mode. Legacy
+personal JSON is never read or written as a hosted fallback.
+
+The operator bootstrap reserves a new target exclusively (0600 in a 0700,
+current-user directory), rejects symlink/public/nonprivate paths and shares the
+canonical schema without synthetic authentication or readiness bypass. Exactly
+one owner profile is initialized from validated operator input. Metadata schema,
+pinned runtime versions, WAL/FULL/FK/busy timeout, exact 83-table catalog,
+integrity/FKs and aggregate checks precede readiness. Any bootstrap error leaves
+the created target unready; an existing malformed/partial target is refused.
+
+The production launcher fixes hosted Next to loopback `127.0.0.1:3000`.
+The Tailscale Serve gateway must strip caller-supplied identity headers
+and supply its authenticated login. Direct localhost requests can imitate gateway
+headers, so trusted local process access remains part of the accepted boundary.
+The disposable smoke simulates gateway headers; accepted real Mac Tailscale
+read/write/reload/restart and redirect-auth evidence is recorded in
+[#118 local evaluation](https://github.com/Planton361/life-os/issues/118#issuecomment-6038562930)
+and its [redirect repair acceptance](https://github.com/Planton361/life-os/issues/118#issuecomment-6042913658).
+The Next 16.2.2 private `__NEXT_PRIVATE_ORIGIN` redirect hook must be revalidated
+on framework upgrades; it does not relax identity, Host or Origin admission.
+
+WP0 #120 accepts this opt-in local baseline without switching the Supabase
+default, altering the existing local DB or declaring the Mac a permanent server.
+#118 hosted VPS/storage, B2/restic, deployment and cutover are indefinitely
+deferred and unfulfilled. No provider action or migration follows from integration.
+The mandatory local prototype Freeze-Gate remains unfulfilled: consistent online
+backup to private local storage with unchanged source, isolated restore, 83/83
+catalog and integrity/FK verification, then normal local application startup
+with preserved representative data/projections. Synthetic recovery evidence is
+insufficient for this gate. Backup/restore data, artifacts and secrets stay private;
+no cloud backup architecture is implied.

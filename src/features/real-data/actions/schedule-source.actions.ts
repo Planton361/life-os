@@ -2,9 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { scheduleSourceInputSchema } from "../schemas/schedule-source.schema";
-import { createSupabaseScheduleSourceRepository } from "../supabase/repositories/supabase-schedule-source-repository";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
-import { createAuthenticatedSupabaseServerClient } from "@/lib/supabase/server";
+import { createAuthenticatedApplicationContext } from "@/features/real-data/runtime/application-context";
 
 function value(formData: FormData, key: string) {
   const candidate = formData.get(key);
@@ -17,7 +16,7 @@ function revalidateScheduleProjections() {
 
 export async function scheduleSourceFormAction(formData: FormData) {
   if ((await getCurrentLifeOsProfileId()) !== "manual") return;
-  const auth = await createAuthenticatedSupabaseServerClient();
+  const auth = await createAuthenticatedApplicationContext("write");
   if (!auth.ok) return;
   const plannedDate = value(formData, "plannedDate");
   const scheduledTime = value(formData, "scheduledTime") || "12:00";
@@ -31,6 +30,6 @@ export async function scheduleSourceFormAction(formData: FormData) {
     sourceType: value(formData, "sourceType"),
   });
   if (!parsed.success) return;
-  const result = await createSupabaseScheduleSourceRepository(auth.client).schedule(parsed.data);
+  const result = await auth.repositories.scheduling.schedule(parsed.data);
   if (!result.error) revalidateScheduleProjections();
 }

@@ -347,6 +347,7 @@ export async function collectDoctor({
   run = runCommand,
   platform = process.platform,
   arch = process.arch,
+  nodeVersion = process.version.replace(/^v/, ""),
   packageManager: packageManagerOverride,
   expectedRepository = EXPECTED_REPOSITORY,
   pnpmVersion: pnpmVersionOverride,
@@ -362,11 +363,9 @@ export async function collectDoctor({
     `${platform}/${arch}`,
   );
 
-  const nodeVersion = process.version.replace(/^v/, "");
-  const nodeMajor = versionMajor(nodeVersion);
   checks.node = check(
-    nodeMajor === 22 ? "PASS" : "FAIL",
-    nodeMajor === 22 ? "expected Node 22.x" : "expected Node 22.x",
+    nodeVersion === "24.21.0" ? "PASS" : "FAIL",
+    "expected pinned Node 24.21.0",
     nodeVersion,
   );
 
