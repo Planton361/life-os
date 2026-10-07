@@ -579,7 +579,7 @@ Task→Target/Milestone or direct Project↔Skill FK, inferred graph, mastery/co
 progress/decay model, automatic Evidence/advancement or Task READY/BLOCKED effect.
 Implementation: `supabase/migrations/20261002191215_pp2_skill_development.sql`.
 
-## Native SQLite backend checkpoint (#116)
+## Native SQLite canonical data and application runtime (#116)
 
 Fresh synthetic schema version 9 represents all 83 current canonical business
 tables, plus operational `runtime_metadata`. `canonicalTableNames` is checked
@@ -603,7 +603,8 @@ Fresh synthetic initialization remains `compatibility_ready=0`. The deliberate
 synthetic files after exact schema/runtime/driver/SQLite/catalog, integrity/FK
 and native aggregate self-checks. Only then may it seal readiness to 1; the
 application requires that gate through its normal `applicationRuntime` path.
-This sealer is not personal migration tooling. Final application acceptance,
-resource-budget and exact-head target packaging evidence belong to #116/PR #117.
+This sealer is not personal migration tooling. Complete synthetic application,
+resource-budget and Linux/macOS packaging acceptance is recorded in #116/PR #117
+and the Capability Registry.
 PostgreSQL remains the operative personal datastore; no personal migration or
 runtime cutover is established.
