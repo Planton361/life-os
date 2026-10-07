@@ -144,8 +144,10 @@ export class SqliteRuntime {
       if (this.#db.pragma("integrity_check", { simple: true }) !== "ok" || (this.#db.pragma("foreign_key_check") as unknown[]).length)
         throw new Error("SQLITE_INTEGRITY_FAILED");
       if (!["canonical", "synthetic"].includes(meta.dataset_kind)) throw new Error("SQLITE_DATASET_KIND_INVALID");
-      const profiles = this.#db.prepare("SELECT id FROM profiles").all() as { id: string }[];
-      if (profiles.length !== 1 || profiles[0].id !== uuid(meta.owner_id)) throw new Error("SQLITE_OWNER_INVALID");
+      if (meta.dataset_kind === "canonical") {
+        const profiles = this.#db.prepare("SELECT id FROM profiles").all() as { id: string }[];
+        if (profiles.length !== 1 || profiles[0].id !== uuid(meta.owner_id)) throw new Error("SQLITE_OWNER_INVALID");
+      }
       this.#owner = meta.owner_id;
       this.#acquireWriter();
     } catch (error) { this.#db.close(); this.#releaseWriter(); throw error; }
