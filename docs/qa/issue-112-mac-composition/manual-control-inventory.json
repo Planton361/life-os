@@ -1,0 +1,1156 @@
+{
+  "runtime": "sqlite-hosted",
+  "dataset": "fresh disposable canonical SQLite, 83/83",
+  "authentication": "real existing Tailscale Serve owner gateway",
+  "mutationInventory": [
+    {
+      "tag": "TEXTAREA",
+      "label": "Quick Thought",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "In Inbox speichern",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Today Agenda",
+      "href": "/calendar",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Day",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Week",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Month",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Open agenda item: #112 Daily 1791407266573",
+      "href": "/tasks/97b74024-e900-435a-942d-e198fca99f69",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Mental health",
+      "href": "/health/mental",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Calm",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Focused",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Tired",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Anxious",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Stressed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Happy",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Tasks: 1 / 1, Tasks for today",
+      "href": "/today",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Focus Time: Unavailable, Focus classification not implemented",
+      "href": "/calendar",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Inbox: 1 open, Captured to Inbox",
+      "href": "/inbox",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Nutrition: No meals, Recipe estimates unavailable",
+      "href": "/nutrition/meal-planner?view=today",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Review Status: Not started, Daily and weekly review",
+      "href": "/review/daily",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Sleep: Unknown, No sleep entry",
+      "href": "/health/mental?section=sleep",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Habit Trackers",
+      "href": "/health/habits",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Morning",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Midday",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Evening",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "#112 Habit 1791407266573 erhöhen",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "+ Add habit",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Active Portfolio",
+      "href": "/portfolio",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Open portfolio projects view",
+      "href": "/portfolio?view=projects",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Open portfolio goals view",
+      "href": "/portfolio?view=goals",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Open portfolio skills view",
+      "href": "/portfolio?view=skills",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Project View",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Goal View",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Skill View",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "project erstellen",
+      "href": "/portfolio?view=projects#portfolio-contextual-create-heading",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "project erstellen",
+      "href": "/portfolio?view=projects#portfolio-contextual-create-heading",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "project erstellen",
+      "href": "/portfolio?view=projects#portfolio-contextual-create-heading",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "project erstellen",
+      "href": "/portfolio?view=projects#portfolio-contextual-create-heading",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Open health: Weight Goal",
+      "href": "/health",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Open meal planner: Nutrient Balance",
+      "href": "/nutrition/meal-planner?view=today",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Meals Today",
+      "href": "/nutrition/meal-planner?view=today",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Open meal slot Breakfast: Keine Mahlzeit",
+      "href": "/nutrition/recipes",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Planen Breakfast",
+      "href": "/nutrition/meal-planner?slot=breakfast",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Open meal slot Lunch: Keine Mahlzeit",
+      "href": "/nutrition/recipes",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Planen Lunch",
+      "href": "/nutrition/meal-planner?slot=lunch",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Open meal slot Dinner: Keine Mahlzeit",
+      "href": "/nutrition/recipes",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Planen Dinner",
+      "href": "/nutrition/meal-planner?slot=dinner",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Running Tracker",
+      "href": "/health/running",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Running",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Muscle",
+      "href": null,
+      "disabled": false
+    }
+  ],
+  "populatedNavigation": {
+    "default": [
+      {
+        "href": "/calendar",
+        "index": 0,
+        "label": "Today Agenda"
+      },
+      {
+        "href": "/tasks/97b74024-e900-435a-942d-e198fca99f69",
+        "index": 0,
+        "label": "Open agenda item: #112 Daily 1791407266573"
+      },
+      {
+        "href": "/health/mental",
+        "index": 0,
+        "label": "Mental health"
+      },
+      {
+        "href": "/today",
+        "index": 0,
+        "label": "Tasks: 1 / 1, Tasks for today"
+      },
+      {
+        "href": "/calendar",
+        "index": 1,
+        "label": "Focus Time: Unavailable, Focus classification not implemented"
+      },
+      {
+        "href": "/inbox",
+        "index": 0,
+        "label": "Inbox: 1 open, Captured to Inbox"
+      },
+      {
+        "href": "/nutrition/meal-planner?view=today",
+        "index": 0,
+        "label": "Nutrition: No meals, Recipe estimates unavailable"
+      },
+      {
+        "href": "/review/daily",
+        "index": 0,
+        "label": "Review Status: Not started, Daily and weekly review"
+      },
+      {
+        "href": "/health/mental?section=sleep",
+        "index": 0,
+        "label": "Sleep: Unknown, No sleep entry"
+      },
+      {
+        "href": "/health/habits",
+        "index": 0,
+        "label": "Habit Trackers"
+      },
+      {
+        "href": "/portfolio",
+        "index": 0,
+        "label": "Active Portfolio"
+      },
+      {
+        "href": "/portfolio?view=projects",
+        "index": 0,
+        "label": "Open portfolio projects view"
+      },
+      {
+        "href": "/portfolio?view=goals",
+        "index": 0,
+        "label": "Open portfolio goals view"
+      },
+      {
+        "href": "/portfolio?view=skills",
+        "index": 0,
+        "label": "Open portfolio skills view"
+      },
+      {
+        "href": "/projects/c937b66a-00e1-4a83-b04c-6e57316d9995",
+        "index": 0,
+        "label": "Open portfolio item: #112 projects 1791407266573"
+      },
+      {
+        "href": "/portfolio?view=projects#portfolio-contextual-create-heading",
+        "index": 0,
+        "label": "project erstellen"
+      },
+      {
+        "href": "/portfolio?view=projects#portfolio-contextual-create-heading",
+        "index": 1,
+        "label": "project erstellen"
+      },
+      {
+        "href": "/portfolio?view=projects#portfolio-contextual-create-heading",
+        "index": 2,
+        "label": "project erstellen"
+      },
+      {
+        "href": "/health",
+        "index": 0,
+        "label": "Open health: Weight Goal"
+      },
+      {
+        "href": "/nutrition/meal-planner?view=today",
+        "index": 1,
+        "label": "Open meal planner: Nutrient Balance"
+      },
+      {
+        "href": "/nutrition/meal-planner?view=today",
+        "index": 2,
+        "label": "Meals Today"
+      },
+      {
+        "href": "/nutrition/recipes",
+        "index": 0,
+        "label": "Open meal slot Breakfast: Keine Mahlzeit"
+      },
+      {
+        "href": "/nutrition/meal-planner?slot=breakfast",
+        "index": 0,
+        "label": "Planen Breakfast"
+      },
+      {
+        "href": "/nutrition/recipes",
+        "index": 1,
+        "label": "Open meal slot Lunch: Keine Mahlzeit"
+      },
+      {
+        "href": "/nutrition/meal-planner?slot=lunch",
+        "index": 0,
+        "label": "Planen Lunch"
+      },
+      {
+        "href": "/nutrition/recipes",
+        "index": 2,
+        "label": "Open meal slot Dinner: Keine Mahlzeit"
+      },
+      {
+        "href": "/nutrition/meal-planner?slot=dinner",
+        "index": 0,
+        "label": "Planen Dinner"
+      },
+      {
+        "href": "/health/running",
+        "index": 0,
+        "label": "Running Tracker"
+      }
+    ],
+    "Goal View": [
+      {
+        "href": "/portfolio",
+        "index": 0,
+        "label": "Active Portfolio"
+      },
+      {
+        "href": "/portfolio?view=projects",
+        "index": 0,
+        "label": "Open portfolio projects view"
+      },
+      {
+        "href": "/portfolio?view=goals",
+        "index": 0,
+        "label": "Open portfolio goals view"
+      },
+      {
+        "href": "/portfolio?view=skills",
+        "index": 0,
+        "label": "Open portfolio skills view"
+      },
+      {
+        "href": "/goals/124b6b03-5d15-47db-a853-ef6e0646d1bf",
+        "index": 0,
+        "label": "Open portfolio item: #112 goals 1791407266573"
+      },
+      {
+        "href": "/portfolio?view=goals#portfolio-contextual-create-heading",
+        "index": 0,
+        "label": "goal erstellen"
+      },
+      {
+        "href": "/portfolio?view=goals#portfolio-contextual-create-heading",
+        "index": 1,
+        "label": "goal erstellen"
+      },
+      {
+        "href": "/portfolio?view=goals#portfolio-contextual-create-heading",
+        "index": 2,
+        "label": "goal erstellen"
+      }
+    ],
+    "Skill View": [
+      {
+        "href": "/portfolio",
+        "index": 0,
+        "label": "Active Portfolio"
+      },
+      {
+        "href": "/portfolio?view=projects",
+        "index": 0,
+        "label": "Open portfolio projects view"
+      },
+      {
+        "href": "/portfolio?view=goals",
+        "index": 0,
+        "label": "Open portfolio goals view"
+      },
+      {
+        "href": "/portfolio?view=skills",
+        "index": 0,
+        "label": "Open portfolio skills view"
+      },
+      {
+        "href": "/skills/c62d4251-ef23-401b-9f32-a08416aec6ef",
+        "index": 0,
+        "label": "Open portfolio item: #112 skills 1791407266573"
+      },
+      {
+        "href": "/portfolio?view=skills#portfolio-contextual-create-heading",
+        "index": 0,
+        "label": "skill erstellen"
+      },
+      {
+        "href": "/portfolio?view=skills#portfolio-contextual-create-heading",
+        "index": 1,
+        "label": "skill erstellen"
+      },
+      {
+        "href": "/portfolio?view=skills#portfolio-contextual-create-heading",
+        "index": 2,
+        "label": "skill erstellen"
+      }
+    ],
+    "Project View": [
+      {
+        "href": "/portfolio",
+        "index": 0,
+        "label": "Active Portfolio"
+      },
+      {
+        "href": "/portfolio?view=projects",
+        "index": 0,
+        "label": "Open portfolio projects view"
+      },
+      {
+        "href": "/portfolio?view=goals",
+        "index": 0,
+        "label": "Open portfolio goals view"
+      },
+      {
+        "href": "/portfolio?view=skills",
+        "index": 0,
+        "label": "Open portfolio skills view"
+      },
+      {
+        "href": "/projects/c937b66a-00e1-4a83-b04c-6e57316d9995",
+        "index": 0,
+        "label": "Open portfolio item: #112 projects 1791407266573"
+      },
+      {
+        "href": "/portfolio?view=projects#portfolio-contextual-create-heading",
+        "index": 0,
+        "label": "project erstellen"
+      },
+      {
+        "href": "/portfolio?view=projects#portfolio-contextual-create-heading",
+        "index": 1,
+        "label": "project erstellen"
+      },
+      {
+        "href": "/portfolio?view=projects#portfolio-contextual-create-heading",
+        "index": 2,
+        "label": "project erstellen"
+      }
+    ]
+  },
+  "testedViewports": [
+    {
+      "width": 769,
+      "height": 413,
+      "visibleControls": 47,
+      "individuallyClickedLinks": 27,
+      "portfolioClicksByView": {
+        "Goal View": 8,
+        "Skill View": 8,
+        "Project View": 8
+      }
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "visibleControls": 47,
+      "individuallyClickedLinks": 27,
+      "portfolioClicksByView": {
+        "Goal View": 8,
+        "Skill View": 8,
+        "Project View": 8
+      }
+    },
+    {
+      "width": 3840,
+      "height": 2160,
+      "visibleControls": 47,
+      "individuallyClickedLinks": 27,
+      "portfolioClicksByView": {
+        "Goal View": 8,
+        "Skill View": 8,
+        "Project View": 8
+      }
+    }
+  ],
+  "sparseControls": [
+    {
+      "tag": "TEXTAREA",
+      "label": "Quick Thought",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "In Inbox speichern",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Today Agenda",
+      "href": "/calendar",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Day",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Week",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Month",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Mental health",
+      "href": "/health/mental",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Calm",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Focused",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Tired",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Anxious",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Stressed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Happy",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Tasks: 0 / 0, No tasks today",
+      "href": "/today",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Focus Time: Unavailable, Focus classification not implemented",
+      "href": "/calendar",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Inbox: 0 open, Capture thought",
+      "href": "/inbox",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Nutrition: No meals, Recipe estimates unavailable",
+      "href": "/nutrition/meal-planner?view=today",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Review Status: Not started, Daily and weekly review",
+      "href": "/review/daily",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Sleep: Unknown, No sleep entry",
+      "href": "/health/mental?section=sleep",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Habit Trackers",
+      "href": "/health/habits",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Morning",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Midday",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Evening",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "+ Add habit",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Active Portfolio",
+      "href": "/portfolio",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Open portfolio projects view",
+      "href": "/portfolio?view=projects",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Open portfolio goals view",
+      "href": "/portfolio?view=goals",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Open portfolio skills view",
+      "href": "/portfolio?view=skills",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Project View",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Goal View",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Skill View",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "project erstellen",
+      "href": "/portfolio?view=projects#portfolio-contextual-create-heading",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "project erstellen",
+      "href": "/portfolio?view=projects#portfolio-contextual-create-heading",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "project erstellen",
+      "href": "/portfolio?view=projects#portfolio-contextual-create-heading",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "project erstellen",
+      "href": "/portfolio?view=projects#portfolio-contextual-create-heading",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Open health: Weight Goal",
+      "href": "/health",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Open meal planner: Nutrient Balance",
+      "href": "/nutrition/meal-planner?view=today",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Meals Today",
+      "href": "/nutrition/meal-planner?view=today",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Open meal slot Breakfast: Keine Mahlzeit",
+      "href": "/nutrition/recipes",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Planen Breakfast",
+      "href": "/nutrition/meal-planner?slot=breakfast",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Open meal slot Lunch: Keine Mahlzeit",
+      "href": "/nutrition/recipes",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Planen Lunch",
+      "href": "/nutrition/meal-planner?slot=lunch",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Open meal slot Dinner: Keine Mahlzeit",
+      "href": "/nutrition/recipes",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Planen Dinner",
+      "href": "/nutrition/meal-planner?slot=dinner",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "label": "Running Tracker",
+      "href": "/health/running",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Running",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "label": "Muscle",
+      "href": null,
+      "disabled": false
+    }
+  ],
+  "sparseClickedLinks": [
+    {
+      "href": "/calendar",
+      "index": 0,
+      "label": "Today Agenda"
+    },
+    {
+      "href": "/health/mental",
+      "index": 0,
+      "label": "Mental health"
+    },
+    {
+      "href": "/today",
+      "index": 0,
+      "label": "Tasks: 0 / 0, No tasks today"
+    },
+    {
+      "href": "/calendar",
+      "index": 1,
+      "label": "Focus Time: Unavailable, Focus classification not implemented"
+    },
+    {
+      "href": "/inbox",
+      "index": 0,
+      "label": "Inbox: 0 open, Capture thought"
+    },
+    {
+      "href": "/nutrition/meal-planner?view=today",
+      "index": 0,
+      "label": "Nutrition: No meals, Recipe estimates unavailable"
+    },
+    {
+      "href": "/review/daily",
+      "index": 0,
+      "label": "Review Status: Not started, Daily and weekly review"
+    },
+    {
+      "href": "/health/mental?section=sleep",
+      "index": 0,
+      "label": "Sleep: Unknown, No sleep entry"
+    },
+    {
+      "href": "/health/habits",
+      "index": 0,
+      "label": "Habit Trackers"
+    },
+    {
+      "href": "/portfolio",
+      "index": 0,
+      "label": "Active Portfolio"
+    },
+    {
+      "href": "/portfolio?view=projects",
+      "index": 0,
+      "label": "Open portfolio projects view"
+    },
+    {
+      "href": "/portfolio?view=goals",
+      "index": 0,
+      "label": "Open portfolio goals view"
+    },
+    {
+      "href": "/portfolio?view=skills",
+      "index": 0,
+      "label": "Open portfolio skills view"
+    },
+    {
+      "href": "/portfolio?view=projects#portfolio-contextual-create-heading",
+      "index": 0,
+      "label": "project erstellen"
+    },
+    {
+      "href": "/portfolio?view=projects#portfolio-contextual-create-heading",
+      "index": 1,
+      "label": "project erstellen"
+    },
+    {
+      "href": "/portfolio?view=projects#portfolio-contextual-create-heading",
+      "index": 2,
+      "label": "project erstellen"
+    },
+    {
+      "href": "/portfolio?view=projects#portfolio-contextual-create-heading",
+      "index": 3,
+      "label": "project erstellen"
+    },
+    {
+      "href": "/health",
+      "index": 0,
+      "label": "Open health: Weight Goal"
+    },
+    {
+      "href": "/nutrition/meal-planner?view=today",
+      "index": 1,
+      "label": "Open meal planner: Nutrient Balance"
+    },
+    {
+      "href": "/nutrition/meal-planner?view=today",
+      "index": 2,
+      "label": "Meals Today"
+    },
+    {
+      "href": "/nutrition/recipes",
+      "index": 0,
+      "label": "Open meal slot Breakfast: Keine Mahlzeit"
+    },
+    {
+      "href": "/nutrition/meal-planner?slot=breakfast",
+      "index": 0,
+      "label": "Planen Breakfast"
+    },
+    {
+      "href": "/nutrition/recipes",
+      "index": 1,
+      "label": "Open meal slot Lunch: Keine Mahlzeit"
+    },
+    {
+      "href": "/nutrition/meal-planner?slot=lunch",
+      "index": 0,
+      "label": "Planen Lunch"
+    },
+    {
+      "href": "/nutrition/recipes",
+      "index": 2,
+      "label": "Open meal slot Dinner: Keine Mahlzeit"
+    },
+    {
+      "href": "/nutrition/meal-planner?slot=dinner",
+      "index": 0,
+      "label": "Planen Dinner"
+    },
+    {
+      "href": "/health/running",
+      "index": 0,
+      "label": "Running Tracker"
+    }
+  ],
+  "sparsePortfolioClicks": {
+    "Goal View": [
+      {
+        "href": "/portfolio",
+        "index": 0,
+        "label": "Active Portfolio"
+      },
+      {
+        "href": "/portfolio?view=projects",
+        "index": 0,
+        "label": "Open portfolio projects view"
+      },
+      {
+        "href": "/portfolio?view=goals",
+        "index": 0,
+        "label": "Open portfolio goals view"
+      },
+      {
+        "href": "/portfolio?view=skills",
+        "index": 0,
+        "label": "Open portfolio skills view"
+      },
+      {
+        "href": "/portfolio?view=goals#portfolio-contextual-create-heading",
+        "index": 0,
+        "label": "goal erstellen"
+      },
+      {
+        "href": "/portfolio?view=goals#portfolio-contextual-create-heading",
+        "index": 1,
+        "label": "goal erstellen"
+      },
+      {
+        "href": "/portfolio?view=goals#portfolio-contextual-create-heading",
+        "index": 2,
+        "label": "goal erstellen"
+      },
+      {
+        "href": "/portfolio?view=goals#portfolio-contextual-create-heading",
+        "index": 3,
+        "label": "goal erstellen"
+      }
+    ],
+    "Skill View": [
+      {
+        "href": "/portfolio",
+        "index": 0,
+        "label": "Active Portfolio"
+      },
+      {
+        "href": "/portfolio?view=projects",
+        "index": 0,
+        "label": "Open portfolio projects view"
+      },
+      {
+        "href": "/portfolio?view=goals",
+        "index": 0,
+        "label": "Open portfolio goals view"
+      },
+      {
+        "href": "/portfolio?view=skills",
+        "index": 0,
+        "label": "Open portfolio skills view"
+      },
+      {
+        "href": "/portfolio?view=skills#portfolio-contextual-create-heading",
+        "index": 0,
+        "label": "skill erstellen"
+      },
+      {
+        "href": "/portfolio?view=skills#portfolio-contextual-create-heading",
+        "index": 1,
+        "label": "skill erstellen"
+      },
+      {
+        "href": "/portfolio?view=skills#portfolio-contextual-create-heading",
+        "index": 2,
+        "label": "skill erstellen"
+      },
+      {
+        "href": "/portfolio?view=skills#portfolio-contextual-create-heading",
+        "index": 3,
+        "label": "skill erstellen"
+      }
+    ],
+    "Project View": [
+      {
+        "href": "/portfolio",
+        "index": 0,
+        "label": "Active Portfolio"
+      },
+      {
+        "href": "/portfolio?view=projects",
+        "index": 0,
+        "label": "Open portfolio projects view"
+      },
+      {
+        "href": "/portfolio?view=goals",
+        "index": 0,
+        "label": "Open portfolio goals view"
+      },
+      {
+        "href": "/portfolio?view=skills",
+        "index": 0,
+        "label": "Open portfolio skills view"
+      },
+      {
+        "href": "/portfolio?view=projects#portfolio-contextual-create-heading",
+        "index": 0,
+        "label": "project erstellen"
+      },
+      {
+        "href": "/portfolio?view=projects#portfolio-contextual-create-heading",
+        "index": 1,
+        "label": "project erstellen"
+      },
+      {
+        "href": "/portfolio?view=projects#portfolio-contextual-create-heading",
+        "index": 2,
+        "label": "project erstellen"
+      },
+      {
+        "href": "/portfolio?view=projects#portfolio-contextual-create-heading",
+        "index": 3,
+        "label": "project erstellen"
+      }
+    ]
+  },
+  "writeBoundary": "Read-only inventory on disposable canonical owner; mutations proved on the same isolated database below. Private DB never opened."
+}

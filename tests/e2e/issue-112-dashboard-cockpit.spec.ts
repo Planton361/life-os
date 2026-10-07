@@ -97,18 +97,21 @@ for (const v of cockpitViewports)
           await expect(control).toHaveAttribute("aria-pressed", "true");
           await assertCockpit(page);
         }
-      await scrollProof(page);
       if (geometry.canvas < 880) {
         const timeline = page.getByRole("region", {
           name: "Agenda time content",
         });
         await timeline.scrollIntoViewIfNeeded();
         await timeline.focus();
+        // Near midnight, auto-positioning can already be at the final hour.
+        // Start at the top so native End scrolls this region, not the outer page.
+        await timeline.evaluate((e) => (e.scrollTop = 0));
         await page.keyboard.press("End");
         await expect(
-          timeline.getByText("24:00", { exact: true }),
+          timeline.locator(":scope > div").filter({ hasText: /^24:00/ }),
         ).toBeInViewport();
       }
+      await scrollProof(page);
       await page.reload();
       await assertCockpit(page);
       await page.evaluate(() => scrollTo(0, 0));
