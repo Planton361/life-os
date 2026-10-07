@@ -1291,6 +1291,92 @@ Journal depth, Skill Map and final active acceptance remain the planned work.
 
 # 1. Dashboard
 
+## #112 Mac composition repair — implementation evidence (2026-10-06)
+
+The [authorized same-Issue repair](https://github.com/Planton361/life-os/issues/112#issuecomment-6006545599)
+keeps Linear Dashboard in document flow: Daily → Quick → Agenda. Below 880px
+canvas width, Current Task and Up Next stack at intrinsic heights. The full
+Agenda axis/period remains keyboard/mouse accessible in one bounded body
+(`clamp(192px, 60dvh, 360px)`), with header and view controls outside that body.
+At Mac 769×413 / DPR 2, Empty Agenda drops from 765.5px to 324.8px; Demo from
+1073px to 324.8px. Daily/Quick have a 12px flow gap, without equalized heights.
+
+`tests/e2e/issue-112-dashboard-cockpit.spec.ts` proves Empty/Demo at Mac,
+Gigabyte, ASUS, 1920, 4K and Mobile, including switches, reload, keyboard/mouse
+scroll, reachable 24:00, blocked non-Manual capture feedback, bounds and clean
+console/hydration. Wide targets retain every major zone without body scroll.
+Full-surface screenshots and pre-repair Mac references are in
+`docs/qa/issue-112-mac-composition/`. V5 review: P0/P1 hierarchy, existing tokens,
+readable controls and content-led Command pass; no scaling or hidden zones.
+
+The original 2026-10-06 evidence used an isolated production source copy without
+protected env or auth files and left the user dev server untouched. Its two
+authenticated Manual tests were skipped. The follow-up below supersedes that
+Manual-proof gap; capability statuses below remain unchanged.
+
+### Post-B2 SQLite Manual proof — 2026-10-07
+
+[WP0 L1 authorization](https://github.com/Planton361/life-os/issues/112#issuecomment-6046623581)
+continues the same [Draft PR #114](https://github.com/Planton361/life-os/pull/114)
+after integrating `main d7aae0a28db3fac6d9500dafce31a21b0e796aee` by a
+non-rewriting merge. The existing Mac repair is preserved; no additional UI,
+domain, security or runtime behavior changes were necessary.
+
+`node --conditions=react-server tests/sqlite/issue-112-manual-proof.mjs` on
+Node 24.21.0 runs the focused proof from a clean production source copy. It
+refuses an occupied port 3000, bootstraps a new disposable canonical database
+in a private temporary directory (83/83, production readiness preflight), and
+starts the ordinary `sqlite-hosted` production runtime. Authentication uses the
+existing real Tailscale Serve gateway and its server-derived owner identity;
+there is no Supabase signup, synthetic authentication or injected identity
+header. The private SQLite database is never opened. No provider configuration
+or existing runtime is changed. The disposable process stops after the proof;
+technical databases and local logs are not published.
+
+Browser-Proof: **PASS — 15 passed, zero skipped**, including both previously
+skipped Manual tests. Sparse/populated Manual, Empty and Demo are tested at
+Mac 769×413 / DPR 2, Gigabyte, ASUS, 1920×1080, 3840×2160 and Mobile 390×844.
+Console/hydration is clean. Origin/owner/security semantics are unchanged;
+the accepted #120 boundary evidence remains applicable.
+
+| Current control inventory / interaction | Current result |
+|---|---|
+| Sparse Dashboard inventory | 47 visible controls, including 27 individually clicked links, at Mac, 1920 and 4K; destinations retain their route/query contract and resolve to real surfaces |
+| Daily Control | Task created through the UI, selected in Daily Control, opened, completed with success feedback; completion remains after reload |
+| Quick Thought | Text entered, saved with success feedback, found in Inbox and retained after reload; Empty/Demo retain visible blocked-write feedback |
+| Mood | Calm, Focused, Tired, Anxious, Stressed and Happy clicked; success feedback and selected state survive reload |
+| Agenda / supporting switches | Day/Week/Month, Morning/Midday/Evening and Running/Muscle directly clicked; internal lists remain keyboard/mouse accessible; 24:00 is reachable without changing page composition |
+| Habit dialog and log | Open/Escape, invalid Target with visible validation, Cancel, Name/Target/Unit/Increment/Time of day, Save with toast, Increment/Undo with visible value feedback and reload-stable 1/2 → 0/2; notification dismissal exercised |
+| Portfolio | Project/Goal/Skill created through normal UI and retained after reload; all three views and their real item/create links clicked; populated default Dashboard has 28 clicked links |
+| Meals / Running / metrics / health links | Every visible title, summary, meal-slot and planning link clicked, including all three meal slots and Running/Muscle views; no domain expansion |
+
+Machine-readable inventories and sparse/populated geometry are persisted in
+`docs/qa/issue-112-mac-composition/manual-control-inventory.json` and
+`manual-geometry.json`. Full technical Manual screenshots are
+`manual-sparse-mac.png`, `manual-populated-mac.png`,
+`manual-populated-desktop.png` and `manual-populated-4k.png` in the same folder.
+Existing sufficient Wide/Desktop/Mobile visual references are retained.
+Mac has a 12px Daily→Quick and Quick→Agenda gap and a 324.8px Agenda in both
+Manual states; no horizontal overflow, overlapping zones, clipped controls or
+scaling. Wide guards retain the one-glance cockpit without body scroll.
+The Habit overlay fits the Mac viewport with reachable fields and footer.
+
+V5 Design-Taste review:
+- Was passt zu V5: intrinsic Daily/Quick flow, bounded recognizable Agenda,
+  unchanged P0/P1 hierarchy, readable controls and existing semantic tokens.
+- Was verletzt V5: no new material violation in the bounded repair; historical
+  unsupported capabilities retain their honest states and separate scope.
+- Konkrete Fixes: no additional UI fix; test-only corrections handle Inbox's
+  canonical item-selection query and native End behavior/current-hour labels
+  near midnight without weakening the navigation or 24:00 assertions.
+- Acceptance Decision: **PASS for the technical Mac repair**.
+
+`git diff --check`, typecheck, lint and production build pass on the integrated
+source. Exact-head required `quality` is recorded on PR #114. Technical repair
+evidence is complete; final Mac **USER ACCEPTANCE**, M0 and #112/#110 closure
+remain user-owned and open. This is not final Dashboard/product closure and
+does not complete hosting or the separate local backup/restore freeze gate.
+
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
 | SR1-04 personal Target runtime | `CONNECTED` | personal transfer, candidate-volume preservation, same-user reauthorization, authenticated read/write proof and persistent default-runtime Target switch passed | maintain Target as canonical local runtime; Source is `LEGACY_FALLBACK_READ_ONLY` |
