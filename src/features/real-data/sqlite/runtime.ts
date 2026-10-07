@@ -24,12 +24,12 @@ export const schemaVersion = 9;
 type Metadata = { schema_version: number; dataset_kind: string; owner_id: string; compatibility_ready: number; writer_pid: number | null; writer_host: string | null };
 type GlobalRuntime = typeof globalThis & { __lifeOsSqliteRuntime?: { path: string; store: SqliteRuntime } };
 
-function verifyNodeAndDriver() {
+export function verifyNodeAndDriver() {
   if (process.versions.node !== runtimeVersions.node || driverPackage.version !== runtimeVersions.driver)
     throw new Error("SQLITE_RUNTIME_VERSION_MISMATCH");
 }
 
-function canonicalPath(path: string) {
+export function canonicalPath(path: string) {
   privateDatabasePath(path);
   if (!isAbsolute(path) || resolve(path) !== path) throw new Error("SQLITE_PATH_INVALID");
   const stat = lstatSync(path);
@@ -93,6 +93,23 @@ export function configureConnection(db: Database.Database) {
   return values;
 }
 
+
+export function assertCanonicalCatalog(db: Database.Database) {
+  const tables = (db.prepare("SELECT name FROM sqlite_schema WHERE type='table' AND name NOT LIKE 'sqlite_%'").all() as { name: string }[]).map(row => row.name);
+  const expected = new Set<string>([...canonicalTableNames, "runtime_metadata"]);
+  if (canonicalTableNames.length !== 83 || expected.size !== 84 || tables.length !== expected.size || tables.some(name => !expected.has(name)))
+    throw new Error("SQLITE_CANONICAL_CATALOG_INVALID");
+}
+
+// The same aggregate validators used by normal command commits, without writes.
+export function aggregatePreflight(db: Database.Database, ownerId: string) {
+  validateProjectCommit(db, ownerId, projectCommitSnapshot(db, ownerId));
+  validateGoalCommit(db, ownerId, goalCommitSnapshot(db, ownerId));
+  validateSkillCommit(db, ownerId);
+  validateSkillBoundary(db, ownerId, skillCommitSnapshot(db, ownerId));
+  validateRewardCommit(db, ownerId);
+}
+
 export class SqliteRuntime {
   #db: Database.Database;
   #owner: string;
@@ -121,12 +138,16 @@ export class SqliteRuntime {
       if (Number(meta.compatibility_ready) !== 1 && !options.syntheticProof)
         throw new Error("SQLITE_COMPATIBILITY_NOT_READY");
       if (!options.syntheticProof) {
-        const tables = new Set((this.#db.prepare("SELECT name FROM sqlite_schema WHERE type='table'").all() as { name: string }[]).map((table) => table.name));
-        if (canonicalTableNames.some((name) => !tables.has(name))) throw new Error("SQLITE_CANONICAL_CATALOG_INCOMPLETE");
+        assertCanonicalCatalog(this.#db);
       }
       if (options.syntheticProof && meta.dataset_kind !== "synthetic") throw new Error("SYNTHETIC_DATABASE_REQUIRED");
       if (this.#db.pragma("integrity_check", { simple: true }) !== "ok" || (this.#db.pragma("foreign_key_check") as unknown[]).length)
         throw new Error("SQLITE_INTEGRITY_FAILED");
+      if (!["canonical", "synthetic"].includes(meta.dataset_kind)) throw new Error("SQLITE_DATASET_KIND_INVALID");
+      if (meta.dataset_kind === "canonical") {
+        const profiles = this.#db.prepare("SELECT id FROM profiles").all() as { id: string }[];
+        if (profiles.length !== 1 || profiles[0].id !== uuid(meta.owner_id)) throw new Error("SQLITE_OWNER_INVALID");
+      }
       this.#owner = meta.owner_id;
       this.#acquireWriter();
     } catch (error) { this.#db.close(); this.#releaseWriter(); throw error; }

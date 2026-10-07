@@ -74,3 +74,4 @@ jobs:
           node tests/sqlite/retired-runtime-proof.mjs
           node tests/sqlite/framework-shutdown-proof.mjs
           node tests/sqlite/application-smoke.mjs
+          pnpm test:sqlite:hosted

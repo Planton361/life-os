@@ -38,6 +38,7 @@ export async function getManualDbAuthNotice() {
     return null;
   }
 
+  if (applicationRuntimeConfiguration().backend === "sqlite-hosted") return { body: "Die private Gateway-Anmeldung fehlt oder ist ungültig. Manual-Daten und Änderungen sind gesperrt.", canResetSession: false, canSignIn: false, title: "Manual-Daten gesperrt" };
   if (applicationRuntimeConfiguration().backend === "sqlite-synthetic") return { body: "Die serverseitige Anmeldung für den synthetischen Lauf ist deaktiviert. Manual-Daten und Änderungen sind gesperrt.", canResetSession: false, canSignIn: false, title: "Manual-Daten gesperrt" };
 
   return {

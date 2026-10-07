@@ -9,13 +9,20 @@ Nicht gilt für: reine UI-Widgets.
 
 ## Durable work-graph / knowledge ownership data decision
 
-Product Target v0.4 is accepted. Life OS / PostgreSQL remains canonical for
+Product Target v0.4 is accepted. Life OS remains canonical for
 operational context: Projects, Goals, Skills, Milestones, Tasks, Dependencies,
 Planning and Relations. `Resource` remains the canonical Life-OS reference /
 Work-Artifact identity. Obsidian owns long-form Knowledge Content and Notes.
 For a bound Note, `life_os_id` is stable identity and a vault-relative path is
 only a locator; rename/move never changes identity. No watcher, sync,
 write-back or personal Vault access is implied.
+
+Supabase/PostgreSQL remains the default runtime. The opt-in local production
+SQLite path (#120) implements the same 83 canonical tables and domain contracts
+with native owner/constraint/transaction guards. This changes no domain model,
+migrates no data and creates no dual write; each runtime uses its own selected
+canonical datastore. Hosted cutover and the local backup/restore Freeze-Gate
+remain unfulfilled.
 
 Project, Goal and Skill remain separate categories. Their shared planning
 shape is Higher-order entity → domain milestones → Tasks → progress, but their

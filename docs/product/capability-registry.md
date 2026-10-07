@@ -27,7 +27,7 @@
 - Backend, repository or historical reload evidence proves that layer only; it
   does not by itself prove that a visible control currently works.
 
-## Production SQLite runtime — #115 accepted target / #116 synthetic application integration
+## Production SQLite runtime — #116 synthetic proof / #120 local production baseline
 
 | Capability | Status | Current implementation evidence | Missing capability |
 |---|---|---|---|
@@ -49,19 +49,26 @@
 | SQLite Entertainment / Wishlist / Inventory / Purchase Decisions backend | `CONNECTED` | Canonical enum/lifecycle/nullability checks, exact progress/price/quantity/value and owned parent guards; Wishlist conversion serializes to one stable Inventory snapshot and reconciles Decision links, including independent-process retry proof and all-domain recovery | None within #116 synthetic scope. Fresh initialization remains readiness 0; application fixtures require explicit verified sealing to 1. Personal activation is a separate gate. |
 | SQLite Anti-Rot backend | `CONNECTED` | Active/paused/archive/restore, deterministic native rotation, predecessor skip and exactly-once resolution; immutable event ledger, DB active/open recommendation and owner tuples. Process rotation/conflicting resolution and recovery preserve one coherent chain; no coins are created | None within #116 synthetic scope. Fresh initialization remains readiness 0; application fixtures require explicit verified sealing to 1. Personal activation is a separate gate. |
 | SQLite Challenge / Reward / Shop backend | `CONNECTED` | Exact target/increment, latest active progress correction/archive, lifecycle/eligibility and exactly-once transactional reward. Append-only sign/source-constrained ledger plus pre-COMMIT aggregate checks; derived bigint balance, request-key redemption/debit, frozen title/cost snapshots and catalog lifecycle. Nine retained/reward process tests (12 serialized races), native bypass/foreign parent/failure rollback and all-domain recovery are green | None within #116 synthetic scope. Fresh initialization remains readiness 0; application fixtures require explicit verified sealing to 1. Personal activation is a separate gate. |
-| Complete SQLite application browser / resource / target packaging proof | `CONNECTED` | `pnpm test:sqlite:application`: real production build/start, native-command sealed fixture, normal Server Component reads and Server Action writes, four modes, owner/origin negatives, browser reload, restart/SIGKILL and online restore; no Supabase/Docker/signup prerequisites. `tests/sqlite/application-browser-proof.mjs` and shared flow/boundary/surface proofs persist private evidence. | None within #116 synthetic scope; personal migration and hosted activation require separate authorization |
+| Complete SQLite application browser / resource / target packaging proof | `CONNECTED` | `pnpm test:sqlite:application`: real production build/start, native-command sealed fixture, normal Server Component reads and Server Action writes, four modes, owner/origin negatives, browser reload, restart/SIGKILL and online restore; no Supabase/Docker/signup prerequisites. `tests/sqlite/application-browser-proof.mjs` and shared flow/boundary/surface proofs persist private evidence. | None within #116 synthetic scope; hosted activation remains a separate gate |
+| Fresh canonical bootstrap and opt-in local production runtime | `CONNECTED` | #118 implementation in [PR #119](https://github.com/Planton361/life-os/pull/119), for #120 integration: production bootstrap verifies 83/83, one owner, canonical metadata/readiness and native policy; `production-bootstrap.test.ts`, hosted context/configuration/redirect tests and `tests/sqlite/hosted-application-smoke.mjs` prove normal applicationRuntime, auth/owner/origin negatives and restart persistence. [Accepted real Mac Tailscale evaluation](https://github.com/Planton361/life-os/issues/118#issuecomment-6038562930) and [redirect repair acceptance](https://github.com/Planton361/life-os/issues/118#issuecomment-6042913658) supply real gateway/write/reload evidence. | None within bounded local baseline; full hosted acceptance is deferred and unmet. Local source-preserving backup/isolated-restore normal-app Freeze-Gate remains open. |
 
-Supabase/PostgreSQL remains the operative personal datastore. Active product
-imports of the #37 experiment are removed. Explicit synthetic application
-activation exists; no personal migration, hosted deployment or cutover is established. The
-`PRODUCTION_SQLITE_RUNTIME_READY_FOR_MIGRATION_TOOLING` marker is established for implementation and synthetic acceptance only.
+Supabase/PostgreSQL remains the absent-selector default; `sqlite-hosted` explicitly
+selects the canonical local production path, while `sqlite-synthetic` stays a
+separate disposable proof. Integration does not switch an installation or alter
+its existing DB. Active product imports of #37 are removed. The historical
+`PRODUCTION_SQLITE_RUNTIME_READY_FOR_MIGRATION_TOOLING` marker describes #116
+synthetic acceptance; #118 later removed the migration requirement because the
+old PostgreSQL dataset is disposable test data. No migration, hosted deployment
+or cutover is established. WP0 #120 defers hosting indefinitely and does not
+designate the Mac a permanent server or close any product/core-surface gate.
 
 Normal application composition lives in `src/features/real-data/runtime`. It
 selects native repositories/use cases/read services or the preserved Supabase
-adapter without UI backend branches or Supabase API emulation. Verified synthetic
-metadata alone determines owner issuance; write context requires Origin/Host/
-forwarded-host admission. Blocked configuration issues no OwnerContext. Demo and
-Empty never write SQLite, and synthetic mode denies personal JSON profile writes.
+adapter without UI backend branches or Supabase API emulation. Verified metadata
+determines the owner; production mode additionally requires the exact configured
+Tailscale identity and Host. Write context requires Origin/Host/forwarded-host
+admission. Blocked authentication issues no OwnerContext. Demo and Empty never
+write SQLite, and both SQLite modes deny legacy personal JSON profile writes.
 
 Current #116 application acceptance: **358 tests / 71 files**, production build,
 **46 Server Component routes / 32 focused Chromium acceptance steps**, four modes,

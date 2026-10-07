@@ -72,7 +72,7 @@ export async function signInWithPasswordAction(
   _previousState: SupabaseAuthActionState,
   formData: FormData,
 ): Promise<SupabaseAuthActionState> {
-  if (applicationRuntimeConfiguration().backend === "sqlite-synthetic") return authErrorState("Die synthetische Test-Anmeldung wird ausschließlich serverseitig konfiguriert.");
+  if (applicationRuntimeConfiguration().backend !== "supabase") return authErrorState("Die Anmeldung wird ausschließlich serverseitig konfiguriert.");
   const parsed = authSchema.safeParse({
     email: formData.get("email"),
     next: formData.get("next"),
@@ -106,7 +106,7 @@ export async function signUpWithPasswordAction(
   _previousState: SupabaseAuthActionState,
   formData: FormData,
 ): Promise<SupabaseAuthActionState> {
-  if (applicationRuntimeConfiguration().backend === "sqlite-synthetic") return authErrorState("Die synthetische Test-Anmeldung wird ausschließlich serverseitig konfiguriert.");
+  if (applicationRuntimeConfiguration().backend !== "supabase") return authErrorState("Die Anmeldung wird ausschließlich serverseitig konfiguriert.");
   const parsed = authSchema.safeParse({
     email: formData.get("email"),
     next: formData.get("next"),
@@ -146,7 +146,7 @@ export async function signUpWithPasswordAction(
 }
 
 export async function signOutAction(formData: FormData): Promise<void> {
-  if (applicationRuntimeConfiguration().backend === "sqlite-synthetic") redirect("/settings");
+  if (applicationRuntimeConfiguration().backend !== "supabase") redirect("/settings");
   const parsed = signOutSchema.safeParse({
     next: formData.get("next"),
   });
@@ -163,7 +163,7 @@ export async function signOutAction(formData: FormData): Promise<void> {
 }
 
 export async function resetSupabaseSessionAction(formData: FormData): Promise<void> {
-  if (applicationRuntimeConfiguration().backend === "sqlite-synthetic") redirect("/settings");
+  if (applicationRuntimeConfiguration().backend !== "supabase") redirect("/settings");
   const parsed = signOutSchema.safeParse({
     next: formData.get("next"),
   });

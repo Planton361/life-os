@@ -1,14 +1,14 @@
 # Life OS – Product Contract
 
 **Status:** Active
-**Product mode:** personal-only; hosted single-owner target; current runtime local-first until cutover
+**Product mode:** personal-only; local prototype finalization; hosted single-owner target deferred
 **Primary user:** Anton
 **Primary usage:** browser-based command center on a 4K second monitor
 **Design truth:** `DESIGN.md` / Life OS – Linear Calm Dark Command Center / Dashboard V5
 
 ## Durable work-graph / knowledge ownership decision
 
-**Product Target v0.4 is accepted.** Life OS / PostgreSQL remains canonical operational truth for operational context, Projects, Goals, Skills, Milestones, Tasks, Dependencies, Planning and their Relations. `Resource` remains the canonical Life OS reference / Work Artifact identity. Obsidian owns long-form Knowledge Content and Notes.
+**Product Target v0.4 is accepted.** Life OS remains canonical operational truth for operational context, Projects, Goals, Skills, Milestones, Tasks, Dependencies, Planning and their Relations, using the explicitly selected runtime's single datastore. `Resource` remains the canonical Life OS reference / Work Artifact identity. Obsidian owns long-form Knowledge Content and Notes.
 
 Obsidian is therefore a knowledge-content owner and client boundary, not an operational work store. Existing Life OS exports remain one-way projections. A bound Obsidian Note uses `life_os_id` as its stable identity; a vault-relative path is only a locator. Rename, move, missing metadata or collisions never authorize implicit path-based matching. No watcher, sync, write-back or personal Vault access is implied by this contract.
 
@@ -21,20 +21,31 @@ Current delivery sequence and product context belong to `ROADMAP.md`; operative 
 Issue #34 is USER ACCEPTED. The target normal operating model is a private,
 single-owner hosted Life OS with one cloud-persistent canonical dataset reachable
 from Mac and Linux browsers. Normal use must not require local Docker, a local
-Supabase runtime, an IDE or a second operative datastore. The current
-Supabase/PostgreSQL stack remains the implementation baseline until a separately
-authorized and proven cutover. The native SQLite implementation now supports an
-explicit, synthetic-only production application runtime for #116 acceptance.
-This implementation does not switch the personal datastore, migrate personal
-data, deploy a provider or establish hosted authentication. PGlite remains
-historical fallback evidence.
+Supabase runtime, an IDE or a second operative datastore. Under USER ACCEPTED
+WP0 B2/H1/L1/F1 (2026-10-07, #120), the current goal is a reliably usable local
+prototype. Hosting, VPS/storage, B2/restic and deployment/cutover are indefinitely
+deferred; the Mac is not a permanent server. AI delivery is optional, not a
+prototype-freeze prerequisite. Dashboard repair/acceptance remains separate.
+
+Supabase/PostgreSQL remains the absent-selector default. The explicit
+`sqlite-hosted` selector also supports local production use through private
+Tailscale Serve: one canonical SQLite dataset, one owner, normal application
+reads/writes and fail-closed startup/authentication. The selector name does not
+imply hosting. The separate `sqlite-synthetic` path remains disposable proof.
+Integration does not switch an existing installation or alter its database.
+Existing PostgreSQL data was declared disposable test data in #118; no migration,
+import or dual write is required or authorized. PGlite remains historical evidence.
 
 Hosted access must still authenticate the single owner server-side before reads
 or writes. Zod validation, ownership/relation checks, transactional invariants,
 soft-archive semantics, visible errors and canonical-data discipline remain
-required. The exact hosted authentication method, remote access boundary,
-persistent storage, backup/restore contract and final database choice require
-later explicit security/runtime decisions.
+required. #115 accepted SQLite and the private Tailscale topology; local gateway
+use is evidenced in #118, while the full hosted acceptance remains unmet.
+Before a later prototype FREEZE, a separate local backup/restore gate must prove
+a consistent online backup to private local storage with unchanged source,
+isolated restore, 83/83 catalog and integrity/FK checks, and the normal local app
+serving preserved representative data/projections. That gate is still open;
+synthetic recovery evidence alone does not satisfy it.
 
 Task, Project, Goal and Skill share one interaction grammar: lightweight capture,
 read-first orientation, progressive disclosure for editing/relationship

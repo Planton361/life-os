@@ -32,7 +32,7 @@ export type AuthenticatedApplicationContext =
 
 // Trusted metadata is cached with the process-owned application runtime. It is
 // never serialized or returned through an Action or a Client Component prop.
-let synthetic:
+let sqlite:
   | {
       path: string;
       ownerId: string;
@@ -43,18 +43,23 @@ let synthetic:
 export async function prepareApplicationRuntime() {
   const config = applicationRuntimeConfiguration();
   if (config.backend === "supabase") return;
-  if (!synthetic) {
-    const { verifySyntheticApplicationDatabase } =
-      await import("../sqlite/synthetic-readiness");
+  if (!sqlite) {
+    const verified =
+      config.backend === "sqlite-hosted"
+        ? (
+            await import("../sqlite/production-bootstrap")
+          ).verifyProductionApplicationDatabase(config.path)
+        : (
+            await import("../sqlite/synthetic-readiness")
+          ).verifySyntheticApplicationDatabase(config.path);
     const { applicationRuntime } = await import("../sqlite/runtime");
-    const verified = verifySyntheticApplicationDatabase(config.path);
-    synthetic = {
+    sqlite = {
       path: config.path,
       ownerId: verified.ownerId,
       store: applicationRuntime(config.path),
     };
   }
-  if (synthetic.path !== config.path)
+  if (sqlite.path !== config.path)
     throw new Error("SQLITE_SINGLETON_PATH_CHANGED");
 }
 
@@ -99,10 +104,10 @@ export async function createAuthenticatedApplicationContext(
       }),
     });
   }
-  if (!config.issueAuthentication)
+  if (config.backend === "sqlite-synthetic" && !config.issueAuthentication)
     return { ok: false, error: "unauthenticated" };
   // No write-capable context exists before Origin/Host admission, even for a
-  // valid synthetic owner. No cookie, query or form field is consulted here.
+  // valid SQLite owner. No cookie, query or form field is consulted here.
   if (access === "write") {
     const { assertBrowserWriteOrigin } =
       await import("../sqlite/request-boundary");
@@ -113,21 +118,28 @@ export async function createAuthenticatedApplicationContext(
     }
   }
   await prepareApplicationRuntime();
-  if (!synthetic) throw new Error("SYNTHETIC_APPLICATION_RUNTIME_REQUIRED");
+  if (!sqlite) throw new Error("SQLITE_APPLICATION_RUNTIME_REQUIRED");
   const { issueOwnerContext } = await import("../sqlite/owner-context");
   const {
     sqliteApplicationRepositories,
     sqliteApplicationUseCases,
     sqliteApplicationScopes,
   } = await import("./sqlite-adapter");
-  const owner = issueOwnerContext(synthetic.ownerId);
+  const owner =
+    config.backend === "sqlite-hosted"
+      ? (await import("../sqlite/request-boundary")).authenticateGatewayRequest(
+          new Headers(await headers()),
+          { ...config, ownerId: sqlite.ownerId },
+        )
+      : issueOwnerContext(sqlite.ownerId);
+  if (!owner) return { ok: false, error: "unauthenticated" };
   const { sqliteApplicationReads } = await import("./sqlite-read-services");
   const repositories = admitApplicationRepositories(
-    sqliteApplicationRepositories(synthetic.store, owner),
+    sqliteApplicationRepositories(sqlite.store, owner),
     access,
   );
   const useCases = admitRepository(
-    sqliteApplicationUseCases(synthetic.store, owner),
+    sqliteApplicationUseCases(sqlite.store, owner),
     access,
     [
       "getGoalOutcome",
@@ -138,13 +150,13 @@ export async function createAuthenticatedApplicationContext(
   );
   return Object.freeze({
     ok: true,
-    user: Object.freeze({ id: synthetic.ownerId }),
+    user: Object.freeze({ id: sqlite.ownerId }),
     repositories,
     data: Object.freeze({
       repositories,
       useCases,
-      scopes: sqliteApplicationScopes(synthetic.store, owner),
-      reads: sqliteApplicationReads(synthetic.store, owner),
+      scopes: sqliteApplicationScopes(sqlite.store, owner),
+      reads: sqliteApplicationReads(sqlite.store, owner),
     }),
   });
 }
