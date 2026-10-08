@@ -2082,7 +2082,7 @@ and its USER ACCEPTANCE STATUS is PENDING.
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
 | Portfolio information architecture | `CONNECTED` | one Portfolio list with shared URL entity filters, five dedicated create/detail workbenches and independent quick inspector; R2-04 IA correction proof below | accepted 2026-09-07; maintain |
-| Task create/edit/lifecycle | `CONNECTED` | canonical ID create/edit/reload, complete/reopen/archive and source-owned lifecycle boundary; R2-04 proof. Issue #62 retains title-first progressive capture and Task Detail Variant B, consolidates task execution into one Work surface and dependency/planning/context into one Supporting Depth surface, and proves scheduled Task→Week Inspector navigation with reload-stable `task=<id>&date=<day>&view=week` while Calendar retains Time Block ownership. The corrected real Task surface and Week handoff were USER ACCEPTED on 2026-09-29 (`tests/e2e/issue-58-task-read-first-loop.spec.ts`, `tests/e2e/project-context-task-create.spec.ts`) | accepted 2026-09-07; #62 real-user accepted 2026-09-29; maintain |
+| Task create/edit/lifecycle | `CONNECTED` | canonical ID create/edit/reload, complete/reopen/archive and source-owned lifecycle boundary; R2-04 proof. Issue #62 retains title-first progressive capture and Task Detail Variant B, historically consolidated task execution into Work and dependency/planning/context into Supporting Depth (visual placement superseded by B8 #123), and proves scheduled Task→Week Inspector navigation with reload-stable `task=<id>&date=<day>&view=week` while Calendar retains Time Block ownership. The corrected real Task surface and Week handoff were USER ACCEPTED on 2026-09-29 (`tests/e2e/issue-58-task-read-first-loop.spec.ts`, `tests/e2e/project-context-task-create.spec.ts`) | accepted 2026-09-07; #62 real-user accepted 2026-09-29; maintain |
 | Task relation to Project/Goal | `CONNECTED` | nullable Task→Project/Goal fields, server-authenticated/Zod/user-scoped alignment checks and C1.1 integrated Target reload proof | maintain explicit user choices; no silent relinking |
 | Task relation to Skill/Resource | `CONNECTED` | owned n:m `task_skill_links` plus Resource relations, idempotent link/unlink, Task detail projection and Skill backlink without creating Evidence; C1.1 integrated proof PASS | maintain endpoint ownership, reload and no-auto-Evidence proofs |
 | Project Goal inheritance in Task context | `CONNECTED` | direct, via-Project, redundant and existing-conflict states are explicit; Task and Project writes reject new contradictions, and C1.1 integrated read models deduplicate matching paths | preserve existing rows; resolve any future reported existing conflicts deliberately |
@@ -2108,6 +2108,26 @@ and its USER ACCEPTANCE STATUS is PENDING.
 | Project/Goal restore/undo | `NOT_STARTED` | archive exists | lifecycle slice |
 | Progress engine | `DECISION_REQUIRED` | task-based signals and legacy fields | preserve honest work signals until model exists |
 | Portfolio pins/favorites | `NOT_STARTED` | none | support Dashboard max-four selection |
+
+Issue #123 proposes the accepted B8 **Task Detail only**: 1360px matte Identity,
+direct shared Edit and eligible `Erledigt`, ordered Work with object-local step
+toggles, compact contextual rail and Work-first mobile flow. Missing Context
+releases Work width. Lifecycle, explicit dependencies, source ownership,
+Calendar Week selection and Skill-origin recovery keep their canonical contracts.
+Historical evidence on PR #124 head `661791d`: `tests/e2e/issue-123-b8-task-detail.spec.ts` records disposable authenticated
+Supabase Manual control/write/reload, stale dependency and forged/source rejection,
+state inventory and 3840/1920/769/390 geometry/screenshots. The existing isolated
+SQLite application browser proof also passes visible Task edit/complete/reopen,
+two-tab stale dependency rejection, projections, Demo/Empty/Auth boundaries and
+restart/reload on fresh synthetic data; #85 remains the shared Project-row Edit
+regression. The Supabase E2Es used `pnpm test:e2e:isolated` and Docker-backed
+Supabase; they are not Docker-free native acceptance. The native SQLite suite
+and application browser proof are separate earlier runs, not a complete native
+B8 four-viewport matrix. The USER Fast Finish decision waives repeat broad/E2E
+and screenshot rounds. `task-read-view.test.ts` adds one focused native SQLite
+read/render check for archived-parent completion/Edit suppression (client
+interaction boundaries stubbed, not browser E2E). This is proposed-revision evidence, not real-user
+surface acceptance, and does not deliver the other B8 entities or Task Create.
 
 Issue #28 updates the connected Goal detail presentation to accepted Prototype A v2: stable Überblick / Arbeit / Erfolg / Verlauf areas, a numbered Goal-Etappen progression with explicit Project/direct-Task contributions, selected work context, canonical review-ready cue and outcome-first achieved/reopened views. `tests/e2e/issue-28-goal-a-v2.spec.ts` is the focused Manual browser/reload and 3840×2160 / 1920×1080 / 390×844 surface proof; the existing readiness regression in `tests/e2e/pp1-goal-follow-up.spec.ts` covers Task-only READY/BLOCKED. Status remains `CONNECTED_GAP` because Slice 2 completion episodes and Skill Evidence revisions are not part of #28.
 

@@ -1,6 +1,9 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { taskDependencyContext } from "@/features/real-data/domain/task-dependencies";
+import {
+  taskDependencyContext,
+  taskHasExecutableLifecycle,
+} from "@/features/real-data/domain/task-dependencies";
 import type { WorkbenchData } from "@/features/real-data/runtime/entity-workbench-read";
 import {
   ManagementDisclosure,
@@ -8,6 +11,8 @@ import {
 } from "./management-disclosure";
 import { taskGuidance } from "./task-guidance";
 import { TaskEditDialog } from "./task-edit-dialog";
+import { OperationForm } from "./forms";
+import styles from "./task-read-view.module.css";
 import { taskTextFields } from "./task-text";
 
 const taskStatusLabels: Record<string, string> = {
@@ -80,6 +85,7 @@ export function TaskReadView({
   lifecycle,
   editInitiallyOpen = false,
   skillRecovery,
+  sourceHref,
 }: {
   data: WorkbenchData;
   taskId: string;
@@ -90,9 +96,11 @@ export function TaskReadView({
   lifecycle: ReactNode;
   editInitiallyOpen?: boolean;
   skillRecovery?: ReactNode;
+  sourceHref?: string;
 }) {
   const task = data.tasks.find((item) => item.id === taskId)!;
   const project = data.projects.find((item) => item.id === task.project_id);
+  const parentArchived = Boolean(project?.archived_at);
   const directGoal = data.goals.find((item) => item.id === task.goal_id);
   const inheritedGoal = data.goals.find((item) => item.id === project?.goal_id);
   const milestone = project
@@ -109,7 +117,7 @@ export function TaskReadView({
   const guidance = taskGuidance({
     taskId,
     status: task.archived_at ? "archived" : task.status,
-    archived: Boolean(task.archived_at),
+    archived: Boolean(task.archived_at) || parentArchived,
     availability: dependency.availability,
     blockerCount: dependency.blockers.length,
     scheduledDate,
@@ -133,341 +141,150 @@ export function TaskReadView({
   const conflictingGoals =
     directGoal && inheritedGoal && directGoal.id !== inheritedGoal.id;
 
+  const sourceOwned = data.scheduleSources.some(
+    (source) => source.task_id === taskId,
+  );
+  const canComplete =
+    !parentArchived &&
+    !task.archived_at &&
+    taskHasExecutableLifecycle(task) &&
+    dependency.availability === "READY" &&
+    !sourceOwned;
+  const editIsPrimary =
+    !parentArchived &&
+    !sourceOwned &&
+    !task.archived_at &&
+    ["inbox", "waiting", "someday"].includes(task.status) &&
+    !dependency.blockers.length;
+  const calendarHref =
+    "/calendar?" +
+    new URLSearchParams({
+      task: taskId,
+      date:
+        scheduledDate || task.planned_date || todayInTimezone(data.timezone),
+      view: "week",
+    }).toString();
+  const showCalendar =
+    !parentArchived &&
+    (Boolean(scheduledDate) ||
+      (!sourceOwned && !task.archived_at && taskHasExecutableLifecycle(task)));
+  const hasContext = Boolean(
+    project ||
+    directGoal ||
+    inheritedGoal ||
+    task.planned_date ||
+    task.scheduled_start_at ||
+    task.due_at ||
+    dependency.predecessors.length ||
+    dependency.successors.length,
+  );
+  const nextHref = sourceOwned && sourceHref ? sourceHref : guidance.href;
+  const nextLabel =
+    sourceOwned && sourceHref ? "Quelle öffnen" : guidance.label;
+  const nextBody = sourceOwned
+    ? "Planung und Status gehören zur verknüpften Quelle."
+    : guidance.body;
+
   return (
-    <div
-      data-task-detail-variant="B"
-      className="grid w-full min-w-0 gap-6 px-2 pb-10 md:px-6"
-    >
+    <div data-task-detail-variant="B8" className={styles.canvas}>
       {skillRecovery}
+      <nav aria-label="Breadcrumb" className={styles.breadcrumb}>
+        <Link href="/tasks">Tasks</Link>
+      </nav>
       <header
         aria-label="Aufgabenidentität"
         data-task-order="identity"
-        className="grid min-w-0 gap-2"
+        data-task-guidance={nextLabel}
+        className={styles.header}
       >
-        <nav
-          aria-label="Breadcrumb"
-          className="flex flex-wrap gap-3 text-sm text-[var(--text-muted)]"
-        >
-          <Link href="/tasks">Tasks</Link>
-        </nav>
-        <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-          Aufgabe
-        </p>
-        <h1 className="break-words text-3xl font-semibold">{task.title}</h1>
-        <div
-          aria-label="Task-Status"
-          data-task-lifecycle={task.status}
-          data-task-readiness={dependency.availability}
-          className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-[var(--text-secondary)]"
-        >
-          <span>{taskStatusLabels[task.status] ?? task.status}</span>
-          <span>
-            {dependency.availability === "READY" ? "Bereit" : "Blockiert"}
-          </span>
-          {task.priority === "none" ? (
-            <span>Ohne Priorität</span>
-          ) : (
-            <span>{task.priority}</span>
-          )}
-          <span>Erstellt am {localDate(task.created_at, data.timezone)}</span>
-          {task.archived_at && <span>Archiviert</span>}
-        </div>
-      </header>
-
-      <section
-        aria-label="Dein nächster Schritt"
-        data-task-order="guidance"
-        data-task-guidance={guidance.label}
-        className="grid min-w-0 gap-2 border-l-2 border-[var(--accent-cyan)] bg-[rgba(95,200,215,.055)] px-5 py-5 md:px-7"
-      >
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--accent-cyan)]">
-          Dein nächster Schritt
-        </h2>
-        <p className="max-w-4xl text-sm text-[var(--text-secondary)]">
-          {task.status === "waiting"
-            ? "Der Task wartet, auch wenn seine Voraussetzungen erfüllt sein können. Ordne die Wartesituation bei Bedarf neu ein."
-            : guidance.body}
-        </p>
-        <Link
-          className="inline-flex min-h-11 w-fit max-w-full items-center justify-center break-words rounded-lg bg-[var(--accent-cyan)] px-4 py-2 text-sm font-semibold text-[var(--bg-app)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-          href={guidance.href}
-        >
-          {guidance.label}
-        </Link>
-      </section>
-
-      {(project || milestone || directGoal || inheritedGoal) && (
-        <nav
-          aria-label="Zusammenhang"
-          data-task-order="context"
-          data-task-context
-          className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2 border-b border-[var(--border-subtle)] pb-4 text-sm"
-        >
-          {project && (
-            <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
-              <span className="text-[var(--text-muted)]">Project</span>
-              <Link
-                className="break-words text-[var(--accent-cyan)] underline underline-offset-2"
-                href={"/projects/" + project.id}
+        <div className={styles.identity}>
+          <div className={styles.titles}>
+            <p className={styles.entity}>Task</p>
+            <h1>{task.title}</h1>
+            <div
+              aria-label="Task-Status"
+              data-task-lifecycle={task.status}
+              data-task-readiness={dependency.availability}
+              className={styles.meta}
+            >
+              <span>{taskStatusLabels[task.status] ?? task.status}</span>
+              <span>
+                {dependency.availability === "READY" ? "Bereit" : "Blockiert"}
+              </span>
+              <span>
+                {task.priority === "none" ? "Ohne Priorität" : task.priority}
+              </span>
+              {task.archived_at && <span>Archiviert</span>}
+            </div>
+          </div>
+          <div aria-label="Task-Aktionen" className={styles.actions}>
+            {canComplete && (
+              <OperationForm
+                operation="task.complete"
+                label="Erledigt"
+                submitClassName={styles.primary}
               >
-                {project.title}
-              </Link>
-            </span>
-          )}
-          {milestone && (
-            <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
-              <span aria-hidden="true" className="text-[var(--text-muted)]">
-                /
-              </span>
-              <span className="text-[var(--text-muted)]">
-                {milestone.status === "active" ? "Aktuelle Etappe" : "Etappe"}
-              </span>
-              <Link
-                className="break-words text-[var(--text-secondary)] underline underline-offset-2"
-                href={"/projects/" + project!.id}
-              >
-                {milestone.title}
-              </Link>
-            </span>
-          )}
-          {directGoal && (
-            <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
-              <span aria-hidden="true" className="text-[var(--text-muted)]">
-                /
-              </span>
-              <span className="text-[var(--text-muted)]">
-                {conflictingGoals ? "Ziel für diese Aufgabe" : "Ziel"}
-              </span>
-              <Link
-                className="break-words text-[var(--accent-purple)] underline underline-offset-2"
-                href={"/goals/" + directGoal.id}
-              >
-                {directGoal.title}
-                {directGoal.archived_at ? " · Archiviert" : ""}
-              </Link>
-            </span>
-          )}
-          {inheritedGoal && (!directGoal || conflictingGoals) && (
-            <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
-              <span aria-hidden="true" className="text-[var(--text-muted)]">
-                /
-              </span>
-              <span className="text-[var(--text-muted)]">
-                {conflictingGoals ? "Ziel im Project" : "Ziel"}
-              </span>
-              <Link
-                className="break-words text-[var(--accent-purple)] underline underline-offset-2"
-                href={"/goals/" + inheritedGoal.id}
-              >
-                {inheritedGoal.title}
-                {inheritedGoal.archived_at ? " · Archiviert" : ""}
-              </Link>
-            </span>
-          )}
-          {conflictingGoals && (
-            <span className="basis-full text-sm text-[var(--accent-orange)]">
-              Für diese Aufgabe und das Project sind unterschiedliche Ziele
-              verknüpft.
-            </span>
-          )}
-        </nav>
-      )}
-
-      <section
-        id="task-work-content"
-        aria-labelledby="task-work-heading"
-        data-task-order="work"
-        className="grid min-w-0 gap-6 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-1)] p-5 md:p-7"
-      >
-        <div className="grid min-w-0 gap-3">
-          <h2 id="task-work-heading" className="text-xl font-semibold">
-            Worum geht es?
-          </h2>
-          <div className="grid min-w-0 gap-2">
-            <h3 className="text-sm font-semibold text-[var(--text-secondary)]">
-              Beschreibung
-            </h3>
-            {text.description ? (
-              <p className="whitespace-pre-wrap break-words text-sm leading-6 text-[var(--text-secondary)]">
-                {text.description}
-              </p>
-            ) : (
-              <p className="text-sm text-[var(--text-muted)]">
-                Noch keine Beschreibung.
-              </p>
+                <input type="hidden" name="taskId" value={taskId} />
+              </OperationForm>
             )}
+            {!canComplete && !editIsPrimary && (
+              <Link className={styles.primary} href={nextHref}>
+                {nextLabel}
+              </Link>
+            )}
+            {!parentArchived && (
+              <TaskEditDialog
+                data={data}
+                taskId={taskId}
+                initiallyOpen={editInitiallyOpen}
+                triggerClassName={editIsPrimary ? styles.primary : styles.button}
+              />
+            )}
+            {showCalendar &&
+              (canComplete || editIsPrimary || nextHref !== calendarHref) && (
+                <Link className={styles.button} href={calendarHref}>
+                  {scheduledDate
+                    ? "Termin im Kalender öffnen"
+                    : dependency.availability === "BLOCKED"
+                      ? "Im Calendar ansehen"
+                      : "Im Calendar planen"}
+                </Link>
+              )}
           </div>
         </div>
-        <div className="grid min-w-0 gap-6 border-t border-[var(--border-subtle)] pt-5 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-8">
-          <section
-            aria-label="Arbeitsnotiz"
-            className="grid min-w-0 content-start gap-3"
-          >
-            <h3 className="font-semibold">Arbeitsnotiz</h3>
-            {text.nextAction ? (
-              <p className="whitespace-pre-wrap break-words border-l border-[var(--border-default)] pl-3 text-sm leading-6 text-[var(--text-secondary)]">
-                {text.nextAction}
-              </p>
-            ) : (
-              <p className="text-sm text-[var(--text-muted)]">
-                Noch keine Arbeitsnotiz.
-              </p>
-            )}
+        <p className={styles.guidance}>{nextBody}</p>
+      </header>
+      <div className={hasContext ? styles.split : styles.surface}>
+        <section
+          id="task-work-content"
+          aria-labelledby="task-work-heading"
+          data-task-order="work"
+          className={styles.work}
+        >
+          <h2 id="task-work-heading">Worum geht es?</h2>
+          <section aria-label="Beschreibung" className={styles.unit}>
+            <h3>Beschreibung</h3>
+            <p className={styles.prose}>
+              {text.description || "Noch keine Beschreibung."}
+            </p>
           </section>
-          <section
-            aria-label="Vorgehen"
-            className="grid min-w-0 content-start gap-3 border-t border-[var(--border-subtle)] pt-5 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0"
-          >
-            <h3 className="font-semibold">Vorgehen</h3>
+          <section aria-label="Arbeitsnotiz" className={styles.unit}>
+            <h3>Arbeitsnotiz</h3>
+            <p className={styles.prose}>
+              {text.nextAction || "Noch keine Arbeitsnotiz."}
+            </p>
+          </section>
+          <section aria-label="Vorgehen" className={styles.unit}>
             {steps}
           </section>
-        </div>
-      </section>
-
-      <div
-        role="group"
-        aria-label="Unterstützende Details"
-        data-task-supporting-depth
-        className="grid min-w-0 gap-5 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-1)] p-5 md:p-7"
-      >
-        <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1fr)] xl:gap-0">
-          <section
-            id="task-dependencies"
-            aria-labelledby="task-prerequisite-heading"
-            aria-label="Voraussetzung"
-            data-task-order="prerequisite"
-            className="grid min-w-0 content-start gap-3 xl:pr-6"
-          >
-            <h2
-              id="task-prerequisite-heading"
-              className="text-lg font-semibold"
-            >
-              Voraussetzung
-            </h2>
-            {dependencies}
-          </section>
-
-          <section
-            aria-labelledby="task-planning-heading"
-            aria-label="Planung"
-            data-task-order="planning"
-            className="grid min-w-0 content-start gap-4 border-t border-[var(--border-subtle)] pt-5 xl:ml-6 xl:border-l xl:border-t-0 xl:pl-6 xl:pt-0"
-          >
-            <h2 id="task-planning-heading" className="text-lg font-semibold">
-              Planung
-            </h2>
-            <dl className="grid min-w-0 gap-4">
-              <div className="grid gap-1">
-                <dt className="text-sm text-[var(--text-muted)]">Geplant</dt>
-                <dd className="text-sm">
-                  {task.planned_date
-                    ? localDay(task.planned_date)
-                    : "Kein Tag geplant"}
-                </dd>
-                <dd className="text-xs text-[var(--text-muted)]">
-                  Tagesabsicht
-                </dd>
-              </div>
-              <div className="grid gap-1">
-                <dt className="text-sm text-[var(--text-muted)]">Termin</dt>
-                <dd className="text-sm">
-                  {task.scheduled_start_at
-                    ? localDate(task.scheduled_start_at, data.timezone) +
-                      " · " +
-                      localTimeRange(
-                        task.scheduled_start_at,
-                        task.duration_minutes,
-                        data.timezone,
-                      )
-                    : "Kein Termin bestätigt"}
-                </dd>
-                <dd className="text-xs text-[var(--text-muted)]">
-                  {task.scheduled_start_at
-                    ? (task.duration_minutes
-                        ? durationLabel(task.duration_minutes) + " · "
-                        : "") + data.timezone
-                    : "Der Kalender verwaltet bestätigte Termine."}
-                </dd>
-                {task.scheduled_start_at && scheduledDate && (
-                  <dd>
-                    <Link
-                      className="inline-flex min-h-10 items-center text-sm text-[var(--accent-cyan)] underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
-                      href={
-                        "/calendar?" +
-                        new URLSearchParams({
-                          task: task.id,
-                          date: scheduledDate,
-                          view: "week",
-                        }).toString()
-                      }
-                    >
-                      Termin im Kalender öffnen
-                    </Link>
-                  </dd>
-                )}
-              </div>
-              <div className="grid gap-1">
-                <dt className="text-sm text-[var(--text-muted)]">Deadline</dt>
-                <dd className="text-sm">
-                  {task.due_at
-                    ? localDate(task.due_at, data.timezone)
-                    : "Keine Deadline"}
-                </dd>
-              </div>
-            </dl>
-          </section>
-
-          <section
-            aria-labelledby="task-return-heading"
-            aria-label="Zurück zum Zusammenhang"
-            data-task-order="return"
-            className="grid min-w-0 content-start gap-4 border-t border-[var(--border-subtle)] pt-5 xl:ml-6 xl:border-l xl:border-t-0 xl:pl-6 xl:pt-0"
-          >
-            <h2 id="task-return-heading" className="text-lg font-semibold">
-              Zurück zum Zusammenhang
-            </h2>
-            {(project || directGoal || inheritedGoal) && (
-              <nav
-                aria-label="Project- und Ziellinks"
-                className="grid gap-2 text-sm"
-              >
-                {project && (
-                  <Link
-                    className="break-words text-[var(--accent-cyan)] underline underline-offset-2"
-                    href={"/projects/" + project.id}
-                  >
-                    Project öffnen: {project.title}
-                  </Link>
-                )}
-                {directGoal && (
-                  <Link
-                    className="break-words text-[var(--accent-purple)] underline underline-offset-2"
-                    href={"/goals/" + directGoal.id}
-                  >
-                    Ziel öffnen: {directGoal.title}
-                  </Link>
-                )}
-                {inheritedGoal && (!directGoal || conflictingGoals) && (
-                  <Link
-                    className="break-words text-[var(--accent-purple)] underline underline-offset-2"
-                    href={"/goals/" + inheritedGoal.id}
-                  >
-                    Ziel öffnen: {inheritedGoal.title}
-                  </Link>
-                )}
-              </nav>
-            )}
-          </section>
-        </div>
-        <ManagementDisclosureGroup className="grid gap-3 border-t border-[var(--border-subtle)] pt-3">
-          <TaskEditDialog
-            data={data}
-            taskId={taskId}
-            initiallyOpen={editInitiallyOpen}
-          />
-          {!task.archived_at && (
+          <ManagementDisclosureGroup className={styles.management}>
             <ManagementDisclosure label="Mehr verwalten">
               <ManagementDisclosureGroup className="grid gap-3">
+                {!hasContext && (
+                  <section id="task-dependencies" aria-label="Voraussetzung">
+                    {dependencies}
+                  </section>
+                )}
                 {milestoneManagement}
                 <ManagementDisclosure label="Weitere Beziehungen verwalten">
                   {relations}
@@ -477,8 +294,154 @@ export function TaskReadView({
                 </ManagementDisclosure>
               </ManagementDisclosureGroup>
             </ManagementDisclosure>
-          )}
-        </ManagementDisclosureGroup>
+          </ManagementDisclosureGroup>
+        </section>
+        {hasContext && (
+          <aside
+            aria-label="Task-Kontext"
+            data-task-context
+            className={styles.context}
+          >
+            {(project || directGoal || inheritedGoal) && (
+              <section
+                data-task-order="context"
+                aria-label="Zusammenhang"
+                className={styles.group}
+              >
+                <h2>Zusammenhang</h2>
+                <dl className={styles.facts}>
+                  {project && (
+                    <div>
+                      <dt>Project</dt>
+                      <dd>
+                        <Link
+                          className={styles.projectLink}
+                          href={"/projects/" + project.id}
+                        >
+                          {project.title}
+                        </Link>
+                      </dd>
+                    </div>
+                  )}
+                  {milestone && (
+                    <div>
+                      <dt>
+                        {milestone.status === "active"
+                          ? "Aktuelle Etappe"
+                          : "Etappe"}
+                      </dt>
+                      <dd>
+                        <Link href={"/projects/" + project!.id}>
+                          {milestone.title}
+                        </Link>
+                      </dd>
+                    </div>
+                  )}
+                  {directGoal && (
+                    <div>
+                      <dt>
+                        {conflictingGoals
+                          ? "Ziel für diese Aufgabe"
+                          : "Direktes Ziel"}
+                      </dt>
+                      <dd>
+                        <Link
+                          className={styles.goalLink}
+                          href={"/goals/" + directGoal.id}
+                        >
+                          {directGoal.title}
+                          {directGoal.archived_at ? " · Archiviert" : ""}
+                        </Link>
+                      </dd>
+                    </div>
+                  )}
+                  {inheritedGoal && (!directGoal || conflictingGoals) && (
+                    <div>
+                      <dt>Ziel im Project</dt>
+                      <dd>
+                        <Link
+                          className={styles.goalLink}
+                          href={"/goals/" + inheritedGoal.id}
+                        >
+                          {inheritedGoal.title}
+                          {inheritedGoal.archived_at ? " · Archiviert" : ""}
+                        </Link>
+                      </dd>
+                    </div>
+                  )}
+                </dl>
+                {conflictingGoals && (
+                  <p className={styles.warning}>
+                    Für diese Aufgabe und das Project sind unterschiedliche
+                    Ziele verknüpft.
+                  </p>
+                )}
+              </section>
+            )}
+            {(task.planned_date || task.scheduled_start_at || task.due_at) && (
+              <section
+                data-task-order="planning"
+                aria-label="Planung"
+                className={styles.group}
+              >
+                <h2>Planung</h2>
+                <dl className={styles.facts}>
+                  <div>
+                    <dt>Geplant</dt>
+                    <dd>
+                      {task.planned_date
+                        ? localDay(task.planned_date)
+                        : "Kein Tag geplant"}
+                      <small>Tagesabsicht</small>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Termin</dt>
+                    <dd>
+                      {task.scheduled_start_at
+                        ? localDate(task.scheduled_start_at, data.timezone) +
+                          " · " +
+                          localTimeRange(
+                            task.scheduled_start_at,
+                            task.duration_minutes,
+                            data.timezone,
+                          )
+                        : "Kein Termin bestätigt"}
+                      <small>
+                        {task.scheduled_start_at
+                          ? (task.duration_minutes
+                              ? durationLabel(task.duration_minutes) + " · "
+                              : "") + data.timezone
+                          : "Der Kalender verwaltet bestätigte Termine."}
+                      </small>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Deadline</dt>
+                    <dd>
+                      {task.due_at
+                        ? localDate(task.due_at, data.timezone)
+                        : "Keine Deadline"}
+                    </dd>
+                  </div>
+                </dl>
+              </section>
+            )}
+            {(project ||
+              dependency.predecessors.length > 0 ||
+              dependency.successors.length > 0) && (
+              <section
+                id="task-dependencies"
+                data-task-order="prerequisite"
+                aria-label="Voraussetzung"
+                className={styles.group}
+              >
+                <h2>Voraussetzung</h2>
+                {dependencies}
+              </section>
+            )}
+          </aside>
+        )}
       </div>
     </div>
   );

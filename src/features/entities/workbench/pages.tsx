@@ -570,18 +570,11 @@ export async function WorkbenchEditor({
           <p>Archiviert. Historische Beziehungen bleiben erhalten.</p>
         ) : (
           <>
-            <OperationForm
-              operation={
-                task.status === "done" ? "task.reopen" : "task.complete"
-              }
-              label={
-                task.status === "done"
-                  ? "Task wieder öffnen"
-                  : "Task abschließen"
-              }
-            >
-              <Hidden name="taskId" value={id} />
-            </OperationForm>
+            {task.status === "done" && (
+              <OperationForm operation="task.reopen" label="Task wieder öffnen">
+                <Hidden name="taskId" value={id} />
+              </OperationForm>
+            )}
             <OperationForm operation="task.archive" label="Task archivieren">
               <Hidden name="taskId" value={id} />
             </OperationForm>
@@ -601,6 +594,7 @@ export async function WorkbenchEditor({
         relations={taskRelations}
         steps={<TaskSteps id={id} data={data} />}
         lifecycle={taskLifecycle}
+        sourceHref={source ? sourceHref : undefined}
         skillRecovery={
           contextSkill ? (
             <SkillTaskRecovery
@@ -1292,9 +1286,9 @@ function TaskSteps({ id, data }: { id: string; data: WorkbenchData }) {
       className="grid min-w-0 gap-4"
     >
       <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h4 id="task-steps-heading" className="font-semibold">
+        <h3 id="task-steps-heading" className="font-semibold">
           Arbeitsschritte
-        </h4>
+        </h3>
         <p className="text-sm text-[var(--text-secondary)]">
           {progress.completed} von {progress.total} erledigt
         </p>
@@ -1309,12 +1303,29 @@ function TaskSteps({ id, data }: { id: string; data: WorkbenchData }) {
           {steps.map((step) => (
             <li
               key={step.id}
-              className="grid min-w-0 gap-x-3 gap-y-1 border-t border-[var(--border-subtle)] pt-2 sm:grid-cols-[7rem_minmax(0,1fr)]"
+              className="grid min-w-0 gap-x-3 gap-y-1 border-t border-[var(--border-subtle)] pt-2 sm:grid-cols-[5rem_minmax(0,1fr)_auto]"
             >
               <span className="text-xs text-[var(--text-muted)]">
                 {step.completed_at ? "Erledigt" : "Offen"}
               </span>
               <span className="break-words text-sm">{step.title}</span>
+              {!archived && (
+                <OperationForm
+                  operation="step.update"
+                  label={
+                    step.completed_at
+                      ? "Schritt wieder öffnen"
+                      : "Schritt erledigen"
+                  }
+                  submitClassName="min-h-10 rounded-lg border border-[var(--border-default)] px-3 text-sm text-[var(--text-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
+                >
+                  <Hidden name="taskId" value={id} />
+                  <Hidden name="stepId" value={step.id} />
+                  <Hidden name="title" value={step.title} />
+                  <Hidden name="position" value={String(step.position)} />
+                  <Hidden name="completed" value={step.completed_at ? "" : "on"} />
+                </OperationForm>
+              )}
             </li>
           ))}
         </ol>

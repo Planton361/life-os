@@ -153,6 +153,7 @@ export function ManagementDialog({
   initiallyOpen = false,
   clearSearchParamOnClose,
   resetOnClose = false,
+  triggerClassName,
 }: {
   label: string;
   children: ReactNode;
@@ -163,6 +164,7 @@ export function ManagementDialog({
   initiallyOpen?: boolean;
   clearSearchParamOnClose?: string;
   resetOnClose?: boolean;
+  triggerClassName?: string;
 }) {
   const hydrated = useSyncExternalStore(
     subscribe,
@@ -224,7 +226,10 @@ export function ManagementDialog({
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls={dialogId}
-        className="min-h-10 text-left text-sm text-[var(--accent-cyan)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
+        className={
+          triggerClassName ??
+          "min-h-10 text-left text-sm text-[var(--accent-cyan)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
+        }
         onClick={() => setOpen(true)}
       >
         {triggerText ?? label}

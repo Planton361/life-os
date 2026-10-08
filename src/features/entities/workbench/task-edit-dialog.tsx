@@ -24,10 +24,12 @@ export function TaskEditDialog({
   data,
   taskId,
   initiallyOpen = false,
+  triggerClassName,
 }: {
   data: WorkbenchData;
   taskId: string;
   initiallyOpen?: boolean;
+  triggerClassName?: string;
 }) {
   const task = data.tasks.find((item) => item.id === taskId)!;
   if (task.archived_at) return null;
@@ -43,6 +45,7 @@ export function TaskEditDialog({
       }));
   return (
     <ManagementDialog
+      triggerClassName={triggerClassName}
       label="Task bearbeiten"
       triggerText="Bearbeiten"
       initiallyOpen={initiallyOpen}

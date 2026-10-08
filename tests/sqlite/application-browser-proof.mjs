@@ -281,18 +281,8 @@ try {
         exact: true,
       }),
     ).toHaveText("SQLite browser Task edited");
-    await page
-      .getByRole("button", { name: "Mehr verwalten", exact: true })
-      .click();
-    await page
-      .getByRole("button", { name: "Status verwalten", exact: true })
-      .click();
-    await page
-      .getByRole("button", { name: "Task abschließen", exact: true })
-      .click();
-    await expect(
-      page.getByRole("button", { name: "Task wieder öffnen", exact: true }),
-    ).toBeVisible();
+    await page.getByRole("button", { name: "Erledigt", exact: true }).click();
+    await expect(page.locator('[data-task-lifecycle="done"]')).toBeVisible();
     await page.reload();
     await page
       .getByRole("button", { name: "Mehr verwalten", exact: true })
@@ -304,7 +294,7 @@ try {
       .getByRole("button", { name: "Task wieder öffnen", exact: true })
       .click();
     await expect(
-      page.getByRole("button", { name: "Task abschließen", exact: true }),
+      page.getByRole("button", { name: "Erledigt", exact: true }),
     ).toBeVisible();
     await page.reload();
     await page.goto(app.origin + "/today");

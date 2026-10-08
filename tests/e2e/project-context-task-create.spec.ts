@@ -213,15 +213,7 @@ test("canonical Task create from Project, Milestone and Backlog preserves contex
     (await api.from("task_dependencies").select("id").eq("user_id", uid)).data,
   ).toEqual([]);
   await page.goto(`/tasks/${created[0]}`);
-  await page
-    .getByRole("button", { name: "Mehr verwalten", exact: true })
-    .click();
-  await page
-    .getByRole("button", { name: "Status verwalten", exact: true })
-    .click();
-  await page
-    .getByRole("button", { name: "Task abschließen", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Erledigt", exact: true }).click();
   await expect(
     page
       .getByRole("status")
@@ -229,7 +221,8 @@ test("canonical Task create from Project, Milestone and Backlog preserves contex
       .last(),
   ).toBeVisible();
   await page.goto(`/projects/${project.id}`);
-  await expect(work).toContainText("4 Tasks · 1 erledigt");
+  await expect(work.locator("[data-project-task]")).toHaveCount(4);
+  await expect(work.locator(`[data-project-task="${created[0]}"]`)).toContainText("done");
   await expect(work).toContainText("3 Tasks sind READY");
   await expect(
     work.getByRole("button", { name: "Erledigt", exact: true }),

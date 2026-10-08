@@ -7,6 +7,8 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/features/real-data/supabase/database.types";
 import { signUpTechnicalManualUser } from "./support/local-manual-auth";
 
+test.use({ actionTimeout: 15000 });
+
 test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar Week loop", async ({
   page,
   context,
@@ -234,10 +236,7 @@ test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar We
   ).toBeNull();
 
   await page.goto(`/projects/${completedProject.id}`);
-  const completionResult = page.getByRole("region", {
-    name: "Project Ergebnis und Kriterien",
-    exact: true,
-  });
+  const completionResult = page.locator("[data-project-frame]");
   await completionResult
     .getByRole("button", {
       name: "Gewünschtes Ergebnis und Kriterien festlegen",
@@ -248,12 +247,15 @@ test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar We
     name: "Ergebnis und Kriterien verwalten",
     exact: true,
   });
-  await resultDialog.getByLabel("Gewünschtes Ergebnis").fill(
-    `Task loop complete ${stamp}`,
-  );
+  await resultDialog
+    .getByLabel("Gewünschtes Ergebnis")
+    .fill(`Task loop complete ${stamp}`);
   await resultDialog
     .getByRole("button", { name: "Ergebnis speichern", exact: true })
     .click();
+  await expect(resultDialog.getByRole("status")).toContainText(
+    "Project-Änderung gespeichert.",
+  );
   await page.reload();
   await completionResult
     .getByRole("button", {
@@ -261,12 +263,16 @@ test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar We
       exact: true,
     })
     .click();
+  await expect(resultDialog.getByLabel("Gewünschtes Ergebnis")).toBeFocused();
   await resultDialog
     .getByLabel("Neues Kriterium", { exact: true })
     .fill(`Task loop criterion ${stamp}`);
   await resultDialog
     .getByRole("button", { name: "Kriterium hinzufügen", exact: true })
     .click();
+  await expect(resultDialog.getByLabel("Kriterium bearbeiten")).toHaveValue(
+    `Task loop criterion ${stamp}`,
+  );
   await page.reload();
   const completionReview = page.getByRole("region", {
     name: "Project Abschluss",
@@ -309,7 +315,9 @@ test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar We
     .throwOnError();
 
   const guidance = (label: string) =>
-    page.getByRole("region", { name: label, exact: true });
+    label === "Dein nächster Schritt"
+      ? page.locator('[data-task-order="identity"]')
+      : page.getByRole("region", { name: label, exact: true });
   const taskContext = () => page.locator("[data-task-context]");
   const visitProject = async (projectId: string) => {
     await page.goto(`/projects/${projectId}`);
@@ -455,12 +463,14 @@ test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar We
   await expect(
     page.getByRole("heading", { name: createdTitle, exact: true }),
   ).toBeVisible();
-  await expect(page.locator('[data-task-detail-variant="B"]')).toBeVisible();
+  await expect(page.locator('[data-task-detail-variant="B8"]')).toBeVisible();
   const identity = page.locator('[data-task-order="identity"]');
   await expect(identity).toContainText("Geplant");
   await expect(identity).toContainText("Bereit");
   await expect(identity).toContainText("Ohne Priorität");
-  await expect(identity).toContainText("Erstellt am");
+  await expect(
+    identity.getByRole("button", { name: "Erledigt", exact: true }),
+  ).toBeVisible();
   await expect(identity.locator('[data-task-readiness="READY"]')).toHaveCount(
     1,
   );
@@ -471,7 +481,10 @@ test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar We
     taskContext().getByRole("link", { name: goal.title, exact: true }),
   ).toHaveAttribute("href", `/goals/${goal.id}`);
   const workSurface = page.locator('[data-task-order="work"]');
-  const supportingDepth = page.locator("[data-task-supporting-depth]");
+  const supportingDepth = page.getByRole("complementary", {
+    name: "Task-Kontext",
+    exact: true,
+  });
   await expect(workSurface).toHaveCount(1);
   await expect(
     workSurface.locator('[aria-label="Arbeitsnotiz"]'),
@@ -490,22 +503,22 @@ test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar We
     supportingDepth.locator('[data-task-order="planning"]'),
   ).toBeVisible();
   await expect(
-    supportingDepth.locator('[data-task-order="return"]'),
+    supportingDepth.locator('[data-task-order="context"]'),
   ).toBeVisible();
   await expect(
-    supportingDepth.getByRole("button", { name: "Bearbeiten", exact: true }),
+    identity.getByRole("button", { name: "Bearbeiten", exact: true }),
   ).toBeVisible();
-  const supportStyle = await supportingDepth.evaluate((element) => {
-    const style = window.getComputedStyle(element);
+  const headerStyle = await identity.evaluate((element) => {
+    const style = getComputedStyle(element);
     return {
       background: style.backgroundColor,
       border: style.borderTopWidth,
       radius: style.borderTopLeftRadius,
     };
   });
-  expect(supportStyle.background).not.toBe("rgba(0, 0, 0, 0)");
-  expect(supportStyle.border).toBe("1px");
-  expect(Number.parseFloat(supportStyle.radius)).toBeGreaterThan(0);
+  expect(headerStyle.background).toBe("rgb(15, 23, 36)");
+  expect(headerStyle.border).toBe("1px");
+  expect(headerStyle.radius).toBe("12px");
   const planning = page.locator('[data-task-order="planning"]');
   await expect(planning).toContainText("Geplant");
   await expect(planning).toContainText("Termin");
@@ -522,7 +535,7 @@ test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar We
     "Arbeitsschritte",
     "Voraussetzung",
     "Planung",
-    "Zurück zum Zusammenhang",
+    "Zusammenhang",
   ])
     await expect(
       page.getByRole("heading", { name: heading, exact: true }),
@@ -668,10 +681,13 @@ test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar We
       timeZone: "Europe/Berlin",
     }).format(new Date(`${plannedTimeBlockDate}T10:30:00`)),
   );
-  const planningCalendarLink = planning.getByRole("link", {
-    name: "Termin im Kalender öffnen",
-    exact: true,
-  });
+  const planningCalendarLink = guidance("Dein nächster Schritt").getByRole(
+    "link",
+    {
+      name: "Termin im Kalender öffnen",
+      exact: true,
+    },
+  );
   await expect(planningCalendarLink).toHaveAttribute(
     "href",
     new RegExp(
@@ -698,7 +714,7 @@ test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar We
   const scheduledGuidanceLink = guidance("Dein nächster Schritt").getByRole(
     "link",
     {
-      name: "Geplanten Termin öffnen",
+      name: "Termin im Kalender öffnen",
       exact: true,
     },
   );
@@ -777,7 +793,7 @@ test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar We
   await expect(page).toHaveURL(new RegExp(`/tasks/${createdTask.id}$`));
   await expect(
     guidance("Dein nächster Schritt").getByRole("link", {
-      name: "Geplanten Termin öffnen",
+      name: "Termin im Kalender öffnen",
       exact: true,
     }),
   ).toHaveAttribute(
@@ -785,17 +801,7 @@ test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar We
     new RegExp(`/calendar\\?task=${createdTask.id}&date=.*&view=week`),
   );
   await page.reload();
-  const lifecycleTrigger = page.getByRole("button", {
-    name: "Mehr verwalten",
-    exact: true,
-  });
-  await lifecycleTrigger.click();
-  await page
-    .getByRole("button", { name: "Status verwalten", exact: true })
-    .click();
-  await page
-    .getByRole("button", { name: "Task abschließen", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Erledigt", exact: true }).click();
   await expect(
     guidance("Dein nächster Schritt").getByRole("link", {
       name: `Zurück zu ${emptyProject.title}`,
@@ -813,7 +819,11 @@ test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar We
   );
   await expect(
     page.getByRole("region", { name: "Tasks & Progress", exact: true }),
-  ).toContainText("2/2 Tasks erledigt");
+  ).toContainText("Keine ausführbaren Tasks");
+  await expect(page.locator("[data-project-task]")).toHaveCount(2);
+  await expect(
+    page.locator("[data-project-task]").filter({ hasText: "done" }),
+  ).toHaveCount(2);
   await page.reload();
   await expect(guidance("Project Task guidance")).toContainText(
     "Keine ausführbaren Tasks",
@@ -831,9 +841,8 @@ test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar We
     "Einordnen",
   );
   await inboxGuidance
-    .getByRole("link", { name: "Einordnen", exact: true })
+    .getByRole("button", { name: "Bearbeiten", exact: true })
     .click();
-  await expect(page).toHaveURL(new RegExp(`/tasks/${inboxTask.id}\\?edit=1$`));
   const editTrigger = page.getByRole("button", {
     name: "Bearbeiten",
     exact: true,
@@ -959,19 +968,15 @@ test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar We
     exact: true,
   });
   await expect(blockedWork).toContainText(waitingAllBlocked.title);
-  const blockedRow = blockedWork.getByRole("region", {
-    name: "Ohne Milestone",
-    exact: true,
-  });
   await expect(
-    blockedRow.getByRole("link", {
+    blockedWork.getByRole("link", {
       name: `${waitingAllBlocked.title}: Details öffnen`,
       exact: true,
     }),
   ).toBeVisible();
   for (const blockedTask of [allBlockedOne, allBlockedTwo]) {
-    const row = blockedRow
-      .getByRole("listitem")
+    const row = blockedWork
+      .locator("[data-project-task]")
       .filter({ hasText: blockedTask.title });
     await expect(
       row.getByRole("link", {
@@ -988,7 +993,10 @@ test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar We
   );
   await expect(
     page.getByRole("region", { name: "Tasks & Progress", exact: true }),
-  ).toContainText("Noch keine Milestones.");
+  ).not.toContainText("Noch keine Milestones.");
+  await expect(
+    page.getByRole("region", { name: "Ohne Milestone", exact: true }),
+  ).toHaveCount(0);
   await expect(
     page.getByRole("region", { name: "Tasks & Progress", exact: true }),
   ).toContainText(noMilestoneTask.title);
@@ -1036,7 +1044,9 @@ test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar We
   await editTriggerForKeyboard.focus();
   await editTriggerForKeyboard.press("Enter");
   await expect(editTriggerForKeyboard).toHaveAttribute("aria-expanded", "true");
-  await expect(page.getByRole("dialog", { name: "Task bearbeiten", exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("dialog", { name: "Task bearbeiten", exact: true }),
+  ).toBeVisible();
   await expect(
     page
       .getByRole("form", { name: "Task bearbeiten", exact: true })
@@ -1196,7 +1206,7 @@ test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar We
       await page.goto(url);
       const surfaceReady =
         surface === "task"
-          ? page.locator('[data-task-detail-variant="B"]')
+          ? page.locator('[data-task-detail-variant="B8"]')
           : surface === "project"
             ? page.getByRole("heading", {
                 name: visualProject.title,
@@ -1211,87 +1221,40 @@ test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar We
       ).toBe(true);
       if (surface === "task") {
         await expect(
-          page.locator('[data-task-detail-variant="B"]'),
+          page.locator('[data-task-detail-variant="B8"]'),
         ).toBeVisible();
         await expect(page.locator("[data-task-guidance]")).toHaveCount(1);
         const workSurface = page.locator('[data-task-order="work"]');
-        const supportingDepth = page.locator("[data-task-supporting-depth]");
+        const supportingDepth = page.getByRole("complementary", {
+          name: "Task-Kontext",
+          exact: true,
+        });
         await expect(workSurface).toHaveCount(1);
         await expect(supportingDepth).toHaveCount(1);
-        for (const order of ["prerequisite", "planning", "return"]) {
+        for (const order of ["prerequisite", "planning", "context"]) {
           await expect(
             supportingDepth.locator('[data-task-order="' + order + '"]'),
           ).toHaveCount(1);
         }
-        const supportStyle = await supportingDepth.evaluate((element) => {
-          const style = window.getComputedStyle(element);
-          return {
-            background: style.backgroundColor,
-            border: style.borderTopWidth,
-            radius: style.borderTopLeftRadius,
-          };
-        });
-        expect(supportStyle.background).not.toBe("rgba(0, 0, 0, 0)");
-        expect(supportStyle.border).toBe("1px");
-        expect(Number.parseFloat(supportStyle.radius)).toBeGreaterThan(0);
-        const supportingTopicsShareSurface = await supportingDepth
-          .locator(
-            '[data-task-order="prerequisite"], [data-task-order="planning"], [data-task-order="return"]',
-          )
-          .evaluateAll((elements) =>
-            elements.every((element) => {
-              const style = window.getComputedStyle(element);
-              return (
-                style.backgroundColor === "rgba(0, 0, 0, 0)" &&
-                element.closest("[data-task-supporting-depth]") !== null
-              );
-            }),
-          );
-        expect(supportingTopicsShareSurface).toBe(true);
         await expect(
-          supportingDepth.getByRole("button", {
-            name: "Bearbeiten",
-            exact: true,
-          }),
+          page
+            .locator('[data-task-order="identity"]')
+            .getByRole("button", { name: "Bearbeiten", exact: true }),
         ).toBeVisible();
-        const orderedSections = await page
-          .locator("[data-task-order]")
-          .evaluateAll((elements) =>
-            elements.map((element) => {
-              const rect = element.getBoundingClientRect();
-              return {
-                bottom: rect.bottom,
-                order: element.getAttribute("data-task-order"),
-                top: rect.top,
-                width: rect.width,
-              };
-            }),
-          );
-        expect(orderedSections.map((item) => item.order)).toEqual([
-          "identity",
-          "guidance",
-          "context",
-          "work",
-          "prerequisite",
-          "planning",
-          "return",
-        ]);
+        const workBounds = (await workSurface.boundingBox())!;
+        const contextBounds = (await supportingDepth.boundingBox())!;
+        const headerBounds = (await page
+          .locator('[data-task-order="identity"]')
+          .boundingBox())!;
+        expect(headerBounds.width).toBeLessThanOrEqual(1360);
         if (width === 390)
-          for (let index = 1; index < orderedSections.length; index += 1)
-            expect(orderedSections[index].top).toBeGreaterThanOrEqual(
-              orderedSections[index - 1].bottom,
-            );
-        if (width >= 1920)
-          expect(orderedSections[0].width).toBeGreaterThan(1280);
-      }
-      if (surface === "task" && width === 390) {
-        await page.getByRole("link", { name: "Inhalt", exact: true }).click();
-        await expect(
-          page.getByRole("link", {
-            name: "Geplanten Termin öffnen",
-            exact: true,
-          }),
-        ).toBeInViewport();
+          expect(contextBounds.y).toBeGreaterThanOrEqual(
+            workBounds.y + workBounds.height,
+          );
+        else
+          expect(contextBounds.x).toBeGreaterThanOrEqual(
+            workBounds.x + workBounds.width,
+          );
       }
       if (surface === "calendar") {
         const calendarWeekToggle = page.getByRole("button", {

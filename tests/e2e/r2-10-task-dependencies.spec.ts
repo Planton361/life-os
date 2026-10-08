@@ -139,15 +139,7 @@ test("Canonical task graph: management, parallel readiness, completion guards an
   await visit("Integration");
   await expect(region()).toContainText(tasks.API.title);
   await expect(region()).toContainText(tasks.UI.title);
-  await openLifecycle();
-  await page
-    .getByRole("button", { name: "Task abschließen", exact: true })
-    .click();
-  await expect(
-    page
-      .getByRole("form", { name: "Task abschließen", exact: true })
-      .getByRole("alert"),
-  ).toContainText("Task ist blockiert");
+  await expect(page.getByRole("button", { name: "Erledigt", exact: true })).toHaveCount(0);
   expect(
     (
       await api.rpc("complete_linked_task", {
@@ -208,9 +200,8 @@ test("Canonical task graph: management, parallel readiness, completion guards an
   await expect(work.locator("select:visible")).toHaveCount(0);
   const complete = async (name: string) => {
     await visit(name);
-    await openLifecycle();
     await page
-      .getByRole("button", { name: "Task abschließen", exact: true })
+      .getByRole("button", { name: "Erledigt", exact: true })
       .click();
     await expect(
       page
@@ -269,7 +260,7 @@ test("Canonical task graph: management, parallel readiness, completion guards an
     .getByRole("button", { name: "Task wieder öffnen", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "Task abschließen", exact: true }),
+    page.getByRole("button", { name: "Erledigt", exact: true }),
   ).toBeVisible();
   await visit("Integration");
   await expect(region()).toContainText(
@@ -285,7 +276,7 @@ test("Canonical task graph: management, parallel readiness, completion guards an
     .getByRole("button", { name: "Task wieder öffnen", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "Task abschließen", exact: true }),
+    page.getByRole("button", { name: "Erledigt", exact: true }),
   ).toBeVisible();
   await visit("API");
   await expect(region()).toContainText("1 Vorgänger · 1 offen");
