@@ -100,6 +100,7 @@ export function TaskReadView({
 }) {
   const task = data.tasks.find((item) => item.id === taskId)!;
   const project = data.projects.find((item) => item.id === task.project_id);
+  const parentArchived = Boolean(project?.archived_at);
   const directGoal = data.goals.find((item) => item.id === task.goal_id);
   const inheritedGoal = data.goals.find((item) => item.id === project?.goal_id);
   const milestone = project
@@ -116,7 +117,7 @@ export function TaskReadView({
   const guidance = taskGuidance({
     taskId,
     status: task.archived_at ? "archived" : task.status,
-    archived: Boolean(task.archived_at),
+    archived: Boolean(task.archived_at) || parentArchived,
     availability: dependency.availability,
     blockerCount: dependency.blockers.length,
     scheduledDate,
@@ -144,11 +145,13 @@ export function TaskReadView({
     (source) => source.task_id === taskId,
   );
   const canComplete =
+    !parentArchived &&
     !task.archived_at &&
     taskHasExecutableLifecycle(task) &&
     dependency.availability === "READY" &&
     !sourceOwned;
   const editIsPrimary =
+    !parentArchived &&
     !sourceOwned &&
     !task.archived_at &&
     ["inbox", "waiting", "someday"].includes(task.status) &&
@@ -162,8 +165,9 @@ export function TaskReadView({
       view: "week",
     }).toString();
   const showCalendar =
-    Boolean(scheduledDate) ||
-    (!sourceOwned && !task.archived_at && taskHasExecutableLifecycle(task));
+    !parentArchived &&
+    (Boolean(scheduledDate) ||
+      (!sourceOwned && !task.archived_at && taskHasExecutableLifecycle(task)));
   const hasContext = Boolean(
     project ||
     directGoal ||
@@ -228,12 +232,14 @@ export function TaskReadView({
                 {nextLabel}
               </Link>
             )}
-            <TaskEditDialog
-              data={data}
-              taskId={taskId}
-              initiallyOpen={editInitiallyOpen}
-              triggerClassName={editIsPrimary ? styles.primary : styles.button}
-            />
+            {!parentArchived && (
+              <TaskEditDialog
+                data={data}
+                taskId={taskId}
+                initiallyOpen={editInitiallyOpen}
+                triggerClassName={editIsPrimary ? styles.primary : styles.button}
+              />
+            )}
             {showCalendar &&
               (canComplete || editIsPrimary || nextHref !== calendarHref) && (
                 <Link className={styles.button} href={calendarHref}>

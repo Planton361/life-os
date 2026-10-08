@@ -2114,13 +2114,19 @@ direct shared Edit and eligible `Erledigt`, ordered Work with object-local step
 toggles, compact contextual rail and Work-first mobile flow. Missing Context
 releases Work width. Lifecycle, explicit dependencies, source ownership,
 Calendar Week selection and Skill-origin recovery keep their canonical contracts.
-`tests/e2e/issue-123-b8-task-detail.spec.ts` records disposable authenticated
+Historical evidence on PR #124 head `661791d`: `tests/e2e/issue-123-b8-task-detail.spec.ts` records disposable authenticated
 Supabase Manual control/write/reload, stale dependency and forged/source rejection,
 state inventory and 3840/1920/769/390 geometry/screenshots. The existing isolated
 SQLite application browser proof also passes visible Task edit/complete/reopen,
 two-tab stale dependency rejection, projections, Demo/Empty/Auth boundaries and
 restart/reload on fresh synthetic data; #85 remains the shared Project-row Edit
-regression. This is proposed-revision evidence, not real-user
+regression. The Supabase E2Es used `pnpm test:e2e:isolated` and Docker-backed
+Supabase; they are not Docker-free native acceptance. The native SQLite suite
+and application browser proof are separate earlier runs, not a complete native
+B8 four-viewport matrix. The USER Fast Finish decision waives repeat broad/E2E
+and screenshot rounds. `task-read-view.test.ts` adds one focused native SQLite
+read/render check for archived-parent completion/Edit suppression (client
+interaction boundaries stubbed, not browser E2E). This is proposed-revision evidence, not real-user
 surface acceptance, and does not deliver the other B8 entities or Task Create.
 
 Issue #28 updates the connected Goal detail presentation to accepted Prototype A v2: stable Überblick / Arbeit / Erfolg / Verlauf areas, a numbered Goal-Etappen progression with explicit Project/direct-Task contributions, selected work context, canonical review-ready cue and outcome-first achieved/reopened views. `tests/e2e/issue-28-goal-a-v2.spec.ts` is the focused Manual browser/reload and 3840×2160 / 1920×1080 / 390×844 surface proof; the existing readiness regression in `tests/e2e/pp1-goal-follow-up.spec.ts` covers Task-only READY/BLOCKED. Status remains `CONNECTED_GAP` because Slice 2 completion episodes and Skill Evidence revisions are not part of #28.
