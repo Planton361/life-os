@@ -185,6 +185,9 @@ export function TaskReadView({
   const progress = taskStepProgress(
     data.steps.filter((step) => step.task_id === taskId),
   );
+  const hasWorkContent = Boolean(
+    text.description.trim() || text.nextAction.trim() || progress.total,
+  );
   const editorKey = `task-edit-${taskId}`;
   const nextBody = sourceOwned
     ? "Planung und Status gehören zur verknüpften Quelle."
@@ -192,7 +195,11 @@ export function TaskReadView({
 
   return (
     <ManagementDialogScope>
-      <div data-task-detail-variant="B8" className={styles.canvas}>
+      <div
+        data-task-detail-variant="B8"
+        data-task-work-state={hasWorkContent ? "populated" : "empty"}
+        className={styles.canvas}
+      >
         {skillRecovery}
         <nav aria-label="Breadcrumb" className={styles.breadcrumb}>
           <Link href={project ? "/projects" : "/tasks"}>
@@ -308,7 +315,10 @@ export function TaskReadView({
                 "Konkrete ausführbare Arbeit. Ergänze bei Bedarf den Zweck oder die Arbeitsnotiz."}
           </p>
         </header>
-        <div className={hasContext ? styles.split : styles.surface}>
+        <div
+          data-task-frame
+          className={`${styles.frame} ${hasContext ? styles.split : styles.surface}`}
+        >
           <section
             id="task-work-content"
             aria-labelledby="task-work-heading"
@@ -349,6 +359,20 @@ export function TaskReadView({
             <section aria-label="Vorgehen" className={styles.unit}>
               {steps}
             </section>
+            {project && (
+              <div className={styles.handoffs}>
+                <span>
+                  Task Completion führt niemals automatisch zum
+                  Project-Abschluss.
+                </span>
+                <Link
+                  className={styles.quietSmall}
+                  href={"/projects/" + project.id}
+                >
+                  Zurück zum Project
+                </Link>
+              </div>
+            )}
           </section>
           {hasContext && (
             <aside
@@ -517,19 +541,6 @@ export function TaskReadView({
             </aside>
           )}
         </div>
-        {project && (
-          <div className={styles.handoffs}>
-            <span>
-              Task Completion führt niemals automatisch zum Project-Abschluss.
-            </span>
-            <Link
-              className={styles.quietSmall}
-              href={"/projects/" + project.id}
-            >
-              Zurück zum Project
-            </Link>
-          </div>
-        )}
       </div>
     </ManagementDialogScope>
   );
