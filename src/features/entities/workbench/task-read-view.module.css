@@ -370,6 +370,7 @@
   gap: 10px;
   color: var(--text-muted);
   font-size: 12px;
+  padding: 12px 26px 23px;
 }
 .menu {
   position: relative;
@@ -421,6 +422,9 @@
   }
   .panelHead {
     padding: 16px;
+  }
+  .handoffs {
+    padding-inline: 16px;
   }
   .actions {
     width: 100%;
@@ -478,4 +482,52 @@
 }
 .actions .menu {
   position: static;
+}
+
+/* Accepted B8 Variant B: one frame, with the original column/content spacing. */
+@media (min-width: 951px) {
+  .split {
+    align-items: stretch;
+    background: var(--surface-1);
+    border: 1px solid var(--border-default);
+  }
+  .split .work,
+  .context {
+    background: transparent;
+    border-color: transparent;
+  }
+  .split .work {
+    border-radius: 12px 0 0 12px;
+  }
+  .context {
+    position: relative;
+    align-self: stretch;
+    border-radius: 0 12px 12px 0;
+  }
+  .context::before {
+    content: "";
+    position: absolute;
+    left: -7px;
+    top: -1px;
+    bottom: -1px;
+    width: 1px;
+    background: var(--border-subtle);
+    pointer-events: none;
+  }
+}
+
+/* The shell supplies spare height. Only the populated outer frame grows;
+   inner sections stay top-led and long content still grows the document. */
+@media (min-width: 1208px) and (min-height: 720px) {
+  .canvas[data-task-work-state="populated"] {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+  .canvas[data-task-work-state="populated"] > :not(.frame) {
+    flex-shrink: 0;
+  }
+  .canvas[data-task-work-state="populated"] > .frame {
+    flex: 1;
+  }
 }
