@@ -59,6 +59,13 @@ data/projections. Existing synthetic recovery proofs do not close this gate.
 The runtime experiment is architecture evidence, not a migration or cutover. It
 may proceed before the UX sequence so later architecture work is evidence-based.
 
+The USER ACCEPTED B8 cross-entity target (#121, 2026-10-08) refines visual and
+interaction scope across Task/Project/Goal/Skill, including Project Create A and
+the retained single optional Task-create disclosure. PRODUCT/DESIGN supersede
+conflicting historical visual placement/density below; domain scope, permanent
+sequence and dependencies stay unchanged. Target acceptance is not B8 UI delivery,
+product-surface closure or an operative work authorization.
+
 ### PP1 — Goal Outcome Planning
 
 **Outcome:** Goal becomes one guided completion Journey with domain-specific Goal
@@ -74,8 +81,11 @@ generic Goal percentage is introduced.
 The USER ACCEPTED #52 Variant A refines only the desktop composition: Current
 Work and the context rail share a bounded viewport-derived workbench frame,
 while inner modules and the Journey remain content-sized and secondary actions
-anchor at the frame's lower edge. The minimum is disabled on mobile/narrow
-layouts and real content grows through normal page flow. Goal domain, dependency
+anchor at the frame's lower edge in populated states. USER ACCEPTED B8 (#121)
+adds the Goal Empty exception: no viewport-derived desktop minimum and secondary
+actions immediately after compact success-definition content. Populated Goal
+retains #52; mobile/narrow layouts disable the minimum and real content grows
+through normal page flow. Goal domain, dependency
 and review semantics are unchanged.
 
 **Direct dependency:** Accepted Product Target v0.4 and the accepted Target
