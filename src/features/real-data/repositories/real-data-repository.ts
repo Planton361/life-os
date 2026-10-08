@@ -335,6 +335,9 @@ export interface ReviewRepository {
 }
 
 export interface ResourceRepository {
+  createTaskResource(
+    input: import("../schemas/task-resource.schemas").CreateTaskResourceInput,
+  ): Promise<RepositoryResult<{ resourceId: string; linked: boolean }>>;
   createResource(
     input: CreateResourceInput,
   ): Promise<RepositoryResult<Resource>>;

@@ -2168,6 +2168,27 @@ records implementation evidence. Existing Actions/domain/auth/storage are
 unchanged; final real-user acceptance and M0 remain separate. No other surface
 or personal runtime/database is changed.
 
+
+Issue #129 adds the USER-accepted B8 right-rail Task-Notizen and Externe Links
+using canonical `note`/`link` Resources and explicit Task context relations.
+Projectless Tasks have the same bounded Save/Cancel dialogs. HTTP(S) validation,
+owned Manual writes, source/Task/parent archive guards, title fallback and safe
+external opening are enforced. SQLite creates and links in one existing native
+transaction; its failed relation rolls back the Resource. The existing Supabase
+adapter retains separate writes: a failed link is an explicit recoverable partial
+outcome with Resource navigation, preserved draft and retry identity, never a
+Task Save success. Repeated requests converge on a server-derived Resource ID.
+No schema/RPC/provider/runtime or Task Create change.
+`tests/sqlite/issue-129-browser-proof.mjs` uses the existing disposable native
+harness for Empty/projectless access, Save/Cancel/Escape/error/draft retention,
+Note+URL Reload, safe opening, archived-parent UI, 24px desktop frame and bounded
+Short-Mac/Mobile flow. Focused native tests cover ownership, invalid URLs, source
+and archive guards, stale Resource retry and failed-link rollback; adapter tests
+cover partial-link recovery without a second Resource. Console/hydration are clean.
+One [1920×1080 screenshot](../qa/issue-129-task-resources/task-detail-1920x1080.png)
+records implementation evidence. The accepted HTML is design acceptance; final
+real-user acceptance and M0 remain pending. Personal data/server are untouched.
+
 Issue #28 updates the connected Goal detail presentation to accepted Prototype A v2: stable Überblick / Arbeit / Erfolg / Verlauf areas, a numbered Goal-Etappen progression with explicit Project/direct-Task contributions, selected work context, canonical review-ready cue and outcome-first achieved/reopened views. `tests/e2e/issue-28-goal-a-v2.spec.ts` is the focused Manual browser/reload and 3840×2160 / 1920×1080 / 390×844 surface proof; the existing readiness regression in `tests/e2e/pp1-goal-follow-up.spec.ts` covers Task-only READY/BLOCKED. Status remains `CONNECTED_GAP` because Slice 2 completion episodes and Skill Evidence revisions are not part of #28.
 
 Issue #53 implements the USER ACCEPTED #52 Variant A spatial refinement: the Goal identity remains compact, the shared workbench uses a bounded desktop viewport minimum with a common 60/40 frame and bottom-row secondary actions, inner work/review modules remain content-sized, the Journey stays top-led, and mobile remains content-driven. The authenticated disposable Manual flow in `tests/e2e/issue-46-simplified-goal-surface.spec.ts` captures and visually checks sparse one-Current/one-READY and multi-milestone READY/BLOCKED states at 3840×2160, 1920×1080 and 390×844; screenshot artifacts are under `test-results/issue-46-simplified-goal-s-0a261-e-authenticated-Manual-flow/`. `tests/e2e/support/goal-workbench-layout.ts` checks the viewport-derived minimum, footer baseline, 60/40 placement, mobile reset, clipping and horizontal overflow. The focused Goal Journey browser regression also passes explicit intermediate-result review, Goal Review, achievement/reopen, reload and keyboard/focus; 25 Goal guidance/outcome unit tests pass. `pnpm typecheck`, `pnpm lint` and `pnpm build` pass. PP1 is USER ACCEPTED as of 2026-09-28 after the real post-merge Goal review on main `d54f70f9882ef21844073734831a2db17e69b332`; the existing Slice 2 gaps remain deferred.

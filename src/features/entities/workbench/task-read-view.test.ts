@@ -78,6 +78,10 @@ vi.mock("./forms", () => ({
 vi.mock("./task-edit-dialog", () => ({
   TaskEditDialog: () => createElement("button", null, "Bearbeiten"),
 }));
+vi.mock("./task-resource-composer", () => ({
+  TaskResourceComposer: ({ type }: { type: "note" | "link" }) =>
+    createElement("button", null, type === "note" ? "+ Notiz" : "+ Link"),
+}));
 vi.mock("./management-disclosure", () => ({
   ManagementDisclosure: ({ children }: { children: ReactNode }) =>
     createElement("div", null, children),
