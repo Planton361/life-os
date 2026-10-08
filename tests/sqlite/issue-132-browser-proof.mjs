@@ -205,6 +205,23 @@ try {
       }),
   ).toBeVisible();
   await go(f.ids.goal);
+  await ready.getByRole("button", { name: "Bearbeiten", exact: true }).click();
+  const taskEdit = page.getByRole("dialog", {
+    name: "Task bearbeiten",
+    exact: true,
+  });
+  const updatedTitle = `Forschungsthemen vergleichen ${randomUUID().slice(0, 8)}`;
+  await taskEdit.locator('[name="title"]').fill(updatedTitle);
+  await taskEdit
+    .getByRole("button", { name: "Änderungen speichern", exact: true })
+    .click();
+  await expect(taskEdit).not.toBeVisible();
+  await page.reload();
+  await expect(ready).toContainText(updatedTitle);
+  await expect(
+    stage.locator(`[data-goal-task="${ids.blocked}"]`),
+  ).toContainText(`Wartet auf: ${updatedTitle}`);
+  await expect(root.locator(`[data-goal-task="${ids.ready}"]`)).toHaveCount(1);
   const nextStage = root.locator(`[data-goal-work-milestone="${ids.next}"]`);
   await nextStage.getByRole("button", { name: "+ Task", exact: true }).click();
   const activation = page.getByRole("dialog", {
@@ -232,6 +249,12 @@ try {
     exact: true,
   });
   const createdTitle = `Goal capture ${randomUUID().slice(0, 8)}`;
+  await create.locator('[name="title"]').fill(`Unsaved ${createdTitle}`);
+  await create.getByRole("link", { name: "Abbrechen", exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/goals/${f.ids.goal}\\?`));
+  await page.reload();
+  await expect(stage).not.toContainText(`Unsaved ${createdTitle}`);
+  await stage.getByRole("link", { name: "+ Task", exact: true }).click();
   await create.locator('[name="title"]').fill(createdTitle);
   await create
     .getByRole("button", { name: "Task erstellen", exact: true })
@@ -241,7 +264,7 @@ try {
   await expect(stage).toContainText(createdTitle);
   await expect(root.locator('[data-goal-primary-task="true"]')).toHaveCount(0); // two eligible Tasks preserve choice
   checks.push(
-    "real milestone Task Create/canonical context/reload; Calendar Week selected-task handoff; direct Task once; BLOCKED reason; one Current",
+    "real Task Edit/dependency title projection/reload; milestone Task Create/Cancel/Save/canonical context/reload; Calendar Week selected-task handoff; direct Task once; BLOCKED reason; one Current",
   );
   const editTrigger = root
     .locator("header")
