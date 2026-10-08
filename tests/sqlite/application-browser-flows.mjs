@@ -418,17 +418,9 @@ export async function additionalWriteFlows({
       await page.waitForLoadState("networkidle");
       await go(`/tasks/${browserTask}`);
       await page
-        .getByRole("button", { name: "Mehr verwalten", exact: true })
+        .getByRole("button", { name: "Erledigt", exact: true })
         .click();
-      await page
-        .getByRole("button", { name: "Status verwalten", exact: true })
-        .click();
-      await page
-        .getByRole("button", { name: "Task abschließen", exact: true })
-        .click();
-      await expect(
-        page.getByRole("button", { name: "Task wieder öffnen", exact: true }),
-      ).toBeVisible();
+      await expect(page.locator('[data-task-lifecycle="done"]')).toBeVisible();
       await go(`/goals/${fixture.ids.goal}`);
       page.once("dialog", (dialog) => dialog.accept());
       await root
@@ -485,7 +477,7 @@ export async function additionalWriteFlows({
   if (await reopenTask.count()) {
     await reopenTask.click();
     await expect(
-      page.getByRole("button", { name: "Task abschließen", exact: true }),
+      page.getByRole("button", { name: "Erledigt", exact: true }),
     ).toBeVisible();
   }
   await step(
@@ -707,6 +699,11 @@ export async function additionalWriteFlows({
     "Task dependency failure is visible and reload-stable",
     async () => {
       await go(`/tasks/${browserTask}`);
+      const stale = await page.context().newPage();
+      await stale.goto(app.origin + `/tasks/${browserTask}`);
+      await expect(
+        stale.getByRole("button", { name: "Erledigt", exact: true }),
+      ).toBeVisible();
       const dependencies = page.getByRole("region", {
         name: "Voraussetzung",
         exact: true,
@@ -729,20 +726,18 @@ export async function additionalWriteFlows({
           .filter({ hasText: "Dependency gespeichert." })
           .last(),
       ).toBeVisible();
-      await page
-        .getByRole("button", { name: "Mehr verwalten", exact: true })
-        .click();
-      await page
-        .getByRole("button", { name: "Status verwalten", exact: true })
-        .click();
-      await page
-        .getByRole("button", { name: "Task abschließen", exact: true })
+      await expect(
+        page.getByRole("button", { name: "Erledigt", exact: true }),
+      ).toHaveCount(0);
+      await stale
+        .getByRole("button", { name: "Erledigt", exact: true })
         .click();
       await expect(
-        page
-          .getByRole("form", { name: "Task abschließen", exact: true })
+        stale
+          .getByRole("form", { name: "Erledigt", exact: true })
           .getByRole("alert"),
       ).toContainText("Task ist blockiert");
+      await stale.close();
       await page.reload();
       await expect(
         page.getByLabel("Task-Status", { exact: true }),
