@@ -85,7 +85,7 @@ Die bestehende V5-App bleibt Grundlage; Domain- und Interaktionssemantik ändern
 - **H = CSS-Viewporthöhe:** unter 720 px normaler Dokumentfluss ohne künstliches Fill, außer beim Wide-Dashboard (siehe unten). Ab 720 darf ein gemeinsamer Frame freie Resthöhe aufnehmen, wenn C mindestens 880 ist. Shell-/Header-Flow liefert die tatsächliche Restfläche; keine route-spezifischen Höhenabzüge. Das künstliche Mindestziel bleibt auf höchstens 2160 px nutzbare Canvas-Höhe begrenzt; echter Inhalt hat keine Obergrenze.
 - **Frames statt gestreckter Cards:** Orientierung, Command und Supporting/Review bleiben content-sized; nur der gemeinsame Work-Rahmen nimmt Restfläche auf. Innere Cards, Task-Zeilen und Journey bleiben oben geführt. Fehlender Context kollabiert; Rails stacken, wenn sie nicht passen. Lange Inhalte wachsen mit dem Dokument; das Wide-Dashboard verwendet sein explizites Cockpit-Opt-in.
 - **Dashboard:** [#112 corrected target](https://github.com/Planton361/life-os/issues/110#issuecomment-6000725969) supersedes Dashboard document growth. C≥1440 ist ein One-Glance-Cockpit ohne erforderlichen Body-Scroll, auch bei H<720. Wide: Stats / Quick / Daily / Signals im Command Band; Agenda + Habits/Portfolio im gemeinsamen Workbench; Weight/Nutrients, Meals und Running im horizontalen Supporting-Band. Unter 900px Höhe nutzt Wide-Short kompakte V5-Abstände und eine horizontale Time/Mood-Komposition. Alle Standard-Zonen bleiben sichtbar; nur passende Listen-/Agenda-Bodies dürfen intern scrollen, mit sichtbaren Headers/Controls und Tastaturzugang. Innere Cards werden nicht künstlich gestreckt. Split: Daily + Quick, Stats + Signals, Agenda + P1, dann P2. Linear: Daily → Agenda → Quick → Signals → Stats → Habits/Portfolio → Health/Nutrition. Sparse und populated verwenden dieselbe Makrohierarchie.
-- **Details:** Project [#87](https://github.com/Planton361/life-os/issues/87#issuecomment-5938627502), Goal [#52](https://github.com/Planton361/life-os/issues/52#issuecomment-5867990501) und Skill [#102](https://github.com/Planton361/life-os/issues/102#issuecomment-5974677264) behalten ihre fachliche Grammatik und Verhältnisse. B8 ersetzt widersprechende visuelle Vorgaben; Goal Empty ist ausdrücklich von #52s Desktop-Mindesthöhe ausgenommen. Gemeinsame C/H-/Rail-Fit-Regeln ändern keine READY/BLOCKED-, Lernweg-, Review- oder Task-Semantik.
+- **Details:** Project [#87](https://github.com/Planton361/life-os/issues/87#issuecomment-5938627502), Goal [#131](https://github.com/Planton361/life-os/issues/131) und Skill [#102](https://github.com/Planton361/life-os/issues/102#issuecomment-5974677264) behalten ihre fachliche Grammatik. B8 ersetzt widersprechende visuelle Vorgaben; #131 ersetzt Goals Work/Journey-Verhältnis und #52s Mindesthöhe. Gemeinsame C/H-/Rail-Fit-Regeln ändern keine READY/BLOCKED-, Lernweg-, Review- oder Task-Semantik.
 - **Bestehende bounded Workspaces:** Today, Calendar und Portfolio behalten ihr explizites Scroll-Workspace-Opt-in bei ausreichend C/H. Short und Linear lösen dieses Opt-in in normalen Dokumentfluss auf. Calendar-Zeitgeometrie und alle Produktflows bleiben erhalten.
 - **Shell:** kompakte Navigation, wenn Sidebar + Split-Canvas + Gutters nicht passen; Desktop-Sidebar bei 280 + 880 + 2×24 px. Symmetrische Canvas-Gutters und begrenzte maximale Lesebreite bei großer/4K-Fläche, ohne CSS-Zoom oder Geräte-Breakpoints.
 
@@ -139,7 +139,7 @@ unchanged. No page-expanding inline editor or parallel form.
 | Task Detail | Matte header/actions; Description, Arbeitsnotiz, Schritte in left Work; Project/Milestone/Goal, planned day/time block/deadline and predecessors in compact right Context; mobile Work then Context |
 | Project Detail | Header/result/Criteria; one Work with orange Milestone grouping bars and indented Task rows; neutral Backlog only with real Milestones and unassigned Tasks; optional Context and compact supporting references |
 | Project Arbeitsstand | One B7 segmented balance and counts for recorded non-archived/non-canceled Tasks: done / executable-ready / explicitly dependency-blocked / other open; explicit done Milestones separate; no captured Tasks means no fake 0%-bar |
-| Goal Detail | Matte Goal identity/Outcome/Warum/Horizont; dominant ~60/40 Work/Journey, exactly one Current in the active Journey, contextually valid next action and separate Zwischenziel-/Goal-Reviews; Journey has no Tasks, counts or percentage |
+| Goal Detail | Project-inspired matte identity/Outcome/Warum/Horizont with success criteria; one Work with real Goal Zwischenziel group bands and Task rows, direct Tasks without milestones; object-local management and explicit Zwischenziel-/Goal reviews, no Journey rail or percentage |
 | Skill Detail | Matte identity and shared canvas; information left, Actions right per accepted #102; Target, Lernweg, Practice Tasks, Evidence and Recency remain separate; one primary next action and secondary Focus/Lernschritt/Evidence groups |
 | Task Create | B8 outer header/canvas/surface; canonical title-first inner form, exactly one `Weitere Angaben (optional)` with unchanged field order and origin parity |
 | Project Create A | Title first, only existing Title required; Description, Project-Fokus, Status, Priority, Deadline, Area and direct Goal in one optional disclosure; clear Create/Cancel; result/Criteria managed on Detail after creation |
@@ -156,8 +156,9 @@ Project Empty uses a calm content-sized focus surface with `Erste Task anlegen`
 dominant; Milestone/result setup stays secondary. Goal Empty leads with `Wann ist
 das Ziel erreicht?` and `Erfolg definieren`. **Explicit #52 exception:** no
 viewport-derived desktop minimum for Goal Empty; secondary actions immediately
-follow compact content. Populated Goal retains its bounded shared workbench
-minimum, ~60/40 split and top-led Journey. Skill Empty is content-sized with
+follow compact content. Accepted #131 Goal replaces both Empty and populated composition with a
+content-sized header and one Work in normal flow, without a Journey rail or
+viewport minimum. Skill Empty is content-sized with
 information left/actions right, `Entwicklungsfokus festlegen` preferred and
 `Bestehende Aufgabe verknüpfen` / `Beobachtung festhalten` as alternatives.
 No Target is required for Practice or Evidence. No forced setup wizard or
@@ -413,97 +414,41 @@ Acceptance pausiert; Journal-Ownership ist im akzeptierten Target Life-OS-owned.
 Dieser Vertrag beschreibt die erhaltene Life-OS-Oberfläche; eine Verlagerung von
 Journal-Text nach Obsidian ist nicht vorgesehen.
 
-## Hybrid Goal Workbench (#48)
+## B8 Goal Work (#131 / #132)
 
-Issue #48's accepted target (comment 5860230666) supersedes the visible #44/#46
-composition. The #39/#41 domain, dependency and explicit-review semantics remain
-binding. #44/#46 remain evidence for user language and progressive planning.
+The accepted #131 Goal preview supersedes #48/#49's Work/Journey composition and
+#52's populated minimum-height frame. Use the accepted Project Detail surface
+rhythm: a matte header (up to 1360px), then one clearly bounded **Work** surface.
+Existing Goal/Task/review domain semantics remain unchanged.
 
-### Goal Identity
+Header: identity/status, intended outcome and why, compact horizon/date/Area,
+and canonical success criteria. Criteria states have text, with local
+`Prüfen / bearbeiten`; identity Edit is directly discoverable. No explanation
+cards, coaching, percentage or second review preview lane.
 
-A full-width calm header shows Goal/status, title, short outcome, why, horizon,
-target date and `Planung bearbeiten`. Use canonical data only. No hero/background
-image, illustration, quote or invented motivational content.
+Work: compact Zwischenziel group bands and indented actual Task rows. Current
+has a restrained purple accent and explicit text; planned/achieved groups remain
+calm. Status, title, optional short outcome/date, `+ Task` and a local management
+entry belong to the group. Contextual creation retains the Current-only rule;
+non-current `+ Task` requests explicit activation/reopening first. Expansion and
+management never imply Current selection. Without Zwischenziele, use a simple
+Task list; with them, unassigned direct Tasks appear under `Ohne Zwischenziel`.
+Actual Task dependencies explain READY/BLOCKED. No duplicated selected-Task card,
+Journey column, generic progress, redundant card frames or global action wall.
 
-### Desktop composition
+One contextual primary action stays on its actual Task or explicit review.
+Task opening/Edit and Calendar Week selection use the existing controls; optional
+Projects remain secondary context. Milestone and Goal achievement are separate,
+explicit confirmations. Task completion does not confirm either. Preserve
+append-only evaluation/evidence/history and object-local progressive management
+for identity, criteria, milestone planning, ordering/archive and associations.
 
-Below the header, use a real two-column workbench: dominant left work region
-(roughly 58–64%), quieter right context rail (roughly 36–42%). Keep both
-top-aligned inside one shared desktop workbench frame. The frame has a bounded
-minimum height for populated Goal derived from the available viewport below the
-shell and Goal identity; it grows with real content, stays in normal document flow and never
-clips or adds an internal scroll area just to fill height. Anchor the secondary
-footer actions to the lower edge in sparse populated states. B8 Goal Empty has no
-viewport minimum; secondary actions immediately follow compact content, as the
-explicitly accepted exception to #52.
-
-Stretch the shared frame, not its modules: Current Work, the next action, the
-roadmap and Goal Review preview remain content-sized. Keep the roadmap top-led;
-do not add artificial distance between its current and final review points.
-
-Left: **Aktuelle Arbeit** with a short orientation sentence, `AKTUELL` / current
-Zwischenziel and its intended outcome, then `ALS NÄCHSTES` with the one canonical
-guidance action. The selected READY Task appears once with `Aufgabe öffnen`.
-Exclude it from equivalent secondary Task rows while retaining its planning
-association controls. Other current work is secondary; BLOCKED has readable real
-Task-dependency reasons and completed work is subdued. Optional Project context
-remains quiet. No separate JETZT panel.
-
-Right upper: **Dein Weg zum Ergebnis**. Use a restrained vertical roadmap with
-completed/current/future intermediate outcomes and final `Ziel prüfen`. Optional
-short outcome/date context is allowed. No Task titles, Task/criterion counts,
-READY/BLOCKED summaries or generic percentages. With one intermediate result,
-keep an intentional compact roadmap region rather than a trivial inline
-fragment. B8 uses dividers and a Current band, not a card per outcome.
-
-Right lower: **Ziel prüfen**. During execution this is a quiet preview explaining
-explicit final review, with no competing primary CTA, counts or live success
-progress. At final review the active current decision asks `Ist dein Ziel erreicht?` and shows canonical criteria under `Erreicht, wenn …`. Do not duplicate
-criteria across equal-weight regions. Reopen stays secondary after achievement.
-
-Secondary depth uses restrained `Verlauf ansehen` and `Weitere Optionen` links.
-
-### V5 tone and hierarchy
-
-Use `--bg-app` for the application, `--surface-1` for identity/context,
-`--surface-2` for the Current band. B8 keeps the next action object-local within
-Work, without an additional competing rounded `--surface-3` container.
-Use restrained borders/dividers and existing spacing. Cyan is semantic for
-Current/focus/the primary CTA. Do not use a black JETZT panel, new palette,
-gradient, neon, glow or full cyan frame. Status always has text, not color alone.
-
-### Planning and review
-
-Retain one explicit `Planung bearbeiten` / `Fertig` mode with progressive
-questions:
-
-```text
-Was willst du erreichen?
-→ Woran erkennst du, dass es geschafft ist?
-→ Was soll als Nächstes wahr sein?
-→ Was kannst du konkret als Nächstes tun?
-```
-
-Reuse existing Goal identity, Outcome Criteria, Milestone and Task writes.
-Management remains disclosed by question; no persisted wizard state or second
-planning surface. Criteria are editing/review depth, not an execution progress lane.
-
-Task completion never completes a Milestone or Goal. Intermediate-result review
-explicitly confirms achievement or adds work. Final Goal Review explicitly
-achieves the Goal against canonical criteria or continues planning. Preserve
-exactly one Current, Task-only READY/BLOCKED and append-only history/evidence.
-
-### Responsive and accessibility
-
-Narrow/mobile order:
-`Goal identity → Aktuelle Arbeit → Dein Weg zum Ergebnis → Ziel prüfen → secondary depth`.
-
-At 3840×2160 and 1920×1080, preserve the desktop split and use the bounded shared
-frame for populated Goal; Goal Empty is content-sized at every width. At
-390×844, disable the populated frame minimum and stack naturally without artificial
-stretching, horizontal overflow or clipped controls. Keep one obvious primary
-action, logical headings/regions, visible keyboard focus, disclosure/dialog
-operation and focus return after closing planning or a disclosure.
+All states grow naturally with content. Mobile/short screens follow header →
+Work → secondary review/history, with wrapping row actions, no internal scroll
+added to fill height, no horizontal page overflow and no viewport minimum.
+Dialogs retain keyboard operation, visible focus and return focus on close.
+Goal achievement/reopen/read-only archive use existing canonical state. The
+five other accepted B8 surfaces and Skill Detail are outside #132's changes.
 
 
 ## Project Work Artifacts and References (R2-09)

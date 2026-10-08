@@ -632,123 +632,40 @@ intermediate result ready for explicit user review. Completing all Milestones
 never automatically achieves the Goal; the final Goal Review evaluates the
 Definition of Done and requires explicit confirmation.
 
-### Hybrid Goal Detail composition (#48)
+### B8 Goal Detail composition (#131 / #132)
 
-Goal Detail is read/work-first. A calm full-width Goal Identity header shows
-status, title, short intended outcome, why, horizon, target date and
-`Planung bearbeiten`, using existing canonical data only.
+The USER ACCEPTED #131 Goal preview replaces the #48/#49 Work/Journey split,
+#52 populated minimum-height frame and global Planning Mode composition. Project
+Detail is the direct visual reference; the existing Goal domain remains binding.
 
-Below it, desktop uses one composed workbench:
+A matte, content-sized header shows Goal identity/status, intended outcome, why,
+horizon/target date and canonical success criteria (`Erreicht, wenn …`). Goal
+identity editing and criterion evaluation/management open locally in dialogs.
+No hero, coaching card, generic percentage or duplicate success lane.
 
-- dominant left region, **Aktuelle Arbeit** (roughly 58–64%): current intermediate
-  outcome, one canonical guidance decision/action, other current work as secondary
-  depth;
-- quieter right rail (roughly 36–42%): **Dein Weg zum Ergebnis**, followed by a
-  **Ziel prüfen** preview.
+One **Work** region groups real Goal Zwischenziele with their actual support-linked
+Task rows. Show status, title and optional outcome/date in a compact group band.
+Each group owns `+ Task`, management and explicit review. Canonical contextual
+Task creation remains Current-only: other groups first offer explicit activation
+(or reopening) rather than linking to an invalid create route. At most one
+non-archived Zwischenziel is Current; expanding/managing a group does not change
+that state. Without Zwischenziele, show a simple direct Task list. With them,
+unassigned direct Goal Tasks stay visible as `Ohne Zwischenziel`. Optional Projects
+remain quiet context; project membership alone does not assign a Task to a Goal
+Zwischenziel. A Task appears once in Work; a unique eligible Task may be primary, while
+multiple eligible Tasks retain user choice, with real dependency reasons, Task
+Detail/Edit and the existing Calendar Week handoff. Completed work is subdued.
 
-The selected READY Task appears once, with `Aufgabe öffnen`. Exclude it from
-peer rows in secondary current work. Other current Tasks retain real dependency
-reasons; READY stays dominant over BLOCKED, and completed work is subdued.
-A blocker, planning question or explicit review replaces the next Task when
-canonical guidance requires it. There is no separate competing JETZT region.
+Preserve one contextual primary next action, explicit milestone and final Goal
+reviews, ownership, source restrictions and append-only history/evidence. Task
+completion never automatically achieves a Zwischenziel or Goal. Final Goal
+confirmation remains guarded by canonical criteria; achievement/reopen and
+history corrections retain their existing commands. Planning, reorder, archive,
+association and evidence operations stay object-local progressive depth.
 
-The roadmap shows completed/current/future intermediate results and the final
-`Ziel prüfen` gate. Short outcome descriptions and target dates may support
-orientation. It never displays Task titles, Task/criterion counts, READY/BLOCKED
-summaries or generic percentages. Even with one intermediate result it remains
-an intentional, compact roadmap region in the right rail.
-
-The lower review preview explains explicit Goal Review without a competing CTA
-or progress system. Actual criteria become prominent at final review, in the
-active current decision, or in progressive planning; never in two equally
-weighted regions simultaneously. Projects remain optional, quiet context.
-
-Use `Zwischenziel` / `Zwischenresultat` as primary user language.
-Mobile stacks Goal Identity → Aktuelle Arbeit → Dein Weg zum Ergebnis →
-Ziel prüfen → secondary depth (`Verlauf ansehen` / `Weitere Optionen`).
-
-#### Viewport Workbench refinement — #52 Variant A
-
-For populated Goal states on desktop, the two columns and their secondary actions
-sit inside one shared workbench frame with a bounded minimum height derived from the remaining
-viewport after the Goal identity and application shell. The frame is only a
-minimum: normal document flow grows with real content, without clipping or an
-internal scroll area added to fill height. Current Work, roadmap and review
-modules stay content-sized; the Journey remains top-led rather than stretching
-to create distance. In sparse states, `Verlauf ansehen` and `Weitere Optionen`
-sit at the lower edge of the shared frame. At narrow/mobile widths the desktop
-minimum is removed and the existing content-driven stack remains natural.
-
-**B8 exception accepted on 2026-10-08 (#121):** Goal Empty has no
-viewport-derived desktop minimum. Its compact success-definition entry and
-secondary actions follow immediately in normal content flow. This replaces #52's
-sparse-frame/footer rule only for Empty; populated Goal and global C/H contracts
-retain their bounded shared minimum.
-
-The Definition of Done remains canonical truth but ordinary execution does not
-require the user to learn that term. Preferred user questions are:
-- planning: `Wann ist das Ziel erreicht?`;
-- final review: `Ist dein Ziel erreicht?`;
-- criteria: `Erreicht, wenn …`.
-
-Planning remains separate from execution, but becomes more guided and progressive.
-The canonical planning sequence is:
-
-```text
-Was willst du erreichen?
-→ Woran erkennst du, dass es geschafft ist?
-→ Was soll als Nächstes wahr sein?
-→ Was kannst du konkret als Nächstes tun?
-```
-
-This interaction sequence maps to existing Goal identity, Outcome Criteria,
-Current Goal Milestone and Task structures. It is not a new persisted Goal state
-machine.
-
-Normal work mode orients and executes. Planning mode changes Goal acceptance
-criteria, intermediate results, Task association/creation and optional Project
-context without becoming a wall of all management controls.
-
-Completion remains explicit:
-- Task completion does not complete a Milestone;
-- after planned work, the user confirms whether the intermediate result is
-  actually achieved or adds more work;
-- after the final intermediate result, the user reviews the Goal against its
-  canonical success criteria and explicitly achieves or continues planning.
-
-### Visual target
-
-The current-work surface uses the existing V5 navy surface hierarchy rather than
-the rejected black JETZT treatment. Use existing tokens:
-- `--bg-app` for app/background;
-- `--surface-1` for ordinary surfaces;
-- `--surface-2` or bounded `--surface-3` for current-work emphasis;
-- `--accent-cyan` only as semantic Current/primary-action accent.
-
-No hero/background image, illustrative scene, quote, new palette, neon, gradient,
-glow or full cyan frame is introduced.
-Emphasis comes from tone, hierarchy and one primary action.
-
-The following historical composition details are superseded by #48:
-- separate dominant `JETZT` surface;
-- separate Current-Milestone workbench immediately below it;
-- required 68/32 split and the #44/#46 full-width stacked Current Work default;
-- reducing a single-result roadmap to a trivial inline cue;
-- repeating the guidance-selected Task as an equivalent peer row;
-- mobile stack `JETZT → Current Milestone → Tasks → Journey`.
-
-The following #39/#41 semantics remain binding:
-- one dominant next decision/action;
-- exactly one Current Milestone;
-- explicit planning mode;
-- progressive planning;
-- quiet success criteria during execution;
-- explicit Milestone/Goal reviews;
-- Tasks as execution layer;
-- Journey/roadmap as long-term orientation only;
-- READY/BLOCKED only from Task Dependencies;
-- append-only PP1 history/evidence;
-- no generic Goal percentage and no automatic achievement.
+Desktop and mobile follow header → Work → secondary review/history/management
+in natural document flow, without a Journey rail, action wall or artificial
+minimum-height whitespace. All other B8 surfaces remain unchanged.
 
 
 ## 1. Product Promise

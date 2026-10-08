@@ -9,7 +9,6 @@ import {
   type GoalAchievementEvent,
   type GoalEvidenceReference,
   type GoalEvidenceSourceType,
-  type GoalJourneyAction,
   type GoalMilestone,
   type GoalMilestoneAchievementEvent,
   type GoalOutcome,
@@ -19,12 +18,14 @@ import type { WorkbenchData } from "@/features/real-data/runtime/entity-workbenc
 import { EntityWorkbenchShell } from "./pages";
 import { Choice, fieldClass, OperationForm } from "./forms";
 import { taskDependencyContext } from "@/features/real-data/domain/task-dependencies";
-import { ManagementDisclosure } from "./management-disclosure";
 import {
-  GoalPlanningMode,
-  GoalPlanningModeToggle,
-  GoalPlanningOnly,
-} from "./goal-planning-mode";
+  ManagementDialog,
+  ManagementDisclosure,
+} from "./management-disclosure";
+import { TaskEditDialog } from "./task-edit-dialog";
+import { projectTaskGuidance } from "./project-guidance";
+import { taskHasExecutableLifecycle } from "@/features/real-data/domain/task-dependencies";
+import styles from "./goal-outcome-workbench.module.css";
 
 function Hidden({ name, value }: { name: string; value: string }) {
   return <input type="hidden" name={name} value={value} />;
@@ -67,36 +68,6 @@ function milestoneStatusLabel(status: string) {
   if (status === "active") return "aktiv";
   if (status === "planned") return "geplant";
   return "archiviert";
-}
-
-function roadmapStatusLabel(status: GoalMilestone["status"]) {
-  if (status === "active") return "Aktuell";
-  if (status === "achieved") return "Erreicht";
-  return "Geplant";
-}
-
-function guidanceHeading(action: GoalJourneyAction, taskTitle: string | null) {
-  switch (action) {
-    case "define_outcome":
-      return "Woran erkennst du, dass es geschafft ist?";
-    case "create_first_milestone":
-    case "select_current_milestone":
-      return "Was soll als Nächstes wahr sein?";
-    case "create_next_task":
-      return "Was kannst du konkret als Nächstes tun?";
-    case "review_milestone":
-      return "Ist das Zwischenziel erreicht?";
-    case "review_goal":
-      return "Ist dein Ziel erreicht?";
-    case "open_ready_task":
-      return taskTitle ?? "Nächste Aufgabe";
-    case "resolve_blocker":
-      return "Was hält den nächsten Schritt auf?";
-    case "achieved":
-      return "Erreichtes Ergebnis";
-    case "archived":
-      return "Archiviertes Ziel";
-  }
 }
 
 function goalStatusLabel(status: string) {
@@ -373,187 +344,6 @@ function goalAreaHref(goalId: string, area: string, stage?: string) {
   const params = new URLSearchParams({ area });
   if (stage) params.set("stage", stage);
   return `/goals/${goalId}?${params}`;
-}
-
-function MilestoneProgression({
-  goalId,
-  outcome,
-  selectedId,
-  canManage,
-}: {
-  goalId: string;
-  outcome: GoalOutcome;
-  selectedId: string | null;
-  canManage: boolean;
-}) {
-  const milestones = outcome.milestones.filter(
-    (item) => !item.archivedAt && item.status !== "archived",
-  );
-  if (milestones.length === 0) {
-    return (
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[var(--text-muted)]">
-        <span>Zwischenziel planen</span>
-        <span aria-hidden="true">→</span>
-        <span>Ziel prüfen</span>
-      </div>
-    );
-  }
-  return (
-    <ol
-      className="grid min-w-0 gap-0 border-l border-[var(--border-default)] pl-5"
-      aria-label="Zwischenziele in Reihenfolge"
-      data-goal-progression
-    >
-      {milestones.map((milestone, index) => (
-        <li
-          key={milestone.id}
-          className="relative grid min-w-0 gap-1 pb-4"
-          data-goal-stage-status={milestone.status}
-          data-goal-milestone-id={milestone.id}
-        >
-          <span
-            aria-hidden="true"
-            className={`absolute -left-[26px] top-1.5 h-2.5 w-2.5 rounded-full border ${milestone.status === "achieved" ? "border-[var(--text-muted)] bg-[var(--text-muted)]" : milestone.status === "active" ? "border-[var(--accent-cyan)] bg-[var(--accent-cyan)]" : "border-[var(--border-default)] bg-[var(--surface-1)]"}`}
-          />
-          <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-            <span
-              className={`text-xs font-semibold ${milestone.status === "active" ? "text-[var(--accent-cyan)]" : "text-[var(--text-muted)]"}`}
-            >
-              {roadmapStatusLabel(milestone.status)}
-            </span>
-            <Link
-              href={goalAreaHref(goalId, "planung", milestone.id)}
-              aria-current={
-                selectedId === milestone.id ? "location" : undefined
-              }
-              className={`min-w-0 break-words font-semibold underline-offset-4 hover:underline focus-visible:underline ${milestone.status === "active" ? "text-[var(--accent-cyan)]" : milestone.status === "achieved" ? "text-[var(--text-muted)]" : "text-[var(--text-primary)]"}`}
-            >
-              {milestone.title}
-            </Link>
-          </div>
-          {milestone.description && (
-            <p className="line-clamp-2 text-sm leading-5 text-[var(--text-muted)]">
-              {milestone.description}
-            </p>
-          )}
-          {milestone.targetDate && (
-            <p className="text-xs text-[var(--text-muted)]">
-              Zieltermin {goalDateLabel(milestone.targetDate)}
-            </p>
-          )}
-          {canManage && (
-            <GoalPlanningOnly marker="journey-milestone">
-              <ManagementDisclosure label="Zwischenziel verwalten">
-                <div className="grid gap-3" data-goal-milestone-controls>
-                  <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
-                    {milestone.status !== "active" && (
-                      <OperationForm
-                        operation="milestone.status"
-                        label={
-                          milestone.status === "achieved"
-                            ? "Zwischenziel wieder öffnen"
-                            : "Als aktuelles Zwischenziel festlegen"
-                        }
-                        closeOnSuccess
-                      >
-                        <Hidden name="goalId" value={goalId} />
-                        <Hidden name="milestoneId" value={milestone.id} />
-                        <Hidden name="status" value="active" />
-                        <Hidden
-                          name="expectedUpdatedAt"
-                          value={milestone.updatedAt}
-                        />
-                      </OperationForm>
-                    )}
-                    {milestone.status === "active" && (
-                      <OperationForm
-                        operation="milestone.status"
-                        label="Zwischenziel zurückstellen"
-                        closeOnSuccess
-                      >
-                        <Hidden name="goalId" value={goalId} />
-                        <Hidden name="milestoneId" value={milestone.id} />
-                        <Hidden name="status" value="planned" />
-                      </OperationForm>
-                    )}
-                    <OperationForm
-                      operation="milestone.reorder"
-                      label="Nach oben"
-                      disabled={index === 0}
-                      closeOnSuccess
-                    >
-                      <Hidden name="goalId" value={goalId} />
-                      <Hidden name="milestoneId" value={milestone.id} />
-                      <Hidden name="direction" value="up" />
-                    </OperationForm>
-                    <OperationForm
-                      operation="milestone.reorder"
-                      label="Nach unten"
-                      disabled={index === milestones.length - 1}
-                      closeOnSuccess
-                    >
-                      <Hidden name="goalId" value={goalId} />
-                      <Hidden name="milestoneId" value={milestone.id} />
-                      <Hidden name="direction" value="down" />
-                    </OperationForm>
-                  </div>
-                  <ManagementDisclosure label="Zwischenziel bearbeiten">
-                    <OperationForm
-                      operation="milestone.update"
-                      label="Zwischenziel speichern"
-                      closeOnSuccess
-                    >
-                      <Hidden name="goalId" value={goalId} />
-                      <Hidden name="milestoneId" value={milestone.id} />
-                      <label className="grid gap-1 text-sm">
-                        Titel
-                        <input
-                          className={fieldClass}
-                          name="title"
-                          defaultValue={milestone.title}
-                          required
-                        />
-                      </label>
-                      <label className="grid gap-1 text-sm">
-                        Beschreibung
-                        <textarea
-                          className={fieldClass}
-                          name="description"
-                          defaultValue={milestone.description ?? ""}
-                          rows={3}
-                        />
-                      </label>
-                      <label className="grid gap-1 text-sm">
-                        Zieldatum
-                        <input
-                          className={fieldClass}
-                          name="targetDate"
-                          type="date"
-                          defaultValue={milestone.targetDate ?? ""}
-                        />
-                      </label>
-                    </OperationForm>
-                    <OperationForm
-                      operation="milestone.archive"
-                      label="Zwischenziel archivieren"
-                      closeOnSuccess
-                    >
-                      <Hidden name="goalId" value={goalId} />
-                      <Hidden name="milestoneId" value={milestone.id} />
-                    </OperationForm>
-                  </ManagementDisclosure>
-                </div>
-              </ManagementDisclosure>
-            </GoalPlanningOnly>
-          )}
-        </li>
-      ))}
-      <li className="flex flex-wrap items-center gap-x-2 pt-1 text-sm text-[var(--text-muted)]">
-        <span aria-hidden="true">→</span>
-        <span>Ziel prüfen</span>
-      </li>
-    </ol>
-  );
 }
 
 function eventDate(event: { occurredAt: string | null; recordedAt: string }) {
@@ -1085,7 +875,7 @@ function MilestoneCard({
           </p>
         )}
       </div>
-      {canManage && !isArchived && (
+      {canManage && !isArchived && milestone.status === "active" && (
         <div className="flex flex-wrap gap-3">
           <Link
             className="text-sm text-[var(--accent-cyan)]"
@@ -1352,1031 +1142,801 @@ export function GoalOutcomeWorkbench({
   area?: string;
   selectedStage?: string;
 }) {
-  const milestoneTitles = new Map(
-    outcome.milestones.map((milestone) => [milestone.id, milestone.title]),
-  );
   const activeMilestones = outcome.milestones.filter(
-    (milestone) => !milestone.archivedAt && milestone.status !== "archived",
+    (m) => !m.archivedAt && m.status !== "archived",
   );
-  const selectedArea = area === "verlauf" ? "verlauf" : "journey";
-  const activeCriteria = outcome.criteria.filter(
-    (criterion) => !criterion.archivedAt,
+  const activeCriteria = outcome.criteria.filter((c) => !c.archivedAt);
+  const milestoneTitles = new Map(
+    outcome.milestones.map((m) => [m.id, m.title]),
   );
-  const currentMilestone =
-    activeMilestones.find((milestone) => milestone.status === "active") ?? null;
-  const journeyGuidance = deriveGoalJourneyGuidance(
-    outcome,
-    data.dependencyGraph,
-  );
-  const currentMilestoneTaskIds = new Set(
-    currentMilestone
-      ? outcome.taskSupport
-          .filter((link) => link.goalMilestoneId === currentMilestone.id)
-          .map((link) => link.targetId)
-      : [],
-  );
-  const currentMilestoneTasks = currentMilestone
-    ? orderCurrentGoalMilestoneTasks(
-        outcome.tasks.filter(
-          (task) => currentMilestoneTaskIds.has(task.id) && !task.archivedAt,
-        ),
-        data.dependencyGraph,
-        journeyGuidance.action === "open_ready_task"
-          ? (journeyGuidance.task?.id ?? undefined)
-          : undefined,
-      )
-    : [];
-  const currentMilestoneProjects = currentMilestone
-    ? outcome.projectSupport
-        .filter((link) => link.goalMilestoneId === currentMilestone.id)
-        .map((link) =>
-          outcome.projects.find((project) => project.id === link.targetId),
-        )
-        .filter((project) => project && !project.archivedAt)
-    : [];
-  const selectedTask =
-    journeyGuidance.action === "open_ready_task" ? journeyGuidance.task : null;
-  const secondaryCurrentTasks = currentMilestoneTasks.filter(
-    (task) => task.id !== selectedTask?.id,
-  );
-  const selectedTaskSupport = selectedTask
-    ? outcome.taskSupport.find(
-        (link) =>
-          link.targetId === selectedTask.id &&
-          link.goalMilestoneId === currentMilestone?.id,
-      )
-    : null;
-  const projectSupportIds = new Set(
-    outcome.projectSupport.map((link) => link.targetId),
-  );
-  const taskSupportIds = new Set(
-    outcome.taskSupport.map((link) => link.targetId),
-  );
+  const projectById = new Map(outcome.projects.map((p) => [p.id, p]));
+  const taskById = new Map(outcome.tasks.map((t) => [t.id, t]));
   const archived = outcome.goalStatus === "archived";
   const canManage = !archived && outcome.goalStatus !== "achieved";
-  const projectById = new Map(
-    outcome.projects.map((project) => [project.id, project]),
+  const guidance = deriveGoalJourneyGuidance(outcome, data.dependencyGraph);
+  const currentMilestone = activeMilestones.find((m) => m.status === "active");
+  const supportedTaskIds = new Set(outcome.taskSupport.map((l) => l.targetId));
+  const supportedProjectIds = new Set(
+    outcome.projectSupport.map((l) => l.targetId),
   );
-  const taskById = new Map(outcome.tasks.map((task) => [task.id, task]));
-  const eligibleProjects = outcome.projects
-    .filter(
-      (project) => !project.archivedAt && !projectSupportIds.has(project.id),
-    )
-    .map((project) => ({ id: project.id, title: project.title }));
-  const eligibleTasks = outcome.tasks
-    .filter((task) => !task.archivedAt && !taskSupportIds.has(task.id))
-    .map((task) => ({ id: task.id, title: task.title }));
+  const eligibleTasks = outcome.tasks.filter(
+    (t) => !t.archivedAt && !supportedTaskIds.has(t.id),
+  );
+  const eligibleProjects = outcome.projects.filter(
+    (p) => !p.archivedAt && !supportedProjectIds.has(p.id),
+  );
+  const directTasks = outcome.tasks.filter(
+    (t) =>
+      !t.archivedAt &&
+      !supportedTaskIds.has(t.id) &&
+      (!t.projectId ||
+        data.tasks.some((row) => row.id === t.id && row.goal_id === goalId)),
+  );
+  const currentTaskIds = new Set(
+    outcome.taskSupport
+      .filter((link) => link.goalMilestoneId === currentMilestone?.id)
+      .map((link) => link.targetId),
+  );
+  const workTasks = currentMilestone
+    ? outcome.tasks.filter(
+        (task) => currentTaskIds.has(task.id) && !task.archivedAt,
+      )
+    : !activeMilestones.length
+      ? directTasks
+      : [];
+  const executableTasks = workTasks.filter((task) => {
+    const raw = data.tasks.find((row) => row.id === task.id);
+    return (
+      raw &&
+      taskHasExecutableLifecycle(raw) &&
+      !data.scheduleSources.some((source) => source.task_id === task.id)
+    );
+  });
+  const taskGuidance = projectTaskGuidance({
+    archived: !canManage,
+    taskCount: workTasks.length,
+    readyTaskIds: executableTasks
+      .filter(
+        (task) =>
+          taskDependencyContext(data.dependencyGraph, task.id).availability ===
+          "READY",
+      )
+      .map((task) => task.id),
+    blockedCount: executableTasks.filter(
+      (task) =>
+        taskDependencyContext(data.dependencyGraph, task.id).availability ===
+        "BLOCKED",
+    ).length,
+  });
   const recentGoalHistory = outcome.achievementHistory;
   const recentMilestoneHistory = outcome.milestoneHistory;
+  const selectedArea = area === "verlauf" ? "verlauf" : "work";
+  const goalRow = data.goals.find((g) => g.id === goalId);
+  const areaName = data.areas.find(
+    (a) => a.id === goalRow?.area_id && !a.archived_at,
+  )?.name;
+  const today = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: data.timezone,
+  }).format(new Date());
   const latestAchievement = currentGoalAchievementEvent(
     outcome.achievementHistory,
     outcome.goalStatus,
   );
-  const effectiveAchievementAt =
-    latestAchievement?.occurredAt ?? outcome.achievedAt;
-  const goalRow = data.goals.find((goal) => goal.id === goalId);
-  const areaName = data.areas.find(
-    (area) => area.id === goalRow?.area_id && !area.archived_at,
-  )?.name;
-  const guidanceTitle = guidanceHeading(
-    journeyGuidance.action,
-    journeyGuidance.task?.title ?? null,
+  const criteria = (
+    <div className="grid gap-5">
+      {activeCriteria.map((criterion) => (
+        <CriterionRow
+          key={criterion.id}
+          criterion={criterion}
+          data={data}
+          goalId={goalId}
+          outcome={outcome}
+          milestoneTitles={milestoneTitles}
+          canManage={canManage}
+        />
+      ))}
+      {!activeCriteria.length && (
+        <p className="text-sm text-[var(--text-muted)]">
+          Noch keine Erfolgskriterien.
+        </p>
+      )}
+      {canManage && (
+        <ManagementDisclosure label="Erfolgskriterium hinzufügen">
+          <OperationForm
+            operation="criterion.create"
+            label="Erfolgskriterium erstellen"
+            closeOnSuccess
+          >
+            <Hidden name="goalId" value={goalId} />
+            <label className="grid gap-1 text-sm">
+              Titel
+              <input className={fieldClass} name="title" required />
+            </label>
+            <Choice
+              name="criterionType"
+              label="Erfolg prüfen als"
+              options={[
+                { id: "boolean", title: "Ja / Nein" },
+                { id: "numeric", title: "Messwert" },
+              ]}
+              required
+            />
+            <Choice
+              label="Zwischenziel (optional)"
+              name="goalMilestoneId"
+              options={milestoneOptions(outcome)}
+            />
+            <div className="grid gap-3 md:grid-cols-3">
+              <label className="grid gap-1 text-sm">
+                Einheit (Messwert)
+                <input className={fieldClass} name="unit" />
+              </label>
+              <label className="grid gap-1 text-sm">
+                Zielwert
+                <input
+                  className={fieldClass}
+                  name="target"
+                  type="number"
+                  step="any"
+                />
+              </label>
+              <Choice
+                name="direction"
+                label="Richtung"
+                options={[
+                  { id: "at_least", title: "mindestens" },
+                  { id: "at_most", title: "höchstens" },
+                  { id: "exact", title: "genau" },
+                ]}
+              />
+            </div>
+          </OperationForm>
+        </ManagementDisclosure>
+      )}
+    </div>
   );
+  const createTask = (milestone?: GoalMilestone) => {
+    if (!canManage) return null;
+    if (!milestone || milestone.status === "active")
+      return (
+        <Link
+          className={styles.action}
+          href={`/tasks/new?${new URLSearchParams({ goal: goalId, ...(milestone ? { goalMilestone: milestone.id } : {}) })}`}
+        >
+          + Task
+        </Link>
+      );
+    return (
+      <ManagementDialog
+        label={`Task zu „${milestone.title}“ hinzufügen`}
+        triggerText="+ Task"
+        triggerClassName={styles.action}
+        panelClassName="m-auto"
+      >
+        <p className="text-sm text-[var(--text-secondary)]">
+          Aktiviere dieses Zwischenziel, um hier eine Task anzulegen.
+        </p>
+        <OperationForm
+          operation="milestone.status"
+          label={
+            milestone.status === "achieved"
+              ? "Zwischenziel wieder aktivieren"
+              : "Zwischenziel aktivieren"
+          }
+          closeOnSuccess
+        >
+          <Hidden name="goalId" value={goalId} />
+          <Hidden name="milestoneId" value={milestone.id} />
+          <Hidden name="status" value="active" />
+          <Hidden name="expectedUpdatedAt" value={milestone.updatedAt} />
+        </OperationForm>
+      </ManagementDialog>
+    );
+  };
+  const renderTasks = (tasks: GoalOutcome["tasks"]) =>
+    tasks.length ? (
+      <ul className={styles.tasks}>
+        {orderCurrentGoalMilestoneTasks(
+          tasks,
+          data.dependencyGraph,
+          taskGuidance.kind === "single-ready"
+            ? taskGuidance.taskId
+            : undefined,
+        ).map((task) => {
+          const dependency = taskDependencyContext(
+            data.dependencyGraph,
+            task.id,
+          );
+          const raw = data.tasks.find((t) => t.id === task.id);
+          const closed = ["done", "completed", "canceled"].includes(
+            task.status,
+          );
+          const sourceOwned = data.scheduleSources.some(
+            (s) => s.task_id === task.id,
+          );
+          const isPrimary =
+            canManage &&
+            activeCriteria.length > 0 &&
+            taskGuidance.kind === "single-ready" &&
+            taskGuidance.taskId === task.id;
+          const calendarHref =
+            "/calendar?" +
+            new URLSearchParams({
+              task: task.id,
+              date: raw?.scheduled_start_at
+                ? new Intl.DateTimeFormat("sv-SE", {
+                    timeZone: data.timezone,
+                  }).format(new Date(raw.scheduled_start_at))
+                : task.plannedDate || today,
+              view: "week",
+            }).toString();
+          const showCalendar =
+            !archived &&
+            raw &&
+            !raw.archived_at &&
+            ((!sourceOwned && taskHasExecutableLifecycle(raw)) ||
+              Boolean(raw.scheduled_start_at));
+          return (
+            <li
+              key={task.id}
+              className={`${styles.task} ${closed ? styles.completed : ""}`}
+              data-goal-task={task.id}
+              data-task-availability={dependency.availability.toLowerCase()}
+              data-goal-primary-task={isPrimary ? "true" : undefined}
+            >
+              <div className="min-w-0">
+                <p className={styles.taskState}>
+                  {!closed &&
+                    `${({ planned: "Geplant", active: "Aktiv", inbox: "Inbox", waiting: "Wartet", someday: "Irgendwann" } as Record<string, string>)[task.status] ?? task.status} · `}
+                  {closed
+                    ? task.status === "canceled"
+                      ? "Abgebrochen"
+                      : "Erledigt"
+                    : dependency.availability === "BLOCKED"
+                      ? "Blockiert"
+                      : dependency.availability === "READY"
+                        ? "Bereit"
+                        : "Verfügbarkeit unbekannt"}
+                  {task.plannedDate
+                    ? ` · ${goalDateLabel(task.plannedDate)}`
+                    : ""}
+                  {task.dueAt
+                    ? ` · fällig ${goalDateLabel(task.dueAt.slice(0, 10))}`
+                    : ""}
+                </p>
+                <Link className={styles.taskTitle} href={`/tasks/${task.id}`}>
+                  {task.title}
+                </Link>
+                {!!dependency.blockers.length && (
+                  <p className={styles.blocker}>
+                    Wartet auf:{" "}
+                    {dependency.blockers.map((b, i) => (
+                      <span key={b.edgeId}>
+                        {i ? " · " : ""}
+                        {b.task ? (
+                          <Link
+                            href={`/tasks/${b.task.id}`}
+                            className="underline underline-offset-4"
+                          >
+                            {b.task.title}
+                          </Link>
+                        ) : (
+                          "Unbekannte Voraussetzung"
+                        )}
+                      </span>
+                    ))}
+                  </p>
+                )}
+              </div>
+              <div
+                className={styles.taskActions}
+                aria-label={`Aktionen: ${task.title}`}
+              >
+                {canManage && raw && !sourceOwned && (
+                  <TaskEditDialog
+                    data={data}
+                    taskId={task.id}
+                    triggerClassName={styles.action}
+                  />
+                )}
+                {showCalendar && (
+                  <Link
+                    className={styles.action}
+                    href={calendarHref}
+                    aria-label={`${task.title}: Im Calendar planen`}
+                  >
+                    Calendar
+                  </Link>
+                )}
+                <Link
+                  className={isPrimary ? styles.primary : styles.action}
+                  href={`/tasks/${task.id}`}
+                  aria-label={`${task.title}: Öffnen`}
+                >
+                  Öffnen
+                </Link>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    ) : (
+      <p className={styles.empty}>Noch keine Tasks.</p>
+    );
   return (
     <EntityWorkbenchShell
       kind="goal"
       title={outcome.goalTitle}
       headingInContent
     >
-      <GoalPlanningMode
-        initiallyOpen={
-          canManage && ["planung", "arbeit", "erfolg"].includes(area ?? "")
-        }
-        className="goal-composition flex min-w-0 flex-1 flex-col gap-4"
-      >
-        <header
-          className="grid min-w-0 gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-1)] p-4"
-          data-goal-default-surface
-        >
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <p className="text-sm font-semibold uppercase tracking-wider text-[var(--accent-blue)]">
-              {outcome.goalStatus === "achieved"
-                ? "Erreichtes Ergebnis"
-                : "Ziel"}
-            </p>
-            <span
-              className="rounded-full border border-[var(--border-default)] px-2 py-1 text-xs text-[var(--text-secondary)]"
-              data-goal-status
-            >
-              {goalStatusLabel(outcome.goalStatus)}
-            </span>
+      <div className={styles.composition} data-goal-detail-variant="B8">
+        <header className={styles.header} data-goal-default-surface>
+          <div className={styles.heading}>
+            <div className="min-w-0">
+              <p className={styles.eyebrow}>
+                GOAL ·{" "}
+                <span data-goal-status>
+                  {goalStatusLabel(outcome.goalStatus)}
+                </span>
+              </p>
+              <h1 className={styles.title}>{outcome.goalTitle}</h1>
+            </div>
             {canManage && (
-              <div className="ml-auto">
-                <GoalPlanningModeToggle />
-              </div>
+              <ManagementDialog
+                label="Ziel bearbeiten"
+                triggerText="Bearbeiten"
+                triggerClassName={styles.action}
+                panelClassName="m-auto"
+              >
+                {edit}
+              </ManagementDialog>
             )}
           </div>
-          <div className="goal-identity-content grid min-w-0 items-start gap-3">
-            <div className="grid min-w-0 gap-2">
-              <h1 className="break-words text-2xl font-semibold tracking-tight">
-                {outcome.goalTitle}
-              </h1>
-              {outcome.goalStatus === "achieved" && (
-                <div className="grid gap-2">
-                  <p className="text-base font-semibold text-[var(--accent-cyan)]">
-                    Ergebnis bestätigt
-                    {effectiveAchievementAt
-                      ? ` am ${goalDateLabel(effectiveAchievementAt)}`
-                      : ""}
-                    .
-                  </p>
-                  {(latestAchievement?.achievementNote ??
-                    outcome.achievementNote) && (
-                    <p className="max-w-4xl whitespace-pre-wrap text-base text-[var(--text-secondary)]">
-                      {latestAchievement?.achievementNote ??
-                        outcome.achievementNote}
-                    </p>
-                  )}
-                </div>
+          <div className={styles.outcome}>
+            <section aria-label="Gewünschtes Ergebnis">
+              <h2 className={styles.label}>Gewünschtes Ergebnis</h2>
+              <p className={styles.description}>
+                {outcome.goalDescription || "Noch kein Ergebnis beschrieben."}
+              </p>
+              {outcome.goalWhy && (
+                <p className={styles.why}>Warum · {outcome.goalWhy}</p>
               )}
-              {outcome.goalStatus !== "achieved" && (
-                <div className="grid gap-2">
-                  <p className="max-w-4xl whitespace-pre-wrap text-base text-[var(--text-secondary)] line-clamp-2">
-                    {outcome.goalDescription ||
-                      "Noch keine Beschreibung. Das Ziel bleibt bewusst leichtgewichtig."}
-                  </p>
-                  {outcome.goalWhy && (
-                    <p className="max-w-4xl whitespace-pre-wrap text-sm text-[var(--text-secondary)]">
-                      <span className="font-semibold">Warum:</span>{" "}
-                      {outcome.goalWhy}
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-            <dl className="goal-identity-meta flex flex-wrap gap-x-6 gap-y-2 border-t border-[var(--border-subtle)] pt-3 text-sm text-[var(--text-muted)]">
-              <div>
-                <dt className="text-xs uppercase tracking-wide text-[var(--text-faint)]">
-                  Horizont
-                </dt>
-                <dd>{goalHorizonLabel(outcome.goalHorizon)}</dd>
+            </section>
+            <section aria-label="Erfolgskriterien" data-goal-criteria-summary>
+              <div className={styles.heading}>
+                <h2 className={styles.label}>Erreicht, wenn …</h2>
+                <ManagementDialog
+                  label="Erfolgskriterien prüfen"
+                  triggerText={
+                    canManage
+                      ? activeCriteria.length
+                        ? "Prüfen / bearbeiten"
+                        : "Erfolg definieren"
+                      : "Ansehen"
+                  }
+                  triggerClassName={
+                    canManage && !activeCriteria.length
+                      ? styles.primary
+                      : styles.action
+                  }
+                  panelClassName="m-auto"
+                  initiallyOpen={canManage && area === "erfolg"}
+                >
+                  {criteria}
+                </ManagementDialog>
               </div>
-              {outcome.targetDate && (
-                <div>
-                  <dt className="text-xs uppercase tracking-wide text-[var(--text-faint)]">
-                    Zieltermin
-                  </dt>
-                  <dd>{goalDateLabel(outcome.targetDate)}</dd>
-                </div>
+              {activeCriteria.length ? (
+                <ul className={styles.criteria}>
+                  {activeCriteria.map((c) => (
+                    <li key={c.id}>
+                      <span>
+                        {c.title}
+                        {c.criterionType === "numeric"
+                          ? ` · ${criterionDescription(c)}`
+                          : ""}
+                        {c.goalMilestoneId ? (
+                          <small>
+                            {" "}
+                            · {milestoneTitles.get(c.goalMilestoneId)}
+                          </small>
+                        ) : null}
+                      </span>
+                      <span className={styles.criterionState}>
+                        {statusLabel(
+                          criterionEvaluationState(c, c.latestEvaluation),
+                        )}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className={styles.empty}>Noch keine Erfolgskriterien.</p>
               )}
-              {areaName && (
-                <div>
-                  <dt className="text-xs uppercase tracking-wide text-[var(--text-faint)]">
-                    Area
-                  </dt>
-                  <dd>{areaName}</dd>
-                </div>
-              )}
-            </dl>
+            </section>
           </div>
+          <p className={styles.meta}>
+            {[
+              areaName,
+              goalHorizonLabel(outcome.goalHorizon),
+              outcome.targetDate
+                ? `Ziel ${goalDateLabel(outcome.targetDate)}`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+          {latestAchievement && (
+            <p className={styles.meta}>
+              Ausdrücklich erreicht bestätigt · {eventDate(latestAchievement)}
+              {outcome.achievementNote ? ` · ${outcome.achievementNote}` : ""}
+            </p>
+          )}
           {archived && (
-            <p role="status" className="text-sm text-[var(--text-secondary)]">
-              Dieses archivierte Ziel ist schreibgeschützt. Verlauf und Belege
-              bleiben sichtbar.
+            <p role="status" className={styles.meta}>
+              Archiviertes Ziel · schreibgeschützt.
             </p>
           )}
         </header>
-
-        {canManage && (
-          <GoalPlanningOnly marker="goal-identity">
-            <div className="border-t border-[var(--border-subtle)] pt-3">
-              <ManagementDisclosure
-                label="Was willst du erreichen?"
-                initiallyOpen={!outcome.goalDescription?.trim()}
+        <section className={styles.work} aria-label="Goal Work" data-goal-work>
+          <div className={styles.workHead}>
+            <h2>Work</h2>
+            {canManage && (
+              <ManagementDialog
+                label="Zwischenziel hinzufügen"
+                triggerText="+ Zwischenziel"
+                triggerClassName={styles.action}
+                panelClassName="m-auto"
+                initiallyOpen={area === "planung" && !selectedStage}
               >
-                {edit}
-              </ManagementDisclosure>
-            </div>
-          </GoalPlanningOnly>
-        )}
-
-        <div
-          className="goal-workbench grid min-w-0 items-start gap-4"
-          data-goal-journey-layout
-          data-goal-workbench-frame
-        >
-          <section
-            id="goal-current-work"
-            aria-label="Aktuelle Arbeit"
-            data-goal-now
-            data-goal-current-workbench
-            className="grid min-w-0 content-start gap-3 rounded-xl border border-[var(--border-default)] bg-[var(--surface-2)] p-4"
-          >
-            <header className="grid gap-1 border-b border-[var(--border-subtle)] pb-3">
-              <h2 className="text-xl font-semibold">Aktuelle Arbeit</h2>
-              <p className="text-sm text-[var(--text-muted)]">
-                Dein nächster Schritt zum angestrebten Ergebnis.
-              </p>
-            </header>
-            <div
-              className="grid min-w-0 gap-1 border-b border-[var(--border-subtle)] pb-3"
-              data-goal-current-result
-            >
-              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--accent-cyan)]">
-                Aktuell · Zwischenziel
-              </p>
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <h3 className="break-words text-lg font-semibold">
-                    {currentMilestone?.title ??
-                      "Noch kein aktuelles Zwischenziel"}
-                  </h3>
-                  {currentMilestone?.description && (
-                    <p className="mt-1 max-w-[70ch] whitespace-pre-wrap text-sm leading-5 text-[var(--text-secondary)]">
-                      {currentMilestone.description}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div
-              className="grid min-w-0 content-start gap-3 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-3)] p-3"
-              data-goal-next-action
-              data-goal-current-task={selectedTask?.id}
-              data-goal-current-task-state={selectedTask ? "ready" : undefined}
-              data-task-availability={selectedTask ? "ready" : undefined}
-            >
-              <div className="grid gap-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
-                  Als Nächstes
-                </p>
-                <h3 className="max-w-4xl break-words text-xl font-semibold tracking-tight">
-                  {guidanceTitle}
-                </h3>
-                <p
-                  className="max-w-4xl text-sm leading-5 text-[var(--text-secondary)]"
-                  data-goal-journey-action={journeyGuidance.action}
-                  data-goal-next-step-state={
-                    journeyGuidance.action === "resolve_blocker"
-                      ? "blocked"
-                      : journeyGuidance.action === "open_ready_task" ||
-                          journeyGuidance.action === "review_milestone" ||
-                          (journeyGuidance.action === "review_goal" &&
-                            outcome.summary.readyToAchieve)
-                        ? "ready"
-                        : "planning"
-                  }
+                <OperationForm
+                  operation="milestone.create"
+                  label="Zwischenziel erstellen"
+                  closeOnSuccess
                 >
-                  {journeyGuidance.action === "review_goal" &&
-                  !outcome.summary.readyToAchieve
-                    ? "Prüfe deine Erfolgskriterien und plane weiter, falls noch etwas offen ist."
-                    : journeyGuidance.reason}
-                </p>
-                {journeyGuidance.blockers.length > 0 && (
-                  <ul
-                    className="grid gap-1 text-sm text-[var(--accent-orange)]"
-                    aria-label="Offene Aufgaben-Voraussetzungen"
-                  >
-                    {journeyGuidance.blockers.map((blocker) => (
-                      <li key={blocker.id ?? blocker.title}>
-                        {blocker.id ? (
-                          <Link
-                            className="underline underline-offset-4"
-                            href={`/tasks/${blocker.id}`}
-                          >
-                            {blocker.title}
-                          </Link>
-                        ) : (
-                          blocker.title
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {journeyGuidance.action === "review_goal" && (
-                  <GoalPlanningOnly when="closed" marker="final-review-summary">
-                    <section
-                      aria-label="Erreicht, wenn …"
-                      data-goal-final-criteria
-                      className="grid gap-2 border-t border-[var(--border-subtle)] pt-4"
-                    >
-                      <h4 className="text-sm font-semibold">
-                        Erreicht, wenn …
-                      </h4>
-                      {activeCriteria.length > 0 ? (
-                        <ul className="grid gap-2 text-sm">
-                          {activeCriteria.map((criterion) => (
-                            <li
-                              key={criterion.id}
-                              className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1"
-                            >
-                              <span className="text-[var(--text-secondary)]">
-                                {criterion.title}
-                              </span>
-                              <span className="text-xs text-[var(--text-muted)]">
-                                {statusLabel(
-                                  criterionEvaluationState(
-                                    criterion,
-                                    criterion.latestEvaluation,
-                                  ),
-                                )}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="text-sm text-[var(--text-muted)]">
-                          Lege zuerst ein Erfolgskriterium fest.
-                        </p>
-                      )}
-                    </section>
-                  </GoalPlanningOnly>
-                )}
-              </div>
-
-              {journeyGuidance.action === "review_milestone" &&
-                currentMilestone &&
-                canManage && (
-                  <div className="grid justify-items-start gap-2">
-                    <OperationForm
-                      operation="milestone.status"
-                      label="Zwischenziel erreicht"
-                      confirmMessage="Hast du das Zwischenziel geprüft und möchtest es ausdrücklich als erreicht bestätigen?"
-                      submitClassName="min-h-12 w-fit rounded-lg bg-[var(--accent-cyan)] px-5 py-3 text-sm font-semibold text-[var(--bg-app)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
-                    >
-                      <Hidden name="goalId" value={goalId} />
-                      <Hidden name="milestoneId" value={currentMilestone.id} />
-                      <Hidden name="status" value="achieved" />
-                      <Hidden
-                        name="expectedUpdatedAt"
-                        value={currentMilestone.updatedAt}
-                      />
-                      <label className="grid max-w-xl gap-1 text-sm">
-                        Review-Notiz (optional)
-                        <input className={fieldClass} name="note" />
-                      </label>
-                    </OperationForm>
-                    <Link
-                      href={`/tasks/new?goal=${goalId}&goalMilestone=${currentMilestone.id}`}
-                      className="min-h-10 w-fit py-2 text-sm text-[var(--text-secondary)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
-                    >
-                      Weitere Aufgabe planen
-                    </Link>
-                  </div>
-                )}
-              {journeyGuidance.action === "review_goal" &&
-                outcome.summary.readyToAchieve &&
-                canManage && (
-                  <OperationForm
-                    operation="achieve"
-                    label="Ziel erreicht bestätigen"
-                    confirmMessage="Hast du das Ziel geprüft und möchtest es ausdrücklich als erreicht bestätigen?"
-                    submitClassName="min-h-12 w-fit rounded-lg bg-[var(--accent-cyan)] px-5 py-3 text-sm font-semibold text-[var(--bg-app)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
-                  >
-                    <Hidden name="goalId" value={goalId} />
-                    <Hidden
-                      name="expectedUpdatedAt"
-                      value={outcome.updatedAt}
+                  <Hidden name="goalId" value={goalId} />
+                  <Hidden name="status" value="planned" />
+                  <Hidden
+                    name="sortOrder"
+                    value={String(outcome.milestones.length)}
+                  />
+                  <label className="grid gap-1 text-sm">
+                    Titel
+                    <input className={fieldClass} name="title" required />
+                  </label>
+                  <label className="grid gap-1 text-sm">
+                    Beschreibung
+                    <textarea
+                      className={fieldClass}
+                      name="description"
+                      rows={3}
                     />
-                    <label className="grid max-w-xl gap-1 text-sm">
-                      Erfolgsnotiz (optional)
-                      <input className={fieldClass} name="note" />
-                    </label>
-                    <InitialEvidenceFields
-                      data={data}
-                      outcome={outcome}
-                      allowed={[
-                        "project",
-                        "project_milestone",
-                        "task",
-                        "resource",
-                        "review_record",
-                      ]}
+                  </label>
+                  <label className="grid gap-1 text-sm">
+                    Zieldatum
+                    <input
+                      className={fieldClass}
+                      name="targetDate"
+                      type="date"
                     />
-                  </OperationForm>
-                )}
-              {journeyGuidance.action === "review_goal" &&
-                !outcome.summary.readyToAchieve &&
-                canManage && (
-                  <Link
-                    className="inline-flex min-h-12 w-fit items-center rounded-lg bg-[var(--accent-cyan)] px-5 py-3 text-sm font-semibold text-[var(--bg-app)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
-                    href={goalAreaHref(goalId, "planung")}
-                  >
-                    Weiter planen
-                  </Link>
-                )}
-              {journeyGuidance.action === "open_ready_task" &&
-                journeyGuidance.task && (
-                  <Link
-                    className="inline-flex min-h-12 w-fit items-center rounded-lg bg-[var(--accent-cyan)] px-5 py-3 text-sm font-semibold text-[var(--bg-app)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
-                    href={`/tasks/${journeyGuidance.task.id}`}
-                  >
-                    Aufgabe öffnen
-                  </Link>
-                )}
-              {journeyGuidance.action === "resolve_blocker" &&
-                journeyGuidance.task && (
-                  <Link
-                    className="inline-flex min-h-12 w-fit items-center rounded-lg bg-[var(--accent-cyan)] px-5 py-3 text-sm font-semibold text-[var(--bg-app)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
-                    href={`/tasks/${journeyGuidance.blockers[0]?.id ?? journeyGuidance.task.id}`}
-                  >
-                    Voraussetzung öffnen
-                  </Link>
-                )}
-              {journeyGuidance.action === "create_next_task" &&
-                currentMilestone &&
-                canManage && (
-                  <Link
-                    className="inline-flex min-h-12 w-fit items-center rounded-lg bg-[var(--accent-cyan)] px-5 py-3 text-sm font-semibold text-[var(--bg-app)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
-                    href={`/tasks/new?goal=${goalId}&goalMilestone=${currentMilestone.id}`}
-                  >
-                    Nächste Aufgabe planen
-                  </Link>
-                )}
-              {[
-                "define_outcome",
-                "create_first_milestone",
-                "select_current_milestone",
-              ].includes(journeyGuidance.action) &&
-                canManage && (
-                  <Link
-                    className="inline-flex min-h-12 w-fit items-center rounded-lg bg-[var(--accent-cyan)] px-5 py-3 text-sm font-semibold text-[var(--bg-app)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
-                    href={goalAreaHref(goalId, "planung")}
-                  >
-                    {journeyGuidance.action === "define_outcome"
-                      ? "Erfolgskriterium festlegen"
-                      : journeyGuidance.action === "create_first_milestone"
-                        ? "Zwischenziel planen"
-                        : "Zwischenziel auswählen"}
-                  </Link>
-                )}
-              {journeyGuidance.action === "achieved" && (
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                  <OperationForm
-                    operation="reopen"
-                    label="Ziel wieder öffnen"
-                    confirmMessage="Möchtest du das erreichte Ziel wieder öffnen und weiter daran arbeiten?"
-                    submitClassName="min-h-10 w-fit rounded-lg border border-[var(--border-default)] px-4 py-2 text-sm font-semibold text-[var(--text-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
-                  >
-                    <Hidden name="goalId" value={goalId} />
-                  </OperationForm>
-                </div>
-              )}
-              {journeyGuidance.action === "archived" && (
-                <p role="status" className="text-sm text-[var(--text-muted)]">
-                  Archivierte Ziele sind schreibgeschützt.
-                </p>
-              )}
-              {canManage && selectedTaskSupport && (
-                <GoalPlanningOnly marker="selected-task-association">
-                  <ManagementDisclosure label="Aufgabenzuordnung verwalten">
-                    <OperationForm
-                      operation="support.task.remove"
-                      label="Zwischenziel-Zuordnung lösen"
-                      closeOnSuccess
-                    >
-                      <Hidden name="goalId" value={goalId} />
-                      <Hidden name="supportId" value={selectedTaskSupport.id} />
-                    </OperationForm>
-                  </ManagementDisclosure>
-                </GoalPlanningOnly>
-              )}
-            </div>
-            {currentMilestone && canManage && (
-              <GoalPlanningOnly marker="current-milestone">
-                <div className="border-t border-[var(--border-subtle)] pt-3">
-                  <ManagementDisclosure
-                    label="Passt bereits etwas dazu?"
-                    initiallyOpen={
-                      journeyGuidance.action === "create_next_task"
-                    }
-                  >
-                    <div
-                      className="grid gap-3"
-                      data-goal-current-planning-controls
-                    >
-                      <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
-                        {journeyGuidance.action !== "create_next_task" && (
-                          <Link
-                            href={`/tasks/new?goal=${goalId}&goalMilestone=${currentMilestone.id}`}
-                            className="text-[var(--accent-cyan)] underline underline-offset-4"
-                          >
-                            Aufgabe zum Zwischenziel hinzufügen
-                          </Link>
-                        )}
-                        <Link
-                          href={`/projects/new?goal=${goalId}&goalMilestone=${currentMilestone.id}`}
-                          className="text-[var(--accent-cyan)] underline underline-offset-4"
-                        >
-                          Projekt hinzufügen
-                        </Link>
-                      </div>
-                      {eligibleTasks.length > 0 && (
-                        <ManagementDisclosure label="Aufgabe zuordnen">
-                          <OperationForm
-                            operation="support.task.add"
-                            label="Aufgabe verknüpfen"
-                            closeOnSuccess
-                          >
-                            <Hidden name="goalId" value={goalId} />
-                            <Hidden
-                              name="goalMilestoneId"
-                              value={currentMilestone.id}
-                            />
-                            <Choice
-                              label="Aufgabe"
-                              name="taskId"
-                              options={eligibleTasks}
-                              required
-                            />
-                          </OperationForm>
-                        </ManagementDisclosure>
-                      )}
-                      {eligibleProjects.length > 0 && (
-                        <ManagementDisclosure label="Projektkontext verknüpfen">
-                          <OperationForm
-                            operation="support.project.add"
-                            label="Projekt verknüpfen"
-                            closeOnSuccess
-                          >
-                            <Hidden name="goalId" value={goalId} />
-                            <Hidden
-                              name="goalMilestoneId"
-                              value={currentMilestone.id}
-                            />
-                            <Choice
-                              label="Projekt"
-                              name="projectId"
-                              options={eligibleProjects}
-                              required
-                            />
-                          </OperationForm>
-                        </ManagementDisclosure>
-                      )}
-                    </div>
-                  </ManagementDisclosure>
-                </div>
-              </GoalPlanningOnly>
+                  </label>
+                </OperationForm>
+              </ManagementDialog>
             )}
-
-            {secondaryCurrentTasks.length > 0 ? (
+          </div>
+          {activeMilestones.map((milestone, index) => {
+            const links = outcome.taskSupport.filter(
+              (l) => l.goalMilestoneId === milestone.id,
+            );
+            const ids = new Set(links.map((l) => l.targetId));
+            const tasks = outcome.tasks.filter(
+              (t) => !t.archivedAt && ids.has(t.id),
+            );
+            const projects = outcome.projectSupport.filter(
+              (l) => l.goalMilestoneId === milestone.id,
+            );
+            const stageCriteria = activeCriteria.filter(
+              (c) => c.goalMilestoneId === milestone.id,
+            );
+            return (
               <section
-                className="grid gap-2"
-                aria-label="Weitere Arbeit am Zwischenziel"
+                key={milestone.id}
+                aria-label={`Zwischenziel: ${milestone.title}`}
+                className={styles.milestone}
+                data-goal-work-milestone={milestone.id}
+                data-current={
+                  milestone.status === "active" ? "true" : undefined
+                }
               >
-                <h3 className="text-sm font-semibold text-[var(--text-secondary)]">
-                  Weitere Arbeit am Zwischenziel
-                </h3>
-                <ul
-                  className="grid gap-0"
-                  aria-label="Weitere Aufgaben am Zwischenziel"
-                >
-                  {secondaryCurrentTasks.map((task) => {
-                    if (!task) return null;
-                    const dependency = taskDependencyContext(
-                      data.dependencyGraph,
-                      task.id,
-                    );
-                    const taskStatus =
-                      task.status === "done" || task.status === "completed"
-                        ? "abgeschlossen"
-                        : task.status === "active"
-                          ? "in Arbeit"
-                          : task.status === "canceled"
-                            ? "abgebrochen"
-                            : task.status === "waiting"
-                              ? "wartet"
-                              : task.status === "inbox"
-                                ? "Inbox"
-                                : task.status === "someday"
-                                  ? "irgendwann"
-                                  : "geplant";
-                    const taskCompleted = [
-                      "done",
-                      "completed",
-                      "canceled",
-                    ].includes(task.status);
-                    const taskSupport = outcome.taskSupport.find(
-                      (link) =>
-                        link.targetId === task.id &&
-                        link.goalMilestoneId === currentMilestone?.id,
-                    );
-                    return (
-                      <li
-                        key={task.id}
-                        className={`grid gap-1 border-t border-[var(--border-subtle)] py-2 ${taskCompleted ? "opacity-60" : ""}`}
-                        data-goal-current-task={task.id}
-                        data-task-availability={dependency.availability.toLowerCase()}
-                        data-goal-current-task-state={
-                          taskCompleted
-                            ? "completed"
-                            : dependency.availability.toLowerCase()
+                <div className={styles.band}>
+                  <div className="min-w-0">
+                    <p className={styles.eyebrow}>
+                      {milestoneStatusLabel(milestone.status)}
+                      {milestone.targetDate
+                        ? ` · ${goalDateLabel(milestone.targetDate)}`
+                        : ""}
+                    </p>
+                    <h3>{milestone.title}</h3>
+                    {milestone.description && (
+                      <p className={styles.milestoneDescription}>
+                        {milestone.description}
+                      </p>
+                    )}
+                  </div>
+                  <div className={styles.groupActions}>
+                    {createTask(milestone)}
+                    {canManage && (
+                      <ManagementDialog
+                        label={`Zwischenziel verwalten: ${milestone.title}`}
+                        triggerText="Weitere Optionen"
+                        triggerClassName={styles.action}
+                        panelClassName="m-auto"
+                        initiallyOpen={
+                          area === "planung" && selectedStage === milestone.id
                         }
                       >
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                          <Link
-                            href={`/tasks/${task.id}`}
-                            className="break-words text-sm font-semibold text-[var(--text-secondary)] underline-offset-4 hover:underline focus-visible:underline"
-                          >
-                            {task.title}
-                          </Link>
-                          <span
-                            className={`text-xs ${dependency.availability === "BLOCKED" ? "text-[var(--accent-orange)]" : "text-[var(--text-muted)]"}`}
-                          >
-                            {taskCompleted
-                              ? "Abgeschlossen"
-                              : dependency.availability === "BLOCKED"
-                                ? "Blockiert"
-                                : dependency.availability === "READY"
-                                  ? "Keine offene Voraussetzung"
-                                  : "Verfügbarkeit unbekannt"}
-                          </span>
-                        </div>
-                        <p className="text-sm text-[var(--text-muted)]">
-                          {taskStatus}
-                          {task.plannedDate
-                            ? ` · geplant ${goalDateLabel(task.plannedDate)}`
-                            : ""}
-                          {task.dueAt
-                            ? ` · fällig ${new Date(task.dueAt).toLocaleDateString("de-DE")}`
-                            : ""}
-                        </p>
-                        {dependency.blockers.length > 0 && (
-                          <p className="text-sm text-[var(--accent-orange)]">
-                            Wartet auf:{" "}
-                            {dependency.blockers
-                              .map((item) =>
-                                item.task ? (
-                                  <Link
-                                    key={item.edgeId}
-                                    className="underline underline-offset-4"
-                                    href={`/tasks/${item.task.id}`}
-                                  >
-                                    {item.task.title}
-                                  </Link>
-                                ) : (
-                                  <span key={item.edgeId}>
-                                    unbekannte Aufgabe
-                                  </span>
-                                ),
-                              )
-                              .reduce<ReactNode[]>((items, link, index) => {
-                                if (index > 0) items.push(", ");
-                                items.push(link);
-                                return items;
-                              }, [])}
-                          </p>
-                        )}
-                        {canManage && taskSupport && (
-                          <GoalPlanningOnly marker="current-task-association">
-                            <ManagementDisclosure label="Aufgabenzuordnung verwalten">
-                              <OperationForm
-                                operation="support.task.remove"
-                                label="Zwischenziel-Zuordnung lösen"
-                                closeOnSuccess
-                              >
-                                <Hidden name="goalId" value={goalId} />
-                                <Hidden
-                                  name="supportId"
-                                  value={taskSupport.id}
-                                />
-                              </OperationForm>
-                            </ManagementDisclosure>
-                          </GoalPlanningOnly>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </section>
-            ) : selectedTask ? null : currentMilestone ? (
-              <p className="text-sm text-[var(--text-muted)]">
-                Noch keine Aufgaben.
-              </p>
-            ) : (
-              <p className="text-sm text-[var(--text-muted)]">
-                Noch kein Zwischenziel ausgewählt.
-              </p>
-            )}
-
-            {currentMilestoneProjects.length > 0 && (
-              <section
-                className="grid gap-2 border-t border-[var(--border-subtle)] pt-4"
-                aria-label="Projektkontext des aktuellen Zwischenziels"
-              >
-                <h3 className="text-sm font-semibold">Projektkontext</h3>
-                <ul className="grid gap-2">
-                  {currentMilestoneProjects.map((project) => {
-                    if (!project) return null;
-                    const projectSupport = outcome.projectSupport.find(
-                      (link) =>
-                        link.targetId === project.id &&
-                        link.goalMilestoneId === currentMilestone?.id,
-                    );
-                    return (
-                      <li key={project.id} className="grid gap-2 text-sm">
-                        <div>
-                          <Link
-                            href={`/projects/${project.id}`}
-                            className="text-[var(--accent-cyan)] underline underline-offset-4"
-                          >
-                            {project.title}
-                          </Link>
-                          {project.nextStep && (
-                            <span className="text-[var(--text-muted)]">
-                              {" "}
-                              · {project.nextStep}
-                            </span>
-                          )}
-                        </div>
-                        {canManage && projectSupport && (
-                          <GoalPlanningOnly marker="current-project-association">
-                            <ManagementDisclosure label="Projektzuordnung verwalten">
-                              <OperationForm
-                                operation="support.project.remove"
-                                label="Projektkontext lösen"
-                                closeOnSuccess
-                              >
-                                <Hidden name="goalId" value={goalId} />
-                                <Hidden
-                                  name="supportId"
-                                  value={projectSupport.id}
-                                />
-                              </OperationForm>
-                            </ManagementDisclosure>
-                          </GoalPlanningOnly>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </section>
-            )}
-
-            {outcome.tasks.some(
-              (task) =>
-                !task.archivedAt &&
-                !task.projectId &&
-                !outcome.taskSupport.some((link) => link.targetId === task.id),
-            ) && (
-              <GoalPlanningOnly marker="unassigned-tasks">
-                <details className="border-t border-[var(--border-subtle)] pt-3">
-                  <summary className="min-h-10 cursor-pointer py-2 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]">
-                    Direkt dem Ziel zugeordnete Aufgaben
-                  </summary>
-                  <p className="mb-2 text-sm text-[var(--text-muted)]">
-                    Diese Aufgaben gehören nicht zum aktuellen Zwischenziel.
-                  </p>
-                  <ul className="grid gap-2">
-                    {outcome.tasks
-                      .filter(
-                        (task) =>
-                          !task.archivedAt &&
-                          !task.projectId &&
-                          !outcome.taskSupport.some(
-                            (link) => link.targetId === task.id,
-                          ),
-                      )
-                      .map((task) => (
-                        <li key={task.id}>
-                          <Link
-                            href={`/tasks/${task.id}`}
-                            className="text-sm text-[var(--accent-cyan)] underline underline-offset-4"
-                          >
-                            {task.title}
-                          </Link>
-                        </li>
-                      ))}
-                  </ul>
-                </details>
-              </GoalPlanningOnly>
-            )}
-          </section>
-
-          <div
-            className="grid min-w-0 content-start gap-4"
-            data-goal-context-rail
-          >
-            <section
-              aria-label="Dein Weg zum Ergebnis"
-              className="grid min-w-0 content-start gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-1)] p-4"
-              data-goal-journey
-            >
-              <h2 className="text-lg font-semibold text-[var(--text-secondary)]">
-                Dein Weg zum Ergebnis
-              </h2>
-              <MilestoneProgression
-                goalId={goalId}
-                outcome={outcome}
-                selectedId={selectedStage ?? currentMilestone?.id ?? null}
-                canManage={canManage}
-              />
-              {canManage && (
-                <GoalPlanningOnly marker="journey">
-                  <div
-                    className="grid gap-3 border-t border-[var(--border-subtle)] pt-4"
-                    data-goal-journey-planning-controls
-                  >
-                    <ManagementDisclosure
-                      label="Was soll als Nächstes wahr sein?"
-                      initiallyOpen={
-                        journeyGuidance.action === "create_first_milestone" ||
-                        journeyGuidance.action === "select_current_milestone"
-                      }
-                    >
-                      <OperationForm
-                        operation="milestone.create"
-                        label="Zwischenziel erstellen"
-                        closeOnSuccess
-                      >
-                        <Hidden name="goalId" value={goalId} />
-                        <label className="grid gap-1 text-sm">
-                          Titel
-                          <input className={fieldClass} name="title" required />
-                        </label>
-                        <label className="grid gap-1 text-sm">
-                          Beschreibung
-                          <textarea
-                            className={fieldClass}
-                            name="description"
-                            rows={3}
-                          />
-                        </label>
-                        <label className="grid gap-1 text-sm">
-                          Zieldatum
-                          <input
-                            className={fieldClass}
-                            name="targetDate"
-                            type="date"
-                          />
-                        </label>
-                        <p className="text-sm text-[var(--text-muted)]">
-                          Neue Zwischenziele starten geplant. Lege danach
-                          ausdrücklich fest, woran du jetzt arbeitest.
-                        </p>
-                        <Hidden name="status" value="planned" />
-                        <Hidden
-                          name="sortOrder"
-                          value={String(outcome.milestones.length)}
+                        <MilestoneCard
+                          data={data}
+                          goalId={goalId}
+                          milestone={milestone}
+                          outcome={outcome}
+                          projectById={projectById}
+                          taskById={taskById}
+                          canManage={canManage}
+                          index={index}
+                          activeCount={activeMilestones.length}
                         />
-                      </OperationForm>
-                    </ManagementDisclosure>
-                  </div>
-                </GoalPlanningOnly>
-              )}
-            </section>
-            <section
-              aria-label="Ziel prüfen"
-              data-goal-review-preview
-              className="grid min-w-0 content-start gap-1 border-t border-[var(--border-subtle)] px-4 py-3"
-            >
-              <h2 className="text-sm font-semibold text-[var(--text-secondary)]">
-                Ziel prüfen
-              </h2>
-              <p className="text-sm leading-5 text-[var(--text-muted)]">
-                {outcome.goalStatus === "achieved"
-                  ? "Du hast das Ergebnis bewusst bestätigt. Deine Entscheidung bleibt im Verlauf erhalten."
-                  : journeyGuidance.action === "review_goal"
-                    ? "Jetzt prüfst du in der aktuellen Arbeit, ob dein Ziel erreicht ist. Maßgeblich sind deine Erfolgskriterien."
-                    : "Am Ende prüfst du anhand deiner Erfolgskriterien, ob dein Ziel erreicht ist. Du bestätigst das Ergebnis bewusst."}
-              </p>
-              <GoalPlanningOnly marker="definition-of-done">
-                <section
-                  className="grid gap-3 border-t border-[var(--border-subtle)] pt-4 text-sm text-[var(--text-secondary)]"
-                  aria-label="Erfolgskriterien planen"
-                  data-goal-definition-of-done
-                >
-                  <ManagementDisclosure
-                    label="Woran erkennst du, dass es geschafft ist?"
-                    initiallyOpen={journeyGuidance.action === "define_outcome"}
-                  >
-                    <div data-goal-definition-of-done-controls>
-                      <h3 className="mb-3 font-semibold">Erreicht, wenn …</h3>
-                      {activeCriteria.length > 0 ? (
-                        <div className="grid gap-5">
-                          {activeCriteria.map((criterion) => (
-                            <CriterionRow
-                              key={criterion.id}
-                              criterion={criterion}
-                              data={data}
-                              goalId={goalId}
-                              outcome={outcome}
-                              milestoneTitles={milestoneTitles}
-                              canManage={canManage}
-                            />
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="mb-3 text-[var(--text-muted)]">
-                          Lege fest, woran du das erreichte Ziel erkennen wirst.
-                        </p>
-                      )}
-                      {canManage && (
-                        <ManagementDisclosure
-                          label={
-                            activeCriteria.length === 0
-                              ? "Erfolgskriterium festlegen"
-                              : "Erfolgskriterium hinzufügen"
-                          }
-                        >
-                          <OperationForm
-                            operation="criterion.create"
-                            label="Erfolgskriterium erstellen"
-                            closeOnSuccess
-                          >
-                            <Hidden name="goalId" value={goalId} />
-                            <label className="grid gap-1 text-sm">
-                              Titel
-                              <input
-                                className={fieldClass}
-                                name="title"
+                        {!!eligibleTasks.length && (
+                          <ManagementDisclosure label="Bestehende Task zuordnen">
+                            <OperationForm
+                              operation="support.task.add"
+                              label="Aufgabe verknüpfen"
+                              closeOnSuccess
+                            >
+                              <Hidden name="goalId" value={goalId} />
+                              <Hidden
+                                name="goalMilestoneId"
+                                value={milestone.id}
+                              />
+                              <Choice
+                                label="Aufgabe"
+                                name="taskId"
+                                options={eligibleTasks}
                                 required
                               />
-                            </label>
-                            <Choice
-                              name="criterionType"
-                              label="Erfolg prüfen als"
-                              options={[
-                                { id: "boolean", title: "Ja / Nein" },
-                                { id: "numeric", title: "Messwert" },
-                              ]}
-                              required
-                            />
-                            <Choice
-                              label="Zwischenziel (optional)"
-                              name="goalMilestoneId"
-                              options={milestoneOptions(outcome)}
-                            />
-                            <div className="grid gap-3 md:grid-cols-3">
-                              <label className="grid gap-1 text-sm">
-                                Einheit (Messwert)
-                                <input
-                                  className={fieldClass}
-                                  name="unit"
-                                  placeholder="z. B. Stunden"
-                                />
-                              </label>
-                              <label className="grid gap-1 text-sm">
-                                Zielwert
-                                <input
-                                  className={fieldClass}
-                                  name="target"
-                                  type="number"
-                                  step="any"
-                                />
-                              </label>
-                              <Choice
-                                name="direction"
-                                label="Richtung"
-                                options={[
-                                  { id: "at_least", title: "mindestens" },
-                                  { id: "at_most", title: "höchstens" },
-                                  { id: "exact", title: "genau" },
-                                ]}
+                            </OperationForm>
+                          </ManagementDisclosure>
+                        )}
+                        {!!eligibleProjects.length && (
+                          <ManagementDisclosure label="Projektkontext verknüpfen">
+                            <OperationForm
+                              operation="support.project.add"
+                              label="Projekt verknüpfen"
+                              closeOnSuccess
+                            >
+                              <Hidden name="goalId" value={goalId} />
+                              <Hidden
+                                name="goalMilestoneId"
+                                value={milestone.id}
                               />
-                            </div>
-                          </OperationForm>
-                        </ManagementDisclosure>
-                      )}
-                    </div>
-                  </ManagementDisclosure>
-                </section>
-              </GoalPlanningOnly>
-            </section>
-          </div>
-          <footer
-            data-goal-workbench-footer
-            className="col-span-full flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-[var(--border-subtle)] pt-3"
-          >
-            <Link
-              href={`${goalAreaHref(goalId, "verlauf")}#verlauf-belege`}
-              className="w-fit text-sm text-[var(--text-muted)] underline underline-offset-4 hover:text-[var(--text-secondary)]"
-            >
-              Verlauf ansehen
-            </Link>
-            {canManage && (
-              <div
-                aria-label="Zielverwaltung"
-                className="flex flex-wrap items-center gap-x-4 gap-y-2"
-              >
-                <ManagementDisclosure label="Weitere Optionen">
-                  <div className="grid gap-4">
-                    <ManagementDisclosure label="Ziel archivieren">
-                      <OperationForm
-                        operation="goal.archive"
-                        label="Ziel archivieren"
-                        closeOnSuccess
-                      >
-                        <Hidden name="goalId" value={goalId} />
-                      </OperationForm>
-                    </ManagementDisclosure>
+                              <Choice
+                                label="Projekt"
+                                name="projectId"
+                                options={eligibleProjects}
+                                required
+                              />
+                            </OperationForm>
+                          </ManagementDisclosure>
+                        )}
+                        {!!links.length && (
+                          <ManagementDisclosure label="Task-Zuordnungen verwalten">
+                            {links.map((l) => (
+                              <OperationForm
+                                key={l.id}
+                                operation="support.task.remove"
+                                label={`Zuordnung lösen: ${l.targetTitle}`}
+                                closeOnSuccess
+                              >
+                                <Hidden name="goalId" value={goalId} />
+                                <Hidden name="supportId" value={l.id} />
+                              </OperationForm>
+                            ))}
+                          </ManagementDisclosure>
+                        )}
+                        {!!projects.length && (
+                          <ManagementDisclosure label="Projektzuordnungen verwalten">
+                            {projects.map((l) => (
+                              <OperationForm
+                                key={l.id}
+                                operation="support.project.remove"
+                                label={`Projektkontext lösen: ${l.targetTitle}`}
+                                closeOnSuccess
+                              >
+                                <Hidden name="goalId" value={goalId} />
+                                <Hidden name="supportId" value={l.id} />
+                              </OperationForm>
+                            ))}
+                          </ManagementDisclosure>
+                        )}
+                      </ManagementDialog>
+                    )}
                   </div>
-                </ManagementDisclosure>
+                </div>
+                {!!stageCriteria.length && (
+                  <p className={styles.context}>
+                    Erreicht, wenn:{" "}
+                    {stageCriteria
+                      .map(
+                        (c) =>
+                          `${c.title} (${statusLabel(criterionEvaluationState(c, c.latestEvaluation))})`,
+                      )
+                      .join(" · ")}
+                  </p>
+                )}
+                {renderTasks(tasks)}
+                {!!projects.length && (
+                  <p className={styles.context}>
+                    Projektkontext ·{" "}
+                    {projects.map((p, i) => (
+                      <span key={p.id}>
+                        {i ? " · " : ""}
+                        <Link
+                          href={`/projects/${p.targetId}`}
+                          className="underline underline-offset-4"
+                        >
+                          {p.targetTitle}
+                        </Link>
+                      </span>
+                    ))}
+                  </p>
+                )}
+                {canManage &&
+                  guidance.action === "review_milestone" &&
+                  milestone.id === currentMilestone?.id && (
+                    <div className={styles.review}>
+                      <ManagementDialog
+                        label="Zwischenziel prüfen"
+                        triggerText="Zwischenziel prüfen"
+                        triggerClassName={styles.primary}
+                        panelClassName="m-auto"
+                      >
+                        <p className="text-sm text-[var(--text-secondary)]">
+                          Ist „{milestone.title}“ erreicht? Task-Abschlüsse
+                          bestätigen dieses Ergebnis nicht automatisch.
+                        </p>
+                        <OperationForm
+                          operation="milestone.status"
+                          label="Zwischenziel erreicht bestätigen"
+                          confirmMessage="Hast du das Zwischenziel geprüft und möchtest es ausdrücklich als erreicht bestätigen?"
+                          closeOnSuccess
+                        >
+                          <Hidden name="goalId" value={goalId} />
+                          <Hidden name="milestoneId" value={milestone.id} />
+                          <Hidden name="status" value="achieved" />
+                          <Hidden
+                            name="expectedUpdatedAt"
+                            value={milestone.updatedAt}
+                          />
+                          <label className="grid gap-1 text-sm">
+                            Review-Notiz (optional)
+                            <input className={fieldClass} name="note" />
+                          </label>
+                        </OperationForm>
+                      </ManagementDialog>
+                    </div>
+                  )}
+              </section>
+            );
+          })}
+          {(!activeMilestones.length || directTasks.length > 0) && (
+            <section aria-label="Direkte Goal Tasks" className={styles.direct}>
+              <div className={styles.band}>
+                <h3>
+                  {activeMilestones.length ? "Ohne Zwischenziel" : "Tasks"}
+                </h3>
+                {createTask()}
               </div>
-            )}
-          </footer>
-        </div>
-
+              {renderTasks(directTasks)}
+            </section>
+          )}
+          {outcome.projects.some(
+            (p) => !p.archivedAt && !supportedProjectIds.has(p.id),
+          ) && (
+            <details className={styles.projectContext}>
+              <summary>Weitere Projekte im Goal</summary>
+              {outcome.projects
+                .filter((p) => !p.archivedAt && !supportedProjectIds.has(p.id))
+                .map((p) => (
+                  <p key={p.id}>
+                    <Link href={`/projects/${p.id}`} className={styles.action}>
+                      {p.title}
+                    </Link>
+                  </p>
+                ))}
+            </details>
+          )}
+        </section>
+        <footer className={styles.footer}>
+          <Link
+            href={`${goalAreaHref(goalId, "verlauf")}#verlauf-belege`}
+            className={styles.action}
+          >
+            Verlauf ansehen
+          </Link>
+          {!archived && (
+            <ManagementDialog
+              label="Ziel prüfen"
+              triggerText="Ziel prüfen"
+              triggerClassName={
+                guidance.action === "review_goal" &&
+                outcome.summary.readyToAchieve
+                  ? styles.primary
+                  : styles.action
+              }
+              panelClassName="m-auto"
+            >
+              <p className="text-sm text-[var(--text-secondary)]">
+                Ist dein Ziel erreicht? Bestätige das Ergebnis ausdrücklich
+                anhand deiner Erfolgskriterien.
+              </p>
+              {criteria}
+              {canManage && outcome.summary.readyToAchieve ? (
+                <OperationForm
+                  operation="achieve"
+                  label="Ziel erreicht bestätigen"
+                  confirmMessage="Hast du das Ziel geprüft und möchtest es ausdrücklich als erreicht bestätigen?"
+                  closeOnSuccess
+                >
+                  <Hidden name="goalId" value={goalId} />
+                  <Hidden name="expectedUpdatedAt" value={outcome.updatedAt} />
+                  <label className="grid gap-1 text-sm">
+                    Erfolgsnotiz (optional)
+                    <input className={fieldClass} name="note" />
+                  </label>
+                  <InitialEvidenceFields
+                    data={data}
+                    outcome={outcome}
+                    allowed={[
+                      "project",
+                      "project_milestone",
+                      "task",
+                      "resource",
+                      "review_record",
+                    ]}
+                  />
+                </OperationForm>
+              ) : canManage ? (
+                <p role="status" className="text-sm text-[var(--text-muted)]">
+                  {outcome.summary.blockers.join(" · ")}
+                </p>
+              ) : (
+                <OperationForm
+                  operation="reopen"
+                  label="Ziel wieder öffnen"
+                  confirmMessage="Möchtest du das erreichte Ziel wieder öffnen und weiter daran arbeiten?"
+                  closeOnSuccess
+                >
+                  <Hidden name="goalId" value={goalId} />
+                </OperationForm>
+              )}
+            </ManagementDialog>
+          )}
+          {canManage && (
+            <ManagementDialog
+              label="Zielverwaltung"
+              triggerText="Weitere Optionen"
+              triggerClassName={styles.action}
+              panelClassName="m-auto"
+            >
+              <OperationForm
+                operation="goal.archive"
+                label="Ziel archivieren"
+                closeOnSuccess
+              >
+                <Hidden name="goalId" value={goalId} />
+              </OperationForm>
+            </ManagementDialog>
+          )}
+        </footer>
         {selectedArea === "verlauf" && (
           <Panel id="verlauf-belege" title="Verlauf & Belege">
             <p className="text-sm text-[var(--text-muted)]">
@@ -2485,7 +2045,7 @@ export function GoalOutcomeWorkbench({
             )}
           </Panel>
         )}
-      </GoalPlanningMode>
+      </div>
     </EntityWorkbenchShell>
   );
 }
