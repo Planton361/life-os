@@ -59,6 +59,13 @@ data/projections. Existing synthetic recovery proofs do not close this gate.
 The runtime experiment is architecture evidence, not a migration or cutover. It
 may proceed before the UX sequence so later architecture work is evidence-based.
 
+The USER ACCEPTED B8 cross-entity target (#121, 2026-10-08) refines visual and
+interaction scope across Task/Project/Goal/Skill, including Project Create A and
+the retained single optional Task-create disclosure. PRODUCT/DESIGN supersede
+conflicting historical visual placement/density below; domain scope, permanent
+sequence and dependencies stay unchanged. Target acceptance is not B8 UI delivery,
+product-surface closure or an operative work authorization.
+
 ### PP1 — Goal Outcome Planning
 
 **Outcome:** Goal becomes one guided completion Journey with domain-specific Goal
@@ -74,8 +81,11 @@ generic Goal percentage is introduced.
 The USER ACCEPTED #52 Variant A refines only the desktop composition: Current
 Work and the context rail share a bounded viewport-derived workbench frame,
 while inner modules and the Journey remain content-sized and secondary actions
-anchor at the frame's lower edge. The minimum is disabled on mobile/narrow
-layouts and real content grows through normal page flow. Goal domain, dependency
+anchor at the frame's lower edge in populated states. USER ACCEPTED B8 (#121)
+adds the Goal Empty exception: no viewport-derived desktop minimum and secondary
+actions immediately after compact success-definition content. Populated Goal
+retains #52; mobile/narrow layouts disable the minimum and real content grows
+through normal page flow. Goal domain, dependency
 and review semantics are unchanged.
 
 **Direct dependency:** Accepted Product Target v0.4 and the accepted Target
@@ -146,29 +156,33 @@ and sequence on 2026-09-29; Issue #67 P-DATA USER ACCEPTED its Project-specific
 data/security contract on 2026-09-29; #69 delivered that technical implementation.
 The replacement [#72 target was USER ACCEPTED](https://github.com/Planton361/life-os/issues/72#issuecomment-5912775840)
 on 2026-09-30 and canonically persisted. #74 / PR #75 redesign implementation is
-merged and technically verified. Subsequent real #69 USER ACCEPTANCE still failed
-on the canonical Task-create mismatch: Project-origin adds top context/capture
-presentation that diverges from standalone `/tasks/new`.
+merged and technically verified. The subsequent #69 user check at that stage
+failed on the canonical Task-create mismatch: Project-origin added top context/
+capture presentation that diverged from standalone `/tasks/new`.
 The [#77 corrected target](https://github.com/Planton361/life-os/issues/77#issuecomment-5922104190)
 is [USER ACCEPTED](https://github.com/Planton361/life-os/issues/77#issuecomment-5922117427)
 on 2026-10-01: retain the existing canonical Title-first `/tasks/new` composition,
 with origin changing only validated prefills, metadata and Save/Cancel destinations.
 #77 was canonically persisted through #78 / PR #79. #80 / PR #81 implemented the
 Task-create origin-parity correction and was post-merge verified on
-`main 1f61f9d7e337896e6e369d7adf787c2b47a5a6ca`. The subsequent real
+`main 1f61f9d7e337896e6e369d7adf787c2b47a5a6ca`. At that intermediate stage,
 [#69 acceptance still failed](https://github.com/Planton361/life-os/issues/69#issuecomment-5934133039)
 on Project Detail density and canonical `/tasks/new` width; the revised target
 also addresses the broader Task interaction UX. The
 [revised #82 target is USER ACCEPTED](https://github.com/Planton361/life-os/issues/82#issuecomment-5934881871):
 one executable READY row, quieter Work/context hierarchy, distinct completion,
 shared modal editing and depth navigation, and bounded readability-driven Create
-width. #82 adds no schema, domain or Security semantics and is not yet implemented.
-Its canonical persistence must be merged and verified before one final separately
-authorized bounded UI Delivery, followed by another real #69 acceptance check.
-#69 remains OPEN and its Product Surface is not USER ACCEPTED. P-DATA, Security
-and domain semantics remain unchanged. Project Depth acceptance still gates
-Skill PP2 → PP3 → PP4; those blocks remain unauthorized and may not bypass the
-open #69 gate.
+width. #82 added no schema, domain or Security semantics. It was implemented by
+[#85 / merged PR #86](https://github.com/Planton361/life-os/issues/85#issuecomment-5937286378)
+and post-merge verified on `f6e7b7180ba4600fd936311a786e3817d33ae922`.
+The later [#69 USER ACCEPTANCE](https://github.com/Planton361/life-os/issues/69#issuecomment-5942502151)
+on `75bc21312d337767ad80f975dbc3f9742ba201ca` closed the Project-Depth surface gate
+on 2026-10-01. Its earlier failed checks remain historical evidence, not a current
+blocker or a blanket denial of later PP2/PP3/PP4 authorization. The permanent
+Project Depth → Skill PP2 → PP3 → PP4 dependency order and domain/Security contracts
+remain unchanged; operative authorization comes from GitHub Project #3 and Issues.
+The newer accepted B8 target remains unimplemented by this docs-only consolidation;
+previous #82 delivery and #69 surface acceptance are not reopened.
 #3 / R2-13 remains Blocked/preserved.
 This ROADMAP does not authorize schema, migration or product delivery; GitHub
 Project #3 remains the operative queue.
