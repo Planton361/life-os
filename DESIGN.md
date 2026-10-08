@@ -633,8 +633,10 @@ summaries instead of mechanically stacking desktop management blocks.
 
 The [decision package](https://github.com/Planton361/life-os/issues/72#issuecomment-5910226294)
 was [USER ACCEPTED](https://github.com/Planton361/life-os/issues/72#issuecomment-5912775840)
-on 2026-09-30. This is the replacement Product/UX target for the failed #69
-surface acceptance, not acceptance of that implementation. PRODUCT owns the
+on 2026-09-30. It replaced the initially failed #69 surface target; this decision
+was not itself acceptance of that implementation. #69 was subsequently
+[USER ACCEPTED and closed](https://github.com/Planton361/life-os/issues/69#issuecomment-5942502151)
+on 2026-10-01. PRODUCT owns the
 read-first mental model, state/action hierarchy and normal `/tasks/new` reuse.
 The [#77 corrected Task-create target](https://github.com/Planton361/life-os/issues/77#issuecomment-5922104190)
 was [USER ACCEPTED](https://github.com/Planton361/life-os/issues/77#issuecomment-5922117427)
@@ -655,7 +657,8 @@ Title-first capture itself remains accepted. PRODUCT retains the required owning
 Project, valid Project switching, incompatible Milestone clearing, backlog,
 Goal inheritance/conflict and Save/Cancel semantics. The #77 correction is an
 accepted target; #80 / PR #81 implemented its origin parity. That implementation
-does not establish final #69 surface acceptance or deliver the #82 refinement.
+did not itself establish #69 surface acceptance or deliver #82. #85 / PR #86
+later implemented #82; #69 subsequently received explicit USER ACCEPTANCE.
 
 The R2-09 identity → shared Work/context → supporting responsibilities stay intact
 under B8; management must not dominate reading or execution.
@@ -707,7 +710,9 @@ without large empty vertical space.
 #### USER ACCEPTED #82 Task interaction and create-width refinement
 
 The [revised #82 target is USER ACCEPTED](https://github.com/Planton361/life-os/issues/82#issuecomment-5934881871)
-on 2026-10-01 and **not yet implemented** on the current baseline. These density,
+on 2026-10-01 and [implemented by #85 / merged PR #86](https://github.com/Planton361/life-os/issues/85#issuecomment-5937286378).
+The subsequent #69 USER ACCEPTANCE closed the Project-Depth surface gate. The
+new B8 visual target remains not implemented by this docs-only contract. These density,
 interaction and outer-width refinements preserve V5, accepted inner Task-create
 composition and existing domain/security semantics. Review remains quiet and
 separated below Work; no Review redesign is introduced.
@@ -949,7 +954,9 @@ right on desktop. Keep explicit spacing and alignment; when width is insufficien
 move the whole cluster below content before wrapping individual actions. Keep
 canonical completion eligibility, the shared edit modal and Details navigation.
 V5 matte surfaces/tokens and all domain/persistence/security boundaries remain.
-#69 still requires real USER ACCEPTANCE; this target is not surface closure.
+#87 target acceptance was not itself surface closure. The later
+[#69 USER ACCEPTANCE](https://github.com/Planton361/life-os/issues/69#issuecomment-5942502151)
+on 2026-10-01 closed that gate; B8 remains a separately accepted, undelivered target.
 
 ## Accepted Task read-first & Project-to-Day interaction — #56
 

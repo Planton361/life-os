@@ -320,8 +320,10 @@ Criterion Archive with a reason and a fresh Review read. Project Archive is not
 successful completion. Reopen preserves prior Reviews and starts a new cycle;
 legacy completed Projects retain no invented Review or Criteria history. This
 accepted data contract is implemented by Issue #69's bounded Project Depth
-slice. Its current Product Surface failed the post-merge user check and remains
-not USER ACCEPTED; #72 accepts the replacement UX target below, not that surface.
+slice. Its initial Product Surface failed the post-merge user check, leading to
+#72's replacement UX target. After the later repairs,
+[#69 was USER ACCEPTED](https://github.com/Planton361/life-os/issues/69#issuecomment-5942502151)
+on 2026-10-01 and closed; the earlier failed check is historical evidence.
 
 ### Accepted Project Detail Redesign target — #72
 
@@ -333,8 +335,9 @@ R2-09/#56/#65 presentation without replacing the existing workbench architecture
 The Task-create portion is corrected by the [#77 canonical target](https://github.com/Planton361/life-os/issues/77#issuecomment-5922104190),
 [USER ACCEPTED](https://github.com/Planton361/life-os/issues/77#issuecomment-5922117427)
 on 2026-10-01. All unrelated #72 decisions remain binding. Target acceptance does
-not itself claim implementation or accept the current #69 surface. #80 / PR #81
-implemented the #77 origin-parity correction; #82 refines the accepted target below.
+not itself establish implementation or surface acceptance. #80 / PR #81
+implemented #77 origin parity; #85 / PR #86 later implemented #82, and #69's
+subsequent explicit USER ACCEPTANCE closed the Project-Depth surface gate.
 
 Canonical desktop reading order:
 
@@ -462,15 +465,21 @@ removals and browser-observable Delivery acceptance at 3840×2160, 1920×1080 an
 390×844. P-DATA, Review/History persistence, revision/cycle, Security/RLS/command
 boundary, Task Dependencies, Project Milestone semantics, Goal/Skill boundaries,
 Project↔Skill, Progress Model, R2-13 and Skill PP2/PP3/PP4 remain unchanged.
-#69 remains the open Project-Depth Product-Surface gate before Skill PP2/PP3/PP4.
+The then-open #69 Project-Depth Product-Surface gate was subsequently satisfied
+by [USER ACCEPTANCE](https://github.com/Planton361/life-os/issues/69#issuecomment-5942502151)
+and closure on 2026-10-01. It is not a current blocker for Skill PP2/PP3/PP4;
+operative authorization still belongs to GitHub Project #3 and approved Issues.
 
 ### Accepted final Project / Task interaction refinement — #82
 
 The [revised #82 target is USER ACCEPTED](https://github.com/Planton361/life-os/issues/82#issuecomment-5934881871)
-on 2026-10-01. This is accepted Product/UX truth, **not yet implemented** on the
-current baseline. Canonical persistence precedes a separately authorized bounded
-UI Delivery and another real #69 acceptance check. Review remains secondary below
-Work; no Project Review, Task Dependency or Project Milestone semantics change.
+on 2026-10-01. [#85 / merged PR #86 implemented this target](https://github.com/Planton361/life-os/issues/85#issuecomment-5937286378),
+with post-merge technical verification on `f6e7b7180ba4600fd936311a786e3817d33ae922`.
+The subsequent [#69 USER ACCEPTANCE](https://github.com/Planton361/life-os/issues/69#issuecomment-5942502151)
+closed its real Project-Depth surface gate. The newer B8 target above remains
+not implemented by this docs-only contract; it does not undo #82's delivery.
+Review remains secondary below Work; no Project Review, Task Dependency or
+Project Milestone semantics change.
 
 Task interactions have distinct roles:
 
@@ -525,7 +534,9 @@ together on desktop and moves below content as a unit when space is insufficient
 Absent Context collapses; meaningful Context keeps approximately 2:1 Work/Context
 with top-led, content-sized contents. Review/History and all Project/Task domain,
 persistence, security, dependency and creation/edit semantics are unchanged.
-This target does not close #69 or authorize PP2/PP3/PP4 or R2-13.
+#87 target acceptance alone did not close #69; its later explicit USER ACCEPTANCE
+did. Neither that historical closure nor B8 target acceptance independently
+authorizes PP2/PP3/PP4 or R2-13 work.
 
 ### Skill Development Planning / PP2
 
