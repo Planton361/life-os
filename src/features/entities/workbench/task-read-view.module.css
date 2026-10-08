@@ -9,6 +9,97 @@
   font-size: 13px;
   line-height: 1.55;
 }
+.resourceHeading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 10px;
+  margin-bottom: 8px;
+}
+.resourceHeading h2 {
+  margin: 0;
+}
+.resourceAdd {
+  color: var(--accent-blue);
+  font-size: 12px;
+  font-weight: 600;
+  min-height: 33px;
+}
+.resourceAdd:hover {
+  color: var(--text-primary);
+}
+.resourceAdd:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.resourceList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.resourceList li + li {
+  border-top: 1px solid var(--border-subtle);
+  margin-top: 9px;
+  padding-top: 9px;
+}
+.resourceNote {
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.resourceLink {
+  min-width: 0;
+}
+.resourceLink a {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.resourceLink a:hover {
+  color: var(--text-primary);
+}
+.resourceLink a span {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+.resourceLink small {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.resourceEmpty {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.65;
+}
+.resourceDialog {
+  max-width: 440px;
+}
+.resourceRecovery {
+  flex-basis: 100%;
+  font-size: 12px;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+.resourceRecovery a {
+  text-decoration: underline;
+}
+@media (max-width: 600px) {
+  .resourceAdd {
+    min-height: 44px;
+  }
+}
 .breadcrumb {
   display: flex;
   flex-wrap: wrap;

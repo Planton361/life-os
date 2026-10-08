@@ -17,6 +17,7 @@ import styles from "./task-read-view.module.css";
 import { TaskObjectMenu } from "./task-object-menu";
 import { taskStepProgress } from "./task-step-progress";
 import { taskTextFields } from "./task-text";
+import { TaskResources, taskResources } from "./task-resources";
 
 const taskStatusLabels: Record<string, string> = {
   inbox: "Inbox",
@@ -180,13 +181,23 @@ export function TaskReadView({
     dependency.successors.length,
   );
   const nextHref = sourceOwned && sourceHref ? sourceHref : guidance.href;
+  const resources = taskResources(data, taskId);
+  const writableResources =
+    !sourceOwned &&
+    !parentArchived &&
+    !task.archived_at &&
+    task.status !== "archived";
+  const hasRightRail = hasContext || writableResources || resources.length > 0;
   const nextLabel =
     sourceOwned && sourceHref ? "Quelle öffnen" : guidance.label;
   const progress = taskStepProgress(
     data.steps.filter((step) => step.task_id === taskId),
   );
   const hasWorkContent = Boolean(
-    text.description.trim() || text.nextAction.trim() || progress.total,
+    text.description.trim() ||
+    text.nextAction.trim() ||
+    progress.total ||
+    resources.length,
   );
   const editorKey = `task-edit-${taskId}`;
   const nextBody = sourceOwned
@@ -317,7 +328,7 @@ export function TaskReadView({
         </header>
         <div
           data-task-frame
-          className={`${styles.frame} ${hasContext ? styles.split : styles.surface}`}
+          className={`${styles.frame} ${hasRightRail ? styles.split : styles.surface}`}
         >
           <section
             id="task-work-content"
@@ -374,7 +385,7 @@ export function TaskReadView({
               </div>
             )}
           </section>
-          {hasContext && (
+          {hasRightRail && (
             <aside
               aria-label="Task-Kontext"
               data-task-context
@@ -538,6 +549,11 @@ export function TaskReadView({
                   {dependencies}
                 </section>
               )}
+              <TaskResources
+                data={data}
+                taskId={taskId}
+                writable={writableResources}
+              />
             </aside>
           )}
         </div>
