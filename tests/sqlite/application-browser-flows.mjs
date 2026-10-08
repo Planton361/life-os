@@ -465,7 +465,7 @@ export async function additionalWriteFlows({
   );
   await go(`/tasks/${browserTask}`);
   await page
-    .getByRole("button", { name: "Mehr verwalten", exact: true })
+    .getByRole("button", { name: "Task-Verwaltung", exact: true })
     .click();
   await page
     .getByRole("button", { name: "Status verwalten", exact: true })

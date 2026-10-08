@@ -2129,6 +2129,30 @@ read/render check for archived-parent completion/Edit suppression (client
 interaction boundaries stubbed, not browser E2E). This is proposed-revision evidence, not real-user
 surface acceptance, and does not deliver the other B8 entities or Task Create.
 
+Issue #125 corrects the merged #123 Task Detail whose real-user visual acceptance
+failed against the original B8. The header now has the accepted blue hierarchy,
+text-supported readiness and object menu; Work has the panel head/step count,
+object-local canonical Note/Edit and Step/Create, native step checkboxes and
+row menus; Context uses compact facts and bounded local management. Existing
+Actions, validation, ownership, source/lifecycle/dependency rules and Calendar
+Week selection remain unchanged. `tests/sqlite/issue-125-browser-proof.mjs`
+reuses the native application fixture/process harness: fresh disposable Empty
+and reference-matched Populated Tasks at 1920/3840/769/390, edit/step writes and
+reload, validation/draft retention, focus/trap/Escape, menu/dialog bounds,
+state/source eligibility, collapsed absent Context, assignment, explicit blockers
+and stale completion rejection. Console/hydration are clean. The [portable
+before/reference/after evidence](../qa/issue-125-b8-task-detail/README.md) records
+measured parity and the larger mobile touch targets. This is implementation
+proof on disposable SQLite, not acceptance on the personal dataset; final USER
+ACCEPTED remains pending. No Task Create or other B8 surface is delivered here.
+
+The authorized F1 repair in PR #126 enforces the existing archived-Project
+boundary for Step Create/Update/Archive in UI and both canonical repositories.
+Focused native tests prove retained read-only steps, rejected writes after
+archive/restart and working active-Project steps. Task management/retry follows
+the parent lock; explicit Milestone release and existing Dependency removal
+remain available, while new assignments stay blocked. No schema change.
+
 Issue #28 updates the connected Goal detail presentation to accepted Prototype A v2: stable Überblick / Arbeit / Erfolg / Verlauf areas, a numbered Goal-Etappen progression with explicit Project/direct-Task contributions, selected work context, canonical review-ready cue and outcome-first achieved/reopened views. `tests/e2e/issue-28-goal-a-v2.spec.ts` is the focused Manual browser/reload and 3840×2160 / 1920×1080 / 390×844 surface proof; the existing readiness regression in `tests/e2e/pp1-goal-follow-up.spec.ts` covers Task-only READY/BLOCKED. Status remains `CONNECTED_GAP` because Slice 2 completion episodes and Skill Evidence revisions are not part of #28.
 
 Issue #53 implements the USER ACCEPTED #52 Variant A spatial refinement: the Goal identity remains compact, the shared workbench uses a bounded desktop viewport minimum with a common 60/40 frame and bottom-row secondary actions, inner work/review modules remain content-sized, the Journey stays top-led, and mobile remains content-driven. The authenticated disposable Manual flow in `tests/e2e/issue-46-simplified-goal-surface.spec.ts` captures and visually checks sparse one-Current/one-READY and multi-milestone READY/BLOCKED states at 3840×2160, 1920×1080 and 390×844; screenshot artifacts are under `test-results/issue-46-simplified-goal-s-0a261-e-authenticated-Manual-flow/`. `tests/e2e/support/goal-workbench-layout.ts` checks the viewport-derived minimum, footer baseline, 60/40 placement, mobile reset, clipping and horizontal overflow. The focused Goal Journey browser regression also passes explicit intermediate-result review, Goal Review, achievement/reopen, reload and keyboard/focus; 25 Goal guidance/outcome unit tests pass. `pnpm typecheck`, `pnpm lint` and `pnpm build` pass. PP1 is USER ACCEPTED as of 2026-09-28 after the real post-merge Goal review on main `d54f70f9882ef21844073734831a2db17e69b332`; the existing Slice 2 gaps remain deferred.

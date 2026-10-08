@@ -6,13 +6,16 @@ import {
 } from "@/features/real-data/domain/task-dependencies";
 import type { WorkbenchData } from "@/features/real-data/runtime/entity-workbench-read";
 import {
-  ManagementDisclosure,
-  ManagementDisclosureGroup,
+  ManagementDialog,
+  ManagementDialogScope,
+  ManagementDialogTrigger,
 } from "./management-disclosure";
 import { taskGuidance } from "./task-guidance";
 import { TaskEditDialog } from "./task-edit-dialog";
 import { OperationForm } from "./forms";
 import styles from "./task-read-view.module.css";
+import { TaskObjectMenu } from "./task-object-menu";
+import { taskStepProgress } from "./task-step-progress";
 import { taskTextFields } from "./task-text";
 
 const taskStatusLabels: Record<string, string> = {
@@ -71,10 +74,6 @@ function localTimeRange(
   return formatter.format(start) + "–" + formatter.format(end);
 }
 
-function durationLabel(duration: number) {
-  return duration === 1 ? "1 Minute" : duration + " Minuten";
-}
-
 export function TaskReadView({
   data,
   taskId,
@@ -100,7 +99,9 @@ export function TaskReadView({
 }) {
   const task = data.tasks.find((item) => item.id === taskId)!;
   const project = data.projects.find((item) => item.id === task.project_id);
-  const parentArchived = Boolean(project?.archived_at);
+  const parentArchived = Boolean(
+    project?.archived_at || project?.status === "archived",
+  );
   const directGoal = data.goals.find((item) => item.id === task.goal_id);
   const inheritedGoal = data.goals.find((item) => item.id === project?.goal_id);
   const milestone = project
@@ -181,268 +182,355 @@ export function TaskReadView({
   const nextHref = sourceOwned && sourceHref ? sourceHref : guidance.href;
   const nextLabel =
     sourceOwned && sourceHref ? "Quelle öffnen" : guidance.label;
+  const progress = taskStepProgress(
+    data.steps.filter((step) => step.task_id === taskId),
+  );
+  const editorKey = `task-edit-${taskId}`;
   const nextBody = sourceOwned
     ? "Planung und Status gehören zur verknüpften Quelle."
     : guidance.body;
 
   return (
-    <div data-task-detail-variant="B8" className={styles.canvas}>
-      {skillRecovery}
-      <nav aria-label="Breadcrumb" className={styles.breadcrumb}>
-        <Link href="/tasks">Tasks</Link>
-      </nav>
-      <header
-        aria-label="Aufgabenidentität"
-        data-task-order="identity"
-        data-task-guidance={nextLabel}
-        className={styles.header}
-      >
-        <div className={styles.identity}>
-          <div className={styles.titles}>
-            <p className={styles.entity}>Task</p>
-            <h1>{task.title}</h1>
-            <div
-              aria-label="Task-Status"
-              data-task-lifecycle={task.status}
-              data-task-readiness={dependency.availability}
-              className={styles.meta}
-            >
-              <span>{taskStatusLabels[task.status] ?? task.status}</span>
-              <span>
-                {dependency.availability === "READY" ? "Bereit" : "Blockiert"}
-              </span>
-              <span>
-                {task.priority === "none" ? "Ohne Priorität" : task.priority}
-              </span>
-              {task.archived_at && <span>Archiviert</span>}
-            </div>
-          </div>
-          <div aria-label="Task-Aktionen" className={styles.actions}>
-            {canComplete && (
-              <OperationForm
-                operation="task.complete"
-                label="Erledigt"
-                submitClassName={styles.primary}
+    <ManagementDialogScope>
+      <div data-task-detail-variant="B8" className={styles.canvas}>
+        {skillRecovery}
+        <nav aria-label="Breadcrumb" className={styles.breadcrumb}>
+          <Link href={project ? "/projects" : "/tasks"}>
+            {project ? "Projects" : "Tasks"}
+          </Link>
+          {project && (
+            <>
+              <span>/</span>
+              <Link href={"/projects/" + project.id}>{project.title}</Link>
+              <span>/</span>
+              <span>Task</span>
+            </>
+          )}
+        </nav>
+        <header
+          aria-label="Aufgabenidentität"
+          data-task-order="identity"
+          data-task-guidance={nextLabel}
+          className={styles.header}
+        >
+          <div className={styles.identity}>
+            <div className={styles.titles}>
+              <p className={styles.entity}>Task / Ausführbare Arbeit</p>
+              <h1>{task.title}</h1>
+              <div
+                aria-label="Task-Status"
+                data-task-lifecycle={task.status}
+                data-task-readiness={dependency.availability}
+                className={styles.meta}
               >
-                <input type="hidden" name="taskId" value={taskId} />
-              </OperationForm>
-            )}
-            {!canComplete && !editIsPrimary && (
-              <Link className={styles.primary} href={nextHref}>
-                {nextLabel}
-              </Link>
-            )}
-            {!parentArchived && (
-              <TaskEditDialog
-                data={data}
-                taskId={taskId}
-                initiallyOpen={editInitiallyOpen}
-                triggerClassName={editIsPrimary ? styles.primary : styles.button}
-              />
-            )}
-            {showCalendar &&
-              (canComplete || editIsPrimary || nextHref !== calendarHref) && (
-                <Link className={styles.button} href={calendarHref}>
-                  {scheduledDate
-                    ? "Termin im Kalender öffnen"
-                    : dependency.availability === "BLOCKED"
-                      ? "Im Calendar ansehen"
-                      : "Im Calendar planen"}
+                <span>{taskStatusLabels[task.status] ?? task.status}</span>
+                {!task.archived_at &&
+                  !["done", "canceled", "archived"].includes(task.status) && (
+                    <span
+                      className={
+                        dependency.availability === "READY"
+                          ? styles.ready
+                          : styles.blocked
+                      }
+                    >
+                      {dependency.availability}
+                    </span>
+                  )}
+                <span aria-hidden="true">·</span>
+                <span>
+                  {task.priority === "none"
+                    ? "Ohne Priorität"
+                    : "Priority " + task.priority}
+                </span>
+                {task.archived_at && <span>Archiviert</span>}
+              </div>
+            </div>
+            <div aria-label="Task-Aktionen" className={styles.actions}>
+              {canComplete && (
+                <OperationForm
+                  operation="task.complete"
+                  label="Erledigt"
+                  submitClassName={styles.primary}
+                >
+                  <input type="hidden" name="taskId" value={taskId} />
+                </OperationForm>
+              )}
+              {!canComplete && !editIsPrimary && (
+                <Link className={styles.primary} href={nextHref}>
+                  {nextLabel}
                 </Link>
               )}
+              {!parentArchived && (
+                <TaskEditDialog
+                  data={data}
+                  taskId={taskId}
+                  initiallyOpen={editInitiallyOpen}
+                  dialogKey={editorKey}
+                  triggerClassName={
+                    editIsPrimary ? styles.primary : styles.button
+                  }
+                />
+              )}
+              {showCalendar &&
+                (canComplete || editIsPrimary || nextHref !== calendarHref) && (
+                  <Link className={styles.quiet} href={calendarHref}>
+                    {scheduledDate
+                      ? "Termin im Kalender öffnen"
+                      : dependency.availability === "BLOCKED"
+                        ? "Im Calendar ansehen"
+                        : "Im Calendar planen"}
+                  </Link>
+                )}
+              {!parentArchived && (
+                <TaskObjectMenu label="Task-Verwaltung">
+                  {!hasContext && (
+                    <ManagementDialog
+                      label="Voraussetzungen"
+                      triggerText="Vorgänger verwalten"
+                    >
+                      {dependencies}
+                    </ManagementDialog>
+                  )}
+                  <ManagementDialog label="Weitere Beziehungen verwalten">
+                    {relations}
+                  </ManagementDialog>
+                  <ManagementDialog label="Status verwalten">
+                    {lifecycle}
+                  </ManagementDialog>
+                </TaskObjectMenu>
+              )}
+            </div>
           </div>
-        </div>
-        <p className={styles.guidance}>{nextBody}</p>
-      </header>
-      <div className={hasContext ? styles.split : styles.surface}>
-        <section
-          id="task-work-content"
-          aria-labelledby="task-work-heading"
-          data-task-order="work"
-          className={styles.work}
-        >
-          <h2 id="task-work-heading">Worum geht es?</h2>
-          <section aria-label="Beschreibung" className={styles.unit}>
-            <h3>Beschreibung</h3>
-            <p className={styles.prose}>
-              {text.description || "Noch keine Beschreibung."}
-            </p>
-          </section>
-          <section aria-label="Arbeitsnotiz" className={styles.unit}>
-            <h3>Arbeitsnotiz</h3>
-            <p className={styles.prose}>
-              {text.nextAction || "Noch keine Arbeitsnotiz."}
-            </p>
-          </section>
-          <section aria-label="Vorgehen" className={styles.unit}>
-            {steps}
-          </section>
-          <ManagementDisclosureGroup className={styles.management}>
-            <ManagementDisclosure label="Mehr verwalten">
-              <ManagementDisclosureGroup className="grid gap-3">
-                {!hasContext && (
-                  <section id="task-dependencies" aria-label="Voraussetzung">
-                    {dependencies}
-                  </section>
-                )}
-                {milestoneManagement}
-                <ManagementDisclosure label="Weitere Beziehungen verwalten">
-                  {relations}
-                </ManagementDisclosure>
-                <ManagementDisclosure label="Status verwalten">
-                  {lifecycle}
-                </ManagementDisclosure>
-              </ManagementDisclosureGroup>
-            </ManagementDisclosure>
-          </ManagementDisclosureGroup>
-        </section>
-        {hasContext && (
-          <aside
-            aria-label="Task-Kontext"
-            data-task-context
-            className={styles.context}
+          <p className={styles.guidance}>
+            {sourceOwned
+              ? nextBody
+              : text.description ||
+                "Konkrete ausführbare Arbeit. Ergänze bei Bedarf den Zweck oder die Arbeitsnotiz."}
+          </p>
+        </header>
+        <div className={hasContext ? styles.split : styles.surface}>
+          <section
+            id="task-work-content"
+            aria-labelledby="task-work-heading"
+            data-task-order="work"
+            className={styles.work}
           >
-            {(project || directGoal || inheritedGoal) && (
-              <section
-                data-task-order="context"
-                aria-label="Zusammenhang"
-                className={styles.group}
-              >
-                <h2>Zusammenhang</h2>
-                <dl className={styles.facts}>
-                  {project && (
-                    <div>
-                      <dt>Project</dt>
-                      <dd>
-                        <Link
-                          className={styles.projectLink}
-                          href={"/projects/" + project.id}
-                        >
-                          {project.title}
-                        </Link>
-                      </dd>
-                    </div>
-                  )}
-                  {milestone && (
-                    <div>
-                      <dt>
-                        {milestone.status === "active"
-                          ? "Aktuelle Etappe"
-                          : "Etappe"}
-                      </dt>
-                      <dd>
-                        <Link href={"/projects/" + project!.id}>
-                          {milestone.title}
-                        </Link>
-                      </dd>
-                    </div>
-                  )}
-                  {directGoal && (
-                    <div>
-                      <dt>
-                        {conflictingGoals
-                          ? "Ziel für diese Aufgabe"
-                          : "Direktes Ziel"}
-                      </dt>
-                      <dd>
-                        <Link
-                          className={styles.goalLink}
-                          href={"/goals/" + directGoal.id}
-                        >
-                          {directGoal.title}
-                          {directGoal.archived_at ? " · Archiviert" : ""}
-                        </Link>
-                      </dd>
-                    </div>
-                  )}
-                  {inheritedGoal && (!directGoal || conflictingGoals) && (
-                    <div>
-                      <dt>Ziel im Project</dt>
-                      <dd>
-                        <Link
-                          className={styles.goalLink}
-                          href={"/goals/" + inheritedGoal.id}
-                        >
-                          {inheritedGoal.title}
-                          {inheritedGoal.archived_at ? " · Archiviert" : ""}
-                        </Link>
-                      </dd>
-                    </div>
-                  )}
-                </dl>
-                {conflictingGoals && (
-                  <p className={styles.warning}>
-                    Für diese Aufgabe und das Project sind unterschiedliche
-                    Ziele verknüpft.
-                  </p>
+            <div className={styles.panelHead}>
+              <div>
+                <p className={styles.entity}>Arbeitsinhalt</p>
+                <h2 id="task-work-heading">Was ist zu tun?</h2>
+              </div>
+              <span className={styles.count}>
+                {progress.completed} von {progress.total} Schritten erledigt
+              </span>
+            </div>
+            <section aria-label="Beschreibung" className={styles.unit}>
+              <h3>Beschreibung / Zweck</h3>
+              <p className={styles.prose}>
+                {text.description || "Noch keine Beschreibung."}
+              </p>
+            </section>
+            <section aria-label="Arbeitsnotiz" className={styles.unit}>
+              <div className={styles.blockTop}>
+                <h3>Arbeitsnotiz / Vorgehen</h3>
+                {!parentArchived && !task.archived_at && (
+                  <ManagementDialogTrigger
+                    dialogKey={editorKey}
+                    className={styles.quietSmall}
+                  >
+                    Notiz bearbeiten
+                  </ManagementDialogTrigger>
                 )}
-              </section>
-            )}
-            {(task.planned_date || task.scheduled_start_at || task.due_at) && (
-              <section
-                data-task-order="planning"
-                aria-label="Planung"
-                className={styles.group}
-              >
-                <h2>Planung</h2>
-                <dl className={styles.facts}>
-                  <div>
-                    <dt>Geplant</dt>
-                    <dd>
-                      {task.planned_date
-                        ? localDay(task.planned_date)
-                        : "Kein Tag geplant"}
-                      <small>Tagesabsicht</small>
-                    </dd>
+              </div>
+              <p className={styles.prose}>
+                {text.nextAction || "Noch keine Arbeitsnotiz."}
+              </p>
+            </section>
+            <section aria-label="Vorgehen" className={styles.unit}>
+              {steps}
+            </section>
+          </section>
+          {hasContext && (
+            <aside
+              aria-label="Task-Kontext"
+              data-task-context
+              className={styles.context}
+            >
+              {(project || directGoal || inheritedGoal) && (
+                <section
+                  data-task-order="context"
+                  aria-label="Zusammenhang"
+                  className={styles.group}
+                >
+                  <h2>Zusammenhang</h2>
+                  <dl className={styles.facts}>
+                    {project && (
+                      <div>
+                        <dt>Project</dt>
+                        <dd>
+                          <Link
+                            className={styles.projectLink}
+                            href={"/projects/" + project.id}
+                          >
+                            {project.title}
+                          </Link>
+                        </dd>
+                      </div>
+                    )}
+                    {milestone && (
+                      <div>
+                        <dt>
+                          {milestone.status === "active"
+                            ? "Aktueller Milestone"
+                            : "Milestone"}
+                        </dt>
+                        <dd>
+                          <Link href={"/projects/" + project!.id}>
+                            {milestone.title}
+                          </Link>
+                        </dd>
+                      </div>
+                    )}
+                    {directGoal && (
+                      <div>
+                        <dt>
+                          {conflictingGoals
+                            ? "Ziel für diese Aufgabe"
+                            : "Direktes Ziel"}
+                        </dt>
+                        <dd>
+                          <Link
+                            className={styles.goalLink}
+                            href={"/goals/" + directGoal.id}
+                          >
+                            {directGoal.title}
+                            {directGoal.archived_at ? " · Archiviert" : ""}
+                          </Link>
+                        </dd>
+                      </div>
+                    )}
+                    {inheritedGoal && (!directGoal || conflictingGoals) && (
+                      <div>
+                        <dt>Ziel im Project</dt>
+                        <dd>
+                          <Link
+                            className={styles.goalLink}
+                            href={"/goals/" + inheritedGoal.id}
+                          >
+                            {inheritedGoal.title}
+                            {inheritedGoal.archived_at ? " · Archiviert" : ""}
+                          </Link>
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
+                  <div className={styles.localActions}>
+                    {project && (
+                      <Link
+                        className={styles.quietSmall}
+                        href={"/projects/" + project.id}
+                      >
+                        Zum Project
+                      </Link>
+                    )}
+                    {milestoneManagement}
                   </div>
-                  <div>
-                    <dt>Termin</dt>
-                    <dd>
-                      {task.scheduled_start_at
-                        ? localDate(task.scheduled_start_at, data.timezone) +
-                          " · " +
-                          localTimeRange(
-                            task.scheduled_start_at,
-                            task.duration_minutes,
-                            data.timezone,
-                          )
-                        : "Kein Termin bestätigt"}
-                      <small>
+                  {conflictingGoals && (
+                    <p className={styles.warning}>
+                      Für diese Aufgabe und das Project sind unterschiedliche
+                      Ziele verknüpft.
+                    </p>
+                  )}
+                </section>
+              )}
+              {(task.planned_date ||
+                task.scheduled_start_at ||
+                task.due_at) && (
+                <section
+                  data-task-order="planning"
+                  aria-label="Planung"
+                  className={styles.group}
+                >
+                  <h2>Planung</h2>
+                  <dl className={styles.facts}>
+                    <div>
+                      <dt>Geplanter Tag</dt>
+                      <dd>
+                        {task.planned_date
+                          ? localDay(task.planned_date)
+                          : "Kein Tag geplant"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Zeitblock</dt>
+                      <dd>
                         {task.scheduled_start_at
-                          ? (task.duration_minutes
-                              ? durationLabel(task.duration_minutes) + " · "
-                              : "") + data.timezone
-                          : "Der Kalender verwaltet bestätigte Termine."}
-                      </small>
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Deadline</dt>
-                    <dd>
-                      {task.due_at
-                        ? localDate(task.due_at, data.timezone)
-                        : "Keine Deadline"}
-                    </dd>
-                  </div>
-                </dl>
-              </section>
-            )}
-            {(project ||
-              dependency.predecessors.length > 0 ||
-              dependency.successors.length > 0) && (
-              <section
-                id="task-dependencies"
-                data-task-order="prerequisite"
-                aria-label="Voraussetzung"
-                className={styles.group}
-              >
-                <h2>Voraussetzung</h2>
-                {dependencies}
-              </section>
-            )}
-          </aside>
+                          ? localDate(task.scheduled_start_at, data.timezone) +
+                            " · " +
+                            localTimeRange(
+                              task.scheduled_start_at,
+                              task.duration_minutes,
+                              data.timezone,
+                            )
+                          : "Kein bestätigter Block"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Deadline</dt>
+                      <dd>
+                        {task.due_at
+                          ? localDate(task.due_at, data.timezone)
+                          : "Keine Deadline"}
+                      </dd>
+                    </div>
+                  </dl>
+                  {showCalendar && (
+                    <div className={styles.localActions}>
+                      <Link className={styles.buttonSmall} href={calendarHref}>
+                        {scheduledDate
+                          ? "Zeitblock öffnen"
+                          : "Im Calendar planen"}
+                      </Link>
+                    </div>
+                  )}
+                </section>
+              )}
+              {(project ||
+                dependency.predecessors.length > 0 ||
+                dependency.successors.length > 0) && (
+                <section
+                  id="task-dependencies"
+                  data-task-order="prerequisite"
+                  aria-label="Voraussetzung"
+                  className={styles.group}
+                >
+                  <h2>Voraussetzungen</h2>
+                  <dl className={styles.facts}>
+                    <div>
+                      <dt>Readiness</dt>
+                      <dd>{dependency.availability}</dd>
+                    </div>
+                  </dl>
+                  {dependencies}
+                </section>
+              )}
+            </aside>
+          )}
+        </div>
+        {project && (
+          <div className={styles.handoffs}>
+            <span>
+              Task Completion führt niemals automatisch zum Project-Abschluss.
+            </span>
+            <Link
+              className={styles.quietSmall}
+              href={"/projects/" + project.id}
+            >
+              Zurück zum Project
+            </Link>
+          </div>
         )}
       </div>
-    </div>
+    </ManagementDialogScope>
   );
 }

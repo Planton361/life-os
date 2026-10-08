@@ -17,7 +17,12 @@ export function createSqliteTaskStepRepository(store: SqliteRuntime, context: Ow
       if (!parsed.success) return false;
       try { return store.command(context, `step.${operation}`, (db, owner) => {
         const data = parsed.data, task = uuid(data.taskId);
-        if (!db.prepare("SELECT id FROM tasks WHERE user_id=? AND id=? AND archived_at IS NULL").get(owner, task)) throw new Error("STEP_PARENT_UNAVAILABLE");
+        if (!db.prepare(`SELECT t.id FROM tasks t
+          WHERE t.user_id=? AND t.id=? AND t.archived_at IS NULL
+          AND (t.project_id IS NULL OR EXISTS (
+            SELECT 1 FROM projects p WHERE p.user_id=t.user_id AND p.id=t.project_id
+            AND p.archived_at IS NULL AND p.status<>'archived'
+          ))`).get(owner, task)) throw new Error("STEP_PARENT_UNAVAILABLE");
         if (operation === "create" && "title" in data) {
           db.prepare("INSERT INTO task_steps(id,user_id,task_id,title,position,created_at,updated_at) VALUES(?,?,?,?,?,life_now(),life_now())")
             .run(randomUUID(), owner, task, data.title, data.position);

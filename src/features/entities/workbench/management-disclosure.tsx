@@ -143,6 +143,58 @@ export function ManagementDisclosure({
   );
 }
 
+// Multiple object-local triggers share one canonical editor and its draft.
+const DialogScope = createContext<{
+  request: { key: string; trigger: HTMLButtonElement } | null;
+  setRequest: (
+    request: { key: string; trigger: HTMLButtonElement } | null,
+  ) => void;
+} | null>(null);
+
+export function ManagementDialogScope({ children }: { children: ReactNode }) {
+  const [request, setRequest] = useState<{
+    key: string;
+    trigger: HTMLButtonElement;
+  } | null>(null);
+  return (
+    <DialogScope.Provider value={{ request, setRequest }}>
+      {children}
+    </DialogScope.Provider>
+  );
+}
+
+export function ManagementDialogTrigger({
+  dialogKey,
+  children,
+  className,
+}: {
+  dialogKey: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  const scope = useContext(DialogScope);
+  const hydrated = useSyncExternalStore(
+    subscribe,
+    () => true,
+    () => false,
+  );
+  return (
+    <button
+      type="button"
+      className={className}
+      disabled={!hydrated || !scope}
+      aria-haspopup="dialog"
+      aria-controls={dialogKey}
+      aria-expanded={scope?.request?.key === dialogKey}
+      onClick={(event) =>
+        scope?.setRequest({ key: dialogKey, trigger: event.currentTarget })
+      }
+    >
+      {children}
+    </button>
+  );
+}
+
 export function ManagementDialog({
   label,
   children,
@@ -154,6 +206,7 @@ export function ManagementDialog({
   clearSearchParamOnClose,
   resetOnClose = false,
   triggerClassName,
+  dialogKey,
 }: {
   label: string;
   children: ReactNode;
@@ -165,16 +218,23 @@ export function ManagementDialog({
   clearSearchParamOnClose?: string;
   resetOnClose?: boolean;
   triggerClassName?: string;
+  dialogKey?: string;
 }) {
   const hydrated = useSyncExternalStore(
     subscribe,
     () => true,
     () => false,
   );
-  const [open, setOpen] = useState(initiallyOpen);
+  const [localOpen, setOpen] = useState(initiallyOpen);
+  const scope = useContext(DialogScope);
+  const request =
+    dialogKey && scope?.request?.key === dialogKey ? scope.request : null;
+  const open = localOpen || Boolean(request);
+  const returnFocus = useRef<HTMLButtonElement | null>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const dialog = useRef<HTMLDialogElement>(null);
-  const dialogId = useId();
+  const generatedId = useId();
+  const dialogId = dialogKey ?? generatedId;
   const headingId = useId();
   const router = useRouter();
   const pathname = usePathname();
@@ -184,6 +244,7 @@ export function ManagementDialog({
     const element = dialog.current;
     if (!element) return;
     if (open && !element.open) {
+      returnFocus.current = request?.trigger ?? trigger.current;
       element.showModal();
       if (focusFirstOnOpen) {
         const frame = window.requestAnimationFrame(() => {
@@ -201,10 +262,11 @@ export function ManagementDialog({
     } else if (!open && element.open) {
       element.close();
     }
-  }, [focusFirstOnOpen, open]);
+  }, [focusFirstOnOpen, open, request]);
 
   function close() {
     setOpen(false);
+    if (request) scope?.setRequest(null);
     dialog.current?.close();
     if (clearSearchParamOnClose && searchParams.has(clearSearchParamOnClose)) {
       const params = new URLSearchParams(searchParams.toString());
@@ -214,7 +276,7 @@ export function ManagementDialog({
         scroll: false,
       });
     }
-    trigger.current?.focus();
+    returnFocus.current?.focus();
   }
 
   return (
@@ -230,7 +292,11 @@ export function ManagementDialog({
           triggerClassName ??
           "min-h-10 text-left text-sm text-[var(--accent-cyan)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
         }
-        onClick={() => setOpen(true)}
+        onClick={(event) => {
+          if (dialogKey && scope)
+            scope.setRequest({ key: dialogKey, trigger: event.currentTarget });
+          else setOpen(true);
+        }}
       >
         {triggerText ?? label}
       </button>
@@ -262,7 +328,8 @@ export function ManagementDialog({
         }}
         onClose={() => {
           setOpen(false);
-          trigger.current?.focus();
+          if (request) scope?.setRequest(null);
+          returnFocus.current?.focus();
         }}
       >
         <div className="grid gap-5 p-5 sm:p-6">

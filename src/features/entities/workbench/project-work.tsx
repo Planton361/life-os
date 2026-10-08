@@ -535,15 +535,25 @@ export function TaskMilestoneContext({
 export function TaskMilestoneManagement({
   data,
   taskId,
+  dialog = false,
 }: {
   data: WorkbenchData;
   taskId: string;
+  dialog?: boolean;
 }) {
   const task = data.tasks.find((t) => t.id === taskId);
   const project = data.projects.find((p) => p.id === task?.project_id);
   if (!task || !project || task.archived_at) return null;
+  const parentArchived = Boolean(
+    project.archived_at || project.status === "archived",
+  );
+  // Explicit unassignment is allowed in archived context; new assignments are not.
+  if (parentArchived && !task.milestone_id) return null;
+  const Container = dialog ? ManagementDialog : ManagementDisclosure;
   return (
-    <ManagementDisclosure label="Milestone-Zuordnung ändern">
+    <Container
+      label={dialog ? "Zuordnung ändern" : "Milestone-Zuordnung ändern"}
+    >
       <OperationForm
         operation="project.milestone"
         label="Task-Milestone speichern"
@@ -555,15 +565,17 @@ export function TaskMilestoneManagement({
         <Choice
           name="milestoneId"
           label="Milestone (keine Auswahl = Ohne Milestone)"
-          value={project.archived_at ? "" : (task.milestone_id ?? "")}
+          value={parentArchived ? "" : (task.milestone_id ?? "")}
           options={data.milestones
-            .filter((m) => m.project_id === project.id && !m.archived_at)
+            .filter(
+              (m) => !parentArchived && m.project_id === project.id && !m.archived_at,
+            )
             .map((m) => ({ id: m.id, title: m.title }))}
         />
       </OperationForm>
       <p className="text-sm text-[var(--text-muted)]">
         Vor einem Project-Wechsel die Milestone-Zuordnung lösen.
       </p>
-    </ManagementDisclosure>
+    </Container>
   );
 }
