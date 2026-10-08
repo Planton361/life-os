@@ -28,7 +28,17 @@ vi.mock("./task-edit-dialog", () => ({
 vi.mock("./management-disclosure", () => ({
   ManagementDisclosure: ({ children }: { children: ReactNode }) =>
     createElement("div", null, children),
+  ManagementDialog: ({ children }: { children: ReactNode }) =>
+    createElement("div", null, children),
+  ManagementDialogScope: ({ children }: { children: ReactNode }) =>
+    createElement("div", null, children),
+  ManagementDialogTrigger: () =>
+    createElement("button", null, "Notiz bearbeiten"),
   ManagementDisclosureGroup: ({ children }: { children: ReactNode }) =>
+    createElement("div", null, children),
+}));
+vi.mock("./task-object-menu", () => ({
+  TaskObjectMenu: ({ children }: { children: ReactNode }) =>
     createElement("div", null, children),
 }));
 import { TaskReadView } from "./task-read-view";

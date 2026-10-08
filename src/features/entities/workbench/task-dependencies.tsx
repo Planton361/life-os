@@ -5,15 +5,21 @@ import {
   taskSatisfiesDependency,
   taskDependencyContext,
 } from "@/features/real-data/domain/task-dependencies";
-import { ManagementDisclosure } from "./management-disclosure";
+import styles from "./task-read-view.module.css";
+import {
+  ManagementDialog,
+  ManagementDisclosure,
+} from "./management-disclosure";
 import { Choice, OperationForm } from "./forms";
 
 export function TaskDependencies({
   data,
   taskId,
+  compact = false,
 }: {
   data: WorkbenchData;
   taskId: string;
+  compact?: boolean;
 }) {
   const task = data.tasks.find((task) => task.id === taskId)!;
   const context = taskDependencyContext(data.dependencyGraph, taskId);
@@ -29,10 +35,11 @@ export function TaskDependencies({
       predecessor && taskSatisfiesDependency(predecessor),
   ).length;
   const openPredecessors = context.predecessors.length - fulfilledPredecessors;
+  const Container = compact ? ManagementDialog : ManagementDisclosure;
   return (
     <section
       aria-label="Vorgänger und Nachfolger"
-      className="grid min-w-0 gap-3 text-sm"
+      className={compact ? styles.dependencies : "grid min-w-0 gap-3 text-sm"}
     >
       {context.inconsistentCompletion && (
         <p className="text-[var(--accent-orange)]" role="status">
@@ -43,13 +50,13 @@ export function TaskDependencies({
       {context.predecessors.length > 0 ? (
         <p className="text-[var(--text-secondary)]">
           {context.predecessors.length} Vorgänger ·{" "}
-          {openPredecessors === 0
-            ? "erfüllt"
-            : openPredecessors + " offen"}
+          {openPredecessors === 0 ? "erfüllt" : openPredecessors + " offen"}
         </p>
       ) : (
         <p className="text-[var(--text-secondary)]">
-          Keine offenen Voraussetzungen.
+          {compact
+            ? "Keine Vorgänger zugeordnet."
+            : "Keine offenen Voraussetzungen."}
         </p>
       )}
       {context.predecessors.length ? (
@@ -104,11 +111,14 @@ export function TaskDependencies({
             ))}
           </ul>
         </div>
-      ) : (
+      ) : !compact ? (
         <p className="text-[var(--text-muted)]">Keine nachfolgenden Tasks.</p>
-      )}
+      ) : null}
       {(task.project_id || context.predecessors.length > 0) && (
-        <ManagementDisclosure label="Vorgänger verwalten">
+        <Container
+          label="Vorgänger verwalten"
+          {...(compact ? { triggerClassName: styles.quietSmall } : {})}
+        >
           {candidates.length > 0 ? (
             <ManagementDisclosure label="Vorgänger hinzufügen">
               <OperationForm
@@ -158,7 +168,7 @@ export function TaskDependencies({
               </OperationForm>
             </div>
           ))}
-        </ManagementDisclosure>
+        </Container>
       )}
     </section>
   );

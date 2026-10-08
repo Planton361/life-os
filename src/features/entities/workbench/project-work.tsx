@@ -535,15 +535,20 @@ export function TaskMilestoneContext({
 export function TaskMilestoneManagement({
   data,
   taskId,
+  dialog = false,
 }: {
   data: WorkbenchData;
   taskId: string;
+  dialog?: boolean;
 }) {
   const task = data.tasks.find((t) => t.id === taskId);
   const project = data.projects.find((p) => p.id === task?.project_id);
   if (!task || !project || task.archived_at) return null;
+  const Container = dialog ? ManagementDialog : ManagementDisclosure;
   return (
-    <ManagementDisclosure label="Milestone-Zuordnung ändern">
+    <Container
+      label={dialog ? "Zuordnung ändern" : "Milestone-Zuordnung ändern"}
+    >
       <OperationForm
         operation="project.milestone"
         label="Task-Milestone speichern"
@@ -564,6 +569,6 @@ export function TaskMilestoneManagement({
       <p className="text-sm text-[var(--text-muted)]">
         Vor einem Project-Wechsel die Milestone-Zuordnung lösen.
       </p>
-    </ManagementDisclosure>
+    </Container>
   );
 }

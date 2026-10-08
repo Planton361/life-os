@@ -39,5 +39,5 @@ await run("pnpm", [
 await run("pnpm", ["build"]);
 for (const proof of resourceOnly
   ? ["application-resource-proof.mjs"]
-  : ["application-smoke.mjs", "application-browser-proof.mjs"])
+  : ["application-smoke.mjs", "application-browser-proof.mjs", "issue-125-browser-proof.mjs"])
   await run(process.execPath, [fileURLToPath(new URL(proof, import.meta.url))]);

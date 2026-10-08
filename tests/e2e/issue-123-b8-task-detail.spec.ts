@@ -168,7 +168,7 @@ test("#123 B8 real Manual controls, state guards, races, reload and geometry", a
   await expect(header(page)).toContainText("Wochenplan zuverlässig klären");
   // Step operations remain independent from Task completion.
   await page
-    .getByRole("button", { name: "Arbeitsschritte verwalten", exact: true })
+    .getByRole("button", { name: "+ Schritt", exact: true })
     .click();
   await page
     .getByLabel("Neuer Arbeitsschritt", { exact: true })
@@ -185,11 +185,14 @@ test("#123 B8 real Manual controls, state guards, races, reload and geometry", a
   await page.reload();
   await page
     .getByRole("region", { name: "Vorgehen" })
-    .getByRole("button", { name: "Schritt erledigen", exact: true })
+    .getByRole("checkbox", { name: /^Schritt erledigen:/ })
     .click();
+  await expect(
+    page.getByRole("region", { name: "Vorgehen" }).getByRole("checkbox"),
+  ).toBeChecked();
   await page.reload();
-  await expect(page.getByRole("region", { name: "Vorgehen" })).toContainText(
-    "1 von 1 erledigt",
+  await expect(page.locator("#task-work-content")).toContainText(
+    "1 von 1 Schritten erledigt",
   );
   await expect(header(page)).toContainText("Geplant");
   const inventories = [];
@@ -443,7 +446,7 @@ test("#123 B8 real Manual controls, state guards, races, reload and geometry", a
     ).data!.status,
   ).toBe(milestone.status);
   await page
-    .getByRole("button", { name: "Mehr verwalten", exact: true })
+    .getByRole("button", { name: "Task-Verwaltung", exact: true })
     .click();
   await page
     .getByRole("button", { name: "Status verwalten", exact: true })
@@ -534,7 +537,7 @@ test("#123 B8 real Manual controls, state guards, races, reload and geometry", a
     ).toHaveCount(0);
     if (state === "active") {
       await page
-        .getByRole("button", { name: "Mehr verwalten", exact: true })
+        .getByRole("button", { name: "Task-Verwaltung", exact: true })
         .click();
       await page
         .getByRole("button", { name: "Status verwalten", exact: true })

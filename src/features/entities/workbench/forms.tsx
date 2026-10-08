@@ -804,6 +804,8 @@ export function OperationForm({
   closeOnSuccess = false,
   confirmMessage,
   submitClassName = actionClass,
+  checkboxChecked,
+  checkboxId,
 }: {
   operation: string;
   label: string;
@@ -812,6 +814,8 @@ export function OperationForm({
   closeOnSuccess?: boolean;
   confirmMessage?: string;
   submitClassName?: string;
+  checkboxChecked?: boolean;
+  checkboxId?: string;
 }) {
   const hydrated = useHydrated();
   const closeDisclosure = useCloseManagementDisclosure();
@@ -844,9 +848,22 @@ export function OperationForm({
         className="grid gap-3"
       >
         {children}
-        <button className={submitClassName} type="submit">
-          {pending ? "Speichern …" : label}
-        </button>
+        {checkboxChecked === undefined ? (
+          <button className={submitClassName} type="submit">
+            {pending ? "Speichern …" : label}
+          </button>
+        ) : (
+          <label className={submitClassName}>
+            <input
+              type="checkbox"
+              id={checkboxId}
+              aria-busy={pending}
+              aria-label={label}
+              checked={checkboxChecked}
+              onChange={(event) => event.currentTarget.form?.requestSubmit()}
+            />
+          </label>
+        )}
       </fieldset>
       {error && (
         <p role="alert" className="text-sm text-[var(--accent-red)]">
