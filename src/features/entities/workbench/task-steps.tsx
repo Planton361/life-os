@@ -9,7 +9,10 @@ export function TaskSteps({ id, data }: { id: string; data: WorkbenchData }) {
   const steps = data.steps.filter(
     (step) => step.task_id === id && !step.archived_at,
   );
-  const archived = Boolean(task.archived_at);
+  const project = data.projects.find((item) => item.id === task.project_id);
+  const archived = Boolean(
+    task.archived_at || project?.archived_at || project?.status === "archived",
+  );
   return (
     <section aria-labelledby="task-steps-heading">
       <div className={styles.blockTop}>

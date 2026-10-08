@@ -99,7 +99,9 @@ export function TaskReadView({
 }) {
   const task = data.tasks.find((item) => item.id === taskId)!;
   const project = data.projects.find((item) => item.id === task.project_id);
-  const parentArchived = Boolean(project?.archived_at);
+  const parentArchived = Boolean(
+    project?.archived_at || project?.status === "archived",
+  );
   const directGoal = data.goals.find((item) => item.id === task.goal_id);
   const inheritedGoal = data.goals.find((item) => item.id === project?.goal_id);
   const milestone = project
@@ -279,22 +281,24 @@ export function TaskReadView({
                         : "Im Calendar planen"}
                   </Link>
                 )}
-              <TaskObjectMenu label="Task-Verwaltung">
-                {!hasContext && (
-                  <ManagementDialog
-                    label="Voraussetzungen"
-                    triggerText="Vorgänger verwalten"
-                  >
-                    {dependencies}
+              {!parentArchived && (
+                <TaskObjectMenu label="Task-Verwaltung">
+                  {!hasContext && (
+                    <ManagementDialog
+                      label="Voraussetzungen"
+                      triggerText="Vorgänger verwalten"
+                    >
+                      {dependencies}
+                    </ManagementDialog>
+                  )}
+                  <ManagementDialog label="Weitere Beziehungen verwalten">
+                    {relations}
                   </ManagementDialog>
-                )}
-                <ManagementDialog label="Weitere Beziehungen verwalten">
-                  {relations}
-                </ManagementDialog>
-                <ManagementDialog label="Status verwalten">
-                  {lifecycle}
-                </ManagementDialog>
-              </TaskObjectMenu>
+                  <ManagementDialog label="Status verwalten">
+                    {lifecycle}
+                  </ManagementDialog>
+                </TaskObjectMenu>
+              )}
             </div>
           </div>
           <p className={styles.guidance}>

@@ -548,6 +548,7 @@ export async function WorkbenchEditor({
   }
   if (kind === "task" && id && row) {
     const task = data.tasks.find((item) => item.id === id)!;
+    const parent = data.projects.find((item) => item.id === task.project_id);
     const taskRelations = (
       <Relations
         kind="task"
@@ -612,7 +613,10 @@ export async function WorkbenchEditor({
                 (l) => l.task_id === id && l.skill_id === contextSkill.id,
               )}
               taskArchived={Boolean(
-                task.archived_at || task.status === "archived",
+                task.archived_at ||
+                task.status === "archived" ||
+                parent?.archived_at ||
+                parent?.status === "archived",
               )}
             />
           ) : undefined

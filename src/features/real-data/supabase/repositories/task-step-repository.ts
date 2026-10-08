@@ -24,12 +24,23 @@ export async function writeTaskStep(
   const data = parsed.data;
   const parent = await client
     .from("tasks")
-    .select("id")
+    .select("id, project_id")
     .eq("user_id", userId)
     .eq("id", data.taskId)
     .is("archived_at", null)
     .maybeSingle();
   if (parent.error || !parent.data) return false;
+  if (parent.data.project_id) {
+    const project = await client
+      .from("projects")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("id", parent.data.project_id)
+      .is("archived_at", null)
+      .neq("status", "archived")
+      .maybeSingle();
+    if (project.error || !project.data) return false;
+  }
   if (operation === "create" && "title" in data) {
     const result = await client
       .from("task_steps")
