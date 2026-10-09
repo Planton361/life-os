@@ -102,12 +102,17 @@ before Context. Guidance remains a canonical state projection with one dominant
 action, not a second workflow. Status, same-Project/owner guards, source ownership,
 READY/BLOCKED and Task/Project completion semantics are unchanged.
 
-Canonical `/tasks/new` keeps title-first capture and **exactly one**
-`Weitere Angaben (optional)` group with the existing inner field order.
-B8 changes its outer Header/Canvas/Surface only. Global, Project, Milestone and
+The [USER-approved #134 revision](https://github.com/Planton361/life-os/pull/135#issuecomment-6072307754)
+supersedes #121's Task Create composition only: canonical `/tasks/new` uses a
+dominant required Task title under compact `ERFASSEN`, clear Create/Cancel actions
+and exactly three independent, initially closed optional sections. `Arbeitsinhalt
+(optional)` contains Description/Purpose and Arbeitsnotiz; `Planung (optional)`
+contains Priority, Energy, Duration, Deadline and planned date; `Zuordnung
+(optional)` contains Area, Project, Project Milestone and Goal context. Existing
+fields keep their names and relative order within each group; all three groups
+may stay open simultaneously. Global, Project, Milestone and
 Goal origins share the identical form; only validated prefills, return targets
-and relation constraints differ. The historical HTML's three optional disclosure
-groups are explicitly excluded. Existing Skill-origin create/link recovery is
+and relation constraints differ. Existing Skill-origin create/link recovery is
 also retained; B8 does not introduce a second Task form or link mechanism.
 
 ### Project Detail, Empty and B7 Arbeitsstand
@@ -378,17 +383,17 @@ Result and Criteria:
 Project-origin Task creation:
 
 - The existing global `/tasks/new` surface is the canonical normal Task-create
-  UX. Keep `Task erstellen`, `Bewusst erstellen`, `Task zuerst festhalten`,
-  Title-first capture, `Weitere Angaben (optional)`, and the existing field
-  hierarchy, labels and inner visual composition. DESIGN owns the #82 bounded
-  responsive outer-width refinement.
+  UX. Keep `Task erstellen` and title-first capture. The accepted #134 Handoff
+  revision replaces redundant headings with compact `ERFASSEN`, a dominant title
+  and three independent optional sections as defined above. DESIGN owns bounded
+  responsive outer width and the matte B8 composition.
 - `Erste Task anlegen`, non-empty `+ Task` and Milestone-local Task add use that
   exact same page and composition. Project/Milestone/Goal origin may change only
   validated prefills, origin metadata, Save destination and Cancel destination.
   No Project-specific heading, field order, disclosure state or separate
   Task-create component is allowed.
 - Project, Project Milestone and Goal context belong in the existing canonical
-  fields under `Weitere Angaben (optional)`. No extra Project-origin context
+  fields under `Zuordnung (optional)`. No extra Project-origin context
   summary, chip, link or capture block appears in the top Title-first area.
   No Project-specific visual/capture composition beyond canonical Title-first
   `/tasks/new` is allowed; no second Portfolio Task-create UI is introduced.
@@ -952,8 +957,9 @@ user actions through the bounded secondary interactions accepted in #72.
 One Work Task-add entry starts the same normal `/tasks/new` composition as global
 creation; optional Milestone-local entries remain quiet rather than repeated button
 chrome. Project and optional Milestone are prefilled from validated server context
-in the existing canonical fields under `Weitere Angaben (optional)`, as corrected
-in #77; no extra origin-specific top context/capture block is allowed. Creation
+in the existing canonical fields under `Zuordnung (optional)`, preserving #77's
+origin rules within the accepted #134 composition; no extra origin-specific top
+context/capture block is allowed. Creation
 stores one canonical Task and returns to the Project with a global success toast;
 a deliberate Project switch returns to the selected Project. Standalone Task Create keeps its Task-detail navigation.
 Milestone membership never creates a Dependency.

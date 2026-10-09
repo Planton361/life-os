@@ -354,7 +354,7 @@ test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar We
   await expect(capture.getByLabel("Titel", { exact: true })).toBeVisible();
   await expectTaskCaptureParity(page, baseline);
   const optional = capture.getByRole("button", {
-    name: "Weitere Angaben (optional)",
+    name: "Zuordnung (optional)",
     exact: true,
   });
   await expect(optional).toHaveAttribute("aria-expanded", "false");
@@ -377,6 +377,9 @@ test("Issue 62 Task shared surfaces, Project guidance and task-aware Calendar We
       .getByLabel("Goal-Kontext", { exact: true })
       .locator(`option[value="${goal.id}"]`),
   ).toHaveText(goal.title);
+  await capture
+    .getByRole("button", { name: "Planung (optional)", exact: true })
+    .click();
   await capture.getByLabel("Geplantes Datum", { exact: true }).fill(today);
   const createdTitle = `First real Task ${stamp}`;
   await capture.getByLabel("Titel", { exact: true }).fill(createdTitle);

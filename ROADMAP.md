@@ -61,7 +61,9 @@ may proceed before the UX sequence so later architecture work is evidence-based.
 
 The USER ACCEPTED B8 cross-entity target (#121, 2026-10-08) refines visual and
 interaction scope across Task/Project/Goal/Skill, including Project Create A and
-the retained single optional Task-create disclosure. PRODUCT/DESIGN supersede
+the Task-create capture target. The accepted #134 Handoff revision replaces its
+single disclosure with three independent optional groups; all other B8 targets
+remain unchanged. PRODUCT/DESIGN supersede
 conflicting historical visual placement/density below; domain scope, permanent
 sequence and dependencies stay unchanged. Target acceptance is not B8 UI delivery,
 product-surface closure or an operative work authorization.

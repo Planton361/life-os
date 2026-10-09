@@ -96,7 +96,9 @@ binds Task, Project, Goal and Skill to the same V5 family. PRODUCT owns the
 accepted scope and domain boundaries. This design target does not claim B8 UI
 implementation, authorize delivery/merge or close any production Surface Gate.
 The original HTML's earlier B5/B6-open notice is superseded by later acceptance;
-its three Task-create disclosure groups remain explicitly excluded.
+the [USER-approved #134 revision](https://github.com/Planton361/life-os/pull/135#issuecomment-6072307754)
+subsequently accepts its three independent Task Create groups and dominant-title
+hierarchy, superseding #121's one-disclosure target for Task Create only.
 
 ### Canvas, header and surfaces
 
@@ -141,7 +143,7 @@ unchanged. No page-expanding inline editor or parallel form.
 | Project Arbeitsstand | One B7 segmented balance and counts for recorded non-archived/non-canceled Tasks: done / executable-ready / explicitly dependency-blocked / other open; explicit done Milestones separate; no captured Tasks means no fake 0%-bar |
 | Goal Detail | Project-inspired matte identity/Outcome/Warum/Horizont with success criteria; one Work with real Goal Zwischenziel group bands and Task rows, direct Tasks without milestones; object-local management and explicit Zwischenziel-/Goal reviews, no Journey rail or percentage |
 | Skill Detail | Matte identity and shared canvas; information left, Actions right per accepted #102; Target, Lernweg, Practice Tasks, Evidence and Recency remain separate; one primary next action and secondary Focus/Lernschritt/Evidence groups |
-| Task Create | B8 outer header/canvas/surface; canonical title-first inner form, exactly one `Weitere Angaben (optional)` with unchanged field order and origin parity |
+| Task Create | Matte B8 header/canvas/surface; compact `ERFASSEN`, dominant required title and clear Create/Cancel; three independent initially closed groups: Arbeitsinhalt, Planung, Zuordnung; preserved fields, relative group order and origin parity (#134 revision) |
 | Project Create A | Title first, only existing Title required; Description, Project-Fokus, Status, Priority, Deadline, Area and direct Goal in one optional disclosure; clear Create/Cancel; result/Criteria managed on Detail after creation |
 
 B7 is an Arbeitsstand, not a completion score. PRODUCT defines its exact lifecycle,
@@ -588,14 +590,22 @@ was [USER ACCEPTED](https://github.com/Planton361/life-os/issues/77#issuecomment
 on 2026-10-01 and corrects only the Task-create part of #72. All unrelated #72
 hierarchy, management, Review/History and V5 decisions remain binding.
 
-The existing global `/tasks/new` is the canonical normal Task-create UX. Keep
-`Task erstellen`, `Bewusst erstellen`, `Task zuerst festhalten`, Title-first
-capture, exactly one `Weitere Angaben (optional)` group, and the existing field
-hierarchy, labels and inner composition. #82 refines responsive outer width;
-B8 adds shared outer Header/Canvas/Surface treatment. Project/Milestone/Goal origin
+The existing global `/tasks/new` is the canonical normal Task-create UX. The
+USER-approved #134 revision supersedes the older #77/#121 inner visual target:
+keep title-first capture and `Task erstellen`, replace `Bewusst erstellen` /
+`Task zuerst festhalten` with compact `ERFASSEN`, and make the required Task title
+visually dominant with a clear Create/Cancel bar. Exactly three independent,
+initially closed groups follow: `Arbeitsinhalt (optional)` (Description/Purpose,
+Arbeitsnotiz), `Planung (optional)` (Priority, Energy, Duration, Deadline, planned
+date), `Zuordnung (optional)` (Area, Project, Project Milestone, Goal context).
+All three may remain open together; closing/Escape returns focus to the respective
+trigger without closing other groups. Preserve field names, validated writes and
+relative order within each group. #82's responsive width is bounded by B8's 1360px
+matte canvas and readable 940px inner capture. Project/Milestone/Goal origin
 changes only validated
 prefills, origin metadata and Save/Cancel destinations. Project, Project Milestone
-and Goal remain in the existing fields under `Weitere Angaben (optional)`.
+and Goal remain in the existing fields under `Zuordnung (optional)`; Goal-Milestone
+origin retains its scoped optional Project chooser and hidden validated Goal/Stage.
 No Project-specific heading, field order, disclosure state, separate Task-create
 component or extra top context summary/chip/link/capture block is allowed.
 Title-first capture itself remains accepted. PRODUCT retains the required owning
