@@ -1,0 +1,123 @@
+.canvas {
+  width: 100%;
+  max-width: 1360px;
+  min-width: 0;
+  margin-inline: auto;
+  display: grid;
+  gap: 12px;
+  padding-bottom: 24px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+.header,
+.canvas > div > section {
+  min-width: 0;
+  background: var(--surface-1);
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+}
+.header {
+  padding: 23px 27px;
+}
+.entity {
+  margin-bottom: 9px;
+  color: var(--accent-blue);
+  font-size: 10px;
+  font-weight: 720;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+.header h1 {
+  font-size: clamp(26px, 2.8vw, 36px);
+  font-weight: 680;
+  letter-spacing: -0.045em;
+  line-height: 1.16;
+  overflow-wrap: anywhere;
+}
+.description {
+  margin-top: 12px;
+  color: var(--text-secondary);
+}
+.canvas > div > section {
+  padding: 0;
+  gap: 0;
+}
+.canvas > div > section > h2 {
+  padding: 20px 23px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 19px;
+  font-weight: 630;
+  letter-spacing: -0.025em;
+}
+.canvas form {
+  width: calc(100% - 52px);
+  max-width: 940px;
+  min-width: 0;
+  margin: 23px auto;
+}
+.canvas form h2 {
+  font-size: 16px;
+  font-weight: 630;
+  color: var(--text-primary);
+}
+.canvas form label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.canvas form input:not([type="checkbox"]),
+.canvas form select,
+.canvas form textarea {
+  min-height: 42px;
+  background: var(--bg-shell);
+  border-color: var(--border-default);
+  font-size: 13px;
+}
+.canvas form textarea {
+  min-height: 88px;
+}
+.canvas form button[aria-expanded] {
+  color: var(--text-secondary);
+}
+.canvas form button[type="submit"] {
+  background: var(--accent-blue);
+  border-color: var(--accent-blue);
+  color: var(--bg-app);
+  font-size: 12.5px;
+  font-weight: 640;
+}
+.canvas a:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+@media (max-width: 760px) {
+  .header {
+    padding: 18px 16px;
+  }
+  .header h1 {
+    font-size: 26px;
+  }
+  .canvas > div > section > h2 {
+    padding: 16px;
+  }
+  .canvas form {
+    width: calc(100% - 32px);
+    margin-block: 19px;
+  }
+  .canvas form input:not([type="checkbox"]),
+  .canvas form select,
+  .canvas form textarea {
+    font-size: 16px;
+    min-height: 44px;
+  }
+  .canvas form button,
+  .canvas form a {
+    min-height: 44px;
+  }
+}

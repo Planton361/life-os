@@ -2216,6 +2216,21 @@ One [1920×1080 screenshot](../qa/issue-129-task-resources/task-detail-1920x1080
 records implementation evidence. The accepted HTML is design acceptance; final
 real-user acceptance and M0 remain pending. Personal data/server are untouched.
 
+Issue #134 integrates the accepted B8 frame on canonical `/tasks/new` only:
+1360px matte header/canvas, aligned form surface and centered 940px inner capture.
+Task creation remains `CONNECTED`; title-first capture, one closed optional
+disclosure, field order, validated origins and existing Save/Cancel/link semantics
+are unchanged. `tests/sqlite/issue-134-browser-proof.mjs` reuses the #80 parity
+assertions and disposable native SQLite harness for Global, Empty/populated
+Project, Project Milestone, Goal, Current Goal Milestone and Skill capture;
+Save/Cancel/native relation readback after reload, ownership/context denial,
+validation/conflict feedback, Project switching, Skill opt-out/known-ID recovery
+and ambiguous Create are proven. Desktop/4K/Mobile/Short-Mac geometry and keyboard
+disclosure/focus are checked; console/hydration are clean. One
+[1920×1080 screenshot](../qa/issue-134-b8-task-create/task-create-1920x1080.png)
+records implementation evidence. Other entity shells, backend/schema and personal
+runtime/data are unchanged; integrated real-user acceptance and M0 remain separate.
+
 Issue #28 updates the connected Goal detail presentation to accepted Prototype A v2: stable Überblick / Arbeit / Erfolg / Verlauf areas, a numbered Goal-Etappen progression with explicit Project/direct-Task contributions, selected work context, canonical review-ready cue and outcome-first achieved/reopened views. `tests/e2e/issue-28-goal-a-v2.spec.ts` is the focused Manual browser/reload and 3840×2160 / 1920×1080 / 390×844 surface proof; the existing readiness regression in `tests/e2e/pp1-goal-follow-up.spec.ts` covers Task-only READY/BLOCKED. Status remains `CONNECTED_GAP` because Slice 2 completion episodes and Skill Evidence revisions are not part of #28.
 
 Issue #53 implements the USER ACCEPTED #52 Variant A spatial refinement: the Goal identity remains compact, the shared workbench uses a bounded desktop viewport minimum with a common 60/40 frame and bottom-row secondary actions, inner work/review modules remain content-sized, the Journey stays top-led, and mobile remains content-driven. The authenticated disposable Manual flow in `tests/e2e/issue-46-simplified-goal-surface.spec.ts` captures and visually checks sparse one-Current/one-READY and multi-milestone READY/BLOCKED states at 3840×2160, 1920×1080 and 390×844; screenshot artifacts are under `test-results/issue-46-simplified-goal-s-0a261-e-authenticated-Manual-flow/`. `tests/e2e/support/goal-workbench-layout.ts` checks the viewport-derived minimum, footer baseline, 60/40 placement, mobile reset, clipping and horizontal overflow. The focused Goal Journey browser regression also passes explicit intermediate-result review, Goal Review, achievement/reopen, reload and keyboard/focus; 25 Goal guidance/outcome unit tests pass. `pnpm typecheck`, `pnpm lint` and `pnpm build` pass. PP1 is USER ACCEPTED as of 2026-09-28 after the real post-merge Goal review on main `d54f70f9882ef21844073734831a2db17e69b332`; the existing Slice 2 gaps remain deferred.

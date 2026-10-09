@@ -37,6 +37,7 @@ import {
 import type { ReactNode } from "react";
 import { GoalOutcomeWorkbench } from "./goal-outcome-workbench";
 import { TaskReadView } from "./task-read-view";
+import { TaskCreateShell } from "./task-create-shell";
 
 export function EntityWorkbenchShell({
   kind,
@@ -635,8 +636,10 @@ export async function WorkbenchEditor({
         />
       </EntityWorkbenchShell>
     );
+  const EditorShell =
+    kind === "task" && !id ? TaskCreateShell : EntityWorkbenchShell;
   return (
-    <EntityWorkbenchShell
+    <EditorShell
       kind={kind}
       title={row?.title ?? `${visibleEditorLabel} erstellen`}
     >
@@ -825,7 +828,7 @@ export async function WorkbenchEditor({
           </aside>
         )}
       </div>
-    </EntityWorkbenchShell>
+    </EditorShell>
   );
 }
 function Relations({
