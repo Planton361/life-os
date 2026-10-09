@@ -137,6 +137,7 @@
 }
 .workHeader h2 {
   font-size: 19px;
+  margin-top: 5px;
 }
 .guidance {
   order: 3;
@@ -222,7 +223,10 @@
   color: var(--accent-orange);
 }
 .milestone > ul {
-  padding-left: 17px;
+  margin-left: 18px;
+  border-left: 1px solid
+    color-mix(in srgb, var(--accent-orange) 40%, var(--border-subtle));
+  padding-left: 20px;
 }
 .milestone > p {
   margin: 8px 17px 0;
@@ -237,7 +241,9 @@
   color: var(--text-muted);
 }
 .ungrouped > ul {
-  padding-left: 17px;
+  margin-left: 18px;
+  border-left: 1px solid var(--border-default);
+  padding-left: 20px;
 }
 .balance {
   display: grid;
@@ -265,10 +271,10 @@
   overflow: hidden;
 }
 .distribution .done {
-  background: var(--accent-blue);
+  background: var(--accent-green);
 }
 .distribution .ready {
-  background: var(--accent-cyan);
+  background: var(--accent-blue);
 }
 .distribution .blocked {
   background: var(--accent-orange);

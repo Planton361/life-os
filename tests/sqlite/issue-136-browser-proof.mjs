@@ -32,6 +32,9 @@ const ids = Object.fromEntries(
     "stagedEmpty",
     "flat",
     "review",
+    "reviewTask",
+    "reviewStage",
+    "reviewReference",
     "archived",
     "first",
     "current",
@@ -89,6 +92,7 @@ try {
       [ids.first, f.ids.project, "Referenzablauf ist klar", "done", 0],
       [ids.current, f.ids.project, "Kernabläufe prüfen", "active", 1],
       [ids.emptyStage, ids.stagedEmpty, "Optionale Etappe", "open", 0],
+      [ids.reviewStage, ids.review, "Bewusst offene Etappe", "open", 0],
     ])
       db.prepare(
         "INSERT INTO project_milestones(id,user_id,project_id,title,status,sort_order,created_at,updated_at) VALUES(?,?,?,?,?,?,life_now(),life_now())",
@@ -108,7 +112,7 @@ try {
       ["old", "Archivierte Arbeit", "archived", null],
     ])
       db.prepare(
-        "INSERT INTO tasks(id,user_id,project_id,milestone_id,title,status,completed_at,archived_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,life_now(),life_now())",
+        "INSERT INTO tasks(id,user_id,project_id,milestone_id,title,status,completed_at,archived_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,life_now())",
       ).run(
         ids[key],
         f.ownerId,
@@ -118,7 +122,26 @@ try {
         status,
         status === "done" ? new Date().toISOString() : null,
         key === "old" ? new Date().toISOString() : null,
+        `2026-01-${String(["done", "ready", "blocked", "waiting", "source", "canceled", "old"].indexOf(key) + 1).padStart(2, "0")}T12:00:00.000Z`,
       );
+    db.prepare(
+      "INSERT INTO tasks(id,user_id,project_id,milestone_id,title,status,created_at,updated_at) VALUES(?,?,?,?,?,'planned',life_now(),life_now())",
+    ).run(
+      ids.reviewTask,
+      f.ownerId,
+      ids.review,
+      ids.reviewStage,
+      "Offene Task nach Project-Abschluss",
+    );
+    db.prepare(
+      "INSERT INTO resource_relations(id,user_id,resource_id,target_type,target_id,relation_type,project_role,created_at) VALUES(?,?,?,'project',?,'supports','primary_artifact',life_now())",
+    ).run(randomUUID(), f.ownerId, f.ids.resource, ids.review);
+    db.prepare(
+      "INSERT INTO resources(id,user_id,type,title,created_at,updated_at) VALUES(?,?,'note','Review Reference',life_now(),life_now())",
+    ).run(ids.reviewReference, f.ownerId);
+    db.prepare(
+      "INSERT INTO resource_relations(id,user_id,resource_id,target_type,target_id,relation_type,project_role,created_at) VALUES(?,?,?,'project',?,'context','reference',life_now())",
+    ).run(randomUUID(), f.ownerId, ids.reviewReference, ids.review);
     db.prepare(
       "INSERT INTO task_dependencies(id,user_id,project_id,predecessor_task_id,successor_task_id,created_at) VALUES(?,?,?,?,?,life_now())",
     ).run(randomUUID(), f.ownerId, f.ids.project, ids.ready, ids.blocked);
@@ -277,7 +300,64 @@ try {
   ).toHaveCount(1);
   await expect(root.locator("[data-milestone-id]").first()).toHaveAttribute(
     "data-milestone-id",
-    ids.first,
+    ids.current,
+  );
+  const currentRows = () =>
+    root.locator(`[data-milestone-id="${ids.current}"] [data-project-task]`);
+  assert.deepEqual(
+    await currentRows().evaluateAll((rows) =>
+      rows.map((row) => row.dataset.projectTask),
+    ),
+    [ids.blocked, ids.ready],
+  );
+  assert.deepEqual(
+    await root
+      .locator('[aria-label="Ohne Milestone"] [data-project-task]')
+      .evaluateAll((rows) => rows.map((row) => row.dataset.projectTask)),
+    [ids.canceled, ids.source, ids.waiting],
+  );
+  await expect(work.getByText("Work / Project", { exact: true })).toBeVisible();
+  await expect(
+    work.getByRole("heading", { name: "Tasks & Milestones", exact: true }),
+  ).toBeVisible();
+  const workTask = work
+    .getByRole("link", { name: "+ Task", exact: true })
+    .first();
+  const workMilestone = work.getByRole("button", {
+    name: "+ Milestone",
+    exact: true,
+  });
+  assert.equal(
+    await workTask.evaluate((el) => getComputedStyle(el).backgroundColor),
+    "rgb(217, 146, 79)",
+  );
+  assert.equal(
+    await workMilestone.evaluate((el) => getComputedStyle(el).borderTopStyle),
+    "solid",
+  );
+  assert.notEqual(
+    await workMilestone.evaluate((el) => getComputedStyle(el).backgroundColor),
+    "rgb(217, 146, 79)",
+  );
+  for (const [key, color] of [
+    ["done", "rgb(66, 184, 131)"],
+    ["ready", "rgb(91, 124, 250)"],
+    ["blocked", "rgb(217, 146, 79)"],
+    ["other", "rgb(127, 141, 163)"],
+  ]) {
+    assert.equal(
+      await balance
+        .locator(`[data-work-segment="${key}"]`)
+        .evaluate((el) => getComputedStyle(el).backgroundColor),
+      color,
+    );
+  }
+  const groupBounds = await root
+    .locator(`[data-milestone-id="${ids.current}"]`)
+    .boundingBox();
+  assert.ok(
+    (await row(ids.ready).boundingBox()).x > groupBounds.x + 18,
+    "Task rows are indented within their Milestone",
   );
   await expect(balance).toContainText("1 von 2");
   await geometry();
@@ -346,6 +426,12 @@ try {
   await expect(taskEdit).toBeHidden();
   await page.reload();
   await expect(row(ids.ready)).toContainText(title);
+  assert.deepEqual(
+    await currentRows().evaluateAll((rows) =>
+      rows.map((row) => row.dataset.projectTask),
+    ),
+    [ids.blocked, ids.ready],
+  );
   await expect(row(ids.blocked)).toContainText(`Blockiert durch: ${title}`);
   await row(ids.ready)
     .getByRole("link", { name: /Details öffnen$/ })
@@ -369,7 +455,7 @@ try {
   await expect(row(ids.blocked)).toHaveAttribute("data-primary-task", "true");
   await expect(root.locator("header")).toContainText("Aktiv");
   checks.push(
-    "B7 disjoint counts; source/waiting excluded from executability; stored milestone order; real Task edit/complete/Details/Calendar; dependency/title/readiness revalidation and reload; Project remains active",
+    "B7 done green/ready blue/blocked orange/other neutral; orange + Task and outlined + Milestone; inherited Task order with READY emphasized in place; lifecycle-partitioned Milestones; real Task edit/complete/Details/Calendar; dependency/title/readiness reload; Project remains active",
   );
   const group = root.locator(`[data-milestone-id="${ids.current}"]`);
   const createName = `Grouped capture ${randomUUID().slice(0, 8)}`;
@@ -405,6 +491,8 @@ try {
     "canonical merged three-disclosure Task Create; milestone origin; Cancel/no write; Save/return/reload; multiple eligible Tasks preserve choice",
   );
   // Force a concurrent explicit predecessor after the displayed eligibility was read.
+  // Drain background prefetch before deliberately stopping our synthetic writer.
+  await page.waitForLoadState("networkidle");
   const proofPort = Number(new URL(app.origin).port);
   await app.stop();
   app = undefined;
@@ -459,6 +547,9 @@ try {
   }
   await page.setViewportSize({ width: 1920, height: 1080 });
   await go(ids.empty);
+  await expect(
+    work.getByRole("heading", { name: "Tasks", exact: true }),
+  ).toBeVisible();
   await expect(balance).toHaveCount(0);
   await expect(
     root.getByRole("link", { name: "Erste Task anlegen", exact: true }),
@@ -587,6 +678,10 @@ try {
     .click();
   await review.locator('[name="decision"]').selectOption("completed");
   await review.locator('[name="resultAccepted"]').check();
+  await review.locator('[name="openWorkAcknowledged"]').check();
+  await review
+    .locator('[name="openWorkDisposition"]')
+    .fill("Offene Arbeit bleibt für eine bewusste Wiederöffnung erhalten.");
   await review
     .locator(`[name="assessment-${ids.criterion}"]`)
     .selectOption("satisfied");
@@ -601,6 +696,72 @@ try {
   await expect(
     root.getByRole("region", { name: "Project Abschluss", exact: true }),
   ).toContainText("Project abgeschlossen");
+  await expect(row(ids.reviewTask)).toHaveAttribute(
+    "data-work-category",
+    "ready",
+  );
+  await expect(
+    row(ids.reviewTask).getByRole("link", { name: /Details öffnen$/ }),
+  ).toBeVisible();
+  await expect(work.locator("form")).toHaveCount(0);
+  await expect(
+    work.getByRole("button", { name: "Bearbeiten", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    work.getByRole("button", { name: "+ Milestone", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    work.getByRole("link", { name: /^(\+ Task|Erste Task anlegen)$/ }),
+  ).toHaveCount(0);
+  await expect(root.locator('[data-primary-task="true"]')).toHaveCount(0);
+  for (const name of [
+    "Bearbeiten",
+    "Mehr",
+    "Ergebnis und Kriterien bearbeiten",
+    "Beziehungen verwalten",
+    "Artifact verwalten",
+    "Abschluss prüfen",
+  ]) {
+    await expect(root.getByRole("button", { name, exact: true })).toHaveCount(
+      0,
+    );
+  }
+  await expect(
+    root
+      .locator("header")
+      .getByRole("button", { name: "Für Obsidian exportieren", exact: true }),
+  ).toBeVisible();
+  const exportDownload = page.waitForEvent("download");
+  await root
+    .locator("header")
+    .getByRole("button", { name: "Für Obsidian exportieren", exact: true })
+    .click();
+  const download = await exportDownload;
+  assert.equal(await download.failure(), null);
+  assert.match(download.suggestedFilename(), /\.zip$/);
+  await expect(
+    root.getByRole("link", { name: "Abschluss-Review ansehen", exact: true }),
+  ).toBeVisible();
+  await root
+    .getByRole("button", { name: "Weitere Inhalte ansehen", exact: true })
+    .click();
+  const supporting = page.getByRole("dialog", {
+    name: "Weitere Inhalte",
+    exact: true,
+  });
+  await expect(supporting).toContainText("Review Reference");
+  await expect(supporting.locator("form")).toHaveCount(0);
+  await expect(
+    supporting.getByRole("link", {
+      name: "Neue externe Referenz anlegen",
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await geometry();
+  await expect(work.getByText(/Abgeschlossenes Project/)).toBeVisible();
+  await page.setViewportSize({ width: 1920, height: 1080 });
   await root
     .getByRole("button", { name: "Abschlussverlauf ansehen", exact: true })
     .click();
@@ -627,6 +788,35 @@ try {
   await page.reload();
   await expect(root.locator("header")).toContainText("Aktiv");
   await expect(
+    row(ids.reviewTask).getByRole("button", { name: "Erledigt", exact: true }),
+  ).toBeVisible();
+  await expect(
+    row(ids.reviewTask).getByRole("button", {
+      name: "Bearbeiten",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    work.getByRole("link", { name: "+ Task", exact: true }).first(),
+  ).toBeVisible();
+  await expect(
+    work.getByRole("button", { name: "+ Milestone", exact: true }),
+  ).toBeVisible();
+  await expect(
+    root
+      .locator(`[data-milestone-id="${ids.reviewStage}"]`)
+      .locator(":scope > div")
+      .getByRole("button", { name: "Bearbeiten", exact: true }),
+  ).toBeVisible();
+  for (const name of [
+    "Ergebnis und Kriterien bearbeiten",
+    "Beziehungen verwalten",
+    "Artifact verwalten",
+    "Mehr",
+  ]) {
+    await expect(root.getByRole("button", { name, exact: true })).toBeVisible();
+  }
+  await expect(
     root.getByRole("button", { name: "Abschluss prüfen", exact: true }),
   ).toHaveCount(1);
   await go(ids.archived);
@@ -640,7 +830,7 @@ try {
     root.getByRole("link", { name: "+ Task", exact: true }),
   ).toHaveCount(0);
   checks.push(
-    "explicit Continue/completed Review and immutable History reload; reopen/new cycle; archived read-only; foreign/invalid/stale ownership guards",
+    "explicit Continue/completed Review retaining open Task/Milestone; completed header/work/relations/resources read-only with Review/History/Reopen/Export preserved; reload/mobile and actions return after Reopen; archived read-only; foreign/invalid/stale ownership guards",
   );
   assert.deepEqual(errors, []);
   writeFileSync(

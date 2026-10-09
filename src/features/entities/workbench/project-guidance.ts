@@ -1,5 +1,6 @@
 export type ProjectTaskGuidance =
   | { kind: "archived" }
+  | { kind: "completed" }
   | { kind: "empty" }
   | { kind: "single-ready"; taskId: string }
   | { kind: "multiple-ready"; count: number }
@@ -8,16 +9,19 @@ export type ProjectTaskGuidance =
 
 export function projectTaskGuidance({
   archived,
+  completed = false,
   taskCount,
   readyTaskIds,
   blockedCount,
 }: {
   archived: boolean;
+  completed?: boolean;
   taskCount: number;
   readyTaskIds: readonly string[];
   blockedCount: number;
 }): ProjectTaskGuidance {
   if (archived) return { kind: "archived" };
+  if (completed) return { kind: "completed" };
   if (taskCount === 0) return { kind: "empty" };
   if (readyTaskIds.length === 1)
     return { kind: "single-ready", taskId: readyTaskIds[0] };

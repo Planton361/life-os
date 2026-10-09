@@ -28,19 +28,50 @@ describe("project milestones", () => {
       result.groups.flatMap((g) => g.tasks).length + result.unassigned.length,
     ).toBe(3);
   });
-  it("respects stored stage order including completed stages, excludes history and other projects", () => {
+  it("sorts open/active before done, retaining sort_order and id within each partition", () => {
     const result = projectMilestoneGroups(
       "p",
       [
         stage("z", "done", 0),
         stage("b", "active", 2),
         stage("a", "open", 1),
+        stage("c", "open", 2),
+        stage("y", "done", 0),
+        stage("x", "done", 4),
         stage("archived", "open", 3, "now"),
+        { ...stage("foreign", "open", 0), project_id: "other" },
       ],
       [{ ...task("foreign", null), project_id: "other" }],
     );
-    expect(result.groups.map((g) => g.milestone.id)).toEqual(["z", "a", "b"]);
+    expect(result.groups.map((g) => g.milestone.id)).toEqual([
+      "a",
+      "b",
+      "c",
+      "y",
+      "z",
+      "x",
+    ]);
     expect(result.taskCount).toBe(0);
+  });
+  it("preserves inherited Task row order in each group and unassigned work", () => {
+    const result = projectMilestoneGroups(
+      "p",
+      [stage("a")],
+      [
+        task("new-waiting", "a", "waiting"),
+        task("new-unassigned", null, "waiting"),
+        task("older-ready", "a"),
+        task("old-unassigned", null),
+      ],
+    );
+    expect(result.groups[0].tasks.map((t) => t.id)).toEqual([
+      "new-waiting",
+      "older-ready",
+    ]);
+    expect(result.unassigned.map((t) => t.id)).toEqual([
+      "new-unassigned",
+      "old-unassigned",
+    ]);
   });
   it("accepts unassignment but rejects invalid operations, missing identity and impossible dates", () => {
     const projectId = "00000000-0000-4000-8000-000000000001";

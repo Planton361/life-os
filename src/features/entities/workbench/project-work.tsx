@@ -91,6 +91,7 @@ export function ProjectWork({
   projectId: string;
 }) {
   const project = data.projects.find((p) => p.id === projectId)!;
+  const mutable = !project.archived_at && project.status !== "completed";
   const summary = projectMilestoneGroups(
     projectId,
     data.milestones,
@@ -110,6 +111,7 @@ export function ProjectWork({
   );
   const guidance = projectTaskGuidance({
     archived: Boolean(project.archived_at),
+    completed: project.status === "completed",
     taskCount: balance.total,
     readyTaskIds: balance.readyTaskIds,
     blockedCount: balance.counts.blocked,
@@ -120,24 +122,18 @@ export function ProjectWork({
     quiet = false,
   ) => (
     <Link
-      className={
-        quiet
-          ? styles.quiet
-          : label === "Erste Task anlegen"
-            ? styles.primaryAction
-            : styles.button
-      }
+      className={quiet ? styles.quiet : styles.primaryAction}
       prefetch={false}
       href={`/tasks/new?${new URLSearchParams({ project: projectId, ...(milestoneId ? { milestone: milestoneId } : {}) })}`}
     >
       {label}
     </Link>
   );
-  const milestoneManagement = !project.archived_at && (
+  const milestoneManagement = mutable && (
     <ManagementDialog
       label="Weitere Work-Optionen"
       triggerText="+ Milestone"
-      triggerClassName={styles.quiet}
+      triggerClassName={styles.button}
     >
       <section className="grid gap-3">
         <h3 className="font-semibold">Milestone hinzufügen</h3>
@@ -183,149 +179,135 @@ export function ProjectWork({
   const renderTasks = (rows: typeof tasks) =>
     rows.length ? (
       <ul>
-        {rows
-          .toSorted(
-            (a, b) =>
-              Number(balance.categories.get(b.id) === "ready") -
-              Number(balance.categories.get(a.id) === "ready"),
-          )
-          .map((t) => {
-            const dependency = taskDependencyContext(
-              data.dependencyGraph,
-              t.id,
-            );
-            const text = taskTextFields(t.description);
-            return (
-              <li
-                key={t.id}
-                data-project-task={t.id}
-                data-work-category={balance.categories.get(t.id) ?? "excluded"}
-                data-primary-task={
+        {rows.map((t) => {
+          const dependency = taskDependencyContext(data.dependencyGraph, t.id);
+          const text = taskTextFields(t.description);
+          return (
+            <li
+              key={t.id}
+              data-project-task={t.id}
+              data-work-category={balance.categories.get(t.id) ?? "excluded"}
+              data-primary-task={
+                guidance.kind === "single-ready" && guidance.taskId === t.id
+                  ? "true"
+                  : undefined
+              }
+              className={`${styles.task} ${guidance.kind === "single-ready" && guidance.taskId === t.id ? styles.primaryTask : ""}`}
+            >
+              <section
+                className="min-w-0"
+                aria-label={
                   guidance.kind === "single-ready" && guidance.taskId === t.id
-                    ? "true"
+                    ? "Project Task guidance"
                     : undefined
                 }
-                className={`${styles.task} ${guidance.kind === "single-ready" && guidance.taskId === t.id ? styles.primaryTask : ""}`}
+                data-project-task-guidance={
+                  guidance.kind === "single-ready" && guidance.taskId === t.id
+                    ? "single-ready"
+                    : undefined
+                }
               >
-                <section
-                  className="min-w-0"
-                  aria-label={
-                    guidance.kind === "single-ready" && guidance.taskId === t.id
-                      ? "Project Task guidance"
-                      : undefined
-                  }
-                  data-project-task-guidance={
-                    guidance.kind === "single-ready" && guidance.taskId === t.id
-                      ? "single-ready"
-                      : undefined
-                  }
+                {guidance.kind === "single-ready" &&
+                  guidance.taskId === t.id && (
+                    <p className={styles.taskLabel}>
+                      Task · Nächste ausführbare Task
+                    </p>
+                  )}
+                {!(
+                  guidance.kind === "single-ready" && guidance.taskId === t.id
+                ) && <p className={styles.taskLabel}>Task</p>}
+                <Link className={styles.taskTitle} href={`/tasks/${t.id}`}>
+                  {t.title}
+                </Link>
+                <p
+                  className={`${styles.taskStatus} ${balance.categories.get(t.id) === "ready" ? styles.ready : balance.categories.get(t.id) === "blocked" ? styles.blocked : ""}`}
                 >
-                  {guidance.kind === "single-ready" &&
-                    guidance.taskId === t.id && (
-                      <p className={styles.taskLabel}>
-                        Task · Nächste ausführbare Task
-                      </p>
-                    )}
-                  {!(
-                    guidance.kind === "single-ready" && guidance.taskId === t.id
-                  ) && <p className={styles.taskLabel}>Task</p>}
-                  <Link className={styles.taskTitle} href={`/tasks/${t.id}`}>
-                    {t.title}
-                  </Link>
-                  <p
-                    className={`${styles.taskStatus} ${balance.categories.get(t.id) === "ready" ? styles.ready : balance.categories.get(t.id) === "blocked" ? styles.blocked : ""}`}
-                  >
-                    {{
-                      inbox: "Inbox",
-                      planned: "Geplant",
-                      active: "Aktiv",
-                      waiting: "Wartend",
-                      done: "Erledigt",
-                      canceled: "Abgebrochen",
-                      someday: "Irgendwann",
-                      archived: "Archiviert",
-                    }[t.status] ?? t.status}
-                    {!balance.categories.has(t.id) &&
-                      " · nicht im Arbeitsstand"}
-                    {taskIsOpen(t)
-                      ? ` · Dependencies ${dependency.availability}${balance.categories.get(t.id) === "ready" ? " · ausführbar" : balance.categories.get(t.id) === "other" ? " · derzeit nicht ausführbar" : ""}`
-                      : dependency.inconsistentCompletion
-                        ? " · Dependency inkonsistent"
-                        : ""}
+                  {{
+                    inbox: "Inbox",
+                    planned: "Geplant",
+                    active: "Aktiv",
+                    waiting: "Wartend",
+                    done: "Erledigt",
+                    canceled: "Abgebrochen",
+                    someday: "Irgendwann",
+                    archived: "Archiviert",
+                  }[t.status] ?? t.status}
+                  {!balance.categories.has(t.id) && " · nicht im Arbeitsstand"}
+                  {taskIsOpen(t)
+                    ? ` · Dependencies ${dependency.availability}${balance.categories.get(t.id) === "ready" ? " · ausführbar" : balance.categories.get(t.id) === "other" ? " · derzeit nicht ausführbar" : ""}`
+                    : dependency.inconsistentCompletion
+                      ? " · Dependency inkonsistent"
+                      : ""}
+                </p>
+                {data.scheduleSources.some(
+                  (source) => source.task_id === t.id,
+                ) && (
+                  <p className={styles.taskStatus}>
+                    Quellengebunden · Abschluss über die Quelle
                   </p>
-                  {data.scheduleSources.some(
-                    (source) => source.task_id === t.id,
-                  ) && (
-                    <p className={styles.taskStatus}>
-                      Quellengebunden · Abschluss über die Quelle
-                    </p>
+                )}
+                {text.nextAction && (
+                  <p className="mt-1 line-clamp-2 break-words text-sm text-[var(--text-secondary)]">
+                    {text.nextAction}
+                  </p>
+                )}
+                {dependency.blockers.length > 0 && (
+                  <p className="mt-1 break-words text-sm text-[var(--text-secondary)]">
+                    <span className="font-medium">Blockiert durch: </span>
+                    {dependency.blockers.map(({ edgeId, task: blocker }, i) => (
+                      <span key={edgeId}>
+                        {i > 0 ? " · " : ""}
+                        {blocker ? (
+                          <Link
+                            className="underline underline-offset-2"
+                            href={`/tasks/${blocker.id}`}
+                          >
+                            {blocker.title}
+                            {blocker.archived_at ? " (archiviert)" : ""}
+                          </Link>
+                        ) : (
+                          "Vorgänger nicht verfügbar"
+                        )}
+                      </span>
+                    ))}
+                  </p>
+                )}
+                {t.due_at && (
+                  <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                    Deadline{" "}
+                    {t.due_at.slice(0, 10).split("-").reverse().join(".")}
+                  </p>
+                )}
+              </section>
+              <div
+                className={styles.taskActions}
+                aria-label={`Aktionen: ${t.title}`}
+              >
+                {mutable &&
+                  !t.archived_at &&
+                  taskHasExecutableLifecycle(t) &&
+                  dependency.availability === "READY" &&
+                  balance.categories.get(t.id) === "ready" && (
+                    <OperationForm
+                      operation="task.complete"
+                      label="Erledigt"
+                      submitClassName={styles.button}
+                    >
+                      <input type="hidden" name="taskId" value={t.id} />
+                    </OperationForm>
                   )}
-                  {text.nextAction && (
-                    <p className="mt-1 line-clamp-2 break-words text-sm text-[var(--text-secondary)]">
-                      {text.nextAction}
-                    </p>
-                  )}
-                  {dependency.blockers.length > 0 && (
-                    <p className="mt-1 break-words text-sm text-[var(--text-secondary)]">
-                      <span className="font-medium">Blockiert durch: </span>
-                      {dependency.blockers.map(
-                        ({ edgeId, task: blocker }, i) => (
-                          <span key={edgeId}>
-                            {i > 0 ? " · " : ""}
-                            {blocker ? (
-                              <Link
-                                className="underline underline-offset-2"
-                                href={`/tasks/${blocker.id}`}
-                              >
-                                {blocker.title}
-                                {blocker.archived_at ? " (archiviert)" : ""}
-                              </Link>
-                            ) : (
-                              "Vorgänger nicht verfügbar"
-                            )}
-                          </span>
-                        ),
-                      )}
-                    </p>
-                  )}
-                  {t.due_at && (
-                    <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                      Deadline{" "}
-                      {t.due_at.slice(0, 10).split("-").reverse().join(".")}
-                    </p>
-                  )}
-                </section>
-                <div
-                  className={styles.taskActions}
-                  aria-label={`Aktionen: ${t.title}`}
+                {mutable && <TaskEditDialog data={data} taskId={t.id} />}
+                <Link
+                  className="min-h-10 content-center text-sm text-[var(--text-muted)] underline"
+                  aria-label={`${t.title}: Details öffnen`}
+                  href={`/tasks/${t.id}`}
                 >
-                  {!project.archived_at &&
-                    !t.archived_at &&
-                    taskHasExecutableLifecycle(t) &&
-                    dependency.availability === "READY" &&
-                    balance.categories.get(t.id) === "ready" && (
-                      <OperationForm
-                        operation="task.complete"
-                        label="Erledigt"
-                        submitClassName={styles.button}
-                      >
-                        <input type="hidden" name="taskId" value={t.id} />
-                      </OperationForm>
-                    )}
-                  {!project.archived_at && (
-                    <TaskEditDialog data={data} taskId={t.id} />
-                  )}
-                  <Link
-                    className="min-h-10 content-center text-sm text-[var(--text-muted)] underline"
-                    aria-label={`${t.title}: Details öffnen`}
-                    href={`/tasks/${t.id}`}
-                  >
-                    Details
-                  </Link>
-                </div>
-              </li>
-            );
-          })}
+                  Details
+                </Link>
+              </div>
+            </li>
+          );
+        })}
       </ul>
     ) : (
       <p className="py-3 text-sm text-[var(--text-muted)]">Noch keine Tasks.</p>
@@ -333,7 +315,12 @@ export function ProjectWork({
   return (
     <section aria-label="Tasks & Progress" className={styles.work}>
       <div className={styles.workHeader}>
-        <h2 className="text-xl font-semibold">Work</h2>
+        <div>
+          <p className={styles.groupLabel}>Work / Project</p>
+          <h2 className="text-xl font-semibold">
+            {summary.milestoneCount > 0 ? "Tasks & Milestones" : "Tasks"}
+          </h2>
+        </div>
         <div className={styles.guidance}>
           {guidance.kind !== "single-ready" && (
             <section
@@ -347,6 +334,11 @@ export function ProjectWork({
                 <p className="text-sm text-[var(--text-secondary)]">
                   Archivierter Project-Kontext · Tasks bleiben als Verlauf
                   lesbar.
+                </p>
+              ) : guidance.kind === "completed" ? (
+                <p className="text-sm text-[var(--text-secondary)]">
+                  Abgeschlossenes Project · Arbeit bleibt lesbar. Öffne das
+                  Project wieder, um sie zu bearbeiten.
                 </p>
               ) : guidance.kind === "empty" ? (
                 <>
@@ -412,7 +404,7 @@ export function ProjectWork({
             </section>
           )}
         </div>
-        {!project.archived_at && guidance.kind !== "empty" && (
+        {mutable && guidance.kind !== "empty" && (
           <div className={styles.workActions}>
             {balance.total > 0 && createTaskLink(undefined, "+ Task")}
             {milestoneManagement}
@@ -440,6 +432,7 @@ export function ProjectWork({
                   .map((key) => (
                     <span
                       key={key}
+                      data-work-segment={key}
                       className={styles[key]}
                       style={{ flex: balance.counts[key] }}
                     />
@@ -501,7 +494,7 @@ export function ProjectWork({
                   </span>
                 )}
               </div>
-              {!project.archived_at && (
+              {mutable && (
                 <div className={styles.workActions}>
                   {createTaskLink(m.id, "+ Task", true)}
                   <ManagementDialog

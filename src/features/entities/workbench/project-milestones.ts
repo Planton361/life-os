@@ -22,7 +22,12 @@ export function projectMilestoneGroups<M extends Milestone, T extends Task>(
   );
   const stages = milestones
     .filter((m) => m.project_id === projectId && !m.archived_at)
-    .sort((a, b) => a.sort_order - b.sort_order || a.id.localeCompare(b.id));
+    .sort(
+      (a, b) =>
+        Number(a.status === "done") - Number(b.status === "done") ||
+        a.sort_order - b.sort_order ||
+        a.id.localeCompare(b.id),
+    );
   return {
     groups: stages.map((m) => {
       const linked = tasks.filter((t) => t.milestone_id === m.id);

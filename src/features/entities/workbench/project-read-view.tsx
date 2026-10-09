@@ -38,6 +38,7 @@ export function ProjectReadView({
   depth?: PresentationRead<ProjectDepthRead>;
 }) {
   const project = data.projects.find((p) => p.id === id)!;
+  const mutable = !project.archived_at && project.status !== "completed";
   const tasks = data.tasks.filter((t) => t.project_id === id && !t.archived_at);
   const goal = data.goals.find((g) => g.id === project.goal_id);
   const skillIds = new Set([
@@ -67,7 +68,7 @@ export function ProjectReadView({
   );
   const showRail = hasContext && hasWork;
   const ContextContainer = hasWork ? "aside" : "details";
-  const relationshipManagement = !project.archived_at && (
+  const relationshipManagement = mutable && (
     <ManagementDialog
       label="Beziehungen verwalten"
       initiallyOpen={Boolean(selectedResource)}
@@ -120,7 +121,7 @@ export function ProjectReadView({
                 {project.title}
               </h1>
             </div>
-            {!project.archived_at && (
+            {mutable && (
               <div className={styles.actions}>
                 <ManagementDialog
                   label="Project bearbeiten"
@@ -159,7 +160,7 @@ export function ProjectReadView({
                 </ManagementDialog>
               </div>
             )}
-            {project.archived_at && (
+            {!mutable && (
               <div className={styles.actions}>
                 <ProjectExport projectId={id} />
               </div>
@@ -196,9 +197,7 @@ export function ProjectReadView({
             )}
           </div>
           {depth && <ProjectDepthResult depth={depth} />}
-          {depth && !project.archived_at && (
-            <ProjectDepthResultManagement depth={depth} />
-          )}
+          {depth && mutable && <ProjectDepthResultManagement depth={depth} />}
           {!hasContext && project.next_step && (
             <section
               aria-label="Project-Fokus"
