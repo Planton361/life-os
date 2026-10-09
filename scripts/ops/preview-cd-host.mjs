@@ -188,7 +188,7 @@ export function compatibilityFingerprint(release) {
       if (entry.isDirectory()) walk(file);
       else if (
         !entry.name.endsWith(".test.ts") &&
-        /schema|catalog|runtime\.ts$|bootstrap|writer-lease|file-boundary|codecs|request-boundary|gateway|hosted/.test(
+        /schema|catalog|runtime\.ts$|runtime-configuration|owner-context|bootstrap|writer-lease|file-boundary|codecs|request-boundary|gateway|hosted/.test(
           entry.name,
         )
       )
