@@ -1348,6 +1348,10 @@ export function GoalOutcomeWorkbench({
             task.id,
           );
           const raw = data.tasks.find((t) => t.id === task.id);
+          const project = data.projects.find((p) => p.id === raw?.project_id);
+          const parentArchived = Boolean(
+            project?.archived_at || project?.status === "archived",
+          );
           const closed = ["done", "completed", "canceled"].includes(
             task.status,
           );
@@ -1372,6 +1376,7 @@ export function GoalOutcomeWorkbench({
             }).toString();
           const showCalendar =
             !archived &&
+            !parentArchived &&
             raw &&
             !raw.archived_at &&
             ((!sourceOwned && taskHasExecutableLifecycle(raw)) ||
@@ -1432,7 +1437,7 @@ export function GoalOutcomeWorkbench({
                 className={styles.taskActions}
                 aria-label={`Aktionen: ${task.title}`}
               >
-                {canManage && raw && !sourceOwned && (
+                {canManage && !parentArchived && raw && !sourceOwned && (
                   <TaskEditDialog
                     data={data}
                     taskId={task.id}
