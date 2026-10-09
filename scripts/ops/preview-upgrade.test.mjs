@@ -22,6 +22,9 @@ function fixture(fault = "") {
   const io = {
     authorize: operation("gate"),
     originalCheckpoint: async () => ({ originalSchema: 9 }),
+    prepareHelpers: operation("helpers-before-stop"),
+    stoppedCheckpoint: async (checkpoint) => ({ ...checkpoint, stopped: true }),
+    assertOperatorHandoff: operation("operator-handoff"),
     prepareCompatiblePair: async () => {
       events.push("pair");
       return { candidate, fallback };

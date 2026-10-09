@@ -20,7 +20,7 @@
     "workstation:doctor": "node scripts/ops/workstation-doctor.mjs",
     "test:workstation:doctor": "node --test scripts/ops/workstation-doctor.test.mjs",
     "preview:cd": "node scripts/ops/preview-cd.mjs",
-    "test:preview:cd": "node --test --test-concurrency=1 scripts/ops/preview-cd.test.mjs scripts/ops/preview-cd-simulation.test.mjs scripts/ops/preview-upgrade.test.mjs scripts/ops/preview-upgrade-native.test.mjs tests/sqlite/preview-reset-crash.test.mjs",
+    "test:preview:cd": "node --test --test-concurrency=1 scripts/ops/preview-cd.test.mjs scripts/ops/preview-cd-simulation.test.mjs scripts/ops/preview-upgrade.test.mjs scripts/ops/preview-upgrade-state.test.mjs scripts/ops/preview-upgrade-native.test.mjs tests/sqlite/preview-reset-crash.test.mjs",
     "export:local": "echo \"Export not implemented yet. See docs/security/backup-export-restore-strategy-r1-9-2.md\"",
     "backup:local:create": "node scripts/ops/create-local-db-backup.mjs",
     "backup:local:restore-smoke": "node scripts/ops/restore-local-db-backup-smoke.mjs",

@@ -1,13 +1,10 @@
-import { createRequire } from "node:module";
-import { join } from "node:path";
 import { boundary } from "./preview-cd-host.mjs";
+import { upgradeNativeDependencies } from "./preview-upgrade-native-loader.mjs";
 // Private pipe only: the caller consumes this owner identifier; never a CLI log.
 try {
   const [release, path] = process.argv.slice(2);
   boundary(path);
-  const Database = createRequire(join(release, "package.json"))(
-      "better-sqlite3",
-    ),
+  const { Database } = upgradeNativeDependencies(release),
     db = new Database(path, { readonly: true, fileMustExist: true });
   try {
     const row = db

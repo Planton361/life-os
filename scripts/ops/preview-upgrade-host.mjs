@@ -3,14 +3,7 @@ import { dirname, join, resolve } from "node:path";
 import { existsSync, readFileSync, writeFileSync, lstatSync } from "node:fs";
 import { hostname } from "node:os";
 import { randomUUID } from "node:crypto";
-import {
-  NODE,
-  LABEL,
-  deny,
-  initialState,
-  launchAgent,
-  isSha,
-} from "./preview-cd-core.mjs";
+import { NODE, LABEL, deny, launchAgent, isSha } from "./preview-cd-core.mjs";
 import {
   boundary,
   readJson,
@@ -32,6 +25,12 @@ import {
   upgradeExistingProtocol,
   recoverExistingProtocol,
 } from "./preview-upgrade-core.mjs";
+import {
+  stoppedOperatorCheckpoint,
+  assertOperatorHandoff,
+  assertConfirmedOperatorPrefix,
+  upgradedOperatorState,
+} from "./preview-upgrade-state.mjs";
 
 export async function upgradeExisting({
   root,
@@ -68,16 +67,16 @@ export async function upgradeExisting({
   const helper = join(source, "scripts/ops/preview-upgrade-database.mjs");
   const journalPath = join(root, "upgrade-v2.json");
   const existing = recover ? readJson(journalPath) : null;
-  let newConfig, newService, workerUnlock;
+  let newConfig, newService, workerUnlock, helperRelease;
   const databaseCommand = async (op, path, destination) =>
     command(
       config.node,
       [
         "--conditions=react-server",
         helper,
-        source,
+        helperRelease.path,
         op,
-        path,
+        ...(path ? [path] : []),
         ...(destination ? [destination] : []),
       ],
       { env, timeout: 60_000 },
@@ -107,6 +106,8 @@ export async function upgradeExisting({
       "preview-upgrade-core.mjs",
       "preview-upgrade-database.mjs",
       "preview-upgrade-owner.mjs",
+      "preview-upgrade-native-loader.mjs",
+      "preview-upgrade-state.mjs",
       "run-preview-production.mjs",
       "run-production.mjs",
     ]) {
@@ -140,7 +141,8 @@ export async function upgradeExisting({
     );
     await command("/usr/bin/plutil", ["-lint", plist], { env });
   }
-  async function publish(pair) {
+  async function publish(pair, checkpoint) {
+    const ready = upgradedOperatorState(root, pair, checkpoint);
     const grantPath = join(root, "preview-grant-v2.json");
     const identity = lstatSync(config.database);
     // Owner is read only from canonical metadata, never CLI/body/request input.
@@ -165,9 +167,6 @@ export async function upgradeExisting({
       preview: { version: 2, grantPath },
     };
     atomicJson(join(root, "config.json"), newConfig);
-    const ready = initialState(pair.candidate);
-    ready.previousGood = pair.fallback;
-    ready.autoEnabled = state.autoEnabled;
     atomicJson(join(root, "state.json"), ready);
     newService = new AppService(newConfig);
   }
@@ -179,10 +178,32 @@ export async function upgradeExisting({
       originalPlist: oldPlist,
       instance: randomUUID(),
     }),
+    stoppedCheckpoint: async (previous) =>
+      stoppedOperatorCheckpoint(root, previous),
+    assertOperatorHandoff: async (checkpoint) =>
+      assertOperatorHandoff(root, checkpoint),
+    async prepareHelpers(pair) {
+      helperRelease = { path: config.workerSource ?? state.lastGood.path };
+      await databaseCommand("legacy-dependencies");
+      for (const release of [pair.candidate, pair.fallback]) {
+        validateRelease(release);
+        helperRelease = release;
+        if (
+          (await databaseCommand("dependencies")) !==
+          "UPGRADE_DEPENDENCIES_PASS"
+        )
+          deny("UPGRADE_DEPENDENCIES_INVALID");
+      }
+      helperRelease = pair.candidate;
+    },
     async prepareCompatiblePair() {
+      helperRelease = { path: config.workerSource ?? state.lastGood.path };
+      await databaseCommand("legacy-dependencies");
       const buildConfig = {
         ...config,
-        workerSource: source,
+        // Build lease dependencies come from the installed worker, not a clean
+        // source checkout. Later helper/worker leases use the verified v2 release.
+        workerSource: config.workerSource ?? state.lastGood.path,
         preview: { version: 2 },
       };
       const newBaseline = {
@@ -219,13 +240,16 @@ export async function upgradeExisting({
         if (!recover || error.message !== "COMMAND_FAILED") throw error;
       }
       await oldService.free();
-      workerUnlock = operationalLock(join(root, "worker-lease.db"), source);
+      workerUnlock = operationalLock(
+        join(root, "worker-lease.db"),
+        helperRelease.path,
+      );
     },
     freeSingleWriter: async () => {
       if (newService) await newService.stop();
       await oldService.free();
     },
-    async backupAndProveRecovery(pair) {
+    async backupAndProveRecovery(pair, checkpoint) {
       const backup = join(root, `pre-upgrade-v9-${randomUUID()}.db`),
         clone = join(root, `recovery-proof-${randomUUID()}.db`);
       await databaseCommand("backup", config.database, backup);
@@ -237,7 +261,7 @@ export async function upgradeExisting({
           databaseDevice: identity.dev,
           databaseInode: identity.ino,
         },
-        state.lastGood,
+        checkpoint.originalState.lastGood,
       );
       await databaseCommand("backup", backup, clone);
       await databaseCommand("migrate", clone);
@@ -255,7 +279,7 @@ export async function upgradeExisting({
         [
           "--conditions=react-server",
           join(source, "scripts/ops/preview-upgrade-owner.mjs"),
-          source,
+          helperRelease.path,
           clone,
         ],
         { env },
@@ -265,10 +289,6 @@ export async function upgradeExisting({
       return {
         backup,
         clone,
-        originalConfig: config,
-        originalState: state,
-        originalPlist: oldPlist,
-        instance: randomUUID(),
       };
     },
     save: (journal) =>
@@ -278,6 +298,9 @@ export async function upgradeExisting({
     schemaVersion: async () =>
       Number(await databaseCommand("version", config.database)),
     async restoreOldWorker(checkpoint) {
+      // Pending intents remain queued for v9; never overwrite a changed consumed
+      // prefix or manufacture an offset zero on recovery.
+      assertConfirmedOperatorPrefix(root, checkpoint);
       atomicJson(join(root, "config.json"), checkpoint.originalConfig);
       atomicJson(join(root, "state.json"), checkpoint.originalState);
       writeFileSync(plist, checkpoint.originalPlist, { mode: 0o600 });

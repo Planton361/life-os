@@ -82,7 +82,7 @@ async function adoptLegacy(config, service) {
   deny("GRACEFUL_SHUTDOWN_FAILED");
 }
 
-function commands(root, state) {
+export function commands(root, state) {
   const file = join(root, "commands.jsonl");
   if (!existsSync(file)) return;
   boundary(file);

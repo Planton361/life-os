@@ -30,6 +30,30 @@ old v9 binary. A durable `release-prepared` checkpoint retains the old worker
 configuration, state and plist before stopping its owned service. A worker lease
 and free-service proof exclude overlapping cooperating writers.
 
+All native helper subprocesses resolve TypeScript, the SQLite driver and runtime
+modules from verified built releases, never from the clean source checkout.
+The installed v9 release is dependency-probed before building; both independent
+v10 releases are probed (including loading the native driver in memory) before
+stopping the old preview. Recovery repeats these probes before stopping.
+
+After stopping and acquiring the worker lease, the operator rereads the final
+worker state. It persists the actual confirmed `commandOffset`, `autoEnabled`
+and a digest of the consumed command-log prefix before backup or migration.
+This includes commands processed during either build. Backup checkpoints merge
+with this snapshot; publication and v10 recovery preserve its cursor and pause
+state. Consumed rollback/disable/enable/retry commands are never queued again.
+
+Pending log entries or unresolved rollback/transition intent deny the handoff.
+The log must be complete, valid and retain the confirmed prefix. Before schema
+commit, failure restores the latest v9 state and leaves pending commands for
+the old worker to consume once. Handoff guards run before migration, publication
+and completion. After v10 commit, pending or changed intent keeps recovery fail
+closed: do not reinterpret an old pending rollback against the new release pair,
+truncate the log or advance the cursor manually. Reconciling such intent requires
+an explicit CONTROL operator decision. Commands appended after the final handoff
+check are future v2 commands. This is an operator cutover boundary, not permission
+for concurrent command submission during upgrade.
+
 A private, lease-protected SQLite backup preserves v9. Its old-release preflight
 must pass. A second disposable clone is forward-migrated and checked against both
 v10 releases. No active backup is restored and no data is reset. After persisting
@@ -51,7 +75,8 @@ login/wake, shutdown and app-only rollback policies remain in force.
 ## Recovery boundaries
 
 - Failure before migration commit: verify actual schema v9, then restore the
-  checkpointed old worker/config/state. The database is not restored or reset.
+  latest stopped worker/config/state; v9 recovery rereads it after stopping again.
+  The database is not restored or reset.
 - Lost migration response or committed schema v10: **never start a v9 release**.
   Keep the incomplete journal fail closed. After a new explicit operator gate,
   `recover-existing` verifies the actual schema and uses the preflighted v10
@@ -142,7 +167,9 @@ provisioning. CI executes both standard and Preview compositions at exact PR hea
   admission tests independently cover mode, gateway/Origin/site and strict input.
 - `pnpm test:preview:cd`: existing worker policy/macOS isolated launchd fixtures,
   upgrade protocol faults, actual native v9 backup→clone→migration→compatible
-  recovery proof, single writer and SIGKILL during DELETE rollback.
+  recovery proof, late/consumed/pending command-log handoffs and SIGKILL recovery,
+  dependency probes plus backup/migration/owner helpers from a clean source
+  without `node_modules`, single writer and SIGKILL during DELETE rollback.
 - Standard `pnpm build`, retired-runtime, framework shutdown, application and
   hosted smoke: generic Hosted auth/read/write and shutdown remain functional;
   standard composition has no Preview reset permission. The additional
