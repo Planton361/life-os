@@ -54,6 +54,24 @@ an explicit CONTROL operator decision. Commands appended after the final handoff
 check are future v2 commands. This is an operator cutover boundary, not permission
 for concurrent command submission during upgrade.
 
+The v9 handoff is explicitly bound to the approved historical release
+`6705607afa033e555b800901366837d6bbef73a2`. The frozen v1 fingerprint recipe,
+expected fingerprint and shipped source inventory are sealed in
+`scripts/ops/preview-v9-contract.mjs`; original worker/launcher/helper bytes are
+also checked against that history. Its real manifest and BUILD_ID must match,
+including for a caller-supplied `legacy` flag. This path does not infer v9 from
+missing files, suppress ENOENT, import an unverified old validator, or relax the
+current v10 fingerprint. Other historical SHAs/bootstrap releases or changed/mixed
+source require an explicitly reviewed contract; they are refused before build/
+stop, and the current lastGood is rechecked after builds before stopping.
+
+Only v9 admission, backup and precommit restore call the dedicated historical
+preflight, which requires the original schema v9, owner/profile/readiness,
+integrity/FKs, aggregates and configured DB device/inode. Restore verifies source,
+command-log prefix and database before writing the saved configuration/plist or
+releasing the worker lease and re-registering the old service. On schema v10 the
+v9 verifier denies bootstrap; committed recovery retains full v10 validation.
+
 A private, lease-protected SQLite backup preserves v9. Its old-release preflight
 must pass. A second disposable clone is forward-migrated and checked against both
 v10 releases. No active backup is restored and no data is reset. After persisting
@@ -170,6 +188,11 @@ provisioning. CI executes both standard and Preview compositions at exact PR hea
   recovery proof, late/consumed/pending command-log handoffs and SIGKILL recovery,
   dependency probes plus backup/migration/owner helpers from a clean source
   without `node_modules`, single writer and SIGKILL during DELETE rollback.
+  Historical-source regressions archive the real v1 SHA (including its absent
+  newer Reset files), exercise the real backup/restore preflight helpers, a
+  precommit failure with resumed ephemeral v9 HTTP/native writer, an owned unique
+  macOS LaunchAgent bootstrap, schema10 refusal and committed v10 recovery.
+  These owned fixtures do not start the fixed personal label or port 3000.
 - Standard `pnpm build`, retired-runtime, framework shutdown, application and
   hosted smoke: generic Hosted auth/read/write and shutdown remain functional;
   standard composition has no Preview reset permission. The additional

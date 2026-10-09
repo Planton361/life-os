@@ -28,9 +28,14 @@ import {
 import {
   stoppedOperatorCheckpoint,
   assertOperatorHandoff,
-  assertConfirmedOperatorPrefix,
   upgradedOperatorState,
 } from "./preview-upgrade-state.mjs";
+
+import {
+  validateV9Release,
+  validateV9WorkerSource,
+} from "./preview-v9-contract.mjs";
+import { v9DatabasePreflight, restoreV9Worker } from "./preview-upgrade-v9.mjs";
 
 export async function upgradeExisting({
   root,
@@ -108,6 +113,9 @@ export async function upgradeExisting({
       "preview-upgrade-owner.mjs",
       "preview-upgrade-native-loader.mjs",
       "preview-upgrade-state.mjs",
+      "preview-v9-contract.mjs",
+      "preview-upgrade-v9.mjs",
+      "preview-upgrade-v9-preflight.mjs",
       "run-preview-production.mjs",
       "run-production.mjs",
     ]) {
@@ -197,6 +205,11 @@ export async function upgradeExisting({
       helperRelease = pair.candidate;
     },
     async prepareCompatiblePair() {
+      validateV9WorkerSource(config.workerSource);
+      await v9DatabasePreflight(
+        config,
+        readJson(join(root, "state.json")).lastGood,
+      );
       helperRelease = { path: config.workerSource ?? state.lastGood.path };
       await databaseCommand("legacy-dependencies");
       const buildConfig = {
@@ -230,6 +243,11 @@ export async function upgradeExisting({
       return { candidate, fallback };
     },
     async stopFrozenWorker() {
+      if (!recover) {
+        // Recheck after the two builds while the old service is still available.
+        validateV9Release(readJson(join(root, "state.json")).lastGood);
+        validateV9WorkerSource(config.workerSource);
+      }
       try {
         await command(
           "/bin/launchctl",
@@ -254,7 +272,7 @@ export async function upgradeExisting({
         clone = join(root, `recovery-proof-${randomUUID()}.db`);
       await databaseCommand("backup", config.database, backup);
       const identity = lstatSync(backup);
-      await databasePreflight(
+      await v9DatabasePreflight(
         {
           ...config,
           database: backup,
@@ -298,23 +316,22 @@ export async function upgradeExisting({
     schemaVersion: async () =>
       Number(await databaseCommand("version", config.database)),
     async restoreOldWorker(checkpoint) {
-      // Pending intents remain queued for v9; never overwrite a changed consumed
-      // prefix or manufacture an offset zero on recovery.
-      assertConfirmedOperatorPrefix(root, checkpoint);
-      atomicJson(join(root, "config.json"), checkpoint.originalConfig);
-      atomicJson(join(root, "state.json"), checkpoint.originalState);
-      writeFileSync(plist, checkpoint.originalPlist, { mode: 0o600 });
-      await databasePreflight(
-        checkpoint.originalConfig,
-        checkpoint.originalState.lastGood,
-      );
-      workerUnlock?.();
-      workerUnlock = null;
-      await command(
-        "/bin/launchctl",
-        ["bootstrap", `gui/${process.getuid()}`, plist],
-        { env },
-      );
+      await restoreV9Worker({
+        root,
+        checkpoint,
+        plist,
+        env,
+        releaseWorkerLease: async () => {
+          workerUnlock?.();
+          workerUnlock = null;
+        },
+        bootstrap: (path, childEnv) =>
+          command(
+            "/bin/launchctl",
+            ["bootstrap", `gui/${process.getuid()}`, path],
+            { env: childEnv },
+          ),
+      });
     },
     publishCompatiblePair: publish,
     async startAndProve(release) {
