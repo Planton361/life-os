@@ -46,7 +46,7 @@ describe("synthetic application readiness sealing", () => {
     expect(sealSyntheticApplicationDatabase(path)).toEqual({
       ownerId: owner,
       datasetKind: "synthetic",
-      schemaVersion: 9,
+      schemaVersion: 10,
     });
     const application = new SqliteRuntime(path);
     application.close();

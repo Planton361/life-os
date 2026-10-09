@@ -1,4 +1,5 @@
 import "server-only";
+import { previewDeleteGuards, resetMetadataSchema } from "./reset-schema";
 import type Database from "better-sqlite3";
 import { coreSchema, coreOwnedTables, ownerGuards } from "./core-schema";
 import { sourceSchema, sourceOwnedTables } from "./source-schema";
@@ -19,24 +20,29 @@ import { retainedGuards } from "./retained-guards";
 import { taskStepSchema } from "./task-step-schema";
 
 // One schema composition for fresh canonical and disposable synthetic datasets.
-export function initializeCanonicalSchema(db: Database.Database) {
-  db.exec(coreSchema);
-  db.exec(sourceSchema);
-  db.exec(habitSchema);
-  db.exec(healthSchema);
-  db.exec(goalSchema);
-  db.exec(projectSchema);
-  db.exec(skillSchema);
-  db.exec(taskStepSchema);
-  db.exec(retainedSchema);
-  db.exec(retainedGuards());
-  db.exec(skillGuards);
-  db.exec(resourceGuards());
-  db.exec(projectGuards);
-  db.exec(goalGuards + goalHistoryScopeGuards);
-  db.exec(sourceGuards + sourceDependencyGuards());
-  db.exec(nutritionTrainingGuards());
-  db.exec(
+export function initializeCanonicalSchema(
+  db: Database.Database,
+  options: { legacyV9?: boolean } = {},
+) {
+  const exec = (sql: string) =>
+    db.exec(options.legacyV9 ? sql : previewDeleteGuards(sql));
+  exec(coreSchema);
+  exec(sourceSchema);
+  exec(habitSchema);
+  exec(healthSchema);
+  exec(goalSchema);
+  exec(projectSchema);
+  exec(skillSchema);
+  exec(taskStepSchema);
+  exec(retainedSchema);
+  exec(retainedGuards());
+  exec(skillGuards);
+  exec(resourceGuards());
+  exec(projectGuards);
+  exec(goalGuards + goalHistoryScopeGuards);
+  exec(sourceGuards + sourceDependencyGuards());
+  exec(nutritionTrainingGuards());
+  exec(
     ownerGuards([
       ...coreOwnedTables,
       ...sourceOwnedTables,
@@ -49,4 +55,5 @@ export function initializeCanonicalSchema(db: Database.Database) {
       "task_steps",
     ]),
   );
+  if (!options.legacyV9) db.exec(resetMetadataSchema);
 }

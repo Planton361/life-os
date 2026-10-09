@@ -1,5 +1,7 @@
 "use server";
 
+import { withSubmittedDatasetEpoch } from "./submitted-dataset";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
@@ -104,8 +106,9 @@ function revalidateRecurringTemplateRoutes() {
 }
 
 function authBlockedMessage(
-  error: "auth_error" | "invalid_session" | "missing_env" | "unauthenticated",
+  error: "auth_error" | "invalid_session" | "missing_env" | "unauthenticated" | "dataset_stale",
 ) {
+  if (error === "dataset_stale") return "Die Testdaten haben sich geändert. Bitte neu laden, bevor du Änderungen speicherst.";
   if (error === "missing_env") {
     return "Supabase ist lokal noch nicht konfiguriert.";
   }
@@ -176,66 +179,68 @@ async function getAuthenticatedRecurringTemplateContext() {
 export async function createRecurringTaskTemplateAction(
   formData: FormData,
 ): Promise<RecurringTaskTemplateActionResult> {
-  const context = await getAuthenticatedRecurringTemplateContext();
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const context = await getAuthenticatedRecurringTemplateContext();
 
-  if (!context.ok) return context.result;
+    if (!context.ok) return context.result;
 
-  const actionInput = recurringTaskTemplateInputSchema.safeParse({
-    areaId: optionalFormString(formData, "areaId"),
-    description: optionalFormString(formData, "description"),
-    durationMinutes: optionalFormNumber(formData, "durationMinutes"),
-    endsOn: optionalFormString(formData, "endsOn"),
-    energy: optionalFormString(formData, "energy"),
-    goalId: optionalFormString(formData, "goalId"),
-    isActive: optionalFormBoolean(formData, "isActive"),
-    nextAction: optionalFormString(formData, "nextAction"),
-    priority: optionalFormString(formData, "priority"),
-    projectId: optionalFormString(formData, "projectId"),
-    recurrenceRule:
-      recurrenceRuleFromForm(formData) ??
-      recurrenceRuleFromFrequencyForm(formData),
-    startsOn: formString(formData, "startsOn"),
-    timezone: formString(formData, "timezone"),
-    title: formString(formData, "title"),
+    const actionInput = recurringTaskTemplateInputSchema.safeParse({
+      areaId: optionalFormString(formData, "areaId"),
+      description: optionalFormString(formData, "description"),
+      durationMinutes: optionalFormNumber(formData, "durationMinutes"),
+      endsOn: optionalFormString(formData, "endsOn"),
+      energy: optionalFormString(formData, "energy"),
+      goalId: optionalFormString(formData, "goalId"),
+      isActive: optionalFormBoolean(formData, "isActive"),
+      nextAction: optionalFormString(formData, "nextAction"),
+      priority: optionalFormString(formData, "priority"),
+      projectId: optionalFormString(formData, "projectId"),
+      recurrenceRule:
+        recurrenceRuleFromForm(formData) ??
+        recurrenceRuleFromFrequencyForm(formData),
+      startsOn: formString(formData, "startsOn"),
+      timezone: formString(formData, "timezone"),
+      title: formString(formData, "title"),
+    });
+
+    if (!actionInput.success) {
+      return {
+        message: "Gib gültige Recurring-Template-Daten ein.",
+        status: "error",
+      };
+    }
+
+    const parsed = createRecurringTaskTemplateInputSchema.safeParse({
+      ...actionInput.data,
+      profileId: context.auth.user.id,
+      userId: context.auth.user.id,
+    });
+
+    if (!parsed.success) {
+      return {
+        message: "Das Recurring Template konnte nicht validiert werden.",
+        status: "error",
+      };
+    }
+
+    const repository = context.auth.repositories.recurrence;
+    const result = await repository.createRecurringTaskTemplate(parsed.data);
+
+    if (!result.ok) {
+      return {
+        message: repositoryFailureMessage(result.error.message),
+        status: "error",
+      };
+    }
+
+    revalidateRecurringTemplateRoutes();
+
+    return {
+      message: "Recurring Template erstellt.",
+      status: "success",
+      templateId: result.data.id,
+    };
   });
-
-  if (!actionInput.success) {
-    return {
-      message: "Gib gültige Recurring-Template-Daten ein.",
-      status: "error",
-    };
-  }
-
-  const parsed = createRecurringTaskTemplateInputSchema.safeParse({
-    ...actionInput.data,
-    profileId: context.auth.user.id,
-    userId: context.auth.user.id,
-  });
-
-  if (!parsed.success) {
-    return {
-      message: "Das Recurring Template konnte nicht validiert werden.",
-      status: "error",
-    };
-  }
-
-  const repository = context.auth.repositories.recurrence;
-  const result = await repository.createRecurringTaskTemplate(parsed.data);
-
-  if (!result.ok) {
-    return {
-      message: repositoryFailureMessage(result.error.message),
-      status: "error",
-    };
-  }
-
-  revalidateRecurringTemplateRoutes();
-
-  return {
-    message: "Recurring Template erstellt.",
-    status: "success",
-    templateId: result.data.id,
-  };
 }
 
 function todayTemplateReturnUrl(result: RecurringTaskTemplateActionResult) {
@@ -260,136 +265,148 @@ function recurringTemplateReturnUrl(
 export async function createRecurringTaskTemplateTodayFormAction(
   formData: FormData,
 ): Promise<void> {
-  const result = await createRecurringTaskTemplateAction(formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const result = await createRecurringTaskTemplateAction(formData);
 
-  redirect(todayTemplateReturnUrl(result));
+    redirect(todayTemplateReturnUrl(result));
+  });
 }
 
 export async function updateRecurringTaskTemplateAction(
   formData: FormData,
 ): Promise<RecurringTaskTemplateActionResult> {
-  const context = await getAuthenticatedRecurringTemplateContext();
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const context = await getAuthenticatedRecurringTemplateContext();
 
-  if (!context.ok) return context.result;
+    if (!context.ok) return context.result;
 
-  const actionInput = updateRecurringTaskTemplateActionInputSchema.safeParse({
-    areaId: optionalFormStringIfPresent(formData, "areaId"),
-    description: optionalFormStringIfPresent(formData, "description"),
-    durationMinutes: optionalFormNumber(formData, "durationMinutes"),
-    endsOn: optionalFormStringIfPresent(formData, "endsOn"),
-    energy: optionalFormStringIfPresent(formData, "energy"),
-    goalId: optionalFormStringIfPresent(formData, "goalId"),
-    isActive: optionalFormBoolean(formData, "isActive"),
-    nextAction: optionalFormStringIfPresent(formData, "nextAction"),
-    priority: optionalFormStringIfPresent(formData, "priority"),
-    projectId: optionalFormStringIfPresent(formData, "projectId"),
-    recurrenceRule:
-      recurrenceRuleFromForm(formData) ??
-      recurrenceRuleFromFrequencyForm(formData),
-    startsOn: optionalFormStringIfPresent(formData, "startsOn"),
-    templateId: formString(formData, "templateId"),
-    timezone: optionalFormStringIfPresent(formData, "timezone"),
-    title: optionalFormStringIfPresent(formData, "title"),
+    const actionInput = updateRecurringTaskTemplateActionInputSchema.safeParse({
+      areaId: optionalFormStringIfPresent(formData, "areaId"),
+      description: optionalFormStringIfPresent(formData, "description"),
+      durationMinutes: optionalFormNumber(formData, "durationMinutes"),
+      endsOn: optionalFormStringIfPresent(formData, "endsOn"),
+      energy: optionalFormStringIfPresent(formData, "energy"),
+      goalId: optionalFormStringIfPresent(formData, "goalId"),
+      isActive: optionalFormBoolean(formData, "isActive"),
+      nextAction: optionalFormStringIfPresent(formData, "nextAction"),
+      priority: optionalFormStringIfPresent(formData, "priority"),
+      projectId: optionalFormStringIfPresent(formData, "projectId"),
+      recurrenceRule:
+        recurrenceRuleFromForm(formData) ??
+        recurrenceRuleFromFrequencyForm(formData),
+      startsOn: optionalFormStringIfPresent(formData, "startsOn"),
+      templateId: formString(formData, "templateId"),
+      timezone: optionalFormStringIfPresent(formData, "timezone"),
+      title: optionalFormStringIfPresent(formData, "title"),
+    });
+
+    if (!actionInput.success) {
+      return {
+        message: "Gib gültige Recurring-Template-Daten ein.",
+        status: "error",
+      };
+    }
+
+    const parsed = updateRecurringTaskTemplateInputSchema.safeParse({
+      ...actionInput.data,
+      profileId: context.auth.user.id,
+      userId: context.auth.user.id,
+    });
+
+    if (!parsed.success) {
+      return {
+        message: "Das Recurring Template konnte nicht validiert werden.",
+        status: "error",
+      };
+    }
+
+    const repository = context.auth.repositories.recurrence;
+    const result = await repository.updateRecurringTaskTemplate(parsed.data);
+
+    if (!result.ok) {
+      return {
+        message: repositoryFailureMessage(result.error.message),
+        status: "error",
+      };
+    }
+
+    revalidateRecurringTemplateRoutes();
+
+    return {
+      message: "Recurring Template aktualisiert.",
+      status: "success",
+      templateId: result.data.id,
+    };
   });
-
-  if (!actionInput.success) {
-    return {
-      message: "Gib gültige Recurring-Template-Daten ein.",
-      status: "error",
-    };
-  }
-
-  const parsed = updateRecurringTaskTemplateInputSchema.safeParse({
-    ...actionInput.data,
-    profileId: context.auth.user.id,
-    userId: context.auth.user.id,
-  });
-
-  if (!parsed.success) {
-    return {
-      message: "Das Recurring Template konnte nicht validiert werden.",
-      status: "error",
-    };
-  }
-
-  const repository = context.auth.repositories.recurrence;
-  const result = await repository.updateRecurringTaskTemplate(parsed.data);
-
-  if (!result.ok) {
-    return {
-      message: repositoryFailureMessage(result.error.message),
-      status: "error",
-    };
-  }
-
-  revalidateRecurringTemplateRoutes();
-
-  return {
-    message: "Recurring Template aktualisiert.",
-    status: "success",
-    templateId: result.data.id,
-  };
 }
 
 export async function updateRecurringTaskTemplateTodayFormAction(
   formData: FormData,
 ): Promise<void> {
-  const result = await updateRecurringTaskTemplateAction(formData);
-  redirect(recurringTemplateReturnUrl(result, "updated"));
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const result = await updateRecurringTaskTemplateAction(formData);
+    redirect(recurringTemplateReturnUrl(result, "updated"));
+  });
 }
 
 export async function deactivateRecurringTaskTemplateAction(
   formData: FormData,
 ): Promise<RecurringTaskTemplateActionResult> {
-  const context = await getAuthenticatedRecurringTemplateContext();
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const context = await getAuthenticatedRecurringTemplateContext();
 
-  if (!context.ok) return context.result;
+    if (!context.ok) return context.result;
 
-  const parsed = deactivateRecurringTaskTemplateInputSchema.safeParse({
-    profileId: context.auth.user.id,
-    templateId: formString(formData, "templateId"),
-    userId: context.auth.user.id,
+    const parsed = deactivateRecurringTaskTemplateInputSchema.safeParse({
+      profileId: context.auth.user.id,
+      templateId: formString(formData, "templateId"),
+      userId: context.auth.user.id,
+    });
+
+    if (!parsed.success) {
+      return {
+        message: "Das Recurring Template konnte nicht validiert werden.",
+        status: "error",
+      };
+    }
+
+    const repository = context.auth.repositories.recurrence;
+    const result = await repository.deactivateRecurringTaskTemplate(parsed.data);
+
+    if (!result.ok) {
+      return {
+        message: repositoryFailureMessage(result.error.message),
+        status: "error",
+      };
+    }
+
+    revalidateRecurringTemplateRoutes();
+
+    return {
+      message: "Recurring Template deaktiviert.",
+      status: "success",
+      templateId: result.data.id,
+    };
   });
-
-  if (!parsed.success) {
-    return {
-      message: "Das Recurring Template konnte nicht validiert werden.",
-      status: "error",
-    };
-  }
-
-  const repository = context.auth.repositories.recurrence;
-  const result = await repository.deactivateRecurringTaskTemplate(parsed.data);
-
-  if (!result.ok) {
-    return {
-      message: repositoryFailureMessage(result.error.message),
-      status: "error",
-    };
-  }
-
-  revalidateRecurringTemplateRoutes();
-
-  return {
-    message: "Recurring Template deaktiviert.",
-    status: "success",
-    templateId: result.data.id,
-  };
 }
 
 export async function deactivateRecurringTaskTemplateTodayFormAction(
   formData: FormData,
 ): Promise<void> {
-  const result = await deactivateRecurringTaskTemplateAction(formData);
-  redirect(recurringTemplateReturnUrl(result, "paused"));
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const result = await deactivateRecurringTaskTemplateAction(formData);
+    redirect(recurringTemplateReturnUrl(result, "paused"));
+  });
 }
 
 export async function reactivateRecurringTaskTemplateTodayFormAction(
   formData: FormData,
 ): Promise<void> {
-  const nextFormData = new FormData();
-  nextFormData.set("templateId", formString(formData, "templateId"));
-  nextFormData.set("isActive", "true");
-  const result = await updateRecurringTaskTemplateAction(nextFormData);
-  redirect(recurringTemplateReturnUrl(result, "activated"));
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const nextFormData = new FormData();
+    nextFormData.set("templateId", formString(formData, "templateId"));
+    nextFormData.set("isActive", "true");
+    const result = await updateRecurringTaskTemplateAction(nextFormData);
+    redirect(recurringTemplateReturnUrl(result, "activated"));
+  });
 }

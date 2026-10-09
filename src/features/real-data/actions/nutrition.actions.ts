@@ -1,4 +1,6 @@
 "use server";
+
+import { withSubmittedDatasetEpoch } from "./submitted-dataset";
 import { dependencyErrorMessage } from "../supabase/repositories/task-dependency-repository";
 import { getNutritionRepository, getScheduleSourceRepository } from "@/features/real-data/runtime/facade";
 
@@ -145,8 +147,9 @@ function revalidateNutritionRoutes() {
 }
 
 function authBlockedMessage(
-  error: "auth_error" | "invalid_session" | "missing_env" | "unauthenticated",
+  error: "auth_error" | "invalid_session" | "missing_env" | "unauthenticated" | "dataset_stale",
 ) {
+  if (error === "dataset_stale") return "Die Testdaten haben sich geändert. Bitte neu laden, bevor du Änderungen speicherst.";
   if (error === "missing_env") {
     return "Supabase ist lokal noch nicht konfiguriert.";
   }
@@ -234,489 +237,525 @@ function recipeIngredientPayload(
 export async function createRecipeAction(
   formData: FormData,
 ): Promise<NutritionActionResult> {
-  const context = await getAuthenticatedNutritionContext();
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const context = await getAuthenticatedNutritionContext();
 
-  if (!context.ok) return context.result;
+    if (!context.ok) return context.result;
 
-  const parsed = recipeCreateInputSchema.safeParse({
-    areaId: optionalFormString(formData, "areaId"),
-    instructions: optionalFormString(formData, "instructions"),
-    nutritionEstimate: nutritionEstimateFromForm(formData),
-    prepMinutes: optionalFormNumber(formData, "prepMinutes"),
-    servings: optionalFormNumber(formData, "servings"),
-    source: optionalFormString(formData, "source"),
-    summary: optionalFormString(formData, "summary"),
-    tags: tagsFromForm(formData),
-    title: formString(formData, "title"),
-  });
+    const parsed = recipeCreateInputSchema.safeParse({
+      areaId: optionalFormString(formData, "areaId"),
+      instructions: optionalFormString(formData, "instructions"),
+      nutritionEstimate: nutritionEstimateFromForm(formData),
+      prepMinutes: optionalFormNumber(formData, "prepMinutes"),
+      servings: optionalFormNumber(formData, "servings"),
+      source: optionalFormString(formData, "source"),
+      summary: optionalFormString(formData, "summary"),
+      tags: tagsFromForm(formData),
+      title: formString(formData, "title"),
+    });
 
-  if (!parsed.success) {
+    if (!parsed.success) {
+      return {
+        message: "Gib gültige Rezeptdaten ein.",
+        status: "error",
+      };
+    }
+
+    const repository = getNutritionRepository(context.auth.data);
+    const result = await repository.createRecipe({
+      ...parsed.data,
+      profileId: context.auth.user.id,
+      userId: context.auth.user.id,
+    });
+
+    if (!result.ok) {
+      return {
+        message: repositoryFailureMessage(result.error.message),
+        status: "error",
+      };
+    }
+
+    revalidateNutritionRoutes();
+
     return {
-      message: "Gib gültige Rezeptdaten ein.",
-      status: "error",
+      message: "Rezept erstellt.",
+      recipeId: result.data.id,
+      status: "success",
     };
-  }
-
-  const repository = getNutritionRepository(context.auth.data);
-  const result = await repository.createRecipe({
-    ...parsed.data,
-    profileId: context.auth.user.id,
-    userId: context.auth.user.id,
   });
-
-  if (!result.ok) {
-    return {
-      message: repositoryFailureMessage(result.error.message),
-      status: "error",
-    };
-  }
-
-  revalidateNutritionRoutes();
-
-  return {
-    message: "Rezept erstellt.",
-    recipeId: result.data.id,
-    status: "success",
-  };
 }
 
 export async function createRecipeFormStateAction(
   _previousState: NutritionActionResult,
   formData: FormData,
 ): Promise<NutritionActionResult> {
-  return createRecipeAction(formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    return createRecipeAction(formData);
+  });
 }
 
 export async function updateRecipeAction(
   formData: FormData,
 ): Promise<NutritionActionResult> {
-  const context = await getAuthenticatedNutritionContext();
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const context = await getAuthenticatedNutritionContext();
 
-  if (!context.ok) return context.result;
+    if (!context.ok) return context.result;
 
-  const parsed = recipeUpdateInputSchema.safeParse({
-    areaId: optionalFormStringIfPresent(formData, "areaId"),
-    instructions: optionalFormStringIfPresent(formData, "instructions"),
-    nutritionEstimate: nutritionEstimateFromForm(formData),
-    prepMinutes: optionalFormNumber(formData, "prepMinutes"),
-    recipeId: formString(formData, "recipeId"),
-    servings: optionalFormNumber(formData, "servings"),
-    source: optionalFormStringIfPresent(formData, "source"),
-    summary: optionalFormStringIfPresent(formData, "summary"),
-    tags: formData.has("tags") ? (tagsFromForm(formData) ?? []) : undefined,
-    title: optionalFormStringIfPresent(formData, "title"),
-  });
+    const parsed = recipeUpdateInputSchema.safeParse({
+      areaId: optionalFormStringIfPresent(formData, "areaId"),
+      instructions: optionalFormStringIfPresent(formData, "instructions"),
+      nutritionEstimate: nutritionEstimateFromForm(formData),
+      prepMinutes: optionalFormNumber(formData, "prepMinutes"),
+      recipeId: formString(formData, "recipeId"),
+      servings: optionalFormNumber(formData, "servings"),
+      source: optionalFormStringIfPresent(formData, "source"),
+      summary: optionalFormStringIfPresent(formData, "summary"),
+      tags: formData.has("tags") ? (tagsFromForm(formData) ?? []) : undefined,
+      title: optionalFormStringIfPresent(formData, "title"),
+    });
 
-  if (!parsed.success) {
+    if (!parsed.success) {
+      return {
+        message: "Gib gültige Rezeptdaten ein.",
+        status: "error",
+      };
+    }
+
+    const repository = getNutritionRepository(context.auth.data);
+    const result = await repository.updateRecipe({
+      ...parsed.data,
+      profileId: context.auth.user.id,
+      userId: context.auth.user.id,
+    });
+
+    if (!result.ok) {
+      return {
+        message: repositoryFailureMessage(result.error.message),
+        status: "error",
+      };
+    }
+
+    revalidateNutritionRoutes();
+
     return {
-      message: "Gib gültige Rezeptdaten ein.",
-      status: "error",
+      message: "Rezept aktualisiert.",
+      recipeId: result.data.id,
+      status: "success",
     };
-  }
-
-  const repository = getNutritionRepository(context.auth.data);
-  const result = await repository.updateRecipe({
-    ...parsed.data,
-    profileId: context.auth.user.id,
-    userId: context.auth.user.id,
   });
-
-  if (!result.ok) {
-    return {
-      message: repositoryFailureMessage(result.error.message),
-      status: "error",
-    };
-  }
-
-  revalidateNutritionRoutes();
-
-  return {
-    message: "Rezept aktualisiert.",
-    recipeId: result.data.id,
-    status: "success",
-  };
 }
 
 export async function updateRecipeFormStateAction(
   _previousState: NutritionActionResult,
   formData: FormData,
 ): Promise<NutritionActionResult> {
-  return updateRecipeAction(formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    return updateRecipeAction(formData);
+  });
 }
 
 export async function archiveRecipeAction(
   formData: FormData,
 ): Promise<NutritionActionResult> {
-  const context = await getAuthenticatedNutritionContext();
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const context = await getAuthenticatedNutritionContext();
 
-  if (!context.ok) return context.result;
+    if (!context.ok) return context.result;
 
-  const parsed = recipeArchiveInputSchema.safeParse({
-    recipeId: formString(formData, "recipeId"),
-  });
+    const parsed = recipeArchiveInputSchema.safeParse({
+      recipeId: formString(formData, "recipeId"),
+    });
 
-  if (!parsed.success) {
+    if (!parsed.success) {
+      return {
+        message: "Das Recipe konnte nicht validiert werden.",
+        status: "error",
+      };
+    }
+
+    const repository = getNutritionRepository(context.auth.data);
+    const result = await repository.archiveRecipe({
+      ...parsed.data,
+      profileId: context.auth.user.id,
+      userId: context.auth.user.id,
+    });
+
+    if (!result.ok) {
+      return {
+        message: repositoryFailureMessage(result.error.message),
+        status: "error",
+      };
+    }
+
+    revalidateNutritionRoutes();
+
     return {
-      message: "Das Recipe konnte nicht validiert werden.",
-      status: "error",
+      message: "Rezept archiviert.",
+      recipeId: result.data.id,
+      status: "success",
     };
-  }
-
-  const repository = getNutritionRepository(context.auth.data);
-  const result = await repository.archiveRecipe({
-    ...parsed.data,
-    profileId: context.auth.user.id,
-    userId: context.auth.user.id,
   });
-
-  if (!result.ok) {
-    return {
-      message: repositoryFailureMessage(result.error.message),
-      status: "error",
-    };
-  }
-
-  revalidateNutritionRoutes();
-
-  return {
-    message: "Rezept archiviert.",
-    recipeId: result.data.id,
-    status: "success",
-  };
 }
 
 export async function archiveRecipeFormStateAction(
   _previousState: NutritionActionResult,
   formData: FormData,
 ): Promise<NutritionActionResult> {
-  return archiveRecipeAction(formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    return archiveRecipeAction(formData);
+  });
 }
 
 export async function createRecipeIngredientAction(
   formData: FormData,
 ): Promise<NutritionActionResult> {
-  const context = await getAuthenticatedNutritionContext();
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const context = await getAuthenticatedNutritionContext();
 
-  if (!context.ok) return context.result;
+    if (!context.ok) return context.result;
 
-  const parsed = recipeIngredientCreateInputSchema.safeParse({
-    name: formString(formData, "name"),
-    note: nullableFormString(formData, "note"),
-    position: optionalFormNumber(formData, "position"),
-    quantity: nullableFormNumber(formData, "quantity"),
-    recipeId: formString(formData, "recipeId"),
-    unit: nullableFormString(formData, "unit"),
-  });
+    const parsed = recipeIngredientCreateInputSchema.safeParse({
+      name: formString(formData, "name"),
+      note: nullableFormString(formData, "note"),
+      position: optionalFormNumber(formData, "position"),
+      quantity: nullableFormNumber(formData, "quantity"),
+      recipeId: formString(formData, "recipeId"),
+      unit: nullableFormString(formData, "unit"),
+    });
 
-  if (!parsed.success) {
+    if (!parsed.success) {
+      return {
+        message: "Gib gültige Zutaten-Daten ein.",
+        status: "error",
+      };
+    }
+
+    const repository = getNutritionRepository(context.auth.data);
+    const result = await repository.createRecipeIngredient({
+      ...parsed.data,
+      profileId: context.auth.user.id,
+      userId: context.auth.user.id,
+    });
+
+    if (!result.ok) {
+      return {
+        message: repositoryFailureMessage(result.error.message),
+        status: "error",
+      };
+    }
+
+    revalidateNutritionRoutes();
+
     return {
-      message: "Gib gültige Zutaten-Daten ein.",
-      status: "error",
+      ingredient: recipeIngredientPayload(result.data),
+      ingredientId: result.data.id,
+      message: "Zutat erstellt.",
+      recipeId: result.data.recipeId,
+      status: "success",
     };
-  }
-
-  const repository = getNutritionRepository(context.auth.data);
-  const result = await repository.createRecipeIngredient({
-    ...parsed.data,
-    profileId: context.auth.user.id,
-    userId: context.auth.user.id,
   });
-
-  if (!result.ok) {
-    return {
-      message: repositoryFailureMessage(result.error.message),
-      status: "error",
-    };
-  }
-
-  revalidateNutritionRoutes();
-
-  return {
-    ingredient: recipeIngredientPayload(result.data),
-    ingredientId: result.data.id,
-    message: "Zutat erstellt.",
-    recipeId: result.data.recipeId,
-    status: "success",
-  };
 }
 
 export async function createRecipeIngredientFormStateAction(
   _previousState: NutritionActionResult,
   formData: FormData,
 ): Promise<NutritionActionResult> {
-  return createRecipeIngredientAction(formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    return createRecipeIngredientAction(formData);
+  });
 }
 
 export async function updateRecipeIngredientAction(
   formData: FormData,
 ): Promise<NutritionActionResult> {
-  const context = await getAuthenticatedNutritionContext();
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const context = await getAuthenticatedNutritionContext();
 
-  if (!context.ok) return context.result;
+    if (!context.ok) return context.result;
 
-  const parsed = recipeIngredientUpdateInputSchema.safeParse({
-    ingredientId: formString(formData, "ingredientId"),
-    name: formStringIfPresent(formData, "name"),
-    note: nullableFormStringIfPresent(formData, "note"),
-    position: optionalFormNumber(formData, "position"),
-    quantity: nullableFormNumberIfPresent(formData, "quantity"),
-    recipeId: optionalFormStringIfPresent(formData, "recipeId"),
-    unit: nullableFormStringIfPresent(formData, "unit"),
-  });
+    const parsed = recipeIngredientUpdateInputSchema.safeParse({
+      ingredientId: formString(formData, "ingredientId"),
+      name: formStringIfPresent(formData, "name"),
+      note: nullableFormStringIfPresent(formData, "note"),
+      position: optionalFormNumber(formData, "position"),
+      quantity: nullableFormNumberIfPresent(formData, "quantity"),
+      recipeId: optionalFormStringIfPresent(formData, "recipeId"),
+      unit: nullableFormStringIfPresent(formData, "unit"),
+    });
 
-  if (!parsed.success) {
+    if (!parsed.success) {
+      return {
+        message: "Gib gültige Zutaten-Daten ein.",
+        status: "error",
+      };
+    }
+
+    const repository = getNutritionRepository(context.auth.data);
+    const result = await repository.updateRecipeIngredient({
+      ...parsed.data,
+      profileId: context.auth.user.id,
+      userId: context.auth.user.id,
+    });
+
+    if (!result.ok) {
+      return {
+        message: repositoryFailureMessage(result.error.message),
+        status: "error",
+      };
+    }
+
+    revalidateNutritionRoutes();
+
     return {
-      message: "Gib gültige Zutaten-Daten ein.",
-      status: "error",
+      ingredient: recipeIngredientPayload(result.data),
+      ingredientId: result.data.id,
+      message: "Zutat aktualisiert.",
+      recipeId: result.data.recipeId,
+      status: "success",
     };
-  }
-
-  const repository = getNutritionRepository(context.auth.data);
-  const result = await repository.updateRecipeIngredient({
-    ...parsed.data,
-    profileId: context.auth.user.id,
-    userId: context.auth.user.id,
   });
-
-  if (!result.ok) {
-    return {
-      message: repositoryFailureMessage(result.error.message),
-      status: "error",
-    };
-  }
-
-  revalidateNutritionRoutes();
-
-  return {
-    ingredient: recipeIngredientPayload(result.data),
-    ingredientId: result.data.id,
-    message: "Zutat aktualisiert.",
-    recipeId: result.data.recipeId,
-    status: "success",
-  };
 }
 
 export async function updateRecipeIngredientFormStateAction(
   _previousState: NutritionActionResult,
   formData: FormData,
 ): Promise<NutritionActionResult> {
-  return updateRecipeIngredientAction(formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    return updateRecipeIngredientAction(formData);
+  });
 }
 
 export async function deleteRecipeIngredientAction(
   formData: FormData,
 ): Promise<NutritionActionResult> {
-  const context = await getAuthenticatedNutritionContext();
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const context = await getAuthenticatedNutritionContext();
 
-  if (!context.ok) return context.result;
+    if (!context.ok) return context.result;
 
-  const parsed = recipeIngredientDeleteInputSchema.safeParse({
-    ingredientId: formString(formData, "ingredientId"),
-    recipeId: optionalFormStringIfPresent(formData, "recipeId"),
-  });
+    const parsed = recipeIngredientDeleteInputSchema.safeParse({
+      ingredientId: formString(formData, "ingredientId"),
+      recipeId: optionalFormStringIfPresent(formData, "recipeId"),
+    });
 
-  if (!parsed.success) {
+    if (!parsed.success) {
+      return {
+        message: "Die Zutat konnte nicht validiert werden.",
+        status: "error",
+      };
+    }
+
+    const repository = getNutritionRepository(context.auth.data);
+    const result = await repository.deleteRecipeIngredient({
+      ...parsed.data,
+      profileId: context.auth.user.id,
+      userId: context.auth.user.id,
+    });
+
+    if (!result.ok) {
+      return {
+        message: repositoryFailureMessage(result.error.message),
+        status: "error",
+      };
+    }
+
+    revalidateNutritionRoutes();
+
     return {
-      message: "Die Zutat konnte nicht validiert werden.",
-      status: "error",
+      ingredient: recipeIngredientPayload(result.data),
+      ingredientId: result.data.id,
+      message: "Zutat entfernt.",
+      recipeId: result.data.recipeId,
+      status: "success",
     };
-  }
-
-  const repository = getNutritionRepository(context.auth.data);
-  const result = await repository.deleteRecipeIngredient({
-    ...parsed.data,
-    profileId: context.auth.user.id,
-    userId: context.auth.user.id,
   });
-
-  if (!result.ok) {
-    return {
-      message: repositoryFailureMessage(result.error.message),
-      status: "error",
-    };
-  }
-
-  revalidateNutritionRoutes();
-
-  return {
-    ingredient: recipeIngredientPayload(result.data),
-    ingredientId: result.data.id,
-    message: "Zutat entfernt.",
-    recipeId: result.data.recipeId,
-    status: "success",
-  };
 }
 
 export async function deleteRecipeIngredientFormStateAction(
   _previousState: NutritionActionResult,
   formData: FormData,
 ): Promise<NutritionActionResult> {
-  return deleteRecipeIngredientAction(formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    return deleteRecipeIngredientAction(formData);
+  });
 }
 
 export async function createMealAction(
   formData: FormData,
 ): Promise<NutritionActionResult> {
-  const context = await getAuthenticatedNutritionContext();
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const context = await getAuthenticatedNutritionContext();
 
-  if (!context.ok) return context.result;
+    if (!context.ok) return context.result;
 
-  const parsed = mealCreateInputSchema.safeParse({
-    completedAt: optionalFormString(formData, "completedAt"),
-    date: formString(formData, "date"),
-    mealType: formString(formData, "mealType"),
-    notes: optionalFormString(formData, "notes"),
-    plannedAt: optionalFormString(formData, "plannedAt"),
-    recipeId: optionalFormString(formData, "recipeId"),
-    requestId: formString(formData, "requestId"),
-    servings: optionalFormNumber(formData, "servings"),
-    title: formString(formData, "title"),
-  });
+    const parsed = mealCreateInputSchema.safeParse({
+      completedAt: optionalFormString(formData, "completedAt"),
+      date: formString(formData, "date"),
+      mealType: formString(formData, "mealType"),
+      notes: optionalFormString(formData, "notes"),
+      plannedAt: optionalFormString(formData, "plannedAt"),
+      recipeId: optionalFormString(formData, "recipeId"),
+      requestId: formString(formData, "requestId"),
+      servings: optionalFormNumber(formData, "servings"),
+      title: formString(formData, "title"),
+    });
 
-  if (!parsed.success) {
+    if (!parsed.success) {
+      return {
+        message: "Gib gültige Meal-Daten ein.",
+        status: "error",
+      };
+    }
+
+    const repository = getNutritionRepository(context.auth.data);
+    const result = await repository.createMeal({
+      ...parsed.data,
+      profileId: context.auth.user.id,
+      userId: context.auth.user.id,
+    });
+
+    if (!result.ok) {
+      return {
+        message: repositoryFailureMessage(result.error.message),
+        status: "error",
+      };
+    }
+
+    revalidateNutritionRoutes();
+
     return {
-      message: "Gib gültige Meal-Daten ein.",
-      status: "error",
+      mealId: result.data.id,
+      message: "Meal erstellt.",
+      status: "success",
     };
-  }
-
-  const repository = getNutritionRepository(context.auth.data);
-  const result = await repository.createMeal({
-    ...parsed.data,
-    profileId: context.auth.user.id,
-    userId: context.auth.user.id,
   });
-
-  if (!result.ok) {
-    return {
-      message: repositoryFailureMessage(result.error.message),
-      status: "error",
-    };
-  }
-
-  revalidateNutritionRoutes();
-
-  return {
-    mealId: result.data.id,
-    message: "Meal erstellt.",
-    status: "success",
-  };
 }
 
 export async function createMealFormStateAction(
   _previousState: NutritionActionResult,
   formData: FormData,
 ): Promise<NutritionActionResult> {
-  return createMealAction(formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    return createMealAction(formData);
+  });
 }
 
 export async function updateMealAction(
   formData: FormData,
 ): Promise<NutritionActionResult> {
-  const context = await getAuthenticatedNutritionContext();
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const context = await getAuthenticatedNutritionContext();
 
-  if (!context.ok) return context.result;
+    if (!context.ok) return context.result;
 
-  const parsed = mealUpdateInputSchema.safeParse({
-    completedAt: optionalFormStringIfPresent(formData, "completedAt"),
-    date: optionalFormStringIfPresent(formData, "date"),
-    mealId: formString(formData, "mealId"),
-    mealType: optionalFormStringIfPresent(formData, "mealType"),
-    notes: nullableFormStringIfPresent(formData, "notes"),
-    plannedAt: nullableFormStringIfPresent(formData, "plannedAt"),
-    recipeId: nullableFormStringIfPresent(formData, "recipeId"),
-    servings: nullableFormNumberIfPresent(formData, "servings"),
-    title: optionalFormStringIfPresent(formData, "title"),
-  });
+    const parsed = mealUpdateInputSchema.safeParse({
+      completedAt: optionalFormStringIfPresent(formData, "completedAt"),
+      date: optionalFormStringIfPresent(formData, "date"),
+      mealId: formString(formData, "mealId"),
+      mealType: optionalFormStringIfPresent(formData, "mealType"),
+      notes: nullableFormStringIfPresent(formData, "notes"),
+      plannedAt: nullableFormStringIfPresent(formData, "plannedAt"),
+      recipeId: nullableFormStringIfPresent(formData, "recipeId"),
+      servings: nullableFormNumberIfPresent(formData, "servings"),
+      title: optionalFormStringIfPresent(formData, "title"),
+    });
 
-  if (!parsed.success) {
+    if (!parsed.success) {
+      return {
+        message: "Gib gültige Meal-Daten ein.",
+        status: "error",
+      };
+    }
+
+    const repository = getNutritionRepository(context.auth.data);
+    const result = await repository.updateMeal({
+      ...parsed.data,
+      profileId: context.auth.user.id,
+      userId: context.auth.user.id,
+    });
+
+    if (!result.ok) {
+      return {
+        message: repositoryFailureMessage(result.error.message),
+        status: "error",
+      };
+    }
+
+    revalidateNutritionRoutes();
+
     return {
-      message: "Gib gültige Meal-Daten ein.",
-      status: "error",
+      mealId: result.data.id,
+      message: "Meal aktualisiert.",
+      status: "success",
     };
-  }
-
-  const repository = getNutritionRepository(context.auth.data);
-  const result = await repository.updateMeal({
-    ...parsed.data,
-    profileId: context.auth.user.id,
-    userId: context.auth.user.id,
   });
-
-  if (!result.ok) {
-    return {
-      message: repositoryFailureMessage(result.error.message),
-      status: "error",
-    };
-  }
-
-  revalidateNutritionRoutes();
-
-  return {
-    mealId: result.data.id,
-    message: "Meal aktualisiert.",
-    status: "success",
-  };
 }
 
 export async function updateMealFormStateAction(
   _previousState: NutritionActionResult,
   formData: FormData,
 ): Promise<NutritionActionResult> {
-  return updateMealAction(formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    return updateMealAction(formData);
+  });
 }
 
 export async function completeMealAction(
   formData: FormData,
 ): Promise<NutritionActionResult> {
-  const context = await getAuthenticatedNutritionContext();
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const context = await getAuthenticatedNutritionContext();
 
-  if (!context.ok) return context.result;
+    if (!context.ok) return context.result;
 
-  const parsed = mealCompleteInputSchema.safeParse({
-    completedAt: optionalFormString(formData, "completedAt"),
-    mealId: formString(formData, "mealId"),
+    const parsed = mealCompleteInputSchema.safeParse({
+      completedAt: optionalFormString(formData, "completedAt"),
+      mealId: formString(formData, "mealId"),
+    });
+
+    if (!parsed.success) {
+      return {
+        message: "Das Meal konnte nicht validiert werden.",
+        status: "error",
+      };
+    }
+
+    const completedAt = parsed.data.completedAt ?? new Date().toISOString();
+    const linkedResult = await getScheduleSourceRepository(
+      context.auth.data,
+    ).completeLinkedMeal(parsed.data.mealId, completedAt);
+    const result =
+      linkedResult.error || !linkedResult.data
+        ? { ok: false as const }
+        : { data: { id: linkedResult.data.id }, ok: true as const };
+
+    if (!result.ok) {
+      return {
+        message: repositoryFailureMessage(
+          linkedResult.error?.message ?? "complete meal",
+        ),
+        status: "error",
+      };
+    }
+
+    revalidateNutritionRoutes();
+
+    return {
+      mealId: result.data.id,
+      message: "Meal abgeschlossen.",
+      status: "success",
+    };
   });
-
-  if (!parsed.success) {
-    return {
-      message: "Das Meal konnte nicht validiert werden.",
-      status: "error",
-    };
-  }
-
-  const completedAt = parsed.data.completedAt ?? new Date().toISOString();
-  const linkedResult = await getScheduleSourceRepository(
-    context.auth.data,
-  ).completeLinkedMeal(parsed.data.mealId, completedAt);
-  const result =
-    linkedResult.error || !linkedResult.data
-      ? { ok: false as const }
-      : { data: { id: linkedResult.data.id }, ok: true as const };
-
-  if (!result.ok) {
-    return {
-      message: repositoryFailureMessage(
-        linkedResult.error?.message ?? "complete meal",
-      ),
-      status: "error",
-    };
-  }
-
-  revalidateNutritionRoutes();
-
-  return {
-    mealId: result.data.id,
-    message: "Meal abgeschlossen.",
-    status: "success",
-  };
 }
 
 export async function completeMealFormStateAction(
   _previousState: NutritionActionResult,
   formData: FormData,
 ): Promise<NutritionActionResult> {
-  return completeMealAction(formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    return completeMealAction(formData);
+  });
 }
 
 export async function applyNutritionPlanAction(
@@ -745,32 +784,34 @@ export async function scheduleNutritionMealAction(
   _previous: NutritionActionResult,
   form: FormData,
 ): Promise<NutritionActionResult> {
-  const context = await getAuthenticatedNutritionContext();
-  if (!context.ok) return context.result;
-  const date = formString(form, "plannedDate");
-  const parsed = scheduleSourceInputSchema.safeParse({
-    sourceType: "meal",
-    sourceId: formString(form, "sourceId"),
-    plannedDate: date,
-    scheduledStartAt: runningStartInstant(
-      date,
-      formString(form, "scheduledTime"),
-    ),
-    durationMinutes: formString(form, "durationMinutes"),
+  return withSubmittedDatasetEpoch(form, async () => {
+    const context = await getAuthenticatedNutritionContext();
+    if (!context.ok) return context.result;
+    const date = formString(form, "plannedDate");
+    const parsed = scheduleSourceInputSchema.safeParse({
+      sourceType: "meal",
+      sourceId: formString(form, "sourceId"),
+      plannedDate: date,
+      scheduledStartAt: runningStartInstant(
+        date,
+        formString(form, "scheduledTime"),
+      ),
+      durationMinutes: formString(form, "durationMinutes"),
+    });
+    if (!parsed.success)
+      return {
+        status: "error",
+        message: "Bitte ein gültiges Datum, eine Uhrzeit und Dauer angeben.",
+      };
+    const result = await getScheduleSourceRepository(
+      context.auth.data,
+    ).schedule(parsed.data);
+    if (result.error)
+      return {
+        status: "error",
+        message: "Die Zeitplanung konnte nicht gespeichert werden.",
+      };
+    revalidateNutritionRoutes();
+    return { status: "success", message: "Mahlzeit im Kalender geplant." };
   });
-  if (!parsed.success)
-    return {
-      status: "error",
-      message: "Bitte ein gültiges Datum, eine Uhrzeit und Dauer angeben.",
-    };
-  const result = await getScheduleSourceRepository(
-    context.auth.data,
-  ).schedule(parsed.data);
-  if (result.error)
-    return {
-      status: "error",
-      message: "Die Zeitplanung konnte nicht gespeichert werden.",
-    };
-  revalidateNutritionRoutes();
-  return { status: "success", message: "Mahlzeit im Kalender geplant." };
 }

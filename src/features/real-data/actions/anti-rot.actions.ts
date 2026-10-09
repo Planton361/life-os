@@ -1,4 +1,6 @@
 "use server";
+
+import { withSubmittedDatasetEpoch } from "./submitted-dataset";
 import { revalidatePath } from "next/cache";
 import { getAntiRotRepository } from "@/features/real-data/runtime/facade";
 import { redirect } from "next/navigation";
@@ -38,27 +40,31 @@ function input(data: FormData) {
   };
 }
 export async function createAntiRotAction(data: FormData) {
-  const parsed = antiRotActionInputSchema.safeParse(input(data));
-  if (!parsed.success) finish("anti_rot_invalid");
-  const { repository, userId } = await context();
-  finish(
-    (await repository.create(userId, parsed.data)).ok
-      ? "anti_rot_created"
-      : "anti_rot_error",
-  );
+  return withSubmittedDatasetEpoch(data, async () => {
+    const parsed = antiRotActionInputSchema.safeParse(input(data));
+    if (!parsed.success) finish("anti_rot_invalid");
+    const { repository, userId } = await context();
+    finish(
+      (await repository.create(userId, parsed.data)).ok
+        ? "anti_rot_created"
+        : "anti_rot_error",
+    );
+  });
 }
 export async function updateAntiRotAction(data: FormData) {
-  const parsed = updateAntiRotActionInputSchema.safeParse({
-    ...input(data),
-    actionId: value(data, "actionId"),
+  return withSubmittedDatasetEpoch(data, async () => {
+    const parsed = updateAntiRotActionInputSchema.safeParse({
+      ...input(data),
+      actionId: value(data, "actionId"),
+    });
+    if (!parsed.success) finish("anti_rot_invalid");
+    const { repository, userId } = await context();
+    finish(
+      (await repository.update(userId, parsed.data)).ok
+        ? "anti_rot_updated"
+        : "anti_rot_error",
+    );
   });
-  if (!parsed.success) finish("anti_rot_invalid");
-  const { repository, userId } = await context();
-  finish(
-    (await repository.update(userId, parsed.data)).ok
-      ? "anti_rot_updated"
-      : "anti_rot_error",
-  );
 }
 async function idContext(data: FormData) {
   const parsed = antiRotActionIdSchema.safeParse({
@@ -68,36 +74,44 @@ async function idContext(data: FormData) {
   return { ...(await context()), actionId: parsed.data.actionId };
 }
 export async function pauseAntiRotAction(data: FormData) {
-  const { repository, userId, actionId } = await idContext(data);
-  finish(
-    (await repository.setStatus(userId, actionId, "paused"))
-      ? "anti_rot_paused"
-      : "anti_rot_resolve_first",
-  );
+  return withSubmittedDatasetEpoch(data, async () => {
+    const { repository, userId, actionId } = await idContext(data);
+    finish(
+      (await repository.setStatus(userId, actionId, "paused"))
+        ? "anti_rot_paused"
+        : "anti_rot_resolve_first",
+    );
+  });
 }
 export async function reactivateAntiRotAction(data: FormData) {
-  const { repository, userId, actionId } = await idContext(data);
-  finish(
-    (await repository.setStatus(userId, actionId, "active"))
-      ? "anti_rot_reactivated"
-      : "anti_rot_error",
-  );
+  return withSubmittedDatasetEpoch(data, async () => {
+    const { repository, userId, actionId } = await idContext(data);
+    finish(
+      (await repository.setStatus(userId, actionId, "active"))
+        ? "anti_rot_reactivated"
+        : "anti_rot_error",
+    );
+  });
 }
 export async function archiveAntiRotAction(data: FormData) {
-  const { repository, userId, actionId } = await idContext(data);
-  finish(
-    (await repository.archive(userId, actionId))
-      ? "anti_rot_archived"
-      : "anti_rot_resolve_first",
-  );
+  return withSubmittedDatasetEpoch(data, async () => {
+    const { repository, userId, actionId } = await idContext(data);
+    finish(
+      (await repository.archive(userId, actionId))
+        ? "anti_rot_archived"
+        : "anti_rot_resolve_first",
+    );
+  });
 }
 export async function restoreAntiRotAction(data: FormData) {
-  const { repository, userId, actionId } = await idContext(data);
-  finish(
-    (await repository.restore(userId, actionId))
-      ? "anti_rot_restored"
-      : "anti_rot_error",
-  );
+  return withSubmittedDatasetEpoch(data, async () => {
+    const { repository, userId, actionId } = await idContext(data);
+    finish(
+      (await repository.restore(userId, actionId))
+        ? "anti_rot_restored"
+        : "anti_rot_error",
+    );
+  });
 }
 export async function rotateAntiRotAction() {
   const { repository } = await context();
@@ -118,8 +132,12 @@ async function resolve(data: FormData, eventType: "completed" | "skipped") {
   );
 }
 export async function completeAntiRotRecommendation(data: FormData) {
-  return resolve(data, "completed");
+  return withSubmittedDatasetEpoch(data, async () => {
+    return resolve(data, "completed");
+  });
 }
 export async function skipAntiRotRecommendation(data: FormData) {
-  return resolve(data, "skipped");
+  return withSubmittedDatasetEpoch(data, async () => {
+    return resolve(data, "skipped");
+  });
 }

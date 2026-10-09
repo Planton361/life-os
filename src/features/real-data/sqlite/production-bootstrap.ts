@@ -48,6 +48,7 @@ export function bootstrapProductionDatabase(path: string, input: unknown) {
       db.prepare(
         "INSERT INTO runtime_metadata(singleton,schema_version,dataset_kind,owner_id) VALUES(1,?,'canonical',?)",
       ).run(schemaVersion, owner.ownerId);
+      db.prepare("UPDATE runtime_metadata SET dataset_epoch=life_uuid() WHERE singleton=1").run();
       const now = timestamp(new Date().toISOString());
       db.prepare(
         "INSERT INTO profiles(id,display_name,timezone,created_at,updated_at) VALUES(?,?,?,?,?)",

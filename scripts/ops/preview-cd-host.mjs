@@ -188,7 +188,7 @@ export function compatibilityFingerprint(release) {
       if (entry.isDirectory()) walk(file);
       else if (
         !entry.name.endsWith(".test.ts") &&
-        /schema|catalog|runtime\.ts$|runtime-configuration|owner-context|bootstrap|writer-lease|file-boundary|codecs|request-boundary|gateway|hosted/.test(
+        /schema|guards|invariants|preview|reset|catalog|runtime\.ts$|runtime-configuration|owner-context|bootstrap|writer-lease|file-boundary|codecs|request-boundary|gateway|hosted/.test(
           entry.name,
         )
       )
@@ -200,7 +200,13 @@ export function compatibilityFingerprint(release) {
     join(release, "src/instrumentation.ts"),
     join(release, "src/features/real-data/runtime/application-context.ts"),
     join(release, "src/features/real-data/runtime/configuration.ts"),
+    join(release, "src/features/real-data/runtime/submitted-dataset-epoch.ts"),
+    join(release, "src/features/real-data/actions/submitted-dataset.ts"),
     join(release, "scripts/ops/run-production.mjs"),
+    join(release, "scripts/ops/run-preview-production.mjs"),
+    join(release, "src/features/real-data/actions/preview-reset.actions.ts"),
+    join(release, "src/features/real-data/preview-reset/epoch-transport.tsx"),
+    join(release, "src/app/api/preview/epoch/route.ts"),
   );
   const hash = createHash("sha256").update(
     JSON.stringify({
@@ -242,7 +248,12 @@ export function validateRelease(release) {
 
 export async function buildRelease(root, config, sha, baseline) {
   if (!isSha(sha)) deny("INVALID_MAIN_SHA");
-  const env = cleanEnvironment(config.node),
+  const env = {
+      ...cleanEnvironment(config.node),
+      ...(config.preview?.version === 2
+        ? { LIFE_OS_BUILD_COMPOSITION: "personal-preview-v2" }
+        : {}),
+    },
     mirror = join(root, "source.git");
   const git = (...args) =>
     command("/usr/bin/git", args, { cwd: root, env, timeout: 120_000 });
@@ -435,6 +446,9 @@ export function appEnvironment(config) {
     LIFE_OS_HOSTED_SQLITE_PATH: config.database,
     LIFE_OS_HOSTED_ORIGIN: config.origin,
     LIFE_OS_HOSTED_OWNER_LOGIN: config.ownerLogin,
+    ...(config.preview?.version === 2
+      ? { LIFE_OS_PREVIEW_GRANT_PATH: config.preview.grantPath }
+      : {}),
   };
 }
 
@@ -477,11 +491,19 @@ export class AppService {
     if (this.alive()) deny("SUPERVISION_CONFLICT");
     await databasePreflight(this.config, release);
     await this.free();
-    this.child = spawn(this.config.node, ["scripts/ops/run-production.mjs"], {
-      cwd: release.path,
-      env: appEnvironment(this.config),
-      stdio: "ignore",
-    });
+    this.child = spawn(
+      this.config.node,
+      [
+        this.config.preview?.version === 2
+          ? "scripts/ops/run-preview-production.mjs"
+          : "scripts/ops/run-production.mjs",
+      ],
+      {
+        cwd: release.path,
+        env: appEnvironment(this.config),
+        stdio: "ignore",
+      },
+    );
     this.child.on("error", () => {});
   }
 }

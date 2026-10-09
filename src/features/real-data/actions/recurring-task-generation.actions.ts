@@ -1,5 +1,7 @@
 "use server";
 
+import { withSubmittedDatasetEpoch } from "./submitted-dataset";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
@@ -50,8 +52,9 @@ function revalidateGeneratedTaskRoutes() {
 }
 
 function authBlockedMessage(
-  error: "auth_error" | "invalid_session" | "missing_env" | "unauthenticated",
+  error: "auth_error" | "invalid_session" | "missing_env" | "unauthenticated" | "dataset_stale",
 ) {
+  if (error === "dataset_stale") return "Die Testdaten haben sich geändert. Bitte neu laden, bevor du Änderungen speicherst.";
   if (error === "missing_env") {
     return "Supabase ist lokal noch nicht konfiguriert.";
   }
@@ -114,99 +117,103 @@ function actionResultFromGeneration(
 export async function generateRecurringTaskInstancesForDateAction(
   formData: FormData,
 ): Promise<RecurringTaskGenerationActionResult> {
-  const context = await getAuthenticatedGenerationContext();
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const context = await getAuthenticatedGenerationContext();
 
-  if (!context.ok) return context.result;
+    if (!context.ok) return context.result;
 
-  const parsed =
-    generateRecurringTaskInstancesForDateActionInputSchema.safeParse({
-      date: formString(formData, "date"),
-    });
+    const parsed =
+      generateRecurringTaskInstancesForDateActionInputSchema.safeParse({
+        date: formString(formData, "date"),
+      });
 
-  if (!parsed.success) {
-    return emptyGenerationResult(
-      "error",
-      "Gib ein gültiges Generierungsdatum ein.",
+    if (!parsed.success) {
+      return emptyGenerationResult(
+        "error",
+        "Gib ein gültiges Generierungsdatum ein.",
+      );
+    }
+
+    const result = await generateRecurringTaskInstancesForDate(
+      {
+        date: parsed.data.date,
+        profileId: context.auth.user.id,
+        userId: context.auth.user.id,
+      },
+      {
+        recurringTaskTemplates: context.auth.repositories.recurrence,
+        tasks: context.auth.repositories.tasks,
+      },
     );
-  }
 
-  const result = await generateRecurringTaskInstancesForDate(
-    {
-      date: parsed.data.date,
-      profileId: context.auth.user.id,
-      userId: context.auth.user.id,
-    },
-    {
-      recurringTaskTemplates: context.auth.repositories.recurrence,
-      tasks: context.auth.repositories.tasks,
-    },
-  );
+    if (!result.ok) {
+      return emptyGenerationResult(
+        "error",
+        "Recurring Task Instances konnten nicht erzeugt werden.",
+      );
+    }
 
-  if (!result.ok) {
-    return emptyGenerationResult(
-      "error",
-      "Recurring Task Instances konnten nicht erzeugt werden.",
+    revalidateGeneratedTaskRoutes();
+
+    return actionResultFromGeneration(
+      "Recurring Task Instances erzeugt.",
+      result.data.generated,
+      result.data.existing,
+      result.data.skippedTemplates,
     );
-  }
-
-  revalidateGeneratedTaskRoutes();
-
-  return actionResultFromGeneration(
-    "Recurring Task Instances erzeugt.",
-    result.data.generated,
-    result.data.existing,
-    result.data.skippedTemplates,
-  );
+  });
 }
 
 export async function generateRecurringTaskInstancesForRangeAction(
   formData: FormData,
 ): Promise<RecurringTaskGenerationActionResult> {
-  const context = await getAuthenticatedGenerationContext();
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const context = await getAuthenticatedGenerationContext();
 
-  if (!context.ok) return context.result;
+    if (!context.ok) return context.result;
 
-  const parsed =
-    generateRecurringTaskInstancesForRangeActionInputSchema.safeParse({
-      endDate: formString(formData, "endDate"),
-      startDate: formString(formData, "startDate"),
-    });
+    const parsed =
+      generateRecurringTaskInstancesForRangeActionInputSchema.safeParse({
+        endDate: formString(formData, "endDate"),
+        startDate: formString(formData, "startDate"),
+      });
 
-  if (!parsed.success) {
-    return emptyGenerationResult(
-      "error",
-      "Gib einen gültigen Generierungszeitraum bis maximal 31 Tage ein.",
+    if (!parsed.success) {
+      return emptyGenerationResult(
+        "error",
+        "Gib einen gültigen Generierungszeitraum bis maximal 31 Tage ein.",
+      );
+    }
+
+    const result = await generateRecurringTaskInstancesForRange(
+      {
+        endDate: parsed.data.endDate,
+        profileId: context.auth.user.id,
+        startDate: parsed.data.startDate,
+        userId: context.auth.user.id,
+      },
+      {
+        recurringTaskTemplates: context.auth.repositories.recurrence,
+        tasks: context.auth.repositories.tasks,
+      },
     );
-  }
 
-  const result = await generateRecurringTaskInstancesForRange(
-    {
-      endDate: parsed.data.endDate,
-      profileId: context.auth.user.id,
-      startDate: parsed.data.startDate,
-      userId: context.auth.user.id,
-    },
-    {
-      recurringTaskTemplates: context.auth.repositories.recurrence,
-      tasks: context.auth.repositories.tasks,
-    },
-  );
+    if (!result.ok) {
+      return emptyGenerationResult(
+        "error",
+        "Recurring Task Instances konnten nicht erzeugt werden.",
+      );
+    }
 
-  if (!result.ok) {
-    return emptyGenerationResult(
-      "error",
-      "Recurring Task Instances konnten nicht erzeugt werden.",
+    revalidateGeneratedTaskRoutes();
+
+    return actionResultFromGeneration(
+      "Recurring Task Instances erzeugt.",
+      result.data.generated,
+      result.data.existing,
+      result.data.skippedTemplates,
     );
-  }
-
-  revalidateGeneratedTaskRoutes();
-
-  return actionResultFromGeneration(
-    "Recurring Task Instances erzeugt.",
-    result.data.generated,
-    result.data.existing,
-    result.data.skippedTemplates,
-  );
+  });
 }
 
 function todayGenerationReturnUrl(result: RecurringTaskGenerationActionResult) {
@@ -226,14 +233,18 @@ function todayGenerationReturnUrl(result: RecurringTaskGenerationActionResult) {
 export async function generateRecurringTaskInstancesForTodayFormAction(
   formData: FormData,
 ): Promise<void> {
-  const result = await generateRecurringTaskInstancesForDateAction(formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const result = await generateRecurringTaskInstancesForDateAction(formData);
 
-  redirect(todayGenerationReturnUrl(result));
+    redirect(todayGenerationReturnUrl(result));
+  });
 }
 
 export async function generateRecurringTaskInstancesForRangeTodayFormAction(
   formData: FormData,
 ): Promise<void> {
-  const result = await generateRecurringTaskInstancesForRangeAction(formData);
-  redirect(todayGenerationReturnUrl(result));
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const result = await generateRecurringTaskInstancesForRangeAction(formData);
+    redirect(todayGenerationReturnUrl(result));
+  });
 }

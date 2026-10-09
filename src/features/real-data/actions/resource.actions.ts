@@ -1,5 +1,7 @@
 "use server";
 
+import { withSubmittedDatasetEpoch } from "./submitted-dataset";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createResourceInputSchema, linkResourceToTargetInputSchema, resourceLifecycleInputSchema, unlinkResourceFromTargetInputSchema, updateResourceInputSchema } from "@/features/real-data";
@@ -123,41 +125,45 @@ function redirectResourceState(state: string, resourceId?: string): never {
 }
 
 export async function createResourceFormAction(formData: FormData): Promise<void> {
-  const auth = await authenticatedManualResourceContext();
-  if (!auth) redirectResourceState("blocked");
-  const parsed = createResourceInputSchema.safeParse({
-    body: optionalFormString(formData, "body"),
-    profileId: auth.user.id,
-    reviewNeeded: false,
-    title: formString(formData, "title"),
-    type: formString(formData, "type"),
-    url: optionalFormString(formData, "url"),
-    userId: auth.user.id,
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const auth = await authenticatedManualResourceContext();
+    if (!auth) redirectResourceState("blocked");
+    const parsed = createResourceInputSchema.safeParse({
+      body: optionalFormString(formData, "body"),
+      profileId: auth.user.id,
+      reviewNeeded: false,
+      title: formString(formData, "title"),
+      type: formString(formData, "type"),
+      url: optionalFormString(formData, "url"),
+      userId: auth.user.id,
+    });
+    if (!parsed.success) redirectResourceState("invalid");
+    const result = await auth.repositories.resources.createResource(parsed.data);
+    if (!result.ok) redirectResourceState("error");
+    revalidateResourceRoutes();
+    redirectResourceState("created", result.data.id);
   });
-  if (!parsed.success) redirectResourceState("invalid");
-  const result = await auth.repositories.resources.createResource(parsed.data);
-  if (!result.ok) redirectResourceState("error");
-  revalidateResourceRoutes();
-  redirectResourceState("created", result.data.id);
 }
 
 export async function updateResourceFormAction(formData: FormData): Promise<void> {
-  const auth = await authenticatedManualResourceContext();
-  if (!auth) redirectResourceState("blocked", formString(formData, "resourceId"));
-  const parsed = updateResourceInputSchema.safeParse({
-    body: optionalFormString(formData, "body") ?? null,
-    profileId: auth.user.id,
-    resourceId: formString(formData, "resourceId"),
-    title: formString(formData, "title"),
-    type: formString(formData, "type"),
-    url: optionalFormString(formData, "url") ?? null,
-    userId: auth.user.id,
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const auth = await authenticatedManualResourceContext();
+    if (!auth) redirectResourceState("blocked", formString(formData, "resourceId"));
+    const parsed = updateResourceInputSchema.safeParse({
+      body: optionalFormString(formData, "body") ?? null,
+      profileId: auth.user.id,
+      resourceId: formString(formData, "resourceId"),
+      title: formString(formData, "title"),
+      type: formString(formData, "type"),
+      url: optionalFormString(formData, "url") ?? null,
+      userId: auth.user.id,
+    });
+    if (!parsed.success) redirectResourceState("invalid", formString(formData, "resourceId"));
+    const result = await auth.repositories.resources.updateResource(parsed.data);
+    if (!result.ok) redirectResourceState("error", parsed.data.resourceId);
+    revalidateResourceRoutes();
+    redirectResourceState("updated", result.data.id);
   });
-  if (!parsed.success) redirectResourceState("invalid", formString(formData, "resourceId"));
-  const result = await auth.repositories.resources.updateResource(parsed.data);
-  if (!result.ok) redirectResourceState("error", parsed.data.resourceId);
-  revalidateResourceRoutes();
-  redirectResourceState("updated", result.data.id);
 }
 
 async function resourceLifecycleAction(formData: FormData, mode: "archive" | "restore") {
@@ -173,8 +179,14 @@ async function resourceLifecycleAction(formData: FormData, mode: "archive" | "re
   redirectResourceState(mode === "archive" ? "archived" : "restored", resourceId);
 }
 
-export async function archiveResourceFormAction(formData: FormData): Promise<void> { await resourceLifecycleAction(formData, "archive"); }
-export async function restoreResourceFormAction(formData: FormData): Promise<void> { await resourceLifecycleAction(formData, "restore"); }
+export async function archiveResourceFormAction(formData: FormData): Promise<void> {
+  return withSubmittedDatasetEpoch(formData, async () => { await resourceLifecycleAction(formData, "archive");
+  });
+}
+export async function restoreResourceFormAction(formData: FormData): Promise<void> {
+  return withSubmittedDatasetEpoch(formData, async () => { await resourceLifecycleAction(formData, "restore");
+  });
+}
 
 async function createResourceRelationState(
   formData: FormData,
@@ -245,50 +257,58 @@ async function createResourceRelationState(
 export async function linkResourceToTargetAction(
   formData: FormData,
 ): Promise<void> {
-  redirectToResourceRelationState(
-    formData,
-    await createResourceRelationState(formData),
-  );
+  return withSubmittedDatasetEpoch(formData, async () => {
+    redirectToResourceRelationState(
+      formData,
+      await createResourceRelationState(formData),
+    );
+  });
 }
 
 export async function linkPortfolioResourceToTargetAction(
   formData: FormData,
 ): Promise<void> {
-  redirectToPortfolioResourceRelationState(
-    formData,
-    await createResourceRelationState(formData),
-  );
+  return withSubmittedDatasetEpoch(formData, async () => {
+    redirectToPortfolioResourceRelationState(
+      formData,
+      await createResourceRelationState(formData),
+    );
+  });
 }
 
 export async function unlinkPortfolioResourceFromTargetAction(formData: FormData): Promise<void> {
-  const profileId = await getCurrentLifeOsProfileId();
-  if (profileId !== "manual") redirectToPortfolioResourceRelationState(formData, "blocked");
-  const auth = await createAuthenticatedApplicationContext("write");
-  if (!auth.ok) redirectToPortfolioResourceRelationState(formData, "blocked");
-  const parsed = unlinkResourceFromTargetInputSchema.safeParse({
-    profileId: auth.user.id,
-    relationId: formString(formData, "relationId"),
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const profileId = await getCurrentLifeOsProfileId();
+    if (profileId !== "manual") redirectToPortfolioResourceRelationState(formData, "blocked");
+    const auth = await createAuthenticatedApplicationContext("write");
+    if (!auth.ok) redirectToPortfolioResourceRelationState(formData, "blocked");
+    const parsed = unlinkResourceFromTargetInputSchema.safeParse({
+      profileId: auth.user.id,
+      relationId: formString(formData, "relationId"),
+    });
+    if (!parsed.success) redirectToPortfolioResourceRelationState(formData, "invalid");
+    const result = await auth.repositories.resources.unlinkResource(
+      auth.user.id, auth.user.id, parsed.data.relationId,
+    );
+    if (!result.ok) redirectToPortfolioResourceRelationState(formData, "invalid");
+    revalidateResourceRelationRoutes(result.data.targetType);
+    redirectToPortfolioResourceRelationState(formData, "saved");
   });
-  if (!parsed.success) redirectToPortfolioResourceRelationState(formData, "invalid");
-  const result = await auth.repositories.resources.unlinkResource(
-    auth.user.id, auth.user.id, parsed.data.relationId,
-  );
-  if (!result.ok) redirectToPortfolioResourceRelationState(formData, "invalid");
-  revalidateResourceRelationRoutes(result.data.targetType);
-  redirectToPortfolioResourceRelationState(formData, "saved");
 }
 
 export async function unlinkResourceFromTargetAction(formData: FormData): Promise<void> {
-  const auth = await authenticatedManualResourceContext();
-  const resourceId = formString(formData, "resourceId");
-  if (!auth) redirectResourceState("blocked", resourceId);
-  const parsed = unlinkResourceFromTargetInputSchema.safeParse({
-    profileId: auth.user.id,
-    relationId: formString(formData, "relationId"),
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const auth = await authenticatedManualResourceContext();
+    const resourceId = formString(formData, "resourceId");
+    if (!auth) redirectResourceState("blocked", resourceId);
+    const parsed = unlinkResourceFromTargetInputSchema.safeParse({
+      profileId: auth.user.id,
+      relationId: formString(formData, "relationId"),
+    });
+    if (!parsed.success) redirectResourceState("invalid", resourceId);
+    const result = await auth.repositories.resources.unlinkResource(auth.user.id, auth.user.id, parsed.data.relationId);
+    if (!result.ok) redirectResourceState("error", resourceId);
+    revalidateResourceRelationRoutes(result.data.targetType);
+    redirectResourceState("unlinked", resourceId);
   });
-  if (!parsed.success) redirectResourceState("invalid", resourceId);
-  const result = await auth.repositories.resources.unlinkResource(auth.user.id, auth.user.id, parsed.data.relationId);
-  if (!result.ok) redirectResourceState("error", resourceId);
-  revalidateResourceRelationRoutes(result.data.targetType);
-  redirectResourceState("unlinked", resourceId);
 }

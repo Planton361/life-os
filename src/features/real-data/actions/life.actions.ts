@@ -1,5 +1,7 @@
 "use server";
 
+import { withSubmittedDatasetEpoch } from "./submitted-dataset";
+
 import { saveJournalEntryAction, archiveJournalEntryAction } from "./journal.actions";
 import { getLifeRepository } from "@/features/real-data/runtime/facade";
 import { revalidatePath } from "next/cache";
@@ -66,38 +68,48 @@ function noteInput(formData: FormData) {
 }
 
 export async function createJournalEntryFormAction(formData: FormData) {
-  formData.delete("journalEntryId");
-  const result = await saveJournalEntryAction(formData);
-  destination("/life/journal", result.ok ? "created" : "error", result.id);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    formData.delete("journalEntryId");
+    const result = await saveJournalEntryAction(formData);
+    destination("/life/journal", result.ok ? "created" : "error", result.id);
+  });
 }
 export async function updateJournalEntryFormAction(formData: FormData) {
-  if (!archiveJournalEntryInputSchema.safeParse({ journalEntryId: value(formData, "journalEntryId") }).success) destination("/life/journal", "invalid");
-  const result = await saveJournalEntryAction(formData);
-  destination("/life/journal", result.ok ? "updated" : "error", result.id);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    if (!archiveJournalEntryInputSchema.safeParse({ journalEntryId: value(formData, "journalEntryId") }).success) destination("/life/journal", "invalid");
+    const result = await saveJournalEntryAction(formData);
+    destination("/life/journal", result.ok ? "updated" : "error", result.id);
+  });
 }
 export async function archiveJournalEntryFormAction(formData: FormData) {
-  const result = await archiveJournalEntryAction(formData);
-  destination("/life/journal", result.ok ? "archived" : "error", result.id);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const result = await archiveJournalEntryAction(formData);
+    destination("/life/journal", result.ok ? "archived" : "error", result.id);
+  });
 }
 
 export async function createLifeNoteFormAction(formData: FormData) {
-  const auth = await context("/life/notes");
-  const parsed = createLifeNoteInputSchema.safeParse(noteInput(formData));
-  if (!parsed.success) destination("/life/notes", "invalid");
-  const result = await getLifeRepository(auth.data).createNote(auth.user.id, parsed.data);
-  if (!result.ok) destination("/life/notes", "error");
-  revalidateLife();
-  destination("/life/notes", "created", result.data.id);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const auth = await context("/life/notes");
+    const parsed = createLifeNoteInputSchema.safeParse(noteInput(formData));
+    if (!parsed.success) destination("/life/notes", "invalid");
+    const result = await getLifeRepository(auth.data).createNote(auth.user.id, parsed.data);
+    if (!result.ok) destination("/life/notes", "error");
+    revalidateLife();
+    destination("/life/notes", "created", result.data.id);
+  });
 }
 
 export async function updateLifeNoteFormAction(formData: FormData) {
-  const auth = await context("/life/notes");
-  const parsed = updateLifeNoteInputSchema.safeParse({ ...noteInput(formData), resourceId: value(formData, "resourceId") });
-  if (!parsed.success) destination("/life/notes", "invalid");
-  const result = await getLifeRepository(auth.data).updateNote(auth.user.id, parsed.data.resourceId, parsed.data);
-  if (!result.ok) destination("/life/notes", "error", parsed.data.resourceId);
-  revalidateLife();
-  destination("/life/notes", "updated", parsed.data.resourceId);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const auth = await context("/life/notes");
+    const parsed = updateLifeNoteInputSchema.safeParse({ ...noteInput(formData), resourceId: value(formData, "resourceId") });
+    if (!parsed.success) destination("/life/notes", "invalid");
+    const result = await getLifeRepository(auth.data).updateNote(auth.user.id, parsed.data.resourceId, parsed.data);
+    if (!result.ok) destination("/life/notes", "error", parsed.data.resourceId);
+    revalidateLife();
+    destination("/life/notes", "updated", parsed.data.resourceId);
+  });
 }
 
 async function noteLifecycle(formData: FormData, archived: boolean) {
@@ -110,8 +122,14 @@ async function noteLifecycle(formData: FormData, archived: boolean) {
   destination("/life/notes", archived ? "archived" : "restored", parsed.data.resourceId);
 }
 
-export async function archiveLifeNoteFormAction(formData: FormData) { await noteLifecycle(formData, true); }
-export async function restoreLifeNoteFormAction(formData: FormData) { await noteLifecycle(formData, false); }
+export async function archiveLifeNoteFormAction(formData: FormData) {
+  return withSubmittedDatasetEpoch(formData, async () => { await noteLifecycle(formData, true);
+  });
+}
+export async function restoreLifeNoteFormAction(formData: FormData) {
+  return withSubmittedDatasetEpoch(formData, async () => { await noteLifecycle(formData, false);
+  });
+}
 
 function entertainmentPath(formData: FormData): LifeActionPath {
   const returnTo = value(formData, "returnTo");
@@ -137,25 +155,29 @@ function entertainmentInput(formData: FormData) {
 }
 
 export async function createEntertainmentItemFormAction(formData: FormData) {
-  const path = entertainmentPath(formData);
-  const auth = await context(path);
-  const parsed = entertainmentItemInputSchema.safeParse(entertainmentInput(formData));
-  if (!parsed.success) destination(path, "invalid");
-  const result = await getLifeRepository(auth.data).createEntertainmentItem(auth.user.id, parsed.data);
-  if (!result.ok) destination(path, "error");
-  revalidateLife();
-  destination(path, "created", result.data.id);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const path = entertainmentPath(formData);
+    const auth = await context(path);
+    const parsed = entertainmentItemInputSchema.safeParse(entertainmentInput(formData));
+    if (!parsed.success) destination(path, "invalid");
+    const result = await getLifeRepository(auth.data).createEntertainmentItem(auth.user.id, parsed.data);
+    if (!result.ok) destination(path, "error");
+    revalidateLife();
+    destination(path, "created", result.data.id);
+  });
 }
 
 export async function updateEntertainmentItemFormAction(formData: FormData) {
-  const path = entertainmentPath(formData);
-  const auth = await context(path);
-  const parsed = updateEntertainmentItemInputSchema.safeParse({ ...entertainmentInput(formData), entertainmentItemId: value(formData, "entertainmentItemId") });
-  if (!parsed.success) destination(path, "invalid");
-  const result = await getLifeRepository(auth.data).updateEntertainmentItem(auth.user.id, parsed.data);
-  if (!result.ok) destination(path, "error", parsed.data.entertainmentItemId);
-  revalidateLife();
-  destination(path, "updated", result.data.id);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const path = entertainmentPath(formData);
+    const auth = await context(path);
+    const parsed = updateEntertainmentItemInputSchema.safeParse({ ...entertainmentInput(formData), entertainmentItemId: value(formData, "entertainmentItemId") });
+    if (!parsed.success) destination(path, "invalid");
+    const result = await getLifeRepository(auth.data).updateEntertainmentItem(auth.user.id, parsed.data);
+    if (!result.ok) destination(path, "error", parsed.data.entertainmentItemId);
+    revalidateLife();
+    destination(path, "updated", result.data.id);
+  });
 }
 
 async function entertainmentLifecycle(formData: FormData, archived: boolean) {
@@ -169,66 +191,100 @@ async function entertainmentLifecycle(formData: FormData, archived: boolean) {
   destination(path, archived ? "archived" : "restored", parsed.data.entertainmentItemId);
 }
 
-export async function archiveEntertainmentItemFormAction(formData: FormData) { await entertainmentLifecycle(formData, true); }
-export async function restoreEntertainmentItemFormAction(formData: FormData) { await entertainmentLifecycle(formData, false); }
+export async function archiveEntertainmentItemFormAction(formData: FormData) {
+  return withSubmittedDatasetEpoch(formData, async () => { await entertainmentLifecycle(formData, true);
+  });
+}
+export async function restoreEntertainmentItemFormAction(formData: FormData) {
+  return withSubmittedDatasetEpoch(formData, async () => { await entertainmentLifecycle(formData, false);
+  });
+}
 
 function inventoryInput(formData: FormData) { return { acquiredOn: value(formData, "acquiredOn"), amount: value(formData, "amount"), category: value(formData, "category"), condition: value(formData, "condition"), currency: value(formData, "currency"), description: value(formData, "description"), location: value(formData, "location"), name: value(formData, "name"), quantity: value(formData, "quantity"), unit: value(formData, "unit") }; }
 function wishlistInput(formData: FormData) { return { amount: value(formData, "amount"), category: value(formData, "category"), currency: value(formData, "currency"), description: value(formData, "description"), priority: value(formData, "priority"), status: value(formData, "status"), targetDate: value(formData, "targetDate"), title: value(formData, "title") }; }
 function decisionInput(formData: FormData) { return { context: value(formData, "context"), criteria: value(formData, "criteria"), decision: value(formData, "decision"), decisionDate: value(formData, "decisionDate"), rationale: value(formData, "rationale"), status: value(formData, "status"), wishlistItemId: value(formData, "wishlistItemId") }; }
 
 export async function createInventoryItemFormAction(formData: FormData) {
-  const auth = await context("/life/inventory"); const parsed = inventoryItemInputSchema.safeParse(inventoryInput(formData));
-  if (!parsed.success) destination("/life/inventory", "invalid"); const result = await getLifeRepository(auth.data).createInventoryItem(auth.user.id, parsed.data);
-  if (!result.ok) destination("/life/inventory", "error"); revalidateLife(); destination("/life/inventory", "inventory_created", result.data.id);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const auth = await context("/life/inventory"); const parsed = inventoryItemInputSchema.safeParse(inventoryInput(formData));
+    if (!parsed.success) destination("/life/inventory", "invalid"); const result = await getLifeRepository(auth.data).createInventoryItem(auth.user.id, parsed.data);
+    if (!result.ok) destination("/life/inventory", "error"); revalidateLife(); destination("/life/inventory", "inventory_created", result.data.id);
+  });
 }
 export async function updateInventoryItemFormAction(formData: FormData) {
-  const auth = await context("/life/inventory"); const parsed = updateInventoryItemInputSchema.safeParse({ ...inventoryInput(formData), inventoryItemId: value(formData, "inventoryItemId") });
-  if (!parsed.success) destination("/life/inventory", "invalid"); const result = await getLifeRepository(auth.data).updateInventoryItem(auth.user.id, parsed.data);
-  if (!result.ok) destination("/life/inventory", "error"); revalidateLife(); destination("/life/inventory", "inventory_updated", result.data.id);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const auth = await context("/life/inventory"); const parsed = updateInventoryItemInputSchema.safeParse({ ...inventoryInput(formData), inventoryItemId: value(formData, "inventoryItemId") });
+    if (!parsed.success) destination("/life/inventory", "invalid"); const result = await getLifeRepository(auth.data).updateInventoryItem(auth.user.id, parsed.data);
+    if (!result.ok) destination("/life/inventory", "error"); revalidateLife(); destination("/life/inventory", "inventory_updated", result.data.id);
+  });
 }
 async function inventoryLifecycle(formData: FormData, archived: boolean) {
   const auth = await context("/life/inventory"); const parsed = inventoryItemLifecycleInputSchema.safeParse({ inventoryItemId: value(formData, "inventoryItemId") });
   if (!parsed.success) destination("/life/inventory", "invalid"); const result = await getLifeRepository(auth.data).setInventoryItemArchived(auth.user.id, parsed.data.inventoryItemId, archived);
   if (!result.ok) destination("/life/inventory", "error"); revalidateLife(); destination("/life/inventory", archived ? "inventory_archived" : "inventory_restored", parsed.data.inventoryItemId);
 }
-export async function archiveInventoryItemFormAction(formData: FormData) { await inventoryLifecycle(formData, true); }
-export async function restoreInventoryItemFormAction(formData: FormData) { await inventoryLifecycle(formData, false); }
+export async function archiveInventoryItemFormAction(formData: FormData) {
+  return withSubmittedDatasetEpoch(formData, async () => { await inventoryLifecycle(formData, true);
+  });
+}
+export async function restoreInventoryItemFormAction(formData: FormData) {
+  return withSubmittedDatasetEpoch(formData, async () => { await inventoryLifecycle(formData, false);
+  });
+}
 
 export async function createWishlistItemFormAction(formData: FormData) {
-  const auth = await context("/life/inventory"); const parsed = wishlistItemInputSchema.safeParse(wishlistInput(formData));
-  if (!parsed.success) destination("/life/inventory", "invalid"); const result = await getLifeRepository(auth.data).createWishlistItem(auth.user.id, parsed.data);
-  if (!result.ok) destination("/life/inventory", "error"); revalidateLife(); destination("/life/inventory", "wishlist_created", result.data.id);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const auth = await context("/life/inventory"); const parsed = wishlistItemInputSchema.safeParse(wishlistInput(formData));
+    if (!parsed.success) destination("/life/inventory", "invalid"); const result = await getLifeRepository(auth.data).createWishlistItem(auth.user.id, parsed.data);
+    if (!result.ok) destination("/life/inventory", "error"); revalidateLife(); destination("/life/inventory", "wishlist_created", result.data.id);
+  });
 }
 export async function updateWishlistItemFormAction(formData: FormData) {
-  const auth = await context("/life/inventory"); const parsed = updateWishlistItemInputSchema.safeParse({ ...wishlistInput(formData), wishlistItemId: value(formData, "wishlistItemId") });
-  if (!parsed.success) destination("/life/inventory", "invalid"); const result = await getLifeRepository(auth.data).updateWishlistItem(auth.user.id, parsed.data);
-  if (!result.ok) destination("/life/inventory", "error"); revalidateLife(); destination("/life/inventory", "wishlist_updated", result.data.id);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const auth = await context("/life/inventory"); const parsed = updateWishlistItemInputSchema.safeParse({ ...wishlistInput(formData), wishlistItemId: value(formData, "wishlistItemId") });
+    if (!parsed.success) destination("/life/inventory", "invalid"); const result = await getLifeRepository(auth.data).updateWishlistItem(auth.user.id, parsed.data);
+    if (!result.ok) destination("/life/inventory", "error"); revalidateLife(); destination("/life/inventory", "wishlist_updated", result.data.id);
+  });
 }
 async function wishlistLifecycle(formData: FormData, archived: boolean) {
   const auth = await context("/life/inventory"); const parsed = wishlistItemLifecycleInputSchema.safeParse({ wishlistItemId: value(formData, "wishlistItemId") });
   if (!parsed.success) destination("/life/inventory", "invalid"); const result = await getLifeRepository(auth.data).setWishlistItemArchived(auth.user.id, parsed.data.wishlistItemId, archived);
   if (!result.ok) destination("/life/inventory", "error"); revalidateLife(); destination("/life/inventory", archived ? "wishlist_archived" : "wishlist_restored", parsed.data.wishlistItemId);
 }
-export async function archiveWishlistItemFormAction(formData: FormData) { await wishlistLifecycle(formData, true); }
-export async function restoreWishlistItemFormAction(formData: FormData) { await wishlistLifecycle(formData, false); }
+export async function archiveWishlistItemFormAction(formData: FormData) {
+  return withSubmittedDatasetEpoch(formData, async () => { await wishlistLifecycle(formData, true);
+  });
+}
+export async function restoreWishlistItemFormAction(formData: FormData) {
+  return withSubmittedDatasetEpoch(formData, async () => { await wishlistLifecycle(formData, false);
+  });
+}
 
 export async function createPurchaseDecisionFormAction(formData: FormData) {
-  const auth = await context("/life/inventory"); const parsed = purchaseDecisionInputSchema.safeParse(decisionInput(formData));
-  if (!parsed.success) destination("/life/inventory", "invalid"); const result = await getLifeRepository(auth.data).createPurchaseDecision(auth.user.id, parsed.data);
-  if (!result.ok) destination("/life/inventory", "error"); revalidateLife(); destination("/life/inventory", "decision_created", result.data.id);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const auth = await context("/life/inventory"); const parsed = purchaseDecisionInputSchema.safeParse(decisionInput(formData));
+    if (!parsed.success) destination("/life/inventory", "invalid"); const result = await getLifeRepository(auth.data).createPurchaseDecision(auth.user.id, parsed.data);
+    if (!result.ok) destination("/life/inventory", "error"); revalidateLife(); destination("/life/inventory", "decision_created", result.data.id);
+  });
 }
 export async function updatePurchaseDecisionFormAction(formData: FormData) {
-  const auth = await context("/life/inventory"); const parsed = updatePurchaseDecisionInputSchema.safeParse({ ...decisionInput(formData), purchaseDecisionId: value(formData, "purchaseDecisionId") });
-  if (!parsed.success) destination("/life/inventory", "invalid"); const result = await getLifeRepository(auth.data).updatePurchaseDecision(auth.user.id, parsed.data);
-  if (!result.ok) destination("/life/inventory", "error"); revalidateLife(); destination("/life/inventory", "decision_updated", result.data.id);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const auth = await context("/life/inventory"); const parsed = updatePurchaseDecisionInputSchema.safeParse({ ...decisionInput(formData), purchaseDecisionId: value(formData, "purchaseDecisionId") });
+    if (!parsed.success) destination("/life/inventory", "invalid"); const result = await getLifeRepository(auth.data).updatePurchaseDecision(auth.user.id, parsed.data);
+    if (!result.ok) destination("/life/inventory", "error"); revalidateLife(); destination("/life/inventory", "decision_updated", result.data.id);
+  });
 }
 export async function archivePurchaseDecisionFormAction(formData: FormData) {
-  const auth = await context("/life/inventory"); const parsed = purchaseDecisionLifecycleInputSchema.safeParse({ purchaseDecisionId: value(formData, "purchaseDecisionId") });
-  if (!parsed.success) destination("/life/inventory", "invalid"); const result = await getLifeRepository(auth.data).archivePurchaseDecision(auth.user.id, parsed.data.purchaseDecisionId);
-  if (!result.ok) destination("/life/inventory", "error"); revalidateLife(); destination("/life/inventory", "decision_archived", parsed.data.purchaseDecisionId);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const auth = await context("/life/inventory"); const parsed = purchaseDecisionLifecycleInputSchema.safeParse({ purchaseDecisionId: value(formData, "purchaseDecisionId") });
+    if (!parsed.success) destination("/life/inventory", "invalid"); const result = await getLifeRepository(auth.data).archivePurchaseDecision(auth.user.id, parsed.data.purchaseDecisionId);
+    if (!result.ok) destination("/life/inventory", "error"); revalidateLife(); destination("/life/inventory", "decision_archived", parsed.data.purchaseDecisionId);
+  });
 }
 export async function convertWishlistItemToInventoryFormAction(formData: FormData) {
-  const auth = await context("/life/inventory"); const parsed = convertWishlistItemInputSchema.safeParse({ wishlistItemId: value(formData, "wishlistItemId") });
-  if (!parsed.success) destination("/life/inventory", "invalid"); const result = await getLifeRepository(auth.data).convertWishlistItemToInventory(auth.user.id, parsed.data.wishlistItemId);
-  if (!result.ok) destination("/life/inventory", "error"); revalidateLife(); destination("/life/inventory", "converted", result.data.id);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const auth = await context("/life/inventory"); const parsed = convertWishlistItemInputSchema.safeParse({ wishlistItemId: value(formData, "wishlistItemId") });
+    if (!parsed.success) destination("/life/inventory", "invalid"); const result = await getLifeRepository(auth.data).convertWishlistItemToInventory(auth.user.id, parsed.data.wishlistItemId);
+    if (!result.ok) destination("/life/inventory", "error"); revalidateLife(); destination("/life/inventory", "converted", result.data.id);
+  });
 }

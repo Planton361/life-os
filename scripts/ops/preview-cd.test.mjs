@@ -419,6 +419,9 @@ test("source fingerprint ignores UI but detects schema/runtime/auth changes", ()
   for (const p of [
     "src/features/real-data/sqlite",
     "src/features/real-data/runtime",
+    "src/features/real-data/actions",
+    "src/features/real-data/preview-reset",
+    "src/app/api/preview/epoch",
     "scripts/ops",
   ])
     mkdirSync(join(root, p), { recursive: true });
@@ -434,11 +437,24 @@ test("source fingerprint ignores UI but detects schema/runtime/auth changes", ()
     "src/instrumentation.ts",
     "src/features/real-data/runtime/application-context.ts",
     "src/features/real-data/runtime/configuration.ts",
+    "src/features/real-data/runtime/submitted-dataset-epoch.ts",
+    "src/features/real-data/actions/submitted-dataset.ts",
     "scripts/ops/run-production.mjs",
+    "scripts/ops/run-preview-production.mjs",
+    "src/features/real-data/actions/preview-reset.actions.ts",
+    "src/features/real-data/preview-reset/epoch-transport.tsx",
+    "src/app/api/preview/epoch/route.ts",
     "src/features/real-data/sqlite/core-schema.ts",
+    "src/features/real-data/sqlite/goal-guards.ts",
+    "src/features/real-data/sqlite/preview-grant.ts",
   ])
     writeFileSync(join(root, p), "accepted");
   const before = compatibilityFingerprint(root);
+  for (const path of ["src/features/real-data/sqlite/goal-guards.ts", "src/features/real-data/sqlite/preview-grant.ts", "src/features/real-data/actions/preview-reset.actions.ts"]) {
+    writeFileSync(join(root, path), "security boundary changed");
+    assert.notEqual(compatibilityFingerprint(root), before);
+    writeFileSync(join(root, path), "accepted");
+  }
   writeFileSync(join(root, "src/ui.tsx"), "new view");
   assert.equal(compatibilityFingerprint(root), before);
   writeFileSync(join(root, "next.config.ts"), "changed host boundary");
