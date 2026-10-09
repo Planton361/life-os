@@ -1184,10 +1184,15 @@ export function GoalOutcomeWorkbench({
     : !activeMilestones.length
       ? directTasks
       : [];
+  const isParentProjectArchived = (projectId: string | null | undefined) => {
+    const project = data.projects.find((row) => row.id === projectId);
+    return Boolean(project?.archived_at || project?.status === "archived");
+  };
   const executableTasks = workTasks.filter((task) => {
     const raw = data.tasks.find((row) => row.id === task.id);
     return (
       raw &&
+      !isParentProjectArchived(raw.project_id) &&
       taskHasExecutableLifecycle(raw) &&
       !data.scheduleSources.some((source) => source.task_id === task.id)
     );
@@ -1348,10 +1353,7 @@ export function GoalOutcomeWorkbench({
             task.id,
           );
           const raw = data.tasks.find((t) => t.id === task.id);
-          const project = data.projects.find((p) => p.id === raw?.project_id);
-          const parentArchived = Boolean(
-            project?.archived_at || project?.status === "archived",
-          );
+          const parentArchived = isParentProjectArchived(raw?.project_id);
           const closed = ["done", "completed", "canceled"].includes(
             task.status,
           );
@@ -1397,11 +1399,13 @@ export function GoalOutcomeWorkbench({
                     ? task.status === "canceled"
                       ? "Abgebrochen"
                       : "Erledigt"
-                    : dependency.availability === "BLOCKED"
-                      ? "Blockiert"
-                      : dependency.availability === "READY"
-                        ? "Bereit"
-                        : "Verfügbarkeit unbekannt"}
+                    : parentArchived
+                      ? "Project archiviert"
+                      : dependency.availability === "BLOCKED"
+                        ? "Blockiert"
+                        : dependency.availability === "READY"
+                          ? "Bereit"
+                          : "Verfügbarkeit unbekannt"}
                   {task.plannedDate
                     ? ` · ${goalDateLabel(task.plannedDate)}`
                     : ""}

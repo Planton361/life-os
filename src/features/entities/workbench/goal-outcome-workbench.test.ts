@@ -192,7 +192,7 @@ it("native Goal groups only actual support Tasks, retains a direct Project/Goal 
   }
 });
 
-it("native Goal retains archived-Project Task reads but hides Edit/Calendar without affecting active Tasks", async () => {
+it("native Goal retains archived-Project Task reads but excludes execution guidance and writes without affecting active Tasks", async () => {
   const f = sourceReviewFixture();
   const repo = createSqliteGoalOutcomeRepository(f.store, f.context);
   const take = <T>(
@@ -233,6 +233,14 @@ it("native Goal retains archived-Project Task reads but hides Edit/Calendar with
         projectId: f.project,
         title: "Archived parent Task",
         status: "planned",
+      }),
+    );
+    take(
+      await repo.createGoalCriterion({
+        ...scope,
+        goalId: f.goal,
+        title: "Written outcome",
+        criterionType: "boolean",
       }),
     );
     const activeTask = take(
@@ -297,6 +305,8 @@ it("native Goal retains archived-Project Task reads but hides Edit/Calendar with
       return rows[0][0];
     };
     const active = await render();
+    expect(row(active, parentTask.id)).toContain('data-goal-primary-task="true"');
+    expect(row(active, parentTask.id)).toContain("Geplant · Bereit");
     for (const id of [parentTask.id, activeTask.id]) {
       expect(row(active, id)).toContain(">Bearbeiten</button>");
       expect(row(active, id)).toContain(">Calendar</a>");
@@ -325,6 +335,10 @@ it("native Goal retains archived-Project Task reads but hides Edit/Calendar with
       expect(retained.archived_at).toBeNull();
       const archivedRow = row(archived, parentTask.id);
       expect(archivedRow).toContain("Archived parent Task");
+      expect(archivedRow).not.toContain("data-goal-primary-task");
+      expect(archivedRow).toContain("Geplant · Project archiviert");
+      expect(archivedRow).not.toContain("Bereit");
+      expect(archivedRow).toContain('data-task-availability="ready"');
       expect(archivedRow).not.toContain(">Bearbeiten</button>");
       expect(archivedRow).not.toContain(">Calendar</a>");
       expect(archivedRow).not.toContain("/calendar?");
@@ -332,6 +346,25 @@ it("native Goal retains archived-Project Task reads but hides Edit/Calendar with
       expect(archived).toContain('data-operation="goal.archive"');
       expect(archived).toContain('data-operation="milestone.create"');
     }
+    take(
+      await repo.addGoalTaskSupport({
+        ...scope,
+        goalId: f.goal,
+        goalMilestoneId: milestone.id,
+        taskId: activeTask.id,
+      }),
+    );
+    const withActiveCandidate = await render();
+    expect(row(withActiveCandidate, parentTask.id)).not.toContain(
+      "data-goal-primary-task",
+    );
+    const activeCandidateRow = row(withActiveCandidate, activeTask.id);
+    expect(activeCandidateRow).toContain('data-goal-primary-task="true"');
+    expect(activeCandidateRow).toContain("Geplant · Bereit");
+    expect(activeCandidateRow).toContain(">Bearbeiten</button>");
+    expect(activeCandidateRow.match(/href="\/calendar\?[^"]*"/)?.[0]).toBe(
+      row(active, activeTask.id).match(/href="\/calendar\?[^"]*"/)?.[0],
+    );
   } finally {
     f.store.close();
   }
