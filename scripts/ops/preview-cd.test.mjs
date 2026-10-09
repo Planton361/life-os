@@ -306,6 +306,17 @@ test("schema/security boundaries and pause during build fail before stop", async
   };
   await deploy(paused.state, paused.io);
   assert(!paused.events.includes("stop"));
+  const latePause = fixture();
+  let queued = false;
+  latePause.io.preflight = async () => {
+    queued = true;
+  };
+  latePause.io.commands = async (s) => {
+    if (queued) s.autoEnabled = false;
+  };
+  await deploy(latePause.state, latePause.io);
+  assert(!latePause.events.includes("stop"));
+  assert.equal(latePause.writers(), 1);
 });
 test("startup, crash and health failure restore last good with no overlap", async () => {
   for (const point of ["start", "health"]) {

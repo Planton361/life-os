@@ -136,6 +136,12 @@ export async function deploy(state, io, { now = Date.now() } = {}) {
     if ((await io.latest()) !== sha) deny("MAIN_SUPERSEDED");
     await io.preflight(candidate);
     if ((await io.latest()) !== sha) deny("MAIN_SUPERSEDED");
+    // Observe a pause queued during CI/readiness before disturbing the writer.
+    await io.commands(state);
+    if (!state.autoEnabled) {
+      state.status = "idle";
+      return await io.save(state);
+    }
     state.transition = { phase: "stopping", candidate };
     await io.save(state);
     await io.stop();
