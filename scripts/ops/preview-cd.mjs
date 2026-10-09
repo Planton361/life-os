@@ -410,14 +410,17 @@ export async function install({ source, root, baselinePath, pnpm, tailscale }) {
 export async function cli(args) {
   const [op, rootArg, ...rest] = args,
     root = rootArg && resolve(rootArg);
-  if (["upgrade-existing", "recover-existing"].includes(op)) {
-    if (!root || rest.length !== 2)
+  if (
+    ["upgrade-existing", "recover-existing", "reattempt-existing"].includes(op)
+  ) {
+    if (!root || rest.length !== (op === "reattempt-existing" ? 3 : 2))
       deny("USAGE_UPGRADE_ROOT_SOURCE_CONTROL_SHA");
     return (await import("./preview-upgrade-host.mjs")).upgradeExisting({
       root,
       source: rest[0],
       controlSha: rest[1],
       recover: op === "recover-existing",
+      abortedDigest: op === "reattempt-existing" ? rest[2] : undefined,
     });
   }
   if (op === "install") {

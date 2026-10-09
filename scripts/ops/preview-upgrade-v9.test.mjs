@@ -10,6 +10,8 @@ import {
   symlinkSync,
   lstatSync,
   cpSync,
+  renameSync,
+  chmodSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -46,6 +48,16 @@ import {
 } from "./preview-upgrade-state.mjs";
 import { cli, commands } from "./preview-cd.mjs";
 import { initialState } from "./preview-cd-core.mjs";
+import {
+  journalDigest,
+  abortedV9Evidence,
+  acknowledgeAbortedV9,
+  verifyAbortedV9,
+  assertUpgradeJournalAdmission,
+  assertFreshReattemptPair,
+  durableUpgradeJournal,
+  verifyRunningV9,
+} from "./preview-upgrade-reattempt.mjs";
 
 const source = process.cwd(),
   temp = realpathSync(tmpdir());
@@ -344,6 +356,7 @@ async function fixture() {
     config,
     plist,
     path,
+    owner,
     pair,
     io,
     journal,
@@ -447,6 +460,533 @@ test("historical source/manifest contract is explicit; missing v2 files never we
     await f.cleanup();
   }
 });
+
+async function abortedFixture({ actualAbort = false } = {}) {
+  const f = await fixture(),
+    sha = "b".repeat(40),
+    nextSha = "c".repeat(40);
+  f.io.originalCheckpoint = async () => ({
+    originalConfig: f.config,
+    originalState: readJson(join(f.root, "state.json")),
+    originalPlist: readFileSync(f.plist, "utf8"),
+    instance: randomUUID(),
+  });
+  f.io.save = async (j) =>
+    durableUpgradeJournal(f.journal, { version: 2, sha, ...j });
+  if (actualAbort) {
+    await f.start(f.old);
+    f.io.armNewWorker = async () => {
+      throw Error("ISOLATED_PRECOMMIT_ABORT");
+    };
+    await assert.rejects(
+      upgradeExistingProtocol(f.io),
+      /ISOLATED_PRECOMMIT_ABORT/,
+    );
+    assert.equal(f.restores, 1);
+  } else {
+    const unlock = operationalLock(join(f.root, "worker-lease.db"), source);
+    const cp = stoppedOperatorCheckpoint(
+      f.root,
+      await f.io.originalCheckpoint(),
+    );
+    durableUpgradeJournal(f.journal, {
+      version: 2,
+      sha,
+      phase: "aborted-v9",
+      prepared: f.pair,
+      checkpoint: cp,
+    });
+    unlock();
+    await f.start(f.old);
+  }
+  const original = readFileSync(f.journal),
+    digest = journalDigest(original);
+  const options = {
+    root: f.root,
+    digest,
+    plist: f.plist,
+    authorize: async () => {},
+    provenance: async (s) => {
+      assert.ok([sha, nextSha].includes(s));
+    },
+    serving: async () => {
+      const info = readJson(f.ready);
+      assert.equal(
+        await (await fetch(`http://127.0.0.1:${info.port}`)).text(),
+        f.old.buildId,
+      );
+      assert.throws(
+        () => operationalLock(join(f.root, "worker-lease.db"), source),
+        /ALREADY_RUNNING/,
+      );
+    },
+  };
+  return { f, sha, nextSha, original, digest, options };
+}
+
+test("explicit aborted-v9 acknowledgement preserves real aborted evidence and upgrades with two fresh independent releases", async () => {
+  const { f, nextSha, original, digest, options } = await abortedFixture({
+    actualAbort: true,
+  });
+  try {
+    f.assertPreserved();
+    assert.throws(
+      () => assertUpgradeJournalAdmission(f.root),
+      /RECOVERY_REQUIRED/,
+    );
+    const retained = await acknowledgeAbortedV9(options, nextSha);
+    const archive = join(f.root, retained.archive);
+    assert.ok(readFileSync(archive).equals(original));
+    assert.equal(lstatSync(archive).mode & 0o777, 0o400);
+    assert.throws(
+      () => assertUpgradeJournalAdmission(f.root),
+      /RECOVERY_REQUIRED/,
+    );
+    assert.throws(
+      () => assertFreshReattemptPair(f.pair, f.pair, nextSha),
+      /FRESH_PAIR_REQUIRED/,
+    );
+    assert.deepEqual(await acknowledgeAbortedV9(options, nextSha), retained);
+    assert.equal(
+      abortedV9Evidence(f.root, digest).original.phase,
+      "aborted-v9",
+    );
+    const fresh = {
+      candidate: releaseFrom(modern, nextSha, "FRESH_CANDIDATE"),
+      fallback: releaseFrom(modern, nextSha, "FRESH_FALLBACK"),
+    };
+    assertFreshReattemptPair(fresh, f.pair, nextSha);
+    f.io.prepareCompatiblePair = async () => {
+      await verifyAbortedV9(options);
+      assertFreshReattemptPair(fresh, f.pair, nextSha);
+      return fresh;
+    };
+    f.io.prepareHelpers = async (pair) => {
+      for (const r of [pair.candidate, pair.fallback]) validateRelease(r);
+    };
+    f.io.backupAndProveRecovery = async () => {
+      const backup = join(f.root, `fresh-backup-${randomUUID()}.db`),
+        clone = join(f.root, `fresh-clone-${randomUUID()}.db`);
+      nativeCommand("backup", f.path, backup);
+      const b = lstatSync(backup);
+      await v9DatabasePreflight(
+        {
+          ...f.config,
+          database: backup,
+          databaseDevice: b.dev,
+          databaseInode: b.ino,
+        },
+        f.old,
+      );
+      nativeCommand("backup", backup, clone);
+      nativeCommand("migrate", clone);
+      const c = lstatSync(clone);
+      for (const r of [fresh.candidate, fresh.fallback])
+        await databasePreflight(
+          {
+            ...f.config,
+            database: clone,
+            databaseDevice: c.dev,
+            databaseInode: c.ino,
+          },
+          r,
+        );
+      fresh.owner = f.owner;
+      return { backup, clone };
+    };
+    f.io.save = async (j) =>
+      durableUpgradeJournal(f.journal, {
+        version: 2,
+        sha: nextSha,
+        abortedEvidence: retained,
+        ...j,
+      });
+    f.io.armNewWorker = async () => {};
+    const start = f.io.startAndProve;
+    f.io.startAndProve = async (r) => {
+      if (r === fresh.candidate) throw Error("ISOLATED_CANDIDATE_HEALTH");
+      await start(r);
+    };
+    f.io.selectFallback = async (r) => {
+      const state = readJson(join(f.root, "state.json"));
+      state.lastGood = r;
+      atomicJson(join(f.root, "state.json"), state);
+    };
+    assert.equal(
+      (await upgradeExistingProtocol(f.io)).upgrade,
+      "PROVISIONED_V2",
+    );
+    assert.equal(nativeCommand("version", f.path), "10");
+    assert.equal(
+      readJson(join(f.root, "state.json")).lastGood.path,
+      fresh.fallback.path,
+    );
+    assert.ok(readFileSync(archive).equals(original));
+    f.assertPreserved();
+    await assert.rejects(acknowledgeAbortedV9(options, nextSha));
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test("aborted-v9 gate rejects foreign phase, schema, identity, commands, source and failed authorization before evidence writes", async () => {
+  for (const fault of [
+    "phase",
+    "version",
+    "sha",
+    "checkpoint",
+    "config",
+    "inode",
+    "schema10",
+    "owner",
+    "release",
+    "worker",
+    "candidate",
+    "pending",
+    "rollback",
+    "transition",
+    "cursor",
+    "auto",
+    "ci",
+    "provenance",
+    "writer",
+    "race",
+  ]) {
+    const { f, options, nextSha } = await abortedFixture();
+    try {
+      if (["phase", "version", "sha", "checkpoint"].includes(fault)) {
+        const j = readJson(f.journal);
+        if (fault === "phase") j.phase = "prepared";
+        if (fault === "version") j.version = 1;
+        if (fault === "sha") j.sha = "d".repeat(40);
+        if (fault === "checkpoint") j.checkpoint.instance = "foreign";
+        atomicJson(f.journal, j);
+        options.digest = journalDigest(readFileSync(f.journal));
+      } else if (fault === "config")
+        atomicJson(join(f.root, "config.json"), {
+          ...f.config,
+          databaseInode: -1,
+        });
+      else if (fault === "inode") {
+        renameSync(f.path, `${f.path}.retained`);
+        cpSync(`${f.path}.retained`, f.path);
+      } else if (fault === "schema10") {
+        await f.stop();
+        nativeCommand("migrate", f.path);
+      } else if (fault === "owner") {
+        const { Database } = upgradeNativeDependencies(f.old.path, {
+          legacy: true,
+        });
+        const db = new Database(f.path);
+        db.prepare("UPDATE runtime_metadata SET owner_id=?").run(randomUUID());
+        db.close();
+      } else if (fault === "candidate") {
+        writeFileSync(
+          join(f.candidate.path, ".next/BUILD_ID"),
+          "FOREIGN_BUILD",
+        );
+      } else if (fault === "release" || fault === "worker") {
+        const file =
+          fault === "release"
+            ? join(
+                f.old.path,
+                "src/features/real-data/sqlite/canonical-schema.ts",
+              )
+            : join(f.old.path, "scripts/ops/preview-cd.mjs");
+        writeFileSync(file, readFileSync(file, "utf8") + "\n// foreign\n");
+      } else if (fault === "pending") await cli(["rollback", f.root]);
+      else if (["rollback", "transition", "cursor", "auto"].includes(fault)) {
+        const s = readJson(join(f.root, "state.json"));
+        if (fault === "rollback") s.rollbackRequested = true;
+        if (fault === "transition") s.transition = { phase: "switch" };
+        if (fault === "cursor") s.commandOffset--;
+        if (fault === "auto") s.autoEnabled = !s.autoEnabled;
+        atomicJson(join(f.root, "state.json"), s);
+      } else if (fault === "ci")
+        options.authorize = async () => {
+          throw Error("EXACT_MAIN_QUALITY_FAILED");
+        };
+      else if (fault === "provenance")
+        options.provenance = async () => {
+          throw Error("FOREIGN_JOURNAL_SOURCE");
+        };
+      else if (fault === "writer")
+        options.serving = async () => {
+          throw Error("COMPETING_WRITER");
+        };
+      else if (fault === "race")
+        options.serving = async () => {
+          await cli(["rollback", f.root]);
+        };
+      const bytes = readFileSync(f.journal),
+        config = readFileSync(join(f.root, "config.json")),
+        state = readFileSync(join(f.root, "state.json")),
+        plist = readFileSync(f.plist);
+      await assert.rejects(
+        acknowledgeAbortedV9(options, nextSha),
+        undefined,
+        fault,
+      );
+      assert.ok(readFileSync(f.journal).equals(bytes), fault);
+      assert.ok(
+        readFileSync(join(f.root, "config.json")).equals(config),
+        fault,
+      );
+      assert.ok(readFileSync(join(f.root, "state.json")).equals(state), fault);
+      assert.ok(readFileSync(f.plist).equals(plist), fault);
+      assert.equal(
+        existsSync(
+          join(f.root, `upgrade-v2.aborted-v9.${options.digest}.json`),
+        ),
+        false,
+        fault,
+      );
+      if (!["schema10", "inode", "owner"].includes(fault)) f.assertPreserved();
+    } finally {
+      await f.cleanup();
+    }
+  }
+});
+
+test("fresh re-attempt precommit failure resumes original v9 and requires acknowledgement of its new aborted journal", async () => {
+  const { f, options, nextSha, original } = await abortedFixture();
+  try {
+    const retained = await acknowledgeAbortedV9(options, nextSha);
+    const fresh = {
+      candidate: releaseFrom(modern, nextSha, "RETRY_CANDIDATE"),
+      fallback: releaseFrom(modern, nextSha, "RETRY_FALLBACK"),
+    };
+    f.io.prepareCompatiblePair = async () => {
+      await verifyAbortedV9(options);
+      assertFreshReattemptPair(fresh, f.pair, nextSha);
+      return fresh;
+    };
+    f.io.prepareHelpers = async () => {
+      validateRelease(fresh.candidate);
+      validateRelease(fresh.fallback);
+    };
+    const backup = f.io.backupAndProveRecovery;
+    f.io.backupAndProveRecovery = async () => {
+      const proof = await backup(),
+        stat = lstatSync(proof.clone);
+      for (const r of [fresh.candidate, fresh.fallback])
+        await databasePreflight(
+          {
+            ...f.config,
+            database: proof.clone,
+            databaseDevice: stat.dev,
+            databaseInode: stat.ino,
+          },
+          r,
+        );
+      fresh.owner = f.owner;
+      return proof;
+    };
+    f.io.save = async (j) =>
+      durableUpgradeJournal(f.journal, {
+        version: 2,
+        sha: nextSha,
+        abortedEvidence: retained,
+        ...j,
+      });
+    f.io.armNewWorker = async () => {
+      throw Error("REATTEMPT_PRECOMMIT_FAILURE");
+    };
+    await assert.rejects(
+      upgradeExistingProtocol(f.io),
+      /REATTEMPT_PRECOMMIT_FAILURE/,
+    );
+    assert.equal(f.restores, 1);
+    assert.equal(nativeCommand("version", f.path), "9");
+    assert.equal(readJson(f.journal).phase, "aborted-v9");
+    assert.ok(readFileSync(join(f.root, retained.archive)).equals(original));
+    await options.serving();
+    f.assertPreserved();
+    await assert.rejects(acknowledgeAbortedV9(options, nextSha), /ACK_CHANGED/);
+    const newDigest = journalDigest(readFileSync(f.journal));
+    assert.notEqual(newDigest, options.digest);
+    await acknowledgeAbortedV9({ ...options, digest: newDigest }, nextSha);
+    assert.ok(readFileSync(join(f.root, retained.archive)).equals(original));
+    f.assertPreserved();
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test("acknowledgement crash boundaries are durable/idempotent; build failure preserves old service and archived evidence", async () => {
+  const { f, options, nextSha, original } = await abortedFixture();
+  try {
+    await assert.rejects(
+      acknowledgeAbortedV9(options, nextSha, async () => {
+        throw Error("CRASH_AFTER_ARCHIVE");
+      }),
+      /CRASH_AFTER_ARCHIVE/,
+    );
+    assert.ok(readFileSync(f.journal).equals(original));
+    const evidence = await acknowledgeAbortedV9(options, nextSha);
+    const marker = readFileSync(f.journal);
+    assert.deepEqual(await acknowledgeAbortedV9(options, nextSha), evidence);
+    assert.ok(readFileSync(f.journal).equals(marker));
+    f.io.prepareCompatiblePair = async () => {
+      throw Error("ISOLATED_BUILD_FAILURE");
+    };
+    await assert.rejects(
+      upgradeExistingProtocol(f.io),
+      /ISOLATED_BUILD_FAILURE/,
+    );
+    assert.ok(readFileSync(f.journal).equals(marker));
+    assert.ok(readFileSync(join(f.root, evidence.archive)).equals(original));
+    await options.serving();
+    f.assertPreserved();
+    // Partial/changed archives are never overwritten or silently repaired.
+    chmodSync(join(f.root, evidence.archive), 0o600);
+    writeFileSync(join(f.root, evidence.archive), "partial");
+    chmodSync(join(f.root, evidence.archive), 0o400);
+    await assert.rejects(acknowledgeAbortedV9(options, nextSha));
+    assert.ok(readFileSync(f.journal).equals(marker));
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test("SIGKILL at archive and acknowledgement boundaries releases the independent operator lease without disturbing the v9 writer", async () => {
+  const { f, options, nextSha, original } = await abortedFixture();
+  let child;
+  try {
+    const script = join(f.root, "owned-ack-crash.mjs");
+    writeFileSync(
+      script,
+      `import {operationalLock} from ${JSON.stringify(pathToFileURL(resolve("scripts/ops/preview-cd-host.mjs")).href)};import {acknowledgeAbortedV9} from ${JSON.stringify(pathToFileURL(resolve("scripts/ops/preview-upgrade-reattempt.mjs")).href)};const unlock=operationalLock(${JSON.stringify(join(f.root, "operator-upgrade-lease.db"))},${JSON.stringify(f.old.path)});const options=${JSON.stringify({ root: f.root, digest: options.digest, plist: f.plist })};options.authorize=async()=>{};options.provenance=async()=>{};options.serving=async()=>{};const wait=()=>new Promise(()=>{setInterval(()=>{},1000);});await acknowledgeAbortedV9(options,${JSON.stringify(nextSha)},process.argv[2]==='archive'?async()=>{process.send('ARCHIVE');await wait();}:undefined);process.send('MARKER');await wait();`,
+      { mode: 0o600 },
+    );
+    for (const phase of ["archive", "marker"]) {
+      child = spawn(
+        process.execPath,
+        ["--conditions=react-server", script, phase],
+        { stdio: ["ignore", "ignore", "pipe", "ipc"] },
+      );
+      const ended = once(child, "exit");
+      await Promise.race([
+        once(child, "message"),
+        ended.then(() => {
+          throw Error("ACK_CHILD_EXIT");
+        }),
+      ]);
+      assert.throws(
+        () =>
+          operationalLock(
+            join(f.root, "operator-upgrade-lease.db"),
+            f.old.path,
+          ),
+        /ALREADY_RUNNING/,
+      );
+      child.kill("SIGKILL");
+      await ended;
+      child = null;
+      const unlock = operationalLock(
+        join(f.root, "operator-upgrade-lease.db"),
+        f.old.path,
+      );
+      unlock();
+      if (phase === "archive")
+        assert.ok(readFileSync(f.journal).equals(original));
+      else assert.equal(readJson(f.journal).phase, "reattempt-v9");
+      await options.serving();
+      f.assertPreserved();
+    }
+    await acknowledgeAbortedV9(options, nextSha);
+    assert.equal(nativeCommand("version", f.path), "9");
+  } finally {
+    if (child) {
+      const ended = once(child, "exit");
+      child.kill("SIGKILL");
+      await ended;
+    }
+    await f.cleanup();
+  }
+});
+
+test(
+  "macOS re-attempt service gate attributes the launchd job, server and leases and rejects an extra database process",
+  { skip: process.platform !== "darwin" },
+  async () => {
+    const { f } = await abortedFixture();
+    const label = `dev.life-os.test.v9-reattempt.${randomUUID()}`;
+    const agent = join(f.root, "owned-agent.plist"),
+      supervisor = join(f.root, "owned-supervisor.mjs"),
+      service = join(f.root, "owned-server.mjs");
+    let registered = false;
+    try {
+      await f.stop();
+      writeFileSync(
+        service,
+        readFileSync(f.helper, "utf8").replace(
+          "const unlock=operationalLock(root+'/worker-lease.db',release);",
+          "const unlock=()=>{};",
+        ),
+        { mode: 0o600 },
+      );
+      writeFileSync(
+        supervisor,
+        `import {spawn} from 'node:child_process';import {once} from 'node:events';import {operationalLock,atomicJson} from ${JSON.stringify(pathToFileURL(resolve("scripts/ops/preview-cd-host.mjs")).href)};import {processIdentity} from ${JSON.stringify(pathToFileURL(resolve("scripts/ops/preview-cd.mjs")).href)};const unlock=operationalLock(${JSON.stringify(join(f.root, "worker-lease.db"))},${JSON.stringify(f.old.path)});const child=spawn(process.execPath,${JSON.stringify(["--conditions=react-server", service, f.old.path, f.path, f.root, f.ready, f.old.buildId])},{cwd:${JSON.stringify(f.old.path)},stdio:['ignore','ignore','ignore','ipc']});await once(child,'message');atomicJson(${JSON.stringify(join(f.root, "worker.json"))},{pid:process.pid,serverPid:child.pid,identity:await processIdentity(process.pid,process.execPath)});process.on('SIGTERM',async()=>{const ended=once(child,'exit');child.kill('SIGTERM');await ended;unlock();process.exit(0);});`,
+        { mode: 0o600 },
+      );
+      const args = [process.execPath, supervisor, "supervise", f.root];
+      writeFileSync(
+        agent,
+        `<?xml version="1.0"?><plist version="1.0"><dict><key>Label</key><string>${label}</string><key>ProgramArguments</key><array>${args.map((x) => `<string>${x}</string>`).join("")}</array><key>RunAtLoad</key><true/><key>KeepAlive</key><false/><key>AbandonProcessGroup</key><false/></dict></plist>`,
+        { mode: 0o600 },
+      );
+      execFileSync("/bin/launchctl", [
+        "bootstrap",
+        `gui/${process.getuid()}`,
+        agent,
+      ]);
+      registered = true;
+      let ready = false;
+      for (let i = 0; i < 100; i++) {
+        if (existsSync(join(f.root, "worker.json"))) {
+          ready = true;
+          break;
+        }
+        await pause(50);
+      }
+      assert.equal(ready, true);
+      const info = readJson(f.ready),
+        opts = {
+          label,
+          port: info.port,
+          authenticatedHealth: false,
+          plist: agent,
+          programArguments: args,
+        };
+      await verifyRunningV9(f.root, f.config, f.old, opts);
+      const { Database } = upgradeNativeDependencies(f.old.path, {
+        legacy: true,
+      });
+      const foreign = new Database(f.path);
+      foreign.exec("BEGIN IMMEDIATE");
+      try {
+        await assert.rejects(
+          verifyRunningV9(f.root, f.config, f.old, opts),
+          /SERVICE_OR_WRITER_CONFLICT/,
+        );
+      } finally {
+        foreign.exec("ROLLBACK");
+        foreign.close();
+      }
+      await verifyRunningV9(f.root, f.config, f.old, opts);
+      f.assertPreserved();
+    } finally {
+      if (registered)
+        execFileSync("/bin/launchctl", [
+          "bootout",
+          `gui/${process.getuid()}/${label}`,
+        ]);
+      await f.cleanup();
+    }
+  },
+);
 
 test("real historical backup preflight plus precommit abort restores v1 availability, rows, cursor and single writer", async () => {
   const f = await fixture();

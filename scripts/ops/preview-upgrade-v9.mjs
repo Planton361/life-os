@@ -37,8 +37,13 @@ export async function v9DatabasePreflight(config, release) {
       timeout: 60_000,
     },
   );
-  if (result !== "UPGRADE_V9_PREFLIGHT_PASS")
+  const verified = JSON.parse(result);
+  if (
+    verified.result !== "UPGRADE_V9_PREFLIGHT_PASS" ||
+    !/^[a-f0-9-]{36}$/.test(verified.owner ?? "")
+  )
     deny("UPGRADE_V9_PREFLIGHT_DENIED");
+  return verified.owner;
 }
 export async function restoreV9Worker({
   root,

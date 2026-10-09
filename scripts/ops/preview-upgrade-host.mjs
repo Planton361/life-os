@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { dirname, join, resolve } from "node:path";
-import { existsSync, readFileSync, writeFileSync, lstatSync } from "node:fs";
+import { readFileSync, writeFileSync, lstatSync } from "node:fs";
 import { hostname } from "node:os";
 import { randomUUID } from "node:crypto";
 import { NODE, LABEL, deny, launchAgent, isSha } from "./preview-cd-core.mjs";
@@ -36,12 +36,22 @@ import {
   validateV9WorkerSource,
 } from "./preview-v9-contract.mjs";
 import { v9DatabasePreflight, restoreV9Worker } from "./preview-upgrade-v9.mjs";
+import {
+  acknowledgeAbortedV9,
+  verifyAbortedV9,
+  verifyRunningV9,
+  durableUpgradeJournal,
+  assertUpgradeJournalAdmission,
+  assertFreshReattemptPair,
+  abortedV9Evidence,
+} from "./preview-upgrade-reattempt.mjs";
 
 export async function upgradeExisting({
   root,
   source,
   controlSha,
   recover = false,
+  abortedDigest,
 }) {
   if (
     process.platform !== "darwin" ||
@@ -57,7 +67,8 @@ export async function upgradeExisting({
   boundary(source, { directory: true, privateMode: false });
   const config = readJson(join(root, "config.json")),
     state = readJson(join(root, "state.json"));
-  if (!recover && (config.preview || existsSync(join(root, "upgrade-v2.json"))))
+  assertUpgradeJournalAdmission(root, { recover, abortedDigest });
+  if (!recover && config.preview)
     deny("UPGRADE_ALREADY_PROVISIONED_OR_RECOVERY_REQUIRED");
   const env = cleanEnvironment(config.node),
     github = new GitHubGate();
@@ -72,7 +83,12 @@ export async function upgradeExisting({
   const helper = join(source, "scripts/ops/preview-upgrade-database.mjs");
   const journalPath = join(root, "upgrade-v2.json");
   const existing = recover ? readJson(journalPath) : null;
-  let newConfig, newService, workerUnlock, helperRelease;
+  let newConfig,
+    newService,
+    workerUnlock,
+    helperRelease,
+    operatorUnlock,
+    abortedEvidence;
   const databaseCommand = async (op, path, destination) =>
     command(
       config.node,
@@ -116,6 +132,7 @@ export async function upgradeExisting({
       "preview-v9-contract.mjs",
       "preview-upgrade-v9.mjs",
       "preview-upgrade-v9-preflight.mjs",
+      "preview-upgrade-reattempt.mjs",
       "run-preview-production.mjs",
       "run-production.mjs",
     ]) {
@@ -135,6 +152,20 @@ export async function upgradeExisting({
     if ((await serveConfiguration(config)) !== config.gatewayFingerprint)
       deny("GATEWAY_CONFIGURATION_CHANGED");
   }
+  const retryOptions = {
+    root,
+    digest: abortedDigest,
+    plist,
+    authorize,
+    provenance: async (sha) => {
+      await command(
+        "/usr/bin/git",
+        ["-C", source, "merge-base", "--is-ancestor", sha, controlSha],
+        { env },
+      );
+    },
+    serving: verifyRunningV9,
+  };
   async function arm(pair) {
     validateRelease(pair.candidate);
     validateRelease(pair.fallback);
@@ -180,12 +211,15 @@ export async function upgradeExisting({
   }
   const io = {
     authorize,
-    originalCheckpoint: async () => ({
-      originalConfig: config,
-      originalState: state,
-      originalPlist: oldPlist,
-      instance: randomUUID(),
-    }),
+    originalCheckpoint: async () => {
+      if (abortedDigest) await verifyAbortedV9(retryOptions);
+      return {
+        originalConfig: config,
+        originalState: state,
+        originalPlist: oldPlist,
+        instance: randomUUID(),
+      };
+    },
     stoppedCheckpoint: async (previous) =>
       stoppedOperatorCheckpoint(root, previous),
     assertOperatorHandoff: async (checkpoint) =>
@@ -240,6 +274,12 @@ export async function upgradeExisting({
         candidate.compatibility !== fallback.compatibility
       )
         deny("COMPATIBLE_FALLBACK_REQUIRED");
+      if (abortedDigest)
+        assertFreshReattemptPair(
+          { candidate, fallback },
+          abortedV9Evidence(root, abortedDigest).original.prepared,
+          controlSha,
+        );
       return { candidate, fallback };
     },
     async stopFrozenWorker() {
@@ -310,7 +350,12 @@ export async function upgradeExisting({
       };
     },
     save: (journal) =>
-      atomicJson(journalPath, { version: 2, sha: controlSha, ...journal }),
+      durableUpgradeJournal(journalPath, {
+        version: 2,
+        sha: controlSha,
+        ...(abortedEvidence ? { abortedEvidence } : {}),
+        ...journal,
+      }),
     armNewWorker: arm,
     migrateSameFile: () => databaseCommand("migrate", config.database),
     schemaVersion: async () =>
@@ -346,6 +391,19 @@ export async function upgradeExisting({
     },
   };
   try {
+    await authorize();
+    if (abortedDigest) {
+      validateV9WorkerSource(config.workerSource);
+      validateV9Release(state.lastGood);
+    }
+    // Independent operator lease serializes upgrade/recovery/re-attempt without
+    // interfering with the still-running original worker or SQLite writer.
+    operatorUnlock = operationalLock(
+      join(root, "operator-upgrade-lease.db"),
+      config.workerSource,
+    );
+    if (abortedDigest)
+      abortedEvidence = await acknowledgeAbortedV9(retryOptions, controlSha);
     const result = recover
       ? await recoverExistingProtocol(io, existing)
       : await upgradeExistingProtocol(io);
@@ -362,7 +420,11 @@ export async function upgradeExisting({
     }
     return result;
   } finally {
-    if (newService) await newService.stop();
-    workerUnlock?.();
+    try {
+      if (newService) await newService.stop();
+    } finally {
+      workerUnlock?.();
+      operatorUnlock?.();
+    }
   }
 }

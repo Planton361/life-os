@@ -36,7 +36,12 @@ try {
     expected.close();
   }
 
-  process.stdout.write("UPGRADE_V9_PREFLIGHT_PASS\n");
+  process.stdout.write(
+    JSON.stringify({
+      result: "UPGRADE_V9_PREFLIGHT_PASS",
+      owner: result.ownerId,
+    }),
+  );
 } catch {
   process.stderr.write("UPGRADE_V9_PREFLIGHT_DENIED\n");
   process.exitCode = 1;

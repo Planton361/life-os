@@ -17,7 +17,7 @@ unavailable to standard production/Hosted/Supabase builds.
    provisioning, backup, migration or reset was performed for this PR.
 4. An operator may then explicitly invoke the merged script with pinned Node
    24.21.0, `node scripts/ops/preview-cd.mjs upgrade-existing
-   <existing-private-root> <clean-merged-main-source> <exact-main-SHA>`.
+<existing-private-root> <clean-merged-main-source> <exact-main-SHA>`.
    This is a future procedure, not an instruction to run it during code review.
    It requires macOS, the existing fixed launchd identity and private 0700 root.
    Do not patch config, change gateway headers, or bypass a frozen-worker conflict.
@@ -92,6 +92,69 @@ blocks deployment rather than implicitly migrating. Existing pause/retry,
 login/wake, shutdown and app-only rollback policies remain in force.
 
 ## Recovery boundaries
+
+### Explicit re-attempt after restored v9
+
+An existing `aborted-v9` journal still blocks generic `upgrade-existing`.
+Do not delete, rename, truncate or patch that journal manually. After a separate
+exact-main post-merge CONTROL operator authorization, the operator can explicitly
+invoke `node scripts/ops/preview-cd.mjs reattempt-existing <private-root>
+<clean-merged-main-source> <exact-main-SHA> <original-journal-SHA256>`.
+The last argument acknowledges the exact original journal bytes, not a reset or
+general recovery permission. The verified checkout must contain the journal
+revision's Git ancestry; unavailable history fails closed. This PR authorizes
+only isolated code tests, not this invocation against the personal installation.
+
+Admission requires journal version 2/`aborted-v9`, a complete stopped checkpoint,
+v4 instance identity, recorded compatible-pair metadata/source, original v1
+worker and pinned v9 release, byte-identical original config/plist, unchanged
+confirmed cursor/prefix/autoEnabled and no pending commands, rollback or transition.
+The journal SHA must be an ancestor of current approved main. Native read-only
+verification requires schema v9, historical guards/indexes, owner/profile/readiness,
+integrity/FKs and unchanged device/inode. Any recorded owner must match; the
+canonical verified owner is also pinned in the new acknowledgement for subsequent
+crash/re-attempt checks. The original launchd supervisor, its sole child server,
+localhost listener, canonical writer and worker leases must be attributed to the
+same original service; authenticated Tailscale/build health and gateway are checked.
+A foreign process with the DB open, schema v10, unknown release, changed checkpoint
+or failed current main/Quality/Ruleset gate prevents acknowledgement and stop.
+
+All operator upgrade/recovery commands hold an independent kernel operator lease.
+After these checks, the original bytes are retained under the private root as
+`upgrade-v2.aborted-v9.<SHA256>.json`, mode 0400, single-link/canonical/owned,
+exclusive-create, exact digest, file and directory `fsync`. Code never overwrites
+an existing evidence archive. A durable version-2 `reattempt-v9` marker references
+it and pins the native owner. This is immutable within the operator protocol;
+same-UID administrators remain the documented trust boundary. No canonical DB,
+WAL, writer lease, old release or backup is replaced/deleted by acknowledgement.
+
+Crash after archive but before marker leaves the original aborted journal usable
+by the same explicitly repeated command; crash after marker admits only the same
+digest through this explicit gate, rechecking all live conditions. A changed or
+partial archive fails closed, never silently repaired. Generic upgrade/recovery
+does not consume this marker. Other existing phases are not re-attemptable.
+
+The command then uses the normal fresh upgrade protocol: two independent newly
+built v10 releases from current gated main, new backup/clone proofs, and the v9
+restoration/v10 committed-recovery boundaries below. Old candidates are checked
+only as journal provenance, never reused. Original v9 state is rechecked after
+builds while still serving, before the new stopped checkpoint is written. Every
+new journal retains its predecessor evidence reference. Build/gate failure keeps
+the original v9 service running; precommit failure resumes v9 and creates a new
+`aborted-v9` journal requiring its own digest acknowledgement. After a new
+`release-prepared`/later checkpoint, use separately authorized schema-aware
+recovery, not a forced re-attempt. No automatic retry or reset occurs.
+
+Isolated regressions use the real archived v1/v9 source and a realistically
+aborted private operator root. They cover generic refusal, strict negatives,
+fresh independent fallback and native schema10 migration without data loss,
+SIGKILL at both acknowledgement boundaries/operator-lease release, idempotent
+explicit resume, and pre-build failure with old HTTP/native writer preserved.
+The macOS process-attribution test uses a unique owned LaunchAgent, fixture
+supervisor and ephemeral listener around the frozen native v9 runtime; it does
+not run the installed original fixed-label/port3000 supervisor.
+
+### Schema-aware existing recovery
 
 - Failure before migration commit: verify actual schema v9, then restore the
   latest stopped worker/config/state; v9 recovery rereads it after stopping again.
