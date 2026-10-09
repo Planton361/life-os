@@ -1,14 +1,28 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { createRequire } from "node:module";
 
 // Next prepares instrumentation after announcing its HTTP listener. Validate
 // configuration before loading its CLI so a retired proof cannot become a
 // partially prepared production process or fall through to profile data.
-if (["LIFE_OS_37_PROOF", "LIFE_OS_37_SQLITE_DB", "LIFE_OS_37_OWNER_TOKEN"].some(key => process.env[key] !== undefined)) {
+if (
+  ["LIFE_OS_37_PROOF", "LIFE_OS_37_SQLITE_DB", "LIFE_OS_37_OWNER_TOKEN"].some(
+    (key) => process.env[key] !== undefined,
+  )
+) {
   process.stderr.write("RETIRED_SQLITE_PROOF_CONFIGURATION_DENIED\n");
   process.exit(1);
 }
 if (process.versions.node !== "24.21.0") {
   process.stderr.write("PRODUCTION_NODE_VERSION_MISMATCH\n");
+  process.exit(1);
+}
+if (
+  (process.env.LIFE_OS_PREVIEW_GRANT_PATH ||
+    existsSync(join(process.cwd(), ".next/life-preview-composition.json"))) &&
+  !globalThis.__lifeOsPreviewLaunch
+) {
+  process.stderr.write("PREVIEW_DEDICATED_LAUNCH_REQUIRED\n");
   process.exit(1);
 }
 const require = createRequire(import.meta.url);
@@ -26,7 +40,15 @@ if (process.env.LIFE_OS_APPLICATION_RUNTIME === "sqlite-hosted") {
   }
   // Hosted topology has exactly one loopback listener; CLI/PORT/HOSTNAME cannot
   // widen its network boundary. Instrumentation opens the normal runtime gate.
-  process.argv = [process.execPath, cli, "start", "-H", "127.0.0.1", "-p", "3000"];
+  process.argv = [
+    process.execPath,
+    cli,
+    "start",
+    "-H",
+    "127.0.0.1",
+    "-p",
+    "3000",
+  ];
 } else {
   process.argv = [process.execPath, cli, "start", ...process.argv.slice(2)];
 }

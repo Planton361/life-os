@@ -14,6 +14,12 @@ const disposableDistDir =
     : undefined;
 
 const nextConfig: NextConfig = {
+  env: {
+    LIFE_OS_BUILD_COMPOSITION:
+      process.env.LIFE_OS_BUILD_COMPOSITION === "personal-preview-v2"
+        ? "personal-preview-v2"
+        : "standard",
+  },
   serverExternalPackages: ["better-sqlite3"],
   // Next 16.2.2 supports this worker budget; recheck on framework upgrades.
   experimental: { cpus: 2 },

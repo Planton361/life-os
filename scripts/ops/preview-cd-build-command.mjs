@@ -1,3 +1,4 @@
+import { readFileSync, writeFileSync } from "node:fs";
 import { createProcessScope } from "./managed-process.mjs";
 import { NODE } from "./preview-cd-core.mjs";
 import { isAbsolute, join } from "node:path";
@@ -28,6 +29,22 @@ if (
       operation === "install" ? ["install", "--frozen-lockfile"] : ["build"];
     const result = await scope.run(pnpm, args);
     if (!result.ok) throw new Error();
+    if (
+      operation === "build" &&
+      process.env.LIFE_OS_BUILD_COMPOSITION === "personal-preview-v2"
+    ) {
+      writeFileSync(
+        join(process.cwd(), ".next/life-preview-composition.json"),
+        JSON.stringify({
+          version: 2,
+          buildId: readFileSync(
+            join(process.cwd(), ".next/BUILD_ID"),
+            "utf8",
+          ).trim(),
+        }),
+        { mode: 0o600, flag: "wx" },
+      );
+    }
     process.stdout.write("BUILD_OPERATION_PASS\n");
   } catch {
     process.stderr.write("BUILD_OPERATION_FAILED\n");

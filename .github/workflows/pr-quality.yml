@@ -71,6 +71,9 @@ jobs:
       - name: Native SQLite and application composition (Linux x64)
         run: pnpm exec vitest run --config tests/sqlite/application-vitest.config.mjs
 
+      - name: Install isolated browser engine
+        run: pnpm exec playwright install --with-deps chromium
+
       - name: Production Next build and native shutdown proof (Linux x64)
         run: |
           pnpm build
@@ -78,3 +81,20 @@ jobs:
           node tests/sqlite/framework-shutdown-proof.mjs
           node tests/sqlite/application-smoke.mjs
           pnpm test:sqlite:hosted
+          node tests/sqlite/issue-142-browser-proof.mjs --standard-negative
+
+      - name: Preview composition and isolated reset browser proof (Linux x64)
+        run: |
+          LIFE_OS_BUILD_COMPOSITION=personal-preview-v2 pnpm build
+          node tests/sqlite/issue-142-browser-proof.mjs
+
+      - name: Preserve disposable reset browser evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: issue-142-disposable-browser-proof
+          path: |
+            test-results/issue-142/*.png
+            test-results/issue-142/proof.json
+          if-no-files-found: warn
+          retention-days: 14

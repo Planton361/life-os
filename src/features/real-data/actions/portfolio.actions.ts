@@ -1,4 +1,6 @@
 "use server";
+
+import { withSubmittedDatasetEpoch } from "./submitted-dataset";
 import { createGoalContextProject, getGoalRepository, getProjectRepository } from "../runtime/facade";
 
 import { revalidatePath } from "next/cache";
@@ -51,8 +53,9 @@ function optionalNullableFormString(formData: FormData, key: string) {
 }
 
 function authBlockedMessage(
-  error: "auth_error" | "invalid_session" | "missing_env" | "unauthenticated",
+  error: "auth_error" | "invalid_session" | "missing_env" | "unauthenticated" | "dataset_stale",
 ) {
+  if (error === "dataset_stale") return "Die Testdaten haben sich geändert. Bitte neu laden, bevor du Änderungen speicherst.";
   if (error === "missing_env") {
     return "Supabase ist lokal noch nicht konfiguriert.";
   }
@@ -195,105 +198,107 @@ async function validateGoalScope(
 export async function createProjectAction(
   formData: FormData,
 ): Promise<PortfolioTargetCreateActionResult> {
-  const profileId = await getCurrentLifeOsProfileId();
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const profileId = await getCurrentLifeOsProfileId();
 
-  if (profileId !== "manual") {
-    return {
-      message: "Wechsle ins Manual-Profil, um Projects zu erstellen.",
-      status: "blocked",
-    };
-  }
-
-  const auth = await createAuthenticatedApplicationContext("write");
-
-  if (!auth.ok) {
-    return {
-      message: authBlockedMessage(auth.error),
-      status: "blocked",
-    };
-  }
-
-  const goalId = optionalFormString(formData, "goalId");
-  const goalMilestoneId = optionalFormString(formData, "goalMilestoneId");
-
-  if (!(await validateGoalScope(auth.data, auth.user.id, goalId))) {
-    return {
-      message: "Das Ziel konnte nicht als Projekt-Kontext bestätigt werden.",
-      status: "error",
-    };
-  }
-
-  const parsed = createProjectInputSchema.safeParse({
-    areaId: optionalFormString(formData, "areaId"),
-    nextStep: optionalFormString(formData, "nextStep"),
-    priority: optionalFormString(formData, "priority"),
-    status: optionalFormString(formData, "status"),
-    deadline: optionalFormString(formData, "deadline"),
-    description: optionalFormString(formData, "description"),
-    goalId,
-    profileId: auth.user.id,
-    title: formString(formData, "title"),
-    userId: auth.user.id,
-  });
-
-  if (!parsed.success) {
-    return {
-      message: "Gib einen gültigen Project-Titel ein.",
-      status: "error",
-    };
-  }
-
-  if (goalMilestoneId) {
-    if (!goalId || !z.uuid().safeParse(goalId).success || !z.uuid().safeParse(goalMilestoneId).success) {
+    if (profileId !== "manual") {
       return {
-        message: "Ziel und Etappe müssen für den Kontext eindeutig sein.",
+        message: "Wechsle ins Manual-Profil, um Projects zu erstellen.",
+        status: "blocked",
+      };
+    }
+
+    const auth = await createAuthenticatedApplicationContext("write");
+
+    if (!auth.ok) {
+      return {
+        message: authBlockedMessage(auth.error),
+        status: "blocked",
+      };
+    }
+
+    const goalId = optionalFormString(formData, "goalId");
+    const goalMilestoneId = optionalFormString(formData, "goalMilestoneId");
+
+    if (!(await validateGoalScope(auth.data, auth.user.id, goalId))) {
+      return {
+        message: "Das Ziel konnte nicht als Projekt-Kontext bestätigt werden.",
         status: "error",
       };
     }
-    const contextual = await createGoalContextProject(auth.data, {
-      areaId: parsed.data.areaId,
-      commandId: optionalFormString(formData, "commandId"),
-      description: parsed.data.description,
+
+    const parsed = createProjectInputSchema.safeParse({
+      areaId: optionalFormString(formData, "areaId"),
+      nextStep: optionalFormString(formData, "nextStep"),
+      priority: optionalFormString(formData, "priority"),
+      status: optionalFormString(formData, "status"),
+      deadline: optionalFormString(formData, "deadline"),
+      description: optionalFormString(formData, "description"),
       goalId,
-      milestoneId: goalMilestoneId,
-      nextStep: parsed.data.nextStep,
-      priority: parsed.data.priority,
-      status: parsed.data.status,
-      targetDate: parsed.data.deadline ?? undefined,
-      title: parsed.data.title,
+      profileId: auth.user.id,
+      title: formString(formData, "title"),
       userId: auth.user.id,
     });
-    if (!contextual.ok) {
+
+    if (!parsed.success) {
       return {
-        message: contextual.error.message,
+        message: "Gib einen gültigen Project-Titel ein.",
         status: "error",
       };
     }
+
+    if (goalMilestoneId) {
+      if (!goalId || !z.uuid().safeParse(goalId).success || !z.uuid().safeParse(goalMilestoneId).success) {
+        return {
+          message: "Ziel und Etappe müssen für den Kontext eindeutig sein.",
+          status: "error",
+        };
+      }
+      const contextual = await createGoalContextProject(auth.data, {
+        areaId: parsed.data.areaId,
+        commandId: optionalFormString(formData, "commandId"),
+        description: parsed.data.description,
+        goalId,
+        milestoneId: goalMilestoneId,
+        nextStep: parsed.data.nextStep,
+        priority: parsed.data.priority,
+        status: parsed.data.status,
+        targetDate: parsed.data.deadline ?? undefined,
+        title: parsed.data.title,
+        userId: auth.user.id,
+      });
+      if (!contextual.ok) {
+        return {
+          message: contextual.error.message,
+          status: "error",
+        };
+      }
+      revalidatePortfolioTargetRoutes();
+      return {
+        message: "Projekt aus der Etappe erstellt.",
+        projectId: contextual.data.id,
+        status: "success",
+      };
+    }
+
+    const repository = getProjectRepository(auth.data);
+    const result = await repository.createProject(parsed.data);
+
+    if (!result.ok) {
+      return {
+        message: "Das Project konnte nicht gespeichert werden.",
+        status: "error",
+      };
+    }
+
     revalidatePortfolioTargetRoutes();
+
     return {
-      message: "Projekt aus der Etappe erstellt.",
-      projectId: contextual.data.id,
+      message: "Project erstellt.",
+      projectId: result.data.id,
       status: "success",
     };
-  }
-
-  const repository = getProjectRepository(auth.data);
-  const result = await repository.createProject(parsed.data);
-
-  if (!result.ok) {
-    return {
-      message: "Das Project konnte nicht gespeichert werden.",
-      status: "error",
-    };
-  }
-
-  revalidatePortfolioTargetRoutes();
-
-  return {
-    message: "Project erstellt.",
-    projectId: result.data.id,
-    status: "success",
-  };
+  });
 }
 
 async function getAuthenticatedManualProjectContext(actionLabel: string) {
@@ -330,75 +335,79 @@ async function getAuthenticatedManualProjectContext(actionLabel: string) {
 export async function updateProjectAction(
   formData: FormData,
 ): Promise<PortfolioProjectEditActionResult> {
-  const context = await getAuthenticatedManualProjectContext("bearbeiten");
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const context = await getAuthenticatedManualProjectContext("bearbeiten");
 
-  if (!context.ok) return context.result;
+    if (!context.ok) return context.result;
 
-  const parsed = updateProjectInputSchema.safeParse({
-    areaId: formData.has("areaId")
-      ? (optionalFormString(formData, "areaId") ?? null)
-      : undefined,
-    priority: optionalFormString(formData, "priority"),
-    deadline: optionalNullableFormString(formData, "deadline"),
-    description: formData.has("description")
-      ? (optionalFormString(formData, "description") ?? null)
-      : undefined,
-    goalId: optionalNullableFormString(formData, "goalId"),
-    nextStep: formData.has("nextStep")
-      ? (optionalFormString(formData, "nextStep") ?? null)
-      : undefined,
-    profileId: context.auth.user.id,
-    projectId: formString(formData, "projectId"),
-    status: optionalFormString(formData, "status"),
-    title: optionalFormString(formData, "title"),
-    userId: context.auth.user.id,
+    const parsed = updateProjectInputSchema.safeParse({
+      areaId: formData.has("areaId")
+        ? (optionalFormString(formData, "areaId") ?? null)
+        : undefined,
+      priority: optionalFormString(formData, "priority"),
+      deadline: optionalNullableFormString(formData, "deadline"),
+      description: formData.has("description")
+        ? (optionalFormString(formData, "description") ?? null)
+        : undefined,
+      goalId: optionalNullableFormString(formData, "goalId"),
+      nextStep: formData.has("nextStep")
+        ? (optionalFormString(formData, "nextStep") ?? null)
+        : undefined,
+      profileId: context.auth.user.id,
+      projectId: formString(formData, "projectId"),
+      status: optionalFormString(formData, "status"),
+      title: optionalFormString(formData, "title"),
+      userId: context.auth.user.id,
+    });
+
+    if (!parsed.success) {
+      return {
+        message: "Das Project konnte nicht aktualisiert werden.",
+        status: "error",
+      };
+    }
+
+    const repository = getProjectRepository(context.auth.data);
+    const result = await repository.updateProject(parsed.data);
+
+    if (!result.ok) {
+      return {
+        message:
+          result.error.code === "conflict"
+            ? "Das Project kann dieses Goal nicht übernehmen, weil verbundene Tasks ein anderes direktes Goal haben. Passe zuerst Project oder direktes Task-Goal bewusst an."
+            : "Das Project konnte nicht in Supabase aktualisiert werden.",
+        status: "error",
+      };
+    }
+
+    revalidatePortfolioTargetRoutes();
+
+    return {
+      message: "Project aktualisiert.",
+      projectId: result.data.id,
+      status: "success",
+    };
   });
-
-  if (!parsed.success) {
-    return {
-      message: "Das Project konnte nicht aktualisiert werden.",
-      status: "error",
-    };
-  }
-
-  const repository = getProjectRepository(context.auth.data);
-  const result = await repository.updateProject(parsed.data);
-
-  if (!result.ok) {
-    return {
-      message:
-        result.error.code === "conflict"
-          ? "Das Project kann dieses Goal nicht übernehmen, weil verbundene Tasks ein anderes direktes Goal haben. Passe zuerst Project oder direktes Task-Goal bewusst an."
-          : "Das Project konnte nicht in Supabase aktualisiert werden.",
-      status: "error",
-    };
-  }
-
-  revalidatePortfolioTargetRoutes();
-
-  return {
-    message: "Project aktualisiert.",
-    projectId: result.data.id,
-    status: "success",
-  };
 }
 
 export async function archiveProjectAction(
   formData: FormData,
 ): Promise<PortfolioProjectEditActionResult> {
-  const projectId = formString(formData, "projectId");
-  if (!formData.has("expectedRevision") || !formData.has("expectedCycle")) {
-    return { status: "error", message: "Project wurde möglicherweise geändert. Detailseite bewusst neu laden und erneut prüfen." };
-  }
-  const result = await projectDepthAction({
-    projectId,
-    commandId: formString(formData, "commandId") || crypto.randomUUID(),
-    operation: "project.archive",
-    expectedRevision: formString(formData, "expectedRevision"),
-    expectedCycle: formString(formData, "expectedCycle"),
-    payload: {},
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const projectId = formString(formData, "projectId");
+    if (!formData.has("expectedRevision") || !formData.has("expectedCycle")) {
+      return { status: "error", message: "Project wurde möglicherweise geändert. Detailseite bewusst neu laden und erneut prüfen." };
+    }
+    const result = await projectDepthAction({
+      projectId,
+      commandId: formString(formData, "commandId") || crypto.randomUUID(),
+      operation: "project.archive",
+      expectedRevision: formString(formData, "expectedRevision"),
+      expectedCycle: formString(formData, "expectedCycle"),
+      payload: {},
+    });
+    return { ...result, projectId: result.status === "success" ? projectId : undefined };
   });
-  return { ...result, projectId: result.status === "success" ? projectId : undefined };
 }
 
 async function getAuthenticatedManualGoalContext(actionLabel: string) {
@@ -435,243 +444,261 @@ async function getAuthenticatedManualGoalContext(actionLabel: string) {
 export async function createGoalAction(
   formData: FormData,
 ): Promise<PortfolioTargetCreateActionResult> {
-  const profileId = await getCurrentLifeOsProfileId();
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const profileId = await getCurrentLifeOsProfileId();
 
-  if (profileId !== "manual") {
+    if (profileId !== "manual") {
+      return {
+        message: "Wechsle ins Manual-Profil, um Ziele zu erstellen.",
+        status: "blocked",
+      };
+    }
+
+    const auth = await createAuthenticatedApplicationContext("write");
+
+    if (!auth.ok) {
+      return {
+        message: authBlockedMessage(auth.error),
+        status: "blocked",
+      };
+    }
+
+    const parsed = createGoalInputSchema.safeParse({
+      areaId: optionalFormString(formData, "areaId"),
+      horizon: optionalFormString(formData, "horizon"),
+      why: optionalFormString(formData, "why"),
+      // Goal creation is intentionally lightweight: lifecycle is managed after
+      // capture and every newly persisted Goal starts as a draft.
+      status: "draft",
+      description: optionalFormString(formData, "description"),
+      profileId: auth.user.id,
+      targetDate: optionalFormString(formData, "targetDate"),
+      title: formString(formData, "title"),
+      userId: auth.user.id,
+    });
+
+    if (!parsed.success) {
+      return {
+        message: "Gib einen gültigen Ziel-Titel ein.",
+        status: "error",
+      };
+    }
+
+    const repository = getGoalRepository(auth.data);
+    const result = await repository.createGoal(parsed.data);
+
+    if (!result.ok) {
+      return {
+        message: "Das Ziel konnte nicht gespeichert werden.",
+        status: "error",
+      };
+    }
+
+    revalidatePortfolioTargetRoutes();
+
     return {
-      message: "Wechsle ins Manual-Profil, um Ziele zu erstellen.",
-      status: "blocked",
+      goalId: result.data.id,
+      message: "Ziel erstellt.",
+      status: "success",
     };
-  }
-
-  const auth = await createAuthenticatedApplicationContext("write");
-
-  if (!auth.ok) {
-    return {
-      message: authBlockedMessage(auth.error),
-      status: "blocked",
-    };
-  }
-
-  const parsed = createGoalInputSchema.safeParse({
-    areaId: optionalFormString(formData, "areaId"),
-    horizon: optionalFormString(formData, "horizon"),
-    why: optionalFormString(formData, "why"),
-    // Goal creation is intentionally lightweight: lifecycle is managed after
-    // capture and every newly persisted Goal starts as a draft.
-    status: "draft",
-    description: optionalFormString(formData, "description"),
-    profileId: auth.user.id,
-    targetDate: optionalFormString(formData, "targetDate"),
-    title: formString(formData, "title"),
-    userId: auth.user.id,
   });
-
-  if (!parsed.success) {
-    return {
-      message: "Gib einen gültigen Ziel-Titel ein.",
-      status: "error",
-    };
-  }
-
-  const repository = getGoalRepository(auth.data);
-  const result = await repository.createGoal(parsed.data);
-
-  if (!result.ok) {
-    return {
-      message: "Das Ziel konnte nicht gespeichert werden.",
-      status: "error",
-    };
-  }
-
-  revalidatePortfolioTargetRoutes();
-
-  return {
-    goalId: result.data.id,
-    message: "Ziel erstellt.",
-    status: "success",
-  };
 }
 
 export async function updateGoalAction(
   formData: FormData,
 ): Promise<PortfolioGoalEditActionResult> {
-  const context = await getAuthenticatedManualGoalContext("bearbeiten");
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const context = await getAuthenticatedManualGoalContext("bearbeiten");
 
-  if (!context.ok) return context.result;
+    if (!context.ok) return context.result;
 
-  const parsed = updateGoalInputSchema.safeParse({
-    areaId: formData.has("areaId")
-      ? (optionalFormString(formData, "areaId") ?? null)
-      : undefined,
-    horizon: optionalFormString(formData, "horizon"),
-    why: formData.has("why")
-      ? (optionalFormString(formData, "why") ?? null)
-      : undefined,
-    description: formData.has("description")
-      ? (optionalFormString(formData, "description") ?? null)
-      : undefined,
-    goalId: formString(formData, "goalId"),
-    profileId: context.auth.user.id,
-    status: optionalFormString(formData, "status"),
-    targetDate: optionalNullableFormString(formData, "targetDate"),
-    title: optionalFormString(formData, "title"),
-    userId: context.auth.user.id,
+    const parsed = updateGoalInputSchema.safeParse({
+      areaId: formData.has("areaId")
+        ? (optionalFormString(formData, "areaId") ?? null)
+        : undefined,
+      horizon: optionalFormString(formData, "horizon"),
+      why: formData.has("why")
+        ? (optionalFormString(formData, "why") ?? null)
+        : undefined,
+      description: formData.has("description")
+        ? (optionalFormString(formData, "description") ?? null)
+        : undefined,
+      goalId: formString(formData, "goalId"),
+      profileId: context.auth.user.id,
+      status: optionalFormString(formData, "status"),
+      targetDate: optionalNullableFormString(formData, "targetDate"),
+      title: optionalFormString(formData, "title"),
+      userId: context.auth.user.id,
+    });
+
+    if (!parsed.success) {
+      return {
+        message: "Das Ziel konnte nicht aktualisiert werden.",
+        status: "error",
+      };
+    }
+
+    if (parsed.data.status === "achieved") {
+      return {
+        message: "Ziele werden ausschließlich über den expliziten Ergebnis-Flow erreicht.",
+        status: "error",
+      };
+    }
+
+    const repository = getGoalRepository(context.auth.data);
+    const result = await repository.updateGoal(parsed.data);
+
+    if (!result.ok) {
+      return {
+        message: "Das Ziel konnte nicht in Supabase aktualisiert werden.",
+        status: "error",
+      };
+    }
+
+    revalidatePortfolioTargetRoutes();
+
+    return {
+      goalId: result.data.id,
+      message: "Ziel aktualisiert.",
+      status: "success",
+    };
   });
-
-  if (!parsed.success) {
-    return {
-      message: "Das Ziel konnte nicht aktualisiert werden.",
-      status: "error",
-    };
-  }
-
-  if (parsed.data.status === "achieved") {
-    return {
-      message: "Ziele werden ausschließlich über den expliziten Ergebnis-Flow erreicht.",
-      status: "error",
-    };
-  }
-
-  const repository = getGoalRepository(context.auth.data);
-  const result = await repository.updateGoal(parsed.data);
-
-  if (!result.ok) {
-    return {
-      message: "Das Ziel konnte nicht in Supabase aktualisiert werden.",
-      status: "error",
-    };
-  }
-
-  revalidatePortfolioTargetRoutes();
-
-  return {
-    goalId: result.data.id,
-    message: "Ziel aktualisiert.",
-    status: "success",
-  };
 }
 
 export async function archiveGoalAction(
   formData: FormData,
 ): Promise<PortfolioGoalEditActionResult> {
-  const context = await getAuthenticatedManualGoalContext("archivieren");
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const context = await getAuthenticatedManualGoalContext("archivieren");
 
-  if (!context.ok) return context.result;
+    if (!context.ok) return context.result;
 
-  const parsed = updateGoalInputSchema.safeParse({
-    goalId: formString(formData, "goalId"),
-    profileId: context.auth.user.id,
-    status: "archived",
-    userId: context.auth.user.id,
+    const parsed = updateGoalInputSchema.safeParse({
+      goalId: formString(formData, "goalId"),
+      profileId: context.auth.user.id,
+      status: "archived",
+      userId: context.auth.user.id,
+    });
+
+    if (!parsed.success) {
+      return {
+        message: "Das Ziel konnte nicht archiviert werden.",
+        status: "error",
+      };
+    }
+
+    const repository = getGoalRepository(context.auth.data);
+    const result = await repository.updateGoal(parsed.data);
+
+    if (!result.ok) {
+      return {
+        message: "Das Ziel konnte nicht in Supabase archiviert werden.",
+        status: "error",
+      };
+    }
+
+    revalidatePortfolioTargetRoutes();
+
+    return {
+      goalId: result.data.id,
+      message: "Ziel archiviert.",
+      status: "success",
+    };
   });
-
-  if (!parsed.success) {
-    return {
-      message: "Das Ziel konnte nicht archiviert werden.",
-      status: "error",
-    };
-  }
-
-  const repository = getGoalRepository(context.auth.data);
-  const result = await repository.updateGoal(parsed.data);
-
-  if (!result.ok) {
-    return {
-      message: "Das Ziel konnte nicht in Supabase archiviert werden.",
-      status: "error",
-    };
-  }
-
-  revalidatePortfolioTargetRoutes();
-
-  return {
-    goalId: result.data.id,
-    message: "Ziel archiviert.",
-    status: "success",
-  };
 }
 
 export async function createProjectFormAction(
   formData: FormData,
 ): Promise<void> {
-  const result = await createProjectAction(formData);
-  const returnView = returnViewFromForm(formData, "projects");
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const result = await createProjectAction(formData);
+    const returnView = returnViewFromForm(formData, "projects");
 
-  if (result.status === "success") {
-    redirectToPortfolioCreateState(
-      "project_created",
-      returnView,
-      formData,
-      result.projectId,
-    );
-  }
+    if (result.status === "success") {
+      redirectToPortfolioCreateState(
+        "project_created",
+        returnView,
+        formData,
+        result.projectId,
+      );
+    }
 
-  redirectToPortfolioCreateState(result.status, returnView, formData);
+    redirectToPortfolioCreateState(result.status, returnView, formData);
+  });
 }
 
 export async function createGoalFormAction(formData: FormData): Promise<void> {
-  const result = await createGoalAction(formData);
-  const returnView = returnViewFromForm(formData, "goals");
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const result = await createGoalAction(formData);
+    const returnView = returnViewFromForm(formData, "goals");
 
-  if (result.status === "success") {
-    redirectToPortfolioCreateState(
-      "goal_created",
-      returnView,
-      formData,
-      result.goalId,
-    );
-  }
+    if (result.status === "success") {
+      redirectToPortfolioCreateState(
+        "goal_created",
+        returnView,
+        formData,
+        result.goalId,
+      );
+    }
 
-  redirectToPortfolioCreateState(result.status, returnView, formData);
+    redirectToPortfolioCreateState(result.status, returnView, formData);
+  });
 }
 
 export async function updateProjectFormAction(
   formData: FormData,
 ): Promise<void> {
-  const result = await updateProjectAction(formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const result = await updateProjectAction(formData);
 
-  if (result.status === "success") {
-    redirectToProjectActionState("project_updated", formData, result.projectId);
-  }
+    if (result.status === "success") {
+      redirectToProjectActionState("project_updated", formData, result.projectId);
+    }
 
-  redirectToProjectActionState(
-    result.status === "error" &&
-      result.message.startsWith("Das Project kann dieses Goal")
-      ? "project_alignment_conflict"
-      : result.status,
-    formData,
-  );
+    redirectToProjectActionState(
+      result.status === "error" &&
+        result.message.startsWith("Das Project kann dieses Goal")
+        ? "project_alignment_conflict"
+        : result.status,
+      formData,
+    );
+  });
 }
 
 export async function archiveProjectFormAction(
   formData: FormData,
 ): Promise<void> {
-  const result = await archiveProjectAction(formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const result = await archiveProjectAction(formData);
 
-  if (result.status === "success") {
-    redirectToProjectActionState("project_archived", formData);
-  }
+    if (result.status === "success") {
+      redirectToProjectActionState("project_archived", formData);
+    }
 
-  redirectToProjectActionState(result.status, formData);
+    redirectToProjectActionState(result.status, formData);
+  });
 }
 
 export async function updateGoalFormAction(formData: FormData): Promise<void> {
-  const result = await updateGoalAction(formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const result = await updateGoalAction(formData);
 
-  if (result.status === "success") {
-    redirectToGoalActionState("goal_updated", formData, result.goalId);
-  }
+    if (result.status === "success") {
+      redirectToGoalActionState("goal_updated", formData, result.goalId);
+    }
 
-  redirectToGoalActionState(result.status, formData);
+    redirectToGoalActionState(result.status, formData);
+  });
 }
 
 export async function archiveGoalFormAction(formData: FormData): Promise<void> {
-  const result = await archiveGoalAction(formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const result = await archiveGoalAction(formData);
 
-  if (result.status === "success") {
-    redirectToGoalActionState("goal_archived", formData);
-  }
+    if (result.status === "success") {
+      redirectToGoalActionState("goal_archived", formData);
+    }
 
-  redirectToGoalActionState(result.status, formData);
+    redirectToGoalActionState(result.status, formData);
+  });
 }

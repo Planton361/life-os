@@ -1,5 +1,7 @@
 "use server";
 
+import { withSubmittedDatasetEpoch } from "./submitted-dataset";
+
 import { revalidatePath } from "next/cache";
 import { getCodingRepository } from "@/features/real-data/runtime/facade";
 import { redirect } from "next/navigation";
@@ -48,26 +50,30 @@ function revalidateCoding(projectId?: string) {
 }
 
 export async function createCodingProjectFormAction(formData: FormData) {
-  const auth = await context();
-  if (!auth) redirect(codingUrl("auth_blocked"));
-  const parsed = createCodingProjectInputSchema.safeParse({ description: optionalValue(formData, "description"), repositoryUrl: optionalValue(formData, "repositoryUrl"), status: value(formData, "status"), title: value(formData, "title") });
-  if (!parsed.success) redirect(codingUrl("project_error"));
-  const result = await getCodingRepository(auth.data).createProject(auth.user.id, parsed.data);
-  if (!result.ok) redirect(codingUrl("project_error"));
-  revalidateCoding(result.data.id);
-  redirect(codingUrl("project_created", result.data.id));
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const auth = await context();
+    if (!auth) redirect(codingUrl("auth_blocked"));
+    const parsed = createCodingProjectInputSchema.safeParse({ description: optionalValue(formData, "description"), repositoryUrl: optionalValue(formData, "repositoryUrl"), status: value(formData, "status"), title: value(formData, "title") });
+    if (!parsed.success) redirect(codingUrl("project_error"));
+    const result = await getCodingRepository(auth.data).createProject(auth.user.id, parsed.data);
+    if (!result.ok) redirect(codingUrl("project_error"));
+    revalidateCoding(result.data.id);
+    redirect(codingUrl("project_created", result.data.id));
+  });
 }
 
 export async function updateCodingProjectFormAction(formData: FormData) {
-  const projectId = value(formData, "projectId");
-  const auth = await context();
-  if (!auth) redirect(codingUrl("auth_blocked", projectId));
-  const parsed = updateCodingProjectInputSchema.safeParse({ description: optionalValue(formData, "description"), projectId, repositoryUrl: optionalValue(formData, "repositoryUrl"), status: value(formData, "status"), title: value(formData, "title") });
-  if (!parsed.success) redirect(codingUrl("project_error", projectId));
-  const result = await getCodingRepository(auth.data).updateProject(auth.user.id, projectId, parsed.data);
-  if (!result.ok) redirect(codingUrl("project_error", projectId));
-  revalidateCoding(projectId);
-  redirect(codingUrl("project_updated", projectId));
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const projectId = value(formData, "projectId");
+    const auth = await context();
+    if (!auth) redirect(codingUrl("auth_blocked", projectId));
+    const parsed = updateCodingProjectInputSchema.safeParse({ description: optionalValue(formData, "description"), projectId, repositoryUrl: optionalValue(formData, "repositoryUrl"), status: value(formData, "status"), title: value(formData, "title") });
+    if (!parsed.success) redirect(codingUrl("project_error", projectId));
+    const result = await getCodingRepository(auth.data).updateProject(auth.user.id, projectId, parsed.data);
+    if (!result.ok) redirect(codingUrl("project_error", projectId));
+    revalidateCoding(projectId);
+    redirect(codingUrl("project_updated", projectId));
+  });
 }
 
 function sessionInput(formData: FormData) {
@@ -75,38 +81,44 @@ function sessionInput(formData: FormData) {
 }
 
 export async function createCodingSessionFormAction(formData: FormData) {
-  const selected = value(formData, "projectId");
-  const auth = await context();
-  if (!auth) redirect(codingUrl("auth_blocked", selected));
-  const parsed = createCodingSessionInputSchema.safeParse(sessionInput(formData));
-  if (!parsed.success) redirect(codingUrl("session_error", selected));
-  const result = await getCodingRepository(auth.data).createSession(auth.user.id, parsed.data);
-  if (!result.ok) redirect(codingUrl("session_error", selected));
-  revalidateCoding(selected);
-  redirect(codingUrl("session_created", selected));
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const selected = value(formData, "projectId");
+    const auth = await context();
+    if (!auth) redirect(codingUrl("auth_blocked", selected));
+    const parsed = createCodingSessionInputSchema.safeParse(sessionInput(formData));
+    if (!parsed.success) redirect(codingUrl("session_error", selected));
+    const result = await getCodingRepository(auth.data).createSession(auth.user.id, parsed.data);
+    if (!result.ok) redirect(codingUrl("session_error", selected));
+    revalidateCoding(selected);
+    redirect(codingUrl("session_created", selected));
+  });
 }
 
 export async function updateCodingSessionFormAction(formData: FormData) {
-  const selected = value(formData, "projectId");
-  const sessionId = value(formData, "sessionId");
-  const auth = await context();
-  if (!auth) redirect(codingUrl("auth_blocked", selected));
-  const parsed = updateCodingSessionInputSchema.safeParse({ ...sessionInput(formData), sessionId });
-  if (!parsed.success) redirect(codingUrl("session_error", selected));
-  const result = await getCodingRepository(auth.data).updateSession(auth.user.id, sessionId, parsed.data);
-  if (!result.ok) redirect(codingUrl("session_error", selected));
-  revalidateCoding(selected);
-  redirect(codingUrl("session_updated", selected));
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const selected = value(formData, "projectId");
+    const sessionId = value(formData, "sessionId");
+    const auth = await context();
+    if (!auth) redirect(codingUrl("auth_blocked", selected));
+    const parsed = updateCodingSessionInputSchema.safeParse({ ...sessionInput(formData), sessionId });
+    if (!parsed.success) redirect(codingUrl("session_error", selected));
+    const result = await getCodingRepository(auth.data).updateSession(auth.user.id, sessionId, parsed.data);
+    if (!result.ok) redirect(codingUrl("session_error", selected));
+    revalidateCoding(selected);
+    redirect(codingUrl("session_updated", selected));
+  });
 }
 
 export async function archiveCodingSessionFormAction(formData: FormData) {
-  const selected = value(formData, "projectId");
-  const parsed = archiveCodingSessionInputSchema.safeParse({ sessionId: value(formData, "sessionId") });
-  const auth = await context();
-  if (!auth) redirect(codingUrl("auth_blocked", selected));
-  if (!parsed.success) redirect(codingUrl("session_error", selected));
-  const result = await getCodingRepository(auth.data).archiveSession(auth.user.id, parsed.data.sessionId);
-  if (!result.ok) redirect(codingUrl("session_error", selected));
-  revalidateCoding(selected);
-  redirect(codingUrl("session_archived", selected));
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const selected = value(formData, "projectId");
+    const parsed = archiveCodingSessionInputSchema.safeParse({ sessionId: value(formData, "sessionId") });
+    const auth = await context();
+    if (!auth) redirect(codingUrl("auth_blocked", selected));
+    if (!parsed.success) redirect(codingUrl("session_error", selected));
+    const result = await getCodingRepository(auth.data).archiveSession(auth.user.id, parsed.data.sessionId);
+    if (!result.ok) redirect(codingUrl("session_error", selected));
+    revalidateCoding(selected);
+    redirect(codingUrl("session_archived", selected));
+  });
 }

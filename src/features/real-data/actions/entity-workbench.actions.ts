@@ -1,4 +1,6 @@
 "use server";
+
+import { withSubmittedDatasetEpoch } from "./submitted-dataset";
 import { writeTaskDependency, getResourceRepository, getTaskRepository, getProjectRepository, achieveGoal, addGoalAchievementEvidence, addGoalCriterionEvidence, addGoalMilestoneEvidence, addGoalProjectSupport, addGoalTaskSupport, appendGoalCriterionEvaluation, appendGoalCriterionRevision, amendGoalAchievementEvent, amendGoalMilestoneAchievementEvent, archiveGoalCriterion, archiveGoalMilestone, createGoalCriterion, createGoalMilestone, removeGoalProjectSupport, removeGoalTaskSupport, reopenGoal, reorderGoalMilestone, setGoalMilestoneStatus, updateGoalMilestone, writeProjectMilestone, setProjectResourceRole, writeTaskStep } from "../runtime/facade";
 import { dependencyErrorMessage } from "../supabase/repositories/task-dependency-repository";
 import { z } from "zod";
@@ -500,228 +502,232 @@ export async function saveWorkbenchEntity(
   id: string | null,
   form: FormData,
 ): Promise<FormResult> {
-  if (
-    !z.enum(workbenchKinds).safeParse(kind).success ||
-    (id && !z.uuid().safeParse(id).success)
-  )
-    return invalid;
-  let result: FormResult;
-  if (id) form.set(`${kind}Id`, id);
-  if (kind === "task") {
-    const r = await (id
-      ? updatePortfolioTaskAction(form)
-      : createPortfolioTaskAction(form));
-    result = { ...r, id: r.taskId };
-  } else if (kind === "project") {
-    const r = await (id
-      ? updateProjectAction(form)
-      : createProjectAction(form));
-    result = { ...r, id: r.projectId };
-  } else if (kind === "goal") {
-    const r = await (id ? updateGoalAction(form) : createGoalAction(form));
-    result = { ...r, id: r.goalId };
-  } else if (kind === "skill") {
-    const r = await (id ? updateSkillAction(form) : createSkillAction(form));
-    result = { ...r, id: r.skillId };
-  } else {
-    const auth = await context();
-    if (!auth)
-      return { status: "blocked", message: "Bitte im Manual-Profil anmelden." };
-    const scope = { userId: auth.user.id, profileId: auth.user.id };
-    const input = {
-      ...scope,
-      title: str(form, "title"),
-      type: str(form, "type"),
-      body: str(form, "body") || null,
-      url: str(form, "url") || null,
-      resourceId: id,
-    };
-    const repo = getResourceRepository(auth.data);
-    if (input.url && !z.url().safeParse(input.url).success) return invalid;
-    if (id) {
-      const parsed = updateResourceInputSchema.safeParse(input);
-      if (!parsed.success) return invalid;
-      const r = await repo.updateResource(parsed.data);
-      result = r.ok
-        ? { status: "success", message: "Resource gespeichert.", id: r.data.id }
-        : invalid;
+  return withSubmittedDatasetEpoch(form, async () => {
+    if (
+      !z.enum(workbenchKinds).safeParse(kind).success ||
+      (id && !z.uuid().safeParse(id).success)
+    )
+      return invalid;
+    let result: FormResult;
+    if (id) form.set(`${kind}Id`, id);
+    if (kind === "task") {
+      const r = await (id
+        ? updatePortfolioTaskAction(form)
+        : createPortfolioTaskAction(form));
+      result = { ...r, id: r.taskId };
+    } else if (kind === "project") {
+      const r = await (id
+        ? updateProjectAction(form)
+        : createProjectAction(form));
+      result = { ...r, id: r.projectId };
+    } else if (kind === "goal") {
+      const r = await (id ? updateGoalAction(form) : createGoalAction(form));
+      result = { ...r, id: r.goalId };
+    } else if (kind === "skill") {
+      const r = await (id ? updateSkillAction(form) : createSkillAction(form));
+      result = { ...r, id: r.skillId };
     } else {
-      const parsed = createResourceInputSchema.safeParse(input);
-      if (!parsed.success) return invalid;
-      const r = await repo.createResource(parsed.data);
-      result = r.ok
-        ? { status: "success", message: "Resource erstellt.", id: r.data.id }
-        : invalid;
+      const auth = await context();
+      if (!auth)
+        return { status: "blocked", message: "Bitte im Manual-Profil anmelden." };
+      const scope = { userId: auth.user.id, profileId: auth.user.id };
+      const input = {
+        ...scope,
+        title: str(form, "title"),
+        type: str(form, "type"),
+        body: str(form, "body") || null,
+        url: str(form, "url") || null,
+        resourceId: id,
+      };
+      const repo = getResourceRepository(auth.data);
+      if (input.url && !z.url().safeParse(input.url).success) return invalid;
+      if (id) {
+        const parsed = updateResourceInputSchema.safeParse(input);
+        if (!parsed.success) return invalid;
+        const r = await repo.updateResource(parsed.data);
+        result = r.ok
+          ? { status: "success", message: "Resource gespeichert.", id: r.data.id }
+          : invalid;
+      } else {
+        const parsed = createResourceInputSchema.safeParse(input);
+        if (!parsed.success) return invalid;
+        const r = await repo.createResource(parsed.data);
+        result = r.ok
+          ? { status: "success", message: "Resource erstellt.", id: r.data.id }
+          : invalid;
+      }
     }
-  }
-  if (result.status === "success") refresh();
-  return result;
+    if (result.status === "success") refresh();
+    return result;
+  });
 }
 export async function workbenchOperation(
   operation: string,
   form: FormData,
 ): Promise<FormResult> {
-  const auth = await context();
-  if (!auth)
-    return { status: "blocked", message: "Bitte im Manual-Profil anmelden." };
-  const scope = { userId: auth.user.id, profileId: auth.user.id };
-  let result: FormResult = invalid;
-  if (goalOutcomeOperationSchema.safeParse(operation).success) {
-    result = await runGoalOutcomeOperation(auth, operation, form);
-  } else if (operation === "project.milestone") {
-    if (
-      await writeProjectMilestone(auth.data, auth.user.id, {
-        operation: str(form, "milestoneOperation"),
+  return withSubmittedDatasetEpoch(form, async () => {
+    const auth = await context();
+    if (!auth)
+      return { status: "blocked", message: "Bitte im Manual-Profil anmelden." };
+    const scope = { userId: auth.user.id, profileId: auth.user.id };
+    let result: FormResult = invalid;
+    if (goalOutcomeOperationSchema.safeParse(operation).success) {
+      result = await runGoalOutcomeOperation(auth, operation, form);
+    } else if (operation === "project.milestone") {
+      if (
+        await writeProjectMilestone(auth.data, auth.user.id, {
+          operation: str(form, "milestoneOperation"),
+          projectId: str(form, "projectId"),
+          milestoneId: str(form, "milestoneId"),
+          taskId: str(form, "taskId"),
+          title: str(form, "title"),
+          description: str(form, "description"),
+          status: str(form, "status") || "open",
+          targetDate: str(form, "targetDate"),
+        })
+      )
+        result = { status: "success", message: "Milestone gespeichert." };
+    } else if (operation === "project.resource.role") {
+      if (
+        await setProjectResourceRole(auth.data, {
+          projectId: str(form, "projectId"),
+          resourceId: str(form, "resourceId"),
+          role: str(form, "role"),
+        })
+      )
+        result = {
+          status: "success",
+          message: "Project-Verwendung gespeichert.",
+        };
+    } else if (
+      operation === "step.create" ||
+      operation === "step.update" ||
+      operation === "step.archive"
+    ) {
+      const ok = await writeTaskStep(
+        auth.data,
+        auth.user.id,
+        operation === "step.create"
+          ? "create"
+          : operation === "step.update"
+            ? "update"
+            : "archive",
+        {
+          taskId: str(form, "taskId"),
+          stepId: str(form, "stepId"),
+          title: str(form, "title"),
+          position: str(form, "position") || "0",
+          completed: form.get("completed") === "on",
+        },
+      );
+      if (ok)
+        result = { status: "success", message: "Arbeitsschritt gespeichert." };
+    } else if (
+      operation === "task.dependency.add" ||
+      operation === "task.dependency.remove"
+    ) {
+      result = await writeTaskDependency(auth.data, auth.user.id, {
+        operation: operation === "task.dependency.add" ? "add" : "remove",
         projectId: str(form, "projectId"),
-        milestoneId: str(form, "milestoneId"),
         taskId: str(form, "taskId"),
-        title: str(form, "title"),
-        description: str(form, "description"),
-        status: str(form, "status") || "open",
-        targetDate: str(form, "targetDate"),
-      })
-    )
-      result = { status: "success", message: "Milestone gespeichert." };
-  } else if (operation === "project.resource.role") {
-    if (
-      await setProjectResourceRole(auth.data, {
-        projectId: str(form, "projectId"),
+        predecessorId: str(form, "predecessorId"),
+        dependencyId: str(form, "dependencyId"),
+      });
+    } else if (operation === "task.complete")
+      result = await completeTaskAction(form);
+    else if (operation === "task.reopen") result = await reopenTaskAction(form);
+    else if (operation === "task.archive") result = await archiveTaskAction(form);
+    else if (operation === "project.archive")
+      result = await archiveProjectAction(form);
+    else if (operation === "goal.archive") result = await archiveGoalAction(form);
+    else if (operation === "skill.archive")
+      result = await archiveSkillAction(form);
+    else if (operation === "skill.link") result = await linkTaskSkillAction(form);
+    else if (operation === "skill.unlink")
+      result = await unlinkTaskSkillAction(form);
+    else if (operation === "evidence.create")
+      result = await createSkillEvidenceAction(form);
+    else if (operation === "evidence.remove")
+      result = await deleteSkillEvidenceAction(form);
+    else if (
+      operation === "resource.archive" ||
+      operation === "resource.restore"
+    ) {
+      const parsed = resourceLifecycleInputSchema.safeParse({
+        ...scope,
         resourceId: str(form, "resourceId"),
-        role: str(form, "role"),
-      })
-    )
-      result = {
-        status: "success",
-        message: "Project-Verwendung gespeichert.",
-      };
-  } else if (
-    operation === "step.create" ||
-    operation === "step.update" ||
-    operation === "step.archive"
-  ) {
-    const ok = await writeTaskStep(
-      auth.data,
-      auth.user.id,
-      operation === "step.create"
-        ? "create"
-        : operation === "step.update"
-          ? "update"
-          : "archive",
-      {
+      });
+      if (!parsed.success) return invalid;
+      const repo = getResourceRepository(auth.data);
+      const r = await (operation === "resource.archive"
+        ? repo.archiveResource(parsed.data)
+        : repo.restoreResource(parsed.data));
+      if (r.ok)
+        result = { status: "success", message: "Resource-Status gespeichert." };
+    } else if (operation === "resource.link") {
+      const parsed = linkResourceInputSchema.safeParse({
+        ...scope,
+        resourceId: str(form, "resourceId"),
+        targetType: str(form, "targetType"),
+        targetId: str(form, "targetId"),
+        relationType: "context",
+      });
+      if (!parsed.success) return invalid;
+      const r = await getResourceRepository(auth.data).linkResource(
+        parsed.data,
+      );
+      if (r.ok) result = { status: "success", message: "Resource verknüpft." };
+    } else if (operation === "resource.unlink") {
+      const parsed = z.uuid().safeParse(str(form, "relationId"));
+      if (!parsed.success) return invalid;
+      const r = await getResourceRepository(
+        auth.data,
+      ).unlinkResource(auth.user.id, auth.user.id, parsed.data);
+      if (r.ok) result = { status: "success", message: "Verknüpfung gelöst." };
+    } else if (operation === "task.context") {
+      const parsed = updateTaskInputSchema.safeParse({
+        ...scope,
         taskId: str(form, "taskId"),
-        stepId: str(form, "stepId"),
-        title: str(form, "title"),
-        position: str(form, "position") || "0",
-        completed: form.get("completed") === "on",
-      },
-    );
-    if (ok)
-      result = { status: "success", message: "Arbeitsschritt gespeichert." };
-  } else if (
-    operation === "task.dependency.add" ||
-    operation === "task.dependency.remove"
-  ) {
-    result = await writeTaskDependency(auth.data, auth.user.id, {
-      operation: operation === "task.dependency.add" ? "add" : "remove",
-      projectId: str(form, "projectId"),
-      taskId: str(form, "taskId"),
-      predecessorId: str(form, "predecessorId"),
-      dependencyId: str(form, "dependencyId"),
-    });
-  } else if (operation === "task.complete")
-    result = await completeTaskAction(form);
-  else if (operation === "task.reopen") result = await reopenTaskAction(form);
-  else if (operation === "task.archive") result = await archiveTaskAction(form);
-  else if (operation === "project.archive")
-    result = await archiveProjectAction(form);
-  else if (operation === "goal.archive") result = await archiveGoalAction(form);
-  else if (operation === "skill.archive")
-    result = await archiveSkillAction(form);
-  else if (operation === "skill.link") result = await linkTaskSkillAction(form);
-  else if (operation === "skill.unlink")
-    result = await unlinkTaskSkillAction(form);
-  else if (operation === "evidence.create")
-    result = await createSkillEvidenceAction(form);
-  else if (operation === "evidence.remove")
-    result = await deleteSkillEvidenceAction(form);
-  else if (
-    operation === "resource.archive" ||
-    operation === "resource.restore"
-  ) {
-    const parsed = resourceLifecycleInputSchema.safeParse({
-      ...scope,
-      resourceId: str(form, "resourceId"),
-    });
-    if (!parsed.success) return invalid;
-    const repo = getResourceRepository(auth.data);
-    const r = await (operation === "resource.archive"
-      ? repo.archiveResource(parsed.data)
-      : repo.restoreResource(parsed.data));
-    if (r.ok)
-      result = { status: "success", message: "Resource-Status gespeichert." };
-  } else if (operation === "resource.link") {
-    const parsed = linkResourceInputSchema.safeParse({
-      ...scope,
-      resourceId: str(form, "resourceId"),
-      targetType: str(form, "targetType"),
-      targetId: str(form, "targetId"),
-      relationType: "context",
-    });
-    if (!parsed.success) return invalid;
-    const r = await getResourceRepository(auth.data).linkResource(
-      parsed.data,
-    );
-    if (r.ok) result = { status: "success", message: "Resource verknüpft." };
-  } else if (operation === "resource.unlink") {
-    const parsed = z.uuid().safeParse(str(form, "relationId"));
-    if (!parsed.success) return invalid;
-    const r = await getResourceRepository(
-      auth.data,
-    ).unlinkResource(auth.user.id, auth.user.id, parsed.data);
-    if (r.ok) result = { status: "success", message: "Verknüpfung gelöst." };
-  } else if (operation === "task.context") {
-    const parsed = updateTaskInputSchema.safeParse({
-      ...scope,
-      taskId: str(form, "taskId"),
-      ...(form.has("projectId")
-        ? { projectId: str(form, "projectId") || null }
-        : {}),
-      ...(form.has("goalId") ? { goalId: str(form, "goalId") || null } : {}),
-    });
-    if (!parsed.success) return invalid;
-    const r = await getTaskRepository(auth.data).updateTask(
-      parsed.data,
-    );
-    if (r.ok)
-      result = {
-        status: "success",
-        message: form.has("goalId")
-          ? "Aufgaben-Beziehung gespeichert."
-          : "Task-Beziehung gespeichert.",
-      };
-    else if (r.error.message.includes("DEPENDENCY_"))
-      result = {
-        status: "error",
-        message: dependencyErrorMessage(r.error.message),
-      };
-  } else if (operation === "project.context") {
-    const parsed = updateProjectInputSchema.safeParse({
-      ...scope,
-      projectId: str(form, "projectId"),
-      goalId: str(form, "goalId") || null,
-    });
-    if (!parsed.success) return invalid;
-    const r = await getProjectRepository(auth.data).updateProject(
-      parsed.data,
-    );
-    if (r.ok)
-      result = {
-        status: "success",
-        message: form.has("goalId")
-          ? "Projekt-Beziehung gespeichert."
-          : "Project-Beziehung gespeichert.",
-      };
-  }
-  if (result.status === "success") refresh();
-  return result;
+        ...(form.has("projectId")
+          ? { projectId: str(form, "projectId") || null }
+          : {}),
+        ...(form.has("goalId") ? { goalId: str(form, "goalId") || null } : {}),
+      });
+      if (!parsed.success) return invalid;
+      const r = await getTaskRepository(auth.data).updateTask(
+        parsed.data,
+      );
+      if (r.ok)
+        result = {
+          status: "success",
+          message: form.has("goalId")
+            ? "Aufgaben-Beziehung gespeichert."
+            : "Task-Beziehung gespeichert.",
+        };
+      else if (r.error.message.includes("DEPENDENCY_"))
+        result = {
+          status: "error",
+          message: dependencyErrorMessage(r.error.message),
+        };
+    } else if (operation === "project.context") {
+      const parsed = updateProjectInputSchema.safeParse({
+        ...scope,
+        projectId: str(form, "projectId"),
+        goalId: str(form, "goalId") || null,
+      });
+      if (!parsed.success) return invalid;
+      const r = await getProjectRepository(auth.data).updateProject(
+        parsed.data,
+      );
+      if (r.ok)
+        result = {
+          status: "success",
+          message: form.has("goalId")
+            ? "Projekt-Beziehung gespeichert."
+            : "Project-Beziehung gespeichert.",
+        };
+    }
+    if (result.status === "success") refresh();
+    return result;
+  });
 }

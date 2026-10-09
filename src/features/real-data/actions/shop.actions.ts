@@ -1,4 +1,6 @@
 "use server";
+
+import { withSubmittedDatasetEpoch } from "./submitted-dataset";
 import { revalidatePath } from "next/cache";
 import { getShopRepository } from "@/features/real-data/runtime/facade";
 import { redirect } from "next/navigation";
@@ -38,23 +40,27 @@ function input(data: FormData) {
   };
 }
 export async function createShopItemAction(data: FormData) {
-  const parsed = shopItemInputSchema.safeParse(input(data));
-  if (!parsed.success) finish("invalid");
-  const { repository, userId } = await context();
-  finish(
-    (await repository.create(userId, parsed.data)).ok ? "created" : "error",
-  );
+  return withSubmittedDatasetEpoch(data, async () => {
+    const parsed = shopItemInputSchema.safeParse(input(data));
+    if (!parsed.success) finish("invalid");
+    const { repository, userId } = await context();
+    finish(
+      (await repository.create(userId, parsed.data)).ok ? "created" : "error",
+    );
+  });
 }
 export async function updateShopItemAction(data: FormData) {
-  const parsed = updateShopItemInputSchema.safeParse({
-    ...input(data),
-    shopItemId: value(data, "shopItemId"),
+  return withSubmittedDatasetEpoch(data, async () => {
+    const parsed = updateShopItemInputSchema.safeParse({
+      ...input(data),
+      shopItemId: value(data, "shopItemId"),
+    });
+    if (!parsed.success) finish("invalid");
+    const { repository, userId } = await context();
+    finish(
+      (await repository.update(userId, parsed.data)).ok ? "updated" : "error",
+    );
   });
-  if (!parsed.success) finish("invalid");
-  const { repository, userId } = await context();
-  finish(
-    (await repository.update(userId, parsed.data)).ok ? "updated" : "error",
-  );
 }
 async function idContext(data: FormData) {
   const parsed = shopItemIdSchema.safeParse({
@@ -64,37 +70,47 @@ async function idContext(data: FormData) {
   return { ...(await context()), shopItemId: parsed.data.shopItemId };
 }
 export async function pauseShopItemAction(data: FormData) {
-  const { repository, userId, shopItemId } = await idContext(data);
-  finish(
-    (await repository.setPaused(userId, shopItemId, true)) ? "paused" : "error",
-  );
+  return withSubmittedDatasetEpoch(data, async () => {
+    const { repository, userId, shopItemId } = await idContext(data);
+    finish(
+      (await repository.setPaused(userId, shopItemId, true)) ? "paused" : "error",
+    );
+  });
 }
 export async function reactivateShopItemAction(data: FormData) {
-  const { repository, userId, shopItemId } = await idContext(data);
-  finish(
-    (await repository.setPaused(userId, shopItemId, false))
-      ? "reactivated"
-      : "error",
-  );
+  return withSubmittedDatasetEpoch(data, async () => {
+    const { repository, userId, shopItemId } = await idContext(data);
+    finish(
+      (await repository.setPaused(userId, shopItemId, false))
+        ? "reactivated"
+        : "error",
+    );
+  });
 }
 export async function archiveShopItemAction(data: FormData) {
-  const { repository, userId, shopItemId } = await idContext(data);
-  finish((await repository.archive(userId, shopItemId)) ? "archived" : "error");
+  return withSubmittedDatasetEpoch(data, async () => {
+    const { repository, userId, shopItemId } = await idContext(data);
+    finish((await repository.archive(userId, shopItemId)) ? "archived" : "error");
+  });
 }
 export async function restoreShopItemAction(data: FormData) {
-  const { repository, userId, shopItemId } = await idContext(data);
-  finish((await repository.restore(userId, shopItemId)) ? "restored" : "error");
+  return withSubmittedDatasetEpoch(data, async () => {
+    const { repository, userId, shopItemId } = await idContext(data);
+    finish((await repository.restore(userId, shopItemId)) ? "restored" : "error");
+  });
 }
 export async function redeemShopItemAction(data: FormData) {
-  const parsed = redeemShopItemSchema.safeParse({
-    requestKey: value(data, "requestKey"),
-    shopItemId: value(data, "shopItemId"),
+  return withSubmittedDatasetEpoch(data, async () => {
+    const parsed = redeemShopItemSchema.safeParse({
+      requestKey: value(data, "requestKey"),
+      shopItemId: value(data, "shopItemId"),
+    });
+    if (!parsed.success) finish("invalid");
+    const { repository } = await context();
+    finish(
+      (await repository.redeem(parsed.data.shopItemId, parsed.data.requestKey)).ok
+        ? "redeemed"
+        : "insufficient",
+    );
   });
-  if (!parsed.success) finish("invalid");
-  const { repository } = await context();
-  finish(
-    (await repository.redeem(parsed.data.shopItemId, parsed.data.requestKey)).ok
-      ? "redeemed"
-      : "insufficient",
-  );
 }

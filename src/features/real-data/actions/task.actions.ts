@@ -1,4 +1,6 @@
 "use server";
+
+import { withSubmittedDatasetEpoch } from "./submitted-dataset";
 import { createGoalContextTask, getSkillRepository, getTaskRepository } from "../runtime/facade";
 import { dependencyErrorMessage } from "../supabase/repositories/task-dependency-repository";
 import { z } from "zod";
@@ -205,211 +207,224 @@ function optionalNullableFormString(formData: FormData, key: string) {
 export async function updatePortfolioTaskAction(
   formData: FormData,
 ): Promise<TaskLifecycleActionResult> {
-  const context = await getAuthenticatedManualTaskContext("bearbeiten");
-  if (!context.ok) return context.result;
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const context = await getAuthenticatedManualTaskContext("bearbeiten");
+    if (!context.ok) return context.result;
 
-  const projectId = optionalNullableFormString(formData, "projectId");
-  const goalId = optionalNullableFormString(formData, "goalId");
-  if (!(await validateProjectScope(context, projectId ?? undefined))) {
-    return {
-      message: "Das Project konnte nicht bestätigt werden.",
-      status: "error",
-    };
-  }
-  if (!(await validateGoalScope(context, goalId ?? undefined))) {
-    return {
-      message: "Das Goal konnte nicht bestätigt werden.",
-      status: "error",
-    };
-  }
+    const projectId = optionalNullableFormString(formData, "projectId");
+    const goalId = optionalNullableFormString(formData, "goalId");
+    if (!(await validateProjectScope(context, projectId ?? undefined))) {
+      return {
+        message: "Das Project konnte nicht bestätigt werden.",
+        status: "error",
+      };
+    }
+    if (!(await validateGoalScope(context, goalId ?? undefined))) {
+      return {
+        message: "Das Goal konnte nicht bestätigt werden.",
+        status: "error",
+      };
+    }
 
-  const nextAction = optionalFormString(formData, "nextAction");
-  const description = optionalFormString(formData, "description");
-  const combinedDescription =
-    [description, nextAction ? `Nächste Aktion: ${nextAction}` : null]
-      .filter(Boolean)
-      .join("\n\n") || null;
-  const dueDate = optionalFormString(formData, "dueAt");
-  const parsed = updateTaskInputSchema.safeParse({
-    areaId: optionalNullableFormString(formData, "areaId"),
-    description: combinedDescription,
-    dueAt: dueDate ? `${dueDate}T23:59:59.000Z` : null,
-    durationMinutes: optionalFormString(formData, "durationMinutes")
-      ? formString(formData, "durationMinutes")
-      : null,
-    energy: optionalNullableFormString(formData, "energy"),
-    goalId,
-    plannedDate: optionalNullableFormString(formData, "plannedDate"),
-    priority: formString(formData, "priority"),
-    profileId: context.auth.user.id,
-    projectId,
-    status: formString(formData, "status"),
-    taskId: formString(formData, "taskId"),
-    title: formString(formData, "title"),
-    userId: context.auth.user.id,
+    const nextAction = optionalFormString(formData, "nextAction");
+    const description = optionalFormString(formData, "description");
+    const combinedDescription =
+      [description, nextAction ? `Nächste Aktion: ${nextAction}` : null]
+        .filter(Boolean)
+        .join("\n\n") || null;
+    const dueDate = optionalFormString(formData, "dueAt");
+    const parsed = updateTaskInputSchema.safeParse({
+      areaId: optionalNullableFormString(formData, "areaId"),
+      description: combinedDescription,
+      dueAt: dueDate ? `${dueDate}T23:59:59.000Z` : null,
+      durationMinutes: optionalFormString(formData, "durationMinutes")
+        ? formString(formData, "durationMinutes")
+        : null,
+      energy: optionalNullableFormString(formData, "energy"),
+      goalId,
+      plannedDate: optionalNullableFormString(formData, "plannedDate"),
+      priority: formString(formData, "priority"),
+      profileId: context.auth.user.id,
+      projectId,
+      status: formString(formData, "status"),
+      taskId: formString(formData, "taskId"),
+      title: formString(formData, "title"),
+      userId: context.auth.user.id,
+    });
+    if (!parsed.success)
+      return { message: "Prüfe die Task-Felder.", status: "error" };
+    const result = await getTaskRepository(context.auth.data).updateTask(
+      parsed.data,
+    );
+    if (!result.ok) {
+      return {
+        message: result.error.message.includes("DEPENDENCY_")
+          ? dependencyErrorMessage(result.error.message)
+          : result.error.code === "conflict"
+            ? "Dieses direkte Goal widerspricht dem Goal des ausgewählten Projects. Passe Project oder direktes Goal bewusst an."
+            : "Der Task konnte nicht gespeichert werden.",
+        status: "error",
+      };
+    }
+    revalidateTaskProjectionRoutes(result.data.id);
+    revalidatePath("/resources");
+    return {
+      message: "Task gespeichert.",
+      status: "success",
+      taskId: result.data.id,
+    };
   });
-  if (!parsed.success)
-    return { message: "Prüfe die Task-Felder.", status: "error" };
-  const result = await getTaskRepository(context.auth.data).updateTask(
-    parsed.data,
-  );
-  if (!result.ok) {
-    return {
-      message: result.error.message.includes("DEPENDENCY_")
-        ? dependencyErrorMessage(result.error.message)
-        : result.error.code === "conflict"
-          ? "Dieses direkte Goal widerspricht dem Goal des ausgewählten Projects. Passe Project oder direktes Goal bewusst an."
-          : "Der Task konnte nicht gespeichert werden.",
-      status: "error",
-    };
-  }
-  revalidateTaskProjectionRoutes(result.data.id);
-  revalidatePath("/resources");
-  return {
-    message: "Task gespeichert.",
-    status: "success",
-    taskId: result.data.id,
-  };
 }
 
 export async function updatePortfolioTaskFormAction(
   formData: FormData,
 ): Promise<void> {
-  const result = await updatePortfolioTaskAction(formData);
-  const selected = formString(formData, "taskId");
-  const state =
-    result.status === "error" &&
-    result.message.startsWith("Dieses direkte Goal")
-      ? "task_alignment_conflict"
-      : `task_${result.status}`;
-  redirect(
-    `/portfolio?view=tasks&selected=${encodeURIComponent(selected)}&targetCreate=${state}`,
-  );
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const result = await updatePortfolioTaskAction(formData);
+    const selected = formString(formData, "taskId");
+    const state =
+      result.status === "error" &&
+      result.message.startsWith("Dieses direkte Goal")
+        ? "task_alignment_conflict"
+        : `task_${result.status}`;
+    redirect(
+      `/portfolio?view=tasks&selected=${encodeURIComponent(selected)}&targetCreate=${state}`,
+    );
+  });
 }
 
 export async function linkTaskSkillAction(
   formData: FormData,
 ): Promise<TaskSkillActionResult> {
-  const context = await getAuthenticatedManualTaskContext(
-    "mit Skills zu verknüpfen",
-  );
-  if (!context.ok) return context.result;
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const context = await getAuthenticatedManualTaskContext(
+      "mit Skills zu verknüpfen",
+    );
+    if (!context.ok) return context.result;
 
-  const parsed = taskSkillLinkInputSchema.safeParse({
-    skillId: formString(formData, "skillId"),
-    taskId: formString(formData, "taskId"),
-  });
-  if (!parsed.success) {
+    const parsed = taskSkillLinkInputSchema.safeParse({
+      skillId: formString(formData, "skillId"),
+      taskId: formString(formData, "taskId"),
+    });
+    if (!parsed.success) {
+      return {
+        message: "Wähle einen gültigen Skill aus.",
+        status: "error",
+      };
+    }
+
+    const result = await getSkillRepository(
+      context.auth.data,
+    ).linkTaskSkill({
+      ...parsed.data,
+      userId: context.auth.user.id,
+    });
+    if (!result.ok) {
+      return {
+        message:
+          "Task und Skill konnten im aktuellen User-Scope nicht verknüpft werden.",
+        status: "error",
+      };
+    }
+
+    revalidateTaskSkillProjectionRoutes(parsed.data.taskId, parsed.data.skillId);
+
     return {
-      message: "Wähle einen gültigen Skill aus.",
-      status: "error",
+      message: "Skill mit Task verknüpft.",
+      skillId: parsed.data.skillId,
+      status: "success",
+      taskId: parsed.data.taskId,
     };
-  }
-
-  const result = await getSkillRepository(
-    context.auth.data,
-  ).linkTaskSkill({
-    ...parsed.data,
-    userId: context.auth.user.id,
   });
-  if (!result.ok) {
-    return {
-      message:
-        "Task und Skill konnten im aktuellen User-Scope nicht verknüpft werden.",
-      status: "error",
-    };
-  }
-
-  revalidateTaskSkillProjectionRoutes(parsed.data.taskId, parsed.data.skillId);
-
-  return {
-    message: "Skill mit Task verknüpft.",
-    skillId: parsed.data.skillId,
-    status: "success",
-    taskId: parsed.data.taskId,
-  };
 }
 
 export async function linkTaskSkillFormAction(
   formData: FormData,
 ): Promise<void> {
-  const result = await linkTaskSkillAction(formData);
-  const taskId = formString(formData, "taskId");
-  const state =
-    result.status === "success"
-      ? "task_skill_linked"
-      : result.status === "blocked"
-        ? "blocked"
-        : "task_skill_error";
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const result = await linkTaskSkillAction(formData);
+    const taskId = formString(formData, "taskId");
+    const state =
+      result.status === "success"
+        ? "task_skill_linked"
+        : result.status === "blocked"
+          ? "blocked"
+          : "task_skill_error";
 
-  redirect(
-    `/portfolio?view=tasks&selected=${encodeURIComponent(taskId)}&targetCreate=${state}`,
-  );
+    redirect(
+      `/portfolio?view=tasks&selected=${encodeURIComponent(taskId)}&targetCreate=${state}`,
+    );
+  });
 }
 
 export async function unlinkTaskSkillAction(
   formData: FormData,
 ): Promise<TaskSkillActionResult> {
-  const context = await getAuthenticatedManualTaskContext(
-    "von Skills zu lösen",
-  );
-  if (!context.ok) return context.result;
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const context = await getAuthenticatedManualTaskContext(
+      "von Skills zu lösen",
+    );
+    if (!context.ok) return context.result;
 
-  const parsed = taskSkillLinkInputSchema.safeParse({
-    skillId: formString(formData, "skillId"),
-    taskId: formString(formData, "taskId"),
-  });
-  if (!parsed.success) {
+    const parsed = taskSkillLinkInputSchema.safeParse({
+      skillId: formString(formData, "skillId"),
+      taskId: formString(formData, "taskId"),
+    });
+    if (!parsed.success) {
+      return {
+        message: "Die Task-Skill-Verbindung konnte nicht validiert werden.",
+        status: "error",
+      };
+    }
+
+    const result = await getSkillRepository(
+      context.auth.data,
+    ).unlinkTaskSkill({
+      ...parsed.data,
+      userId: context.auth.user.id,
+    });
+    if (!result.ok) {
+      return {
+        message: "Die Task-Skill-Verbindung konnte nicht entfernt werden.",
+        status: "error",
+      };
+    }
+
+    revalidateTaskSkillProjectionRoutes(parsed.data.taskId, parsed.data.skillId);
+
     return {
-      message: "Die Task-Skill-Verbindung konnte nicht validiert werden.",
-      status: "error",
+      message: "Skill-Verbindung entfernt.",
+      skillId: parsed.data.skillId,
+      status: "success",
+      taskId: parsed.data.taskId,
     };
-  }
-
-  const result = await getSkillRepository(
-    context.auth.data,
-  ).unlinkTaskSkill({
-    ...parsed.data,
-    userId: context.auth.user.id,
   });
-  if (!result.ok) {
-    return {
-      message: "Die Task-Skill-Verbindung konnte nicht entfernt werden.",
-      status: "error",
-    };
-  }
-
-  revalidateTaskSkillProjectionRoutes(parsed.data.taskId, parsed.data.skillId);
-
-  return {
-    message: "Skill-Verbindung entfernt.",
-    skillId: parsed.data.skillId,
-    status: "success",
-    taskId: parsed.data.taskId,
-  };
 }
 
 export async function unlinkTaskSkillFormAction(
   formData: FormData,
 ): Promise<void> {
-  const result = await unlinkTaskSkillAction(formData);
-  const taskId = formString(formData, "taskId");
-  const state =
-    result.status === "success"
-      ? "task_skill_unlinked"
-      : result.status === "blocked"
-        ? "blocked"
-        : "task_skill_error";
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const result = await unlinkTaskSkillAction(formData);
+    const taskId = formString(formData, "taskId");
+    const state =
+      result.status === "success"
+        ? "task_skill_unlinked"
+        : result.status === "blocked"
+          ? "blocked"
+          : "task_skill_error";
 
-  redirect(
-    `/portfolio?view=tasks&selected=${encodeURIComponent(taskId)}&targetCreate=${state}`,
-  );
+    redirect(
+      `/portfolio?view=tasks&selected=${encodeURIComponent(taskId)}&targetCreate=${state}`,
+    );
+  });
 }
 
 function authBlockedMessage(
-  error: "auth_error" | "invalid_session" | "missing_env" | "unauthenticated",
+  error: "auth_error" | "invalid_session" | "missing_env" | "unauthenticated" | "dataset_stale",
   actionLabel = "planen",
 ) {
+  if (error === "dataset_stale") return "Die Testdaten haben sich geändert. Bitte neu laden, bevor du Änderungen speicherst.";
   if (error === "missing_env") {
     return "Supabase ist lokal noch nicht konfiguriert.";
   }
@@ -479,472 +494,502 @@ async function validateGoalScope(
 export async function scheduleTaskForTodayAction(
   formData: FormData,
 ): Promise<TaskScheduleActionResult> {
-  const context = await getAuthenticatedManualTaskContext("planen");
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const context = await getAuthenticatedManualTaskContext("planen");
 
-  if (!context.ok) return context.result;
+    if (!context.ok) return context.result;
 
-  const mode =
-    formString(formData, "mode") === "schedule" ? "schedule" : "plan";
-  const plannedDateInput = formString(formData, "plannedDate");
-  const plannedDate = isLocalDate(plannedDateInput)
-    ? plannedDateInput
-    : localDateLabel();
-  const scheduledTimeInput = formString(formData, "scheduledTime");
-  const scheduledTime = isLocalTime(scheduledTimeInput)
-    ? scheduledTimeInput
-    : "09:00";
-  const scheduledStartAtInput = formString(formData, "scheduledStartAt");
-  const scheduledStartAt =
-    mode === "schedule"
-      ? scheduledStartAtInput ||
-        zonedLocalDateTimeToIso(plannedDate, scheduledTime)
-      : undefined;
-  const parsed = scheduleTaskInputSchema.safeParse({
-    durationMinutes: durationMinutesFromForm(formData, mode),
-    plannedDate,
-    profileId: context.auth.user.id,
-    scheduledStartAt,
-    taskId: formString(formData, "taskId"),
-    userId: context.auth.user.id,
-  });
-
-  if (!parsed.success) {
-    return {
-      message: "Der Task konnte nicht geplant werden.",
-      status: "error",
-    };
-  }
-
-  const repository = getTaskRepository(context.auth.data);
-  const result = await repository.scheduleTask(parsed.data);
-
-  if (!result.ok) {
-    return {
-      message: "Der Task konnte nicht in Supabase geplant werden.",
-      status: "error",
-    };
-  }
-
-  revalidateTaskProjectionRoutes(result.data.id);
-
-  return {
-    message:
+    const mode =
+      formString(formData, "mode") === "schedule" ? "schedule" : "plan";
+    const plannedDateInput = formString(formData, "plannedDate");
+    const plannedDate = isLocalDate(plannedDateInput)
+      ? plannedDateInput
+      : localDateLabel();
+    const scheduledTimeInput = formString(formData, "scheduledTime");
+    const scheduledTime = isLocalTime(scheduledTimeInput)
+      ? scheduledTimeInput
+      : "09:00";
+    const scheduledStartAtInput = formString(formData, "scheduledStartAt");
+    const scheduledStartAt =
       mode === "schedule"
-        ? "Task für heute terminiert."
-        : "Task für heute geplant.",
-    status: "success",
-    taskId: result.data.id,
-  };
+        ? scheduledStartAtInput ||
+          zonedLocalDateTimeToIso(plannedDate, scheduledTime)
+        : undefined;
+    const parsed = scheduleTaskInputSchema.safeParse({
+      durationMinutes: durationMinutesFromForm(formData, mode),
+      plannedDate,
+      profileId: context.auth.user.id,
+      scheduledStartAt,
+      taskId: formString(formData, "taskId"),
+      userId: context.auth.user.id,
+    });
+
+    if (!parsed.success) {
+      return {
+        message: "Der Task konnte nicht geplant werden.",
+        status: "error",
+      };
+    }
+
+    const repository = getTaskRepository(context.auth.data);
+    const result = await repository.scheduleTask(parsed.data);
+
+    if (!result.ok) {
+      return {
+        message: "Der Task konnte nicht in Supabase geplant werden.",
+        status: "error",
+      };
+    }
+
+    revalidateTaskProjectionRoutes(result.data.id);
+
+    return {
+      message:
+        mode === "schedule"
+          ? "Task für heute terminiert."
+          : "Task für heute geplant.",
+      status: "success",
+      taskId: result.data.id,
+    };
+  });
 }
 
 export async function scheduleTaskForTodayFormAction(
   formData: FormData,
 ): Promise<void> {
-  await scheduleTaskForTodayAction(formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    await scheduleTaskForTodayAction(formData);
+  });
 }
 
 export async function createPortfolioTaskAction(
   formData: FormData,
 ): Promise<TaskLifecycleActionResult> {
-  const context = await getAuthenticatedManualTaskContext("erstellen");
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const context = await getAuthenticatedManualTaskContext("erstellen");
 
-  if (!context.ok) return context.result;
+    if (!context.ok) return context.result;
 
-  const todayCandidate = formData.get("todayCandidate") === "on";
-  const goalId = optionalFormString(formData, "goalId");
-  const projectId = optionalFormString(formData, "projectId");
+    const todayCandidate = formData.get("todayCandidate") === "on";
+    const goalId = optionalFormString(formData, "goalId");
+    const projectId = optionalFormString(formData, "projectId");
 
-  if (!(await validateProjectScope(context, projectId))) {
-    return {
-      message: "Das Project konnte nicht als Task-Kontext bestätigt werden.",
-      status: "error",
-    };
-  }
-
-  if (!(await validateGoalScope(context, goalId))) {
-    return {
-      message: "Das Goal konnte nicht als Task-Kontext bestätigt werden.",
-      status: "error",
-    };
-  }
-
-  const parsed = createTaskInputSchema.safeParse({
-    milestoneId: optionalFormString(formData, "milestoneId"),
-    areaId: optionalFormString(formData, "areaId"),
-    dueAt: optionalFormString(formData, "dueAt")
-      ? `${formString(formData, "dueAt")}T23:59:59.000Z`
-      : undefined,
-    description: portfolioTaskDescriptionFromForm(formData),
-    durationMinutes: durationMinutesFromForm(formData, "plan"),
-    energy: optionalFormString(formData, "energy"),
-    goalId,
-    plannedDate: todayCandidate
-      ? localDateLabel()
-      : optionalFormString(formData, "plannedDate"),
-    priority: formString(formData, "priority") || "none",
-    projectId,
-    profileId: context.auth.user.id,
-    status: "planned",
-    title: formString(formData, "title"),
-    userId: context.auth.user.id,
-  });
-
-  if (!parsed.success) {
-    return {
-      message: "Prüfe Task-Titel und Milestone-Zuordnung.",
-      status: "error",
-    };
-  }
-
-  if (formData.has("goalMilestoneId")) {
-
-    const goalMilestoneId = optionalFormString(formData, "goalMilestoneId");
-    if (
-      !goalId ||
-      !goalMilestoneId ||
-      !z.uuid().safeParse(goalId).success ||
-      !z.uuid().safeParse(goalMilestoneId).success
-    ) {
+    if (!(await validateProjectScope(context, projectId))) {
       return {
-        message:
-          "Eine Etappen-Aufgabe benötigt ein gültiges Ziel und eine aktuelle Etappe.",
+        message: "Das Project konnte nicht als Task-Kontext bestätigt werden.",
         status: "error",
       };
     }
-    const contextual = await createGoalContextTask(context.auth.data, {
-      areaId: parsed.data.areaId,
-      commandId: optionalFormString(formData, "commandId"),
-      description: parsed.data.description,
-      dueAt: parsed.data.dueAt,
-      durationMinutes: parsed.data.durationMinutes,
-      energy: parsed.data.energy,
+
+    if (!(await validateGoalScope(context, goalId))) {
+      return {
+        message: "Das Goal konnte nicht als Task-Kontext bestätigt werden.",
+        status: "error",
+      };
+    }
+
+    const parsed = createTaskInputSchema.safeParse({
+      milestoneId: optionalFormString(formData, "milestoneId"),
+      areaId: optionalFormString(formData, "areaId"),
+      dueAt: optionalFormString(formData, "dueAt")
+        ? `${formString(formData, "dueAt")}T23:59:59.000Z`
+        : undefined,
+      description: portfolioTaskDescriptionFromForm(formData),
+      durationMinutes: durationMinutesFromForm(formData, "plan"),
+      energy: optionalFormString(formData, "energy"),
       goalId,
-      milestoneId: goalMilestoneId,
-      projectId: parsed.data.projectId,
-      plannedDate: parsed.data.plannedDate,
-      priority: parsed.data.priority,
-      title: parsed.data.title,
+      plannedDate: todayCandidate
+        ? localDateLabel()
+        : optionalFormString(formData, "plannedDate"),
+      priority: formString(formData, "priority") || "none",
+      projectId,
+      profileId: context.auth.user.id,
+      status: "planned",
+      title: formString(formData, "title"),
       userId: context.auth.user.id,
     });
-    if (!contextual.ok) {
+
+    if (!parsed.success) {
       return {
-        message: contextual.error.message,
+        message: "Prüfe Task-Titel und Milestone-Zuordnung.",
         status: "error",
       };
     }
-    revalidateTaskProjectionRoutes(contextual.data.id);
+
+    if (formData.has("goalMilestoneId")) {
+
+      const goalMilestoneId = optionalFormString(formData, "goalMilestoneId");
+      if (
+        !goalId ||
+        !goalMilestoneId ||
+        !z.uuid().safeParse(goalId).success ||
+        !z.uuid().safeParse(goalMilestoneId).success
+      ) {
+        return {
+          message:
+            "Eine Etappen-Aufgabe benötigt ein gültiges Ziel und eine aktuelle Etappe.",
+          status: "error",
+        };
+      }
+      const contextual = await createGoalContextTask(context.auth.data, {
+        areaId: parsed.data.areaId,
+        commandId: optionalFormString(formData, "commandId"),
+        description: parsed.data.description,
+        dueAt: parsed.data.dueAt,
+        durationMinutes: parsed.data.durationMinutes,
+        energy: parsed.data.energy,
+        goalId,
+        milestoneId: goalMilestoneId,
+        projectId: parsed.data.projectId,
+        plannedDate: parsed.data.plannedDate,
+        priority: parsed.data.priority,
+        title: parsed.data.title,
+        userId: context.auth.user.id,
+      });
+      if (!contextual.ok) {
+        return {
+          message: contextual.error.message,
+          status: "error",
+        };
+      }
+      revalidateTaskProjectionRoutes(contextual.data.id);
+      return {
+        message: "Aufgabe aus der Etappe erstellt.",
+        status: "success",
+        taskId: contextual.data.id,
+      };
+    }
+
+    const result = await getTaskRepository(context.auth.data).createTask(
+      parsed.data,
+    );
+
+    if (!result.ok) {
+      return {
+        message: result.error.message.includes("DEPENDENCY_")
+          ? dependencyErrorMessage(result.error.message)
+          : result.error.message.includes("Milestone")
+            ? "Der Milestone ist nicht mehr verfügbar oder gehört nicht zum gewählten Project."
+            : result.error.code === "conflict"
+              ? "Dieses direkte Goal widerspricht dem Goal des ausgewählten Projects. Passe Project oder direktes Goal bewusst an."
+              : "Der Task konnte in Supabase nicht erstellt werden.",
+        status: "error",
+      };
+    }
+
+    revalidateTaskProjectionRoutes(result.data.id);
+
     return {
-      message: "Aufgabe aus der Etappe erstellt.",
+      message: "Task erstellt.",
       status: "success",
-      taskId: contextual.data.id,
+      taskId: result.data.id,
     };
-  }
-
-  const result = await getTaskRepository(context.auth.data).createTask(
-    parsed.data,
-  );
-
-  if (!result.ok) {
-    return {
-      message: result.error.message.includes("DEPENDENCY_")
-        ? dependencyErrorMessage(result.error.message)
-        : result.error.message.includes("Milestone")
-          ? "Der Milestone ist nicht mehr verfügbar oder gehört nicht zum gewählten Project."
-          : result.error.code === "conflict"
-            ? "Dieses direkte Goal widerspricht dem Goal des ausgewählten Projects. Passe Project oder direktes Goal bewusst an."
-            : "Der Task konnte in Supabase nicht erstellt werden.",
-      status: "error",
-    };
-  }
-
-  revalidateTaskProjectionRoutes(result.data.id);
-
-  return {
-    message: "Task erstellt.",
-    status: "success",
-    taskId: result.data.id,
-  };
+  });
 }
 
 export async function createPortfolioTaskFormAction(
   formData: FormData,
 ): Promise<void> {
-  const result = await createPortfolioTaskAction(formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const result = await createPortfolioTaskAction(formData);
 
-  if (result.status === "success") {
-    redirect(portfolioTaskReturnUrl(formData, "task_created", result.taskId));
-  }
+    if (result.status === "success") {
+      redirect(portfolioTaskReturnUrl(formData, "task_created", result.taskId));
+    }
 
-  redirect(
-    portfolioTaskReturnUrl(
-      formData,
-      result.status === "error" &&
-        result.message.startsWith("Dieses direkte Goal")
-        ? "task_alignment_conflict"
-        : result.status,
-    ),
-  );
+    redirect(
+      portfolioTaskReturnUrl(
+        formData,
+        result.status === "error" &&
+          result.message.startsWith("Dieses direkte Goal")
+          ? "task_alignment_conflict"
+          : result.status,
+      ),
+    );
+  });
 }
 
 export async function completeTaskAction(
   formData: FormData,
 ): Promise<TaskLifecycleActionResult> {
-  const context = await getAuthenticatedManualTaskContext("erledigen");
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const context = await getAuthenticatedManualTaskContext("erledigen");
 
-  if (!context.ok) return context.result;
+    if (!context.ok) return context.result;
 
-  const parsed = completeTaskInputSchema.safeParse({
-    completedAt:
-      formString(formData, "completedAt") || new Date().toISOString(),
-    completionNote: formString(formData, "completionNote") || undefined,
-    profileId: context.auth.user.id,
-    taskId: formString(formData, "taskId"),
-    userId: context.auth.user.id,
+    const parsed = completeTaskInputSchema.safeParse({
+      completedAt:
+        formString(formData, "completedAt") || new Date().toISOString(),
+      completionNote: formString(formData, "completionNote") || undefined,
+      profileId: context.auth.user.id,
+      taskId: formString(formData, "taskId"),
+      userId: context.auth.user.id,
+    });
+
+    if (!parsed.success) {
+      return {
+        message: "Der Task konnte nicht abgeschlossen werden.",
+        status: "error",
+      };
+    }
+
+    const result = await getTaskRepository(context.auth.data).completeTask(
+      parsed.data,
+    );
+
+    if (!result.ok) {
+      return {
+        message: result.error.message.includes("DEPENDENCY_")
+          ? dependencyErrorMessage(result.error.message)
+          : (result.error.message.includes("review through its review flow") || result.error.message.includes("SOURCE_REVIEW_FLOW_REQUIRED"))
+            ? "Dieser Task gehört zu einem offenen Review. Schließe das Review über seinen Review-Flow ab."
+            : (result.error.message.includes("running flow") || result.error.message.includes("SOURCE_RUNNING_FLOW_REQUIRED"))
+              ? "Dieser Task gehört zu einer offenen Laufeinheit. Schließe den Lauf über den Running-Flow ab."
+              : (result.error.message.includes("strength flow") || result.error.message.includes("SOURCE_STRENGTH_FLOW_REQUIRED"))
+                ? "Dieser Task gehört zu einer offenen Krafttrainingseinheit. Schließe das Training über den Strength-Flow ab."
+                : "Der Task konnte in Supabase nicht abgeschlossen werden.",
+        status: "error",
+      };
+    }
+
+    revalidateTaskProjectionRoutes();
+
+    return {
+      message: "Task abgeschlossen.",
+      status: "success",
+      taskId: result.data.id,
+    };
   });
-
-  if (!parsed.success) {
-    return {
-      message: "Der Task konnte nicht abgeschlossen werden.",
-      status: "error",
-    };
-  }
-
-  const result = await getTaskRepository(context.auth.data).completeTask(
-    parsed.data,
-  );
-
-  if (!result.ok) {
-    return {
-      message: result.error.message.includes("DEPENDENCY_")
-        ? dependencyErrorMessage(result.error.message)
-        : (result.error.message.includes("review through its review flow") || result.error.message.includes("SOURCE_REVIEW_FLOW_REQUIRED"))
-          ? "Dieser Task gehört zu einem offenen Review. Schließe das Review über seinen Review-Flow ab."
-          : (result.error.message.includes("running flow") || result.error.message.includes("SOURCE_RUNNING_FLOW_REQUIRED"))
-            ? "Dieser Task gehört zu einer offenen Laufeinheit. Schließe den Lauf über den Running-Flow ab."
-            : (result.error.message.includes("strength flow") || result.error.message.includes("SOURCE_STRENGTH_FLOW_REQUIRED"))
-              ? "Dieser Task gehört zu einer offenen Krafttrainingseinheit. Schließe das Training über den Strength-Flow ab."
-              : "Der Task konnte in Supabase nicht abgeschlossen werden.",
-      status: "error",
-    };
-  }
-
-  revalidateTaskProjectionRoutes();
-
-  return {
-    message: "Task abgeschlossen.",
-    status: "success",
-    taskId: result.data.id,
-  };
 }
 
 export async function reopenTaskAction(
   formData: FormData,
 ): Promise<TaskLifecycleActionResult> {
-  const context = await getAuthenticatedManualTaskContext("wieder öffnen");
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const context = await getAuthenticatedManualTaskContext("wieder öffnen");
 
-  if (!context.ok) return context.result;
+    if (!context.ok) return context.result;
 
-  const parsed = reopenTaskInputSchema.safeParse({
-    profileId: context.auth.user.id,
-    taskId: formString(formData, "taskId"),
-    userId: context.auth.user.id,
+    const parsed = reopenTaskInputSchema.safeParse({
+      profileId: context.auth.user.id,
+      taskId: formString(formData, "taskId"),
+      userId: context.auth.user.id,
+    });
+
+    if (!parsed.success) {
+      return {
+        message: "Der Task konnte nicht wieder geöffnet werden.",
+        status: "error",
+      };
+    }
+
+    const result = await getTaskRepository(context.auth.data).reopenTask(
+      parsed.data,
+    );
+
+    if (!result.ok) {
+      return {
+        message: result.error.message.includes("DEPENDENCY_")
+          ? dependencyErrorMessage(result.error.message)
+          : result.error.code === "conflict"
+            ? "Verknüpfte Tasks werden über ihren zuständigen Domain-Flow wieder geöffnet."
+            : "Der Task konnte in Supabase nicht wieder geöffnet werden.",
+        status: "error",
+      };
+    }
+
+    revalidateTaskProjectionRoutes();
+
+    return {
+      message: "Task wieder geöffnet.",
+      status: "success",
+      taskId: result.data.id,
+    };
   });
-
-  if (!parsed.success) {
-    return {
-      message: "Der Task konnte nicht wieder geöffnet werden.",
-      status: "error",
-    };
-  }
-
-  const result = await getTaskRepository(context.auth.data).reopenTask(
-    parsed.data,
-  );
-
-  if (!result.ok) {
-    return {
-      message: result.error.message.includes("DEPENDENCY_")
-        ? dependencyErrorMessage(result.error.message)
-        : result.error.code === "conflict"
-          ? "Verknüpfte Tasks werden über ihren zuständigen Domain-Flow wieder geöffnet."
-          : "Der Task konnte in Supabase nicht wieder geöffnet werden.",
-      status: "error",
-    };
-  }
-
-  revalidateTaskProjectionRoutes();
-
-  return {
-    message: "Task wieder geöffnet.",
-    status: "success",
-    taskId: result.data.id,
-  };
 }
 
 export async function archiveTaskAction(
   formData: FormData,
 ): Promise<TaskLifecycleActionResult> {
-  const context = await getAuthenticatedManualTaskContext("archivieren");
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const context = await getAuthenticatedManualTaskContext("archivieren");
 
-  if (!context.ok) return context.result;
+    if (!context.ok) return context.result;
 
-  const parsed = archiveTaskInputSchema.safeParse({
-    archivedAt: formString(formData, "archivedAt") || new Date().toISOString(),
-    profileId: context.auth.user.id,
-    taskId: formString(formData, "taskId"),
-    userId: context.auth.user.id,
+    const parsed = archiveTaskInputSchema.safeParse({
+      archivedAt: formString(formData, "archivedAt") || new Date().toISOString(),
+      profileId: context.auth.user.id,
+      taskId: formString(formData, "taskId"),
+      userId: context.auth.user.id,
+    });
+
+    if (!parsed.success) {
+      return {
+        message: "Der Task konnte nicht archiviert werden.",
+        status: "error",
+      };
+    }
+
+    const repository = getTaskRepository(context.auth.data);
+    const result = await repository.archiveTask(parsed.data);
+
+    if (!result.ok) {
+      return {
+        message: result.error.message.includes("DEPENDENCY_")
+          ? dependencyErrorMessage(result.error.message)
+          : result.error.code === "conflict"
+            ? "Verknüpfte Tasks werden über ihren zuständigen Domain-Flow archiviert."
+            : "Der Task konnte in Supabase nicht archiviert werden.",
+        status: "error",
+      };
+    }
+
+    revalidateTaskProjectionRoutes();
+
+    return {
+      message: "Task archiviert.",
+      status: "success",
+      taskId: result.data.id,
+    };
   });
-
-  if (!parsed.success) {
-    return {
-      message: "Der Task konnte nicht archiviert werden.",
-      status: "error",
-    };
-  }
-
-  const repository = getTaskRepository(context.auth.data);
-  const result = await repository.archiveTask(parsed.data);
-
-  if (!result.ok) {
-    return {
-      message: result.error.message.includes("DEPENDENCY_")
-        ? dependencyErrorMessage(result.error.message)
-        : result.error.code === "conflict"
-          ? "Verknüpfte Tasks werden über ihren zuständigen Domain-Flow archiviert."
-          : "Der Task konnte in Supabase nicht archiviert werden.",
-      status: "error",
-    };
-  }
-
-  revalidateTaskProjectionRoutes();
-
-  return {
-    message: "Task archiviert.",
-    status: "success",
-    taskId: result.data.id,
-  };
 }
 
 export async function unscheduleTaskAction(
   formData: FormData,
 ): Promise<TaskLifecycleActionResult> {
-  const context = await getAuthenticatedManualTaskContext("entterminieren");
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const context = await getAuthenticatedManualTaskContext("entterminieren");
 
-  if (!context.ok) return context.result;
+    if (!context.ok) return context.result;
 
-  const parsed = unscheduleTaskInputSchema.safeParse({
-    profileId: context.auth.user.id,
-    taskId: formString(formData, "taskId"),
-    userId: context.auth.user.id,
+    const parsed = unscheduleTaskInputSchema.safeParse({
+      profileId: context.auth.user.id,
+      taskId: formString(formData, "taskId"),
+      userId: context.auth.user.id,
+    });
+
+    if (!parsed.success) {
+      return {
+        message: "Der Task konnte nicht entterminiert werden.",
+        status: "error",
+      };
+    }
+
+    const repository = getTaskRepository(context.auth.data);
+    const result = await repository.unscheduleTask(parsed.data);
+
+    if (!result.ok) {
+      return {
+        message: "Der Task konnte in Supabase nicht entterminiert werden.",
+        status: "error",
+      };
+    }
+
+    revalidateTaskProjectionRoutes();
+
+    return {
+      message: "Task entterminiert.",
+      status: "success",
+      taskId: result.data.id,
+    };
   });
-
-  if (!parsed.success) {
-    return {
-      message: "Der Task konnte nicht entterminiert werden.",
-      status: "error",
-    };
-  }
-
-  const repository = getTaskRepository(context.auth.data);
-  const result = await repository.unscheduleTask(parsed.data);
-
-  if (!result.ok) {
-    return {
-      message: "Der Task konnte in Supabase nicht entterminiert werden.",
-      status: "error",
-    };
-  }
-
-  revalidateTaskProjectionRoutes();
-
-  return {
-    message: "Task entterminiert.",
-    status: "success",
-    taskId: result.data.id,
-  };
 }
 
 export async function rescheduleTaskAction(
   formData: FormData,
 ): Promise<TaskLifecycleActionResult> {
-  const context = await getAuthenticatedManualTaskContext("umplanen");
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const context = await getAuthenticatedManualTaskContext("umplanen");
 
-  if (!context.ok) return context.result;
+    if (!context.ok) return context.result;
 
-  const plannedDateInput = formString(formData, "plannedDate");
-  const plannedDate = isLocalDate(plannedDateInput)
-    ? plannedDateInput
-    : localDateLabel();
-  const parsed = rescheduleTaskInputSchema.safeParse({
-    durationMinutes: durationMinutesFromForm(formData, "schedule"),
-    plannedDate,
-    profileId: context.auth.user.id,
-    scheduledStartAt: scheduledStartAtFromForm(formData, plannedDate),
-    taskId: formString(formData, "taskId"),
-    userId: context.auth.user.id,
+    const plannedDateInput = formString(formData, "plannedDate");
+    const plannedDate = isLocalDate(plannedDateInput)
+      ? plannedDateInput
+      : localDateLabel();
+    const parsed = rescheduleTaskInputSchema.safeParse({
+      durationMinutes: durationMinutesFromForm(formData, "schedule"),
+      plannedDate,
+      profileId: context.auth.user.id,
+      scheduledStartAt: scheduledStartAtFromForm(formData, plannedDate),
+      taskId: formString(formData, "taskId"),
+      userId: context.auth.user.id,
+    });
+
+    if (!parsed.success) {
+      return {
+        message: "Der Task konnte nicht umgeplant werden.",
+        status: "error",
+      };
+    }
+
+    const repository = getTaskRepository(context.auth.data);
+    const result = await repository.rescheduleTask(parsed.data);
+
+    if (!result.ok) {
+      return {
+        message: "Der Task konnte in Supabase nicht umgeplant werden.",
+        status: "error",
+      };
+    }
+
+    revalidateTaskProjectionRoutes();
+
+    return {
+      message: "Task umgeplant.",
+      status: "success",
+      taskId: result.data.id,
+    };
   });
-
-  if (!parsed.success) {
-    return {
-      message: "Der Task konnte nicht umgeplant werden.",
-      status: "error",
-    };
-  }
-
-  const repository = getTaskRepository(context.auth.data);
-  const result = await repository.rescheduleTask(parsed.data);
-
-  if (!result.ok) {
-    return {
-      message: "Der Task konnte in Supabase nicht umgeplant werden.",
-      status: "error",
-    };
-  }
-
-  revalidateTaskProjectionRoutes();
-
-  return {
-    message: "Task umgeplant.",
-    status: "success",
-    taskId: result.data.id,
-  };
 }
 
 export async function completeTaskFormAction(
   formData: FormData,
 ): Promise<void> {
-  await completeTaskAction(formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    await completeTaskAction(formData);
+  });
 }
 
 export async function completeTaskFormStateAction(
   _previousState: TaskLifecycleActionResult,
   formData: FormData,
 ): Promise<TaskLifecycleActionResult> {
-  return completeTaskAction(formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    return completeTaskAction(formData);
+  });
 }
 
 export async function reopenTaskFormAction(formData: FormData): Promise<void> {
-  await reopenTaskAction(formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    await reopenTaskAction(formData);
+  });
 }
 
 export async function archiveTaskFormAction(formData: FormData): Promise<void> {
-  const result = await archiveTaskAction(formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const result = await archiveTaskAction(formData);
 
-  if (result.status === "success") {
-    redirect("/portfolio?view=tasks&targetCreate=task_archived");
-  }
+    if (result.status === "success") {
+      redirect("/portfolio?view=tasks&targetCreate=task_archived");
+    }
 
-  redirect(`/portfolio?view=tasks&targetCreate=${result.status}`);
+    redirect(`/portfolio?view=tasks&targetCreate=${result.status}`);
+  });
 }
 
 export async function unscheduleTaskFormAction(
   formData: FormData,
 ): Promise<void> {
-  await unscheduleTaskAction(formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    await unscheduleTaskAction(formData);
+  });
 }
 
 export async function rescheduleTaskFormAction(
   formData: FormData,
 ): Promise<void> {
-  await rescheduleTaskAction(formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    await rescheduleTaskAction(formData);
+  });
 }
