@@ -82,8 +82,18 @@ test("isolated compiler drains after invoking worker loss and serializes replace
     invoking.kill("SIGTERM");
     await exit;
     await eventually(() => !alive(owned.compiler) && !alive(owned.child));
-    const unlock = operationalLock(join(root, "build-lease.db"), source);
-    unlock();
+    // Compiler exit precedes the wrapper's finally/unlock on fast Linux hosts.
+    // Assert actual kernel release rather than assuming process-exit ordering.
+    await eventually(() => {
+      try {
+        const unlock = operationalLock(join(root, "build-lease.db"), source);
+        unlock();
+        return true;
+      } catch (error) {
+        if (error.message === "UPDATER_ALREADY_RUNNING") return false;
+        throw error;
+      }
+    });
   } finally {
     if (invoking.exitCode === null && invoking.signalCode === null) {
       invoking.kill("SIGTERM");
