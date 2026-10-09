@@ -602,7 +602,7 @@ test(
 );
 
 test("historical identity/schema/owner readiness failures stop before restore writes or bootstrap", async () => {
-  for (const fault of ["inode", "owner", "ready"]) {
+  for (const fault of ["inode", "owner", "ready", "guard", "version"]) {
     const f = await fixture();
     try {
       const cp = stoppedOperatorCheckpoint(f.root, {
@@ -627,6 +627,14 @@ test("historical identity/schema/owner readiness failures stop before restore wr
           db.prepare("UPDATE runtime_metadata SET owner_id=?").run(
             randomUUID(),
           );
+        else if (fault === "guard") {
+          const { name } = db
+            .prepare(
+              "SELECT name FROM sqlite_schema WHERE type='trigger' ORDER BY name LIMIT 1",
+            )
+            .get();
+          db.exec(`DROP TRIGGER "${name}"`);
+        } else if (fault === "version") db.pragma("user_version=8");
         else
           db.prepare("UPDATE runtime_metadata SET compatibility_ready=0").run();
         db.close();
@@ -699,6 +707,39 @@ test("native historical crash releases both leases; v9 recovery starts the old d
       before = structuredClone(state);
     commands(f.root, state);
     assert.deepEqual(state, before);
+    f.assertPreserved();
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test("restore refuses an existing canonical writer before any checkpoint write or bootstrap", async () => {
+  const f = await fixture();
+  try {
+    await f.start(f.old);
+    const cp = stoppedOperatorCheckpoint(f.root, {
+      originalConfig: f.config,
+      originalPlist: "NO_WRITE",
+      instance: "competing-writer",
+    });
+    const config = readFileSync(join(f.root, "config.json"), "utf8"),
+      state = readFileSync(join(f.root, "state.json"), "utf8"),
+      plist = readFileSync(f.plist, "utf8");
+    let bootstrap = 0;
+    await assert.rejects(
+      restoreV9Worker({
+        root: f.root,
+        checkpoint: cp,
+        plist: f.plist,
+        releaseWorkerLease: async () => {},
+        bootstrap: async () => bootstrap++,
+      }),
+      /UPGRADE_V9_WRITER_NOT_FREE/,
+    );
+    assert.equal(bootstrap, 0);
+    assert.equal(readFileSync(join(f.root, "config.json"), "utf8"), config);
+    assert.equal(readFileSync(join(f.root, "state.json"), "utf8"), state);
+    assert.equal(readFileSync(f.plist, "utf8"), plist);
     f.assertPreserved();
   } finally {
     await f.cleanup();

@@ -67,8 +67,9 @@ stop, and the current lastGood is rechecked after builds before stopping.
 
 Only v9 admission, backup and precommit restore call the dedicated historical
 preflight, which requires the original schema v9, owner/profile/readiness,
-integrity/FKs, aggregates and configured DB device/inode. Restore verifies source,
-command-log prefix and database before writing the saved configuration/plist or
+integrity/FKs, aggregates, exact historical table/index/trigger definitions and
+configured DB device/inode. Restore verifies source,
+command-log prefix, database and released canonical writer lease before writing the saved configuration/plist or
 releasing the worker lease and re-registering the old service. On schema v10 the
 v9 verifier denies bootstrap; committed recovery retains full v10 validation.
 

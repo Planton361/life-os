@@ -4,6 +4,7 @@ import { writeFileSync } from "node:fs";
 import { deny } from "./preview-cd-core.mjs";
 import {
   boundary,
+  leaseFree,
   atomicJson,
   command,
   cleanEnvironment,
@@ -54,6 +55,8 @@ export async function restoreV9Worker({
   // All historical source, schema, owner, identity and data checks precede writes
   // or bootstrap. In particular this helper cannot restore v9 after v10 commit.
   await v9DatabasePreflight(config, checkpoint.originalState.lastGood);
+  if (!leaseFree(config, config.workerSource))
+    deny("UPGRADE_V9_WRITER_NOT_FREE");
   atomicJson(join(root, "config.json"), config);
   atomicJson(join(root, "state.json"), checkpoint.originalState);
   writeFileSync(plist, checkpoint.originalPlist, { mode: 0o600 });
