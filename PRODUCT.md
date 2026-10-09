@@ -483,8 +483,9 @@ with post-merge technical verification on `f6e7b7180ba4600fd936311a786e3817d33ae
 The subsequent [#69 USER ACCEPTANCE](https://github.com/Planton361/life-os/issues/69#issuecomment-5942502151)
 closed its real Project-Depth surface gate. The newer B8 target above remains
 not implemented by this docs-only contract; it does not undo #82's delivery.
-Review remains secondary below Work; no Project Review, Task Dependency or
-Project Milestone semantics change.
+Under B8, exactly one Project Review stays secondary in actual Context or the
+Work footer when Context is absent. Empty Context is progressive depth; no
+Project Review, Task Dependency or Project Milestone semantics change.
 
 Task interactions have distinct roles:
 

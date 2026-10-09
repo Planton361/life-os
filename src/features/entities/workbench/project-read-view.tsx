@@ -2,10 +2,7 @@ import Link from "next/link";
 import { ProjectExport } from "./project-export";
 import type { ReactNode } from "react";
 import type { WorkbenchData } from "@/features/real-data/runtime/entity-workbench-read";
-import {
-  ManagementDialog,
-  ManagementDisclosure,
-} from "./management-disclosure";
+import { ManagementDialog } from "./management-disclosure";
 import { OperationForm } from "./forms";
 import {
   ProjectResources,
@@ -65,10 +62,16 @@ export function ProjectReadView({
       (use) => use.role === "primary_artifact" && !use.resource.archived_at,
     ),
   );
+  const hasWork = tasks.some(
+    (task) => !["canceled", "archived"].includes(task.status),
+  );
+  const showRail = hasContext && hasWork;
+  const ContextContainer = hasWork ? "aside" : "details";
   const relationshipManagement = !project.archived_at && (
     <ManagementDialog
       label="Beziehungen verwalten"
       initiallyOpen={Boolean(selectedResource)}
+      triggerClassName={styles.quiet}
     >
       {relations}
       <ProjectResources
@@ -80,31 +83,58 @@ export function ProjectReadView({
     </ManagementDialog>
   );
   return (
-    <div data-entity-workbench="project" className={styles.project}>
+    <div
+      data-entity-workbench="project"
+      data-project-detail-variant="B8"
+      className={styles.project}
+    >
       <div className={styles.frame} data-project-frame>
+        <nav
+          aria-label="Breadcrumb"
+          className="mb-3 flex gap-3 text-sm text-[var(--text-muted)]"
+        >
+          <Link href="/portfolio">Portfolio</Link>
+          <span>/</span>
+          <Link href="/portfolio?type=projects">Projects</Link>
+        </nav>
         <header aria-label="Project Header" className={styles.header}>
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-3 flex gap-3 text-sm text-[var(--text-muted)]"
-          >
-            <Link href="/portfolio">Portfolio</Link>
-            <span>/</span>
-            <Link href="/portfolio?type=projects">Projects</Link>
-          </nav>
           <div className={styles.identity}>
-            <h1 className="min-w-0 break-words text-3xl font-semibold">
-              {project.title}
-            </h1>
+            <div className={styles.title}>
+              <p className={styles.entityLabel}>
+                Project{" "}
+                <span>
+                  {project.archived_at
+                    ? "Archiviert"
+                    : ({
+                        active: "Aktiv",
+                        planned: "Geplant",
+                        idea: "Idee",
+                        blocked: "Blockiert",
+                        paused: "Pausiert",
+                        archived: "Archiviert",
+                        completed: "Abgeschlossen",
+                      }[project.status] ?? project.status)}
+                </span>
+              </p>
+              <h1 className="min-w-0 break-words text-3xl font-semibold">
+                {project.title}
+              </h1>
+            </div>
             {!project.archived_at && (
               <div className={styles.actions}>
-                {depth && <ProjectDepthResultManagement depth={depth} />}
-                {relationshipManagement}
-                <ManagementDialog label="Project verwalten">
-                  <section className="grid gap-3">
-                    <ManagementDisclosure label="Bearbeiten">
-                      {edit}
-                    </ManagementDisclosure>
-                  </section>
+                <ManagementDialog
+                  label="Project bearbeiten"
+                  triggerText="Bearbeiten"
+                  triggerClassName={styles.button}
+                >
+                  {edit}
+                </ManagementDialog>
+                <ManagementDialog
+                  label="Project verwalten"
+                  triggerText="Mehr"
+                  triggerClassName={styles.quiet}
+                >
+                  {!hasContext && relationshipManagement}
                   <div className="border-t border-[var(--border-subtle)] pt-3">
                     <ProjectExport projectId={id} />
                   </div>
@@ -144,7 +174,12 @@ export function ProjectReadView({
             aria-label="Project Metadata"
             className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-[var(--text-secondary)]"
           >
-            <span>{project.archived_at ? "Archiviert" : project.status}</span>
+            {goal && (
+              <Link href={`/goals/${goal.id}`}>
+                Goal: {goal.title}
+                {goal.archived_at ? " · Archiviert" : ""}
+              </Link>
+            )}
             {area && <span>{area.name}</span>}
             {project.priority && project.priority !== "none" && (
               <span>Priority {project.priority}</span>
@@ -161,7 +196,10 @@ export function ProjectReadView({
             )}
           </div>
           {depth && <ProjectDepthResult depth={depth} />}
-          {project.next_step && (
+          {depth && !project.archived_at && (
+            <ProjectDepthResultManagement depth={depth} />
+          )}
+          {!hasContext && project.next_step && (
             <section
               aria-label="Project-Fokus"
               data-project-focus
@@ -173,17 +211,24 @@ export function ProjectReadView({
               <p className="mt-1 whitespace-pre-wrap break-words text-sm">
                 {project.next_step}
               </p>
+              <p className={styles.taskStatus}>
+                Gespeicherte Orientierung, keine Task-Auswahl.
+              </p>
             </section>
           )}
         </header>
         <div
-          className={`${styles.workspace} ${hasContext ? styles.withContext : ""}`}
+          className={`${styles.workspace} ${showRail ? styles.withContext : ""}`}
           data-project-workspace
+          data-project-empty={!hasWork ? "true" : undefined}
         >
           <ProjectWork data={data} projectId={id} />
           {hasContext && (
-            <aside aria-label="Project Context Rail" className={styles.rail}>
-              <ProjectResources data={data} projectId={id} section="primary" />
+            <ContextContainer
+              aria-label="Project Context Rail"
+              className={styles.rail}
+            >
+              {!hasWork && <summary>Context</summary>}
               <section aria-label="Project Context" className="min-w-0">
                 {(goal || skills.length > 0 || area) && (
                   <>
@@ -240,7 +285,26 @@ export function ProjectReadView({
                   </>
                 )}
               </section>
-            </aside>
+              {relationshipManagement}
+              {project.next_step && (
+                <section aria-label="Project-Fokus" data-project-focus>
+                  <h2 className="text-sm font-semibold">Project-Fokus</h2>
+                  <p className="mt-2 whitespace-pre-wrap break-words text-sm">
+                    {project.next_step}
+                  </p>
+                  <p className={`${styles.taskStatus} mt-2`}>
+                    Gespeicherte Orientierung, keine Task-Auswahl.
+                  </p>
+                </section>
+              )}
+              <ProjectResources data={data} projectId={id} section="primary" />
+              {depth && showRail && <ProjectDepthReview depth={depth} />}
+            </ContextContainer>
+          )}
+          {depth && !showRail && (
+            <div className={styles.review}>
+              <ProjectDepthReview depth={depth} />
+            </div>
           )}
         </div>
         {hasSupportingResources && (
@@ -252,7 +316,6 @@ export function ProjectReadView({
             />
           </div>
         )}
-        {depth && <ProjectDepthReview depth={depth} />}
       </div>
       {depth && <ProjectDepthHistory depth={depth} />}
     </div>

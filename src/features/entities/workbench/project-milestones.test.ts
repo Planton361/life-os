@@ -28,18 +28,18 @@ describe("project milestones", () => {
       result.groups.flatMap((g) => g.tasks).length + result.unassigned.length,
     ).toBe(3);
   });
-  it("respects stage order, completed stages last, excludes history and other projects", () => {
+  it("respects stored stage order including completed stages, excludes history and other projects", () => {
     const result = projectMilestoneGroups(
       "p",
       [
-        stage("z", "done"),
-        stage("b", "active", 1),
-        stage("a", "open", 0),
+        stage("z", "done", 0),
+        stage("b", "active", 2),
+        stage("a", "open", 1),
         stage("archived", "open", 3, "now"),
       ],
       [{ ...task("foreign", null), project_id: "other" }],
     );
-    expect(result.groups.map((g) => g.milestone.id)).toEqual(["a", "b", "z"]);
+    expect(result.groups.map((g) => g.milestone.id)).toEqual(["z", "a", "b"]);
     expect(result.taskCount).toBe(0);
   });
   it("accepts unassignment but rejects invalid operations, missing identity and impossible dates", () => {

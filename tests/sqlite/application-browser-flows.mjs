@@ -122,20 +122,10 @@ export async function additionalWriteFlows({
     "Project metadata, Result/Criterion/Review and history reload",
     async () => {
       await go(`/projects/${fixture.ids.project}`);
-      await page
-        .getByRole("button", { name: "Project verwalten", exact: true })
-        .click();
-      const manage = page.getByRole("dialog", {
-        name: "Project verwalten",
-        exact: true,
-      });
-      await manage
-        .getByRole("button", { name: "Bearbeiten", exact: true })
-        .click();
-      const metadata = manage.getByRole("form", {
-        name: "Project bearbeiten",
-        exact: true,
-      });
+      await page.locator('[data-entity-workbench="project"] header')
+        .getByRole("button", { name: "Bearbeiten", exact: true }).click();
+      const metadata = page.getByRole("dialog", { name: "Project bearbeiten", exact: true })
+        .getByRole("form", { name: "Project bearbeiten", exact: true });
       await metadata
         .getByLabel("Titel", { exact: true })
         .fill("SQLite browser Project edited");
@@ -252,7 +242,7 @@ export async function additionalWriteFlows({
     async () => {
       await go(`/projects/${fixture.ids.project}`);
       await page
-        .getByRole("button", { name: "Project verwalten", exact: true })
+        .getByRole("button", { name: "Mehr", exact: true })
         .click();
       const download = page.waitForEvent("download");
       await page

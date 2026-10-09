@@ -669,8 +669,9 @@ on 2026-10-01 and [implemented by #85 / merged PR #86](https://github.com/Planto
 The subsequent #69 USER ACCEPTANCE closed the Project-Depth surface gate. The
 new B8 visual target remains not implemented by this docs-only contract. These density,
 interaction and outer-width refinements preserve V5, accepted inner Task-create
-composition and existing domain/security semantics. Review remains quiet and
-separated below Work; no Review redesign is introduced.
+composition and existing domain/security semantics. Under B8, one quiet Review
+belongs to real Context or the Work footer when Context is absent. Empty Context
+is initially collapsed; the validated Review interaction is unchanged.
 
 For an eligible active Project Task row, `Erledigt` is the execution action,
 `Bearbeiten` is secondary modal edit, and `Details` is tertiary depth navigation.

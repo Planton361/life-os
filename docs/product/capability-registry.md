@@ -27,6 +27,14 @@
 - Backend, repository or historical reload evidence proves that layer only; it
   does not by itself prove that a visible control currently works.
 
+## B8 Project Detail / recorded work balance — #136
+
+| Capability | Status | Current implementation evidence | Remaining gate |
+|---|---|---|---|
+| B8 Project Identity, Work and compact Empty | `CONNECTED` | `ProjectReadView` / `ProjectWork` implement the #121 accepted matte 1360px family, direct Edit, result/Criteria, orange ordered Milestone bands, real indented Task rows, canonical group-local `/tasks/new`, flat no-Milestone work, optional real Context and progressive Empty Context. Existing result/Criteria, relations, artifacts, export, lifecycle and immutable History remain reachable. Synthetic 1920 captures: `docs/qa/b8-project-detail/project-populated-1920.png` and `project-empty-1920.png`, visually compared with the accepted `work/b8-cross-entity-finish-20261008/index.html` Project view. | Integrated personal USER ACCEPTANCE and M0 merge remain separate; no production-instance activation or core-surface closure is claimed. |
+| B7 recorded Project Arbeitsstand | `CONNECTED` | Pure `projectWorkBalance` projects non-archived/non-canceled Tasks into disjoint done / executable-ready / explicit-dependency-blocked / other-open counts. Waiting and source-owned READY work remain other-open; excluded history is labelled. One text-supported segmented bar exists only for captured work; actual explicitly done Milestones are separate. Unit tests cover Project-scoped projection, missing predecessors, sources, lifecycle, count sums and zero/all-done states. | No Project completion percentage, task weighting or new persistence. |
+| Project Task and explicit Review interactions | `CONNECTED` | `tests/sqlite/issue-136-browser-proof.mjs` runs the normal production app against disposable authenticated native SQLite at an ephemeral port. It proves real Task edit/complete/Details/Calendar, explicit predecessor revalidation and visible stale-completion error, merged three-disclosure Create/Cancel/Save and milestone relations after reload, multiple eligible choice, Empty/no-Milestone/with-Milestone/one-Task states, Continue/completed Review, immutable History and Reopen, archived read-only, invalid/foreign/stale ownership guards. 3840×2160 / 1920×1080 / 769×413 / 390×844 geometry, bounded mobile dialog, keyboard Escape/focus return and clean console/hydration are checked. All-done Task work leaves Project active until explicit Review. | Synthetic implementation evidence; integrated USER ACCEPTANCE is pending. Existing command/auth/Zod/revalidation and domain contracts are reused without schema changes. |
+
 ## Production SQLite runtime — #116 synthetic proof / #120 local production baseline
 
 | Capability | Status | Current implementation evidence | Missing capability |

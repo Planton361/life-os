@@ -1,5 +1,4 @@
 import {
-  projectDependencySummary,
   taskHasExecutableLifecycle,
   taskDependencyContext,
   taskIsOpen,
@@ -10,8 +9,9 @@ import {
   ManagementDialog,
   ManagementDisclosure,
 } from "./management-disclosure";
-import { Choice, OperationForm, fieldClass, actionClass } from "./forms";
+import { Choice, OperationForm, fieldClass } from "./forms";
 import { projectMilestoneGroups } from "./project-milestones";
+import { projectWorkBalance } from "./project-work-balance";
 import { projectTaskGuidance } from "./project-guidance";
 import { TaskEditDialog } from "./task-edit-dialog";
 import { taskTextFields } from "./task-text";
@@ -96,9 +96,11 @@ export function ProjectWork({
     data.milestones,
     data.tasks,
   );
-  const graphSummary = projectDependencySummary(
-    data.dependencyGraph,
+  const balance = projectWorkBalance(
     projectId,
+    data.tasks,
+    data.dependencyGraph,
+    data.scheduleSources,
   );
   const archived = data.milestones.filter(
     (m) => m.project_id === projectId && m.archived_at,
@@ -106,17 +108,11 @@ export function ProjectWork({
   const tasks = data.tasks.filter(
     (t) => t.project_id === projectId && !t.archived_at,
   );
-  const currentMilestone = summary.groups.find(
-    ({ milestone }) => milestone.status === "active",
-  )?.milestone;
   const guidance = projectTaskGuidance({
     archived: Boolean(project.archived_at),
-    taskCount: summary.taskCount,
-    readyTaskIds: graphSummary.ready
-      .filter(taskHasExecutableLifecycle)
-      .map((task) => task.id),
-    blockedCount: graphSummary.blocked.filter(taskHasExecutableLifecycle)
-      .length,
+    taskCount: balance.total,
+    readyTaskIds: balance.readyTaskIds,
+    blockedCount: balance.counts.blocked,
   });
   const createTaskLink = (
     milestoneId?: string,
@@ -126,8 +122,10 @@ export function ProjectWork({
     <Link
       className={
         quiet
-          ? "min-h-10 content-center text-left text-sm text-[var(--accent-cyan)]! underline! underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
-          : actionClass
+          ? styles.quiet
+          : label === "Erste Task anlegen"
+            ? styles.primaryAction
+            : styles.button
       }
       prefetch={false}
       href={`/tasks/new?${new URLSearchParams({ project: projectId, ...(milestoneId ? { milestone: milestoneId } : {}) })}`}
@@ -135,122 +133,199 @@ export function ProjectWork({
       {label}
     </Link>
   );
+  const milestoneManagement = !project.archived_at && (
+    <ManagementDialog
+      label="Weitere Work-Optionen"
+      triggerText="+ Milestone"
+      triggerClassName={styles.quiet}
+    >
+      <section className="grid gap-3">
+        <h3 className="font-semibold">Milestone hinzufügen</h3>
+        <OperationForm
+          operation="project.milestone"
+          label="Milestone erstellen"
+          closeOnSuccess
+        >
+          <input type="hidden" name="projectId" value={projectId} />
+          <input type="hidden" name="milestoneOperation" value="save" />
+          <StageFields />
+        </OperationForm>
+      </section>
+      {tasks.length > 0 && (
+        <section className="grid gap-3 border-t border-[var(--border-subtle)] pt-4">
+          <h3 className="font-semibold">Tasks zuordnen</h3>
+          <OperationForm
+            operation="project.milestone"
+            label="Task-Milestone speichern"
+            closeOnSuccess
+          >
+            <input type="hidden" name="projectId" value={projectId} />
+            <input type="hidden" name="milestoneOperation" value="assign" />
+            <Choice
+              name="taskId"
+              label="Task"
+              required
+              options={tasks.map((t) => ({ id: t.id, title: t.title }))}
+            />
+            <Choice
+              name="milestoneId"
+              label="Milestone (keine Auswahl = Ohne Milestone)"
+              options={summary.groups.map((g) => ({
+                id: g.milestone.id,
+                title: g.milestone.title,
+              }))}
+            />
+          </OperationForm>
+        </section>
+      )}
+    </ManagementDialog>
+  );
   const renderTasks = (rows: typeof tasks) =>
     rows.length ? (
       <ul>
-        {rows.map((t) => {
-          const dependency = taskDependencyContext(data.dependencyGraph, t.id);
-          const text = taskTextFields(t.description);
-          return (
-            <li
-              key={t.id}
-              data-project-task={t.id}
-              data-primary-task={
-                guidance.kind === "single-ready" && guidance.taskId === t.id
-                  ? "true"
-                  : undefined
-              }
-              className={`${styles.task} ${guidance.kind === "single-ready" && guidance.taskId === t.id ? styles.primaryTask : ""}`}
-            >
-              <section
-                className="min-w-0"
-                aria-label={
+        {rows
+          .toSorted(
+            (a, b) =>
+              Number(balance.categories.get(b.id) === "ready") -
+              Number(balance.categories.get(a.id) === "ready"),
+          )
+          .map((t) => {
+            const dependency = taskDependencyContext(
+              data.dependencyGraph,
+              t.id,
+            );
+            const text = taskTextFields(t.description);
+            return (
+              <li
+                key={t.id}
+                data-project-task={t.id}
+                data-work-category={balance.categories.get(t.id) ?? "excluded"}
+                data-primary-task={
                   guidance.kind === "single-ready" && guidance.taskId === t.id
-                    ? "Project Task guidance"
+                    ? "true"
                     : undefined
                 }
-                data-project-task-guidance={
-                  guidance.kind === "single-ready" && guidance.taskId === t.id
-                    ? "single-ready"
-                    : undefined
-                }
+                className={`${styles.task} ${guidance.kind === "single-ready" && guidance.taskId === t.id ? styles.primaryTask : ""}`}
               >
-                {guidance.kind === "single-ready" &&
-                  guidance.taskId === t.id && (
-                    <p className="mb-2 text-xs text-[var(--text-secondary)]">
-                      Nächste ausführbare Task
-                    </p>
-                  )}
-                <p className="text-sm text-[var(--text-secondary)]">
-                  {t.status}
-                  {taskIsOpen(t)
-                    ? ` · Dependency-Readiness ${dependency.availability}`
-                    : dependency.inconsistentCompletion
-                      ? " · Dependency inkonsistent"
-                      : ""}
-                </p>
-                <Link
-                  className="mt-1 block break-words font-medium hover:underline"
-                  href={`/tasks/${t.id}`}
+                <section
+                  className="min-w-0"
+                  aria-label={
+                    guidance.kind === "single-ready" && guidance.taskId === t.id
+                      ? "Project Task guidance"
+                      : undefined
+                  }
+                  data-project-task-guidance={
+                    guidance.kind === "single-ready" && guidance.taskId === t.id
+                      ? "single-ready"
+                      : undefined
+                  }
                 >
-                  {t.title}
-                </Link>
-                {text.nextAction && (
-                  <p className="mt-1 line-clamp-2 break-words text-sm text-[var(--text-secondary)]">
-                    {text.nextAction}
+                  {guidance.kind === "single-ready" &&
+                    guidance.taskId === t.id && (
+                      <p className={styles.taskLabel}>
+                        Task · Nächste ausführbare Task
+                      </p>
+                    )}
+                  {!(
+                    guidance.kind === "single-ready" && guidance.taskId === t.id
+                  ) && <p className={styles.taskLabel}>Task</p>}
+                  <Link className={styles.taskTitle} href={`/tasks/${t.id}`}>
+                    {t.title}
+                  </Link>
+                  <p
+                    className={`${styles.taskStatus} ${balance.categories.get(t.id) === "ready" ? styles.ready : balance.categories.get(t.id) === "blocked" ? styles.blocked : ""}`}
+                  >
+                    {{
+                      inbox: "Inbox",
+                      planned: "Geplant",
+                      active: "Aktiv",
+                      waiting: "Wartend",
+                      done: "Erledigt",
+                      canceled: "Abgebrochen",
+                      someday: "Irgendwann",
+                      archived: "Archiviert",
+                    }[t.status] ?? t.status}
+                    {!balance.categories.has(t.id) &&
+                      " · nicht im Arbeitsstand"}
+                    {taskIsOpen(t)
+                      ? ` · Dependencies ${dependency.availability}${balance.categories.get(t.id) === "ready" ? " · ausführbar" : balance.categories.get(t.id) === "other" ? " · derzeit nicht ausführbar" : ""}`
+                      : dependency.inconsistentCompletion
+                        ? " · Dependency inkonsistent"
+                        : ""}
                   </p>
-                )}
-                {dependency.blockers.length > 0 && (
-                  <p className="mt-1 break-words text-sm text-[var(--text-secondary)]">
-                    <span className="font-medium">Blockiert durch: </span>
-                    {dependency.blockers.map(({ edgeId, task: blocker }, i) => (
-                      <span key={edgeId}>
-                        {i > 0 ? " · " : ""}
-                        {blocker ? (
-                          <Link
-                            className="underline underline-offset-2"
-                            href={`/tasks/${blocker.id}`}
-                          >
-                            {blocker.title}
-                            {blocker.archived_at ? " (archiviert)" : ""}
-                          </Link>
-                        ) : (
-                          "Vorgänger nicht verfügbar"
-                        )}
-                      </span>
-                    ))}
-                  </p>
-                )}
-                {t.due_at && (
-                  <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                    Deadline{" "}
-                    {t.due_at.slice(0, 10).split("-").reverse().join(".")}
-                  </p>
-                )}
-              </section>
-              <div
-                className={styles.taskActions}
-                aria-label={`Aktionen: ${t.title}`}
-              >
-                {!project.archived_at &&
-                  !t.archived_at &&
-                  taskHasExecutableLifecycle(t) &&
-                  dependency.availability === "READY" &&
-                  !data.scheduleSources.some(
+                  {data.scheduleSources.some(
                     (source) => source.task_id === t.id,
                   ) && (
-                    <OperationForm
-                      operation="task.complete"
-                      label="Erledigt"
-                      submitClassName={actionClass}
-                    >
-                      <input type="hidden" name="taskId" value={t.id} />
-                    </OperationForm>
+                    <p className={styles.taskStatus}>
+                      Quellengebunden · Abschluss über die Quelle
+                    </p>
                   )}
-                {!project.archived_at && (
-                  <TaskEditDialog data={data} taskId={t.id} />
-                )}
-                <Link
-                  className="min-h-10 content-center text-sm text-[var(--text-muted)] underline"
-                  aria-label={`${t.title}: Details öffnen`}
-                  href={`/tasks/${t.id}`}
+                  {text.nextAction && (
+                    <p className="mt-1 line-clamp-2 break-words text-sm text-[var(--text-secondary)]">
+                      {text.nextAction}
+                    </p>
+                  )}
+                  {dependency.blockers.length > 0 && (
+                    <p className="mt-1 break-words text-sm text-[var(--text-secondary)]">
+                      <span className="font-medium">Blockiert durch: </span>
+                      {dependency.blockers.map(
+                        ({ edgeId, task: blocker }, i) => (
+                          <span key={edgeId}>
+                            {i > 0 ? " · " : ""}
+                            {blocker ? (
+                              <Link
+                                className="underline underline-offset-2"
+                                href={`/tasks/${blocker.id}`}
+                              >
+                                {blocker.title}
+                                {blocker.archived_at ? " (archiviert)" : ""}
+                              </Link>
+                            ) : (
+                              "Vorgänger nicht verfügbar"
+                            )}
+                          </span>
+                        ),
+                      )}
+                    </p>
+                  )}
+                  {t.due_at && (
+                    <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                      Deadline{" "}
+                      {t.due_at.slice(0, 10).split("-").reverse().join(".")}
+                    </p>
+                  )}
+                </section>
+                <div
+                  className={styles.taskActions}
+                  aria-label={`Aktionen: ${t.title}`}
                 >
-                  Details
-                </Link>
-              </div>
-            </li>
-          );
-        })}
+                  {!project.archived_at &&
+                    !t.archived_at &&
+                    taskHasExecutableLifecycle(t) &&
+                    dependency.availability === "READY" &&
+                    balance.categories.get(t.id) === "ready" && (
+                      <OperationForm
+                        operation="task.complete"
+                        label="Erledigt"
+                        submitClassName={styles.button}
+                      >
+                        <input type="hidden" name="taskId" value={t.id} />
+                      </OperationForm>
+                    )}
+                  {!project.archived_at && (
+                    <TaskEditDialog data={data} taskId={t.id} />
+                  )}
+                  <Link
+                    className="min-h-10 content-center text-sm text-[var(--text-muted)] underline"
+                    aria-label={`${t.title}: Details öffnen`}
+                    href={`/tasks/${t.id}`}
+                  >
+                    Details
+                  </Link>
+                </div>
+              </li>
+            );
+          })}
       </ul>
     ) : (
       <p className="py-3 text-sm text-[var(--text-muted)]">Noch keine Tasks.</p>
@@ -263,7 +338,9 @@ export function ProjectWork({
           {guidance.kind !== "single-ready" && (
             <section
               aria-label="Project Task guidance"
-              className="min-w-0 border-l-2 border-[var(--accent-cyan)] pl-3"
+              className={
+                guidance.kind === "empty" ? styles.empty : styles.guidanceText
+              }
               data-project-task-guidance={guidance.kind}
             >
               {guidance.kind === "archived" ? (
@@ -273,16 +350,16 @@ export function ProjectWork({
                 </p>
               ) : guidance.kind === "empty" ? (
                 <>
-                  <p className="inline text-sm text-[var(--text-secondary)]">
-                    Beginne mit einer Task. Project-Kontext
-                    {currentMilestone
-                      ? ` · ${currentMilestone.title}`
-                      : ""}{" "}
-                    wird vorbefüllt.
+                  <p className={styles.groupLabel}>Dein Einstieg</p>
+                  <h3>Aus einem Vorhaben wird ausführbare Arbeit.</h3>
+                  <p>
+                    Erstelle eine konkrete Task. Milestones kannst du ergänzen,
+                    wenn du Etappen brauchst.
                   </p>
-                  <span className="ml-2 inline-flex">
-                    {createTaskLink(currentMilestone?.id, "Erste Task anlegen")}
-                  </span>
+                  <div className={styles.emptyActions}>
+                    {createTaskLink(undefined, "Erste Task anlegen")}
+                    {milestoneManagement}
+                  </div>
                 </>
               ) : guidance.kind === "multiple-ready" ? (
                 <>
@@ -335,137 +412,145 @@ export function ProjectWork({
             </section>
           )}
         </div>
-        {!project.archived_at && (
+        {!project.archived_at && guidance.kind !== "empty" && (
           <div className={styles.workActions}>
-            {summary.taskCount > 0 &&
-              createTaskLink(currentMilestone?.id, "+ Task", true)}
-            <ManagementDialog
-              label="Weitere Work-Optionen"
-              triggerText="Meilenstein +"
-            >
-              <section className="grid gap-3">
-                <h3 className="font-semibold">Milestone hinzufügen</h3>
-                <OperationForm
-                  operation="project.milestone"
-                  label="Milestone erstellen"
-                  closeOnSuccess
-                >
-                  <input type="hidden" name="projectId" value={projectId} />
-                  <input type="hidden" name="milestoneOperation" value="save" />
-                  <StageFields />
-                </OperationForm>
-              </section>
-              {tasks.length > 0 && (
-                <section className="grid gap-3 border-t border-[var(--border-subtle)] pt-4">
-                  <h3 className="font-semibold">Tasks zuordnen</h3>
-                  <OperationForm
-                    operation="project.milestone"
-                    label="Task-Milestone speichern"
-                    closeOnSuccess
-                  >
-                    <input type="hidden" name="projectId" value={projectId} />
-                    <input
-                      type="hidden"
-                      name="milestoneOperation"
-                      value="assign"
-                    />
-                    <Choice
-                      name="taskId"
-                      label="Task"
-                      required
-                      options={tasks.map((t) => ({ id: t.id, title: t.title }))}
-                    />
-                    <Choice
-                      name="milestoneId"
-                      label="Milestone (keine Auswahl = Ohne Milestone)"
-                      options={summary.groups.map((g) => ({
-                        id: g.milestone.id,
-                        title: g.milestone.title,
-                      }))}
-                    />
-                  </OperationForm>
-                </section>
-              )}
-            </ManagementDialog>
+            {balance.total > 0 && createTaskLink(undefined, "+ Task")}
+            {milestoneManagement}
           </div>
         )}
       </div>
+      {(balance.total > 0 || summary.milestoneCount > 0) && (
+        <section aria-label="Arbeitsstand" className={styles.balance}>
+          {balance.total > 0 && (
+            <div>
+              <h3 className={styles.groupLabel}>Arbeitsstand</h3>
+              <p className={styles.balanceCount}>
+                {balance.counts.done} von {balance.total}{" "}
+                <span>
+                  Tasks erledigt · {balance.total - balance.counts.done} offen
+                </span>
+              </p>
+              <div
+                className={styles.distribution}
+                role="img"
+                aria-label={`${balance.counts.done} erledigt, ${balance.counts.ready} bereit, ${balance.counts.blocked} blockiert, ${balance.counts.other} sonstige offen`}
+              >
+                {(["done", "ready", "blocked", "other"] as const)
+                  .filter((key) => balance.counts[key] > 0)
+                  .map((key) => (
+                    <span
+                      key={key}
+                      className={styles[key]}
+                      style={{ flex: balance.counts[key] }}
+                    />
+                  ))}
+              </div>
+              <div className={styles.legend}>
+                <span>{balance.counts.done} erledigt</span>
+                <span>{balance.counts.ready} bereit</span>
+                <span>{balance.counts.blocked} blockiert</span>
+                <span>{balance.counts.other} sonstige offen</span>
+              </div>
+            </div>
+          )}
+          {summary.milestoneCount > 0 && (
+            <div>
+              <h3 className={styles.groupLabel}>Etappen</h3>
+              <p className={styles.balanceCount}>
+                {summary.milestonesDone} von {summary.milestoneCount}
+              </p>
+              <p className={styles.taskStatus}>Milestones abgeschlossen</p>
+            </div>
+          )}
+          <p className={styles.balanceNote}>
+            Stand der erfassten Arbeit, kein Project-Abschlussgrad.
+          </p>
+        </section>
+      )}
       <div
         className={styles.taskList}
         data-project-task-list
         id="project-task-list"
         aria-label="Project Task List"
       >
-        {summary.groups.map(({ milestone: m, tasks: linked, done }) => (
+        {summary.groups.map(({ milestone: m, tasks: linked }, index) => (
           <section
             key={m.id}
             aria-label={`Milestone: ${m.title}`}
             data-milestone-id={m.id}
             id={`project-milestone-${m.id}`}
-            className={`${styles.milestone} ${!linked.length ? styles.emptyMilestone : ""}`}
+            className={styles.milestone}
           >
-            <div className="min-w-0">
-              <span className={styles.groupLabel}>Meilenstein</span>
-              <h3
-                className={`text-sm font-semibold break-words ${m.status === "done" ? "text-[var(--text-muted)]" : m.status === "active" ? "text-[var(--accent-blue)]" : ""}`}
-              >
-                {m.title}
-              </h3>
-              <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                {statuses.find((s) => s.id === m.status)?.title}
-                {m.target_date
-                  ? ` · ${m.target_date.split("-").reverse().join(".")}`
-                  : ""}
-              </p>
-              {done > 0 && (
-                <span className="text-sm text-[var(--text-muted)]">
-                  {done}/{linked.length} Tasks erledigt
+            <div className={styles.milestoneHeader}>
+              <div className="min-w-0">
+                <span className={styles.groupLabel}>
+                  Milestone {String(index + 1).padStart(2, "0")} ·{" "}
+                  {linked.length} Tasks
                 </span>
-              )}
-              {!linked.length && (
-                <span className="text-sm text-[var(--text-muted)]">
-                  Noch keine Tasks.
-                </span>
+                <h3 className="text-sm font-semibold break-words">
+                  {m.title} · {statuses.find((s) => s.id === m.status)?.title}
+                </h3>
+                {m.target_date && (
+                  <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                    {m.target_date.split("-").reverse().join(".")}
+                  </p>
+                )}
+                {!linked.length && (
+                  <span className="text-sm text-[var(--text-muted)]">
+                    Noch keine Tasks.
+                  </span>
+                )}
+              </div>
+              {!project.archived_at && (
+                <div className={styles.workActions}>
+                  {createTaskLink(m.id, "+ Task", true)}
+                  <ManagementDialog
+                    label="Milestone verwalten"
+                    triggerText="Bearbeiten"
+                    triggerClassName={styles.quiet}
+                  >
+                    <OperationForm
+                      operation="project.milestone"
+                      label="Milestone speichern"
+                      closeOnSuccess
+                    >
+                      <input type="hidden" name="projectId" value={projectId} />
+                      <input type="hidden" name="milestoneId" value={m.id} />
+                      <input
+                        type="hidden"
+                        name="milestoneOperation"
+                        value="save"
+                      />
+                      <StageFields stage={m} />
+                    </OperationForm>
+                    <div className="flex flex-wrap gap-2">
+                      <StageOperation
+                        projectId={projectId}
+                        stageId={m.id}
+                        operation="up"
+                        label="Nach oben"
+                      />
+                      <StageOperation
+                        projectId={projectId}
+                        stageId={m.id}
+                        operation="down"
+                        label="Nach unten"
+                      />
+                    </div>
+                    <p className="text-sm text-[var(--text-muted)]">
+                      Archivieren erhält die Etappe als Verlauf. Ihre Tasks
+                      wechseln zu Ohne Milestone.
+                    </p>
+                    <StageOperation
+                      projectId={projectId}
+                      stageId={m.id}
+                      operation="archive"
+                      label="Milestone archivieren"
+                    />
+                  </ManagementDialog>
+                </div>
               )}
             </div>
-            {!project.archived_at && (
-              <ManagementDialog label="Milestone verwalten">
-                <OperationForm
-                  operation="project.milestone"
-                  label="Milestone speichern"
-                  closeOnSuccess
-                >
-                  <input type="hidden" name="projectId" value={projectId} />
-                  <input type="hidden" name="milestoneId" value={m.id} />
-                  <input type="hidden" name="milestoneOperation" value="save" />
-                  <StageFields stage={m} />
-                </OperationForm>
-                <div className="flex flex-wrap gap-2">
-                  <StageOperation
-                    projectId={projectId}
-                    stageId={m.id}
-                    operation="up"
-                    label="Nach oben"
-                  />
-                  <StageOperation
-                    projectId={projectId}
-                    stageId={m.id}
-                    operation="down"
-                    label="Nach unten"
-                  />
-                </div>
-                <p className="text-sm text-[var(--text-muted)]">
-                  Archivieren erhält die Etappe als Verlauf. Ihre Tasks wechseln
-                  zu Ohne Milestone.
-                </p>
-                <StageOperation
-                  projectId={projectId}
-                  stageId={m.id}
-                  operation="archive"
-                  label="Milestone archivieren"
-                />
-              </ManagementDialog>
-            )}
             {m.description && (
               <p className="mt-2 whitespace-pre-wrap break-words text-sm text-[var(--text-secondary)]">
                 {m.description}
