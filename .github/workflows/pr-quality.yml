@@ -65,6 +65,9 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Preview CD policy and isolated service fixtures
+        run: pnpm test:preview:cd
+
       - name: Native SQLite and application composition (Linux x64)
         run: pnpm exec vitest run --config tests/sqlite/application-vitest.config.mjs
 
