@@ -114,7 +114,7 @@ export function abortedV9Evidence(root, digest) {
     original.version !== 2 ||
     original.phase !== "aborted-v9" ||
     !isSha(original.sha) ||
-    !cp?.stopped ||
+    cp?.stopped !== true ||
     !cp.operator ||
     !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(
       cp.instance ?? "",
@@ -268,12 +268,14 @@ export async function verifyAbortedV9({
   validateV9WorkerSource(config.workerSource);
   const owner = await v9DatabasePreflight(config, state.lastGood);
   if (
-    (original.prepared.owner && original.prepared.owner !== owner) ||
+    (Object.hasOwn(original.prepared, "owner") &&
+      original.prepared.owner !== owner) ||
     (original.abortedEvidence && original.abortedEvidence.owner !== owner) ||
     (current.phase === "reattempt-v9" && current.owner !== owner)
   )
     deny("UPGRADE_ABORT_OWNER_CHANGED");
   await serving(root, config, state.lastGood);
+  await authorize();
   // Reject a command/state/journal change during slow network/native checks.
   const latest = readJson(join(root, "state.json"));
   if (
@@ -286,7 +288,6 @@ export async function verifyAbortedV9({
   )
     deny("UPGRADE_ABORT_STATE_RACED");
   assertOperatorHandoff(root, cp);
-  await authorize();
   return { ...evidence, owner };
 }
 

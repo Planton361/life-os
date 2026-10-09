@@ -635,6 +635,8 @@ test("aborted-v9 gate rejects foreign phase, schema, identity, commands, source 
     "version",
     "sha",
     "checkpoint",
+    "checkpoint-flag",
+    "recorded-owner",
     "config",
     "inode",
     "schema10",
@@ -651,15 +653,27 @@ test("aborted-v9 gate rejects foreign phase, schema, identity, commands, source 
     "provenance",
     "writer",
     "race",
+    "gate-race",
   ]) {
     const { f, options, nextSha } = await abortedFixture();
     try {
-      if (["phase", "version", "sha", "checkpoint"].includes(fault)) {
+      if (
+        [
+          "phase",
+          "version",
+          "sha",
+          "checkpoint",
+          "checkpoint-flag",
+          "recorded-owner",
+        ].includes(fault)
+      ) {
         const j = readJson(f.journal);
         if (fault === "phase") j.phase = "prepared";
         if (fault === "version") j.version = 1;
         if (fault === "sha") j.sha = "d".repeat(40);
         if (fault === "checkpoint") j.checkpoint.instance = "foreign";
+        if (fault === "checkpoint-flag") j.checkpoint.stopped = "true";
+        if (fault === "recorded-owner") j.prepared.owner = "";
         atomicJson(f.journal, j);
         options.digest = journalDigest(readFileSync(f.journal));
       } else if (fault === "config")
@@ -718,6 +732,12 @@ test("aborted-v9 gate rejects foreign phase, schema, identity, commands, source 
         options.serving = async () => {
           await cli(["rollback", f.root]);
         };
+      else if (fault === "gate-race") {
+        let calls = 0;
+        options.authorize = async () => {
+          if (++calls === 2) await cli(["rollback", f.root]);
+        };
+      }
       const bytes = readFileSync(f.journal),
         config = readFileSync(join(f.root, "config.json")),
         state = readFileSync(join(f.root, "state.json")),
