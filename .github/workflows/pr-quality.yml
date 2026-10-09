@@ -87,3 +87,14 @@ jobs:
         run: |
           LIFE_OS_BUILD_COMPOSITION=personal-preview-v2 pnpm build
           node tests/sqlite/issue-142-browser-proof.mjs
+
+      - name: Preserve disposable reset browser evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: issue-142-disposable-browser-proof
+          path: |
+            test-results/issue-142/*.png
+            test-results/issue-142/proof.json
+          if-no-files-found: warn
+          retention-days: 14

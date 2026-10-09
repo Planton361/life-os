@@ -329,14 +329,36 @@ it("deletes the populated all-domain canonical fixture, including all history, w
   const admission = admitPreviewReset(f.policy, "all-domain-session");
   for (const n of [1, 15, 30, 45, 82]) {
     const original = resetPlan.deletePreviewDataset;
+    let reached = 0;
     const injected = vi
       .spyOn(resetPlan, "deletePreviewDataset")
       .mockImplementationOnce((db, owner) => {
-        if (n === 82) original(db, owner);
-        else
-          for (const table of resetPlan.previewResetTables.slice(0, n))
-            db.prepare(`DELETE FROM ${table} WHERE user_id=?`).run(owner);
-        throw new Error("ISOLATED_INJECTED_STORAGE_FAILURE");
+        const prepare = db.prepare.bind(db),
+          deleted = new Set<string>();
+        const prepareSpy = vi
+          .spyOn(db, "prepare")
+          .mockImplementation((sql: string) => {
+            const statement = prepare(sql);
+            const table = /^DELETE FROM ([a-z_]+)/.exec(sql)?.[1];
+            if (table) {
+              const run = statement.run.bind(statement);
+              statement.run = (...args: unknown[]) => {
+                const result = run(...args);
+                deleted.add(table);
+                if (deleted.size === n) {
+                  reached = deleted.size;
+                  throw new Error("ISOLATED_INJECTED_STORAGE_FAILURE");
+                }
+                return result;
+              };
+            }
+            return statement;
+          });
+        try {
+          original(db, owner);
+        } finally {
+          prepareSpy.mockRestore();
+        }
       });
     const attempt = store.preparePreviewReset(f.context, admission);
     expect(() =>
@@ -344,8 +366,9 @@ it("deletes the populated all-domain canonical fixture, including all history, w
         ...attempt,
         confirmation: "ZURÜCKSETZEN",
       }),
-    ).toThrow();
+    ).toThrow("ISOLATED_INJECTED_STORAGE_FAILURE");
     injected.mockRestore();
+    expect(reached).toBe(n);
     expect(snapshot()).toEqual(before);
     expect(
       store.read(f.context, (db) => db.pragma("foreign_key_check")),
