@@ -115,7 +115,7 @@ test("canonical Task create from Project, Milestone and Backlog preserves contex
     ).toHaveAttribute("href", `/projects/${project.id}`);
     await expectTaskCaptureParity(page, baseline);
     const optionalDetails = form.getByRole("button", {
-      name: "Weitere Angaben (optional)",
+      name: "Zuordnung (optional)",
       exact: true,
     });
     await expect(optionalDetails).toHaveAttribute("aria-expanded", "false");
@@ -250,7 +250,7 @@ test("canonical Task create from Project, Milestone and Backlog preserves contex
   // returns to the originating Project after the selection changes.
   await work.getByRole("link", { name: "+ Task", exact: true }).click();
   const cancelDetails = form.getByRole("button", {
-    name: "Weitere Angaben (optional)",
+    name: "Zuordnung (optional)",
     exact: true,
   });
   await cancelDetails.click();
@@ -263,7 +263,7 @@ test("canonical Task create from Project, Milestone and Backlog preserves contex
   // A compatible Project switch clears the old stage and returns to the new owner.
   await work.getByRole("link", { name: "+ Task", exact: true }).click();
   const switchDetails = form.getByRole("button", {
-    name: "Weitere Angaben (optional)",
+    name: "Zuordnung (optional)",
     exact: true,
   });
   await switchDetails.click();
@@ -284,7 +284,7 @@ test("canonical Task create from Project, Milestone and Backlog preserves contex
   await expect(form).toHaveAttribute("data-task-capture-title-first", "true");
   await expect(
     form.getByRole("button", {
-      name: "Weitere Angaben (optional)",
+      name: "Zuordnung (optional)",
       exact: true,
     }),
   ).toHaveAttribute("aria-expanded", "false");
@@ -346,7 +346,7 @@ test("canonical Task create from Project, Milestone and Backlog preserves contex
   for (const target of [otherStage.id, foreignStage.id]) {
     await page.goto(`/tasks/new?project=${project.id}`);
     const forgedDetails = form.getByRole("button", {
-      name: "Weitere Angaben (optional)",
+      name: "Zuordnung (optional)",
       exact: true,
     });
     await forgedDetails.click();

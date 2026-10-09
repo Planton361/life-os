@@ -6,6 +6,7 @@ import {
   expectTaskCaptureParity,
   expectOptionalTaskFieldParity,
   standaloneTaskCapture,
+  setTaskOptionalSections,
 } from "./support/task-create-parity";
 
 test("Issue 80 standalone and contextual Task capture have responsive visual parity", async ({
@@ -83,10 +84,6 @@ test("Issue 80 standalone and contextual Task capture have responsive visual par
       .throwOnError()
   ).data!;
   const form = page.getByRole("form", { name: "Task erstellen", exact: true });
-  const details = form.getByRole("button", {
-    name: "Weitere Angaben (optional)",
-    exact: true,
-  });
   const origins = [
     "standalone",
     "empty-project",
@@ -154,7 +151,7 @@ test("Issue 80 standalone and contextual Task capture have responsive visual par
         path: capturePath,
         contentType: "image/png",
       });
-      await details.click();
+      await setTaskOptionalSections(page, true);
       await expectOptionalTaskFieldParity(
         page,
         baseline,
@@ -193,7 +190,7 @@ test("Issue 80 standalone and contextual Task capture have responsive visual par
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       ).toBe(true);
-      await details.click();
+      await setTaskOptionalSections(page, false);
       await expectTaskCaptureParity(page, baseline);
       const createUrl = page.url();
       const cancelHref = await form

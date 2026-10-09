@@ -221,7 +221,7 @@ test("#112 isolated UI owner: sparse/populated matrix, Task/Capture/Mood/Habit r
   const task = `#112 Daily ${stamp}`;
   await taskForm.getByLabel("Titel", { exact: true }).fill(task);
   await taskForm
-    .getByRole("button", { name: "Weitere Angaben (optional)", exact: true })
+    .getByRole("button", { name: "Planung (optional)", exact: true })
     .click();
   await taskForm
     .getByLabel("Geplantes Datum", { exact: true })

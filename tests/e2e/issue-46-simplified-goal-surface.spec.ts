@@ -147,7 +147,7 @@ async function createCurrentTask(
   const titleField = form.getByLabel("Titel", { exact: true });
   await titleField.fill(title);
   const optional = form.getByRole("button", {
-    name: "Weitere Angaben (optional)",
+    name: "Zuordnung (optional)",
     exact: true,
   });
   await expect(optional).toHaveAttribute("aria-expanded", "false");

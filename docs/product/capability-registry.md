@@ -2216,19 +2216,27 @@ One [1920×1080 screenshot](../qa/issue-129-task-resources/task-detail-1920x1080
 records implementation evidence. The accepted HTML is design acceptance; final
 real-user acceptance and M0 remain pending. Personal data/server are untouched.
 
-Issue #134 integrates the accepted B8 frame on canonical `/tasks/new` only:
-1360px matte header/canvas, aligned form surface and centered 940px inner capture.
-Task creation remains `CONNECTED`; title-first capture, one closed optional
-disclosure, field order, validated origins and existing Save/Cancel/link semantics
-are unchanged. `tests/sqlite/issue-134-browser-proof.mjs` reuses the #80 parity
+Issue #134 integrates the accepted B8 frame on canonical `/tasks/new` only.
+The [USER-approved Handoff correction](https://github.com/Planton361/life-os/pull/135#issuecomment-6072307754)
+supersedes its earlier one-disclosure composition: 1360px matte header/canvas,
+aligned form surface, 940px capture, compact `ERFASSEN`, dominant required title,
+clear Create/Cancel and three independent initially closed groups (Arbeitsinhalt,
+Planung, Zuordnung). All three can remain open together; fields and relative
+group order, validated origins and existing Save/Cancel/link semantics remain.
+The reference is the original local `life-os-b8-consolidated-design.html`
+(SHA-256 `6aacbf7f4ce6dcd23c884a2d046a5f9496b156ee6a61f0551b12205dd4993ae6`),
+not the rejected first PR screenshot. Task creation remains `CONNECTED`.
+`tests/sqlite/issue-134-browser-proof.mjs` reuses the updated #80 parity
 assertions and disposable native SQLite harness for Global, Empty/populated
 Project, Project Milestone, Goal, Current Goal Milestone and Skill capture;
 Save/Cancel/native relation readback after reload, ownership/context denial,
 validation/conflict feedback, Project switching, Skill opt-out/known-ID recovery
 and ambiguous Create are proven. Desktop/4K/Mobile/Short-Mac geometry and keyboard
-disclosure/focus are checked; console/hydration are clean. One
+independent disclosure/Tab/Enter/Space/Close/Escape/focus are checked;
+console/hydration are clean. The primary
 [1920×1080 screenshot](../qa/issue-134-b8-task-create/task-create-1920x1080.png)
-records implementation evidence. Other entity shells, backend/schema and personal
+shows the empty title and all three sections closed, with an optional all-open
+comparison. Other entity shells, backend/schema and personal
 runtime/data are unchanged; integrated real-user acceptance and M0 remain separate.
 
 Issue #28 updates the connected Goal detail presentation to accepted Prototype A v2: stable Überblick / Arbeit / Erfolg / Verlauf areas, a numbered Goal-Etappen progression with explicit Project/direct-Task contributions, selected work context, canonical review-ready cue and outcome-first achieved/reopened views. `tests/e2e/issue-28-goal-a-v2.spec.ts` is the focused Manual browser/reload and 3840×2160 / 1920×1080 / 390×844 surface proof; the existing readiness regression in `tests/e2e/pp1-goal-follow-up.spec.ts` covers Task-only READY/BLOCKED. Status remains `CONNECTED_GAP` because Slice 2 completion episodes and Skill Evidence revisions are not part of #28.

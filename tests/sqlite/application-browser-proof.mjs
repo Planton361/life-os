@@ -241,11 +241,14 @@ try {
     const form = page.locator('form[data-task-capture-title-first="true"]');
     await form.getByLabel("Titel", { exact: true }).fill("SQLite browser Task");
     await form
-      .getByRole("button", { name: "Weitere Angaben (optional)", exact: true })
+      .getByRole("button", { name: "Zuordnung (optional)", exact: true })
       .click();
     await form
       .getByLabel("Project", { exact: true })
       .selectOption(fixture.ids.project);
+    await form
+      .getByRole("button", { name: "Planung (optional)", exact: true })
+      .click();
     await form.getByLabel("Geplantes Datum", { exact: true }).fill(fixture.day);
     await form.getByRole("button", { name: "Task erstellen" }).click();
     await expect(page).toHaveURL(/\/tasks\/[a-f0-9-]{36}$/);

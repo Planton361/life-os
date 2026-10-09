@@ -88,13 +88,13 @@ export function EntityWorkbenchShell({
 function Hidden({ name, value }: { name: string; value: string }) {
   return <input type="hidden" name={name} value={value} />;
 }
-function Block({ title, children }: { title: string; children: ReactNode }) {
+function Block({ title, children }: { title?: string; children: ReactNode }) {
   return (
     <section
       aria-label={title}
       className="grid content-start gap-4 rounded-xl border border-[var(--border-subtle)] bg-[rgba(15,23,36,.6)] p-5"
     >
-      <h2 className="text-lg font-semibold">{title}</h2>
+      {title && <h2 className="text-lg font-semibold">{title}</h2>}
       {children}
     </section>
   );
@@ -696,7 +696,15 @@ export async function WorkbenchEditor({
       <div
         className={`grid ${kind === "task" ? "items-start" : ""} gap-6 ${id ? "xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)]" : kind === "task" ? "mx-auto w-full max-w-[1400px]" : "mx-auto w-full max-w-[1000px]"}`}
       >
-        <Block title={id ? "Informationen bearbeiten" : "Bewusst erstellen"}>
+        <Block
+          title={
+            id
+              ? "Informationen bearbeiten"
+              : kind === "task"
+                ? undefined
+                : "Bewusst erstellen"
+          }
+        >
           <EntityForm
             kind={kind}
             id={id}

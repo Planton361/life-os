@@ -11,6 +11,8 @@ import {
   standaloneTaskCapture,
   expectTaskCaptureParity,
   expectOptionalTaskFieldParity,
+  setTaskOptionalSections,
+  taskOptionalSections,
 } from "../e2e/support/task-create-parity.ts";
 
 // Reuse the canonical native synthetic harness and #80 parity assertions.
@@ -195,7 +197,7 @@ try {
   const form = page.getByRole("form", { name: "Task erstellen", exact: true });
   const root = page.locator('[data-task-create-variant="B8"]');
   const disclosure = form.getByRole("button", {
-    name: "Weitere Angaben (optional)",
+    name: "Zuordnung (optional)",
     exact: true,
   });
   const titleInput = form.getByLabel("Titel", { exact: true });
@@ -332,7 +334,7 @@ try {
         );
       await go(origin.query);
       await expectTaskCaptureParity(page, baseline);
-      await expect(disclosure).toHaveCount(1);
+      await expect(form.locator("button[aria-expanded]")).toHaveCount(3);
       await page.reload();
       await expectTaskCaptureParity(page, baseline);
       const collapsed = await geometry();
@@ -340,7 +342,7 @@ try {
         collapsed.surfaceHeight < 650,
         "collapsed capture is content-sized",
       );
-      await disclosure.click();
+      await setTaskOptionalSections(page, true);
       await expectOptionalTaskFieldParity(
         page,
         baseline,
@@ -364,7 +366,7 @@ try {
         await expect(form.locator('[name="goalMilestoneId"]')).toHaveValue(
           origin.stage,
         );
-      await disclosure.click();
+      await setTaskOptionalSections(page, false);
       const cancelled = `Cancelled ${origin.name} ${viewport.width} ${randomUUID()}`;
       await titleInput.fill(cancelled);
       await expect(
@@ -422,10 +424,51 @@ try {
   }
 
   await page.setViewportSize({ width: 1920, height: 1080 });
+  await go();
+  await expect(titleInput).toBeEmpty();
+  for (const name of taskOptionalSections)
+    await expect(
+      form.getByRole("button", { name, exact: true }),
+    ).toHaveAttribute("aria-expanded", "false");
+  // Decisive visual comparison: empty title, all three sections initially closed.
+  await root.locator("h1").click();
+  await page.screenshot({
+    path: join(output, "task-create-1920x1080.png"),
+    fullPage: true,
+  });
+  for (const viewport of [
+    { width: 769, height: 413 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await geometry();
+    await page.screenshot({
+      path: join(
+        output,
+        `task-create-closed-${viewport.width}x${viewport.height}.png`,
+      ),
+      fullPage: true,
+    });
+  }
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await titleInput.focus();
+  for (const name of taskOptionalSections) {
+    await page.keyboard.press("Tab");
+    await expect(form.getByRole("button", { name, exact: true })).toBeFocused();
+  }
+  await page.keyboard.press("Tab");
+  await expect(form.locator('button[type="submit"]')).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(
+    form.getByRole("link", { name: "Abbrechen", exact: true }),
+  ).toBeFocused();
   await go(`?project=${f.ids.project}&milestone=${ids.milestone}`);
-  await disclosure.focus();
-  await page.keyboard.press("Enter");
-  await expect(disclosure).toHaveAttribute("aria-expanded", "true");
+  for (const name of taskOptionalSections) {
+    const trigger = form.getByRole("button", { name, exact: true });
+    await trigger.focus();
+    await trigger.press("Enter");
+    await expect(trigger).toHaveAttribute("aria-expanded", "true");
+  }
   const fullTitle = `Forschungsmethoden vergleichen ${randomUUID().slice(0, 8)}`;
   await titleInput.fill(fullTitle);
   await form
@@ -447,7 +490,7 @@ try {
     .selectOption(f.ids.goal);
   await root.locator("h1").click();
   await page.screenshot({
-    path: join(output, "task-create-1920x1080.png"),
+    path: join(output, "task-create-all-open-1920x1080.png"),
     fullPage: true,
   });
   for (const viewport of [
@@ -465,15 +508,34 @@ try {
         ),
         fullPage: true,
       });
-    await form.getByRole("button", { name: "Schließen", exact: true }).click();
-    await expect(disclosure).toBeFocused();
+    for (const name of taskOptionalSections) {
+      const trigger = form.getByRole("button", { name, exact: true });
+      const panel = form.locator(
+        `[id="${await trigger.getAttribute("aria-controls")}"]`,
+      );
+      await panel
+        .getByRole("button", { name: "Schließen", exact: true })
+        .click();
+      await expect(trigger).toBeFocused();
+      await expect(trigger).toHaveAttribute("aria-expanded", "false");
+      for (const other of taskOptionalSections.filter((n) => n !== name))
+        await expect(
+          form.getByRole("button", { name: other, exact: true }),
+        ).toHaveAttribute("aria-expanded", "true");
+      await trigger.press("Enter");
+      await panel
+        .locator("input:not([type=hidden]),select,textarea")
+        .first()
+        .focus();
+      await page.keyboard.press("Escape");
+      await expect(trigger).toBeFocused();
+      await expect(trigger).toHaveAttribute("aria-expanded", "false");
+      await trigger.press("Space");
+      await expect(trigger).toHaveAttribute("aria-expanded", "true");
+    }
+    await setTaskOptionalSections(page, false);
     viewports.at(-1).collapsed = await geometry();
-    await disclosure.press("Enter");
-    await form.getByLabel("Beschreibung / Purpose", { exact: true }).focus();
-    await page.keyboard.press("Escape");
-    await expect(disclosure).toBeFocused();
-    await expect(disclosure).toHaveAttribute("aria-expanded", "false");
-    await disclosure.press("Enter");
+    await setTaskOptionalSections(page, true);
   }
   await page.setViewportSize({ width: 1920, height: 1080 });
   await form
@@ -492,14 +554,14 @@ try {
   assert.ok(full.due_at.startsWith("2026-12-31"));
   assert.ok(full.description.includes("Nächste Aktion: Drei Methodenquellen"));
   checks.push(
-    "All optional fields survive Save/reload; 1920 desktop screenshot; 4K, Mobile and Short-Mac bounds/centering/natural flow; keyboard disclosure/Close/Escape/focus return",
+    "All optional fields survive Save/reload; 1920 desktop screenshot; 4K, Mobile and Short-Mac bounds/centering/natural flow; three independent sections/all-open/all-closed; keyboard Tab/Enter/Space/Close/Escape/focus return",
   );
 
   // Invalid values traverse the existing real action; draft and feedback stay visible.
   await go();
   const invalidTitle = `Invalid ${randomUUID()}`;
   await titleInput.fill(invalidTitle);
-  await disclosure.click();
+  await setTaskOptionalSections(page, true);
   await form.getByLabel("Duration (min)", { exact: true }).fill("-1");
   assert.equal(
     await form

@@ -49,23 +49,37 @@
   padding: 0;
   gap: 0;
 }
-.canvas > div > section > h2 {
-  padding: 20px 23px 16px;
-  border-bottom: 1px solid var(--border-subtle);
-  font-size: 19px;
-  font-weight: 630;
-  letter-spacing: -0.025em;
-}
 .canvas form {
   width: calc(100% - 52px);
   max-width: 940px;
   min-width: 0;
-  margin: 23px auto;
+  margin: 26px auto;
 }
-.canvas form h2 {
-  font-size: 16px;
+.canvas form fieldset {
+  gap: 0;
+}
+.canvas [data-task-capture-default] {
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.canvas [data-task-capture-kicker] {
+  color: var(--accent-blue);
+  font-size: 10px;
+  font-weight: 720;
+  letter-spacing: 0.13em;
+}
+.canvas [data-task-capture-default] > label {
+  gap: 7px;
+  color: var(--text-secondary);
+  font-size: 12px;
   font-weight: 630;
-  color: var(--text-primary);
+}
+.canvas [data-task-capture-default] > p:last-child {
+  font-size: 12px;
+}
+.canvas form fieldset > div:has(> button[aria-expanded]) {
+  padding-block: 10px;
+  border-top: 1px solid var(--border-subtle);
 }
 .canvas form label {
   min-width: 0;
@@ -82,8 +96,38 @@
 .canvas form textarea {
   min-height: 88px;
 }
+.canvas form input[name="title"] {
+  min-height: 52px;
+  font-size: 16px;
+}
 .canvas form button[aria-expanded] {
-  color: var(--text-secondary);
+  width: 100%;
+  color: var(--accent-blue);
+  font-size: 13px;
+  font-weight: 630;
+  text-decoration: none;
+}
+.canvas form button[aria-expanded]::before {
+  content: "";
+  display: inline-block;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 5px solid currentColor;
+  margin-right: 7px;
+}
+.canvas form button[aria-expanded="true"]::before {
+  transform: rotate(90deg);
+}
+.canvas form fieldset > div:last-child {
+  margin-top: 10px;
+  padding-top: 20px;
+}
+.canvas form a {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12.5px;
+  font-weight: 630;
+  text-decoration: none;
 }
 .canvas form button[type="submit"] {
   background: var(--accent-blue);
@@ -102,9 +146,6 @@
   }
   .header h1 {
     font-size: 26px;
-  }
-  .canvas > div > section > h2 {
-    padding: 16px;
   }
   .canvas form {
     width: calc(100% - 32px);

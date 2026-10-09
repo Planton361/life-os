@@ -25,7 +25,8 @@ export function TaskCreateShell({
         <p className={styles.entity}>Task</p>
         <h1>{title}</h1>
         <p className={styles.description}>
-          Titel zuerst. Weitere Angaben kannst du nach dem Erfassen ergänzen.
+          Titel zuerst. Weitere Angaben sind nach Arbeitsinhalt, Planung und
+          Zuordnung gruppiert.
         </p>
       </header>
       {children}
