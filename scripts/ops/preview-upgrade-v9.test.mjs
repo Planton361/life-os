@@ -1750,3 +1750,63 @@ test(
     }
   },
 );
+
+test(
+  "macOS operator SIGKILL at release-prepared preserves serving v9 and explicit recovery safely switches one supervisor",
+  { skip: process.platform !== "darwin", timeout: 60000 },
+  async () => {
+    const x = await delayedLaunchFixture(200);
+    let operator, exit;
+    try {
+      await x.bootstrap();
+      const oldPid = x.pid;
+      const helper = join(x.f.root, "crash-operator.mjs"),
+        input = join(x.f.root, "operator-input.json");
+      atomicJson(input, { pair: x.f.pair, checkpoint: x.cp() });
+      writeFileSync(
+        helper,
+        `import fs from 'node:fs';import {upgradeExistingProtocol} from ${JSON.stringify(pathToFileURL(resolve("scripts/ops/preview-upgrade-core.mjs")).href)};import {atomicJson,operationalLock} from ${JSON.stringify(pathToFileURL(resolve("scripts/ops/preview-cd-host.mjs")).href)};
+const [root,source,input]=process.argv.slice(2),data=JSON.parse(fs.readFileSync(input));const unlock=operationalLock(root+'/operator-upgrade-lease.db',source);
+await upgradeExistingProtocol({authorize:async()=>{},prepareCompatiblePair:async()=>data.pair,prepareHelpers:async()=>{},originalCheckpoint:async()=>data.checkpoint,save:async j=>atomicJson(root+'/upgrade-v2.json',{version:2,...j}),stopFrozenWorker:async()=>{process.send('AT_STOP');await new Promise(()=>{});}});unlock();`,
+        { mode: 0o600 },
+      );
+      operator = spawn(process.execPath, [helper, x.f.root, source, input], {
+        stdio: ["ignore", "ignore", "pipe", "ipc"],
+      });
+      exit = once(operator, "exit");
+      await Promise.race([
+        once(operator, "message"),
+        exit.then(() => {
+          throw Error("OWNED_OPERATOR_START_FAILED");
+        }),
+      ]);
+      assert.equal(readJson(x.f.journal).phase, "release-prepared");
+      assert.equal(
+        await (await fetch(`http://127.0.0.1:${x.port}`)).text(),
+        x.f.old.buildId,
+      );
+      operator.kill("SIGKILL");
+      await exit;
+      const release = operationalLock(
+        join(x.f.root, "operator-upgrade-lease.db"),
+        source,
+      );
+      release();
+      await recoverExistingProtocol(x.f.io, readJson(x.f.journal));
+      assert.notEqual(x.pid, oldPid);
+      assert.equal(readJson(x.f.journal).phase, "aborted-v9");
+      await x.verifyRunning();
+      x.f.assertPreserved();
+    } finally {
+      if (
+        operator &&
+        operator.exitCode === null &&
+        operator.signalCode === null
+      ) {
+        operator.kill("SIGTERM");
+        await exit;
+      }
+      await x.cleanup();
+    }
+  },
+);
