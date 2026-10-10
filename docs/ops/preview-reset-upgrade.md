@@ -140,6 +140,41 @@ same original service; authenticated Tailscale/build health and gateway are chec
 A foreign process with the DB open, schema v10, unknown release, changed checkpoint
 or failed current main/Quality/Ruleset gate prevents acknowledgement and stop.
 
+### Public GitHub request budget
+
+The operator uses the unchanged unauthenticated REST GitHubGate; it never caches
+CI, job or ruleset responses. With one active branch ruleset, the explicit
+re-attempt makes **24 requests before schema commit**, previously 48:
+
+| Authorization point                                         | Requests | Fresh evidence                                                     |
+| ----------------------------------------------------------- | -------: | ------------------------------------------------------------------ |
+| Host entry, before operator lease                           |        5 | push Quality, latest-attempt job, ruleset list/details, exact main |
+| Aborted-journal verification start                          |        1 | exact main plus local gates                                        |
+| Verification completion, before acknowledgement             |        5 | full gate plus local gates                                         |
+| Before both builds                                          |        1 | exact main plus local gates                                        |
+| After both builds, before read-only checkpoint verification |        1 | exact main plus local gates                                        |
+| Original-checkpoint verification start                      |        1 | exact main plus local gates                                        |
+| Verification completion, before `release-prepared`          |        5 | full gate plus local gates                                         |
+| Immediately before schema commit                            |        5 | full gate plus local gates                                         |
+
+The complete post-build gate occurs at the **end** of the original-checkpoint
+verification, before its first journal write/stop. A re-attempt cannot skip that
+verifier. Ordinary upgrades instead run the complete gate immediately after
+builds. The redundant leading main request is removed only from complete gates:
+GitHubGate already rereads and validates exact main after fetching all proofs.
+All eight authorizations still verify local source bytes/SHA, DB identity and
+gateway. Unrecognized authorization stages fail closed.
+
+Each additional active branch ruleset costs four more requests across these
+four complete gates. A separately authorized existing recovery needs two complete
+fresh gates (**10** requests with one ruleset); normal new-worker CI checks and
+other same-IP traffic need additional reserve. These are counts, not a promise
+of sufficient shared quota or an automatic retry. Check actual remaining/reset
+read-only before any separately authorized personal operation. GitHub 403/429
+fails immediately with no polling, credentials or bypass. Review/M0, exact-main
+push Quality and a **new** explicit CONTROL operator authorization remain
+mandatory; this code repair does not authorize a personal re-attempt.
+
 All operator upgrade/recovery commands hold an independent kernel operator lease.
 After these checks, the original bytes are retained under the private root as
 `upgrade-v2.aborted-v9.<SHA256>.json`, mode 0400, single-link/canonical/owned,

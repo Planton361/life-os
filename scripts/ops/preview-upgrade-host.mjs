@@ -47,6 +47,35 @@ import {
   abortedV9Evidence,
 } from "./preview-upgrade-reattempt.mjs";
 
+// No CI/ruleset cache: full fresh proofs at each mutation boundary. The final
+// main read inside gate() already binds those proofs to the requested SHA.
+// Read-only checks between boundaries still reread main and all local gates.
+export async function authorizeOperatorGitHub(
+  github,
+  sha,
+  stage = "entry",
+  reattempt = false,
+) {
+  if (
+    ![
+      "entry",
+      "verify-start",
+      "verify-complete",
+      "before-build",
+      "after-build",
+      "before-commit",
+    ].includes(stage)
+  )
+    deny("OPERATOR_GATE_STAGE_INVALID");
+  const readOnly =
+    stage === "verify-start" ||
+    stage === "before-build" ||
+    (stage === "after-build" && reattempt);
+  if (readOnly) {
+    if ((await github.latest()) !== sha) deny("MAIN_SUPERSEDED");
+  } else await github.gate(sha);
+}
+
 export async function upgradeExisting({
   root,
   source,
@@ -108,9 +137,8 @@ export async function upgradeExisting({
       ],
       { env, timeout: 60_000 },
     );
-  async function authorize() {
-    if ((await github.latest()) !== controlSha) deny("MAIN_SUPERSEDED");
-    await github.gate(controlSha);
+  async function authorize(stage = "entry") {
+    await authorizeOperatorGitHub(github, controlSha, stage, !!abortedDigest);
     if (
       (await command("/usr/bin/git", ["-C", source, "rev-parse", "HEAD"], {
         env,
