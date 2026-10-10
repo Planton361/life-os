@@ -123,6 +123,11 @@ export async function upgradeExisting({
     root,
     config,
     source: () => helperRelease.path,
+    // Only the independently validated historical v1/v9 path needs room for
+    // its uncanceled 30s AppService timer. Provisioned v2 stays at 30s.
+    legacyV9: !config.preview,
+    diagnostic: (evidence) =>
+      console.error(JSON.stringify({ previewHandoff: evidence })),
   });
   const databaseCommand = async (op, path, destination) =>
     command(

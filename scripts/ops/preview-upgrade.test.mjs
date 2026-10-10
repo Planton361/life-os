@@ -187,3 +187,132 @@ test("recovery stop failures on committed v10 retain v10-only boundary", async (
   assert.equal(f.journal.phase, "recovery-required-v10");
   assert.ok(!f.events.includes("old-v9"));
 });
+
+import { SupervisorHandoff } from "./preview-upgrade-stop.mjs";
+function syntheticHandoff(timeout = 40) {
+  const events = [];
+  const h = new SupervisorHandoff({
+    root: "/synthetic",
+    config: {
+      node: process.execPath,
+      workerSource: "/synthetic/source",
+      database: "/synthetic/canonical.db",
+    },
+    source: () => "/synthetic/source",
+    timeout,
+    diagnostic: (e) => events.push(e),
+  });
+  h.worker = { pid: 12345, serverPid: 12346, identity: "a".repeat(64) };
+  h.capture = async () => null;
+  h.registered = () => {
+    h.observe("job", "removed");
+    return null;
+  };
+  h.sameSupervisor = async () => {
+    h.observe("supervisor", "alive");
+    return true;
+  };
+  h.holders = (path) => {
+    h.observe(
+      path.endsWith("worker-lease.db") ? "workerHandles" : "databaseHandles",
+      "none",
+    );
+    return [];
+  };
+  h.portBusy = async () => {
+    h.observe("port", "free");
+    return false;
+  };
+  h.writerFree = () => {
+    h.observe("writerLease", "free");
+    return true;
+  };
+  return { h, events };
+}
+test("handoff budgets remain bounded, legacy alone gets room for its 30s timer", () => {
+  const opts = {
+    root: "/synthetic",
+    config: { node: process.execPath, workerSource: "/synthetic/source" },
+    source: () => "/synthetic",
+  };
+  assert.equal(new SupervisorHandoff(opts).timeout, 30000);
+  assert.equal(
+    new SupervisorHandoff({ ...opts, legacyV9: true }).timeout,
+    60000,
+  );
+  for (const timeout of [0, -1, 60001, Infinity, NaN])
+    assert.throws(
+      () => new SupervisorHandoff({ ...opts, timeout }),
+      /HANDOFF_BUDGET_INVALID/,
+    );
+});
+test("stuck supervisor fails with independent last observations and no secret identifiers", async () => {
+  const { h, events } = syntheticHandoff();
+  await assert.rejects(h.stop(), /SUPERVISOR_HANDOFF_TIMEOUT/);
+  const e = events.at(-1);
+  assert.equal(e.phase, "failed");
+  assert.equal(e.observations.supervisor.state, "alive");
+  assert.equal(e.observations.port.state, "free");
+  assert.equal(e.observations.writerLease.state, "free");
+  assert.equal(e.observations.workerLease.state, "unobserved");
+  assert.ok(e.elapsedMs >= 40 && e.elapsedMs < 500);
+  assert.doesNotMatch(JSON.stringify(e), /synthetic|12345|12346|a{64}/);
+});
+test("inspection helpers cannot consume more than the remaining monotonic budget; failures stay unknown", () => {
+  for (const name of [
+    "job",
+    "supervisor",
+    "workerHandles",
+    "databaseHandles",
+    "writerHandles",
+  ]) {
+    const { h } = syntheticHandoff(25);
+    h.begin();
+    assert.throws(
+      () =>
+        h.syncProbe(name, process.execPath, ["-e", "setTimeout(()=>{},10000)"]),
+      /HANDOFF_PROBE_FAILED/,
+    );
+    assert.equal(h.observations[name].state, "unknown");
+    assert.ok(h.evidence().elapsedMs < 500);
+    assert.throws(() => h.probeTimeout(), /SUPERVISOR_HANDOFF_TIMEOUT/);
+  }
+});
+
+test("foreign worker holders fail before admission and before migration", async () => {
+  const { h } = syntheticHandoff(500);
+  h.holders = (path) => (path.endsWith("worker-lease.db") ? [77777] : []);
+  await assert.rejects(h.stop(), /FOREIGN_WORKER_LEASE/);
+});
+
+test("replacement launchd job and changed captured process identity fail closed", async () => {
+  const first = syntheticHandoff(500);
+  first.h.registered = () => "pid = 88888\n";
+  await assert.rejects(first.h.stop(), /SUPERVISOR_IDENTITY_CHANGED/);
+  const second = syntheticHandoff(500);
+  second.h.alive = () => true;
+  second.h.identity = async () => "b".repeat(64);
+  second.h.sameSupervisor = SupervisorHandoff.prototype.sameSupervisor.bind(
+    second.h,
+  );
+  await assert.rejects(second.h.stop(), /SUPERVISOR_IDENTITY_CHANGED/);
+  assert.equal(second.events.at(-1).observations.identity.state, "changed");
+});
+test("unknown launchctl and ps output never means job removed or process exited", () => {
+  const { h } = syntheticHandoff(500);
+  h.begin();
+  h.syncProbe = (name) => {
+    h.observe(name, "unknown");
+    return { status: 1, stdout: "", stderr: "inspection unavailable" };
+  };
+  assert.throws(
+    () => SupervisorHandoff.prototype.registered.call(h),
+    /LAUNCHD_STATE_UNKNOWN/,
+  );
+  assert.throws(
+    () => SupervisorHandoff.prototype.alive.call(h, 12345),
+    /SUPERVISOR_STATE_UNKNOWN/,
+  );
+  assert.equal(h.observations.job.state, "unknown");
+  assert.equal(h.observations.supervisor.state, "unknown");
+});
