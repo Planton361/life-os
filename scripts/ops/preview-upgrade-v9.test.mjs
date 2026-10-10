@@ -39,6 +39,7 @@ import {
   portOccupied,
   command,
   pause,
+  GitHubGate,
 } from "./preview-cd-host.mjs";
 import {
   upgradeExistingProtocol,
@@ -50,6 +51,7 @@ import {
   upgradedOperatorState,
 } from "./preview-upgrade-state.mjs";
 import { SupervisorHandoff } from "./preview-upgrade-stop.mjs";
+import { authorizeOperatorGitHub } from "./preview-upgrade-host.mjs";
 import { cli, commands, processIdentity } from "./preview-cd.mjs";
 import { initialState } from "./preview-cd-core.mjs";
 import {
@@ -539,6 +541,68 @@ test("explicit aborted-v9 acknowledgement preserves real aborted evidence and up
       () => assertUpgradeJournalAdmission(f.root),
       /RECOVERY_REQUIRED/,
     );
+    const requests = [];
+    const github = new GitHubGate(async (url, headers) => {
+      assert.equal(headers.headers.Authorization, undefined);
+      requests.push(url);
+      const data = url.includes("git/ref")
+        ? { ref: "refs/heads/main", object: { type: "commit", sha: nextSha } }
+        : url.includes("/runs?")
+          ? {
+              workflow_runs: [
+                {
+                  id: 42,
+                  run_attempt: 1,
+                  head_sha: nextSha,
+                  head_branch: "main",
+                  event: "push",
+                  path: ".github/workflows/pr-quality.yml",
+                  status: "completed",
+                  conclusion: "success",
+                  repository: { full_name: "Planton361/life-os" },
+                  head_repository: { full_name: "Planton361/life-os" },
+                },
+              ],
+            }
+          : url.includes("/jobs?")
+            ? {
+                jobs: [
+                  {
+                    name: "quality",
+                    head_sha: nextSha,
+                    status: "completed",
+                    conclusion: "success",
+                  },
+                ],
+              }
+            : url.endsWith("rulesets")
+              ? [{ id: 1, target: "branch", enforcement: "active" }]
+              : {
+                  target: "branch",
+                  enforcement: "active",
+                  bypass_actors: [],
+                  conditions: {
+                    ref_name: { include: ["refs/heads/main"], exclude: [] },
+                  },
+                  rules: [
+                    { type: "pull_request" },
+                    { type: "deletion" },
+                    { type: "non_fast_forward" },
+                    {
+                      type: "required_status_checks",
+                      parameters: {
+                        strict_required_status_checks_policy: true,
+                        required_status_checks: [{ context: "quality" }],
+                      },
+                    },
+                  ],
+                };
+      return { ok: true, json: async () => data };
+    });
+    options.authorize = (stage) =>
+      authorizeOperatorGitHub(github, nextSha, stage, true);
+    f.io.authorize = options.authorize;
+    await options.authorize(); // real host entry, before operator lease
     const retained = await acknowledgeAbortedV9(options, nextSha);
     const archive = join(f.root, retained.archive);
     assert.ok(readFileSync(archive).equals(original));
@@ -551,7 +615,6 @@ test("explicit aborted-v9 acknowledgement preserves real aborted evidence and up
       () => assertFreshReattemptPair(f.pair, f.pair, nextSha),
       /FRESH_PAIR_REQUIRED/,
     );
-    assert.deepEqual(await acknowledgeAbortedV9(options, nextSha), retained);
     assert.equal(
       abortedV9Evidence(f.root, digest).original.phase,
       "aborted-v9",
@@ -562,9 +625,18 @@ test("explicit aborted-v9 acknowledgement preserves real aborted evidence and up
     };
     assertFreshReattemptPair(fresh, f.pair, nextSha);
     f.io.prepareCompatiblePair = async () => {
-      await verifyAbortedV9(options);
       assertFreshReattemptPair(fresh, f.pair, nextSha);
       return fresh;
+    };
+    const originalCheckpoint = f.io.originalCheckpoint;
+    f.io.originalCheckpoint = async () => {
+      await verifyAbortedV9(options); // real host: after both builds, before stopped journal
+      return originalCheckpoint();
+    };
+    const migrate = f.io.migrateSameFile;
+    f.io.migrateSameFile = async () => {
+      assert.equal(requests.length, 24);
+      await migrate();
     };
     f.io.prepareHelpers = async (pair) => {
       for (const r of [pair.candidate, pair.fallback]) validateRelease(r);

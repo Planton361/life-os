@@ -225,7 +225,7 @@ export async function verifyAbortedV9({
   provenance,
   serving,
 }) {
-  await authorize();
+  await authorize("verify-start");
   const evidence = abortedV9Evidence(root, digest),
     { original, current } = evidence;
   await provenance(original.sha);
@@ -275,7 +275,7 @@ export async function verifyAbortedV9({
   )
     deny("UPGRADE_ABORT_OWNER_CHANGED");
   await serving(root, config, state.lastGood);
-  await authorize();
+  await authorize("verify-complete");
   // Reject a command/state/journal change during slow network/native checks.
   const latest = readJson(join(root, "state.json"));
   if (

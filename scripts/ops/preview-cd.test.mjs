@@ -28,6 +28,11 @@ import {
   compatibilityFingerprint,
 } from "./preview-cd-host.mjs";
 import { cli } from "./preview-cd.mjs";
+import { authorizeOperatorGitHub } from "./preview-upgrade-host.mjs";
+import {
+  upgradeExistingProtocol,
+  recoverExistingProtocol,
+} from "./preview-upgrade-core.mjs";
 
 const a = "a".repeat(40),
   b = "b".repeat(40),
@@ -221,6 +226,255 @@ test("GitHub transport is outbound public-only, denies offline and verifies exac
     /GITHUB_OFFLINE/,
   );
 });
+
+function operatorGitHubFixture({
+  driftAt = -1,
+  fault = "",
+  rulesets = 1,
+  rateAt = Infinity,
+  legacy = false,
+} = {}) {
+  const requests = [];
+  let stage = 0;
+  const gate = new GitHubGate(async (url, options) => {
+    assert.equal(
+      Object.keys(options.headers).some(
+        (k) => k.toLowerCase() === "authorization",
+      ),
+      false,
+    );
+    requests.push({ stage, url });
+    if (requests.length >= rateAt) return { ok: false, status: 403 };
+    const changed = stage === driftAt;
+    if (changed && ["403", "429"].includes(fault))
+      return { ok: false, status: Number(fault) };
+    const data = url.includes("git/ref")
+      ? {
+          ref: "refs/heads/main",
+          object: { type: "commit", sha: changed && fault === "main" ? c : b },
+        }
+      : url.includes("/runs?")
+        ? {
+            workflow_runs: [
+              {
+                ...green,
+                run_attempt: changed && fault === "attempt" ? 2 : 1,
+                conclusion:
+                  changed && fault === "quality" ? "failure" : "success",
+              },
+            ],
+          }
+        : url.includes("/jobs?")
+          ? {
+              jobs: [
+                {
+                  name: "quality",
+                  head_sha: b,
+                  status: "completed",
+                  conclusion:
+                    changed &&
+                    (fault === "job" ||
+                      (fault === "attempt" && url.includes("/attempts/2/")))
+                      ? "failure"
+                      : "success",
+                },
+              ],
+            }
+          : url.endsWith("rulesets")
+            ? Array.from({ length: rulesets }, (_, i) => ({
+                id: i + 1,
+                target: "branch",
+                enforcement: "active",
+              }))
+            : {
+                ...goodRules,
+                bypass_actors: changed && fault === "ruleset" ? [{}] : [],
+              };
+    return { ok: true, json: async () => structuredClone(data) };
+  });
+  return {
+    requests,
+    commitBudget: legacy ? 48 + 8 * (rulesets - 1) : 24 + 4 * (rulesets - 1),
+    authorize: async (name = "entry") => {
+      stage++;
+      if (legacy) {
+        assert.equal(await gate.latest(), b);
+        await gate.gate(b);
+      } else await authorizeOperatorGitHub(gate, b, name, true);
+    },
+  };
+}
+async function scriptedReattempt(remote, failAfterCommit = false) {
+  const writes = [];
+  let schema = 9;
+  const io = {
+    authorize: remote.authorize,
+    prepareCompatiblePair: async () => {
+      writes.push("build-candidate", "build-fallback");
+      return { candidate: {}, fallback: {} };
+    },
+    prepareHelpers: async () => {},
+    originalCheckpoint: async () => {
+      await remote.authorize("verify-start");
+      await remote.authorize("verify-complete");
+      return {};
+    },
+    save: async (j) => writes.push(j.phase),
+    stopFrozenWorker: async () => writes.push("stop"),
+    freeSingleWriter: async () => {},
+    stoppedCheckpoint: async (cp) => cp,
+    assertOperatorHandoff: async () => {},
+    backupAndProveRecovery: async () => ({}),
+    armNewWorker: async () => writes.push("arm"),
+    migrateSameFile: async () => {
+      assert.equal(remote.requests.length, remote.commitBudget);
+      schema = 10;
+      writes.push("commit");
+      if (failAfterCommit) throw Error("LOST_COMMIT_RESPONSE");
+    },
+    schemaVersion: async () => schema,
+    prepareV9Recovery: async () => true,
+    restoreOldWorker: async () => writes.push("restore-v9"),
+    publishCompatiblePair: async () => {},
+    startAndProve: async () => {},
+    selectFallback: async () => {},
+  };
+  try {
+    await remote.authorize(); // outer host: before operator lease
+    await remote.authorize("verify-start");
+    await remote.authorize("verify-complete"); // actual verifier repeats this before archive
+    writes.push("acknowledgement");
+    await upgradeExistingProtocol(io);
+  } catch (error) {
+    return { error, writes, io };
+  }
+  return { writes, io };
+}
+test("approved previous authorization ordering costs 48 REST requests with the identical GitHubGate", async () => {
+  const remote = operatorGitHubFixture({ legacy: true });
+  const result = await scriptedReattempt(remote);
+  assert.equal(result.error, undefined);
+  assert.equal(remote.requests.length, 48);
+  assert.equal(
+    remote.requests.filter((r) => r.url.includes("/runs?")).length,
+    8,
+  );
+});
+test("re-attempt has 24 public REST requests through commit; full fresh gates at all four essential boundaries", async () => {
+  const remote = operatorGitHubFixture();
+  const result = await scriptedReattempt(remote);
+  assert.equal(result.error, undefined);
+  assert.deepEqual(
+    Array.from(
+      { length: 8 },
+      (_, i) => remote.requests.filter((r) => r.stage === i + 1).length,
+    ),
+    [5, 1, 5, 1, 1, 1, 5, 5],
+  );
+  assert.ok(result.writes.includes("complete-v10"));
+  for (const event of [
+    "acknowledgement",
+    "build-candidate",
+    "build-fallback",
+    "release-prepared",
+    "commit",
+  ])
+    assert.equal(result.writes.filter((v) => v === event).length, 1);
+  assert.equal(
+    remote.requests.filter((r) => r.url.includes("/runs?")).length,
+    4,
+  );
+  assert.equal(
+    remote.requests.filter((r) => r.url.endsWith("rulesets")).length,
+    4,
+  );
+});
+for (const fault of [
+  "main",
+  "quality",
+  "attempt",
+  "job",
+  "ruleset",
+  "403",
+  "429",
+]) {
+  for (const stage of fault === "main" || ["403", "429"].includes(fault)
+    ? [1, 2, 3, 4, 5, 6, 7, 8]
+    : [1, 3, 7, 8]) {
+    test(`re-attempt denies ${fault} drift at authorization ${stage} before protected writes`, async () => {
+      const remote = operatorGitHubFixture({ driftAt: stage, fault });
+      const result = await scriptedReattempt(remote);
+      assert.ok(result.error);
+      assert.equal(result.writes.includes("commit"), false);
+      if (stage <= 3)
+        assert.equal(result.writes.includes("acknowledgement"), false);
+      if (stage <= 7) assert.equal(result.writes.includes("stop"), false);
+      if (stage === 8) assert.ok(result.writes.includes("restore-v9"));
+      if (["403", "429"].includes(fault)) {
+        assert.match(result.error.message, /GITHUB_RATE_LIMIT/);
+        assert.equal(
+          remote.requests.filter((r) => r.stage === stage).length,
+          1,
+        ); // no retry
+      }
+    });
+  }
+}
+test("additional active rulesets are freshly fetched at each essential gate and counted", async () => {
+  const remote = operatorGitHubFixture({ rulesets: 2 });
+  const result = await scriptedReattempt(remote);
+  assert.equal(result.error, undefined);
+  assert.equal(remote.requests.length, 28);
+  assert.equal(
+    remote.requests.filter((r) => r.url.endsWith("rulesets/2")).length,
+    4,
+  );
+});
+test("quota exhaustion partway through final gate restores v9 without commit or transport retry", async () => {
+  for (const rateAt of [21, 22, 23, 24]) {
+    const remote = operatorGitHubFixture({ rateAt });
+    const result = await scriptedReattempt(remote);
+    assert.match(result.error.message, /GITHUB_RATE_LIMIT/);
+    assert.equal(remote.requests.length, rateAt);
+    assert.equal(result.writes.includes("commit"), false);
+    assert.ok(result.writes.includes("restore-v9"));
+  }
+});
+test("committed recovery takes ten additional fresh requests and never restores v9", async () => {
+  const remote = operatorGitHubFixture();
+  const result = await scriptedReattempt(remote, true);
+  assert.match(result.error.message, /LOST_COMMIT_RESPONSE/);
+  assert.ok(result.writes.includes("recovery-required-v10"));
+  assert.equal(result.writes.includes("restore-v9"), false);
+  await remote.authorize(); // separately authorized recovery host entry
+  await recoverExistingProtocol(result.io, {
+    prepared: { fallback: {} },
+    checkpoint: {},
+    phase: "recovery-required-v10",
+  });
+  assert.equal(remote.requests.length, 34);
+  assert.equal(result.writes.includes("restore-v9"), false);
+});
+test("operator gates fail closed on unknown stages; ordinary post-build gate is full, not re-attempt-only", async () => {
+  let calls = 0;
+  const github = {
+    latest: async () => {
+      calls++;
+      return b;
+    },
+    gate: async () => {
+      calls += 5;
+    },
+  };
+  await assert.rejects(
+    authorizeOperatorGitHub(github, b, "unknown"),
+    /OPERATOR_GATE_STAGE_INVALID/,
+  );
+  assert.equal(calls, 0);
+  await authorizeOperatorGitHub(github, b, "after-build", false);
+  assert.equal(calls, 5);
+});
+
 test("build-before-stop, durable good release, one writer and idempotent no-op", async () => {
   const f = fixture();
   await deploy(f.state, f.io);
@@ -378,17 +632,30 @@ test("native updater lease serializes workers and recovers after process crash",
   const unlock = operationalLock(lock, source);
   assert.throws(() => operationalLock(lock, source), /ALREADY_RUNNING/);
   unlock();
-  const script = `import {operationalLock} from ${JSON.stringify(new URL("./preview-cd-host.mjs", import.meta.url).href)};operationalLock(${JSON.stringify(lock)},${JSON.stringify(source)});console.log('LOCKED');setInterval(()=>{},1000);`;
+  const script = `import {operationalLock} from ${JSON.stringify(new URL("./preview-cd-host.mjs", import.meta.url).href)};const unlock=operationalLock(${JSON.stringify(lock)},${JSON.stringify(source)});process.on('SIGTERM',()=>{unlock();process.exit(0)});console.log('LOCKED');setInterval(()=>{},1000);`;
   const child = spawn(process.execPath, ["--input-type=module", "-e", script], {
     stdio: ["ignore", "pipe", "ignore"],
   });
-  await new Promise((r) => child.stdout.once("data", r));
-  assert.throws(() => operationalLock(lock, source), /ALREADY_RUNNING/);
   const ended = new Promise((r) => child.once("exit", r));
-  child.kill("SIGKILL");
-  await ended;
-  const recovered = operationalLock(lock, source);
-  recovered();
+  try {
+    await Promise.race([
+      new Promise((r) => child.stdout.once("data", r)),
+      ended.then(() => {
+        throw Error("FIXTURE_LOCK_PROCESS_EXITED");
+      }),
+    ]);
+    assert.throws(() => operationalLock(lock, source), /ALREADY_RUNNING/);
+    child.kill("SIGKILL");
+    await ended;
+    const recovered = operationalLock(lock, source);
+    recovered();
+  } finally {
+    // A failed assertion must never strand the exclusively owned fixture child.
+    if (child.exitCode === null && child.signalCode === null) {
+      child.kill("SIGKILL");
+      await ended;
+    }
+  }
 });
 test("launchd fixture contains one supervisor, no app secrets/listener and valid plist", () => {
   const xml = launchAgent(
@@ -450,7 +717,11 @@ test("source fingerprint ignores UI but detects schema/runtime/auth changes", ()
   ])
     writeFileSync(join(root, p), "accepted");
   const before = compatibilityFingerprint(root);
-  for (const path of ["src/features/real-data/sqlite/goal-guards.ts", "src/features/real-data/sqlite/preview-grant.ts", "src/features/real-data/actions/preview-reset.actions.ts"]) {
+  for (const path of [
+    "src/features/real-data/sqlite/goal-guards.ts",
+    "src/features/real-data/sqlite/preview-grant.ts",
+    "src/features/real-data/actions/preview-reset.actions.ts",
+  ]) {
     writeFileSync(join(root, path), "security boundary changed");
     assert.notEqual(compatibilityFingerprint(root), before);
     writeFileSync(join(root, path), "accepted");

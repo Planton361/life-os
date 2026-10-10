@@ -2,10 +2,10 @@ import { deny } from "./preview-cd-core.mjs";
 // Versioned operator protocol, not normal deploy/self-update. Persist a recovery
 // checkpoint BEFORE touching the canonical schema. No phase ever resets data.
 export async function upgradeExistingProtocol(io) {
-  await io.authorize();
+  await io.authorize("before-build");
   const prepared = await io.prepareCompatiblePair();
   await io.prepareHelpers(prepared);
-  await io.authorize();
+  await io.authorize("after-build");
   let checkpoint = await io.originalCheckpoint();
   await io.save({ phase: "release-prepared", prepared, checkpoint });
   try {
@@ -20,7 +20,7 @@ export async function upgradeExistingProtocol(io) {
     };
     await io.save({ phase: "prepared", prepared, checkpoint });
     await io.armNewWorker(prepared);
-    await io.authorize();
+    await io.authorize("before-commit");
     await io.assertOperatorHandoff(checkpoint);
     await io.migrateSameFile();
   } catch (error) {
