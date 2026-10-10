@@ -8,9 +8,9 @@ export async function upgradeExistingProtocol(io) {
   await io.authorize();
   let checkpoint = await io.originalCheckpoint();
   await io.save({ phase: "release-prepared", prepared, checkpoint });
-  await io.stopFrozenWorker();
-  await io.freeSingleWriter();
   try {
+    await io.stopFrozenWorker();
+    await io.freeSingleWriter();
     checkpoint = await io.stoppedCheckpoint(checkpoint);
     await io.save({ phase: "stopped-worker", prepared, checkpoint });
     await io.assertOperatorHandoff(checkpoint);
@@ -27,10 +27,15 @@ export async function upgradeExistingProtocol(io) {
     // Read committed schema from disk, including a lost migration response.
     const version = await io.schemaVersion();
     if (version === 9) {
-      await io.save({ phase: "aborted-v9", prepared, checkpoint });
-      await io.restoreOldWorker(checkpoint);
-    } else
+      if (await io.prepareV9Recovery(checkpoint)) {
+        checkpoint = await io.stoppedCheckpoint(checkpoint);
+        await io.save({ phase: "aborted-v9", prepared, checkpoint });
+        await io.restoreOldWorker(checkpoint);
+      }
+    } else if (version === 10)
       await io.save({ phase: "recovery-required-v10", prepared, checkpoint });
+    // Unknown schema or unsafe topology retains the last durable checkpoint.
+    // An already-running verified v9 service is preserved without re-bootstrap.
     throw error;
   }
   if ((await io.schemaVersion()) !== 10) deny("UPGRADE_SCHEMA_INVALID");
@@ -57,8 +62,20 @@ export async function recoverExistingProtocol(io, journal) {
     deny("UPGRADE_RECOVERY_CHECKPOINT_REQUIRED");
   await io.authorize();
   await io.prepareHelpers(journal.prepared);
-  await io.stopFrozenWorker();
-  await io.freeSingleWriter();
+  try {
+    await io.stopFrozenWorker();
+    await io.freeSingleWriter();
+  } catch (error) {
+    const schema = await io.schemaVersion();
+    if (schema === 9 && (await io.prepareV9Recovery(journal.checkpoint))) {
+      const checkpoint = await io.stoppedCheckpoint(journal.checkpoint);
+      await io.save({ ...journal, checkpoint, phase: "aborted-v9" });
+      await io.restoreOldWorker(checkpoint);
+    } else if (schema === 10) {
+      await io.save({ ...journal, phase: "recovery-required-v10" });
+    }
+    throw error;
+  }
   const schema = await io.schemaVersion();
   if (schema === 9) {
     const checkpoint = await io.stoppedCheckpoint(journal.checkpoint);

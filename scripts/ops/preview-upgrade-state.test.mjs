@@ -83,6 +83,7 @@ async function fixture({ late, fault } = {}) {
       if (fault === "lost-commit-response") throw new Error("LOST_RESPONSE");
     },
     schemaVersion: async () => version,
+    prepareV9Recovery: async () => true,
     restoreOldWorker: async (checkpoint) => {
       assertConfirmedOperatorPrefix(root, checkpoint);
       atomicJson(statePath, checkpoint.originalState);

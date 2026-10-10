@@ -35,6 +35,9 @@ import {
   validateRelease,
   databasePreflight,
   operationalLock,
+  leaseFree,
+  portOccupied,
+  command,
   pause,
 } from "./preview-cd-host.mjs";
 import {
@@ -46,7 +49,8 @@ import {
   assertOperatorHandoff,
   upgradedOperatorState,
 } from "./preview-upgrade-state.mjs";
-import { cli, commands } from "./preview-cd.mjs";
+import { SupervisorHandoff } from "./preview-upgrade-stop.mjs";
+import { cli, commands, processIdentity } from "./preview-cd.mjs";
 import { initialState } from "./preview-cd-core.mjs";
 import {
   journalDigest,
@@ -324,6 +328,7 @@ async function fixture() {
     armNewWorker: async () => {},
     migrateSameFile: async () => nativeCommand("migrate", path),
     schemaVersion: async () => Number(nativeCommand("version", path)),
+    prepareV9Recovery: async () => true,
     restoreOldWorker: async (checkpoint) => {
       await restoreV9Worker({
         root,
@@ -1305,3 +1310,443 @@ test("restore refuses an existing canonical writer before any checkpoint write o
     await f.cleanup();
   }
 });
+
+// A real owned launchd job around the unchanged, sealed historical native v9
+// runtime. Its fixture supervisor deliberately separates app close from finally
+// releasing its worker lease. Never uses personal LABEL, port 3000 or HOME plist.
+async function delayedLaunchFixture(delay = 800) {
+  const f = await fixture(),
+    label = `dev.life-os.test.handoff.${randomUUID()}`,
+    domain = `gui/${process.getuid()}`,
+    job = `${domain}/${label}`,
+    closed = join(f.root, "app-closed.json");
+  // Separate supervisor and canonical writer PIDs, as in the real frozen v1.
+  writeFileSync(
+    f.helper,
+    readFileSync(f.helper, "utf8").replace(
+      "const unlock=operationalLock(root+'/worker-lease.db',release);",
+      "const unlock=()=>{};",
+    ),
+    { mode: 0o600 },
+  );
+  const supervisor = join(f.root, "delayed-supervisor.mjs");
+  writeFileSync(
+    supervisor,
+    `import fs from 'node:fs';import {spawn} from 'node:child_process';import {operationalLock} from ${JSON.stringify(pathToFileURL(resolve("scripts/ops/preview-cd-host.mjs")).href)};
+const [helper,release,path,root,ready,buildId]=process.argv.slice(2);const unlock=operationalLock(root+'/worker-lease.db',release);
+const child=spawn(process.execPath,['--conditions=react-server',helper,release,path,root,ready,buildId],{cwd:release,stdio:['ignore','ignore','ignore','ipc']});
+child.once('message',()=>{const info=JSON.parse(fs.readFileSync(ready));fs.writeFileSync(ready,JSON.stringify({...info,pid:process.pid,serverPid:child.pid}),{mode:0o600});});
+process.once('SIGTERM',()=>child.kill('SIGTERM'));
+child.once('exit',()=>{fs.writeFileSync(${JSON.stringify(closed)},JSON.stringify({pid:process.pid,at:Date.now()}),{mode:0o600});setTimeout(()=>{unlock();process.exit(0);},${delay});});`,
+    { mode: 0o600 },
+  );
+  const args = [
+    process.execPath,
+    "--conditions=react-server",
+    supervisor,
+    f.helper,
+    f.old.path,
+    f.path,
+    f.root,
+    f.ready,
+    f.old.buildId,
+  ];
+  const escape = (x) =>
+    x.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+  const plist = `<?xml version="1.0"?><plist version="1.0"><dict><key>Label</key><string>${label}</string><key>ProgramArguments</key><array>${args.map((x) => `<string>${escape(x)}</string>`).join("")}</array><key>WorkingDirectory</key><string>${escape(f.old.path)}</string><key>RunAtLoad</key><true/><key>KeepAlive</key><false/></dict></plist>`;
+  writeFileSync(f.plist, plist, { mode: 0o600 });
+  const ctl = (...a) => execFileSync("/bin/launchctl", a, { encoding: "utf8" });
+  const eventually = async (fn) => {
+    for (let i = 0; i < 150; i++) {
+      if (await fn()) return;
+      await pause(50);
+    }
+    assert.fail("OWNED_FIXTURE_TIMEOUT");
+  };
+  let pid, serverPid, port, lock;
+  async function bootstrap() {
+    ctl("bootstrap", domain, f.plist);
+    await eventually(async () => {
+      try {
+        const info = readJson(f.ready);
+        if (info.pid === pid || !info.serverPid) return false;
+        const r = await fetch(`http://127.0.0.1:${info.port}`);
+        if ((await r.text()) !== f.old.buildId) return false;
+        pid = info.pid;
+        serverPid = info.serverPid;
+        port = info.port;
+        return true;
+      } catch {
+        return false;
+      }
+    });
+    atomicJson(join(f.root, "worker.json"), {
+      pid,
+      serverPid,
+      identity: await processIdentity(pid, process.execPath),
+    });
+    assert.throws(
+      () => operationalLock(join(f.root, "worker-lease.db"), source),
+      /ALREADY_RUNNING/,
+    );
+  }
+  let observedLag = 0;
+  const handoff = () => {
+    const h = new SupervisorHandoff({
+      root: f.root,
+      config: f.config,
+      source: () => source,
+      label,
+      port,
+      timeout: 3000,
+      plist: f.plist,
+      programArguments: args,
+    });
+    const same = h.sameSupervisor.bind(h);
+    h.sameSupervisor = async () => {
+      const alive = await same();
+      if (
+        alive &&
+        existsSync(closed) &&
+        readJson(closed).pid === h.worker.pid
+      ) {
+        assert.equal(await portOccupied(port), false);
+        assert.equal(leaseFree(f.config, f.old.path), true);
+        assert.throws(
+          () => operationalLock(join(f.root, "worker-lease.db"), source),
+          /ALREADY_RUNNING/,
+        );
+        observedLag++;
+      }
+      return alive;
+    };
+    return h;
+  };
+  const cp = () => ({
+    originalConfig: f.config,
+    originalState: readJson(join(f.root, "state.json")),
+    originalPlist: plist,
+    instance: randomUUID(),
+  });
+  f.io.originalCheckpoint = async () => cp();
+  f.io.prepareCompatiblePair = async () => f.pair;
+  let h;
+  f.io.stopFrozenWorker = async () => {
+    h = handoff();
+    lock = await h.stop({ allowUnregistered: true });
+  };
+  f.io.prepareV9Recovery = async () => {
+    if (h.registered()) return false;
+    lock ??= await h.acquireReleased({ wait: false });
+    await h.assertReleased();
+    return true;
+  };
+  f.io.freeSingleWriter = async () => {};
+  f.io.restoreOldWorker = async (checkpoint) =>
+    restoreV9Worker({
+      root: f.root,
+      checkpoint,
+      plist: f.plist,
+      releaseWorkerLease: async () => {
+        lock?.();
+        lock = null;
+      },
+      bootstrap,
+    });
+  return {
+    f,
+    closed,
+    ctl,
+    job,
+    domain,
+    cp,
+    bootstrap,
+    handoff,
+    async verifyRunning() {
+      await verifyRunningV9(f.root, f.config, f.old, {
+        label,
+        port,
+        authenticatedHealth: false,
+        plist: f.plist,
+        programArguments: args,
+      });
+    },
+    eventually,
+    get observedLag() {
+      return observedLag;
+    },
+    get pid() {
+      return pid;
+    },
+    get port() {
+      return port;
+    },
+    release() {
+      lock?.();
+      lock = null;
+    },
+    async cleanup() {
+      lock?.();
+      try {
+        ctl("bootout", job);
+      } catch {}
+      await eventually(() => {
+        try {
+          process.kill(pid, 0);
+          return false;
+        } catch {
+          return true;
+        }
+      });
+      await f.cleanup();
+    },
+  };
+}
+
+test(
+  "macOS delayed supervisor finally: app port/writer free first, kernel handoff waits then v9 abort restores one service",
+  { skip: process.platform !== "darwin", timeout: 60000 },
+  async () => {
+    const x = await delayedLaunchFixture();
+    try {
+      await x.bootstrap();
+      const oldPid = x.pid;
+      x.f.io.armNewWorker = async () => {
+        throw Error("ISOLATED_ARM_FAILURE");
+      };
+      await assert.rejects(
+        upgradeExistingProtocol(x.f.io),
+        /ISOLATED_ARM_FAILURE/,
+      );
+      assert.equal(readJson(x.f.journal).phase, "aborted-v9");
+      assert.notEqual(x.pid, oldPid);
+      assert.ok(Date.now() - readJson(x.closed).at >= 800);
+      assert.ok(
+        x.observedLag > 0,
+        "Port/writer free while supervisor kernel lease held was actually observed",
+      );
+      assert.equal(
+        await (await fetch(`http://127.0.0.1:${x.port}`)).text(),
+        x.f.old.buildId,
+      );
+      assert.throws(
+        () => operationalLock(join(x.f.root, "worker-lease.db"), source),
+        /ALREADY_RUNNING/,
+      );
+      x.f.assertPreserved();
+      assert.equal(nativeCommand("version", x.f.path), "9");
+    } finally {
+      await x.cleanup();
+    }
+  },
+);
+
+test(
+  "macOS worker-exit timeout keeps release-prepared; explicit crash recovery starts v9 once after kernel release",
+  { skip: process.platform !== "darwin", timeout: 60000 },
+  async () => {
+    const x = await delayedLaunchFixture(1200);
+    try {
+      await x.bootstrap();
+      const oldPid = x.pid;
+      const h = x.handoff();
+      h.timeout = 50;
+      x.f.io.stopFrozenWorker = async () => {
+        await h.stop();
+      };
+      x.f.io.prepareV9Recovery = async () => {
+        await h.acquireReleased({ wait: false });
+        return true;
+      };
+      await assert.rejects(upgradeExistingProtocol(x.f.io), /HANDOFF_TIMEOUT/);
+      assert.equal(readJson(x.f.journal).phase, "release-prepared");
+      await x.eventually(() => {
+        try {
+          process.kill(oldPid, 0);
+          return false;
+        } catch {
+          return true;
+        }
+      });
+      x.f.io.stopFrozenWorker = async () => {};
+      x.f.io.prepareV9Recovery = async () => true;
+      await recoverExistingProtocol(x.f.io, readJson(x.f.journal));
+      assert.equal(readJson(x.f.journal).phase, "aborted-v9");
+      assert.notEqual(x.pid, oldPid);
+      x.f.assertPreserved();
+      assert.equal(nativeCommand("version", x.f.path), "9");
+    } finally {
+      await x.cleanup();
+    }
+  },
+);
+
+test(
+  "macOS crash/SIGKILL at release-prepared leaves durable v9 checkpoint and no double supervisor on recovery",
+  { skip: process.platform !== "darwin", timeout: 60000 },
+  async () => {
+    const x = await delayedLaunchFixture();
+    try {
+      await x.bootstrap();
+      const cp = x.cp();
+      atomicJson(x.f.journal, {
+        version: 2,
+        phase: "release-prepared",
+        prepared: x.f.pair,
+        checkpoint: cp,
+      });
+      const h = x.handoff();
+      await h.capture(true);
+      x.ctl("bootout", x.job);
+      await x.eventually(() => existsSync(x.closed));
+      process.kill(x.pid, "SIGKILL");
+      await x.eventually(() => {
+        try {
+          process.kill(x.pid, 0);
+          return false;
+        } catch {
+          return true;
+        }
+      });
+      await recoverExistingProtocol(x.f.io, readJson(x.f.journal));
+      assert.equal(readJson(x.f.journal).phase, "aborted-v9");
+      x.f.assertPreserved();
+    } finally {
+      await x.cleanup();
+    }
+  },
+);
+
+test(
+  "macOS live original service is preserved on bootout fault; foreign worker holder fails closed",
+  { skip: process.platform !== "darwin", timeout: 60000 },
+  async () => {
+    const x = await delayedLaunchFixture();
+    let foreign, ended;
+    try {
+      await x.bootstrap();
+      const pid = x.pid;
+      x.f.io.stopFrozenWorker = async () => {
+        await command("/bin/launchctl", ["bootout", x.job + ".not-installed"]);
+      };
+      x.f.io.prepareV9Recovery = async () => {
+        await x.verifyRunning();
+        return false;
+      };
+      await assert.rejects(upgradeExistingProtocol(x.f.io), /COMMAND_FAILED/);
+      assert.equal(x.pid, pid);
+      assert.equal(readJson(x.f.journal).phase, "release-prepared");
+      assert.equal(
+        await (await fetch(`http://127.0.0.1:${x.port}`)).text(),
+        x.f.old.buildId,
+      );
+      const h = x.handoff();
+      const unlock = await h.stop();
+      unlock();
+      const helper = join(x.f.root, "foreign-holder.mjs");
+      writeFileSync(
+        helper,
+        `import {operationalLock} from ${JSON.stringify(pathToFileURL(resolve("scripts/ops/preview-cd-host.mjs")).href)};const unlock=operationalLock(process.argv[2],process.argv[3]);process.send('READY');process.on('SIGTERM',()=>{unlock();process.exit(0)});setInterval(()=>{},1000);`,
+      );
+      foreign = spawn(
+        process.execPath,
+        [helper, join(x.f.root, "worker-lease.db"), source],
+        { stdio: ["ignore", "ignore", "ignore", "ipc"] },
+      );
+      ended = once(foreign, "exit");
+      await once(foreign, "message");
+      await assert.rejects(
+        h.acquireReleased({ wait: false }),
+        /FOREIGN_WORKER_LEASE/,
+      );
+      x.f.assertPreserved();
+    } finally {
+      if (foreign) {
+        foreign.kill("SIGTERM");
+        await ended;
+      }
+      await x.cleanup();
+    }
+  },
+);
+
+test(
+  "macOS free error before stopped checkpoint returns v9 with latest cursor and pending intent retained",
+  { skip: process.platform !== "darwin", timeout: 60000 },
+  async () => {
+    const x = await delayedLaunchFixture(200);
+    try {
+      await x.bootstrap();
+      const original = x.pid;
+      x.f.io.freeSingleWriter = async () => {
+        await cli(["disable", x.f.root]);
+        const latest = readJson(join(x.f.root, "state.json"));
+        commands(x.f.root, latest);
+        atomicJson(join(x.f.root, "state.json"), latest);
+        await cli(["retry", x.f.root]);
+        throw Error("ISOLATED_FREE_FAILURE");
+      };
+      await assert.rejects(upgradeExistingProtocol(x.f.io), /FREE_FAILURE/);
+      const j = readJson(x.f.journal),
+        s = readJson(join(x.f.root, "state.json"));
+      assert.equal(j.phase, "aborted-v9");
+      assert.equal(j.checkpoint.stopped, true);
+      assert.equal(s.commandOffset, 5);
+      assert.equal(s.autoEnabled, false);
+      assert.notEqual(x.pid, original);
+      commands(x.f.root, s);
+      assert.equal(s.commandOffset, 6);
+      commands(x.f.root, s);
+      assert.equal(s.commandOffset, 6);
+      x.f.assertPreserved();
+    } finally {
+      await x.cleanup();
+    }
+  },
+);
+
+test(
+  "macOS foreign canonical writer never permits handoff or old bootstrap",
+  { skip: process.platform !== "darwin", timeout: 60000 },
+  async () => {
+    const x = await delayedLaunchFixture(200);
+    let foreign, exit;
+    try {
+      await x.bootstrap();
+      const h = x.handoff(),
+        unlock = await h.stop();
+      unlock();
+      foreign = spawn(
+        process.execPath,
+        [
+          "--conditions=react-server",
+          x.f.helper,
+          x.f.old.path,
+          x.f.path,
+          x.f.root,
+          join(x.f.root, "foreign-ready.json"),
+          x.f.old.buildId,
+        ],
+        { stdio: ["ignore", "ignore", "pipe", "ipc"] },
+      );
+      exit = once(foreign, "exit");
+      await Promise.race([
+        once(foreign, "message"),
+        exit.then(() => {
+          throw Error("OWNED_FOREIGN_WRITER_START_FAILED");
+        }),
+      ]);
+      await assert.rejects(
+        h.acquireReleased({ wait: false }),
+        /FOREIGN_DATABASE_HANDLE/,
+      );
+      x.f.assertPreserved();
+    } finally {
+      if (foreign && foreign.exitCode === null && foreign.signalCode === null) {
+        foreign.kill("SIGTERM");
+        await exit;
+      }
+      await x.cleanup();
+    }
+  },
+);

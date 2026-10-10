@@ -35,6 +35,7 @@ import {
   validateV9Release,
   validateV9WorkerSource,
 } from "./preview-v9-contract.mjs";
+import { SupervisorHandoff } from "./preview-upgrade-stop.mjs";
 import { v9DatabasePreflight, restoreV9Worker } from "./preview-upgrade-v9.mjs";
 import {
   acknowledgeAbortedV9,
@@ -89,6 +90,11 @@ export async function upgradeExisting({
     helperRelease,
     operatorUnlock,
     abortedEvidence;
+  const handoff = new SupervisorHandoff({
+    root,
+    config,
+    source: () => helperRelease.path,
+  });
   const databaseCommand = async (op, path, destination) =>
     command(
       config.node,
@@ -129,6 +135,7 @@ export async function upgradeExisting({
       "preview-upgrade-owner.mjs",
       "preview-upgrade-native-loader.mjs",
       "preview-upgrade-state.mjs",
+      "preview-upgrade-stop.mjs",
       "preview-v9-contract.mjs",
       "preview-upgrade-v9.mjs",
       "preview-upgrade-v9-preflight.mjs",
@@ -288,20 +295,7 @@ export async function upgradeExisting({
         validateV9Release(readJson(join(root, "state.json")).lastGood);
         validateV9WorkerSource(config.workerSource);
       }
-      try {
-        await command(
-          "/bin/launchctl",
-          ["bootout", `gui/${process.getuid()}/${LABEL}`],
-          { env },
-        );
-      } catch (error) {
-        if (!recover || error.message !== "COMMAND_FAILED") throw error;
-      }
-      await oldService.free();
-      workerUnlock = operationalLock(
-        join(root, "worker-lease.db"),
-        helperRelease.path,
-      );
+      workerUnlock = await handoff.stop({ allowUnregistered: recover });
     },
     freeSingleWriter: async () => {
       if (newService) await newService.stop();
@@ -360,6 +354,21 @@ export async function upgradeExisting({
     migrateSameFile: () => databaseCommand("migrate", config.database),
     schemaVersion: async () =>
       Number(await databaseCommand("version", config.database)),
+    async prepareV9Recovery(checkpoint) {
+      const latest = readJson(join(root, "state.json"));
+      // A failed bootout can leave the original service healthy. Preserve it;
+      // never rewrite its live state or bootstrap a second supervisor.
+      if (handoff.registered()) {
+        await v9DatabasePreflight(checkpoint.originalConfig, latest.lastGood);
+        await verifyRunningV9(root, checkpoint.originalConfig, latest.lastGood);
+        return false;
+      }
+      workerUnlock ??= await handoff.acquireReleased({ wait: false });
+      await handoff.assertReleased();
+      validateV9WorkerSource(checkpoint.originalConfig.workerSource);
+      await v9DatabasePreflight(checkpoint.originalConfig, latest.lastGood);
+      return true;
+    },
     async restoreOldWorker(checkpoint) {
       await restoreV9Worker({
         root,

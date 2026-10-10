@@ -36,6 +36,27 @@ The installed v9 release is dependency-probed before building; both independent
 v10 releases are probed (including loading the native driver in memory) before
 stopping the old preview. Recovery repeats these probes before stopping.
 
+After `launchctl bootout`, the operator separately waits for the attributed
+supervisor process to exit, its launchd job to disappear, its exclusive Worker
+lease to be released, and the app port/canonical writer to be free. The wait has
+a 30-second deadline with bounded OS identity/holder probes. During shutdown the
+job can remain visible after bootout returns; it is never assumed to have exited.
+The operator verifies the recorded process identity and refuses a replacement
+supervisor, foreign lease holder or canonical DB handle. Only then does it take
+the Worker lease and recheck the released topology. No PID is killed and no lease
+file is removed by this handoff.
+
+Stop, port/free and lease failures are inside the schema-aware recovery boundary.
+On confirmed v9, a still-registered, strictly verified healthy original service is
+preserved without rewriting its live state or bootstrapping again. If it has fully
+stopped and the operator can prove/hold the free Worker lease, the latest confirmed
+cursor/pending prefix is captured before saving `aborted-v9` and restoring v1.
+A lingering supervisor, timeout, foreign writer or ambiguous OS/schema state
+retains the incomplete checkpoint and fails closed; no unsafe bootstrap or
+automatic second operator attempt occurs. On confirmed v10, failure retains a
+v10-only recovery checkpoint and never restores v9. The same handoff applies to
+normal upgrade, explicit re-attempt and separately authorized existing recovery.
+
 After stopping and acquiring the worker lease, the operator rereads the final
 worker state. It persists the actual confirmed `commandOffset`, `autoEnabled`
 and a digest of the consumed command-log prefix before backup or migration.

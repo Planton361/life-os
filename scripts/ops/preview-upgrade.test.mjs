@@ -48,6 +48,7 @@ function fixture(fault = "") {
       if (fault === "lost-commit-response") throw new Error("LOST_RESPONSE");
     },
     schemaVersion: async () => version,
+    prepareV9Recovery: async () => true,
     restoreOldWorker: async () => {
       assert.equal(version, 9);
       events.push("old-v9");
@@ -115,7 +116,7 @@ test("failed candidate uses schema-compatible fallback, never v9", async () => {
 test("crash boundary before stop keeps recovery checkpoint; schema-v9 recovery does not migrate", async () => {
   const f = fixture("stop");
   await assert.rejects(upgradeExistingProtocol(f.io));
-  assert.equal(f.journal.phase, "release-prepared");
+  assert.equal(f.journal.phase, "aborted-v9");
   assert.equal(f.migrations, 0);
   f.io.stopFrozenWorker = async () => {};
   await recoverExistingProtocol(f.io, f.journal);
@@ -145,4 +146,44 @@ test("arming or final main-gate failure restores v9; publication failure never s
   await recoverExistingProtocol(published.io, published.journal);
   assert.equal(published.journal.phase, "complete-v10");
   assert.equal(published.migrations, 1);
+});
+
+for (const fault of ["stop", "free"]) {
+  test(`stop-boundary ${fault} failure restores verified v9 without migration`, async () => {
+    const f = fixture(fault);
+    await assert.rejects(upgradeExistingProtocol(f.io), /ISOLATED_FAULT/);
+    assert.equal(f.journal.phase, "aborted-v9");
+    assert.equal(f.migrations, 0);
+    assert.equal(f.events.filter((e) => e === "old-v9").length, 1);
+  });
+}
+test("failed bootout preserves an already-running verified v9 without duplicate bootstrap", async () => {
+  const f = fixture("stop");
+  f.io.prepareV9Recovery = async () => false;
+  await assert.rejects(upgradeExistingProtocol(f.io));
+  assert.equal(f.journal.phase, "release-prepared");
+  assert.ok(!f.events.includes("old-v9"));
+});
+test("unsafe holder or unknown schema keeps incomplete checkpoint; never starts old v9", async () => {
+  for (const unknown of [false, true]) {
+    const f = fixture("stop");
+    if (unknown) f.io.schemaVersion = async () => 8;
+    else
+      f.io.prepareV9Recovery = async () => {
+        throw Error("FOREIGN_LEASE");
+      };
+    await assert.rejects(upgradeExistingProtocol(f.io));
+    assert.equal(f.journal.phase, "release-prepared");
+    assert.ok(!f.events.includes("old-v9"));
+  }
+});
+test("recovery stop failures on committed v10 retain v10-only boundary", async () => {
+  const f = fixture("lost-commit-response");
+  await assert.rejects(upgradeExistingProtocol(f.io));
+  f.io.stopFrozenWorker = async () => {
+    throw Error("STOP_FAILED");
+  };
+  await assert.rejects(recoverExistingProtocol(f.io, f.journal));
+  assert.equal(f.journal.phase, "recovery-required-v10");
+  assert.ok(!f.events.includes("old-v9"));
 });

@@ -120,6 +120,7 @@ test("native operator backup/isolated recovery/v9→v10 protocol preserves owned
       assert.equal(command("migrate", path), "MIGRATION_PASS");
     },
     schemaVersion: async () => Number(command("version", path)),
+    prepareV9Recovery: async () => true,
     restoreOldWorker: async () => {
       assert.equal(command("version", path), "9");
     },
