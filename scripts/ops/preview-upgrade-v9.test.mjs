@@ -1766,7 +1766,7 @@ test(
       writeFileSync(
         helper,
         `import fs from 'node:fs';import {upgradeExistingProtocol} from ${JSON.stringify(pathToFileURL(resolve("scripts/ops/preview-upgrade-core.mjs")).href)};import {atomicJson,operationalLock} from ${JSON.stringify(pathToFileURL(resolve("scripts/ops/preview-cd-host.mjs")).href)};
-const [root,source,input]=process.argv.slice(2),data=JSON.parse(fs.readFileSync(input));const unlock=operationalLock(root+'/operator-upgrade-lease.db',source);
+const [root,source,input]=process.argv.slice(2),data=JSON.parse(fs.readFileSync(input));const unlock=operationalLock(root+'/operator-upgrade-lease.db',source);setInterval(()=>{},1000);
 await upgradeExistingProtocol({authorize:async()=>{},prepareCompatiblePair:async()=>data.pair,prepareHelpers:async()=>{},originalCheckpoint:async()=>data.checkpoint,save:async j=>atomicJson(root+'/upgrade-v2.json',{version:2,...j}),stopFrozenWorker:async()=>{process.send('AT_STOP');await new Promise(()=>{});}});unlock();`,
         { mode: 0o600 },
       );
@@ -1785,8 +1785,9 @@ await upgradeExistingProtocol({authorize:async()=>{},prepareCompatiblePair:async
         await (await fetch(`http://127.0.0.1:${x.port}`)).text(),
         x.f.old.buildId,
       );
-      operator.kill("SIGKILL");
-      await exit;
+      assert.equal(operator.kill("SIGKILL"), true);
+      const [, signal] = await exit;
+      assert.equal(signal, "SIGKILL");
       const release = operationalLock(
         join(x.f.root, "operator-upgrade-lease.db"),
         source,
