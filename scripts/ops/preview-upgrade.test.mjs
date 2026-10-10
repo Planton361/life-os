@@ -258,7 +258,7 @@ test("stuck supervisor fails with independent last observations and no secret id
   assert.ok(e.elapsedMs >= 40 && e.elapsedMs < 500);
   assert.doesNotMatch(JSON.stringify(e), /synthetic|12345|12346|a{64}/);
 });
-test("inspection helpers cannot consume more than the remaining monotonic budget; failures stay unknown", () => {
+test("inspection helpers cannot consume more than the remaining monotonic budget; failures stay unknown", async () => {
   for (const name of [
     "job",
     "supervisor",
@@ -275,6 +275,9 @@ test("inspection helpers cannot consume more than the remaining monotonic budget
     );
     assert.equal(h.observations[name].state, "unknown");
     assert.ok(h.evidence().elapsedMs < 500);
+    // Helpers round down to milliseconds and can return just before the overall
+    // deadline on Linux; explicitly let that final fraction elapse.
+    await new Promise((resolve) => setTimeout(resolve, 2));
     assert.throws(() => h.probeTimeout(), /SUPERVISOR_HANDOFF_TIMEOUT/);
   }
 });
