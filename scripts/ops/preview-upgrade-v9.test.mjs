@@ -1386,7 +1386,7 @@ test("restore refuses an existing canonical writer before any checkpoint write o
 // A real owned launchd job around the unchanged, sealed historical native v9
 // runtime. Its fixture supervisor deliberately separates app close from finally
 // releasing its worker lease. Never uses personal LABEL, port 3000 or HOME plist.
-async function delayedLaunchFixture(delay = 800) {
+async function delayedLaunchFixture(delay = 800, legacyTimer = false) {
   const f = await fixture(),
     label = `dev.life-os.test.handoff.${randomUUID()}`,
     domain = `gui/${process.getuid()}`,
@@ -1408,8 +1408,14 @@ async function delayedLaunchFixture(delay = 800) {
 const [helper,release,path,root,ready,buildId]=process.argv.slice(2);const unlock=operationalLock(root+'/worker-lease.db',release);
 const child=spawn(process.execPath,['--conditions=react-server',helper,release,path,root,ready,buildId],{cwd:release,stdio:['ignore','ignore','ignore','ipc']});
 child.once('message',()=>{const info=JSON.parse(fs.readFileSync(ready));fs.writeFileSync(ready,JSON.stringify({...info,pid:process.pid,serverPid:child.pid}),{mode:0o600});});
-process.once('SIGTERM',()=>child.kill('SIGTERM'));
-child.once('exit',()=>{fs.writeFileSync(${JSON.stringify(closed)},JSON.stringify({pid:process.pid,at:Date.now()}),{mode:0o600});setTimeout(()=>{unlock();process.exit(0);},${delay});});`,
+${
+  legacyTimer
+    ? `const {AppService}=await import(${JSON.stringify(pathToFileURL(join(f.old.path, "scripts/ops/preview-cd-host.mjs")).href)});const service=new AppService({});service.child=child;
+process.once('SIGTERM',async()=>{await service.stop();unlock();});
+child.once('exit',()=>fs.writeFileSync(${JSON.stringify(closed)},JSON.stringify({pid:process.pid,at:Date.now()}),{mode:0o600}));`
+    : `process.once('SIGTERM',()=>child.kill('SIGTERM'));
+child.once('exit',()=>{fs.writeFileSync(${JSON.stringify(closed)},JSON.stringify({pid:process.pid,at:Date.now()}),{mode:0o600});setTimeout(()=>{unlock();process.exit(0);},${delay});});`
+}`,
     { mode: 0o600 },
   );
   const args = [
@@ -1425,11 +1431,11 @@ child.once('exit',()=>{fs.writeFileSync(${JSON.stringify(closed)},JSON.stringify
   ];
   const escape = (x) =>
     x.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-  const plist = `<?xml version="1.0"?><plist version="1.0"><dict><key>Label</key><string>${label}</string><key>ProgramArguments</key><array>${args.map((x) => `<string>${escape(x)}</string>`).join("")}</array><key>WorkingDirectory</key><string>${escape(f.old.path)}</string><key>RunAtLoad</key><true/><key>KeepAlive</key><false/></dict></plist>`;
+  const plist = `<?xml version="1.0"?><plist version="1.0"><dict><key>Label</key><string>${label}</string><key>ProgramArguments</key><array>${args.map((x) => `<string>${escape(x)}</string>`).join("")}</array><key>WorkingDirectory</key><string>${escape(f.old.path)}</string><key>RunAtLoad</key><true/><key>KeepAlive</key><false/>${legacyTimer ? "<key>ExitTimeOut</key><integer>60</integer>" : ""}</dict></plist>`;
   writeFileSync(f.plist, plist, { mode: 0o600 });
   const ctl = (...a) => execFileSync("/bin/launchctl", a, { encoding: "utf8" });
   const eventually = async (fn) => {
-    for (let i = 0; i < 150; i++) {
+    for (let i = 0; i < (legacyTimer ? 900 : 150); i++) {
       if (await fn()) return;
       await pause(50);
     }
@@ -1470,7 +1476,7 @@ child.once('exit',()=>{fs.writeFileSync(${JSON.stringify(closed)},JSON.stringify
       source: () => source,
       label,
       port,
-      timeout: 3000,
+      ...(legacyTimer ? { legacyV9: true } : { timeout: 3000 }),
       plist: f.plist,
       programArguments: args,
     });
@@ -1484,10 +1490,11 @@ child.once('exit',()=>{fs.writeFileSync(${JSON.stringify(closed)},JSON.stringify
       ) {
         assert.equal(await portOccupied(port), false);
         assert.equal(leaseFree(f.config, f.old.path), true);
-        assert.throws(
-          () => operationalLock(join(f.root, "worker-lease.db"), source),
-          /ALREADY_RUNNING/,
-        );
+        if (!legacyTimer)
+          assert.throws(
+            () => operationalLock(join(f.root, "worker-lease.db"), source),
+            /ALREADY_RUNNING/,
+          );
         observedLag++;
       }
       return alive;
@@ -1879,6 +1886,70 @@ await upgradeExistingProtocol({authorize:async()=>{},prepareCompatiblePair:async
         operator.kill("SIGTERM");
         await exit;
       }
+      await x.cleanup();
+    }
+  },
+);
+
+// The real historical AppService leaves its losing 30s timer referenced even
+// when the separate native app exits promptly. No sealed source is patched.
+test(
+  "macOS historical uncanceled 30s timer: bounded handoff then one compatible v10 service",
+  { skip: process.platform !== "darwin", timeout: 120000 },
+  async () => {
+    const x = await delayedLaunchFixture(0, true);
+    const evidence = [];
+    let elapsed;
+    try {
+      await x.bootstrap();
+      x.f.io.stopFrozenWorker = async () => {
+        const h = x.handoff();
+        h.diagnostic = (e) => evidence.push(e);
+        const unlock = await h.stop();
+        elapsed = h.evidence().elapsedMs;
+        x.f.release();
+        // Keep the operator's kernel lease until the new compatible start.
+        x.f.io.startAndProve = async (release) => {
+          unlock();
+          writeFileSync(
+            x.f.helper,
+            readFileSync(x.f.helper, "utf8").replace(
+              "const unlock=()=>{};",
+              "const unlock=operationalLock(root+'/worker-lease.db',release);",
+            ),
+            { mode: 0o600 },
+          );
+          await x.f.start(release);
+        };
+      };
+      await upgradeExistingProtocol(x.f.io);
+      assert.equal(readJson(x.f.journal).phase, "complete-v10");
+      assert.equal(nativeCommand("version", x.f.path), "10");
+      assert.equal(x.f.starts, 1);
+      assert.ok(
+        x.observedLag > 0,
+        "App port and canonical writer free while old supervisor remains alive",
+      );
+      assert.ok(
+        elapsed >= 30000 && elapsed < 60000,
+        `legacy handoff elapsed ${elapsed}ms`,
+      );
+      const done = evidence.find((e) => e.phase === "complete");
+      assert.equal(done.observations.supervisor.state, "exited");
+      assert.equal(done.observations.job.state, "removed");
+      assert.equal(done.observations.workerLease.state, "exclusive");
+      assert.equal(done.observations.writerLease.state, "free");
+      assert.equal(done.observations.port.state, "free");
+      assert.equal(done.observations.databaseHandles.state, "none");
+      x.f.assertPreserved();
+      console.log(
+        JSON.stringify({
+          isolatedLegacyTimerHandoffMs: elapsed,
+          budgetMs: done.budgetMs,
+          earlyAppReleaseObserved: true,
+        }),
+      );
+    } finally {
       await x.cleanup();
     }
   },

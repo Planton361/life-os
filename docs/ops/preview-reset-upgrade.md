@@ -330,3 +330,38 @@ provisioning. CI executes both standard and Preview compositions at exact PR hea
 This is implementation/disposable validation evidence, not live installation,
 personal-data acceptance, public-hosted readiness or final closure of the existing
 core surfaces. CONTROL reviews the PR before USER M0; live upgrade remains gated.
+
+### Historical supervisor handoff budget and diagnostics
+
+The verified frozen v1 `AppService.stop()` races child exit against a referenced
+30-second timer without canceling the losing timer. The app port/writer can be
+free while that timer still keeps the supervisor and launchd job alive. The
+sealed historical worker is never patched. Only the verified historical-v9
+operator path receives a 60-second **overall** monotonic handoff budget, starting
+before identity capture and bootout (provisioned v2 retains 30 seconds). This
+allows the 30-second legacy timer plus up to 30 seconds for identity, launchd
+removal, kernel lease handoff and inspection scheduling. Native macOS fixtures
+exercise the actual historical `AppService.stop()` with separate supervisor/app
+PIDs, an ephemeral port and synthetic SQLite, including early app closure.
+
+Every inspection helper is limited to the lesser of 5 seconds and the remaining
+budget; loopback probing uses at most 1 second. No fresh per-iteration deadline
+is granted. Final kernel-lease acquisition and rechecks must finish before the
+same deadline. A failed stop enters the existing schema-dependent recovery
+boundary; its one-shot released-topology inspection gets a separate 5-second
+probe allowance, never another stop/poll. Filesystem/native calls and OS process
+scheduling are subject to host scheduling, so this is a bounded protocol deadline,
+not a real-time guarantee against an unresponsive kernel.
+
+The operator emits `previewHandoff` JSON at phase changes and failure: elapsed
+milliseconds, budget, per-probe count/total/max duration, and timestamped last
+observations of job, supervisor/identity, owned/foreign worker/writer/DB handles,
+writer lease, port and successful exclusive Worker lease acquisition. `unobserved`
+and `unknown` are distinct from release; old observations retain their `atMs`.
+No PIDs, paths, labels, identities/digests, owner/profile data or auth headers are
+included. Handle absence alone never proves kernel-lease ownership: the exclusive
+Worker lease and full post-acquisition checks remain mandatory. Foreign/reused
+processes, unknown probes, occupied ports and unavailable leases fail closed.
+Timeout diagnostics do not authorize retry, forced supervisor termination, manual
+bootstrap, lease removal or a v9 start on schema v10. A new personal attempt still
+requires merge, exact-main CI and separate explicit single-use CONTROL approval.
