@@ -7,7 +7,6 @@ import { LABEL, deny } from "./preview-cd-core.mjs";
 import { createHash } from "node:crypto";
 import {
   boundary,
-  command,
   cleanEnvironment,
   readJson,
   pause,
@@ -146,6 +145,12 @@ export class SupervisorHandoff {
       return r;
     });
   }
+  textProbe(name, file, args) {
+    const r = this.syncProbe(name, file, args);
+    if (r.status !== 0) deny("UPGRADE_HANDOFF_PROBE_FAILED");
+    this.observe(name, "complete");
+    return r.stdout.trim();
+  }
   async portBusy() {
     return this.measured(
       "port",
@@ -242,26 +247,24 @@ export class SupervisorHandoff {
   }
 
   async identity() {
-    const options = () => ({ env: this.env, timeout: this.probeTimeout() });
-    const info = await command(
-      "/bin/ps",
-      [
-        "-p",
-        String(this.worker.pid),
-        "-o",
-        "lstart=",
-        "-o",
-        "ppid=",
-        "-o",
-        "command=",
-      ],
-      options(),
-    );
-    const cwd = await command(
-      "/usr/sbin/lsof",
-      ["-a", "-p", String(this.worker.pid), "-d", "cwd", "-Fn"],
-      options(),
-    );
+    const info = this.textProbe("identityProcess", "/bin/ps", [
+      "-p",
+      String(this.worker.pid),
+      "-o",
+      "lstart=",
+      "-o",
+      "ppid=",
+      "-o",
+      "command=",
+    ]);
+    const cwd = this.textProbe("identityCwd", "/usr/sbin/lsof", [
+      "-a",
+      "-p",
+      String(this.worker.pid),
+      "-d",
+      "cwd",
+      "-Fn",
+    ]);
     return createHash("sha256").update(info).update(cwd).digest("hex");
   }
   async sameSupervisor() {
@@ -292,11 +295,14 @@ export class SupervisorHandoff {
     if (job) {
       boundary(this.plist);
       const args = JSON.parse(
-        await command(
-          "/usr/bin/plutil",
-          ["-extract", "ProgramArguments", "json", "-o", "-", this.plist],
-          { env: this.env, timeout: this.probeTimeout() },
-        ),
+        this.textProbe("plist", "/usr/bin/plutil", [
+          "-extract",
+          "ProgramArguments",
+          "json",
+          "-o",
+          "-",
+          this.plist,
+        ]),
       );
       if (
         !alive ||
@@ -405,12 +411,7 @@ export class SupervisorHandoff {
       const job = await this.capture(allowUnregistered);
       this.report("bootout");
       if (job)
-        await this.measured("bootout", () =>
-          command("/bin/launchctl", ["bootout", this.job], {
-            env: this.env,
-            timeout: this.probeTimeout(),
-          }),
-        );
+        this.textProbe("bootout", "/bin/launchctl", ["bootout", this.job]);
       return await this.acquireReleased();
     } catch (error) {
       this.report(
