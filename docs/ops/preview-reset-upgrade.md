@@ -1,10 +1,25 @@
 # Personal Preview reset and v2 operator upgrade — #142
 
-This runbook describes the reviewed code candidate for the USER-accepted
+This runbook documents the reviewed operator protocol and its actual, scoped
+personal installation for the USER-accepted
 [#141 A1/D1/D2/D3 target](https://github.com/Planton361/life-os/issues/141#issuecomment-6087673972).
-**NOT ACTIVE.** Authoring/testing this procedure does not authorize executing it
-against the installed worker or personal database. The feature is deliberately
-unavailable to standard production/Hosted/Supabase builds.
+
+**Personal-only activation verified (2026-10-11):** The operator-provisioned local
+Tailscale Manual Preview v2 / SQLite schema10 is running the reviewed merged
+[main release](https://github.com/Planton361/life-os/commit/87ae380ed9f17c03ac7d7be15f1de6067adb5e80)
+under the [approved Mac activation](https://github.com/Planton361/life-os/issues/142#issuecomment-6112615294).
+USER executed the first actual Reset; the
+[read-only post-reset evaluation](https://github.com/Planton361/life-os/issues/142#issuecomment-6112872691)
+verified 82/82 empty target tables, the retained profile, valid reset receipt and
+empty Manual/Archive/History reloads. USER subsequently confirmed that a new
+Task was saved and remained after a full reload. This is not a claim of generic
+Hosted/production availability, automatic future deployment, secure erasure,
+or prototype FREEZE.
+
+The commands and admission gates below document the **historical one-time v9→v10
+transition** and are not permission to rerun an operator or reset the personal
+database. The feature remains unavailable in standard production/Hosted/Supabase
+builds and without the private Preview grant.
 
 ## Required deployment gate
 
@@ -13,8 +28,9 @@ unavailable to standard production/Hosted/Supabase builds.
    strict Ruleset/PR protection. PR CI alone does not authorize provisioning.
 3. Obtain a separate explicit CONTROL operator checkpoint for that exact SHA,
    existing private instance, downtime, forward migration and recovery evidence.
-   Recheck live main/CI/one writer immediately before the operation. No live
-   provisioning, backup, migration or reset was performed for this PR.
+   Recheck live main/CI/one writer immediately before the operation. At code
+   review time no personal provisioning or reset occurred; subsequent v2
+   activation and USER Reset are separately evidenced above.
 4. An operator may then explicitly invoke the merged script with pinned Node
    24.21.0, `node scripts/ops/preview-cd.mjs upgrade-existing
 <existing-private-root> <clean-merged-main-source> <exact-main-SHA>`.
