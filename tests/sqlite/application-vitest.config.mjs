@@ -17,6 +17,7 @@ const configuration = {
       "src/features/real-data/schemas/**/*.test.ts",
       "src/features/entities/workbench/**/*.test.ts",
       "src/features/calendar/weekly-task-context.test.ts",
+      "src/features/calendar/calendar-today-snapshot.test.ts",
     ],
   },
 };
