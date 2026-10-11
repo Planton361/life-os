@@ -77,6 +77,7 @@ jobs:
       - name: Production Next build and native shutdown proof (Linux x64)
         run: |
           pnpm build
+          node tests/sqlite/issue-142-calendar-hydration-proof.mjs
           node tests/sqlite/retired-runtime-proof.mjs
           node tests/sqlite/framework-shutdown-proof.mjs
           node tests/sqlite/application-smoke.mjs
@@ -86,6 +87,7 @@ jobs:
       - name: Preview composition and isolated reset browser proof (Linux x64)
         run: |
           LIFE_OS_BUILD_COMPOSITION=personal-preview-v2 pnpm build
+          node tests/sqlite/issue-142-calendar-hydration-proof.mjs --preview
           node tests/sqlite/issue-142-browser-proof.mjs
 
       - name: Preserve disposable reset browser evidence
@@ -96,5 +98,7 @@ jobs:
           path: |
             test-results/issue-142/*.png
             test-results/issue-142/proof.json
+            test-results/issue-142-calendar/*.png
+            test-results/issue-142-calendar/*.json
           if-no-files-found: warn
           retention-days: 14

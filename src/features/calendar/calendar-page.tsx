@@ -82,7 +82,6 @@ type PointerConflictProposal = PointerSchedulingProposal & {
   conflictTimeLabel: string;
 };
 
-const MOCK_TODAY = todayDateIso();
 const monthNames = [
   "January",
   "February",
@@ -101,10 +100,6 @@ const weekdayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const queueInputClass =
   "mt-1 min-h-8 w-full rounded-[9px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.76)] px-2.5 text-[12px] text-[var(--text-primary)] outline-none focus:border-[var(--focus-ring)]";
-
-function todayDateIso() {
-  return formatIsoDate(new Date());
-}
 
 function durationLabel(minutes: number) {
   if (minutes < 60) return `${minutes} min`;
@@ -895,6 +890,7 @@ function CalendarDaySurface({
 function CalendarMonthSurface({
   allDayBlocks,
   currentDate,
+  today,
   onSelectBlock,
   onSelectDay,
   selectedBlockId,
@@ -902,6 +898,7 @@ function CalendarMonthSurface({
 }: Readonly<{
   allDayBlocks: readonly CalendarAllDayBlockViewModel[];
   currentDate: string;
+  today: string;
   onSelectBlock: (blockId: string) => void;
   onSelectDay: (date: string) => void;
   selectedBlockId?: string;
@@ -959,7 +956,7 @@ function CalendarMonthSurface({
         {cells.map((cell) => {
           const dayBlocks = blocks.filter((block) => block.date === cell.iso);
           const muted = cell.date.getUTCMonth() !== currentMonth;
-          const isToday = cell.iso === MOCK_TODAY;
+          const isToday = cell.iso === today;
 
           return (
             <div
@@ -1131,8 +1128,10 @@ function CalendarYearSurface({
 
 export function CalendarPlanningPage({
   viewModel,
+  today,
 }: Readonly<{
   viewModel: CalendarViewModel;
+  today: string;
 }>) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1142,7 +1141,7 @@ export function CalendarPlanningPage({
     (isIsoDate(routeDate) ? routeDate : null) ||
     viewModel.days.find((day) => day.isToday)?.date ||
     viewModel.days[0]?.date ||
-    MOCK_TODAY;
+    today;
   const initialView = isCalendarView(routeView) ? routeView : "week";
   const routeTaskId = searchParams.get("task");
   const routeTaskBlock = routeTaskId
@@ -1233,9 +1232,9 @@ export function CalendarPlanningPage({
   const calendarDays = useMemo(
     () =>
       viewModel.profileId === "manual"
-        ? calendarDaysForWeek(currentDate, MOCK_TODAY)
+        ? calendarDaysForWeek(currentDate, today)
         : viewModel.days,
-    [currentDate, viewModel.days, viewModel.profileId],
+    [currentDate, today, viewModel.days, viewModel.profileId],
   );
   const dateByDayId = useMemo(
     () => new Map(calendarDays.map((day) => [day.id, day.date])),
@@ -1304,7 +1303,7 @@ export function CalendarPlanningPage({
   const activeDay =
     calendarDays.find((day) => day.date === currentDate) ??
     selectedDay ??
-    calendarDayForDate(currentDate, MOCK_TODAY);
+    calendarDayForDate(currentDate, today);
 
   const dynamicHeader = {
     ...viewModel.header,
@@ -1315,7 +1314,7 @@ export function CalendarPlanningPage({
           ? monthLabel(currentDate)
           : activeView === "year"
             ? yearLabel(currentDate)
-            : currentDate === MOCK_TODAY
+            : currentDate === today
               ? weekLabel(calendarDays)
               : weekRangeLabel(currentDate),
     controls: {
@@ -1630,7 +1629,7 @@ export function CalendarPlanningPage({
           header={dynamicHeader}
           onMovePeriod={movePeriod}
           onToday={() => {
-            setCalendarDate(MOCK_TODAY);
+            setCalendarDate(today);
           }}
           onViewChange={setCalendarView}
         />
@@ -1640,7 +1639,7 @@ export function CalendarPlanningPage({
           onCreateBlock={createBlock}
           onMovePeriod={movePeriod}
           onToday={() => {
-            setCalendarDate(MOCK_TODAY);
+            setCalendarDate(today);
           }}
           onViewChange={setCalendarView}
           resolveDayId={resolveDayId}
@@ -1714,6 +1713,7 @@ export function CalendarPlanningPage({
             <CalendarMonthSurface
               allDayBlocks={filteredAllDayBlocks}
               currentDate={currentDate}
+              today={today}
               onSelectBlock={selectBlock}
               onSelectDay={(date) => {
                 setActiveView("day");
