@@ -41,6 +41,14 @@ export type TaskSkillActionResult = TaskLifecycleActionResult & {
 
 const appTimeZone = "Europe/Berlin";
 
+function taskParentCompletionMessage(message: string): string | null {
+  if (message.includes("TASK_PROJECT_ARCHIVED"))
+    return "Das Project ist archiviert. Diese Task kann nicht abgeschlossen werden.";
+  if (message.includes("TASK_PROJECT_NOT_FOUND"))
+    return "Das Project dieser Task ist nicht mehr verfügbar. Lade die Seite neu.";
+  return null;
+}
+
 function formString(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" ? value.trim() : "";
@@ -257,6 +265,8 @@ export async function updatePortfolioTaskAction(
       parsed.data,
     );
     if (!result.ok) {
+      const parentMessage = taskParentCompletionMessage(result.error.message);
+      if (parentMessage) return { message: parentMessage, status: "error" };
       return {
         message: result.error.message.includes("DEPENDENCY_")
           ? dependencyErrorMessage(result.error.message)
@@ -738,6 +748,8 @@ export async function completeTaskAction(
     );
 
     if (!result.ok) {
+      const parentMessage = taskParentCompletionMessage(result.error.message);
+      if (parentMessage) return { message: parentMessage, status: "error" };
       return {
         message: result.error.message.includes("DEPENDENCY_")
           ? dependencyErrorMessage(result.error.message)
@@ -747,7 +759,7 @@ export async function completeTaskAction(
               ? "Dieser Task gehört zu einer offenen Laufeinheit. Schließe den Lauf über den Running-Flow ab."
               : (result.error.message.includes("strength flow") || result.error.message.includes("SOURCE_STRENGTH_FLOW_REQUIRED"))
                 ? "Dieser Task gehört zu einer offenen Krafttrainingseinheit. Schließe das Training über den Strength-Flow ab."
-                : "Der Task konnte in Supabase nicht abgeschlossen werden.",
+                : "Der Task konnte nicht abgeschlossen werden.",
         status: "error",
       };
     }

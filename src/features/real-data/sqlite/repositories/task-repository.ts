@@ -16,6 +16,7 @@ import { SqliteRuntime } from "../runtime";
 import { safeNumber, timestamp, localDate, uuid } from "../codecs";
 import { createTaskInputSchema, updateTaskInputSchema } from "../../schemas/task.schemas";
 import { localDateSchema, z } from "../../schemas/schema-contract";
+import { assertTaskCompletionParent } from "../task-completion-parent";
 
 const generatedInputSchema = updateTaskInputSchema.pick({ userId: true, profileId: true, description: true, areaId: true, projectId: true, goalId: true, energy: true, durationMinutes: true }).extend({
   templateId: z.uuid(), instanceDate: localDateSchema,
@@ -78,7 +79,11 @@ export function createTaskInTransaction(db: Database.Database, owner: string, da
   return load(db, owner, id);
 }
 function update(db: Database.Database, owner: string, id: string, patch: TaskUpdate): TaskRow {
-  load(db, owner, id);
+  const old = load(db, owner, id);
+  if (patch.status === "done" || patch.completed_at != null) {
+    assertTaskCompletionParent(db, owner, old.project_id);
+    assertTaskCompletionParent(db, owner, patch.project_id === undefined ? old.project_id : patch.project_id);
+  }
   validateContext(db, owner, patch);
   const entries = Object.entries(patch).filter(([, value]) => value !== undefined);
   if (entries.some(([key]) => !columns.has(key))) throw new Error("TASK_COLUMN_DENIED");
@@ -149,6 +154,7 @@ export function createSqliteTaskRepository(store: SqliteRuntime, context: OwnerC
     async unscheduleTask(input) { return schedule(input, mapUnscheduleTaskInputToPatch()); },
     async updateTask(input) { return command(input, input.status === "done" ? "source.complete" : "task.update", (db, owner) => {
       const old = load(db, owner, input.taskId); const patch = mapUpdateTaskInputToPatch(input);
+      if (patch.status === "done") assertTaskCompletionParent(db, owner, old.project_id);
       validateAlignment(db, owner, { ...old, ...patch });
       if (link(db, owner, input.taskId)) {
         for (const field of ["planned_date", "scheduled_start_at", "duration_minutes"] as const)

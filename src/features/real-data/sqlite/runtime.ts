@@ -46,6 +46,7 @@ import {
 } from "./skill-invariants";
 
 import { validateRewardCommit } from "./reward-invariants";
+import { taskCompletionSnapshot, validateTaskCompletionCommit } from "./task-completion-parent";
 
 export const runtimeVersions = Object.freeze({
   node: "24.21.0",
@@ -396,7 +397,9 @@ export class SqliteRuntime {
           const skillBefore = skillCommitSnapshot(this.#db, this.#owner);
           const before = goalCommitSnapshot(this.#db, this.#owner);
           const projectBefore = projectCommitSnapshot(this.#db, this.#owner);
+          const tasksBefore = taskCompletionSnapshot(this.#db, this.#owner);
           const result = this.#sync(body(this.#db, this.#owner));
+          validateTaskCompletionCommit(this.#db, this.#owner, tasksBefore);
           advanceProjectMetadata(this.#db, this.#owner, projectBefore, () => {
             this.#command = "project.metadata";
           });
