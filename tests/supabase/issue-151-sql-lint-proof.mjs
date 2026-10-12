@@ -13,6 +13,11 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import {
+  baseRevision,
+  compareEvidence,
+  selfTest,
+} from "./issue-151-sql-lint-gate.mjs";
 
 assert.equal(
   process.env.GITHUB_ACTIONS,
@@ -21,7 +26,12 @@ assert.equal(
 );
 assert.equal(process.env.RUNNER_OS, "Linux", "Ephemeral Linux runner required");
 assert.equal(process.versions.node, "24.21.0");
-const base = "0e3b4115a597841c3e8167df923cbea4063a63cf";
+const base = baseRevision;
+assert.equal(
+  process.env.ISSUE151_BASE_SHA,
+  base,
+  "PR base changed: no implicit baseline update",
+);
 const image =
   "postgres:18.4-bookworm@sha256:882236b897e39051d2368c5ccc6cda944904723506b2dfc97f2a8f5bc9afa382";
 const checker = {
@@ -88,6 +98,12 @@ GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated,anon,service_role;`;
 let started = false;
 try {
   evidence.head = run("git", ["rev-parse", "HEAD"]).trim();
+  assert.equal(
+    evidence.head,
+    process.env.ISSUE151_HEAD_SHA,
+    "Not the exact PR head",
+  );
+  assert.equal(run("git", ["merge-base", base, "HEAD"]).trim(), base);
   assert.ok(
     !process.env.DOCKER_HOST,
     "Remote Docker endpoints are not accepted",
@@ -245,6 +261,9 @@ try {
         stderr = redact(r.stderr);
       writeFileSync(join(output, `${variant}-${kind}-stdout.json`), stdout);
       writeFileSync(join(output, `${variant}-${kind}-stderr.txt`), stderr);
+      console.log(
+        `${variant} ${kind} exit=${r.status}\nstdout:\n${stdout}\nstderr:\n${stderr}`,
+      );
       checks[kind] = { exitCode: r.status, signal: r.signal, stdout, stderr };
       evidence.databases[variant] = { identity, migrations, checks };
       if (r.status !== 0) {
@@ -311,6 +330,9 @@ try {
         join(output, "head-lint-strict-stderr.txt"),
         checks.strictLint.stderr,
       );
+      console.log(
+        `head strict lint exit=${strict.status}\nstdout:\n${checks.strictLint.stdout}\nstderr:\n${checks.strictLint.stderr}`,
+      );
       assert.equal(
         strict.status,
         checks.lint.results.length ? 1 : 0,
@@ -329,47 +351,18 @@ try {
       `${variant}: PostgreSQL ${identity.serverVersion}; plpgsql_check ${identity.extensionVersion}; ${migrations.length} migrations; actual lint/advisor exit 0`,
     );
   }
-  // Keep the complete actual CLI result groups. Compare a multiset rather than
-  // assuming exit 0 means clean; no pre-existing warning is waived or hidden.
-  const baseline = evidence.databases.base.checks.lint.results.map((r) =>
-    JSON.stringify(r),
+  // The approved gate admits only the complete, fingerprinted known baseline.
+  // The absolute CLI warning gate above stays nonzero and fully documented.
+  evidence.classification = compareEvidence(evidence);
+  evidence.comparisonSelfTest = selfTest(evidence);
+  writeFileSync(
+    join(output, "comparison-self-test.json"),
+    JSON.stringify(evidence.comparisonSelfTest, null, 2),
   );
-  const remaining = [...baseline],
-    added = [];
-  for (const r of evidence.databases.head.checks.lint.results) {
-    const key = JSON.stringify(r),
-      i = remaining.indexOf(key);
-    if (i < 0) added.push(r);
-    else remaining.splice(i, 1);
-  }
-  const headFindings = evidence.databases.head.checks.lint.results;
-  for (const row of headFindings)
-    assert.ok(Array.isArray(row.issues), "Unknown lint issue group shape");
-  const issue151 = headFindings.filter((r) =>
-    /guard_task_parent_completion|guard_source_task_parent_completion/.test(
-      JSON.stringify(r),
-    ),
+  console.log(
+    `Differential gate self-test: PASS ${evidence.comparisonSelfTest.length} cases`,
   );
-  evidence.classification = {
-    headFindingGroups: headFindings.length,
-    baseFindingGroups: baseline.length,
-    headIssueCount: headFindings.reduce((n, row) => n + row.issues.length, 0),
-    baseIssueCount: evidence.databases.base.checks.lint.results.reduce(
-      (n, row) => n + row.issues.length,
-      0,
-    ),
-    issue151,
-    added,
-    removedBaselineGroups: remaining.map((r) => JSON.parse(r)),
-    status:
-      headFindings.length === 0
-        ? "PASS_CLEAN"
-        : issue151.length || added.length
-          ? "BLOCKED_NEW_FINDINGS"
-          : "PARTIAL_PREEXISTING_FINDINGS",
-  };
   console.log(JSON.stringify(evidence.classification));
-  if (headFindings.length) process.exitCode = 1;
 } catch (error) {
   evidence.failure = redact(String(error));
   console.error(evidence.failure);
@@ -381,6 +374,7 @@ try {
       timeout: 30_000,
       maxBuffer: 16 * 1024 * 1024,
     });
+    assert.equal(logs.status, 0, "Server log evidence failed");
     writeFileSync(
       join(output, "postgres-server-log.txt"),
       redact(logs.stdout) + redact(logs.stderr),

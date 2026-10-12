@@ -38,6 +38,9 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
       - name: Actual warning-level lint and security advisors
+        env:
+          ISSUE151_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          ISSUE151_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: node tests/supabase/issue-151-sql-lint-proof.mjs
       - name: Preserve complete lint output and isolation evidence
         if: always()
