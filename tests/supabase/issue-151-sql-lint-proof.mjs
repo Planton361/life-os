@@ -263,7 +263,17 @@ try {
         0,
         `${variant} actual ${kind} failed: ${stderr} ${stdout}`,
       );
-      const parsed = JSON.parse(stdout);
+      // The Linux CLI prints the explicit clean result on stderr with empty
+      // stdout, while findings are JSON. Retain both, and never infer clean
+      // results from exit 0 alone.
+      const cleanText =
+        kind === "advisors" ? /No issues found/ : /No schema errors found/;
+      const parsed = stdout.trim()
+        ? JSON.parse(stdout)
+        : cleanText.test(stderr)
+          ? { results: [] }
+          : null;
+      assert.ok(parsed, "Empty CLI output without an explicit clean result");
       assert.notEqual(parsed?._tag, "Error", "CLI operation reported an Error");
       const results = Array.isArray(parsed) ? parsed : parsed.results;
       assert.ok(
@@ -273,6 +283,39 @@ try {
       checks[kind].results = results;
     }
     if (variant === "head") {
+      const strict = spawnSync(
+        cli,
+        [
+          "db",
+          "lint",
+          "--level",
+          "warning",
+          "--fail-on",
+          "warning",
+          "--db-url",
+          url,
+        ],
+        { encoding: "utf8", timeout: 60_000, maxBuffer: 16 * 1024 * 1024 },
+      );
+      checks.strictLint = {
+        exitCode: strict.status,
+        signal: strict.signal,
+        stdout: redact(strict.stdout),
+        stderr: redact(strict.stderr),
+      };
+      writeFileSync(
+        join(output, "head-lint-strict-stdout.json"),
+        checks.strictLint.stdout,
+      );
+      writeFileSync(
+        join(output, "head-lint-strict-stderr.txt"),
+        checks.strictLint.stderr,
+      );
+      assert.equal(
+        strict.status,
+        checks.lint.results.length ? 1 : 0,
+        "Strict warning gate must agree with actual findings",
+      );
       sql(
         database,
         readFileSync(
@@ -300,6 +343,8 @@ try {
     else remaining.splice(i, 1);
   }
   const headFindings = evidence.databases.head.checks.lint.results;
+  for (const row of headFindings)
+    assert.ok(Array.isArray(row.issues), "Unknown lint issue group shape");
   const issue151 = headFindings.filter((r) =>
     /guard_task_parent_completion|guard_source_task_parent_completion/.test(
       JSON.stringify(r),
@@ -308,6 +353,11 @@ try {
   evidence.classification = {
     headFindingGroups: headFindings.length,
     baseFindingGroups: baseline.length,
+    headIssueCount: headFindings.reduce((n, row) => n + row.issues.length, 0),
+    baseIssueCount: evidence.databases.base.checks.lint.results.reduce(
+      (n, row) => n + row.issues.length,
+      0,
+    ),
     issue151,
     added,
     removedBaselineGroups: remaining.map((r) => JSON.parse(r)),
@@ -326,9 +376,14 @@ try {
   process.exitCode = 1;
 } finally {
   if (started) {
+    const logs = spawnSync("docker", ["logs", name], {
+      encoding: "utf8",
+      timeout: 30_000,
+      maxBuffer: 16 * 1024 * 1024,
+    });
     writeFileSync(
       join(output, "postgres-server-log.txt"),
-      redact(run("docker", ["logs", name])),
+      redact(logs.stdout) + redact(logs.stderr),
     );
     const verify = JSON.parse(run("docker", ["inspect", name]))[0];
     assert.equal(
