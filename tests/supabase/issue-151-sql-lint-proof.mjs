@@ -88,6 +88,13 @@ GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated,anon,service_role;`;
 let started = false;
 try {
   evidence.head = run("git", ["rev-parse", "HEAD"]).trim();
+  assert.ok(
+    !process.env.DOCKER_HOST,
+    "Remote Docker endpoints are not accepted",
+  );
+  const dockerContext = JSON.parse(run("docker", ["context", "inspect"]))[0];
+  assert.match(dockerContext.Endpoints.docker.Host, /^unix:\/\//);
+  evidence.dockerEndpoint = dockerContext.Endpoints.docker.Host;
   // No apt upgrade: install only the checksum-verified extension package into
   // our container. The official immutable image supplies the unchanged server.
   const response = await fetch(checker.url);
@@ -176,6 +183,12 @@ try {
   for (const variant of ["base", "head"]) {
     const database = `life_os_151_${variant}`;
     sql("postgres", `CREATE DATABASE ${database} TEMPLATE template0;`);
+    // Supabase's administrative connection resolves extensions as well as public
+    // functions. Plain official PostgreSQL defaults omit that extension schema.
+    sql(
+      "postgres",
+      `ALTER DATABASE ${database} SET search_path=public,extensions;`,
+    );
     sql(database, setup);
     const paths =
       variant === "base"
@@ -234,6 +247,17 @@ try {
       writeFileSync(join(output, `${variant}-${kind}-stderr.txt`), stderr);
       checks[kind] = { exitCode: r.status, signal: r.signal, stdout, stderr };
       evidence.databases[variant] = { identity, migrations, checks };
+      if (r.status !== 0) {
+        const debug = spawnSync(
+          cli,
+          ["db", kind, ...args, "--db-url", url, "--debug"],
+          { encoding: "utf8", timeout: 60_000, maxBuffer: 16 * 1024 * 1024 },
+        );
+        writeFileSync(
+          join(output, `${variant}-${kind}-debug.txt`),
+          redact(debug.stdout) + redact(debug.stderr),
+        );
+      }
       assert.equal(
         r.status,
         0,
@@ -302,6 +326,10 @@ try {
   process.exitCode = 1;
 } finally {
   if (started) {
+    writeFileSync(
+      join(output, "postgres-server-log.txt"),
+      redact(run("docker", ["logs", name])),
+    );
     const verify = JSON.parse(run("docker", ["inspect", name]))[0];
     assert.equal(
       verify.Config.Labels["life-os.disposable"],
