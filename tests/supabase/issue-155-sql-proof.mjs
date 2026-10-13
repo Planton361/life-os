@@ -456,7 +456,7 @@ try {
     "PASS: additional/changed/error findings rejected";
   console.log(JSON.stringify(evidence.classification));
 } catch (error) {
-  evidence.failure = redact(String(error));
+  evidence.failure = redact(error instanceof Error ? error.stack : String(error));
   console.error(evidence.failure);
   process.exitCode = 1;
 } finally {

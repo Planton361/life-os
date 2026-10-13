@@ -180,6 +180,9 @@ export async function proveTaskDeadlinePostgres({ database, sql }) {
     actorSql(
       `UPDATE public.profiles SET timezone=${literal(profileZone)} WHERE id=auth.uid()`,
     );
+    // An old instant may land on this day after a profile-zone change. That is
+    // correctly a no-op; each end-of-day oracle case therefore adds from null.
+    assert.equal((await edit(id, "", "155 matrix explicit clear")).ok, true);
     assert.equal((await edit(id, day, `155 ${profileZone} ${day}`)).ok, true);
     const current = row(id);
     assert.equal(taskDeadlineLocalDay(current.due_at, profileZone), day);
@@ -188,6 +191,7 @@ export async function proveTaskDeadlinePostgres({ database, sql }) {
         `SELECT (due_at=(${literal(day)}::date+time '23:59:59') AT TIME ZONE ${literal(profileZone)})::text FROM public.tasks WHERE id=${literal(id)}`,
       ),
       "true",
+      JSON.stringify({ profileZone, day, dueAt: current.due_at }),
     );
     assert.equal((await edit(id, day)).ok, true);
     assert.ok(!Object.hasOwn(captured.at(-1), "due_at"));
