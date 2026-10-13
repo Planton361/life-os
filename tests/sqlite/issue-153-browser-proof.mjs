@@ -97,7 +97,8 @@ const created = (id) =>
 const evidence = [],
   errors = [],
   network = [],
-  inventory = [];
+  inventory = [],
+  navigationAborts = [];
 let app, browser;
 const step = async (name, body) => {
   await body();
@@ -164,17 +165,31 @@ try {
   await context.addCookies([
     { name: "life_os_profile", value: "manual", url: app.origin },
   ]);
-  context.on("page", (p) => {
-    p.on("pageerror", (e) => errors.push(e.message));
-    p.on("console", (m) => {
-      if (m.type() === "error" || /hydration/i.test(m.text()))
-        errors.push(m.text());
+  const observe = (context) => {
+    context.on("page", (p) => {
+      p.on("pageerror", (e) => errors.push(e.message));
+      p.on("console", (m) => {
+        if (m.type() === "error" || /hydration/i.test(m.text()))
+          errors.push(m.text());
+      });
     });
-  });
-  context.on("request", (r) => {
-    if (/supabase|\/rest\/v1\/|\/auth\/v1\//i.test(r.url()))
-      network.push(r.url());
-  });
+    context.on("request", (r) => {
+      if (/supabase|\/rest\/v1\/|\/auth\/v1\//i.test(r.url()))
+        network.push(r.url());
+    });
+    context.on("response", (r) => {
+      if (r.status() >= 400) errors.push(`HTTP ${r.status()} ${r.url()}`);
+    });
+    context.on("requestfailed", (r) => {
+      const failure = r.failure()?.errorText ?? "unknown";
+      // Rapid explicit navigation/reload may cancel the previous RSC request.
+      // Keep those cancellations visible; every other transport failure fails.
+      if (failure === "net::ERR_ABORTED")
+        navigationAborts.push({ url: r.url(), failure });
+      else errors.push(`Transport ${failure} ${r.url()}`);
+    });
+  };
+  observe(context);
   const page = await context.newPage(),
     second = await context.newPage();
   page.setDefaultTimeout(10_000);
@@ -233,6 +248,8 @@ try {
         }
       });
       await button.focus();
+      await button.press("Shift+Tab");
+      await page.keyboard.press("Tab");
       await expect(button).toBeFocused();
       await button.press("Enter");
       await expect(
@@ -605,6 +622,7 @@ try {
       await blocked.addCookies([
         { name: "life_os_profile", value: "manual", url: app.origin },
       ]);
+      observe(blocked);
       const p = await blocked.newPage();
       await p.goto(`${app.origin}/tasks/${ids.stale}`);
       await expect(
@@ -626,7 +644,14 @@ try {
   writeFileSync(
     join(output, "proof.json"),
     JSON.stringify(
-      { evidence, errors, network, inventory, fixtureDirectory: f.directory },
+      {
+        evidence,
+        errors,
+        network,
+        navigationAborts,
+        inventory,
+        fixtureDirectory: f.directory,
+      },
       null,
       2,
     ),
