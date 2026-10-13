@@ -12,7 +12,7 @@ import {
   portfolioAreaMeta,
   portfolioGroupMeta,
   portfolioGroupOrder,
-  portfolioStatusMeta,
+  portfolioDisplayStatus,
   portfolioTypeAccent,
   portfolioTypeLabels,
   portfolioVisibilityReasonMeta,
@@ -53,7 +53,7 @@ function PortfolioRow({
 }>) {
   const typeAccent = portfolioTypeAccent[entity.type];
   const area = portfolioAreaMeta[entity.area];
-  const status = portfolioStatusMeta[entity.status];
+  const status = portfolioDisplayStatus(entity);
   const primaryReason = getPortfolioPrimaryReason(entity);
   const reason = portfolioVisibilityReasonMeta[primaryReason];
   const skillContext = entity.skillContext;

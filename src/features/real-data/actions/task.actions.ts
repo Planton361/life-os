@@ -12,6 +12,7 @@ import {
   completeTaskInputSchema,
   createTaskInputSchema,
   reopenTaskInputSchema,
+  releaseInboxTaskInputSchema,
   rescheduleTaskInputSchema,
   scheduleTaskInputSchema,
   taskSkillLinkInputSchema,
@@ -220,6 +221,8 @@ export async function updatePortfolioTaskAction(
     if (!context.ok) return context.result;
 
     const projectId = optionalNullableFormString(formData, "projectId");
+    if (formString(formData,"status") === "inbox" && !optionalFormString(formData,"expectedUpdatedAt"))
+      return { status: "error", message: "Die Task-Freigabe benötigt einen aktuellen Stand. Lade die Seite neu." };
     const goalId = optionalNullableFormString(formData, "goalId");
     if (!(await validateProjectScope(context, projectId ?? undefined))) {
       return {
@@ -242,6 +245,7 @@ export async function updatePortfolioTaskAction(
         .join("\n\n") || null;
     const dueDate = optionalFormString(formData, "dueAt");
     const parsed = updateTaskInputSchema.safeParse({
+      expectedUpdatedAt: optionalFormString(formData, "expectedUpdatedAt"),
       areaId: optionalNullableFormString(formData, "areaId"),
       description: combinedDescription,
       dueAt: dueDate ? `${dueDate}T23:59:59.000Z` : null,
@@ -265,6 +269,7 @@ export async function updatePortfolioTaskAction(
       parsed.data,
     );
     if (!result.ok) {
+      if (result.error.message.includes("TASK_STALE")) return { status: "error", message: "Die Task wurde zwischenzeitlich geändert. Lade die Seite neu." };
       const parentMessage = taskParentCompletionMessage(result.error.message);
       if (parentMessage) return { message: parentMessage, status: "error" };
       return {
@@ -716,6 +721,34 @@ export async function createPortfolioTaskFormAction(
           : result.status,
       ),
     );
+  });
+}
+
+export async function releaseInboxTaskAction(formData: FormData): Promise<TaskLifecycleActionResult> {
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const context = await getAuthenticatedManualTaskContext("zur Planung freigeben");
+    if (!context.ok) return context.result;
+    const parsed = releaseInboxTaskInputSchema.safeParse({
+      userId: context.auth.user.id,
+      profileId: context.auth.user.id,
+      taskId: formString(formData, "taskId"),
+      expectedUpdatedAt: formString(formData, "expectedUpdatedAt"),
+    });
+    if (!parsed.success) return { status: "error", message: "Die Task-Freigabe ist ungültig. Lade die Seite neu." };
+    const result = await getTaskRepository(context.auth.data).releaseInboxTask(parsed.data);
+    if (!result.ok) {
+      const code = result.error.message;
+      return { status: "error", message:
+        code.includes("TASK_RELEASE_STALE") ? "Die Task wurde zwischenzeitlich geändert. Lade die Seite neu." :
+        code.includes("TASK_RELEASE_STATUS") ? "Die Task ist nicht mehr in der Inbox. Lade die Seite neu." :
+        code.includes("SOURCE_") ? "Der Status dieser Task gehört zu ihrem Domain-Flow." :
+        code.includes("TASK_PROJECT_ARCHIVED") ? "Das Project ist archiviert. Diese Task kann nicht zur Planung freigegeben werden." :
+        code.includes("DEPENDENCY_") ? dependencyErrorMessage(code) :
+        "Die Task oder ihre Zuordnung ist nicht mehr verfügbar. Lade die Seite neu.",
+      };
+    }
+    revalidateTaskProjectionRoutes(result.data.id);
+    return { status: "success", message: "Task zur Planung freigegeben.", taskId: result.data.id };
   });
 }
 

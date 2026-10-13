@@ -25,6 +25,8 @@ import { initializeCanonicalSchema } from "./canonical-schema";
 import { configureConnection } from "./runtime";
 import { upgradePreviewSchemaV9 } from "./preview-upgrade";
 import { schemaFingerprint } from "./reset-schema";
+import { createSqliteTaskRepository } from "./repositories/task-repository";
+import { sourceTaskCommands } from "./commands/source-commands";
 
 const cleanup: (() => void)[] = [];
 afterEach(() => {
@@ -192,6 +194,19 @@ it("one commit preserves profile/schema/inode and receipt survives fresh writes/
       db.prepare("SELECT count(*) c FROM journal_entries").get(),
     ),
   ).toEqual({ c: BigInt(1) });
+});
+it("#153 historical release with a stale dataset epoch cannot write after an isolated reset", async () => {
+  const f=previewFixture(), state=f.store.datasetState(f.context);
+  const current=issuePreviewOwnerContext(f.ownerId,state.epoch);
+  const repo=createSqliteTaskRepository(f.store,current,sourceTaskCommands);
+  const task=await repo.createTask({userId:f.ownerId,profileId:f.ownerId,title:"Historical epoch fixture",status:"inbox"});
+  if(!task.ok)throw new Error(task.error.message);
+  const challenge=f.store.preparePreviewReset(f.context,f.admission);
+  f.store.executePreviewReset(f.context,f.admission,{...challenge,confirmation:"ZURÜCKSETZEN"});
+  const before=f.store.datasetState(f.context);
+  expect(await repo.releaseInboxTask({userId:f.ownerId,profileId:f.ownerId,taskId:task.data.id,expectedUpdatedAt:task.data.updatedAt})).toMatchObject({ok:false});
+  expect(f.store.datasetState(f.context)).toEqual(before);
+  expect(f.store.read(f.context,db=>db.prepare("SELECT count(*) AS n FROM tasks").get())).toEqual({n:BigInt(0)});
 });
 it("revision, expiry, revocation, session and draining deny without changing epoch/receipt", () => {
   const f = previewFixture();

@@ -14,7 +14,7 @@ import {
 import { requireOwnerContext, type OwnerContext } from "../owner-context";
 import { SqliteRuntime } from "../runtime";
 import { safeNumber, timestamp, localDate, uuid } from "../codecs";
-import { createTaskInputSchema, updateTaskInputSchema } from "../../schemas/task.schemas";
+import { createTaskInputSchema, updateTaskInputSchema, releaseInboxTaskInputSchema } from "../../schemas/task.schemas";
 import { localDateSchema, z } from "../../schemas/schema-contract";
 import { assertTaskCompletionParent } from "../task-completion-parent";
 
@@ -87,8 +87,8 @@ function update(db: Database.Database, owner: string, id: string, patch: TaskUpd
   validateContext(db, owner, patch);
   const entries = Object.entries(patch).filter(([, value]) => value !== undefined);
   if (entries.some(([key]) => !columns.has(key))) throw new Error("TASK_COLUMN_DENIED");
-  if (entries.length) db.prepare(`UPDATE tasks SET ${entries.map(([key]) => `${key}=?`).join(",")},updated_at=? WHERE user_id=? AND id=? AND archived_at IS NULL`)
-    .run(...entries.map(([key, value]) => storage(key, value)), timestamp(new Date().toISOString()), owner, id);
+  if (entries.length) db.prepare(`UPDATE tasks SET ${entries.map(([key]) => `${key}=?`).join(",")},updated_at=next_timestamp(updated_at,life_now()) WHERE user_id=? AND id=? AND archived_at IS NULL`)
+    .run(...entries.map(([key, value]) => storage(key, value)), owner, id);
   return db.prepare("SELECT * FROM tasks WHERE user_id=? AND id=?").get(owner, id) as TaskRow;
 }
 function failure(error: unknown): RepositoryResult<never> {
@@ -126,6 +126,22 @@ export function createSqliteTaskRepository(store: SqliteRuntime, context: OwnerC
     return rowDomain(update(db, owner, input.taskId, patch));
   });
   return {
+    async releaseInboxTask(input) { return command(input, "task.update", (db, owner) => {
+      const parsed = releaseInboxTaskInputSchema.safeParse(input);
+      if (!parsed.success) throw new Error("TASK_RELEASE_INVALID");
+      const old = load(db, owner, parsed.data.taskId);
+      if (old.status !== "inbox") throw new Error("TASK_RELEASE_STATUS");
+      if (old.updated_at !== timestamp(parsed.data.expectedUpdatedAt)) throw new Error("TASK_RELEASE_STALE");
+      if (link(db, owner, old.id)) throw new Error("SOURCE_FLOW_REQUIRED");
+      assertTaskCompletionParent(db, owner, old.project_id);
+      validateContext(db, owner, { area_id: old.area_id, project_id: old.project_id, goal_id: old.goal_id, milestone_id: old.milestone_id });
+      validateAlignment(db, owner, old);
+      // Lifecycle and dependency readiness remain separate. Existing pre-COMMIT
+      // dependency/ownership guards still admit or roll back this command.
+      db.prepare("UPDATE tasks SET status='planned',updated_at=next_timestamp(updated_at,life_now()) WHERE user_id=? AND id=? AND status='inbox' AND updated_at=? AND archived_at IS NULL")
+        .run(owner, old.id, old.updated_at);
+      return rowDomain(load(db, owner, old.id));
+    }); },
     async createTask(input) { return command(input, "task.create", (db, owner) => rowDomain(createTaskInTransaction(db, owner, mapCreateTaskInputToInsert(input, owner)))); },
     async createGeneratedTaskInstance(input) { return command(input, "task.generate", (db, owner) => {
       const parsed = generatedInputSchema.safeParse(input);
@@ -154,6 +170,7 @@ export function createSqliteTaskRepository(store: SqliteRuntime, context: OwnerC
     async unscheduleTask(input) { return schedule(input, mapUnscheduleTaskInputToPatch()); },
     async updateTask(input) { return command(input, input.status === "done" ? "source.complete" : "task.update", (db, owner) => {
       const old = load(db, owner, input.taskId); const patch = mapUpdateTaskInputToPatch(input);
+      if (input.expectedUpdatedAt !== undefined && old.updated_at !== timestamp(input.expectedUpdatedAt)) throw new Error("TASK_STALE");
       if (patch.status === "done") assertTaskCompletionParent(db, owner, old.project_id);
       validateAlignment(db, owner, { ...old, ...patch });
       if (link(db, owner, input.taskId)) {

@@ -27,6 +27,7 @@ import {
 } from "../mappers";
 import type { TaskRow, TaskUpdate } from "../row-types";
 import type { TaskInsert } from "../row-types";
+import { releaseInboxTaskInputSchema } from "../../schemas/task.schemas";
 
 type ScheduleSourceType =
   | "meal"
@@ -342,16 +343,19 @@ async function updateTaskById(
   taskId: string,
   patch: TaskUpdate,
   operation: string,
+  expectedUpdatedAt?: string,
 ): Promise<RepositoryResult<Task>> {
-  const result = (await client
+  let query = client
     .from(realDataTableNames.tasks)
     .update(patch)
     .eq("user_id", userId)
     .eq("id", taskId)
-    .is("archived_at", null)
-    .select("*")
+    .is("archived_at", null);
+  if (expectedUpdatedAt !== undefined) query = query.eq("updated_at",expectedUpdatedAt);
+  const result = (await query.select("*")
     .single()) as SupabaseQueryResult<TaskRow>;
 
+  if (expectedUpdatedAt !== undefined && result.error?.code === "PGRST116") return conflictFailure("TASK_STALE");
   if (result.error) return /DEPENDENCY_|TASK_PROJECT_(ARCHIVED|NOT_FOUND)/.test(result.error.message)
     ? conflictFailure(result.error.message) : adapterFailure(operation);
   if (!result.data) return notFoundFailure("Task");
@@ -439,6 +443,21 @@ export function createSupabaseTaskRepository(
   client: SupabaseClientLike,
 ): TaskRepository {
   return {
+    async releaseInboxTask(input) {
+      const scopeFailure = profileScopeFailure(input.userId, input.profileId);
+      if (scopeFailure) return scopeFailure;
+      const parsed = releaseInboxTaskInputSchema.safeParse(input);
+      if (!parsed.success) return conflictFailure("TASK_RELEASE_INVALID");
+      const result = (await client.rpc("release_inbox_task", {
+        p_task_id: parsed.data.taskId,
+        p_expected_updated_at: parsed.data.expectedUpdatedAt,
+      })) as SupabaseQueryResult<TaskRow>;
+      if (result.error || !result.data) return conflictFailure(
+        /^(TASK_|SOURCE_|DEPENDENCY_)[A-Z_]+$/.test(result.error?.message ?? "")
+          ? result.error!.message! : "TASK_RELEASE_FAILED",
+      );
+      return { ok: true, data: mapTaskRowToDomain(result.data) };
+    },
     async archiveTask(input) {
       const scopeFailure = profileScopeFailure(input.userId, input.profileId);
       if (scopeFailure) return scopeFailure;
@@ -776,6 +795,7 @@ export function createSupabaseTaskRepository(
 
       const currentTask = await getActiveTask(client, input.userId, input.taskId);
       if (!currentTask.ok) return currentTask;
+      if (input.expectedUpdatedAt !== undefined && currentTask.data.updated_at !== input.expectedUpdatedAt) return conflictFailure("TASK_STALE");
 
       const alignmentFailure = await validateTaskGoalAlignment(
         client,
@@ -801,6 +821,7 @@ export function createSupabaseTaskRepository(
           input.taskId,
           patch,
           "update task",
+          input.expectedUpdatedAt,
         );
       }
 

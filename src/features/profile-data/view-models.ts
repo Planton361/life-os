@@ -668,7 +668,8 @@ function portfolioFocusLevel(priority: EntityPriority): PortfolioFocusLevel {
   return "low";
 }
 
-function taskPortfolioStatus(status: TaskStatus): PortfolioStatus {
+// Cross-entity ranking signal only. Task labels use canonical taskLifecycle.
+function taskPortfolioSignal(status: TaskStatus): PortfolioStatus {
   if (status === "active") return "active";
   if (status === "waiting") return "blocked";
   if (status === "done" || status === "canceled") return "done";
@@ -1019,7 +1020,7 @@ function taskToPortfolioEntity(
     title: task.title,
     description: task.description,
     area: task.areaId,
-    status: taskPortfolioStatus(task.status),
+    status: taskPortfolioSignal(task.status),
     priority: portfolioPriority(task.priority),
     focusLevel: portfolioFocusLevel(task.priority),
     goalId: task.goalId,

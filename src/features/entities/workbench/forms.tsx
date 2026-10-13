@@ -404,6 +404,9 @@ export function EntityForm({
         disabled={!hydrated || pending || archived || unclearCreate}
         className="grid gap-6"
       >
+        {kind === "task" && id && typeof values.updated_at === "string" && (
+          <input type="hidden" name="expectedUpdatedAt" value={values.updated_at} />
+        )}
         {taskCapture ? (
           <>
             <section

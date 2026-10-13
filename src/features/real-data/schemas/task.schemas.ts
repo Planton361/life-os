@@ -47,6 +47,7 @@ export const createTaskInputSchema = taskPatchSchema.extend({
 export type CreateTaskInput = z.infer<typeof createTaskInputSchema>;
 
 export const updateTaskInputSchema = taskPatchSchema.extend({
+  expectedUpdatedAt: optionalDateTimeStringSchema,
   areaId: nullableOptionalString,
   description: nullableOptionalString,
   dueAt: nullableOptionalDateTime,
@@ -62,6 +63,15 @@ export const updateTaskInputSchema = taskPatchSchema.extend({
 });
 
 export type UpdateTaskInput = z.infer<typeof updateTaskInputSchema>;
+
+// A historical Inbox release is a compare-and-set, never an editor patch.
+export const releaseInboxTaskInputSchema = z.object({
+  userId: z.uuid(),
+  profileId: z.uuid(),
+  taskId: z.uuid(),
+  expectedUpdatedAt: dateTimeStringSchema,
+}).strict();
+export type ReleaseInboxTaskInput = z.infer<typeof releaseInboxTaskInputSchema>;
 
 export const scheduleTaskInputSchema = z.object({
   durationMinutes: optionalPositiveIntegerSchema,

@@ -34,6 +34,7 @@ import type {
   CarryTaskForwardInput,
   CloseDailyLogInput,
   CompleteTaskInput,
+  ReleaseInboxTaskInput,
   CreateRecurringTaskTemplateInput,
   CreateGoalInput,
   MealCompleteInput,
@@ -256,6 +257,7 @@ export interface TaskRepository {
   ): Promise<RepositoryResult<GeneratedTaskInstanceResult>>;
   createTask(input: CreateTaskInput): Promise<RepositoryResult<Task>>;
   updateTask(input: UpdateTaskInput): Promise<RepositoryResult<Task>>;
+  releaseInboxTask(input: ReleaseInboxTaskInput): Promise<RepositoryResult<Task>>;
   scheduleTask(input: ScheduleTaskInput): Promise<RepositoryResult<Task>>;
   completeTask(input: CompleteTaskInput): Promise<RepositoryResult<Task>>;
   reopenTask(input: ReopenTaskInput): Promise<RepositoryResult<Task>>;

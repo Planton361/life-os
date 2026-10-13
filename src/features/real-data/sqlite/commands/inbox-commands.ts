@@ -13,7 +13,7 @@ function load(db: Database.Database, owner: string, id: string, expected: string
 }
 function active(db: Database.Database, owner: string, table: "areas" | "projects" | "goals" | "skills", id: string | null) {
   if (id === null) return;
-  const status = table === "skills" ? " AND status<>'archived'" : "";
+  const status = table === "skills" || table === "projects" ? " AND status<>'archived'" : "";
   if (!db.prepare(`SELECT id FROM ${table} WHERE user_id=? AND id=? AND archived_at IS NULL${status}`).get(owner, uuid(id))) throw new Error("INBOX_DESTINATION_UNAVAILABLE");
 }
 function blank(value: string | null) { return value?.trim() || null; }
@@ -65,7 +65,7 @@ export function routeSavedInboxItem(db: Database.Database, owner: string, input:
       const profile = db.prepare("SELECT timezone FROM profiles WHERE id=?").get(owner) as { timezone: string };
       const zone = timezone(profile.timezone), now = (db.prepare("SELECT life_now() AS at").get() as { at: string }).at;
       id = randomUUID();
-      db.prepare("INSERT INTO tasks(id,user_id,title,description,status,priority,energy,duration_minutes,area_id,project_id,goal_id,source_inbox_item_id,planned_date,due_at,created_at,updated_at) VALUES(?,?,?,?,'inbox',?,?,?,?,?,?,?,?,?,?,?)")
+      db.prepare("INSERT INTO tasks(id,user_id,title,description,status,priority,energy,duration_minutes,area_id,project_id,goal_id,source_inbox_item_id,planned_date,due_at,created_at,updated_at) VALUES(?,?,?,?,'planned',?,?,?,?,?,?,?,?,?,?,?)")
         .run(id, owner, row.title, description(row) ?? row.body, row.priority, row.energy, row.duration_minutes, row.area_id, project && uuid(project), goal && uuid(goal), row.id, row.today_candidate === BigInt(1) ? localDayAt(now, zone) : null, row.deadline_hint ? deadline(row.deadline_hint, zone) : null, now, now);
       db.prepare("UPDATE inbox_items SET status='triaged',created_task_id=?,processed_at=?,updated_at=next_timestamp(updated_at,life_now()) WHERE user_id=? AND id=?").run(id, now, owner, row.id);
     }

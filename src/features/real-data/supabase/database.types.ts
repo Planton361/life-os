@@ -372,6 +372,10 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
     Tables: GoalPathTables;
     Functions: GeneratedDatabase["public"]["Functions"] &
       GoalPathFunctions & {
+        release_inbox_task: {
+          Args: { p_task_id: string; p_expected_updated_at: string };
+          Returns: GeneratedDatabase["public"]["Tables"]["tasks"]["Row"];
+        };
         skill_development_command: {
           Args: {
             p_skill_id: string | null;
