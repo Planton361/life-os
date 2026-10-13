@@ -362,6 +362,7 @@ try {
       });
       evidence.headSqlRegression = "PASS";
       evidence.headConcurrency = await proveInboxReleaseConcurrency({
+        issue: 155,
         name,
         database,
         sql,

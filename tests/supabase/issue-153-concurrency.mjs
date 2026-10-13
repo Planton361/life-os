@@ -8,9 +8,11 @@ export async function proveInboxReleaseConcurrency({
   database,
   sql,
   output,
+  issue = 153,
 }) {
-  assert.match(name, /^life-os-153-lint-[0-9a-f-]+$/);
-  assert.equal(database, "life_os_153_head");
+  assert.ok(issue === 153 || issue === 155, "Only verified issue proof harnesses");
+  assert.match(name, new RegExp(`^life-os-${issue}-lint-[0-9a-f-]+$`));
+  assert.equal(database, `life_os_${issue}_head`);
   const results = [];
   const args = [
     "exec",
