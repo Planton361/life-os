@@ -40,6 +40,7 @@ import {
   portfolioAreaMeta,
   portfolioFocusLabels,
   portfolioStatusMeta,
+  portfolioDisplayStatus,
   portfolioTypeAccent,
   portfolioTypeLabels,
   portfolioVisibilityReasonMeta,
@@ -1036,7 +1037,7 @@ function ProjectTaskCard({
 }>) {
   const lifecycle = task.taskLifecycle;
   const meta = [
-    portfolioStatusMeta[task.status].label,
+    portfolioDisplayStatus(task).label,
     task.priority,
     task.energy ? `${task.energy} energy` : null,
     `${lifecycle.durationMinutes} min`,
@@ -1058,8 +1059,8 @@ function ProjectTaskCard({
             {meta.join(" · ")}
           </p>
         </div>
-        <Pill accent={portfolioStatusMeta[task.status].accent}>
-          {portfolioStatusMeta[task.status].label}
+        <Pill accent={portfolioDisplayStatus(task).accent}>
+          {portfolioDisplayStatus(task).label}
         </Pill>
       </div>
       {task.nextAction ? (
@@ -2112,7 +2113,7 @@ export function PortfolioContextPanel({
     );
   const typeAccent = portfolioTypeAccent[entity.type];
   const area = portfolioAreaMeta[entity.area];
-  const status = portfolioStatusMeta[entity.status];
+  const status = portfolioDisplayStatus(entity);
   const primaryReason = getPortfolioPrimaryReason(entity);
   const reason = portfolioVisibilityReasonMeta[primaryReason];
   const entityRoute = getPortfolioEntitySourceRoute(entity);

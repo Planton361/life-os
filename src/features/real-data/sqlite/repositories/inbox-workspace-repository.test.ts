@@ -43,7 +43,7 @@ it("ports every saved routing destination and preserves capture, planning signal
       expect(state).toMatchObject({ original_title: "Original", original_body: "Full original text", title: input.title, next_action: input.nextAction, today_candidate: BigInt(1), status: result.data.kind === "task" ? "triaged" : "archived" });
       if (result.data.kind === "task") {
         const task = f.store.read(f.context, db => db.prepare("SELECT * FROM tasks WHERE user_id=? AND id=?").get(owner, result.data!.id)) as { id: string; description: string; status: string; due_at: string; planned_date: string | null };
-        expect(task).toMatchObject({ description: "Clarified body\n\nMissing Info: Missing detail\n\nNächste Aktion: Next action", status: "inbox", due_at: "2026-10-25T22:59:59.000000Z" });
+        expect(task).toMatchObject({ description: "Clarified body\n\nMissing Info: Missing detail\n\nNächste Aktion: Next action", status: "planned", due_at: "2026-10-25T22:59:59.000000Z" });
         expect(task.planned_date).not.toBeNull();
       }
       if (route === "existing_skill") expect(f.store.read(f.context, db => db.prepare("SELECT skill_id FROM task_skill_links WHERE user_id=? AND task_id=?").get(owner, result.data!.id))).toEqual({ skill_id: skillId });

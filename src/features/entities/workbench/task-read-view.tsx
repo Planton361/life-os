@@ -152,7 +152,11 @@ export function TaskReadView({
     taskHasExecutableLifecycle(task) &&
     dependency.availability === "READY" &&
     !sourceOwned;
+  const canReleaseInbox =
+    task.status === "inbox" && !task.archived_at && !parentArchived &&
+    !sourceOwned && !conflictingGoals && (!task.project_id || Boolean(project));
   const editIsPrimary =
+    !canReleaseInbox &&
     !parentArchived &&
     !sourceOwned &&
     !task.archived_at &&
@@ -189,7 +193,7 @@ export function TaskReadView({
     task.status !== "archived";
   const hasRightRail = hasContext || writableResources || resources.length > 0;
   const nextLabel =
-    sourceOwned && sourceHref ? "Quelle öffnen" : guidance.label;
+    sourceOwned && sourceHref ? "Quelle öffnen" : canReleaseInbox ? "Zur Planung freigeben" : guidance.label;
   const progress = taskStepProgress(
     data.steps.filter((step) => step.task_id === taskId),
   );
@@ -202,7 +206,7 @@ export function TaskReadView({
   const editorKey = `task-edit-${taskId}`;
   const nextBody = sourceOwned
     ? "Planung und Status gehören zur verknüpften Quelle."
-    : guidance.body;
+    : canReleaseInbox ? "Bewusst zur Planung freigeben. Datum, Zeitblock und Zuordnungen bleiben erhalten; READY/BLOCKED gilt weiterhin separat." : guidance.body;
 
   return (
     <ManagementDialogScope>
@@ -264,6 +268,12 @@ export function TaskReadView({
               </div>
             </div>
             <div aria-label="Task-Aktionen" className={styles.actions}>
+              {canReleaseInbox && (
+                <OperationForm operation="task.release" label="Zur Planung freigeben" submitClassName={styles.primary}>
+                  <input type="hidden" name="taskId" value={taskId} />
+                  <input type="hidden" name="expectedUpdatedAt" value={task.updated_at} />
+                </OperationForm>
+              )}
               {canComplete && (
                 <OperationForm
                   operation="task.complete"
@@ -273,7 +283,7 @@ export function TaskReadView({
                   <input type="hidden" name="taskId" value={taskId} />
                 </OperationForm>
               )}
-              {!canComplete && !editIsPrimary && (
+              {!canComplete && !canReleaseInbox && !editIsPrimary && (
                 <Link className={styles.primary} href={nextHref}>
                   {nextLabel}
                 </Link>

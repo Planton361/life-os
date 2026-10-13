@@ -7,6 +7,7 @@ import type {
   PortfolioPriority,
   PortfolioStatus,
   PortfolioVisibilityReason,
+  PortfolioTaskLifecycle,
 } from "./types";
 
 export const portfolioTypeLabels: Record<PortfolioEntityType, string> = {
@@ -53,6 +54,24 @@ export const portfolioStatusMeta: Record<
   review_open: { label: "review open", accent: "var(--accent-cyan)" },
   done: { label: "done", accent: "var(--accent-green)" },
 };
+
+const taskLifecycleMeta: Record<PortfolioTaskLifecycle["status"], { label: string; accent: string }> = {
+  inbox: { label: "inbox", accent: "var(--text-muted)" },
+  planned: portfolioStatusMeta.planned,
+  active: portfolioStatusMeta.active,
+  waiting: { label: "waiting", accent: "var(--accent-orange)" },
+  done: portfolioStatusMeta.done,
+  canceled: { label: "canceled", accent: "var(--text-muted)" },
+  someday: { label: "someday", accent: "var(--text-muted)" },
+};
+
+// Grouping/ranking signals remain derived. A displayed Task lifecycle always
+// comes from its canonical projection, never from the cross-entity signal.
+export function portfolioDisplayStatus(entity: Pick<PortfolioEntity, "type" | "status" | "taskLifecycle">) {
+  return entity.type === "task" && entity.taskLifecycle
+    ? taskLifecycleMeta[entity.taskLifecycle.status]
+    : portfolioStatusMeta[entity.status];
+}
 
 export const portfolioFocusLabels: Record<PortfolioFocusLevel, string> = {
   high: "high focus",

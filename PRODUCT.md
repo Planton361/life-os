@@ -806,6 +806,14 @@ Dashboard interactions remain limited and intentional. Complex editing belongs t
 
 Inbox triages existing unstructured thoughts into canonical entities. Quick Capture belongs to Dashboard and is removed from Inbox.
 
+USER accepted Variante B (#150): Only the final confirmed triage into Task,
+existing Project, Goal or Skill creates one canonical `planned` Task. This
+does not schedule a time block or imply a planned day, start or completion;
+explicit planning signals retain their existing meaning. Historical `inbox`
+Tasks stay unchanged until a conscious, status-only `Zur Planung freigeben`
+action. Ownership, Source, Parent and Dependency guards remain authoritative;
+Portfolio shows the actual Task lifecycle separately from its attention groups.
+
 Required capabilities:
 
 - triage of existing captures without a second Quick-Capture control;

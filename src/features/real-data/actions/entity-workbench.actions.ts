@@ -12,6 +12,7 @@ import {
   updatePortfolioTaskAction,
   completeTaskAction,
   reopenTaskAction,
+  releaseInboxTaskAction,
   archiveTaskAction,
   linkTaskSkillAction,
   unlinkTaskSkillAction,
@@ -635,6 +636,7 @@ export async function workbenchOperation(
       });
     } else if (operation === "task.complete")
       result = await completeTaskAction(form);
+    else if (operation === "task.release") result = await releaseInboxTaskAction(form);
     else if (operation === "task.reopen") result = await reopenTaskAction(form);
     else if (operation === "task.archive") result = await archiveTaskAction(form);
     else if (operation === "project.archive")
