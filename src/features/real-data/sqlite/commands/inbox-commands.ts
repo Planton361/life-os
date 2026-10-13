@@ -1,4 +1,5 @@
 import "server-only";
+import { taskDeadlineEndOfDay } from "../../domain/task-deadline";
 import { randomUUID } from "node:crypto";
 import type Database from "better-sqlite3";
 import { inboxClarificationSchema, inboxCompletionSchema, inboxRouteSchema, type InboxClarificationInput, type InboxRouteInput } from "../../schemas/inbox-workspace.schemas";
@@ -20,22 +21,6 @@ function blank(value: string | null) { return value?.trim() || null; }
 function description(row: Item, next = true) {
   return [blank(row.body), row.missing_info ? `Missing Info: ${row.missing_info}` : null, next && row.next_action ? `Nächste Aktion: ${row.next_action}` : null].filter(Boolean).join("\n\n") || null;
 }
-// At 23:59:59 the canonical deadline has a single instant in current product
-// IANA zones. Resolve via actual zone offsets, independent of process timezone.
-function deadline(date: string, zone: string) {
-  const wall = Date.parse(`${date}T23:59:59Z`);
-  const formatter = new Intl.DateTimeFormat("sv-SE", { timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" });
-  const candidates: number[] = [];
-  for (const delta of [-36, 0, 36]) {
-    const sample = wall + delta * 3600000;
-    const offset = Date.parse(formatter.format(new Date(sample)).replace(" ", "T") + "Z") - sample;
-    const instant = wall - offset;
-    if (formatter.format(new Date(instant)).replace(" ", "T") === `${date}T23:59:59`) candidates.push(instant);
-  }
-  if (!candidates.length) throw new Error("INBOX_DEADLINE_UNAVAILABLE");
-  return timestamp(new Date(Math.max(...candidates)).toISOString());
-}
-
 export function saveInboxClarification(db: Database.Database, owner: string, input: unknown) {
   const parsed = inboxClarificationSchema.safeParse(input);
   if (!parsed.success) throw new Error("INBOX_VALIDATION_FAILED");
@@ -66,7 +51,7 @@ export function routeSavedInboxItem(db: Database.Database, owner: string, input:
       const zone = timezone(profile.timezone), now = (db.prepare("SELECT life_now() AS at").get() as { at: string }).at;
       id = randomUUID();
       db.prepare("INSERT INTO tasks(id,user_id,title,description,status,priority,energy,duration_minutes,area_id,project_id,goal_id,source_inbox_item_id,planned_date,due_at,created_at,updated_at) VALUES(?,?,?,?,'planned',?,?,?,?,?,?,?,?,?,?,?)")
-        .run(id, owner, row.title, description(row) ?? row.body, row.priority, row.energy, row.duration_minutes, row.area_id, project && uuid(project), goal && uuid(goal), row.id, row.today_candidate === BigInt(1) ? localDayAt(now, zone) : null, row.deadline_hint ? deadline(row.deadline_hint, zone) : null, now, now);
+        .run(id, owner, row.title, description(row) ?? row.body, row.priority, row.energy, row.duration_minutes, row.area_id, project && uuid(project), goal && uuid(goal), row.id, row.today_candidate === BigInt(1) ? localDayAt(now, zone) : null, row.deadline_hint ? timestamp(taskDeadlineEndOfDay(row.deadline_hint, zone)) : null, now, now);
       db.prepare("UPDATE inbox_items SET status='triaged',created_task_id=?,processed_at=?,updated_at=next_timestamp(updated_at,life_now()) WHERE user_id=? AND id=?").run(id, now, owner, row.id);
     }
     if (skill) db.prepare("INSERT INTO task_skill_links(id,user_id,task_id,skill_id,created_at) VALUES(?,?,?,?,life_now()) ON CONFLICT(user_id,task_id,skill_id) DO NOTHING").run(randomUUID(), owner, id, uuid(skill));

@@ -1,5 +1,6 @@
 "use server";
 
+import { taskDeadlinePatch } from "../domain/task-deadline";
 import { withSubmittedDatasetEpoch } from "./submitted-dataset";
 import { createGoalContextTask, getSkillRepository, getTaskRepository } from "../runtime/facade";
 import { dependencyErrorMessage } from "../supabase/repositories/task-dependency-repository";
@@ -243,12 +244,10 @@ export async function updatePortfolioTaskAction(
       [description, nextAction ? `Nächste Aktion: ${nextAction}` : null]
         .filter(Boolean)
         .join("\n\n") || null;
-    const dueDate = optionalFormString(formData, "dueAt");
     const parsed = updateTaskInputSchema.safeParse({
       expectedUpdatedAt: optionalFormString(formData, "expectedUpdatedAt"),
       areaId: optionalNullableFormString(formData, "areaId"),
       description: combinedDescription,
-      dueAt: dueDate ? `${dueDate}T23:59:59.000Z` : null,
       durationMinutes: optionalFormString(formData, "durationMinutes")
         ? formString(formData, "durationMinutes")
         : null,
@@ -265,9 +264,24 @@ export async function updatePortfolioTaskAction(
     });
     if (!parsed.success)
       return { message: "Prüfe die Task-Felder.", status: "error" };
-    const result = await getTaskRepository(context.auth.data).updateTask(
-      parsed.data,
-    );
+    let deadlinePatch: { dueAt?: string | null } = {};
+    if (formData.has("dueAt")) {
+      if (!z.uuid().safeParse(parsed.data.taskId).success || !parsed.data.expectedUpdatedAt)
+        return { status: "error", message: "Die Task benötigt einen aktuellen Stand. Lade die Seite neu." };
+      try {
+        const current = await context.auth.data.reads.catalog.tasks({ ids: [parsed.data.taskId], activeOnly: true });
+        const task = current.data.find(task => task.id === parsed.data.taskId && !task.archived_at);
+        if (!task || task.updated_at !== parsed.data.expectedUpdatedAt)
+          return { status: "error", message: "Die Task wurde zwischenzeitlich geändert. Lade die Seite neu." };
+        const zone = await context.auth.data.reads.profileTimezone();
+        deadlinePatch = taskDeadlinePatch(formString(formData, "dueAt"), task.due_at, zone);
+      } catch {
+        return { status: "error", message: "Die Deadline oder Profil-Zeitzone konnte nicht bestätigt werden." };
+      }
+    }
+    const result = await getTaskRepository(context.auth.data).updateTask({
+      ...parsed.data, ...deadlinePatch,
+    });
     if (!result.ok) {
       if (result.error.message.includes("TASK_STALE")) return { status: "error", message: "Die Task wurde zwischenzeitlich geändert. Lade die Seite neu." };
       const parentMessage = taskParentCompletionMessage(result.error.message);

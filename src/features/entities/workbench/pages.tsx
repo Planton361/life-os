@@ -401,7 +401,7 @@ export async function WorkbenchEditor({
     if ("name" in row) values.name = row.name;
     if (kind === "task") {
       const t = data.tasks.find((t) => t.id === id)!;
-      Object.assign(values, taskEditValues(t));
+      Object.assign(values, taskEditValues(t, data.timezone));
     }
     if (kind === "project") {
       const p = data.projects.find((p) => p.id === id)!;
