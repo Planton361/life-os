@@ -45,7 +45,7 @@ begin
   perform public.triage_inbox_item_to_task(capture,'Must not re-create');
   perform pg_temp.assert((select to_jsonb(t)=prior from public.tasks t where id=task.id),'idempotent complete row');
   perform pg_temp.assert((select count(*)=1 from public.tasks where source_inbox_item_id=capture),'no duplicate');
-  perform pg_temp.reject(format('select public.complete_inbox_triage(%L,%L,%L,null,null,null,%L,null,null,null,false,false,null,%L,null)',capture,item.updated_at,'stale','P1','task'),'Inbox');
+  perform pg_temp.reject(format('select public.complete_inbox_triage(%L,%L,%L,null,null,null,%L,null,null,null,false,false,null,%L,null)',capture,item.updated_at,'stale','P1','task'),'Open inbox item unavailable');
   -- Actual scheduling fields and completion use existing guards, not promotion.
   update public.tasks set planned_date='2026-10-13',scheduled_start_at='2026-10-13 18:00:00+00',duration_minutes=25 where id=task.id;
   perform public.complete_linked_task(task.id,now());

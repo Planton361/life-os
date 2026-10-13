@@ -374,12 +374,15 @@ try {
           name: "Zur Planung freigeben",
           exact: true,
         });
-      await form.locator('[name="taskId"]').evaluate((el, id) => {
-        el.value = id;
-      }, ids.source);
-      await form.locator('[name="expectedUpdatedAt"]').evaluate((el, value) => {
-        el.value = value;
-      }, before.updated_at);
+      await expect(form.getByRole("button")).toBeEnabled();
+      await form.evaluate(
+        (el, values) => {
+          el.querySelector('[name="taskId"]').value = values.taskId;
+          el.querySelector('[name="expectedUpdatedAt"]').value =
+            values.expectedUpdatedAt;
+        },
+        { taskId: ids.source, expectedUpdatedAt: before.updated_at },
+      );
       await form.getByRole("button").click();
       await expect(form.getByRole("alert")).toContainText("Domain-Flow");
       assert.deepEqual(task(ids.source), before);
@@ -541,6 +544,45 @@ try {
       },
     );
   }
+  await step(
+    "released historical Task retains its existing Calendar block and completes through the real boundary",
+    async () => {
+      await page.goto(`${app.origin}/tasks/${ids.historical}`);
+      const before = task(ids.historical);
+      await page
+        .locator('[aria-label="Task-Aktionen"] a[href*="/calendar?"]')
+        .click();
+      await expect(page).toHaveURL(new RegExp(`task=${ids.historical}`));
+      assert.equal(new URL(page.url()).searchParams.get("view"), "week");
+      await page.reload();
+      assert.deepEqual(task(ids.historical), before);
+      await page.goto(`${app.origin}/tasks/${ids.historical}`);
+      await page
+        .getByRole("form", { name: "Erledigt", exact: true })
+        .getByRole("button")
+        .click();
+      await expect(
+        page
+          .getByRole("status")
+          .filter({ hasText: "Task abgeschlossen." })
+          .last(),
+      ).toBeVisible();
+      await page.reload();
+      const after = task(ids.historical);
+      assert.equal(after.status, "done");
+      assert.ok(after.completed_at);
+      assert.deepEqual(after, {
+        ...before,
+        status: "done",
+        completed_at: after.completed_at,
+        updated_at: after.updated_at,
+      });
+      await page.goto(
+        `${app.origin}/portfolio?view=tasks&selected=${ids.historical}`,
+      );
+      await expect(inspector().locator("p").first()).toContainText("done");
+    },
+  );
   await step(
     "Demo/Empty and Auth-blocked never expose or admit Manual release",
     async () => {

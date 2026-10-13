@@ -469,3 +469,36 @@ for (const bad of [
     }
   });
 }
+
+it("historical release rejects archived execution context, missing/malformed Task and foreign claimed owner without writes", async () => {
+  const f = sourceReviewFixture();
+  try {
+    const task = result(
+      await f.tasks.createTask({
+        ...scope,
+        title: "Historical context",
+        status: "inbox",
+        goalId: f.goal,
+      }),
+    );
+    f.store.command(f.context, "synthetic.initialize", (db) =>
+      db
+        .prepare("UPDATE goals SET archived_at=life_now() WHERE id=?")
+        .run(f.goal),
+    );
+    const before = raw(f, task.id);
+    for (const input of [
+      release(before),
+      { ...release(before), taskId: randomUUID() },
+      { ...release(before), taskId: "forged" },
+      { ...release(before), userId: randomUUID() },
+    ]) {
+      expect(await f.tasks.releaseInboxTask(input)).toMatchObject({
+        ok: false,
+      });
+      expect(raw(f, task.id)).toEqual(before);
+    }
+  } finally {
+    f.store.close();
+  }
+});
