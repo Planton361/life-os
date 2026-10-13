@@ -12,6 +12,15 @@ insert into public.projects(id,user_id,title,status,archived_at) values
 ('15300000-0000-4000-8000-000000000012','15300000-0000-4000-8000-000000000002','Foreign Parent','active',null);
 insert into public.tasks(id,user_id,title,status) values
 ('15300000-0000-4000-8000-000000000020','15300000-0000-4000-8000-000000000002','Foreign Task','inbox');
+-- A pre-existing Source-owned Inbox row is historical fixture state. Only the
+-- disposable administrator may seed this link; authenticated direct INSERT
+-- remains forbidden. All release assertions below use the real actor/RLS.
+insert into public.meals(id,user_id,date,meal_type,title) values
+('15300000-0000-4000-8000-000000000031','15300000-0000-4000-8000-000000000001','2026-10-13','lunch','Historical Source');
+insert into public.tasks(id,user_id,title,status) values
+('15300000-0000-4000-8000-000000000032','15300000-0000-4000-8000-000000000001','Historical Source Task','inbox');
+insert into public.schedule_source_links(user_id,source_type,source_id,task_id) values
+('15300000-0000-4000-8000-000000000001','meal','15300000-0000-4000-8000-000000000031','15300000-0000-4000-8000-000000000032');
 create function pg_temp.assert(ok boolean,label text) returns void language plpgsql as $$
 begin if ok is distinct from true then raise exception 'ASSERT: %',label; end if; end $$;
 create function pg_temp.reject(sql text,expected text) returns void language plpgsql as $$
@@ -81,6 +90,11 @@ begin
  -- A stale metadata editor cannot undo release via its old hidden inbox status.
  update public.tasks set status='inbox',title='Stale editor' where id=historical.id and updated_at=historical.updated_at;
  perform pg_temp.assert((select status='planned' and title='Historical' from public.tasks where id=historical.id),'editor CAS');
+ insert into public.tasks(user_id,title,description,status) values(u,'Historical standalone','Keep standalone','inbox') returning * into historical;
+ prior:=to_jsonb(historical);released:=public.release_inbox_task(historical.id,historical.updated_at);
+ perform pg_temp.assert(released.status='planned' and (to_jsonb(released)-'status'-'updated_at')=(prior-'status'-'updated_at'),'standalone status-only release');
+ perform pg_temp.reject(format('select public.release_inbox_task(%L,now())',gen_random_uuid()),'TASK_NOT_FOUND');
+ perform pg_temp.reject('select public.release_inbox_task(''forged'',now())','invalid input syntax');
  insert into public.tasks(user_id,title,status) values(u,'Stale historical','inbox') returning * into historical;
  update public.tasks set title='Concurrent title' where id=historical.id;
  perform pg_temp.assert((select updated_at>historical.updated_at from public.tasks where id=historical.id),'same transaction timestamp revision');
@@ -105,9 +119,7 @@ begin
  perform pg_temp.reject('select public.release_inbox_task(''15300000-0000-4000-8000-000000000020'',now())','TASK_NOT_FOUND');
  insert into public.tasks(user_id,title,status,archived_at) values(u,'Archived Task','inbox',now()) returning * into historical;
  perform pg_temp.reject(format('select public.release_inbox_task(%L,%L)',historical.id,historical.updated_at),'TASK_NOT_FOUND');
- insert into public.meals(user_id,date,meal_type,title) values(u,'2026-10-13','lunch','Source') returning id into source;
- insert into public.tasks(user_id,title,status) values(u,'Source historical','inbox') returning * into historical;
- insert into public.schedule_source_links(user_id,source_type,source_id,task_id) values(u,'meal',source,historical.id);
+ select * into historical from public.tasks where id='15300000-0000-4000-8000-000000000032';
  prior:=to_jsonb(historical);perform pg_temp.reject(format('select public.release_inbox_task(%L,%L)',historical.id,historical.updated_at),'SOURCE_FLOW_REQUIRED');
  perform pg_temp.assert((select to_jsonb(t)=prior from public.tasks t where id=historical.id),'Source no partial write');
  insert into public.tasks(user_id,title,status,project_id) values(u,'Pred','planned',project) returning id into predecessor;
