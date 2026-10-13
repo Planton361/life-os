@@ -27,7 +27,8 @@ const { taskCompletionSnapshot, validateTaskCompletionCommit } = require(
 const { projectCommitSnapshot, validateProjectCommit } = require(
   join(compiled, "project-invariants.js"),
 );
-let marker = null;
+let marker = null,
+  hold = false;
 db.function("life_owner", () => owner);
 db.function("life_command", () => marker);
 // Application instances retain the single-writer lease. As in the existing
@@ -44,7 +45,7 @@ const store = {
       const result = body(db, owner);
       validateTaskCompletionCommit(db, owner, tasks);
       validateProjectCommit(db, owner, projects);
-      db.exec("COMMIT");
+      if (!hold) db.exec("COMMIT");
       return result;
     } catch (error) {
       if (db.inTransaction) db.exec("ROLLBACK");
@@ -63,16 +64,7 @@ store.read(context, (db) => {
 });
 process.send({ ready: true });
 process.once("message", async (request) => {
-  const command = store.command.bind(store);
-  // Hold the real repository's admitted BEGIN IMMEDIATE transaction. Another
-  // process must wait and then revalidate the original CAS token.
-  if (request.hold)
-    store.command = (ctx, kind, body) =>
-      command(ctx, kind, (db, id) => {
-        process.send({ held: true });
-        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 400);
-        return body(db, id);
-      });
+  hold = Boolean(request.hold);
   process.send({ entering: true });
   const repository = createSqliteTaskRepository(
     store,
@@ -92,9 +84,19 @@ process.once("message", async (request) => {
         title: "Concurrent metadata",
         status: "inbox",
       });
-  store.close();
-  process.send(
-    { ok: result.ok, ...(result.ok ? {} : { error: result.error.message }) },
-    () => process.disconnect(),
-  );
+  const finish = () => {
+    store.close();
+    process.send(
+      { ok: result.ok, ...(result.ok ? {} : { error: result.error.message }) },
+      () => process.disconnect(),
+    );
+  };
+  if (hold && result.ok) {
+    process.send({ held: true });
+    process.once("message", (message) => {
+      if (message !== "commit") throw new Error("INVALID_BARRIER");
+      db.exec("COMMIT");
+      finish();
+    });
+  } else finish();
 });

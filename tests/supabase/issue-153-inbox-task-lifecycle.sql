@@ -3,6 +3,9 @@ begin;
 insert into auth.users(id,instance_id,aud,role,email,raw_app_meta_data,raw_user_meta_data,created_at,updated_at) values
 ('15300000-0000-4000-8000-000000000001','15300000-0000-4000-8000-000000000001','authenticated','authenticated','153-owner@example.test','{}','{}',now(),now()),
 ('15300000-0000-4000-8000-000000000002','15300000-0000-4000-8000-000000000002','authenticated','authenticated','153-other@example.test','{}','{}',now(),now());
+insert into public.profiles(id,display_name,timezone) values
+('15300000-0000-4000-8000-000000000001','153 Owner','Europe/Berlin'),
+('15300000-0000-4000-8000-000000000002','153 Other','Europe/Berlin');
 insert into public.projects(id,user_id,title,status,archived_at) values
 ('15300000-0000-4000-8000-000000000010','15300000-0000-4000-8000-000000000001','Archived timestamp','active',now()),
 ('15300000-0000-4000-8000-000000000011','15300000-0000-4000-8000-000000000001','Archived status','archived',null),

@@ -88,6 +88,7 @@ for (const releaseFirst of [false, true])
         expect(await b.next()).toEqual({ entering: true });
         await new Promise((resolve) => setTimeout(resolve, 80));
         expect(b.pending()).toBe(0);
+        a.child.send("commit");
         expect(await Promise.all([a.next(), b.next()])).toEqual([
           { ok: true },
           {
