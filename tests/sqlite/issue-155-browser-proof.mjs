@@ -147,9 +147,10 @@ try {
       "source_inbox_item_id",
     ])
       assert.equal(after[key], before[key], key);
-    async function reseed(body) {
+    async function reseed(body, retainEditor = false) {
       const port = Number(new URL(app.origin).port);
-      await page.goto("about:blank");
+      if (retainEditor) await page.waitForLoadState("networkidle");
+      else await page.goto("about:blank");
       const previous = app;
       app = undefined;
       await previous.stop("SIGKILL");
@@ -274,6 +275,41 @@ try {
     assert.equal(task(taskId).due_at, before.due_at);
     evidence.steps.push({
       name: "historical microsecond no-op and deliberate date replacement",
+      status: "PASS",
+    });
+    await openEditor(taskId);
+    await expect(dialog.getByLabel("Deadline", { exact: true })).toHaveValue(
+      "2026-10-12",
+    );
+    await reseed(
+      (db, owner) =>
+        db
+          .prepare("UPDATE profiles SET timezone='Asia/Tokyo' WHERE id=?")
+          .run(owner),
+      true,
+    );
+    await dialog
+      .getByLabel("Titel", { exact: true })
+      .fill(title + " zone change");
+    await save();
+    assert.equal(task(taskId).due_at, before.due_at);
+    await openEditor(taskId);
+    await expect(dialog.getByLabel("Deadline", { exact: true })).toHaveValue(
+      "2026-10-13",
+    );
+    await reseed((db, owner) =>
+      db
+        .prepare("UPDATE profiles SET timezone='Europe/Berlin' WHERE id=?")
+        .run(owner),
+    );
+    await openEditor(taskId);
+    await dialog
+      .getByLabel("Titel", { exact: true })
+      .fill(title + " historical");
+    await save();
+    assert.equal(task(taskId).due_at, before.due_at);
+    evidence.steps.push({
+      name: "unchanged open editor across profile-zone change; current-zone read after reload",
       status: "PASS",
     });
     // The real B8 edit entry is also reachable from the Portfolio inspector.
@@ -416,8 +452,12 @@ try {
       await expect(
         dialog.getByLabel("Deadline", { exact: true }),
       ).toBeVisible();
-      await dialog.getByLabel("Deadline", { exact: true }).scrollIntoViewIfNeeded();
-      await expect(dialog.getByLabel("Deadline", { exact: true })).toBeInViewport();
+      await dialog
+        .getByLabel("Deadline", { exact: true })
+        .scrollIntoViewIfNeeded();
+      await expect(
+        dialog.getByLabel("Deadline", { exact: true }),
+      ).toBeInViewport();
       await page.screenshot({
         path: join(output, `editor-${width}.png`),
         fullPage: true,
@@ -438,7 +478,10 @@ try {
     await dialog.getByLabel("Deadline", { exact: true }).fill("2026-10-12");
     await save();
     assert.equal(task(taskId).due_at, before.due_at);
-    evidence.steps.push({ name: "Mobile internal scroll / actual deadline change / Save / reload", status: "PASS" });
+    evidence.steps.push({
+      name: "Mobile internal scroll / actual deadline change / Save / reload",
+      status: "PASS",
+    });
     for (const profile of ["demo", "empty"]) {
       await context.addCookies([
         { name: "life_os_profile", value: profile, url: app.origin },
