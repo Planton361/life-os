@@ -27,6 +27,7 @@ import { upgradePreviewSchemaV9 } from "./preview-upgrade";
 import { schemaFingerprint } from "./reset-schema";
 import { createSqliteTaskRepository } from "./repositories/task-repository";
 import { sourceTaskCommands } from "./commands/source-commands";
+import { createSqliteGoalOutcomeRepository } from "./repositories/goal-outcome-repository";
 
 const cleanup: (() => void)[] = [];
 afterEach(() => {
@@ -219,6 +220,25 @@ it("#155 a stale deadline-editor dataset epoch cannot mutate the replacement dat
   expect(await repo.updateTask({ userId: f.ownerId, profileId: f.ownerId, taskId: task.data.id, title: "Stale deadline", dueAt: null, expectedUpdatedAt: task.data.updatedAt })).toMatchObject({ ok: false });
   expect(f.store.datasetState(f.context)).toEqual(before);
   expect(f.store.read(f.context, db => db.prepare("SELECT count(*) AS n FROM tasks").get())).toEqual({ n: BigInt(0) });
+});
+it("#158 stale Create epochs cannot write Tasks, Goal support or command receipts", async () => {
+  const f = previewFixture(), state = f.store.datasetState(f.context);
+  const stale = issuePreviewOwnerContext(f.ownerId, state.epoch);
+  const taskRepo = createSqliteTaskRepository(f.store, stale, sourceTaskCommands);
+  const goalRepo = createSqliteGoalOutcomeRepository(f.store, stale);
+  const challenge = f.store.preparePreviewReset(f.context, f.admission);
+  f.store.executePreviewReset(f.context, f.admission, { ...challenge, confirmation: "ZURÜCKSETZEN" });
+  const snapshot = () => f.store.read(f.context, db => ({
+    tasks: db.prepare("SELECT * FROM tasks").all(),
+    support: db.prepare("SELECT * FROM goal_milestone_task_support").all(),
+    receipts: db.prepare("SELECT * FROM goal_command_receipts").all(),
+    state: db.prepare("SELECT * FROM runtime_metadata").get(),
+  }));
+  const before = snapshot();
+  const input = { userId: f.ownerId, profileId: f.ownerId, title: "Stale Create", dueAt: "2026-10-12T21:59:59.000000Z", status: "planned" as const };
+  expect(await taskRepo.createTask(input)).toMatchObject({ ok: false });
+  expect(await goalRepo.createGoalContextTask({ ...input, goalId: randomUUID(), milestoneId: randomUUID(), commandId: randomUUID() })).toMatchObject({ ok: false });
+  expect(snapshot()).toEqual(before);
 });
 it("revision, expiry, revocation, session and draining deny without changing epoch/receipt", () => {
   const f = previewFixture();

@@ -1,6 +1,6 @@
 "use server";
 
-import { taskDeadlinePatch } from "../domain/task-deadline";
+import { taskDeadlineEndOfDay, taskDeadlinePatch } from "../domain/task-deadline";
 import { withSubmittedDatasetEpoch } from "./submitted-dataset";
 import { createGoalContextTask, getSkillRepository, getTaskRepository } from "../runtime/facade";
 import { dependencyErrorMessage } from "../supabase/repositories/task-dependency-repository";
@@ -617,12 +617,26 @@ export async function createPortfolioTaskAction(
       };
     }
 
+    const deadlineDay = optionalFormString(formData, "dueAt");
+    let dueAt: string | undefined;
+    if (deadlineDay) {
+      try {
+        const zone = await context.auth.data.reads.profileTimezone();
+        if (typeof zone !== "string" || !zone.trim())
+          throw new Error("TASK_DEADLINE_TIMEZONE_REQUIRED");
+        dueAt = taskDeadlineEndOfDay(deadlineDay, zone);
+      } catch {
+        return {
+          message: "Die Deadline oder Profil-Zeitzone konnte nicht bestätigt werden.",
+          status: "error",
+        };
+      }
+    }
+
     const parsed = createTaskInputSchema.safeParse({
       milestoneId: optionalFormString(formData, "milestoneId"),
       areaId: optionalFormString(formData, "areaId"),
-      dueAt: optionalFormString(formData, "dueAt")
-        ? `${formString(formData, "dueAt")}T23:59:59.000Z`
-        : undefined,
+      dueAt,
       description: portfolioTaskDescriptionFromForm(formData),
       durationMinutes: durationMinutesFromForm(formData, "plan"),
       energy: optionalFormString(formData, "energy"),
