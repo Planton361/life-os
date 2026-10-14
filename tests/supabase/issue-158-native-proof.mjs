@@ -253,9 +253,21 @@ export async function proveTaskCreateDeadlinePostgres({ database, sql }) {
       });
     }
   }
-  const before = json(
-    "SELECT json_build_object('tasks',(SELECT count(*) FROM public.tasks WHERE user_id=auth.uid()),'receipts',(SELECT count(*) FROM public.goal_command_receipts WHERE user_id=auth.uid()),'supports',(SELECT count(*) FROM public.goal_milestone_task_support WHERE user_id=auth.uid()))",
-  );
+  // Receipts intentionally have no authenticated SELECT grant. Inspect only
+  // this disposable owner's receipts with the fixture oracle; never grant it.
+  const snapshot = () => ({
+    visible: json(
+      "SELECT json_build_object('tasks',(SELECT count(*) FROM public.tasks WHERE user_id=auth.uid()),'supports',(SELECT count(*) FROM public.goal_milestone_task_support WHERE user_id=auth.uid()))",
+    ),
+    receipts: Number(
+      sql(
+        database,
+        "SELECT count(*) FROM public.goal_command_receipts WHERE user_id=" +
+          literal(owner),
+      ).trim(),
+    ),
+  });
+  const before = snapshot();
   assert.equal(
     (
       await repo.createTask({
@@ -290,9 +302,7 @@ export async function proveTaskCreateDeadlinePostgres({ database, sql }) {
     ).ok,
     false,
   );
-  const after = json(
-    "SELECT json_build_object('tasks',(SELECT count(*) FROM public.tasks WHERE user_id=auth.uid()),'receipts',(SELECT count(*) FROM public.goal_command_receipts WHERE user_id=auth.uid()),'supports',(SELECT count(*) FROM public.goal_milestone_task_support WHERE user_id=auth.uid()))",
-  );
+  const after = snapshot();
   assert.deepEqual(after, before);
   const noDeadline = await repo.createTask({
     userId: owner,
