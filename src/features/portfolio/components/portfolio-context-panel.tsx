@@ -677,6 +677,7 @@ function TaskDetailForm({
   return (
     <form action={updatePortfolioTaskFormAction} aria-label="Task bearbeiten" className="grid gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.40)] p-3">
       <input name="taskId" type="hidden" value={entity.id} />
+      <input name="expectedUpdatedAt" type="hidden" value={values.expectedUpdatedAt ?? ""} />
       <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">Titel<input className={formInputClassName} defaultValue={values.title} name="title" required /></label>
       <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">Beschreibung / Kontext<textarea className={`${formInputClassName} min-h-20 py-2`} defaultValue={values.description} name="description" /></label>
       <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">Next Action<input className={formInputClassName} defaultValue={values.nextAction} name="nextAction" /></label>

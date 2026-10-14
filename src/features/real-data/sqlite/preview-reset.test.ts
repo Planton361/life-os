@@ -208,6 +208,18 @@ it("#153 historical release with a stale dataset epoch cannot write after an iso
   expect(f.store.datasetState(f.context)).toEqual(before);
   expect(f.store.read(f.context,db=>db.prepare("SELECT count(*) AS n FROM tasks").get())).toEqual({n:BigInt(0)});
 });
+it("#155 a stale deadline-editor dataset epoch cannot mutate the replacement dataset", async () => {
+  const f = previewFixture(), state = f.store.datasetState(f.context);
+  const repo = createSqliteTaskRepository(f.store, issuePreviewOwnerContext(f.ownerId, state.epoch), sourceTaskCommands);
+  const task = await repo.createTask({ userId: f.ownerId, profileId: f.ownerId, title: "Deadline epoch fixture", dueAt: "2026-10-12T21:59:59.123456Z" });
+  if (!task.ok) throw new Error(task.error.message);
+  const challenge = f.store.preparePreviewReset(f.context, f.admission);
+  f.store.executePreviewReset(f.context, f.admission, { ...challenge, confirmation: "ZURÜCKSETZEN" });
+  const before = f.store.datasetState(f.context);
+  expect(await repo.updateTask({ userId: f.ownerId, profileId: f.ownerId, taskId: task.data.id, title: "Stale deadline", dueAt: null, expectedUpdatedAt: task.data.updatedAt })).toMatchObject({ ok: false });
+  expect(f.store.datasetState(f.context)).toEqual(before);
+  expect(f.store.read(f.context, db => db.prepare("SELECT count(*) AS n FROM tasks").get())).toEqual({ n: BigInt(0) });
+});
 it("revision, expiry, revocation, session and draining deny without changing epoch/receipt", () => {
   const f = previewFixture();
   const before = f.store.datasetState(f.context);

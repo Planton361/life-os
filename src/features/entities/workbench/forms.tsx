@@ -328,6 +328,10 @@ export function EntityForm({
         event.preventDefault();
         if (submitting.current || unclearCreate) return;
         const form = new FormData(event.currentTarget);
+        // Preserve explicit field intent even if the profile zone changed while
+        // this editor was open. The server still authorizes and converts changes.
+        if (kind === "task" && id && form.get("dueAt") === String(values.dueAt ?? ""))
+          form.delete("dueAt");
         if (!form.get("commandId")) form.set("commandId", crypto.randomUUID());
         const selectedProjectId = String(form.get("projectId") ?? "").trim();
         if (taskCapture && projectContext && !selectedProjectId) {

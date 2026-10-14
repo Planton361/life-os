@@ -854,6 +854,7 @@ export function createSupabaseTaskRepository(
         input.taskId,
         withoutSourceSensitivePatchFields(patch),
         "update task",
+        input.expectedUpdatedAt,
       );
     },
   };
