@@ -133,6 +133,17 @@ try {
       ids.reviewStage,
       "Offene Task nach Project-Abschluss",
     );
+    for (let index = 0; index < 24; index++) {
+      db.prepare(
+        "INSERT INTO tasks(id,user_id,project_id,milestone_id,title,status,created_at,updated_at) VALUES(?,?,?,?,?,'planned',life_now(),life_now())",
+      ).run(
+        randomUUID(),
+        f.ownerId,
+        ids.review,
+        ids.reviewStage,
+        `Long review list ${index + 1}`,
+      );
+    }
     db.prepare(
       "INSERT INTO resource_relations(id,user_id,resource_id,target_type,target_id,relation_type,project_role,created_at) VALUES(?,?,?,'project',?,'supports','primary_artifact',life_now())",
     ).run(randomUUID(), f.ownerId, f.ids.resource, ids.review);
@@ -261,6 +272,33 @@ try {
     await page.evaluate(() => document.fonts.ready);
   };
   const row = (id) => root.locator(`[data-project-task="${id}"]`);
+  const headerReview = root.locator("header").getByRole("region", {
+    name: "Project Abschluss",
+    exact: true,
+  });
+  const expectHeaderReview = async () => {
+    await expect(
+      root.getByRole("region", { name: "Project Abschluss", exact: true }),
+    ).toHaveCount(1);
+    await expect(headerReview).toBeVisible();
+    const reviewBounds = await headerReview.boundingBox();
+    const workBounds = await work.boundingBox();
+    assert.ok(
+      reviewBounds.y + reviewBounds.height <= workBounds.y,
+      "Review before all Task/Milestone work",
+    );
+    const result = root.getByRole("region", {
+      name: "Project Ergebnis und Kriterien",
+      exact: true,
+    });
+    if (await result.count()) {
+      const resultBounds = await result.boundingBox();
+      assert.ok(
+        resultBounds.y + resultBounds.height <= reviewBounds.y,
+        "Review follows result/criteria",
+      );
+    }
+  };
   const balance = root.getByRole("region", {
     name: "Arbeitsstand",
     exact: true,
@@ -547,6 +585,8 @@ try {
   }
   await page.setViewportSize({ width: 1920, height: 1080 });
   await go(ids.empty);
+  await expectHeaderReview();
+  await expect(root.locator("[data-project-result-read-mode]")).toHaveCount(0);
   await expect(
     work.getByRole("heading", { name: "Tasks", exact: true }),
   ).toBeVisible();
@@ -576,6 +616,7 @@ try {
   await expect(root.locator("[data-milestone-id]")).toHaveCount(0);
   await expect(balance).toContainText("0 von 1");
   await go(ids.stagedEmpty);
+  await expectHeaderReview();
   await expect(balance.getByRole("img")).toHaveCount(0);
   await expect(balance).toContainText("0 von 1");
   await expect(
@@ -657,6 +698,92 @@ try {
     "real Milestone create/reorder and stored order reload; optional stages remain separate from Task capture",
   );
   await go(ids.review);
+  const snapshot = () => {
+    const Database = require("better-sqlite3");
+    const reader = new Database(f.path, {
+      readonly: true,
+      fileMustExist: true,
+    });
+    try {
+      return {
+        project: reader
+          .prepare("SELECT * FROM projects WHERE id=? AND user_id=?")
+          .get(ids.review, f.ownerId),
+        reviews: reader
+          .prepare(
+            "SELECT * FROM project_reviews WHERE project_id=? AND user_id=? ORDER BY id",
+          )
+          .all(ids.review, f.ownerId),
+        criteria: reader
+          .prepare(
+            "SELECT * FROM project_completion_criteria WHERE project_id=? AND user_id=? ORDER BY id",
+          )
+          .all(ids.review, f.ownerId),
+      };
+    } finally {
+      reader.close();
+    }
+  };
+  const beforeCancel = snapshot();
+  for (const viewport of [
+    { width: 1920, height: 1080 },
+    { width: 769, height: 413 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await geometry();
+    await expectHeaderReview();
+    assert.ok(
+      (await work.boundingBox()).height > viewport.height,
+      "long work list exceeds viewport",
+    );
+    const trigger = headerReview.getByRole("button", {
+      name: "Abschluss prüfen",
+      exact: true,
+    });
+    if (viewport.height < 720) await trigger.scrollIntoViewIfNeeded();
+    await expect(trigger).toBeInViewport();
+    await trigger.click();
+    const dialog = page.getByRole("dialog", {
+      name: "Project Review",
+      exact: true,
+    });
+    await expect(dialog).toBeVisible();
+    const bounds = await dialog.boundingBox();
+    assert.ok(
+      bounds.x >= 0 &&
+        bounds.y >= 0 &&
+        bounds.x + bounds.width <= viewport.width &&
+        bounds.y + bounds.height <= viewport.height,
+    );
+    await dialog
+      .getByLabel("Begründung", { exact: true })
+      .fill("Unsaved review draft");
+    await dialog
+      .getByRole("button", { name: "Abbrechen", exact: true })
+      .click();
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+    await trigger.click();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+    await page.reload();
+    await expectHeaderReview();
+    assert.deepEqual(
+      snapshot(),
+      beforeCancel,
+      "Open/Cancel/Escape/reload must not mutate Project or Review history",
+    );
+    await page.screenshot({
+      path: join(output, `review-header-${viewport.width}.png`),
+    });
+  }
+  checks.push(
+    "#162: one Header Review after result/criteria and before long work; available without result/criteria; desktop/short/mobile bounds; Cancel/Escape focus return and no mutation after reload",
+  );
+  await page.setViewportSize({ width: 1920, height: 1080 });
   await root
     .getByRole("button", { name: "Abschluss prüfen", exact: true })
     .click();
@@ -693,6 +820,7 @@ try {
     .click();
   await expect(review).toBeHidden();
   await page.reload();
+  await expectHeaderReview();
   await expect(
     root.getByRole("region", { name: "Project Abschluss", exact: true }),
   ).toContainText("Project abgeschlossen");
@@ -760,6 +888,19 @@ try {
   await page.keyboard.press("Escape");
   await page.setViewportSize({ width: 390, height: 844 });
   await geometry();
+  await expectHeaderReview();
+  await expect(
+    headerReview.getByRole("link", {
+      name: "Abschluss-Review ansehen",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    headerReview.getByRole("button", {
+      name: "Project wieder öffnen",
+      exact: true,
+    }),
+  ).toBeVisible();
   await expect(work.getByText(/Abgeschlossenes Project/)).toBeVisible();
   await page.setViewportSize({ width: 1920, height: 1080 });
   await root
@@ -839,7 +980,7 @@ try {
       {
         checks,
         errors,
-        base: "e97c90bfa7d8bb6ddb9d25cbc8b0042ef231ecb7",
+        base: "df6625dfbbee22d32c49b5a9ce41efebe4ebd5bc",
         runtime: process.versions.node,
         synthetic: true,
       },
