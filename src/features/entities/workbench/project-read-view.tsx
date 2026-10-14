@@ -198,6 +198,7 @@ export function ProjectReadView({
           </div>
           {depth && <ProjectDepthResult depth={depth} />}
           {depth && mutable && <ProjectDepthResultManagement depth={depth} />}
+          {depth && <ProjectDepthReview depth={depth} />}
           {!hasContext && project.next_step && (
             <section
               aria-label="Project-Fokus"
@@ -297,13 +298,7 @@ export function ProjectReadView({
                 </section>
               )}
               <ProjectResources data={data} projectId={id} section="primary" />
-              {depth && showRail && <ProjectDepthReview depth={depth} />}
             </ContextContainer>
-          )}
-          {depth && !showRail && (
-            <div className={styles.review}>
-              <ProjectDepthReview depth={depth} />
-            </div>
           )}
         </div>
         {hasSupportingResources && (
