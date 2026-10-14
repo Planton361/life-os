@@ -214,6 +214,7 @@ jobs:
       - name: Production Next build and native shutdown proof (Linux x64)
         run: |
           pnpm build
+          node tests/sqlite/issue-160-browser-proof.mjs
           node tests/sqlite/issue-158-browser-proof.mjs
           node tests/sqlite/issue-155-browser-proof.mjs
           node tests/sqlite/issue-153-browser-proof.mjs
