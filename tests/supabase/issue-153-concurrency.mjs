@@ -10,7 +10,7 @@ export async function proveInboxReleaseConcurrency({
   output,
   issue = 153,
 }) {
-  assert.ok(issue === 153 || issue === 155, "Only verified issue proof harnesses");
+  assert.ok([153, 155, 158].includes(issue), "Only verified issue proof harnesses");
   assert.match(name, new RegExp(`^life-os-${issue}-lint-[0-9a-f-]+$`));
   assert.equal(database, `life_os_${issue}_head`);
   const results = [];
