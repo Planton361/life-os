@@ -1,3 +1,41 @@
+/* Agenda owns one content frame for all views. Linear/short layouts retain
+   document flow; bounded frames isolate intrinsic Day/Week/Month sizes. */
+.dashboard-agenda > :first-child {
+  flex-shrink: 0;
+}
+.agenda-scroll {
+  min-height: 0;
+}
+.agenda-body {
+  grid-auto-rows: 96px;
+  align-content: start;
+}
+.agenda-hour-events {
+  display: flex;
+  gap: 8px;
+  min-height: 0;
+  overflow-x: auto;
+}
+.agenda-event-card {
+  flex: 1 0 min(100%, 240px);
+}
+@container agenda (min-width: 480px) {
+  .dashboard-agenda-period[data-agenda-view="Month"] {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}
+@media (min-height: 720px) {
+  @container life-os-canvas (min-width: 880px) {
+    .dashboard-agenda {
+      align-self: stretch;
+    }
+    .agenda-scroll {
+      contain: size;
+      flex: 1 1 0;
+      overflow: auto;
+    }
+  }
+}
 /* #112: an explicit Dashboard-only bounded workspace. The width sum is shell
    chrome (280) + Wide canvas (1440) + gutters (48), never a device/DPR rule. */
 @media (min-width: 1768px) {
@@ -85,14 +123,10 @@
   .dashboard-agenda > :first-child {
     flex-shrink: 0;
   }
-  .agenda-body {
-    /* The day timeline uses spare frame height; event cards stay intrinsic. */
-    flex: 1;
-    grid-auto-rows: minmax(min-content, 1fr);
-    display: grid;
-    min-height: 0;
-    overflow-y: auto;
-    align-content: start;
+  .agenda-scroll {
+    contain: size;
+    flex: 1 1 0;
+    overflow: auto;
   }
   .dashboard-composition
     :is(.dashboard-habits, .dashboard-portfolio, .dashboard-meals) {

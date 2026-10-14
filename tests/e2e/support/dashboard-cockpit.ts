@@ -160,7 +160,7 @@ export function consoleProof(page: Page) {
 }
 export async function scrollProof(page: Page) {
   for (const selector of [
-    ".agenda-body",
+    ".agenda-scroll",
     ".portfolio-slots",
     ".habit-slots",
     ".dashboard-meal-list",
