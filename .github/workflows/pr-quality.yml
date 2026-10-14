@@ -16,6 +16,40 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  sql-158:
+    name: "SQL #158 (disposable PostgreSQL 18.4)"
+    if: github.event_name == 'pull_request' && github.head_ref == 'codex/158-task-create-deadline-local-day'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Setup Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .node-version
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.3.0 --activate
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Actual migrated SQL regression, lint and advisors
+        env:
+          ISSUE158_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          ISSUE158_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node tests/supabase/issue-155-sql-proof.mjs
+      - name: Preserve full SQL output and isolation
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: issue-158-disposable-sql-proof
+          path: test-results/issue-158-sql-lint/
+          if-no-files-found: error
+          retention-days: 14
   sql-155:
     name: "SQL #155 (disposable PostgreSQL 18.4)"
     if: github.event_name == 'pull_request' && github.head_ref == 'codex/155-task-deadline-local-day'
@@ -180,6 +214,7 @@ jobs:
       - name: Production Next build and native shutdown proof (Linux x64)
         run: |
           pnpm build
+          node tests/sqlite/issue-158-browser-proof.mjs
           node tests/sqlite/issue-155-browser-proof.mjs
           node tests/sqlite/issue-153-browser-proof.mjs
           node tests/sqlite/issue-151-browser-proof.mjs
@@ -235,5 +270,14 @@ jobs:
         with:
           name: issue-155-disposable-browser-proof
           path: test-results/issue-155/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Preserve Task Create deadline browser evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: issue-158-disposable-browser-proof
+          path: test-results/issue-158/
           if-no-files-found: error
           retention-days: 14

@@ -1,4 +1,4 @@
-// #155 only: actual Supabase lint on a fresh CI-local PostgreSQL 18.4 with
+// #155/#158: actual Supabase lint on a fresh CI-local PostgreSQL 18.4 with
 // plpgsql_check installed. No connection URL, existing container or DB accepted.
 // Refuses workstation Docker: the personal Mac runtime is never touched.
 import assert from "node:assert/strict";
@@ -15,8 +15,13 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { parseCheck, fingerprints } from "./issue-151-sql-lint-gate.mjs";
 import { proveTaskDeadlinePostgres } from "./issue-155-native-proof.mjs";
+import { proveTaskCreateDeadlinePostgres } from "./issue-158-native-proof.mjs";
 import { proveInboxReleaseConcurrency } from "./issue-153-concurrency.mjs";
-const baseRevision = "7614c6aac4037e995a41253944a61abde575332b";
+const issue = process.env.ISSUE158_BASE_SHA ? 158 : 155;
+const baseRevision =
+  issue === 158
+    ? "76e3b2a46c41314a46b98c7311b3ca72de44dbea"
+    : "7614c6aac4037e995a41253944a61abde575332b";
 
 assert.equal(
   process.env.GITHUB_ACTIONS,
@@ -27,7 +32,7 @@ assert.equal(process.env.RUNNER_OS, "Linux", "Ephemeral Linux runner required");
 assert.equal(process.versions.node, "24.21.0");
 const base = baseRevision;
 assert.equal(
-  process.env.ISSUE155_BASE_SHA,
+  process.env["ISSUE" + issue + "_BASE_SHA"],
   base,
   "PR base changed: no implicit baseline update",
 );
@@ -38,11 +43,11 @@ const checker = {
   url: "https://apt.postgresql.org/pub/repos/apt/pool/main/p/plpgsql-check/postgresql-18-plpgsql-check_2.10.13-1.pgdg12+1_amd64.deb",
   sha256: "228d14fde4883f7dfc9bd4971e6cbef6a081de7c2ab6248ac25053dad20fe27d",
 };
-const name = `life-os-155-lint-${randomUUID()}`,
+const name = `life-os-${issue}-lint-${randomUUID()}`,
   password = randomUUID();
-const output = resolve("test-results/issue-155-sql-lint");
+const output = resolve(`test-results/issue-${issue}-sql-lint`);
 mkdirSync(output, { recursive: true });
-const temp = mkdtempSync(join(tmpdir(), "life-os-155-lint-"));
+const temp = mkdtempSync(join(tmpdir(), `life-os-${issue}-lint-`));
 const evidence = {
   base,
   image,
@@ -99,7 +104,7 @@ try {
   evidence.head = run("git", ["rev-parse", "HEAD"]).trim();
   assert.equal(
     evidence.head,
-    process.env.ISSUE155_HEAD_SHA,
+    process.env["ISSUE" + issue + "_HEAD_SHA"],
     "Not the exact PR head",
   );
   assert.equal(run("git", ["merge-base", base, "HEAD"]).trim(), base);
@@ -128,7 +133,7 @@ try {
     "--name",
     name,
     "--label",
-    "life-os.issue=155",
+    `life-os.issue=${issue}`,
     "--label",
     `life-os.disposable=${process.env.GITHUB_RUN_ID}`,
     "--publish",
@@ -139,7 +144,7 @@ try {
   ]);
   started = true;
   const inspect = JSON.parse(run("docker", ["inspect", name]))[0];
-  assert.equal(inspect.Config.Labels["life-os.issue"], "155");
+  assert.equal(inspect.Config.Labels["life-os.issue"], String(issue));
   assert.equal(
     inspect.Config.Labels["life-os.disposable"],
     process.env.GITHUB_RUN_ID,
@@ -196,7 +201,7 @@ try {
     run(cli, ["db", "advisors", "--help"]),
   );
   for (const variant of ["base", "head"]) {
-    const database = `life_os_155_${variant}`;
+    const database = `life_os_${issue}_${variant}`;
     sql("postgres", `CREATE DATABASE ${database} TEMPLATE template0;`);
     // Supabase's administrative connection resolves extensions as well as public
     // functions. Plain official PostgreSQL defaults omit that extension schema.
@@ -360,9 +365,14 @@ try {
         database,
         sql,
       });
+      if (issue === 158)
+        evidence.createDeadlineProof = await proveTaskCreateDeadlinePostgres({
+          database,
+          sql,
+        });
       evidence.headSqlRegression = "PASS";
       evidence.headConcurrency = await proveInboxReleaseConcurrency({
-        issue: 155,
+        issue,
         name,
         database,
         sql,
@@ -435,7 +445,7 @@ try {
   assert.equal(issueCount(head), 18);
   evidence.classification = {
     status: "PASS_SCOPE_DIFF_NO_NEW_FINDINGS",
-    scope: 155,
+    scope: issue,
     baseIssueCount: 18,
     headIssueCount: 18,
     newIssueCount: 0,
@@ -457,7 +467,9 @@ try {
     "PASS: additional/changed/error findings rejected";
   console.log(JSON.stringify(evidence.classification));
 } catch (error) {
-  evidence.failure = redact(error instanceof Error ? error.stack : String(error));
+  evidence.failure = redact(
+    error instanceof Error ? error.stack : String(error),
+  );
   console.error(evidence.failure);
   process.exitCode = 1;
 } finally {
