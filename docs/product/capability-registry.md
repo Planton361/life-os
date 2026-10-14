@@ -1321,8 +1321,8 @@ Journal depth, Skill Map and final active acceptance remain the planned work.
 | Meals Today | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Latest Run | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Muscle Map | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
-| Today Agenda day view | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
-| Today Agenda week/month | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
+| Today Agenda day view | `CONNECTED` | R2-01 USER ACCEPTED; #164 keeps hourly rows content-independent, exact canonical interval labels and accessible Task navigation. Existing SQLite Dashboard proof covers long 30/60-minute scheduled Tasks, same-hour events and reload. | #164 is a scoped visual repair, not renewed Dashboard surface acceptance |
+| Today Agenda week/month | `CONNECTED` | R2-01 USER ACCEPTED; #164 shares one bounded Agenda scroll frame across Day/Week/Month, with natural Linear flow. Existing `tests/sqlite/issue-160-browser-proof.mjs` checks Manual/Demo/Empty at seven viewports, outer/neighbour bounds within 1px, keyboard switching/scrolling, full Agenda link inventory, reload and console. | #112/#114 broader cockpit acceptance remains separate |
 | Urgent time-block create | `CONNECTED_GAP` | current visible control is an honest non-interactive Prepared state; Inbox creates canonical Tasks while scheduling belongs to Calendar/Portfolio | R2-03 must connect it to a canonical flow or remove it; Prepared is not closure without user deferral |
 | Habit Tracker | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Active Portfolio | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
