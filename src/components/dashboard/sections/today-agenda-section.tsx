@@ -152,10 +152,10 @@ function AgendaEventCard({
           {event.relevanceLabel}
         </span>
       </div>
-      <p className="mt-1 truncate text-[10px] font-medium leading-tight text-[var(--text-secondary)]">
+      <p className="agenda-event-time mt-1 truncate text-[10px] font-medium leading-tight text-[var(--text-secondary)]">
         {event.time} · {event.statusLabel}
       </p>
-      <p className="mt-1 truncate text-[11px] leading-tight text-[var(--text-muted)]">
+      <p className="agenda-event-note mt-1 truncate text-[11px] leading-tight text-[var(--text-muted)]">
         {event.note}
       </p>
       <span id={descriptionId} className="sr-only">
@@ -279,7 +279,7 @@ export function TodayAgenda({
               const isCurrent = index === currentHour;
               return (
                 <Fragment key={hour}>
-                  <div className="min-w-0 py-2 text-right text-[11px] font-medium text-[var(--text-secondary)]">
+                  <div className="agenda-hour-label min-w-0 py-2 text-right text-[11px] font-medium text-[var(--text-secondary)]">
                     {hour}
                     {isCurrent && (
                       <p className="mt-1 text-[10px] text-[var(--accent-red)]">
@@ -309,6 +309,7 @@ export function TodayAgenda({
                     ))}
                     {index === 0 && events.length === 0 && (
                       <DashboardEmptyState
+                        className="agenda-empty-state"
                         description="Lege 1-3 Aufgaben für heute an."
                         title="Noch keine Tagesstruktur."
                       />

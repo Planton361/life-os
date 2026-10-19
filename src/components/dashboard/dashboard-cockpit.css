@@ -79,6 +79,7 @@
   .dashboard-agenda {
     grid-column: 4 / 9;
     grid-row: 2;
+    container-type: size;
   }
   .dashboard-composition .dashboard-priority {
     grid-column: 9 / 13;
@@ -250,6 +251,85 @@
     flex-shrink: 0;
     white-space: nowrap;
   }
+}
+/* Roomy Wide: use the existing module bodies, rather than leaving holes around
+   content-sized panels. Short-Wide keeps its compact, scrollable allocation. */
+@media (min-height: 900px) {
+  @container life-os-canvas (min-width: 1440px) {
+    .dashboard-composition
+      :is(
+        .dashboard-stats,
+        .dashboard-quick,
+        .dashboard-daily,
+        .dashboard-signals
+      ) {
+      align-self: stretch;
+    }
+    .dashboard-daily {
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+    .dashboard-quick > form,
+    .dashboard-quick textarea {
+      flex: 1;
+    }
+    .dashboard-signals {
+      align-content: stretch;
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+    .dashboard-mood {
+      display: grid;
+      align-content: center;
+    }
+    .dashboard-composition .dashboard-priority {
+      grid-template-rows: minmax(0, 2fr) minmax(0, 3fr);
+      align-content: stretch;
+    }
+    .dashboard-priority > * {
+      align-self: stretch;
+    }
+    .dashboard-habits > [data-dashboard-section],
+    .dashboard-portfolio-body,
+    .dashboard-priority :is(.habit-slots, .portfolio-slots) {
+      flex: 1;
+    }
+    .dashboard-priority :is(.habit-slots, .portfolio-slots) {
+      grid-auto-rows: minmax(min-content, 1fr);
+      align-content: stretch;
+    }
+  }
+}
+/* Dashboard-only full-day overview when the assigned Agenda frame can fit
+   nineteen readable rows. Grouping and canonical intervals are unchanged;
+   smaller frames retain #164's 96px rows and internal scroll. */
+@container agenda (min-height: 960px) {
+  .agenda-body {
+    --agenda-day-overview: 1;
+    height: 100%;
+    grid-auto-rows: minmax(0, 1fr);
+    align-content: stretch;
+  }
+}
+@container agenda (960px <= height < 1440px) {
+  .agenda-hour-label {
+    padding-block: 4px;
+  }
+  .agenda-hour-label > p {
+    margin-top: 2px;
+  }
+  .agenda-hour-events {
+    padding-block: 2px;
+  }
+  .agenda-event-card,
+  .agenda-empty-state {
+    padding-block: 4px;
+  }
+  .agenda-event-time,
+  .agenda-empty-state > p + p {
+    margin-top: 0;
+  }
+  .agenda-event-note {
+    display: none;
+  } /* Full notes remain in the accessible description and detail link/title. */
 }
 /* Wide-Short retains the same macro hierarchy with compact, readable V5
    spacing. Only temporal/list bodies scroll; primary headers stay visible. */

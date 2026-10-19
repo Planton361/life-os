@@ -160,7 +160,7 @@ try {
   browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({
     viewport: { width: 1920, height: 1080 },
-    deviceScaleFactor: 1,
+    deviceScaleFactor: 1.5,
   });
   await context.addCookies([
     { name: "life_os_profile", value: "manual", url: app.origin },
@@ -303,6 +303,12 @@ try {
         hours: [...document.querySelectorAll("[data-agenda-hour-lines]")].map(
           (e) => e.getBoundingClientRect().height,
         ),
+        dayOverview:
+          getComputedStyle(
+            document.querySelector(".agenda-body") ?? document.body,
+          )
+            .getPropertyValue("--agenda-day-overview")
+            .trim() === "1",
       }),
       selectors,
     );
@@ -393,6 +399,14 @@ try {
         assert.ok(zone("habits").bottom <= zone("portfolio").y + 1);
         assert.ok(zone("meals").bottom <= zone("running").y + 1);
         assert.ok(center.width > zone("habits").width);
+        if (viewport.height >= 900) {
+          assert.ok(Math.abs(zone("portfolio").bottom - center.bottom) <= 1);
+          for (const name of ["daily", "quick", "mood"])
+            assert.ok(
+              Math.abs(zone(name).bottom - zone("stats").bottom) <= 1,
+              `${name}: hole in Command band`,
+            );
+        }
         await scrollProof(page);
       }
       evidence.agendaChecks.push(record);
@@ -427,10 +441,47 @@ try {
             Math.max(...current.hours) - Math.min(...current.hours) <= 1,
             `Unequal hour sizes: ${current.hours}`,
           );
-          assert.ok(
-            Math.max(...current.hours) <= 96 + 1,
-            "Text or event count inflated hour rows",
-          );
+          if (current.dayOverview) {
+            const fullDay = await agenda
+              .locator(".agenda-scroll")
+              .evaluate((frame) => {
+                const bounds = frame.getBoundingClientRect();
+                const labels = [
+                  ...frame.querySelectorAll(".agenda-hour-label"),
+                ];
+                return {
+                  labels: labels.map((e) => e.firstChild.textContent),
+                  allVisible: labels.every((e) => {
+                    const r = e.getBoundingClientRect();
+                    return (
+                      r.top >= bounds.top - 1 && r.bottom <= bounds.bottom + 1
+                    );
+                  }),
+                  scroll: frame.scrollHeight - frame.clientHeight,
+                  timeLabelsContained: [
+                    ...frame.querySelectorAll(".agenda-event-time"),
+                  ].every((e) => {
+                    const r = e.getBoundingClientRect(),
+                      card = e
+                        .closest(".agenda-event-card")
+                        .getBoundingClientRect();
+                    return r.top >= card.top - 1 && r.bottom <= card.bottom + 1;
+                  }),
+                };
+              });
+            assert.equal(fullDay.labels[0], "06:00");
+            assert.equal(fullDay.labels.at(-1), "24:00");
+            assert.equal(fullDay.allVisible, true);
+            assert.ok(fullDay.scroll <= 1);
+            assert.equal(fullDay.timeLabelsContained, true);
+            record.fullDay = fullDay;
+          } else {
+            assert.ok(
+              current.hours.every((height) => Math.abs(height - 96) <= 1),
+            );
+          }
+          if (viewport.height === 1355 || viewport.height === 2160)
+            assert.equal(current.dayOverview, true);
         }
         if (bounded && profile === "manual") {
           const region = agenda.getByRole("region", {

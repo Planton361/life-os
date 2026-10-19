@@ -145,13 +145,23 @@ not final USER ACCEPTED of #112 or product closure.
 Current #112 layout restoration (2026-10-20) keeps these `CONNECTED` capabilities
 and restores only the historical `f0b5891` macrostructure on the current runtime:
 Command above, Health/Nutrients → Meals → Running left, Agenda center, Habits →
-Portfolio right. The current shared Day/Week/Month frame and 96px hour rows remain.
+Portfolio right. USER rejected the first PR #166 revision `b6704ae` visually;
+the same-PR repair retains that macrostructure and addresses the three findings:
+full-day overview, a filled right rail and aligned Command modules. Only the
+Dashboard presentation changes. At an assigned Agenda height >=960px, all 19
+labels 06:00–24:00 fit simultaneously in equal, content-independent rows; smaller
+frames retain 96px rows/internal scroll. Canonical intervals, hour grouping,
+Calendar geometry and the shared Day/Week/Month outer frame are unchanged.
+Compact overview cards show title/time/status; full notes remain in their
+accessible description, title and real detail navigation. No font scaling.
 `tests/sqlite/issue-160-browser-proof.mjs` reuses the existing disposable native
 SQLite browser harness and cockpit helpers: Manual/Demo/Empty at PG27UCDM
 2560×1355 DPR1.5, 2560×589 DPR1, 2560×639 DPR1.5, 1920×1080, 3840×2160,
 769×413 DPR2, 390×844 and Split 1440×900. Assertions cover real DPR, all 12 Wide
 zones, left/center/right bounds, no overlap/clipped controls/scaling/body scroll,
 intrinsic Meal rows, keyboard/wheel scroll, stable Agenda switches and reload.
+The repair adds actual full-day label/interval visibility, zero vertical Day
+scroll at PG27UCDM/4K, filled right-rail bounds and aligned Command bottoms.
 The existing Dashboard control proof is reused for tabs, six Mood choices and
 Habit creation; capture/error/Inbox reload and Habit increment/undo/reload are
 also proved. Dashboard links, including all three Meal planning links and the
@@ -162,9 +172,16 @@ PG27UCDM Empty comparison against unmodified `f5737d4`, same 2560×1355 DPR1.5:
 [before](../qa/dashboard-v5-pg27-before.png) /
 [after](../qa/dashboard-v5-pg27-after.png). Agenda changes from
 `x304 y325 1110×775.5` to `x865 y325 923×1006` CSS px; document height remains
-1355. Command bounds are unchanged. Left stack is 549px wide; right is 736px
-wide, with content-led Cards. Screenshots show Empty presentation, not personal
-data; clock-derived labels remain live. This is implementation/browser evidence;
+1355. In Empty, the Command modules share y24–313; Habits occupy y325–722.59
+and Portfolio y734.59–1331 (2:3 allocation after the 12px gap). Empty right-rail
+space below Portfolio falls from 463px on `b6704ae` to 0px. Left stack remains
+549px wide; right remains 736px. [Populated synthetic Manual screenshot](../qa/dashboard-v5-pg27-populated.png)
+also proves 06:00–24:00 at 48px per row, with exact 30/60-minute labels readable.
+Both new PNGs are 3840×2033 at the actual 2560×1355 DPR1.5 target. Screenshots
+contain only Empty/disposable data; clock-derived labels remain live.
+V5 review: existing P0/P1 hierarchy, tokens and real controls fit V5; the rejected
+holes are addressed through existing workspace bodies. No decorative/fake data
+or shrinking typography. Scoped design review PASS; this is implementation/browser evidence;
 personal visual USER ACCEPTANCE of this revision is still required before merge.
 
 Prior composition browser evidence (historical, not a new acceptance claim):
