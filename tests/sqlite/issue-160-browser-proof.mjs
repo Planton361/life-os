@@ -10,6 +10,12 @@ import {
 } from "./application-fixture.mjs";
 import { compileRuntime } from "./compile-runtime.mjs";
 import { startApplication } from "./application-process.mjs";
+import { surfaceProof } from "./application-surface-proof.mjs";
+import {
+  cockpitGeometry,
+  cockpitViewports,
+  scrollProof,
+} from "../e2e/support/dashboard-cockpit.ts";
 
 assert.equal(process.versions.node, "24.21.0");
 
@@ -160,6 +166,7 @@ try {
     { name: "life_os_profile", value: "manual", url: app.origin },
   ]);
   const page = await context.newPage();
+  const display = await context.newCDPSession(page);
   page.setDefaultTimeout(12000);
   page.on("pageerror", (error) => evidence.errors.push(error.message));
   page.on("console", (message) => {
@@ -279,6 +286,7 @@ try {
   async function geometry() {
     return page.evaluate(
       (selectors) => ({
+        dpr: devicePixelRatio,
         canvas: document.querySelector(".life-os-canvas").clientWidth,
         documentHeight: document.documentElement.scrollHeight,
         documentWidth: document.documentElement.scrollWidth,
@@ -303,23 +311,90 @@ try {
     await context.addCookies([
       { name: "life_os_profile", value: profile, url: app.origin },
     ]);
-    for (const viewport of [
-      { width: 1920, height: 1080 },
-      { width: 3840, height: 2160 },
-      { width: 2560, height: 589 },
-      { width: 2560, height: 639 },
-      { width: 1440, height: 900 },
-      { width: 769, height: 413 },
-      { width: 390, height: 844 },
+    for (const target of [
+      ...cockpitViewports,
+      { width: 1440, height: 900, deviceScaleFactor: 1 },
     ]) {
+      const viewport = { width: target.width, height: target.height };
       await page.setViewportSize(viewport);
+      await display.send("Emulation.setDeviceMetricsOverride", {
+        ...viewport,
+        deviceScaleFactor: target.deviceScaleFactor,
+        mobile: false,
+      });
       await page.goto(`${app.origin}/dashboard`);
       await expect(agenda).toHaveAttribute("data-profile-id", profile);
+      await agenda.getByRole("button", { name: "Day", exact: true }).click();
       const baseline = await geometry();
+      assert.equal(baseline.dpr, target.deviceScaleFactor);
       const bounded =
         baseline.canvas >= 1440 ||
         (baseline.canvas >= 880 && viewport.height >= 720);
       const record = { profile, viewport, baseline, views: [] };
+      record.cockpit = await cockpitGeometry(page);
+      const g = record.cockpit;
+      assert.equal(g.width, viewport.width);
+      assert.equal(g.height, viewport.height);
+      if (profile === "manual" && viewport.height === 1355)
+        record.controls = await page
+          .locator(".dashboard-composition :is(button,a,textarea)")
+          .evaluateAll((nodes) =>
+            nodes.map((e) => ({
+              tag: e.tagName,
+              name: (e.getAttribute("aria-label") || e.textContent).slice(
+                0,
+                160,
+              ),
+              href: e.getAttribute("href"),
+              disabled: e.matches(":disabled"),
+            })),
+          );
+      assert.deepEqual(g.overlaps, []);
+      assert.deepEqual(g.clipped, []);
+      assert.equal(g.scaled, 0);
+      record.mealRows = await page
+        .locator(".dashboard-meal-list > article")
+        .evaluateAll((rows) =>
+          rows.map((row) => {
+            const bounds = row.getBoundingClientRect();
+            return {
+              y: bounds.y,
+              bottom: bounds.bottom,
+              containedLinks: [...row.querySelectorAll("a")].every((link) => {
+                const r = link.getBoundingClientRect();
+                return r.top >= bounds.top - 1 && r.bottom <= bounds.bottom + 1;
+              }),
+            };
+          }),
+        );
+      assert.ok(record.mealRows.every((row) => row.containedLinks));
+      if (g.canvas >= 1440) {
+        assert.ok(g.documentHeight <= viewport.height + 1, JSON.stringify(g));
+        for (const zone of g.zones)
+          assert.ok(
+            zone.y >= 0 &&
+              zone.bottom <= viewport.height + 1 &&
+              zone.height > 40,
+            JSON.stringify(zone),
+          );
+        const zone = (name) =>
+          g.zones.find((z) => z.selector === `.dashboard-${name}`);
+        const center = zone("agenda");
+        for (const name of ["weight", "nutrients", "meals", "running"])
+          assert.ok(
+            zone(name).right <= center.x + 1,
+            `${name} must be left of Agenda`,
+          );
+        for (const name of ["habits", "portfolio"])
+          assert.ok(
+            zone(name).x >= center.right - 1,
+            `${name} must be right of Agenda`,
+          );
+        assert.ok(zone("habits").bottom <= zone("portfolio").y + 1);
+        assert.ok(zone("meals").bottom <= zone("running").y + 1);
+        assert.ok(center.width > zone("habits").width);
+        await scrollProof(page);
+      }
       evidence.agendaChecks.push(record);
       for (const view of ["Week", "Month", "Day"]) {
         const control = agenda.getByRole("button", { name: view, exact: true });
@@ -391,10 +466,18 @@ try {
           }
           await page.evaluate(() => scrollTo(0, 0));
           await page.screenshot({
-            path: join(output, `agenda-${viewport.width}-${view}.png`),
+            path: join(
+              output,
+              `agenda-${viewport.width}x${viewport.height}-${view}.png`,
+            ),
             fullPage: true,
           });
         }
+        if (profile === "empty" && viewport.height === 1355 && view === "Day")
+          await page.screenshot({
+            path: join(output, "pg27-empty-after.png"),
+            fullPage: true,
+          });
       }
       await page.reload();
       await expect(
@@ -466,6 +549,25 @@ try {
         await expect(
           page.getByRole("heading", { name: task.title, exact: true }),
         ).toBeVisible({ timeout: 12000 });
+        if (baseline.canvas >= 1440 && viewport.height < 720) {
+          for (const slot of ["breakfast", "lunch", "dinner"]) {
+            await page.goto(`${app.origin}/dashboard`);
+            const href = `/nutrition/meal-planner?slot=${slot}`;
+            await page
+              .locator(`.dashboard-meal-list a[href="${href}"]`)
+              .click();
+            await page.waitForURL((url) => url.pathname + url.search === href);
+          }
+          await page.goto(`${app.origin}/dashboard`);
+          const running = page.locator(".dashboard-running");
+          await running
+            .getByRole("button", { name: "Muscle", exact: true })
+            .click();
+          await running.getByRole("link", { name: /^Open workout:/ }).click();
+          await page.waitForURL("**/health/strength");
+          record.shortStackNavigation =
+            "all three meal Planen links and Muscle link clicked through bounded bodies";
+        }
       }
     }
   }
@@ -519,6 +621,82 @@ try {
       navigation: "PASS",
     });
   }
+
+  await context.addCookies([
+    { name: "life_os_profile", value: "manual", url: app.origin },
+  ]);
+  const primary = evidence.agendaChecks.find((record) => record.controls);
+  evidence.dashboardLinks = [];
+  for (const href of new Set(
+    primary.controls.map((c) => c.href).filter(Boolean),
+  )) {
+    await page.goto(`${app.origin}/dashboard`);
+    await page
+      .locator(`.dashboard-composition a[href=${JSON.stringify(href)}]`)
+      .first()
+      .click();
+    await page.waitForURL((url) => url.pathname + url.search === href);
+    await expect(page.locator("#main-content")).not.toContainText(
+      "This page could not be found",
+    );
+    evidence.dashboardLinks.push({ href, navigation: "PASS" });
+  }
+  await surfaceProof({
+    page,
+    app,
+    fixture,
+    step: async (name, run) => {
+      if (!name.startsWith("Dashboard existing visible controls")) return;
+      await run();
+      evidence.dashboardControls = name + ": PASS (existing proof reused)";
+    },
+  });
+  await expect(
+    page
+      .locator(".dashboard-mood")
+      .getByRole("button", { name: "Happy", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  const habit = page.getByRole("button", {
+    name: "SQLite browser surface Habit erhöhen",
+    exact: true,
+  });
+  await habit.click();
+  await page.reload();
+  await page.getByRole("button", { name: "Morning", exact: true }).click();
+  await expect(habit).toContainText("1 / 2");
+  await page
+    .getByRole("button", {
+      name: "SQLite browser surface Habit: Letzten Eintrag rückgängig machen",
+      exact: true,
+    })
+    .click();
+  await page.reload();
+  await page.getByRole("button", { name: "Morning", exact: true }).click();
+  await expect(habit).toContainText("0 / 2");
+  const capture = `#112 layout ${randomUUID()}`;
+  const quick = page.locator(".dashboard-quick");
+  await quick
+    .getByRole("button", { name: "In Inbox speichern", exact: true })
+    .click();
+  await expect(quick.getByRole("alert")).toBeVisible();
+  await quick
+    .getByRole("textbox", { name: "Quick Thought", exact: true })
+    .fill(capture);
+  await quick
+    .getByRole("button", { name: "In Inbox speichern", exact: true })
+    .click();
+  await expect(
+    page.getByRole("status").filter({ hasText: "In der Inbox gespeichert." }),
+  ).toBeVisible();
+  await page.goto(`${app.origin}/inbox`);
+  const captured = page
+    .locator('[data-inbox-section="queue"]')
+    .getByRole("button", { name: new RegExp(`^${capture}`) });
+  await expect(captured).toBeVisible();
+  await page.reload();
+  await expect(captured).toBeVisible();
+  evidence.writeReload =
+    "Capture/error feedback, Mood and Habit increment/undo PASS on disposable fixture";
 
   assert.ok(
     !app.output().includes("SQLITE_PROOF_SUPABASE_NETWORK_DENIED"),

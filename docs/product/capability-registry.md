@@ -142,7 +142,32 @@ viewport, including H589/H639, with bounded temporal/list bodies and unchanged
 Manual/Demo/Empty/Auth-blocked semantics. This is scoped implementation evidence,
 not final USER ACCEPTED of #112 or product closure.
 
-Current focused browser evidence:
+Current #112 layout restoration (2026-10-20) keeps these `CONNECTED` capabilities
+and restores only the historical `f0b5891` macrostructure on the current runtime:
+Command above, Health/Nutrients → Meals → Running left, Agenda center, Habits →
+Portfolio right. The current shared Day/Week/Month frame and 96px hour rows remain.
+`tests/sqlite/issue-160-browser-proof.mjs` reuses the existing disposable native
+SQLite browser harness and cockpit helpers: Manual/Demo/Empty at PG27UCDM
+2560×1355 DPR1.5, 2560×589 DPR1, 2560×639 DPR1.5, 1920×1080, 3840×2160,
+769×413 DPR2, 390×844 and Split 1440×900. Assertions cover real DPR, all 12 Wide
+zones, left/center/right bounds, no overlap/clipped controls/scaling/body scroll,
+intrinsic Meal rows, keyboard/wheel scroll, stable Agenda switches and reload.
+The existing Dashboard control proof is reused for tabs, six Mood choices and
+Habit creation; capture/error/Inbox reload and Habit increment/undo/reload are
+also proved. Dashboard links, including all three Meal planning links and the
+Muscle link in Short-Wide, are directly navigated. Only the sealed synthetic
+fixture is mutated; no personal data or running instance is used.
+
+PG27UCDM Empty comparison against unmodified `f5737d4`, same 2560×1355 DPR1.5:
+[before](../qa/dashboard-v5-pg27-before.png) /
+[after](../qa/dashboard-v5-pg27-after.png). Agenda changes from
+`x304 y325 1110×775.5` to `x865 y325 923×1006` CSS px; document height remains
+1355. Command bounds are unchanged. Left stack is 549px wide; right is 736px
+wide, with content-led Cards. Screenshots show Empty presentation, not personal
+data; clock-derived labels remain live. This is implementation/browser evidence;
+personal visual USER ACCEPTANCE of this revision is still required before merge.
+
+Prior composition browser evidence (historical, not a new acceptance claim):
 - `issue-112-dashboard-cockpit.spec.ts`: Empty/Demo six-viewport DPR matrix,
   all 12 zones in the initial Wide viewport, document/body height, overlaps,
   clipping, keyboard/wheel scrolling, real view switches, reload and DPR equality.
@@ -1322,7 +1347,7 @@ Journal depth, Skill Map and final active acceptance remain the planned work.
 | Latest Run | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Muscle Map | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Today Agenda day view | `CONNECTED` | R2-01 USER ACCEPTED; #164 keeps hourly rows content-independent, exact canonical interval labels and accessible Task navigation. Existing SQLite Dashboard proof covers long 30/60-minute scheduled Tasks, same-hour events and reload. | #164 is a scoped visual repair, not renewed Dashboard surface acceptance |
-| Today Agenda week/month | `CONNECTED` | R2-01 USER ACCEPTED; #164 shares one bounded Agenda scroll frame across Day/Week/Month, with natural Linear flow. Existing `tests/sqlite/issue-160-browser-proof.mjs` checks Manual/Demo/Empty at seven viewports, outer/neighbour bounds within 1px, keyboard switching/scrolling, full Agenda link inventory, reload and console. | #112/#114 broader cockpit acceptance remains separate |
+| Today Agenda week/month | `CONNECTED` | R2-01 USER ACCEPTED; #164 shares one bounded Agenda scroll frame across Day/Week/Month, with natural Linear flow. Existing `tests/sqlite/issue-160-browser-proof.mjs` checks Manual/Demo/Empty at eight viewports (including PG27UCDM), outer/neighbour bounds within 1px, keyboard switching/scrolling, full Agenda link inventory, reload and console. | #112 personal visual acceptance remains separate |
 | Urgent time-block create | `CONNECTED_GAP` | current visible control is an honest non-interactive Prepared state; Inbox creates canonical Tasks while scheduling belongs to Calendar/Portfolio | R2-03 must connect it to a canonical flow or remove it; Prepared is not closure without user deferral |
 | Habit Tracker | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Active Portfolio | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |

@@ -59,16 +59,17 @@
     min-height: 0;
   }
   .dashboard-composition {
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr);
     --composition-fill: 1;
     flex: 1;
     min-height: 0;
   }
   .dashboard-composition :is(.dashboard-supporting, .dashboard-priority) {
+    height: 100%;
     min-height: 0;
   }
   .dashboard-composition::before {
-    grid-row: 2 / 4;
+    grid-row: 2;
   }
   .dashboard-composition
     :is(.dashboard-supporting, .dashboard-priority, .dashboard-agenda) {
@@ -76,20 +77,20 @@
     max-height: 100%;
   }
   .dashboard-agenda {
-    grid-column: 1 / 7;
+    grid-column: 4 / 9;
     grid-row: 2;
   }
   .dashboard-composition .dashboard-priority {
-    grid-column: 7 / 13;
+    grid-column: 9 / 13;
     grid-row: 2;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: repeat(2, minmax(0, auto));
   }
   .dashboard-composition .dashboard-supporting {
-    grid-column: 1 / -1;
-    grid-row: 3;
-    grid-template-columns: 3fr 5fr 4fr;
-    grid-template-rows: auto;
+    grid-column: 1 / 4;
+    grid-row: 2;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto repeat(2, minmax(0, auto));
     align-items: start;
   }
   .dashboard-health-grid {
@@ -104,7 +105,8 @@
   }
   .dashboard-meal-list {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: max-content;
     gap: 8px;
   }
   .dashboard-meal-list > article + article {
@@ -129,14 +131,24 @@
     overflow: auto;
   }
   .dashboard-composition
-    :is(.dashboard-habits, .dashboard-portfolio, .dashboard-meals) {
+    :is(
+      .dashboard-habits,
+      .dashboard-portfolio,
+      .dashboard-meals,
+      .dashboard-running
+    ) {
     display: flex;
     flex-direction: column;
     min-height: 0;
     max-height: 100%;
   }
   .dashboard-composition
-    :is(.dashboard-habits, .dashboard-portfolio, .dashboard-meals)
+    :is(
+      .dashboard-habits,
+      .dashboard-portfolio,
+      .dashboard-meals,
+      .dashboard-running
+    )
     > :first-child {
     flex-shrink: 0;
   }
@@ -147,7 +159,8 @@
   }
   .habit-slots,
   .portfolio-slots,
-  .dashboard-meal-list {
+  .dashboard-meal-list,
+  .dashboard-running-body {
     min-height: 0;
     overflow-y: auto;
     align-content: start;
@@ -529,7 +542,7 @@
       grid-column: 1 / -1;
     }
     .dashboard-composition .dashboard-meals {
-      max-height: 160px;
+      max-height: min(160px, 100%);
     }
     .dashboard-composition .dashboard-supporting {
       align-items: start;
