@@ -1,0 +1,1655 @@
+{
+  "scope": "#112 fast-track ASUS visual repair, 2026-10-19; no surface/product closure",
+  "baseRevision": "f5737d402af80b86f8e5235709632d41c62298e4",
+  "applicationRevision": "19085e80b49f5a4c9865fe395712d410698983ae",
+  "revisionNote": "Final follow-up commit changes tests and evidence only; application CSS/TSX is exactly this integrated revision.",
+  "runtime": "Isolated sqlite-synthetic; Manual presentation over sealed disposable fixture; no production/Tailscale auth claim.",
+  "reference": "PR #113 d784ef18f41976c43eabcc1ed556335840fc0398: same 6/3/3 workbench allocation as current main; no #165 macro-layout regression established.",
+  "cause": "Agenda statically owns six of twelve columns, leaving three each for Habits/Portfolio regardless of content. Wide repair uses four/four/four; intrinsic heights and all twelve zones retained.",
+  "before": [
+    {
+      "profile": "empty",
+      "geometry": {
+        "width": 2560,
+        "height": 639,
+        "canvas": 2232,
+        "documentHeight": 639,
+        "bodyHeight": 639,
+        "overflow": 0,
+        "zones": [
+          {
+            "selector": ".dashboard-daily",
+            "x": 1237.328125,
+            "y": 24,
+            "width": 738.671875,
+            "height": 189.734375,
+            "bottom": 213.734375,
+            "right": 1976
+          },
+          {
+            "selector": ".dashboard-quick",
+            "x": 864,
+            "y": 24,
+            "width": 365.328125,
+            "height": 167.5,
+            "bottom": 191.5,
+            "right": 1229.328125
+          },
+          {
+            "selector": ".dashboard-stats",
+            "x": 304,
+            "y": 24,
+            "width": 552,
+            "height": 198,
+            "bottom": 222,
+            "right": 856
+          },
+          {
+            "selector": ".dashboard-time",
+            "x": 1984,
+            "y": 24,
+            "width": 217.59375,
+            "height": 129,
+            "bottom": 153,
+            "right": 2201.59375
+          },
+          {
+            "selector": ".dashboard-mood",
+            "x": 2209.59375,
+            "y": 24,
+            "width": 326.40625,
+            "height": 153.5,
+            "bottom": 177.5,
+            "right": 2536
+          },
+          {
+            "selector": ".dashboard-agenda",
+            "x": 304,
+            "y": 230,
+            "width": 1112,
+            "height": 217,
+            "bottom": 447,
+            "right": 1416
+          },
+          {
+            "selector": ".dashboard-habits",
+            "x": 1424,
+            "y": 230,
+            "width": 552,
+            "height": 177,
+            "bottom": 407,
+            "right": 1976
+          },
+          {
+            "selector": ".dashboard-portfolio",
+            "x": 1984,
+            "y": 230,
+            "width": 552,
+            "height": 217,
+            "bottom": 447,
+            "right": 2536
+          },
+          {
+            "selector": ".dashboard-weight",
+            "x": 304,
+            "y": 455,
+            "width": 273,
+            "height": 132.25,
+            "bottom": 587.25,
+            "right": 577
+          },
+          {
+            "selector": ".dashboard-nutrients",
+            "x": 585,
+            "y": 455,
+            "width": 273,
+            "height": 148,
+            "bottom": 603,
+            "right": 858
+          },
+          {
+            "selector": ".dashboard-meals",
+            "x": 866,
+            "y": 455,
+            "width": 923.328125,
+            "height": 160,
+            "bottom": 615,
+            "right": 1789.328125
+          },
+          {
+            "selector": ".dashboard-running",
+            "x": 1797.328125,
+            "y": 455,
+            "width": 738.671875,
+            "height": 145.5,
+            "bottom": 600.5,
+            "right": 2536
+          }
+        ],
+        "primaryControls": [
+          {
+            "label": "In Inbox speichern",
+            "height": 34,
+            "font": 11
+          },
+          {
+            "label": "Planen",
+            "height": 32,
+            "font": 11
+          },
+          {
+            "label": "Planen",
+            "height": 32,
+            "font": 11
+          },
+          {
+            "label": "Planen",
+            "height": 32,
+            "font": 11
+          }
+        ],
+        "scaled": 0,
+        "overlaps": [],
+        "clipped": []
+      },
+      "css": {
+        "dpr": 1.5,
+        "screen": {
+          "width": 2560,
+          "height": 1440
+        },
+        "styles": [
+          {
+            "selector": ".dashboard-composition",
+            "height": 591,
+            "gridRows": "198px 217px 160px",
+            "alignSelf": "auto",
+            "contain": "none",
+            "overflow": "visible",
+            "scrollHeight": 591,
+            "clientHeight": 591
+          },
+          {
+            "selector": ".dashboard-agenda",
+            "height": 217,
+            "gridRows": "none",
+            "alignSelf": "stretch",
+            "contain": "none",
+            "overflow": "hidden",
+            "scrollHeight": 215,
+            "clientHeight": 215
+          },
+          {
+            "selector": ".agenda-scroll",
+            "height": 162,
+            "gridRows": "none",
+            "alignSelf": "auto",
+            "contain": "size",
+            "overflow": "auto",
+            "scrollHeight": 1848,
+            "clientHeight": 162
+          },
+          {
+            "selector": ".agenda-body",
+            "height": 1848,
+            "gridRows": "96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px",
+            "alignSelf": "auto",
+            "contain": "none",
+            "overflow": "visible",
+            "scrollHeight": 1848,
+            "clientHeight": 1848
+          },
+          {
+            "selector": ".dashboard-priority",
+            "height": 217,
+            "gridRows": "217px",
+            "alignSelf": "auto",
+            "contain": "none",
+            "overflow": "visible",
+            "scrollHeight": 217,
+            "clientHeight": 217
+          },
+          {
+            "selector": ".dashboard-habits",
+            "height": 177,
+            "gridRows": "none",
+            "alignSelf": "start",
+            "contain": "none",
+            "overflow": "hidden",
+            "scrollHeight": 175,
+            "clientHeight": 175
+          },
+          {
+            "selector": ".dashboard-portfolio",
+            "height": 217,
+            "gridRows": "none",
+            "alignSelf": "start",
+            "contain": "none",
+            "overflow": "hidden",
+            "scrollHeight": 215,
+            "clientHeight": 215
+          },
+          {
+            "selector": ".dashboard-supporting",
+            "height": 160,
+            "gridRows": "160px",
+            "alignSelf": "auto",
+            "contain": "none",
+            "overflow": "visible",
+            "scrollHeight": 160,
+            "clientHeight": 160
+          }
+        ]
+      }
+    },
+    {
+      "profile": "manual",
+      "geometry": {
+        "width": 2560,
+        "height": 639,
+        "canvas": 2232,
+        "documentHeight": 639,
+        "bodyHeight": 639,
+        "overflow": 0,
+        "zones": [
+          {
+            "selector": ".dashboard-daily",
+            "x": 1237.328125,
+            "y": 24,
+            "width": 738.671875,
+            "height": 197.734375,
+            "bottom": 221.734375,
+            "right": 1976
+          },
+          {
+            "selector": ".dashboard-quick",
+            "x": 864,
+            "y": 24,
+            "width": 365.328125,
+            "height": 167.5,
+            "bottom": 191.5,
+            "right": 1229.328125
+          },
+          {
+            "selector": ".dashboard-stats",
+            "x": 304,
+            "y": 24,
+            "width": 552,
+            "height": 198,
+            "bottom": 222,
+            "right": 856
+          },
+          {
+            "selector": ".dashboard-time",
+            "x": 1984,
+            "y": 24,
+            "width": 217.59375,
+            "height": 129,
+            "bottom": 153,
+            "right": 2201.59375
+          },
+          {
+            "selector": ".dashboard-mood",
+            "x": 2209.59375,
+            "y": 24,
+            "width": 326.40625,
+            "height": 183.5,
+            "bottom": 207.5,
+            "right": 2536
+          },
+          {
+            "selector": ".dashboard-agenda",
+            "x": 304,
+            "y": 230,
+            "width": 1112,
+            "height": 217,
+            "bottom": 447,
+            "right": 1416
+          },
+          {
+            "selector": ".dashboard-habits",
+            "x": 1424,
+            "y": 230,
+            "width": 552,
+            "height": 177,
+            "bottom": 407,
+            "right": 1976
+          },
+          {
+            "selector": ".dashboard-portfolio",
+            "x": 1984,
+            "y": 230,
+            "width": 552,
+            "height": 217,
+            "bottom": 447,
+            "right": 2536
+          },
+          {
+            "selector": ".dashboard-weight",
+            "x": 304,
+            "y": 455,
+            "width": 273,
+            "height": 132.25,
+            "bottom": 587.25,
+            "right": 577
+          },
+          {
+            "selector": ".dashboard-nutrients",
+            "x": 585,
+            "y": 455,
+            "width": 273,
+            "height": 148,
+            "bottom": 603,
+            "right": 858
+          },
+          {
+            "selector": ".dashboard-meals",
+            "x": 866,
+            "y": 455,
+            "width": 923.328125,
+            "height": 160,
+            "bottom": 615,
+            "right": 1789.328125
+          },
+          {
+            "selector": ".dashboard-running",
+            "x": 1797.328125,
+            "y": 455,
+            "width": 738.671875,
+            "height": 145.5,
+            "bottom": 600.5,
+            "right": 2536
+          }
+        ],
+        "primaryControls": [
+          {
+            "label": "Open task",
+            "height": 32,
+            "font": 10
+          },
+          {
+            "label": "Abschließen",
+            "height": 28,
+            "font": 11
+          },
+          {
+            "label": "In Inbox speichern",
+            "height": 34,
+            "font": 11
+          },
+          {
+            "label": "Planen",
+            "height": 32,
+            "font": 11
+          },
+          {
+            "label": "Planen",
+            "height": 32,
+            "font": 11
+          },
+          {
+            "label": "Planen",
+            "height": 32,
+            "font": 11
+          }
+        ],
+        "scaled": 0,
+        "overlaps": [],
+        "clipped": []
+      },
+      "css": {
+        "dpr": 1.5,
+        "screen": {
+          "width": 2560,
+          "height": 1440
+        },
+        "styles": [
+          {
+            "selector": ".dashboard-composition",
+            "height": 591,
+            "gridRows": "198px 217px 160px",
+            "alignSelf": "auto",
+            "contain": "none",
+            "overflow": "visible",
+            "scrollHeight": 591,
+            "clientHeight": 591
+          },
+          {
+            "selector": ".dashboard-agenda",
+            "height": 217,
+            "gridRows": "none",
+            "alignSelf": "stretch",
+            "contain": "none",
+            "overflow": "hidden",
+            "scrollHeight": 215,
+            "clientHeight": 215
+          },
+          {
+            "selector": ".agenda-scroll",
+            "height": 162,
+            "gridRows": "none",
+            "alignSelf": "auto",
+            "contain": "size",
+            "overflow": "auto",
+            "scrollHeight": 1848,
+            "clientHeight": 162
+          },
+          {
+            "selector": ".agenda-body",
+            "height": 1848,
+            "gridRows": "96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px",
+            "alignSelf": "auto",
+            "contain": "none",
+            "overflow": "visible",
+            "scrollHeight": 1848,
+            "clientHeight": 1848
+          },
+          {
+            "selector": ".dashboard-priority",
+            "height": 217,
+            "gridRows": "217px",
+            "alignSelf": "auto",
+            "contain": "none",
+            "overflow": "visible",
+            "scrollHeight": 217,
+            "clientHeight": 217
+          },
+          {
+            "selector": ".dashboard-habits",
+            "height": 177,
+            "gridRows": "none",
+            "alignSelf": "start",
+            "contain": "none",
+            "overflow": "hidden",
+            "scrollHeight": 175,
+            "clientHeight": 175
+          },
+          {
+            "selector": ".dashboard-portfolio",
+            "height": 217,
+            "gridRows": "none",
+            "alignSelf": "start",
+            "contain": "none",
+            "overflow": "hidden",
+            "scrollHeight": 215,
+            "clientHeight": 215
+          },
+          {
+            "selector": ".dashboard-supporting",
+            "height": 160,
+            "gridRows": "160px",
+            "alignSelf": "auto",
+            "contain": "none",
+            "overflow": "visible",
+            "scrollHeight": 160,
+            "clientHeight": 160
+          }
+        ]
+      }
+    }
+  ],
+  "after": [
+    {
+      "profile": "empty",
+      "geometry": {
+        "width": 2560,
+        "height": 639,
+        "canvas": 2232,
+        "documentHeight": 639,
+        "bodyHeight": 639,
+        "overflow": 0,
+        "zones": [
+          {
+            "selector": ".dashboard-daily",
+            "x": 1237.328125,
+            "y": 24,
+            "width": 738.671875,
+            "height": 189.734375,
+            "bottom": 213.734375,
+            "right": 1976
+          },
+          {
+            "selector": ".dashboard-quick",
+            "x": 864,
+            "y": 24,
+            "width": 365.328125,
+            "height": 167.5,
+            "bottom": 191.5,
+            "right": 1229.328125
+          },
+          {
+            "selector": ".dashboard-stats",
+            "x": 304,
+            "y": 24,
+            "width": 552,
+            "height": 198,
+            "bottom": 222,
+            "right": 856
+          },
+          {
+            "selector": ".dashboard-time",
+            "x": 1984,
+            "y": 24,
+            "width": 217.59375,
+            "height": 129,
+            "bottom": 153,
+            "right": 2201.59375
+          },
+          {
+            "selector": ".dashboard-mood",
+            "x": 2209.59375,
+            "y": 24,
+            "width": 326.40625,
+            "height": 153.5,
+            "bottom": 177.5,
+            "right": 2536
+          },
+          {
+            "selector": ".dashboard-agenda",
+            "x": 304,
+            "y": 230,
+            "width": 738.65625,
+            "height": 217,
+            "bottom": 447,
+            "right": 1042.65625
+          },
+          {
+            "selector": ".dashboard-habits",
+            "x": 1050.65625,
+            "y": 230,
+            "width": 738.671875,
+            "height": 177,
+            "bottom": 407,
+            "right": 1789.328125
+          },
+          {
+            "selector": ".dashboard-portfolio",
+            "x": 1797.328125,
+            "y": 230,
+            "width": 738.671875,
+            "height": 217,
+            "bottom": 447,
+            "right": 2536
+          },
+          {
+            "selector": ".dashboard-weight",
+            "x": 304,
+            "y": 455,
+            "width": 273,
+            "height": 132.25,
+            "bottom": 587.25,
+            "right": 577
+          },
+          {
+            "selector": ".dashboard-nutrients",
+            "x": 585,
+            "y": 455,
+            "width": 273,
+            "height": 148,
+            "bottom": 603,
+            "right": 858
+          },
+          {
+            "selector": ".dashboard-meals",
+            "x": 866,
+            "y": 455,
+            "width": 923.328125,
+            "height": 160,
+            "bottom": 615,
+            "right": 1789.328125
+          },
+          {
+            "selector": ".dashboard-running",
+            "x": 1797.328125,
+            "y": 455,
+            "width": 738.671875,
+            "height": 145.5,
+            "bottom": 600.5,
+            "right": 2536
+          }
+        ],
+        "primaryControls": [
+          {
+            "label": "In Inbox speichern",
+            "height": 34,
+            "font": 11
+          },
+          {
+            "label": "Planen",
+            "height": 32,
+            "font": 11
+          },
+          {
+            "label": "Planen",
+            "height": 32,
+            "font": 11
+          },
+          {
+            "label": "Planen",
+            "height": 32,
+            "font": 11
+          }
+        ],
+        "scaled": 0,
+        "overlaps": [],
+        "clipped": []
+      },
+      "css": {
+        "dpr": 1.5,
+        "screen": {
+          "width": 2560,
+          "height": 1440
+        },
+        "styles": [
+          {
+            "selector": ".dashboard-composition",
+            "height": 591,
+            "gridRows": "198px 217px 160px",
+            "alignSelf": "auto",
+            "contain": "none",
+            "overflow": "visible",
+            "scrollHeight": 591,
+            "clientHeight": 591
+          },
+          {
+            "selector": ".dashboard-agenda",
+            "height": 217,
+            "gridRows": "none",
+            "alignSelf": "stretch",
+            "contain": "none",
+            "overflow": "hidden",
+            "scrollHeight": 215,
+            "clientHeight": 215
+          },
+          {
+            "selector": ".agenda-scroll",
+            "height": 162,
+            "gridRows": "none",
+            "alignSelf": "auto",
+            "contain": "size",
+            "overflow": "auto",
+            "scrollHeight": 1848,
+            "clientHeight": 162
+          },
+          {
+            "selector": ".agenda-body",
+            "height": 1848,
+            "gridRows": "96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px",
+            "alignSelf": "auto",
+            "contain": "none",
+            "overflow": "visible",
+            "scrollHeight": 1848,
+            "clientHeight": 1848
+          },
+          {
+            "selector": ".dashboard-priority",
+            "height": 217,
+            "gridRows": "217px",
+            "alignSelf": "auto",
+            "contain": "none",
+            "overflow": "visible",
+            "scrollHeight": 217,
+            "clientHeight": 217
+          },
+          {
+            "selector": ".dashboard-habits",
+            "height": 177,
+            "gridRows": "none",
+            "alignSelf": "start",
+            "contain": "none",
+            "overflow": "hidden",
+            "scrollHeight": 175,
+            "clientHeight": 175
+          },
+          {
+            "selector": ".dashboard-portfolio",
+            "height": 217,
+            "gridRows": "none",
+            "alignSelf": "start",
+            "contain": "none",
+            "overflow": "hidden",
+            "scrollHeight": 215,
+            "clientHeight": 215
+          },
+          {
+            "selector": ".dashboard-supporting",
+            "height": 160,
+            "gridRows": "160px",
+            "alignSelf": "auto",
+            "contain": "none",
+            "overflow": "visible",
+            "scrollHeight": 160,
+            "clientHeight": 160
+          }
+        ]
+      }
+    },
+    {
+      "profile": "manual",
+      "geometry": {
+        "width": 2560,
+        "height": 639,
+        "canvas": 2232,
+        "documentHeight": 639,
+        "bodyHeight": 639,
+        "overflow": 0,
+        "zones": [
+          {
+            "selector": ".dashboard-daily",
+            "x": 1237.328125,
+            "y": 24,
+            "width": 738.671875,
+            "height": 197.734375,
+            "bottom": 221.734375,
+            "right": 1976
+          },
+          {
+            "selector": ".dashboard-quick",
+            "x": 864,
+            "y": 24,
+            "width": 365.328125,
+            "height": 167.5,
+            "bottom": 191.5,
+            "right": 1229.328125
+          },
+          {
+            "selector": ".dashboard-stats",
+            "x": 304,
+            "y": 24,
+            "width": 552,
+            "height": 198,
+            "bottom": 222,
+            "right": 856
+          },
+          {
+            "selector": ".dashboard-time",
+            "x": 1984,
+            "y": 24,
+            "width": 217.59375,
+            "height": 129,
+            "bottom": 153,
+            "right": 2201.59375
+          },
+          {
+            "selector": ".dashboard-mood",
+            "x": 2209.59375,
+            "y": 24,
+            "width": 326.40625,
+            "height": 183.5,
+            "bottom": 207.5,
+            "right": 2536
+          },
+          {
+            "selector": ".dashboard-agenda",
+            "x": 304,
+            "y": 230,
+            "width": 738.65625,
+            "height": 217,
+            "bottom": 447,
+            "right": 1042.65625
+          },
+          {
+            "selector": ".dashboard-habits",
+            "x": 1050.65625,
+            "y": 230,
+            "width": 738.671875,
+            "height": 177,
+            "bottom": 407,
+            "right": 1789.328125
+          },
+          {
+            "selector": ".dashboard-portfolio",
+            "x": 1797.328125,
+            "y": 230,
+            "width": 738.671875,
+            "height": 217,
+            "bottom": 447,
+            "right": 2536
+          },
+          {
+            "selector": ".dashboard-weight",
+            "x": 304,
+            "y": 455,
+            "width": 273,
+            "height": 132.25,
+            "bottom": 587.25,
+            "right": 577
+          },
+          {
+            "selector": ".dashboard-nutrients",
+            "x": 585,
+            "y": 455,
+            "width": 273,
+            "height": 148,
+            "bottom": 603,
+            "right": 858
+          },
+          {
+            "selector": ".dashboard-meals",
+            "x": 866,
+            "y": 455,
+            "width": 923.328125,
+            "height": 160,
+            "bottom": 615,
+            "right": 1789.328125
+          },
+          {
+            "selector": ".dashboard-running",
+            "x": 1797.328125,
+            "y": 455,
+            "width": 738.671875,
+            "height": 145.5,
+            "bottom": 600.5,
+            "right": 2536
+          }
+        ],
+        "primaryControls": [
+          {
+            "label": "Open task",
+            "height": 32,
+            "font": 10
+          },
+          {
+            "label": "Abschließen",
+            "height": 28,
+            "font": 11
+          },
+          {
+            "label": "In Inbox speichern",
+            "height": 34,
+            "font": 11
+          },
+          {
+            "label": "Planen",
+            "height": 32,
+            "font": 11
+          },
+          {
+            "label": "Planen",
+            "height": 32,
+            "font": 11
+          },
+          {
+            "label": "Planen",
+            "height": 32,
+            "font": 11
+          }
+        ],
+        "scaled": 0,
+        "overlaps": [],
+        "clipped": []
+      },
+      "css": {
+        "dpr": 1.5,
+        "screen": {
+          "width": 2560,
+          "height": 1440
+        },
+        "styles": [
+          {
+            "selector": ".dashboard-composition",
+            "height": 591,
+            "gridRows": "198px 217px 160px",
+            "alignSelf": "auto",
+            "contain": "none",
+            "overflow": "visible",
+            "scrollHeight": 591,
+            "clientHeight": 591
+          },
+          {
+            "selector": ".dashboard-agenda",
+            "height": 217,
+            "gridRows": "none",
+            "alignSelf": "stretch",
+            "contain": "none",
+            "overflow": "hidden",
+            "scrollHeight": 215,
+            "clientHeight": 215
+          },
+          {
+            "selector": ".agenda-scroll",
+            "height": 162,
+            "gridRows": "none",
+            "alignSelf": "auto",
+            "contain": "size",
+            "overflow": "auto",
+            "scrollHeight": 1848,
+            "clientHeight": 162
+          },
+          {
+            "selector": ".agenda-body",
+            "height": 1848,
+            "gridRows": "96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px 96px",
+            "alignSelf": "auto",
+            "contain": "none",
+            "overflow": "visible",
+            "scrollHeight": 1848,
+            "clientHeight": 1848
+          },
+          {
+            "selector": ".dashboard-priority",
+            "height": 217,
+            "gridRows": "217px",
+            "alignSelf": "auto",
+            "contain": "none",
+            "overflow": "visible",
+            "scrollHeight": 217,
+            "clientHeight": 217
+          },
+          {
+            "selector": ".dashboard-habits",
+            "height": 177,
+            "gridRows": "none",
+            "alignSelf": "start",
+            "contain": "none",
+            "overflow": "hidden",
+            "scrollHeight": 175,
+            "clientHeight": 175
+          },
+          {
+            "selector": ".dashboard-portfolio",
+            "height": 217,
+            "gridRows": "none",
+            "alignSelf": "start",
+            "contain": "none",
+            "overflow": "hidden",
+            "scrollHeight": 215,
+            "clientHeight": 215
+          },
+          {
+            "selector": ".dashboard-supporting",
+            "height": 160,
+            "gridRows": "160px",
+            "alignSelf": "auto",
+            "contain": "none",
+            "overflow": "visible",
+            "scrollHeight": 160,
+            "clientHeight": 160
+          }
+        ]
+      }
+    }
+  ],
+  "matrix": [
+    {
+      "profile": "manual",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "dpr": 1,
+      "documentHeight": 1080,
+      "horizontalOverflow": 0,
+      "overlaps": [],
+      "clipped": [],
+      "agendaViewBounds": "Week/Month/Day within 1px when bounded; reload and 96px hour rows PASS"
+    },
+    {
+      "profile": "manual",
+      "viewport": {
+        "width": 3840,
+        "height": 2160
+      },
+      "dpr": 1,
+      "documentHeight": 2160,
+      "horizontalOverflow": 0,
+      "overlaps": [],
+      "clipped": [],
+      "agendaViewBounds": "Week/Month/Day within 1px when bounded; reload and 96px hour rows PASS"
+    },
+    {
+      "profile": "manual",
+      "viewport": {
+        "width": 2560,
+        "height": 589
+      },
+      "dpr": 1,
+      "documentHeight": 589,
+      "horizontalOverflow": 0,
+      "overlaps": [],
+      "clipped": [],
+      "agendaViewBounds": "Week/Month/Day within 1px when bounded; reload and 96px hour rows PASS"
+    },
+    {
+      "profile": "manual",
+      "viewport": {
+        "width": 2560,
+        "height": 639
+      },
+      "dpr": 1.5,
+      "documentHeight": 639,
+      "horizontalOverflow": 0,
+      "overlaps": [],
+      "clipped": [],
+      "agendaViewBounds": "Week/Month/Day within 1px when bounded; reload and 96px hour rows PASS"
+    },
+    {
+      "profile": "manual",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "dpr": 1,
+      "documentHeight": 2430,
+      "horizontalOverflow": 0,
+      "overlaps": [],
+      "clipped": [],
+      "agendaViewBounds": "Week/Month/Day within 1px when bounded; reload and 96px hour rows PASS"
+    },
+    {
+      "profile": "manual",
+      "viewport": {
+        "width": 769,
+        "height": 413
+      },
+      "dpr": 2,
+      "documentHeight": 3607,
+      "horizontalOverflow": 0,
+      "overlaps": [],
+      "clipped": [],
+      "agendaViewBounds": "Week/Month/Day within 1px when bounded; reload and 96px hour rows PASS"
+    },
+    {
+      "profile": "manual",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "dpr": 1,
+      "documentHeight": 4813,
+      "horizontalOverflow": 0,
+      "overlaps": [],
+      "clipped": [],
+      "agendaViewBounds": "Week/Month/Day within 1px when bounded; reload and 96px hour rows PASS"
+    },
+    {
+      "profile": "demo",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "dpr": 1,
+      "documentHeight": 1080,
+      "horizontalOverflow": 0,
+      "overlaps": [],
+      "clipped": [],
+      "agendaViewBounds": "Week/Month/Day within 1px when bounded; reload and 96px hour rows PASS"
+    },
+    {
+      "profile": "demo",
+      "viewport": {
+        "width": 3840,
+        "height": 2160
+      },
+      "dpr": 1,
+      "documentHeight": 2160,
+      "horizontalOverflow": 0,
+      "overlaps": [],
+      "clipped": [],
+      "agendaViewBounds": "Week/Month/Day within 1px when bounded; reload and 96px hour rows PASS"
+    },
+    {
+      "profile": "demo",
+      "viewport": {
+        "width": 2560,
+        "height": 589
+      },
+      "dpr": 1,
+      "documentHeight": 589,
+      "horizontalOverflow": 0,
+      "overlaps": [],
+      "clipped": [],
+      "agendaViewBounds": "Week/Month/Day within 1px when bounded; reload and 96px hour rows PASS"
+    },
+    {
+      "profile": "demo",
+      "viewport": {
+        "width": 2560,
+        "height": 639
+      },
+      "dpr": 1.5,
+      "documentHeight": 639,
+      "horizontalOverflow": 0,
+      "overlaps": [],
+      "clipped": [],
+      "agendaViewBounds": "Week/Month/Day within 1px when bounded; reload and 96px hour rows PASS"
+    },
+    {
+      "profile": "demo",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "dpr": 1,
+      "documentHeight": 2520,
+      "horizontalOverflow": 0,
+      "overlaps": [],
+      "clipped": [],
+      "agendaViewBounds": "Week/Month/Day within 1px when bounded; reload and 96px hour rows PASS"
+    },
+    {
+      "profile": "demo",
+      "viewport": {
+        "width": 769,
+        "height": 413
+      },
+      "dpr": 2,
+      "documentHeight": 3632,
+      "horizontalOverflow": 0,
+      "overlaps": [],
+      "clipped": [],
+      "agendaViewBounds": "Week/Month/Day within 1px when bounded; reload and 96px hour rows PASS"
+    },
+    {
+      "profile": "demo",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "dpr": 1,
+      "documentHeight": 4809,
+      "horizontalOverflow": 0,
+      "overlaps": [],
+      "clipped": [],
+      "agendaViewBounds": "Week/Month/Day within 1px when bounded; reload and 96px hour rows PASS"
+    },
+    {
+      "profile": "empty",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "dpr": 1,
+      "documentHeight": 1080,
+      "horizontalOverflow": 0,
+      "overlaps": [],
+      "clipped": [],
+      "agendaViewBounds": "Week/Month/Day within 1px when bounded; reload and 96px hour rows PASS"
+    },
+    {
+      "profile": "empty",
+      "viewport": {
+        "width": 3840,
+        "height": 2160
+      },
+      "dpr": 1,
+      "documentHeight": 2160,
+      "horizontalOverflow": 0,
+      "overlaps": [],
+      "clipped": [],
+      "agendaViewBounds": "Week/Month/Day within 1px when bounded; reload and 96px hour rows PASS"
+    },
+    {
+      "profile": "empty",
+      "viewport": {
+        "width": 2560,
+        "height": 589
+      },
+      "dpr": 1,
+      "documentHeight": 589,
+      "horizontalOverflow": 0,
+      "overlaps": [],
+      "clipped": [],
+      "agendaViewBounds": "Week/Month/Day within 1px when bounded; reload and 96px hour rows PASS"
+    },
+    {
+      "profile": "empty",
+      "viewport": {
+        "width": 2560,
+        "height": 639
+      },
+      "dpr": 1.5,
+      "documentHeight": 639,
+      "horizontalOverflow": 0,
+      "overlaps": [],
+      "clipped": [],
+      "agendaViewBounds": "Week/Month/Day within 1px when bounded; reload and 96px hour rows PASS"
+    },
+    {
+      "profile": "empty",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "dpr": 1,
+      "documentHeight": 2225,
+      "horizontalOverflow": 0,
+      "overlaps": [],
+      "clipped": [],
+      "agendaViewBounds": "Week/Month/Day within 1px when bounded; reload and 96px hour rows PASS"
+    },
+    {
+      "profile": "empty",
+      "viewport": {
+        "width": 769,
+        "height": 413
+      },
+      "dpr": 2,
+      "documentHeight": 3401,
+      "horizontalOverflow": 0,
+      "overlaps": [],
+      "clipped": [],
+      "agendaViewBounds": "Week/Month/Day within 1px when bounded; reload and 96px hour rows PASS"
+    },
+    {
+      "profile": "empty",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "dpr": 1,
+      "documentHeight": 4487,
+      "horizontalOverflow": 0,
+      "overlaps": [],
+      "clipped": [],
+      "agendaViewBounds": "Week/Month/Day within 1px when bounded; reload and 96px hour rows PASS"
+    }
+  ],
+  "controlInventory": [
+    {
+      "tag": "A",
+      "name": "Open task",
+      "href": "/tasks/d749010d-5b9c-4182-b33e-9e558f473574",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "name": "Abschließen",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "TEXTAREA",
+      "name": "",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "name": "In Inbox speichern",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Today Agenda",
+      "href": "/calendar",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "name": "Day",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "name": "Week",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "name": "Month",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Open agenda item: SQLite synthetic Task",
+      "href": "/tasks/d749010d-5b9c-4182-b33e-9e558f473574",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Open agenda item: #164 03c8f124-740b-4f2a-b4fc-aa7c690f5757 Long scheduled task content Long scheduled task content Long scheduled task content Long scheduled t",
+      "href": "/tasks/5027027d-a460-4e0a-bed5-32d33341c794",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Open agenda item: #164 cda022a5-89a6-49a1-9d1b-e669696168cd Long scheduled task content Long scheduled task content Long scheduled task content Long scheduled t",
+      "href": "/tasks/003ebad4-9687-4ef5-80aa-e09b1261cc1e",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Open agenda item: #164 a75a7514-e2c8-4b4e-80b5-cd8547ba840a Long scheduled task content Long scheduled task content Long scheduled task content Long scheduled t",
+      "href": "/tasks/0b47aaaf-efc3-4b0e-8fcb-88459ce26e97",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Open agenda item: #164 c2087b90-bb39-48d0-9579-f31e6f23c298 Long scheduled task content Long scheduled task content Long scheduled task content Long scheduled t",
+      "href": "/tasks/b20fc445-dda6-40eb-b53a-1b9dc54c020a",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Open agenda item: #164 15d9a14a-1794-4ed2-a202-38fe5cd63d43 Long scheduled task content Long scheduled task content Long scheduled task content Long scheduled t",
+      "href": "/tasks/08acc5da-62b2-4974-a5b3-e0415e0839f0",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Open agenda item: #164 ba9b2a56-01c5-4161-aa14-eb442c8aaaee Long scheduled task content Long scheduled task content Long scheduled task content Long scheduled t",
+      "href": "/tasks/4cf62f77-b359-4385-9277-603e85ee0421",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Open agenda item: #164 c1d5234c-7fbc-4a68-b370-5d732288face Long scheduled task content Long scheduled task content Long scheduled task content Long scheduled t",
+      "href": "/tasks/24d8f0f3-2194-40b1-b4f0-0b9d76f78de7",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Open agenda item: #164 de8f29f6-a701-447d-801a-2643637b4035 Long scheduled task content Long scheduled task content Long scheduled task content Long scheduled t",
+      "href": "/tasks/cf95ee40-838b-4a14-bc15-6346d2667f68",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Mental health",
+      "href": "/health/mental",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "name": "Calm",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "name": "Focused",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "name": "Tired",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "name": "Anxious",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "name": "Stressed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "name": "Happy",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Tasks: 12 / 13, Tasks for today",
+      "href": "/today",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Focus Time: Unavailable, Focus classification not implemented",
+      "href": "/calendar",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Inbox: 1 open, Captured to Inbox",
+      "href": "/inbox",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Nutrition: 1 planned, Recipe estimates unavailable",
+      "href": "/nutrition/meal-planner?view=today",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Review Status: Not started, Daily and weekly review",
+      "href": "/review/daily",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Sleep: Unknown, No sleep entry",
+      "href": "/health/mental?section=sleep",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Habit Trackers",
+      "href": "/health/habits",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "name": "Morning",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "name": "Midday",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "name": "Evening",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "name": "+ Add habit",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Active Portfolio",
+      "href": "/portfolio",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Open portfolio projects view",
+      "href": "/portfolio?view=projects",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Open portfolio goals view",
+      "href": "/portfolio?view=goals",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Open portfolio skills view",
+      "href": "/portfolio?view=skills",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "name": "Project View",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "name": "Goal View",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "name": "Skill View",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Open portfolio item: SQLite synthetic education Project",
+      "href": "/projects/8f2b1793-95d2-42df-a0cd-383b28ffeaf4",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Open portfolio item: SQLite synthetic coding Project",
+      "href": "/projects/0f31d70e-49f7-42ab-b680-4941da72a92e",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Open portfolio item: SQLite synthetic Project",
+      "href": "/projects/6f7e62a5-ce05-4b35-bb2e-8e036812c124",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "project erstellen",
+      "href": "/projects/new",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Open health: Weight Goal",
+      "href": "/health",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Open meal planner: Nutrient Balance",
+      "href": "/nutrition/meal-planner?view=today",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Meals Today",
+      "href": "/nutrition/meal-planner?view=today",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Open meal slot Breakfast: Keine Mahlzeit",
+      "href": "/nutrition/recipes",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Planen Breakfast",
+      "href": "/nutrition/meal-planner?slot=breakfast",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Open meal slot Lunch: SQLite synthetic Meal",
+      "href": "/nutrition/recipes/0ae7668e-ab0c-4694-9684-87e1368c2cb0",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Planen Lunch",
+      "href": "/nutrition/meal-planner?slot=lunch",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Open meal slot Dinner: Keine Mahlzeit",
+      "href": "/nutrition/recipes",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Planen Dinner",
+      "href": "/nutrition/meal-planner?slot=dinner",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "name": "Running Tracker",
+      "href": "/health/running",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "name": "Running",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "name": "Muscle",
+      "href": null,
+      "disabled": false
+    }
+  ],
+  "controlProof": {
+    "tabGroups": "Habit/Portfolio/Running PASS",
+    "quickThought": "invalid/valid feedback and Inbox reload PASS",
+    "mood": "six choices, feedback and reload PASS",
+    "habits": "dialog Escape/Cancel, invalid/valid Save, increment/undo and reload PASS",
+    "navigation": [
+      "/tasks/d749010d-5b9c-4182-b33e-9e558f473574",
+      "/calendar",
+      "/tasks/d749010d-5b9c-4182-b33e-9e558f473574",
+      "/tasks/5027027d-a460-4e0a-bed5-32d33341c794",
+      "/tasks/003ebad4-9687-4ef5-80aa-e09b1261cc1e",
+      "/tasks/0b47aaaf-efc3-4b0e-8fcb-88459ce26e97",
+      "/tasks/b20fc445-dda6-40eb-b53a-1b9dc54c020a",
+      "/tasks/08acc5da-62b2-4974-a5b3-e0415e0839f0",
+      "/tasks/4cf62f77-b359-4385-9277-603e85ee0421",
+      "/tasks/24d8f0f3-2194-40b1-b4f0-0b9d76f78de7",
+      "/tasks/cf95ee40-838b-4a14-bc15-6346d2667f68",
+      "/health/mental",
+      "/today",
+      "/calendar",
+      "/inbox",
+      "/nutrition/meal-planner?view=today",
+      "/review/daily",
+      "/health/mental?section=sleep",
+      "/health/habits",
+      "/portfolio",
+      "/portfolio?view=projects",
+      "/portfolio?view=goals",
+      "/portfolio?view=skills",
+      "/projects/8f2b1793-95d2-42df-a0cd-383b28ffeaf4",
+      "/projects/0f31d70e-49f7-42ab-b680-4941da72a92e",
+      "/projects/6f7e62a5-ce05-4b35-bb2e-8e036812c124",
+      "/projects/new",
+      "/health",
+      "/nutrition/meal-planner?view=today",
+      "/nutrition/meal-planner?view=today",
+      "/nutrition/recipes",
+      "/nutrition/meal-planner?slot=breakfast",
+      "/nutrition/recipes/0ae7668e-ab0c-4694-9684-87e1368c2cb0",
+      "/nutrition/meal-planner?slot=lunch",
+      "/nutrition/recipes",
+      "/nutrition/meal-planner?slot=dinner",
+      "/health/running"
+    ],
+    "dailyEligibility": "existing fixture current Task is not completion-eligible; Open task included in navigation"
+  },
+  "createViewChecks": 6,
+  "agendaMatrixAndInventoryChecks": 24,
+  "consoleErrors": [],
+  "result": "PASS",
+  "v5Review": {
+    "Was passt zu V5": "P0 Daily/Agenda retained; balanced Workbench; existing tokens/controls and intrinsic inner cards; all twelve zones visible on Wide.",
+    "Was verletzt V5": "No new violation in this bounded diff; roomy 4K shared frame remains spacious as before.",
+    "Konkrete Fixes": "Two Wide column endpoints; preserve prior Mac flow and apply its cap to the shared .agenda-scroll frame.",
+    "Acceptance Decision": "PASS for implementation; personal USER ACCEPTED remains pending."
+  },
+  "reproduce": "pnpm build; node tests/sqlite/issue-160-browser-proof.mjs (own free localhost port, disposable fixture)"
+}

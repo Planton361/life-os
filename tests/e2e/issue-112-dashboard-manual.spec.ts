@@ -1,5 +1,5 @@
+import { writeFile } from "node:fs/promises";
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { signUpTechnicalManualUser } from "./support/local-manual-auth";
 import {
   assertCockpit,
   cockpitViewports,
@@ -7,11 +7,11 @@ import {
   scrollProof,
 } from "./support/dashboard-cockpit";
 
-const email = process.env.LIFE_OS_112_TEST_EMAIL,
-  password = process.env.LIFE_OS_112_TEST_PASSWORD;
+// Only the disposable canonical sqlite-hosted runner may authorize writes.
+// Authentication comes from the real Tailscale gateway, never test headers.
 test.skip(
-  !email || !password,
-  "Explicit local read-only test-profile login required",
+  process.env.LIFE_OS_112_DISPOSABLE_HOSTED !== "1",
+  "Run tests/sqlite/issue-112-manual-proof.mjs against isolated production SQLite",
 );
 test.use({ actionTimeout: 15000, navigationTimeout: 15000 });
 
@@ -23,12 +23,19 @@ async function login(page: Page, info: TestInfo) {
       url: info.project.use.baseURL!,
     },
   ]);
-  await page.goto("/settings#supabase-session");
-  const panel = page.locator("#supabase-session");
-  await panel.getByLabel("Email").fill(email!);
-  await panel.getByLabel("Password").fill(password!);
-  await panel.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page).toHaveURL(/\/inbox$/);
+  await page.goto("/dashboard");
+  await expect(page.locator(".dashboard-daily")).toHaveAttribute(
+    "data-profile-id",
+    "manual",
+  );
+  await expect(
+    page
+      .locator(".dashboard-mood")
+      .getByRole("button", { name: "Calm", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator("#main-content")).not.toContainText(
+    "Manual-Daten gesperrt",
+  );
 }
 async function controlInventory(page: Page) {
   return page
@@ -49,6 +56,11 @@ async function controlInventory(page: Page) {
         })),
     );
 }
+async function jsonEvidence(info: TestInfo, name: string, data: unknown) {
+  const path = info.outputPath(`${name}.json`);
+  await writeFile(path, JSON.stringify(data, null, 2));
+  await info.attach(name, { path, contentType: "application/json" });
+}
 async function screenshot(page: Page, info: TestInfo, name: string) {
   await page.evaluate(() => scrollTo(0, 0));
   const path = info.outputPath(`${name}.png`);
@@ -66,6 +78,7 @@ async function matrix(page: Page, info: TestInfo, state: string) {
   for (const v of cockpitViewports) {
     const context = await browser.newContext({
       storageState,
+      baseURL: info.project.use.baseURL,
       viewport: v,
       deviceScaleFactor: v.deviceScaleFactor,
     });
@@ -96,10 +109,7 @@ async function matrix(page: Page, info: TestInfo, state: string) {
     expect(errors).toEqual([]);
     await context.close();
   }
-  await info.attach(state, {
-    body: JSON.stringify(data, null, 2),
-    contentType: "application/json",
-  });
+  await jsonEvidence(info, state, data);
 }
 async function links(
   page: Page,
@@ -131,8 +141,15 @@ async function links(
       .and(page.locator(`a[href=${JSON.stringify(href)}]`))
       .nth(index)
       .click();
+    const expected = new URL(href, test.info().project.use.baseURL!);
+    // Canonical destinations may select an item or add their default view.
     await expect(page).toHaveURL(
-      new URL(href, test.info().project.use.baseURL!).toString(),
+      (actual) =>
+        actual.origin === expected.origin &&
+        actual.pathname === expected.pathname &&
+        [...expected.searchParams].every(
+          ([key, value]) => actual.searchParams.get(key) === value,
+        ),
     );
     await expect(page.locator("#main-content")).not.toContainText(
       "This page could not be found",
@@ -141,15 +158,16 @@ async function links(
   return inventory;
 }
 
-test("#112 existing Manual profile read-only matrix and full control inventory", async ({
+test("#112 canonical SQLite Manual read-only matrix and full control inventory", async ({
   page,
 }, info) => {
   test.setTimeout(300000);
   await login(page, info);
   const errors = consoleProof(page);
-  await matrix(page, info, "manual-existing");
+  await matrix(page, info, "manual-isolated");
   const inventory: Record<string, unknown> = {};
   for (const size of [
+    { width: 769, height: 413 },
     { width: 1920, height: 1080 },
     { width: 3840, height: 2160 },
   ]) {
@@ -182,7 +200,7 @@ test("#112 existing Manual profile read-only matrix and full control inventory",
           .click();
         await assertCockpit(page);
       }
-    // Open and cancel only; writes on this existing profile are prohibited.
+    // Open and cancel only; this inventory phase is read-only.
     await page
       .locator(".dashboard-habits")
       .getByRole("button", { name: /Add habit/i })
@@ -193,11 +211,8 @@ test("#112 existing Manual profile read-only matrix and full control inventory",
     await screenshot(page, info, `manual-controls-${size.width}`);
   }
   inventory.writeBoundary =
-    "All ordinary-profile controls read-only; mutation controls proved on technical owner below.";
-  await info.attach("control-inventory", {
-    body: JSON.stringify(inventory, null, 2),
-    contentType: "application/json",
-  });
+    "Read-only inventory on disposable canonical owner; mutations proved on the same isolated database below. Private DB never opened.";
+  await jsonEvidence(info, "control-inventory", inventory);
   expect(errors).toEqual([]);
 });
 
@@ -207,12 +222,9 @@ test("#112 isolated UI owner: sparse/populated matrix, Task/Capture/Mood/Habit r
   test.setTimeout(300000);
   await login(page, info);
   const stamp = Date.now();
-  await signUpTechnicalManualUser(page, "issue112cockpit", stamp, {
-    issue112ExistingLocalRuntime: true,
-  });
   const errors = consoleProof(page);
   await matrix(page, info, "technical-sparse");
-  await page.setViewportSize({ width: 2560, height: 589 });
+  await page.setViewportSize({ width: 769, height: 413 });
   await page.goto("/tasks/new");
   const taskForm = page.getByRole("form", {
     name: "Task erstellen",
@@ -313,8 +325,14 @@ test("#112 isolated UI owner: sparse/populated matrix, Task/Capture/Mood/Habit r
   await dialog.getByLabel("Target", { exact: true }).fill("2");
   await dialog.getByLabel("Increment", { exact: true }).fill("1");
   await dialog.getByLabel("Unit", { exact: true }).fill("checks");
+  await dialog
+    .getByRole("combobox", { name: "Time of day", exact: true })
+    .selectOption("Morning");
   await dialog.getByRole("button", { name: "Save", exact: true }).click();
   await expect(dialog).toBeHidden();
+  await expect(
+    page.getByRole("status").filter({ hasText: "Habit gespeichert." }).last(),
+  ).toBeVisible();
   const card = habits.getByRole("article").filter({
     has: page.getByRole("button", { name: `${habit} erhöhen`, exact: true }),
   });
@@ -334,10 +352,51 @@ test("#112 isolated UI owner: sparse/populated matrix, Task/Capture/Mood/Habit r
     name: "Benachrichtigung schließen",
   });
   while (await notices.count()) await notices.first().click();
-  await info.attach("technical-control-inventory", {
-    body: JSON.stringify(await controlInventory(page), null, 2),
-    contentType: "application/json",
-  });
+  await jsonEvidence(
+    info,
+    "technical-control-inventory",
+    await controlInventory(page),
+  );
+  // Populate every Portfolio view through normal UI commands. These records
+  // belong only to the disposable canonical database, not the private profile.
+  for (const entity of [
+    { route: "projects", form: "Project erstellen", label: "Titel" },
+    { route: "goals", form: "Ziel erstellen", label: "Titel" },
+    { route: "skills", form: "Skill erstellen", label: "Name" },
+  ]) {
+    await page.goto(`/${entity.route}/new`);
+    const form = page.getByRole("form", { name: entity.form, exact: true });
+    const title = `#112 ${entity.route} ${stamp}`;
+    await form.getByLabel(entity.label, { exact: true }).fill(title);
+    if (entity.route === "projects")
+      await form
+        .getByRole("combobox", { name: "Status", exact: true })
+        .selectOption("active");
+    await form.getByRole("button", { name: entity.form, exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/${entity.route}/[a-f0-9-]+$`));
+    await page.reload();
+    await expect(page.locator("#main-content h1")).toHaveText(title);
+  }
   await matrix(page, info, "technical-populated");
+  await page.setViewportSize({ width: 769, height: 413 });
+  const populatedLinks: Record<string, unknown> = {
+    default: await links(page),
+  };
+  for (const name of ["Goal View", "Skill View", "Project View"]) {
+    populatedLinks[name] = await links(
+      page,
+      async () => {
+        await page
+          .locator(".dashboard-portfolio")
+          .getByRole("button", { name, exact: true })
+          .click();
+        await expect(
+          page.locator(".dashboard-portfolio .portfolio-slots"),
+        ).toContainText(`#112`);
+      },
+      ".dashboard-portfolio a[href]",
+    );
+  }
+  await jsonEvidence(info, "populated-navigation", populatedLinks);
   expect(errors).toEqual([]);
 });

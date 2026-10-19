@@ -36,6 +36,21 @@
     }
   }
 }
+/* Linear Dashboard keeps the command inputs together and content-led. The
+   full time axis remains reachable in one explicit, keyboard-focusable body;
+   empty hours must not reserve a whole day of document height. */
+@container life-os-canvas (width < 880px) {
+  .dashboard-daily .daily-control-body {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+  .dashboard-agenda .agenda-scroll {
+    max-height: clamp(192px, 60dvh, 360px);
+    overflow-y: auto;
+    align-content: start;
+  }
+}
+
 /* #112: an explicit Dashboard-only bounded workspace. The width sum is shell
    chrome (280) + Wide canvas (1440) + gutters (48), never a device/DPR rule. */
 @media (min-width: 1768px) {
@@ -76,11 +91,11 @@
     max-height: 100%;
   }
   .dashboard-agenda {
-    grid-column: 1 / 7;
+    grid-column: 1 / 5;
     grid-row: 2;
   }
   .dashboard-composition .dashboard-priority {
-    grid-column: 7 / 13;
+    grid-column: 5 / 13;
     grid-row: 2;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: minmax(0, 1fr);

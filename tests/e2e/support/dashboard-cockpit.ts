@@ -57,6 +57,7 @@ export async function cockpitGeometry(page: Page) {
       const r = e.getBoundingClientRect();
       if (!r.width || !r.height || e.closest("dialog:not([open])")) continue;
       let scrollBody = false;
+      let horizontalScrollBody = false;
       for (
         let p = e.parentElement;
         p && !p.classList.contains("dashboard-composition");
@@ -71,12 +72,18 @@ export async function cockpitGeometry(page: Page) {
         )
           scrollBody = true;
         if (
+          ["auto", "scroll"].includes(s.overflowX) &&
+          p.scrollWidth > p.clientWidth
+        )
+          horizontalScrollBody = true;
+        if (
           !scrollBody &&
           ["hidden", "clip"].includes(s.overflowY) &&
           (r.top < b.top - 1 || r.bottom > b.bottom + 1)
         )
           clipped.push(`${e.textContent?.trim()}:vertical`);
         if (
+          !horizontalScrollBody &&
           ["hidden", "clip"].includes(s.overflowX) &&
           (r.left < b.left - 1 || r.right > b.right + 1)
         )

@@ -735,8 +735,8 @@ export function CommandCenter({
       {...contentStateAttrs(data.commandCenter.contentState, data.profileId)}
     >
       <DailyControl data={data.dailyControl} profileId={data.profileId} />
-      {agenda}
       <QuickThought data={data.quickCapture} profileId={data.profileId} />
+      {agenda}
       <div className="dashboard-signals grid content-start gap-3">
         <TimeProgress data={data.commandCenter} profileId={data.profileId} />
         <MoodBoard data={data.commandCenter} profileId={data.profileId} />
