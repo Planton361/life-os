@@ -1,5 +1,7 @@
 "use server";
 
+import { withSubmittedDatasetEpoch } from "./submitted-dataset";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { saveReviewInputSchema, type ReviewKind } from "@/features/real-data";
@@ -89,9 +91,13 @@ async function saveReview(
 }
 
 export async function saveDailyReviewFormAction(formData: FormData) {
-  return saveReview("daily", formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    return saveReview("daily", formData);
+  });
 }
 
 export async function saveWeeklyReviewFormAction(formData: FormData) {
-  return saveReview("weekly", formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    return saveReview("weekly", formData);
+  });
 }

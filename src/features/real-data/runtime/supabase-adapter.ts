@@ -229,8 +229,13 @@ export function supabaseApplicationReads(
         .select("timezone")
         .eq("id", ownerId)
         .maybeSingle();
-      if (result.error) throw new Error("Profile unavailable");
-      return result.data?.timezone ?? "Europe/Berlin";
+      if (
+        result.error ||
+        typeof result.data?.timezone !== "string" ||
+        !result.data.timezone.trim()
+      )
+        throw new Error("Profile timezone unavailable");
+      return result.data.timezone;
     },
     workbench: (allowUnavailableDependencies) =>
       readAuthenticatedEntityWorkbench(

@@ -8,6 +8,7 @@ import { mealCompleteInputSchema } from "../../schemas/nutrition.schema";
 import { scheduleSourceInputSchema } from "../../schemas/schedule-source.schema";
 import type { MealRow } from "../../supabase/row-types";
 import { localDate, timestamp, uuid } from "../codecs";
+import { assertTaskCompletionParent } from "../task-completion-parent";
 
 export type SourceType =
   | "meal"
@@ -40,7 +41,7 @@ export function completeLinkedTask(
     }).success
   )
     throw new Error("SOURCE_COMPLETION_INPUT_INVALID");
-  task(db, owner, id);
+  assertTaskCompletionParent(db, owner, task(db, owner, id).project_id);
   completedAt = timestamp(completedAt);
   const source = db
     .prepare(
@@ -159,7 +160,8 @@ export function scheduleLinkedSource(
   const id = link?.task_id ?? randomUUID(),
     now = timestamp(new Date().toISOString());
   if (link) {
-    task(db, owner, id);
+    const current = task(db, owner, id);
+    if (completedAt) assertTaskCompletionParent(db, owner, current.project_id);
     db.prepare(
       "UPDATE tasks SET title=?,status=?,completed_at=?,planned_date=?,scheduled_start_at=?,duration_minutes=?,updated_at=? WHERE user_id=? AND id=?",
     ).run(

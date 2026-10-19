@@ -1,5 +1,7 @@
 "use server";
 
+import { withSubmittedDatasetEpoch } from "./submitted-dataset";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
@@ -65,108 +67,122 @@ function habitInput(formData: FormData) {
 }
 
 export async function createHabitAction(formData: FormData) {
-  const path = target(formData);
-  const parsed = createHabitInputSchema.safeParse(habitInput(formData));
-  if (!parsed.success) finish(path, "error");
-  const { repository, userId } = await context(path);
-  const result = await repository.createHabit(userId, userId, parsed.data);
-  finish(path, result.ok ? "saved" : "error");
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const path = target(formData);
+    const parsed = createHabitInputSchema.safeParse(habitInput(formData));
+    if (!parsed.success) finish(path, "error");
+    const { repository, userId } = await context(path);
+    const result = await repository.createHabit(userId, userId, parsed.data);
+    finish(path, result.ok ? "saved" : "error");
+  });
 }
 
 export async function updateHabitAction(formData: FormData) {
-  const path = target(formData);
-  const parsed = updateHabitInputSchema.safeParse({
-    ...habitInput(formData),
-    habitId: value(formData, "habitId"),
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const path = target(formData);
+    const parsed = updateHabitInputSchema.safeParse({
+      ...habitInput(formData),
+      habitId: value(formData, "habitId"),
+    });
+    if (!parsed.success) finish(path, "error");
+    const { repository, userId } = await context(path);
+    const result = await repository.updateHabit(userId, userId, parsed.data);
+    finish(path, result.ok ? "saved" : "error");
   });
-  if (!parsed.success) finish(path, "error");
-  const { repository, userId } = await context(path);
-  const result = await repository.updateHabit(userId, userId, parsed.data);
-  finish(path, result.ok ? "saved" : "error");
 }
 
 export async function archiveHabitAction(formData: FormData) {
-  const path = target(formData);
-  const parsed = habitIdInputSchema.safeParse({
-    habitId: value(formData, "habitId"),
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const path = target(formData);
+    const parsed = habitIdInputSchema.safeParse({
+      habitId: value(formData, "habitId"),
+    });
+    if (!parsed.success) finish(path, "error");
+    const { repository, userId } = await context(path);
+    finish(
+      path,
+      (await repository.archiveHabit(userId, userId, parsed.data.habitId))
+        ? "saved"
+        : "error",
+    );
   });
-  if (!parsed.success) finish(path, "error");
-  const { repository, userId } = await context(path);
-  finish(
-    path,
-    (await repository.archiveHabit(userId, userId, parsed.data.habitId))
-      ? "saved"
-      : "error",
-  );
 }
 
 export async function incrementHabitAction(formData: FormData) {
-  const path = target(formData);
-  const parsed = habitIdInputSchema.safeParse({
-    habitId: value(formData, "habitId"),
-  });
-  if (!parsed.success) finish(path, "error");
-  const { repository, userId } = await context(path);
-  const result = await repository.addLog(
-    userId,
-    userId,
-    parsed.data.habitId,
-  );
-  if (result.ok && result.data === "already_at_target") {
-    // Refresh a stale projection without manufacturing a success notification.
-    for (const route of ["/dashboard", "/health", "/health/habits", "/today", "/review/daily"])
-      revalidatePath(route);
-    redirect(path);
-  }
-  finish(path, result.ok ? "saved" : "error", true);
-}
-
-export async function undoHabitAction(formData: FormData) {
-  const path = target(formData);
-  const parsed = habitIdInputSchema.safeParse({
-    habitId: value(formData, "habitId"),
-  });
-  if (!parsed.success) finish(path, "error");
-  const { repository, userId } = await context(path);
-  const settings = await repository.getSettings(userId, userId);
-  if (!settings) finish(path, "error");
-  finish(
-    path,
-    (await repository.undoLatestLog(
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const path = target(formData);
+    const parsed = habitIdInputSchema.safeParse({
+      habitId: value(formData, "habitId"),
+    });
+    if (!parsed.success) finish(path, "error");
+    const { repository, userId } = await context(path);
+    const result = await repository.addLog(
       userId,
       userId,
       parsed.data.habitId,
-      localDateInTimeZone(new Date(), settings.timezone),
-    ))
-      ? "saved"
-      : "error",
-    true,
-  );
+    );
+    if (result.ok && result.data === "already_at_target") {
+      // Refresh a stale projection without manufacturing a success notification.
+      for (const route of ["/dashboard", "/health", "/health/habits", "/today", "/review/daily"])
+        revalidatePath(route);
+      redirect(path);
+    }
+    finish(path, result.ok ? "saved" : "error", true);
+  });
+}
+
+export async function undoHabitAction(formData: FormData) {
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const path = target(formData);
+    const parsed = habitIdInputSchema.safeParse({
+      habitId: value(formData, "habitId"),
+    });
+    if (!parsed.success) finish(path, "error");
+    const { repository, userId } = await context(path);
+    const settings = await repository.getSettings(userId, userId);
+    if (!settings) finish(path, "error");
+    finish(
+      path,
+      (await repository.undoLatestLog(
+        userId,
+        userId,
+        parsed.data.habitId,
+        localDateInTimeZone(new Date(), settings.timezone),
+      ))
+        ? "saved"
+        : "error",
+      true,
+    );
+  });
 }
 
 export async function updateHabitWindowSettingsAction(formData: FormData) {
-  const path = "/health/habits";
-  const parsed = habitWindowSettingsInputSchema.safeParse({
-    eveningStartsAt: value(formData, "eveningStartsAt"),
-    middayStartsAt: value(formData, "middayStartsAt"),
-    morningStartsAt: value(formData, "morningStartsAt"),
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const path = "/health/habits";
+    const parsed = habitWindowSettingsInputSchema.safeParse({
+      eveningStartsAt: value(formData, "eveningStartsAt"),
+      middayStartsAt: value(formData, "middayStartsAt"),
+      morningStartsAt: value(formData, "morningStartsAt"),
+    });
+    if (!parsed.success) finish(path, "error");
+    const { repository, userId } = await context(path);
+    finish(
+      path,
+      (await repository.updateSettings(userId, userId, parsed.data))
+        ? "saved"
+        : "error",
+    );
   });
-  if (!parsed.success) finish(path, "error");
-  const { repository, userId } = await context(path);
-  finish(
-    path,
-    (await repository.updateSettings(userId, userId, parsed.data))
-      ? "saved"
-      : "error",
-  );
 }
 
 export async function createDashboardHabitAction(formData: FormData) {
-  const parsed = createHabitInputSchema.safeParse({ ...habitInput(formData), sortOrder: 1 });
-  if (!parsed.success) return { ok: false as const, errors: parsed.error.flatten().fieldErrors, error: "Bitte prüfe die markierten Felder." };
-  const { repository, userId } = await context(target(formData));
-  const result = await repository.createHabit(userId, userId, parsed.data, true);
-  if (!result.ok) return { ok: false as const, errors: {}, error: "Habit konnte nicht angelegt werden. Prüfe die freien Plätze." };
-  for (const path of ["/dashboard", "/health/habits", "/health", "/today"]) revalidatePath(path);
-  return { ok: true as const, errors: {}, error: "" };
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const parsed = createHabitInputSchema.safeParse({ ...habitInput(formData), sortOrder: 1 });
+    if (!parsed.success) return { ok: false as const, errors: parsed.error.flatten().fieldErrors, error: "Bitte prüfe die markierten Felder." };
+    const { repository, userId } = await context(target(formData));
+    const result = await repository.createHabit(userId, userId, parsed.data, true);
+    if (!result.ok) return { ok: false as const, errors: {}, error: "Habit konnte nicht angelegt werden. Prüfe die freien Plätze." };
+    for (const path of ["/dashboard", "/health/habits", "/health", "/today"]) revalidatePath(path);
+    return { ok: true as const, errors: {}, error: "" };
+  });
 }

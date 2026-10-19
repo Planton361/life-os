@@ -64,4 +64,26 @@ describe("Project executable Task guidance", () => {
       }),
     ).toEqual({ kind: "no-open-work" });
   });
+  it("keeps completed Projects read-only even with executable or empty work", () => {
+    for (const taskCount of [0, 1]) {
+      expect(
+        projectTaskGuidance({
+          archived: false,
+          completed: true,
+          taskCount,
+          readyTaskIds: taskCount ? ["open-task"] : [],
+          blockedCount: 0,
+        }),
+      ).toEqual({ kind: "completed" });
+    }
+    expect(
+      projectTaskGuidance({
+        archived: true,
+        completed: true,
+        taskCount: 1,
+        readyTaskIds: ["open-task"],
+        blockedCount: 0,
+      }),
+    ).toEqual({ kind: "archived" });
+  });
 });

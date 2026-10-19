@@ -40,6 +40,7 @@ import {
   portfolioAreaMeta,
   portfolioFocusLabels,
   portfolioStatusMeta,
+  portfolioDisplayStatus,
   portfolioTypeAccent,
   portfolioTypeLabels,
   portfolioVisibilityReasonMeta,
@@ -676,6 +677,7 @@ function TaskDetailForm({
   return (
     <form action={updatePortfolioTaskFormAction} aria-label="Task bearbeiten" className="grid gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[rgba(11,17,28,.40)] p-3">
       <input name="taskId" type="hidden" value={entity.id} />
+      <input name="expectedUpdatedAt" type="hidden" value={values.expectedUpdatedAt ?? ""} />
       <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">Titel<input className={formInputClassName} defaultValue={values.title} name="title" required /></label>
       <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">Beschreibung / Kontext<textarea className={`${formInputClassName} min-h-20 py-2`} defaultValue={values.description} name="description" /></label>
       <label className="grid gap-1 text-[10px] font-semibold uppercase text-[var(--text-muted)]">Next Action<input className={formInputClassName} defaultValue={values.nextAction} name="nextAction" /></label>
@@ -1036,7 +1038,7 @@ function ProjectTaskCard({
 }>) {
   const lifecycle = task.taskLifecycle;
   const meta = [
-    portfolioStatusMeta[task.status].label,
+    portfolioDisplayStatus(task).label,
     task.priority,
     task.energy ? `${task.energy} energy` : null,
     `${lifecycle.durationMinutes} min`,
@@ -1058,8 +1060,8 @@ function ProjectTaskCard({
             {meta.join(" · ")}
           </p>
         </div>
-        <Pill accent={portfolioStatusMeta[task.status].accent}>
-          {portfolioStatusMeta[task.status].label}
+        <Pill accent={portfolioDisplayStatus(task).accent}>
+          {portfolioDisplayStatus(task).label}
         </Pill>
       </div>
       {task.nextAction ? (
@@ -2112,7 +2114,7 @@ export function PortfolioContextPanel({
     );
   const typeAccent = portfolioTypeAccent[entity.type];
   const area = portfolioAreaMeta[entity.area];
-  const status = portfolioStatusMeta[entity.status];
+  const status = portfolioDisplayStatus(entity);
   const primaryReason = getPortfolioPrimaryReason(entity);
   const reason = portfolioVisibilityReasonMeta[primaryReason];
   const entityRoute = getPortfolioEntitySourceRoute(entity);

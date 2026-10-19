@@ -1,3 +1,4 @@
+import { taskDeadlineLocalDay } from "@/features/real-data/domain/task-deadline";
 import type { WorkbenchData } from "@/features/real-data/runtime/entity-workbench-read";
 import { EntityForm } from "./forms";
 import { ManagementDialog } from "./management-disclosure";
@@ -5,7 +6,7 @@ import { taskTextFields } from "./task-text";
 import type { FieldValues } from "./types";
 
 type Task = WorkbenchData["tasks"][number];
-export function taskEditValues(task: Task): FieldValues {
+export function taskEditValues(task: Task, timezone: string): FieldValues {
   const text = taskTextFields(task.description);
   return {
     ...task,
@@ -16,7 +17,7 @@ export function taskEditValues(task: Task): FieldValues {
     goalId: task.goal_id,
     durationMinutes: task.duration_minutes,
     plannedDate: task.planned_date,
-    dueAt: task.due_at?.slice(0, 10),
+    dueAt: task.due_at ? taskDeadlineLocalDay(task.due_at, timezone) : undefined,
   };
 }
 
@@ -24,10 +25,14 @@ export function TaskEditDialog({
   data,
   taskId,
   initiallyOpen = false,
+  triggerClassName,
+  dialogKey,
 }: {
   data: WorkbenchData;
   taskId: string;
   initiallyOpen?: boolean;
+  triggerClassName?: string;
+  dialogKey?: string;
 }) {
   const task = data.tasks.find((item) => item.id === taskId)!;
   if (task.archived_at) return null;
@@ -43,6 +48,8 @@ export function TaskEditDialog({
       }));
   return (
     <ManagementDialog
+      triggerClassName={triggerClassName}
+      dialogKey={dialogKey}
       label="Task bearbeiten"
       triggerText="Bearbeiten"
       initiallyOpen={initiallyOpen}
@@ -55,7 +62,7 @@ export function TaskEditDialog({
         taskEditDialog
         kind="task"
         id={task.id}
-        values={taskEditValues(task)}
+        values={taskEditValues(task, data.timezone)}
         areas={data.areas
           .filter((area) => !area.archived_at || area.id === task.area_id)
           .map((area) => ({

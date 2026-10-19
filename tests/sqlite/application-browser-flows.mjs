@@ -1,3 +1,4 @@
+import { goalDetailBrowserFlow } from "./goal-detail-browser-flow.mjs";
 import { expect } from "@playwright/test";
 
 export async function additionalWriteFlows({
@@ -121,20 +122,10 @@ export async function additionalWriteFlows({
     "Project metadata, Result/Criterion/Review and history reload",
     async () => {
       await go(`/projects/${fixture.ids.project}`);
-      await page
-        .getByRole("button", { name: "Project verwalten", exact: true })
-        .click();
-      const manage = page.getByRole("dialog", {
-        name: "Project verwalten",
-        exact: true,
-      });
-      await manage
-        .getByRole("button", { name: "Bearbeiten", exact: true })
-        .click();
-      const metadata = manage.getByRole("form", {
-        name: "Project bearbeiten",
-        exact: true,
-      });
+      await page.locator('[data-entity-workbench="project"] header')
+        .getByRole("button", { name: "Bearbeiten", exact: true }).click();
+      const metadata = page.getByRole("dialog", { name: "Project bearbeiten", exact: true })
+        .getByRole("form", { name: "Project bearbeiten", exact: true });
       await metadata
         .getByLabel("Titel", { exact: true })
         .fill("SQLite browser Project edited");
@@ -251,7 +242,7 @@ export async function additionalWriteFlows({
     async () => {
       await go(`/projects/${fixture.ids.project}`);
       await page
-        .getByRole("button", { name: "Project verwalten", exact: true })
+        .getByRole("button", { name: "Mehr", exact: true })
         .click();
       const download = page.waitForEvent("download");
       await page
@@ -270,210 +261,17 @@ export async function additionalWriteFlows({
   await step(
     "Goal Criterion/Milestone, explicit achievement/reopen and history reload",
     async () => {
-      await go(`/goals/${fixture.ids.goal}?area=planung`);
-      const root = page.locator('[data-goal-outcome="workbench"]');
-      const planning = root.getByRole("button", {
-        name: "Planung bearbeiten",
-        exact: true,
+      await goalDetailBrowserFlow({
+        page,
+        origin: new URL(page.url()).origin,
+        goalId: fixture.ids.goal,
+        taskId: browserTask,
       });
-      if (await planning.isVisible()) await planning.click();
-      const metadata = root.getByRole("form", {
-        name: "Ziel bearbeiten",
-        exact: true,
-      });
-      await metadata.locator('[name="status"]').selectOption("active");
-      await metadata
-        .getByRole("button", { name: "Änderungen speichern", exact: true })
-        .click();
-      await expect(
-        page
-          .getByRole("status")
-          .filter({ hasText: "Ziel aktualisiert." })
-          .last(),
-      ).toBeVisible();
-      await page.reload();
-      if (await planning.isVisible()) await planning.click();
-      const prompt = root.getByRole("button", {
-        name: "Woran erkennst du, dass es geschafft ist?",
-        exact: true,
-      });
-      if ((await prompt.getAttribute("aria-expanded")) !== "true")
-        await prompt.click();
-      await root
-        .getByRole("button", {
-          name: "Erfolgskriterium festlegen",
-          exact: true,
-        })
-        .click();
-      const criterion = root.getByRole("form", {
-        name: "Erfolgskriterium erstellen",
-        exact: true,
-      });
-      await criterion
-        .getByLabel("Titel", { exact: true })
-        .fill("SQLite browser Goal criterion");
-      await criterion
-        .getByLabel("Erfolg prüfen als", { exact: true })
-        .selectOption("boolean");
-      await criterion
-        .getByRole("button", {
-          name: "Erfolgskriterium erstellen",
-          exact: true,
-        })
-        .click();
-      await page.reload();
-      const planningAgain = root.getByRole("button", {
-        name: "Planung bearbeiten",
-        exact: true,
-      });
-      if (await planningAgain.isVisible()) await planningAgain.click();
-      const milestonePrompt = root.getByRole("button", {
-        name: "Was soll als Nächstes wahr sein?",
-        exact: true,
-      });
-      if ((await milestonePrompt.getAttribute("aria-expanded")) !== "true")
-        await milestonePrompt.click();
-      const milestone = root.getByRole("form", {
-        name: "Zwischenziel erstellen",
-        exact: true,
-      });
-      await milestone
-        .getByLabel("Titel", { exact: true })
-        .fill("SQLite browser Goal milestone");
-      await milestone
-        .getByRole("button", { name: "Zwischenziel erstellen", exact: true })
-        .click();
-      await page.reload();
-      await expect(root.locator("[data-goal-progression]")).toContainText(
-        "SQLite browser Goal milestone",
-      );
-      await root
-        .getByRole("button", {
-          name: "Woran erkennst du, dass es geschafft ist?",
-          exact: true,
-        })
-        .click();
-      await root
-        .locator("[data-goal-criterion-id]")
-        .getByRole("button", { name: "Kriterium verwalten", exact: true })
-        .click();
-      const evaluation = root.getByRole("form", {
-        name: "Bewertung speichern",
-        exact: true,
-      });
-      await evaluation
-        .locator('[name="evaluationState"]')
-        .selectOption("value");
-      await evaluation.locator('[name="booleanValue"]').selectOption("true");
-      await evaluation
-        .getByRole("button", { name: "Bewertung speichern", exact: true })
-        .click();
-      await expect(
-        page
-          .getByRole("status")
-          .filter({ hasText: "Kriterium bewertet." })
-          .last(),
-      ).toBeVisible();
-      await page.reload();
-      if (
-        await root
-          .getByRole("button", { name: "Planung bearbeiten", exact: true })
-          .isVisible()
-      )
-        await root
-          .getByRole("button", { name: "Planung bearbeiten", exact: true })
-          .click();
-      await root
-        .getByRole("button", { name: "Zwischenziel verwalten", exact: true })
-        .click();
-      await root
-        .getByRole("button", {
-          name: "Als aktuelles Zwischenziel festlegen",
-          exact: true,
-        })
-        .click();
-      await page.waitForLoadState("networkidle");
-      await page.reload();
-      if (
-        await root
-          .getByRole("button", { name: "Planung bearbeiten", exact: true })
-          .isVisible()
-      )
-        await root
-          .getByRole("button", { name: "Planung bearbeiten", exact: true })
-          .click();
-      const association = root.getByRole("button", {
-        name: "Aufgabe zuordnen",
-        exact: true,
-      });
-      await association.click();
-      const link = root.getByRole("form", {
-        name: "Aufgabe verknüpfen",
-        exact: true,
-      });
-      await link.locator('[name="taskId"]').selectOption(browserTask);
-      await link
-        .getByRole("button", { name: "Aufgabe verknüpfen", exact: true })
-        .click();
-      await page.waitForLoadState("networkidle");
-      await go(`/tasks/${browserTask}`);
-      await page
-        .getByRole("button", { name: "Mehr verwalten", exact: true })
-        .click();
-      await page
-        .getByRole("button", { name: "Status verwalten", exact: true })
-        .click();
-      await page
-        .getByRole("button", { name: "Task abschließen", exact: true })
-        .click();
-      await expect(
-        page.getByRole("button", { name: "Task wieder öffnen", exact: true }),
-      ).toBeVisible();
-      await go(`/goals/${fixture.ids.goal}`);
-      page.once("dialog", (dialog) => dialog.accept());
-      await root
-        .getByRole("button", { name: "Zwischenziel erreicht", exact: true })
-        .click();
-      await expect(
-        root.getByRole("button", {
-          name: "Ziel erreicht bestätigen",
-          exact: true,
-        }),
-      ).toBeVisible();
-      page.once("dialog", (dialog) => dialog.accept());
-      await root
-        .getByRole("button", { name: "Ziel erreicht bestätigen", exact: true })
-        .click();
-      await expect(
-        root.getByRole("button", { name: "Ziel wieder öffnen", exact: true }),
-      ).toBeVisible();
-      await page.reload();
-      page.once("dialog", (dialog) => dialog.accept());
-      await root
-        .getByRole("button", { name: "Ziel wieder öffnen", exact: true })
-        .click();
-      await expect(
-        page
-          .getByRole("status")
-          .filter({ hasText: "Ziel wieder geöffnet." })
-          .last(),
-      ).toBeVisible();
-      await page.reload();
-      await root
-        .getByRole("link", { name: "Verlauf ansehen", exact: true })
-        .click();
-      await expect(
-        page.getByRole("region", { name: "Verlauf & Belege", exact: true }),
-      ).toContainText(/Kriterium|Zwischenziel|Etappe/);
-      await page.reload();
-      await expect(
-        page.getByRole("region", { name: "Verlauf & Belege", exact: true }),
-      ).toBeVisible();
     },
   );
   await go(`/tasks/${browserTask}`);
   await page
-    .getByRole("button", { name: "Mehr verwalten", exact: true })
+    .getByRole("button", { name: "Task-Verwaltung", exact: true })
     .click();
   await page
     .getByRole("button", { name: "Status verwalten", exact: true })
@@ -485,7 +283,7 @@ export async function additionalWriteFlows({
   if (await reopenTask.count()) {
     await reopenTask.click();
     await expect(
-      page.getByRole("button", { name: "Task abschließen", exact: true }),
+      page.getByRole("button", { name: "Erledigt", exact: true }),
     ).toBeVisible();
   }
   await step(
@@ -707,6 +505,11 @@ export async function additionalWriteFlows({
     "Task dependency failure is visible and reload-stable",
     async () => {
       await go(`/tasks/${browserTask}`);
+      const stale = await page.context().newPage();
+      await stale.goto(app.origin + `/tasks/${browserTask}`);
+      await expect(
+        stale.getByRole("button", { name: "Erledigt", exact: true }),
+      ).toBeVisible();
       const dependencies = page.getByRole("region", {
         name: "Voraussetzung",
         exact: true,
@@ -729,20 +532,18 @@ export async function additionalWriteFlows({
           .filter({ hasText: "Dependency gespeichert." })
           .last(),
       ).toBeVisible();
-      await page
-        .getByRole("button", { name: "Mehr verwalten", exact: true })
-        .click();
-      await page
-        .getByRole("button", { name: "Status verwalten", exact: true })
-        .click();
-      await page
-        .getByRole("button", { name: "Task abschließen", exact: true })
+      await expect(
+        page.getByRole("button", { name: "Erledigt", exact: true }),
+      ).toHaveCount(0);
+      await stale
+        .getByRole("button", { name: "Erledigt", exact: true })
         .click();
       await expect(
-        page
-          .getByRole("form", { name: "Task abschließen", exact: true })
+        stale
+          .getByRole("form", { name: "Erledigt", exact: true })
           .getByRole("alert"),
       ).toContainText("Task ist blockiert");
+      await stale.close();
       await page.reload();
       await expect(
         page.getByLabel("Task-Status", { exact: true }),

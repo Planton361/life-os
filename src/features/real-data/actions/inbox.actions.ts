@@ -1,5 +1,7 @@
 "use server";
 
+import { withSubmittedDatasetEpoch } from "./submitted-dataset";
+
 import { revalidatePath } from "next/cache";
 import { getInboxRepository, getInboxResourceTransaction, getInboxTriageTransaction } from "@/features/real-data/runtime/facade";
 import {
@@ -113,9 +115,10 @@ function revalidateInboxResourceRoutes() {
 }
 
 function authBlockedMessage(
-  error: "auth_error" | "invalid_session" | "missing_env" | "unauthenticated",
+  error: "auth_error" | "invalid_session" | "missing_env" | "unauthenticated" | "dataset_stale",
   actionLabel: string,
 ) {
+  if (error === "dataset_stale") return "Die Testdaten haben sich geändert. Bitte neu laden, bevor du Änderungen speicherst.";
   if (error === "missing_env") {
     return "Supabase ist lokal noch nicht konfiguriert.";
   }
@@ -134,313 +137,339 @@ function authBlockedMessage(
 export async function captureInboxItemAction(
   formData: FormData,
 ): Promise<InboxCaptureActionResult> {
-  const profileId = await getCurrentLifeOsProfileId();
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const profileId = await getCurrentLifeOsProfileId();
 
-  if (profileId !== "manual") {
-    revalidatePath("/inbox");
+    if (profileId !== "manual") {
+      revalidatePath("/inbox");
+
+      return {
+        message: "Wechsle ins Manual-Profil, um Inbox-Einträge zu speichern.",
+        status: "blocked",
+      };
+    }
+
+    const auth = await createAuthenticatedApplicationContext("write");
+
+    if (!auth.ok) {
+      return {
+        message: authBlockedMessage(auth.error, "speichern"),
+        status: "blocked",
+      };
+    }
+
+    const title = formString(formData, "title");
+    const body = formString(formData, "note");
+    const fallbackTitle = body.split(/\s+/).slice(0, 9).join(" ");
+
+    const parsed = captureInboxItemInputSchema.safeParse({
+      body: body || undefined,
+      profileId: auth.user.id,
+      source: "inbox.quick_capture",
+      title: title || fallbackTitle,
+      type: formString(formData, "type") || "note",
+      userId: auth.user.id,
+    });
+
+    if (!parsed.success) {
+      return {
+        message: "Erfasse zuerst einen gültigen Inbox-Eintrag.",
+        status: "error",
+      };
+    }
+
+    const repository = getInboxRepository(auth.data);
+    const result = await repository.createInboxItem(parsed.data);
+
+    if (!result.ok) {
+      return {
+        message: "Der Inbox-Eintrag konnte nicht gespeichert werden.",
+        status: "error",
+      };
+    }
+
+    revalidateInboxCaptureRoutes();
 
     return {
-      message: "Wechsle ins Manual-Profil, um Inbox-Einträge zu speichern.",
-      status: "blocked",
+      inboxItemId: result.data.id,
+      message: "Gespeichert. Der Eintrag liegt in der Inbox.",
+      status: "success",
     };
-  }
-
-  const auth = await createAuthenticatedApplicationContext("write");
-
-  if (!auth.ok) {
-    return {
-      message: authBlockedMessage(auth.error, "speichern"),
-      status: "blocked",
-    };
-  }
-
-  const title = formString(formData, "title");
-  const body = formString(formData, "note");
-  const fallbackTitle = body.split(/\s+/).slice(0, 9).join(" ");
-
-  const parsed = captureInboxItemInputSchema.safeParse({
-    body: body || undefined,
-    profileId: auth.user.id,
-    source: "inbox.quick_capture",
-    title: title || fallbackTitle,
-    type: formString(formData, "type") || "note",
-    userId: auth.user.id,
   });
-
-  if (!parsed.success) {
-    return {
-      message: "Erfasse zuerst einen gültigen Inbox-Eintrag.",
-      status: "error",
-    };
-  }
-
-  const repository = getInboxRepository(auth.data);
-  const result = await repository.createInboxItem(parsed.data);
-
-  if (!result.ok) {
-    return {
-      message: "Der Inbox-Eintrag konnte nicht gespeichert werden.",
-      status: "error",
-    };
-  }
-
-  revalidateInboxCaptureRoutes();
-
-  return {
-    inboxItemId: result.data.id,
-    message: "Gespeichert. Der Eintrag liegt in der Inbox.",
-    status: "success",
-  };
 }
 
 export async function captureInboxItemFormAction(
   formData: FormData,
 ): Promise<void> {
-  await captureInboxItemAction(formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    await captureInboxItemAction(formData);
+  });
 }
 
 export async function triageInboxItemToTaskAction(
   formData: FormData,
 ): Promise<InboxTriageActionResult> {
-  const profileId = await getCurrentLifeOsProfileId();
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const profileId = await getCurrentLifeOsProfileId();
 
-  if (profileId !== "manual") {
-    revalidatePath("/inbox");
+    if (profileId !== "manual") {
+      revalidatePath("/inbox");
+
+      return {
+        message: "Wechsle ins Manual-Profil, um Inbox-Einträge zu triagieren.",
+        status: "blocked",
+      };
+    }
+
+    const auth = await createAuthenticatedApplicationContext("write");
+
+    if (!auth.ok) {
+      return {
+        message: authBlockedMessage(auth.error, "triagieren"),
+        status: "blocked",
+      };
+    }
+
+    const parsed = triageInboxItemToTaskInputSchema.safeParse({
+      areaId: optionalFormString(formData, "areaId"),
+      description: taskDescriptionFromDraft(formData),
+      durationMinutes: optionalFormNumber(formData, "durationMinutes"),
+      energy: optionalFormString(formData, "energy"),
+      goalId: optionalFormString(formData, "goalId"),
+      inboxItemId: formString(formData, "inboxItemId"),
+      plannedDate:
+        formString(formData, "planToday") === "on" ? localDateLabel() : undefined,
+      profileId: auth.user.id,
+      priority: optionalFormString(formData, "priority"),
+      projectId: optionalFormString(formData, "projectId"),
+      skillId: optionalFormString(formData, "skillId"),
+      title: formString(formData, "title"),
+      userId: auth.user.id,
+    });
+
+    if (!parsed.success) {
+      return {
+        message: "Der Inbox-Eintrag konnte nicht als Task angelegt werden.",
+        status: "error",
+      };
+    }
+
+    const triageTransaction = getInboxTriageTransaction(auth.data);
+    const result = await triageTransaction(parsed.data);
+
+    if (!result.ok) {
+      return {
+        message: "Der Task konnte nicht aus dem Inbox-Eintrag erstellt werden.",
+        status: "error",
+      };
+    }
+
+    revalidateInboxTriageRoutes();
 
     return {
-      message: "Wechsle ins Manual-Profil, um Inbox-Einträge zu triagieren.",
-      status: "blocked",
+      inboxItemId: result.data.inboxItem.id,
+      message: "Task erstellt.",
+      status: "success",
+      taskId: result.data.task.id,
     };
-  }
-
-  const auth = await createAuthenticatedApplicationContext("write");
-
-  if (!auth.ok) {
-    return {
-      message: authBlockedMessage(auth.error, "triagieren"),
-      status: "blocked",
-    };
-  }
-
-  const parsed = triageInboxItemToTaskInputSchema.safeParse({
-    areaId: optionalFormString(formData, "areaId"),
-    description: taskDescriptionFromDraft(formData),
-    durationMinutes: optionalFormNumber(formData, "durationMinutes"),
-    energy: optionalFormString(formData, "energy"),
-    goalId: optionalFormString(formData, "goalId"),
-    inboxItemId: formString(formData, "inboxItemId"),
-    plannedDate:
-      formString(formData, "planToday") === "on" ? localDateLabel() : undefined,
-    profileId: auth.user.id,
-    priority: optionalFormString(formData, "priority"),
-    projectId: optionalFormString(formData, "projectId"),
-    skillId: optionalFormString(formData, "skillId"),
-    title: formString(formData, "title"),
-    userId: auth.user.id,
   });
-
-  if (!parsed.success) {
-    return {
-      message: "Der Inbox-Eintrag konnte nicht als Task angelegt werden.",
-      status: "error",
-    };
-  }
-
-  const triageTransaction = getInboxTriageTransaction(auth.data);
-  const result = await triageTransaction(parsed.data);
-
-  if (!result.ok) {
-    return {
-      message: "Der Task konnte nicht aus dem Inbox-Eintrag erstellt werden.",
-      status: "error",
-    };
-  }
-
-  revalidateInboxTriageRoutes();
-
-  return {
-    inboxItemId: result.data.inboxItem.id,
-    message: "Task erstellt.",
-    status: "success",
-    taskId: result.data.task.id,
-  };
 }
 
 export async function triageInboxItemToTaskFormAction(
   formData: FormData,
 ): Promise<void> {
-  await triageInboxItemToTaskAction(formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    await triageInboxItemToTaskAction(formData);
+  });
 }
 
 export async function archiveInboxItemAction(
   formData: FormData,
 ): Promise<InboxArchiveActionResult> {
-  const profileId = await getCurrentLifeOsProfileId();
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const profileId = await getCurrentLifeOsProfileId();
 
-  if (profileId !== "manual") {
-    revalidatePath("/inbox");
+    if (profileId !== "manual") {
+      revalidatePath("/inbox");
+
+      return {
+        message: "Wechsle ins Manual-Profil, um Inbox-Einträge abzuschließen.",
+        status: "blocked",
+      };
+    }
+
+    const auth = await createAuthenticatedApplicationContext("write");
+
+    if (!auth.ok) {
+      return {
+        message: authBlockedMessage(auth.error, "abzuschließen"),
+        status: "blocked",
+      };
+    }
+
+    const parsed = archiveInboxItemInputSchema.safeParse({
+      inboxItemId: formString(formData, "inboxItemId"),
+      profileId: auth.user.id,
+      userId: auth.user.id,
+    });
+
+    if (!parsed.success) {
+      return {
+        message: "Der Inbox-Eintrag konnte nicht abgeschlossen werden.",
+        status: "error",
+      };
+    }
+
+    const repository = getInboxRepository(auth.data);
+    const result = await repository.archiveInboxItem(parsed.data);
+
+    if (!result.ok) {
+      return {
+        message: "Der Inbox-Eintrag konnte nicht archiviert werden.",
+        status: "error",
+      };
+    }
+
+    revalidateInboxArchiveRoutes();
 
     return {
-      message: "Wechsle ins Manual-Profil, um Inbox-Einträge abzuschließen.",
-      status: "blocked",
+      inboxItemId: result.data.id,
+      message: "Inbox-Eintrag abgeschlossen.",
+      status: "success",
     };
-  }
-
-  const auth = await createAuthenticatedApplicationContext("write");
-
-  if (!auth.ok) {
-    return {
-      message: authBlockedMessage(auth.error, "abzuschließen"),
-      status: "blocked",
-    };
-  }
-
-  const parsed = archiveInboxItemInputSchema.safeParse({
-    inboxItemId: formString(formData, "inboxItemId"),
-    profileId: auth.user.id,
-    userId: auth.user.id,
   });
-
-  if (!parsed.success) {
-    return {
-      message: "Der Inbox-Eintrag konnte nicht abgeschlossen werden.",
-      status: "error",
-    };
-  }
-
-  const repository = getInboxRepository(auth.data);
-  const result = await repository.archiveInboxItem(parsed.data);
-
-  if (!result.ok) {
-    return {
-      message: "Der Inbox-Eintrag konnte nicht archiviert werden.",
-      status: "error",
-    };
-  }
-
-  revalidateInboxArchiveRoutes();
-
-  return {
-    inboxItemId: result.data.id,
-    message: "Inbox-Eintrag abgeschlossen.",
-    status: "success",
-  };
 }
 
 export async function archiveInboxItemFormAction(
   formData: FormData,
 ): Promise<void> {
-  await archiveInboxItemAction(formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    await archiveInboxItemAction(formData);
+  });
 }
 
 export async function archiveInboxItemFormStateAction(
   _previousState: InboxArchiveActionResult | null,
   formData: FormData,
 ): Promise<InboxArchiveActionResult> {
-  return archiveInboxItemAction(formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    return archiveInboxItemAction(formData);
+  });
 }
 
 export async function createResourceFromInboxAction(
   formData: FormData,
 ): Promise<InboxResourceActionResult> {
-  const profileId = await getCurrentLifeOsProfileId();
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const profileId = await getCurrentLifeOsProfileId();
 
-  if (profileId !== "manual") {
-    revalidatePath("/inbox");
+    if (profileId !== "manual") {
+      revalidatePath("/inbox");
+
+      return {
+        message: "Wechsle ins Manual-Profil, um Resources zu erstellen.",
+        status: "blocked",
+      };
+    }
+
+    const auth = await createAuthenticatedApplicationContext("write");
+
+    if (!auth.ok) {
+      return {
+        message: authBlockedMessage(auth.error, "als Resource zu speichern"),
+        status: "blocked",
+      };
+    }
+
+    const inboxItemId = formString(formData, "inboxItemId");
+    const summary = formString(formData, "summary");
+    const content = formString(formData, "content");
+    const parsed = createResourceInputSchema.safeParse({
+      body: [summary, content].filter(Boolean).join("\n\n") || undefined,
+      profileId: auth.user.id,
+      reviewNeeded: true,
+      source: inboxItemId ? `inbox:${inboxItemId}` : "inbox.resource_draft",
+      title: formString(formData, "title"),
+      type: formString(formData, "type"),
+      url: optionalFormString(formData, "url"),
+      userId: auth.user.id,
+    });
+
+    if (!inboxItemId || !parsed.success) {
+      return {
+        message:
+          "Der Inbox-Eintrag konnte nicht als Resource gespeichert werden.",
+        status: "error",
+      };
+    }
+
+    const resourceTransaction = getInboxResourceTransaction(
+      auth.data,
+    );
+    const resourceResult = await resourceTransaction({
+      ...parsed.data,
+      inboxItemId,
+    });
+
+    if (!resourceResult.ok) {
+      return {
+        message: "Resource konnte nicht gespeichert werden.",
+        status: "error",
+      };
+    }
+
+    revalidateInboxResourceRoutes();
 
     return {
-      message: "Wechsle ins Manual-Profil, um Resources zu erstellen.",
-      status: "blocked",
+      inboxItemId,
+      message: "Resource erstellt.",
+      resourceId: resourceResult.data.id,
+      status: "success",
     };
-  }
-
-  const auth = await createAuthenticatedApplicationContext("write");
-
-  if (!auth.ok) {
-    return {
-      message: authBlockedMessage(auth.error, "als Resource zu speichern"),
-      status: "blocked",
-    };
-  }
-
-  const inboxItemId = formString(formData, "inboxItemId");
-  const summary = formString(formData, "summary");
-  const content = formString(formData, "content");
-  const parsed = createResourceInputSchema.safeParse({
-    body: [summary, content].filter(Boolean).join("\n\n") || undefined,
-    profileId: auth.user.id,
-    reviewNeeded: true,
-    source: inboxItemId ? `inbox:${inboxItemId}` : "inbox.resource_draft",
-    title: formString(formData, "title"),
-    type: formString(formData, "type"),
-    url: optionalFormString(formData, "url"),
-    userId: auth.user.id,
   });
-
-  if (!inboxItemId || !parsed.success) {
-    return {
-      message:
-        "Der Inbox-Eintrag konnte nicht als Resource gespeichert werden.",
-      status: "error",
-    };
-  }
-
-  const resourceTransaction = getInboxResourceTransaction(
-    auth.data,
-  );
-  const resourceResult = await resourceTransaction({
-    ...parsed.data,
-    inboxItemId,
-  });
-
-  if (!resourceResult.ok) {
-    return {
-      message: "Resource konnte nicht gespeichert werden.",
-      status: "error",
-    };
-  }
-
-  revalidateInboxResourceRoutes();
-
-  return {
-    inboxItemId,
-    message: "Resource erstellt.",
-    resourceId: resourceResult.data.id,
-    status: "success",
-  };
 }
 
 export async function createResourceFromInboxFormStateAction(
   _previousState: InboxResourceActionResult | null,
   formData: FormData,
 ): Promise<InboxResourceActionResult> {
-  return createResourceFromInboxAction(formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    return createResourceFromInboxAction(formData);
+  });
 }
 
 export async function createProjectFromInboxAction(
   formData: FormData,
 ): Promise<InboxCreateNewActionResult> {
-  return routeExistingSavedCapture(formData, "project");
+  return withSubmittedDatasetEpoch(formData, async () => {
+    return routeExistingSavedCapture(formData, "project");
+  });
 }
 
 export async function createProjectFromInboxFormStateAction(
   _previousState: InboxCreateNewActionResult | null,
   formData: FormData,
 ): Promise<InboxCreateNewActionResult> {
-  return createProjectFromInboxAction(formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    return createProjectFromInboxAction(formData);
+  });
 }
 
 export async function createGoalFromInboxAction(
   formData: FormData,
 ): Promise<InboxCreateNewActionResult> {
-  return routeExistingSavedCapture(formData, "goal");
+  return withSubmittedDatasetEpoch(formData, async () => {
+    return routeExistingSavedCapture(formData, "goal");
+  });
 }
 
 export async function createGoalFromInboxFormStateAction(
   _previousState: InboxCreateNewActionResult | null,
   formData: FormData,
 ): Promise<InboxCreateNewActionResult> {
-  return createGoalFromInboxAction(formData);
+  return withSubmittedDatasetEpoch(formData, async () => {
+    return createGoalFromInboxAction(formData);
+  });
 }
 
 // Retained compatibility entry points use the same atomic saved-item transaction.

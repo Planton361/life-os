@@ -576,7 +576,7 @@ test("#85 canonical Task Create inner composition and bounded desktop/portrait w
     await page.setViewportSize(viewport);
     await expect(form.getByLabel("Titel", { exact: true })).toBeVisible();
     const optional = form.getByRole("button", {
-      name: "Weitere Angaben (optional)",
+      name: "Planung (optional)",
       exact: true,
     });
     await expect(optional).toHaveAttribute("aria-expanded", "false");
@@ -585,10 +585,10 @@ test("#85 canonical Task Create inner composition and bounded desktop/portrait w
     ).toBeVisible();
     const width = (await form.boundingBox())!.width;
     if (viewport.width >= 1920) {
-      expect(width).toBeGreaterThan(1000);
-      expect(width).toBeLessThanOrEqual(1440);
+      expect(width).toBeGreaterThan(900);
+      expect(width).toBeLessThanOrEqual(940);
     }
-    if (viewport.width === 1440) expect(width).toBeGreaterThan(1000);
+    if (viewport.width === 1440) expect(width).toBeGreaterThan(900);
     await noOverflow(page);
     await screenshot(page, info, `task-create-collapsed-${viewport.width}`);
     await optional.click();

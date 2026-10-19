@@ -1,6 +1,7 @@
 import {
   expectTaskCaptureParity,
   standaloneTaskCapture,
+  setTaskOptionalSections,
 } from "./support/task-create-parity";
 import { expectHybridGoalLayout } from "./support/goal-workbench-layout";
 import { execFileSync } from "node:child_process";
@@ -124,7 +125,7 @@ async function createAndCompleteCurrentTask(
   );
   await expect(form.getByLabel("Project-Kontext (optional)")).toBeHidden();
   const optionalDetails = form.getByRole("button", {
-    name: "Weitere Angaben (optional)",
+    name: "Arbeitsinhalt (optional)",
     exact: true,
   });
   await expect(optionalDetails).toHaveAttribute("aria-expanded", "false");
@@ -139,13 +140,13 @@ async function createAndCompleteCurrentTask(
   ]) {
     await expect(form.getByLabel(label, { exact: true })).toBeHidden();
   }
-  await optionalDetails.click();
+  await setTaskOptionalSections(page, true);
   await expect(optionalDetails).toHaveAttribute("aria-expanded", "true");
   await expect(
     form.getByLabel("Beschreibung / Purpose", { exact: true }),
   ).toBeVisible();
   await expect(form.getByLabel("Project-Kontext (optional)")).toBeVisible();
-  await optionalDetails.click();
+  await setTaskOptionalSections(page, false);
   await expect(optionalDetails).toHaveAttribute("aria-expanded", "false");
   const title = form.getByLabel("Titel", { exact: true });
   await expect(title).toBeVisible();

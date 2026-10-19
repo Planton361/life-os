@@ -84,7 +84,7 @@ function rankingForTask(
   project: LifeProject | undefined,
   input: PlannerQueueInput,
 ): { group: PlannerQueueRankGroup; reason: string } {
-  const dueDate = dateOnly(task.dueAt);
+  const dueDate = task.dueLocalDate ?? dateOnly(task.dueAt);
 
   if (dueDate && dueDate < input.today) {
     return { group: "overdue", reason: "Overdue" };
@@ -164,7 +164,7 @@ export function buildPlannerQueue(input: PlannerQueueInput): PlannerQueueItem[] 
         accent: undefined,
         area: task.areaId,
         createdAt: task.createdAt,
-        dueDate: dateOnly(task.dueAt),
+        dueDate: task.dueLocalDate ?? dateOnly(task.dueAt),
         durationMinutes: task.durationMinutes ?? 30,
         goal: goalContext(task, project, goalById),
         id: task.id,

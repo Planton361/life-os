@@ -1,5 +1,7 @@
 "use server";
 
+import { withSubmittedDatasetEpoch } from "./submitted-dataset";
+
 import { createMockInboxAISuggestion } from "@/features/inbox/ai/mock-inbox-ai-suggestion-provider";
 import { getInboxRepository } from "@/features/real-data/runtime/facade";
 import type { InboxAISuggestionActionResult } from "@/features/inbox/ai/inbox-ai-suggestion.types";
@@ -14,8 +16,9 @@ function formString(formData: FormData, key: string) {
 }
 
 function authBlockedMessage(
-  error: "auth_error" | "invalid_session" | "missing_env" | "unauthenticated",
+  error: "auth_error" | "invalid_session" | "missing_env" | "unauthenticated" | "dataset_stale",
 ) {
+  if (error === "dataset_stale") return "Die Testdaten haben sich geändert. Bitte neu laden, bevor du Änderungen speicherst.";
   if (error === "missing_env") {
     return "Supabase ist lokal noch nicht konfiguriert.";
   }
@@ -35,62 +38,64 @@ export async function suggestInboxRouteAction(
   _previousState: InboxAISuggestionActionResult | null,
   formData: FormData,
 ): Promise<InboxAISuggestionActionResult> {
-  const profileId = await getCurrentLifeOsProfileId();
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const profileId = await getCurrentLifeOsProfileId();
 
-  if (profileId !== "manual") {
+    if (profileId !== "manual") {
+      return {
+        message: "Wechsle ins Manual-Profil, um echte Inbox-Vorschläge zu erzeugen.",
+        status: "blocked",
+      };
+    }
+
+    const auth = await createAuthenticatedApplicationContext("write");
+
+    if (!auth.ok) {
+      return {
+        message: authBlockedMessage(auth.error),
+        status: "blocked",
+      };
+    }
+
+    const inboxItemId = formString(formData, "inboxItemId");
+
+    if (!inboxItemId) {
+      return {
+        message: "Wähle zuerst einen Inbox-Eintrag aus.",
+        status: "error",
+      };
+    }
+
+    const repository = getInboxRepository(auth.data);
+    const inboxItems = await repository.getInboxItemsByUser(
+      auth.user.id,
+      auth.user.id,
+    );
+
+    if (!inboxItems.ok) {
+      return {
+        message: "Inbox-Eintrag konnte nicht gelesen werden.",
+        status: "error",
+      };
+    }
+
+    const inboxItem = inboxItems.data.find((item) => item.id === inboxItemId);
+
+    if (!inboxItem) {
+      return {
+        message: "Inbox-Eintrag wurde nicht im aktuellen User-Scope gefunden.",
+        status: "error",
+      };
+    }
+
     return {
-      message: "Wechsle ins Manual-Profil, um echte Inbox-Vorschläge zu erzeugen.",
-      status: "blocked",
+      message: "AI Vorschlag erzeugt. Prüfe ihn vor der Übernahme.",
+      status: "success",
+      suggestion: createMockInboxAISuggestion({
+        body: inboxItem.body,
+        title: inboxItem.title,
+        type: inboxItem.type,
+      }),
     };
-  }
-
-  const auth = await createAuthenticatedApplicationContext("write");
-
-  if (!auth.ok) {
-    return {
-      message: authBlockedMessage(auth.error),
-      status: "blocked",
-    };
-  }
-
-  const inboxItemId = formString(formData, "inboxItemId");
-
-  if (!inboxItemId) {
-    return {
-      message: "Wähle zuerst einen Inbox-Eintrag aus.",
-      status: "error",
-    };
-  }
-
-  const repository = getInboxRepository(auth.data);
-  const inboxItems = await repository.getInboxItemsByUser(
-    auth.user.id,
-    auth.user.id,
-  );
-
-  if (!inboxItems.ok) {
-    return {
-      message: "Inbox-Eintrag konnte nicht gelesen werden.",
-      status: "error",
-    };
-  }
-
-  const inboxItem = inboxItems.data.find((item) => item.id === inboxItemId);
-
-  if (!inboxItem) {
-    return {
-      message: "Inbox-Eintrag wurde nicht im aktuellen User-Scope gefunden.",
-      status: "error",
-    };
-  }
-
-  return {
-    message: "AI Vorschlag erzeugt. Prüfe ihn vor der Übernahme.",
-    status: "success",
-    suggestion: createMockInboxAISuggestion({
-      body: inboxItem.body,
-      title: inboxItem.title,
-      type: inboxItem.type,
-    }),
-  };
+  });
 }

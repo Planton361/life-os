@@ -1,3 +1,7 @@
+import {
+  submittedDatasetEpoch,
+  markDatasetStaleSubmission,
+} from "./submitted-dataset-epoch";
 import "server-only";
 import { headers } from "next/headers";
 import { applicationRuntimeConfiguration } from "./configuration";
@@ -21,6 +25,10 @@ export type ApplicationData = Readonly<{
   reads: ApplicationReadServices;
 }>;
 
+export type ApplicationAuthenticationError =
+  | SupabaseServerAuthError
+  | "dataset_stale";
+
 export type AuthenticatedApplicationContext =
   | Readonly<{
       ok: true;
@@ -28,7 +36,7 @@ export type AuthenticatedApplicationContext =
       repositories: ApplicationRepositories;
       data: ApplicationData;
     }>
-  | Readonly<{ ok: false; error: SupabaseServerAuthError }>;
+  | Readonly<{ ok: false; error: ApplicationAuthenticationError }>;
 
 // Trusted metadata is cached with the process-owned application runtime. It is
 // never serialized or returned through an Action or a Client Component prop.
@@ -63,6 +71,18 @@ export async function prepareApplicationRuntime() {
     throw new Error("SQLITE_SINGLETON_PATH_CHANGED");
 }
 
+type ReadApplicationContext =
+  | Extract<AuthenticatedApplicationContext, { ok: true }>
+  | Readonly<{ ok: false; error: SupabaseServerAuthError }>;
+export function createAuthenticatedApplicationContext(
+  access?: "read",
+): Promise<ReadApplicationContext>;
+export function createAuthenticatedApplicationContext(
+  access: "write",
+): Promise<AuthenticatedApplicationContext>;
+export function createAuthenticatedApplicationContext(
+  access: "read" | "write",
+): Promise<AuthenticatedApplicationContext>;
 export async function createAuthenticatedApplicationContext(
   access: "read" | "write" = "read",
 ): Promise<AuthenticatedApplicationContext> {
@@ -125,7 +145,7 @@ export async function createAuthenticatedApplicationContext(
     sqliteApplicationUseCases,
     sqliteApplicationScopes,
   } = await import("./sqlite-adapter");
-  const owner =
+  let owner =
     config.backend === "sqlite-hosted"
       ? (await import("../sqlite/request-boundary")).authenticateGatewayRequest(
           new Headers(await headers()),
@@ -133,6 +153,39 @@ export async function createAuthenticatedApplicationContext(
         )
       : issueOwnerContext(sqlite.ownerId);
   if (!owner) return { ok: false, error: "unauthenticated" };
+  const { isPreviewComposition, currentPreviewGrant } =
+    await import("../sqlite/preview-grant");
+  if (isPreviewComposition()) {
+    if (config.backend !== "sqlite-hosted")
+      return { ok: false, error: "auth_error" };
+    try {
+      currentPreviewGrant(
+        config.path,
+        sqlite.ownerId,
+        config.origin,
+        config.ownerLogin,
+      );
+      if (access === "write") {
+        const headerEpoch = (await headers()).get("x-life-dataset-epoch");
+        const submitted = submittedDatasetEpoch();
+        const epoch = submitted ?? headerEpoch;
+        if (
+          !epoch ||
+          (submitted && headerEpoch && submitted !== headerEpoch) ||
+          sqlite.store.datasetState(owner).epoch !== epoch
+        ) {
+          markDatasetStaleSubmission();
+          return { ok: false, error: "dataset_stale" };
+        }
+        owner = (
+          await import("../sqlite/owner-context")
+        ).issuePreviewOwnerContext(sqlite.ownerId, epoch);
+      }
+    } catch {
+      return { ok: false, error: "auth_error" };
+    }
+  }
+
   const { sqliteApplicationReads } = await import("./sqlite-read-services");
   const repositories = admitApplicationRepositories(
     sqliteApplicationRepositories(sqlite.store, owner),
@@ -159,4 +212,28 @@ export async function createAuthenticatedApplicationContext(
       reads: sqliteApplicationReads(sqlite.store, owner),
     }),
   });
+}
+
+// Server-only capability; never serialized. Reset routes use the same process
+// runtime and authenticated owner instead of constructing another connection.
+export async function authenticatedPreviewRuntime() {
+  const config = applicationRuntimeConfiguration();
+  if (config.backend !== "sqlite-hosted") return null;
+  const auth = await createAuthenticatedApplicationContext("read");
+  if (!auth.ok || !sqlite) return null;
+  try {
+    const { currentPreviewGrant } = await import("../sqlite/preview-grant");
+    currentPreviewGrant(
+      config.path,
+      sqlite.ownerId,
+      config.origin,
+      config.ownerLogin,
+    );
+    const owner = (await import("../sqlite/owner-context")).issueOwnerContext(
+      auth.user.id,
+    );
+    return { config, store: sqlite.store, owner, userId: auth.user.id };
+  } catch {
+    return null;
+  }
 }

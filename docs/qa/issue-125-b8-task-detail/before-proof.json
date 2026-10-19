@@ -1,0 +1,695 @@
+{
+  "stage": "before",
+  "checks": [],
+  "consoleErrors": [],
+  "measurements": [
+    {
+      "name": "before-empty-1920x1080",
+      "canvas": {
+        "width": 1360,
+        "height": 727.46875,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "0px 0px 40px"
+      },
+      "header": {
+        "width": 1360,
+        "height": 180.78125,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "23px 27px"
+      },
+      "title": {
+        "width": 939.75,
+        "height": 43.1875,
+        "fontSize": "36px",
+        "lineHeight": "43.2px",
+        "letterSpacing": "normal",
+        "padding": "0px"
+      },
+      "work": {
+        "width": 1052,
+        "height": 463.1875,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "22px 23px"
+      },
+      "context": {
+        "width": 296,
+        "height": 264,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "20px"
+      }
+    },
+    {
+      "name": "reference-empty-1920x1080",
+      "canvas": {
+        "width": 1360,
+        "height": 656.6875,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "0px"
+      },
+      "header": {
+        "width": 1360,
+        "height": 185.390625,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "23px 27px"
+      },
+      "title": {
+        "width": 811.5,
+        "height": 41.75,
+        "fontSize": "36px",
+        "lineHeight": "41.76px",
+        "letterSpacing": "-1.62px",
+        "padding": "0px"
+      },
+      "work": {
+        "width": 1052,
+        "height": 430.25,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "0px"
+      },
+      "context": {
+        "width": 296,
+        "height": 199.375,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "18px 20px"
+      }
+    },
+    {
+      "name": "before-populated-1920x1080",
+      "canvas": {
+        "width": 1360,
+        "height": 931.28125,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "0px 0px 40px"
+      },
+      "header": {
+        "width": 1360,
+        "height": 180.78125,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "23px 27px"
+      },
+      "title": {
+        "width": 939.75,
+        "height": 43.1875,
+        "fontSize": "36px",
+        "lineHeight": "43.2px",
+        "letterSpacing": "normal",
+        "padding": "0px"
+      },
+      "work": {
+        "width": 1052,
+        "height": 606.1875,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "22px 23px"
+      },
+      "context": {
+        "width": 296,
+        "height": 667,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "20px"
+      }
+    },
+    {
+      "name": "reference-populated-1920x1080",
+      "canvas": {
+        "width": 1360,
+        "height": 848.15625,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "0px"
+      },
+      "header": {
+        "width": 1360,
+        "height": 185.390625,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "23px 27px"
+      },
+      "title": {
+        "width": 811.5,
+        "height": 41.75,
+        "fontSize": "36px",
+        "lineHeight": "41.76px",
+        "letterSpacing": "-1.62px",
+        "padding": "0px"
+      },
+      "work": {
+        "width": 1052,
+        "height": 561.15625,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "0px"
+      },
+      "context": {
+        "width": 296,
+        "height": 576.71875,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "18px 20px"
+      }
+    },
+    {
+      "name": "before-empty-3840x2160",
+      "canvas": {
+        "width": 1360,
+        "height": 727.46875,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "0px 0px 40px"
+      },
+      "header": {
+        "width": 1360,
+        "height": 180.78125,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "23px 27px"
+      },
+      "title": {
+        "width": 939.75,
+        "height": 43.1875,
+        "fontSize": "36px",
+        "lineHeight": "43.2px",
+        "letterSpacing": "normal",
+        "padding": "0px"
+      },
+      "work": {
+        "width": 1052,
+        "height": 463.1875,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "22px 23px"
+      },
+      "context": {
+        "width": 296,
+        "height": 264,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "20px"
+      }
+    },
+    {
+      "name": "reference-empty-3840x2160",
+      "canvas": {
+        "width": 1360,
+        "height": 656.6875,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "0px"
+      },
+      "header": {
+        "width": 1360,
+        "height": 185.390625,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "23px 27px"
+      },
+      "title": {
+        "width": 811.5,
+        "height": 41.75,
+        "fontSize": "36px",
+        "lineHeight": "41.76px",
+        "letterSpacing": "-1.62px",
+        "padding": "0px"
+      },
+      "work": {
+        "width": 1052,
+        "height": 430.25,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "0px"
+      },
+      "context": {
+        "width": 296,
+        "height": 199.375,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "18px 20px"
+      }
+    },
+    {
+      "name": "before-populated-3840x2160",
+      "canvas": {
+        "width": 1360,
+        "height": 931.28125,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "0px 0px 40px"
+      },
+      "header": {
+        "width": 1360,
+        "height": 180.78125,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "23px 27px"
+      },
+      "title": {
+        "width": 939.75,
+        "height": 43.1875,
+        "fontSize": "36px",
+        "lineHeight": "43.2px",
+        "letterSpacing": "normal",
+        "padding": "0px"
+      },
+      "work": {
+        "width": 1052,
+        "height": 606.1875,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "22px 23px"
+      },
+      "context": {
+        "width": 296,
+        "height": 667,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "20px"
+      }
+    },
+    {
+      "name": "reference-populated-3840x2160",
+      "canvas": {
+        "width": 1360,
+        "height": 848.15625,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "0px"
+      },
+      "header": {
+        "width": 1360,
+        "height": 185.390625,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "23px 27px"
+      },
+      "title": {
+        "width": 811.5,
+        "height": 41.75,
+        "fontSize": "36px",
+        "lineHeight": "41.76px",
+        "letterSpacing": "-1.62px",
+        "padding": "0px"
+      },
+      "work": {
+        "width": 1052,
+        "height": 561.15625,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "0px"
+      },
+      "context": {
+        "width": 296,
+        "height": 576.71875,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "18px 20px"
+      }
+    },
+    {
+      "name": "before-empty-769x413",
+      "canvas": {
+        "width": 737,
+        "height": 1065.46875,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "0px 0px 40px"
+      },
+      "header": {
+        "width": 737,
+        "height": 242.78125,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "23px 27px"
+      },
+      "title": {
+        "width": 681,
+        "height": 43.1875,
+        "fontSize": "36px",
+        "lineHeight": "43.2px",
+        "letterSpacing": "normal",
+        "padding": "0px"
+      },
+      "work": {
+        "width": 737,
+        "height": 463.1875,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "22px 23px"
+      },
+      "context": {
+        "width": 737,
+        "height": 264,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "20px"
+      }
+    },
+    {
+      "name": "reference-empty-769x413",
+      "canvas": {
+        "width": 725,
+        "height": 912.46875,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "0px"
+      },
+      "header": {
+        "width": 725,
+        "height": 229.796875,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "23px 27px"
+      },
+      "title": {
+        "width": 669,
+        "height": 30.15625,
+        "fontSize": "26px",
+        "lineHeight": "30.16px",
+        "letterSpacing": "-1.17px",
+        "padding": "0px"
+      },
+      "work": {
+        "width": 725,
+        "height": 430.25,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "0px"
+      },
+      "context": {
+        "width": 725,
+        "height": 199.375,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "18px 20px"
+      }
+    },
+    {
+      "name": "before-populated-769x413",
+      "canvas": {
+        "width": 737,
+        "height": 1611.46875,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "0px 0px 40px"
+      },
+      "header": {
+        "width": 737,
+        "height": 242.78125,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "23px 27px"
+      },
+      "title": {
+        "width": 681,
+        "height": 43.1875,
+        "fontSize": "36px",
+        "lineHeight": "43.2px",
+        "letterSpacing": "normal",
+        "padding": "0px"
+      },
+      "work": {
+        "width": 737,
+        "height": 606.1875,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "22px 23px"
+      },
+      "context": {
+        "width": 737,
+        "height": 667,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "20px"
+      }
+    },
+    {
+      "name": "reference-populated-769x413",
+      "canvas": {
+        "width": 725,
+        "height": 1447.125,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "0px"
+      },
+      "header": {
+        "width": 725,
+        "height": 229.796875,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "23px 27px"
+      },
+      "title": {
+        "width": 669,
+        "height": 30.15625,
+        "fontSize": "26px",
+        "lineHeight": "30.16px",
+        "letterSpacing": "-1.17px",
+        "padding": "0px"
+      },
+      "work": {
+        "width": 725,
+        "height": 561.15625,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "0px"
+      },
+      "context": {
+        "width": 725,
+        "height": 558.125,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "18px 20px"
+      }
+    },
+    {
+      "name": "before-empty-390x844",
+      "canvas": {
+        "width": 358,
+        "height": 1151.5625,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "0px 0px 40px"
+      },
+      "header": {
+        "width": 358,
+        "height": 332.875,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "19px 17px"
+      },
+      "title": {
+        "width": 322,
+        "height": 67.1875,
+        "fontSize": "28px",
+        "lineHeight": "33.6px",
+        "letterSpacing": "normal",
+        "padding": "0px"
+      },
+      "work": {
+        "width": 358,
+        "height": 459.1875,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "20px 17px"
+      },
+      "context": {
+        "width": 358,
+        "height": 264,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "20px"
+      }
+    },
+    {
+      "name": "reference-empty-390x844",
+      "canvas": {
+        "width": 366,
+        "height": 976.71875,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "0px"
+      },
+      "header": {
+        "width": 366,
+        "height": 322.046875,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "18px 16px"
+      },
+      "title": {
+        "width": 332,
+        "height": 60.3125,
+        "fontSize": "26px",
+        "lineHeight": "30.16px",
+        "letterSpacing": "-1.17px",
+        "padding": "0px"
+      },
+      "work": {
+        "width": 366,
+        "height": 402.25,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "0px"
+      },
+      "context": {
+        "width": 366,
+        "height": 199.375,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "18px 20px"
+      }
+    },
+    {
+      "name": "before-populated-390x844",
+      "canvas": {
+        "width": 358,
+        "height": 1873.75,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "0px 0px 40px"
+      },
+      "header": {
+        "width": 358,
+        "height": 332.875,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "19px 17px"
+      },
+      "title": {
+        "width": 322,
+        "height": 67.1875,
+        "fontSize": "28px",
+        "lineHeight": "33.6px",
+        "letterSpacing": "normal",
+        "padding": "0px"
+      },
+      "work": {
+        "width": 358,
+        "height": 778.375,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "20px 17px"
+      },
+      "context": {
+        "width": 358,
+        "height": 667,
+        "fontSize": "13px",
+        "lineHeight": "19.5px",
+        "letterSpacing": "normal",
+        "padding": "20px"
+      }
+    },
+    {
+      "name": "reference-populated-390x844",
+      "canvas": {
+        "width": 366,
+        "height": 1614.5,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "0px"
+      },
+      "header": {
+        "width": 366,
+        "height": 322.046875,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "18px 16px"
+      },
+      "title": {
+        "width": 332,
+        "height": 60.3125,
+        "fontSize": "26px",
+        "lineHeight": "30.16px",
+        "letterSpacing": "-1.17px",
+        "padding": "0px"
+      },
+      "work": {
+        "width": 366,
+        "height": 585.90625,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "0px"
+      },
+      "context": {
+        "width": 366,
+        "height": 558.125,
+        "fontSize": "13px",
+        "lineHeight": "20.15px",
+        "letterSpacing": "normal",
+        "padding": "18px 20px"
+      }
+    }
+  ]
+}

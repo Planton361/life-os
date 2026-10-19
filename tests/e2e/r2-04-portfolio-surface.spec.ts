@@ -60,7 +60,7 @@ test("R2-04 unified Portfolio controls, create/detail reload, history and compos
     if (kind === "Task")
       await form
         .getByRole("button", {
-          name: "Weitere Angaben (optional)",
+          name: "Arbeitsinhalt (optional)",
           exact: true,
         })
         .click();

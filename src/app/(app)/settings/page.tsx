@@ -1,3 +1,5 @@
+import { authenticatedPreviewRuntime } from "@/features/real-data/runtime/application-context";
+import { PreviewResetSettingsPanel } from "@/features/real-data/preview-reset/settings-reset-panel";
 import type { Metadata } from "next";
 import { SupabaseAuthPanel } from "@/features/auth";
 import { SettingsPage as SettingsFeaturePage } from "@/features/settings/settings-page";
@@ -15,6 +17,8 @@ export const metadata: Metadata = {
 
 export default async function SettingsPage() {
   const profileId = await getCurrentLifeOsProfileId();
+  const preview =
+    profileId === "manual" ? await authenticatedPreviewRuntime() : null;
   const viewModel = {
     ...getSettingsViewModel(),
     profileId,
@@ -27,6 +31,7 @@ export default async function SettingsPage() {
         <SupabaseAuthPanel />
       </div>
       <ProfileDataSettingsPanel />
+      {preview && <PreviewResetSettingsPanel />}
     </>
   );
 }

@@ -8,6 +8,8 @@ import { initializeSyntheticDatabase } from "../synthetic-database";
 import { issueOwnerContext, type OwnerContext } from "../owner-context";
 import { SqliteRuntime } from "../runtime";
 import { createSqliteTaskStepRepository } from "./task-step-repository";
+import { sourceReviewFixture, scope } from "../../../../../tests/sqlite/source-review-fixture";
+import { projectDepthCommand, readSqliteProjectDepth } from "./project-depth-repository";
 
 const owner = "11600000-0000-4000-8000-000000000001";
 function fixture() {
@@ -69,4 +71,105 @@ it("denies forged/foreign scopes, missing and archived parents, invalid input an
     expect(() => f.store.command(f.context, "step.update", db => db.prepare("UPDATE task_steps SET title='Bypass' WHERE user_id=? AND id=?").run(owner, step))).toThrow("STEP_UNAVAILABLE");
     expect(f.repo.read(f.task)).toEqual([]);
   } finally { f.store.close(); }
+});
+
+it("rejects stale create/update/archive in an archived Project without changing retained steps; active Project steps persist", async () => {
+  const f = sourceReviewFixture();
+  const repo = createSqliteTaskStepRepository(f.store, f.context);
+  let taskId = "";
+  let retained: ReturnType<typeof repo.read> = [];
+  try {
+    const created = await f.tasks.createTask({
+      ...scope,
+      title: "Project steps",
+      projectId: f.project,
+      status: "active",
+    });
+    if (!created.ok) throw new Error(created.error.message);
+    taskId = created.data.id;
+    expect(repo.write("create", { taskId, title: "Retained step" })).toBe(true);
+    const stepId = repo.read(taskId)[0].id;
+    const update = {
+      taskId,
+      stepId,
+      title: "Edited step",
+      position: 1,
+      completed: true,
+    };
+    expect(repo.write("update", update)).toBe(true);
+    expect(
+      repo.write("create", {
+        taskId,
+        title: "Remove while active",
+        position: 2,
+      }),
+    ).toBe(true);
+    expect(
+      repo.write("archive", { taskId, stepId: repo.read(taskId)[1].id }),
+    ).toBe(true);
+    retained = repo.read(taskId);
+    expect(retained).toHaveLength(1);
+    expect(retained[0]).toMatchObject({ title: "Edited step", position: 1 });
+    expect(retained[0].completed_at).not.toBeNull();
+    const snapshot = () =>
+      f.store.read(f.context, (db, owner) =>
+        db
+          .prepare(
+            "SELECT * FROM task_steps WHERE user_id=? AND task_id=? ORDER BY id",
+          )
+          .all(owner, taskId),
+      );
+    const before = snapshot();
+    const parent = readSqliteProjectDepth(
+      f.store,
+      f.context,
+      f.project,
+    ).context;
+    projectDepthCommand(f.store, f.context, {
+      projectId: f.project,
+      commandId: randomUUID(),
+      expectedRevision: parent.completion_revision,
+      expectedCycle: parent.completion_cycle,
+      operation: "project.archive",
+      payload: {},
+    });
+    expect(repo.write("create", { taskId, title: "Forged create" })).toBe(
+      false,
+    );
+    expect(
+      repo.write("update", {
+        ...update,
+        title: "Forged update",
+        completed: false,
+      }),
+    ).toBe(false);
+    expect(repo.write("archive", { taskId, stepId })).toBe(false);
+    expect(snapshot()).toEqual(before);
+    expect(repo.read(taskId)).toEqual(retained);
+  } finally {
+    f.store.close();
+  }
+  const restarted = new SqliteRuntime(f.path, { syntheticProof: true });
+  try {
+    const repo = createSqliteTaskStepRepository(restarted, f.context);
+    expect(repo.read(taskId)).toEqual(retained);
+    expect(
+      repo.write("create", { taskId, title: "Still denied after restart" }),
+    ).toBe(false);
+    expect(
+      repo.write("update", {
+        taskId,
+        stepId: retained[0].id,
+        title: "Still denied",
+        position: 0,
+        completed: false,
+      }),
+    ).toBe(false);
+    expect(repo.write("archive", { taskId, stepId: retained[0].id })).toBe(
+      false,
+    );
+    expect(repo.read(taskId)).toEqual(retained);
+  } finally {
+    restarted.close();
+  }
 });

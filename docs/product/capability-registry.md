@@ -27,12 +27,21 @@
 - Backend, repository or historical reload evidence proves that layer only; it
   does not by itself prove that a visible control currently works.
 
+## B8 Project Detail / recorded work balance — #136
+
+| Capability | Status | Current implementation evidence | Remaining gate |
+|---|---|---|---|
+| B8 Project Identity, Work and compact Empty | `CONNECTED` | `ProjectReadView` / `ProjectWork` implement the #121 accepted matte 1360px family, direct Edit, result/Criteria, `WORK / PROJECT` → `Tasks & Milestones` (or `Tasks`), orange primary `+ Task` and outlined secondary `+ Milestone`. Orange Milestone bands precede indented Task rows; open/active stages precede done, with `sort_order,id` within each partition. Task rows retain inherited read-model order; single READY emphasis stays in its row. Canonical group-local `/tasks/new`, flat no-Milestone work, optional real Context and progressive Empty Context remain. Synthetic 1920 captures: `docs/qa/b8-project-detail/project-populated-1920.png` and `project-empty-1920.png`, directly compared with the confirmed original B7/B8 references `work/b8-final-design-20261008/reference-project.png` and `reference-empty.png`. | Integrated personal USER ACCEPTANCE and M0 merge remain separate; no production-instance activation or core-surface closure is claimed. |
+| B7 recorded Project Arbeitsstand | `CONNECTED` | Pure `projectWorkBalance` projects non-archived/non-canceled Tasks into disjoint done / executable-ready / explicit-dependency-blocked / other-open counts, displayed green / blue / orange / neutral. Waiting and source-owned READY work remain other-open; excluded history is labelled. One text-supported segmented bar exists only for captured work; actual explicitly done Milestones are separate. Unit tests cover Project-scoped projection, missing predecessors, sources, lifecycle, count sums and zero/all-done states; native browser assertions cover segment colors and action hierarchy. | No Project completion percentage, task weighting or new persistence. |
+| Project Task and explicit Review interactions | `CONNECTED` | `tests/sqlite/issue-136-browser-proof.mjs` runs the normal production app against disposable authenticated native SQLite at an ephemeral port. It proves real Task edit/complete/Details/Calendar, explicit predecessor revalidation and visible stale-completion error, merged three-disclosure Create/Cancel/Save and milestone relations after reload, multiple eligible choice, Empty/no-Milestone/with-Milestone/one-Task states, Continue/completed Review, immutable History and Reopen, archived read-only, invalid/foreign/stale ownership guards. A validated completed Project retaining an open Task and Milestone has no metadata/Task/Milestone/relationship/Resource-management controls; Review/History/Reopen/Export and read navigation remain. Reopen restores controls after reload. 3840×2160 / 1920×1080 / 769×413 / 390×844 geometry, bounded mobile dialog, keyboard Escape/focus return and clean console/hydration are checked, including completed mobile. All-done Task work leaves Project active until explicit Review. | Synthetic implementation evidence; integrated USER ACCEPTANCE is pending. Existing command/auth/Zod/revalidation, immutable-History amendment and domain contracts are reused without schema changes. |
+
 ## Production SQLite runtime — #116 synthetic proof / #120 local production baseline
 
 | Capability | Status | Current implementation evidence | Missing capability |
 |---|---|---|---|
 | SQLite runtime foundation | `CONNECTED` | Node 24.21.0 with Node 24 typings, better-sqlite3 13.0.3 / SQLite 3.53.4; private file boundary, owner contexts, WAL/FULL/FK/busy timeout and synchronous transactions in `src/features/real-data/sqlite`; kernel-held exclusive writer lock with stale-PID/SIGKILL recovery; Next-owned SIGTERM/SIGINT request drain followed by DB checkpoint/close, proven in `tests/sqlite/framework-shutdown-proof.mjs` | None within #116 synthetic scope. Fresh initialization remains readiness 0; application fixtures require explicit verified sealing to 1. Personal activation is a separate gate. |
 | SQLite Task / Review / Habit / Health backend ports | `CONNECTED` | Native repositories and focused synthetic tests preserve tested planning/completion, carry reconciliation, exact target increments, health upserts and stable IDs | None within #116 synthetic scope. Fresh initialization remains readiness 0; application fixtures require explicit verified sealing to 1. Personal activation is a separate gate. |
+| Task Completion under archived Project Parent (#151) | `CONNECTED` | SQLite repositories, Source commands and the existing synchronous pre-COMMIT boundary reject new `done` / `completed_at` writes for the persisted or resulting same-owner Parent when `archived_at` is set or status is `archived`; a detach/move in the completion patch cannot bypass it. `task-parent-completion.test.ts` proves complete/update/raw timestamp writes, exact rollback, restart, ownership and all four genuine Source flows; `task-parent-concurrency.test.ts` proves both archive/completion orders in independent processes. PostgreSQL migration `20261012113000_task_parent_completion_guard.sql` adds invoker Task/Source triggers with current row-version locking, retaining Dependency/Source/RLS guards. `tests/supabase/issue-151-native-proof.mjs` proves RED→GREEN on all migrations, authenticated SQL/RPC/Source negatives and 12 real PostgreSQL 18.4 READ COMMITTED / REPEATABLE READ races. `tests/sqlite/issue-151-browser-proof.mjs` proves stale real controls, alternative detach/done Update, visible errors, positive Completion, reload and profile boundaries with 3840/1920/390 screenshots and clean console. | Guard repair only; no new lifecycle semantics, SQLite schema migration, personal data mutation or runtime activation. PostgreSQL migration is proposed code, never applied remotely. Surface/product USER ACCEPTANCE and M0 merge remain separate. |
 | SQLite canonical compatibility | `CONNECTED` | Fresh synthetic schema v9 contains exactly **83/83 canonical tables**, missing `[]`, plus operational runtime metadata only. The 18 retained/reward tables use canonical columns, exact decimal TEXT, issued-owner and parent/history guards. `retained-repository.test.ts` asserts actual sqlite_master coverage and absence of extra business tables; `all-domain-recovery.test.ts` validates populated native records, projections, all table counts/hashes and online restore | None within #116 synthetic scope. Fresh initialization remains readiness 0; application fixtures require explicit verified sealing to 1. Personal activation is a separate gate. |
 | SQLite Task Steps / Recurrence / Inbox workspace backend | `CONNECTED` | Native Step writes reuse current Zod schemas, preserve identity/idempotent completion, reopen, duplicate-position ordering and archive. Native Recurrence repository reuses current mappers and the explicit generation use case; stable instances, active/all reads, owned contexts, date/interval/deactivation and failed-edit rollback are tested. Inbox native save/route/final completion supports all nine routes, original capture preservation, exact stale tokens, planning fields, canonical Resource notes and Task↔Skill context. Final clarification/routing share one transaction; injected failure leaves no Resource or clarification changes. `inbox-concurrency.test.ts` proves held save/completion versus stale completion in independent processes. Populated core-workflow restart/online backup/isolated restore compares schema, every table count/hash, IDs and native projections | None within #116 synthetic scope. Fresh initialization remains readiness 0; application fixtures require explicit verified sealing to 1. Personal activation is a separate gate. |
 | SQLite canonical source-aware Task backend | `CONNECTED` | Four canonical source types reuse the schedule Zod contract; stable owner/source/Task tuples, Meal scheduling/unscheduling and paired completion, Review source reconciliation, and genuine recorded Running/Strength session evidence are native. SQLite triggers enforce Z1 lifecycle denial for every linked Task and source-owned Meal timing; the generic edit repository still denies source-sensitive edits. No sessions/sets are fabricated. `schedule-source-repository.test.ts` and `source-review-concurrency.test.ts` prove raw tuple/lifecycle negatives, rollback, same-source scheduling, completion versus generic mutation and both dependency/reopen transaction orders | None within #116 synthetic scope. Fresh initialization remains readiness 0; application fixtures require explicit verified sealing to 1. Personal activation is a separate gate. |
@@ -1398,8 +1407,8 @@ does not complete hosting or the separate local backup/restore freeze gate.
 | Meals Today | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Latest Run | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Muscle Map | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
-| Today Agenda day view | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
-| Today Agenda week/month | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
+| Today Agenda day view | `CONNECTED` | R2-01 USER ACCEPTED; #164 keeps hourly rows content-independent, exact canonical interval labels and accessible Task navigation. Existing SQLite Dashboard proof covers long 30/60-minute scheduled Tasks, same-hour events and reload. | #164 is a scoped visual repair, not renewed Dashboard surface acceptance |
+| Today Agenda week/month | `CONNECTED` | R2-01 USER ACCEPTED; #164 shares one bounded Agenda scroll frame across Day/Week/Month, with natural Linear flow. Existing `tests/sqlite/issue-160-browser-proof.mjs` checks Manual/Demo/Empty at seven viewports, outer/neighbour bounds within 1px, keyboard switching/scrolling, full Agenda link inventory, reload and console. | #112/#114 broader cockpit acceptance remains separate |
 | Urgent time-block create | `CONNECTED_GAP` | current visible control is an honest non-interactive Prepared state; Inbox creates canonical Tasks while scheduling belongs to Calendar/Portfolio | R2-03 must connect it to a canonical flow or remove it; Prepared is not closure without user deferral |
 | Habit Tracker | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Active Portfolio | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
@@ -1504,6 +1513,7 @@ R2-03 was subsequently accepted; R2-04 is now the sole active block. The followi
 | Note route | `CONNECTED` | canonical `resources.type = note`, correct Resources selection after reload | no separate Note entity invented |
 | Skill route | `CONNECTED` | Task context through existing Task↔Skill RPC; shown when owned active Skill targets exist; no Skill Evidence write | maintain |
 | Planning signals | `CONNECTED` | seven persisted Inbox signals; final completion and target-specific transfer, current reload proof | Recurrence removed as unsupported Inbox input |
+| Confirmed Inbox Task lifecycle (Variant B, #153) | `CONNECTED` | Final Confirm creates one `planned` Task on `task` / existing Project / Goal / Skill in both SQLite and PostgreSQL. Historical `inbox` Tasks require explicit authenticated status-only “Zur Planung freigeben”; owner/context/Source/Parent, CAS and dataset-epoch boundaries retain metadata, existing blocks, dates and links. Portfolio uses canonical lifecycle separately from attention ranking. `inbox-task-lifecycle.test.ts`, `inbox-task-release-concurrency.test.ts` and the isolated Preview epoch regression cover atomicity, idempotence, rollback, both stale-editor orderings and Dependency/#151 guards. `tests/sqlite/issue-153-browser-proof.mjs` proves twelve real Manual/profile/error/reload groups, four Task→Week→schedule→Completion loops, historical release/completion and Portfolio/Today/Dashboard/Project projections; twelve full screenshots at 3840×2160 / 1920×1080 / 390×844 were visually reviewed with scoped control/bounds inventory. `tests/supabase/issue-153-sql-proof.mjs` proves fully migrated disposable PostgreSQL 18.4 Base RED / Head GREEN, six held-lock RC/RR races, actual warning-level lint, Advisors and unchanged Source/Dependency/#151 SQL regressions. | Implementation evidence in PR #154; no new USER surface acceptance. Fresh Base/Head each retain the same 18 Project-depth warnings, zero new findings; strict warning lint still exits 1. Full raw output and warning fingerprints remain in CI artifacts; this is the scoped differential review for #153, not a clean-lint claim or a general waiver. Deadline editor timezone defect remains outside #153. |
 | AI suggestion review | `CONNECTED` | user-triggered local read-only suggestion and dismiss; no provider or automatic field application | external provider remains outside R2-02 |
 | Related context | `CONNECTED` | bounded links to actual owned local targets, each visible link directly browser-tested | no relevance scores, semantic search or expansion |
 | Inbox surface acceptance | `CONNECTED` | Explicit USER ACCEPTED on 2026-09-06; retained implementation and browser evidence below | R2-02 closed; R2-03 active |
@@ -2168,7 +2178,9 @@ and its USER ACCEPTANCE STATUS is PENDING.
 | Capability | Status | Canonical source / current evidence | Gap / next action |
 |---|---|---|---|
 | Portfolio information architecture | `CONNECTED` | one Portfolio list with shared URL entity filters, five dedicated create/detail workbenches and independent quick inspector; R2-04 IA correction proof below | accepted 2026-09-07; maintain |
-| Task create/edit/lifecycle | `CONNECTED` | canonical ID create/edit/reload, complete/reopen/archive and source-owned lifecycle boundary; R2-04 proof. Issue #62 retains title-first progressive capture and Task Detail Variant B, consolidates task execution into one Work surface and dependency/planning/context into one Supporting Depth surface, and proves scheduled Task→Week Inspector navigation with reload-stable `task=<id>&date=<day>&view=week` while Calendar retains Time Block ownership. The corrected real Task surface and Week handoff were USER ACCEPTED on 2026-09-29 (`tests/e2e/issue-58-task-read-first-loop.spec.ts`, `tests/e2e/project-context-task-create.spec.ts`) | accepted 2026-09-07; #62 real-user accepted 2026-09-29; maintain |
+| Task create/edit/lifecycle | `CONNECTED` | canonical ID create/edit/reload, complete/reopen/archive and source-owned lifecycle boundary; R2-04 proof. Issue #62 retains title-first progressive capture and Task Detail Variant B, historically consolidated task execution into Work and dependency/planning/context into Supporting Depth (visual placement superseded by B8 #123), and proves scheduled Task→Week Inspector navigation with reload-stable `task=<id>&date=<day>&view=week` while Calendar retains Time Block ownership. The corrected real Task surface and Week handoff were USER ACCEPTED on 2026-09-29 (`tests/e2e/issue-58-task-read-first-loop.spec.ts`, `tests/e2e/project-context-task-create.spec.ts`) | accepted 2026-09-07; #62 real-user accepted 2026-09-29; maintain |
+| Task Deadline Local-Day Roundtrip (#155) | `CONNECTED` | B8 Task editor, reachable Portfolio→Task edit and Calendar deadline/Queue projections use the authenticated profile-IANA day. The shared Inbox end-of-day rule resolves deliberate date changes to 23:59:59 local time; unchanged/missing fields omit `due_at`, preserving historical microseconds, and explicit clear writes null. `task-deadline.test.ts`, `task-deadline-action.test.ts`, the #155 stale-epoch regression and `tests/sqlite/issue-155-browser-proof.mjs` cover Base RED→Head GREEN title-only save, DST/offset/month/year cases, add/change/clear/no-op, real feedback/reload, Portfolio navigation, Calendar markers, keyboard and 3840×2160 / 1920×1080 / 390×844 bounds/screenshots. `tests/supabase/issue-155-sql-proof.mjs` runs the real Supabase repository/shared mapper against a fully migrated disposable PostgreSQL with authenticated RLS, a PostgreSQL timezone oracle, source CAS and existing #151/#153/Dependency/Source regressions; fresh Base/Head lint and Advisors are retained in CI artifacts. | Implementation proof for the bounded #155 repair; no historical data migration, personal runtime activation or new USER surface acceptance. Both migration sets remain unchanged (66). The 18 pre-existing Project-depth lint warnings remain open; strict lint is not clean and the fresh differential gate is specific to this revision. |
+| Task Create Deadline Local-Day (#158) | `CONNECTED` | The shared B8 Create Action resolves a nonempty deadline once with the authenticated profile-IANA zone and the existing Inbox/#155 end-of-day helper before normal/Goal-Milestone branching. Standalone, Project, Project Milestone, Goal, Goal Milestone and Skill origins preserve one Task, context and `planned` lifecycle; no deadline omits `due_at` and scheduling remains separate. Action/SQLite tests cover invalid dates/zones, unavailable profile, auth/ownership/archived contexts, inheritance and stale epochs without partial Task/support/receipt writes. `tests/sqlite/issue-158-browser-proof.mjs` proves the #157 Berlin RED→GREEN contract, six origins, DST/offset/month/year instants, visible Task/Edit/Calendar days after reload, Inbox/#155 controls and desktop/mobile interaction. `tests/supabase/issue-158-native-proof.mjs`, run through the existing disposable SQL runner, covers the real Supabase repository/mapper and Goal-Milestone RPC with authenticated PostgreSQL RLS and an independent timezone oracle. | Bounded Create repair; #157 supplies accepted Base RED evidence. Missing Supabase profile zones now fail closed for Task deadlines. No replay-idempotency repair, schema/data migration, personal Preview activation or USER surface acceptance. CI retains Base/Head SQL lint/Advisors with the 18 existing Project-depth warnings; strict lint remains nonzero. |
 | Task relation to Project/Goal | `CONNECTED` | nullable Task→Project/Goal fields, server-authenticated/Zod/user-scoped alignment checks and C1.1 integrated Target reload proof | maintain explicit user choices; no silent relinking |
 | Task relation to Skill/Resource | `CONNECTED` | owned n:m `task_skill_links` plus Resource relations, idempotent link/unlink, Task detail projection and Skill backlink without creating Evidence; C1.1 integrated proof PASS | maintain endpoint ownership, reload and no-auto-Evidence proofs |
 | Project Goal inheritance in Task context | `CONNECTED` | direct, via-Project, redundant and existing-conflict states are explicit; Task and Project writes reject new contradictions, and C1.1 integrated read models deduplicate matching paths | preserve existing rows; resolve any future reported existing conflicts deliberately |
@@ -2188,12 +2200,142 @@ and its USER ACCEPTANCE STATUS is PENDING.
 | Project/Goal resource links | `CONNECTED` | same-user Resource link/unlink from both detail directions, reload-proven in R2-04 | accepted 2026-09-07; maintain |
 | Project/Goal evidence display | `CONNECTED_GAP` | skill evidence read projection | create/manage from workbench later |
 | Project milestones | `CONNECTED` | R2-09 owned milestones, grouping, lifecycle and progress; focused evidence above | USER ACCEPTED 2026-09-09; preserve |
-| Goal outcome planning | `CONNECTED_GAP` | PP1 #23 Slice 1 and Issue #41 preserve the accepted #39/#40 semantics: one Current Milestone enforced by a partial unique index and serialized atomic switches; pure one-action guidance based on canonical Goal state and Task-to-Task dependencies; current-only contextual title-first Task creation; append-only Milestone Review with atomic next-planned advancement; explicit Goal review, with no automatic achievement from Task completion. Issue #49 implements the USER ACCEPTED #48 hybrid composition: calm full-width Goal identity, dominant left Current Work with current intermediate outcome and one selected Task/action, and a quieter right rail with an intentional roadmap plus Goal Review preview. The selected READY Task appears once; other current Tasks remain secondary, and only Task dependencies determine READY/BLOCKED. Matte V5 navy, one explicit question-led Planning Mode, explicit final criteria/review and achieved/reopen behavior are retained; #44/#46 flat composition is historical evidence where superseded. `tests/e2e/issue-46-simplified-goal-surface.spec.ts` now proves the #49 authenticated Manual dependency flow, single selected Task, quiet review preview, actual primary navigation, reload and keyboard/focus; `tests/e2e/support/goal-workbench-layout.ts` checks desktop 60/40 placement, mobile order, unclipped controls and absence of hero images/quotes at 3840×2160 / 1920×1080 / 390×844. The #49 Manual rejection (comment 5860549961) required a bounded density repair: compact identity with grouped metadata, tighter Current Work/divider rhythm, secondary task rows and a compact review gate without a second card frame. The retained browser flow now captures one- and multiple-result states at all three viewports; layout checks also reject stretched trailing blank space. Full-page screenshots were visually inspected; real-user re-acceptance completed on 2026-09-28 against the merged real Goal surface. `tests/e2e/issue-41-goal-journey.spec.ts` retains explicit Milestone/Goal review, achievement/reopen, no automatic achievement, reload and the one-Current regression. PP1 is USER ACCEPTED as of 2026-09-28 after the real post-merge Goal check on `d54f70f9882ef21844073734831a2db17e69b332`. `tests/supabase/pp1-goal-current-milestone.sql` and `tests/supabase/pp1-goal-current-milestone-concurrency.mjs` prove the database invariant, history retention, atomic advancement and concurrent switches. Existing PP1 correction, evidence and history ledgers remain append-only; Goal/Etappe revisions, legacy snapshots and episode-aware projections remain preserved. | Slice 2 remains deferred: Task completion episodes, Project/Project-Milestone completion history, Skill Evidence as Goal decision evidence (Skill-local immutable revisions are delivered by #94); preserve legacy progress fields and no generic percentage |
+| Goal outcome planning | `CONNECTED_GAP` | PP1 #23 Slice 1 and Issue #41 preserve the accepted #39/#40 semantics: one Current Milestone enforced by a partial unique index and serialized atomic switches; pure one-action guidance based on canonical Goal state and Task-to-Task dependencies; current-only contextual title-first Task creation; append-only Milestone Review with atomic next-planned advancement; explicit Goal review, with no automatic achievement from Task completion. Issue #49 historically implemented the USER ACCEPTED #48 hybrid composition (visually superseded by #131/#132): calm full-width Goal identity, dominant left Current Work with current intermediate outcome and one selected Task/action, and a quieter right rail with an intentional roadmap plus Goal Review preview. The selected READY Task appears once; other current Tasks remain secondary, and only Task dependencies determine READY/BLOCKED. Matte V5 navy, one explicit question-led Planning Mode, explicit final criteria/review and achieved/reopen behavior are retained; #44/#46 flat composition is historical evidence where superseded. `tests/e2e/issue-46-simplified-goal-surface.spec.ts` now proves the #49 authenticated Manual dependency flow, single selected Task, quiet review preview, actual primary navigation, reload and keyboard/focus; `tests/e2e/support/goal-workbench-layout.ts` checks desktop 60/40 placement, mobile order, unclipped controls and absence of hero images/quotes at 3840×2160 / 1920×1080 / 390×844. The #49 Manual rejection (comment 5860549961) required a bounded density repair: compact identity with grouped metadata, tighter Current Work/divider rhythm, secondary task rows and a compact review gate without a second card frame. The retained browser flow now captures one- and multiple-result states at all three viewports; layout checks also reject stretched trailing blank space. Full-page screenshots were visually inspected; real-user re-acceptance completed on 2026-09-28 against the merged real Goal surface. `tests/e2e/issue-41-goal-journey.spec.ts` retains explicit Milestone/Goal review, achievement/reopen, no automatic achievement, reload and the one-Current regression. PP1 is USER ACCEPTED as of 2026-09-28 after the real post-merge Goal check on `d54f70f9882ef21844073734831a2db17e69b332`. `tests/supabase/pp1-goal-current-milestone.sql` and `tests/supabase/pp1-goal-current-milestone-concurrency.mjs` prove the database invariant, history retention, atomic advancement and concurrent switches. Existing PP1 correction, evidence and history ledgers remain append-only; Goal/Etappe revisions, legacy snapshots and episode-aware projections remain preserved. | Slice 2 remains deferred: Task completion episodes, Project/Project-Milestone completion history, Skill Evidence as Goal decision evidence (Skill-local immutable revisions are delivered by #94); preserve legacy progress fields and no generic percentage |
 | Project/Goal logs | `NOT_STARTED` | none | add canonical log records |
 | Review cadence | `NOT_STARTED` | none | connect to reviews after D1.2 |
 | Project/Goal restore/undo | `NOT_STARTED` | archive exists | lifecycle slice |
 | Progress engine | `DECISION_REQUIRED` | task-based signals and legacy fields | preserve honest work signals until model exists |
 | Portfolio pins/favorites | `NOT_STARTED` | none | support Dashboard max-four selection |
+
+Issue #132 proposes the USER ACCEPTED #131 **Goal Detail only** on the native
+SQLite application runtime. A content-sized matte header exposes intended outcome,
+why/horizon/date and canonical criteria; one Project-inspired Work groups real
+Goal milestones with their actual support-linked Task rows. Without milestones,
+direct Tasks form a flat list; unassigned direct Tasks (including explicit
+Goal + Project membership) remain visible once. A unique eligible Task is primary;
+multiple eligible Tasks preserve choice. Goal/milestone/criterion editing,
+association, ordering/archive and evidence/history commands retain object-local
+depth. Current-only Task Create and Calendar Week selection use existing routes;
+non-current `+ Task` requires explicit activation/reopening. There is no Journey
+rail, global planning mode, percentage or automatic achievement. No tables,
+relations, ownership rules or other B8 surfaces change.
+
+Focused evidence: `goal-outcome-workbench.test.ts` exercises the actual composition
+against native SQLite reads (direct/support grouping, Current-only create route,
+read-only archive). `tests/sqlite/issue-132-browser-proof.mjs` uses the existing
+sealed synthetic fixture and isolated production harness for real controls,
+creation/edit/criterion evaluation/support writes and reload, Task completion
+without automatic achievement, explicit milestone/Goal confirmation/reopen and
+history, dependency reasons, Calendar selection, native stale/foreign-scope
+rejections, 1920 desktop screenshot (`docs/qa/issue-132-goal-detail/goal-detail-1920x1080.png`),
+769×413 / 390×844 bounds and keyboard focus.
+`goal-detail-browser-flow.mjs` also replaces only the obsolete Goal selectors in
+the retained application browser flow. This is proposed-revision evidence,
+not post-merge USER ACCEPTED or production validation; Goal outcome planning
+remains `CONNECTED_GAP` for the separate deferred Slice 2 capabilities above.
+
+Issue #123 proposes the accepted B8 **Task Detail only**: 1360px matte Identity,
+direct shared Edit and eligible `Erledigt`, ordered Work with object-local step
+toggles, compact contextual rail and Work-first mobile flow. Missing Context
+releases Work width. Lifecycle, explicit dependencies, source ownership,
+Calendar Week selection and Skill-origin recovery keep their canonical contracts.
+Historical evidence on PR #124 head `661791d`: `tests/e2e/issue-123-b8-task-detail.spec.ts` records disposable authenticated
+Supabase Manual control/write/reload, stale dependency and forged/source rejection,
+state inventory and 3840/1920/769/390 geometry/screenshots. The existing isolated
+SQLite application browser proof also passes visible Task edit/complete/reopen,
+two-tab stale dependency rejection, projections, Demo/Empty/Auth boundaries and
+restart/reload on fresh synthetic data; #85 remains the shared Project-row Edit
+regression. The Supabase E2Es used `pnpm test:e2e:isolated` and Docker-backed
+Supabase; they are not Docker-free native acceptance. The native SQLite suite
+and application browser proof are separate earlier runs, not a complete native
+B8 four-viewport matrix. The USER Fast Finish decision waives repeat broad/E2E
+and screenshot rounds. `task-read-view.test.ts` adds one focused native SQLite
+read/render check for archived-parent completion/Edit suppression (client
+interaction boundaries stubbed, not browser E2E). This is proposed-revision evidence, not real-user
+surface acceptance, and does not deliver the other B8 entities or Task Create.
+
+Issue #125 corrects the merged #123 Task Detail whose real-user visual acceptance
+failed against the original B8. The header now has the accepted blue hierarchy,
+text-supported readiness and object menu; Work has the panel head/step count,
+object-local canonical Note/Edit and Step/Create, native step checkboxes and
+row menus; Context uses compact facts and bounded local management. Existing
+Actions, validation, ownership, source/lifecycle/dependency rules and Calendar
+Week selection remain unchanged. `tests/sqlite/issue-125-browser-proof.mjs`
+reuses the native application fixture/process harness: fresh disposable Empty
+and reference-matched Populated Tasks at 1920/3840/769/390, edit/step writes and
+reload, validation/draft retention, focus/trap/Escape, menu/dialog bounds,
+state/source eligibility, collapsed absent Context, assignment, explicit blockers
+and stale completion rejection. Console/hydration are clean. The [portable
+before/reference/after evidence](../qa/issue-125-b8-task-detail/README.md) records
+measured parity and the larger mobile touch targets. This is implementation
+proof on disposable SQLite, not acceptance on the personal dataset; final USER
+ACCEPTED remains pending. No Task Create or other B8 surface is delivered here.
+
+The authorized F1 repair in PR #126 enforces the existing archived-Project
+boundary for Step Create/Update/Archive in UI and both canonical repositories.
+Focused native tests prove retained read-only steps, rejected writes after
+archive/restart and working active-Project steps. Task management/retry follows
+the parent lock; explicit Milestone release and existing Dependency removal
+remain available, while new assignments stay blocked. No schema change.
+
+Issue #127 integrates the accepted B8 Variant B shared matte Work/Context frame
+and subtle divider. On tall desktop, Tasks with description, Arbeitsnotiz or
+non-archived steps take the shell's remaining height; inner content stays at the
+top. Empty Tasks, including planning-only and archived-step-only Tasks, stay
+content-sized. Missing Context releases Work width; Short-Mac/mobile retain
+normal flow and long content grows the document. The existing Project return
+handoff stays inside Work. `tests/sqlite/issue-127-browser-proof.mjs` reuses the
+disposable native harness: 24px bottom gutter/no body scroll at 1920×1080 and
+3840×2160, 1360px canvas, Empty/short/mobile/collapsed Context, long-content scroll,
+canonical note/step Save+Reload and Calendar handoff; clean console/hydration.
+One [full desktop screenshot](../qa/issue-127-b8-task-viewport/task-detail-1920x1080.png)
+records implementation evidence. Existing Actions/domain/auth/storage are
+unchanged; final real-user acceptance and M0 remain separate. No other surface
+or personal runtime/database is changed.
+
+
+Issue #129 adds the USER-accepted B8 right-rail Task-Notizen and Externe Links
+using canonical `note`/`link` Resources and explicit Task context relations.
+Projectless Tasks have the same bounded Save/Cancel dialogs. HTTP(S) validation,
+owned Manual writes, source/Task/parent archive guards, title fallback and safe
+external opening are enforced. SQLite creates and links in one existing native
+transaction; its failed relation rolls back the Resource. The existing Supabase
+adapter retains separate writes: a failed link is an explicit recoverable partial
+outcome with Resource navigation, preserved draft and retry identity, never a
+Task Save success. Repeated requests converge on a server-derived Resource ID.
+No schema/RPC/provider/runtime or Task Create change.
+`tests/sqlite/issue-129-browser-proof.mjs` uses the existing disposable native
+harness for Empty/projectless access, Save/Cancel/Escape/error/draft retention,
+Note+URL Reload, safe opening, archived-parent UI, 24px desktop frame and bounded
+Short-Mac/Mobile flow. Focused native tests cover ownership, invalid URLs, source
+and archive guards, stale Resource retry and failed-link rollback; adapter tests
+cover partial-link recovery without a second Resource. Console/hydration are clean.
+One [1920×1080 screenshot](../qa/issue-129-task-resources/task-detail-1920x1080.png)
+records implementation evidence. The accepted HTML is design acceptance; final
+real-user acceptance and M0 remain pending. Personal data/server are untouched.
+
+Issue #134 integrates the accepted B8 frame on canonical `/tasks/new` only.
+The [USER-approved Handoff correction](https://github.com/Planton361/life-os/pull/135#issuecomment-6072307754)
+supersedes its earlier one-disclosure composition: 1360px matte header/canvas,
+aligned form surface, 940px capture, compact `ERFASSEN`, dominant required title,
+clear Create/Cancel and three independent initially closed groups (Arbeitsinhalt,
+Planung, Zuordnung). All three can remain open together; fields and relative
+group order, validated origins and existing Save/Cancel/link semantics remain.
+The reference is the original local `life-os-b8-consolidated-design.html`
+(SHA-256 `6aacbf7f4ce6dcd23c884a2d046a5f9496b156ee6a61f0551b12205dd4993ae6`),
+not the rejected first PR screenshot. Task creation remains `CONNECTED`.
+`tests/sqlite/issue-134-browser-proof.mjs` reuses the updated #80 parity
+assertions and disposable native SQLite harness for Global, Empty/populated
+Project, Project Milestone, Goal, Current Goal Milestone and Skill capture;
+Save/Cancel/native relation readback after reload, ownership/context denial,
+validation/conflict feedback, Project switching, Skill opt-out/known-ID recovery
+and ambiguous Create are proven. Desktop/4K/Mobile/Short-Mac geometry and keyboard
+independent disclosure/Tab/Enter/Space/Close/Escape/focus are checked;
+console/hydration are clean. The primary
+[1920×1080 screenshot](../qa/issue-134-b8-task-create/task-create-1920x1080.png)
+shows the empty title and all three sections closed, with an optional all-open
+comparison. Other entity shells, backend/schema and personal
+runtime/data are unchanged; integrated real-user acceptance and M0 remain separate.
 
 Issue #28 updates the connected Goal detail presentation to accepted Prototype A v2: stable Überblick / Arbeit / Erfolg / Verlauf areas, a numbered Goal-Etappen progression with explicit Project/direct-Task contributions, selected work context, canonical review-ready cue and outcome-first achieved/reopened views. `tests/e2e/issue-28-goal-a-v2.spec.ts` is the focused Manual browser/reload and 3840×2160 / 1920×1080 / 390×844 surface proof; the existing readiness regression in `tests/e2e/pp1-goal-follow-up.spec.ts` covers Task-only READY/BLOCKED. Status remains `CONNECTED_GAP` because Slice 2 completion episodes and Skill Evidence revisions are not part of #28.
 
@@ -2995,6 +3137,8 @@ remaining relation/Today depth are still open implementation gates.
 | Manual/Demo/Empty profile switch | `CONNECTED` | profile mode | maintain |
 | Playwright auth-state capture | `CONNECTED` | local script | maintain |
 | Local startup runbook | `CONNECTED` | ops docs | maintain |
+| Automatic macOS preview delivery | `CONNECTED_GAP` | #139 gated worker in `scripts/ops/preview-cd*.mjs`; exact-main Quality/Ruleset, isolated releases and a single supervised writer; personal v2/schema10 handoff [verified on the Mac](https://github.com/Planton361/life-os/issues/142#issuecomment-6112615294) | Personal operator activation PASS; **automatic catch-up following a later main push is not yet evidenced**. No claim of general Hosted/production deployment or prototype FREEZE |
+| Personal Preview manual-test reset | `CONNECTED` | #142: Settings → Testbetrieb; fixed 82/83 owner-data reset with `profiles` preserved, preview-only v2 grant, schema10 guards, epoch/revision and replay receipt. [Activation](https://github.com/Planton361/life-os/issues/142#issuecomment-6112615294), [CONTROL operator review](https://github.com/Planton361/life-os/issues/142#issuecomment-6112649231), [live read-only post-reset proof](https://github.com/Planton361/life-os/issues/142#issuecomment-6112872691), USER confirmed new Task save + reload on 2026-10-11; [operator runbook](../ops/preview-reset-upgrade.md) | **ACTIVE only in the operator-granted personal local Tailscale Manual Preview:** 82/82 owner/total counts zero after first USER reset, unchanged profile/DB identity, valid receipt/epoch, FK/integrity and 48 GET/reload browser checks PASS. USER's fresh Task persisted after reload. Standard/Hosted/Supabase/Demo/Empty/Auth-blocked reset remains unavailable; no secure-erasure or prototype FREEZE claim |
 | Local runtime memory budget | `CONNECTED_GAP` | Measured build-worker reduction, scoped process cleanup, direct Playwright wrapper, disk-backed test temp files, completed Idle baseline and ten-minute normal navigation; validation evidence below | Artificial rapid-navigation stress can still reach Next's configured heap threshold; system `updatedb` pressure remains outside repository fixes. R2-04 stays ACTIVE/PENDING |
 | Local backup create | `CONNECTED` | ops script | maintain |
 | Restore smoke | `CONNECTED` | Z1 guarded canonical Target backup restores schema, migration history and aggregate canonical-table data into an isolated disposable container; Target preservation is structurally checked before/after | logical local restore-smoke only; no cloud, remote or production restore claim |

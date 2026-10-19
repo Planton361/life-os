@@ -1,3 +1,4 @@
+import { taskDeadlineLocalDay } from "@/features/real-data/domain/task-deadline";
 import { readWeeklyPlanningContext, readTaskDependencyGraph, readTodayActivity, getGoalRepository, getInboxRepository, getNutritionRepository, getProjectRepository, getReviewRepository, getScheduleSourceRepository, getResourceRepository, getSkillRepository, getTaskRepository, getHealthRepository, getHabitRepository, getTrainingRepository, getGoalOutcomeSummaries } from "@/features/real-data/runtime/facade";
 import { skillTaskReadiness } from "@/features/entities/workbench/skill-guidance";
 
@@ -668,7 +669,8 @@ function portfolioFocusLevel(priority: EntityPriority): PortfolioFocusLevel {
   return "low";
 }
 
-function taskPortfolioStatus(status: TaskStatus): PortfolioStatus {
+// Cross-entity ranking signal only. Task labels use canonical taskLifecycle.
+function taskPortfolioSignal(status: TaskStatus): PortfolioStatus {
   if (status === "active") return "active";
   if (status === "waiting") return "blocked";
   if (status === "done" || status === "canceled") return "done";
@@ -1019,7 +1021,7 @@ function taskToPortfolioEntity(
     title: task.title,
     description: task.description,
     area: task.areaId,
-    status: taskPortfolioStatus(task.status),
+    status: taskPortfolioSignal(task.status),
     priority: portfolioPriority(task.priority),
     focusLevel: portfolioFocusLevel(task.priority),
     goalId: task.goalId,
@@ -1057,7 +1059,8 @@ function taskToPortfolioEntity(
     taskEditValues: {
       areaId: task.canonicalAreaId,
       description: task.description,
-      dueAt: task.dueAt?.slice(0, 10),
+      dueAt: task.dueLocalDate ?? task.dueAt?.slice(0, 10),
+      expectedUpdatedAt: task.updatedAt,
       durationMinutes: task.durationMinutes,
       energy: task.energy,
       goalId: task.goalId,
@@ -2569,12 +2572,26 @@ async function getManualTasksFromApplication(
     };
   }
 
+  let zone: string;
+  try {
+    zone = await client.reads.profileTimezone();
+    new Intl.DateTimeFormat("en", { timeZone: zone }).format(0);
+  } catch {
+    return { tasks: [], unavailableReason: "Die Profil-Zeitzone konnte nicht bestätigt werden." };
+  }
+  const projectTask = (task: RealDataTask): LifeTask | null => {
+    const projected = realTaskToLifeTask(task);
+    return projected ? { ...projected,
+      dueLocalDate: task.dueAt ? taskDeadlineLocalDay(task.dueAt, zone) : undefined,
+    } : null;
+  };
+
   // Calendar reads its dependency graph together with weekly context. Preserve
   // temporal Tasks on a graph failure so the Inspector can report it honestly.
   if (skipDependencies) {
     return {
       tasks: result.data
-        .map(realTaskToLifeTask)
+        .map(projectTask)
         .filter((task): task is LifeTask => Boolean(task)),
     };
   }
@@ -2583,7 +2600,7 @@ async function getManualTasksFromApplication(
     const graph = await readTaskDependencyGraph(client);
     return {
       tasks: result.data
-        .map(realTaskToLifeTask)
+        .map(projectTask)
         .filter((task): task is LifeTask => Boolean(task))
         .map(task => ({
           ...task,
@@ -4273,7 +4290,7 @@ function buildProfileCalendarViewModel(
       title: project.title,
     })),
     tasks: profile.tasks.map((task) => ({
-      dueDate: task.dueAt,
+      dueDate: task.dueLocalDate ?? task.dueAt,
       id: task.id,
       isRecurringOccurrence: task.isGenerated,
       plannedDate: task.date,

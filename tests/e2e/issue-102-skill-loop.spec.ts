@@ -741,15 +741,7 @@ test("#102 canonical Task origin: one save, opt-out, link-only recovery, ambiguo
     page.getByRole("region", { name: "Üben & Anwenden" }),
   ).toContainText("Happy path explicit title");
   await page.goto(`/tasks/${happyId}`);
-  await page
-    .getByRole("button", { name: "Mehr verwalten", exact: true })
-    .click();
-  await page
-    .getByRole("button", { name: "Status verwalten", exact: true })
-    .click();
-  await page
-    .getByRole("button", { name: "Task abschließen", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Erledigt", exact: true }).click();
   await expect(
     page.getByRole("status").filter({ hasText: "Task abgeschlossen." }).first(),
   ).toBeVisible();

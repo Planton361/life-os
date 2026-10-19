@@ -18,6 +18,46 @@ import type {
   SupabaseQueryResult,
 } from "../database.types";
 import type { ResourceRelationRow, ResourceRow } from "../row-types";
+import {
+  createTaskResourceInputSchema,
+  taskResourceFields,
+} from "../../schemas/task-resource.schemas";
+
+async function writableTask(
+  client: SupabaseClientLike,
+  userId: string,
+  taskId: string,
+) {
+  const task = (await client
+    .from("tasks")
+    .select("id,project_id")
+    .eq("user_id", userId)
+    .eq("id", taskId)
+    .is("archived_at", null)
+    .neq("status", "archived")
+    .maybeSingle()) as SupabaseQueryResult<{
+    id: string;
+    project_id: string | null;
+  }>;
+  if (task.error || !task.data) return false;
+  const source = await client
+    .from("schedule_source_links")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("task_id", taskId)
+    .maybeSingle();
+  if (source.error || source.data) return false;
+  if (!task.data.project_id) return true;
+  const project = await client
+    .from("projects")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("id", task.data.project_id)
+    .is("archived_at", null)
+    .neq("status", "archived")
+    .maybeSingle();
+  return !project.error && Boolean(project.data);
+}
 
 type RepositoryFailure = RepositoryResult<never>;
 
@@ -181,7 +221,100 @@ async function verifyTargetOwnership(
 export function createSupabaseResourceRepository(
   client: SupabaseClientLike,
 ): ResourceRepository {
-  return {
+  const repository: ResourceRepository = {
+    async createTaskResource(input) {
+      const scopeFailure = profileScopeFailure(input.userId, input.profileId);
+      if (scopeFailure) return scopeFailure;
+      const parsed = createTaskResourceInputSchema.safeParse(input);
+      if (!parsed.success)
+        return validationFailure("Invalid Task Resource input.");
+      const { userId, profileId, resourceId, taskId, draft } = parsed.data;
+      const fields = taskResourceFields(draft);
+      const read = async () =>
+        (await client
+          .from("resources")
+          .select("*")
+          .eq("user_id", userId)
+          .eq("id", resourceId)
+          .maybeSingle()) as SupabaseQueryResult<ResourceRow>;
+      let stored: ResourceRow | null = null;
+      try {
+        const existing = await read();
+        if (existing.error) return adapterFailure("confirm task resource");
+        stored = existing.data;
+        if (
+          stored &&
+          (stored.archived_at ||
+            stored.type !== fields.type ||
+            stored.title !== fields.title ||
+            stored.summary !== fields.body ||
+            stored.url !== fields.url)
+        )
+          return validationFailure(
+            "Task Resource retry conflicts with stored content.",
+          );
+        if (!(await writableTask(client, userId, taskId)))
+          return stored
+            ? { ok: true, data: { resourceId, linked: false } }
+            : notFoundFailure("Writable Task");
+        if (!stored) {
+          // A server-derived stable ID makes uncertain transport/duplicate retries
+          // converge. Existing canonical Resource fields and RLS remain in force.
+          const inserted = (await client
+            .from("resources")
+            .insert({
+              ...mapCreateResourceInputToInsert(
+                {
+                  userId,
+                  profileId,
+                  ...fields,
+                  body: fields.body ?? undefined,
+                  url: fields.url ?? undefined,
+                },
+                userId,
+              ),
+              id: resourceId,
+            })
+            .select("*")
+            .single()) as SupabaseQueryResult<ResourceRow>;
+          stored = inserted.data;
+          if (inserted.error || !stored) {
+            const retry = await read();
+            if (retry.error || !retry.data)
+              return adapterFailure(
+                "confirm task resource creation; retry the same draft",
+              );
+            stored = retry.data;
+            if (
+              stored.archived_at ||
+              stored.type !== fields.type ||
+              stored.title !== fields.title ||
+              stored.summary !== fields.body ||
+              stored.url !== fields.url
+            )
+              return validationFailure(
+                "Task Resource retry conflicts with stored content.",
+              );
+          }
+        }
+        if (!(await writableTask(client, userId, taskId)))
+          return { ok: true, data: { resourceId, linked: false } };
+        const linked = await repository.linkResource({
+          userId,
+          profileId,
+          resourceId,
+          targetType: "task",
+          targetId: taskId,
+          relationType: "context",
+        });
+        return { ok: true, data: { resourceId, linked: linked.ok } };
+      } catch {
+        // Never report an unlinked Resource as saved to the Task or discard it.
+        return stored
+          ? { ok: true, data: { resourceId, linked: false } }
+          : adapterFailure("confirm task resource; retry the same draft");
+      }
+    },
     async archiveResource(input) {
       const scopeFailure = profileScopeFailure(input.userId, input.profileId);
       if (scopeFailure) return scopeFailure;
@@ -412,4 +545,5 @@ export function createSupabaseResourceRepository(
       return { data: mapResourceRelationRowToDomain(result.data), ok: true };
     },
   };
+  return repository;
 }

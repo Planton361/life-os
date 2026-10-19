@@ -114,6 +114,7 @@ export type PortfolioTaskLifecycle = {
 };
 
 export type PortfolioTaskEditValues = {
+  expectedUpdatedAt?: string;
   areaId?: string;
   description?: string;
   dueAt?: string;

@@ -20,6 +20,10 @@ import { timestamp, uuid } from "../codecs";
 import { requireOwnerContext, type OwnerContext } from "../owner-context";
 import type { SqliteRuntime } from "../runtime";
 import {
+  createTaskResourceInputSchema,
+  taskResourceFields,
+} from "../../schemas/task-resource.schemas";
+import {
   linkResource,
   setProjectResourceRole,
   resourceTargetTables,
@@ -71,6 +75,80 @@ export function createSqliteResourceRepository(
     }));
   };
   return {
+    async createTaskResource(input) {
+      if (!scoped(input.userId, input.profileId)) return forbidden();
+      const parsed = createTaskResourceInputSchema.safeParse(input);
+      if (!parsed.success) return failure("Invalid Task Resource input.");
+      try {
+        return store.command(context, "resource.create", (db) => {
+          const { taskId, resourceId, draft } = parsed.data;
+          const task = db
+            .prepare(
+              "SELECT project_id FROM tasks WHERE user_id=? AND id=? AND archived_at IS NULL AND status<>'archived'",
+            )
+            .get(owner, taskId) as { project_id: string | null } | undefined;
+          if (
+            !task ||
+            db
+              .prepare(
+                "SELECT 1 FROM schedule_source_links WHERE user_id=? AND task_id=?",
+              )
+              .get(owner, taskId)
+          )
+            throw new Error("TASK_RESOURCE_READ_ONLY");
+          if (
+            task.project_id &&
+            !db
+              .prepare(
+                "SELECT 1 FROM projects WHERE user_id=? AND id=? AND archived_at IS NULL AND status<>'archived'",
+              )
+              .get(owner, task.project_id)
+          )
+            throw new Error("TASK_RESOURCE_PARENT_READ_ONLY");
+          const fields = taskResourceFields(draft);
+          const existing = db
+            .prepare("SELECT * FROM resources WHERE user_id=? AND id=?")
+            .get(owner, resourceId) as StoredResource | undefined;
+          if (existing) {
+            if (
+              existing.archived_at ||
+              existing.type !== fields.type ||
+              existing.title !== fields.title ||
+              existing.summary !== fields.body ||
+              existing.url !== fields.url
+            )
+              throw new Error("TASK_RESOURCE_RETRY_CONFLICT");
+          } else {
+            const at = timestamp(new Date().toISOString());
+            db.prepare(
+              "INSERT INTO resources(id,user_id,type,title,summary,url,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)",
+            ).run(
+              resourceId,
+              owner,
+              fields.type,
+              fields.title,
+              fields.body,
+              fields.url,
+              at,
+              at,
+            );
+          }
+          // Canonical relation command in the same owned transaction: any failure
+          // rolls back creation, including stale endpoints and relation guards.
+          linkResource(db, owner, {
+            userId: owner,
+            profileId: owner,
+            resourceId,
+            targetId: taskId,
+            targetType: "task",
+            relationType: "context",
+          });
+          return { ok: true as const, data: { resourceId, linked: true } };
+        });
+      } catch {
+        return failure("Task Resource could not be saved and linked.");
+      }
+    },
     async createResource(input) {
       if (!scoped(input.userId, input.profileId)) return forbidden();
       const parsed = createResourceInputSchema.safeParse(input);

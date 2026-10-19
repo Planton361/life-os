@@ -1,5 +1,7 @@
 "use server";
 
+import { withSubmittedDatasetEpoch } from "./submitted-dataset";
+
 import { revalidatePath } from "next/cache";
 import { scheduleSourceInputSchema } from "../schemas/schedule-source.schema";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
@@ -15,21 +17,23 @@ function revalidateScheduleProjections() {
 }
 
 export async function scheduleSourceFormAction(formData: FormData) {
-  if ((await getCurrentLifeOsProfileId()) !== "manual") return;
-  const auth = await createAuthenticatedApplicationContext("write");
-  if (!auth.ok) return;
-  const plannedDate = value(formData, "plannedDate");
-  const scheduledTime = value(formData, "scheduledTime") || "12:00";
-  const rawStart = value(formData, "scheduledStartAt");
-  const scheduledStartAt = rawStart || new Date(`${plannedDate}T${scheduledTime}:00+02:00`).toISOString();
-  const parsed = scheduleSourceInputSchema.safeParse({
-    durationMinutes: value(formData, "durationMinutes"),
-    plannedDate,
-    scheduledStartAt,
-    sourceId: value(formData, "sourceId"),
-    sourceType: value(formData, "sourceType"),
+  return withSubmittedDatasetEpoch(formData, async () => {
+    if ((await getCurrentLifeOsProfileId()) !== "manual") return;
+    const auth = await createAuthenticatedApplicationContext("write");
+    if (!auth.ok) return;
+    const plannedDate = value(formData, "plannedDate");
+    const scheduledTime = value(formData, "scheduledTime") || "12:00";
+    const rawStart = value(formData, "scheduledStartAt");
+    const scheduledStartAt = rawStart || new Date(`${plannedDate}T${scheduledTime}:00+02:00`).toISOString();
+    const parsed = scheduleSourceInputSchema.safeParse({
+      durationMinutes: value(formData, "durationMinutes"),
+      plannedDate,
+      scheduledStartAt,
+      sourceId: value(formData, "sourceId"),
+      sourceType: value(formData, "sourceType"),
+    });
+    if (!parsed.success) return;
+    const result = await auth.repositories.scheduling.schedule(parsed.data);
+    if (!result.error) revalidateScheduleProjections();
   });
-  if (!parsed.success) return;
-  const result = await auth.repositories.scheduling.schedule(parsed.data);
-  if (!result.error) revalidateScheduleProjections();
 }

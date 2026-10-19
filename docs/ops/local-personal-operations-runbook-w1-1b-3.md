@@ -1,5 +1,101 @@
 # W1.1B.3 Local Personal Operations Runbook
 
+## macOS SQLite preview CD — #139
+
+This section is the opt-in local preview path accepted in #139. Older Supabase
+and hosted deployment sections below retain their own boundaries. This worker
+does not install Supabase, apply migrations, bootstrap a database or change
+Tailscale Serve. Implementation/PR evidence is not installation evidence:
+until the post-merge activation is performed, automatic delivery is **NOT_ACTIVE**.
+
+The public `Planton361/life-os` repository needs no GitHub token for polling.
+The worker uses outbound HTTPS to the GitHub REST API and public Git fetches;
+it never uses `gh` credentials. Only the latest `refs/heads/main` is eligible,
+after the exact SHA's push-event `pr-quality.yml` run and current-attempt
+`quality` job succeed, with the strict integration ruleset active. CI is checked
+again after the isolated build; main is checked again after DB preflight,
+immediately before stopping the old app. Pending CI/offline/rate limits preserve
+the app and retry; three build/start failures block that target pending retry.
+
+One user LaunchAgent owns both the app and the five-minute outbound polling
+loop. `RunAtLoad`/`KeepAlive` provide login and crash recovery; the timer catches
+up on wake. The Mac must be awake and the user logged in. No 24/7 uptime promise
+is made. `AbandonProcessGroup=false` lets launchd remove an orphaned app group;
+on recovery the worker additionally waits for port 3000 and the kernel SQLite
+writer lease. It never signals an unknown process to obtain the port.
+
+Prepare **after CONTROL review, USER M0 merge and successful exact-main push CI**:
+
+1. Use pinned Node **24.21.0** / pnpm **11.3.0** and a clean exact merged-main
+   source copy containing the reviewed worker. Resolve tool executables to real
+   absolute paths. Keep the currently accepted runtime/launcher running.
+2. Supply the accepted runtime directory that contains its existing private
+   `local-instance-config.json` and `running-instance.json`. Do not print their
+   contents or copy them into the repository. Preserve its old release/backup.
+3. Choose a **new**, private direct child directory of
+   `~/Library/Application Support`. Existing directories and LaunchAgent labels
+   are rejected. Run the following locally with real absolute arguments:
+
+```text
+<pinned-node> scripts/ops/preview-cd.mjs install <new-private-root> <merged-main-source> <accepted-runtime> <real-pnpm-executable> <tailscale-executable>
+```
+
+The installer refuses pre-merge/untracked installer code, checks CI, toolchain,
+DB inode, current gateway, health and audited launcher PID/start/cwd identity,
+and builds a self-contained release before registering the sole LaunchAgent.
+Only that explicit install registers `dev.life-os.preview-cd`; no admin or sudo
+is needed. The daemon gracefully takes over the audited launcher, serves the
+retained last-good release first, then switches to the prepared merged release.
+Partial installation retains its private files; inspect status rather than
+rerunning against an unknown directory. Do not delete state/leases to unblock it.
+
+Operator commands use that installed worker's frozen script and private root:
+
+```text
+<pinned-node> <installed-worker>/scripts/ops/preview-cd.mjs status <root>
+<pinned-node> <installed-worker>/scripts/ops/preview-cd.mjs disable <root>
+<pinned-node> <installed-worker>/scripts/ops/preview-cd.mjs enable <root>
+<pinned-node> <installed-worker>/scripts/ops/preview-cd.mjs retry <root>
+<pinned-node> <installed-worker>/scripts/ops/preview-cd.mjs rollback <root>
+```
+
+`disable` pauses updates while leaving the app and login recovery enabled. Commands
+are queued and observed within a second when idle, or before a build's switchover.
+`retry` clears target backoff; it does not bypass CI or compatibility gates.
+`rollback` pauses updates and requests the retained previous good app release;
+it never restores a DB. `status` reports durable status, worker liveness, last
+good SHA/Build-ID and the Build-ID actually observed on loopback. `events.jsonl`
+holds only redacted codes and revisions; state/config/releases remain owner-only.
+
+Release source comes from `git archive` into a unique directory, with fresh
+dependencies, lockfile and `.next`; neither the developer worktree nor old build
+is reused. Node/pnpm/native/Next pins, SQLite schema/catalog/runtime and auth
+boundaries must match the accepted baseline. Any change fails closed for an
+operator decision. The real read-only canonical DB preflight runs before stop.
+After stop, both port and lease must release before exactly one Next starts.
+Loopback Build-ID and real authenticated Tailscale Manual Settings/Task Create/
+Portfolio reads must pass; startup/health failure restores the last-good app.
+An interrupted switch restores durable last-good state on the next login/job
+start. DB data, lease inode, old releases and backups are never deleted/restored.
+There is no automatic worker self-upgrade or release cleanup.
+
+Before operational acceptance, inspect `status` for `ACTIVE`, verify the new
+Build-ID in a real browser, and prove a subsequent autonomous catch-up. The
+accepted #138 favicon-only 404 remains a documented cosmetic exception; JS,
+hydration, gateway/auth and 5xx errors are still failures. Personal-production
+Backup/Restore FREEZE is separate and remains open.
+
+Validation: `pnpm test:preview:cd` covers exact-CI/races/backoff, rollback ordering,
+real ephemeral HTTP/SQLite lease switching without DB changes, kernel recovery
+and a disposable macOS LaunchAgent crash/relaunch/cleanup fixture. The fixture
+registers only a unique temporary test label, unregisters it and never touches
+port 3000, the real gateway or app. Linux CI skips only the macOS launchd fixture.
+
+Supervisor semantics: [Apple launchd lifecycle](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html)
+and [launchd plist](https://github.com/apple-oss-distributions/launchd/blob/main/man/launchd.plist.5).
+Exact attempt provenance: [GitHub workflow runs](https://docs.github.com/en/rest/actions/workflow-runs)
+and [workflow jobs](https://docs.github.com/en/rest/actions/workflow-jobs).
+
 Stand: 2026-07-10
 Status: Active local-first operations contract (Z1 runtime update)
 Quelle der Wahrheit: `AGENTS.md`, Root-Dokumente, W1.1B.2 Personal

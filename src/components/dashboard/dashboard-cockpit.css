@@ -1,3 +1,41 @@
+/* Agenda owns one content frame for all views. Linear/short layouts retain
+   document flow; bounded frames isolate intrinsic Day/Week/Month sizes. */
+.dashboard-agenda > :first-child {
+  flex-shrink: 0;
+}
+.agenda-scroll {
+  min-height: 0;
+}
+.agenda-body {
+  grid-auto-rows: 96px;
+  align-content: start;
+}
+.agenda-hour-events {
+  display: flex;
+  gap: 8px;
+  min-height: 0;
+  overflow-x: auto;
+}
+.agenda-event-card {
+  flex: 1 0 min(100%, 240px);
+}
+@container agenda (min-width: 480px) {
+  .dashboard-agenda-period[data-agenda-view="Month"] {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}
+@media (min-height: 720px) {
+  @container life-os-canvas (min-width: 880px) {
+    .dashboard-agenda {
+      align-self: stretch;
+    }
+    .agenda-scroll {
+      contain: size;
+      flex: 1 1 0;
+      overflow: auto;
+    }
+  }
+}
 /* Linear Dashboard keeps the command inputs together and content-led. The
    full time axis remains reachable in one explicit, keyboard-focusable body;
    empty hours must not reserve a whole day of document height. */
@@ -6,10 +44,7 @@
     grid-template-columns: minmax(0, 1fr);
     align-items: start;
   }
-  .dashboard-agenda > :first-child {
-    flex-shrink: 0;
-  }
-  .dashboard-agenda :is(.agenda-body, .dashboard-agenda-period) {
+  .dashboard-agenda .agenda-scroll {
     max-height: clamp(192px, 60dvh, 360px);
     overflow-y: auto;
     align-content: start;
@@ -56,11 +91,11 @@
     max-height: 100%;
   }
   .dashboard-agenda {
-    grid-column: 1 / 7;
+    grid-column: 1 / 5;
     grid-row: 2;
   }
   .dashboard-composition .dashboard-priority {
-    grid-column: 7 / 13;
+    grid-column: 5 / 13;
     grid-row: 2;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: minmax(0, 1fr);
@@ -103,14 +138,10 @@
   .dashboard-agenda > :first-child {
     flex-shrink: 0;
   }
-  .agenda-body {
-    /* The day timeline uses spare frame height; event cards stay intrinsic. */
-    flex: 1;
-    grid-auto-rows: minmax(min-content, 1fr);
-    display: grid;
-    min-height: 0;
-    overflow-y: auto;
-    align-content: start;
+  .agenda-scroll {
+    contain: size;
+    flex: 1 1 0;
+    overflow: auto;
   }
   .dashboard-composition
     :is(.dashboard-habits, .dashboard-portfolio, .dashboard-meals) {

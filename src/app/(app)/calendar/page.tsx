@@ -1,4 +1,5 @@
 import { CalendarPlanningPage } from "@/features/calendar";
+import { calendarTodaySnapshot } from "@/features/calendar/calendar-today-snapshot";
 import { getCalendarViewModel } from "@/features/profile-data";
 import { ManualDbAuthNotice } from "@/features/real-data/manual-db-auth-notice";
 
@@ -10,6 +11,10 @@ export const metadata = {
 
 export default async function CalendarPage() {
   const viewModel = await getCalendarViewModel();
+  const today = calendarTodaySnapshot(
+    viewModel,
+    new Date().toISOString().slice(0, 10),
+  );
   const calendarProjectionKey = viewModel.timedBlocks
     .map(
       (block) =>
@@ -27,7 +32,11 @@ export default async function CalendarPage() {
       <div className="w-full shrink-0 [&:not(:empty)]:mb-3">
         <ManualDbAuthNotice />
       </div>
-      <CalendarPlanningPage key={calendarProjectionKey} viewModel={viewModel} />
+      <CalendarPlanningPage
+        key={calendarProjectionKey}
+        viewModel={viewModel}
+        today={today}
+      />
     </div>
   );
 }

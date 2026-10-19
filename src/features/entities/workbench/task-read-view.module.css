@@ -1,0 +1,624 @@
+.canvas {
+  width: 100%;
+  max-width: 1360px;
+  margin-inline: auto;
+  min-width: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.resourceHeading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 10px;
+  margin-bottom: 8px;
+}
+.resourceHeading h2 {
+  margin: 0;
+}
+.resourceAdd {
+  color: var(--accent-blue);
+  font-size: 12px;
+  font-weight: 600;
+  min-height: 33px;
+}
+.resourceAdd:hover {
+  color: var(--text-primary);
+}
+.resourceAdd:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.resourceList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.resourceList li + li {
+  border-top: 1px solid var(--border-subtle);
+  margin-top: 9px;
+  padding-top: 9px;
+}
+.resourceNote {
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.resourceLink {
+  min-width: 0;
+}
+.resourceLink a {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.resourceLink a:hover {
+  color: var(--text-primary);
+}
+.resourceLink a span {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+.resourceLink small {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.resourceEmpty {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.65;
+}
+.resourceDialog {
+  max-width: 440px;
+}
+.resourceRecovery {
+  flex-basis: 100%;
+  font-size: 12px;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+.resourceRecovery a {
+  text-decoration: underline;
+}
+@media (max-width: 600px) {
+  .resourceAdd {
+    min-height: 44px;
+  }
+}
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.header,
+.surface,
+.split {
+  min-width: 0;
+  background: var(--surface-1);
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+}
+.header {
+  padding: 23px 27px;
+}
+.identity {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+.titles {
+  flex: 1 1 330px;
+  min-width: 0;
+}
+.entity {
+  color: var(--accent-blue);
+  font-size: 10px;
+  font-weight: 720;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  margin-bottom: 9px;
+}
+.titles h1 {
+  font-size: clamp(26px, 2.8vw, 36px);
+  font-weight: 680;
+  line-height: 1.16;
+  letter-spacing: -0.045em;
+  overflow-wrap: anywhere;
+}
+.meta {
+  display: flex;
+  gap: 6px 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  color: var(--text-secondary);
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: 100%;
+}
+.actions form {
+  max-width: 100%;
+}
+.actions form [role="alert"] {
+  max-width: 280px;
+}
+.button,
+.primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 8px 14px;
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 640;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.button {
+  background: transparent;
+  color: var(--text-secondary);
+}
+.primary {
+  background: var(--accent-blue);
+  border-color: var(--accent-blue);
+  color: var(--bg-app);
+}
+.button:hover {
+  background: var(--surface-2);
+}
+.button:focus-visible,
+.primary:focus-visible,
+.canvas a:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+.guidance {
+  margin-top: 14px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  max-width: 960px;
+}
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 296px;
+  gap: 12px;
+  background: transparent;
+  border: 0;
+  align-items: start;
+}
+.split .work,
+.context {
+  background: var(--surface-1);
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+}
+.work {
+  min-width: 0;
+  padding: 0;
+}
+.work h2 {
+  font-size: 19px;
+  font-weight: 650;
+}
+.unit {
+  min-width: 0;
+  padding: 23px 26px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.unit h3 {
+  font-size: 13px;
+  font-weight: 650;
+  margin-bottom: 8px;
+}
+.prose {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+.management {
+  padding-top: 12px;
+}
+.context {
+  min-width: 0;
+  padding: 18px 20px;
+}
+.group {
+  min-width: 0;
+  padding: 2px 0 18px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.group:last-child {
+  padding-bottom: 0;
+  margin-bottom: 0;
+  border-bottom: 0;
+}
+.group h2 {
+  font-size: 12px;
+  font-weight: 650;
+  margin-bottom: 12px;
+}
+.facts {
+  display: grid;
+  gap: 0;
+}
+.facts div {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr);
+  align-items: start;
+  gap: 6px;
+  padding: 5px 0;
+  font-size: 12px;
+}
+.facts dt,
+.facts small {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.facts dd {
+  overflow-wrap: anywhere;
+  font-weight: 550;
+}
+.facts small {
+  display: block;
+  margin-top: 3px;
+}
+.facts a {
+  text-decoration: none;
+  display: inline-block;
+}
+.projectLink {
+  color: var(--text-primary);
+}
+.goalLink {
+  color: var(--accent-purple);
+}
+.warning {
+  margin-top: 12px;
+  color: var(--accent-orange);
+  line-height: 1.6;
+}
+/* Object-local controls and full-width Work dividers follow the accepted B8. */
+.panelHead {
+  padding: 20px 23px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 15px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.panelHead .entity {
+  margin-bottom: 0;
+}
+.panelHead h2 {
+  margin: 4px 0;
+}
+.count {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.unit:last-child {
+  border-bottom: 0;
+}
+.blockTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 7px;
+}
+.blockTop h3 {
+  margin-bottom: 0;
+}
+.quiet,
+.quietSmall,
+.buttonSmall {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  min-height: 38px;
+  padding: 8px;
+  font-size: 12.5px;
+  font-weight: 640;
+}
+.quietSmall,
+.buttonSmall {
+  min-height: 33px;
+  padding: 5px 10px;
+  font-size: 12px;
+}
+.buttonSmall {
+  border-color: var(--border-default);
+}
+.quiet:hover,
+.quietSmall:hover {
+  background: var(--surface-2);
+  color: var(--text-primary);
+}
+.canvas button:focus-visible,
+.checkbox:has(:focus-visible) {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+.ready,
+.blocked {
+  padding: 3px 8px;
+  border: 1px solid;
+  border-radius: 6px;
+  font-size: 11px;
+}
+.ready {
+  color: var(--accent-green);
+  border-color: color-mix(
+    in srgb,
+    var(--accent-green) 35%,
+    var(--border-default)
+  );
+  background: color-mix(in srgb, var(--accent-green) 9%, var(--surface-1));
+}
+.blocked {
+  color: var(--accent-orange);
+  border-color: color-mix(
+    in srgb,
+    var(--accent-orange) 35%,
+    var(--border-default)
+  );
+  background: color-mix(in srgb, var(--accent-orange) 9%, var(--surface-1));
+}
+.stepRow {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 11px 0;
+  border-top: 1px solid var(--border-subtle);
+}
+.stepRow > span {
+  overflow-wrap: anywhere;
+}
+.stepDone {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+.checkbox {
+  display: flex;
+  width: 24px;
+  min-height: 33px;
+  align-items: center;
+  cursor: pointer;
+}
+.checkbox input {
+  width: 17px;
+  height: 17px;
+  margin-left: 4px;
+  accent-color: var(--accent-blue);
+  cursor: pointer;
+}
+.stepRow form:has([role="alert"]) {
+  grid-column: 1 / -1;
+}
+.stepRow form:has([role="alert"]) fieldset {
+  width: 24px;
+}
+.localActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 10px;
+}
+.localActions > button {
+  min-height: 33px;
+  padding: 5px 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+.dependencies {
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+  margin-top: 8px;
+}
+.dependencies > button {
+  justify-self: start;
+}
+.handoffs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 12px 26px 23px;
+}
+.menu {
+  position: relative;
+  min-width: 0;
+}
+.menuPanel {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 4px);
+  right: 0;
+  width: min(260px, calc(100vw - 48px));
+  padding: 8px;
+  display: grid;
+  gap: 3px;
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  background: var(--surface-2);
+  box-shadow: 0 12px 30px #0005;
+}
+.menuPanel > button {
+  text-align: left;
+  min-height: 38px;
+  padding: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+/* Dialogs remain mounted outside the collapsed visual menu entries. */
+.menuPanel[data-open="false"] {
+  display: contents;
+}
+.menuPanel[data-open="false"] > :not(dialog) {
+  display: none;
+}
+@media (max-width: 950px) {
+  .split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 760px) {
+  .header {
+    padding: 18px 16px;
+  }
+  .titles h1 {
+    font-size: 26px;
+  }
+  .unit {
+    padding: 19px 16px;
+  }
+  .panelHead {
+    padding: 16px;
+  }
+  .handoffs {
+    padding-inline: 16px;
+  }
+  .actions {
+    width: 100%;
+  }
+  .actions .button,
+  .actions .primary,
+  .actions .quiet {
+    min-height: 44px;
+  }
+  .quietSmall,
+  .buttonSmall,
+  .checkbox {
+    min-height: 44px;
+  }
+}
+
+.menu > button {
+  min-height: 36px;
+  font-weight: 400;
+}
+.stepTitle,
+.stepDone {
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.localActions > button {
+  font-weight: 640;
+}
+.facts a:hover {
+  text-decoration: underline;
+}
+@media (max-width: 760px) {
+  .menu > button {
+    min-height: 44px;
+  }
+}
+
+.emptySteps {
+  padding: 12px 0;
+}
+@media (min-width: 761px) and (max-width: 950px) {
+  .canvas {
+    width: calc(100% - 12px);
+  }
+}
+@media (max-width: 760px) {
+  .canvas {
+    width: calc(100% + 8px);
+    margin-inline: -4px;
+  }
+}
+/* The canonical shorter completion label may leave Mehr alone on a mobile row. */
+.actions {
+  position: relative;
+}
+.actions .menu {
+  position: static;
+}
+
+/* Accepted B8 Variant B: one frame, with the original column/content spacing. */
+@media (min-width: 951px) {
+  .split {
+    align-items: stretch;
+    background: var(--surface-1);
+    border: 1px solid var(--border-default);
+  }
+  .split .work,
+  .context {
+    background: transparent;
+    border-color: transparent;
+  }
+  .split .work {
+    border-radius: 12px 0 0 12px;
+  }
+  .context {
+    position: relative;
+    align-self: stretch;
+    border-radius: 0 12px 12px 0;
+  }
+  .context::before {
+    content: "";
+    position: absolute;
+    left: -7px;
+    top: -1px;
+    bottom: -1px;
+    width: 1px;
+    background: var(--border-subtle);
+    pointer-events: none;
+  }
+}
+
+/* The shell supplies spare height. Only the populated outer frame grows;
+   inner sections stay top-led and long content still grows the document. */
+@media (min-width: 1208px) and (min-height: 720px) {
+  .canvas[data-task-work-state="populated"] {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+  .canvas[data-task-work-state="populated"] > :not(.frame) {
+    flex-shrink: 0;
+  }
+  .canvas[data-task-work-state="populated"] > .frame {
+    flex: 1;
+  }
+}

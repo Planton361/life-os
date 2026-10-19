@@ -30,12 +30,10 @@ async function create(
   await form
     .getByLabel(kind === "Skill" ? "Name" : "Titel", { exact: true })
     .fill(title);
+  if (kind === "Task" && (area || project))
+    await form.getByRole("button", { name: "Zuordnung (optional)" }).click();
   if (area) await form.getByLabel("Area", { exact: true }).selectOption(area);
   if (project) {
-    if (kind === "Task")
-      await form
-        .getByRole("button", { name: "Weitere Angaben (optional)" })
-        .click();
     await form.getByLabel("Project", { exact: true }).selectOption(project);
   }
   await submit(page, formName);

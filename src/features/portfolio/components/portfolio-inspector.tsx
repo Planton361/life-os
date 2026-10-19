@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {
-  portfolioStatusMeta,
+  portfolioDisplayStatus,
   portfolioAreaMeta,
   portfolioTypeLabels,
   portfolioTypeAccent,
@@ -73,7 +73,7 @@ export function PortfolioInspector({
               style={{ color: portfolioTypeAccent[entity.type] }}
             >
               {portfolioTypeLabels[entity.type]} ·{" "}
-              {portfolioStatusMeta[entity.status].label}
+              {portfolioDisplayStatus(entity).label}
             </p>
             <h3 className="mt-2 text-xl font-semibold">{entity.title}</h3>
             {entity.type === "skill" && (

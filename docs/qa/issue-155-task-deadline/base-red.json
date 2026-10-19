@@ -1,0 +1,17 @@
+{
+  "mode": "BASE_RED",
+  "owner": "11600000-0000-4000-8000-000000000001",
+  "profileTimezone": "Europe/Berlin",
+  "browserTimezone": "America/Los_Angeles",
+  "steps": [
+    {
+      "name": "real Inbox Confirm \u2192 B8 title-only save \u2192 reload",
+      "before": "2026-10-12T21:59:59.000000Z",
+      "after": "2026-10-12T23:59:59.000000Z",
+      "defectReproduced": true
+    }
+  ],
+  "errors": [],
+  "baseRevision": "7614c6aac4037e995a41253944a61abde575332b",
+  "scope": "Disposable SQLite Manual fixture; exact base production bundle built before application-source edits; real Inbox Confirm and B8 title-only Save with reload."
+}

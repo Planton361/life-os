@@ -61,6 +61,136 @@ long-form Knowledge Content; Life OS retains operational IDs, status, planning,
 dependencies and relation semantics. Any future Obsidian graph projection is
 one-way/non-authoritative unless a separate command/security contract is accepted.
 
+## USER ACCEPTED B8 Cross-Entity UX — #121
+
+The [B8 decision recorded in #121](https://github.com/Planton361/life-os/issues/121)
+is USER ACCEPTED on 2026-10-08 for Task, Project, Goal and Skill, including
+Goal/Skill Detail and Empty States and **Project Create Variante A**. It is the
+binding product/design target, not implementation evidence or merge approval.
+The earlier B8 HTML notice that B5/B6 were open is superseded by the later
+Task/Project acceptance and final cross-entity acceptance.
+
+### Shared grammar and replacement boundary
+
+All four entities share a bounded V5 canvas/gutters, matte Identity/Header,
+existing typography/tokens/borders and restrained text-supported entity colors.
+Create, Edit, Complete and Review stay object-local and text-labelled. Each state
+has one contextually dominant next action; secondary management uses clearly
+named `Mehr` or contextual entries without hiding primary work actions. Focused,
+bounded dialogs preserve keyboard operation, Escape/Cancel, focus return,
+visible errors and the existing validated write/revalidation/reload contracts.
+Work and Context are meaningful surfaces; absent Context collapses. Empty States
+are composed from useful content, not huge blank frames or additional card walls.
+Short-Mac and mobile use responsive document flow and domain-specific reading order.
+
+B8 supersedes conflicting **visual placement/density** in #56/#60 (unboxed Task
+identity and layered Supporting Depth), #72/#87 (Project count suppression and
+empty viewport-fill), and the older Skill composition below. It preserves
+#77/#82/#85 Task-create origin parity, edit/completion separation, Goal #48/#52
+and Skill #101/#102 domain rules. This is a common design family, not a universal
+Milestone model or progress engine. The detailed domain contracts below remain
+binding with these explicit visual replacements.
+
+### Task Detail and Create
+
+Task Detail has a matte header with immediately discoverable `Bearbeiten`,
+`Erledigt` only when lifecycle/dependency/source eligibility permits, and the
+appropriate Calendar handoff. Dominant Work contains Description, Arbeitsnotiz
+and Schritte; compact right Context contains Project/Milestone/Goal, distinct
+planned day/time block/deadline and explicit predecessors. Mobile stacks Work
+before Context. Guidance remains a canonical state projection with one dominant
+action, not a second workflow. Status, same-Project/owner guards, source ownership,
+READY/BLOCKED and Task/Project completion semantics are unchanged.
+
+The [USER-approved #134 revision](https://github.com/Planton361/life-os/pull/135#issuecomment-6072307754)
+supersedes #121's Task Create composition only: canonical `/tasks/new` uses a
+dominant required Task title under compact `ERFASSEN`, clear Create/Cancel actions
+and exactly three independent, initially closed optional sections. `Arbeitsinhalt
+(optional)` contains Description/Purpose and Arbeitsnotiz; `Planung (optional)`
+contains Priority, Energy, Duration, Deadline and planned date; `Zuordnung
+(optional)` contains Area, Project, Project Milestone and Goal context. Existing
+fields keep their names and relative order within each group; all three groups
+may stay open simultaneously. Global, Project, Milestone and
+Goal origins share the identical form; only validated prefills, return targets
+and relation constraints differ. Existing Skill-origin create/link recovery is
+also retained; B8 does not introduce a second Task form or link mechanism.
+
+### Project Detail, Empty and B7 Arbeitsstand
+
+The matte Project header contains desired result and optional Criteria. One Work
+surface has object-local Task/Milestone actions, orange Milestone grouping bars
+and indented Task rows. Real unassigned work uses a neutral Backlog group only
+when real Milestones exist; Tasks without Milestones remain a flat list.
+One executable READY Task appears once; multiple READY Tasks preserve choice;
+BLOCKED names actual predecessors. Task actions retain `Erledigt · Bearbeiten ·
+Details`. Optional Context and supporting Artifacts/References stay subordinate;
+stored Project-Fokus remains distinct from derived Task guidance. Exactly one
+state-appropriate Project Review entry remains available, with immutable History,
+Criteria/revision/cycle and Resource/Artifact semantics unchanged.
+
+Project Empty is content-sized, with `Erste Task anlegen` dominant and Milestone
+and result/Criteria setup secondary. No forced Milestone setup or blank viewport
+fill. Populated Project retains the bounded shared workbench rules.
+
+**B7 Arbeitsstand** is the balance of recorded, non-archived, non-canceled Project
+Tasks, not a Project completion score. Counts and one segmented bar distinguish:
+
+- **Erledigt:** lifecycle `done`;
+- **Bereit:** lifecycle `planned`/`active`, explicit Dependencies satisfied and
+  canonical completion/source eligibility permits execution;
+- **Blockiert:** lifecycle `planned`/`active` with open explicit Dependencies;
+- **Sonstige offen:** remaining open work, including lifecycle `waiting` even
+  when Dependencies are READY; source restrictions remain authoritative.
+
+Separately show explicitly `done` Project Milestones against recorded
+non-archived Milestones. No captured Tasks means no fake 0%-bar; Milestones without Tasks may still
+be shown. No task weighting, persisted progress percentage, inferred Project
+completion, Goal achievement or Skill mastery. A full Task bar leaves an active
+Project active until its explicit validated Review decision.
+
+### Project Create — Variante A
+
+Use the same V5 Header/Canvas and compact title-first form. Only the existing
+Title is required. Existing Description, Project-Fokus, Status, Priority,
+Deadline, Area and direct Goal are optional inside **one**
+`Weitere Angaben (optional)` disclosure. `Project erstellen` and `Abbrechen` are
+unambiguous. Result/Criteria remain Project Detail management after creation.
+No new fields, mandatory Criteria, wizard, automatic Milestones/Tasks or parallel
+form. Variante B was an alternative preview and is not the accepted target.
+
+### Goal and Skill extension
+
+Goal keeps Outcome/Warum/Horizont, dominant current Work and roughly 60/40
+Work/Journey, exactly one Current Goal Milestone in its active Journey and
+separate intermediate/final Reviews. Tasks appear only in real Work, never the
+Journey; no synthetic percentage or Task count in the Journey. **Goal Empty is
+the explicitly accepted exception to #52:** a compact `Wann ist das Ziel
+erreicht?` entry with success definition dominant, no viewport-derived desktop
+minimum, secondary actions immediately after content. Populated Goal retains
+the existing bounded shared workbench minimum and Journey composition.
+
+Skill preserves [#101](https://github.com/Planton361/life-os/issues/101) and
+[#102's accepted information-left/actions-right contract](https://github.com/Planton361/life-os/issues/102#issuecomment-5974677264):
+Development Target, ordered Lernschritte, linked Practice Tasks, Evidence/Recency
+and explicit Reviews remain distinct. One next action dominates; Focus,
+Lernschritt and Evidence actions form secondary groups on the right. Mobile has
+a separate `Aktionen` block. Skill Empty is compact with `Entwicklungsfokus
+festlegen` preferred; `Bestehende Aufgabe verknüpfen` and `Beobachtung festhalten`
+are alternatives. A Skill without a Target is fully usable. No empty frame fill,
+implicit Task→Lernschritt assignment, auto advancement/Evidence, inferred graph
+or mastery percentage.
+
+### Acceptance is a target, not capability closure
+
+The original 272 B8 + 189 regression checks and 85 revised cross-entity checks
+are **local prototype evidence only**. Production controls, persistence,
+ownership/security, reload and final real-user surface acceptance remain future
+gates. No capability status is raised by this contract. Dashboard V5 and
+Calendar/Today/Portfolio flows, separate #112/#114 acceptance, #118 Hosted
+deferral and the local Backup/Restore Freeze-Gate remain unchanged. Feature-local
+architecture, Supabase absent-selector default/explicit SQLite, Auth/RLS,
+same-owner validation and Manual/Demo/Empty/Auth-blocked boundaries are preserved.
+
 ## Accepted Core Task / Project interaction target — #56
 
 Issue #56 USER ACCEPTED the bounded Core Task / Project interaction target on
@@ -69,41 +199,33 @@ the accepted Project R2-09 structure or changing domain semantics.
 
 ### Task Detail
 
-Task Detail uses the accepted **layered read-first Variant B**:
+The #56 layered read-first target is historical visual evidence where replaced
+by B8 above. Its retained semantic constraints are:
 
 - identity and lifecycle establish what the Task is;
-- exactly one contextually valid `Dein nächster Schritt` guidance surface appears
-  before deeper detail;
+- exactly one contextually valid next-action emphasis remains early, before
+  deeper detail; B8 does not require a separate guidance surface;
 - Project, Project Milestone and Goal are compact context, not competing actions;
 - purpose/work content precedes deeper relationship management;
 - explicit Task Dependencies remain the only source of execution READY/BLOCKED;
 - planned day, scheduled time block and deadline remain distinct concepts;
-- Edit, relationship management and lifecycle actions remain discoverable but
-  secondary through progressive disclosure;
+- Edit and eligible completion remain directly discoverable under B8;
+  relationship management and secondary lifecycle actions stay progressively disclosed;
 - mobile preserves the same read order.
 
-The rejected split/workbench Task alternative is not part of the target. Guidance
+B8 now uses Work/Context without adopting a persisted workflow engine. Guidance
 is a UI projection over canonical Task state; it is not a persisted workflow
 engine or new Task status model.
 
 #### USER ACCEPTED #60 visible-composition refinement
 
-Real post-merge review of #58 rejected the Task page because the accepted semantic
-order still felt visually dispersed across open app background. Issue #60 USER
-ACCEPTED the corrected composition:
-
-- Task identity remains compact and unboxed;
-- `Dein nächster Schritt` remains the single dominant guidance surface;
-- Project / current Project Milestone / Goal remains a compact linked context strip;
-- `Worum geht es?`, `Arbeitsnotiz` and `Arbeitsschritte` share one coherent
-  primary **Work** surface;
-- `Voraussetzung`, `Planung`, `Zurück zum Zusammenhang` and quiet secondary
-  management share one coherent **Supporting Depth** surface with internal dividers;
-- desktop uses the available content width intentionally without a card wall;
-- mobile preserves the same read-first order and stacks the shared surfaces naturally.
-
-This remains layered read-first Variant B. It is not the rejected Variant A split
-workbench.
+Real post-merge review of #58 led to #60's shared Work and Supporting Depth.
+B8 explicitly replaces its unboxed identity, separate dominant guidance surface
+and layered Supporting Depth placement with the matte header and Work/Context
+composition above. The coherent Work grouping of `Worum geht es?`, `Arbeitsnotiz`
+and `Arbeitsschritte` remains; Dependency/planning facts move to compact Context.
+Canonical guidance, progressive secondary management and Calendar Week handoff
+remain unchanged.
 
 ### Project refinement
 
@@ -167,7 +289,8 @@ Issue #65 USER ACCEPTED the next higher-order planning target and sequence on
 ### Project Depth
 
 Project remains a finite, multi-step work result and keeps the USER ACCEPTED
-R2-09 three-surface structure. The accepted depth target adds an explicit
+R2-09 Work/context and supporting responsibilities, with visual placement now
+owned by B8. The accepted depth target adds an explicit
 Project-owned result and an explicit completion contract without turning Project
 into Goal:
 
@@ -202,8 +325,10 @@ Criterion Archive with a reason and a fresh Review read. Project Archive is not
 successful completion. Reopen preserves prior Reviews and starts a new cycle;
 legacy completed Projects retain no invented Review or Criteria history. This
 accepted data contract is implemented by Issue #69's bounded Project Depth
-slice. Its current Product Surface failed the post-merge user check and remains
-not USER ACCEPTED; #72 accepts the replacement UX target below, not that surface.
+slice. Its initial Product Surface failed the post-merge user check, leading to
+#72's replacement UX target. After the later repairs,
+[#69 was USER ACCEPTED](https://github.com/Planton361/life-os/issues/69#issuecomment-5942502151)
+on 2026-10-01 and closed; the earlier failed check is historical evidence.
 
 ### Accepted Project Detail Redesign target — #72
 
@@ -215,8 +340,9 @@ R2-09/#56/#65 presentation without replacing the existing workbench architecture
 The Task-create portion is corrected by the [#77 canonical target](https://github.com/Planton361/life-os/issues/77#issuecomment-5922104190),
 [USER ACCEPTED](https://github.com/Planton361/life-os/issues/77#issuecomment-5922117427)
 on 2026-10-01. All unrelated #72 decisions remain binding. Target acceptance does
-not itself claim implementation or accept the current #69 surface. #80 / PR #81
-implemented the #77 origin-parity correction; #82 refines the accepted target below.
+not itself establish implementation or surface acceptance. #80 / PR #81
+implemented #77 origin parity; #85 / PR #86 later implemented #82, and #69's
+subsequent explicit USER ACCEPTANCE closed the Project-Depth surface gate.
 
 Canonical desktop reading order:
 
@@ -257,17 +383,17 @@ Result and Criteria:
 Project-origin Task creation:
 
 - The existing global `/tasks/new` surface is the canonical normal Task-create
-  UX. Keep `Task erstellen`, `Bewusst erstellen`, `Task zuerst festhalten`,
-  Title-first capture, `Weitere Angaben (optional)`, and the existing field
-  hierarchy, labels and inner visual composition. DESIGN owns the #82 bounded
-  responsive outer-width refinement.
+  UX. Keep `Task erstellen` and title-first capture. The accepted #134 Handoff
+  revision replaces redundant headings with compact `ERFASSEN`, a dominant title
+  and three independent optional sections as defined above. DESIGN owns bounded
+  responsive outer width and the matte B8 composition.
 - `Erste Task anlegen`, non-empty `+ Task` and Milestone-local Task add use that
   exact same page and composition. Project/Milestone/Goal origin may change only
   validated prefills, origin metadata, Save destination and Cancel destination.
   No Project-specific heading, field order, disclosure state or separate
   Task-create component is allowed.
 - Project, Project Milestone and Goal context belong in the existing canonical
-  fields under `Weitere Angaben (optional)`. No extra Project-origin context
+  fields under `Zuordnung (optional)`. No extra Project-origin context
   summary, chip, link or capture block appears in the top Title-first area.
   No Project-specific visual/capture composition beyond canonical Title-first
   `/tasks/new` is allowed; no second Portfolio Task-create UI is introduced.
@@ -288,8 +414,9 @@ Project-origin Task creation:
 
 Secondary management:
 
-- Identity shows restrained present metadata and one overflow entry; edit,
-  status, relations and `Für Obsidian exportieren` remain secondary.
+- Identity shows restrained present metadata, directly discoverable Project
+  edit and one overflow entry; status, relations and `Für Obsidian exportieren`
+  remain secondary.
 - Result/Criteria, Milestone create/edit/reorder/archive and Task assignment use
   bounded dialogs; metadata/status use the existing secondary edit/manage
   interaction; relations and Artifact/Resource management use bounded interaction
@@ -298,11 +425,10 @@ Secondary management:
 - Work uses the actual Task row as the executable work object. Exactly-one READY
   appears once, without duplicate title guidance plus a list row. Multiple READY
   Tasks remain user choice; all-blocked work retains concrete blocker context.
-  One quiet Work summary may remain; redundant counts, readiness and guidance
-  signals are quiet or removed, including zero-completion fragments without
-  decision value. Milestone/Backlog are compact structural grouping, not competing
-  cards. Milestone management and `+ Task` stay secondary; repeated Task-add
-  button chrome is removed.
+  B8 replaces count suppression with the defined B7 Arbeitsstand; redundant
+  duplicate signals and fake zero bars remain excluded. Milestone/Backlog groups
+  use B8 grouping bars and indented rows, not competing cards. Object-local
+  `+ Task` and Milestone controls remain discoverable with restrained hierarchy.
 
 Context/support:
 
@@ -344,15 +470,22 @@ removals and browser-observable Delivery acceptance at 3840×2160, 1920×1080 an
 390×844. P-DATA, Review/History persistence, revision/cycle, Security/RLS/command
 boundary, Task Dependencies, Project Milestone semantics, Goal/Skill boundaries,
 Project↔Skill, Progress Model, R2-13 and Skill PP2/PP3/PP4 remain unchanged.
-#69 remains the open Project-Depth Product-Surface gate before Skill PP2/PP3/PP4.
+The then-open #69 Project-Depth Product-Surface gate was subsequently satisfied
+by [USER ACCEPTANCE](https://github.com/Planton361/life-os/issues/69#issuecomment-5942502151)
+and closure on 2026-10-01. It is not a current blocker for Skill PP2/PP3/PP4;
+operative authorization still belongs to GitHub Project #3 and approved Issues.
 
 ### Accepted final Project / Task interaction refinement — #82
 
 The [revised #82 target is USER ACCEPTED](https://github.com/Planton361/life-os/issues/82#issuecomment-5934881871)
-on 2026-10-01. This is accepted Product/UX truth, **not yet implemented** on the
-current baseline. Canonical persistence precedes a separately authorized bounded
-UI Delivery and another real #69 acceptance check. Review remains secondary below
-Work; no Project Review, Task Dependency or Project Milestone semantics change.
+on 2026-10-01. [#85 / merged PR #86 implemented this target](https://github.com/Planton361/life-os/issues/85#issuecomment-5937286378),
+with post-merge technical verification on `f6e7b7180ba4600fd936311a786e3817d33ae922`.
+The subsequent [#69 USER ACCEPTANCE](https://github.com/Planton361/life-os/issues/69#issuecomment-5942502151)
+closed its real Project-Depth surface gate. The newer B8 target above remains
+not implemented by this docs-only contract; it does not undo #82's delivery.
+Under B8, exactly one Project Review stays secondary in actual Context or the
+Work footer when Context is absent. Empty Context is progressive depth; no
+Project Review, Task Dependency or Project Milestone semantics change.
 
 Task interactions have distinct roles:
 
@@ -388,15 +521,17 @@ while title and actions remain usable.
 
 The [#87 target](https://github.com/Planton361/life-os/issues/87#issuecomment-5938450667)
 is [USER ACCEPTED](https://github.com/Planton361/life-os/issues/87#issuecomment-5938627502).
-It refines Project presentation only; #88 implements it in one focused PR.
-Desktop Project Detail uses a bounded viewport-derived minimum height: compact
+It refines Project presentation only; #88 is implementation evidence. B8
+supersedes conflicting density/count and Empty-fill guidance, retaining the
+populated shared-frame and domain rules.
+Populated desktop Project Detail uses a bounded viewport-derived minimum height: compact
 orientation, flexible primary Work, content-sized Supporting and Review. Sparse
 space belongs inside the shared workbench; long content grows the document with
 no primary internal-scroll trap. History stays secondary depth outside the frame.
 Mobile resets the minimum and stacks naturally.
 
-Normal Work has one heading, quiet `+ Task` and `Meilenstein +`. Without
-real Milestones, Tasks render directly: no generic Task count, `Tasks & Milestones`,
+Normal Work has one heading and object-local `+ Task` / `+ Milestone` under B8. Without
+real Milestones, Tasks render directly: no artificial grouping, `Tasks & Milestones`,
 `Noch keine Milestones.` or `Ohne Milestone` grouping. Real Milestones retain
 compact groups and may give unassigned Tasks one grouping label. Exactly-one READY
 is marked once on its real row; multiple READY/all BLOCKED have one guidance line
@@ -405,7 +540,9 @@ together on desktop and moves below content as a unit when space is insufficient
 Absent Context collapses; meaningful Context keeps approximately 2:1 Work/Context
 with top-led, content-sized contents. Review/History and all Project/Task domain,
 persistence, security, dependency and creation/edit semantics are unchanged.
-This target does not close #69 or authorize PP2/PP3/PP4 or R2-13.
+#87 target acceptance alone did not close #69; its later explicit USER ACCEPTANCE
+did. Neither that historical closure nor B8 target acceptance independently
+authorizes PP2/PP3/PP4 or R2-13 work.
 
 ### Skill Development Planning / PP2
 
@@ -501,117 +638,40 @@ intermediate result ready for explicit user review. Completing all Milestones
 never automatically achieves the Goal; the final Goal Review evaluates the
 Definition of Done and requires explicit confirmation.
 
-### Hybrid Goal Detail composition (#48)
+### B8 Goal Detail composition (#131 / #132)
 
-Goal Detail is read/work-first. A calm full-width Goal Identity header shows
-status, title, short intended outcome, why, horizon, target date and
-`Planung bearbeiten`, using existing canonical data only.
+The USER ACCEPTED #131 Goal preview replaces the #48/#49 Work/Journey split,
+#52 populated minimum-height frame and global Planning Mode composition. Project
+Detail is the direct visual reference; the existing Goal domain remains binding.
 
-Below it, desktop uses one composed workbench:
+A matte, content-sized header shows Goal identity/status, intended outcome, why,
+horizon/target date and canonical success criteria (`Erreicht, wenn …`). Goal
+identity editing and criterion evaluation/management open locally in dialogs.
+No hero, coaching card, generic percentage or duplicate success lane.
 
-- dominant left region, **Aktuelle Arbeit** (roughly 58–64%): current intermediate
-  outcome, one canonical guidance decision/action, other current work as secondary
-  depth;
-- quieter right rail (roughly 36–42%): **Dein Weg zum Ergebnis**, followed by a
-  **Ziel prüfen** preview.
+One **Work** region groups real Goal Zwischenziele with their actual support-linked
+Task rows. Show status, title and optional outcome/date in a compact group band.
+Each group owns `+ Task`, management and explicit review. Canonical contextual
+Task creation remains Current-only: other groups first offer explicit activation
+(or reopening) rather than linking to an invalid create route. At most one
+non-archived Zwischenziel is Current; expanding/managing a group does not change
+that state. Without Zwischenziele, show a simple direct Task list. With them,
+unassigned direct Goal Tasks stay visible as `Ohne Zwischenziel`. Optional Projects
+remain quiet context; project membership alone does not assign a Task to a Goal
+Zwischenziel. A Task appears once in Work; a unique eligible Task may be primary, while
+multiple eligible Tasks retain user choice, with real dependency reasons, Task
+Detail/Edit and the existing Calendar Week handoff. Completed work is subdued.
 
-The selected READY Task appears once, with `Aufgabe öffnen`. Exclude it from
-peer rows in secondary current work. Other current Tasks retain real dependency
-reasons; READY stays dominant over BLOCKED, and completed work is subdued.
-A blocker, planning question or explicit review replaces the next Task when
-canonical guidance requires it. There is no separate competing JETZT region.
+Preserve one contextual primary next action, explicit milestone and final Goal
+reviews, ownership, source restrictions and append-only history/evidence. Task
+completion never automatically achieves a Zwischenziel or Goal. Final Goal
+confirmation remains guarded by canonical criteria; achievement/reopen and
+history corrections retain their existing commands. Planning, reorder, archive,
+association and evidence operations stay object-local progressive depth.
 
-The roadmap shows completed/current/future intermediate results and the final
-`Ziel prüfen` gate. Short outcome descriptions and target dates may support
-orientation. It never displays Task titles, Task/criterion counts, READY/BLOCKED
-summaries or generic percentages. Even with one intermediate result it remains
-an intentional, compact roadmap region in the right rail.
-
-The lower review preview explains explicit Goal Review without a competing CTA
-or progress system. Actual criteria become prominent at final review, in the
-active current decision, or in progressive planning; never in two equally
-weighted regions simultaneously. Projects remain optional, quiet context.
-
-Use `Zwischenziel` / `Zwischenresultat` as primary user language.
-Mobile stacks Goal Identity → Aktuelle Arbeit → Dein Weg zum Ergebnis →
-Ziel prüfen → secondary depth (`Verlauf ansehen` / `Weitere Optionen`).
-
-#### Viewport Workbench refinement — #52 Variant A
-
-On desktop, the two columns and their secondary actions sit inside one shared
-workbench frame with a bounded minimum height derived from the remaining
-viewport after the Goal identity and application shell. The frame is only a
-minimum: normal document flow grows with real content, without clipping or an
-internal scroll area added to fill height. Current Work, roadmap and review
-modules stay content-sized; the Journey remains top-led rather than stretching
-to create distance. In sparse states, `Verlauf ansehen` and `Weitere Optionen`
-sit at the lower edge of the shared frame. At narrow/mobile widths the desktop
-minimum is removed and the existing content-driven stack remains natural.
-
-The Definition of Done remains canonical truth but ordinary execution does not
-require the user to learn that term. Preferred user questions are:
-- planning: `Wann ist das Ziel erreicht?`;
-- final review: `Ist dein Ziel erreicht?`;
-- criteria: `Erreicht, wenn …`.
-
-Planning remains separate from execution, but becomes more guided and progressive.
-The canonical planning sequence is:
-
-```text
-Was willst du erreichen?
-→ Woran erkennst du, dass es geschafft ist?
-→ Was soll als Nächstes wahr sein?
-→ Was kannst du konkret als Nächstes tun?
-```
-
-This interaction sequence maps to existing Goal identity, Outcome Criteria,
-Current Goal Milestone and Task structures. It is not a new persisted Goal state
-machine.
-
-Normal work mode orients and executes. Planning mode changes Goal acceptance
-criteria, intermediate results, Task association/creation and optional Project
-context without becoming a wall of all management controls.
-
-Completion remains explicit:
-- Task completion does not complete a Milestone;
-- after planned work, the user confirms whether the intermediate result is
-  actually achieved or adds more work;
-- after the final intermediate result, the user reviews the Goal against its
-  canonical success criteria and explicitly achieves or continues planning.
-
-### Visual target
-
-The current-work surface uses the existing V5 navy surface hierarchy rather than
-the rejected black JETZT treatment. Use existing tokens:
-- `--bg-app` for app/background;
-- `--surface-1` for ordinary surfaces;
-- `--surface-2` or bounded `--surface-3` for current-work emphasis;
-- `--accent-cyan` only as semantic Current/primary-action accent.
-
-No hero/background image, illustrative scene, quote, new palette, neon, gradient,
-glow or full cyan frame is introduced.
-Emphasis comes from tone, hierarchy and one primary action.
-
-The following historical composition details are superseded by #48:
-- separate dominant `JETZT` surface;
-- separate Current-Milestone workbench immediately below it;
-- required 68/32 split and the #44/#46 full-width stacked Current Work default;
-- reducing a single-result roadmap to a trivial inline cue;
-- repeating the guidance-selected Task as an equivalent peer row;
-- mobile stack `JETZT → Current Milestone → Tasks → Journey`.
-
-The following #39/#41 semantics remain binding:
-- one dominant next decision/action;
-- exactly one Current Milestone;
-- explicit planning mode;
-- progressive planning;
-- quiet success criteria during execution;
-- explicit Milestone/Goal reviews;
-- Tasks as execution layer;
-- Journey/roadmap as long-term orientation only;
-- READY/BLOCKED only from Task Dependencies;
-- append-only PP1 history/evidence;
-- no generic Goal percentage and no automatic achievement.
+Desktop and mobile follow header → Work → secondary review/history/management
+in natural document flow, without a Journey rail, action wall or artificial
+minimum-height whitespace. All other B8 surfaces remain unchanged.
 
 
 ## 1. Product Promise
@@ -745,6 +805,14 @@ Dashboard interactions remain limited and intentional. Complex editing belongs t
 ### 5.2 Inbox
 
 Inbox triages existing unstructured thoughts into canonical entities. Quick Capture belongs to Dashboard and is removed from Inbox.
+
+USER accepted Variante B (#150): Only the final confirmed triage into Task,
+existing Project, Goal or Skill creates one canonical `planned` Task. This
+does not schedule a time block or imply a planned day, start or completion;
+explicit planning signals retain their existing meaning. Historical `inbox`
+Tasks stay unchanged until a conscious, status-only `Zur Planung freigeben`
+action. Ownership, Source, Parent and Dependency guards remain authoritative;
+Portfolio shows the actual Task lifecycle separately from its attention groups.
 
 Required capabilities:
 
@@ -898,8 +966,9 @@ user actions through the bounded secondary interactions accepted in #72.
 One Work Task-add entry starts the same normal `/tasks/new` composition as global
 creation; optional Milestone-local entries remain quiet rather than repeated button
 chrome. Project and optional Milestone are prefilled from validated server context
-in the existing canonical fields under `Weitere Angaben (optional)`, as corrected
-in #77; no extra origin-specific top context/capture block is allowed. Creation
+in the existing canonical fields under `Zuordnung (optional)`, preserving #77's
+origin rules within the accepted #134 composition; no extra origin-specific top
+context/capture block is allowed. Creation
 stores one canonical Task and returns to the Project with a global success toast;
 a deliberate Project switch returns to the selected Project. Standalone Task Create keeps its Task-detail navigation.
 Milestone membership never creates a Dependency.
@@ -907,11 +976,14 @@ Identity, compact result/Criteria and Project-Fokus lead into Work; real Tasks a
 Milestones dominate, with counts only where useful for orientation. The #72
 secondary rail groups present Primary Artifact and Context; Additional
 Artifacts and References share a compact supporting summary. Under #87, desktop
-uses a bounded viewport-derived minimum-height frame; Work expands while inner
+uses a bounded viewport-derived minimum-height frame for populated Project;
+Work expands while inner
 modules remain content-sized. Longer content grows normally; mobile resets the
-minimum. Header, shared
-Work/Context workbench and Supporting section form three structural surfaces,
-using dividers inside rather than fragmented cards or floating content. Lifecycle belongs to header overflow, not the normal work flow.
+minimum. Header, shared Work/Context and supporting depth retain their distinct
+responsibilities, with dividers rather than fragmented cards. B8 retains Work/context and supporting
+responsibilities, with content-led Empty, B7 Arbeitsstand and object-local actions
+as specified above; it does not require an empty Supporting container. Secondary
+lifecycle management belongs to header overflow.
 Artifact management belongs to Project Detail. Existing Resource Create stores
 one canonical object, then returns to the Project for explicit role selection.
 Resource Detail shows its uses; Resources Search still finds every such record.

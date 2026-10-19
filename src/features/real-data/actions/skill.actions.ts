@@ -1,5 +1,7 @@
 "use server";
 
+import { withSubmittedDatasetEpoch } from "./submitted-dataset";
+
 import { redirect } from "next/navigation";
 import { skillDevelopmentCommand } from "./skill-development.actions";
 import type { SkillCommandOperation } from "../schemas/skill-development.schema";
@@ -68,23 +70,35 @@ async function command(
   };
 }
 export async function createSkillAction(f: FormData) {
-  return command(f, "skill.create");
+  return withSubmittedDatasetEpoch(f, async () => {
+    return command(f, "skill.create");
+  });
 }
 export async function updateSkillAction(f: FormData) {
-  return command(f, "skill.edit");
+  return withSubmittedDatasetEpoch(f, async () => {
+    return command(f, "skill.edit");
+  });
 }
 export async function archiveSkillAction(f: FormData) {
-  return command(f, "skill.archive");
+  return withSubmittedDatasetEpoch(f, async () => {
+    return command(f, "skill.archive");
+  });
 }
 export async function createSkillEvidenceAction(f: FormData) {
-  return command(f, "evidence.create");
+  return withSubmittedDatasetEpoch(f, async () => {
+    return command(f, "evidence.create");
+  });
 }
 export async function updateSkillEvidenceAction(f: FormData) {
-  return command(f, "evidence.correct");
+  return withSubmittedDatasetEpoch(f, async () => {
+    return command(f, "evidence.correct");
+  });
 }
 // Historical API name: this is now explicit withdrawal, with a required reason.
 export async function deleteSkillEvidenceAction(f: FormData) {
-  return command(f, "evidence.withdraw");
+  return withSubmittedDatasetEpoch(f, async () => {
+    return command(f, "evidence.withdraw");
+  });
 }
 async function navigate(result: SkillActionResult) {
   redirect(
@@ -94,17 +108,27 @@ async function navigate(result: SkillActionResult) {
   );
 }
 export async function createSkillFormAction(f: FormData) {
-  return navigate(await createSkillAction(f));
+  return withSubmittedDatasetEpoch(f, async () => {
+    return navigate(await createSkillAction(f));
+  });
 }
 export async function updateSkillFormAction(f: FormData) {
-  return navigate(await updateSkillAction(f));
+  return withSubmittedDatasetEpoch(f, async () => {
+    return navigate(await updateSkillAction(f));
+  });
 }
 export async function archiveSkillFormAction(f: FormData) {
-  return navigate(await archiveSkillAction(f));
+  return withSubmittedDatasetEpoch(f, async () => {
+    return navigate(await archiveSkillAction(f));
+  });
 }
 export async function createSkillEvidenceFormAction(f: FormData) {
-  return navigate(await createSkillEvidenceAction(f));
+  return withSubmittedDatasetEpoch(f, async () => {
+    return navigate(await createSkillEvidenceAction(f));
+  });
 }
 export async function deleteSkillEvidenceFormAction(f: FormData) {
-  return navigate(await deleteSkillEvidenceAction(f));
+  return withSubmittedDatasetEpoch(f, async () => {
+    return navigate(await deleteSkillEvidenceAction(f));
+  });
 }

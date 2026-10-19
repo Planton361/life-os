@@ -84,12 +84,16 @@ function Field({
   values,
   type = "text",
   required = false,
+  placeholder,
+  ariaLabel,
 }: {
   name: string;
   label: string;
   values: FieldValues;
   type?: string;
   required?: boolean;
+  placeholder?: string;
+  ariaLabel?: string;
 }) {
   return (
     <label className="grid gap-1 text-sm">
@@ -108,6 +112,8 @@ function Field({
           name={name}
           type={type}
           required={required}
+          placeholder={placeholder}
+          aria-label={ariaLabel}
           min={type === "number" ? 1 : undefined}
           minLength={required ? (name === "name" ? 1 : 2) : undefined}
         />
@@ -322,6 +328,10 @@ export function EntityForm({
         event.preventDefault();
         if (submitting.current || unclearCreate) return;
         const form = new FormData(event.currentTarget);
+        // Preserve explicit field intent even if the profile zone changed while
+        // this editor was open. The server still authorizes and converts changes.
+        if (kind === "task" && id && form.get("dueAt") === String(values.dueAt ?? ""))
+          form.delete("dueAt");
         if (!form.get("commandId")) form.set("commandId", crypto.randomUUID());
         const selectedProjectId = String(form.get("projectId") ?? "").trim();
         if (taskCapture && projectContext && !selectedProjectId) {
@@ -398,6 +408,9 @@ export function EntityForm({
         disabled={!hydrated || pending || archived || unclearCreate}
         className="grid gap-6"
       >
+        {kind === "task" && id && typeof values.updated_at === "string" && (
+          <input type="hidden" name="expectedUpdatedAt" value={values.updated_at} />
+        )}
         {taskCapture ? (
           <>
             <section
@@ -408,10 +421,15 @@ export function EntityForm({
                 goalMilestoneTaskCapture ? "true" : undefined
               }
             >
-              <h2 className="text-lg text-[var(--accent-cyan)]">
-                Task zuerst festhalten
-              </h2>
-              {field("title", "Titel", "text", true)}
+              <p data-task-capture-kicker>ERFASSEN</p>
+              <Field
+                name="title"
+                label="Task-Titel · erforderlich"
+                ariaLabel="Titel"
+                placeholder="Was ist konkret zu tun?"
+                values={values}
+                required
+              />
               {skillOrigin && (
                 <div className="grid min-w-0 gap-2">
                   <p className="break-words text-sm">
@@ -430,14 +448,18 @@ export function EntityForm({
                 </div>
               )}
               <p className="text-sm text-[var(--text-muted)]">
-                Neue Tasks starten geplant. Details kannst du nach dem Erfassen
-                ergänzen.
+                Du kannst die Task mit dem Titel speichern und Details später
+                ergänzen. Neue Tasks starten geplant.
               </p>
             </section>
-            <ManagementDisclosure label="Weitere Angaben (optional)">
+            <ManagementDisclosure label="Arbeitsinhalt (optional)">
               <section className="grid gap-4 md:grid-cols-2">
                 {field("description", "Beschreibung / Purpose", "textarea")}
                 {field("nextAction", "Arbeitsnotiz / nächste Aktion")}
+              </section>
+            </ManagementDisclosure>
+            <ManagementDisclosure label="Planung (optional)">
+              <section className="grid gap-4 md:grid-cols-2">
                 {choice(
                   "priority",
                   "Priority",
@@ -447,6 +469,10 @@ export function EntityForm({
                 {field("durationMinutes", "Duration (min)", "number")}
                 {field("dueAt", "Deadline", "date")}
                 {field("plannedDate", "Geplantes Datum", "date")}
+              </section>
+            </ManagementDisclosure>
+            <ManagementDisclosure label="Zuordnung (optional)">
+              <section className="grid gap-4 md:grid-cols-2">
                 {choice("areaId", "Area", areas)}
                 {goalMilestoneContext ? (
                   <>
@@ -804,6 +830,8 @@ export function OperationForm({
   closeOnSuccess = false,
   confirmMessage,
   submitClassName = actionClass,
+  checkboxChecked,
+  checkboxId,
 }: {
   operation: string;
   label: string;
@@ -812,6 +840,8 @@ export function OperationForm({
   closeOnSuccess?: boolean;
   confirmMessage?: string;
   submitClassName?: string;
+  checkboxChecked?: boolean;
+  checkboxId?: string;
 }) {
   const hydrated = useHydrated();
   const closeDisclosure = useCloseManagementDisclosure();
@@ -844,9 +874,22 @@ export function OperationForm({
         className="grid gap-3"
       >
         {children}
-        <button className={submitClassName} type="submit">
-          {pending ? "Speichern …" : label}
-        </button>
+        {checkboxChecked === undefined ? (
+          <button className={submitClassName} type="submit">
+            {pending ? "Speichern …" : label}
+          </button>
+        ) : (
+          <label className={submitClassName}>
+            <input
+              type="checkbox"
+              id={checkboxId}
+              aria-busy={pending}
+              aria-label={label}
+              checked={checkboxChecked}
+              onChange={(event) => event.currentTarget.form?.requestSubmit()}
+            />
+          </label>
+        )}
       </fieldset>
       {error && (
         <p role="alert" className="text-sm text-[var(--accent-red)]">

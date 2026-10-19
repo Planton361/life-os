@@ -1,5 +1,7 @@
 "use server";
 
+import { withSubmittedDatasetEpoch } from "./submitted-dataset";
+
 import { revalidatePath } from "next/cache";
 import { getLifeRepository } from "@/features/real-data/runtime/facade";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
@@ -26,84 +28,88 @@ async function authContext() {
 export async function saveJournalEntryAction(
   data: FormData,
 ): Promise<JournalActionResult> {
-  const auth = await authContext();
-  if (!auth)
-    return { ok: false, message: "Bitte melde dich im manuellen Profil an." };
-  const id = value(data, "journalEntryId");
-  const input = {
-    body: value(data, "body"),
-    entryDate: value(data, "entryDate"),
-    title: value(data, "title"),
-    journalEntryId: id,
-  };
-  const parsed = id
-    ? updateJournalEntryInputSchema.safeParse(input)
-    : createJournalEntryInputSchema.safeParse(input);
-  if (!parsed.success)
-    return {
-      ok: false,
-      message: "Bitte prüfe Datum, Inhalt und Titel (höchstens 200 Zeichen).",
+  return withSubmittedDatasetEpoch(data, async () => {
+    const auth = await authContext();
+    if (!auth)
+      return { ok: false, message: "Bitte melde dich im manuellen Profil an." };
+    const id = value(data, "journalEntryId");
+    const input = {
+      body: value(data, "body"),
+      entryDate: value(data, "entryDate"),
+      title: value(data, "title"),
+      journalEntryId: id,
     };
-  try {
-    const repository = getLifeRepository(auth.data);
-    const result = id
-      ? await repository.updateJournalEntry(auth.user.id, {
-          ...parsed.data,
-          journalEntryId: id,
-        })
-      : await repository.createJournalEntry(auth.user.id, parsed.data);
-    if (!result.ok)
+    const parsed = id
+      ? updateJournalEntryInputSchema.safeParse(input)
+      : createJournalEntryInputSchema.safeParse(input);
+    if (!parsed.success)
       return {
         ok: false,
-        message:
-          "Der Eintrag konnte nicht gespeichert werden. Er ist möglicherweise nicht mehr verfügbar.",
+        message: "Bitte prüfe Datum, Inhalt und Titel (höchstens 200 Zeichen).",
       };
-    refreshJournal();
-    return {
-      ok: true,
-      id: result.data.id,
-      message: id
-        ? "Journal-Eintrag gespeichert."
-        : "Journal-Eintrag erstellt.",
-    };
-  } catch {
-    return {
-      ok: false,
-      message: "Speichern nicht möglich. Bitte versuche es erneut.",
-    };
-  }
+    try {
+      const repository = getLifeRepository(auth.data);
+      const result = id
+        ? await repository.updateJournalEntry(auth.user.id, {
+            ...parsed.data,
+            journalEntryId: id,
+          })
+        : await repository.createJournalEntry(auth.user.id, parsed.data);
+      if (!result.ok)
+        return {
+          ok: false,
+          message:
+            "Der Eintrag konnte nicht gespeichert werden. Er ist möglicherweise nicht mehr verfügbar.",
+        };
+      refreshJournal();
+      return {
+        ok: true,
+        id: result.data.id,
+        message: id
+          ? "Journal-Eintrag gespeichert."
+          : "Journal-Eintrag erstellt.",
+      };
+    } catch {
+      return {
+        ok: false,
+        message: "Speichern nicht möglich. Bitte versuche es erneut.",
+      };
+    }
+  });
 }
 export async function archiveJournalEntryAction(
   data: FormData,
 ): Promise<JournalActionResult> {
-  const auth = await authContext();
-  if (!auth)
-    return { ok: false, message: "Bitte melde dich im manuellen Profil an." };
-  const parsed = archiveJournalEntryInputSchema.safeParse({
-    journalEntryId: value(data, "journalEntryId"),
-  });
-  if (!parsed.success)
-    return { ok: false, message: "Dieser Eintrag ist nicht verfügbar." };
-  try {
-    const result = await getLifeRepository(
-      auth.data,
-    ).archiveJournalEntry(auth.user.id, parsed.data.journalEntryId);
-    if (!result.ok)
+  return withSubmittedDatasetEpoch(data, async () => {
+    const auth = await authContext();
+    if (!auth)
+      return { ok: false, message: "Bitte melde dich im manuellen Profil an." };
+    const parsed = archiveJournalEntryInputSchema.safeParse({
+      journalEntryId: value(data, "journalEntryId"),
+    });
+    if (!parsed.success)
+      return { ok: false, message: "Dieser Eintrag ist nicht verfügbar." };
+    try {
+      const result = await getLifeRepository(
+        auth.data,
+      ).archiveJournalEntry(auth.user.id, parsed.data.journalEntryId);
+      if (!result.ok)
+        return {
+          ok: false,
+          message:
+            "Der Eintrag konnte nicht archiviert werden. Er ist möglicherweise nicht mehr verfügbar.",
+        };
+      refreshJournal();
+      return {
+        ok: true,
+        id: parsed.data.journalEntryId,
+        message: "Journal-Eintrag archiviert.",
+      };
+    } catch {
       return {
         ok: false,
-        message:
-          "Der Eintrag konnte nicht archiviert werden. Er ist möglicherweise nicht mehr verfügbar.",
+        message: "Archivieren nicht möglich. Bitte versuche es erneut.",
       };
-    refreshJournal();
-    return {
-      ok: true,
-      id: parsed.data.journalEntryId,
-      message: "Journal-Eintrag archiviert.",
-    };
-  } catch {
-    return {
-      ok: false,
-      message: "Archivieren nicht möglich. Bitte versuche es erneut.",
-    };
-  }
+    }
+  });
 }

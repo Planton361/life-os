@@ -68,6 +68,7 @@ export function ProjectResources({
   selectedResource?: string;
 }) {
   const project = data.projects.find((p) => p.id === projectId)!;
+  const mutable = !project.archived_at && project.status !== "completed";
   const uses = projectResourceUses(data, projectId);
   const artifacts = uses.filter((u) => u.role !== "reference");
   const primary = artifacts.find(
@@ -151,7 +152,7 @@ export function ProjectResources({
             Details öffnen
           </Link>
         </div>
-        {!project.archived_at &&
+        {mutable &&
           (use.role !== "reference" || manage) &&
           (manage ? (
             <ManagementDisclosure
@@ -249,7 +250,7 @@ export function ProjectResources({
           )}
         </>
       )}
-      {section === "reference-management" && !project.archived_at && (
+      {section === "reference-management" && mutable && (
         <div className="grid gap-4 border-t border-[var(--border-subtle)] pt-4">
           <OperationForm
             operation="project.resource.role"
@@ -352,7 +353,7 @@ export function ProjectSupportingSummary({
         <ManagementDialog
           label="Weitere Inhalte"
           triggerText={
-            project.archived_at
+            project.archived_at || project.status === "completed"
               ? "Weitere Inhalte ansehen"
               : "Weitere Inhalte ansehen und verwalten"
           }

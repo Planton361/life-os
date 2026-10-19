@@ -1,0 +1,164 @@
+.canvas {
+  width: 100%;
+  max-width: 1360px;
+  min-width: 0;
+  margin-inline: auto;
+  display: grid;
+  gap: 12px;
+  padding-bottom: 24px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+.header,
+.canvas > div > section {
+  min-width: 0;
+  background: var(--surface-1);
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+}
+.header {
+  padding: 23px 27px;
+}
+.entity {
+  margin-bottom: 9px;
+  color: var(--accent-blue);
+  font-size: 10px;
+  font-weight: 720;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+.header h1 {
+  font-size: clamp(26px, 2.8vw, 36px);
+  font-weight: 680;
+  letter-spacing: -0.045em;
+  line-height: 1.16;
+  overflow-wrap: anywhere;
+}
+.description {
+  margin-top: 12px;
+  color: var(--text-secondary);
+}
+.canvas > div > section {
+  padding: 0;
+  gap: 0;
+}
+.canvas form {
+  width: calc(100% - 52px);
+  max-width: 940px;
+  min-width: 0;
+  margin: 26px auto;
+}
+.canvas form fieldset {
+  gap: 0;
+}
+.canvas [data-task-capture-default] {
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.canvas [data-task-capture-kicker] {
+  color: var(--accent-blue);
+  font-size: 10px;
+  font-weight: 720;
+  letter-spacing: 0.13em;
+}
+.canvas [data-task-capture-default] > label {
+  gap: 7px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 630;
+}
+.canvas [data-task-capture-default] > p:last-child {
+  font-size: 12px;
+}
+.canvas form fieldset > div:has(> button[aria-expanded]) {
+  padding-block: 10px;
+  border-top: 1px solid var(--border-subtle);
+}
+.canvas form label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.canvas form input:not([type="checkbox"]),
+.canvas form select,
+.canvas form textarea {
+  min-height: 42px;
+  background: var(--bg-shell);
+  border-color: var(--border-default);
+  font-size: 13px;
+}
+.canvas form textarea {
+  min-height: 88px;
+}
+.canvas form input[name="title"] {
+  min-height: 52px;
+  font-size: 16px;
+}
+.canvas form button[aria-expanded] {
+  width: 100%;
+  color: var(--accent-blue);
+  font-size: 13px;
+  font-weight: 630;
+  text-decoration: none;
+}
+.canvas form button[aria-expanded]::before {
+  content: "";
+  display: inline-block;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 5px solid currentColor;
+  margin-right: 7px;
+}
+.canvas form button[aria-expanded="true"]::before {
+  transform: rotate(90deg);
+}
+.canvas form fieldset > div:last-child {
+  margin-top: 10px;
+  padding-top: 20px;
+}
+.canvas form a {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12.5px;
+  font-weight: 630;
+  text-decoration: none;
+}
+.canvas form button[type="submit"] {
+  background: var(--accent-blue);
+  border-color: var(--accent-blue);
+  color: var(--bg-app);
+  font-size: 12.5px;
+  font-weight: 640;
+}
+.canvas a:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+@media (max-width: 760px) {
+  .header {
+    padding: 18px 16px;
+  }
+  .header h1 {
+    font-size: 26px;
+  }
+  .canvas form {
+    width: calc(100% - 32px);
+    margin-block: 19px;
+  }
+  .canvas form input:not([type="checkbox"]),
+  .canvas form select,
+  .canvas form textarea {
+    font-size: 16px;
+    min-height: 44px;
+  }
+  .canvas form button,
+  .canvas form a {
+    min-height: 44px;
+  }
+}

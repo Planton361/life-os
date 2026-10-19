@@ -1,4 +1,6 @@
 "use server";
+
+import { withSubmittedDatasetEpoch } from "./submitted-dataset";
 import { revalidatePath } from "next/cache";
 import { getChallengeRepository } from "@/features/real-data/runtime/facade";
 import { redirect } from "next/navigation";
@@ -11,11 +13,35 @@ function finish(state: string): never { revalidatePath("/challenges"); revalidat
 async function context() { if (await getCurrentLifeOsProfileId() !== "manual") finish("auth_blocked"); const auth = await createAuthenticatedApplicationContext("write"); if (!auth.ok) finish("auth_blocked"); return { repository: getChallengeRepository(auth.data), userId: auth.user.id }; }
 function challengeInput(data: FormData) { return { description: value(data, "description"), endDate: value(data, "endDate"), periodType: value(data, "periodType"), rewardCoins: value(data, "rewardCoins"), startDate: value(data, "startDate"), targetValue: value(data, "targetValue"), title: value(data, "title"), unit: value(data, "unit") }; }
 function progressInput(data: FormData) { return { challengeId: value(data, "challengeId"), increment: value(data, "increment"), note: value(data, "note") }; }
-export async function createChallengeAction(data: FormData) { const parsed = challengeInputSchema.safeParse(challengeInput(data)); if (!parsed.success) finish("invalid"); const { repository, userId } = await context(); finish((await repository.createChallenge(userId, parsed.data)).ok ? "created" : "error"); }
-export async function updateChallengeAction(data: FormData) { const parsed = updateChallengeInputSchema.safeParse({ ...challengeInput(data), challengeId: value(data, "challengeId") }); if (!parsed.success) finish("invalid"); const { repository, userId } = await context(); finish((await repository.updateChallenge(userId, parsed.data)).ok ? "updated" : "error"); }
-export async function addChallengeProgressAction(data: FormData) { const parsed = challengeProgressInputSchema.safeParse(progressInput(data)); if (!parsed.success) finish("invalid"); const { repository, userId } = await context(); finish((await repository.addProgress(userId, parsed.data)).ok ? "progress" : "error"); }
-export async function updateChallengeProgressAction(data: FormData) { const parsed = updateChallengeProgressInputSchema.safeParse({ ...progressInput(data), progressLogId: value(data, "progressLogId") }); if (!parsed.success) finish("invalid"); const { repository, userId } = await context(); finish((await repository.updateLatestProgress(userId, parsed.data)).ok ? "progress_updated" : "error"); }
-export async function archiveChallengeProgressAction(data: FormData) { const parsed = challengeProgressIdSchema.safeParse({ challengeId: value(data, "challengeId"), progressLogId: value(data, "progressLogId") }); if (!parsed.success) finish("invalid"); const { repository, userId } = await context(); finish(await repository.archiveLatestProgress(userId, parsed.data.challengeId, parsed.data.progressLogId) ? "progress_archived" : "error"); }
-export async function completeChallengeAction(data: FormData) { const parsed = challengeIdSchema.safeParse({ challengeId: value(data, "challengeId") }); if (!parsed.success) finish("invalid"); const { repository, userId } = await context(); finish((await repository.complete(userId, parsed.data.challengeId)).ok ? "completed" : "not_ready"); }
-export async function abandonChallengeAction(data: FormData) { const parsed = challengeIdSchema.safeParse({ challengeId: value(data, "challengeId") }); if (!parsed.success) finish("invalid"); const { repository, userId } = await context(); finish(await repository.setStatus(userId, parsed.data.challengeId, "abandoned") ? "abandoned" : "error"); }
-export async function archiveChallengeAction(data: FormData) { const parsed = challengeIdSchema.safeParse({ challengeId: value(data, "challengeId") }); if (!parsed.success) finish("invalid"); const { repository, userId } = await context(); finish(await repository.archive(userId, parsed.data.challengeId) ? "archived" : "error"); }
+export async function createChallengeAction(data: FormData) {
+  return withSubmittedDatasetEpoch(data, async () => { const parsed = challengeInputSchema.safeParse(challengeInput(data)); if (!parsed.success) finish("invalid"); const { repository, userId } = await context(); finish((await repository.createChallenge(userId, parsed.data)).ok ? "created" : "error");
+  });
+}
+export async function updateChallengeAction(data: FormData) {
+  return withSubmittedDatasetEpoch(data, async () => { const parsed = updateChallengeInputSchema.safeParse({ ...challengeInput(data), challengeId: value(data, "challengeId") }); if (!parsed.success) finish("invalid"); const { repository, userId } = await context(); finish((await repository.updateChallenge(userId, parsed.data)).ok ? "updated" : "error");
+  });
+}
+export async function addChallengeProgressAction(data: FormData) {
+  return withSubmittedDatasetEpoch(data, async () => { const parsed = challengeProgressInputSchema.safeParse(progressInput(data)); if (!parsed.success) finish("invalid"); const { repository, userId } = await context(); finish((await repository.addProgress(userId, parsed.data)).ok ? "progress" : "error");
+  });
+}
+export async function updateChallengeProgressAction(data: FormData) {
+  return withSubmittedDatasetEpoch(data, async () => { const parsed = updateChallengeProgressInputSchema.safeParse({ ...progressInput(data), progressLogId: value(data, "progressLogId") }); if (!parsed.success) finish("invalid"); const { repository, userId } = await context(); finish((await repository.updateLatestProgress(userId, parsed.data)).ok ? "progress_updated" : "error");
+  });
+}
+export async function archiveChallengeProgressAction(data: FormData) {
+  return withSubmittedDatasetEpoch(data, async () => { const parsed = challengeProgressIdSchema.safeParse({ challengeId: value(data, "challengeId"), progressLogId: value(data, "progressLogId") }); if (!parsed.success) finish("invalid"); const { repository, userId } = await context(); finish(await repository.archiveLatestProgress(userId, parsed.data.challengeId, parsed.data.progressLogId) ? "progress_archived" : "error");
+  });
+}
+export async function completeChallengeAction(data: FormData) {
+  return withSubmittedDatasetEpoch(data, async () => { const parsed = challengeIdSchema.safeParse({ challengeId: value(data, "challengeId") }); if (!parsed.success) finish("invalid"); const { repository, userId } = await context(); finish((await repository.complete(userId, parsed.data.challengeId)).ok ? "completed" : "not_ready");
+  });
+}
+export async function abandonChallengeAction(data: FormData) {
+  return withSubmittedDatasetEpoch(data, async () => { const parsed = challengeIdSchema.safeParse({ challengeId: value(data, "challengeId") }); if (!parsed.success) finish("invalid"); const { repository, userId } = await context(); finish(await repository.setStatus(userId, parsed.data.challengeId, "abandoned") ? "abandoned" : "error");
+  });
+}
+export async function archiveChallengeAction(data: FormData) {
+  return withSubmittedDatasetEpoch(data, async () => { const parsed = challengeIdSchema.safeParse({ challengeId: value(data, "challengeId") }); if (!parsed.success) finish("invalid"); const { repository, userId } = await context(); finish(await repository.archive(userId, parsed.data.challengeId) ? "archived" : "error");
+  });
+}

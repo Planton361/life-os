@@ -1,3 +1,4 @@
+import { freePort } from "./application-process.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -15,9 +16,11 @@ const path = join(directory, "canonical.db");
 const ownerId = "11800000-0000-4000-8000-000000000001";
 const ownerLogin = "owner@example.invalid";
 const privateOrigin = "https://life-os.owner-tailnet.ts.net";
-const backend = "http://127.0.0.1:3000";
+const port = await freePort();
+const backend = `http://127.0.0.1:${port}`;
 const environment = {
   PATH: process.env.PATH,
+  LIFE_OS_DISPOSABLE_HOSTED_PORT: String(port),
   TMPDIR: realpathSync(tmpdir()),
   NODE_ENV: "production",
   LIFE_OS_APPLICATION_RUNTIME: "sqlite-hosted",
@@ -97,6 +100,8 @@ async function start() {
   const child = spawn(
     process.execPath,
     [
+      "--import",
+      fileURLToPath(new URL("./disposable-hosted-port.mjs", import.meta.url)),
       "--import",
       fileURLToPath(new URL("./no-supabase-network.mjs", import.meta.url)),
       "scripts/ops/run-production.mjs",
@@ -245,7 +250,7 @@ try {
     "canonical",
   );
   process.stdout.write(
-    "HOSTED_PRODUCTION_SMOKE_PASS: canonical 83/83, regular runtime, gateway Manual read/action write, owner forgery ignored, auth/origin negatives, restart; loopback 127.0.0.1:3000; no Supabase/Postgres/Docker\n",
+    "HOSTED_PRODUCTION_SMOKE_PASS: canonical 83/83, regular runtime, gateway Manual read/action write, owner forgery ignored, auth/origin negatives, restart; owned ephemeral loopback port; no Supabase/Postgres/Docker\n",
   );
 } finally {
   await stop();

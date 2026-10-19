@@ -16,6 +16,143 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  sql-158:
+    name: "SQL #158 (disposable PostgreSQL 18.4)"
+    if: github.event_name == 'pull_request' && github.head_ref == 'codex/158-task-create-deadline-local-day'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Setup Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .node-version
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.3.0 --activate
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Actual migrated SQL regression, lint and advisors
+        env:
+          ISSUE158_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          ISSUE158_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node tests/supabase/issue-155-sql-proof.mjs
+      - name: Preserve full SQL output and isolation
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: issue-158-disposable-sql-proof
+          path: test-results/issue-158-sql-lint/
+          if-no-files-found: error
+          retention-days: 14
+  sql-155:
+    name: "SQL #155 (disposable PostgreSQL 18.4)"
+    if: github.event_name == 'pull_request' && github.head_ref == 'codex/155-task-deadline-local-day'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Setup Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .node-version
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.3.0 --activate
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Actual migrated SQL regression, lint and advisors
+        env:
+          ISSUE155_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          ISSUE155_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node tests/supabase/issue-155-sql-proof.mjs
+      - name: Preserve full SQL output and isolation
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: issue-155-disposable-sql-proof
+          path: test-results/issue-155-sql-lint/
+          if-no-files-found: error
+          retention-days: 14
+  sql-153:
+    name: "SQL #153 (disposable PostgreSQL 18.4)"
+    if: github.event_name == 'pull_request' && github.head_ref == 'codex/153-inbox-task-lifecycle'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Setup Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .node-version
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.3.0 --activate
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Actual migrated SQL regression, lint and advisors
+        env:
+          ISSUE153_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          ISSUE153_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node tests/supabase/issue-153-sql-proof.mjs
+      - name: Preserve full SQL output and isolation
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: issue-153-disposable-sql-proof
+          path: test-results/issue-153-sql-lint/
+          if-no-files-found: error
+          retention-days: 14
+  sql-lint-151:
+    name: "SQL lint #151 (disposable PostgreSQL 18.4)"
+    if: github.event_name == 'pull_request' && github.head_ref == 'codex/151-task-parent-completion-guard'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Setup Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .node-version
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.3.0 --activate
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Actual warning-level lint and security advisors
+        env:
+          ISSUE151_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          ISSUE151_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node tests/supabase/issue-151-sql-lint-proof.mjs
+      - name: Preserve complete lint output and isolation evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: issue-151-sql-lint-proof
+          path: test-results/issue-151-sql-lint/
+          if-no-files-found: error
+          retention-days: 14
+
   quality:
     name: quality
     runs-on: ubuntu-latest
@@ -65,13 +202,85 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Preview CD policy and isolated service fixtures
+        run: pnpm test:preview:cd
+
       - name: Native SQLite and application composition (Linux x64)
         run: pnpm exec vitest run --config tests/sqlite/application-vitest.config.mjs
+
+      - name: Install isolated browser engine
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Production Next build and native shutdown proof (Linux x64)
         run: |
           pnpm build
+          node tests/sqlite/issue-160-browser-proof.mjs
+          node tests/sqlite/issue-158-browser-proof.mjs
+          node tests/sqlite/issue-155-browser-proof.mjs
+          node tests/sqlite/issue-153-browser-proof.mjs
+          node tests/sqlite/issue-151-browser-proof.mjs
+          node tests/sqlite/issue-142-calendar-hydration-proof.mjs
           node tests/sqlite/retired-runtime-proof.mjs
           node tests/sqlite/framework-shutdown-proof.mjs
           node tests/sqlite/application-smoke.mjs
           pnpm test:sqlite:hosted
+          node tests/sqlite/issue-142-browser-proof.mjs --standard-negative
+
+      - name: Preview composition and isolated reset browser proof (Linux x64)
+        run: |
+          LIFE_OS_BUILD_COMPOSITION=personal-preview-v2 pnpm build
+          node tests/sqlite/issue-142-calendar-hydration-proof.mjs --preview
+          node tests/sqlite/issue-142-browser-proof.mjs
+
+      - name: Preserve disposable reset browser evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: issue-142-disposable-browser-proof
+          path: |
+            test-results/issue-142/*.png
+            test-results/issue-142/proof.json
+            test-results/issue-142-calendar/*.png
+            test-results/issue-142-calendar/*.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Preserve Task parent completion browser evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: issue-151-disposable-browser-proof
+          path: |
+            test-results/issue-151/*.png
+            test-results/issue-151/proof.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Preserve Inbox Task lifecycle browser evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: issue-153-disposable-browser-proof
+          path: test-results/issue-153/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Preserve Task deadline browser evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: issue-155-disposable-browser-proof
+          path: test-results/issue-155/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Preserve Task Create deadline browser evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: issue-158-disposable-browser-proof
+          path: |
+            test-results/issue-158/
+            test-results/issue-160/
+          if-no-files-found: error
+          retention-days: 14
