@@ -557,6 +557,164 @@ try {
     });
   }
 
+  // Reuse the #112 controls on this disposable fixture, never its old
+  // production/Tailscale runner (which requires the user's occupied port).
+  await page.setViewportSize({ width: 2560, height: 639 });
+  await display.send("Emulation.setDeviceMetricsOverride", {
+    width: 2560,
+    height: 639,
+    deviceScaleFactor: 1.5,
+    mobile: false,
+    screenWidth: 2560,
+    screenHeight: 1440,
+  });
+  await page.goto(`${app.origin}/dashboard`);
+  evidence.controls = await page
+    .locator(".dashboard-composition :is(button,a,textarea)")
+    .evaluateAll((nodes) =>
+      nodes.map((e) => ({
+        tag: e.tagName,
+        name: e.getAttribute("aria-label") || e.textContent,
+        href: e.getAttribute("href"),
+        disabled: e.matches(":disabled"),
+      })),
+    );
+  for (const [selector, names] of [
+    [".dashboard-habits", ["Midday", "Evening", "Morning"]],
+    [".dashboard-portfolio", ["Goal View", "Skill View", "Project View"]],
+    [".dashboard-running", ["Muscle", "Running"]],
+  ])
+    for (const name of names) {
+      const control = page
+        .locator(selector)
+        .getByRole("button", { name, exact: true });
+      await control.click();
+      await expect(control).toHaveAttribute("aria-pressed", "true");
+    }
+  const quick = page.locator(".dashboard-quick");
+  await quick
+    .getByRole("button", { name: "In Inbox speichern", exact: true })
+    .click();
+  await expect(quick.getByRole("alert")).toBeVisible();
+  const capture = `#112 fast-track ${randomUUID()}`;
+  await quick
+    .getByRole("textbox", { name: "Quick Thought", exact: true })
+    .fill(capture);
+  await quick
+    .getByRole("button", { name: "In Inbox speichern", exact: true })
+    .click();
+  await expect(
+    page.getByRole("status").filter({ hasText: "In der Inbox gespeichert." }),
+  ).toBeVisible();
+  await page.goto(`${app.origin}/inbox`);
+  const captured = page
+    .locator('[data-inbox-section="queue"]')
+    .getByRole("button", { name: new RegExp(`^${capture}`) });
+  await expect(captured).toBeVisible();
+  await page.reload();
+  await expect(captured).toBeVisible();
+  await page.goto(`${app.origin}/dashboard`);
+  for (const name of [
+    "Calm",
+    "Focused",
+    "Tired",
+    "Anxious",
+    "Stressed",
+    "Happy",
+  ]) {
+    const control = page
+      .locator(".dashboard-mood")
+      .getByRole("button", { name, exact: true });
+    await control.click();
+    await expect(
+      page.getByRole("status").filter({ hasText: "Mood gespeichert." }).last(),
+    ).toBeVisible();
+    await page.reload();
+    await expect(control).toHaveAttribute("aria-pressed", "true");
+  }
+  const habits = page.locator(".dashboard-habits");
+  await habits.getByRole("button", { name: "Morning", exact: true }).click();
+  await habits.getByRole("button", { name: /Add habit/i }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await habits.getByRole("button", { name: /Add habit/i }).click();
+  const habit = `#112 ${randomUUID()}`;
+  await dialog.getByLabel("Name", { exact: true }).fill(habit);
+  await dialog.getByLabel("Target", { exact: true }).fill("-1");
+  await dialog.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(dialog.getByRole("alert")).toContainText("Bitte prüfe");
+  await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+  await habits.getByRole("button", { name: /Add habit/i }).click();
+  await dialog.getByLabel("Name", { exact: true }).fill(habit);
+  await dialog.getByLabel("Target", { exact: true }).fill("2");
+  await dialog.getByLabel("Increment", { exact: true }).fill("1");
+  await dialog.getByLabel("Unit", { exact: true }).fill("checks");
+  await dialog
+    .getByRole("combobox", { name: "Time of day", exact: true })
+    .selectOption("Morning");
+  await dialog.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(dialog).toBeHidden();
+  await expect(
+    page.getByRole("status").filter({ hasText: "Habit gespeichert." }).last(),
+  ).toBeVisible();
+  const habitCard = habits.getByRole("article").filter({
+    has: page.getByRole("button", { name: `${habit} erhöhen`, exact: true }),
+  });
+  await habitCard
+    .getByRole("button", { name: `${habit} erhöhen`, exact: true })
+    .click();
+  await expect(habitCard).toContainText("1 / 2 checks");
+  await page.reload();
+  await habits.getByRole("button", { name: "Morning", exact: true }).click();
+  await expect(habitCard).toContainText("1 / 2 checks");
+  await habitCard
+    .getByRole("button", { name: /Letzten Eintrag rückgängig machen/ })
+    .click();
+  await expect(habitCard).toContainText("0 / 2 checks");
+  await page.reload();
+  await habits.getByRole("button", { name: "Morning", exact: true }).click();
+  await expect(habitCard).toContainText("0 / 2 checks");
+  await habits.getByRole("button", { name: /Add habit/i }).click();
+  await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(dialog).toBeHidden();
+  await page.goto(`${app.origin}/dashboard`);
+  const links = await page
+    .locator(".dashboard-composition a[href]")
+    .evaluateAll((nodes) => nodes.map((e) => e.getAttribute("href")));
+  const occurrences = new Map();
+  for (const href of links) {
+    await page.goto(`${app.origin}/dashboard`);
+    const index = occurrences.get(href) ?? 0;
+    occurrences.set(href, index + 1);
+    await page
+      .locator(`.dashboard-composition a[href=${JSON.stringify(href)}]`)
+      .nth(index)
+      .click();
+    const expected = new URL(href, app.origin);
+    await page.waitForURL(
+      (url) =>
+        url.pathname === expected.pathname &&
+        [...expected.searchParams].every(
+          ([key, value]) => url.searchParams.get(key) === value,
+        ),
+    );
+    await expect(page.locator("#main-content")).not.toContainText(
+      "This page could not be found",
+    );
+  }
+  evidence.dashboardControls = {
+    tabGroups: "Habit/Portfolio/Running PASS",
+    quickThought: "invalid/valid feedback and Inbox reload PASS",
+    mood: "six choices, feedback and reload PASS",
+    habits:
+      "dialog Escape/Cancel, invalid/valid Save, increment/undo and reload PASS",
+    navigation: links,
+    dailyEligibility:
+      "existing fixture current Task is not completion-eligible; Open task included in navigation",
+  };
+
   assert.ok(
     !app.output().includes("SQLITE_PROOF_SUPABASE_NETWORK_DENIED"),
     "application attempted a Supabase network request",

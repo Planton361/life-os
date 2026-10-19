@@ -1300,6 +1300,34 @@ Journal depth, Skill Map and final active acceptance remain the planned work.
 
 # 1. Dashboard
 
+## #112 ASUS fast-track visual repair — 2026-10-19
+
+Implementation evidence in the existing Draft PR #114; no capability status or
+USER acceptance is raised. Current `main f5737d4` and accepted #113 `d784ef1`
+share the same 6/3/3 Wide workbench split: the empty Agenda owns half its width.
+The bounded repair changes two CSS column endpoints to 4/4/4. ASUS 2560×639
+DPR 1.5: Agenda **1112×217 → 738.66×217 px**; Habits/Portfolio widths
+**552 → 738.67 px**. Their intrinsic heights stay 177/217 px; all twelve zones
+remain visible with document height 639 px, zero horizontal overflow, overlap
+or clipping. No #165 macro-layout regression is claimed. Its 96px hours,
+shared Day/Week/Month frame, keyboard access and labels are retained; the prior
+Mac cap now targets that shared frame.
+
+The existing `tests/sqlite/issue-160-browser-proof.mjs` passes 6 create-view
+checks, 24 Agenda matrix/inventory checks and the reused #112 Capture/Mood/Habit
+feedback/reload controls plus 37 direct Dashboard link clicks. Manual here means
+Manual **presentation in an isolated sqlite-synthetic fixture**, not new real
+production/Tailscale authentication evidence. No private DB, running server,
+release `.next` or Tailscale configuration was touched. ASUS, Gigabyte, desktop,
+4K, Mac and Mobile guards pass; console/hydration clean. V5 design review PASS
+for this repair, with personal visual acceptance still pending. The previous
+real-gateway runner was intentionally not run against occupied port 3000.
+
+[Current geometry/control proof and V5 review](../qa/issue-112-mac-composition/asus-fast-track-2026-10-19.json),
+[ASUS before](../qa/issue-112-mac-composition/asus-before-2026-10-19.png),
+[ASUS after](../qa/issue-112-mac-composition/asus-after-2026-10-19.png).
+
+
 ## #112 Mac composition repair — implementation evidence (2026-10-06)
 
 The [authorized same-Issue repair](https://github.com/Planton361/life-os/issues/112#issuecomment-6006545599)
