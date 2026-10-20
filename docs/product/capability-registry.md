@@ -1364,13 +1364,32 @@ Journal depth, Skill Map and final active acceptance remain the planned work.
 | Latest Run | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Muscle Map | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Today Agenda day view | `CONNECTED` | R2-01 USER ACCEPTED; #164 keeps hourly rows content-independent, exact canonical interval labels and accessible Task navigation. Existing SQLite Dashboard proof covers long 30/60-minute scheduled Tasks, same-hour events and reload. | #164 is a scoped visual repair, not renewed Dashboard surface acceptance |
-| Today Agenda week/month | `CONNECTED` | R2-01 USER ACCEPTED; #164 shares one bounded Agenda scroll frame across Day/Week/Month, with natural Linear flow. Existing `tests/sqlite/issue-160-browser-proof.mjs` checks Manual/Demo/Empty at eight viewports (including PG27UCDM), outer/neighbour bounds within 1px, keyboard switching/scrolling, full Agenda link inventory, reload and console. | #112 personal visual acceptance remains separate |
+| Today Agenda week/month | `CONNECTED` | R2-01 USER ACCEPTED; #164 shares one bounded Agenda scroll frame across Day/Week/Month, with natural Linear flow. #167 gives the period grid a 100% minimum height: existing cells fill available space while intrinsic content can grow into the scroll region. Existing `tests/sqlite/issue-160-browser-proof.mjs` checks Manual/Demo/Empty at eight viewports (including PG27UCDM), outer/neighbour bounds within 1px, keyboard switching and keyboard/wheel scrolling, full Agenda link inventory, reload and console. It adds period fill/count/containment assertions and same-fixture CSS A/B captures for Empty, sparse Manual and twelve-task overflow. | #167 visual USER acceptance and M0 merge remain separate; no renewed Dashboard surface closure |
 | Urgent time-block create | `CONNECTED_GAP` | current visible control is an honest non-interactive Prepared state; Inbox creates canonical Tasks while scheduling belongs to Calendar/Portfolio | R2-03 must connect it to a canonical flow or remove it; Prepared is not closure without user deferral |
 | Habit Tracker | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Active Portfolio | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Dashboard control inventory and bounds | `CONNECTED` | R2-01 current evidence below and explicit USER ACCEPTED on 2026-09-06 | maintain accepted behavior |
 | Anti-Rot Actions | `UI_ONLY` | retained Dashboard component is no longer composed; the underlying feature is connected elsewhere | deferred/hidden by R0 and C1.1-01 |
 | Challenges | `UI_ONLY` | retained Dashboard component is no longer composed; the underlying feature is connected elsewhere | deferred/hidden by R0 and C1.1-01 |
+
+#167 scoped browser evidence (2560×1355, actual DPR1.5): unused space below the
+last real cell changes from 417→0px (Empty Week), 510→0px (Empty Month),
+275→0px (sparse Manual Week) and 353→0px (sparse Manual Month). Before captures
+undo only the new minimum height on the same page/fixture. The original long
+twelve-task fixture still overflows internally by 103px/25px in Week/Month;
+keyboard/wheel scrolling and every Agenda link are exercised. Short-Wide keeps
+intrinsic readable rows, with no forced compression. Day 06:00–24:00 and the
+shared outer frame remain unchanged. The existing Dashboard control inventory,
+32 distinct navigation targets, Capture error/success, Mood and Habit writes
+and reload checks pass; browser console/hydration is clean. Complete viewport
+screenshots and numeric/control evidence remain in the existing Quality artifact.
+Reviewed primary captures: [Empty Week](../qa/dashboard-agenda-week-empty.png),
+[Empty Month](../qa/dashboard-agenda-month-empty.png),
+[Manual Week](../qa/dashboard-agenda-week-manual.png),
+[Manual Month](../qa/dashboard-agenda-month-manual.png).
+V5 Design-Taste PASS: existing P0 hierarchy, tokens and top-aligned content fit
+V5; no remaining scoped violation or additional design fix. This is scoped
+implementation/browser evidence, pending personal visual USER acceptance.
 
 ## R2-01 confirmed Dashboard finding corrections — 2026-09-05
 
