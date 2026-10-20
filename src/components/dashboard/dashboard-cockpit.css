@@ -6,6 +6,10 @@
 .agenda-scroll {
   min-height: 0;
 }
+.dashboard-agenda-period {
+  /* Fill a bounded frame; intrinsic content still grows into its scroll area. */
+  min-height: 100%;
+}
 .agenda-body {
   grid-auto-rows: 96px;
   align-content: start;

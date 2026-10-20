@@ -146,6 +146,33 @@ async function assertNoHorizontalOverflow(page, label) {
   );
 }
 
+async function periodGeometry(period) {
+  return period.evaluate((grid) => {
+    const frame = grid.parentElement;
+    const cells = [...grid.children].map((cell) =>
+      cell.getBoundingClientRect(),
+    );
+    const bounds = frame.getBoundingClientRect();
+    return {
+      count: cells.length,
+      rows: new Set(cells.map((r) => r.top)).size,
+      heights: cells.map((r) => r.height),
+      columns: new Set(cells.map((r) => r.left)).size,
+      remaining:
+        bounds.top +
+        frame.clientHeight -
+        Math.max(...cells.map((r) => r.bottom)) -
+        parseFloat(getComputedStyle(grid).paddingBottom),
+      scroll: frame.scrollHeight - frame.clientHeight,
+      contentContained: [...grid.querySelectorAll("a")].every((link) => {
+        const r = link.getBoundingClientRect();
+        const cell = link.closest("section").getBoundingClientRect();
+        return r.top >= cell.top && r.bottom <= cell.bottom;
+      }),
+    };
+  });
+}
+
 try {
   const { execFileSync } = await import("node:child_process");
   evidence.revision = execFileSync("git", ["rev-parse", "HEAD"], {
@@ -435,6 +462,46 @@ try {
         }
         if (baseline.canvas >= 1440)
           assert.ok(current.documentHeight <= viewport.height + 1);
+        if (view !== "Day") {
+          const period = agenda.locator(".dashboard-agenda-period");
+          const measure = () => periodGeometry(period);
+          const fill = await measure();
+          record.views.at(-1).period = fill;
+          assert.equal(fill.count, view === "Week" ? 7 : 42);
+          assert.equal(fill.contentContained, true);
+          if (bounded) assert.ok(fill.remaining <= 1, JSON.stringify(fill));
+          if (bounded && profile === "empty") {
+            // Short frames retain readable intrinsic rows and internal scroll.
+            if (fill.scroll <= 1) assert.ok(Math.abs(fill.remaining) <= 1);
+            assert.ok(
+              Math.max(...fill.heights) - Math.min(...fill.heights) <= 1,
+            );
+          }
+          if (view === "Month" && baseline.canvas >= 1440) {
+            assert.equal(fill.columns, 7);
+            assert.equal(fill.rows, 6);
+          }
+          if (viewport.height === 1355 && profile !== "demo") {
+            // CSS A/B against main's intrinsic period sizing, on the very same
+            // sealed fixture/page. Only #167's min-height declaration is undone.
+            const original = await page.addStyleTag({
+              content: ".dashboard-agenda-period { min-height: 0; }",
+            });
+            await agenda
+              .locator(".agenda-scroll")
+              .evaluate((e) => (e.scrollTop = 0));
+            record.views.at(-1).before = await measure();
+            await page.screenshot({
+              path: join(output, `period-${profile}-${view}-before.png`),
+              fullPage: true,
+            });
+            await original.evaluate((e) => e.remove());
+            await page.screenshot({
+              path: join(output, `period-${profile}-${view}-after.png`),
+              fullPage: true,
+            });
+          }
+        }
         if (view === "Day") {
           assert.equal(current.hours.length, 19);
           assert.ok(
@@ -495,6 +562,16 @@ try {
           if (scrollable) {
             await region.focus();
             await page.keyboard.press("End");
+            await expect
+              .poll(() => region.evaluate((e) => e.scrollTop))
+              .toBeGreaterThan(0);
+            await region.evaluate((e) => (e.scrollTop = 0));
+            const box = await region.boundingBox();
+            await page.mouse.move(
+              box.x + box.width / 2,
+              box.y + box.height / 2,
+            );
+            await page.mouse.wheel(0, 240);
             await expect
               .poll(() => region.evaluate((e) => e.scrollTop))
               .toBeGreaterThan(0);
@@ -748,6 +825,65 @@ try {
   await expect(captured).toBeVisible();
   evidence.writeReload =
     "Capture/error feedback, Mood and Habit increment/undo PASS on disposable fixture";
+
+  // Retain the original twelve-task overflow/navigation regression above, then
+  // prove a realistic sparse Manual week/month on that same disposable owner.
+  await page.goto("about:blank");
+  await app.stop();
+  app = undefined;
+  const sparseStore = new SqliteRuntime(fixture.path, { syntheticProof: true });
+  try {
+    const repositories = sqliteApplicationRepositories(
+      sparseStore,
+      issueOwnerContext(fixture.ownerId),
+    );
+    for (const task of agendaTasks.slice(3)) {
+      const result = await repositories.tasks.archiveTask({
+        userId: fixture.ownerId,
+        profileId: fixture.ownerId,
+        taskId: task.id,
+      });
+      assert.equal(result.ok, true, JSON.stringify(result));
+    }
+  } finally {
+    sparseStore.close();
+  }
+  app = await startApplication(fixture, { port: evidence.port });
+  await page.setViewportSize({ width: 2560, height: 1355 });
+  await display.send("Emulation.setDeviceMetricsOverride", {
+    width: 2560,
+    height: 1355,
+    deviceScaleFactor: 1.5,
+    mobile: false,
+  });
+  await page.goto(`${app.origin}/dashboard`);
+  const sparseBaseline = await geometry();
+  evidence.sparsePeriod = [];
+  for (const view of ["Week", "Month"]) {
+    await agenda.getByRole("button", { name: view, exact: true }).click();
+    const period = agenda.locator(".dashboard-agenda-period");
+    const original = await page.addStyleTag({
+      content: ".dashboard-agenda-period { min-height: 0; }",
+    });
+    const before = await periodGeometry(period);
+    await page.screenshot({
+      path: join(output, `period-sparse-manual-${view}-before.png`),
+      fullPage: true,
+    });
+    await original.evaluate((e) => e.remove());
+    const after = await periodGeometry(period);
+    assert.ok(Math.abs(after.remaining) <= 1, JSON.stringify(after));
+    assert.equal(after.contentContained, true);
+    assert.equal(after.scroll, 0);
+    const current = await geometry();
+    assert.deepEqual(current.zones, sparseBaseline.zones);
+    assert.equal(current.documentHeight, 1355);
+    await page.screenshot({
+      path: join(output, `period-sparse-manual-${view}-after.png`),
+      fullPage: true,
+    });
+    evidence.sparsePeriod.push({ view, before, after });
+  }
 
   assert.ok(
     !app.output().includes("SQLITE_PROOF_SUPABASE_NETWORK_DENIED"),
