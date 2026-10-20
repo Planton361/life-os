@@ -1,6 +1,7 @@
 import { expect, type Page } from "@playwright/test";
 
 export const cockpitViewports = [
+  { name: "pg27ucdm", width: 2560, height: 1355, deviceScaleFactor: 1.5 },
   { name: "gigabyte", width: 2560, height: 589, deviceScaleFactor: 1 },
   { name: "asus", width: 2560, height: 639, deviceScaleFactor: 1.5 },
   { name: "desktop", width: 1920, height: 1080, deviceScaleFactor: 1 },
@@ -57,6 +58,7 @@ export async function cockpitGeometry(page: Page) {
       const r = e.getBoundingClientRect();
       if (!r.width || !r.height || e.closest("dialog:not([open])")) continue;
       let scrollBody = false;
+      let horizontalScrollBody = false;
       for (
         let p = e.parentElement;
         p && !p.classList.contains("dashboard-composition");
@@ -71,12 +73,18 @@ export async function cockpitGeometry(page: Page) {
         )
           scrollBody = true;
         if (
+          ["auto", "scroll"].includes(s.overflowX) &&
+          p.scrollWidth > p.clientWidth
+        )
+          horizontalScrollBody = true;
+        if (
           !scrollBody &&
           ["hidden", "clip"].includes(s.overflowY) &&
           (r.top < b.top - 1 || r.bottom > b.bottom + 1)
         )
           clipped.push(`${e.textContent?.trim()}:vertical`);
         if (
+          !horizontalScrollBody &&
           ["hidden", "clip"].includes(s.overflowX) &&
           (r.left < b.left - 1 || r.right > b.right + 1)
         )
@@ -164,6 +172,7 @@ export async function scrollProof(page: Page) {
     ".portfolio-slots",
     ".habit-slots",
     ".dashboard-meal-list",
+    ".dashboard-running-body",
   ]) {
     const body = page.locator(selector);
     if (!(await body.count())) continue;

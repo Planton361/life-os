@@ -348,7 +348,12 @@ export function RunningTracker({
       title={data.title}
       titleHref={data.href}
     >
-      <div className="p-3 2xl:flex 2xl:flex-col 2xl:justify-between 2xl:p-2.5">
+      <div
+        className="dashboard-running-body p-3 2xl:flex 2xl:flex-col 2xl:justify-between 2xl:p-2.5"
+        tabIndex={0}
+        role="region"
+        aria-label="Running and muscle content"
+      >
         {activeMode === "Running" ? (
           <>
             <div className="grid gap-3 sm:grid-cols-3 2xl:gap-2">
