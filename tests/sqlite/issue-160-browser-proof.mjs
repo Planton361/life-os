@@ -833,7 +833,10 @@ try {
   // Retain the original twelve-task overflow/navigation regression above, then
   // prove a realistic sparse Manual week/month on that same disposable owner.
   await page.goto("about:blank");
-  await app.stop();
+  assert.ok(!app.output().includes("SQLITE_PROOF_SUPABASE_NETWORK_DENIED"));
+  // Reuse the existing forced cleanup for this owned test server: aborted Next
+  // prefetches can remain pending after leaving the page.
+  await app.stop("SIGKILL");
   app = undefined;
   const sparseStore = new SqliteRuntime(fixture.path, { syntheticProof: true });
   try {
