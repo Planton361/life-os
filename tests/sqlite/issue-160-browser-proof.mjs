@@ -473,9 +473,13 @@ try {
           if (bounded && profile === "empty") {
             // Short frames retain readable intrinsic rows and internal scroll.
             if (fill.scroll <= 1) assert.ok(Math.abs(fill.remaining) <= 1);
-            assert.ok(
-              Math.max(...fill.heights) - Math.min(...fill.heights) <= 1,
-            );
+            // Equal Empty rows are a roomy Wide contract. Split date labels
+            // may wrap and must retain their intrinsic readable heights.
+            if (baseline.canvas >= 1440)
+              assert.ok(
+                Math.max(...fill.heights) - Math.min(...fill.heights) <= 1,
+                JSON.stringify(fill),
+              );
           }
           if (view === "Month" && baseline.canvas >= 1440) {
             assert.equal(fill.columns, 7);
