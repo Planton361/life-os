@@ -281,6 +281,8 @@ export type DashboardPortfolioViewLink = {
 };
 
 export type DashboardPortfolioItem = {
+  projectWork?: import("./project-work-balance").DashboardProjectWorkBalance;
+  savedProjectFocus?: string;
   id: string;
   title: string;
   label: string;
@@ -296,6 +298,7 @@ export type DashboardPortfolioItem = {
 };
 
 export type DashboardActivePortfolio = {
+  unavailableReason?: string;
   priority: Extract<DashboardPriority, "P1">;
   title: string;
   subtitle: string;

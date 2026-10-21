@@ -4,6 +4,7 @@ import { createSupabaseShopRepository } from "../supabase/repositories/supabase-
 import { createSupabaseChallengeRepository } from "../supabase/repositories/supabase-challenge-repository";
 import { createSupabaseAntiRotRepository } from "../supabase/repositories/supabase-anti-rot-repository";
 import "server-only";
+import { readDashboardProjectWork, projectWorkColumns } from "./dashboard-project-work-read";
 import type { SupabaseClientLike } from "../supabase/database.types";
 import * as repositories from "../supabase/repositories";
 import type { ApplicationRepositories } from "./repositories";
@@ -222,6 +223,24 @@ export function supabaseApplicationReads(
       resources: (options) => catalog("resources", options),
       areas: (options) => catalog("areas", options),
     },
+    dashboardProjectWork: (projectIds) => readDashboardProjectWork(async (table, ids) => {
+      const rows: unknown[] = [];
+      for (let offset = 0; offset < ids.length; offset += 200) {
+        const batch = ids.slice(offset, offset + 200);
+        for (let start = 0; ; start += 500) {
+          let query = client.from(table).select(projectWorkColumns[table])
+            .eq("user_id", ownerId)
+            .in(table === "schedule_source_links" ? "task_id" : "project_id", [...batch])
+            .order(table === "schedule_source_links" ? "task_id" : "id");
+          if (table === "schedule_source_links") query = query.order("source_id");
+          const result = await query.range(start, start + 499);
+          if (result.error || !result.data) throw new Error("Project work unavailable");
+          rows.push(...result.data);
+          if (result.data.length < 500) break;
+        }
+      }
+      return rows;
+    }, projectIds),
     projectProjection: (input) => readProjectProjection(client, ownerId, input),
     profileTimezone: async () => {
       const result = await client

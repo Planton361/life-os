@@ -1,4 +1,5 @@
 import { taskDeadlineLocalDay } from "@/features/real-data/domain/task-deadline";
+import { dashboardProjectWorkBalance, type DashboardProjectWorkRead } from "@/features/dashboard/project-work-balance";
 import { readWeeklyPlanningContext, readTaskDependencyGraph, readTodayActivity, getGoalRepository, getInboxRepository, getNutritionRepository, getProjectRepository, getReviewRepository, getScheduleSourceRepository, getResourceRepository, getSkillRepository, getTaskRepository, getHealthRepository, getHabitRepository, getTrainingRepository, getGoalOutcomeSummaries } from "@/features/real-data/runtime/facade";
 import { skillTaskReadiness } from "@/features/entities/workbench/skill-guidance";
 
@@ -373,8 +374,10 @@ function taskToCurrentTask(task: LifeTask) {
   };
 }
 
-function projectToPortfolioItem(project: LifeProject): DashboardPortfolioItem {
+function projectToPortfolioItem(project: LifeProject, work?: DashboardProjectWorkRead, focus?: string): DashboardPortfolioItem {
   return {
+    projectWork: dashboardProjectWorkBalance(project.id, work),
+    savedProjectFocus: focus,
     id: project.id,
     title: project.title,
     label: areaLabel(project.areaId),
@@ -447,6 +450,8 @@ type DashboardNutritionTotals = {
 };
 
 type DashboardReadSources = {
+  projectWork?: DashboardProjectWorkRead;
+  projectFocus?: ReadonlyMap<string, string>;
   authAvailable: boolean;
   dailyDecisions: readonly ReviewTaskDecision[];
   dailyReview: ReviewRecord | null;
@@ -1687,7 +1692,7 @@ function buildProfileDashboardViewModel(
     : "Morning";
   const activeHabitCount = dashboardHabits[activeHabitWindow].length;
   const portfolioItems = [
-    ...profile.projects.map(projectToPortfolioItem),
+    ...profile.projects.map((project) => projectToPortfolioItem(project, sources.projectWork, sources.projectFocus?.get(project.id))),
     ...profile.goals.map((goal) =>
       goalToPortfolioItem(goal, sources.goalOutcomeSummaries.get(goal.id)),
     ),
@@ -2078,6 +2083,9 @@ function buildProfileDashboardViewModel(
   };
   viewModel.activePortfolio = {
     ...viewModel.activePortfolio,
+    unavailableReason: profileId === "manual" && !sources.authAvailable
+      ? "Manual benötigt eine bestätigte Anmeldung."
+      : undefined,
     activeView: activePortfolioView,
     contentState: resolveContentStateMeta({
       capacity: dashboardCapacity.activePortfolio,
@@ -2723,6 +2731,7 @@ async function getManualProjectGoalTargetsFromApplication(
 ): Promise<{
   goals: LifeGoal[];
   projects: LifeProject[];
+  projectFocus: ReadonlyMap<string, string>;
 }> {
   const [projectResult, goalResult] = await Promise.all([
     getProjectRepository(client).getProjectsByUser(userId, userId),
@@ -2730,6 +2739,7 @@ async function getManualProjectGoalTargetsFromApplication(
   ]);
 
   return {
+    projectFocus: new Map(projectResult.ok ? projectResult.data.filter((p) => p.nextStep?.trim()).map((p) => [p.id, p.nextStep!]) : []),
     goals: goalResult.ok ? goalResult.data.map(realGoalToLifeGoal) : [],
     projects: projectResult.ok
       ? projectResult.data.map(realProjectToLifeProject)
@@ -3169,6 +3179,7 @@ async function getManualDashboardReadData(calendarRead = false): Promise<{
     trainingRepository.getSnapshot(userId),
   ]);
   const scheduleLinks = scheduleLinkResult.error ? [] : (scheduleLinkResult.data ?? []);
+  const projectWork = calendarRead ? undefined : await auth.data.reads.dashboardProjectWork(targets.projects.slice(0, 4).map((project) => project.id));
   const scheduleLinkByTask = new Map(scheduleLinks.map((link) => [link.task_id, link]));
   const linkedTasks = taskResult.tasks.map((task) => {
     const link = scheduleLinkByTask.get(task.id);
@@ -3228,6 +3239,8 @@ async function getManualDashboardReadData(calendarRead = false): Promise<{
       tasks: linkedTasks,
     },
     sources: {
+      projectWork,
+      projectFocus: targets.projectFocus,
       authAvailable: true,
       dailyDecisions: dailyDecisionResult.ok ? dailyDecisionResult.data : [],
       dailyReview,

@@ -15,7 +15,7 @@ export async function freePort() {
 }
 export async function startApplication(
   fixture,
-  { authentication = "issue", port, timeZone } = {},
+  { authentication = "issue", port, timeZone, imports = [] } = {},
 ) {
   port ??= await freePort();
   const origin = `http://127.0.0.1:${port}`;
@@ -24,6 +24,7 @@ export async function startApplication(
     [
       "--import",
       fileURLToPath(new URL("./no-supabase-network.mjs", import.meta.url)),
+      ...imports.flatMap((path) => ["--import", path]),
       "scripts/ops/run-production.mjs",
       "-p",
       String(port),

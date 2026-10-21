@@ -9,6 +9,7 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 import { cn } from "@/lib/cn";
+import { ProjectPortfolioWork } from "./project-portfolio-work";
 import {
   type AccentStyle,
   Panel,
@@ -51,9 +52,9 @@ export function ActivePortfolio({
 }>) {
   const [activeView, setActiveView] = useState<PortfolioView>(data.activeView);
   const projects = data.items;
-  const visibleProjects = projects.filter(
-    (project) => project.kind === kindForPortfolioView(activeView),
-  ).slice(0, 4);
+  const visibleProjects = projects
+    .filter((project) => project.kind === kindForPortfolioView(activeView))
+    .slice(0, 4);
   const activeViewCount = visibleProjects.length;
   const activePortfolioCounters = [
     {
@@ -152,54 +153,100 @@ export function ActivePortfolio({
           className="portfolio-slots grid grid-cols-2 auto-rows-fr gap-3"
         >
           {visibleProjects.map((project) => (
-              <Link
-                aria-label={`Open portfolio item: ${project.title}`}
-                className={cn(
-                  "min-w-0 block rounded-[13px] border p-3 2xl:p-2.5",
-                  DASHBOARD_LINK_FOCUS_CLASSES,
-                )}
-                href={project.href ?? data.href ?? "/portfolio?status=active"}
-                key={project.id}
-                style={
-                  {
-                    background: "color-mix(in srgb, var(--accent) 4%, #101a2a)",
-                    borderColor:
-                      "color-mix(in srgb, var(--accent) 26%, transparent)",
-                    "--accent": project.accent,
-                  } as AccentStyle
-                }
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <span className="size-2.5 rounded-full bg-[var(--accent)] shadow-[0_0_10px_color-mix(in_srgb,var(--accent)_30%,transparent)]" />
-                    <h3 className="truncate text-sm font-semibold text-[var(--text-primary)]">
-                      {project.title}
-                    </h3>
+            <Link
+              aria-label={`Open portfolio item: ${project.title}`}
+              aria-describedby={
+                project.kind === "project"
+                  ? `project-work-${project.id}`
+                  : undefined
+              }
+              className={cn(
+                "min-w-0 block rounded-[13px] border p-3 2xl:p-2.5",
+                project.kind === "project" && "portfolio-project-card",
+                DASHBOARD_LINK_FOCUS_CLASSES,
+              )}
+              href={project.href ?? data.href ?? "/portfolio?status=active"}
+              key={project.id}
+              style={
+                {
+                  background: "color-mix(in srgb, var(--accent) 4%, #101a2a)",
+                  borderColor:
+                    "color-mix(in srgb, var(--accent) 26%, transparent)",
+                  "--accent": project.accent,
+                } as AccentStyle
+              }
+            >
+              {project.kind === "project" ? (
+                <>
+                  <h3 className="portfolio-project-title text-sm font-semibold text-[var(--text-primary)]">
+                    {project.title}
+                  </h3>
+                  <ProjectPortfolioWork
+                    descriptionId={`project-work-${project.id}`}
+                    work={project.projectWork}
+                    focus={project.savedProjectFocus}
+                  />
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="size-2.5 rounded-full bg-[var(--accent)] shadow-[0_0_10px_color-mix(in_srgb,var(--accent)_30%,transparent)]" />
+                      <h3 className="truncate text-sm font-semibold text-[var(--text-primary)]">
+                        {project.title}
+                      </h3>
+                    </div>
+                    <Pill accent={project.accent}>{project.label}</Pill>
                   </div>
-                  <Pill accent={project.accent}>{project.label}</Pill>
-                </div>
-                <p className="mt-2.5 text-[10px] font-medium text-[var(--text-secondary)]">
-                  Next
-                </p>
-                <p className="mt-1 text-[10px] font-medium text-[var(--text-secondary)]">
-                  {project.next}
-                </p>
-                <div className="mt-2.5 flex items-center justify-between gap-3">
-                  <p className="text-[10px] font-medium text-[var(--text-secondary)]">
-                    {project.meta}
+                  <p className="mt-2.5 text-[10px] font-medium text-[var(--text-secondary)]">
+                    Next
                   </p>
-                  <p className="text-[10px] font-medium text-[var(--text-secondary)]">
-                    {project.progressLabel ?? `${project.progress}%`}
+                  <p className="mt-1 text-[10px] font-medium text-[var(--text-secondary)]">
+                    {project.next}
                   </p>
-                </div>
-                {!project.progressLabel && <div className="mt-2"><ProgressBar accent={project.accent} progress={project.progress} /></div>}
-              </Link>
-          ))}
-          {Array.from({ length: 4 - activeViewCount }, (_, index) => (
-            <Link href={`/${kindForPortfolioView(activeView)}s/new`} aria-label={`${kindForPortfolioView(activeView)} erstellen`} key={`empty-${index}`} data-portfolio-placeholder className="grid min-h-[64px] place-items-center rounded-[13px] border border-dashed border-[var(--border-subtle)] p-3 text-center text-[10px] text-[var(--text-muted)]">
-              + {kindForPortfolioView(activeView) === "project" ? "Projekt" : kindForPortfolioView(activeView) === "goal" ? "Ziel" : "Skill"} erstellen
+                  <div className="mt-2.5 flex items-center justify-between gap-3">
+                    <p className="text-[10px] font-medium text-[var(--text-secondary)]">
+                      {project.meta}
+                    </p>
+                    <p className="text-[10px] font-medium text-[var(--text-secondary)]">
+                      {project.progressLabel ?? `${project.progress}%`}
+                    </p>
+                  </div>
+                  {!project.progressLabel && (
+                    <div className="mt-2">
+                      <ProgressBar
+                        accent={project.accent}
+                        progress={project.progress}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
             </Link>
           ))}
+          {data.unavailableReason ? (
+            <p className="col-span-2 text-[var(--text-secondary)] text-sm">
+              {data.unavailableReason}
+            </p>
+          ) : (
+            Array.from({ length: 4 - activeViewCount }, (_, index) => (
+              <Link
+                href={`/${kindForPortfolioView(activeView)}s/new`}
+                aria-label={`${kindForPortfolioView(activeView)} erstellen`}
+                key={`empty-${index}`}
+                data-portfolio-placeholder
+                className="grid min-h-[64px] place-items-center rounded-[13px] border border-dashed border-[var(--border-subtle)] p-3 text-center text-[10px] text-[var(--text-muted)]"
+              >
+                +{" "}
+                {kindForPortfolioView(activeView) === "project"
+                  ? "Projekt"
+                  : kindForPortfolioView(activeView) === "goal"
+                    ? "Ziel"
+                    : "Skill"}{" "}
+                erstellen
+              </Link>
+            ))
+          )}
         </div>
       </div>
     </Panel>

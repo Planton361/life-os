@@ -8,6 +8,7 @@ import {
   type SourceRow,
 } from "./project-export-projection";
 import "server-only";
+import { readDashboardProjectWork, projectWorkColumns } from "./dashboard-project-work-read";
 import type Database from "better-sqlite3";
 import type { TableRow, PublicTableName } from "../supabase/database.types";
 import type { SqliteRuntime } from "../sqlite/runtime";
@@ -148,6 +149,17 @@ export function sqliteApplicationReads(
     };
   }
   return {
+    dashboardProjectWork: (projectIds) => readDashboardProjectWork(async (table, ids) => {
+      const result: unknown[] = [];
+      // Bounded IN lists also cover Projects with thousands of recorded Tasks.
+      for (let start = 0; start < ids.length; start += 400) {
+        const batch = ids.slice(start, start + 400);
+        result.push(...store.read(context, (db) => db.prepare(
+          `SELECT ${projectWorkColumns[table]} FROM ${table} WHERE user_id=? AND ${table === "schedule_source_links" ? "task_id" : "project_id"} IN (${batch.map(() => "?").join(",")}) ORDER BY ${table === "schedule_source_links" ? "task_id,source_id" : "id"}`,
+        ).all(owner, ...batch)));
+      }
+      return result;
+    }, projectIds),
     catalog: {
       projects: (options) => catalog("projects", options),
       goals: (options) => catalog("goals", options),

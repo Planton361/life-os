@@ -699,3 +699,56 @@
     }
   }
 }
+/* #170: named card containers use their assigned size, not device identity.
+   A readable minimum keeps short allocations keyboard-scrollable. Optional
+   stored focus yields first; the independent Milestone row yields second. */
+.portfolio-slots > .portfolio-project-card {
+  container: portfolio-project / size;
+  min-height: 156px;
+}
+.portfolio-project-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  line-height: 20px;
+}
+.portfolio-project-work {
+  margin-top: 8px;
+  font-size: 10px;
+  line-height: 14px;
+  color: var(--text-secondary);
+}
+.portfolio-task-count {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.portfolio-work-bar {
+  display: flex;
+  height: 4px;
+  margin-top: 6px;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.portfolio-work-categories {
+  margin-top: 6px;
+  overflow-wrap: anywhere;
+}
+.portfolio-project-milestones,
+.portfolio-project-focus {
+  display: none;
+  margin-top: 6px;
+  overflow-wrap: anywhere;
+}
+@container portfolio-project (min-height: 156px) {
+  .portfolio-project-milestones { display: block; }
+}
+@container portfolio-project (min-height: 190px) and (min-width: 180px) {
+  .portfolio-project-focus {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+}
