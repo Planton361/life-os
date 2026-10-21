@@ -1,4 +1,6 @@
 import { dashboardMockData } from "./mock-data";
+import { entityCollection } from "@/features/entities/mock-entity-data";
+import { dashboardProjectWorkBalance, type DashboardProjectWorkRead } from "./project-work-balance";
 import { recipes } from "@/features/nutrition/meal-planner/meal-planner-mock-data";
 import { resolveContentStateMeta } from "@/features/content-state";
 import type {
@@ -254,6 +256,19 @@ function withDemoContentState(viewModel: DashboardViewModel): DashboardViewModel
 }
 
 export function getDashboardViewModel(): DashboardViewModel {
+  // Curated Demo records are an explicit reference projection, never a Manual fallback.
+  const demoWork: DashboardProjectWorkRead = {
+    tasks: entityCollection.tasks.map((task) => ({
+      id: task.id, title: task.title, project_id: task.projectId ?? null,
+      status: task.status, completed_at: task.status === "done" ? "demo" : null,
+      archived_at: null,
+    })),
+    dependencies: [],
+    sources: entityCollection.tasks.filter((task) => task.scheduleSource).map((task) => ({ task_id: task.id })),
+    milestones: entityCollection.milestones.filter((milestone) => milestone.linkedProjectId).map((milestone) => ({
+      project_id: milestone.linkedProjectId!, status: milestone.status, archived_at: null,
+    })),
+  };
   return withDemoContentState({
     profileId: "demo",
     commandCenter: {
@@ -273,7 +288,10 @@ export function getDashboardViewModel(): DashboardViewModel {
       runningRecovery: dashboardMockData.runningRecovery,
     },
     habitTrackers: dashboardMockData.habitTrackers,
-    activePortfolio: dashboardMockData.activePortfolio,
+    activePortfolio: { ...dashboardMockData.activePortfolio, items: dashboardMockData.activePortfolio.items.map((item) => item.kind === "project" ? {
+      ...item, projectWork: dashboardProjectWorkBalance(item.id, demoWork),
+      savedProjectFocus: entityCollection.projects.find((project) => project.id === item.id)?.nextStep,
+    } : item) },
     antiRotActions: dashboardMockData.antiRotActions,
     challengesRewardFocus: dashboardMockData.challengesRewardFocus,
   });

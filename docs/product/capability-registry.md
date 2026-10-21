@@ -27,6 +27,14 @@
 - Backend, repository or historical reload evidence proves that layer only; it
   does not by itself prove that a visible control currently works.
 
+## Dashboard Compact Project Work Balance v1.1 — #170
+
+| Capability | Status | Current implementation evidence | Remaining gate |
+|---|---|---|---|
+| Dashboard Project Task-Arbeitsstand | `CONNECTED` | `/dashboard` → Active Portfolio → Project View reuses pure B7 `projectWorkBalance`, with one owner-bound `dashboardProjectWork` read for the displayed Projects. Both runtime adapters select only Task/dependency/source/Milestone fields, paginate/batch without per-card Workbench reads, and validate independent datasets. `dashboard-project-work-read.test.ts` proves B7 parity, lifecycle/source/missing-predecessor rules, 1,001+ Tasks, explicit Milestones, owner scope and independent failures. No new write, schema or persistence. | Bounded implementation evidence; USER Visual Acceptance and M0 merge remain separate. No personal runtime activation or Dashboard closure. |
+| Compact, accessible Project cards | `CONNECTED` | Existing 2×2 grid and outer V5 geometry retained. Title up to two lines, actual Task counts, one green/blue/orange/neutral segmented bar, visible nonzero other-open text and all four categories in each link's accessible description. Explicit done Milestones and stored focus remain independent. Named card-size containers hide focus before Milestones. Zero Tasks, milestone-only, all-done yet active, unavailable totals and unknown execution states are distinct. `tests/sqlite/issue-170-browser-proof.mjs` proves 1/4/5 Projects, 1,200 Tasks, seven specified viewports, keyboard links/scroll, reload, Demo/Empty/Auth-blocked and four process-local read faults. | USER Visual Acceptance pending on the complete screenshots in `docs/qa/issue-170/`; no whole-surface/product acceptance claim. |
+| Dashboard control and geometry preservation | `CONNECTED` | Existing `issue-160-browser-proof.mjs` inventories and directly exercises the Dashboard controls, navigation, capture errors/success, Mood and Habit increment/undo/reload; Agenda Day/Week/Month regressions remain green. The #170 proof directly clicks Project cards and Portfolio counters/create/navigation, exercises all three tabs, compares outer geometry, checks actual card bounds, horizontal/body overflow, console/hydration and measured reduction states. Complete Manual 4-card screenshots: `docs/qa/issue-170/manual-4-{pg27ucdm,desktop,gigabyte,asus,4k,mac,mobile}.png`. All profile/error screenshots plus machine-readable proof are also retained by the required CI artifact. V5 Design-Taste review: PASS for the bounded change. | Personal USER ACCEPTED remains required for final surface closure. Blocked #3/#110/#118 and rejected Draft #114 are untouched. |
+
 ## B8 Project Detail / recorded work balance — #136
 
 | Capability | Status | Current implementation evidence | Remaining gate |
