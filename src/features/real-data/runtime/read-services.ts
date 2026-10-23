@@ -16,6 +16,7 @@ export type ApplicationEntityCatalog = Readonly<{
   ) => Promise<{ data: readonly TableRow<K>[]; error: null }>;
 }>;
 export type ApplicationReadServices = Readonly<{
+  dashboardTaskSteps(taskId: string): Promise<import("@/features/dashboard/current-task-progress").DashboardTaskStepProgress>;
   dashboardProjectWork(projectIds: readonly string[]): Promise<import("@/features/dashboard/project-work-balance").DashboardProjectWorkRead>;
   catalog: ApplicationEntityCatalog;
   projectProjection(

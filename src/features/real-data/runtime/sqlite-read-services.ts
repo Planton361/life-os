@@ -8,6 +8,7 @@ import {
   type SourceRow,
 } from "./project-export-projection";
 import "server-only";
+import { readDashboardTaskSteps, dashboardTaskStepColumns } from "./dashboard-task-steps-read";
 import { readDashboardProjectWork, projectWorkColumns } from "./dashboard-project-work-read";
 import type Database from "better-sqlite3";
 import type { TableRow, PublicTableName } from "../supabase/database.types";
@@ -149,6 +150,12 @@ export function sqliteApplicationReads(
     };
   }
   return {
+    dashboardTaskSteps: (taskId) => readDashboardTaskSteps(taskId, async (id) =>
+      store.read(context, (db) => {
+        if (!db.prepare("SELECT id FROM tasks WHERE user_id=? AND id=? AND archived_at IS NULL").get(owner, id))
+          throw new Error("Task unavailable");
+        return db.prepare(`SELECT ${dashboardTaskStepColumns} FROM task_steps WHERE user_id=? AND task_id=? AND archived_at IS NULL ORDER BY id`).all(owner, id);
+      })),
     dashboardProjectWork: (projectIds) => readDashboardProjectWork(async (table, ids) => {
       const result: unknown[] = [];
       // Bounded IN lists also cover Projects with thousands of recorded Tasks.

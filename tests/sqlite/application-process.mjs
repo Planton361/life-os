@@ -15,7 +15,7 @@ export async function freePort() {
 }
 export async function startApplication(
   fixture,
-  { authentication = "issue", port, timeZone, imports = [] } = {},
+  { authentication = "issue", port, timeZone, imports = [], distDir } = {},
 ) {
   port ??= await freePort();
   const origin = `http://127.0.0.1:${port}`;
@@ -36,6 +36,7 @@ export async function startApplication(
         PATH: process.env.PATH,
         TMPDIR: realpathSync(tmpdir()),
         NODE_ENV: "production",
+        ...(distDir ? { LIFE_OS_E2E_RUNTIME: "DISPOSABLE", LIFE_OS_E2E_DIST_DIR: distDir } : {}),
         ...(timeZone ? { TZ: timeZone } : {}),
         LIFE_OS_APPLICATION_RUNTIME: "sqlite-synthetic",
         LIFE_OS_SYNTHETIC_SQLITE_PATH: fixture.path,

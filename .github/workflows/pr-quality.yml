@@ -214,6 +214,7 @@ jobs:
       - name: Production Next build and native shutdown proof (Linux x64)
         run: |
           pnpm build
+          node tests/sqlite/issue-172-browser-proof.mjs
           node tests/sqlite/issue-170-browser-proof.mjs
           node tests/sqlite/issue-160-browser-proof.mjs
           node tests/sqlite/issue-158-browser-proof.mjs
@@ -284,5 +285,14 @@ jobs:
             test-results/issue-158/
             test-results/issue-160/
             test-results/issue-170/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Preserve Current Task step progress browser evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: issue-172-current-task-browser-proof
+          path: test-results/issue-172/
           if-no-files-found: error
           retention-days: 14
