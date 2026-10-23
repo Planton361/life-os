@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { expect, it } from "vitest";
@@ -149,7 +149,7 @@ it("projects native Step writes, selection, archive and restart without completi
   const ownerId = randomUUID(),
     otherTask = randomUUID();
   const path = join(
-    mkdtempSync(join(tmpdir(), "life-os-116-172-steps-")),
+    mkdtempSync(join(realpathSync(tmpdir()), "life-os-116-172-steps-")),
     "synthetic.db",
   );
   initializeSyntheticDatabase(path, ownerId);
