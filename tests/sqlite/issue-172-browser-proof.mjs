@@ -102,7 +102,17 @@ function observePage() {
   const errors = consoleProof(page);
   activeErrors = errors;
   const origin = app.origin;
+  proof.taskNavigation ??= [];
   page.on("response", (r) => {
+    if (r.url().startsWith(origin + "/tasks/")) {
+      const headers = r.request().headers();
+      proof.taskNavigation.push({
+        url: r.url(),
+        status: r.status(),
+        prefetch: headers["next-router-prefetch"] === "1",
+        rsc: headers.rsc === "1",
+      });
+    }
     if (r.status() >= 500 && r.url().startsWith(origin))
       errors.push(`HTTP ${r.status()}: ${r.url()}`);
   });
@@ -233,12 +243,14 @@ try {
         href: n.getAttribute("href"),
       })),
     );
-  await page
-    .locator(`.daily-control-queue a[href="/tasks/${fixture.nextTask}"]`)
-    .click();
-  await page.waitForURL(`**/tasks/${fixture.nextTask}`);
-  await expect(page.locator("h1")).toHaveText(nextTitle);
-  await dashboard(50);
+  for (let navigation = 0; navigation < 3; navigation++) {
+    await page
+      .locator(`.daily-control-queue a[href="/tasks/${fixture.nextTask}"]`)
+      .click();
+    await page.waitForURL(`**/tasks/${fixture.nextTask}`);
+    await expect(page.locator("h1")).toHaveText(nextTitle);
+    await dashboard(50);
+  }
   await detail();
   await toggle(3, true);
   await dashboard(75);

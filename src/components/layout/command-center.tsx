@@ -274,6 +274,8 @@ function DailyControlStatusPill({
   );
 }
 
+// Fetch Task destinations through a fresh document request. Production SPA
+// navigation intermittently left these destinations with an empty page body.
 function DailyControlCurrentTask({
   profileId,
   task,
@@ -341,7 +343,7 @@ function DailyControlCurrentTask({
       ) : null}
       <div className="mt-3 flex min-h-[32px] items-center gap-1.5">
         {task.href && canComplete ? (
-          <Link
+          <a
             className={cn(
               "current-task-action flex min-h-[32px] flex-1 items-center justify-center rounded-full border border-[rgba(95,200,215,.38)] bg-[rgba(91,124,250,.22)] text-[11px] font-medium text-[var(--text-secondary)] transition hover:border-[rgba(95,200,215,.52)] hover:text-[var(--text-primary)]",
               DASHBOARD_LINK_FOCUS_CLASSES,
@@ -349,7 +351,7 @@ function DailyControlCurrentTask({
             href={task.href}
           >
             {task.actionLabel}
-          </Link>
+          </a>
         ) : (
           <span className="current-task-action flex min-h-[32px] flex-1 items-center justify-center rounded-full border border-[rgba(95,200,215,.38)] bg-[rgba(91,124,250,.22)] text-[11px] font-medium text-[var(--text-secondary)]">
             {task.actionLabel}
@@ -380,13 +382,13 @@ function DailyControlCurrentTask({
 
   if (task.href && !canComplete) {
     return (
-      <Link
+      <a
         aria-label={`${task.sectionLabel}: ${task.title}`}
         className={className}
         href={task.href}
       >
         {content}
-      </Link>
+      </a>
     );
   }
 
@@ -428,13 +430,13 @@ function DailyControlQueueItem({
 
   if (item.href) {
     return (
-      <Link
+      <a
         aria-label={`Open queued task: ${item.title}`}
         className={className}
         href={item.href}
       >
         {content}
-      </Link>
+      </a>
     );
   }
 
