@@ -376,10 +376,38 @@ try {
       assert.ok(geometry.documentHeight <= viewport.height + 1);
       for (const zone of geometry.zones) {
         assert.ok(zone.y >= 0 && zone.bottom <= viewport.height + 1);
-        assert.ok(zone.height > 40);
+        assert.ok(zone.height > 0, zone.selector);
+        if ([".dashboard-daily", ".dashboard-agenda"].includes(zone.selector))
+          assert.ok(zone.height > 40, zone.selector);
       }
     }
-    proof.matrix.push({ profile: "auth-blocked", viewport, geometry });
+    const headingBounds = await page.evaluate(
+      (selectors) =>
+        [...document.querySelectorAll(".dashboard-composition h2")].map((h) => {
+          const panel = h.closest(selectors);
+          const r = h.getBoundingClientRect(),
+            b = panel.getBoundingClientRect();
+          return {
+            text: h.textContent,
+            visible: r.width > 0 && r.height > 0,
+            contained:
+              r.top >= b.top - 1 &&
+              r.bottom <= b.bottom + 1 &&
+              r.right <= b.right + 1,
+          };
+        }),
+      geometry.zones.map((zone) => zone.selector).join(","),
+    );
+    assert.ok(
+      headingBounds.every((h) => h.visible && h.contained),
+      JSON.stringify(headingBounds),
+    );
+    proof.matrix.push({
+      profile: "auth-blocked",
+      viewport,
+      geometry,
+      headingBounds,
+    });
     await page.screenshot({
       path: join(output, `auth-blocked-${viewport.name}.png`),
       fullPage: true,
