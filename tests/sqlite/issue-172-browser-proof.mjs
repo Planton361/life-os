@@ -4,7 +4,8 @@ import { execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { chromium, expect } from "@playwright/test";
+import { chromium, expect as baseExpect } from "@playwright/test";
+
 import { createApplicationFixture } from "./application-fixture.mjs";
 import { startApplication } from "./application-process.mjs";
 import {
@@ -13,6 +14,8 @@ import {
   cockpitViewports,
   consoleProof,
 } from "../e2e/support/dashboard-cockpit.ts";
+
+const expect = baseExpect.configure({ timeout: 12000 });
 
 const output = resolve("test-results/issue-172");
 mkdirSync(output, { recursive: true });
@@ -83,7 +86,7 @@ try {
   store.close();
 }
 
-let app, browser, context, page;
+let app, browser, context, page, activeErrors;
 const distDir = process.env.ISSUE172_DIST_DIR;
 async function start(authentication = "issue", imports = []) {
   app = await startApplication(fixture, { authentication, imports, distDir });
@@ -92,8 +95,17 @@ async function start(authentication = "issue", imports = []) {
     { name: "life_os_profile", value: "manual", url: app.origin },
   ]);
   page = await context.newPage();
+  return observePage();
+}
+function observePage() {
   page.setDefaultTimeout(12000);
   const errors = consoleProof(page);
+  activeErrors = errors;
+  const origin = app.origin;
+  page.on("response", (r) => {
+    if (r.status() >= 500 && r.url().startsWith(origin))
+      errors.push(`HTTP ${r.status()}: ${r.url()}`);
+  });
   return errors;
 }
 async function stop(errors) {
@@ -197,11 +209,21 @@ try {
       proof.matrix.push({ profile, viewport, geometry, bounds });
     }
   }
+  // Profile cookies above are set out of band for the screenshot matrix.
+  // Start the real Manual workflow with a fresh router/prefetch cache, as a
+  // normal browser opening this profile would. No navigation retry/reload is
+  // used to make a failed Task link pass.
+  proof.errors.push(...errors);
+  assert.deepEqual(errors, []);
+  await context.close();
+  context = await browser.newContext({
+    viewport: { width: 1920, height: 1080 },
+  });
   await context.addCookies([
     { name: "life_os_profile", value: "manual", url: app.origin },
   ]);
-  await page.setViewportSize({ width: 1920, height: 1080 });
-  await display.send("Emulation.clearDeviceMetricsOverride");
+  page = await context.newPage();
+  errors = observePage();
   await dashboard(50);
   proof.controls = await page
     .locator(".dashboard-daily a,.dashboard-daily button")
@@ -369,6 +391,8 @@ try {
 } catch (e) {
   proof.status = "FAIL";
   proof.failure = e.stack;
+  proof.failureConsole = activeErrors;
+  proof.failureApplicationOutput = app?.output();
   await page
     ?.screenshot({ path: join(output, "failure.png"), fullPage: true })
     .catch(() => {});
