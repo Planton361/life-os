@@ -94,12 +94,12 @@ export type DashboardQuickCapture = {
 export type DashboardCurrentTask = {
   id: string;
   sectionLabel: string;
-  timeRemainingLabel: string;
+  plannedTimeLabel: string | null;
   statusLabel: string;
   title: string;
   contextLabel: string;
   actionLabel: string;
-  progress: number;
+  stepProgress: import("./current-task-progress").DashboardTaskStepProgress | null;
   accent: DashboardAccent;
   area: DashboardArea;
   href?: DashboardHref;

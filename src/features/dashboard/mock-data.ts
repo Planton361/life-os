@@ -1,4 +1,13 @@
 import type { DashboardMockData } from "./types";
+import { currentTaskStepProgress } from "./current-task-progress";
+
+// Curated Demo-only checklist: two of four recorded steps are complete.
+const demoCurrentTaskSteps = [
+  { title: "Quellen sichten", archived_at: null, completed_at: "2026-06-22T16:10:00Z" },
+  { title: "Drei Quellencluster bilden", archived_at: null, completed_at: "2026-06-22T16:20:00Z" },
+  { title: "Abschnitt 2.3 sortieren", archived_at: null, completed_at: null },
+  { title: "Struktur prüfen", archived_at: null, completed_at: null },
+];
 
 const filledMetricState = {
   hasHistory: true,
@@ -128,12 +137,12 @@ export const dashboardMockData = {
     currentTask: {
       id: "task-literature-structure",
       sectionLabel: "Current Task",
-      timeRemainingLabel: "18:32 · 25 min left",
+      plannedTimeLabel: "55 min geplant · 18:05–19:00",
       statusLabel: "Active Now",
       title: "Literaturstruktur überarbeiten",
       contextLabel: "Masterarbeit · hoher Fokus",
       actionLabel: "Continue current task",
-      progress: 34,
+      stepProgress: currentTaskStepProgress("task-literature-structure", demoCurrentTaskSteps),
       accent: "var(--accent-blue)",
       area: "education",
       href: "/tasks/task-literature-structure",

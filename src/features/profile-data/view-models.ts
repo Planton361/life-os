@@ -1,3 +1,4 @@
+import { currentTaskStepProgress, type DashboardTaskStepProgress } from "@/features/dashboard/current-task-progress";
 import { taskDeadlineLocalDay } from "@/features/real-data/domain/task-deadline";
 import { dashboardProjectWorkBalance, type DashboardProjectWorkRead } from "@/features/dashboard/project-work-balance";
 import { readWeeklyPlanningContext, readTaskDependencyGraph, readTodayActivity, getGoalRepository, getInboxRepository, getNutritionRepository, getProjectRepository, getReviewRepository, getScheduleSourceRepository, getResourceRepository, getSkillRepository, getTaskRepository, getHealthRepository, getHabitRepository, getTrainingRepository, getGoalOutcomeSummaries } from "@/features/real-data/runtime/facade";
@@ -342,8 +343,8 @@ function taskToQueueItem(task: LifeTask) {
   };
 }
 
-function taskToCurrentTask(task: LifeTask) {
-  const endTime = taskEndTime(task);
+function taskToCurrentTask(task: LifeTask, progress?: DashboardTaskStepProgress) {
+  const endTime = task.durationMinutes ? taskEndTime(task) : undefined;
   const lifecycleStatus: "planned" | "active" | "done" | "blocked" =
     task.status === "done"
       ? "done"
@@ -356,14 +357,15 @@ function taskToCurrentTask(task: LifeTask) {
   return {
     id: task.id,
     sectionLabel: "Current Task",
-    timeRemainingLabel: task.startTime
-      ? `${task.startTime}${endTime ? `-${endTime}` : ""}`
-      : "Flexible block",
+    plannedTimeLabel: [
+      task.durationMinutes ? `${task.durationMinutes} min geplant` : null,
+      task.startTime ? `${task.startTime}${endTime ? `–${endTime}` : ""}` : null,
+    ].filter(Boolean).join(" · ") || null,
     statusLabel: taskStatusLabel(task),
     title: task.title,
     contextLabel: `${areaLabel(task.areaId)} · ${task.priority}`,
     actionLabel: "Open task",
-    progress: task.status === "done" ? 100 : task.status === "active" ? 42 : 0,
+    stepProgress: progress?.taskId === task.id ? progress : currentTaskStepProgress(task.id, null),
     accent: areaAccent(task.areaId),
     area: task.areaId as DashboardArea,
     href: `/tasks/${task.id}` as `/${string}`,
@@ -450,6 +452,7 @@ type DashboardNutritionTotals = {
 };
 
 type DashboardReadSources = {
+  currentTaskSteps?: DashboardTaskStepProgress;
   projectWork?: DashboardProjectWorkRead;
   projectFocus?: ReadonlyMap<string, string>;
   authAvailable: boolean;
@@ -1893,16 +1896,16 @@ function buildProfileDashboardViewModel(
           detail: "Plane oder terminiere vorhandene Tasks in Today.",
         },
     currentTask: activeTask
-      ? taskToCurrentTask(activeTask)
+      ? taskToCurrentTask(activeTask, sources.currentTaskSteps)
       : {
           id: "empty-current-task",
           sectionLabel: "Current Task",
-          timeRemainingLabel: "Kein Block gewählt",
+          plannedTimeLabel: null,
           statusLabel: "Empty",
           title: "Kein aktueller Fokus",
           contextLabel: "Plane oder terminiere vorhandene Tasks in Today.",
           actionLabel: "Noch kein Task ausgewählt",
-          progress: 0,
+          stepProgress: null,
           accent: "var(--text-muted)",
           area: "review",
         },
@@ -3185,6 +3188,8 @@ async function getManualDashboardReadData(calendarRead = false): Promise<{
     const link = scheduleLinkByTask.get(task.id);
     return link ? { ...task, scheduleSource: { id: link.source_id, type: link.source_type } } : task;
   });
+  const selectedTask = calendarRead ? null : dashboardTaskSelection(visibleDashboardTasks(linkedTasks)).current;
+  const currentTaskSteps = selectedTask ? await auth.data.reads.dashboardTaskSteps(selectedTask.id) : undefined;
   const recipes = recipeResult.ok ? recipeResult.data : [];
   const recipeById = new Map(recipes.map((recipe) => [recipe.id, recipe]));
   const realMeals = mealResult.ok ? mealResult.data : [];
@@ -3239,6 +3244,7 @@ async function getManualDashboardReadData(calendarRead = false): Promise<{
       tasks: linkedTasks,
     },
     sources: {
+      currentTaskSteps,
       projectWork,
       projectFocus: targets.projectFocus,
       authAvailable: true,

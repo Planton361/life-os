@@ -752,3 +752,26 @@
     overflow: hidden;
   }
 }
+.dashboard-composition .current-task-action {
+  min-height: 32px;
+  font-size: 11px;
+}
+@media (max-height: 719px) {
+  @container life-os-canvas (min-width: 1440px) {
+    .dashboard-composition .daily-control-current > p,
+    .dashboard-composition .daily-control-current > div:last-child {
+      margin-top: 3px;
+    }
+    .daily-control-current .current-task-progress {
+      margin-top: 4px;
+    }
+    .current-task-progress > p {
+      margin-bottom: 2px;
+    }
+  }
+}
+@media (max-width: 640px) {
+  .dashboard-composition .current-task-action {
+    min-height: 44px;
+  }
+}

@@ -37,13 +37,23 @@ function ProgressBar({
   progress,
   accent,
   quiet = false,
+  label,
 }: Readonly<{
   progress: number;
   accent: string;
   quiet?: boolean;
+  label?: string;
 }>) {
   return (
-    <div className="h-1.5 rounded-full bg-[rgba(168,183,204,.14)]">
+    <div
+      className="h-1.5 rounded-full bg-[rgba(168,183,204,.14)]"
+      role={label ? "progressbar" : undefined}
+      aria-label={label}
+      aria-valuemin={label ? 0 : undefined}
+      aria-valuemax={label ? 100 : undefined}
+      aria-valuenow={label ? progress : undefined}
+      aria-valuetext={label}
+    >
       <div
         aria-hidden="true"
         className={cn(
@@ -264,6 +274,8 @@ function DailyControlStatusPill({
   );
 }
 
+// Fetch Task destinations through a fresh document request. Production SPA
+// navigation intermittently left these destinations with an empty page body.
 function DailyControlCurrentTask({
   profileId,
   task,
@@ -301,9 +313,11 @@ function DailyControlCurrentTask({
           <p className="text-[10px] font-medium uppercase text-[var(--text-secondary)]">
             {task.sectionLabel}
           </p>
-          <p className="mt-1 text-[10px] font-medium text-[var(--text-secondary)]">
-            {task.timeRemainingLabel}
-          </p>
+          {task.plannedTimeLabel ? (
+            <p className="mt-1 text-[10px] font-medium text-[var(--text-secondary)]">
+              {task.plannedTimeLabel}
+            </p>
+          ) : null}
         </div>
         <DailyControlStatusPill label={task.statusLabel} />
       </div>
@@ -313,22 +327,33 @@ function DailyControlCurrentTask({
       <p className="mt-3 text-[11px] font-medium text-[var(--text-secondary)]">
         {task.contextLabel}
       </p>
-      <div className="mt-2">
-        <ProgressBar accent={task.accent} progress={task.progress} />
-      </div>
-      <div className="mt-3 flex min-h-[24px] items-center gap-1.5">
+      {task.stepProgress?.state === "available" && task.stepProgress.percent !== null ? (
+        <div className="current-task-progress mt-2">
+          <p className="mb-1.5 text-[10px] font-medium text-[var(--text-secondary)]">
+            {task.stepProgress.completed} von {task.stepProgress.total} Schritten erledigt · {task.stepProgress.percent} %
+          </p>
+          <ProgressBar
+            accent={task.accent}
+            progress={task.stepProgress.percent}
+            label={`${task.stepProgress.completed} von ${task.stepProgress.total} Schritten erledigt · ${task.stepProgress.percent} %`}
+          />
+        </div>
+      ) : task.stepProgress?.state === "unavailable" ? (
+        <p className="mt-2 text-[10px] text-[var(--text-secondary)]">Schrittfortschritt nicht verfügbar</p>
+      ) : null}
+      <div className="mt-3 flex min-h-[32px] items-center gap-1.5">
         {task.href && canComplete ? (
-          <Link
+          <a
             className={cn(
-              "flex min-h-[24px] flex-1 items-center justify-center rounded-full border border-[rgba(95,200,215,.38)] bg-[rgba(91,124,250,.22)] text-[10px] font-medium text-[var(--text-secondary)] transition hover:border-[rgba(95,200,215,.52)] hover:text-[var(--text-primary)]",
+              "current-task-action flex min-h-[32px] flex-1 items-center justify-center rounded-full border border-[rgba(95,200,215,.38)] bg-[rgba(91,124,250,.22)] text-[11px] font-medium text-[var(--text-secondary)] transition hover:border-[rgba(95,200,215,.52)] hover:text-[var(--text-primary)]",
               DASHBOARD_LINK_FOCUS_CLASSES,
             )}
             href={task.href}
           >
             {task.actionLabel}
-          </Link>
+          </a>
         ) : (
-          <span className="flex min-h-[24px] flex-1 items-center justify-center rounded-full border border-[rgba(95,200,215,.38)] bg-[rgba(91,124,250,.22)] text-[10px] font-medium text-[var(--text-secondary)]">
+          <span className="current-task-action flex min-h-[32px] flex-1 items-center justify-center rounded-full border border-[rgba(95,200,215,.38)] bg-[rgba(91,124,250,.22)] text-[11px] font-medium text-[var(--text-secondary)]">
             {task.actionLabel}
           </span>
         )}
@@ -341,7 +366,7 @@ function DailyControlCurrentTask({
             />
             <button
               className={cn(
-                "min-h-[24px] rounded-full border border-[rgba(66,184,131,.32)] bg-[rgba(66,184,131,.14)] px-2.5 text-[10px] font-semibold text-[var(--text-secondary)] transition hover:border-[rgba(66,184,131,.48)] hover:text-[var(--text-primary)]",
+                "current-task-action min-h-[32px] rounded-full border border-[rgba(66,184,131,.32)] bg-[rgba(66,184,131,.14)] px-2.5 text-[11px] font-semibold text-[var(--text-secondary)] transition hover:border-[rgba(66,184,131,.48)] hover:text-[var(--text-primary)]",
                 DASHBOARD_LINK_FOCUS_CLASSES,
               )}
               disabled={completionPending}
@@ -357,13 +382,13 @@ function DailyControlCurrentTask({
 
   if (task.href && !canComplete) {
     return (
-      <Link
+      <a
         aria-label={`${task.sectionLabel}: ${task.title}`}
         className={className}
         href={task.href}
       >
         {content}
-      </Link>
+      </a>
     );
   }
 
@@ -405,13 +430,13 @@ function DailyControlQueueItem({
 
   if (item.href) {
     return (
-      <Link
+      <a
         aria-label={`Open queued task: ${item.title}`}
         className={className}
         href={item.href}
       >
         {content}
-      </Link>
+      </a>
     );
   }
 

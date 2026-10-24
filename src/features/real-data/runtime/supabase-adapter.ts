@@ -4,6 +4,7 @@ import { createSupabaseShopRepository } from "../supabase/repositories/supabase-
 import { createSupabaseChallengeRepository } from "../supabase/repositories/supabase-challenge-repository";
 import { createSupabaseAntiRotRepository } from "../supabase/repositories/supabase-anti-rot-repository";
 import "server-only";
+import { readDashboardTaskSteps, dashboardTaskStepColumns } from "./dashboard-task-steps-read";
 import { readDashboardProjectWork, projectWorkColumns } from "./dashboard-project-work-read";
 import type { SupabaseClientLike } from "../supabase/database.types";
 import * as repositories from "../supabase/repositories";
@@ -223,6 +224,20 @@ export function supabaseApplicationReads(
       resources: (options) => catalog("resources", options),
       areas: (options) => catalog("areas", options),
     },
+    dashboardTaskSteps: (taskId) => readDashboardTaskSteps(taskId, async (id) => {
+      const parent = await client.from("tasks").select("id")
+        .eq("user_id", ownerId).eq("id", id).is("archived_at", null).maybeSingle();
+      if (parent.error || !parent.data) throw new Error("Task unavailable");
+      const rows: unknown[] = [];
+      for (let start = 0; ; start += 500) {
+        const result = await client.from("task_steps").select(dashboardTaskStepColumns)
+          .eq("user_id", ownerId).eq("task_id", id).is("archived_at", null)
+          .order("id").range(start, start + 499);
+        if (result.error || !result.data) throw new Error("Task steps unavailable");
+        rows.push(...result.data);
+        if (result.data.length < 500) return rows;
+      }
+    }),
     dashboardProjectWork: (projectIds) => readDashboardProjectWork(async (table, ids) => {
       const rows: unknown[] = [];
       for (let offset = 0; offset < ids.length; offset += 200) {
