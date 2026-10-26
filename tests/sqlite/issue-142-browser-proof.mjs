@@ -17,9 +17,16 @@ import { chromium, expect } from "@playwright/test";
 import Database from "better-sqlite3";
 import { compileRuntime } from "./compile-runtime.mjs";
 import { freePort } from "./application-process.mjs";
+import { compatibilityFingerprint } from "../../scripts/ops/preview-cd-host.mjs";
+import {
+  backupAndRestore,
+  verifyRecovery,
+} from "../../scripts/ops/linux-preview-database.mjs";
+import { proveRestoredApplication } from "../../scripts/ops/linux-preview-application.mjs";
 
 assert.equal(process.versions.node, "24.21.0");
 const standardNegative = process.argv.includes("--standard-negative");
+const linuxPreview = process.argv.includes("--linux");
 const source = process.cwd(),
   root = mkdtempSync(join(realpathSync(tmpdir()), "life-os-142-browser-")),
   path = join(root, "canonical.db");
@@ -70,11 +77,45 @@ const stat = lstatSync(path),
   };
 writeFileSync(grantPath, JSON.stringify(grant), { mode: 0o600 });
 const buildId = readFileSync(join(source, ".next/BUILD_ID"), "utf8").trim();
+const linuxRelease = {
+  path: source,
+  buildId,
+  sha: "a".repeat(40),
+  compatibility: compatibilityFingerprint(source),
+};
+if (linuxPreview) {
+  grant.release = linuxRelease;
+  writeFileSync(grantPath, JSON.stringify(grant), { mode: 0o600 });
+}
 writeFileSync(
   join(source, ".next/life-preview-composition.json"),
-  JSON.stringify({ version: 2, buildId }),
+  JSON.stringify({
+    version: 2,
+    buildId,
+    ...(linuxPreview
+      ? {
+          sha: linuxRelease.sha,
+          compatibility: linuxRelease.compatibility,
+        }
+      : {}),
+  }),
   { mode: 0o600 },
 );
+if (linuxPreview && !standardNegative) {
+  const recovery = join(root, `recovery-${randomUUID()}`);
+  mkdirSync(recovery, { mode: 0o700 });
+  const proof = {
+    ...(await backupAndRestore(source, path, recovery)),
+    version: 1,
+  };
+  await proveRestoredApplication(
+    { node: process.execPath, database: path, origin, ownerLogin: login },
+    linuxRelease,
+    proof,
+  );
+  verifyRecovery(source, path, proof);
+  console.log("LINUX_ONLINE_BACKUP_ISOLATED_RESTORE_NORMAL_APP_PASS");
+}
 const port = await freePort(),
   backend = `http://127.0.0.1:${port}`,
   output = resolve("test-results/issue-142");

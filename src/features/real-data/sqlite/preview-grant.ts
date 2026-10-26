@@ -17,6 +17,17 @@ const grantSchema = z
     owner: z.uuid(),
     origin: z.string().url(),
     login: z.string().min(1),
+    // Linux's explicit operator path freezes one reviewed release. Existing
+    // launchd v2 grants retain their original contract.
+    release: z
+      .object({
+        path: z.string().min(1),
+        buildId: z.string().min(1),
+        sha: z.string().regex(/^[a-f0-9]{40}$/),
+        compatibility: z.string().regex(/^[a-f0-9]{64}$/),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 export type PreviewGrant = z.infer<typeof grantSchema>;
@@ -96,6 +107,11 @@ export function currentPreviewGrant(
     grant.device !== db.dev ||
     grant.inode !== db.ino ||
     grant.owner !== owner ||
+    (grant.release !== undefined &&
+      (grant.release.path !== launch.releasePath ||
+        grant.release.buildId !== launch.buildId ||
+        marker.sha !== grant.release.sha ||
+        marker.compatibility !== grant.release.compatibility)) ||
     (origin !== undefined && grant.origin !== origin) ||
     (login !== undefined && grant.login !== login)
   )
