@@ -1,4 +1,4 @@
-# Personal Preview reset and v2 operator upgrade — #142
+# Personal Preview reset — macOS #142 / Linux #174
 
 This runbook documents the reviewed operator protocol and its actual, scoped
 personal installation for the USER-accepted
@@ -21,7 +21,115 @@ transition** and are not permission to rerun an operator or reset the personal
 database. The feature remains unavailable in standard production/Hosted/Supabase
 builds and without the private Preview grant.
 
-## Required deployment gate
+## Linux existing-v10 operator path — #174
+
+**Code path only; Linux personal activation is NOT performed by this delivery.**
+The Linux path reuses the same Settings → Testbetrieb panel, three reset Actions,
+82-table plan, v2 grant, v10 guards, epoch/revision and receipt semantics. It does
+not install launchd/systemd, enable CD, bootstrap a dataset, migrate a schema,
+stop an existing process, or change Tailscale. It is a deliberate foreground
+Preview session with one owned Next child; terminal SIGINT/SIGTERM and operator
+parent loss use Next's existing drain/close path, without force kill.
+The macOS procedure below is unchanged and is not the Linux procedure.
+
+Only after code/security review, USER M0 merge, exact-main push `quality` PASS,
+and **separate explicit operator authorization** for the exact source/instance:
+
+1. Read-only attribute the existing runtime, private v10 canonical file and
+   writer lease, owner, origin/login, Tailscale Serve and both occupied ports.
+   Keep the original launch command/service and its reviewed standard v10
+   release as the rollback path. No schema rollback or DB replacement is needed.
+2. In a fresh 0700 operator directory **outside the repository**, with the
+   existing database outside that operator directory,
+   create `linux-config.json` (0600). Use real canonical absolute paths locally;
+   never publish this file or its values. All fields are required, no extras:
+
+   ```json
+   {
+     "version": 1,
+     "source": "/absolute/clean/merged/source",
+     "node": "/absolute/pinned/node",
+     "pnpm": "/absolute/pinned/pnpm",
+     "tailscale": "/absolute/tailscale",
+     "database": "/absolute/private/existing/canonical.db",
+     "origin": "https://your-existing-private-name.ts.net",
+     "ownerLogin": "your-existing-owner-login"
+   }
+   ```
+
+   Source dependencies must be installed with the frozen lockfile using Node
+   24.21.0 / pnpm 11.3.0. The source must be clean and match the approved current
+   merged main SHA and origin; it supplies audited operator code and lock-driver
+   dependencies. Builds use fresh private archived releases, clean environment,
+   the existing isolated build wrapper and Preview-only build composition.
+3. From that exact source, explicitly run each authorized stage separately:
+
+   ```text
+   pnpm preview:linux build <private-operator-root> <exact-main-SHA> --operator-approved
+   pnpm preview:linux prove <private-operator-root> <exact-main-SHA> --operator-approved
+   ```
+
+   `build` grants nothing. `prove` opens the source read-only and uses SQLite's
+   online backup API, including live WAL contents. It never copies the source
+   file with `cp`, acquires its writer, checkpoints it or swaps its inode. A new
+   private `recovery-<uuid>` retains `online-backup.db` and an independently
+   restored `restore.db`. Exact v10 schema/catalog, integrity/FKs, one canonical
+   owner/readiness, all **83 table counts and row hashes**, and source
+   device/inode/UID/schema/owner are checked. A source write after the backup
+   does not invalidate that consistent historical snapshot.
+
+   The real Next app starts **only on the restore** at an ephemeral loopback port
+   excluding 3000/3001, with a separate restore-bound grant. It checks authenticated
+   Settings plus Dashboard, Today, Projects and Journal reads, then gracefully
+   shuts down and rechecks all row hashes. No form or reset is submitted. The
+   restore-only port hook checks private restore identity, fresh recovery folder
+   and exact parent PID. All artifacts remain private; CLI output is code-only.
+   A failed/unfinished proof produces no eligible activation receipt. On shutdown
+   timeout, preserve the isolated process/artifacts, block, and explicitly
+   attribute/reconcile it; there is no force kill or automatic recovery retry.
+4. Inspect the private proof and source identity under the authorized checkpoint.
+   Only after a successful proof, the operator gracefully stops the attributed
+   original port-3000 runtime using its existing mechanism. Leave port 3001 alone.
+   Confirm port 3000 and the existing canonical writer lease are free, then run:
+
+   ```text
+   pnpm preview:linux provision <private-operator-root> <exact-main-SHA> --operator-approved
+   pnpm preview:linux start <private-operator-root> <exact-main-SHA> --operator-approved
+   ```
+
+   Provision/start independently revalidate the exact backup bytes, restored
+   rows, source identity, release, gateway fingerprint, fresh exact-main push CI
+   and strict no-bypass Ruleset. Wrong schema/readiness/owner, changed files,
+   revoked grant, unavailable GitHub, recovery proof older than one hour or
+   occupied port/writer fail closed. Normal
+   operation remains one writer on `127.0.0.1:3000`; Tailscale's private HTTPS
+   proxy remains unchanged. The private grant additionally binds release path,
+   BUILD_ID, main SHA and runtime compatibility. Every reset admission rereads it.
+   The operator implementation is byte-compared between merged source and release.
+   The existing public GitHubGate uses ten requests per normal stage with one
+   ruleset (40 across all four), without cached authorization, credentials,
+   polling or bypass; rate-limit failure blocks the operation.
+5. Prove real owner-only Settings UI, cancel/focus, reload/restart and ordinary
+   Manual writes in that separately authorized activation session. **Actual
+   reset requires the USER's conscious UI confirmation `ZURÜCKSETZEN`.** Code,
+   CI, merge, login, build, proof and startup never reset the personal dataset.
+
+To revoke, explicitly run `pnpm preview:linux revoke <private-operator-root>
+<recorded-main-SHA> --operator-approved` from the reviewed source. Revocation
+works even if main moved or GitHub is unavailable: it invalidates the private
+grant without deleting it and marks the installation disabled. An already open
+dialog cannot execute afterward. Then gracefully stop the foreground Preview.
+For rollback, verify the writer/port are released and restart the preserved
+standard v10 runtime with its original configuration. Do not restore over the
+source, run v9, alter Tailscale, or remove backups/lease files. A changed schema,
+unknown writer or recovery mismatch requires a new explicit operator decision.
+
+Normal `pnpm build` / `pnpm start` remain default OFF, including copied grants,
+runtime flags and forged markers. Linux activation, real personal reset and
+post-merge push proof remain separate gates; synthetic evidence is not their
+acceptance.
+
+## Required macOS deployment gate
 
 1. CONTROL code/security review of #142; USER owns the final M0 merge.
 2. Verify current protected `main`, its exact SHA push `quality` success and

@@ -136,6 +136,53 @@ it("default composition refuses copied grant/flags; forged admission cannot dele
     } as never),
   ).toThrow("PREVIEW_RESET_DENIED");
 });
+it("Linux grant requires the exact release path/build/main SHA/compatibility marker and rechecks revocation", () => {
+  const f = fixture();
+  vi.stubEnv("LIFE_OS_BUILD_COMPOSITION", "personal-preview-v2");
+  const release = {
+    path: process.cwd(),
+    buildId: "fixture-build",
+    sha: "a".repeat(40),
+    compatibility: "b".repeat(64),
+  };
+  const markerPath = join(release.path, ".next/life-preview-composition.json");
+  const marker = {
+    version: 2,
+    buildId: release.buildId,
+    sha: release.sha,
+    compatibility: release.compatibility,
+  };
+  writeFileSync(markerPath, JSON.stringify(marker));
+  const save = (value: unknown) =>
+    writeFileSync(f.grantPath, JSON.stringify(value));
+  save({ ...f.grant, release });
+  const admission = admitPreviewReset(f.policy, "linux-release-session");
+  expect(admission.instance).toBe(f.grant.instance);
+  for (const patch of [
+    { path: dirname(release.path) },
+    { buildId: "other-build" },
+    { sha: "c".repeat(40) },
+    { compatibility: "d".repeat(64) },
+  ]) {
+    save({ ...f.grant, release: { ...release, ...patch } });
+    expect(() => admitPreviewReset(f.policy, "linux-release-session")).toThrow(
+      "PREVIEW_GRANT_DENIED",
+    );
+  }
+  save({ ...f.grant, release });
+  for (const patch of [
+    { sha: "c".repeat(40) },
+    { compatibility: "d".repeat(64) },
+  ]) {
+    writeFileSync(markerPath, JSON.stringify({ ...marker, ...patch }));
+    expect(() => admitPreviewReset(f.policy, "linux-release-session")).toThrow(
+      "PREVIEW_GRANT_DENIED",
+    );
+  }
+  writeFileSync(markerPath, JSON.stringify(marker));
+  save({ revoked: true });
+  expect(() => admitPreviewReset(f.policy, "linux-release-session")).toThrow();
+});
 it("one commit preserves profile/schema/inode and receipt survives fresh writes/restart", () => {
   const f = previewFixture();
   const initial = f.store.datasetState(f.context);
