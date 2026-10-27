@@ -105,6 +105,10 @@ and **separate explicit operator authorization** for the exact source/instance:
    operation remains one writer on `127.0.0.1:3000`; Tailscale's private HTTPS
    proxy remains unchanged. The private grant additionally binds release path,
    BUILD_ID, main SHA and runtime compatibility. Every reset admission rereads it.
+   If the owned child exits unexpectedly, the operator reports its exit status
+   or signal and a fixed diagnostic category. It drains bounded stdout/stderr
+   without printing raw output, paths, login values or application data; an
+   unrecognised failure remains explicitly unclassified.
    The operator implementation is byte-compared between merged source and release.
    The existing public GitHubGate uses ten requests per normal stage with one
    ruleset (40 across all four), without cached authorization, credentials,

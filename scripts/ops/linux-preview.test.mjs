@@ -134,6 +134,44 @@ function fixture() {
   return { folder, path, owner };
 }
 
+for (const [diagnostic, expected] of [
+  ["LINUX_OPERATOR_PARENT_REQUIRED", "PARENT_REQUIRED"],
+  ["SQLITE_WRITER_ALREADY_RUNNING", "WRITER_BUSY"],
+  ["UNRECOGNISED_PRIVATE_FAILURE", "UNCLASSIFIED"],
+]) {
+  test(`Linux child startup failure is attributable without leaking output: ${expected}`, () => {
+    const f = fixture(), release = join(f.folder, "release");
+    mkdirSync(join(release, "scripts/ops"), { recursive: true, mode: 0o700 });
+    copyFileSync(
+      join(source, "scripts/ops/linux-preview-parent.mjs"),
+      join(release, "scripts/ops/linux-preview-parent.mjs"),
+    );
+    writeFileSync(
+      join(release, "scripts/ops/run-preview-production.mjs"),
+      `process.stderr.write(${JSON.stringify(`PRIVATE_SECRET ${diagnostic} PRIVATE_PATH`)}); process.stdout.write('PRIVATE_STDOUT'.repeat(2000)); process.exitCode=17;`,
+      { mode: 0o600 },
+    );
+    const config = {
+      node: process.execPath,
+      database: f.path,
+      origin: "https://fixture.owner-tailnet.ts.net",
+      ownerLogin: "fixture@example.test",
+    };
+    const entry = `import { runLinuxApplication } from ${JSON.stringify(pathToFileURL(join(source, "scripts/ops/linux-preview-application.mjs")).href)};
+      try { await runLinuxApplication(${JSON.stringify(config)}, ${JSON.stringify({ path: release })}, ${JSON.stringify(join(f.folder, "unused-grant.json"))}); }
+      catch (error) { process.stderr.write(error.message); process.exitCode = 1; }`;
+    const result = spawnSync(
+      process.execPath,
+      ["--conditions=react-server", "--input-type=module", "--eval", entry],
+      { encoding: "utf8", timeout: 10_000 },
+    );
+    assert.equal(result.status, 1);
+    assert.equal(result.stdout, "");
+    assert.equal(result.stderr, `LINUX_PREVIEW_CHILD_EXIT_17_${expected}`);
+    assert.doesNotMatch(result.stderr, /PRIVATE|fixture@example/);
+  });
+}
+
 test("Linux live WAL online backup + independent restore retain all 83 tables and data without acquiring the original writer", async () => {
   const { folder, path, owner } = fixture();
   const runtime = new (native("runtime").SqliteRuntime)(path);
