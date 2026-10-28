@@ -26,6 +26,37 @@ export function linuxGrant(config, release, owner, instance = randomUUID()) {
   };
 }
 
+// Child output can contain private paths, logins or data. Retain only a bounded
+// tail and report fixed categories, never the output itself.
+const diagnosticCategories = [
+  ["LINUX_OPERATOR_PARENT_REQUIRED", "PARENT_REQUIRED"],
+  ["PREVIEW_LAUNCH_DENIED", "PREVIEW_DENIED"],
+  ["PREVIEW_COMPOSITION_REQUIRED", "PREVIEW_COMPOSITION"],
+  ["PATH_BOUNDARY_INVALID", "PATH_BOUNDARY"],
+  ["SQLITE_WRITER_ALREADY_RUNNING", "WRITER_BUSY"],
+  ["SQLITE_SCHEMA_VERSION_MISMATCH", "SCHEMA_MISMATCH"],
+  ["SQLITE_OWNER_INVALID", "OWNER_INVALID"],
+  ["SQLITE_INTEGRITY_FAILED", "INTEGRITY_FAILED"],
+  ["SQLITE_COMPATIBILITY_NOT_READY", "COMPATIBILITY_NOT_READY"],
+  ["SQLITE_CANONICAL_CATALOG_INVALID", "CATALOG_INVALID"],
+  ["HOSTED_APPLICATION_CONFIGURATION_REQUIRED", "HOSTED_CONFIGURATION"],
+  ["LIFE_OS_RUNTIME_STARTUP_DENIED", "RUNTIME_DENIED"],
+];
+const diagnosticLimit = 16_384;
+
+function childFailure(result, output) {
+  if (result.spawnFailed) return "LINUX_PREVIEW_CHILD_SPAWN_FAILED";
+  const diagnostic =
+    diagnosticCategories.find(([code]) => output.includes(code))?.[1] ??
+    "UNCLASSIFIED";
+  if (Number.isInteger(result.code) && result.code >= 0 && result.code <= 255)
+    return `LINUX_PREVIEW_CHILD_EXIT_${result.code}_${diagnostic}`;
+  const signal = ["SIGINT", "SIGTERM", "SIGKILL", "SIGHUP"].includes(result.signal)
+    ? result.signal
+    : "OTHER";
+  return `LINUX_PREVIEW_CHILD_SIGNAL_${signal}_${diagnostic}`;
+}
+
 export async function runLinuxApplication(config, release, grantPath) {
   const child = spawn(
     config.node,
@@ -40,19 +71,27 @@ export async function runLinuxApplication(config, release, grantPath) {
         ...appEnvironment({ ...config, preview: { version: 2, grantPath } }),
         LIFE_OS_LINUX_OPERATOR_PID: String(process.pid),
       },
-      stdio: ["ignore", "ignore", "ignore"],
+      stdio: ["ignore", "pipe", "pipe"],
     },
   );
+  let stdout = "", stderr = "";
+  child.stdout.on("data", (chunk) => {
+    stdout = (stdout + chunk.toString()).slice(-diagnosticLimit);
+  });
+  child.stderr.on("data", (chunk) => {
+    stderr = (stderr + chunk.toString()).slice(-diagnosticLimit);
+  });
   const stop = () => child.kill("SIGTERM");
   process.once("SIGINT", stop);
   process.once("SIGTERM", stop);
   try {
     const result = await new Promise((resolve) => {
-      child.once("exit", (code, signal) => resolve({ code, signal }));
-      child.once("error", () => resolve({ code: -1 }));
+      // `close` follows stdio drain; `exit` alone can lose the last diagnostic.
+      child.once("close", (code, signal) => resolve({ code, signal }));
+      child.once("error", () => resolve({ spawnFailed: true }));
     });
     if (![130, 143].includes(result.code))
-      throw new Error("LINUX_PREVIEW_APPLICATION_FAILED");
+      throw new Error(childFailure(result, `${stderr}\n${stdout}`));
   } finally {
     process.removeListener("SIGINT", stop);
     process.removeListener("SIGTERM", stop);
