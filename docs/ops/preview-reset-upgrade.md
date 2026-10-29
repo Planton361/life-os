@@ -62,6 +62,7 @@ and **separate explicit operator authorization** for the exact source/instance:
    merged main SHA and origin; it supplies audited operator code and lock-driver
    dependencies. Builds use fresh private archived releases, clean environment,
    the existing isolated build wrapper and Preview-only build composition.
+
 3. From that exact source, explicitly run each authorized stage separately:
 
    ```text
@@ -87,6 +88,7 @@ and **separate explicit operator authorization** for the exact source/instance:
    A failed/unfinished proof produces no eligible activation receipt. On shutdown
    timeout, preserve the isolated process/artifacts, block, and explicitly
    attribute/reconcile it; there is no force kill or automatic recovery retry.
+
 4. Inspect the private proof and source identity under the authorized checkpoint.
    Only after a successful proof, the operator gracefully stops the attributed
    original port-3000 runtime using its existing mechanism. Leave port 3001 alone.
@@ -109,10 +111,19 @@ and **separate explicit operator authorization** for the exact source/instance:
    or signal and a fixed diagnostic category. It drains bounded stdout/stderr
    without printing raw output, paths, login values or application data; an
    unrecognised failure remains explicitly unclassified.
+   The operator appends bounded, fixed-category lifecycle events to the private
+   `linux-lifecycle.jsonl` (0600) in the operator root. Signal receipt and child
+   close are separate records: a signal is not proof of user intent. Exit 130/143
+   or SIGINT/SIGTERM without a recorded operator stop request is a failure.
+   An admission/start without a terminal record is UNKNOWN/INCOMPLETE, not a
+   successful shutdown. SIGKILL, terminal teardown or host loss can prevent the
+   operator from recording a final event; the log cannot identify an external
+   killer. Unsafe, full or unwritable evidence fails closed; preserve prior logs.
    The operator implementation is byte-compared between merged source and release.
    The existing public GitHubGate uses ten requests per normal stage with one
    ruleset (40 across all four), without cached authorization, credentials,
    polling or bypass; rate-limit failure blocks the operation.
+
 5. Prove real owner-only Settings UI, cancel/focus, reload/restart and ordinary
    Manual writes in that separately authorized activation session. **Actual
    reset requires the USER's conscious UI confirmation `ZURÜCKSETZEN`.** Code,
