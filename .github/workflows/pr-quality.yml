@@ -217,6 +217,8 @@ jobs:
       - name: Production Next build and native shutdown proof (Linux x64)
         run: |
           pnpm build
+          node --test tests/sqlite/browser-route-diagnostics.test.mjs
+          node tests/sqlite/browser-route-diagnostics-injected.mjs
           node tests/sqlite/issue-172-browser-proof.mjs
           node tests/sqlite/issue-170-browser-proof.mjs
           node tests/sqlite/issue-160-browser-proof.mjs
@@ -284,10 +286,31 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: issue-158-disposable-browser-proof
+          path: test-results/issue-158/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Preserve issue 160 redacted route diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: issue-160-route-diagnostics
           path: |
-            test-results/issue-158/
-            test-results/issue-160/
-            test-results/issue-170/
+            test-results/issue-160/*.png
+            test-results/issue-160/route-diagnostics/
+            test-results/issue-160/synthetic-injection/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Preserve issue 170 redacted route diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: issue-170-route-diagnostics
+          path: |
+            test-results/issue-170/*.png
+            test-results/issue-170/route-diagnostics/
+            test-results/issue-170/synthetic-injection/
           if-no-files-found: error
           retention-days: 14
 
