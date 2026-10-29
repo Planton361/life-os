@@ -28,6 +28,7 @@ import {
 } from "./linux-preview-database.mjs";
 import { readLinuxConfiguration } from "./linux-preview.mjs";
 import { linuxGrant } from "./linux-preview-application.mjs";
+import { createLifecycleLog } from "./linux-preview-lifecycle.mjs";
 
 for (const operation of ["build", "prove", "provision", "start", "revoke"]) {
   test(`Linux ${operation}: explicit stage ordering; each failed gate prevents later effects`, async () => {
@@ -140,7 +141,8 @@ for (const [diagnostic, expected] of [
   ["UNRECOGNISED_PRIVATE_FAILURE", "UNCLASSIFIED"],
 ]) {
   test(`Linux child startup failure is attributable without leaking output: ${expected}`, () => {
-    const f = fixture(), release = join(f.folder, "release");
+    const f = fixture(),
+      release = join(f.folder, "release");
     mkdirSync(join(release, "scripts/ops"), { recursive: true, mode: 0o700 });
     copyFileSync(
       join(source, "scripts/ops/linux-preview-parent.mjs"),
@@ -158,7 +160,7 @@ for (const [diagnostic, expected] of [
       ownerLogin: "fixture@example.test",
     };
     const entry = `import { runLinuxApplication } from ${JSON.stringify(pathToFileURL(join(source, "scripts/ops/linux-preview-application.mjs")).href)};
-      try { await runLinuxApplication(${JSON.stringify(config)}, ${JSON.stringify({ path: release })}, ${JSON.stringify(join(f.folder, "unused-grant.json"))}); }
+      try { await runLinuxApplication(${JSON.stringify(config)}, ${JSON.stringify({ path: release })}, ${JSON.stringify(join(f.folder, "unused-grant.json"))}, ${JSON.stringify(f.folder)}); }
       catch (error) { process.stderr.write(error.message); process.exitCode = 1; }`;
     const result = spawnSync(
       process.execPath,
@@ -169,8 +171,108 @@ for (const [diagnostic, expected] of [
     assert.equal(result.stdout, "");
     assert.equal(result.stderr, `LINUX_PREVIEW_CHILD_EXIT_17_${expected}`);
     assert.doesNotMatch(result.stderr, /PRIVATE|fixture@example/);
+    const log = readFileSync(join(f.folder, "linux-lifecycle.jsonl"), "utf8");
+    assert.doesNotMatch(log, /PRIVATE|fixture@example|fixture\.owner/);
+    assert.deepEqual(
+      log
+        .trim()
+        .split("\n")
+        .map((row) => JSON.parse(row).event),
+      ["admitted", "child_started", "child_close"],
+    );
   });
 }
+
+for (const outcome of ["130", "143", "SIGINT", "SIGTERM", "spawn"]) {
+  test(`Linux unexpected child ${outcome} is failure with durable redacted close`, () => {
+    const f = fixture(),
+      release = join(f.folder, "release");
+    mkdirSync(join(release, "scripts/ops"), { recursive: true, mode: 0o700 });
+    copyFileSync(
+      join(source, "scripts/ops/linux-preview-parent.mjs"),
+      join(release, "scripts/ops/linux-preview-parent.mjs"),
+    );
+    const code = outcome.startsWith("SIG")
+      ? `process.kill(process.pid, '${outcome}');`
+      : `process.exit(${Number(outcome) || 17});`;
+    writeFileSync(
+      join(release, "scripts/ops/run-preview-production.mjs"),
+      `process.stderr.write('PRIVATE_SECRET'); ${code}`,
+      { mode: 0o600 },
+    );
+    const config = {
+      node:
+        outcome === "spawn" ? join(f.folder, "missing-node") : process.execPath,
+      database: f.path,
+      origin: "https://fixture.owner-tailnet.ts.net",
+      ownerLogin: "fixture@example.test",
+    };
+    const entry = `import { runLinuxApplication } from ${JSON.stringify(pathToFileURL(join(source, "scripts/ops/linux-preview-application.mjs")).href)};
+      try { await runLinuxApplication(${JSON.stringify(config)}, ${JSON.stringify({ path: release })}, 'unused', ${JSON.stringify(f.folder)}); } catch(e) { process.stderr.write(e.message); process.exitCode=1; }`;
+    const result = spawnSync(
+      process.execPath,
+      ["--conditions=react-server", "--input-type=module", "--eval", entry],
+      { encoding: "utf8", timeout: 10_000 },
+    );
+    assert.equal(result.status, 1);
+    assert.match(
+      result.stderr,
+      outcome === "spawn"
+        ? /CHILD_SPAWN_FAILED/
+        : outcome.startsWith("SIG")
+          ? new RegExp(`CHILD_SIGNAL_${outcome}_`)
+          : new RegExp(`CHILD_EXIT_${outcome}_`),
+    );
+    const log = readFileSync(join(f.folder, "linux-lifecycle.jsonl"), "utf8");
+    assert.doesNotMatch(log, /PRIVATE|fixture|owner-tailnet|canonical|secret/i);
+    const rows = log.trim().split("\n").map(JSON.parse);
+    assert.equal(rows[0].event, "admitted");
+    assert.equal(rows.at(-1).event, "child_close");
+    assert.ok(!rows.some((row) => row.event === "controlled_shutdown"));
+  });
+}
+
+test("Linux lifecycle log preserves prior evidence and rejects unsafe boundaries and capacity", () => {
+  const folder = mkdtempSync(join(realpathSync(tmpdir()), "life-os-174-log-"));
+  const path = join(folder, "linux-lifecycle.jsonl");
+  const log = createLifecycleLog(folder);
+  log.record("admitted");
+  log.close();
+  const before = readFileSync(path, "utf8");
+  const again = createLifecycleLog(folder);
+  again.record("admitted");
+  again.close();
+  assert.ok(readFileSync(path, "utf8").startsWith(before));
+  chmodSync(path, 0o644);
+  assert.throws(() => createLifecycleLog(folder), /LINUX_LIFECYCLE_LOG_DENIED/);
+  chmodSync(path, 0o600);
+  const other = join(folder, "hardlink");
+  linkSync(path, other);
+  assert.throws(() => createLifecycleLog(folder), /LINUX_LIFECYCLE_LOG_DENIED/);
+  const symlinkFolder = mkdtempSync(
+    join(realpathSync(tmpdir()), "life-os-174-symlink-"),
+  );
+  symlinkSync(path, join(symlinkFolder, "linux-lifecycle.jsonl"));
+  assert.throws(
+    () => createLifecycleLog(symlinkFolder),
+    /LINUX_LIFECYCLE_LOG_DENIED/,
+  );
+  const fullFolder = mkdtempSync(
+    join(realpathSync(tmpdir()), "life-os-174-full-"),
+  );
+  const full = join(fullFolder, "linux-lifecycle.jsonl");
+  writeFileSync(full, Buffer.alloc(262_144), { mode: 0o600 });
+  assert.throws(
+    () => createLifecycleLog(fullFolder),
+    /LINUX_LIFECYCLE_LOG_DENIED/,
+  );
+  assert.equal(lstatSync(full).size, 262_144);
+  chmodSync(symlinkFolder, 0o755);
+  assert.throws(
+    () => createLifecycleLog(symlinkFolder),
+    /LINUX_LIFECYCLE_LOG_DENIED/,
+  );
+});
 
 test("Linux live WAL online backup + independent restore retain all 83 tables and data without acquiring the original writer", async () => {
   const { folder, path, owner } = fixture();
@@ -257,7 +359,7 @@ test("Linux live WAL online backup + independent restore retain all 83 tables an
   }
 });
 
-for (const signal of ["SIGINT", "SIGTERM", "SIGKILL"]) {
+for (const signal of ["SIGINT", "SIGTERM", "SIGKILL", "LOG_FAILURE"]) {
   test(`Linux owned child drains and releases its real kernel lease after operator ${signal}; restart remains possible`, async () => {
     const f = fixture(),
       release = join(f.folder, "release");
@@ -297,13 +399,15 @@ for (const signal of ["SIGINT", "SIGTERM", "SIGKILL"]) {
       ownerLogin: "fixture@example.test",
     };
     const entry = `import { runLinuxApplication } from ${JSON.stringify(pathToFileURL(join(source, "scripts/ops/linux-preview-application.mjs")).href)};
-      await runLinuxApplication(${JSON.stringify(config)}, ${JSON.stringify({ path: release })}, ${JSON.stringify(join(f.folder, "unused-grant.json"))});`;
+      await runLinuxApplication(${JSON.stringify(config)}, ${JSON.stringify({ path: release })}, ${JSON.stringify(join(f.folder, "unused-grant.json"))}, ${JSON.stringify(f.folder)});`;
     const parent = spawn(
       process.execPath,
       ["--conditions=react-server", "--input-type=module", "--eval", entry],
       { stdio: "ignore" },
     );
-    const exited = new Promise((resolve) => parent.once("exit", resolve));
+    const exited = new Promise((resolve) =>
+      parent.once("exit", (code, exitSignal) => resolve({ code, exitSignal })),
+    );
     const waitFor = async (file) => {
       for (let n = 0; n < 250; n++) {
         if (existsSync(file)) return;
@@ -321,10 +425,35 @@ for (const signal of ["SIGINT", "SIGTERM", "SIGKILL"]) {
         () => native("writer-lease").acquireWriterLease(f.path),
         /SQLITE_WRITER_ALREADY_RUNNING/,
       );
-      parent.kill(signal);
-      await exited;
+      if (signal === "LOG_FAILURE")
+        chmodSync(join(f.folder, "linux-lifecycle.jsonl"), 0o644);
+      parent.kill(signal === "LOG_FAILURE" ? "SIGTERM" : signal);
+      const parentExit = await exited;
+      if (signal === "SIGKILL") assert.equal(parentExit.exitSignal, "SIGKILL");
+      else assert.equal(parentExit.code, signal === "LOG_FAILURE" ? 1 : 0);
       await waitFor(closed);
       assert.deepEqual(JSON.parse(readFileSync(closed)), { drained: true });
+      const events = readFileSync(
+        join(f.folder, "linux-lifecycle.jsonl"),
+        "utf8",
+      )
+        .trim()
+        .split("\n")
+        .map((row) => JSON.parse(row));
+      assert.deepEqual(
+        events.map((row) => row.event),
+        ["SIGKILL", "LOG_FAILURE"].includes(signal)
+          ? ["admitted", "child_started"]
+          : [
+              "admitted",
+              "child_started",
+              "operator_signal",
+              "child_close",
+              "controlled_shutdown",
+            ],
+      );
+      if (!["SIGKILL", "LOG_FAILURE"].includes(signal))
+        assert.equal(events[2].signal, signal);
       const restarted = new (native("runtime").SqliteRuntime)(f.path);
       restarted.close();
     } finally {

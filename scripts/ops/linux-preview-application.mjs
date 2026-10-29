@@ -4,6 +4,7 @@ import { request } from "node:http";
 import { dirname, join } from "node:path";
 import { hostname } from "node:os";
 import { randomUUID } from "node:crypto";
+import { createLifecycleLog } from "./linux-preview-lifecycle.mjs";
 import { atomicJson, appEnvironment, pause } from "./preview-cd-host.mjs";
 import {
   databaseIdentity,
@@ -51,50 +52,116 @@ function childFailure(result, output) {
     "UNCLASSIFIED";
   if (Number.isInteger(result.code) && result.code >= 0 && result.code <= 255)
     return `LINUX_PREVIEW_CHILD_EXIT_${result.code}_${diagnostic}`;
-  const signal = ["SIGINT", "SIGTERM", "SIGKILL", "SIGHUP"].includes(result.signal)
+  const signal = ["SIGINT", "SIGTERM", "SIGKILL", "SIGHUP"].includes(
+    result.signal,
+  )
     ? result.signal
     : "OTHER";
   return `LINUX_PREVIEW_CHILD_SIGNAL_${signal}_${diagnostic}`;
 }
 
-export async function runLinuxApplication(config, release, grantPath) {
-  const child = spawn(
-    config.node,
-    [
-      "--import",
-      join(release.path, "scripts/ops/linux-preview-parent.mjs"),
-      "scripts/ops/run-preview-production.mjs",
-    ],
-    {
-      cwd: release.path,
-      env: {
-        ...appEnvironment({ ...config, preview: { version: 2, grantPath } }),
-        LIFE_OS_LINUX_OPERATOR_PID: String(process.pid),
-      },
-      stdio: ["ignore", "pipe", "pipe"],
-    },
-  );
-  let stdout = "", stderr = "";
-  child.stdout.on("data", (chunk) => {
-    stdout = (stdout + chunk.toString()).slice(-diagnosticLimit);
-  });
-  child.stderr.on("data", (chunk) => {
-    stderr = (stderr + chunk.toString()).slice(-diagnosticLimit);
-  });
-  const stop = () => child.kill("SIGTERM");
-  process.once("SIGINT", stop);
-  process.once("SIGTERM", stop);
+export async function runLinuxApplication(config, release, grantPath, root) {
+  const lifecycle = createLifecycleLog(root);
   try {
-    const result = await new Promise((resolve) => {
-      // `close` follows stdio drain; `exit` alone can lose the last diagnostic.
-      child.once("close", (code, signal) => resolve({ code, signal }));
-      child.once("error", () => resolve({ spawnFailed: true }));
+    lifecycle.record("admitted");
+    const child = spawn(
+      config.node,
+      [
+        "--import",
+        join(release.path, "scripts/ops/linux-preview-parent.mjs"),
+        "scripts/ops/run-preview-production.mjs",
+      ],
+      {
+        cwd: release.path,
+        env: {
+          ...appEnvironment({ ...config, preview: { version: 2, grantPath } }),
+          LIFE_OS_LINUX_OPERATOR_PID: String(process.pid),
+        },
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    );
+    let stdout = "",
+      stderr = "";
+    child.stdout.on("data", (chunk) => {
+      stdout = (stdout + chunk.toString()).slice(-diagnosticLimit);
     });
-    if (![130, 143].includes(result.code))
-      throw new Error(childFailure(result, `${stderr}\n${stdout}`));
+    child.stderr.on("data", (chunk) => {
+      stderr = (stderr + chunk.toString()).slice(-diagnosticLimit);
+    });
+    let requested = false,
+      exited = false,
+      logFailed = false,
+      spawnFailed = false;
+    const record = (event, details) => {
+      try {
+        lifecycle.record(event, details);
+      } catch {
+        logFailed = true;
+      }
+    };
+    child.once("spawn", () => {
+      record("child_started");
+      if (logFailed) child.kill("SIGTERM");
+    });
+    child.once("exit", () => {
+      exited = true;
+    });
+    const stop = (signal) => {
+      record("operator_signal", { signal });
+      // A signal received after the child's exit cannot explain its exit.
+      if (!exited && child.kill("SIGTERM")) requested = true;
+    };
+    const interrupt = () => stop("SIGINT");
+    const terminate = () => stop("SIGTERM");
+    process.once("SIGINT", interrupt);
+    process.once("SIGTERM", terminate);
+    try {
+      const result = await new Promise((resolve) => {
+        // `close` follows stdio drain; `exit` alone can lose the last diagnostic.
+        child.once("close", (code, signal) =>
+          resolve({ code, signal, spawnFailed }),
+        );
+        child.once("error", () => {
+          spawnFailed = true;
+        });
+      });
+      const failure = childFailure(result, `${stderr}\n${stdout}`);
+      const category = result.spawnFailed
+        ? "SPAWN_FAILED"
+        : (diagnosticCategories.find(([code]) =>
+            `${stderr}\n${stdout}`.includes(code),
+          )?.[1] ?? "UNCLASSIFIED");
+      const details = { category };
+      if (
+        Number.isInteger(result.code) &&
+        result.code >= 0 &&
+        result.code <= 255
+      )
+        details.code = result.code;
+      if (result.signal)
+        details.signal = ["SIGINT", "SIGTERM", "SIGKILL", "SIGHUP"].includes(
+          result.signal,
+        )
+          ? result.signal
+          : "OTHER";
+      record("child_close", details);
+      if (logFailed) throw new Error("LINUX_LIFECYCLE_LOG_DENIED");
+      if (
+        result.spawnFailed ||
+        !requested ||
+        !(
+          [130, 143].includes(result.code) ||
+          ["SIGINT", "SIGTERM"].includes(result.signal)
+        )
+      )
+        throw new Error(failure);
+      lifecycle.record("controlled_shutdown");
+    } finally {
+      process.removeListener("SIGINT", interrupt);
+      process.removeListener("SIGTERM", terminate);
+    }
   } finally {
-    process.removeListener("SIGINT", stop);
-    process.removeListener("SIGTERM", stop);
+    lifecycle.close();
   }
 }
 

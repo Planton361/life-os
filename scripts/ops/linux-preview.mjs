@@ -64,6 +64,7 @@ function operatorFingerprint(source) {
       "linux-preview-core.mjs",
       "linux-preview-database.mjs",
       "linux-preview-application.mjs",
+      "linux-preview-lifecycle.mjs",
       "linux-preview-restore-port.mjs",
       "linux-preview-parent.mjs",
     ].map((name) => {
@@ -291,7 +292,7 @@ export async function runLinuxPreview(operation, root, sha, approved) {
         // Foreground owner, one normal-conditions Next child. Next retains
         // request draining, checkpoint/close and the sole writer lease.
         releaseLock();
-        await runLinuxApplication(config, release, grantPath);
+        await runLinuxApplication(config, release, grantPath, root);
       },
       revoke: () => {
         // Existing admissions re-read this file on prepare/execute/receipt.
