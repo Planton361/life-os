@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createRouteDiagnostics } from "./browser-route-diagnostics.mjs";
 import { randomUUID } from "node:crypto";
 import { createRequire } from "node:module";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -104,6 +105,11 @@ const evidence = {
 let app;
 let browser;
 let exitCode = 0;
+const syntheticFailure = process.env.LIFE_OS_174_SYNTHETIC_FAILURE === "160";
+const diagnostics = createRouteDiagnostics({
+  output,
+  synthetic: syntheticFailure,
+});
 
 function readEntities() {
   const db = new Database(fixture.path, {
@@ -193,6 +199,7 @@ try {
     { name: "life_os_profile", value: "manual", url: app.origin },
   ]);
   const page = await context.newPage();
+  diagnostics.attach(page, app);
   const display = await context.newCDPSession(page);
   page.setDefaultTimeout(12000);
   page.on("pageerror", (error) => evidence.errors.push(error.message));
@@ -260,16 +267,21 @@ try {
 
       await link.focus();
       await expect(link).toBeFocused();
+      diagnostics.begin(route.path, "keyboard");
       await page.keyboard.press("Enter");
       await page.waitForURL(
         (url) => `${url.pathname}${url.search}${url.hash}` === route.path,
       );
+      diagnostics.matched();
       assert.equal(new URL(page.url()).pathname, route.path);
+      if (syntheticFailure && route.path === "/goals/new")
+        assert.fail("explicit synthetic failure fixture");
       const form = page.getByRole("form", {
         name: route.formName,
         exact: true,
       });
       await expect(form).toBeVisible();
+      diagnostics.visible();
       await expect(
         page.getByRole("heading", { name: route.formName, exact: true }),
       ).toBeVisible();
@@ -907,41 +919,45 @@ try {
     "Agenda matrix/inventory checks",
   );
 } catch (error) {
+  diagnostics.failure(error);
   evidence.result = "HARNESS_OR_ASSERTION_FAILURE";
-  evidence.failure = String(error.stack || error);
-  if (browser) {
-    const failedPage = browser.contexts()[0]?.pages()[0];
-    if (failedPage) {
-      await failedPage.screenshot({
-        path: join(output, "failure.png"),
-        fullPage: true,
-      });
-      evidence.focus = await failedPage.evaluate(() => ({
-        scrollY,
-        active: document.activeElement?.outerHTML.slice(0, 2000),
-        rect: document.activeElement?.getBoundingClientRect().toJSON(),
-        parent: document.activeElement?.parentElement && {
-          rect: document.activeElement.parentElement
-            .getBoundingClientRect()
-            .toJSON(),
-          scrollLeft: document.activeElement.parentElement.scrollLeft,
-          scrollWidth: document.activeElement.parentElement.scrollWidth,
-          overflowX: getComputedStyle(document.activeElement.parentElement)
-            .overflowX,
-        },
-      }));
-    }
-  }
-  console.error(error);
+  evidence.failure = "ASSERTION_OR_HARNESS_FAILURE";
+  console.error("ISSUE_160_ASSERTION_OR_HARNESS_FAILURE");
   exitCode = 1;
 } finally {
-  writeFileSync(
-    join(output, "evidence.json"),
-    JSON.stringify(evidence, null, 2),
-  );
-  if (browser) await browser.close();
-  if (app) await app.stop("SIGKILL");
-  if (!exitCode) releaseApplicationFixture(fixture);
+  try {
+    await diagnostics.finish({ failed: exitCode !== 0, app });
+  } catch {
+    console.error("ISSUE_160_DIAGNOSTIC_FAILED");
+    exitCode = 1;
+  }
+  try {
+    writeFileSync(
+      join(output, "evidence.json"),
+      JSON.stringify(evidence, null, 2),
+    );
+  } catch {
+    console.error("ISSUE_160_EVIDENCE_FAILED");
+    exitCode = 1;
+  }
+  try {
+    if (browser) await browser.close();
+  } catch {
+    console.error("ISSUE_160_BROWSER_CLEANUP_FAILED");
+    exitCode = 1;
+  }
+  try {
+    if (app) await app.stop("SIGKILL");
+  } catch {
+    console.error("ISSUE_160_APPLICATION_CLEANUP_FAILED");
+    exitCode = 1;
+  }
+  try {
+    if (!exitCode) releaseApplicationFixture(fixture);
+  } catch {
+    console.error("ISSUE_160_FIXTURE_CLEANUP_FAILED");
+    exitCode = 1;
+  }
 }
 
 if (exitCode) process.exitCode = exitCode;

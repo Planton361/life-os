@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createRouteDiagnostics } from "./browser-route-diagnostics.mjs";
 import { randomUUID } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
@@ -49,6 +50,11 @@ const proof = {
 const projects = [];
 let app, browser, context, page;
 let success = false;
+const syntheticFailure = process.env.LIFE_OS_174_SYNTHETIC_FAILURE === "170";
+const diagnostics = createRouteDiagnostics({
+  output,
+  synthetic: syntheticFailure,
+});
 
 async function prepare(count) {
   const store = new SqliteRuntime(fixture.path, { syntheticProof: true });
@@ -204,6 +210,7 @@ async function start(options = {}) {
     { name: "life_os_profile", value: "manual", url: app.origin },
   ]);
   page = await context.newPage();
+  diagnostics.attach(page, app);
   const errors = consoleProof(page);
   page.setDefaultTimeout(12000);
   context.on("request", (r) => {
@@ -313,9 +320,13 @@ try {
       const firstTitle = await firstCard.locator("h3").textContent();
       await page.keyboard.press("Tab");
       await expect(firstCard).toBeFocused();
+      diagnostics.begin(firstHref, "keyboard");
       await page.keyboard.press("Enter");
       await page.waitForURL(`**${firstHref}`);
+      diagnostics.matched();
+      if (syntheticFailure) assert.fail("explicit synthetic failure fixture");
       await expect(page.locator("h1")).toContainText(firstTitle);
+      diagnostics.visible();
       await page.goto(`${app.origin}/dashboard`);
       const baseline = await assertCockpit(page);
       for (const view of ["Goal View", "Skill View", "Project View"]) {
@@ -361,9 +372,12 @@ try {
       const panel = page.locator(".dashboard-portfolio");
       for (const p of projects) {
         const link = panel.locator(`a[href="/projects/${p.id}"]`);
+        diagnostics.begin(`/projects/${p.id}`, "click");
         await link.click();
         await page.waitForURL(`**/projects/${p.id}`);
+        diagnostics.matched();
         await expect(page.locator("h1")).toContainText(p.title);
+        diagnostics.visible();
         proof.controls.push({ href: `/projects/${p.id}`, click: "PASS" });
         await page.goto(`${app.origin}/dashboard`);
       }
@@ -509,18 +523,44 @@ try {
     "populated viewport cases; Demo/Empty, keyboard/reload, four read faults and Auth-blocked",
   );
 } catch (error) {
+  diagnostics.failure(error);
   proof.result = "FAIL";
-  proof.error = String(error.stack || error);
-  if (page && !page.isClosed())
-    await page.screenshot({
-      path: join(output, "failure.png"),
-      fullPage: true,
-    });
-  console.error(error);
+  proof.error = "ASSERTION_OR_HARNESS_FAILURE";
+  console.error("ISSUE_170_ASSERTION_OR_HARNESS_FAILURE");
   process.exitCode = 1;
 } finally {
-  writeFileSync(join(output, "proof.json"), JSON.stringify(proof, null, 2));
-  if (browser) await browser.close();
-  if (app) await app.stop("SIGKILL");
-  if (success) releaseApplicationFixture(fixture);
+  try {
+    await diagnostics.finish({ failed: !success, app });
+  } catch {
+    console.error("ISSUE_170_DIAGNOSTIC_FAILED");
+    success = false;
+    process.exitCode = 1;
+  }
+  try {
+    writeFileSync(join(output, "proof.json"), JSON.stringify(proof, null, 2));
+  } catch {
+    console.error("ISSUE_170_EVIDENCE_FAILED");
+    success = false;
+    process.exitCode = 1;
+  }
+  try {
+    if (browser) await browser.close();
+  } catch {
+    console.error("ISSUE_170_BROWSER_CLEANUP_FAILED");
+    success = false;
+    process.exitCode = 1;
+  }
+  try {
+    if (app) await app.stop("SIGKILL");
+  } catch {
+    console.error("ISSUE_170_APPLICATION_CLEANUP_FAILED");
+    success = false;
+    process.exitCode = 1;
+  }
+  try {
+    if (success) releaseApplicationFixture(fixture);
+  } catch {
+    console.error("ISSUE_170_FIXTURE_CLEANUP_FAILED");
+    process.exitCode = 1;
+  }
 }
