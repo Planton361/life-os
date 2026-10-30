@@ -26,7 +26,12 @@ import {
   inspectDatabase,
   verifyRecovery,
 } from "./linux-preview-database.mjs";
-import { readLinuxConfiguration } from "./linux-preview.mjs";
+import {
+  readLinuxConfiguration,
+  prepareLinuxPreviewNext,
+  saveLinuxBuild,
+} from "./linux-preview.mjs";
+import { atomicJson } from "./preview-cd-host.mjs";
 import { linuxGrant } from "./linux-preview-application.mjs";
 import { createLifecycleLog } from "./linux-preview-lifecycle.mjs";
 
@@ -120,6 +125,204 @@ test("Linux operator defaults OFF, denies unapproved invocation without printing
 });
 
 const source = process.cwd();
+
+function markerFixture() {
+  const root = mkdtempSync(join(realpathSync(tmpdir()), "life-os-174-marker-"));
+  const releases = join(root, "releases"),
+    release = join(releases, "fresh");
+  mkdirSync(releases, { mode: 0o700 });
+  mkdirSync(release, { mode: 0o700 });
+  const database = join(root, "fixture.db");
+  writeFileSync(database, "", { mode: 0o600, flag: "wx" });
+  return {
+    root,
+    release,
+    next: join(release, ".next"),
+    config: { database },
+    sha: "a".repeat(40),
+    built: {
+      path: release,
+      buildId: "fixture-build",
+      compatibility: "b".repeat(64),
+    },
+  };
+}
+
+test("Linux build reproduces the generated 0755 .next marker boundary failure", () => {
+  const f = markerFixture();
+  mkdirSync(f.next, { mode: 0o755 });
+  chmodSync(f.next, 0o755); // Model a normal generated directory independent of test umask.
+  const marker = join(f.next, "life-preview-composition.json");
+  writeFileSync(
+    marker,
+    JSON.stringify({ version: 2, buildId: f.built.buildId }),
+    { mode: 0o600 },
+  );
+  assert.throws(
+    () => atomicJson(marker, { version: 2 }),
+    /PATH_BOUNDARY_INVALID/,
+  );
+  assert.throws(
+    () => saveLinuxBuild(f.root, f.config, f.sha, f.built),
+    /PATH_BOUNDARY_INVALID/,
+  );
+  assert.equal(existsSync(join(f.root, "linux-state.json")), false);
+});
+
+test("Linux fresh build keeps .next private and commits the marker before disabled state", async () => {
+  const f = markerFixture();
+  prepareLinuxPreviewNext(f.release);
+  // A Next-style recursive mkdir with 0755 must retain the already-private directory.
+  mkdirSync(f.next, { recursive: true, mode: 0o755 });
+  const marker = join(f.next, "life-preview-composition.json");
+  writeFileSync(
+    marker,
+    JSON.stringify({ version: 2, buildId: f.built.buildId }),
+    { mode: 0o600, flag: "wx" },
+  );
+  await linuxPreviewOperation("build", {
+    authorize() {},
+    verifySource() {},
+    assertInactive() {},
+    build: () => f.built,
+    saveBuild: (built) => saveLinuxBuild(f.root, f.config, f.sha, built),
+  });
+  assert.equal(lstatSync(f.next).mode & 0o777, 0o700);
+  assert.equal(lstatSync(marker).mode & 0o777, 0o600);
+  assert.deepEqual(JSON.parse(readFileSync(marker, "utf8")), {
+    version: 2,
+    buildId: f.built.buildId,
+    sha: f.sha,
+    compatibility: f.built.compatibility,
+  });
+  const state = JSON.parse(
+    readFileSync(join(f.root, "linux-state.json"), "utf8"),
+  );
+  assert.equal(state.enabled, false);
+  assert.deepEqual(state.release, f.built);
+  assert.equal(state.sha, f.sha);
+});
+
+test("Linux build wrapper checks the generated directory and BUILD_ID before writing its marker", () => {
+  for (const kind of [
+    "private",
+    "next-mode",
+    "next-symlink",
+    "build-id-symlink",
+    "build-id-hardlink",
+  ]) {
+    const f = markerFixture();
+    const fake = join(f.root, "fake-pnpm");
+    writeFileSync(fake, "#!/usr/bin/env node\n", { mode: 0o700, flag: "wx" });
+    if (kind === "next-symlink") {
+      const target = join(f.root, "target-next");
+      mkdirSync(target, { mode: 0o700 });
+      writeFileSync(join(target, "BUILD_ID"), "fixture-build", { mode: 0o600 });
+      symlinkSync(target, f.next);
+    } else {
+      prepareLinuxPreviewNext(f.release);
+      const id = join(f.next, "BUILD_ID");
+      if (kind === "build-id-symlink") {
+        const target = join(f.root, "target-id");
+        writeFileSync(target, "fixture-build", { mode: 0o600 });
+        symlinkSync(target, id);
+      } else {
+        writeFileSync(id, "fixture-build", { mode: 0o600 });
+        if (kind === "build-id-hardlink") linkSync(id, join(f.root, "id-link"));
+      }
+      if (kind === "next-mode") chmodSync(f.next, 0o755);
+    }
+    const result = spawnSync(
+      process.execPath,
+      [
+        join(source, "scripts/ops/preview-cd-build-command.mjs"),
+        fake,
+        "build",
+        f.root,
+        source,
+      ],
+      {
+        cwd: f.release,
+        env: {
+          ...process.env,
+          LIFE_OS_BUILD_COMPOSITION: "personal-preview-v2",
+        },
+        encoding: "utf8",
+        timeout: 10_000,
+      },
+    );
+    const marker = join(f.next, "life-preview-composition.json");
+    if (kind === "private") {
+      assert.equal(result.status, 0, result.stderr);
+      assert.equal(lstatSync(marker).mode & 0o777, 0o600);
+      saveLinuxBuild(f.root, f.config, f.sha, f.built);
+      assert.equal(JSON.parse(readFileSync(marker, "utf8")).sha, f.sha);
+      assert.equal(
+        JSON.parse(readFileSync(join(f.root, "linux-state.json"), "utf8"))
+          .enabled,
+        false,
+      );
+    } else {
+      assert.equal(result.status, 1, kind);
+      assert.equal(existsSync(marker), false, kind);
+      assert.equal(existsSync(join(f.root, "linux-state.json")), false, kind);
+    }
+  }
+});
+
+test("Linux marker creation refuses existing or unsafe paths and never saves state", () => {
+  for (const kind of [
+    "existing-next",
+    "next-symlink",
+    "next-mode",
+    "marker-symlink",
+    "marker-hardlink",
+    "marker-mode",
+    "marker-mismatch",
+    "release-escape",
+  ]) {
+    const f = markerFixture();
+    const marker = join(f.next, "life-preview-composition.json");
+    if (kind === "existing-next") {
+      mkdirSync(f.next, { mode: 0o755 });
+      assert.throws(() => prepareLinuxPreviewNext(f.release));
+      assert.equal(existsSync(join(f.root, "linux-state.json")), false);
+      continue;
+    }
+    if (kind === "next-symlink") {
+      const target = join(f.root, "other");
+      mkdirSync(target, { mode: 0o700 });
+      symlinkSync(target, f.next);
+      assert.throws(() => prepareLinuxPreviewNext(f.release));
+      assert.throws(() => saveLinuxBuild(f.root, f.config, f.sha, f.built));
+    } else {
+      prepareLinuxPreviewNext(f.release);
+      if (kind === "marker-symlink") {
+        const target = join(f.root, "target");
+        writeFileSync(target, "{}", { mode: 0o600 });
+        symlinkSync(target, marker);
+      } else {
+        writeFileSync(
+          marker,
+          JSON.stringify({
+            version: 2,
+            buildId: kind === "marker-mismatch" ? "wrong" : f.built.buildId,
+          }),
+          { mode: 0o600 },
+        );
+        if (kind === "marker-hardlink")
+          linkSync(marker, join(f.root, "marker-link"));
+        if (kind === "marker-mode") chmodSync(marker, 0o644);
+        if (kind === "next-mode") chmodSync(f.next, 0o755);
+      }
+      const built =
+        kind === "release-escape" ? { ...f.built, path: f.root } : f.built;
+      assert.throws(() => saveLinuxBuild(f.root, f.config, f.sha, built));
+    }
+    assert.equal(existsSync(join(f.root, "linux-state.json")), false, kind);
+  }
+});
+
 const { require, Database } = upgradeNativeDependencies(source);
 const native = (name) =>
   require(join(source, `src/features/real-data/sqlite/${name}.ts`));
