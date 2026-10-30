@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { createProcessScope } from "./managed-process.mjs";
 import { NODE } from "./preview-cd-core.mjs";
 import { isAbsolute, join } from "node:path";
-import { operationalLock } from "./preview-cd-host.mjs";
+import { boundary, operationalLock } from "./preview-cd-host.mjs";
 
 // Build-only scope: no app environment, DB or service. The existing process
 // wrapper cleans this exact build group on timeout/signal/invoking-parent loss.
@@ -33,6 +33,13 @@ if (
       operation === "build" &&
       process.env.LIFE_OS_BUILD_COMPOSITION === "personal-preview-v2"
     ) {
+      if (process.platform === "linux") {
+        const next = join(process.cwd(), ".next");
+        boundary(process.cwd(), { directory: true });
+        const nextStat = boundary(next, { directory: true });
+        if ((nextStat.mode & 0o777) !== 0o700) throw new Error();
+        boundary(join(next, "BUILD_ID"), { privateMode: false });
+      }
       writeFileSync(
         join(process.cwd(), ".next/life-preview-composition.json"),
         JSON.stringify({

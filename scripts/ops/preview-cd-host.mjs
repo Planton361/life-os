@@ -246,7 +246,7 @@ export function validateRelease(release) {
   }
 }
 
-export async function buildRelease(root, config, sha, baseline) {
+export async function buildRelease(root, config, sha, baseline, options = {}) {
   if (!isSha(sha)) deny("INVALID_MAIN_SHA");
   const env = {
       ...cleanEnvironment(config.node),
@@ -315,6 +315,9 @@ export async function buildRelease(root, config, sha, baseline) {
     existsSync(join(folder, "node_modules"))
   )
     deny("SOURCE_BOUNDARY_INVALID");
+  // Only the caller for a new Linux Preview release supplies this hook.
+  // The archived release is fresh and has not yet run its compiler.
+  options.prepareBuild?.(folder);
   const compatibility = compatibilityFingerprint(folder);
   if (compatibility !== baseline.compatibility)
     deny("SCHEMA_RUNTIME_COMPATIBILITY_CHANGED");

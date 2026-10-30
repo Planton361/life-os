@@ -57,6 +57,51 @@ const configuration = z
   })
   .strict();
 const outside = (root, path) => relative(root, path).split("/")[0] === "..";
+
+// Create this boundary before Next runs, only inside a freshly allocated release.
+// Never chmod an existing directory or follow an existing .next symlink.
+export function prepareLinuxPreviewNext(release) {
+  boundary(release, { directory: true });
+  const next = join(release, ".next");
+  newDirectory(next);
+  if ((lstatSync(next).mode & 0o777) !== 0o700)
+    throw new Error("PATH_BOUNDARY_INVALID");
+}
+
+export function saveLinuxBuild(root, config, sha, built) {
+  const releases = join(root, "releases");
+  boundary(root, { directory: true });
+  boundary(releases, { directory: true });
+  if (resolve(built.path) !== built.path || dirname(built.path) !== releases)
+    throw new Error("PATH_BOUNDARY_INVALID");
+  boundary(built.path, { directory: true });
+  const next = join(built.path, ".next");
+  const nextStat = boundary(next, { directory: true });
+  if ((nextStat.mode & 0o777) !== 0o700)
+    throw new Error("PATH_BOUNDARY_INVALID");
+  const markerPath = join(next, "life-preview-composition.json");
+  const markerStat = boundary(markerPath);
+  if ((markerStat.mode & 0o777) !== 0o600)
+    throw new Error("PATH_BOUNDARY_INVALID");
+  const marker = readJson(markerPath);
+  if (marker.version !== 2 || marker.buildId !== built.buildId)
+    throw new Error("LINUX_RELEASE_STATE_INVALID");
+  atomicJson(markerPath, {
+    version: 2,
+    buildId: built.buildId,
+    sha,
+    compatibility: built.compatibility,
+  });
+  atomicJson(join(root, "linux-state.json"), {
+    version: 1,
+    sha,
+    release: built,
+    enabled: false,
+    configHash: digest(config),
+    identityHash: digest(databaseIdentity(config.database)),
+  });
+}
+
 function operatorFingerprint(source) {
   return digest(
     [
@@ -215,24 +260,10 @@ export async function runLinuxPreview(operation, root, sha, approved) {
           { ...config, workerSource: config.source, preview: { version: 2 } },
           sha,
           { compatibility: compatibilityFingerprint(config.source) },
+          { prepareBuild: prepareLinuxPreviewNext },
         );
       },
-      saveBuild: (built) => {
-        atomicJson(join(built.path, ".next/life-preview-composition.json"), {
-          version: 2,
-          buildId: built.buildId,
-          sha,
-          compatibility: built.compatibility,
-        });
-        atomicJson(statePath, {
-          version: 1,
-          sha,
-          release: built,
-          enabled: false,
-          configHash: digest(config),
-          identityHash: digest(databaseIdentity(config.database)),
-        });
-      },
+      saveBuild: (built) => saveLinuxBuild(root, config, sha, built),
       verifyRelease,
       backupAndRestore: async () => {
         const folder = join(root, `recovery-${randomUUID()}`);
