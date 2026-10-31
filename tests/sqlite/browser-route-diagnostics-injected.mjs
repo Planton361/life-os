@@ -65,7 +65,9 @@ for (const [issue, matcher] of [
     assert.ok(data.failure.elapsedMs >= 5000);
   }
   assert.ok(data.rscAtFailure);
-  assert.ok(data.dom);
+  assert.equal(data.observations.relation, "sequential_not_atomic");
+  assert.ok(data.observations.dom.result);
+  assert.ok(data.observations.accessibility.result);
   assert.ok(data.events.some((event) => event.event === "navigation_begin"));
   assert.ok(data.events.some((event) => event.event === "response"));
   assert.ok(statSync(join(folder, "failure.png")).size > 8);

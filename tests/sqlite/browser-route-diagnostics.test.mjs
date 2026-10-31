@@ -52,7 +52,8 @@ test("route diagnostics allow only bounded, finite, redacted events and protecte
   );
   assert.equal(result.result, "failed");
   assert.equal(result.target, "/goals/new");
-  assert.equal(result.content, "not_visible");
+  assert.equal(result.content, "unknown");
+  assert.equal(result.observations.dom.result, null);
   assert.equal(result.process.state, "observed_running");
   assert.equal(result.screenshot, "captured");
   assert.equal(
@@ -125,7 +126,7 @@ test("a screenshot or visibility failure is categorized without masking the orig
   assert.equal(result.result, "failed");
   assert.equal(result.content, "unknown");
   assert.equal(result.failureCategory, "assertion");
-  assert.equal(result.dom, null);
+  assert.equal(result.observations.dom.result, null);
   assert.equal(result.screenshot, "capture_failed");
   assert.deepEqual(result.process, { state: "exited", code: 17, signal: null });
   assert.doesNotMatch(
@@ -242,8 +243,20 @@ test("DOM snapshots distinguish missing, hidden and visible targets and real wor
         html: '<p role="status">Entity wird geladen …</p>',
         form: "absent",
         heading: "absent",
-        loading: "visible",
+        loading: "unknown",
+        loadingCandidate: "visible",
         error: "absent",
+        errorCandidate: "absent",
+        accessible: 0,
+      },
+      {
+        html: '<p role="status">PRIVATE_SECRET</p>',
+        form: "absent",
+        heading: "absent",
+        loading: "unknown",
+        loadingCandidate: "visible",
+        error: "absent",
+        errorCandidate: "absent",
         accessible: 0,
       },
       {
@@ -251,7 +264,9 @@ test("DOM snapshots distinguish missing, hidden and visible targets and real wor
         form: "hidden",
         heading: "hidden",
         loading: "absent",
+        loadingCandidate: "absent",
         error: "absent",
+        errorCandidate: "absent",
         accessible: 0,
       },
       {
@@ -259,7 +274,9 @@ test("DOM snapshots distinguish missing, hidden and visible targets and real wor
         form: "absent",
         heading: "visible",
         loading: "absent",
-        error: "visible",
+        loadingCandidate: "absent",
+        error: "unknown",
+        errorCandidate: "visible",
         accessible: 0,
       },
       {
@@ -267,7 +284,9 @@ test("DOM snapshots distinguish missing, hidden and visible targets and real wor
         form: "visible",
         heading: "visible",
         loading: "absent",
+        loadingCandidate: "absent",
         error: "absent",
+        errorCandidate: "absent",
         accessible: 1,
       },
     ]) {
@@ -285,11 +304,19 @@ test("DOM snapshots distinguish missing, hidden and visible targets and real wor
       d.matched();
       d.failure(new Error("PRIVATE_SECRET"));
       const result = await d.finish({ failed: true, app });
-      assert.equal(result.dom.form.state, scenario.form);
-      assert.equal(result.dom.heading.state, scenario.heading);
-      assert.equal(result.dom.loading.state, scenario.loading);
-      assert.equal(result.dom.error.state, scenario.error);
-      assert.equal(result.dom.accessible.form, scenario.accessible);
+      const { dom, accessibility, relation } = result.observations;
+      assert.equal(relation, "sequential_not_atomic");
+      assert.ok(dom.finishedMs <= accessibility.startedMs);
+      assert.equal(dom.result.form.state, scenario.form);
+      assert.equal(dom.result.heading.state, scenario.heading);
+      assert.equal(dom.result.loading.boundary, scenario.loading);
+      assert.equal(
+        dom.result.loading.candidates.state,
+        scenario.loadingCandidate,
+      );
+      assert.equal(dom.result.error.boundary, scenario.error);
+      assert.equal(dom.result.error.candidates.state, scenario.errorCandidate);
+      assert.equal(accessibility.result.form, scenario.accessible);
       assert.doesNotMatch(
         JSON.stringify(result),
         /PRIVATE_SECRET|fixture\.invalid/,
@@ -300,4 +327,73 @@ test("DOM snapshots distinguish missing, hidden and visible targets and real wor
   } finally {
     await browser.close();
   }
+});
+
+test("a form appearing between DOM and accessibility reads is a non-atomic difference, not a cause", async () => {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage();
+    await page.route("**/*", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "text/html",
+        body: "<main id='main-content'></main>",
+      }),
+    );
+    await page.goto("http://fixture.invalid/goals/new");
+    const originalEvaluate = page.evaluate.bind(page);
+    page.evaluate = async (...args) => {
+      const result = await originalEvaluate(...args);
+      // Deterministically model a client render after the DOM observation.
+      await page.locator("#main-content").evaluate((main) => {
+        main.innerHTML =
+          '<form aria-label="Ziel erstellen"><input value="PRIVATE_SECRET"></form>';
+      });
+      return result;
+    };
+    const output = resolve(
+      "test-results/issue-160",
+      `transition-${randomUUID()}`,
+    );
+    const d = createRouteDiagnostics({ output });
+    const app = {
+      origin: "http://fixture.invalid",
+      child: { exitCode: null, signalCode: null },
+    };
+    d.attach(page, app);
+    d.begin("/goals/new", "keyboard");
+    d.matched();
+    d.failure(new Error("PRIVATE_SECRET"));
+    const result = await d.finish({ failed: true, app });
+    assert.equal(result.contentSource, "post_failure_dom_observation");
+    assert.equal(result.observations.relation, "sequential_not_atomic");
+    assert.equal(result.observations.dom.result.form.state, "absent");
+    assert.equal(result.observations.accessibility.result.form, 1);
+    assert.ok(
+      result.observations.dom.finishedMs <=
+        result.observations.accessibility.startedMs,
+    );
+    assert.equal(result.observations.comparison.form, "difference_observed");
+    assert.equal(
+      result.observations.comparison.interpretation,
+      "timing_or_accessibility_semantics_unknown",
+    );
+    assert.doesNotMatch(
+      JSON.stringify(result),
+      /PRIVATE_SECRET|fixture\.invalid/,
+    );
+  } finally {
+    await browser.close();
+  }
+});
+
+test("diagnostic source does not directly read DOM text or dynamic attribute values", () => {
+  const source = readFileSync(
+    new URL("./browser-route-diagnostics.mjs", import.meta.url),
+    "utf8",
+  );
+  assert.doesNotMatch(
+    source,
+    /\.\s*(?:textContent|innerText|outerHTML|innerHTML|getAttribute|getAttributeNode|attributes|dataset)\b/,
+  );
 });

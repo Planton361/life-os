@@ -290,24 +290,23 @@ export function createRouteDiagnostics({ output, synthetic = false }) {
         }
       : null;
   }
+  const observationTime = () =>
+    Math.min(3_600_000, Math.max(0, Math.round(performance.now() - started)));
   async function captureDom() {
-    // Only fixed selectors and fixed boundary labels are used in the browser;
-    // no DOM content, attributes, user text or exception is returned.
-    const dom = await page.evaluate((route) => {
+    // Static selectors from the route components; never read DOM text or
+    // arbitrary attribute values, even transiently.
+    return page.evaluate((route) => {
       const max = 999;
       const main = document.querySelector("#main-content");
       if (!main) return null;
-      const names = {
-        "/goals/new": "Ziel erstellen",
-        "/projects/new": "Project erstellen",
-        "/skills/new": "Skill erstellen",
+      const formSelectors = {
+        "/goals/new": 'form[aria-label="Ziel erstellen"]',
+        "/projects/new": 'form[aria-label="Project erstellen"]',
+        "/skills/new": 'form[aria-label="Skill erstellen"]',
       };
-      const name = names[route];
-      const formNodes = name
-        ? [...main.querySelectorAll("form")].filter(
-            (e) => e.getAttribute("aria-label") === name,
-          )
-        : [...main.querySelectorAll("form")];
+      const formNodes = [
+        ...main.querySelectorAll(formSelectors[route] ?? "form"),
+      ];
       const headingNodes = [...main.querySelectorAll("h1")];
       const state = (nodes) => {
         const visible = nodes.some((element) => {
@@ -326,22 +325,25 @@ export function createRouteDiagnostics({ output, synthetic = false }) {
           state: nodes.length === 0 ? "absent" : visible ? "visible" : "hidden",
         };
       };
-      const loading = [...main.querySelectorAll('p[role="status"]')].filter(
-        (e) => e.textContent.trim() === "Entity wird geladen …",
-      );
-      const error = [...main.querySelectorAll('section[role="alert"]')].filter(
-        (e) =>
-          e.querySelector("h1")?.textContent.trim() ===
-          "Entity konnte nicht geladen werden",
-      );
+      // These shapes are present in the Workbench boundaries but are not
+      // unique to them. A candidate is not proof of the actual boundary.
+      const loading = state([...main.querySelectorAll('p[role="status"]')]);
+      const error = state([...main.querySelectorAll('section[role="alert"]')]);
       return {
         form: state(formNodes),
         heading: state(headingNodes),
-        loading: state(loading),
-        error: state(error),
+        loading: {
+          boundary: loading.count === 0 ? "absent" : "unknown",
+          candidates: loading,
+        },
+        error: {
+          boundary: error.count === 0 ? "absent" : "unknown",
+          candidates: error,
+        },
       };
     }, target);
-    if (!dom) return null;
+  }
+  async function captureAccessibility() {
     const formNames = {
       "/goals/new": "Ziel erstellen",
       "/projects/new": "Project erstellen",
@@ -359,55 +361,81 @@ export function createRouteDiagnostics({ output, synthetic = false }) {
         form.count(),
         heading.count(),
       ]);
-      dom.accessible = {
+      return {
         form: bounded(formCount),
         heading: bounded(headingCount),
         formTruncated: formCount > maxCount,
         headingTruncated: headingCount > maxCount,
       };
     } catch {
-      dom.accessible = null;
+      return null;
     }
-    return dom;
+  }
+  function compareObservations(dom, accessibility, field) {
+    if (
+      !dom ||
+      !accessibility ||
+      dom[field].truncated ||
+      accessibility[`${field}Truncated`]
+    )
+      return "unknown";
+    return dom[field].count === accessibility[field]
+      ? "no_count_difference"
+      : "difference_observed";
   }
   async function finish({ failed, app }) {
     let screenshot = "not_requested";
-    let visibleAtFailure = content;
+    let observedContent = content;
     let currentRoute = "unknown";
-    let dom = null;
+    let observations = null;
     try {
       if (failed && page && !page.isClosed()) {
         if (new URL(page.url()).origin === origin) {
           currentRoute = routeTemplate(page.url());
-          const selector =
-            target === "/projects/[id]"
-              ? "h1"
-              : target === "/goals/new"
-                ? 'form[aria-label="Ziel erstellen"]'
-                : target === "/projects/new"
-                  ? 'form[aria-label="Project erstellen"]'
-                  : target === "/skills/new"
-                    ? 'form[aria-label="Skill erstellen"]'
-                    : null;
-          if (currentRoute !== target) visibleAtFailure = "different_route";
-          else if (selector) {
-            try {
-              visibleAtFailure = (await page
-                .locator(selector)
-                .first()
-                .isVisible())
-                ? "visible"
-                : "not_visible";
-            } catch {
-              visibleAtFailure = "unknown";
-            }
-          }
-          if (currentRoute === target) {
+          if (currentRoute !== target) observedContent = "different_route";
+          else {
+            let dom = null,
+              accessibility = null;
+            const domStartedMs = observationTime();
             try {
               dom = await captureDom();
             } catch {
-              dom = null;
+              /* unavailable is unknown */
             }
+            const domFinishedMs = observationTime();
+            const accessibilityStartedMs = observationTime();
+            try {
+              accessibility = await captureAccessibility();
+            } catch {
+              /* unavailable is unknown */
+            }
+            const accessibilityFinishedMs = observationTime();
+            const selected =
+              target === "/projects/[id]" ? dom?.heading : dom?.form;
+            observedContent = selected
+              ? selected.state === "visible"
+                ? "visible"
+                : "not_visible"
+              : "unknown";
+            observations = {
+              relation: "sequential_not_atomic",
+              clock: "ms_since_diagnostics_created",
+              dom: {
+                startedMs: domStartedMs,
+                finishedMs: domFinishedMs,
+                result: dom,
+              },
+              accessibility: {
+                startedMs: accessibilityStartedMs,
+                finishedMs: accessibilityFinishedMs,
+                result: accessibility,
+              },
+              comparison: {
+                form: compareObservations(dom, accessibility, "form"),
+                heading: compareObservations(dom, accessibility, "heading"),
+                interpretation: "timing_or_accessibility_semantics_unknown",
+              },
+            };
           }
           const image = await page.screenshot({ fullPage: false });
           mkdirSync(directory, { recursive: true, mode: 0o700 });
@@ -423,17 +451,21 @@ export function createRouteDiagnostics({ output, synthetic = false }) {
       screenshot = "capture_failed";
     }
     const summary = {
-      version: 1,
+      version: 2,
       result: failed ? "failed" : "passed",
       failureCategory: failed ? failureCategory : "none",
       phase,
       target,
       currentRoute,
-      content: visibleAtFailure,
+      content: observedContent,
+      contentSource:
+        failed && observations?.dom.result
+          ? "post_failure_dom_observation"
+          : "other_or_unknown",
       screenshot,
       process: childState(app),
       failure: failed ? failureDetails : null,
-      dom,
+      observations,
       rscAtFailure: failed ? rscAtFailure : null,
       events,
     };
