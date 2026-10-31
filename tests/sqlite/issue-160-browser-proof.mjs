@@ -106,9 +106,11 @@ let app;
 let browser;
 let exitCode = 0;
 const syntheticFailure = process.env.LIFE_OS_174_SYNTHETIC_FAILURE === "160";
+const syntheticMatcherFailure =
+  process.env.LIFE_OS_174_SYNTHETIC_FAILURE === "160-matcher";
 const diagnostics = createRouteDiagnostics({
   output,
-  synthetic: syntheticFailure,
+  synthetic: syntheticMatcherFailure ? "matcher" : syntheticFailure,
 });
 
 function readEntities() {
@@ -276,15 +278,25 @@ try {
       assert.equal(new URL(page.url()).pathname, route.path);
       if (syntheticFailure && route.path === "/goals/new")
         assert.fail("explicit synthetic failure fixture");
+      if (syntheticMatcherFailure && route.path === "/goals/new") {
+        diagnostics.assertionStart("toBeVisible", 5000);
+        await expect(
+          page.locator("[data-synthetic-absent-form]"),
+        ).toBeVisible();
+      }
       const form = page.getByRole("form", {
         name: route.formName,
         exact: true,
       });
+      diagnostics.assertionStart("toBeVisible", 5000);
       await expect(form).toBeVisible();
+      diagnostics.assertionPassed();
       diagnostics.visible();
+      diagnostics.assertionStart("toBeVisible", 5000);
       await expect(
         page.getByRole("heading", { name: route.formName, exact: true }),
       ).toBeVisible();
+      diagnostics.assertionPassed();
       await assertNoHorizontalOverflow(page, `${route.path}-${viewport.width}`);
       assert.deepEqual(
         readEntities(),

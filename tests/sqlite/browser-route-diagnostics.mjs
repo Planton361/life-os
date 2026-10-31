@@ -6,6 +6,14 @@ import { join } from "node:path";
 const maxEvents = 350;
 const maxJsonBytes = 64 * 1024;
 const maxScreenshotBytes = 12 * 1024 * 1024;
+const maxCount = 999;
+const names = new Set([
+  "Error",
+  "AssertionError",
+  "ExpectError",
+  "TimeoutError",
+]);
+const matchers = new Set(["toBeVisible", "toContainText"]);
 const signals = new Set(["SIGINT", "SIGTERM", "SIGKILL", "SIGHUP"]);
 const errors = new Set([
   "net::ERR_ABORTED",
@@ -62,11 +70,16 @@ function childState(app) {
 export function createRouteDiagnostics({ output, synthetic = false }) {
   const directory = join(
     output,
-    synthetic ? "synthetic-injection" : "route-diagnostics",
+    synthetic === "matcher"
+      ? "synthetic-injection/matcher"
+      : synthetic
+        ? "synthetic-injection"
+        : "route-diagnostics",
   );
   const started = performance.now();
   const events = [];
   const requests = new WeakMap();
+  const rscRoutes = new Map();
   let sequence = 0,
     target = "other",
     content = "unknown",
@@ -74,7 +87,31 @@ export function createRouteDiagnostics({ output, synthetic = false }) {
     origin,
     currentApp,
     phase = "not_started",
-    failureCategory = "unknown";
+    failureCategory = "unknown",
+    assertion = null,
+    failureDetails = null,
+    rscAtFailure = null,
+    observerReady = false;
+  const bounded = (n) => Math.min(maxCount, Math.max(0, n));
+  function counters(route) {
+    if (!rscRoutes.has(route))
+      rscRoutes.set(route, {
+        direct: { pending: 0, finished: 0, failed: 0 },
+        prefetch: { pending: 0, finished: 0, failed: 0 },
+      });
+    return rscRoutes.get(route);
+  }
+  function finishRequest(request, outcome) {
+    const req = requests.get(request);
+    if (!req || req.terminal) return req;
+    req.terminal = true;
+    if (req.rsc) {
+      const counts = counters(req.route)[req.prefetch ? "prefetch" : "direct"];
+      counts.pending = Math.max(0, counts.pending - 1);
+      counts[outcome] += 1;
+    }
+    return req;
+  }
   function record(event, fields = {}) {
     const ms = Math.min(3_600_000, Math.round(performance.now() - started));
     if (events.length === maxEvents) events.shift();
@@ -97,14 +134,22 @@ export function createRouteDiagnostics({ output, synthetic = false }) {
     page = nextPage;
     origin = app.origin;
     currentApp = app;
+    observerReady = true;
     page.on("request", (request) => {
       try {
         const details = classifyRequest(request, app.origin);
         if (details.route === "other") return;
-        const id = ++sequence;
-        requests.set(request, { id, ...details });
+        const id = (sequence = (sequence % 1_000_000) + 1);
+        requests.set(request, { id, ...details, terminal: false });
+        if (details.rsc) {
+          const counts = counters(details.route)[
+            details.prefetch ? "prefetch" : "direct"
+          ];
+          counts.pending += 1;
+        }
         record("request", { id, ...details });
       } catch {
+        observerReady = false;
         record("observer_error");
       }
     });
@@ -126,11 +171,11 @@ export function createRouteDiagnostics({ output, synthetic = false }) {
       }
     });
     page.on("requestfinished", (request) => {
-      const req = requests.get(request);
+      const req = finishRequest(request, "finished");
       if (req) record("request_finished", { id: req.id });
     });
     page.on("requestfailed", (request) => {
-      const req = requests.get(request);
+      const req = finishRequest(request, "failed");
       if (!req) return;
       const value = request.failure()?.errorText;
       record("request_failed", {
@@ -159,6 +204,7 @@ export function createRouteDiagnostics({ output, synthetic = false }) {
     target = routeTemplate(route);
     content = "unknown";
     phase = "navigation_started";
+    assertion = null;
     record("navigation_begin", {
       route: target,
       kind: kind === "keyboard" ? "keyboard" : "click",
@@ -170,45 +216,226 @@ export function createRouteDiagnostics({ output, synthetic = false }) {
     phase = "content_visible";
     record("content_visible", { route: target });
   }
+  function assertionStart(matcher, timeoutMs) {
+    assertion =
+      matchers.has(matcher) && timeoutMs === 5000
+        ? { matcher, timeoutMs, started: performance.now() }
+        : null;
+  }
+  function assertionPassed() {
+    assertion = null;
+  }
   function matched() {
     phase = "url_matched";
     record("url_matched", { route: target });
   }
   function failure(error) {
-    failureCategory = ["AssertionError", "ExpectError"].includes(error?.name)
-      ? "assertion"
-      : "harness_or_browser";
+    try {
+      const name = names.has(error?.name) ? error.name : "other";
+      const constructor = names.has(error?.constructor?.name)
+        ? error.constructor.name
+        : "other";
+      const result = error?.matcherResult;
+      const matcher = matchers.has(result?.name) ? result.name : "unknown";
+      const matcherFailed = Boolean(result && result.pass === false);
+      const elapsedMs = assertion
+        ? Math.min(
+            3_600_000,
+            Math.max(0, Math.round(performance.now() - assertion.started)),
+          )
+        : null;
+      const timedOut = Boolean(
+        assertion &&
+        matcherFailed &&
+        constructor === "ExpectError" &&
+        matcher === assertion.matcher &&
+        elapsedMs >= assertion.timeoutMs,
+      );
+      failureCategory = timedOut
+        ? "matcher_timeout"
+        : matcherFailed ||
+            name === "AssertionError" ||
+            constructor === "AssertionError"
+          ? "assertion"
+          : "harness_or_browser";
+      failureDetails = {
+        name,
+        constructor,
+        matcherResult: Boolean(result),
+        matcher,
+        matcherFailed,
+        assertion: assertion?.matcher ?? "unknown",
+        elapsedMs,
+        timeoutMs: assertion?.timeoutMs ?? null,
+        originalPhase: phase,
+      };
+    } catch {
+      failureCategory = "harness_or_browser";
+      failureDetails = null;
+    }
+    const counts = rscRoutes.get(target);
+    const snapshotCounts = (entry) => ({
+      pending: bounded(entry?.pending ?? 0),
+      finished: bounded(entry?.finished ?? 0),
+      failed: bounded(entry?.failed ?? 0),
+      truncated: [entry?.pending, entry?.finished, entry?.failed].some(
+        (n) => n > maxCount,
+      ),
+    });
+    rscAtFailure = observerReady
+      ? {
+          scope: "target_since_attach",
+          direct: snapshotCounts(counts?.direct),
+          prefetch: snapshotCounts(counts?.prefetch),
+        }
+      : null;
+  }
+  const observationTime = () =>
+    Math.min(3_600_000, Math.max(0, Math.round(performance.now() - started)));
+  async function captureDom() {
+    // Static selectors from the route components; never read DOM text or
+    // arbitrary attribute values, even transiently.
+    return page.evaluate((route) => {
+      const max = 999;
+      const main = document.querySelector("#main-content");
+      if (!main) return null;
+      const formSelectors = {
+        "/goals/new": 'form[aria-label="Ziel erstellen"]',
+        "/projects/new": 'form[aria-label="Project erstellen"]',
+        "/skills/new": 'form[aria-label="Skill erstellen"]',
+      };
+      const formNodes = [
+        ...main.querySelectorAll(formSelectors[route] ?? "form"),
+      ];
+      const headingNodes = [...main.querySelectorAll("h1")];
+      const state = (nodes) => {
+        const visible = nodes.some((element) => {
+          const style = getComputedStyle(element);
+          const rect = element.getBoundingClientRect();
+          return (
+            style.visibility !== "hidden" &&
+            style.visibility !== "collapse" &&
+            rect.width > 0 &&
+            rect.height > 0
+          );
+        });
+        return {
+          count: Math.min(max, nodes.length),
+          truncated: nodes.length > max,
+          state: nodes.length === 0 ? "absent" : visible ? "visible" : "hidden",
+        };
+      };
+      // These shapes are present in the Workbench boundaries but are not
+      // unique to them. A candidate is not proof of the actual boundary.
+      const loading = state([...main.querySelectorAll('p[role="status"]')]);
+      const error = state([...main.querySelectorAll('section[role="alert"]')]);
+      return {
+        form: state(formNodes),
+        heading: state(headingNodes),
+        loading: {
+          boundary: loading.count === 0 ? "absent" : "unknown",
+          candidates: loading,
+        },
+        error: {
+          boundary: error.count === 0 ? "absent" : "unknown",
+          candidates: error,
+        },
+      };
+    }, target);
+  }
+  async function captureAccessibility() {
+    const formNames = {
+      "/goals/new": "Ziel erstellen",
+      "/projects/new": "Project erstellen",
+      "/skills/new": "Skill erstellen",
+    };
+    const name = formNames[target];
+    try {
+      const main = page.locator("#main-content");
+      const form = main.getByRole("form", name ? { name, exact: true } : {});
+      const heading = main.getByRole(
+        "heading",
+        name ? { name, exact: true, level: 1 } : { level: 1 },
+      );
+      const [formCount, headingCount] = await Promise.all([
+        form.count(),
+        heading.count(),
+      ]);
+      return {
+        form: bounded(formCount),
+        heading: bounded(headingCount),
+        formTruncated: formCount > maxCount,
+        headingTruncated: headingCount > maxCount,
+      };
+    } catch {
+      return null;
+    }
+  }
+  function compareObservations(dom, accessibility, field) {
+    if (
+      !dom ||
+      !accessibility ||
+      dom[field].truncated ||
+      accessibility[`${field}Truncated`]
+    )
+      return "unknown";
+    return dom[field].count === accessibility[field]
+      ? "no_count_difference"
+      : "difference_observed";
   }
   async function finish({ failed, app }) {
     let screenshot = "not_requested";
-    let visibleAtFailure = content;
+    let observedContent = content;
     let currentRoute = "unknown";
+    let observations = null;
     try {
       if (failed && page && !page.isClosed()) {
         if (new URL(page.url()).origin === origin) {
           currentRoute = routeTemplate(page.url());
-          const selector =
-            target === "/projects/[id]"
-              ? "h1"
-              : target === "/goals/new"
-                ? 'form[aria-label="Ziel erstellen"]'
-                : target === "/projects/new"
-                  ? 'form[aria-label="Project erstellen"]'
-                  : target === "/skills/new"
-                    ? 'form[aria-label="Skill erstellen"]'
-                    : null;
-          if (currentRoute !== target) visibleAtFailure = "different_route";
-          else if (selector) {
+          if (currentRoute !== target) observedContent = "different_route";
+          else {
+            let dom = null,
+              accessibility = null;
+            const domStartedMs = observationTime();
             try {
-              visibleAtFailure = (await page
-                .locator(selector)
-                .first()
-                .isVisible())
-                ? "visible"
-                : "not_visible";
+              dom = await captureDom();
             } catch {
-              visibleAtFailure = "unknown";
+              /* unavailable is unknown */
             }
+            const domFinishedMs = observationTime();
+            const accessibilityStartedMs = observationTime();
+            try {
+              accessibility = await captureAccessibility();
+            } catch {
+              /* unavailable is unknown */
+            }
+            const accessibilityFinishedMs = observationTime();
+            const selected =
+              target === "/projects/[id]" ? dom?.heading : dom?.form;
+            observedContent = selected
+              ? selected.state === "visible"
+                ? "visible"
+                : "not_visible"
+              : "unknown";
+            observations = {
+              relation: "sequential_not_atomic",
+              clock: "ms_since_diagnostics_created",
+              dom: {
+                startedMs: domStartedMs,
+                finishedMs: domFinishedMs,
+                result: dom,
+              },
+              accessibility: {
+                startedMs: accessibilityStartedMs,
+                finishedMs: accessibilityFinishedMs,
+                result: accessibility,
+              },
+              comparison: {
+                form: compareObservations(dom, accessibility, "form"),
+                heading: compareObservations(dom, accessibility, "heading"),
+                interpretation: "timing_or_accessibility_semantics_unknown",
+              },
+            };
           }
           const image = await page.screenshot({ fullPage: false });
           mkdirSync(directory, { recursive: true, mode: 0o700 });
@@ -224,15 +451,22 @@ export function createRouteDiagnostics({ output, synthetic = false }) {
       screenshot = "capture_failed";
     }
     const summary = {
-      version: 1,
+      version: 2,
       result: failed ? "failed" : "passed",
       failureCategory: failed ? failureCategory : "none",
       phase,
       target,
       currentRoute,
-      content: visibleAtFailure,
+      content: observedContent,
+      contentSource:
+        failed && observations?.dom.result
+          ? "post_failure_dom_observation"
+          : "other_or_unknown",
       screenshot,
       process: childState(app),
+      failure: failed ? failureDetails : null,
+      observations,
+      rscAtFailure: failed ? rscAtFailure : null,
       events,
     };
     const json = JSON.stringify(summary);
@@ -244,5 +478,14 @@ export function createRouteDiagnostics({ output, synthetic = false }) {
     });
     return summary;
   }
-  return { attach, begin, matched, visible, failure, finish };
+  return {
+    attach,
+    begin,
+    matched,
+    visible,
+    assertionStart,
+    assertionPassed,
+    failure,
+    finish,
+  };
 }

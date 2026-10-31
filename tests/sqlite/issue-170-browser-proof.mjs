@@ -51,9 +51,11 @@ const projects = [];
 let app, browser, context, page;
 let success = false;
 const syntheticFailure = process.env.LIFE_OS_174_SYNTHETIC_FAILURE === "170";
+const syntheticMatcherFailure =
+  process.env.LIFE_OS_174_SYNTHETIC_FAILURE === "170-matcher";
 const diagnostics = createRouteDiagnostics({
   output,
-  synthetic: syntheticFailure,
+  synthetic: syntheticMatcherFailure ? "matcher" : syntheticFailure,
 });
 
 async function prepare(count) {
@@ -325,7 +327,15 @@ try {
       await page.waitForURL(`**${firstHref}`);
       diagnostics.matched();
       if (syntheticFailure) assert.fail("explicit synthetic failure fixture");
+      if (syntheticMatcherFailure) {
+        diagnostics.assertionStart("toContainText", 5000);
+        await expect(
+          page.locator("[data-synthetic-absent-heading]"),
+        ).toContainText("synthetic");
+      }
+      diagnostics.assertionStart("toContainText", 5000);
       await expect(page.locator("h1")).toContainText(firstTitle);
+      diagnostics.assertionPassed();
       diagnostics.visible();
       await page.goto(`${app.origin}/dashboard`);
       const baseline = await assertCockpit(page);
@@ -376,7 +386,9 @@ try {
         await link.click();
         await page.waitForURL(`**/projects/${p.id}`);
         diagnostics.matched();
+        diagnostics.assertionStart("toContainText", 5000);
         await expect(page.locator("h1")).toContainText(p.title);
+        diagnostics.assertionPassed();
         diagnostics.visible();
         proof.controls.push({ href: `/projects/${p.id}`, click: "PASS" });
         await page.goto(`${app.origin}/dashboard`);
