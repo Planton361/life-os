@@ -1,7 +1,7 @@
 "use server";
 
 import { withSubmittedDatasetEpoch } from "./submitted-dataset";
-import { createGoalContextProject, getGoalRepository, getProjectRepository } from "../runtime/facade";
+import { getGoalRepository, getProjectRepository } from "../runtime/facade";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -254,7 +254,7 @@ export async function createProjectAction(
           status: "error",
         };
       }
-      const contextual = await createGoalContextProject(auth.data, {
+      const contextual = await auth.data.useCases.createGoalContextProject({
         areaId: parsed.data.areaId,
         commandId: optionalFormString(formData, "commandId"),
         description: parsed.data.description,

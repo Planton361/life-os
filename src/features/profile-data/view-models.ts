@@ -1,7 +1,7 @@
 import { currentTaskStepProgress, type DashboardTaskStepProgress } from "@/features/dashboard/current-task-progress";
 import { taskDeadlineLocalDay } from "@/features/real-data/domain/task-deadline";
 import { dashboardProjectWorkBalance, type DashboardProjectWorkRead } from "@/features/dashboard/project-work-balance";
-import { readWeeklyPlanningContext, readTaskDependencyGraph, readTodayActivity, getGoalRepository, getInboxRepository, getNutritionRepository, getProjectRepository, getReviewRepository, getScheduleSourceRepository, getResourceRepository, getSkillRepository, getTaskRepository, getHealthRepository, getHabitRepository, getTrainingRepository, getGoalOutcomeSummaries } from "@/features/real-data/runtime/facade";
+import { readWeeklyPlanningContext, readTaskDependencyGraph, readTodayActivity, getGoalRepository, getInboxRepository, getNutritionRepository, getProjectRepository, getReviewRepository, getScheduleSourceRepository, getResourceRepository, getSkillRepository, getTaskRepository, getHealthRepository, getHabitRepository, getTrainingRepository } from "@/features/real-data/runtime/facade";
 import { skillTaskReadiness } from "@/features/entities/workbench/skill-guidance";
 
 import { enrichPlannerQueue, type WeeklyTaskContext } from "@/features/calendar/weekly-task-context";
@@ -3001,8 +3001,7 @@ async function getManualPortfolioEntityCollection(): Promise<{
       getManualSkillsFromApplication(auth.data, auth.user.id),
     ],
   );
-  const goalOutcomeResult = await getGoalOutcomeSummaries(
-    auth.data,
+  const goalOutcomeResult = await auth.data.useCases.getGoalOutcomeSummaries(
     auth.user.id,
     manualTargets.goals.map((goal) => goal.id),
   );
@@ -3224,8 +3223,7 @@ async function getManualDashboardReadData(calendarRead = false): Promise<{
     },
     { calories: 0, carbs: 0, completedMealCount: 0, fat: 0, protein: 0 },
   );
-  const goalOutcomeResult = await getGoalOutcomeSummaries(
-    auth.data,
+  const goalOutcomeResult = await auth.data.useCases.getGoalOutcomeSummaries(
     userId,
     targets.goals.map((goal) => goal.id),
   );
