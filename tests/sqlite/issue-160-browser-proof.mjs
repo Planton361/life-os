@@ -791,7 +791,15 @@ try {
       .locator(`.dashboard-composition a[href=${JSON.stringify(href)}]`)
       .first()
       .click();
-    await page.waitForURL((url) => url.pathname + url.search === href);
+    // Inbox canonicalizes its URL to /inbox?item=<id> after mount; waiting for
+    // the bare href races that replace on slower runners.
+    await page.waitForURL(
+      (url) =>
+        url.pathname + url.search === href ||
+        (href === "/inbox" &&
+          url.pathname === "/inbox" &&
+          [...url.searchParams.keys()].join() === "item"),
+    );
     await expect(page.locator("#main-content")).not.toContainText(
       "This page could not be found",
     );
