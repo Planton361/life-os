@@ -1,162 +1,68 @@
 name: PR Quality
 
+# Every PR gets the fast checks. The browser/preview proofs ("full") run when a PR
+# touches auth, persistence, preview/ops, the CI proof suites or CI itself, when it carries the
+# `full-ci` label, on every push to main, nightly and on manual dispatch.
+# `quality` is the required status check and gates on both.
+
 on:
   pull_request:
     branches:
       - main
+    types: [opened, synchronize, reopened, labeled]
   push:
     branches:
       - main
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: pr-quality-${{ github.workflow }}-${{ github.ref }}
+  group: pr-quality-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 jobs:
-  sql-158:
-    name: "SQL #158 (disposable PostgreSQL 18.4)"
-    if: github.event_name == 'pull_request' && github.head_ref == 'codex/158-task-create-deadline-local-day'
+  scope:
+    name: scope
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 5
+    outputs:
+      full: ${{ steps.scope.outputs.full }}
     steps:
-      - name: Checkout exact head
+      - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
-      - name: Setup Node
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
-        with:
-          node-version-file: .node-version
-      - name: Enable pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@11.3.0 --activate
-      - name: Install
-        run: pnpm install --frozen-lockfile
-      - name: Actual migrated SQL regression, lint and advisors
-        env:
-          ISSUE158_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          ISSUE158_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: node tests/supabase/issue-155-sql-proof.mjs
-      - name: Preserve full SQL output and isolation
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: issue-158-disposable-sql-proof
-          path: test-results/issue-158-sql-lint/
-          if-no-files-found: error
-          retention-days: 14
-  sql-155:
-    name: "SQL #155 (disposable PostgreSQL 18.4)"
-    if: github.event_name == 'pull_request' && github.head_ref == 'codex/155-task-deadline-local-day'
-    runs-on: ubuntu-latest
-    timeout-minutes: 12
-    steps:
-      - name: Checkout exact head
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
-      - name: Setup Node
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
-        with:
-          node-version-file: .node-version
-      - name: Enable pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@11.3.0 --activate
-      - name: Install
-        run: pnpm install --frozen-lockfile
-      - name: Actual migrated SQL regression, lint and advisors
-        env:
-          ISSUE155_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          ISSUE155_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: node tests/supabase/issue-155-sql-proof.mjs
-      - name: Preserve full SQL output and isolation
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: issue-155-disposable-sql-proof
-          path: test-results/issue-155-sql-lint/
-          if-no-files-found: error
-          retention-days: 14
-  sql-153:
-    name: "SQL #153 (disposable PostgreSQL 18.4)"
-    if: github.event_name == 'pull_request' && github.head_ref == 'codex/153-inbox-task-lifecycle'
-    runs-on: ubuntu-latest
-    timeout-minutes: 12
-    steps:
-      - name: Checkout exact head
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
-      - name: Setup Node
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
-        with:
-          node-version-file: .node-version
-      - name: Enable pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@11.3.0 --activate
-      - name: Install
-        run: pnpm install --frozen-lockfile
-      - name: Actual migrated SQL regression, lint and advisors
-        env:
-          ISSUE153_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          ISSUE153_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: node tests/supabase/issue-153-sql-proof.mjs
-      - name: Preserve full SQL output and isolation
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: issue-153-disposable-sql-proof
-          path: test-results/issue-153-sql-lint/
-          if-no-files-found: error
-          retention-days: 14
-  sql-lint-151:
-    name: "SQL lint #151 (disposable PostgreSQL 18.4)"
-    if: github.event_name == 'pull_request' && github.head_ref == 'codex/151-task-parent-completion-guard'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Checkout exact head
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
-      - name: Setup Node
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
-        with:
-          node-version-file: .node-version
-      - name: Enable pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@11.3.0 --activate
-      - name: Install
-        run: pnpm install --frozen-lockfile
-      - name: Actual warning-level lint and security advisors
-        env:
-          ISSUE151_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          ISSUE151_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: node tests/supabase/issue-151-sql-lint-proof.mjs
-      - name: Preserve complete lint output and isolation evidence
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: issue-151-sql-lint-proof
-          path: test-results/issue-151-sql-lint/
-          if-no-files-found: error
-          retention-days: 14
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-  quality:
-    name: quality
+      - name: Decide whether the full proof suite is required
+        id: scope
+        shell: bash
+        env:
+          FULL_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'full-ci') }}
+        run: |
+          if [[ "${{ github.event_name }}" != "pull_request" || "$FULL_LABEL" == "true" ]]; then
+            echo "full=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          risky='^(\.github/|package\.json$|pnpm-lock\.yaml$|pnpm-workspace\.yaml$|\.node-version$|next\.config\.|supabase/|scripts/|tests/(sqlite|supabase)/|src/instrumentation\.ts$|src/app/api/|src/lib/supabase/|src/features/(auth|real-data)/)'
+          changed="$(git diff --name-only "${{ github.event.pull_request.base.sha }}...HEAD")"
+          matches="$(grep -E "$risky" <<<"$changed" || true)"
+          if [[ -n "$matches" ]]; then
+            echo "full=true" >> "$GITHUB_OUTPUT"
+            printf 'Full suite required by:\n%s\n' "$matches"
+          else
+            echo "full=false" >> "$GITHUB_OUTPUT"
+            echo "No risk-scoped paths changed; fast checks only."
+          fi
+
+  fast:
+    name: fast checks
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
@@ -178,6 +84,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Diff check
+        if: github.event_name == 'pull_request' || github.event_name == 'push'
         shell: bash
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
@@ -202,19 +109,53 @@ jobs:
       - name: Lint
         run: pnpm lint
 
-      - name: Preview CD policy and isolated service fixtures
-        run: pnpm test:preview:cd
+      - name: Native SQLite and application composition (Linux x64)
+        run: pnpm exec vitest run --config tests/sqlite/application-vitest.config.mjs
 
       - name: Linux preview operator and live WAL recovery fixtures
         run: pnpm test:preview:linux
 
-      - name: Native SQLite and application composition (Linux x64)
-        run: pnpm exec vitest run --config tests/sqlite/application-vitest.config.mjs
+      - name: Production build, server smoke and native shutdown proof (Linux x64)
+        run: |
+          pnpm build
+          node tests/sqlite/retired-runtime-proof.mjs
+          node tests/sqlite/framework-shutdown-proof.mjs
+          node tests/sqlite/application-smoke.mjs
+          pnpm test:sqlite:hosted
+
+  full:
+    name: full proofs
+    needs: scope
+    if: needs.scope.outputs.full == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Setup Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: ".node-version"
+
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.3.0 --activate
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Preview CD policy and isolated service fixtures
+        run: pnpm test:preview:cd
 
       - name: Install isolated browser engine
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Production Next build and native shutdown proof (Linux x64)
+      - name: Production browser proofs (Linux x64)
         run: |
           pnpm build
           node --test tests/sqlite/browser-route-diagnostics.test.mjs
@@ -227,10 +168,6 @@ jobs:
           node tests/sqlite/issue-153-browser-proof.mjs
           node tests/sqlite/issue-151-browser-proof.mjs
           node tests/sqlite/issue-142-calendar-hydration-proof.mjs
-          node tests/sqlite/retired-runtime-proof.mjs
-          node tests/sqlite/framework-shutdown-proof.mjs
-          node tests/sqlite/application-smoke.mjs
-          pnpm test:sqlite:hosted
           node tests/sqlite/issue-142-browser-proof.mjs --standard-negative --linux
 
       - name: Preview composition and isolated reset browser proof (Linux x64)
@@ -239,86 +176,68 @@ jobs:
           node tests/sqlite/issue-142-calendar-hydration-proof.mjs --preview
           node --conditions=react-server tests/sqlite/issue-142-browser-proof.mjs --linux
 
-      - name: Preserve disposable reset browser evidence
+      # Mirrors the former per-proof uploads that used `if-no-files-found: error`.
+      - name: Require mandatory browser proof evidence
+        if: always()
+        shell: bash
+        run: |
+          missing=0
+          require() {
+            local name=$1 p; shift
+            for p in "$@"; do
+              [[ -n "$(find $p -type f -print -quit 2>/dev/null)" ]] && return 0
+            done
+            echo "::error::Missing mandatory $name evidence"
+            missing=1
+          }
+          require issue-153 test-results/issue-153/
+          require issue-155 test-results/issue-155/
+          require issue-158 test-results/issue-158/
+          require issue-160 "test-results/issue-160/*.png" test-results/issue-160/route-diagnostics/ test-results/issue-160/synthetic-injection/
+          require issue-170 "test-results/issue-170/*.png" test-results/issue-170/route-diagnostics/ test-results/issue-170/synthetic-injection/
+          require issue-172 test-results/issue-172/
+          exit "$missing"
+
+      - name: Preserve disposable browser proof evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: issue-142-disposable-browser-proof
+          name: disposable-browser-proof-evidence
           path: |
             test-results/issue-142/*.png
             test-results/issue-142/proof.json
             test-results/issue-142-calendar/*.png
             test-results/issue-142-calendar/*.json
-          if-no-files-found: warn
-          retention-days: 14
-
-      - name: Preserve Task parent completion browser evidence
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: issue-151-disposable-browser-proof
-          path: |
             test-results/issue-151/*.png
             test-results/issue-151/proof.json
-          if-no-files-found: warn
-          retention-days: 14
-
-      - name: Preserve Inbox Task lifecycle browser evidence
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: issue-153-disposable-browser-proof
-          path: test-results/issue-153/
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Preserve Task deadline browser evidence
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: issue-155-disposable-browser-proof
-          path: test-results/issue-155/
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Preserve Task Create deadline browser evidence
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: issue-158-disposable-browser-proof
-          path: test-results/issue-158/
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Preserve issue 160 redacted route diagnostics
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: issue-160-route-diagnostics
-          path: |
+            test-results/issue-153/
+            test-results/issue-155/
+            test-results/issue-158/
             test-results/issue-160/*.png
             test-results/issue-160/route-diagnostics/
             test-results/issue-160/synthetic-injection/
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Preserve issue 170 redacted route diagnostics
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: issue-170-route-diagnostics
-          path: |
             test-results/issue-170/*.png
             test-results/issue-170/route-diagnostics/
             test-results/issue-170/synthetic-injection/
-          if-no-files-found: error
+            test-results/issue-172/
+          if-no-files-found: warn
           retention-days: 14
 
-      - name: Preserve Current Task step progress browser evidence
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: issue-172-current-task-browser-proof
-          path: test-results/issue-172/
-          if-no-files-found: error
-          retention-days: 14
+  quality:
+    name: quality
+    needs: [scope, fast, full]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require fast checks and, when in scope, the full proofs
+        shell: bash
+        run: |
+          echo "scope=${{ needs.scope.result }} full-required=${{ needs.scope.outputs.full }} fast=${{ needs.fast.result }} full=${{ needs.full.result }}"
+          [[ "${{ needs.scope.result }}" == "success" ]] || exit 1
+          [[ "${{ needs.fast.result }}" == "success" ]] || exit 1
+          if [[ "${{ needs.scope.outputs.full }}" == "true" ]]; then
+            [[ "${{ needs.full.result }}" == "success" ]] || exit 1
+          else
+            [[ "${{ needs.full.result }}" == "skipped" ]] || exit 1
+          fi
