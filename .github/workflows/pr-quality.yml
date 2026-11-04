@@ -176,6 +176,28 @@ jobs:
           node tests/sqlite/issue-142-calendar-hydration-proof.mjs --preview
           node --conditions=react-server tests/sqlite/issue-142-browser-proof.mjs --linux
 
+      # Mirrors the former per-proof uploads that used `if-no-files-found: error`.
+      - name: Require mandatory browser proof evidence
+        if: always()
+        shell: bash
+        run: |
+          missing=0
+          require() {
+            local name=$1 p; shift
+            for p in "$@"; do
+              [[ -n "$(find $p -type f -print -quit 2>/dev/null)" ]] && return 0
+            done
+            echo "::error::Missing mandatory $name evidence"
+            missing=1
+          }
+          require issue-153 test-results/issue-153/
+          require issue-155 test-results/issue-155/
+          require issue-158 test-results/issue-158/
+          require issue-160 "test-results/issue-160/*.png" test-results/issue-160/route-diagnostics/ test-results/issue-160/synthetic-injection/
+          require issue-170 "test-results/issue-170/*.png" test-results/issue-170/route-diagnostics/ test-results/issue-170/synthetic-injection/
+          require issue-172 test-results/issue-172/
+          exit "$missing"
+
       - name: Preserve disposable browser proof evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
