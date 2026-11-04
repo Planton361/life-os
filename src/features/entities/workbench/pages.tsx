@@ -1,5 +1,5 @@
 import { presentationRead } from "@/features/real-data/runtime/presentation-read";
-import { getGoalOutcome, readProjectDepth } from "@/features/real-data/runtime/facade";
+import { readProjectDepth } from "@/features/real-data/runtime/facade";
 import { SkillTaskRecovery } from "./skill-task-recovery";
 import { SkillWorkbench, SkillCapture } from "./skill-workbench";
 import { TaskDependencies } from "./task-dependencies";
@@ -442,8 +442,7 @@ export async function WorkbenchEditor({
     const outcome = await (async () => {
       const auth = await createAuthenticatedApplicationContext();
       if (!auth.ok) return null;
-      return getGoalOutcome(
-        auth.data,
+      return auth.data.useCases.getGoalOutcome(
         auth.user.id,
         id,
         data.dependencyGraph,

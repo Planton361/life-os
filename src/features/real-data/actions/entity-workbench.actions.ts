@@ -1,7 +1,7 @@
 "use server";
 
 import { withSubmittedDatasetEpoch } from "./submitted-dataset";
-import { writeTaskDependency, getResourceRepository, getTaskRepository, getProjectRepository, achieveGoal, addGoalAchievementEvidence, addGoalCriterionEvidence, addGoalMilestoneEvidence, addGoalProjectSupport, addGoalTaskSupport, appendGoalCriterionEvaluation, appendGoalCriterionRevision, amendGoalAchievementEvent, amendGoalMilestoneAchievementEvent, archiveGoalCriterion, archiveGoalMilestone, createGoalCriterion, createGoalMilestone, removeGoalProjectSupport, removeGoalTaskSupport, reopenGoal, reorderGoalMilestone, setGoalMilestoneStatus, updateGoalMilestone, writeProjectMilestone, setProjectResourceRole, writeTaskStep } from "../runtime/facade";
+import { writeTaskDependency, getResourceRepository, getTaskRepository, getProjectRepository, writeProjectMilestone, setProjectResourceRole, writeTaskStep } from "../runtime/facade";
 import { dependencyErrorMessage } from "../supabase/repositories/task-dependency-repository";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
@@ -158,7 +158,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await createGoalMilestone(auth.data, parsed.data),
+          await auth.data.useCases.createGoalMilestone(parsed.data),
           "Etappe erstellt.",
         )
       : invalid;
@@ -174,7 +174,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await updateGoalMilestone(auth.data, parsed.data),
+          await auth.data.useCases.updateGoalMilestone(parsed.data),
           "Etappe gespeichert.",
         )
       : invalid;
@@ -190,7 +190,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await setGoalMilestoneStatus(auth.data, parsed.data),
+          await auth.data.useCases.setGoalMilestoneStatus(parsed.data),
           "Etappenstatus gespeichert.",
         )
       : invalid;
@@ -203,7 +203,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await archiveGoalMilestone(auth.data, parsed.data),
+          await auth.data.useCases.archiveGoalMilestone(parsed.data),
           "Etappe archiviert.",
         )
       : invalid;
@@ -217,7 +217,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await reorderGoalMilestone(auth.data, parsed.data),
+          await auth.data.useCases.reorderGoalMilestone(parsed.data),
           "Etappenreihenfolge gespeichert.",
         )
       : invalid;
@@ -236,7 +236,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await createGoalCriterion(auth.data, parsed.data),
+          await auth.data.useCases.createGoalCriterion(parsed.data),
           "Kriterium erstellt.",
         )
       : invalid;
@@ -249,7 +249,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await archiveGoalCriterion(auth.data, parsed.data),
+          await auth.data.useCases.archiveGoalCriterion(parsed.data),
           "Kriterium archiviert.",
         )
       : invalid;
@@ -282,7 +282,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await appendGoalCriterionEvaluation(auth.data, parsed.data),
+          await auth.data.useCases.appendGoalCriterionEvaluation(parsed.data),
           "Kriterium bewertet.",
         )
       : invalid;
@@ -320,9 +320,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await appendGoalCriterionRevision(
-            auth.data,
-            parsed.data,
+          await auth.data.useCases.appendGoalCriterionRevision(parsed.data,
             operation === "criterion.correct"
               ? "criterion.correct"
               : "criterion.retract",
@@ -345,7 +343,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await addGoalCriterionEvidence(auth.data, parsed.data),
+          await auth.data.useCases.addGoalCriterionEvidence(parsed.data),
           "Beleg an Bewertung angehängt.",
         )
       : invalid;
@@ -363,7 +361,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await addGoalMilestoneEvidence(auth.data, parsed.data),
+          await auth.data.useCases.addGoalMilestoneEvidence(parsed.data),
           "Etappen-Beleg gespeichert.",
         )
       : invalid;
@@ -382,7 +380,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await amendGoalMilestoneAchievementEvent(auth.data, parsed.data),
+          await auth.data.useCases.amendGoalMilestoneAchievementEvent(parsed.data),
           "Etappen-Verlauf ergänzt.",
         )
       : invalid;
@@ -396,7 +394,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await addGoalProjectSupport(auth.data, parsed.data),
+          await auth.data.useCases.addGoalProjectSupport(parsed.data),
           "Projekt als unterstützender Kontext verknüpft.",
         )
       : invalid;
@@ -410,7 +408,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await addGoalTaskSupport(auth.data, parsed.data),
+          await auth.data.useCases.addGoalTaskSupport(parsed.data),
           "Aufgabe als unterstützender Kontext verknüpft.",
         )
       : invalid;
@@ -427,8 +425,8 @@ async function runGoalOutcomeOperation(
     if (!parsed.success) return invalid;
     const result =
       operation === "support.project.remove"
-        ? await removeGoalProjectSupport(auth.data, parsed.data)
-        : await removeGoalTaskSupport(auth.data, parsed.data);
+        ? await auth.data.useCases.removeGoalProjectSupport(parsed.data)
+        : await auth.data.useCases.removeGoalTaskSupport(parsed.data);
     return outcomeResult(result, "Support-Kontext gelöst.");
   }
   if (operation === "achieve") {
@@ -441,7 +439,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await achieveGoal(auth.data, parsed.data),
+          await auth.data.useCases.achieveGoal(parsed.data),
           "Ziel erreicht.",
         )
       : invalid;
@@ -459,7 +457,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await amendGoalAchievementEvent(auth.data, parsed.data),
+          await auth.data.useCases.amendGoalAchievementEvent(parsed.data),
           "Ziel-Verlauf ergänzt.",
         )
       : invalid;
@@ -476,7 +474,7 @@ async function runGoalOutcomeOperation(
     });
     return parsed.success
       ? outcomeResult(
-          await addGoalAchievementEvidence(auth.data, parsed.data),
+          await auth.data.useCases.addGoalAchievementEvidence(parsed.data),
           "Ziel-Beleg gespeichert.",
         )
       : invalid;
@@ -488,7 +486,7 @@ async function runGoalOutcomeOperation(
   });
   return parsed.success
     ? outcomeResult(
-        await reopenGoal(auth.data, parsed.data),
+        await auth.data.useCases.reopenGoal(parsed.data),
         "Ziel wieder geöffnet.",
       )
     : invalid;

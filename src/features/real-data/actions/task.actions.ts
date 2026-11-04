@@ -2,7 +2,7 @@
 
 import { taskDeadlineEndOfDay, taskDeadlinePatch } from "../domain/task-deadline";
 import { withSubmittedDatasetEpoch } from "./submitted-dataset";
-import { createGoalContextTask, getSkillRepository, getTaskRepository } from "../runtime/facade";
+import { getSkillRepository, getTaskRepository } from "../runtime/facade";
 import { dependencyErrorMessage } from "../supabase/repositories/task-dependency-repository";
 import { z } from "zod";
 
@@ -674,7 +674,7 @@ export async function createPortfolioTaskAction(
           status: "error",
         };
       }
-      const contextual = await createGoalContextTask(context.auth.data, {
+      const contextual = await context.auth.data.useCases.createGoalContextTask({
         areaId: parsed.data.areaId,
         commandId: optionalFormString(formData, "commandId"),
         description: parsed.data.description,
