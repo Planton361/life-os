@@ -5,6 +5,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
 import { authenticatedPreviewRuntime } from "@/features/real-data/runtime/application-context";
 import { PreviewEpochTransport } from "@/features/real-data/preview-reset/epoch-transport";
+import { applicationRuntimeConfiguration } from "@/features/real-data/runtime/configuration";
 
 export default async function AppLayout({
   children,
@@ -15,7 +16,13 @@ export default async function AppLayout({
     (await getCurrentLifeOsProfileId()) === "manual"
       ? await authenticatedPreviewRuntime()
       : null;
-  const shell = <AppShell>{children}</AppShell>;
+  const shell = (
+    <AppShell
+      reviewMode={applicationRuntimeConfiguration().backend === "sqlite-review"}
+    >
+      {children}
+    </AppShell>
+  );
   return preview ? (
     <PreviewEpochTransport
       epoch={preview.store.datasetState(preview.owner).epoch}

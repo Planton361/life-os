@@ -120,4 +120,41 @@ describe("hosted selector", () => {
         }),
       ).toThrow();
   });
+  it("admits the review runtime only for its fixed local database and a loopback origin", () => {
+    const review = {
+      LIFE_OS_APPLICATION_RUNTIME: "sqlite-review",
+      LIFE_OS_REVIEW_SQLITE_PATH: `${process.cwd()}/.local/review/life-os-review.db`,
+      LIFE_OS_REVIEW_ORIGIN: "http://localhost:3000",
+    };
+    expect(applicationRuntimeConfiguration(review)).toEqual({
+      backend: "sqlite-review",
+      path: review.LIFE_OS_REVIEW_SQLITE_PATH,
+      origin: "http://localhost:3000",
+    });
+    expect(() =>
+      applicationRuntimeConfiguration({
+        ...review,
+        LIFE_OS_REVIEW_SQLITE_PATH: "/home/user/personal/canonical.db",
+      }),
+    ).toThrow("REVIEW_DATABASE_PATH_DENIED");
+    for (const origin of [
+      "https://localhost:3000",
+      "http://example.com:3000",
+      "http://user:pw@localhost:3000",
+    ])
+      expect(() =>
+        applicationRuntimeConfiguration({ ...review, LIFE_OS_REVIEW_ORIGIN: origin }),
+      ).toThrow();
+    expect(() =>
+      applicationRuntimeConfiguration({ ...review, NODE_ENV: "production" }),
+    ).toThrow("REVIEW_RUNTIME_PRODUCTION_DENIED");
+    expect(() =>
+      applicationRuntimeConfiguration({ ...review, LIFE_OS_SYNTHETIC_AUTH: "issue" }),
+    ).toThrow("MIXED_SQLITE_CONFIGURATION_DENIED");
+    expect(() =>
+      applicationRuntimeConfiguration({
+        LIFE_OS_REVIEW_SQLITE_PATH: review.LIFE_OS_REVIEW_SQLITE_PATH,
+      }),
+    ).toThrow("REVIEW_CONFIGURATION_WITHOUT_SELECTOR");
+  });
 });

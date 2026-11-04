@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import type { LifeOsProfileId, LifeOsProfileSummary } from "./types";
 import { lifeOsProfileIds } from "./types";
 import { assertNoRetiredProofConfiguration } from "../real-data/sqlite/runtime-configuration";
+import { applicationRuntimeConfiguration } from "../real-data/runtime/configuration";
 
 
 export const LIFE_OS_PROFILE_COOKIE = "life_os_profile";
@@ -50,7 +51,12 @@ export async function getCurrentLifeOsProfileId(): Promise<LifeOsProfileId> {
 
   const cookieStore = await cookies();
 
-  return parseLifeOsProfileId(
-    cookieStore.get(LIFE_OS_PROFILE_COOKIE)?.value ?? null,
-  );
+  const value = cookieStore.get(LIFE_OS_PROFILE_COOKIE)?.value ?? null;
+  // The local review runtime opens on its own (initially empty) test data.
+  if (
+    !isLifeOsProfileId(value) &&
+    applicationRuntimeConfiguration().backend === "sqlite-review"
+  )
+    return "manual";
+  return parseLifeOsProfileId(value);
 }
