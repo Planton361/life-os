@@ -180,28 +180,6 @@ function mapQuickCaptureKind(kind: string): InboxCaptureType {
   return "note";
 }
 
-function minutesFromTime(value: string) {
-  const [hours = "0", minutes = "0"] = value.split(":");
-  const total = Number(hours) * 60 + Number(minutes);
-
-  return Number.isFinite(total) ? total : null;
-}
-
-function durationFromTimes(startTime: string, endTime: string) {
-  const start = minutesFromTime(startTime);
-  const end = minutesFromTime(endTime);
-
-  if (start === null || end === null || end <= start) {
-    return 30;
-  }
-
-  return Math.min(480, end - start);
-}
-
-function todayIsoDate() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 async function assertManualDashboardAction(): Promise<DashboardActionState | null> {
   const profileId = await getCurrentLifeOsProfileId();
 
@@ -251,44 +229,6 @@ export async function captureDashboardQuickThoughtAction(
 
   return {
     message: "In der Inbox gespeichert.",
-    status: "success",
-  };
-}
-
-export async function createDashboardTaskAction(
-  _previousState: DashboardActionState,
-  formData: FormData,
-): Promise<DashboardActionState> {
-  const blocked = await assertManualDashboardAction();
-
-  if (blocked) return blocked;
-
-  const title = formString(formData, "title");
-  const startTime = formString(formData, "startTime");
-  const endTime = formString(formData, "endTime");
-
-  if (!title) {
-    return {
-      message: "Gib der Aufgabe einen Titel.",
-      status: "error",
-    };
-  }
-
-  await createManualTask({
-    areaId: formString(formData, "area") as EntityArea,
-    date: formString(formData, "date") || todayIsoDate(),
-    description: formString(formData, "description"),
-    durationMinutes: durationFromTimes(startTime, endTime),
-    nextStep: formString(formData, "nextStep") || "Open task detail.",
-    priority: formString(formData, "priority") as EntityPriority,
-    startTime,
-    status: "planned",
-    title,
-  });
-  revalidateDashboardViews();
-
-  return {
-    message: "Aufgabe gespeichert und in Agenda/Today/Calendar projiziert.",
     status: "success",
   };
 }
