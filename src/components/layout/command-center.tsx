@@ -324,9 +324,11 @@ function DailyControlCurrentTask({
       <p className="mt-3 text-[21px] font-semibold leading-[1.18] text-[var(--text-primary)]">
         {task.title}
       </p>
-      <p className="mt-3 text-[11px] font-medium text-[var(--text-secondary)]">
-        {task.contextLabel}
-      </p>
+      {task.contextLabel ? (
+        <p className="mt-3 text-[11px] font-medium text-[var(--text-secondary)]">
+          {task.contextLabel}
+        </p>
+      ) : null}
       {task.stepProgress?.state === "available" && task.stepProgress.percent !== null ? (
         <div className="current-task-progress mt-2">
           <p className="mb-1.5 text-[10px] font-medium text-[var(--text-secondary)]">

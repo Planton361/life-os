@@ -19,6 +19,7 @@ const configuration = {
       "src/features/portfolio/portfolio-lifecycle.test.ts",
       "src/features/calendar/weekly-task-context.test.ts",
       "src/features/calendar/calendar-today-snapshot.test.ts",
+      "src/features/profile-data/task-metadata-projection.test.ts",
     ],
   },
 };

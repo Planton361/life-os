@@ -231,6 +231,21 @@ function dashboardPriority(priority: EntityPriority): DashboardPriority {
   return priority === "none" ? "P3" : priority;
 }
 
+// Task projections show only explicitly set metadata; `areaId` stays an
+// internal routing value for real Tasks and is never a display label.
+function explicitTaskPriority(priority: EntityPriority) {
+  return priority === "none" ? undefined : priority;
+}
+
+function taskAreaLabel(task: LifeTask) {
+  return task.canonicalAreaLabel;
+}
+
+function taskSourceLabel(task: LifeTask) {
+  const area = taskAreaLabel(task);
+  return area ? `Task / ${area}` : "Task";
+}
+
 function boundedProgress(value: number) {
   return Math.max(0, Math.min(100, Math.round(value)));
 }
@@ -295,13 +310,14 @@ function projectedAgendaType(task: LifeTask): DashboardAgendaEvent["type"] {
   return type === "workout" ? "task" : type;
 }
 
-function taskToAgendaEvent(
+export function taskToAgendaEvent(
   task: LifeTask,
   index: number,
 ): DashboardAgendaEvent {
   const endTime = taskEndTime(task);
-  const priority = dashboardPriority(task.priority);
+  const priority = explicitTaskPriority(task.priority);
   const accent = areaAccent(task.areaId);
+  const note = task.description || task.nextStep;
 
   return {
     id: task.id,
@@ -309,16 +325,16 @@ function taskToAgendaEvent(
     time: `${task.startTime ?? "Flexible"}${
       endTime ? `-${endTime}` : ""
     } · ${taskDurationLabel(task)}`,
-    note: task.description || task.nextStep,
-    areaLabel: task.scheduleSource?.type === "meal" ? "Nutrition" : isWorkoutScheduleSource(task) ? "Health" : areaLabel(task.areaId),
+    note,
+    areaLabel: task.scheduleSource?.type === "meal" ? "Nutrition" : isWorkoutScheduleSource(task) ? "Health" : taskAreaLabel(task),
     type: projectedAgendaType(task),
     typeLabel: task.scheduleSource?.type === "meal" ? "Meal" : task.scheduleSource?.type === "review" ? "Review" : isWorkoutScheduleSource(task) ? "Workout" : "Task",
     status: taskAgendaStatus(task),
     statusLabel: taskStatusLabel(task),
     relevanceLabel: priority,
-    nextAction: task.nextStep,
+    nextAction: task.nextStep && task.nextStep !== note ? task.nextStep : undefined,
     attentionLabel: task.reviewNeeded ? "Review needed" : undefined,
-    tags: [areaLabel(task.areaId), task.energy ?? "medium"],
+    tags: [taskAreaLabel(task), task.energy ?? "medium"].filter((tag): tag is string => Boolean(tag)),
     accent,
     area: task.areaId as DashboardArea,
     energy: task.energy ?? "medium",
@@ -343,7 +359,7 @@ function taskToQueueItem(task: LifeTask) {
   };
 }
 
-function taskToCurrentTask(task: LifeTask, progress?: DashboardTaskStepProgress) {
+export function taskToCurrentTask(task: LifeTask, progress?: DashboardTaskStepProgress) {
   const endTime = task.durationMinutes ? taskEndTime(task) : undefined;
   const lifecycleStatus: "planned" | "active" | "done" | "blocked" =
     task.status === "done"
@@ -363,7 +379,9 @@ function taskToCurrentTask(task: LifeTask, progress?: DashboardTaskStepProgress)
     ].filter(Boolean).join(" · ") || null,
     statusLabel: taskStatusLabel(task),
     title: task.title,
-    contextLabel: `${areaLabel(task.areaId)} · ${task.priority}`,
+    contextLabel: [taskAreaLabel(task), explicitTaskPriority(task.priority)]
+      .filter(Boolean)
+      .join(" · "),
     actionLabel: "Open task",
     stepProgress: progress?.taskId === task.id ? progress : currentTaskStepProgress(task.id, null),
     accent: areaAccent(task.areaId),
@@ -973,11 +991,11 @@ function taskPlannerRelationLabels(
   ];
 }
 
-function taskPlannerContextLabel(
+function taskPlannerContextLabel<Fallback extends string | undefined>(
   task: LifeTask,
   lookups: PortfolioRelationLabelLookups,
-  fallback: string,
-) {
+  fallback: Fallback,
+): string | Fallback {
   const labels = taskPlannerRelationLabels(task, lookups);
 
   return labels.length > 0 ? labels.join(" · ") : fallback;
@@ -2193,7 +2211,7 @@ function realTaskStatusToLifeTaskStatus(
   return status;
 }
 
-function realTaskToLifeTask(task: RealDataTask): LifeTask | null {
+export function realTaskToLifeTask(task: RealDataTask): LifeTask | null {
   const status = realTaskStatusToLifeTaskStatus(task.status);
 
   if (!status) return null;
@@ -2229,10 +2247,7 @@ function realTaskToLifeTask(task: RealDataTask): LifeTask | null {
     instanceDate: task.instanceDate ?? undefined,
     isGenerated: Boolean(task.generatedFromTemplateId),
     nextStep:
-      task.description?.split("Nächste Aktion:")[1]?.trim() ?? task.description ??
-      (task.sourceInboxItemId
-        ? "Review the task created from Inbox triage."
-        : "Review the task."),
+      task.description?.split("Nächste Aktion:")[1]?.trim() ?? task.description ?? "",
     priority: task.priority,
     projectId: task.projectId ?? undefined,
     resultNote: task.completedAt ? "Task completed." : undefined,
@@ -2590,9 +2605,13 @@ async function getManualTasksFromApplication(
   } catch {
     return { tasks: [], unavailableReason: "Die Profil-Zeitzone konnte nicht bestätigt werden." };
   }
+  // A missing or unreadable Area name renders no Area rather than a placeholder.
+  const areas = await client.reads.catalog.areas().catch(() => null);
+  const areaNames = new Map((areas?.data ?? []).map((area) => [area.id, area.name]));
   const projectTask = (task: RealDataTask): LifeTask | null => {
     const projected = realTaskToLifeTask(task);
     return projected ? { ...projected,
+      canonicalAreaLabel: task.areaId ? areaNames.get(task.areaId) : undefined,
       dueLocalDate: task.dueAt ? taskDeadlineLocalDay(task.dueAt, zone) : undefined,
     } : null;
   };
@@ -3562,7 +3581,7 @@ function taskToTodayEvent(task: LifeTask): TodayActivityEventViewModel {
     title: task.title,
     description: task.description,
     sourceLabel: task.scheduleSource?.type === "meal" ? "Nutrition" : task.scheduleSource?.type === "review" ? "Reviews" : isWorkoutScheduleSource(task) ? "Health" : "Tasks",
-    areaLabel: task.scheduleSource?.type === "meal" ? "Nutrition" : isWorkoutScheduleSource(task) ? "Health" : areaLabel(task.areaId),
+    areaLabel: task.scheduleSource?.type === "meal" ? "Nutrition" : isWorkoutScheduleSource(task) ? "Health" : taskAreaLabel(task),
     linkedEntityType: projectedScheduleSourceType(task),
     linkedEntityId: task.scheduleSource?.id ?? task.id,
     sourceHref: task.scheduleSource?.type === "meal" ? "/nutrition/meal-planner" : task.scheduleSource?.type === "review" ? `/review/${task.title.startsWith("Weekly") ? "weekly" : "daily"}` : isWorkoutScheduleSource(task) ? workoutSourceHref(task) : `/tasks/${task.id}`,
@@ -4099,7 +4118,7 @@ function buildManualCalendarDays(): CalendarDayViewModel[] {
   });
 }
 
-function taskToCalendarBlock(
+export function taskToCalendarBlock(
   task: LifeTask,
   lookups: PortfolioRelationLabelLookups,
 ): Omit<
@@ -4139,19 +4158,19 @@ function taskToCalendarBlock(
             ? "needs_decision"
             : "planned",
     source: task.scheduleSource?.type === "meal" ? "meal_planner" : task.scheduleSource?.type === "review" ? "review" : isWorkoutScheduleSource(task) ? "health" : "task",
-    area: task.scheduleSource?.type === "meal" ? "Nutrition" : task.scheduleSource?.type === "review" ? "Review" : isWorkoutScheduleSource(task) ? "Health" : areaLabel(task.areaId),
+    area: task.scheduleSource?.type === "meal" ? "Nutrition" : task.scheduleSource?.type === "review" ? "Review" : isWorkoutScheduleSource(task) ? "Health" : taskAreaLabel(task),
     sourceEntity: {
       type: projectedScheduleSourceType(task),
-      label: task.scheduleSource?.type === "meal" ? "Meal / Nutrition" : task.scheduleSource?.type === "review" ? "Review / Daily loop" : isWorkoutScheduleSource(task) ? "Workout / Health" : `Task / ${areaLabel(task.areaId)}`,
+      label: task.scheduleSource?.type === "meal" ? "Meal / Nutrition" : task.scheduleSource?.type === "review" ? "Review / Daily loop" : isWorkoutScheduleSource(task) ? "Workout / Health" : taskSourceLabel(task),
       href: task.scheduleSource?.type === "meal" ? "/nutrition/meal-planner" : task.scheduleSource?.type === "review" ? `/review/${task.title.startsWith("Weekly") ? "weekly" : "daily"}` : isWorkoutScheduleSource(task) ? workoutSourceHref(task) : `/tasks/${task.id}`,
     },
     accent: areaAccent(task.areaId),
-    meta: task.priority,
+    meta: explicitTaskPriority(task.priority),
     linkedEntity: task.title,
-    plannedOutcome: task.nextStep,
+    plannedOutcome: task.nextStep || undefined,
     timeLabel: `${task.startTime}-${endTime}`,
-    priority: dashboardPriority(task.priority),
-    project: taskPlannerContextLabel(task, lookups, areaLabel(task.areaId)),
+    priority: explicitTaskPriority(task.priority),
+    project: taskPlannerContextLabel(task, lookups, taskAreaLabel(task)),
     taskId: task.id,
     goalId: task.goalId,
     startTime: task.startTime,
@@ -4174,10 +4193,10 @@ function taskDeadlineToAllDayBlock(
     type: "deadline",
     status: task.status === "done" ? "done" : "planned",
     source: "task",
-    area: areaLabel(task.areaId),
+    area: taskAreaLabel(task),
     sourceEntity: {
       type: "task",
-      label: `Task / ${areaLabel(task.areaId)}`,
+      label: taskSourceLabel(task),
       href: `/tasks/${task.id}`,
     },
     accent: isOverdue ? "var(--accent-orange)" : areaAccent(task.areaId),
@@ -4185,7 +4204,7 @@ function taskDeadlineToAllDayBlock(
     linkedEntity: task.title,
     markerKind: "task_deadline",
     markerLabel: isOverdue ? "Task overdue" : "Task due",
-    priority: dashboardPriority(task.priority),
+    priority: explicitTaskPriority(task.priority),
     timeLabel: isOverdue ? "Overdue" : "Task due",
   };
 }
@@ -4203,7 +4222,7 @@ function plannedTaskToAllDayBlock(
     type: isRecurringOccurrence ? "routine" : "task_block",
     status: task.status === "done" ? "done" : "planned",
     source: isRecurringOccurrence ? "routine" : "task",
-    area: areaLabel(task.areaId),
+    area: taskAreaLabel(task),
     sourceEntity: {
       type: "task",
       label: isRecurringOccurrence ? "Recurring task" : "Task",
@@ -4212,7 +4231,7 @@ function plannedTaskToAllDayBlock(
     accent: areaAccent(task.areaId),
     markerKind: "planned_task",
     markerLabel: isRecurringOccurrence ? "Recurring task" : "Planned task",
-    priority: dashboardPriority(task.priority),
+    priority: explicitTaskPriority(task.priority),
     taskId: task.id,
     timeLabel: isRecurringOccurrence ? "Recurring task" : "Planned task",
   };
