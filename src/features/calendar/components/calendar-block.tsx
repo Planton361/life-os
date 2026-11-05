@@ -15,8 +15,12 @@ type TimedBlockStyle = CSSProperties & {
   "--accent"?: string;
 };
 
+function areaSuffix(area: string | undefined) {
+  return area ? `, area ${area}` : "";
+}
+
 function blockLabel(block: CalendarTimedBlockViewModel) {
-  return `${block.title}, ${block.startTime} to ${block.endTime}, ${calendarBlockTypeLabels[block.type]}, ${calendarBlockStatusLabels[block.status]}, source ${block.sourceEntity.label}, area ${block.area}`;
+  return `${block.title}, ${block.startTime} to ${block.endTime}, ${calendarBlockTypeLabels[block.type]}, ${calendarBlockStatusLabels[block.status]}, source ${block.sourceEntity.label}${areaSuffix(block.area)}`;
 }
 
 export function CalendarTimedBlock({
@@ -108,7 +112,9 @@ export function CalendarTimedBlock({
             ) : null}
             {isRegular ? (
               <p className="truncate text-[9px] leading-3 text-[var(--text-muted)]">
-                {block.area} · {block.meta ?? block.sourceEntity.label}
+                {[block.area, block.meta ?? block.sourceEntity.label]
+                  .filter(Boolean)
+                  .join(" · ")}
               </p>
             ) : null}
           </div>
@@ -142,7 +148,7 @@ export function CalendarAllDayBlock({
 }>) {
   return (
     <button
-      aria-label={`${block.markerLabel ?? calendarBlockTypeLabels[block.type]}: ${block.title}, ${block.timeLabel ?? "all day"}, ${calendarBlockStatusLabels[block.status]}, source ${block.sourceEntity.label}, area ${block.area}`}
+      aria-label={`${block.markerLabel ?? calendarBlockTypeLabels[block.type]}: ${block.title}, ${block.timeLabel ?? "all day"}, ${calendarBlockStatusLabels[block.status]}, source ${block.sourceEntity.label}${areaSuffix(block.area)}`}
       aria-pressed={selected}
       id={`calendar-focus-block-${block.id}`}
       onClick={() => onSelect?.(block.id)}

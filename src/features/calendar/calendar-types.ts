@@ -161,7 +161,7 @@ export type CalendarBlockBase = {
   type: CalendarBlockType;
   status: CalendarBlockStatus;
   source: CalendarBlockSource;
-  area: string;
+  area?: string;
   sourceEntity: CalendarSourceEntity;
   accent: string;
   meta?: string;

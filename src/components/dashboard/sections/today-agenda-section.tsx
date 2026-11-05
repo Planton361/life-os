@@ -111,13 +111,18 @@ function AgendaViewSwitch({
   );
 }
 
-function AgendaEventCard({
+export function AgendaEventCard({
   event,
 }: Readonly<{
   event: DashboardAgendaEvent;
 }>) {
   const descriptionId = useId();
-  const metaLabel = `${event.time} · ${event.areaLabel} · ${event.typeLabel} · ${event.statusLabel}`;
+  const metaLabel = [event.time, event.areaLabel, event.typeLabel, event.statusLabel]
+    .filter(Boolean)
+    .join(" · ");
+  const description = [metaLabel, event.note, event.nextAction, event.attentionLabel]
+    .filter(Boolean)
+    .join(" · ");
   const eventStyle: AccentStyle = {
     ...styleFor(event.accent),
     background: agendaEventBackground(event.status),
@@ -148,18 +153,22 @@ function AgendaEventCard({
         >
           {event.title}
         </h3>
-        <span className="shrink-0 text-[9px] text-[var(--text-muted)]">
-          {event.relevanceLabel}
-        </span>
+        {event.relevanceLabel ? (
+          <span className="shrink-0 text-[9px] text-[var(--text-muted)]">
+            {event.relevanceLabel}
+          </span>
+        ) : null}
       </div>
       <p className="agenda-event-time mt-1 truncate text-[10px] font-medium leading-tight text-[var(--text-secondary)]">
         {event.time} · {event.statusLabel}
       </p>
-      <p className="agenda-event-note mt-1 truncate text-[11px] leading-tight text-[var(--text-muted)]">
-        {event.note}
-      </p>
+      {event.note ? (
+        <p className="agenda-event-note mt-1 truncate text-[11px] leading-tight text-[var(--text-muted)]">
+          {event.note}
+        </p>
+      ) : null}
       <span id={descriptionId} className="sr-only">
-        {metaLabel} · {event.note} · {event.nextAction} · {event.attentionLabel}
+        {description}
       </span>
     </>
   );
@@ -169,7 +178,7 @@ function AgendaEventCard({
       <Link
         aria-label={`Open agenda item: ${event.title}`}
         aria-describedby={descriptionId}
-        title={`${event.title} — ${metaLabel} — ${event.note}`}
+        title={[event.title, metaLabel, event.note].filter(Boolean).join(" — ")}
         className={className}
         href={event.href}
         onFocus={(focusEvent) =>

@@ -450,7 +450,7 @@ function InspectorHeader({
   );
 }
 
-function SelectedContext({
+export function SelectedContext({
   block,
   selectedDay,
   selectedSlot,
@@ -505,16 +505,18 @@ function SelectedContext({
               <dd className="inline">{durationLabel(block.durationMinutes)}</dd>
             </div>
           ) : null}
-          <div>
-            <dt className="inline text-[var(--text-muted)]">Area: </dt>
-            <dd className="inline">{block.area}</dd>
-          </div>
-          <div>
-            <dt className="inline text-[var(--text-muted)]">Outcome: </dt>
-            <dd className="inline">
-              {block.plannedOutcome ?? "Prepared for later scheduling."}
-            </dd>
-          </div>
+          {block.area ? (
+            <div>
+              <dt className="inline text-[var(--text-muted)]">Area: </dt>
+              <dd className="inline">{block.area}</dd>
+            </div>
+          ) : null}
+          {block.plannedOutcome ? (
+            <div>
+              <dt className="inline text-[var(--text-muted)]">Outcome: </dt>
+              <dd className="inline">{block.plannedOutcome}</dd>
+            </div>
+          ) : null}
           <div>
             <dt className="inline text-[var(--text-muted)]">State: </dt>
             <dd className="inline">
