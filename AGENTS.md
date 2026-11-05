@@ -350,7 +350,9 @@ Before calling delegated work complete, confirm:
 - dependent read models are updated;
 - Manual/Demo/Empty/Auth-blocked are correct;
 - write flows survive reload;
-- focused browser proof is green;
+- focused browser proof is green where navigation, writes or persistence
+  changed; presentation-only changes may use the live UI review in
+  `AI_WORKFLOW.md` instead;
 - every visible control was inventoried and current browser-proven where a
   core surface is in scope;
 - console/hydration is clean and full-surface screenshots plus bounds/
