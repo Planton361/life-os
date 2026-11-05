@@ -9,6 +9,8 @@
   "scripts": {
     "dev": "node scripts/ops/run-canonical-target-dev.mjs",
     "dev:raw": "node scripts/ops/run-local-next-dev.mjs",
+    "dev:review": "node --conditions=react-server scripts/ops/run-review-dev.mjs",
+    "review:reset": "node --conditions=react-server scripts/ops/run-review-dev.mjs --reset",
     "build": "next build",
     "start": "node scripts/ops/run-production.mjs",
     "lint": "eslint .",

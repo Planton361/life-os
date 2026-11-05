@@ -26,3 +26,13 @@ export function productionDatabaseModule() {
     ),
   );
 }
+export function reviewDatabaseModule() {
+  return require(
+    fileURLToPath(
+      new URL(
+        "../../src/features/real-data/sqlite/review-database.ts",
+        import.meta.url,
+      ),
+    ),
+  );
+}

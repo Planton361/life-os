@@ -57,9 +57,13 @@ export async function prepareApplicationRuntime() {
         ? (
             await import("../sqlite/production-bootstrap")
           ).verifyProductionApplicationDatabase(config.path)
-        : (
-            await import("../sqlite/synthetic-readiness")
-          ).verifySyntheticApplicationDatabase(config.path);
+        : config.backend === "sqlite-review"
+          ? (
+              await import("../sqlite/review-database")
+            ).verifyReviewDatabase(config.path)
+          : (
+              await import("../sqlite/synthetic-readiness")
+            ).verifySyntheticApplicationDatabase(config.path);
     const { applicationRuntime } = await import("../sqlite/runtime");
     sqlite = {
       path: config.path,
@@ -151,7 +155,10 @@ export async function createAuthenticatedApplicationContext(
           new Headers(await headers()),
           { ...config, ownerId: sqlite.ownerId },
         )
-      : issueOwnerContext(sqlite.ownerId);
+      : config.backend === "sqlite-review" &&
+          (await headers()).get("host") !== new URL(config.origin).host
+        ? null // review data is served to the loopback origin only
+        : issueOwnerContext(sqlite.ownerId);
   if (!owner) return { ok: false, error: "unauthenticated" };
   const { isPreviewComposition, currentPreviewGrant } =
     await import("../sqlite/preview-grant");
