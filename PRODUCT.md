@@ -886,7 +886,7 @@ Required capabilities:
 - filters by area, type, project, goal, skill and priority;
 - recurring tasks and routines;
 - planned meals, workouts and reviews as linked schedule sources;
-- urgent time-block creation;
+- urgent work uses the same Task → `Im Calendar planen` → Week Planner flow; there is no separate Dashboard time-block creation;
 - accessible drag, drop and resize as a comfort layer after keyboard/button scheduling is complete;
 - no duplicate domain data;
 - use the available primary desktop height intentionally, without a large empty Bottom Zone.
