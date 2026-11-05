@@ -18,6 +18,10 @@ import type { PointerEvent as ReactPointerEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const TIME_GUTTER_WIDTH = 56;
+// The time gutter stays visible while narrow viewports scroll the week
+// horizontally; its opaque layer keeps the former translucent tint.
+const STICKY_GUTTER_CLASS =
+  "sticky left-0 z-[2] [background:linear-gradient(rgba(11,17,28,.34),rgba(11,17,28,.34)),var(--surface-1)]";
 
 const emptyCalendarStateContent = {
   title: "Noch keine Termine oder Zeitblöcke",
@@ -154,8 +158,42 @@ export function CalendarWeekSurface({
         target * hoursRef.current.clientHeight -
         120,
     );
+
+    // Narrow viewports scroll the week horizontally: bring the selected block's
+    // day, else the current date, fully beside the sticky time gutter.
+    const selectedBlock = [
+      ...viewModel.timedBlocks,
+      ...viewModel.allDayBlocks,
+    ].find((block) => block.id === selectedBlockId);
+    const focusDate =
+      viewModel.days.find((day) => day.id === selectedBlock?.dayId)?.date ??
+      (viewModel.days.some((day) => day.date === currentDate)
+        ? currentDate
+        : undefined);
+    const scroller = scrollRef.current;
+    const column = focusDate
+      ? scroller.querySelector<HTMLElement>(
+          `[data-calendar-date="${focusDate}"]`,
+        )
+      : null;
+    if (!column) {
+      scroller.scrollLeft = 0;
+      return;
+    }
+    const columnLeft =
+      column.getBoundingClientRect().left -
+      scroller.getBoundingClientRect().left +
+      scroller.scrollLeft;
+    if (
+      columnLeft - TIME_GUTTER_WIDTH < scroller.scrollLeft ||
+      columnLeft + column.offsetWidth > scroller.scrollLeft + scroller.clientWidth
+    )
+      scroller.scrollLeft = columnLeft - TIME_GUTTER_WIDTH;
   }, [
     weekKey,
+    currentDate,
+    selectedBlockId,
+    viewModel.allDayBlocks,
     viewModel.currentTime.top,
     viewModel.days,
     viewModel.timedBlocks,
@@ -343,7 +381,7 @@ export function CalendarWeekSurface({
       >
         <div className="calendar-grid-content min-w-[1040px] xl:flex xl:h-full xl:min-h-[660px] xl:flex-col 2xl:min-h-[700px]">
           <div className="grid grid-cols-[56px_repeat(7,minmax(138px,1fr))] border-b border-[var(--border-subtle)]">
-            <div className="border-r border-[var(--border-subtle)] bg-[rgba(11,17,28,.34)]" />
+            <div className={cn("border-r border-[var(--border-subtle)]", STICKY_GUTTER_CLASS)} />
             {viewModel.days.map((day) => (
               <div
                 className={cn(
@@ -379,7 +417,12 @@ export function CalendarWeekSurface({
           </div>
 
           <div className="grid grid-cols-[56px_repeat(7,minmax(138px,1fr))] border-b border-[var(--border-subtle)]">
-            <div className="flex items-start justify-center border-r border-[var(--border-subtle)] bg-[rgba(11,17,28,.34)] px-2 py-3 text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--text-faint)]">
+            <div
+              className={cn(
+                "flex items-start justify-center border-r border-[var(--border-subtle)] px-2 py-3 text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--text-faint)]",
+                STICKY_GUTTER_CLASS,
+              )}
+            >
               All day
             </div>
             {viewModel.days.map((day) => {
@@ -429,9 +472,26 @@ export function CalendarWeekSurface({
               {hourRows.map((hour) => (
                 <div className="contents" key={`calendar-week-row-${hour}`}>
                   <div
-                    className="calendar-hour-cell relative border-r border-t border-[rgba(148,163,184,.18)] bg-[rgba(11,17,28,.34)]"
+                    className={cn(
+                      "calendar-hour-cell border-r border-t border-[rgba(148,163,184,.18)]",
+                      STICKY_GUTTER_CLASS,
+                      hour === hourRows[0] && "z-[3]",
+                    )}
                     data-calendar-hour-line={hour}
                   >
+                    {hour === hourRows[0] ? (
+                      // The first sticky cell carries the current-time label
+                      // across all equal hour rows (padding box excludes 1px border).
+                      <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute left-1 -mt-2 rounded-full border border-[rgba(221,107,95,.26)] bg-[rgba(18,28,43,.94)] px-2 py-0.5 text-[9px] font-semibold text-[var(--accent-red)]"
+                        style={{
+                          top: `calc(${(viewModel.currentTime.top * CALENDAR_DAY_HOUR_COUNT) / 100} * (100% + 1px) - 1px)`,
+                        }}
+                      >
+                        {viewModel.currentTime.label}
+                      </span>
+                    ) : null}
                     <time
                       className="calendar-hour-label absolute right-2 top-2 text-[9px] font-medium leading-none text-[var(--text-faint)]"
                       data-calendar-time-boundary={
@@ -444,6 +504,15 @@ export function CalendarWeekSurface({
                     >
                       {hour}
                     </time>
+                    {hour === hourRows[hourRows.length - 1] ? (
+                      <time
+                        className="absolute bottom-px right-[7px] text-[9px] font-medium leading-none text-[var(--text-faint)]"
+                        data-calendar-time-boundary="end"
+                        dateTime={calendarMinutesToTime(CALENDAR_DAY_END_MINUTES)}
+                      >
+                        {calendarMinutesToTime(CALENDAR_DAY_END_MINUTES)}
+                      </time>
+                    ) : null}
                   </div>
                   {viewModel.days.map((day) => (
                     <div
@@ -467,16 +536,15 @@ export function CalendarWeekSurface({
               data-calendar-time-boundary-line="end"
             />
 
-            <time
-              className="absolute bottom-px left-0 z-[3] w-[56px] pr-2 text-right text-[9px] font-medium leading-none text-[var(--text-faint)]"
-              data-calendar-time-boundary="end"
-              dateTime={calendarMinutesToTime(CALENDAR_DAY_END_MINUTES)}
-            >
-              {calendarMinutesToTime(CALENDAR_DAY_END_MINUTES)}
-            </time>
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute left-[56px] right-0 z-[1] h-px bg-[rgba(221,107,95,.82)]"
+              data-calendar-current-time-line
+              style={{ top: `${viewModel.currentTime.top}%` }}
+            />
 
             <div
-              className="absolute inset-y-0 right-0 grid"
+              className="absolute inset-y-0 right-0 z-[1] grid"
               style={{
                 gridTemplateColumns: "repeat(7, minmax(138px, 1fr))",
                 left: TIME_GUTTER_WIDTH,
@@ -583,16 +651,6 @@ export function CalendarWeekSurface({
               })}
             </div>
 
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute left-[56px] right-0 z-[2] h-px bg-[rgba(221,107,95,.82)]"
-              data-calendar-current-time-line
-              style={{ top: `${viewModel.currentTime.top}%` }}
-            >
-              <span className="absolute -left-[52px] -top-2 rounded-full border border-[rgba(221,107,95,.26)] bg-[rgba(18,28,43,.94)] px-2 py-0.5 text-[9px] font-semibold text-[var(--accent-red)]">
-                {viewModel.currentTime.label}
-              </span>
-            </div>
             {!hasBlocks ? <CalendarWeekEmptyOverlay /> : null}
           </div>
 

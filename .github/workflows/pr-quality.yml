@@ -168,6 +168,7 @@ jobs:
           node tests/sqlite/issue-153-browser-proof.mjs
           node tests/sqlite/issue-151-browser-proof.mjs
           node tests/sqlite/issue-142-calendar-hydration-proof.mjs
+          node tests/sqlite/issue-190-browser-proof.mjs
           node tests/sqlite/issue-142-browser-proof.mjs --standard-negative --linux
 
       - name: Preview composition and isolated reset browser proof (Linux x64)
@@ -196,6 +197,7 @@ jobs:
           require issue-160 "test-results/issue-160/*.png" test-results/issue-160/route-diagnostics/ test-results/issue-160/synthetic-injection/
           require issue-170 "test-results/issue-170/*.png" test-results/issue-170/route-diagnostics/ test-results/issue-170/synthetic-injection/
           require issue-172 test-results/issue-172/
+          require issue-190 "test-results/issue-190/*.png"
           exit "$missing"
 
       - name: Preserve disposable browser proof evidence
