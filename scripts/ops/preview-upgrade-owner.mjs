@@ -9,7 +9,7 @@ try {
   try {
     const row = db
       .prepare(
-        "SELECT owner_id FROM runtime_metadata WHERE singleton=1 AND schema_version=10 AND dataset_kind='canonical'",
+        "SELECT owner_id FROM runtime_metadata WHERE singleton=1 AND schema_version IN (10,11) AND dataset_kind='canonical'",
       )
       .get();
     if (!row) throw new Error();

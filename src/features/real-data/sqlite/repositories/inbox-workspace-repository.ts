@@ -9,7 +9,7 @@ export function createSqliteInboxWorkspaceRepository(store: SqliteRuntime, conte
     try { return { data: store.command(context, kind, body), error: null }; }
     catch (error) {
       const message = error instanceof Error ? error.message : "";
-      return { data: null, error: { code: message === "INBOX_STALE" ? "PT409" : message === "INBOX_OPEN_ITEM_UNAVAILABLE" ? "P0002" : "23514" } };
+      return { data: null, error: { code: message === "INBOX_STALE" ? "PT409" : message === "INBOX_TITLE_REQUIRED" ? "PT422" : message === "INBOX_OPEN_ITEM_UNAVAILABLE" ? "P0002" : "23514" } };
     }
   };
   return {

@@ -5,7 +5,7 @@ import type Database from "better-sqlite3";
 import { inboxClarificationSchema, inboxCompletionSchema, inboxRouteSchema, type InboxClarificationInput, type InboxRouteInput } from "../../schemas/inbox-workspace.schemas";
 import { timestamp, localDayAt, timezone, uuid } from "../codecs";
 
-type Item = { id: string; title: string; body: string | null; next_action: string | null; missing_info: string | null; priority: string; energy: string | null; duration_minutes: bigint | null; area_id: string | null; review_needed: bigint; today_candidate: bigint; deadline_hint: string | null; updated_at: string; created_task_id: string | null; processed_at: string | null };
+type Item = { id: string; title: string | null; body: string | null; next_action: string | null; missing_info: string | null; priority: string; energy: string | null; duration_minutes: bigint | null; area_id: string | null; review_needed: bigint; today_candidate: bigint; deadline_hint: string | null; updated_at: string; created_task_id: string | null; processed_at: string | null };
 function load(db: Database.Database, owner: string, id: string, expected: string) {
   const row = db.prepare("SELECT * FROM inbox_items WHERE user_id=? AND id=? AND archived_at IS NULL AND status IN ('raw','clarified')").get(owner, uuid(id)) as Item | undefined;
   if (!row) throw new Error("INBOX_OPEN_ITEM_UNAVAILABLE");
@@ -36,6 +36,8 @@ export function routeSavedInboxItem(db: Database.Database, owner: string, input:
   const parsed = inboxRouteSchema.safeParse(input);
   if (!parsed.success) throw new Error("INBOX_VALIDATION_FAILED");
   const data: InboxRouteInput = parsed.data, row = load(db, owner, data.inboxItemId, data.expectedUpdatedAt);
+  // An untitled capture may only be archived; every target needs a user title (#192).
+  if (row.title === null && data.route !== "archive") throw new Error("INBOX_TITLE_REQUIRED");
   active(db, owner, "areas", row.area_id);
   if (["task", "existing_project", "existing_goal", "existing_skill"].includes(data.route)) {
     const project = data.route === "existing_project" ? data.targetId : null;

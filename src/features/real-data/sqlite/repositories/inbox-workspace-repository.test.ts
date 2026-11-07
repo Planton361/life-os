@@ -8,6 +8,7 @@ import { initializeSyntheticDatabase } from "../synthetic-database";
 import { issueOwnerContext, type OwnerContext } from "../owner-context";
 import { SqliteRuntime } from "../runtime";
 import { createSqliteInboxWorkspaceRepository } from "./inbox-workspace-repository";
+import { createSqliteInboxRepository } from "./inbox-repository";
 import { skillDevelopmentCommand } from "./skill-development-repository";
 import type { InboxCompletionInput } from "../../schemas/inbox-workspace.schemas";
 const owner = "11600000-0000-4000-8000-000000000001", at = "2026-10-06T10:00:00.123456Z";
@@ -81,5 +82,36 @@ it("denies unissued/foreign contexts, invalid clarification and raw capture rewr
     expect(f.repo.complete({ ...completion(id), title: " " }).error).not.toBeNull();
     expect(() => f.store.command(f.context, "inbox.update", db => db.prepare("UPDATE inbox_items SET original_title='Rewritten' WHERE user_id=? AND id=?").run(owner, id))).toThrow("INBOX_ORIGINAL_IMMUTABLE");
     expect(f.store.read(f.context, db => db.prepare("SELECT count(*) AS n FROM tasks WHERE user_id=?").get(owner))).toEqual({ n: BigInt(0) });
+  } finally { f.store.close(); }
+});
+it("keeps an untitled Quick Thought untitled and requires a user title before any target object (#192)", async () => {
+  const f = fixture();
+  try {
+    const text = "Ein langer ungeordneter Gedanke über Wochenplanung, Lernen und die nächste Woche ohne fertigen Titel";
+    const captured = await createSqliteInboxRepository(f.store, f.context).createInboxItem({ body: text, profileId: owner, source: "inbox.quick_capture", userId: owner });
+    if (!captured.ok) throw new Error("Capture failed");
+    expect(captured.data).toMatchObject({ title: null, body: text, status: "raw", clarification: { originalTitle: null, originalBody: text } });
+    const id = captured.data.id, expectedUpdatedAt = captured.data.updatedAt;
+    const row = () => f.store.read(f.context, db => db.prepare("SELECT title,body,original_title,original_body,status FROM inbox_items WHERE user_id=? AND id=?").get(owner, id));
+    const counts = () => f.store.read(f.context, db => db.prepare("SELECT (SELECT count(*) FROM tasks) AS tasks,(SELECT count(*) FROM projects) AS projects,(SELECT count(*) FROM goals) AS goals,(SELECT count(*) FROM resources) AS resources").get());
+    const before = counts();
+    for (const route of ["task", "project", "goal", "resource", "note"] as const) {
+      expect(f.repo.route({ inboxItemId: id, expectedUpdatedAt, route, targetId: null }).error?.code, route).toBe("PT422");
+      expect(f.repo.complete({ ...completion(id), expectedUpdatedAt, title: null, route }).error, route).not.toBeNull();
+    }
+    expect(counts()).toEqual(before);
+    expect(row()).toEqual({ title: null, body: text, original_title: null, original_body: text, status: "raw" });
+    expect(() => f.store.command(f.context, "inbox.proof", db => db.prepare("UPDATE inbox_items SET original_body='rewritten' WHERE user_id=? AND id=?").run(owner, id))).toThrow("INBOX_ORIGINAL_IMMUTABLE");
+    const saved = f.repo.save({ ...completion(id), expectedUpdatedAt, title: "", body: text });
+    expect(saved.error).toBeNull();
+    expect(row()).toEqual({ title: null, body: text, original_title: null, original_body: text, status: "clarified" });
+    const routed = f.repo.complete({ ...completion(id), expectedUpdatedAt: saved.data!.updated_at, title: "Wochenplanung klären", body: text });
+    expect(routed.error).toBeNull();
+    expect(f.store.read(f.context, db => db.prepare("SELECT title,source_inbox_item_id FROM tasks WHERE user_id=? AND id=?").get(owner, routed.data!.id))).toEqual({ title: "Wochenplanung klären", source_inbox_item_id: id });
+    expect(row()).toEqual({ title: "Wochenplanung klären", body: text, original_title: null, original_body: text, status: "triaged" });
+    const archived = await createSqliteInboxRepository(f.store, f.context).createInboxItem({ body: "Nur ablegen", profileId: owner, userId: owner });
+    if (!archived.ok) throw new Error("Capture failed");
+    expect(f.repo.route({ inboxItemId: archived.data.id, expectedUpdatedAt: archived.data.updatedAt, route: "archive", targetId: null }).error).toBeNull();
+    expect(() => f.store.command(f.context, "inbox.proof", db => db.prepare("INSERT INTO inbox_items(id,user_id,title,body,captured_at,created_at,updated_at) VALUES(?,?,NULL,'  ',?,?,?)").run(randomUUID(), owner, at, at, at))).toThrow();
   } finally { f.store.close(); }
 });

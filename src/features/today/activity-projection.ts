@@ -3,6 +3,7 @@ import {
   localDateInTimeZone,
   localTimeInTimeZone,
 } from "../real-data/domain/habit";
+import { inboxItemDisplayTitle } from "../real-data/domain/inbox";
 type Row<K extends keyof Database["public"]["Tables"]> =
   Database["public"]["Tables"][K]["Row"];
 export type ActivitySources = {
@@ -113,7 +114,11 @@ export function projectTodayActivity(
       `${item.id}:capture`,
       item.created_at,
       "INBOX CAPTURE",
-      item.original_title ?? item.title,
+      inboxItemDisplayTitle({
+        title: item.original_title,
+        body: item.body,
+        originalBody: item.original_body,
+      }),
       "In Inbox erfasst",
       item.processed_at ? "/inbox" : `/inbox?item=${item.id}`,
       "cyan",
@@ -122,7 +127,11 @@ export function projectTodayActivity(
       `${item.id}:processed`,
       item.processed_at,
       "INBOX PROCESSED",
-      item.title,
+      inboxItemDisplayTitle({
+        title: item.title,
+        body: item.body,
+        originalBody: item.original_body,
+      }),
       "Einordnung / Abschluss gespeichert",
       item.created_task_id
         ? `/portfolio?view=tasks&selected=${item.created_task_id}`

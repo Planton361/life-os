@@ -313,6 +313,18 @@ back the clarification too. Selection alone writes nothing; the original
 functions remain available to existing callers. No table or column is added
 by this final-commit migration.
 
+## #192 Untitled capture
+
+An unprocessed capture (Dashboard Quick Thought) stores its unchanged text in
+`body` with `title = NULL`; no title is derived from it. A row must hold a
+title or a non-blank body. A blank Clean Title is saved as NULL. Every target
+route requires a 2–500 character title and rejects without partial objects;
+Solved/Archive remains allowed without one. Display surfaces derive a text
+preview from `body`, which is never stored. The original capture stays
+immutable when `original_title` is NULL. SQLite schema v11 carries this
+contract; existing v10 databases move forward only through the operator
+`migrate-v10` step, never at runtime start.
+
 
 Text context transfers into the target's canonical description/summary;
 Next Action maps to Project `next_step`, otherwise labelled description text.

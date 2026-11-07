@@ -1,5 +1,6 @@
 import { currentTaskStepProgress, type DashboardTaskStepProgress } from "@/features/dashboard/current-task-progress";
 import { taskDeadlineLocalDay } from "@/features/real-data/domain/task-deadline";
+import { inboxItemDisplayTitle } from "@/features/real-data/domain/inbox";
 import { dashboardProjectWorkBalance, type DashboardProjectWorkRead } from "@/features/dashboard/project-work-balance";
 import { readWeeklyPlanningContext, readTaskDependencyGraph, readTodayActivity, getGoalRepository, getInboxRepository, getNutritionRepository, getProjectRepository, getReviewRepository, getScheduleSourceRepository, getResourceRepository, getSkillRepository, getTaskRepository, getHealthRepository, getHabitRepository, getTrainingRepository } from "@/features/real-data/runtime/facade";
 import { skillTaskReadiness } from "@/features/entities/workbench/skill-guidance";
@@ -2197,7 +2198,12 @@ function realInboxToManualInboxItem(item: InboxItem): ManualInboxItem {
     priority: item.priority,
     stage,
     sourceAreaId: item.areaId,
-    title: item.title,
+    title: inboxItemDisplayTitle({
+      title: item.title,
+      body: item.body,
+      originalBody: item.clarification?.originalBody,
+    }),
+    cleanTitle: item.title,
     triagedTaskId: item.triagedTaskId,
     type: item.type,
   };
@@ -3480,7 +3486,11 @@ function buildProfileInboxViewModel(
     fields: [
       {
         label: "Clean Title",
-        value: active?.title ?? "—",
+        value: active
+          ? active.cleanTitle === undefined
+            ? active.title
+            : (active.cleanTitle ?? "")
+          : "—",
       },
       {
         label: "Description / Context",

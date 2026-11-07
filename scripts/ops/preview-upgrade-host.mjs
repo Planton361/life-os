@@ -222,12 +222,16 @@ export async function upgradeExisting({
   }
   async function publish(pair, checkpoint) {
     const ready = upgradedOperatorState(root, pair, checkpoint);
+    // The v9 protocol commits v10; the compatible pair requires v11 (#192).
+    // Idempotent on recovery: an already upgraded file is left unchanged.
+    if (Number(await databaseCommand("version", config.database)) === 10)
+      await databaseCommand("migrate-v10", config.database);
     const grantPath = join(root, "preview-grant-v2.json");
     const identity = lstatSync(config.database);
     // Owner is read only from canonical metadata, never CLI/body/request input.
     const grant = {
       version: 2,
-      schema: 10,
+      schema: 11,
       instance: readJson(journalPath).checkpoint.instance,
       host: hostname(),
       uid: process.getuid(),
@@ -350,6 +354,9 @@ export async function upgradeExisting({
       );
       await databaseCommand("backup", backup, clone);
       await databaseCommand("migrate", clone);
+      // Since #192 current releases serve v11; the proof clone takes the same
+      // fixed v10→v11 step that publish applies to the canonical file.
+      await databaseCommand("migrate-v10", clone);
       const cloneIdentity = lstatSync(clone),
         copyConfig = {
           ...config,
