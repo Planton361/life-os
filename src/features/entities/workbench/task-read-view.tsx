@@ -105,6 +105,7 @@ export function TaskReadView({
   );
   const directGoal = data.goals.find((item) => item.id === task.goal_id);
   const inheritedGoal = data.goals.find((item) => item.id === project?.goal_id);
+  const area = data.areas.find((item) => item.id === task.area_id);
   const milestone = project
     ? data.milestones.find(
         (item) =>
@@ -191,7 +192,8 @@ export function TaskReadView({
     !parentArchived &&
     !task.archived_at &&
     task.status !== "archived";
-  const hasRightRail = hasContext || writableResources || resources.length > 0;
+  const hasRightRail =
+    hasContext || Boolean(area) || writableResources || resources.length > 0;
   const nextLabel =
     sourceOwned && sourceHref ? "Quelle öffnen" : canReleaseInbox ? "Zur Planung freigeben" : guidance.label;
   const progress = taskStepProgress(
@@ -401,7 +403,7 @@ export function TaskReadView({
               data-task-context
               className={styles.context}
             >
-              {(project || directGoal || inheritedGoal) && (
+              {(project || directGoal || inheritedGoal || area) && (
                 <section
                   data-task-order="context"
                   aria-label="Zusammenhang"
@@ -465,6 +467,15 @@ export function TaskReadView({
                             {inheritedGoal.title}
                             {inheritedGoal.archived_at ? " · Archiviert" : ""}
                           </Link>
+                        </dd>
+                      </div>
+                    )}
+                    {area && (
+                      <div>
+                        <dt>Area</dt>
+                        <dd>
+                          {area.name}
+                          {area.archived_at ? " · Archiviert" : ""}
                         </dd>
                       </div>
                     )}
