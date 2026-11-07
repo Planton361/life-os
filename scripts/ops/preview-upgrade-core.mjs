@@ -71,7 +71,7 @@ export async function recoverExistingProtocol(io, journal) {
       const checkpoint = await io.stoppedCheckpoint(journal.checkpoint);
       await io.save({ ...journal, checkpoint, phase: "aborted-v9" });
       await io.restoreOldWorker(checkpoint);
-    } else if (schema === 10) {
+    } else if (schema === 10 || schema === 11) {
       await io.save({ ...journal, phase: "recovery-required-v10" });
     }
     throw error;
@@ -83,7 +83,8 @@ export async function recoverExistingProtocol(io, journal) {
     await io.restoreOldWorker(checkpoint);
     return { recovery: "V9_ORIGINAL", reset: "NOT_PERFORMED" };
   }
-  if (schema !== 10) deny("UPGRADE_RECOVERY_SCHEMA_UNKNOWN");
+  // 11: publish already carried the committed v10 file forward (#192).
+  if (schema !== 10 && schema !== 11) deny("UPGRADE_RECOVERY_SCHEMA_UNKNOWN");
   await io.assertOperatorHandoff(journal.checkpoint);
   await io.armNewWorker(journal.prepared);
   await io.publishCompatiblePair(journal.prepared, journal.checkpoint);

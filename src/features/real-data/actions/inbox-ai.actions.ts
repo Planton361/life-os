@@ -93,7 +93,7 @@ export async function suggestInboxRouteAction(
       status: "success",
       suggestion: createMockInboxAISuggestion({
         body: inboxItem.body,
-        title: inboxItem.title,
+        title: inboxItem.title ?? "",
         type: inboxItem.type,
       }),
     };

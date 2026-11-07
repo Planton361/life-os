@@ -160,13 +160,13 @@ export async function captureInboxItemAction(
 
     const title = formString(formData, "title");
     const body = formString(formData, "note");
-    const fallbackTitle = body.split(/\s+/).slice(0, 9).join(" ");
 
+    // The original text is kept as body; no title is derived from it (#192).
     const parsed = captureInboxItemInputSchema.safeParse({
       body: body || undefined,
       profileId: auth.user.id,
       source: "inbox.quick_capture",
-      title: title || fallbackTitle,
+      title: title || undefined,
       type: formString(formData, "type") || "note",
       userId: auth.user.id,
     });

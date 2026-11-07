@@ -19,6 +19,12 @@ try {
         join(release, "src/features/real-data/sqlite/preview-upgrade.ts"),
       ).upgradePreviewSchemaV9(path);
       process.stdout.write("MIGRATION_PASS\n");
+    } else if (operation === "migrate-v10") {
+      // #192 v10→v11; operator-run only against a stopped, backed-up worker.
+      require(
+        join(release, "src/features/real-data/sqlite/preview-upgrade.ts"),
+      ).upgradePreviewSchemaV10(path);
+      process.stdout.write("MIGRATION_V11_PASS\n");
     } else if (operation === "version") {
       const db = new Database(path, { readonly: true, fileMustExist: true });
       try {

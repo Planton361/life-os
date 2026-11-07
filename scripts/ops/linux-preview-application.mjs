@@ -15,7 +15,7 @@ import {
 export function linuxGrant(config, release, owner, instance = randomUUID()) {
   return {
     version: 2,
-    schema: 10,
+    schema: 11,
     instance,
     host: hostname(),
     uid: process.getuid(),

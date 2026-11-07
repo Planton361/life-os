@@ -23,7 +23,7 @@ import { issueOwnerContext, issuePreviewOwnerContext } from "./owner-context";
 import { admitPreviewReset } from "./preview-grant";
 import { initializeCanonicalSchema } from "./canonical-schema";
 import { configureConnection } from "./runtime";
-import { upgradePreviewSchemaV9 } from "./preview-upgrade";
+import { upgradePreviewSchemaV10, upgradePreviewSchemaV9 } from "./preview-upgrade";
 import { schemaFingerprint } from "./reset-schema";
 import { createSqliteTaskRepository } from "./repositories/task-repository";
 import { sourceTaskCommands } from "./commands/source-commands";
@@ -78,7 +78,7 @@ function fixture(legacy = false, existing?: { path: string; owner: string }) {
     grantPath = join(root, "grant.json");
   const grant = {
     version: 2,
-    schema: 10,
+    schema: 11,
     instance,
     host: hostname(),
     uid: process.getuid!(),
@@ -345,6 +345,15 @@ it("v9 forward migration retains identity/data and normal startup never auto-mig
   const result = upgradePreviewSchemaV9(f.path);
   expect(result).toEqual({ schema: 10, owner: f.ownerId });
   expect(lstatSync(f.path).ino).toEqual(f.identity.ino);
+  // v10 is a historical schema since #192; the runtime requires v11.
+  expect(() => new SqliteRuntime(f.path)).toThrow(
+    "SQLITE_SCHEMA_VERSION_MISMATCH",
+  );
+  expect(upgradePreviewSchemaV10(f.path)).toEqual({
+    schema: 11,
+    owner: f.ownerId,
+  });
+  expect(lstatSync(f.path).ino).toEqual(f.identity.ino);
   const store = new SqliteRuntime(f.path);
   cleanup.push(() => store.close());
   expect(
@@ -358,6 +367,7 @@ it("v9 forward migration retains identity/data and normal startup never auto-mig
     ),
   ).toEqual({ body: "Must survive migration" });
   expect(() => upgradePreviewSchemaV9(f.path)).toThrow();
+  expect(() => upgradePreviewSchemaV10(f.path)).toThrow();
 });
 
 it("deletes the populated all-domain canonical fixture, including all history, with unchanged schema", async () => {

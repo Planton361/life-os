@@ -15,7 +15,12 @@ const nullableText = z.string().trim().max(20000).nullable();
 export const inboxClarificationSchema = z.object({
   inboxItemId: z.uuid(),
   expectedUpdatedAt: z.iso.datetime({ offset: true }),
-  title: z.string().trim().min(2).max(500),
+  // Empty Clean Title stays NULL; a title is required only for a target route.
+  title: z.preprocess(
+    (value) =>
+      typeof value === "string" && value.trim() === "" ? null : value,
+    z.string().trim().min(2).max(500).nullable(),
+  ),
   body: nullableText,
   nextAction: nullableText,
   missingInfo: nullableText,
@@ -41,6 +46,10 @@ export const inboxRouteSchema = z
 export type InboxClarificationInput = z.infer<typeof inboxClarificationSchema>;
 export type InboxRouteInput = z.infer<typeof inboxRouteSchema>;
 
-export const inboxCompletionSchema =
-  inboxClarificationSchema.and(inboxRouteSchema);
+export const inboxCompletionSchema = inboxClarificationSchema
+  .and(inboxRouteSchema)
+  .refine((value) => value.route === "archive" || value.title !== null, {
+    message: "Titel für das Ziel erforderlich.",
+    path: ["title"],
+  });
 export type InboxCompletionInput = z.infer<typeof inboxCompletionSchema>;

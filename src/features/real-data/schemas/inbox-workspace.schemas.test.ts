@@ -34,8 +34,17 @@ describe("Inbox workspace boundary", () => {
       }).reviewNeeded,
     ).toBe(false);
   });
+  it("saves an empty Clean Title as NULL instead of inventing one (#192)", () => {
+    expect(inboxClarificationSchema.parse({ ...valid, title: " " }).title).toBe(
+      null,
+    );
+    expect(inboxClarificationSchema.parse({ ...valid, title: null }).title).toBe(
+      null,
+    );
+  });
   it.each([
-    { title: " " },
+    { title: "x" },
+    { title: "x".repeat(501) },
     { durationMinutes: 0 },
     { durationMinutes: 1.5 },
     { energy: "fake" },
@@ -84,6 +93,22 @@ it("validates fields and destination together for the final commit", () => {
       targetId: null,
     }).success,
   ).toBe(false);
+  // #192: only a target object needs a title; an untitled thought may be archived.
+  const untitled = inboxCompletionSchema.safeParse({
+    ...valid,
+    title: "",
+    route: "task",
+    targetId: null,
+  });
+  expect(untitled.success).toBe(false);
+  expect(untitled.error?.issues.map((issue) => issue.path[0])).toContain(
+    "title",
+  );
+  for (const route of ["project", "goal", "resource", "note"])
+    expect(
+      inboxCompletionSchema.safeParse({ ...valid, title: null, route, targetId: null })
+        .success,
+    ).toBe(false);
   expect(
     inboxCompletionSchema.safeParse({
       ...valid,
@@ -91,5 +116,5 @@ it("validates fields and destination together for the final commit", () => {
       route: "archive",
       targetId: null,
     }).success,
-  ).toBe(false);
+  ).toBe(true);
 });

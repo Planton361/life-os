@@ -1,7 +1,13 @@
 import "server-only";
 import { previewDeleteGuards, resetMetadataSchema } from "./reset-schema";
 import type Database from "better-sqlite3";
-import { coreSchema, coreOwnedTables, ownerGuards } from "./core-schema";
+import {
+  coreSchema,
+  coreOwnedTables,
+  inboxItemsSchema,
+  legacyInboxItemsSchemaV10,
+  ownerGuards,
+} from "./core-schema";
 import { sourceSchema, sourceOwnedTables } from "./source-schema";
 import { sourceGuards, sourceDependencyGuards } from "./source-guards";
 import { habitSchema, habitOwnedTables } from "./habit-schema";
@@ -20,13 +26,18 @@ import { retainedGuards } from "./retained-guards";
 import { taskStepSchema } from "./task-step-schema";
 
 // One schema composition for fresh canonical and disposable synthetic datasets.
+// legacyV9/legacyV10 only reconstruct historical definitions for operator upgrades.
 export function initializeCanonicalSchema(
   db: Database.Database,
-  options: { legacyV9?: boolean } = {},
+  options: { legacyV9?: boolean; legacyV10?: boolean } = {},
 ) {
   const exec = (sql: string) =>
     db.exec(options.legacyV9 ? sql : previewDeleteGuards(sql));
-  exec(coreSchema);
+  exec(
+    options.legacyV9 || options.legacyV10
+      ? coreSchema.replace(inboxItemsSchema, () => legacyInboxItemsSchemaV10)
+      : coreSchema,
+  );
   exec(sourceSchema);
   exec(habitSchema);
   exec(healthSchema);

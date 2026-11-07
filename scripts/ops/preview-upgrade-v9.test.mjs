@@ -313,6 +313,7 @@ async function fixture() {
       );
       nativeCommand("backup", backup, clone);
       nativeCommand("migrate", clone);
+      nativeCommand("migrate-v10", clone);
       const x = lstatSync(clone);
       for (const r of [candidate, fallback])
         await databasePreflight(
@@ -346,8 +347,12 @@ async function fixture() {
         },
       });
     },
-    publishCompatiblePair: async (p, cp) =>
-      atomicJson(join(root, "state.json"), upgradedOperatorState(root, p, cp)),
+    publishCompatiblePair: async (p, cp) => {
+      // Mirrors the real host: the committed v10 file is carried to v11 (#192).
+      if (nativeCommand("version", path) === "10")
+        nativeCommand("migrate-v10", path);
+      atomicJson(join(root, "state.json"), upgradedOperatorState(root, p, cp));
+    },
     startAndProve: async (r) => {
       unlock?.();
       unlock = null;
@@ -657,6 +662,7 @@ test("explicit aborted-v9 acknowledgement preserves real aborted evidence and up
       );
       nativeCommand("backup", backup, clone);
       nativeCommand("migrate", clone);
+      nativeCommand("migrate-v10", clone);
       const c = lstatSync(clone);
       for (const r of [fresh.candidate, fresh.fallback])
         await databasePreflight(
@@ -693,7 +699,7 @@ test("explicit aborted-v9 acknowledgement preserves real aborted evidence and up
       (await upgradeExistingProtocol(f.io)).upgrade,
       "PROVISIONED_V2",
     );
-    assert.equal(nativeCommand("version", f.path), "10");
+    assert.equal(nativeCommand("version", f.path), "11");
     assert.equal(
       readJson(join(f.root, "state.json")).lastGood.path,
       fresh.fallback.path,
@@ -1924,7 +1930,7 @@ test(
       };
       await upgradeExistingProtocol(x.f.io);
       assert.equal(readJson(x.f.journal).phase, "complete-v10");
-      assert.equal(nativeCommand("version", x.f.path), "10");
+      assert.equal(nativeCommand("version", x.f.path), "11");
       assert.equal(x.f.starts, 1);
       assert.ok(
         x.observedLag > 0,

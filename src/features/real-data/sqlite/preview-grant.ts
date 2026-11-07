@@ -8,7 +8,7 @@ export const previewWorkerVersion = 2;
 const grantSchema = z
   .object({
     version: z.literal(2),
-    schema: z.literal(10),
+    schema: z.literal(11),
     instance: z.uuid(),
     host: z.string().min(1),
     uid: z.number().int().nonnegative(),

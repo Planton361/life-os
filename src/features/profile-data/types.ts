@@ -41,7 +41,11 @@ export type LifeOsProfileSummary = {
 export type ManualInboxItem = {
   clarification?: import("@/features/real-data/domain/inbox").InboxItem["clarification"];
   id: string;
+  // Display label; an untitled capture shows a preview of its original text.
   title: string;
+  // Persisted Clean Title. NULL until the user names the capture (#192);
+  // undefined for local/demo items whose title is their own.
+  cleanTitle?: string | null;
   stage: InboxStage;
   type: InboxCaptureType;
   next: string;
