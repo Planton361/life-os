@@ -52,7 +52,7 @@ if (preview) {
     grantPath,
     JSON.stringify({
       version: 2,
-      schema: 10,
+      schema: 11,
       instance: randomUUID(),
       host: hostname(),
       uid: process.getuid(),

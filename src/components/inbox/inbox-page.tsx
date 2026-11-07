@@ -252,11 +252,11 @@ function InboxEditor({
                     Clean Title
                     <input
                       className={cn(input, "mt-1")}
-                      value={fields.title}
+                      value={fields.title ?? ""}
                       onChange={(event) => change("title", event.target.value)}
+                      placeholder="Noch kein Titel · vor dem Umwandeln vergeben"
                       minLength={2}
                       maxLength={500}
-                      required
                     />
                   </label>
                   <label className="block text-xs text-[var(--text-secondary)]">
@@ -524,7 +524,6 @@ function InboxEditor({
                 !enabled ||
                 pending ||
                 !route ||
-                fields.title.trim().length < 2 ||
                 (route.startsWith("existing_") && !targetId) ||
                 (fields.durationMinutes !== null &&
                   (!Number.isInteger(fields.durationMinutes) ||

@@ -27,15 +27,25 @@ const triageTaskFieldsSchema = z.object({
   skillId: z.string().trim().uuid().optional(),
 });
 
-export const captureInboxItemInputSchema = z.object({
-  areaId: optionalTrimmedStringSchema,
-  body: optionalTrimmedStringSchema,
-  profileId: requiredIdSchema,
-  source: optionalTrimmedStringSchema,
-  title: titleSchema,
-  type: optionalEnumSchema(inboxItemTypes),
-  userId: requiredIdSchema,
-});
+// A capture keeps its original text; a title is optional until triage (#192).
+export const captureInboxItemInputSchema = z
+  .object({
+    areaId: optionalTrimmedStringSchema,
+    body: optionalTrimmedStringSchema,
+    profileId: requiredIdSchema,
+    source: optionalTrimmedStringSchema,
+    title: z.preprocess(
+      (value) =>
+        typeof value === "string" && value.trim() === "" ? undefined : value,
+      titleSchema.optional(),
+    ),
+    type: optionalEnumSchema(inboxItemTypes),
+    userId: requiredIdSchema,
+  })
+  .refine((value) => value.title !== undefined || value.body !== undefined, {
+    message: "Capture text or title is required.",
+    path: ["body"],
+  });
 
 export type CaptureInboxItemInput = z.infer<
   typeof captureInboxItemInputSchema

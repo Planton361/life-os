@@ -77,7 +77,7 @@ export function createSqliteInboxRepository(
                 id: randomUUID(),
                 user_id: owner,
                 area_id: p.areaId ?? null,
-                title: p.title,
+                title: p.title ?? null,
                 body: p.body ?? null,
                 source: p.source ?? null,
                 type: p.type ?? "note",

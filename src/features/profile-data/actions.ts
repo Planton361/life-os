@@ -213,7 +213,7 @@ export async function captureDashboardQuickThoughtAction(
   }
 
   const inboxFormData = new FormData();
-  inboxFormData.set("title", content.split(/\s+/).slice(0, 9).join(" "));
+  // A Quick Thought is stored as its original text without a title (#192).
   inboxFormData.set("note", content);
   inboxFormData.set("type", inboxType);
   const result = await captureInboxItemAction(inboxFormData);

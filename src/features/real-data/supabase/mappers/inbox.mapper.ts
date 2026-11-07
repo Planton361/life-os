@@ -48,7 +48,7 @@ export function mapCaptureInboxItemInputToInsert(
     area_id: input.areaId ?? null,
     body: input.body ?? null,
     source: input.source ?? null,
-    title: input.title,
+    title: input.title ?? null,
     type: input.type ?? "note",
     user_id: userId,
   };

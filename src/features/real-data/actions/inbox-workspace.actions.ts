@@ -22,13 +22,17 @@ async function context() {
   const auth = await createAuthenticatedApplicationContext("write");
   return auth.ok ? auth : null;
 }
+const titleRequiredMessage =
+  "Vergib zuerst einen Clean Title (2–500 Zeichen). Es wurde nichts übernommen.";
 function failure(code?: string): InboxWorkspaceResult {
   return {
     status: "error",
     message:
       code === "PT409"
         ? "Dieser Eintrag wurde inzwischen geändert. Deine Eingaben bleiben erhalten. Lade den aktuellen Stand vor dem erneuten Speichern."
-        : "Der Eintrag oder sein Ziel ist nicht mehr verfügbar. Es wurde nichts übernommen.",
+        : code === "PT422"
+          ? titleRequiredMessage
+          : "Der Eintrag oder sein Ziel ist nicht mehr verfügbar. Es wurde nichts übernommen.",
   };
 }
 function refresh() {
@@ -61,7 +65,7 @@ export async function saveInboxClarificationAction(
     return {
       status: "error",
       message:
-        "Prüfe Titel, Datum und Planning Signals. Titel: 2–500 Zeichen; Dauer: 1–10080 Minuten.",
+        "Prüfe Titel, Datum und Planning Signals. Titel: leer oder 2–500 Zeichen; Dauer: 1–10080 Minuten.",
     };
   const result = await getInboxWorkspaceRepository(
     auth.data,
@@ -133,8 +137,11 @@ export async function completeInboxTriageAction(
   if (!parsed.success)
     return {
       status: "error",
-      message:
-        "Prüfe Titel, Planning Signals, Route und gegebenenfalls das bestehende Ziel.",
+      message: parsed.error.issues.some(
+        (issue) => issue.path[0] === "title",
+      )
+        ? titleRequiredMessage
+        : "Prüfe Titel, Planning Signals, Route und gegebenenfalls das bestehende Ziel.",
     };
   const result = await getInboxWorkspaceRepository(
     auth.data,

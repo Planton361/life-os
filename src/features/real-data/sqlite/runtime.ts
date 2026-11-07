@@ -54,7 +54,7 @@ export const runtimeVersions = Object.freeze({
   sqlite: "3.53.4",
 });
 
-export const schemaVersion = 10;
+export const schemaVersion = 11;
 type Metadata = {
   schema_version: number;
   dataset_kind: string;

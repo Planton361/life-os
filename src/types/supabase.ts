@@ -939,7 +939,7 @@ export type Database = {
           review_needed: boolean
           source: string | null
           status: Database["public"]["Enums"]["inbox_item_status"]
-          title: string
+          title: string | null
           today_candidate: boolean
           type: Database["public"]["Enums"]["inbox_item_type"]
           updated_at: string
@@ -965,7 +965,7 @@ export type Database = {
           review_needed?: boolean
           source?: string | null
           status?: Database["public"]["Enums"]["inbox_item_status"]
-          title: string
+          title?: string | null
           today_candidate?: boolean
           type?: Database["public"]["Enums"]["inbox_item_type"]
           updated_at?: string
@@ -991,7 +991,7 @@ export type Database = {
           review_needed?: boolean
           source?: string | null
           status?: Database["public"]["Enums"]["inbox_item_status"]
-          title?: string
+          title?: string | null
           today_candidate?: boolean
           type?: Database["public"]["Enums"]["inbox_item_type"]
           updated_at?: string
@@ -3043,7 +3043,7 @@ export type Database = {
           p_target_id: string | null
           p_inbox_item_id: string
           p_expected_updated_at: string
-          p_title: string
+          p_title: string | null
           p_body: string | null
           p_next_action: string | null
           p_missing_info: string | null
@@ -3388,7 +3388,7 @@ export type Database = {
         Args: {
           p_inbox_item_id: string
           p_expected_updated_at: string
-          p_title: string
+          p_title: string | null
           p_body: string | null
           p_next_action: string | null
           p_missing_info: string | null

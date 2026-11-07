@@ -78,8 +78,10 @@ test("native operator backup/isolated recovery/v9→v10 protocol preserves owned
     gateway = "fixture-gateway-unchanged";
   let stopped = false,
     app;
-  const candidate = { schema: 10, compatibility: "v10-private-preview" },
-    fallback = { schema: 10, compatibility: "v10-private-preview" };
+  // The v9 protocol commits v10; since #192 the current release serves v11,
+  // so every v10 result is carried forward by the fixed migrate-v10 helper.
+  const candidate = { schema: 11, compatibility: "v11-private-preview" },
+    fallback = { schema: 11, compatibility: "v11-private-preview" };
   const io = {
     authorize: async () => assert.equal(gateway, "fixture-gateway-unchanged"),
     prepareCompatiblePair: async () => ({ candidate, fallback }),
@@ -105,6 +107,8 @@ test("native operator backup/isolated recovery/v9→v10 protocol preserves owned
       assert.equal(command("version", backup), "9");
       assert.equal(command("backup", backup, clone), "BACKUP_PASS");
       assert.equal(command("migrate", clone), "MIGRATION_PASS");
+      assert.equal(command("version", clone), "10");
+      assert.equal(command("migrate-v10", clone), "MIGRATION_V11_PASS");
       for (const release of [candidate, fallback])
         assert.equal(
           native("production-bootstrap").verifyProductionApplicationDatabase(
@@ -126,6 +130,7 @@ test("native operator backup/isolated recovery/v9→v10 protocol preserves owned
     },
     publishCompatiblePair: async (pair) => {
       assert.equal(pair.candidate.compatibility, pair.fallback.compatibility);
+      assert.equal(command("migrate-v10", path), "MIGRATION_V11_PASS");
     },
     startAndProve: async (release) => {
       versions.push(release.schema);
@@ -145,7 +150,8 @@ test("native operator backup/isolated recovery/v9→v10 protocol preserves owned
       upgrade: "PROVISIONED_V2",
       reset: "NOT_PERFORMED",
     });
-    assert.deepEqual(versions, [10]);
+    assert.deepEqual(versions, [11]);
+    assert.equal(command("version", path), "11");
     assert.equal(lstatSync(path).ino, identity.ino);
     assert.equal(lstatSync(path).dev, identity.dev);
     assert.equal(command("version", backup), "9");
@@ -233,6 +239,14 @@ test("clean operator source without node_modules uses release dependencies for e
   const identity = child("preview-upgrade-owner.mjs", release, [backup]);
   assert.equal(identity.status, 0, identity.stderr);
   assert.equal(identity.stdout, owner);
+  for (const [op, expected] of [
+    ["migrate-v10", "MIGRATION_V11_PASS"],
+    ["version", "11"],
+  ]) {
+    const result = child("preview-upgrade-database.mjs", release, [op, backup]);
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout.trim(), expected);
+  }
   // A failed dependency admission is part of preparation, never post-stop.
   let stopped = false;
   const io = {
