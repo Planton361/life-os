@@ -54,12 +54,17 @@ export type InboxItem = UserScopedEntity & {
 const inboxPreviewLength = 80;
 
 // Display-only label (#192): the user's Clean Title, else a preview derived
-// from the original capture text. The preview is never stored as a title.
-export function inboxItemDisplayTitle(
-  item: Pick<InboxItem, "title" | "body">,
-): string {
+// from the immutable original capture. The editable body is only a fallback
+// for rows without an original snapshot. The preview is never stored.
+export function inboxItemDisplayTitle(item: {
+  title: string | null;
+  body: string | null;
+  originalBody?: string | null;
+}): string {
   if (item.title) return item.title;
-  const text = (item.body ?? "").replace(/\s+/g, " ").trim();
+  const text = (item.originalBody?.trim() ? item.originalBody : (item.body ?? ""))
+    .replace(/\s+/g, " ")
+    .trim();
   if (!text) return "Ohne Titel";
   return text.length > inboxPreviewLength
     ? `${text.slice(0, inboxPreviewLength - 1).trimEnd()}…`

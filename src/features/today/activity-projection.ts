@@ -116,7 +116,8 @@ export function projectTodayActivity(
       "INBOX CAPTURE",
       inboxItemDisplayTitle({
         title: item.original_title,
-        body: item.original_body ?? item.body,
+        body: item.body,
+        originalBody: item.original_body,
       }),
       "In Inbox erfasst",
       item.processed_at ? "/inbox" : `/inbox?item=${item.id}`,
@@ -126,7 +127,11 @@ export function projectTodayActivity(
       `${item.id}:processed`,
       item.processed_at,
       "INBOX PROCESSED",
-      inboxItemDisplayTitle(item),
+      inboxItemDisplayTitle({
+        title: item.title,
+        body: item.body,
+        originalBody: item.original_body,
+      }),
       "Einordnung / Abschluss gespeichert",
       item.created_task_id
         ? `/portfolio?view=tasks&selected=${item.created_task_id}`

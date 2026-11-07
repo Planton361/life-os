@@ -17,6 +17,9 @@ const f = await createApplicationFixture(),
   Database = require("better-sqlite3");
 const { SqliteRuntime } = require(join(f.compiled, "runtime.js"));
 const { issueOwnerContext } = require(join(f.compiled, "owner-context.js"));
+const { saveInboxClarification } = require(
+  join(f.compiled, "commands/inbox-commands.js"),
+);
 const marker = randomUUID().slice(0, 8);
 const legacy = {
   id: randomUUID(),
@@ -25,6 +28,7 @@ const legacy = {
 };
 const thought = `Quick Thought ${marker} über Wochenplanung, Lernzeiten am Dienstag und Donnerstag, offene Fragen zur Prüfung und was nächste Woche wirklich zählt`;
 const cleanTitle = `#192 Wochenplanung klären ${marker}`;
+const editedBody = `Bearbeitete Beschreibung ${marker}: nur Dienstag als Lerntag`;
 const store = new SqliteRuntime(f.path, { syntheticProof: true });
 try {
   store.command(
@@ -50,7 +54,7 @@ function read(sql, ...args) {
 }
 const captured = () =>
   read(
-    "SELECT * FROM inbox_items WHERE user_id=? AND body=?",
+    "SELECT * FROM inbox_items WHERE user_id=? AND original_body=?",
     f.ownerId,
     thought,
   );
@@ -89,34 +93,39 @@ const snapshots = async (page, surface) => {
 try {
   app = await startApplication(f);
   browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({
-    viewport: { width: 1920, height: 1080 },
-  });
-  await context.addCookies([
-    { name: "life_os_profile", value: "manual", url: app.origin },
-  ]);
-  context.on("page", (p) => {
-    p.on("pageerror", (e) => errors.push(e.message));
-    p.on("console", (m) => {
-      if (m.type() === "error" || /hydration/i.test(m.text()))
-        errors.push(m.text());
+  // A fresh session per app start; the save step below restarts the app.
+  let context, page;
+  const openSession = async () => {
+    context = await browser.newContext({
+      viewport: { width: 1920, height: 1080 },
     });
-  });
-  context.on("request", (r) => {
-    if (/supabase|\/rest\/v1\/|\/auth\/v1\//i.test(r.url()))
-      network.push(r.url());
-  });
-  context.on("response", (r) => {
-    if (r.status() >= 400) errors.push(`HTTP ${r.status()} ${r.url()}`);
-  });
-  context.on("requestfailed", (r) => {
-    const failure = r.failure()?.errorText ?? "unknown";
-    if (failure === "net::ERR_ABORTED")
-      navigationAborts.push({ url: r.url(), failure });
-    else errors.push(`Transport ${failure} ${r.url()}`);
-  });
-  const page = await context.newPage();
-  page.setDefaultTimeout(10_000);
+    await context.addCookies([
+      { name: "life_os_profile", value: "manual", url: app.origin },
+    ]);
+    context.on("page", (p) => {
+      p.on("pageerror", (e) => errors.push(e.message));
+      p.on("console", (m) => {
+        if (m.type() === "error" || /hydration/i.test(m.text()))
+          errors.push(m.text());
+      });
+    });
+    context.on("request", (r) => {
+      if (/supabase|\/rest\/v1\/|\/auth\/v1\//i.test(r.url()))
+        network.push(r.url());
+    });
+    context.on("response", (r) => {
+      if (r.status() >= 400) errors.push(`HTTP ${r.status()} ${r.url()}`);
+    });
+    context.on("requestfailed", (r) => {
+      const failure = r.failure()?.errorText ?? "unknown";
+      if (failure === "net::ERR_ABORTED")
+        navigationAborts.push({ url: r.url(), failure });
+      else errors.push(`Transport ${failure} ${r.url()}`);
+    });
+    page = await context.newPage();
+    page.setDefaultTimeout(10_000);
+  };
+  await openSession();
   const active = () => page.locator('[data-inbox-section="active-item"]');
   const form = () =>
     page.getByRole("form", { name: "Active Item bearbeiten", exact: true });
@@ -201,6 +210,83 @@ try {
   );
 
   await step(
+    "Saved Description edit keeps the preview on the original capture after reload",
+    async () => {
+      // The Inbox UI has no save-only control (final commit only), so the edit
+      // is persisted through the canonical save command while the app is stopped.
+      const [before] = captured();
+      await context.close();
+      await app.stop();
+      const writer = new SqliteRuntime(f.path, { syntheticProof: true });
+      try {
+        writer.command(
+          issueOwnerContext(f.ownerId),
+          "inbox.save",
+          (db, owner) =>
+            saveInboxClarification(db, owner, {
+              inboxItemId: inboxId,
+              expectedUpdatedAt: before.updated_at,
+              title: null,
+              body: editedBody,
+              nextAction: null,
+              missingInfo: null,
+              priority: "P2",
+              energy: null,
+              durationMinutes: null,
+              areaId: null,
+              reviewNeeded: false,
+              todayCandidate: false,
+              deadlineHint: null,
+            }),
+        );
+      } finally {
+        writer.close();
+      }
+      const row = read(
+        "SELECT title,body,original_title,original_body,status FROM inbox_items WHERE id=?",
+        inboxId,
+      )[0];
+      assert.deepEqual(row, {
+        title: null,
+        body: editedBody,
+        original_title: null,
+        original_body: thought,
+        status: "clarified",
+      });
+      app = await startApplication(f);
+      await openSession();
+      await page.goto(`${app.origin}/inbox?item=${inboxId}`);
+      for (let pass = 0; pass < 2; pass++) {
+        const queueButton = page
+          .locator('[aria-labelledby="inbox-queue-title"]')
+          .getByRole("button", { name: new RegExp(`Quick Thought ${marker}`) });
+        await expect(queueButton).toHaveCount(1);
+        await expect(
+          active().getByRole("heading", { level: 2 }),
+        ).toContainText(`Quick Thought ${marker}`);
+        await expect(
+          active().getByRole("heading", { level: 2 }),
+        ).not.toContainText("Bearbeitete");
+        await expect(
+          form().getByLabel("Clean Title", { exact: true }),
+        ).toHaveValue("");
+        await expect(form().getByLabel("Description / Context")).toHaveValue(
+          editedBody,
+        );
+        await active().getByText("Original Capture", { exact: true }).click();
+        await expect(active().locator("blockquote")).toHaveText(thought);
+        if (pass === 0) await page.reload();
+      }
+      assert.equal(captured().length, 1);
+      assert.equal(
+        read("SELECT original_body FROM inbox_items WHERE id=?", inboxId)[0]
+          .original_body,
+        thought,
+      );
+    },
+  );
+
+  await step(
     "Conversion without a Clean Title is rejected visibly and creates no object",
     async () => {
       await page.goto(`${app.origin}/inbox?item=${inboxId}`);
@@ -216,7 +302,7 @@ try {
       );
       assert.deepEqual(targets(inboxId), before);
       const [row] = captured();
-      assert.equal(row.status, "raw");
+      assert.equal(row.status, "clarified");
       assert.equal(row.title, null);
       assert.equal(row.created_task_id, null);
       await snapshots(page, "inbox-title-required");
@@ -241,7 +327,7 @@ try {
       );
       assert.equal(tasks.length, 1);
       assert.equal(tasks[0].title, cleanTitle);
-      assert.ok(tasks[0].description.startsWith(thought));
+      assert.ok(tasks[0].description.startsWith(editedBody));
       const [row] = captured();
       assert.equal(row.status, "triaged");
       assert.equal(row.title, cleanTitle);

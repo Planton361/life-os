@@ -2198,7 +2198,11 @@ function realInboxToManualInboxItem(item: InboxItem): ManualInboxItem {
     priority: item.priority,
     stage,
     sourceAreaId: item.areaId,
-    title: inboxItemDisplayTitle(item),
+    title: inboxItemDisplayTitle({
+      title: item.title,
+      body: item.body,
+      originalBody: item.clarification?.originalBody,
+    }),
     cleanTitle: item.title,
     triagedTaskId: item.triagedTaskId,
     type: item.type,
