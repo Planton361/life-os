@@ -21,6 +21,47 @@ transition** and are not permission to rerun an operator or reset the personal
 database. The feature remains unavailable in standard production/Hosted/Supabase
 builds and without the private Preview grant.
 
+## Existing v10 → v11 schema step — #192 (prepared, NOT executed)
+
+Since #192 current releases require SQLite schema v11 (`inbox_items.title` may
+be NULL). Normal startup never migrates. CD refuses v11 releases
+(`SCHEMA_RUNTIME_COMPATIBILITY_CHANGED`) and keeps the last good v10 release,
+so nothing changes on a personal instance until this step runs. **Every
+personal run requires separate explicit USER authorization for the exact
+instance and merged-main SHA.** The fixed operator helper is
+`node --conditions=react-server scripts/ops/preview-upgrade-database.mjs <v11-release> <op> …`
+from a clean, frozen-lockfile merged-main source.
+
+1. **Preflight (read-only):** merged-main push `quality` PASS; `version <db>`
+   prints `10`; private file/directory modes; record device/inode; free space
+   ≥ 3× the database size.
+2. **Stop** the attributed writer with its existing mechanism (Linux port-3000
+   runtime or the macOS supervised worker); confirm port and writer lease free.
+3. **Backup:** `backup <db> <private-pre-v11-backup.db>` (online backup API,
+   integrity/FK check, distinct inode, 0600) and `version` of the backup is `10`.
+   The backup is retained and never deleted.
+4. **Rehearsal on real data:** `backup <pre-v11-backup.db> <probe.db>`,
+   `migrate-v10 <probe.db>` → `MIGRATION_V11_PASS`; compare all 83 table row
+   hashes (with rowid) against the backup.
+5. **Migrate in place:** `migrate-v10 <db>` → `MIGRATION_V11_PASS`, `version` is
+   `11`, inode unchanged. One IMMEDIATE transaction; any failure leaves v10.
+6. **Runtime:** start the merged v11 release (Linux standard runtime: same
+   configuration, new release). The macOS Preview v2 additionally needs its grant
+   at `schema: 11` for the same instance/inode/owner and its CD baseline on the v11
+   release; that host step has no fixed command yet and must be prepared and
+   reviewed before authorization instead of hand-editing `state.json`. The Linux
+   #174 path validates the current schema and therefore also expects v11.
+7. **Verify:** health/login, Inbox count and samples against the backup, a new
+   Quick Thought stores `title = NULL`.
+8. **Fallback:** a failed step 5 rolls back to v10 (tested); restart the
+   preserved v10 release unchanged. If v11 fails to start after a successful
+   migration, stop it, rename (never delete) the v11 file, place the backup as a
+   new private file, reissue any inode-bound grant for v10 and start the v10
+   release.
+
+The historical v9 host protocol now carries its committed v10 file forward with
+the same `migrate-v10` step when it publishes the compatible v11 pair.
+
 ## Linux existing-v10 operator path — #174
 
 **Code path only; Linux personal activation is NOT performed by this delivery.**
