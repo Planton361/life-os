@@ -152,8 +152,8 @@ test("native operator backup/isolated recovery/v9→v10 protocol preserves owned
       upgrade: "PROVISIONED_V2",
       reset: "NOT_PERFORMED",
     });
-    assert.deepEqual(versions, [11]);
-    assert.equal(command("version", path), "11");
+    assert.deepEqual(versions, [12]);
+    assert.equal(command("version", path), "12");
     assert.equal(lstatSync(path).ino, identity.ino);
     assert.equal(lstatSync(path).dev, identity.dev);
     assert.equal(command("version", backup), "9");

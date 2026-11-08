@@ -704,7 +704,7 @@ test("explicit aborted-v9 acknowledgement preserves real aborted evidence and up
       (await upgradeExistingProtocol(f.io)).upgrade,
       "PROVISIONED_V2",
     );
-    assert.equal(nativeCommand("version", f.path), "11");
+    assert.equal(nativeCommand("version", f.path), "12");
     assert.equal(
       readJson(join(f.root, "state.json")).lastGood.path,
       fresh.fallback.path,
@@ -1935,7 +1935,7 @@ test(
       };
       await upgradeExistingProtocol(x.f.io);
       assert.equal(readJson(x.f.journal).phase, "complete-v10");
-      assert.equal(nativeCommand("version", x.f.path), "11");
+      assert.equal(nativeCommand("version", x.f.path), "12");
       assert.equal(x.f.starts, 1);
       assert.ok(
         x.observedLag > 0,
