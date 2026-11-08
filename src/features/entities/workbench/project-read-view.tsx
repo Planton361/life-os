@@ -123,6 +123,25 @@ export function ProjectReadView({
             </div>
             {mutable && (
               <div className={styles.actions}>
+                {depth && (
+                  <OperationForm
+                    operation="project.complete"
+                    label="Erledigt"
+                    submitClassName={styles.primaryAction}
+                  >
+                    <input type="hidden" name="projectId" value={id} />
+                    <input
+                      type="hidden"
+                      name="expectedRevision"
+                      value={depth.context.completion_revision}
+                    />
+                    <input
+                      type="hidden"
+                      name="expectedCycle"
+                      value={depth.context.completion_cycle}
+                    />
+                  </OperationForm>
+                )}
                 <ManagementDialog
                   label="Project bearbeiten"
                   triggerText="Bearbeiten"

@@ -62,6 +62,56 @@ from a clean, frozen-lockfile merged-main source.
 The historical v9 host protocol now carries its committed v10 file forward with
 the same `migrate-v10` step when it publishes the compatible v11 pair.
 
+## Existing v11 → v12 schema step — #198 (prepared, NOT executed)
+
+Since #198 current releases require SQLite schema v12
+(`project_lifecycle_events` admits the direct `completed` fact and the
+`direct` prior completion kind). Normal startup never migrates. CD refuses v12
+releases (`SCHEMA_RUNTIME_COMPATIBILITY_CHANGED`: `project-schema.ts`,
+`project-guards.ts`, `project-invariants.ts` and `runtime.ts` are part of the
+compatibility fingerprint) and keeps the last compatible release, so nothing
+changes on a personal instance until this step runs. **The USER explicitly did
+not authorize any personal upgrade with #198; every personal run requires a
+separate explicit USER authorization for the exact instance and merged-main
+SHA.** A personal instance still on v10 first takes the #192 step above.
+
+Helper: `node --conditions=react-server scripts/ops/preview-upgrade-database.mjs <v12-release> <op> …`
+from a clean, frozen-lockfile merged-main source.
+
+1. **Preflight (read-only):** merged-main push `quality` PASS; `version <db>`
+   prints `11`; private file/directory modes; record device/inode; free space
+   ≥ 3× the database size.
+2. **Stop** the attributed writer with its existing mechanism; confirm port and
+   writer lease free.
+3. **Backup:** `backup <db> <private-pre-v12-backup.db>` (online backup API,
+   integrity/FK check, distinct inode, 0600); `version` of the backup is `11`.
+   The backup is retained and never deleted.
+4. **Rehearsal on real data:** `backup <pre-v12-backup.db> <probe.db>`,
+   `migrate-v11 <probe.db>` → `MIGRATION_V12_PASS`; compare all table row hashes
+   (with rowid) against the backup.
+5. **Migrate in place:** `migrate-v11 <db>` → `MIGRATION_V12_PASS`, `version` is
+   `12`, inode unchanged. One IMMEDIATE transaction rebuilds only
+   `project_lifecycle_events` with every rowid/id/value unchanged and proves
+   schema fingerprint, data snapshot, `integrity_check`, `foreign_key_check`,
+   aggregate invariants and file identity; any failure leaves the untouched v11
+   file (tested in `preview-upgrade-v12.test.ts`).
+6. **Runtime:** start the merged v12 release. The macOS Preview v2 grant must be
+   reissued at `schema: 12` for the same instance/inode/owner with its CD
+   baseline on the v12 release; as for v11 that host step must be prepared and
+   reviewed before authorization instead of hand-editing `state.json`. The Linux
+   #174 path expects v12.
+7. **Verify:** health/login, Project count and lifecycle/Review row counts
+   against the backup; Project detail shows existing Review/legacy completions
+   unchanged; a test Project completes via `Erledigt` and reopens.
+8. **Fallback:** a failed step 5 rolls back to v11 (tested); restart the
+   preserved v11 release unchanged. If v12 fails to start after a successful
+   migration, stop it, rename (never delete) the v12 file, place the backup as a
+   new private file, reissue any inode-bound grant for v11 and start the v11
+   release.
+
+The historical v9 host protocol now carries its committed v10 file forward with
+`migrate-v10` then `migrate-v11` when it publishes the compatible v12 pair.
+
 ## Linux existing-v10 operator path — #174
 
 **Code path only; Linux personal activation is NOT performed by this delivery.**

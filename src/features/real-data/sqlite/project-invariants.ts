@@ -7,6 +7,7 @@ import {
 } from "./project-canonical";
 import { createHash } from "node:crypto";
 import {
+  projectCompletionKind,
   projectOne as one,
   projectRows as rows,
   projectReviewContext,
@@ -293,6 +294,23 @@ export function validateProjectCommit(
           entry.request.payload.kind === "marked_mistaken")
     )
       fail("PROJECT_LIFECYCLE_RECEIPT_INVALID");
+    // #198: only a direct status command completes without a Review, and a
+    // recorded prior kind must name what actually completed that cycle.
+    if (
+      (l.event_kind === "completed") !==
+        (entry.r.command_kind === "project.status.set") ||
+      (l.event_kind === "completed" &&
+        entry.request.payload.status !== "completed") ||
+      (l.prior_status === "completed" &&
+        l.prior_completion_kind !==
+          projectCompletionKind(
+            db,
+            owner,
+            String(l.project_id),
+            l.cycle_before as bigint,
+          ))
+    )
+      fail("PROJECT_PRIOR_COMPLETION_INVALID");
     if (
       l.prior_review_id !== null &&
       !one(
@@ -401,7 +419,8 @@ export function validateProjectCommit(
     )
       fail("PROJECT_AMENDMENT_RECEIPT_INVALID");
     if (
-      ["project.reopen", "project.archive"].includes(String(r.command_kind)) &&
+      (["project.reopen", "project.archive"].includes(String(r.command_kind)) ||
+        (r.command_kind === "project.status.set" && q.status === "completed")) &&
       !lifecycle.some((l) => l.command_id === r.command_id)
     )
       fail("PROJECT_LIFECYCLE_REQUIRED");
@@ -483,6 +502,14 @@ export function validateProjectCommit(
             r.revision_after === p.completion_revision &&
             r.completion_cycle === p.completion_cycle &&
             r.prior_status === old.status,
+        ) &&
+        !lifecycle.some(
+          (l) =>
+            l.project_id === p.id &&
+            l.event_kind === "completed" &&
+            l.revision_after === p.completion_revision &&
+            l.cycle_before === p.completion_cycle &&
+            l.prior_status === old.status,
         )
       )
         fail("PROJECT_COMPLETION_REVIEW_REQUIRED");

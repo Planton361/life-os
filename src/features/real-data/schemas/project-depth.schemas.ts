@@ -45,7 +45,7 @@ export const projectDepthCommandSchema = z.discriminatedUnion("operation", [
   common.extend({ operation: z.literal("review.amend"), payload: z.object({ review_id: uuid, kind: z.enum(["clarification", "evidence_withdrawn", "marked_mistaken"]), review_resource_id: uuid.nullable(), reason: text(2000) }).refine((p) => (p.kind === "evidence_withdrawn") === (p.review_resource_id !== null)) }),
   common.extend({ operation: z.literal("project.reopen"), payload: z.object({ reason: boundedText(2000).nullable().optional(), mistaken_completion: z.boolean().optional() }).refine((p) => !p.mistaken_completion || !!p.reason?.trim()) }),
   common.extend({ operation: z.literal("project.archive"), payload: z.object({ reason: boundedText(2000).nullable().optional() }) }),
-  common.extend({ operation: z.literal("project.status.set"), payload: z.object({ status: z.enum(["idea", "active", "paused", "blocked"]) }) }),
+  common.extend({ operation: z.literal("project.status.set"), payload: z.object({ status: z.enum(["idea", "active", "paused", "blocked", "completed"]) }) }),
 ]);
 
 export type ProjectDepthCommand = z.infer<typeof projectDepthCommandSchema>;

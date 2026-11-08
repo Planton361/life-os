@@ -339,6 +339,58 @@ it("independent processes: Archive vs Review ends archived with no fabricated Re
     f.close();
   }
 }, 15000);
+it("independent processes (#198): direct completion vs Review completion keeps exactly one completion fact", async () => {
+  const f = setup();
+  try {
+    const direct = f.input("project.status.set", { status: "completed" }),
+      review = f.input("review.submit", f.review());
+    f.close();
+    const replies = await heldRace(
+      f.path,
+      { command: direct },
+      { command: review },
+    );
+    expect(replies[0].ok).toBe(true);
+    expect(replies[1]).toMatchObject({ ok: false, error: "PROJECT_STALE" });
+    f.open();
+    expect(f.state().p).toMatchObject({
+      status: "completed",
+      completion_cycle: BigInt(0),
+    });
+    expect(f.state().reviews).toHaveLength(0);
+    expect(f.state().events).toEqual([
+      {
+        event_kind: "completed",
+        cycle_before: BigInt(0),
+        cycle_after: BigInt(0),
+      },
+    ]);
+  } finally {
+    f.close();
+  }
+}, 15000);
+it("independent processes (#198): concurrent same-key direct completion records one event and replays one result", async () => {
+  const f = setup();
+  try {
+    const req = f.input("project.status.set", { status: "completed" });
+    f.close();
+    const [a, b] = await heldRace(f.path, { command: req }, { command: req });
+    expect(a.ok).toBe(true);
+    expect(b).toEqual(a);
+    f.open();
+    expect(f.state().p.status).toBe("completed");
+    expect(f.state().events).toHaveLength(1);
+    expect(f.state().receipts).toHaveLength(3);
+    expect(() =>
+      projectDepthCommand(f.store, f.context, {
+        ...req,
+        payload: { status: "paused" },
+      }),
+    ).toThrow("PROJECT_COMMAND_KEY_CONFLICT");
+  } finally {
+    f.close();
+  }
+}, 15000);
 it("independent processes: same key with a changed request conflicts while original transaction is held", async () => {
   const f = setup();
   try {

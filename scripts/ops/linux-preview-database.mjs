@@ -62,7 +62,7 @@ export function inspectDatabase(release, path, { rows = false } = {}) {
       return {
         identity,
         owner: verified.ownerId,
-        schema: 11,
+        schema: 12,
         epoch,
         schemaHash: digest(schema),
         ...(rows ? { data } : {}),

@@ -20,7 +20,7 @@ test("SIGKILL during admitted DELETE rolls back owned data/epoch/receipt and rel
   const snapshot = () => store.read(context, db => JSON.stringify({ rows: native("canonical-catalog").canonicalTableNames.map(t => [t, db.prepare(`SELECT * FROM ${t} ORDER BY rowid`).all()]), metadata: db.prepare("SELECT dataset_epoch,data_revision,reset_receipt FROM runtime_metadata").get() }, (_, v) => typeof v === "bigint" ? String(v) : v));
   const before = snapshot(); store.close();
   const identity = lstatSync(path), grantPath = join(root, "grant.json"), policy = { path, owner, origin: "https://fixture.ts.net", login: "fixture@example.test" };
-  writeFileSync(grantPath, JSON.stringify({ version: 2, schema: 11, instance: randomUUID(), host: hostname(), uid: process.getuid(), device: identity.dev, inode: identity.ino, ...{ owner, origin: policy.origin, login: policy.login } }), { mode: 0o600 });
+  writeFileSync(grantPath, JSON.stringify({ version: 2, schema: 12, instance: randomUUID(), host: hostname(), uid: process.getuid(), device: identity.dev, inode: identity.ino, ...{ owner, origin: policy.origin, login: policy.login } }), { mode: 0o600 });
   const script = join(root, "crash-worker.cjs");
   writeFileSync(script, `
 process.env.LIFE_OS_BUILD_COMPOSITION='personal-preview-v2';

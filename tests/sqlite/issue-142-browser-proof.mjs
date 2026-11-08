@@ -65,7 +65,7 @@ const stat = lstatSync(path),
   grantPath = join(root, "grant.json"),
   grant = {
     version: 2,
-    schema: 11,
+    schema: 12,
     instance: randomUUID(),
     host: hostname(),
     uid: process.getuid(),

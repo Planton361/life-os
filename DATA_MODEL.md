@@ -83,9 +83,16 @@ a required reason and server-set `archived_cycle`/`archived_revision`. The curre
 Review set contains all active Criteria and only Criteria archived in the current
 cycle. Earlier-cycle archives remain in immutable History.
 
-Project completion requires an explicit immutable Project Review: a desired
+An explicit immutable Project Review completes a Project only with a desired
 result, at least one active Criterion and every active Criterion assessed
-`satisfied`. Task or Project-Milestone completion never completes the Project.
+`satisfied`. Since #198 (USER decision 2026-11-08, SQLite schema v12) the
+Review is optional: `project.status.set` → `completed` completes directly and
+records exactly one `project_lifecycle_events` fact `event_kind='completed'`
+per cycle (prior status, revision, timestamp); no Review is synthesized. A later
+Reopen/Archive records `prior_completion_kind` as `review`, `direct` or
+`legacy_without_review` from what actually completed that cycle, so direct
+completions are never labelled legacy and can be reopened any number of times.
+Task or Project-Milestone completion never completes the Project.
 Reopen preserves old Reviews and starts a new cycle; a later completion needs a
 new Review. Legacy completed Projects have no fabricated Review or Criteria
 history. Optional evidence in the first slice consists of selected, owned

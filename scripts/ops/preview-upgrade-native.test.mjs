@@ -78,10 +78,10 @@ test("native operator backup/isolated recovery/v9→v10 protocol preserves owned
     gateway = "fixture-gateway-unchanged";
   let stopped = false,
     app;
-  // The v9 protocol commits v10; since #192 the current release serves v11,
-  // so every v10 result is carried forward by the fixed migrate-v10 helper.
-  const candidate = { schema: 11, compatibility: "v11-private-preview" },
-    fallback = { schema: 11, compatibility: "v11-private-preview" };
+  // The v9 protocol commits v10; since #198 the current release serves v12,
+  // so every v10 result is carried forward by the fixed migrate-v10/v11 helpers.
+  const candidate = { schema: 12, compatibility: "v12-private-preview" },
+    fallback = { schema: 12, compatibility: "v12-private-preview" };
   const io = {
     authorize: async () => assert.equal(gateway, "fixture-gateway-unchanged"),
     prepareCompatiblePair: async () => ({ candidate, fallback }),
@@ -109,6 +109,7 @@ test("native operator backup/isolated recovery/v9→v10 protocol preserves owned
       assert.equal(command("migrate", clone), "MIGRATION_PASS");
       assert.equal(command("version", clone), "10");
       assert.equal(command("migrate-v10", clone), "MIGRATION_V11_PASS");
+      assert.equal(command("migrate-v11", clone), "MIGRATION_V12_PASS");
       for (const release of [candidate, fallback])
         assert.equal(
           native("production-bootstrap").verifyProductionApplicationDatabase(
@@ -131,6 +132,7 @@ test("native operator backup/isolated recovery/v9→v10 protocol preserves owned
     publishCompatiblePair: async (pair) => {
       assert.equal(pair.candidate.compatibility, pair.fallback.compatibility);
       assert.equal(command("migrate-v10", path), "MIGRATION_V11_PASS");
+      assert.equal(command("migrate-v11", path), "MIGRATION_V12_PASS");
     },
     startAndProve: async (release) => {
       versions.push(release.schema);
@@ -150,8 +152,8 @@ test("native operator backup/isolated recovery/v9→v10 protocol preserves owned
       upgrade: "PROVISIONED_V2",
       reset: "NOT_PERFORMED",
     });
-    assert.deepEqual(versions, [11]);
-    assert.equal(command("version", path), "11");
+    assert.deepEqual(versions, [12]);
+    assert.equal(command("version", path), "12");
     assert.equal(lstatSync(path).ino, identity.ino);
     assert.equal(lstatSync(path).dev, identity.dev);
     assert.equal(command("version", backup), "9");
@@ -242,6 +244,8 @@ test("clean operator source without node_modules uses release dependencies for e
   for (const [op, expected] of [
     ["migrate-v10", "MIGRATION_V11_PASS"],
     ["version", "11"],
+    ["migrate-v11", "MIGRATION_V12_PASS"],
+    ["version", "12"],
   ]) {
     const result = child("preview-upgrade-database.mjs", release, [op, backup]);
     assert.equal(result.status, 0, result.stderr);

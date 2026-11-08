@@ -30,6 +30,36 @@ export function requireProject(
   if (!p) throw new Error("PROJECT_NOT_FOUND");
   return p;
 }
+// What completed `cycle`: an explicit Review, the direct one-click completion
+// (#198), or neither (a legacy completion from before Project Depth).
+export function projectCompletionKind(
+  db: Database.Database,
+  owner: string,
+  projectId: string,
+  cycle: bigint | string,
+) {
+  if (
+    projectOne(
+      db,
+      "SELECT id FROM project_reviews WHERE user_id=? AND project_id=? AND completion_cycle=? AND decision='completed'",
+      owner,
+      projectId,
+      cycle,
+    )
+  )
+    return "review" as const;
+  if (
+    projectOne(
+      db,
+      "SELECT id FROM project_lifecycle_events WHERE user_id=? AND project_id=? AND cycle_before=? AND event_kind='completed'",
+      owner,
+      projectId,
+      cycle,
+    )
+  )
+    return "direct" as const;
+  return "legacy_without_review" as const;
+}
 export function projectReviewContext(
   db: Database.Database,
   owner: string,
@@ -135,8 +165,33 @@ export function projectReviewContext(
       archived_at: projectPgTimestamp(w.archived_at),
     })),
   };
+  // Outside the fingerprint: describes the current completion, not Review input.
+  const completionKind =
+    p.status === "completed"
+      ? projectCompletionKind(db, owner, projectId, p.completion_cycle!)
+      : null;
+  const completedAt =
+    completionKind === "review"
+      ? projectOne(
+          db,
+          "SELECT reviewed_at AS t FROM project_reviews WHERE user_id=? AND project_id=? AND completion_cycle=? AND decision='completed'",
+          owner,
+          projectId,
+          p.completion_cycle,
+        )?.t
+      : completionKind === "direct"
+        ? projectOne(
+            db,
+            "SELECT recorded_at AS t FROM project_lifecycle_events WHERE user_id=? AND project_id=? AND cycle_before=? AND event_kind='completed'",
+            owner,
+            projectId,
+            p.completion_cycle,
+          )?.t
+        : null;
   const ctx = {
     ...core,
+    current_completion_kind: completionKind,
+    current_completed_at: (completedAt as string | null | undefined) ?? null,
     fingerprint: projectHash(fingerprintCore),
     resources,
     work_observed_at: String(projectOne(db, "SELECT life_now() AS t")!.t),

@@ -12,8 +12,12 @@ import { sourceSchema, sourceOwnedTables } from "./source-schema";
 import { sourceGuards, sourceDependencyGuards } from "./source-guards";
 import { habitSchema, habitOwnedTables } from "./habit-schema";
 import { healthSchema, healthOwnedTables } from "./health-schema";
-import { projectSchema, projectOwnedTables } from "./project-schema";
-import { projectGuards } from "./project-guards";
+import {
+  legacyProjectSchemaV11,
+  projectSchema,
+  projectOwnedTables,
+} from "./project-schema";
+import { legacyProjectGuardsV11, projectGuards } from "./project-guards";
 import { goalSchema, goalOwnedTables } from "./goal-schema";
 import { goalGuards, goalHistoryScopeGuards } from "./goal-guards";
 
@@ -26,11 +30,17 @@ import { retainedGuards } from "./retained-guards";
 import { taskStepSchema } from "./task-step-schema";
 
 // One schema composition for fresh canonical and disposable synthetic datasets.
-// legacyV9/legacyV10 only reconstruct historical definitions for operator upgrades.
+// legacyV9/V10/V11 only reconstruct historical definitions for operator upgrades.
 export function initializeCanonicalSchema(
   db: Database.Database,
-  options: { legacyV9?: boolean; legacyV10?: boolean } = {},
+  options: {
+    legacyV9?: boolean;
+    legacyV10?: boolean;
+    legacyV11?: boolean;
+  } = {},
 ) {
+  const legacyProject =
+    options.legacyV9 || options.legacyV10 || options.legacyV11;
   const exec = (sql: string) =>
     db.exec(options.legacyV9 ? sql : previewDeleteGuards(sql));
   exec(
@@ -42,14 +52,14 @@ export function initializeCanonicalSchema(
   exec(habitSchema);
   exec(healthSchema);
   exec(goalSchema);
-  exec(projectSchema);
+  exec(legacyProject ? legacyProjectSchemaV11 : projectSchema);
   exec(skillSchema);
   exec(taskStepSchema);
   exec(retainedSchema);
   exec(retainedGuards());
   exec(skillGuards);
   exec(resourceGuards());
-  exec(projectGuards);
+  exec(legacyProject ? legacyProjectGuardsV11 : projectGuards);
   exec(goalGuards + goalHistoryScopeGuards);
   exec(sourceGuards + sourceDependencyGuards());
   exec(nutritionTrainingGuards());

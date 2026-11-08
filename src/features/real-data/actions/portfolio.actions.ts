@@ -410,6 +410,29 @@ export async function archiveProjectAction(
   });
 }
 
+// #198: one-click direct completion; no Review, the lifecycle records it.
+export async function completeProjectAction(
+  formData: FormData,
+): Promise<PortfolioProjectEditActionResult> {
+  return withSubmittedDatasetEpoch(formData, async () => {
+    const projectId = formString(formData, "projectId");
+    if (!formData.has("expectedRevision") || !formData.has("expectedCycle")) {
+      return { status: "error", message: "Project wurde möglicherweise geändert. Detailseite bewusst neu laden und erneut prüfen." };
+    }
+    const result = await projectDepthAction({
+      projectId,
+      commandId: formString(formData, "commandId") || crypto.randomUUID(),
+      operation: "project.status.set",
+      expectedRevision: formString(formData, "expectedRevision"),
+      expectedCycle: formString(formData, "expectedCycle"),
+      payload: { status: "completed" },
+    });
+    return result.status === "success"
+      ? { status: "success", message: "Project abgeschlossen.", projectId }
+      : { ...result, projectId: undefined };
+  });
+}
+
 async function getAuthenticatedManualGoalContext(actionLabel: string) {
   const profileId = await getCurrentLifeOsProfileId();
 

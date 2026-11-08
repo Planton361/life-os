@@ -12,6 +12,7 @@ import {
   type Canonical,
 } from "../project-canonical";
 import {
+  projectCompletionKind,
   projectOne as one,
   projectReviewContext,
   requireProject,
@@ -293,6 +294,23 @@ export function executeProjectDepthInTransaction(
       if (p.status === "completed") throw new Error("PROJECT_STATUS_CONFLICT");
       changed = p.status !== q.status;
       if (changed) update("status=?", q.status);
+      // #198: direct completion needs no Review; it is recorded as its own
+      // lifecycle fact and never synthesizes Review data.
+      if (q.status === "completed")
+        insertProjectRow(db, "project_lifecycle_events", {
+          ...withCommand,
+          event_kind: "completed",
+          revision_after: after,
+          cycle_before: cycle,
+          cycle_after: cycle,
+          project_title_snapshot: p.title,
+          prior_status: p.status,
+          resulting_status: "completed",
+          prior_completion_kind: null,
+          prior_review_id: null,
+          reason: null,
+          mistaken_completion: false,
+        });
       break;
     case "project.reopen":
     case "project.archive":
@@ -496,9 +514,7 @@ export function executeProjectDepthInTransaction(
       resulting_status: reopen ? "active" : "archived",
       prior_completion_kind:
         p.status === "completed"
-          ? priorReview
-            ? "review"
-            : "legacy_without_review"
+          ? projectCompletionKind(db, owner, command.projectId, cycle)
           : null,
       prior_review_id: priorReview,
       reason: q.reason ?? null,
