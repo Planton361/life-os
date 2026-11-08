@@ -550,8 +550,9 @@ Work/context:
   canonical;
 - the right context rail keeps Primary Work Artifact, Goal/Area and derived Skill
   provenance;
-- only quiet `Abschluss prüfen` opens the focused Project Review under #72,
-  without a permanent preview lane competing with Work;
+- the primary header `Erledigt` completes the Project directly (#198 USER
+  decision); quiet optional `Abschluss prüfen` opens the focused Project Review
+  under #72, without a permanent preview lane competing with Work;
 - criterion scope removal is a visible Archive with a reason followed by a fresh
   Review read, never a hidden exclusion inside the Review;
 - successful Project completion does not automatically change Tasks or Project
@@ -732,8 +733,9 @@ Secondary edits must not materially reshape the Project reading surface.
 
 #### Review and History presentation
 
-Normal active Project shows only quiet `Abschluss prüfen`, near the result/context
-boundary or end of Work. Opening Review temporarily focuses that interaction;
+Normal active Project shows the primary header `Erledigt` (#198, same primary
+action style as Task `Erledigt`; one click, no dialog) and the quiet optional
+`Abschluss prüfen`, near the result/context boundary or end of Work. Opening Review temporarily focuses that interaction;
 the background Project remains context. Dialog order:
 
 1. desired result snapshot;
@@ -752,7 +754,8 @@ closes Review and refreshes Project; `continue` returns to the normal current
 work surface without permanently expanding History.
 
 Completed Project shows compact `Abgeschlossen`, canonical Review date and short
-rationale/result summary. `Abschluss-Review ansehen` has moderate informational
+rationale/result summary; a direct completion instead shows `Direkt abgeschlossen
+am <Datum>` without a Review link, and History lists it as `Direkt abgeschlossen`. `Abschluss-Review ansehen` has moderate informational
 emphasis and opens secondary History directly at the canonical current completion
 Review, even beyond the first pagination window. `Verlauf ansehen` opens newest
 History. Reviews, lifecycle events, amendments and Resource snapshots remain

@@ -135,6 +135,41 @@ export function upgradePreviewSchemaV9(path: string) {
 // same file inside one IMMEDIATE transaction with every rowid, id and value
 // unchanged. Any failure rolls back to the untouched v10 database.
 export function upgradePreviewSchemaV10(path: string) {
+  return rebuildTableUpgrade(path, {
+    from: 10,
+    table: "inbox_items",
+    columnsChanged: "UPGRADE_INBOX_COLUMNS_CHANGED",
+    expected: { legacyV10: true },
+    // Lands exactly on historical v11; upgradePreviewSchemaV11 continues (#198).
+    target: { legacyV11: true },
+  });
+}
+
+// Operator-only v11→v12 migration (#198): project_lifecycle_events admits the
+// direct `completed` fact and the `direct` prior completion kind. SQLite cannot
+// widen a CHECK in place, so the same single-table rebuild applies: every
+// rowid, id and value is unchanged and any failure leaves the v11 database.
+export function upgradePreviewSchemaV11(path: string) {
+  return rebuildTableUpgrade(path, {
+    from: 11,
+    table: "project_lifecycle_events",
+    columnsChanged: "UPGRADE_LIFECYCLE_COLUMNS_CHANGED",
+    expected: { legacyV11: true },
+    target: {},
+  });
+}
+
+function rebuildTableUpgrade(
+  path: string,
+  step: {
+    from: number;
+    table: string;
+    columnsChanged: string;
+    expected: Parameters<typeof initializeCanonicalSchema>[1];
+    target: Parameters<typeof initializeCanonicalSchema>[1];
+  },
+) {
+  const to = step.from + 1;
   verifyNodeAndDriver();
   canonicalPath(path);
   const identity = lstatSync(path);
@@ -145,11 +180,11 @@ export function upgradePreviewSchemaV10(path: string) {
   try {
     configureConnection(db);
     registerCodecs(expected);
-    initializeCanonicalSchema(expected, { legacyV10: true });
+    initializeCanonicalSchema(expected, step.expected);
     registerCodecs(target);
-    initializeCanonicalSchema(target);
+    initializeCanonicalSchema(target, step.target);
     if (schemaFingerprint(db) !== schemaFingerprint(expected))
-      throw new Error("UPGRADE_V10_SCHEMA_REQUIRED");
+      throw new Error(`UPGRADE_V${step.from}_SCHEMA_REQUIRED`);
     const meta = db
       .prepare("SELECT * FROM runtime_metadata WHERE singleton=1")
       .get() as {
@@ -162,53 +197,54 @@ export function upgradePreviewSchemaV10(path: string) {
     if (
       !meta ||
       meta.dataset_kind !== "canonical" ||
-      Number(meta.schema_version) !== 10 ||
-      Number(db.pragma("user_version", { simple: true })) !== 10 ||
+      Number(meta.schema_version) !== step.from ||
+      Number(db.pragma("user_version", { simple: true })) !== step.from ||
       Number(meta.compatibility_ready) !== 1 ||
       meta.writer_pid !== null
     )
-      throw new Error("UPGRADE_STOPPED_CANONICAL_V10_REQUIRED");
+      throw new Error(`UPGRADE_STOPPED_CANONICAL_V${step.from}_REQUIRED`);
     db.function("life_owner", () => meta.owner_id);
     db.function("life_command", () => "preview.upgrade");
     const columns = (source: Database.Database) =>
-      (source.pragma("table_info(inbox_items)") as { name: string }[]).map(
+      (source.pragma(`table_info(${step.table})`) as { name: string }[]).map(
         (column) => column.name,
       );
     const names = columns(target);
     if (names.join() !== columns(db).join())
-      throw new Error("UPGRADE_INBOX_COLUMNS_CHANGED");
+      throw new Error(step.columnsChanged);
     const list = names.map((name) => `"${name}"`).join(",");
     const definitions = target
       .prepare(
-        "SELECT type,sql FROM sqlite_schema WHERE tbl_name='inbox_items' AND sql IS NOT NULL ORDER BY type='table' DESC,name",
+        "SELECT type,sql FROM sqlite_schema WHERE tbl_name=? AND sql IS NOT NULL ORDER BY type='table' DESC,name",
       )
-      .all() as { type: string; sql: string }[];
+      .all(step.table) as { type: string; sql: string }[];
     const before = dataSnapshot(db);
     // foreign_keys cannot change inside a transaction. The rebuild keeps every
-    // referenced inbox id, and foreign_key_check proves all references below.
+    // referenced id, and foreign_key_check proves all references below.
     db.pragma("foreign_keys=OFF");
     try {
       db.transaction(() => {
         assertCanonicalCatalog(db);
         aggregatePreflight(db, meta.owner_id);
         db.exec(
-          `CREATE TEMP TABLE inbox_items_v10 AS SELECT rowid AS v10_rowid,${list} FROM main.inbox_items`,
+          `CREATE TEMP TABLE upgrade_copy AS SELECT rowid AS copy_rowid,${list} FROM main.${step.table}`,
         );
         // Dropping the table also drops its own triggers and indexes; the exact
-        // v11 definitions are recreated after the rows are restored, so no
-        // capture/owner trigger rewrites a copied row.
-        db.exec("DROP TABLE main.inbox_items");
+        // target definitions are recreated after the rows are restored, so no
+        // command/owner trigger rewrites or rejects a copied row.
+        db.exec(`DROP TABLE main.${step.table}`);
         db.exec(definitions[0].sql);
         db.exec(
-          `INSERT INTO main.inbox_items(rowid,${list}) SELECT v10_rowid,${list} FROM temp.inbox_items_v10 ORDER BY v10_rowid`,
+          `INSERT INTO main.${step.table}(rowid,${list}) SELECT copy_rowid,${list} FROM temp.upgrade_copy ORDER BY copy_rowid`,
         );
-        db.exec("DROP TABLE temp.inbox_items_v10");
+        db.exec("DROP TABLE temp.upgrade_copy");
         for (const definition of definitions.slice(1)) db.exec(definition.sql);
-        if (before !== dataSnapshot(db)) throw new Error("UPGRADE_DATA_CHANGED");
+        if (before !== dataSnapshot(db))
+          throw new Error("UPGRADE_DATA_CHANGED");
         db.prepare(
-          "UPDATE runtime_metadata SET schema_version=11,dataset_epoch=life_uuid() WHERE singleton=1",
-        ).run();
-        db.pragma("user_version=11");
+          "UPDATE runtime_metadata SET schema_version=?,dataset_epoch=life_uuid() WHERE singleton=1",
+        ).run(to);
+        db.pragma(`user_version=${to}`);
         if (schemaFingerprint(db) !== schemaFingerprint(target))
           throw new Error("UPGRADE_TARGET_SCHEMA_INVALID");
         if (
@@ -228,7 +264,7 @@ export function upgradePreviewSchemaV10(path: string) {
       db.pragma("foreign_keys=ON");
     }
     db.pragma("wal_checkpoint(TRUNCATE)");
-    return { schema: 11, owner: meta.owner_id };
+    return { schema: to, owner: meta.owner_id };
   } finally {
     target.close();
     expected.close();

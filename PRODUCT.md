@@ -299,8 +299,10 @@ into Goal:
   is expected to produce;
 - optional **Completion Criteria / `Fertig, wenn …`** are Project-owned
   acceptance statements for that result;
-- Project Completion is confirmed through an explicit Project Review that remains
-  distinct from Goal Outcome Criteria / Goal Review;
+- Project Completion is a direct, one-click `Erledigt` in the Project header
+  (#198 USER decision, like a Task); the explicit Project Review remains an
+  optional documentation path and stays distinct from Goal Outcome Criteria /
+  Goal Review;
 - Task completion, Project Milestone completion and Task counts never
   automatically satisfy Project criteria or complete the Project;
 - Project-Fokus remains stored Project-owned orientation and is distinct from
@@ -322,7 +324,11 @@ is no live criterion `met` state. Successful completion requires an explicit,
 immutable Project Review of the result and at least one active criterion; every
 active criterion must be satisfied. Removing one from scope requires an explicit
 Criterion Archive with a reason and a fresh Review read. Project Archive is not
-successful completion. Reopen preserves prior Reviews and starts a new cycle;
+successful completion. Since #198 (USER decision 2026-11-08) these Review
+preconditions apply only to the optional explicit Review path: the header
+`Erledigt` completes directly without result, Criteria or rationale, records a
+dated `completed` lifecycle fact of kind `direct`, never synthesizes a Review and
+leaves Tasks/Milestones/Resources unchanged. Reopen preserves prior Reviews and starts a new cycle;
 legacy completed Projects retain no invented Review or Criteria history. This
 accepted data contract is implemented by Issue #69's bounded Project Depth
 slice. Its initial Product Surface failed the post-merge user check, leading to
@@ -445,7 +451,8 @@ Context/support:
 
 Review/History:
 
-- Normal active view has only quiet `Abschluss prüfen`. Review itself is a
+- Normal active view has the primary header `Erledigt` (direct completion, #198)
+  and the quiet optional `Abschluss prüfen`. Review itself is a
   focused desktop dialog and full-screen/near-full-screen mobile dialog, not a
   permanent competing Work lane.
 - Review keeps the accepted result, continue/complete decision, Criteria
@@ -454,14 +461,17 @@ Review/History:
   stale/conflict/error preserves the draft and requires conscious reload/reconfirmation.
   Successful Save closes the dialog and refreshes the Project. A saved `continue`
   returns to normal current work without permanent History expansion.
-- Completed Projects show a compact completion summary with Review date and
-  short rationale/result summary. `Abschluss-Review ansehen` opens the canonical
+- Completed Projects show a compact completion summary: a Review completion with
+  Review date and short rationale/result summary, a direct completion with
+  `Direkt abgeschlossen am <Datum>` and no Review link. `Abschluss-Review ansehen` opens the canonical
   current completion Review directly, including beyond the newest History page.
 - `Verlauf ansehen` opens newest immutable History as explicit secondary depth
   using existing pagination. Amendments start inside History; full immutable
   History is never permanently expanded in the main page flow.
 - Reopen remains explicit and secondary. A reopened Project prioritizes current
-  work; prior completion is reachable through History. Legacy completed Projects
+  work; prior completion is reachable through History. Reopen after a direct
+  completion works any number of times; each completion and Reopen is a History
+  entry (`vorher direkt abgeschlossen`). Legacy completed Projects
   say `Abgeschlossen ohne gespeicherten Review`, with no invented Review/date.
   Archived Projects retain read-only context and History without write CTAs.
 

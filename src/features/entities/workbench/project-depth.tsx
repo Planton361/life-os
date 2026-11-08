@@ -23,6 +23,11 @@ const amendmentLabel: Record<string, string> = {
   evidence_withdrawn: "Beleg zurückgezogen",
   marked_mistaken: "Review irrtümlich",
 };
+const lifecycleLabel: Record<string, string> = {
+  completed: "Direkt abgeschlossen",
+  reopened: "Wieder geöffnet",
+  archived: "Archiviert",
+};
 const assessmentLabel: Record<string, string> = {
   satisfied: "erfüllt",
   not_satisfied: "nicht erfüllt",
@@ -437,7 +442,13 @@ export function ProjectDepthReview({ depth }: { depth: Depth }) {
                 {completionReview?.reviewed_at
                   ? ` · Review am ${new Date(completionReview.reviewed_at).toLocaleDateString("de-DE")}`
                   : ""}
-                {!completionReviewId ? " · Ohne gespeicherten Review" : ""}
+                {context.current_completion_kind === "direct" &&
+                context.current_completed_at
+                  ? ` · Direkt abgeschlossen am ${new Date(context.current_completed_at).toLocaleDateString("de-DE")}`
+                  : ""}
+                {context.current_completion_kind === "legacy_without_review"
+                  ? " · Ohne gespeicherten Review"
+                  : ""}
               </p>
               {completionSummary && (
                 <p
@@ -911,8 +922,7 @@ function ProjectDepthHistoryContent({ depth }: { depth: Depth }) {
       r.decision === "completed" &&
       String(r.completion_cycle) === context.completion_cycle,
   );
-  const legacy =
-    context.status === "completed" && !context.current_completion_review_id;
+  const legacy = context.current_completion_kind === "legacy_without_review";
   return (
     <section
       id="project-history"
@@ -938,15 +948,15 @@ function ProjectDepthHistoryContent({ depth }: { depth: Depth }) {
               e && (
                 <p key={e.id}>
                   {new Date(e.recorded_at).toLocaleString("de-DE")} ·{" "}
-                  {e.event_kind === "reopened"
-                    ? "Wieder geöffnet"
-                    : "Archiviert"}{" "}
+                  {lifecycleLabel[e.event_kind]}{" "}
                   · {e.prior_status} → {e.resulting_status} ·{" "}
                   {e.project_title_snapshot} · Zyklus {e.cycle_before} →{" "}
                   {e.cycle_after}
                   {e.prior_completion_kind === "legacy_without_review"
                     ? " · vorher ohne gespeicherten Review"
-                    : ""}
+                    : e.prior_completion_kind === "direct"
+                      ? " · vorher direkt abgeschlossen"
+                      : ""}
                   {e.reason ? ` · ${e.reason}` : ""}
                 </p>
               )
@@ -1132,8 +1142,7 @@ function ProjectDepthHistoryContent({ depth }: { depth: Depth }) {
 
 export function ProjectDepthHistory({ depth }: { depth: Depth }) {
   const { context } = depth;
-  const legacy =
-    context.status === "completed" && !context.current_completion_review_id;
+  const legacy = context.current_completion_kind === "legacy_without_review";
   const hasHistory = depth.historyItems.length > 0 || legacy;
   const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);

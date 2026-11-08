@@ -20,7 +20,9 @@ const allowed: Record<string, readonly string[]> = {
   project_reviews: ["review.submit"],
   project_review_criteria: ["review.submit"],
   project_review_resources: ["review.submit"],
+  // v12 (#198): project.status.set records the direct `completed` fact.
   project_lifecycle_events: [
+    "project.status.set",
     "project.reopen",
     "project.archive",
     "review.amend",
@@ -28,7 +30,7 @@ const allowed: Record<string, readonly string[]> = {
   project_review_amendments: ["review.amend", "project.reopen"],
 };
 const permitted = `((${legacy}) OR life_command() IN (${kinds}))`;
-export const projectGuards =
+const guards = (allowed: Record<string, readonly string[]>) =>
   projectOwnedTables
     .map(
       (table) => `
@@ -69,3 +71,11 @@ END;
 CREATE TRIGGER project_resource_target_insert BEFORE INSERT ON resource_relations WHEN NEW.target_type='project' AND NOT EXISTS(SELECT 1 FROM projects WHERE user_id=NEW.user_id AND id=NEW.target_id) BEGIN SELECT RAISE(ABORT,'PROJECT_NOT_FOUND'); END;
 CREATE TRIGGER project_resource_target_update BEFORE UPDATE ON resource_relations WHEN NEW.target_type='project' AND NOT EXISTS(SELECT 1 FROM projects WHERE user_id=NEW.user_id AND id=NEW.target_id) BEGIN SELECT RAISE(ABORT,'PROJECT_NOT_FOUND'); END;
 `;
+export const projectGuards = guards(allowed);
+// Historical v11 definition, used only by the operator upgrade fingerprint.
+export const legacyProjectGuardsV11 = guards({
+  ...allowed,
+  project_lifecycle_events: allowed.project_lifecycle_events.filter(
+    (kind) => kind !== "project.status.set",
+  ),
+});

@@ -21,6 +21,7 @@ import {
   createProjectAction,
   updateProjectAction,
   archiveProjectAction,
+  completeProjectAction,
   createGoalAction,
   updateGoalAction,
   archiveGoalAction,
@@ -639,6 +640,8 @@ export async function workbenchOperation(
     else if (operation === "task.archive") result = await archiveTaskAction(form);
     else if (operation === "project.archive")
       result = await archiveProjectAction(form);
+    else if (operation === "project.complete")
+      result = await completeProjectAction(form);
     else if (operation === "goal.archive") result = await archiveGoalAction(form);
     else if (operation === "skill.archive")
       result = await archiveSkillAction(form);

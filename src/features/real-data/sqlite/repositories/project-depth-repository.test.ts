@@ -330,8 +330,9 @@ it("implements result and all Criterion commands, no-ops, exact order, stale pro
     expect(f.read().context.desired_result).toBeNull();
     for (const status of ["idea", "active", "paused", "blocked"])
       expect(f.command("project.status.set", { status }).status).toBe(status);
+    // Archive keeps its own command; direct completion is covered below (#198).
     expect(() =>
-      f.command("project.status.set", { status: "completed" }),
+      f.command("project.status.set", { status: "archived" }),
     ).toThrow();
   } finally {
     f.store.close();
@@ -1159,6 +1160,255 @@ it("preserves v4 canonical defaults on direct native requests and rejects oversi
     expect(() => f.command("review.submit", f.review())).toThrow(
       "PROJECT_COMPLETION_PRECONDITION",
     );
+  } finally {
+    f.store.close();
+  }
+});
+
+// #198: direct one-click completion without a Review.
+const events = (f: ReturnType<typeof fixture>) =>
+  f.sql(
+    "SELECT event_kind,prior_status,resulting_status,cycle_before,cycle_after,prior_completion_kind,prior_review_id FROM project_lifecycle_events WHERE project_id=? ORDER BY revision_after",
+    f.id,
+  );
+const event = (
+  event_kind: string,
+  prior_status: string,
+  resulting_status: string,
+  cycle: number,
+  prior_completion_kind: string | null = null,
+) => ({
+  event_kind,
+  prior_status,
+  resulting_status,
+  cycle_before: BigInt(cycle),
+  cycle_after: BigInt(cycle + (event_kind === "reopened" ? 1 : 0)),
+  prior_completion_kind,
+  prior_review_id: null,
+});
+it("completes directly without result, Criteria or Review, records one completed fact and leaves open work unchanged", () => {
+  const f = fixture();
+  try {
+    f.store.command(f.context, "task.create", (db) => {
+      for (const status of ["planned", "active", "waiting"])
+        db.prepare(
+          "INSERT INTO tasks(id,user_id,project_id,title,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?)",
+        ).run(randomUUID(), owner, f.id, status, status, now, now);
+      db.prepare(
+        "INSERT INTO project_milestones(id,user_id,project_id,title,status,sort_order,created_at,updated_at) VALUES(?,?,?,'Open','open',0,?,?)",
+      ).run(randomUUID(), owner, f.id, now, now);
+    });
+    const tasks = f.sql(
+        "SELECT * FROM tasks WHERE project_id=? ORDER BY id",
+        f.id,
+      ),
+      milestones = f.sql(
+        "SELECT * FROM project_milestones WHERE project_id=? ORDER BY id",
+        f.id,
+      );
+    const key = randomUUID(),
+      req = f.input("project.status.set", { status: "completed" }, key);
+    const result = projectDepthCommand(f.store, f.context, req);
+    expect(result).toMatchObject({
+      status: "completed",
+      no_op: false,
+      completion_revision: "1",
+      completion_cycle: "0",
+    });
+    // Replay returns the stored result without a second effect.
+    expect(projectDepthCommand(f.store, f.context, req)).toEqual(result);
+    const read = f.read();
+    expect(read.context).toMatchObject({
+      status: "completed",
+      desired_result: null,
+      current_completion_review_id: null,
+      current_completion_kind: "direct",
+    });
+    expect(read.context.current_completed_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(read.context.criteria).toHaveLength(0);
+    expect(read.reviews).toHaveLength(0);
+    expect(read.criteriaSnapshots).toHaveLength(0);
+    expect(f.sql("SELECT id FROM project_reviews")).toHaveLength(0);
+    expect(events(f)).toEqual([event("completed", "active", "completed", 0)]);
+    expect(read.historyItems.map((i) => i.kind)).toEqual(["lifecycle"]);
+    expect(
+      f.sql("SELECT * FROM tasks WHERE project_id=? ORDER BY id", f.id),
+    ).toEqual(tasks);
+    expect(
+      f.sql(
+        "SELECT * FROM project_milestones WHERE project_id=? ORDER BY id",
+        f.id,
+      ),
+    ).toEqual(milestones);
+    // Completed stays frozen; the explicit Review path is closed until Reopen.
+    expect(() => f.command("result.set", { desired_result: "Late" })).toThrow(
+      "PROJECT_COMPLETED_FROZEN",
+    );
+    expect(() =>
+      f.command("criterion.create", { text: "Late", sort_order: "0" }),
+    ).toThrow("PROJECT_COMPLETED_FROZEN");
+    expect(() => f.command("review.submit", f.review("continue"))).toThrow(
+      "PROJECT_ALREADY_COMPLETED",
+    );
+    for (const status of ["completed", "paused"])
+      expect(() => f.command("project.status.set", { status })).toThrow(
+        "PROJECT_STATUS_CONFLICT",
+      );
+    expect(events(f)).toHaveLength(1);
+  } finally {
+    f.store.close();
+  }
+});
+it("reopens a direct completion any number of times with every completion and Reopen in History", () => {
+  const f = fixture();
+  try {
+    const expected = [];
+    for (let cycle = 0; cycle < 3; cycle++) {
+      f.command("project.status.set", { status: "completed" });
+      expect(f.read().context.current_completion_kind).toBe("direct");
+      f.command("project.reopen", {});
+      expect(f.read().context).toMatchObject({
+        status: "active",
+        completion_cycle: String(cycle + 1),
+        current_completion_kind: null,
+        current_completed_at: null,
+      });
+      expected.push(
+        event("completed", "active", "completed", cycle),
+        event("reopened", "completed", "active", cycle, "direct"),
+      );
+    }
+    expect(events(f)).toEqual(expected);
+    expect(f.read().lifecycle).toHaveLength(6);
+    // A direct completion from paused is recorded with its real prior status.
+    f.command("project.status.set", { status: "paused" });
+    f.command("project.status.set", { status: "completed" });
+    expect(events(f).at(-1)).toEqual(
+      event("completed", "paused", "completed", 3),
+    );
+    f.command("project.archive", {});
+    expect(events(f).at(-1)).toEqual({
+      ...event("archived", "completed", "archived", 3, "direct"),
+    });
+  } finally {
+    f.store.close();
+  }
+});
+it("keeps explicit Review and legacy completions intact and labelled; a later direct completion is never legacy", () => {
+  const f = fixture();
+  try {
+    f.prepare();
+    f.command("review.submit", f.review("continue"));
+    const reviewed = f.command("review.submit", f.review());
+    const ctx = f.read().context;
+    expect(ctx).toMatchObject({
+      current_completion_kind: "review",
+      current_completion_review_id: reviewed.review_id,
+    });
+    expect(ctx.current_completed_at).toBe(
+      f.read().reviews.find((r) => r.id === reviewed.review_id)!.reviewed_at,
+    );
+    const history = () => ({
+      reviews: f.sql("SELECT * FROM project_reviews ORDER BY rowid"),
+      criteria: f.sql("SELECT * FROM project_review_criteria ORDER BY rowid"),
+    });
+    const before = history();
+    f.command("project.reopen", {});
+    f.command("project.status.set", { status: "completed" });
+    expect(f.read().context).toMatchObject({
+      current_completion_kind: "direct",
+      current_completion_review_id: null,
+    });
+    f.command("project.reopen", {});
+    expect(history()).toEqual(before);
+    expect(
+      f.sql(
+        "SELECT event_kind,prior_completion_kind,prior_review_id FROM project_lifecycle_events WHERE project_id=? ORDER BY revision_after",
+        f.id,
+      ),
+    ).toEqual([
+      {
+        event_kind: "reopened",
+        prior_completion_kind: "review",
+        prior_review_id: reviewed.review_id,
+      },
+      {
+        event_kind: "completed",
+        prior_completion_kind: null,
+        prior_review_id: null,
+      },
+      {
+        event_kind: "reopened",
+        prior_completion_kind: "direct",
+        prior_review_id: null,
+      },
+    ]);
+  } finally {
+    f.store.close();
+  }
+  const legacy = fixture("completed");
+  try {
+    expect(legacy.read().context.current_completion_kind).toBe(
+      "legacy_without_review",
+    );
+    legacy.command("project.reopen", {});
+    legacy.command("project.status.set", { status: "completed" });
+    legacy.command("project.reopen", {});
+    legacy.command("project.status.set", { status: "completed" });
+    legacy.command("project.reopen", {});
+    expect(
+      events(legacy).map((e) => [e.event_kind, e.prior_completion_kind]),
+    ).toEqual([
+      ["reopened", "legacy_without_review"],
+      ["completed", null],
+      ["reopened", "direct"],
+      ["completed", null],
+      ["reopened", "direct"],
+    ]);
+  } finally {
+    legacy.store.close();
+  }
+});
+it("rejects archived, stale, foreign and forged direct completions without effect", () => {
+  const f = fixture();
+  try {
+    const stale = f.input("project.status.set", { status: "completed" });
+    f.command("project.status.set", { status: "paused" });
+    expect(() => projectDepthCommand(f.store, f.context, stale)).toThrow(
+      "PROJECT_STALE",
+    );
+    expect(() =>
+      projectDepthCommand(
+        f.store,
+        issueOwnerContext(randomUUID()),
+        f.input("project.status.set", { status: "completed" }),
+      ),
+    ).toThrow(/OWNER/);
+    // A raw status write without the lifecycle fact fails the commit invariant.
+    expect(() =>
+      f.store.command(f.context, "project.project.status.set", (db) =>
+        db
+          .prepare("UPDATE projects SET status='completed' WHERE id=?")
+          .run(f.id),
+      ),
+    ).toThrow("PROJECT_COMPLETION_REVIEW_REQUIRED");
+    // A forged completed fact without its status command is rejected.
+    expect(() =>
+      f.store.command(f.context, "project.project.reopen", (db) =>
+        db
+          .prepare(
+            "INSERT INTO project_lifecycle_events(id,user_id,project_id,command_id,event_kind,revision_after,cycle_before,cycle_after,project_title_snapshot,prior_status,resulting_status) VALUES(?,?,?,?,'completed',9,0,0,'x','paused','completed')",
+          )
+          .run(randomUUID(), owner, f.id, randomUUID()),
+      ),
+    ).toThrow();
+    expect(events(f)).toHaveLength(0);
+    expect(f.read().context.status).toBe("paused");
+    f.command("project.archive", {});
+    expect(() =>
+      f.command("project.status.set", { status: "completed" }),
+    ).toThrow("PROJECT_ARCHIVED");
+    expect(events(f).map((e) => e.event_kind)).toEqual(["archived"]);
   } finally {
     f.store.close();
   }

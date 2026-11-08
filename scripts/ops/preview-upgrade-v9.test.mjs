@@ -314,6 +314,7 @@ async function fixture() {
       nativeCommand("backup", backup, clone);
       nativeCommand("migrate", clone);
       nativeCommand("migrate-v10", clone);
+      nativeCommand("migrate-v11", clone);
       const x = lstatSync(clone);
       for (const r of [candidate, fallback])
         await databasePreflight(
@@ -348,9 +349,12 @@ async function fixture() {
       });
     },
     publishCompatiblePair: async (p, cp) => {
-      // Mirrors the real host: the committed v10 file is carried to v11 (#192).
+      // Mirrors the real host: the committed v10 file is carried to v12
+      // (#192, #198).
       if (nativeCommand("version", path) === "10")
         nativeCommand("migrate-v10", path);
+      if (nativeCommand("version", path) === "11")
+        nativeCommand("migrate-v11", path);
       atomicJson(join(root, "state.json"), upgradedOperatorState(root, p, cp));
     },
     startAndProve: async (r) => {
@@ -663,6 +667,7 @@ test("explicit aborted-v9 acknowledgement preserves real aborted evidence and up
       nativeCommand("backup", backup, clone);
       nativeCommand("migrate", clone);
       nativeCommand("migrate-v10", clone);
+      nativeCommand("migrate-v11", clone);
       const c = lstatSync(clone);
       for (const r of [fresh.candidate, fresh.fallback])
         await databasePreflight(

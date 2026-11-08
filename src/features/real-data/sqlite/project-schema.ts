@@ -15,7 +15,35 @@ const time = (column: string) =>
 const text = (column: string, limit: number, nullable = false) =>
   `CHECK(${nullable ? `${column} IS NULL OR ` : ""}(project_text_valid(${column},${limit})=1))`;
 
-const ddl = `
+// v12 (#198): a direct one-click completion is its own lifecycle fact
+// (`completed`), and a later Reopen/Archive names its prior kind `direct`.
+// v11 is kept only to reconstruct the historical schema for the operator upgrade.
+const lifecycleV12 = `CREATE TABLE project_lifecycle_events (
+ ${id} ${owner}  command_id TEXT NOT NULL, event_kind TEXT NOT NULL CHECK(event_kind IN ('completed','reopened','archived')), revision_after INTEGER NOT NULL CHECK(revision_after>=0), cycle_before INTEGER NOT NULL CHECK(cycle_before>=0), cycle_after INTEGER NOT NULL CHECK(cycle_after>=0),
+ project_title_snapshot TEXT NOT NULL, prior_status TEXT NOT NULL CHECK(prior_status IN ('idea','active','paused','blocked','completed','archived')), resulting_status TEXT NOT NULL CHECK(resulting_status IN ('idea','active','paused','blocked','completed','archived')), prior_completion_kind TEXT CHECK(prior_completion_kind IS NULL OR prior_completion_kind IN ('review','legacy_without_review','direct')), prior_review_id TEXT, reason TEXT ${text("reason", 2000, true)}, mistaken_completion INTEGER NOT NULL DEFAULT 0 CHECK(mistaken_completion IN (0,1)), ${time("recorded_at")},
+ UNIQUE(user_id,project_id,id), UNIQUE(user_id,command_id), UNIQUE(project_id,revision_after),
+ FOREIGN KEY(user_id,project_id,prior_review_id) REFERENCES project_reviews(user_id,project_id,id) DEFERRABLE INITIALLY DEFERRED,
+ CHECK((event_kind='completed' AND prior_status IN ('idea','active','paused','blocked') AND resulting_status='completed' AND cycle_after=cycle_before) OR (event_kind='reopened' AND prior_status='completed' AND resulting_status='active' AND cycle_after=cycle_before+1) OR (event_kind='archived' AND prior_status<>'archived' AND resulting_status='archived' AND cycle_after=cycle_before)),
+ CHECK((prior_status='completed' AND prior_completion_kind IS NOT NULL AND ((prior_completion_kind='review' AND prior_review_id IS NOT NULL) OR (prior_completion_kind IN ('legacy_without_review','direct') AND prior_review_id IS NULL))) OR (prior_status<>'completed' AND prior_completion_kind IS NULL AND prior_review_id IS NULL)),
+ CHECK(mistaken_completion=0 OR (event_kind='reopened' AND reason IS NOT NULL))
+) STRICT;
+CREATE UNIQUE INDEX project_reopen_review_once ON project_lifecycle_events(prior_review_id) WHERE event_kind='reopened' AND prior_review_id IS NOT NULL;
+CREATE UNIQUE INDEX project_reopen_legacy_once ON project_lifecycle_events(user_id,project_id) WHERE event_kind='reopened' AND prior_completion_kind='legacy_without_review';
+CREATE UNIQUE INDEX project_complete_direct_once ON project_lifecycle_events(user_id,project_id,cycle_before) WHERE event_kind='completed';
+`;
+const legacyProjectLifecycleSchemaV11 = `CREATE TABLE project_lifecycle_events (
+ ${id} ${owner}  command_id TEXT NOT NULL, event_kind TEXT NOT NULL CHECK(event_kind IN ('reopened','archived')), revision_after INTEGER NOT NULL CHECK(revision_after>=0), cycle_before INTEGER NOT NULL CHECK(cycle_before>=0), cycle_after INTEGER NOT NULL CHECK(cycle_after>=0),
+ project_title_snapshot TEXT NOT NULL, prior_status TEXT NOT NULL CHECK(prior_status IN ('idea','active','paused','blocked','completed','archived')), resulting_status TEXT NOT NULL CHECK(resulting_status IN ('idea','active','paused','blocked','completed','archived')), prior_completion_kind TEXT CHECK(prior_completion_kind IS NULL OR prior_completion_kind IN ('review','legacy_without_review')), prior_review_id TEXT, reason TEXT ${text("reason", 2000, true)}, mistaken_completion INTEGER NOT NULL DEFAULT 0 CHECK(mistaken_completion IN (0,1)), ${time("recorded_at")},
+ UNIQUE(user_id,project_id,id), UNIQUE(user_id,command_id), UNIQUE(project_id,revision_after),
+ FOREIGN KEY(user_id,project_id,prior_review_id) REFERENCES project_reviews(user_id,project_id,id) DEFERRABLE INITIALLY DEFERRED,
+ CHECK((event_kind='reopened' AND prior_status='completed' AND resulting_status='active' AND cycle_after=cycle_before+1) OR (event_kind='archived' AND prior_status<>'archived' AND resulting_status='archived' AND cycle_after=cycle_before)),
+ CHECK((prior_status='completed' AND prior_completion_kind IS NOT NULL AND ((prior_completion_kind='review' AND prior_review_id IS NOT NULL) OR (prior_completion_kind='legacy_without_review' AND prior_review_id IS NULL))) OR (prior_status<>'completed' AND prior_completion_kind IS NULL AND prior_review_id IS NULL)),
+ CHECK(mistaken_completion=0 OR (event_kind='reopened' AND reason IS NOT NULL))
+) STRICT;
+CREATE UNIQUE INDEX project_reopen_review_once ON project_lifecycle_events(prior_review_id) WHERE event_kind='reopened' AND prior_review_id IS NOT NULL;
+CREATE UNIQUE INDEX project_reopen_legacy_once ON project_lifecycle_events(user_id,project_id) WHERE event_kind='reopened' AND prior_completion_kind='legacy_without_review';
+`;
+const ddl = (lifecycle: string) => `
 CREATE TABLE project_completion_criteria (
  ${id} ${owner} text TEXT NOT NULL ${text("text", 1000)}, sort_order INTEGER NOT NULL DEFAULT 0 CHECK(sort_order>=0),
  ${time("created_at")}, ${time("updated_at")}, archived_at TEXT CHECK(archived_at IS NULL OR codec_timestamp_valid(archived_at)),
@@ -62,18 +90,7 @@ CREATE TABLE project_review_resources (
 ) STRICT;
 CREATE UNIQUE INDEX project_resource_global ON project_review_resources(review_id,resource_id) WHERE criterion_id IS NULL;
 CREATE UNIQUE INDEX project_resource_criterion ON project_review_resources(review_id,criterion_id,resource_id) WHERE criterion_id IS NOT NULL;
-CREATE TABLE project_lifecycle_events (
- ${id} ${owner}  command_id TEXT NOT NULL, event_kind TEXT NOT NULL CHECK(event_kind IN ('reopened','archived')), revision_after INTEGER NOT NULL CHECK(revision_after>=0), cycle_before INTEGER NOT NULL CHECK(cycle_before>=0), cycle_after INTEGER NOT NULL CHECK(cycle_after>=0),
- project_title_snapshot TEXT NOT NULL, prior_status TEXT NOT NULL CHECK(prior_status IN ('idea','active','paused','blocked','completed','archived')), resulting_status TEXT NOT NULL CHECK(resulting_status IN ('idea','active','paused','blocked','completed','archived')), prior_completion_kind TEXT CHECK(prior_completion_kind IS NULL OR prior_completion_kind IN ('review','legacy_without_review')), prior_review_id TEXT, reason TEXT ${text("reason", 2000, true)}, mistaken_completion INTEGER NOT NULL DEFAULT 0 CHECK(mistaken_completion IN (0,1)), ${time("recorded_at")},
- UNIQUE(user_id,project_id,id), UNIQUE(user_id,command_id), UNIQUE(project_id,revision_after),
- FOREIGN KEY(user_id,project_id,prior_review_id) REFERENCES project_reviews(user_id,project_id,id) DEFERRABLE INITIALLY DEFERRED,
- CHECK((event_kind='reopened' AND prior_status='completed' AND resulting_status='active' AND cycle_after=cycle_before+1) OR (event_kind='archived' AND prior_status<>'archived' AND resulting_status='archived' AND cycle_after=cycle_before)),
- CHECK((prior_status='completed' AND prior_completion_kind IS NOT NULL AND ((prior_completion_kind='review' AND prior_review_id IS NOT NULL) OR (prior_completion_kind='legacy_without_review' AND prior_review_id IS NULL))) OR (prior_status<>'completed' AND prior_completion_kind IS NULL AND prior_review_id IS NULL)),
- CHECK(mistaken_completion=0 OR (event_kind='reopened' AND reason IS NOT NULL))
-) STRICT;
-CREATE UNIQUE INDEX project_reopen_review_once ON project_lifecycle_events(prior_review_id) WHERE event_kind='reopened' AND prior_review_id IS NOT NULL;
-CREATE UNIQUE INDEX project_reopen_legacy_once ON project_lifecycle_events(user_id,project_id) WHERE event_kind='reopened' AND prior_completion_kind='legacy_without_review';
-CREATE TABLE project_review_amendments (
+${lifecycle}CREATE TABLE project_review_amendments (
  ${id} ${owner}   review_id TEXT NOT NULL, command_id TEXT NOT NULL, revision_after INTEGER NOT NULL CHECK(revision_after>=0), kind TEXT NOT NULL CHECK(kind IN ('clarification','evidence_withdrawn','marked_mistaken')), review_resource_id TEXT, reason TEXT NOT NULL ${text("reason", 2000)}, ${time("recorded_at")},
  UNIQUE(user_id,command_id), FOREIGN KEY(user_id,project_id,review_id,review_resource_id) REFERENCES project_review_resources(user_id,project_id,review_id,id) DEFERRABLE INITIALLY DEFERRED,
  CHECK((kind='evidence_withdrawn')=(review_resource_id IS NOT NULL))
@@ -86,36 +103,41 @@ CREATE INDEX project_lifecycle_revision ON project_lifecycle_events(user_id,proj
 CREATE INDEX project_amend_revision ON project_review_amendments(user_id,project_id,revision_after DESC,id);
 `;
 
-export const projectSchema = ddl.replace(
-  /CREATE TABLE (project_[a-z_]+) \(([\s\S]*?)\) STRICT;/g,
-  (_match, table: string, columns: string) => {
-    const constraints = [
-      "FOREIGN KEY(user_id,project_id) REFERENCES projects(user_id,id) DEFERRABLE INITIALLY DEFERRED",
-    ];
-    if (
-      [
-        "project_reviews",
-        "project_lifecycle_events",
-        "project_review_amendments",
-      ].includes(table)
-    )
-      constraints.push(
-        "FOREIGN KEY(user_id,project_id,command_id) REFERENCES project_command_receipts(user_id,project_id,command_id) DEFERRABLE INITIALLY DEFERRED",
-      );
-    if (
-      [
-        "project_review_criteria",
-        "project_review_resources",
-        "project_review_amendments",
-      ].includes(table)
-    )
-      constraints.push(
-        "FOREIGN KEY(user_id,project_id,review_id) REFERENCES project_reviews(user_id,project_id,id) DEFERRABLE INITIALLY DEFERRED",
-      );
-    if (table === "project_review_criteria")
-      constraints.push(
-        "FOREIGN KEY(user_id,project_id,criterion_id) REFERENCES project_completion_criteria(user_id,project_id,id) DEFERRABLE INITIALLY DEFERRED",
-      );
-    return `CREATE TABLE ${table} (${columns}, ${constraints.join(",")} ) STRICT;`;
-  },
+const compose = (sql: string) =>
+  sql.replace(
+    /CREATE TABLE (project_[a-z_]+) \(([\s\S]*?)\) STRICT;/g,
+    (_match, table: string, columns: string) => {
+      const constraints = [
+        "FOREIGN KEY(user_id,project_id) REFERENCES projects(user_id,id) DEFERRABLE INITIALLY DEFERRED",
+      ];
+      if (
+        [
+          "project_reviews",
+          "project_lifecycle_events",
+          "project_review_amendments",
+        ].includes(table)
+      )
+        constraints.push(
+          "FOREIGN KEY(user_id,project_id,command_id) REFERENCES project_command_receipts(user_id,project_id,command_id) DEFERRABLE INITIALLY DEFERRED",
+        );
+      if (
+        [
+          "project_review_criteria",
+          "project_review_resources",
+          "project_review_amendments",
+        ].includes(table)
+      )
+        constraints.push(
+          "FOREIGN KEY(user_id,project_id,review_id) REFERENCES project_reviews(user_id,project_id,id) DEFERRABLE INITIALLY DEFERRED",
+        );
+      if (table === "project_review_criteria")
+        constraints.push(
+          "FOREIGN KEY(user_id,project_id,criterion_id) REFERENCES project_completion_criteria(user_id,project_id,id) DEFERRABLE INITIALLY DEFERRED",
+        );
+      return `CREATE TABLE ${table} (${columns}, ${constraints.join(",")} ) STRICT;`;
+    },
+  );
+export const projectSchema = compose(ddl(lifecycleV12));
+export const legacyProjectSchemaV11 = compose(
+  ddl(legacyProjectLifecycleSchemaV11),
 );

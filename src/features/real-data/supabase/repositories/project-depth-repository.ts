@@ -11,6 +11,9 @@ export type ProjectReviewContext = {
   completion_cycle: string;
   fingerprint: string;
   current_completion_review_id: string | null;
+  // #198: what completed the current cycle; null unless status is completed.
+  current_completion_kind: "review" | "direct" | "legacy_without_review" | null;
+  current_completed_at: string | null;
   criteria: {
     id: string; text: string; sort_order: string;
     archived_at: string | null; archive_reason: string | null;
@@ -57,15 +60,27 @@ export async function readProjectDepth(
     amendments: ProjectDepthRead["amendments"]; items: ProjectDepthRead["historyItems"]; next_revision: string | null;
   };
   const current = context.data as unknown as ProjectReviewContext;
+  current.current_completion_kind = null;
+  current.current_completed_at = null;
   let completionReviewHistoryBefore: string | null = null;
+  if (current.status === "completed" && !current.current_completion_review_id) {
+    const direct = await client.from("project_lifecycle_events").select("recorded_at")
+      .eq("user_id", userId).eq("project_id", projectId).eq("event_kind", "completed")
+      .filter("cycle_before", "eq", current.completion_cycle).maybeSingle();
+    if (direct.error) throw new Error("Project-Abschluss konnte nicht geladen werden.");
+    current.current_completion_kind = direct.data ? "direct" : "legacy_without_review";
+    current.current_completed_at = direct.data?.recorded_at ?? null;
+  }
   if (current.status === "completed" && current.current_completion_review_id) {
     // Cast in PostgreSQL so a bigint revision never rounds in JSON/JavaScript.
-    const completion = await client.from("project_reviews").select("revision_after::text")
+    const completion = await client.from("project_reviews").select("revision_after::text,reviewed_at")
       .eq("user_id", userId).eq("project_id", projectId)
       .eq("id", current.current_completion_review_id).eq("decision", "completed")
       .filter("completion_cycle", "eq", current.completion_cycle).single();
     if (completion.error || !completion.data) throw new Error("Abschluss-Review konnte nicht geladen werden.");
     completionReviewHistoryBefore = (BigInt(completion.data.revision_after) + BigInt(1)).toString();
+    current.current_completion_kind = "review";
+    current.current_completed_at = completion.data.reviewed_at;
   }
   const snapshotResourceIds = [...new Set(detail.resources.map((row) => row.resource_id))];
   const [available, relations] = snapshotResourceIds.length ? await Promise.all([
@@ -74,7 +89,7 @@ export async function readProjectDepth(
   ]) : [{ data: [], error: null }, { data: [], error: null }];
   if (available.error || relations.error) throw new Error("Project-Resource-Verfügbarkeit konnte nicht geladen werden.");
   return {
-    context: context.data as unknown as ProjectReviewContext,
+    context: current,
     reviews: detail.reviews,
     criteriaSnapshots: detail.criteria,
     resourceSnapshots: detail.resources,

@@ -8,14 +8,14 @@ vi.mock("server-only", () => ({}));
 import { initializeCanonicalSchema } from "./canonical-schema";
 import { routeSavedInboxItem, saveInboxClarification } from "./commands/inbox-commands";
 import { issueOwnerContext } from "./owner-context";
-import { upgradePreviewSchemaV10 } from "./preview-upgrade";
+import { upgradePreviewSchemaV10, upgradePreviewSchemaV11 } from "./preview-upgrade";
 import { createSqliteInboxRepository } from "./repositories/inbox-repository";
 import { schemaFingerprint } from "./reset-schema";
 import { configureConnection, registerCodecs, SqliteRuntime } from "./runtime";
 
 // #192 operator v10→v11 rehearsal on disposable files only.
 const at = "2026-11-07T10:00:00.123456Z";
-function fingerprint(options: { legacyV10?: boolean }) {
+function fingerprint(options: { legacyV10?: boolean; legacyV11?: boolean }) {
   const db = new Database(":memory:");
   try {
     registerCodecs(db);
@@ -85,7 +85,8 @@ it("upgrades a populated v10 database in place without changing any row or Task 
 
   expect(lstatSync(f.path).ino).toBe(inode);
   expect(read(f.path, allRows)).toEqual(before);
-  expect(read(f.path, schemaFingerprint)).toBe(fingerprint({}));
+  // Exactly historical v11; current releases continue with v11→v12 (#198).
+  expect(read(f.path, schemaFingerprint)).toBe(fingerprint({ legacyV11: true }));
   read(f.path, (db) => {
     expect(db.pragma("user_version", { simple: true })).toBe(BigInt(11));
     expect(db.prepare("SELECT schema_version FROM runtime_metadata").get()).toEqual({ schema_version: BigInt(11) });
@@ -99,6 +100,7 @@ it("upgrades a populated v10 database in place without changing any row or Task 
 it("upgraded data admits untitled captures and keeps every original capture immutable", async () => {
   const f = v10Database();
   upgradePreviewSchemaV10(f.path);
+  upgradePreviewSchemaV11(f.path);
   const store = new SqliteRuntime(f.path), context = issueOwnerContext(f.owner);
   let id: string;
   try {

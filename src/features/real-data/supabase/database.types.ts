@@ -107,9 +107,9 @@ type ProjectDepthTables = {
   }>;
   project_lifecycle_events: ProjectDepthTable<{
     id: string; user_id: string; project_id: string; command_id: string;
-    event_kind: "reopened" | "archived"; recorded_at: string; revision_after: number;
+    event_kind: "completed" | "reopened" | "archived"; recorded_at: string; revision_after: number;
     cycle_before: number; cycle_after: number; project_title_snapshot: string;
-    prior_status: string; resulting_status: string; prior_completion_kind: "review" | "legacy_without_review" | null;
+    prior_status: string; resulting_status: string; prior_completion_kind: "review" | "legacy_without_review" | "direct" | null;
     prior_review_id: string | null; reason: string | null; mistaken_completion: boolean;
   }>;
   project_review_amendments: ProjectDepthTable<{
