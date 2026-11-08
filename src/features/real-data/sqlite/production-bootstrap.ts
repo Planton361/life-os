@@ -4,6 +4,7 @@ import { z } from "zod";
 import { initializeCanonicalSchema } from "./canonical-schema";
 import { reserveFreshDatabase } from "./file-boundary";
 import { timestamp, uuid } from "./codecs";
+import { seedStandardAreas } from "./standard-areas";
 import {
   aggregatePreflight,
   assertCanonicalCatalog,
@@ -53,6 +54,7 @@ export function bootstrapProductionDatabase(path: string, input: unknown) {
       db.prepare(
         "INSERT INTO profiles(id,display_name,timezone,created_at,updated_at) VALUES(?,?,?,?,?)",
       ).run(owner.ownerId, owner.displayName, owner.timezone, now, now);
+      seedStandardAreas(db, owner.ownerId, now);
       db.pragma(`user_version=${schemaVersion}`);
     }).immediate();
     // Readiness promotion and invariant checks share a transaction. An error

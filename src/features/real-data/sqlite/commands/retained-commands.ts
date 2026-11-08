@@ -20,6 +20,7 @@ import {
 } from "./nutrition-commands";
 import { createEducationLiteratureInputSchema } from "../../schemas/resource.schemas";
 import { linkResource } from "./resource-commands";
+import { standardAreas } from "../standard-areas";
 
 const definitions = {
   journal: {
@@ -270,8 +271,9 @@ export function ownedArea(
     id,
     owner,
     key,
-    key[0].toUpperCase() + key.slice(1),
-    { coding: 80, education: 90, work: 100, life: 110 }[key as "life"] ?? 0,
+    standardAreas[key as keyof typeof standardAreas]?.name ??
+      key[0].toUpperCase() + key.slice(1),
+    standardAreas[key as keyof typeof standardAreas]?.sortOrder ?? 0,
     at,
     at,
   );
