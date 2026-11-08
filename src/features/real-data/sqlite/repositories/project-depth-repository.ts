@@ -114,6 +114,12 @@ export async function writeSqliteProjectDepth(
         message:
           "Die Grenze für diesen Project-Review wurde erreicht. Die Eingabe wurde nicht gespeichert.",
       };
+    if (code === "PROJECT_COMPLETION_PRECONDITION")
+      return {
+        ok: false,
+        message:
+          "Für den Abschluss braucht das Project ein gewünschtes Ergebnis, mindestens ein aktives Kriterium und die ausdrückliche Bestätigung des Ergebnisses.",
+      };
     return {
       ok: false,
       message: /^PROJECT_/.test(code)

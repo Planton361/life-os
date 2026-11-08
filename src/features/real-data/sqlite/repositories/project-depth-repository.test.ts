@@ -764,6 +764,27 @@ it("denies unauthenticated/forged/other-owner contexts and cross-Project Criteri
     f.store.close();
   }
 });
+it("explains a rejected completion without a desired result instead of leaking the code", async () => {
+  const f = fixture();
+  try {
+    f.command("criterion.create", { text: "Needs result", sort_order: "0" });
+    expect(
+      await writeSqliteProjectDepth(
+        f.store,
+        f.context,
+        f.input("review.submit", f.review()),
+      ),
+    ).toEqual({
+      ok: false,
+      message:
+        "Für den Abschluss braucht das Project ein gewünschtes Ergebnis, mindestens ein aktives Kriterium und die ausdrückliche Bestätigung des Ergebnisses.",
+    });
+    expect(f.read().context.status).toBe("active");
+    expect(f.read().reviews).toHaveLength(0);
+  } finally {
+    f.store.close();
+  }
+});
 it("fails closed at Criteria/Work/Resource and serialized context bounds", () => {
   for (const kind of ["criteria", "work", "resources", "bytes"]) {
     const f = fixture();
