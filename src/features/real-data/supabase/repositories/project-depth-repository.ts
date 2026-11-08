@@ -116,6 +116,9 @@ export async function writeProjectDepth(
   if (/PROJECT_.*LIMIT|PROJECT_PAYLOAD_LIMIT/.test(code)) {
     return { ok: false, message: "Die Grenze für diesen Project-Review wurde erreicht. Die Eingabe wurde nicht gespeichert." };
   }
+  if (/PROJECT_COMPLETION_PRECONDITION/.test(code)) {
+    return { ok: false, message: "Für den Abschluss braucht das Project ein gewünschtes Ergebnis, mindestens ein aktives Kriterium und die ausdrückliche Bestätigung des Ergebnisses." };
+  }
   if (/PROJECT_/.test(code)) return { ok: false, message: code };
   return { ok: false, message: "Project-Änderung konnte nicht gespeichert werden." };
 }

@@ -170,6 +170,7 @@ jobs:
           node tests/sqlite/issue-142-calendar-hydration-proof.mjs
           node tests/sqlite/issue-190-browser-proof.mjs
           node tests/sqlite/issue-192-browser-proof.mjs
+          node tests/sqlite/issue-196-browser-proof.mjs
           node tests/sqlite/issue-142-browser-proof.mjs --standard-negative --linux
 
       - name: Preview composition and isolated reset browser proof (Linux x64)
@@ -200,6 +201,7 @@ jobs:
           require issue-172 test-results/issue-172/
           require issue-190 "test-results/issue-190/*.png"
           require issue-192 "test-results/issue-192/*.png" test-results/issue-192/proof.json
+          require issue-196 "test-results/issue-196/*.png" test-results/issue-196/proof.json
           exit "$missing"
 
       - name: Preserve disposable browser proof evidence
@@ -225,6 +227,7 @@ jobs:
             test-results/issue-170/synthetic-injection/
             test-results/issue-172/
             test-results/issue-192/
+            test-results/issue-196/
           if-no-files-found: warn
           retention-days: 14
 

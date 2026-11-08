@@ -1138,6 +1138,7 @@ export function ProjectDepthHistory({ depth }: { depth: Depth }) {
   const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
   const dialog = useRef<HTMLDialogElement>(null);
+  const router = useRouter();
   const dialogId = "project-history-dialog";
   const titleId = "project-history-title";
 
@@ -1172,6 +1173,17 @@ export function ProjectDepthHistory({ depth }: { depth: Depth }) {
   function closeHistory() {
     setOpen(false);
     trigger.current?.focus();
+    // Closing ends the deep link; later refreshes must not reopen a pinned page.
+    const url = new URL(window.location.href);
+    const hash = url.hash.slice(1);
+    if (
+      url.searchParams.has("historyBefore") ||
+      hash === "project-history" ||
+      hash.startsWith("project-review-")
+    ) {
+      url.searchParams.delete("historyBefore");
+      router.replace(`${url.pathname}${url.search}`, { scroll: false });
+    }
   }
 
   if (!hasHistory) return null;
