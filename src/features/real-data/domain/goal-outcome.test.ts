@@ -172,7 +172,7 @@ describe("Goal outcome semantics", () => {
     });
     expect(summary.deferredCriteriaCount).toBe(1);
     expect(summary.readyToAchieve).toBe(false);
-    expect(summary.blockers).toContain("1 Kriterium/Kriterien deferred.");
+    expect(summary.blockers).toContain("1 Kriterium ist auf „Später prüfen“ gesetzt.");
   });
 
   it("treats a retracted revision as open and chooses the canonical next step", () => {

@@ -3,6 +3,7 @@
 import { withSubmittedDatasetEpoch } from "./submitted-dataset";
 import { writeTaskDependency, getResourceRepository, getTaskRepository, getProjectRepository, writeProjectMilestone, setProjectResourceRole, writeTaskStep } from "../runtime/facade";
 import { dependencyErrorMessage } from "../supabase/repositories/task-dependency-repository";
+import { goalErrorMessage } from "../domain/goal-error-messages";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createAuthenticatedApplicationContext } from "@/features/real-data/runtime/application-context";
@@ -127,9 +128,7 @@ function outcomeResult(
     ? { status: "success", message }
     : {
         status: "error",
-        message:
-          result.error?.message ??
-          "Die Ziel-Änderung konnte nicht gespeichert werden.",
+        message: goalErrorMessage(result.error?.message),
       };
 }
 

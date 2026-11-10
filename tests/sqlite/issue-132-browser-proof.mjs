@@ -320,6 +320,38 @@ try {
   checks.push(
     "flat and Empty Goal; identity/criterion/milestone/association writes reload; task completion does not achieve milestone or Goal; explicit milestone/Goal review, achieved/reopen/history",
   );
+  // #200: a stale second tab gets a readable message, never a raw GOAL_* code.
+  const tab = await context.newPage();
+  tab.on("pageerror", (e) => errors.push(e.message));
+  const review = async (p) => {
+    await p
+      .locator('[data-goal-detail-variant="B8"] footer')
+      .getByRole("button", { name: "Ziel prüfen", exact: true })
+      .click();
+    return p.getByRole("dialog", { name: "Ziel prüfen", exact: true });
+  };
+  await tab.goto(`${app.origin}/goals/${ids.flow}`);
+  const staleReview = await review(tab);
+  await go(ids.flow);
+  const freshReview = await review(page);
+  page.once("dialog", (d) => d.accept());
+  await freshReview
+    .getByRole("button", { name: "Ziel erreicht bestätigen", exact: true })
+    .click();
+  await expect(freshReview).not.toBeVisible();
+  tab.once("dialog", (d) => d.accept());
+  await staleReview
+    .getByRole("button", { name: "Ziel erreicht bestätigen", exact: true })
+    .click();
+  await expect(staleReview.getByRole("alert")).toHaveText(
+    "Der Stand hat sich geändert. Lade das Goal neu und wiederhole die Entscheidung.",
+  );
+  await tab.close();
+  await page.reload();
+  await expect(root.locator("[data-goal-status]")).toHaveText("erreicht");
+  checks.push(
+    "stale second-tab achievement rejected with readable German message, no raw code; Goal stays achieved once",
+  );
   await go(ids.archived);
   await expect(root.locator("button:visible")).toHaveCount(1); // read-only criterion viewer
   await expect(
