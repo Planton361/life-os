@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { skillTaskReadiness, skillWorkAction } from "./skill-guidance";
+import {
+  evidenceOperationLabel,
+  skillTaskReadiness,
+  skillWorkAction,
+} from "./skill-guidance";
 import type { SkillDevelopmentRead } from "@/features/real-data/domain/skill-development";
 
 const read = {
@@ -113,5 +117,19 @@ describe("Skill work starts from canonical Task dependencies", () => {
       ).kind,
     ).toBe("restore");
     expect(skillTaskReadiness(graph, "a").availability).toBe("READY");
+  });
+  it("labels observation history operations instead of raw codes", () => {
+    expect(
+      ["baseline", "create", "correct", "withdraw", "restore"].map(
+        evidenceOperationLabel,
+      ),
+    ).toEqual([
+      "Übernommen",
+      "Festgehalten",
+      "Korrigiert",
+      "Zurückgezogen",
+      "Wiederhergestellt",
+    ]);
+    expect(evidenceOperationLabel("unknown")).toBe("Geändert");
   });
 });

@@ -1,7 +1,12 @@
 import type { PresentationRead } from "@/features/real-data/runtime/presentation-read";
 import Link from "next/link";
 import { SkillDisclosureBoundary } from "./skill-disclosure-boundary";
-import { skillWorkAction, skillTaskReadiness } from "./skill-guidance";
+import {
+  evidenceOperationLabel,
+  skillWorkAction,
+  skillTaskReadiness,
+} from "./skill-guidance";
+import { taskStatusLabels } from "./task-status-labels";
 import { actionClass, fieldClass } from "./form-styles";
 import type { ReactNode } from "react";
 import {
@@ -1478,7 +1483,7 @@ export function SkillWorkbench({
                                 ? `Abgeschlossen · ${t.completed_at ? new Date(t.completed_at).toLocaleDateString("de-DE", { timeZone: read.timezone }) : "Datum unbekannt"}`
                                 : t.status === "canceled"
                                   ? "Abgebrochen"
-                                  : t.status}
+                                  : (taskStatusLabels[t.status] ?? "Offen")}
                               {t.completed_at && t.linked_at > t.completed_at
                                 ? " · Nachträglich verknüpft"
                                 : ""}
@@ -1619,7 +1624,8 @@ export function SkillWorkbench({
                     {v.title} · Version {v.revision}
                   </h3>
                   <p className="text-xs">
-                    {v.operation} · {v.recorded_at.slice(0, 10)} · Beobachtung{" "}
+                    {evidenceOperationLabel(v.operation)} ·{" "}
+                    {v.recorded_at.slice(0, 10)} · Beobachtung{" "}
                     {v.evidence_date}
                   </p>
                   <p className="whitespace-pre-wrap break-words text-sm">

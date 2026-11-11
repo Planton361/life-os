@@ -76,3 +76,14 @@ export function skillWorkAction(
     return result("planned", "Fokus wählen");
   return result("create", "Übungsaufgabe anlegen");
 }
+
+// Readable history label for a stored observation revision operation.
+const evidenceOperationLabels: Record<string, string> = {
+  baseline: "Übernommen",
+  create: "Festgehalten",
+  correct: "Korrigiert",
+  withdraw: "Zurückgezogen",
+  restore: "Wiederhergestellt",
+};
+export const evidenceOperationLabel = (operation: string) =>
+  evidenceOperationLabels[operation] ?? "Geändert";

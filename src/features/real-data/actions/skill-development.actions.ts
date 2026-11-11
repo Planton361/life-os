@@ -32,7 +32,7 @@ export async function skillDevelopmentCommand(input: unknown) {
           : /ACK_REQUIRED/.test(error.message)
             ? "Bestätige die noch offenen Lernschritte."
             : /FUTURE/.test(error.message)
-              ? "Evidence benötigt ein heutiges oder vergangenes Datum."
+              ? "Eine Beobachtung benötigt ein heutiges oder vergangenes Datum."
               : "Die Änderung konnte nicht gespeichert werden. Prüfe Lifecycle, Quelle und Eingaben.",
     };
   const result = data as {
