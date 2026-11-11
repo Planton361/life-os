@@ -22,6 +22,7 @@ import {
   resolveGoalAchievementBasisEventId,
 } from "../../domain/goal-outcome";
 import type { TaskDependencyGraph } from "../../domain/task-dependencies";
+import { knownGoalErrorMessage } from "../../domain/goal-error-messages";
 import type {
   GoalAchieveInput,
   GoalAchievementAmendInput,
@@ -117,82 +118,7 @@ function dbFailure(
   error?: { message?: string | null },
 ): OutcomeFailure {
   const message = error?.message ?? "";
-  const known: Record<string, string> = {
-    GOAL_ACHIEVEMENT_REQUIRES_ACTIVE:
-      "Nur aktive Goals können erreicht werden. Goal zuerst aktivieren.",
-    GOAL_ACHIEVEMENT_NO_ACTIVE_CRITERIA:
-      "Mindestens ein aktives Kriterium ist erforderlich.",
-    GOAL_ACHIEVEMENT_CRITERIA_NOT_MET:
-      "Alle aktiven Kriterien müssen erfüllt sein.",
-    GOAL_ACHIEVEMENT_MILESTONES_NOT_ACHIEVED:
-      "Alle nicht archivierten Etappen müssen erreicht sein.",
-    GOAL_ACHIEVEMENT_GOAL_ARCHIVED:
-      "Ein archiviertes Goal kann nicht erreicht werden.",
-    GOAL_ARCHIVED: "Ein archiviertes Goal kann nicht verändert werden.",
-    GOAL_CRITERION_ARCHIVED:
-      "Ein archiviertes Kriterium kann nicht bewertet werden.",
-    GOAL_CRITERION_ACHIEVED_REQUIRES_REOPEN:
-      "Öffne das Ziel zuerst wieder, bevor du das Kriterium änderst.",
-    GOAL_DEFERRED_EVALUATION_SHAPE:
-      "Deferred-Bewertungen dürfen keinen Wert oder keine Einheit enthalten.",
-    GOAL_NUMERIC_EVALUATION_UNIT:
-      "Die Einheit der Bewertung muss exakt zum Kriterium passen.",
-    GOAL_BOOLEAN_EVALUATION_SHAPE:
-      "Boolean-Kriterien akzeptieren nur true oder false.",
-    GOAL_PROJECT_SUPPORT_TARGET_INVALID:
-      "Das Project gehört nicht zu diesem Goal oder ist archiviert.",
-    GOAL_TASK_SUPPORT_TARGET_INVALID:
-      "Der Task gehört nicht mehr zum aktiven Benutzerkontext.",
-    GOAL_TASK_SUPPORT_GOAL_CONFLICT:
-      "Der Task hat widersprüchliche direkte und geerbte Goal-Zuordnungen.",
-    GOAL_TASK_SUPPORT_GOAL_MISMATCH: "Der Task gehört nicht zu diesem Goal.",
-    GOAL_MILESTONE_ARCHIVED:
-      "Eine archivierte Etappe kann nicht verknüpft werden.",
-    GOAL_MILESTONE_STATUS_TRANSITION_INVALID:
-      "Dieser Etappenstatuswechsel ist im akzeptierten Lebenszyklus nicht erlaubt.",
-    GOAL_STALE_STATE:
-      "Der Stand hat sich geändert. Lade das Goal neu und wiederhole die Entscheidung.",
-    GOAL_COMMAND_FINGERPRINT_MISMATCH:
-      "Diese Entscheidung wurde bereits mit einem anderen Inhalt verwendet.",
-    GOAL_MILESTONE_ACHIEVE_REQUIRES_ACTIVE:
-      "Eine Etappe muss aktiv sein, bevor sie erreicht werden kann.",
-    GOAL_MILESTONE_OPEN_EPISODE_NOT_FOUND:
-      "Für diese Etappe wurde keine offene Erreichungsepisode gefunden.",
-    GOAL_OPEN_EPISODE_NOT_FOUND:
-      "Für dieses Goal wurde keine offene Erreichungsepisode gefunden.",
-    GOAL_REOPEN_REQUIRES_ACHIEVED:
-      "Nur ein erreichtes Goal kann wieder geöffnet werden.",
-    GOAL_MILESTONE_EVENT_NOT_FOUND:
-      "Die Etappenentscheidung ist im aktuellen Benutzerkontext nicht verfügbar.",
-    GOAL_EVENT_NOT_FOUND:
-      "Die Zielentscheidung ist im aktuellen Benutzerkontext nicht verfügbar.",
-    GOAL_EVENT_CORRECTION_REASON_REQUIRED:
-      "Für eine Verlaufsänderung ist ein Begründung erforderlich.",
-    GOAL_EVIDENCE_ACTION_INVALID: "Diese Belegänderung ist nicht erlaubt.",
-    GOAL_EVIDENCE_REFERENCE_REQUIRED:
-      "Eine bestehende Belegreferenz muss ausgewählt werden.",
-    GOAL_EVIDENCE_REFERENCE_NOT_FOUND:
-      "Die zu ändernde Belegreferenz wurde nicht gefunden.",
-    GOAL_EVIDENCE_REFERENCE_ALREADY_SUPERSEDED:
-      "Diese Belegreferenz wurde bereits korrigiert; verwende die letzte Referenz der Kette.",
-    GOAL_EVIDENCE_REASON_REQUIRED:
-      "Für Ersetzen, Zurücknehmen oder retrospektives Ergänzen ist ein Grund erforderlich.",
-    GOAL_EVIDENCE_SOURCE_REQUIRED:
-      "Für diese Belegänderung muss eine aktive Quelle ausgewählt werden.",
-    GOAL_EVIDENCE_REPLACEMENT_SAME_SOURCE:
-      "Ein Ersatz muss auf eine neue zulässige Quelle zeigen.",
-    GOAL_RETROSPECTIVE_SUPPLEMENT_REQUIRED:
-      "Retrospektive Ergänzungen müssen ausdrücklich markiert werden.",
-    GOAL_EVIDENCE_SOURCE_INVALID:
-      "Die Belegquelle ist nicht mehr aktiv oder gehört nicht zum aktuellen Benutzer.",
-    GOAL_EVIDENCE_SOURCE_TYPE_INVALID:
-      "Dieser Belegtyp ist für diese Entscheidung nicht erlaubt.",
-    GOAL_CONTEXT_AREA_INVALID:
-      "Die Area gehört nicht zum aktuellen Benutzerkontext.",
-  };
-  const knownMessage = Object.entries(known).find(([key]) =>
-    message.includes(key),
-  )?.[1];
+  const knownMessage = knownGoalErrorMessage(message);
   if (knownMessage) return failure("conflict", knownMessage);
   return failure("adapter_unavailable", `Unable to ${operation}.`);
 }

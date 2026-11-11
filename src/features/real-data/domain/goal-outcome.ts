@@ -768,7 +768,11 @@ export function buildGoalOutcomeSummary(
     );
   }
   if (deferredCriteriaCount > 0) {
-    blockers.push(`${deferredCriteriaCount} Kriterium/Kriterien deferred.`);
+    blockers.push(
+      deferredCriteriaCount === 1
+        ? "1 Kriterium ist auf „Später prüfen“ gesetzt."
+        : `${deferredCriteriaCount} Kriterien sind auf „Später prüfen“ gesetzt.`,
+    );
   }
   const unfinishedMilestones = activeMilestones.filter(
     (milestone) => milestone.status !== "achieved",
