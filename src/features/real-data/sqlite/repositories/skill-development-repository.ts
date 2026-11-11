@@ -172,7 +172,7 @@ export async function writeSqliteSkillDevelopment(
           : /ACK_REQUIRED/.test(code)
             ? "Bestätige die noch offenen Lernschritte."
             : /FUTURE/.test(code)
-              ? "Evidence benötigt ein heutiges oder vergangenes Datum."
+              ? "Eine Beobachtung benötigt ein heutiges oder vergangenes Datum."
               : "Die Änderung konnte nicht gespeichert werden. Prüfe Lifecycle, Quelle und Eingaben.",
     };
   }

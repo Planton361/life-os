@@ -18,17 +18,7 @@ import { TaskObjectMenu } from "./task-object-menu";
 import { taskStepProgress } from "./task-step-progress";
 import { taskTextFields } from "./task-text";
 import { TaskResources, taskResources } from "./task-resources";
-
-const taskStatusLabels: Record<string, string> = {
-  inbox: "Inbox",
-  planned: "Geplant",
-  active: "In Arbeit",
-  waiting: "Wartend",
-  done: "Abgeschlossen",
-  canceled: "Abgebrochen",
-  someday: "Irgendwann",
-  archived: "Archiviert",
-};
+import { taskStatusLabels } from "./task-status-labels";
 
 function localDate(value: string, timezone: string) {
   return new Intl.DateTimeFormat("de-DE", {
