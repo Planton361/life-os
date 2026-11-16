@@ -23,6 +23,10 @@ import {
 
 import { getCurrentLifeOsProfileId } from "@/features/profile-data/profile-cookie";
 import { createAuthenticatedApplicationContext } from "@/features/real-data/runtime/application-context";
+import {
+  taskScheduledMessage,
+  taskTimeWriteFailedMessage,
+} from "@/features/real-data/domain/task-schedule-messages";
 
 
 export type TaskScheduleActionResult = {
@@ -565,7 +569,7 @@ export async function scheduleTaskForTodayAction(
 
     if (!result.ok) {
       return {
-        message: "Der Task konnte nicht in Supabase geplant werden.",
+        message: taskTimeWriteFailedMessage("schedule"),
         status: "error",
       };
     }
@@ -573,10 +577,7 @@ export async function scheduleTaskForTodayAction(
     revalidateTaskProjectionRoutes(result.data.id);
 
     return {
-      message:
-        mode === "schedule"
-          ? "Task für heute terminiert."
-          : "Task für heute geplant.",
+      message: taskScheduledMessage(mode, plannedDate, localDateLabel()),
       status: "success",
       taskId: result.data.id,
     };
@@ -953,7 +954,7 @@ export async function unscheduleTaskAction(
 
     if (!result.ok) {
       return {
-        message: "Der Task konnte in Supabase nicht entterminiert werden.",
+        message: taskTimeWriteFailedMessage("unschedule"),
         status: "error",
       };
     }
@@ -1001,7 +1002,7 @@ export async function rescheduleTaskAction(
 
     if (!result.ok) {
       return {
-        message: "Der Task konnte in Supabase nicht umgeplant werden.",
+        message: taskTimeWriteFailedMessage("reschedule"),
         status: "error",
       };
     }
