@@ -1912,7 +1912,7 @@ function buildProfileDashboardViewModel(
       : {
           label: "Nächster Schritt",
           title: "Heute planen",
-          detail: "Plane oder terminiere vorhandene Tasks in Today.",
+          detail: "Plane oder terminiere vorhandene Tasks im Calendar.",
         },
     currentTask: activeTask
       ? taskToCurrentTask(activeTask, sources.currentTaskSteps)
@@ -1922,7 +1922,7 @@ function buildProfileDashboardViewModel(
           plannedTimeLabel: null,
           statusLabel: "Empty",
           title: "Kein aktueller Fokus",
-          contextLabel: "Plane oder terminiere vorhandene Tasks in Today.",
+          contextLabel: "Plane oder terminiere vorhandene Tasks im Calendar.",
           actionLabel: "Noch kein Task ausgewählt",
           stepProgress: null,
           accent: "var(--text-muted)",
