@@ -123,6 +123,30 @@ it("real action distinguishes missing / clear / add / change and rejects bad dat
   });
   expect(row()).toEqual(before);
 });
+it("moves the day of a timed Task only with its Calendar block; untimed Tasks keep an editable day", async () => {
+  const before = row();
+  for (const due of ["2026-10-12", undefined]) {
+    const moved = form(due);
+    moved.set("plannedDate", "2026-10-11");
+    expect(await updatePortfolioTaskAction(moved)).toMatchObject({
+      status: "error",
+      message:
+        "Der Tag einer terminierten Task wird über ihren Zeitblock im Calendar geändert.",
+    });
+    expect(row()).toEqual(before);
+  }
+  const unscheduled = await repos.tasks.unscheduleTask({ ...scope, taskId: id });
+  if (!unscheduled.ok) throw new Error(unscheduled.error.message);
+  const moved = form();
+  moved.set("plannedDate", "2026-10-11");
+  expect(await updatePortfolioTaskAction(moved)).toMatchObject({
+    status: "success",
+  });
+  expect(row()).toMatchObject({
+    planned_date: "2026-10-11",
+    scheduled_start_at: null,
+  });
+});
 it("rejects stale / missing tokens, foreign targets, Zod failures and unauthenticated or non-Manual writes", async () => {
   const before = row();
   const stale = form("2026-10-12");
