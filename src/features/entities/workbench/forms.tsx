@@ -650,9 +650,11 @@ export function EntityForm({
                         field("durationMinutes", "Duration (min)", "number")
                       )}
                       {field("dueAt", "Deadline", "date")}
-                      {sourceOwned ? (
+                      {sourceOwned || values.scheduled_start_at ? (
                         <p>
-                          Planung über die verantwortliche Quelle
+                          {sourceOwned
+                            ? "Planung über die verantwortliche Quelle"
+                            : "Tag über den Zeitblock im Calendar ändern"}
                           <input
                             type="hidden"
                             name="plannedDate"

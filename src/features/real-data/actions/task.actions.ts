@@ -269,7 +269,7 @@ export async function updatePortfolioTaskAction(
     if (!parsed.success)
       return { message: "Prüfe die Task-Felder.", status: "error" };
     let deadlinePatch: { dueAt?: string | null } = {};
-    if (formData.has("dueAt")) {
+    if (formData.has("dueAt") || parsed.data.plannedDate !== undefined) {
       if (!z.uuid().safeParse(parsed.data.taskId).success || !parsed.data.expectedUpdatedAt)
         return { status: "error", message: "Die Task benötigt einen aktuellen Stand. Lade die Seite neu." };
       try {
@@ -277,8 +277,17 @@ export async function updatePortfolioTaskAction(
         const task = current.data.find(task => task.id === parsed.data.taskId && !task.archived_at);
         if (!task || task.updated_at !== parsed.data.expectedUpdatedAt)
           return { status: "error", message: "Die Task wurde zwischenzeitlich geändert. Lade die Seite neu." };
-        const zone = await context.auth.data.reads.profileTimezone();
-        deadlinePatch = taskDeadlinePatch(formString(formData, "dueAt"), task.due_at, zone);
+        // Calendar owns time blocks: the day of a timed Task moves only with its block.
+        if (
+          task.scheduled_start_at &&
+          parsed.data.plannedDate !== undefined &&
+          parsed.data.plannedDate !== task.planned_date
+        )
+          return { status: "error", message: "Der Tag einer terminierten Task wird über ihren Zeitblock im Calendar geändert." };
+        if (formData.has("dueAt")) {
+          const zone = await context.auth.data.reads.profileTimezone();
+          deadlinePatch = taskDeadlinePatch(formString(formData, "dueAt"), task.due_at, zone);
+        }
       } catch {
         return { status: "error", message: "Die Deadline oder Profil-Zeitzone konnte nicht bestätigt werden." };
       }
