@@ -223,6 +223,22 @@ Focused Playwright proof with:
 - reload after writes;
 - unique test data.
 
+### Live UI review – presentation-only changes
+
+For layout, styling or copy changes that do not alter navigation, writes or
+persistence, the user's live review replaces a new Playwright proof:
+
+- run `pnpm dev:raw` (plain `next dev` with Fast Refresh, no Supabase Target
+  needed) and review at `http://localhost:3000` in the default, read-only Demo
+  profile; Empty is selectable in Settings;
+- keep the server running for the whole review round; edits appear on save;
+- after each visual change name the URL and wait for "accepted" or a change
+  request; open the PR only after acceptance.
+
+Tier 1 checks, CI and existing browser proofs still apply. Manual-profile writes
+keep using `pnpm dev` with authentication and ownership checks intact. Core
+surface closure still follows Tier 5.
+
 ### Tier 4 – major block closure
 
 ```bash
@@ -355,7 +371,7 @@ Before committing, Codex reviews:
 - Are auth, validation, ownership and RLS correct?
 - Did all affected projections update?
 - Did Manual/Demo/Empty/Auth-blocked remain separated?
-- Is the focused reload/browser proof green?
+- Is the focused reload/browser proof green (or, for presentation-only changes, the live UI review accepted)?
 - Was every visible control inventoried and directly exercised for a core surface?
 - Are console/hydration, bounds, overlap, whitespace and complete screenshots reviewed?
 - Is `USER ACCEPTED` present when this is final core-surface/product closure?
